@@ -19,10 +19,7 @@
  *
  *   Claimed restaurants: Option A editorial public profile (diner presentation).
  *   Unclaimed: existing Claim Screen (brand splash → FieldRow stub + Claim CTA).
- *   Menu highlights: GET /public/restaurants/:id/menu-preview (read-only partial).
- *
- *   Full menu is NOT shown here.
- *   "View Menu →" links to /restaurants/:slugOrId/menu (PublicMenuPage).
+ *   Menu preview: GET /public/restaurants/:id/menu-preview (scrollable name+price list).
  *
  *   Profile tier values coded against: "pro" | "verified"
  *   Data source: GET /public/restaurants/:slugOrId
@@ -30,7 +27,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useLocation, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import BottomNav from "../components/BottomNav.jsx";
 import PublicProfileOwnerChrome from "../components/restaurant/PublicProfileOwnerChrome.jsx";
@@ -45,7 +42,6 @@ import { trackRestaurantView } from "../lib/analytics.js";
 import { sendPageVisit } from "../lib/analyticsPageVisitSend.js";
 import { getLocalizedField } from "../utils/getLocalizedField.js";
 import { getDisplayMenuItemName } from "../utils/getDisplayMenuItemName.js";
-import { restaurantMenuPath } from "../lib/canonicalUrl.js";
 import RestaurantStatusLight from "../components/RestaurantStatusLight.jsx";
 import { buildRestaurantStatusLightProps } from "../lib/restaurantStatusLight.js";
 import ShareButton from "../components/share/ShareButton.jsx";
@@ -639,12 +635,11 @@ function applyPublicRestaurantPayload(json) {
 }
 
 export default function RestaurantPublicPage() {
-  const { language, t: translateUi } = useLanguage();
+  const { language } = useLanguage();
   const {
     isAuthenticated: isOperatorAuthenticated,
     restaurants: operatorRestaurants,
   } = useOperator();
-  const location = useLocation();
   const { slugOrId, restaurantSlug: canonicalRestaurantSlug } = useParams();
   // canonicalRestaurantSlug is present on 3-segment canonical routes
   // (/restaurants/:state/:city/:restaurantSlug); slugOrId on legacy 1-segment routes.
@@ -711,7 +706,7 @@ export default function RestaurantPublicPage() {
       return;
     }
     let alive = true;
-    fetchRestaurantMenuPreview(restaurantId, { limit: 8 })
+    fetchRestaurantMenuPreview(restaurantId, { limit: 50 })
       .then((json) => {
         if (!alive) return;
         const items = Array.isArray(json?.preview_items)
@@ -778,7 +773,6 @@ export default function RestaurantPublicPage() {
     [streetAddr, city, stateVal, zipVal].filter(Boolean).join(", ")
   );
   const cityLine = [city, stateVal].filter(Boolean).join(", ") + (zipVal ? ` ${zipVal}` : "");
-  const locationLine = [streetAddr, cityLine].filter(Boolean).join(" · ") || cityLine;
   const websiteRaw = data?.website || data?.website_url || "";
   const website = normalizeUrl(websiteRaw);
   const phone = data?.phone || data?.phone_number || data?.contact_phone || "";
@@ -825,18 +819,6 @@ export default function RestaurantPublicPage() {
     billboardPreview.find((p) => p?.image_url || p?.photo_url)?.photo_url ||
     null;
 
-  const menuHref =
-    (data?.id &&
-      (restaurantMenuPath({
-        slug: data.slug,
-        city: data.city,
-        state: data.state,
-        id: data.id,
-      }) ||
-        `/restaurants/${encodeURIComponent(String(data.slug || data.id))}/menu`)) ||
-    menuPreview?.menu_url ||
-    null;
-
   const pageBg = isDark ? "#0b0b0f" : "#ffffff";
 
   return (
@@ -871,7 +853,6 @@ export default function RestaurantPublicPage() {
       ) : data ? (
         <RestaurantPublicEditorial
           name={name}
-          locationLine={locationLine}
           streetAddr={streetAddr}
           cityLine={cityLine}
           directionsUrl={streetDirectionsUrl}
@@ -894,9 +875,6 @@ export default function RestaurantPublicPage() {
             restaurantName: name,
             restaurantSlug: data?.slug || resolvedSlug,
           }}
-          menuHref={menuHref}
-          menuSearch={location.search || ""}
-          viewMenuLabel={translateUi("common.viewMenu")}
           menuPreviewItems={menuPreview?.items || []}
           billboardPreview={billboardPreview}
           billboardHref={billboardHref}
@@ -905,7 +883,6 @@ export default function RestaurantPublicPage() {
           statusBanners={data?.status_banners}
           statusEventPresentations={data?.status_event_presentations}
           isMobile={isMobile}
-          translateUi={translateUi}
         />
       ) : null}
       <BottomNav />

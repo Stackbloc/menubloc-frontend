@@ -590,7 +590,7 @@ export default function OperatorDashboard() {
             <QuickBtn
               icon="◷"
               label={t("operator.dashboard.publicProfile", "Public Profile")}
-              onClick={() => navigate("/operator/profile")}
+              onClick={() => navigate("/operator/my-account")}
             />
             <QuickBtn icon="▣" label={t("operator.dashboard.menuLab", "Menu Lab")} onClick={() => navigate("/operator/menulab")} />
             <QuickBtn icon="🔥" label={t("operator.dashboard.deals", "Deals")} onClick={() => navigate("/operator/deals")} />

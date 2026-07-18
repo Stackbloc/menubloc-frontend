@@ -1,5 +1,5 @@
 /**
- * Option A — large editorial public restaurant profile (claimed / owner view).
+ * Option A — editorial public restaurant profile (claimed / owner view).
  * Consumer presentation only. Not a form. Not the Claim Screen.
  */
 import { Link } from "react-router-dom";
@@ -59,9 +59,160 @@ function DetailLine({ label, children }) {
   );
 }
 
+function IdentityBlock({
+  name,
+  cityLine,
+  streetAddr,
+  directionsUrl,
+  logoUrl,
+  tierLabel,
+  statusLightProps,
+  restaurantId,
+  shareData,
+  shareAnalytics,
+  metaBits,
+  onPhoto = false,
+  isMobile,
+}) {
+  const ink = onPhoto ? "#fafaf9" : "#1c1917";
+  const muted = onPhoto ? "rgba(250,250,249,0.88)" : "#57534e";
+
+  return (
+    <div style={{ display: "flex", alignItems: "flex-start", gap: 14, minWidth: 0 }}>
+      {logoUrl ? (
+        <img
+          src={logoUrl}
+          alt={`${name} logo`}
+          width={64}
+          height={64}
+          style={{
+            width: 64,
+            height: 64,
+            objectFit: "cover",
+            borderRadius: 12,
+            border: onPhoto ? "2px solid #fafaf9" : "1px solid #e7e5e4",
+            background: "#fff",
+            flexShrink: 0,
+          }}
+        />
+      ) : null}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        {/* Name + like/share on one row — same pattern as public menu headers */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            flexWrap: "nowrap",
+            minWidth: 0,
+          }}
+        >
+          <div style={{ minWidth: 0, flex: 1, display: "flex", alignItems: "center", gap: 8 }}>
+            <h1
+              style={{
+                margin: 0,
+                fontSize: isMobile ? 24 : 32,
+                fontWeight: 800,
+                letterSpacing: "-0.03em",
+                lineHeight: 1.15,
+                color: ink,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {name}
+            </h1>
+            {statusLightProps ? <RestaurantStatusLight {...statusLightProps} size={7} /> : null}
+            {tierLabel ? (
+              <span style={{ fontSize: 13, fontWeight: 600, color: muted, flexShrink: 0 }}>{tierLabel}</span>
+            ) : null}
+          </div>
+          {restaurantId || shareData ? (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: MENU_ROW_HEADER_ICON_GAP,
+                flexShrink: 0,
+              }}
+            >
+              {restaurantId ? (
+                <FollowRestaurantButton
+                  restaurantId={restaurantId}
+                  restaurantName={name}
+                  source="restaurant_profile"
+                  size={MENU_ROW_ICON_SIZE}
+                />
+              ) : null}
+              {shareData ? (
+                <ShareButton
+                  variant="menu"
+                  iconOnly
+                  tone="ghost"
+                  shareData={shareData}
+                  analyticsContext={shareAnalytics || undefined}
+                />
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+
+        {/* City / state directly under the name, same left edge */}
+        {cityLine || streetAddr ? (
+          directionsUrl ? (
+            <a
+              href={directionsUrl}
+              target="_blank"
+              rel="noreferrer"
+              aria-label={`Get directions to ${name}`}
+              style={{
+                margin: "6px 0 0",
+                display: "block",
+                fontSize: 14,
+                lineHeight: 1.4,
+                color: muted,
+                textDecoration: "none",
+              }}
+            >
+              {streetAddr ? <span style={{ display: "block" }}>{streetAddr}</span> : null}
+              {cityLine ? <span style={{ display: "block" }}>{cityLine}</span> : null}
+            </a>
+          ) : (
+            <div style={{ margin: "6px 0 0", fontSize: 14, lineHeight: 1.4, color: muted }}>
+              {streetAddr ? <div>{streetAddr}</div> : null}
+              {cityLine ? <div>{cityLine}</div> : null}
+            </div>
+          )
+        ) : null}
+
+        {metaBits.length ? (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
+            {metaBits.map((bit) => (
+              <span
+                key={bit}
+                style={{
+                  fontSize: 12,
+                  fontWeight: 600,
+                  padding: "4px 10px",
+                  borderRadius: 999,
+                  border: onPhoto ? "1px solid rgba(250,250,249,0.35)" : "1px solid #d6d3d1",
+                  background: onPhoto ? "rgba(28,25,23,0.25)" : "#fff",
+                  color: ink,
+                }}
+              >
+                {bit}
+              </span>
+            ))}
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 export default function RestaurantPublicEditorial({
   name,
-  locationLine,
   streetAddr,
   cityLine,
   directionsUrl,
@@ -80,9 +231,6 @@ export default function RestaurantPublicEditorial({
   restaurantId,
   shareData,
   shareAnalytics,
-  menuHref,
-  menuSearch,
-  viewMenuLabel,
   menuPreviewItems,
   billboardPreview,
   billboardHref,
@@ -91,16 +239,29 @@ export default function RestaurantPublicEditorial({
   statusBanners,
   statusEventPresentations,
   isMobile,
-  translateUi,
 }) {
   const hasStatus =
     (Array.isArray(statusBanners) && statusBanners.length > 0) ||
     (Array.isArray(statusEventPresentations) && statusEventPresentations.length > 0);
 
   const metaBits = [cuisine, category].filter(Boolean);
-  const hasDetails = Boolean(
-    website || phone || cuisine || category || streetAddr || cityLine
-  );
+  const hasDetails = Boolean(website || phone || cuisine || category || streetAddr || cityLine);
+  const hasMenuPreview = Array.isArray(menuPreviewItems) && menuPreviewItems.length > 0;
+
+  const identityProps = {
+    name,
+    cityLine,
+    streetAddr,
+    directionsUrl,
+    logoUrl,
+    tierLabel,
+    statusLightProps,
+    restaurantId,
+    shareData,
+    shareAnalytics,
+    metaBits,
+    isMobile,
+  };
 
   return (
     <div
@@ -112,212 +273,59 @@ export default function RestaurantPublicEditorial({
         paddingBottom: 88,
       }}
     >
-      {/* Full-bleed hero */}
-      <header
-        aria-label={bannerPhotoUrl ? `${name} banner` : `${name}`}
-        style={{
-          position: "relative",
-          minHeight: isMobile ? 200 : 280,
-          backgroundColor: "#e7e5e4",
-          backgroundImage: bannerPhotoUrl
-            ? `linear-gradient(to top, rgba(28,25,23,0.72) 0%, rgba(28,25,23,0.2) 45%, transparent 70%), url(${JSON.stringify(
-                String(bannerPhotoUrl)
-              )})`
-            : "linear-gradient(160deg, #f5f5f4 0%, #e7e5e4 55%, #d6d3d1 100%)",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
-      >
-        {!bannerPhotoUrl ? (
+      {bannerPhotoUrl ? (
+        <header
+          aria-label={`${name} banner`}
+          style={{
+            position: "relative",
+            minHeight: isMobile ? 180 : 240,
+            backgroundColor: "#e7e5e4",
+            backgroundImage: `linear-gradient(to top, rgba(28,25,23,0.72) 0%, rgba(28,25,23,0.2) 45%, transparent 70%), url(${JSON.stringify(
+              String(bannerPhotoUrl)
+            )})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+          }}
+        >
           <div
             style={{
               position: "absolute",
-              inset: 0,
-              display: "flex",
-              alignItems: "flex-end",
-              padding: isMobile ? 16 : "20px 28px",
-              color: "#78716c",
-              fontSize: 12,
-              fontWeight: 600,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              padding: isMobile ? "20px 16px 18px" : "28px 28px 24px",
             }}
           >
-            Photo coming soon
-          </div>
-        ) : null}
-
-        <div
-          style={{
-            position: "absolute",
-            left: 0,
-            right: 0,
-            bottom: 0,
-            padding: isMobile ? "20px 16px 18px" : "28px 28px 24px",
-            color: bannerPhotoUrl ? "#fafaf9" : "#1c1917",
-          }}
-        >
-          <div style={{ maxWidth: 1040, margin: "0 auto" }}>
-            <div style={{ display: "flex", alignItems: "flex-end", gap: 14, flexWrap: "wrap" }}>
-              {logoUrl ? (
-                <img
-                  src={logoUrl}
-                  alt={`${name} logo`}
-                  width={72}
-                  height={72}
-                  style={{
-                    width: 72,
-                    height: 72,
-                    objectFit: "cover",
-                    borderRadius: 12,
-                    border: "2px solid #fafaf9",
-                    background: "#fff",
-                    flexShrink: 0,
-                  }}
-                />
-              ) : null}
-              <div style={{ flex: "1 1 220px", minWidth: 0 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                  <h1
-                    style={{
-                      margin: 0,
-                      fontSize: isMobile ? 28 : 40,
-                      fontWeight: 800,
-                      letterSpacing: "-0.03em",
-                      lineHeight: 1.1,
-                      wordBreak: "break-word",
-                    }}
-                  >
-                    {name}
-                  </h1>
-                  {statusLightProps ? (
-                    <RestaurantStatusLight {...statusLightProps} size={7} />
-                  ) : null}
-                  {tierLabel ? (
-                    <span style={{ fontSize: 13, fontWeight: 600, opacity: 0.9 }}>{tierLabel}</span>
-                  ) : null}
-                </div>
-                {locationLine ? (
-                  <p style={{ margin: "8px 0 0", fontSize: 15, opacity: bannerPhotoUrl ? 0.9 : 0.75 }}>
-                    {locationLine}
-                  </p>
-                ) : null}
-                {metaBits.length ? (
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
-                    {metaBits.map((bit) => (
-                      <span
-                        key={bit}
-                        style={{
-                          fontSize: 12,
-                          fontWeight: 600,
-                          padding: "4px 10px",
-                          borderRadius: 999,
-                          border: bannerPhotoUrl
-                            ? "1px solid rgba(250,250,249,0.35)"
-                            : "1px solid #d6d3d1",
-                          background: bannerPhotoUrl ? "rgba(28,25,23,0.25)" : "#fafaf9",
-                        }}
-                      >
-                        {bit}
-                      </span>
-                    ))}
-                  </div>
-                ) : null}
-              </div>
-              {restaurantId || shareData ? (
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: MENU_ROW_HEADER_ICON_GAP,
-                    marginLeft: "auto",
-                  }}
-                >
-                  {restaurantId ? (
-                    <FollowRestaurantButton
-                      restaurantId={restaurantId}
-                      restaurantName={name}
-                      source="restaurant_profile"
-                      size={MENU_ROW_ICON_SIZE}
-                    />
-                  ) : null}
-                  {shareData ? (
-                    <ShareButton
-                      variant="menu"
-                      iconOnly
-                      tone="ghost"
-                      shareData={shareData}
-                      analyticsContext={shareAnalytics || undefined}
-                    />
-                  ) : null}
-                </div>
-              ) : null}
+            <div style={{ maxWidth: 1040, margin: "0 auto" }}>
+              <IdentityBlock {...identityProps} onPhoto />
             </div>
           </div>
-        </div>
-      </header>
+        </header>
+      ) : (
+        <header
+          aria-label={name}
+          style={{
+            maxWidth: 1040,
+            margin: "0 auto",
+            padding: isMobile ? "24px 16px 8px" : "32px 28px 8px",
+          }}
+        >
+          <IdentityBlock {...identityProps} onPhoto={false} />
+        </header>
+      )}
 
       <div
         style={{
           maxWidth: 1040,
           margin: "0 auto",
-          padding: isMobile ? "24px 16px 0" : "32px 28px 0",
+          padding: isMobile ? "20px 16px 0" : "28px 28px 0",
         }}
       >
-        {/* Primary actions — quiet, not blue chrome */}
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 28 }}>
-          {menuHref ? (
-            <Link
-              to={{ pathname: menuHref, search: menuSearch || "" }}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                minHeight: 40,
-                padding: "0 16px",
-                borderRadius: 8,
-                textDecoration: "none",
-                fontSize: 14,
-                fontWeight: 700,
-                background: "#1c1917",
-                color: "#fafaf9",
-              }}
-            >
-              {viewMenuLabel || translateUi?.("common.viewMenu") || "View menu"}
-            </Link>
-          ) : null}
-          {directionsUrl ? (
-            <a
-              href={directionsUrl}
-              target="_blank"
-              rel="noreferrer"
-              aria-label={`Get directions to ${name}`}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                minHeight: 40,
-                padding: "0 16px",
-                borderRadius: 8,
-                textDecoration: "none",
-                fontSize: 14,
-                fontWeight: 700,
-                background: "#ffffff",
-                color: "#1c1917",
-                border: "1px solid #d6d3d1",
-              }}
-            >
-              Directions
-            </a>
-          ) : null}
-        </div>
-
         <div
           style={{
             display: "grid",
-            gridTemplateColumns:
-              isMobile || !(menuPreviewItems?.length && menuHref)
-                ? "1fr"
-                : "minmax(0, 1.55fr) minmax(240px, 0.85fr)",
-            gap: isMobile ? 8 : 8,
+            gridTemplateColumns: isMobile || !hasMenuPreview ? "1fr" : "minmax(0, 1.55fr) minmax(240px, 0.85fr)",
+            gap: 8,
             alignItems: "start",
           }}
         >
@@ -329,13 +337,14 @@ export default function RestaurantPublicEditorial({
               <Section title="Restaurant details">
                 <div style={{ borderTop: "1px solid #e7e5e4" }}>
                   <DetailLine label="Website">
-                    {website ? (
-                      <QuietLink href={website}>{websiteRaw || website} ↗</QuietLink>
-                    ) : null}
+                    {website ? <QuietLink href={website}>{websiteRaw || website} ↗</QuietLink> : null}
                   </DetailLine>
                   <DetailLine label="Phone">
                     {phone ? (
-                      <a href={`tel:${String(phone).replace(/\s+/g, "")}`} style={{ color: "inherit", textDecoration: "none" }}>
+                      <a
+                        href={`tel:${String(phone).replace(/\s+/g, "")}`}
+                        style={{ color: "inherit", textDecoration: "none" }}
+                      >
                         {phone}
                       </a>
                     ) : null}
@@ -344,7 +353,7 @@ export default function RestaurantPublicEditorial({
                   <DetailLine label="Category">{category || null}</DetailLine>
                   <DetailLine label="Address">
                     {streetAddr || cityLine ? (
-                      directionsUrl && (streetAddr || cityLine) ? (
+                      directionsUrl ? (
                         <a
                           href={directionsUrl}
                           target="_blank"
@@ -381,9 +390,7 @@ export default function RestaurantPublicEditorial({
                   style={{ color: "#166534", textDecoration: "none", fontWeight: 600 }}
                 >
                   {displayCluster.name}
-                  {displayCluster.cluster_type
-                    ? ` · ${clusterTypeLabel(displayCluster.cluster_type)}`
-                    : ""}
+                  {displayCluster.cluster_type ? ` · ${clusterTypeLabel(displayCluster.cluster_type)}` : ""}
                 </Link>
               </Section>
             ) : null}
@@ -449,27 +456,15 @@ export default function RestaurantPublicEditorial({
               </Section>
             ) : null}
 
-            {isMobile && menuPreviewItems?.length && menuHref ? (
+            {isMobile && hasMenuPreview ? (
               <div style={{ marginTop: 8, marginBottom: 24 }}>
-                <RestaurantProfileMenuPreview
-                  items={menuPreviewItems}
-                  menuHref={menuHref}
-                  search={menuSearch}
-                  viewMenuLabel={viewMenuLabel || "View full menu"}
-                  isMobile
-                />
+                <RestaurantProfileMenuPreview items={menuPreviewItems} isMobile />
               </div>
             ) : null}
           </div>
 
-          {!isMobile && menuPreviewItems?.length && menuHref ? (
-            <RestaurantProfileMenuPreview
-              items={menuPreviewItems}
-              menuHref={menuHref}
-              search={menuSearch}
-              viewMenuLabel={viewMenuLabel || "View full menu"}
-              isMobile={false}
-            />
+          {!isMobile && hasMenuPreview ? (
+            <RestaurantProfileMenuPreview items={menuPreviewItems} isMobile={false} />
           ) : null}
         </div>
       </div>

@@ -131,8 +131,8 @@ export async function fetchRestaurantMenuPreview(restaurantId, options = {}) {
   const limit = Number(options.limit);
   const qs =
     Number.isFinite(limit) && limit > 0
-      ? `?limit=${Math.min(Math.trunc(limit), 10)}`
-      : "?limit=8";
+      ? `?limit=${Math.min(Math.trunc(limit), 100)}`
+      : "?limit=50";
   return apiGet(`/public/restaurants/${id}/menu-preview${qs}`, options);
 }
 

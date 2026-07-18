@@ -138,7 +138,6 @@ import CommunityClusterCreatePage from "./pages/CommunityClusterCreatePage.jsx";
 import MarketMenuItemPage from "./pages/MarketMenuItemPage.jsx";
 import MenuItemCanonicalRoute from "./pages/MenuItemCanonicalRoute.jsx";
 import MenuThemesPage from "./pages/MenuThemesPage.jsx";
-import MenuDesignLabPage from "./pages/MenuDesignLabPage.jsx";
 import DemoPage from "./pages/DemoPage.jsx";
 import CheckoutPage from "./pages/CheckoutPage.jsx";
 import BuyMeThisPage from "./pages/BuyMeThisPage.jsx";
@@ -725,7 +724,7 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/operator/my-account" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorMyAccount /></OperatorRoute>} />
         <Route path="/operator/display-settings" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorDisplaySettings /></OperatorRoute>} />
         <Route path="/operator/menu-studio" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorMenuStudio /></OperatorRoute>} />
-        <Route path="/operator/menudesign" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><MenuDesignLabPage /></OperatorRoute>} />
+        <Route path="/operator/menudesign" element={<Navigate to="/operator/menulab" replace />} />
         <Route path="/operator/brand" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorBrandSettings /></OperatorRoute>} />
 
         <Route path="/owner/login" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <OwnerLogin />} />

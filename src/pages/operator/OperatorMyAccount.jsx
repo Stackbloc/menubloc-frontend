@@ -1,4 +1,10 @@
-import { useEffect, useRef, useState } from "react";
+/**
+ * Operator My Account — public restaurant profile editor + account settings.
+ * Route: /operator/my-account
+ *
+ * Profile form is primary. Password, plan, and utilities are secondary.
+ */
+import { useEffect, useState } from "react";
 import { useLanguage } from "../../context/LanguageContext.jsx";
 import { useNavigate } from "react-router-dom";
 import OperatorLayout from "./OperatorLayout.jsx";
@@ -7,6 +13,7 @@ import * as api from "../../lib/operatorApi.js";
 import { getSubscriptionStatusLabel, formatMoney } from "../../components/payments/paymentHelpers.js";
 import PrimaryQrCard from "../../components/qr/PrimaryQrCard.jsx";
 import { operatorPublicProfilePath } from "../../lib/canonicalUrl.js";
+import { OperatorRestaurantProfileForm } from "./OperatorProfileEditor.jsx";
 
 function getPlanTier(planCode) {
   if (!planCode) return "published";
@@ -45,14 +52,20 @@ function getAutoRenewLabel(sub) {
   return sub?.cancel_at_period_end ? "No" : "Yes";
 }
 
-function Row({ label, value }) {
+function Row({ label, value, last }) {
   return (
-    <div style={{
-      display: "flex", justifyContent: "space-between", alignItems: "center",
-      gap: 12, padding: "14px 0", borderBottom: "1px solid #f0f4f8",
-    }}>
-      <span style={{ fontSize: 13, color: "#8a9ab0", fontWeight: 500 }}>{label}</span>
-      <span style={{ fontSize: 13, color: "#0f1720", fontWeight: 700, textAlign: "right" }}>{value}</span>
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        gap: 12,
+        padding: "12px 0",
+        borderBottom: last ? "none" : "1px solid #f0f4f8",
+      }}
+    >
+      <span style={{ fontSize: 13, color: "#78716c", fontWeight: 500 }}>{label}</span>
+      <span style={{ fontSize: 13, color: "#0f1720", fontWeight: 650, textAlign: "right" }}>{value}</span>
     </div>
   );
 }
@@ -69,31 +82,92 @@ function StatusBadge({ status }) {
   };
   const style = colors[normalized] || { bg: "#f3f4f6", color: "#6b7280" };
   return (
-    <span style={{
-      background: style.bg, color: style.color,
-      fontWeight: 700, fontSize: 12, padding: "3px 10px",
-      borderRadius: 20, display: "inline-block",
-    }}>
+    <span
+      style={{
+        background: style.bg,
+        color: style.color,
+        fontWeight: 700,
+        fontSize: 12,
+        padding: "3px 10px",
+        borderRadius: 20,
+        display: "inline-block",
+      }}
+    >
       {getSubscriptionStatusLabel(status) || status || "—"}
     </span>
   );
 }
 
+function QuietLink({ onClick, href, children }) {
+  const style = {
+    fontSize: 13,
+    fontWeight: 650,
+    color: "#1F4E3D",
+    textDecoration: "none",
+    background: "none",
+    border: "none",
+    padding: 0,
+    cursor: "pointer",
+    fontFamily: "inherit",
+  };
+  if (href) {
+    return (
+      <a href={href} target="_blank" rel="noreferrer" style={style}>
+        {children}
+      </a>
+    );
+  }
+  return (
+    <button type="button" onClick={onClick} style={style}>
+      {children}
+    </button>
+  );
+}
+
+function SectionCard({ title, children, style }) {
+  return (
+    <section
+      style={{
+        background: "#fff",
+        border: "1px solid #e7e5e4",
+        borderRadius: 12,
+        padding: "18px 20px",
+        marginBottom: 16,
+        ...style,
+      }}
+    >
+      {title ? (
+        <h2
+          style={{
+            margin: "0 0 14px",
+            fontSize: 12,
+            fontWeight: 800,
+            letterSpacing: "0.06em",
+            textTransform: "uppercase",
+            color: "#78716c",
+          }}
+        >
+          {title}
+        </h2>
+      ) : null}
+      {children}
+    </section>
+  );
+}
+
 export default function OperatorMyAccount() {
   const { t } = useLanguage();
-  const { operator, selectedRestaurant, subscription: contextSubscription } = useOperator();
+  const { selectedRestaurant, subscription: contextSubscription } = useOperator();
   const navigate = useNavigate();
 
   const [subscription, setSubscription] = useState(null);
   const [billingOverview, setBillingOverview] = useState(null);
-  const [menus, setMenus] = useState([]);
-  const [deals, setDeals] = useState([]);
+  const [primaryQr, setPrimaryQr] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [cancelConfirm, setCancelConfirm] = useState(false);
   const [cancelBusy, setCancelBusy] = useState(false);
   const [cancelMessage, setCancelMessage] = useState("");
-  const [primaryQr, setPrimaryQr] = useState(null);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
@@ -105,17 +179,13 @@ export default function OperatorMyAccount() {
     setLoading(true);
     setError("");
     try {
-      const [subData, billingData, menusData, dealsData, qrData] = await Promise.allSettled([
+      const [subData, billingData, qrData] = await Promise.allSettled([
         api.getPlatformSubscriptionStatus(rid),
         api.getBillingOverview(rid),
-        api.getMenus(rid),
-        api.getDeals(rid),
         api.getPrimaryQr(rid),
       ]);
       setSubscription(subData.status === "fulfilled" ? subData.value : null);
       setBillingOverview(billingData.status === "fulfilled" ? billingData.value : null);
-      setMenus(menusData.status === "fulfilled" ? menusData.value?.menus || [] : []);
-      setDeals(dealsData.status === "fulfilled" ? dealsData.value?.deals || [] : []);
       setPrimaryQr(qrData.status === "fulfilled" ? qrData.value?.qr || null : null);
       if (subData.status === "rejected") setError("Unable to load subscription details.");
     } finally {
@@ -129,16 +199,13 @@ export default function OperatorMyAccount() {
     } else {
       setSubscription(null);
       setBillingOverview(null);
-      setMenus([]);
-      setDeals([]);
+      setPrimaryQr(null);
     }
   }, [selectedRestaurant?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Stripe platform subscription is primary; internal context subscription is fallback
   const planCode = subscription?.plan_code || contextSubscription?.plan_slug || null;
-  const planDisplayOverride = !subscription?.plan_code && contextSubscription?.plan_name
-    ? contextSubscription.plan_name
-    : null;
+  const planDisplayOverride =
+    !subscription?.plan_code && contextSubscription?.plan_name ? contextSubscription.plan_name : null;
   const tier = getPlanTier(planCode);
   const isFreeTier = tier === "published";
   const normalizedStatus = String(subscription?.status || "").toLowerCase();
@@ -150,7 +217,9 @@ export default function OperatorMyAccount() {
 
   const renewalDate = subscription?.current_period_end
     ? new Date(subscription.current_period_end).toLocaleDateString(undefined, {
-        year: "numeric", month: "long", day: "numeric",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
       })
     : "—";
 
@@ -162,25 +231,22 @@ export default function OperatorMyAccount() {
       setCancelMessage("Cancellation scheduled. Your plan remains active until the end of the billing period.");
       setCancelConfirm(false);
       await loadData(selectedRestaurant.id);
-    } catch (err) {
+    } catch {
       setCancelMessage("Unable to process cancellation. Please try again.");
     } finally {
       setCancelBusy(false);
     }
   }
 
-  const locationLine = [selectedRestaurant?.city, selectedRestaurant?.state]
-    .filter(Boolean).join(", ");
+  const publicProfileHref = selectedRestaurant ? operatorPublicProfilePath(selectedRestaurant) : null;
 
   async function handleChangePassword() {
     setPasswordError("");
     setPasswordMessage("");
-
     if (newPassword !== confirmNewPassword) {
       setPasswordError("New passwords do not match");
       return;
     }
-
     setPasswordSaving(true);
     try {
       await api.changeOperatorPassword(currentPassword, newPassword);
@@ -195,41 +261,245 @@ export default function OperatorMyAccount() {
     }
   }
 
-  return (
-    <OperatorLayout>
-      <div style={{ maxWidth: 560, margin: "0 auto", padding: "32px 20px" }}>
-        {/* Header */}
-        <div style={{ marginBottom: 28 }}>
-          <h1 style={{ fontSize: 22, fontWeight: 800, color: "#0f1720", margin: 0 }}>
-            My Account
-          </h1>
-          {operator?.full_name && (
-            <p style={{ margin: "6px 0 0", fontSize: 14, color: "#344054", fontWeight: 600 }}>
-              {operator.full_name}
-            </p>
-          )}
-          {operator?.email && (
-            <p style={{ margin: "4px 0 0", fontSize: 13, color: "#8a9ab0" }}>
-              {operator.email}
-            </p>
-          )}
-          {(selectedRestaurant?.restaurant_name || selectedRestaurant?.name) && (
-            <p style={{ margin: "8px 0 0", fontSize: 13, color: "#aab4c0" }}>
-              {selectedRestaurant.restaurant_name || selectedRestaurant.name}
-              {locationLine ? ` · ${locationLine}` : ""}
-            </p>
-          )}
-        </div>
+  const inputStyle = {
+    width: "100%",
+    padding: "10px 12px",
+    fontSize: 13,
+    border: "1px solid #e7e5e4",
+    borderRadius: 8,
+    fontFamily: "inherit",
+    boxSizing: "border-box",
+  };
 
-        {/* Password — account-level, not tied to any restaurant */}
-        <div style={{
-          background: "#fff", border: "1px solid #e4e9f0",
-          borderRadius: 12, padding: "16px 18px",
-          marginBottom: 20,
-        }}>
-          <div style={{ fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", color: "#8a9ab0", marginBottom: 12 }}>
-            Password
+  return (
+    <OperatorLayout title="My Account">
+      <div style={{ maxWidth: 960, paddingBottom: 48 }}>
+        {/* Restaurant name lives in the sidebar — do not repeat it here */}
+        {selectedRestaurant?.id ? (
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 16,
+              marginBottom: 20,
+              alignItems: "center",
+            }}
+          >
+            {publicProfileHref ? (
+              <QuietLink href={publicProfileHref}>View public profile ↗</QuietLink>
+            ) : null}
+            <QuietLink
+              onClick={() =>
+                window.open(`/public/restaurants/${selectedRestaurant.id}/menu`, "_blank")
+              }
+            >
+              View public menu ↗
+            </QuietLink>
+            <QuietLink onClick={() => navigate("/operator/menulab")}>Menu Lab →</QuietLink>
           </div>
+        ) : null}
+
+        {!selectedRestaurant?.id ? (
+          <p style={{ fontSize: 14, color: "#78716c", marginBottom: 16 }}>
+            {t("operator.selectRestaurantProfile", "Select a restaurant to edit its profile.")}
+          </p>
+        ) : (
+          <>
+            {/* PRIMARY — public profile editor */}
+            <SectionCard title="Public restaurant profile">
+              <p style={{ margin: "-4px 0 16px", fontSize: 13, color: "#78716c", lineHeight: 1.5 }}>
+                These fields appear on your public Menuply listing. Save a draft, then publish to go live.
+              </p>
+              <OperatorRestaurantProfileForm embedded />
+            </SectionCard>
+
+            {/* SECONDARY — plan */}
+            <SectionCard title="Plan">
+              {loading ? (
+                <p style={{ margin: 0, fontSize: 13, color: "#78716c" }}>Loading…</p>
+              ) : error ? (
+                <p style={{ margin: 0, fontSize: 13, color: "#92400e" }}>{error}</p>
+              ) : (
+                <>
+                  <Row
+                    label="Current plan"
+                    value={planDisplayOverride || getPlanDisplayName(planCode)}
+                  />
+                  <Row
+                    label="Status"
+                    value={
+                      <StatusBadge
+                        status={
+                          subscription?.status ||
+                          contextSubscription?.status ||
+                          (isFreeTier ? "active" : null)
+                        }
+                      />
+                    }
+                  />
+                  <Row label="Billing" value={getBillingIntervalLabel(planCode)} />
+                  <Row label="Renewal" value={isFreeTier ? "—" : renewalDate} />
+                  <Row
+                    label="Auto-renew"
+                    value={isFreeTier ? "—" : getAutoRenewLabel(subscription)}
+                    last={!billingOverview}
+                  />
+
+                  {billingOverview ? (
+                    <>
+                      {billingOverview.subscription?.subscription_fee_amount_cents != null ? (
+                        <Row
+                          label="Subscription fee"
+                          value={formatMoney(billingOverview.subscription.subscription_fee_amount_cents)}
+                        />
+                      ) : null}
+                      {billingOverview.payment_method?.present ? (
+                        <Row
+                          label="Payment method"
+                          value={
+                            billingOverview.payment_method.brand
+                              ? `${billingOverview.payment_method.brand.charAt(0).toUpperCase()}${billingOverview.payment_method.brand.slice(1)} ···· ${billingOverview.payment_method.last4}`
+                              : "On file"
+                          }
+                        />
+                      ) : null}
+                      <Row
+                        label="Marketplace setup"
+                        value={
+                          billingOverview.stripe_connect?.onboarding_complete ? "Complete" : "Not complete"
+                        }
+                        last
+                      />
+                    </>
+                  ) : null}
+
+                  {!isFreeTier && subscription?.cancel_at_period_end && !cancelMessage ? (
+                    <p style={{ margin: "12px 0 0", fontSize: 13, color: "#92400e" }}>
+                      Your plan will not renew. Access continues until {renewalDate}.
+                    </p>
+                  ) : null}
+                  {cancelMessage ? (
+                    <p style={{ margin: "12px 0 0", fontSize: 13, color: "#1F4E3D" }}>{cancelMessage}</p>
+                  ) : null}
+
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 16 }}>
+                    <button
+                      type="button"
+                      onClick={() => navigate("/operator/subscription")}
+                      style={{
+                        background: "#1c1917",
+                        color: "#fff",
+                        border: "none",
+                        borderRadius: 8,
+                        padding: "10px 16px",
+                        fontSize: 13,
+                        fontWeight: 700,
+                        cursor: "pointer",
+                        fontFamily: "inherit",
+                      }}
+                    >
+                      Change plan
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => navigate("/operator/delivery")}
+                      style={{
+                        background: "#fff",
+                        color: "#1c1917",
+                        border: "1px solid #d6d3d1",
+                        borderRadius: 8,
+                        padding: "10px 16px",
+                        fontSize: 13,
+                        fontWeight: 650,
+                        cursor: "pointer",
+                        fontFamily: "inherit",
+                      }}
+                    >
+                      Delivery settings
+                    </button>
+                    {canCancel && !cancelConfirm ? (
+                      <button
+                        type="button"
+                        onClick={() => setCancelConfirm(true)}
+                        style={{
+                          background: "none",
+                          color: "#78716c",
+                          border: "none",
+                          padding: "10px 8px",
+                          fontSize: 13,
+                          fontWeight: 600,
+                          cursor: "pointer",
+                          fontFamily: "inherit",
+                        }}
+                      >
+                        Cancel subscription
+                      </button>
+                    ) : null}
+                  </div>
+
+                  {cancelConfirm ? (
+                    <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid #f0f4f8" }}>
+                      <p style={{ margin: "0 0 12px", fontSize: 13, color: "#374151", lineHeight: 1.5 }}>
+                        Your plan stays active until <strong>{renewalDate}</strong>, then switches to Starter
+                        (free).
+                      </p>
+                      <div style={{ display: "flex", gap: 10 }}>
+                        <button
+                          type="button"
+                          onClick={handleCancel}
+                          disabled={cancelBusy}
+                          style={{
+                            background: "#7f1d1d",
+                            color: "#fff",
+                            border: "none",
+                            borderRadius: 8,
+                            padding: "9px 14px",
+                            fontSize: 13,
+                            fontWeight: 700,
+                            cursor: cancelBusy ? "default" : "pointer",
+                            opacity: cancelBusy ? 0.7 : 1,
+                            fontFamily: "inherit",
+                          }}
+                        >
+                          {cancelBusy ? "Processing…" : "Confirm cancellation"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setCancelConfirm(false)}
+                          disabled={cancelBusy}
+                          style={{
+                            background: "none",
+                            color: "#57534e",
+                            border: "1px solid #e7e5e4",
+                            borderRadius: 8,
+                            padding: "9px 14px",
+                            fontSize: 13,
+                            fontWeight: 600,
+                            cursor: "pointer",
+                            fontFamily: "inherit",
+                          }}
+                        >
+                          Keep plan
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
+                </>
+              )}
+            </SectionCard>
+
+            {/* QR — keep, quieter */}
+            <SectionCard title="Primary QR">
+              <PrimaryQrCard qr={primaryQr} restaurantId={selectedRestaurant?.id} />
+              <div style={{ marginTop: 10 }}>
+                <QuietLink onClick={() => navigate("/operator/qr-kits/order")}>QR tools →</QuietLink>
+              </div>
+            </SectionCard>
+          </>
+        )}
+
+        {/* Password — separate account-level panel (not restaurant-scoped) */}
+        <SectionCard title="Password">
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             <input
               type="password"
@@ -237,7 +507,7 @@ export default function OperatorMyAccount() {
               onChange={(e) => setCurrentPassword(e.target.value)}
               placeholder="Current password"
               autoComplete="current-password"
-              style={{ padding: "10px 12px", fontSize: 13, border: "1px solid #e4e9f0", borderRadius: 7, fontFamily: "inherit" }}
+              style={inputStyle}
             />
             <input
               type="password"
@@ -245,7 +515,7 @@ export default function OperatorMyAccount() {
               onChange={(e) => setNewPassword(e.target.value)}
               placeholder="New password"
               autoComplete="new-password"
-              style={{ padding: "10px 12px", fontSize: 13, border: "1px solid #e4e9f0", borderRadius: 7, fontFamily: "inherit" }}
+              style={inputStyle}
             />
             <input
               type="password"
@@ -253,7 +523,7 @@ export default function OperatorMyAccount() {
               onChange={(e) => setConfirmNewPassword(e.target.value)}
               placeholder="Confirm new password"
               autoComplete="new-password"
-              style={{ padding: "10px 12px", fontSize: 13, border: "1px solid #e4e9f0", borderRadius: 7, fontFamily: "inherit" }}
+              style={inputStyle}
             />
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               <button
@@ -261,283 +531,34 @@ export default function OperatorMyAccount() {
                 onClick={handleChangePassword}
                 disabled={passwordSaving}
                 style={{
-                  background: "#0f1720", color: "#fff",
-                  border: "none", borderRadius: 7,
-                  padding: "9px 16px", fontSize: 13, fontWeight: 700,
-                  cursor: passwordSaving ? "default" : "pointer", opacity: passwordSaving ? 0.7 : 1,
+                  background: "#1c1917",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: 8,
+                  padding: "9px 14px",
+                  fontSize: 13,
+                  fontWeight: 700,
+                  cursor: passwordSaving ? "default" : "pointer",
+                  opacity: passwordSaving ? 0.7 : 1,
+                  fontFamily: "inherit",
                 }}
               >
-                {passwordSaving ? "Updating…" : "Update Password"}
+                {passwordSaving ? "Updating…" : "Update password"}
               </button>
               {(passwordError || passwordMessage) && (
-                <span style={{ fontSize: 12, fontWeight: 600, color: passwordError ? "#dc2626" : "#16a34a" }}>
+                <span
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 600,
+                    color: passwordError ? "#dc2626" : "#16a34a",
+                  }}
+                >
                   {passwordError || passwordMessage}
                 </span>
               )}
             </div>
           </div>
-        </div>
-
-        {!selectedRestaurant ? (
-          <p style={{ fontSize: 14, color: "#8a9ab0" }}>Select a restaurant to view account details.</p>
-        ) : loading ? (
-          <div style={{ padding: "24px 0", color: "#8a9ab0", fontSize: 14 }}>Loading…</div>
-        ) : error ? (
-          <div style={{ padding: "12px 16px", background: "#fef3c7", borderRadius: 8, fontSize: 13, color: "#92400e" }}>
-            {error}
-          </div>
-        ) : (
-          <>
-            {/* Restaurant stats */}
-            {(() => {
-              const totalItems = menus.reduce((sum, m) => sum + (Number(m.item_count) || 0), 0);
-              const activeDeals = deals.filter((d) => String(d.status || "").toLowerCase() === "active").length;
-              const liveMenus = menus.filter((m) => String(m.status || "").toLowerCase() === "published").length;
-              const menuStatusLabel = liveMenus > 0
-                ? `${liveMenus} menu${liveMenus === 1 ? "" : "s"} live`
-                : menus.length > 0 ? "No menus published" : "No menus yet";
-              return (
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 20 }}>
-                  {[
-                    { label: "Menu items", value: totalItems },
-                    { label: "Active deals", value: activeDeals },
-                    { label: "Menu status", value: menuStatusLabel },
-                  ].map(({ label, value }) => (
-                    <div key={label} style={{
-                      background: "#fff", border: "1px solid #e4e9f0",
-                      borderRadius: 12, padding: "14px 16px",
-                    }}>
-                      <div style={{ fontSize: 20, fontWeight: 900, color: "#0f1720", lineHeight: 1.1 }}>{value}</div>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: "#8a9ab0", marginTop: 6 }}>{label}</div>
-                    </div>
-                  ))}
-                </div>
-              );
-            })()}
-
-            {/* Primary QR code */}
-            <PrimaryQrCard qr={primaryQr} restaurantId={selectedRestaurant?.id} />
-
-            {/* Quick actions */}
-            <div style={{
-              background: "#fff", border: "1px solid #e4e9f0",
-              borderRadius: 12, marginBottom: 20, overflow: "hidden",
-            }}>
-              <div style={{ padding: "10px 16px 4px", fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", color: "#8a9ab0" }}>
-                Quick Actions
-              </div>
-              {[
-                { label: "Open Menu Lab", action: () => navigate("/operator/menulab") },
-                { label: "View Public Menu", action: () => window.open(`/public/restaurants/${selectedRestaurant.id}/menu`, "_blank") },
-                {
-                  label: "View Public Profile",
-                  action: () => {
-                    const href = operatorPublicProfilePath(selectedRestaurant);
-                    if (href) window.open(href, "_blank");
-                  },
-                },
-                { label: "QR Tools", action: () => navigate("/operator/qr-kits/order") },
-              ].map(({ label, action }, i) => (
-                <button
-                  key={label}
-                  type="button"
-                  onClick={action}
-                  style={{
-                    display: "flex", justifyContent: "space-between", alignItems: "center",
-                    width: "100%", padding: "13px 16px",
-                    background: "none", border: "none",
-                    borderTop: i === 0 ? "none" : "1px solid #f0f4f8",
-                    cursor: "pointer", textAlign: "left", fontFamily: "inherit",
-                  }}
-                >
-                  <span style={{ fontSize: 13, color: "#0f1720", fontWeight: 600 }}>{label}</span>
-                  <span style={{ fontSize: 16, color: "#c4cdd6" }}>›</span>
-                </button>
-              ))}
-            </div>
-
-            {/* Subscription summary card */}
-            <div style={{
-              background: "#fff", border: "1px solid #e4e9f0",
-              borderRadius: 12, padding: "4px 20px 4px",
-              marginBottom: 20,
-            }}>
-              <Row label="Plan" value={planDisplayOverride || getPlanDisplayName(planCode)} />
-              <Row
-                label="Status"
-                value={<StatusBadge status={subscription?.status || contextSubscription?.status || (isFreeTier ? "active" : null)} />}
-              />
-              <Row label="Billing" value={getBillingIntervalLabel(planCode)} />
-              <Row label="Renewal date" value={isFreeTier ? "—" : renewalDate} />
-              <div style={{
-                display: "flex", justifyContent: "space-between", alignItems: "center",
-                gap: 12, padding: "14px 0",
-              }}>
-                <span style={{ fontSize: 13, color: "#8a9ab0", fontWeight: 500 }}>Auto-renew</span>
-                <span style={{ fontSize: 13, color: "#0f1720", fontWeight: 700 }}>
-                  {isFreeTier ? "—" : getAutoRenewLabel(subscription)}
-                </span>
-              </div>
-            </div>
-
-            {/* Cancellation-scheduled notice */}
-            {!isFreeTier && subscription?.cancel_at_period_end && !cancelMessage && (
-              <div style={{
-                padding: "12px 16px", background: "#fef3c7",
-                borderRadius: 8, fontSize: 13, color: "#92400e", marginBottom: 20,
-              }}>
-                Your plan will not renew. Access continues until {renewalDate}.
-              </div>
-            )}
-
-            {/* Success / error feedback */}
-            {cancelMessage && (
-              <div style={{
-                padding: "12px 16px", background: "#f0faf6",
-                borderRadius: 8, fontSize: 13, color: "#1F4E3D", marginBottom: 20,
-              }}>
-                {cancelMessage}
-              </div>
-            )}
-
-            {/* Billing details (non-duplicate fields from billing overview) */}
-            {billingOverview && (
-              <div style={{
-                background: "#fff", border: "1px solid #e4e9f0",
-                borderRadius: 12, padding: "4px 20px 4px",
-                marginBottom: 20,
-              }}>
-                {billingOverview.subscription?.subscription_fee_amount_cents != null && (
-                  <Row
-                    label="Subscription fee"
-                    value={formatMoney(billingOverview.subscription.subscription_fee_amount_cents)}
-                  />
-                )}
-                {billingOverview.payment_method?.present && (
-                  <Row
-                    label="Payment method"
-                    value={
-                      billingOverview.payment_method.brand
-                        ? `${billingOverview.payment_method.brand.charAt(0).toUpperCase()}${billingOverview.payment_method.brand.slice(1)} ···· ${billingOverview.payment_method.last4}`
-                        : "On file"
-                    }
-                  />
-                )}
-                {billingOverview.marketplace?.effective_commission_rate_percent != null && (
-                  <Row
-                    label="Commission rate"
-                    value={`${billingOverview.marketplace.effective_commission_rate_percent}%`}
-                  />
-                )}
-                <Row
-                  label="Marketplace setup"
-                  value={billingOverview.stripe_connect?.onboarding_complete ? "Complete" : "Not complete"}
-                />
-              </div>
-            )}
-
-            {/* Account settings nav */}
-            <div style={{
-              background: "#fff", border: "1px solid #e4e9f0",
-              borderRadius: 12, marginBottom: 20, overflow: "hidden",
-            }}>
-              <div style={{ padding: "10px 16px 4px", fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", color: "#8a9ab0" }}>
-                Account Settings
-              </div>
-              {[
-                { label: "Restaurant Profile", to: "/operator/profile" },
-                { label: "Manage Subscription", to: "/operator/subscription" },
-                { label: "Delivery Settings", to: "/operator/delivery" },
-              ].map(({ label, to }, i, arr) => (
-                <button
-                  key={to}
-                  type="button"
-                  onClick={() => navigate(to)}
-                  style={{
-                    display: "flex", justifyContent: "space-between", alignItems: "center",
-                    width: "100%", padding: "14px 16px",
-                    background: "none", border: "none",
-                    borderTop: i === 0 ? "none" : "1px solid #f0f4f8",
-                    cursor: "pointer", textAlign: "left", fontFamily: "inherit",
-                  }}
-                >
-                  <span style={{ fontSize: 13, color: "#0f1720", fontWeight: 600 }}>{label}</span>
-                  <span style={{ fontSize: 16, color: "#c4cdd6" }}>›</span>
-                </button>
-              ))}
-            </div>
-
-            {/* Subscription actions */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              <button
-                type="button"
-                onClick={() => navigate("/operator/subscription")}
-                style={{
-                  background: "#0f1720", color: "#fff",
-                  border: "none", borderRadius: 8,
-                  padding: "12px 20px", fontSize: 14, fontWeight: 700,
-                  cursor: "pointer", textAlign: "center",
-                }}
-              >
-                Change Plan
-              </button>
-
-              {canCancel && !cancelConfirm && (
-                <button
-                  type="button"
-                  onClick={() => setCancelConfirm(true)}
-                  style={{
-                    background: "none", color: "#8a9ab0",
-                    border: "1px solid #e4e9f0", borderRadius: 8,
-                    padding: "11px 20px", fontSize: 13, fontWeight: 600,
-                    cursor: "pointer", textAlign: "center",
-                  }}
-                >
-                  Cancel Subscription
-                </button>
-              )}
-
-              {cancelConfirm && (
-                <div style={{
-                  background: "#fff", border: "1px solid #e4e9f0",
-                  borderRadius: 10, padding: "16px 18px",
-                }}>
-                  <p style={{ margin: "0 0 14px", fontSize: 13, color: "#374151", lineHeight: 1.5 }}>
-                    Your plan will stay active until <strong>{renewalDate}</strong>, then switch to Starter (free). No charge after that.
-                  </p>
-                  <div style={{ display: "flex", gap: 10 }}>
-                    <button
-                      type="button"
-                      onClick={handleCancel}
-                      disabled={cancelBusy}
-                      style={{
-                        background: "#7f1d1d", color: "#fff",
-                        border: "none", borderRadius: 7,
-                        padding: "9px 16px", fontSize: 13, fontWeight: 700,
-                        cursor: cancelBusy ? "default" : "pointer", opacity: cancelBusy ? 0.7 : 1,
-                      }}
-                    >
-                      {cancelBusy ? "Processing…" : "Confirm Cancellation"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setCancelConfirm(false)}
-                      disabled={cancelBusy}
-                      style={{
-                        background: "none", color: "#5b6675",
-                        border: "1px solid #e4e9f0", borderRadius: 7,
-                        padding: "9px 16px", fontSize: 13, fontWeight: 600,
-                        cursor: "pointer",
-                      }}
-                    >
-                      Keep Plan
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </>
-        )}
+        </SectionCard>
       </div>
     </OperatorLayout>
   );

@@ -145,6 +145,20 @@ export const replaceStatusEvents = (rid, status_type, events) =>
   put(`/operator/restaurants/${rid}/profile/status-events`, { status_type, events });
 export const setFeaturedDish = (rid, menu_item_id) =>
   patch(`/operator/restaurants/${rid}/profile/featured-dish`, { menu_item_id });
+export const uploadProfileLogo = (rid, file) => {
+  const formData = new FormData();
+  formData.append("logo", file);
+  return reqForm(`/operator/restaurants/${rid}/profile/logo`, formData);
+};
+export const removeProfileLogo = (rid) =>
+  del(`/operator/restaurants/${rid}/profile/logo`);
+export const uploadProfileBanner = (rid, file) => {
+  const formData = new FormData();
+  formData.append("banner", file);
+  return reqForm(`/operator/restaurants/${rid}/profile/banner`, formData);
+};
+export const removeProfileBanner = (rid) =>
+  del(`/operator/restaurants/${rid}/profile/banner`);
 
 // ── Restaurant: Onboarding Business Organization ──────────────────────────
 export const getOwnedBusinessOrganization = (rid) =>

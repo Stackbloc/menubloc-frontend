@@ -1,16 +1,17 @@
 /**
  * src/pages/operator/OperatorProfileEditor.jsx
  *
- * Route: /operator/profile
+ * Restaurant public-profile editor form.
+ * Primary home: /operator/my-account (My Account).
+ * /operator/profile redirects to My Account.
  *
  * Sections (visibility controlled by plan benefits):
- *   • Core fields — always visible (profile_edit)
+ *   • Core fields — always visible (profile_edit): cuisine, type, contact, address
  *   • About Us    — benefit: about_us
- *   • Logo        — benefit: logo_upload  (URL input for MVP; file input ready)
+ *   • Logo        — benefit: logo_upload
  *   • Featured dish — benefit: featured_dish
  *
  * Pattern: edits go to draft → Publish makes them live.
- * Locked fields show an upgrade notice instead of the input.
  */
 
 // TAXONOMY GUARDRAIL: This file must NOT define local cuisine or category arrays.
@@ -18,8 +19,8 @@
 // The backend src/lib/restaurantTaxonomy.js is the single source of truth.
 // Hardcoding options here silently diverges from backend validation rules.
 
-import React, { useState, useEffect, useMemo } from "react";
-import { useLocation } from "react-router-dom";
+import React, { useState, useEffect, useMemo, useRef } from "react";
+import { Navigate, useLocation } from "react-router-dom";
 import OperatorLayout from "./OperatorLayout.jsx";
 import { useLanguage } from "../../context/LanguageContext.jsx";
 import { useOperator } from "../../context/OperatorContext.jsx";
@@ -92,7 +93,7 @@ function Section({ title, sub, children }) {
   );
 }
 
-export default function OperatorProfileEditor() {
+export function OperatorRestaurantProfileForm({ embedded = false } = {}) {
   const { t } = useLanguage();
   const { selectedRestaurant } = useOperator();
   const location = useLocation();
@@ -111,12 +112,24 @@ export default function OperatorProfileEditor() {
   const [error, setError]       = useState("");
   const [cuisineOptions, setCuisineOptions] = useState([]); // [{value, label}] from API
   const [categoryOptions, setCategoryOptions] = useState([]); // [{value, label}] from API
+  const [bannerUrl, setBannerUrl] = useState("");
+  const [logoUploading, setLogoUploading] = useState(false);
+  const [bannerUploading, setBannerUploading] = useState(false);
+  const logoFileRef = useRef(null);
+  const bannerFileRef = useRef(null);
 
   const f = (k) => (e) => setForm(p => ({ ...p, [k]: e.target.value }));
   const publicProfileHref = useMemo(() => {
     const slugOrId = profile?.slug || rid;
     return slugOrId ? `/restaurants/${encodeURIComponent(String(slugOrId))}` : null;
   }, [profile?.slug, rid]);
+
+  function mediaUrl(url) {
+    const s = String(url || "").trim();
+    if (!s) return "";
+    if (/^https?:\/\//i.test(s) || s.startsWith("data:")) return s;
+    return `${API_BASE}${s.startsWith("/") ? "" : "/"}${s}`;
+  }
 
   // Load taxonomy from backend — single source of truth
   useEffect(() => {
@@ -151,15 +164,19 @@ export default function OperatorProfileEditor() {
         setProfile(p);
         setBenefits(profileData.benefits || {});
         setAllItems(items);
+        setBannerUrl(p.hero_image_url || "");
         // Initialise form from live values (not draft)
         setForm({
           restaurant_name: p.restaurant_name || "",
           cuisine:         p.cuisine || "",
           category:        p.category || "",
+          address_line1:   p.address_line1 || "",
+          address_line2:   p.address_line2 || "",
+          city:            p.city || "",
+          state:           p.state || "",
+          postal_code:     p.postal_code || "",
           phone:           p.phone || "",
           website_url:     p.website_url || "",
-          instagram:       p.instagram || "",
-          bio:             p.bio || "",
           about_us:        p.about_us || "",
           logo_url:        p.logo_url || "",
           featured_menu_item_id: p.featured_menu_item_id || "",
@@ -171,28 +188,81 @@ export default function OperatorProfileEditor() {
 
   const hasBenefit = (key) => benefits[key]?.is_enabled === true;
 
+  async function handleLogoFileChange(e) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !rid) return;
+    setLogoUploading(true);
+    setError("");
+    try {
+      const result = await api.uploadProfileLogo(rid, file);
+      const nextUrl = result.logo_url || "";
+      setForm((p) => ({ ...p, logo_url: nextUrl }));
+      setProfile((p) => (p ? { ...p, logo_url: nextUrl } : p));
+    } catch (err) {
+      setError(err.message || "Logo upload failed.");
+    } finally {
+      setLogoUploading(false);
+    }
+  }
+
+  async function handleBannerFileChange(e) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !rid) return;
+    setBannerUploading(true);
+    setError("");
+    try {
+      const result = await api.uploadProfileBanner(rid, file);
+      setBannerUrl(result.hero_image_url || "");
+    } catch (err) {
+      setError(err.message || "Banner upload failed.");
+    } finally {
+      setBannerUploading(false);
+    }
+  }
+
+  async function handleRemoveBanner() {
+    if (!rid || !bannerUrl) return;
+    setBannerUploading(true);
+    setError("");
+    try {
+      await api.removeProfileBanner(rid);
+      setBannerUrl("");
+    } catch (err) {
+      setError(err.message || "Could not remove banner.");
+    } finally {
+      setBannerUploading(false);
+    }
+  }
+
   async function saveProfileDraft() {
     try {
       // restaurant_name is identity-locked — never include in draft/publish payload.
       const payload = {
         cuisine:         form.cuisine,
         category:        form.category,
+        address_line1:   form.address_line1,
+        address_line2:   form.address_line2,
+        city:            form.city,
+        state:           form.state,
+        postal_code:     form.postal_code,
         phone:           form.phone,
         website_url:     form.website_url,
-        instagram:       form.instagram,
-        bio:             form.bio,
       };
       if (hasBenefit("about_us")) payload.about_us = form.about_us;
       await api.updateProfile(rid, payload);
 
       // Logo URL change (direct update, not draft)
       if (hasBenefit("logo_upload") && form.logo_url !== profile.logo_url) {
-        const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
-        await fetch(`${API}/operator/restaurants/${rid}/profile/logo`, {
+        await fetch(`${API_BASE}/operator/restaurants/${rid}/profile/logo`, {
           method: "POST",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ logo_url: form.logo_url }),
+        }).then(async (r) => {
+          const data = await r.json().catch(() => ({}));
+          if (!r.ok || data.ok === false) throw new Error(data.error || "Logo URL update failed");
         });
       }
 
@@ -251,7 +321,6 @@ export default function OperatorProfileEditor() {
       if (String(refreshedProfile?.category || "").trim() !== publicCategory) mismatches.push("type");
       if (String(refreshedProfile?.phone || "").trim() !== publicPhone) mismatches.push("phone");
       if (String(refreshedProfile?.website_url || "").trim() !== publicWebsite) mismatches.push("website");
-      // bio/instagram are not returned by operator GET profile (stubbed NULL) — skip verify
       if (mismatches.length) {
         console.error("[operator-profile] publish verification mismatch", {
           mismatches,
@@ -271,25 +340,25 @@ export default function OperatorProfileEditor() {
     }
   }
 
+  function wrap(content) {
+    if (embedded) return content;
+    return <OperatorLayout title="Profile">{content}</OperatorLayout>;
+  }
+
   if (!rid) {
-    return (
-      <OperatorLayout title="Profile">
-        <p style={{ color: "#8a9ab0" }}>{t("operator.selectRestaurantProfile", "Select a restaurant to edit its profile.")}</p>
-      </OperatorLayout>
+    return wrap(
+      <p style={{ color: "#8a9ab0" }}>{t("operator.selectRestaurantProfile", "Select a restaurant to edit its profile.")}</p>
     );
   }
 
   if (loading) {
-    return (
-      <OperatorLayout title="Profile">
-        <p style={{ color: "#8a9ab0" }}>{t("operator.loading", "Loading…")}</p>
-      </OperatorLayout>
+    return wrap(
+      <p style={{ color: "#8a9ab0" }}>{t("operator.loading", "Loading…")}</p>
     );
   }
 
-  return (
-    <OperatorLayout title="Profile">
-      <div style={{ maxWidth: 680 }}>
+  return wrap(
+      <div id="restaurant-profile" style={{ maxWidth: embedded ? "100%" : 680 }}>
         {setup && (
           <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 10, padding: "10px 14px", fontSize: 13, color: "#1d4ed8", marginBottom: 20 }}>
             Complete your profile, then publish it to make your public page live.
@@ -327,7 +396,7 @@ export default function OperatorProfileEditor() {
         )}
 
         {/* ── Core Info ──────────────────────────────────────────────── */}
-        <Section title="Restaurant info" sub="Basic details shown on your public listing.">
+        <Section title="Restaurant info" sub="These fields publish to your public restaurant profile. Save draft, then Publish.">
           <div className="operator-responsive-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
             <div style={{ gridColumn: "1 / -1" }}>
               <Label>Restaurant name</Label>
@@ -377,32 +446,46 @@ export default function OperatorProfileEditor() {
               <Label>Website</Label>
               <input
                 style={INPUT}
-                value={form.website_url}
+                value={form.website_url || ""}
                 onChange={f("website_url")}
                 placeholder="https://your-restaurant.com"
               />
             </div>
             <div>
               <Label>Phone</Label>
-              <input style={INPUT} value={form.phone} onChange={f("phone")} placeholder="(555) 555-5555" />
-            </div>
-            <div>
-              <Label>Instagram</Label>
-              <input style={INPUT} value={form.instagram} onChange={f("instagram")} placeholder="@handle" />
+              <input style={INPUT} value={form.phone || ""} onChange={f("phone")} placeholder="(555) 555-5555" />
             </div>
             <div style={{ gridColumn: "1 / -1" }}>
-              <Label>Short bio</Label>
-              <textarea style={TEXTAREA} value={form.bio} onChange={f("bio")} placeholder="One or two sentences about your restaurant." />
+              <Label>Street address</Label>
+              <input
+                style={INPUT}
+                value={form.address_line1 || ""}
+                onChange={f("address_line1")}
+                placeholder="123 Main Street"
+              />
+            </div>
+            <div style={{ gridColumn: "1 / -1" }}>
+              <Label>Address line 2</Label>
+              <input
+                style={INPUT}
+                value={form.address_line2 || ""}
+                onChange={f("address_line2")}
+                placeholder="Suite, floor, unit (optional)"
+              />
+            </div>
+            <div>
+              <Label>City</Label>
+              <input style={INPUT} value={form.city || ""} onChange={f("city")} placeholder="Los Angeles" />
+            </div>
+            <div>
+              <Label>State</Label>
+              <input style={INPUT} value={form.state || ""} onChange={f("state")} placeholder="CA" />
+            </div>
+            <div>
+              <Label>Postal code</Label>
+              <input style={INPUT} value={form.postal_code || ""} onChange={f("postal_code")} placeholder="90012" />
             </div>
           </div>
-        </Section>
-
-        {/* ── Restaurant Status ───────────────────────────────────────── */}
-        <Section
-          title="Restaurant Status"
-          sub="Optional banners on your public profile (Now Hiring, Happy Hour, Live Music, and more). Changes go live immediately."
-        >
-          <RestaurantStatusSettingsPanel restaurantId={rid} />
         </Section>
 
         {/* ── About Us ────────────────────────────────────────────────── */}
@@ -420,28 +503,72 @@ export default function OperatorProfileEditor() {
         </Section>
 
         {/* ── Logo ───────────────────────────────────────────────────── */}
-        <Section title="Logo" sub="Square image recommended. 512×512px minimum.">
+        <Section title="Logo" sub="Square image recommended. 512×512px minimum. Upload a file or paste a URL.">
           {hasBenefit("logo_upload") ? (
             <div className="operator-responsive-row" style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
-              {form.logo_url && (
+              {form.logo_url ? (
                 <img
-                  src={form.logo_url}
+                  src={mediaUrl(form.logo_url)}
                   alt="logo preview"
-                  style={{ width: 72, height: 72, borderRadius: 12, objectFit: "cover", border: "1px solid #e4e9f0", flexShrink: 0 }}
-                  onError={e => { e.target.style.display = "none"; }}
+                  style={{ width: 72, height: 72, borderRadius: 12, objectFit: "cover", border: "1px solid #e4e9f0", flexShrink: 0, background: "#fafaf9" }}
+                  onError={(e) => { e.currentTarget.style.visibility = "hidden"; }}
                 />
+              ) : (
+                <div
+                  style={{
+                    width: 72,
+                    height: 72,
+                    borderRadius: 12,
+                    border: "1px dashed #d6d3d1",
+                    background: "#fafaf9",
+                    flexShrink: 0,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 11,
+                    color: "#a8a29e",
+                    textAlign: "center",
+                    padding: 6,
+                  }}
+                >
+                  No logo
+                </div>
               )}
-              <div style={{ flex: 1 }}>
-                <Label>Logo URL</Label>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <input
+                  ref={logoFileRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                  style={{ display: "none" }}
+                  onChange={handleLogoFileChange}
+                />
+                <button
+                  type="button"
+                  onClick={() => logoFileRef.current?.click()}
+                  disabled={logoUploading}
+                  style={{
+                    background: "#1c1917",
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: 8,
+                    padding: "9px 14px",
+                    fontSize: 13,
+                    fontWeight: 700,
+                    cursor: logoUploading ? "wait" : "pointer",
+                    opacity: logoUploading ? 0.7 : 1,
+                    fontFamily: "inherit",
+                    marginBottom: 10,
+                  }}
+                >
+                  {logoUploading ? "Uploading…" : "Upload logo from file"}
+                </button>
+                <Label>Or logo URL</Label>
                 <input
                   style={INPUT}
-                  value={form.logo_url}
+                  value={form.logo_url || ""}
                   onChange={f("logo_url")}
                   placeholder="https://your-cdn.com/logo.png"
                 />
-                <div style={{ fontSize: 11, color: "#b0bbc8", marginTop: 5 }}>
-                  Paste a public image URL. File upload coming soon.
-                </div>
               </div>
             </div>
           ) : (
@@ -449,30 +576,137 @@ export default function OperatorProfileEditor() {
           )}
         </Section>
 
+        {/* ── Banner photo ────────────────────────────────────────────── */}
+        <Section
+          title="Banner photo"
+          sub="Wide photo at the top of your public profile. Landscape images work best."
+        >
+          <div>
+            {bannerUrl ? (
+              <img
+                src={mediaUrl(bannerUrl)}
+                alt="Banner preview"
+                style={{
+                  width: "100%",
+                  maxHeight: 160,
+                  objectFit: "cover",
+                  borderRadius: 10,
+                  border: "1px solid #e4e9f0",
+                  marginBottom: 12,
+                  background: "#fafaf9",
+                }}
+              />
+            ) : (
+              <div
+                style={{
+                  width: "100%",
+                  height: 100,
+                  borderRadius: 10,
+                  border: "1px dashed #d6d3d1",
+                  background: "#fafaf9",
+                  marginBottom: 12,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 13,
+                  color: "#a8a29e",
+                }}
+              >
+                No banner photo yet
+              </div>
+            )}
+            <input
+              ref={bannerFileRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              style={{ display: "none" }}
+              onChange={handleBannerFileChange}
+            />
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+              <button
+                type="button"
+                onClick={() => bannerFileRef.current?.click()}
+                disabled={bannerUploading}
+                style={{
+                  background: "#1c1917",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: 8,
+                  padding: "9px 14px",
+                  fontSize: 13,
+                  fontWeight: 700,
+                  cursor: bannerUploading ? "wait" : "pointer",
+                  opacity: bannerUploading ? 0.7 : 1,
+                  fontFamily: "inherit",
+                }}
+              >
+                {bannerUploading ? "Uploading…" : "Upload banner photo"}
+              </button>
+              {bannerUrl ? (
+                <button
+                  type="button"
+                  onClick={handleRemoveBanner}
+                  disabled={bannerUploading}
+                  style={{
+                    background: "#fff",
+                    color: "#57534e",
+                    border: "1px solid #d6d3d1",
+                    borderRadius: 8,
+                    padding: "9px 14px",
+                    fontSize: 13,
+                    fontWeight: 650,
+                    cursor: "pointer",
+                    fontFamily: "inherit",
+                  }}
+                >
+                  Remove banner
+                </button>
+              ) : null}
+            </div>
+          </div>
+        </Section>
+
         {/* ── Featured Dish ───────────────────────────────────────────── */}
-        <Section title="Featured dish" sub="One item pinned at the top of your listing. Pick your best seller.">
+        <Section
+          title="Featured dish"
+          sub="Optional. Choose one item from your menu to spotlight on the public profile (shown in the Featured dish section)."
+        >
           {hasBenefit("featured_dish") ? (
             allItems.length === 0 ? (
-              <div style={{ fontSize: 13, color: "#8a9ab0" }}>
-                Add menu items first, then come back to pin a featured dish.
+              <div style={{ fontSize: 13, color: "#8a9ab0", lineHeight: 1.5 }}>
+                You need at least one menu item first. Open Menu Lab, add dishes, then return here to pick a featured dish.
               </div>
             ) : (
-              <select
-                style={{ ...INPUT, cursor: "pointer" }}
-                value={form.featured_menu_item_id || ""}
-                onChange={f("featured_menu_item_id")}
-              >
-                <option value="">— None —</option>
-                {allItems.map(i => (
-                  <option key={i.id} value={i.id}>
-                    {i.name}{i.price != null ? ` · $${Number(i.price).toFixed(2)}` : ""}
-                  </option>
-                ))}
-              </select>
+              <>
+                <select
+                  style={{ ...INPUT, cursor: "pointer" }}
+                  value={form.featured_menu_item_id || ""}
+                  onChange={f("featured_menu_item_id")}
+                >
+                  <option value="">— No featured dish —</option>
+                  {allItems.map((i) => (
+                    <option key={i.id} value={i.id}>
+                      {i.name}
+                      {i.price != null && i.price !== "" ? ` · $${Number(i.price).toFixed(2)}` : ""}
+                    </option>
+                  ))}
+                </select>
+                <div style={{ fontSize: 12, color: "#a8a29e", marginTop: 8, lineHeight: 1.45 }}>
+                  This is not your full menu — just one highlight. Diners still browse the complete menu separately.
+                </div>
+              </>
             )
           ) : (
             <LockedField benefitName="Featured dish" />
           )}
+        </Section>
+
+        {/* ── Restaurant Status (last) ─────────────────────────────────── */}
+        <Section
+          title="Restaurant Status"
+          sub="Optional banners on your public profile (Now Hiring, Happy Hour, Live Music, and more). Tap a row to toggle — a check mark means it is on. Changes go live immediately."
+        >
+          <RestaurantStatusSettingsPanel restaurantId={rid} />
         </Section>
 
         {/* ── Action bar ─────────────────────────────────────────────── */}
@@ -525,6 +759,10 @@ export default function OperatorProfileEditor() {
           </a>
         </div>
       </div>
-    </OperatorLayout>
   );
+}
+
+/** Legacy route: send operators to My Account where the form lives. */
+export default function OperatorProfileEditor() {
+  return <Navigate to="/operator/my-account" replace />;
 }

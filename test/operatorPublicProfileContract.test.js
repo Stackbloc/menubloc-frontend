@@ -1,7 +1,7 @@
 /**
  * Operator Public Profile:
- * - Dashboard Quick Access → /operator/profile (edit: Save draft / Publish / View)
- * - My Account "View Public Profile" → /restaurants/{slug}, not legacy /restaurant-profile/:id
+ * - Dashboard Quick Access → /operator/my-account (edit: Save draft / Publish / View)
+ * - My Account hosts the Restaurant Profile form
  * - claim_pending + owning operator must not hit UnclaimedRestaurantPage claim CTA
  */
 import assert from "node:assert/strict";
@@ -34,8 +34,8 @@ function testOperatorPublicProfilePathHelper() {
 
 function testDashboardOpensProfileEditor() {
   const src = read("src/pages/operator/OperatorDashboard.jsx");
-  assert.match(src, /navigate\("\/operator\/profile"\)/);
-  assert.doesNotMatch(src, /operatorPublicProfilePath/);
+  assert.match(src, /navigate\("\/operator\/my-account"\)/);
+  assert.doesNotMatch(src, /navigate\("\/operator\/profile"\)/);
   assert.doesNotMatch(src, /\/restaurant-profile\/\$\{/);
   assert.doesNotMatch(src, /`\/restaurant-profile\//);
 }
@@ -43,6 +43,7 @@ function testDashboardOpensProfileEditor() {
 function testMyAccountUsesOperatorPublicProfilePath() {
   const src = read("src/pages/operator/OperatorMyAccount.jsx");
   assert.match(src, /operatorPublicProfilePath/);
+  assert.match(src, /OperatorRestaurantProfileForm/);
   assert.doesNotMatch(src, /\/restaurant-profile\/\$\{/);
 }
 
@@ -57,8 +58,8 @@ function testPublicPageHasOwnerChrome() {
   const chrome = read("src/components/restaurant/PublicProfileOwnerChrome.jsx");
   assert.match(page, /PublicProfileOwnerChrome/);
   assert.match(page, /isOwner/);
-  // Public page is view-only for owners — Edit links to /operator/profile (no duplicate form).
-  assert.match(chrome, /\/operator\/profile/);
+  // Public page is view-only for owners — Edit links to My Account (no duplicate form).
+  assert.match(chrome, /\/operator\/my-account/);
   assert.doesNotMatch(chrome, /publishProfile/);
   assert.doesNotMatch(chrome, /updateProfile/);
   assert.doesNotMatch(chrome, /RestaurantStatusSettingsPanel/);
@@ -72,17 +73,25 @@ function testClaimPendingAndOwnerSkipUnclaimedStub() {
 
 function testProfileEditorHasSavePublishView() {
   const src = read("src/pages/operator/OperatorProfileEditor.jsx");
+  const account = read("src/pages/operator/OperatorMyAccount.jsx");
   assert.match(src, /Save draft/);
   assert.match(src, /Publish changes/);
   assert.match(src, /Preview Public Profile|View Public Profile/);
   assert.match(src, /Website/);
   assert.match(src, /website_url/);
+  assert.match(src, /address_line1/);
+  assert.match(src, /Street address/);
+  assert.match(src, /postal_code/);
   assert.match(src, /publicData\.restaurant \|\| publicData/);
   assert.match(src, /publicRestaurant\.name \|\| publicRestaurant\.restaurant_name/);
   assert.match(src, /RestaurantStatusSettingsPanel/);
   assert.match(src, /readOnly/);
   assert.match(src, /Protected listing identity/);
+  assert.match(src, /Navigate to="\/operator\/my-account"/);
+  assert.match(account, /OperatorRestaurantProfileForm/);
   assert.doesNotMatch(src, /restaurant_name:\s*form\.restaurant_name/);
+  assert.doesNotMatch(src, /Short bio/);
+  assert.doesNotMatch(src, /Instagram/);
 }
 
 /** Consumer public profile must always be light — never grubbid_theme dark default. */
@@ -140,10 +149,13 @@ function testClaimedProfileUsesEditorialPresentation() {
   assert.match(editorial, /About/);
   assert.match(editorial, /Featured dish/);
   assert.match(editorial, /Announcements/);
-  assert.match(editorial, /background:\s*"#1c1917"/);
+  assert.match(editorial, /IdentityBlock|FollowRestaurantButton/);
+  assert.doesNotMatch(editorial, /Photo coming soon/);
+  assert.doesNotMatch(editorial, /View Menu|viewMenuLabel|common\.viewMenu/);
   assert.doesNotMatch(editorial, /#1d4ed8/);
-  assert.match(preview, /Menu highlights/);
-  assert.match(preview, /from "react-router-dom"/);
+  assert.match(preview, /Menu preview/);
+  assert.match(preview, /overflowY:\s*"auto"/);
+  assert.doesNotMatch(preview, /<Link|to=\{\{|viewMenuLabel/);
   assert.doesNotMatch(preview, /import .*Basket|import .*Waiter|import .*CatalogMenu/);
   assert.doesNotMatch(preview, /#1d4ed8/);
   // Claim CTA only on unclaimed stub (id=claim-profile), not claimed path.

@@ -1,6 +1,6 @@
 /**
  * Operator profile controls for public-profile status banners.
- * Mounted on /operator/profile only — not duplicated on the public page.
+ * Mounted on /operator/my-account (Restaurant Profile) — not duplicated on the public page.
  * Simple banners toggle live; Happy Hour / Live Music use schedules.
  */
 import { useEffect, useState } from "react";
@@ -111,13 +111,14 @@ export default function RestaurantStatusSettingsPanel({
             <div key={banner.id}>
               <label
                 style={{
+                  position: "relative",
                   display: "flex",
                   alignItems: "center",
                   gap: 10,
                   padding: "8px 10px",
                   borderRadius: 10,
                   border: on ? "1px solid #86efac" : "1px solid #d1d5db",
-                  background: on ? "#fff" : "#f8fafc",
+                  background: on ? "#f0fdf4" : "#fff",
                   cursor: bannerSaving ? "wait" : "pointer",
                   fontSize: 13,
                   color: "#0f172a",
@@ -129,7 +130,28 @@ export default function RestaurantStatusSettingsPanel({
                   checked={on}
                   disabled={bannerSaving}
                   onChange={() => handleBannerToggle(banner.id)}
+                  style={{ position: "absolute", opacity: 0, width: 1, height: 1 }}
                 />
+                <span
+                  aria-hidden="true"
+                  style={{
+                    width: 22,
+                    height: 22,
+                    borderRadius: 6,
+                    border: on ? "2px solid #166534" : "2px solid #cbd5e1",
+                    background: on ? "#166534" : "#fff",
+                    color: "#fff",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 14,
+                    fontWeight: 800,
+                    flexShrink: 0,
+                    lineHeight: 1,
+                  }}
+                >
+                  {on ? "✓" : ""}
+                </span>
                 <span aria-hidden="true">{banner.emoji}</span>
                 <span>{banner.label}</span>
                 {banner.prominence === "primary" ? (

@@ -376,18 +376,15 @@ function FranchiseBanner({ group, currentRestaurantId, onSelectLocation, brand }
   const resolvedIndex = currentIndex >= 0 ? currentIndex : fallbackIndex;
   const currentLocation = locations[resolvedIndex] || group?.current_location || null;
   const brandName = asStr(group?.brand_name || currentLocation?.restaurant_name).trim();
-  const currentAddress = asStr(
-    currentLocation?.address_line1 || currentLocation?.address_line || currentLocation?.address || currentLocation?.label
-  ).trim();
 
   if (locations.length <= 1 || !currentLocation) return null;
 
+  // Address is already rendered by the menu template header. Keep this slot as a
+  // left-aligned locations control only — a side-by-side "Closest location" label
+  // used hard-coded light text and pushed the link off the address column on light menus.
   return (
     <>
-      <div style={{ marginTop: 6, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-        <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", fontWeight: 500 }}>
-          Closest location: {currentAddress || brandName}
-        </span>
+      <div style={{ marginTop: 6, textAlign: "left" }}>
         <button
           type="button"
           onClick={() => setSheetOpen(true)}
@@ -395,12 +392,15 @@ function FranchiseBanner({ group, currentRestaurantId, onSelectLocation, brand }
             background: "none",
             border: "none",
             padding: 0,
+            margin: 0,
             cursor: "pointer",
             fontSize: 12,
             color: accent,
             fontWeight: 600,
             textDecoration: "underline",
             textUnderlineOffset: 2,
+            display: "block",
+            textAlign: "left",
           }}
         >
           See all {locations.length} locations →

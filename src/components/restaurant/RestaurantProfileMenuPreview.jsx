@@ -1,10 +1,9 @@
 /**
- * Option A — menu highlights panel.
- * Read-only partial menu for the public restaurant profile.
+ * Option A — scrollable live Menu Preview for public restaurant profiles.
+ * CK-backed item names and prices only. Read-only list; no ordering UI.
  */
-import { Link } from "react-router-dom";
-
-const MAX_ITEMS = 8;
+const MAX_ITEMS = 100;
+const SCROLL_MAX_HEIGHT = 420;
 
 function selectItems(items, limit = MAX_ITEMS) {
   const rows = Array.isArray(items) ? items : [];
@@ -26,13 +25,10 @@ function selectItems(items, limit = MAX_ITEMS) {
 
 export default function RestaurantProfileMenuPreview({
   items = [],
-  menuHref,
-  search = "",
-  viewMenuLabel = "View full menu",
   isMobile = false,
 }) {
   const previewItems = selectItems(items);
-  if (!previewItems.length || !menuHref) return null;
+  if (!previewItems.length) return null;
 
   const sections = [];
   const bySection = new Map();
@@ -47,7 +43,7 @@ export default function RestaurantProfileMenuPreview({
 
   return (
     <aside
-      aria-label="Menu highlights"
+      aria-label="Menu preview"
       style={{
         borderTop: isMobile ? "1px solid #e7e5e4" : "none",
         borderLeft: isMobile ? "none" : "1px solid #e7e5e4",
@@ -66,75 +62,76 @@ export default function RestaurantProfileMenuPreview({
           marginBottom: 6,
         }}
       >
-        Menu highlights
+        Menu preview
       </div>
-      <p style={{ margin: "0 0 14px", fontSize: 13, lineHeight: 1.45, color: "#78716c" }}>
-        A partial look at the menu.
+      <p style={{ margin: "0 0 12px", fontSize: 13, lineHeight: 1.45, color: "#78716c" }}>
+        Live menu items and prices.
       </p>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-        {sections.map((section) => (
-          <div key={section || "__none"}>
-            {section ? (
-              <div style={{ fontSize: 12, fontWeight: 700, color: "#44403c", marginBottom: 6 }}>
-                {section}
-              </div>
-            ) : null}
-            <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
-              {bySection.get(section).map((item) => (
-                <li
-                  key={String(item.id)}
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    gap: 12,
-                    padding: "8px 0",
-                    borderBottom: "1px solid #f5f5f4",
-                    alignItems: "baseline",
-                  }}
-                >
-                  <span
-                    style={{
-                      fontSize: 14,
-                      fontWeight: 600,
-                      color: "#1c1917",
-                      lineHeight: 1.35,
-                      wordBreak: "break-word",
-                      minWidth: 0,
-                    }}
-                  >
-                    {item.name}
-                  </span>
-                  {item.price ? (
-                    <span style={{ fontSize: 13, color: "#57534e", flexShrink: 0 }}>{item.price}</span>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
-      </div>
-
-      <Link
-        to={{ pathname: menuHref, search: search || "" }}
+      <div
         style={{
-          display: "inline-flex",
-          alignItems: "center",
-          justifyContent: "center",
-          marginTop: 18,
-          minHeight: 42,
-          padding: "0 16px",
-          width: isMobile ? "100%" : "auto",
-          borderRadius: 8,
-          textDecoration: "none",
-          fontSize: 14,
-          fontWeight: 700,
-          background: "#1c1917",
-          color: "#fafaf9",
+          maxHeight: SCROLL_MAX_HEIGHT,
+          overflowY: "auto",
+          WebkitOverflowScrolling: "touch",
+          paddingRight: 4,
         }}
       >
-        {viewMenuLabel}
-      </Link>
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          {sections.map((section) => (
+            <div key={section || "__none"}>
+              {section ? (
+                <div
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 700,
+                    color: "#44403c",
+                    marginBottom: 6,
+                    position: "sticky",
+                    top: 0,
+                    background: "#fafaf9",
+                    paddingTop: 2,
+                    paddingBottom: 2,
+                    zIndex: 1,
+                  }}
+                >
+                  {section}
+                </div>
+              ) : null}
+              <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
+                {bySection.get(section).map((item) => (
+                  <li
+                    key={String(item.id)}
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      gap: 12,
+                      padding: "8px 0",
+                      borderBottom: "1px solid #f5f5f4",
+                      alignItems: "baseline",
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: 14,
+                        fontWeight: 600,
+                        color: "#1c1917",
+                        lineHeight: 1.35,
+                        wordBreak: "break-word",
+                        minWidth: 0,
+                      }}
+                    >
+                      {item.name}
+                    </span>
+                    {item.price ? (
+                      <span style={{ fontSize: 13, color: "#57534e", flexShrink: 0 }}>{item.price}</span>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      </div>
     </aside>
   );
 }

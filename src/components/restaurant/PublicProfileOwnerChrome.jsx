@@ -1,6 +1,6 @@
 /**
  * Owner-only notice on the public restaurant profile.
- * All profile + status editing lives on /operator/profile — not duplicated here.
+ * Profile + status editing lives on /operator/my-account — not duplicated here.
  */
 import { Link } from "react-router-dom";
 
@@ -24,11 +24,11 @@ export default function PublicProfileOwnerChrome() {
           You own this listing
         </div>
         <div style={{ marginTop: 2, fontSize: 12, color: "#166534" }}>
-          Review or edit your public profile and restaurant status in Brand Settings.
+          Review or edit your public profile in My Account.
         </div>
       </div>
       <Link
-        to="/operator/profile"
+        to="/operator/my-account"
         style={{
           background: "#1F4E3D",
           color: "#fff",

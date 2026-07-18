@@ -9,7 +9,7 @@
  */
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import OperatorLayout from "./OperatorLayout.jsx";
 import { useOperator } from "../../context/OperatorContext.jsx";
 import * as api from "../../lib/operatorApi.js";
@@ -529,6 +529,19 @@ function MenuLabPanel({ rid, isEmailVerified }) {
     }}>
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap", marginBottom: 16 }}>
         <div style={{ minWidth: 0 }}>
+          <Link
+            to="/operator"
+            style={{
+              display: "inline-block",
+              fontSize: 13,
+              fontWeight: 650,
+              color: "#1F4E3D",
+              textDecoration: "none",
+              marginBottom: 8,
+            }}
+          >
+            ← Operator Home
+          </Link>
           <div style={{ fontSize: 24, fontWeight: 800, color: "#0f1720", letterSpacing: "-0.03em" }}>Menu Lab</div>
           <div style={{ fontSize: 13, color: "#6b7280", marginTop: 4, lineHeight: 1.5, maxWidth: 760 }}>
             Default (Yellow Browser Apple look) is auto-selected for every menu. Preview any layout with your real restaurant and items, then Use + Save Design. This panel is for layout, photos, and colors — edit menu data in the tools below.
