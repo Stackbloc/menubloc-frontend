@@ -393,7 +393,9 @@ export default function FoodTruckSignup() {
     const errors = {};
     if (!form.email.trim()) errors.email = "Email is required.";
     if (!form.password) errors.password = "Password is required.";
-    else if (form.password.length < 8) errors.password = "Password must be at least 8 characters.";
+    else if (!(form.password.length >= 8 && /\d/.test(form.password) && /[A-Z]/.test(form.password))) {
+      errors.password = "Password must be at least 8 characters and include 1 uppercase letter and 1 number";
+    }
     if (!form.confirmPassword) errors.confirmPassword = "Confirm your password.";
     else if (form.password !== form.confirmPassword) errors.confirmPassword = "Passwords do not match.";
     if (!form.truck_name.trim()) errors.truck_name = "Truck name is required.";

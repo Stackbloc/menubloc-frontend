@@ -35,7 +35,9 @@ function validate(form, agreements) {
   if (!form.restaurant_name.trim()) errors.restaurant_name = "Restaurant name is required.";
   if (!form.email.trim()) errors.email = "Email address is required.";
   if (!form.password) errors.password = "Password is required.";
-  else if (form.password.length < 8) errors.password = "Password must be at least 8 characters.";
+  else if (!(form.password.length >= 8 && /\d/.test(form.password) && /[A-Z]/.test(form.password))) {
+    errors.password = "Password must be at least 8 characters and include 1 uppercase letter and 1 number";
+  }
   if (!form.confirmPassword) errors.confirmPassword = "Please confirm your password.";
   else if (form.password !== form.confirmPassword) errors.confirmPassword = "Passwords do not match.";
   if (!form.city.trim()) errors.city = "City is required.";

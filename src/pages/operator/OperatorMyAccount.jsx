@@ -455,6 +455,10 @@ export default function OperatorMyAccount() {
   async function handleChangePassword() {
     setPasswordError("");
     setPasswordMessage("");
+    if (!(newPassword.length >= 8 && /\d/.test(newPassword) && /[A-Z]/.test(newPassword))) {
+      setPasswordError("Password must be at least 8 characters and include 1 uppercase letter and 1 number");
+      return;
+    }
     if (newPassword !== confirmNewPassword) {
       setPasswordError("New passwords do not match");
       return;

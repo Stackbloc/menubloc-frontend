@@ -377,7 +377,9 @@ export default function RestaurantSignup() {
     if (!form.email.trim()) errors.email = t("signup.error.emailRequired");
     if (!isOperatorAuthenticated) {
       if (!form.password) errors.password = "Password is required.";
-      else if (form.password.length < 8) errors.password = "Password must be at least 8 characters.";
+      else if (!(form.password.length >= 8 && /\d/.test(form.password) && /[A-Z]/.test(form.password))) {
+        errors.password = "Password must be at least 8 characters and include 1 uppercase letter and 1 number";
+      }
       if (!form.confirmPassword) errors.confirmPassword = "Confirm your password.";
       else if (form.password !== form.confirmPassword) errors.confirmPassword = t("signup.error.passwordsDoNotMatch");
     }
