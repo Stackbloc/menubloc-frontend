@@ -139,6 +139,7 @@ import MarketMenuItemPage from "./pages/MarketMenuItemPage.jsx";
 import MenuItemCanonicalRoute from "./pages/MenuItemCanonicalRoute.jsx";
 import MenuThemesPage from "./pages/MenuThemesPage.jsx";
 import DemoPage from "./pages/DemoPage.jsx";
+import DemoPresentation from "./presentation/DemoPresentation.jsx";
 import CheckoutPage from "./pages/CheckoutPage.jsx";
 import BuyMeThisPage from "./pages/BuyMeThisPage.jsx";
 import OrderConfirmationPage from "./pages/OrderConfirmationPage.jsx";
@@ -558,7 +559,14 @@ function AppShell({ easyMenu, crmHost }) {
     location.pathname === "/restaurant/onboarding" ||
     location.pathname.startsWith("/restaurant/onboarding/");
   const operatorTabletRoute = location.pathname === "/operator/tablet";
-  const hidePublicChrome = crmHost || joinLandingRoute || joinSignupRoute || restaurantOnboardingRoute || operatorTabletRoute;
+  const presentationRoute = location.pathname === "/demo";
+  const hidePublicChrome =
+    crmHost ||
+    joinLandingRoute ||
+    joinSignupRoute ||
+    restaurantOnboardingRoute ||
+    operatorTabletRoute ||
+    presentationRoute;
 
   return (
     <>
@@ -611,7 +619,8 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/menu-template-preview" element={crmHost ? <HostRouteRedirect to="/crm" /> : <PublicMenuPage />} />
         <Route path="/menu-design-lab" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MenuThemesPage />} />
         <Route path="/menu-themes" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MenuThemesPage />} />
-        <Route path="/demo" element={crmHost ? <HostRouteRedirect to="/crm" /> : <DemoPage />} />
+        <Route path="/demo" element={crmHost ? <HostRouteRedirect to="/crm" /> : <DemoPresentation />} />
+        <Route path="/demo_menus" element={crmHost ? <HostRouteRedirect to="/crm" /> : <DemoPage />} />
         <Route path="/restaurant/:slugOrId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantSingularRedirect />} />
 
         <Route path="/restaurant-profile/:id" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantProfile />} />
