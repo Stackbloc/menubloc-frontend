@@ -13,7 +13,9 @@ import {
   buildManualLocationLimitMessages,
   canAddManualLocation,
   emptyLocationForm,
+  LOCATION_COUNTRY_OPTIONS,
   resolveManualLocationLimit,
+  US_STATE_OPTIONS,
   validateLocationForm,
 } from "../lib/locationEntryPolicy.js";
 import {
@@ -36,42 +38,90 @@ import {
   syncRestaurantOnboardingProgress,
 } from "../lib/restaurantOnboardingState.js";
 
-const FONT = '"Instrument Sans", "Avenir Next", system-ui, sans-serif';
+/**
+ * Chrome must match `/restaurant/onboarding/organization`:
+ * pure white page, BrandLogo height 48 / radius 14 / matchPageBackground false,
+ * max-width 640. Do not invent cream shells.
+ */
+const FONT = '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif';
 
 const styles = {
   page: {
     minHeight: "100vh",
-    background: "linear-gradient(180deg, #f7f4ef 0%, #efe8df 100%)",
+    backgroundColor: "#ffffff",
+    color: "#0B0F0C",
     fontFamily: FONT,
+    fontSize: 17,
+    lineHeight: 1.65,
+    WebkitFontSmoothing: "antialiased",
   },
-  main: { maxWidth: 820, margin: "0 auto", padding: "40px 20px 80px" },
-  eyebrow: {
+  main: {
+    maxWidth: 640,
+    margin: "0 auto",
+    padding: "28px 24px calc(var(--bottom-nav-h, 72px) + 8px)",
+  },
+  logo: {
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+    marginBottom: 20,
+  },
+  sectionLabel: {
+    display: "inline-block",
     fontSize: 11,
-    fontWeight: 800,
-    color: "#1F4E3D",
-    letterSpacing: "0.08em",
+    fontWeight: 700,
+    letterSpacing: "0.12em",
     textTransform: "uppercase",
-    marginBottom: 10,
+    color: "#6B7280",
+    background: "rgba(0,0,0,0.05)",
+    border: "1px solid rgba(0,0,0,0.1)",
+    borderRadius: 4,
+    padding: "3px 10px",
+    marginBottom: 20,
   },
   title: {
-    fontSize: "clamp(1.6rem, 3.5vw, 2.1rem)",
-    fontWeight: 900,
-    letterSpacing: "-0.03em",
+    fontSize: "clamp(28px, 6vw, 36px)",
+    fontWeight: 700,
+    lineHeight: 1.25,
+    letterSpacing: "-0.35px",
     color: "#0B0F0C",
+    margin: "0 0 12px",
+  },
+  subtitle: {
+    fontSize: 17,
+    color: "#374151",
+    lineHeight: 1.65,
     margin: "0 0 8px",
   },
-  subtitle: { fontSize: 15, color: "#4b5563", lineHeight: 1.55, margin: "0 0 8px" },
-  hint: { fontSize: 13, color: "#6b7280", marginBottom: 20 },
+  hint: { fontSize: 14, color: "#6b7280", margin: "0 0 24px" },
   card: {
-    border: "1px solid #e8e4de",
-    borderRadius: 16,
-    padding: 16,
-    background: "#fff",
-    marginBottom: 12,
+    background: "#F9FAFB",
+    border: "1px solid rgba(0,0,0,0.08)",
+    borderRadius: 12,
+    padding: 22,
+    marginBottom: 16,
   },
-  sectionTitle: { fontSize: 15, fontWeight: 800, margin: "0 0 10px" },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: 700,
+    color: "#0B0F0C",
+    margin: "0 0 6px",
+  },
+  sectionHelp: {
+    fontSize: 14,
+    color: "#6b7280",
+    lineHeight: 1.55,
+    margin: "0 0 16px",
+  },
+  locationRow: {
+    background: "#fff",
+    border: "1px solid #e5e7eb",
+    borderRadius: 10,
+    padding: 14,
+    marginBottom: 10,
+  },
   err: {
-    marginBottom: 12,
+    marginBottom: 14,
     padding: 12,
     background: "#fff5f5",
     border: "1px solid #ffd2d2",
@@ -80,7 +130,7 @@ const styles = {
     fontSize: 14,
   },
   ok: {
-    marginBottom: 12,
+    marginBottom: 14,
     padding: 12,
     background: "#f3fff6",
     border: "1px solid #c6f3d1",
@@ -89,69 +139,99 @@ const styles = {
     fontSize: 14,
   },
   warn: {
-    marginBottom: 12,
-    padding: 12,
+    marginBottom: 14,
+    padding: 16,
     background: "#fff8e6",
     border: "1px solid #f0e0a8",
     borderRadius: 12,
     color: "#7c5e10",
     fontSize: 14,
   },
-  row: { display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" },
-  grid: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 },
+  row: { display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" },
+  grid: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 },
   full: { gridColumn: "1 / -1" },
-  label: { fontSize: 12, fontWeight: 800, marginBottom: 4 },
+  field: { marginBottom: 0 },
+  label: {
+    display: "block",
+    fontSize: 13,
+    fontWeight: 700,
+    color: "#1f2937",
+    marginBottom: 6,
+  },
   input: {
     width: "100%",
-    height: 40,
-    padding: "0 10px",
-    border: "1px solid #e5e5e5",
+    height: 44,
     borderRadius: 10,
+    border: "1px solid #d1d5db",
+    padding: "0 12px",
+    fontSize: 15,
+    background: "#fff",
+    color: "#0B0F0C",
+    boxSizing: "border-box",
+    fontFamily: FONT,
+  },
+  select: {
+    width: "100%",
+    height: 44,
+    borderRadius: 10,
+    border: "1px solid #d1d5db",
+    padding: "0 12px",
+    fontSize: 15,
+    background: "#fff",
+    color: "#0B0F0C",
     boxSizing: "border-box",
     fontFamily: FONT,
   },
   primaryBtn: {
-    height: 44,
-    padding: "0 16px",
-    borderRadius: 12,
+    height: 48,
+    padding: "0 20px",
+    borderRadius: 10,
     border: 0,
-    background: "#1F4E3D",
+    background: "#4caf50",
     color: "#fff",
-    fontWeight: 800,
+    fontWeight: 700,
+    fontSize: 16,
     cursor: "pointer",
     fontFamily: FONT,
   },
   secondaryBtn: {
-    height: 44,
-    padding: "0 16px",
-    borderRadius: 12,
+    height: 48,
+    padding: "0 20px",
+    borderRadius: 10,
     border: "1px solid #d1d5db",
     background: "#fff",
-    color: "#111",
-    fontWeight: 800,
+    color: "#1f2937",
+    fontWeight: 700,
+    fontSize: 14,
     cursor: "pointer",
     fontFamily: FONT,
   },
   smallBtn: {
     height: 34,
     padding: "0 10px",
-    borderRadius: 10,
+    borderRadius: 8,
     border: "1px solid #d1d5db",
     background: "#fff",
-    fontWeight: 700,
+    color: "#1f2937",
+    fontWeight: 600,
     cursor: "pointer",
     fontFamily: FONT,
     fontSize: 12,
   },
   badge: {
-    fontSize: 10,
-    fontWeight: 800,
-    letterSpacing: "0.06em",
+    fontSize: 11,
+    fontWeight: 700,
+    letterSpacing: "0.04em",
     textTransform: "uppercase",
     background: "#e8f5ef",
-    color: "#1F4E3D",
-    borderRadius: 999,
-    padding: "2px 8px",
+    color: "#166534",
+    borderRadius: 6,
+    padding: "3px 8px",
+  },
+  formPanel: {
+    marginTop: 16,
+    paddingTop: 16,
+    borderTop: "1px solid #e5e7eb",
   },
 };
 
@@ -521,10 +601,12 @@ export default function RestaurantOnboardingLocations() {
   if (sessionLoading || (!workspace && !loadError)) {
     return (
       <div style={styles.page}>
-        <div style={styles.main}>
-          <BrandLogo height={44} radius={12} matchPageBackground={false} />
-          <p style={{ marginTop: 28, color: "#6b7280" }}>Loading locations…</p>
-        </div>
+        <main style={styles.main}>
+          <div style={styles.logo}>
+            <BrandLogo height={48} radius={14} matchPageBackground={false} />
+          </div>
+          <p style={{ margin: 0, color: "#6b7280" }}>Loading locations…</p>
+        </main>
       </div>
     );
   }
@@ -532,11 +614,17 @@ export default function RestaurantOnboardingLocations() {
   const locations = workspace?.locations || [];
   const count = workspace?.count || 0;
 
+  function setFormField(key, value) {
+    setForm((p) => ({ ...p, [key]: value }));
+  }
+
   return (
     <div style={styles.page}>
-      <div style={styles.main}>
-        <BrandLogo height={44} radius={12} matchPageBackground={false} />
-        <div style={{ ...styles.eyebrow, marginTop: 28 }}>Onboarding · Locations</div>
+      <main style={styles.main}>
+        <div style={styles.logo}>
+          <BrandLogo height={48} radius={14} matchPageBackground={false} />
+        </div>
+        <div style={styles.sectionLabel}>Onboarding · Locations</div>
         <h1 style={styles.title}>Locations</h1>
         <p style={styles.subtitle}>
           Manage where you operate. Manual entry supports up to {effectiveMax} locations.
@@ -555,10 +643,10 @@ export default function RestaurantOnboardingLocations() {
             aria-labelledby="guided-bulk-title"
             data-testid="guided-bulk-location-import"
           >
-            <h2 id="guided-bulk-title" style={{ ...styles.sectionTitle, marginTop: 0 }}>
+            <h2 id="guided-bulk-title" style={{ ...styles.sectionTitle, marginTop: 0, color: "#7c5e10" }}>
               {limitMessages.headline}
             </h2>
-            <p style={{ margin: "0 0 14px", lineHeight: 1.55 }}>{limitMessages.body}</p>
+            <p style={{ margin: "0 0 14px", lineHeight: 1.55, color: "#7c5e10" }}>{limitMessages.body}</p>
             <div style={styles.row}>
               <button
                 type="button"
@@ -581,7 +669,7 @@ export default function RestaurantOnboardingLocations() {
         ) : null}
 
         <section style={styles.card} aria-labelledby="manual-entry">
-          <div style={{ ...styles.row, justifyContent: "space-between", marginBottom: 8 }}>
+          <div style={{ ...styles.row, justifyContent: "space-between", marginBottom: 4 }}>
             <h2 id="manual-entry" style={{ ...styles.sectionTitle, margin: 0 }}>
               Manual Location Entry
             </h2>
@@ -589,19 +677,19 @@ export default function RestaurantOnboardingLocations() {
               {count} / {effectiveMax}
             </span>
           </div>
-          <p style={{ fontSize: 13, color: "#6b7280", marginTop: 0 }}>
+          <p style={styles.sectionHelp}>
             Best for independents, small groups, and small regional chains.
           </p>
 
           {locations.map((loc) => (
-            <div key={loc.id} style={{ ...styles.card, marginBottom: 8, background: "#fafafa" }}>
+            <div key={loc.id} style={styles.locationRow}>
               <div style={{ ...styles.row, justifyContent: "space-between" }}>
                 <div>
-                  <strong>{loc.restaurant_name}</strong>
+                  <strong style={{ color: "#0B0F0C" }}>{loc.restaurant_name}</strong>
                   {loc.is_primary ? (
                     <span style={{ ...styles.badge, marginLeft: 8 }}>Primary</span>
                   ) : null}
-                  <div style={{ fontSize: 13, color: "#4b5563", marginTop: 4 }}>
+                  <div style={{ fontSize: 14, color: "#4b5563", marginTop: 4 }}>
                     {[loc.address_line1, loc.city, loc.state, loc.postal_code]
                       .filter(Boolean)
                       .join(", ")}
@@ -631,7 +719,7 @@ export default function RestaurantOnboardingLocations() {
                         address_line1: loc.address_line1 || "",
                         address_line2: loc.address_line2 || "",
                         city: loc.city || "",
-                        state: loc.state || "",
+                        state: String(loc.state || "").toUpperCase().slice(0, 2),
                         postal_code: loc.postal_code || "",
                         country_code: loc.country_code || "US",
                         phone: loc.phone || "",
@@ -650,45 +738,124 @@ export default function RestaurantOnboardingLocations() {
             </div>
           ))}
 
-          <div style={styles.row}>
-            <button type="button" style={styles.secondaryBtn} disabled={busy} onClick={openAddManual}>
-              Add location
-            </button>
-          </div>
-
-          {showAdd ? (
-            <form onSubmit={handleCreateOrUpdate} style={{ marginTop: 14 }}>
+          {!showAdd ? (
+            <div style={styles.row}>
+              <button type="button" style={styles.secondaryBtn} disabled={busy} onClick={openAddManual}>
+                Add location
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={handleCreateOrUpdate} style={styles.formPanel}>
               <div style={styles.grid}>
-                {[
-                  ["restaurant_name", "Location name *", "full"],
-                  ["address_line1", "Address line 1 *", "full"],
-                  ["address_line2", "Address line 2", "full"],
-                  ["city", "City *"],
-                  ["state", "State *"],
-                  ["postal_code", "Postal code *"],
-                  ["country_code", "Country"],
-                  ["phone", "Phone"],
-                ].map(([key, label, full]) => (
-                  <div key={key} style={full ? styles.full : undefined}>
-                    <div style={styles.label}>{label}</div>
-                    <input
-                      style={styles.input}
-                      value={form[key]}
-                      maxLength={key === "state" || key === "country_code" ? 2 : undefined}
-                      onChange={(e) =>
-                        setForm((p) => ({
-                          ...p,
-                          [key]:
-                            key === "state" || key === "country_code"
-                              ? e.target.value.toUpperCase().slice(0, 2)
-                              : e.target.value,
-                        }))
-                      }
-                    />
-                  </div>
-                ))}
+                <div style={{ ...styles.field, ...styles.full }}>
+                  <label style={styles.label} htmlFor="loc_restaurant_name">
+                    Location name *
+                  </label>
+                  <input
+                    id="loc_restaurant_name"
+                    style={styles.input}
+                    value={form.restaurant_name}
+                    placeholder="e.g. Downtown patio or Main Street"
+                    onChange={(e) => setFormField("restaurant_name", e.target.value)}
+                  />
+                </div>
+                <div style={{ ...styles.field, ...styles.full }}>
+                  <label style={styles.label} htmlFor="loc_address_line1">
+                    Address line 1 *
+                  </label>
+                  <input
+                    id="loc_address_line1"
+                    style={styles.input}
+                    value={form.address_line1}
+                    placeholder="e.g. 123 Main St"
+                    onChange={(e) => setFormField("address_line1", e.target.value)}
+                  />
+                </div>
+                <div style={{ ...styles.field, ...styles.full }}>
+                  <label style={styles.label} htmlFor="loc_address_line2">
+                    Address line 2
+                  </label>
+                  <input
+                    id="loc_address_line2"
+                    style={styles.input}
+                    value={form.address_line2}
+                    placeholder="Suite, unit, or floor (optional)"
+                    onChange={(e) => setFormField("address_line2", e.target.value)}
+                  />
+                </div>
+                <div style={styles.field}>
+                  <label style={styles.label} htmlFor="loc_city">
+                    City *
+                  </label>
+                  <input
+                    id="loc_city"
+                    style={styles.input}
+                    value={form.city}
+                    placeholder="e.g. Los Angeles"
+                    onChange={(e) => setFormField("city", e.target.value)}
+                  />
+                </div>
+                <div style={styles.field}>
+                  <label style={styles.label} htmlFor="loc_state">
+                    State *
+                  </label>
+                  <select
+                    id="loc_state"
+                    style={styles.select}
+                    value={form.state}
+                    onChange={(e) => setFormField("state", e.target.value)}
+                  >
+                    <option value="">Select state</option>
+                    {US_STATE_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div style={styles.field}>
+                  <label style={styles.label} htmlFor="loc_postal_code">
+                    Postal code *
+                  </label>
+                  <input
+                    id="loc_postal_code"
+                    style={styles.input}
+                    value={form.postal_code}
+                    placeholder="e.g. 90012"
+                    onChange={(e) => setFormField("postal_code", e.target.value)}
+                  />
+                </div>
+                <div style={styles.field}>
+                  <label style={styles.label} htmlFor="loc_country_code">
+                    Country
+                  </label>
+                  <select
+                    id="loc_country_code"
+                    style={styles.select}
+                    value={form.country_code || "US"}
+                    onChange={(e) => setFormField("country_code", e.target.value)}
+                  >
+                    {LOCATION_COUNTRY_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div style={{ ...styles.field, ...styles.full }}>
+                  <label style={styles.label} htmlFor="loc_phone">
+                    Phone
+                  </label>
+                  <input
+                    id="loc_phone"
+                    style={styles.input}
+                    value={form.phone}
+                    placeholder="e.g. (310) 555-0100"
+                    onChange={(e) => setFormField("phone", e.target.value)}
+                  />
+                </div>
               </div>
-              <div style={{ ...styles.row, marginTop: 12 }}>
+              <div style={{ ...styles.row, marginTop: 16 }}>
                 <button type="submit" style={styles.primaryBtn} disabled={busy}>
                   {busy ? "Saving…" : editId ? "Update location" : "Add location"}
                 </button>
@@ -705,17 +872,16 @@ export default function RestaurantOnboardingLocations() {
                 </button>
               </div>
             </form>
-          ) : null}
+          )}
         </section>
 
         <section style={styles.card} aria-labelledby="bulk-import">
           <h2 id="bulk-import" style={styles.sectionTitle}>
             Bulk Location Import
           </h2>
-          <p style={{ fontSize: 13, color: "#6b7280", marginTop: 0 }}>
+          <p style={styles.sectionHelp}>
             Optional at any size. Required when you need more than {effectiveMax} locations.
-            Supports CSV (XLSX reserved). Nothing is created until you confirm a validated preview.
-            Bulk Location Import continues this Locations stage — it is not a separate onboarding flow.
+            Supports CSV. Nothing is created until you confirm a validated preview.
           </p>
           <div style={styles.row}>
             <button type="button" style={styles.secondaryBtn} onClick={() => setShowBulk((v) => !v)}>
@@ -727,24 +893,29 @@ export default function RestaurantOnboardingLocations() {
           </div>
 
           {showBulk ? (
-            <div style={{ marginTop: 14 }}>
-              <div style={styles.label}>Paste CSV contents</div>
+            <div style={{ marginTop: 16 }}>
+              <label style={styles.label} htmlFor="loc_csv_paste">
+                Paste CSV contents
+              </label>
               <textarea
+                id="loc_csv_paste"
                 value={csvText}
                 onChange={(e) => setCsvText(e.target.value)}
                 rows={8}
                 style={{
                   width: "100%",
-                  border: "1px solid #e5e5e5",
-                  borderRadius: 12,
-                  padding: 10,
+                  border: "1px solid #d1d5db",
+                  borderRadius: 10,
+                  padding: 12,
                   fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
                   fontSize: 12,
+                  color: "#0B0F0C",
+                  background: "#fff",
                   boxSizing: "border-box",
                 }}
                 placeholder="restaurant_name,address_line1,address_line2,city,state,postal_code,country_code,phone"
               />
-              <div style={{ ...styles.row, marginTop: 10 }}>
+              <div style={{ ...styles.row, marginTop: 12 }}>
                 <button type="button" style={styles.secondaryBtn} disabled={busy} onClick={handleValidateImport}>
                   Validate & preview
                 </button>
@@ -758,7 +929,7 @@ export default function RestaurantOnboardingLocations() {
                 </button>
               </div>
               {preview ? (
-                <div style={{ marginTop: 12, fontSize: 13 }}>
+                <div style={{ marginTop: 12, fontSize: 14, color: "#374151" }}>
                   <div>
                     Valid: {preview.valid_count} · Issues: {preview.issue_count} · Ready:{" "}
                     {preview.import_ready ? "yes" : "no"}
@@ -783,7 +954,7 @@ export default function RestaurantOnboardingLocations() {
             Continue
           </button>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

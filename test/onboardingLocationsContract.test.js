@@ -141,4 +141,34 @@ test("location form validation requires address fields", () => {
     postal_code: "90012",
   });
   assert.equal(good.ok, true);
+  const badState = validateLocationForm({
+    restaurant_name: "A",
+    address_line1: "1 Main",
+    city: "LA",
+    state: "XX",
+    postal_code: "90012",
+  });
+  assert.equal(badState.ok, false);
+  assert.match(badState.message, /valid US state/i);
+});
+
+test("Locations page uses white Organization shell with placeholders and State select", () => {
+  const page = read("src/pages/RestaurantOnboardingLocations.jsx");
+  const policy = read("src/lib/locationEntryPolicy.js");
+  assert.match(page, /backgroundColor:\s*"#ffffff"/);
+  assert.doesNotMatch(page, /#f7f4ef/);
+  assert.doesNotMatch(page, /#efe8df/);
+  assert.match(page, /color:\s*"#1f2937"/);
+  assert.match(page, /placeholder="e\.g\. 123 Main St"/);
+  assert.match(page, /placeholder="e\.g\. Los Angeles"/);
+  assert.match(page, /placeholder="e\.g\. 90012"/);
+  assert.match(page, /placeholder="e\.g\. \(310\) 555-0100"/);
+  assert.match(page, /id="loc_state"/);
+  assert.match(page, /<select[\s\S]*id="loc_state"/);
+  assert.match(page, /Select state/);
+  assert.match(page, /US_STATE_OPTIONS/);
+  assert.match(page, /LOCATION_COUNTRY_OPTIONS/);
+  assert.match(page, /!showAdd \?/);
+  assert.match(policy, /US_STATE_OPTIONS/);
+  assert.match(policy, /Select a valid US state/);
 });
