@@ -4,7 +4,7 @@ Restructure My Account into Profile Editor / Menu / Settings / Password, with Me
 
 # Current Status
 
-**LOCAL COMPLETE** — not CPD’d.
+**CPD COMPLETE** — FE `0eabea7` / bundle `index-DNLOm8YI.js` on menuply.com (`menubloc-frontend-mpt2j6zuk-menuply.vercel.app`).
 
 # Files Changed
 
