@@ -4,6 +4,8 @@
   display: flex;
   min-height: 100vh;
   min-width: 0;
+  max-width: 100vw;
+  overflow-x: clip;
   background: #f6f7f9;
   color: #0b0f0c;
   font-family: var(--gb-font-ui);
@@ -138,9 +140,14 @@
 
 .admin-console__column {
   display: flex;
-  flex: 1;
+  flex: 1 1 auto;
   min-width: 0;
+  /* Sidebar is position:fixed (out of flow). Size the column to remaining viewport so
+     margin-left + content never exceeds 100vw (horizontal “float off monitor”). */
+  width: calc(100% - var(--admin-sidebar-w, 232px));
+  max-width: calc(100% - var(--admin-sidebar-w, 232px));
   margin-left: var(--admin-sidebar-w, 232px);
+  box-sizing: border-box;
 }
 
 .admin-console__main {
@@ -327,6 +334,7 @@
   .admin-console__column {
     margin-left: 0;
     width: 100%;
+    max-width: 100%;
   }
 
   .admin-console__header {

@@ -32,15 +32,23 @@ describe("OCR edit split pane contract", () => {
     expect(css).toMatch(/ocr-source-evidence__magnify-btn/);
   });
 
-  it("defines OcrEditSplitLayout with independent rail scroll and narrow collapse", () => {
+  it("defines OcrEditSplitLayout with independent rail scroll and drawer containment", () => {
     const layout = read("OcrEditSplitLayout.jsx");
     const css = read("ocrEditSplitLayout.css");
+    const shell = fs.readFileSync(
+      path.resolve(__dirname, "../src/components/adminConsole/adminConsoleShell.css"),
+      "utf8"
+    );
     expect(layout).toMatch(/OcrSourceEvidencePanel/);
-    expect(layout).toMatch(/max-width: 1100px/);
+    expect(layout).toMatch(/max-width: 1479px/);
     expect(layout).toMatch(/Source menu/);
     expect(css).toMatch(/ocr-edit-split__rail/);
     expect(css).toMatch(/overflow-y:\s*auto/);
-    expect(css).toMatch(/@media \(max-width: 1100px\)/);
+    expect(css).toMatch(/@media \(min-width: 1480px\)/);
+    expect(css).toMatch(/@media \(max-width: 1479px\)/);
+    expect(css).toMatch(/minmax\(0,\s*1fr\)/);
+    expect(shell).toMatch(/overflow-x:\s*clip/);
+    expect(shell).toMatch(/calc\(100% - var\(--admin-sidebar-w/);
   });
 
   it("Review Queue uses split layout instead of top 50/50 image|OCR grid", () => {

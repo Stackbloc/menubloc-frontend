@@ -3,7 +3,9 @@
   flex-direction: column;
   gap: 12px;
   width: 100%;
+  max-width: 100%;
   min-width: 0;
+  box-sizing: border-box;
 }
 
 .ocr-edit-split__toolbar {
@@ -31,36 +33,90 @@
 }
 
 .ocr-edit-split__body {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 16px;
-  align-items: flex-start;
+  align-items: start;
   width: 100%;
+  max-width: 100%;
   min-width: 0;
+  box-sizing: border-box;
 }
 
 .ocr-edit-split__center {
-  flex: 1 1 auto;
   min-width: 0;
-}
-
-.ocr-edit-split__rail {
-  display: none;
-  flex: 0 0 380px;
-  width: 380px;
   max-width: 100%;
-  position: sticky;
-  top: 12px;
-  max-height: calc(100vh - 24px);
-  overflow: hidden;
-  z-index: 2;
 }
 
-.ocr-edit-split__rail--open {
-  display: block;
+/* Side-by-side only when there is room for sidebar (~232) + editor + OCR rail.
+   Below this, OCR is a fixed drawer so the page never grows past the viewport. */
+@media (min-width: 1480px) {
+  .ocr-edit-split--rail-open .ocr-edit-split__body {
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
+  }
+
+  .ocr-edit-split__rail {
+    display: none;
+    position: sticky;
+    top: 12px;
+    max-height: calc(100vh - 24px);
+    min-width: 0;
+    overflow: hidden;
+    z-index: 2;
+  }
+
+  .ocr-edit-split--rail-open .ocr-edit-split__rail {
+    display: block;
+  }
+
+  .ocr-edit-split__backdrop {
+    display: none !important;
+  }
 }
 
-.ocr-edit-split__backdrop {
-  display: none;
+/* Drawer mode (default below 1480px — accounts for owner sidebar) */
+@media (max-width: 1479px) {
+  .ocr-edit-split__rail {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(400px, 92vw);
+    max-width: 100%;
+    z-index: 60;
+    display: block;
+    /* Keep off-screen drawers from expanding document scroll width */
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateX(100%);
+    transition: transform 0.2s ease, visibility 0.2s ease;
+    box-shadow: -12px 0 40px rgba(11, 15, 12, 0.12);
+  }
+
+  .ocr-edit-split__rail--open {
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateX(0);
+  }
+
+  .ocr-edit-split__rail .ocr-source-evidence {
+    height: 100%;
+    max-height: none;
+    border-radius: 0;
+    border: none;
+  }
+
+  .ocr-edit-split__backdrop {
+    display: none;
+  }
+
+  .ocr-edit-split--rail-open .ocr-edit-split__backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(11, 15, 12, 0.35);
+    z-index: 55;
+  }
 }
 
 /* ---- OCR evidence panel (inside rail) ---- */
@@ -79,6 +135,8 @@
   border-radius: 14px;
   box-shadow: 0 12px 40px rgba(11, 15, 12, 0.06);
   box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .ocr-source-evidence__header {
@@ -110,6 +168,7 @@
   gap: 8px;
   overflow-x: auto;
   padding: 2px 0;
+  max-width: 100%;
 }
 
 .ocr-source-evidence__thumb {
@@ -164,6 +223,7 @@
   flex-direction: column;
   gap: 10px;
   min-height: 0;
+  min-width: 0;
 }
 
 .ocr-source-evidence__meta {
@@ -192,6 +252,8 @@
   flex-direction: column;
   gap: 8px;
   align-items: stretch;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .ocr-source-evidence__photo-tools {
@@ -291,45 +353,6 @@
   word-break: break-word;
   color: #0b0f0c;
   line-height: 1.5;
-}
-
-/* Narrow: OCR becomes a drawer over the editor */
-@media (max-width: 1100px) {
-  .ocr-edit-split__body {
-    flex-direction: column;
-  }
-
-  .ocr-edit-split__rail {
-    position: fixed;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    width: min(400px, 92vw);
-    flex-basis: auto;
-    max-height: none;
-    z-index: 60;
-    transform: translateX(100%);
-    transition: transform 0.2s ease;
-    display: block;
-    box-shadow: -12px 0 40px rgba(11, 15, 12, 0.12);
-  }
-
-  .ocr-edit-split__rail--open {
-    transform: translateX(0);
-  }
-
-  .ocr-edit-split__rail .ocr-source-evidence {
-    height: 100%;
-    max-height: none;
-    border-radius: 0;
-    border: none;
-  }
-
-  .ocr-edit-split__backdrop {
-    display: block;
-    position: fixed;
-    inset: 0;
-    background: rgba(11, 15, 12, 0.35);
-    z-index: 55;
-  }
+  max-width: 100%;
+  box-sizing: border-box;
 }

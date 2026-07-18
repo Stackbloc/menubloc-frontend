@@ -2,11 +2,12 @@ import React, { useEffect, useState } from "react";
 import OcrSourceEvidencePanel from "./OcrSourceEvidencePanel.jsx";
 import "./ocrEditSplitLayout.css";
 
-const NARROW_MQ = "(max-width: 1100px)";
+/** Matches CSS: side-by-side only at 1480px+; drawer below (owner sidebar needs room). */
+const DRAWER_MQ = "(max-width: 1479px)";
 
 /**
  * Center editing surface + independently scrolling OCR source rail.
- * Below 1100px the rail collapses behind a "Source menu" toggle / drawer.
+ * Below 1480px the rail is a fixed drawer so the page cannot overflow horizontally.
  */
 export default function OcrEditSplitLayout({
   pages = [],
@@ -16,14 +17,14 @@ export default function OcrEditSplitLayout({
 }) {
   const hasPages = Array.isArray(pages) && pages.length > 0;
   const [railOpen, setRailOpen] = useState(defaultOpen);
-  const [isNarrow, setIsNarrow] = useState(() =>
-    typeof window !== "undefined" ? window.matchMedia(NARROW_MQ).matches : false
+  const [isDrawer, setIsDrawer] = useState(() =>
+    typeof window !== "undefined" ? window.matchMedia(DRAWER_MQ).matches : true
   );
 
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
-    const mq = window.matchMedia(NARROW_MQ);
-    const onChange = () => setIsNarrow(mq.matches);
+    const mq = window.matchMedia(DRAWER_MQ);
+    const onChange = () => setIsDrawer(mq.matches);
     onChange();
     mq.addEventListener("change", onChange);
     return () => mq.removeEventListener("change", onChange);
@@ -31,9 +32,10 @@ export default function OcrEditSplitLayout({
 
   useEffect(() => {
     if (!hasPages) return;
-    // On narrow screens start closed so editing stays primary; desktop stays open.
-    setRailOpen(!isNarrow && defaultOpen);
-  }, [hasPages, isNarrow, defaultOpen]);
+    // Drawer mode: start closed so the editor stays fully on-screen.
+    // Wide desktop: open by default when pages exist.
+    setRailOpen(!isDrawer && defaultOpen);
+  }, [hasPages, isDrawer, defaultOpen]);
 
   if (!hasPages) {
     return <>{children}</>;
@@ -64,13 +66,13 @@ export default function OcrEditSplitLayout({
             <OcrSourceEvidencePanel
               pages={pages}
               title={railTitle}
-              onClose={isNarrow ? () => setRailOpen(false) : null}
+              onClose={isDrawer ? () => setRailOpen(false) : null}
             />
           ) : null}
         </aside>
       </div>
 
-      {railOpen && isNarrow ? (
+      {railOpen && isDrawer ? (
         <div
           className="ocr-edit-split__backdrop"
           onClick={() => setRailOpen(false)}
