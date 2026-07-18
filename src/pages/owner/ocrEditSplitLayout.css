@@ -1,0 +1,276 @@
+.ocr-edit-split {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
+}
+
+.ocr-edit-split__toolbar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.ocr-edit-split__toggle {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  color: #0b0f0c;
+  font-weight: 700;
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.ocr-edit-split__toggle--active {
+  border-color: #16a34a;
+  background: #f0fdf4;
+  color: #15803d;
+}
+
+.ocr-edit-split__body {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  width: 100%;
+  min-width: 0;
+}
+
+.ocr-edit-split__center {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.ocr-edit-split__rail {
+  display: none;
+  flex: 0 0 380px;
+  width: 380px;
+  max-width: 100%;
+  position: sticky;
+  top: 12px;
+  max-height: calc(100vh - 24px);
+  overflow: hidden;
+  z-index: 2;
+}
+
+.ocr-edit-split__rail--open {
+  display: block;
+}
+
+.ocr-edit-split__backdrop {
+  display: none;
+}
+
+/* ---- OCR evidence panel (inside rail) ---- */
+
+.ocr-source-evidence {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 100%;
+  max-height: calc(100vh - 24px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 14px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  box-shadow: 0 12px 40px rgba(11, 15, 12, 0.06);
+  box-sizing: border-box;
+}
+
+.ocr-source-evidence__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.ocr-source-evidence__title {
+  font-weight: 700;
+  font-size: 13px;
+  color: #0b0f0c;
+}
+
+.ocr-source-evidence__close {
+  background: none;
+  border: none;
+  color: #16a34a;
+  font-weight: 700;
+  font-size: 12px;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 0;
+}
+
+.ocr-source-evidence__thumbs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 2px 0;
+}
+
+.ocr-source-evidence__thumb {
+  position: relative;
+  padding: 0;
+  width: 64px;
+  height: 64px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background: #f3f4f6;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.ocr-source-evidence__thumb--active {
+  border-color: #16a34a;
+}
+
+.ocr-source-evidence__thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.ocr-source-evidence__thumb-fallback {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.ocr-source-evidence__thumb-label {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  font-size: 9px;
+  text-align: center;
+  padding: 2px 0;
+  font-weight: 700;
+}
+
+.ocr-source-evidence__body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+}
+
+.ocr-source-evidence__meta {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.ocr-source-evidence__page-label {
+  font-weight: 700;
+  font-size: 13px;
+  color: #0b0f0c;
+}
+
+.ocr-source-evidence__fullsize {
+  margin-left: auto;
+  font-size: 12px;
+  color: #16a34a;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.ocr-source-evidence__image-wrap {
+  background: #111;
+  border-radius: 10px;
+  overflow: hidden;
+  text-align: center;
+}
+
+.ocr-source-evidence__image {
+  max-width: 100%;
+  max-height: 320px;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto;
+}
+
+.ocr-source-evidence__image-missing {
+  padding: 28px 16px;
+  background: #f3f4f6;
+  border-radius: 10px;
+  text-align: center;
+  color: #6b7280;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.ocr-source-evidence__ocr-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.ocr-source-evidence__ocr-text {
+  margin: 0;
+  font-size: 10px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  background: #f9f9f9;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: #0b0f0c;
+  line-height: 1.5;
+}
+
+/* Narrow: OCR becomes a drawer over the editor */
+@media (max-width: 1100px) {
+  .ocr-edit-split__body {
+    flex-direction: column;
+  }
+
+  .ocr-edit-split__rail {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(400px, 92vw);
+    flex-basis: auto;
+    max-height: none;
+    z-index: 60;
+    transform: translateX(100%);
+    transition: transform 0.2s ease;
+    display: block;
+    box-shadow: -12px 0 40px rgba(11, 15, 12, 0.12);
+  }
+
+  .ocr-edit-split__rail--open {
+    transform: translateX(0);
+  }
+
+  .ocr-edit-split__rail .ocr-source-evidence {
+    height: 100%;
+    max-height: none;
+    border-radius: 0;
+    border: none;
+  }
+
+  .ocr-edit-split__backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(11, 15, 12, 0.35);
+    z-index: 55;
+  }
+}

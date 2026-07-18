@@ -1,13 +1,13 @@
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
-import OwnerLayout, { OWNER_COLORS, PageCard, SectionTitle } from "./OwnerLayout.jsx";
+import OwnerLayout, { OWNER_COLORS, PageCard } from "./OwnerLayout.jsx";
+import OcrEditSplitLayout from "./OcrEditSplitLayout.jsx";
 import {
   getUploadReviewItems,
   getOwnerMenuUpload,
   approveReviewItem,
   rejectReviewItem,
   bulkReviewItems,
-  OWNER_API_BASE,
 } from "../../lib/ownerApi.js";
 
 function resolveItemSection(item) {
@@ -18,12 +18,6 @@ function resolveItemSection(item) {
       item?.section ||
       ""
   ).trim();
-}
-
-function buildImageUrl(relativePath) {
-  if (!relativePath) return null;
-  if (/^https?:\/\//.test(relativePath)) return relativePath;
-  return `${OWNER_API_BASE}${relativePath}`;
 }
 
 const STATUS_BADGE = {
@@ -220,35 +214,6 @@ function HoldReasonChips({ reasons }) {
   );
 }
 
-function OcrQualityBadge({ score, flags }) {
-  if (score == null) return null;
-  const pct = (score * 100).toFixed(0);
-  const hasFlags = Array.isArray(flags) && flags.length > 0;
-  const color = hasFlags ? "#92400e" : score >= 0.7 ? "#15803d" : score >= 0.4 ? "#92400e" : "#991b1b";
-  const bg = hasFlags ? "#fffbeb" : score >= 0.7 ? "#f0fdf4" : score >= 0.4 ? "#fffbeb" : "#fef2f2";
-  return (
-    <span title={hasFlags ? `Flags: ${flags.join(", ")}` : undefined} style={{ display: "inline-block", fontSize: 10, padding: "2px 6px", borderRadius: 5, fontWeight: 700, background: bg, color }}>
-      {hasFlags ? "⚠ " : ""}{pct}% OCR
-    </span>
-  );
-}
-
-function ExtractionQualityBadge({ itemCount, parseFailed, accepted, readable }) {
-  if (parseFailed) {
-    return <span style={{ fontSize: 10, padding: "2px 6px", borderRadius: 5, fontWeight: 700, background: "#fef2f2", color: "#991b1b" }}>Parse failed</span>;
-  }
-  if (accepted === false && readable === false) {
-    return <span style={{ fontSize: 10, padding: "2px 6px", borderRadius: 5, fontWeight: 700, background: "#fef2f2", color: "#991b1b" }}>Unreadable</span>;
-  }
-  if (itemCount > 0) {
-    return <span style={{ fontSize: 10, padding: "2px 6px", borderRadius: 5, fontWeight: 700, background: "#f0fdf4", color: "#15803d" }}>{itemCount} item{itemCount !== 1 ? "s" : ""}</span>;
-  }
-  if (accepted === false) {
-    return <span style={{ fontSize: 10, padding: "2px 6px", borderRadius: 5, fontWeight: 700, background: "#fffbeb", color: "#92400e" }}>No items extracted</span>;
-  }
-  return null;
-}
-
 function ItemQualityBadge({ ocr, extraction }) {
   const score = ocr != null ? Number(ocr) : extraction != null ? Number(extraction) : null;
   if (score == null) return <span style={{ color: OWNER_COLORS.muted }}>—</span>;
@@ -287,7 +252,6 @@ export default function OwnerMenuUploadReviewItems() {
   const [items, setItems] = useState([]);
   const [counts, setCounts] = useState({ open: 0, edited: 0, approved: 0, rejected: 0 });
   const [pages, setPages] = useState([]);
-  const [activePage, setActivePage] = useState(null);
   const [edits, setEdits] = useState({});
   const [selected, setSelected] = useState(new Set());
   const [busy, setBusy] = useState(new Set());
@@ -647,359 +611,255 @@ export default function OwnerMenuUploadReviewItems() {
         </div>
       )}
 
-      {/* Source Pages Panel */}
-      {pages.length > 0 && (
+      <OcrEditSplitLayout pages={pages} railTitle="Source menu">
+        {/* Live counts */}
         <PageCard style={{ padding: 18, marginBottom: 18 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-            <span style={{ fontWeight: 700, fontSize: 13 }}>Source Pages ({pages.length} pages)</span>
-            {activePage && (
-              <button onClick={() => setActivePage(null)} style={{ background: "none", border: "none", color: OWNER_COLORS.accent, fontWeight: 700, fontSize: 12, cursor: "pointer" }}>
-                Close ✕
-              </button>
-            )}
-          </div>
-          {/* Thumbnail strip */}
-          <div style={{ display: "flex", gap: 8, overflowX: "auto", padding: "2px 0" }}>
-            {pages.map((p) => (
-              <button
-                key={p.page_number}
-                onClick={() => setActivePage(activePage?.page_number === p.page_number ? null : p)}
-                style={{
-                  padding: 0,
-                  border: activePage?.page_number === p.page_number ? `2px solid ${OWNER_COLORS.accent}` : `2px solid transparent`,
-                  borderRadius: 8,
-                  cursor: "pointer",
-                  background: "#f3f4f6",
-                  flexShrink: 0,
-                  overflow: "hidden",
-                  width: 72,
-                  height: 72,
-                  position: "relative",
-                }}
-                title={`Page ${p.page_number}${p.item_count ? ` · ${p.item_count} items` : ""}`}
-              >
-                {p.image_url ? (
-                  <img
-                    src={buildImageUrl(p.image_url)}
-                    alt={`Page ${p.page_number}`}
-                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                    onError={(e) => { e.target.style.display = "none"; }}
-                  />
-                ) : (
-                  <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: OWNER_COLORS.muted }}>
-                    P{p.page_number}
-                  </div>
-                )}
-                <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "rgba(0,0,0,0.5)", color: "#fff", fontSize: 9, textAlign: "center", padding: "2px 0", fontWeight: 700 }}>
-                  {p.page_number}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+            {[
+              ["Needs Review", needsReview, "#fffbeb", "#92400e"],
+              ["Approved",     counts.approved, "#f0fdf4", "#15803d"],
+              ["Rejected",     counts.rejected, "#fef2f2", "#991b1b"],
+              ["Total",        needsReview + counts.approved + counts.rejected, "#f3f4f6", "#374151"],
+            ].map(([label, value, bg, color]) => (
+              <div key={label} style={{ padding: 14, borderRadius: 10, background: bg, textAlign: "center" }}>
+                <div style={{ fontSize: 10, color: OWNER_COLORS.muted, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                  {label}
                 </div>
-              </button>
+                <div style={{ fontSize: 24, fontWeight: 800, marginTop: 6, color }}>{value ?? 0}</div>
+              </div>
             ))}
           </div>
-          {/* Expanded page view */}
-          {activePage && (
-            <div style={{ marginTop: 14 }}>
-              <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 10 }}>
-                <span style={{ fontWeight: 700, fontSize: 13 }}>Page {activePage.page_number}</span>
-                {/* OCR quality — measures text recognition */}
-                <OcrQualityBadge score={activePage.ocr_quality_score} flags={activePage.ocr_quality_flags} />
-                {/* Extraction quality — measures structured item extraction */}
-                <ExtractionQualityBadge
-                  itemCount={activePage.item_count}
-                  parseFailed={activePage.extraction_parse_failure}
-                  accepted={activePage.extraction_accepted}
-                  readable={activePage.extraction_readable}
-                />
-                {activePage.image_url && (
-                  <a href={buildImageUrl(activePage.image_url)} target="_blank" rel="noreferrer" style={{ marginLeft: "auto", fontSize: 12, color: OWNER_COLORS.accent, fontWeight: 700, textDecoration: "none" }}>
-                    Full size ↗
-                  </a>
-                )}
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-                {/* Photo */}
-                <div>
-                  {activePage.image_url ? (
-                    <div style={{ background: "#111", borderRadius: 10, overflow: "hidden", textAlign: "center" }}>
-                      <img
-                        src={buildImageUrl(activePage.image_url)}
-                        alt={`Page ${activePage.page_number}`}
-                        style={{ maxWidth: "100%", maxHeight: 400, objectFit: "contain" }}
-                        onError={(e) => {
-                          e.target.parentNode.innerHTML =
-                            '<div style="padding:40px;color:#9ca3af;text-align:center;line-height:1.45">' +
-                            "<div style=\"font-weight:700;margin-bottom:6px\">Photo unavailable</div>" +
-                            "<div style=\"font-size:12px\">Source file is no longer on the server (common for older uploads). OCR text on the right is still valid for review.</div>" +
-                            "</div>";
+        </PageCard>
+
+        {/* Bulk action bar */}
+        {selected.size > 0 && (
+          <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 14, padding: "12px 16px", background: "#f8f7f4", borderRadius: 10, border: `1px solid ${OWNER_COLORS.line}` }}>
+            <span style={{ fontSize: 13, color: OWNER_COLORS.muted, flex: 1 }}>
+              {selected.size} item{selected.size !== 1 ? "s" : ""} selected
+            </span>
+            <button disabled={bulkBusy} onClick={() => handleBulk("approve")} style={approveBtn(bulkBusy)}>
+              Approve Selected
+            </button>
+            <button disabled={bulkBusy} onClick={() => handleBulk("reject")} style={rejectBtn(bulkBusy)}>
+              Reject Selected
+            </button>
+          </div>
+        )}
+
+        {/* Item table */}
+        {items.length === 0 ? (
+          <PageCard style={{ padding: 40, textAlign: "center", color: OWNER_COLORS.muted, fontSize: 14 }}>
+            No review items found for this upload.
+          </PageCard>
+        ) : (
+          <PageCard style={{ padding: 0, overflow: "hidden" }}>
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+                <thead>
+                  <tr style={{ background: "#f8f7f4", borderBottom: `2px solid ${OWNER_COLORS.line}` }}>
+                    <th style={th}>
+                      <input type="checkbox" checked={allSelected} onChange={toggleAll} style={{ cursor: "pointer" }} />
+                    </th>
+                    <th style={{ ...th, minWidth: 240, width: "24%" }}>Name</th>
+                    <th style={{ ...th, width: 72 }}>Price</th>
+                    <th style={{ ...th, minWidth: 280, width: "34%" }}>Description</th>
+                    <th style={{ ...th, width: 130 }}>Section *</th>
+                    <th style={{ ...th, width: 72 }} title="Hover codes for full hold reason">
+                      Hold
+                    </th>
+                    <th style={{ ...th, width: 70, textAlign: "center" }}>Quality</th>
+                    <th style={{ ...th, width: 70, textAlign: "center" }}>Status</th>
+                    <th style={{ ...th, textAlign: "right" }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map((item, idx) => {
+                    const edit = getEdit(item.id);
+                    const isBusy = busy.has(item.id);
+                    const isDone = ["approved", "rejected"].includes(item.status);
+                    const isOpen = ["open", "edited"].includes(item.status);
+                    const rowBg = item.status === "approved"
+                      ? "#f0fdf4"
+                      : item.status === "rejected"
+                      ? "#fef2f2"
+                      : idx % 2 === 0 ? "#fff" : "#fafaf9";
+
+                    return (
+                      <tr
+                        key={item.id}
+                        style={{
+                          borderBottom: `1px solid ${OWNER_COLORS.line}`,
+                          background: rowBg,
+                          opacity: isBusy ? 0.55 : 1,
+                          transition: "opacity 0.15s",
                         }}
-                      />
-                    </div>
-                  ) : (
-                    <div style={{ padding: 32, background: "#f3f4f6", borderRadius: 10, textAlign: "center", color: OWNER_COLORS.muted, fontSize: 13 }}>
-                      No photo for this page
-                    </div>
-                  )}
-                </div>
-                {/* OCR Text */}
-                <div>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: OWNER_COLORS.muted, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>OCR Text (supporting evidence)</div>
-                  <pre style={{ fontSize: 10, fontFamily: "monospace", background: "#f9f9f9", padding: 12, borderRadius: 10, border: `1px solid ${OWNER_COLORS.line}`, maxHeight: 360, overflow: "auto", whiteSpace: "pre-wrap", wordBreak: "break-word", margin: 0, color: OWNER_COLORS.ink, lineHeight: 1.5 }}>
-                    {activePage.ocr_text || "No OCR text available for this page."}
-                  </pre>
-                </div>
-              </div>
-            </div>
-          )}
-        </PageCard>
-      )}
-
-      {/* Live counts */}
-      <PageCard style={{ padding: 18, marginBottom: 18 }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
-          {[
-            ["Needs Review", needsReview, "#fffbeb", "#92400e"],
-            ["Approved",     counts.approved, "#f0fdf4", "#15803d"],
-            ["Rejected",     counts.rejected, "#fef2f2", "#991b1b"],
-            ["Total",        needsReview + counts.approved + counts.rejected, "#f3f4f6", "#374151"],
-          ].map(([label, value, bg, color]) => (
-            <div key={label} style={{ padding: 14, borderRadius: 10, background: bg, textAlign: "center" }}>
-              <div style={{ fontSize: 10, color: OWNER_COLORS.muted, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                {label}
-              </div>
-              <div style={{ fontSize: 24, fontWeight: 800, marginTop: 6, color }}>{value ?? 0}</div>
-            </div>
-          ))}
-        </div>
-      </PageCard>
-
-      {/* Bulk action bar */}
-      {selected.size > 0 && (
-        <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 14, padding: "12px 16px", background: "#f8f7f4", borderRadius: 10, border: `1px solid ${OWNER_COLORS.line}` }}>
-          <span style={{ fontSize: 13, color: OWNER_COLORS.muted, flex: 1 }}>
-            {selected.size} item{selected.size !== 1 ? "s" : ""} selected
-          </span>
-          <button disabled={bulkBusy} onClick={() => handleBulk("approve")} style={approveBtn(bulkBusy)}>
-            Approve Selected
-          </button>
-          <button disabled={bulkBusy} onClick={() => handleBulk("reject")} style={rejectBtn(bulkBusy)}>
-            Reject Selected
-          </button>
-        </div>
-      )}
-
-      {/* Item table */}
-      {items.length === 0 ? (
-        <PageCard style={{ padding: 40, textAlign: "center", color: OWNER_COLORS.muted, fontSize: 14 }}>
-          No review items found for this upload.
-        </PageCard>
-      ) : (
-        <PageCard style={{ padding: 0, overflow: "hidden" }}>
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
-              <thead>
-                <tr style={{ background: "#f8f7f4", borderBottom: `2px solid ${OWNER_COLORS.line}` }}>
-                  <th style={th}>
-                    <input type="checkbox" checked={allSelected} onChange={toggleAll} style={{ cursor: "pointer" }} />
-                  </th>
-                  <th style={{ ...th, minWidth: 240, width: "24%" }}>Name</th>
-                  <th style={{ ...th, width: 72 }}>Price</th>
-                  <th style={{ ...th, minWidth: 280, width: "34%" }}>Description</th>
-                  <th style={{ ...th, width: 130 }}>Section *</th>
-                  <th style={{ ...th, width: 72 }} title="Hover codes for full hold reason">
-                    Hold
-                  </th>
-                  <th style={{ ...th, width: 70, textAlign: "center" }}>Quality</th>
-                  <th style={{ ...th, width: 70, textAlign: "center" }}>Status</th>
-                  <th style={{ ...th, textAlign: "right" }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((item, idx) => {
-                  const edit = getEdit(item.id);
-                  const isBusy = busy.has(item.id);
-                  const isDone = ["approved", "rejected"].includes(item.status);
-                  const isOpen = ["open", "edited"].includes(item.status);
-                  const rowBg = item.status === "approved"
-                    ? "#f0fdf4"
-                    : item.status === "rejected"
-                    ? "#fef2f2"
-                    : idx % 2 === 0 ? "#fff" : "#fafaf9";
-
-                  return (
-                    <tr
-                      key={item.id}
-                      style={{
-                        borderBottom: `1px solid ${OWNER_COLORS.line}`,
-                        background: rowBg,
-                        opacity: isBusy ? 0.55 : 1,
-                        transition: "opacity 0.15s",
-                      }}
-                    >
-                      {/* Checkbox */}
-                      <td style={td}>
-                        {isOpen && (
-                          <input
-                            type="checkbox"
-                            checked={selected.has(item.id)}
-                            onChange={() => toggleItem(item.id)}
-                            style={{ cursor: "pointer" }}
-                          />
-                        )}
-                      </td>
-
-                      {/* Name — primary editable field (with description) */}
-                      <td style={{ ...td, minWidth: 240 }}>
-                        {isDone ? (
-                          <div>
-                            <span style={{ fontWeight: 700, fontSize: 14 }}>
-                              {item.parsed_name || item.proposed_item_name || "—"}
-                            </span>
-                            <SourceTextToggle text={item.original_text || item.raw_text} />
-                          </div>
-                        ) : (
-                          <div>
-                            <textarea
-                              value={edit.name || ""}
-                              onChange={(e) => updateEdit(item.id, "name", e.target.value)}
-                              style={nameTextareaStyle}
-                              placeholder="Item name"
-                              rows={2}
+                      >
+                        {/* Checkbox */}
+                        <td style={td}>
+                          {isOpen && (
+                            <input
+                              type="checkbox"
+                              checked={selected.has(item.id)}
+                              onChange={() => toggleItem(item.id)}
+                              style={{ cursor: "pointer" }}
                             />
-                            <div style={{ marginTop: 4 }}>
+                          )}
+                        </td>
+
+                        {/* Name — primary editable field (with description) */}
+                        <td style={{ ...td, minWidth: 240 }}>
+                          {isDone ? (
+                            <div>
+                              <span style={{ fontWeight: 700, fontSize: 14 }}>
+                                {item.parsed_name || item.proposed_item_name || "—"}
+                              </span>
                               <SourceTextToggle text={item.original_text || item.raw_text} />
                             </div>
-                          </div>
-                        )}
-                      </td>
+                          ) : (
+                            <div>
+                              <textarea
+                                value={edit.name || ""}
+                                onChange={(e) => updateEdit(item.id, "name", e.target.value)}
+                                style={nameTextareaStyle}
+                                placeholder="Item name"
+                                rows={2}
+                              />
+                              <div style={{ marginTop: 4 }}>
+                                <SourceTextToggle text={item.original_text || item.raw_text} />
+                              </div>
+                            </div>
+                          )}
+                        </td>
 
-                      {/* Price */}
-                      <td style={td}>
-                        {isDone ? (
-                          <span>
-                            {item.proposed_price != null
-                              ? `$${Number(item.proposed_price).toFixed(2)}`
-                              : "—"}
-                          </span>
-                        ) : (
-                          <input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            value={edit.price || ""}
-                            onChange={(e) => updateEdit(item.id, "price", e.target.value)}
-                            style={{ ...inputStyle, width: 72 }}
-                            placeholder="0.00"
-                          />
-                        )}
-                      </td>
+                        {/* Price */}
+                        <td style={td}>
+                          {isDone ? (
+                            <span>
+                              {item.proposed_price != null
+                                ? `$${Number(item.proposed_price).toFixed(2)}`
+                                : "—"}
+                            </span>
+                          ) : (
+                            <input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              value={edit.price || ""}
+                              onChange={(e) => updateEdit(item.id, "price", e.target.value)}
+                              style={{ ...inputStyle, width: 72 }}
+                              placeholder="0.00"
+                            />
+                          )}
+                        </td>
 
-                      {/* Description — largest text field */}
-                      <td style={{ ...td, minWidth: 260 }}>
-                        {isDone ? (
+                        {/* Description — largest text field */}
+                        <td style={{ ...td, minWidth: 260 }}>
+                          {isDone ? (
+                            <span
+                              style={{
+                                color: OWNER_COLORS.muted,
+                                fontSize: 12,
+                                whiteSpace: "pre-wrap",
+                                lineHeight: 1.45,
+                                display: "block",
+                              }}
+                            >
+                              {item.parsed_description || item.proposed_description || "—"}
+                            </span>
+                          ) : (
+                            <textarea
+                              value={edit.description || ""}
+                              onChange={(e) => updateEdit(item.id, "description", e.target.value)}
+                              style={descriptionTextareaStyle}
+                              placeholder="Description"
+                              rows={4}
+                            />
+                          )}
+                        </td>
+
+                        {/* Section — required combobox that grows from prior inputs */}
+                        <td style={td}>
+                          {isDone ? (
+                            <span style={{ color: OWNER_COLORS.ink, fontWeight: 600 }}>
+                              {resolveItemSection(item) || edit.section || "—"}
+                            </span>
+                          ) : (
+                            <SectionCombobox
+                              value={edit.section || ""}
+                              options={sectionOptions}
+                              disabled={isBusy}
+                              invalid={sectionErrors.has(item.id) && !String(edit.section || "").trim()}
+                              onChange={(value) => updateEdit(item.id, "section", value)}
+                            />
+                          )}
+                        </td>
+
+                        {/* Hold Reasons */}
+                        <td style={td}>
+                          <HoldReasonChips reasons={item.hold_reasons} />
+                        </td>
+
+                        {/* Quality */}
+                        <td style={{ ...td, textAlign: "center" }}>
+                          <ItemQualityBadge ocr={item.ocr_quality_score} extraction={item.extraction_quality_score} />
+                        </td>
+
+                        {/* Status */}
+                        <td style={{ ...td, textAlign: "center" }}>
                           <span
                             style={{
-                              color: OWNER_COLORS.muted,
-                              fontSize: 12,
-                              whiteSpace: "pre-wrap",
-                              lineHeight: 1.45,
-                              display: "block",
+                              fontSize: 10,
+                              padding: "2px 8px",
+                              borderRadius: 6,
+                              fontWeight: 700,
+                              ...(STATUS_BADGE[item.status] || {}),
                             }}
                           >
-                            {item.parsed_description || item.proposed_description || "—"}
+                            {item.status}
                           </span>
-                        ) : (
-                          <textarea
-                            value={edit.description || ""}
-                            onChange={(e) => updateEdit(item.id, "description", e.target.value)}
-                            style={descriptionTextareaStyle}
-                            placeholder="Description"
-                            rows={4}
-                          />
-                        )}
-                      </td>
+                        </td>
 
-                      {/* Section — required combobox that grows from prior inputs */}
-                      <td style={td}>
-                        {isDone ? (
-                          <span style={{ color: OWNER_COLORS.ink, fontWeight: 600 }}>
-                            {resolveItemSection(item) || edit.section || "—"}
-                          </span>
-                        ) : (
-                          <SectionCombobox
-                            value={edit.section || ""}
-                            options={sectionOptions}
-                            disabled={isBusy}
-                            invalid={sectionErrors.has(item.id) && !String(edit.section || "").trim()}
-                            onChange={(value) => updateEdit(item.id, "section", value)}
-                          />
-                        )}
-                      </td>
-
-                      {/* Hold Reasons */}
-                      <td style={td}>
-                        <HoldReasonChips reasons={item.hold_reasons} />
-                      </td>
-
-                      {/* Quality */}
-                      <td style={{ ...td, textAlign: "center" }}>
-                        <ItemQualityBadge ocr={item.ocr_quality_score} extraction={item.extraction_quality_score} />
-                      </td>
-
-                      {/* Status */}
-                      <td style={{ ...td, textAlign: "center" }}>
-                        <span
-                          style={{
-                            fontSize: 10,
-                            padding: "2px 8px",
-                            borderRadius: 6,
-                            fontWeight: 700,
-                            ...(STATUS_BADGE[item.status] || {}),
-                          }}
-                        >
-                          {item.status}
-                        </span>
-                      </td>
-
-                      {/* Actions */}
-                      <td style={{ ...td, textAlign: "right" }}>
-                        {isOpen && (
-                          <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
-                            <button
-                              disabled={isBusy || !String(edit.section || "").trim()}
-                              onClick={() => handleApprove(item)}
-                              title={
-                                !String(edit.section || "").trim()
-                                  ? "Enter a section before approving"
-                                  : undefined
-                              }
-                              style={approveBtn(isBusy || !String(edit.section || "").trim())}
-                            >
-                              {isBusy ? "…" : "Approve"}
-                            </button>
-                            <button
-                              disabled={isBusy}
-                              onClick={() => handleReject(item)}
-                              style={rejectBtn(isBusy)}
-                            >
-                              {isBusy ? "…" : "Reject"}
-                            </button>
-                          </div>
-                        )}
-                        {item.status === "approved" && (
-                          <span style={{ fontSize: 11, color: "#15803d", fontWeight: 600 }}>✓ Approved</span>
-                        )}
-                        {item.status === "rejected" && (
-                          <span style={{ fontSize: 11, color: "#991b1b", fontWeight: 600 }}>✗ Rejected</span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </PageCard>
-      )}
+                        {/* Actions */}
+                        <td style={{ ...td, textAlign: "right" }}>
+                          {isOpen && (
+                            <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
+                              <button
+                                disabled={isBusy || !String(edit.section || "").trim()}
+                                onClick={() => handleApprove(item)}
+                                title={
+                                  !String(edit.section || "").trim()
+                                    ? "Enter a section before approving"
+                                    : undefined
+                                }
+                                style={approveBtn(isBusy || !String(edit.section || "").trim())}
+                              >
+                                {isBusy ? "…" : "Approve"}
+                              </button>
+                              <button
+                                disabled={isBusy}
+                                onClick={() => handleReject(item)}
+                                style={rejectBtn(isBusy)}
+                              >
+                                {isBusy ? "…" : "Reject"}
+                              </button>
+                            </div>
+                          )}
+                          {item.status === "approved" && (
+                            <span style={{ fontSize: 11, color: "#15803d", fontWeight: 600 }}>✓ Approved</span>
+                          )}
+                          {item.status === "rejected" && (
+                            <span style={{ fontSize: 11, color: "#991b1b", fontWeight: 600 }}>✗ Rejected</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </PageCard>
+        )}
+      </OcrEditSplitLayout>
     </OwnerLayout>
   );
 }

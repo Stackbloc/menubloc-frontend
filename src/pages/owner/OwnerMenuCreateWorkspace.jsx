@@ -3,6 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import OwnerLayout, { OWNER_COLORS, PageCard, SectionTitle } from "./OwnerLayout.jsx";
 import { MenuEditor, StatusChip, inputStyle } from "./ownerMenuEditorComponents.jsx";
 import OwnerMenuRestaurantFinder, { saveRecentRestaurant } from "./OwnerMenuRestaurantFinder.jsx";
+import OcrEditSplitLayout from "./OcrEditSplitLayout.jsx";
 import {
   bulkReviewItems,
   createMenuConsoleMenu,
@@ -186,6 +187,7 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
 
   const [reviewItems, setReviewItems] = useState([]);
   const [reviewSessions, setReviewSessions] = useState([]);
+  const [sourcePages, setSourcePages] = useState([]);
   const [bulkActing, setBulkActing] = useState(false);
   const [actionMsg, setActionMsg] = useState("");
   const [publishing, setPublishing] = useState(false);
@@ -567,7 +569,8 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
   async function loadReviewItems() {
     if (!rid) return;
     const uploadsRes = await getOwnerMenuUploads({ restaurant_id: rid, limit: 20 });
-    const pending = (uploadsRes.uploads || []).filter((u) => (u.human_review_items || 0) > 0);
+    const uploads = uploadsRes.uploads || [];
+    const pending = uploads.filter((u) => (u.human_review_items || 0) > 0);
     const groups = await Promise.all(
       pending.map(async (u) => {
         try {
@@ -588,7 +591,7 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
           const detail = await getOwnerMenuUpload(u.id);
           return {
             id: u.id,
-            pages: detail.upload?.pages || [],
+            pages: detail.upload?.pages || detail.pages || [],
             human_review_items: u.human_review_items,
           };
         } catch {
@@ -598,6 +601,33 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
     );
     setReviewSessions(sessions);
     if (!pendingUploadId && pending[0]?.id) setPendingUploadId(pending[0].id);
+
+    // OCR companion rail: prefer pending upload pages, else most recent upload with pages
+    let pagesForRail = [];
+    const preferredId = pendingUploadId || pending[0]?.id;
+    const preferredSession = sessions.find((s) => s.id === preferredId);
+    if (preferredSession?.pages?.length) {
+      pagesForRail = preferredSession.pages;
+    } else {
+      for (const u of uploads.slice(0, 8)) {
+        const fromSession = sessions.find((s) => s.id === u.id);
+        if (fromSession?.pages?.length) {
+          pagesForRail = fromSession.pages;
+          break;
+        }
+        try {
+          const detail = await getOwnerMenuUpload(u.id);
+          const pages = detail.upload?.pages || detail.pages || [];
+          if (pages.length) {
+            pagesForRail = pages;
+            break;
+          }
+        } catch {
+          /* skip */
+        }
+      }
+    }
+    setSourcePages(pagesForRail);
   }
 
   async function runBulkReview(action) {
@@ -1001,34 +1031,36 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
 
       {restaurant && menuDetail && (
         <div ref={menuEditorRef}>
-        <PageCard style={{ padding: 20, marginBottom: 16 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap", marginBottom: 12 }}>
-            <div>
-              <SectionTitle
-                title="Edit dishes"
-                subtitle={`${menuDetail.item_count ?? 0} items in this menu — this is the main editor. Publish when ready.`}
-              />
-              <div style={{ display: "flex", gap: 10, alignItems: "center", marginTop: 6, flexWrap: "wrap" }}>
-                <StatusChip status={menuDetail.menu?.status} />
-                <a
-                  href={`/public/restaurants/${rid}/menu`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{ fontSize: 12, fontWeight: 700, color: OWNER_COLORS.accent, textDecoration: "none" }}
-                >
-                  View live menu ↗
-                </a>
+          <OcrEditSplitLayout pages={sourcePages} railTitle="Source menu">
+            <PageCard style={{ padding: 20, marginBottom: 16 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap", marginBottom: 12 }}>
+                <div>
+                  <SectionTitle
+                    title="Edit dishes"
+                    subtitle={`${menuDetail.item_count ?? 0} items in this menu — this is the main editor. Publish when ready.`}
+                  />
+                  <div style={{ display: "flex", gap: 10, alignItems: "center", marginTop: 6, flexWrap: "wrap" }}>
+                    <StatusChip status={menuDetail.menu?.status} />
+                    <a
+                      href={`/public/restaurants/${rid}/menu`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ fontSize: 12, fontWeight: 700, color: OWNER_COLORS.accent, textDecoration: "none" }}
+                    >
+                      View live menu ↗
+                    </a>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-          <MenuEditor
-            restaurantId={rid}
-            menuDetail={menuDetail}
-            onMenuUpdated={(updated) => setMenuDetail((prev) => (prev ? { ...prev, menu: { ...prev.menu, ...updated } } : prev))}
-            onMenuDeleted={handleMenuDeleted}
-            onReload={loadMenuState}
-          />
-        </PageCard>
+              <MenuEditor
+                restaurantId={rid}
+                menuDetail={menuDetail}
+                onMenuUpdated={(updated) => setMenuDetail((prev) => (prev ? { ...prev, menu: { ...prev.menu, ...updated } } : prev))}
+                onMenuDeleted={handleMenuDeleted}
+                onReload={loadMenuState}
+              />
+            </PageCard>
+          </OcrEditSplitLayout>
         </div>
       )}
 
@@ -1115,7 +1147,7 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
             {reviewItems.length} OCR item{reviewItems.length === 1 ? "" : "s"} still need review
           </div>
           <div style={{ fontSize: 13, color: OWNER_COLORS.ink, lineHeight: 1.5, marginBottom: 12 }}>
-            Edit those on the dedicated Review Queue (with source photos). This page stays focused on the live dish list above.
+            Use the Source menu panel beside Edit dishes, or open the Review Queue to approve/reject holds.
           </div>
           {actionMsg ? (
             <div style={{ marginBottom: 12, padding: "10px 12px", borderRadius: 9, background: "#fff", color: OWNER_COLORS.ink, fontSize: 13, fontWeight: 600 }}>
