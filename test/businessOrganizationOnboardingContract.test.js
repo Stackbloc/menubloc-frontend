@@ -145,6 +145,26 @@ test("App mounts organization onboarding route", () => {
   assert.match(app, /\/restaurant\/onboarding\/organization/);
 });
 
+test("organization page shows claimed-profile welcome before legal-entity form", () => {
+  const page = read("src/pages/RestaurantOnboardingOrganization.jsx");
+  assert.match(page, /You have claimed the profile for/);
+  assert.match(page, /Let&apos;s get your restaurant set up on Menuply/);
+  assert.match(page, /welcomeDismissed|setWelcomeDismissed/);
+  assert.match(page, /Linked listing/);
+  assert.match(page, /not<\/strong> the public restaurant brand name/);
+  assert.match(page, /State of formation \(optional\)/);
+  assert.match(page, /not the[\s\S]*restaurant/);
+});
+
+test("signup persists claim_source and address for organization welcome", () => {
+  const signup = read("src/pages/RestaurantSignup.jsx");
+  const stateLib = read("src/lib/restaurantOnboardingState.js");
+  assert.match(signup, /claim_source:/);
+  assert.match(signup, /address_line1:/);
+  assert.match(stateLib, /address_line1:/);
+  assert.match(stateLib, /claim_source:/);
+});
+
 test("organization page does not collect Stripe payout fields", () => {
   const page = read("src/pages/RestaurantOnboardingOrganization.jsx");
   assert.doesNotMatch(page, /tax_id|ssn|bank_account|routing_number|stripe/i);

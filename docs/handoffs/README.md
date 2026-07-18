@@ -1,5 +1,6 @@
 # Handoffs Index
 
+- `2026-07-18_claim-organization-welcome_handoff.md` — Claim welcome on business organization onboarding.
 - `2026-07-18_claim-signup-identity-lock_handoff.md` — Claim signup locks name/city/state + binds `restaurant_id` (no CK overwrite).
 - `2026-07-17_my-account-hub-tabs_handoff.md` — My Account tabs: Profile / Menu / Settings / Password + Menu Worksheet edit path.
 - `2026-07-17_demo-presentation-framework_handoff.md` — Reusable `/demo` presentation engine + 26-slide Menuply deck; menu gallery moved to `/demo_menus`.

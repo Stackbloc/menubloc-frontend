@@ -444,6 +444,8 @@ export default function RestaurantSignup() {
         owner_token,
         city: form.city.trim(),
         state: form.state.trim().toUpperCase(),
+        address_line1: String(location.state?.address_line1 || "").trim(),
+        claim_source: String(location.state?.claim_source || "").trim(),
         phone: form.phone.trim(),
         ingestion_method: "later",
         selected_plan: selectedPlan,

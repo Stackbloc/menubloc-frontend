@@ -24,6 +24,8 @@ export function normalizeRestaurantOnboardingState(raw) {
     owner_token: normalizeString(raw.owner_token),
     city: normalizeString(raw.city),
     state: normalizeString(raw.state).toUpperCase(),
+    address_line1: normalizeString(raw.address_line1 || raw.address),
+    claim_source: normalizeString(raw.claim_source),
     phone: normalizeString(raw.phone),
     ingestion_method: normalizeString(raw.ingestion_method),
     menu_choice: normalizeString(raw.menu_choice),

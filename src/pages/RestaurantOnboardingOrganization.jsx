@@ -126,6 +126,41 @@ const styles = {
     color: "#6b7280",
     margin: "-8px 0 14px",
   },
+  welcomeCard: {
+    background: "#F0FDF4",
+    border: "1.5px solid #86EFAC",
+    borderRadius: 12,
+    padding: "22px 22px 20px",
+    marginBottom: 8,
+  },
+  welcomeTitle: {
+    fontSize: "clamp(26px, 5.5vw, 32px)",
+    fontWeight: 700,
+    lineHeight: 1.3,
+    letterSpacing: "-0.3px",
+    color: "#0B0F0C",
+    margin: "0 0 12px",
+  },
+  welcomeBody: {
+    fontSize: 17,
+    color: "#374151",
+    lineHeight: 1.65,
+    margin: "0 0 20px",
+  },
+  claimedName: {
+    fontWeight: 700,
+    color: "#0B0F0C",
+  },
+  linkedBanner: {
+    background: "#F0FDF4",
+    border: "1px solid #BBF7D0",
+    borderRadius: 10,
+    padding: "12px 14px",
+    marginBottom: 20,
+    fontSize: 14,
+    lineHeight: 1.55,
+    color: "#166534",
+  },
   err: {
     marginBottom: 14,
     padding: 12,
@@ -200,9 +235,36 @@ export default function RestaurantOnboardingOrganization() {
     [location.state, location.search]
   );
   const restaurantId = onboarding?.restaurant_id || restaurants?.[0]?.id || null;
-  const restaurantDisplayName =
-    onboarding?.restaurant_name || restaurants?.[0]?.restaurant_name || "";
+  const linkedRestaurant = useMemo(() => {
+    if (!restaurants?.length) return null;
+    if (restaurantId) {
+      return restaurants.find((r) => Number(r.id) === Number(restaurantId)) || null;
+    }
+    return restaurants[0] || null;
+  }, [restaurants, restaurantId]);
 
+  const restaurantDisplayName =
+    onboarding?.restaurant_name ||
+    linkedRestaurant?.restaurant_name ||
+    linkedRestaurant?.name ||
+    "";
+  const restaurantCity = onboarding?.city || linkedRestaurant?.city || "";
+  const restaurantState = onboarding?.state || linkedRestaurant?.state || "";
+  const restaurantAddress =
+    onboarding?.address_line1 ||
+    linkedRestaurant?.address_line1 ||
+    linkedRestaurant?.address ||
+    "";
+  const restaurantLocationLabel = [
+    restaurantAddress,
+    [restaurantCity, restaurantState].filter(Boolean).join(", "),
+  ]
+    .filter(Boolean)
+    .join(", ");
+  const isClaimedProfile = Boolean(restaurantDisplayName);
+
+  const [welcomeDismissed, setWelcomeDismissed] = useState(false);
+  const showWelcome = Boolean(restaurantDisplayName) && !welcomeDismissed;
   const [form, setForm] = useState(() => emptyBusinessOrganizationForm());
   const [fieldErrors, setFieldErrors] = useState({});
   const [error, setError] = useState("");
@@ -365,18 +427,73 @@ export default function RestaurantOnboardingOrganization() {
           <BrandLogo height={48} radius={14} matchPageBackground={false} />
         </div>
         <div style={styles.sectionLabel}>Onboarding · Business organization</div>
-        <h1 style={styles.pageTitle}>Who operates this restaurant?</h1>
-        <p style={styles.pageSubtitle}>
-          Enter the legal or operating entity that owns or operates the restaurant.
-          This is separate from your login account and from each location address.
-          We do not collect bank or tax ID details here.
-        </p>
 
-        {error ? <div style={styles.err}>{error}</div> : null}
-
-        {loading ? (
-          <p style={styles.pageSubtitle}>Loading…</p>
+        {showWelcome ? (
+          <div style={styles.welcomeCard}>
+            <h1 style={styles.welcomeTitle}>
+              {isClaimedProfile ? "Profile claimed" : "Restaurant linked"}
+            </h1>
+            <p style={styles.welcomeBody}>
+              {isClaimedProfile ? (
+                <>
+                  You have claimed the profile for{" "}
+                  <span style={styles.claimedName}>{restaurantDisplayName}</span>
+                  {restaurantLocationLabel ? (
+                    <>
+                      {" "}
+                      located at{" "}
+                      <span style={styles.claimedName}>{restaurantLocationLabel}</span>
+                    </>
+                  ) : null}
+                  . Let&apos;s get your restaurant set up on Menuply.
+                </>
+              ) : (
+                <>
+                  You&apos;re setting up{" "}
+                  <span style={styles.claimedName}>{restaurantDisplayName}</span>
+                  {restaurantLocationLabel ? (
+                    <>
+                      {" "}
+                      located at{" "}
+                      <span style={styles.claimedName}>{restaurantLocationLabel}</span>
+                    </>
+                  ) : null}
+                  . Let&apos;s get your restaurant set up on Menuply.
+                </>
+              )}
+            </p>
+            <button
+              type="button"
+              style={styles.primary}
+              onClick={() => setWelcomeDismissed(true)}
+            >
+              Continue
+            </button>
+          </div>
         ) : (
+          <>
+            <h1 style={styles.pageTitle}>Who operates this restaurant?</h1>
+            <p style={styles.pageSubtitle}>
+              Enter the <strong>legal or operating entity</strong> that owns or operates
+              this restaurant — for example a sole proprietor name or LLC. This is{" "}
+              <strong>not</strong> the public restaurant brand name, city, or state
+              (those are already linked). We do not collect bank or tax ID details here.
+            </p>
+
+            {restaurantDisplayName ? (
+              <div style={styles.linkedBanner}>
+                Linked listing: <strong>{restaurantDisplayName}</strong>
+                {restaurantLocationLabel ? ` · ${restaurantLocationLabel}` : ""}. Restaurant
+                display name stays on the next steps — do not re-enter it as the legal entity
+                name.
+              </div>
+            ) : null}
+
+            {error ? <div style={styles.err}>{error}</div> : null}
+
+            {loading ? (
+              <p style={styles.pageSubtitle}>Loading…</p>
+            ) : (
           <form style={styles.card} onSubmit={handleContinue}>
             <label style={styles.label} htmlFor="legal_name">
               Legal entity name
@@ -431,7 +548,8 @@ export default function RestaurantOnboardingOrganization() {
               placeholder="If different from legal name"
             />
             <p style={styles.hint}>
-              Restaurant display name is collected on the next step — do not treat them as the same.
+              Optional assumed business name for this legal entity — not the Menuply restaurant
+              listing name ({restaurantDisplayName || "already linked"}).
             </p>
 
             <label style={styles.label} htmlFor="country_code">
@@ -447,15 +565,19 @@ export default function RestaurantOnboardingOrganization() {
             />
 
             <label style={styles.label} htmlFor="jurisdiction">
-              Jurisdiction (optional)
+              State of formation (optional)
             </label>
             <input
               id="jurisdiction"
               style={styles.input}
               value={form.jurisdiction || ""}
               onChange={(e) => setField("jurisdiction", e.target.value)}
-              placeholder="State / province"
+              placeholder="e.g. CA, DE"
             />
+            <p style={styles.hint}>
+              The state or province where this legal entity was formed or registered — not the
+              restaurant&apos;s city.
+            </p>
 
             <label style={styles.label} htmlFor="primary_contact_name">
               Primary business contact
@@ -513,6 +635,8 @@ export default function RestaurantOnboardingOrganization() {
               </button>
             </div>
           </form>
+            )}
+          </>
         )}
       </main>
     </div>
