@@ -448,32 +448,38 @@ export default function OperatorDeliveryPortalPanel({ embedded = false }) {
                 Enable delivery checkout for this restaurant
               </label>
 
-              <label className="operator-responsive-field" style={{ display: "grid", gap: 6, maxWidth: 320 }}>
-                <span style={labelStyle}>Default delivery provider</span>
-                <select
-                  value={state.settings?.default_delivery_provider || ""}
-                  onChange={(event) =>
-                    setState((prev) => ({
-                      ...prev,
-                      settings: {
-                        ...(prev.settings || {}),
-                        default_delivery_provider: event.target.value || null,
-                      },
-                    }))
-                  }
-                  style={inputStyle}
-                >
-                  <option value="">Select default provider</option>
-                  {activeProviders.map((provider) => (
-                    <option key={provider} value={provider}>
-                      {PROVIDERS.find((entry) => entry.key === provider)?.label || provider}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              {activeProviders.length > 0 ? (
+                <label className="operator-responsive-field" style={{ display: "grid", gap: 6, maxWidth: 320 }}>
+                  <span style={labelStyle}>Default delivery provider</span>
+                  <select
+                    value={state.settings?.default_delivery_provider || ""}
+                    onChange={(event) =>
+                      setState((prev) => ({
+                        ...prev,
+                        settings: {
+                          ...(prev.settings || {}),
+                          default_delivery_provider: event.target.value || null,
+                        },
+                      }))
+                    }
+                    style={inputStyle}
+                  >
+                    <option value="">Select default provider</option>
+                    {activeProviders.map((provider) => (
+                      <option key={provider} value={provider}>
+                        {PROVIDERS.find((entry) => entry.key === provider)?.label || provider}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : (
+                <p style={{ margin: 0, fontSize: 13, color: "#667085", lineHeight: 1.5, maxWidth: 520 }}>
+                  Connect Uber Direct or DoorDash Drive below, then you can choose a default delivery provider here.
+                </p>
+              )}
 
               <div style={{ fontSize: 13, color: "#667085" }}>
-                Active providers: {activeProviders.length ? activeProviders.join(", ") : "none"}
+                Active providers: {activeProviders.length ? activeProviders.map((provider) => PROVIDERS.find((entry) => entry.key === provider)?.label || provider).join(", ") : "none yet"}
               </div>
 
               <div style={{ marginTop: 8, borderTop: "1px solid #e4e9f0", paddingTop: 16, display: "grid", gap: 14 }}>
