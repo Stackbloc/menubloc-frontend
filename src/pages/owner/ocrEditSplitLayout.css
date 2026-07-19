@@ -87,24 +87,46 @@
 }
 
 /* Side-by-side only when there is room for sidebar (~232) + editor + OCR rail.
-   Below this, OCR is a fixed drawer so the page never grows past the viewport.
-   Rail must be viewport-tall + align-self:start so sticky keeps content visible
-   while the center column scrolls (a content-height sticky box scrolls away). */
+   Desktop uses a FIXED rail (see .ocr-edit-split__rail--fixed) because
+   admin-console overflow-x:clip breaks position:sticky. A full-height spacer
+   (.ocr-edit-split__rail-slot) reserves the column; JS pins the panel. */
 @media (min-width: 1480px) {
   .ocr-edit-split--rail-open .ocr-edit-split__body {
     grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
     align-items: start;
   }
 
-  .ocr-edit-split__rail {
-    display: none;
-    position: sticky;
-    top: 68px; /* below admin console sticky header */
+  .ocr-edit-split__rail-slot {
+    align-self: stretch;
+    width: 100%;
+    /* Fill the grid row (as tall as the editor) so fixed tracking lasts while scrolling */
+    min-height: calc(100dvh - 80px);
+    pointer-events: none;
+    visibility: hidden;
+  }
+
+  /* Force the spacer to match the center column height via grid stretch */
+  .ocr-edit-split--fixed-rail .ocr-edit-split__body {
+    align-items: stretch;
+  }
+
+  .ocr-edit-split--fixed-rail .ocr-edit-split__center {
     align-self: start;
     width: 100%;
-    height: calc(100vh - 80px);
+  }
+
+  .ocr-edit-split__rail {
+    display: none;
+  }
+
+  .ocr-edit-split--rail-open .ocr-edit-split__rail:not(.ocr-edit-split__rail--fixed) {
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 68px;
+    align-self: start;
+    width: 100%;
     height: calc(100dvh - 80px);
-    max-height: calc(100vh - 80px);
     max-height: calc(100dvh - 80px);
     min-width: 0;
     min-height: 0;
@@ -112,9 +134,15 @@
     z-index: 2;
   }
 
-  .ocr-edit-split--rail-open .ocr-edit-split__rail {
-    display: flex;
+  .ocr-edit-split__rail--fixed {
+    display: flex !important;
     flex-direction: column;
+    position: fixed;
+    z-index: 35;
+    margin: 0;
+    min-width: 0;
+    overflow: hidden;
+    box-sizing: border-box;
   }
 
   .ocr-edit-split__rail .ocr-source-evidence,
