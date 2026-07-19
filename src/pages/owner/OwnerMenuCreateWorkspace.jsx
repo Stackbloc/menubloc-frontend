@@ -1031,7 +1031,18 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
 
       {restaurant && menuDetail && (
         <div ref={menuEditorRef}>
-          <OcrEditSplitLayout pages={sourcePages} railTitle="Source menu">
+          <OcrEditSplitLayout
+            pages={sourcePages}
+            liveItems={menuDetail.sections || []}
+            liveMenuHref={`/public/restaurants/${rid}/menu`}
+            railTitle="Source menu"
+            defaultRailMode={
+              String(menuDetail.menu?.status || "").toLowerCase() === "published" ||
+              Number(menuDetail.item_count || 0) > 0
+                ? "live"
+                : "ocr"
+            }
+          >
             <PageCard style={{ padding: 20, marginBottom: 16 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap", marginBottom: 12 }}>
                 <div>

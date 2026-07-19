@@ -8,13 +8,13 @@ export function buildOcrImageUrl(relativePath) {
 }
 
 const MAGNIFIER_ZOOM = 2.75;
-const MAGNIFIER_LENS_PX = 148;
+const MAGNIFIER_LENS_PX = 160;
 
-/** Toggleable hover lens so operators can read small menu print on source photos. */
+/** Hover lens on source photos — on by default so the control is obvious. */
 function OcrPhotoMagnifier({ src, alt }) {
   const wrapRef = useRef(null);
   const imgRef = useRef(null);
-  const [enabled, setEnabled] = useState(false);
+  const [enabled, setEnabled] = useState(true);
   const [lens, setLens] = useState(null);
 
   useEffect(() => {
@@ -27,19 +27,24 @@ function OcrPhotoMagnifier({ src, alt }) {
 
   function updateLens(clientX, clientY) {
     const img = imgRef.current;
-    if (!img || !enabled) return;
-    const rect = img.getBoundingClientRect();
-    const x = clientX - rect.left;
-    const y = clientY - rect.top;
-    if (x < 0 || y < 0 || x > rect.width || y > rect.height) {
+    const wrap = wrapRef.current;
+    if (!img || !wrap || !enabled) return;
+    const imgRect = img.getBoundingClientRect();
+    const wrapRect = wrap.getBoundingClientRect();
+    const x = clientX - imgRect.left;
+    const y = clientY - imgRect.top;
+    if (x < 0 || y < 0 || x > imgRect.width || y > imgRect.height) {
       setLens(null);
       return;
     }
     const half = MAGNIFIER_LENS_PX / 2;
+    // Position relative to the wrap (image may be letterboxed inside it)
+    const offsetX = imgRect.left - wrapRect.left;
+    const offsetY = imgRect.top - wrapRect.top;
     setLens({
-      left: x - half,
-      top: y - half,
-      backgroundSize: `${rect.width * MAGNIFIER_ZOOM}px ${rect.height * MAGNIFIER_ZOOM}px`,
+      left: offsetX + x - half,
+      top: offsetY + y - half,
+      backgroundSize: `${imgRect.width * MAGNIFIER_ZOOM}px ${imgRect.height * MAGNIFIER_ZOOM}px`,
       backgroundPosition: `-${x * MAGNIFIER_ZOOM - half}px -${y * MAGNIFIER_ZOOM - half}px`,
     });
   }
@@ -53,7 +58,7 @@ function OcrPhotoMagnifier({ src, alt }) {
   }
 
   function handleImageError(e) {
-    const parent = e.target.closest(".ocr-source-evidence__image-wrap");
+    const parent = e.target.closest(".ocr-source-evidence__photo");
     if (!parent) return;
     parent.innerHTML =
       '<div class="ocr-source-evidence__image-missing">' +
@@ -70,19 +75,29 @@ function OcrPhotoMagnifier({ src, alt }) {
           className={`ocr-source-evidence__magnify-btn${enabled ? " ocr-source-evidence__magnify-btn--active" : ""}`}
           onClick={() => setEnabled((v) => !v)}
           aria-pressed={enabled}
-          title={enabled ? "Turn off magnifier" : "Turn on magnifier — hover the photo to zoom"}
+          title={enabled ? "Turn off magnifier" : "Turn on magnifier — move pointer over the photo to zoom"}
         >
-          {enabled ? "Magnifier on" : "Magnifier"}
+          🔍 {enabled ? "Magnifier on" : "Magnifier off"}
         </button>
-        {enabled ? (
-          <span className="ocr-source-evidence__magnify-hint">Hover photo to zoom · {MAGNIFIER_ZOOM}×</span>
-        ) : null}
+        <span className="ocr-source-evidence__magnify-hint">
+          {enabled ? `Move over the photo to zoom · ${MAGNIFIER_ZOOM}×` : "Turn on to inspect fine print"}
+        </span>
       </div>
       <div
         ref={wrapRef}
         className={`ocr-source-evidence__image-wrap${enabled ? " ocr-source-evidence__image-wrap--magnify" : ""}`}
         onPointerMove={handlePointerMove}
+        onPointerEnter={handlePointerMove}
         onPointerLeave={handlePointerLeave}
+        onPointerDown={(e) => {
+          if (!enabled) return;
+          try {
+            e.currentTarget.setPointerCapture(e.pointerId);
+          } catch {
+            /* ignore */
+          }
+          updateLens(e.clientX, e.clientY);
+        }}
       >
         <img
           ref={imgRef}
@@ -100,13 +115,18 @@ function OcrPhotoMagnifier({ src, alt }) {
               height: MAGNIFIER_LENS_PX,
               left: lens.left,
               top: lens.top,
-              backgroundImage: `url(${src})`,
+              backgroundImage: `url("${src}")`,
               backgroundRepeat: "no-repeat",
               backgroundSize: lens.backgroundSize,
               backgroundPosition: lens.backgroundPosition,
             }}
             aria-hidden="true"
           />
+        ) : null}
+        {enabled && !lens ? (
+          <div className="ocr-source-evidence__magnify-cue" aria-hidden="true">
+            Move pointer to magnify
+          </div>
         ) : null}
       </div>
     </div>

@@ -12,6 +12,37 @@
   display: flex;
   justify-content: flex-end;
   align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.ocr-edit-split__mode-toggle {
+  display: inline-flex;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.ocr-edit-split__mode-btn {
+  padding: 8px 12px;
+  border: none;
+  border-right: 1px solid #e5e7eb;
+  background: #fff;
+  color: #64748b;
+  font-weight: 700;
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.ocr-edit-split__mode-btn:last-child {
+  border-right: none;
+}
+
+.ocr-edit-split__mode-btn--active {
+  background: #f0fdf4;
+  color: #15803d;
 }
 
 .ocr-edit-split__toggle {
@@ -99,7 +130,8 @@
     transform: translateX(0);
   }
 
-  .ocr-edit-split__rail .ocr-source-evidence {
+  .ocr-edit-split__rail .ocr-source-evidence,
+  .ocr-edit-split__rail .live-menu-reference {
     height: 100%;
     max-height: none;
     border-radius: 0;
@@ -264,21 +296,21 @@
 }
 
 .ocr-source-evidence__magnify-btn {
-  padding: 6px 10px;
-  border-radius: 7px;
-  border: 1px solid #e5e7eb;
-  background: #fff;
-  color: #0b0f0c;
-  font-weight: 700;
-  font-size: 11px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #16a34a;
+  background: #f0fdf4;
+  color: #15803d;
+  font-weight: 800;
+  font-size: 12px;
   font-family: inherit;
   cursor: pointer;
 }
 
 .ocr-source-evidence__magnify-btn--active {
-  border-color: #16a34a;
-  background: #f0fdf4;
-  color: #15803d;
+  border-color: #15803d;
+  background: #16a34a;
+  color: #fff;
 }
 
 .ocr-source-evidence__magnify-hint {
@@ -294,7 +326,7 @@
   max-width: 100%;
   background: #111;
   border-radius: 10px;
-  overflow: hidden;
+  overflow: visible;
   text-align: center;
   line-height: 0;
 }
@@ -312,15 +344,34 @@
   margin: 0 auto;
   user-select: none;
   -webkit-user-drag: none;
+  border-radius: 10px;
 }
 
 .ocr-source-evidence__lens {
   position: absolute;
   border-radius: 50%;
-  border: 2px solid #fff;
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35), 0 8px 24px rgba(0, 0, 0, 0.35);
+  border: 3px solid #fff;
+  box-shadow: 0 0 0 2px #16a34a, 0 10px 28px rgba(0, 0, 0, 0.45);
   pointer-events: none;
-  z-index: 3;
+  z-index: 5;
+  background-color: #111;
+}
+
+.ocr-source-evidence__magnify-cue {
+  position: absolute;
+  left: 50%;
+  bottom: 10px;
+  transform: translateX(-50%);
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.72);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.2;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 2;
 }
 
 .ocr-source-evidence__image-missing {
@@ -355,4 +406,98 @@
   line-height: 1.5;
   max-width: 100%;
   box-sizing: border-box;
+}
+
+/* ---- Live menu reference panel (Mode 2) ---- */
+
+.live-menu-reference__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.live-menu-reference__open-link {
+  font-size: 11px;
+  font-weight: 700;
+  color: #15803d;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.live-menu-reference__body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.live-menu-reference__empty {
+  padding: 16px;
+  border-radius: 10px;
+  background: #f8f7f4;
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.live-menu-reference__empty--error {
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.live-menu-reference__section-title {
+  margin: 0 0 8px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #173f35;
+}
+
+.live-menu-reference__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.live-menu-reference__item {
+  padding-bottom: 10px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.live-menu-reference__item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.live-menu-reference__item-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: baseline;
+}
+
+.live-menu-reference__name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0b0f0c;
+  line-height: 1.35;
+}
+
+.live-menu-reference__price {
+  font-size: 13px;
+  font-weight: 700;
+  color: #173f35;
+  white-space: nowrap;
+}
+
+.live-menu-reference__desc {
+  margin: 4px 0 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #64748b;
 }

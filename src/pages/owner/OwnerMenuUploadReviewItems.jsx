@@ -495,6 +495,14 @@ export default function OwnerMenuUploadReviewItems() {
   const allDone = !loading && needsReview === 0 && items.length > 0;
   const menuHref = liveMenuHref(publicRestaurantId);
   const showLiveMenu = Boolean(menuHref) && counts.approved > 0;
+  const liveItems = items
+    .filter((it) => it.status === "approved")
+    .map((it) => ({
+      name: it.parsed_name || it.proposed_item_name || it.name || "",
+      section: it.section_name || it.section || "Menu",
+      price: it.proposed_price ?? it.price ?? null,
+      description: it.parsed_description || it.description || "",
+    }));
 
   if (loading) {
     return (
@@ -611,7 +619,13 @@ export default function OwnerMenuUploadReviewItems() {
         </div>
       )}
 
-      <OcrEditSplitLayout pages={pages} railTitle="Source menu">
+      <OcrEditSplitLayout
+        pages={pages}
+        liveItems={liveItems}
+        liveMenuHref={menuHref}
+        railTitle="Source menu"
+        defaultRailMode="ocr"
+      >
         {/* Live counts */}
         <PageCard style={{ padding: 18, marginBottom: 18 }}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>

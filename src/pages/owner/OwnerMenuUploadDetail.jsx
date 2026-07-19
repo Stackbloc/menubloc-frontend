@@ -13,6 +13,7 @@ import {
   publishUpload,
 } from "../../lib/ownerApi.js";
 import { buildOwnerUploadImageUrl } from "../../lib/ownerMenuUploadMedia.js";
+import OcrEditSplitLayout from "./OcrEditSplitLayout.jsx";
 
 // ─── Retry / Recovery Panel ───────────────────────────────────────────────────
 function RetryPanel({ upload, uploadId, onComplete }) {
@@ -228,7 +229,7 @@ const inputS = {
   boxSizing: "border-box",
 };
 
-function ParsedItemsSection({ uploadId, upload }) {
+function ParsedItemsSection({ uploadId, upload, pages = [] }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [meta, setMeta] = useState({});
@@ -316,6 +317,15 @@ function ParsedItemsSection({ uploadId, upload }) {
   const canPreviewLiveMenu = Boolean(publicRestaurantId) && (promotedItems.length > 0 || isPublished);
 
   return (
+    <OcrEditSplitLayout
+      pages={pages}
+      liveItems={promotedItems}
+      liveMenuHref={
+        canPreviewLiveMenu ? `/restaurants/${publicRestaurantId}/menu` : null
+      }
+      railTitle="Source menu"
+      defaultRailMode={promotedItems.length > 0 ? "live" : "ocr"}
+    >
     <PageCard style={{ padding: 22, marginBottom: 18 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
         <SectionTitle
@@ -549,6 +559,7 @@ function ParsedItemsSection({ uploadId, upload }) {
         </div>
       )}
     </PageCard>
+    </OcrEditSplitLayout>
   );
 }
 
@@ -799,34 +810,17 @@ export default function OwnerMenuUploadDetail() {
         )}
       </PageCard>
 
-      {/* Parsed Items — edit + publish */}
-      <ParsedItemsSection uploadId={uploadId} upload={upload} />
+      {/* Parsed Items — edit + companion rail (OCR / live menu) */}
+      <ParsedItemsSection uploadId={uploadId} upload={upload} pages={pages} />
 
-      {/* Source Photos */}
-      {hasPhotos && (
+      {/* Source Photos — only when no companion rail (no pages for rail) */}
+      {!pages.length && hasPhotos && (
         <PageCard style={{ padding: 22, marginBottom: 18 }}>
           <SectionTitle
             title="Source Photos"
             subtitle={`${pages.filter((p) => p.image_url).length} page(s) uploaded`}
           />
           <SourcePhotoViewer pages={pages} photoPage={photoPage} setPhotoPage={setPhotoPage} />
-        </PageCard>
-      )}
-
-      {/* OCR Output */}
-      {pages.length > 0 && pages.some((p) => p.ocr_text || p.ocr_text_preview) && (
-        <PageCard style={{ padding: 22, marginBottom: 18 }}>
-          <SectionTitle title="OCR Output" subtitle="Raw text extracted from each page." />
-          <div style={{ display: "grid", gap: 14 }}>
-            {pages.map((p) => (
-              <OcrPageBlock
-                key={p.page_number}
-                page={p}
-                expanded={!!expandedOcr[p.page_number]}
-                onToggle={() => setExpandedOcr((prev) => ({ ...prev, [p.page_number]: !prev[p.page_number] }))}
-              />
-            ))}
-          </div>
         </PageCard>
       )}
 
