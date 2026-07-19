@@ -37,39 +37,175 @@ export const CHECKOUT_PRICE_LABELS = Object.freeze({
   [FOOD_TRUCK_ANNUAL_PLAN_CODE]: "$89/year",
 });
 
-/** Fallback catalog used when /plans is unavailable (amounts for display only). */
+/**
+ * Fallback commission (basis points) aligned with backend menuplyPlanCatalog.
+ * Display only — never send these fields in checkout request bodies.
+ */
+export const FALLBACK_COMMISSION_RATE_BPS = Object.freeze({
+  [FREE_PLAN_CODE]: null,
+  [LEGACY_FREE_PLAN_CODE]: null,
+  starter_monthly: 1100,
+  starter_annual: 1100,
+  founders_monthly: 800,
+  founders_annual: 800,
+  [FOOD_TRUCK_ANNUAL_PLAN_CODE]: 800,
+});
+
+export const FALLBACK_COMMISSION_LOCK_MONTHS = Object.freeze({
+  founders_annual: 24,
+});
+
+/** Fallback catalog used when /plans is unavailable (amounts + commission for display only). */
 export const FALLBACK_CHECKOUT_PLANS = Object.freeze([
+  {
+    code: FREE_PLAN_CODE,
+    checkout_label: "Starter",
+    amount_cents: 0,
+    billing_interval: null,
+    commission_rate_bps: FALLBACK_COMMISSION_RATE_BPS[FREE_PLAN_CODE],
+    commission_lock_months: null,
+  },
   {
     code: "starter_monthly",
     checkout_label: "Pro Monthly",
     amount_cents: 2000,
     billing_interval: "month",
+    commission_rate_bps: FALLBACK_COMMISSION_RATE_BPS.starter_monthly,
+    commission_lock_months: null,
   },
   {
     code: "starter_annual",
     checkout_label: "Pro Annual",
     amount_cents: 19900,
     billing_interval: "year",
+    commission_rate_bps: FALLBACK_COMMISSION_RATE_BPS.starter_annual,
+    commission_lock_months: null,
   },
   {
     code: "founders_monthly",
     checkout_label: "Founder's Monthly",
     amount_cents: 3900,
     billing_interval: "month",
+    commission_rate_bps: FALLBACK_COMMISSION_RATE_BPS.founders_monthly,
+    commission_lock_months: null,
   },
   {
     code: "founders_annual",
     checkout_label: "Founder's Annual",
     amount_cents: 31900,
     billing_interval: "year",
+    commission_rate_bps: FALLBACK_COMMISSION_RATE_BPS.founders_annual,
+    commission_lock_months: FALLBACK_COMMISSION_LOCK_MONTHS.founders_annual,
   },
   {
     code: FOOD_TRUCK_ANNUAL_PLAN_CODE,
     checkout_label: "Food Truck Annual",
     amount_cents: 8900,
     billing_interval: "year",
+    commission_rate_bps: FALLBACK_COMMISSION_RATE_BPS[FOOD_TRUCK_ANNUAL_PLAN_CODE],
+    commission_lock_months: null,
   },
 ]);
+
+/** @param {unknown} bps */
+export function formatCommissionPercentFromBps(bps) {
+  if (bps == null || bps === "") return null;
+  const n = Number(bps);
+  if (!Number.isFinite(n)) return null;
+  const pct = n / 100;
+  return Number.isInteger(pct) ? `${pct}%` : `${parseFloat(pct.toFixed(2))}%`;
+}
+
+/**
+ * Marketplace commission disclosure label shown before subscription fee amounts.
+ * @param {{ commission_rate_bps?: unknown, commission_lock_months?: unknown, code?: string } | string | null} planOrCode
+ * @param {{ plansByCode?: Record<string, object> }} [opts]
+ */
+export function getMarketplaceCommissionDisclosure(planOrCode, opts = {}) {
+  let plan = null;
+  if (planOrCode && typeof planOrCode === "object") {
+    plan = planOrCode;
+  } else {
+    const code = String(planOrCode || "").trim().toLowerCase();
+    plan =
+      opts.plansByCode?.[code] ||
+      FALLBACK_CHECKOUT_PLANS.find((p) => p.code === code) ||
+      (code
+        ? {
+            code,
+            commission_rate_bps: FALLBACK_COMMISSION_RATE_BPS[code] ?? null,
+            commission_lock_months: FALLBACK_COMMISSION_LOCK_MONTHS[code] ?? null,
+          }
+        : null);
+  }
+
+  const pct = formatCommissionPercentFromBps(plan?.commission_rate_bps);
+  if (!pct) {
+    return "No Menuply marketplace commission (online ordering not included)";
+  }
+
+  const lockMonths = Number(plan?.commission_lock_months);
+  if (Number.isFinite(lockMonths) && lockMonths > 0) {
+    const years = lockMonths / 12;
+    const yearsLabel = Number.isInteger(years) ? `${years}-year` : `${parseFloat(years.toFixed(1))}-year`;
+    return `${pct} marketplace commission · ${yearsLabel} rate lock`;
+  }
+  return `${pct} marketplace commission`;
+}
+
+/**
+ * Fetch display-safe plan options (includes commission_rate_bps from catalog).
+ * Falls back to FALLBACK_CHECKOUT_PLANS when the API is unavailable.
+ */
+export async function fetchCheckoutPlanOptionsForDisplay() {
+  const DEFAULT_PROD_API_BASE = "https://menubloc-backend-production.up.railway.app";
+  const API = (
+    import.meta.env.VITE_API_BASE_URL ||
+    (import.meta.env.DEV ? "http://localhost:3001" : DEFAULT_PROD_API_BASE)
+  ).replace(/\/$/, "");
+
+  try {
+    const res = await fetch(`${API}/api/stripe/platform/plans`);
+    const json = await res.json().catch(() => null);
+    if (!res.ok || !json?.ok || !Array.isArray(json.plans)) {
+      return { ok: false, plans: [...FALLBACK_CHECKOUT_PLANS], source: "fallback" };
+    }
+    const byCode = Object.fromEntries(
+      FALLBACK_CHECKOUT_PLANS.map((p) => [p.code, { ...p }])
+    );
+    for (const plan of json.plans) {
+      const code = String(plan?.code || "").trim().toLowerCase();
+      if (!code) continue;
+      byCode[code] = {
+        ...(byCode[code] || {}),
+        ...plan,
+        code,
+        commission_rate_bps:
+          plan.commission_rate_bps != null
+            ? Number(plan.commission_rate_bps)
+            : byCode[code]?.commission_rate_bps ?? FALLBACK_COMMISSION_RATE_BPS[code] ?? null,
+        commission_lock_months:
+          plan.commission_lock_months != null
+            ? Number(plan.commission_lock_months)
+            : byCode[code]?.commission_lock_months ?? FALLBACK_COMMISSION_LOCK_MONTHS[code] ?? null,
+      };
+    }
+    if (!byCode[FREE_PLAN_CODE]) {
+      byCode[FREE_PLAN_CODE] = { ...FALLBACK_CHECKOUT_PLANS.find((p) => p.code === FREE_PLAN_CODE) };
+    }
+    return { ok: true, plans: Object.values(byCode), source: "api" };
+  } catch {
+    return { ok: false, plans: [...FALLBACK_CHECKOUT_PLANS], source: "fallback" };
+  }
+}
+
+export function indexPlansByCode(plans = []) {
+  return Object.fromEntries(
+    (plans || [])
+      .map((p) => [String(p?.code || "").trim().toLowerCase(), p])
+      .filter(([code]) => Boolean(code))
+  );
+}
 
 const PAID_ACTIVE_STATUSES = new Set(["active", "trialing"]);
 

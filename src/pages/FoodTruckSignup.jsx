@@ -15,7 +15,7 @@
  * ============================================================
  */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { BrandLogo } from "../components/BrandLogo.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
@@ -23,6 +23,9 @@ import { buildLegalConsentPayload } from "../lib/legalConsent.js";
 import {
   CHECKOUT_PRICE_LABELS,
   FOOD_TRUCK_ANNUAL_PLAN_CODE,
+  fetchCheckoutPlanOptionsForDisplay,
+  getMarketplaceCommissionDisclosure,
+  indexPlansByCode,
   rememberIntendedCheckoutPlanCode,
 } from "../lib/menuplyCheckoutPlans.js";
 
@@ -40,7 +43,6 @@ const PLAN_FEATURES = [
   "Customers can follow your Food Truck",
   "Create deals and promotions free of charge",
   "Online ordering",
-  "Lowest marketplace commission",
 ];
 
 const styles = {
@@ -129,6 +131,17 @@ const styles = {
     letterSpacing: "-0.04em",
     lineHeight: 0.95,
     marginBottom: 10,
+  },
+  commissionDisclosure: {
+    margin: "0 0 12px",
+    padding: "10px 12px",
+    borderRadius: 12,
+    background: "#eef6f1",
+    border: "1px solid #cfe0d8",
+    color: "#1F4E3D",
+    fontSize: 14,
+    fontWeight: 800,
+    lineHeight: 1.4,
   },
   planPrice: {
     fontSize: 28,
@@ -376,6 +389,18 @@ export default function FoodTruckSignup() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreements, setAgreements] = useState({ legalConsent: false });
+  const [plansByCode, setPlansByCode] = useState(() => indexPlansByCode());
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchCheckoutPlanOptionsForDisplay().then((result) => {
+      if (cancelled) return;
+      setPlansByCode(indexPlansByCode(result.plans));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   function handleChange(event) {
     const { name, value } = event.target;
@@ -497,9 +522,12 @@ export default function FoodTruckSignup() {
           <aside style={styles.pricingCard}>
             <div style={styles.planBadge}>Annual plan</div>
             <div style={styles.planName}>Food Truck</div>
+            <div style={styles.commissionDisclosure}>
+              {getMarketplaceCommissionDisclosure(FOOD_TRUCK_ANNUAL_PLAN_CODE, { plansByCode })}
+            </div>
             <div style={styles.planPrice}>{CHECKOUT_PRICE_LABELS[FOOD_TRUCK_ANNUAL_PLAN_CODE]}</div>
             <div style={styles.planDescription}>
-              Build a professional digital presence for your Food Truck — discovery, menus, social sharing, online ordering, and Menuply&apos;s lowest marketplace commission.
+              Build a professional digital presence for your Food Truck — discovery, menus, social sharing, and online ordering.
             </div>
             <ul style={styles.featureList}>
               {PLAN_FEATURES.map((feature) => (

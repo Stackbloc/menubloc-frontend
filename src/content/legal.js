@@ -1,7 +1,7 @@
-export const LEGAL_EFFECTIVE_DATE = "2026-07-07";
+export const LEGAL_EFFECTIVE_DATE = "2026-07-19";
 
 export const LEGAL_VERSIONS = {
-  consumerTerms: "terms_of_use_v2026_07_07",
+  consumerTerms: "terms_of_use_v2026_07_19_commission_before_sub",
   privacyPolicy: "privacy_policy_v2026_04_09",
   merchantTerms: "merchant_terms_v2026_05_31",
   subscriptionTerms: "subscription_terms_v2026_04_09",
@@ -9,27 +9,28 @@ export const LEGAL_VERSIONS = {
 };
 
 export const LEGAL_CONTACT = {
-  company: "Stackbloc Corporation",
+  company: "Stackbloc Corporation, a California corporation",
   email: "inquiries@menuply.com",
 };
 
 export const TERMS_DOCUMENT = {
   title: "Menuply Terms of Use",
   description:
-    'Public website, app, and consumer ordering terms for Menuply, operated by Stackbloc Corporation, doing business as Menuply ("Menuply").',
+    'Public website, app, and consumer ordering terms for Menuply, operated by Stackbloc Corporation, a California corporation, doing business as Menuply ("Menuply").',
   sections: [
     {
       heading: "Overview",
       paragraphs: [
-        'These Terms of Use govern your access to and use of the Menuply websites, mobile experiences, ordering tools, and related services operated by Stackbloc Corporation, doing business as Menuply ("Menuply").',
+        'These Terms of Use govern your access to and use of the Menuply websites, mobile experiences, ordering tools, and related services operated by Stackbloc Corporation, a California corporation, doing business as Menuply ("Menuply").',
         "By using Menuply, you agree to these Terms of Use. If you do not agree, do not use the platform.",
       ],
     },
     {
       heading: "Operator and platform role",
       paragraphs: [
-        "Menuply is a technology platform operated by Stackbloc Corporation. Menuply helps consumers discover restaurants, browse menus, place digital orders, and complete related payment flows.",
+        "Menuply is a technology platform operated by Stackbloc Corporation, a California corporation. Menuply helps consumers discover restaurants, browse menus, place digital orders, and complete related payment flows.",
         "Menuply is not the food preparer, not the seller of the restaurant's food and beverages, and not the delivery provider unless Menuply expressly states otherwise in a separate written agreement.",
+        "Menuply may organize, classify, enhance, summarize, estimate, or otherwise process restaurant, menu, and related information using proprietary technologies and automated systems.",
       ],
     },
     {
@@ -47,13 +48,20 @@ export const TERMS_DOCUMENT = {
       ],
     },
     {
+      heading: "Franchise Locations",
+      paragraphs: [
+        "Locations that share the same brand name may differ with respect to ownership, menus, pricing, promotions, participation on Menuply, and availability. Users should not assume that one location represents all locations of the same brand.",
+      ],
+    },
+    {
       heading: "Restaurant Information and Verification Status",
       paragraphs: [
         "Menuply collects, organizes, and displays restaurant information from a variety of sources, including restaurants, restaurant owners, publicly available information, user submissions, menu documents, and automated data processing systems. While Menuply works to maintain accurate and current information, we cannot guarantee that all information displayed is complete, current, or error-free.",
+        "Information displayed by Menuply may differ from information supplied directly by a restaurant, and may reflect updates, automated processing, or other lawful information sources.",
         "Information displayed on Menuply—including, but not limited to, menu items, descriptions, prices, hours of operation, promotions, availability, restaurant amenities, photographs, dietary information, and other restaurant-related content—may change without notice and may differ by restaurant location or region.",
         "Menu prices displayed on Menuply may not reflect regional pricing differences, temporary promotions, franchise pricing, local market conditions, or recent restaurant updates. Users should verify prices, availability, and other important information directly with the restaurant before placing an order or making purchasing decisions.",
         "Restaurants displayed on Menuply may be identified using the following verification status indicators. Each indicator includes a color and an accessible text label:",
-        "Verification status indicates the level of restaurant participation on the Menuply platform. Verification does not constitute a guarantee that all information is complete, current, or accurate at all times.",
+        "Verification status indicates the level of restaurant participation on the Menuply platform. Verification does not constitute a guarantee that all information is complete, current, or accurate at all times. Verification does not constitute endorsement, inspection, certification, or a guarantee of restaurant quality, food safety, or legal compliance.",
         "If you believe restaurant information is inaccurate, you should notify Menuply through the available reporting tools or contact the restaurant directly. Menuply may review reported inaccuracies and update information in its sole discretion.",
       ],
       items: [
@@ -63,22 +71,30 @@ export const TERMS_DOCUMENT = {
       ],
     },
     {
+      heading: "Search Results and Recommendations",
+      paragraphs: [
+        "Search results, rankings, recommendations, classifications, and informational displays on Menuply are generated using proprietary methods and may change without notice. Menuply does not guarantee placement or visibility for any restaurant, menu item, or other content.",
+      ],
+    },
+    {
+      heading: "User Reports",
+      paragraphs: [
+        "Users may submit corrections, updates, closure reports, and similar information about restaurants or menu content. Menuply may review, edit, reject, delay, or remove such submissions in its sole discretion.",
+      ],
+    },
+    {
       heading: "Restaurant Partner Terms",
       paragraphs: [
-        'These Restaurant Partner Terms describe additional restaurant-facing terms for Menuply. Menuply is operated by Stackbloc Corporation, doing business as Menuply ("Menuply"). Restaurants remain the merchant of record and remain responsible for pricing, fulfillment, taxes, legal compliance, and their own customer-facing operations.',
+        'These Restaurant Partner Terms describe additional restaurant-facing terms for Menuply. Menuply is operated by Stackbloc Corporation, a California corporation, doing business as Menuply ("Menuply"). Restaurants remain the merchant of record and remain responsible for pricing, fulfillment, taxes, legal compliance, and their own customer-facing operations.',
         "Restaurants are responsible for promptly updating their menus, prices, hours, availability, tax settings, promotions, fulfillment options, and other customer-facing information when changes occur.",
         "Menuply is designed to align restaurant sustainability, customer value, and long-term demand. Menuply is designed to operate without reliance on high-markup pricing models, while preserving restaurant flexibility outside the Menuply platform.",
         "The price integrity requirements in this section apply only to pricing displayed on Menuply. Restaurants remain free to set pricing independently on other platforms, channels, and direct ordering surfaces. For Menuply-listed items, prices generally should not materially exceed in-store or direct ordering prices except for reasonable adjustments, and as a general guideline prices ordinarily should not materially exceed approximately 15% above in-store pricing unless approved by Menuply. Menuply may review pricing across channels, request verification, audit supporting information, and enforce pricing integrity in good faith and consistent with platform policies.",
-        "If Menuply identifies pricing concerns, Menuply may remove or suppress items, disable ordering for specific items or locations, revoke benefits including commission protection, downgrade plan status, or suspend or terminate restaurant access where appropriate.",
-        'For pricing and commission administration, Menuply may use a "Base Price" that reflects a protected reference price for an item and a "Current Price" that reflects the actual price shown to and paid by the customer on Menuply at the time of the transaction. Menuply may calculate commission using a protected Base Price rather than the Current Price for qualifying items, but the commissionable price will not exceed the actual Current Price paid by the customer for that transaction. If the Current Price is lower than the Base Price, the commissionable price will be the Current Price.',
-        "Menuply may provide a temporary commission grace period or similar protection for qualifying price increases on price-compliant items. Menuply may limit or deny protection for excessive increases, category-based thresholds, item-based thresholds, low-cost item exceptions, or other platform integrity concerns. After an applicable grace period, the Current Price may become the new Base Price.",
-        "Menuply may reject, adjust, or reset an asserted Base Price if Menuply reasonably believes the Base Price is artificial, unsupported, misleading, or manipulated. Menuply may request verification and may make Base Price integrity determinations in good faith and consistent with platform policies.",
-        "Menuply may offer subscription plans and commission structures that vary by tier. A free tier may have no subscription fee and may carry a higher commission rate, while paid tiers may offer lower commission rates or additional benefits. Certain plans may include a launch grace period before billing begins, and subscription activation may occur when a defined sales threshold, a defined elapsed-time threshold, or both are reached. Unless Menuply states otherwise, only completed, non-refunded transactions count toward activation thresholds or similar eligibility requirements.",
-        "Eligible performance-based plans include a reduced introductory marketplace commission rate for the first 24 months from the restaurant's activation date on that plan. This early partner introductory rate is designed to support sustainable restaurant growth during the onboarding period. After the 24-month introductory period, the commission reverts to the standard marketplace partner rate applicable to the restaurant's plan tier at that time. Menuply will provide advance notice of the transition from the introductory rate to the standard rate in accordance with the advance-notice provisions of this section.",
-        "Certain plans may include a commission stability period. After an applicable stability period ends, Menuply may modify commission rates or related pricing terms with advance notice, generally within a 30- to 180-day range depending on the plan. Menuply may make more immediate changes where Menuply reasonably determines they are necessary for fraud prevention, legal compliance, payment processing requirements, security, or platform integrity.",
-        "Commission calculations, Base Price determinations, pricing safeguards, ranking and visibility systems, fraud detection, and related platform operations are proprietary to Menuply. Menuply may modify these systems in good faith and consistent with platform policies. No specific formula, methodology, ranking treatment, or economic outcome is guaranteed unless Menuply expressly agrees otherwise in a separate written agreement.",
+        "If Menuply identifies pricing concerns, Menuply may remove or suppress items, disable ordering for specific items or locations, downgrade plan status, or suspend or terminate restaurant access where appropriate.",
+        "Menuply may charge restaurants marketplace commission on orders processed through Menuply, as well as subscription fees and other disclosed fees for platform services. Because Menuply uses upfront subscription pricing, applicable marketplace commission rates for each plan—including free or $0 subscription plans—are disclosed before that plan's subscription fee amount is shown. Commission rates and related fees may vary by plan, market, order type, or other factors Menuply discloses at that time.",
+        "Menuply may change commission rates, fees, or related pricing terms with advance notice. Menuply may make more immediate changes where reasonably necessary for fraud prevention, legal compliance, payment processing requirements, security, or platform integrity.",
+        "Unless Menuply expressly agrees otherwise in a separate written agreement, Menuply does not guarantee any specific commission rate, fee amount, order volume, ranking treatment, or other economic outcome.",
         "To the fullest extent permitted by law, any dispute, claim, or controversy arising out of or relating to these Terms or the restaurant relationship with Menuply will be resolved by binding arbitration administered by the American Arbitration Association rather than in court, except that either party may bring an individual claim in small claims court if it qualifies. This arbitration provision includes a class action waiver, so claims must be brought only on an individual basis and not as a plaintiff or class member in any purported class, collective, coordinated, consolidated, or representative proceeding. The arbitrator will decide threshold issues concerning the scope, enforceability, and interpretation of this arbitration provision, except to the extent applicable law reserves a question for a court. Restaurants may opt out of arbitration by providing written notice within 30 days after first accepting these Terms. Menuply will bear arbitration costs to the extent necessary to ensure enforceability of this provision consistent with applicable law.",
-        "To the fullest extent permitted by law, Stackbloc Corporation's total liability arising out of or relating to Menuply, these Terms, or the restaurant relationship will be limited to the greater of one hundred U.S. dollars (US $100) or the fees paid by the restaurant to Menuply for the specific services giving rise to the claim during the twelve months before the event giving rise to liability.",
+        "To the fullest extent permitted by law, the total liability of Stackbloc Corporation, a California corporation, arising out of or relating to Menuply, these Terms, or the restaurant relationship will be limited to the greater of one hundred U.S. dollars (US $100) or the fees paid by the restaurant to Menuply for the specific services giving rise to the claim during the twelve months before the event giving rise to liability.",
       ],
     },
     {
@@ -134,6 +150,7 @@ export const TERMS_DOCUMENT = {
       paragraphs: [
         "Menuply may display nutrition values, wellness insights, dietary indicators, allergen-related information, and similar food intelligence to help you explore and compare menus. When official nutrition information is not available from a restaurant, Menuply may present estimated menu intelligence alongside or in place of those official values so you still have useful, directional context.",
         "Nutrition values, wellness insights, dietary indicators, allergen-related information, and similar food intelligence features may include estimates generated from restaurant menus, restaurant-provided information, ingredient analysis, preparation methods (including preparation inference from menu text), publicly available nutrition data, and automated menu intelligence systems.",
+        "Certain nutrition, dietary, allergen, and related information may be generated, estimated, categorized, summarized, enhanced, or otherwise processed using automated systems. Such information is informational only.",
         "Nutrition, ingredient, dietary, allergen, and related food intelligence information provided by Menuply is for general informational purposes only and should not be relied upon for medical, dietary, allergy, or other health-related decisions. Users should consult the restaurant directly to confirm ingredients, allergens, preparation methods, nutritional information, and any other information that may affect their purchasing or consumption decisions.",
         "Allergen-related information displayed on Menuply may be incomplete, estimated, outdated, or inaccurate and may not reflect recipe changes, substitutions, cross-contact, shared equipment, fryer oil, or other kitchen practices. Individuals with food allergies, dietary restrictions, or medical conditions should not rely on information displayed on Menuply and should verify all relevant information directly with the restaurant before ordering or consuming any food.",
       ],
@@ -141,16 +158,22 @@ export const TERMS_DOCUMENT = {
     {
       heading: "Disclaimers",
       paragraphs: [
-        "Menuply is provided on an as-is and as-available basis to the fullest extent permitted by law. Stackbloc Corporation disclaims all warranties, express or implied, including implied warranties of merchantability, fitness for a particular purpose, title, and non-infringement.",
+        "Menuply is provided on an as-is and as-available basis to the fullest extent permitted by law. Stackbloc Corporation, a California corporation, disclaims all warranties, express or implied, including implied warranties of merchantability, fitness for a particular purpose, title, and non-infringement.",
         "Without limiting the foregoing, Menuply does not warrant that the platform will be uninterrupted, error-free, secure, or that any menu, pricing, restaurant, delivery, or payment information will always be complete, current, or accurate.",
+      ],
+    },
+    {
+      heading: "Platform Availability",
+      paragraphs: [
+        "During maintenance, outages, security events, or third-party interruptions, Menuply may temporarily operate with reduced functionality while core services remain available.",
       ],
     },
     {
       heading: "Limitation of liability",
       paragraphs: [
-        "To the fullest extent permitted by law, Stackbloc Corporation and its affiliates, officers, employees, and service providers will not be liable for any indirect, incidental, special, consequential, exemplary, or punitive damages, or for any loss of profits, revenues, goodwill, data, or business opportunities arising out of or related to Menuply.",
+        "To the fullest extent permitted by law, Stackbloc Corporation, a California corporation, and its affiliates, officers, employees, and service providers will not be liable for any indirect, incidental, special, consequential, exemplary, or punitive damages, or for any loss of profits, revenues, goodwill, data, or business opportunities arising out of or related to Menuply.",
         "To the fullest extent permitted by law, Menuply shall not be liable for losses arising from inaccuracies, omissions, delays, or changes in restaurant information supplied by restaurants, third parties, public sources, user submissions, or automated processing systems.",
-        "To the fullest extent permitted by law, the total liability of Stackbloc Corporation for any claim arising out of or relating to the platform will not exceed the greater of one hundred U.S. dollars (US $100) or the amount paid by you to Menuply, if any, for the specific transaction giving rise to the claim in the twelve months before the event.",
+        "To the fullest extent permitted by law, the total liability of Stackbloc Corporation, a California corporation, for any claim arising out of or relating to the platform will not exceed the greater of one hundred U.S. dollars (US $100) or the amount paid by you to Menuply, if any, for the specific transaction giving rise to the claim in the twelve months before the event.",
       ],
     },
     {
@@ -167,6 +190,12 @@ export const TERMS_DOCUMENT = {
       ],
     },
     {
+      heading: "Future Products and Services",
+      paragraphs: [
+        "Menuply may introduce, modify, suspend, replace, or discontinue products, services, subscriptions, marketplace features, advertising products, creator services, business tools, and other platform functionality, subject to applicable law.",
+      ],
+    },
+    {
       heading: "Changes to these terms",
       paragraphs: [
         "We may update these Terms of Use from time to time. Updated terms become effective when posted unless a later effective date is stated. Your continued use of Menuply after updated terms are posted means you accept the revised terms.",
@@ -175,7 +204,7 @@ export const TERMS_DOCUMENT = {
     {
       heading: "Contact",
       paragraphs: [
-        "Questions about these Terms of Use may be sent to Stackbloc Corporation at inquiries@menuply.com.",
+        "Questions about these Terms of Use may be sent to Stackbloc Corporation, a California corporation, at inquiries@menuply.com.",
       ],
     },
   ],

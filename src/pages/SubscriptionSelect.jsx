@@ -26,6 +26,9 @@ import {
   FREE_PLAN_CODE,
   buildOwnerStripeCheckoutBody,
   clearIntendedCheckoutPlanCode,
+  fetchCheckoutPlanOptionsForDisplay,
+  getMarketplaceCommissionDisclosure,
+  indexPlansByCode,
   isFreePlanCode,
   isSelectablePaidPlanCode,
   readIntendedCheckoutPlanCode,
@@ -84,6 +87,7 @@ const PLAN_CARDS = {
     title: "Starter",
     price: CHECKOUT_PRICE_LABELS[FREE_PLAN_CODE],
     description: "A simple published restaurant presence with public menu access on Menuply.",
+    commissionPlanCode: FREE_PLAN_CODE,
     features: [
       "100% Free Profile with Fully Searchable, Verified Menu",
       "Basic restaurant profile",
@@ -96,14 +100,14 @@ const PLAN_CARDS = {
     title: "Pro",
     price: `${CHECKOUT_PRICE_LABELS.starter_monthly} or ${CHECKOUT_PRICE_LABELS.starter_annual}`,
     description:
-      "Professional Menuply tools for growing restaurants — profiles, menus, QR Code, online ordering, and standard marketplace commission.",
+      "Professional Menuply tools for growing restaurants — profiles, menus, QR Code, and online ordering.",
+    commissionPlanCode: "starter_annual",
     features: [
       "All Starter benefits, plus logo and product photos",
       "Unlimited menus and menu items",
       "QR Code and social sharing",
       "Online ordering",
       "Customers can follow your restaurant",
-      "Standard marketplace commission",
     ],
   },
   founders_annual: {
@@ -111,12 +115,11 @@ const PLAN_CARDS = {
     price: `${CHECKOUT_PRICE_LABELS.founders_monthly} or ${CHECKOUT_PRICE_LABELS.founders_annual}`,
     description:
       "Founders are early adopters who want to take back their restaurant's independence. Lock in early-bird Founder's pricing while availability remains open.",
+    commissionPlanCode: "founders_annual",
     features: [
       "All Pro benefits, plus much more",
       "Premium menu management tools",
       "Create deals and promotions free of charge",
-      "Lowest marketplace commission",
-      "Two-year commission rate guarantee",
     ],
   },
 };
@@ -308,6 +311,28 @@ const s = {
     lineHeight: 0.95,
     marginBottom: 16,
   },
+  commissionDisclosure: {
+    margin: "0 0 14px",
+    padding: "10px 12px",
+    borderRadius: 12,
+    background: "#eef6f1",
+    border: "1px solid #cfe0d8",
+    color: "#1F4E3D",
+    fontSize: 14,
+    fontWeight: 800,
+    lineHeight: 1.4,
+  },
+  commissionDisclosureFounders: {
+    margin: "0 0 14px",
+    padding: "10px 12px",
+    borderRadius: 12,
+    background: "#fffbeb",
+    border: "1px solid #fde68a",
+    color: "#92400e",
+    fontSize: 14,
+    fontWeight: 800,
+    lineHeight: 1.4,
+  },
   featureList: {
     listStyle: "none",
     padding: 0,
@@ -483,6 +508,7 @@ export default function SubscriptionSelect() {
 
   const [isSubmittingPlan, setIsSubmittingPlan] = useState(false);
   const [planError, setPlanError] = useState("");
+  const [plansByCode, setPlansByCode] = useState(() => indexPlansByCode());
   const [autoCheckoutStarted, setAutoCheckoutStarted] = useState(false);
   const autoCheckoutRef = useRef(false);
   const [starterInterval, setStarterInterval] = useState(
@@ -519,6 +545,17 @@ export default function SubscriptionSelect() {
     });
     setOnboardingState(next.state || null);
   }, [location.state, location.search]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchCheckoutPlanOptionsForDisplay().then((result) => {
+      if (cancelled) return;
+      setPlansByCode(indexPlansByCode(result.plans));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -948,6 +985,9 @@ export default function SubscriptionSelect() {
             <div style={s.planDesc}>
               {publishedCard.description}
             </div>
+            <div style={s.commissionDisclosure}>
+              {getMarketplaceCommissionDisclosure(FREE_PLAN_CODE, { plansByCode })}
+            </div>
             <div style={s.priceValue}>{publishedCard.price}</div>
 
             <ul style={s.featureList}>
@@ -968,6 +1008,9 @@ export default function SubscriptionSelect() {
             <div style={s.planEyebrow}>Pro</div>
             <div style={s.planName}>Pro</div>
             <div style={s.planDesc}>{starterCard.description}</div>
+            <div style={s.commissionDisclosure}>
+              {getMarketplaceCommissionDisclosure(starterCheckoutCode, { plansByCode })}
+            </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 8 }}>
               {[
                 { key: "monthly", label: "Monthly", price: CHECKOUT_PRICE_LABELS.starter_monthly },
@@ -1028,6 +1071,9 @@ export default function SubscriptionSelect() {
             <div style={s.planName}>Founder&apos;s</div>
             <div style={s.planDesc}>
               {PLAN_CARDS.founders_annual.description}
+            </div>
+            <div style={s.commissionDisclosureFounders}>
+              {getMarketplaceCommissionDisclosure(foundersCheckoutCode, { plansByCode })}
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 8 }}>
               {[

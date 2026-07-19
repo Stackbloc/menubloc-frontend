@@ -3,8 +3,8 @@ const AMBER = "#92400e";
 
 /**
  * Restaurant subscription feature comparison.
- * Display-only marketing content for the public signup and operator
- * subscription pages. Not sourced from Stripe, entitlements, or the backend.
+ * Marketplace commission % in the header is shown above subscription prices
+ * (aligned with backend menuplyPlanCatalog BPS). Feature rows are display-only.
  */
 const FEATURES = [
   { label: "Searchable restaurant listing on Menuply", published: true, starter: true, founders: true },
@@ -21,14 +21,13 @@ const FEATURES = [
   { label: "Customers can follow your restaurant", published: false, starter: true, founders: true },
   { label: "Create deals and promotions free of charge", published: false, starter: false, founders: true },
   { label: "Online ordering", published: false, starter: true, founders: true },
-  { label: "Marketplace commission rate", published: false, starter: "Standard", founders: "Lowest" },
-  { label: "Two-year commission rate guarantee", published: false, starter: false, founders: true },
 ];
 
 const PLAN_COLUMNS = [
   {
     key: "published",
     name: "Starter",
+    commission: "No order commission",
     prices: ["Free"],
     nameColor: GREEN,
     highlight: false,
@@ -36,6 +35,7 @@ const PLAN_COLUMNS = [
   {
     key: "starter",
     name: "Pro",
+    commission: "11% commission",
     prices: ["$20/month", "or $199/year"],
     nameColor: GREEN,
     highlight: false,
@@ -43,6 +43,7 @@ const PLAN_COLUMNS = [
   {
     key: "founders",
     name: "Founder's*",
+    commission: "8% · 2-year lock",
     prices: ["$39/month", "or $319/year"],
     nameColor: AMBER,
     highlight: true,
@@ -111,6 +112,17 @@ function PlanHeaderCell({ plan }) {
     >
       <div style={{ fontSize: 12, fontWeight: 800, color: plan.nameColor, lineHeight: 1.3 }}>
         {plan.name}
+      </div>
+      <div
+        style={{
+          marginTop: 6,
+          fontSize: 11,
+          fontWeight: 800,
+          color: plan.highlight ? AMBER : GREEN,
+          lineHeight: 1.3,
+        }}
+      >
+        {plan.commission}
       </div>
       <div style={{ marginTop: 4, display: "flex", flexDirection: "column", gap: 1, alignItems: "center" }}>
         {plan.prices.map((line) => (

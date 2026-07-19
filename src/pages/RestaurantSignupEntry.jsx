@@ -9,7 +9,7 @@
  * ============================================================
  */
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { BrandLogo } from "../components/BrandLogo.jsx";
@@ -17,6 +17,9 @@ import PlanComparisonTable from "../components/PlanComparisonTable.jsx";
 import {
   CHECKOUT_PRICE_LABELS,
   FREE_PLAN_CODE,
+  fetchCheckoutPlanOptionsForDisplay,
+  getMarketplaceCommissionDisclosure,
+  indexPlansByCode,
 } from "../lib/menuplyCheckoutPlans.js";
 
 const ACCOUNT_ROUTE = "/restaurant/signup/account";
@@ -32,6 +35,7 @@ const SIGNUP_PLAN_OPTIONS = [
     description: "A simple published restaurant presence with public menu access on Menuply.",
     cta: "Select Starter",
     tone: "default",
+    commissionPlanCode: FREE_PLAN_CODE,
     features: [
       "100% Free Profile with Fully Searchable, Verified Menu",
       "Searchable restaurant listing on Menuply",
@@ -48,9 +52,10 @@ const SIGNUP_PLAN_OPTIONS = [
     priceLines: [CHECKOUT_PRICE_LABELS.starter_monthly, `or ${CHECKOUT_PRICE_LABELS.starter_annual}`],
     price: `${CHECKOUT_PRICE_LABELS.starter_monthly} or ${CHECKOUT_PRICE_LABELS.starter_annual}`,
     description:
-      "Professional Menuply tools for growing restaurants — profiles, menus, QR Code, online ordering, and standard marketplace commission.",
+      "Professional Menuply tools for growing restaurants — profiles, menus, QR Code, and online ordering.",
     cta: "Select Pro",
     tone: "starter",
+    commissionPlanCode: "starter_annual",
     intervals: [
       { key: "monthly", code: "starter_monthly", label: "Monthly", price: CHECKOUT_PRICE_LABELS.starter_monthly },
       { key: "annual", code: "starter_annual", label: "Annual", price: CHECKOUT_PRICE_LABELS.starter_annual },
@@ -61,7 +66,6 @@ const SIGNUP_PLAN_OPTIONS = [
       "QR Code and social sharing",
       "Online ordering",
       "Customers can follow your restaurant",
-      "Standard marketplace commission",
     ],
   },
   {
@@ -74,6 +78,7 @@ const SIGNUP_PLAN_OPTIONS = [
       "Founders are early adopters who want to take back their restaurant's independence. Lock in early-bird Founder's pricing while availability remains open.",
     cta: "Select Founder's",
     tone: "founder",
+    commissionPlanCode: "founders_annual",
     intervals: [
       { key: "monthly", code: "founders_monthly", label: "Monthly", price: CHECKOUT_PRICE_LABELS.founders_monthly },
       { key: "annual", code: "founders_annual", label: "Annual", price: CHECKOUT_PRICE_LABELS.founders_annual },
@@ -82,8 +87,6 @@ const SIGNUP_PLAN_OPTIONS = [
       "All Pro benefits, plus much more",
       "Premium menu management tools",
       "Create deals and promotions free of charge",
-      "Lowest marketplace commission",
-      "Two-year commission rate guarantee",
     ],
   },
 ];
@@ -218,6 +221,16 @@ const styles = {
     lineHeight: 1.12,
     paddingTop: 14,
     marginBottom: 14,
+  },
+  commissionDisclosure: {
+    margin: "4px 0 0",
+    padding: "10px 12px",
+    borderRadius: 12,
+    fontSize: 14,
+    fontWeight: 800,
+    lineHeight: 1.4,
+    background: "rgba(255,255,255,0.14)",
+    border: "1px solid rgba(255,255,255,0.28)",
   },
   priceBlock: {
     display: "flex",
@@ -510,8 +523,20 @@ export default function RestaurantSignupEntry() {
   const [hoveredPlan, setHoveredPlan] = useState(null);
   const [pendingPlan, setPendingPlan] = useState(null);
   const [billingInterval, setBillingInterval] = useState(null);
+  const [plansByCode, setPlansByCode] = useState(() => indexPlansByCode());
   // Claim → new listing: choose single vs multi before plan / details entry.
   const [listingScope, setListingScope] = useState(fromOperatorClaim ? null : "single");
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchCheckoutPlanOptionsForDisplay().then((result) => {
+      if (cancelled) return;
+      setPlansByCode(indexPlansByCode(result.plans));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const localizedPlans = useMemo(
     () => SIGNUP_PLAN_OPTIONS.map((plan) => {
@@ -695,6 +720,24 @@ export default function RestaurantSignupEntry() {
               )}
             </p>
 
+            <div
+              style={{
+                ...styles.commissionDisclosure,
+                marginBottom: 20,
+                background: "#eef6f1",
+                border: "1px solid #cfe0d8",
+                color: "#1F4E3D",
+              }}
+            >
+              {getMarketplaceCommissionDisclosure(
+                billingInterval
+                  ? pendingPlan.intervals.find((i) => i.key === billingInterval)?.code ||
+                      pendingPlan.commissionPlanCode
+                  : pendingPlan.commissionPlanCode || pendingPlan.code,
+                { plansByCode }
+              )}
+            </div>
+
             <div style={styles.cadenceOptions} role="radiogroup" aria-label="Billing period">
               {pendingPlan.intervals.map((interval) => {
                 const active = billingInterval === interval.key;
@@ -843,6 +886,11 @@ export default function RestaurantSignupEntry() {
                   <div style={styles.limitedBadge}>{t("signup.entry.limitedAvailability", "Limited Availability")}</div>
                 ) : null}
                 <div style={styles.planName}>{plan.name}</div>
+                <div style={styles.commissionDisclosure}>
+                  {getMarketplaceCommissionDisclosure(plan.commissionPlanCode || plan.code, {
+                    plansByCode,
+                  })}
+                </div>
                 <PlanPrice plan={plan} />
                 <div style={styles.description}>{plan.description}</div>
 

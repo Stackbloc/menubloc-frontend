@@ -18,6 +18,10 @@ import { getSubscriptionStatusLabel, formatMoney } from "../../components/paymen
 import PrimaryQrCard from "../../components/qr/PrimaryQrCard.jsx";
 import { operatorPublicProfilePath } from "../../lib/canonicalUrl.js";
 import { OperatorRestaurantProfileForm } from "./OperatorProfileEditor.jsx";
+import {
+  FREE_PLAN_CODE,
+  getMarketplaceCommissionDisclosure,
+} from "../../lib/menuplyCheckoutPlans.js";
 
 const TABS = [
   { id: "profile", label: "Profile Editor" },
@@ -411,6 +415,15 @@ export default function OperatorMyAccount() {
   const planDisplayOverride =
     !subscription?.plan_code && contextSubscription?.plan_name ? contextSubscription.plan_name : null;
   const tier = getPlanTier(planCode);
+  const marketplaceCommissionLabel = getMarketplaceCommissionDisclosure(
+    subscription?.commission_rate_bps != null
+      ? {
+          code: planCode || FREE_PLAN_CODE,
+          commission_rate_bps: subscription.commission_rate_bps,
+          commission_lock_months: subscription.commission_lock_months,
+        }
+      : planCode || FREE_PLAN_CODE
+  );
   const isFreeTier = tier === "published";
   const normalizedStatus = String(subscription?.status || "").toLowerCase();
 
@@ -653,7 +666,23 @@ export default function OperatorMyAccount() {
                 <>
                   <Row
                     label="Account type"
-                    value={planDisplayOverride || getPlanDisplayName(planCode)}
+                    value={
+                      <div>
+                        <div>{planDisplayOverride || getPlanDisplayName(planCode)}</div>
+                        <div
+                          style={{
+                            marginTop: 6,
+                            fontSize: 13,
+                            fontWeight: 700,
+                            color: "#1F4E3D",
+                            lineHeight: 1.35,
+                          }}
+                          data-testid="my-account-marketplace-commission"
+                        >
+                          {marketplaceCommissionLabel}
+                        </div>
+                      </div>
+                    }
                   />
                   <Row label="Account opened" value={formatLongDate(accountOpenedAt)} />
                   <Row

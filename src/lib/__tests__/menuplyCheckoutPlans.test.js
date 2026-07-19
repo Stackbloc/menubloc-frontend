@@ -10,6 +10,8 @@ import {
   buildOperatorStripeCheckoutBody,
   buildOwnerStripeCheckoutBody,
   filterSelectableCheckoutPlans,
+  formatCommissionPercentFromBps,
+  getMarketplaceCommissionDisclosure,
   isFreePlanCode,
   isLegacyBlockedCheckoutPlanCode,
   isPaidSubscriptionConfirmed,
@@ -134,6 +136,19 @@ describe("menuplyCheckoutPlans canonical checkout contract", () => {
       expect(body).not.toHaveProperty("subscription_price");
       expect(body).not.toHaveProperty("billing_amount");
     }
+  });
+
+  it("formats marketplace commission disclosures before subscription pricing", () => {
+    expect(formatCommissionPercentFromBps(1100)).toBe("11%");
+    expect(formatCommissionPercentFromBps(800)).toBe("8%");
+    expect(getMarketplaceCommissionDisclosure("starter_annual")).toBe("11% marketplace commission");
+    expect(getMarketplaceCommissionDisclosure("founders_annual")).toBe(
+      "8% marketplace commission · 2-year rate lock"
+    );
+    expect(getMarketplaceCommissionDisclosure(FREE_PLAN_CODE)).toMatch(/not included/i);
+    expect(FALLBACK_CHECKOUT_PLANS.find((p) => p.code === "starter_annual").commission_rate_bps).toBe(
+      1100
+    );
   });
 
   it("displays Founder's Annual as $319, not $299", () => {

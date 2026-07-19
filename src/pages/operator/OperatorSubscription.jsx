@@ -18,6 +18,8 @@ import {
   clearIntendedCheckoutPlanCode,
   filterSelectableCheckoutPlans,
   getCheckoutPriceLabel,
+  getMarketplaceCommissionDisclosure,
+  indexPlansByCode,
   isFreePlanCode,
   isPaidSubscriptionConfirmed,
   readIntendedCheckoutPlanCode,
@@ -369,6 +371,22 @@ export default function OperatorSubscription() {
                   <span style={{ fontSize: 16, fontWeight: 800, color: GREEN }}>Starter</span>
                   {hasPublishedAccess && <span style={currentBadge(GREEN)}>Current access</span>}
                 </div>
+                <div
+                  style={{
+                    padding: "8px 10px",
+                    borderRadius: 10,
+                    background: "#eef6f1",
+                    border: "1px solid #cfe0d8",
+                    color: GREEN,
+                    fontSize: 13,
+                    fontWeight: 800,
+                    lineHeight: 1.35,
+                  }}
+                >
+                  {getMarketplaceCommissionDisclosure(FREE_PLAN_CODE, {
+                    plansByCode: indexPlansByCode(planOptions),
+                  })}
+                </div>
                 <div>
                   <div style={{ fontSize: 28, fontWeight: 800, color: "#0f1720", letterSpacing: "-0.04em" }}>
                     {CHECKOUT_PRICE_LABELS[FREE_PLAN_CODE]}
@@ -421,6 +439,22 @@ export default function OperatorSubscription() {
                       <span style={currentBadge(GREEN)}>Current plan</span>
                     ) : null}
                   </div>
+                  <div
+                    style={{
+                      padding: "8px 10px",
+                      borderRadius: 10,
+                      background: "#eef6f1",
+                      border: "1px solid #cfe0d8",
+                      color: GREEN,
+                      fontSize: 13,
+                      fontWeight: 800,
+                      lineHeight: 1.35,
+                    }}
+                  >
+                    {getMarketplaceCommissionDisclosure(FOOD_TRUCK_ANNUAL_PLAN_CODE, {
+                      plansByCode: indexPlansByCode(planOptions),
+                    })}
+                  </div>
                   <div>
                     <div style={{ fontSize: 28, fontWeight: 800, color: "#0f1720", letterSpacing: "-0.04em" }}>
                       {formatWholeDollarAmount(foodTruckPlan.amount_cents)}
@@ -443,7 +477,6 @@ export default function OperatorSubscription() {
                       "Customers can follow your Food Truck",
                       "Create deals and promotions free of charge",
                       "Online ordering",
-                      "Lowest marketplace commission",
                     ].map((benefit) => (
                       <li key={benefit} style={{ fontSize: 13, color: "#374151", display: "flex", gap: 7, alignItems: "flex-start" }}>
                         <span style={{ color: GREEN, fontWeight: 700, flexShrink: 0 }}>✓</span>
@@ -488,6 +521,22 @@ export default function OperatorSubscription() {
                     {currentTier === "starter"
                       ? <span style={currentBadge(GREEN)}>Current plan</span>
                       : <span style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", padding: "3px 8px", borderRadius: 999, background: "#d1fae5", color: "#065f46" }}>Most popular</span>}
+                  </div>
+                  <div
+                    style={{
+                      padding: "8px 10px",
+                      borderRadius: 10,
+                      background: "#eef6f1",
+                      border: "1px solid #cfe0d8",
+                      color: GREEN,
+                      fontSize: 13,
+                      fontWeight: 800,
+                      lineHeight: 1.35,
+                    }}
+                  >
+                    {getMarketplaceCommissionDisclosure(starterPlanCode, {
+                      plansByCode: indexPlansByCode(planOptions),
+                    })}
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                     {[
@@ -584,6 +633,22 @@ export default function OperatorSubscription() {
                   {currentTier === "founders"
                     ? <span style={currentBadge(AMBER)}>Current plan</span>
                     : <span style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", padding: "3px 8px", borderRadius: 999, background: "#fee2e2", color: "#b42318" }}>Limited Availability</span>}
+                </div>
+                <div
+                  style={{
+                    padding: "8px 10px",
+                    borderRadius: 10,
+                    background: "#fff7ed",
+                    border: "1px solid #fde68a",
+                    color: AMBER,
+                    fontSize: 13,
+                    fontWeight: 800,
+                    lineHeight: 1.35,
+                  }}
+                >
+                  {getMarketplaceCommissionDisclosure(foundersPlanCode, {
+                    plansByCode: indexPlansByCode(planOptions),
+                  })}
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                   {[
