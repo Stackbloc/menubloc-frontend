@@ -55,6 +55,18 @@ describe("Shared MenuEditor contract", () => {
     expect(src).toMatch(/ck-menus/);
   });
 
+  it("Section field is a dropdown of existing sections with New section option", () => {
+    const src = read("src/components/menuEditor/SharedMenuEditor.jsx");
+    expect(src).toMatch(/function SectionSelect/);
+    expect(src).toMatch(/\+ New section/);
+    expect(src).toMatch(/ensureSection/);
+    expect(src).toMatch(/deriveSectionList/);
+    expect(src).toMatch(/sectionOptions/);
+    expect(src).toMatch(/<SectionSelect/);
+    expect(src).not.toMatch(/placeholder="e\.g\. Appetizers"/);
+    expect(src).not.toMatch(/placeholder=\{sectionName \|\| "e\.g\. Entrees"\}/);
+  });
+
   it("operatorApi exposes CK editor adapters", () => {
     const src = read("src/lib/operatorApi.js");
     expect(src).toMatch(/createOperatorCkMenuApi/);

@@ -1,4 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  deriveSectionList,
+  resolveSectionCanonical,
+} from "../../lib/menuWorksheetHelpers.js";
 
 /** Default theme — matches owner Menu Manager palette for visual continuity. */
 export const MENU_EDITOR_COLORS = {
@@ -38,6 +42,116 @@ function DefaultEmptyState({ children, colors }) {
       }}
     >
       {children}
+    </div>
+  );
+}
+
+/**
+ * Section dropdown: existing sections + "+ New section…" (added to options after create).
+ */
+function SectionSelect({
+  value,
+  options = [],
+  onChange,
+  onCreateSection,
+  fieldStyle,
+  label = "Section",
+  labelStyle,
+}) {
+  const [mode, setMode] = useState("select");
+  const [draft, setDraft] = useState("");
+
+  const optionList = useMemo(
+    () => deriveSectionList([...(options || []), value]),
+    [options, value]
+  );
+
+  function commitNew() {
+    const canonical = resolveSectionCanonical(draft, optionList);
+    if (!canonical) {
+      setMode("select");
+      return;
+    }
+    onCreateSection?.(canonical);
+    onChange(canonical);
+    setDraft("");
+    setMode("select");
+  }
+
+  if (mode === "create") {
+    return (
+      <div>
+        {labelStyle ? <label style={labelStyle}>{label}</label> : null}
+        <input
+          autoFocus
+          value={draft}
+          placeholder="New section name"
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={() => {
+            if (String(draft || "").trim()) commitNew();
+            else setMode("select");
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              commitNew();
+            }
+            if (e.key === "Escape") {
+              setDraft("");
+              setMode("select");
+            }
+          }}
+          style={fieldStyle}
+          aria-label="New section name"
+        />
+        <button
+          type="button"
+          onClick={() => {
+            setDraft("");
+            setMode("select");
+          }}
+          style={{
+            marginTop: 6,
+            padding: 0,
+            border: "none",
+            background: "none",
+            color: "#64748b",
+            fontSize: 12,
+            fontWeight: 600,
+            cursor: "pointer",
+            fontFamily: "inherit",
+          }}
+        >
+          Cancel
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      {labelStyle ? <label style={labelStyle}>{label}</label> : null}
+      <select
+        value={value || ""}
+        onChange={(e) => {
+          if (e.target.value === "__new__") {
+            setMode("create");
+            setDraft("");
+            return;
+          }
+          onChange(e.target.value);
+        }}
+        style={{ ...fieldStyle, cursor: "pointer" }}
+        aria-label={label}
+      >
+        <option value="">— No section —</option>
+        {optionList.map((s) => (
+          <option key={s} value={s}>
+            {s}
+          </option>
+        ))}
+        <option value="__new__">+ New section…</option>
+      </select>
     </div>
   );
 }
@@ -280,17 +394,29 @@ export function MenuEditor({
     const sectionName = newSectionName.trim();
     if (!sectionName) return;
     setAddingSection(true);
-    setSections((prev) => {
-      if (prev.some((s) => String(s.name || "").toLowerCase() === sectionName.toLowerCase())) {
-        return prev;
-      }
-      return [...prev, { name: sectionName, items: [] }];
-    });
+    ensureSection(sectionName);
     setNewItemSection(sectionName);
     setNewItem({ name: "", description: "", price: "", section: sectionName });
     setNewSectionName("");
     setAddingSection(false);
   }
+
+  function ensureSection(rawName) {
+    const canonical = resolveSectionCanonical(rawName, sections.map((s) => s.name));
+    if (!canonical) return null;
+    setSections((prev) => {
+      if (prev.some((s) => String(s.name || "").toLowerCase() === canonical.toLowerCase())) {
+        return prev;
+      }
+      return [...prev, { name: canonical, items: [] }];
+    });
+    return canonical;
+  }
+
+  const sectionOptions = useMemo(
+    () => deriveSectionList(sections.map((s) => s.name)),
+    [sections]
+  );
 
   async function handlePublish() {
     setSaving(true);
@@ -540,6 +666,8 @@ export function MenuEditor({
           <SectionEditor
             key={section.name}
             section={section}
+            sectionOptions={sectionOptions}
+            onEnsureSection={ensureSection}
             editingItemId={editingItemId}
             pendingEdits={pendingEdits}
             saving={saving}
@@ -566,6 +694,8 @@ export function MenuEditor({
       {newItemSection === "" && (
         <AddItemForm
           sectionName=""
+          sectionOptions={sectionOptions}
+          onEnsureSection={ensureSection}
           newItem={newItem}
           onSetNewItem={setNewItem}
           addItemErr={addItemErr}
@@ -601,6 +731,8 @@ export function MenuEditor({
 
 function SectionEditor({
   section,
+  sectionOptions = [],
+  onEnsureSection,
   editingItemId,
   pendingEdits,
   saving,
@@ -666,6 +798,8 @@ function SectionEditor({
         <ItemRow
           key={item.id}
           item={item}
+          sectionOptions={sectionOptions}
+          onEnsureSection={onEnsureSection}
           isEditing={editingItemId === item.id}
           pendingEdit={pendingEdits[item.id]}
           saving={saving}
@@ -683,6 +817,8 @@ function SectionEditor({
       {isAddingHere && (
         <AddItemForm
           sectionName={section.name}
+          sectionOptions={sectionOptions}
+          onEnsureSection={onEnsureSection}
           newItem={newItem}
           onSetNewItem={onSetNewItem}
           addItemErr={addItemErr}
@@ -700,6 +836,8 @@ function SectionEditor({
 
 function ItemRow({
   item,
+  sectionOptions = [],
+  onEnsureSection,
   isEditing,
   pendingEdit,
   saving,
@@ -757,12 +895,14 @@ function ItemRow({
           />
         </div>
         <div style={{ marginBottom: 12 }}>
-          <label style={labelStyle}>Section / Category</label>
-          <input
+          <SectionSelect
+            label="Section / Category"
+            labelStyle={labelStyle}
             value={pendingEdit.section}
-            onChange={(e) => onUpdateEdit("section", e.target.value)}
-            style={fieldStyle}
-            placeholder="e.g. Appetizers"
+            options={sectionOptions}
+            onChange={(v) => onUpdateEdit("section", v)}
+            onCreateSection={onEnsureSection}
+            fieldStyle={fieldStyle}
           />
         </div>
         <div style={{ display: "flex", gap: 8 }}>
@@ -876,6 +1016,8 @@ function ItemRow({
 
 function AddItemForm({
   sectionName,
+  sectionOptions = [],
+  onEnsureSection,
   newItem,
   onSetNewItem,
   addItemErr,
@@ -934,12 +1076,14 @@ function AddItemForm({
           />
         </div>
         <div style={{ marginBottom: 10 }}>
-          <label style={labelStyle}>Section</label>
-          <input
+          <SectionSelect
+            label="Section"
+            labelStyle={labelStyle}
             value={newItem.section}
-            onChange={(e) => onSetNewItem((p) => ({ ...p, section: e.target.value }))}
-            style={fieldStyle}
-            placeholder={sectionName || "e.g. Entrees"}
+            options={sectionOptions}
+            onChange={(v) => onSetNewItem((p) => ({ ...p, section: v }))}
+            onCreateSection={onEnsureSection}
+            fieldStyle={fieldStyle}
           />
         </div>
         {addItemErr && <div style={{ marginBottom: 8, fontSize: 12, color: "#991b1b" }}>{addItemErr}</div>}
