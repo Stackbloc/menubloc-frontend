@@ -130,12 +130,12 @@ const OPERATIONS_SECTIONS = [
       {
         id: "overview-qr-tools",
         title: "QR Tools",
-        summary: "Order physical QR menu kits to connect every table to your Menuply profile.",
+        summary: "See, share, and print your digital menu QR, or order physical stickers and decals from Marketplace.",
         points: [
-          "QR kits are printed table cards that link customers directly to the restaurant's live Menuply ordering page and profile.",
+          "My Account → My QR Code shows your primary digital menu QR — share the link, print a copy, or download PNG/SVG/PDF.",
+          "Marketplace (Owner / Business sidebar) opens QR merchandise ordering for stickers, window decals, and table kits.",
           "Orders are placed through the portal with a Stripe payment. Fulfillment begins only after payment is confirmed — no partial fulfillment.",
           "Best placements: table tents, counter standees, takeout bags, and receipt inserts. The QR code links to your current public menu — no reprinting needed when you update items.",
-          "QR kits can be ordered as an add-on at any subscription level.",
         ],
       },
       {
@@ -172,9 +172,9 @@ const OPERATIONS_SECTIONS = [
         title: "Business Section",
         summary: "Owner-level settings protected by Owner PIN.",
         points: [
-          "Subscription — full plan comparison and upgrade/cancellation flow. Requires Owner PIN for access.",
-          "QR Kits — order printed QR menu kits. Accessible at any subscription level.",
-          "Restaurant Profile — edit public-facing restaurant info: name, description, logo, billboard image, cuisine tags, and location.",
+          "My Account — Profile, Menu, Settings (plan/billing), My QR Code (see/share/print), and Password. No PIN required.",
+          "Marketplace — order printed QR stickers, window decals, and table kits at /operator/qr-kits/order.",
+          "Restaurant Profile / Owner PIN Settings — edit public-facing restaurant info (owner PIN for sensitive settings).",
           "Business section items are intentionally separated from daily operations so staff cannot accidentally change billing or profile details.",
         ],
       },
@@ -183,7 +183,7 @@ const OPERATIONS_SECTIONS = [
         title: "Support Section",
         summary: "Account information and help resources.",
         points: [
-          "My Account — subscription summary, renewal date, and plan change options. No PIN required.",
+          "My Account — profile, menu, plan/billing Settings, My QR Code, and password. No PIN required.",
           "Knowledge Base — setup guides, troubleshooting, hardware recommendations, and direct support ticket submission.",
           "Support items are visible to all portal users. No elevated access required.",
         ],

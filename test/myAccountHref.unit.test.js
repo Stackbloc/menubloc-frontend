@@ -1,8 +1,7 @@
 import assert from "node:assert/strict";
-import { createRequire } from "node:module";
 
 // Pure copy of href builder (keeps test free of React mount)
-const TABS = ["profile", "menu", "settings", "password"];
+const TABS = ["profile", "menu", "settings", "qr", "password"];
 const MENU_PANELS = ["view", "edit"];
 function normalizeTab(raw) {
   const id = String(raw || "").toLowerCase();
@@ -22,6 +21,7 @@ function myAccountHref(tabId, menuPanelId = "view") {
 
 assert.equal(myAccountHref("menu"), "/operator/my-account?tab=menu&menuPanel=view");
 assert.equal(myAccountHref("settings"), "/operator/my-account?tab=settings");
+assert.equal(myAccountHref("qr"), "/operator/my-account?tab=qr");
 assert.equal(myAccountHref("password"), "/operator/my-account?tab=password");
 assert.equal(myAccountHref("menu", "edit"), "/operator/my-account?tab=menu&menuPanel=edit");
 assert.equal(myAccountHref("nope"), "/operator/my-account?tab=profile");

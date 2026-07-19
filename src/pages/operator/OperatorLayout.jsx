@@ -198,6 +198,7 @@ const OPERATOR_PAGE_TITLE_KEYS = {
   "Delivery Accounts": "operator.delivery.title",
   Profile: "operator.profile.title",
   "My Account": "operator.nav.myAccount",
+  Marketplace: "operator.nav.marketplace",
   "Bid-Free Bidding™": "operator.nav.bidFree",
   "Adobe Studio": "operator.nav.adobeStudio",
   "Menu Studio": "operator.nav.menuStudio",
@@ -313,6 +314,11 @@ export default function OperatorLayout({ title, children }) {
           to: "/operator/my-account",
           label: t("operator.nav.myAccount", "My Account"),
           icon: "◈",
+        },
+        {
+          to: "/operator/qr-kits/order",
+          label: t("operator.nav.marketplace", "Marketplace"),
+          icon: "▢",
         },
       ];
       if (role === "owner") {

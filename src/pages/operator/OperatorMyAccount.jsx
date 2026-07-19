@@ -1,11 +1,12 @@
 /**
  * Operator My Account — tabbed account hub.
- * Route: /operator/my-account?tab=profile|menu|settings|password
+ * Route: /operator/my-account?tab=profile|menu|settings|qr|password
  * Menu sub: ?tab=menu&menuPanel=view|edit
  *
  * Profile Editor — public restaurant listing fields
  * Menu — view public menu + Edit menu content (Menu Worksheet)
  * Settings — account type, open date, next billing, change, cancel
+ * My QR Code — see / share / print primary digital menu QR
  * Password — operator password
  */
 import { useEffect, useMemo, useState } from "react";
@@ -27,6 +28,7 @@ const TABS = [
   { id: "profile", label: "Profile Editor" },
   { id: "menu", label: "Menu" },
   { id: "settings", label: "Settings" },
+  { id: "qr", label: "My QR Code" },
   { id: "password", label: "Password" },
 ];
 
@@ -801,13 +803,27 @@ export default function OperatorMyAccount() {
               )}
             </SectionCard>
 
-            <SectionCard title="Primary QR">
-              <PrimaryQrCard qr={primaryQr} restaurantId={selectedRestaurant?.id} />
-              <div style={{ marginTop: 10 }}>
-                <QuietLink onClick={() => navigate("/operator/qr-kits/order")}>QR tools →</QuietLink>
-              </div>
-            </SectionCard>
           </>
+        ) : null}
+
+        {tab === "qr" && selectedRestaurant?.id ? (
+          <SectionCard title="My QR Code" data-testid="my-account-panel-qr">
+            {loading ? (
+              <p style={{ margin: 0, fontSize: 13, color: "#78716c" }}>Loading…</p>
+            ) : primaryQr ? (
+              <PrimaryQrCard
+                qr={primaryQr}
+                restaurantId={selectedRestaurant.id}
+                restaurantName={selectedRestaurant.restaurant_name}
+              />
+            ) : (
+              <p style={{ margin: 0, fontSize: 13, color: "#78716c", lineHeight: 1.5 }}>
+                No primary menu QR is available yet. Once your restaurant is claimed and on an eligible plan,
+                Menuply creates one automatically. Physical stickers and decals are in{" "}
+                <QuietLink onClick={() => navigate("/operator/qr-kits/order")}>Marketplace →</QuietLink>
+              </p>
+            )}
+          </SectionCard>
         ) : null}
 
         {tab === "password" ? (

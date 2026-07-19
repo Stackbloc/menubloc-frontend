@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
 
 const API = import.meta.env.VITE_API_URL || "";
@@ -14,15 +14,27 @@ function formatDate(iso) {
   }
 }
 
+const BTN = {
+  borderRadius: 7,
+  padding: "7px 14px",
+  fontSize: 12,
+  fontWeight: 600,
+  cursor: "pointer",
+  fontFamily: "inherit",
+};
+
 /**
  * PrimaryQrCard — shows the restaurant's primary digital QR code.
  * Props:
  *   qr            — { token, image_url, image_url_svg, destination_path,
  *                     destination_url, created_at, scan_tracking_available }
  *   restaurantId  — number
+ *   restaurantName — optional display name for share/print
  */
-export default function PrimaryQrCard({ qr, restaurantId }) {
+export default function PrimaryQrCard({ qr, restaurantId: _restaurantId, restaurantName }) {
   const [copied, setCopied] = useState(false);
+  const [shareMessage, setShareMessage] = useState("");
+  const printRef = useRef(null);
 
   if (!qr) return null;
 
@@ -37,6 +49,9 @@ export default function PrimaryQrCard({ qr, restaurantId }) {
 
   const createdDate = formatDate(qr?.created_at);
   const scanTrackingAvailable = qr?.scan_tracking_available === true;
+  const shareTitle = restaurantName
+    ? `${restaurantName} menu on Menuply`
+    : "Menu on Menuply";
 
   async function handleCopy() {
     if (!displayUrl) return;
@@ -47,6 +62,94 @@ export default function PrimaryQrCard({ qr, restaurantId }) {
     } catch {
       // clipboard API unavailable — silent
     }
+  }
+
+  async function handleShare() {
+    if (!displayUrl) return;
+    setShareMessage("");
+
+    try {
+      if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
+        const payload = {
+          title: shareTitle,
+          text: "Scan or open to view our menu on Menuply.",
+          url: displayUrl,
+        };
+
+        if (imageUrl && navigator.canShare) {
+          try {
+            const res = await fetch(imageUrl);
+            const blob = await res.blob();
+            const file = new File([blob], "menuply-qr.png", { type: blob.type || "image/png" });
+            if (navigator.canShare({ files: [file] })) {
+              await navigator.share({ ...payload, files: [file] });
+              return;
+            }
+          } catch {
+            // Fall through to URL-only share
+          }
+        }
+
+        await navigator.share(payload);
+        return;
+      }
+    } catch (err) {
+      if (err?.name === "AbortError") return;
+      // Fall through to clipboard
+    }
+
+    await handleCopy();
+    setShareMessage("Link copied — share it from anywhere.");
+    setTimeout(() => setShareMessage(""), 2500);
+  }
+
+  function handlePrint() {
+    if (!imageUrl && !displayUrl) return;
+
+    const printWindow = window.open("", "_blank", "noopener,noreferrer,width=560,height=720");
+    if (!printWindow) {
+      // Popup blocked — try printing PDF poster if available
+      if (qr?.image_url_pdf) {
+        const pdfUrl = qr.image_url_pdf.startsWith("http")
+          ? qr.image_url_pdf
+          : `${API}${qr.image_url_pdf}`;
+        window.open(pdfUrl, "_blank", "noopener,noreferrer");
+      }
+      return;
+    }
+
+    const safeName = (restaurantName || "Your restaurant").replace(/</g, "&lt;");
+    const safeUrl = (displayUrl || "").replace(/</g, "&lt;");
+    const safeImg = (imageUrl || "").replace(/"/g, "&quot;");
+
+    printWindow.document.write(`<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>${safeName} — Menu QR</title>
+  <style>
+    body { font-family: Georgia, "Times New Roman", serif; margin: 40px; color: #0f1720; text-align: center; }
+    h1 { font-size: 22px; margin: 0 0 8px; font-weight: 700; }
+    p { font-size: 13px; color: #475467; margin: 0 0 24px; }
+    img { width: 280px; height: 280px; display: block; margin: 0 auto 20px; }
+    .url { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; word-break: break-all; color: #344054; }
+    .hint { margin-top: 28px; font-size: 11px; color: #98a2b3; }
+  </style>
+</head>
+<body>
+  <h1>${safeName}</h1>
+  <p>Scan to view our menu on Menuply</p>
+  ${safeImg ? `<img src="${safeImg}" alt="Menu QR code" />` : ""}
+  ${safeUrl ? `<div class="url">${safeUrl}</div>` : ""}
+  <div class="hint">Powered by Menuply</div>
+  <script>
+    window.onload = function () {
+      setTimeout(function () { window.print(); }, 250);
+    };
+  </script>
+</body>
+</html>`);
+    printWindow.document.close();
   }
 
   function handleDownloadPng() {
@@ -86,10 +189,14 @@ export default function PrimaryQrCard({ qr, restaurantId }) {
   }
 
   return (
-    <div style={{
-      background: "#fff", border: "1px solid #e4e9f0",
-      borderRadius: 12, padding: "20px", marginBottom: 20,
-    }}>
+    <div
+      ref={printRef}
+      data-testid="primary-qr-card"
+      style={{
+        background: "#fff", border: "1px solid #e4e9f0",
+        borderRadius: 12, padding: "20px", marginBottom: 20,
+      }}
+    >
       <div style={{
         fontSize: 11, fontWeight: 800, textTransform: "uppercase",
         letterSpacing: "0.06em", color: "#8a9ab0", marginBottom: 14,
@@ -98,9 +205,8 @@ export default function PrimaryQrCard({ qr, restaurantId }) {
       </div>
 
       <div style={{ display: "flex", gap: 20, alignItems: "flex-start", flexWrap: "wrap" }}>
-        {/* QR image */}
         <div style={{
-          flexShrink: 0, width: 120, height: 120,
+          flexShrink: 0, width: 160, height: 160,
           border: "1px solid #e4e9f0", borderRadius: 10,
           display: "flex", alignItems: "center", justifyContent: "center",
           background: "#fafbfc", overflow: "hidden",
@@ -109,7 +215,7 @@ export default function PrimaryQrCard({ qr, restaurantId }) {
             <img
               src={imageUrl}
               alt="Menu QR code"
-              style={{ width: 112, height: 112, display: "block" }}
+              style={{ width: 148, height: 148, display: "block" }}
               loading="lazy"
             />
           ) : (
@@ -119,10 +225,9 @@ export default function PrimaryQrCard({ qr, restaurantId }) {
           )}
         </div>
 
-        {/* Info + actions */}
         <div style={{ flex: 1, minWidth: 160 }}>
           <p style={{ margin: "0 0 6px", fontSize: 12, color: "#344054", lineHeight: 1.5 }}>
-            Customers scan this code to view your menu instantly.
+            Customers scan this code to view your menu instantly. Share the link or print a copy for your counter.
           </p>
 
           {displayUrl && (
@@ -141,30 +246,56 @@ export default function PrimaryQrCard({ qr, restaurantId }) {
             </p>
           )}
 
-          {/* Scan tracking status */}
           <div style={{
             fontSize: 11, color: "#8a9ab0",
             background: "#f8fafc", border: "1px solid #e4e9f0",
             borderRadius: 6, padding: "6px 10px", marginBottom: 12,
             display: "flex", alignItems: "center", gap: 6,
           }}>
-            <span style={{ fontSize: 13 }}>📊</span>
+            <span aria-hidden="true">📊</span>
             {scanTrackingAvailable
               ? "Scan tracking active"
               : "Scan tracking coming soon"}
           </div>
 
-          {/* Download / copy actions */}
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
+            <button
+              type="button"
+              onClick={handleShare}
+              data-testid="primary-qr-share"
+              style={{
+                ...BTN,
+                background: "#0f1720",
+                color: "#fff",
+                border: "none",
+              }}
+            >
+              Share
+            </button>
+
+            <button
+              type="button"
+              onClick={handlePrint}
+              data-testid="primary-qr-print"
+              style={{
+                ...BTN,
+                background: "#1F4E3D",
+                color: "#fff",
+                border: "none",
+              }}
+            >
+              Print
+            </button>
+
             <button
               type="button"
               onClick={handleCopy}
+              data-testid="primary-qr-copy"
               style={{
+                ...BTN,
                 background: copied ? "#f0faf6" : "#f8fafc",
                 color: copied ? "#1F4E3D" : "#344054",
                 border: "1px solid #e4e9f0",
-                borderRadius: 7, padding: "7px 14px",
-                fontSize: 12, fontWeight: 600, cursor: "pointer",
               }}
             >
               {copied ? "Copied!" : "Copy link"}
@@ -175,9 +306,10 @@ export default function PrimaryQrCard({ qr, restaurantId }) {
                 type="button"
                 onClick={handleDownloadPng}
                 style={{
-                  background: "#0f1720", color: "#fff",
-                  border: "none", borderRadius: 7,
-                  padding: "7px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer",
+                  ...BTN,
+                  background: "#f8fafc",
+                  color: "#344054",
+                  border: "1px solid #e4e9f0",
                 }}
               >
                 Download PNG
@@ -189,9 +321,10 @@ export default function PrimaryQrCard({ qr, restaurantId }) {
                 type="button"
                 onClick={handleDownloadSvg}
                 style={{
-                  background: "#f8fafc", color: "#344054",
-                  border: "1px solid #e4e9f0", borderRadius: 7,
-                  padding: "7px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer",
+                  ...BTN,
+                  background: "#f8fafc",
+                  color: "#344054",
+                  border: "1px solid #e4e9f0",
                 }}
               >
                 Download SVG
@@ -203,9 +336,10 @@ export default function PrimaryQrCard({ qr, restaurantId }) {
                 type="button"
                 onClick={handleDownloadPdf}
                 style={{
-                  background: "#f8fafc", color: "#344054",
-                  border: "1px solid #e4e9f0", borderRadius: 7,
-                  padding: "7px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer",
+                  ...BTN,
+                  background: "#f8fafc",
+                  color: "#344054",
+                  border: "1px solid #e4e9f0",
                 }}
               >
                 Download PDF poster
@@ -213,34 +347,24 @@ export default function PrimaryQrCard({ qr, restaurantId }) {
             )}
           </div>
 
-          {/* Physical product CTAs */}
+          {shareMessage ? (
+            <p style={{ margin: "0 0 10px", fontSize: 12, color: "#1F4E3D" }}>{shareMessage}</p>
+          ) : null}
+
           <div style={{
             borderTop: "1px solid #e4e9f0", paddingTop: 12,
-            display: "flex", gap: 8, flexWrap: "wrap",
           }}>
             <Link
               to="/operator/qr-kits/order"
+              data-testid="primary-qr-marketplace-link"
               style={{
-                display: "inline-flex", alignItems: "center", gap: 5,
-                background: "#f8fafc", color: "#344054",
-                border: "1px solid #e4e9f0", borderRadius: 7,
-                padding: "7px 14px", fontSize: 12, fontWeight: 600,
+                fontSize: 13,
+                fontWeight: 650,
+                color: "#1F4E3D",
                 textDecoration: "none",
               }}
             >
-              🏷️ Order replacement sticker
-            </Link>
-            <Link
-              to="/operator/qr-kits/order"
-              style={{
-                display: "inline-flex", alignItems: "center", gap: 5,
-                background: "#f8fafc", color: "#344054",
-                border: "1px solid #e4e9f0", borderRadius: 7,
-                padding: "7px 14px", fontSize: 12, fontWeight: 600,
-                textDecoration: "none",
-              }}
-            >
-              🪟 Order window decal
+              Order stickers &amp; decals → Marketplace
             </Link>
           </div>
         </div>

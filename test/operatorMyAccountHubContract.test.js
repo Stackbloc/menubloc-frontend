@@ -1,5 +1,5 @@
 /**
- * My Account hub: Profile Editor | Menu | Settings | Password
+ * My Account hub: Profile Editor | Menu | Settings | My QR Code | Password
  * Menu includes View + Edit menu content (worksheet) subdirectory.
  */
 import assert from "node:assert/strict";
@@ -18,10 +18,14 @@ function testMyAccountTabs() {
   assert.match(src, /Profile Editor/);
   assert.match(src, /label: "Menu"/);
   assert.match(src, /label: "Settings"/);
+  assert.match(src, /label: "My QR Code"/);
   assert.match(src, /label: "Password"/);
-  assert.match(src, /tab=profile\|menu\|settings\|password/);
+  assert.match(src, /tab=profile\|menu\|settings\|qr\|password/);
   assert.match(src, /OperatorRestaurantProfileForm/);
+  assert.match(src, /data-testid="my-account-panel-qr"/);
+  assert.match(src, /PrimaryQrCard/);
   assert.doesNotMatch(src, /Menu Lab →/);
+  assert.doesNotMatch(src, /SectionCard title="Primary QR"/);
   // Tabs must drive local panel state + navigate (not URL-only setSearchParams)
   assert.match(src, /function selectTab\(/);
   assert.match(src, /function myAccountHref\(/);
@@ -51,6 +55,22 @@ function testSettingsAccountFields() {
   assert.match(src, /cancelPlatformSubscription/);
 }
 
+function testMarketplaceNav() {
+  const layout = read("src/pages/operator/OperatorLayout.jsx");
+  assert.match(layout, /operator\.nav\.marketplace/);
+  assert.match(layout, /\/operator\/qr-kits\/order/);
+  assert.match(layout, /Marketplace/);
+}
+
+function testPrimaryQrSharePrint() {
+  const src = read("src/components/qr/PrimaryQrCard.jsx");
+  assert.match(src, /data-testid="primary-qr-share"/);
+  assert.match(src, /data-testid="primary-qr-print"/);
+  assert.match(src, /navigator\.share/);
+  assert.match(src, /window\.print/);
+  assert.match(src, /\/operator\/qr-kits\/order/);
+}
+
 function testWorksheetReturnsToMyAccount() {
   const src = read("src/pages/operator/OperatorMenuWorksheetPage.jsx");
   assert.match(src, /\/operator\/my-account\?tab=menu&menuPanel=edit/);
@@ -60,5 +80,7 @@ function testWorksheetReturnsToMyAccount() {
 testMyAccountTabs();
 testMenuSubPanels();
 testSettingsAccountFields();
+testMarketplaceNav();
+testPrimaryQrSharePrint();
 testWorksheetReturnsToMyAccount();
 console.log("operatorMyAccountHubContract: ok");
