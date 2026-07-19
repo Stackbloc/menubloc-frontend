@@ -1,5 +1,5 @@
 /**
- * My Account hub: Profile Editor | Menu | Settings | My QR Code | Password
+ * My Account hub: Profile Editor | Menu | Settings | My QR Code | Delivery Portal | Password
  * Menu includes View + Edit menu content (worksheet) subdirectory.
  */
 import assert from "node:assert/strict";
@@ -19,10 +19,13 @@ function testMyAccountTabs() {
   assert.match(src, /label: "Menu"/);
   assert.match(src, /label: "Settings"/);
   assert.match(src, /label: "My QR Code"/);
+  assert.match(src, /label: "Delivery Portal"/);
   assert.match(src, /label: "Password"/);
-  assert.match(src, /tab=profile\|menu\|settings\|qr\|password/);
+  assert.match(src, /tab=profile\|menu\|settings\|qr\|delivery\|password/);
   assert.match(src, /OperatorRestaurantProfileForm/);
+  assert.match(src, /OperatorDeliveryPortalPanel/);
   assert.match(src, /data-testid="my-account-panel-qr"/);
+  assert.match(src, /data-testid="my-account-panel-delivery"/);
   assert.match(src, /PrimaryQrCard/);
   assert.doesNotMatch(src, /Menu Lab →/);
   assert.doesNotMatch(src, /SectionCard title="Primary QR"/);
@@ -71,6 +74,18 @@ function testPrimaryQrSharePrint() {
   assert.match(src, /\/operator\/qr-kits\/order/);
 }
 
+function testDeliveryPortalRewire() {
+  const panel = read("src/pages/operator/OperatorDeliveryPortalPanel.jsx");
+  const page = read("src/pages/operator/OperatorDeliveryPage.jsx");
+  assert.match(panel, /uber_direct/);
+  assert.match(panel, /doordash_drive/);
+  assert.match(panel, /data-testid="delivery-portal-panel"/);
+  assert.match(panel, /getDeliverySettings/);
+  assert.match(page, /OperatorDeliveryPortalPanel/);
+  assert.match(page, /\/operator\/my-account\?tab=delivery/);
+  assert.doesNotMatch(page, /function ProviderCard/);
+}
+
 function testWorksheetReturnsToMyAccount() {
   const src = read("src/pages/operator/OperatorMenuWorksheetPage.jsx");
   assert.match(src, /\/operator\/my-account\?tab=menu&menuPanel=edit/);
@@ -82,5 +97,6 @@ testMenuSubPanels();
 testSettingsAccountFields();
 testMarketplaceNav();
 testPrimaryQrSharePrint();
+testDeliveryPortalRewire();
 testWorksheetReturnsToMyAccount();
 console.log("operatorMyAccountHubContract: ok");

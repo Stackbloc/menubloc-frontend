@@ -10,7 +10,7 @@ import { MemoryRouter, Routes, Route, useNavigate, useSearchParams, Link } from 
 
 function normalizeTab(raw) {
   const id = String(raw || "").toLowerCase();
-  return ["profile", "menu", "settings", "qr", "password"].includes(id) ? id : "profile";
+  return ["profile", "menu", "settings", "qr", "delivery", "password"].includes(id) ? id : "profile";
 }
 
 function myAccountHref(tabId) {
@@ -37,7 +37,7 @@ function Page() {
   return (
     <div>
       <div data-testid="active-tab">{tab}</div>
-      {["menu", "settings", "qr", "password"].map((id) => (
+      {["menu", "settings", "qr", "delivery", "password"].map((id) => (
         <Link
           key={id}
           to={myAccountHref(id)}
@@ -53,6 +53,7 @@ function Page() {
       {tab === "menu" ? <div data-testid="panel-menu">Menu panel</div> : null}
       {tab === "settings" ? <div data-testid="panel-settings">Settings panel</div> : null}
       {tab === "qr" ? <div data-testid="panel-qr">QR panel</div> : null}
+      {tab === "delivery" ? <div data-testid="panel-delivery">Delivery panel</div> : null}
       {tab === "password" ? <div data-testid="panel-password">Password panel</div> : null}
     </div>
   );
@@ -69,7 +70,7 @@ function App({ initial = "/operator/my-account" }) {
 }
 
 describe("My Account tab navigation", () => {
-  it("switches Menu / Settings / QR / Password panels via selectTab", async () => {
+  it("switches Menu / Settings / QR / Delivery / Password panels via selectTab", async () => {
     render(<App />);
     expect(screen.getByTestId("active-tab").textContent).toBe("profile");
 
@@ -98,6 +99,14 @@ describe("My Account tab navigation", () => {
     });
 
     await act(async () => {
+      screen.getByText("delivery").click();
+    });
+    await waitFor(() => {
+      expect(screen.getByTestId("active-tab").textContent).toBe("delivery");
+      expect(screen.getByTestId("panel-delivery")).toBeTruthy();
+    });
+
+    await act(async () => {
       screen.getByText("password").click();
     });
     await waitFor(() => {
@@ -116,5 +125,11 @@ describe("My Account tab navigation", () => {
     render(<App initial="/operator/my-account?tab=qr" />);
     expect(screen.getByTestId("active-tab").textContent).toBe("qr");
     expect(screen.getByTestId("panel-qr")).toBeTruthy();
+  });
+
+  it("hydrates from URL tab=delivery", () => {
+    render(<App initial="/operator/my-account?tab=delivery" />);
+    expect(screen.getByTestId("active-tab").textContent).toBe("delivery");
+    expect(screen.getByTestId("panel-delivery")).toBeTruthy();
   });
 });

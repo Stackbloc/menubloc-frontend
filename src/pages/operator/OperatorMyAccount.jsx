@@ -1,12 +1,13 @@
 /**
  * Operator My Account — tabbed account hub.
- * Route: /operator/my-account?tab=profile|menu|settings|qr|password
+ * Route: /operator/my-account?tab=profile|menu|settings|qr|delivery|password
  * Menu sub: ?tab=menu&menuPanel=view|edit
  *
  * Profile Editor — public restaurant listing fields
  * Menu — view public menu + Edit menu content (Menu Worksheet)
  * Settings — account type, open date, next billing, change, cancel
  * My QR Code — see / share / print primary digital menu QR
+ * Delivery Portal — Uber Direct / DoorDash Drive delivery accounts
  * Password — operator password
  */
 import { useEffect, useMemo, useState } from "react";
@@ -19,6 +20,7 @@ import { getSubscriptionStatusLabel, formatMoney } from "../../components/paymen
 import PrimaryQrCard from "../../components/qr/PrimaryQrCard.jsx";
 import { operatorPublicProfilePath } from "../../lib/canonicalUrl.js";
 import { OperatorRestaurantProfileForm } from "./OperatorProfileEditor.jsx";
+import OperatorDeliveryPortalPanel from "./OperatorDeliveryPortalPanel.jsx";
 import {
   FREE_PLAN_CODE,
   getMarketplaceCommissionDisclosure,
@@ -29,6 +31,7 @@ const TABS = [
   { id: "menu", label: "Menu" },
   { id: "settings", label: "Settings" },
   { id: "qr", label: "My QR Code" },
+  { id: "delivery", label: "Delivery Portal" },
   { id: "password", label: "Password" },
 ];
 
@@ -823,6 +826,12 @@ export default function OperatorMyAccount() {
                 <QuietLink onClick={() => navigate("/operator/qr-kits/order")}>Marketplace →</QuietLink>
               </p>
             )}
+          </SectionCard>
+        ) : null}
+
+        {tab === "delivery" && selectedRestaurant?.id ? (
+          <SectionCard title="Delivery Portal" data-testid="my-account-panel-delivery">
+            <OperatorDeliveryPortalPanel embedded />
           </SectionCard>
         ) : null}
 

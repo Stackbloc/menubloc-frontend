@@ -196,6 +196,7 @@ const OPERATOR_PAGE_TITLE_KEYS = {
   Hours: "operator.hours.title",
   "Order Detail": "operator.orders.detailTitle",
   "Delivery Accounts": "operator.delivery.title",
+  "Delivery Portal": "operator.delivery.title",
   Profile: "operator.profile.title",
   "My Account": "operator.nav.myAccount",
   Marketplace: "operator.nav.marketplace",

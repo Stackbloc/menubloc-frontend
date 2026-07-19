@@ -172,7 +172,7 @@ const OPERATIONS_SECTIONS = [
         title: "Business Section",
         summary: "Owner-level settings protected by Owner PIN.",
         points: [
-          "My Account — Profile, Menu, Settings (plan/billing), My QR Code (see/share/print), and Password. No PIN required.",
+          "My Account — Profile, Menu, Settings (plan/billing), My QR Code, Delivery Portal (Uber Direct / DoorDash Drive), and Password. No PIN required.",
           "Marketplace — order printed QR stickers, window decals, and table kits at /operator/qr-kits/order.",
           "Restaurant Profile / Owner PIN Settings — edit public-facing restaurant info (owner PIN for sensitive settings).",
           "Business section items are intentionally separated from daily operations so staff cannot accidentally change billing or profile details.",
@@ -183,7 +183,7 @@ const OPERATIONS_SECTIONS = [
         title: "Support Section",
         summary: "Account information and help resources.",
         points: [
-          "My Account — profile, menu, plan/billing Settings, My QR Code, and password. No PIN required.",
+          "My Account — profile, menu, plan/billing Settings, My QR Code, Delivery Portal, and password. No PIN required.",
           "Knowledge Base — setup guides, troubleshooting, hardware recommendations, and direct support ticket submission.",
           "Support items are visible to all portal users. No elevated access required.",
         ],
@@ -396,6 +396,17 @@ const OPERATIONS_SECTIONS = [
           "Cancel only when the restaurant cannot fulfill the order reliably.",
           "Use a clear operational reason so the team can explain what happened later.",
           "If cancellations repeat, review staffing, item availability, or alert workflow.",
+        ],
+      },
+      {
+        id: "delivery-portal-setup",
+        title: "Delivery Portal (Uber Direct & DoorDash Drive)",
+        summary: "Connect restaurant-owned delivery accounts from My Account.",
+        points: [
+          "Open My Account → Delivery Portal to enable delivery checkout and connect providers.",
+          "Uber Direct and DoorDash Drive credentials are owned by the restaurant — Menuply only dispatches through connected accounts.",
+          "You can connect one or both providers and choose a default for dispatch.",
+          "Finish-setup links still open /operator/delivery, which shows the same Delivery Portal.",
         ],
       },
       {
