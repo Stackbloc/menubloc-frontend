@@ -66,6 +66,10 @@ describe("OCR edit split pane contract", () => {
     expect(css).toMatch(/ocr-edit-split__mode-toggle/);
     expect(css).toMatch(/live-menu-reference/);
     expect(css).toMatch(/overflow-y:\s*auto/);
+    expect(css).toMatch(/position:\s*sticky/);
+    expect(css).toMatch(/align-self:\s*start/);
+    expect(css).toMatch(/100dvh - 80px/);
+    expect(css).toMatch(/ocr-edit-split__toolbar[\s\S]*position:\s*sticky/);
     expect(css).toMatch(/@media \(min-width: 1480px\)/);
     expect(css).toMatch(/@media \(max-width: 1479px\)/);
     expect(css).toMatch(/minmax\(0,\s*1fr\)/);
