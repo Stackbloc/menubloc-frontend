@@ -1,5 +1,6 @@
 /**
- * Delivery Portal panel — Uber Direct + DoorDash Drive account setup.
+ * Delivery Portal panel — sign up with Uber Direct / DoorDash Drive,
+ * then Link Delivery Account to store credentials on the Menuply restaurant.
  * Used by My Account (?tab=delivery) and /operator/delivery deep links.
  */
 import React, { useEffect, useMemo, useState } from "react";
@@ -15,6 +16,12 @@ const PROVIDERS = [
   {
     key: "uber_direct",
     label: "Uber Direct",
+    blurb:
+      "Create your Uber Direct merchant account so customers can get Menuply orders delivered by Uber couriers.",
+    signupUrl: "https://direct.uber.com",
+    signupLabel: "Open Uber Direct signup",
+    docsUrl: "https://developer.uber.com/docs/deliveries/get-started",
+    docsLabel: "Uber Direct get-started guide",
     fields: [
       { key: "clientId", label: "Client ID" },
       { key: "clientSecret", label: "Client Secret" },
@@ -24,6 +31,12 @@ const PROVIDERS = [
   {
     key: "doordash_drive",
     label: "DoorDash Drive",
+    blurb:
+      "Create your DoorDash Developer / Drive account so customers can get Menuply orders delivered by Dashers.",
+    signupUrl: "https://developer.doordash.com/",
+    signupLabel: "Open DoorDash Developer Portal",
+    docsUrl: "https://developer.doordash.com/en-US/docs/drive/overview/about_drive/",
+    docsLabel: "DoorDash Drive overview",
     fields: [
       { key: "developerId", label: "Developer ID" },
       { key: "keyId", label: "Key ID" },
@@ -119,7 +132,7 @@ function StatusPill({ value }) {
   );
 }
 
-function ProviderCard({
+function ProviderPortalCard({
   provider,
   savedAccount,
   formState,
@@ -127,12 +140,18 @@ function ProviderCard({
   onSave,
   onDisconnect,
   busyKey,
+  linkOpen,
+  onToggleLink,
 }) {
   const providerDef = PROVIDERS.find((entry) => entry.key === provider);
   if (!providerDef) return null;
 
+  const isLinked = Boolean(savedAccount);
+  const showLinkForm = linkOpen || isLinked;
+
   return (
     <section
+      data-testid={`delivery-provider-card-${provider}`}
       style={{
         background: "#fff",
         borderRadius: 18,
@@ -141,93 +160,231 @@ function ProviderCard({
         boxShadow: "0 10px 24px rgba(15,23,42,0.05)",
       }}
     >
-      <div className="operator-responsive-row" style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-        <div>
+      <div
+        className="operator-responsive-row"
+        style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}
+      >
+        <div style={{ flex: 1, minWidth: 220 }}>
           <div style={{ fontSize: 22, fontWeight: 800, color: "#0f1720" }}>{providerDef.label}</div>
           <div style={{ marginTop: 6, fontSize: 13, color: "#5b6675", lineHeight: 1.5 }}>
-            This restaurant owns the provider relationship. Menuply only dispatches through the restaurant’s connected account.
+            {providerDef.blurb}
           </div>
+          <ol style={{ margin: "12px 0 0", paddingLeft: 18, fontSize: 13, color: "#475467", lineHeight: 1.55 }}>
+            <li>Sign up for the delivery service in their portal (opens in a new tab).</li>
+            <li>
+              After you have an account, return here and choose <strong>Link Delivery Account</strong> to
+              add your delivery info to Menuply.
+            </li>
+          </ol>
         </div>
         <div className="operator-responsive-status" style={{ textAlign: "right" }}>
-          <StatusPill value={savedAccount?.account_status || formState.accountStatus} />
+          <StatusPill value={isLinked ? savedAccount?.account_status || "connected" : "pending"} />
           <div style={{ marginTop: 8, fontSize: 12, color: "#667085" }}>
-            {savedAccount?.credentials_last4 ? `Saved credential ending in ${savedAccount.credentials_last4}` : "No credential stored yet"}
+            {isLinked
+              ? savedAccount?.credentials_last4
+                ? `Linked · credential ending in ${savedAccount.credentials_last4}`
+                : "Linked to Menuply"
+              : "Not linked to Menuply yet"}
           </div>
         </div>
       </div>
 
-      <div className="operator-responsive-grid-4" style={{ marginTop: 16, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
-        <label style={{ display: "grid", gap: 6 }}>
-          <span style={labelStyle}>Account label</span>
-          <input value={formState.accountLabel} onChange={(event) => onChange("accountLabel", event.target.value)} style={inputStyle} />
-        </label>
-        <label style={{ display: "grid", gap: 6 }}>
-          <span style={labelStyle}>Business name</span>
-          <input value={formState.businessName} onChange={(event) => onChange("businessName", event.target.value)} style={inputStyle} />
-        </label>
-        <label style={{ display: "grid", gap: 6 }}>
-          <span style={labelStyle}>Contact email</span>
-          <input value={formState.contactEmail} onChange={(event) => onChange("contactEmail", event.target.value)} style={inputStyle} />
-        </label>
-        <label style={{ display: "grid", gap: 6 }}>
-          <span style={labelStyle}>Account status</span>
-          <select value={formState.accountStatus} onChange={(event) => onChange("accountStatus", event.target.value)} style={inputStyle}>
-            <option value="pending">Pending</option>
-            <option value="connected">Connected</option>
-            <option value="error">Error</option>
-            <option value="disabled">Disabled</option>
-          </select>
-        </label>
-        <label style={{ display: "grid", gap: 6 }}>
-          <span style={labelStyle}>External business ID</span>
-          <input value={formState.externalBusinessId} onChange={(event) => onChange("externalBusinessId", event.target.value)} style={inputStyle} />
-        </label>
-        <label style={{ display: "grid", gap: 6 }}>
-          <span style={labelStyle}>External store ID</span>
-          <input value={formState.externalStoreId} onChange={(event) => onChange("externalStoreId", event.target.value)} style={inputStyle} />
-        </label>
-        <label style={{ display: "grid", gap: 6 }}>
-          <span style={labelStyle}>External account ID</span>
-          <input value={formState.externalAccountId} onChange={(event) => onChange("externalAccountId", event.target.value)} style={inputStyle} />
-        </label>
-      </div>
-
-      <div className="operator-responsive-grid-3" style={{ marginTop: 16, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
-        {providerDef.fields.map((field) => (
-          <label key={field.key} style={{ display: "grid", gap: 6 }}>
-            <span style={labelStyle}>{field.label}</span>
-            <input
-              type="password"
-              value={formState.credentials[field.key] || ""}
-              onChange={(event) => onChange(`credentials.${field.key}`, event.target.value)}
-              placeholder={savedAccount?.credentials_last4 ? "Leave blank to keep existing secret" : ""}
-              style={inputStyle}
-            />
-          </label>
-        ))}
-      </div>
-
-      <div className="operator-responsive-actions" style={{ marginTop: 16, display: "flex", gap: 16, flexWrap: "wrap", alignItems: "center" }}>
-        <label style={checkLabelStyle}>
-          <input type="checkbox" checked={formState.isEnabled} onChange={(event) => onChange("isEnabled", event.target.checked)} />
-          Enable this provider for delivery dispatch
-        </label>
-        <label style={checkLabelStyle}>
-          <input type="checkbox" checked={formState.isDefault} onChange={(event) => onChange("isDefault", event.target.checked)} />
-          Set as default provider
-        </label>
-      </div>
-
-      <div className="operator-responsive-card-actions" style={{ marginTop: 16, display: "flex", gap: 10, flexWrap: "wrap" }}>
-        <button type="button" onClick={onSave} disabled={busyKey === provider} style={primaryButtonStyle}>
-          {busyKey === provider ? "Saving..." : `Save ${providerDef.label}`}
-        </button>
-        {savedAccount ? (
-          <button type="button" onClick={onDisconnect} disabled={busyKey === `${provider}:disconnect`} style={secondaryDangerButtonStyle}>
-            {busyKey === `${provider}:disconnect` ? "Disconnecting..." : "Disconnect provider"}
+      <div style={{ marginTop: 16, display: "flex", gap: 10, flexWrap: "wrap" }}>
+        <a
+          href={providerDef.signupUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          data-testid={`delivery-signup-${provider}`}
+          style={{
+            ...primaryButtonStyle,
+            display: "inline-flex",
+            alignItems: "center",
+            textDecoration: "none",
+          }}
+        >
+          {providerDef.signupLabel} ↗
+        </a>
+        <a
+          href={providerDef.docsUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            ...secondaryButtonStyle,
+            display: "inline-flex",
+            alignItems: "center",
+            textDecoration: "none",
+          }}
+        >
+          {providerDef.docsLabel} ↗
+        </a>
+        {!showLinkForm ? (
+          <button
+            type="button"
+            data-testid={`delivery-link-account-${provider}`}
+            onClick={onToggleLink}
+            style={secondaryButtonStyle}
+          >
+            Link Delivery Account
+          </button>
+        ) : !isLinked ? (
+          <button type="button" onClick={onToggleLink} style={quietButtonStyle}>
+            Hide link form
           </button>
         ) : null}
       </div>
+
+      {showLinkForm ? (
+        <div
+          data-testid={`delivery-link-form-${provider}`}
+          style={{
+            marginTop: 18,
+            paddingTop: 16,
+            borderTop: "1px solid #e4e9f0",
+            display: "grid",
+            gap: 14,
+          }}
+        >
+          <div style={{ fontSize: 15, fontWeight: 800, color: "#0f1720" }}>
+            Link Delivery Account
+          </div>
+          <p style={{ margin: 0, fontSize: 13, color: "#5b6675", lineHeight: 1.5 }}>
+            Paste the account IDs and API credentials from your {providerDef.label} dashboard after
+            you have signed up. Menuply stores them for this restaurant so we can dispatch deliveries
+            through your own account.
+          </p>
+
+          <div
+            className="operator-responsive-grid-4"
+            style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}
+          >
+            <label style={{ display: "grid", gap: 6 }}>
+              <span style={labelStyle}>Account label</span>
+              <input
+                value={formState.accountLabel}
+                onChange={(event) => onChange("accountLabel", event.target.value)}
+                style={inputStyle}
+              />
+            </label>
+            <label style={{ display: "grid", gap: 6 }}>
+              <span style={labelStyle}>Business name</span>
+              <input
+                value={formState.businessName}
+                onChange={(event) => onChange("businessName", event.target.value)}
+                style={inputStyle}
+              />
+            </label>
+            <label style={{ display: "grid", gap: 6 }}>
+              <span style={labelStyle}>Contact email</span>
+              <input
+                value={formState.contactEmail}
+                onChange={(event) => onChange("contactEmail", event.target.value)}
+                style={inputStyle}
+              />
+            </label>
+            <label style={{ display: "grid", gap: 6 }}>
+              <span style={labelStyle}>Account status</span>
+              <select
+                value={formState.accountStatus}
+                onChange={(event) => onChange("accountStatus", event.target.value)}
+                style={inputStyle}
+              >
+                <option value="pending">Pending</option>
+                <option value="connected">Connected</option>
+                <option value="error">Error</option>
+                <option value="disabled">Disabled</option>
+              </select>
+            </label>
+            <label style={{ display: "grid", gap: 6 }}>
+              <span style={labelStyle}>External business ID</span>
+              <input
+                value={formState.externalBusinessId}
+                onChange={(event) => onChange("externalBusinessId", event.target.value)}
+                style={inputStyle}
+              />
+            </label>
+            <label style={{ display: "grid", gap: 6 }}>
+              <span style={labelStyle}>External store ID</span>
+              <input
+                value={formState.externalStoreId}
+                onChange={(event) => onChange("externalStoreId", event.target.value)}
+                style={inputStyle}
+              />
+            </label>
+            <label style={{ display: "grid", gap: 6 }}>
+              <span style={labelStyle}>External account ID</span>
+              <input
+                value={formState.externalAccountId}
+                onChange={(event) => onChange("externalAccountId", event.target.value)}
+                style={inputStyle}
+              />
+            </label>
+          </div>
+
+          <div
+            className="operator-responsive-grid-3"
+            style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}
+          >
+            {providerDef.fields.map((field) => (
+              <label key={field.key} style={{ display: "grid", gap: 6 }}>
+                <span style={labelStyle}>{field.label}</span>
+                <input
+                  type="password"
+                  value={formState.credentials[field.key] || ""}
+                  onChange={(event) => onChange(`credentials.${field.key}`, event.target.value)}
+                  placeholder={savedAccount?.credentials_last4 ? "Leave blank to keep existing secret" : ""}
+                  style={inputStyle}
+                />
+              </label>
+            ))}
+          </div>
+
+          <div
+            className="operator-responsive-actions"
+            style={{ display: "flex", gap: 16, flexWrap: "wrap", alignItems: "center" }}
+          >
+            <label style={checkLabelStyle}>
+              <input
+                type="checkbox"
+                checked={formState.isEnabled}
+                onChange={(event) => onChange("isEnabled", event.target.checked)}
+              />
+              Enable this provider for delivery dispatch
+            </label>
+            <label style={checkLabelStyle}>
+              <input
+                type="checkbox"
+                checked={formState.isDefault}
+                onChange={(event) => onChange("isDefault", event.target.checked)}
+              />
+              Set as default provider
+            </label>
+          </div>
+
+          <div
+            className="operator-responsive-card-actions"
+            style={{ display: "flex", gap: 10, flexWrap: "wrap" }}
+          >
+            <button
+              type="button"
+              onClick={onSave}
+              disabled={busyKey === provider}
+              style={primaryButtonStyle}
+            >
+              {busyKey === provider ? "Saving..." : `Save linked ${providerDef.label} account`}
+            </button>
+            {savedAccount ? (
+              <button
+                type="button"
+                onClick={onDisconnect}
+                disabled={busyKey === `${provider}:disconnect`}
+                style={secondaryDangerButtonStyle}
+              >
+                {busyKey === `${provider}:disconnect` ? "Disconnecting..." : "Disconnect provider"}
+              </button>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }
@@ -237,6 +394,7 @@ export default function OperatorDeliveryPortalPanel({ embedded = false }) {
   const [state, setState] = useState({ status: "idle", settings: null, error: "", message: "" });
   const [forms, setForms] = useState({});
   const [busyKey, setBusyKey] = useState("");
+  const [linkOpenByProvider, setLinkOpenByProvider] = useState({});
 
   useEffect(() => {
     if (!selectedRestaurant?.id) return;
@@ -251,7 +409,9 @@ export default function OperatorDeliveryPortalPanel({ embedded = false }) {
 
         const nextForms = {};
         for (const provider of PROVIDERS) {
-          const savedAccount = (response.settings.accounts || []).find((entry) => entry.provider === provider.key);
+          const savedAccount = (response.settings.accounts || []).find(
+            (entry) => entry.provider === provider.key
+          );
           nextForms[provider.key] = providerStateFromAccount(savedAccount, provider.key);
         }
 
@@ -259,7 +419,12 @@ export default function OperatorDeliveryPortalPanel({ embedded = false }) {
         setState({ status: "ready", settings: response.settings, error: "", message: "" });
       } catch (error) {
         if (cancelled) return;
-        setState({ status: "error", settings: null, error: error.message || "Unable to load delivery settings.", message: "" });
+        setState({
+          status: "error",
+          settings: null,
+          error: error.message || "Unable to load delivery settings.",
+          message: "",
+        });
       }
     }
 
@@ -306,7 +471,9 @@ export default function OperatorDeliveryPortalPanel({ embedded = false }) {
     const response = await getDeliverySettings(selectedRestaurant.id);
     const nextForms = {};
     for (const provider of PROVIDERS) {
-      const savedAccount = (response.settings.accounts || []).find((entry) => entry.provider === provider.key);
+      const savedAccount = (response.settings.accounts || []).find(
+        (entry) => entry.provider === provider.key
+      );
       nextForms[provider.key] = providerStateFromAccount(savedAccount, provider.key);
     }
     setForms(nextForms);
@@ -336,9 +503,13 @@ export default function OperatorDeliveryPortalPanel({ embedded = false }) {
         credentials,
       });
 
-      await reloadSettings("Provider settings saved.");
+      await reloadSettings("Delivery account linked.");
     } catch (error) {
-      setState((prev) => ({ ...prev, error: error.message || "Unable to save provider settings.", message: "" }));
+      setState((prev) => ({
+        ...prev,
+        error: error.message || "Unable to save provider settings.",
+        message: "",
+      }));
     } finally {
       setBusyKey("");
     }
@@ -349,9 +520,14 @@ export default function OperatorDeliveryPortalPanel({ embedded = false }) {
     setBusyKey(`${provider}:disconnect`);
     try {
       await disconnectDeliveryProviderAccount(selectedRestaurant.id, provider);
+      setLinkOpenByProvider((prev) => ({ ...prev, [provider]: false }));
       await reloadSettings("Provider disconnected.");
     } catch (error) {
-      setState((prev) => ({ ...prev, error: error.message || "Unable to disconnect provider.", message: "" }));
+      setState((prev) => ({
+        ...prev,
+        error: error.message || "Unable to disconnect provider.",
+        message: "",
+      }));
     } finally {
       setBusyKey("");
     }
@@ -384,7 +560,11 @@ export default function OperatorDeliveryPortalPanel({ embedded = false }) {
       });
       await reloadSettings("Restaurant delivery settings updated.");
     } catch (error) {
-      setState((prev) => ({ ...prev, error: error.message || "Unable to update delivery settings.", message: "" }));
+      setState((prev) => ({
+        ...prev,
+        error: error.message || "Unable to update delivery settings.",
+        message: "",
+      }));
     } finally {
       setBusyKey("");
     }
@@ -400,242 +580,304 @@ export default function OperatorDeliveryPortalPanel({ embedded = false }) {
 
   return (
     <div data-testid="delivery-portal-panel" style={{ display: "grid", gap: 18 }}>
-          <section
+      <section
+        style={{
+          background: embedded ? "transparent" : "#fff",
+          borderRadius: embedded ? 0 : 18,
+          border: embedded ? "none" : "1px solid #e4e9f0",
+          padding: embedded ? "0 0 8px" : "18px 18px 16px",
+          boxShadow: embedded ? "none" : "0 10px 24px rgba(15,23,42,0.05)",
+        }}
+      >
+        <div style={{ fontSize: embedded ? 18 : 28, fontWeight: 800, color: "#0f1720" }}>
+          {selectedRestaurant.restaurant_name}
+        </div>
+        <div style={{ marginTop: 8, color: "#5b6675", lineHeight: 1.6, maxWidth: 760 }}>
+          Delivery Portal helps you sign up for Uber Direct or DoorDash Drive, then link those
+          accounts to Menuply. You stay the merchant of record with each delivery service.
+        </div>
+        <div style={{ marginTop: 10, color: "#5b6675", lineHeight: 1.6, maxWidth: 760, fontSize: 14 }}>
+          Step 1: open the provider signup portal. Step 2: after you have signed up, use{" "}
+          <strong>Link Delivery Account</strong> to add your delivery credentials to this restaurant.
+        </div>
+
+        {state.error ? (
+          <div
             style={{
-              background: embedded ? "transparent" : "#fff",
-              borderRadius: embedded ? 0 : 18,
-              border: embedded ? "none" : "1px solid #e4e9f0",
-              padding: embedded ? "0 0 8px" : "18px 18px 16px",
-              boxShadow: embedded ? "none" : "0 10px 24px rgba(15,23,42,0.05)",
+              marginTop: 16,
+              padding: "12px 14px",
+              borderRadius: 12,
+              background: "#fee2e2",
+              color: "#991b1b",
+              fontWeight: 700,
             }}
           >
-            <div style={{ fontSize: embedded ? 18 : 28, fontWeight: 800, color: "#0f1720" }}>
-              {selectedRestaurant.restaurant_name}
-            </div>
-            <div style={{ marginTop: 8, color: "#5b6675", lineHeight: 1.6, maxWidth: 760 }}>
-              Delivery is restaurant-managed. Connect Uber Direct, DoorDash Drive, or both, then pick a default dispatch provider — or stay pickup-only.
-            </div>
-            <div style={{ marginTop: 10, color: "#5b6675", lineHeight: 1.6, maxWidth: 760, fontSize: 14 }}>
-              Delivery fees are calculated on the backend. Menuply should not add a second restaurant fee when a provider already passes through its own customer-facing delivery fee unless you intentionally apply the fee to all delivery orders.
-            </div>
+            {state.error}
+          </div>
+        ) : null}
+        {state.message ? (
+          <div
+            style={{
+              marginTop: 16,
+              padding: "12px 14px",
+              borderRadius: 12,
+              background: "#dcfce7",
+              color: "#166534",
+              fontWeight: 700,
+            }}
+          >
+            {state.message}
+          </div>
+        ) : null}
 
-            {state.error ? (
-              <div style={{ marginTop: 16, padding: "12px 14px", borderRadius: 12, background: "#fee2e2", color: "#991b1b", fontWeight: 700 }}>
-                {state.error}
-              </div>
-            ) : null}
-            {state.message ? (
-              <div style={{ marginTop: 16, padding: "12px 14px", borderRadius: 12, background: "#dcfce7", color: "#166534", fontWeight: 700 }}>
-                {state.message}
-              </div>
-            ) : null}
+        <form onSubmit={handleUpdateSettings} style={{ marginTop: 16, display: "grid", gap: 14 }}>
+          <label style={checkLabelStyle}>
+            <input
+              type="checkbox"
+              checked={state.settings?.delivery_enabled === true}
+              onChange={(event) =>
+                setState((prev) => ({
+                  ...prev,
+                  settings: {
+                    ...(prev.settings || {}),
+                    delivery_enabled: event.target.checked,
+                  },
+                }))
+              }
+            />
+            Enable delivery checkout for this restaurant
+          </label>
 
-            <form onSubmit={handleUpdateSettings} style={{ marginTop: 16, display: "grid", gap: 14 }}>
-              <label style={checkLabelStyle}>
-                <input
-                  type="checkbox"
-                  checked={state.settings?.delivery_enabled === true}
+          {activeProviders.length > 0 ? (
+            <label
+              className="operator-responsive-field"
+              style={{ display: "grid", gap: 6, maxWidth: 320 }}
+            >
+              <span style={labelStyle}>Default delivery provider</span>
+              <select
+                value={state.settings?.default_delivery_provider || ""}
+                onChange={(event) =>
+                  setState((prev) => ({
+                    ...prev,
+                    settings: {
+                      ...(prev.settings || {}),
+                      default_delivery_provider: event.target.value || null,
+                    },
+                  }))
+                }
+                style={inputStyle}
+              >
+                <option value="">Select default provider</option>
+                {activeProviders.map((provider) => (
+                  <option key={provider} value={provider}>
+                    {PROVIDERS.find((entry) => entry.key === provider)?.label || provider}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : (
+            <p style={{ margin: 0, fontSize: 13, color: "#667085", lineHeight: 1.5, maxWidth: 520 }}>
+              Sign up and link Uber Direct or DoorDash Drive below, then you can choose a default
+              delivery provider here.
+            </p>
+          )}
+
+          <div style={{ fontSize: 13, color: "#667085" }}>
+            Linked providers:{" "}
+            {activeProviders.length
+              ? activeProviders
+                  .map(
+                    (provider) =>
+                      PROVIDERS.find((entry) => entry.key === provider)?.label || provider
+                  )
+                  .join(", ")
+              : "none yet"}
+          </div>
+
+          <div
+            style={{
+              marginTop: 8,
+              borderTop: "1px solid #e4e9f0",
+              paddingTop: 16,
+              display: "grid",
+              gap: 14,
+            }}
+          >
+            <div style={{ fontSize: 16, fontWeight: 800, color: "#0f1720" }}>Delivery fee</div>
+            <label style={checkLabelStyle}>
+              <input
+                type="checkbox"
+                checked={state.settings?.delivery_fee_enabled === true}
+                onChange={(event) =>
+                  setState((prev) => ({
+                    ...prev,
+                    settings: {
+                      ...(prev.settings || {}),
+                      delivery_fee_enabled: event.target.checked,
+                    },
+                  }))
+                }
+              />
+              Enable a restaurant-configured delivery fee
+            </label>
+
+            <div
+              className="operator-responsive-grid-4"
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+                gap: 12,
+              }}
+            >
+              <label style={{ display: "grid", gap: 6 }}>
+                <span style={labelStyle}>Fee type</span>
+                <select
+                  value={state.settings?.delivery_fee_type || "flat"}
                   onChange={(event) =>
                     setState((prev) => ({
                       ...prev,
                       settings: {
                         ...(prev.settings || {}),
-                        delivery_enabled: event.target.checked,
+                        delivery_fee_type: event.target.value,
                       },
                     }))
                   }
-                />
-                Enable delivery checkout for this restaurant
+                  style={inputStyle}
+                >
+                  <option value="flat">Flat</option>
+                  <option value="percentage">Percentage</option>
+                </select>
               </label>
-
-              {activeProviders.length > 0 ? (
-                <label className="operator-responsive-field" style={{ display: "grid", gap: 6, maxWidth: 320 }}>
-                  <span style={labelStyle}>Default delivery provider</span>
-                  <select
-                    value={state.settings?.default_delivery_provider || ""}
+              {state.settings?.delivery_fee_type === "percentage" ? (
+                <label style={{ display: "grid", gap: 6 }}>
+                  <span style={labelStyle}>Percentage</span>
+                  <input
+                    value={formatPercentInputFromBps(state.settings?.delivery_fee_percentage_bps)}
                     onChange={(event) =>
                       setState((prev) => ({
                         ...prev,
                         settings: {
                           ...(prev.settings || {}),
-                          default_delivery_provider: event.target.value || null,
+                          delivery_fee_percentage_bps: normalizePercentInputToBps(event.target.value),
                         },
                       }))
                     }
                     style={inputStyle}
-                  >
-                    <option value="">Select default provider</option>
-                    {activeProviders.map((provider) => (
-                      <option key={provider} value={provider}>
-                        {PROVIDERS.find((entry) => entry.key === provider)?.label || provider}
-                      </option>
-                    ))}
-                  </select>
+                    inputMode="decimal"
+                  />
                 </label>
               ) : (
-                <p style={{ margin: 0, fontSize: 13, color: "#667085", lineHeight: 1.5, maxWidth: 520 }}>
-                  Connect Uber Direct or DoorDash Drive below, then you can choose a default delivery provider here.
-                </p>
-              )}
-
-              <div style={{ fontSize: 13, color: "#667085" }}>
-                Active providers: {activeProviders.length ? activeProviders.map((provider) => PROVIDERS.find((entry) => entry.key === provider)?.label || provider).join(", ") : "none yet"}
-              </div>
-
-              <div style={{ marginTop: 8, borderTop: "1px solid #e4e9f0", paddingTop: 16, display: "grid", gap: 14 }}>
-                <div style={{ fontSize: 16, fontWeight: 800, color: "#0f1720" }}>Delivery fee</div>
-                <label style={checkLabelStyle}>
-                  <input
-                    type="checkbox"
-                    checked={state.settings?.delivery_fee_enabled === true}
-                    onChange={(event) =>
-                      setState((prev) => ({
-                        ...prev,
-                        settings: {
-                          ...(prev.settings || {}),
-                          delivery_fee_enabled: event.target.checked,
-                        },
-                      }))
-                    }
-                  />
-                  Enable a restaurant-configured delivery fee
-                </label>
-
-                <div className="operator-responsive-grid-4" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
-                  <label style={{ display: "grid", gap: 6 }}>
-                    <span style={labelStyle}>Fee type</span>
-                    <select
-                      value={state.settings?.delivery_fee_type || "flat"}
-                      onChange={(event) =>
-                        setState((prev) => ({
-                          ...prev,
-                          settings: {
-                            ...(prev.settings || {}),
-                            delivery_fee_type: event.target.value,
-                          },
-                        }))
-                      }
-                      style={inputStyle}
-                    >
-                      <option value="flat">Flat</option>
-                      <option value="percentage">Percentage</option>
-                    </select>
-                  </label>
-                  {state.settings?.delivery_fee_type === "percentage" ? (
-                    <label style={{ display: "grid", gap: 6 }}>
-                      <span style={labelStyle}>Percentage</span>
-                      <input
-                        value={formatPercentInputFromBps(state.settings?.delivery_fee_percentage_bps)}
-                        onChange={(event) =>
-                          setState((prev) => ({
-                            ...prev,
-                            settings: {
-                              ...(prev.settings || {}),
-                              delivery_fee_percentage_bps: normalizePercentInputToBps(event.target.value),
-                            },
-                          }))
-                        }
-                        style={inputStyle}
-                        inputMode="decimal"
-                      />
-                    </label>
-                  ) : (
-                    <label style={{ display: "grid", gap: 6 }}>
-                      <span style={labelStyle}>Flat amount</span>
-                      <input
-                        value={formatMoneyInputFromCents(state.settings?.delivery_fee_amount_cents)}
-                        onChange={(event) =>
-                          setState((prev) => ({
-                            ...prev,
-                            settings: {
-                              ...(prev.settings || {}),
-                              delivery_fee_amount_cents: normalizeMoneyInputToCents(event.target.value),
-                            },
-                          }))
-                        }
-                        style={inputStyle}
-                        inputMode="decimal"
-                      />
-                    </label>
-                  )}
-                  <label style={{ display: "grid", gap: 6 }}>
-                    <span style={labelStyle}>Label</span>
-                    <input
-                      value={state.settings?.delivery_fee_label || "Delivery fee"}
-                      onChange={(event) =>
-                        setState((prev) => ({
-                          ...prev,
-                          settings: {
-                            ...(prev.settings || {}),
-                            delivery_fee_label: event.target.value,
-                          },
-                        }))
-                      }
-                      style={inputStyle}
-                    />
-                  </label>
-                  <label style={{ display: "grid", gap: 6 }}>
-                    <span style={labelStyle}>Applies to</span>
-                    <select
-                      value={state.settings?.delivery_fee_applies_to || "menuply_delivery_without_provider_fee"}
-                      onChange={(event) =>
-                        setState((prev) => ({
-                          ...prev,
-                          settings: {
-                            ...(prev.settings || {}),
-                            delivery_fee_applies_to: event.target.value,
-                          },
-                        }))
-                      }
-                      style={inputStyle}
-                    >
-                      <option value="restaurant_delivery">Restaurant delivery</option>
-                      <option value="menuply_delivery_without_provider_fee">Menuply delivery without provider fee</option>
-                      <option value="all_delivery_orders">All delivery orders</option>
-                    </select>
-                  </label>
-                </div>
-
                 <label style={{ display: "grid", gap: 6 }}>
-                  <span style={labelStyle}>Disclosure</span>
-                  <textarea
-                    value={state.settings?.delivery_fee_disclosure || ""}
+                  <span style={labelStyle}>Flat amount</span>
+                  <input
+                    value={formatMoneyInputFromCents(state.settings?.delivery_fee_amount_cents)}
                     onChange={(event) =>
                       setState((prev) => ({
                         ...prev,
                         settings: {
                           ...(prev.settings || {}),
-                          delivery_fee_disclosure: event.target.value,
+                          delivery_fee_amount_cents: normalizeMoneyInputToCents(event.target.value),
                         },
                       }))
                     }
-                    rows={3}
-                    style={{ ...inputStyle, resize: "vertical" }}
-                    placeholder="Optional customer-facing disclosure shown with the fee."
+                    style={inputStyle}
+                    inputMode="decimal"
                   />
                 </label>
-              </div>
+              )}
+              <label style={{ display: "grid", gap: 6 }}>
+                <span style={labelStyle}>Label</span>
+                <input
+                  value={state.settings?.delivery_fee_label || "Delivery fee"}
+                  onChange={(event) =>
+                    setState((prev) => ({
+                      ...prev,
+                      settings: {
+                        ...(prev.settings || {}),
+                        delivery_fee_label: event.target.value,
+                      },
+                    }))
+                  }
+                  style={inputStyle}
+                />
+              </label>
+              <label style={{ display: "grid", gap: 6 }}>
+                <span style={labelStyle}>Applies to</span>
+                <select
+                  value={
+                    state.settings?.delivery_fee_applies_to ||
+                    "menuply_delivery_without_provider_fee"
+                  }
+                  onChange={(event) =>
+                    setState((prev) => ({
+                      ...prev,
+                      settings: {
+                        ...(prev.settings || {}),
+                        delivery_fee_applies_to: event.target.value,
+                      },
+                    }))
+                  }
+                  style={inputStyle}
+                >
+                  <option value="restaurant_delivery">Restaurant delivery</option>
+                  <option value="menuply_delivery_without_provider_fee">
+                    Menuply delivery without provider fee
+                  </option>
+                  <option value="all_delivery_orders">All delivery orders</option>
+                </select>
+              </label>
+            </div>
 
-              <div className="operator-responsive-card-actions">
-                <button type="submit" disabled={busyKey === "settings"} style={primaryButtonStyle}>
-                  {busyKey === "settings" ? "Saving..." : "Save restaurant delivery settings"}
-                </button>
-              </div>
-            </form>
-          </section>
+            <label style={{ display: "grid", gap: 6 }}>
+              <span style={labelStyle}>Disclosure</span>
+              <textarea
+                value={state.settings?.delivery_fee_disclosure || ""}
+                onChange={(event) =>
+                  setState((prev) => ({
+                    ...prev,
+                    settings: {
+                      ...(prev.settings || {}),
+                      delivery_fee_disclosure: event.target.value,
+                    },
+                  }))
+                }
+                rows={3}
+                style={{ ...inputStyle, resize: "vertical" }}
+                placeholder="Optional customer-facing disclosure shown with the fee."
+              />
+            </label>
+          </div>
 
-          {PROVIDERS.map((provider) => (
-            <ProviderCard
-              key={provider.key}
-              provider={provider.key}
-              savedAccount={(state.settings?.accounts || []).find((entry) => entry.provider === provider.key) || null}
-              formState={forms[provider.key] || providerDefaults(provider.key)}
-              onChange={(field, value) => updateForm(provider.key, field, value)}
-              onSave={() => handleSaveProvider(provider.key)}
-              onDisconnect={() => handleDisconnectProvider(provider.key)}
-              busyKey={busyKey}
-            />
-          ))}
+          <div className="operator-responsive-card-actions">
+            <button type="submit" disabled={busyKey === "settings"} style={primaryButtonStyle}>
+              {busyKey === "settings" ? "Saving..." : "Save restaurant delivery settings"}
+            </button>
+          </div>
+        </form>
+      </section>
+
+      {PROVIDERS.map((provider) => (
+        <ProviderPortalCard
+          key={provider.key}
+          provider={provider.key}
+          savedAccount={
+            (state.settings?.accounts || []).find((entry) => entry.provider === provider.key) ||
+            null
+          }
+          formState={forms[provider.key] || providerDefaults(provider.key)}
+          onChange={(field, value) => updateForm(provider.key, field, value)}
+          onSave={() => handleSaveProvider(provider.key)}
+          onDisconnect={() => handleDisconnectProvider(provider.key)}
+          busyKey={busyKey}
+          linkOpen={linkOpenByProvider[provider.key] === true}
+          onToggleLink={() =>
+            setLinkOpenByProvider((prev) => ({
+              ...prev,
+              [provider.key]: !prev[provider.key],
+            }))
+          }
+        />
+      ))}
     </div>
   );
 }
@@ -673,6 +915,28 @@ const primaryButtonStyle = {
   padding: "10px 14px",
   fontSize: 13,
   fontWeight: 800,
+  cursor: "pointer",
+};
+
+const secondaryButtonStyle = {
+  border: "1px solid #d9e0ea",
+  borderRadius: 12,
+  background: "#f8fafc",
+  color: "#0f1720",
+  padding: "10px 14px",
+  fontSize: 13,
+  fontWeight: 800,
+  cursor: "pointer",
+};
+
+const quietButtonStyle = {
+  border: "none",
+  borderRadius: 12,
+  background: "transparent",
+  color: "#667085",
+  padding: "10px 8px",
+  fontSize: 13,
+  fontWeight: 700,
   cursor: "pointer",
 };
 

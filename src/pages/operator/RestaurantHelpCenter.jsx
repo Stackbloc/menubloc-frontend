@@ -401,11 +401,11 @@ const OPERATIONS_SECTIONS = [
       {
         id: "delivery-portal-setup",
         title: "Delivery Portal (Uber Direct & DoorDash Drive)",
-        summary: "Connect restaurant-owned delivery accounts from My Account.",
+        summary: "Sign up for delivery services, then link those accounts to Menuply.",
         points: [
-          "Open My Account → Delivery Portal to enable delivery checkout and connect providers.",
-          "Uber Direct and DoorDash Drive credentials are owned by the restaurant — Menuply only dispatches through connected accounts.",
-          "You can connect one or both providers and choose a default for dispatch.",
+          "Open My Account → Delivery Portal.",
+          "Use Open Uber Direct signup or Open DoorDash Developer Portal to create your delivery-service account.",
+          "After you have signed up, choose Link Delivery Account and enter the IDs/credentials from that provider’s dashboard.",
           "Finish-setup links still open /operator/delivery, which shows the same Delivery Portal.",
         ],
       },

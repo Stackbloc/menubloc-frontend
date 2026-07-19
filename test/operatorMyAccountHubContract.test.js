@@ -81,8 +81,11 @@ function testDeliveryPortalRewire() {
   assert.match(panel, /doordash_drive/);
   assert.match(panel, /data-testid="delivery-portal-panel"/);
   assert.match(panel, /getDeliverySettings/);
+  assert.match(panel, /https:\/\/direct\.uber\.com/);
+  assert.match(panel, /https:\/\/developer\.doordash\.com\//);
+  assert.match(panel, /Link Delivery Account/);
+  assert.match(panel, /delivery-link-account-/);
   assert.match(panel, /activeProviders\.length > 0/);
-  assert.match(panel, /Connect Uber Direct or DoorDash Drive below/);
   assert.match(page, /OperatorDeliveryPortalPanel/);
   assert.match(page, /\/operator\/my-account\?tab=delivery/);
   assert.doesNotMatch(page, /function ProviderCard/);
