@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { EmptyState, OWNER_COLORS, PageCard, SectionTitle } from "./OwnerLayout.jsx";
 import { getOwnerMenuUploads } from "../../lib/ownerApi.js";
 
@@ -30,7 +30,6 @@ const COL_HEADS = [
   "Items (inserted/parsed)",
   "Uploaded",
   "Location",
-  "",
 ];
 
 function formatDate(iso) {
@@ -75,16 +74,42 @@ function ErrorBanner({ message }) {
 }
 
 function UploadRow({ upload }) {
+  const navigate = useNavigate();
   const badge = STATUS_STYLE[upload.display_status] || STATUS_STYLE.pending;
   const source = sourceBadge(upload);
   const hasItems = upload.parsed_item_count > 0 || upload.inserted_item_count > 0;
   const location = upload.city && upload.state ? `${upload.city}, ${upload.state}` : null;
   const detailPath = `/owner/menu-manager/uploads/${upload.id}`;
-  const reviewPath = `${detailPath}/review-items`;
   const needsReview = Number(upload.human_review_items || 0) > 0;
 
+  function openDetail() {
+    navigate(detailPath);
+  }
+
   return (
-    <tr style={{ borderBottom: `1px solid ${OWNER_COLORS.line}` }}>
+    <tr
+      onClick={openDetail}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          openDetail();
+        }
+      }}
+      tabIndex={0}
+      role="link"
+      aria-label={`Open upload detail for ${upload.restaurant_name || "restaurant"}`}
+      data-testid={`upload-activity-row-${upload.id}`}
+      style={{
+        borderBottom: `1px solid ${OWNER_COLORS.line}`,
+        cursor: "pointer",
+      }}
+      onMouseEnter={(event) => {
+        event.currentTarget.style.background = OWNER_COLORS.accentSoft || "#f0faf6";
+      }}
+      onMouseLeave={(event) => {
+        event.currentTarget.style.background = "transparent";
+      }}
+    >
       <td style={{ padding: "11px 14px" }}>
         <div style={{ fontWeight: 600 }}>
           {upload.restaurant_name || <em style={{ color: OWNER_COLORS.muted }}>Unknown / unlocked</em>}
@@ -157,25 +182,6 @@ function UploadRow({ upload }) {
       </td>
       <td style={{ padding: "11px 14px", color: OWNER_COLORS.muted, fontSize: 12 }}>
         {location || "—"}
-      </td>
-      <td style={{ padding: "11px 14px", whiteSpace: "nowrap" }}>
-        <Link
-          to={detailPath}
-          style={{ color: OWNER_COLORS.accent, fontWeight: 700, fontSize: 12, textDecoration: "none" }}
-        >
-          Photos / Detail
-        </Link>
-        {needsReview ? (
-          <>
-            <span style={{ color: OWNER_COLORS.muted, margin: "0 6px" }}>·</span>
-            <Link
-              to={reviewPath}
-              style={{ color: "#92400e", fontWeight: 700, fontSize: 12, textDecoration: "none" }}
-            >
-              Review
-            </Link>
-          </>
-        ) : null}
       </td>
     </tr>
   );
@@ -254,7 +260,7 @@ export default function OwnerMenuUploadActivity() {
 
       <SectionTitle
         title="Upload Activity"
-        subtitle="Camera captures and PDF/text imports — open a row to view source photos, review held items, and publish."
+        subtitle="Camera captures and PDF/text imports — click a row to open upload detail (source photos, holds, publish)."
       />
 
       <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
@@ -298,7 +304,7 @@ export default function OwnerMenuUploadActivity() {
                 <tr style={{ borderBottom: `2px solid ${OWNER_COLORS.line}` }}>
                   {COL_HEADS.map((h) => (
                     <th
-                      key={h || "actions"}
+                      key={h}
                       style={{
                         padding: "10px 14px",
                         textAlign: "left",

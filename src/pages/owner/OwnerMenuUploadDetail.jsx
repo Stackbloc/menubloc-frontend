@@ -648,11 +648,15 @@ export default function OwnerMenuUploadDetail() {
         </span>
       </div>
 
-      {/* Attach / review / create loop CTAs — locked restaurant IDs only (no mid-upload reassignment) */}
-      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 22 }}>
-        {displayStatus === "needs_review" && upload.human_review_items > 0 ? (
+      {/* Review queue lives on a dedicated screen; entry points here (not on the activity table). */}
+      <div
+        style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 22 }}
+        data-testid="upload-detail-primary-actions"
+      >
+        {Number(upload.human_review_items || 0) > 0 ? (
           <Link
             to={`/owner/menu-manager/uploads/${uploadId}/review-items`}
+            data-testid="upload-detail-review-holds"
             style={{
               padding: "9px 18px",
               borderRadius: 10,
@@ -668,6 +672,7 @@ export default function OwnerMenuUploadDetail() {
         ) : (
           <Link
             to={`/owner/menu-manager/uploads/${uploadId}/review-items`}
+            data-testid="upload-detail-review-queue"
             style={{
               padding: "9px 18px",
               borderRadius: 10,
