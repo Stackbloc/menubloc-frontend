@@ -63,7 +63,11 @@ export const resendOperatorEmailCode = (email) =>
   post("/restaurant-auth/resend-email-code", { email });
 export const verifyOperatorEmailCode = (email, code) =>
   post("/restaurant-auth/verify-email-code", { email, code });
-export const requestOperatorRecovery = (email) => post("/operator/auth/forgot", { email });
+export const requestOperatorRecovery = (email, options = {}) =>
+  post("/operator/auth/forgot", {
+    email,
+    ...(options.audience ? { audience: options.audience } : {}),
+  });
 export const validateOperatorResetToken = (token) =>
   get(`/operator/auth/reset-password?token=${encodeURIComponent(token)}`);
 export const resetOperatorPassword = (token, password) =>

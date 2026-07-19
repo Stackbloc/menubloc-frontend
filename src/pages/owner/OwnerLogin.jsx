@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useLanguage } from "../../context/LanguageContext.jsx";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useOwner } from "../../context/OwnerContext.jsx";
 import { AuthPageFrame, FormError, PasswordField, styles } from "../../components/consumer/ConsumerAuthShared.jsx";
 
@@ -90,6 +90,11 @@ export default function OwnerLogin() {
     <AuthPageFrame
       title={t("owner.login.title", "Owner sign in")}
       subtitle="Platform control and system-wide administrative access."
+      footer={(
+        <p style={styles.footer}>
+          <Link to="/owner/recover" style={styles.link}>Forgot password?</Link>
+        </p>
+      )}
     >
       <form onSubmit={handleSubmit} noValidate style={styles.form}>
         <div style={styles.fieldGroup}>

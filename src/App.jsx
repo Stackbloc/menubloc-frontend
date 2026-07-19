@@ -76,6 +76,8 @@ import OperatorQrKitOrder from "./pages/operator/OperatorQrKitOrder.jsx";
 import OperatorDisplaySettings from "./pages/operator/OperatorDisplaySettings.jsx";
 import RestaurantHelpCenter from "./pages/operator/RestaurantHelpCenter.jsx";
 import OwnerLogin from "./pages/owner/OwnerLogin.jsx";
+import OwnerRecovery from "./pages/owner/OwnerRecovery.jsx";
+import OwnerResetPassword from "./pages/owner/OwnerResetPassword.jsx";
 import OwnerDashboard from "./pages/owner/OwnerDashboard.jsx";
 import OwnerPlatformIntelligence from "./pages/owner/intelligence/OwnerPlatformIntelligence.jsx";
 import OwnerRestaurants from "./pages/owner/OwnerRestaurants.jsx";
@@ -739,6 +741,8 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/operator/brand" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorBrandSettings /></OperatorRoute>} />
 
         <Route path="/owner/login" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <OwnerLogin />} />
+        <Route path="/owner/recover" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <OwnerRecovery />} />
+        <Route path="/owner/reset-password" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <OwnerResetPassword />} />
         <Route path="/owner" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerDashboard /></OwnerRoute>} />
         <Route path="/owner/intelligence/*" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerPlatformIntelligence /></OwnerRoute>} />
         <Route path="/owner/analytics" element={<Navigate to="/owner/intelligence/site-activity" replace />} />
