@@ -3,11 +3,14 @@
  * Columns: Menu Item, Section, Description, Price A/B/C, Menuply Price.
  */
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   applyBulkPriceOp,
   deriveSectionList,
+  readPriceAltLabels,
+  resolveBulkPriceField,
   resolveSectionCanonical,
+  writePriceAltLabels,
 } from "../../lib/menuWorksheetHelpers.js";
 
 export const WORKSHEET_COLUMNS = [
@@ -72,6 +75,9 @@ const cellInputStyle = {
  * @param {string|null} [props.lastSavedAt]
  * @param {string|null} [props.lastPublishedAt]
  * @param {string} [props.menuName]
+ * @param {number|null} [props.restaurantId]
+ * @param {number|null} [props.menuId]
+ * @param {string[]} [props.priceWarnings] — red save-time price drift messages
  */
 export default function MenuWorksheet({
   rows,
@@ -86,12 +92,26 @@ export default function MenuWorksheet({
   lastSavedAt = null,
   lastPublishedAt = null,
   menuName = "Menu",
+  restaurantId = null,
+  menuId = null,
+  priceWarnings = [],
 }) {
-  const [selected, setSelected] = useState(() => new Set());
   const [bulkAmount, setBulkAmount] = useState("5");
-  const [scope, setScope] = useState("all"); // all | selected
+  /** all | row_a | row_b | row_c */
+  const [scope, setScope] = useState("all");
   const [showSource, setShowSource] = useState(false);
-  const [sectionDrafts, setSectionDrafts] = useState({}); // rowId -> typed value while creating
+  const [sectionDrafts, setSectionDrafts] = useState({});
+  const [priceAlts, setPriceAlts] = useState(() =>
+    readPriceAltLabels(restaurantId, menuId)
+  );
+  const [canUndo, setCanUndo] = useState(false);
+  const historyRef = useRef([]);
+
+  useEffect(() => {
+    setPriceAlts(readPriceAltLabels(restaurantId, menuId));
+    historyRef.current = [];
+    setCanUndo(false);
+  }, [restaurantId, menuId]);
 
   const sectionOptions = useMemo(() => {
     const fromRows = deriveSectionList([
@@ -102,32 +122,49 @@ export default function MenuWorksheet({
     return fromRows;
   }, [sections, rows, sectionDrafts]);
 
+  function pushHistory() {
+    historyRef.current.push({
+      rows: JSON.parse(JSON.stringify(rows)),
+      sections: [...sections],
+    });
+    if (historyRef.current.length > 40) historyRef.current.shift();
+    setCanUndo(true);
+  }
+
+  function handleUndo() {
+    const prev = historyRef.current.pop();
+    if (!prev) {
+      setCanUndo(false);
+      return;
+    }
+    onChange(prev.rows, prev.sections);
+    setCanUndo(historyRef.current.length > 0);
+  }
+
+  function commitChange(nextRows, nextSections) {
+    pushHistory();
+    onChange(nextRows, nextSections);
+  }
+
   function updateRow(id, patch) {
     const next = rows.map((r) => (Number(r.id) === Number(id) ? { ...r, ...patch } : r));
     const nextSections = deriveSectionList(next.map((r) => r.section_name));
-    onChange(next, nextSections);
-  }
-
-  function toggleSelect(id) {
-    setSelected((prev) => {
-      const n = new Set(prev);
-      if (n.has(id)) n.delete(id);
-      else n.add(id);
-      return n;
-    });
-  }
-
-  function toggleSelectAll() {
-    if (selected.size === rows.length) setSelected(new Set());
-    else setSelected(new Set(rows.map((r) => Number(r.id))));
+    commitChange(next, nextSections);
   }
 
   function runBulk(mode) {
     const amount = Number(bulkAmount);
-    const rowIds =
-      scope === "selected" && selected.size > 0 ? Array.from(selected) : null;
-    const next = applyBulkPriceOp(rows, { mode, amount, rowIds });
-    onChange(next, deriveSectionList(next.map((r) => r.section_name)));
+    const priceField = resolveBulkPriceField(scope);
+    const next = applyBulkPriceOp(rows, { mode, amount, priceField });
+    commitChange(next, deriveSectionList(next.map((r) => r.section_name)));
+  }
+
+  function updatePriceAlt(key, value) {
+    setPriceAlts((prev) => {
+      const next = { ...prev, [key]: value };
+      writePriceAltLabels(restaurantId, menuId, next);
+      return next;
+    });
   }
 
   function handlePublishClick() {
@@ -180,6 +217,15 @@ export default function MenuWorksheet({
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <button
             type="button"
+            onClick={handleUndo}
+            disabled={!canUndo || saving || publishing}
+            style={btnSecondary}
+            data-testid="worksheet-undo"
+          >
+            Undo
+          </button>
+          <button
+            type="button"
             onClick={onSave}
             disabled={saving || publishing}
             style={btnSecondary}
@@ -198,6 +244,29 @@ export default function MenuWorksheet({
           </button>
         </div>
       </header>
+
+      {Array.isArray(priceWarnings) && priceWarnings.length > 0 ? (
+        <div
+          role="alert"
+          data-testid="worksheet-price-warnings"
+          style={{
+            padding: "12px 14px",
+            background: "#fef2f2",
+            border: "1px solid #fecaca",
+            borderRadius: 10,
+            color: "#b91c1c",
+            fontSize: 13,
+            fontWeight: 600,
+            display: "flex",
+            flexDirection: "column",
+            gap: 6,
+          }}
+        >
+          {priceWarnings.map((msg) => (
+            <div key={msg}>{msg}</div>
+          ))}
+        </div>
+      ) : null}
 
       {sourcePdfUrl ? (
         <div style={{ fontSize: 13 }}>
@@ -245,9 +314,12 @@ export default function MenuWorksheet({
           onChange={(e) => setScope(e.target.value)}
           style={{ ...cellInputStyle, width: "auto" }}
           aria-label="Bulk scope"
+          data-testid="worksheet-bulk-scope"
         >
           <option value="all">All rows</option>
-          <option value="selected">Selected rows</option>
+          <option value="row_a">Row A</option>
+          <option value="row_b">Row B</option>
+          <option value="row_c">Row C</option>
         </select>
         <input
           type="number"
@@ -280,28 +352,67 @@ export default function MenuWorksheet({
       </div>
 
       <div style={{ overflowX: "auto", border: `1px solid ${COLORS.line}`, borderRadius: 12 }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 900 }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 1100, tableLayout: "fixed" }}>
+          <colgroup>
+            <col style={{ width: "22%" }} />
+            <col style={{ width: "12%" }} />
+            <col style={{ width: "28%" }} />
+            <col style={{ width: "9.5%" }} />
+            <col style={{ width: "9.5%" }} />
+            <col style={{ width: "9.5%" }} />
+            <col style={{ width: "9.5%" }} />
+          </colgroup>
           <thead>
             <tr style={{ background: "#f8fafc", textAlign: "left" }}>
+              <th style={thStyle}>Menu Item</th>
+              <th style={thStyle}>Section</th>
+              <th style={thStyle}>Description</th>
               <th style={thStyle}>
-                <input
-                  type="checkbox"
-                  checked={rows.length > 0 && selected.size === rows.length}
-                  onChange={toggleSelectAll}
-                  aria-label="Select all rows"
-                />
+                <div>Price A</div>
+                <label style={altLabelWrap}>
+                  <span style={altLabelText}>Alt name</span>
+                  <input
+                    value={priceAlts.price_a}
+                    onChange={(e) => updatePriceAlt("price_a", e.target.value)}
+                    placeholder="e.g. DoorDash"
+                    style={altInputStyle}
+                    aria-label="Price A alt name"
+                  />
+                </label>
               </th>
-              {WORKSHEET_COLUMNS.map((col) => (
-                <th key={col} style={thStyle}>
-                  {col}
-                </th>
-              ))}
+              <th style={thStyle}>
+                <div>Price B</div>
+                <label style={altLabelWrap}>
+                  <span style={altLabelText}>Alt name</span>
+                  <input
+                    value={priceAlts.price_b}
+                    onChange={(e) => updatePriceAlt("price_b", e.target.value)}
+                    placeholder="e.g. Uber Eats"
+                    style={altInputStyle}
+                    aria-label="Price B alt name"
+                  />
+                </label>
+              </th>
+              <th style={thStyle}>
+                <div>Price C</div>
+                <label style={altLabelWrap}>
+                  <span style={altLabelText}>Alt name</span>
+                  <input
+                    value={priceAlts.price_c}
+                    onChange={(e) => updatePriceAlt("price_c", e.target.value)}
+                    placeholder="e.g. In-store"
+                    style={altInputStyle}
+                    aria-label="Price C alt name"
+                  />
+                </label>
+              </th>
+              <th style={thStyle}>Menuply Price</th>
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={8} style={{ padding: 24, color: COLORS.muted, textAlign: "center" }}>
+                <td colSpan={7} style={{ padding: 24, color: COLORS.muted, textAlign: "center" }}>
                   No items yet. Re-upload a menu or add items after publish.
                 </td>
               </tr>
@@ -311,14 +422,6 @@ export default function MenuWorksheet({
                 const warnings = Array.isArray(row.warning_flags) ? row.warning_flags : [];
                 return (
                   <tr key={id} style={{ borderTop: `1px solid ${COLORS.line}` }}>
-                    <td style={tdStyle}>
-                      <input
-                        type="checkbox"
-                        checked={selected.has(id)}
-                        onChange={() => toggleSelect(id)}
-                        aria-label={`Select row ${id}`}
-                      />
-                    </td>
                     <td style={tdStyle}>
                       <input
                         value={row.item_name || ""}
@@ -355,8 +458,8 @@ export default function MenuWorksheet({
                       <textarea
                         value={row.description || ""}
                         onChange={(e) => updateRow(id, { description: e.target.value })}
-                        rows={2}
-                        style={{ ...cellInputStyle, resize: "vertical" }}
+                        rows={3}
+                        style={{ ...cellInputStyle, resize: "vertical", minHeight: 64 }}
                         aria-label="Description"
                       />
                     </td>
@@ -442,10 +545,31 @@ const thStyle = {
   fontSize: 12,
   fontWeight: 700,
   color: COLORS.muted,
-  whiteSpace: "nowrap",
+  verticalAlign: "top",
 };
 
 const tdStyle = { padding: "8px 6px", verticalAlign: "top" };
+
+const altLabelWrap = {
+  display: "flex",
+  flexDirection: "column",
+  gap: 2,
+  marginTop: 6,
+  fontWeight: 500,
+};
+
+const altLabelText = {
+  fontSize: 10,
+  color: COLORS.muted,
+  fontWeight: 600,
+};
+
+const altInputStyle = {
+  ...cellInputStyle,
+  padding: "4px 6px",
+  fontSize: 11,
+  fontWeight: 500,
+};
 
 const btnPrimary = {
   padding: "10px 16px",

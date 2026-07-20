@@ -39,6 +39,24 @@ function roundMoney(n) {
   return Math.round(Number(n) * 100) / 100;
 }
 
+/** Bulk scope → which price field %/$ ops mutate. */
+export const BULK_PRICE_FIELDS = {
+  all: "menuply_price",
+  row_a: "price_a",
+  row_b: "price_b",
+  row_c: "price_c",
+};
+
+export function resolveBulkPriceField(scope) {
+  return BULK_PRICE_FIELDS[scope] || BULK_PRICE_FIELDS.all;
+}
+
+/**
+ * @param {object[]} rows
+ * @param {{ mode: string, amount?: number, priceField?: string, rowIds?: number[]|null }} op
+ *   priceField: menuply_price | price_a | price_b | price_c (default menuply_price)
+ *   Copy modes always write menuply_price and ignore priceField.
+ */
 export function applyBulkPriceOp(rows, op) {
   const mode = String(op?.mode || "");
   const amount = Number(op?.amount);
@@ -46,6 +64,13 @@ export function applyBulkPriceOp(rows, op) {
     Array.isArray(op?.rowIds) && op.rowIds.length > 0
       ? new Set(op.rowIds.map(Number))
       : null;
+  const priceField =
+    op?.priceField === "price_a" ||
+    op?.priceField === "price_b" ||
+    op?.priceField === "price_c" ||
+    op?.priceField === "menuply_price"
+      ? op.priceField
+      : "menuply_price";
 
   const target = (row) => {
     if (!idSet) return true;
@@ -55,17 +80,17 @@ export function applyBulkPriceOp(rows, op) {
   return (rows || []).map((row) => {
     if (!target(row)) return { ...row };
     const next = { ...row };
-    const mp = toMoney(next.menuply_price);
+    const current = toMoney(next[priceField]);
 
     if (mode === "increase_pct" && Number.isFinite(amount)) {
-      if (mp != null) next.menuply_price = roundMoney(mp * (1 + amount / 100));
+      if (current != null) next[priceField] = roundMoney(current * (1 + amount / 100));
     } else if (mode === "decrease_pct" && Number.isFinite(amount)) {
-      if (mp != null) next.menuply_price = roundMoney(mp * (1 - amount / 100));
+      if (current != null) next[priceField] = roundMoney(current * (1 - amount / 100));
     } else if (mode === "increase_dollar" && Number.isFinite(amount)) {
-      if (mp != null) next.menuply_price = roundMoney(mp + amount);
-      else next.menuply_price = roundMoney(amount);
+      if (current != null) next[priceField] = roundMoney(current + amount);
+      else next[priceField] = roundMoney(amount);
     } else if (mode === "decrease_dollar" && Number.isFinite(amount)) {
-      if (mp != null) next.menuply_price = roundMoney(mp - amount);
+      if (current != null) next[priceField] = roundMoney(current - amount);
     } else if (mode === "copy_a_to_menuply") {
       next.menuply_price = toMoney(next.price_a);
     } else if (mode === "copy_b_to_menuply") {
@@ -77,6 +102,41 @@ export function applyBulkPriceOp(rows, op) {
   });
 }
 
+/**
+ * Compare baseline vs current Menuply prices; flag moves greater than threshold (default 40%).
+ * @returns {{ item_name: string, direction: 'increase'|'decrease', pct: number }[]}
+ */
+export function detectLargeMenuplyPriceChanges(baselineRows, currentRows, threshold = 0.4) {
+  const baseById = new Map(
+    (baselineRows || []).map((r) => [Number(r.id ?? r.client_id), r])
+  );
+  const out = [];
+  for (const row of currentRows || []) {
+    const id = Number(row.id ?? row.client_id);
+    const base = baseById.get(id);
+    if (!base) continue;
+    const oldP = toMoney(base.menuply_price);
+    const newP = toMoney(row.menuply_price);
+    if (oldP == null || oldP === 0 || newP == null) continue;
+    const pct = Math.abs(newP - oldP) / Math.abs(oldP);
+    if (pct <= threshold) continue;
+    out.push({
+      item_name: String(row.item_name || "Menu item").trim() || "Menu item",
+      direction: newP > oldP ? "increase" : "decrease",
+      pct: Math.round(pct * 100),
+    });
+  }
+  return out;
+}
+
+export function formatLargePriceChangeWarning(change) {
+  const dir =
+    change.direction === "increase"
+      ? "increase greater than 40%"
+      : "decrease greater than 40%";
+  return `Warning ${change.item_name} price ${dir} confirm.`;
+}
+
 export const WORKSHEET_PUBLISH_FIELDS = [
   "item_name",
   "section_name",
@@ -85,3 +145,37 @@ export const WORKSHEET_PUBLISH_FIELDS = [
 ];
 
 export const WORKSHEET_PRIVATE_PRICE_FIELDS = ["price_a", "price_b", "price_c"];
+
+export function priceAltLabelsStorageKey(restaurantId, menuId) {
+  return `menuply.worksheet.priceAlt.${Number(restaurantId) || 0}.${Number(menuId) || 0}`;
+}
+
+export function readPriceAltLabels(restaurantId, menuId) {
+  try {
+    const raw = localStorage.getItem(priceAltLabelsStorageKey(restaurantId, menuId));
+    if (!raw) return { price_a: "", price_b: "", price_c: "" };
+    const parsed = JSON.parse(raw);
+    return {
+      price_a: String(parsed?.price_a || ""),
+      price_b: String(parsed?.price_b || ""),
+      price_c: String(parsed?.price_c || ""),
+    };
+  } catch {
+    return { price_a: "", price_b: "", price_c: "" };
+  }
+}
+
+export function writePriceAltLabels(restaurantId, menuId, labels) {
+  try {
+    localStorage.setItem(
+      priceAltLabelsStorageKey(restaurantId, menuId),
+      JSON.stringify({
+        price_a: String(labels?.price_a || ""),
+        price_b: String(labels?.price_b || ""),
+        price_c: String(labels?.price_c || ""),
+      })
+    );
+  } catch {
+    // ignore quota / private mode
+  }
+}

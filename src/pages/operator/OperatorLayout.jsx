@@ -251,6 +251,22 @@ export default function OperatorLayout({ title, children }) {
     setMobileNavOpen(false);
   }, [location.pathname, location.search]);
 
+  // Menu Worksheet only: Knowledge Base starts closed; side-panel click can reopen.
+  // Do not write sessionStorage on auto-close so other operator pages keep preference.
+  useEffect(() => {
+    const path = location.pathname || "";
+    const onWorksheet =
+      path === "/operator/menu-worksheet" ||
+      /\/operator\/restaurants\/[^/]+\/menus\/[^/]+\/worksheet\/?$/.test(path);
+    if (onWorksheet) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setKnowledgeOpen(false);
+      return;
+    }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setKnowledgeOpen(readKbPanelOpen(KB_SESSION_KEYS.operator));
+  }, [location.pathname]);
+
   async function handleLogout() {
     await logout();
     navigate("/operator/login", { replace: true });

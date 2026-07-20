@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import OperatorLayout from "./OperatorLayout.jsx";
 import MenuWorksheet from "../../components/menuEditor/MenuWorksheet.jsx";
@@ -7,6 +7,10 @@ import {
   publishMenuWorksheet,
   saveMenuWorksheet,
 } from "../../lib/operatorApi.js";
+import {
+  detectLargeMenuplyPriceChanges,
+  formatLargePriceChangeWarning,
+} from "../../lib/menuWorksheetHelpers.js";
 import {
   profileEditOnboardingPath,
 } from "../../lib/operatorOnboardingCheckpoints.js";
@@ -39,6 +43,8 @@ export default function OperatorMenuWorksheetPage() {
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [flash, setFlash] = useState("");
+  const [priceWarnings, setPriceWarnings] = useState([]);
+  const priceBaselineRef = useRef([]);
 
   const load = useCallback(async () => {
     if (!rid || !mid) {
@@ -48,10 +54,17 @@ export default function OperatorMenuWorksheetPage() {
     }
     setLoading(true);
     setError("");
+    setPriceWarnings([]);
     try {
       const data = await getMenuWorksheet(rid, mid, uploadSessionId);
-      setRows(data.rows || []);
+      const loadedRows = data.rows || [];
+      setRows(loadedRows);
       setSections(data.sections || []);
+      priceBaselineRef.current = loadedRows.map((r) => ({
+        id: r.id,
+        item_name: r.item_name,
+        menuply_price: r.menuply_price,
+      }));
       setMeta({
         menu: data.menu,
         worksheet: data.worksheet,
@@ -75,6 +88,14 @@ export default function OperatorMenuWorksheetPage() {
   }
 
   async function handleSave() {
+    const changes = detectLargeMenuplyPriceChanges(priceBaselineRef.current, rows);
+    const warnings = changes.map(formatLargePriceChangeWarning);
+    setPriceWarnings(warnings);
+    if (warnings.length > 0) {
+      const ok = window.confirm(`${warnings.join("\n")}\n\nSave worksheet anyway?`);
+      if (!ok) return;
+    }
+
     setSaving(true);
     setFlash("");
     setError("");
@@ -84,8 +105,15 @@ export default function OperatorMenuWorksheetPage() {
         upload_session_id: uploadSessionId || meta?.worksheet?.upload_session_id,
         source_pdf_url: meta?.worksheet?.source_pdf_url,
       });
-      setRows(data.rows || rows);
+      const savedRows = data.rows || rows;
+      setRows(savedRows);
       setSections(data.sections || sections);
+      priceBaselineRef.current = savedRows.map((r) => ({
+        id: r.id,
+        item_name: r.item_name,
+        menuply_price: r.menuply_price,
+      }));
+      setPriceWarnings([]);
       setMeta((prev) => ({
         ...prev,
         worksheet: { ...(prev?.worksheet || {}), ...(data.worksheet || {}) },
@@ -167,7 +195,7 @@ export default function OperatorMenuWorksheetPage() {
 
   return (
     <OperatorLayout title="Menu Worksheet">
-      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "16px 12px 48px" }}>
+      <div style={{ maxWidth: 1480, margin: "0 auto", padding: "16px 12px 48px" }}>
         <div style={{ marginBottom: 12, fontSize: 13, display: "flex", gap: 16, flexWrap: "wrap" }}>
           <Link to="/operator/menu-worksheet" style={{ color: "#1F4E3D", fontWeight: 650 }}>
             ← Menu Worksheet
@@ -223,6 +251,9 @@ export default function OperatorMenuWorksheetPage() {
               lastSavedAt={meta?.worksheet?.last_saved_at || null}
               lastPublishedAt={meta?.worksheet?.last_published_at || null}
               menuName={meta?.menu?.name || "Menu"}
+              restaurantId={rid}
+              menuId={mid}
+              priceWarnings={priceWarnings}
             />
           </>
         )}
