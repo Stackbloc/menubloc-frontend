@@ -5,7 +5,26 @@ import { useOperator } from "../../context/OperatorContext.jsx";
 import * as api from "../../lib/operatorApi.js";
 import StripeElementsProvider from "../../components/payments/StripeElementsProvider.jsx";
 import PlatformPaymentForm from "../../components/payments/PlatformPaymentForm.jsx";
-import { formatMoney, hasStripePublishableKey } from "../../components/payments/paymentHelpers.js";
+import {
+  formatMoney,
+  getQrProductCode,
+  hasStripePublishableKey,
+} from "../../components/payments/paymentHelpers.js";
+
+const TABLE_QTY_OPTIONS = [
+  { qty: 10, amountCents: 3500, label: "10 signs - $35.00 ($3.50/sign)" },
+];
+
+const PACKAGES = {
+  table: {
+    key: "table",
+    name: "Tabletop QR Sign",
+    amountCents: TABLE_QTY_OPTIONS[0].amountCents,
+    description: "Preset 10-pack of tabletop QR signs. QR code at each table for direct menu access.",
+    placements: ["Table Set"],
+    qtyOptions: TABLE_QTY_OPTIONS,
+  },
+};
 
 function inputStyle() {
   return {
@@ -44,22 +63,11 @@ function InfoTile({ label, value }) {
   );
 }
 
-function productPriceLabel(product) {
-  if (product.pricing_mode === "volume_tiers") {
-    if (product.display_from_total_cents != null && product.display_from_quantity != null) {
-      return `From ${formatMoney(product.display_from_total_cents)}, qty ${product.display_from_quantity}`;
-    }
-    return "Volume pricing — select quantity";
-  }
-  return `${formatMoney(product.unit_amount_cents)} each`;
-}
-
 export default function OperatorQrKitOrder() {
   const { t } = useLanguage();
   const { selectedRestaurant } = useOperator();
-  const [catalog, setCatalog] = useState([]);
-  const [selectedSku, setSelectedSku] = useState("");
-  const [quantity, setQuantity] = useState(1);
+  const [packageType, setPackageType] = useState("table");
+  const [tableQtyIndex, setTableQtyIndex] = useState(0);
   const [profile, setProfile] = useState(null);
   const [form, setForm] = useState({
     shipping_name: "",
@@ -76,26 +84,13 @@ export default function OperatorQrKitOrder() {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [loading, setLoading] = useState(true);
   const [creatingIntent, setCreatingIntent] = useState(false);
-  const [requestingBulk, setRequestingBulk] = useState(false);
   const [error, setError] = useState("");
   const [paymentSession, setPaymentSession] = useState(null);
-  const [serverQuote, setServerQuote] = useState(null);
-  const [previewQuote, setPreviewQuote] = useState(null);
   const [confirmation, setConfirmation] = useState(null);
-  const [bulkRequest, setBulkRequest] = useState(null);
 
-  const selectedProduct = useMemo(
-    () => catalog.find((p) => p.sku === selectedSku) || null,
-    [catalog, selectedSku]
-  );
-
-  const volumeTiers = selectedProduct?.volume_pricing?.tiers || [];
-  const isVolume = selectedProduct?.pricing_mode === "volume_tiers";
-
-  const selectedTier = useMemo(() => {
-    if (!isVolume) return null;
-    return volumeTiers.find((tier) => tier.quantity === quantity) || null;
-  }, [isVolume, volumeTiers, quantity]);
+  const selectedPackage = PACKAGES[packageType];
+  const tableQtyOption = TABLE_QTY_OPTIONS[tableQtyIndex] || TABLE_QTY_OPTIONS[0];
+  const effectiveAmountCents = tableQtyOption.amountCents;
 
   useEffect(() => {
     if (!selectedRestaurant?.id) {
@@ -104,23 +99,9 @@ export default function OperatorQrKitOrder() {
     }
 
     setLoading(true);
-    Promise.all([
-      api.getQrMerchandiseCatalog(selectedRestaurant.id),
-      api.getProfile(selectedRestaurant.id),
-    ])
-      .then(([catalogResult, profileResult]) => {
-        const products = catalogResult?.products || [];
-        setCatalog(products);
-        if (products.length && !selectedSku) {
-          const first = products[0];
-          setSelectedSku(first.sku);
-          if (first.pricing_mode === "volume_tiers" && first.qty_options?.length) {
-            setQuantity(first.qty_options[0]);
-          } else {
-            setQuantity(first.qty_min || 1);
-          }
-        }
-        const nextProfile = profileResult?.profile || null;
+    api.getProfile(selectedRestaurant.id)
+      .then((result) => {
+        const nextProfile = result?.profile || null;
         setProfile(nextProfile);
         setForm((current) => ({
           ...current,
@@ -134,50 +115,29 @@ export default function OperatorQrKitOrder() {
           receipt_email: current.receipt_email || nextProfile?.email || "",
         }));
       })
-      .catch((err) => setError(err.message || "Unable to load QR merchandise catalog."))
+      .catch((err) => setError(err.message || "Unable to load restaurant details."))
       .finally(() => setLoading(false));
   }, [selectedRestaurant?.id]);
 
-  useEffect(() => {
-    if (!selectedProduct) return;
-    if (selectedProduct.pricing_mode === "volume_tiers" && selectedProduct.qty_options?.length) {
-      setQuantity(selectedProduct.qty_options[0]);
-    } else {
-      setQuantity(selectedProduct.qty_min || 1);
-    }
-    setPaymentSession(null);
-    setServerQuote(null);
-    setPreviewQuote(null);
-    setBulkRequest(null);
-  }, [selectedProduct?.sku]);
-
-  useEffect(() => {
-    if (!selectedRestaurant?.id || !selectedProduct) {
-      setPreviewQuote(null);
-      return;
-    }
-    let cancelled = false;
-    api
-      .getQrMerchandiseQuote(selectedRestaurant.id, {
-        sku: selectedProduct.sku,
-        quantity,
-      })
-      .then((result) => {
-        if (!cancelled) setPreviewQuote(result.quote || null);
-      })
-      .catch((err) => {
-        if (!cancelled) {
-          setPreviewQuote({
-            error: err.message,
-            code: err.payload?.code || err.code,
-            bulk_quote_required: true,
-          });
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [selectedRestaurant?.id, selectedProduct?.sku, quantity]);
+  const previewPlacements = useMemo(
+    () => selectedPackage.placements.map((placement) => ({
+      label: placement,
+      previewUrl: placement === "Door"
+        ? "/qr-door-preview.png"
+        : selectedRestaurant?.id
+          ? api.getQrKitPreviewUrl(selectedRestaurant.id, {
+              package_type: packageType,
+              placement:
+                placement === "Counter / Pickup"
+                  ? "counter"
+                  : placement === "Table Set"
+                    ? "table"
+                    : "door",
+            })
+          : "",
+    })),
+    [packageType, selectedPackage.placements, selectedRestaurant?.id]
+  );
 
   function setField(key, value) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -200,9 +160,9 @@ export default function OperatorQrKitOrder() {
   }
 
   function validateForm() {
-    if (!selectedRestaurant?.id) return "Select a restaurant before ordering.";
-    if (!selectedProduct) return "Select a product from the catalog.";
+    if (!selectedRestaurant?.id) return "Select a restaurant before ordering a QR kit.";
     if (!hasStripePublishableKey()) return "VITE_STRIPE_PUBLISHABLE_KEY is not configured.";
+
     for (const field of [
       "shipping_name",
       "shipping_address_1",
@@ -211,15 +171,13 @@ export default function OperatorQrKitOrder() {
       "shipping_postal_code",
       "shipping_country",
     ]) {
-      if (!String(form[field] || "").trim()) return `${field} is required.`;
+      if (!String(form[field] || "").trim()) {
+        return `${field} is required.`;
+      }
     }
+
     return null;
   }
-
-  const needsBulkQuote =
-    Boolean(previewQuote?.bulk_quote_required) ||
-    (selectedTier && selectedTier.self_service_eligible === false) ||
-    previewQuote?.checkout_allowed === false;
 
   async function handleCreatePaymentIntent(event) {
     event.preventDefault();
@@ -228,70 +186,41 @@ export default function OperatorQrKitOrder() {
       setError(validationError);
       return;
     }
-    if (needsBulkQuote) {
-      setError("This quantity requires a bulk quote. Use Request Bulk Quote — no payment will be created.");
-      return;
-    }
 
     setCreatingIntent(true);
     setError("");
     setConfirmation(null);
-    setServerQuote(null);
 
     try {
       const response = await api.createPlatformPaymentIntent({
         restaurantId: selectedRestaurant.id,
-        productCode: selectedProduct.sku,
-        quantity,
+        productCode: getQrProductCode(packageType),
         receiptEmail: form.receipt_email || undefined,
+        amountCents: effectiveAmountCents,
         metadata: {
-          source: "operator_qr_merchandise",
-          merchandise_sku: selectedProduct.sku,
+          source: "operator_qr_kit_order",
+          qty: tableQtyOption.qty,
         },
       });
 
       setPaymentSession(response);
-      setServerQuote(response.merchandise || null);
     } catch (err) {
-      const code = err.payload?.code || err.code || "";
-      if (code === "MERCHANDISE_QUOTE_REQUIRED") {
-        setError(err.message || "Bulk quote required — PaymentIntent was not created.");
-      } else {
-        setError(err.message || "Unable to prepare QR merchandise payment.");
-      }
+      setError(err.message || "Unable to prepare QR kit payment.");
     } finally {
       setCreatingIntent(false);
     }
   }
 
-  async function handleBulkQuoteRequest() {
-    if (!selectedRestaurant?.id || !selectedProduct) return;
-    setRequestingBulk(true);
-    setError("");
-    try {
-      const result = await api.requestQrMerchandiseBulkQuote(selectedRestaurant.id, {
-        sku: selectedProduct.sku,
-        quantity,
-        contact_email: form.receipt_email || undefined,
-        note: "Operator requested bulk quote from QR merchandise order page.",
-      });
-      setBulkRequest(result.request || result);
-      setPaymentSession(null);
-    } catch (err) {
-      setError(err.message || "Unable to submit bulk quote request.");
-    } finally {
-      setRequestingBulk(false);
-    }
-  }
-
   async function handlePaymentConfirmed(paymentIntent) {
-    if (!selectedRestaurant?.id || !selectedProduct) return;
+    if (!selectedRestaurant?.id) return;
+
     setError("");
 
     try {
       const result = await api.createQrKitOrder(selectedRestaurant.id, {
-        sku: selectedProduct.sku,
-        quantity,
+        package_type: packageType,
+        sku: "QR-TABLE",
+        quantity: tableQtyOption.qty,
         shipping_name: form.shipping_name,
         shipping_address_1: form.shipping_address_1,
         shipping_address_2: form.shipping_address_2,
@@ -306,216 +235,290 @@ export default function OperatorQrKitOrder() {
       setConfirmation(result);
       setPaymentSession(null);
     } catch (err) {
-      setError(err.message || "Payment succeeded, but merchandise order could not be created.");
+      setError(err.message || "Payment succeeded, but QR kit fulfillment could not be created.");
     }
   }
 
   if (!selectedRestaurant) {
     return (
-      <OperatorLayout title={t("operator.qrKit.title") || "Order QR Code Kit"}>
+      <OperatorLayout title="Order QR Code Kit">
         <div style={{ maxWidth: 560, background: "#fff", border: "1px solid #eaecf0", borderRadius: 20, padding: 24 }}>
           <h2 style={{ margin: 0, fontSize: 22, color: "#101828" }}>No restaurant selected</h2>
+          <p style={{ margin: "10px 0 0", fontSize: 15, lineHeight: 1.7, color: "#475467" }}>
+            Link a restaurant to your operator account before ordering a QR code kit.
+          </p>
         </div>
       </OperatorLayout>
     );
   }
 
-  const displayUnit = previewQuote?.unit_amount_cents ?? selectedTier?.retail_unit_price_cents ?? null;
-  const displaySubtotal = previewQuote?.subtotal_cents ?? selectedTier?.retail_total_cents ?? null;
-
   return (
-    <OperatorLayout title={t("operator.qrKit.title") || "Order QR Merchandise"}>
-      <div style={{ maxWidth: 960, margin: "0 auto" }}>
-        <h1 style={{ fontSize: 28, letterSpacing: "-0.03em", color: "#101828" }}>QR merchandise</h1>
-        <p style={{ color: "#475467", lineHeight: 1.6 }}>
-          Prices come from the Menuply catalog. Table QR Cards use volume tiers. Tax and shipping charges are not included yet.
-        </p>
+    <OperatorLayout title="Order QR Code Kit">
+      <div style={{ maxWidth: 1120, margin: "0 auto" }}>
+        <section
+          style={{
+            background: "linear-gradient(135deg, #102b22 0%, #1f4e3d 52%, #dff2e7 100%)",
+            borderRadius: 28,
+            padding: "28px 24px",
+            color: "#fff",
+            boxShadow: "0 24px 64px rgba(16, 43, 34, 0.18)",
+          }}
+        >
+          <div style={{ display: "inline-flex", padding: "7px 12px", borderRadius: 999, background: "rgba(255,255,255,0.12)", fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 16 }}>
+            QR Code Signage
+          </div>
+          <h1 style={{ margin: 0, fontSize: "clamp(28px, 4vw, 48px)", lineHeight: 1.05, letterSpacing: "-0.04em", maxWidth: 720 }}>
+            Put your menu in front of every guest
+          </h1>
+          <p style={{ margin: "14px 0 0", maxWidth: 720, fontSize: 16, lineHeight: 1.7, color: "rgba(255,255,255,0.88)" }}>
+            Order the current Menuply tabletop QR sign pack. Each pack includes 10 signs with your unique QR code so guests can scan to view your menu and order directly.
+          </p>
+        </section>
 
         {error ? (
-          <div style={{ marginTop: 16, background: "#fef3f2", border: "1px solid #fecdca", color: "#b42318", borderRadius: 16, padding: 14 }}>
+          <div style={{ marginTop: 20, background: "#fef3f2", border: "1px solid #fecdca", color: "#b42318", borderRadius: 16, padding: "14px 16px", fontSize: 14, fontWeight: 600 }}>
             {error}
           </div>
         ) : null}
 
-        {loading ? <p>Loading catalog…</p> : null}
-
         {confirmation ? (
-          <section style={{ marginTop: 20, background: "#f0fdf4", border: "1px solid #86efac", borderRadius: 22, padding: 22 }}>
-            <h2 style={{ margin: 0 }}>Order recorded</h2>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, marginTop: 16 }}>
-              <InfoTile label="Product" value={confirmation.order?.product_name_snapshot || confirmation.order?.sku || "—"} />
-              <InfoTile label="Qty" value={String(confirmation.order?.quantity ?? "—")} />
-              <InfoTile label="Charged" value={formatMoney(confirmation.order?.stripe_amount_cents ?? confirmation.order?.amount_cents)} />
-              <InfoTile label="Status" value={confirmation.order?.status || "—"} />
+          <section style={{ marginTop: 22, background: "#f0fdf4", border: "1px solid #86efac", borderRadius: 22, padding: 22 }}>
+            <div style={{ fontSize: 12, fontWeight: 800, color: "#166534", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>
+              Order Confirmed
+            </div>
+            <h2 style={{ margin: 0, fontSize: 28, color: "#101828", letterSpacing: "-0.04em" }}>
+              Your QR kit has been submitted for fulfillment
+            </h2>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12, marginTop: 18 }}>
+              <InfoTile label="Package" value={confirmation.order?.package_type === "full" ? "Full Setup Kit" : "Starter Kit"} />
+              <InfoTile label="Status" value={confirmation.order?.status || "submitted"} />
+              <InfoTile label="Payment Intent" value={confirmation.order?.stripe_payment_intent_id || "—"} />
+              <InfoTile label="Printer Ref" value={confirmation.order?.printer_order_reference || "pending"} />
             </div>
           </section>
         ) : null}
 
-        {bulkRequest ? (
-          <section style={{ marginTop: 20, background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 22, padding: 22 }}>
-            <h2 style={{ margin: 0 }}>Bulk quote requested</h2>
-            <p style={{ color: "#1e3a8a", lineHeight: 1.5 }}>
-              Quantity {bulkRequest.quantity} for {bulkRequest.sku} is held for Menuply confirmation. No payment was taken.
-            </p>
-          </section>
-        ) : null}
-
-        <div style={{ display: "grid", gap: 16, marginTop: 20 }}>
-          {(catalog || []).map((product) => {
-            const active = product.sku === selectedSku;
-            return (
-              <button
-                key={product.sku}
-                type="button"
-                onClick={() => setSelectedSku(product.sku)}
-                style={{
-                  textAlign: "left",
-                  borderRadius: 18,
-                  border: active ? "2px solid #1f4e3d" : "1px solid #d0d5dd",
-                  background: active ? "#f3faf6" : "#fff",
-                  padding: 16,
-                  cursor: "pointer",
-                }}
-              >
-                <div style={{ fontWeight: 800, fontSize: 16 }}>{product.public_name}</div>
-                <div style={{ color: "#667085", marginTop: 6, fontSize: 14 }}>{product.description}</div>
-                <div style={{ marginTop: 10, fontWeight: 800 }}>{productPriceLabel(product)}</div>
-              </button>
-            );
-          })}
-        </div>
-
-        {isVolume && volumeTiers.length ? (
-          <label style={{ display: "block", marginTop: 18 }}>
-            <span style={labelStyle()}>Quantity (volume tier)</span>
-            <select
-              value={quantity}
-              onChange={(e) => setQuantity(Number(e.target.value))}
-              style={inputStyle()}
-            >
-              {volumeTiers.map((tier) => (
-                <option key={tier.tier_id || tier.quantity} value={tier.quantity}>
-                  {tier.label || `${tier.quantity} — ${formatMoney(tier.retail_total_cents)}`}
-                  {!tier.self_service_eligible ? " (bulk quote)" : ""}
-                </option>
-              ))}
-            </select>
-          </label>
-        ) : selectedProduct?.qty_max > 1 ? (
-          <label style={{ display: "block", marginTop: 18 }}>
-            <span style={labelStyle()}>Quantity</span>
-            <input
-              type="number"
-              min={selectedProduct.qty_min}
-              max={selectedProduct.qty_max}
-              step={selectedProduct.qty_step}
-              value={quantity}
-              onChange={(e) => setQuantity(Number(e.target.value))}
-              style={inputStyle()}
-            />
-          </label>
-        ) : null}
-
-        {selectedProduct ? (
-          <div style={{ marginTop: 16, background: "#fff", border: "1px solid #eaecf0", borderRadius: 16, padding: 16 }}>
-            <div><strong>Product:</strong> {selectedProduct.public_name}</div>
-            <div><strong>Quantity:</strong> {quantity}</div>
-            {previewQuote?.tier_id ? (
-              <div><strong>Volume tier:</strong> {previewQuote.tier_id}</div>
-            ) : null}
-            <div>
-              <strong>Unit price:</strong>{" "}
-              {displayUnit != null ? formatMoney(displayUnit) : "—"}
+        <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.1fr) minmax(320px, 0.9fr)", gap: 20, marginTop: 24 }}>
+          <section style={{ display: "grid", gap: 18 }}>
+            <div style={{ background: "#fff", border: "1px solid #eaecf0", borderRadius: 22, padding: 22 }}>
+              <div style={{ fontSize: 12, fontWeight: 800, color: "#667085", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 12 }}>
+                Step 1
+              </div>
+              <h2 style={{ margin: 0, fontSize: 26, color: "#101828", letterSpacing: "-0.04em" }}>Choose your signage</h2>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 14, marginTop: 18 }}>
+                {Object.values(PACKAGES).map((pkg) => {
+                  const active = packageType === pkg.key;
+                  return (
+                    <button
+                      key={pkg.key}
+                      type="button"
+                      onClick={() => setPackageType(pkg.key)}
+                      style={{
+                        textAlign: "left",
+                        borderRadius: 20,
+                        border: active ? "2px solid #1f4e3d" : "1px solid #d0d5dd",
+                        background: active ? "#f0fdf4" : "#fff",
+                        padding: 18,
+                        cursor: "pointer",
+                      }}
+                    >
+                      {pkg.key === "table" && (
+                        <img
+                          src="/qr-table-tent-sign.png"
+                          alt="Table tent QR sign"
+                          style={{ width: "100%", maxHeight: 140, objectFit: "contain", borderRadius: 10, marginBottom: 12 }}
+                        />
+                      )}
+                      <div style={{ fontSize: 12, fontWeight: 800, color: "#667085", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                        Current QR product
+                      </div>
+                      <div style={{ marginTop: 8, fontSize: 24, fontWeight: 800, color: "#101828", letterSpacing: "-0.04em" }}>
+                        {pkg.name}
+                      </div>
+                      <div style={{ marginTop: 6, fontSize: 22, fontWeight: 800, color: "#1f4e3d" }}>
+                        {formatMoney(TABLE_QTY_OPTIONS[0].amountCents)}
+                      </div>
+                      <p style={{ margin: "10px 0 0", fontSize: 14, lineHeight: 1.6, color: "#475467" }}>
+                        {pkg.description}
+                      </p>
+                      {pkg.key === "table" && active && (
+                        <div style={{ marginTop: 12 }} onClick={(e) => e.stopPropagation()}>
+                          <label style={{ fontSize: 12, fontWeight: 700, color: "#344054", display: "block", marginBottom: 6 }}>Preset quantity</label>
+                          <select
+                            value={tableQtyIndex}
+                            onChange={(e) => setTableQtyIndex(Number(e.target.value))}
+                            style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d0d5dd", fontSize: 14, fontFamily: "inherit", background: "#fff", color: "#101828" }}
+                          >
+                            {TABLE_QTY_OPTIONS.map((opt, i) => (
+                              <option key={opt.qty} value={i}>{opt.label}</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-            <div>
-              <strong>Merchandise subtotal:</strong>{" "}
-              {displaySubtotal != null ? formatMoney(displaySubtotal) : "—"}
-            </div>
-            {serverQuote ? (
-              <div style={{ marginTop: 8, color: "#166534" }}>
-                <strong>Server-confirmed amount due:</strong> {formatMoney(serverQuote.subtotal_cents)}
-                {serverQuote.tier_id ? ` · ${serverQuote.tier_id}` : ""}
+
+            <form onSubmit={handleCreatePaymentIntent} style={{ background: "#fff", border: "1px solid #eaecf0", borderRadius: 22, padding: 22, display: "grid", gap: 14 }}>
+              <div style={{ fontSize: 12, fontWeight: 800, color: "#667085", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                Step 2
+              </div>
+              <h2 style={{ margin: 0, fontSize: 26, color: "#101828", letterSpacing: "-0.04em" }}>Shipping and receipt details</h2>
+
+              <div>
+                <label style={labelStyle()}>Shipping name</label>
+                <input value={form.shipping_name} onChange={(event) => setField("shipping_name", event.target.value)} style={inputStyle()} />
+              </div>
+              <div>
+                <label style={labelStyle()}>Address line 1</label>
+                <input value={form.shipping_address_1} onChange={(event) => setField("shipping_address_1", event.target.value)} style={inputStyle()} />
+              </div>
+              <div>
+                <label style={labelStyle()}>Address line 2</label>
+                <input value={form.shipping_address_2} onChange={(event) => setField("shipping_address_2", event.target.value)} style={inputStyle()} />
+              </div>
+              <div style={{ display: "grid", gap: 14, gridTemplateColumns: "1fr 1fr" }}>
+                <div>
+                  <label style={labelStyle()}>City</label>
+                  <input value={form.shipping_city} onChange={(event) => setField("shipping_city", event.target.value)} style={inputStyle()} />
+                </div>
+                <div>
+                  <label style={labelStyle()}>State</label>
+                  <input value={form.shipping_state} onChange={(event) => setField("shipping_state", event.target.value)} style={inputStyle()} />
+                </div>
+              </div>
+              <div style={{ display: "grid", gap: 14, gridTemplateColumns: "1fr 1fr" }}>
+                <div>
+                  <label style={labelStyle()}>Postal code</label>
+                  <input value={form.shipping_postal_code} onChange={(event) => setField("shipping_postal_code", event.target.value)} style={inputStyle()} />
+                </div>
+                <div>
+                  <label style={labelStyle()}>Country</label>
+                  <input value={form.shipping_country} onChange={(event) => setField("shipping_country", event.target.value)} style={inputStyle()} />
+                </div>
+              </div>
+              <div>
+                <label style={labelStyle()}>Receipt email</label>
+                <input value={form.receipt_email} onChange={(event) => setField("receipt_email", event.target.value)} style={inputStyle()} />
+              </div>
+
+              <div>
+                <label style={labelStyle()}>Door photo <span style={{ fontWeight: 400, textTransform: "none", color: "#667085" }}>(optional — photo of your door or entrance)</span></label>
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                    cursor: "pointer",
+                    border: "1px dashed #d0d5dd",
+                    borderRadius: 12,
+                    padding: "12px 14px",
+                    background: "#f9fafb",
+                    fontSize: 14,
+                    color: "#475467",
+                    fontWeight: 500,
+                  }}
+                >
+                  <input
+                    type="file"
+                    accept="image/*"
+                    style={{ display: "none" }}
+                    onChange={handleDoorPhotoChange}
+                    disabled={uploadingPhoto}
+                  />
+                  {uploadingPhoto ? (
+                    <span>Uploading…</span>
+                  ) : doorPhotoPreview ? (
+                    <>
+                      <img src={doorPhotoPreview} alt="Door preview" style={{ width: 56, height: 56, objectFit: "cover", borderRadius: 8, flexShrink: 0 }} />
+                      <span>Change photo</span>
+                    </>
+                  ) : (
+                    <span>📷 Upload door photo</span>
+                  )}
+                </label>
+              </div>
+
+              {!paymentSession ? (
+                <button
+                  type="submit"
+                  disabled={creatingIntent || loading || !hasStripePublishableKey()}
+                  style={{
+                    marginTop: 8,
+                    width: "100%",
+                    border: "none",
+                    borderRadius: 16,
+                    background: creatingIntent ? "#94a3b8" : "#11211a",
+                    color: "#fff",
+                    padding: "14px 16px",
+                    fontSize: 15,
+                    fontWeight: 900,
+                    cursor: creatingIntent ? "wait" : "pointer",
+                  }}
+                >
+                  {creatingIntent ? "Preparing payment..." : "Continue to payment"}
+                </button>
+              ) : null}
+            </form>
+
+            {paymentSession?.client_secret ? (
+              <div style={{ background: "#fff", border: "1px solid #eaecf0", borderRadius: 22, padding: 22 }}>
+                <div style={{ fontSize: 12, fontWeight: 800, color: "#667085", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>
+                  Step 3
+                </div>
+                <h2 style={{ margin: 0, fontSize: 26, color: "#101828", letterSpacing: "-0.04em" }}>Confirm payment</h2>
+                <p style={{ margin: "10px 0 0", fontSize: 14, lineHeight: 1.6, color: "#475467" }}>
+                  After Stripe confirms the PaymentIntent, the backend verifies the successful ledger record before creating the QR kit fulfillment order.
+                </p>
+                <div style={{ marginTop: 16 }}>
+                  <StripeElementsProvider clientSecret={paymentSession.client_secret}>
+                    <PlatformPaymentForm
+                      submitLabel={`Pay ${formatMoney(effectiveAmountCents)}`}
+                      returnUrl={`${window.location.origin}/operator/qr-kit-order`}
+                      onConfirmed={handlePaymentConfirmed}
+                    />
+                  </StripeElementsProvider>
+                </div>
               </div>
             ) : null}
-            <div style={{ marginTop: 8, fontSize: 13, color: "#667085" }}>
-              Tax: not included · Shipping charge: not included
-              {needsBulkQuote ? " · Self-service checkout unavailable for this quantity" : ""}
+          </section>
+
+          <aside style={{ display: "grid", gap: 18 }}>
+            <div style={{ background: "#fff", border: "1px solid #eaecf0", borderRadius: 22, padding: 22 }}>
+              <div style={{ fontSize: 12, fontWeight: 800, color: "#667085", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                Selected package
+              </div>
+              <h3 style={{ margin: "8px 0 0", fontSize: 28, color: "#101828", letterSpacing: "-0.05em" }}>
+                {selectedPackage.name}
+                <span style={{ fontSize: 16, fontWeight: 600, color: "#667085", marginLeft: 8 }}>x {tableQtyOption.qty}</span>
+              </h3>
+              <div style={{ marginTop: 8, fontSize: 34, fontWeight: 800, color: "#1f4e3d", letterSpacing: "-0.05em" }}>
+                {formatMoney(effectiveAmountCents)}
+              </div>
+              <p style={{ margin: "12px 0 0", fontSize: 14, lineHeight: 1.65, color: "#475467" }}>
+                {selectedPackage.description}
+              </p>
             </div>
-          </div>
-        ) : null}
 
-        <form onSubmit={handleCreatePaymentIntent} style={{ marginTop: 20, display: "grid", gap: 12 }}>
-          {[
-            ["shipping_name", "Ship to name"],
-            ["shipping_address_1", "Address line 1"],
-            ["shipping_address_2", "Address line 2"],
-            ["shipping_city", "City"],
-            ["shipping_state", "State"],
-            ["shipping_postal_code", "Postal code"],
-            ["shipping_country", "Country"],
-            ["receipt_email", "Receipt email"],
-          ].map(([key, label]) => (
-            <label key={key}>
-              <span style={labelStyle()}>{label}</span>
-              <input style={inputStyle()} value={form[key]} onChange={(e) => setField(key, e.target.value)} />
-            </label>
-          ))}
-
-          <label>
-            <span style={labelStyle()}>Door photo (optional)</span>
-            <input type="file" accept="image/*" onChange={handleDoorPhotoChange} disabled={uploadingPhoto} />
-            {doorPhotoPreview ? (
-              <img src={doorPhotoPreview} alt="Door" style={{ marginTop: 8, maxWidth: 180, borderRadius: 12 }} />
-            ) : null}
-          </label>
-
-          {needsBulkQuote ? (
-            <button
-              type="button"
-              onClick={handleBulkQuoteRequest}
-              disabled={requestingBulk || !selectedProduct}
-              style={{
-                minHeight: 48,
-                borderRadius: 14,
-                border: "none",
-                background: "#1d4ed8",
-                color: "#fff",
-                fontWeight: 800,
-                cursor: "pointer",
-              }}
-            >
-              {requestingBulk ? "Submitting…" : "Request Bulk Quote"}
-            </button>
-          ) : (
-            <button
-              type="submit"
-              disabled={creatingIntent || !selectedProduct}
-              style={{
-                minHeight: 48,
-                borderRadius: 14,
-                border: "none",
-                background: "#1f4e3d",
-                color: "#fff",
-                fontWeight: 800,
-                cursor: "pointer",
-              }}
-            >
-              {creatingIntent
-                ? "Preparing payment…"
-                : displaySubtotal != null
-                  ? `Continue to payment · ${formatMoney(displaySubtotal)}`
-                  : "Continue to payment"}
-            </button>
-          )}
-        </form>
-
-        {paymentSession?.client_secret ? (
-          <div style={{ marginTop: 20 }}>
-            <StripeElementsProvider options={{ clientSecret: paymentSession.client_secret }}>
-              <PlatformPaymentForm onConfirmed={handlePaymentConfirmed} />
-            </StripeElementsProvider>
-          </div>
-        ) : null}
+            <div style={{ background: "#fff", border: "1px solid #eaecf0", borderRadius: 22, padding: 22 }}>
+              <div style={{ fontSize: 12, fontWeight: 800, color: "#667085", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 12 }}>
+                Product
+              </div>
+              <div style={{ display: "grid", gap: 14 }}>
+                {[
+                  { label: "Tabletop QR Sign - 10 pack", img: "/qr-table-tent-sign.png" },
+                ].map(({ label, img }) => (
+                  <div key={label} style={{ border: "1px solid #eaecf0", borderRadius: 18, overflow: "hidden", background: "#f8fafc" }}>
+                    <img src={img} alt={label} style={{ display: "block", width: "100%", aspectRatio: "4 / 3", objectFit: "cover" }} />
+                    <div style={{ padding: 14, fontSize: 14, fontWeight: 800, color: "#101828" }}>{label}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </aside>
+        </div>
       </div>
     </OperatorLayout>
   );

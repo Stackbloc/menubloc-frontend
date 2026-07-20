@@ -78,6 +78,7 @@ export default function OperatorAdobeStudio() {
   const [status, setStatus] = useState("");
   const [socialPrompt, setSocialPrompt] = useState(null);
   const expressRef = useRef(null);
+  const hasMenus = (config?.menus || []).length > 0;
 
   useEffect(() => {
     if (!rid || !designAllowed) {
@@ -89,16 +90,23 @@ export default function OperatorAdobeStudio() {
 
     setLoading(true);
     setError("");
-    Promise.all([
-      api.getAdobeDesignConfig(rid),
-      api.getAdobeDesignManifest(rid, { layout_id: layoutId, variant }),
-    ])
-      .then(([cfg, man]) => {
+    api.getAdobeDesignConfig(rid)
+      .then(async (cfg) => {
         setConfig(cfg);
-        setManifest(man.manifest || null);
+        setManifest(null);
         if (!menuId && cfg.menus?.length) {
           const primary = cfg.menus.find((menu) => menu.is_primary) || cfg.menus[0];
           setMenuId(String(primary.id));
+        }
+
+        if (cfg.menus?.length) {
+          const primary = cfg.menus.find((menu) => menu.is_primary) || cfg.menus[0];
+          const man = await api.getAdobeDesignManifest(rid, {
+            layout_id: layoutId,
+            variant,
+            menu_id: menuId || primary.id,
+          });
+          setManifest(man.manifest || null);
         }
       })
       .catch((err) => setError(err.message))
@@ -107,6 +115,10 @@ export default function OperatorAdobeStudio() {
 
   useEffect(() => {
     if (!rid || !designAllowed) return;
+    if (!hasMenus || !menuId) {
+      setManifest(null);
+      return;
+    }
     api.getAdobeDesignManifest(rid, {
       layout_id: layoutId,
       variant,
@@ -151,7 +163,7 @@ export default function OperatorAdobeStudio() {
   }
 
   async function handlePrintExport() {
-    if (!rid) return;
+    if (!rid || !hasMenus || !menuId) return;
     setBusy("pdf");
     setError("");
     setStatus("");
@@ -171,7 +183,7 @@ export default function OperatorAdobeStudio() {
   }
 
   async function handleDocumentExport() {
-    if (!rid) return;
+    if (!rid || !hasMenus || !menuId) return;
     setBusy("document");
     setError("");
     setStatus("");
@@ -221,7 +233,7 @@ export default function OperatorAdobeStudio() {
   }
 
   async function handleFireflyPrompt() {
-    if (!rid) return;
+    if (!rid || !hasMenus || !menuId) return;
     setBusy("firefly");
     setError("");
     setStatus("");
@@ -232,6 +244,11 @@ export default function OperatorAdobeStudio() {
         layout_id: layoutId,
       });
       setSocialPrompt(payload.social || null);
+
+      if (!payload.adobe?.express_embed?.configured) {
+        setStatus("Instagram asset prompt generated. Adobe Express Embed is not configured for this deployment.");
+        return;
+      }
 
       const express = await ensureAdobeExpress();
       if (!express?.module?.createImageFromText) {
@@ -333,13 +350,19 @@ export default function OperatorAdobeStudio() {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 18 }}>
             <div>
               <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 6, color: "#5b6675" }}>Menu</label>
-              <select style={CONTROL} value={menuId} onChange={(e) => setMenuId(e.target.value)}>
-                {menus.map((menu) => (
-                  <option key={menu.id} value={menu.id}>
-                    {menu.name}
-                  </option>
-                ))}
-              </select>
+              {hasMenus ? (
+                <select style={CONTROL} value={menuId} onChange={(e) => setMenuId(e.target.value)}>
+                  {menus.map((menu) => (
+                    <option key={menu.id} value={menu.id}>
+                      {menu.name}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <div style={{ ...CONTROL, display: "flex", alignItems: "center", minHeight: 42, color: "#7b8797" }}>
+                  No menu available yet
+                </div>
+              )}
             </div>
             <div>
               <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 6, color: "#5b6675" }}>Variant</label>
@@ -406,19 +429,24 @@ export default function OperatorAdobeStudio() {
           <div style={{ background: "#fff", border: "1px solid #d8e2ef", borderRadius: 18, padding: 18, marginBottom: 18 }}>
             <div style={{ fontSize: 13, fontWeight: 800, color: "#112031", marginBottom: 10 }}>Exports</div>
             <div style={{ display: "grid", gap: 10 }}>
-              <button style={BTN("primary")} onClick={handlePrintExport} disabled={busy !== ""}>
+              <button style={BTN("primary")} onClick={handlePrintExport} disabled={busy !== "" || !hasMenus}>
                 {busy === "pdf" ? "Generating PDF…" : "Download print PDF"}
               </button>
-              <button style={BTN("accent")} onClick={handleDocumentExport} disabled={busy !== ""}>
+              <button style={BTN("accent")} onClick={handleDocumentExport} disabled={busy !== "" || !hasMenus}>
                 {busy === "document" ? "Generating document…" : "Generate variant PDF"}
               </button>
               <button style={BTN("ghost")} onClick={handleLaunchExpress} disabled={busy !== ""}>
                 {busy === "express" ? "Opening Adobe Express…" : "Open Adobe Express"}
               </button>
-              <button style={BTN("ghost")} onClick={handleFireflyPrompt} disabled={busy !== ""}>
+              <button style={BTN("ghost")} onClick={handleFireflyPrompt} disabled={busy !== "" || !hasMenus}>
                 {busy === "firefly" ? "Opening Firefly…" : "Launch Instagram asset"}
               </button>
             </div>
+            {!hasMenus && (
+              <div style={{ marginTop: 12, fontSize: 12, lineHeight: 1.5, color: "#7b8797" }}>
+                Add or upload a menu before generating Adobe exports.
+              </div>
+            )}
           </div>
 
           <div style={{ background: "#fff", border: "1px solid #d8e2ef", borderRadius: 18, padding: 18, marginBottom: 18 }}>
@@ -435,8 +463,14 @@ export default function OperatorAdobeStudio() {
 
           <div style={{ background: "#fff", border: "1px solid #d8e2ef", borderRadius: 18, padding: 18 }}>
             <div style={{ fontSize: 13, fontWeight: 800, color: "#112031", marginBottom: 10 }}>Manifest preview</div>
-            {loading || !manifest ? (
+            {loading ? (
               <div style={{ color: "#7b8797", fontSize: 13 }}>Loading Adobe design manifest…</div>
+            ) : !hasMenus ? (
+              <div style={{ color: "#7b8797", fontSize: 13, lineHeight: 1.6 }}>
+                No menu has been added for this restaurant yet. Once a menu exists, this panel will show the Adobe export manifest.
+              </div>
+            ) : !manifest ? (
+              <div style={{ color: "#7b8797", fontSize: 13 }}>Choose a menu to preview the Adobe design manifest.</div>
             ) : (
               <>
                 <div style={{ fontSize: 19, fontWeight: 800, color: "#112031", marginBottom: 4 }}>

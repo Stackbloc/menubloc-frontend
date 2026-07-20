@@ -113,30 +113,6 @@ function StatCard({ label, value, sub }) {
   );
 }
 
-function QuickBtn({ label, icon, onClick }) {
-  const [hov, setHov] = useState(false);
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      onMouseEnter={() => setHov(true)}
-      onMouseLeave={() => setHov(false)}
-      style={{
-        flex: 1, minWidth: 130,
-        display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
-        padding: "16px 12px",
-        background: hov ? "#f0f8f4" : "#fff",
-        border: `1.5px solid ${hov ? GREEN : BORDER}`,
-        borderRadius: 12, cursor: "pointer", fontFamily: "inherit",
-        transition: "border-color 0.12s, background 0.12s",
-      }}
-    >
-      <span style={{ fontSize: 22 }}>{icon}</span>
-      <span style={{ fontSize: 12, fontWeight: 700, color: "#0f1720" }}>{label}</span>
-    </button>
-  );
-}
-
 // ── Main ──────────────────────────────────────────────────────────────────
 
 const PAUSE_OPTIONS = [
@@ -657,23 +633,6 @@ export default function OperatorDashboard() {
               <span style={{ fontSize: 14, fontWeight: 800, color: "#0f1720" }}>{value}</span>
             </div>
           ))}
-        </div>
-
-        {/* ── Quick Access ────────────────────────────────────── */}
-        <div style={{ background: "#fff", border: `1px solid ${BORDER}`, borderRadius: 14, padding: "14px 16px 16px", marginBottom: 20 }}>
-          <div style={{ fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", color: "#8a9ab0", marginBottom: 12 }}>
-            Quick Access
-          </div>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            <QuickBtn
-              icon="◷"
-              label={t("operator.dashboard.publicProfile", "Public Profile")}
-              onClick={() => navigate("/operator/my-account")}
-            />
-            <QuickBtn icon="▣" label={t("operator.dashboard.menuLab", "Menu Lab")} onClick={() => navigate("/operator/menulab")} />
-            <QuickBtn icon="🔥" label={t("operator.dashboard.deals", "Deals")} onClick={() => navigate("/operator/deals")} />
-            <QuickBtn icon="▣" label="QR Tools" onClick={() => navigate("/operator/qr-kits/order")} />
-          </div>
         </div>
 
       </div>
