@@ -7,6 +7,7 @@ import {
   getOwnerPhmsDisplayAudit,
   getOwnerPhmsDeploymentHealth,
   getOwnerPhmsHomeFeedCache,
+  refreshOwnerPhmsHomeFeedCache,
   captureOwnerPhmsDisplaySnapshot,
   getOwnerPhmsRepairTickets,
   acknowledgeOwnerPhmsRepairTicket,
@@ -711,6 +712,7 @@ function HomeFeedCacheSection() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   function load() {
     setLoading(true);
@@ -721,13 +723,33 @@ function HomeFeedCacheSection() {
       .finally(() => setLoading(false));
   }
 
+  async function runRefresh() {
+    setRefreshing(true);
+    setError(null);
+    try {
+      // Same stale-recovery pipeline as the scheduler tick (bounded batch).
+      const report = await refreshOwnerPhmsHomeFeedCache();
+      setData(report);
+    } catch (e) {
+      setError(e.message);
+      load();
+    } finally {
+      setRefreshing(false);
+    }
+  }
+
   useEffect(() => { load(); }, []);
 
   const metrics = [
     { label: "Cache health", value: data?.status || "—" },
     { label: "Expected cache version", value: data?.expected_cache_version ?? "—" },
     { label: "Schema status", value: data?.schema_verification?.status || "—" },
-    { label: "Scheduler", value: data?.scheduler_enabled ? "enabled" : "disabled" },
+    {
+      label: "Scheduler",
+      value: data?.scheduler_enabled
+        ? "enabled"
+        : `disabled${data?.scheduler_disabled_reason ? ` (${data.scheduler_disabled_reason})` : ""}`,
+    },
     { label: "Rows cached", value: data?.rows_cached ?? "—" },
     { label: "Eligible restaurants", value: data?.eligible_restaurants ?? "—" },
     { label: "Incompatible version rows", value: data?.incompatible_version_count ?? "—" },
@@ -736,6 +758,10 @@ function HomeFeedCacheSection() {
     { label: "Fallback-to-live", value: data?.fallback_to_live ?? "—" },
     { label: "Fallback / hour", value: data?.fallback_to_live_per_hour ?? "—" },
     { label: "Failed refreshes", value: data?.failed_refreshes ?? "—" },
+    {
+      label: "Failed / hour",
+      value: data?.failed_refreshes_hour_count ?? "—",
+    },
     { label: "Avg refresh time", value: data?.average_refresh_ms != null ? `${data.average_refresh_ms} ms` : "—" },
     { label: "Oldest stale row", value: data?.oldest_stale_minutes != null ? `${data.oldest_stale_minutes} min` : "—" },
     { label: "Stale rows", value: data?.stale_row_count ?? "—" },
@@ -753,8 +779,12 @@ function HomeFeedCacheSection() {
         title="Home Feed Cache"
         subtitle="Publish-time homepage cache · self-healing · operational metrics"
         action={
-          <button onClick={load} disabled={loading} style={{ fontSize: 12, fontWeight: 700, border: `1px solid ${OWNER_COLORS.line}`, background: "#fff", borderRadius: 10, padding: "7px 14px", cursor: "pointer" }}>
-            {loading ? "Refreshing…" : "Refresh"}
+          <button
+            onClick={runRefresh}
+            disabled={loading || refreshing}
+            style={{ fontSize: 12, fontWeight: 700, border: `1px solid ${OWNER_COLORS.line}`, background: "#fff", borderRadius: 10, padding: "7px 14px", cursor: "pointer" }}
+          >
+            {refreshing ? "Refreshing…" : "Refresh"}
           </button>
         }
       />
