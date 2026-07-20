@@ -56,13 +56,19 @@ Not committed in this session (await user CPD).
 
 # Deployment Status
 
-Local only — FE + BE + migration not deployed. Non-offer create will fail on prod until migration runs and Railway picks up `deals.js`.
+**CPD COMPLETE (agent deploy 2026-07-19)**
+
+- FE: `8a4af1d` · production URL `https://menuply.com` · bundle `index-C4sK-aDU.js` (alias set)
+- BE: `06b4c1e9` Railway health commit_hash match
+- Migration 0193 applied; `menu_item_id` nullable YES
+- Verified by: **human pending** (agent must not self-certify UI)
 
 # Verification Results
 
-- `node test/operatorBillboardsNavContract.test.js` → **ok**
-- Static smoke: nav Billboards present; display-settings route redirects; offer question + `allow_null_menu_item` + upsert/pause present; Deals Feature path still calls upload/upsert; Menu Lab still imports `getDisplaySettings`
-- Live UI create/profile strip not exercised in this session (no operator login probe)
+- Contract test: pass
+- Bundle API check: `menubloc-backend-production` 59 · `localhost:3001` 6
+- Bundle contains `operator/billboards` references
+- Live operator UI: await user confirm
 
 # Remaining Risks
 

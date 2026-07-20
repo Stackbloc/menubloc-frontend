@@ -4,7 +4,13 @@ Replace operator Display Board nav with deal-backed Billboards (graphic/splash),
 
 # Current Status
 
-**LOCAL COMPLETE** — code + contract test + migration authored. Awaiting commit, migrate, deploy, human CPD.
+**CPD COMPLETE** — 2026-07-19
+
+- FE commit `8a4af1d` · live bundle `index-C4sK-aDU.js` on menuply.com
+- BE commit `06b4c1e9` on Railway production (`/health` commit_hash match)
+- Migration `20260719_0193_deals_menu_item_nullable_for_billboards.sql` applied (`deals.menu_item_id is_nullable=YES`)
+- Deploy: `vercel --prod` → `menubloc-frontend-a7d1oaojv-menuply.vercel.app` + `vercel alias set … menuply.com`
+- Awaiting **human** smoke on `/operator/billboards`
 
 # Files Changed
 
