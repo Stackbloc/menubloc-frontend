@@ -144,6 +144,7 @@ import SpreadsheetUploadPage from "./pages/SpreadsheetUploadPage.jsx";
 import FoodTruckPage from "./pages/FoodTruckPage.jsx";
 import FoodTrucksPage from "./pages/FoodTrucksPage.jsx";
 import FoodTruckSchedulePage from "./pages/FoodTruckSchedulePage.jsx";
+import FoodTruckSignup from "./pages/FoodTruckSignup.jsx";
 import OperatorIntakePage from "./pages/menulibrarian_mobile.jsx";
 import CrmDashboard from "./pages/crm/CrmDashboard.jsx";
 import AdminOrdersPage from "./pages/crm/AdminOrdersPage.jsx";
@@ -513,7 +514,7 @@ function AppShell({ easyMenu, crmHost }) {
 
         <Route path="/restaurants/:id/qr-codes" element={crmHost ? <HostRouteRedirect to="/crm" /> : <QrCodesPage />} />
 
-        <Route path="/foodtruck/signup" element={<Navigate to="/restaurant/signup" replace />} />
+        <Route path="/foodtruck/signup" element={crmHost ? <HostRouteRedirect to="/crm" /> : <FoodTruckSignup />} />
         <Route path="/foodtrucks" element={crmHost ? <HostRouteRedirect to="/crm" /> : <FoodTrucksPage />} />
         <Route path="/foodtrucks/:slugOrId/schedule" element={crmHost ? <HostRouteRedirect to="/crm" /> : <FoodTruckSchedulePage />} />
         <Route path="/foodtrucks/:slugOrId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <FoodTruckPage />} />

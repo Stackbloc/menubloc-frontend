@@ -341,7 +341,7 @@ export default function RestaurantSignupEntry() {
                 <FoodTruckIcon />
               </span>
               <span style={styles.foodTruckPrompt}>{t("signup.entry.foodTruckOwner", "Food Truck Owner?")}</span>
-              <Link to="/restaurant/signup" style={styles.foodTruckLink}>
+              <Link to="/foodtruck/signup" style={styles.foodTruckLink}>
                 {t("signup.entry.foodTruckSignup", "Sign up")}
               </Link>
             </div>
