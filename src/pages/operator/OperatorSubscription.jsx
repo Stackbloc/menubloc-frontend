@@ -106,6 +106,7 @@ export default function OperatorSubscription() {
   const [selectedPlanCode, setSelectedPlanCode] = useState(null);
   const [showPlanSelection, setShowPlanSelection] = useState(false);
   const [preferFoodTruckPlan, setPreferFoodTruckPlan] = useState(false);
+  const foodTruckOnboarding = searchParams.get("onboarding") === "food_truck";
 
   const monthlyPlan = planOptions.find((p) => p.code === "starter_monthly");
   const annualPlan = planOptions.find((p) => p.code === "starter_annual");
@@ -149,11 +150,11 @@ export default function OperatorSubscription() {
 
   useEffect(() => {
     const intended = readIntendedCheckoutPlanCode();
-    if (intended === FOOD_TRUCK_ANNUAL_PLAN_CODE) {
+    if (intended === FOOD_TRUCK_ANNUAL_PLAN_CODE || foodTruckOnboarding) {
       setPreferFoodTruckPlan(true);
       setSelectedPlanCode(FOOD_TRUCK_ANNUAL_PLAN_CODE);
     }
-  }, []);
+  }, [foodTruckOnboarding]);
 
   useEffect(() => {
     getCheckoutPlans()
@@ -194,6 +195,20 @@ export default function OperatorSubscription() {
     }
   }, [loading, shouldShowAccountManagement]);
 
+  useEffect(() => {
+    if (!foodTruckOnboarding || loading || !selectedRestaurant?.id) return;
+    if (!isPaidSubscriptionConfirmed(subscription)) return;
+    api.markOnboardingStage(selectedRestaurant.id, {
+      stage_id: "subscription_active",
+      status: "completed",
+      append_completed_key: "subscription_active",
+      current_step_key: "detailed_information",
+      selected_plan_code: FOOD_TRUCK_ANNUAL_PLAN_CODE,
+      extra: { onboarding_kind: "food_truck" },
+    }).catch(() => {});
+    navigate("/foodtruck/onboarding/details", { replace: true });
+  }, [foodTruckOnboarding, loading, selectedRestaurant?.id, subscription, navigate]);
+
   const checkoutResult = searchParams.get("checkout");
   useEffect(() => {
     if (checkoutResult === "success") {
@@ -202,8 +217,21 @@ export default function OperatorSubscription() {
       refreshSubscription().then((sub) => {
         if (isPaidSubscriptionConfirmed(sub)) {
           clearIntendedCheckoutPlanCode();
-          setMessage("Your plan is active. Upload your menu to complete your public profile.");
-          setTimeout(() => navigate("/operator/menulab"), 2000);
+          if (foodTruckOnboarding && selectedRestaurant?.id) {
+            api.markOnboardingStage(selectedRestaurant.id, {
+              stage_id: "subscription_active",
+              status: "completed",
+              append_completed_key: "subscription_active",
+              current_step_key: "detailed_information",
+              selected_plan_code: FOOD_TRUCK_ANNUAL_PLAN_CODE,
+              extra: { onboarding_kind: "food_truck" },
+            }).catch(() => {});
+            setMessage("Your plan is active. Continue to your public profile details.");
+            setTimeout(() => navigate("/foodtruck/onboarding/details"), 1200);
+          } else {
+            setMessage("Your plan is active. Upload your menu to complete your public profile.");
+            setTimeout(() => navigate("/operator/menulab"), 2000);
+          }
         } else {
           setMessage(
             "Payment received. Your subscription is still processing — this page will show Active once Stripe confirms."
@@ -213,7 +241,7 @@ export default function OperatorSubscription() {
     } else if (checkoutResult === "cancelled") {
       setSearchParams({}, { replace: true });
     }
-  }, [checkoutResult]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [checkoutResult, foodTruckOnboarding, selectedRestaurant?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleSelectPublished() {
     setError("");
@@ -249,15 +277,27 @@ export default function OperatorSubscription() {
       const body = buildOperatorStripeCheckoutBody({
         restaurantId: selectedRestaurant.id,
         planCode,
-        successUrl: `${origin}/operator/subscription?checkout=success`,
-        cancelUrl: `${origin}/operator/subscription?checkout=cancelled`,
+        successUrl: `${origin}/operator/subscription?checkout=success${foodTruckOnboarding ? "&onboarding=food_truck" : ""}`,
+        cancelUrl: `${origin}/operator/subscription?checkout=cancelled${foodTruckOnboarding ? "&onboarding=food_truck" : ""}`,
       });
       const result = await api.createPlatformCheckoutSession(body);
       if (result.already_active) {
-        setMessage("Plan active. Taking you to menu setup…");
+        setMessage(foodTruckOnboarding ? "Plan active. Taking you to profile details..." : "Plan active. Taking you to menu setup…");
         await refreshSubscription();
         clearIntendedCheckoutPlanCode();
-        setTimeout(() => navigate("/operator/menulab"), 1500);
+        if (foodTruckOnboarding) {
+          await api.markOnboardingStage(selectedRestaurant.id, {
+            stage_id: "subscription_active",
+            status: "completed",
+            append_completed_key: "subscription_active",
+            current_step_key: "detailed_information",
+            selected_plan_code: FOOD_TRUCK_ANNUAL_PLAN_CODE,
+            extra: { onboarding_kind: "food_truck" },
+          }).catch(() => {});
+          setTimeout(() => navigate("/foodtruck/onboarding/details"), 800);
+        } else {
+          setTimeout(() => navigate("/operator/menulab"), 1500);
+        }
         setIsCheckingOut(false);
         return;
       }

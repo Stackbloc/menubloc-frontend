@@ -219,6 +219,8 @@ export const completeOwnedLocationsCheckpoint = (rid, body = {}) =>
   post(`/operator/restaurants/${rid}/onboarding/locations/complete`, body);
 export const getOnboardingCheckpoint = (rid) =>
   get(`/operator/restaurants/${rid}/onboarding/checkpoint`);
+export const markOnboardingStage = (rid, body) =>
+  post(`/operator/restaurants/${rid}/onboarding/checkpoint/stage`, body);
 export const getLaunchReadiness = (rid) =>
   get(`/operator/restaurants/${rid}/onboarding/launch-readiness`);
 

@@ -11,6 +11,7 @@ import {
   resolveRestaurantOnboardingState,
   syncRestaurantOnboardingProgress,
 } from "../lib/restaurantOnboardingState.js";
+import { markOnboardingStage } from "../lib/operatorApi.js";
 import MenuUploadCompletionNextSteps from "../components/menuUpload/MenuUploadCompletionNextSteps.jsx";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
@@ -602,6 +603,8 @@ export default function PdfUploadPage() {
   const location = useLocation();
   const nav = useNavigate();
   const { selectedRestaurant, operator } = useOperator();
+  const searchParams = new URLSearchParams(location.search || "");
+  const isFoodTruckOnboarding = searchParams.get("food_truck_onboarding") === "1";
   const isOperatorFlow = location.pathname.startsWith("/operator/");
   const isAuthenticatedOperator = Boolean(operator?.id && selectedRestaurant?.id);
   const recovery = useMemo(
@@ -707,6 +710,24 @@ export default function PdfUploadPage() {
       Number(result.public_restaurant_id || result.restaurant_id || restaurant_id) || 0;
     const publicMenuId = Number(result.public_menu_id) || 0;
     if (!publicRestaurantId || !publicMenuId) return;
+    if (isFoodTruckOnboarding) {
+      markOnboardingStage(publicRestaurantId, {
+        stage_id: "menu_uploaded",
+        status: "completed",
+        append_completed_key: "menu_uploaded",
+        current_step_key: "subscription_active",
+        extra: {
+          onboarding_kind: "food_truck",
+          menu_id: publicMenuId,
+          upload_session_id: result.upload_session_id || result.upload_id || null,
+        },
+      })
+        .catch(() => {})
+        .finally(() => {
+          nav("/operator/subscription?onboarding=food_truck", { replace: true });
+        });
+      return;
+    }
     const params = new URLSearchParams();
     const uploadSessionId = result.upload_session_id || result.upload_id || "";
     if (uploadSessionId) params.set("upload_session_id", uploadSessionId);
@@ -715,7 +736,7 @@ export default function PdfUploadPage() {
     nav(`/operator/restaurants/${publicRestaurantId}/menus/${publicMenuId}/worksheet${qs}`, {
       replace: true,
     });
-  }, [result, isOperatorFlow, restaurant_id, nav]);
+  }, [result, isOperatorFlow, restaurant_id, nav, isFoodTruckOnboarding]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1149,22 +1170,39 @@ export default function PdfUploadPage() {
           <div style={s.page}>
             <div style={s.successBox}>
               <div style={s.successIcon}>✓</div>
-              <div style={s.successTitle}>Menu parsed — opening worksheet…</div>
-              <p style={s.successSub}>
-                Review items and prices in the Menu Worksheet. Saving the worksheet does not publish.
-              </p>
-              {worksheetHref ? (
+              {isFoodTruckOnboarding ? (
+                <>
+                  <div style={s.successTitle}>Menu uploaded</div>
+                  <p style={s.successSub}>
+                    Continuing to food-truck plan selection. Menu corrections are not required during onboarding.
+                  </p>
+                  <Link to="/operator/subscription?onboarding=food_truck" style={s.profileLink}>
+                    Continue to plan selection
+                  </Link>
+                </>
+              ) : worksheetHref ? (
+                <>
+                  <div style={s.successTitle}>Menu parsed — opening worksheet…</div>
+                  <p style={s.successSub}>
+                    Review items and prices in the Menu Worksheet. Saving the worksheet does not publish.
+                  </p>
                 <Link to={worksheetHref} style={s.profileLink}>
                   Open Menu Worksheet
                 </Link>
+                </>
               ) : (
-                <p style={s.successSub}>
-                  Upload finished but menu ids were missing. Return to Menu Lab and try again.
-                </p>
+                <>
+                  <div style={s.successTitle}>Menu upload finished</div>
+                  <p style={s.successSub}>
+                    Upload finished but menu ids were missing. Return to Menu Lab and try again.
+                  </p>
+                </>
               )}
-              <Link to="/operator/menulab" style={{ ...s.profileLink, marginTop: 10 }}>
-                Back to Menu Lab
-              </Link>
+              {!isFoodTruckOnboarding ? (
+                <Link to="/operator/menulab" style={{ ...s.profileLink, marginTop: 10 }}>
+                  Back to Menu Lab
+                </Link>
+              ) : null}
             </div>
           </div>
         </OperatorLayout>

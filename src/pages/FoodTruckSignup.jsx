@@ -381,6 +381,10 @@ export default function FoodTruckSignup() {
     password: "",
     confirmPassword: "",
     truck_name: "",
+    city: "",
+    state: "",
+    owner_name: "",
+    phone: "",
   });
   const [fieldErrors, setFieldErrors] = useState({});
   const [serverError, setServerError] = useState("");
@@ -424,6 +428,10 @@ export default function FoodTruckSignup() {
     if (!form.confirmPassword) errors.confirmPassword = "Confirm your password.";
     else if (form.password !== form.confirmPassword) errors.confirmPassword = "Passwords do not match.";
     if (!form.truck_name.trim()) errors.truck_name = "Truck name is required.";
+    if (!form.city.trim()) errors.city = "City is required.";
+    if (!form.state.trim()) errors.state = "State is required.";
+    if (!form.owner_name.trim()) errors.owner_name = "Owner name is required.";
+    if (!form.phone.trim()) errors.phone = "Phone number is required.";
     if (!agreements.legalConsent) {
       errors.legalConsent = "You must agree to the Terms of Use and Privacy Policy and consent to electronic communications.";
     }
@@ -451,6 +459,13 @@ export default function FoodTruckSignup() {
           password: form.password,
           restaurant_name: form.truck_name.trim(),
           category: "food_truck",
+          city: form.city.trim(),
+          state: form.state.trim(),
+          manager_name: form.owner_name.trim(),
+          full_name: form.owner_name.trim(),
+          phone: form.phone.trim(),
+          signup_source: "food_truck_signup",
+          selected_plan: FOOD_TRUCK_ANNUAL_PLAN_CODE,
           ...buildLegalConsentPayload(),
         }),
       });
@@ -476,7 +491,7 @@ export default function FoodTruckSignup() {
           <BrandLogo height={48} radius={14} matchPageBackground={false} />
         <div style={styles.successBanner}>
           <div style={{ fontSize: 18, fontWeight: 900, marginBottom: 6 }}>Account created</div>
-          You can now sign in to the operator dashboard to finish your truck profile, menus, service locations, and the remaining onboarding steps.
+          You can now sign in to verify your email and continue food-truck onboarding.
         </div>
           <a
             href="/operator/login"
@@ -494,7 +509,7 @@ export default function FoodTruckSignup() {
               boxShadow: "0 12px 24px rgba(31, 78, 61, 0.18)",
             }}
           >
-            Continue to operator sign in
+            Continue to email verification
           </a>
         </div>
       </div>
@@ -511,7 +526,7 @@ export default function FoodTruckSignup() {
             <div style={styles.eyebrow}>{t("foodTruck.signup.title", "Food truck sign up")}</div>
             <h1 style={styles.heading}>{t("foodTruck.signup.subtitle", "List your truck and share your live menu with diners.")}</h1>
             <div style={styles.subheading}>
-              Join Menuply with a food truck plan built for mobile operators. Create your account now, then add your live pickup location, menus, hours, and other truck details from the operator dashboard.
+              Join Menuply with a food truck plan built for mobile operators. Create your account, verify email, upload your menu, choose the food-truck plan, and finish your public profile before entering the Operator Panel.
             </div>
           </div>
         </header>
@@ -538,7 +553,7 @@ export default function FoodTruckSignup() {
               ))}
             </ul>
             <div style={styles.planFootnote}>
-              Create your account here. Finish your profile, menus, and live service location from the operator dashboard after signup.
+              Create your account here. Merchant onboarding and delivery configuration remain in the Operator Panel after onboarding is complete.
             </div>
           </aside>
 
@@ -547,7 +562,7 @@ export default function FoodTruckSignup() {
               <div style={styles.formCardHeader}>
                 <h2 style={styles.formCardTitle}>Create your account</h2>
                 <div style={{ ...styles.helperText, marginTop: 8 }}>
-                  Only the essentials are needed here. Food truck basics, menus, and live service locations can be added later from the operator dashboard.
+                  These basics create your food-truck account and listing. Menu upload, plan selection, and public profile details come next.
                 </div>
               </div>
 
@@ -613,6 +628,70 @@ export default function FoodTruckSignup() {
                       style={fieldErrors.truck_name ? styles.inputError : styles.input}
                     />
                     {fieldErrors.truck_name ? <div style={styles.fieldError}>{fieldErrors.truck_name}</div> : null}
+                  </div>
+
+                  <div style={styles.fieldGroup}>
+                    <label htmlFor="city" style={styles.label}>
+                      City<span style={styles.required}>*</span>
+                    </label>
+                    <input
+                      id="city"
+                      name="city"
+                      type="text"
+                      autoComplete="address-level2"
+                      value={form.city}
+                      onChange={handleChange}
+                      style={fieldErrors.city ? styles.inputError : styles.input}
+                    />
+                    {fieldErrors.city ? <div style={styles.fieldError}>{fieldErrors.city}</div> : null}
+                  </div>
+
+                  <div style={styles.fieldGroup}>
+                    <label htmlFor="state" style={styles.label}>
+                      State<span style={styles.required}>*</span>
+                    </label>
+                    <input
+                      id="state"
+                      name="state"
+                      type="text"
+                      autoComplete="address-level1"
+                      value={form.state}
+                      onChange={handleChange}
+                      style={fieldErrors.state ? styles.inputError : styles.input}
+                    />
+                    {fieldErrors.state ? <div style={styles.fieldError}>{fieldErrors.state}</div> : null}
+                  </div>
+
+                  <div style={styles.fieldGroup}>
+                    <label htmlFor="owner_name" style={styles.label}>
+                      Owner name<span style={styles.required}>*</span>
+                    </label>
+                    <input
+                      id="owner_name"
+                      name="owner_name"
+                      type="text"
+                      autoComplete="name"
+                      value={form.owner_name}
+                      onChange={handleChange}
+                      style={fieldErrors.owner_name ? styles.inputError : styles.input}
+                    />
+                    {fieldErrors.owner_name ? <div style={styles.fieldError}>{fieldErrors.owner_name}</div> : null}
+                  </div>
+
+                  <div style={styles.fieldGroup}>
+                    <label htmlFor="phone" style={styles.label}>
+                      Phone number<span style={styles.required}>*</span>
+                    </label>
+                    <input
+                      id="phone"
+                      name="phone"
+                      type="tel"
+                      autoComplete="tel"
+                      value={form.phone}
+                      onChange={handleChange}
+                      style={fieldErrors.phone ? styles.inputError : styles.input}
+                    />
+                    {fieldErrors.phone ? <div style={styles.fieldError}>{fieldErrors.phone}</div> : null}
                   </div>
                 </div>
 

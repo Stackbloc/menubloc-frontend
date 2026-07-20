@@ -37,6 +37,10 @@ import OrderCartDrawer from "./components/OrderCartDrawer.jsx";
 import BasketResumePrompt from "./components/basket/BasketResumePrompt.jsx";
 import SiteFooter from "./components/SiteFooter.jsx";
 import { OperatorProvider, useOperator } from "./context/OperatorContext.jsx";
+import {
+  isFoodTruckRestaurant,
+  resolveFoodTruckOnboardingRoute,
+} from "./lib/foodTruckOnboarding.js";
 import { OwnerProvider, useOwner } from "./context/OwnerContext.jsx";
 import { CrmProvider, useCrm } from "./context/CrmContext.jsx";
 import { ConsumerProvider } from "./context/ConsumerContext.jsx";
@@ -178,6 +182,7 @@ import FoodTruckPage from "./pages/FoodTruckPage.jsx";
 import FoodTrucksPage from "./pages/FoodTrucksPage.jsx";
 import FoodTruckSchedulePage from "./pages/FoodTruckSchedulePage.jsx";
 import FoodTruckSignup from "./pages/FoodTruckSignup.jsx";
+import FoodTruckOnboardingDetails from "./pages/FoodTruckOnboardingDetails.jsx";
 import OperatorIntakePage from "./pages/menulibrarian_mobile.jsx";
 import CrmDashboard from "./pages/crm/CrmDashboard.jsx";
 import AdminOrdersPage from "./pages/crm/AdminOrdersPage.jsx";
@@ -201,10 +206,26 @@ import CrmSubscriptions from "./pages/crm/CrmSubscriptions.jsx";
 import CrmCommissions from "./pages/crm/CrmCommissions.jsx";
 
 function OperatorRoute({ children }) {
-  const { isAuthenticated, isEmailVerified, loading } = useOperator();
+  const location = useLocation();
+  const { isAuthenticated, isEmailVerified, loading, selectedRestaurant, restaurants } = useOperator();
   if (loading) return null;
   if (!isAuthenticated) return <Navigate to="/operator/login" replace />;
   if (!isEmailVerified) return <Navigate to="/operator/verify-email" replace />;
+  const restaurant = selectedRestaurant || restaurants?.[0] || null;
+  if (restaurant && isFoodTruckRestaurant(restaurant)) {
+    const next = resolveFoodTruckOnboardingRoute(restaurant);
+    const current = `${location.pathname}${location.search || ""}`;
+    const routeSearch = new URLSearchParams(location.search || "");
+    const allowed =
+      (location.pathname === "/operator/subscription" &&
+        routeSearch.get("onboarding") === "food_truck") ||
+      location.pathname === "/operator/verify-email" ||
+      location.pathname === "/restaurant/pdf-upload" ||
+      location.pathname === "/foodtruck/onboarding/details";
+    if (next !== "/operator" && !allowed && current !== next) {
+      return <Navigate to={next} replace />;
+    }
+  }
   return children;
 }
 
@@ -603,6 +624,7 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/restaurants/:id/qr-codes" element={crmHost ? <HostRouteRedirect to="/crm" /> : <QrCodesPage />} />
 
         <Route path="/foodtruck/signup" element={crmHost ? <HostRouteRedirect to="/crm" /> : <FoodTruckSignup />} />
+        <Route path="/foodtruck/onboarding/details" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><FoodTruckOnboardingDetails /></OperatorRoute>} />
         <Route path="/foodtrucks" element={crmHost ? <HostRouteRedirect to="/crm" /> : <FoodTrucksPage />} />
         <Route path="/foodtrucks/:slugOrId/schedule" element={crmHost ? <HostRouteRedirect to="/crm" /> : <FoodTruckSchedulePage />} />
         <Route path="/foodtrucks/:slugOrId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <FoodTruckPage />} />

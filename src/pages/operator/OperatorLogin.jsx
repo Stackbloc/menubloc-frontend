@@ -17,6 +17,10 @@ import {
   styles,
 } from "../../components/consumer/ConsumerAuthShared.jsx";
 import { resolveOperatorResumePath } from "../../lib/operatorOnboardingCheckpoints.js";
+import {
+  isFoodTruckRestaurant,
+  resolveFoodTruckOnboardingRoute,
+} from "../../lib/foodTruckOnboarding.js";
 
 function onboardingStateForResume(restaurant, email, routeState) {
   if (!restaurant) return undefined;
@@ -34,6 +38,9 @@ function onboardingStateForResume(restaurant, email, routeState) {
 }
 
 function resolvePostLoginDest(restaurant, preferredNextPath) {
+  if (isFoodTruckRestaurant(restaurant)) {
+    return resolveFoodTruckOnboardingRoute(restaurant);
+  }
   return resolveOperatorResumePath(restaurant, preferredNextPath);
 }
 

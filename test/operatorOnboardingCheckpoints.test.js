@@ -17,6 +17,10 @@ import {
   resolveNextOnboardingRoute,
   resolveOperatorResumePath,
 } from "../src/lib/operatorOnboardingCheckpoints.js";
+import {
+  isFoodTruckOnboardingComplete,
+  resolveFoodTruckOnboardingRoute,
+} from "../src/lib/foodTruckOnboarding.js";
 import { resolvePostOrganizationPath } from "../src/lib/businessOrganizationSchema.js";
 import { resolvePostLocationsPath } from "../src/lib/restaurantInformationSchema.js";
 
@@ -163,4 +167,45 @@ test("dashboard includes Finish setup cards wiring", () => {
   assert.match(dash, /getIncompleteFinishSetupSteps/);
   assert.match(dash, /Finish setup/);
   assert.match(dash, /Recommended:/);
+});
+
+test("food truck onboarding skips worksheet, merchant, and delivery until panel", () => {
+  const base = {
+    id: 20,
+    category: "food_truck",
+    restaurant_type: "food_truck",
+    selected_plan_code: "food_truck_annual",
+    completed_step_keys: [
+      "account_created",
+      "email_verified",
+      "basic_information_complete",
+    ],
+    draft_payload: {
+      stage_records: {
+        basic_information_complete: { status: "completed" },
+      },
+    },
+  };
+
+  assert.equal(resolveFoodTruckOnboardingRoute(base), "/restaurant/pdf-upload?food_truck_onboarding=1");
+  assert.equal(resolveFoodTruckOnboardingRoute({
+    ...base,
+    completed_step_keys: [...base.completed_step_keys, "menu_uploaded"],
+  }), "/operator/subscription?onboarding=food_truck");
+  assert.equal(resolveFoodTruckOnboardingRoute({
+    ...base,
+    subscription_active: true,
+    completed_step_keys: [...base.completed_step_keys, "menu_uploaded", "subscription_active"],
+  }), "/foodtruck/onboarding/details");
+  assert.equal(isFoodTruckOnboardingComplete({
+    ...base,
+    subscription_active: true,
+    completed_step_keys: [
+      ...base.completed_step_keys,
+      "menu_uploaded",
+      "subscription_active",
+      "detailed_information_complete",
+      "onboarding_complete",
+    ],
+  }), true);
 });
