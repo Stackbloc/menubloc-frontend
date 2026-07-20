@@ -63,6 +63,7 @@ import OperatorTabletPage from "./pages/operator/OperatorTabletPage.jsx";
 import OperatorMenuEditor from "./pages/operator/OperatorMenuEditor.jsx";
 import OperatorCkMenuEditorPage from "./pages/operator/OperatorCkMenuEditorPage.jsx";
 import OperatorMenuWorksheetPage from "./pages/operator/OperatorMenuWorksheetPage.jsx";
+import OperatorMenuWorksheetHubPage from "./pages/operator/OperatorMenuWorksheetHubPage.jsx";
 import OperatorMenuCameraUpload from "./pages/operator/OperatorMenuCameraUpload.jsx";
 import OperatorDealsEditor from "./pages/operator/OperatorDealsEditor.jsx";
 import OperatorClaimSearch from "./pages/operator/OperatorClaimSearch.jsx";
@@ -714,8 +715,10 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/operator/merchant" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorMerchantAccountPage /></OperatorRoute>} />
         <Route path="/operator/delivery" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorDeliveryPage /></OperatorRoute>} />
         <Route path="/operator/help" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><RestaurantHelpCenter /></OperatorRoute>} />
-        <Route path="/operator/profile" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorProfileEditor /></OperatorRoute>} />
+        <Route path="/operator/profile" element={crmHost ? <HostRouteRedirect to="/crm" /> : <Navigate to="/operator/profile-editor" replace />} />
+        <Route path="/operator/profile-editor" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorProfileEditor /></OperatorRoute>} />
         <Route path="/operator/menulab" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorMenuEditor /></OperatorRoute>} />
+        <Route path="/operator/menu-worksheet" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorMenuWorksheetHubPage /></OperatorRoute>} />
         <Route path="/operator/restaurants/:restaurantId/menus/:menuId/worksheet" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorMenuWorksheetPage /></OperatorRoute>} />
         <Route path="/operator/restaurants/:restaurantId/ck-menus/:menuId/edit" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorCkMenuEditorPage /></OperatorRoute>} />
         <Route path="/operator/menu" element={<Navigate to="/operator/menulab" replace />} />

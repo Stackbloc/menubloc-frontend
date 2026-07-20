@@ -72,6 +72,19 @@
   margin-bottom: 8px;
 }
 
+.admin-console__section--spaced {
+  margin-top: 18px;
+  margin-bottom: 14px;
+  padding-top: 10px;
+  border-top: 1px solid #e8eaed;
+}
+
+.admin-console__section--spaced:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
 .admin-console__section-label {
   padding: 10px 16px 6px;
   font-size: 10px;
@@ -83,6 +96,13 @@
 
 .admin-console__section--accent .admin-console__section-label {
   color: #0b0f0c;
+}
+
+.admin-console__nav-children {
+  display: flex;
+  flex-direction: column;
+  margin: 0 0 4px;
+  padding-left: 10px;
 }
 
 .admin-console__link {
@@ -105,6 +125,14 @@
   text-align: left;
   position: relative;
   transition: background 0.1s, color 0.1s;
+}
+
+.admin-console__link--nested {
+  margin-left: 18px;
+  width: calc(100% - 26px);
+  padding: 6px 10px;
+  font-size: 12.5px;
+  font-weight: 500;
 }
 
 .admin-console__link:hover {
@@ -179,13 +207,15 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 12px;
   min-height: 56px;
-  padding: 0 28px;
+  padding: 8px 20px;
   background: #ffffff;
   border-bottom: 1px solid #e5e7eb;
   box-sizing: border-box;
   max-width: 100%;
+  min-width: 0;
+  flex-wrap: wrap;
 }
 
 .admin-console__header-left {
@@ -193,6 +223,7 @@
   align-items: center;
   gap: 12px;
   min-width: 0;
+  flex: 1 1 auto;
 }
 
 .admin-console__menu-button {
@@ -230,6 +261,9 @@
   font-weight: 700;
   color: #0b0f0c;
   line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .admin-console__mobile-subtitle {
@@ -245,8 +279,12 @@
 .admin-console__header-right {
   display: flex;
   align-items: center;
-  gap: 10px;
-  flex-shrink: 0;
+  justify-content: flex-end;
+  gap: 8px;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  flex-wrap: wrap;
 }
 
 .admin-console__kb-toggle {

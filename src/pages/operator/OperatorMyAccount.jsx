@@ -1,16 +1,12 @@
 /**
- * Operator My Account — tabbed account hub.
- * Route: /operator/my-account?tab=profile|menu|settings|qr|delivery|password
- * Menu sub: ?tab=menu&menuPanel=view|edit
+ * Operator My Account — Settings (default) + My QR Code.
+ * Route: /operator/my-account?tab=settings|qr|password
  *
- * Profile Editor — public restaurant listing fields
- * Menu — view public menu + Edit menu content (Menu Worksheet)
- * Settings — account type, open date, next billing, change, cancel
- * My QR Code — see / share / print primary digital menu QR
- * Delivery Portal — Uber Direct / DoorDash Drive delivery accounts
- * Password — operator password
+ * Profile Editor and Menu moved to Operations / Menu sidebar sections.
+ * Settings includes: Account Settings, Merchant Account, Delivery Portal, Owner PIN.
+ * Legacy ?tab=profile|menu|delivery redirect to new homes.
  */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useLanguage } from "../../context/LanguageContext.jsx";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import OperatorLayout from "./OperatorLayout.jsx";
@@ -18,8 +14,6 @@ import { useOperator } from "../../context/OperatorContext.jsx";
 import * as api from "../../lib/operatorApi.js";
 import { getSubscriptionStatusLabel, formatMoney } from "../../components/payments/paymentHelpers.js";
 import PrimaryQrCard from "../../components/qr/PrimaryQrCard.jsx";
-import { operatorPublicProfilePath } from "../../lib/canonicalUrl.js";
-import { OperatorRestaurantProfileForm } from "./OperatorProfileEditor.jsx";
 import OperatorDeliveryPortalPanel from "./OperatorDeliveryPortalPanel.jsx";
 import {
   FREE_PLAN_CODE,
@@ -27,36 +21,44 @@ import {
 } from "../../lib/menuplyCheckoutPlans.js";
 
 const TABS = [
-  { id: "profile", label: "Profile Editor" },
-  { id: "menu", label: "Menu" },
   { id: "settings", label: "Settings" },
   { id: "qr", label: "My QR Code" },
-  { id: "delivery", label: "Delivery Portal" },
   { id: "password", label: "Password" },
 ];
 
-const MENU_PANELS = [
-  { id: "view", label: "View menu" },
-  { id: "edit", label: "Edit menu content" },
+const SETTINGS_SUBNAV = [
+  { id: "account", label: "Account Settings" },
+  { id: "merchant", label: "Merchant Account" },
+  { id: "delivery", label: "Delivery Portal" },
+  { id: "pin", label: "Owner PIN Settings" },
 ];
 
 function normalizeTab(raw) {
   const id = String(raw || "").toLowerCase();
-  return TABS.some((t) => t.id === id) ? id : "profile";
+  if (id === "profile") return "profile_redirect";
+  if (id === "menu") return "menu_redirect";
+  if (id === "delivery") return "settings";
+  return TABS.some((t) => t.id === id) ? id : "settings";
 }
 
-function normalizeMenuPanel(raw) {
+function normalizeSettingsPanel(raw) {
   const id = String(raw || "").toLowerCase();
-  return MENU_PANELS.some((p) => p.id === id) ? id : "view";
+  if (id === "delivery") return "delivery";
+  return SETTINGS_SUBNAV.some((p) => p.id === id) ? id : "account";
 }
 
-/** Build My Account tab / panel hrefs — real links so tabs work without setSearchParams quirks. */
-export function myAccountHref(tabId, menuPanelId = "view") {
+/** Build My Account tab hrefs. */
+export function myAccountHref(tabId, settingsPanelId = "account") {
   const tab = normalizeTab(tabId);
-  if (tab === "menu") {
-    return `/operator/my-account?tab=menu&menuPanel=${encodeURIComponent(normalizeMenuPanel(menuPanelId))}`;
+  if (tab === "profile_redirect") return "/operator/profile-editor";
+  if (tab === "menu_redirect") return "/operator/menu-worksheet";
+  if (tab === "settings") {
+    const panel = normalizeSettingsPanel(settingsPanelId);
+    if (panel !== "account") {
+      return `/operator/my-account?tab=settings&panel=${encodeURIComponent(panel)}`;
+    }
   }
-  return `/operator/my-account?tab=${encodeURIComponent(tab)}`;
+  return `/operator/my-account?tab=${encodeURIComponent(tab === "profile_redirect" || tab === "menu_redirect" ? "settings" : tab)}`;
 }
 
 function getPlanTier(planCode) {
@@ -315,42 +317,62 @@ const BTN_SECONDARY = {
 
 export default function OperatorMyAccount() {
   const { t } = useLanguage();
-  const { selectedRestaurant, subscription: contextSubscription } = useOperator();
+  const { selectedRestaurant, subscription: contextSubscription, operator } = useOperator();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
+  const rawTab = String(searchParams.get("tab") || "").toLowerCase();
+  useEffect(() => {
+    if (rawTab === "profile") {
+      navigate("/operator/profile-editor", { replace: true });
+      return;
+    }
+    if (rawTab === "menu") {
+      navigate("/operator/menu-worksheet", { replace: true });
+    }
+  }, [rawTab, navigate]);
+
   const urlTab = normalizeTab(searchParams.get("tab"));
-  const urlMenuPanel = normalizeMenuPanel(searchParams.get("menuPanel"));
-  // Local state is source of truth for which panel is shown (URL can lag / fail to sync).
-  const [tab, setTab] = useState(urlTab);
-  const [menuPanel, setMenuPanel] = useState(urlMenuPanel);
+  const urlSettingsPanel = normalizeSettingsPanel(
+    searchParams.get("panel") || (rawTab === "delivery" ? "delivery" : "account")
+  );
+  const [tab, setTab] = useState(urlTab === "profile_redirect" || urlTab === "menu_redirect" ? "settings" : urlTab);
+  const [settingsPanel, setSettingsPanel] = useState(urlSettingsPanel);
+  const [pinDigits, setPinDigits] = useState("");
+  const [pinBusy, setPinBusy] = useState(false);
+  const [pinMessage, setPinMessage] = useState("");
 
   useEffect(() => {
+    if (urlTab === "profile_redirect" || urlTab === "menu_redirect") return;
     setTab(urlTab);
-    setMenuPanel(urlMenuPanel);
-  }, [urlTab, urlMenuPanel]);
+    setSettingsPanel(urlSettingsPanel);
+  }, [urlTab, urlSettingsPanel]);
 
   function selectTab(nextTab) {
     const normalized = normalizeTab(nextTab);
+    if (normalized === "profile_redirect") {
+      navigate("/operator/profile-editor");
+      return;
+    }
+    if (normalized === "menu_redirect") {
+      navigate("/operator/menu-worksheet");
+      return;
+    }
     setTab(normalized);
-    if (normalized !== "menu") setMenuPanel("view");
-    navigate(myAccountHref(normalized), { replace: true });
+    navigate(myAccountHref(normalized, settingsPanel), { replace: true });
   }
 
-  function selectMenuPanel(nextPanel) {
-    const normalized = normalizeMenuPanel(nextPanel);
-    setTab("menu");
-    setMenuPanel(normalized);
-    navigate(myAccountHref("menu", normalized), { replace: true });
+  function selectSettingsPanel(nextPanel) {
+    const normalized = normalizeSettingsPanel(nextPanel);
+    setTab("settings");
+    setSettingsPanel(normalized);
+    navigate(myAccountHref("settings", normalized), { replace: true });
   }
 
   const [subscription, setSubscription] = useState(null);
   const [billingOverview, setBillingOverview] = useState(null);
   const [primaryQr, setPrimaryQr] = useState(null);
   const [accountOpenedAt, setAccountOpenedAt] = useState(null);
-  const [menus, setMenus] = useState([]);
-  const [menusLoading, setMenusLoading] = useState(false);
-  const [menusError, setMenusError] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [cancelConfirm, setCancelConfirm] = useState(false);
@@ -384,20 +406,6 @@ export default function OperatorMyAccount() {
     }
   }
 
-  async function loadMenus(rid) {
-    setMenusLoading(true);
-    setMenusError("");
-    try {
-      const data = await api.getMenus(rid);
-      setMenus(Array.isArray(data?.menus) ? data.menus : []);
-    } catch (err) {
-      setMenus([]);
-      setMenusError(err.message || "Unable to load menus.");
-    } finally {
-      setMenusLoading(false);
-    }
-  }
-
   useEffect(() => {
     if (selectedRestaurant?.id) {
       loadAccountData(selectedRestaurant.id);
@@ -406,15 +414,43 @@ export default function OperatorMyAccount() {
       setBillingOverview(null);
       setPrimaryQr(null);
       setAccountOpenedAt(null);
-      setMenus([]);
     }
   }, [selectedRestaurant?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => {
-    if (selectedRestaurant?.id && tab === "menu") {
-      loadMenus(selectedRestaurant.id);
+  async function handleSetupPin() {
+    if (!selectedRestaurant?.id) return;
+    const pin = String(pinDigits || "").replace(/\D/g, "");
+    if (pin.length !== 4) {
+      setPinMessage("Enter a 4-digit Owner PIN.");
+      return;
     }
-  }, [selectedRestaurant?.id, tab]); // eslint-disable-line react-hooks/exhaustive-deps
+    setPinBusy(true);
+    setPinMessage("");
+    try {
+      await api.setupOwnerPin(selectedRestaurant.id, pin);
+      setPinMessage("Owner PIN saved.");
+      setPinDigits("");
+    } catch (err) {
+      setPinMessage(err.message || "Unable to save Owner PIN.");
+    } finally {
+      setPinBusy(false);
+    }
+  }
+
+  async function handleResetPin() {
+    if (!selectedRestaurant?.id) return;
+    setPinBusy(true);
+    setPinMessage("");
+    try {
+      await api.resetOwnerPin(selectedRestaurant.id);
+      setPinMessage("Owner PIN reset. Set a new 4-digit PIN above.");
+      setPinDigits("");
+    } catch (err) {
+      setPinMessage(err.message || "Unable to reset Owner PIN.");
+    } finally {
+      setPinBusy(false);
+    }
+  }
 
   const planCode = subscription?.plan_code || contextSubscription?.plan_slug || null;
   const planDisplayOverride =
@@ -440,20 +476,6 @@ export default function OperatorMyAccount() {
   const nextBillingDate = isFreeTier
     ? "—"
     : formatLongDate(subscription?.current_period_end);
-
-  const publicProfileHref = selectedRestaurant ? operatorPublicProfilePath(selectedRestaurant) : null;
-  const publicMenuHref = selectedRestaurant?.id
-    ? `/restaurants/${selectedRestaurant.id}/menu`
-    : null;
-
-  const primaryMenu = useMemo(() => {
-    if (!menus.length) return null;
-    return menus.find((m) => m.is_primary || m.is_active) || menus[0];
-  }, [menus]);
-
-  function worksheetPath(menuId) {
-    return `/operator/restaurants/${selectedRestaurant.id}/menus/${menuId}/worksheet`;
-  }
 
   async function handleCancel() {
     if (!selectedRestaurant?.id) return;
@@ -516,153 +538,12 @@ export default function OperatorMyAccount() {
           </p>
         ) : null}
 
-        {tab === "profile" && selectedRestaurant?.id ? (
-          <SectionCard title="Public restaurant profile" data-testid="my-account-panel-profile">
-            <p style={{ margin: "-4px 0 16px", fontSize: 13, color: "#78716c", lineHeight: 1.5 }}>
-              These fields appear on your public Menuply listing. Save a draft, then publish to go live.
-            </p>
-            {publicProfileHref ? (
-              <div style={{ marginBottom: 14 }}>
-                <QuietLink href={publicProfileHref}>View public profile ↗</QuietLink>
-              </div>
-            ) : null}
-            <OperatorRestaurantProfileForm embedded />
-          </SectionCard>
-        ) : null}
-
-        {tab === "menu" && selectedRestaurant?.id ? (
-          <SectionCard title="Menu" data-testid="my-account-panel-menu">
-            <SubNav panels={MENU_PANELS} activeId={menuPanel} onSelect={selectMenuPanel} />
-
-            {menuPanel === "view" ? (
-              <>
-                <p style={{ margin: "0 0 14px", fontSize: 13, color: "#78716c", lineHeight: 1.5 }}>
-                  Open the live diner menu your guests see on Menuply.
-                </p>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 18 }}>
-                  <button
-                    type="button"
-                    style={BTN_PRIMARY}
-                    disabled={!publicMenuHref}
-                    onClick={() => window.open(publicMenuHref, "_blank", "noopener,noreferrer")}
-                  >
-                    View public menu ↗
-                  </button>
-                  <button
-                    type="button"
-                    style={BTN_SECONDARY}
-                    onClick={() => selectMenuPanel("edit")}
-                  >
-                    Edit menu content →
-                  </button>
-                </div>
-                {menusLoading ? (
-                  <p style={{ margin: 0, fontSize: 13, color: "#78716c" }}>Loading menus…</p>
-                ) : menusError ? (
-                  <p style={{ margin: 0, fontSize: 13, color: "#92400e" }}>{menusError}</p>
-                ) : menus.length === 0 ? (
-                  <p style={{ margin: 0, fontSize: 13, color: "#78716c", lineHeight: 1.5 }}>
-                    No menus yet. Upload a PDF or photo from Menu Lab, then return here to edit content.
-                  </p>
-                ) : (
-                  <div style={{ display: "grid", gap: 8 }}>
-                    {menus.map((menu) => (
-                      <div
-                        key={menu.id}
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          gap: 12,
-                          padding: "10px 12px",
-                          border: "1px solid #e7e5e4",
-                          borderRadius: 10,
-                        }}
-                      >
-                        <div>
-                          <div style={{ fontSize: 13, fontWeight: 700, color: "#0f1720" }}>
-                            {menu.name || menu.title || `Menu ${menu.id}`}
-                          </div>
-                          <div style={{ fontSize: 12, color: "#78716c", marginTop: 2 }}>
-                            {[menu.status, menu.is_primary ? "Primary" : null].filter(Boolean).join(" · ") ||
-                              "Menu"}
-                          </div>
-                        </div>
-                        <QuietLink href={publicMenuHref}>View ↗</QuietLink>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </>
-            ) : (
-              <>
-                <p style={{ margin: "0 0 14px", fontSize: 13, color: "#78716c", lineHeight: 1.5 }}>
-                  Edit dish names, sections, descriptions, and Menuply prices in the Menu Worksheet — content
-                  only (not layout or photos).
-                </p>
-                {menusLoading ? (
-                  <p style={{ margin: 0, fontSize: 13, color: "#78716c" }}>Loading menus…</p>
-                ) : menusError ? (
-                  <p style={{ margin: 0, fontSize: 13, color: "#92400e" }}>{menusError}</p>
-                ) : menus.length === 0 ? (
-                  <p style={{ margin: 0, fontSize: 13, color: "#78716c", lineHeight: 1.5 }}>
-                    No menus to edit yet. After a PDF or photo upload finishes, open the worksheet from here.
-                  </p>
-                ) : (
-                  <>
-                    {primaryMenu ? (
-                      <div style={{ marginBottom: 14 }}>
-                        <button
-                          type="button"
-                          style={BTN_PRIMARY}
-                          onClick={() => navigate(worksheetPath(primaryMenu.id))}
-                        >
-                          Open Menu Worksheet
-                        </button>
-                      </div>
-                    ) : null}
-                    <div style={{ display: "grid", gap: 8 }}>
-                      {menus.map((menu) => (
-                        <div
-                          key={menu.id}
-                          style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                            gap: 12,
-                            padding: "10px 12px",
-                            border: "1px solid #e7e5e4",
-                            borderRadius: 10,
-                          }}
-                        >
-                          <div>
-                            <div style={{ fontSize: 13, fontWeight: 700, color: "#0f1720" }}>
-                              {menu.name || menu.title || `Menu ${menu.id}`}
-                            </div>
-                            <div style={{ fontSize: 12, color: "#78716c", marginTop: 2 }}>
-                              Content editor · names, prices, sections
-                            </div>
-                          </div>
-                          <button
-                            type="button"
-                            style={{ ...BTN_SECONDARY, padding: "8px 12px" }}
-                            onClick={() => navigate(worksheetPath(menu.id))}
-                          >
-                            Edit content
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </>
-                )}
-              </>
-            )}
-          </SectionCard>
-        ) : null}
-
         {tab === "settings" && selectedRestaurant?.id ? (
           <>
-            <SectionCard title="Account settings" data-testid="my-account-panel-settings">
+            <SubNav panels={SETTINGS_SUBNAV} activeId={settingsPanel} onSelect={selectSettingsPanel} />
+
+            {settingsPanel === "account" ? (
+            <SectionCard title="Account Settings" data-testid="my-account-panel-settings">
               {loading ? (
                 <p style={{ margin: 0, fontSize: 13, color: "#78716c" }}>Loading…</p>
               ) : error ? (
@@ -805,7 +686,60 @@ export default function OperatorMyAccount() {
                 </>
               )}
             </SectionCard>
+            ) : null}
 
+            {settingsPanel === "merchant" ? (
+              <SectionCard title="Merchant Account" data-testid="my-account-panel-merchant">
+                <p style={{ margin: "0 0 14px", fontSize: 13, color: "#78716c", lineHeight: 1.5 }}>
+                  Connect payouts and review merchant account status for this restaurant.
+                </p>
+                <button type="button" style={BTN_PRIMARY} onClick={() => navigate("/operator/merchant")}>
+                  Open Merchant Account →
+                </button>
+              </SectionCard>
+            ) : null}
+
+            {settingsPanel === "delivery" ? (
+              <SectionCard title="Delivery Portal" data-testid="my-account-panel-delivery">
+                <OperatorDeliveryPortalPanel embedded />
+              </SectionCard>
+            ) : null}
+
+            {settingsPanel === "pin" ? (
+              <SectionCard title="Owner PIN Settings" data-testid="my-account-panel-pin">
+                <p style={{ margin: "0 0 14px", fontSize: 13, color: "#78716c", lineHeight: 1.5 }}>
+                  Your 4-digit Owner PIN unlocks sensitive business actions. Signed in as{" "}
+                  {operator?.email || "owner"}.
+                </p>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
+                  <input
+                    type="password"
+                    inputMode="numeric"
+                    maxLength={4}
+                    value={pinDigits}
+                    onChange={(e) => setPinDigits(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                    placeholder="4-digit PIN"
+                    style={{
+                      ...inputStyle,
+                      width: 140,
+                      letterSpacing: "0.2em",
+                      fontWeight: 700,
+                    }}
+                  />
+                  <button type="button" style={BTN_PRIMARY} disabled={pinBusy} onClick={handleSetupPin}>
+                    {pinBusy ? "Saving…" : "Save PIN"}
+                  </button>
+                  <button type="button" style={BTN_SECONDARY} disabled={pinBusy} onClick={handleResetPin}>
+                    Reset PIN
+                  </button>
+                </div>
+                {pinMessage ? (
+                  <p style={{ margin: "12px 0 0", fontSize: 13, color: "#1F4E3D", fontWeight: 600 }}>
+                    {pinMessage}
+                  </p>
+                ) : null}
+              </SectionCard>
+            ) : null}
           </>
         ) : null}
 
@@ -826,12 +760,6 @@ export default function OperatorMyAccount() {
                 <QuietLink onClick={() => navigate("/operator/qr-kits/order")}>Marketplace →</QuietLink>
               </p>
             )}
-          </SectionCard>
-        ) : null}
-
-        {tab === "delivery" && selectedRestaurant?.id ? (
-          <SectionCard title="Delivery Portal" data-testid="my-account-panel-delivery">
-            <OperatorDeliveryPortalPanel embedded />
           </SectionCard>
         ) : null}
 

@@ -187,6 +187,7 @@ function PinGateModal({ restaurantId, onSuccess, onClose }) {
 const OPERATOR_PAGE_TITLE_KEYS = {
   Home: "operator.nav.home",
   "Menu Lab": "operator.nav.menuLab",
+  "Menu Worksheet": "operator.nav.menuWorksheet",
   "Knowledge Base": "operator.nav.knowledgeBase",
   Subscription: "operator.subscription.title",
   "Incoming Orders": "operator.orders.title",
@@ -199,6 +200,7 @@ const OPERATOR_PAGE_TITLE_KEYS = {
   "Delivery Accounts": "operator.delivery.title",
   "Delivery Portal": "operator.delivery.title",
   Profile: "operator.profile.title",
+  "Profile Editor": "operator.nav.profileEditor",
   "My Account": "operator.nav.myAccount",
   Marketplace: "operator.nav.marketplace",
   "Bid-Free Bidding™": "operator.nav.bidFree",
@@ -232,27 +234,17 @@ export default function OperatorLayout({ title, children }) {
   const role = selectedRestaurant?.role || "staff";
   const rid = selectedRestaurant?.id;
 
-  const operationsNav = useMemo(() => ([
-    { to: "/operator", label: t("operator.nav.home", "Home"), icon: "⌂", end: true },
-    { to: "/operator/orders", label: t("operator.nav.orders", "Orders"), icon: "☷", end: true },
-    { to: "/operator/merchant", label: t("operator.nav.merchantAccount", "Merchant Account"), icon: "$" },
-  ]), [t]);
+  const openPublicMenu = useCallback(() => {
+    if (!rid) {
+      navigate("/operator/menu-worksheet");
+      return;
+    }
+    window.open(`/restaurants/${rid}/menu`, "_blank", "noopener,noreferrer");
+  }, [rid, navigate]);
 
-  const menuNavBase = useMemo(() => ([
-    { to: "/operator/menulab", label: t("operator.nav.menuLab", "Menu Lab"), icon: "☰" },
-    { to: "/operator/deals", label: t("operator.nav.deals", "Deals"), icon: "⊹" },
-    { to: "/operator/hours", label: t("operator.nav.hours", "Hours"), icon: "⏰" },
-    { to: "/operator/bid-free-bidding", label: t("operator.nav.bidFree", "Bid-Free Bidding™"), icon: "◇" },
-    { to: "/operator/design", label: t("operator.nav.adobeStudio", "Adobe Studio"), icon: "▣", benefitKey: "design_exports" },
-    { to: "/operator/billboards", label: t("operator.nav.billboards", "Billboards"), icon: "⊞" },
-    { to: "/operator/menu-studio", label: t("operator.nav.menuStudio", "Menu Studio"), icon: "✦", benefitKey: "menu_outputs" },
-    { to: "/operator/brand", label: t("operator.nav.brandSettings", "Brand Settings"), icon: "◉", benefitKey: "brand_customization" },
-  ]), [t]);
-
-  const staffMenuNav = useMemo(() => menuNavBase.slice(0, 3), [menuNavBase]);
-  const menuNav = role === "staff" ? staffMenuNav : menuNavBase;
-  const visibleMenuNav = menuNav.filter((item) => !item.benefitKey || hasBenefit(item.benefitKey));
   const showBusiness = role === "owner" || role === "manager";
+  const showMarketing = showBusiness;
+  const showAdobe = showBusiness && hasBenefit("design_exports");
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -295,60 +287,162 @@ export default function OperatorLayout({ title, children }) {
   const sections = useMemo(() => {
     const list = [
       {
-        id: "operations",
-        label: t("operator.section.operations", "Operations"),
+        id: "home",
+        label: t("operator.section.home", "Home"),
         accent: true,
-        items: operationsNav,
+        spaced: true,
+        items: [
+          {
+            to: "/operator",
+            label: t("operator.nav.home", "Home"),
+            icon: "⌂",
+            end: true,
+            children: [
+              {
+                to: "/operator/orders",
+                label: t("operator.nav.orders", "Orders"),
+                icon: "☷",
+                end: true,
+              },
+            ],
+          },
+        ],
       },
     ];
 
-    if (visibleMenuNav.length > 0) {
+    if (showBusiness) {
       list.push({
-        id: "menu",
-        label: t("operator.section.menuCustomer", "Menu & Customer"),
-        items: visibleMenuNav,
+        id: "operations",
+        label: t("operator.section.operations", "Operations"),
+        spaced: true,
+        items: [
+          {
+            to: "/operator/profile-editor",
+            label: t("operator.nav.profileEditor", "Profile Editor"),
+            icon: "✎",
+          },
+          {
+            to: "/operator/brand",
+            label: t("operator.nav.brandSettings", "Brand Settings"),
+            icon: "◉",
+          },
+          {
+            to: "/operator/hours",
+            label: t("operator.nav.hours", "Hours"),
+            icon: "⏰",
+          },
+        ],
+      });
+    } else {
+      list.push({
+        id: "operations",
+        label: t("operator.section.operations", "Operations"),
+        spaced: true,
+        items: [
+          {
+            to: "/operator/hours",
+            label: t("operator.nav.hours", "Hours"),
+            icon: "⏰",
+          },
+        ],
       });
     }
 
-    if (showBusiness) {
-      const businessItems = [
-        {
-          to: "/operator/my-account",
-          label: t("operator.nav.myAccount", "My Account"),
-          icon: "◈",
-        },
-        {
-          to: "/operator/qr-kits/order",
-          label: t("operator.nav.marketplace", "Marketplace"),
-          icon: "▢",
-        },
-      ];
-      if (role === "owner") {
-        businessItems.push({
-          key: "pin-settings",
-          button: true,
-          label: "Owner PIN Settings",
-          icon: "⚙",
-          sensitive: true,
-          onClick: () => handleSensitiveClick("/operator/profile"),
-        });
-      }
+    if (showMarketing) {
       list.push({
-        id: "business",
-        label: t("operator.section.business", "Owner / Business"),
-        items: businessItems,
+        id: "marketing",
+        label: t("operator.section.marketing", "Marketing"),
+        spaced: true,
+        items: [
+          {
+            to: "/operator/billboards",
+            label: t("operator.nav.billboards", "Billboards"),
+            icon: "⊞",
+          },
+          {
+            to: "/operator/deals",
+            label: t("operator.nav.deals", "Deals"),
+            icon: "⊹",
+          },
+          {
+            to: "/operator/bid-free-bidding",
+            label: t("operator.nav.bidFree", "Bid-Free Bidding™"),
+            icon: "◇",
+          },
+        ],
+      });
+    }
+
+    const menuItems = [
+      {
+        to: "/operator/menu-worksheet",
+        label: t("operator.nav.menuWorksheet", "Menu Worksheet"),
+        icon: "☰",
+      },
+      {
+        key: "view-menu",
+        button: true,
+        label: t("operator.nav.viewMenu", "View Menu"),
+        icon: "◎",
+        onClick: openPublicMenu,
+      },
+      {
+        to: "/operator/menulab",
+        label: t("operator.nav.menuLab", "Menu Lab"),
+        icon: "▦",
+      },
+    ];
+    if (showAdobe) {
+      menuItems.push({
+        to: "/operator/design",
+        label: t("operator.nav.adobeStudio", "Adobe Studio"),
+        icon: "▣",
+      });
+    }
+    list.push({
+      id: "menu",
+      label: t("operator.section.menu", "Menu"),
+      spaced: true,
+      items: menuItems,
+    });
+
+    if (showBusiness) {
+      list.push({
+        id: "marketplace",
+        label: t("operator.section.marketplace", "Marketplace"),
+        spaced: true,
+        items: [
+          {
+            to: "/operator/qr-kits/order",
+            label: t("operator.nav.qrProducts", "QR Products"),
+            icon: "▢",
+          },
+        ],
+      });
+
+      list.push({
+        id: "my-account",
+        label: t("operator.section.myAccount", "My Account"),
+        spaced: true,
+        items: [
+          {
+            to: "/operator/my-account",
+            label: t("operator.nav.myAccount", "My Account"),
+            icon: "◈",
+          },
+        ],
       });
     }
 
     list.push({
       id: "support",
       label: t("operator.section.support", "Support"),
+      spaced: true,
       items: [
         {
           to: "/operator/help",
           label: t("operator.nav.knowledgeBase", "Knowledge Base"),
           icon: "?",
-          onClick: undefined,
         },
       ],
     });
@@ -356,11 +450,10 @@ export default function OperatorLayout({ title, children }) {
     return list;
   }, [
     t,
-    operationsNav,
-    visibleMenuNav,
     showBusiness,
-    role,
-    handleSensitiveClick,
+    showMarketing,
+    showAdobe,
+    openPublicMenu,
   ]);
 
   const restaurantBlock = restaurants.length > 0 ? (

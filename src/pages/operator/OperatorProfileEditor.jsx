@@ -20,7 +20,7 @@
 // Hardcoding options here silently diverges from backend validation rules.
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { Navigate, useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import OperatorLayout from "./OperatorLayout.jsx";
 import { useLanguage } from "../../context/LanguageContext.jsx";
 import { useOperator } from "../../context/OperatorContext.jsx";
@@ -808,7 +808,16 @@ export function OperatorRestaurantProfileForm({ embedded = false } = {}) {
   );
 }
 
-/** Legacy route: send operators to My Account where the form lives. */
+/** Profile Editor route — public listing fields (also linked from Operations nav). */
 export default function OperatorProfileEditor() {
-  return <Navigate to="/operator/my-account" replace />;
+  return (
+    <OperatorLayout title="Profile Editor">
+      <div style={{ maxWidth: 960, paddingBottom: 48 }}>
+        <p style={{ margin: "0 0 16px", fontSize: 13, color: "#78716c", lineHeight: 1.5 }}>
+          These fields appear on your public Menuply listing. Save a draft, then publish to go live.
+        </p>
+        <OperatorRestaurantProfileForm embedded />
+      </div>
+    </OperatorLayout>
+  );
 }

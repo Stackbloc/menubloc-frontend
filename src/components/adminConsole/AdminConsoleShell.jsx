@@ -1,10 +1,26 @@
 import React from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import { BrandLogo } from "../BrandLogo.jsx";
 import { ADMIN_CONSOLE } from "./adminConsoleTokens.js";
 import "./adminConsoleShell.css";
 
-function NavItem({ item, onNavigate }) {
+function isItemActive(item, pathname, search) {
+  if (!item?.to) return false;
+  const [base, queryPart = ""] = String(item.to).split("?");
+  if (queryPart) {
+    return pathname === base && search.includes(queryPart);
+  }
+  if (item.end) return pathname === base;
+  return pathname === base || pathname.startsWith(`${base}/`);
+}
+
+function childOrSelfActive(item, pathname, search) {
+  if (isItemActive(item, pathname, search)) return true;
+  return (item.children || []).some((child) => isItemActive(child, pathname, search));
+}
+
+function NavItem({ item, onNavigate, nested = false }) {
+  const location = useLocation();
   const {
     to,
     label,
@@ -16,11 +32,16 @@ function NavItem({ item, onNavigate }) {
     onClick,
   } = item;
 
+  const classNameFor = (active) =>
+    `admin-console__link${nested ? " admin-console__link--nested" : ""}${
+      active ? " admin-console__link--active" : ""
+    }`;
+
   if (button) {
     return (
       <button
         type="button"
-        className="admin-console__link"
+        className={`admin-console__link${nested ? " admin-console__link--nested" : ""}`}
         onClick={() => {
           onClick?.();
           onNavigate?.();
@@ -38,8 +59,8 @@ function NavItem({ item, onNavigate }) {
       <NavLink
         to={to}
         end={Boolean(end)}
-        className={({ isActive }) =>
-          `admin-console__link${isActive ? " admin-console__link--active" : ""}`
+        className={() =>
+          classNameFor(childOrSelfActive(item, location.pathname, location.search))
         }
         onClick={(e) => {
           e.preventDefault();
@@ -64,19 +85,40 @@ function NavItem({ item, onNavigate }) {
         if (to?.includes("?")) {
           const queryPart = to.split("?")[1] || "";
           const queryActive =
-            typeof window !== "undefined" &&
-            window.location.pathname === basePath &&
-            window.location.search.includes(queryPart);
-          return `admin-console__link${queryActive ? " admin-console__link--active" : ""}`;
+            location.pathname === basePath && location.search.includes(queryPart);
+          return classNameFor(queryActive);
         }
-        let active = isActive;
-        return `admin-console__link${active ? " admin-console__link--active" : ""}`;
+        const childActive = (item.children || []).some((child) =>
+          isItemActive(child, location.pathname, location.search)
+        );
+        return classNameFor(isActive || childActive);
       }}
       onClick={() => onNavigate?.()}
     >
       {icon ? <span className="admin-console__link-icon">{icon}</span> : null}
       <span>{label}</span>
     </NavLink>
+  );
+}
+
+function NavItemTree({ item, onNavigate }) {
+  const children = Array.isArray(item.children) ? item.children : [];
+  return (
+    <div className="admin-console__nav-item-tree">
+      <NavItem item={item} onNavigate={onNavigate} />
+      {children.length > 0 ? (
+        <div className="admin-console__nav-children" role="group" aria-label={`${item.label} submenu`}>
+          {children.map((child) => (
+            <NavItem
+              key={child.key || child.to || child.label}
+              item={child}
+              onNavigate={onNavigate}
+              nested
+            />
+          ))}
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -143,13 +185,15 @@ export default function AdminConsoleShell({
           {sections.map((section) => (
             <div
               key={section.id || section.label}
-              className={`admin-console__section${section.accent ? " admin-console__section--accent" : ""}`}
+              className={`admin-console__section${section.accent ? " admin-console__section--accent" : ""}${
+                section.spaced ? " admin-console__section--spaced" : ""
+              }`}
             >
               {section.label ? (
                 <div className="admin-console__section-label">{section.label}</div>
               ) : null}
               {(section.items || []).map((item) => (
-                <NavItem
+                <NavItemTree
                   key={item.key || item.to || item.label}
                   item={item}
                   onNavigate={closeMobile}

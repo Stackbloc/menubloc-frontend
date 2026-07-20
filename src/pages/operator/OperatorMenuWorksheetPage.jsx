@@ -169,12 +169,22 @@ export default function OperatorMenuWorksheetPage() {
     <OperatorLayout title="Menu Worksheet">
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "16px 12px 48px" }}>
         <div style={{ marginBottom: 12, fontSize: 13, display: "flex", gap: 16, flexWrap: "wrap" }}>
-          <Link to="/operator/my-account?tab=menu&menuPanel=edit" style={{ color: "#1F4E3D", fontWeight: 650 }}>
-            ← My Account · Menu
+          <Link to="/operator/menu-worksheet" style={{ color: "#1F4E3D", fontWeight: 650 }}>
+            ← Menu Worksheet
           </Link>
           <Link to="/operator/menulab" style={{ color: "#64748b" }}>
             Menu Lab
           </Link>
+          {rid ? (
+            <a
+              href={`/restaurants/${rid}/menu`}
+              target="_blank"
+              rel="noreferrer"
+              style={{ color: "#64748b", fontWeight: 600 }}
+            >
+              View Menu ↗
+            </a>
+          ) : null}
         </div>
 
         {loading ? (

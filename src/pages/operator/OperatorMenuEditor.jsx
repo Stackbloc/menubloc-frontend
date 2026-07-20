@@ -526,9 +526,13 @@ function MenuLabPanel({ rid, isEmailVerified }) {
       padding: "18px 18px 16px",
       marginBottom: 22,
       boxShadow: "0 12px 32px rgba(15, 23, 42, 0.04)",
+      maxWidth: "100%",
+      minWidth: 0,
+      boxSizing: "border-box",
+      overflow: "hidden",
     }}>
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap", marginBottom: 16 }}>
-        <div style={{ minWidth: 0 }}>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 16, maxWidth: "100%", minWidth: 0 }}>
+        <div style={{ minWidth: 0, flex: "1 1 240px" }}>
           <Link
             to="/operator"
             style={{
@@ -547,7 +551,19 @@ function MenuLabPanel({ rid, isEmailVerified }) {
             Default (Yellow Browser Apple look) is auto-selected for every menu. Preview any layout with your real restaurant and items, then Use + Save Design. This panel is for layout, photos, and colors — edit menu data in the tools below.
           </div>
         </div>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
+        <div
+          data-testid="menu-lab-header-actions"
+          style={{
+            display: "flex",
+            gap: 8,
+            flexWrap: "wrap",
+            justifyContent: "flex-end",
+            alignItems: "center",
+            maxWidth: "100%",
+            minWidth: 0,
+            flex: "1 1 220px",
+          }}
+        >
           <button type="button" style={BTN("ghost")} onClick={openPreview} disabled={!rid}>
             Preview
           </button>
