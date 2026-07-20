@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import OwnerLayout, { OWNER_COLORS, PageCard } from "./OwnerLayout.jsx";
+import OwnerRestaurantContextBar from "./OwnerRestaurantContextBar.jsx";
 import OcrEditSplitLayout from "./OcrEditSplitLayout.jsx";
 import {
   getUploadReviewItems,
@@ -260,6 +261,8 @@ export default function OwnerMenuUploadReviewItems() {
   const [error, setError] = useState("");
   const [statusMsg, setStatusMsg] = useState("");
   const [publicRestaurantId, setPublicRestaurantId] = useState(null);
+  /** Restaurant identity from upload detail — shown in context bar. */
+  const [uploadContext, setUploadContext] = useState(null);
   /** Rows that failed validation for missing section (show required styling). */
   const [sectionErrors, setSectionErrors] = useState(() => new Set());
 
@@ -297,7 +300,14 @@ export default function OwnerMenuUploadReviewItems() {
         const detail = uploadDetail.value;
         const detailPages = detail.pages || detail.upload?.pages || [];
         if (detailPages.length > 0) setPages(detailPages);
-        const fromUpload = Number(detail.upload?.restaurant_id || detail.public_restaurant_id);
+        const upload = detail.upload || {};
+        setUploadContext({
+          name: upload.restaurant_name || null,
+          id: upload.restaurant_id || detail.public_restaurant_id || null,
+          city: upload.city || null,
+          state: upload.state || null,
+        });
+        const fromUpload = Number(upload.restaurant_id || detail.public_restaurant_id);
         if (Number.isFinite(fromUpload) && fromUpload > 0) {
           setPublicRestaurantId((prev) => prev || fromUpload);
         }
@@ -541,6 +551,16 @@ export default function OwnerMenuUploadReviewItems() {
           </a>
         )}
       </div>
+
+      {uploadContext ? (
+        <OwnerRestaurantContextBar
+          name={uploadContext.name}
+          id={uploadContext.id || publicRestaurantId}
+          city={uploadContext.city}
+          state={uploadContext.state}
+          style={{ marginBottom: 16 }}
+        />
+      ) : null}
 
       {counts.approved > 0 && !allDone && (
         <div style={{ marginBottom: 14, padding: "10px 14px", borderRadius: 10, background: "#eff6ff", color: "#1d4ed8", fontSize: 12, fontWeight: 600 }}>

@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { OWNER_COLORS, PageCard, SectionTitle } from "./OwnerLayout.jsx";
+import OwnerRestaurantContextBar from "./OwnerRestaurantContextBar.jsx";
 import { inputStyle } from "./ownerMenuEditorComponents.jsx";
 import { searchMenuConsoleRestaurants } from "../../lib/ownerApi.js";
 
@@ -137,8 +138,6 @@ export default function OwnerMenuRestaurantFinder({
     onClear?.();
   }
 
-  const selectedName = selectedRestaurant?.restaurant_name || selectedRestaurant?.name;
-
   return (
     <PageCard style={{ padding: 20, marginBottom: 16 }}>
       <SectionTitle
@@ -155,16 +154,12 @@ export default function OwnerMenuRestaurantFinder({
       />
 
       {selectedRestaurant ? (
-        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", flexWrap: "wrap", padding: "12px 14px", borderRadius: 10, background: "#f0fdf4", border: "1px solid #bbf7d0" }}>
-          <div>
-            <div style={{ fontWeight: 700, fontSize: 14, color: "#15803d" }}>{selectedName}</div>
-            <div style={{ fontSize: 12, color: OWNER_COLORS.muted, marginTop: 4 }}>
-              #{selectedRestaurant.id}
-              {selectedRestaurant.city || selectedRestaurant.state
-                ? ` · ${[selectedRestaurant.city, selectedRestaurant.state].filter(Boolean).join(", ")}`
-                : ""}
-            </div>
-          </div>
+        <OwnerRestaurantContextBar
+          name={selectedRestaurant.restaurant_name || selectedRestaurant.name}
+          id={selectedRestaurant.id}
+          city={selectedRestaurant.city}
+          state={selectedRestaurant.state}
+        >
           <button
             type="button"
             onClick={handleClear}
@@ -181,7 +176,7 @@ export default function OwnerMenuRestaurantFinder({
           >
             Change restaurant
           </button>
-        </div>
+        </OwnerRestaurantContextBar>
       ) : (
         <>
           <input

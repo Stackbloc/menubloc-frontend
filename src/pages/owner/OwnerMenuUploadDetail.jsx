@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import { useLanguage } from "../../context/LanguageContext.jsx";
 import { useParams, Link } from "react-router-dom";
 import OwnerLayout, { EmptyState, OWNER_COLORS, PageCard, SectionTitle } from "./OwnerLayout.jsx";
+import OwnerRestaurantContextBar from "./OwnerRestaurantContextBar.jsx";
 import {
   getOwnerMenuUpload,
   markOwnerMenuUploadReview,
@@ -628,6 +629,14 @@ export default function OwnerMenuUploadDetail() {
     <OwnerLayout title="Upload Detail">
       <BackLink />
 
+      <OwnerRestaurantContextBar
+        name={upload.restaurant_name}
+        id={upload.restaurant_id}
+        city={upload.city}
+        state={upload.state}
+        style={{ marginBottom: 16 }}
+      />
+
       {actionMsg && (
         <div style={{ marginBottom: 16, padding: "12px 14px", borderRadius: 12, background: "#f0fdf4", color: "#15803d", fontWeight: 700 }}>
           {actionMsg}
@@ -754,7 +763,8 @@ export default function OwnerMenuUploadDetail() {
         <PageCard style={{ padding: 22 }}>
           <SectionTitle title="Restaurant" />
           <DetailRow label="Name"     value={upload.restaurant_name || "Unknown"} />
-          <DetailRow label="Location" value={upload.city && upload.state ? `${upload.city}, ${upload.state}` : "—"} />
+          <DetailRow label="Restaurant ID" value={upload.restaurant_id ? `#${upload.restaurant_id}` : "—"} />
+          <DetailRow label="Location" value={upload.city && upload.state ? `${upload.city}, ${upload.state}` : (upload.city || upload.state || "—")} />
         </PageCard>
 
         {/* Upload metadata */}

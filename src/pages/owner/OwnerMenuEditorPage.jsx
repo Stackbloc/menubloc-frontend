@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import OwnerLayout, { EmptyState, OWNER_COLORS, PageCard, SectionTitle } from "./OwnerLayout.jsx";
+import OwnerRestaurantContextBar from "./OwnerRestaurantContextBar.jsx";
 import { MenuEditor, StatusChip, inputStyle } from "./ownerMenuEditorComponents.jsx";
 import {
   getMenuConsoleMenu,
@@ -329,10 +330,19 @@ export default function OwnerMenuEditorPage() {
         </Link>
       </div>
 
+      {restaurant ? (
+        <OwnerRestaurantContextBar
+          name={restaurantName}
+          id={restaurant.id || rid}
+          city={restaurant.city}
+          state={restaurant.state}
+          style={{ marginBottom: 16 }}
+        />
+      ) : null}
+
       <PageCard style={{ padding: 20, marginBottom: 16 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
           <div>
-            <div style={{ fontSize: 12, color: OWNER_COLORS.muted, marginBottom: 4 }}>{restaurantName}</div>
             <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: OWNER_COLORS.ink }}>{menuName}</h1>
             {menuDetail?.menu && (
               <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 8 }}>
