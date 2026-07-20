@@ -6,7 +6,7 @@ import { getMenuSectionImageUrl } from "./menuImageUtils.js";
 import { shouldShowItemImages, shouldShowSectionImages } from "./menuThemeSettings.js";
 import { MENU_ROW_HEADER_ICON_GAP, MENU_ROW_ICON_SIZE } from "./menuPresentationUtils.js";
 import FollowRestaurantButton from "../FollowRestaurantButton.jsx";
-import { MenuDesignHeroSlot } from "./MenuDesignPhotoEditOverlay.jsx";
+import { MenuDesignHeroSlot, MenuDesignSectionSlot, sectionPhotoSlotKey } from "./MenuDesignPhotoEditOverlay.jsx";
 
 export default function RusticItalianMenuTemplate(ctx) {
   const {
@@ -192,11 +192,11 @@ export default function RusticItalianMenuTemplate(ctx) {
                   </div>
                   {showSectionImages && sectionImage ? (
                     <div style={{ borderTop: "1px solid rgba(36,31,27,0.08)" }}>
-                      <img
-                        src={sectionImage}
-                        alt=""
-                        loading="lazy"
-                        style={{ width: "100%", height: isMobile ? 170 : 240, objectFit: "cover", display: "block" }}
+                      <MenuDesignSectionSlot
+                        slotKey={sectionPhotoSlotKey(section, index)}
+                        imageUrl={sectionImage}
+                        isStock={Boolean(ctx?.designSectionIsStock?.[sectionPhotoSlotKey(section, index)])}
+                        height={isMobile ? 170 : 240}
                       />
                     </div>
                   ) : null}

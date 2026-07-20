@@ -45,12 +45,20 @@ function writeJsonMap(key, value) {
   }
 }
 
+export function sectionPhotoSlotKey(section, index = 0) {
+  const id = section?.id ?? section?.section_id ?? section?.menu_section_id;
+  if (id != null && String(id).trim()) return `section:${String(id).trim()}`;
+  const title = String(section?.title || section?.name || "section").trim().toLowerCase() || "section";
+  return `section:${title}:${index}`;
+}
+
 export function useMenuDesignPhotoEditController({
   enabled,
   restaurantId,
   menuStyle,
   onHeroUrlChange,
   onItemPhotoChange,
+  onSectionPhotoChange,
 }) {
   const [toast, setToast] = useState(null);
   const [fits, setFits] = useState(() =>
@@ -184,6 +192,34 @@ export function useMenuDesignPhotoEditController({
     return url;
   }
 
+  async function replaceSectionPhoto(slotKey, file) {
+    const key = String(slotKey || "").trim();
+    if (!key) throw new Error("Section photo slot required");
+    if (!file) throw new Error("Choose an image to replace this photo");
+    // No section-photo upload API yet — keep preview override in-session via object URL.
+    const url = URL.createObjectURL(file);
+    if (onSectionPhotoChange) onSectionPhotoChange({ slotKey: key, imageUrl: url });
+    const nextHidden = { ...hiddenStock };
+    delete nextHidden[key];
+    persistHiddenStock(nextHidden);
+    return url;
+  }
+
+  async function deleteSectionPhoto({ slotKey, isStock = true, previousUrl = null } = {}) {
+    const key = String(slotKey || "").trim();
+    if (!key) throw new Error("Section photo slot required");
+    persistHiddenStock({ ...hiddenStock, [key]: true });
+    if (onSectionPhotoChange) onSectionPhotoChange({ slotKey: key, clear: true });
+    showUndoToast("Photo removed · Undo", () => {
+      const next = { ...hiddenStock };
+      delete next[key];
+      persistHiddenStock(next);
+      if (previousUrl?.startsWith?.("blob:") && onSectionPhotoChange) {
+        onSectionPhotoChange({ slotKey: key, imageUrl: previousUrl });
+      }
+    });
+  }
+
   async function deleteHero({ isStock = false, previousUrl = null } = {}) {
     if (!restaurantId) throw new Error("Restaurant required");
     if (isStock) {
@@ -225,6 +261,9 @@ export function useMenuDesignPhotoEditController({
     delete next[slotKey];
     persistHiddenStock(next);
     if (slotKey === "hero" && onHeroUrlChange) onHeroUrlChange(previousUrl || null);
+    if (String(slotKey).startsWith("section:") && onSectionPhotoChange) {
+      onSectionPhotoChange({ slotKey, imageUrl: previousUrl || null });
+    }
   }
 
   return {
@@ -235,6 +274,8 @@ export function useMenuDesignPhotoEditController({
     deleteItemPhoto,
     replaceHero,
     deleteHero,
+    replaceSectionPhoto,
+    deleteSectionPhoto,
     setSlotFit,
     getSlotFit,
     isStockHidden,
@@ -303,6 +344,7 @@ export function MenuDesignPhotoSlot({
 }) {
   const inputRef = useRef(null);
   const [hovered, setHovered] = useState(false);
+  const [pinned, setPinned] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
@@ -311,17 +353,23 @@ export function MenuDesignPhotoSlot({
   }
 
   const showEmptyActions = !imageUrl;
+  const showChrome = hovered || pinned || showEmptyActions;
 
   return (
     <div
-      style={{ position: "relative", ...style }}
+      style={{ position: "relative", cursor: "pointer", ...style }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
+      onClick={(e) => {
+        // Touch / click opens chrome when hover is unavailable (mobile).
+        if (e.target?.closest?.("button, input, a, label")) return;
+        setPinned((prev) => !prev);
+      }}
       data-menu-photo-slot={slotKey}
       data-menu-photo-kind={kind}
     >
       {children}
-      {(hovered || showEmptyActions) && (
+      {showChrome && (
         <div
           style={{
             position: "absolute",
@@ -334,6 +382,7 @@ export function MenuDesignPhotoSlot({
             background: "rgba(15,23,42,0.48)",
             padding: 10,
             zIndex: 4,
+            pointerEvents: "auto",
           }}
         >
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center" }}>
@@ -482,7 +531,7 @@ export function MenuDesignHeroSlot({ heroImageUrl, isStock = false, style, imgSt
       }
       onFitChange={(fit) => designEdit.setSlotFit("hero", fit)}
       onRestoreStock={() => designEdit.restoreStock("hero", heroImageUrl)}
-      style={style}
+      style={{ zIndex: 0, ...style }}
     >
       {visibleUrl ? (
         <img
@@ -492,6 +541,97 @@ export function MenuDesignHeroSlot({ heroImageUrl, isStock = false, style, imgSt
         />
       ) : (
         <div style={{ width: "100%", height: "100%", minHeight: 120, background: "rgba(148,163,184,0.2)" }} />
+      )}
+    </MenuDesignPhotoSlot>
+  );
+}
+
+/**
+ * Large section / banner stock photos (edge-to-edge strips under gallery sections).
+ * These were previously plain <img> tags and were not editable in designEdit mode.
+ */
+export function MenuDesignSectionSlot({
+  slotKey,
+  imageUrl,
+  isStock = true,
+  style,
+  imgStyle,
+  height,
+}) {
+  const designEdit = useMenuDesignPhotoEdit();
+  const enabled = Boolean(designEdit?.enabled);
+  const key = String(slotKey || "section");
+  const stockHidden = enabled && designEdit.isStockHidden?.(key);
+  const visibleUrl = stockHidden ? "" : imageUrl;
+  const objectFit = enabled ? designEdit.getSlotFit?.(key) || "cover" : "cover";
+  const resolvedHeight = height == null ? undefined : height;
+
+  if (!enabled) {
+    if (!imageUrl) return null;
+    return (
+      <div style={style}>
+        <img
+          src={imageUrl}
+          alt=""
+          loading="lazy"
+          style={{
+            width: "100%",
+            height: resolvedHeight ?? "100%",
+            objectFit: "cover",
+            display: "block",
+            ...imgStyle,
+          }}
+        />
+      </div>
+    );
+  }
+
+  if (!visibleUrl && !stockHidden && !imageUrl) {
+    return null;
+  }
+
+  return (
+    <MenuDesignPhotoSlot
+      enabled
+      slotKey={key}
+      kind="section"
+      imageUrl={visibleUrl || ""}
+      isStock={isStock || Boolean(stockHidden)}
+      objectFit={objectFit}
+      onReplaceFile={(file) => designEdit.replaceSectionPhoto(key, file)}
+      onDelete={() =>
+        designEdit.deleteSectionPhoto({
+          slotKey: key,
+          isStock: isStock || Boolean(stockHidden),
+          previousUrl: imageUrl || null,
+        })
+      }
+      onFitChange={(fit) => designEdit.setSlotFit(key, fit)}
+      onRestoreStock={() => designEdit.restoreStock(key, imageUrl || null)}
+      style={style}
+    >
+      {visibleUrl ? (
+        <img
+          src={visibleUrl}
+          alt=""
+          loading="lazy"
+          style={{
+            width: "100%",
+            height: resolvedHeight ?? "100%",
+            objectFit,
+            display: "block",
+            ...imgStyle,
+          }}
+        />
+      ) : (
+        <div
+          style={{
+            width: "100%",
+            height: resolvedHeight ?? 160,
+            minHeight: 120,
+            background: "rgba(148,163,184,0.2)",
+          }}
+        />
       )}
     </MenuDesignPhotoSlot>
   );

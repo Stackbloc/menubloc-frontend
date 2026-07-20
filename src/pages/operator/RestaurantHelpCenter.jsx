@@ -60,6 +60,9 @@ const TICKET_CATEGORIES = [
   "Account & Billing",
 ];
 
+/** When you edit OPERATIONS_SECTIONS copy, bump this date (YYYY-MM-DD). Shown on article views. */
+const HELP_CONTENT_UPDATED = "2026-07-19";
+
 const OPERATIONS_SECTIONS = [
   {
     id: "portal-overview",
@@ -101,7 +104,8 @@ const OPERATIONS_SECTIONS = [
         points: [
           "Overview mode lists all menus. From here, create a new menu with Add via Upload (PDF or image) or select a menu and click Edit to enter full edit mode.",
           "Edit mode focuses on one menu. The header shows the menu name and provides a ← Menus back link and a Done button. All changes are saved in real time.",
-          "Within a menu, items are grouped into sections. Use + Add Item to add a new item. Items can have a name, price, description, modifiers, dietary flags (vegan, gluten-free, etc.), and an optional photo.",
+          "Within a menu, items are grouped into sections. Use + Add Item to add a new item. Items can have a name, price, description, modifiers, dietary flags (vegan, gluten-free, etc.), and an optional photo (Pro plan — camera control on each item row).",
+          "Menu Lab Design controls layout, colors, hero image, and Image density (Thumbnail or All required for dish photos to appear on the public menu). Preview my menu opens design-edit mode to replace stock or hero photos.",
           "Multiple menus are supported — a breakfast menu, lunch menu, late-night menu, and more can all coexist. Scheduled display settings control which menu is active during which hours.",
           "Menus marked as published are visible on the public profile. Unpublished menus are visible only inside the editor.",
         ],
@@ -164,6 +168,7 @@ const OPERATIONS_SECTIONS = [
           "Orders — real-time order queue with the status panel, incoming order acceptance, and order history tabs.",
           "Menu — menu editor for all restaurant menus and items.",
           "Deals — create and manage public-facing customer offers.",
+          "Billboards — profile splash graphics (graphic-first or linked from Deals). Replaces the old Display Board nav label.",
           "Hours — set weekly operating hours and holiday exceptions.",
         ],
       },
@@ -174,6 +179,7 @@ const OPERATIONS_SECTIONS = [
         points: [
           "My Account — Profile, Menu, Settings (plan/billing), My QR Code, Delivery Portal (Uber Direct / DoorDash Drive), and Password. No PIN required.",
           "Marketplace — order printed QR stickers, window decals, and table kits at /operator/qr-kits/order.",
+          "Billboards — manage profile splash creatives at /operator/billboards.",
           "Restaurant Profile / Owner PIN Settings — edit public-facing restaurant info (owner PIN for sensitive settings).",
           "Business section items are intentionally separated from daily operations so staff cannot accidentally change billing or profile details.",
         ],
@@ -266,7 +272,7 @@ const OPERATIONS_SECTIONS = [
         title: "Your Public Restaurant Profile",
         summary: "What customers see when they find your restaurant on Menuply.",
         points: [
-          "The public profile shows your restaurant name, logo, billboard image, about us description, cuisine tags, city/state, hours, and featured dish.",
+          "The public profile shows your restaurant name, logo, banner photo, about us description, cuisine tags, city/state, hours, and featured dish.",
           "Active deals appear on the profile page with their headline and description.",
           "Customers can follow your restaurant to receive updates when you post deals or make changes.",
           "The public profile URL is /restaurants/[your-restaurant-slug]. Use the Public Profile quick-access button from the Home screen to open it. If you own the listing, you can edit and save profile fields on that page.",
@@ -558,6 +564,47 @@ const OPERATIONS_SECTIONS = [
     title: "Menu & Customer Tools",
     articles: [
       {
+        id: "photos-and-logos",
+        title: "Photos & Logos",
+        summary: "Where to upload logos, banners, dish photos, heroes, and deal images — plus file types and size limits.",
+        updated: "2026-07-19",
+        points: [
+          "Restaurant logo — Restaurant Profile → Logo. JPG, JPEG, PNG, WEBP, or SVG up to 5 MB. Square; 512×512 px minimum recommended. Requires Starter plan or higher.",
+          "Profile banner — Restaurant Profile → Banner photo. JPG, PNG, or WEBP up to 8 MB. Wide landscape images work best.",
+          "Menu hero — Menu Lab → Design → Hero image, or Replace in Preview my menu. JPG, PNG, or WEBP up to 5 MB.",
+          "Dish photos — Menu Lab → Edit → camera on item row. JPG, JPEG, PNG, or WEBP up to 10 MB. Pro plan required. HEIC/iPhone photos are not supported — save as JPEG first.",
+          "Public menu must show dish photos — Menu Lab Design → set Image density to Thumbnail or All (not None).",
+          "Menu scan (PDF/photo of printed menu) — Add via Upload only. Builds menu text; does not attach dish photos to items. Up to 20 MB.",
+          "Deal billboard image — Deals or Billboards editor. JPG, PNG, or WEBP up to 5 MB.",
+          "Search the Knowledge Base for \"How do I upload photos and logos?\" for the full reference table and troubleshooting.",
+        ],
+      },
+      {
+        id: "menu-lab-design",
+        title: "Menu Lab Design & Preview",
+        summary: "Layouts, Image density, hero, and Preview my menu design-edit.",
+        updated: "2026-07-19",
+        points: [
+          "Open Menu Lab → Design to pick Default (Classic) or a gallery layout (Modern Dark, Steakhouse, Fast Casual, Family Dining).",
+          "Set Image density to Thumbnail or All so dish photos appear on the public menu; None hides them.",
+          "Upload or replace the menu hero image from Design, or use Preview my menu and Replace on the header photo.",
+          "Preview my menu opens design-edit mode for owners — hover or tap photos for Replace / Delete / Fill / Fit.",
+          "Use / Save Design applies the style to the live menu. Search KB: \"How do I change my menu design?\"",
+        ],
+      },
+      {
+        id: "billboards",
+        title: "Billboards",
+        summary: "Profile splash graphics — not the old Display Board / TV menu board.",
+        updated: "2026-07-19",
+        points: [
+          "Open Billboards from the sidebar, or Feature as Billboard from a Deal.",
+          "Create graphic-first splash creatives or link an offer to a menu item.",
+          "Turn splash On/Off from the Billboards list. Review active dates so stale promos do not linger.",
+          "Images: JPG, PNG, or WEBP up to 5 MB.",
+        ],
+      },
+      {
         id: "menu-editing",
         title: "Menu Editing",
         summary: "Keep menu accuracy aligned with what the restaurant can fulfill.",
@@ -661,6 +708,19 @@ const OPERATIONS_SECTIONS = [
           "Verify the device is on the intended network at the actual work location.",
           "Look for weak zones near prep or kitchen areas.",
           "If reconnect behavior is frequent, fix the network setup before scaling the deployment.",
+        ],
+      },
+      {
+        id: "photo-upload-problems",
+        title: "Photo or Logo Upload Problems",
+        summary: "Fix format, size, plan, and display-setting issues before escalating.",
+        points: [
+          "Confirm you are uploading in the correct screen — logo in Profile, dish photo on item row, menu scan via Add via Upload.",
+          "Convert HEIC/iPhone photos to JPEG or PNG for dish photo uploads.",
+          "Check file size limits: logo 5 MB, banner 8 MB, hero 5 MB, dish 10 MB, billboard 5 MB, menu scan 20 MB.",
+          "Logo upload requires Starter+; dish photos require Pro+. Check My Account plan if upload is locked.",
+          "If a dish photo uploaded but does not appear publicly, set Menu Lab Design → Image density to Thumbnail or All.",
+          "Search Knowledge Base: \"Why did my photo or logo upload fail?\"",
         ],
       },
       {
@@ -965,7 +1025,7 @@ export default function RestaurantHelpCenter() {
                 Knowledge Base
               </h1>
               <p style={{ margin: "14px 0 0", maxWidth: 760, fontSize: 15, lineHeight: 1.7, color: "rgba(255,255,255,0.84)" }}>
-                Set up Menuply, manage common restaurant workflows, and get help when needed.
+                Set up Menuply, manage common restaurant workflows, and get help when needed. Guides show a Last updated date so you know when content was last reviewed.
               </p>
             </div>
             <div
@@ -1229,6 +1289,9 @@ export default function RestaurantHelpCenter() {
                 <p style={{ margin: "10px 0 0", fontSize: 15, lineHeight: 1.7, color: "#475467" }}>
                   {activeArticle.summary}
                 </p>
+                <div style={{ marginTop: 10, fontSize: 12, fontWeight: 700, color: "#8a9ab0" }}>
+                  Last updated: {activeArticle.updated || HELP_CONTENT_UPDATED}
+                </div>
                 <div style={{ display: "grid", gap: 10, marginTop: 18 }}>
                   {activeArticle.points.map((point, index) => (
                     <div

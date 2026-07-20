@@ -5,7 +5,7 @@ import { getLocalizedField } from "../../utils/getLocalizedField.js";
 import { shouldShowItemImages, shouldShowSectionImages } from "./menuThemeSettings.js";
 import { MENU_ROW_HEADER_ICON_GAP, MENU_ROW_ICON_SIZE } from "./menuPresentationUtils.js";
 import FollowRestaurantButton from "../FollowRestaurantButton.jsx";
-import { MenuDesignHeroSlot } from "./MenuDesignPhotoEditOverlay.jsx";
+import { MenuDesignHeroSlot, MenuDesignSectionSlot, sectionPhotoSlotKey } from "./MenuDesignPhotoEditOverlay.jsx";
 
 function LogoMark({ logoUrl, restaurantName, accent }) {
   if (logoUrl) {
@@ -190,11 +190,11 @@ export default function DarkPremiumMenuTemplate(ctx) {
                       boxShadow: "0 14px 34px rgba(0,0,0,0.24)",
                     }}
                   >
-                    <img
-                      src={sectionImage}
-                      alt=""
-                      loading="lazy"
-                      style={{ width: "100%", height: isMobile ? 128 : 176, objectFit: "cover", display: "block" }}
+                    <MenuDesignSectionSlot
+                      slotKey={sectionPhotoSlotKey(section, sIdx)}
+                      imageUrl={sectionImage}
+                      isStock={Boolean(ctx?.designSectionIsStock?.[sectionPhotoSlotKey(section, sIdx)])}
+                      height={isMobile ? 128 : 176}
                     />
                   </div>
                 ) : null}

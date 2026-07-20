@@ -96,9 +96,16 @@ test("Menu Lab preview opens designEdit mode and overlay exists", () => {
     join(root, "src/pages/PublicMenuPage.jsx"),
     "utf8",
   );
+  const modernAsian = readFileSync(
+    join(root, "src/components/menu-templates/ModernAsianMenuTemplate.jsx"),
+    "utf8",
+  );
   assert.match(editor, /designEdit=1/);
   assert.match(overlay, /MenuDesignPhotoSlot/);
+  assert.match(overlay, /MenuDesignSectionSlot/);
   assert.match(overlay, /Photo removed/);
   assert.match(publicMenu, /MenuDesignPhotoEditProvider/);
   assert.match(publicMenu, /designEdit/);
+  assert.match(publicMenu, /designSectionIsStock/);
+  assert.match(modernAsian, /MenuDesignSectionSlot/);
 });

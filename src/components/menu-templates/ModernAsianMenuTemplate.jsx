@@ -6,7 +6,7 @@ import { getMenuSectionImageUrl } from "./menuImageUtils.js";
 import { shouldShowItemImages, shouldShowSectionImages } from "./menuThemeSettings.js";
 import { MENU_ROW_HEADER_ICON_GAP, MENU_ROW_ICON_SIZE } from "./menuPresentationUtils.js";
 import FollowRestaurantButton from "../FollowRestaurantButton.jsx";
-import { MenuDesignHeroSlot } from "./MenuDesignPhotoEditOverlay.jsx";
+import { MenuDesignHeroSlot, MenuDesignSectionSlot, sectionPhotoSlotKey } from "./MenuDesignPhotoEditOverlay.jsx";
 
 export default function ModernAsianMenuTemplate(ctx) {
   const {
@@ -77,8 +77,8 @@ export default function ModernAsianMenuTemplate(ctx) {
           style={{ position: "absolute", inset: 0 }}
           imgStyle={{ filter: "brightness(0.55)" }}
         />
-        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(11,15,20,0.18), rgba(11,15,20,0.9))", pointerEvents: "none" }} />
-        <div style={{ position: "relative", padding: isMobile ? "18px 18px 20px" : "26px 28px 24px" }}>
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(11,15,20,0.18), rgba(11,15,20,0.9))", pointerEvents: "none", zIndex: 1 }} />
+        <div style={{ position: "relative", zIndex: 2, padding: isMobile ? "18px 18px 20px" : "26px 28px 24px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start", flexWrap: "wrap" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0, justifyContent: logoPlacement === "center" ? "center" : undefined, textAlign: logoPlacement === "center" ? "center" : undefined }}>
               {showLogo && (logoUrl ? (
@@ -191,11 +191,11 @@ export default function ModernAsianMenuTemplate(ctx) {
                     </div>
                   </div>
                   {showSectionImages && sectionImage ? (
-                    <img
-                      src={sectionImage}
-                      alt=""
-                      loading="lazy"
-                      style={{ width: "100%", height: isMobile ? 180 : 240, objectFit: "cover", display: "block" }}
+                    <MenuDesignSectionSlot
+                      slotKey={sectionPhotoSlotKey(section, index)}
+                      imageUrl={sectionImage}
+                      isStock={Boolean(ctx?.designSectionIsStock?.[sectionPhotoSlotKey(section, index)])}
+                      height={isMobile ? 180 : 240}
                     />
                   ) : null}
                 </section>

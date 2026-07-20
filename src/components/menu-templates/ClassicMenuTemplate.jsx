@@ -11,7 +11,7 @@ import MenuRestaurantDistanceLine from "./MenuRestaurantDistanceLine.jsx";
 import RestaurantProfileLogoLink from "./RestaurantProfileLogoLink.jsx";
 import FollowRestaurantButton from "../FollowRestaurantButton.jsx";
 import MenuHeaderNameWithActions from "./MenuHeaderIconRail.jsx";
-import { MenuDesignHeroSlot } from "./MenuDesignPhotoEditOverlay.jsx";
+import { MenuDesignHeroSlot, MenuDesignSectionSlot, sectionPhotoSlotKey } from "./MenuDesignPhotoEditOverlay.jsx";
 
 const FONT_STACK = '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif';
 const INK = "#1D1D1F";
@@ -379,16 +379,11 @@ export default function ClassicMenuTemplate(ctx) {
 
                   {showSectionImages && sectionImage ? (
                     <div aria-hidden="true" style={{ margin: "12px 0", borderRadius: 12, overflow: "hidden" }}>
-                      <img
-                        src={sectionImage}
-                        alt=""
-                        loading="lazy"
-                        style={{
-                          width: "100%",
-                          height: isTablet ? 164 : isMobile ? 136 : 188,
-                          objectFit: "cover",
-                          display: "block",
-                        }}
+                      <MenuDesignSectionSlot
+                        slotKey={sectionPhotoSlotKey(sec, sIdx)}
+                        imageUrl={sectionImage}
+                        isStock={Boolean(ctx?.designSectionIsStock?.[sectionPhotoSlotKey(sec, sIdx)])}
+                        height={isTablet ? 164 : isMobile ? 136 : 188}
                       />
                     </div>
                   ) : null}

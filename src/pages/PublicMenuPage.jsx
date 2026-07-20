@@ -88,6 +88,7 @@ import {
   DesignEditUndoToast,
   MenuDesignPhotoEditProvider,
   useMenuDesignPhotoEditController,
+  sectionPhotoSlotKey,
 } from "../components/menu-templates/MenuDesignPhotoEditOverlay.jsx";
 
 const API = API_BASE;
@@ -1114,6 +1115,7 @@ export default function PublicMenuPage() {
   const stylePreviewParam = searchParams.get("menuStyle") || searchParams.get("previewStyle");
   const [heroOverrideUrl, setHeroOverrideUrl] = useState(undefined);
   const [itemPhotoOverrides, setItemPhotoOverrides] = useState({});
+  const [sectionPhotoOverrides, setSectionPhotoOverrides] = useState({});
   const operatorOwnsRestaurant = useMemo(() => {
     if (!isOperatorAuthenticated || !data?.restaurant_id) return false;
     const rid = Number(data.restaurant_id);
@@ -1147,14 +1149,48 @@ export default function PublicMenuPage() {
         })),
       };
     }
+    if (Object.keys(sectionPhotoOverrides).length > 0) {
+      next = {
+        ...next,
+        sections: (next.sections || []).map((section, sIdx) => {
+          const slotKey = sectionPhotoSlotKey(section, sIdx);
+          const override = sectionPhotoOverrides[slotKey];
+          if (!override || override.imageUrl == null || override.imageUrl === "") return section;
+          return {
+            ...section,
+            image_url: override.imageUrl,
+            photo_url: override.imageUrl,
+          };
+        }),
+      };
+    }
     return next;
-  }, [data, stylePreviewParam, heroOverrideUrl, itemPhotoOverrides]);
+  }, [data, stylePreviewParam, heroOverrideUrl, itemPhotoOverrides, sectionPhotoOverrides]);
 
   const designHeroIsStock = Boolean(
     stylePreviewParam &&
       presentationData?.hero_image_url &&
       presentationData.hero_image_url !== data?.hero_image_url
   );
+
+  const designSectionIsStock = useMemo(() => {
+    if (!stylePreviewParam || !presentationData?.sections?.length) return {};
+    const stockBySlot = {};
+    (presentationData.sections || []).forEach((section, sIdx) => {
+      const slotKey = sectionPhotoSlotKey(section, sIdx);
+      const currentUrl =
+        section?.image_url || section?.photo_url || section?.section_image_url || "";
+      if (!currentUrl) return;
+      const liveSection = (data?.sections || [])[sIdx];
+      const liveUrl =
+        liveSection?.image_url ||
+        liveSection?.photo_url ||
+        liveSection?.section_image_url ||
+        "";
+      if (currentUrl && currentUrl !== liveUrl) stockBySlot[slotKey] = true;
+    });
+    return stockBySlot;
+  }, [stylePreviewParam, presentationData?.sections, data?.sections]);
 
   const designPhotoEdit = useMenuDesignPhotoEditController({
     enabled: designEditEnabled,
@@ -1168,6 +1204,21 @@ export default function PublicMenuPage() {
         ...prev,
         [key]: { imageUrl, photoId, publicMenuItemId },
       }));
+    },
+    onSectionPhotoChange: ({ slotKey, imageUrl, clear }) => {
+      const key = String(slotKey || "");
+      if (!key) return;
+      setSectionPhotoOverrides((prev) => {
+        if (clear) {
+          const next = { ...prev };
+          delete next[key];
+          return next;
+        }
+        return {
+          ...prev,
+          [key]: { imageUrl },
+        };
+      });
     },
   });
   const displaySettingsSource = data?.display_settings || data || {};
@@ -1460,6 +1511,7 @@ export default function PublicMenuPage() {
           tabError,
           menuPresentation: data?.menu_presentation || data?.presentation || {},
           designHeroIsStock,
+          designSectionIsStock,
           ...buildRestaurantStatusLightProps(data),
         }
       : null;

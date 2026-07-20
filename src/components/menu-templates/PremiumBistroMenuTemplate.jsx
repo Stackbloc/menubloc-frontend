@@ -5,7 +5,7 @@ import { shouldShowItemImages, shouldShowSectionImages } from "./menuThemeSettin
 import { MENU_ROW_HEADER_ICON_GAP, MENU_ROW_ICON_SIZE } from "./menuPresentationUtils.js";
 import FollowRestaurantButton from "../FollowRestaurantButton.jsx";
 import RestaurantVerificationBadge from "../RestaurantVerificationBadge.jsx";
-import { MenuDesignHeroSlot } from "./MenuDesignPhotoEditOverlay.jsx";
+import { MenuDesignHeroSlot, MenuDesignSectionSlot, sectionPhotoSlotKey } from "./MenuDesignPhotoEditOverlay.jsx";
 
 function text(value) {
   return String(value || "").trim();
@@ -175,7 +175,7 @@ export default function PremiumBistroMenuTemplate(ctx) {
           style={{ position: "absolute", inset: 0, zIndex: 0 }}
           imgStyle={{ filter: "brightness(0.55)" }}
         />
-        <div style={{ position: "relative", zIndex: 1, textAlign: "center", maxWidth: 720 }}>
+        <div style={{ position: "relative", zIndex: 2, textAlign: "center", maxWidth: 720 }}>
           {statusLabel ? (
             <div
               style={{
@@ -416,11 +416,12 @@ export default function PremiumBistroMenuTemplate(ctx) {
                         overflow: "hidden",
                       }}
                     >
-                      <img
-                        src={imageUrl}
-                        alt=""
-                        loading="lazy"
-                        style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                      <MenuDesignSectionSlot
+                        slotKey={sectionPhotoSlotKey(section, sIdx)}
+                        imageUrl={imageUrl}
+                        isStock={Boolean(ctx?.designSectionIsStock?.[sectionPhotoSlotKey(section, sIdx)])}
+                        style={{ width: "100%", height: "100%" }}
+                        imgStyle={{ height: "100%" }}
                       />
                     </div>
                   ) : null}
