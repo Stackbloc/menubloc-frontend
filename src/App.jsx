@@ -73,7 +73,7 @@ import OperatorMyAccount from "./pages/operator/OperatorMyAccount.jsx";
 import OperatorMerchantAccountPage from "./pages/operator/OperatorMerchantAccountPage.jsx";
 import OperatorAdobeStudio from "./pages/operator/OperatorAdobeStudio.jsx";
 import OperatorQrKitOrder from "./pages/operator/OperatorQrKitOrder.jsx";
-import OperatorDisplaySettings from "./pages/operator/OperatorDisplaySettings.jsx";
+import OperatorBillboardsPage from "./pages/operator/OperatorBillboardsPage.jsx";
 import RestaurantHelpCenter from "./pages/operator/RestaurantHelpCenter.jsx";
 import OwnerLogin from "./pages/owner/OwnerLogin.jsx";
 import OwnerRecovery from "./pages/owner/OwnerRecovery.jsx";
@@ -735,7 +735,8 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/operator/qr-stickers" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorQrStickers /></OperatorRoute>} />
         <Route path="/operator/subscription" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorSubscription /></OperatorRoute>} />
         <Route path="/operator/my-account" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorMyAccount /></OperatorRoute>} />
-        <Route path="/operator/display-settings" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorDisplaySettings /></OperatorRoute>} />
+        <Route path="/operator/billboards" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorBillboardsPage /></OperatorRoute>} />
+        <Route path="/operator/display-settings" element={crmHost ? <HostRouteRedirect to="/crm" /> : <Navigate to="/operator/billboards" replace />} />
         <Route path="/operator/menu-studio" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorMenuStudio /></OperatorRoute>} />
         <Route path="/operator/menudesign" element={<Navigate to="/operator/menulab" replace />} />
         <Route path="/operator/brand" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorBrandSettings /></OperatorRoute>} />

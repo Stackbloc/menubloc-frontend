@@ -13,6 +13,7 @@
  */
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
+import { Link } from "react-router-dom";
 import { useLanguage } from "../../context/LanguageContext.jsx";
 import OperatorLayout from "./OperatorLayout.jsx";
 import { useOperator } from "../../context/OperatorContext.jsx";
@@ -407,11 +408,16 @@ function DealForm({ allItems, initial = {}, initialBillboard = null, onSave, onC
           />
           <span style={{ fontSize: 13, fontWeight: 700, color: "#0f1720" }}>Feature this deal as a billboard</span>
         </label>
+        <div style={{ fontSize: 12, color: "#8a9ab0", lineHeight: 1.5, marginTop: 8 }}>
+          Upload a graphic here after entering deal text. Or create from{" "}
+          <Link to="/operator/billboards" style={{ color: "#1F4E3D", fontWeight: 700 }}>Billboards</Link>
+          {" "}(graphic first) — same deal, synced both ways.
+        </div>
 
         {billboardEnabled && (
           <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 12 }}>
             <div style={{ fontSize: 12, color: "#8a9ab0", lineHeight: 1.5 }}>
-              These settings control how this deal appears in your restaurant profile and search results.
+              These settings control how this deal appears on your restaurant profile splash.
               All fields are optional — defaults use the deal title and description above.
             </div>
 

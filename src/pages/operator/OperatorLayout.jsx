@@ -193,6 +193,7 @@ const OPERATOR_PAGE_TITLE_KEYS = {
   Deals: "operator.deals.title",
   "Order QR Code Kit": "operator.qrKit.title",
   "Display Board": "operator.nav.displayBoard",
+  Billboards: "operator.nav.billboards",
   Hours: "operator.hours.title",
   "Order Detail": "operator.orders.detailTitle",
   "Delivery Accounts": "operator.delivery.title",
@@ -243,7 +244,7 @@ export default function OperatorLayout({ title, children }) {
     { to: "/operator/hours", label: t("operator.nav.hours", "Hours"), icon: "⏰" },
     { to: "/operator/bid-free-bidding", label: t("operator.nav.bidFree", "Bid-Free Bidding™"), icon: "◇" },
     { to: "/operator/design", label: t("operator.nav.adobeStudio", "Adobe Studio"), icon: "▣", benefitKey: "design_exports" },
-    { to: "/operator/display-settings", label: t("operator.nav.displayBoard", "Display Board"), icon: "⊞", benefitKey: "tv_menu_board" },
+    { to: "/operator/billboards", label: t("operator.nav.billboards", "Billboards"), icon: "⊞" },
     { to: "/operator/menu-studio", label: t("operator.nav.menuStudio", "Menu Studio"), icon: "✦", benefitKey: "menu_outputs" },
     { to: "/operator/brand", label: t("operator.nav.brandSettings", "Brand Settings"), icon: "◉", benefitKey: "brand_customization" },
   ]), [t]);
