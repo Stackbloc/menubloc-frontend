@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { useLanguage } from "../../context/LanguageContext.jsx";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import OperatorLayout from "./OperatorLayout.jsx";
 import { useOperator } from "../../context/OperatorContext.jsx";
@@ -89,8 +88,26 @@ function StatusRow({ label, value }) {
   );
 }
 
+async function markFoodTruckSubscriptionActivated(restaurantId) {
+  await api.markOnboardingStage(restaurantId, {
+    stage_id: "subscription_active",
+    status: "completed",
+    append_completed_key: "subscription_active",
+    current_step_key: "detailed_information",
+    selected_plan_code: FOOD_TRUCK_ANNUAL_PLAN_CODE,
+    extra: { onboarding_kind: "food_truck" },
+  });
+  await api.markOnboardingStage(restaurantId, {
+    stage_id: "onboarding_complete",
+    status: "completed",
+    append_completed_key: "onboarding_complete",
+    current_step_key: "detailed_information",
+    selected_plan_code: FOOD_TRUCK_ANNUAL_PLAN_CODE,
+    extra: { onboarding_kind: "food_truck", account_active: true },
+  });
+}
+
 export default function OperatorSubscription() {
-  const { t } = useLanguage();
   const { selectedRestaurant } = useOperator();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -198,15 +215,8 @@ export default function OperatorSubscription() {
   useEffect(() => {
     if (!foodTruckOnboarding || loading || !selectedRestaurant?.id) return;
     if (!isPaidSubscriptionConfirmed(subscription)) return;
-    api.markOnboardingStage(selectedRestaurant.id, {
-      stage_id: "subscription_active",
-      status: "completed",
-      append_completed_key: "subscription_active",
-      current_step_key: "detailed_information",
-      selected_plan_code: FOOD_TRUCK_ANNUAL_PLAN_CODE,
-      extra: { onboarding_kind: "food_truck" },
-    }).catch(() => {});
-    navigate("/foodtruck/onboarding/details", { replace: true });
+    markFoodTruckSubscriptionActivated(selectedRestaurant.id).catch(() => {});
+    navigate("/foodtruck/onboarding/details?activated=1", { replace: true });
   }, [foodTruckOnboarding, loading, selectedRestaurant?.id, subscription, navigate]);
 
   const checkoutResult = searchParams.get("checkout");
@@ -218,16 +228,9 @@ export default function OperatorSubscription() {
         if (isPaidSubscriptionConfirmed(sub)) {
           clearIntendedCheckoutPlanCode();
           if (foodTruckOnboarding && selectedRestaurant?.id) {
-            api.markOnboardingStage(selectedRestaurant.id, {
-              stage_id: "subscription_active",
-              status: "completed",
-              append_completed_key: "subscription_active",
-              current_step_key: "detailed_information",
-              selected_plan_code: FOOD_TRUCK_ANNUAL_PLAN_CODE,
-              extra: { onboarding_kind: "food_truck" },
-            }).catch(() => {});
-            setMessage("Your plan is active. Continue to your public profile details.");
-            setTimeout(() => navigate("/foodtruck/onboarding/details"), 1200);
+            markFoodTruckSubscriptionActivated(selectedRestaurant.id).catch(() => {});
+            setMessage("Your Food Truck account is active. Continue to your public profile details.");
+            setTimeout(() => navigate("/foodtruck/onboarding/details?activated=1"), 1200);
           } else {
             setMessage("Your plan is active. Upload your menu to complete your public profile.");
             setTimeout(() => navigate("/operator/menulab"), 2000);

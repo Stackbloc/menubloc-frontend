@@ -5,8 +5,8 @@ export const FOOD_TRUCK_ONBOARDING_STAGES = Object.freeze([
   "basic_information_complete",
   "menu_uploaded",
   "subscription_active",
-  "detailed_information_complete",
   "onboarding_complete",
+  "detailed_information_complete",
 ]);
 
 export function isFoodTruckRestaurant(restaurant = {}) {
@@ -63,9 +63,9 @@ export function routeForFoodTruckOnboardingStage(stage) {
       return "/restaurant/pdf-upload?food_truck_onboarding=1";
     case "subscription_active":
       return "/operator/subscription?onboarding=food_truck";
-    case "detailed_information_complete":
-      return "/foodtruck/onboarding/details";
     case "onboarding_complete":
+      return "/foodtruck/onboarding/details?activated=1";
+    case "detailed_information_complete":
       return "/foodtruck/onboarding/details";
     default:
       return "/operator";

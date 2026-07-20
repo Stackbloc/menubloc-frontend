@@ -703,7 +703,7 @@ export default function PdfUploadPage() {
     }).catch(() => {});
   }, [result, isOperatorFlow, restaurant_id, state]);
 
-  // Operator Menu Lab + onboarding upload: open Menu Worksheet immediately after successful parse.
+  // Operator Menu Lab opens the worksheet; food-truck onboarding records upload acceptance and continues to plan selection.
   useEffect(() => {
     if (!result) return;
     const publicRestaurantId =
@@ -724,7 +724,9 @@ export default function PdfUploadPage() {
       })
         .catch(() => {})
         .finally(() => {
-          nav("/operator/subscription?onboarding=food_truck", { replace: true });
+          setTimeout(() => {
+            nav("/operator/subscription?onboarding=food_truck", { replace: true });
+          }, 1200);
         });
       return;
     }
@@ -1150,6 +1152,30 @@ export default function PdfUploadPage() {
   }
 
   if (result) {
+    if (isFoodTruckOnboarding) {
+      return (
+        <OperatorLayout title="Upload Menu">
+          <div style={s.page}>
+            <div style={s.successBox}>
+              <div style={s.successIcon}>✓</div>
+              <div style={s.successTitle}>Your menu is uploading.</div>
+              <p style={s.successSub}>
+                Your menu has been received and is now being processed.
+                <br />
+                <br />
+                This usually only takes a few moments.
+                <br />
+                <br />
+                While we prepare your menu, let's finish setting up your Food Truck account.
+              </p>
+              <Link to="/operator/subscription?onboarding=food_truck" style={s.profileLink}>
+                Continue to plan selection
+              </Link>
+            </div>
+          </div>
+        </OperatorLayout>
+      );
+    }
     if (isOperatorFlow) {
       const publicRestaurantId =
         Number(result.public_restaurant_id || result.restaurant_id || restaurant_id) || 0;
@@ -1170,17 +1196,7 @@ export default function PdfUploadPage() {
           <div style={s.page}>
             <div style={s.successBox}>
               <div style={s.successIcon}>✓</div>
-              {isFoodTruckOnboarding ? (
-                <>
-                  <div style={s.successTitle}>Menu uploaded</div>
-                  <p style={s.successSub}>
-                    Continuing to food-truck plan selection. Menu corrections are not required during onboarding.
-                  </p>
-                  <Link to="/operator/subscription?onboarding=food_truck" style={s.profileLink}>
-                    Continue to plan selection
-                  </Link>
-                </>
-              ) : worksheetHref ? (
+              {worksheetHref ? (
                 <>
                   <div style={s.successTitle}>Menu parsed — opening worksheet…</div>
                   <p style={s.successSub}>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { BrandLogo } from "../components/BrandLogo.jsx";
 import RestaurantInformationForm from "../components/restaurant/RestaurantInformationForm.jsx";
 import { useOperator } from "../context/OperatorContext.jsx";
@@ -74,9 +74,11 @@ const styles = {
 
 export default function FoodTruckOnboardingDetails() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { selectedRestaurant, restaurants, operator, refreshSession } = useOperator();
   const restaurant = selectedRestaurant || restaurants?.[0] || null;
   const restaurantId = Number(restaurant?.id || restaurant?.restaurant_id) || 0;
+  const [showActivation, setShowActivation] = useState(() => searchParams.get("activated") === "1");
   const [form, setForm] = useState(emptyRestaurantInformationForm());
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -110,6 +112,15 @@ export default function FoodTruckOnboardingDetails() {
     };
   }, [restaurantId, operator?.email]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  useEffect(() => {
+    if (!showActivation) return undefined;
+    const id = setTimeout(() => {
+      setShowActivation(false);
+      navigate("/foodtruck/onboarding/details", { replace: true });
+    }, 5000);
+    return () => clearTimeout(id);
+  }, [showActivation, navigate]);
+
   async function handleComplete() {
     setError("");
     if (!restaurantId || !isFoodTruckRestaurant(restaurant)) {
@@ -132,13 +143,6 @@ export default function FoodTruckOnboardingDetails() {
         current_step_key: "complete",
         extra: { onboarding_kind: "food_truck" },
       });
-      await markOnboardingStage(restaurantId, {
-        stage_id: "onboarding_complete",
-        status: "completed",
-        append_completed_key: "onboarding_complete",
-        current_step_key: "complete",
-        extra: { onboarding_kind: "food_truck" },
-      });
       await refreshSession().catch(() => {});
       navigate("/operator", { replace: true });
     } catch (err) {
@@ -148,12 +152,52 @@ export default function FoodTruckOnboardingDetails() {
     }
   }
 
+  if (showActivation) {
+    return (
+      <div style={styles.page}>
+        <div style={styles.main}>
+          <BrandLogo height={44} radius={12} matchPageBackground={false} />
+          <div style={styles.eyebrow}>Food-truck onboarding</div>
+          <h1 style={styles.title}>Congratulations! Welcome to Menuply.</h1>
+          <p style={styles.subtitle}>
+            Your Food Truck account is now active.
+            <br />
+            <br />
+            Before entering your Restaurant Operator Panel, let's complete your public restaurant profile. This only takes a few minutes and helps customers discover your business.
+            <br />
+            <br />
+            After your profile is complete, you'll have access to everything you need to manage and grow your business on Menuply.
+          </p>
+          <div style={{ ...styles.subtitle, color: "#101828" }}>
+            <div style={{ fontWeight: 800, marginBottom: 8 }}>Once you're in the Restaurant Operator Panel, you can:</div>
+            <div>Review and edit your menu</div>
+            <div>Review menu prices</div>
+            <div>Choose your menu design</div>
+            <div>Publish your menu</div>
+            <div>Complete your Stripe merchant account setup</div>
+            <div>Enable delivery services (optional)</div>
+          </div>
+          <button
+            type="button"
+            style={styles.primary}
+            onClick={() => {
+              setShowActivation(false);
+              navigate("/foodtruck/onboarding/details", { replace: true });
+            }}
+          >
+            Continue
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div style={styles.page}>
         <div style={styles.main}>
           <BrandLogo height={44} radius={12} matchPageBackground={false} />
-          <p style={{ marginTop: 28, color: "#6b7280" }}>Loading food-truck details...</p>
+          <p style={{ marginTop: 28, color: "#6b7280" }}>Loading your public profile details...</p>
         </div>
       </div>
     );
@@ -164,9 +208,9 @@ export default function FoodTruckOnboardingDetails() {
       <div style={styles.main}>
         <BrandLogo height={44} radius={12} matchPageBackground={false} />
         <div style={styles.eyebrow}>Food-truck onboarding</div>
-        <h1 style={styles.title}>Complete your public profile details</h1>
+        <h1 style={styles.title}>Complete your public restaurant profile</h1>
         <p style={styles.subtitle}>
-          Confirm the details diners will see on your Menuply food-truck profile.
+          Add the public details diners will see on your Menuply Food Truck profile. Your account is already active.
         </p>
         {error ? <div style={styles.error}>{error}</div> : null}
         <RestaurantInformationForm
@@ -176,7 +220,7 @@ export default function FoodTruckOnboardingDetails() {
           emailReadOnly
         />
         <button type="button" style={styles.primary} disabled={saving} onClick={handleComplete}>
-          {saving ? "Completing..." : "Complete onboarding"}
+          {saving ? "Saving..." : "Save profile and enter Operator Panel"}
         </button>
       </div>
     </div>

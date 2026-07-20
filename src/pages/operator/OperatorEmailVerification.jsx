@@ -17,6 +17,7 @@ import {
   FormError,
   styles,
 } from "../../components/consumer/ConsumerAuthShared.jsx";
+import { isFoodTruckRestaurant } from "../../lib/foodTruckOnboarding.js";
 
 export default function OperatorEmailVerification() {
   const { t } = useLanguage();
@@ -28,6 +29,7 @@ export default function OperatorEmailVerification() {
   const [sending, setSending] = useState(false);
   const [formError, setFormError] = useState("");
   const [info, setInfo] = useState("");
+  const [showFoodTruckVerified, setShowFoodTruckVerified] = useState(false);
   const autoSent = useRef(false);
 
   const onboarding = resolveRestaurantOnboardingState({
@@ -44,12 +46,19 @@ export default function OperatorEmailVerification() {
     if (onboarding?.restaurant_id) return "/restaurant/onboarding/organization";
     return restaurants?.length === 0 ? "/operator/claim" : "/operator";
   }, [location.state, onboarding, restaurants]);
+  const isFoodTruckVerification = useMemo(() => {
+    return (
+      String(nextPath || "").includes("food_truck_onboarding=1") ||
+      restaurants?.some((restaurant) => isFoodTruckRestaurant(restaurant))
+    );
+  }, [nextPath, restaurants]);
 
   useEffect(() => {
+    if (showFoodTruckVerified) return;
     if (isAuthenticated && isEmailVerified) {
       navigate(nextPath, { replace: true });
     }
-  }, [isAuthenticated, isEmailVerified, navigate, nextPath]);
+  }, [isAuthenticated, isEmailVerified, navigate, nextPath, showFoodTruckVerified]);
 
   useEffect(() => {
     if (!location.state?.autoSend || !email || autoSent.current) return;
@@ -84,6 +93,10 @@ export default function OperatorEmailVerification() {
       if (isAuthenticated) {
         await refreshSession().catch(() => {});
       }
+      if (isFoodTruckVerification) {
+        setShowFoodTruckVerified(true);
+        return;
+      }
       if (onboarding?.restaurant_id) {
         const nextOnboarding = {
           ...onboarding,
@@ -114,6 +127,31 @@ export default function OperatorEmailVerification() {
     } finally {
       setBusy(false);
     }
+  }
+
+  if (showFoodTruckVerified) {
+    return (
+      <AuthPageFrame
+        title="Your email has been verified."
+        subtitle={(
+          <>
+            Welcome to Menuply!
+            <br />
+            <br />
+            Let's upload your restaurant menu so we can begin building your digital menu and make your Food Truck searchable on Menuply.
+          </>
+        )}
+        footer={null}
+      >
+        <button
+          type="button"
+          onClick={() => navigate("/restaurant/pdf-upload?food_truck_onboarding=1", { replace: true })}
+          style={styles.submitButton}
+        >
+          Upload Menu
+        </button>
+      </AuthPageFrame>
+    );
   }
 
   return (

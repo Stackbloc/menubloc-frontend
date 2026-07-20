@@ -196,7 +196,27 @@ test("food truck onboarding skips worksheet, merchant, and delivery until panel"
     ...base,
     subscription_active: true,
     completed_step_keys: [...base.completed_step_keys, "menu_uploaded", "subscription_active"],
+  }), "/foodtruck/onboarding/details?activated=1");
+  assert.equal(resolveFoodTruckOnboardingRoute({
+    ...base,
+    subscription_active: true,
+    completed_step_keys: [
+      ...base.completed_step_keys,
+      "menu_uploaded",
+      "subscription_active",
+      "onboarding_complete",
+    ],
   }), "/foodtruck/onboarding/details");
+  assert.equal(isFoodTruckOnboardingComplete({
+    ...base,
+    subscription_active: true,
+    completed_step_keys: [
+      ...base.completed_step_keys,
+      "menu_uploaded",
+      "subscription_active",
+      "onboarding_complete",
+    ],
+  }), false);
   assert.equal(isFoodTruckOnboardingComplete({
     ...base,
     subscription_active: true,
