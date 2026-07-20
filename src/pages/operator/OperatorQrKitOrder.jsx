@@ -12,49 +12,17 @@ import {
 } from "../../components/payments/paymentHelpers.js";
 
 const TABLE_QTY_OPTIONS = [
-  { qty: 10,    amountCents:   3750, label: "10 signs    — $37.50     ($3.75/sign)" },
-  { qty: 25,    amountCents:   8750, label: "25 signs    — $87.50     ($3.50/sign)" },
-  { qty: 50,    amountCents:  13750, label: "50 signs    — $137.50    ($2.75/sign)" },
-  { qty: 100,   amountCents:  25000, label: "100 signs   — $250.00    ($2.50/sign)" },
-  { qty: 250,   amountCents:  50000, label: "250 signs   — $500.00    ($2.00/sign)" },
-  { qty: 500,   amountCents:  75000, label: "500 signs   — $750.00    ($1.50/sign)" },
-  { qty: 1000,  amountCents: 100000, label: "1,000 signs — $1,000.00  ($1.00/sign)" },
-  { qty: 1500,  amountCents: 112500, label: "1,500 signs — $1,125.00  ($0.75/sign)" },
-  { qty: 2000,  amountCents: 150000, label: "2,000 signs — $1,500.00  ($0.75/sign)" },
-  { qty: 2500,  amountCents: 187500, label: "2,500 signs — $1,875.00  ($0.75/sign)" },
-  { qty: 5000,  amountCents: 250000, label: "5,000 signs — $2,500.00  ($0.50/sign)" },
-  { qty: 10000, amountCents: 500000, label: "10,000 signs — $5,000.00 ($0.50/sign)" },
+  { qty: 10, amountCents: 3500, label: "10 signs - $35.00 ($3.50/sign)" },
 ];
 
 const PACKAGES = {
-  starter: {
-    key: "starter",
-    name: "Door / Window QR Sticker",
-    amountCents: 1500,
-    description: "One door QR vinyl sticker (6.25\" × 5.25\"). Scannable link placed right at your entrance.",
-    placements: ["Door"],
-  },
   table: {
     key: "table",
-    name: "Table Tent QR Sign",
+    name: "Tabletop QR Sign",
     amountCents: TABLE_QTY_OPTIONS[0].amountCents,
-    description: "Folded tent card table sign. QR code at every table for direct ordering. Select quantity.",
+    description: "Preset 10-pack of tabletop QR signs. QR code at each table for direct menu access.",
     placements: ["Table Set"],
     qtyOptions: TABLE_QTY_OPTIONS,
-  },
-  counter: {
-    key: "counter",
-    name: "Counter / Pickup Acrylic QR Sign",
-    amountCents: 3000,
-    description: "Clear acrylic counter sign, 7\" × 5\", white print. QR code at your counter or pickup window.",
-    placements: ["Counter / Pickup"],
-  },
-  full: {
-    key: "full",
-    name: "Complete QR Signage Bundle",
-    amountCents: 9000,
-    description: "Door/window sticker + acrylic counter sign + 20 table tent signs. Save vs buying separately.",
-    placements: ["Door", "Counter / Pickup", "Table Set"],
   },
 };
 
@@ -98,7 +66,7 @@ function InfoTile({ label, value }) {
 export default function OperatorQrKitOrder() {
   const { t } = useLanguage();
   const { selectedRestaurant } = useOperator();
-  const [packageType, setPackageType] = useState("starter");
+  const [packageType, setPackageType] = useState("table");
   const [tableQtyIndex, setTableQtyIndex] = useState(0);
   const [profile, setProfile] = useState(null);
   const [form, setForm] = useState({
@@ -122,7 +90,7 @@ export default function OperatorQrKitOrder() {
 
   const selectedPackage = PACKAGES[packageType];
   const tableQtyOption = TABLE_QTY_OPTIONS[tableQtyIndex] || TABLE_QTY_OPTIONS[0];
-  const effectiveAmountCents = packageType === "table" ? tableQtyOption.amountCents : selectedPackage.amountCents;
+  const effectiveAmountCents = tableQtyOption.amountCents;
 
   useEffect(() => {
     if (!selectedRestaurant?.id) {
@@ -231,7 +199,7 @@ export default function OperatorQrKitOrder() {
         amountCents: effectiveAmountCents,
         metadata: {
           source: "operator_qr_kit_order",
-          qty: packageType === "table" ? tableQtyOption.qty : 1,
+          qty: tableQtyOption.qty,
         },
       });
 
@@ -251,6 +219,8 @@ export default function OperatorQrKitOrder() {
     try {
       const result = await api.createQrKitOrder(selectedRestaurant.id, {
         package_type: packageType,
+        sku: "QR-TABLE",
+        quantity: tableQtyOption.qty,
         shipping_name: form.shipping_name,
         shipping_address_1: form.shipping_address_1,
         shipping_address_2: form.shipping_address_2,
@@ -301,7 +271,7 @@ export default function OperatorQrKitOrder() {
             Put your menu in front of every guest
           </h1>
           <p style={{ margin: "14px 0 0", maxWidth: 720, fontSize: 16, lineHeight: 1.7, color: "rgba(255,255,255,0.88)" }}>
-            Choose the sign that fits your location. Each piece ships with your unique QR code — guests scan to view your menu and order directly. Door vinyl sticker, counter acrylic sign, or table acrylic sign.
+            Order the current Menuply tabletop QR sign pack. Each pack includes 10 signs with your unique QR code so guests can scan to view your menu and order directly.
           </p>
         </section>
 
@@ -360,20 +330,20 @@ export default function OperatorQrKitOrder() {
                         />
                       )}
                       <div style={{ fontSize: 12, fontWeight: 800, color: "#667085", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                        {pkg.key === "full" ? "Best Value" : pkg.key === "table" ? "Tent Card" : pkg.key === "counter" ? "Acrylic" : "Vinyl"}
+                        Current QR product
                       </div>
                       <div style={{ marginTop: 8, fontSize: 24, fontWeight: 800, color: "#101828", letterSpacing: "-0.04em" }}>
                         {pkg.name}
                       </div>
                       <div style={{ marginTop: 6, fontSize: 22, fontWeight: 800, color: "#1f4e3d" }}>
-                        {pkg.key === "table" ? `From ${formatMoney(TABLE_QTY_OPTIONS[0].amountCents)}, qty ${TABLE_QTY_OPTIONS[0].qty}` : formatMoney(pkg.amountCents)}
+                        {formatMoney(TABLE_QTY_OPTIONS[0].amountCents)}
                       </div>
                       <p style={{ margin: "10px 0 0", fontSize: 14, lineHeight: 1.6, color: "#475467" }}>
                         {pkg.description}
                       </p>
                       {pkg.key === "table" && active && (
                         <div style={{ marginTop: 12 }} onClick={(e) => e.stopPropagation()}>
-                          <label style={{ fontSize: 12, fontWeight: 700, color: "#344054", display: "block", marginBottom: 6 }}>Quantity</label>
+                          <label style={{ fontSize: 12, fontWeight: 700, color: "#344054", display: "block", marginBottom: 6 }}>Preset quantity</label>
                           <select
                             value={tableQtyIndex}
                             onChange={(e) => setTableQtyIndex(Number(e.target.value))}
@@ -522,7 +492,7 @@ export default function OperatorQrKitOrder() {
               </div>
               <h3 style={{ margin: "8px 0 0", fontSize: 28, color: "#101828", letterSpacing: "-0.05em" }}>
                 {selectedPackage.name}
-                {packageType === "table" && <span style={{ fontSize: 16, fontWeight: 600, color: "#667085", marginLeft: 8 }}>× {tableQtyOption.qty}</span>}
+                <span style={{ fontSize: 16, fontWeight: 600, color: "#667085", marginLeft: 8 }}>x {tableQtyOption.qty}</span>
               </h3>
               <div style={{ marginTop: 8, fontSize: 34, fontWeight: 800, color: "#1f4e3d", letterSpacing: "-0.05em" }}>
                 {formatMoney(effectiveAmountCents)}
@@ -534,13 +504,11 @@ export default function OperatorQrKitOrder() {
 
             <div style={{ background: "#fff", border: "1px solid #eaecf0", borderRadius: 22, padding: 22 }}>
               <div style={{ fontSize: 12, fontWeight: 800, color: "#667085", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 12 }}>
-                Product options
+                Product
               </div>
               <div style={{ display: "grid", gap: 14 }}>
                 {[
-                  { label: "Door / Window QR Sticker",       img: "/qr-door-preview.png" },
-                  { label: "Acrylic Counter / Table Sign",    img: "/qr-acrylic-sign.png" },
-                  { label: "Table Tent QR Sign",              img: "/qr-table-tent-sign.png" },
+                  { label: "Tabletop QR Sign - 10 pack", img: "/qr-table-tent-sign.png" },
                 ].map(({ label, img }) => (
                   <div key={label} style={{ border: "1px solid #eaecf0", borderRadius: 18, overflow: "hidden", background: "#f8fafc" }}>
                     <img src={img} alt={label} style={{ display: "block", width: "100%", aspectRatio: "4 / 3", objectFit: "cover" }} />

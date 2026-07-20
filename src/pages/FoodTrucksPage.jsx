@@ -170,7 +170,7 @@ export default function FoodTrucksPage() {
             </div>
             <div>
               <Link
-                to="/foodtruck/signup"
+                to="/restaurant/signup"
                 style={{
                   display: "inline-flex",
                   alignItems: "center",

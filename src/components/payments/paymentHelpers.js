@@ -17,7 +17,7 @@ export function formatMoney(cents, currency = "usd") {
 
 export function getQrProductCode(packageType) {
   if (packageType === "full") return "qr_full";
-  if (packageType === "table") return "qr_table";
+  if (packageType === "table") return "QR-TABLE";
   if (packageType === "counter") return "qr_counter";
   return "qr_basic";
 }
