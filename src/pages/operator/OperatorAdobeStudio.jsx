@@ -330,8 +330,7 @@ export default function OperatorAdobeStudio() {
             </h2>
             <p style={{ margin: 0, color: "#566273", lineHeight: 1.6 }}>
               Share your menu anywhere, including Instagram, Google, and your website, and send customers directly to
-              your ordering system. Menuply menu JSON remains the source of truth, so restaurants can choose a preset,
-              pick a variant, and export without rebuilding the menu inside Adobe.
+              your ordering system.
             </p>
           </div>
 
