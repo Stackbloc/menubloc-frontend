@@ -61,6 +61,25 @@ function saveBlob(blob, filename) {
   window.URL.revokeObjectURL(url);
 }
 
+function buildAdobeMenuInput(manifest) {
+  if (!manifest) return "";
+  const lines = [
+    `${manifest.restaurant.restaurant_name}`,
+    `${manifest.variant.name} - ${manifest.selected_menu.name}`,
+    "",
+  ];
+  for (const section of manifest.sections || []) {
+    lines.push(section.name);
+    for (const item of section.items || []) {
+      const price = item.price_display ? ` ${item.price_display}` : "";
+      const description = item.description ? ` - ${item.description}` : "";
+      lines.push(`- ${item.name}${price}${description}`);
+    }
+    lines.push("");
+  }
+  return lines.join("\n").trim();
+}
+
 export default function OperatorAdobeStudio() {
   const { t } = useLanguage();
   const { selectedRestaurant, hasBenefit } = useOperator();
@@ -135,6 +154,7 @@ export default function OperatorAdobeStudio() {
     () => layouts.find((preset) => preset.id === layoutId) || layouts[0] || null,
     [layouts, layoutId]
   );
+  const adobeMenuInput = useMemo(() => buildAdobeMenuInput(manifest), [manifest]);
 
   async function ensureAdobeExpress() {
     if (expressRef.current) return expressRef.current;
@@ -203,6 +223,10 @@ export default function OperatorAdobeStudio() {
   }
 
   async function handleLaunchExpress() {
+    if (!manifest) {
+      setError("Choose a menu and wait for the Adobe manifest to load before opening Adobe Express.");
+      return;
+    }
     setBusy("express");
     setError("");
     setStatus("");
@@ -224,7 +248,7 @@ export default function OperatorAdobeStudio() {
         { id: "download_png", label: "Download PNG", fileType: "png" },
       ];
       await express.editor.create(docConfig, appConfig, exportConfig);
-      setStatus("Adobe Express editor launched.");
+      setStatus("Adobe Express editor launched. Use the Adobe menu input below if you need to paste menu copy into the design.");
     } catch (err) {
       setError(err.message);
     } finally {
@@ -234,6 +258,10 @@ export default function OperatorAdobeStudio() {
 
   async function handleFireflyPrompt() {
     if (!rid || !hasMenus || !menuId) return;
+    if (!manifest) {
+      setError("Choose a menu and wait for the Adobe manifest to load before creating an Instagram asset.");
+      return;
+    }
     setBusy("firefly");
     setError("");
     setStatus("");
@@ -272,6 +300,16 @@ export default function OperatorAdobeStudio() {
       setError(err.message);
     } finally {
       setBusy("");
+    }
+  }
+
+  async function handleCopyMenuInput() {
+    if (!adobeMenuInput) return;
+    try {
+      await navigator.clipboard.writeText(adobeMenuInput);
+      setStatus("Adobe menu input copied.");
+    } catch {
+      setError("Unable to copy menu input. Select the text and copy it manually.");
     }
   }
 
@@ -434,7 +472,7 @@ export default function OperatorAdobeStudio() {
               <button style={BTN("accent")} onClick={handleDocumentExport} disabled={busy !== "" || !hasMenus}>
                 {busy === "document" ? "Generating document…" : "Generate variant PDF"}
               </button>
-              <button style={BTN("ghost")} onClick={handleLaunchExpress} disabled={busy !== ""}>
+              <button style={BTN("ghost")} onClick={handleLaunchExpress} disabled={busy !== "" || !manifest}>
                 {busy === "express" ? "Opening Adobe Express…" : "Open Adobe Express"}
               </button>
               <button style={BTN("ghost")} onClick={handleFireflyPrompt} disabled={busy !== "" || !hasMenus}>
@@ -447,6 +485,35 @@ export default function OperatorAdobeStudio() {
               </div>
             )}
           </div>
+
+          {manifest && (
+            <div style={{ background: "#fff", border: "1px solid #d8e2ef", borderRadius: 18, padding: 18, marginBottom: 18 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                <div style={{ fontSize: 13, fontWeight: 800, color: "#112031" }}>Adobe menu input</div>
+                <button type="button" style={BTN("ghost")} onClick={handleCopyMenuInput}>
+                  Copy
+                </button>
+              </div>
+              <textarea
+                value={adobeMenuInput}
+                readOnly
+                rows={8}
+                style={{
+                  width: "100%",
+                  boxSizing: "border-box",
+                  border: "1px solid #d5dde8",
+                  borderRadius: 12,
+                  padding: 12,
+                  fontSize: 12,
+                  lineHeight: 1.45,
+                  color: "#112031",
+                  background: "#f8fafc",
+                  resize: "vertical",
+                  fontFamily: "inherit",
+                }}
+              />
+            </div>
+          )}
 
           <div style={{ background: "#fff", border: "1px solid #d8e2ef", borderRadius: 18, padding: 18, marginBottom: 18 }}>
             <div style={{ fontSize: 13, fontWeight: 800, color: "#112031", marginBottom: 10 }}>Adobe product fit</div>
