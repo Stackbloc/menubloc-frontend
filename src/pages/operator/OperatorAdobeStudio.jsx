@@ -155,6 +155,7 @@ export default function OperatorAdobeStudio() {
     [layouts, layoutId]
   );
   const adobeMenuInput = useMemo(() => buildAdobeMenuInput(manifest), [manifest]);
+  const adobeExpressConfigured = Boolean(config?.adobe?.express_embed?.configured);
 
   async function ensureAdobeExpress() {
     if (expressRef.current) return expressRef.current;
@@ -231,6 +232,17 @@ export default function OperatorAdobeStudio() {
     setError("");
     setStatus("");
     try {
+      if (!adobeExpressConfigured) {
+        if (adobeMenuInput && navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(adobeMenuInput);
+          setStatus("Adobe menu input copied. Adobe Express opened in a new tab so you can paste the menu into your design.");
+        } else {
+          setStatus("Adobe Express opened in a new tab. Use the Adobe menu input below if you need to paste menu copy into the design.");
+        }
+        window.open("https://new.express.adobe.com/", "_blank", "noopener,noreferrer");
+        return;
+      }
+
       const express = await ensureAdobeExpress();
       const docConfig = {
         canvasSize: selectedLayout?.canvas_size || "Letter",
@@ -274,7 +286,13 @@ export default function OperatorAdobeStudio() {
       setSocialPrompt(payload.social || null);
 
       if (!payload.adobe?.express_embed?.configured) {
-        setStatus("Instagram asset prompt generated. Adobe Express Embed is not configured for this deployment.");
+        if (payload.social?.prompt_text && navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(payload.social.prompt_text);
+          setStatus("Instagram prompt copied. Adobe Express opened in a new tab so you can create and share the asset.");
+        } else {
+          setStatus("Instagram prompt generated. Adobe Express opened in a new tab so you can create and share the asset.");
+        }
+        window.open("https://new.express.adobe.com/", "_blank", "noopener,noreferrer");
         return;
       }
 
