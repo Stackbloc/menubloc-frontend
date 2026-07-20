@@ -4,7 +4,7 @@ Clarify Menu Worksheet bulk price scope and ship related operator worksheet UX (
 
 # Current Status
 
-**LOCAL COMPLETE** — contract tests pass; commit/deploy not done.
+**CPD COMPLETE** — FE feature `a6a68e0` / docs stamp `024eba8`; live bundle `index-CZl_kssF.js`; BE `8be95e70` on `main`.
 
 # Files Changed
 
@@ -16,6 +16,7 @@ Clarify Menu Worksheet bulk price scope and ship related operator worksheet UX (
 - `menubloc-backend/src/services/menus/menuWorksheetService.js`
 - `menubloc-backend/test/menuWorksheetService.test.js`
 - `docs/audits/2026-07-20_menu-worksheet-bulk-row-abc-ux.md`
+- `docs/deployments/2026-07-20_menu-worksheet-bulk-row-abc-ux-cpd.md`
 
 # Database Changes
 
@@ -31,9 +32,8 @@ None.
 
 # Remaining Work
 
-1. User review in operator UI.
-2. Commit when asked; CPD if requested.
-3. Optional: DB columns for price alt labels.
+1. Human verify on menuply.com operator worksheet.
+2. Optional: DB columns for price alt labels.
 
 # Risks / Known Issues
 
@@ -42,16 +42,16 @@ None.
 
 # Verification Status
 
-- FE MenuWorksheet contract: 12 pass
+- FE MenuWorksheet contract: 12 pass (pre-commit)
 - BE menuWorksheetService helpers: 8 pass
+- Live bundle `index-CZl_kssF.js`; API scan Railway 59 / localhost 6
+- Railway health 200 after BE push
 
 # Resume Instructions
 
-1. Open `/operator/restaurants/:id/menus/:menuId/worksheet`
-2. Confirm bulk dropdown: All rows / Row A / Row B / Row C; no checkboxes
-3. Confirm KB starts closed; side-panel icon reopens
-4. If shipping: commit FE (+ BE helper parity) then CPD
+Human: open Menu Worksheet on production and confirm bulk dropdown + KB closed default.
 
 # Git Status
 
-Uncommitted local changes in FE + BE helper; do not CPD until user requests.
+- FE: `a6a68e0` (feature) + `024eba8` (docs stamp) on `feature/mds-homepage-controls` (pushed)
+- BE: `8be95e70` on `main` (pushed)
