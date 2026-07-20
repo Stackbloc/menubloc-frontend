@@ -33,7 +33,7 @@ const COLORS = {
   warnBg: "#fffbeb",
 };
 
-function moneyInput(value, onChange) {
+function moneyInput(value, onChange, { onBlur } = {}) {
   return (
     <input
       type="number"
@@ -44,6 +44,7 @@ function moneyInput(value, onChange) {
         const v = e.target.value;
         onChange(v === "" ? null : Number(v));
       }}
+      onBlur={onBlur}
       style={cellInputStyle}
     />
   );
@@ -105,12 +106,19 @@ export default function MenuWorksheet({
     readPriceAltLabels(restaurantId, menuId)
   );
   const [canUndo, setCanUndo] = useState(false);
-  const historyRef = useRef([]);
+  const [canRedo, setCanRedo] = useState(false);
+  const undoStackRef = useRef([]);
+  const redoStackRef = useRef([]);
+  /** Coalesce per-keystroke edits into one undo step: `${rowId}:${field}` */
+  const editingCellRef = useRef(null);
 
   useEffect(() => {
     setPriceAlts(readPriceAltLabels(restaurantId, menuId));
-    historyRef.current = [];
+    undoStackRef.current = [];
+    redoStackRef.current = [];
+    editingCellRef.current = null;
     setCanUndo(false);
+    setCanRedo(false);
   }, [restaurantId, menuId]);
 
   const sectionOptions = useMemo(() => {
@@ -122,34 +130,83 @@ export default function MenuWorksheet({
     return fromRows;
   }, [sections, rows, sectionDrafts]);
 
-  function pushHistory() {
-    historyRef.current.push({
+  function snapshotState() {
+    return {
       rows: JSON.parse(JSON.stringify(rows)),
       sections: [...sections],
-    });
-    if (historyRef.current.length > 40) historyRef.current.shift();
+    };
+  }
+
+  function pushUndoSnapshot(snapshot) {
+    undoStackRef.current.push(snapshot);
+    if (undoStackRef.current.length > 40) undoStackRef.current.shift();
     setCanUndo(true);
   }
 
+  function clearRedo() {
+    redoStackRef.current = [];
+    setCanRedo(false);
+  }
+
+  function endCellEdit() {
+    editingCellRef.current = null;
+  }
+
+  /**
+   * Push history once per focused cell edit session so undo restores the
+   * entire previous cell value (not each keystroke/digit).
+   */
+  function ensureHistoryForCell(rowId, field) {
+    const key = `${rowId}:${field}`;
+    if (editingCellRef.current === key) return;
+    editingCellRef.current = key;
+    pushUndoSnapshot(snapshotState());
+    clearRedo();
+  }
+
+  function applyRows(nextRows, nextSections) {
+    onChange(nextRows, nextSections);
+  }
+
   function handleUndo() {
-    const prev = historyRef.current.pop();
+    const prev = undoStackRef.current.pop();
     if (!prev) {
       setCanUndo(false);
       return;
     }
-    onChange(prev.rows, prev.sections);
-    setCanUndo(historyRef.current.length > 0);
+    editingCellRef.current = null;
+    redoStackRef.current.push(snapshotState());
+    setCanRedo(true);
+    setCanUndo(undoStackRef.current.length > 0);
+    applyRows(prev.rows, prev.sections);
   }
 
+  function handleRedo() {
+    const next = redoStackRef.current.pop();
+    if (!next) {
+      setCanRedo(false);
+      return;
+    }
+    editingCellRef.current = null;
+    pushUndoSnapshot(snapshotState());
+    setCanRedo(redoStackRef.current.length > 0);
+    applyRows(next.rows, next.sections);
+  }
+
+  /** Immediate commit (bulk tools, section picks) — one undo step. */
   function commitChange(nextRows, nextSections) {
-    pushHistory();
-    onChange(nextRows, nextSections);
+    editingCellRef.current = null;
+    pushUndoSnapshot(snapshotState());
+    clearRedo();
+    applyRows(nextRows, nextSections);
   }
 
-  function updateRow(id, patch) {
+  function updateRow(id, patch, fieldKey = null) {
+    const field = fieldKey || Object.keys(patch)[0] || "cell";
+    ensureHistoryForCell(id, field);
     const next = rows.map((r) => (Number(r.id) === Number(id) ? { ...r, ...patch } : r));
     const nextSections = deriveSectionList(next.map((r) => r.section_name));
-    commitChange(next, nextSections);
+    applyRows(next, nextSections);
   }
 
   function runBulk(mode) {
@@ -214,15 +271,28 @@ export default function MenuWorksheet({
             {statusLabel}
           </div>
         </div>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
           <button
             type="button"
             onClick={handleUndo}
             disabled={!canUndo || saving || publishing}
-            style={btnSecondary}
+            style={btnIcon}
             data-testid="worksheet-undo"
+            aria-label="Undo"
+            title="Undo"
           >
-            Undo
+            ↶
+          </button>
+          <button
+            type="button"
+            onClick={handleRedo}
+            disabled={!canRedo || saving || publishing}
+            style={btnIcon}
+            data-testid="worksheet-redo"
+            aria-label="Redo"
+            title="Redo"
+          >
+            ↷
           </button>
           <button
             type="button"
@@ -425,7 +495,8 @@ export default function MenuWorksheet({
                     <td style={tdStyle}>
                       <input
                         value={row.item_name || ""}
-                        onChange={(e) => updateRow(id, { item_name: e.target.value })}
+                        onChange={(e) => updateRow(id, { item_name: e.target.value }, "item_name")}
+                        onBlur={endCellEdit}
                         style={cellInputStyle}
                         aria-label="Menu item"
                       />
@@ -445,7 +516,13 @@ export default function MenuWorksheet({
                         }
                         onCommit={(raw) => {
                           const canonical = resolveSectionCanonical(raw, sectionOptions);
-                          updateRow(id, { section_name: canonical });
+                          const next = rows.map((r) =>
+                            Number(r.id) === Number(id) ? { ...r, section_name: canonical } : r
+                          );
+                          commitChange(
+                            next,
+                            deriveSectionList(next.map((r) => r.section_name))
+                          );
                           setSectionDrafts((prev) => {
                             const n = { ...prev };
                             delete n[id];
@@ -457,17 +534,42 @@ export default function MenuWorksheet({
                     <td style={tdStyle}>
                       <textarea
                         value={row.description || ""}
-                        onChange={(e) => updateRow(id, { description: e.target.value })}
+                        onChange={(e) =>
+                          updateRow(id, { description: e.target.value }, "description")
+                        }
+                        onBlur={endCellEdit}
                         rows={3}
                         style={{ ...cellInputStyle, resize: "vertical", minHeight: 64 }}
                         aria-label="Description"
                       />
                     </td>
-                    <td style={tdStyle}>{moneyInput(row.price_a, (v) => updateRow(id, { price_a: v }))}</td>
-                    <td style={tdStyle}>{moneyInput(row.price_b, (v) => updateRow(id, { price_b: v }))}</td>
-                    <td style={tdStyle}>{moneyInput(row.price_c, (v) => updateRow(id, { price_c: v }))}</td>
                     <td style={tdStyle}>
-                      {moneyInput(row.menuply_price, (v) => updateRow(id, { menuply_price: v }))}
+                      {moneyInput(
+                        row.price_a,
+                        (v) => updateRow(id, { price_a: v }, "price_a"),
+                        { onBlur: endCellEdit }
+                      )}
+                    </td>
+                    <td style={tdStyle}>
+                      {moneyInput(
+                        row.price_b,
+                        (v) => updateRow(id, { price_b: v }, "price_b"),
+                        { onBlur: endCellEdit }
+                      )}
+                    </td>
+                    <td style={tdStyle}>
+                      {moneyInput(
+                        row.price_c,
+                        (v) => updateRow(id, { price_c: v }, "price_c"),
+                        { onBlur: endCellEdit }
+                      )}
+                    </td>
+                    <td style={tdStyle}>
+                      {moneyInput(
+                        row.menuply_price,
+                        (v) => updateRow(id, { menuply_price: v }, "menuply_price"),
+                        { onBlur: endCellEdit }
+                      )}
                     </td>
                   </tr>
                 );
@@ -591,6 +693,14 @@ const btnSecondary = {
   fontWeight: 700,
   fontSize: 14,
   cursor: "pointer",
+};
+
+const btnIcon = {
+  ...btnSecondary,
+  padding: "8px 12px",
+  fontSize: 18,
+  lineHeight: 1,
+  minWidth: 42,
 };
 
 const btnTiny = {

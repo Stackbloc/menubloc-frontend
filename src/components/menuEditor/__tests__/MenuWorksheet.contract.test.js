@@ -97,6 +97,10 @@ describe("Menu Worksheet UI contract", () => {
     expect(src).not.toMatch(/Selected rows/);
     expect(src).not.toMatch(/toggleSelect|Select all rows/);
     expect(src).toMatch(/data-testid="worksheet-undo"/);
+    expect(src).toMatch(/data-testid="worksheet-redo"/);
+    expect(src).toMatch(/ensureHistoryForCell/);
+    expect(src).toMatch(/↶/);
+    expect(src).toMatch(/↷/);
     expect(src).toMatch(/Alt name/);
   });
 
