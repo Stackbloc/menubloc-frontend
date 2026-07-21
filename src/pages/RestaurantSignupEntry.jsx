@@ -244,6 +244,22 @@ const styles = {
     flexDirection: "column",
     gap: 4,
   },
+  billingOrDivider: {
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+    fontSize: 12,
+    fontWeight: 900,
+    letterSpacing: 0,
+    textTransform: "uppercase",
+    opacity: 0.72,
+  },
+  billingOrRule: {
+    height: 1,
+    flex: 1,
+    background: "currentColor",
+    opacity: 0.24,
+  },
   priceLabel: {
     fontSize: 12,
     fontWeight: 800,
@@ -499,10 +515,19 @@ function PlanPrice({ plan }) {
   if (Array.isArray(plan.intervals) && plan.intervals.length > 0) {
     return (
       <div style={styles.priceBlock}>
-        {plan.intervals.map((interval) => (
-          <div key={interval.key} style={styles.priceRow}>
-            <span style={styles.priceLabel}>{interval.label}</span>
-            <span style={styles.priceValue}>{interval.price}</span>
+        {plan.intervals.map((interval, index) => (
+          <div key={interval.key}>
+            {index > 0 ? (
+              <div style={{ ...styles.billingOrDivider, marginBottom: 14 }} aria-hidden="true">
+                <span style={styles.billingOrRule} />
+                <span>OR</span>
+                <span style={styles.billingOrRule} />
+              </div>
+            ) : null}
+            <div style={styles.priceRow}>
+              <span style={styles.priceLabel}>{interval.label}</span>
+              <span style={styles.priceValue}>{interval.price}</span>
+            </div>
           </div>
         ))}
         <div style={styles.priceHint}>Billing period is chosen on the next step.</div>
@@ -739,23 +764,31 @@ export default function RestaurantSignupEntry() {
             </div>
 
             <div style={styles.cadenceOptions} role="radiogroup" aria-label="Billing period">
-              {pendingPlan.intervals.map((interval) => {
+              {pendingPlan.intervals.map((interval, index) => {
                 const active = billingInterval === interval.key;
                 const priceDisplay = String(interval.price || "")
                   .replace("/month", " per month")
                   .replace("/year", " per year");
                 return (
-                  <button
-                    key={interval.key}
-                    type="button"
-                    role="radio"
-                    aria-checked={active}
-                    style={styles.cadenceOption(active)}
-                    onClick={() => setBillingInterval(interval.key)}
-                  >
-                    <span style={styles.cadenceOptionLabel}>{interval.label}</span>
-                    <span style={styles.cadenceOptionPrice}>{priceDisplay}</span>
-                  </button>
+                  <div key={interval.key}>
+                    {index > 0 ? (
+                      <div style={{ ...styles.billingOrDivider, margin: "0 0 14px" }} aria-hidden="true">
+                        <span style={styles.billingOrRule} />
+                        <span>OR</span>
+                        <span style={styles.billingOrRule} />
+                      </div>
+                    ) : null}
+                    <button
+                      type="button"
+                      role="radio"
+                      aria-checked={active}
+                      style={styles.cadenceOption(active)}
+                      onClick={() => setBillingInterval(interval.key)}
+                    >
+                      <span style={styles.cadenceOptionLabel}>{interval.label}</span>
+                      <span style={styles.cadenceOptionPrice}>{priceDisplay}</span>
+                    </button>
+                  </div>
                 );
               })}
             </div>
