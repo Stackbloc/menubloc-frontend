@@ -31,7 +31,7 @@ describe("fetchRestaurantClaimPlans", () => {
         json: async () => ({
           ok: true,
           plans: [
-            { code: "published_free", public_name: "Starter", amount_cents: 0 },
+            { code: "published_free", public_name: "Standard", amount_cents: 0 },
             { code: "starter_monthly", public_name: "Pro", amount_cents: 2000 },
           ],
         }),

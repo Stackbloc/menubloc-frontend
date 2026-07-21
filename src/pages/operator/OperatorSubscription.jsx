@@ -256,11 +256,11 @@ export default function OperatorSubscription() {
     }
     try {
       await api.cancelPlatformSubscription({ restaurantId: selectedRestaurant.id, atPeriodEnd: true });
-      setMessage("Starter selected. Your menu and data are preserved.");
+      setMessage("Standard selected. Your menu and data are preserved.");
       await refreshSubscription();
       setTimeout(() => navigate("/operator/menulab"), 1500);
     } catch (err) {
-      setError(err.message || "Unable to switch to Starter.");
+      setError(err.message || "Unable to switch to Standard.");
     }
   }
 
@@ -408,7 +408,7 @@ export default function OperatorSubscription() {
                 style={{ ...planCard("#f8faf9", "#d1e7dd", selectedPlanCode === FREE_PLAN_CODE), cursor: "pointer" }}
               >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                  <span style={{ fontSize: 16, fontWeight: 800, color: GREEN }}>Starter</span>
+                  <span style={{ fontSize: 16, fontWeight: 800, color: GREEN }}>Standard</span>
                   {hasPublishedAccess && <span style={currentBadge(GREEN)}>Current access</span>}
                 </div>
                 <div
@@ -447,10 +447,10 @@ export default function OperatorSubscription() {
                   ))}
                 </ul>
                 <button type="button" style={hasPublishedAccess ? planBtn("primary", GREEN) : planBtn("muted", GREEN)} onClick={handleSelectPublished} disabled={isCheckingOut}>
-                  Select Starter
+                  Select Standard
                 </button>
                 <p style={{ margin: 0, fontSize: 11, color: "#8a9ab0", textAlign: "center" }}>
-                  Starter activates without Stripe checkout.
+                  Standard activates without Stripe checkout.
                 </p>
               </div>
 

@@ -74,7 +74,7 @@ function getPlanTier(planCode) {
 }
 
 function getPlanDisplayName(planCode) {
-  if (!planCode || planCode === "verified" || planCode === "published_free") return "Starter";
+  if (!planCode || planCode === "verified" || planCode === "published_free") return "Standard";
   if (planCode === "starter_monthly") return "Pro — Monthly";
   if (planCode === "starter_annual") return "Pro — Annual";
   if (planCode === "pro_monthly") return "Pro Partner — Monthly";
@@ -650,7 +650,7 @@ export default function OperatorMyAccount() {
                     <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid #f0f4f8" }}>
                       <p style={{ margin: "0 0 12px", fontSize: 13, color: "#374151", lineHeight: 1.5 }}>
                         Your plan stays active until <strong>{nextBillingDate}</strong>, then switches to
-                        Starter (free).
+                        Standard (free).
                       </p>
                       <div style={{ display: "flex", gap: 10 }}>
                         <button

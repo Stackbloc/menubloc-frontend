@@ -5,7 +5,7 @@
  * Date:    2026-05-06
  * Purpose:
  *   Onboarding step 2 — choose a restaurant plan after account
- *   creation. Starter stays free, Pro uses Stripe
+ *   creation. Standard stays free, Pro uses Stripe
  *   checkout, and the Founders plan uses annual Stripe checkout.
  * ============================================================
  */
@@ -46,9 +46,9 @@ const API = (
 const POST_PLAN_PAYMENT_ROUTE = "/restaurant/onboarding/information";
 
 const PLAN_LABELS = {
-  [FREE_PLAN_CODE]: "Starter",
-  verified: "Starter",
-  published_free: "Starter",
+  [FREE_PLAN_CODE]: "Standard",
+  verified: "Standard",
+  published_free: "Standard",
   founders_monthly: "Founder's",
   founders_annual: "Founder's",
   starter_monthly: "Pro",
@@ -84,7 +84,7 @@ const OPTIONAL_ONBOARDING_MODULES = [
 
 const PLAN_CARDS = {
   [FREE_PLAN_CODE]: {
-    title: "Starter",
+    title: "Standard",
     price: CHECKOUT_PRICE_LABELS[FREE_PLAN_CODE],
     description: "A simple published restaurant presence with public menu access on Menuply.",
     commissionPlanCode: FREE_PLAN_CODE,
@@ -103,7 +103,7 @@ const PLAN_CARDS = {
       "Professional Menuply tools for growing restaurants — profiles, menus, QR Code, and online ordering.",
     commissionPlanCode: "starter_annual",
     features: [
-      "All Starter benefits, plus logo and product photos",
+      "All Standard benefits, plus logo and product photos",
       "Unlimited menus and menu items",
       "QR Code and social sharing",
       "Online ordering",
@@ -980,8 +980,8 @@ export default function SubscriptionSelect() {
 
         <section style={s.cardsGrid}>
           <article style={s.planCard(false)}>
-            <div style={s.planEyebrow}>Starter</div>
-            <div style={s.planName}>Starter</div>
+            <div style={s.planEyebrow}>Standard</div>
+            <div style={s.planName}>Standard</div>
             <div style={s.planDesc}>
               {publishedCard.description}
             </div>
@@ -1000,7 +1000,7 @@ export default function SubscriptionSelect() {
             </ul>
 
             <button type="button" style={s.button(false, false)} onClick={choosePublished}>
-              {isPublishedSelected ? "Continue with Starter" : "Choose Starter"}
+              {isPublishedSelected ? "Continue with Standard" : "Choose Standard"}
             </button>
           </article>
 

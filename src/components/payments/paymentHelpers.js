@@ -33,7 +33,7 @@ export function getQrProductCode(packageTypeOrSku) {
 export function getSubscriptionPlanLabel(planCode) {
   // menu_manager_monthly / pro_* retained for legacy historical rows only.
   if (planCode === "menu_manager_monthly") return "Menu Manager";
-  if (planCode === "published_free" || planCode === "verified") return "Starter";
+  if (planCode === "published_free" || planCode === "verified") return "Standard";
   if (planCode === "starter_monthly") return "Pro Monthly";
   if (planCode === "starter_annual") return "Pro Annual";
   if (planCode === "founders_monthly") return "Founder's Monthly";

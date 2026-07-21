@@ -7,7 +7,7 @@ export default function Slide22SocialProof() {
   return (
     <FullBleedGraphic
       src={graphic}
-      alt="Grow your restaurant your way — Starter, Pro, and Founders plans."
+      alt="Grow your restaurant your way — Standard, Pro, and Founders plans."
       background={PRESENTATION_THEME.white}
     />
   );

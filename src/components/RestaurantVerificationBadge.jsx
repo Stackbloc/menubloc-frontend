@@ -10,13 +10,13 @@ const BADGE_PALETTE = {
 };
 
 function resolveBadgeLabel(tone) {
-  if (tone === "green") return "LIVE";
-  if (tone === "yellow") return "VERIFIED";
-  return "PEND";
+  if (tone === "green") return "SUBSCRIBER";
+  if (tone === "yellow") return "STANDARD";
+  return "NONSUBSCRIBER";
 }
 
 /**
- * Inline verification pill — dull red PEND, yellow VERIFIED, green LIVE.
+ * Inline restaurant status pill — red nonsubscriber, yellow Standard, green subscriber.
  * Placed immediately after the restaurant name.
  */
 export default function RestaurantVerificationBadge({
@@ -58,10 +58,10 @@ export default function RestaurantVerificationBadge({
     <span
       aria-label={
         resolvedTone === "green"
-          ? "Paid restaurant with online ordering"
+          ? "Subscriber restaurant with online ordering"
           : resolvedTone === "yellow"
-            ? "Verified restaurant"
-            : "Pending verification"
+            ? "Standard restaurant without online ordering"
+            : "Nonsubscriber restaurant without online ordering"
       }
       style={{
         display: "inline-flex",

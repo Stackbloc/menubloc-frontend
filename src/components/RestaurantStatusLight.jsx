@@ -41,10 +41,10 @@ export default function RestaurantStatusLight({
 
   const defaultAriaLabel =
     resolvedTone === "green"
-      ? "Paid restaurant with online ordering"
+      ? "Subscriber restaurant with online ordering"
       : resolvedTone === "yellow"
-        ? "Verified restaurant"
-        : "Pending verification";
+        ? "Standard restaurant without online ordering"
+        : "Nonsubscriber restaurant without online ordering";
 
   return (
     <span

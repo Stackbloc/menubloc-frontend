@@ -21,6 +21,8 @@ test("payment helpers format platform product display values", () => {
   assert.equal(getQrProductCode("counter"), "QR-COUNTER");
   assert.equal(getQrProductCode("full"), "full");
   assert.equal(getQrProductCode("QR-TABLE"), "QR-TABLE");
+  assert.equal(getSubscriptionPlanLabel("published_free"), "Standard");
+  assert.equal(getSubscriptionPlanLabel("verified"), "Standard");
   assert.equal(getSubscriptionPlanLabel("pro_monthly"), "Pro Monthly");
   assert.equal(getSubscriptionPlanLabel("pro_annual"), "Pro Annual");
   assert.equal(getSubscriptionStatusLabel("past_due"), "past due");

@@ -25,7 +25,7 @@ describe("menuplyCheckoutPlans canonical checkout contract", () => {
     sessionStorage.clear();
   });
 
-  it("maps Starter Monthly checkout to starter_monthly only", () => {
+  it("maps Pro Monthly checkout to starter_monthly only", () => {
     const body = buildOperatorStripeCheckoutBody({
       restaurantId: "r1",
       planCode: "starter_monthly",
@@ -40,7 +40,7 @@ describe("menuplyCheckoutPlans canonical checkout contract", () => {
     });
   });
 
-  it("maps Starter Annual checkout to starter_annual only", () => {
+  it("maps Pro Annual checkout to starter_annual only", () => {
     const body = buildOwnerStripeCheckoutBody({
       restaurantId: "r1",
       ownerToken: "tok",
@@ -149,6 +149,11 @@ describe("menuplyCheckoutPlans canonical checkout contract", () => {
     expect(FALLBACK_CHECKOUT_PLANS.find((p) => p.code === "starter_annual").commission_rate_bps).toBe(
       1100
     );
+  });
+
+  it("uses Standard as the free plan display name", () => {
+    const standard = FALLBACK_CHECKOUT_PLANS.find((p) => p.code === FREE_PLAN_CODE);
+    expect(standard.checkout_label).toBe("Standard");
   });
 
   it("displays Founder's Annual as $319, not $299", () => {

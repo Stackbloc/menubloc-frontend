@@ -30,10 +30,10 @@ const SIGNUP_PLAN_OPTIONS = [
   {
     code: FREE_PLAN_CODE,
     family: "published",
-    name: "Starter",
+    name: "Standard",
     price: CHECKOUT_PRICE_LABELS[FREE_PLAN_CODE],
     description: "A simple published restaurant presence with public menu access on Menuply.",
-    cta: "Select Starter",
+    cta: "Select Standard",
     tone: "default",
     commissionPlanCode: FREE_PLAN_CODE,
     features: [
@@ -61,9 +61,9 @@ const SIGNUP_PLAN_OPTIONS = [
       { key: "annual", code: "starter_annual", label: "Annual", price: CHECKOUT_PRICE_LABELS.starter_annual },
     ],
     features: [
-      "All Starter benefits, plus logo and product photos",
+      "All Standard benefits, plus logo and product photos",
       "Unlimited menus and menu items",
-      "QR Code and social sharing",
+      "Social sharing",
       "Online ordering",
       "Customers can follow your restaurant",
     ],

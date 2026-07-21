@@ -26,7 +26,7 @@ const FEATURES = [
 const PLAN_COLUMNS = [
   {
     key: "published",
-    name: "Starter",
+    name: "Standard",
     commission: "No order commission",
     prices: ["Free"],
     nameColor: GREEN,
