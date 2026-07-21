@@ -8,7 +8,6 @@ import RestaurantStatusBannerStrip from "./RestaurantStatusBannerStrip.jsx";
 import RestaurantProfileMenuPreview from "./RestaurantProfileMenuPreview.jsx";
 import FollowRestaurantButton from "../FollowRestaurantButton.jsx";
 import ShareButton from "../share/ShareButton.jsx";
-import RestaurantStatusLight from "../RestaurantStatusLight.jsx";
 import {
   MENU_ROW_HEADER_ICON_GAP,
   MENU_ROW_ICON_SIZE,
@@ -65,8 +64,6 @@ function IdentityBlock({
   streetAddr,
   directionsUrl,
   logoUrl,
-  tierLabel,
-  statusLightProps,
   restaurantId,
   shareData,
   shareAnalytics,
@@ -123,10 +120,6 @@ function IdentityBlock({
             >
               {name}
             </h1>
-            {statusLightProps ? <RestaurantStatusLight {...statusLightProps} size={7} /> : null}
-            {tierLabel ? (
-              <span style={{ fontSize: 13, fontWeight: 600, color: muted, flexShrink: 0 }}>{tierLabel}</span>
-            ) : null}
           </div>
           {restaurantId || shareData ? (
             <div
@@ -226,8 +219,6 @@ export default function RestaurantPublicEditorial({
   landmarks,
   logoUrl,
   bannerPhotoUrl,
-  tierLabel,
-  statusLightProps,
   restaurantId,
   shareData,
   shareAnalytics,
@@ -238,6 +229,7 @@ export default function RestaurantPublicEditorial({
   displayCluster,
   statusBanners,
   statusEventPresentations,
+  menuInformationPanel,
   isMobile,
 }) {
   const hasStatus =
@@ -254,8 +246,6 @@ export default function RestaurantPublicEditorial({
     streetAddr,
     directionsUrl,
     logoUrl,
-    tierLabel,
-    statusLightProps,
     restaurantId,
     shareData,
     shareAnalytics,
@@ -330,6 +320,7 @@ export default function RestaurantPublicEditorial({
           }}
         >
           <div style={{ minWidth: 0, paddingRight: isMobile ? 0 : 8 }}>
+            {menuInformationPanel}
             <Section title="About">{aboutText || null}</Section>
             <Section title="Featured dish">{featuredText || null}</Section>
 

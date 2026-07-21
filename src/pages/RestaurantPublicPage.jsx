@@ -42,8 +42,6 @@ import { trackRestaurantView } from "../lib/analytics.js";
 import { sendPageVisit } from "../lib/analyticsPageVisitSend.js";
 import { getLocalizedField } from "../utils/getLocalizedField.js";
 import { getDisplayMenuItemName } from "../utils/getDisplayMenuItemName.js";
-import RestaurantStatusLight from "../components/RestaurantStatusLight.jsx";
-import { buildRestaurantStatusLightProps } from "../lib/restaurantStatusLight.js";
 import ShareButton from "../components/share/ShareButton.jsx";
 import { buildRestaurantShareData } from "../components/share/shareUtils.js";
 import FollowRestaurantButton from "../components/FollowRestaurantButton.jsx";
@@ -82,39 +80,6 @@ function buildGoogleMapsDirectionsUrl(destination) {
   const s = String(destination || "").trim();
   if (!s) return "";
   return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(s)}`;
-}
-
-function normalizeTier(profileTier, listingStatus) {
-  for (const v of [profileTier, listingStatus]) {
-    const s = String(v || "").toLowerCase();
-    if (s.includes("pro") || s.includes("founder")) return "pro";
-    if (s.includes("verified")) return "verified";
-  }
-  return "";
-}
-
-/** Resolve public profile visual tier from explicit tier or paid plan signals. */
-function resolvePublicProfileTier(data) {
-  const explicit = normalizeTier(data?.profile_tier, data?.listing_status);
-  if (explicit) return explicit;
-  if (data?.is_pro === true || data?.menu_presentation?.is_pro === true) return "pro";
-  const plan = String(
-    data?.menu_presentation?.plan_slug ||
-      data?.plan_slug ||
-      data?.subscription_plan ||
-      data?.subscription_plan_code ||
-      ""
-  ).toLowerCase();
-  if (
-    plan.includes("founder") ||
-    plan === "pro" ||
-    plan === "enterprise" ||
-    plan.startsWith("founders_")
-  ) {
-    return "pro";
-  }
-  if (plan.includes("verified") || plan.includes("starter")) return "verified";
-  return "";
 }
 
 function normalizeClaimStatus(v) {
@@ -179,6 +144,92 @@ function fieldHasValue(value) {
     return Boolean(String(value).trim());
   }
   return true;
+}
+
+function formatProfileUpdatedDate(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function resolveProfileLastUpdated(data) {
+  return (
+    data?.menu_last_updated_at ||
+    data?.menu_updated_at ||
+    data?.menu_last_verified_at ||
+    data?.updated_at ||
+    data?.menu_presentation?.menu_last_updated_at ||
+    data?.menu_presentation?.menu_last_verified_at ||
+    ""
+  );
+}
+
+function hasOnlineOrderingCapability(data) {
+  return (
+    data?.ordering_enabled === true &&
+    String(data?.order_acceptance_status || data?.menu_presentation?.order_acceptance_status || "")
+      .trim()
+      .toLowerCase() === "accepting_orders"
+  );
+}
+
+function MenuInformationPanel({
+  managed,
+  lastUpdated,
+  orderingAvailable,
+  claimAction = null,
+  isDark = false,
+}) {
+  const formatted = formatProfileUpdatedDate(lastUpdated);
+  const border = isDark ? "1px solid rgba(255,255,255,0.10)" : "1px solid #e4e9f0";
+  const bg = isDark ? "rgba(15,23,42,0.72)" : "#ffffff";
+  const ink = isDark ? "#f8fafc" : "#0f172a";
+  const muted = isDark ? "rgba(255,255,255,0.68)" : "#64748b";
+
+  return (
+    <section
+      aria-label="Menu information"
+      style={{
+        border,
+        background: bg,
+        borderRadius: 12,
+        padding: 16,
+        marginBottom: 20,
+      }}
+    >
+      <div
+        style={{
+          fontSize: 12,
+          fontWeight: 800,
+          letterSpacing: 0.7,
+          textTransform: "uppercase",
+          color: muted,
+          marginBottom: 8,
+        }}
+      >
+        Menu Information
+      </div>
+      <p style={{ margin: 0, fontSize: 14, lineHeight: 1.55, color: ink }}>
+        {managed
+          ? "This restaurant manages its menu and profile."
+          : "This menu has not yet been claimed or managed by the restaurant."}
+      </p>
+      {formatted ? (
+        <div style={{ marginTop: 10, fontSize: 13, color: muted }}>
+          Last Updated: {formatted}
+        </div>
+      ) : null}
+      <div style={{ marginTop: 12, fontSize: 13, fontWeight: 800, color: orderingAvailable ? "#166534" : muted }}>
+        {orderingAvailable ? "✓ Order Direct · Ordering Available" : "Ordering Not Available"}
+      </div>
+      {claimAction ? <div style={{ marginTop: 14 }}>{claimAction}</div> : null}
+    </section>
+  );
 }
 
 function FieldRow({ label, value, placeholder, isDark }) {
@@ -368,8 +419,6 @@ function UnclaimedRestaurantPage({ data, isDark, slugOrId }) {
         state: stateVal,
       })
     : null;
-  const unclaimedStatusLightProps = buildRestaurantStatusLightProps(data);
-
   if (showBrandSplash) {
     return <UnclaimedRestaurantBrandSplash name={name} isDark={isDark} />;
   }
@@ -446,8 +495,6 @@ function UnclaimedRestaurantPage({ data, isDark, slugOrId }) {
                 {name}
               </h1>
 
-              <RestaurantStatusLight {...unclaimedStatusLightProps} size={7} />
-
               {data?.id || restaurantShareData ? (
                 <div
                   style={{
@@ -498,6 +545,33 @@ function UnclaimedRestaurantPage({ data, isDark, slugOrId }) {
           </div>
 
           <div style={{ padding: isMobile ? "8px 16px 24px" : "8px 24px 24px" }}>
+            <MenuInformationPanel
+              managed={false}
+              lastUpdated={resolveProfileLastUpdated(data)}
+              orderingAvailable={hasOnlineOrderingCapability(data)}
+              isDark={isDark}
+              claimAction={
+                <Link
+                  to="/onboarding"
+                  state={claimPrefillState}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    minHeight: 40,
+                    padding: "0 14px",
+                    borderRadius: 9,
+                    textDecoration: "none",
+                    fontSize: 13,
+                    fontWeight: 800,
+                    background: "#111827",
+                    color: "#ffffff",
+                  }}
+                >
+                  Claim this Restaurant
+                </Link>
+              }
+            />
             <ProfileFieldList
               isDark={isDark}
               isFoodTruck={isFoodTruck}
@@ -573,7 +647,7 @@ function UnclaimedRestaurantPage({ data, isDark, slugOrId }) {
                 color: "#ffffff",
               }}
             >
-              Claim this profile
+              Claim this Restaurant
             </Link>
           </div>
         </div>
@@ -754,11 +828,6 @@ export default function RestaurantPublicPage() {
     return <UnclaimedRestaurantPage data={data} isDark={isDark} slugOrId={resolvedSlug} />;
   }
 
-  const tier = resolvePublicProfileTier(data);
-  const isPro = tier === "pro";
-  const isVerified = tier === "verified";
-  const restaurantStatusLightProps = buildRestaurantStatusLightProps(data);
-
   const name =
     getLocalizedField(data, "restaurant_name", language) ||
     getLocalizedField(data, "name", language) ||
@@ -866,8 +935,6 @@ export default function RestaurantPublicPage() {
           landmarks={landmarks}
           logoUrl={logoUrl}
           bannerPhotoUrl={bannerPhotoUrl}
-          tierLabel={isPro ? "Pro" : isVerified ? "Verified" : ""}
-          statusLightProps={restaurantStatusLightProps}
           restaurantId={data?.id || null}
           shareData={restaurantShareData}
           shareAnalytics={{
@@ -882,6 +949,14 @@ export default function RestaurantPublicPage() {
           displayCluster={data?.display_cluster || null}
           statusBanners={data?.status_banners}
           statusEventPresentations={data?.status_event_presentations}
+          menuInformationPanel={
+            <MenuInformationPanel
+              managed
+              lastUpdated={resolveProfileLastUpdated(data)}
+              orderingAvailable={hasOnlineOrderingCapability(data)}
+              isDark={false}
+            />
+          }
           isMobile={isMobile}
         />
       ) : null}

@@ -25,7 +25,7 @@ describe("menuplyCheckoutPlans canonical checkout contract", () => {
     sessionStorage.clear();
   });
 
-  it("maps Starter Monthly checkout to starter_monthly only", () => {
+  it("maps Pro Monthly checkout to starter_monthly only", () => {
     const body = buildOperatorStripeCheckoutBody({
       restaurantId: "r1",
       planCode: "starter_monthly",
@@ -40,7 +40,7 @@ describe("menuplyCheckoutPlans canonical checkout contract", () => {
     });
   });
 
-  it("maps Starter Annual checkout to starter_annual only", () => {
+  it("maps Pro Annual checkout to starter_annual only", () => {
     const body = buildOwnerStripeCheckoutBody({
       restaurantId: "r1",
       ownerToken: "tok",

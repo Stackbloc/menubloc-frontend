@@ -20,7 +20,14 @@ function priceCents(cents) {
   return `$${(cents / 100).toFixed(2)}/mo`;
 }
 
-const PLAN_ORDER = { enterprise: 0, pro: 1, starter: 2, verified: 3, public: 4, free: 5 };
+const PLAN_ORDER = { enterprise: 0, pro: 1, starter: 2, standard: 3, verified: 4, public: 5, free: 6 };
+
+function planSlugLabel(slug) {
+  const normalized = String(slug || "").trim().toLowerCase();
+  if (normalized === "starter") return "Pro";
+  if (normalized === "verified" || normalized === "standard") return "Standard";
+  return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+}
 
 export default function CrmSubscriptions() {
   const { t } = useLanguage();
@@ -71,7 +78,7 @@ export default function CrmSubscriptions() {
               .sort(([a], [b]) => (PLAN_ORDER[a] ?? 9) - (PLAN_ORDER[b] ?? 9))
               .map(([slug, count]) => (
                 <div key={slug} style={{ background: "#e8f3ef", borderRadius: 10, padding: "6px 14px", fontSize: 13, fontWeight: 700, color: "#173f35" }}>
-                  {slug.charAt(0).toUpperCase() + slug.slice(1)}: {count}
+                  {planSlugLabel(slug)}: {count}
                 </div>
               ))}
           </div>

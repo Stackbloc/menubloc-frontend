@@ -29,6 +29,7 @@ export const LEGACY_BLOCKED_CHECKOUT_PLAN_CODES = Object.freeze([
 
 export const CHECKOUT_PRICE_LABELS = Object.freeze({
   [FREE_PLAN_CODE]: "Free",
+  standard: "Free",
   [LEGACY_FREE_PLAN_CODE]: "Free",
   starter_monthly: "$20/month",
   starter_annual: "$199/year",
@@ -43,6 +44,7 @@ export const CHECKOUT_PRICE_LABELS = Object.freeze({
  */
 export const FALLBACK_COMMISSION_RATE_BPS = Object.freeze({
   [FREE_PLAN_CODE]: null,
+  standard: null,
   [LEGACY_FREE_PLAN_CODE]: null,
   starter_monthly: 1100,
   starter_annual: 1100,
@@ -59,7 +61,7 @@ export const FALLBACK_COMMISSION_LOCK_MONTHS = Object.freeze({
 export const FALLBACK_CHECKOUT_PLANS = Object.freeze([
   {
     code: FREE_PLAN_CODE,
-    checkout_label: "Starter",
+    checkout_label: "Standard",
     amount_cents: 0,
     billing_interval: null,
     commission_rate_bps: FALLBACK_COMMISSION_RATE_BPS[FREE_PLAN_CODE],

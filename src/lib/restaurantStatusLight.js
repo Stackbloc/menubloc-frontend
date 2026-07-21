@@ -1,6 +1,21 @@
 import { isRestaurantVerifiedMenuStatus } from "./menuVerificationLabels.js";
 
-const PAID_SUBSCRIPTION_PLANS = new Set(["pro", "founders", "performance", "enterprise"]);
+const STANDARD_SUBSCRIPTION_PLANS = new Set(["standard", "standard_free", "published_free", "verified"]);
+const PAID_SUBSCRIPTION_PLANS = new Set([
+  "pro",
+  "pro_monthly",
+  "pro_annual",
+  "starter_monthly",
+  "starter_annual",
+  "founder",
+  "founders",
+  "founders_annual",
+  "food_truck",
+  "food_truck_monthly",
+  "food_truck_annual",
+  "performance",
+  "enterprise",
+]);
 
 /** Returns "pro", "verified", or null. */
 export function normalizeRestaurantProfileTier(profileTier, listingStatus) {
@@ -37,6 +52,11 @@ export function hasOnlineOrderingEnabled({ orderAcceptanceStatus } = {}) {
   return String(orderAcceptanceStatus || "").trim().toLowerCase() === "accepting_orders";
 }
 
+export function hasStandardSubscriptionPlan({ subscriptionPlan, planSlug } = {}) {
+  const plan = String(subscriptionPlan || planSlug || "").trim().toLowerCase();
+  return STANDARD_SUBSCRIPTION_PLANS.has(plan);
+}
+
 export function isVerifiedRestaurantProfile({
   menuStatus,
   subscriptionPlan,
@@ -50,24 +70,17 @@ export function isVerifiedRestaurantProfile({
 }
 
 /**
- * Red: unverified / unclaimed profile.
- * Yellow: claimed profile with rep-verified menu.
- * Green: paid plan with online ordering enabled.
+ * Red: nonsubscriber.
+ * Yellow: Standard claimed/free profile.
+ * Green: paid subscriber with online ordering enabled.
  */
 export function resolveRestaurantStatusLightTone({
-  claimStatus,
   subscriptionPlan,
-  menuStatus,
-  profileTier,
-  listingStatus,
   planSlug,
   isPro,
   isPaidSubscriber,
   orderAcceptanceStatus,
 } = {}) {
-  const claimed = isClaimedRestaurantProfile(claimStatus);
-  if (!claimed) return "red";
-
   const paid = hasPaidSubscriptionPlan({
     subscriptionPlan,
     planSlug,
@@ -77,13 +90,7 @@ export function resolveRestaurantStatusLightTone({
   const ordering = hasOnlineOrderingEnabled({ orderAcceptanceStatus });
   if (paid && ordering) return "green";
 
-  const verified = isVerifiedRestaurantProfile({
-    menuStatus,
-    subscriptionPlan,
-    profileTier,
-    listingStatus,
-  });
-  if (claimed && verified) return "yellow";
+  if (hasStandardSubscriptionPlan({ subscriptionPlan, planSlug })) return "yellow";
 
   return "red";
 }

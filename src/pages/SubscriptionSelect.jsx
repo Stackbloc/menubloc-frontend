@@ -5,7 +5,7 @@
  * Date:    2026-05-06
  * Purpose:
  *   Onboarding step 2 — choose a restaurant plan after account
- *   creation. Starter stays free, Pro uses Stripe
+ *   creation. Standard stays free, Pro uses Stripe
  *   checkout, and the Founders plan uses annual Stripe checkout.
  * ============================================================
  */
@@ -46,9 +46,9 @@ const API = (
 const POST_PLAN_PAYMENT_ROUTE = "/restaurant/onboarding/information";
 
 const PLAN_LABELS = {
-  [FREE_PLAN_CODE]: "Starter",
-  verified: "Starter",
-  published_free: "Starter",
+  [FREE_PLAN_CODE]: "Standard",
+  verified: "Standard",
+  published_free: "Standard",
   founders_monthly: "Founder's",
   founders_annual: "Founder's",
   starter_monthly: "Pro",
@@ -84,7 +84,7 @@ const OPTIONAL_ONBOARDING_MODULES = [
 
 const PLAN_CARDS = {
   [FREE_PLAN_CODE]: {
-    title: "Starter",
+    title: "Standard",
     price: CHECKOUT_PRICE_LABELS[FREE_PLAN_CODE],
     description: "A simple published restaurant presence with public menu access on Menuply.",
     commissionPlanCode: FREE_PLAN_CODE,
@@ -103,7 +103,7 @@ const PLAN_CARDS = {
       "Professional Menuply tools for growing restaurants — profiles, menus, QR Code, and online ordering.",
     commissionPlanCode: "starter_annual",
     features: [
-      "All Starter benefits, plus logo and product photos",
+      "All Standard benefits, plus logo and product photos",
       "Unlimited menus and menu items",
       "QR Code and social sharing",
       "Online ordering",
@@ -223,7 +223,7 @@ const s = {
     flexDirection: "column",
     minHeight: 420,
   }),
-  planCardStarter: {
+  planCardPro: {
     borderRadius: 28,
     padding: "24px 22px 22px",
     border: "2px solid #86b89a",
@@ -511,7 +511,7 @@ export default function SubscriptionSelect() {
   const [plansByCode, setPlansByCode] = useState(() => indexPlansByCode());
   const [autoCheckoutStarted, setAutoCheckoutStarted] = useState(false);
   const autoCheckoutRef = useRef(false);
-  const [starterInterval, setStarterInterval] = useState(
+  const [proInterval, setProInterval] = useState(
     recovered.state?.selected_plan === "starter_monthly" ? "monthly" : "annual"
   );
   const [foundersInterval, setFoundersInterval] = useState(
@@ -533,8 +533,8 @@ export default function SubscriptionSelect() {
   } = onboardingState || {};
 
   const hasOnboardingContext = Boolean(restaurant_id && owner_token);
-  const starterCheckoutCode =
-    starterInterval === "monthly" ? "starter_monthly" : "starter_annual";
+  const proCheckoutCode =
+    proInterval === "monthly" ? "starter_monthly" : "starter_annual";
   const foundersCheckoutCode =
     foundersInterval === "monthly" ? "founders_monthly" : "founders_annual";
 
@@ -872,8 +872,8 @@ export default function SubscriptionSelect() {
     owner_token,
   ]);
 
-  async function handleStarter() {
-    await submitRestaurantPlan(starterCheckoutCode);
+  async function handlePro() {
+    await submitRestaurantPlan(proCheckoutCode);
   }
 
   async function handleFounder() {
@@ -917,10 +917,10 @@ export default function SubscriptionSelect() {
   }
 
   const publishedCard = PLAN_CARDS[FREE_PLAN_CODE];
-  const starterCard = PLAN_CARDS.starter_annual;
+  const proCard = PLAN_CARDS.starter_annual;
   const isPublishedSelected =
     selected_plan === FREE_PLAN_CODE || selected_plan === "verified" || selected_plan === "published";
-  const isStarterSelected =
+  const isProSelected =
     selected_plan === "starter_monthly" || selected_plan === "starter_annual";
   const isFoundersSelected =
     selected_plan === "founders_monthly" || selected_plan === "founders_annual";
@@ -980,8 +980,8 @@ export default function SubscriptionSelect() {
 
         <section style={s.cardsGrid}>
           <article style={s.planCard(false)}>
-            <div style={s.planEyebrow}>Starter</div>
-            <div style={s.planName}>Starter</div>
+            <div style={s.planEyebrow}>Standard</div>
+            <div style={s.planName}>Standard</div>
             <div style={s.planDesc}>
               {publishedCard.description}
             </div>
@@ -1000,16 +1000,16 @@ export default function SubscriptionSelect() {
             </ul>
 
             <button type="button" style={s.button(false, false)} onClick={choosePublished}>
-              {isPublishedSelected ? "Continue with Starter" : "Choose Starter"}
+              {isPublishedSelected ? "Continue with Standard" : "Choose Standard"}
             </button>
           </article>
 
-          <article style={s.planCardStarter}>
+          <article style={s.planCardPro}>
             <div style={s.planEyebrow}>Pro</div>
             <div style={s.planName}>Pro</div>
-            <div style={s.planDesc}>{starterCard.description}</div>
+            <div style={s.planDesc}>{proCard.description}</div>
             <div style={s.commissionDisclosure}>
-              {getMarketplaceCommissionDisclosure(starterCheckoutCode, { plansByCode })}
+              {getMarketplaceCommissionDisclosure(proCheckoutCode, { plansByCode })}
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 8 }}>
               {[
@@ -1019,15 +1019,15 @@ export default function SubscriptionSelect() {
                 <button
                   key={key}
                   type="button"
-                  onClick={() => setStarterInterval(key)}
+                  onClick={() => setProInterval(key)}
                   style={{
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center",
                     padding: "10px 12px",
                     borderRadius: 10,
-                    border: starterInterval === key ? "1.5px solid #1F4E3D" : "1.5px solid #d0d5dd",
-                    background: starterInterval === key ? "#ffffff" : "rgba(255,255,255,0.7)",
+                    border: proInterval === key ? "1.5px solid #1F4E3D" : "1.5px solid #d0d5dd",
+                    background: proInterval === key ? "#ffffff" : "rgba(255,255,255,0.7)",
                     cursor: "pointer",
                     fontFamily: "inherit",
                     width: "100%",
@@ -1039,11 +1039,11 @@ export default function SubscriptionSelect() {
               ))}
             </div>
             <div style={{ ...s.priceValue, color: "#1F4E3D" }}>
-              {CHECKOUT_PRICE_LABELS[starterCheckoutCode]}
+              {CHECKOUT_PRICE_LABELS[proCheckoutCode]}
             </div>
 
             <ul style={s.featureList}>
-              {starterCard.features.map((feature) => (
+              {proCard.features.map((feature) => (
                 <li key={feature} style={s.featureItem}>
                   <span style={s.featureMark(false)}>&#10003;</span>
                   <span>{feature}</span>
@@ -1055,11 +1055,11 @@ export default function SubscriptionSelect() {
               type="button"
               disabled={isSubmittingPlan}
               style={s.button(true, isSubmittingPlan)}
-              onClick={handleStarter}
+              onClick={handlePro}
             >
               {isSubmittingPlan
                 ? "Preparing checkout..."
-                : isStarterSelected
+                : isProSelected
                   ? "Continue with Pro"
                   : "Choose Pro"}
             </button>

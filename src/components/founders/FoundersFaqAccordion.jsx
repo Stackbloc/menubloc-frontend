@@ -8,7 +8,7 @@ const FOUNDER_FAQ = [
     question: "Why does Menuply charge a subscription fee?",
     answer: [
       "Menuply provides restaurant profile pages, full menu presentation, ordering tools, deal promotion, QR code support, and customer discovery — all in one self-service platform.",
-      "Unlike traditional delivery marketplaces that take 15–30% per order, Menuply charges a flat subscription so your costs are predictable regardless of how many orders you process. Restaurants that want a free presence can start with the Starter plan at $0.",
+      "Unlike traditional delivery marketplaces that take 15–30% per order, Menuply charges a flat subscription so your costs are predictable regardless of how many orders you process. Restaurants that want a free presence can start with the Standard plan at $0.",
     ],
   },
   {
