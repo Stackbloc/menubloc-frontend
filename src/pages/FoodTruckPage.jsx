@@ -979,6 +979,27 @@ const DARK_PANEL = {
   chipBg: "rgba(255,255,255,0.04)",
 };
 
+function DisplayOnlyOrderNotice({ isDark, c }) {
+  return (
+    <div
+      role="status"
+      style={{
+        marginTop: 16,
+        padding: "12px 14px",
+        borderRadius: 12,
+        background: isDark ? "rgba(245,158,11,0.10)" : "#fffbeb",
+        border: isDark ? "1px solid rgba(245,158,11,0.30)" : "1px solid #fcd34d",
+        color: c.pageColor,
+        fontSize: 13,
+        lineHeight: 1.5,
+      }}
+    >
+      <strong>Demo profile — ordering unavailable.</strong>{" "}
+      Browse the menu for display purposes. Checkout and payment are disabled.
+    </div>
+  );
+}
+
 function MenuInline({ menuData, isDark, c, isMobile, language = "en" }) {
   const sections = normalizeSections(menuData);
 
@@ -1444,6 +1465,10 @@ export default function FoodTruckPage() {
         c={c}
         isMobile={isMobile}
       />
+
+      {profile?.public_ordering_mode === "display_only" ? (
+        <DisplayOnlyOrderNotice isDark={isDark} c={c} />
+      ) : null}
 
       <div style={{ marginTop: isMobile ? 24 : 32 }}>
         {menuState.status === "loading" ? (
