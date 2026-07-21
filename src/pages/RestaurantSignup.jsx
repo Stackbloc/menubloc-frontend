@@ -26,6 +26,18 @@ const ORGANIZATION_ROUTE = "/restaurant/onboarding/organization";
 
 function planLabel(t, planCode) {
   if (!planCode) return "";
+  if (["standard", "standard_free", "published", "published_free", "verified", "starter"].includes(planCode)) {
+    return t("signup.account.plan.standard", "Standard");
+  }
+  if (["starter_monthly", "starter_annual", "pro_monthly", "pro_annual", "pro_partner"].includes(planCode)) {
+    return t("signup.account.plan.pro", "Pro");
+  }
+  if (["founders_monthly", "founders_annual"].includes(planCode)) {
+    return t("signup.account.plan.founders", "Founder's");
+  }
+  if (planCode === "food_truck_annual" || planCode === "food_truck") {
+    return t("signup.account.plan.foodTruck", "Food Truck");
+  }
   return t(`signup.account.plan.${planCode}`, planCode);
 }
 
