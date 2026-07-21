@@ -109,6 +109,39 @@ export const getCrmDiscountCodes = () => get("/api/crm/discount-codes");
 export const createCrmDiscountCode = (body) => post("/api/crm/discount-codes", body);
 export const updateCrmDiscountCode = (id, body) => req(`/api/crm/discount-codes/${id}`, { method: "PATCH", body: JSON.stringify(body) });
 
+export const getCrmMarketplaceProducts = () => get("/api/crm/marketplace/products");
+export const createCrmMarketplaceProduct = (body) => post("/api/crm/marketplace/products", body);
+export const updateCrmMarketplaceProduct = (sku, body) =>
+  req(`/api/crm/marketplace/products/${encodeURIComponent(sku)}`, {
+    method: "PATCH",
+    body: JSON.stringify(body),
+  });
+export const getCrmMarketplaceOrders = () => get("/api/crm/marketplace/orders");
+export const updateCrmMarketplaceOrder = (id, body) =>
+  req(`/api/crm/marketplace/orders/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    body: JSON.stringify(body),
+  });
+
+export const getCrmMarketplaceProviders = () => get("/api/crm/marketplace/providers");
+export const updateCrmMarketplaceProvider = (id, body) =>
+  req(`/api/crm/marketplace/providers/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    body: JSON.stringify(body),
+  });
+export const getCrmMarketplaceServiceListings = () => get("/api/crm/marketplace/service-listings");
+export const updateCrmMarketplaceServiceListing = (id, body) =>
+  req(`/api/crm/marketplace/service-listings/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    body: JSON.stringify(body),
+  });
+export const getCrmMarketplaceServiceProjects = () => get("/api/crm/marketplace/service-projects");
+export const updateCrmMarketplaceServiceProject = (id, body) =>
+  req(`/api/crm/marketplace/service-projects/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    body: JSON.stringify(body),
+  });
+
 export const getCrmClusters = (params = {}) => {
   const qs = new URLSearchParams(
     Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== "")

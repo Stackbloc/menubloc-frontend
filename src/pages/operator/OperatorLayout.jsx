@@ -430,7 +430,7 @@ export default function OperatorLayout({ title, children }) {
         items: [
           {
             to: "/operator/qr-kits/order",
-            label: t("operator.nav.qrProducts", "QR Products"),
+            label: t("operator.nav.marketplace", "Marketplace"),
             icon: "▢",
           },
         ],

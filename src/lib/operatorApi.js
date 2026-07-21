@@ -353,6 +353,25 @@ export const fulfillQrMerchandiseEntitlement = (rid, body) =>
   post(`/operator/restaurants/${rid}/qr-kit-orders/entitlements/fulfill`, body);
 export const createQrKitOrder = (rid, body) => post(`/operator/restaurants/${rid}/qr-kit-orders`, body);
 export const getQrKitOrder = (rid, orderId) => get(`/operator/restaurants/${rid}/qr-kit-orders/${orderId}`);
+export const getMarketplaceOrderHistory = (rid) =>
+  get(`/operator/restaurants/${rid}/qr-kit-orders/history`);
+export const getMarketplaceProduct = (rid, slug) =>
+  get(`/operator/restaurants/${rid}/qr-kit-orders/products/${encodeURIComponent(slug)}`);
+
+export const getMarketplaceServiceListings = (rid, params = {}) => {
+  const qs = new URLSearchParams(
+    Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== "")
+  ).toString();
+  return get(`/operator/restaurants/${rid}/marketplace-services/listings${qs ? `?${qs}` : ""}`);
+};
+export const getMarketplaceServiceListing = (rid, ref) =>
+  get(`/operator/restaurants/${rid}/marketplace-services/listings/${encodeURIComponent(ref)}`);
+export const getMarketplaceServiceProjects = (rid) =>
+  get(`/operator/restaurants/${rid}/marketplace-services/projects`);
+export const checkoutMarketplaceService = (rid, body) =>
+  post(`/operator/restaurants/${rid}/marketplace-services/checkout`, body);
+export const confirmMarketplaceServiceProject = (rid, projectId, body) =>
+  post(`/operator/restaurants/${rid}/marketplace-services/projects/${encodeURIComponent(projectId)}/confirm`, body);
 
 export async function uploadQrDoorPhoto(rid, file) {
   const formData = new FormData();
@@ -364,6 +383,22 @@ export async function uploadQrDoorPhoto(rid, file) {
   });
   const json = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(json.error || `Upload failed (${res.status})`);
+  return json;
+}
+
+export async function uploadMarketplaceArtwork(rid, file) {
+  const formData = new FormData();
+  formData.append("artwork", file);
+  const res = await fetch(`${API}/operator/restaurants/${rid}/qr-kit-orders/artwork`, {
+    method: "POST",
+    credentials: "include",
+    body: formData,
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    // Fall back to legacy door-photo endpoint if artwork route is unavailable.
+    return uploadQrDoorPhoto(rid, file);
+  }
   return json;
 }
 

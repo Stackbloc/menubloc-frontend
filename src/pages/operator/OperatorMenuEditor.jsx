@@ -327,7 +327,7 @@ function MenuLabPresetCard({ theme, selected, locked, onPreview, onEdit }) {
   );
 }
 
-function MenuLabPanel({ rid, isEmailVerified }) {
+function MenuLabPanel({ rid, isEmailVerified, selectedMenuId = null }) {
   const [settings, setSettings] = useState(() => ({
     menu_style: "v1",
     primary_color: null,
@@ -573,6 +573,21 @@ function MenuLabPanel({ rid, isEmailVerified }) {
           <button type="button" style={BTN("muted")} onClick={openPublicMenu} disabled={!rid}>
             View Public Menu
           </button>
+          <Link
+            data-testid="menu-lab-redesign-my-menu"
+            to={`/operator/qr-kits/order?service_category=menuply_menu_design${
+              selectedMenuId ? `&menu_id=${encodeURIComponent(selectedMenuId)}` : ""
+            }`}
+            style={{
+              ...BTN("ghost"),
+              textDecoration: "none",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            Redesign My Menu
+          </Link>
         </div>
       </div>
 
@@ -1185,7 +1200,7 @@ export default function OperatorMenuEditor() {
 
   return (
     <OperatorLayout title="Menu Lab">
-      <MenuLabPanel rid={rid} isEmailVerified={isEmailVerified} />
+      <MenuLabPanel rid={rid} isEmailVerified={isEmailVerified} selectedMenuId={selectedMenuId} />
 
       <div className="operator-responsive-actions" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 20, flexWrap: "wrap" }}>
         <div>
