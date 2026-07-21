@@ -126,7 +126,7 @@ const OPERATIONS_SECTIONS = [
         title: "My Account",
         summary: "Subscription status and plan details for this restaurant location.",
         points: [
-          "Shows the active plan name (Starter, Pro Monthly, Pro Annual, or Founders), current status (Active, Trialing, Past Due), billing interval, next renewal date, and whether auto-renew is on.",
+          "Shows the active plan name (Standard, Pro Monthly, Pro Annual, or Founders), current status (Active, Trialing, Past Due), billing interval, next renewal date, and whether auto-renew is on.",
           "Use Change Plan to navigate to the full plan picker. Use Cancel Subscription to end the plan at the current billing period end — the Cancel button only appears for active paid subscriptions not already set to cancel.",
           "Subscription changes apply immediately on upgrade. Cancellations keep benefits active until the period end date shown.",
         ],
@@ -148,7 +148,7 @@ const OPERATIONS_SECTIONS = [
         summary: "Full plan comparison and upgrade flow — accessible to account owners.",
         points: [
           "Accessible from My Account → Change Plan, or from the Subscription item in the Business sidebar section (requires Owner PIN).",
-          "Shows the full feature comparison matrix across Starter (free), Pro Monthly, Pro Annual, and Founders plans.",
+          "Shows the full feature comparison matrix across Standard (free), Pro Monthly, Pro Annual, and Founders plans.",
           "Pro plans unlock advanced menu tools, unlimited menus, deal posting, billboard ads, and marketplace ordering. Founders plan is the best per-year value and has limited availability.",
           "The QR kit add-on callout appears above the feature table — order directly from the subscription screen.",
         ],
@@ -297,7 +297,7 @@ const OPERATIONS_SECTIONS = [
         points: [
           "Customers search by food type, cuisine, dish name, or dietary preference. Your restaurant appears in results when your menu items or profile match the query.",
           "Location matters: results are filtered by city and state, or by the customer's detected location. Accurate address data in your profile ensures you appear in the right market.",
-          "Starter and Pro restaurants receive a fully searchable listing. Pro plans add billboard display in search results for additional visibility.",
+          "Standard and Pro restaurants receive a fully searchable listing. Pro plans add billboard display in search results for additional visibility.",
           "Active deals and dietary tags (vegan, gluten-free, etc.) increase the chance of appearing in filtered searches.",
         ],
       },
@@ -307,7 +307,7 @@ const OPERATIONS_SECTIONS = [
         summary: "How the follower system works for customer retention.",
         points: [
           "Customers can follow your restaurant from your public profile page. Followers receive notifications when you post new deals.",
-          "The follow feature is available on Starter and Pro plans.",
+          "The follow feature is available on Standard and Pro plans.",
           "Follower count is visible on your public profile. Growing followers creates a direct channel to your repeat customers without requiring third-party marketing tools.",
           "Post deals proactively before peak periods to engage your follower base before they decide where to order.",
         ],
@@ -569,7 +569,7 @@ const OPERATIONS_SECTIONS = [
         summary: "Where to upload logos, banners, dish photos, heroes, and deal images — plus file types and size limits.",
         updated: "2026-07-19",
         points: [
-          "Restaurant logo — Restaurant Profile → Logo. JPG, JPEG, PNG, WEBP, or SVG up to 5 MB. Square; 512×512 px minimum recommended. Requires Starter plan or higher.",
+          "Restaurant logo — Restaurant Profile → Logo. JPG, JPEG, PNG, WEBP, or SVG up to 5 MB. Square; 512×512 px minimum recommended. Requires Standard plan or higher.",
           "Profile banner — Restaurant Profile → Banner photo. JPG, PNG, or WEBP up to 8 MB. Wide landscape images work best.",
           "Menu hero — Menu Lab → Design → Hero image, or Replace in Preview my menu. JPG, PNG, or WEBP up to 5 MB.",
           "Dish photos — Menu Lab → Edit → camera on item row. JPG, JPEG, PNG, or WEBP up to 10 MB. Pro plan required. HEIC/iPhone photos are not supported — save as JPEG first.",
@@ -718,7 +718,7 @@ const OPERATIONS_SECTIONS = [
           "Confirm you are uploading in the correct screen — logo in Profile, dish photo on item row, menu scan via Add via Upload.",
           "Convert HEIC/iPhone photos to JPEG or PNG for dish photo uploads.",
           "Check file size limits: logo 5 MB, banner 8 MB, hero 5 MB, dish 10 MB, billboard 5 MB, menu scan 20 MB.",
-          "Logo upload requires Starter+; dish photos require Pro+. Check My Account plan if upload is locked.",
+          "Logo upload requires Standard+; dish photos require Pro+. Check My Account plan if upload is locked.",
           "If a dish photo uploaded but does not appear publicly, set Menu Lab Design → Image density to Thumbnail or All.",
           "Search Knowledge Base: \"Why did my photo or logo upload fail?\"",
         ],

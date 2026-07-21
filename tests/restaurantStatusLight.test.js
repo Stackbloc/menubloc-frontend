@@ -10,11 +10,11 @@ test("resolveRestaurantStatusLightTone defaults unclaimed restaurants to red", (
   assert.equal(resolveRestaurantStatusLightTone({ claimStatus: "unclaimed" }), "red");
 });
 
-test("resolveRestaurantStatusLightTone marks claimed verified restaurants yellow", () => {
+test("resolveRestaurantStatusLightTone marks Standard restaurants yellow", () => {
   assert.equal(
     resolveRestaurantStatusLightTone({
       claimStatus: "claimed",
-      subscriptionPlan: "verified",
+      subscriptionPlan: "standard",
     }),
     "yellow"
   );
@@ -37,7 +37,7 @@ test("buildMenuVerificationAttributionText formats rep verification copy", () =>
   assert.match(text, /^Last verified by rep\. on /);
 });
 
-test("resolveRestaurantStatusLightTone keeps unclaimed restaurants red even with ordering enabled", () => {
+test("resolveRestaurantStatusLightTone marks paid online ordering restaurants green without claim fallback", () => {
   assert.equal(
     resolveRestaurantStatusLightTone({
       claimStatus: "unclaimed",
@@ -45,7 +45,7 @@ test("resolveRestaurantStatusLightTone keeps unclaimed restaurants red even with
       isPro: true,
       orderAcceptanceStatus: "accepting_orders",
     }),
-    "red"
+    "green"
   );
 });
 

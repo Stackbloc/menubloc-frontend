@@ -42,8 +42,8 @@ function getPlanTier(planCode) {
     return "food_truck";
   }
   if (planCode?.startsWith("founders")) return "founders";
-  if (planCode?.startsWith("starter")) return "starter";
-  // Legacy Pro display only — not selectable for new checkout.
+  if (planCode?.startsWith("starter")) return "pro";
+  // Legacy Pro display only.
   if (planCode?.startsWith("pro")) return "pro";
   return "published";
 }
@@ -97,7 +97,7 @@ export default function OperatorSubscription() {
 
   const [planOptions, setPlanOptions] = useState([]);
   const [subscription, setSubscription] = useState(null);
-  const [starterInterval, setStarterInterval] = useState("monthly");
+  const [proInterval, setProInterval] = useState("monthly");
   const [foundersInterval, setFoundersInterval] = useState("annual");
   const [loading, setLoading] = useState(false);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
@@ -123,7 +123,7 @@ export default function OperatorSubscription() {
       billing_interval: "year",
     };
 
-  const starterPlanCode = starterInterval === "annual" ? "starter_annual" : "starter_monthly";
+  const proPlanCode = proInterval === "annual" ? "starter_annual" : "starter_monthly";
   const foundersPlanCode =
     foundersInterval === "monthly" ? "founders_monthly" : "founders_annual";
 
@@ -228,11 +228,11 @@ export default function OperatorSubscription() {
     }
     try {
       await api.cancelPlatformSubscription({ restaurantId: selectedRestaurant.id, atPeriodEnd: true });
-      setMessage("Starter selected. Your menu and data are preserved.");
+      setMessage("Standard selected. Your menu and data are preserved.");
       await refreshSubscription();
       setTimeout(() => navigate("/operator/menulab"), 1500);
     } catch (err) {
-      setError(err.message || "Unable to switch to Starter.");
+      setError(err.message || "Unable to switch to Standard.");
     }
   }
 
@@ -368,7 +368,7 @@ export default function OperatorSubscription() {
                 style={{ ...planCard("#f8faf9", "#d1e7dd", selectedPlanCode === FREE_PLAN_CODE), cursor: "pointer" }}
               >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                  <span style={{ fontSize: 16, fontWeight: 800, color: GREEN }}>Starter</span>
+                  <span style={{ fontSize: 16, fontWeight: 800, color: GREEN }}>Standard</span>
                   {hasPublishedAccess && <span style={currentBadge(GREEN)}>Current access</span>}
                 </div>
                 <div
@@ -407,10 +407,10 @@ export default function OperatorSubscription() {
                   ))}
                 </ul>
                 <button type="button" style={hasPublishedAccess ? planBtn("primary", GREEN) : planBtn("muted", GREEN)} onClick={handleSelectPublished} disabled={isCheckingOut}>
-                  Select Starter
+                  Select Standard
                 </button>
                 <p style={{ margin: 0, fontSize: 11, color: "#8a9ab0", textAlign: "center" }}>
-                  Starter activates without Stripe checkout.
+                  Standard activates without Stripe checkout.
                 </p>
               </div>
 
@@ -503,9 +503,9 @@ export default function OperatorSubscription() {
                 <div
                   role="button"
                   tabIndex={0}
-                  onClick={() => setSelectedPlanCode(starterPlanCode)}
+                  onClick={() => setSelectedPlanCode(proPlanCode)}
                   onKeyDown={(event) => {
-                    if (event.key === "Enter" || event.key === " ") setSelectedPlanCode(starterPlanCode);
+                  if (event.key === "Enter" || event.key === " ") setSelectedPlanCode(proPlanCode);
                   }}
                   style={{
                     ...planCard(
@@ -518,7 +518,7 @@ export default function OperatorSubscription() {
                 >
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                     <span style={{ fontSize: 16, fontWeight: 800, color: GREEN }}>Pro</span>
-                    {currentTier === "starter"
+                    {currentTier === "pro"
                       ? <span style={currentBadge(GREEN)}>Current plan</span>
                       : <span style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", padding: "3px 8px", borderRadius: 999, background: "#d1fae5", color: "#065f46" }}>Most popular</span>}
                   </div>
@@ -534,7 +534,7 @@ export default function OperatorSubscription() {
                       lineHeight: 1.35,
                     }}
                   >
-                    {getMarketplaceCommissionDisclosure(starterPlanCode, {
+                    {getMarketplaceCommissionDisclosure(proPlanCode, {
                       plansByCode: indexPlansByCode(planOptions),
                     })}
                   </div>
@@ -547,7 +547,7 @@ export default function OperatorSubscription() {
                         key={key}
                         type="button"
                         onClick={() => {
-                          setStarterInterval(key);
+                          setProInterval(key);
                           setSelectedPlanCode(key === "annual" ? "starter_annual" : "starter_monthly");
                         }}
                         style={{
@@ -556,16 +556,16 @@ export default function OperatorSubscription() {
                           alignItems: "center",
                           padding: "9px 12px",
                           borderRadius: 10,
-                          border: starterInterval === key ? `1.5px solid ${GREEN}` : "1.5px solid #e4e9f0",
-                          background: starterInterval === key ? "#f0f7f4" : "#fff",
+                          border: proInterval === key ? `1.5px solid ${GREEN}` : "1.5px solid #e4e9f0",
+                          background: proInterval === key ? "#f0f7f4" : "#fff",
                           cursor: "pointer",
                           fontFamily: "inherit",
                           width: "100%",
                         }}
                       >
                         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          <div style={{ width: 14, height: 14, borderRadius: "50%", border: `2px solid ${starterInterval === key ? GREEN : "#d1d5db"}`, background: starterInterval === key ? GREEN : "transparent", flexShrink: 0 }} />
-                          <span style={{ fontSize: 13, fontWeight: 700, color: starterInterval === key ? GREEN : "#374151" }}>
+                          <div style={{ width: 14, height: 14, borderRadius: "50%", border: `2px solid ${proInterval === key ? GREEN : "#d1d5db"}`, background: proInterval === key ? GREEN : "transparent", flexShrink: 0 }} />
+                          <span style={{ fontSize: 13, fontWeight: 700, color: proInterval === key ? GREEN : "#374151" }}>
                             {label}
                             <span style={{ fontSize: 11, fontWeight: 600, color: "#059669", marginLeft: 6 }}>{sub}</span>
                           </span>
@@ -595,14 +595,14 @@ export default function OperatorSubscription() {
                       </li>
                     ))}
                   </ul>
-                  {currentTier !== "starter" ? (
+                  {currentTier !== "pro" ? (
                     <button
                       type="button"
                       style={{ ...planBtn("primary", GREEN), opacity: isCheckingOut ? 0.6 : 1 }}
                       disabled={isCheckingOut}
-                      onClick={() => handleStripeCheckout(starterPlanCode)}
+                      onClick={() => handleStripeCheckout(proPlanCode)}
                     >
-                      {isCheckingOut ? "Redirecting…" : starterInterval === "annual" ? "Choose Annual" : "Choose Monthly"}
+                      {isCheckingOut ? "Redirecting…" : proInterval === "annual" ? "Choose Annual" : "Choose Monthly"}
                     </button>
                   ) : (
                     <div style={{ padding: "10px 12px", borderRadius: 10, background: "#f0f7f4", textAlign: "center", fontSize: 13, fontWeight: 700, color: GREEN }}>

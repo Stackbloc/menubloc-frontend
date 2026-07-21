@@ -7,33 +7,33 @@ const AMBER = "#92400e";
  * (aligned with backend menuplyPlanCatalog BPS). Feature rows are display-only.
  */
 const FEATURES = [
-  { label: "Searchable restaurant listing on Menuply", published: true, starter: true, founders: true },
-  { label: "Searchable menu items", published: true, starter: true, founders: true },
-  { label: "Professional restaurant profile", published: "Limited", starter: true, founders: true },
-  { label: "Restaurant logo on profile", published: false, starter: true, founders: true },
-  { label: "Logo and product photos", published: false, starter: true, founders: true },
-  { label: "QR Code", published: false, starter: true, founders: true },
-  { label: "Unlimited menus and menu items", published: false, starter: true, founders: true },
-  { label: "Edit menus and menu items", published: false, starter: true, founders: true },
-  { label: "Premium menu management tools", published: false, starter: false, founders: true },
-  { label: "Rich searchable menu data", published: false, starter: true, founders: true },
-  { label: "Social sharing of menus and menu items", published: false, starter: true, founders: true },
-  { label: "Customers can follow your restaurant", published: false, starter: true, founders: true },
-  { label: "Create deals and promotions free of charge", published: false, starter: false, founders: true },
-  { label: "Online ordering", published: false, starter: true, founders: true },
+  { label: "Searchable restaurant listing on Menuply", published: true, pro: true, founders: true },
+  { label: "Searchable menu items", published: true, pro: true, founders: true },
+  { label: "Professional restaurant profile", published: "Limited", pro: true, founders: true },
+  { label: "Restaurant logo on profile", published: false, pro: true, founders: true },
+  { label: "Logo and product photos", published: false, pro: true, founders: true },
+  { label: "QR Code", published: false, pro: true, founders: true },
+  { label: "Unlimited menus and menu items", published: false, pro: true, founders: true },
+  { label: "Edit menus and menu items", published: false, pro: true, founders: true },
+  { label: "Premium menu management tools", published: false, pro: false, founders: true },
+  { label: "Rich searchable menu data", published: false, pro: true, founders: true },
+  { label: "Social sharing of menus and menu items", published: false, pro: true, founders: true },
+  { label: "Customers can follow your restaurant", published: false, pro: true, founders: true },
+  { label: "Create deals and promotions free of charge", published: false, pro: false, founders: true },
+  { label: "Online ordering", published: false, pro: true, founders: true },
 ];
 
 const PLAN_COLUMNS = [
   {
     key: "published",
-    name: "Starter",
+    name: "Standard",
     commission: "No order commission",
     prices: ["Free"],
     nameColor: GREEN,
     highlight: false,
   },
   {
-    key: "starter",
+    key: "pro",
     name: "Pro",
     commission: "11% commission",
     prices: ["$20/month", "or $199/year"],
@@ -65,7 +65,7 @@ function CellValue({ value }) {
   return <span style={{ color: "#d1d5db", fontSize: 15 }}>—</span>;
 }
 
-function FeatureRow({ label, published, starter, founders, shade }) {
+function FeatureRow({ label, published, pro, founders, shade }) {
   return (
     <tr style={{ background: shade ? "#f8faf9" : "#fff" }}>
       <td
@@ -83,7 +83,7 @@ function FeatureRow({ label, published, starter, founders, shade }) {
         <CellValue value={published} />
       </td>
       <td style={{ padding: "11px 6px", textAlign: "center", width: 110 }}>
-        <CellValue value={starter} />
+        <CellValue value={pro} />
       </td>
       <td
         style={{
@@ -105,7 +105,7 @@ function PlanHeaderCell({ plan }) {
       style={{
         padding: "6px 8px 10px",
         textAlign: "center",
-        width: plan.key === "founders" ? 120 : plan.key === "starter" ? 110 : 100,
+        width: plan.key === "founders" ? 120 : plan.key === "pro" ? 110 : 100,
         background: plan.highlight ? "#fffdf7" : undefined,
         verticalAlign: "top",
       }}
@@ -197,7 +197,7 @@ export default function PlanComparisonTable() {
                   key={row.label}
                   label={row.label}
                   published={row.published}
-                  starter={row.starter}
+                  pro={row.pro}
                   founders={row.founders}
                   shade={idx % 2 === 1}
                 />

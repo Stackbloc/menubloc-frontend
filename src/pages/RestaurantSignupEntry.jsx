@@ -30,10 +30,10 @@ const SIGNUP_PLAN_OPTIONS = [
   {
     code: FREE_PLAN_CODE,
     family: "published",
-    name: "Starter",
+    name: "Standard",
     price: CHECKOUT_PRICE_LABELS[FREE_PLAN_CODE],
     description: "A simple published restaurant presence with public menu access on Menuply.",
-    cta: "Select Starter",
+    cta: "Select Standard",
     tone: "default",
     commissionPlanCode: FREE_PLAN_CODE,
     features: [
@@ -47,21 +47,21 @@ const SIGNUP_PLAN_OPTIONS = [
   },
   {
     code: "starter_annual",
-    family: "starter",
+    family: "pro",
     name: "Pro",
     priceLines: [CHECKOUT_PRICE_LABELS.starter_monthly, `or ${CHECKOUT_PRICE_LABELS.starter_annual}`],
     price: `${CHECKOUT_PRICE_LABELS.starter_monthly} or ${CHECKOUT_PRICE_LABELS.starter_annual}`,
     description:
       "Professional Menuply tools for growing restaurants — profiles, menus, QR Code, and online ordering.",
     cta: "Select Pro",
-    tone: "starter",
+    tone: "pro",
     commissionPlanCode: "starter_annual",
     intervals: [
       { key: "monthly", code: "starter_monthly", label: "Monthly", price: CHECKOUT_PRICE_LABELS.starter_monthly },
       { key: "annual", code: "starter_annual", label: "Annual", price: CHECKOUT_PRICE_LABELS.starter_annual },
     ],
     features: [
-      "All Starter benefits, plus logo and product photos",
+      "All Standard benefits, plus logo and product photos",
       "Unlimited menus and menu items",
       "QR Code and social sharing",
       "Online ordering",
@@ -155,7 +155,7 @@ const styles = {
         transition: "box-shadow 0.15s ease",
       };
     }
-    if (tone === "starter") {
+    if (tone === "pro") {
       return {
         position: "relative",
         overflow: "hidden",
