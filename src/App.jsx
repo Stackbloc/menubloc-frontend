@@ -53,6 +53,7 @@ import ConsumerForgotPassword from "./pages/consumer/ConsumerForgotPassword.jsx"
 import ConsumerResetPassword from "./pages/consumer/ConsumerResetPassword.jsx";
 import ConsumerProfile from "./pages/consumer/ConsumerProfile.jsx";
 import ConsumerFollowing from "./pages/consumer/ConsumerFollowing.jsx";
+import ProviderApp from "./pages/provider/ProviderApp.jsx";
 import AccountWelcome from "./pages/consumer/AccountWelcome.jsx";
 import OperatorLogin from "./pages/operator/OperatorLogin.jsx";
 import OperatorSignup from "./pages/operator/OperatorSignup.jsx";
@@ -198,6 +199,7 @@ import CrmBusinessDevelopment from "./pages/crm/CrmBusinessDevelopment.jsx";
 import CrmBusinessDevelopmentDetail from "./pages/crm/CrmBusinessDevelopmentDetail.jsx";
 import CrmReports from "./pages/crm/CrmReports.jsx";
 import CrmQrInventory from "./pages/crm/CrmQrInventory.jsx";
+import CrmMarketplacePage from "./pages/crm/CrmMarketplacePage.jsx";
 import BuildInfoPage from "./pages/BuildInfoPage.jsx";
 import CrmLogin from "./pages/crm/CrmLogin.jsx";
 import CrmForgotPassword from "./pages/crm/CrmForgotPassword.jsx";
@@ -724,6 +726,8 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/account/welcome" element={crmHost ? <HostRouteRedirect to="/crm" /> : <AccountWelcome />} />
         <Route path="/account/following" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ConsumerFollowing />} />
 
+        <Route path="/provider/*" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ProviderApp />} />
+
         <Route path="/operator/login" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <OperatorLogin />} />
         <Route path="/operator/signup" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <OperatorSignup />} />
         <Route path="/operator/verify-email" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <OperatorEmailVerification />} />
@@ -812,6 +816,7 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/crm/clusters/:id" element={<CrmClustersAdminRedirect />} />
         <Route path="/crm/reports" element={<CrmRoute><CrmReports /></CrmRoute>} />
         <Route path="/crm/qr-inventory" element={<CrmRoute><CrmQrInventory /></CrmRoute>} />
+        <Route path="/crm/marketplace" element={<CrmRoute><CrmMarketplacePage /></CrmRoute>} />
         <Route path="/admin/crm" element={<CrmLegacyRedirect />} />
         <Route path="/admin/crm/leads" element={<CrmLegacyRedirect />} />
         <Route path="/admin/crm/leads/:id" element={<CrmLegacyRedirect />} />

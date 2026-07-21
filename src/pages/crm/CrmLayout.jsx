@@ -16,6 +16,7 @@ const NAV = [
   { to: "/clusters/admin", label: "Cluster Manager" },
   { to: "/crm/reports", label: "Reports" },
   { to: "/crm/qr-inventory", label: "QR Inventory" },
+  { to: "/crm/marketplace", label: "Marketplace" },
 ];
 
 export default function CrmLayout({ title, actions = null, children }) {

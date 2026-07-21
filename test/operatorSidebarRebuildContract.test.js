@@ -62,9 +62,9 @@ function testLayoutSectionAndItemOrder() {
   assert.ok(ws >= 0 && view > ws && lab > view, "Menu item order");
   assert.ok(adobe < 0 || adobe > lab, "Adobe after Menu Lab when present");
 
-  // Marketplace → QR Products
+  // Marketplace hub (generalized; same route)
   assert.match(layout, /to: "\/operator\/qr-kits\/order"/);
-  assert.match(layout, /operator\.nav\.qrProducts/);
+  assert.match(layout, /operator\.nav\.marketplace/);
 }
 
 function testMyAccountTabs() {
