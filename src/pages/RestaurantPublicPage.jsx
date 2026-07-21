@@ -403,8 +403,8 @@ function UnclaimedRestaurantPage({ data, isDark, slugOrId }) {
   const heroBg = isDark ? "#10151d" : "#f8fbff";
 
   const verifiedMessage = isFoodTruck
-    ? "Your information appears here with a free Verified subscription."
-    : "Your information appears here with a free Verified subscription.";
+    ? "Your information appears here with a free Standard profile."
+    : "Your information appears here with a free Standard profile.";
 
   const proMessage = isFoodTruck
     ? "Your information appears here with Pro subscription."
