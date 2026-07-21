@@ -12,6 +12,8 @@ import {
   getUploadItems,
   updateUploadItem,
   publishUpload,
+  createMenuConsoleRestaurant,
+  getMenuConsoleProfileSchema,
 } from "../../lib/ownerApi.js";
 import { buildOwnerUploadImageUrl } from "../../lib/ownerMenuUploadMedia.js";
 import OcrEditSplitLayout from "./OcrEditSplitLayout.jsx";
@@ -564,6 +566,218 @@ function ParsedItemsSection({ uploadId, upload, pages = [] }) {
   );
 }
 
+// ─── One-click create restaurant profile (create-only; never mutates this session) ─
+// Prefills name/city/state from the finished capture. Collects the three
+// backend-required fields (address, ZIP, cuisine), then creates a restaurant + draft
+// menu via POST /api/owner/menu-console/restaurants. Per the Single Restaurant
+// Resolution guardrail, this deliberately does NOT write a restaurant_id back onto
+// the finished upload session — the operator attaches a new upload afterward.
+function CreateRestaurantProfileInline({ upload }) {
+  const [open, setOpen] = useState(false);
+  const [schema, setSchema] = useState(null);
+  const [schemaErr, setSchemaErr] = useState("");
+  const [form, setForm] = useState({
+    restaurant_name: upload.restaurant_name || "",
+    city: upload.city || "",
+    state: upload.state || "",
+    address_line1: "",
+    postal_code: "",
+    cuisine: "",
+  });
+  const [submitting, setSubmitting] = useState(false);
+  const [err, setErr] = useState("");
+  const [duplicates, setDuplicates] = useState(null);
+  const [created, setCreated] = useState(null);
+
+  useEffect(() => {
+    if (!open || schema) return;
+    getMenuConsoleProfileSchema()
+      .then(setSchema)
+      .catch(() => setSchemaErr("Could not load cuisine options."));
+  }, [open, schema]);
+
+  const cuisines = schema?.cuisines || [];
+  const canSubmit =
+    form.restaurant_name.trim() &&
+    form.address_line1.trim() &&
+    form.city.trim() &&
+    form.state.trim() &&
+    form.postal_code.trim() &&
+    form.cuisine;
+
+  function update(key, value) {
+    setForm((prev) => ({ ...prev, [key]: value }));
+  }
+
+  async function submit(confirmDuplicate = false) {
+    setSubmitting(true);
+    setErr("");
+    try {
+      const payload = {
+        restaurant_name: form.restaurant_name.trim(),
+        address_line1: form.address_line1.trim(),
+        city: form.city.trim(),
+        state: form.state.trim().toUpperCase(),
+        postal_code: form.postal_code.trim(),
+        primary_cuisine: form.cuisine,
+        menu_name: "Main Menu",
+        menu_type: "main",
+        confirm_duplicate: confirmDuplicate || undefined,
+      };
+      const data = await createMenuConsoleRestaurant(payload);
+      setCreated(data.restaurant);
+      setDuplicates(null);
+    } catch (ex) {
+      if (ex?.status === 409 && ex?.payload?.duplicate_warning) {
+        setDuplicates(ex.payload.matches || []);
+      } else {
+        setErr(ex?.payload?.error || ex?.message || "Could not create restaurant.");
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  const greenBtn = {
+    padding: "9px 18px",
+    borderRadius: 10,
+    background: OWNER_COLORS.accent,
+    color: "#fff",
+    fontWeight: 700,
+    fontSize: 13,
+    border: "none",
+    cursor: "pointer",
+    textDecoration: "none",
+  };
+
+  if (!open) {
+    return (
+      <button type="button" style={greenBtn} onClick={() => setOpen(true)}>
+        Create restaurant profile →
+      </button>
+    );
+  }
+
+  if (created) {
+    return (
+      <div
+        style={{
+          flexBasis: "100%",
+          padding: "16px 18px",
+          borderRadius: 12,
+          background: "#f0fdf4",
+          border: "1px solid #86efac",
+        }}
+      >
+        <div style={{ fontWeight: 800, fontSize: 14, color: "#15803d", marginBottom: 6 }}>
+          Restaurant profile created — ID #{created.id}
+        </div>
+        <div style={{ fontSize: 12.5, color: OWNER_COLORS.muted, marginBottom: 12 }}>
+          {created.restaurant_name}
+          {created.city && created.state ? ` · ${created.city}, ${created.state}` : ""}. A draft
+          “Main Menu” was created. This finished capture was left unchanged — start a new
+          upload/attach against this restaurant to add items.
+        </div>
+        <Link
+          to={`/owner/menu-manager?tab=workspace&restaurant=${created.id}`}
+          style={greenBtn}
+        >
+          Open in Create / Edit →
+        </Link>
+      </div>
+    );
+  }
+
+  const label = { fontSize: 11, fontWeight: 700, color: OWNER_COLORS.muted, display: "block", marginBottom: 4 };
+
+  return (
+    <div
+      style={{
+        flexBasis: "100%",
+        padding: "18px 20px",
+        borderRadius: 14,
+        background: "#fff",
+        border: `1px solid ${OWNER_COLORS.line}`,
+      }}
+    >
+      <div style={{ fontWeight: 800, fontSize: 14, marginBottom: 4 }}>Create restaurant profile</div>
+      <div style={{ fontSize: 12.5, color: OWNER_COLORS.muted, marginBottom: 14 }}>
+        Prefilled from this capture. Address, ZIP, and cuisine are required. Creating a profile
+        does <strong>not</strong> change this finished session.
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, maxWidth: 620 }}>
+        <div style={{ gridColumn: "1 / -1" }}>
+          <label style={label}>Restaurant name *</label>
+          <input style={inputS} value={form.restaurant_name} onChange={(e) => update("restaurant_name", e.target.value)} />
+        </div>
+        <div style={{ gridColumn: "1 / -1" }}>
+          <label style={label}>Address *</label>
+          <input style={inputS} value={form.address_line1} onChange={(e) => update("address_line1", e.target.value)} placeholder="123 Main St" />
+        </div>
+        <div>
+          <label style={label}>City *</label>
+          <input style={inputS} value={form.city} onChange={(e) => update("city", e.target.value)} />
+        </div>
+        <div>
+          <label style={label}>State *</label>
+          <input style={inputS} value={form.state} onChange={(e) => update("state", e.target.value)} maxLength={2} />
+        </div>
+        <div>
+          <label style={label}>ZIP *</label>
+          <input style={inputS} value={form.postal_code} onChange={(e) => update("postal_code", e.target.value)} />
+        </div>
+        <div>
+          <label style={label}>Primary cuisine *</label>
+          <select style={inputS} value={form.cuisine} onChange={(e) => update("cuisine", e.target.value)} disabled={!schema}>
+            <option value="">{schema ? "Select cuisine…" : "Loading…"}</option>
+            {cuisines.map((c) => (
+              <option key={c.value} value={c.value}>{c.label}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {schemaErr && <div style={{ marginTop: 10, fontSize: 12, color: "#991b1b" }}>{schemaErr}</div>}
+      {err && <div style={{ marginTop: 10, fontSize: 12, color: "#991b1b" }}>{err}</div>}
+
+      {duplicates && (
+        <div style={{ marginTop: 12, padding: "12px 14px", borderRadius: 10, background: "#fffbeb", border: "1px solid #fde68a" }}>
+          <div style={{ fontSize: 12.5, fontWeight: 700, color: "#92400e", marginBottom: 6 }}>
+            A similar restaurant already exists in {form.city}, {form.state.toUpperCase()}:
+          </div>
+          <ul style={{ margin: "0 0 10px 18px", padding: 0, fontSize: 12, color: OWNER_COLORS.ink }}>
+            {duplicates.map((m) => (
+              <li key={m.id}>#{m.id} — {m.name || m.restaurant_name}{m.city ? ` (${m.city}, ${m.state})` : ""}</li>
+            ))}
+          </ul>
+          <button type="button" style={{ ...greenBtn, opacity: submitting ? 0.6 : 1 }} disabled={submitting} onClick={() => submit(true)}>
+            {submitting ? "Creating…" : "Create anyway"}
+          </button>
+        </div>
+      )}
+
+      <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
+        <button
+          type="button"
+          style={{ ...greenBtn, opacity: !canSubmit || submitting ? 0.6 : 1, cursor: !canSubmit || submitting ? "not-allowed" : "pointer" }}
+          disabled={!canSubmit || submitting}
+          onClick={() => submit(false)}
+        >
+          {submitting ? "Creating profile…" : "Create Restaurant Profile →"}
+        </button>
+        <button
+          type="button"
+          style={{ padding: "9px 18px", borderRadius: 10, border: `1px solid ${OWNER_COLORS.line}`, background: "#fff", color: OWNER_COLORS.muted, fontWeight: 700, fontSize: 13, cursor: "pointer" }}
+          onClick={() => setOpen(false)}
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function OwnerMenuUploadDetail() {
   const { t } = useLanguage();
   const { uploadId } = useParams();
@@ -712,20 +926,7 @@ export default function OwnerMenuUploadDetail() {
             Open restaurant in Create / Edit →
           </Link>
         ) : (
-          <Link
-            to={`/owner/menu-manager?tab=workspace&create=1&name=${encodeURIComponent(upload.restaurant_name || "")}&city=${encodeURIComponent(upload.city || "")}&state=${encodeURIComponent(upload.state || "")}`}
-            style={{
-              padding: "9px 18px",
-              borderRadius: 10,
-              background: OWNER_COLORS.accent,
-              color: "#fff",
-              fontWeight: 700,
-              fontSize: 13,
-              textDecoration: "none",
-            }}
-          >
-            Create restaurant profile →
-          </Link>
+          <CreateRestaurantProfileInline upload={upload} />
         )}
         <Link
           to="/owner/menu-manager?tab=activity&status=needs_review"
