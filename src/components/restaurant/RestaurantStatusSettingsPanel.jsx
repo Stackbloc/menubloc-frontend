@@ -115,7 +115,7 @@ export default function RestaurantStatusSettingsPanel({
                   display: "flex",
                   alignItems: "center",
                   gap: 10,
-                  padding: "8px 10px",
+                  padding: "8px 40px 8px 10px",
                   borderRadius: 10,
                   border: on ? "1px solid #86efac" : "1px solid #d1d5db",
                   background: on ? "#f0fdf4" : "#fff",
@@ -152,6 +152,30 @@ export default function RestaurantStatusSettingsPanel({
                 >
                   {on ? "✓" : ""}
                 </span>
+                {on ? (
+                  <span
+                    aria-hidden="true"
+                    style={{
+                      position: "absolute",
+                      top: 8,
+                      right: 10,
+                      width: 20,
+                      height: 20,
+                      borderRadius: 999,
+                      background: "#166534",
+                      color: "#fff",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: 12,
+                      fontWeight: 900,
+                      lineHeight: 1,
+                      boxShadow: "0 0 0 2px #f0fdf4",
+                    }}
+                  >
+                    ✓
+                  </span>
+                ) : null}
                 <span aria-hidden="true">{banner.emoji}</span>
                 <span>{banner.label}</span>
                 {banner.prominence === "primary" ? (
