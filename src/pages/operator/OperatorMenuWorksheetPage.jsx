@@ -10,6 +10,7 @@ import {
 import {
   detectLargeMenuplyPriceChanges,
   formatLargePriceChangeWarning,
+  buildWorksheetWarningFlags,
 } from "../../lib/menuWorksheetHelpers.js";
 import {
   profileEditOnboardingPath,
@@ -57,7 +58,10 @@ export default function OperatorMenuWorksheetPage() {
     setPriceWarnings([]);
     try {
       const data = await getMenuWorksheet(rid, mid, uploadSessionId);
-      const loadedRows = data.rows || [];
+      const loadedRows = (data.rows || []).map((r) => ({
+        ...r,
+        warning_flags: buildWorksheetWarningFlags(r),
+      }));
       setRows(loadedRows);
       setSections(data.sections || []);
       priceBaselineRef.current = loadedRows.map((r) => ({
@@ -105,7 +109,10 @@ export default function OperatorMenuWorksheetPage() {
         upload_session_id: uploadSessionId || meta?.worksheet?.upload_session_id,
         source_pdf_url: meta?.worksheet?.source_pdf_url,
       });
-      const savedRows = data.rows || rows;
+      const savedRows = (data.rows || rows).map((r) => ({
+        ...r,
+        warning_flags: buildWorksheetWarningFlags(r),
+      }));
       setRows(savedRows);
       setSections(data.sections || sections);
       priceBaselineRef.current = savedRows.map((r) => ({
