@@ -2,9 +2,10 @@
 
 Date: 2026-07-22  
 Branch: `feature/mds-homepage-controls`  
-Commit: *(filled after commit)*  
-Deployment: *(filled after vercel --prod)*  
-Alias: `menuply.com` → *(filled after alias set)*
+Commit: `a4a469f` — feat(menu-manager): click-to-edit Name/Section/Price on Upload Detail  
+Deployment: `https://menubloc-frontend-fatxep5an-menuply.vercel.app` (`dpl_9HNvCmWQySapxeX4x1SAGmauBNxg`)  
+Alias: `menuply.com` → `menubloc-frontend-fatxep5an-menuply.vercel.app`  
+Bundle: `index-CTItvi9Z.js`
 
 ## Purpose
 
@@ -26,12 +27,13 @@ Cancel remain while a row is being edited.
 
 ## Verification
 
-- `npx vitest run test/ocrEditSplitPaneContract.test.js` — pass
-- Bundle hash on `menuply.com` matches deploy
-- API base in bundle: `menubloc-backend-production` dominant
-- Human: open Upload Detail → click a price cell → Save/Cancel
+- `npx vitest run test/ocrEditSplitPaneContract.test.js` — 8 passed
+- `menuply.com` bundle: `index-CTItvi9Z.js` (matches Vite build)
+- Bundle API scan: `menubloc-backend-production` ×60, `localhost:3001` ×6 (≤6 OK)
+- Human: open Upload Detail → click a price cell → Save/Cancel *(await user)*
 
 ## Guardrails
 
 - No Waiter / Operator Login / Home / menu-experience protected files
 - No backend / `updateUploadItem` contract change
+- Unrelated local working-tree changes were **not** included in this commit
