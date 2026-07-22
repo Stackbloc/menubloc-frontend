@@ -166,6 +166,10 @@ export async function getOrder(orderId) {
   return apiGet(`/api/orders/${encodeURIComponent(String(orderId))}`);
 }
 
+export async function getPublicOrder(publicOrderToken) {
+  return apiGet(`/api/orders/public/${encodeURIComponent(String(publicOrderToken))}`);
+}
+
 export async function createBmtSession(body) {
   return apiPost("/api/bmt/create", body);
 }

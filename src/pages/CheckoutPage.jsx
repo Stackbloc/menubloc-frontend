@@ -120,7 +120,41 @@ function getItemCount(items) {
   return (Array.isArray(items) ? items : []).reduce((sum, item) => sum + Number(item?.quantity || 0), 0);
 }
 
-function PaymentStep({ orderId, onSuccess }) {
+function createCheckoutAttemptId() {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return `attempt_${Date.now()}_${Math.random().toString(36).slice(2, 12)}`;
+}
+
+function checkoutAttemptStorageKey(restaurantId) {
+  return `menuply_checkout_attempt_${restaurantId}`;
+}
+
+function getOrCreateCheckoutAttemptId(restaurantId) {
+  const key = checkoutAttemptStorageKey(restaurantId);
+  try {
+    const existing = sessionStorage.getItem(key);
+    if (existing && existing.length >= 16) {
+      return existing;
+    }
+    const next = createCheckoutAttemptId();
+    sessionStorage.setItem(key, next);
+    return next;
+  } catch {
+    return createCheckoutAttemptId();
+  }
+}
+
+function clearCheckoutAttemptId(restaurantId) {
+  try {
+    sessionStorage.removeItem(checkoutAttemptStorageKey(restaurantId));
+  } catch {
+    // ignore
+  }
+}
+
+function PaymentStep({ publicOrderToken, onSuccess }) {
   const { t } = useLanguage();
   const stripe = useStripe();
   const elements = useElements();
@@ -137,10 +171,14 @@ function PaymentStep({ orderId, onSuccess }) {
     setSubmitting(true);
     setErrorMessage("");
 
+    const confirmationPath = publicOrderToken
+      ? `/orders/confirmation/${encodeURIComponent(publicOrderToken)}`
+      : "/checkout";
+
     const result = await stripe.confirmPayment({
       elements,
       confirmParams: {
-        return_url: `${window.location.origin}/orders/${orderId}/confirmation`,
+        return_url: `${window.location.origin}${confirmationPath}`,
       },
       redirect: "if_required",
     });
@@ -506,6 +544,19 @@ export default function CheckoutPage() {
       return;
     }
 
+    if (!isAuthenticated && !customerEmail.trim()) {
+      setSubmitError(t("checkout.emailRequired", "Email address is required."));
+      return;
+    }
+
+    if (customerEmail.trim()) {
+      const email = customerEmail.trim();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        setSubmitError(t("checkout.emailInvalid", "Enter a valid email address."));
+        return;
+      }
+    }
+
     if (hasUnavailablePricing(items)) {
       setSubmitError(unavailablePricingMessage(t));
       return;
@@ -526,6 +577,7 @@ export default function CheckoutPage() {
     setCreatingIntent(true);
 
     try {
+      const checkoutAttemptId = getOrCreateCheckoutAttemptId(restaurant.restaurantId);
       const response = await apiPost("/api/orders/create-payment-intent", {
         restaurantId: restaurant.restaurantId,
         items: apiItems,
@@ -538,10 +590,12 @@ export default function CheckoutPage() {
         applyCoins,
         userBidAttempted,
         userBidAttemptedAt,
+        checkoutAttemptId,
       });
 
       setPaymentSession({
         orderId: response.orderId,
+        publicOrderToken: response.publicOrderToken,
         clientSecret: response.clientSecret,
       });
       trackCheckoutStarted({
@@ -643,32 +697,59 @@ export default function CheckoutPage() {
 
             <form onSubmit={handleCreatePaymentIntent} style={{ marginTop: 24, display: "grid", gap: 16 }}>
               <div>
+                <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 6 }}>
+                  {t("checkout.contactInformation", "Contact Information")}
+                </div>
+                <p style={{ margin: "0 0 12px", color: "#9CA3AF", fontSize: 14, lineHeight: 1.5 }}>
+                  {t("checkout.noAccountRequired", "No account is required to place your order.")}
+                </p>
                 <label style={{ display: "block", fontSize: 13, fontWeight: 800, marginBottom: 6 }}>{t("checkout.customerName", "Customer name")}</label>
                 <input
                   value={customerName}
                   onChange={(event) => setCustomerName(event.target.value)}
                   style={inputStyle}
+                  autoComplete="name"
                 />
               </div>
 
               <div style={{ display: "grid", gap: 14, gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr" }}>
                 <div>
-                  <label style={{ display: "block", fontSize: 13, fontWeight: 800, marginBottom: 6 }}>{t("checkout.phone", "Phone")}</label>
+                  <label style={{ display: "block", fontSize: 13, fontWeight: 800, marginBottom: 6 }}>{t("checkout.phone", "Mobile phone")}</label>
                   <input
                     value={customerPhone}
                     onChange={(event) => setCustomerPhone(event.target.value)}
                     style={inputStyle}
+                    autoComplete="tel"
                   />
                 </div>
                 <div>
-                  <label style={{ display: "block", fontSize: 13, fontWeight: 800, marginBottom: 6 }}>{t("checkout.emailOptional", "Email (optional)")}</label>
+                  <label style={{ display: "block", fontSize: 13, fontWeight: 800, marginBottom: 6 }}>
+                    {isAuthenticated
+                      ? t("checkout.emailOptional", "Email (optional)")
+                      : t("checkout.email", "Email address")}
+                  </label>
                   <input
+                    type="email"
                     value={customerEmail}
                     onChange={(event) => setCustomerEmail(event.target.value)}
                     style={inputStyle}
+                    autoComplete="email"
+                    required={!isAuthenticated}
                   />
                 </div>
               </div>
+
+              {!isAuthenticated ? (
+                <div style={{ fontSize: 13, color: "#9CA3AF" }}>
+                  Already have an account?{" "}
+                  <Link
+                    to={`/account/login?redirect=${encodeURIComponent(`${location.pathname}${location.search}`)}`}
+                    style={{ color: "#22C55E", fontWeight: 700, textDecoration: "none" }}
+                  >
+                    Sign in
+                  </Link>
+                </div>
+              ) : null}
 
               <div>
                 <label style={{ display: "block", fontSize: 13, fontWeight: 800, marginBottom: 10 }}>{t("checkout.fulfillment", "Fulfillment")}</label>
@@ -927,7 +1008,7 @@ export default function CheckoutPage() {
                 </div>
                 <Elements stripe={stripePromise} options={{ clientSecret: paymentSession.clientSecret }}>
                   <PaymentStep
-                    orderId={paymentSession.orderId}
+                    publicOrderToken={paymentSession.publicOrderToken}
                     onSuccess={(status) => {
                       if (status === "succeeded" || status === "processing") {
                         trackCheckoutCompleted({
@@ -938,8 +1019,11 @@ export default function CheckoutPage() {
                           currency: "USD",
                           itemCount: getItemCount(items),
                         });
+                        clearCheckoutAttemptId(restaurant.restaurantId);
                         clearCart();
-                        navigate(`/orders/${paymentSession.orderId}/confirmation`);
+                        navigate(
+                          `/orders/confirmation/${encodeURIComponent(paymentSession.publicOrderToken)}`
+                        );
                       }
                     }}
                   />

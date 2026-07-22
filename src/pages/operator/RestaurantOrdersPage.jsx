@@ -261,8 +261,9 @@ function PrintTicket({ order }) {
         )}
       </div>
       <div style={{ borderTop: "2px dashed #000", margin: "12px 0" }} />
-      <div><strong>Customer:</strong> {order.customer_name}</div>
+      <div><strong>Customer:</strong> {order.customer_name}{order.consumer_user_id == null ? " (Guest Order)" : ""}</div>
       <div><strong>Phone:</strong> {order.customer_phone || "—"}</div>
+      {order.customer_email ? <div><strong>Email:</strong> {order.customer_email}</div> : null}
       {order.fulfillment_type === "delivery" && (() => {
         const addr = order.delivery_address_json || {};
         const lines = [addr.name, addr.line1, addr.line2, [addr.city, addr.state].filter(Boolean).join(", "), addr.postalCode].filter(Boolean);
@@ -317,6 +318,21 @@ function PendingCard({ order, onPreparing, onReady, onCompleted, onPickedUp, bus
         <div>
           <div style={{ fontSize: 11, fontWeight: 800, color: "#8a9ab0", textTransform: "uppercase" }}>#{order.id}</div>
           <div style={{ fontSize: 18, fontWeight: 800, color: "#0f1720", marginTop: 2 }}>{order.customer_name}</div>
+          {order.consumer_user_id == null ? (
+            <div style={{
+              display: "inline-block",
+              marginTop: 6,
+              padding: "2px 8px",
+              borderRadius: 999,
+              background: "#EEF2FF",
+              color: "#3730A3",
+              fontSize: 11,
+              fontWeight: 800,
+              letterSpacing: 0.3,
+            }}>
+              Guest Order
+            </div>
+          ) : null}
           <div style={{ fontSize: 13, color: "#5b6675", marginTop: 2 }}>
             {fmtTimeShort(order.created_at)} • {order.customer_phone || "—"}
           </div>
@@ -403,7 +419,12 @@ function HistoryRow({ order }) {
     <tr style={{ borderBottom: "1px solid #f1f5f9" }}>
       <td style={{ padding: "10px 8px", fontSize: 13, color: "#0f1720", fontWeight: 700 }}>#{order.id}</td>
       <td style={{ padding: "10px 8px", fontSize: 12, color: "#475467" }}>{fmtTime(order.created_at)}</td>
-      <td style={{ padding: "10px 8px", fontSize: 13, color: "#0f1720" }}>{order.customer_name}</td>
+      <td style={{ padding: "10px 8px", fontSize: 13, color: "#0f1720" }}>
+        {order.customer_name}
+        {order.consumer_user_id == null ? (
+          <span style={{ marginLeft: 8, color: "#3730A3", fontWeight: 800, fontSize: 11 }}>Guest Order</span>
+        ) : null}
+      </td>
       <td style={{ padding: "10px 8px" }}><StatusPill value={order.fulfillment_type} /></td>
       <td style={{ padding: "10px 8px" }}><StatusPill value={order.order_status} /></td>
       <td style={{ padding: "10px 8px", fontSize: 13, fontWeight: 800, color: "#0f1720", textAlign: "right" }}>{fmt$(order.total_cents)}</td>
@@ -1001,6 +1022,20 @@ export default function RestaurantOrdersPage() {
                             <div style={{ fontSize: 24, fontWeight: 900, color: "#0f1720", marginTop: 2 }}>
                               {order.customer_name}
                             </div>
+                            {order.consumer_user_id == null ? (
+                              <div style={{
+                                display: "inline-block",
+                                marginTop: 6,
+                                padding: "2px 8px",
+                                borderRadius: 999,
+                                background: "#EEF2FF",
+                                color: "#3730A3",
+                                fontSize: 11,
+                                fontWeight: 800,
+                              }}>
+                                Guest Order
+                              </div>
+                            ) : null}
                             <div style={{ fontSize: 14, color: "#5b6675", marginTop: 4 }}>
                               {order.customer_phone || "No phone"} • {fmtTime(order.created_at)}
                             </div>
