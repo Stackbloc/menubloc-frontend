@@ -58,6 +58,11 @@ const EMPTY_PROFILE = {
   website: "",
   lat: "",
   lng: "",
+  is_demo: false,
+  claim_status: "",
+  search_eligible: null,
+  search_eligibility_reason: "",
+  public_profile_path: "",
 };
 
 function StepHeader({ current }) {
@@ -152,6 +157,11 @@ function profileFromRestaurant(r = {}) {
     website: r.website || r.website_url || "",
     lat: r.lat != null ? String(r.lat) : "",
     lng: r.lng != null ? String(r.lng) : "",
+    is_demo: r.is_demo === true,
+    claim_status: r.claim_status || "",
+    search_eligible: r.search_eligible,
+    search_eligibility_reason: r.search_eligibility_reason || "",
+    public_profile_path: r.public_profile_path || "",
   };
 }
 
@@ -784,6 +794,46 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
             <input value={profile.restaurant_name} onChange={(e) => updateProfile("restaurant_name", e.target.value)} style={inputStyle} disabled={!!restaurant && !existingRestaurant} />
           </div>
           <SelectField label="Restaurant type" value={profile.restaurant_type} onChange={(v) => updateProfile("restaurant_type", v)} options={schema?.restaurant_types} required />
+          {existingRestaurant ? (
+            <>
+              <SelectField
+                label="Listing mode (internal)"
+                value={profile.is_demo ? "demo" : "normal"}
+                onChange={(v) => updateProfile("is_demo", v === "demo")}
+                options={[
+                  { value: "normal", label: "Normal" },
+                  { value: "demo", label: "Demo" },
+                ]}
+              />
+              <div>
+                <label style={fieldLabel}>Claim status</label>
+                <div style={{ ...inputStyle, display: "flex", alignItems: "center", background: "#f8fafc" }}>
+                  {profile.claim_status || "unclaimed"}
+                </div>
+              </div>
+              <div>
+                <label style={fieldLabel}>Search eligibility</label>
+                <div style={{ ...inputStyle, display: "flex", alignItems: "center", background: "#f8fafc", fontSize: 12 }}>
+                  {profile.search_eligible === false
+                    ? `Excluded (${profile.search_eligibility_reason || "n/a"})`
+                    : `Included (${profile.search_eligibility_reason || "standard_listing"})`}
+                </div>
+              </div>
+              {profile.public_profile_path ? (
+                <div style={{ gridColumn: "1 / -1" }}>
+                  <label style={fieldLabel}>Public profile</label>
+                  <a
+                    href={profile.public_profile_path}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{ fontSize: 13, fontWeight: 600, color: OWNER_COLORS.accent }}
+                  >
+                    Open {profile.public_profile_path}
+                  </a>
+                </div>
+              ) : null}
+            </>
+          ) : null}
           <div style={{ gridColumn: "1 / -1" }}>
             <label style={fieldLabel}>Address *</label>
             <input value={profile.address_line1} onChange={(e) => updateProfile("address_line1", e.target.value)} style={inputStyle} disabled={!!restaurant && !existingRestaurant} />
