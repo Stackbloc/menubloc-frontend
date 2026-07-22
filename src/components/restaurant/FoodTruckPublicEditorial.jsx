@@ -1,21 +1,17 @@
 /**
- * Food truck public profile — editorial shell + Where & when panel.
- * Visual language matches RestaurantPublicEditorial; truck location/schedule
- * live in an open side panel (collapsible on mobile).
+ * Food truck public profile — editorial shell.
+ * Current Location under the name (maps pin); upcoming stops inline; full menu elsewhere.
  */
-import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
-import RestaurantProfileMenuPreview from "./RestaurantProfileMenuPreview.jsx";
+import { useMemo } from "react";
 import FollowRestaurantButton from "../FollowRestaurantButton.jsx";
 import ShareButton from "../share/ShareButton.jsx";
 import RestaurantStatusLight from "../RestaurantStatusLight.jsx";
+import MapPinIcon from "../menu-templates/MapPinIcon.jsx";
 import {
   MENU_ROW_HEADER_ICON_GAP,
   MENU_ROW_ICON_SIZE,
 } from "../menu-templates/menuPresentationUtils.js";
 import { buildGoogleMapsDirectionsUrl } from "../../lib/catalogMenuUtils.js";
-
-const SCHEDULE_PREVIEW = 5;
 
 function asStr(v) {
   return v == null ? "" : String(v);
@@ -27,18 +23,6 @@ function firstNonEmpty(...vals) {
     if (s) return s;
   }
   return "";
-}
-
-function fmtTimeAgo(iso) {
-  if (!iso) return "";
-  const diff = Date.now() - new Date(iso).getTime();
-  if (!Number.isFinite(diff)) return "";
-  const mins = Math.floor(diff / 60000);
-  if (mins < 2) return "Just now";
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  return `${Math.floor(hrs / 24)}d ago`;
 }
 
 function Section({ title, children }) {
@@ -85,22 +69,107 @@ function DetailLine({ label, children }) {
   );
 }
 
+function buildCurrentLocation(profile, streetAddr, cityLine) {
+  const locName = firstNonEmpty(profile?.current_location_name, profile?.current_location);
+  const street = firstNonEmpty(
+    profile?.current_address,
+    profile?.current_pickup_address,
+    streetAddr,
+    profile?.address_line1,
+    profile?.address
+  );
+  const city = firstNonEmpty(profile?.current_city, profile?.city);
+  const state = firstNonEmpty(profile?.current_state, profile?.state);
+  const liveCityLine = [city, state].filter(Boolean).join(", ") || cityLine;
+
+  const parts = [];
+  if (locName) parts.push(locName);
+  if (street) parts.push(street);
+  if (liveCityLine && liveCityLine !== street && liveCityLine !== locName) parts.push(liveCityLine);
+
+  const text = parts.join(" · ") || "";
+  const mapsDest = [street, liveCityLine].filter(Boolean).join(", ") || locName || text;
+  const directionsUrl = mapsDest ? buildGoogleMapsDirectionsUrl(mapsDest) : "";
+
+  return { text, directionsUrl };
+}
+
+function normalizeScheduleStops(profile) {
+  const raw = profile?.schedule || profile?.scheduled_locations;
+  if (!Array.isArray(raw)) return [];
+  return raw.filter(Boolean).map((entry) => ({
+    day: firstNonEmpty(entry?.day, entry?.date),
+    location: firstNonEmpty(entry?.location, entry?.address, entry?.place),
+    time: firstNonEmpty(entry?.time, entry?.time_window, entry?.hours),
+  }));
+}
+
+function UpcomingStops({ stops }) {
+  return (
+    <Section title="Upcoming">
+      <div data-testid="food-truck-upcoming" style={{ display: "grid", gap: 10 }}>
+        {stops.length ? (
+          stops.map((stop, idx) => (
+            <div
+              key={`${stop.day}-${stop.location}-${idx}`}
+              style={{
+                padding: "12px 14px",
+                borderRadius: 12,
+                background: "#fff",
+                border: "1px solid #e7e5e4",
+              }}
+            >
+              {stop.day ? (
+                <div
+                  style={{
+                    fontSize: 10,
+                    fontWeight: 800,
+                    letterSpacing: 0.5,
+                    textTransform: "uppercase",
+                    color: "#166534",
+                    marginBottom: 4,
+                  }}
+                >
+                  {stop.day}
+                </div>
+              ) : null}
+              {stop.location ? (
+                <div style={{ fontSize: 14, fontWeight: 700, color: "#1c1917", lineHeight: 1.35 }}>
+                  {stop.location}
+                </div>
+              ) : null}
+              {stop.time ? (
+                <div style={{ fontSize: 13, color: "#78716c", marginTop: 2 }}>{stop.time}</div>
+              ) : null}
+            </div>
+          ))
+        ) : (
+          <div style={{ fontSize: 14, color: "#78716c", lineHeight: 1.5 }}>
+            No upcoming stops yet.
+          </div>
+        )}
+      </div>
+    </Section>
+  );
+}
+
 function IdentityBlock({
   name,
-  cityLine,
-  streetAddr,
+  currentLocationText,
   directionsUrl,
   logoUrl,
   statusLightProps,
   restaurantId,
   shareData,
   shareAnalytics,
-  metaBits,
+  saveContactControl,
+  cuisine,
   onPhoto = false,
   isMobile,
 }) {
   const ink = onPhoto ? "#fafaf9" : "#1c1917";
   const muted = onPhoto ? "rgba(250,250,249,0.88)" : "#57534e";
+  const pinStroke = onPhoto ? "#fafaf9" : "#166534";
 
   return (
     <div style={{ display: "flex", alignItems: "flex-start", gap: 14, minWidth: 0 }}>
@@ -149,7 +218,7 @@ function IdentityBlock({
               {name}
             </h1>
           </div>
-          {restaurantId || shareData ? (
+          {restaurantId || shareData || saveContactControl ? (
             <div
               style={{
                 display: "flex",
@@ -164,6 +233,7 @@ function IdentityBlock({
                   restaurantName={name}
                   source="food_truck_profile"
                   size={MENU_ROW_ICON_SIZE}
+                  dark={onPhoto}
                 />
               ) : null}
               {shareData ? (
@@ -175,382 +245,56 @@ function IdentityBlock({
                   analyticsContext={shareAnalytics || undefined}
                 />
               ) : null}
+              {saveContactControl || null}
             </div>
           ) : null}
         </div>
 
-        {cityLine || streetAddr ? (
-          directionsUrl ? (
+        <div
+          data-testid="food-truck-current-location"
+          style={{
+            marginTop: 8,
+            display: "flex",
+            alignItems: "flex-start",
+            gap: 8,
+            minWidth: 0,
+          }}
+        >
+          <div style={{ flex: 1, minWidth: 0, fontSize: 14, lineHeight: 1.45, color: muted }}>
+            <span style={{ fontWeight: 700, color: ink }}>Current Location:</span>{" "}
+            <span>{currentLocationText || "Location not posted yet."}</span>
+          </div>
+          {directionsUrl ? (
             <a
               href={directionsUrl}
               target="_blank"
               rel="noreferrer"
-              aria-label={`Get directions to ${name}`}
+              aria-label={`Open directions to ${name} in Google Maps`}
+              title="Directions"
               style={{
-                margin: "6px 0 0",
-                display: "block",
-                fontSize: 14,
-                lineHeight: 1.4,
-                color: muted,
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: 32,
+                height: 32,
+                borderRadius: 8,
+                flexShrink: 0,
+                color: pinStroke,
                 textDecoration: "none",
+                background: onPhoto ? "rgba(28,25,23,0.28)" : "#ecfdf5",
+                border: onPhoto ? "1px solid rgba(250,250,249,0.35)" : "1px solid #bbf7d0",
               }}
             >
-              {streetAddr ? <span style={{ display: "block" }}>{streetAddr}</span> : null}
-              {cityLine ? <span style={{ display: "block" }}>{cityLine}</span> : null}
+              <MapPinIcon size={16} stroke={pinStroke} />
             </a>
-          ) : (
-            <div style={{ margin: "6px 0 0", fontSize: 14, lineHeight: 1.4, color: muted }}>
-              {streetAddr ? <div>{streetAddr}</div> : null}
-              {cityLine ? <div>{cityLine}</div> : null}
-            </div>
-          )
-        ) : null}
+          ) : null}
+        </div>
 
-        {metaBits.length ? (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
-            {metaBits.map((bit) => (
-              <span
-                key={bit}
-                style={{
-                  fontSize: 12,
-                  fontWeight: 600,
-                  padding: "4px 10px",
-                  borderRadius: 999,
-                  border: onPhoto ? "1px solid rgba(250,250,249,0.35)" : "1px solid #d6d3d1",
-                  background: onPhoto ? "rgba(28,25,23,0.25)" : "#fff",
-                  color: ink,
-                }}
-              >
-                {bit}
-              </span>
-            ))}
-          </div>
+        {cuisine ? (
+          <div style={{ marginTop: 8, fontSize: 13, fontWeight: 600, color: muted }}>{cuisine}</div>
         ) : null}
       </div>
     </div>
-  );
-}
-
-function buildLiveLocation(profile) {
-  const locName = firstNonEmpty(profile?.current_location_name, profile?.current_location);
-  const street = firstNonEmpty(
-    profile?.current_address,
-    profile?.current_pickup_address,
-    profile?.address_line1,
-    profile?.address
-  );
-  const city = firstNonEmpty(profile?.current_city, profile?.city);
-  const state = firstNonEmpty(profile?.current_state, profile?.state);
-  const cityLine = [city, state].filter(Boolean).join(", ");
-  const servingUntil = firstNonEmpty(profile?.serving_until);
-  const serviceWindow = firstNonEmpty(profile?.service_window);
-  const updatedAt = firstNonEmpty(
-    profile?.location_updated_at,
-    profile?.current_location_updated_at
-  );
-  const currentlyServing = profile?.is_currently_serving === true;
-  const landmarks = firstNonEmpty(profile?.landmarks);
-  const landmarkLines = landmarks
-    ? String(landmarks)
-        .split(/\n/)
-        .map((l) => l.trim())
-        .filter(Boolean)
-    : [];
-
-  const dest = [street, city, state].filter(Boolean).join(", ") || locName;
-  const directionsUrl = dest ? buildGoogleMapsDirectionsUrl(dest) : "";
-
-  return {
-    locName,
-    street,
-    cityLine,
-    servingUntil,
-    serviceWindow,
-    updatedAt,
-    currentlyServing,
-    landmarkLines,
-    directionsUrl,
-    hasLocationBits: Boolean(
-      locName || street || cityLine || currentlyServing || servingUntil || serviceWindow
-    ),
-  };
-}
-
-function normalizeScheduleStops(profile) {
-  const raw = profile?.schedule || profile?.scheduled_locations;
-  if (!Array.isArray(raw)) return [];
-  return raw.filter(Boolean).map((entry) => ({
-    day: firstNonEmpty(entry?.day, entry?.date),
-    location: firstNonEmpty(entry?.location, entry?.address, entry?.place),
-    time: firstNonEmpty(entry?.time, entry?.time_window, entry?.hours),
-  }));
-}
-
-/** Where & when — live location + upcoming stops. Always visible (empty states included). */
-export function WhereAndWhenPanel({
-  profile,
-  scheduleHref,
-  isMobile,
-  collapsed,
-  onToggle,
-}) {
-  const live = useMemo(() => buildLiveLocation(profile), [profile]);
-  const stops = useMemo(() => normalizeScheduleStops(profile), [profile]);
-  const preview = stops.slice(0, SCHEDULE_PREVIEW);
-  const hasMore = stops.length > SCHEDULE_PREVIEW;
-  const timeAgo = live.updatedAt ? fmtTimeAgo(live.updatedAt) : "";
-
-  const body = (
-    <div data-testid="where-and-when-panel" style={{ display: "grid", gap: 16 }}>
-      <div>
-        <div
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            height: 24,
-            padding: "0 10px",
-            borderRadius: 999,
-            fontSize: 11,
-            fontWeight: 700,
-            letterSpacing: 0.3,
-            background: live.currentlyServing ? "#ecfdf5" : "#f5f5f4",
-            color: live.currentlyServing ? "#166534" : "#57534e",
-            border: live.currentlyServing ? "1px solid #bbf7d0" : "1px solid #e7e5e4",
-          }}
-        >
-          {live.currentlyServing ? "Currently serving" : "Not serving right now"}
-        </div>
-      </div>
-
-      <div>
-        <div
-          style={{
-            fontSize: 11,
-            fontWeight: 700,
-            letterSpacing: 0.7,
-            textTransform: "uppercase",
-            color: "#78716c",
-            marginBottom: 8,
-          }}
-        >
-          Live location
-        </div>
-        {live.hasLocationBits ? (
-          <div style={{ fontSize: 14, lineHeight: 1.5, color: "#1c1917" }}>
-            {live.locName ? (
-              <div style={{ fontWeight: 700, marginBottom: 4 }}>{live.locName}</div>
-            ) : null}
-            {live.street ? <div>{live.street}</div> : null}
-            {live.cityLine ? <div style={{ color: "#57534e" }}>{live.cityLine}</div> : null}
-            {live.servingUntil ? (
-              <div style={{ marginTop: 8, color: "#57534e" }}>Serving until {live.servingUntil}</div>
-            ) : live.serviceWindow ? (
-              <div style={{ marginTop: 8, color: "#57534e" }}>{live.serviceWindow}</div>
-            ) : null}
-            {timeAgo ? (
-              <div style={{ marginTop: 6, fontSize: 12, color: "#a8a29e" }}>Updated {timeAgo}</div>
-            ) : null}
-            {live.directionsUrl ? (
-              <a
-                href={live.directionsUrl}
-                target="_blank"
-                rel="noreferrer"
-                style={{
-                  display: "inline-block",
-                  marginTop: 10,
-                  color: "#166534",
-                  fontWeight: 700,
-                  fontSize: 13,
-                  textDecoration: "none",
-                }}
-              >
-                Get directions →
-              </a>
-            ) : null}
-          </div>
-        ) : (
-          <div style={{ fontSize: 14, color: "#78716c", lineHeight: 1.5 }}>
-            Location not posted yet.
-          </div>
-        )}
-      </div>
-
-      {live.landmarkLines.length ? (
-        <div>
-          <div
-            style={{
-              fontSize: 11,
-              fontWeight: 700,
-              letterSpacing: 0.7,
-              textTransform: "uppercase",
-              color: "#78716c",
-              marginBottom: 8,
-            }}
-          >
-            Nearby
-          </div>
-          <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gap: 6 }}>
-            {live.landmarkLines.map((line) => (
-              <li key={line} style={{ fontSize: 13, color: "#44403c", lineHeight: 1.4 }}>
-                {line}
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
-
-      <div>
-        <div
-          style={{
-            fontSize: 11,
-            fontWeight: 700,
-            letterSpacing: 0.7,
-            textTransform: "uppercase",
-            color: "#78716c",
-            marginBottom: 8,
-          }}
-        >
-          Upcoming
-        </div>
-        {preview.length ? (
-          <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gap: 10 }}>
-            {preview.map((stop, idx) => (
-              <li
-                key={`${stop.day}-${stop.location}-${idx}`}
-                style={{
-                  padding: "10px 12px",
-                  borderRadius: 10,
-                  background: "#fafaf9",
-                  border: "1px solid #e7e5e4",
-                }}
-              >
-                {stop.day ? (
-                  <div
-                    style={{
-                      fontSize: 10,
-                      fontWeight: 800,
-                      letterSpacing: 0.5,
-                      textTransform: "uppercase",
-                      color: "#166534",
-                      marginBottom: 4,
-                    }}
-                  >
-                    {stop.day}
-                  </div>
-                ) : null}
-                {stop.location ? (
-                  <div style={{ fontSize: 13, fontWeight: 700, color: "#1c1917", lineHeight: 1.35 }}>
-                    {stop.location}
-                  </div>
-                ) : null}
-                {stop.time ? (
-                  <div style={{ fontSize: 12, color: "#78716c", marginTop: 2 }}>{stop.time}</div>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <div style={{ fontSize: 14, color: "#78716c", lineHeight: 1.5 }}>
-            No upcoming stops yet.
-          </div>
-        )}
-        {scheduleHref ? (
-          <Link
-            to={scheduleHref}
-            style={{
-              display: "inline-block",
-              marginTop: 12,
-              color: "#166534",
-              fontWeight: 700,
-              fontSize: 13,
-              textDecoration: "none",
-            }}
-          >
-            {hasMore ? "View full schedule →" : "Upcoming locations / events →"}
-          </Link>
-        ) : null}
-      </div>
-    </div>
-  );
-
-  if (!isMobile) {
-    return (
-      <aside
-        aria-label="Where and when"
-        style={{
-          position: "sticky",
-          top: "calc(var(--sph-h, 0px) + 16px)",
-          alignSelf: "start",
-          width: "100%",
-          maxWidth: 320,
-          padding: "18px 16px",
-          borderRadius: 14,
-          border: "1px solid #e7e5e4",
-          background: "#fff",
-        }}
-      >
-        <div
-          style={{
-            fontSize: 12,
-            fontWeight: 700,
-            letterSpacing: 0.7,
-            textTransform: "uppercase",
-            color: "#78716c",
-            marginBottom: 14,
-          }}
-        >
-          Where & when
-        </div>
-        {body}
-      </aside>
-    );
-  }
-
-  return (
-    <section
-      aria-label="Where and when"
-      style={{
-        marginBottom: 20,
-        borderRadius: 14,
-        border: "1px solid #e7e5e4",
-        background: "#fff",
-        overflow: "hidden",
-      }}
-    >
-      <button
-        type="button"
-        onClick={onToggle}
-        aria-expanded={!collapsed}
-        style={{
-          width: "100%",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 12,
-          padding: "14px 16px",
-          border: "none",
-          background: "transparent",
-          cursor: "pointer",
-          textAlign: "left",
-        }}
-      >
-        <span
-          style={{
-            fontSize: 12,
-            fontWeight: 700,
-            letterSpacing: 0.7,
-            textTransform: "uppercase",
-            color: "#78716c",
-          }}
-        >
-          Where & when
-        </span>
-        <span style={{ fontSize: 13, fontWeight: 700, color: "#1c1917" }}>
-          {collapsed ? "Show" : "Hide"}
-        </span>
-      </button>
-      {!collapsed ? <div style={{ padding: "0 16px 16px" }}>{body}</div> : null}
-    </section>
   );
 }
 
@@ -559,7 +303,6 @@ export default function FoodTruckPublicEditorial({
   name,
   streetAddr,
   cityLine,
-  directionsUrl,
   website,
   websiteRaw,
   phone,
@@ -571,42 +314,29 @@ export default function FoodTruckPublicEditorial({
   restaurantId,
   shareData,
   shareAnalytics,
-  menuPreviewItems,
-  scheduleHref,
+  saveContactControl = null,
   isMobile,
 }) {
   const stops = useMemo(() => normalizeScheduleStops(profile), [profile]);
-  const currentlyServing = profile?.is_currently_serving === true;
-  const defaultOpen = currentlyServing || stops.length > 0;
-  const [mobileCollapsed, setMobileCollapsed] = useState(!defaultOpen);
-
-  const metaBits = [cuisine, "Food Truck"].filter(Boolean);
+  const location = useMemo(
+    () => buildCurrentLocation(profile, streetAddr, cityLine),
+    [profile, streetAddr, cityLine]
+  );
   const hasDetails = Boolean(website || phone || cuisine);
-  const hasMenuPreview = Array.isArray(menuPreviewItems) && menuPreviewItems.length > 0;
 
   const identityProps = {
     name,
-    cityLine,
-    streetAddr,
-    directionsUrl,
+    currentLocationText: location.text,
+    directionsUrl: location.directionsUrl,
     logoUrl,
     statusLightProps,
     restaurantId,
     shareData,
     shareAnalytics,
-    metaBits,
+    saveContactControl,
+    cuisine,
     isMobile,
   };
-
-  const wherePanel = (
-    <WhereAndWhenPanel
-      profile={profile}
-      scheduleHref={scheduleHref}
-      isMobile={isMobile}
-      collapsed={mobileCollapsed}
-      onToggle={() => setMobileCollapsed((v) => !v)}
-    />
-  );
 
   return (
     <div
@@ -665,58 +395,30 @@ export default function FoodTruckPublicEditorial({
           padding: isMobile ? "20px 16px 0" : "28px 28px 0",
         }}
       >
-        {isMobile ? wherePanel : null}
+        <Section title="About">{aboutText || null}</Section>
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: isMobile
-              ? "1fr"
-              : hasMenuPreview
-                ? "minmax(260px, 300px) minmax(0, 1.2fr) minmax(220px, 0.85fr)"
-                : "minmax(260px, 300px) minmax(0, 1fr)",
-            gap: isMobile ? 0 : 24,
-            alignItems: "start",
-          }}
-        >
-          {!isMobile ? wherePanel : null}
+        {hasDetails ? (
+          <Section title="Details">
+            <div style={{ borderTop: "1px solid #e7e5e4" }}>
+              <DetailLine label="Website">
+                {website ? <QuietLink href={website}>{websiteRaw || website} ↗</QuietLink> : null}
+              </DetailLine>
+              <DetailLine label="Phone">
+                {phone ? (
+                  <a
+                    href={`tel:${String(phone).replace(/\s+/g, "")}`}
+                    style={{ color: "inherit", textDecoration: "none" }}
+                  >
+                    {phone}
+                  </a>
+                ) : null}
+              </DetailLine>
+              <DetailLine label="Cuisine">{cuisine || null}</DetailLine>
+            </div>
+          </Section>
+        ) : null}
 
-          <div style={{ minWidth: 0 }}>
-            <Section title="About">{aboutText || null}</Section>
-
-            {hasDetails ? (
-              <Section title="Details">
-                <div style={{ borderTop: "1px solid #e7e5e4" }}>
-                  <DetailLine label="Website">
-                    {website ? <QuietLink href={website}>{websiteRaw || website} ↗</QuietLink> : null}
-                  </DetailLine>
-                  <DetailLine label="Phone">
-                    {phone ? (
-                      <a
-                        href={`tel:${String(phone).replace(/\s+/g, "")}`}
-                        style={{ color: "inherit", textDecoration: "none" }}
-                      >
-                        {phone}
-                      </a>
-                    ) : null}
-                  </DetailLine>
-                  <DetailLine label="Cuisine">{cuisine || null}</DetailLine>
-                  <DetailLine label="Category">Food Truck</DetailLine>
-                </div>
-              </Section>
-            ) : null}
-
-            {isMobile && hasMenuPreview ? (
-              <div style={{ marginTop: 8, marginBottom: 24 }}>
-                <RestaurantProfileMenuPreview items={menuPreviewItems} isMobile />
-              </div>
-            ) : null}
-          </div>
-
-          {!isMobile && hasMenuPreview ? (
-            <RestaurantProfileMenuPreview items={menuPreviewItems} isMobile={false} />
-          ) : null}
-        </div>
+        <UpcomingStops stops={stops} />
       </div>
     </div>
   );

@@ -7,8 +7,8 @@
  *   Dedicated Menuply profile page for food trucks.
  *   React route: /foodtrucks/:slugOrId
  *
- *   Editorial shell + Where & when panel (live location / upcoming stops).
- *   Claim CTA + display-only notice preserved for sales demos.
+ *   Editorial shell: Current Location, upcoming stops, full menu.
+ *   Claim CTA + display-only notice + Save to contacts preserved for demos.
  *
  *   Data sources:
  *     - Profile: GET /public/restaurants/:slugOrId
@@ -17,7 +17,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useParams, useSearchParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { HomeButton } from "../components/NavButton.jsx";
 import MenuItemInsightsPanel from "../components/MenuItemInsightsPanel.jsx";
@@ -267,23 +267,22 @@ function Badge({ label, bg, color, border }) {
   );
 }
 
-/* ─── SaveLinkBanner ──────────────────────────────────────── */
+/* ─── SaveContactButton (vCard: name, phone, profile URL) ─── */
 
-function SaveLinkBanner({ isDark, c, isMobile, truckName, truckPhone }) {
-  const [dismissed, setDismissed] = useState(false);
+function SaveContactButton({ truckName, truckPhone, size = 36, dark = false }) {
   const anchorRef = useRef(null);
 
-  // Permanent URL = current origin + pathname, stripping ?ref=qr
   const permanentUrl =
     typeof window !== "undefined"
       ? `${window.location.origin}${window.location.pathname}`
       : "";
 
-  function handleSaveContact() {
+  function handleSaveContact(e) {
+    e?.preventDefault?.();
+    e?.stopPropagation?.();
     const name = truckName || "Food Truck";
     const phone = String(truckPhone || "").replace(/[^\d+]/g, "");
 
-    // Build vCard — phone and name come from the truck's own profile
     const lines = [
       "BEGIN:VCARD",
       "VERSION:3.0",
@@ -299,103 +298,45 @@ function SaveLinkBanner({ isDark, c, isMobile, truckName, truckPhone }) {
 
     const blob = new Blob([lines], { type: "text/vcard;charset=utf-8" });
     const url = URL.createObjectURL(blob);
-
-    // Trigger download — iOS opens Contacts directly, Android prompts import
     const a = anchorRef.current;
+    if (!a) return;
     a.href = url;
     a.download = `${name.replace(/[^a-zA-Z0-9]/g, "_")}.vcf`;
     a.click();
-
-    // Clean up object URL after a short delay
     setTimeout(() => URL.revokeObjectURL(url), 5000);
-    setDismissed(true);
   }
 
-  if (dismissed) return null;
-
   return (
-    <div
-      style={{
-        marginBottom: isMobile ? 14 : 16,
-        borderRadius: 14,
-        background: isDark ? "rgba(99,102,241,0.10)" : "#eef2ff",
-        border: isDark ? "1px solid rgba(99,102,241,0.22)" : "1px solid #c7d2fe",
-        padding: "12px 14px",
-        display: "flex",
-        alignItems: "center",
-        gap: 10,
-        flexWrap: "wrap",
-      }}
-    >
-      {/* Hidden anchor used to trigger the .vcf download */}
+    <>
       <a ref={anchorRef} style={{ display: "none" }} aria-hidden="true" />
-
-      <span style={{ fontSize: 18, flexShrink: 0 }} aria-hidden="true">📇</span>
-
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div
-          style={{
-            fontSize: 13,
-            fontWeight: 700,
-            color: isDark ? "#c7d2fe" : "#3730a3",
-            marginBottom: 2,
-          }}
-        >
-          Save {truckName || "this truck"} to your contacts
-        </div>
-        <div
-          style={{
-            fontSize: 11,
-            color: isDark ? "rgba(199,210,254,0.60)" : "#6366f1",
-          }}
-        >
-          Includes their number and a link back to this page
-        </div>
-      </div>
-
-      <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
-        <button
-          type="button"
-          onClick={handleSaveContact}
-          style={{
-            height: 30,
-            padding: "0 14px",
-            borderRadius: 999,
-            fontSize: 12,
-            fontWeight: 700,
-            cursor: "pointer",
-            background: isDark ? "rgba(99,102,241,0.22)" : "#6366f1",
-            color: isDark ? "#c7d2fe" : "#ffffff",
-            border: "none",
-            whiteSpace: "nowrap",
-          }}
-        >
-          Save to Contacts
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setDismissed(true)}
-          aria-label="Dismiss"
-          style={{
-            height: 30,
-            width: 30,
-            borderRadius: 999,
-            fontSize: 14,
-            cursor: "pointer",
-            background: "transparent",
-            color: isDark ? "rgba(199,210,254,0.45)" : "#818cf8",
-            border: "none",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            flexShrink: 0,
-          }}
-        >
-          ✕
-        </button>
-      </div>
-    </div>
+      <button
+        type="button"
+        data-testid="food-truck-save-contact"
+        onClick={handleSaveContact}
+        aria-label={`Save ${truckName || "this food truck"} to contacts`}
+        title="Save to contacts"
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          width: size,
+          height: size,
+          padding: 0,
+          borderRadius: "50%",
+          border: dark ? "1px solid rgba(255,255,255,0.16)" : "1px solid rgba(15,23,42,0.16)",
+          background: dark
+            ? "rgba(255,255,255,0.04)"
+            : "linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(241,245,249,0.96) 100%)",
+          color: dark ? "#f8fafc" : "#0f172a",
+          cursor: "pointer",
+          fontSize: Math.max(14, Math.round(size * 0.42)),
+          lineHeight: 1,
+          flexShrink: 0,
+        }}
+      >
+        <span aria-hidden="true">📇</span>
+      </button>
+    </>
   );
 }
 
@@ -1291,8 +1232,6 @@ function AboutSection({ profile, isDark, c }) {
 export default function FoodTruckPage() {
   const { t, language } = useLanguage();
   const { slugOrId } = useParams();
-  const [searchParams] = useSearchParams();
-  const isQrScan = searchParams.get("ref") === "qr";
   const isMobile = useIsMobile();
 
   const [theme, setTheme] = useState(readTheme);
@@ -1524,9 +1463,6 @@ export default function FoodTruckPage() {
   const phone = firstNonEmpty(profile?.phone);
   const cuisine = humanizeLabel(firstNonEmpty(profile?.cuisine));
   const aboutText = firstNonEmpty(profile?.about_us, profile?.bio);
-  const directionsUrl = buildGoogleMapsDirectionsUrl(
-    [streetAddr, city, stateVal, zipVal].filter(Boolean).join(", ")
-  );
   const billboardPreview = Array.isArray(profile?.billboard_preview)
     ? profile.billboard_preview
     : [];
@@ -1538,23 +1474,9 @@ export default function FoodTruckPage() {
     billboardPreview.find((p) => p?.image_url || p?.photo_url)?.photo_url ||
     null;
 
-  const menuPreviewItems = (() => {
-    const sections = normalizeSections(menuState?.data);
-    const items = [];
-    for (const section of sections) {
-      for (const item of section.items || []) {
-        items.push({
-          name: item.name || item.item_name || "",
-          price: item.price,
-          section: section.name || section.title || section.section_name || "",
-        });
-        if (items.length >= 40) return items;
-      }
-    }
-    return items;
-  })();
-
-  const scheduleHref = `/foodtrucks/${encodeURIComponent(profile?.slug || slugOrId)}/schedule`;
+  const saveContactControl = (
+    <SaveContactButton truckName={name} truckPhone={phone} size={36} dark={Boolean(bannerPhotoUrl)} />
+  );
 
   return (
     <>
@@ -1567,18 +1489,6 @@ export default function FoodTruckPage() {
           fontFamily: "var(--font-ui, ui-sans-serif, system-ui, sans-serif)",
         }}
       >
-        {isQrScan ? (
-          <div style={{ maxWidth: 860, margin: "12px auto 0", padding: "0 16px" }}>
-            <SaveLinkBanner
-              isDark={false}
-              c={light}
-              isMobile={isMobile}
-              truckName={name}
-              truckPhone={phone}
-            />
-          </div>
-        ) : null}
-
         <div style={{ maxWidth: 860, margin: "12px auto 0", padding: "0 16px" }}>
           {profile?.public_ordering_mode === "display_only" ? (
             <DisplayOnlyOrderNotice isDark={false} c={light} />
@@ -1598,7 +1508,6 @@ export default function FoodTruckPage() {
           name={name}
           streetAddr={streetAddr || ""}
           cityLine={cityLine}
-          directionsUrl={directionsUrl}
           website={website}
           websiteRaw={websiteRaw || website}
           phone={phone || ""}
@@ -1625,8 +1534,7 @@ export default function FoodTruckPage() {
             restaurantName: name,
             restaurantSlug: profile?.slug || slugOrId,
           }}
-          menuPreviewItems={menuPreviewItems}
-          scheduleHref={scheduleHref}
+          saveContactControl={saveContactControl}
           isMobile={isMobile}
         />
 
