@@ -21,8 +21,8 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext.jsx";
-import { useParams, useSearchParams } from "react-router-dom";
 import { HomeButton } from "../components/NavButton.jsx";
 import MenuItemInsightsPanel from "../components/MenuItemInsightsPanel.jsx";
 import ShareIcon from "../components/share/ShareIcon.jsx";
@@ -1000,6 +1000,66 @@ function DisplayOnlyOrderNotice({ isDark, c }) {
   );
 }
 
+function FullClaimableClaimNotice({ profile, slugOrId, isDark, c }) {
+  const claimPrefillState = {
+    restaurant_name: firstNonEmpty(profile?.restaurant_name, profile?.name),
+    address_line1: firstNonEmpty(profile?.address, profile?.address_line1),
+    city: firstNonEmpty(profile?.city),
+    state: firstNonEmpty(profile?.state),
+    postal_code: firstNonEmpty(profile?.postal_code, profile?.zip),
+    phone: firstNonEmpty(profile?.phone),
+    website_url: firstNonEmpty(profile?.website, profile?.website_url),
+    category: firstNonEmpty(profile?.category),
+    cuisine: firstNonEmpty(profile?.cuisine),
+    claim_source: "public_food_truck_page",
+    public_restaurant_slug_or_id: slugOrId,
+    restaurant_id: profile?.id || null,
+  };
+  return (
+    <div
+      style={{
+        marginTop: 16,
+        padding: "12px 14px",
+        borderRadius: 12,
+        background: isDark ? "rgba(34,197,94,0.12)" : "#f0fdf4",
+        border: isDark ? "1px solid rgba(34,197,94,0.35)" : "1px solid #bbf7d0",
+        color: c.pageColor,
+        fontSize: 13,
+        lineHeight: 1.5,
+        display: "flex",
+        flexWrap: "wrap",
+        gap: 12,
+        alignItems: "center",
+        justifyContent: "space-between",
+      }}
+    >
+      <div style={{ flex: "1 1 220px" }}>
+        Your Menuply profile is already set up. You only need to claim it.
+      </div>
+      <Link
+        to="/onboarding"
+        state={claimPrefillState}
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          height: 36,
+          padding: "0 14px",
+          borderRadius: 10,
+          textDecoration: "none",
+          fontSize: 13,
+          fontWeight: 800,
+          background: isDark ? "#f8fafc" : "#111827",
+          color: isDark ? "#0f172a" : "#ffffff",
+          whiteSpace: "nowrap",
+        }}
+      >
+        Claim this profile
+      </Link>
+    </div>
+  );
+}
+
 function MenuInline({ menuData, isDark, c, isMobile, language = "en" }) {
   const sections = normalizeSections(menuData);
 
@@ -1468,6 +1528,15 @@ export default function FoodTruckPage() {
 
       {profile?.public_ordering_mode === "display_only" ? (
         <DisplayOnlyOrderNotice isDark={isDark} c={c} />
+      ) : null}
+
+      {profile?.public_profile_mode === "full_claimable" ? (
+        <FullClaimableClaimNotice
+          profile={profile}
+          slugOrId={slugOrId}
+          isDark={isDark}
+          c={c}
+        />
       ) : null}
 
       <div style={{ marginTop: isMobile ? 24 : 32 }}>

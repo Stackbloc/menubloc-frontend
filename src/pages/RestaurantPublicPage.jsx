@@ -127,6 +127,39 @@ function isClaimedRestaurant(data) {
   return status === "claimed" || status === "claim_pending";
 }
 
+function isFullClaimablePublicProfile(data) {
+  const mode =
+    data?.public_profile_mode ||
+    data?.restaurant?.public_profile_mode ||
+    "";
+  return String(mode).trim().toLowerCase() === "full_claimable";
+}
+
+function buildClaimPrefillState(data, slugOrId) {
+  const name =
+    firstNonEmpty(data?.restaurant_name, data?.name) || `Restaurant ${slugOrId}`;
+  const addressLine1 = firstNonEmpty(data?.address, data?.address_line1);
+  const city = firstNonEmpty(data?.city);
+  const stateVal = firstNonEmpty(data?.state, data?.region);
+  const postalCode = firstNonEmpty(data?.zip, data?.postal_code, data?.postcode);
+  const phone = firstNonEmpty(data?.phone, data?.phone_number, data?.contact_phone);
+  const websiteRaw = firstNonEmpty(data?.website, data?.website_url);
+  return {
+    restaurant_name: name,
+    address_line1: addressLine1,
+    city,
+    state: stateVal,
+    postal_code: postalCode,
+    phone,
+    website_url: websiteRaw,
+    category: humanizeLabel(firstNonEmpty(data?.category)),
+    cuisine: humanizeLabel(firstNonEmpty(data?.cuisine)),
+    claim_source: "public_restaurant_page",
+    public_restaurant_slug_or_id: slugOrId,
+    restaurant_id: data?.id || null,
+  };
+}
+
 function firstNonEmpty(...values) {
   for (const v of values) {
     const s = String(v || "").trim();
@@ -606,6 +639,10 @@ function applyPublicRestaurantPayload(json) {
     // Intentionally do NOT merge top-level menu_items — use menu-preview endpoint.
     deal_items: Array.isArray(json?.deal_items) ? json.deal_items : [],
     claim_status: json?.claim_status ?? restaurant?.claim_status ?? null,
+    public_profile_mode:
+      json?.public_profile_mode ?? restaurant?.public_profile_mode ?? "standard",
+    public_ordering_mode:
+      json?.public_ordering_mode ?? restaurant?.public_ordering_mode ?? "standard",
     subscription_plan:
       json?.subscription_plan ?? restaurant?.subscription_plan ?? null,
     plan_slug: json?.plan_slug ?? json?.menu_presentation?.plan_slug ?? null,
@@ -701,7 +738,7 @@ export default function RestaurantPublicPage() {
   useEffect(() => {
     const restaurantId = data?.id;
     if (!restaurantId || loading || err) return;
-    if (!isClaimedRestaurant(data) && !isOwner) {
+    if (!isClaimedRestaurant(data) && !isOwner && !isFullClaimablePublicProfile(data)) {
       setMenuPreview(null);
       return;
     }
@@ -749,8 +786,16 @@ export default function RestaurantPublicPage() {
     });
   }, [data?.id, data?.restaurant_name, data?.name, data?.slug, resolvedSlug, loading, err]);
 
-  // Claim Screen path — leave UnclaimedRestaurantPage unchanged.
-  if (!loading && !err && data && !isClaimedRestaurant(data) && !isOwner) {
+  // Claim Screen path — leave UnclaimedRestaurantPage unchanged for ordinary unclaimed listings.
+  // Real sales demos use full_claimable → editorial profile + menu + claim CTA.
+  if (
+    !loading &&
+    !err &&
+    data &&
+    !isClaimedRestaurant(data) &&
+    !isOwner &&
+    !isFullClaimablePublicProfile(data)
+  ) {
     return <UnclaimedRestaurantPage data={data} isDark={isDark} slugOrId={resolvedSlug} />;
   }
 
@@ -851,7 +896,49 @@ export default function RestaurantPublicPage() {
           {err}
         </div>
       ) : data ? (
-        <RestaurantPublicEditorial
+        <>
+          {isFullClaimablePublicProfile(data) && !isClaimedRestaurant(data) && !isOwner ? (
+            <div
+              style={{
+                maxWidth: 860,
+                margin: "16px auto 0",
+                padding: isMobile ? "14px 16px" : "16px 24px",
+                borderRadius: 14,
+                border: "1px solid #bbf7d0",
+                background: "#f0fdf4",
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 12,
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
+              <div style={{ fontSize: 14, lineHeight: 1.5, color: "#14532d", flex: "1 1 220px" }}>
+                Your Menuply profile is already set up. You only need to claim it.
+              </div>
+              <Link
+                to="/onboarding"
+                state={buildClaimPrefillState(data, resolvedSlug)}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  height: 40,
+                  padding: "0 16px",
+                  borderRadius: 10,
+                  textDecoration: "none",
+                  fontSize: 13,
+                  fontWeight: 800,
+                  background: "#111827",
+                  color: "#ffffff",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Claim this profile
+              </Link>
+            </div>
+          ) : null}
+          <RestaurantPublicEditorial
           name={name}
           streetAddr={streetAddr}
           cityLine={cityLine}
@@ -884,6 +971,7 @@ export default function RestaurantPublicPage() {
           statusEventPresentations={data?.status_event_presentations}
           isMobile={isMobile}
         />
+        </>
       ) : null}
       <BottomNav />
     </>
