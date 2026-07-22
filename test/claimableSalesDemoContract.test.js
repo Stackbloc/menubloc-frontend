@@ -20,7 +20,7 @@ test("RestaurantPublicPage renders full claimable profile with menu and claim CT
   assert.doesNotMatch(source, /Demo profile/);
 });
 
-test("FoodTruckPage uses editorial shell with Current Location and Save contact", () => {
+test("FoodTruckPage uses personality editorial with View menu icon rail (no inline menu)", () => {
   const source = read("src/pages/FoodTruckPage.jsx");
   const editorial = read("src/components/restaurant/FoodTruckPublicEditorial.jsx");
   assert.match(source, /FoodTruckPublicEditorial/);
@@ -30,17 +30,21 @@ test("FoodTruckPage uses editorial shell with Current Location and Save contact"
   assert.match(source, /Claim this profile/);
   assert.match(source, /SaveContactButton/);
   assert.match(source, /food-truck-save-contact/);
-  assert.match(source, /<MenuInline[\s\S]*menuData=\{menuState\.data\}/);
+  assert.match(source, /restaurantMenuPathFromRow/);
+  assert.match(source, /menuHref/);
+  assert.doesNotMatch(source, /Full menu/);
+  assert.doesNotMatch(source, /<MenuInline/);
   assert.match(editorial, /Current Location:/);
   assert.match(editorial, /food-truck-current-location/);
   assert.match(editorial, /food-truck-upcoming/);
-  assert.match(editorial, /MapPinIcon/);
+  assert.match(editorial, /food-truck-view-menu/);
+  assert.match(editorial, /ViewMenuIcon/);
+  assert.match(editorial, /Hours of operation/);
+  assert.match(editorial, /Featured dish/);
+  assert.match(editorial, /Today's special/);
   assert.match(editorial, /FollowRestaurantButton/);
-  assert.doesNotMatch(editorial, /Where & when/);
-  assert.doesNotMatch(editorial, /WhereAndWhenPanel/);
   assert.doesNotMatch(editorial, /RestaurantProfileMenuPreview/);
-  assert.doesNotMatch(editorial, /"Food Truck"/);
-  assert.doesNotMatch(source, /scheduleHref/);
+  assert.doesNotMatch(editorial, /Where & when/);
   assert.doesNotMatch(source, /RestaurantPublicEditorial/);
   assert.doesNotMatch(source, /FullClaimableFoodTruckProfile/);
   assert.doesNotMatch(source, /\.is_demo/);

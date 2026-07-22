@@ -7,12 +7,11 @@
  *   Dedicated Menuply profile page for food trucks.
  *   React route: /foodtrucks/:slugOrId
  *
- *   Editorial shell: Current Location, upcoming stops, full menu.
- *   Claim CTA + display-only notice + Save to contacts preserved for demos.
+ *   Personality-first editorial shell (no inline menu).
+ *   Icon rail links to public menu; claim CTA + display-only + Save contact kept.
  *
  *   Data sources:
  *     - Profile: GET /public/restaurants/:slugOrId
- *     - Menu:    GET /public/restaurants/:id/menu
  * ============================================================
  */
 
@@ -27,9 +26,9 @@ import FoodTruckPublicEditorial from "../components/restaurant/FoodTruckPublicEd
 import { toConsumerErrorMessage } from "../lib/api.js";
 import BottomNav from "../components/BottomNav.jsx";
 import { getDisplayMenuItemName } from "../utils/getDisplayMenuItemName.js";
-import { buildGoogleMapsDirectionsUrl } from "../lib/catalogMenuUtils.js";
 import { buildRestaurantStatusLightProps } from "../lib/restaurantStatusLight.js";
 import { buildRestaurantShareData } from "../components/share/shareUtils.js";
+import { restaurantMenuPathFromRow } from "../lib/canonicalUrl.js";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 const THEME_KEY = "grubbid_theme";
@@ -1230,7 +1229,7 @@ function AboutSection({ profile, isDark, c }) {
 /* ─── Page ────────────────────────────────────────────────── */
 
 export default function FoodTruckPage() {
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
   const { slugOrId } = useParams();
   const isMobile = useIsMobile();
 
@@ -1240,11 +1239,6 @@ export default function FoodTruckPage() {
 
   const [profileState, setProfileState] = useState({
     status: "loading",
-    data: null,
-    error: null,
-  });
-  const [menuState, setMenuState] = useState({
-    status: "idle",
     data: null,
     error: null,
   });
@@ -1280,7 +1274,15 @@ export default function FoodTruckPage() {
 
         setProfileState({
           status: "ok",
-          data: json?.restaurant || json,
+          data: {
+            ...(json?.restaurant || json || {}),
+            deal_items: Array.isArray(json?.deal_items) ? json.deal_items : [],
+            operating_hours: Array.isArray(json?.restaurant?.operating_hours)
+              ? json.restaurant.operating_hours
+              : Array.isArray(json?.operating_hours)
+                ? json.operating_hours
+                : [],
+          },
           error: null,
         });
       } catch (e) {
@@ -1301,55 +1303,6 @@ export default function FoodTruckPage() {
       cancelled = true;
     };
   }, [slugOrId]);
-
-  const restaurantId = profileState.data?.id ?? null;
-
-  useEffect(() => {
-    if (!restaurantId) return;
-    let cancelled = false;
-
-    setMenuState({ status: "loading", data: null, error: null });
-
-    (async () => {
-      try {
-        const res = await fetch(
-          `${API}/public/restaurants/${encodeURIComponent(restaurantId)}/menu`
-        );
-        const json = await res.json().catch(() => null);
-
-        if (cancelled) return;
-
-        if (!res.ok || !json || json.ok === false) {
-          setMenuState({
-            status: "error",
-            data: null,
-            error: toConsumerErrorMessage(
-              json?.error || `Menu not available (${res.status})`,
-              "We couldn’t load this menu right now. Please try again in a moment."
-            ),
-          });
-          return;
-        }
-
-        setMenuState({ status: "ok", data: json, error: null });
-      } catch (e) {
-        if (!cancelled) {
-          setMenuState({
-            status: "error",
-            data: null,
-            error: toConsumerErrorMessage(
-              e,
-              "We couldn’t load this menu right now. Please try again in a moment."
-            ),
-          });
-        }
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [restaurantId]);
 
   const pageWrap = (children) => (
     <>
@@ -1462,7 +1415,23 @@ export default function FoodTruckPage() {
   const website = normalizeUrl(websiteRaw);
   const phone = firstNonEmpty(profile?.phone);
   const cuisine = humanizeLabel(firstNonEmpty(profile?.cuisine));
-  const aboutText = firstNonEmpty(profile?.about_us, profile?.bio);
+  const bioText = firstNonEmpty(profile?.bio);
+  const aboutText = firstNonEmpty(profile?.about_us);
+  const foundedText = firstNonEmpty(
+    profile?.founded,
+    profile?.founded_year,
+    profile?.year_founded
+  );
+  const featuredItem = profile?.featured_item || null;
+  const dealItems = Array.isArray(profile?.deal_items) ? profile.deal_items : [];
+  const todaysSpecial = dealItems[0]
+    ? {
+        name: firstNonEmpty(dealItems[0]?.name, dealItems[0]?.title, dealItems[0]?.item_name),
+        description: firstNonEmpty(dealItems[0]?.description, dealItems[0]?.details),
+        price: dealItems[0]?.price ?? dealItems[0]?.deal_price ?? null,
+      }
+    : null;
+  const operatingHours = Array.isArray(profile?.operating_hours) ? profile.operating_hours : [];
   const billboardPreview = Array.isArray(profile?.billboard_preview)
     ? profile.billboard_preview
     : [];
@@ -1473,6 +1442,14 @@ export default function FoodTruckPage() {
     billboardPreview.find((p) => p?.image_url || p?.photo_url)?.image_url ||
     billboardPreview.find((p) => p?.image_url || p?.photo_url)?.photo_url ||
     null;
+
+  const menuHref =
+    restaurantMenuPathFromRow({
+      slug: profile?.slug || slugOrId,
+      city,
+      state: stateVal,
+      id: profile?.id,
+    }) || (profile?.id ? `/public/restaurants/${profile.id}/menu` : null);
 
   const saveContactControl = (
     <SaveContactButton truckName={name} truckPhone={phone} size={36} dark={Boolean(bannerPhotoUrl)} />
@@ -1512,7 +1489,12 @@ export default function FoodTruckPage() {
           websiteRaw={websiteRaw || website}
           phone={phone || ""}
           cuisine={cuisine || ""}
+          bioText={bioText || ""}
           aboutText={aboutText || ""}
+          foundedText={foundedText || ""}
+          featuredItem={featuredItem}
+          todaysSpecial={todaysSpecial}
+          operatingHours={operatingHours}
           logoUrl={profile?.logo_url || ""}
           bannerPhotoUrl={bannerPhotoUrl}
           statusLightProps={buildRestaurantStatusLightProps(profile)}
@@ -1535,52 +1517,9 @@ export default function FoodTruckPage() {
             restaurantSlug: profile?.slug || slugOrId,
           }}
           saveContactControl={saveContactControl}
+          menuHref={menuHref}
           isMobile={isMobile}
         />
-
-        <div
-          style={{
-            maxWidth: 1040,
-            margin: "0 auto",
-            padding: isMobile ? "8px 16px 24px" : "8px 28px 32px",
-          }}
-        >
-          <h2
-            style={{
-              margin: "8px 0 14px",
-              fontSize: 12,
-              fontWeight: 700,
-              letterSpacing: 0.7,
-              textTransform: "uppercase",
-              color: "#78716c",
-            }}
-          >
-            Full menu
-          </h2>
-          {menuState.status === "loading" ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {[1, 2, 3].map((i) => (
-                <Skel key={i} w="100%" h={72} isDark={false} radius={14} />
-              ))}
-            </div>
-          ) : menuState.status === "error" ? (
-            <div style={{ fontSize: 13, color: "#78716c", fontStyle: "italic" }}>
-              {menuState.error}
-            </div>
-          ) : menuState.data ? (
-            <MenuInline
-              menuData={menuState.data}
-              isDark={false}
-              c={light}
-              isMobile={isMobile}
-              language={language}
-            />
-          ) : (
-            <div style={{ fontSize: 14, color: "#78716c", fontStyle: "italic" }}>
-              No menu items yet.
-            </div>
-          )}
-        </div>
       </div>
       <BottomNav />
     </>

@@ -1,17 +1,22 @@
 /**
- * Food truck public profile — editorial shell.
- * Current Location under the name (maps pin); upcoming stops inline; full menu elsewhere.
+ * Food truck public profile — personality-first editorial shell.
+ * Menu is one icon away; story sections live on the page.
  */
 import { useMemo } from "react";
+import { Link } from "react-router-dom";
 import FollowRestaurantButton from "../FollowRestaurantButton.jsx";
 import ShareButton from "../share/ShareButton.jsx";
 import RestaurantStatusLight from "../RestaurantStatusLight.jsx";
 import MapPinIcon from "../menu-templates/MapPinIcon.jsx";
+import ViewMenuIcon from "../icons/ViewMenuIcon.jsx";
+import IconHoverLabel from "../IconHoverLabel.jsx";
 import {
   MENU_ROW_HEADER_ICON_GAP,
   MENU_ROW_ICON_SIZE,
 } from "../menu-templates/menuPresentationUtils.js";
 import { buildGoogleMapsDirectionsUrl } from "../../lib/catalogMenuUtils.js";
+
+const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 function asStr(v) {
   return v == null ? "" : String(v);
@@ -25,10 +30,10 @@ function firstNonEmpty(...vals) {
   return "";
 }
 
-function Section({ title, children }) {
+function Section({ title, children, empty = false }) {
   if (children == null || children === false || children === "") return null;
   return (
-    <section style={{ marginBottom: 28 }}>
+    <section style={{ marginBottom: 28 }} data-empty={empty ? "true" : undefined}>
       <h2
         style={{
           margin: "0 0 10px",
@@ -41,7 +46,16 @@ function Section({ title, children }) {
       >
         {title}
       </h2>
-      <div style={{ fontSize: 15, lineHeight: 1.65, color: "#1c1917" }}>{children}</div>
+      <div
+        style={{
+          fontSize: 15,
+          lineHeight: 1.65,
+          color: empty ? "#78716c" : "#1c1917",
+          fontStyle: empty ? "italic" : undefined,
+        }}
+      >
+        {children}
+      </div>
     </section>
   );
 }
@@ -66,6 +80,45 @@ function DetailLine({ label, children }) {
       <div style={{ fontSize: 12, fontWeight: 700, color: "#78716c", paddingTop: 2 }}>{label}</div>
       <div style={{ fontSize: 15, color: "#1c1917", lineHeight: 1.5, minWidth: 0 }}>{children}</div>
     </div>
+  );
+}
+
+function ghostIconStyle(dark) {
+  return {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: MENU_ROW_ICON_SIZE,
+    height: MENU_ROW_ICON_SIZE,
+    minWidth: MENU_ROW_ICON_SIZE,
+    minHeight: MENU_ROW_ICON_SIZE,
+    padding: 0,
+    borderRadius: "50%",
+    border: dark ? "1px solid rgba(255,255,255,0.28)" : "1px solid rgba(55,65,81,0.22)",
+    background: dark ? "rgba(28,25,23,0.35)" : "rgba(255,255,255,0.96)",
+    color: dark ? "#fafaf9" : "#0f172a",
+    flexShrink: 0,
+    boxShadow: dark ? "none" : "0 2px 8px rgba(15, 23, 42, 0.12)",
+    textDecoration: "none",
+    cursor: "pointer",
+    lineHeight: 0,
+  };
+}
+
+function ViewMenuLink({ href, dark }) {
+  if (!href) return null;
+  return (
+    <IconHoverLabel label="View menu">
+      <Link
+        to={href}
+        data-testid="food-truck-view-menu"
+        aria-label="View menu"
+        title="View menu"
+        style={ghostIconStyle(dark)}
+      >
+        <ViewMenuIcon size={14} color="currentColor" />
+      </Link>
+    </IconHoverLabel>
   );
 }
 
@@ -104,52 +157,72 @@ function normalizeScheduleStops(profile) {
   }));
 }
 
-function UpcomingStops({ stops }) {
+function formatTimeLabel(raw) {
+  const s = asStr(raw).trim();
+  if (!s) return "";
+  const m = s.match(/^(\d{1,2}):(\d{2})/);
+  if (!m) return s;
+  let h = Number(m[1]);
+  const min = m[2];
+  const ampm = h >= 12 ? "PM" : "AM";
+  h = h % 12 || 12;
+  return `${h}:${min} ${ampm}`;
+}
+
+function formatHoursRows(rows) {
+  if (!Array.isArray(rows) || !rows.length) return [];
+  return [...rows]
+    .sort((a, b) => Number(a.day_of_week) - Number(b.day_of_week))
+    .map((row) => {
+      const day = DAY_LABELS[Number(row.day_of_week)] || `Day ${row.day_of_week}`;
+      if (row.is_closed) return { day, text: "Closed" };
+      if (row.label) return { day, text: String(row.label) };
+      const open = formatTimeLabel(row.opens_at);
+      const close = formatTimeLabel(row.closes_at);
+      if (open && close) return { day, text: `${open} – ${close}` };
+      return { day, text: open || close || "—" };
+    });
+}
+
+function DishCard({ title, name, description, price }) {
+  if (!name) return null;
   return (
-    <Section title="Upcoming">
-      <div data-testid="food-truck-upcoming" style={{ display: "grid", gap: 10 }}>
-        {stops.length ? (
-          stops.map((stop, idx) => (
-            <div
-              key={`${stop.day}-${stop.location}-${idx}`}
-              style={{
-                padding: "12px 14px",
-                borderRadius: 12,
-                background: "#fff",
-                border: "1px solid #e7e5e4",
-              }}
-            >
-              {stop.day ? (
-                <div
-                  style={{
-                    fontSize: 10,
-                    fontWeight: 800,
-                    letterSpacing: 0.5,
-                    textTransform: "uppercase",
-                    color: "#166534",
-                    marginBottom: 4,
-                  }}
-                >
-                  {stop.day}
-                </div>
-              ) : null}
-              {stop.location ? (
-                <div style={{ fontSize: 14, fontWeight: 700, color: "#1c1917", lineHeight: 1.35 }}>
-                  {stop.location}
-                </div>
-              ) : null}
-              {stop.time ? (
-                <div style={{ fontSize: 13, color: "#78716c", marginTop: 2 }}>{stop.time}</div>
-              ) : null}
-            </div>
-          ))
-        ) : (
-          <div style={{ fontSize: 14, color: "#78716c", lineHeight: 1.5 }}>
-            No upcoming stops yet.
-          </div>
-        )}
+    <div
+      style={{
+        padding: "14px 16px",
+        borderRadius: 12,
+        background: "#fff",
+        border: "1px solid #e7e5e4",
+      }}
+    >
+      {title ? (
+        <div
+          style={{
+            fontSize: 10,
+            fontWeight: 800,
+            letterSpacing: 0.5,
+            textTransform: "uppercase",
+            color: "#166534",
+            marginBottom: 6,
+          }}
+        >
+          {title}
+        </div>
+      ) : null}
+      <div style={{ fontSize: 16, fontWeight: 800, color: "#1c1917", lineHeight: 1.3 }}>
+        {name}
+        {price != null && String(price).trim() ? (
+          <span style={{ marginLeft: 8, fontSize: 14, fontWeight: 600, color: "#78716c" }}>
+            {String(price).trim()}
+          </span>
+        ) : null}
       </div>
-    </Section>
+      {description ? (
+        <div style={{ marginTop: 6, fontSize: 14, color: "#57534e", lineHeight: 1.5 }}>
+          {description}
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -163,6 +236,7 @@ function IdentityBlock({
   shareData,
   shareAnalytics,
   saveContactControl,
+  menuHref,
   cuisine,
   onPhoto = false,
   isMobile,
@@ -218,42 +292,45 @@ function IdentityBlock({
               {name}
             </h1>
           </div>
-          {restaurantId || shareData || saveContactControl ? (
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: MENU_ROW_HEADER_ICON_GAP,
-                flexShrink: 0,
-              }}
-            >
-              {restaurantId ? (
-                <FollowRestaurantButton
-                  restaurantId={restaurantId}
-                  restaurantName={name}
-                  source="food_truck_profile"
-                  size={MENU_ROW_ICON_SIZE}
-                  dark={onPhoto}
-                />
-              ) : null}
-              {shareData ? (
-                <ShareButton
-                  variant="menu"
-                  iconOnly
-                  tone="ghost"
-                  shareData={shareData}
-                  analyticsContext={shareAnalytics || undefined}
-                />
-              ) : null}
-              {saveContactControl || null}
-            </div>
-          ) : null}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: MENU_ROW_HEADER_ICON_GAP,
+              flexShrink: 0,
+            }}
+          >
+            <ViewMenuLink href={menuHref} dark={onPhoto} />
+            {restaurantId ? (
+              <FollowRestaurantButton
+                restaurantId={restaurantId}
+                restaurantName={name}
+                source="food_truck_profile"
+                size={MENU_ROW_ICON_SIZE}
+                dark={onPhoto}
+              />
+            ) : null}
+            {shareData ? (
+              <ShareButton
+                variant="menu"
+                iconOnly
+                tone="ghost"
+                shareData={shareData}
+                analyticsContext={shareAnalytics || undefined}
+              />
+            ) : null}
+            {saveContactControl || null}
+          </div>
         </div>
+
+        {cuisine ? (
+          <div style={{ marginTop: 6, fontSize: 13, fontWeight: 600, color: muted }}>{cuisine}</div>
+        ) : null}
 
         <div
           data-testid="food-truck-current-location"
           style={{
-            marginTop: 8,
+            marginTop: 10,
             display: "flex",
             alignItems: "flex-start",
             gap: 8,
@@ -262,7 +339,18 @@ function IdentityBlock({
         >
           <div style={{ flex: 1, minWidth: 0, fontSize: 14, lineHeight: 1.45, color: muted }}>
             <span style={{ fontWeight: 700, color: ink }}>Current Location:</span>{" "}
-            <span>{currentLocationText || "Location not posted yet."}</span>
+            {directionsUrl && currentLocationText ? (
+              <a
+                href={directionsUrl}
+                target="_blank"
+                rel="noreferrer"
+                style={{ color: muted, textDecoration: "underline", textUnderlineOffset: 2 }}
+              >
+                {currentLocationText}
+              </a>
+            ) : (
+              <span>{currentLocationText || "Location not posted yet."}</span>
+            )}
           </div>
           {directionsUrl ? (
             <a
@@ -289,10 +377,6 @@ function IdentityBlock({
             </a>
           ) : null}
         </div>
-
-        {cuisine ? (
-          <div style={{ marginTop: 8, fontSize: 13, fontWeight: 600, color: muted }}>{cuisine}</div>
-        ) : null}
       </div>
     </div>
   );
@@ -307,7 +391,12 @@ export default function FoodTruckPublicEditorial({
   websiteRaw,
   phone,
   cuisine,
-  aboutText,
+  bioText = "",
+  aboutText = "",
+  foundedText = "",
+  featuredItem = null,
+  todaysSpecial = null,
+  operatingHours = [],
   logoUrl,
   bannerPhotoUrl,
   statusLightProps,
@@ -315,6 +404,7 @@ export default function FoodTruckPublicEditorial({
   shareData,
   shareAnalytics,
   saveContactControl = null,
+  menuHref = null,
   isMobile,
 }) {
   const stops = useMemo(() => normalizeScheduleStops(profile), [profile]);
@@ -322,7 +412,13 @@ export default function FoodTruckPublicEditorial({
     () => buildCurrentLocation(profile, streetAddr, cityLine),
     [profile, streetAddr, cityLine]
   );
-  const hasDetails = Boolean(website || phone || cuisine);
+  const hoursRows = useMemo(() => formatHoursRows(operatingHours), [operatingHours]);
+
+  const bio = firstNonEmpty(bioText);
+  const about = firstNonEmpty(aboutText);
+  const aboutDistinct = about && about.toLowerCase() !== bio.toLowerCase() ? about : "";
+  const founded = firstNonEmpty(foundedText, profile?.founded, profile?.founded_year, profile?.year_founded);
+  const hasDetails = Boolean(website || phone);
 
   const identityProps = {
     name,
@@ -334,6 +430,7 @@ export default function FoodTruckPublicEditorial({
     shareData,
     shareAnalytics,
     saveContactControl,
+    menuHref,
     cuisine,
     isMobile,
   };
@@ -392,10 +489,66 @@ export default function FoodTruckPublicEditorial({
         style={{
           maxWidth: 1040,
           margin: "0 auto",
-          padding: isMobile ? "20px 16px 0" : "28px 28px 0",
+          padding: isMobile ? "20px 16px 8px" : "28px 28px 8px",
         }}
       >
-        <Section title="About">{aboutText || null}</Section>
+        <Section title="Hours of operation" empty={!hoursRows.length}>
+          {hoursRows.length ? (
+            <div
+              data-testid="food-truck-hours"
+              style={{ display: "grid", gap: 6, maxWidth: 360 }}
+            >
+              {hoursRows.map((row) => (
+                <div
+                  key={row.day}
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "48px 1fr",
+                    gap: 12,
+                    fontSize: 14,
+                  }}
+                >
+                  <span style={{ fontWeight: 700, color: "#57534e" }}>{row.day}</span>
+                  <span style={{ color: "#1c1917" }}>{row.text}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <span data-testid="food-truck-hours">Hours not posted yet.</span>
+          )}
+        </Section>
+
+        <Section title="Bio" empty={!bio}>
+          {bio || "Bio coming soon."}
+        </Section>
+
+        {aboutDistinct ? <Section title="About us">{aboutDistinct}</Section> : null}
+
+        {founded ? <Section title="Founded">{founded}</Section> : null}
+
+        <Section title="Featured dish" empty={!featuredItem?.name}>
+          {featuredItem?.name ? (
+            <DishCard
+              name={featuredItem.name}
+              description={featuredItem.description}
+              price={featuredItem.price}
+            />
+          ) : (
+            "No featured dish yet."
+          )}
+        </Section>
+
+        <Section title="Today's special" empty={!todaysSpecial?.name}>
+          {todaysSpecial?.name ? (
+            <DishCard
+              name={todaysSpecial.name}
+              description={todaysSpecial.description}
+              price={todaysSpecial.price}
+            />
+          ) : (
+            "No special posted today."
+          )}
+        </Section>
 
         {hasDetails ? (
           <Section title="Details">
@@ -413,12 +566,54 @@ export default function FoodTruckPublicEditorial({
                   </a>
                 ) : null}
               </DetailLine>
-              <DetailLine label="Cuisine">{cuisine || null}</DetailLine>
             </div>
           </Section>
         ) : null}
 
-        <UpcomingStops stops={stops} />
+        <Section title="Upcoming">
+          <div data-testid="food-truck-upcoming" style={{ display: "grid", gap: 10 }}>
+            {stops.length ? (
+              stops.map((stop, idx) => (
+                <div
+                  key={`${stop.day}-${stop.location}-${idx}`}
+                  style={{
+                    padding: "12px 14px",
+                    borderRadius: 12,
+                    background: "#fff",
+                    border: "1px solid #e7e5e4",
+                  }}
+                >
+                  {stop.day ? (
+                    <div
+                      style={{
+                        fontSize: 10,
+                        fontWeight: 800,
+                        letterSpacing: 0.5,
+                        textTransform: "uppercase",
+                        color: "#166534",
+                        marginBottom: 4,
+                      }}
+                    >
+                      {stop.day}
+                    </div>
+                  ) : null}
+                  {stop.location ? (
+                    <div style={{ fontSize: 14, fontWeight: 700, color: "#1c1917", lineHeight: 1.35 }}>
+                      {stop.location}
+                    </div>
+                  ) : null}
+                  {stop.time ? (
+                    <div style={{ fontSize: 13, color: "#78716c", marginTop: 2 }}>{stop.time}</div>
+                  ) : null}
+                </div>
+              ))
+            ) : (
+              <div style={{ fontSize: 14, color: "#78716c", lineHeight: 1.5, fontStyle: "italic" }}>
+                No upcoming stops yet.
+              </div>
+            )}
+          </div>
+        </Section>
       </div>
     </div>
   );

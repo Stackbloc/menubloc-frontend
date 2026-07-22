@@ -10,12 +10,13 @@ const source = fs.readFileSync(
   "utf8"
 );
 
-test("demo food truck keeps its menu visible and labels ordering as unavailable", () => {
+test("demo food truck keeps ordering labeled unavailable and links to menu via icon", () => {
   assert.match(source, /profile\?\.public_ordering_mode === "display_only"/);
   assert.match(source, /Demo profile — ordering unavailable\./);
   assert.match(source, /Checkout and payment are disabled\./);
-  assert.match(source, /<MenuInline[\s\S]*menuData=\{menuState\.data\}/);
   assert.match(source, /FoodTruckPublicEditorial/);
+  assert.match(source, /menuHref/);
+  assert.doesNotMatch(source, /<MenuInline/);
 });
 
 test("internal demo status is not read by the public food truck page", () => {
