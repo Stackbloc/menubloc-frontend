@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import ChainLocationsSheet from "./ChainLocationsSheet.jsx";
-import RestaurantVerificationBadge, { verificationBadgePropsFromRow } from "../RestaurantVerificationBadge.jsx";
 import { useLanguage } from "../../context/LanguageContext.jsx";
 import { getDisplayItemCount, getMenuAvailabilityLabel, shouldLinkRestaurantCardToMenu } from "../../lib/publicCardCounts.js";
 import { getLocalizedField, getLocalizedPreviewLabel } from "../../utils/getLocalizedField.js";
@@ -118,7 +117,6 @@ export default function FeaturedDiscoveryCard({
   const itemCount = getDisplayItemCount({ restaurant: menu, hasActiveFilters });
   const menuReady = shouldLinkRestaurantCardToMenu(menu);
   const availabilityLabel = getMenuAvailabilityLabel(menu, t);
-  const verificationProps = verificationBadgePropsFromRow(menu);
   const hasDeals = menuReady && (menu?.has_deals || false);
   const previewSource = menuReady && Array.isArray(menu?.preview_menu_items) && menu.preview_menu_items.length
     ? menu.preview_menu_items
@@ -221,7 +219,6 @@ export default function FeaturedDiscoveryCard({
                 }}>
                   {name}
                 </span>
-                <RestaurantVerificationBadge {...verificationProps} />
               </div>
               {cuisine && (
                 <div style={{

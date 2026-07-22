@@ -1,5 +1,4 @@
 import { useState } from "react";
-import RestaurantVerificationBadge, { verificationBadgePropsFromRow } from "../RestaurantVerificationBadge.jsx";
 import { Link, useLocation } from "react-router-dom";
 import ChainLocationsSheet from "./ChainLocationsSheet.jsx";
 import { useLanguage } from "../../context/LanguageContext.jsx";
@@ -111,7 +110,6 @@ export default function DiscoveryCard({
   const itemCount = getDisplayItemCount({ restaurant: menu, hasActiveFilters });
   const menuReady = shouldLinkRestaurantCardToMenu(menu);
   const availabilityLabel = getMenuAvailabilityLabel(menu, t);
-  const verificationProps = verificationBadgePropsFromRow(menu);
   const previewSource = menuReady && Array.isArray(menu?.preview_menu_items) && menu.preview_menu_items.length
     ? menu.preview_menu_items
     : menuReady ? (menu?.preview_items || []) : [];
@@ -200,7 +198,6 @@ export default function DiscoveryCard({
               letterSpacing: "-0.01em",
             }}>
               {name}
-              <RestaurantVerificationBadge {...verificationProps} />
             </div>
           </div>
           {onSave ? (
