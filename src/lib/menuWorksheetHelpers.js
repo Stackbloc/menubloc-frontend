@@ -146,6 +146,34 @@ export const WORKSHEET_PUBLISH_FIELDS = [
 
 export const WORKSHEET_PRIVATE_PRICE_FIELDS = ["price_a", "price_b", "price_c"];
 
+/** Auto flags derived from current field values — must match backend menuWorksheetService. */
+const AUTO_WARNING_FLAGS = new Set(["uncertain_price", "empty_description", "empty_name"]);
+
+/**
+ * Recompute worksheet row warning flags from current field values.
+ * Clears stale empty_description / empty_name / uncertain_price when fields are filled.
+ */
+export function buildWorksheetWarningFlags(item) {
+  const flags = [];
+  const price = item?.price ?? item?.menuply_price;
+  if (price == null || price === "" || !Number.isFinite(Number(price))) {
+    flags.push("uncertain_price");
+  }
+  if (!String(item?.description || "").trim()) {
+    flags.push("empty_description");
+  }
+  if (!String(item?.item_name || item?.name || "").trim()) {
+    flags.push("empty_name");
+  }
+  if (Array.isArray(item?.warning_flags)) {
+    for (const f of item.warning_flags) {
+      if (!f || AUTO_WARNING_FLAGS.has(f) || flags.includes(f)) continue;
+      flags.push(f);
+    }
+  }
+  return flags;
+}
+
 export function priceAltLabelsStorageKey(restaurantId, menuId) {
   return `menuply.worksheet.priceAlt.${Number(restaurantId) || 0}.${Number(menuId) || 0}`;
 }

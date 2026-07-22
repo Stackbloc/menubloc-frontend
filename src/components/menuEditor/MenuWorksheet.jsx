@@ -6,6 +6,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   applyBulkPriceOp,
+  buildWorksheetWarningFlags,
   deriveSectionList,
   readPriceAltLabels,
   resolveBulkPriceField,
@@ -204,7 +205,11 @@ export default function MenuWorksheet({
   function updateRow(id, patch, fieldKey = null) {
     const field = fieldKey || Object.keys(patch)[0] || "cell";
     ensureHistoryForCell(id, field);
-    const next = rows.map((r) => (Number(r.id) === Number(id) ? { ...r, ...patch } : r));
+    const next = rows.map((r) => {
+      if (Number(r.id) !== Number(id)) return r;
+      const merged = { ...r, ...patch };
+      return { ...merged, warning_flags: buildWorksheetWarningFlags(merged) };
+    });
     const nextSections = deriveSectionList(next.map((r) => r.section_name));
     applyRows(next, nextSections);
   }
@@ -212,7 +217,10 @@ export default function MenuWorksheet({
   function runBulk(mode) {
     const amount = Number(bulkAmount);
     const priceField = resolveBulkPriceField(scope);
-    const next = applyBulkPriceOp(rows, { mode, amount, priceField });
+    const next = applyBulkPriceOp(rows, { mode, amount, priceField }).map((r) => ({
+      ...r,
+      warning_flags: buildWorksheetWarningFlags(r),
+    }));
     commitChange(next, deriveSectionList(next.map((r) => r.section_name)));
   }
 

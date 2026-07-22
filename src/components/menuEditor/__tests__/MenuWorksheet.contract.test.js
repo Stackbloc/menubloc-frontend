@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import {
   applyBulkPriceOp,
+  buildWorksheetWarningFlags,
   deriveSectionList,
   detectLargeMenuplyPriceChanges,
   formatLargePriceChangeWarning,
@@ -60,6 +61,27 @@ describe("Menu Worksheet helpers", () => {
   it("publish fields exclude private prices", () => {
     expect(WORKSHEET_PUBLISH_FIELDS).toContain("menuply_price");
     expect(WORKSHEET_PRIVATE_PRICE_FIELDS).toEqual(["price_a", "price_b", "price_c"]);
+  });
+
+  it("clears stale empty_description when description is filled", () => {
+    expect(
+      buildWorksheetWarningFlags({
+        item_name: "Cheese Pizza -",
+        description: '12" Cheese Pizza, Thin, Deep or Thick Crust',
+        menuply_price: 18,
+        warning_flags: ["empty_description"],
+      })
+    ).toEqual([]);
+  });
+
+  it("flags empty description when blank", () => {
+    expect(
+      buildWorksheetWarningFlags({
+        item_name: "Cheese Slice -",
+        description: "",
+        menuply_price: 3.5,
+      })
+    ).toEqual(["empty_description"]);
   });
 });
 
