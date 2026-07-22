@@ -29,37 +29,64 @@ import {
   syncRestaurantOnboardingProgress,
 } from "../lib/restaurantOnboardingState.js";
 
-const FONT = '"Instrument Sans", "Avenir Next", system-ui, sans-serif';
+/**
+ * Chrome must match `/restaurant/onboarding/organization` and locations:
+ * pure white page, BrandLogo height 48 / radius 14 / matchPageBackground false,
+ * max-width 640. Do not reintroduce cream shells.
+ */
+const FONT = '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif';
 
 const styles = {
   page: {
     minHeight: "100vh",
-    background: "linear-gradient(180deg, #f7f4ef 0%, #efe8df 100%)",
+    backgroundColor: "#ffffff",
+    color: "#0B0F0C",
     fontFamily: FONT,
+    fontSize: 17,
+    lineHeight: 1.65,
+    WebkitFontSmoothing: "antialiased",
   },
   main: {
-    maxWidth: 720,
+    maxWidth: 640,
     margin: "0 auto",
-    padding: "40px 20px 80px",
+    padding: "28px 24px calc(var(--bottom-nav-h, 72px) + 8px)",
+  },
+  logo: {
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+    marginBottom: 20,
   },
   eyebrow: {
+    display: "inline-block",
     fontSize: 11,
-    fontWeight: 800,
-    color: "#1F4E3D",
-    letterSpacing: "0.08em",
+    fontWeight: 700,
+    letterSpacing: "0.12em",
     textTransform: "uppercase",
-    marginBottom: 10,
+    color: "#6B7280",
+    background: "rgba(0,0,0,0.05)",
+    border: "1px solid rgba(0,0,0,0.1)",
+    borderRadius: 4,
+    padding: "3px 10px",
+    marginBottom: 20,
   },
   title: {
-    fontSize: "clamp(1.6rem, 3.5vw, 2.1rem)",
-    fontWeight: 900,
-    letterSpacing: "-0.03em",
+    fontSize: "clamp(28px, 6vw, 36px)",
+    fontWeight: 700,
+    lineHeight: 1.25,
+    letterSpacing: "-0.35px",
     color: "#0B0F0C",
-    margin: "0 0 8px",
+    margin: "0 0 12px",
   },
   subtitle: {
-    fontSize: 15,
-    color: "#4b5563",
+    fontSize: 17,
+    color: "#374151",
+    lineHeight: 1.65,
+    margin: "0 0 8px",
+  },
+  hint: {
+    fontSize: 14,
+    color: "#6b7280",
     lineHeight: 1.55,
     margin: "0 0 24px",
   },
@@ -82,10 +109,10 @@ const styles = {
     fontSize: 14,
   },
   recovery: {
-    padding: 20,
-    background: "#fff",
-    border: "1px solid #e8e4de",
-    borderRadius: 16,
+    padding: 22,
+    background: "#F9FAFB",
+    border: "1px solid rgba(0,0,0,0.08)",
+    borderRadius: 12,
   },
   actions: {
     display: "flex",
@@ -337,7 +364,9 @@ export default function RestaurantOnboardingInformation() {
     return (
       <div style={styles.page}>
         <div style={styles.main}>
-          <BrandLogo height={44} radius={12} matchPageBackground={false} />
+          <div style={styles.logo}>
+            <BrandLogo height={48} radius={14} matchPageBackground={false} />
+          </div>
           <p style={{ marginTop: 28, color: "#6b7280" }}>Loading restaurant information…</p>
         </div>
       </div>
@@ -348,8 +377,10 @@ export default function RestaurantOnboardingInformation() {
     return (
       <div style={styles.page}>
         <div style={styles.main}>
-          <BrandLogo height={44} radius={12} matchPageBackground={false} />
-          <div style={{ ...styles.eyebrow, marginTop: 28 }}>Restaurant information</div>
+          <div style={styles.logo}>
+            <BrandLogo height={48} radius={14} matchPageBackground={false} />
+          </div>
+          <div style={styles.eyebrow}>Restaurant information</div>
           <h1 style={styles.title}>We need to pause onboarding</h1>
           <div style={styles.recovery}>
             <p style={{ marginTop: 0, lineHeight: 1.55, color: "#374151" }}>{loadError}</p>
@@ -374,14 +405,16 @@ export default function RestaurantOnboardingInformation() {
   return (
     <div style={styles.page}>
       <div style={styles.main}>
-        <BrandLogo height={44} radius={12} matchPageBackground={false} />
-        <div style={{ ...styles.eyebrow, marginTop: 28 }}>Onboarding · Step after verify email</div>
+        <div style={styles.logo}>
+          <BrandLogo height={48} radius={14} matchPageBackground={false} />
+        </div>
+        <div style={styles.eyebrow}>Onboarding · Step after verify email</div>
         <h1 style={styles.title}>Restaurant information</h1>
         <p style={styles.subtitle}>
           Confirm the details for your restaurant. This updates your existing listing — it never
           creates a duplicate.
         </p>
-        <p style={{ ...styles.subtitle, marginTop: -12, fontSize: 13, color: "#6b7280" }}>
+        <p style={styles.hint}>
           Your progress is saved automatically when you continue.
         </p>
 
