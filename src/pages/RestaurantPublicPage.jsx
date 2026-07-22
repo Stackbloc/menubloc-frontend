@@ -82,6 +82,22 @@ function buildGoogleMapsDirectionsUrl(destination) {
   return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(s)}`;
 }
 
+function resolvePrimaryAddress(data) {
+  const primary = data?.primary_location || {};
+  return {
+    streetAddr: firstNonEmpty(
+      data?.address,
+      data?.address_line1,
+      primary.address_line1,
+      data?.current_pickup_address
+    ),
+    addressLine2: firstNonEmpty(data?.address_line2, primary.address_line2),
+    city: firstNonEmpty(data?.city, primary.city),
+    state: firstNonEmpty(data?.state, data?.region, primary.state),
+    postalCode: firstNonEmpty(data?.zip, data?.postal_code, data?.postcode, primary.postal_code),
+  };
+}
+
 function normalizeClaimStatus(v) {
   return String(v || "").trim().toLowerCase();
 }
@@ -834,12 +850,16 @@ export default function RestaurantPublicPage() {
     data?.restaurant_name ||
     data?.name ||
     `Restaurant ${resolvedSlug}`;
-  const streetAddr = data?.address || data?.address_line1 || "";
-  const city = data?.city || "";
-  const stateVal = data?.state || data?.region || "";
-  const zipVal = data?.zip || data?.postal_code || data?.postcode || "";
+  const {
+    streetAddr,
+    addressLine2,
+    city,
+    state: stateVal,
+    postalCode: zipVal,
+  } = resolvePrimaryAddress(data);
+  const streetDisplay = [streetAddr, addressLine2].filter(Boolean).join(", ");
   const streetDirectionsUrl = buildGoogleMapsDirectionsUrl(
-    [streetAddr, city, stateVal, zipVal].filter(Boolean).join(", ")
+    [streetDisplay || streetAddr, city, stateVal, zipVal].filter(Boolean).join(", ")
   );
   const cityLine = [city, stateVal].filter(Boolean).join(", ") + (zipVal ? ` ${zipVal}` : "");
   const websiteRaw = data?.website || data?.website_url || "";
@@ -922,7 +942,7 @@ export default function RestaurantPublicPage() {
       ) : data ? (
         <RestaurantPublicEditorial
           name={name}
-          streetAddr={streetAddr}
+          streetAddr={streetDisplay || streetAddr}
           cityLine={cityLine}
           directionsUrl={streetDirectionsUrl}
           website={website}

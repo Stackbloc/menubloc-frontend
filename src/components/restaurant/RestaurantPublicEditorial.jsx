@@ -204,6 +204,32 @@ function IdentityBlock({
   );
 }
 
+function StickyIdentityStrip({ identityProps, isMobile }) {
+  return (
+    <div
+      style={{
+        position: "sticky",
+        top: "var(--sph-h, 0px)",
+        zIndex: 80,
+        background: "rgba(250,250,249,0.96)",
+        backdropFilter: "blur(12px)",
+        borderBottom: "1px solid #e7e5e4",
+        boxShadow: "0 8px 18px rgba(28,25,23,0.04)",
+      }}
+    >
+      <div
+        style={{
+          maxWidth: 1040,
+          margin: "0 auto",
+          padding: isMobile ? "12px 16px" : "14px 28px",
+        }}
+      >
+        <IdentityBlock {...identityProps} onPhoto={false} />
+      </div>
+    </div>
+  );
+}
+
 export default function RestaurantPublicEditorial({
   name,
   streetAddr,
@@ -264,40 +290,50 @@ export default function RestaurantPublicEditorial({
       }}
     >
       {bannerPhotoUrl ? (
-        <header
-          aria-label={`${name} banner`}
-          style={{
-            position: "relative",
-            minHeight: isMobile ? 180 : 240,
-            backgroundColor: "#e7e5e4",
-            backgroundImage: `linear-gradient(to top, rgba(28,25,23,0.72) 0%, rgba(28,25,23,0.2) 45%, transparent 70%), url(${JSON.stringify(
-              String(bannerPhotoUrl)
-            )})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-          }}
-        >
-          <div
+        <>
+          <header
+            aria-label={`${name} banner`}
             style={{
-              position: "absolute",
-              left: 0,
-              right: 0,
-              bottom: 0,
-              padding: isMobile ? "20px 16px 18px" : "28px 28px 24px",
+              position: "relative",
+              minHeight: isMobile ? 180 : 240,
+              backgroundColor: "#e7e5e4",
+              backgroundImage: `linear-gradient(to top, rgba(28,25,23,0.72) 0%, rgba(28,25,23,0.2) 45%, transparent 70%), url(${JSON.stringify(
+                String(bannerPhotoUrl)
+              )})`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
             }}
           >
-            <div style={{ maxWidth: 1040, margin: "0 auto" }}>
-              <IdentityBlock {...identityProps} onPhoto />
+            <div
+              style={{
+                position: "absolute",
+                left: 0,
+                right: 0,
+                bottom: 0,
+                padding: isMobile ? "20px 16px 18px" : "28px 28px 24px",
+              }}
+            >
+              <div style={{ maxWidth: 1040, margin: "0 auto" }}>
+                <IdentityBlock {...identityProps} onPhoto />
+              </div>
             </div>
-          </div>
-        </header>
+          </header>
+          <StickyIdentityStrip identityProps={identityProps} isMobile={isMobile} />
+        </>
       ) : (
         <header
           aria-label={name}
           style={{
+            position: "sticky",
+            top: "var(--sph-h, 0px)",
+            zIndex: 80,
             maxWidth: 1040,
             margin: "0 auto",
             padding: isMobile ? "24px 16px 8px" : "32px 28px 8px",
+            background: "rgba(250,250,249,0.96)",
+            backdropFilter: "blur(12px)",
+            borderBottom: "1px solid #e7e5e4",
+            boxShadow: "0 8px 18px rgba(28,25,23,0.04)",
           }}
         >
           <IdentityBlock {...identityProps} onPhoto={false} />
