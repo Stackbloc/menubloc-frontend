@@ -65,7 +65,6 @@ function IdentityBlock({
   streetAddr,
   directionsUrl,
   logoUrl,
-  tierLabel,
   statusLightProps,
   restaurantId,
   shareData,
@@ -108,6 +107,7 @@ function IdentityBlock({
           }}
         >
           <div style={{ minWidth: 0, flex: 1, display: "flex", alignItems: "center", gap: 8 }}>
+            {statusLightProps ? <RestaurantStatusLight {...statusLightProps} size={7} /> : null}
             <h1
               style={{
                 margin: 0,
@@ -123,10 +123,6 @@ function IdentityBlock({
             >
               {name}
             </h1>
-            {statusLightProps ? <RestaurantStatusLight {...statusLightProps} size={7} /> : null}
-            {tierLabel ? (
-              <span style={{ fontSize: 13, fontWeight: 600, color: muted, flexShrink: 0 }}>{tierLabel}</span>
-            ) : null}
           </div>
           {restaurantId || shareData ? (
             <div
@@ -226,7 +222,6 @@ export default function RestaurantPublicEditorial({
   landmarks,
   logoUrl,
   bannerPhotoUrl,
-  tierLabel,
   statusLightProps,
   restaurantId,
   shareData,
@@ -245,7 +240,8 @@ export default function RestaurantPublicEditorial({
     (Array.isArray(statusEventPresentations) && statusEventPresentations.length > 0);
 
   const metaBits = [cuisine, category].filter(Boolean);
-  const hasDetails = Boolean(website || phone || cuisine || category || streetAddr || cityLine);
+  // Address lives only in IdentityBlock (header / sticky strip). Do not repeat it under details.
+  const hasDetails = Boolean(website || phone || cuisine || category);
   const hasMenuPreview = Array.isArray(menuPreviewItems) && menuPreviewItems.length > 0;
 
   const identityProps = {
@@ -254,7 +250,6 @@ export default function RestaurantPublicEditorial({
     streetAddr,
     directionsUrl,
     logoUrl,
-    tierLabel,
     statusLightProps,
     restaurantId,
     shareData,
@@ -351,32 +346,6 @@ export default function RestaurantPublicEditorial({
                   </DetailLine>
                   <DetailLine label="Cuisine">{cuisine || null}</DetailLine>
                   <DetailLine label="Category">{category || null}</DetailLine>
-                  <DetailLine label="Address">
-                    {streetAddr || cityLine ? (
-                      directionsUrl ? (
-                        <a
-                          href={directionsUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          style={{ color: "inherit", textDecoration: "underline", textUnderlineOffset: 2 }}
-                        >
-                          {streetAddr || cityLine}
-                          {streetAddr && cityLine ? (
-                            <span style={{ display: "block", marginTop: 4, color: "#57534e" }}>{cityLine}</span>
-                          ) : null}
-                        </a>
-                      ) : (
-                        <>
-                          {streetAddr}
-                          {streetAddr && cityLine ? (
-                            <span style={{ display: "block", marginTop: 4, color: "#57534e" }}>{cityLine}</span>
-                          ) : (
-                            !streetAddr && cityLine
-                          )}
-                        </>
-                      )
-                    ) : null}
-                  </DetailLine>
                 </div>
               </Section>
             ) : null}

@@ -20,13 +20,25 @@ test("RestaurantPublicPage renders full claimable profile with menu and claim CT
   assert.doesNotMatch(source, /Demo profile/);
 });
 
-test("FoodTruckPage keeps display-only notice and adds claim CTA for full_claimable", () => {
+test("FoodTruckPage keeps custom ProfileHeaderCard for all trucks including full_claimable", () => {
   const source = read("src/pages/FoodTruckPage.jsx");
+  assert.match(source, /ProfileHeaderCard/);
   assert.match(source, /public_ordering_mode === "display_only"/);
   assert.match(source, /public_profile_mode === "full_claimable"/);
   assert.match(source, /Your Menuply profile is already set up/);
   assert.match(source, /Claim this profile/);
+  assert.match(source, /\/foodtrucks\/\$\{slug\}\/schedule/);
+  assert.doesNotMatch(source, /RestaurantPublicEditorial/);
+  assert.doesNotMatch(source, /FullClaimableFoodTruckProfile/);
   assert.doesNotMatch(source, /\.is_demo/);
+});
+
+test("RestaurantPublicPage redirects food_truck listings to /foodtrucks custom profile", () => {
+  const source = read("src/pages/RestaurantPublicPage.jsx");
+  assert.match(source, /isFoodTruckListing/);
+  assert.match(source, /buildFoodTruckProfileHref/);
+  assert.match(source, /Navigate to=\{foodTruckHref\}/);
+  assert.match(source, /\/foodtrucks\/\$\{encodeURIComponent\(target\)\}/);
 });
 
 test("OwnerMenuCreateWorkspace exposes internal Normal/Demo control only", () => {

@@ -15,7 +15,8 @@
  *     - Claimed restaurants render the normal public profile
  *     - Unclaimed / seeded restaurants show a brief brand splash
  *       (name + "Your Billboard Goes Here"), then the stub sales page
- *     - Food trucks receive food-truck-aware unclaimed copy/labels
+ *     - Food trucks (restaurant_type/category) redirect to /foodtrucks/:slug
+ *       for the dedicated custom FoodTruckPage profile
  *
  *   Claimed restaurants: Option A editorial public profile (diner presentation).
  *   Unclaimed: existing Claim Screen (brand splash → FieldRow stub + Claim CTA).
@@ -27,7 +28,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, Navigate, useLocation, useParams } from "react-router-dom";
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import BottomNav from "../components/BottomNav.jsx";
 import PublicProfileOwnerChrome from "../components/restaurant/PublicProfileOwnerChrome.jsx";
@@ -191,7 +192,24 @@ function buildRestaurantBillboardHref(slugOrId) {
   return `${buildRestaurantBaseHref(slugOrId)}/billboard`;
 }
 
+function normalizeFoodTruckToken(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, "_");
+}
+
+/** Authoritative food-truck listing check (prefer type/category over name heuristics). */
+function isFoodTruckListing(data) {
+  const type = normalizeFoodTruckToken(data?.restaurant_type || data?.entity_type);
+  if (type === "food_truck" || type === "foodtruck") return true;
+  const category = normalizeFoodTruckToken(data?.category);
+  if (category === "food_truck" || category === "foodtruck") return true;
+  return false;
+}
+
 function detectFoodTruck(data) {
+  if (isFoodTruckListing(data)) return true;
   const haystack = [
     data?.restaurant_name,
     data?.name,
@@ -204,6 +222,16 @@ function detectFoodTruck(data) {
     .join(" ");
 
   return /\bfood truck\b|\btruck\b|\bmobile\b|\btrailer\b/.test(haystack);
+}
+
+function buildFoodTruckProfileHref(data, fallbackSlugOrId, location) {
+  const target =
+    String(data?.slug || data?.id || fallbackSlugOrId || "")
+      .trim() || null;
+  if (!target) return null;
+  const search = location?.search || "";
+  const hash = location?.hash || "";
+  return `/foodtrucks/${encodeURIComponent(target)}${search}${hash}`;
 }
 
 function fieldHasValue(value) {
@@ -673,6 +701,7 @@ function applyPublicRestaurantPayload(json) {
 
 export default function RestaurantPublicPage() {
   const { language } = useLanguage();
+  const location = useLocation();
   const {
     isAuthenticated: isOperatorAuthenticated,
     restaurants: operatorRestaurants,
@@ -785,6 +814,14 @@ export default function RestaurantPublicPage() {
       restaurant_id: Number(data.id),
     });
   }, [data?.id, data?.restaurant_name, data?.name, data?.slug, resolvedSlug, loading, err]);
+
+  // Food trucks always use the dedicated custom FoodTruckPage profile.
+  if (!loading && !err && data && isFoodTruckListing(data)) {
+    const foodTruckHref = buildFoodTruckProfileHref(data, resolvedSlug, location);
+    if (foodTruckHref) {
+      return <Navigate to={foodTruckHref} replace />;
+    }
+  }
 
   // Claim Screen path — leave UnclaimedRestaurantPage unchanged for ordinary unclaimed listings.
   // Real sales demos use full_claimable → editorial profile + menu + claim CTA.
