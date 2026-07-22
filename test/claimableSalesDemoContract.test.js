@@ -20,14 +20,18 @@ test("RestaurantPublicPage renders full claimable profile with menu and claim CT
   assert.doesNotMatch(source, /Demo profile/);
 });
 
-test("FoodTruckPage keeps custom ProfileHeaderCard for all trucks including full_claimable", () => {
+test("FoodTruckPage uses editorial shell with Where & when for all trucks", () => {
   const source = read("src/pages/FoodTruckPage.jsx");
-  assert.match(source, /ProfileHeaderCard/);
+  const editorial = read("src/components/restaurant/FoodTruckPublicEditorial.jsx");
+  assert.match(source, /FoodTruckPublicEditorial/);
   assert.match(source, /public_ordering_mode === "display_only"/);
   assert.match(source, /public_profile_mode === "full_claimable"/);
   assert.match(source, /Your Menuply profile is already set up/);
   assert.match(source, /Claim this profile/);
-  assert.match(source, /\/foodtrucks\/\$\{slug\}\/schedule/);
+  assert.match(source, /scheduleHref/);
+  assert.match(editorial, /WhereAndWhenPanel/);
+  assert.match(editorial, /Where & when/);
+  assert.match(editorial, /Upcoming locations \/ events/);
   assert.doesNotMatch(source, /RestaurantPublicEditorial/);
   assert.doesNotMatch(source, /FullClaimableFoodTruckProfile/);
   assert.doesNotMatch(source, /\.is_demo/);

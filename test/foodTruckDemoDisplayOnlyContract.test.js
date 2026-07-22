@@ -14,7 +14,8 @@ test("demo food truck keeps its menu visible and labels ordering as unavailable"
   assert.match(source, /profile\?\.public_ordering_mode === "display_only"/);
   assert.match(source, /Demo profile — ordering unavailable\./);
   assert.match(source, /Checkout and payment are disabled\./);
-  assert.match(source, /<MenuInline menuData=\{menuState\.data\}/);
+  assert.match(source, /<MenuInline[\s\S]*menuData=\{menuState\.data\}/);
+  assert.match(source, /FoodTruckPublicEditorial/);
 });
 
 test("internal demo status is not read by the public food truck page", () => {

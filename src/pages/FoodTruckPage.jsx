@@ -7,12 +7,8 @@
  *   Dedicated Menuply profile page for food trucks.
  *   React route: /foodtrucks/:slugOrId
  *
- *   Mobile-safe revision:
- *     - tighter spacing on phones
- *     - action buttons stack/full-width on small screens
- *     - header card content wraps cleanly
- *     - menu rows and schedule rows avoid horizontal overflow
- *     - page remains centered and readable on narrow screens
+ *   Editorial shell + Where & when panel (live location / upcoming stops).
+ *   Claim CTA + display-only notice preserved for sales demos.
  *
  *   Data sources:
  *     - Profile: GET /public/restaurants/:slugOrId
@@ -26,9 +22,14 @@ import { useLanguage } from "../context/LanguageContext.jsx";
 import { HomeButton } from "../components/NavButton.jsx";
 import MenuItemInsightsPanel from "../components/MenuItemInsightsPanel.jsx";
 import ShareIcon from "../components/share/ShareIcon.jsx";
+import StickyPageHeader from "../components/StickyPageHeader.jsx";
+import FoodTruckPublicEditorial from "../components/restaurant/FoodTruckPublicEditorial.jsx";
 import { toConsumerErrorMessage } from "../lib/api.js";
 import BottomNav from "../components/BottomNav.jsx";
 import { getDisplayMenuItemName } from "../utils/getDisplayMenuItemName.js";
+import { buildGoogleMapsDirectionsUrl } from "../lib/catalogMenuUtils.js";
+import { buildRestaurantStatusLightProps } from "../lib/restaurantStatusLight.js";
+import { buildRestaurantShareData } from "../components/share/shareUtils.js";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 const THEME_KEY = "grubbid_theme";
@@ -1503,69 +1504,177 @@ export default function FoodTruckPage() {
   }
 
   const profile = profileState.data;
+  const light = getColors(false);
 
-  return pageWrap(
+  const name =
+    firstNonEmpty(profile?.restaurant_name, profile?.name) || `Food truck ${slugOrId}`;
+  const streetAddr = firstNonEmpty(
+    profile?.current_address,
+    profile?.current_pickup_address,
+    profile?.address_line1,
+    profile?.address
+  );
+  const city = firstNonEmpty(profile?.current_city, profile?.city);
+  const stateVal = firstNonEmpty(profile?.current_state, profile?.state);
+  const zipVal = firstNonEmpty(profile?.postal_code, profile?.zip);
+  const cityLine =
+    [city, stateVal].filter(Boolean).join(", ") + (zipVal ? ` ${zipVal}` : "");
+  const websiteRaw = firstNonEmpty(profile?.website, profile?.website_url);
+  const website = normalizeUrl(websiteRaw);
+  const phone = firstNonEmpty(profile?.phone);
+  const cuisine = humanizeLabel(firstNonEmpty(profile?.cuisine));
+  const aboutText = firstNonEmpty(profile?.about_us, profile?.bio);
+  const directionsUrl = buildGoogleMapsDirectionsUrl(
+    [streetAddr, city, stateVal, zipVal].filter(Boolean).join(", ")
+  );
+  const billboardPreview = Array.isArray(profile?.billboard_preview)
+    ? profile.billboard_preview
+    : [];
+  const bannerPhotoUrl =
+    profile?.hero_image_url ||
+    profile?.cover_image_url ||
+    profile?.banner_url ||
+    billboardPreview.find((p) => p?.image_url || p?.photo_url)?.image_url ||
+    billboardPreview.find((p) => p?.image_url || p?.photo_url)?.photo_url ||
+    null;
+
+  const menuPreviewItems = (() => {
+    const sections = normalizeSections(menuState?.data);
+    const items = [];
+    for (const section of sections) {
+      for (const item of section.items || []) {
+        items.push({
+          name: item.name || item.item_name || "",
+          price: item.price,
+          section: section.name || section.title || section.section_name || "",
+        });
+        if (items.length >= 40) return items;
+      }
+    }
+    return items;
+  })();
+
+  const scheduleHref = `/foodtrucks/${encodeURIComponent(profile?.slug || slugOrId)}/schedule`;
+
+  return (
     <>
-      {navBar}
-
-      {isQrScan ? (
-        <SaveLinkBanner
-          isDark={isDark}
-          c={c}
-          isMobile={isMobile}
-          truckName={firstNonEmpty(profile?.restaurant_name, profile?.name)}
-          truckPhone={firstNonEmpty(profile?.phone)}
-        />
-      ) : null}
-
-      <ProfileHeaderCard
-        profile={profile}
-        slug={slugOrId}
-        isDark={isDark}
-        c={c}
-        isMobile={isMobile}
-      />
-
-      {profile?.public_ordering_mode === "display_only" ? (
-        <DisplayOnlyOrderNotice isDark={isDark} c={c} />
-      ) : null}
-
-      {profile?.public_profile_mode === "full_claimable" ? (
-        <FullClaimableClaimNotice
-          profile={profile}
-          slugOrId={slugOrId}
-          isDark={isDark}
-          c={c}
-        />
-      ) : null}
-
-      <div style={{ marginTop: isMobile ? 24 : 32 }}>
-        {menuState.status === "loading" ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {[1, 2, 3].map((i) => (
-              <Skel key={i} w="100%" h={72} isDark={isDark} radius={14} />
-            ))}
+      <StickyPageHeader />
+      <div
+        style={{
+          minHeight: "100vh",
+          background: "#fafaf9",
+          paddingBottom: 88,
+          fontFamily: "var(--font-ui, ui-sans-serif, system-ui, sans-serif)",
+        }}
+      >
+        {isQrScan ? (
+          <div style={{ maxWidth: 860, margin: "12px auto 0", padding: "0 16px" }}>
+            <SaveLinkBanner
+              isDark={false}
+              c={light}
+              isMobile={isMobile}
+              truckName={name}
+              truckPhone={phone}
+            />
           </div>
-        ) : menuState.status === "error" ? (
-          <div style={{ fontSize: 13, color: c.muted, fontStyle: "italic" }}>
-            {menuState.error}
-          </div>
-        ) : menuState.data ? (
-          <MenuInline menuData={menuState.data} isDark={isDark} c={c} isMobile={isMobile} language={language} />
         ) : null}
-      </div>
 
-      {profile ? (
+        <div style={{ maxWidth: 860, margin: "12px auto 0", padding: "0 16px" }}>
+          {profile?.public_ordering_mode === "display_only" ? (
+            <DisplayOnlyOrderNotice isDark={false} c={light} />
+          ) : null}
+          {profile?.public_profile_mode === "full_claimable" ? (
+            <FullClaimableClaimNotice
+              profile={profile}
+              slugOrId={slugOrId}
+              isDark={false}
+              c={light}
+            />
+          ) : null}
+        </div>
+
+        <FoodTruckPublicEditorial
+          profile={profile}
+          name={name}
+          streetAddr={streetAddr || ""}
+          cityLine={cityLine}
+          directionsUrl={directionsUrl}
+          website={website}
+          websiteRaw={websiteRaw || website}
+          phone={phone || ""}
+          cuisine={cuisine || ""}
+          aboutText={aboutText || ""}
+          logoUrl={profile?.logo_url || ""}
+          bannerPhotoUrl={bannerPhotoUrl}
+          statusLightProps={buildRestaurantStatusLightProps(profile)}
+          restaurantId={profile?.id || null}
+          shareData={
+            profile?.id
+              ? buildRestaurantShareData({
+                  restaurantName: name,
+                  restaurantSlug: profile?.slug || slugOrId,
+                  restaurantId: profile?.id,
+                  city,
+                  state: stateVal,
+                  logoUrl: profile?.logo_url || "",
+                })
+              : null
+          }
+          shareAnalytics={{
+            restaurantId: profile?.id,
+            restaurantName: name,
+            restaurantSlug: profile?.slug || slugOrId,
+          }}
+          menuPreviewItems={menuPreviewItems}
+          scheduleHref={scheduleHref}
+          isMobile={isMobile}
+        />
+
         <div
           style={{
-            marginTop: isMobile ? 24 : 32,
-            paddingTop: isMobile ? 20 : 24,
-            borderTop: `1px solid ${c.divider}`,
+            maxWidth: 1040,
+            margin: "0 auto",
+            padding: isMobile ? "8px 16px 24px" : "8px 28px 32px",
           }}
         >
-          <AboutSection profile={profile} isDark={isDark} c={c} />
+          <h2
+            style={{
+              margin: "8px 0 14px",
+              fontSize: 12,
+              fontWeight: 700,
+              letterSpacing: 0.7,
+              textTransform: "uppercase",
+              color: "#78716c",
+            }}
+          >
+            Full menu
+          </h2>
+          {menuState.status === "loading" ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {[1, 2, 3].map((i) => (
+                <Skel key={i} w="100%" h={72} isDark={false} radius={14} />
+              ))}
+            </div>
+          ) : menuState.status === "error" ? (
+            <div style={{ fontSize: 13, color: "#78716c", fontStyle: "italic" }}>
+              {menuState.error}
+            </div>
+          ) : menuState.data ? (
+            <MenuInline
+              menuData={menuState.data}
+              isDark={false}
+              c={light}
+              isMobile={isMobile}
+              language={language}
+            />
+          ) : (
+            <div style={{ fontSize: 14, color: "#78716c", fontStyle: "italic" }}>
+              No menu items yet.
+            </div>
+          )}
         </div>
-      ) : null}
+      </div>
+      <BottomNav />
     </>
   );
 }
