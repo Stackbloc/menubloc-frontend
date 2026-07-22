@@ -108,4 +108,21 @@ describe("OCR edit split pane contract", () => {
     expect(src).toMatch(/defaultRailMode=\{promotedItems\.length > 0 \? "live" : "ocr"\}/);
     expect(src).toMatch(/pages=\{pages\}/);
   });
+
+  it("Upload Detail Parsed Items uses click-to-edit fields instead of an idle Edit button", () => {
+    const src = read("OwnerMenuUploadDetail.jsx");
+    const parsed = src.slice(src.indexOf("function ParsedItemsSection"), src.indexOf("function CreateRestaurantProfileInline"));
+    expect(parsed).toMatch(/function startEdit\(itemId, field\)/);
+    expect(parsed).toMatch(/editableFieldProps\("name"\)/);
+    expect(parsed).toMatch(/editableFieldProps\("section"\)/);
+    expect(parsed).toMatch(/editableFieldProps\("price"\)/);
+    expect(parsed).toMatch(/autoFocus=\{editingFocus === "name"\}/);
+    expect(parsed).toMatch(/autoFocus=\{editingFocus === "section"\}/);
+    expect(parsed).toMatch(/autoFocus=\{editingFocus === "price"\}/);
+    expect(parsed).toMatch(/title: "Click to edit"/);
+    // Idle-row Edit button removed; Save/Cancel remain while editing
+    expect(parsed).not.toMatch(/>\s*Edit\s*</);
+    expect(parsed).toMatch(/\{saving \? "…" : "Save"\}/);
+    expect(parsed).toMatch(/>\s*Cancel\s*</);
+  });
 });

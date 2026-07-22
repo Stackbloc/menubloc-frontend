@@ -237,6 +237,7 @@ function ParsedItemsSection({ uploadId, upload, pages = [] }) {
   const [loading, setLoading] = useState(false);
   const [meta, setMeta] = useState({});
   const [editingId, setEditingId] = useState(null);
+  const [editingFocus, setEditingFocus] = useState(null); // "name" | "section" | "price"
   const [draft, setDraft] = useState({});
   const [saving, setSaving] = useState(false);
   const [saveErr, setSaveErr] = useState("");
@@ -263,6 +264,19 @@ function ParsedItemsSection({ uploadId, upload, pages = [] }) {
       .finally(() => setLoading(false));
   }, [uploadId, upload?.status]);
 
+  function startEdit(itemId, field) {
+    setEditingId(itemId);
+    setEditingFocus(field);
+    setDraft({});
+    setSaveErr("");
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setEditingFocus(null);
+    setSaveErr("");
+  }
+
   async function handleSave(itemId) {
     setSaving(true);
     setSaveErr("");
@@ -286,6 +300,7 @@ function ParsedItemsSection({ uploadId, upload, pages = [] }) {
         })
       );
       setEditingId(null);
+      setEditingFocus(null);
     } catch (err) {
       setSaveErr(err?.message || "Save failed.");
     } finally {
@@ -470,6 +485,31 @@ function ParsedItemsSection({ uploadId, upload, pages = [] }) {
               {items.map((item, idx) => {
                 const isEditing = editingId === item.id;
                 const isHeld = item._source === "review";
+                const canClickEdit = !isHeld && !isEditing;
+                const editableFieldProps = (field) =>
+                  canClickEdit
+                    ? {
+                        role: "button",
+                        tabIndex: 0,
+                        title: "Click to edit",
+                        onClick: () => startEdit(item.id, field),
+                        onKeyDown: (e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            startEdit(item.id, field);
+                          }
+                        },
+                        onMouseEnter: (e) => {
+                          e.currentTarget.style.background = "#f0fdf4";
+                        },
+                        onMouseLeave: (e) => {
+                          e.currentTarget.style.background = "transparent";
+                        },
+                      }
+                    : {};
+                const editableFieldStyle = canClickEdit
+                  ? { cursor: "text", borderRadius: 4, padding: "2px 4px", margin: "-2px -4px", display: "block" }
+                  : { display: "block" };
                 return (
                   <tr key={item.id} style={{ background: idx % 2 === 0 ? "#fff" : "#fafaf9" }}>
                     <td style={{ padding: "8px 10px", color: OWNER_COLORS.muted, fontSize: 11, whiteSpace: "nowrap" }}>
@@ -481,10 +521,12 @@ function ParsedItemsSection({ uploadId, upload, pages = [] }) {
                           style={inputS}
                           value={draft.name ?? item.name ?? ""}
                           onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))}
-                          autoFocus
+                          autoFocus={editingFocus === "name"}
                         />
                       ) : (
-                        <span style={{ fontWeight: 600 }}>{item.name || <em style={{ color: OWNER_COLORS.muted }}>unnamed</em>}</span>
+                        <span {...editableFieldProps("name")} style={{ fontWeight: 600, ...editableFieldStyle }}>
+                          {item.name || <em style={{ color: OWNER_COLORS.muted }}>unnamed</em>}
+                        </span>
                       )}
                     </td>
                     <td style={{ padding: "8px 10px", minWidth: 120 }}>
@@ -494,9 +536,15 @@ function ParsedItemsSection({ uploadId, upload, pages = [] }) {
                           value={draft.section ?? item.section ?? ""}
                           onChange={(e) => setDraft((d) => ({ ...d, section: e.target.value }))}
                           placeholder="e.g. Appetizers"
+                          autoFocus={editingFocus === "section"}
                         />
                       ) : (
-                        <span style={{ color: OWNER_COLORS.muted, fontSize: 12 }}>{item.section || "—"}</span>
+                        <span
+                          {...editableFieldProps("section")}
+                          style={{ color: OWNER_COLORS.muted, fontSize: 12, ...editableFieldStyle }}
+                        >
+                          {item.section || "—"}
+                        </span>
                       )}
                     </td>
                     <td style={{ padding: "8px 10px", minWidth: 80, whiteSpace: "nowrap" }}>
@@ -509,9 +557,12 @@ function ParsedItemsSection({ uploadId, upload, pages = [] }) {
                           value={draft.price ?? item.price ?? ""}
                           onChange={(e) => setDraft((d) => ({ ...d, price: e.target.value }))}
                           placeholder="0.00"
+                          autoFocus={editingFocus === "price"}
                         />
                       ) : (
-                        <span>{item.price != null ? `$${Number(item.price).toFixed(2)}` : "—"}</span>
+                        <span {...editableFieldProps("price")} style={editableFieldStyle}>
+                          {item.price != null ? `$${Number(item.price).toFixed(2)}` : "—"}
+                        </span>
                       )}
                     </td>
                     <td style={{ padding: "8px 10px", whiteSpace: "nowrap" }}>
@@ -537,22 +588,13 @@ function ParsedItemsSection({ uploadId, upload, pages = [] }) {
                             {saving ? "…" : "Save"}
                           </button>
                           <button
-                            onClick={() => { setEditingId(null); setSaveErr(""); }}
+                            onClick={cancelEdit}
                             style={{ padding: "4px 10px", borderRadius: 6, border: `1px solid ${OWNER_COLORS.line}`, background: "#fff", color: OWNER_COLORS.ink, fontWeight: 700, fontSize: 11, cursor: "pointer" }}
                           >
                             Cancel
                           </button>
                         </span>
-                      ) : (
-                        !isHeld && (
-                          <button
-                            onClick={() => { setEditingId(item.id); setDraft({}); setSaveErr(""); }}
-                            style={{ padding: "4px 10px", borderRadius: 6, border: `1px solid ${OWNER_COLORS.line}`, background: "#fff", color: OWNER_COLORS.ink, fontWeight: 600, fontSize: 11, cursor: "pointer" }}
-                          >
-                            Edit
-                          </button>
-                        )
-                      )}
+                      ) : null}
                     </td>
                   </tr>
                 );
