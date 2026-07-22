@@ -11,6 +11,8 @@ import {
   deriveSectionList,
   detectLargeMenuplyPriceChanges,
   formatLargePriceChangeWarning,
+  normalizePriceAltLabels,
+  resolvePriceAltLabels,
   WORKSHEET_PRIVATE_PRICE_FIELDS,
   WORKSHEET_PUBLISH_FIELDS,
 } from "../../../lib/menuWorksheetHelpers.js";
@@ -82,6 +84,21 @@ describe("Menu Worksheet helpers", () => {
         menuply_price: 3.5,
       })
     ).toEqual(["empty_description"]);
+  });
+
+  it("resolves price alt labels preferring server over localStorage", () => {
+    expect(
+      resolvePriceAltLabels(
+        { price_a: "DoorDash", price_b: "Uber", price_c: "In-store" },
+        { price_a: "Old A", price_b: "", price_c: "" }
+      )
+    ).toEqual({ price_a: "DoorDash", price_b: "Uber", price_c: "In-store" });
+    expect(
+      resolvePriceAltLabels(
+        { price_a: "", price_b: "", price_c: "" },
+        { price_a: "DoorDash", price_b: "", price_c: "" }
+      )
+    ).toEqual(normalizePriceAltLabels({ price_a: "DoorDash" }));
   });
 });
 

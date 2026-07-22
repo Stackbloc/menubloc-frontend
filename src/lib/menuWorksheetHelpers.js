@@ -178,16 +178,46 @@ export function priceAltLabelsStorageKey(restaurantId, menuId) {
   return `menuply.worksheet.priceAlt.${Number(restaurantId) || 0}.${Number(menuId) || 0}`;
 }
 
+export function normalizePriceAltLabels(raw) {
+  const src =
+    raw && typeof raw === "object" && !Array.isArray(raw)
+      ? raw
+      : typeof raw === "string"
+        ? (() => {
+            try {
+              return JSON.parse(raw || "{}");
+            } catch {
+              return {};
+            }
+          })()
+        : {};
+  return {
+    price_a: String(src.price_a || "").trim().slice(0, 80),
+    price_b: String(src.price_b || "").trim().slice(0, 80),
+    price_c: String(src.price_c || "").trim().slice(0, 80),
+  };
+}
+
+export function priceAltLabelsHaveValues(labels) {
+  const n = normalizePriceAltLabels(labels);
+  return Boolean(n.price_a || n.price_b || n.price_c);
+}
+
+/**
+ * Prefer server labels when present; otherwise fall back to device localStorage
+ * (one-time migration path until the next Save Worksheet).
+ */
+export function resolvePriceAltLabels(serverLabels, localLabels) {
+  const server = normalizePriceAltLabels(serverLabels);
+  if (priceAltLabelsHaveValues(server)) return server;
+  return normalizePriceAltLabels(localLabels);
+}
+
 export function readPriceAltLabels(restaurantId, menuId) {
   try {
     const raw = localStorage.getItem(priceAltLabelsStorageKey(restaurantId, menuId));
     if (!raw) return { price_a: "", price_b: "", price_c: "" };
-    const parsed = JSON.parse(raw);
-    return {
-      price_a: String(parsed?.price_a || ""),
-      price_b: String(parsed?.price_b || ""),
-      price_c: String(parsed?.price_c || ""),
-    };
+    return normalizePriceAltLabels(JSON.parse(raw));
   } catch {
     return { price_a: "", price_b: "", price_c: "" };
   }
@@ -197,11 +227,7 @@ export function writePriceAltLabels(restaurantId, menuId, labels) {
   try {
     localStorage.setItem(
       priceAltLabelsStorageKey(restaurantId, menuId),
-      JSON.stringify({
-        price_a: String(labels?.price_a || ""),
-        price_b: String(labels?.price_b || ""),
-        price_c: String(labels?.price_c || ""),
-      })
+      JSON.stringify(normalizePriceAltLabels(labels))
     );
   } catch {
     // ignore quota / private mode

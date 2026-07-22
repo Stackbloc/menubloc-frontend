@@ -11,6 +11,11 @@ import {
   detectLargeMenuplyPriceChanges,
   formatLargePriceChangeWarning,
   buildWorksheetWarningFlags,
+  normalizePriceAltLabels,
+  resolvePriceAltLabels,
+  readPriceAltLabels,
+  writePriceAltLabels,
+  priceAltLabelsHaveValues,
 } from "../../lib/menuWorksheetHelpers.js";
 import {
   profileEditOnboardingPath,
@@ -45,6 +50,11 @@ export default function OperatorMenuWorksheetPage() {
   const [publishing, setPublishing] = useState(false);
   const [flash, setFlash] = useState("");
   const [priceWarnings, setPriceWarnings] = useState([]);
+  const [priceAltLabels, setPriceAltLabels] = useState({
+    price_a: "",
+    price_b: "",
+    price_c: "",
+  });
   const priceBaselineRef = useRef([]);
 
   const load = useCallback(async () => {
@@ -69,11 +79,22 @@ export default function OperatorMenuWorksheetPage() {
         item_name: r.item_name,
         menuply_price: r.menuply_price,
       }));
+      const serverAlts =
+        data.price_alt_labels || data.worksheet?.price_alt_labels || null;
+      const resolvedAlts = resolvePriceAltLabels(
+        serverAlts,
+        readPriceAltLabels(rid, mid)
+      );
+      setPriceAltLabels(resolvedAlts);
+      writePriceAltLabels(rid, mid, resolvedAlts);
       setMeta({
         menu: data.menu,
         worksheet: data.worksheet,
       });
-      setDirty(false);
+      // If device had labels and server did not, mark dirty so Save migrates them.
+      setDirty(
+        !priceAltLabelsHaveValues(serverAlts) && priceAltLabelsHaveValues(resolvedAlts)
+      );
     } catch (err) {
       setError(err?.payload?.error || err?.message || "Could not load worksheet");
     } finally {
@@ -88,6 +109,13 @@ export default function OperatorMenuWorksheetPage() {
   function handleChange(nextRows, nextSections) {
     setRows(nextRows);
     setSections(nextSections);
+    setDirty(true);
+  }
+
+  function handlePriceAltLabelsChange(next) {
+    const normalized = normalizePriceAltLabels(next);
+    setPriceAltLabels(normalized);
+    writePriceAltLabels(rid, mid, normalized);
     setDirty(true);
   }
 
@@ -106,6 +134,7 @@ export default function OperatorMenuWorksheetPage() {
     try {
       const data = await saveMenuWorksheet(rid, mid, {
         rows,
+        price_alt_labels: priceAltLabels,
         upload_session_id: uploadSessionId || meta?.worksheet?.upload_session_id,
         source_pdf_url: meta?.worksheet?.source_pdf_url,
       });
@@ -115,6 +144,11 @@ export default function OperatorMenuWorksheetPage() {
       }));
       setRows(savedRows);
       setSections(data.sections || sections);
+      const savedAlts = normalizePriceAltLabels(
+        data.price_alt_labels || data.worksheet?.price_alt_labels || priceAltLabels
+      );
+      setPriceAltLabels(savedAlts);
+      writePriceAltLabels(rid, mid, savedAlts);
       priceBaselineRef.current = savedRows.map((r) => ({
         id: r.id,
         item_name: r.item_name,
@@ -141,6 +175,7 @@ export default function OperatorMenuWorksheetPage() {
     try {
       const data = await publishMenuWorksheet(rid, mid, {
         rows,
+        price_alt_labels: priceAltLabels,
         upload_session_id: uploadSessionId || meta?.worksheet?.upload_session_id,
         source_pdf_url: meta?.worksheet?.source_pdf_url,
       });
@@ -260,6 +295,8 @@ export default function OperatorMenuWorksheetPage() {
               menuName={meta?.menu?.name || "Menu"}
               restaurantId={rid}
               menuId={mid}
+              priceAltLabels={priceAltLabels}
+              onPriceAltLabelsChange={handlePriceAltLabelsChange}
               priceWarnings={priceWarnings}
             />
           </>

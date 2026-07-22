@@ -79,6 +79,8 @@ const cellInputStyle = {
  * @param {string} [props.menuName]
  * @param {number|null} [props.restaurantId]
  * @param {number|null} [props.menuId]
+ * @param {{price_a?:string,price_b?:string,price_c?:string}|null} [props.priceAltLabels]
+ * @param {(labels: {price_a:string,price_b:string,price_c:string}) => void} [props.onPriceAltLabelsChange]
  * @param {string[]} [props.priceWarnings] — red save-time price drift messages
  */
 export default function MenuWorksheet({
@@ -96,6 +98,8 @@ export default function MenuWorksheet({
   menuName = "Menu",
   restaurantId = null,
   menuId = null,
+  priceAltLabels = null,
+  onPriceAltLabelsChange = null,
   priceWarnings = [],
 }) {
   const [bulkAmount, setBulkAmount] = useState("5");
@@ -103,9 +107,10 @@ export default function MenuWorksheet({
   const [scope, setScope] = useState("all");
   const [showSource, setShowSource] = useState(false);
   const [sectionDrafts, setSectionDrafts] = useState({});
-  const [priceAlts, setPriceAlts] = useState(() =>
+  const [localPriceAlts, setLocalPriceAlts] = useState(() =>
     readPriceAltLabels(restaurantId, menuId)
   );
+  const priceAlts = priceAltLabels != null ? priceAltLabels : localPriceAlts;
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
   const undoStackRef = useRef([]);
@@ -114,13 +119,16 @@ export default function MenuWorksheet({
   const editingCellRef = useRef(null);
 
   useEffect(() => {
-    setPriceAlts(readPriceAltLabels(restaurantId, menuId));
+    if (priceAltLabels == null) {
+      setLocalPriceAlts(readPriceAltLabels(restaurantId, menuId));
+    }
     undoStackRef.current = [];
     redoStackRef.current = [];
     editingCellRef.current = null;
     setCanUndo(false);
     setCanRedo(false);
-  }, [restaurantId, menuId]);
+  }, [restaurantId, menuId]); // eslint-disable-line react-hooks/exhaustive-deps -- only reset history on worksheet identity change
+
 
   const sectionOptions = useMemo(() => {
     const fromRows = deriveSectionList([
@@ -225,11 +233,13 @@ export default function MenuWorksheet({
   }
 
   function updatePriceAlt(key, value) {
-    setPriceAlts((prev) => {
-      const next = { ...prev, [key]: value };
-      writePriceAltLabels(restaurantId, menuId, next);
-      return next;
-    });
+    const next = { ...priceAlts, [key]: value };
+    writePriceAltLabels(restaurantId, menuId, next);
+    if (typeof onPriceAltLabelsChange === "function") {
+      onPriceAltLabelsChange(next);
+    } else {
+      setLocalPriceAlts(next);
+    }
   }
 
   function handlePublishClick() {
