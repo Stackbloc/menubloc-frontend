@@ -60,28 +60,7 @@ function Section({ title, children, empty = false }) {
   );
 }
 
-function QuietLink({ href, children }) {
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noreferrer"
-      style={{ color: "#166534", textDecoration: "none", fontWeight: 600 }}
-    >
-      {children}
-    </a>
-  );
-}
-
-function DetailLine({ label, children }) {
-  if (!children) return null;
-  return (
-    <div style={{ display: "grid", gridTemplateColumns: "110px 1fr", gap: 12, padding: "8px 0" }}>
-      <div style={{ fontSize: 12, fontWeight: 700, color: "#78716c", paddingTop: 2 }}>{label}</div>
-      <div style={{ fontSize: 15, color: "#1c1917", lineHeight: 1.5, minWidth: 0 }}>{children}</div>
-    </div>
-  );
-}
+const CONTENT_MAX = 640;
 
 function ghostIconStyle(dark) {
   return {
@@ -230,6 +209,9 @@ function IdentityBlock({
   name,
   currentLocationText,
   directionsUrl,
+  website,
+  websiteRaw,
+  phone,
   logoUrl,
   statusLightProps,
   restaurantId,
@@ -244,6 +226,7 @@ function IdentityBlock({
   const ink = onPhoto ? "#fafaf9" : "#1c1917";
   const muted = onPhoto ? "rgba(250,250,249,0.88)" : "#57534e";
   const pinStroke = onPhoto ? "#fafaf9" : "#166534";
+  const linkColor = onPhoto ? "rgba(250,250,249,0.92)" : "#166534";
 
   return (
     <div style={{ display: "flex", alignItems: "flex-start", gap: 14, minWidth: 0 }}>
@@ -377,6 +360,40 @@ function IdentityBlock({
             </a>
           ) : null}
         </div>
+
+        {(phone || website) ? (
+          <div
+            data-testid="food-truck-contact"
+            style={{
+              marginTop: 8,
+              display: "flex",
+              flexWrap: "wrap",
+              gap: "6px 16px",
+              fontSize: 14,
+              lineHeight: 1.45,
+              color: muted,
+            }}
+          >
+            {phone ? (
+              <a
+                href={`tel:${String(phone).replace(/\s+/g, "")}`}
+                style={{ color: linkColor, textDecoration: "none", fontWeight: 600 }}
+              >
+                {phone}
+              </a>
+            ) : null}
+            {website ? (
+              <a
+                href={website}
+                target="_blank"
+                rel="noreferrer"
+                style={{ color: linkColor, textDecoration: "none", fontWeight: 600 }}
+              >
+                {websiteRaw || website} ↗
+              </a>
+            ) : null}
+          </div>
+        ) : null}
       </div>
     </div>
   );
@@ -418,12 +435,14 @@ export default function FoodTruckPublicEditorial({
   const about = firstNonEmpty(aboutText);
   const aboutDistinct = about && about.toLowerCase() !== bio.toLowerCase() ? about : "";
   const founded = firstNonEmpty(foundedText, profile?.founded, profile?.founded_year, profile?.year_founded);
-  const hasDetails = Boolean(website || phone);
 
   const identityProps = {
     name,
     currentLocationText: location.text,
     directionsUrl: location.directionsUrl,
+    website,
+    websiteRaw,
+    phone,
     logoUrl,
     statusLightProps,
     restaurantId,
@@ -433,6 +452,13 @@ export default function FoodTruckPublicEditorial({
     menuHref,
     cuisine,
     isMobile,
+  };
+
+  const columnStyle = {
+    maxWidth: CONTENT_MAX,
+    margin: "0 auto",
+    width: "100%",
+    boxSizing: "border-box",
   };
 
   return (
@@ -464,10 +490,10 @@ export default function FoodTruckPublicEditorial({
               left: 0,
               right: 0,
               bottom: 0,
-              padding: isMobile ? "20px 16px 18px" : "28px 28px 24px",
+              padding: isMobile ? "20px 16px 18px" : "28px 24px 24px",
             }}
           >
-            <div style={{ maxWidth: 1040, margin: "0 auto" }}>
+            <div style={columnStyle}>
               <IdentityBlock {...identityProps} onPhoto />
             </div>
           </div>
@@ -476,9 +502,8 @@ export default function FoodTruckPublicEditorial({
         <header
           aria-label={name}
           style={{
-            maxWidth: 1040,
-            margin: "0 auto",
-            padding: isMobile ? "24px 16px 8px" : "32px 28px 8px",
+            ...columnStyle,
+            padding: isMobile ? "24px 16px 8px" : "32px 24px 8px",
           }}
         >
           <IdentityBlock {...identityProps} onPhoto={false} />
@@ -487,16 +512,15 @@ export default function FoodTruckPublicEditorial({
 
       <div
         style={{
-          maxWidth: 1040,
-          margin: "0 auto",
-          padding: isMobile ? "20px 16px 8px" : "28px 28px 8px",
+          ...columnStyle,
+          padding: isMobile ? "20px 16px 8px" : "28px 24px 8px",
         }}
       >
         <Section title="Hours of operation" empty={!hoursRows.length}>
           {hoursRows.length ? (
             <div
               data-testid="food-truck-hours"
-              style={{ display: "grid", gap: 6, maxWidth: 360 }}
+              style={{ display: "grid", gap: 6 }}
             >
               {hoursRows.map((row) => (
                 <div
@@ -549,26 +573,6 @@ export default function FoodTruckPublicEditorial({
             "No special posted today."
           )}
         </Section>
-
-        {hasDetails ? (
-          <Section title="Details">
-            <div style={{ borderTop: "1px solid #e7e5e4" }}>
-              <DetailLine label="Website">
-                {website ? <QuietLink href={website}>{websiteRaw || website} ↗</QuietLink> : null}
-              </DetailLine>
-              <DetailLine label="Phone">
-                {phone ? (
-                  <a
-                    href={`tel:${String(phone).replace(/\s+/g, "")}`}
-                    style={{ color: "inherit", textDecoration: "none" }}
-                  >
-                    {phone}
-                  </a>
-                ) : null}
-              </DetailLine>
-            </div>
-          </Section>
-        ) : null}
 
         <Section title="Upcoming">
           <div data-testid="food-truck-upcoming" style={{ display: "grid", gap: 10 }}>

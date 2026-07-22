@@ -16,6 +16,7 @@ test.describe("food truck personality profile", () => {
     await expect(page.getByTestId("food-truck-public-editorial")).toBeVisible();
     await expect(page.getByTestId("food-truck-current-location")).toBeVisible({ timeout: 15_000 });
     await expect(page.getByText(/Current Location:/i).first()).toBeVisible();
+    await expect(page.getByTestId("food-truck-contact")).toBeVisible();
     await expect(page.getByTestId("food-truck-view-menu")).toBeVisible();
     await expect(page.getByTestId("food-truck-save-contact")).toBeVisible();
     await expect(page.getByTestId("food-truck-upcoming")).toBeVisible();

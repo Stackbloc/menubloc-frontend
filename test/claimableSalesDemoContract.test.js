@@ -36,7 +36,11 @@ test("FoodTruckPage uses personality editorial with View menu icon rail (no inli
   assert.doesNotMatch(source, /<MenuInline/);
   assert.match(editorial, /Current Location:/);
   assert.match(editorial, /food-truck-current-location/);
+  assert.match(editorial, /food-truck-contact/);
   assert.match(editorial, /food-truck-upcoming/);
+  assert.match(editorial, /CONTENT_MAX = 640/);
+  assert.doesNotMatch(editorial, /title=\"Details\"/);
+  assert.doesNotMatch(editorial, /Section title=\"Details\"/);
   assert.match(editorial, /food-truck-view-menu/);
   assert.match(editorial, /ViewMenuIcon/);
   assert.match(editorial, /Hours of operation/);
