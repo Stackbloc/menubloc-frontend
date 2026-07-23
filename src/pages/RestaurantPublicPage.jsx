@@ -12,7 +12,9 @@
  *     - QR code scan landings (/qr/:token → /restaurants/:slugOrId)
  *
  *   Behavior:
- *     - Claimed restaurants render the normal public profile
+ *     - Claimed restaurants with an active billboard splash show the graphic
+ *       briefly, then the normal public profile
+ *     - Claimed restaurants without splash render the normal public profile
  *     - Unclaimed / seeded restaurants show a brief brand splash
  *       (name + "Your Billboard Goes Here"), then the stub sales page
  *     - Food trucks (restaurant_type/category) redirect to /foodtrucks/:slug
@@ -36,6 +38,11 @@ import RestaurantPublicEditorial from "../components/restaurant/RestaurantPublic
 import UnclaimedRestaurantBrandSplash, {
   UNCLAIMED_BRAND_SPLASH_MS,
 } from "../components/restaurant/UnclaimedRestaurantBrandSplash.jsx";
+import ClaimedRestaurantBillboardSplash, {
+  CLAIMED_BILLBOARD_SPLASH_MS,
+  CLAIMED_BILLBOARD_SPLASH_REDUCED_MS,
+  pickClaimedBillboardSplashPost,
+} from "../components/restaurant/ClaimedRestaurantBillboardSplash.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { useOperator } from "../context/OperatorContext.jsx";
 import { fetchRestaurantMenuPreview, toConsumerErrorMessage } from "../lib/api.js";
@@ -666,6 +673,11 @@ function applyPublicRestaurantPayload(json) {
     menu_presentation: json?.menu_presentation || null,
     // Intentionally do NOT merge top-level menu_items — use menu-preview endpoint.
     deal_items: Array.isArray(json?.deal_items) ? json.deal_items : [],
+    billboard_preview: Array.isArray(restaurant?.billboard_preview)
+      ? restaurant.billboard_preview
+      : Array.isArray(json?.billboard_preview)
+        ? json.billboard_preview
+        : [],
     claim_status: json?.claim_status ?? restaurant?.claim_status ?? null,
     public_profile_mode:
       json?.public_profile_mode ?? restaurant?.public_profile_mode ?? "standard",
@@ -715,6 +727,7 @@ export default function RestaurantPublicPage() {
   const [err, setErr] = useState("");
   const [data, setData] = useState(null);
   const [menuPreview, setMenuPreview] = useState(null);
+  const [billboardSplashDone, setBillboardSplashDone] = useState(false);
 
   const isDark = PUBLIC_PROFILE_IS_DARK;
   const isMobile = useIsMobile();
@@ -737,6 +750,7 @@ export default function RestaurantPublicPage() {
     setErr("");
     setData(null);
     setMenuPreview(null);
+    setBillboardSplashDone(false);
 
     fetch(dataUrl)
       .then((r) => r.json())
@@ -763,6 +777,28 @@ export default function RestaurantPublicPage() {
       alive = false;
     };
   }, [dataUrl]);
+
+  const claimedBillboardSplashPost = useMemo(() => {
+    if (loading || err || !data || isOwner) return null;
+    if (isFoodTruckListing(data)) return null;
+    // Ordinary unclaimed listings use UnclaimedRestaurantBrandSplash instead.
+    if (!isClaimedRestaurant(data) && !isFullClaimablePublicProfile(data)) return null;
+    return pickClaimedBillboardSplashPost(data?.billboard_preview);
+  }, [data, loading, err, isOwner]);
+
+  useEffect(() => {
+    if (!claimedBillboardSplashPost || billboardSplashDone) return undefined;
+    let delayMs = CLAIMED_BILLBOARD_SPLASH_MS;
+    try {
+      if (typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches) {
+        delayMs = CLAIMED_BILLBOARD_SPLASH_REDUCED_MS;
+      }
+    } catch {
+      /* ignore */
+    }
+    const timer = window.setTimeout(() => setBillboardSplashDone(true), delayMs);
+    return () => window.clearTimeout(timer);
+  }, [claimedBillboardSplashPost, billboardSplashDone]);
 
   useEffect(() => {
     const restaurantId = data?.id;
@@ -893,6 +929,7 @@ export default function RestaurantPublicPage() {
   const dealItems = Array.isArray(data?.deal_items) ? data.deal_items : [];
   const billboardPreview = Array.isArray(data?.billboard_preview) ? data.billboard_preview : [];
   const billboardHref = buildRestaurantBillboardHref(data?.slug || data?.id || resolvedSlug);
+  const splashPost = claimedBillboardSplashPost;
   const bannerPhotoUrl =
     data?.hero_image_url ||
     data?.cover_image_url ||
@@ -902,6 +939,16 @@ export default function RestaurantPublicPage() {
     null;
 
   const pageBg = isDark ? "#0b0b0f" : "#ffffff";
+
+  if (!loading && !err && data && splashPost && !billboardSplashDone) {
+    return (
+      <ClaimedRestaurantBillboardSplash
+        restaurantName={name}
+        post={splashPost}
+        onDismiss={() => setBillboardSplashDone(true)}
+      />
+    );
+  }
 
   return (
     <>

@@ -1,5 +1,6 @@
 # Handoffs Index
 
+- `2026-07-23_claimed-billboard-splash-before-profile_handoff.md` — Claimed profile billboard entrance splash + Pho N Mo asset.
 - `2026-07-20_menu-worksheet-bulk-row-abc-ux_handoff.md` — Menu Worksheet bulk All/Row A/B/C + undo/alt names/40% warn/KB closed on worksheet.
 - `2026-07-18_claim-organization-welcome_handoff.md` — Claim welcome on business organization onboarding.
 - `2026-07-18_claim-signup-identity-lock_handoff.md` — Claim signup locks name/city/state + binds `restaurant_id` (no CK overwrite).
