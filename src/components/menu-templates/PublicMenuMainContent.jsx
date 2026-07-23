@@ -3,6 +3,7 @@ import DarkPremiumMenuTemplate from "./DarkPremiumMenuTemplate.jsx";
 import PremiumBistroMenuTemplate from "./PremiumBistroMenuTemplate.jsx";
 import ModernAsianMenuTemplate from "./ModernAsianMenuTemplate.jsx";
 import RusticItalianMenuTemplate from "./RusticItalianMenuTemplate.jsx";
+import FineMenuTemplate from "./FineMenuTemplate.jsx";
 import MenuVerificationFooter from "./MenuVerificationFooter.jsx";
 import { resolveTemplateMenuStyle } from "./menuPresentationUtils.js";
 
@@ -16,6 +17,7 @@ import { resolveTemplateMenuStyle } from "./menuPresentationUtils.js";
  *   v14 Fast Casual → ModernAsianMenuTemplate (photo card grid)
  *   v15 Family Dining → RusticItalianMenuTemplate
  *   v16 Brand Tint → ClassicMenuTemplate + operator shell tint
+ *   v17 Fine → FineMenuTemplate (black/white serif, text-forward)
  */
 export default function PublicMenuMainContent({ menuStyle: rawStyle, templateContext: ctx }) {
   const menuStyle = resolveTemplateMenuStyle(rawStyle);
@@ -29,6 +31,7 @@ export default function PublicMenuMainContent({ menuStyle: rawStyle, templateCon
   else if (menuStyle === "v13") content = <PremiumBistroMenuTemplate {...ctx} />;
   else if (menuStyle === "v14") content = <ModernAsianMenuTemplate {...ctx} />;
   else if (menuStyle === "v15") content = <RusticItalianMenuTemplate {...ctx} />;
+  else if (menuStyle === "v17") content = <FineMenuTemplate {...ctx} />;
   else content = <ClassicMenuTemplate {...ctx} />;
 
   return (
