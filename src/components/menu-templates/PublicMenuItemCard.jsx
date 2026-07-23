@@ -30,6 +30,8 @@ const ED_PALETTES = {
   steakhouse: { ink: "#F2E9DC", subtle: "#A89985", hairline: "#3A2F26", unavailableBg: "#221C17", unavailable: "#D97757", accentDefault: "#C9A227" },
   qsr: { ink: "#1A1A1A", subtle: "#767676", hairline: "#ECECEC", unavailableBg: "#F7F7F7", unavailable: "#E8483A", accentDefault: "#FF5A36" },
   casual: { ink: "#3A2A22", subtle: "#8A7568", hairline: "#EAE0D3", unavailableBg: "#F5EEE3", unavailable: "#C0392B", accentDefault: "#D2691E" },
+  // Fine (v17) — espresso ink on warm brown page
+  fine: { ink: "#2A1810", subtle: "#5C4030", hairline: "#8F6F4E", unavailableBg: "#A8825A", unavailable: "#8B2E1F", accentDefault: "#3D2314" },
 };
 
 function EditorialTag({ label, color }) {
@@ -665,7 +667,7 @@ export default function PublicMenuItemCard({
 
       <PreferenceIngredientAdvisory
         item={it}
-        tone={editorialRefresh && (editorialColorScheme === "light" || editorialColorScheme === "qsr") ? "light" : "dark"}
+        tone={editorialRefresh && (editorialColorScheme === "light" || editorialColorScheme === "qsr" || editorialColorScheme === "fine" || editorialColorScheme === "casual") ? "light" : "dark"}
         style={{ marginTop: editorialRefresh ? 6 : 5, fontSize: 12 }}
       />
 

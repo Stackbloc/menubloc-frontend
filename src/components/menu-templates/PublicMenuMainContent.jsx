@@ -24,7 +24,9 @@ export default function PublicMenuMainContent({ menuStyle: rawStyle, templateCon
   const footerColor =
     menuStyle === "v12" || menuStyle === "v13" || menuStyle === "v14"
       ? "rgba(255,255,255,0.55)"
-      : "#64748b";
+      : menuStyle === "v17"
+        ? "#5C4030"
+        : "#64748b";
 
   let content = null;
   if (menuStyle === "v12") content = <DarkPremiumMenuTemplate {...ctx} />;

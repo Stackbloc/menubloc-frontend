@@ -677,14 +677,14 @@ const THEMES = [
   {
     style: "v17",
     name: "Fine",
-    bestFit: "Fine dining, chef-driven, print-style black and white menus",
-    description: "Black-and-white serif layout with uppercase section titles and a text-forward page — no stock photo chrome.",
+    bestFit: "Fine dining, chef-driven, print-style menus",
+    description: "Warm brown page with espresso serif type, uppercase section titles, and a text-forward layout — no stock photo chrome.",
     visibleInGallery: true,
     previewPayload: makePreviewPayload(MENU_THEME_PREVIEW_PAYLOADS.v1, {
       restaurant_name: "TABL M",
       name: "TABL M",
       slug: "tabl-m-fine-sample",
-      accent_color: "#000000",
+      accent_color: "#3D2314",
       menu_name: "À la Carte",
       address_line1: "700 W 7th St",
       city: "Los Angeles",
@@ -698,9 +698,9 @@ const THEMES = [
       id: "v17",
       layoutStyle: "fine print serif",
       colorDefaults: {
-        primary: "#000000",
-        accent: "#000000",
-        background: "#ffffff",
+        primary: "#3D2314",
+        accent: "#3D2314",
+        background: "#B8956A",
       },
       typographyDefaults: {
         heading: "serif",

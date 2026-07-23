@@ -163,7 +163,7 @@ export const MENU_STYLE_SHELL_BACKGROUND = {
   v13: "#161210",
   v14: "#FFFBF5",
   v15: "#FFF8EF",
-  v17: "#FFFFFF",
+  v17: "#B8956A",
 };
 
 function inferBackgroundStyleFromPreset(theme) {
@@ -252,6 +252,7 @@ export function resolveMenuPageBackground(source = {}, menuBrand = null) {
 export function resolveMenuShellTextColor(source = {}) {
   const normalized = normalizeMenuThemeSettings(source);
   if (normalized.menu_style === "v16") return "#101828";
+  if (normalized.menu_style === "v17") return "#2A1810";
   if (MENU_STYLE_SHELL_BACKGROUND[normalized.menu_style]) {
     return ["v12", "v13"].includes(normalized.menu_style) ? "#F5F5F7" : "#101828";
   }

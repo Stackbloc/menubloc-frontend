@@ -11,14 +11,16 @@ import FollowRestaurantButton from "../FollowRestaurantButton.jsx";
 import MenuHeaderNameWithActions from "./MenuHeaderIconRail.jsx";
 
 /**
- * V17 Fine — black/white serif, text-forward public menu inspired by
- * classic print / tablm.com OCR menus. Own layout identity; does not alter Classic (v1).
+ * V17 Fine — warm brown serif, text-forward public menu inspired by
+ * classic print menus. Own layout identity; does not alter Classic (v1).
  */
 const FONT_STACK = '"Palatino Linotype", Palatino, Georgia, "Times New Roman", serif';
-const INK = "#000000";
-const SUBTLE = "#3F3F46";
-const HAIRLINE = "#E5E5EA";
-const ACCENT_DEFAULT = "#000000";
+const PAGE = "#B8956A";
+const INK = "#2A1810";
+const SUBTLE = "#5C4030";
+const HAIRLINE = "#8F6F4E";
+const CREAM = "#F3E6D4";
+const ACCENT_DEFAULT = "#3D2314";
 
 function RestaurantLogoSlot({ logoUrl, restaurantName, size = 44 }) {
   if (logoUrl) {
@@ -41,7 +43,7 @@ function RestaurantLogoSlot({ logoUrl, restaurantName, size = 44 }) {
         height: size,
         borderRadius: 0,
         flexShrink: 0,
-        background: "#FFFFFF",
+        background: CREAM,
         border: `1px solid ${HAIRLINE}`,
         display: "flex",
         alignItems: "center",
@@ -122,13 +124,13 @@ export default function FineMenuTemplate(ctx) {
   const accent = brand?.accent ?? ACCENT_DEFAULT;
 
   return (
-    <div style={{ fontFamily: FONT_STACK, background: "#FFFFFF", color: INK, marginLeft: edgeBleed, marginRight: edgeBleed }}>
+    <div style={{ fontFamily: FONT_STACK, background: PAGE, color: INK, marginLeft: edgeBleed, marginRight: edgeBleed }}>
       <div
         style={{
           position: "sticky",
           top: "var(--sph-h, 88px)",
           zIndex: 50,
-          background: "rgba(255,255,255,0.94)",
+          background: "rgba(184, 149, 106, 0.94)",
           borderBottom: `1px solid ${HAIRLINE}`,
           padding: isTablet ? "22px 16px" : isMobile ? "20px 16px" : "32px 24px",
         }}
@@ -285,7 +287,7 @@ export default function FineMenuTemplate(ctx) {
                         borderRadius: 0,
                         border: isSelected ? `1px solid ${INK}` : `1px solid ${HAIRLINE}`,
                         background: isSelected ? INK : "transparent",
-                        color: isSelected ? "#FFFFFF" : SUBTLE,
+                        color: isSelected ? CREAM : SUBTLE,
                         fontWeight: 500,
                         fontSize: 14,
                         fontFamily: FONT_STACK,
@@ -368,6 +370,7 @@ export default function FineMenuTemplate(ctx) {
                         key={String(it?.id ?? `${sIdx}-${iIdx}`)}
                         density="classic"
                         editorialRefresh={true}
+                        editorialColorScheme="fine"
                         it={it}
                         sIdx={sIdx}
                         iIdx={iIdx}
