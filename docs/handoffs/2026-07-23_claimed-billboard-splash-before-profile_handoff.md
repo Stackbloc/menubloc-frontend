@@ -4,7 +4,7 @@ Show active billboard creatives as a full-screen splash before claimed restauran
 
 # Current Status
 
-**LOCAL COMPLETE** — code + contract tests + asset. Awaiting commit, deploy, and operator upload for Pho N Mo.
+**CPD COMPLETE** — FE `c9fd879` on `feature/mds-homepage-controls`; menuply.com `index-ClXyDvjG.js`. Awaiting human smoke + Pho N Mo operator upload.
 
 # Files Changed
 
@@ -30,10 +30,8 @@ None.
 
 # Remaining Work
 
-1. Commit FE (user request)
-2. Deploy Vercel prod + `vercel alias set … menuply.com`
-3. Operator: upload `assets/billboards/pho-n-mo-la-billboard.png` for Pho N Mo LA, Splash On
-4. Human smoke: claimed with splash → profile; no splash → profile only; unclaimed splash still works
+1. Human smoke: claimed with splash → profile; no splash → profile only; unclaimed splash still works
+2. Operator: upload `assets/billboards/pho-n-mo-la-billboard.png` for Pho N Mo LA, Splash On
 
 # Risks / Known Issues
 
@@ -44,15 +42,16 @@ None.
 
 - `node test/claimedRestaurantBillboardSplashContract.test.js` — ok
 - `node test/unclaimedRestaurantBrandSplashContract.test.js` — ok
-- Live UI / production — not run
+- Production: menuply.com serves `index-ClXyDvjG.js` with splash copy; API Railway counts OK
+- Human UI smoke — pending
 
 # Resume Instructions
 
-1. Commit FE splash files + asset if desired
-2. Deploy FE; alias menuply.com
-3. Upload Pho N Mo graphic via `/operator/billboards`
-4. Visit public restaurant URL as diner (not owner session) and confirm splash then profile
+1. Human smoke checklist above
+2. Upload Pho N Mo graphic via `/operator/billboards`
+3. Visit public restaurant URL as diner (not owner session) and confirm splash then profile
 
 # Git Status
 
-Uncommitted local FE changes for splash + asset (do not commit unless user asks).
+- Commit: `c9fd879` on `feature/mds-homepage-controls` (pushed)
+- Deploy: `menubloc-frontend-b5f23tfx7-menuply.vercel.app` aliased to menuply.com
