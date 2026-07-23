@@ -4,7 +4,13 @@ Establish the Stripe Environment Protection Contract as a mandatory, always-on M
 
 # Current Status
 
-**COMPLETE (docs + agent rules only).** No production Stripe configuration, Railway/Vercel env vars, webhooks, or payment code were changed in this task.
+**CPD COMPLETE (docs + agent rules).**  
+- Backend `main` `37cc3131` pushed  
+- Frontend `main` `166fb3b` pushed  
+- Vercel/menuply.com runtime deploy **skipped** (no runtime change)  
+- Production Stripe env **unchanged live** — no sandbox switch
+
+No production Stripe configuration, Railway/Vercel env vars, webhooks, or payment code were changed in this task.
 
 # Files Changed
 

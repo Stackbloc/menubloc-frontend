@@ -8,7 +8,7 @@
 | Repo | Branch | Commit | Notes |
 |------|--------|--------|-------|
 | menubloc-backend | `main` | `37cc3131` | Guardrail + CLAUDE.md + handoff |
-| menubloc-frontend | `main` | *(filled after push)* | Guardrail + CLAUDE.md + Cursor rule + handoff |
+| menubloc-frontend | `main` | `166fb3b` | Guardrail + CLAUDE.md + Cursor rule + handoff |
 
 Workspace (not a git root): `docs/guardrails/`, `.cursor/rules/`, root `CLAUDE.md` already updated locally.
 
