@@ -234,10 +234,16 @@ describe("source contracts for active selectors", () => {
     expect(file).not.toMatch(/Plan confirmed/);
   });
 
-  it("FoodTruckSignup shows $89 and remembers food_truck_annual", async () => {
+  it("FoodTruckSignup shows $89 and wires like restaurant signup", async () => {
     const file = await readSource("../../pages/FoodTruckSignup.jsx");
     expect(file).toMatch(/rememberIntendedCheckoutPlanCode\(FOOD_TRUCK_ANNUAL_PLAN_CODE\)/);
     expect(file).toMatch(/CHECKOUT_PRICE_LABELS\[FOOD_TRUCK_ANNUAL_PLAN_CODE\]/);
     expect(file).not.toMatch(/\$39\/year/);
+    expect(file).toMatch(/data-testid="food-truck-plan-signup-cta"/);
+    expect(file).toMatch(/Select Food Truck/);
+    expect(file).toMatch(/persistRestaurantOnboardingState/);
+    expect(file).toMatch(/\/operator\/verify-email/);
+    expect(file).toMatch(/autoSend:\s*true/);
+    expect(file).toMatch(/food_truck_onboarding=1/);
   });
 });

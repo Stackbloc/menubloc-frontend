@@ -16,7 +16,7 @@
  */
 
 import { useEffect, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { BrandLogo } from "../components/BrandLogo.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { buildLegalConsentPayload } from "../lib/legalConsent.js";
@@ -28,8 +28,17 @@ import {
   indexPlansByCode,
   rememberIntendedCheckoutPlanCode,
 } from "../lib/menuplyCheckoutPlans.js";
+import {
+  persistRestaurantOnboardingState,
+  syncRestaurantOnboardingProgress,
+} from "../lib/restaurantOnboardingState.js";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
+const SIGNUP_FORM_ID = "food-truck-signup-form";
+const NARROW_MQ = "(max-width: 860px)";
+const FOOD_TRUCK_MENU_UPLOAD_ROUTE = "/restaurant/pdf-upload?food_truck_onboarding=1";
+const VERIFY_EMAIL_ROUTE = "/operator/verify-email";
+
 /** Consumer-facing Food Truck plan features (display copy only). */
 const PLAN_FEATURES = [
   "Professional Food Truck profile",
@@ -44,6 +53,39 @@ const PLAN_FEATURES = [
   "Create deals and promotions free of charge",
   "Online ordering",
 ];
+
+function useIsNarrowViewport() {
+  const [isNarrow, setIsNarrow] = useState(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return false;
+    return window.matchMedia(NARROW_MQ).matches;
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return undefined;
+    const media = window.matchMedia(NARROW_MQ);
+    const onChange = () => setIsNarrow(media.matches);
+    onChange();
+    if (typeof media.addEventListener === "function") {
+      media.addEventListener("change", onChange);
+      return () => media.removeEventListener("change", onChange);
+    }
+    media.addListener(onChange);
+    return () => media.removeListener(onChange);
+  }, []);
+
+  return isNarrow;
+}
+
+function scrollToSignupForm() {
+  const formRoot = document.getElementById(SIGNUP_FORM_ID);
+  if (formRoot) {
+    formRoot.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  const email = document.getElementById("email");
+  if (email && typeof email.focus === "function") {
+    window.setTimeout(() => email.focus(), 280);
+  }
+}
 
 const styles = {
   page: {
@@ -95,22 +137,22 @@ const styles = {
     color: "#667085",
     maxWidth: 660,
   },
-  contentGrid: {
+  contentGrid: (narrow) => ({
     display: "grid",
-    gridTemplateColumns: "minmax(0, 400px) minmax(0, 1fr)",
+    gridTemplateColumns: narrow ? "minmax(0, 1fr)" : "minmax(0, 400px) minmax(0, 1fr)",
     gap: 20,
     alignItems: "start",
-  },
-  pricingCard: {
-    position: "sticky",
-    top: 24,
+  }),
+  pricingCard: (narrow) => ({
+    position: narrow ? "static" : "sticky",
+    top: narrow ? undefined : 24,
     borderRadius: 28,
     padding: "24px 22px 22px",
     border: "1px solid #eaecf0",
     background: "#ffffff",
     color: "#101828",
     boxShadow: "0 12px 30px rgba(15, 23, 32, 0.04)",
-  },
+  }),
   planBadge: {
     display: "inline-flex",
     alignItems: "center",
@@ -183,6 +225,28 @@ const styles = {
     background: "#1F4E3D",
     color: "#ffffff",
     marginTop: 1,
+  },
+  planCta: {
+    display: "flex",
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 48,
+    marginBottom: 12,
+    borderRadius: 14,
+    border: 0,
+    background: "#1F4E3D",
+    color: "#ffffff",
+    fontWeight: 800,
+    fontSize: 15,
+    cursor: "pointer",
+    fontFamily: "inherit",
+    boxShadow: "0 12px 24px rgba(31, 78, 61, 0.18)",
+  },
+  planFootnote: {
+    fontSize: 12,
+    lineHeight: 1.5,
+    color: "#667085",
   },
   formStack: {
     minWidth: 0,
@@ -373,8 +437,10 @@ function PasswordInput({
 
 export default function FoodTruckSignup() {
   const { t } = useLanguage();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const accountCreatedFromUrl = searchParams.get("created") === "1";
+  const isNarrow = useIsNarrowViewport();
 
   const [form, setForm] = useState({
     email: "",
@@ -451,19 +517,25 @@ export default function FoodTruckSignup() {
     setSubmitting(true);
 
     try {
+      const email = form.email.trim().toLowerCase();
+      const truckName = form.truck_name.trim();
+      const city = form.city.trim();
+      const state = form.state.trim().toUpperCase();
+      const phone = form.phone.trim();
+
       const res = await fetch(`${API}/owner/profile`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          email: form.email.trim(),
+          email,
           password: form.password,
-          restaurant_name: form.truck_name.trim(),
+          restaurant_name: truckName,
           category: "food_truck",
-          city: form.city.trim(),
-          state: form.state.trim(),
+          city,
+          state,
           manager_name: form.owner_name.trim(),
           full_name: form.owner_name.trim(),
-          phone: form.phone.trim(),
+          phone,
           signup_source: "food_truck_signup",
           selected_plan: FOOD_TRUCK_ANNUAL_PLAN_CODE,
           ...buildLegalConsentPayload(),
@@ -475,9 +547,59 @@ export default function FoodTruckSignup() {
         throw new Error(data?.error || `Signup failed (${res.status})`);
       }
 
+      const { restaurant, owner_token } = data;
       rememberIntendedCheckoutPlanCode(FOOD_TRUCK_ANNUAL_PLAN_CODE);
-      setAccountCreated(true);
-      setSubmitting(false);
+
+      // Match restaurant signup wiring: persist onboarding → verify-email autoSend → next step.
+      const baseState = persistRestaurantOnboardingState({
+        restaurant_id: restaurant?.id,
+        restaurant_name: truckName,
+        email,
+        owner_token,
+        city,
+        state,
+        phone,
+        ingestion_method: "later",
+        selected_plan: FOOD_TRUCK_ANNUAL_PLAN_CODE,
+        selected_plan_code: FOOD_TRUCK_ANNUAL_PLAN_CODE,
+        plan: FOOD_TRUCK_ANNUAL_PLAN_CODE,
+        intake_path: "food_truck_signup",
+        current_step_key: "email_verified",
+        completed_step_keys: ["create_operator_account", "account_created", "basic_information_complete"],
+        draft_payload: {
+          onboarding_kind: "food_truck",
+          food_truck_onboarding: true,
+          temporary_selections: {
+            selected_plan_code: FOOD_TRUCK_ANNUAL_PLAN_CODE,
+            menu_upload_mode: "upload_next",
+          },
+        },
+      });
+
+      let draftState = baseState;
+      try {
+        draftState = await syncRestaurantOnboardingProgress(baseState, {
+          current_step_key: "email_verified",
+          completed_step_keys: baseState.completed_step_keys,
+          intake_path: "food_truck_signup",
+          selected_plan_code: FOOD_TRUCK_ANNUAL_PLAN_CODE,
+          draft_payload: baseState.draft_payload,
+        });
+      } catch {
+        /* best-effort checkpoint — still continue to verify-email */
+      }
+
+      navigate(VERIFY_EMAIL_ROUTE, {
+        replace: true,
+        state: {
+          ...draftState,
+          email,
+          autoSend: true,
+          nextPath: FOOD_TRUCK_MENU_UPLOAD_ROUTE,
+          plan: FOOD_TRUCK_ANNUAL_PLAN_CODE,
+          food_truck_onboarding: true,
+        },
+      });
     } catch (err) {
       setServerError(err.message || "Signup failed. Please try again.");
       setSubmitting(false);
@@ -533,8 +655,8 @@ export default function FoodTruckSignup() {
 
         {serverError ? <div style={styles.errorBanner}>{serverError}</div> : null}
 
-        <div style={styles.contentGrid}>
-          <aside style={styles.pricingCard}>
+        <div style={styles.contentGrid(isNarrow)}>
+          <aside style={styles.pricingCard(isNarrow)} data-testid="food-truck-plan-card">
             <div style={styles.planBadge}>Annual plan</div>
             <div style={styles.planName}>Food Truck</div>
             <div style={styles.commissionDisclosure}>
@@ -552,12 +674,20 @@ export default function FoodTruckSignup() {
                 </li>
               ))}
             </ul>
+            <button
+              type="button"
+              style={styles.planCta}
+              onClick={scrollToSignupForm}
+              data-testid="food-truck-plan-signup-cta"
+            >
+              Select Food Truck
+            </button>
             <div style={styles.planFootnote}>
-              Create your account here. Merchant onboarding and delivery configuration remain in the Operator Panel after onboarding is complete.
+              Create your account below. Merchant onboarding and delivery configuration remain in the Operator Panel after onboarding is complete.
             </div>
           </aside>
 
-          <div style={styles.formStack}>
+          <div style={styles.formStack} id={SIGNUP_FORM_ID}>
             <div style={styles.formCard}>
               <div style={styles.formCardHeader}>
                 <h2 style={styles.formCardTitle}>Create your account</h2>
@@ -722,7 +852,7 @@ export default function FoodTruckSignup() {
                 </div>
 
                 <button type="submit" style={submitBtnStyle(submitting)} disabled={submitting}>
-                  {submitting ? "Creating account..." : "Create account"}
+                  {submitting ? "Creating account..." : "Sign up for Food Truck"}
                 </button>
               </form>
             </div>

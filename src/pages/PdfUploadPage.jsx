@@ -604,13 +604,18 @@ export default function PdfUploadPage() {
   const nav = useNavigate();
   const { selectedRestaurant, operator } = useOperator();
   const searchParams = new URLSearchParams(location.search || "");
-  const isFoodTruckOnboarding = searchParams.get("food_truck_onboarding") === "1";
   const isOperatorFlow = location.pathname.startsWith("/operator/");
   const isAuthenticatedOperator = Boolean(operator?.id && selectedRestaurant?.id);
   const recovery = useMemo(
     () => resolveRestaurantOnboardingState({ routeState: location.state, search: location.search }),
     [location.state, location.search]
   );
+  const isFoodTruckOnboarding =
+    searchParams.get("food_truck_onboarding") === "1" ||
+    location.state?.food_truck_onboarding === true ||
+    String(location.state?.selected_plan || recovery.state?.selected_plan || "").includes("food_truck") ||
+    String(location.state?.plan || recovery.state?.plan || "").includes("food_truck") ||
+    recovery.state?.draft_payload?.onboarding_kind === "food_truck";
 
   useEffect(() => {
     if (!isOperatorFlow && recovery.hasAnyData) {

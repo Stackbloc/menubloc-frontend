@@ -8,7 +8,8 @@ import {
   verifyOperatorEmailCode,
 } from "../../lib/operatorApi.js";
 import {
-  navigateWithRestaurantOnboardingState,
+  buildRestaurantOnboardingSearch,
+  persistRestaurantOnboardingState,
   resolveRestaurantOnboardingState,
   syncRestaurantOnboardingProgress,
 } from "../../lib/restaurantOnboardingState.js";
@@ -18,6 +19,19 @@ import {
   styles,
 } from "../../components/consumer/ConsumerAuthShared.jsx";
 
+function mergeSearchParams(...parts) {
+  const merged = new URLSearchParams();
+  for (const part of parts) {
+    const raw = String(part || "").replace(/^\?/, "");
+    if (!raw) continue;
+    const params = new URLSearchParams(raw);
+    for (const [key, value] of params.entries()) {
+      if (value != null && value !== "") merged.set(key, value);
+    }
+  }
+  const query = merged.toString();
+  return query ? `?${query}` : "";
+}
 export default function OperatorEmailVerification() {
   const { t } = useLanguage();
   const navigate = useNavigate();
@@ -45,11 +59,34 @@ export default function OperatorEmailVerification() {
     return restaurants?.length === 0 ? "/operator/claim" : "/operator";
   }, [location.state, onboarding, restaurants]);
 
+  const nextPathParts = useMemo(() => {
+    const raw = String(nextPath || "/operator");
+    try {
+      const url = new URL(raw, "https://menuply.local");
+      return {
+        pathname: url.pathname || "/operator",
+        search: url.search || "",
+      };
+    } catch {
+      const [pathname, query = ""] = raw.split("?");
+      return {
+        pathname: pathname || "/operator",
+        search: query ? `?${query}` : "",
+      };
+    }
+  }, [nextPath]);
+
   useEffect(() => {
     if (isAuthenticated && isEmailVerified) {
-      navigate(nextPath, { replace: true });
+      navigate(
+        {
+          pathname: nextPathParts.pathname,
+          search: nextPathParts.search,
+        },
+        { replace: true }
+      );
     }
-  }, [isAuthenticated, isEmailVerified, navigate, nextPath]);
+  }, [isAuthenticated, isEmailVerified, navigate, nextPathParts.pathname, nextPathParts.search]);
 
   useEffect(() => {
     if (!location.state?.autoSend || !email || autoSent.current) return;
@@ -85,9 +122,16 @@ export default function OperatorEmailVerification() {
         await refreshSession().catch(() => {});
       }
       if (onboarding?.restaurant_id) {
+        const isFoodTruckOnboarding = Boolean(
+          location.state?.food_truck_onboarding ||
+            onboarding?.draft_payload?.food_truck_onboarding ||
+            onboarding?.selected_plan === "food_truck_annual" ||
+            onboarding?.selected_plan_code === "food_truck_annual" ||
+            onboarding?.plan === "food_truck_annual"
+        );
         const nextOnboarding = {
           ...onboarding,
-          current_step_key: "business_organization",
+          current_step_key: isFoodTruckOnboarding ? "menu_upload" : "business_organization",
           completed_step_keys: Array.from(
             new Set([
               ...(onboarding.completed_step_keys || []),
@@ -99,16 +143,43 @@ export default function OperatorEmailVerification() {
         };
         try {
           await syncRestaurantOnboardingProgress(nextOnboarding, {
-            current_step_key: "business_organization",
+            current_step_key: nextOnboarding.current_step_key,
             completed_step_keys: nextOnboarding.completed_step_keys,
           });
         } catch {
           /* best-effort checkpoint */
         }
-        navigateWithRestaurantOnboardingState(navigate, nextPath, nextOnboarding);
+        const persisted = persistRestaurantOnboardingState(nextOnboarding);
+        const search = mergeSearchParams(
+          buildRestaurantOnboardingSearch(persisted),
+          nextPathParts.search,
+          isFoodTruckOnboarding ? "food_truck_onboarding=1" : ""
+        );
+        navigate(
+          {
+            pathname: nextPathParts.pathname,
+            search,
+          },
+          {
+            replace: true,
+            state: {
+              ...persisted,
+              food_truck_onboarding: isFoodTruckOnboarding,
+            },
+          }
+        );
         return;
       }
-      navigate(nextPath, { replace: true });
+      navigate(
+        {
+          pathname: nextPathParts.pathname,
+          search: nextPathParts.search,
+        },
+        {
+          replace: true,
+          state: location.state?.email ? { email: location.state.email } : undefined,
+        }
+      );
     } catch (error) {
       setFormError(error.message || t("auth.verificationFailed", "Verification failed."));
     } finally {
