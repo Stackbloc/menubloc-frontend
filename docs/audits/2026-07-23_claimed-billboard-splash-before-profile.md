@@ -48,26 +48,27 @@ Not committed (awaiting user request).
 
 ## Deployment Status
 
-Not deployed.
+Deployed FE `c9fd879` → `menubloc-frontend-b5f23tfx7-menuply.vercel.app` aliased to menuply.com (`index-ClXyDvjG.js`).
 
 ## Verification Results
 
 ```
 node test/claimedRestaurantBillboardSplashContract.test.js  → ok
 node test/unclaimedRestaurantBrandSplashContract.test.js    → ok
+menuply.com bundle index-ClXyDvjG.js; Tap to continue present
+API: menubloc-backend-production 60 / localhost:3001 6
 ```
 
 ## Remaining Risks
 
-- Splash only appears after profile GET returns `billboard_preview` (no flash of profile first once data is ready; loading skeleton still shows first)
+- Splash only appears after profile GET returns `billboard_preview` (loading skeleton still shows first)
 - Pho N Mo creative is not auto-attached in DB — operator must upload via Billboards + Splash On
 
 ## Follow-Up Work
 
-1. Commit FE changes
-2. Deploy FE + alias menuply.com
-3. Upload Pho N Mo asset on operator Billboards for the LA restaurant and verify splash → profile live
+1. Human smoke on menuply.com
+2. Upload Pho N Mo asset on operator Billboards for the LA restaurant and verify splash → profile live
 
 ## Final Verdict
 
-Local implementation complete for claimed billboard entrance splash. Production attach for Pho N Mo remains an operator upload step.
+CPD complete for claimed billboard entrance splash. Production attach for Pho N Mo remains an operator upload step.
