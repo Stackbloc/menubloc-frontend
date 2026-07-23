@@ -135,6 +135,16 @@ const INTELLIGENCE_DEFAULTS_BY_STYLE = {
     similar_enabled: true,
     indulgence_display: "compact",
   },
+  v17: {
+    intelligence_display_style: "subtle",
+    intelligence_density: "subtle",
+    nutrition_display: "compact",
+    allergen_display: "icon",
+    insight_display: "compact",
+    compare_enabled: true,
+    similar_enabled: true,
+    indulgence_display: "compact",
+  },
 };
 
 export function normalizeHexColor(value) {
@@ -153,6 +163,7 @@ export const MENU_STYLE_SHELL_BACKGROUND = {
   v13: "#161210",
   v14: "#FFFBF5",
   v15: "#FFF8EF",
+  v17: "#FFFFFF",
 };
 
 function inferBackgroundStyleFromPreset(theme) {
@@ -181,6 +192,7 @@ function inferBackgroundStyleFromMenuStyle(menuStyle) {
     case "v6":
     case "v7":
       return "chalkboard";
+    case "v17":
     case "v1":
     default:
       return "light";
@@ -191,7 +203,7 @@ function inferBackgroundStyleFromMenuStyle(menuStyle) {
 function reconcileBackgroundStyleWithMenuStyle(menuStyle, backgroundStyle) {
   const style = normalizeMenuStyle(menuStyle);
   const bg = String(backgroundStyle || "").trim();
-  const lightShellStyles = new Set(["v1", "v14", "v15", "v16", "v2", "v3", "v5", "v8", "v9"]);
+  const lightShellStyles = new Set(["v1", "v14", "v15", "v16", "v17", "v2", "v3", "v5", "v8", "v9"]);
   const darkShellStyles = new Set(["v12", "v13", "v4", "v10"]);
   const chalkShellStyles = new Set(["v6", "v7"]);
 

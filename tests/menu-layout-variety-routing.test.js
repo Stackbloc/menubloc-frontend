@@ -31,6 +31,9 @@ test("gallery styles resolve to distinct layout IDs", () => {
   assert.equal(resolveTemplateMenuStyle("v14"), "v14");
   assert.equal(resolveTemplateMenuStyle("v15"), "v15");
   assert.equal(resolveTemplateMenuStyle("v16"), "v1");
+  assert.equal(resolveTemplateMenuStyle("v17"), "v17");
+  assert.equal(resolveTemplateMenuStyle("fine"), "v17");
+  assert.equal(resolveTemplateMenuStyle("fine-dining"), "v13");
 });
 
 test("PublicMenuMainContent routes gallery styles to photo-forward boutiques", () => {
@@ -38,11 +41,13 @@ test("PublicMenuMainContent routes gallery styles to photo-forward boutiques", (
   assert.match(mainContent, /PremiumBistroMenuTemplate/);
   assert.match(mainContent, /ModernAsianMenuTemplate/);
   assert.match(mainContent, /RusticItalianMenuTemplate/);
+  assert.match(mainContent, /FineMenuTemplate/);
   assert.match(mainContent, /ClassicMenuTemplate/);
   assert.match(mainContent, /menuStyle === "v12".*DarkPremiumMenuTemplate/s);
   assert.match(mainContent, /menuStyle === "v13".*PremiumBistroMenuTemplate/s);
   assert.match(mainContent, /menuStyle === "v14".*ModernAsianMenuTemplate/s);
   assert.match(mainContent, /menuStyle === "v15".*RusticItalianMenuTemplate/s);
+  assert.match(mainContent, /menuStyle === "v17".*FineMenuTemplate/s);
 });
 
 test("Premium Bistro does not render fixed green ORDER CTA", () => {

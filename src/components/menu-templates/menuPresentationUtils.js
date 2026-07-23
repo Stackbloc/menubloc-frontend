@@ -43,6 +43,8 @@ export function normalizeMenuStyle(raw) {
   if (s === "v14" || s === "qsr" || s === "fast-casual" || s === "quick-service") return "v14";
   if (s === "v15" || s === "casual" || s === "family-diner" || s === "family" || s === "diner") return "v15";
   if (s === "v16" || s === "brand-tint" || s === "brandtint" || s === "tinted") return "v16";
+  // Alias "fine" only — do not steal "fine-dining" (maps to Steakhouse v13).
+  if (s === "v17" || s === "fine") return "v17";
   if (s === "v1" || s === "classic") return "v1";
   return "v1";
 }
@@ -51,6 +53,7 @@ export function normalizeMenuStyle(raw) {
  * Map style IDs to the template routed by PublicMenuMainContent.
  * Gallery IDs v12–v15 keep their own boutique layouts.
  * v16 Brand Tint uses Classic layout (shell tint applied outside).
+ * v17 Fine keeps FineMenuTemplate.
  * Legacy boutique IDs (v2–v10) map onto the nearest gallery layout.
  */
 export function resolveTemplateMenuStyle(raw) {

@@ -56,7 +56,8 @@ export function enrichMenuPayloadWithStyleStockPhotos(payload, menuStyle) {
   if (!payload || typeof payload !== "object") return payload;
 
   const resolved = resolveTemplateMenuStyle(menuStyle);
-  if (resolved === "v1") return payload;
+  // Classic + Fine stay text/photo-as-authored — no stock fill.
+  if (resolved === "v1" || resolved === "v17") return payload;
 
   const sampleKey = STYLE_STOCK_SAMPLE_KEY[resolved] || "v1";
   const sample = MENU_THEME_PREVIEW_PAYLOADS[sampleKey];
