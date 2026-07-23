@@ -73,6 +73,16 @@ export default function OwnerDashboard() {
         </section>
       ))}
 
+      {data?.growth ? (
+        <section style={{ marginBottom: 28 }}>
+          <SectionTitle
+            title="Growth & conversion"
+            subtitle="Abandoned restaurant Stripe checkouts, new subscriptions by plan, logins, and new diner accounts."
+          />
+          <GrowthMetricsPanel growth={data.growth} />
+        </section>
+      ) : null}
+
       {data?.market_snapshot ? (
         <section style={{ marginBottom: 28 }}>
           <SectionTitle
@@ -123,6 +133,168 @@ export default function OwnerDashboard() {
       ) : null}
     </OwnerLayout>
   );
+}
+
+function GrowthMetricsPanel({ growth }) {
+  const intervals = growth?.intervals?.length
+    ? growth.intervals
+    : ["today", "yesterday", "7d", "30d"];
+  const labels = {
+    today: "Today",
+    yesterday: "Yesterday",
+    "7d": "7 days",
+    "30d": "30 days",
+  };
+
+  const rows = [
+    {
+      id: "abandoned_checkouts",
+      label: "Abandoned checkouts",
+      hint: "Restaurant Stripe plan sessions expired or left open >24h",
+      values: growth.abandoned_checkouts || {},
+    },
+    {
+      id: "restaurant_logins",
+      label: "Restaurant logins",
+      hint: "Operator portal sign-ins",
+      values: growth.logins?.restaurant || {},
+    },
+    {
+      id: "diner_logins",
+      label: "Diner logins",
+      hint: "Consumer account sign-ins",
+      values: growth.logins?.diner || {},
+    },
+    {
+      id: "new_diner_accounts",
+      label: "New diner accounts",
+      hint: "From market signup log",
+      values: growth.new_diner_accounts || {},
+    },
+  ];
+
+  return (
+    <PageCard style={{ padding: 22 }}>
+      <div style={{ overflowX: "auto" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+          <thead>
+            <tr>
+              <th style={TH_STYLE}>Metric</th>
+              {intervals.map((key) => (
+                <th key={key} style={{ ...TH_STYLE, textAlign: "right" }}>
+                  {labels[key] || key}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr key={row.id}>
+                <td style={TD_STYLE}>
+                  <div style={{ fontWeight: 700, color: OWNER_COLORS.ink }}>{row.label}</div>
+                  {row.hint ? (
+                    <div style={{ marginTop: 4, fontSize: 12, color: OWNER_COLORS.muted }}>{row.hint}</div>
+                  ) : null}
+                </td>
+                {intervals.map((key) => (
+                  <td key={key} style={{ ...TD_STYLE, textAlign: "right", fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>
+                    {formatCount(row.values?.[key])}
+                  </td>
+                ))}
+              </tr>
+            ))}
+            <tr>
+              <td style={TD_STYLE} colSpan={intervals.length + 1}>
+                <div style={{ fontWeight: 800, color: OWNER_COLORS.ink, marginBottom: 10 }}>
+                  New subscriptions by plan
+                </div>
+                <div
+                  className="owner-responsive-grid-2"
+                  style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12 }}
+                >
+                  {intervals.map((key) => {
+                    const plans = growth.new_subscriptions_by_plan?.[key] || [];
+                    const total = plans.reduce((sum, p) => sum + (Number(p.count) || 0), 0);
+                    return (
+                      <div
+                        key={key}
+                        style={{
+                          border: `1px solid ${OWNER_COLORS.line}`,
+                          borderRadius: 10,
+                          padding: "10px 12px",
+                          background: "#fff",
+                        }}
+                      >
+                        <div style={{ fontSize: 12, fontWeight: 800, color: OWNER_COLORS.muted, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                          {labels[key] || key}
+                        </div>
+                        <div style={{ marginTop: 6, fontSize: 22, fontWeight: 800, color: OWNER_COLORS.ink }}>
+                          {formatCount(total)}
+                        </div>
+                        {plans.length === 0 ? (
+                          <div style={{ marginTop: 8, fontSize: 12, color: OWNER_COLORS.muted }}>No new paid plans</div>
+                        ) : (
+                          <ul style={{ margin: "8px 0 0", padding: 0, listStyle: "none" }}>
+                            {plans.map((plan) => (
+                              <li
+                                key={`${key}-${plan.plan_code}`}
+                                style={{
+                                  display: "flex",
+                                  justifyContent: "space-between",
+                                  gap: 8,
+                                  fontSize: 12,
+                                  color: OWNER_COLORS.ink,
+                                  padding: "3px 0",
+                                }}
+                              >
+                                <span>{plan.plan_name || plan.plan_code}</span>
+                                <span style={{ fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>
+                                  {formatCount(plan.count)}
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      {growth.notes ? (
+        <div style={{ marginTop: 14, fontSize: 12, color: OWNER_COLORS.muted, lineHeight: 1.45 }}>
+          {growth.notes}
+        </div>
+      ) : null}
+    </PageCard>
+  );
+}
+
+const TH_STYLE = {
+  textAlign: "left",
+  padding: "8px 10px",
+  borderBottom: `1px solid ${OWNER_COLORS.line}`,
+  color: OWNER_COLORS.muted,
+  fontSize: 11,
+  fontWeight: 800,
+  textTransform: "uppercase",
+  letterSpacing: "0.05em",
+};
+
+const TD_STYLE = {
+  padding: "12px 10px",
+  borderBottom: `1px solid ${OWNER_COLORS.line}`,
+  verticalAlign: "top",
+};
+
+function formatCount(value) {
+  if (value == null || value === "") return "—";
+  const n = Number(value);
+  if (!Number.isFinite(n)) return String(value);
+  return n.toLocaleString();
 }
 
 function DrillDownMetric({ metric }) {
