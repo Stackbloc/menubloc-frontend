@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 import {
   CLAIMED_BILLBOARD_SPLASH_MS,
   CLAIMED_BILLBOARD_SPLASH_REDUCED_MS,
+  CLAIMED_BILLBOARD_SPLASH_IMAGE_WAIT_MS,
   pickClaimedBillboardSplashPost,
 } from "../src/lib/claimedRestaurantBillboardSplash.js";
 
@@ -18,21 +19,25 @@ function read(rel) {
 }
 
 const helper = read("src/lib/claimedRestaurantBillboardSplash.js");
-assert.match(helper, /CLAIMED_BILLBOARD_SPLASH_MS\s*=\s*2000/);
-assert.match(helper, /CLAIMED_BILLBOARD_SPLASH_REDUCED_MS\s*=\s*400/);
+assert.match(helper, /CLAIMED_BILLBOARD_SPLASH_MS\s*=\s*3500/);
+assert.match(helper, /CLAIMED_BILLBOARD_SPLASH_REDUCED_MS\s*=\s*600/);
+assert.match(helper, /CLAIMED_BILLBOARD_SPLASH_IMAGE_WAIT_MS\s*=\s*12000/);
 assert.match(helper, /pickClaimedBillboardSplashPost/);
 
 const splash = read("src/components/restaurant/ClaimedRestaurantBillboardSplash.jsx");
 assert.match(splash, /claimedRestaurantBillboardSplash\.js/);
 assert.match(splash, /prefers-reduced-motion/);
 assert.match(splash, /onDismiss/);
+assert.match(splash, /onLoad/);
+assert.match(splash, /imageReady/);
 assert.match(splash, /Tap to continue/);
 assert.doesNotMatch(splash, /StickyPageHeader/);
 assert.doesNotMatch(splash, /BottomNav/);
 assert.doesNotMatch(splash, /Claim This Profile/);
 
-assert.equal(CLAIMED_BILLBOARD_SPLASH_MS, 2000);
-assert.equal(CLAIMED_BILLBOARD_SPLASH_REDUCED_MS, 400);
+assert.equal(CLAIMED_BILLBOARD_SPLASH_MS, 3500);
+assert.equal(CLAIMED_BILLBOARD_SPLASH_REDUCED_MS, 600);
+assert.equal(CLAIMED_BILLBOARD_SPLASH_IMAGE_WAIT_MS, 12000);
 
 assert.equal(
   pickClaimedBillboardSplashPost([
@@ -56,11 +61,11 @@ assert.equal(pickClaimedBillboardSplashPost(null), null);
 
 const page = read("src/pages/RestaurantPublicPage.jsx");
 assert.match(page, /ClaimedRestaurantBillboardSplash/);
-assert.match(page, /CLAIMED_BILLBOARD_SPLASH_MS/);
 assert.match(page, /pickClaimedBillboardSplashPost/);
 assert.match(page, /claimedBillboardSplashPost/);
 assert.match(page, /billboardSplashDone/);
 assert.match(page, /UnclaimedRestaurantBrandSplash/);
 assert.match(page, /UNCLAIMED_BRAND_SPLASH_MS/);
+assert.doesNotMatch(page, /CLAIMED_BILLBOARD_SPLASH_MS/);
 
 console.log("claimedRestaurantBillboardSplashContract: ok");

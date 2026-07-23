@@ -2,8 +2,11 @@
  * Claimed restaurant billboard splash — timing + post selection (no React).
  */
 
-export const CLAIMED_BILLBOARD_SPLASH_MS = 2000;
-export const CLAIMED_BILLBOARD_SPLASH_REDUCED_MS = 400;
+/** Hold duration after the creative is visible (image loaded or headline-only). */
+export const CLAIMED_BILLBOARD_SPLASH_MS = 3500;
+export const CLAIMED_BILLBOARD_SPLASH_REDUCED_MS = 600;
+/** Max wait for a large billboard image before starting the hold timer anyway. */
+export const CLAIMED_BILLBOARD_SPLASH_IMAGE_WAIT_MS = 12000;
 
 /**
  * Pick the first current (or status-less) preview post with splash creative.

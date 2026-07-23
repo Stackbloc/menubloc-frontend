@@ -1,18 +1,20 @@
 /**
- * Full-screen billboard entrance for claimed restaurant profiles.
- * Shows the active deal billboard graphic (or headline fallback) before the
- * editorial profile. Timed handoff / dismiss is owned by the parent.
+ * Full-screen billboard entrance for restaurant profiles.
+ * Owns the dismiss timer: waits until the image is visible (or fails), then holds
+ * so a multi-MB creative is not dismissed while still loading.
  */
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   CLAIMED_BILLBOARD_SPLASH_MS,
   CLAIMED_BILLBOARD_SPLASH_REDUCED_MS,
+  CLAIMED_BILLBOARD_SPLASH_IMAGE_WAIT_MS,
   pickClaimedBillboardSplashPost,
 } from "../../lib/claimedRestaurantBillboardSplash.js";
 
 export {
   CLAIMED_BILLBOARD_SPLASH_MS,
   CLAIMED_BILLBOARD_SPLASH_REDUCED_MS,
+  CLAIMED_BILLBOARD_SPLASH_IMAGE_WAIT_MS,
   pickClaimedBillboardSplashPost,
 };
 
@@ -48,13 +50,40 @@ export default function ClaimedRestaurantBillboardSplash({
   const sub = String(post?.subheadline_override || "").trim();
   const alt = String(post?.image_alt_text || headline || displayName).trim();
   const ariaLabel = [displayName, headline].filter(Boolean).join(". ");
+  const [imageReady, setImageReady] = useState(!imageUrl);
+  const dismissedRef = useRef(false);
+
+  function dismiss() {
+    if (dismissedRef.current) return;
+    dismissedRef.current = true;
+    onDismiss?.();
+  }
+
+  useEffect(() => {
+    if (!imageUrl) {
+      setImageReady(true);
+      return undefined;
+    }
+    setImageReady(false);
+    const maxWait = window.setTimeout(() => setImageReady(true), CLAIMED_BILLBOARD_SPLASH_IMAGE_WAIT_MS);
+    return () => window.clearTimeout(maxWait);
+  }, [imageUrl]);
+
+  useEffect(() => {
+    if (!imageReady) return undefined;
+    const holdMs = reducedMotion ? CLAIMED_BILLBOARD_SPLASH_REDUCED_MS : CLAIMED_BILLBOARD_SPLASH_MS;
+    const timer = window.setTimeout(() => dismiss(), holdMs);
+    return () => window.clearTimeout(timer);
+    // dismiss is stable via ref; intentionally omit from deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [imageReady, reducedMotion]);
 
   return (
     <button
       type="button"
       role="presentation"
       aria-label={ariaLabel || displayName}
-      onClick={() => onDismiss?.()}
+      onClick={() => dismiss()}
       style={{
         minHeight: "100vh",
         width: "100%",
@@ -85,6 +114,9 @@ export default function ClaimedRestaurantBillboardSplash({
           alt={alt}
           loading="eager"
           decoding="async"
+          fetchPriority="high"
+          onLoad={() => setImageReady(true)}
+          onError={() => setImageReady(true)}
           style={{
             position: "absolute",
             inset: 0,
@@ -93,6 +125,8 @@ export default function ClaimedRestaurantBillboardSplash({
             objectFit: post?.image_fit || "cover",
             display: "block",
             pointerEvents: "none",
+            opacity: imageReady ? 1 : 0.15,
+            transition: reducedMotion ? "none" : "opacity 220ms ease",
           }}
         />
       ) : null}

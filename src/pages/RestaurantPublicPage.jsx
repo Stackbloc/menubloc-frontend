@@ -40,8 +40,6 @@ import UnclaimedRestaurantBrandSplash, {
   UNCLAIMED_BRAND_SPLASH_MS,
 } from "../components/restaurant/UnclaimedRestaurantBrandSplash.jsx";
 import ClaimedRestaurantBillboardSplash, {
-  CLAIMED_BILLBOARD_SPLASH_MS,
-  CLAIMED_BILLBOARD_SPLASH_REDUCED_MS,
   pickClaimedBillboardSplashPost,
 } from "../components/restaurant/ClaimedRestaurantBillboardSplash.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
@@ -376,13 +374,12 @@ function UnclaimedRestaurantPage({ data, isDark, slugOrId }) {
     firstNonEmpty(data?.restaurant_name, data?.name) || `Restaurant ${slugOrId}`;
 
   useEffect(() => {
-    let delayMs = billboardSplashPost
-      ? CLAIMED_BILLBOARD_SPLASH_MS
-      : UNCLAIMED_BRAND_SPLASH_MS;
+    // Billboard splash owns its own image-load + hold timer.
+    if (billboardSplashPost) return undefined;
+    let delayMs = UNCLAIMED_BRAND_SPLASH_MS;
     try {
       if (typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches) {
-        // Keep a readable beat for the billboard preview line; skip long hold/animation.
-        delayMs = billboardSplashPost ? CLAIMED_BILLBOARD_SPLASH_REDUCED_MS : 400;
+        delayMs = 400;
       }
     } catch {
       /* ignore */
@@ -793,27 +790,14 @@ export default function RestaurantPublicPage() {
   }, [dataUrl]);
 
   const claimedBillboardSplashPost = useMemo(() => {
-    if (loading || err || !data || isOwner) return null;
+    if (loading || err || !data) return null;
     if (isFoodTruckListing(data)) return null;
-    // Ordinary unclaimed listings use UnclaimedRestaurantBrandSplash instead.
-    if (!isClaimedRestaurant(data) && !isFullClaimablePublicProfile(data)) return null;
+    // Ordinary unclaimed listings use UnclaimedRestaurantPage (its own splash).
+    if (!isClaimedRestaurant(data) && !isOwner && !isFullClaimablePublicProfile(data)) return null;
     return pickClaimedBillboardSplashPost(data?.billboard_preview);
   }, [data, loading, err, isOwner]);
 
-  useEffect(() => {
-    if (!claimedBillboardSplashPost || billboardSplashDone) return undefined;
-    let delayMs = CLAIMED_BILLBOARD_SPLASH_MS;
-    try {
-      if (typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches) {
-        delayMs = CLAIMED_BILLBOARD_SPLASH_REDUCED_MS;
-      }
-    } catch {
-      /* ignore */
-    }
-    const timer = window.setTimeout(() => setBillboardSplashDone(true), delayMs);
-    return () => window.clearTimeout(timer);
-  }, [claimedBillboardSplashPost, billboardSplashDone]);
-
+  // Billboard splash owns image-load + hold timing via onDismiss.
   useEffect(() => {
     const restaurantId = data?.id;
     if (!restaurantId || loading || err) return;
