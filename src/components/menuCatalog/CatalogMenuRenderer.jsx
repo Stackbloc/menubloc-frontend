@@ -13,7 +13,7 @@ import { buildRestaurantMenuBrand, fontStackForPreset } from "../menu-templates/
 import { normalizeMenuThemeSettings, resolveMenuPageBackground, resolveMenuShellTextColor } from "../menu-templates/menuThemeSettings.js";
 import { formatMoney, getBaseMenuPrice, getConsumerDisplayPrice } from "../../lib/pricingDisplay.js";
 import { buildMenuShareMetadata } from "../share/shareUtils.js";
-import { buildRestaurantStatusLightProps } from "../../lib/restaurantStatusLight.js";
+import { buildRestaurantStatusLightProps, shouldShowMenuPurchaseWaiterHint } from "../../lib/restaurantStatusLight.js";
 import { toConsumerErrorMessage } from "../../lib/api.js";
 import CatalogItemDetailSheet from "./CatalogItemDetailSheet.jsx";
 import MenuPreferencesAppliedBanner from "../menu/MenuPreferencesAppliedBanner.jsx";
@@ -510,11 +510,13 @@ export default function CatalogMenuRenderer({
           shareAnalyticsContext,
           franchiseSlot: null,
           intakeBannerSlot: (
-            <MenuPurchaseWaiterHint
-              sticky
-              pinWithStickyMenuHeader
-              stickyBackground={resolvedPageBackground}
-            />
+            shouldShowMenuPurchaseWaiterHint(data) ? (
+              <MenuPurchaseWaiterHint
+                sticky
+                pinWithStickyMenuHeader
+                stickyBackground={resolvedPageBackground}
+              />
+            ) : null
           ),
           allergenBannerSlot: (
             <MenuPreferencesAppliedBanner

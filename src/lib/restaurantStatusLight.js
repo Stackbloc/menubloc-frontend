@@ -55,6 +55,15 @@ export function hasOnlineOrderingEnabled({ orderAcceptanceStatus } = {}) {
   return String(orderAcceptanceStatus || "").trim().toLowerCase() === "accepting_orders";
 }
 
+/** Tap-to-order coach on public menus — paid plan + accepting online orders only. */
+export function shouldShowMenuPurchaseWaiterHint(data) {
+  const props = buildRestaurantStatusLightProps(data);
+  return (
+    hasPaidSubscriptionPlan(props) &&
+    hasOnlineOrderingEnabled(props)
+  );
+}
+
 export function isVerifiedRestaurantProfile({
   menuStatus,
   subscriptionPlan,
