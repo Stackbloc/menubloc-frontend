@@ -24,8 +24,17 @@ assert.doesNotMatch(splash, /billboard.?artwork|placeholder.*image/i);
 
 const page = read("src/pages/RestaurantPublicPage.jsx");
 assert.match(page, /UnclaimedRestaurantBrandSplash/);
+assert.match(page, /ClaimedRestaurantBillboardSplash/);
 assert.match(page, /UNCLAIMED_BRAND_SPLASH_MS/);
+assert.match(page, /pickClaimedBillboardSplashPost/);
 assert.match(page, /showBrandSplash/);
+assert.match(page, /billboardSplashPost/);
+assert.match(page, /Your Billboard Goes Here/);
 assert.match(page, /!isClaimedRestaurant\(data\) && !isOwner/);
+// Real billboard creative replaces the generic placeholder when present.
+assert.match(
+  page,
+  /Active billboard creative replaces the generic "Your Billboard Goes Here" placeholder/
+);
 
 console.log("unclaimedRestaurantBrandSplashContract: ok");

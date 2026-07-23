@@ -16,7 +16,8 @@
  *       briefly, then the normal public profile
  *     - Claimed restaurants without splash render the normal public profile
  *     - Unclaimed / seeded restaurants show a brief brand splash
- *       (name + "Your Billboard Goes Here"), then the stub sales page
+ *       (active billboard graphic when present, else name +
+ *       "Your Billboard Goes Here"), then the stub sales page
  *     - Food trucks (restaurant_type/category) redirect to /foodtrucks/:slug
  *       for the dedicated custom FoodTruckPage profile
  *
@@ -369,23 +370,26 @@ function UnclaimedRestaurantPage({ data, isDark, slugOrId }) {
   const isFoodTruck = detectFoodTruck(data);
   const isMobile = useIsMobile();
   const [showBrandSplash, setShowBrandSplash] = useState(true);
+  const billboardSplashPost = pickClaimedBillboardSplashPost(data?.billboard_preview);
 
   const name =
     firstNonEmpty(data?.restaurant_name, data?.name) || `Restaurant ${slugOrId}`;
 
   useEffect(() => {
-    let delayMs = UNCLAIMED_BRAND_SPLASH_MS;
+    let delayMs = billboardSplashPost
+      ? CLAIMED_BILLBOARD_SPLASH_MS
+      : UNCLAIMED_BRAND_SPLASH_MS;
     try {
       if (typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches) {
         // Keep a readable beat for the billboard preview line; skip long hold/animation.
-        delayMs = 400;
+        delayMs = billboardSplashPost ? CLAIMED_BILLBOARD_SPLASH_REDUCED_MS : 400;
       }
     } catch {
       /* ignore */
     }
     const timer = window.setTimeout(() => setShowBrandSplash(false), delayMs);
     return () => window.clearTimeout(timer);
-  }, []);
+  }, [billboardSplashPost]);
 
   const addressLine1 = firstNonEmpty(data?.address, data?.address_line1);
   const city = firstNonEmpty(data?.city);
@@ -439,6 +443,16 @@ function UnclaimedRestaurantPage({ data, isDark, slugOrId }) {
   const unclaimedStatusLightProps = buildRestaurantStatusLightProps(data);
 
   if (showBrandSplash) {
+    // Active billboard creative replaces the generic "Your Billboard Goes Here" placeholder.
+    if (billboardSplashPost) {
+      return (
+        <ClaimedRestaurantBillboardSplash
+          restaurantName={name}
+          post={billboardSplashPost}
+          onDismiss={() => setShowBrandSplash(false)}
+        />
+      );
+    }
     return <UnclaimedRestaurantBrandSplash name={name} isDark={isDark} />;
   }
 
