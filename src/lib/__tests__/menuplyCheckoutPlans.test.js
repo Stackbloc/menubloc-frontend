@@ -239,8 +239,8 @@ describe("source contracts for active selectors", () => {
     expect(file).toMatch(/rememberIntendedCheckoutPlanCode\(FOOD_TRUCK_ANNUAL_PLAN_CODE\)/);
     expect(file).toMatch(/CHECKOUT_PRICE_LABELS\[FOOD_TRUCK_ANNUAL_PLAN_CODE\]/);
     expect(file).not.toMatch(/\$39\/year/);
-    expect(file).toMatch(/data-testid="food-truck-plan-signup-cta"/);
-    expect(file).toMatch(/Select Food Truck/);
+    expect(file).not.toMatch(/Select Food Truck/);
+    expect(file).not.toMatch(/food-truck-plan-signup-cta/);
     expect(file).toMatch(/persistRestaurantOnboardingState/);
     expect(file).toMatch(/\/operator\/verify-email/);
     expect(file).toMatch(/autoSend:\s*true/);

@@ -1,5 +1,5 @@
 /**
- * Food truck signup wiring smoke — plan CTA + restaurant-parity verify-email handoff.
+ * Food truck signup wiring smoke — restaurant-parity verify-email handoff.
  * Run:
  *   PLAYWRIGHT_BASE_URL=http://127.0.0.1:5175 \
  *   npx playwright test tests/playwright/food-truck-signup-wiring.spec.js --project=desktop --timeout=90000
@@ -9,15 +9,13 @@ import { test, expect } from "@playwright/test";
 const BASE = process.env.PLAYWRIGHT_BASE_URL || "http://127.0.0.1:5175";
 
 test.describe("Food truck signup wiring", () => {
-  test("plan Select CTA focuses account form", async ({ page }) => {
+  test("plan card and account form are present without Select CTA", async ({ page }) => {
     await page.goto(`${BASE}/foodtruck/signup`, { waitUntil: "domcontentloaded" });
     await expect(page.getByTestId("food-truck-plan-card")).toBeVisible({ timeout: 15000 });
-    await expect(page.getByTestId("food-truck-plan-signup-cta")).toHaveText(/Select Food Truck/i);
+    await expect(page.getByTestId("food-truck-plan-signup-cta")).toHaveCount(0);
     await expect(page.locator("#food-truck-signup-form")).toBeVisible();
     await expect(page.getByText("$89/year")).toBeVisible();
-
-    await page.getByTestId("food-truck-plan-signup-cta").click();
-    await expect(page.locator("#email")).toBeFocused({ timeout: 3000 });
+    await expect(page.getByRole("button", { name: /Sign up for Food Truck/i })).toBeVisible();
   });
 
   test("submit creates account and lands on verify-email with autoSend", async ({ page }) => {
@@ -25,7 +23,7 @@ test.describe("Food truck signup wiring", () => {
     const email = `ft.wiring.${stamp}@mailinator.com`;
 
     await page.goto(`${BASE}/foodtruck/signup`, { waitUntil: "domcontentloaded" });
-    await expect(page.getByTestId("food-truck-plan-signup-cta")).toBeVisible({ timeout: 15000 });
+    await expect(page.getByTestId("food-truck-plan-card")).toBeVisible({ timeout: 15000 });
 
     await page.locator("#email").fill(email);
     await page.locator("#password").fill("TestPass1");
@@ -60,11 +58,9 @@ test.describe("Food truck signup wiring", () => {
 
     const sendRes = await sendCodePromise;
     // Wiring proof: autoSend hit the restaurant-auth route for the new account.
-    // 404 = account missing (broken). 200 = delivered. Non-404 means operator exists.
     expect(sendRes.status(), `send-email-code status ${sendRes.status()}`).not.toBe(404);
     const sendJson = await sendRes.json().catch(() => ({}));
     if (sendRes.status() >= 500) {
-      // Provider/mailer failure is outside signup wiring; still prove operator was found.
       expect(String(sendJson.error || "")).not.toMatch(/Operator account not found/i);
     }
   });

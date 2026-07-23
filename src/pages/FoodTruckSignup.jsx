@@ -76,17 +76,6 @@ function useIsNarrowViewport() {
   return isNarrow;
 }
 
-function scrollToSignupForm() {
-  const formRoot = document.getElementById(SIGNUP_FORM_ID);
-  if (formRoot) {
-    formRoot.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
-  const email = document.getElementById("email");
-  if (email && typeof email.focus === "function") {
-    window.setTimeout(() => email.focus(), 280);
-  }
-}
-
 const styles = {
   page: {
     minHeight: "100vh",
@@ -225,23 +214,6 @@ const styles = {
     background: "#1F4E3D",
     color: "#ffffff",
     marginTop: 1,
-  },
-  planCta: {
-    display: "flex",
-    width: "100%",
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: 48,
-    marginBottom: 12,
-    borderRadius: 14,
-    border: 0,
-    background: "#1F4E3D",
-    color: "#ffffff",
-    fontWeight: 800,
-    fontSize: 15,
-    cursor: "pointer",
-    fontFamily: "inherit",
-    boxShadow: "0 12px 24px rgba(31, 78, 61, 0.18)",
   },
   planFootnote: {
     fontSize: 12,
@@ -674,16 +646,8 @@ export default function FoodTruckSignup() {
                 </li>
               ))}
             </ul>
-            <button
-              type="button"
-              style={styles.planCta}
-              onClick={scrollToSignupForm}
-              data-testid="food-truck-plan-signup-cta"
-            >
-              Select Food Truck
-            </button>
             <div style={styles.planFootnote}>
-              Create your account below. Merchant onboarding and delivery configuration remain in the Operator Panel after onboarding is complete.
+              Create your account here. Merchant onboarding and delivery configuration remain in the Operator Panel after onboarding is complete.
             </div>
           </aside>
 
