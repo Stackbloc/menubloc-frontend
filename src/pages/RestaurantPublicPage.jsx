@@ -12,10 +12,14 @@
  *     - QR code scan landings (/qr/:token → /restaurants/:slugOrId)
  *
  *   Behavior:
- *     - Claimed restaurants render the normal public profile
+ *     - Claimed restaurants with an active billboard splash show the graphic
+ *       briefly, then the normal public profile
+ *     - Claimed restaurants without splash render the normal public profile
  *     - Unclaimed / seeded restaurants show a brief brand splash
- *       (name + "Your Billboard Goes Here"), then the stub sales page
- *     - Food trucks receive food-truck-aware unclaimed copy/labels
+ *       (active billboard graphic when present, else name +
+ *       "Your Billboard Goes Here"), then the stub sales page
+ *     - Food trucks (restaurant_type/category) redirect to /foodtrucks/:slug
+ *       for the dedicated custom FoodTruckPage profile
  *
  *   Claimed restaurants: Option A editorial public profile (diner presentation).
  *   Unclaimed: existing Claim Screen (brand splash → FieldRow stub + Claim CTA).
@@ -27,7 +31,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, Navigate, useLocation, useParams } from "react-router-dom";
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import BottomNav from "../components/BottomNav.jsx";
 import PublicProfileOwnerChrome from "../components/restaurant/PublicProfileOwnerChrome.jsx";
@@ -35,6 +39,9 @@ import RestaurantPublicEditorial from "../components/restaurant/RestaurantPublic
 import UnclaimedRestaurantBrandSplash, {
   UNCLAIMED_BRAND_SPLASH_MS,
 } from "../components/restaurant/UnclaimedRestaurantBrandSplash.jsx";
+import ClaimedRestaurantBillboardSplash, {
+  pickClaimedBillboardSplashPosts,
+} from "../components/restaurant/ClaimedRestaurantBillboardSplash.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { useOperator } from "../context/OperatorContext.jsx";
 import { fetchRestaurantMenuPreview, toConsumerErrorMessage } from "../lib/api.js";
@@ -42,6 +49,8 @@ import { trackRestaurantView } from "../lib/analytics.js";
 import { sendPageVisit } from "../lib/analyticsPageVisitSend.js";
 import { getLocalizedField } from "../utils/getLocalizedField.js";
 import { getDisplayMenuItemName } from "../utils/getDisplayMenuItemName.js";
+import RestaurantStatusLight from "../components/RestaurantStatusLight.jsx";
+import { buildRestaurantStatusLightProps } from "../lib/restaurantStatusLight.js";
 import ShareButton from "../components/share/ShareButton.jsx";
 import { buildRestaurantShareData } from "../components/share/shareUtils.js";
 import FollowRestaurantButton from "../components/FollowRestaurantButton.jsx";
@@ -82,20 +91,37 @@ function buildGoogleMapsDirectionsUrl(destination) {
   return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(s)}`;
 }
 
-function resolvePrimaryAddress(data) {
-  const primary = data?.primary_location || {};
-  return {
-    streetAddr: firstNonEmpty(
-      data?.address,
-      data?.address_line1,
-      primary.address_line1,
-      data?.current_pickup_address
-    ),
-    addressLine2: firstNonEmpty(data?.address_line2, primary.address_line2),
-    city: firstNonEmpty(data?.city, primary.city),
-    state: firstNonEmpty(data?.state, data?.region, primary.state),
-    postalCode: firstNonEmpty(data?.zip, data?.postal_code, data?.postcode, primary.postal_code),
-  };
+function normalizeTier(profileTier, listingStatus) {
+  for (const v of [profileTier, listingStatus]) {
+    const s = String(v || "").toLowerCase();
+    if (s.includes("pro") || s.includes("founder")) return "pro";
+    if (s.includes("verified")) return "verified";
+  }
+  return "";
+}
+
+/** Resolve public profile visual tier from explicit tier or paid plan signals. */
+function resolvePublicProfileTier(data) {
+  const explicit = normalizeTier(data?.profile_tier, data?.listing_status);
+  if (explicit) return explicit;
+  if (data?.is_pro === true || data?.menu_presentation?.is_pro === true) return "pro";
+  const plan = String(
+    data?.menu_presentation?.plan_slug ||
+      data?.plan_slug ||
+      data?.subscription_plan ||
+      data?.subscription_plan_code ||
+      ""
+  ).toLowerCase();
+  if (
+    plan.includes("founder") ||
+    plan === "pro" ||
+    plan === "enterprise" ||
+    plan.startsWith("founders_")
+  ) {
+    return "pro";
+  }
+  if (plan.includes("verified") || plan.includes("starter")) return "verified";
+  return "";
 }
 
 function normalizeClaimStatus(v) {
@@ -106,6 +132,39 @@ function isClaimedRestaurant(data) {
   const status = normalizeClaimStatus(data?.claim_status);
   // Owner signup leaves claim_pending until formal claim completion — still owned, not an open claim stub.
   return status === "claimed" || status === "claim_pending";
+}
+
+function isFullClaimablePublicProfile(data) {
+  const mode =
+    data?.public_profile_mode ||
+    data?.restaurant?.public_profile_mode ||
+    "";
+  return String(mode).trim().toLowerCase() === "full_claimable";
+}
+
+function buildClaimPrefillState(data, slugOrId) {
+  const name =
+    firstNonEmpty(data?.restaurant_name, data?.name) || `Restaurant ${slugOrId}`;
+  const addressLine1 = firstNonEmpty(data?.address, data?.address_line1);
+  const city = firstNonEmpty(data?.city);
+  const stateVal = firstNonEmpty(data?.state, data?.region);
+  const postalCode = firstNonEmpty(data?.zip, data?.postal_code, data?.postcode);
+  const phone = firstNonEmpty(data?.phone, data?.phone_number, data?.contact_phone);
+  const websiteRaw = firstNonEmpty(data?.website, data?.website_url);
+  return {
+    restaurant_name: name,
+    address_line1: addressLine1,
+    city,
+    state: stateVal,
+    postal_code: postalCode,
+    phone,
+    website_url: websiteRaw,
+    category: humanizeLabel(firstNonEmpty(data?.category)),
+    cuisine: humanizeLabel(firstNonEmpty(data?.cuisine)),
+    claim_source: "public_restaurant_page",
+    public_restaurant_slug_or_id: slugOrId,
+    restaurant_id: data?.id || null,
+  };
 }
 
 function firstNonEmpty(...values) {
@@ -139,7 +198,24 @@ function buildRestaurantBillboardHref(slugOrId) {
   return `${buildRestaurantBaseHref(slugOrId)}/billboard`;
 }
 
+function normalizeFoodTruckToken(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, "_");
+}
+
+/** Authoritative food-truck listing check (prefer type/category over name heuristics). */
+function isFoodTruckListing(data) {
+  const type = normalizeFoodTruckToken(data?.restaurant_type || data?.entity_type);
+  if (type === "food_truck" || type === "foodtruck") return true;
+  const category = normalizeFoodTruckToken(data?.category);
+  if (category === "food_truck" || category === "foodtruck") return true;
+  return false;
+}
+
 function detectFoodTruck(data) {
+  if (isFoodTruckListing(data)) return true;
   const haystack = [
     data?.restaurant_name,
     data?.name,
@@ -154,98 +230,22 @@ function detectFoodTruck(data) {
   return /\bfood truck\b|\btruck\b|\bmobile\b|\btrailer\b/.test(haystack);
 }
 
+function buildFoodTruckProfileHref(data, fallbackSlugOrId, location) {
+  const target =
+    String(data?.slug || data?.id || fallbackSlugOrId || "")
+      .trim() || null;
+  if (!target) return null;
+  const search = location?.search || "";
+  const hash = location?.hash || "";
+  return `/foodtrucks/${encodeURIComponent(target)}${search}${hash}`;
+}
+
 function fieldHasValue(value) {
   if (value == null || value === false) return false;
   if (typeof value === "string" || typeof value === "number") {
     return Boolean(String(value).trim());
   }
   return true;
-}
-
-function formatProfileUpdatedDate(value) {
-  if (!value) return "";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
-  return date.toLocaleDateString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-}
-
-function resolveProfileLastUpdated(data) {
-  return (
-    data?.menu_last_updated_at ||
-    data?.menu_updated_at ||
-    data?.menu_last_verified_at ||
-    data?.updated_at ||
-    data?.menu_presentation?.menu_last_updated_at ||
-    data?.menu_presentation?.menu_last_verified_at ||
-    ""
-  );
-}
-
-function hasOnlineOrderingCapability(data) {
-  return (
-    data?.ordering_enabled === true &&
-    String(data?.order_acceptance_status || data?.menu_presentation?.order_acceptance_status || "")
-      .trim()
-      .toLowerCase() === "accepting_orders"
-  );
-}
-
-function MenuInformationPanel({
-  managed,
-  lastUpdated,
-  orderingAvailable,
-  claimAction = null,
-  isDark = false,
-}) {
-  const formatted = formatProfileUpdatedDate(lastUpdated);
-  const border = isDark ? "1px solid rgba(255,255,255,0.10)" : "1px solid #e4e9f0";
-  const bg = isDark ? "rgba(15,23,42,0.72)" : "#ffffff";
-  const ink = isDark ? "#f8fafc" : "#0f172a";
-  const muted = isDark ? "rgba(255,255,255,0.68)" : "#64748b";
-
-  return (
-    <section
-      aria-label="Menu information"
-      style={{
-        border,
-        background: bg,
-        borderRadius: 12,
-        padding: 16,
-        marginBottom: 20,
-      }}
-    >
-      <div
-        style={{
-          fontSize: 12,
-          fontWeight: 800,
-          letterSpacing: 0.7,
-          textTransform: "uppercase",
-          color: muted,
-          marginBottom: 8,
-        }}
-      >
-        Menu Information
-      </div>
-      <p style={{ margin: 0, fontSize: 14, lineHeight: 1.55, color: ink }}>
-        {managed
-          ? "This restaurant manages its menu and profile."
-          : "This menu has not yet been claimed or managed by the restaurant."}
-      </p>
-      {formatted ? (
-        <div style={{ marginTop: 10, fontSize: 13, color: muted }}>
-          Last Updated: {formatted}
-        </div>
-      ) : null}
-      <div style={{ marginTop: 12, fontSize: 13, fontWeight: 800, color: orderingAvailable ? "#166534" : muted }}>
-        {orderingAvailable ? "✓ Order Direct · Ordering Available" : "Ordering Not Available"}
-      </div>
-      {claimAction ? <div style={{ marginTop: 14 }}>{claimAction}</div> : null}
-    </section>
-  );
 }
 
 function FieldRow({ label, value, placeholder, isDark }) {
@@ -368,15 +368,18 @@ function UnclaimedRestaurantPage({ data, isDark, slugOrId }) {
   const isFoodTruck = detectFoodTruck(data);
   const isMobile = useIsMobile();
   const [showBrandSplash, setShowBrandSplash] = useState(true);
+  const billboardSplashPosts = pickClaimedBillboardSplashPosts(data?.billboard_preview);
+  const billboardSplashPost = billboardSplashPosts[0] || null;
 
   const name =
     firstNonEmpty(data?.restaurant_name, data?.name) || `Restaurant ${slugOrId}`;
 
   useEffect(() => {
+    // Billboard splash owns its own image-load + hold timer.
+    if (billboardSplashPosts.length) return undefined;
     let delayMs = UNCLAIMED_BRAND_SPLASH_MS;
     try {
       if (typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches) {
-        // Keep a readable beat for the billboard preview line; skip long hold/animation.
         delayMs = 400;
       }
     } catch {
@@ -384,7 +387,7 @@ function UnclaimedRestaurantPage({ data, isDark, slugOrId }) {
     }
     const timer = window.setTimeout(() => setShowBrandSplash(false), delayMs);
     return () => window.clearTimeout(timer);
-  }, []);
+  }, [billboardSplashPosts.length]);
 
   const addressLine1 = firstNonEmpty(data?.address, data?.address_line1);
   const city = firstNonEmpty(data?.city);
@@ -419,8 +422,8 @@ function UnclaimedRestaurantPage({ data, isDark, slugOrId }) {
   const heroBg = isDark ? "#10151d" : "#f8fbff";
 
   const verifiedMessage = isFoodTruck
-    ? "Your information appears here with a free Standard profile."
-    : "Your information appears here with a free Standard profile.";
+    ? "Your information appears here with a free Verified subscription."
+    : "Your information appears here with a free Verified subscription.";
 
   const proMessage = isFoodTruck
     ? "Your information appears here with Pro subscription."
@@ -435,7 +438,19 @@ function UnclaimedRestaurantPage({ data, isDark, slugOrId }) {
         state: stateVal,
       })
     : null;
+  const unclaimedStatusLightProps = buildRestaurantStatusLightProps(data);
+
   if (showBrandSplash) {
+    // Active billboard creative replaces the generic "Your Billboard Goes Here" placeholder.
+    if (billboardSplashPosts.length) {
+      return (
+        <ClaimedRestaurantBillboardSplash
+          restaurantName={name}
+          posts={billboardSplashPosts}
+          onDismiss={() => setShowBrandSplash(false)}
+        />
+      );
+    }
     return <UnclaimedRestaurantBrandSplash name={name} isDark={isDark} />;
   }
 
@@ -511,6 +526,8 @@ function UnclaimedRestaurantPage({ data, isDark, slugOrId }) {
                 {name}
               </h1>
 
+              <RestaurantStatusLight {...unclaimedStatusLightProps} size={7} />
+
               {data?.id || restaurantShareData ? (
                 <div
                   style={{
@@ -561,33 +578,6 @@ function UnclaimedRestaurantPage({ data, isDark, slugOrId }) {
           </div>
 
           <div style={{ padding: isMobile ? "8px 16px 24px" : "8px 24px 24px" }}>
-            <MenuInformationPanel
-              managed={false}
-              lastUpdated={resolveProfileLastUpdated(data)}
-              orderingAvailable={hasOnlineOrderingCapability(data)}
-              isDark={isDark}
-              claimAction={
-                <Link
-                  to="/onboarding"
-                  state={claimPrefillState}
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    minHeight: 40,
-                    padding: "0 14px",
-                    borderRadius: 9,
-                    textDecoration: "none",
-                    fontSize: 13,
-                    fontWeight: 800,
-                    background: "#111827",
-                    color: "#ffffff",
-                  }}
-                >
-                  Claim this Restaurant
-                </Link>
-              }
-            />
             <ProfileFieldList
               isDark={isDark}
               isFoodTruck={isFoodTruck}
@@ -663,7 +653,7 @@ function UnclaimedRestaurantPage({ data, isDark, slugOrId }) {
                 color: "#ffffff",
               }}
             >
-              Claim this Restaurant
+              Claim this profile
             </Link>
           </div>
         </div>
@@ -695,7 +685,16 @@ function applyPublicRestaurantPayload(json) {
     menu_presentation: json?.menu_presentation || null,
     // Intentionally do NOT merge top-level menu_items — use menu-preview endpoint.
     deal_items: Array.isArray(json?.deal_items) ? json.deal_items : [],
+    billboard_preview: Array.isArray(restaurant?.billboard_preview)
+      ? restaurant.billboard_preview
+      : Array.isArray(json?.billboard_preview)
+        ? json.billboard_preview
+        : [],
     claim_status: json?.claim_status ?? restaurant?.claim_status ?? null,
+    public_profile_mode:
+      json?.public_profile_mode ?? restaurant?.public_profile_mode ?? "standard",
+    public_ordering_mode:
+      json?.public_ordering_mode ?? restaurant?.public_ordering_mode ?? "standard",
     subscription_plan:
       json?.subscription_plan ?? restaurant?.subscription_plan ?? null,
     plan_slug: json?.plan_slug ?? json?.menu_presentation?.plan_slug ?? null,
@@ -726,6 +725,7 @@ function applyPublicRestaurantPayload(json) {
 
 export default function RestaurantPublicPage() {
   const { language } = useLanguage();
+  const location = useLocation();
   const {
     isAuthenticated: isOperatorAuthenticated,
     restaurants: operatorRestaurants,
@@ -739,6 +739,7 @@ export default function RestaurantPublicPage() {
   const [err, setErr] = useState("");
   const [data, setData] = useState(null);
   const [menuPreview, setMenuPreview] = useState(null);
+  const [billboardSplashDone, setBillboardSplashDone] = useState(false);
 
   const isDark = PUBLIC_PROFILE_IS_DARK;
   const isMobile = useIsMobile();
@@ -761,6 +762,7 @@ export default function RestaurantPublicPage() {
     setErr("");
     setData(null);
     setMenuPreview(null);
+    setBillboardSplashDone(false);
 
     fetch(dataUrl)
       .then((r) => r.json())
@@ -788,10 +790,19 @@ export default function RestaurantPublicPage() {
     };
   }, [dataUrl]);
 
+  const claimedBillboardSplashPosts = useMemo(() => {
+    if (loading || err || !data) return [];
+    if (isFoodTruckListing(data)) return [];
+    // Ordinary unclaimed listings use UnclaimedRestaurantPage (its own splash).
+    if (!isClaimedRestaurant(data) && !isOwner && !isFullClaimablePublicProfile(data)) return [];
+    return pickClaimedBillboardSplashPosts(data?.billboard_preview);
+  }, [data, loading, err, isOwner]);
+
+  // Billboard splash owns image-load + hold timing via onDismiss.
   useEffect(() => {
     const restaurantId = data?.id;
     if (!restaurantId || loading || err) return;
-    if (!isClaimedRestaurant(data) && !isOwner) {
+    if (!isClaimedRestaurant(data) && !isOwner && !isFullClaimablePublicProfile(data)) {
       setMenuPreview(null);
       return;
     }
@@ -839,10 +850,31 @@ export default function RestaurantPublicPage() {
     });
   }, [data?.id, data?.restaurant_name, data?.name, data?.slug, resolvedSlug, loading, err]);
 
-  // Claim Screen path — leave UnclaimedRestaurantPage unchanged.
-  if (!loading && !err && data && !isClaimedRestaurant(data) && !isOwner) {
+  // Food trucks always use the dedicated custom FoodTruckPage profile.
+  if (!loading && !err && data && isFoodTruckListing(data)) {
+    const foodTruckHref = buildFoodTruckProfileHref(data, resolvedSlug, location);
+    if (foodTruckHref) {
+      return <Navigate to={foodTruckHref} replace />;
+    }
+  }
+
+  // Claim Screen path — leave UnclaimedRestaurantPage unchanged for ordinary unclaimed listings.
+  // Real sales demos use full_claimable → editorial profile + menu + claim CTA.
+  if (
+    !loading &&
+    !err &&
+    data &&
+    !isClaimedRestaurant(data) &&
+    !isOwner &&
+    !isFullClaimablePublicProfile(data)
+  ) {
     return <UnclaimedRestaurantPage data={data} isDark={isDark} slugOrId={resolvedSlug} />;
   }
+
+  const tier = resolvePublicProfileTier(data);
+  const isPro = tier === "pro";
+  const isVerified = tier === "verified";
+  const restaurantStatusLightProps = buildRestaurantStatusLightProps(data);
 
   const name =
     getLocalizedField(data, "restaurant_name", language) ||
@@ -850,16 +882,12 @@ export default function RestaurantPublicPage() {
     data?.restaurant_name ||
     data?.name ||
     `Restaurant ${resolvedSlug}`;
-  const {
-    streetAddr,
-    addressLine2,
-    city,
-    state: stateVal,
-    postalCode: zipVal,
-  } = resolvePrimaryAddress(data);
-  const streetDisplay = [streetAddr, addressLine2].filter(Boolean).join(", ");
+  const streetAddr = data?.address || data?.address_line1 || "";
+  const city = data?.city || "";
+  const stateVal = data?.state || data?.region || "";
+  const zipVal = data?.zip || data?.postal_code || data?.postcode || "";
   const streetDirectionsUrl = buildGoogleMapsDirectionsUrl(
-    [streetDisplay || streetAddr, city, stateVal, zipVal].filter(Boolean).join(", ")
+    [streetAddr, city, stateVal, zipVal].filter(Boolean).join(", ")
   );
   const cityLine = [city, stateVal].filter(Boolean).join(", ") + (zipVal ? ` ${zipVal}` : "");
   const websiteRaw = data?.website || data?.website_url || "";
@@ -900,6 +928,7 @@ export default function RestaurantPublicPage() {
   const dealItems = Array.isArray(data?.deal_items) ? data.deal_items : [];
   const billboardPreview = Array.isArray(data?.billboard_preview) ? data.billboard_preview : [];
   const billboardHref = buildRestaurantBillboardHref(data?.slug || data?.id || resolvedSlug);
+  const splashPosts = claimedBillboardSplashPosts;
   const bannerPhotoUrl =
     data?.hero_image_url ||
     data?.cover_image_url ||
@@ -909,6 +938,16 @@ export default function RestaurantPublicPage() {
     null;
 
   const pageBg = isDark ? "#0b0b0f" : "#ffffff";
+
+  if (!loading && !err && data && splashPosts.length && !billboardSplashDone) {
+    return (
+      <ClaimedRestaurantBillboardSplash
+        restaurantName={name}
+        posts={splashPosts}
+        onDismiss={() => setBillboardSplashDone(true)}
+      />
+    );
+  }
 
   return (
     <>
@@ -940,9 +979,51 @@ export default function RestaurantPublicPage() {
           {err}
         </div>
       ) : data ? (
-        <RestaurantPublicEditorial
+        <>
+          {isFullClaimablePublicProfile(data) && !isClaimedRestaurant(data) && !isOwner ? (
+            <div
+              style={{
+                maxWidth: 860,
+                margin: "16px auto 0",
+                padding: isMobile ? "14px 16px" : "16px 24px",
+                borderRadius: 14,
+                border: "1px solid #bbf7d0",
+                background: "#f0fdf4",
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 12,
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
+              <div style={{ fontSize: 14, lineHeight: 1.5, color: "#14532d", flex: "1 1 220px" }}>
+                Your Menuply profile is already set up. You only need to claim it.
+              </div>
+              <Link
+                to="/onboarding"
+                state={buildClaimPrefillState(data, resolvedSlug)}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  height: 40,
+                  padding: "0 16px",
+                  borderRadius: 10,
+                  textDecoration: "none",
+                  fontSize: 13,
+                  fontWeight: 800,
+                  background: "#111827",
+                  color: "#ffffff",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Claim this profile
+              </Link>
+            </div>
+          ) : null}
+          <RestaurantPublicEditorial
           name={name}
-          streetAddr={streetDisplay || streetAddr}
+          streetAddr={streetAddr}
           cityLine={cityLine}
           directionsUrl={streetDirectionsUrl}
           website={website}
@@ -955,6 +1036,8 @@ export default function RestaurantPublicPage() {
           landmarks={landmarks}
           logoUrl={logoUrl}
           bannerPhotoUrl={bannerPhotoUrl}
+          tierLabel={isPro ? "Pro" : isVerified ? "Verified" : ""}
+          statusLightProps={restaurantStatusLightProps}
           restaurantId={data?.id || null}
           shareData={restaurantShareData}
           shareAnalytics={{
@@ -969,16 +1052,9 @@ export default function RestaurantPublicPage() {
           displayCluster={data?.display_cluster || null}
           statusBanners={data?.status_banners}
           statusEventPresentations={data?.status_event_presentations}
-          menuInformationPanel={
-            <MenuInformationPanel
-              managed
-              lastUpdated={resolveProfileLastUpdated(data)}
-              orderingAvailable={hasOnlineOrderingCapability(data)}
-              isDark={false}
-            />
-          }
           isMobile={isMobile}
         />
+        </>
       ) : null}
       <BottomNav />
     </>

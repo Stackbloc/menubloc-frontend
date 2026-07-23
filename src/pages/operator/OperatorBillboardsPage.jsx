@@ -174,6 +174,19 @@ function BillboardEditor({
     if (!initialBillboard) return true;
     return status === "active";
   });
+  const [slideOrder, setSlideOrder] = useState(() => {
+    const order = Number(initialBillboard?.display_order);
+    return Number.isInteger(order) && order >= 0 ? Math.min(order + 1, 6) : 1;
+  });
+  const [displaySeconds, setDisplaySeconds] = useState(() => {
+    const ms = Number(initialBillboard?.display_duration_ms);
+    if (Number.isFinite(ms) && ms >= 1000) return Math.round(ms / 1000);
+    return 3.5;
+  });
+  const [imageFit, setImageFit] = useState(() => {
+    const fit = String(initialBillboard?.image_fit || "contain").toLowerCase();
+    return ["cover", "contain", "fill"].includes(fit) ? fit : "contain";
+  });
   const [isOffer, setIsOffer] = useState(Boolean(initialDeal?.menu_item_id));
   const [menuItemId, setMenuItemId] = useState(initialDeal?.menu_item_id || "");
   const [menuItemName, setMenuItemName] = useState(initialDeal?.item_name || "");
@@ -251,6 +264,9 @@ function BillboardEditor({
           cta_label: isOffer ? "View item" : null,
           cta_url: isOffer && menuItemId ? menuItemDetailPath(menuItemId) : null,
           is_primary_search_billboard: false,
+          display_order: Math.max(0, Math.min(5, Number(slideOrder) - 1)),
+          image_fit: imageFit,
+          display_duration_ms: Math.round(Number(displaySeconds) * 1000),
         });
       } else if (initialDeal?.id || dealId) {
         // Ensure billboard exists then pause, or just pause if present
@@ -262,6 +278,9 @@ function BillboardEditor({
             cta_label: isOffer ? "View item" : null,
             cta_url: isOffer && menuItemId ? menuItemDetailPath(menuItemId) : null,
             is_primary_search_billboard: false,
+            display_order: Math.max(0, Math.min(5, Number(slideOrder) - 1)),
+            image_fit: imageFit,
+            display_duration_ms: Math.round(Number(displaySeconds) * 1000),
           });
         }
         await api.removeDealBillboard(rid, dealId);
@@ -293,6 +312,7 @@ function BillboardEditor({
       </div>
       <p style={{ margin: 0, fontSize: 13, color: "#64748b", lineHeight: 1.5 }}>
         Upload a graphic, enter the text terms (also listed on Deals), then turn profile splash On or Off.
+        Up to 6 active billboards rotate on the profile splash.
       </p>
 
       {error ? (
@@ -310,8 +330,9 @@ function BillboardEditor({
             style={{
               width: "100%",
               maxWidth: 420,
-              height: 180,
-              objectFit: "cover",
+              height: 220,
+              objectFit: imageFit,
+              background: "#0b0b0f",
               borderRadius: 12,
               border: "1px solid #e4e9f0",
               display: "block",
@@ -343,6 +364,50 @@ function BillboardEditor({
           accept="image/jpeg,image/png,image/webp"
           onChange={(e) => setPendingPhoto(e.target.files?.[0] || null)}
         />
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+        <div>
+          <label style={LABEL}>Slide order (1–6)</label>
+          <select
+            style={{ ...INPUT, width: "100%" }}
+            value={slideOrder}
+            onChange={(e) => setSlideOrder(Number(e.target.value))}
+            data-testid="billboard-slide-order"
+          >
+            {[1, 2, 3, 4, 5, 6].map((n) => (
+              <option key={n} value={n}>
+                {n}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label style={LABEL}>Display time (seconds)</label>
+          <input
+            type="number"
+            min={1}
+            max={15}
+            step={0.5}
+            style={{ ...INPUT, width: "100%" }}
+            value={displaySeconds}
+            onChange={(e) => setDisplaySeconds(e.target.value)}
+            data-testid="billboard-display-seconds"
+          />
+        </div>
+        <div>
+          <label style={LABEL}>Image fit</label>
+          <select
+            style={{ ...INPUT, width: "100%" }}
+            value={imageFit}
+            onChange={(e) => setImageFit(e.target.value)}
+            data-testid="billboard-image-fit"
+          >
+            <option value="contain">Contain (recommended mobile)</option>
+            <option value="cover">Cover</option>
+            <option value="fill">Fill</option>
+          </select>
+        </div>
       </div>
 
       <div>
@@ -516,9 +581,10 @@ export default function OperatorBillboardsPage() {
           <div>
             <div style={{ fontSize: 15, fontWeight: 800, color: "#0f1720" }}>Restaurant billboards</div>
             <p style={{ margin: "6px 0 0", fontSize: 13, color: "#64748b", lineHeight: 1.5, maxWidth: 560 }}>
-              Graphic splash for your public profile. Text terms also appear on{" "}
+              Graphic splash for your public profile (up to 6 active slides). Text terms also appear on{" "}
               <Link to="/operator/deals" style={{ color: "#1F4E3D", fontWeight: 700 }}>Deals</Link>.
               Start here with a graphic, or start on Deals and choose “Feature as Billboard”.
+              Some billboards can be tied to offers (menu items).
             </p>
           </div>
           {mode === "list" ? (
