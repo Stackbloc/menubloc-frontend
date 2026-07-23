@@ -71,6 +71,38 @@ If redesigned without explicit current-turn instruction → revert immediately.
 
 ---
 
+## 🔴 STRIPE ENVIRONMENT PROTECTION CONTRACT (ABSOLUTE — PRODUCTION SAFETY)
+
+**Established:** 2026-07-23  
+**Full rule:** `docs/guardrails/2026-07-23_stripe-environment-protection-contract.md`  
+**Priority:** Production safety — overrides ordinary implementation convenience
+
+### Hard rule
+
+Menuply production must remain connected to the **Stripe live environment at all times**.
+
+No agent may switch production (website, backend, deployed env, DB, webhooks, or env vars) to Stripe sandbox/test mode unless Andre Barber gives **explicit per-task permission** substantially equivalent to:
+
+> “You have permission to temporarily switch the production Stripe environment to sandbox/test mode for this task.”
+
+Silence, implied approval, prior approval, testing needs, debugging convenience, or agent judgment do **not** constitute permission.
+
+### Preferred testing
+
+Local Stripe test keys · preview/staging · Stripe CLI webhook forwarding · mocks / simulated payments · automated tests that do **not** alter production configuration.
+
+### Fail closed
+
+Production must **never** fall back to Stripe test credentials when live configuration is missing.
+
+### Mandatory certification on EVERY task completion
+
+> ☐ STRIPE ENVIRONMENT CERTIFICATION: Production Stripe [unchanged live | restored+verified live | Andre-authorized temporary sandbox — restoration pending].
+
+Leaving production in sandbox mode is a **production incident**, not unfinished cleanup.
+
+---
+
 Objective:
 Prevent speculative rewrites, unnecessary token/credit usage, production regressions, and architecture drift caused by agents implementing changes before understanding the existing system.
 

@@ -1,0 +1,57 @@
+---
+description: Production must stay on Stripe live mode; sandbox switches need Andre’s explicit per-task permission.
+alwaysApply: true
+---
+
+# Stripe Environment Protection Contract
+
+Full reference: `docs/guardrails/2026-07-23_stripe-environment-protection-contract.md`
+
+## Hard rule (PRODUCTION SAFETY)
+
+**Menuply production must remain on Stripe live mode at all times.**
+
+No agent may switch production (website, backend, DB, webhooks, or env vars) to Stripe sandbox/test mode unless Andre Barber’s **current-turn** message grants explicit temporary permission for that specific task.
+
+Silence, implied approval, prior approval, debugging convenience, or agent judgment ≠ permission.
+
+## Preferred testing (always)
+
+Local test keys · preview/staging · Stripe CLI forwarding · mocks · automated tests that do **not** alter production config.
+
+## Never without Andre’s explicit temporary-sandbox permission
+
+- Overwrite production live keys with test keys
+- Point production webhooks at test endpoints
+- Deploy code that defaults production to test mode
+- Fall back to test credentials when live config is missing (fail closed instead)
+- Leave production in test mode after testing or on handoff
+
+## Agent stop condition
+
+If production sandbox seems necessary without permission, stop and report:
+
+> This task appears to require temporarily changing production Stripe configuration. I have not made that change because explicit authorization is required. I will use local, preview, staging, mocked, or Stripe CLI testing instead.
+
+## Before editing production Stripe / payment env
+
+Output:
+
+> **Per Stripe Environment Protection Contract: the proposed change will modify [names] and may alter production Stripe live/sandbox mode. Explicit Andre authorization required.**
+
+Then stop until approved.
+
+## If temporary sandbox is authorized
+
+Warn continuously: **PRODUCTION STRIPE IS TEMPORARILY IN TEST MODE — RESTORATION REQUIRED**  
+Restore and verify live mode before declaring done. Required statement:
+
+> Stripe production configuration has been restored and independently verified as live. No temporary sandbox configuration remains active.
+
+## Mandatory on every task completion
+
+End every response with:
+
+> ☐ STRIPE ENVIRONMENT CERTIFICATION: Production Stripe [unchanged live | restored+verified live | Andre-authorized temporary sandbox — restoration pending].
+
+Do not expose Stripe secret values in logs, chat, docs, or commits.
