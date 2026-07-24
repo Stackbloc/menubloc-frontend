@@ -39,4 +39,13 @@ assert.match(operatorApi, /getMarketplaceOrderHistory/);
 assert.match(operatorApi, /uploadMarketplaceArtwork/);
 assert.match(operatorApi, /checkoutMarketplaceService/);
 
+const placeholders = [
+  "public/marketplace/placeholders/sign-retractable-banner.svg",
+  "public/marketplace/placeholders/sign-vinyl-banner.svg",
+  "public/marketplace/placeholders/mkt-door-hangers.svg",
+];
+for (const rel of placeholders) {
+  assert.equal(fs.existsSync(path.join(ROOT, rel)), true, `missing ${rel}`);
+}
+
 console.log("marketplaceMvpContract.test.js: ok");
