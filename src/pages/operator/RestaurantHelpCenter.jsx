@@ -178,7 +178,7 @@ const OPERATIONS_SECTIONS = [
         summary: "Owner-level settings protected by Owner PIN.",
         points: [
           "My Account — Profile, Menu, Settings (plan/billing), My QR Code, Delivery Portal (Uber Direct / DoorDash Drive), and Password. No PIN required.",
-          "Marketplace — order printed QR stickers, window decals, and table kits at /operator/qr-kits/order.",
+          "Marketplace — order printed QR stickers, window decals, and table kits at /operator/marketplace.",
           "Billboards — manage profile splash creatives at /operator/billboards.",
           "Restaurant Profile / Owner PIN Settings — edit public-facing restaurant info (owner PIN for sensitive settings).",
           "Business section items are intentionally separated from daily operations so staff cannot accidentally change billing or profile details.",

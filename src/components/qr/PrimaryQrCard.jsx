@@ -355,7 +355,7 @@ export default function PrimaryQrCard({ qr, restaurantId: _restaurantId, restaur
             borderTop: "1px solid #e4e9f0", paddingTop: 12,
           }}>
             <Link
-              to="/operator/qr-kits/order"
+              to="/operator/marketplace"
               data-testid="primary-qr-marketplace-link"
               style={{
                 fontSize: 13,

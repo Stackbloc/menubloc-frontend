@@ -781,7 +781,7 @@ export default function OperatorSubscription() {
               </div>
               <button
                 type="button"
-                onClick={() => navigate("/operator/qr-kits/order")}
+                onClick={() => navigate("/operator/marketplace")}
                 style={{
                   background: "#1F4E3D", color: "#fff", border: "none",
                   borderRadius: 8, padding: "10px 18px",

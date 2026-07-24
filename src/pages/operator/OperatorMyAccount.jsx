@@ -757,7 +757,7 @@ export default function OperatorMyAccount() {
               <p style={{ margin: 0, fontSize: 13, color: "#78716c", lineHeight: 1.5 }}>
                 No primary menu QR is available yet. Once your restaurant is claimed and on an eligible plan,
                 Menuply creates one automatically. Physical stickers and decals are in{" "}
-                <QuietLink onClick={() => navigate("/operator/qr-kits/order")}>Marketplace →</QuietLink>
+                <QuietLink onClick={() => navigate("/operator/marketplace")}>Marketplace →</QuietLink>
               </p>
             )}
           </SectionCard>

@@ -575,7 +575,7 @@ function MenuLabPanel({ rid, isEmailVerified, selectedMenuId = null }) {
           </button>
           <Link
             data-testid="menu-lab-redesign-my-menu"
-            to={`/operator/qr-kits/order?service_category=menuply_menu_design${
+            to={`/operator/marketplace?service_category=menuply_menu_design${
               selectedMenuId ? `&menu_id=${encodeURIComponent(selectedMenuId)}` : ""
             }`}
             style={{

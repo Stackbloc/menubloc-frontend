@@ -261,6 +261,11 @@ function OnboardingAliasRedirect() {
   return <Navigate to="/restaurant/onboarding" replace state={location.state} />;
 }
 
+function OperatorMarketplaceLegacyRedirect() {
+  const location = useLocation();
+  return <Navigate to={`/operator/marketplace${location.search || ""}${location.hash || ""}`} replace />;
+}
+
 export function ConsumerLegacyRedirect({ nextPath }) {
   const location = useLocation();
   return <Navigate to={`${nextPath}${location.search || ""}${location.hash || ""}`} replace />;
@@ -766,7 +771,8 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/operator/deals" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorDealsEditor /></OperatorRoute>} />
         <Route path="/operator/hours" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorHoursEditor /></OperatorRoute>} />
         <Route path="/operator/bid-free-bidding" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorCartNegotiationSettings /></OperatorRoute>} />
-        <Route path="/operator/qr-kits/order" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorQrKitOrder /></OperatorRoute>} />
+        <Route path="/operator/marketplace" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorQrKitOrder /></OperatorRoute>} />
+        <Route path="/operator/qr-kits/order" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorMarketplaceLegacyRedirect />} />
         <Route path="/operator/qr-stickers" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorQrStickers /></OperatorRoute>} />
         <Route path="/operator/subscription" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorSubscription /></OperatorRoute>} />
         <Route path="/operator/my-account" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorMyAccount /></OperatorRoute>} />

@@ -8,33 +8,37 @@ import StripeElementsProvider from "../../components/payments/StripeElementsProv
 import PlatformPaymentForm from "../../components/payments/PlatformPaymentForm.jsx";
 import { formatMoney, hasStripePublishableKey } from "../../components/payments/paymentHelpers.js";
 
-const FALLBACK_CREATIVE_SERVICES = [
-  {
-    id: "photography",
-    name: "Photography",
-    short_description: "Professional food and restaurant photography.",
-    status: "coming_soon",
-  },
+/** Canonical creative categories shown in Shop Creative Services (Fiverr-style). */
+const CREATIVE_CATEGORIES = [
   {
     id: "menuply_menu_design",
-    name: "Menuply Menu Design",
+    name: "Custom Menu Design",
     short_description: "Fixed-price Menuply menu redesign by approved providers.",
     status: "available",
     category: "menuply_menu_design",
   },
   {
-    id: "social-media-graphics",
-    name: "Social Media Graphics",
-    short_description: "Social graphics for promotions and specials.",
+    id: "photography",
+    name: "Pro Photography",
+    short_description: "Professional food and restaurant photography.",
+    status: "coming_soon",
+  },
+  {
+    id: "graphic_arts",
+    name: "Graphic Arts",
+    short_description: "Graphics for promotions, specials, and restaurant branding.",
     status: "coming_soon",
   },
 ];
 
+/** @deprecated alias — kept for API creative_siblings fallback mapping */
+const FALLBACK_CREATIVE_SERVICES = CREATIVE_CATEGORIES;
+
 const FALLBACK_CATEGORIES = [
-  { id: "qr_products", label: "QR Products" },
-  { id: "menus", label: "Menus" },
-  { id: "signs_displays", label: "Signs & Displays" },
-  { id: "marketing_materials", label: "Marketing Materials" },
+  { id: "qr_products", label: "QR Products", subtitle: "Stickers, decals, table tents, and displays" },
+  { id: "menus", label: "Menus", subtitle: "Printed, laminated, and takeout menus" },
+  { id: "signs_displays", label: "Signs & Displays", subtitle: "Banners, posters, and sidewalk signs" },
+  { id: "marketing_materials", label: "Marketing Materials", subtitle: "Cards, flyers, hangers, and more" },
 ];
 
 function inputStyle() {
@@ -71,6 +75,90 @@ function InfoTile({ label, value }) {
       </div>
       <div style={{ marginTop: 6, fontSize: 15, fontWeight: 800, color: "#101828" }}>{value}</div>
     </div>
+  );
+}
+
+function Breadcrumb({ items }) {
+  return (
+    <nav aria-label="Breadcrumb" style={{ marginBottom: 16, fontSize: 13, color: "#667085", display: "flex", flexWrap: "wrap", gap: 6 }}>
+      {items.map((item, index) => (
+        <span key={`${item.label}-${index}`} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+          {index > 0 ? <span aria-hidden="true">›</span> : null}
+          {item.onClick ? (
+            <button
+              type="button"
+              onClick={item.onClick}
+              style={{
+                border: "none",
+                background: "transparent",
+                color: "#1f4e3d",
+                fontWeight: 700,
+                cursor: "pointer",
+                padding: 0,
+                fontSize: 13,
+              }}
+            >
+              {item.label}
+            </button>
+          ) : (
+            <span style={{ color: "#101828", fontWeight: 700 }}>{item.label}</span>
+          )}
+        </span>
+      ))}
+    </nav>
+  );
+}
+
+function ShopEntryCard({ title, description, testId, onClick }) {
+  return (
+    <button
+      type="button"
+      data-testid={testId}
+      onClick={onClick}
+      style={{
+        textAlign: "left",
+        borderRadius: 22,
+        border: "1px solid #d0d5dd",
+        background: "linear-gradient(165deg, #ffffff 0%, #f3faf6 100%)",
+        padding: 28,
+        cursor: "pointer",
+        minHeight: 180,
+        display: "grid",
+        gap: 12,
+        alignContent: "start",
+      }}
+    >
+      <div style={{ fontWeight: 800, fontSize: 24, color: "#101828", letterSpacing: "-0.02em" }}>{title}</div>
+      <div style={{ color: "#667085", fontSize: 15, lineHeight: 1.5 }}>{description}</div>
+      <div style={{ marginTop: "auto", fontWeight: 800, color: "#1f4e3d", fontSize: 14 }}>Browse →</div>
+    </button>
+  );
+}
+
+function CategoryTile({ title, subtitle, statusLabel, testId, onClick }) {
+  return (
+    <button
+      type="button"
+      data-testid={testId}
+      onClick={onClick}
+      style={{
+        textAlign: "left",
+        borderRadius: 18,
+        border: "1px solid #d0d5dd",
+        background: "#fff",
+        padding: 20,
+        cursor: "pointer",
+        display: "grid",
+        gap: 10,
+        minHeight: 140,
+      }}
+    >
+      <div style={{ fontWeight: 800, fontSize: 18, color: "#101828" }}>{title}</div>
+      <div style={{ color: "#667085", fontSize: 14, lineHeight: 1.45 }}>{subtitle}</div>
+      <div style={{ fontWeight: 800, color: statusLabel === "Coming Soon" ? "#b54708" : "#1f4e3d", fontSize: 13 }}>
+        {statusLabel}
+      </div>
+    </button>
   );
 }
 
@@ -146,8 +234,6 @@ export default function OperatorQrKitOrder() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [catalog, setCatalog] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [creativeServices, setCreativeServices] = useState([]);
-  const [featured, setFeatured] = useState([]);
   const [orders, setOrders] = useState([]);
   const [serviceListings, setServiceListings] = useState([]);
   const [serviceProjects, setServiceProjects] = useState([]);
@@ -157,11 +243,12 @@ export default function OperatorQrKitOrder() {
   const [servicePaymentSession, setServicePaymentSession] = useState(null);
   const [serviceProject, setServiceProject] = useState(null);
   const [creatingServiceIntent, setCreatingServiceIntent] = useState(false);
-  const [view, setView] = useState("shop"); // shop | checkout | history | service
+  // hub | products_hub | products_category | creative_hub | creative_category | checkout | history
+  const [view, setView] = useState("hub");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [creativeCategoryId, setCreativeCategoryId] = useState(null);
   const [selectedSku, setSelectedSku] = useState("");
   const [quantity, setQuantity] = useState(1);
-  const [profile, setProfile] = useState(null);
   const [form, setForm] = useState({
     shipping_name: "",
     shipping_address_1: "",
@@ -196,8 +283,16 @@ export default function OperatorQrKitOrder() {
     [serviceListings, selectedServiceListingId]
   );
 
-  const focusMenuDesign =
-    searchParams.get("service_category") === "menuply_menu_design" || view === "service";
+  const productCategories = categories.length ? categories : FALLBACK_CATEGORIES;
+  const selectedProductCategory = useMemo(
+    () => productCategories.find((c) => c.id === categoryFilter) || null,
+    [productCategories, categoryFilter]
+  );
+
+  const selectedCreativeCategory = useMemo(
+    () => CREATIVE_CATEGORIES.find((c) => c.id === creativeCategoryId) || null,
+    [creativeCategoryId]
+  );
 
   const volumeTiers = selectedProduct?.volume_pricing?.tiers || [];
   const isVolume = selectedProduct?.pricing_mode === "volume_tiers";
@@ -213,11 +308,40 @@ export default function OperatorQrKitOrder() {
     return catalog.filter((p) => p.category === categoryFilter && !p.is_replacement);
   }, [catalog, categoryFilter]);
 
+  function goHub() {
+    setView("hub");
+    setError("");
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.delete("service_category");
+      return next;
+    });
+  }
+
+  function openCreativeCategory(categoryId) {
+    setCreativeCategoryId(categoryId);
+    setView("creative_category");
+    setError("");
+    setSelectedServiceListingId(null);
+    setServicePaymentSession(null);
+    setServiceProject(null);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (categoryId === "menuply_menu_design") {
+        next.set("service_category", "menuply_menu_design");
+      } else {
+        next.delete("service_category");
+      }
+      return next;
+    });
+  }
+
   useEffect(() => {
     const menuId = searchParams.get("menu_id");
     if (menuId) setServiceSourceMenuId(String(menuId));
     if (searchParams.get("service_category") === "menuply_menu_design") {
-      setView("service");
+      setCreativeCategoryId("menuply_menu_design");
+      setView("creative_category");
     }
   }, [searchParams]);
 
@@ -241,12 +365,6 @@ export default function OperatorQrKitOrder() {
         const products = catalogResult?.products || [];
         setCatalog(products);
         setCategories(catalogResult?.categories?.length ? catalogResult.categories : FALLBACK_CATEGORIES);
-        setCreativeServices(
-          catalogResult?.creative_services?.length
-            ? catalogResult.creative_services
-            : FALLBACK_CREATIVE_SERVICES
-        );
-        setFeatured(catalogResult?.featured || products.filter((p) => p.featured).slice(0, 6));
         setOrders(historyResult?.orders || []);
         setServiceListings(serviceResult?.listings || []);
         setServiceProjects(serviceHistory?.projects || []);
@@ -256,7 +374,6 @@ export default function OperatorQrKitOrder() {
           setQuantity(firstAvailable.qty_min || 1);
         }
         const nextProfile = profileResult?.profile || null;
-        setProfile(nextProfile);
         setForm((current) => ({
           ...current,
           shipping_name: current.shipping_name || nextProfile?.restaurant_name || "",
@@ -444,7 +561,7 @@ export default function OperatorQrKitOrder() {
 
       setConfirmation(result);
       setPaymentSession(null);
-      setView("shop");
+      setView("hub");
       const history = await api.getMarketplaceOrderHistory(selectedRestaurant.id).catch(() => null);
       if (history?.orders) setOrders(history.orders);
     } catch (err) {
@@ -459,25 +576,14 @@ export default function OperatorQrKitOrder() {
     if (product.availability === "available") {
       setView("checkout");
     } else {
-      setView("shop");
       setError("");
     }
-  }
-
-  function openMenuDesign() {
-    setView("service");
-    setError("");
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      next.set("service_category", "menuply_menu_design");
-      return next;
-    });
   }
 
   async function handleServiceCheckout(event) {
     event.preventDefault();
     if (!selectedRestaurant?.id || !selectedServiceListing) {
-      setError("Select a Menuply Menu Design listing.");
+      setError("Select a Custom Menu Design listing.");
       return;
     }
     if (!hasStripePublishableKey()) {
@@ -529,7 +635,7 @@ export default function OperatorQrKitOrder() {
       setServicePaymentSession(null);
       const history = await api.getMarketplaceServiceProjects(selectedRestaurant.id).catch(() => null);
       if (history?.projects) setServiceProjects(history.projects);
-      setView("service");
+      setView("creative_category");
     } catch (err) {
       setError(err.message || "Payment succeeded, but service project could not be confirmed.");
     }
@@ -547,6 +653,7 @@ export default function OperatorQrKitOrder() {
 
   const displayUnit = previewQuote?.unit_amount_cents ?? selectedTier?.retail_unit_price_cents ?? null;
   const displaySubtotal = previewQuote?.subtotal_cents ?? selectedTier?.retail_total_cents ?? null;
+  const shopActive = view !== "history";
 
   return (
     <OperatorLayout title={t("operator.nav.marketplace") || "Marketplace"}>
@@ -560,16 +667,8 @@ export default function OperatorQrKitOrder() {
             </p>
           </div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            <button type="button" onClick={() => setView("shop")} style={tabBtn(view === "shop" || view === "checkout")}>
+            <button type="button" onClick={goHub} style={tabBtn(shopActive)} data-testid="marketplace-shop-tab">
               Shop
-            </button>
-            <button
-              type="button"
-              onClick={openMenuDesign}
-              style={tabBtn(view === "service")}
-              data-testid="marketplace-menu-design-tab"
-            >
-              Menu Design
             </button>
             <button type="button" onClick={() => setView("history")} style={tabBtn(view === "history")} data-testid="marketplace-orders-tab">
               Orders
@@ -685,334 +784,386 @@ export default function OperatorQrKitOrder() {
               </div>
             )}
           </section>
-        ) : view === "service" || focusMenuDesign ? (
-          <section style={{ marginTop: 28 }} data-testid="marketplace-menu-design-panel">
-            <h2 style={{ margin: "0 0 8px" }}>Menuply Menu Design</h2>
-            <p style={{ color: "#667085", marginTop: 0 }}>
-              Fixed-price redesigns from approved providers. Photography and Social Media Graphics remain Coming Soon.
-            </p>
+        ) : null}
 
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14, marginBottom: 20 }}>
-              {(creativeServices.length ? creativeServices : FALLBACK_CREATIVE_SERVICES).map((service) => {
-                const isMenuDesign =
-                  service.id === "menuply_menu_design" || service.category === "menuply_menu_design";
-                const comingSoon = !isMenuDesign || service.status === "coming_soon";
+        {view === "hub" ? (
+          <section style={{ marginTop: 28 }} data-testid="marketplace-hub">
+            <h2 style={{ margin: "0 0 16px", fontSize: 20 }}>What would you like to shop?</h2>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 16 }}>
+              <ShopEntryCard
+                title="Shop Products"
+                description="QR kits, printed menus, signs, and marketing materials for your restaurant."
+                testId="marketplace-shop-products"
+                onClick={() => {
+                  setView("products_hub");
+                  setError("");
+                }}
+              />
+              <ShopEntryCard
+                title="Shop Creative Services"
+                description="Custom Menu Design, Pro Photography, and Graphic Arts from approved providers."
+                testId="marketplace-shop-creative"
+                onClick={() => {
+                  setView("creative_hub");
+                  setError("");
+                }}
+              />
+            </div>
+          </section>
+        ) : null}
+
+        {view === "products_hub" ? (
+          <section style={{ marginTop: 28 }} data-testid="marketplace-products-hub">
+            <Breadcrumb
+              items={[
+                { label: "Marketplace", onClick: goHub },
+                { label: "Shop Products" },
+              ]}
+            />
+            <h2 style={{ margin: "0 0 8px", fontSize: 26, letterSpacing: "-0.02em" }}>Shop Products</h2>
+            <p style={{ color: "#667085", marginTop: 0, marginBottom: 20 }}>
+              Choose a category to browse available products.
+            </p>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
+              {productCategories.map((cat) => {
+                const meta = FALLBACK_CATEGORIES.find((f) => f.id === cat.id);
                 return (
-                  <div
-                    key={service.id}
-                    data-testid={`creative-service-${service.id}`}
-                    style={{
-                      background: isMenuDesign ? "#f3faf6" : "#fff",
-                      border: isMenuDesign ? "2px solid #1f4e3d" : "1px solid #eaecf0",
-                      borderRadius: 18,
-                      padding: 16,
+                  <CategoryTile
+                    key={cat.id}
+                    title={cat.label}
+                    subtitle={meta?.subtitle || cat.subtitle || "Browse products in this category"}
+                    statusLabel="Explore"
+                    testId={`product-category-${cat.id}`}
+                    onClick={() => {
+                      setCategoryFilter(cat.id);
+                      setView("products_category");
+                      setError("");
                     }}
-                  >
-                    <div style={{ fontWeight: 800, fontSize: 16 }}>{service.name}</div>
-                    <div style={{ color: "#667085", marginTop: 8, fontSize: 14 }}>{service.short_description}</div>
-                    <div style={{ marginTop: 12, fontWeight: 800, color: comingSoon ? "#b54708" : "#1f4e3d" }}>
-                      {comingSoon ? "Coming Soon" : "Available"}
-                    </div>
-                  </div>
+                  />
                 );
               })}
             </div>
+          </section>
+        ) : null}
 
-            <h3 style={{ margin: "0 0 12px" }}>Available providers</h3>
-            {!serviceListings.length ? (
-              <p style={{ color: "#667085" }}>
-                No approved Menu Design listings are live yet. Providers set their own fixed prices after CRM approval.
-              </p>
-            ) : (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 14 }}>
-                {serviceListings.map((listing) => (
-                  <button
-                    key={listing.id}
-                    type="button"
-                    data-testid={`service-listing-${listing.slug || listing.id}`}
-                    onClick={() => {
-                      setSelectedServiceListingId(listing.id);
-                      setServicePaymentSession(null);
-                      setServiceProject(null);
-                    }}
+        {view === "products_category" ? (
+          <section style={{ marginTop: 28 }} data-testid="marketplace-products-category">
+            <Breadcrumb
+              items={[
+                { label: "Marketplace", onClick: goHub },
+                { label: "Shop Products", onClick: () => setView("products_hub") },
+                { label: selectedProductCategory?.label || "Category" },
+              ]}
+            />
+            <h2 style={{ margin: "0 0 8px", fontSize: 26, letterSpacing: "-0.02em" }}>
+              {selectedProductCategory?.label || "Products"}
+            </h2>
+            <p style={{ color: "#667085", marginTop: 0, marginBottom: 20 }}>
+              Select a product to view details and checkout.
+            </p>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
+              {filteredCatalog.map((product) => (
+                <ProductCard
+                  key={product.sku}
+                  product={product}
+                  active={product.sku === selectedSku}
+                  onSelect={selectProduct}
+                />
+              ))}
+            </div>
+            {!filteredCatalog.length ? (
+              <p style={{ color: "#667085" }}>No products in this category yet.</p>
+            ) : null}
+          </section>
+        ) : null}
+
+        {view === "creative_hub" ? (
+          <section style={{ marginTop: 28 }} data-testid="marketplace-creative-hub">
+            <Breadcrumb
+              items={[
+                { label: "Marketplace", onClick: goHub },
+                { label: "Shop Creative Services" },
+              ]}
+            />
+            <h2 style={{ margin: "0 0 8px", fontSize: 26, letterSpacing: "-0.02em" }}>Shop Creative Services</h2>
+            <p style={{ color: "#667085", marginTop: 0, marginBottom: 20 }}>
+              Pick a creative category. Available services show provider listings; others are Coming Soon.
+            </p>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
+              {CREATIVE_CATEGORIES.map((service) => (
+                <CategoryTile
+                  key={service.id}
+                  title={service.name}
+                  subtitle={service.short_description}
+                  statusLabel={service.status === "coming_soon" ? "Coming Soon" : "Browse services"}
+                  testId={`creative-service-${service.id}`}
+                  onClick={() => openCreativeCategory(service.id)}
+                />
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        {view === "creative_category" && selectedCreativeCategory ? (
+          <section style={{ marginTop: 28 }} data-testid="marketplace-menu-design-panel">
+            <Breadcrumb
+              items={[
+                { label: "Marketplace", onClick: goHub },
+                { label: "Shop Creative Services", onClick: () => setView("creative_hub") },
+                { label: selectedCreativeCategory.name },
+              ]}
+            />
+            <h2 style={{ margin: "0 0 8px", fontSize: 26, letterSpacing: "-0.02em" }}>
+              {selectedCreativeCategory.name}
+            </h2>
+            <p style={{ color: "#667085", marginTop: 0, marginBottom: 20 }}>
+              {selectedCreativeCategory.short_description}
+            </p>
+
+            {selectedCreativeCategory.id === "menuply_menu_design" ? (
+              <>
+                <h3 style={{ margin: "0 0 12px" }}>Available providers</h3>
+                {!serviceListings.length ? (
+                  <p style={{ color: "#667085" }}>
+                    No approved Custom Menu Design listings are live yet. Providers set their own fixed prices after CRM approval.
+                  </p>
+                ) : (
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 14 }}>
+                    {serviceListings.map((listing) => (
+                      <button
+                        key={listing.id}
+                        type="button"
+                        data-testid={`service-listing-${listing.slug || listing.id}`}
+                        onClick={() => {
+                          setSelectedServiceListingId(listing.id);
+                          setServicePaymentSession(null);
+                          setServiceProject(null);
+                        }}
+                        style={{
+                          textAlign: "left",
+                          borderRadius: 18,
+                          border:
+                            Number(selectedServiceListingId) === Number(listing.id)
+                              ? "2px solid #1f4e3d"
+                              : "1px solid #d0d5dd",
+                          background: "#fff",
+                          padding: 16,
+                          cursor: "pointer",
+                        }}
+                      >
+                        <div style={{ fontWeight: 800 }}>{listing.title}</div>
+                        <div style={{ color: "#667085", marginTop: 6, fontSize: 14 }}>
+                          {listing.provider?.display_name || "Provider"} · {listing.turnaround_days} days ·{" "}
+                          {listing.revision_count} revisions
+                        </div>
+                        <div style={{ marginTop: 10, fontWeight: 800, color: "#1f4e3d" }}>
+                          {formatMoney(listing.fixed_price_cents)}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {selectedServiceListing ? (
+                  <form
+                    onSubmit={handleServiceCheckout}
                     style={{
-                      textAlign: "left",
-                      borderRadius: 18,
-                      border:
-                        Number(selectedServiceListingId) === Number(listing.id)
-                          ? "2px solid #1f4e3d"
-                          : "1px solid #d0d5dd",
+                      marginTop: 24,
                       background: "#fff",
-                      padding: 16,
-                      cursor: "pointer",
+                      border: "1px solid #eaecf0",
+                      borderRadius: 22,
+                      padding: 22,
+                      display: "grid",
+                      gap: 12,
                     }}
+                    data-testid="marketplace-service-checkout"
                   >
-                    <div style={{ fontWeight: 800 }}>{listing.title}</div>
-                    <div style={{ color: "#667085", marginTop: 6, fontSize: 14 }}>
-                      {listing.provider?.display_name || "Provider"} · {listing.turnaround_days} days ·{" "}
-                      {listing.revision_count} revisions
+                    <h3 style={{ margin: 0 }}>{selectedServiceListing.title}</h3>
+                    <p style={{ margin: 0, color: "#667085" }}>
+                      {selectedServiceListing.full_description || selectedServiceListing.short_description}
+                    </p>
+                    <div style={{ background: "#f9fafb", borderRadius: 14, padding: 14 }}>
+                      <strong>Fixed price:</strong> {formatMoney(selectedServiceListing.fixed_price_cents)}
+                      <div style={{ marginTop: 6, fontSize: 13, color: "#667085" }}>
+                        Platform PaymentIntent only · payment_type=marketplace_service · no shipping
+                      </div>
                     </div>
-                    <div style={{ marginTop: 10, fontWeight: 800, color: "#1f4e3d" }}>
-                      {formatMoney(listing.fixed_price_cents)}
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {selectedServiceListing ? (
-              <form
-                onSubmit={handleServiceCheckout}
+                    <label>
+                      <span style={labelStyle()}>Project brief</span>
+                      <textarea
+                        value={serviceBrief}
+                        onChange={(e) => setServiceBrief(e.target.value)}
+                        style={{ ...inputStyle(), minHeight: 100 }}
+                        placeholder="Describe your menu redesign goals…"
+                      />
+                    </label>
+                    <label>
+                      <span style={labelStyle()}>Source menu id (optional)</span>
+                      <input
+                        value={serviceSourceMenuId}
+                        onChange={(e) => setServiceSourceMenuId(e.target.value)}
+                        style={inputStyle()}
+                        placeholder="menu_id"
+                      />
+                    </label>
+                    <label>
+                      <span style={labelStyle()}>Receipt email</span>
+                      <input
+                        value={form.receipt_email}
+                        onChange={(e) => setField("receipt_email", e.target.value)}
+                        style={inputStyle()}
+                      />
+                    </label>
+                    <button type="submit" disabled={creatingServiceIntent} style={primaryBtn("#1f4e3d")}>
+                      {creatingServiceIntent
+                        ? "Preparing payment…"
+                        : `Purchase · ${formatMoney(selectedServiceListing.fixed_price_cents)}`}
+                    </button>
+                    {servicePaymentSession?.client_secret ? (
+                      <div style={{ marginTop: 8 }}>
+                        <StripeElementsProvider options={{ clientSecret: servicePaymentSession.client_secret }}>
+                          <PlatformPaymentForm onConfirmed={handleServicePaymentConfirmed} />
+                        </StripeElementsProvider>
+                      </div>
+                    ) : null}
+                  </form>
+                ) : null}
+              </>
+            ) : (
+              <div
                 style={{
-                  marginTop: 24,
                   background: "#fff",
                   border: "1px solid #eaecf0",
                   borderRadius: 22,
-                  padding: 22,
-                  display: "grid",
-                  gap: 12,
+                  padding: 28,
+                  textAlign: "center",
                 }}
-                data-testid="marketplace-service-checkout"
+                data-testid={`creative-coming-soon-${selectedCreativeCategory.id}`}
               >
-                <h3 style={{ margin: 0 }}>{selectedServiceListing.title}</h3>
-                <p style={{ margin: 0, color: "#667085" }}>
-                  {selectedServiceListing.full_description || selectedServiceListing.short_description}
+                <div style={{ fontWeight: 800, fontSize: 18, color: "#101828" }}>Coming Soon</div>
+                <p style={{ color: "#667085", marginBottom: 0, lineHeight: 1.5 }}>
+                  {selectedCreativeCategory.name} listings will appear here when providers go live.
                 </p>
-                <div style={{ background: "#f9fafb", borderRadius: 14, padding: 14 }}>
-                  <strong>Fixed price:</strong> {formatMoney(selectedServiceListing.fixed_price_cents)}
-                  <div style={{ marginTop: 6, fontSize: 13, color: "#667085" }}>
-                    Platform PaymentIntent only · payment_type=marketplace_service · no shipping
-                  </div>
+              </div>
+            )}
+          </section>
+        ) : null}
+
+        {view === "checkout" && selectedProduct && purchasable ? (
+          <section style={{ marginTop: 28, background: "#fff", border: "1px solid #eaecf0", borderRadius: 22, padding: 22 }}>
+            <Breadcrumb
+              items={[
+                { label: "Marketplace", onClick: goHub },
+                { label: "Shop Products", onClick: () => setView("products_hub") },
+                {
+                  label: selectedProductCategory?.label || "Products",
+                  onClick: () => setView("products_category"),
+                },
+                { label: selectedProduct.public_name || selectedProduct.name },
+              ]}
+            />
+            <h2 style={{ marginTop: 0 }}>{selectedProduct.public_name}</h2>
+            <p style={{ color: "#667085" }}>{selectedProduct.short_description || selectedProduct.description}</p>
+
+            {isVolume && volumeTiers.length ? (
+              <label style={{ display: "block", marginTop: 18 }}>
+                <span style={labelStyle()}>Quantity (volume tier)</span>
+                <select value={quantity} onChange={(e) => setQuantity(Number(e.target.value))} style={inputStyle()}>
+                  {volumeTiers.map((tier) => (
+                    <option key={tier.tier_id || tier.quantity} value={tier.quantity}>
+                      {tier.label || `${tier.quantity} — ${formatMoney(tier.retail_total_cents)}`}
+                      {!tier.self_service_eligible ? " (bulk quote)" : ""}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : selectedProduct?.qty_max > 1 ? (
+              <label style={{ display: "block", marginTop: 18 }}>
+                <span style={labelStyle()}>Quantity</span>
+                <input
+                  type="number"
+                  min={selectedProduct.qty_min}
+                  max={selectedProduct.qty_max}
+                  step={selectedProduct.qty_step}
+                  value={quantity}
+                  onChange={(e) => setQuantity(Number(e.target.value))}
+                  style={inputStyle()}
+                />
+              </label>
+            ) : null}
+
+            <div style={{ marginTop: 16, background: "#f9fafb", borderRadius: 16, padding: 16 }}>
+              <div><strong>Quantity:</strong> {quantity}</div>
+              <div><strong>Unit price:</strong> {displayUnit != null ? formatMoney(displayUnit) : "—"}</div>
+              <div><strong>Subtotal:</strong> {displaySubtotal != null ? formatMoney(displaySubtotal) : "—"}</div>
+              {serverQuote ? (
+                <div style={{ marginTop: 8, color: "#166534" }}>
+                  <strong>Server-confirmed amount due:</strong> {formatMoney(serverQuote.subtotal_cents)}
                 </div>
-                <label>
-                  <span style={labelStyle()}>Project brief</span>
-                  <textarea
-                    value={serviceBrief}
-                    onChange={(e) => setServiceBrief(e.target.value)}
-                    style={{ ...inputStyle(), minHeight: 100 }}
-                    placeholder="Describe your menu redesign goals…"
-                  />
+              ) : null}
+              <div style={{ marginTop: 8, fontSize: 13, color: "#667085" }}>
+                Tax: not included · Shipping charge: not included
+              </div>
+            </div>
+
+            <form onSubmit={handleCreatePaymentIntent} style={{ marginTop: 20, display: "grid", gap: 12 }}>
+              {[
+                ["shipping_name", "Ship to name"],
+                ["shipping_address_1", "Address line 1"],
+                ["shipping_address_2", "Address line 2"],
+                ["shipping_city", "City"],
+                ["shipping_state", "State"],
+                ["shipping_postal_code", "Postal code"],
+                ["shipping_country", "Country"],
+                ["receipt_email", "Receipt email"],
+              ].map(([key, label]) => (
+                <label key={key}>
+                  <span style={labelStyle()}>{label}</span>
+                  <input style={inputStyle()} value={form[key]} onChange={(e) => setField(key, e.target.value)} />
                 </label>
-                <label>
-                  <span style={labelStyle()}>Source menu id (optional)</span>
-                  <input
-                    value={serviceSourceMenuId}
-                    onChange={(e) => setServiceSourceMenuId(e.target.value)}
-                    style={inputStyle()}
-                    placeholder="menu_id"
-                  />
-                </label>
-                <label>
-                  <span style={labelStyle()}>Receipt email</span>
-                  <input
-                    value={form.receipt_email}
-                    onChange={(e) => setField("receipt_email", e.target.value)}
-                    style={inputStyle()}
-                  />
-                </label>
-                <button type="submit" disabled={creatingServiceIntent} style={primaryBtn("#1f4e3d")}>
-                  {creatingServiceIntent
-                    ? "Preparing payment…"
-                    : `Purchase · ${formatMoney(selectedServiceListing.fixed_price_cents)}`}
-                </button>
-                {servicePaymentSession?.client_secret ? (
-                  <div style={{ marginTop: 8 }}>
-                    <StripeElementsProvider options={{ clientSecret: servicePaymentSession.client_secret }}>
-                      <PlatformPaymentForm onConfirmed={handleServicePaymentConfirmed} />
-                    </StripeElementsProvider>
-                  </div>
+              ))}
+
+              <label>
+                <span style={labelStyle()}>Artwork / photo (optional)</span>
+                <input type="file" accept="image/*" onChange={handleArtworkChange} disabled={uploadingPhoto} />
+                {doorPhotoPreview ? (
+                  <img src={doorPhotoPreview} alt="Artwork preview" style={{ marginTop: 8, maxWidth: 180, borderRadius: 12 }} />
                 ) : null}
-              </form>
+              </label>
+
+              {needsBulkQuote ? (
+                <button
+                  type="button"
+                  onClick={handleBulkQuoteRequest}
+                  disabled={requestingBulk || !selectedProduct}
+                  style={primaryBtn("#1d4ed8")}
+                >
+                  {requestingBulk ? "Submitting…" : "Request Bulk Quote"}
+                </button>
+              ) : (
+                <button
+                  type="submit"
+                  disabled={creatingIntent || !selectedProduct}
+                  style={primaryBtn("#1f4e3d")}
+                >
+                  {creatingIntent
+                    ? "Preparing payment…"
+                    : displaySubtotal != null
+                      ? `Continue to payment · ${formatMoney(displaySubtotal)}`
+                      : "Continue to payment"}
+                </button>
+              )}
+            </form>
+
+            {paymentSession?.client_secret ? (
+              <div style={{ marginTop: 20 }}>
+                <StripeElementsProvider options={{ clientSecret: paymentSession.client_secret }}>
+                  <PlatformPaymentForm onConfirmed={handlePaymentConfirmed} />
+                </StripeElementsProvider>
+              </div>
             ) : null}
           </section>
-        ) : (
-          <>
-            <section style={{ marginTop: 28 }}>
-              <h2 style={{ margin: "0 0 12px" }}>Featured Products</h2>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
-                {(featured.length ? featured : filteredCatalog.slice(0, 4)).map((product) => (
-                  <ProductCard
-                    key={`featured-${product.sku}`}
-                    product={product}
-                    active={product.sku === selectedSku}
-                    onSelect={selectProduct}
-                  />
-                ))}
-              </div>
-            </section>
-
-            <section style={{ marginTop: 28 }}>
-              <h2 style={{ margin: "0 0 12px" }}>Shop by Category</h2>
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 14 }}>
-                <button type="button" onClick={() => setCategoryFilter("all")} style={chipBtn(categoryFilter === "all")}>All</button>
-                {(categories.length ? categories : FALLBACK_CATEGORIES).map((cat) => (
-                  <button
-                    key={cat.id}
-                    type="button"
-                    onClick={() => setCategoryFilter(cat.id)}
-                    style={chipBtn(categoryFilter === cat.id)}
-                  >
-                    {cat.label}
-                  </button>
-                ))}
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
-                {filteredCatalog.map((product) => (
-                  <ProductCard
-                    key={product.sku}
-                    product={product}
-                    active={product.sku === selectedSku}
-                    onSelect={selectProduct}
-                  />
-                ))}
-              </div>
-            </section>
-
-            <section style={{ marginTop: 28 }}>
-              <h2 style={{ margin: "0 0 12px" }}>Creative Services</h2>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
-                {(creativeServices.length ? creativeServices : FALLBACK_CREATIVE_SERVICES).map((service) => {
-                  const isMenuDesign =
-                    service.id === "menuply_menu_design" || service.category === "menuply_menu_design";
-                  return (
-                    <div
-                      key={service.id}
-                      data-testid={`creative-service-${service.id}`}
-                      style={{ background: "#fff", border: "1px solid #eaecf0", borderRadius: 18, padding: 16 }}
-                    >
-                      <div style={{ fontWeight: 800, fontSize: 16 }}>{service.name}</div>
-                      <div style={{ color: "#667085", marginTop: 8, fontSize: 14 }}>{service.short_description}</div>
-                      {isMenuDesign ? (
-                        <button
-                          type="button"
-                          onClick={openMenuDesign}
-                          style={{
-                            marginTop: 12,
-                            border: "none",
-                            background: "transparent",
-                            color: "#1f4e3d",
-                            fontWeight: 800,
-                            cursor: "pointer",
-                            padding: 0,
-                          }}
-                        >
-                          Browse Menu Design →
-                        </button>
-                      ) : (
-                        <div style={{ marginTop: 12, fontWeight: 800, color: "#b54708" }}>Coming Soon</div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
-
-            {view === "checkout" && selectedProduct && purchasable ? (
-              <section style={{ marginTop: 28, background: "#fff", border: "1px solid #eaecf0", borderRadius: 22, padding: 22 }}>
-                <h2 style={{ marginTop: 0 }}>{selectedProduct.public_name}</h2>
-                <p style={{ color: "#667085" }}>{selectedProduct.short_description || selectedProduct.description}</p>
-
-                {isVolume && volumeTiers.length ? (
-                  <label style={{ display: "block", marginTop: 18 }}>
-                    <span style={labelStyle()}>Quantity (volume tier)</span>
-                    <select value={quantity} onChange={(e) => setQuantity(Number(e.target.value))} style={inputStyle()}>
-                      {volumeTiers.map((tier) => (
-                        <option key={tier.tier_id || tier.quantity} value={tier.quantity}>
-                          {tier.label || `${tier.quantity} — ${formatMoney(tier.retail_total_cents)}`}
-                          {!tier.self_service_eligible ? " (bulk quote)" : ""}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                ) : selectedProduct?.qty_max > 1 ? (
-                  <label style={{ display: "block", marginTop: 18 }}>
-                    <span style={labelStyle()}>Quantity</span>
-                    <input
-                      type="number"
-                      min={selectedProduct.qty_min}
-                      max={selectedProduct.qty_max}
-                      step={selectedProduct.qty_step}
-                      value={quantity}
-                      onChange={(e) => setQuantity(Number(e.target.value))}
-                      style={inputStyle()}
-                    />
-                  </label>
-                ) : null}
-
-                <div style={{ marginTop: 16, background: "#f9fafb", borderRadius: 16, padding: 16 }}>
-                  <div><strong>Quantity:</strong> {quantity}</div>
-                  <div><strong>Unit price:</strong> {displayUnit != null ? formatMoney(displayUnit) : "—"}</div>
-                  <div><strong>Subtotal:</strong> {displaySubtotal != null ? formatMoney(displaySubtotal) : "—"}</div>
-                  {serverQuote ? (
-                    <div style={{ marginTop: 8, color: "#166534" }}>
-                      <strong>Server-confirmed amount due:</strong> {formatMoney(serverQuote.subtotal_cents)}
-                    </div>
-                  ) : null}
-                  <div style={{ marginTop: 8, fontSize: 13, color: "#667085" }}>
-                    Tax: not included · Shipping charge: not included
-                  </div>
-                </div>
-
-                <form onSubmit={handleCreatePaymentIntent} style={{ marginTop: 20, display: "grid", gap: 12 }}>
-                  {[
-                    ["shipping_name", "Ship to name"],
-                    ["shipping_address_1", "Address line 1"],
-                    ["shipping_address_2", "Address line 2"],
-                    ["shipping_city", "City"],
-                    ["shipping_state", "State"],
-                    ["shipping_postal_code", "Postal code"],
-                    ["shipping_country", "Country"],
-                    ["receipt_email", "Receipt email"],
-                  ].map(([key, label]) => (
-                    <label key={key}>
-                      <span style={labelStyle()}>{label}</span>
-                      <input style={inputStyle()} value={form[key]} onChange={(e) => setField(key, e.target.value)} />
-                    </label>
-                  ))}
-
-                  <label>
-                    <span style={labelStyle()}>Artwork / photo (optional)</span>
-                    <input type="file" accept="image/*" onChange={handleArtworkChange} disabled={uploadingPhoto} />
-                    {doorPhotoPreview ? (
-                      <img src={doorPhotoPreview} alt="Artwork preview" style={{ marginTop: 8, maxWidth: 180, borderRadius: 12 }} />
-                    ) : null}
-                  </label>
-
-                  {needsBulkQuote ? (
-                    <button
-                      type="button"
-                      onClick={handleBulkQuoteRequest}
-                      disabled={requestingBulk || !selectedProduct}
-                      style={primaryBtn("#1d4ed8")}
-                    >
-                      {requestingBulk ? "Submitting…" : "Request Bulk Quote"}
-                    </button>
-                  ) : (
-                    <button
-                      type="submit"
-                      disabled={creatingIntent || !selectedProduct}
-                      style={primaryBtn("#1f4e3d")}
-                    >
-                      {creatingIntent
-                        ? "Preparing payment…"
-                        : displaySubtotal != null
-                          ? `Continue to payment · ${formatMoney(displaySubtotal)}`
-                          : "Continue to payment"}
-                    </button>
-                  )}
-                </form>
-
-                {paymentSession?.client_secret ? (
-                  <div style={{ marginTop: 20 }}>
-                    <StripeElementsProvider options={{ clientSecret: paymentSession.client_secret }}>
-                      <PlatformPaymentForm onConfirmed={handlePaymentConfirmed} />
-                    </StripeElementsProvider>
-                  </div>
-                ) : null}
-              </section>
-            ) : null}
-          </>
-        )}
+        ) : null}
       </div>
     </OperatorLayout>
   );
@@ -1027,18 +1178,6 @@ function tabBtn(active) {
     background: active ? "#f3faf6" : "#fff",
     color: "#101828",
     fontWeight: 800,
-    cursor: "pointer",
-  };
-}
-
-function chipBtn(active) {
-  return {
-    minHeight: 36,
-    padding: "0 14px",
-    borderRadius: 999,
-    border: active ? "2px solid #1f4e3d" : "1px solid #d0d5dd",
-    background: active ? "#f3faf6" : "#fff",
-    fontWeight: 700,
     cursor: "pointer",
   };
 }

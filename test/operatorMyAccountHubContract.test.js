@@ -61,7 +61,7 @@ function testSettingsAccountFields() {
 function testMarketplaceNav() {
   const layout = read("src/pages/operator/OperatorLayout.jsx");
   assert.match(layout, /operator\.nav\.marketplace/);
-  assert.match(layout, /\/operator\/qr-kits\/order/);
+  assert.match(layout, /\/operator\/marketplace/);
   assert.match(layout, /Marketplace/);
 }
 
@@ -71,7 +71,7 @@ function testPrimaryQrSharePrint() {
   assert.match(src, /data-testid="primary-qr-print"/);
   assert.match(src, /navigator\.share/);
   assert.match(src, /window\.print/);
-  assert.match(src, /\/operator\/qr-kits\/order/);
+  assert.match(src, /\/operator\/marketplace/);
 }
 
 function testDeliveryPortalRewire() {

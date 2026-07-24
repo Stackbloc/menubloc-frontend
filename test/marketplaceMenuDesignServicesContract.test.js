@@ -21,20 +21,21 @@ const operatorApi = read("src/lib/operatorApi.js");
 const crmPage = read("src/pages/crm/CrmMarketplacePage.jsx");
 const crmApi = read("src/lib/crmApi.js");
 
-assert.match(page, /Menuply Menu Design/);
+assert.match(page, /Custom Menu Design/);
 assert.match(page, /service_category/);
 assert.match(page, /menuply_menu_design/);
 assert.match(page, /marketplace-menu-design-panel/);
 assert.match(page, /checkoutMarketplaceService/);
 assert.match(page, /payment_type=marketplace_service/);
-assert.match(page, /Photography/);
-assert.match(page, /Social Media Graphics/);
+assert.match(page, /Pro Photography/);
+assert.match(page, /Graphic Arts/);
 assert.match(page, /Coming Soon/);
 assert.equal(/VistaPrint/i.test(page) && /submit.*VistaPrint/i.test(page), false);
 
 assert.match(menuLab, /menu-lab-redesign-my-menu/);
 assert.match(menuLab, /Redesign My Menu/);
 assert.match(menuLab, /service_category=menuply_menu_design/);
+assert.match(menuLab, /\/operator\/marketplace\?service_category=menuply_menu_design/);
 assert.match(menuLab, /menu_id=/);
 
 assert.match(app, /path="\/provider\/\*"/);

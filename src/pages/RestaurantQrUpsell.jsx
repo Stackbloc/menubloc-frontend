@@ -88,7 +88,7 @@ export default function RestaurantQrUpsell() {
   }
 
   function goToKitOrder() {
-    nav("/operator/qr-kits/order", {
+    nav("/operator/marketplace", {
       state: {
         restaurant_id,
         qr_token: qrToken,

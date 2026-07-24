@@ -63,7 +63,7 @@ function testLayoutSectionAndItemOrder() {
   assert.ok(adobe < 0 || adobe > lab, "Adobe after Menu Lab when present");
 
   // Marketplace hub (generalized; same route)
-  assert.match(layout, /to: "\/operator\/qr-kits\/order"/);
+  assert.match(layout, /to: "\/operator\/marketplace"/);
   assert.match(layout, /operator\.nav\.marketplace/);
 }
 
