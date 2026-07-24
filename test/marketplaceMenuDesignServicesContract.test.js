@@ -32,8 +32,9 @@ assert.match(page, /Social Media Graphics/);
 assert.match(page, /Coming Soon/);
 assert.equal(/VistaPrint/i.test(page) && /submit.*VistaPrint/i.test(page), false);
 
-assert.match(menuLab, /menu-lab-redesign-my-menu/);
-assert.match(menuLab, /Redesign My Menu/);
+assert.match(menuLab, /menu-lab-order-pro-design/);
+assert.match(menuLab, /Order Pro Design/);
+assert.match(menuLab, /#dc2626/);
 assert.match(menuLab, /service_category=menuply_menu_design/);
 assert.match(menuLab, /menu_id=/);
 

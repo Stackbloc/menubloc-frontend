@@ -574,19 +574,22 @@ function MenuLabPanel({ rid, isEmailVerified, selectedMenuId = null }) {
             View Public Menu
           </button>
           <Link
-            data-testid="menu-lab-redesign-my-menu"
+            data-testid="menu-lab-order-pro-design"
             to={`/operator/qr-kits/order?service_category=menuply_menu_design${
               selectedMenuId ? `&menu_id=${encodeURIComponent(selectedMenuId)}` : ""
             }`}
             style={{
-              ...BTN("ghost"),
+              ...BTN("primary"),
+              background: "#dc2626",
+              color: "#fff",
+              border: "1.5px solid #dc2626",
               textDecoration: "none",
               display: "inline-flex",
               alignItems: "center",
               justifyContent: "center",
             }}
           >
-            Redesign My Menu
+            Order Pro Design
           </Link>
         </div>
       </div>
