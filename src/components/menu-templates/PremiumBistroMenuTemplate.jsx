@@ -5,6 +5,7 @@ import { shouldShowItemImages, shouldShowSectionImages } from "./menuThemeSettin
 import { MENU_ROW_HEADER_ICON_GAP, MENU_ROW_ICON_SIZE } from "./menuPresentationUtils.js";
 import FollowRestaurantButton from "../FollowRestaurantButton.jsx";
 import RestaurantVerificationBadge from "../RestaurantVerificationBadge.jsx";
+import MenuAddressLines from "./MenuAddressLines.jsx";
 import { MenuDesignHeroSlot, MenuDesignSectionSlot, sectionPhotoSlotKey } from "./MenuDesignPhotoEditOverlay.jsx";
 
 function text(value) {
@@ -284,11 +285,19 @@ export default function PremiumBistroMenuTemplate(ctx) {
           {addressLine ? (
             <div style={{ marginTop: 16, color: "rgba(255,255,255,0.66)", fontSize: 13, fontWeight: 700 }}>
               {directionsHref ? (
-                <a href={directionsHref} target="_blank" rel="noreferrer" style={{ color: "inherit", textDecoration: "none" }}>
-                  {addressLine1}{addressLine2 ? `, ${addressLine2}` : ""}
+                <a href={directionsHref} target="_blank" rel="noreferrer" style={{ color: "inherit", textDecoration: "none", display: "inline-flex" }}>
+                  <MenuAddressLines
+                    addressLine1={addressLine1}
+                    addressLine2={addressLine2}
+                    addressLine={addressLine}
+                  />
                 </a>
               ) : (
-                <span>{addressLine}</span>
+                <MenuAddressLines
+                  addressLine1={addressLine1}
+                  addressLine2={addressLine2}
+                  addressLine={addressLine}
+                />
               )}
             </div>
           ) : null}

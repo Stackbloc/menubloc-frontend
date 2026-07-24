@@ -47,6 +47,7 @@ import { useOperator } from "../context/OperatorContext.jsx";
 import { fetchRestaurantMenuPreview, toConsumerErrorMessage } from "../lib/api.js";
 import { trackRestaurantView } from "../lib/analytics.js";
 import { sendPageVisit } from "../lib/analyticsPageVisitSend.js";
+import { restaurantMenuPathFromRow } from "../lib/canonicalUrl.js";
 import { getLocalizedField } from "../utils/getLocalizedField.js";
 import { getDisplayMenuItemName } from "../utils/getDisplayMenuItemName.js";
 import RestaurantStatusLight from "../components/RestaurantStatusLight.jsx";
@@ -908,6 +909,16 @@ export default function RestaurantPublicPage() {
       })
     : null;
 
+  const menuHref =
+    (typeof menuPreview?.menu_url === "string" && menuPreview.menu_url.trim()) ||
+    restaurantMenuPathFromRow({
+      slug: data?.slug || resolvedSlug,
+      city,
+      state: stateVal,
+      id: data?.id,
+    }) ||
+    (data?.id ? `/public/restaurants/${data.id}/menu` : null);
+
   const aboutText =
     getLocalizedField(data, "about_us", language) ||
     data?.about_us ||
@@ -1039,6 +1050,7 @@ export default function RestaurantPublicPage() {
           tierLabel={isPro ? "Pro" : isVerified ? "Verified" : ""}
           statusLightProps={restaurantStatusLightProps}
           restaurantId={data?.id || null}
+          menuHref={menuHref}
           shareData={restaurantShareData}
           shareAnalytics={{
             restaurantId: data?.id,

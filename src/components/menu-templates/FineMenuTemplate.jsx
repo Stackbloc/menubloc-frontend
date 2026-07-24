@@ -5,6 +5,7 @@ import { getLocalizedField } from "../../utils/getLocalizedField.js";
 import PublicMenuItemCard from "./PublicMenuItemCard.jsx";
 import { useIsTabletRange, getRestaurantInitials, MENU_ROW_ICON_SIZE } from "./menuPresentationUtils.js";
 import MapPinIcon from "./MapPinIcon.jsx";
+import MenuAddressLines from "./MenuAddressLines.jsx";
 import MenuRestaurantDistanceLine from "./MenuRestaurantDistanceLine.jsx";
 import RestaurantProfileLogoLink from "./RestaurantProfileLogoLink.jsx";
 import FollowRestaurantButton from "../FollowRestaurantButton.jsx";
@@ -230,14 +231,20 @@ export default function FineMenuTemplate(ctx) {
                   }}
                 >
                   <MapPinIcon size={13} stroke={SUBTLE} />
-                  <span>
-                    {addressLine1}{addressLine2 ? `, ${addressLine2}` : ""}
-                  </span>
+                  <MenuAddressLines
+                    addressLine1={addressLine1}
+                    addressLine2={addressLine2}
+                    addressLine={addressLine}
+                  />
                 </a>
               ) : (
                 <div style={{ fontSize: 14, color: SUBTLE, fontWeight: 400, marginTop: 7, display: "flex", alignItems: "flex-start", gap: 5 }}>
                   <MapPinIcon size={13} stroke={SUBTLE} />
-                  <span>{addressLine1}{addressLine2 ? `, ${addressLine2}` : ""}</span>
+                  <MenuAddressLines
+                    addressLine1={addressLine1}
+                    addressLine2={addressLine2}
+                    addressLine={addressLine}
+                  />
                 </div>
               )
             ) : null}

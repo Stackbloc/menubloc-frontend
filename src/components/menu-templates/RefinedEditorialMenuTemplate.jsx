@@ -4,6 +4,7 @@ import ChipRail from "../chips/ChipRail.jsx";
 import { getLocalizedField } from "../../utils/getLocalizedField.js";
 import { getDisplayMenuItemName } from "../../utils/getDisplayMenuItemName.js";
 import PublicMenuItemCard from "./PublicMenuItemCard.jsx";
+import MenuAddressLines from "./MenuAddressLines.jsx";
 import MenuplyAttribution from "./MenuplyAttribution.jsx";
 import { pickFeaturedMenuItems } from "./menuTemplateFeatured.js";
 
@@ -172,10 +173,10 @@ export default function RefinedEditorialMenuTemplate(ctx) {
                       aria-label={`Get directions to ${restaurantName}`}
                       style={{ color: "inherit", textDecoration: "none" }}
                     >
-                      {addressLine1}{addressLine2 ? `, ${addressLine2}` : ""}
+                      <MenuAddressLines addressLine1={addressLine1} addressLine2={addressLine2} addressLine={addressLine} />
                     </a>
                   ) : (
-                    <span>{addressLine1}{addressLine2 ? `, ${addressLine2}` : ""}</span>
+                    <MenuAddressLines addressLine1={addressLine1} addressLine2={addressLine2} addressLine={addressLine} />
                   )}
                 </div>
               ) : null}

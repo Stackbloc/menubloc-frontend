@@ -8,11 +8,52 @@ import RestaurantStatusBannerStrip from "./RestaurantStatusBannerStrip.jsx";
 import RestaurantProfileMenuPreview from "./RestaurantProfileMenuPreview.jsx";
 import FollowRestaurantButton from "../FollowRestaurantButton.jsx";
 import ShareButton from "../share/ShareButton.jsx";
+import ViewMenuIcon from "../icons/ViewMenuIcon.jsx";
+import IconHoverLabel from "../IconHoverLabel.jsx";
 import {
   MENU_ROW_HEADER_ICON_GAP,
   MENU_ROW_ICON_SIZE,
 } from "../menu-templates/menuPresentationUtils.js";
 import { clusterTypeLabel } from "../../lib/clusterUrl.js";
+
+function ghostIconStyle(dark) {
+  return {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: MENU_ROW_ICON_SIZE,
+    height: MENU_ROW_ICON_SIZE,
+    minWidth: MENU_ROW_ICON_SIZE,
+    minHeight: MENU_ROW_ICON_SIZE,
+    padding: 0,
+    borderRadius: "50%",
+    border: dark ? "1px solid rgba(255,255,255,0.28)" : "1px solid rgba(55,65,81,0.22)",
+    background: dark ? "rgba(28,25,23,0.35)" : "rgba(255,255,255,0.96)",
+    color: dark ? "#fafaf9" : "#0f172a",
+    flexShrink: 0,
+    boxShadow: dark ? "none" : "0 2px 8px rgba(15, 23, 42, 0.12)",
+    textDecoration: "none",
+    cursor: "pointer",
+    lineHeight: 0,
+  };
+}
+
+function ViewMenuLink({ href, dark }) {
+  if (!href) return null;
+  return (
+    <IconHoverLabel label="View menu">
+      <Link
+        to={href}
+        data-testid="restaurant-profile-view-menu"
+        aria-label="View menu"
+        title="View menu"
+        style={ghostIconStyle(dark)}
+      >
+        <ViewMenuIcon size={14} color="currentColor" />
+      </Link>
+    </IconHoverLabel>
+  );
+}
 
 function Section({ title, children }) {
   if (children == null || children === false || children === "") return null;
@@ -65,6 +106,7 @@ function IdentityBlock({
   directionsUrl,
   logoUrl,
   restaurantId,
+  menuHref,
   shareData,
   shareAnalytics,
   metaBits,
@@ -94,7 +136,7 @@ function IdentityBlock({
         />
       ) : null}
       <div style={{ flex: 1, minWidth: 0 }}>
-        {/* Name + like/share on one row — same pattern as public menu headers */}
+        {/* Name + view-menu/like/share — same icon rail as food-truck profile + menu item detail */}
         <div
           style={{
             display: "flex",
@@ -121,7 +163,7 @@ function IdentityBlock({
               {name}
             </h1>
           </div>
-          {restaurantId || shareData ? (
+          {menuHref || restaurantId || shareData ? (
             <div
               style={{
                 display: "flex",
@@ -130,6 +172,7 @@ function IdentityBlock({
                 flexShrink: 0,
               }}
             >
+              <ViewMenuLink href={menuHref} dark={onPhoto} />
               {restaurantId ? (
                 <FollowRestaurantButton
                   restaurantId={restaurantId}
@@ -246,6 +289,7 @@ export default function RestaurantPublicEditorial({
   logoUrl,
   bannerPhotoUrl,
   restaurantId,
+  menuHref,
   shareData,
   shareAnalytics,
   menuPreviewItems,
@@ -273,6 +317,7 @@ export default function RestaurantPublicEditorial({
     directionsUrl,
     logoUrl,
     restaurantId,
+    menuHref,
     shareData,
     shareAnalytics,
     metaBits,

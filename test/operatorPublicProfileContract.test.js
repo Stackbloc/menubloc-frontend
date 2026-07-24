@@ -110,7 +110,7 @@ function testPublicProfileForcedLight() {
   assert.equal(whitePageBgMatches.length, 2);
 }
 
-/** Profile header actions match menu: Like (thumb) then Share (claim + claimed). */
+/** Profile header actions: View menu (list icon), then Like, then Share. */
 function testPublicProfileMenuLikeShareRail() {
   const page = read("src/pages/RestaurantPublicPage.jsx");
   const editorial = read("src/components/restaurant/RestaurantPublicEditorial.jsx");
@@ -119,9 +119,18 @@ function testPublicProfileMenuLikeShareRail() {
   assert.match(page, /MENU_ROW_HEADER_ICON_GAP/);
   assert.match(page, /source="restaurant_profile"/);
   assert.match(page, /variant="menu"/);
+  assert.match(page, /menuHref=\{menuHref\}/);
+  assert.match(page, /restaurantMenuPathFromRow/);
   assert.match(editorial, /FollowRestaurantButton/);
   assert.match(editorial, /source="restaurant_profile"/);
   assert.match(editorial, /variant="menu"/);
+  assert.match(editorial, /ViewMenuIcon/);
+  assert.match(editorial, /restaurant-profile-view-menu/);
+  assert.match(editorial, /ViewMenuLink href=\{menuHref\}/);
+  const railStart = editorial.indexOf("<ViewMenuLink href={menuHref}");
+  const railSlice = editorial.slice(railStart, railStart + 800);
+  assert.ok(railStart > -1, "ViewMenuLink rail mount missing");
+  assert.match(railSlice, /ViewMenuLink[\s\S]*FollowRestaurantButton[\s\S]*ShareButton/);
   assert.doesNotMatch(page, />\s*Follow\s*</);
   assert.doesNotMatch(page, /Following/);
 }
@@ -150,8 +159,10 @@ function testClaimedProfileUsesEditorialPresentation() {
   assert.match(editorial, /Featured dish/);
   assert.match(editorial, /Announcements/);
   assert.match(editorial, /IdentityBlock|FollowRestaurantButton/);
+  assert.match(editorial, /ViewMenuIcon|restaurant-profile-view-menu/);
   assert.doesNotMatch(editorial, /Photo coming soon/);
-  assert.doesNotMatch(editorial, /View Menu|viewMenuLabel|common\.viewMenu/);
+  // Icon-only View menu (same ViewMenuIcon as menu-item detail rail) — not a text CTA button.
+  assert.doesNotMatch(editorial, /common\.viewMenu/);
   assert.doesNotMatch(editorial, /#1d4ed8/);
   assert.match(preview, /Menu preview/);
   assert.match(preview, /overflowY:\s*"auto"/);

@@ -5,6 +5,7 @@ import { getLocalizedField } from "../../utils/getLocalizedField.js";
 import { shouldShowItemImages } from "./menuThemeSettings.js";
 import { MENU_ROW_ICON_SIZE } from "./menuPresentationUtils.js";
 import FollowRestaurantButton from "../FollowRestaurantButton.jsx";
+import MenuAddressLines from "./MenuAddressLines.jsx";
 import MenuHeaderNameWithActions from "./MenuHeaderIconRail.jsx";
 
 function DinerLogo({ logoUrl, restaurantName, accent }) {
@@ -141,14 +142,14 @@ export default function FamilyDinerMenuTemplate(ctx) {
               </>
             }
           />
-          {addressLine1 ? (
+          {addressLine1 || addressLine2 ? (
             <div style={{ marginTop: 7, color: "#667085", fontSize: 13, fontWeight: 650 }}>
               {directionsHref ? (
-                <a href={directionsHref} target="_blank" rel="noreferrer" style={{ color: "inherit", textDecoration: "none" }}>
-                  {addressLine1}{addressLine2 ? `, ${addressLine2}` : ""}
+                <a href={directionsHref} target="_blank" rel="noreferrer" style={{ color: "inherit", textDecoration: "none", display: "inline-flex" }}>
+                  <MenuAddressLines addressLine1={addressLine1} addressLine2={addressLine2} />
                 </a>
               ) : (
-                <span>{addressLine1}{addressLine2 ? `, ${addressLine2}` : ""}</span>
+                <MenuAddressLines addressLine1={addressLine1} addressLine2={addressLine2} />
               )}
             </div>
           ) : null}
