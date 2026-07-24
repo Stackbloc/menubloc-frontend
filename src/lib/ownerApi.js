@@ -337,6 +337,38 @@ export const searchOwnerHomepageRestaurants = (params = {}) => {
   return get(`/api/owner/homepage/restaurants/search${qs ? `?${qs}` : ""}`);
 };
 
+// Subscription Designer
+export const listSdPlans = () => get("/api/owner/subscription-designer/plans");
+export const getSdPlan = (id) =>
+  get(`/api/owner/subscription-designer/plans/${encodeURIComponent(id)}`);
+export const createSdPlan = (body) => post("/api/owner/subscription-designer/plans", body);
+export const updateSdPlan = (id, body) =>
+  put(`/api/owner/subscription-designer/plans/${encodeURIComponent(id)}`, body);
+export const duplicateSdPlan = (id) =>
+  post(`/api/owner/subscription-designer/plans/${encodeURIComponent(id)}/duplicate`, {});
+export const activateSdPlan = (id) =>
+  post(`/api/owner/subscription-designer/plans/${encodeURIComponent(id)}/activate`, {});
+export const deactivateSdPlan = (id) =>
+  post(`/api/owner/subscription-designer/plans/${encodeURIComponent(id)}/deactivate`, {});
+export const archiveSdPlan = (id) =>
+  post(`/api/owner/subscription-designer/plans/${encodeURIComponent(id)}/archive`, {});
+export const reorderSdPlans = (ordered_ids) =>
+  post("/api/owner/subscription-designer/plans/reorder", { ordered_ids });
+export const listSdFeatures = () => get("/api/owner/subscription-designer/features");
+export const createSdFeature = (body) => post("/api/owner/subscription-designer/features", body);
+export const updateSdFeature = (id, body) =>
+  put(`/api/owner/subscription-designer/features/${encodeURIComponent(id)}`, body);
+export const reorderSdFeatures = (ordered_ids) =>
+  post("/api/owner/subscription-designer/features/reorder", { ordered_ids });
+export const getSdChartPreview = (params = {}) => {
+  const qs = new URLSearchParams(params).toString();
+  return get(`/api/owner/subscription-designer/chart-preview${qs ? `?${qs}` : ""}`);
+};
+export const getSdChangeLog = (params = {}) => {
+  const qs = new URLSearchParams(params).toString();
+  return get(`/api/owner/subscription-designer/change-log${qs ? `?${qs}` : ""}`);
+};
+
 // Deployment Operations
 export const getDeploymentOperationsSummary = () => get("/api/owner/deployment-operations/summary");
 export const runDeploymentSmoke = () => post("/api/owner/deployment-operations/smoke", {});

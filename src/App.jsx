@@ -99,6 +99,11 @@ import OwnerMarketExpansion from "./pages/owner/OwnerMarketExpansion.jsx";
 import OwnerPhmsRouter from "./pages/owner/phms/OwnerPhmsRouter.jsx";
 import OwnerDeploymentOperations from "./pages/owner/OwnerDeploymentOperations.jsx";
 import OwnerHomepageControl from "./pages/owner/OwnerHomepageControl.jsx";
+import SubscriptionDesignerList from "./pages/owner/subscriptionDesigner/SubscriptionDesignerList.jsx";
+import SubscriptionDesignerPlanEditor from "./pages/owner/subscriptionDesigner/SubscriptionDesignerPlanEditor.jsx";
+import SubscriptionDesignerFeatures from "./pages/owner/subscriptionDesigner/SubscriptionDesignerFeatures.jsx";
+import SubscriptionDesignerPreview from "./pages/owner/subscriptionDesigner/SubscriptionDesignerPreview.jsx";
+import SubscriptionDesignerAudit from "./pages/owner/subscriptionDesigner/SubscriptionDesignerAudit.jsx";
 import OwnerHelpCenter from "./pages/owner/OwnerHelpCenter.jsx";
 import OperatorQrStickers from "./pages/operator/OperatorQrStickers.jsx";
 import OperatorMenuStudio from "./pages/operator/OperatorMenuStudio.jsx";
@@ -793,6 +798,12 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/owner/market-expansion" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerMarketExpansion /></OwnerRoute>} />
         <Route path="/owner/phms/*" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerPhmsRouter /></OwnerRoute>} />
         <Route path="/owner/homepage" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerHomepageControl /></OwnerRoute>} />
+        <Route path="/owner/subscription-designer" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><SubscriptionDesignerList /></OwnerRoute>} />
+        <Route path="/owner/subscription-designer/new" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><SubscriptionDesignerPlanEditor /></OwnerRoute>} />
+        <Route path="/owner/subscription-designer/plans/:planId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><SubscriptionDesignerPlanEditor /></OwnerRoute>} />
+        <Route path="/owner/subscription-designer/features" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><SubscriptionDesignerFeatures /></OwnerRoute>} />
+        <Route path="/owner/subscription-designer/preview" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><SubscriptionDesignerPreview /></OwnerRoute>} />
+        <Route path="/owner/subscription-designer/audit" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><SubscriptionDesignerAudit /></OwnerRoute>} />
         <Route path="/owner/deployments" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerDeploymentOperations /></OwnerRoute>} />
 
         <Route path="/crm/login" element={<CrmLogin />} />

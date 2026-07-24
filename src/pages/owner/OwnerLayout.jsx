@@ -78,6 +78,7 @@ const NAV_SECTIONS = [
     items: [
       { to: "/owner/restaurants", label: "Restaurant Intelligence" },
       { to: "/owner/revenue", label: "Revenue" },
+      { to: "/owner/subscription-designer", label: "Subscription Designer" },
       { to: "/owner/market-expansion", label: "Market Expansion" },
       { to: "/owner/menu-manager", label: "Menu Manager" },
       { to: "/owner/qr-stickers", label: "QR Stickers" },
