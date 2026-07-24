@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "309eed1193947c1a59e2737903955b8253368e76",
-  "gitShortSha": "309eed1",
-  "branch": "feature/mds-homepage-controls",
-  "buildTime": "2026-07-17T18:42:39.666Z",
+  "gitSha": "fa030e727ffef54eb5e7e4f88fe70f54b5cf1bcd",
+  "gitShortSha": "fa030e7",
+  "branch": "main",
+  "buildTime": "2026-07-24T19:41:49.062Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "Add Foods I Avoid preference advisory and Dothan market intro."
+  "commitMessage": "feat(marketplace): primary /operator/marketplace hub and legacy redirect"
 }

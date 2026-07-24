@@ -1,6 +1,6 @@
 /**
- * My Account hub: Profile Editor | Menu | Settings | My QR Code | Delivery Portal | Password
- * Menu includes View + Edit menu content (worksheet) subdirectory.
+ * My Account hub: Settings (account/merchant/delivery/PIN) | My QR Code | Password.
+ * Profile Editor and Menu live in Operations / Menu sidebar (legacy ?tab= redirects).
  */
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -15,37 +15,24 @@ function read(rel) {
 
 function testMyAccountTabs() {
   const src = read("src/pages/operator/OperatorMyAccount.jsx");
-  assert.match(src, /Profile Editor/);
-  assert.match(src, /label: "Menu"/);
   assert.match(src, /label: "Settings"/);
   assert.match(src, /label: "My QR Code"/);
-  assert.match(src, /label: "Delivery Portal"/);
   assert.match(src, /label: "Password"/);
-  assert.match(src, /tab=profile\|menu\|settings\|qr\|delivery\|password/);
-  assert.match(src, /OperatorRestaurantProfileForm/);
+  assert.match(src, /tab=settings\|qr\|password/);
   assert.match(src, /OperatorDeliveryPortalPanel/);
   assert.match(src, /data-testid="my-account-panel-qr"/);
   assert.match(src, /data-testid="my-account-panel-delivery"/);
   assert.match(src, /PrimaryQrCard/);
-  assert.doesNotMatch(src, /Menu Lab →/);
-  assert.doesNotMatch(src, /SectionCard title="Primary QR"/);
-  // Tabs must drive local panel state + navigate (not URL-only setSearchParams)
   assert.match(src, /function selectTab\(/);
   assert.match(src, /function myAccountHref\(/);
   assert.match(src, /onSelect=\{selectTab\}/);
   assert.match(src, /data-testid="my-account-tabs"/);
   assert.match(src, /navigate\(myAccountHref/);
-}
-
-function testMenuSubPanels() {
-  const src = read("src/pages/operator/OperatorMyAccount.jsx");
-  assert.match(src, /View menu/);
-  assert.match(src, /Edit menu content/);
-  assert.match(src, /menuPanel=view\|edit/);
-  assert.match(src, /Open Menu Worksheet/);
-  assert.match(src, /\/menus\/\$\{menuId\}\/worksheet/);
-  assert.match(src, /View public menu/);
-  assert.match(src, /selectMenuPanel/);
+  // Legacy tabs redirect out of My Account
+  assert.match(src, /profile_redirect/);
+  assert.match(src, /menu_redirect/);
+  assert.match(src, /\/operator\/profile-editor/);
+  assert.match(src, /\/operator\/menu-worksheet/);
 }
 
 function testSettingsAccountFields() {
@@ -91,17 +78,9 @@ function testDeliveryPortalRewire() {
   assert.doesNotMatch(page, /function ProviderCard/);
 }
 
-function testWorksheetReturnsToMyAccount() {
-  const src = read("src/pages/operator/OperatorMenuWorksheetPage.jsx");
-  assert.match(src, /\/operator\/my-account\?tab=menu&menuPanel=edit/);
-  assert.match(src, /← My Account · Menu/);
-}
-
 testMyAccountTabs();
-testMenuSubPanels();
 testSettingsAccountFields();
 testMarketplaceNav();
 testPrimaryQrSharePrint();
 testDeliveryPortalRewire();
-testWorksheetReturnsToMyAccount();
 console.log("operatorMyAccountHubContract: ok");
