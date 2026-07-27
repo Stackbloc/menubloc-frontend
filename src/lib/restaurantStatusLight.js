@@ -52,6 +52,90 @@ export function hasOnlineOrderingEnabled({ orderAcceptanceStatus } = {}) {
   return String(orderAcceptanceStatus || "").trim().toLowerCase() === "accepting_orders";
 }
 
+export function formatOrderingResumeLabel(iso, timeZone) {
+  if (!iso) return null;
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return null;
+  try {
+    return new Intl.DateTimeFormat(undefined, {
+      timeZone: timeZone || undefined,
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    }).format(date);
+  } catch {
+    return date.toLocaleString();
+  }
+}
+
+/**
+ * Customer-facing ordering availability copy from public menu / restaurant payload.
+ */
+export function getOrderingAvailabilityMessage(data) {
+  const availability = data?.ordering_availability || data?.restaurant?.ordering_availability || null;
+  if (availability?.available === true) return null;
+  if (availability?.message) return availability.message;
+
+  const status = String(
+    availability?.availability_status ||
+      data?.order_acceptance_status ||
+      data?.restaurant?.order_acceptance_status ||
+      ""
+  )
+    .trim()
+    .toLowerCase();
+  const resumeAt =
+    availability?.resume_at ||
+    data?.order_pause_expires_at ||
+    data?.order_closed_expires_at ||
+    data?.restaurant?.order_pause_expires_at ||
+    data?.restaurant?.order_closed_expires_at ||
+    null;
+  const when = formatOrderingResumeLabel(resumeAt, data?.timezone || data?.restaurant?.timezone);
+
+  if (status === "paused") {
+    return when
+      ? `Online ordering is currently paused. Orders resume at ${when}.`
+      : "Online ordering is currently paused.";
+  }
+  if (status === "closed" || status === "temporarily_closed") {
+    return when
+      ? `This restaurant is temporarily closed until ${when}.`
+      : "This restaurant is temporarily closed.";
+  }
+  if (status === "outside_hours" || availability?.reason_code === "outside_store_hours") {
+    return when
+      ? `Online ordering is closed. Ordering opens ${when}.`
+      : "Online ordering is closed for today.";
+  }
+  if (availability?.available === false) {
+    return "Online ordering is currently unavailable.";
+  }
+  return null;
+}
+
+export function isOnlineOrderingAvailable(data) {
+  const availability = data?.ordering_availability || data?.restaurant?.ordering_availability;
+  if (availability && typeof availability.available === "boolean") {
+    return availability.available === true;
+  }
+  return hasOnlineOrderingEnabled({
+    orderAcceptanceStatus:
+      data?.order_acceptance_status || data?.restaurant?.order_acceptance_status,
+  });
+}
+
+/** Tap-to-order coach on public menus — paid plan + accepting online orders only. */
+export function shouldShowMenuPurchaseWaiterHint(data) {
+  const props = buildRestaurantStatusLightProps(data);
+  return (
+    hasPaidSubscriptionPlan(props) &&
+    hasOnlineOrderingEnabled(props)
+  );
+}
+
 export function hasStandardSubscriptionPlan({ subscriptionPlan, planSlug } = {}) {
   const plan = String(subscriptionPlan || planSlug || "").trim().toLowerCase();
   return STANDARD_SUBSCRIPTION_PLANS.has(plan);

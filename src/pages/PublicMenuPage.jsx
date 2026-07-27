@@ -58,6 +58,7 @@ import {
 } from "../lib/clusterReturnNavigation.js";
 import MenuPreferencesAppliedBanner from "../components/menu/MenuPreferencesAppliedBanner.jsx";
 import MenuPurchaseWaiterHint from "../components/menu/MenuPurchaseWaiterHint.jsx";
+import OrderingUnavailableBanner from "../components/menu/OrderingUnavailableBanner.jsx";
 import PublicMenuMainContent from "../components/menu-templates/PublicMenuMainContent.jsx";
 import { normalizeMenuStyle, pickHeroImageUrl, resolveTemplateMenuStyle } from "../components/menu-templates/menuPresentationUtils.js";
 import {
@@ -80,7 +81,7 @@ import { useConsumer } from "../context/ConsumerContext.jsx";
 import { toConsumerErrorMessage, API_BASE } from "../lib/api.js";
 import { appendSavedMenuPreferenceQueryParams } from "../lib/dietaryParams.js";
 import { trackRestaurantView } from "../lib/analytics.js";
-import { buildRestaurantStatusLightProps } from "../lib/restaurantStatusLight.js";
+import { buildRestaurantStatusLightProps, shouldShowMenuPurchaseWaiterHint } from "../lib/restaurantStatusLight.js";
 import { sendPageVisit } from "../lib/analyticsPageVisitSend.js";
 import TasteIndexBadge from "../components/TasteIndexBadge.jsx";
 import { useOperator } from "../context/OperatorContext.jsx";
@@ -1459,7 +1460,8 @@ export default function PublicMenuPage() {
           intakeBannerSlot: (
             <>
               <IntakePreviewBanner show={isIntakePreview} />
-              {!isIntakePreview ? (
+              {!isIntakePreview ? <OrderingUnavailableBanner data={data} /> : null}
+              {!isIntakePreview && shouldShowMenuPurchaseWaiterHint(data) ? (
                 <MenuPurchaseWaiterHint
                   sticky
                   pinWithStickyMenuHeader

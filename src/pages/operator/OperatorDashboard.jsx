@@ -1,9 +1,10 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import OperatorLayout from "./OperatorLayout.jsx";
 import { useOperator } from "../../context/OperatorContext.jsx";
 import { useLanguage } from "../../context/LanguageContext.jsx";
 import * as api from "../../lib/operatorApi.js";
+import OrderAvailabilityControls from "../../components/operator/OrderAvailabilityControls.jsx";
 import {
   getIncompleteFinishSetupSteps,
   isCoreOnboardingComplete,
@@ -58,17 +59,6 @@ function countOrders(orders, since, until) {
   }).length;
 }
 
-function parseTodayClose(hoursSchedule) {
-  if (!hoursSchedule || !Array.isArray(hoursSchedule)) return null;
-  const dow = new Date().getDay(); // 0=Sun
-  const entry = hoursSchedule.find(h => h.day_of_week === dow);
-  if (!entry?.close_time) return null;
-  const [hh, mm] = String(entry.close_time).split(":").map(Number);
-  const d = new Date();
-  d.setHours(hh, mm, 0, 0);
-  return d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-}
-
 function hasPickupLocation(location) {
   if (!location || typeof location !== "object") return false;
   return Boolean(
@@ -115,13 +105,6 @@ function StatCard({ label, value, sub }) {
 
 // ── Main ──────────────────────────────────────────────────────────────────
 
-const PAUSE_OPTIONS = [
-  { label: "30 min", minutes: 30 },
-  { label: "1 hour", minutes: 60 },
-  { label: "3 hours", minutes: 180 },
-  { label: "Other…", minutes: null },
-];
-
 export default function OperatorDashboard() {
   const { t } = useLanguage();
   const { selectedRestaurant, restaurants } = useOperator();
@@ -139,16 +122,12 @@ export default function OperatorDashboard() {
   const [availability, setAvailability] = useState(null);
   const [liveOrders, setLiveOrders] = useState([]);
   const [historyOrders, setHistoryOrders] = useState([]);
-  const [hoursSchedule, setHoursSchedule] = useState(null);
   const [loading, setLoading] = useState(false);
   const [finishSetupSteps, setFinishSetupSteps] = useState([]);
   const [coreComplete, setCoreComplete] = useState(false);
 
-  // Pause UI
-  const [pauseOpen, setPauseOpen] = useState(false);
-  const [customMinutes, setCustomMinutes] = useState("");
+  // Pause / close UI
   const [pauseBusy, setPauseBusy] = useState(false);
-  const pauseRef = useRef(null);
   const [locationModalOpen, setLocationModalOpen] = useState(false);
   const [editingLocation, setEditingLocation] = useState(false);
   const [locationBusy, setLocationBusy] = useState(false);
@@ -161,27 +140,17 @@ export default function OperatorDashboard() {
     current_pickup_instructions: "",
   });
 
-  useEffect(() => {
-    function onClickOutside(e) {
-      if (pauseRef.current && !pauseRef.current.contains(e.target)) setPauseOpen(false);
-    }
-    document.addEventListener("mousedown", onClickOutside);
-    return () => document.removeEventListener("mousedown", onClickOutside);
-  }, []);
-
   const loadData = useCallback(async (restaurantId) => {
     setLoading(true);
-    const [avail, live, history, hours, checkpoint] = await Promise.allSettled([
+    const [avail, live, history, checkpoint] = await Promise.allSettled([
       api.getOrderAvailability(restaurantId),
       api.getLiveOrders(restaurantId),
       api.getOrderHistory(restaurantId, { days: 35 }),
-      api.getHours(restaurantId),
       api.getOnboardingCheckpoint(restaurantId),
     ]);
     if (avail.status === "fulfilled") setAvailability(avail.value?.availability ?? avail.value);
     if (live.status === "fulfilled") setLiveOrders(live.value?.orders || []);
     if (history.status === "fulfilled") setHistoryOrders(history.value?.orders || []);
-    if (hours.status === "fulfilled") setHoursSchedule(hours.value?.schedule || null);
     if (checkpoint.status === "fulfilled") {
       const payload = checkpoint.value || {};
       const restaurantShape = {
@@ -221,23 +190,57 @@ export default function OperatorDashboard() {
     });
   }, [availability?.current_pickup_location]);
 
-  async function handlePause(minutes) {
+  async function handlePause({ pause_minutes, pause_until } = {}) {
     if (!rid) return;
     setPauseBusy(true);
-    const note = minutes ? `Paused for ${minutes < 60 ? minutes + " minutes" : minutes / 60 + " hour" + (minutes / 60 > 1 ? "s" : "")}` : "Orders paused";
+    const minutes = pause_minutes || 0;
+    const note = pause_until
+      ? "Paused until selected time"
+      : minutes
+        ? `Paused for ${minutes < 60 ? minutes + " minutes" : minutes / 60 + " hour" + (minutes / 60 > 1 ? "s" : "")}`
+        : "Orders paused";
     try {
       const result = await api.updateOrderAvailability(rid, {
         order_acceptance_status: "paused",
         order_acceptance_note: note,
-        pause_minutes: minutes || 0,
+        pause_minutes: minutes || undefined,
+        pause_until: pause_until || undefined,
       });
       const updated = result?.availability ?? result;
       setAvailability((prev) => ({ ...prev, ...updated }));
-      setPauseOpen(false);
-      setCustomMinutes("");
       loadData(rid);
     } catch (e) {
       window.alert(e.message || "Unable to pause orders.");
+    } finally {
+      setPauseBusy(false);
+    }
+  }
+
+  async function handleCloseStore({ close_minutes, close_preset, closed_until } = {}) {
+    if (!rid) return;
+    setPauseBusy(true);
+    const note = closed_until
+      ? "Temporarily closed until selected time"
+      : close_preset === "rest_of_today"
+        ? "Closed for the rest of today"
+        : close_preset === "until_tomorrow"
+          ? "Closed until tomorrow"
+          : close_minutes
+            ? `Temporarily closed for ${close_minutes / 60} hour${close_minutes / 60 > 1 ? "s" : ""}`
+            : "Temporarily closed";
+    try {
+      const result = await api.updateOrderAvailability(rid, {
+        order_acceptance_status: "closed",
+        order_acceptance_note: note,
+        close_minutes: close_minutes || undefined,
+        close_preset: close_preset || undefined,
+        closed_until: closed_until || undefined,
+      });
+      const updated = result?.availability ?? result;
+      setAvailability((prev) => ({ ...prev, ...updated }));
+      loadData(rid);
+    } catch (e) {
+      window.alert(e.message || "Unable to close store.");
     } finally {
       setPauseBusy(false);
     }
@@ -306,20 +309,8 @@ export default function OperatorDashboard() {
   }
 
   // Derived values
-  const availStatus = availability?.order_acceptance_status || "accepting_orders";
-  const isAccepting = availStatus === "accepting_orders";
-  const isPaused    = availStatus === "paused";
-  const isClosed    = availStatus === "closed";
   const isFoodTruck = availability?.restaurant_type === "food_truck";
   const pickupLocation = availability?.current_pickup_location || null;
-
-  // Countdown: minutes remaining on timed pause
-  const pauseExpiresAt = availability?.order_pause_expires_at
-    ? new Date(availability.order_pause_expires_at)
-    : null;
-  const pauseMinsRemaining = (isPaused && pauseExpiresAt)
-    ? Math.max(0, Math.ceil((pauseExpiresAt - now) / 60_000))
-    : null;
 
   const todayStart     = startOfDay(now);
   const yesterdayStart = new Date(todayStart); yesterdayStart.setDate(yesterdayStart.getDate() - 1);
@@ -340,15 +331,8 @@ export default function OperatorDashboard() {
   const salesWTD       = fmt$(sumOrders(allOrders, weekStart));
   const salesMTD       = fmt$(sumOrders(allOrders, monthStart));
 
-  const closingToday = parseTodayClose(hoursSchedule);
   const locationLine = [selectedRestaurant?.city, selectedRestaurant?.state].filter(Boolean).join(", ");
   const noRestaurant = restaurants.length === 0;
-
-  const statusStyle = isAccepting
-    ? { bg: "#ecfdf3", border: "#86efac", color: "#166534", dot: "#22c55e", label: t("operator.dashboard.acceptingOrders", "Accepting Orders") }
-    : isPaused
-    ? { bg: "#fffbeb", border: "#fcd34d", color: "#92400e", dot: "#f59e0b", label: t("operator.dashboard.ordersPaused", "Orders Paused") }
-    : { bg: "#fef2f2", border: "#fecaca", color: "#b91c1c", dot: "#ef4444", label: "Closed" };
 
   if (noRestaurant) {
     return (
@@ -480,104 +464,15 @@ export default function OperatorDashboard() {
             </div>
           </div>
         )}
-        <div style={{
-          background: statusStyle.bg, border: `1px solid ${statusStyle.border}`,
-          borderRadius: 14, padding: "16px 20px", marginBottom: 20,
-          display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12,
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <span style={{ width: 11, height: 11, borderRadius: "50%", background: statusStyle.dot, display: "inline-block", flexShrink: 0 }} />
-            <div>
-              <div style={{ fontSize: 15, fontWeight: 800, color: statusStyle.color }}>{statusStyle.label}</div>
-              {closingToday && isAccepting && (
-                <div style={{ fontSize: 12, color: statusStyle.color, opacity: 0.8, marginTop: 2 }}>
-                  Closes today at {closingToday}
-                </div>
-              )}
-              {(isPaused || isClosed) && availability?.order_acceptance_note && (
-                <div style={{ fontSize: 12, color: statusStyle.color, opacity: 0.8, marginTop: 2 }}>
-                  {availability.order_acceptance_note}
-                  {pauseMinsRemaining != null && pauseMinsRemaining > 0 && (
-                    <span style={{ marginLeft: 6 }}>· resumes in {pauseMinsRemaining} min</span>
-                  )}
-                  {pauseMinsRemaining === 0 && (
-                    <span style={{ marginLeft: 6 }}>· resuming…</span>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-            {(isPaused || isClosed) && (
-              <button
-                type="button"
-                onClick={handleResume}
-                disabled={pauseBusy}
-                style={{ ...primaryBtn, padding: "8px 16px", fontSize: 13 }}
-              >
-                {pauseBusy ? "…" : isFoodTruck ? t("operator.dashboard.openStore", "Open Store") : t("operator.dashboard.resumeOrders", "Resume Orders")}
-              </button>
-            )}
-            {isAccepting && (
-              <div ref={pauseRef} style={{ position: "relative" }}>
-                <button
-                  type="button"
-                  onClick={() => setPauseOpen(v => !v)}
-                  disabled={pauseBusy}
-                  style={{ ...ghostBtn, padding: "8px 14px", fontSize: 13, display: "flex", alignItems: "center", gap: 6 }}
-                >
-                  Pause Ordering ▾
-                </button>
-                {pauseOpen && (
-                  <div style={{
-                    position: "absolute", right: 0, top: "calc(100% + 6px)", zIndex: 200,
-                    background: "#fff", border: `1px solid ${BORDER}`, borderRadius: 10,
-                    boxShadow: "0 4px 16px rgba(0,0,0,0.1)", minWidth: 190, overflow: "hidden",
-                  }}>
-                    {PAUSE_OPTIONS.map(opt => (
-                      <button
-                        key={opt.label}
-                        type="button"
-                        onClick={() => opt.minutes !== null ? handlePause(opt.minutes) : null}
-                        style={{
-                          display: "block", width: "100%", padding: "11px 16px",
-                          background: "none", border: "none", borderTop: "1px solid #f0f4f8",
-                          cursor: "pointer", textAlign: "left", fontFamily: "inherit",
-                          fontSize: 13, fontWeight: 600, color: "#0f1720",
-                        }}
-                        onMouseEnter={e => e.currentTarget.style.background = "#f8faf9"}
-                        onMouseLeave={e => e.currentTarget.style.background = "none"}
-                      >
-                        {opt.label}
-                        {opt.minutes === null && (
-                          <div style={{ marginTop: 6 }} onClick={e => e.stopPropagation()}>
-                            <input
-                              type="number"
-                              min={1}
-                              max={480}
-                              placeholder="Minutes"
-                              value={customMinutes}
-                              onChange={e => setCustomMinutes(e.target.value)}
-                              style={{ width: 90, padding: "5px 8px", borderRadius: 6, border: `1px solid ${BORDER}`, fontSize: 12, fontFamily: "inherit" }}
-                            />
-                            <button
-                              type="button"
-                              onClick={() => customMinutes && handlePause(Number(customMinutes))}
-                              disabled={!customMinutes}
-                              style={{ marginLeft: 6, padding: "5px 10px", borderRadius: 6, border: "none", background: GREEN, color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}
-                            >
-                              Pause
-                            </button>
-                          </div>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+        <div style={{ marginBottom: 20 }}>
+          <OrderAvailabilityControls
+            availability={availability}
+            busy={pauseBusy}
+            onPause={handlePause}
+            onCloseStore={handleCloseStore}
+            onResume={handleResume}
+            navigate={navigate}
+          />
         </div>
 
         {/* ── Active Alerts ───────────────────────────────────── */}

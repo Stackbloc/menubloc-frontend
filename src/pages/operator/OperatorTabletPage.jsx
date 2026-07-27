@@ -13,6 +13,7 @@ import {
   markOrderReady,
   updateOrderAvailability,
 } from "../../lib/operatorApi.js";
+import OrderAvailabilityControls from "../../components/operator/OrderAvailabilityControls.jsx";
 import "./operatorTablet.css";
 
 const ALERT_VOLUME = 0.65;
@@ -397,30 +398,6 @@ function OrderCard({ order, selected, now, onSelect }) {
   );
 }
 
-function AvailabilityControls({ status, busy, offline, onChange }) {
-  const choices = [
-    { value: "accepting_orders", label: "Accepting Orders" },
-    { value: "paused", label: "Pause Orders" },
-    { value: "closed", label: "Close Store" },
-  ];
-
-  return (
-    <div className="ot-availability" aria-label="Store availability">
-      {choices.map((choice) => (
-        <button
-          key={choice.value}
-          type="button"
-          disabled={busy || offline || status === choice.value}
-          className={status === choice.value ? "is-active" : ""}
-          onClick={() => onChange(choice.value)}
-        >
-          {choice.label}
-        </button>
-      ))}
-    </div>
-  );
-}
-
 export default function OperatorTabletPage() {
   const navigate = useNavigate();
   const { selectedRestaurant, restaurants, setSelectedRestaurant, logout } = useOperator();
@@ -436,7 +413,6 @@ export default function OperatorTabletPage() {
   const [error, setError] = useState("");
   const [declineOrderId, setDeclineOrderId] = useState(null);
   const [declineReason, setDeclineReason] = useState("");
-  const [confirmAvailability, setConfirmAvailability] = useState("");
   const [printOrder, setPrintOrder] = useState(null);
   const [alertsReady, setAlertsReady] = useState(false);
   const [notificationState, setNotificationState] = useState("default");
@@ -449,7 +425,6 @@ export default function OperatorTabletPage() {
   const selectedOrder = useMemo(() => {
     return orders.find((order) => order.id === selectedOrderId) || incomingOrders[0] || pendingOrders[0] || null;
   }, [incomingOrders, orders, pendingOrders, selectedOrderId]);
-  const availabilityStatus = availability?.order_acceptance_status || "accepting_orders";
 
   useEffect(() => {
     document.title = "Menuply Operator";
@@ -578,20 +553,38 @@ export default function OperatorTabletPage() {
     }
   };
 
-  const handleAvailabilityChange = async (nextStatus) => {
+  const handleAvailabilityChange = async (payload) => {
     if (!requireOnline()) return;
-    setBusyAction(`availability:${nextStatus}`);
+    setBusyAction("availability:update");
     setError("");
     try {
-      const data = await updateOrderAvailability(restaurantId, { status: nextStatus });
+      const data = await updateOrderAvailability(restaurantId, payload);
       setAvailability(data.availability || null);
-      setConfirmAvailability("");
     } catch (err) {
       setError(err.message || "Unable to update store status.");
     } finally {
       setBusyAction("");
     }
   };
+
+  const handlePause = (opts) =>
+    handleAvailabilityChange({
+      order_acceptance_status: "paused",
+      order_acceptance_note: opts.pause_until ? "Paused until selected time" : `Paused for ${opts.pause_minutes} minutes`,
+      ...opts,
+    });
+
+  const handleCloseStore = (opts) =>
+    handleAvailabilityChange({
+      order_acceptance_status: "closed",
+      order_acceptance_note: opts.close_preset || opts.closed_until || opts.close_minutes
+        ? "Temporarily closed"
+        : "Temporarily closed",
+      ...opts,
+    });
+
+  const handleResume = () =>
+    handleAvailabilityChange({ order_acceptance_status: "accepting_orders" });
 
   const activateAlerts = () => {
     playAlertTone();
@@ -708,19 +701,15 @@ export default function OperatorTabletPage() {
             </div>
           </section>
 
-          <section className="ot-status-panel">
-            <div>
-              <span>Store status</span>
-              <strong>{statusLabel(availabilityStatus)}</strong>
-            </div>
-            <AvailabilityControls
-              status={availabilityStatus}
-              busy={busyAction.startsWith("availability:")}
-              offline={!isOnline}
-              onChange={(next) => {
-                if (next === "accepting_orders") handleAvailabilityChange(next);
-                else setConfirmAvailability(next);
-              }}
+          <section className="ot-status-panel" style={{ display: "block", padding: 0, background: "transparent", border: "none" }}>
+            <OrderAvailabilityControls
+              availability={availability}
+              busy={busyAction.startsWith("availability:") || !isOnline}
+              onPause={handlePause}
+              onCloseStore={handleCloseStore}
+              onResume={handleResume}
+              navigate={navigate}
+              compact
             />
           </section>
 
@@ -888,23 +877,6 @@ export default function OperatorTabletPage() {
               </button>
               <button type="button" className="ot-action ot-action--print" disabled={!!busyAction} onClick={() => setDeclineOrderId(null)}>
                 Keep Order
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
-
-      {confirmAvailability ? (
-        <div className="ot-modal" role="dialog" aria-modal="true">
-          <div className="ot-modal-panel">
-            <h2>{confirmAvailability === "closed" ? "Close store?" : "Pause new orders?"}</h2>
-            <p>Customers can still browse your public menu.</p>
-            <div className="ot-modal-actions">
-              <button type="button" className="ot-action ot-action--decline" disabled={!!busyAction || !isOnline} onClick={() => handleAvailabilityChange(confirmAvailability)}>
-                {confirmAvailability === "closed" ? "Close Store" : "Pause Orders"}
-              </button>
-              <button type="button" className="ot-action ot-action--print" disabled={!!busyAction} onClick={() => setConfirmAvailability("")}>
-                Cancel
               </button>
             </div>
           </div>

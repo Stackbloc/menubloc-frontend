@@ -614,6 +614,7 @@ export default function CheckoutPage() {
             status: error.availability_status || null,
             reasonCode: error.reason_code || null,
             note: error.note || null,
+            resumeAt: error.resume_at || null,
             message: error.message || "This restaurant is not accepting orders right now.",
           });
         }
