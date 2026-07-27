@@ -316,8 +316,8 @@ export function buildCurrentLocation(profile, streetAddr, cityLine) {
   const directionsUrl = mapsDest ? buildGoogleMapsDirectionsUrl(mapsDest) : "";
 
   let statusLabel = "";
-  if (profile?.is_currently_serving === true) statusLabel = "Now Serving";
-  else if (hasPostedLocation) statusLabel = "Location posted";
+  if (profile?.is_currently_serving === true) statusLabel = "Located today";
+  else if (hasPostedLocation) statusLabel = "Located today";
   else statusLabel = "";
 
   return { text, directionsUrl, hasPostedLocation, statusLabel };

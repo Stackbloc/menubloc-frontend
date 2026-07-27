@@ -51,21 +51,17 @@ export default function ProfileAtAGlance({
   signatureText = "",
   teamIntro = "",
   hoursRows = [],
-  phone = "",
-  website = "",
-  websiteRaw = "",
   showClaimInvites = false,
   claimHref = "#claim-profile",
   showHiringInvite = false,
   isMobile = false,
 }) {
+  void claimHref;
   const about = firstNonEmpty(aboutText);
   const founded = firstNonEmpty(foundedText);
   const signature = firstNonEmpty(signatureText);
   const team = firstNonEmpty(teamIntro);
   const hoursSummary = summarizeHours(hoursRows);
-  const phoneVal = firstNonEmpty(phone);
-  const webVal = firstNonEmpty(website);
 
   const invite = (suffix) =>
     showClaimInvites ? <ClaimInvite text={`Claim your profile ${suffix}`} /> : null;
@@ -139,48 +135,6 @@ export default function ProfileAtAGlance({
       testId: "glance-hours",
       muted: true,
       value: invite("to publish accurate business hours."),
-    });
-  }
-
-  if (phoneVal) {
-    rows.push({
-      key: "phone",
-      label: "Phone",
-      testId: "glance-phone",
-      value: (
-        <a href={`tel:${String(phoneVal).replace(/\s+/g, "")}`} style={{ color: "inherit", textDecoration: "none", fontWeight: 600 }}>
-          {phoneVal}
-        </a>
-      ),
-    });
-  } else if (showClaimInvites) {
-    rows.push({
-      key: "phone",
-      label: "Phone",
-      testId: "glance-phone",
-      muted: true,
-      value: invite("to add a customer contact number."),
-    });
-  }
-
-  if (webVal) {
-    rows.push({
-      key: "website",
-      label: "Website",
-      testId: "glance-website",
-      value: (
-        <a href={webVal} target="_blank" rel="noopener noreferrer" style={{ color: PROFILE_GREEN, fontWeight: 700, textDecoration: "none" }}>
-          {websiteRaw || webVal} ↗
-        </a>
-      ),
-    });
-  } else if (showClaimInvites) {
-    rows.push({
-      key: "website",
-      label: "Website",
-      testId: "glance-website",
-      muted: true,
-      value: invite("to add your official website."),
     });
   }
 

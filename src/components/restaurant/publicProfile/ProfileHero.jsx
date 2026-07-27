@@ -1,7 +1,9 @@
 /**
  * Shared public-profile hero: cover/banner + logo + name + status + icon rail.
  * Missing cover → tasteful Menuply gradient placeholder (not fake food photography).
+ * Restaurant contact (phone/website) sits under the Maps address — not oval chips.
  */
+import { Link } from "react-router-dom";
 import RestaurantStatusLight from "../../RestaurantStatusLight.jsx";
 import FollowRestaurantButton from "../../FollowRestaurantButton.jsx";
 import ShareButton from "../../share/ShareButton.jsx";
@@ -30,6 +32,9 @@ export default function ProfileHero({
   followSource = "restaurant_profile",
   viewMenuTestId = "restaurant-profile-view-menu",
   metaBits = [],
+  venueLabel = "",
+  clusterName = "",
+  clusterHref = null,
   saveContactControl = null,
   foodTruckLocation = null,
   phone = "",
@@ -45,6 +50,10 @@ export default function ProfileHero({
   const ink = "#fafaf9";
   const muted = "rgba(250,250,249,0.88)";
   const linkColor = "rgba(250,250,249,0.92)";
+
+  const venue = String(venueLabel || "").trim();
+  const cluster = String(clusterName || "").trim();
+  const showIdentityMeta = profileType === "restaurant" && (venue || cluster || metaBits.length);
 
   const identity = (
     <div style={{ display: "flex", alignItems: "flex-start", gap: 14, minWidth: 0 }}>
@@ -126,6 +135,57 @@ export default function ProfileHero({
           </div>
         ) : null}
 
+        {showIdentityMeta ? (
+          <div
+            data-testid="profile-hero-identity-meta"
+            style={{
+              marginTop: 6,
+              display: "flex",
+              flexWrap: "wrap",
+              alignItems: "baseline",
+              gap: "4px 0",
+              fontSize: 13,
+              fontWeight: 600,
+              lineHeight: 1.35,
+              color: muted,
+            }}
+          >
+            {venue ? (
+              <span data-testid="profile-hero-venue">{venue}</span>
+            ) : metaBits[0] ? (
+              <span data-testid="profile-hero-venue">{metaBits[0]}</span>
+            ) : null}
+            {(venue || metaBits[0]) && cluster ? (
+              <span aria-hidden="true" style={{ margin: "0 8px", opacity: 0.55 }}>
+                ·
+              </span>
+            ) : null}
+            {cluster ? (
+              clusterHref ? (
+                <Link
+                  to={clusterHref}
+                  data-testid="profile-hero-cluster"
+                  style={{ color: linkColor, textDecoration: "none", fontWeight: 700 }}
+                >
+                  {cluster}
+                </Link>
+              ) : (
+                <span data-testid="profile-hero-cluster">{cluster}</span>
+              )
+            ) : null}
+            {!venue && !cluster && metaBits.length > 1
+              ? metaBits.slice(1).map((bit) => (
+                  <span key={bit}>
+                    <span aria-hidden="true" style={{ margin: "0 8px", opacity: 0.55 }}>
+                      ·
+                    </span>
+                    <span>{bit}</span>
+                  </span>
+                ))
+              : null}
+          </div>
+        ) : null}
+
         {profileType === "restaurant" && (cityLine || streetAddr) ? (
           directionsUrl ? (
             <a
@@ -136,7 +196,7 @@ export default function ProfileHero({
               title="Open in Google Maps"
               data-testid="profile-hero-maps-address"
               style={{
-                margin: "6px 0 0",
+                margin: "8px 0 0",
                 display: "inline-flex",
                 alignItems: "flex-start",
                 gap: 8,
@@ -175,31 +235,47 @@ export default function ProfileHero({
               </span>
             </a>
           ) : (
-            <div style={{ margin: "6px 0 0", fontSize: 14, lineHeight: 1.4, color: muted }}>
+            <div style={{ margin: "8px 0 0", fontSize: 14, lineHeight: 1.4, color: muted }}>
               {streetAddr ? <div>{streetAddr}</div> : null}
               {cityLine ? <div>{cityLine}</div> : null}
             </div>
           )
         ) : null}
 
-        {profileType === "restaurant" && metaBits.length ? (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
-            {metaBits.map((bit) => (
-              <span
-                key={bit}
-                style={{
-                  fontSize: 12,
-                  fontWeight: 600,
-                  padding: "4px 10px",
-                  borderRadius: 999,
-                  border: "1px solid rgba(250,250,249,0.35)",
-                  background: "rgba(28,25,23,0.25)",
-                  color: ink,
-                }}
+        {profileType === "restaurant" && (phone || website) ? (
+          <div
+            data-testid="profile-hero-contact"
+            style={{
+              marginTop: 8,
+              display: "flex",
+              flexDirection: "column",
+              gap: 4,
+              fontSize: 14,
+              lineHeight: 1.4,
+              color: muted,
+              paddingLeft: directionsUrl || streetAddr || cityLine ? 24 : 0,
+            }}
+          >
+            {phone ? (
+              <a
+                href={`tel:${String(phone).replace(/\s+/g, "")}`}
+                data-testid="profile-hero-phone"
+                style={{ color: linkColor, textDecoration: "none", fontWeight: 600 }}
               >
-                {bit}
-              </span>
-            ))}
+                {phone}
+              </a>
+            ) : null}
+            {website ? (
+              <a
+                href={website}
+                target="_blank"
+                rel="noreferrer"
+                data-testid="profile-hero-website"
+                style={{ color: linkColor, textDecoration: "none", fontWeight: 600 }}
+              >
+                {websiteRaw || website} ↗
+              </a>
+            ) : null}
           </div>
         ) : null}
 

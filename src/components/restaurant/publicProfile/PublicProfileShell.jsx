@@ -1,14 +1,13 @@
 /**
- * Unified Menuply public profile shell — Phase 2 hierarchy + existing-data populate.
- * Personality first: Hero → actions → photos → billboard → Featured → FT ops
- * → At a Glance + Highlights + Menu → About → Business info → quiet claim.
- * Empty sections collapse. Facts shown once. Real data only.
+ * Unified Menuply public profile shell.
+ * Facts once: contact lives in the hero (restaurants under address; food trucks in hero).
+ * No Business Information block. No Highlights chip wall.
+ * Food trucks keep current design style + Located today / Upcoming / Add to contacts.
  */
 import { useMemo } from "react";
 import ProfileHero from "./ProfileHero.jsx";
 import ProfilePrimaryActions from "./ProfilePrimaryActions.jsx";
 import ProfileMenuHighlights from "./ProfileMenuHighlights.jsx";
-import ProfileRestaurantHighlights from "./ProfileRestaurantHighlights.jsx";
 import ProfileFeaturedContent from "./ProfileFeaturedContent.jsx";
 import ProfileBillboardFeature from "./ProfileBillboardFeature.jsx";
 import ProfilePhotoStrip from "./ProfilePhotoStrip.jsx";
@@ -16,10 +15,9 @@ import ProfileAtAGlance from "./ProfileAtAGlance.jsx";
 import ProfileNowHiring from "./ProfileNowHiring.jsx";
 import FoodTruckUpcomingStops from "./FoodTruckUpcomingStops.jsx";
 import { resolveStatusBanners } from "../../../lib/restaurantStatusBanners.js";
+import { clusterTypeLabel } from "../../../lib/clusterUrl.js";
 import {
   ProfileSection,
-  DetailLine,
-  QuietLink,
   formatHoursRows,
   normalizeScheduleStops,
   buildCurrentLocation,
@@ -28,28 +26,6 @@ import {
   PROFILE_INK,
   PROFILE_CONTENT_MAX,
 } from "./profilePrimitives.jsx";
-
-function HoursBlock({ hoursRows, testId }) {
-  if (!hoursRows.length) return null;
-  return (
-    <div data-testid={testId} style={{ display: "grid", gap: 6 }}>
-      {hoursRows.map((row) => (
-        <div
-          key={row.day}
-          style={{
-            display: "grid",
-            gridTemplateColumns: "48px 1fr",
-            gap: 12,
-            fontSize: 13,
-          }}
-        >
-          <span style={{ fontWeight: 700, color: "#57534e" }}>{row.day}</span>
-          <span style={{ color: PROFILE_INK }}>{row.text}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
 
 export default function PublicProfileShell({
   profileType = "restaurant",
@@ -94,25 +70,38 @@ export default function PublicProfileShell({
   showClaimInvites = false,
   isMobile = false,
 }) {
+  void landmarks;
+  void menuItemCount;
+  void menuCount;
+  void statusEventPresentations;
+  void category;
+
   const isFoodTruck = profileType === "food_truck";
   const contentMax = PROFILE_CONTENT_MAX;
   const classification = profile?.classification || null;
   const primaryVenue =
-    firstNonEmpty(classification?.primary_venue_type?.display_name, classification?.primary_venue_type?.name) ||
-    "";
+    firstNonEmpty(
+      classification?.primary_venue_type?.display_name,
+      classification?.primary_venue_type?.name
+    ) || "";
   const cuisineFromClass = Array.isArray(classification?.cuisines)
     ? classification.cuisines.map((c) => c?.display_name || c?.name).filter(Boolean)
     : [];
   const cuisineLabel = cuisineFromClass[0] || cuisine;
-  const featureLabels = Array.isArray(classification?.features)
-    ? classification.features.map((f) => f?.display_name || f?.name).filter(Boolean)
-    : [];
-  // Prefer Sports Bar · American over generic full_service_restaurant.
-  const metaBits = [primaryVenue || (isFoodTruck ? "Food Truck" : ""), cuisineLabel || category]
-    .filter(Boolean)
-    .filter((v, i, a) => a.findIndex((x) => String(x).toLowerCase() === String(v).toLowerCase()) === i);
+
+  // Food truck: type shown once via businessTypeLabel — meta is cuisine only.
+  // Restaurant: venue · cluster as plain text (no oval chips).
+  const metaBits = isFoodTruck
+    ? [cuisineLabel].filter(Boolean)
+    : [primaryVenue, cuisineLabel]
+        .filter(Boolean)
+        .filter((v, i, a) => a.findIndex((x) => String(x).toLowerCase() === String(v).toLowerCase()) === i);
+
   const hoursRows = useMemo(() => formatHoursRows(operatingHours), [operatingHours]);
-  const stops = useMemo(() => (isFoodTruck ? normalizeScheduleStops(profile) : []), [isFoodTruck, profile]);
+  const stops = useMemo(
+    () => (isFoodTruck ? normalizeScheduleStops(profile) : []),
+    [isFoodTruck, profile]
+  );
   const location = useMemo(
     () => (isFoodTruck ? buildCurrentLocation(profile, streetAddr, cityLine) : null),
     [isFoodTruck, profile, streetAddr, cityLine]
@@ -148,21 +137,24 @@ export default function PublicProfileShell({
     ? location?.directionsUrl || directionsUrl || ""
     : directionsUrl;
 
-  // Address/Directions live in restaurant hero Maps (or FT location module) — do not repeat.
-  // Phone / Website / Hours live once in Business Information when present (glance may also show).
-  const bizPhone = firstNonEmpty(phone);
-  const bizWebsite = firstNonEmpty(website);
-  const bizHours = hoursRows;
-  const hasDetails = Boolean(bizPhone || bizWebsite || bizHours.length);
-
-  const deals = Array.isArray(dealItems) ? dealItems : [];
-  const pickup = profile?.pickup === true;
-  const delivery = profile?.delivery === true;
-  const dineIn = profile?.dine_in === true;
-  const restaurantType = primaryVenue ? "" : firstNonEmpty(profile?.restaurant_type);
+  // Contact once — hero only. Glance may invite claim when missing.
+  const heroPhone = firstNonEmpty(phone);
+  const heroWebsite = firstNonEmpty(website);
   const bannerList = resolveStatusBanners(statusBanners);
   const hiringActive = bannerList.some((b) => b.id === "now_hiring");
   const claimAnchor = claimHref || "#claim-profile";
+
+  const clusterName = !isFoodTruck && displayCluster?.name ? String(displayCluster.name) : "";
+  const clusterHref =
+    !isFoodTruck && displayCluster?.public_url ? String(displayCluster.public_url) : null;
+  const clusterSuffix =
+    !isFoodTruck && displayCluster?.cluster_type
+      ? ` · ${clusterTypeLabel(displayCluster.cluster_type)}`
+      : "";
+  const clusterLabel = clusterName ? `${clusterName}${clusterSuffix}` : "";
+
+  const deals = Array.isArray(dealItems) ? dealItems : [];
+  const sectionGap = isMobile ? 16 : 20;
 
   const glance = (
     <ProfileAtAGlance
@@ -171,9 +163,6 @@ export default function PublicProfileShell({
       signatureText={signatureText}
       teamIntro={teamIntro}
       hoursRows={hoursRows}
-      phone={bizPhone}
-      website={bizWebsite}
-      websiteRaw={websiteRaw}
       showClaimInvites={showClaimInvites}
       claimHref={claimAnchor}
       showHiringInvite={!hiringActive}
@@ -181,42 +170,18 @@ export default function PublicProfileShell({
     />
   );
 
-  const highlightsColumn = (
-    <ProfileRestaurantHighlights
-      foundedText={founded}
-      landmarks={isFoodTruck ? "" : landmarks}
-      cuisine={cuisineLabel}
-      category=""
-      restaurantType=""
-      venueType={primaryVenue}
-      featureLabels={featureLabels}
-      pickup={pickup}
-      delivery={delivery}
-      dineIn={dineIn}
-      statusBanners={isFoodTruck ? null : statusBanners}
-      statusEventPresentations={isFoodTruck ? null : statusEventPresentations}
-      displayCluster={isFoodTruck ? null : displayCluster}
-      title={isFoodTruck ? "Food truck highlights" : "Restaurant highlights"}
-      isMobile={isMobile}
-    />
-  );
-
-  const leftStack =
-    glance || highlightsColumn ? (
-      <div
-        data-testid="profile-identity-stack"
-        style={{ display: "grid", gap: isMobile ? 16 : 16, minWidth: 0 }}
-      >
-        {glance}
-        {highlightsColumn}
-      </div>
-    ) : null;
-
   const menuRail = hasMenuPreview ? (
     <ProfileMenuHighlights items={menuPreviewItems} menuHref={menuHref} isMobile={isMobile} compact />
   ) : null;
 
-  const sectionGap = isMobile ? 16 : 20;
+  const leftStack = glance ? (
+    <div
+      data-testid="profile-identity-stack"
+      style={{ display: "grid", gap: 16, minWidth: 0 }}
+    >
+      {glance}
+    </div>
+  ) : null;
 
   return (
     <div
@@ -234,9 +199,9 @@ export default function PublicProfileShell({
         profileType={profileType}
         name={name}
         businessTypeLabel={isFoodTruck ? "Food Truck" : ""}
-        cityLine={cityLine}
-        streetAddr={streetAddr}
-        directionsUrl={directionsUrl}
+        cityLine={isFoodTruck ? "" : cityLine}
+        streetAddr={isFoodTruck ? "" : streetAddr}
+        directionsUrl={isFoodTruck ? "" : directionsUrl}
         logoUrl={logoUrl}
         bannerPhotoUrl={bannerPhotoUrl}
         statusLightProps={statusLightProps}
@@ -246,12 +211,15 @@ export default function PublicProfileShell({
         shareAnalytics={shareAnalytics}
         followSource={isFoodTruck ? "food_truck_profile" : "restaurant_profile"}
         viewMenuTestId={isFoodTruck ? "food-truck-view-menu" : "restaurant-profile-view-menu"}
-        metaBits={isFoodTruck ? (metaBits.length ? metaBits : cuisineLabel ? [cuisineLabel] : []) : metaBits}
+        metaBits={metaBits}
+        venueLabel={isFoodTruck ? "" : primaryVenue}
+        clusterName={clusterLabel}
+        clusterHref={clusterHref}
         saveContactControl={saveContactControl}
         foodTruckLocation={location}
-        phone=""
-        website=""
-        websiteRaw=""
+        phone={heroPhone}
+        website={heroWebsite}
+        websiteRaw={websiteRaw}
         isMobile={isMobile}
         contentMax={contentMax}
       />
@@ -300,7 +268,7 @@ export default function PublicProfileShell({
         <ProfileNowHiring isActive={hiringActive} isMobile={isMobile} />
 
         {isFoodTruck && stops.length ? (
-          <ProfileSection title="Upcoming stops">
+          <ProfileSection title="Upcoming locations / events">
             <FoodTruckUpcomingStops stops={stops} />
           </ProfileSection>
         ) : null}
@@ -325,40 +293,6 @@ export default function PublicProfileShell({
         {storyText ? (
           <ProfileSection title="About Us" testId="profile-about-us">
             {storyText}
-          </ProfileSection>
-        ) : null}
-
-        {hasDetails ? (
-          <ProfileSection title="Business information">
-            <div
-              style={{
-                borderTop: "1px solid #e7e5e4",
-                fontSize: 14,
-                color: PROFILE_INK,
-              }}
-            >
-              <DetailLine label="Phone">
-                {bizPhone ? (
-                  <a
-                    href={`tel:${String(bizPhone).replace(/\s+/g, "")}`}
-                    style={{ color: "inherit", textDecoration: "none", fontWeight: 600 }}
-                  >
-                    {bizPhone}
-                  </a>
-                ) : null}
-              </DetailLine>
-              <DetailLine label="Website">
-                {bizWebsite ? <QuietLink href={bizWebsite}>{websiteRaw || bizWebsite} ↗</QuietLink> : null}
-              </DetailLine>
-              {bizHours.length ? (
-                <DetailLine label="Hours">
-                  <HoursBlock
-                    hoursRows={bizHours}
-                    testId={isFoodTruck ? "food-truck-hours" : "restaurant-hours"}
-                  />
-                </DetailLine>
-              ) : null}
-            </div>
           </ProfileSection>
         ) : null}
 

@@ -1,6 +1,6 @@
 /**
  * Primary profile actions — Order / Claim only.
- * Phone, website, directions live once in Business Information / hero Maps.
+ * Phone, website, directions live once in the hero (Maps + contact).
  */
 import { Link } from "react-router-dom";
 import { actionChipStyle, canShowOrderAction } from "./profilePrimitives.jsx";

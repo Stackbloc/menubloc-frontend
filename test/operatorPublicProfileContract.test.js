@@ -142,7 +142,6 @@ function testClaimedProfileUsesEditorialPresentation() {
   const page = read("src/pages/RestaurantPublicPage.jsx");
   const editorial = read("src/components/restaurant/RestaurantPublicEditorial.jsx");
   const shell = read("src/components/restaurant/publicProfile/PublicProfileShell.jsx");
-  const highlights = read("src/components/restaurant/publicProfile/ProfileRestaurantHighlights.jsx");
   const featured = read("src/components/restaurant/publicProfile/ProfileFeaturedContent.jsx");
   const preview = read("src/components/restaurant/publicProfile/ProfileMenuHighlights.jsx");
   const hero = read("src/components/restaurant/publicProfile/ProfileHero.jsx");
@@ -158,7 +157,8 @@ function testClaimedProfileUsesEditorialPresentation() {
   assert.doesNotMatch(page, /function ProfileFieldList/);
   assert.doesNotMatch(page, /Your information appears here with/);
   assert.match(editorial, /PublicProfileShell/);
-  assert.match(shell, /ProfileRestaurantHighlights/);
+  assert.doesNotMatch(shell, /ProfileRestaurantHighlights/);
+  assert.doesNotMatch(shell, /Business information/);
   assert.match(shell, /ProfileFeaturedContent/);
   assert.match(shell, /ProfileAtAGlance/);
   assert.match(shell, /profile-highlights-layout/);
@@ -171,17 +171,10 @@ function testClaimedProfileUsesEditorialPresentation() {
   assert.doesNotMatch(shell, /Coming Soon/);
   assert.doesNotMatch(shell, /common\.viewMenu/);
   assert.doesNotMatch(shell, /#1d4ed8/);
-  // Address lives in hero Maps — not Business Information.
   assert.doesNotMatch(shell, /label="Address"/);
-  assert.match(highlights, /Restaurant highlights/);
-  assert.match(highlights, /profile-highlight-chips/);
-  assert.match(highlights, /profile-chip-pickup|Pickup/);
-  assert.match(highlights, /profile-chip-delivery|Delivery/);
-  assert.match(highlights, /profile-chip-dine-in|Dine-in/);
-  assert.doesNotMatch(highlights, /Signature Dish/);
-  assert.doesNotMatch(highlights, /About Us/);
   assert.match(shell, /ProfileNowHiring/);
   assert.match(shell, /showClaimInvites/);
+  assert.match(shell, /venueLabel|clusterName/);
   const nowHiring = read("src/components/restaurant/publicProfile/ProfileNowHiring.jsx");
   assert.match(nowHiring, /profile-now-hiring/);
   assert.match(nowHiring, /Now Hiring/);
@@ -192,6 +185,7 @@ function testClaimedProfileUsesEditorialPresentation() {
   assert.match(glance, /Claim your profile/);
   assert.match(glance, /glance-about|About Us/);
   assert.match(glance, /Founded|Meet the Team|Signature/);
+  assert.doesNotMatch(glance, /glance-phone|glance-website/);
   assert.match(featured, /profile-featured-content/);
   assert.match(featured, /Signature Dish/);
   assert.match(featured, /Today's Special/);
@@ -207,6 +201,9 @@ function testClaimedProfileUsesEditorialPresentation() {
   assert.doesNotMatch(preview, /#1d4ed8/);
   assert.match(hero, /profile-hero-maps-address/);
   assert.match(hero, /Open in Google Maps|Open \$\{name\} in Google Maps/);
+  assert.match(hero, /profile-hero-contact|profile-hero-phone/);
+  assert.match(hero, /profile-hero-identity-meta|profile-hero-venue/);
+  assert.doesNotMatch(hero, /borderRadius: 999/);
   // Photos before billboard before featured; hiring after featured when active.
   const photoIdx = shell.indexOf("<ProfilePhotoStrip");
   const billboardIdx = shell.indexOf("<ProfileBillboardFeature");
@@ -215,9 +212,9 @@ function testClaimedProfileUsesEditorialPresentation() {
   assert.ok(photoIdx > -1 && billboardIdx > -1 && photoIdx < billboardIdx, "photos should precede billboard");
   assert.ok(featuredIdx > billboardIdx, "featured should follow billboard");
   assert.ok(hiringIdx > featuredIdx, "now hiring should follow featured");
-  // Phone/Website once in Business Information.
-  assert.match(shell, /label="Website"/);
-  assert.match(shell, /label="Phone"/);
+  // Contact once in hero — not Business Information.
+  assert.doesNotMatch(shell, /label="Website"/);
+  assert.doesNotMatch(shell, /label="Phone"/);
   // Quiet claim after restaurant content.
   const claimIdx = shell.lastIndexOf("{claimPanel}");
   const aboutIdx = shell.indexOf('title="About Us"');
@@ -236,7 +233,9 @@ function testSharedPublicProfileShell() {
   assert.match(shell, /FoodTruckUpcomingStops/);
   assert.match(shell, /ProfilePrimaryActions/);
   assert.match(shell, /ProfileMenuHighlights/);
-  assert.match(shell, /ProfileRestaurantHighlights/);
+  assert.doesNotMatch(shell, /ProfileRestaurantHighlights/);
+  assert.match(shell, /saveContactControl/);
+  assert.match(shell, /Located today|buildCurrentLocation/);
   assert.match(shell, /ProfileFeaturedContent/);
   // View Menu / Directions / Call / Website chips removed from primary actions.
   assert.doesNotMatch(actions, /profile-action-view-menu/);
@@ -246,6 +245,7 @@ function testSharedPublicProfileShell() {
   assert.match(actions, /canShowOrderAction/);
   assert.match(actions, /profile-action-order/);
   assert.match(primitives, /display_only/);
+  assert.match(primitives, /Located today/);
 }
 
 testOperatorPublicProfilePathHelper();
