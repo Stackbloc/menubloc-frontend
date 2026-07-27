@@ -1,6 +1,6 @@
 /**
- * Claimed billboard splash helpers remain for operator tooling; consumer
- * restaurant profiles must not mount the splash or public billboard page.
+ * Claimed billboard entrance splash remains on restaurant profiles.
+ * Public /billboard page and on-profile Billboard block stay removed.
  */
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -26,6 +26,13 @@ const helper = read("src/lib/claimedRestaurantBillboardSplash.js");
 assert.match(helper, /CLAIMED_BILLBOARD_SPLASH_MS\s*=\s*3500/);
 assert.match(helper, /CLAIMED_BILLBOARD_SPLASH_MAX_SLIDES\s*=\s*6/);
 assert.match(helper, /pickClaimedBillboardSplashPosts/);
+
+const splash = read("src/components/restaurant/ClaimedRestaurantBillboardSplash.jsx");
+assert.match(splash, /pickClaimedBillboardSplashPosts/);
+assert.match(splash, /objectFit:\s*imageFit/);
+assert.match(splash, /cta_url/);
+assert.match(splash, /Tap to continue/);
+assert.match(splash, /contain/);
 
 assert.equal(CLAIMED_BILLBOARD_SPLASH_MS, 3500);
 assert.equal(CLAIMED_BILLBOARD_SPLASH_REDUCED_MS, 600);
@@ -53,10 +60,14 @@ assert.equal(resolveSplashDurationMs({ display_duration_ms: 5000 }), 5000);
 assert.equal(resolveSplashDurationMs({ display_duration_ms: 5000 }, { reducedMotion: true }), 600);
 
 const page = read("src/pages/RestaurantPublicPage.jsx");
-assert.doesNotMatch(page, /ClaimedRestaurantBillboardSplash/);
-assert.doesNotMatch(page, /pickClaimedBillboardSplashPosts/);
-assert.doesNotMatch(page, /billboardSplashDone/);
+assert.match(page, /ClaimedRestaurantBillboardSplash/);
+assert.match(page, /pickClaimedBillboardSplashPosts/);
+assert.match(page, /claimedBillboardSplashPosts|billboardSplashPosts/);
+assert.match(page, /posts=\{/);
 assert.doesNotMatch(page, /billboardHref/);
+
+const shell = read("src/components/restaurant/publicProfile/PublicProfileShell.jsx");
+assert.doesNotMatch(shell, /ProfileBillboardFeature/);
 
 const app = read("src/App.jsx");
 assert.doesNotMatch(app, /RestaurantBillboard/);
