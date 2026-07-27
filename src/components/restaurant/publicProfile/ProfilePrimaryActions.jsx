@@ -1,6 +1,6 @@
 /**
- * Primary profile actions — Order / Call / Website / Claim only.
- * View Menu is the hero icon + compact preview; Maps is the hero address.
+ * Primary profile actions — Order / Claim only.
+ * Phone, website, directions live once in Business Information / hero Maps.
  */
 import { Link } from "react-router-dom";
 import { actionChipStyle, canShowOrderAction } from "./profilePrimitives.jsx";
@@ -17,8 +17,9 @@ export default function ProfilePrimaryActions({
   isMobile = false,
 }) {
   void directionsUrl;
+  void phone;
+  void website;
   const showOrder = canShowOrderAction(profile, menuHref);
-  const tel = phone ? `tel:${String(phone).replace(/\s+/g, "")}` : "";
 
   const chips = [];
   if (showOrder) {
@@ -26,27 +27,6 @@ export default function ProfilePrimaryActions({
       <Link key="order" to={menuHref} style={actionChipStyle()} data-testid="profile-action-order">
         Order
       </Link>
-    );
-  }
-  if (tel) {
-    chips.push(
-      <a key="call" href={tel} style={actionChipStyle()} data-testid="profile-action-call">
-        Call
-      </a>
-    );
-  }
-  if (website) {
-    chips.push(
-      <a
-        key="website"
-        href={website}
-        target="_blank"
-        rel="noreferrer"
-        style={actionChipStyle()}
-        data-testid="profile-action-website"
-      >
-        Website
-      </a>
     );
   }
   if (claimHref) {
@@ -74,7 +54,7 @@ export default function ProfilePrimaryActions({
         gap: 8,
         overflowX: isMobile ? "auto" : "visible",
         paddingBottom: isMobile ? 4 : 0,
-        marginBottom: 20,
+        marginBottom: 16,
         WebkitOverflowScrolling: "touch",
       }}
     >

@@ -143,6 +143,7 @@ function testClaimedProfileUsesEditorialPresentation() {
   const editorial = read("src/components/restaurant/RestaurantPublicEditorial.jsx");
   const shell = read("src/components/restaurant/publicProfile/PublicProfileShell.jsx");
   const highlights = read("src/components/restaurant/publicProfile/ProfileRestaurantHighlights.jsx");
+  const featured = read("src/components/restaurant/publicProfile/ProfileFeaturedContent.jsx");
   const preview = read("src/components/restaurant/publicProfile/ProfileMenuHighlights.jsx");
   const hero = read("src/components/restaurant/publicProfile/ProfileHero.jsx");
   assert.match(page, /RestaurantPublicEditorial/);
@@ -158,21 +159,25 @@ function testClaimedProfileUsesEditorialPresentation() {
   assert.doesNotMatch(page, /Your information appears here with/);
   assert.match(editorial, /PublicProfileShell/);
   assert.match(shell, /ProfileRestaurantHighlights/);
+  assert.match(shell, /ProfileFeaturedContent/);
   assert.match(shell, /profile-highlights-layout/);
   assert.match(shell, /restaurant-profile-view-menu|viewMenuTestId/);
+  assert.match(shell, /About Us/);
   assert.doesNotMatch(shell, /Photo coming soon/);
   assert.doesNotMatch(shell, /Bio coming soon/);
   assert.doesNotMatch(shell, /No featured dish yet/);
   assert.doesNotMatch(shell, /common\.viewMenu/);
   assert.doesNotMatch(shell, /#1d4ed8/);
-  // No duplicative bottom address — Maps entry is the hero address.
+  // Address lives in hero Maps — not Business Information.
   assert.doesNotMatch(shell, /label="Address"/);
   assert.match(highlights, /Restaurant highlights/);
-  assert.match(highlights, /About Us/);
-  assert.match(highlights, /Signature Dish/);
   assert.match(highlights, /profile-now-hiring|Now Hiring/);
-  assert.match(highlights, /Announcements/);
   assert.match(highlights, /profile-highlight-chips/);
+  assert.doesNotMatch(highlights, /Signature Dish/);
+  assert.doesNotMatch(highlights, /About Us/);
+  assert.match(featured, /profile-featured-content/);
+  assert.match(featured, /Signature Dish/);
+  assert.match(featured, /Today's Special/);
   assert.match(preview, /Menu preview/);
   assert.match(preview, /View Full Menu/);
   assert.match(preview, /Order Online/);
@@ -182,13 +187,19 @@ function testClaimedProfileUsesEditorialPresentation() {
   assert.doesNotMatch(preview, /#1d4ed8/);
   assert.match(hero, /profile-hero-maps-address/);
   assert.match(hero, /Open in Google Maps|Open \$\{name\} in Google Maps/);
-  // Photos before billboard in shell reading order.
+  // Photos before billboard before featured.
   const photoIdx = shell.indexOf("<ProfilePhotoStrip");
   const billboardIdx = shell.indexOf("<ProfileBillboardFeature");
+  const featuredIdx = shell.indexOf("<ProfileFeaturedContent");
   assert.ok(photoIdx > -1 && billboardIdx > -1 && photoIdx < billboardIdx, "photos should precede billboard");
-  assert.doesNotMatch(shell, /label="Website"/);
-  assert.doesNotMatch(shell, /label="Phone"/);
-  assert.doesNotMatch(shell, /label="Address"/);
+  assert.ok(featuredIdx > billboardIdx, "featured should follow billboard");
+  // Phone/Website once in Business Information.
+  assert.match(shell, /label="Website"/);
+  assert.match(shell, /label="Phone"/);
+  // Quiet claim after restaurant content.
+  const claimIdx = shell.lastIndexOf("{claimPanel}");
+  const aboutIdx = shell.indexOf('title="About Us"');
+  assert.ok(claimIdx > aboutIdx, "claim should follow About");
   assert.match(page, /canonicalRestaurantSlug/);
   assert.match(page, /\/restaurants\/:state\/:city\/:restaurantSlug/);
   assert.match(page, /firstBillboardImage/);
@@ -203,9 +214,12 @@ function testSharedPublicProfileShell() {
   assert.match(shell, /ProfilePrimaryActions/);
   assert.match(shell, /ProfileMenuHighlights/);
   assert.match(shell, /ProfileRestaurantHighlights/);
-  // View Menu + Directions chips removed from primary actions.
+  assert.match(shell, /ProfileFeaturedContent/);
+  // View Menu / Directions / Call / Website chips removed from primary actions.
   assert.doesNotMatch(actions, /profile-action-view-menu/);
   assert.doesNotMatch(actions, /profile-action-directions/);
+  assert.doesNotMatch(actions, /profile-action-call/);
+  assert.doesNotMatch(actions, /profile-action-website/);
   assert.match(actions, /canShowOrderAction/);
   assert.match(actions, /profile-action-order/);
   assert.match(primitives, /display_only/);

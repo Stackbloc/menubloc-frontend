@@ -959,23 +959,23 @@ function FullClaimableClaimNotice({ profile, slugOrId, isDark, c }) {
   return (
     <div
       style={{
-        marginTop: 16,
-        padding: "12px 14px",
-        borderRadius: 12,
-        background: isDark ? "rgba(34,197,94,0.12)" : "#f0fdf4",
-        border: isDark ? "1px solid rgba(34,197,94,0.35)" : "1px solid #bbf7d0",
+        marginTop: 8,
+        padding: "10px 0",
+        borderTop: isDark ? "1px solid rgba(255,255,255,0.12)" : "1px solid #e7e5e4",
         color: c.pageColor,
         fontSize: 13,
         lineHeight: 1.5,
         display: "flex",
         flexWrap: "wrap",
-        gap: 12,
+        gap: 10,
         alignItems: "center",
         justifyContent: "space-between",
       }}
     >
-      <div style={{ flex: "1 1 220px" }}>
-        Your Menuply profile is already set up. You only need to claim it.
+      <div style={{ flex: "1 1 220px", color: isDark ? "rgba(248,250,252,0.75)" : "#78716c" }}>
+        <span style={{ fontWeight: 700, color: isDark ? "#f8fafc" : "#44403c" }}>Claim this profile</span>
+        {" — "}
+        manage this listing on Menuply.
       </div>
       <Link
         to="/onboarding"
@@ -984,18 +984,19 @@ function FullClaimableClaimNotice({ profile, slugOrId, isDark, c }) {
           display: "inline-flex",
           alignItems: "center",
           justifyContent: "center",
-          height: 36,
-          padding: "0 14px",
-          borderRadius: 10,
+          height: 34,
+          padding: "0 12px",
+          borderRadius: 999,
           textDecoration: "none",
           fontSize: 13,
-          fontWeight: 800,
-          background: isDark ? "#f8fafc" : "#111827",
-          color: isDark ? "#0f172a" : "#ffffff",
+          fontWeight: 700,
+          border: isDark ? "1px solid rgba(255,255,255,0.28)" : "1px solid #d6d3d1",
+          background: isDark ? "rgba(15,23,42,0.4)" : "#fff",
+          color: isDark ? "#f8fafc" : "#1c1917",
           whiteSpace: "nowrap",
         }}
       >
-        Claim this profile
+        Claim
       </Link>
     </div>
   );
@@ -1503,14 +1504,6 @@ export default function FoodTruckPage() {
           {profile?.public_ordering_mode === "display_only" ? (
             <DisplayOnlyOrderNotice isDark={false} c={light} />
           ) : null}
-          {profile?.public_profile_mode === "full_claimable" ? (
-            <FullClaimableClaimNotice
-              profile={profile}
-              slugOrId={slugOrId}
-              isDark={false}
-              c={light}
-            />
-          ) : null}
         </div>
 
         <FoodTruckPublicEditorial
@@ -1554,6 +1547,16 @@ export default function FoodTruckPage() {
           menuPreviewItems={menuPreviewItems}
           billboardPreview={billboardPreview}
           billboardHref={billboardHref}
+          claimPanel={
+            profile?.public_profile_mode === "full_claimable" ? (
+              <FullClaimableClaimNotice
+                profile={profile}
+                slugOrId={slugOrId}
+                isDark={false}
+                c={light}
+              />
+            ) : null
+          }
           isMobile={isMobile}
         />
       </div>

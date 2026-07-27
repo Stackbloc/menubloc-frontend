@@ -32,6 +32,7 @@ export default function FoodTruckPublicEditorial({
   menuPreviewItems = [],
   billboardPreview = [],
   billboardHref = null,
+  claimPanel = null,
   isMobile,
 }) {
   // Keep contract markers: Current Location:, food-truck-current-location,
@@ -67,6 +68,7 @@ export default function FoodTruckPublicEditorial({
       menuPreviewItems={menuPreviewItems}
       billboardPreview={billboardPreview}
       billboardHref={billboardHref}
+      claimPanel={claimPanel}
       isMobile={isMobile}
     />
   );

@@ -13,8 +13,8 @@ function read(relativePath) {
 test("RestaurantPublicPage renders full claimable profile with menu and claim CTA", () => {
   const source = read("src/pages/RestaurantPublicPage.jsx");
   assert.match(source, /isFullClaimablePublicProfile/);
-  assert.match(source, /Your Menuply profile is already set up/);
-  assert.match(source, /Claim this profile/);
+  assert.match(source, /Claim This Profile/);
+  assert.match(source, /Claim this profile|Claim/);
   assert.match(source, /menuPreviewItems=\{menuPreview\?\.items/);
   assert.doesNotMatch(source, /\.is_demo/);
   assert.doesNotMatch(source, /Demo profile/);
@@ -30,7 +30,6 @@ test("FoodTruckPage uses personality editorial with View menu icon rail (no inli
   assert.match(source, /FoodTruckPublicEditorial/);
   assert.match(source, /public_ordering_mode === "display_only"/);
   assert.match(source, /public_profile_mode === "full_claimable"/);
-  assert.match(source, /Your Menuply profile is already set up/);
   assert.match(source, /Claim this profile/);
   assert.match(source, /SaveContactButton/);
   assert.match(source, /food-truck-save-contact/);
@@ -50,11 +49,12 @@ test("FoodTruckPage uses personality editorial with View menu icon rail (no inli
   assert.match(shell, /Hours/);
   assert.match(shell, /ProfileRestaurantHighlights/);
   assert.match(shell, /Food truck highlights/);
+  assert.match(shell, /ProfileFeaturedContent/);
   assert.match(shell, /FollowRestaurantButton|ProfileHero/);
   assert.match(shell, /food-truck-view-menu/);
   assert.match(shell, /ProfileMenuHighlights/);
-  assert.doesNotMatch(shell, /label="Website"/);
-  assert.doesNotMatch(shell, /label="Phone"/);
+  assert.match(shell, /label="Website"/);
+  assert.match(shell, /label="Phone"/);
   assert.match(hero, /ViewMenuIcon|ViewMenuLink/);
   assert.match(hero, /viewMenuTestId/);
   assert.doesNotMatch(editorial, /RestaurantProfileMenuPreview/);

@@ -1,19 +1,22 @@
 /**
- * Unified Menuply public profile shell — Phase 1.5 destination experience.
- * Hero → actions → photos → billboard → highlights + menu → FT ops → business (de-duped).
- * Empty sections collapse. No fake content. Facts shown once.
+ * Unified Menuply public profile shell — Phase 2 content hierarchy.
+ * Personality first: Hero → actions → photos → billboard → Featured → FT ops
+ * → Highlights + Menu → About → Business info → quiet claim.
+ * Empty sections collapse. Facts shown once.
  */
 import { useMemo } from "react";
 import ProfileHero from "./ProfileHero.jsx";
 import ProfilePrimaryActions from "./ProfilePrimaryActions.jsx";
 import ProfileMenuHighlights from "./ProfileMenuHighlights.jsx";
 import ProfileRestaurantHighlights from "./ProfileRestaurantHighlights.jsx";
+import ProfileFeaturedContent from "./ProfileFeaturedContent.jsx";
 import ProfileBillboardFeature from "./ProfileBillboardFeature.jsx";
 import ProfilePhotoStrip from "./ProfilePhotoStrip.jsx";
 import FoodTruckUpcomingStops from "./FoodTruckUpcomingStops.jsx";
 import {
   ProfileSection,
   DetailLine,
+  QuietLink,
   formatHoursRows,
   normalizeScheduleStops,
   buildCurrentLocation,
@@ -115,39 +118,21 @@ export default function PublicProfileShell({
     ? location?.directionsUrl || directionsUrl || ""
     : directionsUrl;
 
-  // Hero (FT) or primary action chips (restaurant) already expose phone/website — never repeat.
-  const bizCategory = isFoodTruck ? "" : category && category !== cuisine ? category : "";
-  const bizHours = !isFoodTruck && hoursRows.length ? hoursRows : [];
-  const hasDetails = Boolean(bizCategory || bizHours.length);
+  // Address/Directions live in restaurant hero Maps (or FT location module) — do not repeat.
+  // Phone / Website / Hours live once in Business Information.
+  const bizPhone = firstNonEmpty(phone);
+  const bizWebsite = firstNonEmpty(website);
+  const bizHours = hoursRows;
+  const hasDetails = Boolean(bizPhone || bizWebsite || bizHours.length);
 
-  const promoDeals = useMemo(() => {
-    const base = Array.isArray(dealItems) ? [...dealItems] : [];
-    if (todaysSpecial?.name) {
-      const already = base.some(
-        (d) => String(d?.name || "").toLowerCase() === String(todaysSpecial.name).toLowerCase()
-      );
-      if (!already) {
-        base.unshift({
-          id: "todays-special",
-          name: todaysSpecial.name,
-          description: todaysSpecial.description || "Today's special",
-          price: todaysSpecial.price,
-        });
-      }
-    }
-    return base;
-  }, [dealItems, todaysSpecial]);
+  const deals = Array.isArray(dealItems) ? dealItems : [];
 
   const highlightsColumn = (
     <ProfileRestaurantHighlights
-      aboutText={isFoodTruck ? storyText : aboutText}
-      featuredItem={featuredItem}
-      featuredText={featuredText}
       foundedText={founded}
       landmarks={isFoodTruck ? "" : landmarks}
       cuisine={cuisine}
       includeCuisineChip={false}
-      dealItems={promoDeals}
       statusBanners={isFoodTruck ? null : statusBanners}
       statusEventPresentations={isFoodTruck ? null : statusEventPresentations}
       displayCluster={isFoodTruck ? null : displayCluster}
@@ -199,9 +184,9 @@ export default function PublicProfileShell({
         metaBits={isFoodTruck ? (cuisine ? [cuisine] : []) : metaBits}
         saveContactControl={saveContactControl}
         foodTruckLocation={location}
-        phone={phone}
-        website={website}
-        websiteRaw={websiteRaw}
+        phone=""
+        website=""
+        websiteRaw=""
         isMobile={isMobile}
         contentMax={contentMax}
       />
@@ -215,20 +200,17 @@ export default function PublicProfileShell({
           boxSizing: "border-box",
         }}
       >
-        {claimPanel}
-
         <ProfilePrimaryActions
           profile={profile}
           menuHref={menuHref}
           directionsUrl={actionDirectionsUrl}
-          phone={isFoodTruck ? "" : phone}
-          website={isFoodTruck ? "" : website}
+          phone=""
+          website=""
           claimHref={claimHref}
           claimState={claimState}
           isMobile={isMobile}
         />
 
-        {/* Photos elevated — before billboard */}
         <ProfilePhotoStrip
           name={name}
           bannerPhotoUrl={bannerPhotoUrl}
@@ -242,20 +224,20 @@ export default function PublicProfileShell({
           isMobile={isMobile}
         />
 
-        {/* FT energetic ops — only real data */}
+        <ProfileFeaturedContent
+          featuredItem={featuredItem}
+          featuredText={featuredText}
+          todaysSpecial={todaysSpecial}
+          dealItems={deals}
+          isMobile={isMobile}
+        />
+
         {isFoodTruck && stops.length ? (
           <ProfileSection title="Upcoming stops">
             <FoodTruckUpcomingStops stops={stops} />
           </ProfileSection>
         ) : null}
 
-        {isFoodTruck && hoursRows.length ? (
-          <ProfileSection title="Hours">
-            <HoursBlock hoursRows={hoursRows} testId="food-truck-hours" />
-          </ProfileSection>
-        ) : null}
-
-        {/* Highlights + menu teaser */}
         {highlightsColumn || menuRail ? (
           <div
             data-testid="profile-highlights-layout"
@@ -273,24 +255,48 @@ export default function PublicProfileShell({
           </div>
         ) : null}
 
+        {storyText ? (
+          <ProfileSection title="About Us" testId="profile-about-us">
+            {storyText}
+          </ProfileSection>
+        ) : null}
+
         {hasDetails ? (
           <ProfileSection title="Business information">
             <div
               style={{
                 borderTop: "1px solid #e7e5e4",
-                fontSize: 13,
-                color: PROFILE_MUTED,
+                fontSize: 14,
+                color: PROFILE_INK,
               }}
             >
-              <DetailLine label="Category">{bizCategory || null}</DetailLine>
+              <DetailLine label="Phone">
+                {bizPhone ? (
+                  <a
+                    href={`tel:${String(bizPhone).replace(/\s+/g, "")}`}
+                    style={{ color: "inherit", textDecoration: "none", fontWeight: 600 }}
+                  >
+                    {bizPhone}
+                  </a>
+                ) : null}
+              </DetailLine>
+              <DetailLine label="Website">
+                {bizWebsite ? <QuietLink href={bizWebsite}>{websiteRaw || bizWebsite} ↗</QuietLink> : null}
+              </DetailLine>
               {bizHours.length ? (
                 <DetailLine label="Hours">
-                  <HoursBlock hoursRows={bizHours} testId="restaurant-hours" />
+                  <HoursBlock
+                    hoursRows={bizHours}
+                    testId={isFoodTruck ? "food-truck-hours" : "restaurant-hours"}
+                  />
                 </DetailLine>
               ) : null}
             </div>
           </ProfileSection>
         ) : null}
+
+        {/* Quiet claim after restaurant story — Menuply admin steps back */}
+        {claimPanel}
       </div>
     </div>
   );

@@ -240,25 +240,21 @@ function ClaimProfilePanel({ claimPrefillState, isMobile = false }) {
       id="claim-profile"
       data-testid="claim-profile-panel"
       style={{
-        marginBottom: 20,
-        borderRadius: 14,
-        border: "1px solid #bbf7d0",
-        background: "#f0fdf4",
-        padding: isMobile ? 14 : 18,
+        marginTop: 8,
+        marginBottom: 8,
+        padding: isMobile ? "10px 0" : "12px 0",
+        borderTop: "1px solid #e7e5e4",
         display: "flex",
         flexWrap: "wrap",
-        gap: 12,
+        gap: 10,
         alignItems: "center",
         justifyContent: "space-between",
       }}
     >
-      <div style={{ flex: "1 1 220px" }}>
-        <div style={{ fontSize: 16, fontWeight: 800, color: "#14532d", marginBottom: 4 }}>
-          Claim This Profile
-        </div>
-        <div style={{ fontSize: 14, lineHeight: 1.5, color: "#166534" }}>
-          Your Menuply profile is already set up. Claim it to manage this listing and menu.
-        </div>
+      <div style={{ flex: "1 1 220px", fontSize: 13, lineHeight: 1.5, color: "#78716c" }}>
+        <span style={{ fontWeight: 700, color: "#44403c" }}>Claim This Profile</span>
+        {" — "}
+        manage this listing and menu on Menuply.
       </div>
       <Link
         to="/onboarding"
@@ -267,18 +263,19 @@ function ClaimProfilePanel({ claimPrefillState, isMobile = false }) {
           display: "inline-flex",
           alignItems: "center",
           justifyContent: "center",
-          height: 40,
-          padding: "0 16px",
-          borderRadius: 10,
+          height: 36,
+          padding: "0 14px",
+          borderRadius: 999,
           textDecoration: "none",
           fontSize: 13,
-          fontWeight: 800,
-          background: "#111827",
-          color: "#ffffff",
+          fontWeight: 700,
+          border: "1px solid #d6d3d1",
+          background: "#fff",
+          color: "#1c1917",
           whiteSpace: "nowrap",
         }}
       >
-        Claim this profile
+        Claim
       </Link>
     </div>
   );

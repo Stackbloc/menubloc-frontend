@@ -280,9 +280,9 @@ export default function ProfileHero({
       }
     : {
         position: "relative",
-        minHeight: isMobile ? 168 : 220,
+        minHeight: isMobile ? 188 : 240,
         background:
-          "linear-gradient(145deg, #14532d 0%, #166534 28%, #78716c 72%, #a8a29e 100%)",
+          "linear-gradient(160deg, #052e16 0%, #14532d 38%, #292524 100%)",
       };
 
   return (
