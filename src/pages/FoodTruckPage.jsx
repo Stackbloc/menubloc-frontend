@@ -7,28 +7,28 @@
  *   Dedicated Menuply profile page for food trucks.
  *   React route: /foodtrucks/:slugOrId
  *
- *   Mobile-safe revision:
- *     - tighter spacing on phones
- *     - action buttons stack/full-width on small screens
- *     - header card content wraps cleanly
- *     - menu rows and schedule rows avoid horizontal overflow
- *     - page remains centered and readable on narrow screens
+ *   Personality-first editorial shell (no inline menu).
+ *   Icon rail links to public menu; claim CTA + display-only + Save contact kept.
  *
  *   Data sources:
  *     - Profile: GET /public/restaurants/:slugOrId
- *     - Menu:    GET /public/restaurants/:id/menu
  * ============================================================
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Link, useParams } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext.jsx";
-import { useParams, useSearchParams } from "react-router-dom";
 import { HomeButton } from "../components/NavButton.jsx";
 import MenuItemInsightsPanel from "../components/MenuItemInsightsPanel.jsx";
 import ShareIcon from "../components/share/ShareIcon.jsx";
+import StickyPageHeader from "../components/StickyPageHeader.jsx";
+import FoodTruckPublicEditorial from "../components/restaurant/FoodTruckPublicEditorial.jsx";
 import { toConsumerErrorMessage } from "../lib/api.js";
 import BottomNav from "../components/BottomNav.jsx";
 import { getDisplayMenuItemName } from "../utils/getDisplayMenuItemName.js";
+import { buildRestaurantStatusLightProps } from "../lib/restaurantStatusLight.js";
+import { buildRestaurantShareData } from "../components/share/shareUtils.js";
+import { restaurantMenuPathFromRow } from "../lib/canonicalUrl.js";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 const THEME_KEY = "grubbid_theme";
@@ -266,23 +266,22 @@ function Badge({ label, bg, color, border }) {
   );
 }
 
-/* ─── SaveLinkBanner ──────────────────────────────────────── */
+/* ─── SaveContactButton (vCard: name, phone, profile URL) ─── */
 
-function SaveLinkBanner({ isDark, c, isMobile, truckName, truckPhone }) {
-  const [dismissed, setDismissed] = useState(false);
+function SaveContactButton({ truckName, truckPhone, size = 36, dark = false }) {
   const anchorRef = useRef(null);
 
-  // Permanent URL = current origin + pathname, stripping ?ref=qr
   const permanentUrl =
     typeof window !== "undefined"
       ? `${window.location.origin}${window.location.pathname}`
       : "";
 
-  function handleSaveContact() {
+  function handleSaveContact(e) {
+    e?.preventDefault?.();
+    e?.stopPropagation?.();
     const name = truckName || "Food Truck";
     const phone = String(truckPhone || "").replace(/[^\d+]/g, "");
 
-    // Build vCard — phone and name come from the truck's own profile
     const lines = [
       "BEGIN:VCARD",
       "VERSION:3.0",
@@ -298,103 +297,45 @@ function SaveLinkBanner({ isDark, c, isMobile, truckName, truckPhone }) {
 
     const blob = new Blob([lines], { type: "text/vcard;charset=utf-8" });
     const url = URL.createObjectURL(blob);
-
-    // Trigger download — iOS opens Contacts directly, Android prompts import
     const a = anchorRef.current;
+    if (!a) return;
     a.href = url;
     a.download = `${name.replace(/[^a-zA-Z0-9]/g, "_")}.vcf`;
     a.click();
-
-    // Clean up object URL after a short delay
     setTimeout(() => URL.revokeObjectURL(url), 5000);
-    setDismissed(true);
   }
 
-  if (dismissed) return null;
-
   return (
-    <div
-      style={{
-        marginBottom: isMobile ? 14 : 16,
-        borderRadius: 14,
-        background: isDark ? "rgba(99,102,241,0.10)" : "#eef2ff",
-        border: isDark ? "1px solid rgba(99,102,241,0.22)" : "1px solid #c7d2fe",
-        padding: "12px 14px",
-        display: "flex",
-        alignItems: "center",
-        gap: 10,
-        flexWrap: "wrap",
-      }}
-    >
-      {/* Hidden anchor used to trigger the .vcf download */}
+    <>
       <a ref={anchorRef} style={{ display: "none" }} aria-hidden="true" />
-
-      <span style={{ fontSize: 18, flexShrink: 0 }} aria-hidden="true">📇</span>
-
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div
-          style={{
-            fontSize: 13,
-            fontWeight: 700,
-            color: isDark ? "#c7d2fe" : "#3730a3",
-            marginBottom: 2,
-          }}
-        >
-          Save {truckName || "this truck"} to your contacts
-        </div>
-        <div
-          style={{
-            fontSize: 11,
-            color: isDark ? "rgba(199,210,254,0.60)" : "#6366f1",
-          }}
-        >
-          Includes their number and a link back to this page
-        </div>
-      </div>
-
-      <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
-        <button
-          type="button"
-          onClick={handleSaveContact}
-          style={{
-            height: 30,
-            padding: "0 14px",
-            borderRadius: 999,
-            fontSize: 12,
-            fontWeight: 700,
-            cursor: "pointer",
-            background: isDark ? "rgba(99,102,241,0.22)" : "#6366f1",
-            color: isDark ? "#c7d2fe" : "#ffffff",
-            border: "none",
-            whiteSpace: "nowrap",
-          }}
-        >
-          Save to Contacts
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setDismissed(true)}
-          aria-label="Dismiss"
-          style={{
-            height: 30,
-            width: 30,
-            borderRadius: 999,
-            fontSize: 14,
-            cursor: "pointer",
-            background: "transparent",
-            color: isDark ? "rgba(199,210,254,0.45)" : "#818cf8",
-            border: "none",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            flexShrink: 0,
-          }}
-        >
-          ✕
-        </button>
-      </div>
-    </div>
+      <button
+        type="button"
+        data-testid="food-truck-save-contact"
+        onClick={handleSaveContact}
+        aria-label={`Save ${truckName || "this food truck"} to contacts`}
+        title="Save to contacts"
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          width: size,
+          height: size,
+          padding: 0,
+          borderRadius: "50%",
+          border: dark ? "1px solid rgba(255,255,255,0.16)" : "1px solid rgba(15,23,42,0.16)",
+          background: dark
+            ? "rgba(255,255,255,0.04)"
+            : "linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(241,245,249,0.96) 100%)",
+          color: dark ? "#f8fafc" : "#0f172a",
+          cursor: "pointer",
+          fontSize: Math.max(14, Math.round(size * 0.42)),
+          lineHeight: 1,
+          flexShrink: 0,
+        }}
+      >
+        <span aria-hidden="true">📇</span>
+      </button>
+    </>
   );
 }
 
@@ -979,6 +920,87 @@ const DARK_PANEL = {
   chipBg: "rgba(255,255,255,0.04)",
 };
 
+function DisplayOnlyOrderNotice({ isDark, c }) {
+  return (
+    <div
+      role="status"
+      style={{
+        marginTop: 16,
+        padding: "12px 14px",
+        borderRadius: 12,
+        background: isDark ? "rgba(245,158,11,0.10)" : "#fffbeb",
+        border: isDark ? "1px solid rgba(245,158,11,0.30)" : "1px solid #fcd34d",
+        color: c.pageColor,
+        fontSize: 13,
+        lineHeight: 1.5,
+      }}
+    >
+      <strong>Demo profile — ordering unavailable.</strong>{" "}
+      Browse the menu for display purposes. Checkout and payment are disabled.
+    </div>
+  );
+}
+
+function FullClaimableClaimNotice({ profile, slugOrId, isDark, c }) {
+  const claimPrefillState = {
+    restaurant_name: firstNonEmpty(profile?.restaurant_name, profile?.name),
+    address_line1: firstNonEmpty(profile?.address, profile?.address_line1),
+    city: firstNonEmpty(profile?.city),
+    state: firstNonEmpty(profile?.state),
+    postal_code: firstNonEmpty(profile?.postal_code, profile?.zip),
+    phone: firstNonEmpty(profile?.phone),
+    website_url: firstNonEmpty(profile?.website, profile?.website_url),
+    category: firstNonEmpty(profile?.category),
+    cuisine: firstNonEmpty(profile?.cuisine),
+    claim_source: "public_food_truck_page",
+    public_restaurant_slug_or_id: slugOrId,
+    restaurant_id: profile?.id || null,
+  };
+  return (
+    <div
+      style={{
+        marginTop: 16,
+        padding: "12px 14px",
+        borderRadius: 12,
+        background: isDark ? "rgba(34,197,94,0.12)" : "#f0fdf4",
+        border: isDark ? "1px solid rgba(34,197,94,0.35)" : "1px solid #bbf7d0",
+        color: c.pageColor,
+        fontSize: 13,
+        lineHeight: 1.5,
+        display: "flex",
+        flexWrap: "wrap",
+        gap: 12,
+        alignItems: "center",
+        justifyContent: "space-between",
+      }}
+    >
+      <div style={{ flex: "1 1 220px" }}>
+        Your Menuply profile is already set up. You only need to claim it.
+      </div>
+      <Link
+        to="/onboarding"
+        state={claimPrefillState}
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          height: 36,
+          padding: "0 14px",
+          borderRadius: 10,
+          textDecoration: "none",
+          fontSize: 13,
+          fontWeight: 800,
+          background: isDark ? "#f8fafc" : "#111827",
+          color: isDark ? "#0f172a" : "#ffffff",
+          whiteSpace: "nowrap",
+        }}
+      >
+        Claim this profile
+      </Link>
+    </div>
+  );
+}
+
 function MenuInline({ menuData, isDark, c, isMobile, language = "en" }) {
   const sections = normalizeSections(menuData);
 
@@ -1207,10 +1229,8 @@ function AboutSection({ profile, isDark, c }) {
 /* ─── Page ────────────────────────────────────────────────── */
 
 export default function FoodTruckPage() {
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
   const { slugOrId } = useParams();
-  const [searchParams] = useSearchParams();
-  const isQrScan = searchParams.get("ref") === "qr";
   const isMobile = useIsMobile();
 
   const [theme, setTheme] = useState(readTheme);
@@ -1219,11 +1239,6 @@ export default function FoodTruckPage() {
 
   const [profileState, setProfileState] = useState({
     status: "loading",
-    data: null,
-    error: null,
-  });
-  const [menuState, setMenuState] = useState({
-    status: "idle",
     data: null,
     error: null,
   });
@@ -1259,7 +1274,15 @@ export default function FoodTruckPage() {
 
         setProfileState({
           status: "ok",
-          data: json?.restaurant || json,
+          data: {
+            ...(json?.restaurant || json || {}),
+            deal_items: Array.isArray(json?.deal_items) ? json.deal_items : [],
+            operating_hours: Array.isArray(json?.restaurant?.operating_hours)
+              ? json.restaurant.operating_hours
+              : Array.isArray(json?.operating_hours)
+                ? json.operating_hours
+                : [],
+          },
           error: null,
         });
       } catch (e) {
@@ -1280,55 +1303,6 @@ export default function FoodTruckPage() {
       cancelled = true;
     };
   }, [slugOrId]);
-
-  const restaurantId = profileState.data?.id ?? null;
-
-  useEffect(() => {
-    if (!restaurantId) return;
-    let cancelled = false;
-
-    setMenuState({ status: "loading", data: null, error: null });
-
-    (async () => {
-      try {
-        const res = await fetch(
-          `${API}/public/restaurants/${encodeURIComponent(restaurantId)}/menu`
-        );
-        const json = await res.json().catch(() => null);
-
-        if (cancelled) return;
-
-        if (!res.ok || !json || json.ok === false) {
-          setMenuState({
-            status: "error",
-            data: null,
-            error: toConsumerErrorMessage(
-              json?.error || `Menu not available (${res.status})`,
-              "We couldn’t load this menu right now. Please try again in a moment."
-            ),
-          });
-          return;
-        }
-
-        setMenuState({ status: "ok", data: json, error: null });
-      } catch (e) {
-        if (!cancelled) {
-          setMenuState({
-            status: "error",
-            data: null,
-            error: toConsumerErrorMessage(
-              e,
-              "We couldn’t load this menu right now. Please try again in a moment."
-            ),
-          });
-        }
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [restaurantId]);
 
   const pageWrap = (children) => (
     <>
@@ -1422,56 +1396,132 @@ export default function FoodTruckPage() {
   }
 
   const profile = profileState.data;
+  const light = getColors(false);
 
-  return pageWrap(
+  const name =
+    firstNonEmpty(profile?.restaurant_name, profile?.name) || `Food truck ${slugOrId}`;
+  const streetAddr = firstNonEmpty(
+    profile?.current_address,
+    profile?.current_pickup_address,
+    profile?.address_line1,
+    profile?.address
+  );
+  const city = firstNonEmpty(profile?.current_city, profile?.city);
+  const stateVal = firstNonEmpty(profile?.current_state, profile?.state);
+  const zipVal = firstNonEmpty(profile?.postal_code, profile?.zip);
+  const cityLine =
+    [city, stateVal].filter(Boolean).join(", ") + (zipVal ? ` ${zipVal}` : "");
+  const websiteRaw = firstNonEmpty(profile?.website, profile?.website_url);
+  const website = normalizeUrl(websiteRaw);
+  const phone = firstNonEmpty(profile?.phone);
+  const cuisine = humanizeLabel(firstNonEmpty(profile?.cuisine));
+  const bioText = firstNonEmpty(profile?.bio);
+  const aboutText = firstNonEmpty(profile?.about_us);
+  const foundedText = firstNonEmpty(
+    profile?.founded,
+    profile?.founded_year,
+    profile?.year_founded
+  );
+  const featuredItem = profile?.featured_item || null;
+  const dealItems = Array.isArray(profile?.deal_items) ? profile.deal_items : [];
+  const todaysSpecial = dealItems[0]
+    ? {
+        name: firstNonEmpty(dealItems[0]?.name, dealItems[0]?.title, dealItems[0]?.item_name),
+        description: firstNonEmpty(dealItems[0]?.description, dealItems[0]?.details),
+        price: dealItems[0]?.price ?? dealItems[0]?.deal_price ?? null,
+      }
+    : null;
+  const operatingHours = Array.isArray(profile?.operating_hours) ? profile.operating_hours : [];
+  const billboardPreview = Array.isArray(profile?.billboard_preview)
+    ? profile.billboard_preview
+    : [];
+  const bannerPhotoUrl =
+    profile?.hero_image_url ||
+    profile?.cover_image_url ||
+    profile?.banner_url ||
+    billboardPreview.find((p) => p?.image_url || p?.photo_url)?.image_url ||
+    billboardPreview.find((p) => p?.image_url || p?.photo_url)?.photo_url ||
+    null;
+
+  const menuHref =
+    restaurantMenuPathFromRow({
+      slug: profile?.slug || slugOrId,
+      city,
+      state: stateVal,
+      id: profile?.id,
+    }) || (profile?.id ? `/public/restaurants/${profile.id}/menu` : null);
+
+  const saveContactControl = (
+    <SaveContactButton truckName={name} truckPhone={phone} size={36} dark={Boolean(bannerPhotoUrl)} />
+  );
+
+  return (
     <>
-      {navBar}
-
-      {isQrScan ? (
-        <SaveLinkBanner
-          isDark={isDark}
-          c={c}
-          isMobile={isMobile}
-          truckName={firstNonEmpty(profile?.restaurant_name, profile?.name)}
-          truckPhone={firstNonEmpty(profile?.phone)}
-        />
-      ) : null}
-
-      <ProfileHeaderCard
-        profile={profile}
-        slug={slugOrId}
-        isDark={isDark}
-        c={c}
-        isMobile={isMobile}
-      />
-
-      <div style={{ marginTop: isMobile ? 24 : 32 }}>
-        {menuState.status === "loading" ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {[1, 2, 3].map((i) => (
-              <Skel key={i} w="100%" h={72} isDark={isDark} radius={14} />
-            ))}
-          </div>
-        ) : menuState.status === "error" ? (
-          <div style={{ fontSize: 13, color: c.muted, fontStyle: "italic" }}>
-            {menuState.error}
-          </div>
-        ) : menuState.data ? (
-          <MenuInline menuData={menuState.data} isDark={isDark} c={c} isMobile={isMobile} language={language} />
-        ) : null}
-      </div>
-
-      {profile ? (
-        <div
-          style={{
-            marginTop: isMobile ? 24 : 32,
-            paddingTop: isMobile ? 20 : 24,
-            borderTop: `1px solid ${c.divider}`,
-          }}
-        >
-          <AboutSection profile={profile} isDark={isDark} c={c} />
+      <StickyPageHeader />
+      <div
+        style={{
+          minHeight: "100vh",
+          background: "#fafaf9",
+          paddingBottom: 88,
+          fontFamily: "var(--font-ui, ui-sans-serif, system-ui, sans-serif)",
+        }}
+      >
+        <div style={{ maxWidth: 860, margin: "12px auto 0", padding: "0 16px" }}>
+          {profile?.public_ordering_mode === "display_only" ? (
+            <DisplayOnlyOrderNotice isDark={false} c={light} />
+          ) : null}
+          {profile?.public_profile_mode === "full_claimable" ? (
+            <FullClaimableClaimNotice
+              profile={profile}
+              slugOrId={slugOrId}
+              isDark={false}
+              c={light}
+            />
+          ) : null}
         </div>
-      ) : null}
+
+        <FoodTruckPublicEditorial
+          profile={profile}
+          name={name}
+          streetAddr={streetAddr || ""}
+          cityLine={cityLine}
+          website={website}
+          websiteRaw={websiteRaw || website}
+          phone={phone || ""}
+          cuisine={cuisine || ""}
+          bioText={bioText || ""}
+          aboutText={aboutText || ""}
+          foundedText={foundedText || ""}
+          featuredItem={featuredItem}
+          todaysSpecial={todaysSpecial}
+          operatingHours={operatingHours}
+          logoUrl={profile?.logo_url || ""}
+          bannerPhotoUrl={bannerPhotoUrl}
+          statusLightProps={buildRestaurantStatusLightProps(profile)}
+          restaurantId={profile?.id || null}
+          shareData={
+            profile?.id
+              ? buildRestaurantShareData({
+                  restaurantName: name,
+                  restaurantSlug: profile?.slug || slugOrId,
+                  restaurantId: profile?.id,
+                  city,
+                  state: stateVal,
+                  logoUrl: profile?.logo_url || "",
+                })
+              : null
+          }
+          shareAnalytics={{
+            restaurantId: profile?.id,
+            restaurantName: name,
+            restaurantSlug: profile?.slug || slugOrId,
+          }}
+          saveContactControl={saveContactControl}
+          menuHref={menuHref}
+          isMobile={isMobile}
+        />
+      </div>
+      <BottomNav />
     </>
   );
 }

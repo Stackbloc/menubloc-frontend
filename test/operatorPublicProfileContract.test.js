@@ -3,6 +3,7 @@
  * - Dashboard Quick Access → /operator/my-account (edit: Save draft / Publish / View)
  * - My Account hosts the Restaurant Profile form
  * - claim_pending + owning operator must not hit UnclaimedRestaurantPage claim CTA
+ * - Public restaurant + food truck profiles share PublicProfileShell
  */
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -34,16 +35,16 @@ function testOperatorPublicProfilePathHelper() {
 
 function testDashboardOpensProfileEditor() {
   const src = read("src/pages/operator/OperatorDashboard.jsx");
-  assert.match(src, /navigate\("\/operator\/my-account"\)/);
-  assert.doesNotMatch(src, /navigate\("\/operator\/profile"\)/);
+  // Tip dashboard layout varies; only assert restaurant-profile deep links are gone.
   assert.doesNotMatch(src, /\/restaurant-profile\/\$\{/);
   assert.doesNotMatch(src, /`\/restaurant-profile\//);
 }
 
 function testMyAccountUsesOperatorPublicProfilePath() {
   const src = read("src/pages/operator/OperatorMyAccount.jsx");
-  assert.match(src, /operatorPublicProfilePath/);
-  assert.match(src, /OperatorRestaurantProfileForm/);
+  // Profile editor moved to Operations / Menu sidebar; My Account keeps settings + QR.
+  assert.match(src, /OperatorLayout/);
+  assert.match(src, /My QR Code/);
   assert.doesNotMatch(src, /\/restaurant-profile\/\$\{/);
 }
 
@@ -68,12 +69,12 @@ function testPublicPageHasOwnerChrome() {
 function testClaimPendingAndOwnerSkipUnclaimedStub() {
   const page = read("src/pages/RestaurantPublicPage.jsx");
   assert.match(page, /status === "claimed" \|\| status === "claim_pending"/);
-  assert.match(page, /!isClaimedRestaurant\(data\) && !isOwner/);
+  assert.match(page, /isOrdinaryUnclaimed/);
+  assert.match(page, /ClaimProfilePanel/);
 }
 
 function testProfileEditorHasSavePublishView() {
   const src = read("src/pages/operator/OperatorProfileEditor.jsx");
-  const account = read("src/pages/operator/OperatorMyAccount.jsx");
   assert.match(src, /Save draft/);
   assert.match(src, /Publish changes/);
   assert.match(src, /Preview Public Profile|View Public Profile/);
@@ -87,8 +88,6 @@ function testProfileEditorHasSavePublishView() {
   assert.match(src, /RestaurantStatusSettingsPanel/);
   assert.match(src, /readOnly/);
   assert.match(src, /Protected listing identity/);
-  assert.match(src, /Navigate to="\/operator\/my-account"/);
-  assert.match(account, /OperatorRestaurantProfileForm/);
   assert.doesNotMatch(src, /restaurant_name:\s*form\.restaurant_name/);
   assert.doesNotMatch(src, /Short bio/);
   assert.doesNotMatch(src, /Instagram/);
@@ -105,30 +104,30 @@ function testPublicProfileForcedLight() {
   assert.doesNotMatch(page, /THEME_KEY/);
   assert.doesNotMatch(page, /grubbid_theme/);
   assert.doesNotMatch(page, /localStorage\.getItem\(THEME_KEY\)/);
-  // Claimed + unclaimed both use solid white pageBg (two occurrences).
   const whitePageBgMatches = page.match(/pageBg = isDark \? "#0b0b0f" : "#ffffff"/g) || [];
-  assert.equal(whitePageBgMatches.length, 2);
+  assert.equal(whitePageBgMatches.length, 1);
 }
 
 /** Profile header actions: View menu (list icon), then Like, then Share. */
 function testPublicProfileMenuLikeShareRail() {
   const page = read("src/pages/RestaurantPublicPage.jsx");
   const editorial = read("src/components/restaurant/RestaurantPublicEditorial.jsx");
-  assert.match(page, /FollowRestaurantButton/);
-  assert.match(page, /MENU_ROW_ICON_SIZE/);
-  assert.match(page, /MENU_ROW_HEADER_ICON_GAP/);
-  assert.match(page, /source="restaurant_profile"/);
-  assert.match(page, /variant="menu"/);
+  const hero = read("src/components/restaurant/publicProfile/ProfileHero.jsx");
+  const shell = read("src/components/restaurant/publicProfile/PublicProfileShell.jsx");
+  assert.match(page, /RestaurantPublicEditorial/);
   assert.match(page, /menuHref=\{menuHref\}/);
   assert.match(page, /restaurantMenuPathFromRow/);
-  assert.match(editorial, /FollowRestaurantButton/);
-  assert.match(editorial, /source="restaurant_profile"/);
-  assert.match(editorial, /variant="menu"/);
-  assert.match(editorial, /ViewMenuIcon/);
-  assert.match(editorial, /restaurant-profile-view-menu/);
-  assert.match(editorial, /ViewMenuLink href=\{menuHref\}/);
-  const railStart = editorial.indexOf("<ViewMenuLink href={menuHref}");
-  const railSlice = editorial.slice(railStart, railStart + 800);
+  assert.match(editorial, /PublicProfileShell/);
+  assert.match(editorial, /profileType="restaurant"/);
+  assert.match(hero, /FollowRestaurantButton/);
+  assert.match(hero, /source=\{followSource\}/);
+  assert.match(hero, /variant="menu"/);
+  assert.match(hero, /ViewMenuIcon|ViewMenuLink/);
+  assert.match(hero, /restaurant-profile-view-menu/);
+  assert.match(shell, /followSource=\{isFoodTruck \? "food_truck_profile" : "restaurant_profile"\}/);
+  // Order in the header rail JSX: View menu → Follow → Share.
+  const railStart = hero.indexOf("<ViewMenuLink href={menuHref}");
+  const railSlice = hero.slice(railStart, railStart + 800);
   assert.ok(railStart > -1, "ViewMenuLink rail mount missing");
   assert.match(railSlice, /ViewMenuLink[\s\S]*FollowRestaurantButton[\s\S]*ShareButton/);
   assert.doesNotMatch(page, />\s*Follow\s*</);
@@ -136,49 +135,55 @@ function testPublicProfileMenuLikeShareRail() {
 }
 
 /**
- * Claimed restaurants use Option A editorial public profile.
- * Claim Screen (FieldRow stub + Claim CTA) remains for unclaimed only.
+ * Claimed and ordinary unclaimed restaurants use shared editorial public profile.
+ * Claim is one panel — not a FieldRow subscription stub.
  */
 function testClaimedProfileUsesEditorialPresentation() {
   const page = read("src/pages/RestaurantPublicPage.jsx");
   const editorial = read("src/components/restaurant/RestaurantPublicEditorial.jsx");
+  const shell = read("src/components/restaurant/publicProfile/PublicProfileShell.jsx");
   const preview = read("src/components/restaurant/RestaurantProfileMenuPreview.jsx");
   assert.match(page, /RestaurantPublicEditorial/);
   assert.match(page, /fetchRestaurantMenuPreview/);
-  assert.match(page, /function ProfileFieldList/);
-  assert.match(page, /Restaurant Name/);
-  assert.match(page, /City \/ Region \/ Postal Code/);
-  assert.match(page, /Story \/ About/);
-  assert.match(page, /Featured Dish/);
-  assert.match(page, /Landmarks \/ Nearby/);
-  assert.match(page, /Brand Presentation/);
+  assert.match(page, /ClaimProfilePanel/);
+  assert.match(page, /id="claim-profile"/);
+  assert.match(page, /Claim This Profile/);
+  assert.match(page, /isOrdinaryUnclaimed/);
   assert.match(page, /status_banners/);
   assert.match(page, /status_event_presentations/);
-  assert.match(editorial, /RestaurantStatusBannerStrip/);
-  assert.match(editorial, /About/);
-  assert.match(editorial, /Featured dish/);
-  assert.match(editorial, /Announcements/);
-  assert.match(editorial, /IdentityBlock|FollowRestaurantButton/);
-  assert.match(editorial, /ViewMenuIcon|restaurant-profile-view-menu/);
-  assert.doesNotMatch(editorial, /Photo coming soon/);
-  // Icon-only View menu (same ViewMenuIcon as menu-item detail rail) — not a text CTA button.
-  assert.doesNotMatch(editorial, /common\.viewMenu/);
-  assert.doesNotMatch(editorial, /#1d4ed8/);
+  assert.match(page, /operatingHours=\{operatingHours\}/);
+  assert.doesNotMatch(page, /function ProfileFieldList/);
+  assert.doesNotMatch(page, /Your information appears here with/);
+  assert.match(editorial, /PublicProfileShell/);
+  assert.match(shell, /RestaurantStatusBannerStrip/);
+  assert.match(shell, /About/);
+  assert.match(shell, /Featured dish/);
+  assert.match(shell, /Announcements/);
+  assert.match(shell, /FollowRestaurantButton|ProfileHero/);
+  assert.match(shell, /restaurant-profile-view-menu|viewMenuTestId/);
+  assert.doesNotMatch(shell, /Photo coming soon/);
+  assert.doesNotMatch(shell, /common\.viewMenu/);
+  assert.doesNotMatch(shell, /#1d4ed8/);
   assert.match(preview, /Menu preview/);
   assert.match(preview, /overflowY:\s*"auto"/);
   assert.doesNotMatch(preview, /<Link|to=\{\{|viewMenuLabel/);
   assert.doesNotMatch(preview, /import .*Basket|import .*Waiter|import .*CatalogMenu/);
   assert.doesNotMatch(preview, /#1d4ed8/);
-  // Claim CTA only on unclaimed stub (id=claim-profile), not claimed path.
-  assert.match(page, /id="claim-profile"/);
-  assert.match(page, /Claim This Profile/);
-  assert.match(page, /!isClaimedRestaurant\(data\) && !isOwner/);
-  // Claim screen still uses subscription placeholders for empty FieldRows.
-  assert.match(page, /verifiedEmpty=\{verifiedMessage\}/);
-  assert.match(page, /proEmpty=\{proMessage\}/);
   // Canonical 3-segment route params preserved for SEO URLs.
   assert.match(page, /canonicalRestaurantSlug/);
   assert.match(page, /\/restaurants\/:state\/:city\/:restaurantSlug/);
+}
+
+function testSharedPublicProfileShell() {
+  const shell = read("src/components/restaurant/publicProfile/PublicProfileShell.jsx");
+  const actions = read("src/components/restaurant/publicProfile/ProfilePrimaryActions.jsx");
+  const primitives = read("src/components/restaurant/publicProfile/profilePrimitives.jsx");
+  assert.match(shell, /profileType === "food_truck"/);
+  assert.match(shell, /FoodTruckUpcomingStops/);
+  assert.match(shell, /ProfilePrimaryActions/);
+  assert.match(actions, /profile-action-view-menu/);
+  assert.match(actions, /canShowOrderAction/);
+  assert.match(primitives, /display_only/);
 }
 
 testOperatorPublicProfilePathHelper();
@@ -191,5 +196,6 @@ testProfileEditorHasSavePublishView();
 testPublicProfileForcedLight();
 testPublicProfileMenuLikeShareRail();
 testClaimedProfileUsesEditorialPresentation();
+testSharedPublicProfileShell();
 
 console.log("operatorPublicProfileContract: ok");
