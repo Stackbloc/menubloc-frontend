@@ -121,7 +121,8 @@ export default function RestaurantInformationForm({
           Basics
         </h2>
         <p style={styles.sectionHint}>
-          Public name and classification shown on your Menuply listing.
+          Public name and classification shown on your Menuply listing. Pick the most specific
+          venue type — for example Sports Bar, not just Restaurant or Bar.
         </p>
         <div style={styles.grid}>
           <div style={styles.full}>
@@ -135,14 +136,15 @@ export default function RestaurantInformationForm({
             />
           </div>
           <div>
-            <div style={styles.label}>Category *</div>
+            <div style={styles.label}>Venue type *</div>
             <select
               style={styles.select}
               value={form.category}
               disabled={disabled}
               onChange={(e) => setField("category", e.target.value)}
+              data-testid="onboarding-venue-type"
             >
-              <option value="">— Select category —</option>
+              <option value="">— Select specific type —</option>
               {categories.map((c) => (
                 <option key={c.value} value={c.value}>
                   {c.label}
@@ -157,6 +159,7 @@ export default function RestaurantInformationForm({
               value={form.cuisine}
               disabled={disabled}
               onChange={(e) => setField("cuisine", e.target.value)}
+              data-testid="onboarding-cuisine"
             >
               <option value="">— Select cuisine —</option>
               {cuisines.map((c) => (
@@ -165,6 +168,35 @@ export default function RestaurantInformationForm({
                 </option>
               ))}
             </select>
+          </div>
+          <div>
+            <div style={styles.label}>Founded year</div>
+            <input
+              style={styles.input}
+              inputMode="numeric"
+              placeholder="e.g. 2012"
+              value={form.founded_year || ""}
+              disabled={disabled}
+              onChange={(e) => setField("founded_year", e.target.value.replace(/[^\d]/g, "").slice(0, 4))}
+              data-testid="onboarding-founded-year"
+            />
+          </div>
+          <div style={styles.full}>
+            <div style={styles.label}>Meet the team</div>
+            <textarea
+              style={{
+                ...styles.input,
+                height: 88,
+                padding: "10px 12px",
+                resize: "vertical",
+                lineHeight: 1.45,
+              }}
+              value={form.team_intro || ""}
+              disabled={disabled}
+              onChange={(e) => setField("team_intro", e.target.value)}
+              placeholder="Optional short intro diners can read on your public profile."
+              data-testid="onboarding-team-intro"
+            />
           </div>
         </div>
       </section>

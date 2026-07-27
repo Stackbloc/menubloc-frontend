@@ -67,6 +67,10 @@ test("shared form has no PDF upload or menu processing", () => {
   assert.doesNotMatch(form, /parse-file|Upload \+ Parse|type="file"|application\/pdf/i);
   assert.match(form, /Private/);
   assert.match(form, /manager_name/);
+  assert.match(form, /Venue type/);
+  assert.match(form, /Sports Bar/);
+  assert.match(form, /founded_year|Founded year/);
+  assert.match(form, /Meet the team|team_intro/);
 });
 
 test("signup verify nextPath goes to business organization", () => {
@@ -88,14 +92,26 @@ test("schema validates continue requirements and strips to editable payload", ()
   assert.equal(incomplete.ok, false);
   assert.ok(incomplete.missing.includes("category"));
 
-  const payload = buildRestaurantInformationPayload(
+  const tooGeneric = validateRestaurantInformationForm(
     {
       restaurant_name: "Cafe",
       category: "restaurant",
+      phone: "5551112222",
+    },
+    { complete: true }
+  );
+  assert.equal(tooGeneric.ok, false);
+
+  const payload = buildRestaurantInformationPayload(
+    {
+      restaurant_name: "Cafe",
+      category: "sports_bar",
       cuisine: "american",
       manager_name: "Pat",
       phone: "(555) 111-2222",
       website_url: "https://x.test",
+      founded_year: "2012",
+      team_intro: "Family owned.",
       address_line1: "1 Main",
       address_line2: "",
       city: "LA",
@@ -115,6 +131,9 @@ test("schema validates continue requirements and strips to editable payload", ()
   assert.equal(payload.city, undefined);
   assert.equal(payload.state, undefined);
   assert.equal(payload.postal_code, undefined);
+  assert.equal(payload.venue_type_slug, "sports_bar");
+  assert.equal(payload.founded_year, 2012);
+  assert.equal(payload.team_intro, "Family owned.");
   for (const field of RESTAURANT_INFORMATION_PROTECTED_FIELDS) {
     assert.equal(payload[field], undefined);
   }
@@ -122,7 +141,7 @@ test("schema validates continue requirements and strips to editable payload", ()
   const completeOk = validateRestaurantInformationForm(
     {
       restaurant_name: "Cafe",
-      category: "restaurant",
+      category: "sports_bar",
       phone: "5551112222",
     },
     { complete: true }

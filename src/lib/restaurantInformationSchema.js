@@ -5,6 +5,8 @@
  * Address / geo / location-specific fields are owned by the Locations stage
  * (see locationEntryPolicy + ownedLocationsService). They must not be written
  * from Restaurant Information.
+ *
+ * Venue type: use the most specific type (Sports Bar, Fine Dining, …) — not generic "Restaurant".
  */
 
 /** Restaurant-level fields owned by Restaurant Information. */
@@ -15,6 +17,8 @@ export const RESTAURANT_INFORMATION_EDITABLE_FIELDS = Object.freeze([
   "manager_name",
   "phone",
   "website_url",
+  "founded_year",
+  "team_intro",
 ]);
 
 /**
@@ -65,6 +69,8 @@ export function emptyRestaurantInformationForm() {
     phone: "",
     website_url: "",
     email: "",
+    founded_year: "",
+    team_intro: "",
   };
 }
 
@@ -76,25 +82,40 @@ export function formatPhoneDisplay(raw) {
 }
 
 export function restaurantToInformationForm(restaurant = {}, accountEmail = "") {
+  const primaryVenue =
+    restaurant?.classification?.primary_venue_type?.slug ||
+    restaurant?.primary_venue_type?.slug ||
+    "";
   return {
     restaurant_name: String(restaurant.restaurant_name || "").trim(),
-    category: String(restaurant.category || "").trim(),
+    category: String(primaryVenue || restaurant.category || "").trim(),
     cuisine: String(restaurant.cuisine || "").trim(),
     manager_name: String(restaurant.manager_name || "").trim(),
     phone: formatPhoneDisplay(restaurant.phone || ""),
     website_url: String(restaurant.website_url || restaurant.website || "").trim(),
     email: String(accountEmail || restaurant.email || "").trim(),
+    founded_year:
+      restaurant.founded_year != null && restaurant.founded_year !== ""
+        ? String(restaurant.founded_year)
+        : "",
+    team_intro: String(restaurant.team_intro || "").trim(),
   };
 }
 
 export function buildRestaurantInformationPayload(form, { complete = false } = {}) {
+  const foundedRaw = String(form.founded_year || "").trim();
+  const foundedYear = foundedRaw ? Number(foundedRaw) : null;
   const payload = {
     restaurant_name: String(form.restaurant_name || "").trim(),
     category: String(form.category || "").trim(),
+    venue_type_slug: String(form.category || "").trim() || null,
     cuisine: String(form.cuisine || "").trim() || null,
     manager_name: String(form.manager_name || "").trim() || null,
     phone: String(form.phone || "").replace(/\D/g, "") || null,
     website_url: String(form.website_url || "").trim() || null,
+    founded_year:
+      foundedYear != null && Number.isFinite(foundedYear) ? Math.trunc(foundedYear) : null,
+    team_intro: String(form.team_intro || "").trim() || null,
   };
   if (complete) payload.complete = true;
   return payload;
@@ -106,7 +127,7 @@ export function validateRestaurantInformationForm(form, { complete = false } = {
       return {
         ok: false,
         missing: ["restaurant_name"],
-        message: "Enter at least a restaurant name or category to save a draft.",
+        message: "Enter at least a restaurant name or venue type to save a draft.",
       };
     }
     return { ok: true, missing: [] };
@@ -119,8 +140,30 @@ export function validateRestaurantInformationForm(form, { complete = false } = {
     return {
       ok: false,
       missing,
-      message: `Please complete: ${missing.join(", ").replace(/_/g, " ")}`,
+      message: `Please complete: ${missing
+        .join(", ")
+        .replace(/category/g, "venue type")
+        .replace(/_/g, " ")}`,
     };
+  }
+  if (String(form.category || "").trim().toLowerCase() === "restaurant") {
+    return {
+      ok: false,
+      missing: ["category"],
+      message:
+        "Choose a specific venue type (for example Sports Bar or Fine Dining), not generic Restaurant.",
+    };
+  }
+  const foundedRaw = String(form.founded_year || "").trim();
+  if (foundedRaw) {
+    const y = Number(foundedRaw);
+    if (!Number.isFinite(y) || y < 1700 || y > 2100) {
+      return {
+        ok: false,
+        missing: ["founded_year"],
+        message: "Founded year must be between 1700 and 2100.",
+      };
+    }
   }
   return { ok: true, missing: [] };
 }

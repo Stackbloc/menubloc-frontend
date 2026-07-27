@@ -679,6 +679,8 @@ export default function RestaurantPublicPage() {
           statusEventPresentations={data?.status_event_presentations}
           operatingHours={operatingHours}
           profile={data}
+          claimHref={showClaimPanel ? "#claim-profile" : null}
+          showClaimInvites={showClaimPanel}
           claimPanel={
             showClaimPanel ? (
               <ClaimProfilePanel claimPrefillState={claimPrefillState} isMobile={isMobile} />

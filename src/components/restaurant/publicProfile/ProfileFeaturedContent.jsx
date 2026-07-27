@@ -1,15 +1,12 @@
 /**
- * Featured content — strongest “what should you try?” block.
- * Today's special / featured dish / promotion / real menu pick. Collapses when empty.
+ * Featured content — operator-set special / signature / promotion only.
+ * Does NOT auto-promote ordinary menu items. Collapses when empty.
  */
-import { pickFeaturedFromMenuItems } from "./profilePrimitives.jsx";
-
 export default function ProfileFeaturedContent({
   featuredItem = null,
   featuredText = "",
   todaysSpecial = null,
   dealItems = [],
-  menuPreviewItems = [],
   isMobile = false,
 }) {
   let featured = null;
@@ -38,9 +35,6 @@ export default function ProfileFeaturedContent({
           description: String(deal.description || "").trim(),
           price: String(deal.price || "").trim(),
         };
-      } else {
-        const fromMenu = pickFeaturedFromMenuItems(menuPreviewItems);
-        if (fromMenu) featured = fromMenu;
       }
     }
   }

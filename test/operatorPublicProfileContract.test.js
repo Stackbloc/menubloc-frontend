@@ -174,23 +174,32 @@ function testClaimedProfileUsesEditorialPresentation() {
   // Address lives in hero Maps — not Business Information.
   assert.doesNotMatch(shell, /label="Address"/);
   assert.match(highlights, /Restaurant highlights/);
-  assert.match(highlights, /profile-now-hiring|Now Hiring/);
   assert.match(highlights, /profile-highlight-chips/);
   assert.match(highlights, /profile-chip-pickup|Pickup/);
   assert.match(highlights, /profile-chip-delivery|Delivery/);
   assert.match(highlights, /profile-chip-dine-in|Dine-in/);
   assert.doesNotMatch(highlights, /Signature Dish/);
   assert.doesNotMatch(highlights, /About Us/);
+  assert.match(shell, /ProfileNowHiring/);
+  assert.match(shell, /showClaimInvites/);
+  const nowHiring = read("src/components/restaurant/publicProfile/ProfileNowHiring.jsx");
+  assert.match(nowHiring, /profile-now-hiring/);
+  assert.match(nowHiring, /Now Hiring/);
+  assert.doesNotMatch(nowHiring, /apply now|post a job|job board/i);
   const glance = read("src/components/restaurant/publicProfile/ProfileAtAGlance.jsx");
   assert.match(glance, /profile-at-a-glance/);
   assert.match(glance, /At a glance/);
+  assert.match(glance, /Claim your profile/);
+  assert.match(glance, /glance-about|About Us/);
+  assert.match(glance, /Founded|Meet the Team|Signature/);
   assert.match(featured, /profile-featured-content/);
   assert.match(featured, /Signature Dish/);
   assert.match(featured, /Today's Special/);
-  assert.match(featured, /From the menu|pickFeaturedFromMenuItems/);
-  assert.match(preview, /Menu preview/);
-  assert.match(preview, /View Full Menu/);
-  assert.match(preview, /Order Online/);
+  assert.doesNotMatch(featured, /From the menu|pickFeaturedFromMenuItems/);
+  assert.match(preview, /Menu preview|MENU PREVIEW/);
+  assert.match(preview, /View full menu|ViewMenuIcon/);
+  assert.doesNotMatch(preview, /Order Online/);
+  assert.doesNotMatch(preview, /View Full Menu/);
   assert.match(preview, /MAX_ITEMS = 9/);
   assert.match(preview, /MAX_SECTIONS = 4/);
   assert.match(preview, /sectionPriority/);
@@ -198,12 +207,14 @@ function testClaimedProfileUsesEditorialPresentation() {
   assert.doesNotMatch(preview, /#1d4ed8/);
   assert.match(hero, /profile-hero-maps-address/);
   assert.match(hero, /Open in Google Maps|Open \$\{name\} in Google Maps/);
-  // Photos before billboard before featured.
+  // Photos before billboard before featured; hiring after featured when active.
   const photoIdx = shell.indexOf("<ProfilePhotoStrip");
   const billboardIdx = shell.indexOf("<ProfileBillboardFeature");
   const featuredIdx = shell.indexOf("<ProfileFeaturedContent");
+  const hiringIdx = shell.indexOf("<ProfileNowHiring");
   assert.ok(photoIdx > -1 && billboardIdx > -1 && photoIdx < billboardIdx, "photos should precede billboard");
   assert.ok(featuredIdx > billboardIdx, "featured should follow billboard");
+  assert.ok(hiringIdx > featuredIdx, "now hiring should follow featured");
   // Phone/Website once in Business Information.
   assert.match(shell, /label="Website"/);
   assert.match(shell, /label="Phone"/);
@@ -214,6 +225,7 @@ function testClaimedProfileUsesEditorialPresentation() {
   assert.match(page, /canonicalRestaurantSlug/);
   assert.match(page, /\/restaurants\/:state\/:city\/:restaurantSlug/);
   assert.match(page, /firstBillboardImage/);
+  assert.match(page, /showClaimInvites/);
 }
 
 function testSharedPublicProfileShell() {

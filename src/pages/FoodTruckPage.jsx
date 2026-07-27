@@ -958,6 +958,8 @@ function FullClaimableClaimNotice({ profile, slugOrId, isDark, c }) {
   };
   return (
     <div
+      id="claim-profile"
+      data-testid="claim-profile-panel"
       style={{
         marginTop: 8,
         padding: "10px 0",
@@ -1547,6 +1549,10 @@ export default function FoodTruckPage() {
           menuPreviewItems={menuPreviewItems}
           billboardPreview={billboardPreview}
           billboardHref={billboardHref}
+          showClaimInvites={profile?.public_profile_mode === "full_claimable"}
+          claimHref={
+            profile?.public_profile_mode === "full_claimable" ? "#claim-profile" : null
+          }
           claimPanel={
             profile?.public_profile_mode === "full_claimable" ? (
               <FullClaimableClaimNotice

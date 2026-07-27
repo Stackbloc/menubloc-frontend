@@ -39,6 +39,7 @@ export default function RestaurantPublicEditorial({
   claimHref = null,
   claimState = null,
   claimPanel = null,
+  showClaimInvites = false,
   isMobile,
 }) {
   // IdentityBlock / ViewMenuLink / FollowRestaurantButton / Restaurant Highlights
@@ -81,6 +82,7 @@ export default function RestaurantPublicEditorial({
       claimHref={claimHref}
       claimState={claimState}
       claimPanel={claimPanel}
+      showClaimInvites={showClaimInvites}
       isMobile={isMobile}
     />
   );

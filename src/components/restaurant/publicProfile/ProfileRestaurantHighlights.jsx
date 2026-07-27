@@ -55,6 +55,8 @@ export default function ProfileRestaurantHighlights({
   cuisine = "",
   category = "",
   restaurantType = "",
+  venueType = "",
+  featureLabels = [],
   pickup = false,
   delivery = false,
   dineIn = false,
@@ -68,14 +70,17 @@ export default function ProfileRestaurantHighlights({
   const nearby = firstNonEmpty(landmarks);
   const cuisineLabel = firstNonEmpty(cuisine);
   const categoryLabel = firstNonEmpty(category);
-  const typeLabel = humanizeRestaurantType(restaurantType);
+  const venueLabel = firstNonEmpty(venueType);
+  const typeLabel = venueLabel ? "" : humanizeRestaurantType(restaurantType);
   const banners = resolveStatusBanners(statusBanners);
   const presentations = Array.isArray(statusEventPresentations) ? statusEventPresentations : [];
   const hasCluster = Boolean(displayCluster?.name && displayCluster?.public_url);
+  const features = Array.isArray(featureLabels) ? featureLabels.map((f) => String(f || "").trim()).filter(Boolean) : [];
 
   const chips = [];
+  if (venueLabel) chips.push({ key: "venue", label: venueLabel, testId: "profile-chip-venue" });
   if (cuisineLabel) chips.push({ key: "cuisine", label: cuisineLabel, testId: "profile-chip-cuisine" });
-  if (categoryLabel && categoryLabel.toLowerCase() !== cuisineLabel.toLowerCase()) {
+  if (categoryLabel && categoryLabel.toLowerCase() !== cuisineLabel.toLowerCase() && categoryLabel.toLowerCase() !== venueLabel.toLowerCase()) {
     chips.push({ key: "category", label: categoryLabel, testId: "profile-chip-category" });
   }
   if (typeLabel && typeLabel.toLowerCase() !== categoryLabel.toLowerCase()) {
@@ -91,11 +96,22 @@ export default function ProfileRestaurantHighlights({
       testId: "profile-chip-cluster",
     });
   }
-  if (pickup) chips.push({ key: "pickup", label: "Pickup", testId: "profile-chip-pickup" });
-  if (delivery) chips.push({ key: "delivery", label: "Delivery", testId: "profile-chip-delivery" });
-  if (dineIn) chips.push({ key: "dine_in", label: "Dine-in", testId: "profile-chip-dine-in" });
+  for (const feat of features.slice(0, 6)) {
+    if (chips.some((c) => String(c.label).toLowerCase() === feat.toLowerCase())) continue;
+    chips.push({ key: `feat-${feat}`, label: feat, testId: `profile-chip-feature` });
+  }
+  if (pickup && !features.some((f) => /pickup/i.test(f))) {
+    chips.push({ key: "pickup", label: "Pickup", testId: "profile-chip-pickup" });
+  }
+  if (delivery && !features.some((f) => /delivery/i.test(f))) {
+    chips.push({ key: "delivery", label: "Delivery", testId: "profile-chip-delivery" });
+  }
+  if (dineIn && !features.some((f) => /dine/i.test(f))) {
+    chips.push({ key: "dine_in", label: "Dine-in", testId: "profile-chip-dine-in" });
+  }
   if (founded) chips.push({ key: "founded", label: `Established ${founded}`, testId: "profile-founded" });
   for (const banner of banners) {
+    if (banner.id === "now_hiring") continue; // dedicated Now Hiring module
     chips.push({
       key: banner.id,
       label: `${banner.emoji} ${banner.label}`,

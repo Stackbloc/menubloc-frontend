@@ -1,36 +1,38 @@
 /**
- * At a Glance — concise snapshot from real profile fields only.
- * Collapses when nothing meaningful is available.
+ * At a Glance — diner-facing profile summary + claim invitations for missing fields.
+ * Not a database dump. Real values when present; claim CTAs when missing (unclaimed).
  */
 import { Link } from "react-router-dom";
-import { clusterTypeLabel } from "../../../lib/clusterUrl.js";
 import {
   firstNonEmpty,
-  humanizeRestaurantType,
   PROFILE_GREEN,
   PROFILE_INK,
   PROFILE_MUTED,
 } from "./profilePrimitives.jsx";
 
-function GlanceRow({ label, children, testId }) {
-  if (!children) return null;
+function GlanceRow({ label, children, testId, muted = false }) {
+  if (children == null || children === false || children === "") return null;
   return (
     <div
       data-testid={testId}
       style={{
         display: "grid",
-        gridTemplateColumns: "110px minmax(0, 1fr)",
+        gridTemplateColumns: "120px minmax(0, 1fr)",
         gap: 10,
-        padding: "8px 0",
+        padding: "10px 0",
         borderBottom: "1px solid #f5f5f4",
         fontSize: 13,
         lineHeight: 1.45,
       }}
     >
       <span style={{ fontWeight: 700, color: "#57534e" }}>{label}</span>
-      <span style={{ color: PROFILE_INK, minWidth: 0 }}>{children}</span>
+      <span style={{ color: muted ? PROFILE_MUTED : PROFILE_INK, minWidth: 0 }}>{children}</span>
     </div>
   );
+}
+
+function ClaimInvite({ text }) {
+  return <span style={{ color: PROFILE_MUTED }}>{text}</span>;
 }
 
 function summarizeHours(hoursRows) {
@@ -43,90 +45,158 @@ function summarizeHours(hoursRows) {
   return `${open.length} days posted`;
 }
 
-function orderingLabel(profile) {
-  const mode = String(profile?.public_ordering_mode || "").toLowerCase();
-  if (mode === "display_only") return "Browse menu only";
-  const status = String(profile?.order_acceptance_status || "").toLowerCase();
-  if (status === "accepting" || status === "open") return "Ordering available";
-  if (status === "paused" || status === "closed") return "Ordering paused";
-  if (mode === "standard" || mode === "full") return "Menu on Menuply";
-  return "";
-}
-
 export default function ProfileAtAGlance({
-  cuisine = "",
-  category = "",
-  city = "",
-  restaurantType = "",
-  displayCluster = null,
+  aboutText = "",
+  foundedText = "",
+  signatureText = "",
+  teamIntro = "",
   hoursRows = [],
-  profile = null,
-  pickup = false,
-  delivery = false,
-  dineIn = false,
-  priceTier = "",
-  menuItemCount = 0,
-  menuCount = 0,
+  phone = "",
+  website = "",
+  websiteRaw = "",
+  showClaimInvites = false,
+  claimHref = "#claim-profile",
+  showHiringInvite = false,
   isMobile = false,
 }) {
-  const cuisineLabel = firstNonEmpty(cuisine);
-  const categoryLabel = firstNonEmpty(category);
-  const cityLabel = firstNonEmpty(city);
-  const typeLabel = humanizeRestaurantType(restaurantType);
+  const about = firstNonEmpty(aboutText);
+  const founded = firstNonEmpty(foundedText);
+  const signature = firstNonEmpty(signatureText);
+  const team = firstNonEmpty(teamIntro);
   const hoursSummary = summarizeHours(hoursRows);
-  const orderSummary = orderingLabel(profile);
-  const priceLabel = firstNonEmpty(priceTier);
-  const clusterName = firstNonEmpty(displayCluster?.name);
-  const clusterHref = displayCluster?.public_url || null;
-  const clusterExtra = displayCluster?.cluster_type
-    ? clusterTypeLabel(displayCluster.cluster_type)
-    : "";
+  const phoneVal = firstNonEmpty(phone);
+  const webVal = firstNonEmpty(website);
 
-  const services = [];
-  if (pickup) services.push("Pickup");
-  if (delivery) services.push("Delivery");
-  if (dineIn) services.push("Dine-in");
-
-  const menuSummary =
-    menuItemCount > 0
-      ? menuCount > 1
-        ? `${menuItemCount} items · ${menuCount} menus`
-        : `${menuItemCount} items`
-      : menuCount > 0
-        ? `${menuCount} menu${menuCount === 1 ? "" : "s"}`
-        : "";
+  const invite = (suffix) =>
+    showClaimInvites ? <ClaimInvite text={`Claim your profile ${suffix}`} /> : null;
 
   const rows = [];
-  if (cuisineLabel) rows.push({ key: "cuisine", label: "Cuisine", value: cuisineLabel, testId: "glance-cuisine" });
-  if (categoryLabel && categoryLabel.toLowerCase() !== cuisineLabel.toLowerCase()) {
-    rows.push({ key: "category", label: "Category", value: categoryLabel, testId: "glance-category" });
-  }
-  if (typeLabel) rows.push({ key: "type", label: "Type", value: typeLabel, testId: "glance-type" });
-  if (clusterName) {
+
+  if (about) {
     rows.push({
-      key: "cluster",
-      label: "Cluster",
-      value: clusterHref ? (
-        <Link to={clusterHref} style={{ color: PROFILE_GREEN, fontWeight: 700, textDecoration: "none" }}>
-          {clusterName}
-          {clusterExtra ? ` · ${clusterExtra}` : ""}
-        </Link>
-      ) : (
-        `${clusterName}${clusterExtra ? ` · ${clusterExtra}` : ""}`
-      ),
-      testId: "glance-cluster",
+      key: "about",
+      label: "About Us",
+      testId: "glance-about",
+      value: about.length > 220 ? `${about.slice(0, 217).trim()}…` : about,
+    });
+  } else if (showClaimInvites) {
+    rows.push({
+      key: "about",
+      label: "About Us",
+      testId: "glance-about",
+      muted: true,
+      value: invite("to tell diners about your restaurant."),
     });
   }
-  if (cityLabel) rows.push({ key: "city", label: "City", value: cityLabel, testId: "glance-city" });
-  if (hoursSummary) rows.push({ key: "hours", label: "Hours", value: hoursSummary, testId: "glance-hours" });
-  if (services.length) {
-    rows.push({ key: "services", label: "Services", value: services.join(" · "), testId: "glance-services" });
+
+  if (founded) {
+    rows.push({ key: "founded", label: "Founded", testId: "glance-founded", value: founded });
+  } else if (showClaimInvites) {
+    rows.push({
+      key: "founded",
+      label: "Founded",
+      testId: "glance-founded",
+      muted: true,
+      value: invite("to add when the restaurant was founded."),
+    });
   }
-  if (orderSummary) {
-    rows.push({ key: "ordering", label: "Ordering", value: orderSummary, testId: "glance-ordering" });
+
+  if (signature) {
+    rows.push({
+      key: "signature",
+      label: "Signature Dish",
+      testId: "glance-signature",
+      value: signature,
+    });
+  } else if (showClaimInvites) {
+    rows.push({
+      key: "signature",
+      label: "Signature Dish",
+      testId: "glance-signature",
+      muted: true,
+      value: invite("to feature the dish every first-time guest should try."),
+    });
   }
-  if (priceLabel) rows.push({ key: "price", label: "Price", value: priceLabel, testId: "glance-price" });
-  if (menuSummary) rows.push({ key: "menu", label: "Menu", value: menuSummary, testId: "glance-menu" });
+
+  if (team) {
+    rows.push({ key: "team", label: "Meet the Team", testId: "glance-team", value: team });
+  } else if (showClaimInvites) {
+    rows.push({
+      key: "team",
+      label: "Meet the Team",
+      testId: "glance-team",
+      muted: true,
+      value: invite("to introduce the people behind the restaurant."),
+    });
+  }
+
+  if (hoursSummary) {
+    rows.push({ key: "hours", label: "Hours", testId: "glance-hours", value: hoursSummary });
+  } else if (showClaimInvites) {
+    rows.push({
+      key: "hours",
+      label: "Hours",
+      testId: "glance-hours",
+      muted: true,
+      value: invite("to publish accurate business hours."),
+    });
+  }
+
+  if (phoneVal) {
+    rows.push({
+      key: "phone",
+      label: "Phone",
+      testId: "glance-phone",
+      value: (
+        <a href={`tel:${String(phoneVal).replace(/\s+/g, "")}`} style={{ color: "inherit", textDecoration: "none", fontWeight: 600 }}>
+          {phoneVal}
+        </a>
+      ),
+    });
+  } else if (showClaimInvites) {
+    rows.push({
+      key: "phone",
+      label: "Phone",
+      testId: "glance-phone",
+      muted: true,
+      value: invite("to add a customer contact number."),
+    });
+  }
+
+  if (webVal) {
+    rows.push({
+      key: "website",
+      label: "Website",
+      testId: "glance-website",
+      value: (
+        <a href={webVal} target="_blank" rel="noopener noreferrer" style={{ color: PROFILE_GREEN, fontWeight: 700, textDecoration: "none" }}>
+          {websiteRaw || webVal} ↗
+        </a>
+      ),
+    });
+  } else if (showClaimInvites) {
+    rows.push({
+      key: "website",
+      label: "Website",
+      testId: "glance-website",
+      muted: true,
+      value: invite("to add your official website."),
+    });
+  }
+
+  if (showHiringInvite && showClaimInvites) {
+    rows.push({
+      key: "hiring",
+      label: "Now Hiring?",
+      testId: "glance-hiring-invite",
+      muted: true,
+      value: (
+        <span style={{ color: PROFILE_MUTED }}>
+          Claim your profile to tell potential applicants when you are hiring.
+        </span>
+      ),
+    });
+  }
 
   if (!rows.length) return null;
 
@@ -151,21 +221,27 @@ export default function ProfileAtAGlance({
           letterSpacing: 0.8,
           textTransform: "uppercase",
           color: PROFILE_GREEN,
-          marginBottom: 4,
+          marginBottom: 8,
         }}
       >
         At a glance
       </div>
-      <div style={{ color: PROFILE_MUTED, fontSize: 12, marginBottom: 8 }}>
-        What Menuply already knows about this restaurant
-      </div>
       <div>
         {rows.map((row) => (
-          <GlanceRow key={row.key} label={row.label} testId={row.testId}>
+          <GlanceRow key={row.key} label={row.label} testId={row.testId} muted={row.muted}>
             {row.value}
           </GlanceRow>
         ))}
       </div>
+      {showClaimInvites ? (
+        <div style={{ marginTop: 12, fontSize: 12, color: PROFILE_MUTED }}>
+          Already the owner?{" "}
+          <Link to="/onboarding" style={{ color: PROFILE_GREEN, fontWeight: 700, textDecoration: "none" }}>
+            Claim this profile
+          </Link>{" "}
+          to complete these details.
+        </div>
+      ) : null}
     </section>
   );
 }

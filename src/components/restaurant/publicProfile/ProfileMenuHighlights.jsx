@@ -1,10 +1,11 @@
 /**
  * Compact menu preview rail — teaser grouped by representative menu sections.
- * Prefers Appetizers / Entrees / Desserts / Drinks when present.
- * ≤4 sections, ≤3 items/section, ≤9 items total. Always View Full Menu when href exists.
+ * Header: MENU PREVIEW + compact View full menu icon (no large bottom CTA).
  */
 import { Link } from "react-router-dom";
-import { canShowOrderAction, PROFILE_GREEN, PROFILE_INK, PROFILE_MUTED } from "./profilePrimitives.jsx";
+import ViewMenuIcon from "../../icons/ViewMenuIcon.jsx";
+import IconHoverLabel from "../../IconHoverLabel.jsx";
+import { PROFILE_GREEN, PROFILE_INK, PROFILE_MUTED } from "./profilePrimitives.jsx";
 
 const MAX_ITEMS = 9;
 const MAX_SECTIONS = 4;
@@ -59,14 +60,11 @@ function selectHighlightSections(items) {
 export default function ProfileMenuHighlights({
   items = [],
   menuHref = null,
-  profile = null,
   isMobile = false,
   compact = true,
 }) {
   const sections = selectHighlightSections(items);
   if (!sections.length) return null;
-
-  const showOrder = canShowOrderAction(profile, menuHref);
 
   return (
     <aside
@@ -89,15 +87,51 @@ export default function ProfileMenuHighlights({
     >
       <div
         style={{
-          fontSize: 11,
-          fontWeight: 800,
-          letterSpacing: 0.8,
-          textTransform: "uppercase",
-          color: PROFILE_GREEN,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 10,
           marginBottom: 12,
         }}
       >
-        Menu preview
+        <div
+          style={{
+            fontSize: 11,
+            fontWeight: 800,
+            letterSpacing: 0.8,
+            textTransform: "uppercase",
+            color: PROFILE_GREEN,
+          }}
+        >
+          Menu preview
+        </div>
+        {menuHref ? (
+          <IconHoverLabel label="View full menu">
+            <Link
+              to={menuHref}
+              data-testid="profile-view-full-menu"
+              aria-label="View full menu"
+              title="View full menu"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "4px 8px",
+                borderRadius: 8,
+                border: "1px solid #d6d3d1",
+                background: "#fafaf9",
+                color: PROFILE_INK,
+                textDecoration: "none",
+                fontSize: 12,
+                fontWeight: 700,
+                lineHeight: 1,
+              }}
+            >
+              <ViewMenuIcon size={14} color="currentColor" />
+              <span>Full Menu</span>
+            </Link>
+          </IconHoverLabel>
+        ) : null}
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -149,52 +183,6 @@ export default function ProfileMenuHighlights({
           </div>
         ))}
       </div>
-
-      {menuHref ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 14 }}>
-          <Link
-            to={menuHref}
-            data-testid="profile-view-full-menu"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              minHeight: 40,
-              padding: "0 14px",
-              borderRadius: 10,
-              background: PROFILE_GREEN,
-              color: "#fff",
-              textDecoration: "none",
-              fontSize: 13,
-              fontWeight: 800,
-            }}
-          >
-            View Full Menu
-          </Link>
-          {showOrder ? (
-            <Link
-              to={menuHref}
-              data-testid="profile-order-online"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                minHeight: 40,
-                padding: "0 14px",
-                borderRadius: 10,
-                border: "1px solid #d6d3d1",
-                background: "#fff",
-                color: PROFILE_INK,
-                textDecoration: "none",
-                fontSize: 13,
-                fontWeight: 800,
-              }}
-            >
-              Order Online
-            </Link>
-          ) : null}
-        </div>
-      ) : null}
     </aside>
   );
 }
