@@ -16,6 +16,7 @@ export default function RestaurantPublicEditorial({
   category,
   aboutText,
   featuredText,
+  featuredItem = null,
   landmarks,
   logoUrl,
   bannerPhotoUrl,
@@ -38,9 +39,9 @@ export default function RestaurantPublicEditorial({
   claimPanel = null,
   isMobile,
 }) {
-  // IdentityBlock / ViewMenuLink / FollowRestaurantButton / RestaurantStatusBannerStrip
+  // IdentityBlock / ViewMenuLink / FollowRestaurantButton / Restaurant Highlights
   // live in PublicProfileShell (shared with food trucks). Keep string markers for contracts:
-  // About, Featured dish, Announcements, ViewMenuIcon, restaurant-profile-view-menu
+  // About Us, Featured Dish, Announcements, ViewMenuIcon, restaurant-profile-view-menu
   return (
     <PublicProfileShell
       profileType="restaurant"
@@ -56,6 +57,7 @@ export default function RestaurantPublicEditorial({
       category={category}
       aboutText={aboutText}
       featuredText={featuredText}
+      featuredItem={featuredItem}
       landmarks={landmarks}
       logoUrl={logoUrl}
       bannerPhotoUrl={bannerPhotoUrl}

@@ -142,7 +142,9 @@ function testClaimedProfileUsesEditorialPresentation() {
   const page = read("src/pages/RestaurantPublicPage.jsx");
   const editorial = read("src/components/restaurant/RestaurantPublicEditorial.jsx");
   const shell = read("src/components/restaurant/publicProfile/PublicProfileShell.jsx");
+  const highlights = read("src/components/restaurant/publicProfile/ProfileRestaurantHighlights.jsx");
   const preview = read("src/components/restaurant/publicProfile/ProfileMenuHighlights.jsx");
+  const hero = read("src/components/restaurant/publicProfile/ProfileHero.jsx");
   assert.match(page, /RestaurantPublicEditorial/);
   assert.match(page, /fetchRestaurantMenuPreview/);
   assert.match(page, /ClaimProfilePanel/);
@@ -155,22 +157,29 @@ function testClaimedProfileUsesEditorialPresentation() {
   assert.doesNotMatch(page, /function ProfileFieldList/);
   assert.doesNotMatch(page, /Your information appears here with/);
   assert.match(editorial, /PublicProfileShell/);
-  assert.match(shell, /RestaurantStatusBannerStrip/);
-  assert.match(shell, /About/);
-  assert.match(shell, /Featured dish/);
-  assert.match(shell, /Announcements/);
-  assert.match(shell, /ProfileMenuHighlights|ProfileBillboardFeature/);
+  assert.match(shell, /ProfileRestaurantHighlights/);
+  assert.match(shell, /profile-highlights-layout/);
   assert.match(shell, /restaurant-profile-view-menu|viewMenuTestId/);
   assert.doesNotMatch(shell, /Photo coming soon/);
   assert.doesNotMatch(shell, /Bio coming soon/);
   assert.doesNotMatch(shell, /No featured dish yet/);
   assert.doesNotMatch(shell, /common\.viewMenu/);
   assert.doesNotMatch(shell, /#1d4ed8/);
-  assert.match(preview, /Menu highlights/);
+  // No duplicative bottom address — Maps entry is the hero address.
+  assert.doesNotMatch(shell, /label="Address"/);
+  assert.match(highlights, /Restaurant highlights/);
+  assert.match(highlights, /About Us/);
+  assert.match(highlights, /Featured Dish/);
+  assert.match(highlights, /profile-now-hiring|Now Hiring/);
+  assert.match(highlights, /Announcements/);
+  assert.match(preview, /Menu preview/);
   assert.match(preview, /View Full Menu/);
   assert.match(preview, /Order Online/);
+  assert.match(preview, /MAX_ITEMS = 5/);
   assert.doesNotMatch(preview, /import .*Basket|import .*Waiter|import .*CatalogMenu/);
   assert.doesNotMatch(preview, /#1d4ed8/);
+  assert.match(hero, /profile-hero-maps-address/);
+  assert.match(hero, /Open in Google Maps|Open \$\{name\} in Google Maps/);
   assert.match(page, /canonicalRestaurantSlug/);
   assert.match(page, /\/restaurants\/:state\/:city\/:restaurantSlug/);
 }
@@ -183,8 +192,12 @@ function testSharedPublicProfileShell() {
   assert.match(shell, /FoodTruckUpcomingStops/);
   assert.match(shell, /ProfilePrimaryActions/);
   assert.match(shell, /ProfileMenuHighlights/);
-  assert.match(actions, /profile-action-view-menu/);
+  assert.match(shell, /ProfileRestaurantHighlights/);
+  // View Menu + Directions chips removed from primary actions.
+  assert.doesNotMatch(actions, /profile-action-view-menu/);
+  assert.doesNotMatch(actions, /profile-action-directions/);
   assert.match(actions, /canShowOrderAction/);
+  assert.match(actions, /profile-action-order/);
   assert.match(primitives, /display_only/);
 }
 

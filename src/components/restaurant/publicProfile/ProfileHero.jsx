@@ -132,18 +132,47 @@ export default function ProfileHero({
               href={directionsUrl}
               target="_blank"
               rel="noreferrer"
-              aria-label={`Get directions to ${name}`}
+              aria-label={`Open ${name} in Google Maps`}
+              title="Open in Google Maps"
+              data-testid="profile-hero-maps-address"
               style={{
                 margin: "6px 0 0",
-                display: "block",
+                display: "inline-flex",
+                alignItems: "flex-start",
+                gap: 8,
                 fontSize: 14,
                 lineHeight: 1.4,
                 color: muted,
                 textDecoration: "none",
+                maxWidth: "100%",
               }}
             >
-              {streetAddr ? <span style={{ display: "block" }}>{streetAddr}</span> : null}
-              {cityLine ? <span style={{ display: "block" }}>{cityLine}</span> : null}
+              <span
+                aria-hidden="true"
+                style={{
+                  flexShrink: 0,
+                  marginTop: 1,
+                  width: 16,
+                  height: 16,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M12 22s7-7.2 7-12a7 7 0 1 0-14 0c0 4.8 7 12 7 12z"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    fill="rgba(250,250,249,0.12)"
+                  />
+                  <circle cx="12" cy="10" r="2.4" fill="currentColor" />
+                </svg>
+              </span>
+              <span style={{ display: "flex", flexDirection: "column", gap: 1, minWidth: 0 }}>
+                {streetAddr ? <span>{streetAddr}</span> : null}
+                {cityLine ? <span>{cityLine}</span> : null}
+              </span>
             </a>
           ) : (
             <div style={{ margin: "6px 0 0", fontSize: 14, lineHeight: 1.4, color: muted }}>

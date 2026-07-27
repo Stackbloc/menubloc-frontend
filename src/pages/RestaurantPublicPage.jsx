@@ -652,6 +652,7 @@ export default function RestaurantPublicPage() {
           category={category}
           aboutText={aboutText}
           featuredText={featuredText}
+          featuredItem={featuredItem}
           landmarks={landmarks}
           logoUrl={logoUrl}
           bannerPhotoUrl={bannerPhotoUrl}

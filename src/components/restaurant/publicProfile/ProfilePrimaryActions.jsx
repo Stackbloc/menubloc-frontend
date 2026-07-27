@@ -1,12 +1,9 @@
 /**
- * Primary profile actions — only render chips backed by real data / rules.
+ * Primary profile actions — Order / Call / Website / Claim only.
+ * View Menu is the hero icon + compact preview; Maps is the hero address.
  */
 import { Link } from "react-router-dom";
-import {
-  actionChipStyle,
-  primaryActionChipStyle,
-  canShowOrderAction,
-} from "./profilePrimitives.jsx";
+import { actionChipStyle, canShowOrderAction } from "./profilePrimitives.jsx";
 
 export default function ProfilePrimaryActions({
   profile = null,
@@ -19,36 +16,16 @@ export default function ProfilePrimaryActions({
   claimLabel = "Claim This Profile",
   isMobile = false,
 }) {
+  void directionsUrl;
   const showOrder = canShowOrderAction(profile, menuHref);
   const tel = phone ? `tel:${String(phone).replace(/\s+/g, "")}` : "";
 
   const chips = [];
-  if (menuHref) {
-    chips.push(
-      <Link key="menu" to={menuHref} style={primaryActionChipStyle()} data-testid="profile-action-view-menu">
-        View Menu
-      </Link>
-    );
-  }
   if (showOrder) {
     chips.push(
       <Link key="order" to={menuHref} style={actionChipStyle()} data-testid="profile-action-order">
         Order
       </Link>
-    );
-  }
-  if (directionsUrl) {
-    chips.push(
-      <a
-        key="directions"
-        href={directionsUrl}
-        target="_blank"
-        rel="noreferrer"
-        style={actionChipStyle()}
-        data-testid="profile-action-directions"
-      >
-        Directions
-      </a>
     );
   }
   if (tel) {

@@ -1,15 +1,13 @@
 /**
  * Unified Menuply public profile shell — experience-first.
- * Restaurant layout is the master template; food trucks add location/stops modules.
- * Empty sections collapse. Profile introduces the business; full menu is separate.
+ * Restaurant layout: Restaurant Highlights (story fields) + compact menu preview rail.
+ * Food trucks keep location/stops modules. Empty sections collapse.
  */
 import { useMemo } from "react";
-import { Link } from "react-router-dom";
-import RestaurantStatusBannerStrip from "../RestaurantStatusBannerStrip.jsx";
-import { clusterTypeLabel } from "../../../lib/clusterUrl.js";
 import ProfileHero from "./ProfileHero.jsx";
 import ProfilePrimaryActions from "./ProfilePrimaryActions.jsx";
 import ProfileMenuHighlights from "./ProfileMenuHighlights.jsx";
+import ProfileRestaurantHighlights from "./ProfileRestaurantHighlights.jsx";
 import ProfileBillboardFeature from "./ProfileBillboardFeature.jsx";
 import ProfilePhotoStrip from "./ProfilePhotoStrip.jsx";
 import FoodTruckUpcomingStops from "./FoodTruckUpcomingStops.jsx";
@@ -24,7 +22,6 @@ import {
   PROFILE_PAGE_BG,
   PROFILE_INK,
   PROFILE_MUTED,
-  PROFILE_GREEN,
   PROFILE_CONTENT_MAX,
 } from "./profilePrimitives.jsx";
 
@@ -46,7 +43,7 @@ function DishCard({ title, name, description, price }) {
             fontWeight: 800,
             letterSpacing: 0.5,
             textTransform: "uppercase",
-            color: PROFILE_GREEN,
+            color: "#166534",
             marginBottom: 6,
           }}
         >
@@ -133,7 +130,6 @@ export default function PublicProfileShell({
   isMobile = false,
 }) {
   const isFoodTruck = profileType === "food_truck";
-  // Same design language / width for restaurants and food trucks.
   const contentMax = PROFILE_CONTENT_MAX;
   const metaBits = [cuisine, category].filter(Boolean);
   const hoursRows = useMemo(() => formatHoursRows(operatingHours), [operatingHours]);
@@ -143,13 +139,9 @@ export default function PublicProfileShell({
     [isFoodTruck, profile, streetAddr, cityLine]
   );
 
-  const hasStatus =
-    (Array.isArray(statusBanners) && statusBanners.length > 0) ||
-    (Array.isArray(statusEventPresentations) && statusEventPresentations.length > 0);
-  const hasMenuHighlights = Array.isArray(menuPreviewItems) && menuPreviewItems.length > 0;
-  const hasDetails = Boolean(
-    website || phone || cuisine || category || hoursRows.length || (streetAddr && !isFoodTruck)
-  );
+  const hasMenuPreview = Array.isArray(menuPreviewItems) && menuPreviewItems.length > 0;
+  // Address lives in the hero (Maps link) — do not repeat it in Business information.
+  const hasDetails = Boolean(website || phone || cuisine || category || hoursRows.length);
 
   const bio = firstNonEmpty(bioText);
   const about = firstNonEmpty(aboutText);
@@ -163,11 +155,35 @@ export default function PublicProfileShell({
         : about;
   const storyText = isFoodTruck ? bio || aboutDistinct : about;
   const founded = firstNonEmpty(foundedText, profile?.founded, profile?.founded_year, profile?.year_founded);
-  const featuredName = featuredItem?.name || featuredText || "";
 
   const actionDirectionsUrl = isFoodTruck
     ? location?.directionsUrl || directionsUrl || ""
     : directionsUrl;
+
+  const highlightsColumn = !isFoodTruck ? (
+    <ProfileRestaurantHighlights
+      aboutText={aboutText}
+      featuredItem={featuredItem}
+      featuredText={featuredText}
+      foundedText={founded}
+      landmarks={landmarks}
+      dealItems={dealItems}
+      statusBanners={statusBanners}
+      statusEventPresentations={statusEventPresentations}
+      displayCluster={displayCluster}
+      isMobile={isMobile}
+    />
+  ) : null;
+
+  const menuRail = hasMenuPreview ? (
+    <ProfileMenuHighlights
+      items={menuPreviewItems}
+      menuHref={menuHref}
+      profile={profile}
+      isMobile={isMobile}
+      compact
+    />
+  ) : null;
 
   return (
     <div
@@ -229,14 +245,12 @@ export default function PublicProfileShell({
           isMobile={isMobile}
         />
 
-        {/* Signature billboard — early in the reading order */}
         <ProfileBillboardFeature
           billboardPreview={billboardPreview}
           billboardHref={billboardHref}
           isMobile={isMobile}
         />
 
-        {/* Photos from real assets only */}
         <ProfilePhotoStrip
           name={name}
           bannerPhotoUrl={bannerPhotoUrl}
@@ -277,93 +291,34 @@ export default function PublicProfileShell({
           </ProfileSection>
         ) : null}
 
-        {/* Menu Highlights — profile introduces; full menu is separate */}
-        {hasMenuHighlights ? (
-          <ProfileMenuHighlights
-            items={menuPreviewItems}
-            menuHref={menuHref}
-            profile={profile}
-            isMobile={isMobile}
-          />
+        {isFoodTruck && storyText ? (
+          <ProfileSection title="About">{storyText}</ProfileSection>
         ) : null}
 
-        {/* About / story — collapse when empty */}
-        {storyText ? (
-          <ProfileSection title={isFoodTruck ? "About" : "About"}>{storyText}</ProfileSection>
+        {isFoodTruck && founded ? <ProfileSection title="Founded">{founded}</ProfileSection> : null}
+
+        {/* Restaurant: highlights + compact menu preview; FT: compact preview only when present */}
+        {!isFoodTruck && (highlightsColumn || menuRail) ? (
+          <div
+            data-testid="profile-highlights-layout"
+            style={{
+              display: "grid",
+              gridTemplateColumns: isMobile || !menuRail || !highlightsColumn ? "1fr" : "minmax(0, 1fr) 260px",
+              gap: isMobile ? 0 : 20,
+              alignItems: "start",
+              marginBottom: 28,
+            }}
+          >
+            {highlightsColumn}
+            {menuRail}
+          </div>
         ) : null}
 
-        {!isFoodTruck && featuredName ? (
-          <ProfileSection title="Featured dish">{featuredName}</ProfileSection>
-        ) : null}
-
-        {founded ? <ProfileSection title="Founded">{founded}</ProfileSection> : null}
-
-        {Array.isArray(dealItems) && dealItems.length ? (
-          <ProfileSection title="Deals & updates">
-            <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
-              {dealItems.map((deal, idx) => (
-                <li key={deal.id ?? `deal-${idx}`} style={{ padding: "6px 0" }}>
-                  <span style={{ fontWeight: 600 }}>{deal.name}</span>
-                  {deal.price ? (
-                    <span style={{ marginLeft: 8, color: PROFILE_MUTED, fontSize: 13 }}>
-                      {deal.price}
-                    </span>
-                  ) : null}
-                  {deal.description ? (
-                    <div style={{ fontSize: 13, color: PROFILE_MUTED, marginTop: 2 }}>
-                      {deal.description}
-                    </div>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
-          </ProfileSection>
-        ) : null}
-
-        {hasStatus ? (
-          <ProfileSection title="Announcements">
-            <RestaurantStatusBannerStrip
-              variant="aside"
-              statusBanners={statusBanners}
-              statusEventPresentations={statusEventPresentations}
-            />
-          </ProfileSection>
-        ) : null}
-
-        {landmarks ? <ProfileSection title="Nearby">{landmarks}</ProfileSection> : null}
-
-        {displayCluster?.name && displayCluster?.public_url ? (
-          <ProfileSection title="Cluster">
-            <Link
-              to={displayCluster.public_url}
-              style={{ color: PROFILE_GREEN, textDecoration: "none", fontWeight: 600 }}
-            >
-              {displayCluster.name}
-              {displayCluster.cluster_type
-                ? ` · ${clusterTypeLabel(displayCluster.cluster_type)}`
-                : ""}
-            </Link>
-          </ProfileSection>
-        ) : null}
+        {isFoodTruck && menuRail ? <div style={{ marginBottom: 28 }}>{menuRail}</div> : null}
 
         {hasDetails ? (
           <ProfileSection title="Business information">
             <div style={{ borderTop: "1px solid #e7e5e4" }}>
-              {!isFoodTruck && streetAddr ? (
-                <DetailLine label="Address">
-                  {directionsUrl ? (
-                    <QuietLink href={directionsUrl}>
-                      {streetAddr}
-                      {cityLine ? ` · ${cityLine}` : ""}
-                    </QuietLink>
-                  ) : (
-                    <>
-                      {streetAddr}
-                      {cityLine ? ` · ${cityLine}` : ""}
-                    </>
-                  )}
-                </DetailLine>
-              ) : null}
               <DetailLine label="Website">
                 {website ? <QuietLink href={website}>{websiteRaw || website} ↗</QuietLink> : null}
               </DetailLine>
