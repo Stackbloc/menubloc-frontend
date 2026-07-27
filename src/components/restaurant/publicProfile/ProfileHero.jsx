@@ -9,7 +9,6 @@ import FoodTruckCurrentLocation from "./FoodTruckCurrentLocation.jsx";
 import {
   LogoMark,
   ViewMenuLink,
-  MENU_ROW_HEADER_ICON_GAP,
   MENU_ROW_ICON_SIZE,
   PROFILE_CONTENT_MAX,
 } from "./profilePrimitives.jsx";
@@ -55,35 +54,36 @@ export default function ProfileHero({
           style={{
             display: "flex",
             alignItems: "center",
-            gap: 10,
-            flexWrap: "nowrap",
+            gap: 6,
+            flexWrap: "wrap",
             minWidth: 0,
           }}
         >
-          <div style={{ minWidth: 0, flex: 1, display: "flex", alignItems: "center", gap: 8 }}>
-            {statusLightProps ? <RestaurantStatusLight {...statusLightProps} size={7} /> : null}
-            <h1
-              style={{
-                margin: 0,
-                fontSize: isMobile ? 24 : 32,
-                fontWeight: 800,
-                letterSpacing: "-0.03em",
-                lineHeight: 1.15,
-                color: ink,
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {name}
-            </h1>
-          </div>
+          {statusLightProps ? <RestaurantStatusLight {...statusLightProps} size={7} /> : null}
+          <h1
+            style={{
+              margin: 0,
+              fontSize: isMobile ? 24 : 32,
+              fontWeight: 800,
+              letterSpacing: "-0.03em",
+              lineHeight: 1.15,
+              color: ink,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+              flex: "0 1 auto",
+              minWidth: 0,
+              maxWidth: "100%",
+            }}
+          >
+            {name}
+          </h1>
           {menuHref || restaurantId || shareData || saveContactControl ? (
             <div
               style={{
-                display: "flex",
+                display: "inline-flex",
                 alignItems: "center",
-                gap: MENU_ROW_HEADER_ICON_GAP,
+                gap: 6,
                 flexShrink: 0,
               }}
             >
