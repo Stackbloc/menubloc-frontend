@@ -430,6 +430,23 @@ export default function OperatorTabletPage() {
     document.title = "Menuply Operator";
   }, []);
 
+  // Operator PWA only — do not leave landscape lock / operator icon on the consumer site.
+  useEffect(() => {
+    const href = "/operator-manifest.webmanifest";
+    let link = document.querySelector('link[rel="manifest"]');
+    const previousHref = link?.getAttribute("href") || "";
+    if (!link) {
+      link = document.createElement("link");
+      link.rel = "manifest";
+      document.head.appendChild(link);
+    }
+    link.setAttribute("href", href);
+    return () => {
+      if (previousHref) link.setAttribute("href", previousHref);
+      else link.setAttribute("href", "/manifest.webmanifest");
+    };
+  }, []);
+
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 30000);
     return () => clearInterval(timer);

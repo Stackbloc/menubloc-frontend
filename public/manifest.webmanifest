@@ -1,33 +1,26 @@
 {
-  "name": "Menuply Operator",
-  "short_name": "Operator",
-  "description": "Tablet-first Menuply order dashboard for restaurant operators.",
-  "id": "/operator/tablet",
-  "start_url": "/operator/tablet",
+  "name": "Menuply",
+  "short_name": "Menuply",
+  "description": "Browse restaurant menus near you. Find dishes, deals, and nutrition insights on Menuply.",
+  "id": "/",
+  "start_url": "/",
   "scope": "/",
-  "display": "standalone",
-  "orientation": "landscape-primary",
-  "background_color": "#f7f1e6",
+  "display": "browser",
+  "background_color": "#ffffff",
   "theme_color": "#1f4e3d",
-  "categories": ["business", "food", "productivity"],
+  "categories": ["food", "lifestyle"],
   "icons": [
     {
-      "src": "/pwa-icons/operator-icon-192.png",
+      "src": "/menuply-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/menuplyofficialsmalllogo.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
-    },
-    {
-      "src": "/pwa-icons/operator-icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/pwa-icons/operator-icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
     }
   ]
 }

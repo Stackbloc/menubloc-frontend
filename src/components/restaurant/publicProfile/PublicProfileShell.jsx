@@ -9,7 +9,6 @@ import ProfileHero from "./ProfileHero.jsx";
 import ProfilePrimaryActions from "./ProfilePrimaryActions.jsx";
 import ProfileMenuHighlights from "./ProfileMenuHighlights.jsx";
 import ProfileFeaturedContent from "./ProfileFeaturedContent.jsx";
-import ProfileBillboardFeature from "./ProfileBillboardFeature.jsx";
 import ProfilePhotoStrip from "./ProfilePhotoStrip.jsx";
 import ProfileAtAGlance from "./ProfileAtAGlance.jsx";
 import ProfileNowHiring from "./ProfileNowHiring.jsx";
@@ -58,7 +57,6 @@ export default function PublicProfileShell({
   menuItemCount = 0,
   menuCount = 0,
   billboardPreview = [],
-  billboardHref = null,
   dealItems = [],
   displayCluster = null,
   statusBanners = null,
@@ -248,12 +246,6 @@ export default function PublicProfileShell({
           name={name}
           bannerPhotoUrl={bannerPhotoUrl}
           billboardPreview={billboardPreview}
-          isMobile={isMobile}
-        />
-
-        <ProfileBillboardFeature
-          billboardPreview={billboardPreview}
-          billboardHref={billboardHref}
           isMobile={isMobile}
         />
 

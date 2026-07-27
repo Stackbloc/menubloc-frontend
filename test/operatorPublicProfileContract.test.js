@@ -204,14 +204,14 @@ function testClaimedProfileUsesEditorialPresentation() {
   assert.match(hero, /profile-hero-contact|profile-hero-phone/);
   assert.match(hero, /profile-hero-identity-meta|profile-hero-venue/);
   assert.doesNotMatch(hero, /borderRadius: 999/);
-  // Photos before billboard before featured; hiring after featured when active.
+  // Photos before featured; hiring after featured when active.
   const photoIdx = shell.indexOf("<ProfilePhotoStrip");
-  const billboardIdx = shell.indexOf("<ProfileBillboardFeature");
   const featuredIdx = shell.indexOf("<ProfileFeaturedContent");
   const hiringIdx = shell.indexOf("<ProfileNowHiring");
-  assert.ok(photoIdx > -1 && billboardIdx > -1 && photoIdx < billboardIdx, "photos should precede billboard");
-  assert.ok(featuredIdx > billboardIdx, "featured should follow billboard");
+  assert.ok(photoIdx > -1 && featuredIdx > photoIdx, "photos should precede featured");
   assert.ok(hiringIdx > featuredIdx, "now hiring should follow featured");
+  assert.doesNotMatch(shell, /ProfileBillboardFeature/);
+  assert.doesNotMatch(shell, /billboardHref/);
   // Contact once in hero — not Business Information.
   assert.doesNotMatch(shell, /label="Website"/);
   assert.doesNotMatch(shell, /label="Phone"/);

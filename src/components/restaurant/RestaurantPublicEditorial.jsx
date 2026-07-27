@@ -29,7 +29,6 @@ export default function RestaurantPublicEditorial({
   menuItemCount = 0,
   menuCount = 0,
   billboardPreview,
-  billboardHref,
   dealItems,
   displayCluster,
   statusBanners,
@@ -73,7 +72,6 @@ export default function RestaurantPublicEditorial({
       menuItemCount={menuItemCount}
       menuCount={menuCount}
       billboardPreview={billboardPreview}
-      billboardHref={billboardHref}
       dealItems={dealItems}
       displayCluster={displayCluster}
       statusBanners={statusBanners}

@@ -134,7 +134,6 @@ import JoinDinersPage from "./pages/JoinDinersPage.jsx";
 import { isJoinLandingPath } from "./lib/joinMarketConfig.js";
 import ProfileSearchPage from "./pages/ProfileSearchPage.jsx";
 import RestaurantProfile from "./pages/RestaurantProfile.jsx";
-import RestaurantBillboard from "./pages/RestaurantBillboard.jsx";
 import RestaurantPublicPage from "./pages/RestaurantPublicPage.jsx";
 import RestaurantsLandingPage from "./pages/RestaurantsLandingPage.jsx";
 
@@ -642,7 +641,10 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/foodtrucks/:slugOrId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <FoodTruckPage />} />
         <Route path="/trucks/:slugOrId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <TruckRedirect />} />
 
-        <Route path="/restaurants/:slugOrId/billboard" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantBillboard />} />
+        <Route
+          path="/restaurants/:slugOrId/billboard"
+          element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantSingularRedirect />}
+        />
         {/* Canonical 3-segment routes — /restaurants/:state/:city/:restaurantSlug */}
         <Route path="/restaurants" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantsLandingPage />} />
         <Route path="/restaurants/:state/:city/:restaurantSlug/menu" element={crmHost ? <HostRouteRedirect to="/crm" /> : <PublicMenuPage />} />

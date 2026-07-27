@@ -1,5 +1,6 @@
 /**
  * Unclaimed brand splash: name + billboard preview line, timed handoff to public profile.
+ * Claimed billboard entrance splash is no longer mounted on restaurant profiles.
  */
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -24,15 +25,12 @@ assert.doesNotMatch(splash, /billboard.?artwork|placeholder.*image/i);
 
 const page = read("src/pages/RestaurantPublicPage.jsx");
 assert.match(page, /UnclaimedRestaurantBrandSplash/);
-assert.match(page, /ClaimedRestaurantBillboardSplash/);
+assert.doesNotMatch(page, /ClaimedRestaurantBillboardSplash/);
 assert.match(page, /UNCLAIMED_BRAND_SPLASH_MS/);
-assert.match(page, /pickClaimedBillboardSplashPost/);
 assert.match(page, /unclaimedSplashDone/);
 assert.match(page, /isOrdinaryUnclaimed/);
 assert.match(page, /ClaimProfilePanel/);
 assert.match(page, /Your Billboard Goes Here/);
 assert.doesNotMatch(page, /Your information appears here with/);
-// Real billboard creative replaces the generic placeholder when present (splash posts path).
-assert.match(page, /ClaimedRestaurantBillboardSplash/);
 
 console.log("unclaimedRestaurantBrandSplashContract: ok");

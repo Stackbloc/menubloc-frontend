@@ -1487,10 +1487,6 @@ export default function FoodTruckPage() {
     <SaveContactButton truckName={name} truckPhone={phone} size={36} dark />
   );
 
-  const billboardHref = profile?.slug || profile?.id
-    ? `/restaurants/${encodeURIComponent(String(profile.slug || profile.id))}/billboard`
-    : null;
-
   return (
     <>
       <StickyPageHeader />
@@ -1548,7 +1544,6 @@ export default function FoodTruckPage() {
           menuHref={menuHref}
           menuPreviewItems={menuPreviewItems}
           billboardPreview={billboardPreview}
-          billboardHref={billboardHref}
           showClaimInvites={profile?.public_profile_mode === "full_claimable"}
           claimHref={
             profile?.public_profile_mode === "full_claimable" ? "#claim-profile" : null

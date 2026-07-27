@@ -2,7 +2,7 @@ const CACHE_NAME = "menuply-operator-pwa-v1";
 const APP_SHELL_URLS = [
   "/",
   "/operator/tablet",
-  "/manifest.webmanifest",
+  "/operator-manifest.webmanifest",
   "/pwa-icons/operator-icon-192.png",
   "/pwa-icons/operator-icon-512.png",
   "/pwa-icons/operator-apple-touch-icon.png"
