@@ -10,19 +10,19 @@
 |------|--------|
 | Phase 1 audit | Done — [`docs/audits/2026-07-24_tablet-sales-dashboard-order-availability-regression.md`](../audits/2026-07-24_tablet-sales-dashboard-order-availability-regression.md) |
 | Phase 2 local implementation | **Done** (uncommitted) |
-| Git commit | **Not done** |
+| Git commit | **Done** — BE `4c666077`, FE `03795df` |
 | Railway backend tip | **Not updated** — still `8b150e6b…` |
 | Vercel / menuply.com | **Not updated** — live bundle `index-Bet0pO-X.js` |
 | Human smoke on production | **Not done** |
 
-**Verdict:** LOCAL COMPLETE — **NOT PRODUCTION-COMPLETE**. CPD records implementation state only.
+**Verdict:** COMMITTED locally — **NOT PRODUCTION-COMPLETE** (not pushed/deployed).
 
 ## Commits
 
 | Repo | Branch | Commit | Notes | On production tip? |
 |------|--------|--------|-------|--------------------|
-| menubloc-backend | `feature/billboard-multi-slot` (dirty) | *(uncommitted)* | Availability service + migration `0212` + route wiring | **No** |
-| menubloc-frontend-main | `main` (dirty, ahead 1) | *(uncommitted)* | Shared Pause/Close controls + public banner | **No** |
+| menubloc-backend | `feature/billboard-multi-slot` | `4c666077` | Availability service + migration `0212` + route wiring | **No** (not pushed/shipped) |
+| menubloc-frontend-main | `main` (ahead of origin) | `03795df` | Shared Pause/Close controls + public banner | **No** (not pushed/shipped) |
 
 **Do not ship** from dirty trees as-is. Isolate availability files into clean commits (prefer backend `main` worktree + FE `menubloc-frontend-main` clean `main`) before Railway/Vercel.
 
