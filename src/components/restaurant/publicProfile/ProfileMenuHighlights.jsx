@@ -1,13 +1,25 @@
 /**
- * Compact menu preview rail — teaser grouped by menu section.
- * Phase 1.5: ≤3 sections, ≤3 items/section, ≤6 items total.
+ * Compact menu preview rail — teaser grouped by representative menu sections.
+ * Prefers Appetizers / Entrees / Desserts / Drinks when present.
+ * ≤4 sections, ≤3 items/section, ≤9 items total. Always View Full Menu when href exists.
  */
 import { Link } from "react-router-dom";
 import { canShowOrderAction, PROFILE_GREEN, PROFILE_INK, PROFILE_MUTED } from "./profilePrimitives.jsx";
 
-const MAX_ITEMS = 6;
-const MAX_SECTIONS = 3;
+const MAX_ITEMS = 9;
+const MAX_SECTIONS = 4;
 const PER_SECTION = 3;
+
+function sectionPriority(section) {
+  const s = String(section || "").toLowerCase();
+  if (/signature|special|chef|popular|featured/.test(s)) return 100;
+  if (/appetizer|starter|share|small plate/.test(s)) return 90;
+  if (/entr[eé]e|main|burger|sandwich|bowl|plate|specialty/.test(s)) return 80;
+  if (/dessert|sweet/.test(s)) return 70;
+  if (/drink|beverage|cocktail|beer|wine|coffee|tea/.test(s)) return 60;
+  if (/side|extra/.test(s)) return 20;
+  return 40;
+}
 
 function selectHighlightSections(items) {
   const bySection = new Map();
@@ -27,9 +39,13 @@ function selectHighlightSections(items) {
     });
   }
 
+  const ranked = [...bySection.entries()].sort(
+    (a, b) => sectionPriority(b[0]) - sectionPriority(a[0]) || a[0].localeCompare(b[0])
+  );
+
   const sections = [];
   let total = 0;
-  for (const [section, list] of bySection) {
+  for (const [section, list] of ranked) {
     if (sections.length >= MAX_SECTIONS) break;
     const take = list.slice(0, Math.min(PER_SECTION, MAX_ITEMS - total));
     if (!take.length) continue;
@@ -58,13 +74,13 @@ export default function ProfileMenuHighlights({
       aria-label="Menu preview"
       style={{
         marginBottom: isMobile ? 16 : 0,
-        padding: compact ? (isMobile ? "14px 14px" : "16px 16px") : "22px 22px",
+        padding: compact ? (isMobile ? "14px 14px" : "18px 18px") : "22px 22px",
         borderRadius: 16,
         background: "#fff",
         border: "1px solid #e7e5e4",
         boxShadow: "0 8px 28px rgba(28, 25, 23, 0.04)",
         minWidth: 0,
-        maxWidth: isMobile ? "100%" : 280,
+        maxWidth: isMobile ? "100%" : compact ? 320 : undefined,
         width: isMobile ? "100%" : undefined,
         alignSelf: "start",
         position: isMobile ? "static" : "sticky",

@@ -32,6 +32,70 @@ export function firstNonEmpty(...vals) {
   return "";
 }
 
+/** Map DB restaurant_type enum → short public label. Empty if unknown. */
+export function humanizeRestaurantType(raw) {
+  const key = asStr(raw).trim().toLowerCase().replace(/[\s-]+/g, "_");
+  if (!key) return "";
+  const map = {
+    full_service_restaurant: "Full-service restaurant",
+    limited_service_restaurant: "Limited-service restaurant",
+    quick_service: "Quick service",
+    qsr: "Quick service",
+    fast_casual: "Fast casual",
+    cafe: "Café",
+    coffee: "Coffee",
+    bar: "Bar",
+    pub: "Pub",
+    food_truck: "Food truck",
+    foodtruck: "Food truck",
+    ghost_kitchen: "Ghost kitchen",
+    bakery: "Bakery",
+    catering: "Catering",
+  };
+  if (map[key]) return map[key];
+  return key
+    .split("_")
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
+/**
+ * When no operator-set featured dish exists, pick a real menu preview item.
+ * Prefer entrees / signatures / appetizers — never invent names.
+ */
+export function pickFeaturedFromMenuItems(items) {
+  const list = Array.isArray(items) ? items : [];
+  const scored = [];
+  for (const item of list) {
+    const name = firstNonEmpty(item?.name);
+    if (!name) continue;
+    const section = firstNonEmpty(item?.section).toLowerCase();
+    let score = 0;
+    if (/signature|special|chef|popular|featured/.test(section)) score += 40;
+    if (/entr[eé]e|main|burger|sandwich|bowl|plate/.test(section)) score += 30;
+    if (/appetizer|starter|share/.test(section)) score += 20;
+    if (/dessert|drink|beverage|beer|wine|cocktail|side/.test(section)) score -= 10;
+    scored.push({
+      score,
+      name,
+      description: firstNonEmpty(item?.description),
+      price: firstNonEmpty(item?.display_price, item?.price),
+      section: firstNonEmpty(item?.section),
+    });
+  }
+  scored.sort((a, b) => b.score - a.score);
+  const best = scored[0];
+  if (!best) return null;
+  return {
+    kind: "From the menu",
+    name: best.name,
+    description: best.description,
+    price: best.price && best.price !== "0" && best.price !== "0.00" ? best.price : "",
+    section: best.section,
+  };
+}
+
 export function ghostIconStyle(dark) {
   return {
     display: "inline-flex",

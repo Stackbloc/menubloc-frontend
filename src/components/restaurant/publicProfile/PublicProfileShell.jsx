@@ -1,8 +1,8 @@
 /**
- * Unified Menuply public profile shell — Phase 2 content hierarchy.
+ * Unified Menuply public profile shell — Phase 2 hierarchy + existing-data populate.
  * Personality first: Hero → actions → photos → billboard → Featured → FT ops
- * → Highlights + Menu → About → Business info → quiet claim.
- * Empty sections collapse. Facts shown once.
+ * → At a Glance + Highlights + Menu → About → Business info → quiet claim.
+ * Empty sections collapse. Facts shown once. Real data only.
  */
 import { useMemo } from "react";
 import ProfileHero from "./ProfileHero.jsx";
@@ -12,6 +12,7 @@ import ProfileRestaurantHighlights from "./ProfileRestaurantHighlights.jsx";
 import ProfileFeaturedContent from "./ProfileFeaturedContent.jsx";
 import ProfileBillboardFeature from "./ProfileBillboardFeature.jsx";
 import ProfilePhotoStrip from "./ProfilePhotoStrip.jsx";
+import ProfileAtAGlance from "./ProfileAtAGlance.jsx";
 import FoodTruckUpcomingStops from "./FoodTruckUpcomingStops.jsx";
 import {
   ProfileSection,
@@ -23,7 +24,6 @@ import {
   firstNonEmpty,
   PROFILE_PAGE_BG,
   PROFILE_INK,
-  PROFILE_MUTED,
   PROFILE_CONTENT_MAX,
 } from "./profilePrimitives.jsx";
 
@@ -77,6 +77,8 @@ export default function PublicProfileShell({
   shareAnalytics = null,
   saveContactControl = null,
   menuPreviewItems = [],
+  menuItemCount = 0,
+  menuCount = 0,
   billboardPreview = [],
   billboardHref = null,
   dealItems = [],
@@ -126,13 +128,54 @@ export default function PublicProfileShell({
   const hasDetails = Boolean(bizPhone || bizWebsite || bizHours.length);
 
   const deals = Array.isArray(dealItems) ? dealItems : [];
+  const cityOnly = firstNonEmpty(profile?.city, cityLine?.split(",")?.[0]);
+  const pickup = profile?.pickup === true;
+  const delivery = profile?.delivery === true;
+  const dineIn = profile?.dine_in === true;
+  const restaurantType = firstNonEmpty(profile?.restaurant_type);
+  const priceTier = firstNonEmpty(profile?.price_tier);
+  const resolvedMenuItemCount =
+    Number(menuItemCount) > 0
+      ? Number(menuItemCount)
+      : Array.isArray(menuPreviewItems)
+        ? menuPreviewItems.length
+        : 0;
+  const resolvedMenuCount =
+    Number(menuCount) > 0
+      ? Number(menuCount)
+      : Array.isArray(profile?.menus)
+        ? profile.menus.length
+        : 0;
+
+  const glance = (
+    <ProfileAtAGlance
+      cuisine={cuisine}
+      category={category}
+      city={cityOnly}
+      restaurantType={restaurantType}
+      displayCluster={isFoodTruck ? null : displayCluster}
+      hoursRows={hoursRows}
+      profile={profile}
+      pickup={pickup}
+      delivery={delivery}
+      dineIn={dineIn}
+      priceTier={priceTier}
+      menuItemCount={resolvedMenuItemCount}
+      menuCount={resolvedMenuCount}
+      isMobile={isMobile}
+    />
+  );
 
   const highlightsColumn = (
     <ProfileRestaurantHighlights
       foundedText={founded}
       landmarks={isFoodTruck ? "" : landmarks}
       cuisine={cuisine}
-      includeCuisineChip={false}
+      category={category}
+      restaurantType={restaurantType}
+      pickup={pickup}
+      delivery={delivery}
+      dineIn={dineIn}
       statusBanners={isFoodTruck ? null : statusBanners}
       statusEventPresentations={isFoodTruck ? null : statusEventPresentations}
       displayCluster={isFoodTruck ? null : displayCluster}
@@ -140,6 +183,17 @@ export default function PublicProfileShell({
       isMobile={isMobile}
     />
   );
+
+  const leftStack =
+    glance || highlightsColumn ? (
+      <div
+        data-testid="profile-identity-stack"
+        style={{ display: "grid", gap: isMobile ? 16 : 16, minWidth: 0 }}
+      >
+        {glance}
+        {highlightsColumn}
+      </div>
+    ) : null;
 
   const menuRail = hasMenuPreview ? (
     <ProfileMenuHighlights
@@ -229,6 +283,7 @@ export default function PublicProfileShell({
           featuredText={featuredText}
           todaysSpecial={todaysSpecial}
           dealItems={deals}
+          menuPreviewItems={menuPreviewItems}
           isMobile={isMobile}
         />
 
@@ -238,19 +293,19 @@ export default function PublicProfileShell({
           </ProfileSection>
         ) : null}
 
-        {highlightsColumn || menuRail ? (
+        {leftStack || menuRail ? (
           <div
             data-testid="profile-highlights-layout"
             style={{
               display: "grid",
               gridTemplateColumns:
-                isMobile || !menuRail || !highlightsColumn ? "1fr" : "minmax(0, 1fr) 260px",
+                isMobile || !menuRail || !leftStack ? "1fr" : "minmax(0, 1.15fr) minmax(280px, 340px)",
               gap: isMobile ? sectionGap : 20,
               alignItems: "start",
               marginBottom: sectionGap + 8,
             }}
           >
-            {highlightsColumn}
+            {leftStack}
             {menuRail}
           </div>
         ) : null}

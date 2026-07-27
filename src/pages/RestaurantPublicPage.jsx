@@ -302,6 +302,7 @@ function applyPublicRestaurantPayload(json) {
     menus: Array.isArray(json?.menus) ? json.menus : [],
     menu_presentation: json?.menu_presentation || null,
     // Intentionally do NOT merge top-level menu_items — use menu-preview endpoint.
+    menu_item_count: Array.isArray(json?.menu_items) ? json.menu_items.length : 0,
     deal_items: Array.isArray(json?.deal_items) ? json.deal_items : [],
     billboard_preview: Array.isArray(restaurant?.billboard_preview)
       ? restaurant.billboard_preview
@@ -447,7 +448,7 @@ export default function RestaurantPublicPage() {
       return;
     }
     let alive = true;
-    fetchRestaurantMenuPreview(restaurantId, { limit: 8 })
+    fetchRestaurantMenuPreview(restaurantId, { limit: 18 })
       .then((json) => {
         if (!alive) return;
         const items = Array.isArray(json?.preview_items)
@@ -668,6 +669,8 @@ export default function RestaurantPublicPage() {
             restaurantSlug: data?.slug || resolvedSlug,
           }}
           menuPreviewItems={menuPreview?.items || []}
+          menuItemCount={data?.menu_item_count || 0}
+          menuCount={Array.isArray(data?.menus) ? data.menus.length : 0}
           billboardPreview={billboardPreview}
           billboardHref={billboardHref}
           dealItems={dealItems}

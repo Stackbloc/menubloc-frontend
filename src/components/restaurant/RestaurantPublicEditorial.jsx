@@ -26,6 +26,8 @@ export default function RestaurantPublicEditorial({
   shareData,
   shareAnalytics,
   menuPreviewItems,
+  menuItemCount = 0,
+  menuCount = 0,
   billboardPreview,
   billboardHref,
   dealItems,
@@ -67,6 +69,8 @@ export default function RestaurantPublicEditorial({
       shareData={shareData}
       shareAnalytics={shareAnalytics}
       menuPreviewItems={menuPreviewItems}
+      menuItemCount={menuItemCount}
+      menuCount={menuCount}
       billboardPreview={billboardPreview}
       billboardHref={billboardHref}
       dealItems={dealItems}

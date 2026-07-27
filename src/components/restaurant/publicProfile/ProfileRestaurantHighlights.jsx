@@ -1,13 +1,19 @@
 /**
- * Restaurant Highlights — selling-point chips only (why visit).
- * Signature/Featured and About live in separate Phase 2 sections.
- * Collapses when no chips/presentations remain.
+ * Restaurant Highlights — selling-point chips from real attributes only.
+ * Cuisine, category, type, cluster, services, status banners, founded.
+ * Signature/Featured and About live in separate sections. Collapses when empty.
  */
 import { Link } from "react-router-dom";
 import RestaurantStatusBannerStrip from "../RestaurantStatusBannerStrip.jsx";
 import { clusterTypeLabel } from "../../../lib/clusterUrl.js";
 import { resolveStatusBanners } from "../../../lib/restaurantStatusBanners.js";
-import { firstNonEmpty, PROFILE_GREEN, PROFILE_INK, PROFILE_MUTED } from "./profilePrimitives.jsx";
+import {
+  firstNonEmpty,
+  humanizeRestaurantType,
+  PROFILE_GREEN,
+  PROFILE_INK,
+  PROFILE_MUTED,
+} from "./profilePrimitives.jsx";
 
 function AttributeChip({ children, href, testId }) {
   if (!children) return null;
@@ -47,7 +53,11 @@ export default function ProfileRestaurantHighlights({
   foundedText = "",
   landmarks = "",
   cuisine = "",
-  includeCuisineChip = false,
+  category = "",
+  restaurantType = "",
+  pickup = false,
+  delivery = false,
+  dineIn = false,
   statusBanners = null,
   statusEventPresentations = null,
   displayCluster = null,
@@ -56,13 +66,21 @@ export default function ProfileRestaurantHighlights({
 }) {
   const founded = firstNonEmpty(foundedText);
   const nearby = firstNonEmpty(landmarks);
-  const cuisineLabel = includeCuisineChip ? firstNonEmpty(cuisine) : "";
+  const cuisineLabel = firstNonEmpty(cuisine);
+  const categoryLabel = firstNonEmpty(category);
+  const typeLabel = humanizeRestaurantType(restaurantType);
   const banners = resolveStatusBanners(statusBanners);
   const presentations = Array.isArray(statusEventPresentations) ? statusEventPresentations : [];
   const hasCluster = Boolean(displayCluster?.name && displayCluster?.public_url);
 
   const chips = [];
   if (cuisineLabel) chips.push({ key: "cuisine", label: cuisineLabel, testId: "profile-chip-cuisine" });
+  if (categoryLabel && categoryLabel.toLowerCase() !== cuisineLabel.toLowerCase()) {
+    chips.push({ key: "category", label: categoryLabel, testId: "profile-chip-category" });
+  }
+  if (typeLabel && typeLabel.toLowerCase() !== categoryLabel.toLowerCase()) {
+    chips.push({ key: "type", label: typeLabel, testId: "profile-chip-type" });
+  }
   if (hasCluster) {
     chips.push({
       key: "cluster",
@@ -73,6 +91,9 @@ export default function ProfileRestaurantHighlights({
       testId: "profile-chip-cluster",
     });
   }
+  if (pickup) chips.push({ key: "pickup", label: "Pickup", testId: "profile-chip-pickup" });
+  if (delivery) chips.push({ key: "delivery", label: "Delivery", testId: "profile-chip-delivery" });
+  if (dineIn) chips.push({ key: "dine_in", label: "Dine-in", testId: "profile-chip-dine-in" });
   if (founded) chips.push({ key: "founded", label: `Established ${founded}`, testId: "profile-founded" });
   for (const banner of banners) {
     chips.push({

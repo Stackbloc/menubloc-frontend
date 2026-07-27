@@ -1299,7 +1299,7 @@ export default function FoodTruckPage() {
         const rid = restaurant?.id;
         if (rid) {
           try {
-            const preview = await fetchRestaurantMenuPreview(rid, { limit: 8 });
+            const preview = await fetchRestaurantMenuPreview(rid, { limit: 18 });
             if (cancelled) return;
             const items = Array.isArray(preview?.preview_items)
               ? preview.preview_items
