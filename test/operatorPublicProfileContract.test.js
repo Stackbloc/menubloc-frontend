@@ -142,7 +142,7 @@ function testClaimedProfileUsesEditorialPresentation() {
   const page = read("src/pages/RestaurantPublicPage.jsx");
   const editorial = read("src/components/restaurant/RestaurantPublicEditorial.jsx");
   const shell = read("src/components/restaurant/publicProfile/PublicProfileShell.jsx");
-  const preview = read("src/components/restaurant/RestaurantProfileMenuPreview.jsx");
+  const preview = read("src/components/restaurant/publicProfile/ProfileMenuHighlights.jsx");
   assert.match(page, /RestaurantPublicEditorial/);
   assert.match(page, /fetchRestaurantMenuPreview/);
   assert.match(page, /ClaimProfilePanel/);
@@ -159,17 +159,18 @@ function testClaimedProfileUsesEditorialPresentation() {
   assert.match(shell, /About/);
   assert.match(shell, /Featured dish/);
   assert.match(shell, /Announcements/);
-  assert.match(shell, /FollowRestaurantButton|ProfileHero/);
+  assert.match(shell, /ProfileMenuHighlights|ProfileBillboardFeature/);
   assert.match(shell, /restaurant-profile-view-menu|viewMenuTestId/);
   assert.doesNotMatch(shell, /Photo coming soon/);
+  assert.doesNotMatch(shell, /Bio coming soon/);
+  assert.doesNotMatch(shell, /No featured dish yet/);
   assert.doesNotMatch(shell, /common\.viewMenu/);
   assert.doesNotMatch(shell, /#1d4ed8/);
-  assert.match(preview, /Menu preview/);
-  assert.match(preview, /overflowY:\s*"auto"/);
-  assert.doesNotMatch(preview, /<Link|to=\{\{|viewMenuLabel/);
+  assert.match(preview, /Menu highlights/);
+  assert.match(preview, /View Full Menu/);
+  assert.match(preview, /Order Online/);
   assert.doesNotMatch(preview, /import .*Basket|import .*Waiter|import .*CatalogMenu/);
   assert.doesNotMatch(preview, /#1d4ed8/);
-  // Canonical 3-segment route params preserved for SEO URLs.
   assert.match(page, /canonicalRestaurantSlug/);
   assert.match(page, /\/restaurants\/:state\/:city\/:restaurantSlug/);
 }
@@ -181,6 +182,7 @@ function testSharedPublicProfileShell() {
   assert.match(shell, /profileType === "food_truck"/);
   assert.match(shell, /FoodTruckUpcomingStops/);
   assert.match(shell, /ProfilePrimaryActions/);
+  assert.match(shell, /ProfileMenuHighlights/);
   assert.match(actions, /profile-action-view-menu/);
   assert.match(actions, /canShowOrderAction/);
   assert.match(primitives, /display_only/);

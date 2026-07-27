@@ -1,7 +1,6 @@
 /**
  * Food truck public profile — shared shell + food-truck modules.
- * Menu is one icon away; story sections live on the page.
- * Current Location / Upcoming / Hours preserved via PublicProfileShell.
+ * Menu is one icon / Menu Highlights away; story sections live on the page.
  */
 import PublicProfileShell from "./publicProfile/PublicProfileShell.jsx";
 
@@ -30,6 +29,9 @@ export default function FoodTruckPublicEditorial({
   shareAnalytics,
   saveContactControl = null,
   menuHref = null,
+  menuPreviewItems = [],
+  billboardPreview = [],
+  billboardHref = null,
   isMobile,
 }) {
   // Keep contract markers: Current Location:, food-truck-current-location,
@@ -62,6 +64,9 @@ export default function FoodTruckPublicEditorial({
       shareAnalytics={shareAnalytics}
       saveContactControl={saveContactControl}
       menuHref={menuHref}
+      menuPreviewItems={menuPreviewItems}
+      billboardPreview={billboardPreview}
+      billboardHref={billboardHref}
       isMobile={isMobile}
     />
   );

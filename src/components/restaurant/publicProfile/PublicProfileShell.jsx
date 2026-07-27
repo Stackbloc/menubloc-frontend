@@ -1,15 +1,17 @@
 /**
- * Unified Menuply public profile shell for restaurants and food trucks.
+ * Unified Menuply public profile shell — experience-first.
  * Restaurant layout is the master template; food trucks add location/stops modules.
+ * Empty sections collapse. Profile introduces the business; full menu is separate.
  */
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
-import RestaurantBillboardStrip from "../../RestaurantBillboardStrip.jsx";
 import RestaurantStatusBannerStrip from "../RestaurantStatusBannerStrip.jsx";
-import RestaurantProfileMenuPreview from "../RestaurantProfileMenuPreview.jsx";
 import { clusterTypeLabel } from "../../../lib/clusterUrl.js";
 import ProfileHero from "./ProfileHero.jsx";
 import ProfilePrimaryActions from "./ProfilePrimaryActions.jsx";
+import ProfileMenuHighlights from "./ProfileMenuHighlights.jsx";
+import ProfileBillboardFeature from "./ProfileBillboardFeature.jsx";
+import ProfilePhotoStrip from "./ProfilePhotoStrip.jsx";
 import FoodTruckUpcomingStops from "./FoodTruckUpcomingStops.jsx";
 import {
   ProfileSection,
@@ -24,7 +26,6 @@ import {
   PROFILE_MUTED,
   PROFILE_GREEN,
   PROFILE_CONTENT_MAX,
-  FOOD_TRUCK_CONTENT_MAX,
 } from "./profilePrimitives.jsx";
 
 function DishCard({ title, name, description, price }) {
@@ -132,7 +133,8 @@ export default function PublicProfileShell({
   isMobile = false,
 }) {
   const isFoodTruck = profileType === "food_truck";
-  const contentMax = isFoodTruck ? FOOD_TRUCK_CONTENT_MAX : PROFILE_CONTENT_MAX;
+  // Same design language / width for restaurants and food trucks.
+  const contentMax = PROFILE_CONTENT_MAX;
   const metaBits = [cuisine, category].filter(Boolean);
   const hoursRows = useMemo(() => formatHoursRows(operatingHours), [operatingHours]);
   const stops = useMemo(() => (isFoodTruck ? normalizeScheduleStops(profile) : []), [isFoodTruck, profile]);
@@ -144,8 +146,10 @@ export default function PublicProfileShell({
   const hasStatus =
     (Array.isArray(statusBanners) && statusBanners.length > 0) ||
     (Array.isArray(statusEventPresentations) && statusEventPresentations.length > 0);
-  const hasMenuPreview = !isFoodTruck && Array.isArray(menuPreviewItems) && menuPreviewItems.length > 0;
-  const hasDetails = Boolean(website || phone || cuisine || category || (!isFoodTruck && hoursRows.length));
+  const hasMenuHighlights = Array.isArray(menuPreviewItems) && menuPreviewItems.length > 0;
+  const hasDetails = Boolean(
+    website || phone || cuisine || category || hoursRows.length || (streetAddr && !isFoodTruck)
+  );
 
   const bio = firstNonEmpty(bioText);
   const about = firstNonEmpty(aboutText);
@@ -157,7 +161,9 @@ export default function PublicProfileShell({
           ? about
           : ""
         : about;
+  const storyText = isFoodTruck ? bio || aboutDistinct : about;
   const founded = firstNonEmpty(foundedText, profile?.founded, profile?.founded_year, profile?.year_founded);
+  const featuredName = featuredItem?.name || featuredText || "";
 
   const actionDirectionsUrl = isFoodTruck
     ? location?.directionsUrl || directionsUrl || ""
@@ -168,11 +174,11 @@ export default function PublicProfileShell({
       data-testid={isFoodTruck ? "food-truck-public-editorial" : "restaurant-public-editorial"}
       data-profile-type={profileType}
       style={{
-        minHeight: isFoodTruck ? undefined : "100vh",
+        minHeight: "100vh",
         background: PROFILE_PAGE_BG,
         color: PROFILE_INK,
         fontFamily: "var(--font-ui, ui-sans-serif, system-ui, sans-serif)",
-        paddingBottom: isFoodTruck ? undefined : 88,
+        paddingBottom: 88,
       }}
     >
       <ProfileHero
@@ -223,187 +229,164 @@ export default function PublicProfileShell({
           isMobile={isMobile}
         />
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns:
-              isMobile || !hasMenuPreview ? "1fr" : "minmax(0, 1.55fr) minmax(240px, 0.85fr)",
-            gap: 8,
-            alignItems: "start",
-          }}
-        >
-          <div style={{ minWidth: 0, paddingRight: isMobile || !hasMenuPreview ? 0 : 8 }}>
-            {isFoodTruck ? (
-              <>
-                <ProfileSection title="Hours of operation" empty={!hoursRows.length}>
-                  {hoursRows.length ? (
-                    <HoursBlock hoursRows={hoursRows} testId="food-truck-hours" />
-                  ) : (
-                    <span data-testid="food-truck-hours">Hours not posted yet.</span>
-                  )}
-                </ProfileSection>
+        {/* Signature billboard — early in the reading order */}
+        <ProfileBillboardFeature
+          billboardPreview={billboardPreview}
+          billboardHref={billboardHref}
+          isMobile={isMobile}
+        />
 
-                <ProfileSection title="Bio" empty={!bio}>
-                  {bio || "Bio coming soon."}
-                </ProfileSection>
+        {/* Photos from real assets only */}
+        <ProfilePhotoStrip
+          name={name}
+          bannerPhotoUrl={bannerPhotoUrl}
+          billboardPreview={billboardPreview}
+          isMobile={isMobile}
+        />
 
-                {aboutDistinct ? <ProfileSection title="About us">{aboutDistinct}</ProfileSection> : null}
-                {founded ? <ProfileSection title="Founded">{founded}</ProfileSection> : null}
+        {/* Food-truck energy modules — only when real data exists */}
+        {isFoodTruck && featuredItem?.name ? (
+          <ProfileSection title="Featured dish">
+            <DishCard
+              name={featuredItem.name}
+              description={featuredItem.description}
+              price={featuredItem.price}
+            />
+          </ProfileSection>
+        ) : null}
 
-                <ProfileSection title="Featured dish" empty={!featuredItem?.name}>
-                  {featuredItem?.name ? (
-                    <DishCard
-                      name={featuredItem.name}
-                      description={featuredItem.description}
-                      price={featuredItem.price}
-                    />
-                  ) : (
-                    "No featured dish yet."
-                  )}
-                </ProfileSection>
+        {isFoodTruck && todaysSpecial?.name ? (
+          <ProfileSection title="Today's special">
+            <DishCard
+              name={todaysSpecial.name}
+              description={todaysSpecial.description}
+              price={todaysSpecial.price}
+            />
+          </ProfileSection>
+        ) : null}
 
-                <ProfileSection title="Today's special" empty={!todaysSpecial?.name}>
-                  {todaysSpecial?.name ? (
-                    <DishCard
-                      name={todaysSpecial.name}
-                      description={todaysSpecial.description}
-                      price={todaysSpecial.price}
-                    />
-                  ) : (
-                    "No special posted today."
-                  )}
-                </ProfileSection>
+        {isFoodTruck && stops.length ? (
+          <ProfileSection title="Upcoming stops">
+            <FoodTruckUpcomingStops stops={stops} />
+          </ProfileSection>
+        ) : null}
 
-                <ProfileSection title="Upcoming">
-                  <FoodTruckUpcomingStops stops={stops} />
-                </ProfileSection>
-              </>
-            ) : (
-              <>
-                <ProfileSection title="About">{about || null}</ProfileSection>
-                <ProfileSection title="Featured dish">{featuredText || null}</ProfileSection>
+        {isFoodTruck && hoursRows.length ? (
+          <ProfileSection title="Hours">
+            <HoursBlock hoursRows={hoursRows} testId="food-truck-hours" />
+          </ProfileSection>
+        ) : null}
 
-                {hasDetails ? (
-                  <ProfileSection title="Restaurant details">
-                    <div style={{ borderTop: "1px solid #e7e5e4" }}>
-                      <DetailLine label="Website">
-                        {website ? <QuietLink href={website}>{websiteRaw || website} ↗</QuietLink> : null}
-                      </DetailLine>
-                      <DetailLine label="Phone">
-                        {phone ? (
-                          <a
-                            href={`tel:${String(phone).replace(/\s+/g, "")}`}
-                            style={{ color: "inherit", textDecoration: "none" }}
-                          >
-                            {phone}
-                          </a>
-                        ) : null}
-                      </DetailLine>
-                      <DetailLine label="Cuisine">{cuisine || null}</DetailLine>
-                      <DetailLine label="Category">{category || null}</DetailLine>
-                      {hoursRows.length ? (
-                        <DetailLine label="Hours">
-                          <HoursBlock hoursRows={hoursRows} testId="restaurant-hours" />
-                        </DetailLine>
-                      ) : null}
+        {/* Menu Highlights — profile introduces; full menu is separate */}
+        {hasMenuHighlights ? (
+          <ProfileMenuHighlights
+            items={menuPreviewItems}
+            menuHref={menuHref}
+            profile={profile}
+            isMobile={isMobile}
+          />
+        ) : null}
+
+        {/* About / story — collapse when empty */}
+        {storyText ? (
+          <ProfileSection title={isFoodTruck ? "About" : "About"}>{storyText}</ProfileSection>
+        ) : null}
+
+        {!isFoodTruck && featuredName ? (
+          <ProfileSection title="Featured dish">{featuredName}</ProfileSection>
+        ) : null}
+
+        {founded ? <ProfileSection title="Founded">{founded}</ProfileSection> : null}
+
+        {Array.isArray(dealItems) && dealItems.length ? (
+          <ProfileSection title="Deals & updates">
+            <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
+              {dealItems.map((deal, idx) => (
+                <li key={deal.id ?? `deal-${idx}`} style={{ padding: "6px 0" }}>
+                  <span style={{ fontWeight: 600 }}>{deal.name}</span>
+                  {deal.price ? (
+                    <span style={{ marginLeft: 8, color: PROFILE_MUTED, fontSize: 13 }}>
+                      {deal.price}
+                    </span>
+                  ) : null}
+                  {deal.description ? (
+                    <div style={{ fontSize: 13, color: PROFILE_MUTED, marginTop: 2 }}>
+                      {deal.description}
                     </div>
-                  </ProfileSection>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          </ProfileSection>
+        ) : null}
+
+        {hasStatus ? (
+          <ProfileSection title="Announcements">
+            <RestaurantStatusBannerStrip
+              variant="aside"
+              statusBanners={statusBanners}
+              statusEventPresentations={statusEventPresentations}
+            />
+          </ProfileSection>
+        ) : null}
+
+        {landmarks ? <ProfileSection title="Nearby">{landmarks}</ProfileSection> : null}
+
+        {displayCluster?.name && displayCluster?.public_url ? (
+          <ProfileSection title="Cluster">
+            <Link
+              to={displayCluster.public_url}
+              style={{ color: PROFILE_GREEN, textDecoration: "none", fontWeight: 600 }}
+            >
+              {displayCluster.name}
+              {displayCluster.cluster_type
+                ? ` · ${clusterTypeLabel(displayCluster.cluster_type)}`
+                : ""}
+            </Link>
+          </ProfileSection>
+        ) : null}
+
+        {hasDetails ? (
+          <ProfileSection title="Business information">
+            <div style={{ borderTop: "1px solid #e7e5e4" }}>
+              {!isFoodTruck && streetAddr ? (
+                <DetailLine label="Address">
+                  {directionsUrl ? (
+                    <QuietLink href={directionsUrl}>
+                      {streetAddr}
+                      {cityLine ? ` · ${cityLine}` : ""}
+                    </QuietLink>
+                  ) : (
+                    <>
+                      {streetAddr}
+                      {cityLine ? ` · ${cityLine}` : ""}
+                    </>
+                  )}
+                </DetailLine>
+              ) : null}
+              <DetailLine label="Website">
+                {website ? <QuietLink href={website}>{websiteRaw || website} ↗</QuietLink> : null}
+              </DetailLine>
+              <DetailLine label="Phone">
+                {phone ? (
+                  <a
+                    href={`tel:${String(phone).replace(/\s+/g, "")}`}
+                    style={{ color: "inherit", textDecoration: "none" }}
+                  >
+                    {phone}
+                  </a>
                 ) : null}
-
-                <ProfileSection title="Nearby">{landmarks || null}</ProfileSection>
-
-                {displayCluster?.name && displayCluster?.public_url ? (
-                  <ProfileSection title="Cluster">
-                    <Link
-                      to={displayCluster.public_url}
-                      style={{ color: PROFILE_GREEN, textDecoration: "none", fontWeight: 600 }}
-                    >
-                      {displayCluster.name}
-                      {displayCluster.cluster_type
-                        ? ` · ${clusterTypeLabel(displayCluster.cluster_type)}`
-                        : ""}
-                    </Link>
-                  </ProfileSection>
-                ) : null}
-
-                {Array.isArray(dealItems) && dealItems.length ? (
-                  <ProfileSection title="Active deals">
-                    <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
-                      {dealItems.map((deal, idx) => (
-                        <li key={deal.id ?? `deal-${idx}`} style={{ padding: "6px 0" }}>
-                          <span style={{ fontWeight: 600 }}>{deal.name}</span>
-                          {deal.price ? (
-                            <span style={{ marginLeft: 8, color: PROFILE_MUTED, fontSize: 13 }}>
-                              {deal.price}
-                            </span>
-                          ) : null}
-                          {deal.description ? (
-                            <div style={{ fontSize: 13, color: PROFILE_MUTED, marginTop: 2 }}>
-                              {deal.description}
-                            </div>
-                          ) : null}
-                        </li>
-                      ))}
-                    </ul>
-                  </ProfileSection>
-                ) : null}
-
-                {Array.isArray(billboardPreview) && billboardPreview.length ? (
-                  <ProfileSection title="Billboard">
-                    <RestaurantBillboardStrip
-                      posts={billboardPreview}
-                      isDark={false}
-                      isMobile={isMobile}
-                      muted={PROFILE_MUTED}
-                    />
-                    {billboardHref ? (
-                      <div style={{ marginTop: 12 }}>
-                        <Link
-                          to={billboardHref}
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            minHeight: 36,
-                            padding: "0 12px",
-                            borderRadius: 8,
-                            border: "1px solid #d6d3d1",
-                            background: "#fff",
-                            color: PROFILE_INK,
-                            textDecoration: "none",
-                            fontSize: 13,
-                            fontWeight: 700,
-                          }}
-                        >
-                          View full billboard
-                        </Link>
-                      </div>
-                    ) : null}
-                  </ProfileSection>
-                ) : null}
-
-                {hasStatus ? (
-                  <ProfileSection title="Announcements">
-                    <RestaurantStatusBannerStrip
-                      variant="aside"
-                      statusBanners={statusBanners}
-                      statusEventPresentations={statusEventPresentations}
-                    />
-                  </ProfileSection>
-                ) : null}
-
-                {isMobile && hasMenuPreview ? (
-                  <div style={{ marginTop: 8, marginBottom: 24 }}>
-                    <RestaurantProfileMenuPreview items={menuPreviewItems} isMobile />
-                  </div>
-                ) : null}
-              </>
-            )}
-          </div>
-
-          {!isMobile && hasMenuPreview ? (
-            <RestaurantProfileMenuPreview items={menuPreviewItems} isMobile={false} />
-          ) : null}
-        </div>
+              </DetailLine>
+              <DetailLine label="Cuisine">{cuisine || null}</DetailLine>
+              <DetailLine label="Category">{category || null}</DetailLine>
+              {hoursRows.length && !isFoodTruck ? (
+                <DetailLine label="Hours">
+                  <HoursBlock hoursRows={hoursRows} testId="restaurant-hours" />
+                </DetailLine>
+              ) : null}
+            </div>
+          </ProfileSection>
+        ) : null}
       </div>
     </div>
   );

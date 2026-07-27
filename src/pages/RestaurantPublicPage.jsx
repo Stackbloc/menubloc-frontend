@@ -450,7 +450,7 @@ export default function RestaurantPublicPage() {
       return;
     }
     let alive = true;
-    fetchRestaurantMenuPreview(restaurantId, { limit: 50 })
+    fetchRestaurantMenuPreview(restaurantId, { limit: 8 })
       .then((json) => {
         if (!alive) return;
         const items = Array.isArray(json?.preview_items)

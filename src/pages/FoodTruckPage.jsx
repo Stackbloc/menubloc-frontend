@@ -23,7 +23,7 @@ import MenuItemInsightsPanel from "../components/MenuItemInsightsPanel.jsx";
 import ShareIcon from "../components/share/ShareIcon.jsx";
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import FoodTruckPublicEditorial from "../components/restaurant/FoodTruckPublicEditorial.jsx";
-import { toConsumerErrorMessage } from "../lib/api.js";
+import { toConsumerErrorMessage, fetchRestaurantMenuPreview } from "../lib/api.js";
 import BottomNav from "../components/BottomNav.jsx";
 import { getDisplayMenuItemName } from "../utils/getDisplayMenuItemName.js";
 import { buildRestaurantStatusLightProps } from "../lib/restaurantStatusLight.js";
@@ -1242,6 +1242,7 @@ export default function FoodTruckPage() {
     data: null,
     error: null,
   });
+  const [menuPreviewItems, setMenuPreviewItems] = useState([]);
 
   useEffect(() => {
     saveTheme(theme);
@@ -1252,6 +1253,7 @@ export default function FoodTruckPage() {
     let cancelled = false;
 
     setProfileState({ status: "loading", data: null, error: null });
+    setMenuPreviewItems([]);
 
     (async () => {
       try {
@@ -1272,19 +1274,42 @@ export default function FoodTruckPage() {
           return;
         }
 
+        const restaurant = {
+          ...(json?.restaurant || json || {}),
+          deal_items: Array.isArray(json?.deal_items) ? json.deal_items : [],
+          billboard_preview: Array.isArray(json?.restaurant?.billboard_preview)
+            ? json.restaurant.billboard_preview
+            : Array.isArray(json?.billboard_preview)
+              ? json.billboard_preview
+              : [],
+          operating_hours: Array.isArray(json?.restaurant?.operating_hours)
+            ? json.restaurant.operating_hours
+            : Array.isArray(json?.operating_hours)
+              ? json.operating_hours
+              : [],
+        };
+
         setProfileState({
           status: "ok",
-          data: {
-            ...(json?.restaurant || json || {}),
-            deal_items: Array.isArray(json?.deal_items) ? json.deal_items : [],
-            operating_hours: Array.isArray(json?.restaurant?.operating_hours)
-              ? json.restaurant.operating_hours
-              : Array.isArray(json?.operating_hours)
-                ? json.operating_hours
-                : [],
-          },
+          data: restaurant,
           error: null,
         });
+
+        const rid = restaurant?.id;
+        if (rid) {
+          try {
+            const preview = await fetchRestaurantMenuPreview(rid, { limit: 8 });
+            if (cancelled) return;
+            const items = Array.isArray(preview?.preview_items)
+              ? preview.preview_items
+              : Array.isArray(preview?.items)
+                ? preview.items
+                : [];
+            setMenuPreviewItems(preview?.ok && items.length ? items : []);
+          } catch {
+            if (!cancelled) setMenuPreviewItems([]);
+          }
+        }
       } catch (e) {
         if (!cancelled) {
           setProfileState({
@@ -1452,8 +1477,12 @@ export default function FoodTruckPage() {
     }) || (profile?.id ? `/public/restaurants/${profile.id}/menu` : null);
 
   const saveContactControl = (
-    <SaveContactButton truckName={name} truckPhone={phone} size={36} dark={Boolean(bannerPhotoUrl)} />
+    <SaveContactButton truckName={name} truckPhone={phone} size={36} dark />
   );
+
+  const billboardHref = profile?.slug || profile?.id
+    ? `/restaurants/${encodeURIComponent(String(profile.slug || profile.id))}/billboard`
+    : null;
 
   return (
     <>
@@ -1466,7 +1495,7 @@ export default function FoodTruckPage() {
           fontFamily: "var(--font-ui, ui-sans-serif, system-ui, sans-serif)",
         }}
       >
-        <div style={{ maxWidth: 860, margin: "12px auto 0", padding: "0 16px" }}>
+        <div style={{ maxWidth: 1040, margin: "12px auto 0", padding: "0 16px" }}>
           {profile?.public_ordering_mode === "display_only" ? (
             <DisplayOnlyOrderNotice isDark={false} c={light} />
           ) : null}
@@ -1518,6 +1547,9 @@ export default function FoodTruckPage() {
           }}
           saveContactControl={saveContactControl}
           menuHref={menuHref}
+          menuPreviewItems={menuPreviewItems}
+          billboardPreview={billboardPreview}
+          billboardHref={billboardHref}
           isMobile={isMobile}
         />
       </div>

@@ -1,5 +1,6 @@
 /**
  * Shared public-profile hero: cover/banner + logo + name + status + icon rail.
+ * Missing cover → tasteful Menuply gradient placeholder (not fake food photography).
  */
 import RestaurantStatusLight from "../../RestaurantStatusLight.jsx";
 import FollowRestaurantButton from "../../FollowRestaurantButton.jsx";
@@ -11,8 +12,6 @@ import {
   MENU_ROW_HEADER_ICON_GAP,
   MENU_ROW_ICON_SIZE,
   PROFILE_CONTENT_MAX,
-  FOOD_TRUCK_CONTENT_MAX,
-  PROFILE_GREEN,
 } from "./profilePrimitives.jsx";
 
 export default function ProfileHero({
@@ -40,11 +39,13 @@ export default function ProfileHero({
   isMobile = false,
   contentMax,
 }) {
-  const maxW = contentMax ?? (profileType === "food_truck" ? FOOD_TRUCK_CONTENT_MAX : PROFILE_CONTENT_MAX);
-  const onPhoto = Boolean(bannerPhotoUrl);
-  const ink = onPhoto ? "#fafaf9" : "#1c1917";
-  const muted = onPhoto ? "rgba(250,250,249,0.88)" : "#57534e";
-  const linkColor = onPhoto ? "rgba(250,250,249,0.92)" : PROFILE_GREEN;
+  const maxW = contentMax ?? PROFILE_CONTENT_MAX;
+  const hasPhoto = Boolean(bannerPhotoUrl);
+  // Always use light-on-dark identity over photo or gradient placeholder.
+  const onPhoto = true;
+  const ink = "#fafaf9";
+  const muted = "rgba(250,250,249,0.88)";
+  const linkColor = "rgba(250,250,249,0.92)";
 
   const identity = (
     <div style={{ display: "flex", alignItems: "flex-start", gap: 14, minWidth: 0 }}>
@@ -111,7 +112,16 @@ export default function ProfileHero({
         </div>
 
         {businessTypeLabel ? (
-          <div style={{ marginTop: 6, fontSize: 12, fontWeight: 700, letterSpacing: 0.4, color: muted, textTransform: "uppercase" }}>
+          <div
+            style={{
+              marginTop: 6,
+              fontSize: 12,
+              fontWeight: 700,
+              letterSpacing: 0.4,
+              color: muted,
+              textTransform: "uppercase",
+            }}
+          >
             {businessTypeLabel}
           </div>
         ) : null}
@@ -153,8 +163,8 @@ export default function ProfileHero({
                   fontWeight: 600,
                   padding: "4px 10px",
                   borderRadius: 999,
-                  border: onPhoto ? "1px solid rgba(250,250,249,0.35)" : "1px solid #d6d3d1",
-                  background: onPhoto ? "rgba(28,25,23,0.25)" : "#fff",
+                  border: "1px solid rgba(250,250,249,0.35)",
+                  background: "rgba(28,25,23,0.25)",
                   color: ink,
                 }}
               >
@@ -167,7 +177,9 @@ export default function ProfileHero({
         {profileType === "food_truck" && foodTruckLocation ? (
           <>
             {metaBits[0] ? (
-              <div style={{ marginTop: 6, fontSize: 13, fontWeight: 600, color: muted }}>{metaBits[0]}</div>
+              <div style={{ marginTop: 6, fontSize: 13, fontWeight: 600, color: muted }}>
+                {metaBits[0]}
+              </div>
             ) : null}
             <FoodTruckCurrentLocation
               locationText={foodTruckLocation.text || ""}
@@ -216,54 +228,54 @@ export default function ProfileHero({
     </div>
   );
 
-  const inner = (
-    <div style={{ maxWidth: maxW, margin: "0 auto", width: "100%", boxSizing: "border-box" }}>
-      {identity}
-    </div>
-  );
+  const overlayPad = {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    padding: isMobile ? "20px 16px 18px" : "28px 28px 24px",
+  };
 
-  if (bannerPhotoUrl) {
-    return (
-      <header
-        aria-label={`${name} banner`}
-        style={{
-          position: "relative",
-          minHeight: isMobile ? 180 : 240,
-          backgroundColor: "#e7e5e4",
-          backgroundImage: `linear-gradient(to top, rgba(28,25,23,0.72) 0%, rgba(28,25,23,0.2) 45%, transparent 70%), url(${JSON.stringify(
-            String(bannerPhotoUrl)
-          )})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
-      >
-        <div
-          style={{
-            position: "absolute",
-            left: 0,
-            right: 0,
-            bottom: 0,
-            padding: isMobile ? "20px 16px 18px" : "28px 28px 24px",
-          }}
-        >
-          {inner}
-        </div>
-      </header>
-    );
-  }
+  const headerStyle = hasPhoto
+    ? {
+        position: "relative",
+        minHeight: isMobile ? 200 : 280,
+        backgroundColor: "#e7e5e4",
+        backgroundImage: `linear-gradient(to top, rgba(28,25,23,0.72) 0%, rgba(28,25,23,0.2) 45%, transparent 70%), url(${JSON.stringify(
+          String(bannerPhotoUrl)
+        )})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }
+    : {
+        position: "relative",
+        minHeight: isMobile ? 168 : 220,
+        background:
+          "linear-gradient(145deg, #14532d 0%, #166534 28%, #78716c 72%, #a8a29e 100%)",
+      };
 
   return (
     <header
-      aria-label={name}
-      style={{
-        maxWidth: maxW,
-        margin: "0 auto",
-        padding: isMobile ? "24px 16px 8px" : "32px 28px 8px",
-        width: "100%",
-        boxSizing: "border-box",
-      }}
+      aria-label={hasPhoto ? `${name} banner` : name}
+      data-testid={hasPhoto ? "profile-hero-photo" : "profile-hero-placeholder"}
+      style={headerStyle}
     >
-      {identity}
+      {!hasPhoto ? (
+        <div
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            inset: 0,
+            background:
+              "radial-gradient(ellipse at 20% 30%, rgba(250,250,249,0.18), transparent 55%), radial-gradient(ellipse at 80% 70%, rgba(28,25,23,0.2), transparent 50%)",
+          }}
+        />
+      ) : null}
+      <div style={overlayPad}>
+        <div style={{ maxWidth: maxW, margin: "0 auto", width: "100%", boxSizing: "border-box" }}>
+          {identity}
+        </div>
+      </div>
     </header>
   );
 }
