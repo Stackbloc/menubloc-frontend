@@ -169,19 +169,29 @@ function testClaimedProfileUsesEditorialPresentation() {
   assert.doesNotMatch(shell, /label="Address"/);
   assert.match(highlights, /Restaurant highlights/);
   assert.match(highlights, /About Us/);
-  assert.match(highlights, /Featured Dish/);
+  assert.match(highlights, /Signature Dish/);
   assert.match(highlights, /profile-now-hiring|Now Hiring/);
   assert.match(highlights, /Announcements/);
+  assert.match(highlights, /profile-highlight-chips/);
   assert.match(preview, /Menu preview/);
   assert.match(preview, /View Full Menu/);
   assert.match(preview, /Order Online/);
-  assert.match(preview, /MAX_ITEMS = 5/);
+  assert.match(preview, /MAX_ITEMS = 6/);
+  assert.match(preview, /MAX_SECTIONS = 3/);
   assert.doesNotMatch(preview, /import .*Basket|import .*Waiter|import .*CatalogMenu/);
   assert.doesNotMatch(preview, /#1d4ed8/);
   assert.match(hero, /profile-hero-maps-address/);
   assert.match(hero, /Open in Google Maps|Open \$\{name\} in Google Maps/);
+  // Photos before billboard in shell reading order.
+  const photoIdx = shell.indexOf("<ProfilePhotoStrip");
+  const billboardIdx = shell.indexOf("<ProfileBillboardFeature");
+  assert.ok(photoIdx > -1 && billboardIdx > -1 && photoIdx < billboardIdx, "photos should precede billboard");
+  assert.doesNotMatch(shell, /label="Website"/);
+  assert.doesNotMatch(shell, /label="Phone"/);
+  assert.doesNotMatch(shell, /label="Address"/);
   assert.match(page, /canonicalRestaurantSlug/);
   assert.match(page, /\/restaurants\/:state\/:city\/:restaurantSlug/);
+  assert.match(page, /firstBillboardImage/);
 }
 
 function testSharedPublicProfileShell() {

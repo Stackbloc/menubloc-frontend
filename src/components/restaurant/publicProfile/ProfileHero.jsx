@@ -203,21 +203,23 @@ export default function ProfileHero({
           </div>
         ) : null}
 
-        {profileType === "food_truck" && foodTruckLocation ? (
+        {profileType === "food_truck" ? (
           <>
             {metaBits[0] ? (
               <div style={{ marginTop: 6, fontSize: 13, fontWeight: 600, color: muted }}>
                 {metaBits[0]}
               </div>
             ) : null}
-            <FoodTruckCurrentLocation
-              locationText={foodTruckLocation.text || ""}
-              directionsUrl={foodTruckLocation.directionsUrl || ""}
-              hasPostedLocation={Boolean(foodTruckLocation.hasPostedLocation)}
-              statusLabel={foodTruckLocation.statusLabel || ""}
-              name={name}
-              onPhoto={onPhoto}
-            />
+            {foodTruckLocation?.hasPostedLocation ? (
+              <FoodTruckCurrentLocation
+                locationText={foodTruckLocation.text || ""}
+                directionsUrl={foodTruckLocation.directionsUrl || ""}
+                hasPostedLocation
+                statusLabel={foodTruckLocation.statusLabel || ""}
+                name={name}
+                onPhoto={onPhoto}
+              />
+            ) : null}
             {(phone || website) ? (
               <div
                 data-testid="food-truck-contact"
@@ -268,7 +270,7 @@ export default function ProfileHero({
   const headerStyle = hasPhoto
     ? {
         position: "relative",
-        minHeight: isMobile ? 200 : 280,
+        minHeight: isMobile ? 220 : 320,
         backgroundColor: "#e7e5e4",
         backgroundImage: `linear-gradient(to top, rgba(28,25,23,0.72) 0%, rgba(28,25,23,0.2) 45%, transparent 70%), url(${JSON.stringify(
           String(bannerPhotoUrl)

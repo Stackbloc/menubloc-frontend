@@ -1,12 +1,16 @@
 /**
  * Horizontal photo strip from real billboard / hero assets only.
- * Collapses when no images exist — no empty placeholders.
+ * Collapses when no remaining images — no empty placeholders.
+ * Phase 1.5: larger tiles; exclude hero URL to avoid triple-repeat.
  */
-import { PROFILE_MUTED } from "./profilePrimitives.jsx";
+import { PROFILE_INK } from "./profilePrimitives.jsx";
 
-function collectPhotoUrls({ bannerPhotoUrl, billboardPreview, logoUrl }) {
+function collectPhotoUrls({ bannerPhotoUrl, billboardPreview, excludeHeroUrl }) {
   const urls = [];
   const seen = new Set();
+  const exclude = String(excludeHeroUrl || bannerPhotoUrl || "").trim();
+  if (exclude) seen.add(exclude);
+
   const push = (raw, kind) => {
     const url = String(raw || "").trim();
     if (!url || seen.has(url)) return;
@@ -14,15 +18,14 @@ function collectPhotoUrls({ bannerPhotoUrl, billboardPreview, logoUrl }) {
     urls.push({ url, kind });
   };
 
-  push(bannerPhotoUrl, "cover");
+  // Prefer additional billboard images; then cover if it was not the hero.
   if (Array.isArray(billboardPreview)) {
     for (const post of billboardPreview) {
       push(post?.image_url || post?.photo_url, "billboard");
     }
   }
-  // Logo last — only if we have nothing else, skip (logo already in hero).
-  if (!urls.length) push(null, "none");
-  return urls.filter((u) => u.url);
+  push(bannerPhotoUrl, "cover");
+  return urls;
 }
 
 export default function ProfilePhotoStrip({
@@ -31,24 +34,30 @@ export default function ProfilePhotoStrip({
   billboardPreview = [],
   isMobile = false,
 }) {
-  const photos = collectPhotoUrls({ bannerPhotoUrl, billboardPreview });
-  // Need at least 2 distinct photos to justify a gallery strip (hero already shows one).
-  if (photos.length < 2) return null;
+  const photos = collectPhotoUrls({
+    bannerPhotoUrl,
+    billboardPreview,
+    excludeHeroUrl: bannerPhotoUrl,
+  });
+  // Phase 1.5: show strip when ≥1 remaining image (hero already shows one).
+  if (!photos.length) return null;
+
+  const tileW = isMobile ? 168 : 260;
+  const tileH = isMobile ? 126 : 180;
 
   return (
     <section
       data-testid="profile-photo-strip"
       aria-label={`${name} photos`}
-      style={{ marginBottom: 28 }}
+      style={{ marginBottom: isMobile ? 20 : 24 }}
     >
       <div
         style={{
-          fontSize: 12,
-          fontWeight: 700,
-          letterSpacing: 0.7,
-          textTransform: "uppercase",
-          color: PROFILE_MUTED,
-          marginBottom: 10,
+          fontSize: 13,
+          fontWeight: 800,
+          letterSpacing: 0.4,
+          color: PROFILE_INK,
+          marginBottom: 12,
         }}
       >
         Photos
@@ -56,7 +65,7 @@ export default function ProfilePhotoStrip({
       <div
         style={{
           display: "flex",
-          gap: 10,
+          gap: 12,
           overflowX: "auto",
           WebkitOverflowScrolling: "touch",
           paddingBottom: 4,
@@ -69,16 +78,17 @@ export default function ProfilePhotoStrip({
             src={photo.url}
             alt={`${name} ${photo.kind === "billboard" ? "update" : "photo"} ${idx + 1}`}
             loading="lazy"
-            width={isMobile ? 160 : 200}
-            height={isMobile ? 120 : 140}
+            width={tileW}
+            height={tileH}
             style={{
-              width: isMobile ? 160 : 200,
-              height: isMobile ? 120 : 140,
+              width: tileW,
+              height: tileH,
               objectFit: "cover",
-              borderRadius: 14,
+              borderRadius: 16,
               flexShrink: 0,
               scrollSnapAlign: "start",
               background: "#e7e5e4",
+              boxShadow: "0 10px 28px rgba(28, 25, 23, 0.08)",
             }}
           />
         ))}

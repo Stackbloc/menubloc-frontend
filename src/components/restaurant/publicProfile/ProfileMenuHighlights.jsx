@@ -1,27 +1,43 @@
 /**
- * Compact menu preview rail — small right-side panel, not a full menu dump.
+ * Compact menu preview rail — teaser grouped by menu section.
+ * Phase 1.5: ≤3 sections, ≤3 items/section, ≤6 items total.
  */
 import { Link } from "react-router-dom";
 import { canShowOrderAction, PROFILE_GREEN, PROFILE_INK, PROFILE_MUTED } from "./profilePrimitives.jsx";
 
-const MAX_ITEMS = 5;
+const MAX_ITEMS = 6;
+const MAX_SECTIONS = 3;
+const PER_SECTION = 3;
 
-function selectPreviewItems(items) {
-  const out = [];
-  const seen = new Set();
+function selectHighlightSections(items) {
+  const bySection = new Map();
   for (const item of Array.isArray(items) ? items : []) {
     const name = String(item?.name || "").trim();
-    if (!name || seen.has(name.toLowerCase())) continue;
-    seen.add(name.toLowerCase());
+    if (!name) continue;
+    const section = String(item?.section || "").trim() || "Menu";
+    if (!bySection.has(section)) bySection.set(section, []);
+    const bucket = bySection.get(section);
+    if (bucket.length >= PER_SECTION) continue;
     const price = String(item?.display_price || item?.price || "").trim();
-    out.push({
-      id: item?.id ?? item?.menu_item_id ?? `${name}-${out.length}`,
+    bucket.push({
+      id: item?.id ?? item?.menu_item_id ?? `${name}-${bucket.length}`,
       name,
       price: price && price !== "0" && price !== "0.00" ? price : "",
+      section,
     });
-    if (out.length >= MAX_ITEMS) break;
   }
-  return out;
+
+  const sections = [];
+  let total = 0;
+  for (const [section, list] of bySection) {
+    if (sections.length >= MAX_SECTIONS) break;
+    const take = list.slice(0, Math.min(PER_SECTION, MAX_ITEMS - total));
+    if (!take.length) continue;
+    sections.push({ section, items: take });
+    total += take.length;
+    if (total >= MAX_ITEMS) break;
+  }
+  return sections;
 }
 
 export default function ProfileMenuHighlights({
@@ -31,8 +47,8 @@ export default function ProfileMenuHighlights({
   isMobile = false,
   compact = true,
 }) {
-  const rows = selectPreviewItems(items);
-  if (!rows.length) return null;
+  const sections = selectHighlightSections(items);
+  if (!sections.length) return null;
 
   const showOrder = canShowOrderAction(profile, menuHref);
 
@@ -41,7 +57,7 @@ export default function ProfileMenuHighlights({
       data-testid="profile-menu-highlights"
       aria-label="Menu preview"
       style={{
-        marginBottom: isMobile ? 20 : 0,
+        marginBottom: isMobile ? 16 : 0,
         padding: compact ? (isMobile ? "14px 14px" : "16px 16px") : "22px 22px",
         borderRadius: 16,
         background: "#fff",
@@ -62,43 +78,61 @@ export default function ProfileMenuHighlights({
           letterSpacing: 0.8,
           textTransform: "uppercase",
           color: PROFILE_GREEN,
-          marginBottom: 10,
+          marginBottom: 12,
         }}
       >
         Menu preview
       </div>
 
-      <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
-        {rows.map((item) => (
-          <li
-            key={String(item.id)}
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              gap: 10,
-              padding: "7px 0",
-              borderBottom: "1px solid #f5f5f4",
-              alignItems: "baseline",
-            }}
-          >
-            <span
+      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        {sections.map(({ section, items: sectionItems }) => (
+          <div key={section}>
+            <div
               style={{
-                fontSize: 13,
-                fontWeight: 600,
-                color: PROFILE_INK,
-                lineHeight: 1.35,
-                wordBreak: "break-word",
-                minWidth: 0,
+                fontSize: 11,
+                fontWeight: 700,
+                color: PROFILE_MUTED,
+                marginBottom: 6,
+                letterSpacing: 0.3,
+                textTransform: "uppercase",
               }}
             >
-              {item.name}
-            </span>
-            {item.price ? (
-              <span style={{ fontSize: 12, color: "#57534e", flexShrink: 0 }}>{item.price}</span>
-            ) : null}
-          </li>
+              {section}
+            </div>
+            <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
+              {sectionItems.map((item) => (
+                <li
+                  key={String(item.id)}
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    gap: 10,
+                    padding: "6px 0",
+                    borderBottom: "1px solid #f5f5f4",
+                    alignItems: "baseline",
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: PROFILE_INK,
+                      lineHeight: 1.35,
+                      wordBreak: "break-word",
+                      minWidth: 0,
+                    }}
+                  >
+                    {item.name}
+                  </span>
+                  {item.price ? (
+                    <span style={{ fontSize: 12, color: "#57534e", flexShrink: 0 }}>{item.price}</span>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          </div>
         ))}
-      </ul>
+      </div>
 
       {menuHref ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 14 }}>

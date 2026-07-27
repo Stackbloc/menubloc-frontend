@@ -1,7 +1,7 @@
 /**
- * Unified Menuply public profile shell — experience-first.
- * Restaurant layout: Restaurant Highlights (story fields) + compact menu preview rail.
- * Food trucks keep location/stops modules. Empty sections collapse.
+ * Unified Menuply public profile shell — Phase 1.5 destination experience.
+ * Hero → actions → photos → billboard → highlights + menu → FT ops → business (de-duped).
+ * Empty sections collapse. No fake content. Facts shown once.
  */
 import { useMemo } from "react";
 import ProfileHero from "./ProfileHero.jsx";
@@ -14,7 +14,6 @@ import FoodTruckUpcomingStops from "./FoodTruckUpcomingStops.jsx";
 import {
   ProfileSection,
   DetailLine,
-  QuietLink,
   formatHoursRows,
   normalizeScheduleStops,
   buildCurrentLocation,
@@ -24,48 +23,6 @@ import {
   PROFILE_MUTED,
   PROFILE_CONTENT_MAX,
 } from "./profilePrimitives.jsx";
-
-function DishCard({ title, name, description, price }) {
-  if (!name) return null;
-  return (
-    <div
-      style={{
-        padding: "14px 16px",
-        borderRadius: 12,
-        background: "#fff",
-        border: "1px solid #e7e5e4",
-      }}
-    >
-      {title ? (
-        <div
-          style={{
-            fontSize: 10,
-            fontWeight: 800,
-            letterSpacing: 0.5,
-            textTransform: "uppercase",
-            color: "#166534",
-            marginBottom: 6,
-          }}
-        >
-          {title}
-        </div>
-      ) : null}
-      <div style={{ fontSize: 16, fontWeight: 800, color: PROFILE_INK, lineHeight: 1.3 }}>
-        {name}
-        {price != null && String(price).trim() ? (
-          <span style={{ marginLeft: 8, fontSize: 14, fontWeight: 600, color: PROFILE_MUTED }}>
-            {String(price).trim()}
-          </span>
-        ) : null}
-      </div>
-      {description ? (
-        <div style={{ marginTop: 6, fontSize: 14, color: "#57534e", lineHeight: 1.5 }}>
-          {description}
-        </div>
-      ) : null}
-    </div>
-  );
-}
 
 function HoursBlock({ hoursRows, testId }) {
   if (!hoursRows.length) return null;
@@ -78,7 +35,7 @@ function HoursBlock({ hoursRows, testId }) {
             display: "grid",
             gridTemplateColumns: "48px 1fr",
             gap: 12,
-            fontSize: 14,
+            fontSize: 13,
           }}
         >
           <span style={{ fontWeight: 700, color: "#57534e" }}>{row.day}</span>
@@ -140,8 +97,6 @@ export default function PublicProfileShell({
   );
 
   const hasMenuPreview = Array.isArray(menuPreviewItems) && menuPreviewItems.length > 0;
-  // Address lives in the hero (Maps link) — do not repeat it in Business information.
-  const hasDetails = Boolean(website || phone || cuisine || category || hoursRows.length);
 
   const bio = firstNonEmpty(bioText);
   const about = firstNonEmpty(aboutText);
@@ -160,20 +115,46 @@ export default function PublicProfileShell({
     ? location?.directionsUrl || directionsUrl || ""
     : directionsUrl;
 
-  const highlightsColumn = !isFoodTruck ? (
+  // Hero (FT) or primary action chips (restaurant) already expose phone/website — never repeat.
+  const bizCategory = isFoodTruck ? "" : category && category !== cuisine ? category : "";
+  const bizHours = !isFoodTruck && hoursRows.length ? hoursRows : [];
+  const hasDetails = Boolean(bizCategory || bizHours.length);
+
+  const promoDeals = useMemo(() => {
+    const base = Array.isArray(dealItems) ? [...dealItems] : [];
+    if (todaysSpecial?.name) {
+      const already = base.some(
+        (d) => String(d?.name || "").toLowerCase() === String(todaysSpecial.name).toLowerCase()
+      );
+      if (!already) {
+        base.unshift({
+          id: "todays-special",
+          name: todaysSpecial.name,
+          description: todaysSpecial.description || "Today's special",
+          price: todaysSpecial.price,
+        });
+      }
+    }
+    return base;
+  }, [dealItems, todaysSpecial]);
+
+  const highlightsColumn = (
     <ProfileRestaurantHighlights
-      aboutText={aboutText}
+      aboutText={isFoodTruck ? storyText : aboutText}
       featuredItem={featuredItem}
       featuredText={featuredText}
       foundedText={founded}
-      landmarks={landmarks}
-      dealItems={dealItems}
-      statusBanners={statusBanners}
-      statusEventPresentations={statusEventPresentations}
-      displayCluster={displayCluster}
+      landmarks={isFoodTruck ? "" : landmarks}
+      cuisine={cuisine}
+      includeCuisineChip={false}
+      dealItems={promoDeals}
+      statusBanners={isFoodTruck ? null : statusBanners}
+      statusEventPresentations={isFoodTruck ? null : statusEventPresentations}
+      displayCluster={isFoodTruck ? null : displayCluster}
+      title={isFoodTruck ? "Food truck highlights" : "Restaurant highlights"}
       isMobile={isMobile}
     />
-  ) : null;
+  );
 
   const menuRail = hasMenuPreview ? (
     <ProfileMenuHighlights
@@ -184,6 +165,8 @@ export default function PublicProfileShell({
       compact
     />
   ) : null;
+
+  const sectionGap = isMobile ? 16 : 20;
 
   return (
     <div
@@ -227,7 +210,7 @@ export default function PublicProfileShell({
         style={{
           maxWidth: contentMax,
           margin: "0 auto",
-          padding: isMobile ? "20px 16px 0" : "28px 28px 0",
+          padding: isMobile ? "16px 16px 0" : "24px 28px 0",
           width: "100%",
           boxSizing: "border-box",
         }}
@@ -245,12 +228,7 @@ export default function PublicProfileShell({
           isMobile={isMobile}
         />
 
-        <ProfileBillboardFeature
-          billboardPreview={billboardPreview}
-          billboardHref={billboardHref}
-          isMobile={isMobile}
-        />
-
+        {/* Photos elevated — before billboard */}
         <ProfilePhotoStrip
           name={name}
           bannerPhotoUrl={bannerPhotoUrl}
@@ -258,27 +236,13 @@ export default function PublicProfileShell({
           isMobile={isMobile}
         />
 
-        {/* Food-truck energy modules — only when real data exists */}
-        {isFoodTruck && featuredItem?.name ? (
-          <ProfileSection title="Featured dish">
-            <DishCard
-              name={featuredItem.name}
-              description={featuredItem.description}
-              price={featuredItem.price}
-            />
-          </ProfileSection>
-        ) : null}
+        <ProfileBillboardFeature
+          billboardPreview={billboardPreview}
+          billboardHref={billboardHref}
+          isMobile={isMobile}
+        />
 
-        {isFoodTruck && todaysSpecial?.name ? (
-          <ProfileSection title="Today's special">
-            <DishCard
-              name={todaysSpecial.name}
-              description={todaysSpecial.description}
-              price={todaysSpecial.price}
-            />
-          </ProfileSection>
-        ) : null}
-
+        {/* FT energetic ops — only real data */}
         {isFoodTruck && stops.length ? (
           <ProfileSection title="Upcoming stops">
             <FoodTruckUpcomingStops stops={stops} />
@@ -291,22 +255,17 @@ export default function PublicProfileShell({
           </ProfileSection>
         ) : null}
 
-        {isFoodTruck && storyText ? (
-          <ProfileSection title="About">{storyText}</ProfileSection>
-        ) : null}
-
-        {isFoodTruck && founded ? <ProfileSection title="Founded">{founded}</ProfileSection> : null}
-
-        {/* Restaurant: highlights + compact menu preview; FT: compact preview only when present */}
-        {!isFoodTruck && (highlightsColumn || menuRail) ? (
+        {/* Highlights + menu teaser */}
+        {highlightsColumn || menuRail ? (
           <div
             data-testid="profile-highlights-layout"
             style={{
               display: "grid",
-              gridTemplateColumns: isMobile || !menuRail || !highlightsColumn ? "1fr" : "minmax(0, 1fr) 260px",
-              gap: isMobile ? 0 : 20,
+              gridTemplateColumns:
+                isMobile || !menuRail || !highlightsColumn ? "1fr" : "minmax(0, 1fr) 260px",
+              gap: isMobile ? sectionGap : 20,
               alignItems: "start",
-              marginBottom: 28,
+              marginBottom: sectionGap + 8,
             }}
           >
             {highlightsColumn}
@@ -314,29 +273,19 @@ export default function PublicProfileShell({
           </div>
         ) : null}
 
-        {isFoodTruck && menuRail ? <div style={{ marginBottom: 28 }}>{menuRail}</div> : null}
-
         {hasDetails ? (
           <ProfileSection title="Business information">
-            <div style={{ borderTop: "1px solid #e7e5e4" }}>
-              <DetailLine label="Website">
-                {website ? <QuietLink href={website}>{websiteRaw || website} ↗</QuietLink> : null}
-              </DetailLine>
-              <DetailLine label="Phone">
-                {phone ? (
-                  <a
-                    href={`tel:${String(phone).replace(/\s+/g, "")}`}
-                    style={{ color: "inherit", textDecoration: "none" }}
-                  >
-                    {phone}
-                  </a>
-                ) : null}
-              </DetailLine>
-              <DetailLine label="Cuisine">{cuisine || null}</DetailLine>
-              <DetailLine label="Category">{category || null}</DetailLine>
-              {hoursRows.length && !isFoodTruck ? (
+            <div
+              style={{
+                borderTop: "1px solid #e7e5e4",
+                fontSize: 13,
+                color: PROFILE_MUTED,
+              }}
+            >
+              <DetailLine label="Category">{bizCategory || null}</DetailLine>
+              {bizHours.length ? (
                 <DetailLine label="Hours">
-                  <HoursBlock hoursRows={hoursRows} testId="restaurant-hours" />
+                  <HoursBlock hoursRows={bizHours} testId="restaurant-hours" />
                 </DetailLine>
               ) : null}
             </div>

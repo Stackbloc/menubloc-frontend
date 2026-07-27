@@ -569,12 +569,16 @@ export default function RestaurantPublicPage() {
   const billboardPreview = Array.isArray(data?.billboard_preview) ? data.billboard_preview : [];
   const billboardHref = buildRestaurantBillboardHref(data?.slug || data?.id || resolvedSlug);
   const splashPosts = claimedBillboardSplashPosts;
+  // Phase 1.5: billboard image first, then cover/hero, then Menuply gradient (never fake food).
+  const firstBillboardImage =
+    billboardPreview.find((p) => p?.image_url || p?.photo_url)?.image_url ||
+    billboardPreview.find((p) => p?.image_url || p?.photo_url)?.photo_url ||
+    null;
   const bannerPhotoUrl =
+    firstBillboardImage ||
     data?.hero_image_url ||
     data?.cover_image_url ||
     data?.banner_url ||
-    billboardPreview.find((p) => p?.image_url || p?.photo_url)?.image_url ||
-    billboardPreview.find((p) => p?.image_url || p?.photo_url)?.photo_url ||
     null;
 
   const pageBg = isDark ? "#0b0b0f" : "#ffffff";

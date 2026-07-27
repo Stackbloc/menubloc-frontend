@@ -43,10 +43,12 @@ assert.match(panel, /StatusEventScheduleEditor/);
 const page = read("src/pages/RestaurantPublicPage.jsx");
 const editorial = read("src/components/restaurant/RestaurantPublicEditorial.jsx");
 const shell = read("src/components/restaurant/publicProfile/PublicProfileShell.jsx");
+const highlights = read("src/components/restaurant/publicProfile/ProfileRestaurantHighlights.jsx");
 assert.match(page, /status_banners/);
 assert.match(page, /PUBLIC_PROFILE_IS_DARK/);
 assert.match(editorial, /PublicProfileShell/);
-assert.match(shell, /RestaurantStatusBannerStrip/);
+assert.match(shell, /ProfileRestaurantHighlights/);
+assert.match(highlights, /RestaurantStatusBannerStrip/);
 assert.doesNotMatch(page, /function readTheme/);
 assert.doesNotMatch(page, /grubbid_theme/);
 

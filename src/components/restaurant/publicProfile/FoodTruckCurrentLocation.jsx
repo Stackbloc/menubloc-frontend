@@ -1,5 +1,6 @@
 /**
- * Food-truck current location module — restrained when unset.
+ * Food-truck current location — only mount when a real location is posted.
+ * Empty filler ("has not been posted") is forbidden.
  */
 import MapPinIcon from "../../menu-templates/MapPinIcon.jsx";
 import { PROFILE_GREEN, PROFILE_INK, PROFILE_MUTED } from "./profilePrimitives.jsx";
@@ -12,9 +13,12 @@ export default function FoodTruckCurrentLocation({
   name = "Food truck",
   onPhoto = false,
 }) {
+  if (!hasPostedLocation || !String(locationText || "").trim()) return null;
+
   const ink = onPhoto ? "#fafaf9" : PROFILE_INK;
   const muted = onPhoto ? "rgba(250,250,249,0.88)" : PROFILE_MUTED;
   const pinStroke = onPhoto ? "#fafaf9" : PROFILE_GREEN;
+
   return (
     <div
       data-testid="food-truck-current-location"
@@ -42,7 +46,7 @@ export default function FoodTruckCurrentLocation({
           </div>
         ) : null}
         <span style={{ fontWeight: 700, color: ink }}>Current Location:</span>{" "}
-        {hasPostedLocation && directionsUrl && locationText ? (
+        {directionsUrl ? (
           <a
             href={directionsUrl}
             target="_blank"
@@ -51,10 +55,8 @@ export default function FoodTruckCurrentLocation({
           >
             {locationText}
           </a>
-        ) : hasPostedLocation && locationText ? (
-          <span>{locationText}</span>
         ) : (
-          <span style={{ fontStyle: "italic" }}>Current location has not been posted.</span>
+          <span>{locationText}</span>
         )}
       </div>
       {directionsUrl ? (

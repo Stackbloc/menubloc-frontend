@@ -1,5 +1,6 @@
 /**
  * Signature billboard block — collapses entirely when empty.
+ * Phase 1.5: stronger visual weight as a defining Menuply feature.
  */
 import { Link } from "react-router-dom";
 import RestaurantBillboardStrip from "../../RestaurantBillboardStrip.jsx";
@@ -17,11 +18,12 @@ export default function ProfileBillboardFeature({
       data-testid="profile-billboard-feature"
       aria-label="Billboard"
       style={{
-        marginBottom: 28,
-        padding: isMobile ? "16px 14px" : "20px 20px",
-        borderRadius: 16,
-        background: "linear-gradient(160deg, #ecfdf5 0%, #ffffff 55%)",
-        border: "1px solid #bbf7d0",
+        marginBottom: isMobile ? 20 : 28,
+        padding: isMobile ? "18px 14px 16px" : "24px 24px 20px",
+        borderRadius: 18,
+        background: "linear-gradient(165deg, #ecfdf5 0%, #f0fdf4 40%, #ffffff 100%)",
+        border: "1px solid #86efac",
+        boxShadow: "0 12px 36px rgba(22, 101, 52, 0.08)",
       }}
     >
       <div
@@ -30,7 +32,7 @@ export default function ProfileBillboardFeature({
           alignItems: "baseline",
           justifyContent: "space-between",
           gap: 12,
-          marginBottom: 12,
+          marginBottom: 14,
           flexWrap: "wrap",
         }}
       >
@@ -39,7 +41,7 @@ export default function ProfileBillboardFeature({
             style={{
               fontSize: 11,
               fontWeight: 800,
-              letterSpacing: 0.8,
+              letterSpacing: 0.9,
               textTransform: "uppercase",
               color: PROFILE_GREEN,
               marginBottom: 4,
@@ -47,8 +49,11 @@ export default function ProfileBillboardFeature({
           >
             Billboard
           </div>
-          <div style={{ fontSize: 15, fontWeight: 700, color: PROFILE_INK }}>
+          <div style={{ fontSize: isMobile ? 17 : 20, fontWeight: 800, color: PROFILE_INK, letterSpacing: "-0.02em" }}>
             What&apos;s happening now
+          </div>
+          <div style={{ marginTop: 4, fontSize: 13, color: PROFILE_MUTED, lineHeight: 1.45 }}>
+            Specials, events, and announcements from this business.
           </div>
         </div>
         {billboardHref ? (

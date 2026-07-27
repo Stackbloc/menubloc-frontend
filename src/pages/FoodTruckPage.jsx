@@ -1460,12 +1460,16 @@ export default function FoodTruckPage() {
   const billboardPreview = Array.isArray(profile?.billboard_preview)
     ? profile.billboard_preview
     : [];
+  // Phase 1.5: billboard image first, then cover/hero, then Menuply gradient (never fake food).
+  const firstBillboardImage =
+    billboardPreview.find((p) => p?.image_url || p?.photo_url)?.image_url ||
+    billboardPreview.find((p) => p?.image_url || p?.photo_url)?.photo_url ||
+    null;
   const bannerPhotoUrl =
+    firstBillboardImage ||
     profile?.hero_image_url ||
     profile?.cover_image_url ||
     profile?.banner_url ||
-    billboardPreview.find((p) => p?.image_url || p?.photo_url)?.image_url ||
-    billboardPreview.find((p) => p?.image_url || p?.photo_url)?.photo_url ||
     null;
 
   const menuHref =
