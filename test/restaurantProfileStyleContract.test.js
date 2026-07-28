@@ -167,6 +167,17 @@ describe("operator + public profile style wiring", () => {
     assert.match(hero, /profile-hero-placeholder/);
   });
 
+  it("ProfileSection text sits on a solid card so patterned styles stay readable", () => {
+    const primitives = readFileSync(
+      join(root, "src/components/restaurant/publicProfile/profilePrimitives.jsx"),
+      "utf8"
+    );
+    assert.match(primitives, /function ProfileSection/);
+    assert.match(primitives, /data-profile-surface="card"/);
+    assert.match(primitives, /background:\s*"#fff"/);
+    assert.match(primitives, /profileCardBorderVar/);
+  });
+
   it("RestaurantStyleSelector has Use Recommended + preview cards emphasizing pattern body", () => {
     const sel = readFileSync(
       join(root, "src/components/operator/RestaurantStyleSelector.jsx"),

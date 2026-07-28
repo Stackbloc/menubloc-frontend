@@ -250,14 +250,23 @@ export default function PublicMenuItemCard({
         menuItem: { ...it, id: normalizedItemId, name },
       })
     : null;
+  const featuredMenuItemId =
+    data?.featured_item?.id ?? data?.featured_menu_item_id ?? null;
+  const isFeaturedDish =
+    featuredMenuItemId != null &&
+    normalizedItemId != null &&
+    String(normalizedItemId) === String(featuredMenuItemId);
   const cartState = getCartItemStateForItem(activeCartItems, normalizedItemId);
   const inCartCount = cartState.totalQuantity;
   const isTablet = useIsTabletRange();
   const ed = ED_PALETTES[editorialColorScheme] || ED_PALETTES.light;
   // Cap descriptive badges at 2 (editorialRefresh only) so the row never shows
-  // a wall of tags. Priority: unavailability status, then deal, then diet flags.
+  // a wall of tags. Priority: featured dish, unavailability, deal, then diet flags.
   const visibleBadges = editorialRefresh
     ? [
+        isFeaturedDish
+          ? { key: "featured", label: t("menu.featuredDish", "Featured Dish"), color: accent, soft: true }
+          : null,
         !itemIsOrderable ? { key: "unavailable", label: t("common.unavailable", "Unavailable"), color: ed.subtle, soft: true } : null,
         hasDeal ? { key: "deal", label: t("common.deals", "Deals"), color: accent } : null,
         it?.is_vegan ? { key: "vegan", label: t("diet.vegan", "Vegan"), color: ed.subtle } : null,
@@ -625,6 +634,14 @@ export default function PublicMenuItemCard({
                 ))
               ) : (
                 <>
+                  {isFeaturedDish ? (
+                    <Badge
+                      label={t("menu.featuredDish", "Featured Dish")}
+                      bg={softBg}
+                      color={accent}
+                      border={`1px solid ${softBorder}`}
+                    />
+                  ) : null}
                   {!itemIsOrderable ? <Badge label="Unavailable" bg="#1c1208" color="#fb923c" border="1px solid #431407" /> : null}
                   {hasDeal && (
                     <Badge

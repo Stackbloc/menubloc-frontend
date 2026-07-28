@@ -149,15 +149,28 @@ export { MENU_ROW_HEADER_ICON_GAP, MENU_ROW_ICON_SIZE };
 export function ProfileSection({ title, children, empty = false, testId }) {
   if (children == null || children === false || children === "") return null;
   return (
-    <section style={{ marginBottom: 28 }} data-empty={empty ? "true" : undefined} data-testid={testId}>
+    <section
+      style={{
+        marginBottom: 28,
+        padding: "18px 18px",
+        borderRadius: 16,
+        background: "#fff",
+        border: `1px solid ${profileCardBorderVar}`,
+        boxShadow: profileCardShadowVar,
+        minWidth: 0,
+      }}
+      data-empty={empty ? "true" : undefined}
+      data-testid={testId}
+      data-profile-surface="card"
+    >
       <h2
         style={{
           margin: "0 0 10px",
-          fontSize: 12,
-          fontWeight: 700,
-          letterSpacing: 0.7,
+          fontSize: 11,
+          fontWeight: 800,
+          letterSpacing: 0.8,
           textTransform: "uppercase",
-          color: PROFILE_MUTED,
+          color: profileSectionLabelVar,
         }}
       >
         {title}

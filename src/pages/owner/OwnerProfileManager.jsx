@@ -11,10 +11,10 @@ import { inputStyle } from "./ownerMenuEditorComponents.jsx";
 import {
   OWNER_API_BASE,
   getMenuConsoleRestaurant,
+  getOwnerRestaurantFeaturedDishCandidates,
   getOwnerRestaurantHours,
   getOwnerRestaurantProfileStyle,
   getOwnerRestaurantStatusBanners,
-  searchMenuConsoleItems,
   searchMenuConsoleRestaurants,
   updateMenuConsoleRestaurant,
   updateOwnerRestaurantFeaturedDish,
@@ -22,7 +22,8 @@ import {
   updateOwnerRestaurantProfileStyle,
   updateOwnerRestaurantStatusBanners,
 } from "../../lib/ownerApi.js";
-import { restaurantPathFromRow } from "../../lib/canonicalUrl.js";
+import { restaurantMenuPathFromRow, restaurantPathFromRow } from "../../lib/canonicalUrl.js";
+import { menuItemDomId } from "../../components/share/shareUtils.js";
 
 const SEARCH_LIMIT = 12;
 const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -169,12 +170,12 @@ export default function OwnerProfileManager() {
     setError("");
     setMessage("");
     try {
-      const [profileRes, styleRes, bannersRes, hoursRes, itemsRes] = await Promise.all([
+      const [profileRes, styleRes, bannersRes, hoursRes, candidatesRes] = await Promise.all([
         getMenuConsoleRestaurant(restaurantId),
         getOwnerRestaurantProfileStyle(restaurantId).catch(() => null),
         getOwnerRestaurantStatusBanners(restaurantId).catch(() => null),
         getOwnerRestaurantHours(restaurantId).catch(() => null),
-        searchMenuConsoleItems(restaurantId, { filter: "published", limit: 100, include_ck: 1 }).catch(() => null),
+        getOwnerRestaurantFeaturedDishCandidates(restaurantId, { limit: 200 }).catch(() => null),
       ]);
       const r = profileRes.restaurant || {};
       const style = styleRes?.restaurant || {};
@@ -192,11 +193,7 @@ export default function OwnerProfileManager() {
           label: row.label || null,
         };
       });
-      const items = Array.isArray(itemsRes?.items)
-        ? itemsRes.items
-        : Array.isArray(itemsRes?.results)
-          ? itemsRes.results
-          : [];
+      const items = Array.isArray(candidatesRes?.items) ? candidatesRes.items : [];
 
       const next = {
         restaurant_name: r.restaurant_name || "",
@@ -397,6 +394,21 @@ export default function OwnerProfileManager() {
       state: form.state || selected?.state,
     }) ||
     (selected?.id ? `/restaurants/${selected.id}` : null);
+
+  const menuHref =
+    restaurantMenuPathFromRow({
+      id: selected?.id,
+      slug: selected?.slug,
+      city: form.city || selected?.city,
+      state: form.state || selected?.state,
+    }) ||
+    (selected?.id ? `/public/restaurants/${selected.id}/menu` : null);
+
+  const featuredMenuHref = (() => {
+    if (!menuHref || !form.featured_menu_item_id) return null;
+    const anchor = menuItemDomId(form.featured_menu_item_id);
+    return anchor ? `${menuHref}#${anchor}` : menuHref;
+  })();
 
   const f = (key) => (e) => setForm((prev) => ({ ...prev, [key]: e.target.value }));
 
@@ -667,6 +679,7 @@ export default function OwnerProfileManager() {
                       style={{ ...inputStyle, cursor: "pointer" }}
                       value={form.featured_menu_item_id}
                       onChange={f("featured_menu_item_id")}
+                      data-testid="owner-profile-manager-featured-dish"
                     >
                       <option value="">— No featured dish —</option>
                       {menuItems.map((item) => {
@@ -679,6 +692,44 @@ export default function OwnerProfileManager() {
                         );
                       })}
                     </select>
+                    {menuItems.length === 0 ? (
+                      <div style={{ marginTop: 8, fontSize: 12, color: OWNER_COLORS.muted, lineHeight: 1.45 }}>
+                        No menu items yet.{" "}
+                        <Link
+                          to={`/owner/menu-manager?tab=workspace&restaurant=${selected.id}`}
+                          style={{ color: OWNER_COLORS.accent, fontWeight: 700, textDecoration: "none" }}
+                        >
+                          Open Menu Manager
+                        </Link>
+                        {menuHref ? (
+                          <>
+                            {" "}
+                            or{" "}
+                            <Link
+                              to={menuHref}
+                              target="_blank"
+                              rel="noreferrer"
+                              style={{ color: OWNER_COLORS.accent, fontWeight: 700, textDecoration: "none" }}
+                            >
+                              view public menu
+                            </Link>
+                          </>
+                        ) : null}
+                        .
+                      </div>
+                    ) : featuredMenuHref ? (
+                      <div style={{ marginTop: 8, fontSize: 12 }}>
+                        <Link
+                          to={featuredMenuHref}
+                          target="_blank"
+                          rel="noreferrer"
+                          data-testid="owner-profile-manager-view-featured-on-menu"
+                          style={{ color: OWNER_COLORS.accent, fontWeight: 700, textDecoration: "none" }}
+                        >
+                          View on menu →
+                        </Link>
+                      </div>
+                    ) : null}
                   </div>
                 </div>
                 <div style={{ marginTop: 14 }}>

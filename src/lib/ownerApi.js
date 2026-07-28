@@ -130,6 +130,12 @@ export const updateOwnerRestaurantProfileStyle = (restaurantId, profileStyleKey)
   });
 export const getOwnerRestaurantFeaturedDish = (restaurantId) =>
   get(`/api/owner/restaurants/${encodeURIComponent(restaurantId)}/featured-dish`);
+export const getOwnerRestaurantFeaturedDishCandidates = (restaurantId, params = {}) => {
+  const qs = new URLSearchParams(params).toString();
+  return get(
+    `/api/owner/restaurants/${encodeURIComponent(restaurantId)}/featured-dish/candidates${qs ? `?${qs}` : ""}`
+  );
+};
 export const updateOwnerRestaurantFeaturedDish = (restaurantId, menuItemId) =>
   patch(`/api/owner/restaurants/${encodeURIComponent(restaurantId)}/featured-dish`, {
     menu_item_id: menuItemId,
