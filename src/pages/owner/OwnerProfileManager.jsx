@@ -174,7 +174,7 @@ export default function OwnerProfileManager() {
         getOwnerRestaurantProfileStyle(restaurantId).catch(() => null),
         getOwnerRestaurantStatusBanners(restaurantId).catch(() => null),
         getOwnerRestaurantHours(restaurantId).catch(() => null),
-        searchMenuConsoleItems(restaurantId, { filter: "published", limit: 100 }).catch(() => null),
+        searchMenuConsoleItems(restaurantId, { filter: "published", limit: 100, include_ck: 1 }).catch(() => null),
       ]);
       const r = profileRes.restaurant || {};
       const style = styleRes?.restaurant || {};
@@ -324,7 +324,11 @@ export default function OwnerProfileManager() {
       await loadRestaurant(selected.id);
       setMessage("Profile saved. Public At a Glance / hero fields are live.");
     } catch (err) {
-      setError(err?.message || "Could not save profile.");
+      const detail =
+        err?.payload?.error ||
+        err?.message ||
+        "Could not save profile.";
+      setError(detail);
     } finally {
       setSaving(false);
     }
