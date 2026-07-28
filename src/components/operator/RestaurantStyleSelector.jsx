@@ -1,6 +1,6 @@
 /**
- * Operator Restaurant Style selector — preview cards + compact live preview.
- * Selection is local until Profile Setup Save (draft) / Publish.
+ * Operator / Owner Restaurant Style selector — patterned body previews + Smart Theme cards.
+ * Selection: draft until Publish (operator) or live on select (owner applyMode="live").
  */
 import {
   PROFILE_STYLE_KEYS,
@@ -11,9 +11,9 @@ import { resolveEffectiveProfileStyle } from "../../lib/restaurantProfileStyleRe
 
 const CARD_GRID = {
   display: "grid",
-  gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
-  gap: 10,
-  marginTop: 12,
+  gridTemplateColumns: "repeat(auto-fill, minmax(148px, 1fr))",
+  gap: 12,
+  marginTop: 14,
 };
 
 function StylePreviewCard({
@@ -41,9 +41,10 @@ function StylePreviewCard({
         boxShadow: selected ? `0 0 0 1px ${tokens.accent}` : "none",
       }}
     >
+      {/* Pattern / page body dominates — thin accent ribbon only */}
       <div
         style={{
-          height: 58,
+          height: 78,
           backgroundColor: tokens.pageBackground,
           backgroundImage: tokens.backgroundPattern,
           backgroundRepeat: "repeat",
@@ -57,33 +58,32 @@ function StylePreviewCard({
             left: 0,
             right: 0,
             top: 0,
-            height: 18,
-            background: `linear-gradient(90deg, ${tokens.accent} 0%, ${tokens.buttonBackground} 100%)`,
-            opacity: 0.92,
+            height: 5,
+            background: tokens.accent,
           }}
         />
         <div
           style={{
             position: "absolute",
-            right: 8,
-            bottom: 8,
-            width: 28,
-            height: 10,
-            borderRadius: 4,
-            background: tokens.buttonBackground,
-          }}
-        />
-        <div
-          style={{
-            position: "absolute",
-            left: 8,
-            bottom: 8,
-            width: 36,
-            height: 22,
-            borderRadius: 4,
+            left: 10,
+            bottom: 10,
+            width: 42,
+            height: 28,
+            borderRadius: 5,
             background: "#fff",
             border: `1px solid ${tokens.cardBorder}`,
             boxShadow: tokens.cardShadow,
+          }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            right: 10,
+            bottom: 12,
+            width: 26,
+            height: 10,
+            borderRadius: 4,
+            background: tokens.buttonBackground,
           }}
         />
       </div>
@@ -120,18 +120,18 @@ function CompactStylePreview({ styleKey, restaurantName }) {
         ...root,
         borderRadius: 12,
         border: `2px solid ${tokens.accent}`,
-        padding: 18,
+        padding: 16,
         marginTop: 14,
         marginBottom: 4,
-        minHeight: 200,
+        minHeight: 220,
       }}
     >
       <div
         aria-hidden="true"
         style={{
-          height: 48,
-          borderRadius: 8,
-          marginBottom: 12,
+          height: 28,
+          borderRadius: 6,
+          marginBottom: 14,
           background:
             "linear-gradient(160deg, var(--profile-hero-from, #052e16) 0%, var(--profile-hero-via, #14532d) 38%, var(--profile-hero-to, #292524) 100%)",
         }}
@@ -162,7 +162,7 @@ function CompactStylePreview({ styleKey, restaurantName }) {
           {restaurantName || "Your restaurant"}
         </div>
         <div style={{ fontSize: 12, color: "#78716c", marginBottom: 12, lineHeight: 1.4 }}>
-          Sample white information card with readable contrast.
+          Patterned page body behind this card — each Smart Theme uses a unique motif.
         </div>
         <button
           type="button"
@@ -182,9 +182,9 @@ function CompactStylePreview({ styleKey, restaurantName }) {
           Sample action
         </button>
       </div>
-      <div style={{ marginTop: 10, fontSize: 12, color: "#1c1917", fontWeight: 700 }}>
+      <div style={{ marginTop: 12, fontSize: 12, color: tokens.sectionLabel, fontWeight: 700 }}>
         Showing: {tokens.name}
-        <span style={{ fontWeight: 500, color: "#57534e" }}>
+        <span style={{ fontWeight: 500, opacity: 0.85 }}>
           {" "}
           · page {tokens.pageBackground}
         </span>

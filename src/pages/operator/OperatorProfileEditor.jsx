@@ -8,8 +8,10 @@
  * Sections (visibility controlled by plan benefits):
  *   • Core fields — always visible (profile_edit): cuisine, type, contact, address
  *   • About Us    — benefit: about_us
+ *   • Founded / Meet the Team — profile_edit (draft → Publish)
  *   • Logo        — benefit: logo_upload
  *   • Featured dish — benefit: featured_dish
+ *   • Hours       — link to /operator/hours
  *
  * Pattern: edits go to draft → Publish makes them live.
  */
@@ -20,7 +22,7 @@
 // Hardcoding options here silently diverges from backend validation rules.
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import OperatorLayout from "./OperatorLayout.jsx";
 import { useLanguage } from "../../context/LanguageContext.jsx";
 import { useOperator } from "../../context/OperatorContext.jsx";
@@ -186,6 +188,8 @@ export function OperatorRestaurantProfileForm({ embedded = false } = {}) {
           phone:           p.phone || "",
           website_url:     p.website_url || "",
           about_us:        p.about_us || "",
+          founded_year:    p.founded_year != null ? String(p.founded_year) : "",
+          team_intro:      p.team_intro || "",
           logo_url:        p.logo_url || "",
           featured_menu_item_id: p.featured_menu_item_id || "",
           // null = Use Recommended Style (auto from category/cuisine)
@@ -262,6 +266,8 @@ export function OperatorRestaurantProfileForm({ embedded = false } = {}) {
         postal_code:     form.postal_code,
         phone:           form.phone,
         website_url:     form.website_url,
+        founded_year:    form.founded_year === "" || form.founded_year == null ? null : form.founded_year,
+        team_intro:      form.team_intro || null,
         // Explicit null clears manual override (Use Recommended Style)
         profile_style_key: form.profile_style_key == null ? null : form.profile_style_key,
       };
@@ -554,6 +560,61 @@ export function OperatorRestaurantProfileForm({ embedded = false } = {}) {
           ) : (
             <LockedField benefitName="About Us section" />
           )}
+        </Section>
+
+        {/* ── Founded + Meet the Team (At a Glance) ───────────────────── */}
+        <Section
+          title="Founded & team"
+          sub="These fill the public profile At a Glance rows for Founded and Meet the Team. Save draft, then Publish."
+        >
+          <div style={{ display: "grid", gap: 14, gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))" }}>
+            <div>
+              <Label>Founded year</Label>
+              <input
+                style={INPUT}
+                inputMode="numeric"
+                maxLength={4}
+                value={form.founded_year || ""}
+                onChange={(e) =>
+                  setForm((p) => ({
+                    ...p,
+                    founded_year: e.target.value.replace(/[^\d]/g, "").slice(0, 4),
+                  }))
+                }
+                placeholder="e.g. 2014"
+              />
+            </div>
+          </div>
+          <div style={{ marginTop: 14 }}>
+            <Label>Meet the team</Label>
+            <textarea
+              style={{ ...TEXTAREA, minHeight: 100 }}
+              value={form.team_intro || ""}
+              onChange={f("team_intro")}
+              placeholder="Introduce the people behind the restaurant."
+            />
+          </div>
+        </Section>
+
+        <Section
+          title="Hours"
+          sub="Weekly hours and holiday exceptions power the public At a Glance Hours row."
+        >
+          <Link
+            to="/operator/hours"
+            style={{
+              display: "inline-block",
+              padding: "10px 14px",
+              borderRadius: 8,
+              background: "#1c1917",
+              color: "#fff",
+              textDecoration: "none",
+              fontSize: 13,
+              fontWeight: 700,
+            }}
+          >
+            Open Hours settings →
+          </Link>
         </Section>
 
         {/* ── Logo ───────────────────────────────────────────────────── */}

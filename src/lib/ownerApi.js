@@ -128,6 +128,22 @@ export const updateOwnerRestaurantProfileStyle = (restaurantId, profileStyleKey)
   patch(`/api/owner/restaurants/${encodeURIComponent(restaurantId)}/profile-style`, {
     profile_style_key: profileStyleKey,
   });
+export const getOwnerRestaurantFeaturedDish = (restaurantId) =>
+  get(`/api/owner/restaurants/${encodeURIComponent(restaurantId)}/featured-dish`);
+export const updateOwnerRestaurantFeaturedDish = (restaurantId, menuItemId) =>
+  patch(`/api/owner/restaurants/${encodeURIComponent(restaurantId)}/featured-dish`, {
+    menu_item_id: menuItemId,
+  });
+export const getOwnerRestaurantStatusBanners = (restaurantId) =>
+  get(`/api/owner/restaurants/${encodeURIComponent(restaurantId)}/status-banners`);
+export const updateOwnerRestaurantStatusBanners = (restaurantId, statusBanners) =>
+  put(`/api/owner/restaurants/${encodeURIComponent(restaurantId)}/status-banners`, {
+    status_banners: statusBanners,
+  });
+export const getOwnerRestaurantHours = (restaurantId) =>
+  get(`/api/owner/restaurants/${encodeURIComponent(restaurantId)}/hours`);
+export const updateOwnerRestaurantHours = (restaurantId, schedule) =>
+  put(`/api/owner/restaurants/${encodeURIComponent(restaurantId)}/hours`, { schedule });
 export const addOwnerRestaurantToCrm = (restaurantId) =>
   post(`/api/owner/restaurants/${encodeURIComponent(restaurantId)}/add-to-crm`, {});
 export const getOwnerRevenueSummary = (params = {}) => {

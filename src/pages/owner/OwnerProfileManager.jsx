@@ -1,6 +1,6 @@
 /**
- * Owner Profile Manager — pick a restaurant and edit public profile fields,
- * including Restaurant Style (background atmosphere).
+ * Owner Profile Manager — pick a restaurant and edit public profile fields
+ * sought by At a Glance / hero (story, hiring, hours, style).
  */
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
@@ -11,19 +11,37 @@ import { inputStyle } from "./ownerMenuEditorComponents.jsx";
 import {
   OWNER_API_BASE,
   getMenuConsoleRestaurant,
+  getOwnerRestaurantHours,
   getOwnerRestaurantProfileStyle,
+  getOwnerRestaurantStatusBanners,
+  searchMenuConsoleItems,
   searchMenuConsoleRestaurants,
   updateMenuConsoleRestaurant,
+  updateOwnerRestaurantFeaturedDish,
+  updateOwnerRestaurantHours,
   updateOwnerRestaurantProfileStyle,
+  updateOwnerRestaurantStatusBanners,
 } from "../../lib/ownerApi.js";
 import { restaurantPathFromRow } from "../../lib/canonicalUrl.js";
 
 const SEARCH_LIMIT = 12;
+const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const FIELD_GRID = {
   display: "grid",
   gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
   gap: 14,
 };
+
+function emptyHours() {
+  return Array.from({ length: 7 }, (_, i) => ({
+    day_of_week: i,
+    day_name: DAY_NAMES[i],
+    opens_at: "09:00",
+    closes_at: "21:00",
+    is_closed: true,
+    label: null,
+  }));
+}
 
 function emptyForm() {
   return {
@@ -31,13 +49,36 @@ function emptyForm() {
     cuisine: "",
     category: "",
     address_line1: "",
+    address_line2: "",
     city: "",
     state: "",
     postal_code: "",
     phone: "",
     website_url: "",
+    about_us: "",
+    founded_year: "",
+    team_intro: "",
+    featured_menu_item_id: "",
+    now_hiring: false,
     profile_style_key: null,
   };
+}
+
+function Label({ children }) {
+  return (
+    <div
+      style={{
+        fontSize: 11,
+        fontWeight: 700,
+        color: OWNER_COLORS.muted,
+        marginBottom: 6,
+        letterSpacing: "0.04em",
+        textTransform: "uppercase",
+      }}
+    >
+      {children}
+    </div>
+  );
 }
 
 export default function OwnerProfileManager() {
@@ -52,11 +93,15 @@ export default function OwnerProfileManager() {
   const [selected, setSelected] = useState(null);
   const [form, setForm] = useState(emptyForm);
   const [baseline, setBaseline] = useState(emptyForm);
+  const [hours, setHours] = useState(emptyHours);
+  const [hoursBaseline, setHoursBaseline] = useState(emptyHours);
+  const [menuItems, setMenuItems] = useState([]);
   const [cuisineOptions, setCuisineOptions] = useState([]);
   const [categoryOptions, setCategoryOptions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [styleSaving, setStyleSaving] = useState(false);
+  const [hoursSaving, setHoursSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
@@ -124,22 +169,51 @@ export default function OwnerProfileManager() {
     setError("");
     setMessage("");
     try {
-      const [profileRes, styleRes] = await Promise.all([
+      const [profileRes, styleRes, bannersRes, hoursRes, itemsRes] = await Promise.all([
         getMenuConsoleRestaurant(restaurantId),
         getOwnerRestaurantProfileStyle(restaurantId).catch(() => null),
+        getOwnerRestaurantStatusBanners(restaurantId).catch(() => null),
+        getOwnerRestaurantHours(restaurantId).catch(() => null),
+        searchMenuConsoleItems(restaurantId, { filter: "published", limit: 100 }).catch(() => null),
       ]);
       const r = profileRes.restaurant || {};
       const style = styleRes?.restaurant || {};
+      const banners = Array.isArray(bannersRes?.status_banners) ? bannersRes.status_banners : [];
+      const scheduleRaw = Array.isArray(hoursRes?.schedule) ? hoursRes.schedule : [];
+      const schedule = emptyHours().map((day) => {
+        const row = scheduleRaw.find((s) => Number(s.day_of_week) === day.day_of_week);
+        if (!row) return day;
+        return {
+          day_of_week: day.day_of_week,
+          day_name: day.day_name,
+          opens_at: row.opens_at || "09:00",
+          closes_at: row.closes_at || "21:00",
+          is_closed: row.is_closed === true || (!row.opens_at && row.is_closed !== false),
+          label: row.label || null,
+        };
+      });
+      const items = Array.isArray(itemsRes?.items)
+        ? itemsRes.items
+        : Array.isArray(itemsRes?.results)
+          ? itemsRes.results
+          : [];
+
       const next = {
         restaurant_name: r.restaurant_name || "",
         cuisine: r.cuisine || "",
         category: r.category || "",
         address_line1: r.address_line1 || "",
+        address_line2: r.address_line2 || "",
         city: r.city || "",
         state: r.state || "",
         postal_code: r.postal_code || "",
         phone: r.phone || "",
         website_url: r.website_url || "",
+        about_us: r.about_us || "",
+        founded_year: r.founded_year != null ? String(r.founded_year) : "",
+        team_intro: r.team_intro || "",
+        featured_menu_item_id: r.featured_menu_item_id != null ? String(r.featured_menu_item_id) : "",
+        now_hiring: banners.includes("now_hiring"),
         profile_style_key:
           style.profile_style_key === undefined || style.profile_style_key === ""
             ? null
@@ -155,6 +229,9 @@ export default function OwnerProfileManager() {
       });
       setForm(next);
       setBaseline(next);
+      setHours(schedule);
+      setHoursBaseline(schedule);
+      setMenuItems(items);
       setResults([]);
       setQuery("");
       setSearchParams({ restaurant: String(r.id) }, { replace: true });
@@ -162,6 +239,9 @@ export default function OwnerProfileManager() {
       setSelected(null);
       setForm(emptyForm());
       setBaseline(emptyForm());
+      setHours(emptyHours());
+      setHoursBaseline(emptyHours());
+      setMenuItems([]);
       setError(err?.message || "Could not load restaurant profile.");
     } finally {
       setLoading(false);
@@ -178,6 +258,9 @@ export default function OwnerProfileManager() {
     setSelected(null);
     setForm(emptyForm());
     setBaseline(emptyForm());
+    setHours(emptyHours());
+    setHoursBaseline(emptyHours());
+    setMenuItems([]);
     setMessage("");
     setError("");
     setSearchParams({}, { replace: true });
@@ -186,6 +269,10 @@ export default function OwnerProfileManager() {
   const dirty = useMemo(() => {
     return Object.keys(form).some((key) => (form[key] ?? null) !== (baseline[key] ?? null));
   }, [form, baseline]);
+
+  const hoursDirty = useMemo(() => {
+    return JSON.stringify(hours) !== JSON.stringify(hoursBaseline);
+  }, [hours, hoursBaseline]);
 
   async function handleSave() {
     if (!selected?.id || !dirty) return;
@@ -198,23 +285,44 @@ export default function OwnerProfileManager() {
         cuisine: form.cuisine,
         category: form.category,
         address_line1: form.address_line1,
+        address_line2: form.address_line2,
         city: form.city,
         state: form.state,
         postal_code: form.postal_code,
         phone: form.phone,
         website_url: form.website_url,
+        about_us: form.about_us,
+        founded_year: form.founded_year === "" ? null : form.founded_year,
+        team_intro: form.team_intro || null,
       };
-      // Style is applied live on select; still flush if somehow out of sync.
       const styleChanged =
         (form.profile_style_key ?? null) !== (baseline.profile_style_key ?? null);
+      const featuredChanged =
+        String(form.featured_menu_item_id || "") !== String(baseline.featured_menu_item_id || "");
+      const hiringChanged = Boolean(form.now_hiring) !== Boolean(baseline.now_hiring);
 
       await updateMenuConsoleRestaurant(selected.id, profileBody);
       if (styleChanged) {
         await updateOwnerRestaurantProfileStyle(selected.id, form.profile_style_key);
       }
+      if (featuredChanged) {
+        const itemId = form.featured_menu_item_id ? Number(form.featured_menu_item_id) : null;
+        await updateOwnerRestaurantFeaturedDish(selected.id, itemId);
+      }
+      if (hiringChanged) {
+        const bannersRes = await getOwnerRestaurantStatusBanners(selected.id).catch(() => ({
+          status_banners: [],
+        }));
+        const current = new Set(
+          Array.isArray(bannersRes?.status_banners) ? bannersRes.status_banners : []
+        );
+        if (form.now_hiring) current.add("now_hiring");
+        else current.delete("now_hiring");
+        await updateOwnerRestaurantStatusBanners(selected.id, [...current]);
+      }
 
       await loadRestaurant(selected.id);
-      setMessage("Profile saved. Public profile updates are live.");
+      setMessage("Profile saved. Public At a Glance / hero fields are live.");
     } catch (err) {
       setError(err?.message || "Could not save profile.");
     } finally {
@@ -245,10 +353,34 @@ export default function OwnerProfileManager() {
       );
     } catch (err) {
       setError(err?.message || "Could not update Restaurant Style.");
-      // Revert local selection to last saved baseline
       setForm((prev) => ({ ...prev, profile_style_key: baseline.profile_style_key }));
     } finally {
       setStyleSaving(false);
+    }
+  }
+
+  async function handleSaveHours() {
+    if (!selected?.id || !hoursDirty) return;
+    setHoursSaving(true);
+    setError("");
+    setMessage("");
+    try {
+      await updateOwnerRestaurantHours(
+        selected.id,
+        hours.map((d) => ({
+          day_of_week: d.day_of_week,
+          opens_at: d.is_closed ? null : d.opens_at,
+          closes_at: d.is_closed ? null : d.closes_at,
+          is_closed: Boolean(d.is_closed),
+          label: d.label || null,
+        }))
+      );
+      setHoursBaseline(hours);
+      setMessage("Hours saved. Public At a Glance Hours row is live.");
+    } catch (err) {
+      setError(err?.message || "Could not save hours.");
+    } finally {
+      setHoursSaving(false);
     }
   }
 
@@ -268,7 +400,7 @@ export default function OwnerProfileManager() {
     <OwnerLayout title="Profile Manager">
       <SectionTitle
         title="Profile Manager"
-        subtitle="Find a restaurant, edit public profile fields, and choose the Restaurant Style background."
+        subtitle="Complete the public profile fields diners see — At a Glance story rows, contact, hours, hiring, and Restaurant Style."
       />
 
       {!selected ? (
@@ -473,6 +605,10 @@ export default function OwnerProfileManager() {
                     <Label>Address</Label>
                     <input style={inputStyle} value={form.address_line1} onChange={f("address_line1")} />
                   </div>
+                  <div style={{ gridColumn: "1 / -1" }}>
+                    <Label>Address line 2</Label>
+                    <input style={inputStyle} value={form.address_line2} onChange={f("address_line2")} />
+                  </div>
                   <div>
                     <Label>City</Label>
                     <input style={inputStyle} value={form.city} onChange={f("city")} />
@@ -485,6 +621,176 @@ export default function OwnerProfileManager() {
                     <Label>Postal code</Label>
                     <input style={inputStyle} value={form.postal_code} onChange={f("postal_code")} />
                   </div>
+                </div>
+              </PageCard>
+
+              <PageCard style={{ padding: 22, marginBottom: 18 }} data-testid="owner-profile-manager-story">
+                <div style={{ fontSize: 14, fontWeight: 800, color: OWNER_COLORS.ink, marginBottom: 6 }}>
+                  At a Glance story
+                </div>
+                <div style={{ fontSize: 13, color: OWNER_COLORS.muted, marginBottom: 14, lineHeight: 1.45 }}>
+                  Fills About Us, Founded, Meet the Team, Signature Dish, and Now Hiring on the public profile.
+                </div>
+                <div style={{ marginBottom: 14 }}>
+                  <Label>About Us</Label>
+                  <textarea
+                    style={{ ...inputStyle, minHeight: 110, resize: "vertical" }}
+                    value={form.about_us}
+                    onChange={f("about_us")}
+                    placeholder="Tell diners about the restaurant."
+                  />
+                </div>
+                <div style={FIELD_GRID}>
+                  <div>
+                    <Label>Founded year</Label>
+                    <input
+                      style={inputStyle}
+                      inputMode="numeric"
+                      maxLength={4}
+                      value={form.founded_year}
+                      onChange={(e) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          founded_year: e.target.value.replace(/[^\d]/g, "").slice(0, 4),
+                        }))
+                      }
+                      placeholder="e.g. 2014"
+                    />
+                  </div>
+                  <div>
+                    <Label>Signature / featured dish</Label>
+                    <select
+                      style={{ ...inputStyle, cursor: "pointer" }}
+                      value={form.featured_menu_item_id}
+                      onChange={f("featured_menu_item_id")}
+                    >
+                      <option value="">— No featured dish —</option>
+                      {menuItems.map((item) => {
+                        const id = item.id || item.menu_item_id;
+                        const name = item.name || item.item_name || `Item #${id}`;
+                        return (
+                          <option key={id} value={String(id)}>
+                            {name}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </div>
+                </div>
+                <div style={{ marginTop: 14 }}>
+                  <Label>Meet the team</Label>
+                  <textarea
+                    style={{ ...inputStyle, minHeight: 90, resize: "vertical" }}
+                    value={form.team_intro}
+                    onChange={f("team_intro")}
+                    placeholder="Introduce the people behind the restaurant."
+                  />
+                </div>
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    marginTop: 16,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: OWNER_COLORS.ink,
+                    cursor: "pointer",
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={Boolean(form.now_hiring)}
+                    onChange={(e) => setForm((prev) => ({ ...prev, now_hiring: e.target.checked }))}
+                  />
+                  Now Hiring (shows on public profile)
+                </label>
+              </PageCard>
+
+              <PageCard style={{ padding: 22, marginBottom: 18 }} data-testid="owner-profile-manager-hours">
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    gap: 12,
+                    alignItems: "center",
+                    flexWrap: "wrap",
+                    marginBottom: 12,
+                  }}
+                >
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: OWNER_COLORS.ink }}>Hours</div>
+                    <div style={{ fontSize: 13, color: OWNER_COLORS.muted, marginTop: 4 }}>
+                      Weekly schedule for the public At a Glance Hours row.
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleSaveHours}
+                    disabled={!hoursDirty || hoursSaving}
+                    style={{
+                      padding: "8px 14px",
+                      borderRadius: 8,
+                      border: "none",
+                      background: hoursDirty ? OWNER_COLORS.accent : "#d6d3d1",
+                      color: "#fff",
+                      fontSize: 12,
+                      fontWeight: 800,
+                      cursor: hoursDirty && !hoursSaving ? "pointer" : "default",
+                      fontFamily: "inherit",
+                    }}
+                  >
+                    {hoursSaving ? "Saving hours…" : "Save hours"}
+                  </button>
+                </div>
+                <div style={{ display: "grid", gap: 8 }}>
+                  {hours.map((day, idx) => (
+                    <div
+                      key={day.day_of_week}
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "110px 90px 1fr 1fr",
+                        gap: 8,
+                        alignItems: "center",
+                      }}
+                    >
+                      <div style={{ fontSize: 13, fontWeight: 600 }}>{day.day_name}</div>
+                      <label style={{ fontSize: 12, display: "flex", gap: 6, alignItems: "center" }}>
+                        <input
+                          type="checkbox"
+                          checked={!day.is_closed}
+                          onChange={(e) => {
+                            const next = [...hours];
+                            next[idx] = { ...day, is_closed: !e.target.checked };
+                            setHours(next);
+                          }}
+                        />
+                        Open
+                      </label>
+                      <input
+                        type="time"
+                        disabled={day.is_closed}
+                        value={day.opens_at || "09:00"}
+                        onChange={(e) => {
+                          const next = [...hours];
+                          next[idx] = { ...day, opens_at: e.target.value };
+                          setHours(next);
+                        }}
+                        style={inputStyle}
+                      />
+                      <input
+                        type="time"
+                        disabled={day.is_closed}
+                        value={day.closes_at || "21:00"}
+                        onChange={(e) => {
+                          const next = [...hours];
+                          next[idx] = { ...day, closes_at: e.target.value };
+                          setHours(next);
+                        }}
+                        style={inputStyle}
+                      />
+                    </div>
+                  ))}
                 </div>
               </PageCard>
 
@@ -544,22 +850,5 @@ export default function OwnerProfileManager() {
         </>
       )}
     </OwnerLayout>
-  );
-}
-
-function Label({ children }) {
-  return (
-    <div
-      style={{
-        fontSize: 11,
-        fontWeight: 700,
-        color: OWNER_COLORS.muted,
-        marginBottom: 6,
-        letterSpacing: "0.04em",
-        textTransform: "uppercase",
-      }}
-    >
-      {children}
-    </div>
   );
 }
