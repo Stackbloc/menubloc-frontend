@@ -1430,7 +1430,8 @@ export default function FoodTruckPage() {
       <div
         style={{
           minHeight: "100vh",
-          background: "#fafaf9",
+          /* Background comes from PublicProfileShell Restaurant Style tokens. */
+          background: "transparent",
           paddingBottom: 88,
           fontFamily: "var(--font-ui, ui-sans-serif, system-ui, sans-serif)",
         }}

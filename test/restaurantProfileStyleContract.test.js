@@ -33,7 +33,23 @@ describe("restaurant profile styles registry", () => {
     assert.ok(style["--profile-page-background"]);
     assert.ok(style["--profile-accent"]);
     assert.ok(style["--profile-button-background"]);
+    assert.ok(style["--profile-hero-from"]);
+    assert.ok(style["--profile-hero-via"]);
+    assert.ok(style["--profile-hero-to"]);
     assert.equal(typeof style.backgroundImage, "string");
+    assert.notEqual(style["--profile-page-background"], "#fafaf9");
+  });
+
+  it("styles are visually distinct from each other (page background)", () => {
+    const coastal = getProfileStyleTokens("coastal").pageBackground;
+    const industrial = getProfileStyleTokens("industrial").pageBackground;
+    const modern = getProfileStyleTokens("modern_minimal").pageBackground;
+    assert.notEqual(coastal, industrial);
+    assert.notEqual(coastal, modern);
+    assert.notEqual(industrial, modern);
+    // Coastal should be clearly cooler / more saturated than near-white default
+    assert.match(coastal, /^#[0-9a-fA-F]{6}$/);
+    assert.ok(coastal.toLowerCase() !== "#eef6f8", "coastal should use strengthened token");
   });
 });
 
@@ -85,11 +101,17 @@ describe("operator + public profile style wiring", () => {
       join(root, "src/components/restaurant/publicProfile/PublicProfileShell.jsx"),
       "utf8"
     );
+    const hero = readFileSync(
+      join(root, "src/components/restaurant/publicProfile/ProfileHero.jsx"),
+      "utf8"
+    );
     assert.match(shell, /data-profile-style/);
     assert.match(shell, /buildProfileStyleRootStyle/);
     assert.match(shell, /ProfileAtAGlance/);
     assert.match(shell, /ProfileMenuHighlights/);
     assert.doesNotMatch(shell, /Football|fish illustration|mexican flag/i);
+    assert.match(hero, /--profile-hero-from/);
+    assert.match(hero, /profile-hero-placeholder/);
   });
 
   it("RestaurantStyleSelector has Use Recommended + preview cards", () => {

@@ -359,8 +359,9 @@ export default function ProfileHero({
     : {
         position: "relative",
         minHeight: isMobile ? 188 : 240,
+        /* Inherits --profile-hero-* from PublicProfileShell Restaurant Style vars. */
         background:
-          "linear-gradient(160deg, #052e16 0%, #14532d 38%, #292524 100%)",
+          "linear-gradient(160deg, var(--profile-hero-from, #052e16) 0%, var(--profile-hero-via, #14532d) 38%, var(--profile-hero-to, #292524) 100%)",
       };
 
   return (

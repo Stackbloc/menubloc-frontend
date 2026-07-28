@@ -43,7 +43,7 @@ function StylePreviewCard({
     >
       <div
         style={{
-          height: 52,
+          height: 58,
           backgroundColor: tokens.pageBackground,
           backgroundImage: tokens.backgroundPattern,
           backgroundRepeat: "repeat",
@@ -51,6 +51,17 @@ function StylePreviewCard({
           borderBottom: `1px solid ${tokens.cardBorder}`,
         }}
       >
+        <div
+          style={{
+            position: "absolute",
+            left: 0,
+            right: 0,
+            top: 0,
+            height: 18,
+            background: `linear-gradient(90deg, ${tokens.accent} 0%, ${tokens.buttonBackground} 100%)`,
+            opacity: 0.92,
+          }}
+        />
         <div
           style={{
             position: "absolute",
@@ -114,6 +125,16 @@ function CompactStylePreview({ styleKey, restaurantName }) {
         marginBottom: 4,
       }}
     >
+      <div
+        aria-hidden="true"
+        style={{
+          height: 36,
+          borderRadius: 8,
+          marginBottom: 10,
+          background:
+            "linear-gradient(160deg, var(--profile-hero-from, #052e16) 0%, var(--profile-hero-via, #14532d) 38%, var(--profile-hero-to, #292524) 100%)",
+        }}
+      />
       <div
         style={{
           background: "#fff",
