@@ -38,6 +38,8 @@ describe("owner restaurant manager nav + profile manager", () => {
     assert.match(page, /Restaurant Style/);
     assert.match(page, /getOwnerRestaurantProfileStyle/);
     assert.match(page, /updateOwnerRestaurantProfileStyle/);
+    assert.match(page, /handleStyleChange/);
+    assert.match(page, /applyMode="live"/);
     assert.match(page, /getMenuConsoleRestaurant/);
     assert.match(page, /updateMenuConsoleRestaurant/);
     assert.match(api, /profile-style/);

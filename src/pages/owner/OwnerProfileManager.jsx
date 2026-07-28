@@ -56,6 +56,7 @@ export default function OwnerProfileManager() {
   const [categoryOptions, setCategoryOptions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [styleSaving, setStyleSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
@@ -203,6 +204,7 @@ export default function OwnerProfileManager() {
         phone: form.phone,
         website_url: form.website_url,
       };
+      // Style is applied live on select; still flush if somehow out of sync.
       const styleChanged =
         (form.profile_style_key ?? null) !== (baseline.profile_style_key ?? null);
 
@@ -217,6 +219,36 @@ export default function OwnerProfileManager() {
       setError(err?.message || "Could not save profile.");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleStyleChange(key) {
+    const next = key == null || key === "" ? null : key;
+    setForm((prev) => ({ ...prev, profile_style_key: next }));
+    if (!selected?.id) return;
+    if ((baseline.profile_style_key ?? null) === next) return;
+
+    setStyleSaving(true);
+    setError("");
+    setMessage("");
+    try {
+      const res = await updateOwnerRestaurantProfileStyle(selected.id, next);
+      const saved =
+        res?.restaurant?.profile_style_key === undefined || res?.restaurant?.profile_style_key === ""
+          ? null
+          : res.restaurant.profile_style_key;
+      const effective = res?.restaurant?.effective_profile_style || saved || "modern_minimal";
+      setForm((prev) => ({ ...prev, profile_style_key: saved }));
+      setBaseline((prev) => ({ ...prev, profile_style_key: saved }));
+      setMessage(
+        `Restaurant Style applied live (${String(effective).replace(/_/g, " ")}). Hard-refresh the public profile to see it.`
+      );
+    } catch (err) {
+      setError(err?.message || "Could not update Restaurant Style.");
+      // Revert local selection to last saved baseline
+      setForm((prev) => ({ ...prev, profile_style_key: baseline.profile_style_key }));
+    } finally {
+      setStyleSaving(false);
     }
   }
 
@@ -461,14 +493,17 @@ export default function OwnerProfileManager() {
                   Restaurant Style
                 </div>
                 <div style={{ fontSize: 13, color: OWNER_COLORS.muted, marginBottom: 12, lineHeight: 1.45 }}>
-                  Public profile background atmosphere. Changes apply live when you save.
+                  Public profile background atmosphere. Selecting a style applies it live — then
+                  hard-refresh the public profile page.
+                  {styleSaving ? " Saving style…" : ""}
                 </div>
                 <RestaurantStyleSelector
                   profileStyleKey={form.profile_style_key}
                   category={form.category}
                   cuisine={form.cuisine}
                   restaurantName={form.restaurant_name || selected.name}
-                  onChange={(key) => setForm((prev) => ({ ...prev, profile_style_key: key }))}
+                  applyMode="live"
+                  onChange={handleStyleChange}
                 />
               </PageCard>
             </>

@@ -122,5 +122,6 @@ describe("operator + public profile style wiring", () => {
     assert.match(sel, /Use Recommended Style/);
     assert.match(sel, /profile-style-live-preview/);
     assert.match(sel, /profile-style-card-/);
+    assert.match(sel, /applyMode/);
   });
 });

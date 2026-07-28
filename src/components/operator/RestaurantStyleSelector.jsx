@@ -119,18 +119,19 @@ function CompactStylePreview({ styleKey, restaurantName }) {
       style={{
         ...root,
         borderRadius: 12,
-        border: "1px solid #e4e9f0",
-        padding: 16,
+        border: `2px solid ${tokens.accent}`,
+        padding: 18,
         marginTop: 14,
         marginBottom: 4,
+        minHeight: 200,
       }}
     >
       <div
         aria-hidden="true"
         style={{
-          height: 36,
+          height: 48,
           borderRadius: 8,
-          marginBottom: 10,
+          marginBottom: 12,
           background:
             "linear-gradient(160deg, var(--profile-hero-from, #052e16) 0%, var(--profile-hero-via, #14532d) 38%, var(--profile-hero-to, #292524) 100%)",
         }}
@@ -181,8 +182,12 @@ function CompactStylePreview({ styleKey, restaurantName }) {
           Sample action
         </button>
       </div>
-      <div style={{ marginTop: 8, fontSize: 11, color: "#78716c" }}>
-        Showing: <strong style={{ color: "#1c1917" }}>{tokens.name}</strong>
+      <div style={{ marginTop: 10, fontSize: 12, color: "#1c1917", fontWeight: 700 }}>
+        Showing: {tokens.name}
+        <span style={{ fontWeight: 500, color: "#57534e" }}>
+          {" "}
+          · page {tokens.pageBackground}
+        </span>
       </div>
     </div>
   );
@@ -195,6 +200,7 @@ function CompactStylePreview({ styleKey, restaurantName }) {
  *   cuisine: string,
  *   restaurantName: string,
  *   onChange: (key: string|null) => void,
+ *   applyMode?: "draft" | "live",
  * }} props
  */
 export default function RestaurantStyleSelector({
@@ -203,6 +209,7 @@ export default function RestaurantStyleSelector({
   cuisine,
   restaurantName,
   onChange,
+  applyMode = "draft",
 }) {
   const recommended = resolveEffectiveProfileStyle({
     profile_style_key: null,
@@ -215,12 +222,15 @@ export default function RestaurantStyleSelector({
     cuisine,
   });
   const useRecommended = profileStyleKey == null || profileStyleKey === "";
+  const applyCopy =
+    applyMode === "live"
+      ? "Selecting a style applies it to the public profile immediately. Hard-refresh the public page to see the new atmosphere."
+      : "Choose the atmosphere of your Menuply profile. We recommend a style based on your restaurant type, but you can select any style. Save draft, then Publish to go live.";
 
   return (
     <div data-testid="restaurant-style-selector">
       <p style={{ margin: "0 0 10px", fontSize: 13, color: "#57534e", lineHeight: 1.45 }}>
-        Choose the atmosphere of your Menuply profile. We recommend a style based on your
-        restaurant type, but you can select any style.
+        {applyCopy}
       </p>
 
       <button
