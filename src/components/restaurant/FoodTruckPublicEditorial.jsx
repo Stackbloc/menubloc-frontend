@@ -31,7 +31,6 @@ export default function FoodTruckPublicEditorial({
   menuHref = null,
   menuPreviewItems = [],
   billboardPreview = [],
-  claimPanel = null,
   showClaimInvites = false,
   claimHref = null,
   isMobile,
@@ -68,7 +67,6 @@ export default function FoodTruckPublicEditorial({
       menuHref={menuHref}
       menuPreviewItems={menuPreviewItems}
       billboardPreview={billboardPreview}
-      claimPanel={claimPanel}
       showClaimInvites={showClaimInvites}
       claimHref={claimHref}
       isMobile={isMobile}

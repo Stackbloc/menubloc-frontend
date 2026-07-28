@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import OwnerLayout, { OWNER_COLORS, PageCard, SectionTitle } from "./OwnerLayout.jsx";
 import { getOwnerDashboardSummary } from "../../lib/ownerApi.js";
 import { SimpleTable } from "./intelligence/intelligenceShared.jsx";
+import OwnerRestaurantStylePanel from "./OwnerRestaurantStylePanel.jsx";
 
 const METRIC_GRID = {
   display: "grid",
@@ -42,6 +43,8 @@ export default function OwnerDashboard() {
       }
     >
       {error ? <ErrorBanner message={error} /> : null}
+
+      <OwnerRestaurantStylePanel />
 
       <PageCard style={{ padding: "18px 22px", marginBottom: 22 }}>
         <div style={{ fontSize: 14, color: OWNER_COLORS.ink, lineHeight: 1.55 }}>

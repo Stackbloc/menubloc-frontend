@@ -10,12 +10,15 @@ function read(relativePath) {
   return fs.readFileSync(path.join(currentDir, "..", relativePath), "utf8");
 }
 
-test("RestaurantPublicPage renders full claimable profile with menu and claim CTA", () => {
+test("RestaurantPublicPage renders full claimable profile with menu; no bottom claim panel", () => {
   const source = read("src/pages/RestaurantPublicPage.jsx");
   assert.match(source, /isFullClaimablePublicProfile/);
-  assert.match(source, /Claim This Profile/);
-  assert.match(source, /Claim this profile|Claim/);
+  assert.match(source, /showClaimInvites/);
   assert.match(source, /menuPreviewItems=\{menuPreview\?\.items/);
+  assert.doesNotMatch(source, /ClaimProfilePanel/);
+  assert.doesNotMatch(source, /claim-profile-panel/);
+  assert.doesNotMatch(source, /Claim This Profile/);
+  assert.doesNotMatch(source, /id="claim-profile"/);
   assert.doesNotMatch(source, /\.is_demo/);
   assert.doesNotMatch(source, /Demo profile/);
 });
@@ -30,7 +33,10 @@ test("FoodTruckPage uses personality editorial with View menu icon rail (no inli
   assert.match(source, /FoodTruckPublicEditorial/);
   assert.match(source, /public_ordering_mode === "display_only"/);
   assert.match(source, /public_profile_mode === "full_claimable"/);
-  assert.match(source, /Claim this profile/);
+  assert.match(source, /showClaimInvites/);
+  assert.doesNotMatch(source, /FullClaimableClaimNotice/);
+  assert.doesNotMatch(source, /claim-profile-panel/);
+  assert.doesNotMatch(source, /Claim this profile/);
   assert.match(source, /SaveContactButton/);
   assert.match(source, /food-truck-save-contact/);
   assert.match(source, /restaurantMenuPathFromRow/);
@@ -52,6 +58,7 @@ test("FoodTruckPage uses personality editorial with View menu icon rail (no inli
   assert.doesNotMatch(shell, /ProfileRestaurantHighlights/);
   assert.doesNotMatch(shell, /Food truck highlights/);
   assert.doesNotMatch(shell, /Business information/);
+  assert.doesNotMatch(shell, /\{claimPanel\}/);
   assert.match(shell, /ProfileFeaturedContent/);
   assert.match(shell, /FollowRestaurantButton|ProfileHero/);
   assert.match(shell, /food-truck-view-menu/);

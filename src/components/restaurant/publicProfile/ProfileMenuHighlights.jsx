@@ -5,7 +5,7 @@
 import { Link } from "react-router-dom";
 import ViewMenuIcon from "../../icons/ViewMenuIcon.jsx";
 import IconHoverLabel from "../../IconHoverLabel.jsx";
-import { PROFILE_GREEN, PROFILE_INK, PROFILE_MUTED } from "./profilePrimitives.jsx";
+import { PROFILE_INK, PROFILE_MUTED, profileSectionLabelVar, profileCardBorderVar, profileCardShadowVar } from "./profilePrimitives.jsx";
 
 const MAX_ITEMS = 9;
 const MAX_SECTIONS = 4;
@@ -75,8 +75,8 @@ export default function ProfileMenuHighlights({
         padding: compact ? (isMobile ? "14px 14px" : "18px 18px") : "22px 22px",
         borderRadius: 16,
         background: "#fff",
-        border: "1px solid #e7e5e4",
-        boxShadow: "0 8px 28px rgba(28, 25, 23, 0.04)",
+        border: `1px solid ${profileCardBorderVar}`,
+        boxShadow: profileCardShadowVar,
         minWidth: 0,
         maxWidth: isMobile ? "100%" : compact ? 320 : undefined,
         width: isMobile ? "100%" : undefined,
@@ -100,7 +100,7 @@ export default function ProfileMenuHighlights({
             fontWeight: 800,
             letterSpacing: 0.8,
             textTransform: "uppercase",
-            color: PROFILE_GREEN,
+            color: profileSectionLabelVar,
           }}
         >
           Menu preview

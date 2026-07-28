@@ -10,11 +10,20 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { operatorPublicProfilePath } from "../src/lib/canonicalUrl.js";
+import { formatWebsiteHostLabel } from "../src/lib/formatWebsiteHostLabel.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 function read(rel) {
   return fs.readFileSync(path.join(ROOT, rel), "utf8");
+}
+
+function testWebsiteHostLabelDisplay() {
+  assert.equal(formatWebsiteHostLabel("https://www.tomswatchbar.com/"), "tomswatchbar.com");
+  assert.equal(formatWebsiteHostLabel("https://tomswatchbar.com/menu"), "tomswatchbar.com");
+  assert.equal(formatWebsiteHostLabel("http://Example.COM"), "example.com");
+  assert.equal(formatWebsiteHostLabel("tomswatchbar.com"), "tomswatchbar.com");
+  assert.equal(formatWebsiteHostLabel(""), "");
 }
 
 function testOperatorPublicProfilePathHelper() {
@@ -70,7 +79,8 @@ function testClaimPendingAndOwnerSkipUnclaimedStub() {
   const page = read("src/pages/RestaurantPublicPage.jsx");
   assert.match(page, /status === "claimed" \|\| status === "claim_pending"/);
   assert.match(page, /isOrdinaryUnclaimed/);
-  assert.match(page, /ClaimProfilePanel/);
+  assert.doesNotMatch(page, /ClaimProfilePanel/);
+  assert.doesNotMatch(page, /claim-profile-panel/);
 }
 
 function testProfileEditorHasSavePublishView() {
@@ -136,7 +146,7 @@ function testPublicProfileMenuLikeShareRail() {
 
 /**
  * Claimed and ordinary unclaimed restaurants use shared editorial public profile.
- * Claim is one panel — not a FieldRow subscription stub.
+ * Bottom claim panel removed — at-a-glance claim invites remain when unclaimed.
  */
 function testClaimedProfileUsesEditorialPresentation() {
   const page = read("src/pages/RestaurantPublicPage.jsx");
@@ -147,9 +157,10 @@ function testClaimedProfileUsesEditorialPresentation() {
   const hero = read("src/components/restaurant/publicProfile/ProfileHero.jsx");
   assert.match(page, /RestaurantPublicEditorial/);
   assert.match(page, /fetchRestaurantMenuPreview/);
-  assert.match(page, /ClaimProfilePanel/);
-  assert.match(page, /id="claim-profile"/);
-  assert.match(page, /Claim This Profile/);
+  assert.doesNotMatch(page, /ClaimProfilePanel/);
+  assert.doesNotMatch(page, /claim-profile-panel/);
+  assert.doesNotMatch(page, /Claim This Profile/);
+  assert.doesNotMatch(page, /id="claim-profile"/);
   assert.match(page, /isOrdinaryUnclaimed/);
   assert.match(page, /status_banners/);
   assert.match(page, /status_event_presentations/);
@@ -174,6 +185,7 @@ function testClaimedProfileUsesEditorialPresentation() {
   assert.doesNotMatch(shell, /label="Address"/);
   assert.match(shell, /ProfileNowHiring/);
   assert.match(shell, /showClaimInvites/);
+  assert.doesNotMatch(shell, /\{claimPanel\}/);
   assert.match(shell, /venueLabel|clusterName/);
   const nowHiring = read("src/components/restaurant/publicProfile/ProfileNowHiring.jsx");
   assert.match(nowHiring, /profile-now-hiring/);
@@ -203,6 +215,11 @@ function testClaimedProfileUsesEditorialPresentation() {
   assert.match(hero, /Open in Google Maps|Open \$\{name\} in Google Maps/);
   assert.match(hero, /profile-hero-contact|profile-hero-phone/);
   assert.match(hero, /profile-hero-identity-meta|profile-hero-venue/);
+  assert.match(hero, /formatWebsiteHostLabel/);
+  assert.match(hero, /websiteLabel/);
+  assert.match(hero, /href=\{website\}/);
+  assert.match(hero, /from ["'].*formatWebsiteHostLabel\.js["']/);
+  assert.doesNotMatch(hero, /\{websiteRaw \|\| website\} ↗/);
   assert.doesNotMatch(hero, /borderRadius: 999/);
   // Photos before featured; hiring after featured when active.
   const photoIdx = shell.indexOf("<ProfilePhotoStrip");
@@ -215,10 +232,9 @@ function testClaimedProfileUsesEditorialPresentation() {
   // Contact once in hero — not Business Information.
   assert.doesNotMatch(shell, /label="Website"/);
   assert.doesNotMatch(shell, /label="Phone"/);
-  // Quiet claim after restaurant content.
-  const claimIdx = shell.lastIndexOf("{claimPanel}");
+  // About is the last content block — no bottom claim panel after it.
   const aboutIdx = shell.indexOf('title="About Us"');
-  assert.ok(claimIdx > aboutIdx, "claim should follow About");
+  assert.ok(aboutIdx > -1, "About Us section missing");
   assert.match(page, /canonicalRestaurantSlug/);
   assert.match(page, /\/restaurants\/:state\/:city\/:restaurantSlug/);
   assert.match(page, /firstBillboardImage/);
@@ -237,6 +253,7 @@ function testSharedPublicProfileShell() {
   assert.match(shell, /saveContactControl/);
   assert.match(shell, /Located today|buildCurrentLocation/);
   assert.match(shell, /ProfileFeaturedContent/);
+  assert.match(shell, /data-profile-style|buildProfileStyleRootStyle/);
   // View Menu / Directions / Call / Website chips removed from primary actions.
   assert.doesNotMatch(actions, /profile-action-view-menu/);
   assert.doesNotMatch(actions, /profile-action-directions/);
@@ -249,6 +266,7 @@ function testSharedPublicProfileShell() {
 }
 
 testOperatorPublicProfilePathHelper();
+testWebsiteHostLabelDisplay();
 testDashboardOpensProfileEditor();
 testMyAccountUsesOperatorPublicProfilePath();
 testHelpCenterDocumentsRestaurantsSlug();

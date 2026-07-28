@@ -18,6 +18,15 @@ export const PROFILE_GREEN = "#166534";
 export const PROFILE_CONTENT_MAX = 1040;
 export const FOOD_TRUCK_CONTENT_MAX = 640;
 
+/** CSS vars set by PublicProfileShell from Restaurant Style tokens (with fallbacks). */
+export const profilePageBgVar = `var(--profile-page-background, ${PROFILE_PAGE_BG})`;
+export const profileAccentVar = `var(--profile-accent, ${PROFILE_GREEN})`;
+export const profileSectionLabelVar = `var(--profile-section-label, ${PROFILE_GREEN})`;
+export const profileCardBorderVar = "var(--profile-card-border, #e7e5e4)";
+export const profileCardShadowVar = "var(--profile-card-shadow, 0 1px 2px rgba(28,25,23,0.04))";
+export const profileButtonBgVar = `var(--profile-button-background, ${PROFILE_GREEN})`;
+export const profileButtonTextVar = "var(--profile-button-text, #ffffff)";
+
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export function asStr(v) {
@@ -173,7 +182,7 @@ export function QuietLink({ href, children }) {
       href={href}
       target="_blank"
       rel="noreferrer"
-      style={{ color: PROFILE_GREEN, textDecoration: "none", fontWeight: 600 }}
+      style={{ color: profileAccentVar, textDecoration: "none", fontWeight: 600 }}
     >
       {children}
     </a>
@@ -357,8 +366,8 @@ export function actionChipStyle() {
 export function primaryActionChipStyle() {
   return {
     ...actionChipStyle(),
-    background: PROFILE_GREEN,
-    borderColor: PROFILE_GREEN,
-    color: "#fff",
+    background: profileButtonBgVar,
+    borderColor: profileButtonBgVar,
+    color: profileButtonTextVar,
   };
 }

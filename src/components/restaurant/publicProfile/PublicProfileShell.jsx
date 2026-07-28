@@ -21,10 +21,15 @@ import {
   normalizeScheduleStops,
   buildCurrentLocation,
   firstNonEmpty,
-  PROFILE_PAGE_BG,
   PROFILE_INK,
   PROFILE_CONTENT_MAX,
+  profilePageBgVar,
 } from "./profilePrimitives.jsx";
+import {
+  buildProfileStyleRootStyle,
+  DEFAULT_PROFILE_STYLE_KEY,
+} from "../../../lib/restaurantProfileStyles.js";
+import { resolveEffectiveProfileStyle } from "../../../lib/restaurantProfileStyleRecommendation.js";
 
 export default function PublicProfileShell({
   profileType = "restaurant",
@@ -64,7 +69,6 @@ export default function PublicProfileShell({
   operatingHours = [],
   claimHref = null,
   claimState = null,
-  claimPanel = null,
   showClaimInvites = false,
   isMobile = false,
 }) {
@@ -72,7 +76,28 @@ export default function PublicProfileShell({
   void menuItemCount;
   void menuCount;
   void statusEventPresentations;
-  void category;
+
+  const effectiveStyleKey = useMemo(() => {
+    const fromApi = profile?.effective_profile_style;
+    if (fromApi && String(fromApi).trim()) return String(fromApi).trim();
+    return resolveEffectiveProfileStyle({
+      profile_style_key: profile?.profile_style_key,
+      category: category || profile?.category,
+      cuisine: cuisine || profile?.cuisine,
+    });
+  }, [
+    profile?.effective_profile_style,
+    profile?.profile_style_key,
+    profile?.category,
+    profile?.cuisine,
+    category,
+    cuisine,
+  ]);
+
+  const styleRoot = useMemo(
+    () => buildProfileStyleRootStyle(effectiveStyleKey || DEFAULT_PROFILE_STYLE_KEY),
+    [effectiveStyleKey]
+  );
 
   const isFoodTruck = profileType === "food_truck";
   const contentMax = PROFILE_CONTENT_MAX;
@@ -185,9 +210,11 @@ export default function PublicProfileShell({
     <div
       data-testid={isFoodTruck ? "food-truck-public-editorial" : "restaurant-public-editorial"}
       data-profile-type={profileType}
+      data-profile-style={effectiveStyleKey || DEFAULT_PROFILE_STYLE_KEY}
       style={{
         minHeight: "100vh",
-        background: PROFILE_PAGE_BG,
+        ...styleRoot,
+        backgroundColor: styleRoot.backgroundColor || profilePageBgVar,
         color: PROFILE_INK,
         fontFamily: "var(--font-ui, ui-sans-serif, system-ui, sans-serif)",
         paddingBottom: 88,
@@ -287,9 +314,6 @@ export default function PublicProfileShell({
             {storyText}
           </ProfileSection>
         ) : null}
-
-        {/* Quiet claim after restaurant story — Menuply admin steps back */}
-        {claimPanel}
       </div>
     </div>
   );

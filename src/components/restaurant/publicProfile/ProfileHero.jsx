@@ -14,6 +14,7 @@ import {
   MENU_ROW_ICON_SIZE,
   PROFILE_CONTENT_MAX,
 } from "./profilePrimitives.jsx";
+import { formatWebsiteHostLabel } from "../../../lib/formatWebsiteHostLabel.js";
 
 export default function ProfileHero({
   profileType = "restaurant",
@@ -54,6 +55,7 @@ export default function ProfileHero({
   const venue = String(venueLabel || "").trim();
   const cluster = String(clusterName || "").trim();
   const showIdentityMeta = profileType === "restaurant" && (venue || cluster || metaBits.length);
+  const websiteLabel = formatWebsiteHostLabel(websiteRaw || website);
 
   const identity = (
     <div style={{ display: "flex", alignItems: "flex-start", gap: 14, minWidth: 0 }}>
@@ -273,7 +275,7 @@ export default function ProfileHero({
                 data-testid="profile-hero-website"
                 style={{ color: linkColor, textDecoration: "none", fontWeight: 600 }}
               >
-                {websiteRaw || website} ↗
+                {websiteLabel} ↗
               </a>
             ) : null}
           </div>
@@ -324,7 +326,7 @@ export default function ProfileHero({
                     rel="noreferrer"
                     style={{ color: linkColor, textDecoration: "none", fontWeight: 600 }}
                   >
-                    {websiteRaw || website} ↗
+                    {websiteLabel} ↗
                   </a>
                 ) : null}
               </div>

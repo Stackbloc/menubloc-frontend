@@ -23,7 +23,7 @@
  *     - No on-profile Billboard block; /billboard URL redirects to the profile
  *
  *   Claimed / unclaimed / full_claimable: shared editorial public profile (PublicProfileShell).
- *   Ordinary unclaimed: brief brand splash → real public profile + one Claim panel (not a claim form).
+ *   Ordinary unclaimed: brief brand splash → real public profile (at-a-glance claim invites only; no bottom claim panel).
  *   Menu preview: GET /public/restaurants/:id/menu-preview (scrollable name+price list).
  *
  *   Profile tier values coded against: "pro" | "verified"
@@ -32,7 +32,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, Navigate, useLocation, useParams } from "react-router-dom";
+import { Navigate, useLocation, useParams } from "react-router-dom";
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import BottomNav from "../components/BottomNav.jsx";
 import PublicProfileOwnerChrome from "../components/restaurant/PublicProfileOwnerChrome.jsx";
@@ -137,31 +137,6 @@ function isFullClaimablePublicProfile(data) {
   return String(mode).trim().toLowerCase() === "full_claimable";
 }
 
-function buildClaimPrefillState(data, slugOrId) {
-  const name =
-    firstNonEmpty(data?.restaurant_name, data?.name) || `Restaurant ${slugOrId}`;
-  const addressLine1 = firstNonEmpty(data?.address, data?.address_line1);
-  const city = firstNonEmpty(data?.city);
-  const stateVal = firstNonEmpty(data?.state, data?.region);
-  const postalCode = firstNonEmpty(data?.zip, data?.postal_code, data?.postcode);
-  const phone = firstNonEmpty(data?.phone, data?.phone_number, data?.contact_phone);
-  const websiteRaw = firstNonEmpty(data?.website, data?.website_url);
-  return {
-    restaurant_name: name,
-    address_line1: addressLine1,
-    city,
-    state: stateVal,
-    postal_code: postalCode,
-    phone,
-    website_url: websiteRaw,
-    category: humanizeLabel(firstNonEmpty(data?.category)),
-    cuisine: humanizeLabel(firstNonEmpty(data?.cuisine)),
-    claim_source: "public_restaurant_page",
-    public_restaurant_slug_or_id: slugOrId,
-    restaurant_id: data?.id || null,
-  };
-}
-
 function firstNonEmpty(...values) {
   for (const v of values) {
     const s = String(v || "").trim();
@@ -225,53 +200,6 @@ function buildFoodTruckProfileHref(data, fallbackSlugOrId, location) {
   const search = location?.search || "";
   const hash = location?.hash || "";
   return `/foodtrucks/${encodeURIComponent(target)}${search}${hash}`;
-}
-
-function ClaimProfilePanel({ claimPrefillState, isMobile = false }) {
-  return (
-    <div
-      id="claim-profile"
-      data-testid="claim-profile-panel"
-      style={{
-        marginTop: 8,
-        marginBottom: 8,
-        padding: isMobile ? "10px 0" : "12px 0",
-        borderTop: "1px solid #e7e5e4",
-        display: "flex",
-        flexWrap: "wrap",
-        gap: 10,
-        alignItems: "center",
-        justifyContent: "space-between",
-      }}
-    >
-      <div style={{ flex: "1 1 220px", fontSize: 13, lineHeight: 1.5, color: "#78716c" }}>
-        <span style={{ fontWeight: 700, color: "#44403c" }}>Claim This Profile</span>
-        {" — "}
-        manage this listing and menu on Menuply.
-      </div>
-      <Link
-        to="/onboarding"
-        state={claimPrefillState}
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          justifyContent: "center",
-          height: 36,
-          padding: "0 14px",
-          borderRadius: 999,
-          textDecoration: "none",
-          fontSize: 13,
-          fontWeight: 700,
-          border: "1px solid #d6d3d1",
-          background: "#fff",
-          color: "#1c1917",
-          whiteSpace: "nowrap",
-        }}
-      >
-        Claim
-      </Link>
-    </div>
-  );
 }
 
 function Skel({ w = 160, h = 14, isDark }) {
@@ -573,12 +501,11 @@ export default function RestaurantPublicPage() {
 
   const pageBg = isDark ? "#0b0b0f" : "#ffffff";
   const operatingHours = Array.isArray(data?.operating_hours) ? data.operating_hours : [];
-  const showClaimPanel =
+  const showClaimInvites =
     Boolean(data) &&
     !isClaimedRestaurant(data) &&
     !isOwner &&
     (isOrdinaryUnclaimed || isFullClaimablePublicProfile(data));
-  const claimPrefillState = data ? buildClaimPrefillState(data, resolvedSlug) : null;
 
   if (!loading && !err && data && splashPosts.length && !billboardSplashDone) {
     return (
@@ -670,13 +597,7 @@ export default function RestaurantPublicPage() {
           statusEventPresentations={data?.status_event_presentations}
           operatingHours={operatingHours}
           profile={data}
-          claimHref={showClaimPanel ? "#claim-profile" : null}
-          showClaimInvites={showClaimPanel}
-          claimPanel={
-            showClaimPanel ? (
-              <ClaimProfilePanel claimPrefillState={claimPrefillState} isMobile={isMobile} />
-            ) : null
-          }
+          showClaimInvites={showClaimInvites}
           isMobile={isMobile}
         />
       ) : null}

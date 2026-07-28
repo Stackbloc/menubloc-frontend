@@ -122,6 +122,12 @@ export const getOwnerRestaurantMarkets = () => get("/api/owner/restaurants/marke
 export const getOwnerRestaurantCuisines = () => get("/api/owner/restaurants/cuisines");
 export const getOwnerRestaurantDetail = (restaurantId) =>
   get(`/api/owner/restaurants/${encodeURIComponent(restaurantId)}`);
+export const getOwnerRestaurantProfileStyle = (restaurantId) =>
+  get(`/api/owner/restaurants/${encodeURIComponent(restaurantId)}/profile-style`);
+export const updateOwnerRestaurantProfileStyle = (restaurantId, profileStyleKey) =>
+  patch(`/api/owner/restaurants/${encodeURIComponent(restaurantId)}/profile-style`, {
+    profile_style_key: profileStyleKey,
+  });
 export const addOwnerRestaurantToCrm = (restaurantId) =>
   post(`/api/owner/restaurants/${encodeURIComponent(restaurantId)}/add-to-crm`, {});
 export const getOwnerRevenueSummary = (params = {}) => {

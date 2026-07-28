@@ -5,9 +5,12 @@
 import { Link } from "react-router-dom";
 import {
   firstNonEmpty,
-  PROFILE_GREEN,
   PROFILE_INK,
   PROFILE_MUTED,
+  profileAccentVar,
+  profileSectionLabelVar,
+  profileCardBorderVar,
+  profileCardShadowVar,
 } from "./profilePrimitives.jsx";
 
 function GlanceRow({ label, children, testId, muted = false }) {
@@ -163,8 +166,8 @@ export default function ProfileAtAGlance({
         padding: isMobile ? "16px 14px" : "18px 18px",
         borderRadius: 16,
         background: "#fff",
-        border: "1px solid #e7e5e4",
-        boxShadow: "0 8px 28px rgba(28, 25, 23, 0.04)",
+        border: `1px solid ${profileCardBorderVar}`,
+        boxShadow: profileCardShadowVar,
         minWidth: 0,
       }}
     >
@@ -174,7 +177,7 @@ export default function ProfileAtAGlance({
           fontWeight: 800,
           letterSpacing: 0.8,
           textTransform: "uppercase",
-          color: PROFILE_GREEN,
+          color: profileSectionLabelVar,
           marginBottom: 8,
         }}
       >
@@ -190,7 +193,7 @@ export default function ProfileAtAGlance({
       {showClaimInvites ? (
         <div style={{ marginTop: 12, fontSize: 12, color: PROFILE_MUTED }}>
           Already the owner?{" "}
-          <Link to="/onboarding" style={{ color: PROFILE_GREEN, fontWeight: 700, textDecoration: "none" }}>
+          <Link to="/onboarding" style={{ color: profileAccentVar, fontWeight: 700, textDecoration: "none" }}>
             Claim this profile
           </Link>{" "}
           to complete these details.

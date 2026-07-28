@@ -27,6 +27,7 @@ import { useOperator } from "../../context/OperatorContext.jsx";
 import * as api from "../../lib/operatorApi.js";
 import { API_BASE } from "../../lib/operatorApi.js";
 import RestaurantStatusSettingsPanel from "../../components/restaurant/RestaurantStatusSettingsPanel.jsx";
+import RestaurantStyleSelector from "../../components/operator/RestaurantStyleSelector.jsx";
 import {
   resolveRestaurantOnboardingState,
   syncRestaurantOnboardingProgress,
@@ -187,6 +188,11 @@ export function OperatorRestaurantProfileForm({ embedded = false } = {}) {
           about_us:        p.about_us || "",
           logo_url:        p.logo_url || "",
           featured_menu_item_id: p.featured_menu_item_id || "",
+          // null = Use Recommended Style (auto from category/cuisine)
+          profile_style_key:
+            p.profile_style_key === undefined || p.profile_style_key === ""
+              ? null
+              : p.profile_style_key,
         });
       })
       .catch(e => setError(e.message))
@@ -256,6 +262,8 @@ export function OperatorRestaurantProfileForm({ embedded = false } = {}) {
         postal_code:     form.postal_code,
         phone:           form.phone,
         website_url:     form.website_url,
+        // Explicit null clears manual override (Use Recommended Style)
+        profile_style_key: form.profile_style_key == null ? null : form.profile_style_key,
       };
       if (hasBenefit("about_us")) payload.about_us = form.about_us;
       await api.updateProfile(rid, payload);
@@ -710,6 +718,20 @@ export function OperatorRestaurantProfileForm({ embedded = false } = {}) {
               ) : null}
             </div>
           </div>
+        </Section>
+
+        {/* ── Restaurant Style ────────────────────────────────────────── */}
+        <Section
+          title="Restaurant Style"
+          sub="Save draft, then Publish to show the selected atmosphere on your public profile."
+        >
+          <RestaurantStyleSelector
+            profileStyleKey={form.profile_style_key ?? null}
+            category={form.category || ""}
+            cuisine={form.cuisine || ""}
+            restaurantName={form.restaurant_name || profile?.restaurant_name || ""}
+            onChange={(key) => setForm((p) => ({ ...p, profile_style_key: key }))}
+          />
         </Section>
 
         {/* ── Featured Dish ───────────────────────────────────────────── */}

@@ -37,7 +37,6 @@ export default function RestaurantPublicEditorial({
   profile = null,
   claimHref = null,
   claimState = null,
-  claimPanel = null,
   showClaimInvites = false,
   isMobile,
 }) {
@@ -79,7 +78,6 @@ export default function RestaurantPublicEditorial({
       operatingHours={operatingHours}
       claimHref={claimHref}
       claimState={claimState}
-      claimPanel={claimPanel}
       showClaimInvites={showClaimInvites}
       isMobile={isMobile}
     />
