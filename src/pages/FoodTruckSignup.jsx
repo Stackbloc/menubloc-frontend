@@ -37,7 +37,6 @@ const PLAN_FEATURES = [
   "Full menu",
   "Edit menus and menu items",
   "Rich searchable menu data",
-  "QR Code",
   "Window QR Code included",
   "Social sharing of menus and menu items",
   "Customers can follow your Food Truck",

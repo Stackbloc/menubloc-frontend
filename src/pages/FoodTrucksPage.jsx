@@ -169,7 +169,7 @@ export default function FoodTrucksPage() {
               Own a food truck?
             </div>
             <div style={{ color: "var(--gb-color-ink-muted)", fontSize: 14, lineHeight: 1.6 }}>
-              Sign up for $89/year. Professional profile, full menu, QR Code, Window QR Code included, online ordering, social sharing, and Lowest marketplace commission.
+              Sign up for $89/year. Professional profile, full menu, Window QR Code included, online ordering, social sharing, and Lowest marketplace commission.
             </div>
             <div>
               <Link
