@@ -306,6 +306,20 @@ export const menuAppearances = {
     shadow: "0 1px 3px rgba(154,52,18,0.09)",
     ...MENU_APPEARANCE_READABILITY,
   },
+  dark: {
+    name: "Dark",
+    pageBackground: "#000000",
+    backgroundPattern: patternGrid("#a3a3a3", 0.22, 18),
+    menuSurface: "#000000",
+    accent: "#fafafa",
+    divider: "#262626",
+    sectionHeader: "#f5f5f5",
+    border: "#333333",
+    shadow: "0 1px 3px rgba(255,255,255,0.08)",
+    ink: "#ffffff",
+    muted: "#a3a3a3",
+    onPage: "#ffffff",
+  },
 };
 
 export const MENU_APPEARANCE_KEYS = Object.freeze(Object.keys(menuAppearances));

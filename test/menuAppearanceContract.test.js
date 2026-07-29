@@ -25,11 +25,21 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
 
 describe("Menu Appearance registry", () => {
-  it("has 15 approved keys including modern_minimal", () => {
-    assert.equal(MENU_APPEARANCE_KEYS.length, 15);
+  it("has 16 approved keys including modern_minimal and dark", () => {
+    assert.equal(MENU_APPEARANCE_KEYS.length, 16);
     assert.ok(isValidMenuAppearanceKey("modern_minimal"));
     assert.ok(isValidMenuAppearanceKey("artisan"));
+    assert.ok(isValidMenuAppearanceKey("dark"));
     assert.equal(isValidMenuAppearanceKey("bogus"), false);
+  });
+
+  it("dark uses black surfaces with white/light readable text", () => {
+    const t = getMenuAppearanceTokens("dark");
+    assert.equal(t.pageBackground, "#000000");
+    assert.equal(t.menuSurface, "#000000");
+    assert.equal(t.ink, "#ffffff");
+    assert.equal(t.onPage, "#ffffff");
+    assert.ok(evaluateMenuAppearanceContrast("dark").ok);
   });
 
   it("builds CSS vars and root style for an appearance", () => {
