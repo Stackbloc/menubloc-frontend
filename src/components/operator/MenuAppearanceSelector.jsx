@@ -100,7 +100,9 @@ function CompactMenuAppearancePreview({ appearanceKey, restaurantName }) {
   const surface = buildMenuAppearanceSurfaceStyle(appearanceKey);
   return (
     <div
+      key={appearanceKey}
       data-testid="menu-appearance-live-preview"
+      data-preview-appearance={appearanceKey}
       style={{
         ...root,
         borderRadius: 12,
@@ -150,6 +152,10 @@ function CompactMenuAppearancePreview({ appearanceKey, restaurantName }) {
       </div>
       <div style={{ marginTop: 12, fontSize: 12, color: tokens.onPage, fontWeight: 700 }}>
         Showing: {tokens.name}
+        <span style={{ fontWeight: 500, opacity: 0.85 }}>
+          {" "}
+          · page {tokens.pageBackground} · surface {tokens.menuSurface}
+        </span>
       </div>
     </div>
   );
@@ -189,7 +195,7 @@ export default function MenuAppearanceSelector({
   const applyCopy =
     applyMode === "live"
       ? "Selecting an appearance applies it to the public Default menu immediately. Hard-refresh the public menu to see it. Custom Menu Lab layouts keep their own styling."
-      : "Customize how your menu is presented to customers. Menuply recommends an appearance based on your restaurant type, but you may choose any available appearance.";
+      : "Customize how your menu is presented to customers. Menuply recommends an appearance based on your restaurant type, but you may choose any available appearance. Preview uses your current selection (Save Design still required to publish).";
 
   return (
     <div data-testid="menu-appearance-selector">

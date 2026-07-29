@@ -70,9 +70,15 @@ import { normalizeMenuThemeSettings, resolveMenuPageBackground, resolveMenuShell
 import {
   buildMenuAppearanceRootStyle,
   getMenuAppearanceTokens,
+  isValidMenuAppearanceKey,
   shouldApplyMenuAppearance,
 } from "../lib/menuAppearances.js";
 import { resolveEffectiveMenuAppearance } from "../lib/menuAppearanceRecommendation.js";
+import {
+  readMenuAppearanceQueryOverride,
+  readPreviewBackgroundStyleOverride,
+  readPreviewColorOverride,
+} from "../lib/menuLabPreviewUrl.js";
 import { MENU_TEMPLATE_PREVIEW_SAMPLE } from "../data/menuTemplatePreviewSample.js";
 import useSavedMenuPreferences from "../hooks/useSavedMenuPreferences.js";
 import useCatalogDietaryPreferencesSession from "../hooks/useCatalogDietaryPreferencesSession.js";
@@ -1228,7 +1234,17 @@ export default function PublicMenuPage() {
       });
     },
   });
-  const displaySettingsSource = data?.display_settings || data || {};
+  const previewBackgroundStyle = readPreviewBackgroundStyleOverride(searchParams);
+  const previewPrimaryColor = readPreviewColorOverride(searchParams, "primaryColor");
+  const previewAccentColor = readPreviewColorOverride(searchParams, "accentColor");
+  const displaySettingsSource = {
+    ...(data?.display_settings || data || {}),
+    ...(previewBackgroundStyle ? { background_style: previewBackgroundStyle } : {}),
+    ...(previewPrimaryColor
+      ? { primary_color: previewPrimaryColor, accent_color: previewAccentColor || previewPrimaryColor }
+      : {}),
+    ...(previewAccentColor && !previewPrimaryColor ? { accent_color: previewAccentColor } : {}),
+  };
   const menuThemeSettingsBase = normalizeMenuThemeSettings(displaySettingsSource);
   const menuThemeSettings = stylePreviewParam
     ? stylePreviewImageThemeOverrides(menuThemeSettingsBase)
@@ -1357,13 +1373,18 @@ export default function PublicMenuPage() {
     data?.menu_style ||
     "v1";
   const applyMenuAppearance = shouldApplyMenuAppearance(appearanceStyleSource);
-  const effectiveMenuAppearance =
-    data?.effective_menu_appearance ||
-    resolveEffectiveMenuAppearance({
-      menu_appearance_key: data?.menu_appearance_key,
-      category: data?.category,
-      cuisine: data?.cuisine,
-    });
+  const appearanceQueryOverride = readMenuAppearanceQueryOverride(searchParams);
+  const effectiveMenuAppearance = applyMenuAppearance
+    ? appearanceQueryOverride ||
+      (isValidMenuAppearanceKey(data?.effective_menu_appearance)
+        ? String(data.effective_menu_appearance).trim()
+        : null) ||
+      resolveEffectiveMenuAppearance({
+        menu_appearance_key: data?.menu_appearance_key,
+        category: data?.category,
+        cuisine: data?.cuisine,
+      })
+    : null;
   const appearanceTokens = applyMenuAppearance
     ? getMenuAppearanceTokens(effectiveMenuAppearance)
     : null;

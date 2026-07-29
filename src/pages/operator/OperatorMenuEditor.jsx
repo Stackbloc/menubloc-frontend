@@ -22,6 +22,7 @@ import {
   normalizeMenuThemeSettings,
 } from "../../components/menu-templates/menuThemeSettings.js";
 import MenuAppearanceSelector from "../../components/operator/MenuAppearanceSelector.jsx";
+import { buildMenuLabPreviewPath } from "../../lib/menuLabPreviewUrl.js";
 import {
   resolveRestaurantOnboardingState,
   navigateWithRestaurantOnboardingState,
@@ -527,8 +528,18 @@ function MenuLabPanel({
 
   function openStylePreview(style) {
     if (!rid) return;
-    const resolved = encodeURIComponent(style || settings.menu_style || "v1");
-    window.open(`/restaurants/${rid}/menu?menuStyle=${resolved}&designEdit=1`, "_blank", "noopener,noreferrer");
+    const resolved = style || settings.menu_style || "v1";
+    const path = buildMenuLabPreviewPath(rid, {
+      menuStyle: resolved,
+      menuAppearanceKey,
+      category: appearanceCategory,
+      cuisine: appearanceCuisine,
+      designEdit: true,
+      primaryColor: settings.primary_color || settings.accent_color || null,
+      accentColor: settings.accent_color || settings.primary_color || null,
+      backgroundStyle: settings.background_style || null,
+    });
+    window.open(path, "_blank", "noopener,noreferrer");
   }
 
   function openPreview() {
@@ -703,6 +714,8 @@ function MenuLabPanel({
                 value={settings.background_style || "light"}
                 onChange={(e) => setSettings((current) => ({ ...current, background_style: e.target.value }))}
                 style={controlStyle}
+                disabled={defaultLayoutActive}
+                data-testid="menu-lab-background-style"
               >
                 <option value="dark">Dark</option>
                 <option value="light">Light</option>
@@ -710,6 +723,11 @@ function MenuLabPanel({
                 <option value="chalkboard">Chalkboard</option>
                 <option value="charcoal">Charcoal</option>
               </select>
+              {defaultLayoutActive ? (
+                <span style={{ fontWeight: 500, color: "#9a3412", lineHeight: 1.35 }}>
+                  Default layout uses Menu Appearance below for page chrome — this control applies to custom Menu Lab layouts.
+                </span>
+              ) : null}
             </label>
             <label style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 12, fontWeight: 700, color: "#475467" }}>
               Image density

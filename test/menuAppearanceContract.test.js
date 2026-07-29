@@ -36,7 +36,7 @@ describe("Menu Appearance registry", () => {
   it("dark uses black surfaces with white/light readable text", () => {
     const t = getMenuAppearanceTokens("dark");
     assert.equal(t.pageBackground, "#000000");
-    assert.equal(t.menuSurface, "#000000");
+    assert.equal(t.menuSurface, "#111111");
     assert.equal(t.ink, "#ffffff");
     assert.equal(t.onPage, "#ffffff");
     assert.ok(evaluateMenuAppearanceContrast("dark").ok);
@@ -114,9 +114,44 @@ describe("Menu Appearance wiring contracts", () => {
     assert.match(page, /MenuAppearanceSelector/);
     assert.match(page, /menu_appearance_key|updateMenuAppearance/);
     assert.match(page, /menu-lab-menu-appearance-section/);
+    assert.match(page, /buildMenuLabPreviewPath/);
+    assert.match(page, /menuAppearanceKey/);
   });
 
-  it("public Default menus gate appearance apply", () => {
+  it("Preview URL carries draft Menu Appearance for Default layouts", async () => {
+    const { buildMenuLabPreviewPath, readMenuAppearanceQueryOverride } = await import(
+      "../src/lib/menuLabPreviewUrl.js"
+    );
+    const path = buildMenuLabPreviewPath(681, {
+      menuStyle: "v1",
+      menuAppearanceKey: "dark",
+      category: "coffee_shop",
+      cuisine: "",
+    });
+    assert.match(path, /menuStyle=v1/);
+    assert.match(path, /menuAppearance=dark/);
+    assert.match(path, /designEdit=1/);
+
+    const recommendedPath = buildMenuLabPreviewPath(681, {
+      menuStyle: "v1",
+      menuAppearanceKey: null,
+      category: "coffee_shop",
+    });
+    assert.match(recommendedPath, /menuAppearance=warm_paper/);
+
+    const customPath = buildMenuLabPreviewPath(681, {
+      menuStyle: "v12",
+      menuAppearanceKey: "dark",
+      backgroundStyle: "charcoal",
+    });
+    assert.doesNotMatch(customPath, /menuAppearance=/);
+    assert.match(customPath, /backgroundStyle=charcoal/);
+
+    const params = new URLSearchParams(path.split("?")[1]);
+    assert.equal(readMenuAppearanceQueryOverride(params), "dark");
+  });
+
+  it("public Default menus gate appearance apply and honor preview override", () => {
     const publicMenu = fs.readFileSync(
       path.join(ROOT, "src/pages/PublicMenuPage.jsx"),
       "utf8"
@@ -132,9 +167,21 @@ describe("Menu Appearance wiring contracts", () => {
     assert.match(publicMenu, /shouldApplyMenuAppearance/);
     assert.match(publicMenu, /effective_menu_appearance|effectiveMenuAppearance/);
     assert.match(publicMenu, /data-menu-appearance/);
+    assert.match(publicMenu, /readMenuAppearanceQueryOverride/);
+    assert.match(publicMenu, /appearanceQueryOverride/);
     assert.match(catalog, /shouldApplyMenuAppearance/);
     assert.match(classic, /menuAppearanceKey/);
     assert.match(classic, /--menu-surface/);
+  });
+
+  it("inline selector preview binds to effective appearance key", () => {
+    const selector = fs.readFileSync(
+      path.join(ROOT, "src/components/operator/MenuAppearanceSelector.jsx"),
+      "utf8"
+    );
+    assert.match(selector, /CompactMenuAppearancePreview appearanceKey=\{effective\}/);
+    assert.match(selector, /data-preview-appearance/);
+    assert.match(selector, /Showing: \{tokens\.name\}/);
   });
 
   it("operator API exposes menu appearance helpers", () => {
