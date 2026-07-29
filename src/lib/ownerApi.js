@@ -128,6 +128,13 @@ export const updateOwnerRestaurantProfileStyle = (restaurantId, profileStyleKey)
   patch(`/api/owner/restaurants/${encodeURIComponent(restaurantId)}/profile-style`, {
     profile_style_key: profileStyleKey,
   });
+
+export const getOwnerRestaurantMenuAppearance = (restaurantId) =>
+  get(`/api/owner/restaurants/${encodeURIComponent(restaurantId)}/menu-appearance`);
+export const updateOwnerRestaurantMenuAppearance = (restaurantId, menuAppearanceKey) =>
+  patch(`/api/owner/restaurants/${encodeURIComponent(restaurantId)}/menu-appearance`, {
+    menu_appearance_key: menuAppearanceKey,
+  });
 export const getOwnerRestaurantFeaturedDish = (restaurantId) =>
   get(`/api/owner/restaurants/${encodeURIComponent(restaurantId)}/featured-dish`);
 export const getOwnerRestaurantFeaturedDishCandidates = (restaurantId, params = {}) => {

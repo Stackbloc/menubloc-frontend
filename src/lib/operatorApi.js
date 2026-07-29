@@ -484,6 +484,14 @@ export const getDisplaySettings = (rid) =>
 export const updateDisplaySettings = (rid, body) =>
   patch(`/operator/restaurants/${rid}/display-settings`, body);
 
+// ── Restaurant: Menu Appearance (Default v1 chrome) ───────────────────────
+export const getMenuAppearance = (rid) =>
+  get(`/operator/restaurants/${rid}/menu-appearance`);
+export const updateMenuAppearance = (rid, menuAppearanceKey) =>
+  patch(`/operator/restaurants/${rid}/menu-appearance`, {
+    menu_appearance_key: menuAppearanceKey,
+  });
+
 // ── Restaurant: Menu Themes (Design Lab) ──────────────────────────────────
 export const getMenuThemes = (rid) =>
   get(`/operator/restaurants/${rid}/menu-themes`);

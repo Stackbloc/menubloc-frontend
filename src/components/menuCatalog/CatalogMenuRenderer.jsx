@@ -11,6 +11,12 @@ import PublicMenuMainContent from "../menu-templates/PublicMenuMainContent.jsx";
 import { pickHeroImageUrl, resolveTemplateMenuStyle } from "../menu-templates/menuPresentationUtils.js";
 import { buildRestaurantMenuBrand, fontStackForPreset } from "../menu-templates/restaurantMenuBrand.js";
 import { normalizeMenuThemeSettings, resolveMenuPageBackground, resolveMenuShellTextColor } from "../menu-templates/menuThemeSettings.js";
+import {
+  buildMenuAppearanceRootStyle,
+  getMenuAppearanceTokens,
+  shouldApplyMenuAppearance,
+} from "../../lib/menuAppearances.js";
+import { resolveEffectiveMenuAppearance } from "../../lib/menuAppearanceRecommendation.js";
 import { formatMoney, getBaseMenuPrice, getConsumerDisplayPrice } from "../../lib/pricingDisplay.js";
 import { buildMenuShareMetadata } from "../share/shareUtils.js";
 import { buildRestaurantStatusLightProps, shouldShowMenuPurchaseWaiterHint } from "../../lib/restaurantStatusLight.js";
@@ -433,6 +439,41 @@ export default function CatalogMenuRenderer({
   const resolvedPageBackground = resolveMenuPageBackground(displaySettingsSource, menuBrand);
   const shellTextColor = resolveMenuShellTextColor(displaySettingsSource);
 
+  const applyMenuAppearance = shouldApplyMenuAppearance(data?.menu_style || "v1");
+  const effectiveMenuAppearance =
+    data?.effective_menu_appearance ||
+    resolveEffectiveMenuAppearance({
+      menu_appearance_key: data?.menu_appearance_key,
+      category: data?.category,
+      cuisine: data?.cuisine,
+    });
+  const appearanceTokens = applyMenuAppearance
+    ? getMenuAppearanceTokens(effectiveMenuAppearance)
+    : null;
+  const stickyBarBackground = applyMenuAppearance
+    ? appearanceTokens.pageBackground
+    : resolvedPageBackground;
+  const catalogShellStyle = applyMenuAppearance
+    ? {
+        flex: 1,
+        minHeight: 0,
+        display: "flex",
+        flexDirection: "column",
+        ...buildMenuAppearanceRootStyle(effectiveMenuAppearance),
+        overflow: "hidden",
+      }
+    : {
+        flex: 1,
+        minHeight: 0,
+        display: "flex",
+        flexDirection: "column",
+        background: resolvedPageBackground,
+        overflow: "hidden",
+      };
+  const effectiveShellTextColor = applyMenuAppearance
+    ? appearanceTokens.onPage || appearanceTokens.ink || "#101828"
+    : shellTextColor;
+
   const dealMap = useMemo(() => {
     const m = new Map();
     for (const d of pageState.data?.deal_items || []) {
@@ -517,7 +558,7 @@ export default function CatalogMenuRenderer({
                 <MenuPurchaseWaiterHint
                   sticky
                   pinWithStickyMenuHeader
-                  stickyBackground={resolvedPageBackground}
+                  stickyBackground={stickyBarBackground}
                 />
               ) : null}
             </>
@@ -564,6 +605,7 @@ export default function CatalogMenuRenderer({
           tabLoading,
           tabError,
           menuPresentation: data?.menu_presentation || data?.presentation || {},
+          menuAppearanceKey: applyMenuAppearance ? effectiveMenuAppearance : null,
           ...buildRestaurantStatusLightProps(data),
         }
       : null;
@@ -597,14 +639,8 @@ export default function CatalogMenuRenderer({
 
   return (
     <div
-      style={{
-        flex: 1,
-        minHeight: 0,
-        display: "flex",
-        flexDirection: "column",
-        background: resolvedPageBackground,
-        overflow: "hidden",
-      }}
+      style={catalogShellStyle}
+      data-menu-appearance={applyMenuAppearance ? effectiveMenuAppearance : undefined}
     >
       {isSponsored ? (
         <div style={{
@@ -640,10 +676,25 @@ export default function CatalogMenuRenderer({
           maxWidth: 860,
           margin: "0 auto",
           padding: isMobile ? "12px 12px 24px" : "20px 20px 24px",
-          color: shellTextColor,
+          color: effectiveShellTextColor,
         }}>
           {templateContext ? (
-            <PublicMenuMainContent menuStyle={menuPresentationStyle} templateContext={templateContext} />
+            applyMenuAppearance && appearanceTokens ? (
+              <div
+                style={{
+                  backgroundColor: appearanceTokens.menuSurface,
+                  border: `1px solid ${appearanceTokens.border}`,
+                  boxShadow: appearanceTokens.shadow,
+                  borderRadius: 12,
+                  overflow: "hidden",
+                  color: appearanceTokens.ink,
+                }}
+              >
+                <PublicMenuMainContent menuStyle={menuPresentationStyle} templateContext={templateContext} />
+              </div>
+            ) : (
+              <PublicMenuMainContent menuStyle={menuPresentationStyle} templateContext={templateContext} />
+            )
           ) : null}
         </div>
       </div>

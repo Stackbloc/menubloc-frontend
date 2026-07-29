@@ -136,13 +136,23 @@ export default function ClassicMenuTemplate(ctx) {
   const showSectionImages = shouldShowSectionImages(menuThemeSettings);
   const showLogo = logoPlacement !== "hidden";
   const isTablet = useIsTabletRange();
-  // Must exactly cancel the ancestor page container's horizontal padding
-  // (PublicMenuPage.jsx uses the same isMobile 900px cutoff: 12px vs 20px).
-  const edgeBleed = isMobile ? -12 : -20;
+  const appearanceActive = Boolean(ctx?.menuAppearanceKey);
+  const edgeBleed = appearanceActive ? 0 : (isMobile ? -12 : -20);
   const accent = brand?.accent ?? "#0071E3";
+  const surfaceBackground = "var(--menu-surface, #FFFFFF)";
+  const ink = appearanceActive ? "var(--menu-ink, #1D1D1F)" : INK;
+  const subtle = appearanceActive ? "var(--menu-muted, #6E6E73)" : SUBTLE;
 
   return (
-    <div style={{ fontFamily: FONT_STACK, background: "#FFFFFF", marginLeft: edgeBleed, marginRight: edgeBleed }}>
+    <div
+      style={{
+        fontFamily: FONT_STACK,
+        background: surfaceBackground,
+        marginLeft: edgeBleed,
+        marginRight: edgeBleed,
+        color: ink,
+      }}
+    >
       <MenuDesignHeroSlot
         heroImageUrl={heroImageUrl}
         isStock={Boolean(ctx?.designHeroIsStock)}
@@ -154,7 +164,9 @@ export default function ClassicMenuTemplate(ctx) {
           position: "sticky",
           top: "var(--sph-h, 88px)",
           zIndex: 50,
-          background: "rgba(255,255,255,0.86)",
+          background: ctx?.menuAppearanceKey
+            ? "var(--menu-surface, #FFFFFF)"
+            : "rgba(255,255,255,0.86)",
           backdropFilter: "blur(20px)",
           WebkitBackdropFilter: "blur(20px)",
           borderBottom: `1px solid ${HAIRLINE}`,
@@ -189,7 +201,7 @@ export default function ClassicMenuTemplate(ctx) {
                       fontWeight: 600,
                       letterSpacing: "-0.02em",
                       lineHeight: 1.15,
-                      color: INK,
+                      color: ink,
                       textDecoration: "none",
                       display: "block",
                       overflow: "hidden",
@@ -207,7 +219,7 @@ export default function ClassicMenuTemplate(ctx) {
                       fontWeight: 600,
                       letterSpacing: "-0.02em",
                       lineHeight: 1.15,
-                      color: INK,
+                      color: ink,
                       overflow: "hidden",
                       textOverflow: "ellipsis",
                       whiteSpace: "nowrap",
@@ -241,7 +253,7 @@ export default function ClassicMenuTemplate(ctx) {
                   aria-label={`Get directions to ${restaurantName}`}
                   style={{
                     fontSize: 14,
-                    color: SUBTLE,
+                    color: subtle,
                     fontWeight: 400,
                     marginTop: 7,
                     display: "flex",
@@ -251,7 +263,7 @@ export default function ClassicMenuTemplate(ctx) {
                     cursor: "pointer",
                   }}
                 >
-                  <MapPinIcon size={13} stroke={SUBTLE} />
+                  <MapPinIcon size={13} stroke={subtle} />
                   <MenuAddressLines
                     addressLine1={addressLine1}
                     addressLine2={addressLine2}
@@ -259,8 +271,8 @@ export default function ClassicMenuTemplate(ctx) {
                   />
                 </a>
               ) : (
-                <div style={{ fontSize: 14, color: SUBTLE, fontWeight: 400, marginTop: 7, display: "flex", alignItems: "flex-start", gap: 5 }}>
-                  <MapPinIcon size={13} stroke={SUBTLE} />
+                <div style={{ fontSize: 14, color: subtle, fontWeight: 400, marginTop: 7, display: "flex", alignItems: "flex-start", gap: 5 }}>
+                  <MapPinIcon size={13} stroke={subtle} />
                   <MenuAddressLines
                     addressLine1={addressLine1}
                     addressLine2={addressLine2}
@@ -271,11 +283,11 @@ export default function ClassicMenuTemplate(ctx) {
             ) : null}
 
             {showDistanceBelowAddress ? (
-              <MenuRestaurantDistanceLine miles={distanceMiles} color={SUBTLE} />
+              <MenuRestaurantDistanceLine miles={distanceMiles} color={subtle} />
             ) : null}
 
             {(scheduledActiveMenuLabel || menuTypeLabel) ? (
-              <div style={{ marginTop: 6, fontSize: 13, fontWeight: 400, color: SUBTLE }}>
+              <div style={{ marginTop: 6, fontSize: 13, fontWeight: 400, color: subtle }}>
                 {scheduledActiveMenuLabel || menuTypeLabel}
               </div>
             ) : null}
@@ -313,9 +325,9 @@ export default function ClassicMenuTemplate(ctx) {
                         flexShrink: 0,
                         padding: "7px 16px",
                         borderRadius: 999,
-                        border: isSelected ? `1px solid ${INK}` : `1px solid ${HAIRLINE}`,
-                        background: isSelected ? INK : "transparent",
-                        color: isSelected ? "#FFFFFF" : SUBTLE,
+                        border: isSelected ? `1px solid ${ink}` : `1px solid ${HAIRLINE}`,
+                        background: isSelected ? ink : "transparent",
+                        color: isSelected ? "#FFFFFF" : subtle,
                         fontWeight: 500,
                         fontSize: 14,
                         cursor: tabLoading ? "wait" : "pointer",
@@ -333,13 +345,13 @@ export default function ClassicMenuTemplate(ctx) {
                 })}
               </ChipRail>
               {tabError ? (
-                <div style={{ fontSize: 13, color: SUBTLE, marginBottom: 8 }}>{tabError}</div>
+                <div style={{ fontSize: 13, color: subtle, marginBottom: 8 }}>{tabError}</div>
               ) : null}
             </>
           )}
 
           {displayableItemCount === 0 ? (
-            <div style={{ fontSize: 15, color: SUBTLE, padding: "32px 0" }}>
+            <div style={{ fontSize: 15, color: subtle, padding: "32px 0" }}>
               {filtersActive ? (
                 <>
                   {t(
@@ -368,7 +380,7 @@ export default function ClassicMenuTemplate(ctx) {
                   style={{
                     marginTop: sIdx === 0 ? 28 : 48,
                     paddingTop: sIdx === 0 ? 0 : 24,
-                    borderTop: sIdx === 0 ? "none" : `1px solid ${HAIRLINE}`,
+                    borderTop: sIdx === 0 ? "none" : `1px solid var(--menu-divider, ${HAIRLINE})`,
                   }}
                 >
                   <div
@@ -377,7 +389,7 @@ export default function ClassicMenuTemplate(ctx) {
                       fontWeight: 600,
                       letterSpacing: "0.08em",
                       textTransform: "uppercase",
-                      color: SUBTLE,
+                      color: "var(--menu-section-header, " + subtle + ")",
                       marginBottom: 14,
                     }}
                   >

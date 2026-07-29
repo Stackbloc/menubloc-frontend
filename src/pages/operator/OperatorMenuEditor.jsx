@@ -21,6 +21,7 @@ import {
   buildMenuThemeSettingsFromPreset,
   normalizeMenuThemeSettings,
 } from "../../components/menu-templates/menuThemeSettings.js";
+import MenuAppearanceSelector from "../../components/operator/MenuAppearanceSelector.jsx";
 import {
   resolveRestaurantOnboardingState,
   navigateWithRestaurantOnboardingState,
@@ -327,7 +328,13 @@ function MenuLabPresetCard({ theme, selected, locked, onPreview, onEdit }) {
   );
 }
 
-function MenuLabPanel({ rid, isEmailVerified, selectedMenuId = null }) {
+function MenuLabPanel({
+  rid,
+  isEmailVerified,
+  selectedMenuId = null,
+  restaurantName = "",
+  restaurantCategory = "",
+}) {
   const [settings, setSettings] = useState(() => ({
     menu_style: "v1",
     primary_color: null,
@@ -349,6 +356,9 @@ function MenuLabPanel({ rid, isEmailVerified, selectedMenuId = null }) {
     similar_enabled: true,
     indulgence_display: "compact",
   }));
+  const [menuAppearanceKey, setMenuAppearanceKey] = useState(null);
+  const [appearanceCategory, setAppearanceCategory] = useState(restaurantCategory || "");
+  const [appearanceCuisine, setAppearanceCuisine] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -358,6 +368,9 @@ function MenuLabPanel({ rid, isEmailVerified, selectedMenuId = null }) {
   const heroInputRef = useRef(null);
 
   const selectedTheme = getMenuDesignLabTheme(settings.menu_style || "v1");
+  const defaultLayoutActive =
+    String(settings.menu_style || "v1").toLowerCase() === "v1" ||
+    String(settings.menu_style || "").toLowerCase() === "classic";
 
   const loadSettings = useCallback(async () => {
     if (!rid) {
@@ -366,9 +379,10 @@ function MenuLabPanel({ rid, isEmailVerified, selectedMenuId = null }) {
     }
     setLoading(true);
     try {
-      const [data, brand] = await Promise.all([
+      const [data, brand, appearance] = await Promise.all([
         api.getDisplaySettings(rid),
         api.getBrandProfile(rid).catch(() => null),
+        api.getMenuAppearance(rid).catch(() => null),
       ]);
       if (data?.ok && data?.settings) {
         const normalized = normalizeMenuThemeSettings(data.settings);
@@ -385,12 +399,24 @@ function MenuLabPanel({ rid, isEmailVerified, selectedMenuId = null }) {
         brand?.hero_image_url ||
         null;
       setHeroUrl(nextHero || null);
+      if (appearance?.ok && appearance?.appearance) {
+        setMenuAppearanceKey(
+          appearance.appearance.menu_appearance_key === undefined ||
+            appearance.appearance.menu_appearance_key === ""
+            ? null
+            : appearance.appearance.menu_appearance_key
+        );
+        setAppearanceCategory(appearance.appearance.category || restaurantCategory || "");
+        setAppearanceCuisine(appearance.appearance.cuisine || "");
+      } else {
+        setAppearanceCategory(restaurantCategory || "");
+      }
     } catch {
       // Keep defaults if loading fails.
     } finally {
       setLoading(false);
     }
-  }, [rid]);
+  }, [rid, restaurantCategory]);
 
   async function handleHeroFile(file) {
     if (!rid || !file) return;
@@ -477,6 +503,17 @@ function MenuLabPanel({ rid, isEmailVerified, selectedMenuId = null }) {
           logo_placement: data.settings.logo_placement || "top-left",
           font_preset: data.settings.font_preset || "default",
         }));
+      }
+      const appearanceRes = await api.updateMenuAppearance(rid, menuAppearanceKey);
+      if (appearanceRes?.ok && appearanceRes?.appearance) {
+        setMenuAppearanceKey(
+          appearanceRes.appearance.menu_appearance_key === undefined ||
+            appearanceRes.appearance.menu_appearance_key === ""
+            ? null
+            : appearanceRes.appearance.menu_appearance_key
+        );
+        setAppearanceCategory(appearanceRes.appearance.category || appearanceCategory);
+        setAppearanceCuisine(appearanceRes.appearance.cuisine || appearanceCuisine);
       }
       setSaved(true);
       setStatus("Menu design saved.");
@@ -828,6 +865,31 @@ function MenuLabPanel({ rid, isEmailVerified, selectedMenuId = null }) {
                 <option value="hidden">Hidden</option>
               </select>
             </label>
+          </div>
+
+          <div
+            data-testid="menu-lab-menu-appearance-section"
+            style={{
+              marginTop: 22,
+              paddingTop: 18,
+              borderTop: "1px solid #e4e9f0",
+            }}
+          >
+            <div style={{ fontSize: 16, fontWeight: 800, color: "#0f1720", letterSpacing: "-0.02em" }}>
+              Menu Appearance
+            </div>
+            <MenuAppearanceSelector
+              menuAppearanceKey={menuAppearanceKey}
+              category={appearanceCategory}
+              cuisine={appearanceCuisine}
+              restaurantName={restaurantName}
+              defaultLayoutActive={defaultLayoutActive}
+              onChange={(next) => {
+                setMenuAppearanceKey(next);
+                setSaved(false);
+                setStatus("");
+              }}
+            />
           </div>
         </>
       )}
@@ -1200,7 +1262,13 @@ export default function OperatorMenuEditor() {
 
   return (
     <OperatorLayout title="Menu Lab">
-      <MenuLabPanel rid={rid} isEmailVerified={isEmailVerified} selectedMenuId={selectedMenuId} />
+      <MenuLabPanel
+        rid={rid}
+        isEmailVerified={isEmailVerified}
+        selectedMenuId={selectedMenuId}
+        restaurantName={selectedRestaurant?.restaurant_name || selectedRestaurant?.name || ""}
+        restaurantCategory={selectedRestaurant?.category || ""}
+      />
 
       <div className="operator-responsive-actions" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 20, flexWrap: "wrap" }}>
         <div>

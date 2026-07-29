@@ -7,18 +7,21 @@ import { Link, useSearchParams } from "react-router-dom";
 import OwnerLayout, { OWNER_COLORS, PageCard, SectionTitle } from "./OwnerLayout.jsx";
 import OwnerRestaurantContextBar from "./OwnerRestaurantContextBar.jsx";
 import RestaurantStyleSelector from "../../components/operator/RestaurantStyleSelector.jsx";
+import MenuAppearanceSelector from "../../components/operator/MenuAppearanceSelector.jsx";
 import { inputStyle } from "./ownerMenuEditorComponents.jsx";
 import {
   OWNER_API_BASE,
   getMenuConsoleRestaurant,
   getOwnerRestaurantFeaturedDishCandidates,
   getOwnerRestaurantHours,
+  getOwnerRestaurantMenuAppearance,
   getOwnerRestaurantProfileStyle,
   getOwnerRestaurantStatusBanners,
   searchMenuConsoleRestaurants,
   updateMenuConsoleRestaurant,
   updateOwnerRestaurantFeaturedDish,
   updateOwnerRestaurantHours,
+  updateOwnerRestaurantMenuAppearance,
   updateOwnerRestaurantProfileStyle,
   updateOwnerRestaurantStatusBanners,
 } from "../../lib/ownerApi.js";
@@ -62,6 +65,7 @@ function emptyForm() {
     featured_menu_item_id: "",
     now_hiring: false,
     profile_style_key: null,
+    menu_appearance_key: null,
   };
 }
 
@@ -102,6 +106,7 @@ export default function OwnerProfileManager() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [styleSaving, setStyleSaving] = useState(false);
+  const [appearanceSaving, setAppearanceSaving] = useState(false);
   const [hoursSaving, setHoursSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -170,15 +175,17 @@ export default function OwnerProfileManager() {
     setError("");
     setMessage("");
     try {
-      const [profileRes, styleRes, bannersRes, hoursRes, candidatesRes] = await Promise.all([
+      const [profileRes, styleRes, appearanceRes, bannersRes, hoursRes, candidatesRes] = await Promise.all([
         getMenuConsoleRestaurant(restaurantId),
         getOwnerRestaurantProfileStyle(restaurantId).catch(() => null),
+        getOwnerRestaurantMenuAppearance(restaurantId).catch(() => null),
         getOwnerRestaurantStatusBanners(restaurantId).catch(() => null),
         getOwnerRestaurantHours(restaurantId).catch(() => null),
         getOwnerRestaurantFeaturedDishCandidates(restaurantId, { limit: 200 }).catch(() => null),
       ]);
       const r = profileRes.restaurant || {};
       const style = styleRes?.restaurant || {};
+      const appearance = appearanceRes?.restaurant || {};
       const banners = Array.isArray(bannersRes?.status_banners) ? bannersRes.status_banners : [];
       const scheduleRaw = Array.isArray(hoursRes?.schedule) ? hoursRes.schedule : [];
       const schedule = emptyHours().map((day) => {
@@ -215,6 +222,10 @@ export default function OwnerProfileManager() {
           style.profile_style_key === undefined || style.profile_style_key === ""
             ? null
             : style.profile_style_key,
+        menu_appearance_key:
+          appearance.menu_appearance_key === undefined || appearance.menu_appearance_key === ""
+            ? null
+            : appearance.menu_appearance_key,
       };
       setSelected({
         id: r.id,
@@ -294,6 +305,8 @@ export default function OwnerProfileManager() {
       };
       const styleChanged =
         (form.profile_style_key ?? null) !== (baseline.profile_style_key ?? null);
+      const appearanceChanged =
+        (form.menu_appearance_key ?? null) !== (baseline.menu_appearance_key ?? null);
       const featuredChanged =
         String(form.featured_menu_item_id || "") !== String(baseline.featured_menu_item_id || "");
       const hiringChanged = Boolean(form.now_hiring) !== Boolean(baseline.now_hiring);
@@ -301,6 +314,9 @@ export default function OwnerProfileManager() {
       await updateMenuConsoleRestaurant(selected.id, profileBody);
       if (styleChanged) {
         await updateOwnerRestaurantProfileStyle(selected.id, form.profile_style_key);
+      }
+      if (appearanceChanged) {
+        await updateOwnerRestaurantMenuAppearance(selected.id, form.menu_appearance_key);
       }
       if (featuredChanged) {
         const itemId = form.featured_menu_item_id ? Number(form.featured_menu_item_id) : null;
@@ -360,6 +376,37 @@ export default function OwnerProfileManager() {
     }
   }
 
+  async function handleAppearanceChange(key) {
+    const next = key == null || key === "" ? null : key;
+    setForm((prev) => ({ ...prev, menu_appearance_key: next }));
+    if (!selected?.id) return;
+    if ((baseline.menu_appearance_key ?? null) === next) return;
+
+    setAppearanceSaving(true);
+    setError("");
+    setMessage("");
+    try {
+      const res = await updateOwnerRestaurantMenuAppearance(selected.id, next);
+      const saved =
+        res?.restaurant?.menu_appearance_key === undefined ||
+        res?.restaurant?.menu_appearance_key === ""
+          ? null
+          : res.restaurant.menu_appearance_key;
+      const effective =
+        res?.restaurant?.effective_menu_appearance || saved || "modern_minimal";
+      setForm((prev) => ({ ...prev, menu_appearance_key: saved }));
+      setBaseline((prev) => ({ ...prev, menu_appearance_key: saved }));
+      setMessage(
+        `Menu Appearance applied live (${String(effective).replace(/_/g, " ")}). Hard-refresh the public Default menu to see it.`
+      );
+    } catch (err) {
+      setError(err?.message || "Could not update Menu Appearance.");
+      setForm((prev) => ({ ...prev, menu_appearance_key: baseline.menu_appearance_key }));
+    } finally {
+      setAppearanceSaving(false);
+    }
+  }
+
   async function handleSaveHours() {
     if (!selected?.id || !hoursDirty) return;
     setHoursSaving(true);
@@ -416,7 +463,7 @@ export default function OwnerProfileManager() {
     <OwnerLayout title="Profile Manager">
       <SectionTitle
         title="Profile Manager"
-        subtitle="Complete the public profile fields diners see — At a Glance story rows, contact, hours, hiring, and Restaurant Style."
+        subtitle="Complete the public profile fields diners see — At a Glance story rows, contact, hours, hiring, Restaurant Style, and Menu Appearance."
       />
 
       {!selected ? (
@@ -865,6 +912,27 @@ export default function OwnerProfileManager() {
                   restaurantName={form.restaurant_name || selected.name}
                   applyMode="live"
                   onChange={handleStyleChange}
+                />
+              </PageCard>
+
+              <PageCard style={{ padding: 22 }} data-testid="owner-profile-manager-menu-appearance">
+                <div style={{ fontSize: 14, fontWeight: 800, color: OWNER_COLORS.ink, marginBottom: 6 }}>
+                  Menu Appearance
+                </div>
+                <div style={{ fontSize: 13, color: OWNER_COLORS.muted, marginBottom: 12, lineHeight: 1.45 }}>
+                  Default public menu chrome (patterns + readable surface). Custom Menu Lab layouts
+                  keep their own styling. Selecting an appearance applies it live — then hard-refresh
+                  the public menu.
+                  {appearanceSaving ? " Saving appearance…" : ""}
+                </div>
+                <MenuAppearanceSelector
+                  menuAppearanceKey={form.menu_appearance_key}
+                  category={form.category}
+                  cuisine={form.cuisine}
+                  restaurantName={form.restaurant_name || selected.name}
+                  defaultLayoutActive={true}
+                  applyMode="live"
+                  onChange={handleAppearanceChange}
                 />
               </PageCard>
             </>

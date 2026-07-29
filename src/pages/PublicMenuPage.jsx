@@ -67,6 +67,12 @@ import {
 } from "../components/menu-templates/menuStylePreviewEnrichment.js";
 import { buildRestaurantMenuBrand, fontStackForPreset } from "../components/menu-templates/restaurantMenuBrand.js";
 import { normalizeMenuThemeSettings, resolveMenuPageBackground, resolveMenuShellTextColor } from "../components/menu-templates/menuThemeSettings.js";
+import {
+  buildMenuAppearanceRootStyle,
+  getMenuAppearanceTokens,
+  shouldApplyMenuAppearance,
+} from "../lib/menuAppearances.js";
+import { resolveEffectiveMenuAppearance } from "../lib/menuAppearanceRecommendation.js";
 import { MENU_TEMPLATE_PREVIEW_SAMPLE } from "../data/menuTemplatePreviewSample.js";
 import useSavedMenuPreferences from "../hooks/useSavedMenuPreferences.js";
 import useCatalogDietaryPreferencesSession from "../hooks/useCatalogDietaryPreferencesSession.js";
@@ -1345,10 +1351,37 @@ export default function PublicMenuPage() {
   const resolvedPageBackground = resolveMenuPageBackground(displaySettingsSource, menuBrand);
   const shellTextColor = resolveMenuShellTextColor(displaySettingsSource);
 
-  const pageShellStyle = {
-    minHeight: "100vh",
-    background: resolvedPageBackground,
-  };
+  const appearanceStyleSource =
+    searchParams.get("menuStyle") ||
+    searchParams.get("previewStyle") ||
+    data?.menu_style ||
+    "v1";
+  const applyMenuAppearance = shouldApplyMenuAppearance(appearanceStyleSource);
+  const effectiveMenuAppearance =
+    data?.effective_menu_appearance ||
+    resolveEffectiveMenuAppearance({
+      menu_appearance_key: data?.menu_appearance_key,
+      category: data?.category,
+      cuisine: data?.cuisine,
+    });
+  const appearanceTokens = applyMenuAppearance
+    ? getMenuAppearanceTokens(effectiveMenuAppearance)
+    : null;
+  const stickyBarBackground = applyMenuAppearance
+    ? appearanceTokens.pageBackground
+    : resolvedPageBackground;
+  const pageShellStyle = applyMenuAppearance
+    ? {
+        minHeight: "100vh",
+        ...buildMenuAppearanceRootStyle(effectiveMenuAppearance),
+      }
+    : {
+        minHeight: "100vh",
+        background: resolvedPageBackground,
+      };
+  const effectiveShellTextColor = applyMenuAppearance
+    ? appearanceTokens.onPage || appearanceTokens.ink || "#101828"
+    : shellTextColor;
 
   useEffect(() => {
     if (pageState.status !== "ok" || !data?.restaurant_id) return;
@@ -1465,7 +1498,7 @@ export default function PublicMenuPage() {
                 <MenuPurchaseWaiterHint
                   sticky
                   pinWithStickyMenuHeader
-                  stickyBackground={resolvedPageBackground}
+                  stickyBackground={stickyBarBackground}
                 />
               ) : null}
             </>
@@ -1514,6 +1547,7 @@ export default function PublicMenuPage() {
           menuPresentation: data?.menu_presentation || data?.presentation || {},
           designHeroIsStock,
           designSectionIsStock,
+          menuAppearanceKey: applyMenuAppearance ? effectiveMenuAppearance : null,
           ...buildRestaurantStatusLightProps(data),
         }
       : null;
@@ -1522,11 +1556,11 @@ export default function PublicMenuPage() {
     return (
       <div style={pageShellStyle}>
         <StickyPageHeader
-          barBackground={resolvedPageBackground}
+          barBackground={stickyBarBackground}
           linkAccent={menuBrand?.accent}
           dealsPillBackground={menuBrand?.accentSoftBg}
           dealsPillBorder={menuBrand ? `1.5px solid ${menuBrand.accentBorder}` : undefined}
-          logoPageColor={resolvedPageBackground}
+          logoPageColor={stickyBarBackground}
         />
         <div style={{ maxWidth: 860, margin: "0 auto", padding: isMobile ? "16px 12px" : "28px 20px", color: "#101828" }}>
           <div style={{ fontSize: 14, color: "#667085", fontWeight: 600 }}>Loading menu…</div>
@@ -1539,11 +1573,11 @@ export default function PublicMenuPage() {
     return (
       <div style={pageShellStyle}>
         <StickyPageHeader
-          barBackground={resolvedPageBackground}
+          barBackground={stickyBarBackground}
           linkAccent={menuBrand?.accent}
           dealsPillBackground={menuBrand?.accentSoftBg}
           dealsPillBorder={menuBrand ? `1.5px solid ${menuBrand.accentBorder}` : undefined}
-          logoPageColor={resolvedPageBackground}
+          logoPageColor={stickyBarBackground}
         />
         <div style={{ maxWidth: 860, margin: "0 auto", padding: isMobile ? "16px 12px" : "28px 20px", color: "#101828" }}>
           <div style={{ fontSize: 14, color: "#667085", fontWeight: 600 }}>Loading menu…</div>
@@ -1556,11 +1590,11 @@ export default function PublicMenuPage() {
     return (
       <div style={pageShellStyle}>
         <StickyPageHeader
-          barBackground={resolvedPageBackground}
+          barBackground={stickyBarBackground}
           linkAccent={menuBrand?.accent}
           dealsPillBackground={menuBrand?.accentSoftBg}
           dealsPillBorder={menuBrand ? `1.5px solid ${menuBrand.accentBorder}` : undefined}
-          logoPageColor={resolvedPageBackground}
+          logoPageColor={stickyBarBackground}
         />
         <div style={{ maxWidth: 860, margin: "0 auto", padding: isMobile ? "14px 12px 80px" : "20px 20px 80px", color: "#101828" }}>
           <div style={{ fontSize: 18, fontWeight: 900, marginBottom: 8 }}>{t("publicMenu.loadError", "Couldn't load menu")}</div>
@@ -1574,11 +1608,11 @@ export default function PublicMenuPage() {
     return (
       <div style={pageShellStyle}>
         <StickyPageHeader
-          barBackground={resolvedPageBackground}
+          barBackground={stickyBarBackground}
           linkAccent={menuBrand?.accent}
           dealsPillBackground={menuBrand?.accentSoftBg}
           dealsPillBorder={menuBrand ? `1.5px solid ${menuBrand.accentBorder}` : undefined}
-          logoPageColor={resolvedPageBackground}
+          logoPageColor={stickyBarBackground}
         />
         <div style={{ maxWidth: 860, margin: "0 auto", padding: isMobile ? "16px 12px" : "28px 20px", color: "#101828" }}>
           <div style={{ fontSize: 14, color: "#667085", fontWeight: 600 }}>Loading menu…</div>
@@ -1589,19 +1623,22 @@ export default function PublicMenuPage() {
 
   return (
     <MenuDesignPhotoEditProvider value={designPhotoEdit}>
-    <div style={pageShellStyle}>
+    <div
+      style={pageShellStyle}
+      data-menu-appearance={applyMenuAppearance ? effectiveMenuAppearance : undefined}
+    >
       <StickyPageHeader
-        barBackground={resolvedPageBackground}
+        barBackground={stickyBarBackground}
         linkAccent={menuBrand?.accent}
         dealsPillBackground={menuBrand?.accentSoftBg}
         dealsPillBorder={menuBrand ? `1.5px solid ${menuBrand.accentBorder}` : undefined}
-        logoPageColor={resolvedPageBackground}
+        logoPageColor={stickyBarBackground}
       />
       <div style={{
         maxWidth: 860,
         margin: "0 auto",
         padding: isMobile ? "16px 12px 80px" : "28px 20px 80px",
-        color: shellTextColor,
+        color: effectiveShellTextColor,
       }}>
         {fromCluster && clusterReturnTo ? (
           <ReturnToSourceBar to={clusterReturnTo} label={clusterBackLabel} />
@@ -1642,7 +1679,22 @@ export default function PublicMenuPage() {
           </div>
         ) : null}
 
-        <PublicMenuMainContent menuStyle={menuPresentationStyle} templateContext={templateContext} />
+        {applyMenuAppearance && appearanceTokens ? (
+          <div
+            style={{
+              backgroundColor: appearanceTokens.menuSurface,
+              border: `1px solid ${appearanceTokens.border}`,
+              boxShadow: appearanceTokens.shadow,
+              borderRadius: 12,
+              overflow: "hidden",
+              color: appearanceTokens.ink,
+            }}
+          >
+            <PublicMenuMainContent menuStyle={menuPresentationStyle} templateContext={templateContext} />
+          </div>
+        ) : (
+          <PublicMenuMainContent menuStyle={menuPresentationStyle} templateContext={templateContext} />
+        )}
       </div>
 
       {/* Item detail sheet */}

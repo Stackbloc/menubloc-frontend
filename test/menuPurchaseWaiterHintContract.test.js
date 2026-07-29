@@ -32,14 +32,14 @@ function testClassicTemplatePinsIntakeInStickyHeader() {
 function testPublicMenuUsesPinnedHint() {
   const src = read("src/pages/PublicMenuPage.jsx");
   assert.match(src, /pinWithStickyMenuHeader/);
-  assert.match(src, /stickyBackground=\{resolvedPageBackground\}/);
+  assert.match(src, /stickyBackground=\{(resolvedPageBackground|stickyBarBackground)\}/);
   assert.match(src, /shouldShowMenuPurchaseWaiterHint\(data\)/);
 }
 
 function testCatalogMenuUsesPinnedHint() {
   const src = read("src/components/menuCatalog/CatalogMenuRenderer.jsx");
   assert.match(src, /pinWithStickyMenuHeader/);
-  assert.match(src, /stickyBackground=\{resolvedPageBackground\}/);
+  assert.match(src, /stickyBackground=\{(resolvedPageBackground|stickyBarBackground)\}/);
   assert.match(src, /shouldShowMenuPurchaseWaiterHint\(data\)/);
 }
 

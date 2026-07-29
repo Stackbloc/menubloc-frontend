@@ -46,4 +46,16 @@ describe("owner restaurant manager nav + profile manager", () => {
     assert.match(app, /path="\/owner\/profile-manager"/);
     assert.match(app, /OwnerProfileManager/);
   });
+
+  it("Profile Manager mounts Menu Appearance with live owner APIs", () => {
+    const page = readFileSync(join(root, "src/pages/owner/OwnerProfileManager.jsx"), "utf8");
+    const api = readFileSync(join(root, "src/lib/ownerApi.js"), "utf8");
+    assert.match(page, /MenuAppearanceSelector/);
+    assert.match(page, /Menu Appearance/);
+    assert.match(page, /owner-profile-manager-menu-appearance/);
+    assert.match(page, /getOwnerRestaurantMenuAppearance/);
+    assert.match(page, /updateOwnerRestaurantMenuAppearance/);
+    assert.match(page, /handleAppearanceChange/);
+    assert.match(api, /menu-appearance/);
+  });
 });
