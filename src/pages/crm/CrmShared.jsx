@@ -48,13 +48,58 @@ export function CrmCard({ title, subtitle = null, action = null, children, style
   );
 }
 
-export function StatTile({ label, value, sub = null }) {
-  return (
-    <div style={{ background: CRM_COLORS.panel, border: `1px solid ${CRM_COLORS.line}`, borderRadius: 16, padding: 18 }}>
+export function StatTile({ label, value, sub = null, to = null }) {
+  const body = (
+    <>
       <div style={{ fontSize: 28, fontWeight: 800, color: CRM_COLORS.ink }}>{value ?? "—"}</div>
       <div style={{ marginTop: 8, fontSize: 13, fontWeight: 700, color: CRM_COLORS.ink }}>{label}</div>
       {sub ? <div style={{ marginTop: 4, fontSize: 12, color: CRM_COLORS.muted }}>{sub}</div> : null}
-    </div>
+    </>
+  );
+  const baseStyle = {
+    background: CRM_COLORS.panel,
+    border: `1px solid ${CRM_COLORS.line}`,
+    borderRadius: 16,
+    padding: 18,
+    display: "block",
+    textDecoration: "none",
+    color: "inherit",
+  };
+  if (to) {
+    return (
+      <Link
+        to={to}
+        style={{ ...baseStyle, cursor: "pointer", transition: "border-color 120ms ease, box-shadow 120ms ease" }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.borderColor = CRM_COLORS.accent;
+          e.currentTarget.style.boxShadow = "0 8px 20px rgba(25, 75, 58, 0.12)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.borderColor = CRM_COLORS.line;
+          e.currentTarget.style.boxShadow = "none";
+        }}
+      >
+        {body}
+      </Link>
+    );
+  }
+  return <div style={baseStyle}>{body}</div>;
+}
+
+export function FilterLink({ to, children, style = {} }) {
+  if (!to) return children ?? null;
+  return (
+    <Link
+      to={to}
+      style={{
+        color: CRM_COLORS.accent,
+        fontWeight: 700,
+        textDecoration: "none",
+        ...style,
+      }}
+    >
+      {children}
+    </Link>
   );
 }
 

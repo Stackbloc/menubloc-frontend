@@ -42,6 +42,16 @@ export const getCrmLeads = (params = {}) => {
   ).toString();
   return get(`/api/crm/leads${qs ? `?${qs}` : ""}`);
 };
+export const searchCrmRestaurants = (params = {}) => {
+  const qs = new URLSearchParams(
+    Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== "")
+  ).toString();
+  return get(`/api/crm/restaurants/search${qs ? `?${qs}` : ""}`);
+};
+export const getCrmGeoCities = (state) => {
+  const qs = new URLSearchParams({ state: String(state || "") }).toString();
+  return get(`/api/crm/geo/cities?${qs}`);
+};
 export const getCrmBdContacts = (params = {}) => {
   const qs = new URLSearchParams(
     Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== "")

@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { useLanguage } from "../../context/LanguageContext.jsx";
 import { Link } from "react-router-dom";
 import { getCrmDashboard } from "../../lib/crmApi.js";
 import {
@@ -8,13 +7,13 @@ import {
   CrmPage,
   DataTable,
   ErrorBanner,
+  FilterLink,
   LinkCell,
   StatTile,
   formatDateTime,
 } from "./CrmShared.jsx";
 
 export default function CrmDashboard() {
-  const { t } = useLanguage();
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
 
@@ -38,13 +37,13 @@ export default function CrmDashboard() {
       <ErrorBanner message={error} />
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 14, marginBottom: 18 }}>
-        <StatTile label="Open leads" value={summary?.total_open_leads} />
-        <StatTile label="New leads" value={summary?.new_leads} />
-        <StatTile label="Engaged" value={summary?.engaged_leads} />
-        <StatTile label="Won this month" value={summary?.won_this_month} />
-        <StatTile label="Lost this month" value={summary?.lost_this_month} />
-        <StatTile label="Overdue tasks" value={summary?.overdue_tasks} />
-        <StatTile label="Tasks due today" value={summary?.due_today_tasks} />
+        <StatTile label="Open leads" value={summary?.total_open_leads} to="/crm/leads?open_only=true" />
+        <StatTile label="New leads" value={summary?.new_leads} to="/crm/leads?status=new" />
+        <StatTile label="Engaged" value={summary?.engaged_leads} to="/crm/leads?pipeline_stages=engaged,demo,trial,negotiation" />
+        <StatTile label="Won this month" value={summary?.won_this_month} to="/crm/leads?won_this_month=true" />
+        <StatTile label="Lost this month" value={summary?.lost_this_month} to="/crm/leads?lost_this_month=true" />
+        <StatTile label="Overdue tasks" value={summary?.overdue_tasks} to="/crm/tasks?overdue_only=true" />
+        <StatTile label="Tasks due today" value={summary?.due_today_tasks} to="/crm/tasks?due_today=true" />
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr", gap: 18, marginBottom: 18 }}>
@@ -103,10 +102,10 @@ export default function CrmDashboard() {
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
         <CrmCard title="Leads By Source">
-          <KeyValueGrid data={summary?.leads_by_source || {}} />
+          <KeyValueGrid data={summary?.leads_by_source || {}} linkForKey={(key) => `/crm/leads?source=${encodeURIComponent(key)}`} />
         </CrmCard>
         <CrmCard title="Leads By Stage">
-          <KeyValueGrid data={summary?.leads_by_stage || {}} />
+          <KeyValueGrid data={summary?.leads_by_stage || {}} linkForKey={(key) => `/crm/leads?pipeline_stage=${encodeURIComponent(key)}`} />
         </CrmCard>
       </div>
 
@@ -116,7 +115,29 @@ export default function CrmDashboard() {
             rows={data?.high_demand_unclaimed_restaurants || []}
             keyField="restaurant_id"
             columns={[
-              { key: "restaurant_name", label: "Restaurant" },
+              {
+                key: "restaurant_name",
+                label: "Restaurant",
+                render: (row) => {
+                  if (row.slug) {
+                    return (
+                      <a
+                        href={`https://menuply.com/restaurants/${encodeURIComponent(row.slug)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ color: "#194b3a", fontWeight: 700, textDecoration: "none" }}
+                      >
+                        {row.restaurant_name}
+                      </a>
+                    );
+                  }
+                  return (
+                    <FilterLink to={`/crm/leads?search=${encodeURIComponent(row.restaurant_name || "")}`}>
+                      {row.restaurant_name}
+                    </FilterLink>
+                  );
+                },
+              },
               { key: "city", label: "City" },
               { key: "state", label: "State" },
               { key: "search_demand_count", label: "Demand" },
@@ -130,17 +151,45 @@ export default function CrmDashboard() {
   );
 }
 
-function KeyValueGrid({ data }) {
+function KeyValueGrid({ data, linkForKey = null }) {
   const entries = Object.entries(data || {});
   if (!entries.length) return <div style={{ color: "#64748b" }}>No data.</div>;
   return (
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 10 }}>
-      {entries.map(([key, value]) => (
-        <div key={key} style={{ padding: 12, borderRadius: 12, background: "#f8fafc", border: "1px solid #d9e0ea" }}>
-          <div style={{ fontSize: 12, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em" }}>{key.replaceAll("_", " ")}</div>
-          <div style={{ marginTop: 6, fontSize: 20, fontWeight: 800, color: "#0f1720" }}>{value}</div>
-        </div>
-      ))}
+      {entries.map(([key, value]) => {
+        const to = linkForKey ? linkForKey(key) : null;
+        const content = (
+          <>
+            <div style={{ fontSize: 12, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em" }}>{key.replaceAll("_", " ")}</div>
+            <div style={{ marginTop: 6, fontSize: 20, fontWeight: 800, color: "#0f1720" }}>{value}</div>
+          </>
+        );
+        if (to) {
+          return (
+            <Link
+              key={key}
+              to={to}
+              style={{
+                padding: 12,
+                borderRadius: 12,
+                background: "#f8fafc",
+                border: "1px solid #d9e0ea",
+                textDecoration: "none",
+                color: "inherit",
+                display: "block",
+                cursor: "pointer",
+              }}
+            >
+              {content}
+            </Link>
+          );
+        }
+        return (
+          <div key={key} style={{ padding: 12, borderRadius: 12, background: "#f8fafc", border: "1px solid #d9e0ea" }}>
+            {content}
+          </div>
+        );
+      })}
     </div>
   );
 }

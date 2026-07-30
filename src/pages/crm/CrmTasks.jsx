@@ -1,6 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { useLanguage } from "../../context/LanguageContext.jsx";
-import { Link } from "react-router-dom";
+import React, { useEffect, useMemo, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { completeCrmTask, getCrmTasks } from "../../lib/crmApi.js";
 import {
   Badge,
@@ -12,12 +11,62 @@ import {
   formatDateTime,
 } from "./CrmShared.jsx";
 
+const DEFAULT_FILTERS = {
+  overdue_only: "true",
+  status: "",
+  due_today: "",
+  page: 1,
+  page_size: 25,
+};
+
+function filtersFromSearchParams(searchParams) {
+  const hasAny = ["overdue_only", "due_today", "status", "page", "page_size"].some((key) => searchParams.has(key));
+  if (!hasAny) return { ...DEFAULT_FILTERS };
+
+  return {
+    overdue_only: searchParams.get("overdue_only") || "",
+    status: searchParams.get("status") || "",
+    due_today: searchParams.get("due_today") || "",
+    page: Number.parseInt(searchParams.get("page") || "1", 10) || 1,
+    page_size: Number.parseInt(searchParams.get("page_size") || "25", 10) || 25,
+  };
+}
+
+function searchParamsFromFilters(filters) {
+  const params = new URLSearchParams();
+  if (filters.overdue_only) params.set("overdue_only", String(filters.overdue_only));
+  if (filters.due_today) params.set("due_today", String(filters.due_today));
+  if (filters.status) params.set("status", String(filters.status));
+  if (filters.page && Number(filters.page) !== 1) params.set("page", String(filters.page));
+  if (filters.page_size && Number(filters.page_size) !== 25) params.set("page_size", String(filters.page_size));
+  return params;
+}
+
+function filtersEqual(a, b) {
+  return ["overdue_only", "status", "due_today", "page", "page_size"].every(
+    (key) => String(a[key] ?? "") === String(b[key] ?? "")
+  );
+}
+
 export default function CrmTasks() {
-  const { t } = useLanguage();
-  const [filters, setFilters] = useState({ overdue_only: "true", status: "", due_today: "", page: 1, page_size: 25 });
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialFilters = useMemo(() => filtersFromSearchParams(searchParams), []);
+  const [filters, setFilters] = useState(initialFilters);
   const [data, setData] = useState({ tasks: [], pagination: { page: 1, total: 0, page_size: 25 } });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  useEffect(() => {
+    const fromUrl = filtersFromSearchParams(searchParams);
+    setFilters((current) => (filtersEqual(current, fromUrl) ? current : fromUrl));
+  }, [searchParams]);
+
+  useEffect(() => {
+    const nextParams = searchParamsFromFilters(filters);
+    if (searchParams.toString() !== nextParams.toString()) {
+      setSearchParams(nextParams, { replace: true });
+    }
+  }, [filters, searchParams, setSearchParams]);
 
   useEffect(() => {
     loadTasks(filters);
@@ -31,6 +80,10 @@ export default function CrmTasks() {
     } catch (err) {
       setError(err.message || "Unable to load tasks");
     }
+  }
+
+  function updateFilters(patch) {
+    setFilters((current) => ({ ...current, ...patch }));
   }
 
   async function handleComplete(taskId) {
@@ -51,15 +104,23 @@ export default function CrmTasks() {
 
       <CrmCard title="Task Filters" style={{ marginBottom: 18 }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
-          <select value={filters.status} onChange={(e) => setFilters({ ...filters, status: e.target.value, page: 1 })} style={inputStyle}>
+          <select value={filters.status} onChange={(e) => updateFilters({ status: e.target.value, page: 1 })} style={inputStyle}>
             <option value="">All statuses</option>
             {["open", "in_progress", "completed", "canceled"].map((value) => <option key={value} value={value}>{value}</option>)}
           </select>
-          <select value={filters.overdue_only} onChange={(e) => setFilters({ ...filters, overdue_only: e.target.value, due_today: "", page: 1 })} style={inputStyle}>
+          <select
+            value={filters.overdue_only}
+            onChange={(e) => updateFilters({ overdue_only: e.target.value, due_today: "", page: 1 })}
+            style={inputStyle}
+          >
             <option value="">All due windows</option>
             <option value="true">Overdue only</option>
           </select>
-          <select value={filters.due_today} onChange={(e) => setFilters({ ...filters, due_today: e.target.value, overdue_only: "", page: 1 })} style={inputStyle}>
+          <select
+            value={filters.due_today}
+            onChange={(e) => updateFilters({ due_today: e.target.value, overdue_only: "", page: 1 })}
+            style={inputStyle}
+          >
             <option value="">All due windows</option>
             <option value="true">Due today</option>
           </select>
