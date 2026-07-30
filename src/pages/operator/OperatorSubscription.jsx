@@ -118,6 +118,7 @@ export default function OperatorSubscription() {
   const [foundersInterval, setFoundersInterval] = useState("annual");
   const [loading, setLoading] = useState(false);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [isOpeningPortal, setIsOpeningPortal] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [selectedPlanCode, setSelectedPlanCode] = useState(null);
@@ -160,6 +161,8 @@ export default function OperatorSubscription() {
     Boolean(subscription?.stripe_subscription_id && subscription?.current_period_end) &&
     ["active", "trialing", "past_due"].includes(normalizedStatus) &&
     !subscription?.cancel_at_period_end;
+
+  const canManageBilling = Boolean(subscription?.stripe_customer_id);
 
   const currentPeriodEnd = subscription?.current_period_end
     ? new Date(subscription.current_period_end).toLocaleDateString()
@@ -264,6 +267,29 @@ export default function OperatorSubscription() {
       setTimeout(() => navigate("/operator/menulab"), 1500);
     } catch (err) {
       setError(err.message || "Unable to switch to Standard.");
+    }
+  }
+
+  async function handleManageBilling() {
+    if (!selectedRestaurant?.id) {
+      setError("Select a restaurant first.");
+      return;
+    }
+    if (!canManageBilling) {
+      setError("No Stripe billing account yet. Subscribe to a paid plan first.");
+      return;
+    }
+    setIsOpeningPortal(true);
+    setError("");
+    setMessage("");
+    try {
+      const origin = window.location.origin;
+      await api.openBillingPortal(selectedRestaurant.id, {
+        returnUrl: `${origin}/operator/subscription`,
+      });
+    } catch (err) {
+      setError(err.message || "Unable to open billing portal.");
+      setIsOpeningPortal(false);
     }
   }
 
@@ -378,10 +404,15 @@ export default function OperatorSubscription() {
               </button>
               <button
                 type="button"
-                disabled
-                style={{ ...planBtn("muted", GREEN), opacity: 0.6, cursor: "not-allowed" }}
+                onClick={handleManageBilling}
+                disabled={!canManageBilling || isOpeningPortal}
+                style={{
+                  ...planBtn("muted", GREEN),
+                  opacity: canManageBilling && !isOpeningPortal ? 1 : 0.6,
+                  cursor: canManageBilling && !isOpeningPortal ? "pointer" : "not-allowed",
+                }}
               >
-                Manage Billing
+                {isOpeningPortal ? "Opening Billing…" : "Manage Billing"}
               </button>
               <button
                 type="button"
@@ -391,9 +422,11 @@ export default function OperatorSubscription() {
               >
                 Cancel Subscription
               </button>
-              <div style={{ fontSize: 12, color: "#8a9ab0", textAlign: "center" }}>
-                Billing portal access is not available yet.
-              </div>
+              {!canManageBilling && (
+                <div style={{ fontSize: 12, color: "#8a9ab0", textAlign: "center" }}>
+                  Billing portal opens after a paid plan creates your Stripe billing account.
+                </div>
+              )}
             </div>
           </div>
         )}
