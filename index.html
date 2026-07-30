@@ -74,9 +74,35 @@
             "<li>Chrome → Settings → Site settings → menuply.com → Clear &amp; reset.</li>" +
             "<li>Open menuply.com again from Google Search (it should stay in the browser).</li>" +
             "</ol>" +
-            '<a href="https://menuply.com/?open=browser" style="display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 16px;border-radius:10px;background:#166534;color:#fff;font-weight:700;text-decoration:none;">Try opening in Chrome</a>' +
+            '<button type="button" id="menuply-open-chrome" style="display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 16px;border:0;border-radius:10px;background:#166534;color:#fff;font-weight:700;cursor:pointer;">Try opening in Chrome</button>' +
+            '<p id="menuply-open-chrome-note" style="margin:12px 0 0;font-size:13px;line-height:1.45;color:#94a3b8;">If nothing happens, uninstall is still required — this button cannot delete the old app.</p>' +
             "</div></div>";
           document.body.appendChild(gate);
+          var openBtn = document.getElementById("menuply-open-chrome");
+          if (openBtn) {
+            openBtn.addEventListener("click", function () {
+              var target = "https://menuply.com/?open=browser";
+              var intent =
+                "intent://menuply.com/?open=browser#Intent;scheme=https;package=com.android.chrome;action=android.intent.action.VIEW;" +
+                "S.browser_fallback_url=" +
+                encodeURIComponent(target) +
+                ";end";
+              var chromeNav = "googlechrome://navigate?url=" + encodeURIComponent(target);
+              try {
+                location.href = intent;
+              } catch (e) {}
+              setTimeout(function () {
+                try {
+                  location.href = chromeNav;
+                } catch (e2) {}
+              }, 400);
+              setTimeout(function () {
+                try {
+                  window.open(target, "_blank", "noopener,noreferrer");
+                } catch (e3) {}
+              }, 800);
+            });
+          }
         });
       })();
     </script>

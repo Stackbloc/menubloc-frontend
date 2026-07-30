@@ -22,6 +22,13 @@ assert.match(indexHtml, /screen\.orientation\.unlock/, "early Chrome-tablet unlo
 assert.match(indexHtml, /serviceWorker\.getRegistrations/, "early root SW purge before React");
 assert.match(indexHtml, /display-mode: standalone/, "detect Google Search WebAPK hijack");
 assert.match(indexHtml, /menuply-stale-pwa-gate/, "show uninstall gate for stale standalone");
+assert.match(indexHtml, /intent:\/\/menuply\.com/, "Chrome escape must use Android intent, not same-origin link");
+assert.match(indexHtml, /googlechrome:\/\/navigate/, "Chrome navigate scheme fallback");
+assert.doesNotMatch(
+  indexHtml,
+  /href="https:\/\/menuply\.com\/\?open=browser"/,
+  "same-origin open=browser link cannot escape WebAPK"
+);
 
 const consumerManifest = JSON.parse(read("public/manifest.webmanifest"));
 assert.equal(consumerManifest.name, "Menuply");
