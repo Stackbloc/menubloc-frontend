@@ -4,7 +4,7 @@
   "description": "Tablet-first Menuply order dashboard for restaurant operators.",
   "id": "/operator/tablet",
   "start_url": "/operator/tablet",
-  "scope": "/",
+  "scope": "/operator/",
   "display": "standalone",
   "orientation": "landscape-primary",
   "background_color": "#f7f1e6",
