@@ -337,11 +337,12 @@ export default function OwnerProfileManager() {
       await loadRestaurant(selected.id);
       setMessage("Profile saved. Public At a Glance / hero fields are live.");
     } catch (err) {
+      const field = err?.payload?.field ? `${err.payload.field}: ` : "";
       const detail =
         err?.payload?.error ||
         err?.message ||
         "Could not save profile.";
-      setError(detail);
+      setError(`${field}${detail}`);
     } finally {
       setSaving(false);
     }
