@@ -31,9 +31,24 @@ assert.match(JSON.stringify(operatorManifest), /operator-icon/);
 
 const tablet = read("src/pages/operator/OperatorTabletPage.jsx");
 assert.match(tablet, /operator-manifest\.webmanifest/);
+assert.match(tablet, /\/operator\/service-worker\.js/);
+assert.match(tablet, /scope:\s*["']\/operator\/["']/);
 
-const sw = read("public/service-worker.js");
-assert.match(sw, /operator-manifest\.webmanifest/);
-assert.doesNotMatch(sw, /"\/manifest\.webmanifest"/);
+const consumerSw = read("public/service-worker.js");
+assert.match(consumerSw, /menuply-consumer-pwa/);
+assert.match(consumerSw, /menuply-operator-pwa/);
+assert.doesNotMatch(consumerSw, /operator-icon-192/);
+assert.doesNotMatch(consumerSw, /operator-manifest\.webmanifest/);
+assert.doesNotMatch(consumerSw, /respondWith/);
+
+const operatorSw = read("public/operator/service-worker.js");
+assert.match(operatorSw, /menuply-operator-pwa/);
+assert.match(operatorSw, /operator-icon-192/);
+assert.match(operatorSw, /\/operator\/tablet/);
+assert.doesNotMatch(operatorSw, /caches\.match\("\/"\)/);
+
+const register = read("src/registerServiceWorker.js");
+assert.match(register, /register\("\/service-worker\.js"\)/);
+assert.doesNotMatch(register, /register\("\/operator\/service-worker\.js"/);
 
 console.log("consumerPwaManifestContract: ok");

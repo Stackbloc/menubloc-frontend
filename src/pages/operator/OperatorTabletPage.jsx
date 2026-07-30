@@ -441,6 +441,15 @@ export default function OperatorTabletPage() {
       document.head.appendChild(link);
     }
     link.setAttribute("href", href);
+
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker
+        .register("/operator/service-worker.js", { scope: "/operator/" })
+        .catch(() => {
+          // Operator offline shell is progressive; failures must not block tablet UI.
+        });
+    }
+
     return () => {
       if (previousHref) link.setAttribute("href", previousHref);
       else link.setAttribute("href", "/manifest.webmanifest");
