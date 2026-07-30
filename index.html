@@ -14,9 +14,10 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <!--
-      Early consumer hygiene (before React): Google Search → Chrome tablet can still
-      reopen menuply.com under a poisoned root Operator SW / landscape lock.
-      Unlock orientation + force consumer manifest + drop root-scoped workers ASAP.
+      Google Search on Android often opens an installed WebAPK for menuply.com instead of
+      a Chrome tab. An old Operator install (scope "/", landscape-primary, X icons) cannot
+      be fixed by server HTML — the splash/orientation are baked into that app.
+      Detect standalone consumer launches early and show uninstall instructions.
     -->
     <script>
       (function () {
@@ -30,16 +31,53 @@
           if (link) link.setAttribute("href", "/manifest.webmanifest");
         } catch (e) {}
         try {
-          if (!("serviceWorker" in navigator)) return;
-          navigator.serviceWorker.getRegistrations().then(function (regs) {
-            regs.forEach(function (reg) {
-              try {
-                var path = new URL(reg.scope).pathname;
-                if (path === "/" || path === "") reg.unregister();
-              } catch (e) {}
+          if ("serviceWorker" in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function (regs) {
+              regs.forEach(function (reg) {
+                try {
+                  var path = new URL(reg.scope).pathname;
+                  if (path === "/" || path === "") reg.unregister();
+                } catch (e) {}
+              });
             });
-          });
+          }
         } catch (e) {}
+
+        var pathName = (location.pathname || "/");
+        var onOperator = pathName.indexOf("/operator") === 0;
+        var standalone = false;
+        try {
+          standalone =
+            window.matchMedia("(display-mode: standalone)").matches ||
+            window.matchMedia("(display-mode: fullscreen)").matches ||
+            window.matchMedia("(display-mode: minimal-ui)").matches ||
+            window.navigator.standalone === true;
+        } catch (e) {}
+
+        if (!standalone || onOperator) return;
+
+        document.documentElement.setAttribute("data-menuply-stale-pwa", "1");
+        document.addEventListener("DOMContentLoaded", function () {
+          if (document.getElementById("menuply-stale-pwa-gate")) return;
+          var gate = document.createElement("div");
+          gate.id = "menuply-stale-pwa-gate";
+          gate.setAttribute("role", "dialog");
+          gate.setAttribute("aria-modal", "true");
+          gate.innerHTML =
+            '<div style="position:fixed;inset:0;z-index:2147483647;background:#0f172a;color:#f8fafc;display:flex;align-items:center;justify-content:center;padding:24px;font-family:system-ui,sans-serif;text-align:left;">' +
+            '<div style="max-width:420px;width:100%;">' +
+            '<div style="font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#86efac;margin-bottom:10px;">Installed app is outdated</div>' +
+            "<h1 style=\"margin:0 0 12px;font-size:24px;line-height:1.25;\">Google Search opened an old Menuply / Operator app</h1>" +
+            '<p style="margin:0 0 12px;line-height:1.5;color:#cbd5e1;">That install still uses the Operator X splash and landscape lock. Website updates cannot remove it from this tablet.</p>' +
+            '<ol style="margin:0 0 18px;padding-left:20px;line-height:1.55;color:#e2e8f0;">' +
+            "<li>Long-press the Menuply or Operator app icon → Uninstall / Remove.</li>" +
+            "<li>Chrome → Settings → Site settings → menuply.com → Clear &amp; reset.</li>" +
+            "<li>Open menuply.com again from Google Search (it should stay in the browser).</li>" +
+            "</ol>" +
+            '<a href="https://menuply.com/?open=browser" style="display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 16px;border-radius:10px;background:#166534;color:#fff;font-weight:700;text-decoration:none;">Try opening in Chrome</a>' +
+            "</div></div>";
+          document.body.appendChild(gate);
+        });
       })();
     </script>
     <link rel="canonical" href="https://menuply.com/" />

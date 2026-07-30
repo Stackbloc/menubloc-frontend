@@ -20,12 +20,17 @@ assert.doesNotMatch(indexHtml, /operator-icon-192/);
 assert.doesNotMatch(indexHtml, /operator-apple-touch-icon/);
 assert.match(indexHtml, /screen\.orientation\.unlock/, "early Chrome-tablet unlock before React");
 assert.match(indexHtml, /serviceWorker\.getRegistrations/, "early root SW purge before React");
+assert.match(indexHtml, /display-mode: standalone/, "detect Google Search WebAPK hijack");
+assert.match(indexHtml, /menuply-stale-pwa-gate/, "show uninstall gate for stale standalone");
 
 const consumerManifest = JSON.parse(read("public/manifest.webmanifest"));
 assert.equal(consumerManifest.name, "Menuply");
 assert.equal(consumerManifest.start_url, "/");
 assert.equal(consumerManifest.orientation, "any");
 assert.equal(consumerManifest.scope, "/");
+assert.equal(consumerManifest.display, "browser");
+assert.equal(consumerManifest.handle_links, "not-preferred");
+assert.match(String(consumerManifest.id || ""), /menuply-consumer-v4/);
 assert.doesNotMatch(JSON.stringify(consumerManifest), /operator-icon/);
 assert.match(JSON.stringify(consumerManifest), /menuply-consumer/);
 
