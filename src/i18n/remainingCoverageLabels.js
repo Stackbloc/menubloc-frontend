@@ -47,25 +47,44 @@ const EN = {
   "basket.summary.view": "View basket",
   "about.breadcrumb": "About",
   "about.title": "About Menuply",
-  "about.hero":
+  "about.section1Title": "Food Intelligence for Everyone",
+  "about.lead":
     "Food intelligence built to make restaurant choices clearer, not more judgmental.",
-  "about.intro":
-    "Menuply — we know, the name is a little different. But we are building a different kind of restaurant platform.",
-  "about.body1":
-    "The name comes from a simple idea: menus become more powerful when they work together for the common good. Menuply brings dining options together into one connected experience.",
-  "about.body2":
-    "When diners visit Menuply, our goal is to place thousands of dining options at their fingertips while providing better information so decisions are easier, faster, and more informed.",
-  "about.tagline": "Menuply — One Menu. Multiplied by Thousands.",
-  "about.body3":
-    "Menuply is a food intelligence platform built to help people better understand what they eat without telling them what they should or shouldn't eat.",
-  "about.body4":
-    "At its core, Menuply brings clarity to restaurant menus by translating food into practical nutrition insight so you can compare options with confidence.",
-  "about.body5": "When people have better information, they make better decisions over time.",
-  "about.body6":
-    "If you want to indulge, enjoy it. If you want to optimize your nutrition, do that too. Menuply exists to make food choices more transparent, more informed, and more aligned with how you want to live.",
+  "about.p1": "Menuply is building a different kind of restaurant platform.",
+  "about.p2":
+    "The idea behind the name is simple: menus become more valuable when they work together instead of existing in isolation. By connecting restaurant menus into a single intelligent network, Menuply gives diners access to thousands of dining options through one connected experience.",
+  "about.missionIntro": "Our mission is straightforward:",
+  "about.mission1": "Make restaurant menus more accessible.",
+  "about.mission2": "Help reduce menu price inflation.",
+  "about.mission3":
+    "Help restaurants build and maintain direct relationships with their customers.",
+  "about.p3":
+    "When diners visit Menuply, they aren't just searching for restaurants. They are searching one of the largest collections of restaurant menus, allowing them to compare dishes, ingredients, prices, nutrition, dietary preferences, and other food intelligence across thousands of restaurants.",
+  "about.p4": "We believe better information leads to better decisions.",
+  "about.p5":
+    "Menuply doesn't tell people what they should eat. It gives them the information to decide for themselves.",
+  "about.p6":
+    "Whether you're looking for comfort food, trying to increase protein, reduce sodium, avoid certain ingredients, compare menu prices, or simply discover somewhere new to eat, Menuply is designed to make restaurant decisions easier, faster, and more transparent.",
+  "about.section2Title": "Building a Fairer Restaurant Economy",
+  "about.p7":
+    "Restaurants benefit as well. Menuply gives them the tools to manage accurate menus, build engaging profiles, communicate directly with diners, and participate in a growing food intelligence network that helps customers discover them.",
+  "about.p8": "We also believe the restaurant industry deserves a lower-cost alternative.",
+  "about.p9":
+    "As third-party marketplace fees have increased, many restaurants have little choice but to raise menu prices to protect already thin margins. Those higher costs are ultimately passed on to diners.",
+  "about.p10":
+    "Menuply was built with a different philosophy. By keeping our costs lower than traditional marketplaces, we give restaurants the opportunity to offer lower prices on Menuply while still keeping more of what they earn. Everyone benefits: restaurants retain more revenue, diners pay less, and local restaurants become more competitive.",
+  "about.p11": "We're looking for restaurants that believe there is a better way.",
+  "about.p12": "Restaurants that believe transparency matters.",
+  "about.p13": "Restaurants that believe diners deserve fair prices.",
+  "about.p14":
+    "Restaurants that are willing to help reshape the future of restaurant technology.",
+  "about.cta": "Is your restaurant bold enough to join the movement?",
+  "about.p15":
+    "We believe the future of restaurant technology isn't just online ordering. It's making restaurant information more complete, more accurate, and more useful for everyone.",
   "about.closer1": "Enjoy your food.",
   "about.closer2": "Understand your food.",
   "about.closer3": "That's Menuply.",
+  "about.tagline": "One Menu. Multiplied by Thousands.",
   "contact.intro": "Use the contact options below so your message goes to the right place.",
   "contact.inquiryType": "Inquiry type",
   "contact.inquiry.general": "General inquiry",
@@ -282,25 +301,6 @@ const ES = {
   "basket.summary.view": "Ver cesta",
   "about.breadcrumb": "Acerca de",
   "about.title": "Acerca de Menuply",
-  "about.hero":
-    "Inteligencia gastronómica para elegir restaurantes con más claridad, sin juicios.",
-  "about.intro":
-    "Menuply — sabemos, el nombre es un poco distinto. Pero estamos construyendo una plataforma de restaurantes diferente.",
-  "about.body1":
-    "El nombre nace de una idea simple: los menús son más poderosos cuando trabajan juntos para el bien común. Menuply reúne opciones gastronómicas en una sola experiencia conectada.",
-  "about.body2":
-    "Cuando los comensales visitan Menuply, nuestro objetivo es poner miles de opciones al alcance de la mano con mejor información para decidir de forma más fácil, rápida e informada.",
-  "about.tagline": "Menuply — Un Menú. Multiplicado por Miles.",
-  "about.body3":
-    "Menuply es una plataforma de inteligencia alimentaria creada para ayudar a las personas a entender mejor lo que comen, sin decirles qué deben o no deben comer.",
-  "about.body4":
-    "En esencia, Menuply aporta claridad a los menús de restaurantes y traduce la comida en información nutricional práctica para comparar opciones con confianza.",
-  "about.body5": "Cuando las personas tienen mejor información, toman mejores decisiones con el tiempo.",
-  "about.body6":
-    "Si quieres darte un gusto, disfrútalo. Si quieres optimizar tu nutrición, también. Menuply existe para que tus decisiones de comida sean más transparentes, informadas y alineadas con tu forma de vivir.",
-  "about.closer1": "Disfruta tu comida.",
-  "about.closer2": "Entiende tu comida.",
-  "about.closer3": "Eso es Menuply.",
   "contact.intro": "Usa las opciones de contacto a continuación para que tu mensaje llegue al equipo correcto.",
   "contact.inquiryType": "Tipo de consulta",
   "contact.inquiry.general": "Consulta general",
@@ -514,23 +514,6 @@ const ZH = {
   "basket.summary.view": "查看购物车",
   "about.breadcrumb": "关于",
   "about.title": "关于 Menuply",
-  "about.hero": "餐饮智能，让选择更清晰，而非更有评判性。",
-  "about.intro": "Menuply——名字有点特别，但我们正在打造一种不同的餐厅平台。",
-  "about.body1":
-    "这个名字来自一个简单想法：当菜单协同工作时会更有价值。Menuply 将用餐选择整合为一个互联体验。",
-  "about.body2":
-    "当食客访问 Menuply 时，我们的目标是把海量餐饮选择放在指尖，并提供更好的信息，让决策更轻松、更快速、更明智。",
-  "about.tagline": "Menuply —— 一个菜单，成千上万倍的连接。",
-  "about.body3":
-    "Menuply 是一个餐饮智能平台，帮助人们更好理解自己吃的食物，而不是告诉你该吃什么或不该吃什么。",
-  "about.body4":
-    "Menuply 的核心是让餐厅菜单更清晰，把食物转化为实用的营养信息，帮助你更有信心地比较选择。",
-  "about.body5": "当人们拥有更好的信息时，长期会做出更好的决定。",
-  "about.body6":
-    "想放纵就尽情享受；想优化营养也完全可以。Menuply 的目标是让饮食选择更透明、更有依据、更符合你的生活方式。",
-  "about.closer1": "享受你的食物。",
-  "about.closer2": "理解你的食物。",
-  "about.closer3": "这就是 Menuply。",
   "contact.intro": "请使用下方联系方式，让你的消息更快到达对应团队。",
   "contact.inquiryType": "咨询类型",
   "contact.inquiry.general": "一般咨询",
