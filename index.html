@@ -13,6 +13,35 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <!--
+      Early consumer hygiene (before React): Google Search → Chrome tablet can still
+      reopen menuply.com under a poisoned root Operator SW / landscape lock.
+      Unlock orientation + force consumer manifest + drop root-scoped workers ASAP.
+    -->
+    <script>
+      (function () {
+        try {
+          if (screen.orientation && typeof screen.orientation.unlock === "function") {
+            screen.orientation.unlock();
+          }
+        } catch (e) {}
+        try {
+          var link = document.querySelector('link[rel="manifest"]');
+          if (link) link.setAttribute("href", "/manifest.webmanifest");
+        } catch (e) {}
+        try {
+          if (!("serviceWorker" in navigator)) return;
+          navigator.serviceWorker.getRegistrations().then(function (regs) {
+            regs.forEach(function (reg) {
+              try {
+                var path = new URL(reg.scope).pathname;
+                if (path === "/" || path === "") reg.unregister();
+              } catch (e) {}
+            });
+          });
+        } catch (e) {}
+      })();
+    </script>
     <link rel="canonical" href="https://menuply.com/" />
     <meta property="og:site_name" content="Menuply" />
     <meta property="og:title" content="Menuply | Menus, Deals, and Nutrition Insights" />

@@ -18,6 +18,8 @@ assert.match(indexHtml, /href="\/menuply-logo\.png"/);
 assert.match(indexHtml, /menuply-consumer-192/);
 assert.doesNotMatch(indexHtml, /operator-icon-192/);
 assert.doesNotMatch(indexHtml, /operator-apple-touch-icon/);
+assert.match(indexHtml, /screen\.orientation\.unlock/, "early Chrome-tablet unlock before React");
+assert.match(indexHtml, /serviceWorker\.getRegistrations/, "early root SW purge before React");
 
 const consumerManifest = JSON.parse(read("public/manifest.webmanifest"));
 assert.equal(consumerManifest.name, "Menuply");
@@ -50,6 +52,7 @@ assert.match(operatorSw, /\/operator\/tablet/);
 
 const register = read("src/registerServiceWorker.js");
 assert.match(register, /unregister/);
+assert.match(register, /unlockConsumerOrientation|screen\.orientation\.unlock/);
 assert.doesNotMatch(register, /register\("\/service-worker\.js"\)/);
 assert.doesNotMatch(register, /register\("\/operator\/service-worker\.js"/);
 

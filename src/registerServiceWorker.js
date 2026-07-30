@@ -5,11 +5,23 @@
  * This runs on every consumer load to unregister root-scoped workers and wipe operator caches.
  * Operator tablet registers its own /operator/ scoped worker separately.
  */
+function unlockConsumerOrientation() {
+  try {
+    if (screen.orientation && typeof screen.orientation.unlock === "function") {
+      screen.orientation.unlock();
+    }
+  } catch {
+    // ignore — unlock is best-effort and not supported everywhere
+  }
+}
+
 export function registerServiceWorker() {
+  unlockConsumerOrientation();
   if (!("serviceWorker" in navigator)) return;
   if (!window.isSecureContext && window.location.hostname !== "localhost") return;
 
   const purge = async () => {
+    unlockConsumerOrientation();
     try {
       const registrations = await navigator.serviceWorker.getRegistrations();
       await Promise.all(
@@ -47,5 +59,8 @@ export function registerServiceWorker() {
   void purge();
   window.addEventListener("load", () => {
     void purge();
+  });
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") unlockConsumerOrientation();
   });
 }
