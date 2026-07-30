@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useLanguage } from "../../context/LanguageContext.jsx";
-import { toConsumerErrorMessage } from "../../lib/api.js";
+import { API_BASE, toConsumerErrorMessage } from "../../lib/api.js";
 import { formatMoney } from "../../lib/pricingDisplay.js";
 import RestaurantVerificationBadge from "../RestaurantVerificationBadge.jsx";
 import { buildRestaurantStatusLightProps } from "../../lib/restaurantStatusLight.js";
@@ -13,10 +13,39 @@ import {
   resolveRestaurantProfileHref,
 } from "../../lib/catalogMenuUtils.js";
 import { getDrinkCatalogTab } from "../../lib/menuCatalogDrinkCategories.js";
-
-const API = (import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? "http://localhost:3001" : "")).replace(/\/$/, "");
+import {
+  buildMenuAppearanceRootStyle,
+  getMenuAppearanceTokens,
+  shouldApplyMenuAppearance,
+} from "../../lib/menuAppearances.js";
+import { resolveEffectiveMenuAppearance } from "../../lib/menuAppearanceRecommendation.js";
+import {
+  normalizeMenuThemeSettings,
+  resolveMenuPageBackground,
+  resolveMenuShellTextColor,
+} from "../menu-templates/menuThemeSettings.js";
 
 const drinksMenuPayloadCache = new Map();
+
+/** Empty or failed responses must not stick in cache across remounts. */
+function isCacheableDrinksPayload(json) {
+  if (!json || json.ok !== true) return false;
+  const itemCount = Number(json.item_count);
+  if (Number.isFinite(itemCount) && itemCount <= 0) return false;
+  const sections = json.browser_sections;
+  if (Array.isArray(sections) && sections.every((s) => !Array.isArray(s?.items) || s.items.length === 0)) {
+    return false;
+  }
+  return true;
+}
+
+export function clearDrinksMenuPayloadCache(apiUrl = null) {
+  if (apiUrl == null) {
+    drinksMenuPayloadCache.clear();
+    return;
+  }
+  drinksMenuPayloadCache.delete(apiUrl);
+}
 
 async function fetchDrinksMenuPayload(restaurantId, apiUrl) {
   if (drinksMenuPayloadCache.has(apiUrl)) {
@@ -37,7 +66,11 @@ async function fetchDrinksMenuPayload(restaurantId, apiUrl) {
   })();
   drinksMenuPayloadCache.set(apiUrl, promise);
   try {
-    return await promise;
+    const json = await promise;
+    if (!isCacheableDrinksPayload(json)) {
+      drinksMenuPayloadCache.delete(apiUrl);
+    }
+    return json;
   } catch (error) {
     drinksMenuPayloadCache.delete(apiUrl);
     throw error;
@@ -65,7 +98,7 @@ export function prefetchCatalogDrinksMenu(restaurantId, locationParams = {}, bro
   if (locationParams.state) params.set("state", locationParams.state);
   if (browseSection) params.set("browse_section", browseSection);
   const qs = params.toString();
-  const apiUrl = `${API}/public/restaurants/${encodeURIComponent(restaurantId)}/drinks-menu${qs ? `?${qs}` : ""}`;
+  const apiUrl = `${API_BASE}/public/restaurants/${encodeURIComponent(restaurantId)}/drinks-menu${qs ? `?${qs}` : ""}`;
   fetchDrinksMenuPayload(restaurantId, apiUrl).catch(() => {});
 }
 
@@ -76,11 +109,17 @@ function formatItemPrice(item) {
   return Number.isFinite(Number(cents)) ? formatMoney(Number(cents)) : "";
 }
 
-function DrinksBrowserCategorySection({ section, isActiveBrowseSection = false }) {
+function DrinksBrowserCategorySection({
+  section,
+  isActiveBrowseSection = false,
+  inkColor = "#11211a",
+  mutedColor = "#667085",
+  dividerColor = "rgba(18,34,28,0.08)",
+}) {
   const items = Array.isArray(section?.items) ? section.items : [];
   if (!items.length) return null;
 
-  const accent = asStr(section.accent || getDrinkCatalogTab(section.browser_category_id)?.accent || "#11211a").trim();
+  const accent = asStr(section.accent || getDrinkCatalogTab(section.browser_category_id)?.accent || inkColor).trim();
   const label = asStr(section.label || getDrinkCatalogTab(section.browser_category_id)?.label || "Beverages").trim();
 
   return (
@@ -127,15 +166,15 @@ function DrinksBrowserCategorySection({ section, isActiveBrowseSection = false }
                 gap: 12,
                 alignItems: "start",
                 paddingBottom: 12,
-                borderBottom: "1px solid rgba(18,34,28,0.08)",
+                borderBottom: `1px solid ${dividerColor}`,
               }}
             >
               <div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: "#11211a" }}>
+                <div style={{ fontSize: 15, fontWeight: 700, color: inkColor }}>
                   {asStr(item.name).trim()}
                 </div>
                 {item.description ? (
-                  <div style={{ marginTop: 4, fontSize: 13, lineHeight: 1.45, color: "#667085" }}>
+                  <div style={{ marginTop: 4, fontSize: 13, lineHeight: 1.45, color: mutedColor }}>
                     {asStr(item.description).trim()}
                   </div>
                 ) : null}
@@ -161,7 +200,7 @@ function DrinksBrowserCategorySection({ section, isActiveBrowseSection = false }
                 ) : null}
               </div>
               {price ? (
-                <div style={{ fontSize: 14, fontWeight: 700, color: "#11211a", whiteSpace: "nowrap" }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: inkColor, whiteSpace: "nowrap" }}>
                   {price}
                 </div>
               ) : null}
@@ -196,7 +235,7 @@ export default function CatalogDrinksMenuRenderer({
     if (locationParams.state) params.set("state", locationParams.state);
     if (browseSection) params.set("browse_section", browseSection);
     const qs = params.toString();
-    return `${API}/public/restaurants/${encodeURIComponent(restaurantId)}/drinks-menu${qs ? `?${qs}` : ""}`;
+    return `${API_BASE}/public/restaurants/${encodeURIComponent(restaurantId)}/drinks-menu${qs ? `?${qs}` : ""}`;
   }, [browseSection, entry?.distance_miles, entry?.restaurant_distance_miles, locationParams.city, locationParams.lat, locationParams.lng, locationParams.state, restaurantId]);
 
   useEffect(() => {
@@ -269,6 +308,63 @@ export default function CatalogDrinksMenuRenderer({
   );
   const activeBrowseSection = asStr(data?.active_browse_section || browseSection).trim().toLowerCase();
 
+  const displaySettingsSource = data?.display_settings || data?.style?.display_settings || data || {};
+  const menuThemeSettings = normalizeMenuThemeSettings(displaySettingsSource);
+  const applyMenuAppearance = shouldApplyMenuAppearance(data?.menu_style || data?.style?.menu_style || "v1");
+  const effectiveMenuAppearance =
+    data?.effective_menu_appearance
+    || data?.style?.effective_menu_appearance
+    || resolveEffectiveMenuAppearance({
+      menu_appearance_key: data?.menu_appearance_key || data?.style?.menu_appearance_key,
+      category: restaurant.category || data?.category || entry?.category,
+      cuisine: restaurant.cuisine || data?.cuisine || entry?.cuisine,
+    });
+  const appearanceTokens = applyMenuAppearance
+    ? getMenuAppearanceTokens(effectiveMenuAppearance)
+    : null;
+  const resolvedPageBackground = resolveMenuPageBackground(
+    {
+      ...displaySettingsSource,
+      menu_style: data?.menu_style || data?.style?.menu_style || menuThemeSettings.menu_style,
+      shell_background_color:
+        displaySettingsSource.shell_background_color
+        || data?.style?.shell_background_color
+        || null,
+      background_style:
+        displaySettingsSource.background_style
+        || data?.style?.background_style
+        || null,
+    },
+    {
+      accent_color: data?.accent_color || data?.style?.accent_color || menuThemeSettings.accent_color,
+    }
+  );
+  const shellTextColor = resolveMenuShellTextColor(displaySettingsSource);
+  const canvasStyle = applyMenuAppearance
+    ? {
+        flex: 1,
+        minHeight: 0,
+        overflow: "auto",
+        padding: "20px 18px 32px",
+        ...buildMenuAppearanceRootStyle(effectiveMenuAppearance),
+      }
+    : {
+        flex: 1,
+        minHeight: 0,
+        overflow: "auto",
+        background: resolvedPageBackground || "#f7f6f1",
+        padding: "20px 18px 32px",
+      };
+  const inkColor = applyMenuAppearance
+    ? (appearanceTokens?.ink || appearanceTokens?.onPage || "#11211a")
+    : (shellTextColor || "#11211a");
+  const mutedColor = applyMenuAppearance
+    ? (appearanceTokens?.muted || "#667085")
+    : "#667085";
+  const dividerColor = applyMenuAppearance
+    ? (appearanceTokens?.divider || "rgba(18,34,28,0.08)")
+    : "rgba(18,34,28,0.08)";
+
   if (pageState.status === "loading") {
     return (
       <div style={{ padding: 24, color: "#667085", fontSize: 14 }}>
@@ -290,19 +386,15 @@ export default function CatalogDrinksMenuRenderer({
 
   return (
     <div
-      style={{
-        flex: 1,
-        minHeight: 0,
-        overflow: "auto",
-        background: "#f7f6f1",
-        padding: "20px 18px 32px",
-      }}
+      style={canvasStyle}
+      data-menu-appearance={applyMenuAppearance ? effectiveMenuAppearance : undefined}
+      data-drinks-menu-canvas="true"
     >
       <header style={{ marginBottom: 24 }}>
         <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#9333ea" }}>
           {t("menuBrowser.mode.drinks", "Drinks Menu")}
         </div>
-        <h1 style={{ margin: "8px 0 6px", fontSize: 28, lineHeight: 1.1, fontWeight: 900, color: "#11211a" }}>
+        <h1 style={{ margin: "8px 0 6px", fontSize: 28, lineHeight: 1.1, fontWeight: 900, color: inkColor }}>
           <span style={{ display: "inline-flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
             {restaurantProfileHref ? (
               <Link to={restaurantProfileHref} style={{ color: "inherit", textDecoration: "none" }}>
@@ -313,7 +405,7 @@ export default function CatalogDrinksMenuRenderer({
           </span>
         </h1>
         {addressLine ? (
-          <div style={{ fontSize: 14, color: "#667085", lineHeight: 1.45 }}>
+          <div style={{ fontSize: 14, color: mutedColor, lineHeight: 1.45 }}>
             {directionsHref ? (
               <a href={directionsHref} target="_blank" rel="noreferrer" style={{ color: "inherit" }}>
                 {addressLine}
@@ -322,19 +414,19 @@ export default function CatalogDrinksMenuRenderer({
           </div>
         ) : null}
         {distanceMiles != null ? (
-          <div style={{ marginTop: 6, fontSize: 13, color: "#667085" }}>
+          <div style={{ marginTop: 6, fontSize: 13, color: mutedColor }}>
             {distanceMiles.toFixed(1)} mi away
           </div>
         ) : null}
 
-        <div style={{ marginTop: 10, fontSize: 13, color: "#667085" }}>
+        <div style={{ marginTop: 10, fontSize: 13, color: mutedColor }}>
           {asStr(data?.menu_title || "Drinks Menu").trim()}
           {data?.item_count != null ? ` · ${data.item_count} beverages` : ""}
         </div>
       </header>
 
       {browserSections.length === 0 ? (
-        <div style={{ color: "#667085", fontSize: 14 }}>
+        <div style={{ color: mutedColor, fontSize: 14 }}>
           {t("menuCatalog.noDrinksSections", "No beverage sections are available for this restaurant yet.")}
         </div>
       ) : (
@@ -343,6 +435,9 @@ export default function CatalogDrinksMenuRenderer({
             key={section.browser_category_id}
             section={section}
             isActiveBrowseSection={activeBrowseSection === section.browser_category_id}
+            inkColor={inkColor}
+            mutedColor={mutedColor}
+            dividerColor={dividerColor}
           />
         ))
       )}
