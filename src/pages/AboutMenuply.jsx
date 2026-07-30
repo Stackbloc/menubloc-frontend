@@ -50,7 +50,7 @@ export default function AboutMenuply() {
         <p style={{ ...statementStyle, fontSize: "17px", marginBottom: 18 }}>
           {t(
             "about.lead",
-            "Food intelligence built to make restaurant choices clearer, not more judgmental."
+            "Food intelligence built to make restaurant choices more discoverable, not more judgmental."
           )}
         </p>
 
@@ -61,7 +61,7 @@ export default function AboutMenuply() {
         <p style={paragraphStyle}>
           {t(
             "about.p2",
-            "The idea behind the name is simple: menus become more valuable when they work together instead of existing in isolation. By connecting restaurant menus into a single intelligent network, Menuply gives diners access to thousands of dining options through one connected experience."
+            "The idea behind the name is simple: menus become more valuable when they work together instead of existing in isolation. By connecting restaurant menus into a single intelligent network, our vision is to give diners access to thousands of dining options through one connected experience."
           )}
         </p>
 
@@ -71,10 +71,13 @@ export default function AboutMenuply() {
 
         <ul style={listStyle}>
           <li style={listItemStyle}>
-            {t("about.mission1", "Make restaurant menus more accessible.")}
+            {t("about.mission1", "Make restaurant menus more accessible and accurate.")}
           </li>
           <li style={listItemStyle}>
-            {t("about.mission2", "Help reduce menu price inflation.")}
+            {t(
+              "about.mission2",
+              "Help reduce menu price inflation by reducing restaurant marketing costs."
+            )}
           </li>
           <li style={listItemStyle}>
             {t(
@@ -87,7 +90,7 @@ export default function AboutMenuply() {
         <p style={paragraphStyle}>
           {t(
             "about.p3",
-            "When diners visit Menuply, they aren't just searching for restaurants. They are searching one of the largest collections of restaurant menus, allowing them to compare dishes, ingredients, prices, nutrition, dietary preferences, and other food intelligence across thousands of restaurants."
+            "When diners visit Menuply, they aren't just searching for restaurants. We aspire to build the most comprehensive collection of restaurant menus, allowing diners to compare dishes, ingredients, prices, nutrition, dietary preferences, and other food intelligence across practically all restaurants in a given market."
           )}
         </p>
 
@@ -98,7 +101,7 @@ export default function AboutMenuply() {
         <p style={paragraphStyle}>
           {t(
             "about.p5",
-            "Menuply doesn't tell people what they should eat. It gives them the information to decide for themselves."
+            "Even though we provide nutrition information about menu choices, Menuply doesn't tell people what they should eat. It gives them the information to decide for themselves."
           )}
         </p>
 
@@ -125,7 +128,7 @@ export default function AboutMenuply() {
         <p style={paragraphStyle}>
           {t(
             "about.p8",
-            "We also believe the restaurant industry deserves a lower-cost alternative."
+            "We also believe the restaurant industry and diners deserve a lower-cost alternative."
           )}
         </p>
 
@@ -143,6 +146,10 @@ export default function AboutMenuply() {
           )}
         </p>
 
+        <p style={{ ...statementStyle, fontSize: "17px", marginTop: 8, marginBottom: 18 }}>
+          {t("about.cta", "Is your restaurant bold enough to join the movement?")}
+        </p>
+
         <p style={paragraphStyle}>
           {t(
             "about.p11",
@@ -151,28 +158,23 @@ export default function AboutMenuply() {
         </p>
 
         <p style={paragraphStyle}>
-          {t("about.p12", "Restaurants that believe transparency matters.")}
+          {t(
+            "about.p12",
+            "Restaurants that have the courage to help create an alternative to the exorbitant platform fees causing unsustainable menu price inflation."
+          )}
         </p>
 
         <p style={paragraphStyle}>
-          {t("about.p13", "Restaurants that believe diners deserve fair prices.")}
+          {t(
+            "about.p13",
+            "Restaurants that are willing to help reshape the future of restaurant technology."
+          )}
         </p>
 
         <p style={paragraphStyle}>
           {t(
             "about.p14",
-            "Restaurants that are willing to help reshape the future of restaurant technology."
-          )}
-        </p>
-
-        <p style={{ ...statementStyle, fontSize: "17px", marginTop: 8, marginBottom: 18 }}>
-          {t("about.cta", "Is your restaurant bold enough to join the movement?")}
-        </p>
-
-        <p style={paragraphStyle}>
-          {t(
-            "about.p15",
-            "We believe the future of restaurant technology isn't just online ordering. It's making restaurant information more complete, more accurate, and more useful for everyone."
+            "We believe the future of restaurant technology isn't just online ordering. It's making restaurants more independent so they have better control over their menus, pricing, and customer relationships."
           )}
         </p>
 

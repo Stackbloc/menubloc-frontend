@@ -49,38 +49,40 @@ const EN = {
   "about.title": "About Menuply",
   "about.section1Title": "Food Intelligence for Everyone",
   "about.lead":
-    "Food intelligence built to make restaurant choices clearer, not more judgmental.",
+    "Food intelligence built to make restaurant choices more discoverable, not more judgmental.",
   "about.p1": "Menuply is building a different kind of restaurant platform.",
   "about.p2":
-    "The idea behind the name is simple: menus become more valuable when they work together instead of existing in isolation. By connecting restaurant menus into a single intelligent network, Menuply gives diners access to thousands of dining options through one connected experience.",
+    "The idea behind the name is simple: menus become more valuable when they work together instead of existing in isolation. By connecting restaurant menus into a single intelligent network, our vision is to give diners access to thousands of dining options through one connected experience.",
   "about.missionIntro": "Our mission is straightforward:",
-  "about.mission1": "Make restaurant menus more accessible.",
-  "about.mission2": "Help reduce menu price inflation.",
+  "about.mission1": "Make restaurant menus more accessible and accurate.",
+  "about.mission2":
+    "Help reduce menu price inflation by reducing restaurant marketing costs.",
   "about.mission3":
     "Help restaurants build and maintain direct relationships with their customers.",
   "about.p3":
-    "When diners visit Menuply, they aren't just searching for restaurants. They are searching one of the largest collections of restaurant menus, allowing them to compare dishes, ingredients, prices, nutrition, dietary preferences, and other food intelligence across thousands of restaurants.",
+    "When diners visit Menuply, they aren't just searching for restaurants. We aspire to build the most comprehensive collection of restaurant menus, allowing diners to compare dishes, ingredients, prices, nutrition, dietary preferences, and other food intelligence across practically all restaurants in a given market.",
   "about.p4": "We believe better information leads to better decisions.",
   "about.p5":
-    "Menuply doesn't tell people what they should eat. It gives them the information to decide for themselves.",
+    "Even though we provide nutrition information about menu choices, Menuply doesn't tell people what they should eat. It gives them the information to decide for themselves.",
   "about.p6":
     "Whether you're looking for comfort food, trying to increase protein, reduce sodium, avoid certain ingredients, compare menu prices, or simply discover somewhere new to eat, Menuply is designed to make restaurant decisions easier, faster, and more transparent.",
   "about.section2Title": "Building a Fairer Restaurant Economy",
   "about.p7":
     "Restaurants benefit as well. Menuply gives them the tools to manage accurate menus, build engaging profiles, communicate directly with diners, and participate in a growing food intelligence network that helps customers discover them.",
-  "about.p8": "We also believe the restaurant industry deserves a lower-cost alternative.",
+  "about.p8":
+    "We also believe the restaurant industry and diners deserve a lower-cost alternative.",
   "about.p9":
     "As third-party marketplace fees have increased, many restaurants have little choice but to raise menu prices to protect already thin margins. Those higher costs are ultimately passed on to diners.",
   "about.p10":
     "Menuply was built with a different philosophy. By keeping our costs lower than traditional marketplaces, we give restaurants the opportunity to offer lower prices on Menuply while still keeping more of what they earn. Everyone benefits: restaurants retain more revenue, diners pay less, and local restaurants become more competitive.",
-  "about.p11": "We're looking for restaurants that believe there is a better way.",
-  "about.p12": "Restaurants that believe transparency matters.",
-  "about.p13": "Restaurants that believe diners deserve fair prices.",
-  "about.p14":
-    "Restaurants that are willing to help reshape the future of restaurant technology.",
   "about.cta": "Is your restaurant bold enough to join the movement?",
-  "about.p15":
-    "We believe the future of restaurant technology isn't just online ordering. It's making restaurant information more complete, more accurate, and more useful for everyone.",
+  "about.p11": "We're looking for restaurants that believe there is a better way.",
+  "about.p12":
+    "Restaurants that have the courage to help create an alternative to the exorbitant platform fees causing unsustainable menu price inflation.",
+  "about.p13":
+    "Restaurants that are willing to help reshape the future of restaurant technology.",
+  "about.p14":
+    "We believe the future of restaurant technology isn't just online ordering. It's making restaurants more independent so they have better control over their menus, pricing, and customer relationships.",
   "about.closer1": "Enjoy your food.",
   "about.closer2": "Understand your food.",
   "about.closer3": "That's Menuply.",
