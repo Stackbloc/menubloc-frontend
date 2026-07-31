@@ -313,7 +313,7 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
     loadExistingRestaurant(restaurantParam);
   }, [searchParams, restaurant]);
 
-  function clearSelectedRestaurant() {
+  function resetWorkspaceFormState() {
     suppressUrlLoadRef.current = true;
     loadGenerationRef.current += 1;
     setRestaurant(null);
@@ -323,6 +323,7 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
     setMenuDetail(null);
     setReviewItems([]);
     setReviewSessions([]);
+    setSourcePages([]);
     setProfile(EMPTY_PROFILE);
     setMenuName("Main Menu");
     setMenuType("main");
@@ -333,13 +334,29 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
     setProfileErr("");
     setDuplicateMatches(null);
     setLoadRestaurantErr("");
+    setShowProfilePanel(false);
+    prefillAppliedRef.current = false;
+  }
+
+  function clearSelectedRestaurant() {
+    resetWorkspaceFormState();
     setSearchParams((params) => {
       const next = new URLSearchParams(params);
       next.set("tab", "workspace");
+      next.set("create", "1");
       next.delete("restaurant");
       return next;
     }, { replace: true });
   }
+
+  // Deep-link / shell "Add Restaurant" (?create=1 without restaurant) clears in-memory selection.
+  useEffect(() => {
+    const wantsCreate = searchParams.get("create") === "1";
+    const restaurantParam = searchParams.get("restaurant");
+    if (wantsCreate && !restaurantParam && restaurant) {
+      resetWorkspaceFormState();
+    }
+  }, [searchParams, restaurant]);
 
   async function selectExistingRestaurant(row) {
     await loadExistingRestaurant(row.id, row);
@@ -538,6 +555,7 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
       setDuplicateMatches(null);
       if (data.menu?.display_name) setMenuName(data.menu.display_name);
       if (data.menu?.menu_type) setMenuType(data.menu.menu_type);
+      setShowImportPanel(true);
       setSearchParams((params) => {
         const next = new URLSearchParams(params);
         next.set("tab", "workspace");
@@ -710,6 +728,10 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
         const saved = await importParsedToMenuDraft(uploadId);
         setUploadMsg({
           ok: saved,
+          restaurantId: rid,
+          menuId: mid,
+          uploadId,
+          parseStatus: saved ? "saved_to_menu" : "parse_ok_save_failed",
           message: saved
             ? `Parsed ${inserted} item${inserted !== 1 ? "s" : ""} — saved to menu below. Edit, then publish when ready.`
             : `Parsed ${inserted} item${inserted !== 1 ? "s" : ""}, but saving to the menu editor failed. Use Save to Menu after fixing any errors.`,
@@ -717,6 +739,10 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
       } else {
         setUploadMsg({
           ok: true,
+          restaurantId: rid,
+          menuId: mid,
+          uploadId,
+          parseStatus: reviewCount > 0 ? "needs_review" : "parsed",
           message: reviewCount > 0
             ? `Parsed ${inserted} item${inserted !== 1 ? "s" : ""} — ${reviewCount} need review below before saving to the menu.`
             : `Parsed ${inserted} item${inserted !== 1 ? "s" : ""}.`,
@@ -727,7 +753,13 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
       await loadMenuState();
       await loadReviewItems();
     } catch (err) {
-      setUploadMsg({ ok: false, message: err?.payload?.error || err?.message || "Upload failed." });
+      setUploadMsg({
+        ok: false,
+        restaurantId: rid,
+        menuId: mid,
+        parseStatus: "upload_failed",
+        message: err?.payload?.error || err?.message || "Upload failed. Restaurant was kept — retry the upload without recreating it.",
+      });
     } finally {
       setUploading(false);
     }
@@ -747,6 +779,7 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
         loading={loadingRestaurant}
         onSelect={selectExistingRestaurant}
         onClear={clearSelectedRestaurant}
+        onAddRestaurant={clearSelectedRestaurant}
       />
 
       {loadRestaurantErr ? (
@@ -918,8 +951,33 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
         )}
 
         {restaurant && !existingRestaurant && (
-          <div style={{ marginTop: 14, padding: "12px 14px", borderRadius: 10, background: "#f0fdf4", border: "1px solid #bbf7d0", fontSize: 13, color: "#15803d", fontWeight: 600 }}>
-            Profile created: {restaurant.restaurant_name || restaurant.name} (#{restaurant.id})
+          <div
+            data-testid="owner-restaurant-created-success"
+            style={{ marginTop: 14, padding: "12px 14px", borderRadius: 10, background: "#f0fdf4", border: "1px solid #bbf7d0", fontSize: 13, color: "#15803d" }}
+          >
+            <div style={{ fontWeight: 700, marginBottom: 6 }}>Restaurant created successfully</div>
+            <div style={{ fontWeight: 600 }}>
+              {restaurant.restaurant_name || restaurant.name}
+            </div>
+            <div style={{ marginTop: 6, fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" }}>
+              Restaurant ID: {restaurant.id}
+            </div>
+            {menu?.id ? (
+              <div style={{ marginTop: 4, fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" }}>
+                Menu ID: {menu.id}
+              </div>
+            ) : null}
+            <div style={{ marginTop: 10, display: "flex", gap: 12, flexWrap: "wrap" }}>
+              <Link
+                to={`/owner/profile-manager?restaurant=${restaurant.id}`}
+                style={{ fontSize: 12, fontWeight: 700, color: OWNER_COLORS.accent, textDecoration: "none" }}
+              >
+                Open Profile Manager →
+              </Link>
+              <span style={{ fontSize: 12, color: "#15803d" }}>
+                Upload a menu below, or skip and return later.
+              </span>
+            </div>
           </div>
         )}
       </PageCard>
@@ -1013,7 +1071,7 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
               })}
             </div>
           )}
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 14 }}>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 14, alignItems: "center" }}>
             <button
               type="button"
               disabled={publishing}
@@ -1023,8 +1081,14 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
                 background: OWNER_COLORS.accent, color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer",
               }}
             >
-              + Add menu
+              + Add Another Menu
             </button>
+            <Link
+              to={`/owner/profile-manager?restaurant=${rid}`}
+              style={{ fontSize: 12, fontWeight: 700, color: OWNER_COLORS.accent, textDecoration: "none", padding: "9px 4px" }}
+            >
+              Profile & style editors →
+            </Link>
           </div>
         </PageCard>
       )}
@@ -1075,26 +1139,32 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
         </div>
       )}
 
-      {/* Optional OCR import — secondary to live dish editing */}
+      {/* Optional OCR import — primary after create; secondary once menu has items */}
       {restaurant && (
-        <PageCard style={{ padding: 20, marginBottom: 16 }}>
+        <PageCard style={{ padding: 20, marginBottom: 16 }} data-testid="owner-upload-menu-panel">
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
             <SectionTitle
-              title="Optional: import photo / PDF"
-              subtitle="Secondary path — after parsing, use OCR Uploads → Review Queue for held items, then finish here."
+              title={!existingRestaurant || showImportPanel ? "Upload Menu" : "Optional: import photo / PDF"}
+              subtitle={
+                !existingRestaurant
+                  ? `${restaurant.restaurant_name || restaurant.name} · Restaurant ID: ${rid}${mid ? ` · Menu ID: ${mid}` : ""} — attach a PDF or photo to this restaurant.`
+                  : "Secondary path — after parsing, use OCR Uploads → Review Queue for held items, then finish here."
+              }
             />
-            <button
-              type="button"
-              onClick={() => setShowImportPanel((v) => !v)}
-              style={{
-                padding: "8px 12px", borderRadius: 8, border: `1px solid ${OWNER_COLORS.line}`,
-                background: "#fff", fontWeight: 700, fontSize: 12, cursor: "pointer", color: OWNER_COLORS.ink,
-              }}
-            >
-              {showImportPanel ? "Hide import" : "Show import"}
-            </button>
+            {existingRestaurant ? (
+              <button
+                type="button"
+                onClick={() => setShowImportPanel((v) => !v)}
+                style={{
+                  padding: "8px 12px", borderRadius: 8, border: `1px solid ${OWNER_COLORS.line}`,
+                  background: "#fff", fontWeight: 700, fontSize: 12, cursor: "pointer", color: OWNER_COLORS.ink,
+                }}
+              >
+                {showImportPanel ? "Hide import" : "Show import"}
+              </button>
+            ) : null}
           </div>
-          {showImportPanel ? (
+          {(!existingRestaurant || showImportPanel) ? (
             <>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12, marginTop: 12 }}>
             <div>
@@ -1126,7 +1196,28 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
             </Link>
           </div>
           {(uploadMsg || actionMsg) && (
-            <div style={{ marginTop: 12, padding: "10px 12px", borderRadius: 9, background: uploadMsg?.ok === false ? "#fff1ef" : "#f0fdf4", color: uploadMsg?.ok === false ? "#991b1b" : "#15803d", fontSize: 13, fontWeight: 600 }}>
+            <div
+              data-testid="owner-menu-attached-success"
+              style={{ marginTop: 12, padding: "10px 12px", borderRadius: 9, background: uploadMsg?.ok === false ? "#fff1ef" : "#f0fdf4", color: uploadMsg?.ok === false ? "#991b1b" : "#15803d", fontSize: 13, fontWeight: 600 }}
+            >
+              {uploadMsg?.ok !== false && uploadMsg?.restaurantId ? (
+                <div style={{ marginBottom: 6 }}>
+                  <div>Menu attached successfully</div>
+                  <div style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", fontWeight: 600, marginTop: 4 }}>
+                    Restaurant ID: {uploadMsg.restaurantId}
+                  </div>
+                  {uploadMsg.menuId ? (
+                    <div style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", fontWeight: 600 }}>
+                      Menu ID: {uploadMsg.menuId}
+                    </div>
+                  ) : null}
+                  {uploadMsg.uploadId ? (
+                    <div style={{ fontSize: 12, fontWeight: 600, marginTop: 4 }}>
+                      Upload ID: {uploadMsg.uploadId} · Status: {uploadMsg.parseStatus || "uploaded"}
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
               {uploadMsg?.message || actionMsg}
             </div>
           )}

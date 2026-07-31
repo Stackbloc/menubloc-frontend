@@ -68,12 +68,28 @@ export default function OwnerMenuUploads() {
     });
   }
 
+  function startAddRestaurant() {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set("tab", "workspace");
+      next.set("create", "1");
+      next.delete("restaurant");
+      next.delete("name");
+      next.delete("city");
+      next.delete("state");
+      next.delete("status");
+      next.delete("today");
+      next.delete("last7days");
+      return next;
+    });
+  }
+
   return (
     <OwnerLayout
       title="Menu Manager"
       subtitle="OCR Uploads = camera/photo review queues. Edit Menus = restaurant profile + live menu items."
     >
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 20 }}>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 20, alignItems: "center" }}>
         <TabButton
           active={tab === "activity"}
           label="OCR Uploads"
@@ -84,6 +100,24 @@ export default function OwnerMenuUploads() {
           label="Edit Menus"
           onClick={() => setTab("workspace")}
         />
+        <button
+          type="button"
+          data-testid="owner-add-restaurant"
+          onClick={startAddRestaurant}
+          style={{
+            marginLeft: "auto",
+            padding: "10px 16px",
+            borderRadius: 10,
+            border: "none",
+            background: OWNER_COLORS.accent,
+            color: "#fff",
+            fontWeight: 700,
+            fontSize: 13,
+            cursor: "pointer",
+          }}
+        >
+          Add Restaurant
+        </button>
       </div>
 
       {tab === "activity" ? (

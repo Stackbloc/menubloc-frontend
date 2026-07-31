@@ -65,6 +65,7 @@ export default function OwnerMenuRestaurantFinder({
   loading,
   onSelect,
   onClear,
+  onAddRestaurant,
 }) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState(null);
@@ -144,12 +145,34 @@ export default function OwnerMenuRestaurantFinder({
         title="Find Restaurant"
         subtitle="Search by name, city, state, or restaurant ID. Selecting a restaurant loads it into the workspace below."
         action={(
-          <Link
-            to="/owner/restaurants"
-            style={{ fontSize: 12, fontWeight: 700, color: OWNER_COLORS.accent, textDecoration: "none" }}
-          >
-            Advanced search →
-          </Link>
+          <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+            {typeof onAddRestaurant === "function" ? (
+              <button
+                type="button"
+                data-testid="owner-finder-add-restaurant"
+                onClick={onAddRestaurant}
+                disabled={loading}
+                style={{
+                  padding: "8px 14px",
+                  borderRadius: 8,
+                  border: "none",
+                  background: OWNER_COLORS.accent,
+                  color: "#fff",
+                  fontWeight: 700,
+                  fontSize: 12,
+                  cursor: loading ? "not-allowed" : "pointer",
+                }}
+              >
+                Add Restaurant
+              </button>
+            ) : null}
+            <Link
+              to="/owner/restaurants"
+              style={{ fontSize: 12, fontWeight: 700, color: OWNER_COLORS.accent, textDecoration: "none" }}
+            >
+              Advanced search →
+            </Link>
+          </div>
         )}
       />
 
@@ -198,7 +221,9 @@ export default function OwnerMenuRestaurantFinder({
             </div>
           ) : null}
           {Array.isArray(results) && results.length === 0 && query.trim().length >= 2 && !searching ? (
-            <div style={{ marginTop: 12, fontSize: 13, color: OWNER_COLORS.muted }}>No restaurants matched.</div>
+            <div style={{ marginTop: 12, fontSize: 13, color: OWNER_COLORS.muted }}>
+              No restaurants matched. Use <strong>Add Restaurant</strong> to create a new Common Knowledge profile.
+            </div>
           ) : null}
           {!results && recent.length > 0 ? (
             <div style={{ marginTop: 16 }}>
