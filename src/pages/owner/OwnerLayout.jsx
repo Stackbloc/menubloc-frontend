@@ -60,7 +60,7 @@ export function EmptyState({ children }) {
   );
 }
 
-const NAV_SECTIONS = [
+const NAV_SECTIONS_STATIC = [
   {
     id: "platform",
     label: "Platform",
@@ -70,15 +70,6 @@ const NAV_SECTIONS = [
       { to: "/owner/homepage", label: "Homepage Controls" },
       { to: "/owner/deployments", label: "Deployment Operations" },
       { to: "/owner/intelligence", label: "Platform Intelligence" },
-    ],
-  },
-  {
-    id: "restaurant-manager",
-    label: "Restaurant Manager",
-    items: [
-      { to: "/owner/menu-manager?tab=workspace&create=1", label: "Add Restaurant" },
-      { to: "/owner/profile-manager", label: "Profile Manager" },
-      { to: "/owner/menu-manager", label: "Menu Manager" },
     ],
   },
   {
@@ -124,7 +115,30 @@ export default function OwnerLayout({ title, children, actions = null }) {
     });
   }
 
-  const sections = useMemo(() => NAV_SECTIONS, []);
+  const sections = useMemo(
+    () => [
+      NAV_SECTIONS_STATIC[0],
+      {
+        id: "restaurant-manager",
+        label: "Restaurant Manager",
+        items: [
+          {
+            key: "add-restaurant",
+            label: "Add Restaurant",
+            button: true,
+            onClick: () => {
+              navigate(`/owner/menu-manager?tab=workspace&create=1&fresh=${Date.now()}`);
+            },
+          },
+          { to: "/owner/profile-manager", label: "Profile Manager" },
+          { to: "/owner/menu-manager", label: "Menu Manager" },
+        ],
+      },
+      NAV_SECTIONS_STATIC[1],
+      NAV_SECTIONS_STATIC[2],
+    ],
+    [navigate]
+  );
 
   const footer = (
     <>

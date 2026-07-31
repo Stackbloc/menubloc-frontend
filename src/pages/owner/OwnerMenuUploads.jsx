@@ -43,10 +43,12 @@ function TabButton({ active, label, onClick }) {
 
 /**
  * Menu Manager shell: Upload Activity inbox + Create/Edit workspace.
+ * Add Restaurant lives in left nav (Restaurant Manager) — not duplicated here.
  */
 export default function OwnerMenuUploads() {
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = useMemo(() => resolveMenuManagerTab(searchParams), [searchParams]);
+  const workspaceKey = searchParams.get("fresh") || searchParams.get("create") || "workspace";
 
   function setTab(nextTab) {
     setSearchParams((prev) => {
@@ -55,6 +57,7 @@ export default function OwnerMenuUploads() {
       if (nextTab === "activity") {
         next.delete("restaurant");
         next.delete("create");
+        next.delete("fresh");
         next.delete("name");
         next.delete("city");
         next.delete("state");
@@ -68,26 +71,10 @@ export default function OwnerMenuUploads() {
     });
   }
 
-  function startAddRestaurant() {
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      next.set("tab", "workspace");
-      next.set("create", "1");
-      next.delete("restaurant");
-      next.delete("name");
-      next.delete("city");
-      next.delete("state");
-      next.delete("status");
-      next.delete("today");
-      next.delete("last7days");
-      return next;
-    });
-  }
-
   return (
     <OwnerLayout
       title="Menu Manager"
-      subtitle="OCR Uploads = camera/photo review queues. Edit Menus = restaurant profile + live menu items."
+      subtitle="OCR Uploads = camera/photo review queues. Edit Menus = restaurant profile + live menu items. Add Restaurant is under Restaurant Manager in the left nav."
     >
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 20, alignItems: "center" }}>
         <TabButton
@@ -100,30 +87,12 @@ export default function OwnerMenuUploads() {
           label="Edit Menus"
           onClick={() => setTab("workspace")}
         />
-        <button
-          type="button"
-          data-testid="owner-add-restaurant"
-          onClick={startAddRestaurant}
-          style={{
-            marginLeft: "auto",
-            padding: "10px 16px",
-            borderRadius: 10,
-            border: "none",
-            background: OWNER_COLORS.accent,
-            color: "#fff",
-            fontWeight: 700,
-            fontSize: 13,
-            cursor: "pointer",
-          }}
-        >
-          Add Restaurant
-        </button>
       </div>
 
       {tab === "activity" ? (
         <OwnerMenuUploadActivity />
       ) : (
-        <OwnerMenuCreateWorkspace embedded />
+        <OwnerMenuCreateWorkspace key={workspaceKey} embedded />
       )}
     </OwnerLayout>
   );

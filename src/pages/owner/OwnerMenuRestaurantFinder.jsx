@@ -65,7 +65,8 @@ export default function OwnerMenuRestaurantFinder({
   loading,
   onSelect,
   onClear,
-  onAddRestaurant,
+  title = "Find Restaurant",
+  subtitle = "Search by name, city, state, or restaurant ID. Selecting a restaurant loads it into the workspace below.",
 }) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState(null);
@@ -142,37 +143,15 @@ export default function OwnerMenuRestaurantFinder({
   return (
     <PageCard style={{ padding: 20, marginBottom: 16 }}>
       <SectionTitle
-        title="Find Restaurant"
-        subtitle="Search by name, city, state, or restaurant ID. Selecting a restaurant loads it into the workspace below."
+        title={title}
+        subtitle={subtitle}
         action={(
-          <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-            {typeof onAddRestaurant === "function" ? (
-              <button
-                type="button"
-                data-testid="owner-finder-add-restaurant"
-                onClick={onAddRestaurant}
-                disabled={loading}
-                style={{
-                  padding: "8px 14px",
-                  borderRadius: 8,
-                  border: "none",
-                  background: OWNER_COLORS.accent,
-                  color: "#fff",
-                  fontWeight: 700,
-                  fontSize: 12,
-                  cursor: loading ? "not-allowed" : "pointer",
-                }}
-              >
-                Add Restaurant
-              </button>
-            ) : null}
-            <Link
-              to="/owner/restaurants"
-              style={{ fontSize: 12, fontWeight: 700, color: OWNER_COLORS.accent, textDecoration: "none" }}
-            >
-              Advanced search →
-            </Link>
-          </div>
+          <Link
+            to="/owner/restaurants"
+            style={{ fontSize: 12, fontWeight: 700, color: OWNER_COLORS.accent, textDecoration: "none" }}
+          >
+            Advanced search →
+          </Link>
         )}
       />
 
@@ -222,7 +201,7 @@ export default function OwnerMenuRestaurantFinder({
           ) : null}
           {Array.isArray(results) && results.length === 0 && query.trim().length >= 2 && !searching ? (
             <div style={{ marginTop: 12, fontSize: 13, color: OWNER_COLORS.muted }}>
-              No restaurants matched. Use <strong>Add Restaurant</strong> to create a new Common Knowledge profile.
+              No restaurants matched. Use <strong>Add Restaurant</strong> in the left nav (Restaurant Manager) to create a new profile.
             </div>
           ) : null}
           {!results && recent.length > 0 ? (

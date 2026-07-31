@@ -15,9 +15,9 @@ describe("owner restaurant manager nav + profile manager", () => {
     const layout = readFileSync(join(root, "src/pages/owner/OwnerLayout.jsx"), "utf8");
     assert.match(layout, /id:\s*"restaurant-manager"/);
     assert.match(layout, /label:\s*"Restaurant Manager"/);
-    const section = layout.match(/id:\s*"restaurant-manager"[\s\S]*?id:\s*"growth"/)?.[0] || "";
-    assert.match(section, /to:\s*"\/owner\/menu-manager\?tab=workspace&create=1"/);
+    const section = layout.match(/id:\s*"restaurant-manager"[\s\S]*?NAV_SECTIONS_STATIC\[1\]/)?.[0] || "";
     assert.match(section, /label:\s*"Add Restaurant"/);
+    assert.match(section, /button:\s*true/);
     assert.match(section, /to:\s*"\/owner\/profile-manager"/);
     assert.match(section, /label:\s*"Profile Manager"/);
     assert.match(section, /to:\s*"\/owner\/menu-manager"/);

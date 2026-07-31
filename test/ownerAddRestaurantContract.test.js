@@ -1,6 +1,6 @@
 /**
  * Owner Menu Manager — Add Restaurant restore contract.
- * Reuses existing Menu Manager create/upload flow; asserts discoverability + ID success copy.
+ * Single left-nav entry; form-first create; required-field validation.
  */
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -15,39 +15,62 @@ function read(rel) {
 }
 
 describe("owner Add Restaurant restore", () => {
-  it("Restaurant Manager nav lists Add Restaurant first above Profile Manager", () => {
+  it("Restaurant Manager nav lists Add Restaurant first above Profile Manager as a button action", () => {
     const layout = read("src/pages/owner/OwnerLayout.jsx");
-    const section = layout.match(/id:\s*"restaurant-manager"[\s\S]*?id:\s*"growth"/)?.[0] || "";
-    assert.match(section, /to:\s*"\/owner\/menu-manager\?tab=workspace&create=1"/);
+    const section = layout.match(/id:\s*"restaurant-manager"[\s\S]*?NAV_SECTIONS_STATIC\[1\]/)?.[0]
+      || layout.match(/id:\s*"restaurant-manager"[\s\S]*?id:\s*"growth"/)?.[0]
+      || "";
     assert.match(section, /label:\s*"Add Restaurant"/);
+    assert.match(section, /button:\s*true/);
+    assert.match(section, /create=1&fresh=/);
     const addIdx = section.indexOf('label: "Add Restaurant"');
     const profileIdx = section.indexOf('label: "Profile Manager"');
     assert.ok(addIdx >= 0 && profileIdx > addIdx);
   });
 
-  it("Menu Manager shell exposes labeled Add Restaurant CTA to create=1", () => {
+  it("Menu Manager shell does not duplicate Add Restaurant CTA", () => {
     const shell = read("src/pages/owner/OwnerMenuUploads.jsx");
-    assert.match(shell, /data-testid="owner-add-restaurant"/);
-    assert.match(shell, /Add Restaurant/);
-    assert.match(shell, /startAddRestaurant/);
-    assert.match(shell, /set\("create", "1"\)/);
-    assert.match(shell, /delete\("restaurant"\)/);
+    assert.doesNotMatch(shell, /data-testid="owner-add-restaurant"/);
+    assert.match(shell, /left nav/);
+    assert.match(shell, /workspaceKey/);
   });
 
-  it("restaurant finder exposes Add Restaurant wired to create flow", () => {
+  it("finder does not expose a second Add Restaurant button", () => {
     const finder = read("src/pages/owner/OwnerMenuRestaurantFinder.jsx");
+    assert.doesNotMatch(finder, /data-testid="owner-finder-add-restaurant"/);
+    assert.doesNotMatch(finder, /onAddRestaurant/);
+  });
+
+  it("add form is labeled Add Restaurant with client required-field validation", () => {
     const workspace = read("src/pages/owner/OwnerMenuCreateWorkspace.jsx");
-    assert.match(finder, /data-testid="owner-finder-add-restaurant"/);
-    assert.match(finder, /onAddRestaurant/);
-    assert.match(finder, /Add Restaurant/);
-    assert.match(workspace, /onAddRestaurant=\{clearSelectedRestaurant\}/);
-    assert.match(workspace, /set\("create", "1"\)/);
+    assert.match(workspace, /function missingCreateFields/);
+    assert.match(workspace, /Complete required fields before adding/);
+    assert.match(workspace, /data-testid="owner-add-restaurant-form"/);
+    assert.match(workspace, /data-testid="owner-add-restaurant-submit"/);
+    assert.match(workspace, /title=\{existingRestaurant \? "Restaurant Profile" : "Add Restaurant"\}/);
+    assert.match(workspace, /\{creatingProfile \? "Adding restaurant…" : !schema \? "Loading…" : "Add Restaurant"\}/);
+    for (const field of [
+      "Restaurant name",
+      "Restaurant type",
+      "Street address",
+      "City",
+      "State",
+      "ZIP code",
+      "Country",
+      "Primary cuisine",
+      "Price tier",
+      "Subscription plan",
+      "Status",
+      "Service model",
+    ]) {
+      assert.match(workspace, new RegExp(field.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+    }
   });
 
   it("create success shows persistent Restaurant ID and Menu ID", () => {
     const workspace = read("src/pages/owner/OwnerMenuCreateWorkspace.jsx");
     assert.match(workspace, /data-testid="owner-restaurant-created-success"/);
-    assert.match(workspace, /Restaurant created successfully/);
+    assert.match(workspace, /Restaurant added successfully|Restaurant created successfully/);
     assert.match(workspace, /Restaurant ID:/);
     assert.match(workspace, /Menu ID:/);
     assert.match(workspace, /\/owner\/profile-manager\?restaurant=\$\{restaurant\.id\}/);

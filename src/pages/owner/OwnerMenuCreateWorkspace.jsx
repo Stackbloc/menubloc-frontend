@@ -36,7 +36,7 @@ const fieldLabel = {
 };
 
 const STEPS = [
-  { key: "profile", label: "1. Restaurant Profile" },
+  { key: "profile", label: "1. Add Restaurant" },
   { key: "attach", label: "2. Upload Menu" },
   { key: "review", label: "3. Review & Edit" },
 ];
@@ -155,6 +155,30 @@ function profileFromRestaurant(r = {}) {
   };
 }
 
+function missingCreateFields(profile = {}) {
+  const missing = [];
+  if (!String(profile.restaurant_name || "").trim()) missing.push("Restaurant name");
+  if (!String(profile.restaurant_type || "").trim()) missing.push("Restaurant type");
+  if (!String(profile.address_line1 || "").trim()) missing.push("Street address");
+  if (!String(profile.city || "").trim()) missing.push("City");
+  if (!String(profile.state || "").trim()) missing.push("State");
+  if (!String(profile.postal_code || "").trim()) missing.push("ZIP code");
+  if (!String(profile.country_code || "").trim()) missing.push("Country");
+  if (!String(profile.cuisine || "").trim()) missing.push("Primary cuisine");
+  if (!String(profile.price_tier || "").trim()) missing.push("Price tier");
+  if (!String(profile.subscription_plan || "").trim()) missing.push("Subscription plan");
+  if (!String(profile.status || "").trim()) missing.push("Status");
+  if (!Array.isArray(profile.service_model) || profile.service_model.length === 0) {
+    missing.push("Service model (select at least one)");
+  }
+  const latEmpty = profile.lat === "" || profile.lat == null;
+  const lngEmpty = profile.lng === "" || profile.lng == null;
+  if (latEmpty !== lngEmpty) missing.push("Latitude and longitude (both or neither)");
+  if (!latEmpty && !Number.isFinite(Number(profile.lat))) missing.push("Latitude (must be a number)");
+  if (!lngEmpty && !Number.isFinite(Number(profile.lng))) missing.push("Longitude (must be a number)");
+  return missing;
+}
+
 export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
   const [searchParams, setSearchParams] = useSearchParams();
   const [schema, setSchema] = useState(null);
@@ -184,6 +208,8 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
   const [pendingUploadId, setPendingUploadId] = useState(null);
   const [importingParsed, setImportingParsed] = useState(false);
   const fileRef = useRef(null);
+  const addFormRef = useRef(null);
+  const nameInputRef = useRef(null);
 
   const [reviewItems, setReviewItems] = useState([]);
   const [reviewSessions, setReviewSessions] = useState([]);
@@ -238,6 +264,16 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
       city: city || prev.city,
       state: state || prev.state,
     }));
+  }, [searchParams, restaurant]);
+
+  useEffect(() => {
+    const wantsCreate = searchParams.get("create") === "1";
+    if (!wantsCreate || restaurant) return;
+    const t = window.setTimeout(() => {
+      addFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      nameInputRef.current?.focus();
+    }, 50);
+    return () => window.clearTimeout(t);
   }, [searchParams, restaurant]);
 
   async function loadExistingRestaurant(restaurantId, seed = null) {
@@ -349,7 +385,7 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
     }, { replace: true });
   }
 
-  // Deep-link / shell "Add Restaurant" (?create=1 without restaurant) clears in-memory selection.
+  // Deep-link / left-nav Add Restaurant (?create=1 without restaurant) clears in-memory selection.
   useEffect(() => {
     const wantsCreate = searchParams.get("create") === "1";
     const restaurantParam = searchParams.get("restaurant");
@@ -531,15 +567,27 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
     setCreatingProfile(true);
     setProfileErr("");
     try {
+      const missing = missingCreateFields(profile);
+      if (missing.length) {
+        setProfileErr(`Complete required fields before adding: ${missing.join("; ")}.`);
+        return;
+      }
       const payload = {
-        ...profile,
         restaurant_name: profile.restaurant_name.trim(),
+        restaurant_type: profile.restaurant_type,
         address_line1: profile.address_line1.trim(),
         city: profile.city.trim(),
         state: profile.state.trim().toUpperCase(),
         postal_code: profile.postal_code.trim(),
+        country_code: profile.country_code,
+        cuisine: profile.cuisine,
         primary_cuisine: profile.cuisine,
+        price_tier: profile.price_tier,
         service_models: profile.service_model,
+        status: profile.status,
+        subscription_plan: profile.subscription_plan,
+        phone: profile.phone,
+        website: profile.website,
         lat: profile.lat === "" ? null : Number(profile.lat),
         lng: profile.lng === "" ? null : Number(profile.lng),
         geo_source: profile.lat !== "" && profile.lng !== "" ? "manual" : undefined,
@@ -548,6 +596,7 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
         confirm_duplicate: confirmDuplicate || undefined,
       };
       const data = await createMenuConsoleRestaurant(payload);
+      suppressUrlLoadRef.current = true;
       setRestaurant(data.restaurant);
       setExistingRestaurant(false);
       setMenu(data.menu);
@@ -561,6 +610,7 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
         next.set("tab", "workspace");
         next.set("restaurant", String(data.restaurant.id));
         next.delete("create");
+        next.delete("fresh");
         next.delete("name");
         next.delete("city");
         next.delete("state");
@@ -570,7 +620,8 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
       if (ex?.status === 409 && ex?.payload?.duplicate_warning) {
         setDuplicateMatches(ex.payload.matches || []);
       } else {
-        setProfileErr(ex?.payload?.error || ex?.message || "Could not create restaurant.");
+        const field = ex?.payload?.field ? `${ex.payload.field}: ` : "";
+        setProfileErr(field + (ex?.payload?.error || ex?.message || "Could not add restaurant."));
       }
     } finally {
       setCreatingProfile(false);
@@ -765,41 +816,16 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
     }
   }
 
-  const content = (
-    <>
-      {embedded ? (
-        <div style={{ marginBottom: 14, padding: "12px 14px", borderRadius: 10, background: "#f8fafc", border: `1px solid ${OWNER_COLORS.line}`, fontSize: 13, color: OWNER_COLORS.ink, lineHeight: 1.5 }}>
-          <strong>Edit Menus</strong> is for a restaurant’s live menu (add/edit dishes, then publish).
-          For camera OCR corrections with source photos, use the <strong>OCR Uploads</strong> tab → Review Queue.
-        </div>
-      ) : null}
-      <OwnerMenuRestaurantFinder
-        key={restaurant?.id || "finder"}
-        selectedRestaurant={restaurant}
-        loading={loadingRestaurant}
-        onSelect={selectExistingRestaurant}
-        onClear={clearSelectedRestaurant}
-        onAddRestaurant={clearSelectedRestaurant}
-      />
+  const isAddingRestaurant = !restaurant && !loadingRestaurant;
 
-      {loadRestaurantErr ? (
-        <PageCard style={{ padding: 16, marginBottom: 16, color: "#991b1b" }}>{loadRestaurantErr}</PageCard>
-      ) : null}
-
-      {!existingRestaurant ? <StepHeader current={step} /> : null}
-
-      {schemaError && (
-        <PageCard style={{ padding: 16, marginBottom: 16, color: "#991b1b" }}>{schemaError}</PageCard>
-      )}
-
-      {/* Create flow: profile first. Existing restaurant: menus + editor first (profile below). */}
-      {(!existingRestaurant || showProfilePanel) && (
+  const profileFormCard = (!existingRestaurant || showProfilePanel) ? (
       <PageCard style={{ padding: 20, marginBottom: 16, opacity: restaurant && !existingRestaurant ? 0.72 : 1 }}>
+        <div ref={addFormRef} data-testid="owner-add-restaurant-form">
         <SectionTitle
-          title={existingRestaurant ? "Restaurant Profile" : "Create New Restaurant"}
+          title={existingRestaurant ? "Restaurant Profile" : "Add Restaurant"}
           subtitle={existingRestaurant
             ? "Update platform-owned restaurant fields. Changes are audit-logged."
-            : "Required fields use schema-controlled dropdowns from the platform catalog."}
+            : "Fill every required field (*), then click Add Restaurant. This is the only create path — not a separate Create vs Add feature."}
         />
 
         {duplicateMatches && (
@@ -814,7 +840,13 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12, marginTop: 12 }}>
           <div style={{ gridColumn: "1 / -1" }}>
             <label style={fieldLabel}>Restaurant name *</label>
-            <input value={profile.restaurant_name} onChange={(e) => updateProfile("restaurant_name", e.target.value)} style={inputStyle} disabled={!!restaurant && !existingRestaurant} />
+            <input
+              ref={nameInputRef}
+              value={profile.restaurant_name}
+              onChange={(e) => updateProfile("restaurant_name", e.target.value)}
+              style={inputStyle}
+              disabled={!!restaurant && !existingRestaurant}
+            />
           </div>
           <SelectField label="Restaurant type" value={profile.restaurant_type} onChange={(v) => updateProfile("restaurant_type", v)} options={schema?.restaurant_types} required />
           <div style={{ gridColumn: "1 / -1" }}>
@@ -882,20 +914,24 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
           </div>
         </div>
 
-        {profileErr && <div style={{ marginTop: 12, fontSize: 12, color: "#991b1b" }}>{profileErr}</div>}
+        {profileErr && <div data-testid="owner-add-restaurant-error" style={{ marginTop: 12, fontSize: 12, color: "#991b1b" }}>{profileErr}</div>}
+        {!schema && !schemaError ? (
+          <div style={{ marginTop: 12, fontSize: 12, color: OWNER_COLORS.muted }}>Loading profile options…</div>
+        ) : null}
 
         {!restaurant && (
           <button
             type="button"
+            data-testid="owner-add-restaurant-submit"
             disabled={creatingProfile || !schema}
             onClick={() => createProfile(false)}
             style={{
               marginTop: 16, padding: "10px 18px", borderRadius: 10, border: "none",
-              background: creatingProfile ? OWNER_COLORS.muted : OWNER_COLORS.accent,
-              color: "#fff", fontWeight: 700, fontSize: 13, cursor: creatingProfile ? "not-allowed" : "pointer",
+              background: creatingProfile || !schema ? OWNER_COLORS.muted : OWNER_COLORS.accent,
+              color: "#fff", fontWeight: 700, fontSize: 13, cursor: creatingProfile || !schema ? "not-allowed" : "pointer",
             }}
           >
-            {creatingProfile ? "Creating profile…" : "Create Restaurant Profile →"}
+            {creatingProfile ? "Adding restaurant…" : !schema ? "Loading…" : "Add Restaurant"}
           </button>
         )}
 
@@ -955,7 +991,7 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
             data-testid="owner-restaurant-created-success"
             style={{ marginTop: 14, padding: "12px 14px", borderRadius: 10, background: "#f0fdf4", border: "1px solid #bbf7d0", fontSize: 13, color: "#15803d" }}
           >
-            <div style={{ fontWeight: 700, marginBottom: 6 }}>Restaurant created successfully</div>
+            <div style={{ fontWeight: 700, marginBottom: 6 }}>Restaurant added successfully</div>
             <div style={{ fontWeight: 600 }}>
               {restaurant.restaurant_name || restaurant.name}
             </div>
@@ -980,7 +1016,55 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
             </div>
           </div>
         )}
+        </div>
       </PageCard>
+  ) : null;
+
+  const finderCard = (
+      <OwnerMenuRestaurantFinder
+        key={restaurant?.id || "finder"}
+        selectedRestaurant={restaurant}
+        loading={loadingRestaurant}
+        onSelect={selectExistingRestaurant}
+        onClear={clearSelectedRestaurant}
+        title={isAddingRestaurant ? "Or open an existing restaurant" : "Find Restaurant"}
+        subtitle={
+          isAddingRestaurant
+            ? "Already in Common Knowledge? Search here instead of adding a duplicate."
+            : "Search by name, city, state, or restaurant ID. Selecting a restaurant loads it into the workspace below."
+        }
+      />
+  );
+
+  const content = (
+    <>
+      {embedded ? (
+        <div style={{ marginBottom: 14, padding: "12px 14px", borderRadius: 10, background: "#f8fafc", border: `1px solid ${OWNER_COLORS.line}`, fontSize: 13, color: OWNER_COLORS.ink, lineHeight: 1.5 }}>
+          <strong>Edit Menus</strong> edits a restaurant’s live menu. Use left-nav <strong>Add Restaurant</strong> to create a new Common Knowledge restaurant.
+          For camera OCR corrections, use the <strong>OCR Uploads</strong> tab → Review Queue.
+        </div>
+      ) : null}
+
+      {loadRestaurantErr ? (
+        <PageCard style={{ padding: 16, marginBottom: 16, color: "#991b1b" }}>{loadRestaurantErr}</PageCard>
+      ) : null}
+
+      {schemaError && (
+        <PageCard style={{ padding: 16, marginBottom: 16, color: "#991b1b" }}>{schemaError}</PageCard>
+      )}
+
+      {isAddingRestaurant ? (
+        <>
+          <StepHeader current={step} />
+          {profileFormCard}
+          {finderCard}
+        </>
+      ) : (
+        <>
+          {finderCard}
+          {!existingRestaurant ? <StepHeader current={step} /> : null}
+          {profileFormCard}
+        </>
       )}
 
       {restaurant && existingRestaurant && !showProfilePanel ? (
@@ -1301,11 +1385,11 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
 
   return (
     <OwnerLayout
-      title={existingRestaurant ? "Menu Manager" : "Create Restaurant + Menu"}
+      title={existingRestaurant ? "Menu Manager" : "Add Restaurant"}
       subtitle={
         existingRestaurant
           ? "Edit the live menu, save item changes, then publish."
-          : "Create a restaurant, add or upload a menu, edit items, then publish."
+          : "Add a restaurant to Common Knowledge, optionally upload a menu, edit items, then publish."
       }
     >
       {content}
