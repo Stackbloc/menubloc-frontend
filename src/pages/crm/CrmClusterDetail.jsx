@@ -51,6 +51,41 @@ const secondaryButtonStyle = {
   border: `1px solid ${CRM_COLORS.line}`,
 };
 
+
+function restaurantPublicHref(row) {
+  if (row?.slug) return `/restaurants/${encodeURIComponent(row.slug)}`;
+  if (row?.restaurant_id) return `/restaurants/${encodeURIComponent(row.restaurant_id)}`;
+  return null;
+}
+
+function restaurantMenuHref(row) {
+  const id = row?.restaurant_id;
+  if (!id) return null;
+  return `/public/restaurants/${encodeURIComponent(id)}/menu`;
+}
+
+function RestaurantNameLink({ row }) {
+  const href = restaurantPublicHref(row);
+  if (!href) return <span style={{ fontWeight: 650 }}>{row.restaurant_name}</span>;
+  return (
+    <a href={href} target="_blank" rel="noreferrer" style={{ color: CRM_COLORS.accent, fontWeight: 700, textDecoration: "none" }}>
+      {row.restaurant_name}
+    </a>
+  );
+}
+
+function PublishedMenuLink({ row }) {
+  const ready = row.published_menu || row.menu_ready;
+  const href = ready ? restaurantMenuHref(row) : null;
+  const badge = <Badge type="account" value={ready ? "published" : "missing"} />;
+  if (!href) return badge;
+  return (
+    <a href={href} target="_blank" rel="noreferrer" style={{ textDecoration: "none" }}>
+      {badge}
+    </a>
+  );
+}
+
 export default function CrmClusterDetail() {
   const { id } = useParams();
   const [cluster, setCluster] = useState(null);
@@ -424,9 +459,9 @@ export default function CrmClusterDetail() {
               </div>
               <div style={{ display: "grid", gap: 6 }}>
                 {(preview.restaurants || []).slice(0, 8).map((row) => (
-                  <div key={row.restaurant_id} style={{ fontSize: 13, borderBottom: `1px solid ${CRM_COLORS.line}`, paddingBottom: 6 }}>
-                    {row.restaurant_name}
-                    <span style={{ color: CRM_COLORS.muted }}> · {row.published_menu ? "menu ready" : "no published menu"}</span>
+                  <div key={row.restaurant_id} style={{ fontSize: 13, borderBottom: `1px solid ${CRM_COLORS.line}`, paddingBottom: 6, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                    <RestaurantNameLink row={row} />
+                    <PublishedMenuLink row={row} />
                   </div>
                 ))}
               </div>
@@ -522,11 +557,11 @@ export default function CrmClusterDetail() {
                         onChange={(e) => toggleSelected(row.restaurant_id, e.target.checked)}
                       />
                     </td>
-                    <td style={{ padding: 10, fontWeight: 650 }}>{row.restaurant_name}</td>
+                    <td style={{ padding: 10 }}><RestaurantNameLink row={row} /></td>
                     <td style={{ padding: 10 }}>{row.distance_miles} mi</td>
                     <td style={{ padding: 10 }}>{[row.address_line1, row.city, row.state].filter(Boolean).join(", ")}</td>
                     <td style={{ padding: 10 }}>
-                      <Badge type="account" value={row.published_menu ? "published" : "missing"} />
+                      <PublishedMenuLink row={row} />
                     </td>
                   </tr>
                 ))}
@@ -572,13 +607,13 @@ export default function CrmClusterDetail() {
                 }}
               >
                 <div>
-                  <div style={{ fontWeight: 700 }}>{row.restaurant_name}</div>
+                  <div style={{ fontWeight: 700 }}><RestaurantNameLink row={row} /></div>
                   <div style={{ fontSize: 13, color: CRM_COLORS.muted }}>
                     {[row.address_line1, row.city, row.state].filter(Boolean).join(", ")} · {row.slug}
                   </div>
                 </div>
                 <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                  <Badge type="account" value={row.published_menu ? "published" : "missing"} />
+                  <PublishedMenuLink row={row} />
                   {row.already_assigned ? (
                     <button type="button" onClick={() => handleRemoveRestaurant(row.restaurant_id)} style={secondaryButtonStyle}>
                       Remove
@@ -628,8 +663,10 @@ export default function CrmClusterDetail() {
                   </button>
                 </div>
                 <div>
-                  <div style={{ fontWeight: 700 }}>
-                    {index + 1}. {row.restaurant_name}
+                  <div style={{ fontWeight: 700, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                    <span>{index + 1}.</span>
+                    <RestaurantNameLink row={row} />
+                    <PublishedMenuLink row={row} />
                   </div>
                   <div style={{ fontSize: 13, color: CRM_COLORS.muted }}>
                     {[row.address_line1, row.city, row.state].filter(Boolean).join(", ")}

@@ -25,6 +25,7 @@ const DEFAULT_FILTERS = {
   pipeline_stage: "",
   pipeline_stages: "",
   source: "",
+  campus: "",
   priority: "",
   city: "",
   state: "",
@@ -138,6 +139,7 @@ export default function CrmLeadList({ mode = "leads" }) {
     filters.pipeline_stage,
     filters.pipeline_stages,
     filters.source,
+    filters.campus,
     filters.priority,
     filters.city,
     filters.state,
@@ -240,6 +242,8 @@ export default function CrmLeadList({ mode = "leads" }) {
     filters.pipeline_stages ? `Stages: ${filters.pipeline_stages}` : null,
   ].filter(Boolean);
 
+  const showCampusCols = Boolean(filters.campus) || filters.source === "campus_proximity";
+
   const listTitle = liveMode
     ? "Live restaurant profiles"
     : (mode === "companies" ? "Company List" : "Lead List");
@@ -273,7 +277,7 @@ export default function CrmLeadList({ mode = "leads" }) {
         </div>
       ) : null}
 
-      <div style={{ display: "grid", gridTemplateColumns: mode === "companies" ? "1fr" : "1.6fr 1fr", gap: 18, marginBottom: 18 }}>
+      <div style={{ display: "grid", gridTemplateColumns: mode === "companies" ? "1fr" : "minmax(0, 1.6fr) minmax(0, 1fr)", gap: 18, marginBottom: 18 }}>
         <CrmCard title="Lead Filters">
           <div style={filterGridStyle}>
             <input
@@ -290,7 +294,22 @@ export default function CrmLeadList({ mode = "leads" }) {
               <option value="">All statuses</option>
               {["new", "contacted", "interested", "demo_scheduled", "trial", "won", "lost", "inactive"].map((value) => <option key={value} value={value}>{value}</option>)}
             </select>
-            <input value={filters.source} onChange={(e) => updateFilters({ source: e.target.value, page: 1 })} placeholder="Source" style={inputStyle} />
+            <input value={filters.source} onChange={(e) => updateFilters({ source: e.target.value, campus: e.target.value === "campus_proximity" ? filters.campus : "", page: 1 })} placeholder="Source" style={inputStyle} />
+            <select
+              value={filters.campus}
+              onChange={(e) => updateFilters({
+                campus: e.target.value,
+                source: e.target.value ? "campus_proximity" : (filters.source === "campus_proximity" ? "" : filters.source),
+                page: 1,
+              })}
+              style={inputStyle}
+              aria-label="Campus"
+            >
+              <option value="">All campuses</option>
+              {["USC", "UCLA", "Cal State LA", "Loyola (LMU)", "LATTC", "LA City College"].map((name) => (
+                <option key={name} value={name}>{name}</option>
+              ))}
+            </select>
             <select value={filters.priority} onChange={(e) => updateFilters({ priority: e.target.value, page: 1 })} style={inputStyle}>
               <option value="">All priorities</option>
               {["low", "normal", "high", "urgent"].map((value) => <option key={value} value={value}>{value}</option>)}
@@ -415,6 +434,18 @@ export default function CrmLeadList({ mode = "leads" }) {
                   </div>
                 ),
               },
+              ...(showCampusCols ? [
+                {
+                  key: "nearest_campus",
+                  label: "Campus",
+                  render: (row) => row.nearest_campus || "—",
+                },
+                {
+                  key: "miles_to_campus",
+                  label: "Miles",
+                  render: (row) => (row.miles_to_campus != null ? Number(row.miles_to_campus).toFixed(2) : "—"),
+                },
+              ] : []),
               {
                 key: "email",
                 label: "Contact email",
@@ -509,7 +540,7 @@ function Pagination({ pagination, onPageChange }) {
 
 const filterGridStyle = {
   display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+  gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
   gap: 10,
 };
 

@@ -30,7 +30,7 @@ export default function CrmLayout({ title, actions = null, children }) {
   }
 
   return (
-    <div style={{ minHeight: "100vh", display: "grid", gridTemplateColumns: "240px 1fr", background: "linear-gradient(180deg, #f5f7fb 0%, #eef2f7 100%)", fontFamily: '"Instrument Sans", "Avenir Next", sans-serif' }}>
+    <div style={{ minHeight: "100vh", display: "grid", gridTemplateColumns: "minmax(200px, 240px) minmax(0, 1fr)", background: "linear-gradient(180deg, #f5f7fb 0%, #eef2f7 100%)", fontFamily: '"Instrument Sans", "Avenir Next", sans-serif', overflowX: "hidden" }}>
       <aside style={{ borderRight: "1px solid #d9e0ea", background: "rgba(255,255,255,0.92)", padding: "26px 18px", backdropFilter: "blur(10px)" }}>
         <div style={{ marginBottom: 28 }}>
           <div style={{ fontSize: 24, fontWeight: 800, color: "#173f35", letterSpacing: "-0.04em" }}>Menuply</div>
@@ -83,7 +83,7 @@ export default function CrmLayout({ title, actions = null, children }) {
         </div>
       </aside>
 
-      <main style={{ padding: "28px 32px 40px" }}>
+      <main style={{ padding: "28px 32px 40px", minWidth: 0, overflowX: "hidden" }}>
         <header style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "flex-start", marginBottom: 22 }}>
           <div>
             <div style={{ fontSize: 12, color: "#64748b", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.16em", marginBottom: 8 }}>

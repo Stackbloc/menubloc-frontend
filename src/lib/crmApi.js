@@ -28,6 +28,13 @@ export const logoutCrm = () => post("/api/crm/auth/logout", {});
 
 export const getCrmDashboard = () => get("/api/crm/dashboard");
 export const getCrmSeedMarkets = () => get("/api/crm/seed-explorer/markets");
+export const getCrmSeedCampuses = () => get("/api/crm/seed-explorer/campuses");
+export const getCrmSeedCampusRestaurants = (params = {}) => {
+  const qs = new URLSearchParams(
+    Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== "")
+  ).toString();
+  return get(`/api/crm/seed-explorer/campus-restaurants${qs ? `?${qs}` : ""}`);
+};
 export const getCrmSeedRestaurants = (params = {}) => {
   const qs = new URLSearchParams(
     Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== "")
