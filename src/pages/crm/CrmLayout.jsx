@@ -10,7 +10,7 @@ const NAV = [
   { to: "/crm/orders", label: "Orders" },
   { to: "/crm/leads", label: "Leads" },
   { to: "/crm/business-development", label: "Business Development" },
-  { to: "/crm/companies", label: "Companies" },
+  { to: "/crm/companies", label: "Restaurants" },
   { to: "/crm/tasks", label: "Tasks" },
   { to: "/crm/seed-explorer", label: "Seed Explorer" },
   { to: "/clusters/admin", label: "Cluster Manager" },

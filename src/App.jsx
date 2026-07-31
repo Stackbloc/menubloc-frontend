@@ -827,6 +827,7 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/crm/orders/:orderId" element={<CrmRoute><AdminOrderDetailPage /></CrmRoute>} />
         <Route path="/crm/leads" element={<CrmRoute><CrmLeadList /></CrmRoute>} />
         <Route path="/crm/companies" element={<CrmRoute><CrmLeadList mode="companies" /></CrmRoute>} />
+        <Route path="/crm/restaurants" element={<CrmRoute><CrmLeadList mode="companies" /></CrmRoute>} />
         <Route path="/crm/leads/:id" element={<CrmRoute><CrmLeadDetail /></CrmRoute>} />
         <Route path="/crm/business-development" element={<CrmRoute><CrmBusinessDevelopment /></CrmRoute>} />
         <Route path="/crm/business-development/:id" element={<CrmRoute><CrmBusinessDevelopmentDetail /></CrmRoute>} />

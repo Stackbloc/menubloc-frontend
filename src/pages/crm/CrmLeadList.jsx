@@ -54,6 +54,10 @@ function filtersFromSearchParams(searchParams) {
       next[key] = value;
     }
   }
+  // Campus proximity lists default to closest-first unless sort was explicit in the URL.
+  if (next.campus && !searchParams.get("sort")) {
+    next.sort = "miles_to_campus_asc";
+  }
   return next;
 }
 
@@ -86,7 +90,8 @@ export default function CrmLeadList({ mode = "leads" }) {
   const [addingId, setAddingId] = useState(null);
   const [newLead, setNewLead] = useState({ lead_name: "", source: "manual", priority: "normal" });
 
-  const liveMode = String(debouncedSearch || "").trim().length >= LIVE_SEARCH_MIN;
+  const campusLeadMode = Boolean(filters.campus) || filters.source === "campus_proximity";
+  const liveMode = !campusLeadMode && String(debouncedSearch || "").trim().length >= LIVE_SEARCH_MIN;
 
   useEffect(() => {
     const fromUrl = filtersFromSearchParams(searchParams);
@@ -128,10 +133,11 @@ export default function CrmLeadList({ mode = "leads" }) {
 
   useEffect(() => {
     const queryFilters = { ...filters, search: debouncedSearch };
-    if (String(debouncedSearch || "").trim().length >= LIVE_SEARCH_MIN) {
+    const useLive = !campusLeadMode && String(debouncedSearch || "").trim().length >= LIVE_SEARCH_MIN;
+    if (useLive) {
       loadRestaurants(queryFilters);
     } else {
-      loadLeads({ ...filters, search: "" });
+      loadLeads({ ...filters, search: debouncedSearch });
     }
   }, [
     debouncedSearch,
@@ -246,13 +252,13 @@ export default function CrmLeadList({ mode = "leads" }) {
 
   const listTitle = liveMode
     ? "Live restaurant profiles"
-    : (mode === "companies" ? "Company List" : "Lead List");
+    : (mode === "companies" ? "Restaurant List" : "Lead List");
   const listSubtitle = liveMode
     ? `${data.pagination.total || 0} matching restaurants`
-    : `${data.pagination.total || 0} total ${mode === "companies" ? "companies" : "leads"}`;
+    : `${data.pagination.total || 0} total ${mode === "companies" ? "restaurants" : "leads"}`;
 
   return (
-    <CrmPage title={mode === "companies" ? "CRM Companies" : "CRM Leads"}>
+    <CrmPage title={mode === "companies" ? "CRM Restaurants" : "CRM Leads"}>
       <ErrorBanner message={error} />
       <SuccessBanner message={success} />
 
@@ -283,7 +289,7 @@ export default function CrmLeadList({ mode = "leads" }) {
             <input
               value={filters.search}
               onChange={(e) => updateFilters({ search: e.target.value, page: 1 })}
-              placeholder="Search live restaurants (2+ chars)"
+              placeholder={campusLeadMode ? "Search leads by name / phone / email" : "Search live restaurants (2+ chars)"}
               style={inputStyle}
             />
             <select value={filters.pipeline_stage} onChange={(e) => updateFilters({ pipeline_stage: e.target.value, pipeline_stages: "", page: 1 })} style={inputStyle}>
@@ -294,59 +300,90 @@ export default function CrmLeadList({ mode = "leads" }) {
               <option value="">All statuses</option>
               {["new", "contacted", "interested", "demo_scheduled", "trial", "won", "lost", "inactive"].map((value) => <option key={value} value={value}>{value}</option>)}
             </select>
-            <input value={filters.source} onChange={(e) => updateFilters({ source: e.target.value, campus: e.target.value === "campus_proximity" ? filters.campus : "", page: 1 })} placeholder="Source" style={inputStyle} />
-            <select
-              value={filters.campus}
-              onChange={(e) => updateFilters({
-                campus: e.target.value,
-                source: e.target.value ? "campus_proximity" : (filters.source === "campus_proximity" ? "" : filters.source),
-                page: 1,
-              })}
-              style={inputStyle}
-              aria-label="Campus"
-            >
-              <option value="">All campuses</option>
-              {["USC", "UCLA", "Cal State LA", "Loyola (LMU)", "LATTC", "LA City College"].map((name) => (
-                <option key={name} value={name}>{name}</option>
-              ))}
-            </select>
+            <label style={filterLabelStyle}>
+              Source
+              <select
+                value={filters.source}
+                onChange={(e) => updateFilters({
+                  source: e.target.value,
+                  campus: e.target.value === "campus_proximity" ? filters.campus : "",
+                  page: 1,
+                })}
+                style={inputStyle}
+              >
+                <option value="">All sources</option>
+                <option value="campus_proximity">campus_proximity</option>
+                <option value="seed_explorer">seed_explorer</option>
+                <option value="manual">manual</option>
+                <option value="restaurant_snapshot">restaurant_snapshot</option>
+              </select>
+            </label>
+            <label style={filterLabelStyle}>
+              Campus
+              <select
+                value={filters.campus}
+                onChange={(e) => updateFilters({
+                  campus: e.target.value,
+                  source: e.target.value ? "campus_proximity" : (filters.source === "campus_proximity" ? "" : filters.source),
+                  sort: e.target.value
+                    ? (filters.sort === "updated_at_desc" || !filters.sort ? "miles_to_campus_asc" : filters.sort)
+                    : (filters.sort === "miles_to_campus_asc" || filters.sort === "miles_to_campus_desc" ? "updated_at_desc" : filters.sort),
+                  page: 1,
+                })}
+                style={inputStyle}
+              >
+                <option value="">All campuses</option>
+                {["USC", "UCLA", "Cal State LA", "Loyola (LMU)", "LATTC", "LA City College"].map((name) => (
+                  <option key={name} value={name}>{name}</option>
+                ))}
+              </select>
+            </label>
             <select value={filters.priority} onChange={(e) => updateFilters({ priority: e.target.value, page: 1 })} style={inputStyle}>
               <option value="">All priorities</option>
               {["low", "normal", "high", "urgent"].map((value) => <option key={value} value={value}>{value}</option>)}
             </select>
-            <select
-              value={filters.state}
-              onChange={(e) => updateFilters({ state: e.target.value, city: "", page: 1 })}
-              style={inputStyle}
-              aria-label="State"
-            >
-              <option value="">All states</option>
-              {US_STATE_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
-            <select
-              value={filters.city}
-              onChange={(e) => updateFilters({ city: e.target.value, page: 1 })}
-              style={inputStyle}
-              aria-label="City"
-              disabled={!filters.state}
-            >
-              <option value="">{filters.state ? "All cities" : "Select state first"}</option>
-              {cities.map((city) => (
-                <option key={city} value={city}>{city}</option>
-              ))}
-            </select>
+            <label style={filterLabelStyle}>
+              State
+              <select
+                value={filters.state}
+                onChange={(e) => updateFilters({ state: e.target.value, city: "", page: 1 })}
+                style={inputStyle}
+              >
+                <option value="">All states</option>
+                {US_STATE_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </label>
+            <label style={filterLabelStyle}>
+              City
+              <select
+                value={filters.city}
+                onChange={(e) => updateFilters({ city: e.target.value, page: 1 })}
+                style={inputStyle}
+                disabled={!filters.state}
+              >
+                <option value="">{filters.state ? (cities.length ? "All cities" : "No cities found") : "Choose a state first"}</option>
+                {cities.map((city) => (
+                  <option key={city} value={city}>{city}</option>
+                ))}
+              </select>
+            </label>
             <select value={filters.overdue_only} onChange={(e) => updateFilters({ overdue_only: e.target.value, page: 1 })} style={inputStyle}>
               <option value="">Any follow-up status</option>
               <option value="true">Overdue only</option>
             </select>
-            <select value={filters.sort} onChange={(e) => updateFilters({ sort: e.target.value, page: 1 })} style={inputStyle}>
-              <option value="updated_at_desc">Recently updated</option>
-              <option value="created_at_desc">Newest created</option>
-              <option value="next_follow_up_at_asc">Next follow-up first</option>
-              <option value="priority_desc">Highest priority first</option>
-            </select>
+            <label style={filterLabelStyle}>
+              Sort
+              <select value={filters.sort} onChange={(e) => updateFilters({ sort: e.target.value, page: 1 })} style={inputStyle}>
+                <option value="miles_to_campus_asc">Closest to campus</option>
+                <option value="miles_to_campus_desc">Farthest from campus</option>
+                <option value="updated_at_desc">Recently updated</option>
+                <option value="created_at_desc">Newest created</option>
+                <option value="next_follow_up_at_asc">Next follow-up first</option>
+                <option value="priority_desc">Highest priority first</option>
+              </select>
+            </label>
           </div>
         </CrmCard>
 
