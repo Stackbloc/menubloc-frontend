@@ -76,6 +76,7 @@ const NAV_SECTIONS = [
     id: "restaurant-manager",
     label: "Restaurant Manager",
     items: [
+      { to: "/owner/menu-manager?tab=workspace&create=1", label: "Add Restaurant" },
       { to: "/owner/profile-manager", label: "Profile Manager" },
       { to: "/owner/menu-manager", label: "Menu Manager" },
     ],

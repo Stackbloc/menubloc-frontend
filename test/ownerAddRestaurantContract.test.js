@@ -15,6 +15,16 @@ function read(rel) {
 }
 
 describe("owner Add Restaurant restore", () => {
+  it("Restaurant Manager nav lists Add Restaurant first above Profile Manager", () => {
+    const layout = read("src/pages/owner/OwnerLayout.jsx");
+    const section = layout.match(/id:\s*"restaurant-manager"[\s\S]*?id:\s*"growth"/)?.[0] || "";
+    assert.match(section, /to:\s*"\/owner\/menu-manager\?tab=workspace&create=1"/);
+    assert.match(section, /label:\s*"Add Restaurant"/);
+    const addIdx = section.indexOf('label: "Add Restaurant"');
+    const profileIdx = section.indexOf('label: "Profile Manager"');
+    assert.ok(addIdx >= 0 && profileIdx > addIdx);
+  });
+
   it("Menu Manager shell exposes labeled Add Restaurant CTA to create=1", () => {
     const shell = read("src/pages/owner/OwnerMenuUploads.jsx");
     assert.match(shell, /data-testid="owner-add-restaurant"/);
