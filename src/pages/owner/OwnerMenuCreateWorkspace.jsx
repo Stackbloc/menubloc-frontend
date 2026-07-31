@@ -243,7 +243,7 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
 
   const [menuName, setMenuName] = useState("Main Menu");
   const [menuType, setMenuType] = useState("main");
-  const [file, setFile] = useState(null);
+  const [files, setFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [uploadMsg, setUploadMsg] = useState(null);
   const [pendingUploadId, setPendingUploadId] = useState(null);
@@ -258,7 +258,6 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
   const [bulkActing, setBulkActing] = useState(false);
   const [actionMsg, setActionMsg] = useState("");
   const [publishing, setPublishing] = useState(false);
-  const [showImportPanel, setShowImportPanel] = useState(false);
   const [showProfilePanel, setShowProfilePanel] = useState(false);
 
   const loadGenerationRef = useRef(0);
@@ -346,20 +345,18 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
         restaurant_name: fullProfile.restaurant_name || fullProfile.name,
       };
       const menus = Array.isArray(data.menus) ? data.menus : [];
-      let activeMenu = menus.find((m) => m.is_primary) || menus.find((m) => m.menu_type === "main") || menus[0] || null;
-      if (!activeMenu) {
-        const created = await createMenuConsoleMenu(ridNum, {
-          display_name: menuName.trim() || "Main Menu",
-          menu_type: menuType || "main",
-        });
-        activeMenu = created.menu;
-        menus.push(activeMenu);
-      }
+      // Prefer a menu that already has items. Do not invent empty shells — upload creates the menu.
+      const withItems = menus.filter((m) => Number(m.item_count) > 0);
+      let activeMenu = withItems.find((m) => m.is_primary)
+        || withItems.find((m) => m.menu_type === "main")
+        || withItems[0]
+        || null;
       setRestaurant(normalizedRestaurant);
       setExistingRestaurant(true);
       setAvailableMenus(menus);
       setProfile(profileFromRestaurant(normalizedRestaurant));
       setMenu(activeMenu);
+      if (!activeMenu) setMenuDetail(null);
       if (activeMenu?.display_name) setMenuName(activeMenu.display_name);
       if (activeMenu?.menu_type) setMenuType(activeMenu.menu_type);
       saveRecentRestaurant(normalizedRestaurant);
@@ -404,7 +401,7 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
     setProfile(EMPTY_PROFILE);
     setMenuName("Main Menu");
     setMenuType("main");
-    setFile(null);
+    setFiles([]);
     setUploadMsg(null);
     setPendingUploadId(null);
     setActionMsg("");
@@ -802,8 +799,8 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
   }
 
   async function handleUpload() {
-    if (!file || !rid) {
-      setUploadMsg({ ok: false, message: "Choose a PDF or image file first." });
+    if (!files.length || !rid) {
+      setUploadMsg({ ok: false, message: "Choose a PDF and/or photo files first." });
       return;
     }
     setUploading(true);
@@ -816,43 +813,62 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
           menu_type: menuType,
         });
       }
-      const json = await submitOwnerMenuFilePdf(rid, file, { menuId: mid });
-      const inserted = (json.inserted_items || json.inserted || 0) + (json.updated_items || json.updated || 0);
-      const reviewCount = json.review_count || 0;
-      const uploadId = json.upload_id || null;
-      const publicMenuId = Number(json.public_menu_id) || null;
-      if (uploadId) setPendingUploadId(uploadId);
 
-      // Point the workspace editor at the menu that received parsed items.
-      if (publicMenuId) {
-        await reloadMenus(publicMenuId);
+      let activeMenuId = mid || null;
+      let totalInserted = 0;
+      let totalReview = 0;
+      let lastUploadId = null;
+      const fileSummaries = [];
+
+      for (let i = 0; i < files.length; i += 1) {
+        const nextFile = files[i];
+        const json = await submitOwnerMenuFilePdf(rid, nextFile, { menuId: activeMenuId });
+        const inserted = (json.inserted_items || json.inserted || 0) + (json.updated_items || json.updated || 0);
+        const reviewCount = Number(json.review_count || 0);
+        const uploadId = json.upload_id || null;
+        const publicMenuId = Number(json.public_menu_id) || null;
+        if (publicMenuId) activeMenuId = publicMenuId;
+        if (uploadId) {
+          lastUploadId = uploadId;
+          setPendingUploadId(uploadId);
+        }
+        totalInserted += inserted;
+        totalReview += reviewCount;
+        fileSummaries.push(`${nextFile.name}: ${inserted} item${inserted === 1 ? "" : "s"}`);
+        if (publicMenuId && i === 0) {
+          await reloadMenus(publicMenuId);
+        }
       }
 
-      if (reviewCount === 0 && uploadId && inserted > 0) {
-        const saved = await importParsedToMenuDraft(uploadId, { publicMenuId });
+      if (activeMenuId) {
+        await reloadMenus(activeMenuId);
+      }
+
+      if (totalReview === 0 && lastUploadId && totalInserted > 0) {
+        const saved = await importParsedToMenuDraft(lastUploadId, { publicMenuId: activeMenuId });
         setUploadMsg({
           ok: saved,
           restaurantId: rid,
-          menuId: publicMenuId || mid,
-          uploadId,
+          menuId: activeMenuId || mid,
+          uploadId: lastUploadId,
           parseStatus: saved ? "saved_to_menu" : "parse_ok_save_failed",
           message: saved
-            ? `Parsed ${inserted} item${inserted !== 1 ? "s" : ""} — saved to menu below. Edit, then publish when ready.`
-            : `Parsed ${inserted} item${inserted !== 1 ? "s" : ""}, but saving to the menu editor failed. Use Save to Menu after fixing any errors.`,
+            ? `Parsed ${totalInserted} item${totalInserted !== 1 ? "s" : ""} from ${files.length} file${files.length !== 1 ? "s" : ""} — saved to menu below.`
+            : `Parsed ${totalInserted} item${totalInserted !== 1 ? "s" : ""}, but saving to the menu editor failed.`,
         });
       } else {
         setUploadMsg({
           ok: true,
           restaurantId: rid,
-          menuId: publicMenuId || mid,
-          uploadId,
-          parseStatus: reviewCount > 0 ? "needs_review" : "parsed",
-          message: reviewCount > 0
-            ? `Parsed ${inserted} item${inserted !== 1 ? "s" : ""} — ${reviewCount} need review below before saving to the menu.`
-            : `Parsed ${inserted} item${inserted !== 1 ? "s" : ""}.`,
+          menuId: activeMenuId || mid,
+          uploadId: lastUploadId,
+          parseStatus: totalReview > 0 ? "needs_review" : "parsed",
+          message: totalReview > 0
+            ? `Parsed ${totalInserted} item${totalInserted !== 1 ? "s" : ""} from ${files.length} file${files.length !== 1 ? "s" : ""} — ${totalReview} need review.`
+            : `Parsed ${totalInserted} item${totalInserted !== 1 ? "s" : ""} (${fileSummaries.join("; ")}).`,
         });
       }
-      setFile(null);
+      setFiles([]);
       if (fileRef.current) fileRef.current.value = "";
       await loadMenuState();
       await loadReviewItems();
@@ -870,6 +886,10 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
   }
 
   const isAddingRestaurant = !restaurant && !loadingRestaurant;
+  const menusWithItems = availableMenus.filter((m) => Number(m.item_count) > 0);
+  const restaurantNeedsMenuContent = Boolean(
+    restaurant && (Number(menuDetail?.item_count) || 0) === 0 && menusWithItems.length === 0
+  );
 
   const profileFormCard = (!existingRestaurant || showProfilePanel) ? (
       <PageCard style={{ padding: 20, marginBottom: 16, opacity: restaurant && !existingRestaurant ? 0.72 : 1 }}>
@@ -1089,12 +1109,197 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
       />
   );
 
+  const uploadCard = restaurant ? (
+    <PageCard style={{ padding: 20, marginBottom: 16 }} data-testid="owner-upload-menu-panel">
+      <SectionTitle
+        title="Upload menu"
+        subtitle={
+          restaurantNeedsMenuContent
+            ? "Fastest path: select one PDF or multiple photos, then Upload & Parse. The system builds the menu for you."
+            : "Add another PDF or more photos into this restaurant’s menu."
+        }
+      />
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12, marginTop: 12 }}>
+        <div>
+          <label style={fieldLabel}>Menu name</label>
+          <input value={menuName} onChange={(e) => setMenuName(e.target.value)} style={inputStyle} />
+        </div>
+        <SelectField label="Menu type" value={menuType} onChange={setMenuType} options={schema?.menu_types} required />
+      </div>
+      <div style={{ marginTop: 12 }}>
+        <label style={fieldLabel}>PDF (usually one) and/or photos (select many)</label>
+        <input
+          ref={fileRef}
+          type="file"
+          multiple
+          accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp"
+          onChange={(e) => setFiles(Array.from(e.target.files || []))}
+          style={{ ...inputStyle, padding: "10px 12px" }}
+          data-testid="owner-menu-upload-input"
+        />
+        {files.length > 0 ? (
+          <div style={{ marginTop: 6, fontSize: 12, color: OWNER_COLORS.muted }}>
+            {files.length} file{files.length === 1 ? "" : "s"}:{" "}
+            <strong>{files.map((f) => f.name).join(", ")}</strong>
+          </div>
+        ) : null}
+      </div>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 14, alignItems: "center" }}>
+        <button
+          type="button"
+          disabled={uploading || files.length === 0}
+          onClick={handleUpload}
+          style={{
+            padding: "9px 16px",
+            borderRadius: 9,
+            border: "none",
+            background: uploading || files.length === 0 ? OWNER_COLORS.muted : OWNER_COLORS.accent,
+            color: "#fff",
+            fontWeight: 700,
+            fontSize: 13,
+            cursor: uploading || files.length === 0 ? "not-allowed" : "pointer",
+          }}
+        >
+          {uploading ? "Uploading & parsing…" : "Upload & Parse"}
+        </button>
+        <Link
+          to="/owner/menu-manager?tab=activity&status=needs_review"
+          style={{ fontSize: 12, fontWeight: 600, color: OWNER_COLORS.muted, textDecoration: "none" }}
+        >
+          Held OCR items →
+        </Link>
+      </div>
+      {(uploadMsg || actionMsg) && (
+        <div
+          data-testid="owner-menu-attached-success"
+          style={{
+            marginTop: 12,
+            padding: "10px 12px",
+            borderRadius: 9,
+            background: uploadMsg?.ok === false ? "#fff1ef" : "#f0fdf4",
+            color: uploadMsg?.ok === false ? "#991b1b" : "#15803d",
+            fontSize: 13,
+            fontWeight: 600,
+          }}
+        >
+          {uploadMsg?.ok !== false && uploadMsg?.restaurantId ? (
+            <div style={{ marginBottom: 6 }}>
+              <div>Menu attached successfully</div>
+              <div style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", fontWeight: 600, marginTop: 4 }}>
+                Restaurant ID: {uploadMsg.restaurantId}
+              </div>
+              {uploadMsg.menuId ? (
+                <div style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", fontWeight: 600 }}>
+                  Menu ID: {uploadMsg.menuId}
+                </div>
+              ) : null}
+              {uploadMsg.uploadId ? (
+                <div style={{ fontSize: 12, fontWeight: 600, marginTop: 4 }}>
+                  Upload ID: {uploadMsg.uploadId} · Status: {uploadMsg.parseStatus || "uploaded"}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+          {uploadMsg?.message || actionMsg}
+        </div>
+      )}
+    </PageCard>
+  ) : null;
+
+  const menusCard = restaurant && menusWithItems.length > 0 ? (
+        <PageCard style={{ padding: 20, marginBottom: 16 }}>
+          <SectionTitle
+            title="Menus"
+            subtitle="Menus with dishes. Empty shells are hidden — upload builds the first real menu."
+          />
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 12 }}>
+              {menusWithItems.map((m) => {
+                const active = Number(m.id) === Number(mid);
+                const label = m.display_name || m.name || `Menu #${m.id}`;
+                return (
+                  <div
+                    key={m.id}
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      gap: 12,
+                      flexWrap: "wrap",
+                      padding: "12px 14px",
+                      borderRadius: 10,
+                      border: `1px solid ${active ? OWNER_COLORS.accent : OWNER_COLORS.line}`,
+                      background: active ? OWNER_COLORS.accentSoft : "#fff",
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: 14 }}>{label}</div>
+                      <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 4, flexWrap: "wrap" }}>
+                        <StatusChip status={m.status} />
+                        <span style={{ fontSize: 12, color: OWNER_COLORS.muted }}>
+                          #{m.id}{m.menu_type ? ` · ${m.menu_type}` : ""} · {m.item_count} items
+                          {m.is_primary ? " · primary" : ""}
+                        </span>
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+                      <button
+                        type="button"
+                        onClick={() => switchMenu(m)}
+                        style={{
+                          padding: "8px 12px", borderRadius: 8,
+                          background: active ? OWNER_COLORS.accent : "#fff",
+                          color: active ? "#fff" : OWNER_COLORS.ink,
+                          border: active ? "none" : `1px solid ${OWNER_COLORS.line}`,
+                          fontWeight: 700, fontSize: 12, cursor: "pointer",
+                        }}
+                      >
+                        {active ? "Editing" : "Edit items"}
+                      </button>
+                      {!m.is_primary ? (
+                        <button
+                          type="button"
+                          disabled={publishing}
+                          onClick={() => handleDeleteMenuRow(m)}
+                          style={{
+                            padding: "8px 12px", borderRadius: 8, border: "1px solid #fca5a5",
+                            background: "#fff", color: "#991b1b", fontWeight: 700, fontSize: 12, cursor: "pointer",
+                          }}
+                        >
+                          Delete
+                        </button>
+                      ) : null}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 14, alignItems: "center" }}>
+            <button
+              type="button"
+              disabled={publishing}
+              onClick={handleAddMenu}
+              style={{
+                padding: "9px 14px", borderRadius: 9, border: "none",
+                background: OWNER_COLORS.accent, color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer",
+              }}
+            >
+              + Add Another Menu
+            </button>
+            <Link
+              to={`/owner/profile-manager?restaurant=${rid}`}
+              style={{ fontSize: 12, fontWeight: 700, color: OWNER_COLORS.accent, textDecoration: "none", padding: "9px 4px" }}
+            >
+              Profile & style editors →
+            </Link>
+          </div>
+        </PageCard>
+  ) : null;
+
   const content = (
     <>
       {embedded ? (
         <div style={{ marginBottom: 14, padding: "12px 14px", borderRadius: 10, background: "#f8fafc", border: `1px solid ${OWNER_COLORS.line}`, fontSize: 13, color: OWNER_COLORS.ink, lineHeight: 1.5 }}>
-          <strong>Edit Menus</strong> edits a restaurant’s live menu. Use left-nav <strong>Add Restaurant</strong> to create a new Common Knowledge restaurant.
-          For camera OCR corrections, use the <strong>OCR Uploads</strong> tab → Review Queue.
+          Find a restaurant, <strong>upload a PDF or photos</strong>, then edit dishes. Held OCR lines only need the Review queue.
         </div>
       ) : null}
 
@@ -1135,102 +1340,10 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
         </div>
       ) : null}
 
-      {restaurant && (
-        <PageCard style={{ padding: 20, marginBottom: 16 }}>
-          <SectionTitle
-            title="Menus"
-            subtitle="Pick which menu to edit below. Primary menu cannot be deleted."
-          />
-          {availableMenus.length === 0 ? (
-            <div style={{ marginTop: 12, fontSize: 13, color: OWNER_COLORS.muted }}>
-              No menus yet — create one below or upload a PDF.
-            </div>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 12 }}>
-              {availableMenus.map((m) => {
-                const active = m.id === mid;
-                const label = m.display_name || m.name || `Menu #${m.id}`;
-                return (
-                  <div
-                    key={m.id}
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      gap: 12,
-                      flexWrap: "wrap",
-                      padding: "12px 14px",
-                      borderRadius: 10,
-                      border: `1px solid ${active ? OWNER_COLORS.accent : OWNER_COLORS.line}`,
-                      background: active ? OWNER_COLORS.accentSoft : "#fff",
-                    }}
-                  >
-                    <div>
-                      <div style={{ fontWeight: 700, fontSize: 14 }}>{label}</div>
-                      <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 4, flexWrap: "wrap" }}>
-                        <StatusChip status={m.status} />
-                        <span style={{ fontSize: 12, color: OWNER_COLORS.muted }}>
-                          #{m.id}{m.menu_type ? ` · ${m.menu_type}` : ""}{m.item_count != null ? ` · ${m.item_count} items` : ""}
-                          {m.is_primary ? " · primary" : ""}
-                        </span>
-                      </div>
-                    </div>
-                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-                      <button
-                        type="button"
-                        onClick={() => switchMenu(m)}
-                        style={{
-                          padding: "8px 12px", borderRadius: 8,
-                          background: active ? OWNER_COLORS.accent : "#fff",
-                          color: active ? "#fff" : OWNER_COLORS.ink,
-                          border: active ? "none" : `1px solid ${OWNER_COLORS.line}`,
-                          fontWeight: 700, fontSize: 12, cursor: "pointer",
-                        }}
-                      >
-                        {active ? "Editing" : "Edit items"}
-                      </button>
-                      {!m.is_primary ? (
-                        <button
-                          type="button"
-                          disabled={publishing}
-                          onClick={() => handleDeleteMenuRow(m)}
-                          style={{
-                            padding: "8px 12px", borderRadius: 8, border: "1px solid #fca5a5",
-                            background: "#fff", color: "#991b1b", fontWeight: 700, fontSize: 12, cursor: "pointer",
-                          }}
-                        >
-                          Delete
-                        </button>
-                      ) : null}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 14, alignItems: "center" }}>
-            <button
-              type="button"
-              disabled={publishing}
-              onClick={handleAddMenu}
-              style={{
-                padding: "9px 14px", borderRadius: 9, border: "none",
-                background: OWNER_COLORS.accent, color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer",
-              }}
-            >
-              + Add Another Menu
-            </button>
-            <Link
-              to={`/owner/profile-manager?restaurant=${rid}`}
-              style={{ fontSize: 12, fontWeight: 700, color: OWNER_COLORS.accent, textDecoration: "none", padding: "9px 4px" }}
-            >
-              Profile & style editors →
-            </Link>
-          </div>
-        </PageCard>
-      )}
+      {uploadCard}
+      {menusCard}
 
-      {restaurant && menuDetail && (
+      {restaurant && menuDetail && (Number(menuDetail.item_count) > 0 || !restaurantNeedsMenuContent) ? (
         <div ref={menuEditorRef}>
           <OcrEditSplitLayout
             pages={sourcePages}
@@ -1274,93 +1387,6 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
             </PageCard>
           </OcrEditSplitLayout>
         </div>
-      )}
-
-      {/* Optional OCR import — primary after create; secondary once menu has items */}
-      {restaurant && (
-        <PageCard style={{ padding: 20, marginBottom: 16 }} data-testid="owner-upload-menu-panel">
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-            <SectionTitle
-              title={!existingRestaurant || showImportPanel ? "Upload Menu" : "Optional: import photo / PDF"}
-              subtitle={
-                !existingRestaurant
-                  ? `${restaurant.restaurant_name || restaurant.name} · Restaurant ID: ${rid}${mid ? ` · Menu ID: ${mid}` : ""} — attach a PDF or photo to this restaurant.`
-                  : "Secondary path — after parsing, use OCR Uploads → Review Queue for held items, then finish here."
-              }
-            />
-            {existingRestaurant ? (
-              <button
-                type="button"
-                onClick={() => setShowImportPanel((v) => !v)}
-                style={{
-                  padding: "8px 12px", borderRadius: 8, border: `1px solid ${OWNER_COLORS.line}`,
-                  background: "#fff", fontWeight: 700, fontSize: 12, cursor: "pointer", color: OWNER_COLORS.ink,
-                }}
-              >
-                {showImportPanel ? "Hide import" : "Show import"}
-              </button>
-            ) : null}
-          </div>
-          {(!existingRestaurant || showImportPanel) ? (
-            <>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12, marginTop: 12 }}>
-            <div>
-              <label style={fieldLabel}>Menu name</label>
-              <input value={menuName} onChange={(e) => setMenuName(e.target.value)} style={inputStyle} />
-            </div>
-            <SelectField label="Menu type" value={menuType} onChange={setMenuType} options={schema?.menu_types} required />
-          </div>
-          <div style={{ marginTop: 12 }}>
-            <label style={fieldLabel}>Upload PDF or photo</label>
-            <input
-              ref={fileRef}
-              type="file"
-              accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp"
-              onChange={(e) => setFile(e.target.files?.[0] || null)}
-              style={{ ...inputStyle, padding: "10px 12px" }}
-            />
-            {file && <div style={{ marginTop: 6, fontSize: 12, color: OWNER_COLORS.muted }}>Selected: <strong>{file.name}</strong></div>}
-          </div>
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 14 }}>
-            <button type="button" disabled={uploading} onClick={handleUpload} style={{ padding: "9px 16px", borderRadius: 9, border: "none", background: OWNER_COLORS.accent, color: "#fff", fontWeight: 700, fontSize: 13, cursor: uploading ? "not-allowed" : "pointer" }}>
-              {uploading ? "Uploading…" : "Upload & Parse Menu"}
-            </button>
-            <Link
-              to="/owner/menu-manager?tab=activity"
-              style={{ padding: "9px 14px", borderRadius: 9, border: `1px solid ${OWNER_COLORS.line}`, background: "#fff", fontWeight: 700, fontSize: 13, textDecoration: "none", color: OWNER_COLORS.accent }}
-            >
-              OCR Uploads →
-            </Link>
-          </div>
-          {(uploadMsg || actionMsg) && (
-            <div
-              data-testid="owner-menu-attached-success"
-              style={{ marginTop: 12, padding: "10px 12px", borderRadius: 9, background: uploadMsg?.ok === false ? "#fff1ef" : "#f0fdf4", color: uploadMsg?.ok === false ? "#991b1b" : "#15803d", fontSize: 13, fontWeight: 600 }}
-            >
-              {uploadMsg?.ok !== false && uploadMsg?.restaurantId ? (
-                <div style={{ marginBottom: 6 }}>
-                  <div>Menu attached successfully</div>
-                  <div style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", fontWeight: 600, marginTop: 4 }}>
-                    Restaurant ID: {uploadMsg.restaurantId}
-                  </div>
-                  {uploadMsg.menuId ? (
-                    <div style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", fontWeight: 600 }}>
-                      Menu ID: {uploadMsg.menuId}
-                    </div>
-                  ) : null}
-                  {uploadMsg.uploadId ? (
-                    <div style={{ fontSize: 12, fontWeight: 600, marginTop: 4 }}>
-                      Upload ID: {uploadMsg.uploadId} · Status: {uploadMsg.parseStatus || "uploaded"}
-                    </div>
-                  ) : null}
-                </div>
-              ) : null}
-              {uploadMsg?.message || actionMsg}
-            </div>
-          )}
-            </>
-          ) : null}
-        </PageCard>
       )}
 
       {restaurant && pendingUploadId && reviewItems.length === 0 && (menuDetail?.item_count ?? 0) === 0 && (

@@ -7,9 +7,7 @@ import OwnerMenuUploadActivity from "./OwnerMenuUploadActivity.jsx";
 function resolveMenuManagerTab(searchParams) {
   const explicit = String(searchParams.get("tab") || "").trim().toLowerCase();
   if (explicit === "workspace" || explicit === "activity") return explicit;
-  if (searchParams.get("restaurant") || searchParams.get("create") === "1") {
-    return "workspace";
-  }
+  // Review inbox when filtering upload status / date windows.
   if (
     searchParams.get("status") ||
     searchParams.get("today") === "1" ||
@@ -17,7 +15,8 @@ function resolveMenuManagerTab(searchParams) {
   ) {
     return "activity";
   }
-  return "activity";
+  // Default: find restaurant → upload PDF/photos → edit dishes.
+  return "workspace";
 }
 
 function TabButton({ active, label, onClick }) {
@@ -74,18 +73,18 @@ export default function OwnerMenuUploads() {
   return (
     <OwnerLayout
       title="Menu Manager"
-      subtitle="OCR Uploads = camera/photo review queues. Edit Menus = restaurant profile + live menu items. Add Restaurant is under Restaurant Manager in the left nav."
+      subtitle="Upload a PDF or photos to build a menu. Use Needs review only for held OCR lines. Add Restaurant is under Restaurant Manager."
     >
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 20, alignItems: "center" }}>
         <TabButton
-          active={tab === "activity"}
-          label="OCR Uploads"
-          onClick={() => setTab("activity")}
+          active={tab === "workspace"}
+          label="Menus"
+          onClick={() => setTab("workspace")}
         />
         <TabButton
-          active={tab === "workspace"}
-          label="Edit Menus"
-          onClick={() => setTab("workspace")}
+          active={tab === "activity"}
+          label="Needs review"
+          onClick={() => setTab("activity")}
         />
       </div>
 

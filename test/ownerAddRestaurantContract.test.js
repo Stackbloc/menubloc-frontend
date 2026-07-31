@@ -99,6 +99,23 @@ describe("owner Add Restaurant restore", () => {
     assert.match(workspace, /\+ Add Another Menu/);
   });
 
+  it("upload-first workspace accepts multiple PDF/photo files", () => {
+    const workspace = read("src/pages/owner/OwnerMenuCreateWorkspace.jsx");
+    assert.match(workspace, /title="Upload menu"/);
+    assert.match(workspace, /data-testid="owner-menu-upload-input"/);
+    assert.match(workspace, /multiple\n\s*accept=/);
+    assert.match(workspace, /const \[files, setFiles\] = useState\(\[\]\)/);
+    assert.match(workspace, /for \(let i = 0; i < files\.length; i \+= 1\)/);
+    assert.match(workspace, /submitOwnerMenuFilePdf\(rid, nextFile, \{ menuId: activeMenuId \}\)/);
+    // Empty shells hidden; prefer menus with items; do not auto-create on load.
+    assert.match(workspace, /menusWithItems/);
+    assert.match(workspace, /Prefer a menu that already has items/);
+    assert.doesNotMatch(workspace, /showImportPanel/);
+    const uploadIdx = workspace.indexOf("{uploadCard}");
+    const menusIdx = workspace.indexOf("{menusCard}");
+    assert.ok(uploadIdx >= 0 && menusIdx > uploadIdx, "Upload card must render before menus list");
+  });
+
   it("create API client still posts to menu-console restaurants", () => {
     const api = read("src/lib/ownerApi.js");
     assert.match(api, /post\("\/api\/owner\/menu-console\/restaurants"/);
@@ -111,10 +128,10 @@ describe("owner Add Restaurant restore", () => {
     assert.match(api, /postFormData\("\/menu-upload\/pdf"/);
 
     const workspace = read("src/pages/owner/OwnerMenuCreateWorkspace.jsx");
-    assert.match(workspace, /submitOwnerMenuFilePdf\(rid, file, \{ menuId: mid \}\)/);
+    assert.match(workspace, /submitOwnerMenuFilePdf\(rid, nextFile, \{ menuId: activeMenuId \}\)/);
     assert.match(workspace, /json\.public_menu_id/);
     assert.match(workspace, /reloadMenus\(publicMenuId\)/);
-    assert.match(workspace, /importParsedToMenuDraft\(uploadId, \{ publicMenuId \}\)/);
+    assert.match(workspace, /importParsedToMenuDraft\(lastUploadId, \{ publicMenuId: activeMenuId \}\)/);
     assert.match(
       workspace,
       /uploadMenuId !== Number\(mid\)[\s\S]*unpublishMenuConsoleMenu/
