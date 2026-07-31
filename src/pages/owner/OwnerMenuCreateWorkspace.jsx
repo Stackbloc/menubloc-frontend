@@ -444,8 +444,11 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
     const data = await getMenuConsoleRestaurantMenus(rid);
     const menus = Array.isArray(data.menus) ? data.menus : [];
     setAvailableMenus(menus);
-    const nextMenu = menus.find((m) => m.id === preferredMenuId)
-      || menus.find((m) => m.id === mid)
+    const preferred = Number(preferredMenuId);
+    const nextMenu = (Number.isFinite(preferred)
+      ? menus.find((m) => Number(m.id) === preferred)
+      : null)
+      || menus.find((m) => Number(m.id) === Number(mid))
       || menus.find((m) => m.is_primary)
       || menus[0]
       || null;
@@ -775,15 +778,18 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
     }
   }, [rid, mid]);
 
-  async function importParsedToMenuDraft(uploadId) {
+  async function importParsedToMenuDraft(uploadId, opts = {}) {
     if (!uploadId || !rid || !mid) return false;
     setImportingParsed(true);
     setActionMsg("");
     try {
       await publishUpload(uploadId);
-      await unpublishMenuConsoleMenu(rid, mid);
-      await loadMenuState();
-      await reloadMenus();
+      const uploadMenuId = Number(opts.publicMenuId);
+      // Only unpublish the prior workspace shell when upload landed on a different menu.
+      if (Number.isFinite(uploadMenuId) && uploadMenuId > 0 && uploadMenuId !== Number(mid)) {
+        await unpublishMenuConsoleMenu(rid, mid);
+      }
+      await reloadMenus(Number.isFinite(uploadMenuId) && uploadMenuId > 0 ? uploadMenuId : mid);
       setPendingUploadId(null);
       setActionMsg("Parsed items saved to this menu. Edit below, then publish when ready.");
       return true;
@@ -810,18 +816,24 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
           menu_type: menuType,
         });
       }
-      const json = await submitOwnerMenuFilePdf(rid, file);
+      const json = await submitOwnerMenuFilePdf(rid, file, { menuId: mid });
       const inserted = (json.inserted_items || json.inserted || 0) + (json.updated_items || json.updated || 0);
       const reviewCount = json.review_count || 0;
       const uploadId = json.upload_id || null;
+      const publicMenuId = Number(json.public_menu_id) || null;
       if (uploadId) setPendingUploadId(uploadId);
 
+      // Point the workspace editor at the menu that received parsed items.
+      if (publicMenuId) {
+        await reloadMenus(publicMenuId);
+      }
+
       if (reviewCount === 0 && uploadId && inserted > 0) {
-        const saved = await importParsedToMenuDraft(uploadId);
+        const saved = await importParsedToMenuDraft(uploadId, { publicMenuId });
         setUploadMsg({
           ok: saved,
           restaurantId: rid,
-          menuId: mid,
+          menuId: publicMenuId || mid,
           uploadId,
           parseStatus: saved ? "saved_to_menu" : "parse_ok_save_failed",
           message: saved
@@ -832,7 +844,7 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
         setUploadMsg({
           ok: true,
           restaurantId: rid,
-          menuId: mid,
+          menuId: publicMenuId || mid,
           uploadId,
           parseStatus: reviewCount > 0 ? "needs_review" : "parsed",
           message: reviewCount > 0
@@ -1360,7 +1372,7 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
           <button
             type="button"
             disabled={importingParsed}
-            onClick={() => importParsedToMenuDraft(pendingUploadId)}
+            onClick={() => importParsedToMenuDraft(pendingUploadId, { publicMenuId: uploadMsg?.menuId })}
             style={{ padding: "9px 16px", borderRadius: 9, border: "none", background: OWNER_COLORS.accent, color: "#fff", fontWeight: 700, fontSize: 13, cursor: importingParsed ? "not-allowed" : "pointer" }}
           >
             {importingParsed ? "Saving…" : "Save to Menu"}

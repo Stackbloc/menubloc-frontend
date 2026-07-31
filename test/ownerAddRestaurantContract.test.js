@@ -103,4 +103,21 @@ describe("owner Add Restaurant restore", () => {
     const api = read("src/lib/ownerApi.js");
     assert.match(api, /post\("\/api\/owner\/menu-console\/restaurants"/);
   });
+
+  it("owner PDF/photo upload passes menu_id and switches to public_menu_id", () => {
+    const api = read("src/lib/ownerApi.js");
+    assert.match(api, /submitOwnerMenuFilePdf = \(restaurantId, file, opts = \{\}\)/);
+    assert.match(api, /form\.append\("menu_id"/);
+    assert.match(api, /postFormData\("\/menu-upload\/pdf"/);
+
+    const workspace = read("src/pages/owner/OwnerMenuCreateWorkspace.jsx");
+    assert.match(workspace, /submitOwnerMenuFilePdf\(rid, file, \{ menuId: mid \}\)/);
+    assert.match(workspace, /json\.public_menu_id/);
+    assert.match(workspace, /reloadMenus\(publicMenuId\)/);
+    assert.match(workspace, /importParsedToMenuDraft\(uploadId, \{ publicMenuId \}\)/);
+    assert.match(
+      workspace,
+      /uploadMenuId !== Number\(mid\)[\s\S]*unpublishMenuConsoleMenu/
+    );
+  });
 });

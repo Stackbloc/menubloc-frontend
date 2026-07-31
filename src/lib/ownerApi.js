@@ -193,10 +193,14 @@ export const searchOwnerRestaurantsForUpload = (q) =>
   get(`/api/owner/menu-uploads/restaurant-search?q=${encodeURIComponent(q)}`);
 export const submitOwnerMenuTextIngest = (restaurantId, menuText) =>
   post(`/api/owner/menu-uploads/text-ingest`, { restaurant_id: restaurantId, menu_text: menuText });
-export const submitOwnerMenuFilePdf = (restaurantId, file) => {
+export const submitOwnerMenuFilePdf = (restaurantId, file, opts = {}) => {
   const form = new FormData();
   form.append("file", file);
   form.append("restaurant_id", String(restaurantId));
+  const menuId = Number(opts.menuId);
+  if (Number.isFinite(menuId) && menuId > 0) {
+    form.append("menu_id", String(menuId));
+  }
   return postFormData("/menu-upload/pdf", form);
 };
 export const markOwnerMenuUploadReview = (uploadId) =>
