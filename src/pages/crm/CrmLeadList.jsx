@@ -575,6 +575,14 @@ function Pagination({ pagination, onPageChange }) {
   );
 }
 
+const filterLabelStyle = {
+  display: "grid",
+  gap: 6,
+  color: "#334155",
+  fontSize: 12,
+  fontWeight: 700,
+};
+
 const filterGridStyle = {
   display: "grid",
   gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
