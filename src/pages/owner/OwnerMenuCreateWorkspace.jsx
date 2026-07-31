@@ -101,21 +101,62 @@ function SelectField({ label, value, onChange, options, required }) {
   );
 }
 
-function DuplicateWarning({ matches, onConfirm, onCancel, submitting }) {
+function DuplicateWarning({ matches, onConfirm, onCancel, onSelectExisting, submitting }) {
   return (
-    <div style={{ marginBottom: 14, padding: 14, borderRadius: 10, background: "#fffbeb", border: "1px solid #fde68a" }}>
+    <div
+      data-testid="owner-duplicate-restaurant-warning"
+      style={{ marginBottom: 14, padding: 14, borderRadius: 10, background: "#fffbeb", border: "1px solid #fde68a" }}
+    >
       <div style={{ fontWeight: 700, fontSize: 13, color: "#92400e", marginBottom: 8 }}>Similar restaurants found</div>
+      <div style={{ fontSize: 12, color: "#92400e", marginBottom: 10, lineHeight: 1.45 }}>
+        Discard this new profile and open an existing one, or confirm only if this is a different location.
+      </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 12 }}>
         {matches.map((m) => (
-          <div key={m.id} style={{ padding: "10px 12px", borderRadius: 8, background: "#fff", border: `1px solid ${OWNER_COLORS.line}` }}>
-            <div style={{ fontWeight: 700, fontSize: 13 }}>{m.name}</div>
-            <div style={{ fontSize: 12, color: OWNER_COLORS.muted }}>
-              {[m.address_line1, m.city, m.state, m.postal_code].filter(Boolean).join(", ")}
+          <div
+            key={m.id}
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              gap: 12,
+              flexWrap: "wrap",
+              padding: "10px 12px",
+              borderRadius: 8,
+              background: "#fff",
+              border: `1px solid ${OWNER_COLORS.line}`,
+            }}
+          >
+            <div style={{ minWidth: 0, flex: "1 1 180px" }}>
+              <div style={{ fontWeight: 700, fontSize: 13 }}>{m.name}</div>
+              <div style={{ fontSize: 12, color: OWNER_COLORS.muted }}>
+                {[m.address_line1, m.city, m.state, m.postal_code].filter(Boolean).join(", ")}
+                {m.id != null ? ` · #${m.id}` : ""}
+              </div>
             </div>
+            <button
+              type="button"
+              data-testid="owner-select-existing-profile"
+              disabled={submitting}
+              onClick={() => onSelectExisting?.(m)}
+              style={{
+                padding: "8px 14px",
+                borderRadius: 8,
+                border: "none",
+                background: OWNER_COLORS.accent,
+                color: "#fff",
+                fontWeight: 700,
+                fontSize: 12,
+                cursor: submitting ? "not-allowed" : "pointer",
+                whiteSpace: "nowrap",
+              }}
+            >
+              Select existing profile
+            </button>
           </div>
         ))}
       </div>
-      <div style={{ display: "flex", gap: 8 }}>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
         <button type="button" disabled={submitting} onClick={onConfirm} style={{ padding: "8px 14px", borderRadius: 8, border: "none", background: "#92400e", color: "#fff", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>
           Create anyway — different location
         </button>
@@ -831,9 +872,13 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
         {duplicateMatches && (
           <DuplicateWarning
             matches={duplicateMatches}
-            submitting={creatingProfile}
+            submitting={creatingProfile || loadingRestaurant}
             onConfirm={() => createProfile(true)}
             onCancel={() => setDuplicateMatches(null)}
+            onSelectExisting={async (match) => {
+              setShowProfilePanel(true);
+              await selectExistingRestaurant(match);
+            }}
           />
         )}
 
@@ -1027,12 +1072,8 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
         loading={loadingRestaurant}
         onSelect={selectExistingRestaurant}
         onClear={clearSelectedRestaurant}
-        title={isAddingRestaurant ? "Or open an existing restaurant" : "Find Restaurant"}
-        subtitle={
-          isAddingRestaurant
-            ? "Already in Common Knowledge? Search here instead of adding a duplicate."
-            : "Search by name, city, state, or restaurant ID. Selecting a restaurant loads it into the workspace below."
-        }
+        title="Search restaurants"
+        subtitle="Search by name, city, state, or restaurant ID. Selecting a restaurant loads it into the workspace below."
       />
   );
 
@@ -1056,8 +1097,8 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
       {isAddingRestaurant ? (
         <>
           <StepHeader current={step} />
-          {profileFormCard}
           {finderCard}
+          {profileFormCard}
         </>
       ) : (
         <>

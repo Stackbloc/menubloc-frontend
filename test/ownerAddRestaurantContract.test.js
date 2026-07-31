@@ -67,6 +67,19 @@ describe("owner Add Restaurant restore", () => {
     }
   });
 
+  it("Add Restaurant puts Search restaurants first and offers select-existing on duplicate warning", () => {
+    const workspace = read("src/pages/owner/OwnerMenuCreateWorkspace.jsx");
+    assert.match(workspace, /title="Search restaurants"/);
+    assert.match(workspace, /data-testid="owner-duplicate-restaurant-warning"/);
+    assert.match(workspace, /data-testid="owner-select-existing-profile"/);
+    assert.match(workspace, /Select existing profile/);
+    assert.match(workspace, /onSelectExisting/);
+    const addBranch = workspace.match(/isAddingRestaurant \? \([\s\S]*?\) : \(/)?.[0] || "";
+    const finderIdx = addBranch.indexOf("{finderCard}");
+    const formIdx = addBranch.indexOf("{profileFormCard}");
+    assert.ok(finderIdx >= 0 && formIdx > finderIdx, "Search restaurants must render above Add Restaurant form");
+  });
+
   it("create success shows persistent Restaurant ID and Menu ID", () => {
     const workspace = read("src/pages/owner/OwnerMenuCreateWorkspace.jsx");
     assert.match(workspace, /data-testid="owner-restaurant-created-success"/);
