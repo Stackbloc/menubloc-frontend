@@ -1387,7 +1387,7 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
             </PageCard>
           </OcrEditSplitLayout>
         </div>
-      )}
+      ) : null}
 
       {restaurant && pendingUploadId && reviewItems.length === 0 && (menuDetail?.item_count ?? 0) === 0 && (
         <PageCard style={{ padding: 20, marginBottom: 16 }}>
