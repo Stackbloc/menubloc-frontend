@@ -1,5 +1,4 @@
-const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
-
+import { API_BASE } from "./api.js";
 import { parseLocation, buildSearchLocationParams } from "./locationUtils.js";
 
 const LOCAL_RADIUS_MILES = 8;
@@ -33,7 +32,7 @@ export async function fetchHomeContextChip({
     params.set("state", DEFAULT_MARKET.state);
   }
 
-  const res = await fetch(`${API}/api/home/context-chip?${params.toString()}`, {
+  const res = await fetch(`${API_BASE}/api/home/context-chip?${params.toString()}`, {
     credentials: "include",
     signal,
   });
@@ -63,6 +62,7 @@ export function flattenHomeContextChipResults(results = []) {
         distance_miles: group.distance_miles,
         image_url: group.image_url,
         matched_term: item.matched_term,
+        recommendationReasons: item.recommendationReasons || [],
         context_chip: true,
         item: {
           id: item.menu_item_id,
@@ -100,6 +100,14 @@ export function buildHomeContextChipSearchUrl(entry, payload, locationContext) {
     radiusMiles: LOCAL_RADIUS_MILES,
   });
   params.set("source", "home_context_chip");
-  if (payload?.context) params.set("context", payload.context);
+  const mealPeriod =
+    payload?.normalized_context?.mealPeriod ||
+    payload?.context ||
+    entry?.mealPeriod ||
+    entry?.context?.mealPeriod;
+  if (mealPeriod) {
+    params.set("context", mealPeriod);
+    params.set("meal_period", mealPeriod);
+  }
   return `/search?${params.toString()}`;
 }

@@ -38,7 +38,11 @@ export function splitFoodEntryPointRows(chips) {
   ];
 }
 
-/** Static food chips — meal slot filled at runtime by getFoodEntryPoints(). */
+/**
+ * Static food chips — meal slot filled at runtime by getFoodEntryPoints().
+ * Ranking lives on the backend shared contextualRecommendationService.
+ * Chips only supply normalized context dimensions (no local recommendation lists).
+ */
 const FOOD_ENTRY_STATIC = [
   { id: "__meal__", slot: "meal" },
   { id: "pizza", icon: "🍕", label: "Pizza", query: "pizza" },
@@ -47,9 +51,29 @@ const FOOD_ENTRY_STATIC = [
   { id: "salads", icon: "🥗", label: "Salads", query: "salads" },
   { id: "tacos", icon: "🌮", label: "Tacos", query: "tacos" },
   { id: "sandwiches", icon: "🥪", label: "Sandwiches", query: "sandwiches" },
-  { id: "asian", icon: "🥡", label: "Asian", query: "asian food" },
-  { id: "mexican", icon: "🌮", label: "Mexican", query: "mexican food", cuisine: "mexican" },
-  { id: "comfort", icon: "🍲", label: "Comfort Food", query: "comfort food" },
+  {
+    id: "asian",
+    icon: "🥡",
+    label: "Asian",
+    query: "asian food",
+    cuisine: "asian",
+    context: { cuisine: "asian" },
+  },
+  {
+    id: "mexican",
+    icon: "🌮",
+    label: "Mexican",
+    query: "mexican food",
+    cuisine: "mexican",
+    context: { cuisine: "mexican" },
+  },
+  {
+    id: "comfort",
+    icon: "🍲",
+    label: "Comfort Food",
+    query: "comfort food",
+    context: { occasion: "comfort" },
+  },
 ];
 
 export function getFoodEntryPoints(now = new Date()) {
@@ -63,6 +87,7 @@ export function getFoodEntryPoints(now = new Date()) {
         query: meal.query,
         mealPeriod: meal.mealPeriod,
         contextAware: true,
+        context: { mealPeriod: meal.mealPeriod },
       };
     }
     return { ...entry };
