@@ -325,12 +325,12 @@ export default function SubscriptionDesignerPlanEditor() {
               </span>
             </label>
             <label style={{ ...label, gridColumn: "1 / -1" }}>
-              Commission display (public chart text only)
+              Commission display (public chart + signup cards)
               <input
                 value={form.commission_display}
                 onChange={(e) => setField("commission_display", e.target.value)}
                 style={input}
-                placeholder="11% commission"
+                placeholder="9% marketplace commission"
               />
             </label>
             <div
@@ -346,10 +346,11 @@ export default function SubscriptionDesignerPlanEditor() {
                 lineHeight: 1.45,
               }}
             >
-              This commission rate controls the Menuply platform fee applied to future eligible orders.
-              Changing it affects real transaction calculations. It does not modify Stripe products,
-              subscription prices, credentials, or existing transactions. Payment calculation uses the
-              machine BPS value only — not the public display text.
+              Commission BPS and Commission display are owned by Subscription Designer.
+              Saving here updates public signup cards, the comparison chart, and rates used for
+              future eligible marketplace fees / subscription stamps — without a code deploy.
+              Stripe subscription Price IDs and card credentials are separate and are not modified
+              by these fields.
             </div>
             <label style={{ ...label, gridColumn: "1 / -1" }}>
               Short description

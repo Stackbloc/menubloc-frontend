@@ -139,16 +139,30 @@ describe("menuplyCheckoutPlans canonical checkout contract", () => {
   });
 
   it("formats marketplace commission disclosures before subscription pricing", () => {
-    expect(formatCommissionPercentFromBps(1100)).toBe("11%");
-    expect(formatCommissionPercentFromBps(800)).toBe("8%");
-    expect(getMarketplaceCommissionDisclosure("starter_annual")).toBe("11% marketplace commission");
+    expect(formatCommissionPercentFromBps(900)).toBe("9%");
+    expect(formatCommissionPercentFromBps(600)).toBe("6%");
+    expect(getMarketplaceCommissionDisclosure("starter_annual")).toBe("9% marketplace commission");
     expect(getMarketplaceCommissionDisclosure("founders_annual")).toBe(
-      "8% marketplace commission · 2-year rate lock"
+      "6% marketplace commission · 2-year rate lock"
     );
-    expect(getMarketplaceCommissionDisclosure(FREE_PLAN_CODE)).toMatch(/not included/i);
+    expect(getMarketplaceCommissionDisclosure(FREE_PLAN_CODE)).toBe("12% marketplace commission");
     expect(FALLBACK_CHECKOUT_PLANS.find((p) => p.code === "starter_annual").commission_rate_bps).toBe(
-      1100
+      900
     );
+  });
+
+  it("prefers Subscription Designer commission_display on signup cards", () => {
+    expect(
+      getMarketplaceCommissionDisclosure("starter_annual", {
+        plansByCode: {
+          starter_annual: {
+            code: "starter_annual",
+            commission_rate_bps: 900,
+            commission_display: "9% commission",
+          },
+        },
+      })
+    ).toBe("9% commission");
   });
 
   it("displays Founder's Annual as $319, not $299", () => {

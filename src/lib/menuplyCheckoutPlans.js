@@ -43,14 +43,14 @@ export const CHECKOUT_PRICE_LABELS = Object.freeze({
  * Display only — never send these fields in checkout request bodies.
  */
 export const FALLBACK_COMMISSION_RATE_BPS = Object.freeze({
-  [FREE_PLAN_CODE]: null,
-  standard: null,
-  [LEGACY_FREE_PLAN_CODE]: null,
-  starter_monthly: 1100,
-  starter_annual: 1100,
-  founders_monthly: 800,
-  founders_annual: 800,
-  [FOOD_TRUCK_ANNUAL_PLAN_CODE]: 800,
+  [FREE_PLAN_CODE]: 1200,
+  standard: 1200,
+  [LEGACY_FREE_PLAN_CODE]: 1200,
+  starter_monthly: 900,
+  starter_annual: 900,
+  founders_monthly: 600,
+  founders_annual: 600,
+  [FOOD_TRUCK_ANNUAL_PLAN_CODE]: 600,
 });
 
 export const FALLBACK_COMMISSION_LOCK_MONTHS = Object.freeze({
@@ -141,6 +141,12 @@ export function getMarketplaceCommissionDisclosure(planOrCode, opts = {}) {
         : null);
   }
 
+  // Subscription Designer public display text (chart + signup cards).
+  const sdDisplay = plan?.commission_display;
+  if (sdDisplay && String(sdDisplay).trim()) {
+    return String(sdDisplay).trim();
+  }
+
   const pct = formatCommissionPercentFromBps(plan?.commission_rate_bps);
   if (!pct) {
     return "No Menuply marketplace commission (online ordering not included)";
@@ -190,6 +196,10 @@ export async function fetchCheckoutPlanOptionsForDisplay() {
           plan.commission_lock_months != null
             ? Number(plan.commission_lock_months)
             : byCode[code]?.commission_lock_months ?? FALLBACK_COMMISSION_LOCK_MONTHS[code] ?? null,
+        commission_display:
+          plan.commission_display != null && String(plan.commission_display).trim()
+            ? String(plan.commission_display).trim()
+            : byCode[code]?.commission_display ?? null,
       };
     }
     if (!byCode[FREE_PLAN_CODE]) {
