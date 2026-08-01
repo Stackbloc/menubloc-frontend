@@ -17,6 +17,8 @@ import {
   publishMenuConsoleMenu,
   unpublishMenuConsoleMenu,
   deleteMenuConsoleMenu,
+  putMenuConsoleItemModifierGroups,
+  getMenuConsoleItemModifierGroups,
 } from "../../lib/ownerApi.js";
 
 export const inputStyle = sharedInputStyle;
@@ -30,6 +32,8 @@ const ownerMenuApi = {
   publishMenu: publishMenuConsoleMenu,
   unpublishMenu: unpublishMenuConsoleMenu,
   deleteMenu: deleteMenuConsoleMenu,
+  putModifierGroups: putMenuConsoleItemModifierGroups,
+  getModifierGroups: getMenuConsoleItemModifierGroups,
 };
 
 export function MenuEditor(props) {

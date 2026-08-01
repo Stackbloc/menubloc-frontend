@@ -3,6 +3,10 @@ import {
   deriveSectionList,
   resolveSectionCanonical,
 } from "../../lib/menuWorksheetHelpers.js";
+import MenuItemModifiersEditor, {
+  toEditorGroups,
+  fromEditorGroups,
+} from "./MenuItemModifiersEditor.jsx";
 
 /** Default theme — matches owner Menu Manager palette for visual continuity. */
 export const MENU_EDITOR_COLORS = {
@@ -283,9 +287,25 @@ export function MenuEditor({
         description: item.description || "",
         price: item.price != null ? String(item.price) : "",
         section: item.section || "",
+        modifier_groups: toEditorGroups(item.modifier_groups),
       },
     }));
     setEditingItemId(itemId);
+    if (typeof api.getModifierGroups === "function" && menu?.id) {
+      api
+        .getModifierGroups(restaurantId, menu.id, itemId)
+        .then((data) => {
+          const groups = toEditorGroups(data?.modifier_groups);
+          setPendingEdits((prev) => ({
+            ...prev,
+            [itemId]: {
+              ...(prev[itemId] || {}),
+              modifier_groups: groups,
+            },
+          }));
+        })
+        .catch(() => {});
+    }
   }
 
   function updatePendingEdit(itemId, field, value) {
@@ -318,6 +338,15 @@ export function MenuEditor({
       if (edits.section !== undefined) body.section = edits.section || null;
 
       const data = await api.updateItem(restaurantId, menu.id, itemId, body);
+
+      if (typeof api.putModifierGroups === "function") {
+        await api.putModifierGroups(
+          restaurantId,
+          menu.id,
+          itemId,
+          fromEditorGroups(edits.modifier_groups)
+        );
+      }
 
       if (data.ok !== false) {
         setSaveMsg("Saved.");
@@ -905,6 +934,11 @@ function ItemRow({
             fieldStyle={fieldStyle}
           />
         </div>
+        <MenuItemModifiersEditor
+          value={pendingEdit.modifier_groups || []}
+          onChange={(next) => onUpdateEdit("modifier_groups", next)}
+          compact
+        />
         <div style={{ display: "flex", gap: 8 }}>
           <button
             onClick={onSaveEdit}

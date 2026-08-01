@@ -239,6 +239,17 @@ export const createMenuItem = (rid, mid, body) => post(`/operator/restaurants/${
 export const getMenuItem = (rid, iid) => get(`/operator/restaurants/${rid}/menu-items/${iid}`);
 export const updateMenuItem = (rid, iid, body) => patch(`/operator/restaurants/${rid}/menu-items/${iid}`, body);
 export const publishMenuItem = (rid, iid) => post(`/operator/restaurants/${rid}/menu-items/${iid}/publish`, {});
+
+export const getMenuItemModifierGroups = (rid, mid, itemId, { source = "public" } = {}) =>
+  get(
+    `/operator/restaurants/${rid}/menus/${mid}/items/${itemId}/modifier-groups?source=${encodeURIComponent(source)}`
+  );
+
+export const putMenuItemModifierGroups = (rid, mid, itemId, modifier_groups, { source = "public" } = {}) =>
+  put(
+    `/operator/restaurants/${rid}/menus/${mid}/items/${itemId}/modifier-groups?source=${encodeURIComponent(source)}`,
+    { modifier_groups, source }
+  );
 export const deleteMenuItem = (rid, iid) => del(`/operator/restaurants/${rid}/menu-items/${iid}`);
 export const getPriceHistory = (rid, iid) => get(`/operator/restaurants/${rid}/menu-items/${iid}/price-history`);
 export const submitMenuIntake = (rid, text) =>

@@ -3,9 +3,15 @@ import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom"
 import OperatorLayout from "./OperatorLayout.jsx";
 import MenuWorksheet from "../../components/menuEditor/MenuWorksheet.jsx";
 import {
+  ModifierGroupsDrawer,
+  toEditorGroups,
+  fromEditorGroups,
+} from "../../components/menuEditor/MenuItemModifiersEditor.jsx";
+import {
   getMenuWorksheet,
   publishMenuWorksheet,
   saveMenuWorksheet,
+  putMenuItemModifierGroups,
 } from "../../lib/operatorApi.js";
 import {
   detectLargeMenuplyPriceChanges,
@@ -45,6 +51,9 @@ export default function OperatorMenuWorksheetPage() {
   const [flash, setFlash] = useState("");
   const [priceWarnings, setPriceWarnings] = useState([]);
   const priceBaselineRef = useRef([]);
+  const [modifierRow, setModifierRow] = useState(null);
+  const [modifierGroups, setModifierGroups] = useState([]);
+  const [modifierBusy, setModifierBusy] = useState(false);
 
   const load = useCallback(async () => {
     if (!rid || !mid) {
@@ -193,6 +202,31 @@ export default function OperatorMenuWorksheetPage() {
     }
   }
 
+  async function handleSaveModifiers() {
+    if (!modifierRow?.ck_menu_item_id) return;
+    setModifierBusy(true);
+    setError("");
+    try {
+      const groups = fromEditorGroups(modifierGroups);
+      await putMenuItemModifierGroups(rid, mid, modifierRow.ck_menu_item_id, groups, {
+        source: "ck",
+      });
+      setRows((prev) =>
+        prev.map((r) =>
+          Number(r.id) === Number(modifierRow.id)
+            ? { ...r, modifier_groups: groups }
+            : r
+        )
+      );
+      setFlash(`Modifiers saved for “${modifierRow.item_name || "item"}”.`);
+      setModifierRow(null);
+    } catch (err) {
+      setError(err?.payload?.error || err?.message || "Could not save modifiers");
+    } finally {
+      setModifierBusy(false);
+    }
+  }
+
   return (
     <OperatorLayout title="Menu Worksheet">
       <div style={{ maxWidth: 1480, margin: "0 auto", padding: "16px 12px 48px" }}>
@@ -254,6 +288,19 @@ export default function OperatorMenuWorksheetPage() {
               restaurantId={rid}
               menuId={mid}
               priceWarnings={priceWarnings}
+              onEditModifiers={(row) => {
+                setModifierRow(row);
+                setModifierGroups(toEditorGroups(row.modifier_groups));
+              }}
+            />
+            <ModifierGroupsDrawer
+              open={Boolean(modifierRow)}
+              title={`Modifiers — ${modifierRow?.item_name || "Item"}`}
+              groups={modifierGroups}
+              onChange={setModifierGroups}
+              onSave={handleSaveModifiers}
+              onClose={() => setModifierRow(null)}
+              busy={modifierBusy}
             />
           </>
         )}

@@ -184,7 +184,13 @@ export default function OperatorMenuWorksheetHubPage() {
                       {menu.name || menu.title || `Menu ${menu.id}`}
                     </div>
                     <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>
-                      {[menu.status, menu.is_primary ? "Primary" : null].filter(Boolean).join(" · ") || "Menu"}
+                      {[
+                        menu.status,
+                        menu.is_primary ? "Primary" : null,
+                        menu.is_active === false ? "Inactive" : null,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ") || "Menu"}
                     </div>
                   </div>
                   <button type="button" style={BTN_SECONDARY} onClick={() => openWorksheet(menu.id)}>

@@ -27,6 +27,10 @@ import {
   resolveRestaurantOnboardingState,
   navigateWithRestaurantOnboardingState,
 } from "../../lib/restaurantOnboardingState.js";
+import MenuItemModifiersEditor, {
+  toEditorGroups,
+  fromEditorGroups,
+} from "../../components/menuEditor/MenuItemModifiersEditor.jsx";
 
 const CANONICAL_MENU_CATEGORIES = [
   "Appetizers",
@@ -88,6 +92,9 @@ function ItemForm({ initial = {}, onSave, onCancel, busy }) {
     canonical_category: initial.canonical_category || "",
     display_category_label: initial.display_category_label || "",
   });
+  const [modifierGroups, setModifierGroups] = useState(() =>
+    toEditorGroups(initial.modifier_groups)
+  );
   const f = (k) => (e) => setForm(p => ({ ...p, [k]: e.target.value }));
 
   return (
@@ -130,12 +137,13 @@ function ItemForm({ initial = {}, onSave, onCancel, busy }) {
           <input style={{ ...INPUT, width: "100%" }} value={form.display_category_label} onChange={f("display_category_label")} placeholder="e.g. Mains or Starters" />
         </div>
       </div>
+      <MenuItemModifiersEditor value={modifierGroups} onChange={setModifierGroups} />
       <div className="operator-responsive-card-actions" style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
         <button style={BTN("muted")} onClick={onCancel} type="button">Cancel</button>
         <button
           style={{ ...BTN("primary"), opacity: busy ? 0.6 : 1 }}
           disabled={busy || !form.name.trim() || !form.canonical_category}
-          onClick={() => onSave(form)}
+          onClick={() => onSave({ ...form, modifier_groups: fromEditorGroups(modifierGroups) })}
           type="button"
         >
           {busy ? "Saving…" : initial.id ? "Save changes" : "Add item"}
@@ -1138,6 +1146,10 @@ export default function OperatorMenuEditor() {
         canonical_category: form.canonical_category,
         display_category_label: form.display_category_label || null,
       });
+      if (Array.isArray(form.modifier_groups) && form.modifier_groups.length > 0 && d.item?.id) {
+        await api.putMenuItemModifierGroups(rid, selectedMenuId, d.item.id, form.modifier_groups);
+        d.item = { ...d.item, modifier_groups: form.modifier_groups };
+      }
       setItems(prev => [...prev, d.item]);
       setShowAddItem(false);
       showSuccess(`Added "${form.name.trim()}".`);
@@ -1158,15 +1170,78 @@ export default function OperatorMenuEditor() {
         price: form.price !== "" ? form.price : null,
         canonical_category: form.canonical_category,
         display_category_label: form.display_category_label || null,
+        modifier_groups: Array.isArray(form.modifier_groups) ? form.modifier_groups : [],
       });
       const published = await api.publishMenuItem(rid, editingItem.id);
-      setItems(prev => prev.map(i => i.id === editingItem.id ? published.item : i));
+      const withMods = {
+        ...(published.item || {}),
+        modifier_groups: Array.isArray(form.modifier_groups) ? form.modifier_groups : [],
+      };
+      setItems(prev => prev.map(i => i.id === editingItem.id ? withMods : i));
       setEditingItem(null);
       showSuccess(`Saved changes to "${form.name.trim()}".`);
     } catch (e) {
       setError(e.message || "Could not save item changes.");
     } finally {
       setActionBusy(false);
+    }
+  }
+
+  async function handleSetPrimaryMenu(menuId) {
+    try {
+      const d = await api.updateMenu(rid, menuId, { is_primary: true });
+      setMenus((prev) =>
+        prev.map((m) => ({
+          ...m,
+          is_primary: m.id === menuId,
+          ...(m.id === menuId ? { ...(d.menu || {}) } : {}),
+        }))
+      );
+      showSuccess("Default menu updated.");
+    } catch (e) {
+      setError(e.message || "Could not set default menu.");
+    }
+  }
+
+  async function handleToggleMenuActive(menuId, currentlyActive) {
+    try {
+      const nextActive = !currentlyActive;
+      const d = await api.updateMenu(rid, menuId, {
+        is_active: nextActive,
+        is_public: nextActive,
+      });
+      setMenus((prev) =>
+        prev.map((m) => (m.id === menuId ? { ...m, ...(d.menu || {}), is_active: nextActive, is_public: nextActive } : m))
+      );
+      showSuccess(nextActive ? "Menu activated." : "Menu deactivated (hidden from public tabs).");
+    } catch (e) {
+      setError(e.message || "Could not update menu visibility.");
+    }
+  }
+
+  async function handleReorderMenu(menuId, direction) {
+    const ordered = [...menus].sort(
+      (a, b) =>
+        Number(a.display_priority ?? a.sort_order ?? 9999) -
+        Number(b.display_priority ?? b.sort_order ?? 9999)
+    );
+    const index = ordered.findIndex((m) => m.id === menuId);
+    const swapWith = index + direction;
+    if (index < 0 || swapWith < 0 || swapWith >= ordered.length) return;
+    const a = ordered[index];
+    const b = ordered[swapWith];
+    const aPri = Number(a.display_priority ?? index);
+    const bPri = Number(b.display_priority ?? swapWith);
+    try {
+      await Promise.all([
+        api.updateMenu(rid, a.id, { display_priority: bPri }),
+        api.updateMenu(rid, b.id, { display_priority: aPri }),
+      ]);
+      const refreshed = await api.getMenus(rid);
+      setMenus(Array.isArray(refreshed?.menus) ? refreshed.menus : ordered);
+      showSuccess("Menu order updated.");
+    } catch (e) {
+      setError(e.message || "Could not reorder menus.");
     }
   }
 
@@ -1328,6 +1403,8 @@ export default function OperatorMenuEditor() {
                   }}
                 >
                   {m.name}
+                  {m.is_primary ? <span style={{ marginLeft: 6, opacity: 0.85, fontSize: 11 }}>default</span> : null}
+                  {m.is_active === false ? <span style={{ marginLeft: 6, opacity: 0.6, fontSize: 11 }}>off</span> : null}
                   {m.status === "draft" ? <span style={{ marginLeft: 6, opacity: 0.6, fontSize: 11 }}>draft</span> : null}
                 </button>
               );
@@ -1387,6 +1464,38 @@ export default function OperatorMenuEditor() {
                 type="button"
               >
                 Rename
+              </button>
+              <button
+                style={BTN("ghost")}
+                onClick={() => handleSetPrimaryMenu(selectedMenuId)}
+                disabled={selectedMenu.is_primary === true}
+                type="button"
+                title="Show this menu first on the public page when entitled"
+              >
+                {selectedMenu.is_primary ? "Default" : "Set default"}
+              </button>
+              <button
+                style={BTN("ghost")}
+                onClick={() => handleToggleMenuActive(selectedMenuId, selectedMenu.is_active !== false)}
+                type="button"
+              >
+                {selectedMenu.is_active === false ? "Activate" : "Deactivate"}
+              </button>
+              <button
+                style={BTN("ghost")}
+                onClick={() => handleReorderMenu(selectedMenuId, -1)}
+                type="button"
+                title="Move tab earlier"
+              >
+                ← Order
+              </button>
+              <button
+                style={BTN("ghost")}
+                onClick={() => handleReorderMenu(selectedMenuId, 1)}
+                type="button"
+                title="Move tab later"
+              >
+                Order →
               </button>
               <button
                 style={BTN("ghost")}

@@ -279,6 +279,13 @@ export const updateMenuConsoleItem = (restaurantId, menuId, itemId, body) =>
     method: "PATCH",
     body: JSON.stringify(body),
   });
+export const putMenuConsoleItemModifierGroups = (restaurantId, menuId, itemId, modifier_groups) =>
+  req(`/api/owner/menu-console/restaurants/${restaurantId}/menus/${menuId}/items/${itemId}/modifier-groups`, {
+    method: "PUT",
+    body: JSON.stringify({ modifier_groups }),
+  });
+export const getMenuConsoleItemModifierGroups = (restaurantId, menuId, itemId) =>
+  get(`/api/owner/menu-console/restaurants/${restaurantId}/menus/${menuId}/items/${itemId}/modifier-groups`);
 export const deleteMenuConsoleItem = (restaurantId, menuId, itemId) =>
   req(`/api/owner/menu-console/restaurants/${restaurantId}/menus/${menuId}/items/${itemId}`, {
     method: "DELETE",

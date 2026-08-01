@@ -82,6 +82,14 @@ describe("Menu Worksheet UI contract", () => {
     ]);
   });
 
+  it("offers a per-row Modifiers action without turning Size into grid columns", () => {
+    expect(src).toMatch(/data-testid="worksheet-row-modifiers"/);
+    expect(src).toMatch(/>Modifiers</);
+    expect(page).toMatch(/ModifierGroupsDrawer/);
+    expect(page).toMatch(/putMenuItemModifierGroups/);
+    expect(page).toMatch(/source:\s*"ck"/);
+  });
+
   it("has Save Worksheet and Update Menuply Menu actions", () => {
     expect(src).toMatch(/Save Worksheet/);
     expect(src).toMatch(/Update Menuply Menu/);

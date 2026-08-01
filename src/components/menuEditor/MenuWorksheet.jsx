@@ -79,6 +79,7 @@ const cellInputStyle = {
  * @param {number|null} [props.restaurantId]
  * @param {number|null} [props.menuId]
  * @param {string[]} [props.priceWarnings] — red save-time price drift messages
+ * @param {(row: object) => void} [props.onEditModifiers] — open Size / Add-ons editor for a row
  */
 export default function MenuWorksheet({
   rows,
@@ -96,6 +97,7 @@ export default function MenuWorksheet({
   restaurantId = null,
   menuId = null,
   priceWarnings = [],
+  onEditModifiers = null,
 }) {
   const [bulkAmount, setBulkAmount] = useState("5");
   /** all | row_a | row_b | row_c */
@@ -431,6 +433,7 @@ export default function MenuWorksheet({
             <col style={{ width: "9.5%" }} />
             <col style={{ width: "9.5%" }} />
             <col style={{ width: "9.5%" }} />
+            <col style={{ width: "8%" }} />
           </colgroup>
           <thead>
             <tr style={{ background: "#f8fafc", textAlign: "left" }}>
@@ -477,12 +480,13 @@ export default function MenuWorksheet({
                 </label>
               </th>
               <th style={thStyle}>Menuply Price</th>
+              <th style={thStyle}>Modifiers</th>
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={7} style={{ padding: 24, color: COLORS.muted, textAlign: "center" }}>
+                <td colSpan={8} style={{ padding: 24, color: COLORS.muted, textAlign: "center" }}>
                   No items yet. Re-upload a menu or add items after publish.
                 </td>
               </tr>
@@ -570,6 +574,29 @@ export default function MenuWorksheet({
                         (v) => updateRow(id, { menuply_price: v }, "menuply_price"),
                         { onBlur: endCellEdit }
                       )}
+                    </td>
+                    <td style={tdStyle}>
+                      <button
+                        type="button"
+                        data-testid="worksheet-row-modifiers"
+                        disabled={!onEditModifiers || !row.ck_menu_item_id}
+                        title={
+                          row.ck_menu_item_id
+                            ? "Edit Size / Add-ons for this item"
+                            : "Publish or link a CK item before editing modifiers"
+                        }
+                        onClick={() => onEditModifiers?.(row)}
+                        style={{
+                          ...btnSecondary,
+                          opacity: !onEditModifiers || !row.ck_menu_item_id ? 0.5 : 1,
+                          cursor: !onEditModifiers || !row.ck_menu_item_id ? "not-allowed" : "pointer",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {(Array.isArray(row.modifier_groups) && row.modifier_groups.length > 0)
+                          ? `Modifiers (${row.modifier_groups.length})`
+                          : "Modifiers"}
+                      </button>
                     </td>
                   </tr>
                 );
