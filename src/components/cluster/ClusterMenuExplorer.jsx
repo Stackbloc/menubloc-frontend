@@ -45,20 +45,21 @@ export function ClusterPlaceholderFoodCard({ item }) {
 }
 
 export const CLUSTER_DISH_CHIP_STYLE = {
-  display: "block",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "0.75rem",
   width: "100%",
   boxSizing: "border-box",
-  padding: "0.62rem 0.85rem",
-  borderRadius: 8,
-  border: "2px solid #22c55e",
-  background: "#f0fdf4",
-  color: "#14532d",
-  fontWeight: 600,
+  padding: "0.55rem 0.75rem 0.55rem 0.7rem",
+  borderRadius: 10,
+  border: "1px solid #e5e7eb",
+  borderLeft: "3px solid #16a34a",
+  background: "#ffffff",
+  color: "#111827",
   textDecoration: "none",
-  fontSize: "0.95rem",
-  lineHeight: 1.35,
-  overflowWrap: "anywhere",
   textAlign: "left",
+  overflowWrap: "anywhere",
 };
 
 function buildDishHref(item, clusterReturnTo, clusterReturnLabel) {
@@ -77,6 +78,55 @@ function buildDishHref(item, clusterReturnTo, clusterReturnLabel) {
     : menuPath;
 }
 
+function ClusterDishChipContent({ item }) {
+  const restaurantName = String(item?.restaurant_name || "").trim();
+
+  return (
+    <>
+      <span style={{ display: "grid", gap: "0.15rem", minWidth: 0, flex: 1 }}>
+        <span
+          data-testid="cluster-dish-name"
+          style={{
+            fontWeight: 650,
+            fontSize: "0.95rem",
+            lineHeight: 1.3,
+            color: "#111827",
+            overflowWrap: "anywhere",
+          }}
+        >
+          {item.name}
+        </span>
+        {restaurantName ? (
+          <span
+            data-testid="cluster-dish-restaurant"
+            style={{
+              fontWeight: 500,
+              fontSize: "0.8rem",
+              lineHeight: 1.3,
+              color: "#6b7280",
+              overflowWrap: "anywhere",
+            }}
+          >
+            {restaurantName}
+          </span>
+        ) : null}
+      </span>
+      <span
+        aria-hidden="true"
+        style={{
+          flexShrink: 0,
+          color: "#9ca3af",
+          fontSize: "0.95rem",
+          fontWeight: 500,
+          lineHeight: 1,
+        }}
+      >
+        →
+      </span>
+    </>
+  );
+}
+
 export function ClusterDishChip({ item, clusterReturnTo = null, clusterReturnLabel = null }) {
   if (!item?.name) return null;
 
@@ -85,8 +135,7 @@ export function ClusterDishChip({ item, clusterReturnTo = null, clusterReturnLab
   }
 
   const href = buildDishHref(item, clusterReturnTo, clusterReturnLabel);
-
-  const content = <span>{item.name}</span>;
+  const content = <ClusterDishChipContent item={item} />;
 
   if (!href) {
     return <div style={CLUSTER_DISH_CHIP_STYLE}>{content}</div>;
@@ -110,7 +159,7 @@ export function ClusterDishList({
   let lastRestaurantId = null;
 
   return (
-    <div style={{ display: "grid", gap: "0.55rem" }}>
+    <div style={{ display: "grid", gap: "0.4rem" }}>
       {items.map((item) => {
         const restaurantId = Number(item.restaurant_id) || null;
         const showRestaurantHeading =
