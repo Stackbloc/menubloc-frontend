@@ -10,15 +10,6 @@ import {
   resolveClusterRestaurantStatus,
 } from "../../lib/clusterRestaurantDisplay.js";
 
-function clampLines(maxLines) {
-  return {
-    display: "-webkit-box",
-    WebkitLineClamp: maxLines,
-    WebkitBoxOrient: "vertical",
-    overflow: "hidden",
-  };
-}
-
 export default function ClusterRestaurantDirectoryCard({
   restaurant,
   placeReturnPath = null,
@@ -27,6 +18,7 @@ export default function ClusterRestaurantDirectoryCard({
   if (!restaurant) return null;
 
   const name = restaurant?.restaurant_name || restaurant?.name || "Restaurant";
+  const listingNote = String(restaurant?.listing_note || restaurant?.notes || "").trim() || null;
   const accent = resolveClusterRestaurantAccent(restaurant);
   const cuisineLabel = formatRestaurantCuisineLabel(restaurant);
   const addressHint = String(restaurant?.address_line1 || "").trim() || null;
@@ -66,17 +58,34 @@ export default function ClusterRestaurantDirectoryCard({
         <div style={{ fontSize: "1.35rem", lineHeight: 1 }} aria-hidden="true">
           {accent.emoji}
         </div>
-        <div
-          style={{
-            ...clampLines(3),
-            fontSize: "1.05rem",
-            fontWeight: 700,
-            color: "#111827",
-            lineHeight: 1.3,
-            overflowWrap: "anywhere",
-          }}
-        >
-          {name}
+        <div style={{ minWidth: 0 }}>
+          <div
+            style={{
+              fontSize: "1.05rem",
+              fontWeight: 700,
+              color: "#111827",
+              lineHeight: 1.35,
+              fontSynthesis: "none",
+              WebkitFontSmoothing: "antialiased",
+              wordBreak: "break-word",
+              overflowWrap: "break-word",
+            }}
+          >
+            {name}
+            {listingNote ? (
+              <span
+                style={{
+                  display: "inline",
+                  fontWeight: 600,
+                  fontSize: "0.82rem",
+                  color: "#6b7280",
+                  marginLeft: "0.35rem",
+                }}
+              >
+                ({listingNote})
+              </span>
+            ) : null}
+          </div>
         </div>
         {cuisineLabel ? (
           <div
