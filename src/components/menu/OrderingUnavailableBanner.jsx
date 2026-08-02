@@ -2,7 +2,8 @@ import React from "react";
 import { getOrderingAvailabilityMessage } from "../../lib/restaurantStatusLight.js";
 
 /**
- * Sticky-adjacent banner when online ordering is paused, closed, or outside hours.
+ * Compact status line when online ordering is paused, closed, or outside hours.
+ * Kept intentionally short — full-width yellow blocks with large padding are an eyesore.
  * Does not replace MenuPurchaseWaiterHint sticky wiring.
  */
 export default function OrderingUnavailableBanner({ data, style }) {
@@ -12,16 +13,18 @@ export default function OrderingUnavailableBanner({ data, style }) {
   return (
     <div
       role="status"
+      data-testid="ordering-unavailable-banner"
       style={{
-        margin: "0 0 10px",
-        padding: "12px 14px",
-        borderRadius: 12,
-        border: "1px solid #fcd34d",
+        margin: 0,
+        padding: "5px 10px",
+        borderRadius: 8,
+        border: "1px solid #fde68a",
         background: "#fffbeb",
         color: "#92400e",
-        fontSize: 14,
-        fontWeight: 700,
-        lineHeight: 1.4,
+        fontSize: 12,
+        fontWeight: 600,
+        lineHeight: 1.3,
+        boxSizing: "border-box",
         ...style,
       }}
     >
