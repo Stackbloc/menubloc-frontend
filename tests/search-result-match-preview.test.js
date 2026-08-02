@@ -137,3 +137,17 @@ test("distance only appears for location-driven queries", () => {
     text: "58 g protein",
   });
 });
+
+test("distance alone never becomes Match preview", () => {
+  const preview = buildMatchPreview(
+    { restaurant_distance_miles: 1.9 },
+    {
+      nutrition_intent: {},
+      nutrient_constraints: {},
+      diet: {},
+    },
+    { wantsNearby: true, coordinateSearchActive: true }
+  );
+
+  assert.equal(preview, null);
+});

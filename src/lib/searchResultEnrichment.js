@@ -249,6 +249,7 @@ export function buildWhyMatchLabel(row, queryMeta) {
   for (const s of structured) {
     const token = s?.token ?? s?.label ?? s?.term;
     if (!token) continue;
+    if (/\bmi away\b/i.test(String(token))) continue;
     const candidate = toTitleWords(token);
     if (!isLeakyOntologyLabel(candidate)) return candidate;
   }
@@ -261,6 +262,7 @@ export function buildWhyMatchLabel(row, queryMeta) {
   for (const r of legacy) {
     const t = asStr(r);
     if (!t) continue;
+    if (/\bmi away\b/i.test(t)) continue;
     if (/^ingredient match:/i.test(t)) continue;
     if (/^inferred ingredient/i.test(t)) continue;
     const shortened = t.replace(/^[^:]+:\s*/, "").trim();

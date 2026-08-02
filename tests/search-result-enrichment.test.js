@@ -24,6 +24,19 @@ test("buildWhyMatchLabel prefers match_reasons_v1", () => {
   assert.equal(label, "40g protein");
 });
 
+test("buildWhyMatchLabel never uses distance as Match label", () => {
+  const label = buildWhyMatchLabel(
+    {
+      match_reasons_v1: [],
+      match_reasons_structured: [{ token: "1.9 mi away" }],
+      match_reasons: ["1.9 mi away", "Soup"],
+      primary_family: "",
+    },
+    {}
+  );
+  assert.equal(label, "Soup");
+});
+
 test("buildWhyMatchLabel prefers primary_family over template slug noise", () => {
   const label = buildWhyMatchLabel(
     {

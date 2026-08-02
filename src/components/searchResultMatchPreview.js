@@ -188,12 +188,13 @@ export function buildMatchPreview(row, queryMeta, matchContext) {
     used.add(secondary.key);
   }
 
-  // DISTANCE (ONLY if location-driven)
+  // DISTANCE is never a Match-only reason. Show miles only as a secondary
+  // part when another qualification/nutrition/diet/price part already exists.
   const shouldShowDistance =
     matchContext?.wantsNearby === true ||
     matchContext?.coordinateSearchActive === true;
 
-  if (shouldShowDistance) {
+  if (shouldShowDistance && parts.length > 0) {
     const distanceText = formatDistancePart(distanceValue);
     if (distanceText && parts.length < 3) {
       parts.push(distanceText);
