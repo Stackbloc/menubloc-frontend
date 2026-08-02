@@ -10,14 +10,18 @@ const source = readFileSync(
   "utf8"
 );
 
-test("ordering unavailable banner stays compact (no oversized yellow padding)", () => {
+test("ordering unavailable banner is a fit-to-text chip (no full-width yellow bar)", () => {
   assert.match(source, /data-testid="ordering-unavailable-banner"/);
-  assert.match(source, /padding:\s*"5px 10px"/);
+  assert.match(source, /display:\s*"inline-flex"/);
+  assert.match(source, /width:\s*"fit-content"/);
+  assert.match(source, /alignSelf:\s*"flex-start"/);
+  assert.match(source, /padding:\s*"3px 8px"/);
   assert.match(source, /fontSize:\s*12/);
-  assert.match(source, /lineHeight:\s*1\.3/);
-  assert.match(source, /borderRadius:\s*8/);
-  // Guard against regressing to the large callout that dominated menu headers.
+  assert.match(source, /lineHeight:\s*1\.25/);
+  assert.match(source, /borderRadius:\s*6/);
+  // Guard against regressing to oversized / full-width callouts.
   assert.doesNotMatch(source, /padding:\s*"12px 14px"/);
+  assert.doesNotMatch(source, /padding:\s*"5px 10px"/);
   assert.doesNotMatch(source, /fontSize:\s*14/);
   assert.doesNotMatch(source, /borderRadius:\s*12/);
 });

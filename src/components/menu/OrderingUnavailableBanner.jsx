@@ -2,8 +2,8 @@ import React from "react";
 import { getOrderingAvailabilityMessage } from "../../lib/restaurantStatusLight.js";
 
 /**
- * Compact status line when online ordering is paused, closed, or outside hours.
- * Kept intentionally short — full-width yellow blocks with large padding are an eyesore.
+ * Compact fit-to-text status chip when online ordering is paused, closed, or outside hours.
+ * Not a full-width yellow bar — short copy must not leave a long amber strip.
  * Does not replace MenuPurchaseWaiterHint sticky wiring.
  */
 export default function OrderingUnavailableBanner({ data, style }) {
@@ -15,15 +15,20 @@ export default function OrderingUnavailableBanner({ data, style }) {
       role="status"
       data-testid="ordering-unavailable-banner"
       style={{
+        display: "inline-flex",
+        alignItems: "center",
+        alignSelf: "flex-start",
+        width: "fit-content",
+        maxWidth: "100%",
         margin: 0,
-        padding: "5px 10px",
-        borderRadius: 8,
+        padding: "3px 8px",
+        borderRadius: 6,
         border: "1px solid #fde68a",
         background: "#fffbeb",
         color: "#92400e",
         fontSize: 12,
         fontWeight: 600,
-        lineHeight: 1.3,
+        lineHeight: 1.25,
         boxSizing: "border-box",
         ...style,
       }}
