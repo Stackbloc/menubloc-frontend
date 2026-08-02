@@ -21,8 +21,10 @@ test("PlanComparisonTable keeps fallback chart columns and feature labels", () =
   assert.match(src, /Online ordering/);
   assert.match(src, /Professional restaurant profile/);
   assert.match(src, /api\/public\/subscription-comparison/);
+  assert.match(src, /audience=/);
+  assert.match(src, /food_truck/);
   assert.match(src, /API_BASE/);
-  // Visual markers preserved
+  // Visual markers preserved — do not redesign chart
   assert.match(src, /#1F4E3D/);
   assert.match(src, /#92400e/);
   assert.match(src, /#fffdf7/);

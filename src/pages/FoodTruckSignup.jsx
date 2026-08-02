@@ -11,38 +11,24 @@
  *   Returns { restaurant, owner_token }.
  *   Subscription checkout occurs later in the operator flow.
  *
+ *   Plan cards + comparison chart are driven by Subscription Designer
+ *   public chart API (audience=food_truck).
+ *
  * Route: /foodtruck/signup
  * ============================================================
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { BrandLogo } from "../components/BrandLogo.jsx";
+import PlanComparisonTable from "../components/PlanComparisonTable.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
+import { API_BASE } from "../lib/api.js";
 import { buildLegalConsentPayload } from "../lib/legalConsent.js";
 import {
-  CHECKOUT_PRICE_LABELS,
   FOOD_TRUCK_ANNUAL_PLAN_CODE,
-  fetchCheckoutPlanOptionsForDisplay,
-  getMarketplaceCommissionDisclosure,
-  indexPlansByCode,
   rememberIntendedCheckoutPlanCode,
 } from "../lib/menuplyCheckoutPlans.js";
-
-const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
-/** Consumer-facing Food Truck plan features (display copy only). */
-const PLAN_FEATURES = [
-  "Professional Food Truck profile",
-  "Logo and product photos",
-  "Full menu",
-  "Edit menus and menu items",
-  "Rich searchable menu data",
-  "Window QR Code included",
-  "Social sharing of menus and menu items",
-  "Customers can follow your Food Truck",
-  "Create deals and promotions free of charge",
-  "Online ordering",
-];
 
 const styles = {
   page: {
@@ -94,82 +80,81 @@ const styles = {
     color: "#667085",
     maxWidth: 660,
   },
-  contentGrid: {
+  cardsGrid: {
     display: "grid",
-    gridTemplateColumns: "minmax(0, 400px) minmax(0, 1fr)",
+    gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
     gap: 20,
-    alignItems: "start",
+    marginBottom: 24,
   },
-  pricingCard: {
-    position: "sticky",
-    top: 24,
+  pricingCard: (highlight) => ({
     borderRadius: 28,
     padding: "24px 22px 22px",
-    border: "1px solid #eaecf0",
-    background: "#ffffff",
-    color: "#101828",
-    boxShadow: "0 12px 30px rgba(15, 23, 32, 0.04)",
-  },
-  planBadge: {
+    border: highlight ? "2px solid #1F4E3D" : "1px solid #eaecf0",
+    background: highlight
+      ? "linear-gradient(135deg, #0f1720 0%, #1f4e3d 48%, #eef6f1 100%)"
+      : "#ffffff",
+    color: highlight ? "#ffffff" : "#101828",
+    boxShadow: highlight
+      ? "0 24px 60px rgba(15, 23, 32, 0.16)"
+      : "0 12px 30px rgba(15, 23, 32, 0.04)",
+  }),
+  planBadge: (highlight) => ({
     display: "inline-flex",
     alignItems: "center",
     alignSelf: "flex-start",
     marginBottom: 16,
     padding: "7px 12px",
     borderRadius: 999,
-    background: "#eef6f1",
-    color: "#1F4E3D",
+    background: highlight ? "rgba(255,255,255,0.16)" : "#eef6f1",
+    color: highlight ? "#ffffff" : "#1F4E3D",
     fontSize: 11,
     fontWeight: 900,
     letterSpacing: "0.08em",
     textTransform: "uppercase",
-  },
+  }),
   planName: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: 900,
     letterSpacing: "-0.04em",
-    lineHeight: 0.95,
+    lineHeight: 1.05,
     marginBottom: 10,
   },
-  commissionDisclosure: {
+  commissionDisclosure: (highlight) => ({
     margin: "0 0 12px",
     padding: "10px 12px",
     borderRadius: 12,
-    background: "#eef6f1",
-    border: "1px solid #cfe0d8",
-    color: "#1F4E3D",
+    background: highlight ? "rgba(255,255,255,0.12)" : "#eef6f1",
+    border: highlight ? "1px solid rgba(255,255,255,0.22)" : "1px solid #cfe0d8",
+    color: highlight ? "#ffffff" : "#1F4E3D",
     fontSize: 14,
     fontWeight: 800,
     lineHeight: 1.4,
-  },
+  }),
   planPrice: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: 900,
     letterSpacing: "-0.03em",
     marginBottom: 10,
   },
-  planDescription: {
-    fontSize: 15,
-    lineHeight: 1.6,
-    marginBottom: 18,
-    color: "#667085",
+  planPriceLine: {
+    display: "block",
   },
   featureList: {
     listStyle: "none",
     padding: 0,
-    margin: "0 0 18px",
+    margin: "0 0 12px",
     display: "grid",
     gap: 10,
   },
-  featureItem: {
+  featureItem: (highlight) => ({
     display: "flex",
     gap: 10,
     alignItems: "flex-start",
     fontSize: 14,
     lineHeight: 1.5,
-    color: "#344054",
-  },
-  featureMark: {
+    color: highlight ? "rgba(255,255,255,0.92)" : "#344054",
+  }),
+  featureMark: (highlight) => ({
     flexShrink: 0,
     width: 22,
     height: 22,
@@ -179,19 +164,22 @@ const styles = {
     justifyContent: "center",
     fontSize: 12,
     fontWeight: 900,
-    background: "#1F4E3D",
+    background: highlight ? "rgba(255,255,255,0.2)" : "#1F4E3D",
     color: "#ffffff",
     marginTop: 1,
-  },
-  formStack: {
-    minWidth: 0,
-  },
+  }),
+  planFootnote: (highlight) => ({
+    fontSize: 12,
+    lineHeight: 1.5,
+    color: highlight ? "rgba(255,255,255,0.78)" : "#667085",
+  }),
   formCard: {
     background: "#ffffff",
     border: "1px solid #d9e0ea",
     borderRadius: 28,
     boxShadow: "0 12px 30px rgba(15, 23, 32, 0.04)",
     overflow: "hidden",
+    marginBottom: 28,
   },
   formCardHeader: {
     padding: "26px 24px 18px",
@@ -315,6 +303,13 @@ const styles = {
     fontWeight: 700,
     textDecoration: "underline",
   },
+  chartSectionTitle: {
+    fontSize: 18,
+    fontWeight: 900,
+    letterSpacing: "-0.02em",
+    margin: "0 0 14px",
+    color: "#101828",
+  },
 };
 
 function submitBtnStyle(disabled) {
@@ -370,6 +365,14 @@ function PasswordInput({
   );
 }
 
+function featureLabelsForPlan(planKey, features) {
+  if (!planKey || !Array.isArray(features)) return [];
+  return features
+    .filter((row) => row?.[planKey] === true)
+    .map((row) => row.label)
+    .filter(Boolean);
+}
+
 export default function FoodTruckSignup() {
   const { t } = useLanguage();
   const [searchParams] = useSearchParams();
@@ -392,18 +395,40 @@ export default function FoodTruckSignup() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreements, setAgreements] = useState({ legalConsent: false });
-  const [plansByCode, setPlansByCode] = useState(() => indexPlansByCode());
+  const [sdChart, setSdChart] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
-    fetchCheckoutPlanOptionsForDisplay().then((result) => {
-      if (cancelled) return;
-      setPlansByCode(indexPlansByCode(result.plans));
-    });
+    (async () => {
+      try {
+        const res = await fetch(
+          `${API_BASE}/api/public/subscription-comparison?audience=food_truck`
+        );
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = await res.json();
+        if (!json?.ok || !Array.isArray(json.plans)) return;
+        if (!cancelled) setSdChart(json);
+      } catch {
+        if (!cancelled) setSdChart(null);
+      }
+    })();
     return () => {
       cancelled = true;
     };
   }, []);
+
+  const planCards = useMemo(() => {
+    const plans = Array.isArray(sdChart?.plans) ? sdChart.plans : [];
+    return plans.map((plan) => ({
+      key: plan.key,
+      name: plan.name,
+      commission: plan.commission || "",
+      prices: Array.isArray(plan.prices) ? plan.prices : [],
+      highlight: Boolean(plan.highlight),
+      badge: plan.badge_text || null,
+      features: featureLabelsForPlan(plan.key, sdChart?.features),
+    }));
+  }, [sdChart]);
 
   function handleChange(event) {
     const { name, value } = event.target;
@@ -450,7 +475,7 @@ export default function FoodTruckSignup() {
     setSubmitting(true);
 
     try {
-      const res = await fetch(`${API}/owner/profile`, {
+      const res = await fetch(`${API_BASE}/owner/profile`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -525,208 +550,218 @@ export default function FoodTruckSignup() {
             <div style={styles.eyebrow}>{t("foodTruck.signup.title", "Food truck sign up")}</div>
             <h1 style={styles.heading}>{t("foodTruck.signup.subtitle", "List your truck and share your live menu with diners.")}</h1>
             <div style={styles.subheading}>
-              Join Menuply with a food truck plan built for mobile operators. Create your account, verify email, upload your menu, choose the food-truck plan, and finish your public profile before entering the Operator Panel.
+              Compare Food Truck Standard and Food Truck Founders, create your account, verify email, upload your menu, and finish your public profile before entering the Operator Panel.
             </div>
           </div>
         </header>
 
         {serverError ? <div style={styles.errorBanner}>{serverError}</div> : null}
 
-        <div style={styles.contentGrid}>
-          <aside style={styles.pricingCard}>
-            <div style={styles.planBadge}>Annual plan</div>
-            <div style={styles.planName}>Food Truck</div>
-            <div style={styles.commissionDisclosure}>
-              {getMarketplaceCommissionDisclosure(FOOD_TRUCK_ANNUAL_PLAN_CODE, { plansByCode })}
-            </div>
-            <div style={styles.planPrice}>{CHECKOUT_PRICE_LABELS[FOOD_TRUCK_ANNUAL_PLAN_CODE]}</div>
-            <div style={styles.planDescription}>
-              Build a professional digital presence for your Food Truck — discovery, menus, social sharing, and online ordering.
-            </div>
-            <ul style={styles.featureList}>
-              {PLAN_FEATURES.map((feature) => (
-                <li key={feature} style={styles.featureItem}>
-                  <span style={styles.featureMark}>&#10003;</span>
-                  <span>{feature}</span>
-                </li>
-              ))}
-            </ul>
-            <div style={styles.planFootnote}>
-              Create your account here. Merchant onboarding and delivery configuration remain in the Operator Panel after onboarding is complete.
-            </div>
-          </aside>
-
-          <div style={styles.formStack}>
-            <div style={styles.formCard}>
-              <div style={styles.formCardHeader}>
-                <h2 style={styles.formCardTitle}>Create your account</h2>
-                <div style={{ ...styles.helperText, marginTop: 8 }}>
-                  These basics create your food-truck account and listing. Menu upload, plan selection, and public profile details come next.
-                </div>
-              </div>
-
-              <form onSubmit={handleSubmit} noValidate style={styles.formCardBody}>
-                <div style={styles.section}>
-                  <div style={styles.sectionTitle}>Account</div>
-
-                  <div style={styles.fieldGroup}>
-                    <label htmlFor="email" style={styles.label}>
-                      Email<span style={styles.required}>*</span>
-                    </label>
-                    <input
-                      id="email"
-                      name="email"
-                      type="email"
-                      autoComplete="email"
-                      value={form.email}
-                      onChange={handleChange}
-                      style={fieldErrors.email ? styles.inputError : styles.input}
-                    />
-                    {fieldErrors.email ? <div style={styles.fieldError}>{fieldErrors.email}</div> : null}
-                  </div>
-
-                  <PasswordInput
-                    id="password"
-                    name="password"
-                    label="Password"
-                    value={form.password}
-                    visible={showPassword}
-                    onChange={handleChange}
-                    onToggle={() => setShowPassword((current) => !current)}
-                    error={fieldErrors.password}
-                  />
-
-                  <PasswordInput
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    label="Confirm password"
-                    value={form.confirmPassword}
-                    visible={showConfirmPassword}
-                    onChange={handleChange}
-                    onToggle={() => setShowConfirmPassword((current) => !current)}
-                    error={fieldErrors.confirmPassword}
-                  />
-
-                  {!fieldErrors.confirmPassword && form.confirmPassword ? (
-                    <div style={styles.helperText}>
-                      {form.password === form.confirmPassword ? "Passwords match." : "Passwords do not match."}
-                    </div>
-                  ) : null}
-
-                  <div style={styles.fieldGroup}>
-                    <label htmlFor="truck_name" style={styles.label}>
-                      Food Truck Name<span style={styles.required}>*</span>
-                    </label>
-                    <input
-                      id="truck_name"
-                      name="truck_name"
-                      type="text"
-                      autoComplete="organization"
-                      value={form.truck_name}
-                      onChange={handleChange}
-                      style={fieldErrors.truck_name ? styles.inputError : styles.input}
-                    />
-                    {fieldErrors.truck_name ? <div style={styles.fieldError}>{fieldErrors.truck_name}</div> : null}
-                  </div>
-
-                  <div style={styles.fieldGroup}>
-                    <label htmlFor="city" style={styles.label}>
-                      City<span style={styles.required}>*</span>
-                    </label>
-                    <input
-                      id="city"
-                      name="city"
-                      type="text"
-                      autoComplete="address-level2"
-                      value={form.city}
-                      onChange={handleChange}
-                      style={fieldErrors.city ? styles.inputError : styles.input}
-                    />
-                    {fieldErrors.city ? <div style={styles.fieldError}>{fieldErrors.city}</div> : null}
-                  </div>
-
-                  <div style={styles.fieldGroup}>
-                    <label htmlFor="state" style={styles.label}>
-                      State<span style={styles.required}>*</span>
-                    </label>
-                    <input
-                      id="state"
-                      name="state"
-                      type="text"
-                      autoComplete="address-level1"
-                      value={form.state}
-                      onChange={handleChange}
-                      style={fieldErrors.state ? styles.inputError : styles.input}
-                    />
-                    {fieldErrors.state ? <div style={styles.fieldError}>{fieldErrors.state}</div> : null}
-                  </div>
-
-                  <div style={styles.fieldGroup}>
-                    <label htmlFor="owner_name" style={styles.label}>
-                      Owner name<span style={styles.required}>*</span>
-                    </label>
-                    <input
-                      id="owner_name"
-                      name="owner_name"
-                      type="text"
-                      autoComplete="name"
-                      value={form.owner_name}
-                      onChange={handleChange}
-                      style={fieldErrors.owner_name ? styles.inputError : styles.input}
-                    />
-                    {fieldErrors.owner_name ? <div style={styles.fieldError}>{fieldErrors.owner_name}</div> : null}
-                  </div>
-
-                  <div style={styles.fieldGroup}>
-                    <label htmlFor="phone" style={styles.label}>
-                      Phone number<span style={styles.required}>*</span>
-                    </label>
-                    <input
-                      id="phone"
-                      name="phone"
-                      type="tel"
-                      autoComplete="tel"
-                      value={form.phone}
-                      onChange={handleChange}
-                      style={fieldErrors.phone ? styles.inputError : styles.input}
-                    />
-                    {fieldErrors.phone ? <div style={styles.fieldError}>{fieldErrors.phone}</div> : null}
-                  </div>
-                </div>
-
-                <div style={styles.section}>
-                  <div style={styles.sectionTitle}>Legal</div>
-
-                  <label style={styles.checkboxRow}>
-                    <input
-                      type="checkbox"
-                      name="legalConsent"
-                      checked={agreements.legalConsent}
-                      onChange={handleAgreementChange}
-                      style={styles.checkbox}
-                    />
-                    <span style={styles.checkboxLabel}>
-                      I agree to the{" "}
-                      <Link to="/terms" target="_blank" rel="noreferrer" style={styles.legalLink}>
-                        Terms of Use
-                      </Link>
-                      {" "}and{" "}
-                      <Link to="/privacy" target="_blank" rel="noreferrer" style={styles.legalLink}>
-                        Privacy Policy
-                      </Link>
-                      {" "}and consent to receive electronic communications from Menuply regarding my account, orders, services, and important updates.
+        {planCards.length ? (
+          <section style={styles.cardsGrid} aria-label="Food truck plans">
+            {planCards.map((plan) => (
+              <article key={plan.key} style={styles.pricingCard(plan.highlight)}>
+                {plan.badge ? <div style={styles.planBadge(plan.highlight)}>{plan.badge}</div> : null}
+                <div style={styles.planName}>{plan.name}</div>
+                {plan.commission ? (
+                  <div style={styles.commissionDisclosure(plan.highlight)}>{plan.commission}</div>
+                ) : null}
+                <div style={styles.planPrice}>
+                  {(plan.prices.length ? plan.prices : ["—"]).map((line) => (
+                    <span key={line} style={styles.planPriceLine}>
+                      {line}
                     </span>
-                  </label>
-                  {fieldErrors.legalConsent ? <div style={styles.fieldError}>{fieldErrors.legalConsent}</div> : null}
+                  ))}
                 </div>
+                {plan.features.length ? (
+                  <ul style={styles.featureList}>
+                    {plan.features.map((feature) => (
+                      <li key={feature} style={styles.featureItem(plan.highlight)}>
+                        <span style={styles.featureMark(plan.highlight)}>&#10003;</span>
+                        <span>{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+                <div style={styles.planFootnote(plan.highlight)}>
+                  Create your account below. Checkout for Food Truck Founders happens later in the Operator Panel.
+                </div>
+              </article>
+            ))}
+          </section>
+        ) : null}
 
-                <button type="submit" style={submitBtnStyle(submitting)} disabled={submitting}>
-                  {submitting ? "Creating account..." : "Create account"}
-                </button>
-              </form>
+        <div style={styles.formCard}>
+          <div style={styles.formCardHeader}>
+            <h2 style={styles.formCardTitle}>Create your account</h2>
+            <div style={{ ...styles.helperText, marginTop: 8 }}>
+              These basics create your food-truck account and listing. Menu upload, Food Truck Founders checkout, and public profile details come next.
             </div>
           </div>
+
+          <form onSubmit={handleSubmit} noValidate style={styles.formCardBody}>
+            <div style={styles.section}>
+              <div style={styles.sectionTitle}>Account</div>
+
+              <div style={styles.fieldGroup}>
+                <label htmlFor="email" style={styles.label}>
+                  Email<span style={styles.required}>*</span>
+                </label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  value={form.email}
+                  onChange={handleChange}
+                  style={fieldErrors.email ? styles.inputError : styles.input}
+                />
+                {fieldErrors.email ? <div style={styles.fieldError}>{fieldErrors.email}</div> : null}
+              </div>
+
+              <PasswordInput
+                id="password"
+                name="password"
+                label="Password"
+                value={form.password}
+                visible={showPassword}
+                onChange={handleChange}
+                onToggle={() => setShowPassword((current) => !current)}
+                error={fieldErrors.password}
+              />
+
+              <PasswordInput
+                id="confirmPassword"
+                name="confirmPassword"
+                label="Confirm password"
+                value={form.confirmPassword}
+                visible={showConfirmPassword}
+                onChange={handleChange}
+                onToggle={() => setShowConfirmPassword((current) => !current)}
+                error={fieldErrors.confirmPassword}
+              />
+
+              {!fieldErrors.confirmPassword && form.confirmPassword ? (
+                <div style={styles.helperText}>
+                  {form.password === form.confirmPassword ? "Passwords match." : "Passwords do not match."}
+                </div>
+              ) : null}
+
+              <div style={styles.fieldGroup}>
+                <label htmlFor="truck_name" style={styles.label}>
+                  Food Truck Name<span style={styles.required}>*</span>
+                </label>
+                <input
+                  id="truck_name"
+                  name="truck_name"
+                  type="text"
+                  autoComplete="organization"
+                  value={form.truck_name}
+                  onChange={handleChange}
+                  style={fieldErrors.truck_name ? styles.inputError : styles.input}
+                />
+                {fieldErrors.truck_name ? <div style={styles.fieldError}>{fieldErrors.truck_name}</div> : null}
+              </div>
+
+              <div style={styles.fieldGroup}>
+                <label htmlFor="city" style={styles.label}>
+                  City<span style={styles.required}>*</span>
+                </label>
+                <input
+                  id="city"
+                  name="city"
+                  type="text"
+                  autoComplete="address-level2"
+                  value={form.city}
+                  onChange={handleChange}
+                  style={fieldErrors.city ? styles.inputError : styles.input}
+                />
+                {fieldErrors.city ? <div style={styles.fieldError}>{fieldErrors.city}</div> : null}
+              </div>
+
+              <div style={styles.fieldGroup}>
+                <label htmlFor="state" style={styles.label}>
+                  State<span style={styles.required}>*</span>
+                </label>
+                <input
+                  id="state"
+                  name="state"
+                  type="text"
+                  autoComplete="address-level1"
+                  value={form.state}
+                  onChange={handleChange}
+                  style={fieldErrors.state ? styles.inputError : styles.input}
+                />
+                {fieldErrors.state ? <div style={styles.fieldError}>{fieldErrors.state}</div> : null}
+              </div>
+
+              <div style={styles.fieldGroup}>
+                <label htmlFor="owner_name" style={styles.label}>
+                  Owner name<span style={styles.required}>*</span>
+                </label>
+                <input
+                  id="owner_name"
+                  name="owner_name"
+                  type="text"
+                  autoComplete="name"
+                  value={form.owner_name}
+                  onChange={handleChange}
+                  style={fieldErrors.owner_name ? styles.inputError : styles.input}
+                />
+                {fieldErrors.owner_name ? <div style={styles.fieldError}>{fieldErrors.owner_name}</div> : null}
+              </div>
+
+              <div style={styles.fieldGroup}>
+                <label htmlFor="phone" style={styles.label}>
+                  Phone number<span style={styles.required}>*</span>
+                </label>
+                <input
+                  id="phone"
+                  name="phone"
+                  type="tel"
+                  autoComplete="tel"
+                  value={form.phone}
+                  onChange={handleChange}
+                  style={fieldErrors.phone ? styles.inputError : styles.input}
+                />
+                {fieldErrors.phone ? <div style={styles.fieldError}>{fieldErrors.phone}</div> : null}
+              </div>
+            </div>
+
+            <div style={styles.section}>
+              <div style={styles.sectionTitle}>Legal</div>
+
+              <label style={styles.checkboxRow}>
+                <input
+                  type="checkbox"
+                  name="legalConsent"
+                  checked={agreements.legalConsent}
+                  onChange={handleAgreementChange}
+                  style={styles.checkbox}
+                />
+                <span style={styles.checkboxLabel}>
+                  I agree to the{" "}
+                  <Link to="/terms" target="_blank" rel="noreferrer" style={styles.legalLink}>
+                    Terms of Use
+                  </Link>
+                  {" "}and{" "}
+                  <Link to="/privacy" target="_blank" rel="noreferrer" style={styles.legalLink}>
+                    Privacy Policy
+                  </Link>
+                  {" "}and consent to receive electronic communications from Menuply regarding my account, orders, services, and important updates.
+                </span>
+              </label>
+              {fieldErrors.legalConsent ? <div style={styles.fieldError}>{fieldErrors.legalConsent}</div> : null}
+            </div>
+
+            <button type="submit" style={submitBtnStyle(submitting)} disabled={submitting}>
+              {submitting ? "Creating account..." : "Create account"}
+            </button>
+          </form>
         </div>
+
+        <h2 style={styles.chartSectionTitle}>Compare food truck plans</h2>
+        <PlanComparisonTable audience="food_truck" />
       </div>
     </div>
   );

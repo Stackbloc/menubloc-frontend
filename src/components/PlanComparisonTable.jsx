@@ -207,14 +207,21 @@ function fallbackPayload() {
 
 /**
  * @param {{ plans?: object[], features?: object[], footnote?: string }} [props.data]
+ * @param {"restaurant"|"food_truck"} [props.audience] public chart audience (default restaurant)
  */
-export default function PlanComparisonTable({ data: injectedData = null } = {}) {
+export default function PlanComparisonTable({
+  data: injectedData = null,
+  audience = "restaurant",
+} = {}) {
+  const chartAudience = audience === "food_truck" ? "food_truck" : "restaurant";
+  const allowRestaurantFallback = chartAudience === "restaurant";
+
   const [chart, setChart] = useState(() => {
     if (injectedData) {
       return normalizeApiPayload({ ok: true, ...injectedData }) || null;
     }
-    // Do not paint fallback until fetch settles in strict/dev modes.
-    return isStrictChartMode() ? null : fallbackPayload();
+    // Do not paint restaurant fallback for food_truck or until fetch settles in strict/dev.
+    return isStrictChartMode() || !allowRestaurantFallback ? null : fallbackPayload();
   });
   const [loadError, setLoadError] = useState(null);
   const [usedFallback, setUsedFallback] = useState(false);
@@ -235,7 +242,7 @@ export default function PlanComparisonTable({ data: injectedData = null } = {}) 
     (async () => {
       try {
         const res = await fetch(
-          `${API_BASE}/api/public/subscription-comparison?audience=restaurant`
+          `${API_BASE}/api/public/subscription-comparison?audience=${encodeURIComponent(chartAudience)}`
         );
         if (!res.ok) {
           throw new Error(`HTTP ${res.status}`);
@@ -252,9 +259,13 @@ export default function PlanComparisonTable({ data: injectedData = null } = {}) 
         }
       } catch (err) {
         const reason = err?.message || "fetch_failed";
-        logFallback(reason, { api: `${API_BASE}/api/public/subscription-comparison` });
+        logFallback(reason, {
+          api: `${API_BASE}/api/public/subscription-comparison`,
+          audience: chartAudience,
+        });
         if (cancelled) return;
-        if (isStrictChartMode()) {
+        // Restaurant-only hardcoded fallback — never paint restaurant columns for food_truck.
+        if (isStrictChartMode() || !allowRestaurantFallback) {
           setChart(null);
           setLoadError(
             `Subscription Designer chart unavailable (${reason}). Fallback disabled in development/test.`
@@ -270,7 +281,7 @@ export default function PlanComparisonTable({ data: injectedData = null } = {}) 
     return () => {
       cancelled = true;
     };
-  }, [injectedData]);
+  }, [injectedData, chartAudience, allowRestaurantFallback]);
 
   if (loadError && !chart) {
     return (
