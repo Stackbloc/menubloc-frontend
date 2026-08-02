@@ -14,6 +14,13 @@ test("ClusterDishChip renders restaurant_name on each dish row", () => {
   assert.match(src, /data-testid="cluster-dish-name"/);
 });
 
+test("ClusterDishChip shows consumer display price when present", () => {
+  assert.match(src, /getConsumerDisplayPrice/);
+  assert.match(src, /formatMoney/);
+  assert.match(src, /from ["'].*pricingDisplay\.js["']/);
+  assert.match(src, /data-testid="cluster-dish-price"/);
+});
+
 test("ClusterDishChip avoids full-width green wash fill", () => {
   assert.match(src, /CLUSTER_DISH_CHIP_STYLE/);
   assert.match(src, /borderLeft:\s*"3px solid #16a34a"/);

@@ -2,6 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { restaurantMenuPathFromRow } from "../../lib/canonicalUrl.js";
 import { appendClusterReturnQuery } from "../../lib/clusterReturnNavigation.js";
+import { formatMoney, getConsumerDisplayPrice } from "../../lib/pricingDisplay.js";
 
 export const CLUSTER_PLACEHOLDER_FOOD_CARD_STYLE = {
   display: "grid",
@@ -80,21 +81,49 @@ function buildDishHref(item, clusterReturnTo, clusterReturnLabel) {
 
 function ClusterDishChipContent({ item }) {
   const restaurantName = String(item?.restaurant_name || "").trim();
+  const priceCents = getConsumerDisplayPrice(item);
+  const priceLabel = priceCents != null ? formatMoney(priceCents) : null;
 
   return (
     <>
       <span style={{ display: "grid", gap: "0.15rem", minWidth: 0, flex: 1 }}>
         <span
-          data-testid="cluster-dish-name"
           style={{
-            fontWeight: 650,
-            fontSize: "0.95rem",
-            lineHeight: 1.3,
-            color: "#111827",
-            overflowWrap: "anywhere",
+            display: "flex",
+            alignItems: "baseline",
+            justifyContent: "space-between",
+            gap: "0.75rem",
+            minWidth: 0,
           }}
         >
-          {item.name}
+          <span
+            data-testid="cluster-dish-name"
+            style={{
+              fontWeight: 650,
+              fontSize: "0.95rem",
+              lineHeight: 1.3,
+              color: "#111827",
+              overflowWrap: "anywhere",
+              minWidth: 0,
+            }}
+          >
+            {item.name}
+          </span>
+          {priceLabel ? (
+            <span
+              data-testid="cluster-dish-price"
+              style={{
+                flexShrink: 0,
+                fontWeight: 650,
+                fontSize: "0.9rem",
+                lineHeight: 1.3,
+                color: "#111827",
+                fontVariantNumeric: "tabular-nums",
+              }}
+            >
+              {priceLabel}
+            </span>
+          ) : null}
         </span>
         {restaurantName ? (
           <span

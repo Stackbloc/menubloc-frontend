@@ -30,6 +30,7 @@ import {
   resolveClusterDocumentMeta,
 } from "../lib/clusterSeoContent.js";
 import { toConsumerErrorMessage } from "../lib/api.js";
+import { getConsumerDisplayPrice } from "../lib/pricingDisplay.js";
 import {
   buildClusterReturnPath,
   buildClusterRestaurantsReturnPath,
@@ -298,8 +299,30 @@ function ClusterMenuExplorerTab({ clusterSlug, cluster, enabled }) {
   const [searchMenuItems, setSearchMenuItems] = useState([]);
   const [searchQueryMeta, setSearchQueryMeta] = useState(null);
   const [searchError, setSearchError] = useState("");
+  const [priceSort, setPriceSort] = useState("default");
 
   const searchActive = Boolean(submittedSearch.trim());
+
+  const displayItems = useMemo(() => {
+    if (!Array.isArray(items) || items.length === 0) return items;
+    if (priceSort !== "asc" && priceSort !== "desc") return items;
+
+    const decorated = items.map((item, index) => ({
+      item,
+      index,
+      cents: getConsumerDisplayPrice(item),
+    }));
+    decorated.sort((a, b) => {
+      const aMissing = a.cents == null;
+      const bMissing = b.cents == null;
+      if (aMissing && bMissing) return a.index - b.index;
+      if (aMissing) return 1;
+      if (bMissing) return -1;
+      const diff = priceSort === "asc" ? a.cents - b.cents : b.cents - a.cents;
+      return diff !== 0 ? diff : a.index - b.index;
+    });
+    return decorated.map((row) => row.item);
+  }, [items, priceSort]);
 
   const clusterReturnTo = useMemo(
     () => (cluster ? buildClusterReturnPath(cluster, { view: CLUSTER_VIEW_MODES.MENU }) : null),
@@ -357,6 +380,7 @@ function ClusterMenuExplorerTab({ clusterSlug, cluster, enabled }) {
     setError("");
     setItems([]);
     setPagination(null);
+    setPriceSort("default");
 
     fetchClusterMenuItems(clusterSlug, {
       mksCategory: selectedCategory.code,
@@ -570,6 +594,46 @@ function ClusterMenuExplorerTab({ clusterSlug, cluster, enabled }) {
             <h2 style={{ margin: 0, fontSize: "1.15rem" }}>
               {categoryTitle}
             </h2>
+            <div
+              role="group"
+              aria-label="Sort by price"
+              style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem", marginLeft: "auto" }}
+            >
+              <button
+                type="button"
+                data-testid="cluster-food-price-sort-asc"
+                aria-pressed={priceSort === "asc"}
+                onClick={() => setPriceSort((prev) => (prev === "asc" ? "default" : "asc"))}
+                style={{
+                  padding: "0.4rem 0.65rem",
+                  borderRadius: 8,
+                  border: priceSort === "asc" ? "1px solid #111827" : "1px solid #d1d5db",
+                  background: priceSort === "asc" ? "#111827" : "#fff",
+                  color: priceSort === "asc" ? "#fff" : "#111827",
+                  cursor: "pointer",
+                  fontSize: "0.82rem",
+                }}
+              >
+                Price: Low–High
+              </button>
+              <button
+                type="button"
+                data-testid="cluster-food-price-sort-desc"
+                aria-pressed={priceSort === "desc"}
+                onClick={() => setPriceSort((prev) => (prev === "desc" ? "default" : "desc"))}
+                style={{
+                  padding: "0.4rem 0.65rem",
+                  borderRadius: 8,
+                  border: priceSort === "desc" ? "1px solid #111827" : "1px solid #d1d5db",
+                  background: priceSort === "desc" ? "#111827" : "#fff",
+                  color: priceSort === "desc" ? "#fff" : "#111827",
+                  cursor: "pointer",
+                  fontSize: "0.82rem",
+                }}
+              >
+                High–Low
+              </button>
+            </div>
           </div>
           {status === "loading" ? <p style={{ color: "#666" }}>Loading {categoryTitle}…</p> : null}
           {status === "error" ? <p style={{ color: "#b91c1c" }}>{error}</p> : null}
@@ -578,9 +642,9 @@ function ClusterMenuExplorerTab({ clusterSlug, cluster, enabled }) {
               No items are listed in {categoryTitle} yet for this area.
             </p>
           ) : null}
-          {items.length > 0 ? (
+          {displayItems.length > 0 ? (
             <ClusterDishList
-              items={items}
+              items={displayItems}
               clusterReturnTo={clusterReturnTo}
               clusterReturnLabel={clusterDestinationLabel}
             />
