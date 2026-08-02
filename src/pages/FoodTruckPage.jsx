@@ -947,7 +947,11 @@ function MenuInline({ menuData, isDark, c, isMobile, language = "en" }) {
   const dealMap = useMemo(() => {
     const m = new Map();
     for (const d of menuData?.deal_items || []) {
-      if (d.id != null) m.set(d.id, d);
+      const key = d.menu_item_id ?? d.id;
+      if (key == null) continue;
+      m.set(key, d);
+      const numericKey = Number(key);
+      if (Number.isFinite(numericKey)) m.set(numericKey, d);
     }
     return m;
   }, [menuData]);

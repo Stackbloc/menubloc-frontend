@@ -1,6 +1,7 @@
 import ShareButton from "../share/ShareButton.jsx";
 import LikeMenuItemButton from "../LikeMenuItemButton.jsx";
 import PreferenceIngredientAdvisory from "../menu/PreferenceIngredientAdvisory.jsx";
+import MenuItemDealsIndicator from "../menu/MenuItemDealsIndicator.jsx";
 import { getLocalizedField } from "../../utils/getLocalizedField.js";
 import { getDisplayMenuItemName } from "../../utils/getDisplayMenuItemName.js";
 import { resolveIndulgencePresentation } from "../../lib/indulgencePresentation.js";
@@ -465,16 +466,26 @@ export default function PublicMenuItemCard({
                 {price ? (
                   <span
                     style={{
-                      fontSize: titleSize,
-                      fontWeight: 600,
-                      color: ed.ink,
+                      display: "inline-flex",
+                      alignItems: "center",
                       whiteSpace: "nowrap",
-                      fontVariantNumeric: "tabular-nums",
                       minWidth: MENU_ROW_PRICE_MIN_WIDTH,
-                      textAlign: "right",
+                      justifyContent: "flex-end",
                     }}
                   >
-                    {price}
+                    <span
+                      style={{
+                        fontSize: titleSize,
+                        fontWeight: 600,
+                        color: ed.ink,
+                        whiteSpace: "nowrap",
+                        fontVariantNumeric: "tabular-nums",
+                        textAlign: "right",
+                      }}
+                    >
+                      {price}
+                    </span>
+                    {hasDeal ? <MenuItemDealsIndicator onClick={openSheet} /> : null}
                   </span>
                 ) : null}
               </div>
@@ -520,7 +531,18 @@ export default function PublicMenuItemCard({
                   />
                 ) : null}
                 {price ? (
-                  <span style={{ fontSize: titleSize, fontWeight: 700, color: accent, whiteSpace: "nowrap", minWidth: MENU_ROW_PRICE_MIN_WIDTH, textAlign: "right" }}>{price}</span>
+                  <span
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      whiteSpace: "nowrap",
+                      minWidth: MENU_ROW_PRICE_MIN_WIDTH,
+                      justifyContent: "flex-end",
+                    }}
+                  >
+                    <span style={{ fontSize: titleSize, fontWeight: 700, color: accent, whiteSpace: "nowrap", textAlign: "right" }}>{price}</span>
+                    {hasDeal ? <MenuItemDealsIndicator onClick={openSheet} /> : null}
+                  </span>
                 ) : null}
               </div>
             </div>
@@ -565,7 +587,18 @@ export default function PublicMenuItemCard({
                   />
                 ) : null}
                 {price ? (
-                  <span style={{ fontSize: titleSize, fontWeight: 700, color: accent, whiteSpace: "nowrap", minWidth: MENU_ROW_PRICE_MIN_WIDTH, textAlign: "right" }}>{price}</span>
+                  <span
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      whiteSpace: "nowrap",
+                      minWidth: MENU_ROW_PRICE_MIN_WIDTH,
+                      justifyContent: "flex-end",
+                    }}
+                  >
+                    <span style={{ fontSize: titleSize, fontWeight: 700, color: accent, whiteSpace: "nowrap", textAlign: "right" }}>{price}</span>
+                    {hasDeal ? <MenuItemDealsIndicator onClick={openSheet} /> : null}
+                  </span>
                 ) : null}
               </div>
             </div>

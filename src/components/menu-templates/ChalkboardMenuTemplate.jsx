@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import ShareButton from "../share/ShareButton.jsx";
+import MenuItemDealsIndicator from "../menu/MenuItemDealsIndicator.jsx";
 import { getLocalizedField } from "../../utils/getLocalizedField.js";
 import { getDisplayMenuItemName } from "../../utils/getDisplayMenuItemName.js";
 import { resolveIndulgencePresentation } from "../../lib/indulgencePresentation.js";
@@ -97,8 +98,16 @@ function ChalkItem({ item, sectionIndex, itemIndex, ctx, accent }) {
           {name}
         </div>
         {price ? (
-          <div style={{ color: "#fffaf0", fontSize: 16, fontWeight: 900, whiteSpace: "nowrap" }}>
-            {price.replace("$", "")}
+          <div style={{ display: "inline-flex", alignItems: "center", color: "#fffaf0", fontSize: 16, fontWeight: 900, whiteSpace: "nowrap" }}>
+            <span>{price.replace("$", "")}</span>
+            {deal ? (
+              <MenuItemDealsIndicator
+                onClick={(e) => {
+                  e?.stopPropagation?.();
+                  openItem();
+                }}
+              />
+            ) : null}
           </div>
         ) : null}
       </div>
