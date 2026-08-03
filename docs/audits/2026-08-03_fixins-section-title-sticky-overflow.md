@@ -45,29 +45,27 @@ None (frontend layout bug).
 
 # Commits
 
-Not committed in this turn (pending Andre request / CPD).
+- FE `6137b04` — `fix(menu): stop Menu Appearance overflow from hiding section titles`
 
 # Deployment Status
 
-Not deployed. Live tip still `index-CGduqkJT.js` until FE CPD from `menubloc-frontend-main`.
+**CPD COMPLETE** — `menubloc-frontend-lqaskgcbb-menuply.vercel.app` / `index-DhdKors_.js` aliased to menuply.com + www; tip-gate PASS.
 
 # Verification Results
 
-- Contract tests: `publicMenuSectionTitleVisibilityContract`, `menuAppearanceContract`, waiter-hint + ordering-unavailable contracts — pass locally after change.
-- Live production still broken until CPD.
-- Isolated HTML A/B: removing overflow hidden restores title visibility with sticky header.
+- Contract tests: pass
+- Playwright Fixins after CPD: sticky.bottom 233, LIL' BITS top 261, gap +28, covered false
+- Tip-gate: RESULT=PASS
 
 # Remaining Risks
 
 - Appearance card children may paint slightly outside rounded corners without overflow clipping; acceptable trade for sticky correctness.
-- Scrolling can still tuck later section titles under the sticky name bar (normal sticky behavior); first title at rest must remain visible.
+- Scrolling can still tuck later section titles under the sticky name bar (normal sticky behavior); first title at rest remains visible.
 
 # Follow-Up Work
 
-1. Commit + FE CPD from clean `menubloc-frontend-main` @ `main` + tip-gate + alias.
-2. Playwright re-probe Fixins: sticky.bottom < title.top at scroll 0.
-3. Optional: shorten sticky header or stick only the name row so mid-menu section titles stay visible longer while scrolling.
+Optional: shorten sticky header or stick only the name row so mid-menu section titles stay visible longer while scrolling.
 
 # Final Verdict
 
-Data/seed was fine. Missing `LIL' BITS` was a Menu Appearance `overflow:hidden` × sticky-header layout bug. Fix is local; production needs FE CPD.
+Data/seed was fine. Missing `LIL' BITS` was a Menu Appearance overflow × sticky-header layout bug. Fixed and verified on production.
