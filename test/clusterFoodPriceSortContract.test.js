@@ -11,10 +11,17 @@ test("Cluster Food category list supports price sort Low-High and High-Low", () 
   assert.match(src, /const \[priceSort, setPriceSort\] = useState\("default"\)/);
   assert.match(src, /getConsumerDisplayPrice/);
   assert.match(src, /displayItems/);
+  assert.match(src, /applyClusterZoneAndPriceSort|getConsumerDisplayPrice/);
   assert.match(src, /data-testid="cluster-food-price-sort-asc"/);
   assert.match(src, /data-testid="cluster-food-price-sort-desc"/);
   assert.match(src, /Price: Low–High/);
   assert.match(src, /High–Low/);
   assert.match(src, /items=\{displayItems\}/);
   assert.match(src, /setPriceSort\("default"\)/);
+});
+
+test("Cluster Food price sort runs after optional zone filter", () => {
+  assert.match(src, /applyClusterZoneAndPriceSort/);
+  assert.match(src, /zone: selectedZone/);
+  assert.match(src, /priceSort/);
 });

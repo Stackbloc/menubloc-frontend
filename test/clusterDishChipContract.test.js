@@ -21,6 +21,10 @@ test("ClusterDishChip shows consumer display price when present", () => {
   assert.match(src, /data-testid="cluster-dish-price"/);
 });
 
+test("ClusterDishChip shows area when present", () => {
+  assert.match(src, /data-testid="cluster-dish-area"/);
+});
+
 test("ClusterDishChip avoids full-width green wash fill", () => {
   assert.match(src, /CLUSTER_DISH_CHIP_STYLE/);
   assert.match(src, /borderLeft:\s*"3px solid #16a34a"/);

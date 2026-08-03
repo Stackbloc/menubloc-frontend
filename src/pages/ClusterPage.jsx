@@ -32,6 +32,12 @@ import {
 import { toConsumerErrorMessage } from "../lib/api.js";
 import { getConsumerDisplayPrice } from "../lib/pricingDisplay.js";
 import {
+  applyClusterZoneAndPriceSort,
+  collectClusterZones,
+  getClusterDiningByZoneHeading,
+  getClusterZoneNoun,
+} from "../lib/clusterZoneBrowse.js";
+import {
   buildClusterReturnPath,
   buildClusterRestaurantsReturnPath,
   CLUSTER_FROM,
@@ -208,6 +214,7 @@ function ClusterRestaurantsTab({ clusterSlug, cluster, enabled, placeReturnPath,
   }
 
   const cuisineGroups = groupClusterRestaurantsByCuisine(restaurants);
+  const diningByZoneHeading = getClusterDiningByZoneHeading(cluster);
 
   return (
     <div style={{ display: "grid", gap: "0.75rem" }}>
@@ -232,7 +239,12 @@ function ClusterRestaurantsTab({ clusterSlug, cluster, enabled, placeReturnPath,
       ) : null}
       {placeholders.length > 0 ? (
         <div style={{ display: "grid", gap: "1rem", marginTop: restaurants.length > 0 ? "0.5rem" : 0 }}>
-          <h3 style={{ margin: 0, fontSize: "1.05rem", color: "#111827" }}>Dining by terminal</h3>
+          <h3
+            data-testid="cluster-dining-by-zone-heading"
+            style={{ margin: 0, fontSize: "1.05rem", color: "#111827" }}
+          >
+            {diningByZoneHeading}
+          </h3>
           {placeholderIntro ? (
             <p style={{ margin: 0, color: "#444", fontSize: "0.9rem", lineHeight: 1.45 }}>{placeholderIntro}</p>
           ) : null}
@@ -300,29 +312,28 @@ function ClusterMenuExplorerTab({ clusterSlug, cluster, enabled }) {
   const [searchQueryMeta, setSearchQueryMeta] = useState(null);
   const [searchError, setSearchError] = useState("");
   const [priceSort, setPriceSort] = useState("default");
+  const [selectedZone, setSelectedZone] = useState(null);
 
   const searchActive = Boolean(submittedSearch.trim());
 
-  const displayItems = useMemo(() => {
-    if (!Array.isArray(items) || items.length === 0) return items;
-    if (priceSort !== "asc" && priceSort !== "desc") return items;
+  const availableZones = useMemo(() => collectClusterZones(items), [items]);
+  const zoneNoun = useMemo(() => getClusterZoneNoun(cluster), [cluster]);
 
-    const decorated = items.map((item, index) => ({
-      item,
-      index,
-      cents: getConsumerDisplayPrice(item),
-    }));
-    decorated.sort((a, b) => {
-      const aMissing = a.cents == null;
-      const bMissing = b.cents == null;
-      if (aMissing && bMissing) return a.index - b.index;
-      if (aMissing) return 1;
-      if (bMissing) return -1;
-      const diff = priceSort === "asc" ? a.cents - b.cents : b.cents - a.cents;
-      return diff !== 0 ? diff : a.index - b.index;
-    });
-    return decorated.map((row) => row.item);
-  }, [items, priceSort]);
+  useEffect(() => {
+    if (selectedZone && availableZones.length > 0 && !availableZones.includes(selectedZone)) {
+      setSelectedZone(null);
+    }
+  }, [selectedZone, availableZones]);
+
+  const displayItems = useMemo(
+    () =>
+      applyClusterZoneAndPriceSort(items, {
+        zone: selectedZone,
+        priceSort,
+        getPriceCents: getConsumerDisplayPrice,
+      }),
+    [items, selectedZone, priceSort],
+  );
 
   const clusterReturnTo = useMemo(
     () => (cluster ? buildClusterReturnPath(cluster, { view: CLUSTER_VIEW_MODES.MENU }) : null),
@@ -381,6 +392,7 @@ function ClusterMenuExplorerTab({ clusterSlug, cluster, enabled }) {
     setItems([]);
     setPagination(null);
     setPriceSort("default");
+    setSelectedZone(null);
 
     fetchClusterMenuItems(clusterSlug, {
       mksCategory: selectedCategory.code,
@@ -635,11 +647,66 @@ function ClusterMenuExplorerTab({ clusterSlug, cluster, enabled }) {
               </button>
             </div>
           </div>
+          {availableZones.length > 0 ? (
+            <div
+              role="group"
+              aria-label={`Filter by ${zoneNoun.toLowerCase()}`}
+              data-testid="cluster-food-zone-filter"
+              style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}
+            >
+              <button
+                type="button"
+                data-testid="cluster-food-zone-all"
+                aria-pressed={selectedZone == null}
+                onClick={() => setSelectedZone(null)}
+                style={{
+                  padding: "0.35rem 0.65rem",
+                  borderRadius: 999,
+                  border: selectedZone == null ? "1px solid #111827" : "1px solid #d1d5db",
+                  background: selectedZone == null ? "#111827" : "#fff",
+                  color: selectedZone == null ? "#fff" : "#111827",
+                  cursor: "pointer",
+                  fontSize: "0.8rem",
+                }}
+              >
+                All {zoneNoun.toLowerCase()}s
+              </button>
+              {availableZones.map((zone) => {
+                const selected = selectedZone === zone;
+                const zoneTestId = `cluster-food-zone-${zone.replace(/\s+/g, "-").toLowerCase()}`;
+                return (
+                  <button
+                    key={zone}
+                    type="button"
+                    data-testid={zoneTestId}
+                    aria-pressed={selected}
+                    onClick={() => setSelectedZone((prev) => (prev === zone ? null : zone))}
+                    style={{
+                      padding: "0.35rem 0.65rem",
+                      borderRadius: 999,
+                      border: selected ? "1px solid #111827" : "1px solid #d1d5db",
+                      background: selected ? "#111827" : "#fff",
+                      color: selected ? "#fff" : "#111827",
+                      cursor: "pointer",
+                      fontSize: "0.8rem",
+                    }}
+                  >
+                    {zone}
+                  </button>
+                );
+              })}
+            </div>
+          ) : null}
           {status === "loading" ? <p style={{ color: "#666" }}>Loading {categoryTitle}…</p> : null}
           {status === "error" ? <p style={{ color: "#b91c1c" }}>{error}</p> : null}
           {status === "ok" && items.length === 0 ? (
             <p style={{ color: "#6b7280", margin: 0 }}>
               No items are listed in {categoryTitle} yet for this area.
+            </p>
+          ) : null}
+          {status === "ok" && items.length > 0 && displayItems.length === 0 ? (
+            <p style={{ color: "#6b7280", margin: 0 }} data-testid="cluster-food-zone-empty">
+              No {categoryTitle} items in {selectedZone || "this zone"} yet.
             </p>
           ) : null}
           {displayItems.length > 0 ? (

@@ -81,6 +81,7 @@ function buildDishHref(item, clusterReturnTo, clusterReturnLabel) {
 
 function ClusterDishChipContent({ item }) {
   const restaurantName = String(item?.restaurant_name || "").trim();
+  const area = String(item?.area || "").trim();
   const priceCents = getConsumerDisplayPrice(item);
   const priceLabel = priceCents != null ? formatMoney(priceCents) : null;
 
@@ -137,6 +138,20 @@ function ClusterDishChipContent({ item }) {
             }}
           >
             {restaurantName}
+          </span>
+        ) : null}
+        {area ? (
+          <span
+            data-testid="cluster-dish-area"
+            style={{
+              fontWeight: 500,
+              fontSize: "0.75rem",
+              lineHeight: 1.3,
+              color: "#9ca3af",
+              overflowWrap: "anywhere",
+            }}
+          >
+            {area}
           </span>
         ) : null}
       </span>
