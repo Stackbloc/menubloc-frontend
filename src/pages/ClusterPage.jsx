@@ -558,6 +558,16 @@ function ClusterMenuExplorerTab({ clusterSlug, cluster, enabled }) {
           {searchStatus === "ok" && searchMenuItems.length === 0 ? (
             <p style={{ color: "#888", margin: 0 }}>No food in this area matches “{submittedSearch}”.</p>
           ) : null}
+          {searchStatus === "ok" && searchMenuItems.length > 0 ? (
+            <p
+              data-testid="cluster-food-search-result-count"
+              style={{ margin: 0, color: "#6b7280", fontSize: "0.9rem" }}
+              aria-live="polite"
+            >
+              Showing {searchMenuItems.length}{" "}
+              {searchMenuItems.length === 1 ? "result" : "results"}
+            </p>
+          ) : null}
           <div style={CLUSTER_SEARCH_GRID_STYLE}>
             {searchMenuItems.map((row) => {
               if (row?.placeholder_item) {
