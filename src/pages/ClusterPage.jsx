@@ -43,6 +43,13 @@ import {
   CLUSTER_FROM,
   clusterReturnLabel as getClusterReturnLabel,
 } from "../lib/clusterReturnNavigation.js";
+import {
+  CLUSTER_DRINK_SUBCATEGORY_ALL,
+  CLUSTER_DRINK_SUBCATEGORY_CHIPS,
+  isClusterBeveragesCategory,
+  normalizeClusterDrinkSubcategory,
+} from "../lib/clusterDrinkSubcategories.js";
+import ChipRail from "../components/chips/ChipRail.jsx";
 
 const CANONICAL_BASE = "https://menuply.com";
 const CLUSTER_VIEW_MODES = Object.freeze({
@@ -313,8 +320,10 @@ function ClusterMenuExplorerTab({ clusterSlug, cluster, enabled }) {
   const [searchError, setSearchError] = useState("");
   const [priceSort, setPriceSort] = useState("default");
   const [selectedZone, setSelectedZone] = useState(null);
+  const [drinkSubcategory, setDrinkSubcategory] = useState(CLUSTER_DRINK_SUBCATEGORY_ALL);
 
   const searchActive = Boolean(submittedSearch.trim());
+  const drinksCategorySelected = isClusterBeveragesCategory(selectedCategory);
 
   const availableZones = useMemo(() => collectClusterZones(items), [items]);
   const zoneNoun = useMemo(() => getClusterZoneNoun(cluster), [cluster]);
@@ -394,8 +403,15 @@ function ClusterMenuExplorerTab({ clusterSlug, cluster, enabled }) {
     setPriceSort("default");
     setSelectedZone(null);
 
+    const drinkCategory =
+      isClusterBeveragesCategory(selectedCategory) &&
+      drinkSubcategory !== CLUSTER_DRINK_SUBCATEGORY_ALL
+        ? drinkSubcategory
+        : null;
+
     fetchClusterMenuItems(clusterSlug, {
       mksCategory: selectedCategory.code,
+      drinkCategory,
       limit: PAGE_SIZE,
       offset: 0,
       signal: controller.signal,
@@ -413,7 +429,7 @@ function ClusterMenuExplorerTab({ clusterSlug, cluster, enabled }) {
       });
 
     return () => controller.abort();
-  }, [clusterSlug, enabled, selectedCategory?.code, searchActive]);
+  }, [clusterSlug, enabled, selectedCategory?.code, drinkSubcategory, searchActive]);
 
   useEffect(() => {
     if (!enabled || !clusterSlug || !searchActive) {
@@ -450,8 +466,14 @@ function ClusterMenuExplorerTab({ clusterSlug, cluster, enabled }) {
     setError("");
 
     try {
+      const drinkCategory =
+        isClusterBeveragesCategory(selectedCategory) &&
+        drinkSubcategory !== CLUSTER_DRINK_SUBCATEGORY_ALL
+          ? drinkSubcategory
+          : null;
       const data = await fetchClusterMenuItems(clusterSlug, {
         mksCategory: selectedCategory.code,
+        drinkCategory,
         limit: PAGE_SIZE,
         offset: items.length,
       });
@@ -602,7 +624,10 @@ function ClusterMenuExplorerTab({ clusterSlug, cluster, enabled }) {
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", alignItems: "center" }}>
             <button
               type="button"
-              onClick={() => setSelectedCategory(null)}
+              onClick={() => {
+                setDrinkSubcategory(CLUSTER_DRINK_SUBCATEGORY_ALL);
+                setSelectedCategory(null);
+              }}
               style={{
                 padding: "0.45rem 0.75rem",
                 borderRadius: 8,
@@ -707,6 +732,42 @@ function ClusterMenuExplorerTab({ clusterSlug, cluster, enabled }) {
               })}
             </div>
           ) : null}
+          {drinksCategorySelected ? (
+            <ChipRail
+              data-testid="cluster-food-drink-subcategory-chips"
+              aria-label="Drink subcategories"
+              style={{ paddingTop: 2, paddingBottom: 2 }}
+            >
+              {CLUSTER_DRINK_SUBCATEGORY_CHIPS.map((chip) => {
+                const selected = drinkSubcategory === chip.id;
+                return (
+                  <button
+                    key={chip.id}
+                    type="button"
+                    data-testid={`cluster-food-drink-${chip.id}`}
+                    aria-pressed={selected}
+                    onClick={() =>
+                      setDrinkSubcategory(normalizeClusterDrinkSubcategory(chip.id))
+                    }
+                    style={{
+                      flexShrink: 0,
+                      padding: "7px 16px",
+                      borderRadius: 999,
+                      border: selected ? "1px solid #111827" : "1px solid #d1d5db",
+                      background: selected ? "#111827" : "transparent",
+                      color: selected ? "#fff" : "#374151",
+                      fontWeight: 500,
+                      fontSize: 14,
+                      cursor: "pointer",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {chip.label}
+                  </button>
+                );
+              })}
+            </ChipRail>
+          ) : null}
           {status === "loading" ? <p style={{ color: "#666" }}>Loading {categoryTitle}…</p> : null}
           {status === "error" ? <p style={{ color: "#b91c1c" }}>{error}</p> : null}
           {status === "ok" && items.length === 0 ? (
@@ -752,7 +813,13 @@ function ClusterMenuExplorerTab({ clusterSlug, cluster, enabled }) {
           {mksCategories.length === 0 && status === "ok" ? (
             <p style={{ color: "#888" }}>No food is listed in this area yet.</p>
           ) : null}
-          <ClusterMksCategoryGrid categories={mksCategories} onSelect={setSelectedCategory} />
+          <ClusterMksCategoryGrid
+            categories={mksCategories}
+            onSelect={(category) => {
+              setDrinkSubcategory(CLUSTER_DRINK_SUBCATEGORY_ALL);
+              setSelectedCategory(category);
+            }}
+          />
         </div>
       )}
     </div>
