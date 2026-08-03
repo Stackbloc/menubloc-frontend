@@ -16,4 +16,8 @@ Remove the floating **Order** primary-action chip from food-truck public profile
 
 ## Deployment
 
-Pending this CPD turn.
+- Commit: `80fd4f8` on `menubloc-frontend-main` @ `main`
+- Deploy: `menubloc-frontend-ixz8kvkog-menuply.vercel.app`
+- Bundle: `index-C2Xq7ap7.js`
+- Aliased: `menuply.com` + `www.menuply.com`
+- Tip-gate: PASS (apex + www)
