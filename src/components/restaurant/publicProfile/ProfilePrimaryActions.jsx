@@ -1,11 +1,13 @@
 /**
- * Primary profile actions — Order / Claim only.
+ * Primary profile actions — Order (restaurants) / Claim.
+ * Food trucks: no Order chip — menu is hero View Menu + Menu Preview / Full Menu.
  * Phone, website, directions live once in the hero (Maps + contact).
  */
 import { Link } from "react-router-dom";
 import { actionChipStyle, canShowOrderAction } from "./profilePrimitives.jsx";
 
 export default function ProfilePrimaryActions({
+  profileType = "restaurant",
   profile = null,
   menuHref = null,
   directionsUrl = null,
@@ -19,7 +21,8 @@ export default function ProfilePrimaryActions({
   void directionsUrl;
   void phone;
   void website;
-  const showOrder = canShowOrderAction(profile, menuHref);
+  const isFoodTruck = profileType === "food_truck";
+  const showOrder = !isFoodTruck && canShowOrderAction(profile, menuHref);
 
   const chips = [];
   if (showOrder) {

@@ -259,6 +259,7 @@ export default function PublicProfileShell({
         }}
       >
         <ProfilePrimaryActions
+          profileType={profileType}
           profile={profile}
           menuHref={menuHref}
           directionsUrl={actionDirectionsUrl}

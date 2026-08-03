@@ -19,6 +19,15 @@ test("demo food truck keeps ordering labeled unavailable and links to menu via i
   assert.doesNotMatch(source, /<MenuInline/);
 });
 
+test("food truck profile does not render a standalone Order action chip", () => {
+  const actions = fs.readFileSync(
+    path.join(currentDir, "..", "src/components/restaurant/publicProfile/ProfilePrimaryActions.jsx"),
+    "utf8"
+  );
+  assert.match(actions, /profileType === "food_truck"/);
+  assert.match(actions, /!isFoodTruck && canShowOrderAction/);
+});
+
 test("internal demo status is not read by the public food truck page", () => {
   assert.doesNotMatch(source, /\.is_demo/);
 });

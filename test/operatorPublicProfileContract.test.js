@@ -261,6 +261,11 @@ function testSharedPublicProfileShell() {
   assert.doesNotMatch(actions, /profile-action-website/);
   assert.match(actions, /canShowOrderAction/);
   assert.match(actions, /profile-action-order/);
+  // Food trucks: Order chip is not part of the authorized profile design
+  // (hero View Menu + Menu Preview / Full Menu instead).
+  assert.match(actions, /profileType === "food_truck"/);
+  assert.match(actions, /!isFoodTruck && canShowOrderAction/);
+  assert.match(shell, /profileType=\{profileType\}/);
   assert.match(primitives, /display_only/);
   assert.match(primitives, /Located today/);
 }
