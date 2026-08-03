@@ -4,16 +4,10 @@
  * File: ShareModal.jsx
  * Date: 2026-04-03
  * Purpose:
- *   Mobile-first fallback share modal for Grubbid public pages.
+ *   Mobile-first share modal for Menuply public pages.
  *
- *   Provides share actions for:
- *   - Copy Link
- *   - SMS/Text
- *   - Email
- *   - Facebook
- *   - X
- *   - WhatsApp
- *
+ *   Primary action: Copy Link (paste into any app).
+ *   Also: SMS, Email, Facebook, X, WhatsApp, and optional device share.
  *   Supports:
  *   - variant="menu"
  *   - variant="dish"
@@ -35,6 +29,20 @@ const ACTION_KEYS = [
   { key: "whatsapp", labelKey: "share.whatsapp", fallback: "WhatsApp" },
 ];
 
+function canUseNativeShare(shareData) {
+  if (typeof navigator === "undefined" || typeof navigator.share !== "function") return false;
+  if (typeof navigator.canShare !== "function") return true;
+  try {
+    return navigator.canShare({
+      title: shareData?.title,
+      text: shareData?.text,
+      url: shareData?.url,
+    });
+  } catch {
+    return true;
+  }
+}
+
 function eventNameForAction(variant, action) {
   const prefix = variant === "dish" ? "dish_share" : "menu_share";
   switch (action) {
@@ -50,6 +58,8 @@ function eventNameForAction(variant, action) {
       return `${prefix}_x`;
     case "whatsapp":
       return `${prefix}_whatsapp`;
+    case "native":
+      return `${prefix}_native`;
     default:
       return "";
   }
@@ -120,6 +130,29 @@ export default function ShareModal({
     }
   }
 
+  async function handleNativeShare() {
+    if (!canUseNativeShare(shareData)) return;
+    try {
+      trackShareEvent(eventNameForAction(variant, "native"), analyticsContext);
+      if (variant === "menu") {
+        trackMenuShare({
+          restaurantId: analyticsContext?.restaurantId,
+          restaurantName: analyticsContext?.restaurantName,
+          menuId: analyticsContext?.menuId || analyticsContext?.restaurantId,
+          shareMethod: "native",
+        });
+      }
+      await navigator.share({
+        title: shareData?.title,
+        text: shareData?.text,
+        url: shareData?.url,
+      });
+      onClose?.();
+    } catch {
+      // User cancelled or share failed — keep modal open for Copy Link.
+    }
+  }
+
   function handleChannelClick(action) {
     const eventName = eventNameForAction(variant, action);
     if (eventName) trackShareEvent(eventName, analyticsContext);
@@ -134,28 +167,37 @@ export default function ShareModal({
     onClose?.();
   }
 
+  const isWide =
+    typeof window !== "undefined" && window.matchMedia?.("(min-width: 640px)")?.matches;
+
   const overlayStyle = {
     position: "fixed",
     inset: 0,
     zIndex: 1200,
     background: "rgba(15, 23, 42, 0.52)",
     display: "flex",
-    alignItems: "flex-end",
+    alignItems: isWide ? "center" : "flex-end",
     justifyContent: "center",
-    padding: 0,
+    padding: isWide ? 24 : 0,
   };
 
   const cardStyle = {
     width: "100%",
     maxWidth: 480,
-    borderRadius: "20px 20px 0 0",
+    borderRadius: isWide ? 20 : "20px 20px 0 0",
     background: "#ffffff",
     border: "1px solid rgba(15, 23, 42, 0.08)",
-    borderBottom: "none",
-    boxShadow: "0 -12px 40px rgba(15, 23, 42, 0.22)",
-    padding: "10px 18px calc(18px + env(safe-area-inset-bottom, 0px))",
+    borderBottom: isWide ? "1px solid rgba(15, 23, 42, 0.08)" : "none",
+    boxShadow: isWide
+      ? "0 24px 64px rgba(15, 23, 42, 0.28)"
+      : "0 -12px 40px rgba(15, 23, 42, 0.22)",
+    padding: isWide
+      ? "18px 18px 18px"
+      : "10px 18px calc(18px + env(safe-area-inset-bottom, 0px))",
     boxSizing: "border-box",
   };
+
+  const nativeShareAvailable = canUseNativeShare(shareData);
 
   const actionStyle = {
     width: "100%",
@@ -210,22 +252,31 @@ export default function ShareModal({
           </button>
         </div>
 
-        <div style={{ marginTop: 12, display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 8 }}>
-          {actions.map((action) => {
-            if (action.key === "copy") {
-              return (
-                <button
-                  key={action.key}
-                  type="button"
-                  onClick={handleCopy}
-                  style={actionStyle}
-                >
-                  {copyState === "success" ? t("share.copied", "Link copied") : action.label}
-                </button>
-              );
-            }
+        <button
+          type="button"
+          data-testid="share-copy-link"
+          onClick={handleCopy}
+          style={{
+            ...actionStyle,
+            marginTop: 14,
+            minHeight: 48,
+            width: "100%",
+            background: copyState === "success" ? "#ecfdf3" : "#11211a",
+            color: copyState === "success" ? "#067647" : "#ffffff",
+            border: copyState === "success" ? "1px solid #abefc6" : "1px solid #11211a",
+          }}
+        >
+          {copyState === "success" ? t("share.copied", "Link copied") : t("share.copyLink", "Copy Link")}
+        </button>
 
-            return (
+        <div style={{ marginTop: 10, fontSize: 12, color: "#667085", lineHeight: 1.4 }}>
+          {t("share.copyHint", "Copy the link, then paste it into any app.")}
+        </div>
+
+        <div style={{ marginTop: 12, display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 8 }}>
+          {actions
+            .filter((action) => action.key !== "copy")
+            .map((action) => (
               <a
                 key={action.key}
                 href={links[action.key]}
@@ -236,9 +287,19 @@ export default function ShareModal({
               >
                 {action.label}
               </a>
-            );
-          })}
+            ))}
         </div>
+
+        {nativeShareAvailable ? (
+          <button
+            type="button"
+            data-testid="share-device"
+            onClick={handleNativeShare}
+            style={{ ...actionStyle, marginTop: 10, width: "100%" }}
+          >
+            {t("share.device", "Share via device…")}
+          </button>
+        ) : null}
 
         {copyState === "error" ? (
           <div style={{ marginTop: 10, fontSize: 12, color: "#b42318", fontWeight: 700 }}>
@@ -254,8 +315,10 @@ export default function ShareModal({
             whiteSpace: "nowrap",
             overflow: "hidden",
             textOverflow: "ellipsis",
+            userSelect: "all",
           }}
           title={shareData?.url}
+          data-testid="share-url-preview"
         >
           {shareData?.url}
         </div>

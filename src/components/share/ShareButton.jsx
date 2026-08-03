@@ -8,8 +8,8 @@
  *
  *   Behavior:
  *   - tracks share button clicks
- *   - tries navigator.share first when supported
- *   - falls back to ShareModal when unavailable or rejected
+ *   - opens ShareModal (Copy Link + channels) so users can paste into any app
+ *   - ShareModal may offer native device share as an optional action
  *   - supports menu and dish variants
  * ============================================================
  */
@@ -20,22 +20,6 @@ import ShareModal from "./ShareModal.jsx";
 import ShareIcon from "./ShareIcon.jsx";
 import IconHoverLabel from "../IconHoverLabel.jsx";
 import { trackShareEvent } from "./shareUtils.js";
-import { trackMenuShare } from "../../lib/analytics.js";
-
-function canUseNativeShare(shareData) {
-  if (typeof navigator === "undefined" || typeof navigator.share !== "function") return false;
-  if (typeof navigator.canShare !== "function") return true;
-
-  try {
-    return navigator.canShare({
-      title: shareData?.title,
-      text: shareData?.text,
-      url: shareData?.url,
-    });
-  } catch {
-    return true;
-  }
-}
 
 function getVariantEventName(variant, suffix) {
   const normalizedVariant = variant === "dish" ? "dish" : "menu";
@@ -123,37 +107,15 @@ export default function ShareButton({
     overflow: "hidden",
   };
 
-  async function handleClick(event) {
+  function handleClick(event) {
     if (stopPropagation) {
       event?.preventDefault?.();
       event?.stopPropagation?.();
     }
 
     trackShareEvent(getVariantEventName(normalizedVariant, "clicked"), analyticsContext);
-
-    if (canUseNativeShare(shareData)) {
-      try {
-        if (normalizedVariant === "menu") {
-          trackMenuShare({
-            restaurantId: analyticsContext?.restaurantId,
-            restaurantName: analyticsContext?.restaurantName,
-            menuId: analyticsContext?.menuId || analyticsContext?.restaurantId,
-            shareMethod: "native",
-          });
-        }
-        await navigator.share({
-          title: shareData?.title,
-          text: shareData?.text,
-          url: shareData?.url,
-        });
-        trackShareEvent(getVariantEventName(normalizedVariant, "native_success"), analyticsContext);
-        return;
-      } catch {
-        setIsModalOpen(true);
-        return;
-      }
-    }
-
+    // Always open the in-app share sheet (Copy Link + channels). Desktop OS share
+    // sheets are limited to a few apps; Copy Link lets users paste into any app.
     setIsModalOpen(true);
   }
 
@@ -166,6 +128,7 @@ export default function ShareButton({
           title={iconOnly ? hoverLabel : undefined}
           onClick={handleClick}
           style={buttonStyles}
+          data-testid="share-button"
         >
           <ShareIcon size={inline ? 14 : iconOnly ? (ghost ? 14 : compact ? 15 : 16) : compact ? 15 : 16} />
           {iconOnly ? (
