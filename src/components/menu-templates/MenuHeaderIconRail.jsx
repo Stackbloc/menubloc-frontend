@@ -22,7 +22,7 @@ export default function MenuHeaderNameWithActions({
       <div
         style={{
           minWidth: 0,
-          flex: 1,
+          flex: "0 1 auto",
           display: "flex",
           alignItems: "center",
           gap: 0,
