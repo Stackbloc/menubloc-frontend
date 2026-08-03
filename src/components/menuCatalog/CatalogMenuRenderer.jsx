@@ -690,7 +690,7 @@ export default function CatalogMenuRenderer({
                   border: `1px solid ${appearanceTokens.border}`,
                   boxShadow: appearanceTokens.shadow,
                   borderRadius: 12,
-                  overflow: "hidden",
+                  // Keep overflow visible so sticky headers do not cover section titles.
                   color: appearanceTokens.ink,
                 }}
               >

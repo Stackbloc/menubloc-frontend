@@ -1711,7 +1711,8 @@ export default function PublicMenuPage() {
               border: `1px solid ${appearanceTokens.border}`,
               boxShadow: appearanceTokens.shadow,
               borderRadius: 12,
-              overflow: "hidden",
+              // Keep overflow visible so Classic/Fine sticky headers do not cover
+              // the first section title (Fixins LIL' BITS regression, 2026-08-03).
               color: appearanceTokens.ink,
             }}
           >
