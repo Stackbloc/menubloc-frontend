@@ -4,8 +4,54 @@ import { parseLocation, buildSearchLocationParams } from "./locationUtils.js";
 const LOCAL_RADIUS_MILES = 8;
 const DEFAULT_MARKET = { city: "Los Angeles", state: "CA" };
 
+/** URL `source` value for home meal-chip → /search navigation. */
+export const HOME_CONTEXT_CHIP_SOURCE = "home_context_chip";
+
+export function isHomeContextChipSearchSource(source) {
+  return String(source || "").trim() === HOME_CONTEXT_CHIP_SOURCE;
+}
+
+/**
+ * Meal period from a shared /search URL (`context` or `meal_period`).
+ * @param {URLSearchParams | Record<string, string | null | undefined> | null | undefined} params
+ */
+export function resolveMealPeriodFromSearchParams(params) {
+  if (!params) return null;
+  const read =
+    typeof params.get === "function"
+      ? (key) => params.get(key)
+      : (key) => params[key];
+  const value = String(read("context") || read("meal_period") || "").trim();
+  return value || null;
+}
+
+/**
+ * Map a context-chip API/prefetch payload into search-results page state.
+ * Returns null when there are no flattened rows.
+ */
+export function buildHomeContextChipSearchState(payload, fallbackQuery = "") {
+  const flatRows = flattenHomeContextChipResults(payload?.results);
+  if (!flatRows.length) return null;
+  return {
+    rows: flatRows,
+    queryMeta: {
+      q: payload?.query_terms?.[0] || fallbackQuery,
+      context: payload?.context,
+    },
+    searchMeta: {
+      result_type: "menu_items",
+      context_chip: payload?.context,
+      temporary_patch: true,
+      source: HOME_CONTEXT_CHIP_SOURCE,
+    },
+    totalCount: flatRows.length,
+  };
+}
+
 export async function fetchHomeContextChip({
   appliedLocation = "",
+  city = "",
+  state = "",
   autoLocation = null,
   shouldUseGeoBrowse = false,
   mealPeriod = null,
@@ -19,7 +65,12 @@ export async function fetchHomeContextChip({
   }
   if (mealPeriod) params.set("context", mealPeriod);
 
-  if (appliedLocation) {
+  const explicitCity = String(city || "").trim();
+  const explicitState = String(state || "").trim();
+  if (explicitCity && explicitState) {
+    params.set("city", explicitCity);
+    params.set("state", explicitState);
+  } else if (appliedLocation) {
     const loc = parseLocation(appliedLocation);
     if (loc.city) params.set("city", loc.city);
     if (loc.state) params.set("state", loc.state);
@@ -99,7 +150,7 @@ export function buildHomeContextChipSearchUrl(entry, payload, locationContext) {
     autoLocation: locationContext?.shouldUseGeoBrowse ? locationContext?.autoLocation : null,
     radiusMiles: LOCAL_RADIUS_MILES,
   });
-  params.set("source", "home_context_chip");
+  params.set("source", HOME_CONTEXT_CHIP_SOURCE);
   const mealPeriod =
     payload?.normalized_context?.mealPeriod ||
     payload?.context ||

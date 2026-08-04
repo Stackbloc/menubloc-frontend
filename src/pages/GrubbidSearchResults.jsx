@@ -30,7 +30,12 @@ import BottomNav from "../components/BottomNav.jsx";
 import WaiterRefinementPrompt from "../components/search/WaiterRefinementPrompt.jsx";
 import FoodNavigationLadder from "../components/search/FoodNavigationLadder.jsx";
 import { useFoodNavigation, FOOD_NAV_SLICE_ENABLED } from "../hooks/useFoodNavigation.js";
-import { flattenHomeContextChipResults } from "../lib/homeContextChipApi.js";
+import {
+  buildHomeContextChipSearchState,
+  fetchHomeContextChip,
+  isHomeContextChipSearchSource,
+  resolveMealPeriodFromSearchParams,
+} from "../lib/homeContextChipApi.js";
 
 import { SectionTitle, StatusMessage } from "../components/grubbid/GrubbidPrimitives.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
@@ -2057,7 +2062,8 @@ export default function GrubbidSearchResults() {
   const glp1_friendly =
     params.get("glp1_friendly") === "1" || params.get("glp1_friendly") === "true";
   const routePriceMax = String(params.get("price_max") || "").trim();
-
+  const searchSource = String(params.get("source") || "").trim();
+  const contextChipMealPeriod = resolveMealPeriodFromSearchParams(params);
 
   const fallbackLocation = useMemo(() => {
     if (routeZip || routeCity || routeState || routeNear || routeLocationLabel) {
@@ -2465,6 +2471,20 @@ export default function GrubbidSearchResults() {
       }
     }
 
+    function applyHomeContextChipPayload(payload) {
+      const built = buildHomeContextChipSearchState(payload, q);
+      if (!built) return false;
+      setRows(built.rows);
+      setQueryMeta(built.queryMeta);
+      setSearchMeta(built.searchMeta);
+      setSearchTotalCount(built.totalCount);
+      setSearchOffset(built.totalCount);
+      setSearchHasMore(false);
+      setLoading(false);
+      setErr("");
+      return true;
+    }
+
     async function run() {
       if (foodNav.pendingNavigation) {
         setLoading(false);
@@ -2475,24 +2495,75 @@ export default function GrubbidSearchResults() {
         return;
       }
 
+      // Prefetch from home chip click (React Router state — not in URL).
       const prefetched = location.state?.homeContextChip;
-      if (prefetched?.results?.length) {
-        const flatRows = flattenHomeContextChipResults(prefetched.results);
-        if (flatRows.length) {
-          setRows(flatRows);
-          setQueryMeta({ q: prefetched.query_terms?.[0] || q, context: prefetched.context });
-          setSearchMeta({
-            result_type: "menu_items",
-            context_chip: prefetched.context,
-            temporary_patch: true,
+      if (prefetched?.results?.length && applyHomeContextChipPayload(prefetched)) {
+        return;
+      }
+
+      // Cold open / shared link: same source must re-hit context-chip, not /search?q=dinner.
+      // Share copies window.location.href; router state is lost for recipients.
+      if (isHomeContextChipSearchSource(searchSource)) {
+        setLoading(true);
+        setErr("");
+        setGeoFallbackUsed(false);
+        setSearchOffset(0);
+        setSearchHasMore(false);
+        setRestaurantMetaMap(new Map());
+        try {
+          const hasRouteCoords =
+            routeLat != null &&
+            routeLat !== "" &&
+            routeLng != null &&
+            routeLng !== "" &&
+            Number.isFinite(Number(routeLat)) &&
+            Number.isFinite(Number(routeLng));
+          const payload = await fetchHomeContextChip({
+            city: requestCity,
+            state: requestState,
+            appliedLocation:
+              routeLocationLabel ||
+              [requestCity, requestState].filter(Boolean).join(", ") ||
+              "",
+            autoLocation: hasRouteCoords
+              ? { lat: Number(routeLat), lng: Number(routeLng) }
+              : geo.lat != null && geo.lng != null
+                ? { lat: geo.lat, lng: geo.lng }
+                : null,
+            shouldUseGeoBrowse: !requestCity && (hasRouteCoords || (geo.lat != null && geo.lng != null)),
+            mealPeriod: contextChipMealPeriod,
           });
-          setSearchTotalCount(flatRows.length);
-          setSearchOffset(flatRows.length);
-          setSearchHasMore(false);
-          setLoading(false);
-          setErr("");
-          return;
+          if (!alive) return;
+          if (applyHomeContextChipPayload(payload)) {
+            const locationLabelForAnalytics =
+              routeLocationLabel ||
+              explicitLocationLabel ||
+              [requestCity, requestState].filter(Boolean).join(", ") ||
+              sessionLocation ||
+              "";
+            const gaSearchKey = JSON.stringify({
+              q,
+              total: payload?.results?.length || 0,
+              locationLabelForAnalytics,
+              source: "home_context_chip",
+              path: "context_chip_cold_open",
+            });
+            if (!gaTrackedSearchKeysRef.current.has(gaSearchKey)) {
+              gaTrackedSearchKeysRef.current.add(gaSearchKey);
+              trackSearchPerformed({
+                searchTerm: q,
+                source: "home_context_chip",
+                resultCount: Array.isArray(payload?.results) ? payload.results.length : 0,
+                locationLabel: locationLabelForAnalytics || null,
+              });
+            }
+            return;
+          }
+        } catch (contextChipError) {
+          console.error("home context-chip cold open failed; falling back to /search", contextChipError);
+          // Fall through to standard /search so the page is not blank.
         }
+        if (!alive) return;
       }
 
       setLoading(true);
@@ -2590,6 +2661,8 @@ export default function GrubbidSearchResults() {
     q,
     foodNav.pendingNavigation,
     location.state,
+    searchSource,
+    contextChipMealPeriod,
     requestZip,
     requestCity,
     requestState,
