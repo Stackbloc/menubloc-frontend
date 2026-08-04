@@ -70,6 +70,7 @@ const NAV_SECTIONS_STATIC = [
       { to: "/owner/homepage", label: "Homepage Controls" },
       { to: "/owner/deployments", label: "Deployment Operations" },
       { to: "/owner/intelligence", label: "Platform Intelligence" },
+      { to: "/owner/venues", label: "Venues" },
     ],
   },
   {

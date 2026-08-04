@@ -82,6 +82,20 @@ import OperatorQrKitOrder from "./pages/operator/OperatorQrKitOrder.jsx";
 import OperatorBillboardsPage from "./pages/operator/OperatorBillboardsPage.jsx";
 import RestaurantHelpCenter from "./pages/operator/RestaurantHelpCenter.jsx";
 import OwnerLogin from "./pages/owner/OwnerLogin.jsx";
+import {
+  OwnerVenueDetailPage,
+  OwnerVenuesListPage,
+} from "./pages/owner/venues/OwnerVenuesPages.jsx";
+import { VenueProvider, useVenue } from "./context/VenueContext.jsx";
+import VenueLogin from "./pages/venue/VenueLogin.jsx";
+import VenueInventoryPage from "./pages/venue/VenueInventoryPage.jsx";
+import VenueAdvertisementsPage from "./pages/venue/VenueAdvertisementsPage.jsx";
+import {
+  VenueAnalyticsPage,
+  VenueBillingPage,
+  VenueCampaignsPage,
+  VenueStripeSetupPage,
+} from "./pages/venue/VenuePlaceholderPages.jsx";
 import OwnerRecovery from "./pages/owner/OwnerRecovery.jsx";
 import OwnerResetPassword from "./pages/owner/OwnerResetPassword.jsx";
 import OwnerDashboard from "./pages/owner/OwnerDashboard.jsx";
@@ -276,6 +290,13 @@ function OwnerRoute({ children }) {
   if (loading) return <div style={{ minHeight: "100vh", background: "linear-gradient(180deg, #f7f1ea 0%, #efe5db 100%)" }} />;
   if (!isAuthenticated) return <Navigate to="/owner/login" replace />;
   return <ErrorBoundary>{children}</ErrorBoundary>;
+}
+
+function VenueRoute({ children }) {
+  const { isAuthenticated, loading } = useVenue();
+  if (loading) return null;
+  if (!isAuthenticated) return <Navigate to="/venue/login" replace />;
+  return children;
 }
 
 function isEasyMenuHost() {
@@ -785,6 +806,15 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/operator/menudesign" element={<Navigate to="/operator/menulab" replace />} />
         <Route path="/operator/brand" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorBrandSettings /></OperatorRoute>} />
 
+        <Route path="/venue/login" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <VenueLogin />} />
+        <Route path="/venue" element={crmHost ? <HostRouteRedirect to="/crm" /> : <VenueRoute><Navigate to="/venue/advertising/inventory" replace /></VenueRoute>} />
+        <Route path="/venue/advertising/inventory" element={crmHost ? <HostRouteRedirect to="/crm" /> : <VenueRoute><VenueInventoryPage /></VenueRoute>} />
+        <Route path="/venue/advertising/advertisements" element={crmHost ? <HostRouteRedirect to="/crm" /> : <VenueRoute><VenueAdvertisementsPage /></VenueRoute>} />
+        <Route path="/venue/advertising/campaigns" element={crmHost ? <HostRouteRedirect to="/crm" /> : <VenueRoute><VenueCampaignsPage /></VenueRoute>} />
+        <Route path="/venue/advertising/analytics" element={crmHost ? <HostRouteRedirect to="/crm" /> : <VenueRoute><VenueAnalyticsPage /></VenueRoute>} />
+        <Route path="/venue/advertising/billing" element={crmHost ? <HostRouteRedirect to="/crm" /> : <VenueRoute><VenueBillingPage /></VenueRoute>} />
+        <Route path="/venue/advertising/stripe-setup" element={crmHost ? <HostRouteRedirect to="/crm" /> : <VenueRoute><VenueStripeSetupPage /></VenueRoute>} />
+
         <Route path="/owner/login" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <OwnerLogin />} />
         <Route path="/owner/recover" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <OwnerRecovery />} />
         <Route path="/owner/reset-password" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <OwnerResetPassword />} />
@@ -793,6 +823,8 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/owner/analytics" element={<Navigate to="/owner/intelligence/site-activity" replace />} />
         <Route path="/owner/search-analytics" element={<Navigate to="/owner/intelligence/search-demand" replace />} />
         <Route path="/owner/restaurants" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerRestaurants /></OwnerRoute>} />
+        <Route path="/owner/venues" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerVenuesListPage /></OwnerRoute>} />
+        <Route path="/owner/venues/:id" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerVenueDetailPage /></OwnerRoute>} />
         <Route path="/owner/revenue" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerRevenue /></OwnerRoute>} />
         <Route path="/owner/support" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerSupportTickets /></OwnerRoute>} />
         <Route path="/owner/support/:ticketId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerTicketDetail /></OwnerRoute>} />
@@ -864,6 +896,7 @@ export default function App() {
       <OwnerProvider>
         <CrmProvider>
           <OperatorProvider>
+            <VenueProvider>
             <CartProvider>
               <LanguageProvider>
                 <OrderCartProvider>
@@ -874,6 +907,7 @@ export default function App() {
                 </OrderCartProvider>
               </LanguageProvider>
             </CartProvider>
+            </VenueProvider>
           </OperatorProvider>
         </CrmProvider>
       </OwnerProvider>

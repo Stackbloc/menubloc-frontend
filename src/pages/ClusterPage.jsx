@@ -6,6 +6,7 @@ import ClusterGrowingNotice from "../components/cluster/ClusterGrowingNotice.jsx
 import ClusterRestaurantDirectoryCard from "../components/cluster/ClusterRestaurantDirectoryCard.jsx";
 import { ClusterPlaceholderSection, ClusterDrinksDirectory } from "../components/cluster/ClusterPlaceholderListingCard.jsx";
 import ClusterBackButton from "../components/cluster/ClusterBackButton.jsx";
+import ClusterAdSlot from "../components/cluster/ClusterAdSlot.jsx";
 import {
   ClusterDishList,
   ClusterPlaceholderFoodCard,
@@ -225,6 +226,7 @@ function ClusterRestaurantsTab({ clusterSlug, cluster, enabled, placeReturnPath,
 
   return (
     <div style={{ display: "grid", gap: "0.75rem" }}>
+      <ClusterAdSlot clusterSlug={clusterSlug} pageRegion="cluster_restaurant_header" />
       {restaurants.length > 0 ? (
         <>
           {cuisineGroups.map((group) => (
@@ -295,6 +297,7 @@ function ClusterRestaurantsTab({ clusterSlug, cluster, enabled, placeReturnPath,
         </button>
       ) : null}
       {error ? <p style={{ color: "#b91c1c", margin: 0 }}>{error}</p> : null}
+      <ClusterAdSlot clusterSlug={clusterSlug} pageRegion="cluster_restaurant_footer" />
     </div>
   );
 }
@@ -575,6 +578,7 @@ function ClusterMenuExplorerTab({ clusterSlug, cluster, enabled }) {
 
       {searchActive ? (
         <div style={{ display: "grid", gap: "0.75rem" }}>
+          <ClusterAdSlot clusterSlug={clusterSlug} pageRegion="cluster_search_top" />
           {searchStatus === "loading" ? <p style={{ color: "#666", margin: 0 }}>Searching {submittedSearch}…</p> : null}
           {searchStatus === "error" ? <p style={{ color: "#b91c1c", margin: 0 }}>{searchError}</p> : null}
           {searchStatus === "ok" && searchMenuItems.length === 0 ? (
@@ -618,6 +622,7 @@ function ClusterMenuExplorerTab({ clusterSlug, cluster, enabled }) {
               );
             })}
           </div>
+          <ClusterAdSlot clusterSlug={clusterSlug} pageRegion="cluster_search_inline" />
         </div>
       ) : selectedCategory ? (
         <div style={{ display: "grid", gap: "0.75rem" }}>
@@ -996,6 +1001,11 @@ export default function ClusterPage() {
         </div>
       </header>
 
+      <ClusterAdSlot clusterSlug={cluster.slug} pageRegion="cluster_landing_hero" />
+      {/* cluster_deals_top / cluster_events_top mount when those surfaces exist */}
+      <ClusterAdSlot clusterSlug={cluster.slug} pageRegion="cluster_deals_top" />
+      <ClusterAdSlot clusterSlug={cluster.slug} pageRegion="cluster_events_top" />
+
       <main
         aria-label="Cluster content"
         style={{
@@ -1020,6 +1030,8 @@ export default function ClusterPage() {
       </main>
 
       {showGrowingNotice ? <ClusterGrowingNotice /> : null}
+
+      <ClusterAdSlot clusterSlug={cluster.slug} pageRegion="cluster_landing_footer" />
 
       <footer
         style={{
