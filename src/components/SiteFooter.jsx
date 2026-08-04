@@ -69,8 +69,8 @@ export default function SiteFooter() {
             {t("discovery.footer.restaurants", "Restaurants")}
           </Link>
 
-          <Link to="/creative-pros" style={footerLinkStyle}>
-            {t("discovery.footer.creators", "Creators")}
+          <Link to="/clusters" style={footerLinkStyle}>
+            {t("discovery.footer.clusters", "Clusters")}
           </Link>
 
           <Link to="/terms" style={footerLinkStyle}>

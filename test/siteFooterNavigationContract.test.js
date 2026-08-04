@@ -1,6 +1,7 @@
 /**
  * Public SiteFooter navigation — canonical marketplace links (2026-07-09 d333af2).
- * Diners / Restaurants (onboarding) / Creators; no restaurant auth links in footer row.
+ * Diners / Restaurants (onboarding) / Clusters; Creators page route kept for indexing.
+ * no restaurant auth links in footer row.
  */
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -17,10 +18,20 @@ function testFooterMarketplaceLinks() {
   const src = read("src/components/SiteFooter.jsx");
   assert.match(src, /<Link to="\/diner\/signup"/);
   assert.match(src, /<Link to="\/restaurant\/onboarding"/);
-  assert.match(src, /<Link to="\/creative-pros"/);
+  assert.match(src, /<Link to="\/clusters"/);
+  assert.doesNotMatch(src, /<Link to="\/creative-pros"/);
   assert.doesNotMatch(src, /<Link to="\/operator\/login"/);
   assert.doesNotMatch(src, /discovery\.footer\.signup/);
   assert.doesNotMatch(src, /discovery\.footer\.signin/);
+}
+
+function testCreatorsPathRemainsRouted() {
+  const src = read("src/App.jsx");
+  assert.match(
+    src,
+    /path="\/creative-pros"/,
+    "expected /creative-pros to remain routed for indexing"
+  );
 }
 
 function testRestaurantsRouteUsesLandingPage() {
@@ -45,6 +56,7 @@ function testOperatorLoginUsesAuthPageFrame() {
 }
 
 testFooterMarketplaceLinks();
+testCreatorsPathRemainsRouted();
 testRestaurantsRouteUsesLandingPage();
 testOperatorLoginUsesAuthPageFrame();
 
