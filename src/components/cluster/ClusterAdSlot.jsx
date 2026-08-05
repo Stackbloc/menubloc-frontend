@@ -4,12 +4,13 @@ import { getAdvertisementByRegion, getAdvertisements } from "../../lib/advertise
 /**
  * Generic cluster ad slot.
  * Resolves ads by inventory_key or page_region — no venue-specific keys hardcoded.
- * Creatives render edge-to-edge at their native ratio (no cover-crop).
+ * Size variants: hero (premium wide), standard, small (lower-cost unit).
  */
 export default function ClusterAdSlot({
   clusterSlug,
   inventoryKey = null,
   pageRegion = null,
+  size = null,
   className,
   style,
 }) {
@@ -46,8 +47,9 @@ export default function ClusterAdSlot({
   if (!ad?.image_url) return null;
 
   const type = inventoryType || ad.inventory_type || "Page Banner";
+  const resolvedSize = size || sizeForPlacement(pageRegion, type);
   const href = ad.destination_url || undefined;
-  const frameStyle = resolveFrameStyle(type, style);
+  const frameStyle = resolveFrameStyle(type, resolvedSize, style);
   const mediaStyle = {
     width: "100%",
     height: "auto",
@@ -55,12 +57,7 @@ export default function ClusterAdSlot({
     verticalAlign: "top",
   };
 
-  const media = ad.mobile_image_url ? (
-    <picture>
-      <source media="(max-width: 640px)" srcSet={ad.mobile_image_url} />
-      <img src={ad.image_url} alt={ad.headline || ad.name || "Advertisement"} style={mediaStyle} />
-    </picture>
-  ) : (
+  const media = (
     <img src={ad.image_url} alt={ad.headline || ad.name || "Advertisement"} style={mediaStyle} />
   );
 
@@ -68,27 +65,28 @@ export default function ClusterAdSlot({
     <div
       className={className}
       data-testid="cluster-ad-slot"
+      data-ad-size={resolvedSize}
       data-inventory-type={type}
       data-page-region={pageRegion || ad.page_region || ""}
       data-inventory-key={inventoryKey || ad.inventory_key || ""}
       style={frameStyle}
     >
-      {media}
-      {(ad.headline || ad.cta_text) && type !== "Inline Banner" ? (
-        <div style={{ padding: "10px 12px 12px" }}>
-          {ad.headline ? (
-            <div style={{ fontWeight: 700, fontSize: type === "Hero Banner" ? 18 : 15 }}>
-              {ad.headline}
-            </div>
-          ) : null}
-          {ad.description ? (
-            <div style={{ marginTop: 4, color: "#4b5563", fontSize: 13 }}>{ad.description}</div>
-          ) : null}
-          {ad.cta_text ? (
-            <div style={{ marginTop: 8, fontWeight: 600, fontSize: 13 }}>{ad.cta_text}</div>
-          ) : null}
+      {resolvedSize === "small" ? (
+        <div
+          style={{
+            padding: "5px 8px 0",
+            fontSize: 10,
+            fontWeight: 700,
+            letterSpacing: "0.06em",
+            textTransform: "uppercase",
+            color: "#9ca3af",
+            lineHeight: 1.2,
+          }}
+        >
+          Sponsored
         </div>
       ) : null}
+      <div style={{ padding: resolvedSize === "small" ? "6px 6px 8px" : 0 }}>{media}</div>
     </div>
   );
 
@@ -98,7 +96,13 @@ export default function ClusterAdSlot({
         href={href}
         target="_blank"
         rel="noopener noreferrer"
-        style={{ display: "block", width: "100%", textDecoration: "none", color: "inherit" }}
+        style={{
+          display: "block",
+          width: resolvedSize === "small" ? "auto" : "100%",
+          maxWidth: resolvedSize === "small" ? 228 : "100%",
+          textDecoration: "none",
+          color: "inherit",
+        }}
       >
         {body}
       </a>
@@ -107,7 +111,33 @@ export default function ClusterAdSlot({
   return body;
 }
 
-function resolveFrameStyle(type, style = {}) {
+function sizeForPlacement(pageRegion, type) {
+  if (pageRegion === "cluster_landing_hero") return "hero";
+  if (pageRegion === "cluster_landing_footer") return "small";
+  if (pageRegion === "cluster_deals_top") return "small";
+  if (pageRegion === "cluster_search_inline") return "small";
+  if (type === "Native Promotion" || type === "Inline Banner") return "small";
+  if (type === "Hero Banner") return "hero";
+  return "standard";
+}
+
+function resolveFrameStyle(type, size, style = {}) {
+  if (size === "small") {
+    return {
+      margin: 0,
+      width: 228,
+      maxWidth: "100%",
+      boxSizing: "border-box",
+      overflow: "hidden",
+      borderRadius: 10,
+      border: "1px solid #e5e7eb",
+      background: "#fff",
+      lineHeight: 0,
+      boxShadow: "0 1px 2px rgba(15, 23, 42, 0.08)",
+      ...style,
+    };
+  }
+
   const base = {
     margin: 0,
     width: "100%",
@@ -118,26 +148,26 @@ function resolveFrameStyle(type, style = {}) {
     lineHeight: 0,
     ...style,
   };
+
+  if (size === "hero") return base;
+
   switch (type) {
     case "Sponsored Card":
     case "Featured Listing":
       return {
         ...base,
+        maxWidth: 420,
         border: "1px solid #e5e7eb",
         background: "#fff",
       };
     case "Interstitial":
-      return {
-        ...base,
-        background: "#111827",
-      };
+      return { ...base, maxWidth: 640 };
     case "Floating Banner":
       return {
         ...base,
+        maxWidth: 520,
         boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
       };
-    case "Native Promotion":
-      return { ...base, background: "transparent", borderRadius: 0 };
     default:
       return base;
   }

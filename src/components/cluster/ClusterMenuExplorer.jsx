@@ -197,14 +197,18 @@ export function ClusterDishList({
   showRestaurantBreaks = false,
   clusterReturnTo = null,
   clusterReturnLabel = null,
+  midListAd = null,
+  insertAfterIndex = null,
 }) {
   if (!Array.isArray(items) || items.length === 0) return null;
 
   let lastRestaurantId = null;
+  const insertAt =
+    midListAd && insertAfterIndex != null && insertAfterIndex >= 0 ? Number(insertAfterIndex) : -1;
 
   return (
     <div style={{ display: "grid", gap: "0.4rem" }}>
-      {items.map((item) => {
+      {items.map((item, index) => {
         const restaurantId = Number(item.restaurant_id) || null;
         const showRestaurantHeading =
           showRestaurantBreaks &&
@@ -234,6 +238,7 @@ export function ClusterDishList({
               clusterReturnTo={clusterReturnTo}
               clusterReturnLabel={clusterReturnLabel}
             />
+            {index === insertAt ? midListAd : null}
           </React.Fragment>
         );
       })}

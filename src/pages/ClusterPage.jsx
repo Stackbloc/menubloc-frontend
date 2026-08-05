@@ -316,10 +316,22 @@ const CLUSTER_AD_SPACE_STYLE = {
   padding: "2.75rem 0 3.25rem",
 };
 
-function SpacedClusterAdSlot(props) {
+function SpacedClusterAdSlot({ compact = false, ...props }) {
   return (
-    <div data-testid="cluster-ad-space" style={CLUSTER_AD_SPACE_STYLE}>
-      <ClusterAdSlot {...props} />
+    <div
+      data-testid="cluster-ad-space"
+      data-ad-compact={compact ? "true" : "false"}
+      style={
+        compact
+          ? {
+              padding: "1.35rem 0 1.6rem",
+              display: "flex",
+              justifyContent: "center",
+            }
+          : CLUSTER_AD_SPACE_STYLE
+      }
+    >
+      <ClusterAdSlot size={compact ? "small" : undefined} {...props} />
     </div>
   );
 }
@@ -654,7 +666,7 @@ function ClusterMenuExplorerTab({
           <div style={CLUSTER_SEARCH_GRID_STYLE}>
             {searchMenuItems.map((row, index) => {
               const inlineSlot = shouldInsertClusterSearchAd(index, searchMenuItems.length) ? (
-                <SpacedClusterAdSlot clusterSlug={clusterSlug} pageRegion="cluster_search_inline" />
+                <SpacedClusterAdSlot compact clusterSlug={clusterSlug} pageRegion="cluster_search_inline" />
               ) : null;
 
               if (row?.placeholder_item) {
@@ -852,10 +864,20 @@ function ClusterMenuExplorerTab({
               items={displayItems}
               clusterReturnTo={clusterReturnTo}
               clusterReturnLabel={clusterDestinationLabel}
+              insertAfterIndex={
+                priceSort === "asc" && displayItems.length >= 4
+                  ? Math.min(3, displayItems.length - 2)
+                  : null
+              }
+              midListAd={
+                priceSort === "asc" && displayItems.length >= 4 ? (
+                  <SpacedClusterAdSlot compact clusterSlug={clusterSlug} pageRegion="cluster_deals_top" />
+                ) : null
+              }
             />
           ) : null}
-          {displayItems.length > 0 ? (
-            <SpacedClusterAdSlot clusterSlug={clusterSlug} pageRegion="cluster_deals_top" />
+          {displayItems.length > 0 && priceSort !== "asc" ? (
+            <SpacedClusterAdSlot compact clusterSlug={clusterSlug} pageRegion="cluster_deals_top" />
           ) : null}
           {pagination?.has_more ? (
             <button
@@ -890,7 +912,7 @@ function ClusterMenuExplorerTab({
               setSelectedCategory(category);
             }}
           />
-          <SpacedClusterAdSlot clusterSlug={clusterSlug} pageRegion="cluster_landing_footer" />
+          <SpacedClusterAdSlot compact clusterSlug={clusterSlug} pageRegion="cluster_landing_footer" />
         </div>
       )}
     </div>
