@@ -1,5 +1,4 @@
-import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import React, { useEffect, useMemo, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import BottomNav from "../components/BottomNav.jsx";
 import { CLUSTER_DIRECTORY_GRID_STYLE } from "../components/cluster/ClusterDirectoryCard.jsx";
@@ -309,6 +308,20 @@ const CLUSTER_SEARCH_GRID_STYLE = {
   gap: "0.85rem",
 };
 
+const CLUSTER_STICKY_CHROME_STYLE = {
+  position: "sticky",
+  top: 0,
+  zIndex: 20,
+  background: "#fff",
+  marginLeft: "-1rem",
+  marginRight: "-1rem",
+  padding: "0.7rem 1rem 0.8rem",
+  borderBottom: "1px solid #e5e7eb",
+  display: "grid",
+  gap: "0.65rem",
+  minWidth: 0,
+};
+
 function ClusterFoodSearchForm({
   searchInput,
   onSearchInputChange,
@@ -378,7 +391,14 @@ function ClusterFoodSearchForm({
   );
 }
 
-function ClusterMenuExplorerTab({ clusterSlug, cluster, enabled, searchSlotRef }) {
+function ClusterMenuExplorerTab({
+  clusterSlug,
+  cluster,
+  enabled,
+  stickyLead = null,
+  preContent = null,
+  postContent = null,
+}) {
   const PAGE_SIZE = 40;
   const [status, setStatus] = useState(enabled ? "loading" : "idle");
   const [mksCategories, setMksCategories] = useState([]);
@@ -585,36 +605,13 @@ function ClusterMenuExplorerTab({ clusterSlug, cluster, enabled, searchSlotRef }
     setSubmittedSearch("");
   }
 
-  const [searchHost, setSearchHost] = useState(null);
-  useLayoutEffect(() => {
-    if (!enabled || !searchSlotRef) {
-      setSearchHost(null);
-      return undefined;
-    }
-    setSearchHost(searchSlotRef.current || null);
-    return undefined;
-  }, [enabled, searchSlotRef]);
-
   if (!enabled) {
     return <p style={{ color: "#888" }}>Select Food to browse what you can eat here.</p>;
   }
 
   const categoryTitle = selectedCategory?.label || null;
-  const searchForm = (
-    <ClusterFoodSearchForm
-      searchInput={searchInput}
-      onSearchInputChange={(event) => setSearchInput(event.target.value)}
-      searchPlaceholder={searchPlaceholder}
-      searchActive={searchActive}
-      onSubmit={handleSearchSubmit}
-      onClear={clearSearch}
-    />
-  );
-
-  return (
+  const results = (
     <div style={{ display: "grid", gap: "1rem" }}>
-      {searchHost ? createPortal(searchForm, searchHost) : searchSlotRef ? null : searchForm}
-
       {searchActive ? (
         <div style={{ display: "grid", gap: "0.75rem" }}>
           <ClusterAdSlot clusterSlug={clusterSlug} pageRegion="cluster_search_top" />
@@ -868,6 +865,40 @@ function ClusterMenuExplorerTab({ clusterSlug, cluster, enabled, searchSlotRef }
       )}
     </div>
   );
+
+  return (
+    <>
+      <div data-testid="cluster-sticky-chrome" style={CLUSTER_STICKY_CHROME_STYLE}>
+        {stickyLead}
+        <div data-testid="cluster-sticky-search">
+          <ClusterFoodSearchForm
+            searchInput={searchInput}
+            onSearchInputChange={(event) => setSearchInput(event.target.value)}
+            searchPlaceholder={searchPlaceholder}
+            searchActive={searchActive}
+            onSubmit={handleSearchSubmit}
+            onClear={clearSearch}
+          />
+        </div>
+      </div>
+      <div style={{ overflowX: "clip", minWidth: 0 }}>
+        {preContent}
+        <main
+          aria-label="Cluster content"
+          style={{
+            display: "grid",
+            gap: "0.75rem",
+            minWidth: 0,
+            paddingTop: "0.25rem",
+            paddingBottom: "1.5rem",
+          }}
+        >
+          {results}
+        </main>
+        {postContent}
+      </div>
+    </>
+  );
 }
 
 export default function ClusterPage() {
@@ -985,7 +1016,6 @@ export default function ClusterPage() {
     );
   }
 
-  const searchSlotRef = useRef(null);
   const pageHeading = getClusterPageHeading(cluster);
   const productTitle = getClusterProductTitle(cluster);
   const disclaimer = getClusterDisclaimer(cluster);
@@ -994,6 +1024,79 @@ export default function ClusterPage() {
   const clusterCityBack = clusterCityPath(cluster) || clusterDirectoryPath();
   const cityBackLabel = cluster.city ? `Back to ${cluster.city}` : "All clusters";
   const restaurantsReturnPath = cluster ? buildClusterRestaurantsReturnPath(cluster) : null;
+
+  const stickyLead = (
+    <>
+      <h2
+        data-testid="cluster-sticky-title"
+        style={{
+          margin: 0,
+          color: "#111827",
+          fontSize: "1.2rem",
+          lineHeight: 1.2,
+          fontWeight: 700,
+          minWidth: 0,
+          overflowWrap: "anywhere",
+          letterSpacing: "-0.02em",
+        }}
+      >
+        {productTitle}
+      </h2>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "flex-start",
+          gap: "0.55rem",
+          flexWrap: "wrap",
+          minWidth: 0,
+        }}
+      >
+        <ClusterViewToggle viewMode={resolvedViewMode} onChange={setViewMode} disabled={false} />
+        {shareData ? (
+          <ShareButton
+            shareData={shareData}
+            analyticsContext={{
+              pageType: "cluster",
+              clusterSlug: cluster.slug,
+              clusterName: cluster.name,
+            }}
+            label="Share"
+            iconOnly
+            tone="ghost"
+            size="compact"
+          />
+        ) : null}
+      </div>
+    </>
+  );
+
+  const clusterAdTop = (
+    <>
+      <ClusterAdSlot clusterSlug={cluster.slug} pageRegion="cluster_landing_hero" />
+      <ClusterAdSlot clusterSlug={cluster.slug} pageRegion="cluster_deals_top" />
+      <ClusterAdSlot clusterSlug={cluster.slug} pageRegion="cluster_events_top" />
+    </>
+  );
+
+  const clusterPageTail = (
+    <>
+      {showGrowingNotice ? <ClusterGrowingNotice /> : null}
+      <ClusterAdSlot clusterSlug={cluster.slug} pageRegion="cluster_landing_footer" />
+      <footer
+        style={{
+          marginTop: "2rem",
+          paddingTop: "1rem",
+          borderTop: "1px solid #e5e7eb",
+          color: "#6b7280",
+          fontSize: "0.8rem",
+          lineHeight: 1.5,
+        }}
+      >
+        <p style={{ margin: 0 }}>{disclaimer}</p>
+      </footer>
+    </>
+  );
 
   return (
     <div style={{ maxWidth: 900, margin: "0 auto", padding: "1.25rem 1rem 5rem", width: "100%", boxSizing: "border-box" }}>
@@ -1015,119 +1118,44 @@ export default function ClusterPage() {
         <ClusterDescription cluster={cluster} />
       </header>
 
-      <div
-        data-testid="cluster-sticky-chrome"
-        style={{
-          position: "sticky",
-          top: 0,
-          zIndex: 20,
-          background: "#fff",
-          marginLeft: "-1rem",
-          marginRight: "-1rem",
-          padding: "0.7rem 1rem 0.8rem",
-          borderBottom: "1px solid #e5e7eb",
-          display: "grid",
-          gap: "0.65rem",
-          minWidth: 0,
-        }}
-      >
-        <h2
-          data-testid="cluster-sticky-title"
-          style={{
-            margin: 0,
-            color: "#111827",
-            fontSize: "1.2rem",
-            lineHeight: 1.2,
-            fontWeight: 700,
-            minWidth: 0,
-            overflowWrap: "anywhere",
-            letterSpacing: "-0.02em",
-          }}
-        >
-          {productTitle}
-        </h2>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "flex-start",
-            gap: "0.55rem",
-            flexWrap: "wrap",
-            minWidth: 0,
-          }}
-        >
-          <ClusterViewToggle viewMode={resolvedViewMode} onChange={setViewMode} disabled={false} />
-          {shareData ? (
-            <ShareButton
-              shareData={shareData}
-              analyticsContext={{
-                pageType: "cluster",
-                clusterSlug: cluster.slug,
-                clusterName: cluster.name,
+      {resolvedViewMode === CLUSTER_VIEW_MODES.MENU ? (
+        <ClusterMenuExplorerTab
+          clusterSlug={cluster.slug}
+          cluster={cluster}
+          enabled
+          stickyLead={stickyLead}
+          preContent={clusterAdTop}
+          postContent={clusterPageTail}
+        />
+      ) : (
+        <>
+          <div data-testid="cluster-sticky-chrome" style={CLUSTER_STICKY_CHROME_STYLE}>
+            {stickyLead}
+          </div>
+          <div style={{ overflowX: "clip", minWidth: 0 }}>
+            {clusterAdTop}
+            <main
+              aria-label="Cluster content"
+              style={{
+                display: "grid",
+                gap: "0.75rem",
+                minWidth: 0,
+                paddingTop: "0.25rem",
+                paddingBottom: "1.5rem",
               }}
-              label="Share"
-              iconOnly
-              tone="ghost"
-              size="compact"
-            />
-          ) : null}
-        </div>
-        {resolvedViewMode === CLUSTER_VIEW_MODES.MENU ? (
-          <div data-testid="cluster-sticky-search" ref={searchSlotRef} />
-        ) : null}
-      </div>
-
-      <div style={{ overflowX: "clip", minWidth: 0 }}>
-        <ClusterAdSlot clusterSlug={cluster.slug} pageRegion="cluster_landing_hero" />
-        {/* cluster_deals_top / cluster_events_top mount when those surfaces exist */}
-        <ClusterAdSlot clusterSlug={cluster.slug} pageRegion="cluster_deals_top" />
-        <ClusterAdSlot clusterSlug={cluster.slug} pageRegion="cluster_events_top" />
-
-        <main
-          aria-label="Cluster content"
-          style={{
-            display: "grid",
-            gap: "0.75rem",
-            minWidth: 0,
-            paddingTop: "0.25rem",
-            paddingBottom: "1.5rem",
-          }}
-        >
-          {resolvedViewMode === CLUSTER_VIEW_MODES.MENU ? (
-            <ClusterMenuExplorerTab
-              clusterSlug={cluster.slug}
-              cluster={cluster}
-              enabled
-              searchSlotRef={searchSlotRef}
-            />
-          ) : (
-            <ClusterRestaurantsTab
-              clusterSlug={cluster.slug}
-              cluster={cluster}
-              enabled
-              placeReturnPath={restaurantsReturnPath}
-              placeReturnLabel={clusterLabel}
-            />
-          )}
-        </main>
-
-        {showGrowingNotice ? <ClusterGrowingNotice /> : null}
-
-        <ClusterAdSlot clusterSlug={cluster.slug} pageRegion="cluster_landing_footer" />
-
-        <footer
-          style={{
-            marginTop: "2rem",
-            paddingTop: "1rem",
-            borderTop: "1px solid #e5e7eb",
-            color: "#6b7280",
-            fontSize: "0.8rem",
-            lineHeight: 1.5,
-          }}
-        >
-          <p style={{ margin: 0 }}>{disclaimer}</p>
-        </footer>
-      </div>
+            >
+              <ClusterRestaurantsTab
+                clusterSlug={cluster.slug}
+                cluster={cluster}
+                enabled
+                placeReturnPath={restaurantsReturnPath}
+                placeReturnLabel={clusterLabel}
+              />
+            </main>
+            {clusterPageTail}
+          </div>
+        </>
+      )}
 
       <BottomNav />
     </div>
