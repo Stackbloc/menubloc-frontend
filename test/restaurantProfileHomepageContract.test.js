@@ -69,6 +69,8 @@ function testUnclaimedHomepageBlanks() {
   assert.match(about, /ProfilePhotoStrip/);
   assert.match(hero, /profile-hero-maps-address/);
   assert.match(hero, /profile-hero-hours/);
+  assert.match(hero, /Hours:/);
+  assert.match(hero, /fit-content/);
   assert.match(hero, /profile-hero-instagram/);
   assert.match(hero, /profile-hero-website/);
   assert.match(hero, /profile-hero-phone/);

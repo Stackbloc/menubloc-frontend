@@ -156,30 +156,37 @@ export default function ProfileHero({
   const showRestaurantContact = profileType === "restaurant";
   const hasAddress = Boolean(streetAddr || cityLine);
 
+  const hoursEmpty = hoursRows.length === 0;
   const hoursPanel = (
     <div
       data-testid="profile-hero-hours"
       style={{
-        flex: isMobile ? "1 1 100%" : "0 0 220px",
-        minWidth: isMobile ? 0 : 180,
-        maxWidth: isMobile ? "100%" : 240,
-        padding: isMobile ? "10px 12px" : "12px 14px",
+        flex: hoursEmpty ? "0 0 auto" : isMobile ? "1 1 auto" : "0 0 220px",
+        alignSelf: "flex-start",
+        minWidth: hoursEmpty ? undefined : isMobile ? 0 : 180,
+        maxWidth: isMobile ? "100%" : hoursEmpty ? "fit-content" : 240,
+        width: hoursEmpty ? "fit-content" : undefined,
+        marginTop: isMobile ? 10 : 0,
+        padding: hoursEmpty ? "6px 10px" : isMobile ? "10px 12px" : "12px 14px",
         borderRadius: 12,
         background: "rgba(28,25,23,0.28)",
         border: "1px solid rgba(250,250,249,0.18)",
+        boxSizing: "border-box",
+        whiteSpace: hoursEmpty ? "nowrap" : undefined,
       }}
     >
       <div
         style={{
-          fontSize: 11,
-          fontWeight: 800,
-          letterSpacing: 0.6,
-          textTransform: "uppercase",
+          fontSize: 14,
+          fontWeight: 700,
+          letterSpacing: "normal",
+          textTransform: "none",
           color: muted,
-          marginBottom: 8,
+          marginBottom: hoursEmpty ? 0 : 8,
+          lineHeight: 1.4,
         }}
       >
-        Hours{openLabel ? ` · ${openLabel}` : ""}
+        Hours:{openLabel ? ` ${openLabel}` : hoursEmpty ? " not posted" : ""}
       </div>
       {hoursRows.length ? (
         <div style={{ display: "grid", gap: 3 }}>
@@ -200,9 +207,7 @@ export default function ProfileHero({
           ))}
         </div>
       ) : (
-        <div data-testid="profile-hero-hours-blank" style={{ fontSize: 12, color: muted }}>
-          Hours not posted
-        </div>
+        <span data-testid="profile-hero-hours-blank" hidden />
       )}
     </div>
   );
@@ -514,6 +519,8 @@ export default function ProfileHero({
             ) : null}
           </div>
         ) : null}
+
+        {isMobile ? hoursPanel : null}
       </div>
     </div>
   );
@@ -578,7 +585,7 @@ export default function ProfileHero({
             }}
           >
             {identityLeft}
-            {hoursPanel}
+            {!isMobile ? hoursPanel : null}
           </div>
         </div>
       </div>
