@@ -144,8 +144,8 @@ export function ViewMenuLink({ href, dark, testId = "restaurant-profile-view-men
   );
 }
 
-/** Unclaimed fill-in-the-blank — same homepage sections, empty slots invite claim. */
-export function ProfileSectionBlank({ testId, message, claimHref = "/onboarding" }) {
+/** Empty homepage slot — no per-field claim CTA (one banner on the page). */
+export function ProfileSectionBlank({ testId, message }) {
   return (
     <div
       data-testid={testId || "profile-section-blank"}
@@ -160,12 +160,44 @@ export function ProfileSectionBlank({ testId, message, claimHref = "/onboarding"
       }}
     >
       <span>{message}</span>
-      {" "}
+    </div>
+  );
+}
+
+/** Single unclaimed-profile CTA — use once, prominently. */
+export function ProfileClaimBanner({ claimHref = "/onboarding", claimState = null }) {
+  return (
+    <div
+      data-testid="profile-claim-banner"
+      style={{
+        marginBottom: 20,
+        padding: "14px 16px",
+        borderRadius: 14,
+        border: `1px solid ${profileCardBorderVar}`,
+        background: "#fffbeb",
+        boxShadow: profileCardShadowVar,
+      }}
+    >
+      <div style={{ fontSize: 15, fontWeight: 800, color: PROFILE_INK, letterSpacing: "-0.02em" }}>
+        This profile is unclaimed.
+      </div>
+      <div style={{ marginTop: 4, fontSize: 13, color: PROFILE_MUTED, lineHeight: 1.45 }}>
+        Owners can add Instagram, hours, photos, favorites, and updates.
+      </div>
       <Link
-        to={claimHref || "/onboarding"}
-        style={{ color: profileAccentVar, fontWeight: 700, textDecoration: "none" }}
+        to={claimHref && claimHref !== "#claim-profile" ? claimHref : "/onboarding"}
+        state={claimState || undefined}
+        data-testid="profile-claim-banner-link"
+        style={{
+          display: "inline-block",
+          marginTop: 10,
+          fontSize: 14,
+          fontWeight: 800,
+          color: profileAccentVar,
+          textDecoration: "none",
+        }}
       >
-        Claim this profile to complete
+        Claim this profile to complete it →
       </Link>
     </div>
   );

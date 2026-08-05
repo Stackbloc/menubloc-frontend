@@ -24,6 +24,7 @@ import {
   profilePageBgVar,
   isFoodTruckProfile,
   ProfileSectionBlank,
+  ProfileClaimBanner,
 } from "./profilePrimitives.jsx";
 import {
   buildProfileStyleRootStyle,
@@ -227,6 +228,10 @@ export default function PublicProfileShell({
           boxSizing: "border-box",
         }}
       >
+        {showClaimInvites ? (
+          <ProfileClaimBanner claimHref={claimHref} claimState={claimState} />
+        ) : null}
+
         {!showClaimInvites ? (
           <ProfileBillboardBlock billboardPreview={billboardPreview} isMobile={isMobile} />
         ) : null}

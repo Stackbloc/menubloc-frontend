@@ -205,7 +205,8 @@ function testClaimedProfileUsesEditorialPresentation() {
   assert.match(about, /profile-about-founded/);
   assert.match(about, /profile-founded/);
   assert.match(about, /profile-founded-blank/);
-  assert.match(about, /profile-about-claim|Claim this profile to complete/);
+  assert.match(shell, /ProfileClaimBanner/);
+  assert.match(about, /profile-founded-blank/);
   assert.match(about, /ProfilePhotoStrip/);
   assert.match(billboard, /profile-billboard-block/);
   assert.match(favorites, /showClaimInvites|ProfileSectionBlank/);

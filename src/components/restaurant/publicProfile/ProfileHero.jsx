@@ -116,6 +116,7 @@ export default function ProfileHero({
   contentMax,
 }) {
   void shortDescription;
+  void showClaimInvites;
 
   const maxW = contentMax ?? PROFILE_CONTENT_MAX;
   const hasPhoto = Boolean(bannerPhotoUrl);
@@ -198,12 +199,10 @@ export default function ProfileHero({
             </div>
           ))}
         </div>
-      ) : showClaimInvites ? (
-        <div data-testid="profile-hero-hours-blank" style={{ fontSize: 12, color: muted, fontStyle: "italic" }}>
-          Claim this profile to complete hours.
-        </div>
       ) : (
-        <div style={{ fontSize: 12, color: muted }}>Hours not posted</div>
+        <div data-testid="profile-hero-hours-blank" style={{ fontSize: 12, color: muted }}>
+          Hours not posted
+        </div>
       )}
     </div>
   );
@@ -215,12 +214,22 @@ export default function ProfileHero({
         <div
           style={{
             display: "flex",
-            alignItems: "center",
+            alignItems: isMobile ? "flex-start" : "center",
+            flexDirection: isMobile ? "column" : "row",
             gap: 6,
             flexWrap: "wrap",
             minWidth: 0,
           }}
         >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              minWidth: 0,
+              maxWidth: "100%",
+            }}
+          >
           {statusLightProps ? <RestaurantStatusLight {...statusLightProps} size={7} /> : null}
           <h1
             style={{
@@ -228,11 +237,12 @@ export default function ProfileHero({
               fontSize: isMobile ? 24 : 32,
               fontWeight: 800,
               letterSpacing: "-0.03em",
-              lineHeight: 1.15,
+              lineHeight: 1.2,
               color: ink,
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
+              overflow: isMobile ? "visible" : "hidden",
+              textOverflow: isMobile ? undefined : "ellipsis",
+              whiteSpace: isMobile ? "normal" : "nowrap",
+              overflowWrap: isMobile ? "anywhere" : undefined,
               flex: "0 1 auto",
               minWidth: 0,
               maxWidth: "100%",
@@ -240,6 +250,7 @@ export default function ProfileHero({
           >
             {name}
           </h1>
+          </div>
           <div
             data-testid="profile-hero-actions"
             style={{
@@ -442,10 +453,6 @@ export default function ProfileHero({
               >
                 {igLabel}
               </a>
-            ) : showClaimInvites ? (
-              <span data-testid="profile-hero-instagram-blank" style={{ fontStyle: "italic", fontSize: 13 }}>
-                Claim this profile to complete Instagram.
-              </span>
             ) : null}
             {website ? (
               <a
@@ -457,28 +464,7 @@ export default function ProfileHero({
               >
                 {websiteLabel} ↗
               </a>
-            ) : showClaimInvites ? (
-              <span data-testid="profile-hero-website-blank" style={{ fontStyle: "italic", fontSize: 13 }}>
-                Claim this profile to complete website.
-              </span>
             ) : null}
-          </div>
-        ) : showRestaurantContact && showClaimInvites ? (
-          <div
-            data-testid="profile-hero-contact"
-            style={{
-              marginTop: 8,
-              display: "flex",
-              flexDirection: "column",
-              gap: 4,
-              fontSize: 13,
-              fontStyle: "italic",
-              color: muted,
-              paddingLeft: hasAddress ? 24 : 0,
-            }}
-          >
-            <span data-testid="profile-hero-instagram-blank">Claim this profile to complete Instagram.</span>
-            <span data-testid="profile-hero-website-blank">Claim this profile to complete website.</span>
           </div>
         ) : null}
 
@@ -533,16 +519,18 @@ export default function ProfileHero({
   );
 
   const overlayPad = {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
+    position: "relative",
     padding: isMobile ? "20px 16px 18px" : "28px 28px 24px",
+    width: "100%",
+    boxSizing: "border-box",
   };
 
   const headerStyle = hasPhoto
     ? {
         position: "relative",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "flex-end",
         minHeight: isMobile ? 260 : 340,
         backgroundColor: "#e7e5e4",
         backgroundImage: `linear-gradient(to top, rgba(28,25,23,0.78) 0%, rgba(28,25,23,0.28) 48%, transparent 72%), url(${JSON.stringify(
@@ -553,6 +541,9 @@ export default function ProfileHero({
       }
     : {
         position: "relative",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "flex-end",
         minHeight: isMobile ? 220 : 280,
         background:
           "linear-gradient(160deg, var(--profile-hero-from, #052e16) 0%, var(--profile-hero-via, #14532d) 38%, var(--profile-hero-to, #292524) 100%)",

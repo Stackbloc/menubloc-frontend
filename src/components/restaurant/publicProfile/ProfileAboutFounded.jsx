@@ -1,14 +1,12 @@
 /**
  * About Us + Founded on every public profile.
- * Unclaimed missing Founded (and About) render fill-in-the-blank claim prompts.
+ * Unclaimed missing Founded (and About) render empty slots; claim CTA is page-level.
  */
-import { Link } from "react-router-dom";
 import ProfilePhotoStrip from "./ProfilePhotoStrip.jsx";
 import {
   PROFILE_INK,
   PROFILE_MUTED,
   profileCardBorderVar,
-  profileAccentVar,
   firstNonEmpty,
   ProfileSectionBlank,
 } from "./profilePrimitives.jsx";
@@ -24,6 +22,8 @@ export default function ProfileAboutFounded({
   isMobile = false,
   showClaimInvites = false,
 }) {
+  void claimHref;
+  void claimState;
   const about = firstNonEmpty(aboutText);
   const founded = firstNonEmpty(foundedText);
 
@@ -90,22 +90,6 @@ export default function ProfileAboutFounded({
           showClaimInvites={showClaimInvites}
           embedded
         />
-
-        {showClaimInvites ? (
-          <Link
-            to={claimHref && claimHref !== "#claim-profile" ? claimHref : "/onboarding"}
-            state={claimState || undefined}
-            data-testid="profile-about-claim"
-            style={{
-              fontSize: 13,
-              fontWeight: 700,
-              color: profileAccentVar,
-              textDecoration: "none",
-            }}
-          >
-            Claim this profile to complete →
-          </Link>
-        ) : null}
       </div>
     </section>
   );
