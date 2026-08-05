@@ -227,7 +227,6 @@ function ClusterRestaurantsTab({ clusterSlug, cluster, enabled, placeReturnPath,
 
   return (
     <div style={{ display: "grid", gap: "0.75rem" }}>
-      <ClusterAdSlot clusterSlug={clusterSlug} pageRegion="cluster_restaurant_header" />
       {restaurants.length > 0 ? (
         <>
           {cuisineGroups.map((group, index) => (
@@ -245,8 +244,8 @@ function ClusterRestaurantsTab({ clusterSlug, cluster, enabled, placeReturnPath,
                   ))}
                 </div>
               </section>
-              {index === 0 ? (
-                <ClusterAdSlot clusterSlug={clusterSlug} pageRegion="cluster_events_top" />
+              {index === 1 ? (
+                <SpacedClusterAdSlot clusterSlug={clusterSlug} pageRegion="cluster_events_top" />
               ) : null}
             </React.Fragment>
           ))}
@@ -303,7 +302,7 @@ function ClusterRestaurantsTab({ clusterSlug, cluster, enabled, placeReturnPath,
         </button>
       ) : null}
       {error ? <p style={{ color: "#b91c1c", margin: 0 }}>{error}</p> : null}
-      <ClusterAdSlot clusterSlug={clusterSlug} pageRegion="cluster_restaurant_footer" />
+      <SpacedClusterAdSlot clusterSlug={clusterSlug} pageRegion="cluster_restaurant_footer" />
     </div>
   );
 }
@@ -312,6 +311,24 @@ const CLUSTER_SEARCH_GRID_STYLE = {
   display: "grid",
   gap: "0.85rem",
 };
+
+const CLUSTER_AD_SPACE_STYLE = {
+  padding: "2.75rem 0 3.25rem",
+};
+
+function SpacedClusterAdSlot(props) {
+  return (
+    <div data-testid="cluster-ad-space" style={CLUSTER_AD_SPACE_STYLE}>
+      <ClusterAdSlot {...props} />
+    </div>
+  );
+}
+
+function shouldInsertClusterSearchAd(index, totalCount) {
+  if (totalCount < 8) return false;
+  const after = index + 1;
+  return after === 4 && totalCount - after >= 3;
+}
 
 const CLUSTER_STICKY_CHROME_STYLE = {
   position: "sticky",
@@ -619,7 +636,6 @@ function ClusterMenuExplorerTab({
     <div style={{ display: "grid", gap: "1rem" }}>
       {searchActive ? (
         <div style={{ display: "grid", gap: "0.75rem" }}>
-          <ClusterAdSlot clusterSlug={clusterSlug} pageRegion="cluster_search_top" />
           {searchStatus === "loading" ? <p style={{ color: "#666", margin: 0 }}>Searching {submittedSearch}…</p> : null}
           {searchStatus === "error" ? <p style={{ color: "#b91c1c", margin: 0 }}>{searchError}</p> : null}
           {searchStatus === "ok" && searchMenuItems.length === 0 ? (
@@ -637,11 +653,9 @@ function ClusterMenuExplorerTab({
           ) : null}
           <div style={CLUSTER_SEARCH_GRID_STYLE}>
             {searchMenuItems.map((row, index) => {
-              const inlineAfter = Math.min(1, Math.max(searchMenuItems.length - 1, 0));
-              const inlineSlot =
-                index === inlineAfter ? (
-                  <ClusterAdSlot clusterSlug={clusterSlug} pageRegion="cluster_search_inline" />
-                ) : null;
+              const inlineSlot = shouldInsertClusterSearchAd(index, searchMenuItems.length) ? (
+                <SpacedClusterAdSlot clusterSlug={clusterSlug} pageRegion="cluster_search_inline" />
+              ) : null;
 
               if (row?.placeholder_item) {
                 return (
@@ -821,7 +835,6 @@ function ClusterMenuExplorerTab({
               })}
             </ChipRail>
           ) : null}
-          <ClusterAdSlot clusterSlug={clusterSlug} pageRegion="cluster_deals_top" />
           {status === "loading" ? <p style={{ color: "#666" }}>Loading {categoryTitle}…</p> : null}
           {status === "error" ? <p style={{ color: "#b91c1c" }}>{error}</p> : null}
           {status === "ok" && items.length === 0 ? (
@@ -840,6 +853,9 @@ function ClusterMenuExplorerTab({
               clusterReturnTo={clusterReturnTo}
               clusterReturnLabel={clusterDestinationLabel}
             />
+          ) : null}
+          {displayItems.length > 0 ? (
+            <SpacedClusterAdSlot clusterSlug={clusterSlug} pageRegion="cluster_deals_top" />
           ) : null}
           {pagination?.has_more ? (
             <button
@@ -874,6 +890,7 @@ function ClusterMenuExplorerTab({
               setSelectedCategory(category);
             }}
           />
+          <SpacedClusterAdSlot clusterSlug={clusterSlug} pageRegion="cluster_landing_footer" />
         </div>
       )}
     </div>
@@ -1085,7 +1102,7 @@ export default function ClusterPage() {
   );
 
   const clusterFoodHero = (
-    <ClusterAdSlot clusterSlug={cluster.slug} pageRegion="cluster_landing_hero" />
+    <SpacedClusterAdSlot clusterSlug={cluster.slug} pageRegion="cluster_landing_hero" />
   );
 
   const clusterDisclaimer = (
@@ -1106,7 +1123,6 @@ export default function ClusterPage() {
   const clusterFoodTail = (
     <>
       {showGrowingNotice ? <ClusterGrowingNotice /> : null}
-      <ClusterAdSlot clusterSlug={cluster.slug} pageRegion="cluster_landing_footer" />
       {clusterDisclaimer}
     </>
   );
