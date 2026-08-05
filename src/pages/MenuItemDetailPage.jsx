@@ -66,6 +66,13 @@ import { formatMoney, getConsumerDisplayPrice } from "../lib/pricingDisplay.js";
 import { useOrderCart } from "../context/OrderCartContext.jsx";
 import { sendPageVisit } from "../lib/analyticsPageVisitSend.js";
 import { getNormalizedMenuItemId, isValidMenuItemRouteId } from "../lib/menuItemIdentity.js";
+import {
+  hasAlcoholicBeverageContent,
+  isAlcoholicBeverageItem,
+  resolveAlcoholicBeverageContent,
+  RESPONSIBLE_DRINKING_BULLETS,
+  RESPONSIBLE_DRINKING_TITLE,
+} from "../lib/alcoholicBeverageDetail.js";
 
 const BACKEND_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 
@@ -1009,6 +1016,72 @@ function MissingNutritionState() {
   );
 }
 
+function AlcoholicBeverageInfoCluster({ content, isMobile, t }) {
+  if (!hasAlcoholicBeverageContent(content)) return null;
+
+  const description = String(content?.description || "").trim();
+  const recipe = String(content?.recipe || "").trim();
+  const ingredients = Array.isArray(content?.ingredients)
+    ? content.ingredients.map((entry) => String(entry || "").trim()).filter(Boolean)
+    : [];
+
+  return (
+    <Surface style={{ marginTop: 22, padding: isMobile ? 18 : 22 }}>
+      <Eyebrow>{t("menuItemDetail.beverageInfo", "Beverage")}</Eyebrow>
+      <div style={{ display: "grid", gap: 18 }}>
+        {description ? (
+          <SectionCard
+            title={t("menuItemDetail.beverageDescription", "Description")}
+            eyebrow={t("menuItemDetail.beverageDescription", "Description")}
+          >
+            <div style={{ fontSize: 15, lineHeight: 1.6, color: "#D1D5DB", fontWeight: 800 }}>
+              {description}
+            </div>
+          </SectionCard>
+        ) : null}
+        {recipe ? (
+          <SectionCard
+            title={t("menuItemDetail.beverageRecipe", "Recipe")}
+            eyebrow={t("menuItemDetail.beverageRecipe", "Recipe")}
+          >
+            <div style={{ fontSize: 15, lineHeight: 1.6, color: "#D1D5DB", fontWeight: 800, whiteSpace: "pre-wrap" }}>
+              {recipe}
+            </div>
+          </SectionCard>
+        ) : null}
+        {ingredients.length ? (
+          <SectionCard
+            title={t("menuItemDetail.beverageIngredients", "Ingredients")}
+            eyebrow={t("menuItemDetail.beverageIngredients", "Ingredients")}
+          >
+            <ul style={{ margin: 0, paddingLeft: 18, display: "grid", gap: 6, color: "#D1D5DB", fontSize: 15, lineHeight: 1.55, fontWeight: 700 }}>
+              {ingredients.map((entry) => (
+                <li key={entry}>{entry}</li>
+              ))}
+            </ul>
+          </SectionCard>
+        ) : null}
+      </div>
+    </Surface>
+  );
+}
+
+function ResponsibleDrinkingNotice({ t }) {
+  return (
+    <Surface style={{ marginTop: 22, padding: 20 }}>
+      <Eyebrow>{t("menuItemDetail.drinkResponsiblyEyebrow", "Please note")}</Eyebrow>
+      <h2 style={{ margin: 0, fontSize: 22, lineHeight: 1.05, letterSpacing: "-0.03em", color: "#FFFFFF" }}>
+        {t("menuItemDetail.drinkResponsiblyTitle", RESPONSIBLE_DRINKING_TITLE)}
+      </h2>
+      <ul style={{ margin: "16px 0 0", paddingLeft: 18, display: "grid", gap: 8, color: "#9CA3AF", fontSize: 13.5, lineHeight: 1.55, fontWeight: 700 }}>
+        {RESPONSIBLE_DRINKING_BULLETS.map((line) => (
+          <li key={line}>{line}</li>
+        ))}
+      </ul>
+    </Surface>
+  );
+}
+
 // ── Explore Similar Dishes ───────────────────────────────────
 
 const SIMILAR_DIET_FILTER_KEYS = Object.freeze([
@@ -1377,6 +1450,14 @@ export default function MenuItemDetailPage() {
   }
 
   const detailSystem = item.detailSystem || null;
+  const isAlcoholicBeverage = isAlcoholicBeverageItem(rawItem, detailSystem);
+  const alcoholicBeverageContent = isAlcoholicBeverage
+    ? resolveAlcoholicBeverageContent(
+      rawItem,
+      detailSystem,
+      getLocalizedField(item, "description", language) || item.description,
+    )
+    : null;
   const hasNutritionData = hasAnyNutritionData(detailSystem);
   const indulgencePresentation = resolveIndulgencePresentation({ detailSystem });
   const integrity = rawItem?.integrity || null;
@@ -1385,7 +1466,7 @@ export default function MenuItemDetailPage() {
   const showItemPhoto = hasRenderableImage(item.itemPhotoUrl);
   const heroGridColumns = "1fr";
   const effectiveAllergenFilter = isAuthenticated ? allergenFilter || null : null;
-  const showStickyVerdict = !indulgencePresentation && !detailSystem?.bread_score;
+  const showStickyVerdict = !isAlcoholicBeverage && !indulgencePresentation && !detailSystem?.bread_score;
   const itemDescription = getLocalizedField(item, "description", language) || item.description;
   const fullMenuHref = item
     ? appendMenuHighlightQuery(
@@ -1529,8 +1610,8 @@ export default function MenuItemDetailPage() {
                 />
               </div>
 
-              {indulgencePresentation ? <IndulgenceInline presentation={indulgencePresentation} /> : null}
-              {!indulgencePresentation && detailSystem?.bread_score ? <BreadScoreInline detailSystem={detailSystem} /> : null}
+              {!isAlcoholicBeverage && indulgencePresentation ? <IndulgenceInline presentation={indulgencePresentation} /> : null}
+              {!isAlcoholicBeverage && !indulgencePresentation && detailSystem?.bread_score ? <BreadScoreInline detailSystem={detailSystem} /> : null}
             </div>
 
             {itemDescription ? (
@@ -1550,7 +1631,7 @@ export default function MenuItemDetailPage() {
               tone="dark"
             />
 
-            {showStickyVerdict ? (
+            {showStickyVerdict && !isAlcoholicBeverage ? (
               <VerdictBlock detailSystem={detailSystem} isMobile={isMobile} t={t} compact />
             ) : null}
 
@@ -1580,7 +1661,13 @@ export default function MenuItemDetailPage() {
         </Surface>
       )}
 
-      {hasNutritionData ? (
+      {isAlcoholicBeverage ? (
+        <AlcoholicBeverageInfoCluster
+          content={alcoholicBeverageContent}
+          isMobile={isMobile}
+          t={t}
+        />
+      ) : hasNutritionData ? (
         <>
           <PreparationCard detailSystem={detailSystem} t={t} />
           <NutritionInsightsCluster
@@ -1604,6 +1691,8 @@ export default function MenuItemDetailPage() {
         t={t}
         allergenFilter={effectiveAllergenFilter}
       />
+
+      {isAlcoholicBeverage ? <ResponsibleDrinkingNotice t={t} /> : null}
     </PageShell>
   );
 }

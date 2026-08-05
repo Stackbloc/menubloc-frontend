@@ -20,6 +20,14 @@ test("MenuItemDetailPage compact VerdictBlock renders brief explanation", () => 
   assert.doesNotMatch(source, /if \(!nutritionComplete && compact\) return null/);
 });
 
+test("MenuItemDetailPage hides nutrition verdict only for alcoholic beverages", () => {
+  const source = fs.readFileSync(DETAIL_PAGE, "utf8");
+  assert.match(source, /isAlcoholicBeverageItem/);
+  assert.match(source, /showStickyVerdict && !isAlcoholicBeverage/);
+  assert.match(source, /ResponsibleDrinkingNotice/);
+  assert.match(source, /<NutritionInsightsCluster/);
+});
+
 test("MenuItemDetailPage accepts cmi: franchise route IDs", () => {
   const source = fs.readFileSync(DETAIL_PAGE, "utf8");
   assert.match(source, /isValidMenuItemRouteId/);
