@@ -129,6 +129,13 @@ describe("MenuItemDetailPage alcoholic substitution contract", () => {
     assert.match(detailSource, /showStickyVerdict && !isAlcoholicBeverage/);
   });
 
+  it("omits Similar and Compare for alcoholic beverages only", () => {
+    assert.match(detailSource, /function ExploreSimilarDishes/);
+    assert.match(detailSource, /CompareItemsModal/);
+    assert.match(detailSource, /\{!isAlcoholicBeverage \? \([\s\S]*<ExploreSimilarDishes/);
+    assert.match(detailSource, /isAlcoholicBeverage \? <ResponsibleDrinkingNotice/);
+  });
+
   it("keeps the authorized responsible-drinking copy", () => {
     assert.equal(RESPONSIBLE_DRINKING_TITLE, "Drink Responsibly");
     assert.equal(RESPONSIBLE_DRINKING_BULLETS.length, 5);

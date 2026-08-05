@@ -26,6 +26,7 @@ test("MenuItemDetailPage hides nutrition verdict only for alcoholic beverages", 
   assert.match(source, /showStickyVerdict && !isAlcoholicBeverage/);
   assert.match(source, /ResponsibleDrinkingNotice/);
   assert.match(source, /<NutritionInsightsCluster/);
+  assert.match(source, /\{!isAlcoholicBeverage \? \([\s\S]*<ExploreSimilarDishes/);
 });
 
 test("MenuItemDetailPage accepts cmi: franchise route IDs", () => {

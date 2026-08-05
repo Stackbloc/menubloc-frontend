@@ -1681,16 +1681,18 @@ export default function MenuItemDetailPage() {
         <MissingNutritionState />
       )}
 
-      <ExploreSimilarDishes
-        itemId={item.menu_item_id}
-        itemName={displayItemName}
-        currentSlug={item.restaurant.slug || null}
-        geoLat={geoLat}
-        geoLng={geoLng}
-        activeSearchParams={searchParams}
-        t={t}
-        allergenFilter={effectiveAllergenFilter}
-      />
+      {!isAlcoholicBeverage ? (
+        <ExploreSimilarDishes
+          itemId={item.menu_item_id}
+          itemName={displayItemName}
+          currentSlug={item.restaurant.slug || null}
+          geoLat={geoLat}
+          geoLng={geoLng}
+          activeSearchParams={searchParams}
+          t={t}
+          allergenFilter={effectiveAllergenFilter}
+        />
+      ) : null}
 
       {isAlcoholicBeverage ? <ResponsibleDrinkingNotice t={t} /> : null}
     </PageShell>
