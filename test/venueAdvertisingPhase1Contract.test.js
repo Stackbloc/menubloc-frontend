@@ -72,6 +72,14 @@ describe("venue advertising Phase 1 contracts", () => {
     assert.match(page, /cluster_events_top/);
   });
 
+  it("ClusterPage does not stack landing hero with deals/events ads", () => {
+    const page = read("src/pages/ClusterPage.jsx");
+    assert.doesNotMatch(page, /cluster_landing_hero[\s\S]{0,240}cluster_deals_top/);
+    assert.doesNotMatch(page, /cluster_deals_top[\s\S]{0,240}cluster_events_top/);
+    assert.doesNotMatch(page, /cluster_landing_hero[\s\S]{0,240}cluster_events_top/);
+    assert.match(page, /searchActive \? null : preContent/);
+  });
+
   it("HomeNext is not modified for advertising", () => {
     const home = read("src/pages/HomeNext.jsx");
     assert.doesNotMatch(home, /ClusterAdSlot/);

@@ -51,6 +51,7 @@ export default function ClusterAdSlot({
     : ad.image_url;
 
   const frameStyle = resolveFrameStyle(type, style);
+  const mediaStyle = resolveMediaStyle(type);
 
   const media = ad.mobile_image_url ? (
     <picture>
@@ -58,14 +59,14 @@ export default function ClusterAdSlot({
       <img
         src={ad.image_url}
         alt={ad.headline || ad.name || "Advertisement"}
-        style={{ width: "100%", height: "auto", display: "block", borderRadius: 8 }}
+        style={mediaStyle}
       />
     </picture>
   ) : (
     <img
       src={imgSrc}
       alt={ad.headline || ad.name || "Advertisement"}
-      style={{ width: "100%", height: "auto", display: "block", borderRadius: 8 }}
+      style={mediaStyle}
     />
   );
 
@@ -107,18 +108,57 @@ export default function ClusterAdSlot({
   return body;
 }
 
+function resolveMediaStyle(type) {
+  const cover = {
+    width: "100%",
+    display: "block",
+    borderRadius: 8,
+    objectFit: "cover",
+    objectPosition: "center",
+  };
+  switch (type) {
+    case "Hero Banner":
+      return { ...cover, aspectRatio: "16 / 9", maxHeight: 320 };
+    case "Page Banner":
+      return { ...cover, aspectRatio: "3 / 1", maxHeight: 148 };
+    case "Inline Banner":
+      return { ...cover, aspectRatio: "4 / 3", maxHeight: 220 };
+    case "Sponsored Card":
+      return { ...cover, aspectRatio: "16 / 9", maxHeight: 200 };
+    case "Featured Listing":
+      return { ...cover, aspectRatio: "4 / 3", maxHeight: 240 };
+    case "Interstitial":
+      return { ...cover, aspectRatio: "21 / 9", maxHeight: 176 };
+    case "Floating Banner":
+      return { ...cover, aspectRatio: "5 / 1", maxHeight: 96, borderRadius: 0 };
+    default:
+      return { width: "100%", height: "auto", display: "block", borderRadius: 8 };
+  }
+}
+
 function resolveFrameStyle(type, style = {}) {
   const base = {
-    margin: "12px 0",
+    margin: "16px 0",
     ...style,
   };
   switch (type) {
     case "Hero Banner":
       return { ...base, width: "100%" };
+    case "Page Banner":
+      return { ...base, width: "100%" };
+    case "Inline Banner":
+      return {
+        ...base,
+        maxWidth: 420,
+        width: "100%",
+        marginLeft: "auto",
+        marginRight: "auto",
+      };
     case "Sponsored Card":
     case "Featured Listing":
       return {
         ...base,
+        maxWidth: 560,
         padding: 12,
         border: "1px solid #e5e7eb",
         borderRadius: 12,
@@ -127,7 +167,7 @@ function resolveFrameStyle(type, style = {}) {
     case "Interstitial":
       return {
         ...base,
-        padding: 16,
+        padding: 12,
         borderRadius: 12,
         background: "#111827",
         color: "#fff",
@@ -138,12 +178,15 @@ function resolveFrameStyle(type, style = {}) {
         position: "sticky",
         bottom: 12,
         zIndex: 5,
+        maxWidth: 640,
+        marginLeft: "auto",
+        marginRight: "auto",
+        borderRadius: 10,
+        overflow: "hidden",
         boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
       };
     case "Native Promotion":
       return { ...base, padding: "8px 0" };
-    case "Inline Banner":
-    case "Page Banner":
     default:
       return base;
   }
