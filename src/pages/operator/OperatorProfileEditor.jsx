@@ -6,11 +6,11 @@
  * /operator/profile redirects to My Account.
  *
  * Sections (visibility controlled by plan benefits):
- *   • Core fields — always visible (profile_edit): cuisine, type, contact, address
+ *   • Core fields — always visible (profile_edit): cuisine, type, contact, Instagram, address
  *   • About Us    — benefit: about_us
- *   • Founded / Meet the Team — profile_edit (draft → Publish)
- *   • Logo        — benefit: logo_upload
- *   • Featured dish — benefit: featured_dish
+ *   • Founded — profile_edit (draft → Publish)
+ *   • Logo / banner / billboards / deals — public homepage photos + sections
+ *   • Favorite Menu Items + Updates — live homepage sections
  *   • Hours       — link to /operator/hours
  *
  * Pattern: edits go to draft → Publish makes them live.
@@ -125,10 +125,59 @@ export function OperatorRestaurantProfileForm({ embedded = false } = {}) {
   const [bannerUrl, setBannerUrl] = useState("");
   const [logoUploading, setLogoUploading] = useState(false);
   const [bannerUploading, setBannerUploading] = useState(false);
+  const [favoriteIds, setFavoriteIds] = useState([]);
+  const [profileUpdates, setProfileUpdates] = useState([]);
+  const [updateDraft, setUpdateDraft] = useState({ title: "", body: "" });
+  const [updateSaving, setUpdateSaving] = useState(false);
   const logoFileRef = useRef(null);
   const bannerFileRef = useRef(null);
 
   const f = (k) => (e) => setForm(p => ({ ...p, [k]: e.target.value }));
+
+  function toggleFavoriteId(id) {
+    const key = String(id);
+    setFavoriteIds((prev) => {
+      const current = Array.isArray(prev) ? [...prev] : [];
+      const idx = current.indexOf(key);
+      if (idx >= 0) current.splice(idx, 1);
+      else if (current.length < 3) current.push(key);
+      return current;
+    });
+  }
+
+  async function handleCreateUpdate() {
+    if (!rid || !String(updateDraft.title || "").trim()) return;
+    setUpdateSaving(true);
+    setError("");
+    try {
+      await api.createProfileUpdate(rid, {
+        title: updateDraft.title,
+        body: updateDraft.body,
+      });
+      const updatesData = await api.getProfileUpdates(rid);
+      setProfileUpdates(Array.isArray(updatesData?.profile_updates) ? updatesData.profile_updates : []);
+      setUpdateDraft({ title: "", body: "" });
+    } catch (err) {
+      setError(err.message || "Could not create update.");
+    } finally {
+      setUpdateSaving(false);
+    }
+  }
+
+  async function handleDeleteUpdate(updateId) {
+    if (!rid || !updateId) return;
+    setUpdateSaving(true);
+    setError("");
+    try {
+      await api.deleteProfileUpdate(rid, updateId);
+      const updatesData = await api.getProfileUpdates(rid);
+      setProfileUpdates(Array.isArray(updatesData?.profile_updates) ? updatesData.profile_updates : []);
+    } catch (err) {
+      setError(err.message || "Could not delete update.");
+    } finally {
+      setUpdateSaving(false);
+    }
+  }
   const publicProfileHref = useMemo(() => {
     const slugOrId = profile?.slug || rid;
     return slugOrId ? `/restaurants/${encodeURIComponent(String(slugOrId))}` : null;
@@ -168,13 +217,26 @@ export function OperatorRestaurantProfileForm({ embedded = false } = {}) {
         );
         return allItemArrays.flat();
       }).catch(() => []),
+      api.getFavoriteMenuItems(rid).catch(() => ({})),
+      api.getProfileUpdates(rid).catch(() => ({})),
     ])
-      .then(([profileData, items]) => {
+      .then(([profileData, items, favoritesData, updatesData]) => {
         const p = profileData.profile || {};
         setProfile(p);
         setBenefits(profileData.benefits || {});
         setAllItems(items);
         setBannerUrl(p.hero_image_url || "");
+        const ids = (Array.isArray(favoritesData?.favorite_menu_item_ids)
+          ? favoritesData.favorite_menu_item_ids
+          : p.featured_menu_item_id
+            ? [p.featured_menu_item_id]
+            : []
+        )
+          .map((id) => String(id))
+          .filter(Boolean)
+          .slice(0, 3);
+        setFavoriteIds(ids);
+        setProfileUpdates(Array.isArray(updatesData?.profile_updates) ? updatesData.profile_updates : []);
         // Initialise form from live values (not draft)
         setForm({
           restaurant_name: p.restaurant_name || "",
@@ -187,11 +249,12 @@ export function OperatorRestaurantProfileForm({ embedded = false } = {}) {
           postal_code:     p.postal_code || "",
           phone:           p.phone || "",
           website_url:     p.website_url || "",
+          instagram:       p.instagram || "",
           about_us:        p.about_us || "",
           founded_year:    p.founded_year != null ? String(p.founded_year) : "",
           team_intro:      p.team_intro || "",
           logo_url:        p.logo_url || "",
-          featured_menu_item_id: p.featured_menu_item_id || "",
+          featured_menu_item_id: ids[0] || p.featured_menu_item_id || "",
           // null = Use Recommended Style (auto from category/cuisine)
           profile_style_key:
             p.profile_style_key === undefined || p.profile_style_key === ""
@@ -266,6 +329,7 @@ export function OperatorRestaurantProfileForm({ embedded = false } = {}) {
         postal_code:     form.postal_code,
         phone:           form.phone,
         website_url:     form.website_url,
+        instagram:       form.instagram || null,
         founded_year:    form.founded_year === "" || form.founded_year == null ? null : form.founded_year,
         team_intro:      form.team_intro || null,
         // Explicit null clears manual override (Use Recommended Style)
@@ -287,10 +351,16 @@ export function OperatorRestaurantProfileForm({ embedded = false } = {}) {
         });
       }
 
-      // Featured dish (direct update)
-      if (hasBenefit("featured_dish")) {
-        const itemId = form.featured_menu_item_id || null;
-        await api.setFeaturedDish(rid, itemId);
+      const ids = (favoriteIds || [])
+        .map((id) => Number(id))
+        .filter((id) => Number.isFinite(id) && id > 0)
+        .slice(0, 3);
+      try {
+        await api.updateFavoriteMenuItems(rid, ids);
+      } catch (favErr) {
+        throw new Error(
+          `Draft saved, but Favorite Menu Items did not update on the public profile: ${favErr.message || favErr}`
+        );
       }
     } catch (e) {
       throw e;
@@ -336,12 +406,37 @@ export function OperatorRestaurantProfileForm({ embedded = false } = {}) {
       const publicCategory = String(publicRestaurant.category || "").trim();
       const publicPhone = String(publicRestaurant.phone || "").trim();
       const publicWebsite = String(publicRestaurant.website || publicRestaurant.website_url || "").trim();
+      const normIg = (v) => String(v || "").trim().replace(/^@+/, "").toLowerCase();
+      const publicInstagram = normIg(publicRestaurant.instagram);
+      const liveInstagram = normIg(refreshedProfile?.instagram);
+      const publicFounded =
+        publicRestaurant.founded_year == null || publicRestaurant.founded_year === ""
+          ? ""
+          : String(publicRestaurant.founded_year);
+      const liveFounded =
+        refreshedProfile?.founded_year == null || refreshedProfile?.founded_year === ""
+          ? ""
+          : String(refreshedProfile.founded_year);
+      const publicAbout = String(publicRestaurant.about_us || publicRestaurant.bio || "").trim();
+      const liveAbout = String(refreshedProfile?.about_us || "").trim();
+      const publicFavIds = (Array.isArray(publicRestaurant.favorite_menu_item_ids)
+        ? publicRestaurant.favorite_menu_item_ids
+        : []
+      ).map((id) => Number(id)).filter((id) => Number.isFinite(id) && id > 0);
+      const expectedFavIds = (favoriteIds || [])
+        .map((id) => Number(id))
+        .filter((id) => Number.isFinite(id) && id > 0)
+        .slice(0, 3);
 
       const mismatches = [];
       if (String(refreshedProfile?.restaurant_name || "").trim() !== publicName) mismatches.push("name");
       if (String(refreshedProfile?.category || "").trim() !== publicCategory) mismatches.push("type");
       if (String(refreshedProfile?.phone || "").trim() !== publicPhone) mismatches.push("phone");
       if (String(refreshedProfile?.website_url || "").trim() !== publicWebsite) mismatches.push("website");
+      if (liveInstagram !== publicInstagram) mismatches.push("instagram");
+      if (liveFounded !== publicFounded) mismatches.push("founded_year");
+      if (liveAbout && liveAbout !== publicAbout) mismatches.push("about_us");
+      if (JSON.stringify(publicFavIds) !== JSON.stringify(expectedFavIds)) mismatches.push("favorite_menu_items");
       if (mismatches.length) {
         console.error("[operator-profile] publish verification mismatch", {
           mismatches,
@@ -512,6 +607,16 @@ export function OperatorRestaurantProfileForm({ embedded = false } = {}) {
               />
             </div>
             <div>
+              <Label>Instagram</Label>
+              <input
+                style={INPUT}
+                value={form.instagram || ""}
+                onChange={f("instagram")}
+                placeholder="@handle"
+                data-testid="operator-profile-instagram"
+              />
+            </div>
+            <div>
               <Label>Phone</Label>
               <input style={INPUT} value={form.phone || ""} onChange={f("phone")} placeholder="(555) 555-5555" />
             </div>
@@ -562,10 +667,10 @@ export function OperatorRestaurantProfileForm({ embedded = false } = {}) {
           )}
         </Section>
 
-        {/* ── Founded + Meet the Team (At a Glance) ───────────────────── */}
+        {/* ── Founded (public homepage About Us block) ─────────────────── */}
         <Section
-          title="Founded & team"
-          sub="These fill the public profile At a Glance rows for Founded and Meet the Team. Save draft, then Publish."
+          title="Founded"
+          sub="Shows as Founded on the public profile About Us block. Save draft, then Publish."
         >
           <div style={{ display: "grid", gap: 14, gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))" }}>
             <div>
@@ -598,7 +703,7 @@ export function OperatorRestaurantProfileForm({ embedded = false } = {}) {
 
         <Section
           title="Hours"
-          sub="Weekly hours and holiday exceptions power the public At a Glance Hours row."
+          sub="Weekly hours appear in the public profile hero. Holiday exceptions stay in Hours settings."
         >
           <Link
             to="/operator/hours"
@@ -795,39 +900,171 @@ export function OperatorRestaurantProfileForm({ embedded = false } = {}) {
           />
         </Section>
 
-        {/* ── Featured Dish ───────────────────────────────────────────── */}
         <Section
-          title="Featured dish"
-          sub="Optional. Choose one item from your menu to spotlight on the public profile (shown in the Featured dish section)."
+          title="Billboards & deals"
+          sub="Billboard creatives fill the public splash, Billboard block, and photo strip. Deals fill the public Deals section."
         >
-          {hasBenefit("featured_dish") ? (
-            allItems.length === 0 ? (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+            <Link
+              to="/operator/billboards"
+              data-testid="operator-profile-billboards-link"
+              style={{
+                display: "inline-block",
+                padding: "10px 14px",
+                borderRadius: 8,
+                background: "#1c1917",
+                color: "#fff",
+                textDecoration: "none",
+                fontSize: 13,
+                fontWeight: 700,
+              }}
+            >
+              Edit billboards →
+            </Link>
+            <Link
+              to="/operator/deals"
+              data-testid="operator-profile-deals-link"
+              style={{
+                display: "inline-block",
+                padding: "10px 14px",
+                borderRadius: 8,
+                background: "#fff",
+                color: "#1c1917",
+                border: "1px solid #d6d3d1",
+                textDecoration: "none",
+                fontSize: 13,
+                fontWeight: 700,
+              }}
+            >
+              Edit deals →
+            </Link>
+          </div>
+        </Section>
+
+        {/* ── Favorite Menu Items (public homepage) ───────────────────── */}
+        <Section
+          title="Favorite Menu Items"
+          sub="Up to 3 dishes on the public profile. First selection is also the featured dish on the menu. Changes go live immediately."
+        >
+          <div data-testid="operator-profile-favorite-items">
+            {allItems.length === 0 ? (
               <div style={{ fontSize: 13, color: "#8a9ab0", lineHeight: 1.5 }}>
-                You need at least one menu item first. Open Menu Lab, add dishes, then return here to pick a featured dish.
+                Add menu items first, then return here to pick favorites.
               </div>
             ) : (
-              <>
-                <select
-                  style={{ ...INPUT, cursor: "pointer" }}
-                  value={form.featured_menu_item_id || ""}
-                  onChange={f("featured_menu_item_id")}
-                >
-                  <option value="">— No featured dish —</option>
-                  {allItems.map((i) => (
-                    <option key={i.id} value={i.id}>
-                      {i.name}
-                      {i.price != null && i.price !== "" ? ` · $${Number(i.price).toFixed(2)}` : ""}
-                    </option>
-                  ))}
-                </select>
-                <div style={{ fontSize: 12, color: "#a8a29e", marginTop: 8, lineHeight: 1.45 }}>
-                  This is not your full menu — just one highlight. Diners still browse the complete menu separately.
+              <div style={{ display: "grid", gap: 8 }}>
+                {allItems.map((i) => {
+                  const id = String(i.id);
+                  const checked = favoriteIds.includes(id);
+                  const disabled = !checked && favoriteIds.length >= 3;
+                  return (
+                    <label
+                      key={id}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        fontSize: 13,
+                        opacity: disabled ? 0.45 : 1,
+                        cursor: disabled ? "not-allowed" : "pointer",
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        disabled={disabled}
+                        onChange={() => toggleFavoriteId(id)}
+                      />
+                      <span>
+                        {i.name}
+                        {i.price != null && i.price !== "" ? ` · $${Number(i.price).toFixed(2)}` : ""}
+                      </span>
+                    </label>
+                  );
+                })}
+                <div style={{ fontSize: 12, color: "#a8a29e" }}>
+                  Selected {favoriteIds.length}/3. Save draft to publish favorites to the public profile.
                 </div>
-              </>
-            )
-          ) : (
-            <LockedField benefitName="Featured dish" />
-          )}
+              </div>
+            )}
+          </div>
+        </Section>
+
+        <Section
+          title="Profile Updates"
+          sub="Hiring, live music, and other news on the public Updates section. Posts go live immediately."
+        >
+          <div data-testid="operator-profile-updates" style={{ display: "grid", gap: 10 }}>
+            <input
+              style={INPUT}
+              value={updateDraft.title}
+              onChange={(e) => setUpdateDraft((p) => ({ ...p, title: e.target.value }))}
+              placeholder="e.g. Live music Friday"
+              data-testid="operator-profile-update-title"
+            />
+            <textarea
+              style={{ ...TEXTAREA, minHeight: 72 }}
+              value={updateDraft.body}
+              onChange={(e) => setUpdateDraft((p) => ({ ...p, body: e.target.value }))}
+              placeholder="Optional details"
+            />
+            <button
+              type="button"
+              onClick={handleCreateUpdate}
+              disabled={updateSaving || !String(updateDraft.title || "").trim()}
+              style={{
+                alignSelf: "start",
+                padding: "8px 14px",
+                borderRadius: 8,
+                border: "none",
+                background: "#1c1917",
+                color: "#fff",
+                fontWeight: 700,
+                fontSize: 13,
+                cursor: updateSaving ? "not-allowed" : "pointer",
+                fontFamily: "inherit",
+              }}
+            >
+              Post update
+            </button>
+            {profileUpdates.length ? (
+              <div style={{ display: "grid", gap: 8 }}>
+                {profileUpdates.map((row) => (
+                  <div
+                    key={row.id}
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      gap: 10,
+                      padding: "8px 10px",
+                      border: "1px solid #e7e5e4",
+                      borderRadius: 8,
+                      fontSize: 13,
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontWeight: 700 }}>{row.title}</div>
+                      {row.body ? <div style={{ color: "#78716c", marginTop: 2 }}>{row.body}</div> : null}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteUpdate(row.id)}
+                      style={{
+                        border: "none",
+                        background: "transparent",
+                        color: "#b91c1c",
+                        fontWeight: 700,
+                        cursor: "pointer",
+                        fontFamily: "inherit",
+                      }}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </div>
         </Section>
 
         {/* ── Restaurant Status (last) ─────────────────────────────────── */}

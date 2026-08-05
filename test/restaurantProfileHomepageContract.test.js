@@ -20,9 +20,8 @@ function testHomepageSectionOrder() {
     "ProfileBillboardBlock",
     "ProfileAboutFounded",
     "ProfileFavoriteMenuItems",
-    "ProfileUpdates",
     "ProfileDealsSection",
-    "ProfilePhotoStrip",
+    "ProfileUpdates",
   ];
   let last = -1;
   for (const name of order) {
@@ -65,6 +64,7 @@ function testUnclaimedHomepageBlanks() {
   assert.match(about, /profile-founded-blank/);
   assert.match(about, /profile-founded-empty/);
   assert.match(about, /profile-about-claim/);
+  assert.match(about, /ProfilePhotoStrip/);
   assert.match(hero, /profile-hero-maps-address/);
   assert.match(hero, /profile-hero-hours/);
   assert.match(hero, /profile-hero-instagram/);
@@ -93,6 +93,8 @@ function testOwnerFavoritesAndUpdates() {
   const api = read("src/lib/ownerApi.js");
   assert.match(owner, /owner-profile-manager-favorite-items/);
   assert.match(owner, /owner-profile-manager-updates/);
+  assert.match(owner, /owner-profile-manager-instagram/);
+  assert.match(owner, /instagram: form\.instagram/);
   assert.match(owner, /updateOwnerRestaurantFavoriteMenuItems/);
   assert.match(owner, /createOwnerRestaurantProfileUpdate/);
   assert.match(api, /favorite-menu-items/);

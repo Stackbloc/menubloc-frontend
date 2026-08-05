@@ -3,6 +3,7 @@
  * Unclaimed missing Founded (and About) render fill-in-the-blank claim prompts.
  */
 import { Link } from "react-router-dom";
+import ProfilePhotoStrip from "./ProfilePhotoStrip.jsx";
 import {
   PROFILE_INK,
   PROFILE_MUTED,
@@ -15,6 +16,9 @@ import {
 export default function ProfileAboutFounded({
   aboutText = "",
   foundedText = "",
+  name = "Business",
+  bannerPhotoUrl = null,
+  billboardPreview = [],
   claimHref = null,
   claimState = null,
   isMobile = false,
@@ -77,6 +81,15 @@ export default function ProfileAboutFounded({
             </div>
           )}
         </div>
+
+        <ProfilePhotoStrip
+          name={name}
+          bannerPhotoUrl={bannerPhotoUrl}
+          billboardPreview={billboardPreview}
+          isMobile={isMobile}
+          showClaimInvites={showClaimInvites}
+          embedded
+        />
 
         {showClaimInvites ? (
           <Link

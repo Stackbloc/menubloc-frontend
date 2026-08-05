@@ -98,9 +98,11 @@ function testProfileEditorHasSavePublishView() {
   assert.match(src, /RestaurantStatusSettingsPanel/);
   assert.match(src, /readOnly/);
   assert.match(src, /Protected listing identity/);
+  assert.match(src, /Instagram/);
+  assert.match(src, /updateFavoriteMenuItems/);
+  assert.match(src, /createProfileUpdate/);
   assert.doesNotMatch(src, /restaurant_name:\s*form\.restaurant_name/);
   assert.doesNotMatch(src, /Short bio/);
-  assert.doesNotMatch(src, /Instagram/);
 }
 
 /** Consumer public profile must always be light — never grubbid_theme dark default. */
@@ -154,8 +156,8 @@ function testPublicProfileMenuLikeShareRail() {
 
 /**
  * Claimed and ordinary unclaimed restaurants use shared homepage public profile.
- * Claimed: Hero → Billboard → About Us + Founded → Favorites → Updates → Deals → Photos.
- * Unclaimed: Hero → About Us + Founded → Favorites → Updates → Deals → Photos.
+ * Claimed: Hero → Billboard → About Us + Founded + Photos → Favorites → Deals → Updates.
+ * Unclaimed: Hero → About Us + Founded + Photos → Favorites → Deals → Updates.
  */
 function testClaimedProfileUsesEditorialPresentation() {
   const page = read("src/pages/RestaurantPublicPage.jsx");
@@ -189,7 +191,7 @@ function testClaimedProfileUsesEditorialPresentation() {
   assert.match(shell, /restaurant-profile-view-menu|food-truck-view-menu/);
   assert.match(shell, /ProfileUpdates/);
   assert.match(shell, /ProfileDealsSection/);
-  assert.match(shell, /ProfilePhotoStrip/);
+  assert.match(about, /ProfilePhotoStrip/);
   assert.doesNotMatch(shell, /ProfileRestaurantInfo/);
   assert.match(shell, /showClaimInvites/);
   assert.doesNotMatch(shell, /Photo coming soon/);
@@ -204,6 +206,7 @@ function testClaimedProfileUsesEditorialPresentation() {
   assert.match(about, /profile-founded/);
   assert.match(about, /profile-founded-blank/);
   assert.match(about, /profile-about-claim|Claim this profile to complete/);
+  assert.match(about, /ProfilePhotoStrip/);
   assert.match(billboard, /profile-billboard-block/);
   assert.match(favorites, /showClaimInvites|ProfileSectionBlank/);
   assert.match(updates, /showClaimInvites|ProfileSectionBlank/);
@@ -218,14 +221,12 @@ function testClaimedProfileUsesEditorialPresentation() {
   const billboardIdx = shell.indexOf("<ProfileBillboardBlock");
   const aboutIdx = shell.indexOf("<ProfileAboutFounded");
   const favIdx = shell.indexOf("<ProfileFavoriteMenuItems");
-  const updatesIdx = shell.indexOf("<ProfileUpdates");
   const dealsIdx = shell.indexOf("<ProfileDealsSection");
-  const photoIdx = shell.indexOf("<ProfilePhotoStrip");
+  const updatesIdx = shell.indexOf("<ProfileUpdates");
   assert.ok(billboardIdx > -1 && aboutIdx > billboardIdx, "about/founded after billboard");
   assert.ok(favIdx > aboutIdx, "favorites after about/founded");
-  assert.ok(updatesIdx > favIdx, "updates after favorites");
-  assert.ok(dealsIdx > updatesIdx, "deals after updates");
-  assert.ok(photoIdx > dealsIdx, "photos after deals");
+  assert.ok(dealsIdx > favIdx, "deals after favorites");
+  assert.ok(updatesIdx > dealsIdx, "updates after deals");
   assert.match(page, /canonicalRestaurantSlug/);
   assert.match(page, /\/restaurants\/:state\/:city\/:restaurantSlug/);
   assert.match(page, /firstBillboardImage/);

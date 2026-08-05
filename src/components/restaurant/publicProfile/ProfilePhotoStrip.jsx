@@ -3,7 +3,7 @@
  * Collapses when no remaining images — no empty placeholders.
  * Phase 1.5: larger tiles; exclude hero URL to avoid triple-repeat.
  */
-import { PROFILE_INK, ProfileSectionBlank } from "./profilePrimitives.jsx";
+import { PROFILE_INK, PROFILE_MUTED, ProfileSectionBlank } from "./profilePrimitives.jsx";
 
 function collectPhotoUrls({ bannerPhotoUrl, billboardPreview, excludeHeroUrl }) {
   const urls = [];
@@ -34,6 +34,7 @@ export default function ProfilePhotoStrip({
   billboardPreview = [],
   isMobile = false,
   showClaimInvites = false,
+  embedded = false,
 }) {
   const photos = collectPhotoUrls({
     bannerPhotoUrl,
@@ -42,8 +43,67 @@ export default function ProfilePhotoStrip({
   });
   if (!photos.length && !showClaimInvites) return null;
 
-  const tileW = isMobile ? 168 : 260;
-  const tileH = isMobile ? 126 : 180;
+  const tileW = embedded ? (isMobile ? 132 : 168) : isMobile ? 168 : 260;
+  const tileH = embedded ? (isMobile ? 99 : 126) : isMobile ? 126 : 180;
+
+  const label = (
+    <div
+      style={{
+        fontSize: embedded ? 12 : 13,
+        fontWeight: embedded ? 700 : 800,
+        letterSpacing: 0.4,
+        color: embedded ? PROFILE_MUTED : PROFILE_INK,
+        marginBottom: embedded ? 8 : 12,
+      }}
+    >
+      Photos
+    </div>
+  );
+
+  const body = !photos.length ? (
+    <ProfileSectionBlank testId="profile-photos-blank" message="No additional photos yet." />
+  ) : (
+    <div
+      style={{
+        display: "flex",
+        gap: 12,
+        overflowX: "auto",
+        WebkitOverflowScrolling: "touch",
+        paddingBottom: 4,
+        scrollSnapType: "x mandatory",
+      }}
+    >
+      {photos.slice(0, 8).map((photo, idx) => (
+        <img
+          key={`${photo.url}-${idx}`}
+          src={photo.url}
+          alt={`${name} ${photo.kind === "billboard" ? "update" : "photo"} ${idx + 1}`}
+          loading="lazy"
+          width={tileW}
+          height={tileH}
+          style={{
+            width: tileW,
+            height: tileH,
+            objectFit: "cover",
+            borderRadius: embedded ? 12 : 16,
+            flexShrink: 0,
+            scrollSnapAlign: "start",
+            background: "#e7e5e4",
+            boxShadow: embedded ? "none" : "0 10px 28px rgba(28, 25, 23, 0.08)",
+          }}
+        />
+      ))}
+    </div>
+  );
+
+  if (embedded) {
+    return (
+      <div data-testid="profile-photo-strip" aria-label={`${name} photos`}>
+        {label}
+        {body}
+      </div>
+    );
+  }
 
   return (
     <section
@@ -51,52 +111,8 @@ export default function ProfilePhotoStrip({
       aria-label={`${name} photos`}
       style={{ marginBottom: isMobile ? 20 : 24 }}
     >
-      <div
-        style={{
-          fontSize: 13,
-          fontWeight: 800,
-          letterSpacing: 0.4,
-          color: PROFILE_INK,
-          marginBottom: 12,
-        }}
-      >
-        Photos
-      </div>
-      {!photos.length ? (
-        <ProfileSectionBlank testId="profile-photos-blank" message="No additional photos yet." />
-      ) : (
-      <div
-        style={{
-          display: "flex",
-          gap: 12,
-          overflowX: "auto",
-          WebkitOverflowScrolling: "touch",
-          paddingBottom: 4,
-          scrollSnapType: "x mandatory",
-        }}
-      >
-        {photos.slice(0, 8).map((photo, idx) => (
-          <img
-            key={`${photo.url}-${idx}`}
-            src={photo.url}
-            alt={`${name} ${photo.kind === "billboard" ? "update" : "photo"} ${idx + 1}`}
-            loading="lazy"
-            width={tileW}
-            height={tileH}
-            style={{
-              width: tileW,
-              height: tileH,
-              objectFit: "cover",
-              borderRadius: 16,
-              flexShrink: 0,
-              scrollSnapAlign: "start",
-              background: "#e7e5e4",
-              boxShadow: "0 10px 28px rgba(28, 25, 23, 0.08)",
-            }}
-          />
-        ))}
-      </div>
-      )}
+      {label}
+      {body}
     </section>
   );
 }

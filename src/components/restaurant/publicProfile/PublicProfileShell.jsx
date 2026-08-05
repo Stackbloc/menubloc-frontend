@@ -1,7 +1,7 @@
 /**
  * Unified Menuply public profile shell — restaurant homepage layout.
- * Claimed: Hero → Billboard → About Us + Founded → Favorites → Updates → Deals → Photos
- * Unclaimed: Hero → About Us + Founded → Favorites → Updates → Deals → Photos
+ * Claimed: Hero → Billboard → About Us + Founded + Photos → Favorites → Deals → Updates
+ * Unclaimed: Hero → About Us + Founded + Photos → Favorites → Deals → Updates
  * (+ FT upcoming stops when food truck entity/plan).
  * Contact + hours live in the hero. No bottom Information box.
  */
@@ -12,7 +12,6 @@ import ProfileAboutFounded from "./ProfileAboutFounded.jsx";
 import ProfileFavoriteMenuItems from "./ProfileFavoriteMenuItems.jsx";
 import ProfileUpdates from "./ProfileUpdates.jsx";
 import ProfileDealsSection from "./ProfileDealsSection.jsx";
-import ProfilePhotoStrip from "./ProfilePhotoStrip.jsx";
 import FoodTruckUpcomingStops from "./FoodTruckUpcomingStops.jsx";
 import { clusterTypeLabel } from "../../../lib/clusterUrl.js";
 import {
@@ -235,6 +234,9 @@ export default function PublicProfileShell({
         <ProfileAboutFounded
           aboutText={shortDescription}
           foundedText={founded}
+          name={name}
+          bannerPhotoUrl={bannerPhotoUrl}
+          billboardPreview={billboardPreview}
           claimHref={claimHref}
           claimState={claimState}
           isMobile={isMobile}
@@ -243,6 +245,13 @@ export default function PublicProfileShell({
 
         <ProfileFavoriteMenuItems
           items={favorites}
+          isMobile={isMobile}
+          showClaimInvites={showClaimInvites}
+        />
+
+        <ProfileDealsSection
+          dealItems={deals}
+          restaurantId={restaurantId}
           isMobile={isMobile}
           showClaimInvites={showClaimInvites}
         />
@@ -261,21 +270,6 @@ export default function PublicProfileShell({
             )}
           </ProfileSection>
         ) : null}
-
-        <ProfileDealsSection
-          dealItems={deals}
-          restaurantId={restaurantId}
-          isMobile={isMobile}
-          showClaimInvites={showClaimInvites}
-        />
-
-        <ProfilePhotoStrip
-          name={name}
-          bannerPhotoUrl={bannerPhotoUrl}
-          billboardPreview={billboardPreview}
-          isMobile={isMobile}
-          showClaimInvites={showClaimInvites}
-        />
 
         <div style={{ height: sectionGap }} aria-hidden="true" />
       </div>

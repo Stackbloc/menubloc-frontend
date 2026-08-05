@@ -1,6 +1,6 @@
 /**
- * Owner Profile Manager — pick a restaurant and edit public profile fields
- * sought by At a Glance / hero (story, hiring, hours, style).
+ * Owner Profile Manager — pick a restaurant and edit public homepage fields
+ * (About, Founded, Instagram, Favorite Menu Items, Updates, hours, style).
  */
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
@@ -63,6 +63,7 @@ function emptyForm() {
     postal_code: "",
     phone: "",
     website_url: "",
+    instagram: "",
     about_us: "",
     founded_year: "",
     team_intro: "",
@@ -234,6 +235,7 @@ export default function OwnerProfileManager() {
         postal_code: r.postal_code || "",
         phone: r.phone || "",
         website_url: r.website_url || "",
+        instagram: r.instagram || "",
         about_us: r.about_us || "",
         founded_year: r.founded_year != null ? String(r.founded_year) : "",
         team_intro: r.team_intro || "",
@@ -385,6 +387,7 @@ export default function OwnerProfileManager() {
         postal_code: form.postal_code,
         phone: form.phone,
         website_url: form.website_url,
+        instagram: form.instagram,
         about_us: form.about_us,
         founded_year: form.founded_year === "" ? null : form.founded_year,
         team_intro: form.team_intro || null,
@@ -755,6 +758,16 @@ export default function OwnerProfileManager() {
                     <Label>Website</Label>
                     <input style={inputStyle} value={form.website_url} onChange={f("website_url")} />
                   </div>
+                  <div>
+                    <Label>Instagram</Label>
+                    <input
+                      style={inputStyle}
+                      value={form.instagram}
+                      onChange={f("instagram")}
+                      placeholder="@handle"
+                      data-testid="owner-profile-manager-instagram"
+                    />
+                  </div>
                   <div style={{ gridColumn: "1 / -1" }}>
                     <Label>Address</Label>
                     <input style={inputStyle} value={form.address_line1} onChange={f("address_line1")} />
@@ -780,10 +793,12 @@ export default function OwnerProfileManager() {
 
               <PageCard style={{ padding: 22, marginBottom: 18 }} data-testid="owner-profile-manager-story">
                 <div style={{ fontSize: 14, fontWeight: 800, color: OWNER_COLORS.ink, marginBottom: 6 }}>
-                  At a Glance story
+                  Public homepage story
                 </div>
                 <div style={{ fontSize: 13, color: OWNER_COLORS.muted, marginBottom: 14, lineHeight: 1.45 }}>
-                  Fills About Us, Founded, Meet the Team, Signature Dish, and Now Hiring on the public profile.
+                  These fields publish to the public profile: About Us, Founded, Favorite Menu Items, and Updates.
+                  Photos come from the banner/logo plus operator billboards. Deals and billboards are edited in the
+                  operator console (<code>/operator/billboards</code>, <code>/operator/deals</code>).
                 </div>
                 <div style={{ marginBottom: 14 }}>
                   <Label>About Us</Label>

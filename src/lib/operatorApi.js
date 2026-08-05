@@ -149,6 +149,18 @@ export const replaceStatusEvents = (rid, status_type, events) =>
   put(`/operator/restaurants/${rid}/profile/status-events`, { status_type, events });
 export const setFeaturedDish = (rid, menu_item_id) =>
   patch(`/operator/restaurants/${rid}/profile/featured-dish`, { menu_item_id });
+export const getFavoriteMenuItems = (rid) =>
+  get(`/operator/restaurants/${rid}/profile/favorite-menu-items`);
+export const updateFavoriteMenuItems = (rid, menuItemIds) =>
+  patch(`/operator/restaurants/${rid}/profile/favorite-menu-items`, {
+    menu_item_ids: menuItemIds,
+  });
+export const getProfileUpdates = (rid) =>
+  get(`/operator/restaurants/${rid}/profile/profile-updates`);
+export const createProfileUpdate = (rid, body) =>
+  post(`/operator/restaurants/${rid}/profile/profile-updates`, body);
+export const deleteProfileUpdate = (rid, updateId) =>
+  del(`/operator/restaurants/${rid}/profile/profile-updates/${encodeURIComponent(updateId)}`);
 export const uploadProfileLogo = (rid, file) => {
   const formData = new FormData();
   formData.append("logo", file);
