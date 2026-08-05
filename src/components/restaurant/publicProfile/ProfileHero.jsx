@@ -1,6 +1,7 @@
 /**
- * Shared public-profile hero: cover/banner + logo + name + cuisine + description
- * + open/closed + action rail (View Menu icon next to name, then Like / Share / Call / Directions / Order).
+ * Shared public-profile hero: cover/banner + logo + name + contact under the name
+ * + hours on the right of the green box (stacked on mobile).
+ * Action rail: View Menu icon next to name, then Like / Share / Call / Order.
  */
 import { Link } from "react-router-dom";
 import RestaurantStatusLight from "../../RestaurantStatusLight.jsx";
@@ -14,8 +15,11 @@ import {
   PROFILE_CONTENT_MAX,
   ghostIconStyle,
   canShowOrderAction,
+  formatHoursRows,
+  firstNonEmpty,
 } from "./profilePrimitives.jsx";
 import IconHoverLabel from "../../IconHoverLabel.jsx";
+import { formatWebsiteHostLabel } from "../../../lib/formatWebsiteHostLabel.js";
 
 function HeroIconButton({ href, onClick, label, testId, children, as: As = "a" }) {
   const style = ghostIconStyle(true);
@@ -63,6 +67,20 @@ function HeroIconButton({ href, onClick, label, testId, children, as: As = "a" }
   );
 }
 
+function MapsPin() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M12 22s7-7.2 7-12a7 7 0 1 0-14 0c0 4.8 7 12 7 12z"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        fill="rgba(250,250,249,0.12)"
+      />
+      <circle cx="12" cy="10" r="2.4" fill="currentColor" />
+    </svg>
+  );
+}
+
 export default function ProfileHero({
   profileType = "restaurant",
   name,
@@ -89,16 +107,15 @@ export default function ProfileHero({
   phone = "",
   website = "",
   websiteRaw = "",
+  instagram = "",
   shortDescription = "",
   openStatus = null,
+  operatingHours = [],
   profile = null,
   isMobile = false,
   contentMax,
 }) {
-  void website;
-  void websiteRaw;
-  void streetAddr;
-  void cityLine;
+  void shortDescription;
 
   const maxW = contentMax ?? PROFILE_CONTENT_MAX;
   const hasPhoto = Boolean(bannerPhotoUrl);
@@ -111,18 +128,88 @@ export default function ProfileHero({
   const cluster = String(clusterName || "").trim();
   const showIdentityMeta = profileType === "restaurant" && (venue || cluster || metaBits.length);
   const cuisineLabel = metaBits[0] || "";
-  const desc = String(shortDescription || "").trim();
-  const openLabel = openStatus?.label || (openStatus?.is_open === true ? "Open" : openStatus?.is_open === false ? "Closed" : "");
-  const showOrder =
-    profileType !== "food_truck" && canShowOrderAction(profile, menuHref);
+  const openLabel =
+    openStatus?.label ||
+    (openStatus?.is_open === true ? "Open" : openStatus?.is_open === false ? "Closed" : "");
+  const showOrder = profileType !== "food_truck" && canShowOrderAction(profile, menuHref);
   const callHref = phone ? `tel:${String(phone).replace(/\s+/g, "")}` : "";
   const mapsHref =
     profileType === "food_truck"
       ? foodTruckLocation?.directionsUrl || directionsUrl || ""
       : directionsUrl || "";
+  const websiteLabel = formatWebsiteHostLabel(websiteRaw || website);
+  const ig = firstNonEmpty(instagram);
+  const igHref = ig
+    ? ig.startsWith("http")
+      ? ig
+      : `https://instagram.com/${String(ig).replace(/^@/, "")}`
+    : "";
+  const igLabel = ig
+    ? ig.startsWith("@") || ig.startsWith("http")
+      ? ig.startsWith("http")
+        ? `@${String(ig).replace(/^https?:\/\/(www\.)?instagram\.com\//i, "").replace(/\/$/, "")}`
+        : ig
+      : `@${String(ig).replace(/^@/, "")}`
+    : "";
+  const hoursRows = formatHoursRows(operatingHours);
+  const showRestaurantContact = profileType === "restaurant";
+  const hasAddress = Boolean(streetAddr || cityLine);
 
-  const identity = (
-    <div style={{ display: "flex", alignItems: "flex-start", gap: 14, minWidth: 0 }}>
+  const hoursPanel = (
+    <div
+      data-testid="profile-hero-hours"
+      style={{
+        flex: isMobile ? "1 1 100%" : "0 0 220px",
+        minWidth: isMobile ? 0 : 180,
+        maxWidth: isMobile ? "100%" : 240,
+        padding: isMobile ? "10px 12px" : "12px 14px",
+        borderRadius: 12,
+        background: "rgba(28,25,23,0.28)",
+        border: "1px solid rgba(250,250,249,0.18)",
+      }}
+    >
+      <div
+        style={{
+          fontSize: 11,
+          fontWeight: 800,
+          letterSpacing: 0.6,
+          textTransform: "uppercase",
+          color: muted,
+          marginBottom: 8,
+        }}
+      >
+        Hours{openLabel ? ` · ${openLabel}` : ""}
+      </div>
+      {hoursRows.length ? (
+        <div style={{ display: "grid", gap: 3 }}>
+          {hoursRows.map((row) => (
+            <div
+              key={row.day}
+              style={{
+                display: "grid",
+                gridTemplateColumns: "36px 1fr",
+                gap: 8,
+                fontSize: 12,
+                color: ink,
+              }}
+            >
+              <span style={{ color: muted, fontWeight: 700 }}>{row.day}</span>
+              <span>{row.text}</span>
+            </div>
+          ))}
+        </div>
+      ) : showClaimInvites ? (
+        <div data-testid="profile-hero-hours-blank" style={{ fontSize: 12, color: muted, fontStyle: "italic" }}>
+          Claim this profile to complete hours.
+        </div>
+      ) : (
+        <div style={{ fontSize: 12, color: muted }}>Hours not posted</div>
+      )}
+    </div>
+  );
+
+  const identityLeft = (
+    <div style={{ display: "flex", alignItems: "flex-start", gap: 14, minWidth: 0, flex: "1 1 280px" }}>
       <LogoMark name={name} logoUrl={logoUrl} onPhoto={onPhoto} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div
@@ -190,18 +277,6 @@ export default function ProfileHero({
                     strokeWidth="1.7"
                     strokeLinejoin="round"
                   />
-                </svg>
-              </HeroIconButton>
-            ) : null}
-            {mapsHref ? (
-              <HeroIconButton href={mapsHref} label="Directions" testId="profile-hero-directions">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                  <path
-                    d="M12 22s7-7.2 7-12a7 7 0 1 0-14 0c0 4.8 7 12 7 12z"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                  />
-                  <circle cx="12" cy="10" r="2.4" fill="currentColor" />
                 </svg>
               </HeroIconButton>
             ) : null}
@@ -283,46 +358,127 @@ export default function ProfileHero({
           </div>
         ) : null}
 
-        {desc ? (
-          <p
-            data-testid="profile-hero-description"
-            style={{
-              margin: "8px 0 0",
-              fontSize: 14,
-              lineHeight: 1.45,
-              color: muted,
-              maxWidth: 520,
-            }}
-          >
-            {desc}
-          </p>
-        ) : showClaimInvites ? (
-          <p
-            data-testid="profile-hero-description-blank"
-            style={{
-              margin: "8px 0 0",
-              fontSize: 13,
-              lineHeight: 1.45,
-              color: muted,
-              maxWidth: 520,
-              fontStyle: "italic",
-            }}
-          >
-            Claim this profile to complete a short description.
-          </p>
+        {showRestaurantContact && hasAddress ? (
+          mapsHref ? (
+            <a
+              href={mapsHref}
+              target="_blank"
+              rel="noreferrer"
+              aria-label={`Open ${name} in Google Maps`}
+              title="Open in Google Maps"
+              data-testid="profile-hero-maps-address"
+              style={{
+                margin: "8px 0 0",
+                display: "inline-flex",
+                alignItems: "flex-start",
+                gap: 8,
+                fontSize: 14,
+                lineHeight: 1.4,
+                color: muted,
+                textDecoration: "none",
+                maxWidth: "100%",
+              }}
+            >
+              <span
+                aria-hidden="true"
+                style={{
+                  flexShrink: 0,
+                  marginTop: 1,
+                  width: 16,
+                  height: 16,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <MapsPin />
+              </span>
+              <span style={{ display: "flex", flexDirection: "column", gap: 1, minWidth: 0 }}>
+                {streetAddr ? <span>{streetAddr}</span> : null}
+                {cityLine ? <span>{cityLine}</span> : null}
+              </span>
+            </a>
+          ) : (
+            <div
+              data-testid="profile-hero-maps-address"
+              style={{ margin: "8px 0 0", fontSize: 14, lineHeight: 1.4, color: muted }}
+            >
+              {streetAddr ? <div>{streetAddr}</div> : null}
+              {cityLine ? <div>{cityLine}</div> : null}
+            </div>
+          )
         ) : null}
 
-        {openLabel ? (
+        {showRestaurantContact && (phone || igHref || website) ? (
           <div
-            data-testid="profile-hero-open-status"
+            data-testid="profile-hero-contact"
             style={{
               marginTop: 8,
-              fontSize: 13,
-              fontWeight: 700,
-              color: openStatus?.is_open ? "#bbf7d0" : muted,
+              display: "flex",
+              flexDirection: "column",
+              gap: 4,
+              fontSize: 14,
+              lineHeight: 1.4,
+              color: muted,
+              paddingLeft: hasAddress ? 24 : 0,
             }}
           >
-            {openLabel}
+            {phone ? (
+              <a
+                href={callHref}
+                data-testid="profile-hero-phone"
+                style={{ color: linkColor, textDecoration: "none", fontWeight: 600 }}
+              >
+                {phone}
+              </a>
+            ) : null}
+            {igHref ? (
+              <a
+                href={igHref}
+                target="_blank"
+                rel="noreferrer"
+                data-testid="profile-hero-instagram"
+                style={{ color: linkColor, textDecoration: "none", fontWeight: 600 }}
+              >
+                {igLabel}
+              </a>
+            ) : showClaimInvites ? (
+              <span data-testid="profile-hero-instagram-blank" style={{ fontStyle: "italic", fontSize: 13 }}>
+                Claim this profile to complete Instagram.
+              </span>
+            ) : null}
+            {website ? (
+              <a
+                href={website}
+                target="_blank"
+                rel="noreferrer"
+                data-testid="profile-hero-website"
+                style={{ color: linkColor, textDecoration: "none", fontWeight: 600 }}
+              >
+                {websiteLabel} ↗
+              </a>
+            ) : showClaimInvites ? (
+              <span data-testid="profile-hero-website-blank" style={{ fontStyle: "italic", fontSize: 13 }}>
+                Claim this profile to complete website.
+              </span>
+            ) : null}
+          </div>
+        ) : showRestaurantContact && showClaimInvites ? (
+          <div
+            data-testid="profile-hero-contact"
+            style={{
+              marginTop: 8,
+              display: "flex",
+              flexDirection: "column",
+              gap: 4,
+              fontSize: 13,
+              fontStyle: "italic",
+              color: muted,
+              paddingLeft: hasAddress ? 24 : 0,
+            }}
+          >
+            <span data-testid="profile-hero-instagram-blank">Claim this profile to complete Instagram.</span>
+            <span data-testid="profile-hero-website-blank">Claim this profile to complete website.</span>
           </div>
         ) : null}
 
@@ -335,6 +491,42 @@ export default function ProfileHero({
             name={name}
             onPhoto={onPhoto}
           />
+        ) : null}
+
+        {profileType === "food_truck" && (phone || website) ? (
+          <div
+            data-testid="food-truck-contact"
+            style={{
+              marginTop: 8,
+              display: "flex",
+              flexDirection: "column",
+              gap: 4,
+              fontSize: 14,
+              lineHeight: 1.45,
+              color: muted,
+            }}
+          >
+            {phone ? (
+              <a
+                href={callHref}
+                data-testid="food-truck-hero-phone"
+                style={{ color: linkColor, textDecoration: "none", fontWeight: 600 }}
+              >
+                {phone}
+              </a>
+            ) : null}
+            {website ? (
+              <a
+                href={website}
+                target="_blank"
+                rel="noreferrer"
+                data-testid="food-truck-hero-website"
+                style={{ color: linkColor, textDecoration: "none", fontWeight: 600 }}
+              >
+                {websiteLabel} ↗
+              </a>
+            ) : null}
+          </div>
         ) : null}
       </div>
     </div>
@@ -351,9 +543,9 @@ export default function ProfileHero({
   const headerStyle = hasPhoto
     ? {
         position: "relative",
-        minHeight: isMobile ? 220 : 320,
+        minHeight: isMobile ? 260 : 340,
         backgroundColor: "#e7e5e4",
-        backgroundImage: `linear-gradient(to top, rgba(28,25,23,0.72) 0%, rgba(28,25,23,0.2) 45%, transparent 70%), url(${JSON.stringify(
+        backgroundImage: `linear-gradient(to top, rgba(28,25,23,0.78) 0%, rgba(28,25,23,0.28) 48%, transparent 72%), url(${JSON.stringify(
           String(bannerPhotoUrl)
         )})`,
         backgroundSize: "cover",
@@ -361,7 +553,7 @@ export default function ProfileHero({
       }
     : {
         position: "relative",
-        minHeight: isMobile ? 188 : 240,
+        minHeight: isMobile ? 220 : 280,
         background:
           "linear-gradient(160deg, var(--profile-hero-from, #052e16) 0%, var(--profile-hero-via, #14532d) 38%, var(--profile-hero-to, #292524) 100%)",
       };
@@ -385,7 +577,18 @@ export default function ProfileHero({
       ) : null}
       <div style={overlayPad}>
         <div style={{ maxWidth: maxW, margin: "0 auto", width: "100%", boxSizing: "border-box" }}>
-          {identity}
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              alignItems: "flex-start",
+              justifyContent: "space-between",
+              gap: isMobile ? 14 : 24,
+            }}
+          >
+            {identityLeft}
+            {hoursPanel}
+          </div>
         </div>
       </div>
     </header>

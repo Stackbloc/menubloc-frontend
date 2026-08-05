@@ -18,11 +18,11 @@ function testHomepageSectionOrder() {
   const order = [
     "ProfileHero",
     "ProfileBillboardBlock",
+    "ProfileAboutFounded",
     "ProfileFavoriteMenuItems",
     "ProfileUpdates",
     "ProfileDealsSection",
     "ProfilePhotoStrip",
-    "ProfileRestaurantInfo",
   ];
   let last = -1;
   for (const name of order) {
@@ -52,20 +52,32 @@ function testUpdatesHideWhenEmpty() {
 
 function testUnclaimedHomepageBlanks() {
   const primitives = read("src/components/restaurant/publicProfile/profilePrimitives.jsx");
-  const billboard = read("src/components/restaurant/publicProfile/ProfileBillboardBlock.jsx");
+  const about = read("src/components/restaurant/publicProfile/ProfileAboutFounded.jsx");
+  const hero = read("src/components/restaurant/publicProfile/ProfileHero.jsx");
   const fav = read("src/components/restaurant/publicProfile/ProfileFavoriteMenuItems.jsx");
   const deals = read("src/components/restaurant/publicProfile/ProfileDealsSection.jsx");
   const photos = read("src/components/restaurant/publicProfile/ProfilePhotoStrip.jsx");
-  const info = read("src/components/restaurant/publicProfile/ProfileRestaurantInfo.jsx");
   const shell = read("src/components/restaurant/publicProfile/PublicProfileShell.jsx");
   assert.match(primitives, /ProfileSectionBlank/);
   assert.match(primitives, /Claim this profile to complete/);
-  assert.match(billboard, /profile-billboard-blank/);
+  assert.match(about, /profile-about-founded/);
+  assert.match(about, /profile-founded/);
+  assert.match(about, /profile-founded-blank/);
+  assert.match(about, /profile-founded-empty/);
+  assert.match(about, /profile-about-claim/);
+  assert.match(hero, /profile-hero-maps-address/);
+  assert.match(hero, /profile-hero-hours/);
+  assert.match(hero, /profile-hero-instagram/);
+  assert.match(hero, /profile-hero-website/);
+  assert.match(hero, /profile-hero-phone/);
+  assert.doesNotMatch(hero, /profile-hero-phone-blank/);
+  assert.doesNotMatch(hero, /profile-hero-directions/);
   assert.match(fav, /profile-favorites-blank/);
   assert.match(deals, /profile-deals-blank/);
   assert.match(photos, /profile-photos-blank/);
-  assert.match(info, /profile-info-hours-blank/);
+  assert.match(shell, /ProfileAboutFounded/);
   assert.match(shell, /showClaimInvites=\{showClaimInvites\}/);
+  assert.doesNotMatch(shell, /ProfileRestaurantInfo/);
   assert.doesNotMatch(shell, /ProfileAtAGlance/);
 }
 

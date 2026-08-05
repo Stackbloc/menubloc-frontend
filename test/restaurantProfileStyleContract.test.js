@@ -161,7 +161,7 @@ describe("operator + public profile style wiring", () => {
     assert.match(shell, /data-profile-style/);
     assert.match(shell, /buildProfileStyleRootStyle/);
     assert.match(shell, /ProfileFavoriteMenuItems/);
-    assert.match(shell, /ProfileRestaurantInfo/);
+    assert.match(shell, /ProfileAboutFounded/);
     assert.doesNotMatch(shell, /Football|fish illustration|mexican flag/i);
     assert.match(hero, /--profile-hero-from/);
     assert.match(hero, /profile-hero-placeholder/);

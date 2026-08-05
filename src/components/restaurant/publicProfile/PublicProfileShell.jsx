@@ -1,17 +1,18 @@
 /**
  * Unified Menuply public profile shell — restaurant homepage layout.
- * Order: Hero → Billboard → Favorite Menu Items → Updates → Deals → Photos → Info
+ * Claimed: Hero → Billboard → About Us + Founded → Favorites → Updates → Deals → Photos
+ * Unclaimed: Hero → About Us + Founded → Favorites → Updates → Deals → Photos
  * (+ FT upcoming stops when food truck entity/plan).
- * Claimed: empty sections collapse. Unclaimed: same sections as fill-in-the-blank claim prompts.
+ * Contact + hours live in the hero. No bottom Information box.
  */
 import { useMemo } from "react";
 import ProfileHero from "./ProfileHero.jsx";
 import ProfileBillboardBlock from "./ProfileBillboardBlock.jsx";
+import ProfileAboutFounded from "./ProfileAboutFounded.jsx";
 import ProfileFavoriteMenuItems from "./ProfileFavoriteMenuItems.jsx";
 import ProfileUpdates from "./ProfileUpdates.jsx";
 import ProfileDealsSection from "./ProfileDealsSection.jsx";
 import ProfilePhotoStrip from "./ProfilePhotoStrip.jsx";
-import ProfileRestaurantInfo from "./ProfileRestaurantInfo.jsx";
 import FoodTruckUpcomingStops from "./FoodTruckUpcomingStops.jsx";
 import { clusterTypeLabel } from "../../../lib/clusterUrl.js";
 import {
@@ -79,7 +80,6 @@ export default function PublicProfileShell({
   void menuCount;
   void statusEventPresentations;
   void statusBanners;
-  void foundedText;
   void featuredText;
   void featuredItem;
   void todaysSpecial;
@@ -136,6 +136,12 @@ export default function PublicProfileShell({
   );
 
   const shortDescription = firstNonEmpty(bioText, aboutText, profile?.bio, profile?.about_us);
+  const founded = firstNonEmpty(
+    foundedText,
+    profile?.founded,
+    profile?.founded_year != null ? String(profile.founded_year) : "",
+    profile?.year_founded
+  );
   const openStatus = profile?.open_status || null;
 
   const favorites = Array.isArray(favoriteMenuItems)
@@ -154,10 +160,6 @@ export default function PublicProfileShell({
       ? profile.deal_items
       : [];
 
-  const actionDirectionsUrl = isFoodTruck
-    ? location?.directionsUrl || directionsUrl || ""
-    : directionsUrl;
-
   const clusterName = !isFoodTruck && displayCluster?.name ? String(displayCluster.name) : "";
   const clusterHref =
     !isFoodTruck && displayCluster?.public_url ? String(displayCluster.public_url) : null;
@@ -166,7 +168,6 @@ export default function PublicProfileShell({
       ? ` · ${clusterTypeLabel(displayCluster.cluster_type)}`
       : "";
   const clusterLabel = clusterName ? `${clusterName}${clusterSuffix}` : "";
-  const claimAnchor = claimHref || "#claim-profile";
   const sectionGap = isMobile ? 16 : 20;
 
   return (
@@ -209,8 +210,10 @@ export default function PublicProfileShell({
         phone={phone}
         website={website}
         websiteRaw={websiteRaw}
+        instagram={profile?.instagram || ""}
         shortDescription={shortDescription}
         openStatus={openStatus}
+        operatingHours={operatingHours}
         profile={profile}
         isMobile={isMobile}
         contentMax={contentMax}
@@ -225,8 +228,15 @@ export default function PublicProfileShell({
           boxSizing: "border-box",
         }}
       >
-        <ProfileBillboardBlock
-          billboardPreview={billboardPreview}
+        {!showClaimInvites ? (
+          <ProfileBillboardBlock billboardPreview={billboardPreview} isMobile={isMobile} />
+        ) : null}
+
+        <ProfileAboutFounded
+          aboutText={shortDescription}
+          foundedText={founded}
+          claimHref={claimHref}
+          claimState={claimState}
           isMobile={isMobile}
           showClaimInvites={showClaimInvites}
         />
@@ -265,21 +275,6 @@ export default function PublicProfileShell({
           billboardPreview={billboardPreview}
           isMobile={isMobile}
           showClaimInvites={showClaimInvites}
-        />
-
-        <ProfileRestaurantInfo
-          operatingHours={operatingHours}
-          phone={phone}
-          streetAddr={isFoodTruck ? "" : streetAddr}
-          cityLine={isFoodTruck ? "" : cityLine}
-          directionsUrl={actionDirectionsUrl}
-          website={website}
-          websiteRaw={websiteRaw}
-          instagram={profile?.instagram || ""}
-          claimHref={claimAnchor}
-          claimState={claimState}
-          showClaimInvites={showClaimInvites}
-          isMobile={isMobile}
         />
 
         <div style={{ height: sectionGap }} aria-hidden="true" />

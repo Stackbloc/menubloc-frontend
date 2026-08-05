@@ -118,7 +118,7 @@ function testPublicProfileForcedLight() {
   assert.equal(whitePageBgMatches.length, 1);
 }
 
-/** Profile header actions: View Menu icon next to name, then Like / Share / Call / Directions / Order. */
+/** Profile header actions: View Menu icon next to name, then Like / Share / Call / Order. */
 function testPublicProfileMenuLikeShareRail() {
   const page = read("src/pages/RestaurantPublicPage.jsx");
   const editorial = read("src/components/restaurant/RestaurantPublicEditorial.jsx");
@@ -136,7 +136,8 @@ function testPublicProfileMenuLikeShareRail() {
   assert.match(hero, /variant="menu"/);
   assert.match(hero, /profile-hero-actions/);
   assert.match(hero, /profile-hero-call/);
-  assert.match(hero, /profile-hero-directions/);
+  assert.match(hero, /profile-hero-maps-address/);
+  assert.doesNotMatch(hero, /profile-hero-directions/);
   assert.match(hero, /profile-action-order/);
   assert.match(shell, /followSource=\{isFoodTruck \? "food_truck_profile" : "restaurant_profile"\}/);
   assert.match(shell, /restaurant-profile-view-menu|food-truck-view-menu/);
@@ -153,7 +154,8 @@ function testPublicProfileMenuLikeShareRail() {
 
 /**
  * Claimed and ordinary unclaimed restaurants use shared homepage public profile.
- * Section order: Hero → Billboard → Favorites → Updates → Deals → Photos → Info.
+ * Claimed: Hero → Billboard → About Us + Founded → Favorites → Updates → Deals → Photos.
+ * Unclaimed: Hero → About Us + Founded → Favorites → Updates → Deals → Photos.
  */
 function testClaimedProfileUsesEditorialPresentation() {
   const page = read("src/pages/RestaurantPublicPage.jsx");
@@ -163,7 +165,7 @@ function testClaimedProfileUsesEditorialPresentation() {
   const favorites = read("src/components/restaurant/publicProfile/ProfileFavoriteMenuItems.jsx");
   const updates = read("src/components/restaurant/publicProfile/ProfileUpdates.jsx");
   const deals = read("src/components/restaurant/publicProfile/ProfileDealsSection.jsx");
-  const info = read("src/components/restaurant/publicProfile/ProfileRestaurantInfo.jsx");
+  const about = read("src/components/restaurant/publicProfile/ProfileAboutFounded.jsx");
   const billboard = read("src/components/restaurant/publicProfile/ProfileBillboardBlock.jsx");
   assert.match(page, /RestaurantPublicEditorial/);
   assert.match(page, /favorite_menu_items/);
@@ -181,14 +183,14 @@ function testClaimedProfileUsesEditorialPresentation() {
   assert.doesNotMatch(shell, /ProfileAtAGlance/);
   assert.doesNotMatch(shell, /ProfileMenuHighlights/);
   assert.doesNotMatch(shell, /ProfileNowHiring/);
-  assert.doesNotMatch(shell, /About Us/);
+  assert.match(shell, /ProfileAboutFounded/);
   assert.match(shell, /ProfileBillboardBlock/);
   assert.match(shell, /ProfileFavoriteMenuItems/);
   assert.match(shell, /restaurant-profile-view-menu|food-truck-view-menu/);
   assert.match(shell, /ProfileUpdates/);
   assert.match(shell, /ProfileDealsSection/);
   assert.match(shell, /ProfilePhotoStrip/);
-  assert.match(shell, /ProfileRestaurantInfo/);
+  assert.doesNotMatch(shell, /ProfileRestaurantInfo/);
   assert.match(shell, /showClaimInvites/);
   assert.doesNotMatch(shell, /Photo coming soon/);
   assert.doesNotMatch(shell, /Bio coming soon/);
@@ -198,30 +200,32 @@ function testClaimedProfileUsesEditorialPresentation() {
   assert.match(favorites, /\.slice\(0, 3\)/);
   assert.match(updates, /profile-updates/);
   assert.match(deals, /profile-deals-section/);
-  assert.match(info, /profile-restaurant-info/);
-  assert.match(info, /profile-info-claim|Claim this profile to complete/);
-  assert.match(info, /profile-info-hours-blank|InfoBlank/);
+  assert.match(about, /profile-about-founded/);
+  assert.match(about, /profile-founded/);
+  assert.match(about, /profile-founded-blank/);
+  assert.match(about, /profile-about-claim|Claim this profile to complete/);
   assert.match(billboard, /profile-billboard-block/);
-  assert.match(billboard, /showClaimInvites|ProfileSectionBlank/);
   assert.match(favorites, /showClaimInvites|ProfileSectionBlank/);
   assert.match(updates, /showClaimInvites|ProfileSectionBlank/);
   assert.match(hero, /profile-hero-actions/);
-  assert.match(hero, /profile-hero-open-status|openStatus/);
-  assert.match(hero, /profile-hero-description|shortDescription/);
+  assert.match(hero, /profile-hero-hours/);
+  assert.match(hero, /profile-hero-maps-address/);
+  assert.match(hero, /openStatus/);
+  assert.match(hero, /shortDescription/);
   assert.match(hero, /profile-hero-identity-meta|profile-hero-venue/);
   assert.doesNotMatch(hero, /borderRadius: 999/);
   // Homepage section order.
   const billboardIdx = shell.indexOf("<ProfileBillboardBlock");
+  const aboutIdx = shell.indexOf("<ProfileAboutFounded");
   const favIdx = shell.indexOf("<ProfileFavoriteMenuItems");
   const updatesIdx = shell.indexOf("<ProfileUpdates");
   const dealsIdx = shell.indexOf("<ProfileDealsSection");
   const photoIdx = shell.indexOf("<ProfilePhotoStrip");
-  const infoIdx = shell.indexOf("<ProfileRestaurantInfo");
-  assert.ok(billboardIdx > -1 && favIdx > billboardIdx, "favorites after billboard");
+  assert.ok(billboardIdx > -1 && aboutIdx > billboardIdx, "about/founded after billboard");
+  assert.ok(favIdx > aboutIdx, "favorites after about/founded");
   assert.ok(updatesIdx > favIdx, "updates after favorites");
   assert.ok(dealsIdx > updatesIdx, "deals after updates");
   assert.ok(photoIdx > dealsIdx, "photos after deals");
-  assert.ok(infoIdx > photoIdx, "info after photos");
   assert.match(page, /canonicalRestaurantSlug/);
   assert.match(page, /\/restaurants\/:state\/:city\/:restaurantSlug/);
   assert.match(page, /firstBillboardImage/);
