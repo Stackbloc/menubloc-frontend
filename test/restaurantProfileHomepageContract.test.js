@@ -34,16 +34,39 @@ function testHomepageSectionOrder() {
 
 function testFavoritesCapAndViewMenu() {
   const fav = read("src/components/restaurant/publicProfile/ProfileFavoriteMenuItems.jsx");
+  const hero = read("src/components/restaurant/publicProfile/ProfileHero.jsx");
+  const shell = read("src/components/restaurant/publicProfile/PublicProfileShell.jsx");
   assert.match(fav, /\.slice\(0, 3\)/);
   assert.match(fav, /Favorite Menu Items/);
-  assert.match(fav, /viewMenuTestId|restaurant-profile-view-menu/);
-  assert.match(fav, /View Menu/);
+  assert.doesNotMatch(fav, /View Menu →/);
+  assert.match(hero, /ViewMenuLink/);
+  assert.match(shell, /restaurant-profile-view-menu|food-truck-view-menu/);
 }
 
 function testUpdatesHideWhenEmpty() {
   const updates = read("src/components/restaurant/publicProfile/ProfileUpdates.jsx");
-  assert.match(updates, /if \(!list\.length\) return null/);
+  assert.match(updates, /if \(!list\.length && !showClaimInvites\) return null/);
   assert.match(updates, /profile-updates/);
+  assert.match(updates, /ProfileSectionBlank/);
+}
+
+function testUnclaimedHomepageBlanks() {
+  const primitives = read("src/components/restaurant/publicProfile/profilePrimitives.jsx");
+  const billboard = read("src/components/restaurant/publicProfile/ProfileBillboardBlock.jsx");
+  const fav = read("src/components/restaurant/publicProfile/ProfileFavoriteMenuItems.jsx");
+  const deals = read("src/components/restaurant/publicProfile/ProfileDealsSection.jsx");
+  const photos = read("src/components/restaurant/publicProfile/ProfilePhotoStrip.jsx");
+  const info = read("src/components/restaurant/publicProfile/ProfileRestaurantInfo.jsx");
+  const shell = read("src/components/restaurant/publicProfile/PublicProfileShell.jsx");
+  assert.match(primitives, /ProfileSectionBlank/);
+  assert.match(primitives, /Claim this profile to complete/);
+  assert.match(billboard, /profile-billboard-blank/);
+  assert.match(fav, /profile-favorites-blank/);
+  assert.match(deals, /profile-deals-blank/);
+  assert.match(photos, /profile-photos-blank/);
+  assert.match(info, /profile-info-hours-blank/);
+  assert.match(shell, /showClaimInvites=\{showClaimInvites\}/);
+  assert.doesNotMatch(shell, /ProfileAtAGlance/);
 }
 
 function testSplashPreserved() {
@@ -74,6 +97,7 @@ function testFoodTruckPlanOrType() {
 testHomepageSectionOrder();
 testFavoritesCapAndViewMenu();
 testUpdatesHideWhenEmpty();
+testUnclaimedHomepageBlanks();
 testSplashPreserved();
 testOwnerFavoritesAndUpdates();
 testFoodTruckPlanOrType();

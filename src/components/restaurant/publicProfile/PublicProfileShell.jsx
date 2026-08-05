@@ -1,7 +1,8 @@
 /**
  * Unified Menuply public profile shell — restaurant homepage layout.
  * Order: Hero → Billboard → Favorite Menu Items → Updates → Deals → Photos → Info
- * (+ FT upcoming stops when food truck entity/plan). Empty sections collapse.
+ * (+ FT upcoming stops when food truck entity/plan).
+ * Claimed: empty sections collapse. Unclaimed: same sections as fill-in-the-blank claim prompts.
  */
 import { useMemo } from "react";
 import ProfileHero from "./ProfileHero.jsx";
@@ -22,6 +23,7 @@ import {
   PROFILE_CONTENT_MAX,
   profilePageBgVar,
   isFoodTruckProfile,
+  ProfileSectionBlank,
 } from "./profilePrimitives.jsx";
 import {
   buildProfileStyleRootStyle,
@@ -196,6 +198,8 @@ export default function PublicProfileShell({
         shareData={shareData}
         shareAnalytics={shareAnalytics}
         followSource={isFoodTruck ? "food_truck_profile" : "restaurant_profile"}
+        viewMenuTestId={isFoodTruck ? "food-truck-view-menu" : "restaurant-profile-view-menu"}
+        showClaimInvites={showClaimInvites}
         metaBits={metaBits}
         venueLabel={isFoodTruck ? "" : primaryVenue}
         clusterName={clusterLabel}
@@ -221,20 +225,30 @@ export default function PublicProfileShell({
           boxSizing: "border-box",
         }}
       >
-        <ProfileBillboardBlock billboardPreview={billboardPreview} isMobile={isMobile} />
+        <ProfileBillboardBlock
+          billboardPreview={billboardPreview}
+          isMobile={isMobile}
+          showClaimInvites={showClaimInvites}
+        />
 
         <ProfileFavoriteMenuItems
           items={favorites}
-          menuHref={menuHref}
-          viewMenuTestId={isFoodTruck ? "food-truck-view-menu" : "restaurant-profile-view-menu"}
           isMobile={isMobile}
+          showClaimInvites={showClaimInvites}
         />
 
-        <ProfileUpdates updates={updates} isMobile={isMobile} />
+        <ProfileUpdates updates={updates} isMobile={isMobile} showClaimInvites={showClaimInvites} />
 
-        {isFoodTruck && stops.length ? (
+        {isFoodTruck && (stops.length || showClaimInvites) ? (
           <ProfileSection title="Upcoming locations">
-            <FoodTruckUpcomingStops stops={stops} />
+            {stops.length ? (
+              <FoodTruckUpcomingStops stops={stops} />
+            ) : (
+              <ProfileSectionBlank
+                testId="profile-upcoming-blank"
+                message="No upcoming locations yet."
+              />
+            )}
           </ProfileSection>
         ) : null}
 
@@ -242,6 +256,7 @@ export default function PublicProfileShell({
           dealItems={deals}
           restaurantId={restaurantId}
           isMobile={isMobile}
+          showClaimInvites={showClaimInvites}
         />
 
         <ProfilePhotoStrip
@@ -249,6 +264,7 @@ export default function PublicProfileShell({
           bannerPhotoUrl={bannerPhotoUrl}
           billboardPreview={billboardPreview}
           isMobile={isMobile}
+          showClaimInvites={showClaimInvites}
         />
 
         <ProfileRestaurantInfo

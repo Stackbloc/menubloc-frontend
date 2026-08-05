@@ -8,6 +8,7 @@ import {
   profileCardBorderVar,
   profileAccentVar,
   firstNonEmpty,
+  ProfileSectionBlank,
 } from "./profilePrimitives.jsx";
 
 function formatPrice(raw) {
@@ -20,11 +21,16 @@ function formatPrice(raw) {
   return s.startsWith("$") ? s : s ? `$${s}` : "";
 }
 
-export default function ProfileDealsSection({ dealItems = [], restaurantId = null, isMobile = false }) {
+export default function ProfileDealsSection({
+  dealItems = [],
+  restaurantId = null,
+  isMobile = false,
+  showClaimInvites = false,
+}) {
   const deals = (Array.isArray(dealItems) ? dealItems : []).filter(
     (d) => firstNonEmpty(d?.deal_title, d?.name, d?.title)
   );
-  if (!deals.length) return null;
+  if (!deals.length && !showClaimInvites) return null;
 
   const browseHref = restaurantId
     ? `/deals?restaurant_id=${encodeURIComponent(String(restaurantId))}`
@@ -55,13 +61,18 @@ export default function ProfileDealsSection({ dealItems = [], restaurantId = nul
         >
           Deals
         </div>
-        <Link
-          to={browseHref}
-          style={{ fontSize: 13, fontWeight: 700, color: profileAccentVar, textDecoration: "none" }}
-        >
-          See all
-        </Link>
+        {deals.length ? (
+          <Link
+            to={browseHref}
+            style={{ fontSize: 13, fontWeight: 700, color: profileAccentVar, textDecoration: "none" }}
+          >
+            See all
+          </Link>
+        ) : null}
       </div>
+      {!deals.length ? (
+        <ProfileSectionBlank testId="profile-deals-blank" message="No deals yet." />
+      ) : null}
       <div style={{ display: "grid", gap: 8 }}>
         {deals.slice(0, 5).map((deal) => {
           const title = firstNonEmpty(deal.deal_title, deal.title, deal.name);

@@ -118,7 +118,7 @@ function testPublicProfileForcedLight() {
   assert.equal(whitePageBgMatches.length, 1);
 }
 
-/** Profile header actions: Like, Share, Call, Directions, Order (View Menu under favorites). */
+/** Profile header actions: View Menu icon next to name, then Like / Share / Call / Directions / Order. */
 function testPublicProfileMenuLikeShareRail() {
   const page = read("src/pages/RestaurantPublicPage.jsx");
   const editorial = read("src/components/restaurant/RestaurantPublicEditorial.jsx");
@@ -130,6 +130,7 @@ function testPublicProfileMenuLikeShareRail() {
   assert.match(page, /restaurantMenuPathFromRow/);
   assert.match(editorial, /PublicProfileShell/);
   assert.match(editorial, /profileType="restaurant"/);
+  assert.match(hero, /ViewMenuLink/);
   assert.match(hero, /FollowRestaurantButton/);
   assert.match(hero, /source=\{followSource\}/);
   assert.match(hero, /variant="menu"/);
@@ -138,13 +139,14 @@ function testPublicProfileMenuLikeShareRail() {
   assert.match(hero, /profile-hero-directions/);
   assert.match(hero, /profile-action-order/);
   assert.match(shell, /followSource=\{isFoodTruck \? "food_truck_profile" : "restaurant_profile"\}/);
-  assert.match(favorites, /restaurant-profile-view-menu|viewMenuTestId/);
+  assert.match(shell, /restaurant-profile-view-menu|food-truck-view-menu/);
   assert.match(favorites, /Favorite Menu Items/);
-  // Order in the header rail JSX: Follow → Share (View Menu moved under favorites).
+  assert.doesNotMatch(favorites, /View Menu →/);
+  assert.doesNotMatch(favorites, /restaurant-profile-view-menu/);
   const railStart = hero.indexOf('data-testid="profile-hero-actions"');
-  const railSlice = hero.slice(railStart, railStart + 1200);
+  const railSlice = hero.slice(railStart, railStart + 1600);
   assert.ok(railStart > -1, "hero actions rail missing");
-  assert.match(railSlice, /FollowRestaurantButton[\s\S]*ShareButton/);
+  assert.match(railSlice, /ViewMenuLink[\s\S]*FollowRestaurantButton[\s\S]*ShareButton/);
   assert.doesNotMatch(page, />\s*Follow\s*</);
   assert.doesNotMatch(page, /Following/);
 }
@@ -197,8 +199,12 @@ function testClaimedProfileUsesEditorialPresentation() {
   assert.match(updates, /profile-updates/);
   assert.match(deals, /profile-deals-section/);
   assert.match(info, /profile-restaurant-info/);
-  assert.match(info, /profile-info-claim|Claim this profile/);
+  assert.match(info, /profile-info-claim|Claim this profile to complete/);
+  assert.match(info, /profile-info-hours-blank|InfoBlank/);
   assert.match(billboard, /profile-billboard-block/);
+  assert.match(billboard, /showClaimInvites|ProfileSectionBlank/);
+  assert.match(favorites, /showClaimInvites|ProfileSectionBlank/);
+  assert.match(updates, /showClaimInvites|ProfileSectionBlank/);
   assert.match(hero, /profile-hero-actions/);
   assert.match(hero, /profile-hero-open-status|openStatus/);
   assert.match(hero, /profile-hero-description|shortDescription/);

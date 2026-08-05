@@ -144,6 +144,33 @@ export function ViewMenuLink({ href, dark, testId = "restaurant-profile-view-men
   );
 }
 
+/** Unclaimed fill-in-the-blank — same homepage sections, empty slots invite claim. */
+export function ProfileSectionBlank({ testId, message, claimHref = "/onboarding" }) {
+  return (
+    <div
+      data-testid={testId || "profile-section-blank"}
+      style={{
+        padding: "14px 16px",
+        borderRadius: 12,
+        border: `1px dashed ${profileCardBorderVar}`,
+        background: "#fafaf9",
+        fontSize: 13,
+        color: PROFILE_MUTED,
+        lineHeight: 1.45,
+      }}
+    >
+      <span>{message}</span>
+      {" "}
+      <Link
+        to={claimHref || "/onboarding"}
+        style={{ color: profileAccentVar, fontWeight: 700, textDecoration: "none" }}
+      >
+        Claim this profile to complete
+      </Link>
+    </div>
+  );
+}
+
 export { MENU_ROW_HEADER_ICON_GAP, MENU_ROW_ICON_SIZE };
 
 export function ProfileSection({ title, children, empty = false, testId }) {

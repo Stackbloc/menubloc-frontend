@@ -3,7 +3,7 @@
  * Collapses when no remaining images — no empty placeholders.
  * Phase 1.5: larger tiles; exclude hero URL to avoid triple-repeat.
  */
-import { PROFILE_INK } from "./profilePrimitives.jsx";
+import { PROFILE_INK, ProfileSectionBlank } from "./profilePrimitives.jsx";
 
 function collectPhotoUrls({ bannerPhotoUrl, billboardPreview, excludeHeroUrl }) {
   const urls = [];
@@ -33,14 +33,14 @@ export default function ProfilePhotoStrip({
   bannerPhotoUrl = null,
   billboardPreview = [],
   isMobile = false,
+  showClaimInvites = false,
 }) {
   const photos = collectPhotoUrls({
     bannerPhotoUrl,
     billboardPreview,
     excludeHeroUrl: bannerPhotoUrl,
   });
-  // Phase 1.5: show strip when ≥1 remaining image (hero already shows one).
-  if (!photos.length) return null;
+  if (!photos.length && !showClaimInvites) return null;
 
   const tileW = isMobile ? 168 : 260;
   const tileH = isMobile ? 126 : 180;
@@ -62,6 +62,9 @@ export default function ProfilePhotoStrip({
       >
         Photos
       </div>
+      {!photos.length ? (
+        <ProfileSectionBlank testId="profile-photos-blank" message="No additional photos yet." />
+      ) : (
       <div
         style={{
           display: "flex",
@@ -93,6 +96,7 @@ export default function ProfilePhotoStrip({
           />
         ))}
       </div>
+      )}
     </section>
   );
 }

@@ -30,7 +30,7 @@ test("FoodTruckPage uses personality editorial with homepage shell (no inline me
   const hero = read("src/components/restaurant/publicProfile/ProfileHero.jsx");
   const location = read("src/components/restaurant/publicProfile/FoodTruckCurrentLocation.jsx");
   const upcoming = read("src/components/restaurant/publicProfile/FoodTruckUpcomingStops.jsx");
-  const favorites = read("src/components/restaurant/publicProfile/ProfileFavoriteMenuItems.jsx");
+  const primitives = read("src/components/restaurant/publicProfile/profilePrimitives.jsx");
   assert.match(source, /FoodTruckPublicEditorial/);
   assert.match(source, /public_ordering_mode === "display_only"/);
   assert.match(source, /isClaimedFoodTruck/);
@@ -68,7 +68,10 @@ test("FoodTruckPage uses personality editorial with homepage shell (no inline me
   assert.match(shell, /ProfileBillboardBlock/);
   assert.match(shell, /FollowRestaurantButton|ProfileHero/);
   assert.match(shell, /saveContactControl/);
-  assert.match(favorites, /viewMenuTestId|food-truck-view-menu/);
+  assert.match(shell, /food-truck-view-menu/);
+  assert.match(hero, /ViewMenuLink/);
+  assert.match(primitives, /ProfileSectionBlank/);
+  assert.match(shell, /profile-upcoming-blank|showClaimInvites/);
   assert.doesNotMatch(editorial, /RestaurantProfileMenuPreview/);
   assert.doesNotMatch(shell, /Where & when/);
   assert.doesNotMatch(shell, /Bio coming soon/);

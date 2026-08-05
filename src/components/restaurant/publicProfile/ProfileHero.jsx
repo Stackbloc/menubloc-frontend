@@ -1,7 +1,6 @@
 /**
  * Shared public-profile hero: cover/banner + logo + name + cuisine + description
- * + open/closed + action rail (Like / Share / Call / Directions / Order).
- * View Menu lives under Favorite Menu Items (not in hero).
+ * + open/closed + action rail (View Menu icon next to name, then Like / Share / Call / Directions / Order).
  */
 import { Link } from "react-router-dom";
 import RestaurantStatusLight from "../../RestaurantStatusLight.jsx";
@@ -10,6 +9,7 @@ import ShareButton from "../../share/ShareButton.jsx";
 import FoodTruckCurrentLocation from "./FoodTruckCurrentLocation.jsx";
 import {
   LogoMark,
+  ViewMenuLink,
   MENU_ROW_ICON_SIZE,
   PROFILE_CONTENT_MAX,
   ghostIconStyle,
@@ -78,6 +78,8 @@ export default function ProfileHero({
   shareData,
   shareAnalytics,
   followSource = "restaurant_profile",
+  viewMenuTestId = "restaurant-profile-view-menu",
+  showClaimInvites = false,
   metaBits = [],
   venueLabel = "",
   clusterName = "",
@@ -160,6 +162,7 @@ export default function ProfileHero({
               flexShrink: 0,
             }}
           >
+            <ViewMenuLink href={menuHref} dark={onPhoto} testId={viewMenuTestId} />
             {restaurantId ? (
               <FollowRestaurantButton
                 restaurantId={restaurantId}
@@ -292,6 +295,20 @@ export default function ProfileHero({
             }}
           >
             {desc}
+          </p>
+        ) : showClaimInvites ? (
+          <p
+            data-testid="profile-hero-description-blank"
+            style={{
+              margin: "8px 0 0",
+              fontSize: 13,
+              lineHeight: 1.45,
+              color: muted,
+              maxWidth: 520,
+              fontStyle: "italic",
+            }}
+          >
+            Claim this profile to complete a short description.
           </p>
         ) : null}
 

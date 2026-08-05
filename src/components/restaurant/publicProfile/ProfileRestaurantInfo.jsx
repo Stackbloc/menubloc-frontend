@@ -1,5 +1,6 @@
 /**
  * Compact restaurant information — hours, phone, address, website, social.
+ * Unclaimed missing fields render as fill-in-the-blank claim prompts.
  */
 import { Link } from "react-router-dom";
 import {
@@ -11,6 +12,19 @@ import {
   firstNonEmpty,
 } from "./profilePrimitives.jsx";
 import { formatWebsiteHostLabel } from "../../../lib/formatWebsiteHostLabel.js";
+
+function InfoBlank({ testId, label }) {
+  return (
+    <div data-testid={testId}>
+      <div style={{ fontSize: 12, fontWeight: 700, color: PROFILE_MUTED, marginBottom: 2 }}>
+        {label}
+      </div>
+      <div style={{ fontSize: 13, color: PROFILE_MUTED, fontStyle: "italic" }}>
+        Claim this profile to complete
+      </div>
+    </div>
+  );
+}
 
 export default function ProfileRestaurantInfo({
   operatingHours = [],
@@ -36,8 +50,10 @@ export default function ProfileRestaurantInfo({
     : "";
 
   const hasContact = Boolean(phone || streetAddr || cityLine || website || igHref);
-  const hasAnything = hoursRows.length > 0 || hasContact || (showClaimInvites && claimHref);
+  const hasAnything = hoursRows.length > 0 || hasContact || showClaimInvites;
   if (!hasAnything) return null;
+
+  const claimTo = claimHref && claimHref !== "#claim-profile" ? claimHref : "/onboarding";
 
   return (
     <section
@@ -91,6 +107,8 @@ export default function ProfileRestaurantInfo({
               ))}
             </div>
           </div>
+        ) : showClaimInvites ? (
+          <InfoBlank testId="profile-info-hours-blank" label="Hours" />
         ) : null}
 
         {phone ? (
@@ -105,9 +123,11 @@ export default function ProfileRestaurantInfo({
               {phone}
             </a>
           </div>
+        ) : showClaimInvites ? (
+          <InfoBlank testId="profile-info-phone-blank" label="Phone" />
         ) : null}
 
-        {(streetAddr || cityLine) && (
+        {streetAddr || cityLine ? (
           <div>
             <div style={{ fontSize: 12, fontWeight: 700, color: PROFILE_MUTED, marginBottom: 2 }}>
               Address
@@ -129,7 +149,9 @@ export default function ProfileRestaurantInfo({
               </>
             )}
           </div>
-        )}
+        ) : showClaimInvites ? (
+          <InfoBlank testId="profile-info-address-blank" label="Address" />
+        ) : null}
 
         {website ? (
           <div>
@@ -145,6 +167,8 @@ export default function ProfileRestaurantInfo({
               {websiteLabel} ↗
             </a>
           </div>
+        ) : showClaimInvites ? (
+          <InfoBlank testId="profile-info-website-blank" label="Website" />
         ) : null}
 
         {igHref ? (
@@ -161,11 +185,13 @@ export default function ProfileRestaurantInfo({
               {ig.startsWith("@") ? ig : `@${String(ig).replace(/^@/, "")}`}
             </a>
           </div>
+        ) : showClaimInvites ? (
+          <InfoBlank testId="profile-info-instagram-blank" label="Instagram" />
         ) : null}
 
-        {showClaimInvites && claimHref ? (
+        {showClaimInvites ? (
           <Link
-            to={claimHref}
+            to={claimTo}
             state={claimState || undefined}
             data-testid="profile-info-claim"
             style={{
@@ -176,7 +202,7 @@ export default function ProfileRestaurantInfo({
               textDecoration: "none",
             }}
           >
-            Claim this profile →
+            Claim this profile to complete →
           </Link>
         ) : null}
       </div>

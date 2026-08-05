@@ -3,7 +3,12 @@
  * Reuses billboard_preview creatives; collapses when empty.
  * Entrance splash remains separate (ClaimedRestaurantBillboardSplash).
  */
-import { PROFILE_INK, PROFILE_MUTED, profileCardBorderVar } from "./profilePrimitives.jsx";
+import {
+  PROFILE_INK,
+  PROFILE_MUTED,
+  profileCardBorderVar,
+  ProfileSectionBlank,
+} from "./profilePrimitives.jsx";
 
 function postImage(post) {
   return String(post?.image_url || post?.photo_url || "").trim();
@@ -17,11 +22,15 @@ function postBody(post) {
   return String(post?.body || post?.description || post?.message || "").trim();
 }
 
-export default function ProfileBillboardBlock({ billboardPreview = [], isMobile = false }) {
+export default function ProfileBillboardBlock({
+  billboardPreview = [],
+  isMobile = false,
+  showClaimInvites = false,
+}) {
   const posts = (Array.isArray(billboardPreview) ? billboardPreview : []).filter(
     (p) => postImage(p) || postTitle(p) || postBody(p)
   );
-  if (!posts.length) return null;
+  if (!posts.length && !showClaimInvites) return null;
 
   return (
     <section
@@ -40,6 +49,12 @@ export default function ProfileBillboardBlock({ billboardPreview = [], isMobile 
       >
         Billboard
       </div>
+      {!posts.length ? (
+        <ProfileSectionBlank
+          testId="profile-billboard-blank"
+          message="No Billboard yet."
+        />
+      ) : null}
       <div style={{ display: "grid", gap: 12 }}>
         {posts.slice(0, 3).map((post, idx) => {
           const img = postImage(post);
