@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useParams, useSearchParams } from "react-router-dom";
 import BottomNav from "../components/BottomNav.jsx";
 import { CLUSTER_DIRECTORY_GRID_STYLE } from "../components/cluster/ClusterDirectoryCard.jsx";
@@ -308,7 +309,76 @@ const CLUSTER_SEARCH_GRID_STYLE = {
   gap: "0.85rem",
 };
 
-function ClusterMenuExplorerTab({ clusterSlug, cluster, enabled }) {
+function ClusterFoodSearchForm({
+  searchInput,
+  onSearchInputChange,
+  searchPlaceholder,
+  searchActive,
+  onSubmit,
+  onClear,
+}) {
+  return (
+    <form
+      data-testid="cluster-sticky-search-form"
+      onSubmit={onSubmit}
+      style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", alignItems: "flex-start" }}
+    >
+      <div style={{ flex: "1 1 220px", minWidth: 0, display: "grid", gap: "0.3rem" }}>
+        <input
+          type="search"
+          value={searchInput}
+          onChange={onSearchInputChange}
+          placeholder={searchPlaceholder}
+          aria-label={searchPlaceholder}
+          style={{
+            width: "100%",
+            boxSizing: "border-box",
+            padding: "0.65rem 0.75rem",
+            borderRadius: 8,
+            border: "1px solid #d1d5db",
+            fontSize: "1rem",
+          }}
+        />
+        <p style={{ margin: 0, fontSize: "0.78rem", color: "#6b7280", lineHeight: 1.35 }}>
+          e.g. burger, low calories, high protein
+        </p>
+      </div>
+      <button
+        type="submit"
+        disabled={!searchInput.trim()}
+        style={{
+          padding: "0.65rem 1rem",
+          borderRadius: 8,
+          border: "none",
+          background: searchInput.trim() ? "#111827" : "#9ca3af",
+          color: "#fff",
+          cursor: searchInput.trim() ? "pointer" : "not-allowed",
+          alignSelf: "flex-start",
+        }}
+      >
+        Search
+      </button>
+      {searchActive ? (
+        <button
+          type="button"
+          onClick={onClear}
+          style={{
+            padding: "0.65rem 1rem",
+            borderRadius: 8,
+            border: "1px solid #d1d5db",
+            background: "#fff",
+            cursor: "pointer",
+            alignSelf: "flex-start",
+          }}
+        >
+          Clear
+        </button>
+      ) : null}
+    </form>
+  );
+}
+
+function ClusterMenuExplorerTab({ clusterSlug, cluster, enabled, searchSlotRef }) {
   const PAGE_SIZE = 40;
   const [status, setStatus] = useState(enabled ? "loading" : "idle");
   const [mksCategories, setMksCategories] = useState([]);
@@ -515,67 +585,35 @@ function ClusterMenuExplorerTab({ clusterSlug, cluster, enabled }) {
     setSubmittedSearch("");
   }
 
+  const [searchHost, setSearchHost] = useState(null);
+  useLayoutEffect(() => {
+    if (!enabled || !searchSlotRef) {
+      setSearchHost(null);
+      return undefined;
+    }
+    setSearchHost(searchSlotRef.current || null);
+    return undefined;
+  }, [enabled, searchSlotRef]);
+
   if (!enabled) {
     return <p style={{ color: "#888" }}>Select Food to browse what you can eat here.</p>;
   }
 
   const categoryTitle = selectedCategory?.label || null;
+  const searchForm = (
+    <ClusterFoodSearchForm
+      searchInput={searchInput}
+      onSearchInputChange={(event) => setSearchInput(event.target.value)}
+      searchPlaceholder={searchPlaceholder}
+      searchActive={searchActive}
+      onSubmit={handleSearchSubmit}
+      onClear={clearSearch}
+    />
+  );
 
   return (
     <div style={{ display: "grid", gap: "1rem" }}>
-      <form onSubmit={handleSearchSubmit} style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", alignItems: "flex-start" }}>
-        <div style={{ flex: "1 1 220px", minWidth: 0, display: "grid", gap: "0.3rem" }}>
-          <input
-            type="search"
-            value={searchInput}
-            onChange={(event) => setSearchInput(event.target.value)}
-            placeholder={searchPlaceholder}
-            aria-label={searchPlaceholder}
-            style={{
-              width: "100%",
-              boxSizing: "border-box",
-              padding: "0.65rem 0.75rem",
-              borderRadius: 8,
-              border: "1px solid #d1d5db",
-              fontSize: "1rem",
-            }}
-          />
-          <p style={{ margin: 0, fontSize: "0.78rem", color: "#6b7280", lineHeight: 1.35 }}>
-            e.g. burger, low calories, high protein
-          </p>
-        </div>
-        <button
-          type="submit"
-          disabled={!searchInput.trim()}
-          style={{
-            padding: "0.65rem 1rem",
-            borderRadius: 8,
-            border: "none",
-            background: searchInput.trim() ? "#111827" : "#9ca3af",
-            color: "#fff",
-            cursor: searchInput.trim() ? "pointer" : "not-allowed",
-            alignSelf: "flex-start",
-          }}
-        >
-          Search
-        </button>
-        {searchActive ? (
-          <button
-            type="button"
-            onClick={clearSearch}
-            style={{
-              padding: "0.65rem 1rem",
-              borderRadius: 8,
-              border: "1px solid #d1d5db",
-              background: "#fff",
-              cursor: "pointer",
-              alignSelf: "flex-start",
-            }}
-          >
-            Clear
-          </button>
-        ) : null}
-      </form>
+      {searchHost ? createPortal(searchForm, searchHost) : searchSlotRef ? null : searchForm}
 
       {searchActive ? (
         <div style={{ display: "grid", gap: "0.75rem" }}>
@@ -947,6 +985,7 @@ export default function ClusterPage() {
     );
   }
 
+  const searchSlotRef = useRef(null);
   const pageHeading = getClusterPageHeading(cluster);
   const productTitle = getClusterProductTitle(cluster);
   const disclaimer = getClusterDisclaimer(cluster);
@@ -1033,6 +1072,9 @@ export default function ClusterPage() {
             />
           ) : null}
         </div>
+        {resolvedViewMode === CLUSTER_VIEW_MODES.MENU ? (
+          <div data-testid="cluster-sticky-search" ref={searchSlotRef} />
+        ) : null}
       </div>
 
       <div style={{ overflowX: "clip", minWidth: 0 }}>
@@ -1052,7 +1094,12 @@ export default function ClusterPage() {
           }}
         >
           {resolvedViewMode === CLUSTER_VIEW_MODES.MENU ? (
-            <ClusterMenuExplorerTab clusterSlug={cluster.slug} cluster={cluster} enabled />
+            <ClusterMenuExplorerTab
+              clusterSlug={cluster.slug}
+              cluster={cluster}
+              enabled
+              searchSlotRef={searchSlotRef}
+            />
           ) : (
             <ClusterRestaurantsTab
               clusterSlug={cluster.slug}

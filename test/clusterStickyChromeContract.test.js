@@ -22,6 +22,14 @@ test("ClusterPage mounts sticky product title + Food/Restaurants chrome", () => 
   assert.match(pageSrc, /overflowX:\s*"clip"/);
 });
 
+test("Cluster Food search form mounts inside sticky chrome", () => {
+  assert.match(pageSrc, /data-testid="cluster-sticky-search"/);
+  assert.match(pageSrc, /data-testid="cluster-sticky-search-form"/);
+  assert.match(pageSrc, /createPortal\(searchForm, searchHost\)/);
+  assert.match(pageSrc, /searchSlotRef/);
+  assert.match(pageSrc, /ClusterFoodSearchForm/);
+});
+
 test("sticky chrome is not the page-root overflow clip ancestor", () => {
   const stickyIdx = pageSrc.indexOf('data-testid="cluster-sticky-chrome"');
   const rootOpenIdx = pageSrc.indexOf("maxWidth: 900");
