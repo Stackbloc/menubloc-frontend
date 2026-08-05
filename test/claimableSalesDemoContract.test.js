@@ -32,7 +32,9 @@ test("FoodTruckPage uses personality editorial with View menu icon rail (no inli
   const upcoming = read("src/components/restaurant/publicProfile/FoodTruckUpcomingStops.jsx");
   assert.match(source, /FoodTruckPublicEditorial/);
   assert.match(source, /public_ordering_mode === "display_only"/);
-  assert.match(source, /public_profile_mode === "full_claimable"/);
+  assert.match(source, /isClaimedFoodTruck/);
+  assert.match(source, /showClaimInvites=\{Boolean\(profile\) && !isClaimedFoodTruck\(profile\)\}/);
+  assert.doesNotMatch(source, /public_profile_mode === "full_claimable"/);
   assert.match(source, /showClaimInvites/);
   assert.doesNotMatch(source, /FullClaimableClaimNotice/);
   assert.doesNotMatch(source, /claim-profile-panel/);
@@ -50,11 +52,13 @@ test("FoodTruckPage uses personality editorial with View menu icon rail (no inli
   assert.match(location, /food-truck-current-location/);
   assert.doesNotMatch(location, /Current location has not been posted/);
   assert.match(hero, /food-truck-contact/);
+  assert.match(hero, /flexDirection: "column"/);
   assert.match(hero, /hasPostedLocation/);
   assert.match(hero, /saveContactControl/);
   assert.match(upcoming, /food-truck-upcoming/);
   assert.match(shell, /Located today|buildCurrentLocation|FoodTruckUpcomingStops/);
   assert.match(shell, /Upcoming locations \/ events|FoodTruckUpcomingStops/);
+  assert.match(shell, /venueNoun=\{isFoodTruck \? "food truck" : "restaurant"\}/);
   assert.doesNotMatch(shell, /ProfileRestaurantHighlights/);
   assert.doesNotMatch(shell, /Food truck highlights/);
   assert.doesNotMatch(shell, /Business information/);

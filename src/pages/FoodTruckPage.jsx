@@ -89,6 +89,16 @@ function firstNonEmpty(...vals) {
   return "";
 }
 
+function normalizeClaimStatus(v) {
+  return String(v || "").trim().toLowerCase();
+}
+
+/** Owner signup leaves claim_pending until formal claim completion — still owned. */
+function isClaimedFoodTruck(data) {
+  const status = normalizeClaimStatus(data?.claim_status);
+  return status === "claimed" || status === "claim_pending";
+}
+
 function normalizeUrl(url) {
   const s = asStr(url).trim();
   if (!s) return "";
@@ -1218,8 +1228,9 @@ export default function FoodTruckPage() {
           return;
         }
 
+        const base = json?.restaurant || json || {};
         const restaurant = {
-          ...(json?.restaurant || json || {}),
+          ...base,
           deal_items: Array.isArray(json?.deal_items) ? json.deal_items : [],
           billboard_preview: Array.isArray(json?.restaurant?.billboard_preview)
             ? json.restaurant.billboard_preview
@@ -1231,6 +1242,11 @@ export default function FoodTruckPage() {
             : Array.isArray(json?.operating_hours)
               ? json.operating_hours
               : [],
+          claim_status: json?.claim_status ?? base?.claim_status ?? null,
+          public_profile_mode:
+            json?.public_profile_mode ?? base?.public_profile_mode ?? "standard",
+          public_ordering_mode:
+            json?.public_ordering_mode ?? base?.public_ordering_mode ?? "standard",
         };
 
         setProfileState({
@@ -1486,7 +1502,7 @@ export default function FoodTruckPage() {
           menuHref={menuHref}
           menuPreviewItems={menuPreviewItems}
           billboardPreview={billboardPreview}
-          showClaimInvites={profile?.public_profile_mode === "full_claimable"}
+          showClaimInvites={Boolean(profile) && !isClaimedFoodTruck(profile)}
           isMobile={isMobile}
         />
       </div>

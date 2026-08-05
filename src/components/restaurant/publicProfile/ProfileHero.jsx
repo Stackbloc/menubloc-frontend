@@ -304,8 +304,8 @@ export default function ProfileHero({
                 style={{
                   marginTop: 8,
                   display: "flex",
-                  flexWrap: "wrap",
-                  gap: "6px 16px",
+                  flexDirection: "column",
+                  gap: 4,
                   fontSize: 14,
                   lineHeight: 1.45,
                   color: muted,
@@ -314,6 +314,7 @@ export default function ProfileHero({
                 {phone ? (
                   <a
                     href={`tel:${String(phone).replace(/\s+/g, "")}`}
+                    data-testid="food-truck-hero-phone"
                     style={{ color: linkColor, textDecoration: "none", fontWeight: 600 }}
                   >
                     {phone}
@@ -324,6 +325,7 @@ export default function ProfileHero({
                     href={website}
                     target="_blank"
                     rel="noreferrer"
+                    data-testid="food-truck-hero-website"
                     style={{ color: linkColor, textDecoration: "none", fontWeight: 600 }}
                   >
                     {websiteLabel} ↗

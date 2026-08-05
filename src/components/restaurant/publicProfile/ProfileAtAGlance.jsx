@@ -58,8 +58,10 @@ export default function ProfileAtAGlance({
   claimHref = "#claim-profile",
   showHiringInvite = false,
   isMobile = false,
+  venueNoun = "restaurant",
 }) {
   void claimHref;
+  const venue = firstNonEmpty(venueNoun) || "restaurant";
   const about = firstNonEmpty(aboutText);
   const founded = firstNonEmpty(foundedText);
   const signature = firstNonEmpty(signatureText);
@@ -84,7 +86,7 @@ export default function ProfileAtAGlance({
       label: "About Us",
       testId: "glance-about",
       muted: true,
-      value: invite("to tell diners about your restaurant."),
+      value: invite(`to tell diners about your ${venue}.`),
     });
   }
 
@@ -96,7 +98,7 @@ export default function ProfileAtAGlance({
       label: "Founded",
       testId: "glance-founded",
       muted: true,
-      value: invite("to add when the restaurant was founded."),
+      value: invite(`to add when the ${venue} was founded.`),
     });
   }
 
@@ -125,7 +127,7 @@ export default function ProfileAtAGlance({
       label: "Meet the Team",
       testId: "glance-team",
       muted: true,
-      value: invite("to introduce the people behind the restaurant."),
+      value: invite(`to introduce the people behind the ${venue}.`),
     });
   }
 

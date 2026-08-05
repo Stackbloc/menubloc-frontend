@@ -190,6 +190,7 @@ export default function PublicProfileShell({
       claimHref={claimAnchor}
       showHiringInvite={!hiringActive}
       isMobile={isMobile}
+      venueNoun={isFoodTruck ? "food truck" : "restaurant"}
     />
   );
 

@@ -197,7 +197,9 @@ function testClaimedProfileUsesEditorialPresentation() {
   assert.match(glance, /Claim your profile/);
   assert.match(glance, /glance-about|About Us/);
   assert.match(glance, /Founded|Meet the Team|Signature/);
+  assert.match(glance, /venueNoun/);
   assert.doesNotMatch(glance, /glance-phone|glance-website/);
+  assert.match(shell, /venueNoun=\{isFoodTruck \? "food truck" : "restaurant"\}/);
   assert.match(featured, /profile-featured-content/);
   assert.match(featured, /Signature Dish/);
   assert.match(featured, /Today's Special/);
@@ -245,6 +247,7 @@ function testSharedPublicProfileShell() {
   const shell = read("src/components/restaurant/publicProfile/PublicProfileShell.jsx");
   const actions = read("src/components/restaurant/publicProfile/ProfilePrimaryActions.jsx");
   const primitives = read("src/components/restaurant/publicProfile/profilePrimitives.jsx");
+  const hero = read("src/components/restaurant/publicProfile/ProfileHero.jsx");
   assert.match(shell, /profileType === "food_truck"/);
   assert.match(shell, /FoodTruckUpcomingStops/);
   assert.match(shell, /ProfilePrimaryActions/);
@@ -254,6 +257,14 @@ function testSharedPublicProfileShell() {
   assert.match(shell, /Located today|buildCurrentLocation/);
   assert.match(shell, /ProfileFeaturedContent/);
   assert.match(shell, /data-profile-style|buildProfileStyleRootStyle/);
+  assert.match(shell, /ProfileAtAGlance/);
+  assert.match(shell, /venueNoun=\{isFoodTruck \? "food truck" : "restaurant"\}/);
+  // Food truck contact stacks phone then website (restaurant parity).
+  const contactIdx = hero.indexOf('data-testid="food-truck-contact"');
+  assert.ok(contactIdx > -1, "food-truck-contact missing");
+  const contactSlice = hero.slice(contactIdx, contactIdx + 280);
+  assert.match(contactSlice, /flexDirection: "column"/);
+  assert.doesNotMatch(contactSlice, /flexWrap/);
   // View Menu / Directions / Call / Website chips removed from primary actions.
   assert.doesNotMatch(actions, /profile-action-view-menu/);
   assert.doesNotMatch(actions, /profile-action-directions/);
