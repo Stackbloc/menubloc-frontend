@@ -872,7 +872,13 @@ function ClusterMenuExplorerTab({
               }
               midListAd={
                 displayItems.length >= 4 ? (
-                  <SpacedClusterAdSlot slim clusterSlug={clusterSlug} pageRegion="cluster_deals_top" />
+                  <SpacedClusterAdSlot
+                    slim
+                    clusterSlug={clusterSlug}
+                    pageRegion={
+                      drinksCategorySelected ? "cluster_deals_top" : "cluster_search_top"
+                    }
+                  />
                 ) : null
               }
             />

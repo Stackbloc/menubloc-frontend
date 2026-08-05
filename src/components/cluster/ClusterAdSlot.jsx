@@ -132,6 +132,7 @@ export default function ClusterAdSlot({
 function sizeForPlacement(pageRegion, type) {
   if (pageRegion === "cluster_landing_hero") return "hero";
   if (pageRegion === "cluster_deals_top") return "slim";
+  if (pageRegion === "cluster_search_top") return "slim";
   if (pageRegion === "cluster_landing_footer") return "small";
   if (pageRegion === "cluster_search_inline") return "small";
   if (type === "Native Promotion" || type === "Inline Banner") return "small";

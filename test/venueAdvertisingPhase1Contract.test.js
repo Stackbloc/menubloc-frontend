@@ -69,12 +69,14 @@ describe("venue advertising Phase 1 contracts", () => {
     assert.match(page, /cluster_search_inline/);
     assert.match(page, /cluster_restaurant_footer/);
     assert.match(page, /cluster_deals_top/);
+    assert.match(page, /cluster_search_top/);
     assert.match(page, /cluster_events_top/);
     assert.match(page, /SpacedClusterAdSlot/);
     assert.match(page, /shouldInsertClusterSearchAd/);
     assert.match(page, /compact/);
     assert.match(page, /slim/);
     assert.match(page, /insertAfterIndex/);
+    assert.match(page, /drinksCategorySelected \? "cluster_deals_top" : "cluster_search_top"/);
   });
 
   it("ClusterPage does not stack landing hero with deals/events ads", () => {
@@ -82,7 +84,6 @@ describe("venue advertising Phase 1 contracts", () => {
     assert.doesNotMatch(page, /cluster_landing_hero[\s\S]{0,240}cluster_deals_top/);
     assert.doesNotMatch(page, /cluster_deals_top[\s\S]{0,240}cluster_events_top/);
     assert.doesNotMatch(page, /cluster_landing_hero[\s\S]{0,240}cluster_events_top/);
-    assert.doesNotMatch(page, /cluster_search_top/);
     assert.doesNotMatch(page, /cluster_restaurant_header/);
     assert.match(page, /searchActive \? null : preContent/);
     assert.match(page, /cluster-ad-space/);
