@@ -226,6 +226,7 @@ export default function PublicProfileShell({
         <ProfileFavoriteMenuItems
           items={favorites}
           menuHref={menuHref}
+          viewMenuTestId={isFoodTruck ? "food-truck-view-menu" : "restaurant-profile-view-menu"}
           isMobile={isMobile}
         />
 

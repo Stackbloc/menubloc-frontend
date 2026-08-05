@@ -68,7 +68,7 @@ test("FoodTruckPage uses personality editorial with homepage shell (no inline me
   assert.match(shell, /ProfileBillboardBlock/);
   assert.match(shell, /FollowRestaurantButton|ProfileHero/);
   assert.match(shell, /saveContactControl/);
-  assert.match(favorites, /profile-favorite-view-menu/);
+  assert.match(favorites, /viewMenuTestId|food-truck-view-menu/);
   assert.doesNotMatch(editorial, /RestaurantProfileMenuPreview/);
   assert.doesNotMatch(shell, /Where & when/);
   assert.doesNotMatch(shell, /Bio coming soon/);

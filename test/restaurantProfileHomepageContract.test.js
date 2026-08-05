@@ -36,7 +36,7 @@ function testFavoritesCapAndViewMenu() {
   const fav = read("src/components/restaurant/publicProfile/ProfileFavoriteMenuItems.jsx");
   assert.match(fav, /\.slice\(0, 3\)/);
   assert.match(fav, /Favorite Menu Items/);
-  assert.match(fav, /profile-favorite-view-menu/);
+  assert.match(fav, /viewMenuTestId|restaurant-profile-view-menu/);
   assert.match(fav, /View Menu/);
 }
 

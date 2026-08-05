@@ -34,6 +34,7 @@ function itemDetailHref(item) {
 export default function ProfileFavoriteMenuItems({
   items = [],
   menuHref = null,
+  viewMenuTestId = "restaurant-profile-view-menu",
   isMobile = false,
 }) {
   const list = (Array.isArray(items) ? items : [])
@@ -46,7 +47,7 @@ export default function ProfileFavoriteMenuItems({
         {menuHref ? (
           <Link
             to={menuHref}
-            data-testid="profile-favorite-view-menu"
+            data-testid={viewMenuTestId}
             style={{
               fontSize: 14,
               fontWeight: 700,
@@ -144,7 +145,7 @@ export default function ProfileFavoriteMenuItems({
         <div style={{ marginTop: 14 }}>
           <Link
             to={menuHref}
-            data-testid="profile-favorite-view-menu"
+            data-testid={viewMenuTestId}
             style={{
               fontSize: 14,
               fontWeight: 700,
