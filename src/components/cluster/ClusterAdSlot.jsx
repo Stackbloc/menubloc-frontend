@@ -86,7 +86,25 @@ export default function ClusterAdSlot({
           Sponsored
         </div>
       ) : null}
-      <div style={{ padding: resolvedSize === "small" ? "6px 6px 8px" : 0 }}>{media}</div>
+      <div style={{ position: "relative", padding: resolvedSize === "small" ? "6px 6px 8px" : 0 }}>
+        {media}
+        {resolvedSize === "slim" ? (
+          <div
+            style={{
+              position: "absolute",
+              top: 6,
+              left: 8,
+              fontSize: 9,
+              fontWeight: 700,
+              letterSpacing: "0.06em",
+              textTransform: "uppercase",
+              color: "rgba(255,255,255,0.78)",
+            }}
+          >
+            Sponsored
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 
@@ -113,8 +131,8 @@ export default function ClusterAdSlot({
 
 function sizeForPlacement(pageRegion, type) {
   if (pageRegion === "cluster_landing_hero") return "hero";
+  if (pageRegion === "cluster_deals_top") return "slim";
   if (pageRegion === "cluster_landing_footer") return "small";
-  if (pageRegion === "cluster_deals_top") return "small";
   if (pageRegion === "cluster_search_inline") return "small";
   if (type === "Native Promotion" || type === "Inline Banner") return "small";
   if (type === "Hero Banner") return "hero";
@@ -134,6 +152,20 @@ function resolveFrameStyle(type, size, style = {}) {
       background: "#fff",
       lineHeight: 0,
       boxShadow: "0 1px 2px rgba(15, 23, 42, 0.08)",
+      ...style,
+    };
+  }
+
+  if (size === "slim") {
+    return {
+      margin: "0.35rem 0",
+      width: "100%",
+      boxSizing: "border-box",
+      overflow: "hidden",
+      borderRadius: 8,
+      border: "1px solid #e5e7eb",
+      background: "#0b1220",
+      lineHeight: 0,
       ...style,
     };
   }

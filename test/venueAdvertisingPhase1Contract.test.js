@@ -73,7 +73,8 @@ describe("venue advertising Phase 1 contracts", () => {
     assert.match(page, /SpacedClusterAdSlot/);
     assert.match(page, /shouldInsertClusterSearchAd/);
     assert.match(page, /compact/);
-    assert.match(page, /priceSort === "asc"/);
+    assert.match(page, /slim/);
+    assert.match(page, /insertAfterIndex/);
   });
 
   it("ClusterPage does not stack landing hero with deals/events ads", () => {
