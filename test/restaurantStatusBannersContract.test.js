@@ -44,10 +44,14 @@ const page = read("src/pages/RestaurantPublicPage.jsx");
 const editorial = read("src/components/restaurant/RestaurantPublicEditorial.jsx");
 const shell = read("src/components/restaurant/publicProfile/PublicProfileShell.jsx");
 const nowHiring = read("src/components/restaurant/publicProfile/ProfileNowHiring.jsx");
+const updates = read("src/components/restaurant/publicProfile/ProfileUpdates.jsx");
 assert.match(page, /status_banners/);
 assert.match(page, /PUBLIC_PROFILE_IS_DARK/);
 assert.match(editorial, /PublicProfileShell/);
-assert.match(shell, /resolveStatusBanners|ProfileNowHiring/);
+// Homepage redesign: Now Hiring module removed from shell; owners use Profile Updates.
+assert.doesNotMatch(shell, /ProfileNowHiring/);
+assert.match(shell, /ProfileUpdates/);
+assert.match(updates, /profile-updates/);
 assert.match(nowHiring, /profile-now-hiring/);
 assert.doesNotMatch(page, /function readTheme/);
 assert.doesNotMatch(page, /grubbid_theme/);

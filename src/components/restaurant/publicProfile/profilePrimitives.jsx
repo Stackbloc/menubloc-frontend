@@ -357,6 +357,35 @@ export function canShowOrderAction(profile, menuHref) {
   return true;
 }
 
+const FOOD_TRUCK_PLAN_CODES = new Set([
+  "food_truck",
+  "food_truck_monthly",
+  "food_truck_annual",
+  "foodtruck_verified_annual",
+]);
+
+/** Food truck via entity type OR subscription plan (no manual checkbox). */
+export function isFoodTruckProfile(profile, profileType = null) {
+  if (profileType === "food_truck") return true;
+  const entity = String(
+    profile?.restaurant_type || profile?.entity_type || profile?.category || ""
+  )
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, "_");
+  if (entity === "food_truck" || entity === "foodtruck") return true;
+  const plan = String(
+    profile?.subscription_plan ||
+      profile?.subscription_plan_code ||
+      profile?.plan_slug ||
+      profile?.plan_code ||
+      ""
+  )
+    .trim()
+    .toLowerCase();
+  return FOOD_TRUCK_PLAN_CODES.has(plan);
+}
+
 export function actionChipStyle() {
   return {
     display: "inline-flex",

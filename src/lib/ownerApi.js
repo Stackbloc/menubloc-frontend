@@ -147,6 +147,25 @@ export const updateOwnerRestaurantFeaturedDish = (restaurantId, menuItemId) =>
   patch(`/api/owner/restaurants/${encodeURIComponent(restaurantId)}/featured-dish`, {
     menu_item_id: menuItemId,
   });
+export const getOwnerRestaurantFavoriteMenuItems = (restaurantId) =>
+  get(`/api/owner/restaurants/${encodeURIComponent(restaurantId)}/favorite-menu-items`);
+export const updateOwnerRestaurantFavoriteMenuItems = (restaurantId, menuItemIds) =>
+  patch(`/api/owner/restaurants/${encodeURIComponent(restaurantId)}/favorite-menu-items`, {
+    menu_item_ids: menuItemIds,
+  });
+export const getOwnerRestaurantProfileUpdates = (restaurantId) =>
+  get(`/api/owner/restaurants/${encodeURIComponent(restaurantId)}/profile-updates`);
+export const createOwnerRestaurantProfileUpdate = (restaurantId, body) =>
+  post(`/api/owner/restaurants/${encodeURIComponent(restaurantId)}/profile-updates`, body);
+export const updateOwnerRestaurantProfileUpdate = (restaurantId, updateId, body) =>
+  patch(
+    `/api/owner/restaurants/${encodeURIComponent(restaurantId)}/profile-updates/${encodeURIComponent(updateId)}`,
+    body
+  );
+export const deleteOwnerRestaurantProfileUpdate = (restaurantId, updateId) =>
+  del(
+    `/api/owner/restaurants/${encodeURIComponent(restaurantId)}/profile-updates/${encodeURIComponent(updateId)}`
+  );
 export const getOwnerRestaurantStatusBanners = (restaurantId) =>
   get(`/api/owner/restaurants/${encodeURIComponent(restaurantId)}/status-banners`);
 export const updateOwnerRestaurantStatusBanners = (restaurantId, statusBanners) =>

@@ -1,7 +1,7 @@
 /**
- * Shared public-profile hero: cover/banner + logo + name + status + icon rail.
- * Missing cover → tasteful Menuply gradient placeholder (not fake food photography).
- * Restaurant contact (phone/website) sits under the Maps address — not oval chips.
+ * Shared public-profile hero: cover/banner + logo + name + cuisine + description
+ * + open/closed + action rail (Like / Share / Call / Directions / Order).
+ * View Menu lives under Favorite Menu Items (not in hero).
  */
 import { Link } from "react-router-dom";
 import RestaurantStatusLight from "../../RestaurantStatusLight.jsx";
@@ -10,11 +10,58 @@ import ShareButton from "../../share/ShareButton.jsx";
 import FoodTruckCurrentLocation from "./FoodTruckCurrentLocation.jsx";
 import {
   LogoMark,
-  ViewMenuLink,
   MENU_ROW_ICON_SIZE,
   PROFILE_CONTENT_MAX,
+  ghostIconStyle,
+  canShowOrderAction,
 } from "./profilePrimitives.jsx";
-import { formatWebsiteHostLabel } from "../../../lib/formatWebsiteHostLabel.js";
+import IconHoverLabel from "../../IconHoverLabel.jsx";
+
+function HeroIconButton({ href, onClick, label, testId, children, as: As = "a" }) {
+  const style = ghostIconStyle(true);
+  if (As === "button" || onClick) {
+    return (
+      <IconHoverLabel label={label}>
+        <button
+          type="button"
+          data-testid={testId}
+          aria-label={label}
+          title={label}
+          onClick={onClick}
+          style={{ ...style, appearance: "none" }}
+        >
+          {children}
+        </button>
+      </IconHoverLabel>
+    );
+  }
+  if (!href) return null;
+  const isInternal = href.startsWith("/");
+  if (isInternal) {
+    return (
+      <IconHoverLabel label={label}>
+        <Link to={href} data-testid={testId} aria-label={label} title={label} style={style}>
+          {children}
+        </Link>
+      </IconHoverLabel>
+    );
+  }
+  return (
+    <IconHoverLabel label={label}>
+      <a
+        href={href}
+        data-testid={testId}
+        aria-label={label}
+        title={label}
+        target={href.startsWith("tel:") ? undefined : "_blank"}
+        rel={href.startsWith("tel:") ? undefined : "noreferrer"}
+        style={style}
+      >
+        {children}
+      </a>
+    </IconHoverLabel>
+  );
+}
 
 export default function ProfileHero({
   profileType = "restaurant",
@@ -31,7 +78,6 @@ export default function ProfileHero({
   shareData,
   shareAnalytics,
   followSource = "restaurant_profile",
-  viewMenuTestId = "restaurant-profile-view-menu",
   metaBits = [],
   venueLabel = "",
   clusterName = "",
@@ -41,12 +87,19 @@ export default function ProfileHero({
   phone = "",
   website = "",
   websiteRaw = "",
+  shortDescription = "",
+  openStatus = null,
+  profile = null,
   isMobile = false,
   contentMax,
 }) {
+  void website;
+  void websiteRaw;
+  void streetAddr;
+  void cityLine;
+
   const maxW = contentMax ?? PROFILE_CONTENT_MAX;
   const hasPhoto = Boolean(bannerPhotoUrl);
-  // Always use light-on-dark identity over photo or gradient placeholder.
   const onPhoto = true;
   const ink = "#fafaf9";
   const muted = "rgba(250,250,249,0.88)";
@@ -55,7 +108,16 @@ export default function ProfileHero({
   const venue = String(venueLabel || "").trim();
   const cluster = String(clusterName || "").trim();
   const showIdentityMeta = profileType === "restaurant" && (venue || cluster || metaBits.length);
-  const websiteLabel = formatWebsiteHostLabel(websiteRaw || website);
+  const cuisineLabel = metaBits[0] || "";
+  const desc = String(shortDescription || "").trim();
+  const openLabel = openStatus?.label || (openStatus?.is_open === true ? "Open" : openStatus?.is_open === false ? "Closed" : "");
+  const showOrder =
+    profileType !== "food_truck" && canShowOrderAction(profile, menuHref);
+  const callHref = phone ? `tel:${String(phone).replace(/\s+/g, "")}` : "";
+  const mapsHref =
+    profileType === "food_truck"
+      ? foodTruckLocation?.directionsUrl || directionsUrl || ""
+      : directionsUrl || "";
 
   const identity = (
     <div style={{ display: "flex", alignItems: "flex-start", gap: 14, minWidth: 0 }}>
@@ -89,37 +151,71 @@ export default function ProfileHero({
           >
             {name}
           </h1>
-          {menuHref || restaurantId || shareData || saveContactControl ? (
-            <div
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 6,
-                flexShrink: 0,
-              }}
-            >
-              <ViewMenuLink href={menuHref} dark={onPhoto} testId={viewMenuTestId} />
-              {restaurantId ? (
-                <FollowRestaurantButton
-                  restaurantId={restaurantId}
-                  restaurantName={name}
-                  source={followSource}
-                  size={MENU_ROW_ICON_SIZE}
-                  dark={onPhoto}
-                />
-              ) : null}
-              {shareData ? (
-                <ShareButton
-                  variant="menu"
-                  iconOnly
-                  tone="ghost"
-                  shareData={shareData}
-                  analyticsContext={shareAnalytics || undefined}
-                />
-              ) : null}
-              {saveContactControl || null}
-            </div>
-          ) : null}
+          <div
+            data-testid="profile-hero-actions"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              flexShrink: 0,
+            }}
+          >
+            {restaurantId ? (
+              <FollowRestaurantButton
+                restaurantId={restaurantId}
+                restaurantName={name}
+                source={followSource}
+                size={MENU_ROW_ICON_SIZE}
+                dark={onPhoto}
+              />
+            ) : null}
+            {shareData ? (
+              <ShareButton
+                variant="menu"
+                iconOnly
+                tone="ghost"
+                shareData={shareData}
+                analyticsContext={shareAnalytics || undefined}
+              />
+            ) : null}
+            {callHref ? (
+              <HeroIconButton href={callHref} label="Call" testId="profile-hero-call">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path
+                    d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1.1-.3 1.2.4 2.5.6 3.8.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.4 21 3 13.6 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.6.6 3.8.1.4 0 .8-.3 1.1L6.6 10.8z"
+                    stroke="currentColor"
+                    strokeWidth="1.7"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </HeroIconButton>
+            ) : null}
+            {mapsHref ? (
+              <HeroIconButton href={mapsHref} label="Directions" testId="profile-hero-directions">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path
+                    d="M12 22s7-7.2 7-12a7 7 0 1 0-14 0c0 4.8 7 12 7 12z"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                  />
+                  <circle cx="12" cy="10" r="2.4" fill="currentColor" />
+                </svg>
+              </HeroIconButton>
+            ) : null}
+            {showOrder ? (
+              <HeroIconButton href={menuHref} label="Order" testId="profile-action-order">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path
+                    d="M4 6h16M4 12h16M4 18h10"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </HeroIconButton>
+            ) : null}
+            {saveContactControl || null}
+          </div>
         </div>
 
         {businessTypeLabel ? (
@@ -134,6 +230,12 @@ export default function ProfileHero({
             }}
           >
             {businessTypeLabel}
+          </div>
+        ) : null}
+
+        {cuisineLabel && profileType === "food_truck" ? (
+          <div style={{ marginTop: 6, fontSize: 13, fontWeight: 600, color: muted }}>
+            {cuisineLabel}
           </div>
         ) : null}
 
@@ -175,165 +277,47 @@ export default function ProfileHero({
                 <span data-testid="profile-hero-cluster">{cluster}</span>
               )
             ) : null}
-            {!venue && !cluster && metaBits.length > 1
-              ? metaBits.slice(1).map((bit) => (
-                  <span key={bit}>
-                    <span aria-hidden="true" style={{ margin: "0 8px", opacity: 0.55 }}>
-                      ·
-                    </span>
-                    <span>{bit}</span>
-                  </span>
-                ))
-              : null}
           </div>
         ) : null}
 
-        {profileType === "restaurant" && (cityLine || streetAddr) ? (
-          directionsUrl ? (
-            <a
-              href={directionsUrl}
-              target="_blank"
-              rel="noreferrer"
-              aria-label={`Open ${name} in Google Maps`}
-              title="Open in Google Maps"
-              data-testid="profile-hero-maps-address"
-              style={{
-                margin: "8px 0 0",
-                display: "inline-flex",
-                alignItems: "flex-start",
-                gap: 8,
-                fontSize: 14,
-                lineHeight: 1.4,
-                color: muted,
-                textDecoration: "none",
-                maxWidth: "100%",
-              }}
-            >
-              <span
-                aria-hidden="true"
-                style={{
-                  flexShrink: 0,
-                  marginTop: 1,
-                  width: 16,
-                  height: 16,
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-                  <path
-                    d="M12 22s7-7.2 7-12a7 7 0 1 0-14 0c0 4.8 7 12 7 12z"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    fill="rgba(250,250,249,0.12)"
-                  />
-                  <circle cx="12" cy="10" r="2.4" fill="currentColor" />
-                </svg>
-              </span>
-              <span style={{ display: "flex", flexDirection: "column", gap: 1, minWidth: 0 }}>
-                {streetAddr ? <span>{streetAddr}</span> : null}
-                {cityLine ? <span>{cityLine}</span> : null}
-              </span>
-            </a>
-          ) : (
-            <div style={{ margin: "8px 0 0", fontSize: 14, lineHeight: 1.4, color: muted }}>
-              {streetAddr ? <div>{streetAddr}</div> : null}
-              {cityLine ? <div>{cityLine}</div> : null}
-            </div>
-          )
-        ) : null}
-
-        {profileType === "restaurant" && (phone || website) ? (
-          <div
-            data-testid="profile-hero-contact"
+        {desc ? (
+          <p
+            data-testid="profile-hero-description"
             style={{
-              marginTop: 8,
-              display: "flex",
-              flexDirection: "column",
-              gap: 4,
+              margin: "8px 0 0",
               fontSize: 14,
-              lineHeight: 1.4,
+              lineHeight: 1.45,
               color: muted,
-              paddingLeft: directionsUrl || streetAddr || cityLine ? 24 : 0,
+              maxWidth: 520,
             }}
           >
-            {phone ? (
-              <a
-                href={`tel:${String(phone).replace(/\s+/g, "")}`}
-                data-testid="profile-hero-phone"
-                style={{ color: linkColor, textDecoration: "none", fontWeight: 600 }}
-              >
-                {phone}
-              </a>
-            ) : null}
-            {website ? (
-              <a
-                href={website}
-                target="_blank"
-                rel="noreferrer"
-                data-testid="profile-hero-website"
-                style={{ color: linkColor, textDecoration: "none", fontWeight: 600 }}
-              >
-                {websiteLabel} ↗
-              </a>
-            ) : null}
+            {desc}
+          </p>
+        ) : null}
+
+        {openLabel ? (
+          <div
+            data-testid="profile-hero-open-status"
+            style={{
+              marginTop: 8,
+              fontSize: 13,
+              fontWeight: 700,
+              color: openStatus?.is_open ? "#bbf7d0" : muted,
+            }}
+          >
+            {openLabel}
           </div>
         ) : null}
 
-        {profileType === "food_truck" ? (
-          <>
-            {metaBits[0] ? (
-              <div style={{ marginTop: 6, fontSize: 13, fontWeight: 600, color: muted }}>
-                {metaBits[0]}
-              </div>
-            ) : null}
-            {foodTruckLocation?.hasPostedLocation ? (
-              <FoodTruckCurrentLocation
-                locationText={foodTruckLocation.text || ""}
-                directionsUrl={foodTruckLocation.directionsUrl || ""}
-                hasPostedLocation
-                statusLabel={foodTruckLocation.statusLabel || ""}
-                name={name}
-                onPhoto={onPhoto}
-              />
-            ) : null}
-            {(phone || website) ? (
-              <div
-                data-testid="food-truck-contact"
-                style={{
-                  marginTop: 8,
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 4,
-                  fontSize: 14,
-                  lineHeight: 1.45,
-                  color: muted,
-                }}
-              >
-                {phone ? (
-                  <a
-                    href={`tel:${String(phone).replace(/\s+/g, "")}`}
-                    data-testid="food-truck-hero-phone"
-                    style={{ color: linkColor, textDecoration: "none", fontWeight: 600 }}
-                  >
-                    {phone}
-                  </a>
-                ) : null}
-                {website ? (
-                  <a
-                    href={website}
-                    target="_blank"
-                    rel="noreferrer"
-                    data-testid="food-truck-hero-website"
-                    style={{ color: linkColor, textDecoration: "none", fontWeight: 600 }}
-                  >
-                    {websiteLabel} ↗
-                  </a>
-                ) : null}
-              </div>
-            ) : null}
-          </>
+        {profileType === "food_truck" && foodTruckLocation?.hasPostedLocation ? (
+          <FoodTruckCurrentLocation
+            locationText={foodTruckLocation.text || ""}
+            directionsUrl={foodTruckLocation.directionsUrl || ""}
+            hasPostedLocation
+            statusLabel={foodTruckLocation.statusLabel || ""}
+            name={name}
+            onPhoto={onPhoto}
+          />
         ) : null}
       </div>
     </div>
@@ -361,7 +345,6 @@ export default function ProfileHero({
     : {
         position: "relative",
         minHeight: isMobile ? 188 : 240,
-        /* Inherits --profile-hero-* from PublicProfileShell Restaurant Style vars. */
         background:
           "linear-gradient(160deg, var(--profile-hero-from, #052e16) 0%, var(--profile-hero-via, #14532d) 38%, var(--profile-hero-to, #292524) 100%)",
       };

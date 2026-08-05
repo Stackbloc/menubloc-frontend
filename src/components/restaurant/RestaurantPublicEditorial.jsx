@@ -35,14 +35,15 @@ export default function RestaurantPublicEditorial({
   statusEventPresentations,
   operatingHours = [],
   profile = null,
+  favoriteMenuItems = null,
+  profileUpdates = null,
   claimHref = null,
   claimState = null,
   showClaimInvites = false,
   isMobile,
 }) {
-  // IdentityBlock / ViewMenuLink / FollowRestaurantButton / Restaurant Highlights
-  // live in PublicProfileShell (shared with food trucks). Keep string markers for contracts:
-  // About Us, Featured Dish, Announcements, ViewMenuIcon, restaurant-profile-view-menu
+  // IdentityBlock / FollowRestaurantButton live in PublicProfileShell.
+  // Keep string markers for contracts: View Menu, Favorite Menu Items
   return (
     <PublicProfileShell
       profileType="restaurant"
@@ -72,6 +73,8 @@ export default function RestaurantPublicEditorial({
       menuCount={menuCount}
       billboardPreview={billboardPreview}
       dealItems={dealItems}
+      favoriteMenuItems={favoriteMenuItems}
+      profileUpdates={profileUpdates}
       displayCluster={displayCluster}
       statusBanners={statusBanners}
       statusEventPresentations={statusEventPresentations}

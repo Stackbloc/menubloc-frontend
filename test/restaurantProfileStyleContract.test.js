@@ -149,7 +149,7 @@ describe("operator + public profile style wiring", () => {
     assert.match(page, /profile_style_key/);
   });
 
-  it("PublicProfileShell applies data-profile-style and CSS vars without removing glance/menu", () => {
+  it("PublicProfileShell applies data-profile-style and CSS vars on homepage layout", () => {
     const shell = readFileSync(
       join(root, "src/components/restaurant/publicProfile/PublicProfileShell.jsx"),
       "utf8"
@@ -160,8 +160,8 @@ describe("operator + public profile style wiring", () => {
     );
     assert.match(shell, /data-profile-style/);
     assert.match(shell, /buildProfileStyleRootStyle/);
-    assert.match(shell, /ProfileAtAGlance/);
-    assert.match(shell, /ProfileMenuHighlights/);
+    assert.match(shell, /ProfileFavoriteMenuItems/);
+    assert.match(shell, /ProfileRestaurantInfo/);
     assert.doesNotMatch(shell, /Football|fish illustration|mexican flag/i);
     assert.match(hero, /--profile-hero-from/);
     assert.match(hero, /profile-hero-placeholder/);

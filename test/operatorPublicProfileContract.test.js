@@ -118,12 +118,13 @@ function testPublicProfileForcedLight() {
   assert.equal(whitePageBgMatches.length, 1);
 }
 
-/** Profile header actions: View menu (list icon), then Like, then Share. */
+/** Profile header actions: Like, Share, Call, Directions, Order (View Menu under favorites). */
 function testPublicProfileMenuLikeShareRail() {
   const page = read("src/pages/RestaurantPublicPage.jsx");
   const editorial = read("src/components/restaurant/RestaurantPublicEditorial.jsx");
   const hero = read("src/components/restaurant/publicProfile/ProfileHero.jsx");
   const shell = read("src/components/restaurant/publicProfile/PublicProfileShell.jsx");
+  const favorites = read("src/components/restaurant/publicProfile/ProfileFavoriteMenuItems.jsx");
   assert.match(page, /RestaurantPublicEditorial/);
   assert.match(page, /menuHref=\{menuHref\}/);
   assert.match(page, /restaurantMenuPathFromRow/);
@@ -132,111 +133,88 @@ function testPublicProfileMenuLikeShareRail() {
   assert.match(hero, /FollowRestaurantButton/);
   assert.match(hero, /source=\{followSource\}/);
   assert.match(hero, /variant="menu"/);
-  assert.match(hero, /ViewMenuIcon|ViewMenuLink/);
-  assert.match(hero, /restaurant-profile-view-menu/);
+  assert.match(hero, /profile-hero-actions/);
+  assert.match(hero, /profile-hero-call/);
+  assert.match(hero, /profile-hero-directions/);
+  assert.match(hero, /profile-action-order/);
   assert.match(shell, /followSource=\{isFoodTruck \? "food_truck_profile" : "restaurant_profile"\}/);
-  // Order in the header rail JSX: View menu → Follow → Share.
-  const railStart = hero.indexOf("<ViewMenuLink href={menuHref}");
-  const railSlice = hero.slice(railStart, railStart + 800);
-  assert.ok(railStart > -1, "ViewMenuLink rail mount missing");
-  assert.match(railSlice, /ViewMenuLink[\s\S]*FollowRestaurantButton[\s\S]*ShareButton/);
+  assert.match(favorites, /profile-favorite-view-menu/);
+  assert.match(favorites, /Favorite Menu Items/);
+  // Order in the header rail JSX: Follow → Share (View Menu moved under favorites).
+  const railStart = hero.indexOf('data-testid="profile-hero-actions"');
+  const railSlice = hero.slice(railStart, railStart + 1200);
+  assert.ok(railStart > -1, "hero actions rail missing");
+  assert.match(railSlice, /FollowRestaurantButton[\s\S]*ShareButton/);
   assert.doesNotMatch(page, />\s*Follow\s*</);
   assert.doesNotMatch(page, /Following/);
 }
 
 /**
- * Claimed and ordinary unclaimed restaurants use shared editorial public profile.
- * Bottom claim panel removed — at-a-glance claim invites remain when unclaimed.
+ * Claimed and ordinary unclaimed restaurants use shared homepage public profile.
+ * Section order: Hero → Billboard → Favorites → Updates → Deals → Photos → Info.
  */
 function testClaimedProfileUsesEditorialPresentation() {
   const page = read("src/pages/RestaurantPublicPage.jsx");
   const editorial = read("src/components/restaurant/RestaurantPublicEditorial.jsx");
   const shell = read("src/components/restaurant/publicProfile/PublicProfileShell.jsx");
-  const featured = read("src/components/restaurant/publicProfile/ProfileFeaturedContent.jsx");
-  const preview = read("src/components/restaurant/publicProfile/ProfileMenuHighlights.jsx");
   const hero = read("src/components/restaurant/publicProfile/ProfileHero.jsx");
+  const favorites = read("src/components/restaurant/publicProfile/ProfileFavoriteMenuItems.jsx");
+  const updates = read("src/components/restaurant/publicProfile/ProfileUpdates.jsx");
+  const deals = read("src/components/restaurant/publicProfile/ProfileDealsSection.jsx");
+  const info = read("src/components/restaurant/publicProfile/ProfileRestaurantInfo.jsx");
+  const billboard = read("src/components/restaurant/publicProfile/ProfileBillboardBlock.jsx");
   assert.match(page, /RestaurantPublicEditorial/);
-  assert.match(page, /fetchRestaurantMenuPreview/);
+  assert.match(page, /favorite_menu_items/);
+  assert.match(page, /profile_updates/);
   assert.doesNotMatch(page, /ClaimProfilePanel/);
   assert.doesNotMatch(page, /claim-profile-panel/);
   assert.doesNotMatch(page, /Claim This Profile/);
   assert.doesNotMatch(page, /id="claim-profile"/);
   assert.match(page, /isOrdinaryUnclaimed/);
-  assert.match(page, /status_banners/);
-  assert.match(page, /status_event_presentations/);
   assert.match(page, /operatingHours=\{operatingHours\}/);
-  assert.doesNotMatch(page, /function ProfileFieldList/);
-  assert.doesNotMatch(page, /Your information appears here with/);
   assert.match(editorial, /PublicProfileShell/);
   assert.doesNotMatch(shell, /ProfileRestaurantHighlights/);
   assert.doesNotMatch(shell, /Business information/);
-  assert.match(shell, /ProfileFeaturedContent/);
-  assert.match(shell, /ProfileAtAGlance/);
-  assert.match(shell, /profile-highlights-layout/);
-  assert.match(shell, /profile-identity-stack/);
-  assert.match(shell, /restaurant-profile-view-menu|viewMenuTestId/);
-  assert.match(shell, /About Us/);
+  assert.doesNotMatch(shell, /ProfileFeaturedContent/);
+  assert.doesNotMatch(shell, /ProfileAtAGlance/);
+  assert.doesNotMatch(shell, /ProfileMenuHighlights/);
+  assert.doesNotMatch(shell, /ProfileNowHiring/);
+  assert.doesNotMatch(shell, /About Us/);
+  assert.match(shell, /ProfileBillboardBlock/);
+  assert.match(shell, /ProfileFavoriteMenuItems/);
+  assert.match(shell, /ProfileUpdates/);
+  assert.match(shell, /ProfileDealsSection/);
+  assert.match(shell, /ProfilePhotoStrip/);
+  assert.match(shell, /ProfileRestaurantInfo/);
+  assert.match(shell, /showClaimInvites/);
   assert.doesNotMatch(shell, /Photo coming soon/);
   assert.doesNotMatch(shell, /Bio coming soon/);
-  assert.doesNotMatch(shell, /No featured dish yet/);
   assert.doesNotMatch(shell, /Coming Soon/);
-  assert.doesNotMatch(shell, /common\.viewMenu/);
   assert.doesNotMatch(shell, /#1d4ed8/);
-  assert.doesNotMatch(shell, /label="Address"/);
-  assert.match(shell, /ProfileNowHiring/);
-  assert.match(shell, /showClaimInvites/);
-  assert.doesNotMatch(shell, /\{claimPanel\}/);
-  assert.match(shell, /venueLabel|clusterName/);
-  const nowHiring = read("src/components/restaurant/publicProfile/ProfileNowHiring.jsx");
-  assert.match(nowHiring, /profile-now-hiring/);
-  assert.match(nowHiring, /Now Hiring/);
-  assert.doesNotMatch(nowHiring, /apply now|post a job|job board/i);
-  const glance = read("src/components/restaurant/publicProfile/ProfileAtAGlance.jsx");
-  assert.match(glance, /profile-at-a-glance/);
-  assert.match(glance, /At a glance/);
-  assert.match(glance, /Claim your profile/);
-  assert.match(glance, /glance-about|About Us/);
-  assert.match(glance, /Founded|Meet the Team|Signature/);
-  assert.match(glance, /venueNoun/);
-  assert.doesNotMatch(glance, /glance-phone|glance-website/);
-  assert.match(shell, /venueNoun=\{isFoodTruck \? "food truck" : "restaurant"\}/);
-  assert.match(featured, /profile-featured-content/);
-  assert.match(featured, /Signature Dish/);
-  assert.match(featured, /Today's Special/);
-  assert.doesNotMatch(featured, /From the menu|pickFeaturedFromMenuItems/);
-  assert.match(preview, /Menu preview|MENU PREVIEW/);
-  assert.match(preview, /View full menu|ViewMenuIcon/);
-  assert.doesNotMatch(preview, /Order Online/);
-  assert.doesNotMatch(preview, /View Full Menu/);
-  assert.match(preview, /MAX_ITEMS = 9/);
-  assert.match(preview, /MAX_SECTIONS = 4/);
-  assert.match(preview, /sectionPriority/);
-  assert.doesNotMatch(preview, /import .*Basket|import .*Waiter|import .*CatalogMenu/);
-  assert.doesNotMatch(preview, /#1d4ed8/);
-  assert.match(hero, /profile-hero-maps-address/);
-  assert.match(hero, /Open in Google Maps|Open \$\{name\} in Google Maps/);
-  assert.match(hero, /profile-hero-contact|profile-hero-phone/);
+  assert.match(favorites, /profile-favorite-menu-items/);
+  assert.match(favorites, /\.slice\(0, 3\)/);
+  assert.match(updates, /profile-updates/);
+  assert.match(deals, /profile-deals-section/);
+  assert.match(info, /profile-restaurant-info/);
+  assert.match(info, /profile-info-claim|Claim this profile/);
+  assert.match(billboard, /profile-billboard-block/);
+  assert.match(hero, /profile-hero-actions/);
+  assert.match(hero, /profile-hero-open-status|openStatus/);
+  assert.match(hero, /profile-hero-description|shortDescription/);
   assert.match(hero, /profile-hero-identity-meta|profile-hero-venue/);
-  assert.match(hero, /formatWebsiteHostLabel/);
-  assert.match(hero, /websiteLabel/);
-  assert.match(hero, /href=\{website\}/);
-  assert.match(hero, /from ["'].*formatWebsiteHostLabel\.js["']/);
-  assert.doesNotMatch(hero, /\{websiteRaw \|\| website\} ↗/);
   assert.doesNotMatch(hero, /borderRadius: 999/);
-  // Photos before featured; hiring after featured when active.
+  // Homepage section order.
+  const billboardIdx = shell.indexOf("<ProfileBillboardBlock");
+  const favIdx = shell.indexOf("<ProfileFavoriteMenuItems");
+  const updatesIdx = shell.indexOf("<ProfileUpdates");
+  const dealsIdx = shell.indexOf("<ProfileDealsSection");
   const photoIdx = shell.indexOf("<ProfilePhotoStrip");
-  const featuredIdx = shell.indexOf("<ProfileFeaturedContent");
-  const hiringIdx = shell.indexOf("<ProfileNowHiring");
-  assert.ok(photoIdx > -1 && featuredIdx > photoIdx, "photos should precede featured");
-  assert.ok(hiringIdx > featuredIdx, "now hiring should follow featured");
-  assert.doesNotMatch(shell, /ProfileBillboardFeature/);
-  assert.doesNotMatch(shell, /billboardHref/);
-  // Contact once in hero — not Business Information.
-  assert.doesNotMatch(shell, /label="Website"/);
-  assert.doesNotMatch(shell, /label="Phone"/);
-  // About is the last content block — no bottom claim panel after it.
-  const aboutIdx = shell.indexOf('title="About Us"');
-  assert.ok(aboutIdx > -1, "About Us section missing");
+  const infoIdx = shell.indexOf("<ProfileRestaurantInfo");
+  assert.ok(billboardIdx > -1 && favIdx > billboardIdx, "favorites after billboard");
+  assert.ok(updatesIdx > favIdx, "updates after favorites");
+  assert.ok(dealsIdx > updatesIdx, "deals after updates");
+  assert.ok(photoIdx > dealsIdx, "photos after deals");
+  assert.ok(infoIdx > photoIdx, "info after photos");
   assert.match(page, /canonicalRestaurantSlug/);
   assert.match(page, /\/restaurants\/:state\/:city\/:restaurantSlug/);
   assert.match(page, /firstBillboardImage/);
@@ -248,37 +226,35 @@ function testSharedPublicProfileShell() {
   const actions = read("src/components/restaurant/publicProfile/ProfilePrimaryActions.jsx");
   const primitives = read("src/components/restaurant/publicProfile/profilePrimitives.jsx");
   const hero = read("src/components/restaurant/publicProfile/ProfileHero.jsx");
-  assert.match(shell, /profileType === "food_truck"/);
+  assert.match(shell, /isFoodTruckProfile/);
   assert.match(shell, /FoodTruckUpcomingStops/);
-  assert.match(shell, /ProfilePrimaryActions/);
-  assert.match(shell, /ProfileMenuHighlights/);
+  assert.match(shell, /ProfileBillboardBlock/);
+  assert.match(shell, /ProfileFavoriteMenuItems/);
   assert.doesNotMatch(shell, /ProfileRestaurantHighlights/);
+  assert.doesNotMatch(shell, /ProfilePrimaryActions/);
+  assert.doesNotMatch(shell, /ProfileMenuHighlights/);
+  assert.doesNotMatch(shell, /ProfileFeaturedContent/);
+  assert.doesNotMatch(shell, /ProfileAtAGlance/);
   assert.match(shell, /saveContactControl/);
   assert.match(shell, /Located today|buildCurrentLocation/);
-  assert.match(shell, /ProfileFeaturedContent/);
   assert.match(shell, /data-profile-style|buildProfileStyleRootStyle/);
-  assert.match(shell, /ProfileAtAGlance/);
-  assert.match(shell, /venueNoun=\{isFoodTruck \? "food truck" : "restaurant"\}/);
-  // Food truck contact stacks phone then website (restaurant parity).
-  const contactIdx = hero.indexOf('data-testid="food-truck-contact"');
-  assert.ok(contactIdx > -1, "food-truck-contact missing");
-  const contactSlice = hero.slice(contactIdx, contactIdx + 280);
-  assert.match(contactSlice, /flexDirection: "column"/);
-  assert.doesNotMatch(contactSlice, /flexWrap/);
-  // View Menu / Directions / Call / Website chips removed from primary actions.
+  assert.match(hero, /profile-hero-actions/);
+  assert.match(hero, /canShowOrderAction/);
+  // Order in hero for restaurants; FT uses Save Contact + location.
+  assert.match(hero, /FoodTruckCurrentLocation/);
+  // View Menu / Directions / Call / Website chips removed from primary actions file.
   assert.doesNotMatch(actions, /profile-action-view-menu/);
   assert.doesNotMatch(actions, /profile-action-directions/);
   assert.doesNotMatch(actions, /profile-action-call/);
   assert.doesNotMatch(actions, /profile-action-website/);
   assert.match(actions, /canShowOrderAction/);
   assert.match(actions, /profile-action-order/);
-  // Food trucks: Order chip is not part of the authorized profile design
-  // (hero View Menu + Menu Preview / Full Menu instead).
   assert.match(actions, /profileType === "food_truck"/);
   assert.match(actions, /!isFoodTruck && canShowOrderAction/);
-  assert.match(shell, /profileType=\{profileType\}/);
   assert.match(primitives, /display_only/);
   assert.match(primitives, /Located today/);
+  assert.match(primitives, /isFoodTruckProfile/);
+  assert.match(primitives, /food_truck_annual/);
 }
 
 testOperatorPublicProfilePathHelper();

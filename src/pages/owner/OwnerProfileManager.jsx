@@ -13,13 +13,17 @@ import {
   OWNER_API_BASE,
   getMenuConsoleRestaurant,
   getOwnerRestaurantFeaturedDishCandidates,
+  getOwnerRestaurantFavoriteMenuItems,
   getOwnerRestaurantHours,
   getOwnerRestaurantMenuAppearance,
   getOwnerRestaurantProfileStyle,
+  getOwnerRestaurantProfileUpdates,
   getOwnerRestaurantStatusBanners,
+  createOwnerRestaurantProfileUpdate,
+  deleteOwnerRestaurantProfileUpdate,
   searchMenuConsoleRestaurants,
   updateMenuConsoleRestaurant,
-  updateOwnerRestaurantFeaturedDish,
+  updateOwnerRestaurantFavoriteMenuItems,
   updateOwnerRestaurantHours,
   updateOwnerRestaurantMenuAppearance,
   updateOwnerRestaurantProfileStyle,
@@ -63,6 +67,7 @@ function emptyForm() {
     founded_year: "",
     team_intro: "",
     featured_menu_item_id: "",
+    favorite_menu_item_ids: [],
     now_hiring: false,
     profile_style_key: null,
     menu_appearance_key: null,
@@ -101,6 +106,9 @@ export default function OwnerProfileManager() {
   const [hours, setHours] = useState(emptyHours);
   const [hoursBaseline, setHoursBaseline] = useState(emptyHours);
   const [menuItems, setMenuItems] = useState([]);
+  const [profileUpdates, setProfileUpdates] = useState([]);
+  const [updateDraft, setUpdateDraft] = useState({ title: "", body: "" });
+  const [updateSaving, setUpdateSaving] = useState(false);
   const [cuisineOptions, setCuisineOptions] = useState([]);
   const [categoryOptions, setCategoryOptions] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -175,14 +183,17 @@ export default function OwnerProfileManager() {
     setError("");
     setMessage("");
     try {
-      const [profileRes, styleRes, appearanceRes, bannersRes, hoursRes, candidatesRes] = await Promise.all([
-        getMenuConsoleRestaurant(restaurantId),
-        getOwnerRestaurantProfileStyle(restaurantId).catch(() => null),
-        getOwnerRestaurantMenuAppearance(restaurantId).catch(() => null),
-        getOwnerRestaurantStatusBanners(restaurantId).catch(() => null),
-        getOwnerRestaurantHours(restaurantId).catch(() => null),
-        getOwnerRestaurantFeaturedDishCandidates(restaurantId, { limit: 200 }).catch(() => null),
-      ]);
+      const [profileRes, styleRes, appearanceRes, bannersRes, hoursRes, candidatesRes, favoritesRes, updatesRes] =
+        await Promise.all([
+          getMenuConsoleRestaurant(restaurantId),
+          getOwnerRestaurantProfileStyle(restaurantId).catch(() => null),
+          getOwnerRestaurantMenuAppearance(restaurantId).catch(() => null),
+          getOwnerRestaurantStatusBanners(restaurantId).catch(() => null),
+          getOwnerRestaurantHours(restaurantId).catch(() => null),
+          getOwnerRestaurantFeaturedDishCandidates(restaurantId, { limit: 200 }).catch(() => null),
+          getOwnerRestaurantFavoriteMenuItems(restaurantId).catch(() => null),
+          getOwnerRestaurantProfileUpdates(restaurantId).catch(() => null),
+        ]);
       const r = profileRes.restaurant || {};
       const style = styleRes?.restaurant || {};
       const appearance = appearanceRes?.restaurant || {};
@@ -201,6 +212,16 @@ export default function OwnerProfileManager() {
         };
       });
       const items = Array.isArray(candidatesRes?.items) ? candidatesRes.items : [];
+      const favoriteIds = (
+        Array.isArray(favoritesRes?.favorite_menu_item_ids)
+          ? favoritesRes.favorite_menu_item_ids
+          : r.featured_menu_item_id != null
+            ? [r.featured_menu_item_id]
+            : []
+      )
+        .map((id) => Number(id))
+        .filter((id) => Number.isFinite(id) && id > 0)
+        .slice(0, 3);
 
       const next = {
         restaurant_name: r.restaurant_name || "",
@@ -216,7 +237,8 @@ export default function OwnerProfileManager() {
         about_us: r.about_us || "",
         founded_year: r.founded_year != null ? String(r.founded_year) : "",
         team_intro: r.team_intro || "",
-        featured_menu_item_id: r.featured_menu_item_id != null ? String(r.featured_menu_item_id) : "",
+        featured_menu_item_id: favoriteIds[0] != null ? String(favoriteIds[0]) : "",
+        favorite_menu_item_ids: favoriteIds.map(String),
         now_hiring: banners.includes("now_hiring"),
         profile_style_key:
           style.profile_style_key === undefined || style.profile_style_key === ""
@@ -240,6 +262,8 @@ export default function OwnerProfileManager() {
       setHours(schedule);
       setHoursBaseline(schedule);
       setMenuItems(items);
+      setProfileUpdates(Array.isArray(updatesRes?.profile_updates) ? updatesRes.profile_updates : []);
+      setUpdateDraft({ title: "", body: "" });
       setResults([]);
       setQuery("");
       setSearchParams({ restaurant: String(r.id) }, { replace: true });
@@ -250,6 +274,7 @@ export default function OwnerProfileManager() {
       setHours(emptyHours());
       setHoursBaseline(emptyHours());
       setMenuItems([]);
+      setProfileUpdates([]);
       setError(err?.message || "Could not load restaurant profile.");
     } finally {
       setLoading(false);
@@ -269,14 +294,75 @@ export default function OwnerProfileManager() {
     setHours(emptyHours());
     setHoursBaseline(emptyHours());
     setMenuItems([]);
+    setProfileUpdates([]);
+    setUpdateDraft({ title: "", body: "" });
     setMessage("");
     setError("");
     setSearchParams({}, { replace: true });
   }
 
   const dirty = useMemo(() => {
-    return Object.keys(form).some((key) => (form[key] ?? null) !== (baseline[key] ?? null));
+    return Object.keys(form).some((key) => {
+      if (key === "favorite_menu_item_ids") {
+        return JSON.stringify(form[key] || []) !== JSON.stringify(baseline[key] || []);
+      }
+      return (form[key] ?? null) !== (baseline[key] ?? null);
+    });
   }, [form, baseline]);
+
+  function toggleFavoriteId(rawId) {
+    const id = String(rawId);
+    setForm((prev) => {
+      const current = Array.isArray(prev.favorite_menu_item_ids)
+        ? [...prev.favorite_menu_item_ids]
+        : [];
+      const idx = current.indexOf(id);
+      if (idx >= 0) current.splice(idx, 1);
+      else if (current.length < 3) current.push(id);
+      return {
+        ...prev,
+        favorite_menu_item_ids: current,
+        featured_menu_item_id: current[0] || "",
+      };
+    });
+  }
+
+  async function handleCreateUpdate() {
+    if (!selected?.id) return;
+    const title = String(updateDraft.title || "").trim();
+    if (!title) return;
+    setUpdateSaving(true);
+    setError("");
+    try {
+      await createOwnerRestaurantProfileUpdate(selected.id, {
+        title,
+        body: String(updateDraft.body || "").trim() || null,
+      });
+      const updatesRes = await getOwnerRestaurantProfileUpdates(selected.id);
+      setProfileUpdates(Array.isArray(updatesRes?.profile_updates) ? updatesRes.profile_updates : []);
+      setUpdateDraft({ title: "", body: "" });
+      setMessage("Update published on the public profile.");
+    } catch (err) {
+      setError(err?.message || "Could not create update.");
+    } finally {
+      setUpdateSaving(false);
+    }
+  }
+
+  async function handleDeleteUpdate(updateId) {
+    if (!selected?.id || !updateId) return;
+    setUpdateSaving(true);
+    setError("");
+    try {
+      await deleteOwnerRestaurantProfileUpdate(selected.id, updateId);
+      setProfileUpdates((prev) => prev.filter((u) => u.id !== updateId));
+      setMessage("Update removed.");
+    } catch (err) {
+      setError(err?.message || "Could not delete update.");
+    } finally {
+      setUpdateSaving(false);
+    }
+  }
 
   const hoursDirty = useMemo(() => {
     return JSON.stringify(hours) !== JSON.stringify(hoursBaseline);
@@ -308,7 +394,8 @@ export default function OwnerProfileManager() {
       const appearanceChanged =
         (form.menu_appearance_key ?? null) !== (baseline.menu_appearance_key ?? null);
       const featuredChanged =
-        String(form.featured_menu_item_id || "") !== String(baseline.featured_menu_item_id || "");
+        JSON.stringify(form.favorite_menu_item_ids || []) !==
+        JSON.stringify(baseline.favorite_menu_item_ids || []);
       const hiringChanged = Boolean(form.now_hiring) !== Boolean(baseline.now_hiring);
 
       await updateMenuConsoleRestaurant(selected.id, profileBody);
@@ -319,8 +406,11 @@ export default function OwnerProfileManager() {
         await updateOwnerRestaurantMenuAppearance(selected.id, form.menu_appearance_key);
       }
       if (featuredChanged) {
-        const itemId = form.featured_menu_item_id ? Number(form.featured_menu_item_id) : null;
-        await updateOwnerRestaurantFeaturedDish(selected.id, itemId);
+        const ids = (form.favorite_menu_item_ids || [])
+          .map((id) => Number(id))
+          .filter((id) => Number.isFinite(id) && id > 0)
+          .slice(0, 3);
+        await updateOwnerRestaurantFavoriteMenuItems(selected.id, ids);
       }
       if (hiringChanged) {
         const bannersRes = await getOwnerRestaurantStatusBanners(selected.id).catch(() => ({
@@ -335,7 +425,7 @@ export default function OwnerProfileManager() {
       }
 
       await loadRestaurant(selected.id);
-      setMessage("Profile saved. Public At a Glance / hero fields are live.");
+      setMessage("Profile saved. Public homepage fields are live.");
     } catch (err) {
       const field = err?.payload?.field ? `${err.payload.field}: ` : "";
       const detail =
@@ -722,27 +812,59 @@ export default function OwnerProfileManager() {
                     />
                   </div>
                   <div>
-                    <Label>Signature / featured dish</Label>
-                    <select
-                      style={{ ...inputStyle, cursor: "pointer" }}
-                      value={form.featured_menu_item_id}
-                      onChange={f("featured_menu_item_id")}
-                      data-testid="owner-profile-manager-featured-dish"
+                    <Label>Favorite Menu Items (up to 3)</Label>
+                    <div
+                      data-testid="owner-profile-manager-favorite-items"
+                      style={{
+                        maxHeight: 220,
+                        overflowY: "auto",
+                        border: `1px solid ${OWNER_COLORS.line}`,
+                        borderRadius: 10,
+                        padding: 10,
+                        background: "#fff",
+                      }}
                     >
-                      <option value="">— No featured dish —</option>
-                      {menuItems.map((item) => {
-                        const id = item.id || item.menu_item_id;
-                        const name = item.name || item.item_name || `Item #${id}`;
-                        return (
-                          <option key={id} value={String(id)}>
-                            {name}
-                          </option>
-                        );
-                      })}
-                    </select>
+                      {menuItems.length === 0 ? (
+                        <div style={{ fontSize: 12, color: OWNER_COLORS.muted }}>No menu items yet.</div>
+                      ) : (
+                        menuItems.map((item) => {
+                          const id = String(item.id || item.menu_item_id);
+                          const name = item.name || item.item_name || `Item #${id}`;
+                          const checked = (form.favorite_menu_item_ids || []).includes(id);
+                          const disabled = !checked && (form.favorite_menu_item_ids || []).length >= 3;
+                          return (
+                            <label
+                              key={id}
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 8,
+                                padding: "6px 0",
+                                fontSize: 13,
+                                opacity: disabled ? 0.45 : 1,
+                                cursor: disabled ? "not-allowed" : "pointer",
+                              }}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                disabled={disabled}
+                                onChange={() => toggleFavoriteId(id)}
+                              />
+                              <span>{name}</span>
+                            </label>
+                          );
+                        })
+                      )}
+                    </div>
+                    <div style={{ marginTop: 8, fontSize: 12, color: OWNER_COLORS.muted }}>
+                      First selection is also the featured dish on the menu.
+                      {(form.favorite_menu_item_ids || []).length
+                        ? ` Selected ${(form.favorite_menu_item_ids || []).length}/3.`
+                        : ""}
+                    </div>
                     {menuItems.length === 0 ? (
                       <div style={{ marginTop: 8, fontSize: 12, color: OWNER_COLORS.muted, lineHeight: 1.45 }}>
-                        No menu items yet.{" "}
                         <Link
                           to={`/owner/menu-manager?tab=workspace&restaurant=${selected.id}`}
                           style={{ color: OWNER_COLORS.accent, fontWeight: 700, textDecoration: "none" }}
@@ -774,12 +896,101 @@ export default function OwnerProfileManager() {
                           data-testid="owner-profile-manager-view-featured-on-menu"
                           style={{ color: OWNER_COLORS.accent, fontWeight: 700, textDecoration: "none" }}
                         >
-                          View on menu →
+                          View featured on menu →
                         </Link>
                       </div>
                     ) : null}
                   </div>
                 </div>
+
+                <div style={{ marginTop: 18 }}>
+                  <Label>Profile Updates</Label>
+                  <div
+                    data-testid="owner-profile-manager-updates"
+                    style={{
+                      border: `1px solid ${OWNER_COLORS.line}`,
+                      borderRadius: 10,
+                      padding: 12,
+                      background: "#fff",
+                      display: "grid",
+                      gap: 10,
+                    }}
+                  >
+                    <input
+                      style={inputStyle}
+                      value={updateDraft.title}
+                      onChange={(e) => setUpdateDraft((p) => ({ ...p, title: e.target.value }))}
+                      placeholder="e.g. Live music Friday"
+                      data-testid="owner-profile-update-title"
+                    />
+                    <textarea
+                      style={{ ...inputStyle, minHeight: 64, resize: "vertical" }}
+                      value={updateDraft.body}
+                      onChange={(e) => setUpdateDraft((p) => ({ ...p, body: e.target.value }))}
+                      placeholder="Optional details"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleCreateUpdate}
+                      disabled={updateSaving || !String(updateDraft.title || "").trim()}
+                      style={{
+                        alignSelf: "start",
+                        padding: "8px 14px",
+                        borderRadius: 8,
+                        border: "none",
+                        background: OWNER_COLORS.accent,
+                        color: "#fff",
+                        fontWeight: 700,
+                        cursor: "pointer",
+                        opacity: updateSaving || !String(updateDraft.title || "").trim() ? 0.6 : 1,
+                      }}
+                    >
+                      {updateSaving ? "Saving…" : "Add update"}
+                    </button>
+                    {profileUpdates.length ? (
+                      <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gap: 8 }}>
+                        {profileUpdates.map((u) => (
+                          <li
+                            key={u.id}
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              gap: 12,
+                              padding: "8px 0",
+                              borderTop: `1px solid ${OWNER_COLORS.line}`,
+                            }}
+                          >
+                            <div>
+                              <div style={{ fontWeight: 700, fontSize: 13 }}>{u.title}</div>
+                              {u.body ? (
+                                <div style={{ fontSize: 12, color: OWNER_COLORS.muted }}>{u.body}</div>
+                              ) : null}
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteUpdate(u.id)}
+                              style={{
+                                border: "none",
+                                background: "transparent",
+                                color: "#b91c1c",
+                                fontWeight: 700,
+                                cursor: "pointer",
+                                fontSize: 12,
+                              }}
+                            >
+                              Remove
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <div style={{ fontSize: 12, color: OWNER_COLORS.muted }}>
+                        No active updates yet.
+                      </div>
+                    )}
+                  </div>
+                </div>
+
                 <div style={{ marginTop: 14 }}>
                   <Label>Meet the team</Label>
                   <textarea

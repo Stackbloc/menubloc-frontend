@@ -1502,6 +1502,13 @@ export default function FoodTruckPage() {
           menuHref={menuHref}
           menuPreviewItems={menuPreviewItems}
           billboardPreview={billboardPreview}
+          dealItems={Array.isArray(profile?.deal_items) ? profile.deal_items : []}
+          favoriteMenuItems={
+            Array.isArray(profile?.favorite_menu_items) ? profile.favorite_menu_items : []
+          }
+          profileUpdates={
+            Array.isArray(profile?.profile_updates) ? profile.profile_updates : []
+          }
           showClaimInvites={Boolean(profile) && !isClaimedFoodTruck(profile)}
           isMobile={isMobile}
         />

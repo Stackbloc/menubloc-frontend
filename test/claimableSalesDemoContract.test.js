@@ -23,13 +23,14 @@ test("RestaurantPublicPage renders full claimable profile with menu; no bottom c
   assert.doesNotMatch(source, /Demo profile/);
 });
 
-test("FoodTruckPage uses personality editorial with View menu icon rail (no inline menu)", () => {
+test("FoodTruckPage uses personality editorial with homepage shell (no inline menu)", () => {
   const source = read("src/pages/FoodTruckPage.jsx");
   const editorial = read("src/components/restaurant/FoodTruckPublicEditorial.jsx");
   const shell = read("src/components/restaurant/publicProfile/PublicProfileShell.jsx");
   const hero = read("src/components/restaurant/publicProfile/ProfileHero.jsx");
   const location = read("src/components/restaurant/publicProfile/FoodTruckCurrentLocation.jsx");
   const upcoming = read("src/components/restaurant/publicProfile/FoodTruckUpcomingStops.jsx");
+  const favorites = read("src/components/restaurant/publicProfile/ProfileFavoriteMenuItems.jsx");
   assert.match(source, /FoodTruckPublicEditorial/);
   assert.match(source, /public_ordering_mode === "display_only"/);
   assert.match(source, /isClaimedFoodTruck/);
@@ -51,27 +52,23 @@ test("FoodTruckPage uses personality editorial with View menu icon rail (no inli
   assert.match(location, /Current Location:/);
   assert.match(location, /food-truck-current-location/);
   assert.doesNotMatch(location, /Current location has not been posted/);
-  assert.match(hero, /food-truck-contact/);
-  assert.match(hero, /flexDirection: "column"/);
   assert.match(hero, /hasPostedLocation/);
   assert.match(hero, /saveContactControl/);
+  assert.match(hero, /FoodTruckCurrentLocation/);
+  assert.match(hero, /profile-hero-actions/);
   assert.match(upcoming, /food-truck-upcoming/);
   assert.match(shell, /Located today|buildCurrentLocation|FoodTruckUpcomingStops/);
-  assert.match(shell, /Upcoming locations \/ events|FoodTruckUpcomingStops/);
-  assert.match(shell, /venueNoun=\{isFoodTruck \? "food truck" : "restaurant"\}/);
+  assert.match(shell, /Upcoming locations|FoodTruckUpcomingStops/);
+  assert.match(shell, /isFoodTruckProfile/);
   assert.doesNotMatch(shell, /ProfileRestaurantHighlights/);
   assert.doesNotMatch(shell, /Food truck highlights/);
   assert.doesNotMatch(shell, /Business information/);
   assert.doesNotMatch(shell, /\{claimPanel\}/);
-  assert.match(shell, /ProfileFeaturedContent/);
+  assert.match(shell, /ProfileFavoriteMenuItems/);
+  assert.match(shell, /ProfileBillboardBlock/);
   assert.match(shell, /FollowRestaurantButton|ProfileHero/);
-  assert.match(shell, /food-truck-view-menu/);
-  assert.match(shell, /ProfileMenuHighlights/);
   assert.match(shell, /saveContactControl/);
-  assert.doesNotMatch(shell, /label="Website"/);
-  assert.doesNotMatch(shell, /label="Phone"/);
-  assert.match(hero, /ViewMenuIcon|ViewMenuLink/);
-  assert.match(hero, /viewMenuTestId/);
+  assert.match(favorites, /profile-favorite-view-menu/);
   assert.doesNotMatch(editorial, /RestaurantProfileMenuPreview/);
   assert.doesNotMatch(shell, /Where & when/);
   assert.doesNotMatch(shell, /Bio coming soon/);

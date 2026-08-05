@@ -592,6 +592,10 @@ export default function RestaurantPublicPage() {
           menuCount={Array.isArray(data?.menus) ? data.menus.length : 0}
           billboardPreview={billboardPreview}
           dealItems={dealItems}
+          favoriteMenuItems={
+            Array.isArray(data?.favorite_menu_items) ? data.favorite_menu_items : []
+          }
+          profileUpdates={Array.isArray(data?.profile_updates) ? data.profile_updates : []}
           displayCluster={data?.display_cluster || null}
           statusBanners={data?.status_banners}
           statusEventPresentations={data?.status_event_presentations}

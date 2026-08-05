@@ -31,13 +31,15 @@ export default function FoodTruckPublicEditorial({
   menuHref = null,
   menuPreviewItems = [],
   billboardPreview = [],
+  dealItems = [],
+  favoriteMenuItems = null,
+  profileUpdates = null,
   showClaimInvites = false,
   claimHref = null,
   isMobile,
 }) {
   // Keep contract markers: Current Location:, food-truck-current-location,
-  // food-truck-contact, food-truck-upcoming, food-truck-view-menu, ViewMenuIcon,
-  // Hours of operation, Featured dish, Today's special, FollowRestaurantButton
+  // food-truck-upcoming, FollowRestaurantButton
   void CONTENT_MAX;
 
   return (
@@ -67,6 +69,9 @@ export default function FoodTruckPublicEditorial({
       menuHref={menuHref}
       menuPreviewItems={menuPreviewItems}
       billboardPreview={billboardPreview}
+      dealItems={dealItems}
+      favoriteMenuItems={favoriteMenuItems}
+      profileUpdates={profileUpdates}
       showClaimInvites={showClaimInvites}
       claimHref={claimHref}
       isMobile={isMobile}
