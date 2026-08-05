@@ -24,6 +24,7 @@ import { groupClusterRestaurantsByCuisine } from "../lib/clusterRestaurantCuisin
 import {
   getClusterDisclaimer,
   getClusterPageHeading,
+  getClusterProductTitle,
 } from "../lib/clusterLegalCopy.js";
 import {
   resolveClusterIntro,
@@ -947,6 +948,7 @@ export default function ClusterPage() {
   }
 
   const pageHeading = getClusterPageHeading(cluster);
+  const productTitle = getClusterProductTitle(cluster);
   const disclaimer = getClusterDisclaimer(cluster);
   const showGrowingNotice = isClusterGrowing(cluster);
   const clusterLabel = getClusterReturnLabel(cluster);
@@ -955,12 +957,13 @@ export default function ClusterPage() {
   const restaurantsReturnPath = cluster ? buildClusterRestaurantsReturnPath(cluster) : null;
 
   return (
-    <div style={{ maxWidth: 900, margin: "0 auto", padding: "1.25rem 1rem 5rem", width: "100%", boxSizing: "border-box", overflowX: "clip" }}>
-      <header style={{ marginBottom: "1rem", minWidth: 0, display: "grid", gap: "0.75rem" }}>
+    <div style={{ maxWidth: 900, margin: "0 auto", padding: "1.25rem 1rem 5rem", width: "100%", boxSizing: "border-box" }}>
+      <header style={{ marginBottom: "0.85rem", minWidth: 0, display: "grid", gap: "0.75rem" }}>
         <ClusterBackButton fallbackTo={clusterCityBack} label={cityBackLabel} />
         <h1
           style={{
             margin: 0,
+            color: "#111827",
             fontSize: "1.85rem",
             lineHeight: 1.15,
             minWidth: 0,
@@ -971,6 +974,39 @@ export default function ClusterPage() {
           {pageHeading}
         </h1>
         <ClusterDescription cluster={cluster} />
+      </header>
+
+      <div
+        data-testid="cluster-sticky-chrome"
+        style={{
+          position: "sticky",
+          top: 0,
+          zIndex: 20,
+          background: "#fff",
+          marginLeft: "-1rem",
+          marginRight: "-1rem",
+          padding: "0.7rem 1rem 0.8rem",
+          borderBottom: "1px solid #e5e7eb",
+          display: "grid",
+          gap: "0.65rem",
+          minWidth: 0,
+        }}
+      >
+        <h2
+          data-testid="cluster-sticky-title"
+          style={{
+            margin: 0,
+            color: "#111827",
+            fontSize: "1.2rem",
+            lineHeight: 1.2,
+            fontWeight: 700,
+            minWidth: 0,
+            overflowWrap: "anywhere",
+            letterSpacing: "-0.02em",
+          }}
+        >
+          {productTitle}
+        </h2>
         <div
           style={{
             display: "flex",
@@ -979,8 +1015,6 @@ export default function ClusterPage() {
             gap: "0.55rem",
             flexWrap: "wrap",
             minWidth: 0,
-            marginTop: "1.5rem",
-            paddingTop: "0.25rem",
           }}
         >
           <ClusterViewToggle viewMode={resolvedViewMode} onChange={setViewMode} disabled={false} />
@@ -999,52 +1033,54 @@ export default function ClusterPage() {
             />
           ) : null}
         </div>
-      </header>
+      </div>
 
-      <ClusterAdSlot clusterSlug={cluster.slug} pageRegion="cluster_landing_hero" />
-      {/* cluster_deals_top / cluster_events_top mount when those surfaces exist */}
-      <ClusterAdSlot clusterSlug={cluster.slug} pageRegion="cluster_deals_top" />
-      <ClusterAdSlot clusterSlug={cluster.slug} pageRegion="cluster_events_top" />
+      <div style={{ overflowX: "clip", minWidth: 0 }}>
+        <ClusterAdSlot clusterSlug={cluster.slug} pageRegion="cluster_landing_hero" />
+        {/* cluster_deals_top / cluster_events_top mount when those surfaces exist */}
+        <ClusterAdSlot clusterSlug={cluster.slug} pageRegion="cluster_deals_top" />
+        <ClusterAdSlot clusterSlug={cluster.slug} pageRegion="cluster_events_top" />
 
-      <main
-        aria-label="Cluster content"
-        style={{
-          display: "grid",
-          gap: "0.75rem",
-          minWidth: 0,
-          paddingTop: "0.25rem",
-          paddingBottom: "1.5rem",
-        }}
-      >
-        {resolvedViewMode === CLUSTER_VIEW_MODES.MENU ? (
-          <ClusterMenuExplorerTab clusterSlug={cluster.slug} cluster={cluster} enabled />
-        ) : (
-          <ClusterRestaurantsTab
-            clusterSlug={cluster.slug}
-            cluster={cluster}
-            enabled
-            placeReturnPath={restaurantsReturnPath}
-            placeReturnLabel={clusterLabel}
-          />
-        )}
-      </main>
+        <main
+          aria-label="Cluster content"
+          style={{
+            display: "grid",
+            gap: "0.75rem",
+            minWidth: 0,
+            paddingTop: "0.25rem",
+            paddingBottom: "1.5rem",
+          }}
+        >
+          {resolvedViewMode === CLUSTER_VIEW_MODES.MENU ? (
+            <ClusterMenuExplorerTab clusterSlug={cluster.slug} cluster={cluster} enabled />
+          ) : (
+            <ClusterRestaurantsTab
+              clusterSlug={cluster.slug}
+              cluster={cluster}
+              enabled
+              placeReturnPath={restaurantsReturnPath}
+              placeReturnLabel={clusterLabel}
+            />
+          )}
+        </main>
 
-      {showGrowingNotice ? <ClusterGrowingNotice /> : null}
+        {showGrowingNotice ? <ClusterGrowingNotice /> : null}
 
-      <ClusterAdSlot clusterSlug={cluster.slug} pageRegion="cluster_landing_footer" />
+        <ClusterAdSlot clusterSlug={cluster.slug} pageRegion="cluster_landing_footer" />
 
-      <footer
-        style={{
-          marginTop: "2rem",
-          paddingTop: "1rem",
-          borderTop: "1px solid #e5e7eb",
-          color: "#6b7280",
-          fontSize: "0.8rem",
-          lineHeight: 1.5,
-        }}
-      >
-        <p style={{ margin: 0 }}>{disclaimer}</p>
-      </footer>
+        <footer
+          style={{
+            marginTop: "2rem",
+            paddingTop: "1rem",
+            borderTop: "1px solid #e5e7eb",
+            color: "#6b7280",
+            fontSize: "0.8rem",
+            lineHeight: 1.5,
+          }}
+        >
+          <p style={{ margin: 0 }}>{disclaimer}</p>
+        </footer>
+      </div>
 
       <BottomNav />
     </div>

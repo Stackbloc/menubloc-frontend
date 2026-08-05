@@ -6,6 +6,7 @@ import {
   buildClusterShareTitle,
   getClusterDisclaimer,
   getClusterPageHeading,
+  getClusterProductTitle,
 } from "../src/lib/clusterLegalCopy.js";
 import { buildClusterShareData } from "../src/components/share/shareUtils.js";
 
@@ -40,6 +41,12 @@ test("getClusterDisclaimer returns legal disclaimer text", () => {
 
 test("getClusterPageHeading uses area dining options framing", () => {
   assert.equal(getClusterPageHeading(LA_LIVE), "L.A. Live area dining options");
+});
+
+test("getClusterProductTitle uses area name plus Cluster", () => {
+  assert.equal(getClusterProductTitle(LA_LIVE), "L.A. Live Cluster");
+  assert.equal(getClusterProductTitle({ name: "LAX" }), "LAX Cluster");
+  assert.equal(getClusterProductTitle({}), "Cluster");
 });
 
 test("buildClusterShareData returns legal-safe cluster share payload", () => {

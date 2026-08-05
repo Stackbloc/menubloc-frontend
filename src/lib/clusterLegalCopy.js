@@ -40,6 +40,12 @@ export function getClusterPageHeading(cluster = {}) {
   return asText(cluster.page_heading) || pickAreaName(cluster);
 }
 
+export function getClusterProductTitle(cluster = {}) {
+  const area = asText(cluster.area_name) || pickAreaName(cluster);
+  if (!area || area === "this area") return "Cluster";
+  return `${area} Cluster`;
+}
+
 export function getClusterOverviewDescription(cluster = {}) {
   return asText(cluster.overview_description) || "";
 }
