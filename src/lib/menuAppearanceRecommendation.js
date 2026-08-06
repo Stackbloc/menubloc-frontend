@@ -185,3 +185,76 @@ export function resolveEffectiveMenuAppearance(restaurant = {}) {
   }
   return getRecommendedMenuAppearance(restaurant.category, restaurant.cuisine);
 }
+
+/** Nightlife types may include dark in their scoped pool. */
+export const NIGHTLIFE_CATEGORY_TOKENS = new Set(["nightclub", "cocktail_bar", "lounge"]);
+
+/**
+ * Neighbor appearances by primary recommended key (type-scoped variety).
+ * Primary is always prepended by getTypeScopedAppearancePool.
+ */
+export const APPEARANCE_NEIGHBOR_POOLS = Object.freeze({
+  elegant: ["executive", "heritage"],
+  executive: ["elegant", "dark", "industrial"],
+  heritage: ["elegant", "rustic", "artisan"],
+  coastal: ["contemporary", "linen"],
+  contemporary: ["coastal", "modern_minimal", "geometric"],
+  rustic: ["artisan", "heritage", "warm_paper"],
+  artisan: ["rustic", "heritage", "warm_paper"],
+  industrial: ["geometric", "modern_minimal"],
+  geometric: ["industrial", "modern_minimal", "contemporary"],
+  modern_minimal: ["contemporary", "geometric", "classic_paper"],
+  warm_paper: ["classic_paper", "linen", "soft_texture"],
+  classic_paper: ["warm_paper", "linen", "modern_minimal"],
+  linen: ["warm_paper", "classic_paper", "soft_texture"],
+  soft_texture: ["linen", "warm_paper", "classic_paper"],
+  stone: ["elegant", "heritage", "warm_paper"],
+  dark: ["executive", "industrial"],
+});
+
+const DEFAULT_NEIGHBOR_POOL = Object.freeze([
+  "contemporary",
+  "geometric",
+  "classic_paper",
+]);
+
+/**
+ * Type-scoped appearance pool: recommended primary + related neighbors.
+ * Dark is included only for nightlife categories (or when primary is dark).
+ * @returns {string[]} unique valid appearance keys, primary first
+ */
+export function getTypeScopedAppearancePool(category, cuisine) {
+  const primary = getRecommendedMenuAppearance(category, cuisine);
+  const cat = normalizeAppearanceTaxonomyToken(category);
+  const neighbors = APPEARANCE_NEIGHBOR_POOLS[primary] || DEFAULT_NEIGHBOR_POOL;
+  const allowDark = NIGHTLIFE_CATEGORY_TOKENS.has(cat) || primary === "dark";
+  const out = [];
+  const seen = new Set();
+  for (const key of [primary, ...neighbors]) {
+    if (!isValidMenuAppearanceKey(key)) continue;
+    if (key === "dark" && !allowDark) continue;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(key);
+  }
+  if (allowDark && isValidMenuAppearanceKey("dark") && !seen.has("dark")) {
+    seen.add("dark");
+    out.push("dark");
+  }
+  if (!out.length) out.push(DEFAULT_MENU_APPEARANCE_KEY);
+  return out;
+}
+
+/**
+ * Sort appearance keys for picker: type-scoped pool first, then remaining catalog.
+ * @param {string[]} allKeys
+ * @param {string|null|undefined} category
+ * @param {string|null|undefined} cuisine
+ * @returns {string[]}
+ */
+export function sortAppearancesForRestaurantType(allKeys, category, cuisine) {
+  const pool = getTypeScopedAppearancePool(category, cuisine);
+  const poolSet = new Set(pool);
+  const rest = (allKeys || []).filter((k) => !poolSet.has(k));
+  return [...pool, ...rest];
+}

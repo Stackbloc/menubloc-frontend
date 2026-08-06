@@ -19,6 +19,8 @@ import {
 import {
   getRecommendedMenuAppearance,
   resolveEffectiveMenuAppearance,
+  getTypeScopedAppearancePool,
+  sortAppearancesForRestaurantType,
 } from "../src/lib/menuAppearanceRecommendation.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -101,6 +103,23 @@ describe("Menu Appearance recommendation", () => {
       }),
       "elegant"
     );
+  });
+
+  it("type-scoped pools: seafood coastal, bakery paper, nightclub may include dark", () => {
+    const seafood = getTypeScopedAppearancePool("seafood", null);
+    assert.equal(seafood[0], "coastal");
+    assert.ok(seafood.includes("contemporary"));
+    assert.ok(!seafood.includes("dark"));
+
+    const bakery = getTypeScopedAppearancePool("bakery", null);
+    assert.equal(bakery[0], "classic_paper");
+    assert.ok(!bakery.includes("dark"));
+
+    const nightclub = getTypeScopedAppearancePool("nightclub", null);
+    assert.ok(nightclub.includes("dark"));
+
+    const sorted = sortAppearancesForRestaurantType(MENU_APPEARANCE_KEYS, "seafood", null);
+    assert.equal(sorted[0], "coastal");
   });
 });
 

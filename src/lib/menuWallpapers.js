@@ -4,11 +4,7 @@
  * Keys/params must stay in sync with menubloc-backend-main/src/lib/menuWallpapers.js
  */
 
-/**
- * Menu Wallpaper bank for Default (v1) public menu chrome.
- * Independent of Menu Appearance color/surface tokens — overrides pattern only.
- * Keys/params must stay in sync with menubloc-frontend-main/src/lib/menuWallpapers.js
- */
+import { getTypeScopedAppearancePool } from "./menuAppearanceRecommendation.js";
 
 export const MENU_WALLPAPER_NONE = "none";
 export const MENU_WALLPAPER_INHERIT = null;
@@ -347,16 +343,121 @@ export const RANDOM_APPEARANCE_POOL = Object.freeze([
 ]);
 
 /**
- * Pick random Menu Appearance + Wallpaper for newly created restaurants/menus
- * so Default chrome is never plain white. Owners/operators can override later.
+ * Subtle wallpaper presets paired with each Menu Appearance (2–4 options).
+ * Keys must exist in MENU_WALLPAPER_PRESET_KEYS.
  */
-export function pickRandomMenuChromeDefaults() {
-  const menu_appearance_key = pick(RANDOM_APPEARANCE_POOL);
-  const wallpaper = pick(MENU_WALLPAPER_PRESETS);
+export const APPEARANCE_TO_WALLPAPER_POOL = Object.freeze({
+  modern_minimal: ["soft_grid", "fine_hatch", "quiet_dots", "open_lattice"],
+  classic_paper: ["paper_fiber", "parchment_flecks", "fine_hatch", "stipple_dust"],
+  linen: ["linen_weave", "soft_grain", "fine_hatch", "quiet_dots"],
+  elegant: ["marble_veins", "open_lattice", "soft_grain", "executive_lines"],
+  contemporary: ["quiet_dots", "geo_diamonds", "soft_grid", "open_lattice"],
+  rustic: ["rustic_plank", "parchment_flecks", "heritage_cross", "stipple_dust"],
+  industrial: ["diamond_plate", "geo_diamonds", "soft_grid", "executive_lines"],
+  coastal: ["coastal_waves", "ripple_lines", "quiet_dots", "soft_grain"],
+  stone: ["stone_blocks", "marble_veins", "open_lattice", "heritage_cross"],
+  warm_paper: ["parchment_flecks", "paper_fiber", "confetti_specks", "stipple_dust"],
+  soft_texture: ["soft_grain", "soft_rings", "quiet_dots", "linen_weave"],
+  geometric: ["geo_diamonds", "open_lattice", "diamond_plate", "soft_grid"],
+  executive: ["executive_lines", "soft_grid", "fine_hatch", "open_lattice"],
+  heritage: ["heritage_cross", "rustic_plank", "parchment_flecks", "stone_blocks"],
+  artisan: ["soft_rings", "confetti_specks", "parchment_flecks", "rustic_plank"],
+  dark: ["soft_grid", "fine_hatch", "executive_lines", "quiet_dots"],
+});
+
+let lastAssignedAppearance = null;
+let lastAssignedWallpaper = null;
+
+function pickAvoiding(pool, avoidKey) {
+  const list = Array.isArray(pool) ? pool.filter(Boolean) : [];
+  if (!list.length) return null;
+  if (list.length === 1) return list[0];
+  if (avoidKey == null || avoidKey === "") return pick(list);
+  const filtered = list.filter((k) => k !== avoidKey);
+  return pick(filtered.length ? filtered : list);
+}
+
+export function wallpaperPoolForAppearance(appearanceKey) {
+  const mapped = APPEARANCE_TO_WALLPAPER_POOL[appearanceKey] || APPEARANCE_TO_WALLPAPER_POOL.modern_minimal;
+  return mapped.filter((k) => isPresetWallpaperKey(k));
+}
+
+/**
+ * Suggested wallpaper keys for picker (appearance family first).
+ * @param {string} appearanceKey
+ * @param {Array<{key:string}>} catalog
+ * @returns {string[]}
+ */
+export function getSuggestedWallpaperKeysForAppearance(appearanceKey, catalog = null) {
+  const suggested = wallpaperPoolForAppearance(appearanceKey || "modern_minimal");
+  if (!Array.isArray(catalog) || !catalog.length) return suggested;
+  const catalogKeys = new Set(catalog.map((e) => e && e.key).filter(Boolean));
+  return suggested.filter((k) => catalogKeys.has(k));
+}
+
+/**
+ * Sort wallpaper catalog: suggested-for-appearance first, then remainder.
+ */
+export function sortWallpapersForAppearance(catalog, appearanceKey) {
+  const list = Array.isArray(catalog) ? catalog.slice() : [];
+  const suggested = new Set(getSuggestedWallpaperKeysForAppearance(appearanceKey, list));
+  const first = list.filter((e) => suggested.has(e.key));
+  const rest = list.filter((e) => !suggested.has(e.key));
+  return [...first, ...rest];
+}
+
+/**
+ * Type-scoped chrome pick for new restaurants/menus.
+ * Random within restaurant-type appearance pool + matching wallpaper pool.
+ * Best-effort consecutive-duplicate avoidance for create bursts.
+ *
+ * @param {{ category?: string|null, cuisine?: string|null, avoidAppearanceKey?: string|null, avoidWallpaperKey?: string|null }} [opts]
+ */
+export function pickMenuChromeForRestaurant(opts = {}) {
+  const avoidAppearance =
+    opts.avoidAppearanceKey !== undefined ? opts.avoidAppearanceKey : lastAssignedAppearance;
+  const avoidWallpaper =
+    opts.avoidWallpaperKey !== undefined ? opts.avoidWallpaperKey : lastAssignedWallpaper;
+
+  const appearancePool = getTypeScopedAppearancePool(opts.category, opts.cuisine);
+  let menu_appearance_key = pickAvoiding(appearancePool, avoidAppearance);
+  if (!menu_appearance_key) {
+    menu_appearance_key = pick(RANDOM_APPEARANCE_POOL);
+  }
+
+  const wallPool = wallpaperPoolForAppearance(menu_appearance_key);
+  let menu_wallpaper_key = pickAvoiding(wallPool, avoidWallpaper);
+  if (!menu_wallpaper_key) {
+    menu_wallpaper_key = pick(MENU_WALLPAPER_PRESET_KEYS);
+  }
+
+  lastAssignedAppearance = menu_appearance_key;
+  lastAssignedWallpaper = menu_wallpaper_key;
+
   return {
     menu_appearance_key,
-    menu_wallpaper_key: wallpaper.key,
+    menu_wallpaper_key,
   };
+}
+
+/**
+ * Pick Menu Appearance + Wallpaper for newly created restaurants/menus.
+ * Prefer type-scoped pools when category/cuisine provided; else type-default pool.
+ * @param {{ category?: string|null, cuisine?: string|null } | string} [categoryOrOpts]
+ * @param {string|null} [cuisine]
+ */
+export function pickRandomMenuChromeDefaults(categoryOrOpts, cuisine) {
+  if (
+    categoryOrOpts != null &&
+    typeof categoryOrOpts === "object" &&
+    !Array.isArray(categoryOrOpts)
+  ) {
+    return pickMenuChromeForRestaurant(categoryOrOpts);
+  }
+  if (categoryOrOpts != null || cuisine != null) {
+    return pickMenuChromeForRestaurant({ category: categoryOrOpts, cuisine });
+  }
+  return pickMenuChromeForRestaurant({});
 }
 
 

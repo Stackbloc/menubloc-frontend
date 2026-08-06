@@ -9,6 +9,8 @@ import {
   MENU_WALLPAPER_PRESETS,
   buildMenuChromeRootStyle,
   getPresetWallpaper,
+  getSuggestedWallpaperKeysForAppearance,
+  sortWallpapersForAppearance,
 } from "../../lib/menuWallpapers.js";
 import { getMenuAppearanceTokens } from "../../lib/menuAppearances.js";
 
@@ -82,7 +84,9 @@ export default function MenuWallpaperSelector({
   onKeep,
 }) {
   const tokens = getMenuAppearanceTokens(appearanceKey);
-  const bank = Array.isArray(catalog) && catalog.length ? catalog : MENU_WALLPAPER_PRESETS;
+  const rawBank = Array.isArray(catalog) && catalog.length ? catalog : MENU_WALLPAPER_PRESETS;
+  const bank = sortWallpapersForAppearance(rawBank, appearanceKey);
+  const suggestedKeys = new Set(getSuggestedWallpaperKeysForAppearance(appearanceKey, bank));
   const inherit = menuWallpaperKey == null || menuWallpaperKey === "";
   const isNone = menuWallpaperKey === MENU_WALLPAPER_NONE;
 
@@ -310,7 +314,13 @@ export default function MenuWallpaperSelector({
             pattern={entry.svg_data_uri}
             selected={!inherit && !isNone && menuWallpaperKey === entry.key}
             label={entry.name}
-            sublabel={entry.source && entry.source !== "preset" ? entry.source : null}
+            sublabel={
+              suggestedKeys.has(entry.key)
+                ? "Suggested for this restaurant"
+                : entry.source && entry.source !== "preset"
+                  ? entry.source
+                  : null
+            }
             testId={`menu-wallpaper-card-${entry.key}`}
             onSelect={() => onChange(entry.key)}
           />

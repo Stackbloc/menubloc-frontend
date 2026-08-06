@@ -8,7 +8,11 @@ import {
   buildMenuAppearanceRootStyle,
   buildMenuAppearanceSurfaceStyle,
 } from "../../lib/menuAppearances.js";
-import { resolveEffectiveMenuAppearance } from "../../lib/menuAppearanceRecommendation.js";
+import {
+  getTypeScopedAppearancePool,
+  resolveEffectiveMenuAppearance,
+  sortAppearancesForRestaurantType,
+} from "../../lib/menuAppearanceRecommendation.js";
 
 const CARD_GRID = {
   display: "grid",
@@ -17,7 +21,7 @@ const CARD_GRID = {
   marginTop: 14,
 };
 
-function AppearancePreviewCard({ appearanceKey, selected, recommended, onSelect }) {
+function AppearancePreviewCard({ appearanceKey, selected, recommended, related, onSelect }) {
   const tokens = getMenuAppearanceTokens(appearanceKey);
   return (
     <button
@@ -87,6 +91,19 @@ function AppearancePreviewCard({ appearanceKey, selected, recommended, onSelect 
             }}
           >
             Recommended
+          </div>
+        ) : related ? (
+          <div
+            style={{
+              marginTop: 4,
+              fontSize: 10,
+              fontWeight: 700,
+              letterSpacing: "0.04em",
+              textTransform: "uppercase",
+              color: "#78716c",
+            }}
+          >
+            Related
           </div>
         ) : null}
       </div>
@@ -186,6 +203,9 @@ export default function MenuAppearanceSelector({
     category,
     cuisine,
   });
+  const typePool = getTypeScopedAppearancePool(category, cuisine);
+  const typePoolSet = new Set(typePool);
+  const sortedKeys = sortAppearancesForRestaurantType(MENU_APPEARANCE_KEYS, category, cuisine);
   const effective = resolveEffectiveMenuAppearance({
     menu_appearance_key: menuAppearanceKey,
     category,
@@ -253,12 +273,13 @@ export default function MenuAppearanceSelector({
       <CompactMenuAppearancePreview appearanceKey={effective} restaurantName={restaurantName} />
 
       <div style={CARD_GRID}>
-        {MENU_APPEARANCE_KEYS.map((key) => (
+        {sortedKeys.map((key) => (
           <AppearancePreviewCard
             key={key}
             appearanceKey={key}
             selected={!useRecommended && menuAppearanceKey === key}
             recommended={key === recommended}
+            related={key !== recommended && typePoolSet.has(key)}
             onSelect={() => onChange(key)}
           />
         ))}
