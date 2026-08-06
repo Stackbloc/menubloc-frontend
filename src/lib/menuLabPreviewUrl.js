@@ -13,6 +13,7 @@ import { resolveEffectiveMenuAppearance } from "./menuAppearanceRecommendation.j
  * @param {{
  *   menuStyle?: string,
  *   menuAppearanceKey?: string|null,
+ *   menuWallpaperKey?: string|null,
  *   category?: string,
  *   cuisine?: string,
  *   designEdit?: boolean,
@@ -35,6 +36,9 @@ export function buildMenuLabPreviewPath(restaurantId, opts = {}) {
       cuisine: opts.cuisine || "",
     });
     params.set("menuAppearance", effective);
+    if (opts.menuWallpaperKey != null && opts.menuWallpaperKey !== "") {
+      params.set("menuWallpaper", String(opts.menuWallpaperKey).trim());
+    }
   } else if (opts.backgroundStyle) {
     params.set("backgroundStyle", String(opts.backgroundStyle).trim());
   }
@@ -51,6 +55,18 @@ export function readMenuAppearanceQueryOverride(searchParams) {
   const raw = searchParams.get("menuAppearance") || searchParams.get("previewAppearance");
   if (!isValidMenuAppearanceKey(raw)) return null;
   return String(raw).trim();
+}
+
+/** Menu Wallpaper override from public menu query string (bank key or "none"). */
+export function readMenuWallpaperQueryOverride(searchParams) {
+  if (!searchParams || typeof searchParams.get !== "function") return undefined;
+  const raw = searchParams.get("menuWallpaper") || searchParams.get("previewWallpaper");
+  if (raw == null || raw === "") return undefined;
+  const v = String(raw).trim();
+  if (!v) return undefined;
+  if (v === "none") return "none";
+  if (/^[a-z0-9][a-z0-9_-]{1,80}$/.test(v)) return v;
+  return undefined;
 }
 
 export function readPreviewColorOverride(searchParams, key) {

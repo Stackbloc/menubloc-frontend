@@ -22,6 +22,7 @@ import {
   normalizeMenuThemeSettings,
 } from "../../components/menu-templates/menuThemeSettings.js";
 import MenuAppearanceSelector from "../../components/operator/MenuAppearanceSelector.jsx";
+import MenuWallpaperSelector from "../../components/operator/MenuWallpaperSelector.jsx";
 import { buildMenuLabPreviewPath } from "../../lib/menuLabPreviewUrl.js";
 import {
   resolveRestaurantOnboardingState,
@@ -366,6 +367,8 @@ function MenuLabPanel({
     indulgence_display: "compact",
   }));
   const [menuAppearanceKey, setMenuAppearanceKey] = useState(null);
+  const [menuWallpaperKey, setMenuWallpaperKey] = useState(null);
+  const [wallpaperCatalog, setWallpaperCatalog] = useState([]);
   const [appearanceCategory, setAppearanceCategory] = useState(restaurantCategory || "");
   const [appearanceCuisine, setAppearanceCuisine] = useState("");
   const [loading, setLoading] = useState(true);
@@ -388,10 +391,11 @@ function MenuLabPanel({
     }
     setLoading(true);
     try {
-      const [data, brand, appearance] = await Promise.all([
+      const [data, brand, appearance, wallpaper] = await Promise.all([
         api.getDisplaySettings(rid),
         api.getBrandProfile(rid).catch(() => null),
         api.getMenuAppearance(rid).catch(() => null),
+        api.getMenuWallpaper(rid).catch(() => null),
       ]);
       if (data?.ok && data?.settings) {
         const normalized = normalizeMenuThemeSettings(data.settings);
@@ -419,6 +423,17 @@ function MenuLabPanel({
         setAppearanceCuisine(appearance.appearance.cuisine || "");
       } else {
         setAppearanceCategory(restaurantCategory || "");
+      }
+      if (wallpaper?.ok) {
+        setMenuWallpaperKey(
+          wallpaper?.wallpaper?.menu_wallpaper_key === undefined ||
+            wallpaper?.wallpaper?.menu_wallpaper_key === ""
+            ? null
+            : wallpaper.wallpaper.menu_wallpaper_key
+        );
+        setWallpaperCatalog(
+          Array.isArray(wallpaper.menu_wallpaper_catalog) ? wallpaper.menu_wallpaper_catalog : []
+        );
       }
     } catch {
       // Keep defaults if loading fails.
@@ -524,6 +539,15 @@ function MenuLabPanel({
         setAppearanceCategory(appearanceRes.appearance.category || appearanceCategory);
         setAppearanceCuisine(appearanceRes.appearance.cuisine || appearanceCuisine);
       }
+      const wallpaperRes = await api.updateMenuWallpaper(rid, menuWallpaperKey);
+      if (wallpaperRes?.ok && wallpaperRes?.wallpaper) {
+        setMenuWallpaperKey(
+          wallpaperRes.wallpaper.menu_wallpaper_key === undefined ||
+            wallpaperRes.wallpaper.menu_wallpaper_key === ""
+            ? null
+            : wallpaperRes.wallpaper.menu_wallpaper_key
+        );
+      }
       setSaved(true);
       setStatus("Menu design saved.");
       window.setTimeout(() => setSaved(false), 2600);
@@ -540,6 +564,7 @@ function MenuLabPanel({
     const path = buildMenuLabPreviewPath(rid, {
       menuStyle: resolved,
       menuAppearanceKey,
+      menuWallpaperKey,
       category: appearanceCategory,
       cuisine: appearanceCuisine,
       designEdit: true,
@@ -914,6 +939,41 @@ function MenuLabPanel({
                 setMenuAppearanceKey(next);
                 setSaved(false);
                 setStatus("");
+              }}
+            />
+            <div style={{ marginTop: 18, fontSize: 16, fontWeight: 800, color: "#0f1720", letterSpacing: "-0.02em" }}>
+              Menu Wallpaper
+            </div>
+            <MenuWallpaperSelector
+              menuWallpaperKey={menuWallpaperKey}
+              appearanceKey={menuAppearanceKey || "modern_minimal"}
+              catalog={wallpaperCatalog}
+              defaultLayoutActive={defaultLayoutActive}
+              applyMode="draft"
+              onChange={(next) => {
+                setMenuWallpaperKey(next);
+                setSaved(false);
+                setStatus("");
+              }}
+              onRandomize={async () => {
+                const res = await api.randomizeMenuWallpaper(rid, { source: "requested" });
+                return res?.candidate || null;
+              }}
+              onKeep={async (candidate) => {
+                const res = await api.keepMenuWallpaper(rid, {
+                  candidate,
+                  apply: true,
+                  source: "requested",
+                });
+                if (res?.design?.key) {
+                  setMenuWallpaperKey(res.design.key);
+                  setWallpaperCatalog((prev) => {
+                    const next = Array.isArray(prev) ? prev.slice() : [];
+                    if (!next.some((e) => e.key === res.design.key)) next.push(res.design);
+                    return next;
+                  });
+                }
+                return res?.design || null;
               }}
             />
           </div>

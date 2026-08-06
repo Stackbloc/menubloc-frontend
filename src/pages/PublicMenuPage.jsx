@@ -74,8 +74,10 @@ import {
   shouldApplyMenuAppearance,
 } from "../lib/menuAppearances.js";
 import { resolveEffectiveMenuAppearance } from "../lib/menuAppearanceRecommendation.js";
+import { buildMenuChromeRootStyle } from "../lib/menuWallpapers.js";
 import {
   readMenuAppearanceQueryOverride,
+  readMenuWallpaperQueryOverride,
   readPreviewBackgroundStyleOverride,
   readPreviewColorOverride,
 } from "../lib/menuLabPreviewUrl.js";
@@ -1378,6 +1380,7 @@ export default function PublicMenuPage() {
     "v1";
   const applyMenuAppearance = shouldApplyMenuAppearance(appearanceStyleSource);
   const appearanceQueryOverride = readMenuAppearanceQueryOverride(searchParams);
+  const wallpaperQueryOverride = readMenuWallpaperQueryOverride(searchParams);
   const effectiveMenuAppearance = applyMenuAppearance
     ? appearanceQueryOverride ||
       (isValidMenuAppearanceKey(data?.effective_menu_appearance)
@@ -1389,6 +1392,13 @@ export default function PublicMenuPage() {
         cuisine: data?.cuisine,
       })
     : null;
+  const effectiveMenuWallpaper = applyMenuAppearance
+    ? wallpaperQueryOverride !== undefined
+      ? wallpaperQueryOverride
+      : data?.menu_wallpaper_key == null || data?.menu_wallpaper_key === ""
+        ? null
+        : String(data.menu_wallpaper_key).trim()
+    : null;
   const appearanceTokens = applyMenuAppearance
     ? getMenuAppearanceTokens(effectiveMenuAppearance)
     : null;
@@ -1398,7 +1408,11 @@ export default function PublicMenuPage() {
   const pageShellStyle = applyMenuAppearance
     ? {
         minHeight: "100vh",
-        ...buildMenuAppearanceRootStyle(effectiveMenuAppearance),
+        ...buildMenuChromeRootStyle(
+          effectiveMenuAppearance,
+          effectiveMenuWallpaper,
+          data?.resolved_menu_wallpaper || null
+        ),
       }
     : {
         minHeight: "100vh",

@@ -515,6 +515,24 @@ export const updateMenuAppearance = (rid, menuAppearanceKey) =>
     menu_appearance_key: menuAppearanceKey,
   });
 
+// ── Restaurant: Menu Wallpaper (Default v1 pattern) ───────────────────────
+export const getMenuWallpaper = (rid) =>
+  get(`/operator/restaurants/${rid}/menu-wallpaper`);
+export const updateMenuWallpaper = (rid, menuWallpaperKey) =>
+  patch(`/operator/restaurants/${rid}/menu-wallpaper`, {
+    menu_wallpaper_key: menuWallpaperKey,
+  });
+export const randomizeMenuWallpaper = (rid, body = {}) =>
+  req(`/operator/restaurants/${rid}/menu-wallpaper/randomize`, {
+    method: "POST",
+    body: JSON.stringify(body || {}),
+  });
+export const keepMenuWallpaper = (rid, body = {}) =>
+  req(`/operator/restaurants/${rid}/menu-wallpaper/keep`, {
+    method: "POST",
+    body: JSON.stringify(body || {}),
+  });
+
 // ── Restaurant: Menu Themes (Design Lab) ──────────────────────────────────
 export const getMenuThemes = (rid) =>
   get(`/operator/restaurants/${rid}/menu-themes`);

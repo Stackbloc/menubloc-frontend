@@ -19,6 +19,7 @@ import {
   shouldApplyMenuAppearance,
 } from "../../lib/menuAppearances.js";
 import { resolveEffectiveMenuAppearance } from "../../lib/menuAppearanceRecommendation.js";
+import { buildMenuChromeRootStyle } from "../../lib/menuWallpapers.js";
 import {
   normalizeMenuThemeSettings,
   resolveMenuPageBackground,
@@ -319,6 +320,12 @@ export default function CatalogDrinksMenuRenderer({
       category: restaurant.category || data?.category || entry?.category,
       cuisine: restaurant.cuisine || data?.cuisine || entry?.cuisine,
     });
+  const effectiveMenuWallpaper =
+    data?.menu_wallpaper_key == null || data?.menu_wallpaper_key === ""
+      ? (data?.style?.menu_wallpaper_key == null || data?.style?.menu_wallpaper_key === ""
+        ? null
+        : String(data.style.menu_wallpaper_key).trim())
+      : String(data.menu_wallpaper_key).trim();
   const appearanceTokens = applyMenuAppearance
     ? getMenuAppearanceTokens(effectiveMenuAppearance)
     : null;
@@ -346,7 +353,11 @@ export default function CatalogDrinksMenuRenderer({
         minHeight: 0,
         overflow: "auto",
         padding: "20px 18px 32px",
-        ...buildMenuAppearanceRootStyle(effectiveMenuAppearance),
+        ...buildMenuChromeRootStyle(
+          effectiveMenuAppearance,
+          effectiveMenuWallpaper,
+          data?.resolved_menu_wallpaper || data?.style?.resolved_menu_wallpaper || null
+        ),
       }
     : {
         flex: 1,

@@ -8,6 +8,7 @@ import OwnerLayout, { OWNER_COLORS, PageCard, SectionTitle } from "./OwnerLayout
 import OwnerRestaurantContextBar from "./OwnerRestaurantContextBar.jsx";
 import RestaurantStyleSelector from "../../components/operator/RestaurantStyleSelector.jsx";
 import MenuAppearanceSelector from "../../components/operator/MenuAppearanceSelector.jsx";
+import MenuWallpaperSelector from "../../components/operator/MenuWallpaperSelector.jsx";
 import { inputStyle } from "./ownerMenuEditorComponents.jsx";
 import {
   OWNER_API_BASE,
@@ -16,16 +17,20 @@ import {
   getOwnerRestaurantFavoriteMenuItems,
   getOwnerRestaurantHours,
   getOwnerRestaurantMenuAppearance,
+  getOwnerRestaurantMenuWallpaper,
   getOwnerRestaurantProfileStyle,
   getOwnerRestaurantProfileUpdates,
   getOwnerRestaurantStatusBanners,
   createOwnerRestaurantProfileUpdate,
   deleteOwnerRestaurantProfileUpdate,
+  keepOwnerRestaurantMenuWallpaper,
+  randomizeOwnerRestaurantMenuWallpaper,
   searchMenuConsoleRestaurants,
   updateMenuConsoleRestaurant,
   updateOwnerRestaurantFavoriteMenuItems,
   updateOwnerRestaurantHours,
   updateOwnerRestaurantMenuAppearance,
+  updateOwnerRestaurantMenuWallpaper,
   updateOwnerRestaurantProfileStyle,
   updateOwnerRestaurantStatusBanners,
 } from "../../lib/ownerApi.js";
@@ -72,6 +77,7 @@ function emptyForm() {
     now_hiring: false,
     profile_style_key: null,
     menu_appearance_key: null,
+    menu_wallpaper_key: null,
   };
 }
 
@@ -116,6 +122,8 @@ export default function OwnerProfileManager() {
   const [saving, setSaving] = useState(false);
   const [styleSaving, setStyleSaving] = useState(false);
   const [appearanceSaving, setAppearanceSaving] = useState(false);
+  const [wallpaperSaving, setWallpaperSaving] = useState(false);
+  const [wallpaperCatalog, setWallpaperCatalog] = useState([]);
   const [hoursSaving, setHoursSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -184,11 +192,12 @@ export default function OwnerProfileManager() {
     setError("");
     setMessage("");
     try {
-      const [profileRes, styleRes, appearanceRes, bannersRes, hoursRes, candidatesRes, favoritesRes, updatesRes] =
+      const [profileRes, styleRes, appearanceRes, wallpaperRes, bannersRes, hoursRes, candidatesRes, favoritesRes, updatesRes] =
         await Promise.all([
           getMenuConsoleRestaurant(restaurantId),
           getOwnerRestaurantProfileStyle(restaurantId).catch(() => null),
           getOwnerRestaurantMenuAppearance(restaurantId).catch(() => null),
+          getOwnerRestaurantMenuWallpaper(restaurantId).catch(() => null),
           getOwnerRestaurantStatusBanners(restaurantId).catch(() => null),
           getOwnerRestaurantHours(restaurantId).catch(() => null),
           getOwnerRestaurantFeaturedDishCandidates(restaurantId, { limit: 200 }).catch(() => null),
@@ -198,6 +207,10 @@ export default function OwnerProfileManager() {
       const r = profileRes.restaurant || {};
       const style = styleRes?.restaurant || {};
       const appearance = appearanceRes?.restaurant || {};
+      const wallpaper = wallpaperRes?.restaurant || {};
+      setWallpaperCatalog(
+        Array.isArray(wallpaperRes?.menu_wallpaper_catalog) ? wallpaperRes.menu_wallpaper_catalog : []
+      );
       const banners = Array.isArray(bannersRes?.status_banners) ? bannersRes.status_banners : [];
       const scheduleRaw = Array.isArray(hoursRes?.schedule) ? hoursRes.schedule : [];
       const schedule = emptyHours().map((day) => {
@@ -250,6 +263,10 @@ export default function OwnerProfileManager() {
           appearance.menu_appearance_key === undefined || appearance.menu_appearance_key === ""
             ? null
             : appearance.menu_appearance_key,
+        menu_wallpaper_key:
+          wallpaper.menu_wallpaper_key === undefined || wallpaper.menu_wallpaper_key === ""
+            ? null
+            : wallpaper.menu_wallpaper_key,
       };
       setSelected({
         id: r.id,
@@ -498,6 +515,75 @@ export default function OwnerProfileManager() {
       setForm((prev) => ({ ...prev, menu_appearance_key: baseline.menu_appearance_key }));
     } finally {
       setAppearanceSaving(false);
+    }
+  }
+
+  async function handleWallpaperChange(key) {
+    const next = key == null || key === "" ? null : key;
+    setForm((prev) => ({ ...prev, menu_wallpaper_key: next }));
+    if (!selected?.id) return;
+    if ((baseline.menu_wallpaper_key ?? null) === next) return;
+
+    setWallpaperSaving(true);
+    setError("");
+    setMessage("");
+    try {
+      const res = await updateOwnerRestaurantMenuWallpaper(selected.id, next);
+      const saved =
+        res?.restaurant?.menu_wallpaper_key === undefined ||
+        res?.restaurant?.menu_wallpaper_key === ""
+          ? null
+          : res.restaurant.menu_wallpaper_key;
+      setForm((prev) => ({ ...prev, menu_wallpaper_key: saved }));
+      setBaseline((prev) => ({ ...prev, menu_wallpaper_key: saved }));
+      setMessage(
+        `Menu Wallpaper applied live (${saved == null ? "inherit appearance" : String(saved).replace(/_/g, " ")}). Hard-refresh the public Default menu to see it.`
+      );
+    } catch (err) {
+      setError(err?.message || "Could not update Menu Wallpaper.");
+      setForm((prev) => ({ ...prev, menu_wallpaper_key: baseline.menu_wallpaper_key }));
+    } finally {
+      setWallpaperSaving(false);
+    }
+  }
+
+  async function handleWallpaperRandomize() {
+    if (!selected?.id) return null;
+    const res = await randomizeOwnerRestaurantMenuWallpaper(selected.id, { source: "requested" });
+    return res?.candidate || null;
+  }
+
+  async function handleWallpaperKeep(candidate) {
+    if (!selected?.id || !candidate) return null;
+    setWallpaperSaving(true);
+    try {
+      const res = await keepOwnerRestaurantMenuWallpaper(selected.id, {
+        candidate,
+        apply: true,
+        source: "requested",
+      });
+      if (Array.isArray(res?.menu_wallpaper_catalog)) {
+        setWallpaperCatalog(res.menu_wallpaper_catalog);
+      } else if (res?.design?.key) {
+        setWallpaperCatalog((prev) => {
+          const next = Array.isArray(prev) ? prev.slice() : [];
+          if (!next.some((e) => e.key === res.design.key)) next.push(res.design);
+          return next;
+        });
+      }
+      const saved =
+        res?.restaurant?.menu_wallpaper_key === undefined ||
+        res?.restaurant?.menu_wallpaper_key === ""
+          ? res?.design?.key || null
+          : res.restaurant.menu_wallpaper_key;
+      setForm((prev) => ({ ...prev, menu_wallpaper_key: saved }));
+      setBaseline((prev) => ({ ...prev, menu_wallpaper_key: saved }));
+      setMessage(
+        `Wallpaper “${res?.design?.name || saved}” saved to the platform bank and applied live.`
+      );
+      return res?.design || null;
+    } finally {
+      setWallpaperSaving(false);
     }
   }
 
@@ -1160,6 +1246,32 @@ export default function OwnerProfileManager() {
                   defaultLayoutActive={true}
                   applyMode="live"
                   onChange={handleAppearanceChange}
+                />
+              </PageCard>
+
+              <PageCard style={{ padding: 22 }} data-testid="owner-profile-manager-menu-wallpaper">
+                <div style={{ fontSize: 14, fontWeight: 800, color: OWNER_COLORS.ink, marginBottom: 6 }}>
+                  Menu Wallpaper
+                </div>
+                <div style={{ fontSize: 13, color: OWNER_COLORS.muted, marginBottom: 12, lineHeight: 1.45 }}>
+                  Subtle tiled pattern on the Default menu background. New menus get a random look;
+                  change it anytime. Selecting a wallpaper applies it live — then hard-refresh the
+                  public menu.
+                  {wallpaperSaving ? " Saving wallpaper…" : ""}
+                </div>
+                <MenuWallpaperSelector
+                  menuWallpaperKey={form.menu_wallpaper_key}
+                  appearanceKey={
+                    form.menu_appearance_key ||
+                    "modern_minimal"
+                  }
+                  catalog={wallpaperCatalog}
+                  defaultLayoutActive={true}
+                  applyMode="live"
+                  busy={wallpaperSaving}
+                  onChange={handleWallpaperChange}
+                  onRandomize={handleWallpaperRandomize}
+                  onKeep={handleWallpaperKeep}
                 />
               </PageCard>
             </>

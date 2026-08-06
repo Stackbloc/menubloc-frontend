@@ -135,6 +135,18 @@ export const updateOwnerRestaurantMenuAppearance = (restaurantId, menuAppearance
   patch(`/api/owner/restaurants/${encodeURIComponent(restaurantId)}/menu-appearance`, {
     menu_appearance_key: menuAppearanceKey,
   });
+
+export const getOwnerRestaurantMenuWallpaper = (restaurantId) =>
+  get(`/api/owner/restaurants/${encodeURIComponent(restaurantId)}/menu-wallpaper`);
+export const updateOwnerRestaurantMenuWallpaper = (restaurantId, menuWallpaperKey) =>
+  patch(`/api/owner/restaurants/${encodeURIComponent(restaurantId)}/menu-wallpaper`, {
+    menu_wallpaper_key: menuWallpaperKey,
+  });
+export const randomizeOwnerRestaurantMenuWallpaper = (restaurantId, body = {}) =>
+  post(`/api/owner/restaurants/${encodeURIComponent(restaurantId)}/menu-wallpaper/randomize`, body);
+export const keepOwnerRestaurantMenuWallpaper = (restaurantId, body = {}) =>
+  post(`/api/owner/restaurants/${encodeURIComponent(restaurantId)}/menu-wallpaper/keep`, body);
+
 export const getOwnerRestaurantFeaturedDish = (restaurantId) =>
   get(`/api/owner/restaurants/${encodeURIComponent(restaurantId)}/featured-dish`);
 export const getOwnerRestaurantFeaturedDishCandidates = (restaurantId, params = {}) => {

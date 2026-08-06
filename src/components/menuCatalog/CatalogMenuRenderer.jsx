@@ -17,6 +17,7 @@ import {
   shouldApplyMenuAppearance,
 } from "../../lib/menuAppearances.js";
 import { resolveEffectiveMenuAppearance } from "../../lib/menuAppearanceRecommendation.js";
+import { buildMenuChromeRootStyle } from "../../lib/menuWallpapers.js";
 import { formatMoney, getBaseMenuPrice, getConsumerDisplayPrice } from "../../lib/pricingDisplay.js";
 import { buildMenuShareMetadata } from "../share/shareUtils.js";
 import { buildRestaurantStatusLightProps, shouldShowMenuPurchaseWaiterHint } from "../../lib/restaurantStatusLight.js";
@@ -447,6 +448,10 @@ export default function CatalogMenuRenderer({
       category: data?.category,
       cuisine: data?.cuisine,
     });
+  const effectiveMenuWallpaper =
+    data?.menu_wallpaper_key == null || data?.menu_wallpaper_key === ""
+      ? null
+      : String(data.menu_wallpaper_key).trim();
   const appearanceTokens = applyMenuAppearance
     ? getMenuAppearanceTokens(effectiveMenuAppearance)
     : null;
@@ -459,7 +464,11 @@ export default function CatalogMenuRenderer({
         minHeight: 0,
         display: "flex",
         flexDirection: "column",
-        ...buildMenuAppearanceRootStyle(effectiveMenuAppearance),
+        ...buildMenuChromeRootStyle(
+          effectiveMenuAppearance,
+          effectiveMenuWallpaper,
+          data?.resolved_menu_wallpaper || null
+        ),
         overflow: "hidden",
       }
     : {
