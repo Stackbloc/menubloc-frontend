@@ -41,6 +41,23 @@ const STEPS = [
   { key: "review", label: "3. Review & Edit" },
 ];
 
+/** Stable-ish key so re-picking the same phone photo does not duplicate the queue. */
+function ownerUploadFileKey(file) {
+  return `${file.name}::${file.size}::${file.lastModified}`;
+}
+
+function mergeOwnerUploadFiles(existing, incoming) {
+  const seen = new Set(existing.map(ownerUploadFileKey));
+  const next = [...existing];
+  for (const file of incoming) {
+    const key = ownerUploadFileKey(file);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    next.push(file);
+  }
+  return next;
+}
+
 const EMPTY_PROFILE = {
   restaurant_name: "",
   restaurant_type: "",
@@ -1127,20 +1144,106 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
         <SelectField label="Menu type" value={menuType} onChange={setMenuType} options={schema?.menu_types} required />
       </div>
       <div style={{ marginTop: 12 }}>
-        <label style={fieldLabel}>PDF (usually one) and/or photos (select many)</label>
+        <label style={fieldLabel}>PDF (usually one) and/or photos</label>
+        <div style={{ fontSize: 12, color: OWNER_COLORS.muted, marginBottom: 6, lineHeight: 1.45 }}>
+          Desktop: select many at once. Phone: add one photo at a time — each pick is added to the list below.
+        </div>
         <input
           ref={fileRef}
           type="file"
           multiple
           accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp"
-          onChange={(e) => setFiles(Array.from(e.target.files || []))}
+          onChange={(e) => {
+            const picked = Array.from(e.target.files || []);
+            if (picked.length) {
+              setFiles((prev) => mergeOwnerUploadFiles(prev, picked));
+            }
+            // Reset so the same path can be chosen again and another phone pick can open.
+            e.target.value = "";
+          }}
           style={{ ...inputStyle, padding: "10px 12px" }}
           data-testid="owner-menu-upload-input"
         />
         {files.length > 0 ? (
-          <div style={{ marginTop: 6, fontSize: 12, color: OWNER_COLORS.muted }}>
-            {files.length} file{files.length === 1 ? "" : "s"}:{" "}
-            <strong>{files.map((f) => f.name).join(", ")}</strong>
+          <div style={{ marginTop: 8 }} data-testid="owner-menu-upload-file-list">
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: 8,
+                marginBottom: 6,
+              }}
+            >
+              <div style={{ fontSize: 12, color: OWNER_COLORS.muted, fontWeight: 650 }}>
+                {files.length} file{files.length === 1 ? "" : "s"} ready
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setFiles([]);
+                  if (fileRef.current) fileRef.current.value = "";
+                }}
+                style={{
+                  border: "none",
+                  background: "transparent",
+                  color: OWNER_COLORS.muted,
+                  fontSize: 12,
+                  fontWeight: 650,
+                  cursor: "pointer",
+                  padding: 0,
+                  fontFamily: "inherit",
+                }}
+                data-testid="owner-menu-upload-clear-files"
+              >
+                Clear all
+              </button>
+            </div>
+            <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gap: 6 }}>
+              {files.map((f, idx) => (
+                <li
+                  key={`${ownerUploadFileKey(f)}-${idx}`}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 10,
+                    padding: "8px 10px",
+                    borderRadius: 9,
+                    border: `1px solid ${OWNER_COLORS.line}`,
+                    background: "#fff",
+                    fontSize: 12,
+                  }}
+                >
+                  <span style={{ color: OWNER_COLORS.ink, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {f.name}
+                  </span>
+                  <button
+                    type="button"
+                    aria-label={`Remove ${f.name}`}
+                    onClick={() => setFiles((prev) => prev.filter((_, i) => i !== idx))}
+                    style={{
+                      flexShrink: 0,
+                      border: `1px solid ${OWNER_COLORS.line}`,
+                      background: "#fff",
+                      color: OWNER_COLORS.muted,
+                      borderRadius: 8,
+                      padding: "4px 8px",
+                      fontSize: 11,
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      fontFamily: "inherit",
+                    }}
+                    data-testid="owner-menu-upload-remove-file"
+                  >
+                    Remove
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <div style={{ marginTop: 8, fontSize: 12, color: OWNER_COLORS.muted }}>
+              Need another page? Choose a file again to add it, then Upload & Parse.
+            </div>
           </div>
         ) : null}
       </div>
