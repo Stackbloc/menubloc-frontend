@@ -37,4 +37,9 @@ describe("CatalogDrinksMenuRenderer contract", () => {
     assert.match(src, /drinksMenuPayloadCache\.delete/);
     assert.match(src, /clearDrinksMenuPayloadCache/);
   });
+
+  it("shows system-wide alcohol no-delivery note on drinks menus", () => {
+    assert.match(src, /data-alcohol-no-delivery-note/);
+    assert.match(src, /Alcoholic beverages cannot be ordered for delivery/);
+  });
 });

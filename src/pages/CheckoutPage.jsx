@@ -25,6 +25,10 @@ import { trackCheckoutCompleted, trackCheckoutStarted } from "../lib/analytics.j
 import { formatMoney } from "../lib/pricingDisplay.js";
 import { formatMenuItemName } from "../utils/formatMenuItemName.js";
 import { useLanguage } from "../context/LanguageContext.jsx";
+import {
+  ALCOHOL_NO_DELIVERY_MESSAGE,
+  isAlcoholicBeverageItem,
+} from "../lib/alcoholicBeverageDetail.js";
 
 const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "";
 const stripePromise = stripePublishableKey ? loadStripe(stripePublishableKey) : null;
@@ -268,6 +272,23 @@ export default function CheckoutPage() {
     }
     return ["pickup", "delivery"];
   }, [restaurant]);
+  const cartHasAlcohol = useMemo(() => {
+    const restaurantName = restaurant?.restaurantName || restaurant?.restaurant_name || "";
+    return items.some(
+      (item) =>
+        item?.isAlcoholic === true ||
+        item?.is_alcoholic === true ||
+        isAlcoholicBeverageItem({
+          ...item,
+          restaurant: { name: restaurantName },
+          restaurant_name: restaurantName,
+        }),
+    );
+  }, [items, restaurant]);
+  const fulfillmentChoices = useMemo(() => {
+    if (!cartHasAlcohol) return availableFulfillmentTypes;
+    return availableFulfillmentTypes.filter((type) => type !== "delivery");
+  }, [availableFulfillmentTypes, cartHasAlcohol]);
   const [fulfillmentType, setFulfillmentType] = useState(() => {
     const fromUrl = searchParams.get("fulfillment");
     if (fromUrl === "delivery" || fromUrl === "pickup") return fromUrl;
@@ -377,10 +398,10 @@ export default function CheckoutPage() {
   const userBidMessageText = currentPreviewData?.user_bid?.message || "";
 
   useEffect(() => {
-    if (!availableFulfillmentTypes.includes(fulfillmentType)) {
-      setFulfillmentType(availableFulfillmentTypes[0] || "pickup");
+    if (!fulfillmentChoices.includes(fulfillmentType)) {
+      setFulfillmentType(fulfillmentChoices[0] || "pickup");
     }
-  }, [availableFulfillmentTypes, fulfillmentType]);
+  }, [fulfillmentChoices, fulfillmentType]);
 
   useEffect(() => {
     setPaymentSession(null);
@@ -757,11 +778,16 @@ export default function CheckoutPage() {
                 <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
                   {availableFulfillmentTypes.map((value) => {
                     const active = fulfillmentType === value;
+                    const deliveryDisabled = value === "delivery" && cartHasAlcohol;
                     return (
                       <button
                         key={value}
                         type="button"
-                        onClick={() => setFulfillmentType(value)}
+                        disabled={deliveryDisabled}
+                        onClick={() => {
+                          if (deliveryDisabled) return;
+                          setFulfillmentType(value);
+                        }}
                         style={{
                           borderRadius: 14,
                           border: active ? "1.5px solid #22C55E" : "1px solid #374151",
@@ -770,7 +796,8 @@ export default function CheckoutPage() {
                           padding: "10px 18px",
                           fontSize: 13,
                           fontWeight: 800,
-                          cursor: "pointer",
+                          cursor: deliveryDisabled ? "not-allowed" : "pointer",
+                          opacity: deliveryDisabled ? 0.45 : 1,
                         }}
                       >
                         <span>{value === "pickup" ? t("checkout.pickup", "Pickup") : t("checkout.delivery", "Delivery")}</span>
@@ -778,6 +805,15 @@ export default function CheckoutPage() {
                     );
                   })}
                 </div>
+                {cartHasAlcohol ? (
+                  <div
+                    role="note"
+                    data-alcohol-no-delivery-note="true"
+                    style={{ marginTop: 10, fontSize: 12, lineHeight: 1.45, color: "#9CA3AF", fontWeight: 600 }}
+                  >
+                    {t("checkout.alcoholNoDelivery", ALCOHOL_NO_DELIVERY_MESSAGE)}
+                  </div>
+                ) : null}
               </div>
 
               {fulfillmentType === "delivery" ? (

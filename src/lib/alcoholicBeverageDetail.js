@@ -5,8 +5,12 @@
 
 export const RESPONSIBLE_DRINKING_TITLE = "Drink Responsibly";
 
+export const ALCOHOL_NO_DELIVERY_MESSAGE =
+  "Alcoholic beverages cannot be ordered for delivery. Pickup only.";
+
 export const RESPONSIBLE_DRINKING_BULLETS = Object.freeze([
   "Must be 21 years of age or older to purchase alcoholic beverages.",
+  ALCOHOL_NO_DELIVERY_MESSAGE,
   "Please drink responsibly.",
   "Never drink and drive.",
   "According to the U.S. Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects.",

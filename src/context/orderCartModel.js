@@ -1,5 +1,6 @@
 import { getBaseMenuPrice, getConsumerDisplayPrice } from "../lib/pricingDisplay.js";
 import { requireMenuItemIdentity } from "../lib/menuItemIdentity.js";
+import { isAlcoholicBeverageItem } from "../lib/alcoholicBeverageDetail.js";
 
 function toInteger(value, fallback = 0) {
   const normalized = Number(value);
@@ -123,6 +124,7 @@ export function normalizeCartLine(line) {
     ),
     pricingType: String(line?.pricingType ?? line?.pricing_type ?? "").trim(),
     pricingLabel: String(line?.pricingLabel ?? line?.pricing_label ?? "").trim(),
+    isAlcoholic: Boolean(line?.isAlcoholic ?? line?.is_alcoholic),
   });
 }
 
@@ -228,6 +230,14 @@ export function createCartLine({ restaurant, item }) {
       item?.preparation_instructions ??
       item?.specialInstructions ??
       null,
+    isAlcoholic:
+      item?.isAlcoholic === true ||
+      item?.is_alcoholic === true ||
+      isAlcoholicBeverageItem({
+        ...item,
+        restaurant: restaurant || item?.restaurant,
+        restaurant_name: restaurant?.restaurantName || restaurant?.restaurant_name,
+      }),
   });
 }
 
@@ -324,6 +334,19 @@ export function getCartSummary(cartState) {
     itemCount: current.items.reduce((sum, item) => sum + item.quantity, 0),
     subtotalCents: current.items.reduce((sum, item) => sum + item.lineTotalCents, 0),
   };
+}
+
+export function cartContainsAlcoholicItems(cartState) {
+  const current = normalizeStoredCart(cartState);
+  const restaurantName = current.restaurant?.restaurantName || current.restaurant?.restaurant_name || "";
+  return current.items.some((item) => {
+    if (item?.isAlcoholic === true || item?.is_alcoholic === true) return true;
+    return isAlcoholicBeverageItem({
+      ...item,
+      restaurant: { name: restaurantName },
+      restaurant_name: restaurantName,
+    });
+  });
 }
 
 export function buildCheckoutItems(cartItems) {

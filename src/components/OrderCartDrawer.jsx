@@ -1,9 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useOrderCart } from "../context/OrderCartContext.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { formatMoney } from "../lib/pricingDisplay.js";
 import { formatMenuItemName } from "../utils/formatMenuItemName.js";
+import {
+  ALCOHOL_NO_DELIVERY_MESSAGE,
+  isAlcoholicBeverageItem,
+} from "../lib/alcoholicBeverageDetail.js";
 
 export default function OrderCartDrawer() {
   const { t } = useLanguage();
@@ -19,6 +23,26 @@ export default function OrderCartDrawer() {
     updateQuantity,
     removeItem,
   } = useOrderCart();
+
+  const cartHasAlcohol = useMemo(() => {
+    const restaurantName = restaurant?.restaurantName || restaurant?.restaurant_name || "";
+    return items.some(
+      (item) =>
+        item?.isAlcoholic === true ||
+        item?.is_alcoholic === true ||
+        isAlcoholicBeverageItem({
+          ...item,
+          restaurant: { name: restaurantName },
+          restaurant_name: restaurantName,
+        }),
+    );
+  }, [items, restaurant]);
+
+  useEffect(() => {
+    if (cartHasAlcohol && fulfillmentType === "delivery") {
+      setFulfillmentType("pickup");
+    }
+  }, [cartHasAlcohol, fulfillmentType]);
 
   useEffect(() => {
     if (!isOpen) return undefined;
@@ -123,18 +147,24 @@ export default function OrderCartDrawer() {
           <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
             {["pickup", "delivery"].map((type) => {
               const active = fulfillmentType === type;
+              const deliveryDisabled = type === "delivery" && cartHasAlcohol;
               return (
                 <button
                   key={type}
                   type="button"
-                  onClick={() => setFulfillmentType(type)}
+                  disabled={deliveryDisabled}
+                  onClick={() => {
+                    if (deliveryDisabled) return;
+                    setFulfillmentType(type);
+                  }}
                   style={{
                     flex: 1, height: 38, borderRadius: 12,
                     border: active ? "1.5px solid #11211a" : "1px solid #d0d5dd",
                     background: active ? "#11211a" : "#fff",
                     color: active ? "#fff" : "#11211a",
                     fontSize: 13, fontWeight: 800,
-                    cursor: "pointer",
+                    cursor: deliveryDisabled ? "not-allowed" : "pointer",
+                    opacity: deliveryDisabled ? 0.45 : 1,
                     transition: "background 150ms ease, border-color 150ms ease",
                   }}
                 >
@@ -143,6 +173,21 @@ export default function OrderCartDrawer() {
               );
             })}
           </div>
+          {cartHasAlcohol ? (
+            <div
+              role="note"
+              data-alcohol-no-delivery-note="true"
+              style={{
+                marginTop: 10,
+                fontSize: 12,
+                lineHeight: 1.45,
+                color: "#667085",
+                fontWeight: 600,
+              }}
+            >
+              {t("checkout.alcoholNoDelivery", ALCOHOL_NO_DELIVERY_MESSAGE)}
+            </div>
+          ) : null}
         </div>
 
         <div style={{ flex: 1, overflowY: "auto", padding: "18px 22px" }}>

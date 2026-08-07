@@ -138,8 +138,9 @@ describe("MenuItemDetailPage alcoholic substitution contract", () => {
 
   it("keeps the authorized responsible-drinking copy", () => {
     assert.equal(RESPONSIBLE_DRINKING_TITLE, "Drink Responsibly");
-    assert.equal(RESPONSIBLE_DRINKING_BULLETS.length, 5);
+    assert.equal(RESPONSIBLE_DRINKING_BULLETS.length, 6);
     assert.match(RESPONSIBLE_DRINKING_BULLETS[0], /21 years of age/);
-    assert.match(RESPONSIBLE_DRINKING_BULLETS[3], /Surgeon General/);
+    assert.match(RESPONSIBLE_DRINKING_BULLETS[1], /cannot be ordered for delivery/i);
+    assert.match(RESPONSIBLE_DRINKING_BULLETS[4], /Surgeon General/);
   });
 });

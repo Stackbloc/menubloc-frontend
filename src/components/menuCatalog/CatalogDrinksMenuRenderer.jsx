@@ -434,6 +434,26 @@ export default function CatalogDrinksMenuRenderer({
           {asStr(data?.menu_title || "Drinks Menu").trim()}
           {data?.item_count != null ? ` · ${data.item_count} beverages` : ""}
         </div>
+        <div
+          role="note"
+          data-alcohol-no-delivery-note="true"
+          style={{
+            marginTop: 12,
+            padding: "10px 12px",
+            borderRadius: 10,
+            border: "1px solid rgba(147, 51, 234, 0.22)",
+            background: "rgba(147, 51, 234, 0.06)",
+            color: inkColor,
+            fontSize: 13,
+            lineHeight: 1.45,
+            fontWeight: 600,
+          }}
+        >
+          {t(
+            "menuCatalog.alcoholNoDelivery",
+            "Alcoholic beverages cannot be ordered for delivery. Pickup only.",
+          )}
+        </div>
       </header>
 
       {browserSections.length === 0 ? (
