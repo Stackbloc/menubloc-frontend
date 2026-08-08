@@ -165,7 +165,6 @@ export default function DistributorPublicPage() {
   const infoRows = [
     d.website_url ? { label: "Website", value: d.website_url, href: d.website_url } : null,
     d.phone ? { label: "Phone", value: d.phone, href: `tel:${d.phone.replace(/[^\d+]/g, "")}` } : null,
-    d.email ? { label: "Email", value: d.email, href: `mailto:${d.email}` } : null,
     [d.address_line1, d.city, d.state, d.postal_code].filter(Boolean).length
       ? {
           label: "Address",
@@ -175,6 +174,10 @@ export default function DistributorPublicPage() {
         }
       : null,
   ].filter(Boolean);
+  const aboutText =
+    d.description ||
+    d.short_note ||
+    `${d.display_name} is a foodservice distributor recognized on Menuply.`;
 
   return (
     <div style={styles.page}>
@@ -183,15 +186,22 @@ export default function DistributorPublicPage() {
         <header style={styles.hero}>
           {d.has_logo && d.logo_url ? (
             <img src={d.logo_url} alt="" style={styles.logo} />
-          ) : null}
-          <p style={styles.eyebrow}>{d.category_label}</p>
+          ) : (
+            <div style={styles.logoFallback} aria-hidden="true">
+              {String(d.display_name || "D")
+                .trim()
+                .charAt(0)
+                .toUpperCase()}
+            </div>
+          )}
+          <p style={styles.eyebrow}>{d.category_label || "Foodservice Distributor"}</p>
           <h1 style={styles.title}>{d.display_name}</h1>
           {d.is_verified ? (
             <div style={styles.verifiedBadge}>✓ Verified Distributor</div>
           ) : d.is_unclaimed ? (
-            <div style={styles.unclaimedBadge}>Not yet claimed</div>
+            <div style={styles.unclaimedBadge}>Unclaimed</div>
           ) : d.is_claimed ? (
-            <div style={styles.claimedBadge}>Claimed on Menuply</div>
+            <div style={styles.claimedBadge}>Claimed</div>
           ) : null}
           {d.has_website ? (
             <a
@@ -212,11 +222,9 @@ export default function DistributorPublicPage() {
           style={{ display: "none" }}
         />
 
-        {d.has_description ? (
-          <Section title="About">
-            <p style={styles.body}>{d.description}</p>
-          </Section>
-        ) : null}
+        <Section title="About">
+          <p style={styles.body}>{aboutText}</p>
+        </Section>
 
         {d.has_service_area ? (
           <Section title="Serving">
@@ -225,7 +233,7 @@ export default function DistributorPublicPage() {
         ) : null}
 
         {infoRows.length ? (
-          <Section title="Distributor Information">
+          <Section title="Company information">
             <dl style={styles.dl}>
               {infoRows.map((row) => (
                 <div key={row.label} style={styles.dlRow}>
@@ -246,17 +254,23 @@ export default function DistributorPublicPage() {
         ) : null}
 
         {d.show_claim_cta ? (
-          <Section title="Is this your company?">
+          <section style={{ ...styles.section, ...styles.claimPanel }}>
+            <h2 style={styles.sectionTitle}>Claim your free profile</h2>
             <p style={styles.body}>
-              Claim this profile to manage your Menuply presence. Claiming
-              requires a verified Menuply business account and Menuply review.
+              Menuply is a new platform dedicated to serving the restaurant industry
+              and the diners they serve. Distributors play a critical role in that
+              ecosystem.
+            </p>
+            <p style={{ ...styles.body, marginTop: 12 }}>
+              Claim your free distributor profile to establish your presence on
+              Menuply and connect with restaurants that have joined the platform.
             </p>
             <div style={styles.ctaRow}>
               <Link
                 to={`/distributors/${d.slug}/claim`}
-                style={styles.primaryCta}
+                style={styles.claimCta}
               >
-                Claim this Profile
+                Claim Your Free Profile
               </Link>
             </div>
             {d.profile_claim_status === "CLAIM_PENDING" ? (
@@ -264,10 +278,10 @@ export default function DistributorPublicPage() {
                 A claim is currently under review for this profile.
               </p>
             ) : null}
-          </Section>
+          </section>
         ) : null}
 
-        {/* Reserved for future connection / offer modules */}
+        {/* Reserved for future Distributor → Restaurants relationship module */}
         <div data-distributor-connect-slot="true" aria-hidden="true" style={{ display: "none" }} />
 
         {d.is_claimed ? (
@@ -276,8 +290,7 @@ export default function DistributorPublicPage() {
               <p style={styles.body}>✓ Verified Distributor on Menuply.</p>
             ) : (
               <p style={styles.body}>
-                This profile has been claimed. Verification is a separate Menuply
-                review step.
+                This profile has been claimed on Menuply.
               </p>
             )}
             <div style={styles.ctaRow}>
@@ -317,6 +330,19 @@ const styles = {
     border: "1px solid rgba(15,23,42,0.08)",
     marginBottom: 14,
   },
+  logoFallback: {
+    width: 72,
+    height: 72,
+    borderRadius: 14,
+    background: "linear-gradient(145deg, #166534, #3f6212)",
+    color: "#fff",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontWeight: 900,
+    fontSize: 28,
+    marginBottom: 14,
+  },
   eyebrow: {
     margin: "0 0 8px",
     fontSize: 12,
@@ -326,7 +352,7 @@ const styles = {
     color: "#3f6212",
   },
   title: {
-    margin: "0 0 16px",
+    margin: "0 0 12px",
     fontSize: "clamp(1.8rem, 4vw, 2.4rem)",
     fontWeight: 900,
     letterSpacing: "-0.03em",
@@ -338,6 +364,10 @@ const styles = {
     background: "rgba(255,255,255,0.72)",
     border: "1px solid rgba(15,23,42,0.08)",
     borderRadius: 18,
+  },
+  claimPanel: {
+    background: "linear-gradient(180deg, #f0fdf4 0%, #ffffff 70%)",
+    border: "1px solid rgba(21, 128, 61, 0.22)",
   },
   sectionTitle: {
     margin: "0 0 10px",
@@ -376,6 +406,17 @@ const styles = {
     textDecoration: "none",
     fontSize: 14,
   },
+  claimCta: {
+    display: "inline-block",
+    background: "#15803d",
+    color: "#fff",
+    fontWeight: 800,
+    padding: "14px 20px",
+    borderRadius: 12,
+    textDecoration: "none",
+    fontSize: 16,
+    boxShadow: "0 10px 24px rgba(21, 128, 61, 0.22)",
+  },
   secondaryCta: {
     display: "inline-block",
     background: "#fff",
@@ -391,7 +432,7 @@ const styles = {
     display: "flex",
     flexWrap: "wrap",
     gap: 10,
-    marginTop: 14,
+    marginTop: 16,
   },
   textLink: {
     color: "#15803d",
