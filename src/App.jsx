@@ -96,6 +96,21 @@ import {
   VenueCampaignsPage,
   VenueStripeSetupPage,
 } from "./pages/venue/VenuePlaceholderPages.jsx";
+import { DistributorProvider, useDistributor } from "./context/DistributorContext.jsx";
+import DistributorLogin from "./pages/distributor/DistributorLogin.jsx";
+import DistributorDashboard from "./pages/distributor/DistributorDashboard.jsx";
+import DistributorSearchPage from "./pages/distributor/DistributorSearchPage.jsx";
+import DistributorRestaurantProfile from "./pages/distributor/DistributorRestaurantProfile.jsx";
+import {
+  DistributorConnectedPage,
+  DistributorPendingPage,
+  DistributorReportedPage,
+} from "./pages/distributor/DistributorConnectionLists.jsx";
+import {
+  DistributorInboxPage,
+  DistributorThreadPage,
+} from "./pages/distributor/DistributorMessagesPage.jsx";
+import OperatorDistributorRelationships from "./pages/operator/OperatorDistributorRelationships.jsx";
 import OwnerRecovery from "./pages/owner/OwnerRecovery.jsx";
 import OwnerResetPassword from "./pages/owner/OwnerResetPassword.jsx";
 import OwnerDashboard from "./pages/owner/OwnerDashboard.jsx";
@@ -296,6 +311,13 @@ function VenueRoute({ children }) {
   const { isAuthenticated, loading } = useVenue();
   if (loading) return null;
   if (!isAuthenticated) return <Navigate to="/venue/login" replace />;
+  return children;
+}
+
+function DistributorRoute({ children }) {
+  const { isAuthenticated, loading } = useDistributor();
+  if (loading) return null;
+  if (!isAuthenticated) return <Navigate to="/distributor/login" replace />;
   return children;
 }
 
@@ -800,6 +822,7 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/operator/qr-stickers" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorQrStickers /></OperatorRoute>} />
         <Route path="/operator/subscription" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorSubscription /></OperatorRoute>} />
         <Route path="/operator/my-account" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorMyAccount /></OperatorRoute>} />
+        <Route path="/operator/distributor-relationships" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorDistributorRelationships /></OperatorRoute>} />
         <Route path="/operator/billboards" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorBillboardsPage /></OperatorRoute>} />
         <Route path="/operator/display-settings" element={crmHost ? <HostRouteRedirect to="/crm" /> : <Navigate to="/operator/billboards" replace />} />
         <Route path="/operator/menu-studio" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorMenuStudio /></OperatorRoute>} />
@@ -814,6 +837,16 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/venue/advertising/analytics" element={crmHost ? <HostRouteRedirect to="/crm" /> : <VenueRoute><VenueAnalyticsPage /></VenueRoute>} />
         <Route path="/venue/advertising/billing" element={crmHost ? <HostRouteRedirect to="/crm" /> : <VenueRoute><VenueBillingPage /></VenueRoute>} />
         <Route path="/venue/advertising/stripe-setup" element={crmHost ? <HostRouteRedirect to="/crm" /> : <VenueRoute><VenueStripeSetupPage /></VenueRoute>} />
+
+        <Route path="/distributor/login" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <DistributorLogin />} />
+        <Route path="/distributor" element={crmHost ? <HostRouteRedirect to="/crm" /> : <DistributorRoute><DistributorDashboard /></DistributorRoute>} />
+        <Route path="/distributor/search" element={crmHost ? <HostRouteRedirect to="/crm" /> : <DistributorRoute><DistributorSearchPage /></DistributorRoute>} />
+        <Route path="/distributor/connected" element={crmHost ? <HostRouteRedirect to="/crm" /> : <DistributorRoute><DistributorConnectedPage /></DistributorRoute>} />
+        <Route path="/distributor/pending" element={crmHost ? <HostRouteRedirect to="/crm" /> : <DistributorRoute><DistributorPendingPage /></DistributorRoute>} />
+        <Route path="/distributor/reported" element={crmHost ? <HostRouteRedirect to="/crm" /> : <DistributorRoute><DistributorReportedPage /></DistributorRoute>} />
+        <Route path="/distributor/restaurants/:restaurantId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <DistributorRoute><DistributorRestaurantProfile /></DistributorRoute>} />
+        <Route path="/distributor/messages" element={crmHost ? <HostRouteRedirect to="/crm" /> : <DistributorRoute><DistributorInboxPage /></DistributorRoute>} />
+        <Route path="/distributor/messages/:relationshipId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <DistributorRoute><DistributorThreadPage /></DistributorRoute>} />
 
         <Route path="/owner/login" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <OwnerLogin />} />
         <Route path="/owner/recover" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <OwnerRecovery />} />
@@ -897,6 +930,7 @@ export default function App() {
         <CrmProvider>
           <OperatorProvider>
             <VenueProvider>
+            <DistributorProvider>
             <CartProvider>
               <LanguageProvider>
                 <OrderCartProvider>
@@ -907,6 +941,7 @@ export default function App() {
                 </OrderCartProvider>
               </LanguageProvider>
             </CartProvider>
+            </DistributorProvider>
             </VenueProvider>
           </OperatorProvider>
         </CrmProvider>

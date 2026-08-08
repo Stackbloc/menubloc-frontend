@@ -347,6 +347,11 @@ export default function OperatorLayout({ title, children }) {
             label: t("operator.nav.hours", "Hours"),
             icon: "⏰",
           },
+          {
+            to: "/operator/distributor-relationships",
+            label: t("operator.nav.distributorRelationships", "Distributor Relationships"),
+            icon: "⇄",
+          },
         ],
       });
     } else {

@@ -199,6 +199,26 @@ export const putRestaurantDistributorUsage = (rid, distributorIds) =>
     distributor_ids: Array.isArray(distributorIds) ? distributorIds : [],
   });
 
+// ── Distributor network relationships (Part 2) ────────────────────────────
+export const getDistributorRelationships = (rid) =>
+  get(`/operator/restaurants/${rid}/distributor-relationships`);
+export const getPendingDistributorRelationships = (rid) =>
+  get(`/operator/restaurants/${rid}/distributor-relationships/pending`);
+export const acceptDistributorRelationship = (rid, relationshipId) =>
+  post(`/operator/restaurants/${rid}/distributor-relationships/${relationshipId}/accept`, {});
+export const declineDistributorRelationship = (rid, relationshipId) =>
+  post(`/operator/restaurants/${rid}/distributor-relationships/${relationshipId}/decline`, {});
+export const disconnectDistributorRelationship = (rid, relationshipId) =>
+  post(`/operator/restaurants/${rid}/distributor-relationships/${relationshipId}/disconnect`, {});
+export const getOperatorDistributorInbox = (rid) =>
+  get(`/operator/restaurants/${rid}/distributor-relationships/messages/inbox`);
+export const getOperatorDistributorMessages = (rid, relationshipId) =>
+  get(`/operator/restaurants/${rid}/distributor-relationships/${relationshipId}/messages`);
+export const postOperatorDistributorMessage = (rid, relationshipId, body) =>
+  post(`/operator/restaurants/${rid}/distributor-relationships/${relationshipId}/messages`, {
+    body,
+  });
+
 // ── Restaurant: Onboarding Locations ──────────────────────────────────────
 export const getOwnedLocations = (rid) =>
   get(`/operator/restaurants/${rid}/onboarding/locations`);
