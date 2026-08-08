@@ -165,6 +165,7 @@ import { isJoinLandingPath } from "./lib/joinMarketConfig.js";
 import ProfileSearchPage from "./pages/ProfileSearchPage.jsx";
 import RestaurantProfile from "./pages/RestaurantProfile.jsx";
 import RestaurantPublicPage from "./pages/RestaurantPublicPage.jsx";
+import DistributorPublicPage from "./pages/DistributorPublicPage.jsx";
 import RestaurantsLandingPage from "./pages/RestaurantsLandingPage.jsx";
 
 import MenuPage from "./pages/MenuPage.jsx";
@@ -700,6 +701,7 @@ function AppShell({ easyMenu, crmHost }) {
         {/* Single-segment: market aggregator when slug is city-state, profile otherwise */}
         <Route path="/restaurants/:slugOrId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantOrMarketRouter />} />
         <Route path="/restaurants/:slugOrId/menu" element={crmHost ? <HostRouteRedirect to="/crm" /> : <PublicMenuPage />} />
+        <Route path="/distributors/:slug" element={crmHost ? <HostRouteRedirect to="/crm" /> : <DistributorPublicPage />} />
         <Route path="/menu-template-preview" element={crmHost ? <HostRouteRedirect to="/crm" /> : <PublicMenuPage />} />
         <Route path="/menu-design-lab" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MenuThemesPage />} />
         <Route path="/menu-themes" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MenuThemesPage />} />
