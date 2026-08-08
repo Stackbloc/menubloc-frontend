@@ -100,6 +100,8 @@ import {
 } from "./pages/venue/VenuePlaceholderPages.jsx";
 import { DistributorProvider, useDistributor } from "./context/DistributorContext.jsx";
 import DistributorLogin from "./pages/distributor/DistributorLogin.jsx";
+import DistributorAccountLogin from "./pages/distributor/DistributorAccountLogin.jsx";
+import DistributorAccountSignup from "./pages/distributor/DistributorAccountSignup.jsx";
 import DistributorDashboard from "./pages/distributor/DistributorDashboard.jsx";
 import DistributorSearchPage from "./pages/distributor/DistributorSearchPage.jsx";
 import DistributorRestaurantProfile from "./pages/distributor/DistributorRestaurantProfile.jsx";
@@ -848,8 +850,11 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/venue/advertising/stripe-setup" element={crmHost ? <HostRouteRedirect to="/crm" /> : <VenueRoute><VenueStripeSetupPage /></VenueRoute>} />
 
         <Route path="/distributor/login" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <DistributorLogin />} />
+        <Route path="/distributor/account/login" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <DistributorAccountLogin />} />
+        <Route path="/distributor/account/signup" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <DistributorAccountSignup />} />
         <Route path="/distributor" element={crmHost ? <HostRouteRedirect to="/crm" /> : <DistributorRoute><DistributorDashboard /></DistributorRoute>} />
         <Route path="/distributor/profile" element={crmHost ? <HostRouteRedirect to="/crm" /> : <DistributorRoute><DistributorProfileEditPage /></DistributorRoute>} />
+        <Route path="/distributor/restaurants" element={crmHost ? <HostRouteRedirect to="/crm" /> : <DistributorRoute><DistributorSearchPage /></DistributorRoute>} />
         <Route path="/distributor/search" element={crmHost ? <HostRouteRedirect to="/crm" /> : <DistributorRoute><DistributorSearchPage /></DistributorRoute>} />
         <Route path="/distributor/connected" element={crmHost ? <HostRouteRedirect to="/crm" /> : <DistributorRoute><DistributorConnectedPage /></DistributorRoute>} />
         <Route path="/distributor/pending" element={crmHost ? <HostRouteRedirect to="/crm" /> : <DistributorRoute><DistributorPendingPage /></DistributorRoute>} />

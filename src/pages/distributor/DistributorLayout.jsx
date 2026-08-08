@@ -52,18 +52,15 @@ export function SectionTitle({ title, subtitle, action = null }) {
   );
 }
 
+/** V1 Restaurant Intelligence: Profile + Restaurants only (no Connect/Messages nav). */
 const NAV_SECTIONS = [
   {
-    id: "network",
-    label: "Network",
+    id: "workspace",
+    label: "Workspace",
     items: [
-      { to: "/distributor", label: "Dashboard", end: true },
-      { to: "/distributor/profile", label: "Public profile" },
-      { to: "/distributor/search", label: "Search restaurants" },
-      { to: "/distributor/connected", label: "Connected" },
-      { to: "/distributor/pending", label: "Pending requests" },
-      { to: "/distributor/reported", label: "Reported by restaurants" },
-      { to: "/distributor/messages", label: "Messages" },
+      { to: "/distributor", label: "Home", end: true },
+      { to: "/distributor/profile", label: "Profile" },
+      { to: "/distributor/restaurants", label: "Restaurants" },
     ],
   },
 ];
@@ -132,7 +129,7 @@ export default function DistributorLayout({ title, children, actions = null }) {
   return (
     <AdminConsoleShell
       homeTo="/distributor"
-      brandSubtitle="Distributor Network"
+      brandSubtitle="Distributor"
       brandAriaLabel="Menuply distributor home"
       sections={sections}
       sidebarExtra={sidebarExtra}

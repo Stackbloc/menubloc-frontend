@@ -141,6 +141,12 @@ export async function fetchPublicDistributor(slug, options = {}) {
   return apiGet(`/public/distributors/${key}`, options);
 }
 
+/** Unauthenticated distributor profile claim submit */
+export async function submitPublicDistributorClaim(slug, body) {
+  const key = encodeURIComponent(String(slug || "").trim().toLowerCase());
+  return apiPost(`/public/distributors/${key}/claim`, body);
+}
+
 export async function getBrowseMenus(params = {}, options = {}) {
   const search = new URLSearchParams();
   Object.entries(params).forEach(([key, value]) => {

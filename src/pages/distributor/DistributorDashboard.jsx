@@ -4,7 +4,7 @@ import DistributorLayout, { DIST_COLORS, PageCard, SectionTitle } from "./Distri
 import { useDistributor } from "../../context/DistributorContext.jsx";
 import { getDistributorDashboard } from "../../lib/distributorApi.js";
 
-function StatLink({ to, label, value }) {
+function EntryCard({ to, title, body }) {
   return (
     <Link
       to={to}
@@ -12,22 +12,22 @@ function StatLink({ to, label, value }) {
         textDecoration: "none",
         color: "inherit",
         display: "block",
-        padding: 16,
+        padding: 18,
         borderRadius: 14,
         border: `1px solid ${DIST_COLORS.line}`,
         background: "#fff",
       }}
     >
-      <div style={{ fontSize: 12, color: DIST_COLORS.muted, fontWeight: 700 }}>{label}</div>
-      <div style={{ fontSize: 28, fontWeight: 800, marginTop: 6, color: DIST_COLORS.ink }}>
-        {value}
+      <div style={{ fontSize: 16, fontWeight: 800, color: DIST_COLORS.ink }}>{title}</div>
+      <div style={{ marginTop: 8, fontSize: 13, color: DIST_COLORS.muted, lineHeight: 1.45 }}>
+        {body}
       </div>
     </Link>
   );
 }
 
 export default function DistributorDashboard() {
-  const { distributor, operator } = useDistributor();
+  const { distributor } = useDistributor();
   const [counts, setCounts] = useState(null);
   const [error, setError] = useState("");
 
@@ -38,52 +38,69 @@ export default function DistributorDashboard() {
         if (!cancelled) setCounts(data);
       })
       .catch((err) => {
-        if (!cancelled) setError(err.message || "Failed to load dashboard");
+        if (!cancelled) setError(err.message || "Failed to load workspace");
       });
     return () => {
       cancelled = true;
     };
   }, []);
 
+  const name = distributor?.display_name || "Distributor";
+  const reportedVisible = counts?.reported_usage_visible === true;
+  const reportedCount =
+    reportedVisible && typeof counts?.reported_count === "number"
+      ? counts.reported_count
+      : null;
+
   return (
-    <DistributorLayout title="Dashboard">
+    <DistributorLayout title="Home">
       <PageCard>
         <SectionTitle
-          title={distributor?.display_name || "Distributor"}
-          subtitle={`${operator?.email || ""} · Network overview`}
+          title={`${name} on Menuply`}
+          subtitle="Explore Menuply restaurant profiles and menus. Manage your public company profile."
         />
-        {error ? <div style={{ color: "#b91c1c" }}>{error}</div> : null}
+        {error ? <div style={{ color: "#b91c1c", marginBottom: 12 }}>{error}</div> : null}
+
+        {reportedVisible && reportedCount != null ? (
+          <div
+            style={{
+              marginBottom: 20,
+              padding: "14px 16px",
+              borderRadius: 12,
+              background: "#f8faf8",
+              border: `1px solid ${DIST_COLORS.line}`,
+            }}
+          >
+            <div style={{ fontSize: 12, fontWeight: 700, color: DIST_COLORS.muted }}>
+              Menuply restaurant network
+            </div>
+            <div style={{ marginTop: 6, fontSize: 18, fontWeight: 800, color: DIST_COLORS.ink }}>
+              {reportedCount} Menuply restaurants report {name}
+            </div>
+            <div style={{ marginTop: 6, fontSize: 12, color: DIST_COLORS.muted }}>
+              Based on restaurants that explicitly selected {name} during Menuply onboarding — not a
+              verified customer count.
+            </div>
+          </div>
+        ) : null}
+
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
+            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
             gap: 12,
           }}
         >
-          <StatLink to="/distributor/connected" label="Connected" value={counts?.connected_count ?? "—"} />
-          <StatLink to="/distributor/pending" label="Pending" value={counts?.pending_count ?? "—"} />
-          <StatLink to="/distributor/reported" label="Reported" value={counts?.reported_count ?? "—"} />
-          <StatLink
-            to="/distributor/messages"
-            label="Unread messages"
-            value={counts?.unread_message_count ?? "—"}
+          <EntryCard
+            to="/distributor/profile"
+            title="Your Profile"
+            body="Manage your public company profile on Menuply."
           />
-        </div>
-        <div style={{ marginTop: 20 }}>
-          <Link
-            to="/distributor/search"
-            style={{
-              display: "inline-block",
-              background: DIST_COLORS.accent,
-              color: "#fff",
-              fontWeight: 700,
-              padding: "10px 16px",
-              borderRadius: 10,
-              textDecoration: "none",
-            }}
-          >
-            Search restaurants
-          </Link>
+          <EntryCard
+            to="/distributor/restaurants"
+            title="Restaurants"
+            body="Search and explore restaurants on Menuply — profiles, menus, and location."
+          />
         </div>
       </PageCard>
     </DistributorLayout>

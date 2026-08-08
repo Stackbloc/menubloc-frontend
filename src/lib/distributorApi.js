@@ -44,6 +44,8 @@ export const switchDistributor = (distributorId) =>
 
 export const getDistributorDashboard = () => get("/distributor/dashboard");
 
+export const listDistributorCatalog = () => get("/distributor/catalog/distributors");
+
 export function searchDistributorRestaurants(params = {}) {
   const qs = new URLSearchParams();
   Object.entries(params).forEach(([k, v]) => {

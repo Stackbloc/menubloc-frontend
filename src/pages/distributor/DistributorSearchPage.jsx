@@ -1,58 +1,79 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import DistributorLayout, { DIST_COLORS, PageCard, SectionTitle } from "./DistributorLayout.jsx";
 import {
-  requestRestaurantConnection,
+  listDistributorCatalog,
   searchDistributorRestaurants,
 } from "../../lib/distributorApi.js";
 
+/**
+ * Restaurants hub — search Menuply restaurants (not consumer dish search).
+ * Reported-usage filters appear only when the server exposes reported_usage_visible.
+ */
 export default function DistributorSearchPage() {
   const [q, setQ] = useState("");
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
-  const [relationship, setRelationship] = useState("");
+  const [restaurantType, setRestaurantType] = useState("");
+  const [reportedDistributorSlug, setReportedDistributorSlug] = useState("");
+  const [catalog, setCatalog] = useState([]);
+  const [reportedVisible, setReportedVisible] = useState(false);
   const [rows, setRows] = useState([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [actionMsg, setActionMsg] = useState("");
+  const [searched, setSearched] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    listDistributorCatalog()
+      .then((data) => {
+        if (cancelled) return;
+        setReportedVisible(data?.reported_usage_visible === true);
+        setCatalog(Array.isArray(data?.distributors) ? data.distributors : []);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setReportedVisible(false);
+          setCatalog([]);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   async function runSearch(e) {
     e?.preventDefault?.();
     setBusy(true);
     setError("");
-    setActionMsg("");
+    setSearched(true);
     try {
-      const data = await searchDistributorRestaurants({
+      const params = {
         q,
         city,
         state,
-        relationship: relationship || undefined,
-      });
+        restaurant_type: restaurantType || undefined,
+      };
+      if (reportedVisible && reportedDistributorSlug) {
+        params.reported_distributor_slug = reportedDistributorSlug;
+      }
+      const data = await searchDistributorRestaurants(params);
+      setReportedVisible(data?.reported_usage_visible === true);
       setRows(Array.isArray(data.restaurants) ? data.restaurants : []);
     } catch (err) {
       setError(err.message || "Search failed");
+      setRows([]);
     } finally {
       setBusy(false);
     }
   }
 
-  async function requestConnect(restaurantId) {
-    setActionMsg("");
-    try {
-      await requestRestaurantConnection(restaurantId);
-      setActionMsg("Connection request sent.");
-      await runSearch();
-    } catch (err) {
-      setActionMsg(err.message || "Request failed");
-    }
-  }
-
   return (
-    <DistributorLayout title="Search restaurants">
+    <DistributorLayout title="Restaurants">
       <PageCard>
         <SectionTitle
-          title="Find restaurants"
-          subtitle="Search by name, Menuply ID (MPL-R-…), city, or state. Not consumer dish search."
+          title="Restaurants"
+          subtitle="Search Menuply restaurants by name, Menuply ID (MPL-R-…), city, state, or type. Open public profiles and menus."
         />
         <form
           onSubmit={runSearch}
@@ -76,23 +97,32 @@ export default function DistributorSearchPage() {
             onChange={(e) => setState(e.target.value)}
             style={inputStyle}
           />
-          <select
-            value={relationship}
-            onChange={(e) => setRelationship(e.target.value)}
+          <input
+            placeholder="Restaurant type"
+            value={restaurantType}
+            onChange={(e) => setRestaurantType(e.target.value)}
             style={inputStyle}
-          >
-            <option value="">Any relationship</option>
-            <option value="none">No relationship</option>
-            <option value="reported">Reported usage</option>
-            <option value="requested">Pending</option>
-            <option value="connected">Connected</option>
-          </select>
+          />
+          {reportedVisible ? (
+            <select
+              value={reportedDistributorSlug}
+              onChange={(e) => setReportedDistributorSlug(e.target.value)}
+              style={inputStyle}
+              aria-label="Reported distributor"
+            >
+              <option value="">Any reported distributor</option>
+              {catalog.map((d) => (
+                <option key={d.id} value={d.slug}>
+                  {d.display_name}
+                </option>
+              ))}
+            </select>
+          ) : null}
           <button type="submit" disabled={busy} style={btnStyle}>
             {busy ? "Searching…" : "Search"}
           </button>
         </form>
         {error ? <div style={{ color: "#b91c1c", marginTop: 12 }}>{error}</div> : null}
-        {actionMsg ? <div style={{ color: DIST_COLORS.muted, marginTop: 12 }}>{actionMsg}</div> : null}
         <div style={{ marginTop: 18, display: "grid", gap: 10 }}>
           {rows.map((r) => (
             <div
@@ -116,27 +146,25 @@ export default function DistributorSearchPage() {
                     : ""}
                   {r.restaurant_type ? ` · ${r.restaurant_type}` : ""}
                 </div>
-                <div style={{ fontSize: 12, marginTop: 4 }}>
-                  Status:{" "}
-                  <strong>{r.relationship_status || "none"}</strong>
-                  {r.usage_reported ? " · reported usage" : ""}
-                </div>
+                {reportedVisible && Array.isArray(r.reported_distributors) && r.reported_distributors.length ? (
+                  <div style={{ fontSize: 12, marginTop: 6, color: DIST_COLORS.muted }}>
+                    Reported distributors:{" "}
+                    {r.reported_distributors.map((d) => d.display_name).join(", ")}
+                  </div>
+                ) : null}
               </div>
               <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                 <Link to={`/distributor/restaurants/${r.id}`} style={linkBtn}>
-                  View
+                  View Restaurant
                 </Link>
-                {!r.relationship_status ||
-                ["reported", "declined", "disconnected"].includes(r.relationship_status) ? (
-                  <button type="button" onClick={() => requestConnect(r.id)} style={btnStyle}>
-                    Request
-                  </button>
-                ) : null}
               </div>
             </div>
           ))}
-          {!busy && rows.length === 0 ? (
-            <div style={{ color: DIST_COLORS.muted }}>No results yet. Run a search.</div>
+          {!busy && searched && rows.length === 0 ? (
+            <div style={{ color: DIST_COLORS.muted }}>No restaurants matched this search.</div>
+          ) : null}
+          {!busy && !searched ? (
+            <div style={{ color: DIST_COLORS.muted }}>Enter a search to explore restaurants.</div>
           ) : null}
         </div>
       </PageCard>

@@ -224,6 +224,8 @@ export const listDistributorProfileClaims = () =>
   get("/operator/distributor-profile-claims");
 export const createDistributorProfileClaim = (body) =>
   post("/operator/distributor-profile-claims", body);
+export const attachDistributorProfileClaim = (claimId) =>
+  post("/operator/distributor-profile-claims/attach", { claim_id: claimId });
 
 // ── Restaurant: Onboarding Locations ──────────────────────────────────────
 export const getOwnedLocations = (rid) =>

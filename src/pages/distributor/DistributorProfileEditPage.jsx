@@ -24,6 +24,7 @@ const EMPTY = {
  */
 export default function DistributorProfileEditPage() {
   const [form, setForm] = useState(EMPTY);
+  const [identity, setIdentity] = useState({ display_name: "", slug: "", id: "" });
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -35,6 +36,11 @@ export default function DistributorProfileEditPage() {
       .then((data) => {
         if (cancelled) return;
         const d = data.distributor || {};
+        setIdentity({
+          display_name: d.display_name || "",
+          slug: d.slug || "",
+          id: d.id || "",
+        });
         setForm({
           description: d.description || "",
           website_url: d.website_url || "",
@@ -85,9 +91,30 @@ export default function DistributorProfileEditPage() {
     <DistributorLayout title="Public profile">
       <PageCard>
         <SectionTitle
-          title="Public profile"
-          subtitle="Update information shown on your Menuply distributor page. Canonical identity and restaurant relationships cannot be changed here."
+          title="Profile"
+          subtitle="Update information shown on your Menuply distributor page. Company name and Menuply distributor ID are controlled by Menuply."
         />
+        {identity.display_name ? (
+          <div
+            style={{
+              marginBottom: 14,
+              padding: "12px 14px",
+              borderRadius: 12,
+              border: `1px solid ${DIST_COLORS.line}`,
+              background: "#f8faf8",
+            }}
+          >
+            <div style={{ fontSize: 11, fontWeight: 700, color: DIST_COLORS.muted }}>
+              Company name (locked)
+            </div>
+            <div style={{ fontWeight: 800, marginTop: 4 }}>{identity.display_name}</div>
+            {identity.slug ? (
+              <div style={{ fontSize: 12, color: DIST_COLORS.muted, marginTop: 4 }}>
+                /distributors/{identity.slug}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
         {status ? (
           <p style={{ color: DIST_COLORS.muted, fontWeight: 700, marginTop: 0 }}>
             Status: {status}

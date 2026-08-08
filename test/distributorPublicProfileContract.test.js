@@ -24,12 +24,15 @@ describe("distributor public profile contracts", () => {
     assert.match(app, /DistributorClaimPage/);
     assert.match(app, /DistributorProfileEditPage/);
     assert.match(app, /\/distributor\/login/);
+    assert.match(app, /\/distributor\/account\/signup/);
+    assert.match(app, /\/distributor\/account\/login/);
     assert.match(app, /\/distributor\/profile/);
   });
 
   it("api helper uses shared apiGet / Railway fallback path", () => {
     const api = read("src/lib/api.js");
     assert.match(api, /fetchPublicDistributor/);
+    assert.match(api, /submitPublicDistributorClaim/);
     assert.match(api, /\/public\/distributors\//);
     assert.match(api, /DEFAULT_PROD_API_BASE/);
   });
@@ -48,17 +51,29 @@ describe("distributor public profile contracts", () => {
     assert.match(page, /Visit Website/);
   });
 
-  it("claim page uses operator auth + email verification", () => {
+  it("claim page is public-first with distributor account CTAs", () => {
     const page = read("src/pages/DistributorClaimPage.jsx");
-    assert.match(page, /createDistributorProfileClaim/);
-    assert.match(page, /isEmailVerified/);
-    assert.match(page, /nextPath/);
-    assert.match(page, /\/operator\/login/);
+    assert.match(page, /submitPublicDistributorClaim/);
+    assert.match(page, /no auth required/i);
+    assert.match(page, /\/distributor\/account\/signup/);
+    assert.match(page, /\/distributor\/account\/login/);
+    assert.doesNotMatch(page, /\/operator\/login/);
+    assert.match(page, /Create distributor account/);
   });
 
-  it("operatorApi exposes claim endpoints", () => {
+  it("distributor account screens reuse restaurant email verification path", () => {
+    const signup = read("src/pages/distributor/DistributorAccountSignup.jsx");
+    assert.match(signup, /Create distributor account/);
+    assert.match(signup, /\/operator\/verify-email/);
+    assert.match(signup, /useOperator/);
+    const login = read("src/pages/distributor/DistributorAccountLogin.jsx");
+    assert.match(login, /Distributor sign in/);
+    assert.match(login, /\/operator\/verify-email/);
+  });
+
+  it("operatorApi exposes claim attach endpoint", () => {
     const api = read("src/lib/operatorApi.js");
-    assert.match(api, /createDistributorProfileClaim/);
+    assert.match(api, /attachDistributorProfileClaim/);
     assert.match(api, /\/operator\/distributor-profile-claims/);
   });
 });

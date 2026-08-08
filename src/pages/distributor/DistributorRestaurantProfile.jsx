@@ -1,16 +1,16 @@
 import React, { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import DistributorLayout, { DIST_COLORS, PageCard, SectionTitle } from "./DistributorLayout.jsx";
-import {
-  getDistributorRestaurant,
-  requestRestaurantConnection,
-} from "../../lib/distributorApi.js";
+import { getDistributorRestaurant } from "../../lib/distributorApi.js";
 
+/**
+ * Distributor view of a restaurant — public business identity only.
+ * No Connect / Message CTAs in V1. Reported distributors only when server-gated visible.
+ */
 export default function DistributorRestaurantProfile() {
   const { restaurantId } = useParams();
   const [restaurant, setRestaurant] = useState(null);
   const [error, setError] = useState("");
-  const [msg, setMsg] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -26,24 +26,20 @@ export default function DistributorRestaurantProfile() {
     };
   }, [restaurantId]);
 
-  async function requestConnect() {
-    setMsg("");
-    try {
-      await requestRestaurantConnection(restaurantId);
-      setMsg("Connection request sent.");
-      const data = await getDistributorRestaurant(restaurantId);
-      setRestaurant(data.restaurant);
-    } catch (err) {
-      setMsg(err.message || "Request failed");
-    }
-  }
-
-  const status = restaurant?.relationship?.status;
-  const canRequest =
-    !status || ["reported", "declined", "disconnected"].includes(status);
+  const reportedVisible = restaurant?.reported_usage_visible === true;
+  const reported = Array.isArray(restaurant?.reported_distributors)
+    ? restaurant.reported_distributors
+    : [];
+  const publicProfilePath =
+    restaurant?.public_profile_path ||
+    (restaurant?.slug
+      ? `/restaurants/${restaurant.slug}`
+      : restaurant
+        ? `/restaurants/${restaurant.id}`
+        : null);
 
   return (
-    <DistributorLayout title="Restaurant profile">
+    <DistributorLayout title="Restaurant">
       <PageCard>
         {error ? <div style={{ color: "#b91c1c" }}>{error}</div> : null}
         {!restaurant && !error ? <div>Loading…</div> : null}
@@ -58,50 +54,81 @@ export default function DistributorRestaurantProfile() {
                 .filter(Boolean)
                 .join(" · ")}
               action={
-                <div style={{ display: "flex", gap: 8 }}>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  {publicProfilePath ? (
+                    <a
+                      href={publicProfilePath}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={secondaryBtn}
+                    >
+                      View Restaurant
+                    </a>
+                  ) : null}
                   {restaurant.public_menu_path ? (
                     <a
                       href={restaurant.public_menu_path}
                       target="_blank"
                       rel="noreferrer"
-                      style={secondaryBtn}
-                    >
-                      Public menu
-                    </a>
-                  ) : null}
-                  {canRequest ? (
-                    <button type="button" onClick={requestConnect} style={primaryBtn}>
-                      Request connection
-                    </button>
-                  ) : null}
-                  {status === "connected" ? (
-                    <Link
-                      to={`/distributor/messages/${restaurant.relationship.id}`}
                       style={primaryBtn}
                     >
-                      Message
-                    </Link>
+                      View Menu
+                    </a>
                   ) : null}
                 </div>
               }
             />
-            {msg ? <div style={{ marginBottom: 12, color: DIST_COLORS.muted }}>{msg}</div> : null}
             <dl style={{ display: "grid", gap: 10, margin: 0 }}>
-              <Row label="Relationship" value={status || "none"} />
-              <Row label="Type" value={restaurant.restaurant_type || "—"} />
-              <Row label="Category" value={restaurant.category || "—"} />
+              <Row label="Menuply Restaurant ID" value={restaurant.menuply_public_id || "—"} />
               <Row
-                label="Contact"
+                label="Location"
                 value={
-                  restaurant.contact_visible
-                    ? [restaurant.phone, restaurant.email, restaurant.address_line1]
-                        .filter(Boolean)
-                        .join(" · ") || "—"
-                    : "Visible after connection"
+                  [restaurant.city, restaurant.state, restaurant.postal_code]
+                    .filter(Boolean)
+                    .join(", ") || "—"
                 }
               />
+              <Row label="Restaurant type" value={restaurant.restaurant_type || "—"} />
+              <Row label="Category" value={restaurant.category || restaurant.cuisine_type || "—"} />
               <Row label="Website" value={restaurant.website || "—"} />
             </dl>
+
+            {reportedVisible ? (
+              <div style={{ marginTop: 24 }}>
+                <h3
+                  style={{
+                    margin: "0 0 10px",
+                    fontSize: 14,
+                    fontWeight: 800,
+                    color: DIST_COLORS.ink,
+                  }}
+                >
+                  Reported distributors
+                </h3>
+                <p style={{ margin: "0 0 10px", fontSize: 12, color: DIST_COLORS.muted }}>
+                  Distributors this restaurant explicitly reported during Menuply onboarding.
+                </p>
+                {reported.length ? (
+                  <ul style={{ margin: 0, paddingLeft: 18 }}>
+                    {reported.map((d) => (
+                      <li key={d.slug || d.id || d.display_name} style={{ fontWeight: 600 }}>
+                        {d.display_name}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <div style={{ color: DIST_COLORS.muted, fontSize: 13 }}>
+                    No distributors reported for this restaurant.
+                  </div>
+                )}
+              </div>
+            ) : null}
+
+            <div style={{ marginTop: 24 }}>
+              <Link to="/distributor/restaurants" style={{ color: DIST_COLORS.accent, fontWeight: 700 }}>
+                ← Back to restaurants
+              </Link>
+            </div>
           </>
         ) : null}
       </PageCard>
@@ -122,11 +149,10 @@ const primaryBtn = {
   display: "inline-block",
   border: "none",
   borderRadius: 10,
-  padding: "9px 12px",
+  padding: "10px 14px",
   background: DIST_COLORS.accent,
   color: "#fff",
   fontWeight: 700,
-  cursor: "pointer",
   textDecoration: "none",
   fontFamily: "inherit",
   fontSize: 13,
