@@ -1,6 +1,7 @@
 /**
  * Public distributor profile route + API client contracts.
- * Includes claim CTA / verified badge surface (no fake Connect/offers).
+ * Restaurant-like layout: identity block, claim invite, About/Founded, Updates.
+ * No photos / deals / favorite menu items. No fake Connect/offers.
  */
 
 import assert from "node:assert/strict";
@@ -37,29 +38,49 @@ describe("distributor public profile contracts", () => {
     assert.match(api, /DEFAULT_PROD_API_BASE/);
   });
 
-  it("unclaimed profile shows company identity + claim invite; no fake offers", () => {
+  it("distributorApi exposes profile-updates write helpers", () => {
+    const api = read("src/lib/distributorApi.js");
+    assert.match(api, /listDistributorProfileUpdates/);
+    assert.match(api, /createDistributorProfileUpdate/);
+    assert.match(api, /deleteDistributorProfileUpdate/);
+    assert.match(api, /\/distributor\/profile-updates/);
+  });
+
+  it("unclaimed profile mirrors restaurant shell; identity not repeated later", () => {
     const page = read("src/pages/DistributorPublicPage.jsx");
-    assert.match(page, /has_website/);
-    assert.match(page, /data-distributor-offer-slot/);
+    assert.match(page, /Food Distributor/);
+    assert.match(page, /distributor-identity-block/);
+    assert.match(page, /profile-hero-contact/);
+    assert.match(page, /ProfileAboutFounded/);
+    assert.match(page, /showPhotos=\{false\}/);
+    assert.match(page, /ProfileUpdates/);
     assert.match(page, /show_claim_cta/);
+    assert.match(page, /Is this your company\?/);
+    assert.match(page, /Claim this Profile/);
     assert.match(page, /label: "Unclaimed"/);
     assert.match(page, /label: "Claim Pending"/);
     assert.match(page, /label: "Claimed"/);
     assert.match(page, /label: "Verified"/);
-    assert.match(page, /Is this your company\?/);
-    assert.match(page, /Claim this Profile/);
-    assert.match(page, /addressBlock/);
-    assert.match(page, /Distributor type/);
     assert.match(
       page,
       /Menuply is a new platform dedicated to serving the restaurant industry/
     );
-    assert.doesNotMatch(page, /Not yet claimed/);
-    assert.doesNotMatch(page, /Claim Your Free Profile/);
+    assert.match(page, /data-distributor-offer-slot/);
+    assert.doesNotMatch(page, /Company information/);
+    assert.doesNotMatch(page, /Favorite Menu Items/);
+    assert.doesNotMatch(page, /ProfileDealsSection/);
+    assert.doesNotMatch(page, /ProfilePhotoStrip/);
+    assert.doesNotMatch(page, /Visit Website/);
     assert.doesNotMatch(page, /\$50 off/);
     assert.doesNotMatch(page, /Restaurants reporting/);
-    assert.match(page, /Visit Website/);
-    assert.match(page, /logoFallback/);
+  });
+
+  it("profile editor can post Updates", () => {
+    const page = read("src/pages/distributor/DistributorProfileEditPage.jsx");
+    assert.match(page, /createDistributorProfileUpdate/);
+    assert.match(page, /Publish update/);
+    assert.match(page, /founded_year/);
+    assert.match(page, /About Us/);
   });
 
   it("claim page is public-first with distributor account CTAs", () => {

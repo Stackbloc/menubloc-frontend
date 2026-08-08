@@ -30,6 +30,7 @@ const get = (path) => req(path);
 const post = (path, body) => req(path, { method: "POST", body: JSON.stringify(body || {}) });
 const patch = (path, body) =>
   req(path, { method: "PATCH", body: JSON.stringify(body || {}) });
+const del = (path) => req(path, { method: "DELETE" });
 
 export const getDistributorSession = () => get("/distributor/auth/me");
 export const loginDistributor = (email, password, distributorId = null) =>
@@ -73,3 +74,12 @@ export const postDistributorMessage = (relationshipId, body) =>
 export const getDistributorPublicProfile = () => get("/distributor/profile");
 export const updateDistributorPublicProfile = (body) =>
   patch("/distributor/profile", body);
+
+/** Public profile Updates (posts) */
+export const listDistributorProfileUpdates = () => get("/distributor/profile-updates");
+export const createDistributorProfileUpdate = (body) =>
+  post("/distributor/profile-updates", body);
+export const patchDistributorProfileUpdate = (updateId, body) =>
+  patch(`/distributor/profile-updates/${encodeURIComponent(updateId)}`, body);
+export const deleteDistributorProfileUpdate = (updateId) =>
+  del(`/distributor/profile-updates/${encodeURIComponent(updateId)}`);

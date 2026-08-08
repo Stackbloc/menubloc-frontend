@@ -21,6 +21,10 @@ export default function ProfileAboutFounded({
   claimState = null,
   isMobile = false,
   showClaimInvites = false,
+  /** Distributor public profiles omit the photo strip. */
+  showPhotos = true,
+  aboutBlankMessage = "Tell diners about this restaurant.",
+  foundedBlankMessage = "Add the year or date founded.",
 }) {
   void claimHref;
   void claimState;
@@ -62,7 +66,7 @@ export default function ProfileAboutFounded({
             {about}
           </p>
         ) : showClaimInvites ? (
-          <ProfileSectionBlank testId="profile-about-blank" message="Tell diners about this restaurant." />
+          <ProfileSectionBlank testId="profile-about-blank" message={aboutBlankMessage} />
         ) : null}
 
         <div data-testid="profile-founded">
@@ -74,7 +78,7 @@ export default function ProfileAboutFounded({
               {founded}
             </div>
           ) : showClaimInvites ? (
-            <ProfileSectionBlank testId="profile-founded-blank" message="Add the year or date founded." />
+            <ProfileSectionBlank testId="profile-founded-blank" message={foundedBlankMessage} />
           ) : (
             <div data-testid="profile-founded-empty" style={{ fontSize: 14, color: PROFILE_MUTED }}>
               —
@@ -82,14 +86,16 @@ export default function ProfileAboutFounded({
           )}
         </div>
 
-        <ProfilePhotoStrip
-          name={name}
-          bannerPhotoUrl={bannerPhotoUrl}
-          billboardPreview={billboardPreview}
-          isMobile={isMobile}
-          showClaimInvites={showClaimInvites}
-          embedded
-        />
+        {showPhotos ? (
+          <ProfilePhotoStrip
+            name={name}
+            bannerPhotoUrl={bannerPhotoUrl}
+            billboardPreview={billboardPreview}
+            isMobile={isMobile}
+            showClaimInvites={showClaimInvites}
+            embedded
+          />
+        ) : null}
       </div>
     </section>
   );

@@ -3,6 +3,9 @@ import DistributorLayout, { DIST_COLORS, PageCard, SectionTitle } from "./Distri
 import {
   getDistributorPublicProfile,
   updateDistributorPublicProfile,
+  listDistributorProfileUpdates,
+  createDistributorProfileUpdate,
+  deleteDistributorProfileUpdate,
 } from "../../lib/distributorApi.js";
 
 const EMPTY = {
@@ -16,11 +19,13 @@ const EMPTY = {
   state: "",
   postal_code: "",
   service_area_note: "",
+  founded_year: "",
 };
 
 /**
  * Edit permitted public profile fields after claim acceptance.
  * Cannot change canonical distributor id / slug / onboarding relationships.
+ * Updates posts appear on the public /distributors/:slug page.
  */
 export default function DistributorProfileEditPage() {
   const [form, setForm] = useState(EMPTY);
@@ -29,11 +34,21 @@ export default function DistributorProfileEditPage() {
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const [updates, setUpdates] = useState([]);
+  const [postTitle, setPostTitle] = useState("");
+  const [postBody, setPostBody] = useState("");
+  const [posting, setPosting] = useState(false);
+  const [postError, setPostError] = useState("");
+
+  async function reloadUpdates() {
+    const data = await listDistributorProfileUpdates();
+    setUpdates(Array.isArray(data.updates) ? data.updates : []);
+  }
 
   useEffect(() => {
     let cancelled = false;
-    getDistributorPublicProfile()
-      .then((data) => {
+    Promise.all([getDistributorPublicProfile(), listDistributorProfileUpdates().catch(() => ({ updates: [] }))])
+      .then(([data, updatesData]) => {
         if (cancelled) return;
         const d = data.distributor || {};
         setIdentity({
@@ -52,8 +67,10 @@ export default function DistributorProfileEditPage() {
           state: d.state || "",
           postal_code: d.postal_code || "",
           service_area_note: d.service_area_note || "",
+          founded_year: d.founded_year != null ? String(d.founded_year) : "",
         });
         setStatus(d.profile_claim_status || "");
+        setUpdates(Array.isArray(updatesData.updates) ? updatesData.updates : []);
         setLoaded(true);
       })
       .catch((err) => {
@@ -73,7 +90,11 @@ export default function DistributorProfileEditPage() {
     setSaving(true);
     setError("");
     try {
-      const data = await updateDistributorPublicProfile(form);
+      const payload = {
+        ...form,
+        founded_year: form.founded_year === "" ? null : form.founded_year,
+      };
+      const data = await updateDistributorPublicProfile(payload);
       const d = data.distributor || {};
       setStatus(d.profile_claim_status || status);
       setError("");
@@ -82,6 +103,35 @@ export default function DistributorProfileEditPage() {
       setError(err.message || "Save failed");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleCreatePost(e) {
+    e.preventDefault();
+    setPosting(true);
+    setPostError("");
+    try {
+      await createDistributorProfileUpdate({
+        title: postTitle,
+        body: postBody,
+      });
+      setPostTitle("");
+      setPostBody("");
+      await reloadUpdates();
+    } catch (err) {
+      setPostError(err.message || "Could not publish update");
+    } finally {
+      setPosting(false);
+    }
+  }
+
+  async function handleDeletePost(updateId) {
+    if (!window.confirm("Remove this update from your public profile?")) return;
+    try {
+      await deleteDistributorProfileUpdate(updateId);
+      await reloadUpdates();
+    } catch (err) {
+      setPostError(err.message || "Could not delete update");
     }
   }
 
@@ -132,7 +182,8 @@ export default function DistributorProfileEditPage() {
         ) : (
           <form onSubmit={handleSave} style={{ display: "grid", gap: 12, maxWidth: 520 }}>
             {[
-              ["description", "Description", "textarea"],
+              ["description", "About Us", "textarea"],
+              ["founded_year", "Founded (year)", "text"],
               ["website_url", "Website URL", "text"],
               ["logo_url", "Logo URL", "text"],
               ["phone", "Public phone", "text"],
@@ -157,6 +208,7 @@ export default function DistributorProfileEditPage() {
                     value={form[key]}
                     onChange={(e) => setField(key, e.target.value)}
                     style={inputStyle}
+                    inputMode={key === "founded_year" ? "numeric" : undefined}
                   />
                 )}
               </label>
@@ -181,6 +233,106 @@ export default function DistributorProfileEditPage() {
           </form>
         )}
       </PageCard>
+
+      {canEdit ? (
+        <PageCard>
+          <SectionTitle
+            title="Updates"
+            subtitle="Posts appear on your public distributor profile. Keep them short and useful for restaurants."
+          />
+          {postError ? (
+            <div style={{ color: "#b91c1c", marginBottom: 12 }}>{postError}</div>
+          ) : null}
+          <form onSubmit={handleCreatePost} style={{ display: "grid", gap: 10, maxWidth: 520 }}>
+            <label style={{ display: "grid", gap: 4, fontWeight: 700, fontSize: 13 }}>
+              Title
+              <input
+                value={postTitle}
+                onChange={(e) => setPostTitle(e.target.value)}
+                style={inputStyle}
+                required
+                maxLength={160}
+              />
+            </label>
+            <label style={{ display: "grid", gap: 4, fontWeight: 700, fontSize: 13 }}>
+              Body (optional)
+              <textarea
+                rows={3}
+                value={postBody}
+                onChange={(e) => setPostBody(e.target.value)}
+                style={inputStyle}
+                maxLength={2000}
+              />
+            </label>
+            <button
+              type="submit"
+              disabled={posting || !postTitle.trim()}
+              style={{
+                padding: "12px 16px",
+                borderRadius: 999,
+                border: "none",
+                background: DIST_COLORS.accent || "#15803d",
+                color: "#fff",
+                fontWeight: 800,
+                cursor: "pointer",
+                width: "fit-content",
+              }}
+            >
+              {posting ? "Publishing…" : "Publish update"}
+            </button>
+          </form>
+
+          <ul
+            style={{
+              listStyle: "none",
+              margin: "20px 0 0",
+              padding: 0,
+              display: "grid",
+              gap: 10,
+              maxWidth: 560,
+            }}
+          >
+            {updates.length === 0 ? (
+              <li style={{ color: DIST_COLORS.muted, fontSize: 14 }}>No updates yet.</li>
+            ) : (
+              updates.map((u) => (
+                <li
+                  key={u.id}
+                  style={{
+                    padding: "12px 14px",
+                    borderRadius: 12,
+                    border: `1px solid ${DIST_COLORS.line}`,
+                    background: "#fff",
+                  }}
+                >
+                  <div style={{ fontWeight: 800, fontSize: 15 }}>{u.title}</div>
+                  {u.body ? (
+                    <div style={{ marginTop: 4, fontSize: 13, color: DIST_COLORS.muted }}>
+                      {u.body}
+                    </div>
+                  ) : null}
+                  <button
+                    type="button"
+                    onClick={() => handleDeletePost(u.id)}
+                    style={{
+                      marginTop: 10,
+                      border: "none",
+                      background: "transparent",
+                      color: "#b91c1c",
+                      fontWeight: 700,
+                      fontSize: 13,
+                      cursor: "pointer",
+                      padding: 0,
+                    }}
+                  >
+                    Remove
+                  </button>
+                </li>
+              ))
+            )}
+          </ul>
+        </PageCard>
+      ) : null}
     </DistributorLayout>
   );
 }
