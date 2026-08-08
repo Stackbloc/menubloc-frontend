@@ -162,22 +162,47 @@ export default function DistributorPublicPage() {
   }
 
   const d = distributor;
+  const claimStatus = String(d.profile_claim_status || "UNCLAIMED").toUpperCase();
+  const statusBadge =
+    claimStatus === "VERIFIED"
+      ? { label: "Verified", style: styles.verifiedBadge }
+      : claimStatus === "CLAIMED"
+        ? { label: "Claimed", style: styles.claimedBadge }
+        : claimStatus === "CLAIM_PENDING"
+          ? { label: "Claim Pending", style: styles.pendingBadge }
+          : { label: "Unclaimed", style: styles.unclaimedBadge };
+
+  const cityStateZip = [
+    [d.city, d.state].filter(Boolean).join(", "),
+    d.postal_code,
+  ]
+    .filter(Boolean)
+    .join(" ");
+  const hasAddress = Boolean(d.address_line1 || cityStateZip);
+
   const infoRows = [
-    d.website_url ? { label: "Website", value: d.website_url, href: d.website_url } : null,
-    d.phone ? { label: "Phone", value: d.phone, href: `tel:${d.phone.replace(/[^\d+]/g, "")}` } : null,
-    [d.address_line1, d.city, d.state, d.postal_code].filter(Boolean).length
+    d.category_label
+      ? { label: "Distributor type", value: d.category_label }
+      : null,
+    d.website_url
+      ? { label: "Website", value: d.website_url, href: d.website_url }
+      : null,
+    d.phone
       ? {
-          label: "Address",
-          value: [d.address_line1, [d.city, d.state].filter(Boolean).join(", "), d.postal_code]
-            .filter(Boolean)
-            .join(" · "),
+          label: "Phone",
+          value: d.phone,
+          href: `tel:${d.phone.replace(/[^\d+]/g, "")}`,
         }
       : null,
+    d.email
+      ? { label: "Email", value: d.email, href: `mailto:${d.email}` }
+      : null,
+    d.has_service_area
+      ? { label: "Service area", value: d.service_area_note }
+      : null,
   ].filter(Boolean);
-  const aboutText =
-    d.description ||
-    d.short_note ||
-    `${d.display_name} is a foodservice distributor recognized on Menuply.`;
+
+  const aboutText = d.description || d.short_note || null;
 
   return (
     <div style={styles.page}>
@@ -196,19 +221,21 @@ export default function DistributorPublicPage() {
           )}
           <p style={styles.eyebrow}>{d.category_label || "Foodservice Distributor"}</p>
           <h1 style={styles.title}>{d.display_name}</h1>
-          {d.is_verified ? (
-            <div style={styles.verifiedBadge}>✓ Verified Distributor</div>
-          ) : d.is_unclaimed ? (
-            <div style={styles.unclaimedBadge}>Unclaimed</div>
-          ) : d.is_claimed ? (
-            <div style={styles.claimedBadge}>Claimed</div>
+          <div style={statusBadge.style}>{statusBadge.label}</div>
+
+          {hasAddress ? (
+            <address style={styles.addressBlock}>
+              {d.address_line1 ? <div>{d.address_line1}</div> : null}
+              {cityStateZip ? <div>{cityStateZip}</div> : null}
+            </address>
           ) : null}
+
           {d.has_website ? (
             <a
               href={d.website_url}
               target="_blank"
               rel="noopener noreferrer"
-              style={{ ...styles.primaryCta, marginTop: 14, display: "inline-block" }}
+              style={{ ...styles.primaryCta, marginTop: 16, display: "inline-block" }}
             >
               Visit Website
             </a>
@@ -222,13 +249,9 @@ export default function DistributorPublicPage() {
           style={{ display: "none" }}
         />
 
-        <Section title="About">
-          <p style={styles.body}>{aboutText}</p>
-        </Section>
-
-        {d.has_service_area ? (
-          <Section title="Serving">
-            <p style={styles.body}>{d.service_area_note}</p>
+        {aboutText ? (
+          <Section title="About">
+            <p style={styles.body}>{aboutText}</p>
           </Section>
         ) : null}
 
@@ -240,7 +263,16 @@ export default function DistributorPublicPage() {
                   <dt style={styles.dt}>{row.label}</dt>
                   <dd style={styles.dd}>
                     {row.href ? (
-                      <a href={row.href} target={row.href.startsWith("http") ? "_blank" : undefined} rel={row.href.startsWith("http") ? "noopener noreferrer" : undefined} style={styles.textLink}>
+                      <a
+                        href={row.href}
+                        target={row.href.startsWith("http") ? "_blank" : undefined}
+                        rel={
+                          row.href.startsWith("http")
+                            ? "noopener noreferrer"
+                            : undefined
+                        }
+                        style={styles.textLink}
+                      >
                         {row.value}
                       </a>
                     ) : (
@@ -255,7 +287,7 @@ export default function DistributorPublicPage() {
 
         {d.show_claim_cta ? (
           <section style={{ ...styles.section, ...styles.claimPanel }}>
-            <h2 style={styles.sectionTitle}>Claim your free profile</h2>
+            <h2 style={styles.sectionTitle}>Is this your company?</h2>
             <p style={styles.body}>
               Menuply is a new platform dedicated to serving the restaurant industry
               and the diners they serve. Distributors play a critical role in that
@@ -270,10 +302,10 @@ export default function DistributorPublicPage() {
                 to={`/distributors/${d.slug}/claim`}
                 style={styles.claimCta}
               >
-                Claim Your Free Profile
+                Claim this Profile
               </Link>
             </div>
-            {d.profile_claim_status === "CLAIM_PENDING" ? (
+            {claimStatus === "CLAIM_PENDING" ? (
               <p style={{ ...styles.muted, marginTop: 12 }}>
                 A claim is currently under review for this profile.
               </p>
@@ -284,14 +316,12 @@ export default function DistributorPublicPage() {
         {/* Reserved for future Distributor → Restaurants relationship module */}
         <div data-distributor-connect-slot="true" aria-hidden="true" style={{ display: "none" }} />
 
-        {d.is_claimed ? (
+        {d.is_claimed && !d.show_claim_cta ? (
           <Section title="Menuply">
             {d.is_verified ? (
               <p style={styles.body}>✓ Verified Distributor on Menuply.</p>
             ) : (
-              <p style={styles.body}>
-                This profile has been claimed on Menuply.
-              </p>
+              <p style={styles.body}>This profile has been claimed on Menuply.</p>
             )}
             <div style={styles.ctaRow}>
               <Link to="/distributor/login" style={styles.secondaryCta}>
@@ -357,6 +387,14 @@ const styles = {
     fontWeight: 900,
     letterSpacing: "-0.03em",
     lineHeight: 1.15,
+  },
+  addressBlock: {
+    marginTop: 14,
+    fontStyle: "normal",
+    fontSize: 15,
+    lineHeight: 1.5,
+    color: "#334155",
+    fontWeight: 600,
   },
   section: {
     marginBottom: 28,
@@ -456,6 +494,16 @@ const styles = {
     borderRadius: 999,
     background: "#f1f5f9",
     color: "#475569",
+    fontWeight: 800,
+    fontSize: 13,
+  },
+  pendingBadge: {
+    display: "inline-block",
+    marginTop: 8,
+    padding: "6px 12px",
+    borderRadius: 999,
+    background: "#fff7ed",
+    color: "#c2410c",
     fontWeight: 800,
     fontSize: 13,
   },

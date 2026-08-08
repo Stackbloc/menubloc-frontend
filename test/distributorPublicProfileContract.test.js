@@ -42,20 +42,20 @@ describe("distributor public profile contracts", () => {
     assert.match(page, /has_website/);
     assert.match(page, /data-distributor-offer-slot/);
     assert.match(page, /show_claim_cta/);
-    assert.match(page, /Unclaimed/);
-    assert.match(page, />Claimed</);
-    assert.match(page, /Claim Your Free Profile/);
+    assert.match(page, /label: "Unclaimed"/);
+    assert.match(page, /label: "Claim Pending"/);
+    assert.match(page, /label: "Claimed"/);
+    assert.match(page, /label: "Verified"/);
+    assert.match(page, /Is this your company\?/);
+    assert.match(page, /Claim this Profile/);
+    assert.match(page, /addressBlock/);
+    assert.match(page, /Distributor type/);
     assert.match(
       page,
       /Menuply is a new platform dedicated to serving the restaurant industry/
     );
-    assert.match(
-      page,
-      /Claim your free distributor profile to establish your presence on[\s\S]*Menuply/
-    );
-    assert.match(page, /Verified Distributor/);
     assert.doesNotMatch(page, /Not yet claimed/);
-    assert.doesNotMatch(page, /Claim this Profile/);
+    assert.doesNotMatch(page, /Claim Your Free Profile/);
     assert.doesNotMatch(page, /\$50 off/);
     assert.doesNotMatch(page, /Restaurants reporting/);
     assert.match(page, /Visit Website/);
