@@ -219,6 +219,12 @@ export const postOperatorDistributorMessage = (rid, relationshipId, body) =>
     body,
   });
 
+// ── Distributor public profile claims ─────────────────────────────────────
+export const listDistributorProfileClaims = () =>
+  get("/operator/distributor-profile-claims");
+export const createDistributorProfileClaim = (body) =>
+  post("/operator/distributor-profile-claims", body);
+
 // ── Restaurant: Onboarding Locations ──────────────────────────────────────
 export const getOwnedLocations = (rid) =>
   get(`/operator/restaurants/${rid}/onboarding/locations`);

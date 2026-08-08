@@ -28,6 +28,8 @@ async function req(path, opts = {}) {
 
 const get = (path) => req(path);
 const post = (path, body) => req(path, { method: "POST", body: JSON.stringify(body || {}) });
+const patch = (path, body) =>
+  req(path, { method: "PATCH", body: JSON.stringify(body || {}) });
 
 export const getDistributorSession = () => get("/distributor/auth/me");
 export const loginDistributor = (email, password, distributorId = null) =>
@@ -64,3 +66,8 @@ export const getDistributorMessages = (relationshipId) =>
   get(`/distributor/relationships/${relationshipId}/messages`);
 export const postDistributorMessage = (relationshipId, body) =>
   post(`/distributor/relationships/${relationshipId}/messages`, { body });
+
+/** Claimed-distributor public profile editor */
+export const getDistributorPublicProfile = () => get("/distributor/profile");
+export const updateDistributorPublicProfile = (body) =>
+  patch("/distributor/profile", body);

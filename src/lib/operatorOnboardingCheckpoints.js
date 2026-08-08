@@ -388,6 +388,10 @@ export function resolveOperatorResumePath(restaurant, preferredNextPath) {
       if (preferred === "/operator" || preferred.startsWith("/operator/")) {
         return preferred;
       }
+      // Allow return to public distributor claim after operator sign-in.
+      if (/^\/distributors\/[a-z0-9-]+\/claim\/?$/i.test(preferred)) {
+        return preferred;
+      }
     }
     return "/operator";
   }

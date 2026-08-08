@@ -186,12 +186,19 @@ export default function DistributorPublicPage() {
           ) : null}
           <p style={styles.eyebrow}>{d.category_label}</p>
           <h1 style={styles.title}>{d.display_name}</h1>
+          {d.is_verified ? (
+            <div style={styles.verifiedBadge}>✓ Verified Distributor</div>
+          ) : d.is_unclaimed ? (
+            <div style={styles.unclaimedBadge}>Not yet claimed</div>
+          ) : d.is_claimed ? (
+            <div style={styles.claimedBadge}>Claimed on Menuply</div>
+          ) : null}
           {d.has_website ? (
             <a
               href={d.website_url}
               target="_blank"
               rel="noopener noreferrer"
-              style={styles.primaryCta}
+              style={{ ...styles.primaryCta, marginTop: 14, display: "inline-block" }}
             >
               Visit Website
             </a>
@@ -238,21 +245,48 @@ export default function DistributorPublicPage() {
           </Section>
         ) : null}
 
-        <Section title={`Connect with ${d.display_name} on Menuply`}>
-          <p style={styles.body}>
-            Restaurant operators manage distributor connection requests and
-            relationships from their Menuply account. Distributors use the
-            Menuply distributor portal to send connection requests.
-          </p>
-          <div style={styles.ctaRow}>
-            <Link to="/operator/distributor-relationships" style={styles.primaryCta}>
-              Restaurant operator relationships
-            </Link>
-            <Link to="/distributor/login" style={styles.secondaryCta}>
-              Distributor sign in
-            </Link>
-          </div>
-        </Section>
+        {d.show_claim_cta ? (
+          <Section title="Is this your company?">
+            <p style={styles.body}>
+              Claim this profile to manage your Menuply presence. Claiming
+              requires a verified Menuply business account and Menuply review.
+            </p>
+            <div style={styles.ctaRow}>
+              <Link
+                to={`/distributors/${d.slug}/claim`}
+                style={styles.primaryCta}
+              >
+                Claim this Profile
+              </Link>
+            </div>
+            {d.profile_claim_status === "CLAIM_PENDING" ? (
+              <p style={{ ...styles.muted, marginTop: 12 }}>
+                A claim is currently under review for this profile.
+              </p>
+            ) : null}
+          </Section>
+        ) : null}
+
+        {/* Reserved for future connection / offer modules */}
+        <div data-distributor-connect-slot="true" aria-hidden="true" style={{ display: "none" }} />
+
+        {d.is_claimed ? (
+          <Section title="Menuply">
+            {d.is_verified ? (
+              <p style={styles.body}>✓ Verified Distributor on Menuply.</p>
+            ) : (
+              <p style={styles.body}>
+                This profile has been claimed. Verification is a separate Menuply
+                review step.
+              </p>
+            )}
+            <div style={styles.ctaRow}>
+              <Link to="/distributor/login" style={styles.secondaryCta}>
+                Distributor sign in
+              </Link>
+            </div>
+          </Section>
+        ) : null}
       </main>
       <BottomNav />
     </div>
@@ -363,5 +397,35 @@ const styles = {
     color: "#15803d",
     fontWeight: 700,
     textDecoration: "none",
+  },
+  verifiedBadge: {
+    display: "inline-block",
+    marginTop: 8,
+    padding: "6px 12px",
+    borderRadius: 999,
+    background: "#ecfdf5",
+    color: "#047857",
+    fontWeight: 800,
+    fontSize: 13,
+  },
+  unclaimedBadge: {
+    display: "inline-block",
+    marginTop: 8,
+    padding: "6px 12px",
+    borderRadius: 999,
+    background: "#f1f5f9",
+    color: "#475569",
+    fontWeight: 800,
+    fontSize: 13,
+  },
+  claimedBadge: {
+    display: "inline-block",
+    marginTop: 8,
+    padding: "6px 12px",
+    borderRadius: 999,
+    background: "#eff6ff",
+    color: "#1d4ed8",
+    fontWeight: 800,
+    fontSize: 13,
   },
 };

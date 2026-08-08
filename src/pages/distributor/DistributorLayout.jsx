@@ -58,6 +58,7 @@ const NAV_SECTIONS = [
     label: "Network",
     items: [
       { to: "/distributor", label: "Dashboard", end: true },
+      { to: "/distributor/profile", label: "Public profile" },
       { to: "/distributor/search", label: "Search restaurants" },
       { to: "/distributor/connected", label: "Connected" },
       { to: "/distributor/pending", label: "Pending requests" },
