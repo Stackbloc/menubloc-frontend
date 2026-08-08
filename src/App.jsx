@@ -187,6 +187,7 @@ import ClusterCityDirectoryPage from "./pages/ClusterCityDirectoryPage.jsx";
 import CommunityClusterCreatePage from "./pages/CommunityClusterCreatePage.jsx";
 import DestinationVenueFoodPage from "./pages/DestinationVenueFoodPage.jsx";
 import DestinationVenuePage from "./pages/DestinationVenuePage.jsx";
+import DestinationVenueOrderPage from "./pages/DestinationVenueOrderPage.jsx";
 import MarketMenuItemPage from "./pages/MarketMenuItemPage.jsx";
 import MenuItemCanonicalRoute from "./pages/MenuItemCanonicalRoute.jsx";
 import MenuThemesPage from "./pages/MenuThemesPage.jsx";
@@ -681,6 +682,10 @@ function AppShell({ easyMenu, crmHost }) {
         <Route
           path="/destination-venues/:slug/food"
           element={crmHost ? <HostRouteRedirect to="/crm" /> : <DestinationVenueFoodPage />}
+        />
+        <Route
+          path="/destination-venues/:slug/order"
+          element={crmHost ? <HostRouteRedirect to="/crm" /> : <DestinationVenueOrderPage />}
         />
         <Route
           path="/destination-venues/:slug"

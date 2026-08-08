@@ -1,8 +1,9 @@
-import { apiGet } from "./api.js";
+import { apiGet, apiPost } from "./api.js";
 
 /**
- * Public destination venue food inventory (Phase 4).
+ * Public destination venue food inventory (Phase 4) + seat-delivery order requests (Phase 5).
  * Uses API_BASE from api.js — never same-origin /public paths alone.
+ * Order requests do NOT use Stripe / create-payment-intent.
  */
 
 export async function fetchDestinationVenue(slug, { signal } = {}) {
@@ -65,4 +66,42 @@ export function formatStadiumPrice(price, priceAvailable) {
 /** Consumer copy for null/unknown price — never invent a number. */
 export function stadiumPriceLabel(price, priceAvailable) {
   return formatStadiumPrice(price, priceAvailable) || "Price unavailable";
+}
+
+export async function fetchDestinationVenueDeliveryFee(slug, { signal } = {}) {
+  return apiGet(
+    `/public/destination-venues/${encodeURIComponent(slug)}/delivery-fee`,
+    { signal }
+  );
+}
+
+export async function createDestinationVenueOrderRequest(
+  slug,
+  body,
+  { signal } = {}
+) {
+  return apiPost(
+    `/public/destination-venues/${encodeURIComponent(slug)}/order-requests`,
+    body,
+    { signal }
+  );
+}
+
+export async function fetchDestinationVenueOrderRequest(
+  slug,
+  publicOrderNumber,
+  { signal } = {}
+) {
+  return apiGet(
+    `/public/destination-venues/${encodeURIComponent(slug)}/order-requests/${encodeURIComponent(publicOrderNumber)}`,
+    { signal }
+  );
+}
+
+export function formatCents(cents) {
+  if (cents == null || !Number.isFinite(Number(cents))) return null;
+  return (Number(cents) / 100).toLocaleString("en-US", {
+    style: "currency",
+    currency: "USD",
+  });
 }

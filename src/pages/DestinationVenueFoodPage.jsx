@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Link, useParams, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import BottomNav from "../components/BottomNav.jsx";
 import {
   fetchDestinationVenueInventory,
@@ -8,6 +8,11 @@ import {
   formatStadiumPrice,
   searchDestinationVenueMenuItems,
 } from "../lib/destinationVenueApi.js";
+import {
+  addStadiumCartItem,
+  loadStadiumCart,
+  stadiumCartItemCount,
+} from "../lib/stadiumOrderCart.js";
 
 const CATEGORY_CHIPS = [
   { id: "pizza", label: "Pizza", q: "pizza" },
@@ -182,9 +187,22 @@ const css = {
     marginTop: 16,
     fontSize: 16,
     fontWeight: 800,
-    background: "rgba(255,255,255,0.08)",
-    color: "rgba(242,245,247,0.45)",
-    cursor: "not-allowed",
+    background: "#3dd68c",
+    color: "#0b1a12",
+    cursor: "pointer",
+  },
+  cartChip: {
+    display: "inline-flex",
+    alignItems: "center",
+    minHeight: 40,
+    borderRadius: 999,
+    padding: "0 12px",
+    marginLeft: 8,
+    background: "rgba(61,214,140,0.18)",
+    color: "#3dd68c",
+    fontWeight: 800,
+    fontSize: 13,
+    textDecoration: "none",
   },
   empty: {
     textAlign: "center",
@@ -256,12 +274,17 @@ function PriceLine({ price, priceAvailable }) {
 
 export default function DestinationVenueFoodPage() {
   const { slug } = useParams();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const vendorSlugParam = searchParams.get("vendor") || "";
   const itemIdParam = searchParams.get("item") || "";
   const tab = searchParams.get("tab") === "vendors" ? "vendors" : "search";
 
   const [inventory, setInventory] = useState(null);
+  const [cartCount, setCartCount] = useState(() =>
+    stadiumCartItemCount(loadStadiumCart(slug))
+  );
+  const [orderMsg, setOrderMsg] = useState("");
   const [q, setQ] = useState(searchParams.get("q") || "");
   const [debouncedQ, setDebouncedQ] = useState(q);
   const [items, setItems] = useState([]);
@@ -483,6 +506,29 @@ export default function DestinationVenueFoodPage() {
     patchParams((p) => p.set("q", chip.q));
   }
 
+  function addItemToOrder(item) {
+    setOrderMsg("");
+    const result = addStadiumCartItem(slug, {
+      item,
+      vendor: {
+        id: item.vendor_id,
+        slug: item.vendor_slug,
+        name: item.vendor_name,
+      },
+      quantity: 1,
+    });
+    if (!result.ok) {
+      setOrderMsg(result.error || "Could not add item");
+      return;
+    }
+    setCartCount(stadiumCartItemCount(result.cart));
+    navigate(`/destination-venues/${encodeURIComponent(slug)}/order?step=cart`);
+  }
+
+  useEffect(() => {
+    setCartCount(stadiumCartItemCount(loadStadiumCart(slug)));
+  }, [slug]);
+
   if (loading) {
     return (
       <div style={css.page}>
@@ -545,9 +591,19 @@ export default function DestinationVenueFoodPage() {
                 ) : null}
               </div>
             ) : null}
-            <button type="button" style={css.orderBtn} disabled>
-              Order — Coming soon
+            {orderMsg ? (
+              <p style={{ ...css.meta, color: "#fecaca", marginTop: 12 }}>{orderMsg}</p>
+            ) : null}
+            <button
+              type="button"
+              style={css.orderBtn}
+              onClick={() => addItemToOrder(itemDetail)}
+            >
+              Add to order
             </button>
+            <p style={{ ...css.meta, marginTop: 8, textAlign: "center" }}>
+              Demo seat delivery — no payment collected
+            </p>
           </div>
         </main>
         <BottomNav />
@@ -616,12 +672,22 @@ export default function DestinationVenueFoodPage() {
   return (
     <div style={css.page}>
       <header style={css.sticky}>
-        <Link
-          to={`/destination-venues/${encodeURIComponent(slug)}`}
-          style={{ ...css.ghostBtn, marginBottom: 8 }}
-        >
-          ← {venue.name}
-        </Link>
+        <div style={{ display: "flex", alignItems: "center", marginBottom: 8 }}>
+          <Link
+            to={`/destination-venues/${encodeURIComponent(slug)}`}
+            style={css.ghostBtn}
+          >
+            ← {venue.name}
+          </Link>
+          {cartCount > 0 ? (
+            <Link
+              to={`/destination-venues/${encodeURIComponent(slug)}/order`}
+              style={css.cartChip}
+            >
+              Order · {cartCount}
+            </Link>
+          ) : null}
+        </div>
         <h1 style={css.title}>{venue.name}</h1>
         <p style={css.prompt}>What are you looking for?</p>
         <div style={css.searchWrap}>
