@@ -6,6 +6,15 @@ import { apiGet, apiPost } from "./api.js";
  * Order requests do NOT use Stripe / create-payment-intent.
  */
 
+export async function fetchDestinationVenueDirectory(
+  { league = "nfl", signal } = {}
+) {
+  const params = new URLSearchParams();
+  if (league) params.set("league", league);
+  const qs = params.toString();
+  return apiGet(`/public/destination-venues${qs ? `?${qs}` : ""}`, { signal });
+}
+
 export async function fetchDestinationVenue(slug, { signal } = {}) {
   return apiGet(`/public/destination-venues/${encodeURIComponent(slug)}`, { signal });
 }
