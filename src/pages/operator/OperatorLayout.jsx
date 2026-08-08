@@ -320,6 +320,12 @@ export default function OperatorLayout({ title, children }) {
                 icon: "☷",
                 end: true,
               },
+              {
+                to: "/operator/feedback",
+                label: t("operator.nav.feedback", "Feedback"),
+                icon: "★",
+                end: true,
+              },
             ],
           },
         ],

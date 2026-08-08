@@ -53,6 +53,7 @@ import ConsumerForgotPassword from "./pages/consumer/ConsumerForgotPassword.jsx"
 import ConsumerResetPassword from "./pages/consumer/ConsumerResetPassword.jsx";
 import ConsumerProfile from "./pages/consumer/ConsumerProfile.jsx";
 import ConsumerFollowing from "./pages/consumer/ConsumerFollowing.jsx";
+import ConsumerOrderFeedbackPage from "./pages/consumer/ConsumerOrderFeedbackPage.jsx";
 import ProviderApp from "./pages/provider/ProviderApp.jsx";
 import AccountWelcome from "./pages/consumer/AccountWelcome.jsx";
 import OperatorLogin from "./pages/operator/OperatorLogin.jsx";
@@ -63,6 +64,7 @@ import OperatorResetPassword from "./pages/operator/OperatorResetPassword.jsx";
 import OperatorDashboard from "./pages/operator/OperatorDashboard.jsx";
 import OperatorDeliveryPage from "./pages/operator/OperatorDeliveryPage.jsx";
 import RestaurantOrdersPage from "./pages/operator/RestaurantOrdersPage.jsx";
+import OperatorOrderFeedbackPage from "./pages/operator/OperatorOrderFeedbackPage.jsx";
 import RestaurantOrderDetailPage from "./pages/operator/RestaurantOrderDetailPage.jsx";
 import OperatorTabletPage from "./pages/operator/OperatorTabletPage.jsx";
 import OperatorMenuEditor from "./pages/operator/OperatorMenuEditor.jsx";
@@ -787,6 +789,7 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/account" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ConsumerProfile />} />
         <Route path="/account/welcome" element={crmHost ? <HostRouteRedirect to="/crm" /> : <AccountWelcome />} />
         <Route path="/account/following" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ConsumerFollowing />} />
+        <Route path="/account/feedback" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ConsumerOrderFeedbackPage />} />
 
         <Route path="/provider/*" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ProviderApp />} />
 
@@ -800,6 +803,7 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/operator/tablet" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorTabletPage /></OperatorRoute>} />
         <Route path="/operator/orders" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><RestaurantOrdersPage /></OperatorRoute>} />
         <Route path="/operator/orders/:orderId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><RestaurantOrderDetailPage /></OperatorRoute>} />
+        <Route path="/operator/feedback" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorOrderFeedbackPage /></OperatorRoute>} />
         <Route path="/operator/merchant" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorMerchantAccountPage /></OperatorRoute>} />
         <Route path="/operator/delivery" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorDeliveryPage /></OperatorRoute>} />
         <Route path="/operator/help" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><RestaurantHelpCenter /></OperatorRoute>} />

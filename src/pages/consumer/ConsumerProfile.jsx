@@ -366,6 +366,16 @@ export default function ConsumerProfile() {
       <div style={styles.pageInner}>
         <h1 style={styles.pageTitle}>Account Settings</h1>
 
+        <Section title="Send Feedback">
+          <p style={styles.sectionDesc}>
+            Tell a restaurant privately how a recent Menuply order went. You can
+            send feedback anytime within 45 days of a completed order.
+          </p>
+          <Link to="/account/feedback" style={styles.followingLink}>
+            Send Feedback
+          </Link>
+        </Section>
+
         <Section title="Following">
           <p style={styles.sectionDesc}>
             See the restaurants you follow and remove them from one place.

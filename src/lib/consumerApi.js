@@ -9,7 +9,12 @@
 
 import { appendLanguageParam, readStoredLanguage, withLanguageHeaders } from "./languageApi.js";
 
-const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
+const VITE_ENV = import.meta.env || {};
+const DEFAULT_PROD_API_BASE = "https://menubloc-backend-production.up.railway.app";
+const API = (
+  VITE_ENV.VITE_API_BASE_URL ||
+  (VITE_ENV.DEV ? "http://localhost:3001" : DEFAULT_PROD_API_BASE)
+).replace(/\/$/, "");
 
 async function req(path, opts = {}) {
   const language = opts.language || readStoredLanguage();
@@ -92,3 +97,10 @@ export const likeMenuItem = (menuItemId) =>
   post(`/api/consumer/menu-item-likes/${encodeURIComponent(String(menuItemId))}`, {});
 export const unlikeMenuItem = (menuItemId) =>
   del(`/api/consumer/menu-item-likes/${encodeURIComponent(String(menuItemId))}`);
+
+// ── Private order feedback ────────────────────────────────────────────────
+export const getEligibleOrderFeedback = () =>
+  get("/api/consumer/order-feedback/eligible");
+export const getMyOrderFeedback = () => get("/api/consumer/order-feedback");
+export const submitOrderFeedback = (body) =>
+  post("/api/consumer/order-feedback", body);
