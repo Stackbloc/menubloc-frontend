@@ -185,6 +185,8 @@ import ClusterPage from "./pages/ClusterPage.jsx";
 import ClustersDirectoryPage from "./pages/ClustersDirectoryPage.jsx";
 import ClusterCityDirectoryPage from "./pages/ClusterCityDirectoryPage.jsx";
 import CommunityClusterCreatePage from "./pages/CommunityClusterCreatePage.jsx";
+import DestinationVenueFoodPage from "./pages/DestinationVenueFoodPage.jsx";
+import DestinationVenuePage from "./pages/DestinationVenuePage.jsx";
 import MarketMenuItemPage from "./pages/MarketMenuItemPage.jsx";
 import MenuItemCanonicalRoute from "./pages/MenuItemCanonicalRoute.jsx";
 import MenuThemesPage from "./pages/MenuThemesPage.jsx";
@@ -676,6 +678,14 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/clusters/admin/:id/preview" element={<CrmRoute><CrmClusterPreviewPage /></CrmRoute>} />
         <Route path="/clusters/:stateSlug/:citySlug/:clusterSlug" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ClusterPage />} />
         <Route path="/clusters/:stateSlug/:citySlug" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ClusterCityDirectoryPage />} />
+        <Route
+          path="/destination-venues/:slug/food"
+          element={crmHost ? <HostRouteRedirect to="/crm" /> : <DestinationVenueFoodPage />}
+        />
+        <Route
+          path="/destination-venues/:slug"
+          element={crmHost ? <HostRouteRedirect to="/crm" /> : <DestinationVenuePage />}
+        />
         <Route path="/search" element={crmHost ? <HostRouteRedirect to="/crm" /> : <GrubbidSearchResults />} />
         <Route path="/compare" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ComparePage />} />
         <Route path="/browse-menus" element={crmHost ? <HostRouteRedirect to="/crm" /> : <BrowseMenus />} />
