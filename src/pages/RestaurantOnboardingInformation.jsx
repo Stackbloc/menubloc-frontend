@@ -13,6 +13,8 @@ import RestaurantInformationForm from "../components/restaurant/RestaurantInform
 import { useOperator } from "../context/OperatorContext.jsx";
 import {
   getOwnedRestaurantInformation,
+  getRestaurantDistributorUsage,
+  putRestaurantDistributorUsage,
   updateOwnedRestaurantInformation,
 } from "../lib/operatorApi.js";
 import {
@@ -242,7 +244,10 @@ export default function RestaurantOnboardingInformation() {
 
     (async () => {
       try {
-        const data = await getOwnedRestaurantInformation(restaurantId);
+        const [data, distributorData] = await Promise.all([
+          getOwnedRestaurantInformation(restaurantId),
+          getRestaurantDistributorUsage(restaurantId).catch(() => ({ relationships: [] })),
+        ]);
         if (cancelled) return;
         const restaurant = data?.restaurant;
         if (!restaurant) {
@@ -252,8 +257,16 @@ export default function RestaurantOnboardingInformation() {
           );
           return;
         }
+        const distributorIds = (distributorData?.relationships || [])
+          .map((rel) => rel?.distributor_id || rel?.distributor?.id)
+          .filter(Boolean)
+          .map(String)
+          .slice(0, 3);
         setForm(
-          restaurantToInformationForm(restaurant, operator?.email || onboarding?.email || "")
+          restaurantToInformationForm(
+            { ...restaurant, distributor_ids: distributorIds },
+            operator?.email || onboarding?.email || ""
+          )
         );
         setLoadState("ready");
         persistRestaurantOnboardingState({
@@ -322,6 +335,12 @@ export default function RestaurantOnboardingInformation() {
     try {
       const payload = buildRestaurantInformationPayload(form, { complete: true });
       const result = await updateOwnedRestaurantInformation(restaurantId, payload);
+      await putRestaurantDistributorUsage(
+        restaurantId,
+        Array.isArray(form.distributor_ids) ? form.distributor_ids : []
+      ).catch(() => {
+        // Distributor usage is optional; do not block onboarding continue.
+      });
       const restaurant = result?.restaurant || {};
       const nextOnboarding = persistRestaurantOnboardingState({
         ...onboarding,

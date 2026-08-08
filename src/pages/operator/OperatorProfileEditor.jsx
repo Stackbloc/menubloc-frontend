@@ -29,6 +29,7 @@ import { useOperator } from "../../context/OperatorContext.jsx";
 import * as api from "../../lib/operatorApi.js";
 import { API_BASE } from "../../lib/operatorApi.js";
 import RestaurantStatusSettingsPanel from "../../components/restaurant/RestaurantStatusSettingsPanel.jsx";
+import MenuplyRestaurantIdBadge from "../../components/restaurant/MenuplyRestaurantIdBadge.jsx";
 import RestaurantStyleSelector from "../../components/operator/RestaurantStyleSelector.jsx";
 import {
   resolveRestaurantOnboardingState,
@@ -549,6 +550,13 @@ export function OperatorRestaurantProfileForm({ embedded = false } = {}) {
             )}
           </div>
         )}
+
+        {profile?.menuply_public_id ? (
+          <MenuplyRestaurantIdBadge
+            menuplyPublicId={profile.menuply_public_id}
+            style={{ marginBottom: 20 }}
+          />
+        ) : null}
 
         {/* ── Core Info ──────────────────────────────────────────────── */}
         <Section title="Restaurant info" sub="These fields publish to your public restaurant profile. Save draft, then Publish.">

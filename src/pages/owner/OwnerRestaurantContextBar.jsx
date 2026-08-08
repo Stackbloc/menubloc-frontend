@@ -1,13 +1,16 @@
 import React from "react";
 import { OWNER_COLORS } from "./OwnerLayout.jsx";
+import MenuplyRestaurantIdBadge from "../../components/restaurant/MenuplyRestaurantIdBadge.jsx";
 
 /**
  * Shared restaurant identity chip for Menu Manager post-selection screens.
- * Shows: name · #id · city, state (omits missing parts).
+ * Shows: name · Menuply ID · city, state (omits missing parts).
+ * Numeric #id remains available as a secondary admin hint when public id is absent.
  */
 export default function OwnerRestaurantContextBar({
   name,
   id,
+  menuplyPublicId = "",
   city,
   state,
   style,
@@ -15,10 +18,11 @@ export default function OwnerRestaurantContextBar({
 }) {
   const displayName = String(name || "").trim() || "Unknown";
   const location = [city, state].filter(Boolean).join(", ");
+  const publicId = String(menuplyPublicId || "").trim();
   const idNum = Number(id);
   const hasId = Number.isFinite(idNum) && idNum > 0;
   const metaParts = [];
-  if (hasId) metaParts.push(`#${idNum}`);
+  if (!publicId && hasId) metaParts.push(`#${idNum}`);
   if (location) metaParts.push(location);
 
   return (
@@ -39,6 +43,11 @@ export default function OwnerRestaurantContextBar({
     >
       <div>
         <div style={{ fontWeight: 700, fontSize: 14, color: "#15803d" }}>{displayName}</div>
+        {publicId ? (
+          <div style={{ marginTop: 8 }}>
+            <MenuplyRestaurantIdBadge menuplyPublicId={publicId} compact />
+          </div>
+        ) : null}
         {metaParts.length > 0 ? (
           <div style={{ fontSize: 12, color: OWNER_COLORS.muted, marginTop: 4 }}>
             {metaParts.join(" · ")}

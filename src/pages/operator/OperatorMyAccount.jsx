@@ -15,6 +15,7 @@ import * as api from "../../lib/operatorApi.js";
 import { getSubscriptionStatusLabel, formatMoney } from "../../components/payments/paymentHelpers.js";
 import PrimaryQrCard from "../../components/qr/PrimaryQrCard.jsx";
 import OperatorDeliveryPortalPanel from "./OperatorDeliveryPortalPanel.jsx";
+import MenuplyRestaurantIdBadge from "../../components/restaurant/MenuplyRestaurantIdBadge.jsx";
 import {
   FREE_PLAN_CODE,
   getMarketplaceCommissionDisclosure,
@@ -373,6 +374,7 @@ export default function OperatorMyAccount() {
   const [billingOverview, setBillingOverview] = useState(null);
   const [primaryQr, setPrimaryQr] = useState(null);
   const [accountOpenedAt, setAccountOpenedAt] = useState(null);
+  const [menuplyPublicId, setMenuplyPublicId] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [cancelConfirm, setCancelConfirm] = useState(false);
@@ -400,6 +402,7 @@ export default function OperatorMyAccount() {
       setPrimaryQr(qrData.status === "fulfilled" ? qrData.value?.qr || null : null);
       const profile = profileData.status === "fulfilled" ? profileData.value?.profile : null;
       setAccountOpenedAt(profile?.created_at || selectedRestaurant?.created_at || null);
+      setMenuplyPublicId(profile?.menuply_public_id || "");
       if (subData.status === "rejected") setError("Unable to load subscription details.");
     } finally {
       setLoading(false);
@@ -414,6 +417,7 @@ export default function OperatorMyAccount() {
       setBillingOverview(null);
       setPrimaryQr(null);
       setAccountOpenedAt(null);
+      setMenuplyPublicId("");
     }
   }, [selectedRestaurant?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -550,6 +554,11 @@ export default function OperatorMyAccount() {
                 <p style={{ margin: 0, fontSize: 13, color: "#92400e" }}>{error}</p>
               ) : (
                 <>
+                  {menuplyPublicId ? (
+                    <div style={{ marginBottom: 16 }}>
+                      <MenuplyRestaurantIdBadge menuplyPublicId={menuplyPublicId} />
+                    </div>
+                  ) : null}
                   <Row
                     label="Account type"
                     value={

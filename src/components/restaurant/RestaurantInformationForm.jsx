@@ -4,8 +4,12 @@
  */
 
 import React, { useEffect, useState } from "react";
-import { formatPhoneDisplay } from "../../lib/restaurantInformationSchema.js";
+import {
+  formatPhoneDisplay,
+  PRIMARY_CONTACT_ROLE_SUGGESTIONS,
+} from "../../lib/restaurantInformationSchema.js";
 import { API_BASE } from "../../lib/operatorApi.js";
+import DistributorUsagePicker from "./DistributorUsagePicker.jsx";
 
 const FONT = '"Instrument Sans", "Avenir Next", system-ui, sans-serif';
 
@@ -223,6 +227,30 @@ export default function RestaurantInformationForm({
             />
           </div>
           <div>
+            <div style={styles.label}>
+              Primary contact role
+              <span style={styles.privateBadge}>Private</span>
+            </div>
+            <select
+              style={styles.select}
+              value={form.primary_contact_role || ""}
+              disabled={disabled}
+              onChange={(e) => setField("primary_contact_role", e.target.value)}
+              data-testid="onboarding-primary-contact-role"
+            >
+              <option value="">— Select role —</option>
+              {PRIMARY_CONTACT_ROLE_SUGGESTIONS.map((role) => (
+                <option key={role} value={role}>
+                  {role}
+                </option>
+              ))}
+              {form.primary_contact_role &&
+              !PRIMARY_CONTACT_ROLE_SUGGESTIONS.includes(form.primary_contact_role) ? (
+                <option value={form.primary_contact_role}>{form.primary_contact_role}</option>
+              ) : null}
+            </select>
+          </div>
+          <div>
             <div style={styles.label}>Public phone *</div>
             <input
               style={styles.input}
@@ -260,6 +288,17 @@ export default function RestaurantInformationForm({
             />
           </div>
         </div>
+      </section>
+
+      <section style={styles.section} aria-labelledby="ri-distributors">
+        <h2 id="ri-distributors" style={styles.sectionTitle}>
+          Food distributors
+        </h2>
+        <DistributorUsagePicker
+          selectedIds={Array.isArray(form.distributor_ids) ? form.distributor_ids : []}
+          disabled={disabled}
+          onChange={(ids) => setField("distributor_ids", ids)}
+        />
       </section>
 
       <section style={styles.section} aria-labelledby="ri-locations-note">

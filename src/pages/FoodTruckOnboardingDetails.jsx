@@ -5,7 +5,9 @@ import RestaurantInformationForm from "../components/restaurant/RestaurantInform
 import { useOperator } from "../context/OperatorContext.jsx";
 import {
   getOwnedRestaurantInformation,
+  getRestaurantDistributorUsage,
   markOnboardingStage,
+  putRestaurantDistributorUsage,
   updateOwnedRestaurantInformation,
 } from "../lib/operatorApi.js";
 import {
@@ -94,11 +96,24 @@ export default function FoodTruckOnboardingDetails() {
       };
     }
 
-    getOwnedRestaurantInformation(restaurantId)
-      .then((data) => {
+    Promise.all([
+      getOwnedRestaurantInformation(restaurantId),
+      getRestaurantDistributorUsage(restaurantId).catch(() => ({ relationships: [] })),
+    ])
+      .then(([data, distributorData]) => {
         if (cancelled) return;
         const loaded = data?.restaurant || restaurant || {};
-        setForm(restaurantToInformationForm(loaded, operator?.email || ""));
+        const distributorIds = (distributorData?.relationships || [])
+          .map((rel) => rel?.distributor_id || rel?.distributor?.id)
+          .filter(Boolean)
+          .map(String)
+          .slice(0, 3);
+        setForm(
+          restaurantToInformationForm(
+            { ...loaded, distributor_ids: distributorIds },
+            operator?.email || ""
+          )
+        );
       })
       .catch((err) => {
         if (!cancelled) setError(err?.message || "Unable to load food-truck details.");
@@ -136,6 +151,10 @@ export default function FoodTruckOnboardingDetails() {
     setSaving(true);
     try {
       await updateOwnedRestaurantInformation(restaurantId, buildRestaurantInformationPayload(form, { complete: true }));
+      await putRestaurantDistributorUsage(
+        restaurantId,
+        Array.isArray(form.distributor_ids) ? form.distributor_ids : []
+      ).catch(() => {});
       await markOnboardingStage(restaurantId, {
         stage_id: "detailed_information_complete",
         status: "completed",

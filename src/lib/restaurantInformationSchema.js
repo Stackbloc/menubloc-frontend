@@ -15,10 +15,21 @@ export const RESTAURANT_INFORMATION_EDITABLE_FIELDS = Object.freeze([
   "category",
   "cuisine",
   "manager_name",
+  "primary_contact_role",
   "phone",
   "website_url",
   "founded_year",
   "team_intro",
+]);
+
+/** Suggested primary contact roles (free-text field; not a hard DB enum). */
+export const PRIMARY_CONTACT_ROLE_SUGGESTIONS = Object.freeze([
+  "Owner",
+  "General Manager",
+  "Manager",
+  "Chef",
+  "Operations",
+  "Other",
 ]);
 
 /**
@@ -40,6 +51,7 @@ export const LOCATION_OWNED_FIELDS = Object.freeze([
 /** Fields that must never be submitted from the client (identity / protected). */
 export const RESTAURANT_INFORMATION_PROTECTED_FIELDS = Object.freeze([
   "id",
+  "menuply_public_id",
   "authoritative_restaurant_id",
   "chain_id",
   "franchise_id",
@@ -66,11 +78,13 @@ export function emptyRestaurantInformationForm() {
     category: "",
     cuisine: "",
     manager_name: "",
+    primary_contact_role: "",
     phone: "",
     website_url: "",
     email: "",
     founded_year: "",
     team_intro: "",
+    distributor_ids: [],
   };
 }
 
@@ -91,6 +105,7 @@ export function restaurantToInformationForm(restaurant = {}, accountEmail = "") 
     category: String(primaryVenue || restaurant.category || "").trim(),
     cuisine: String(restaurant.cuisine || "").trim(),
     manager_name: String(restaurant.manager_name || "").trim(),
+    primary_contact_role: String(restaurant.primary_contact_role || "").trim(),
     phone: formatPhoneDisplay(restaurant.phone || ""),
     website_url: String(restaurant.website_url || restaurant.website || "").trim(),
     email: String(accountEmail || restaurant.email || "").trim(),
@@ -99,6 +114,9 @@ export function restaurantToInformationForm(restaurant = {}, accountEmail = "") 
         ? String(restaurant.founded_year)
         : "",
     team_intro: String(restaurant.team_intro || "").trim(),
+    distributor_ids: Array.isArray(restaurant.distributor_ids)
+      ? restaurant.distributor_ids.map(String).filter(Boolean).slice(0, 3)
+      : [],
   };
 }
 
@@ -111,6 +129,7 @@ export function buildRestaurantInformationPayload(form, { complete = false } = {
     venue_type_slug: String(form.category || "").trim() || null,
     cuisine: String(form.cuisine || "").trim() || null,
     manager_name: String(form.manager_name || "").trim() || null,
+    primary_contact_role: String(form.primary_contact_role || "").trim() || null,
     phone: String(form.phone || "").replace(/\D/g, "") || null,
     website_url: String(form.website_url || "").trim() || null,
     founded_year:

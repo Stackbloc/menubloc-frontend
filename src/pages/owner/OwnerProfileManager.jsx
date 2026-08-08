@@ -274,6 +274,7 @@ export default function OwnerProfileManager() {
         city: r.city || "",
         state: r.state || "",
         slug: r.slug || "",
+        menuply_public_id: r.menuply_public_id || "",
         public_profile_path: r.public_profile_path || null,
       });
       setForm(next);
@@ -711,6 +712,7 @@ export default function OwnerProfileManager() {
           <OwnerRestaurantContextBar
             name={form.restaurant_name || selected.name}
             id={selected.id}
+            menuplyPublicId={selected.menuply_public_id}
             city={form.city || selected.city}
             state={form.state || selected.state}
             style={{ marginBottom: 16 }}

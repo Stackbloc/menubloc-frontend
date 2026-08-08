@@ -36,6 +36,8 @@ test("operatorApi exposes ownership-safe information endpoints", () => {
   const api = read("src/lib/operatorApi.js");
   assert.match(api, /getOwnedRestaurantInformation/);
   assert.match(api, /updateOwnedRestaurantInformation/);
+  assert.match(api, /listFoodserviceDistributors/);
+  assert.match(api, /putRestaurantDistributorUsage/);
   assert.match(
     api,
     /export const getOwnedRestaurantInformation = \(rid\) =>\s*get\(`\/operator\/restaurants\/\$\{rid\}\/onboarding\/information`\)/
@@ -67,10 +69,25 @@ test("shared form has no PDF upload or menu processing", () => {
   assert.doesNotMatch(form, /parse-file|Upload \+ Parse|type="file"|application\/pdf/i);
   assert.match(form, /Private/);
   assert.match(form, /manager_name/);
+  assert.match(form, /primary_contact_role|Primary contact role/);
+  assert.match(form, /DistributorUsagePicker/);
   assert.match(form, /Venue type/);
   assert.match(form, /Sports Bar/);
   assert.match(form, /founded_year|Founded year/);
   assert.match(form, /Meet the team|team_intro/);
+});
+
+test("Menuply restaurant ID badge and distributor picker exist", () => {
+  const badge = read("src/components/restaurant/MenuplyRestaurantIdBadge.jsx");
+  assert.match(badge, /Your Menuply ID/);
+  assert.match(badge, /menuply-restaurant-id-copy/);
+  const picker = read("src/components/restaurant/DistributorUsagePicker.jsx");
+  assert.match(picker, /top 3 food distributors/i);
+  assert.match(picker, /does not give permission for/);
+  const profileEditor = read("src/pages/operator/OperatorProfileEditor.jsx");
+  assert.match(profileEditor, /MenuplyRestaurantIdBadge/);
+  const myAccount = read("src/pages/operator/OperatorMyAccount.jsx");
+  assert.match(myAccount, /MenuplyRestaurantIdBadge/);
 });
 
 test("signup verify nextPath goes to business organization", () => {
@@ -108,6 +125,7 @@ test("schema validates continue requirements and strips to editable payload", ()
       category: "sports_bar",
       cuisine: "american",
       manager_name: "Pat",
+      primary_contact_role: "Owner",
       phone: "(555) 111-2222",
       website_url: "https://x.test",
       founded_year: "2012",
@@ -120,13 +138,16 @@ test("schema validates continue requirements and strips to editable payload", ()
       country_code: "US",
       email: "should-not-send@example.com",
       authoritative_restaurant_id: 999,
+      menuply_public_id: "MPL-R-SHOULDNOT",
     },
     { complete: true }
   );
   assert.equal(payload.complete, true);
   assert.equal(payload.phone, "5551112222");
+  assert.equal(payload.primary_contact_role, "Owner");
   assert.equal(payload.email, undefined);
   assert.equal(payload.authoritative_restaurant_id, undefined);
+  assert.equal(payload.menuply_public_id, undefined);
   assert.equal(payload.address_line1, undefined);
   assert.equal(payload.city, undefined);
   assert.equal(payload.state, undefined);

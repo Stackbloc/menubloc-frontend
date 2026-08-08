@@ -190,6 +190,15 @@ export const getOwnedRestaurantInformation = (rid) =>
 export const updateOwnedRestaurantInformation = (rid, body) =>
   patch(`/operator/restaurants/${rid}/onboarding/information`, body);
 
+// ── Foodservice distributors (optional usage; no outreach consent) ────────
+export const listFoodserviceDistributors = () => get(`/operator/foodservice-distributors`);
+export const getRestaurantDistributorUsage = (rid) =>
+  get(`/operator/restaurants/${rid}/onboarding/distributors`);
+export const putRestaurantDistributorUsage = (rid, distributorIds) =>
+  put(`/operator/restaurants/${rid}/onboarding/distributors`, {
+    distributor_ids: Array.isArray(distributorIds) ? distributorIds : [],
+  });
+
 // ── Restaurant: Onboarding Locations ──────────────────────────────────────
 export const getOwnedLocations = (rid) =>
   get(`/operator/restaurants/${rid}/onboarding/locations`);
