@@ -4,7 +4,7 @@ Ship consumer stadium food discovery: hub → search-first inventory → item/ve
 
 # Current Status
 
-CODE READY in `menubloc-frontend-main`. Deploy via authorized FE path.
+**CPD COMPLETE** — tip `ouzgqbayw` / `index-ZWTGH7_X.js`; tip-gate PASS; commit `e6e18ca`.
 
 # Files Changed
 
@@ -55,4 +55,4 @@ Demo: https://menuply.com/destination-venues/sofi-stadium → Explore Food & Dri
 
 # Git Status
 
-Pending commit/deploy.
+FE `e6e18ca` live on menuply.com; tip-gate PASS.

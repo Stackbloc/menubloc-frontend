@@ -38,7 +38,7 @@ See handoff after deploy.
 
 # Deployment Status
 
-Pending FE tip from `menubloc-frontend-main` @ `main` + alias + tip-gate.
+FE tip `ouzgqbayw` / `index-ZWTGH7_X.js` aliased to menuply.com; tip-gate PASS.
 
 # Verification Results
 
