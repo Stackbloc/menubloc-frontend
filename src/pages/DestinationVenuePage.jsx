@@ -119,7 +119,7 @@ export default function DestinationVenuePage() {
     <div style={css.page}>
       <header style={css.hero}>
         <Link
-          to="/nfl/stadiums"
+          to="/clusters/stadiums/nfl"
           style={{
             ...css.meta,
             display: "inline-block",

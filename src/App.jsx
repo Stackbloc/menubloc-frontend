@@ -678,12 +678,16 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/clusters/admin" element={<CrmRoute><CrmClusterList /></CrmRoute>} />
         <Route path="/clusters/admin/:id" element={<CrmRoute><CrmClusterDetail /></CrmRoute>} />
         <Route path="/clusters/admin/:id/preview" element={<CrmRoute><CrmClusterPreviewPage /></CrmRoute>} />
-        <Route path="/clusters/:stateSlug/:citySlug/:clusterSlug" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ClusterPage />} />
-        <Route path="/clusters/:stateSlug/:citySlug" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ClusterCityDirectoryPage />} />
         <Route
-          path="/nfl/stadiums"
+          path="/clusters/stadiums/nfl"
           element={crmHost ? <HostRouteRedirect to="/crm" /> : <NflStadiumsDirectoryPage />}
         />
+        <Route
+          path="/nfl/stadiums"
+          element={crmHost ? <HostRouteRedirect to="/crm" /> : <Navigate to="/clusters/stadiums/nfl" replace />}
+        />
+        <Route path="/clusters/:stateSlug/:citySlug/:clusterSlug" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ClusterPage />} />
+        <Route path="/clusters/:stateSlug/:citySlug" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ClusterCityDirectoryPage />} />
         <Route
           path="/destination-venues/:slug/food"
           element={crmHost ? <HostRouteRedirect to="/crm" /> : <DestinationVenueFoodPage />}

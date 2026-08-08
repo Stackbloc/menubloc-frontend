@@ -1,5 +1,5 @@
 /**
- * NFL stadiums directory — /nfl/stadiums
+ * NFL stadiums directory — /clusters/stadiums/nfl
  */
 
 import assert from "node:assert/strict";
@@ -28,7 +28,15 @@ function run() {
 
   const app = read("src/App.jsx");
   assert.match(app, /NflStadiumsDirectoryPage/);
-  assert.match(app, /\/nfl\/stadiums/);
+  assert.match(app, /\/clusters\/stadiums\/nfl/);
+  // Must be registered before /clusters/:stateSlug/:citySlug
+  const stadiumsIdx = app.indexOf('path="/clusters/stadiums/nfl"');
+  const cityIdx = app.indexOf('path="/clusters/:stateSlug/:citySlug"');
+  assert.ok(stadiumsIdx > 0 && cityIdx > stadiumsIdx, "stadiums route before city catch-all");
+  assert.match(app, /Navigate to="\/clusters\/stadiums\/nfl"/);
+
+  const hub = read("src/pages/DestinationVenuePage.jsx");
+  assert.match(hub, /\/clusters\/stadiums\/nfl/);
 
   console.log("nflStadiumsDirectoryContract PASS");
 }
