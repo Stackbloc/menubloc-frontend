@@ -3,70 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import BottomNav from "../components/BottomNav.jsx";
 import { fetchDestinationVenueInventory } from "../lib/destinationVenueApi.js";
 
-const css = {
-  page: {
-    minHeight: "100dvh",
-    background: "linear-gradient(165deg, #0c1620 0%, #152a3a 45%, #1a3344 100%)",
-    color: "#f2f5f7",
-    fontFamily: '"DM Sans", "Segoe UI", system-ui, sans-serif',
-    paddingBottom: 96,
-  },
-  hero: {
-    padding: "28px 20px 20px",
-    minHeight: "52dvh",
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "flex-end",
-  },
-  eyebrow: {
-    margin: 0,
-    fontSize: 13,
-    fontWeight: 600,
-    letterSpacing: "0.08em",
-    textTransform: "uppercase",
-    color: "rgba(61,214,140,0.9)",
-  },
-  title: {
-    margin: "10px 0 0",
-    fontSize: "clamp(32px, 8vw, 42px)",
-    fontWeight: 800,
-    letterSpacing: "-0.03em",
-    lineHeight: 1.05,
-  },
-  subtitle: {
-    margin: "10px 0 0",
-    fontSize: 16,
-    color: "rgba(242,245,247,0.7)",
-    lineHeight: 1.4,
-    maxWidth: 360,
-  },
-  cta: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 28,
-    minHeight: 54,
-    borderRadius: 16,
-    background: "#3dd68c",
-    color: "#0b1a12",
-    fontSize: 17,
-    fontWeight: 800,
-    textDecoration: "none",
-    boxShadow: "0 10px 28px rgba(61,214,140,0.25)",
-  },
-  panel: { padding: "8px 20px 24px" },
-  meta: {
-    margin: 0,
-    fontSize: 14,
-    color: "rgba(242,245,247,0.55)",
-  },
-  empty: {
-    textAlign: "center",
-    padding: "48px 16px",
-    color: "rgba(242,245,247,0.55)",
-  },
-};
-
+/** Hub landing aligned with LA Live / ClusterPage light destination chrome. */
 export default function DestinationVenuePage() {
   const { slug } = useParams();
   const [inventory, setInventory] = useState(null);
@@ -93,10 +30,22 @@ export default function DestinationVenuePage() {
     };
   }, [slug]);
 
+  const shell = {
+    maxWidth: 900,
+    margin: "0 auto",
+    padding: "1.25rem 1rem 5rem",
+    width: "100%",
+    boxSizing: "border-box",
+    minHeight: "100dvh",
+    background: "#fff",
+    color: "#111827",
+    fontFamily: '"DM Sans", "Segoe UI", system-ui, sans-serif',
+  };
+
   if (loading) {
     return (
-      <div style={css.page}>
-        <div style={css.empty}>Loading stadium…</div>
+      <div style={shell}>
+        <div style={{ textAlign: "center", padding: 48, color: "#6b7280" }}>Loading stadium…</div>
         <BottomNav />
       </div>
     );
@@ -104,8 +53,8 @@ export default function DestinationVenuePage() {
 
   if (error || !inventory?.venue) {
     return (
-      <div style={css.page}>
-        <div style={css.empty}>{error || "Stadium not found"}</div>
+      <div style={shell}>
+        <div style={{ textAlign: "center", padding: 48, color: "#6b7280" }}>{error || "Stadium not found"}</div>
         <BottomNav />
       </div>
     );
@@ -116,43 +65,64 @@ export default function DestinationVenuePage() {
   const teams = venue.teams || [];
 
   return (
-    <div style={css.page}>
-      <header style={css.hero}>
+    <div style={shell}>
+      <header style={{ display: "grid", gap: "0.75rem", marginBottom: "1.25rem" }}>
         <Link
           to="/clusters/stadiums/nfl"
           style={{
-            ...css.meta,
-            display: "inline-block",
-            marginBottom: 12,
-            color: "rgba(242,245,247,0.7)",
+            color: "#374151",
             textDecoration: "none",
             fontWeight: 600,
+            fontSize: "0.9rem",
           }}
         >
           ← All NFL stadiums
         </Link>
-        <p style={css.eyebrow}>Stadium</p>
-        <h1 style={css.title}>{venue.name}</h1>
-        <p style={css.subtitle}>
-          {venue.city}, {venue.state}
+        <h1
+          style={{
+            margin: 0,
+            fontSize: "1.85rem",
+            lineHeight: 1.15,
+            fontWeight: 700,
+            letterSpacing: "-0.02em",
+          }}
+        >
+          {venue.name}
+        </h1>
+        <p style={{ margin: 0, color: "#4b5563", fontSize: "1rem", lineHeight: 1.45, maxWidth: 520 }}>
+          Food & Drink
+          {venue.city ? ` · ${venue.city}, ${venue.state}` : ""}
           {teams.length
             ? ` · ${teams.map((t) => t.short_name || t.name).join(" · ")}`
             : ""}
         </p>
-        <Link to={`/destination-venues/${encodeURIComponent(slug)}/food`} style={css.cta}>
+        <p style={{ margin: 0, color: "#6b7280", fontSize: "0.92rem", lineHeight: 1.5, maxWidth: 520 }}>
+          Search the entire stadium — find an item, then see the vendor and where to get it.
+          {summary.item_count != null
+            ? ` ${summary.item_count} menu items · ${summary.vendor_count} vendors.`
+            : ""}
+        </p>
+        <Link
+          to={`/destination-venues/${encodeURIComponent(slug)}/food`}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            alignSelf: "flex-start",
+            minHeight: 48,
+            marginTop: 8,
+            padding: "0 1.25rem",
+            borderRadius: 10,
+            background: "#111827",
+            color: "#fff",
+            fontSize: "1rem",
+            fontWeight: 700,
+            textDecoration: "none",
+          }}
+        >
           Explore Food & Drink
         </Link>
       </header>
-      <section style={css.panel}>
-        <p style={css.meta}>
-          {summary.item_count != null
-            ? `${summary.item_count} menu items · ${summary.vendor_count} vendors`
-            : "Food & drink across the venue"}
-        </p>
-        <p style={{ ...css.meta, marginTop: 8 }}>
-          Search the entire stadium — find an item, then see the vendor and where to get it.
-        </p>
-      </section>
       <BottomNav />
     </div>
   );

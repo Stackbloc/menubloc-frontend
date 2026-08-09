@@ -36,10 +36,15 @@ function run() {
   assert.match(page, /locations_available/);
   assert.match(page, /What are you looking for/);
   assert.match(page, /CATEGORY_CHIPS/);
+  assert.match(page, /StadiumSearchForm|stadium-sticky-search-form/);
+  assert.match(page, /Popular searches/);
   assert.match(page, /Add to order/);
   assert.match(page, /addStadiumCartItem/);
   assert.match(page, /Demo seat delivery/);
   assert.match(page, /BottomNav/);
+  // LA Live-aligned light chrome (not dark concessions shell)
+  assert.match(page, /background: "#fff"/);
+  assert.doesNotMatch(page, /#0f1a24/);
   assert.doesNotMatch(page, /menu_research_status/);
   assert.doesNotMatch(page, /HomeNext/);
   assert.doesNotMatch(page, /FoodInterestsPage/);
