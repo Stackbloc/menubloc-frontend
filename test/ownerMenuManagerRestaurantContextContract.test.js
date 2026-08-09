@@ -51,9 +51,8 @@ assert.match(finderSrc, /address_line1/);
 assert.match(finderSrc, /No address on file/);
 assert.match(finderSrc, /addressLine1=\{selectedAddress\}/);
 assert.match(finderSrc, /postal_code/);
-assert.match(
-  finderSrc,
-  /Select a restaurant to load it below for profile\/address edits, menus, and Update OCR/
-);
+assert.match(finderSrc, /onRequestAddRestaurant/);
+assert.match(finderSrc, /No restaurants matched/);
+assert.match(finderSrc, /Add restaurant/);
 
 console.log("ownerMenuManagerRestaurantContextContract: ok");

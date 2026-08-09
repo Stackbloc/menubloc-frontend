@@ -35,10 +35,13 @@ describe("owner Add Restaurant restore", () => {
     assert.match(shell, /workspaceKey/);
   });
 
-  it("finder does not expose a second Add Restaurant button", () => {
+  it("finder exposes Add restaurant CTA when search finds nothing (and optional link)", () => {
     const finder = read("src/pages/owner/OwnerMenuRestaurantFinder.jsx");
-    assert.doesNotMatch(finder, /data-testid="owner-finder-add-restaurant"/);
-    assert.doesNotMatch(finder, /onAddRestaurant/);
+    assert.match(finder, /onRequestAddRestaurant/);
+    assert.match(finder, /data-testid="owner-finder-add-restaurant"/);
+    assert.match(finder, /data-testid="owner-finder-empty-results"/);
+    assert.match(finder, /data-testid="owner-finder-add-restaurant-link"/);
+    assert.match(finder, /No restaurants matched/);
   });
 
   it("add form is labeled Add Restaurant with client required-field validation", () => {
@@ -67,13 +70,20 @@ describe("owner Add Restaurant restore", () => {
     }
   });
 
-  it("Add Restaurant puts Search restaurants first and offers select-existing on duplicate warning", () => {
+  it("search-first: Add form only with create=1; Search above form; select-existing on duplicate", () => {
     const workspace = read("src/pages/owner/OwnerMenuCreateWorkspace.jsx");
     assert.match(workspace, /title="Search restaurants"/);
+    assert.match(workspace, /onRequestAddRestaurant=\{restaurant \? undefined : openAddRestaurantForm\}/);
+    assert.match(workspace, /wantsCreateForm/);
+    assert.match(workspace, /showProfileFormCard/);
+    assert.match(workspace, /\(isAddingRestaurant && wantsCreateForm\)/);
+    assert.match(workspace, /function openAddRestaurantForm/);
     assert.match(workspace, /data-testid="owner-duplicate-restaurant-warning"/);
     assert.match(workspace, /data-testid="owner-select-existing-profile"/);
     assert.match(workspace, /Select existing profile/);
     assert.match(workspace, /onSelectExisting/);
+    // Change restaurant returns to search-only (not create=1).
+    assert.match(workspace, /Return to search-only panel/);
     const addBranch = workspace.match(/isAddingRestaurant \? \([\s\S]*?\) : \(/)?.[0] || "";
     const finderIdx = addBranch.indexOf("{finderCard}");
     const formIdx = addBranch.indexOf("{profileFormCard}");

@@ -436,8 +436,28 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
     setSearchParams((params) => {
       const next = new URLSearchParams(params);
       next.set("tab", "workspace");
-      next.set("create", "1");
+      // Return to search-only panel (not Add form).
+      next.delete("create");
+      next.delete("fresh");
       next.delete("restaurant");
+      return next;
+    }, { replace: true });
+  }
+
+  function openAddRestaurantForm(opts = {}) {
+    const q = String(opts.query || "").trim();
+    resetWorkspaceFormState();
+    if (q && !/^\d+$/.test(q)) {
+      setProfile((prev) => ({ ...prev, restaurant_name: q }));
+    }
+    setSearchParams((params) => {
+      const next = new URLSearchParams(params);
+      next.set("tab", "workspace");
+      next.set("create", "1");
+      next.set("fresh", String(Date.now()));
+      next.delete("restaurant");
+      if (q && !/^\d+$/.test(q)) next.set("name", q);
+      else next.delete("name");
       return next;
     }, { replace: true });
   }
@@ -664,7 +684,6 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
       setDuplicateMatches(null);
       if (data.menu?.display_name) setMenuName(data.menu.display_name);
       if (data.menu?.menu_type) setMenuType(data.menu.menu_type);
-      setShowImportPanel(true);
       setSearchParams((params) => {
         const next = new URLSearchParams(params);
         next.set("tab", "workspace");
@@ -922,12 +941,19 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
   }
 
   const isAddingRestaurant = !restaurant && !loadingRestaurant;
+  const wantsCreateForm = searchParams.get("create") === "1";
+  // Search-first: Add form only when left-nav / finder CTA sets create=1, or when editing an existing profile / post-create success card.
+  const showProfileFormCard = Boolean(
+    (isAddingRestaurant && wantsCreateForm)
+    || (existingRestaurant && showProfilePanel)
+    || (restaurant && !existingRestaurant)
+  );
   const menusWithItems = availableMenus.filter((m) => Number(m.item_count) > 0);
   const restaurantNeedsMenuContent = Boolean(
     restaurant && (Number(menuDetail?.item_count) || 0) === 0 && menusWithItems.length === 0
   );
 
-  const profileFormCard = (!existingRestaurant || showProfilePanel) ? (
+  const profileFormCard = showProfileFormCard ? (
       <PageCard style={{ padding: 20, marginBottom: 16, opacity: restaurant && !existingRestaurant ? 0.72 : 1 }}>
         <div ref={addFormRef} data-testid="owner-add-restaurant-form">
         <SectionTitle
@@ -1140,8 +1166,9 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
         loading={loadingRestaurant}
         onSelect={selectExistingRestaurant}
         onClear={clearSelectedRestaurant}
+        onRequestAddRestaurant={restaurant ? undefined : openAddRestaurantForm}
         title="Search restaurants"
-        subtitle="Search by name, city, state, or restaurant ID. Selecting a restaurant loads it into the workspace below."
+        subtitle="Search by name, address, city, state, or restaurant ID. Select a match to edit menus and profile. If nothing matches, add a new restaurant."
       />
   );
 
@@ -1442,7 +1469,7 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
 
       {isAddingRestaurant ? (
         <>
-          <StepHeader current={step} />
+          {wantsCreateForm ? <StepHeader current={step} /> : null}
           {finderCard}
           {profileFormCard}
         </>

@@ -92,8 +92,9 @@ export default function OwnerMenuRestaurantFinder({
   loading,
   onSelect,
   onClear,
+  onRequestAddRestaurant,
   title = "Find Restaurant",
-  subtitle = "Search by name, address, city, state, or restaurant ID. Select a restaurant to load it below for profile/address edits, menus, and Update OCR.",
+  subtitle = "Search by name, address, city, state, or restaurant ID. Select a restaurant to load it for profile/address edits, menus, and Update OCR.",
 }) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState(null);
@@ -234,8 +235,41 @@ export default function OwnerMenuRestaurantFinder({
             </div>
           ) : null}
           {Array.isArray(results) && results.length === 0 && query.trim().length >= 2 && !searching ? (
-            <div style={{ marginTop: 12, fontSize: 13, color: OWNER_COLORS.muted }}>
-              No restaurants matched. Use <strong>Add Restaurant</strong> in the left nav (Restaurant Manager) to create a new profile.
+            <div
+              data-testid="owner-finder-empty-results"
+              style={{
+                marginTop: 14,
+                padding: "14px 16px",
+                borderRadius: 10,
+                background: "#fffbeb",
+                border: "1px solid #fde68a",
+              }}
+            >
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#92400e", marginBottom: 6 }}>
+                No restaurants matched
+              </div>
+              <div style={{ fontSize: 13, color: OWNER_COLORS.ink, lineHeight: 1.45, marginBottom: 12 }}>
+                Try another spelling, or add a new restaurant profile to continue.
+              </div>
+              {typeof onRequestAddRestaurant === "function" ? (
+                <button
+                  type="button"
+                  data-testid="owner-finder-add-restaurant"
+                  onClick={() => onRequestAddRestaurant({ query: query.trim() })}
+                  style={{
+                    padding: "9px 14px",
+                    borderRadius: 9,
+                    border: "none",
+                    background: OWNER_COLORS.accent,
+                    color: "#fff",
+                    fontWeight: 700,
+                    fontSize: 13,
+                    cursor: "pointer",
+                  }}
+                >
+                  Add restaurant
+                </button>
+              ) : null}
             </div>
           ) : null}
           {!results && recent.length > 0 ? (
@@ -248,6 +282,28 @@ export default function OwnerMenuRestaurantFinder({
                   <ResultRow key={row.id} restaurant={row} onSelect={handleSelect} />
                 ))}
               </div>
+            </div>
+          ) : null}
+          {typeof onRequestAddRestaurant === "function" && !(Array.isArray(results) && results.length === 0 && query.trim().length >= 2) ? (
+            <div style={{ marginTop: 14, fontSize: 13, color: OWNER_COLORS.muted }}>
+              Can&apos;t find it?{" "}
+              <button
+                type="button"
+                data-testid="owner-finder-add-restaurant-link"
+                onClick={() => onRequestAddRestaurant({ query: query.trim() })}
+                style={{
+                  border: "none",
+                  background: "none",
+                  padding: 0,
+                  fontWeight: 700,
+                  fontSize: 13,
+                  color: OWNER_COLORS.accent,
+                  cursor: "pointer",
+                  textDecoration: "underline",
+                }}
+              >
+                Add restaurant
+              </button>
             </div>
           ) : null}
         </>
