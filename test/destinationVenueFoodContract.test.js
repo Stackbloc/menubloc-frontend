@@ -37,6 +37,7 @@ function run() {
   assert.match(page, /locations_available/);
   assert.match(page, /What are you looking for/);
   assert.match(page, /CATEGORY_CHIPS/);
+  assert.match(page, /availableChipIds|visibleChips/);
   assert.match(page, /StadiumSearchForm|stadium-sticky-search-form/);
   assert.match(page, /Popular searches/);
   assert.match(page, /Add to order/);

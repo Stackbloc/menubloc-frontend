@@ -225,6 +225,8 @@ export default function DestinationVenueFoodPage() {
   const [priceFilter, setPriceFilter] = useState("all");
   const [activeCategory, setActiveCategory] = useState("");
   const [showFilters, setShowFilters] = useState(false);
+  /** Chip ids with at least one stadium hit — empty chips are hidden (start empty until probed). */
+  const [availableChipIds, setAvailableChipIds] = useState([]);
 
   useEffect(() => {
     setSearchInput(activeQ);
@@ -250,6 +252,35 @@ export default function DestinationVenueFoodPage() {
       cancelled = true;
     };
   }, [slug]);
+
+  useEffect(() => {
+    if (!slug) return;
+    let cancelled = false;
+    Promise.all(
+      CATEGORY_CHIPS.map(async (chip) => {
+        try {
+          const data = await searchDestinationVenueMenuItems(slug, {
+            q: chip.q,
+            limit: 1,
+          });
+          return (data?.items || []).length > 0 ? chip.id : null;
+        } catch {
+          return null;
+        }
+      })
+    ).then((ids) => {
+      if (cancelled) return;
+      setAvailableChipIds(ids.filter(Boolean));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [slug]);
+
+  const visibleChips = useMemo(
+    () => CATEGORY_CHIPS.filter((c) => availableChipIds.includes(c.id)),
+    [availableChipIds]
+  );
 
   const searchActive = Boolean(activeQ) || Boolean(vendorFilter);
 
@@ -750,44 +781,48 @@ export default function DestinationVenueFoodPage() {
       <main style={{ marginTop: "1rem" }}>
         {tab === "search" ? (
           <>
-            <p style={{ margin: "0 0 0.45rem", fontSize: "0.78rem", color: "#6b7280", fontWeight: 600 }}>
-              Popular searches
-            </p>
-            <div
-              style={{
-                display: "flex",
-                gap: 8,
-                overflowX: "auto",
-                paddingBottom: 8,
-                marginBottom: searchActive ? 8 : 4,
-                WebkitOverflowScrolling: "touch",
-              }}
-            >
-              {CATEGORY_CHIPS.map((chip) => {
-                const active = activeCategory === chip.id || activeQ === chip.q;
-                return (
-                  <button
-                    key={chip.id}
-                    type="button"
-                    onClick={() => applyCategory(chip)}
-                    style={{
-                      flex: "0 0 auto",
-                      borderRadius: 999,
-                      border: active ? "1px solid #111827" : "1px solid #d1d5db",
-                      background: active ? "#111827" : "#fff",
-                      color: active ? "#fff" : "#374151",
-                      padding: "0.45rem 0.9rem",
-                      fontSize: "0.85rem",
-                      fontWeight: 650,
-                      cursor: "pointer",
-                      minHeight: 36,
-                    }}
-                  >
-                    {chip.label}
-                  </button>
-                );
-              })}
-            </div>
+            {visibleChips.length > 0 ? (
+              <>
+                <p style={{ margin: "0 0 0.45rem", fontSize: "0.78rem", color: "#6b7280", fontWeight: 600 }}>
+                  Popular searches
+                </p>
+                <div
+                  style={{
+                    display: "flex",
+                    gap: 8,
+                    overflowX: "auto",
+                    paddingBottom: 8,
+                    marginBottom: searchActive ? 8 : 4,
+                    WebkitOverflowScrolling: "touch",
+                  }}
+                >
+                  {visibleChips.map((chip) => {
+                    const active = activeCategory === chip.id || activeQ === chip.q;
+                    return (
+                      <button
+                        key={chip.id}
+                        type="button"
+                        onClick={() => applyCategory(chip)}
+                        style={{
+                          flex: "0 0 auto",
+                          borderRadius: 999,
+                          border: active ? "1px solid #111827" : "1px solid #d1d5db",
+                          background: active ? "#111827" : "#fff",
+                          color: active ? "#fff" : "#374151",
+                          padding: "0.45rem 0.9rem",
+                          fontSize: "0.85rem",
+                          fontWeight: 650,
+                          cursor: "pointer",
+                          minHeight: 36,
+                        }}
+                      >
+                        {chip.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            ) : null}
 
             {!searchActive ? (
               <div
@@ -830,7 +865,7 @@ export default function DestinationVenueFoodPage() {
                       cursor: "pointer",
                     }}
                   >
-                    {showFilters ? "Hide filters" : "Filters"}
+                    {showFilters ? "Hide" : "Refine"}
                   </button>
                 </div>
 
@@ -965,7 +1000,7 @@ export default function DestinationVenueFoodPage() {
 
                 {!searching && visibleItems.length === 0 ? (
                   <div style={{ textAlign: "center", padding: "2rem 1rem", color: "#6b7280" }}>
-                    No items match “{activeQ || "your filters"}”.
+                    No items match “{activeQ || "your selection"}”.
                   </div>
                 ) : null}
 
