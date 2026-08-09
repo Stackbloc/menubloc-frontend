@@ -838,6 +838,7 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
       let activeMenuId = mid || null;
       let totalInserted = 0;
       let totalReview = 0;
+      let totalSuperseded = 0;
       let lastUploadId = null;
       const fileSummaries = [];
 
@@ -846,6 +847,7 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
         const json = await submitOwnerMenuFilePdf(rid, nextFile, { menuId: activeMenuId });
         const inserted = (json.inserted_items || json.inserted || 0) + (json.updated_items || json.updated || 0);
         const reviewCount = Number(json.review_count || 0);
+        const superseded = Number(json.superseded_count || 0);
         const uploadId = json.upload_id || null;
         const publicMenuId = Number(json.public_menu_id) || null;
         if (publicMenuId) activeMenuId = publicMenuId;
@@ -855,6 +857,7 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
         }
         totalInserted += inserted;
         totalReview += reviewCount;
+        totalSuperseded += superseded;
         fileSummaries.push(`${nextFile.name}: ${inserted} item${inserted === 1 ? "" : "s"}`);
         if (publicMenuId && i === 0) {
           await reloadMenus(publicMenuId);
@@ -867,26 +870,38 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
 
       if (totalReview === 0 && lastUploadId && totalInserted > 0) {
         const saved = await importParsedToMenuDraft(lastUploadId, { publicMenuId: activeMenuId });
+        const supersedeNote =
+          totalSuperseded > 0
+            ? ` Replaced ${totalSuperseded} prior same-named dish${totalSuperseded === 1 ? "" : "es"}.`
+            : "";
+        const prefix = restaurantNeedsMenuContent ? "Parsed" : "Update OCR: parsed";
         setUploadMsg({
           ok: saved,
           restaurantId: rid,
           menuId: activeMenuId || mid,
           uploadId: lastUploadId,
+          supersededCount: totalSuperseded,
           parseStatus: saved ? "saved_to_menu" : "parse_ok_save_failed",
           message: saved
-            ? `Parsed ${totalInserted} item${totalInserted !== 1 ? "s" : ""} from ${files.length} file${files.length !== 1 ? "s" : ""} — saved to menu below.`
-            : `Parsed ${totalInserted} item${totalInserted !== 1 ? "s" : ""}, but saving to the menu editor failed.`,
+            ? `${prefix} ${totalInserted} item${totalInserted !== 1 ? "s" : ""} from ${files.length} file${files.length !== 1 ? "s" : ""} — saved to menu below.${supersedeNote}`
+            : `${prefix} ${totalInserted} item${totalInserted !== 1 ? "s" : ""}, but saving to the menu editor failed.`,
         });
       } else {
+        const supersedeNote =
+          totalSuperseded > 0
+            ? ` Replaced ${totalSuperseded} prior same-named dish${totalSuperseded === 1 ? "" : "es"}.`
+            : "";
+        const prefix = restaurantNeedsMenuContent ? "Parsed" : "Update OCR: parsed";
         setUploadMsg({
           ok: true,
           restaurantId: rid,
           menuId: activeMenuId || mid,
           uploadId: lastUploadId,
+          supersededCount: totalSuperseded,
           parseStatus: totalReview > 0 ? "needs_review" : "parsed",
           message: totalReview > 0
-            ? `Parsed ${totalInserted} item${totalInserted !== 1 ? "s" : ""} from ${files.length} file${files.length !== 1 ? "s" : ""} — ${totalReview} need review.`
-            : `Parsed ${totalInserted} item${totalInserted !== 1 ? "s" : ""} (${fileSummaries.join("; ")}).`,
+            ? `${prefix} ${totalInserted} item${totalInserted !== 1 ? "s" : ""} from ${files.length} file${files.length !== 1 ? "s" : ""} — ${totalReview} need review.${supersedeNote}`
+            : `${prefix} ${totalInserted} item${totalInserted !== 1 ? "s" : ""} (${fileSummaries.join("; ")}).${supersedeNote}`,
         });
       }
       setFiles([]);
@@ -1133,11 +1148,11 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
   const uploadCard = restaurant ? (
     <PageCard style={{ padding: 20, marginBottom: 16 }} data-testid="owner-upload-menu-panel">
       <SectionTitle
-        title="Upload menu"
+        title={restaurantNeedsMenuContent ? "Upload menu" : "Update OCR"}
         subtitle={
           restaurantNeedsMenuContent
             ? "Fastest path: select one PDF or multiple photos, then Upload & Parse. The system builds the menu for you."
-            : "Add another PDF or more photos into this restaurant’s menu."
+            : "Update OCR: add PDF or photos to this menu. New dishes are added; same-named dishes replace prior versions (price/description updated)."
         }
       />
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12, marginTop: 12 }}>
@@ -1246,7 +1261,8 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
               ))}
             </ul>
             <div style={{ marginTop: 8, fontSize: 12, color: OWNER_COLORS.muted }}>
-              Need another page? Choose a file again to add it, then Upload & Parse.
+              Need another page? Choose a file again to add it, then{" "}
+              {restaurantNeedsMenuContent ? "Upload & Parse" : "Update OCR"}.
             </div>
           </div>
         ) : null}
@@ -1267,7 +1283,13 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
             cursor: uploading || files.length === 0 ? "not-allowed" : "pointer",
           }}
         >
-          {uploading ? "Uploading & parsing…" : "Upload & Parse"}
+          {uploading
+            ? restaurantNeedsMenuContent
+              ? "Uploading & parsing…"
+              : "Updating OCR…"
+            : restaurantNeedsMenuContent
+              ? "Upload & Parse"
+              : "Update OCR"}
         </button>
         <Link
           to="/owner/menu-manager?tab=activity&status=needs_review"

@@ -101,12 +101,18 @@ describe("owner Add Restaurant restore", () => {
 
   it("upload-first workspace accepts multiple PDF/photo files", () => {
     const workspace = read("src/pages/owner/OwnerMenuCreateWorkspace.jsx");
-    assert.match(workspace, /title="Upload menu"/);
+    assert.match(workspace, /title=\{restaurantNeedsMenuContent \? "Upload menu" : "Update OCR"\}/);
     assert.match(workspace, /data-testid="owner-menu-upload-input"/);
     assert.match(workspace, /multiple\n\s*accept=/);
     assert.match(workspace, /const \[files, setFiles\] = useState\(\[\]\)/);
     assert.match(workspace, /for \(let i = 0; i < files\.length; i \+= 1\)/);
     assert.match(workspace, /submitOwnerMenuFilePdf\(rid, nextFile, \{ menuId: activeMenuId \}\)/);
+    assert.match(workspace, /Update OCR: add PDF or photos/);
+    assert.match(workspace, /same-named dishes replace prior versions/);
+    assert.match(workspace, /totalSuperseded/);
+    assert.match(workspace, /superseded_count/);
+    assert.match(workspace, /Replaced \$\{totalSuperseded\} prior same-named/);
+    assert.match(workspace, /"Update OCR"/);
     // Empty shells hidden; prefer menus with items; do not auto-create on load.
     assert.match(workspace, /menusWithItems/);
     assert.match(workspace, /Prefer a menu that already has items/);
