@@ -119,9 +119,9 @@ function badgePalette(type, value) {
     return { bg: "#e2e8f0", fg: "#334155" };
   }
   if (type === "status") {
-    if (text === "won") return { bg: "#dcfce7", fg: "#166534" };
-    if (text === "lost") return { bg: "#fee2e2", fg: "#991b1b" };
-    if (text === "demo_scheduled" || text === "trial") return { bg: "#ede9fe", fg: "#5b21b6" };
+    if (text === "won" || text === "active" || text === "upcoming" || text === "primary") return { bg: "#dcfce7", fg: "#166534" };
+    if (text === "lost" || text === "overdue" || text === "do_not_contact" || text === "inactive") return { bg: "#fee2e2", fg: "#991b1b" };
+    if (text === "demo_scheduled" || text === "trial" || text === "responded") return { bg: "#ede9fe", fg: "#5b21b6" };
     if (text === "interested" || text === "contacted") return { bg: "#fef3c7", fg: "#92400e" };
     return { bg: "#e2e8f0", fg: "#334155" };
   }

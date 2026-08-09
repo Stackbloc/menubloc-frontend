@@ -238,6 +238,10 @@ import AdminOrderDetailPage from "./pages/crm/AdminOrderDetailPage.jsx";
 import CrmLeadList from "./pages/crm/CrmLeadList.jsx";
 import CrmLeadDetail from "./pages/crm/CrmLeadDetail.jsx";
 import CrmTasks from "./pages/crm/CrmTasks.jsx";
+import CrmFollowUps from "./pages/crm/CrmFollowUps.jsx";
+import CrmContacts from "./pages/crm/CrmContacts.jsx";
+import CrmEmailTemplates from "./pages/crm/CrmEmailTemplates.jsx";
+import CrmActivity from "./pages/crm/CrmActivity.jsx";
 import CrmSeedExplorer from "./pages/crm/CrmSeedExplorer.jsx";
 import CrmClusterList from "./pages/crm/CrmClusterList.jsx";
 import CrmClusterDetail from "./pages/crm/CrmClusterDetail.jsx";
@@ -937,6 +941,10 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/crm/companies" element={<CrmRoute><CrmLeadList mode="companies" /></CrmRoute>} />
         <Route path="/crm/restaurants" element={<CrmRoute><CrmLeadList mode="companies" /></CrmRoute>} />
         <Route path="/crm/leads/:id" element={<CrmRoute><CrmLeadDetail /></CrmRoute>} />
+        <Route path="/crm/follow-ups" element={<CrmRoute><CrmFollowUps /></CrmRoute>} />
+        <Route path="/crm/contacts" element={<CrmRoute><CrmContacts /></CrmRoute>} />
+        <Route path="/crm/email-templates" element={<CrmRoute><CrmEmailTemplates /></CrmRoute>} />
+        <Route path="/crm/activity" element={<CrmRoute><CrmActivity /></CrmRoute>} />
         <Route path="/crm/business-development" element={<CrmRoute><CrmBusinessDevelopment /></CrmRoute>} />
         <Route path="/crm/business-development/:id" element={<CrmRoute><CrmBusinessDevelopmentDetail /></CrmRoute>} />
         <Route path="/crm/referral-prospects" element={<Navigate to="/crm/business-development" replace />} />

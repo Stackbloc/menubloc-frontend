@@ -4,7 +4,10 @@ import { Link, useParams } from "react-router-dom";
 import {
   createCrmLeadActivity,
   createCrmLeadTask,
+  createCrmRestaurantContact,
   getCrmLead,
+  getCrmRestaurantContacts,
+  getCrmRestaurantEmailHistory,
   linkCrmLeadRestaurant,
   updateCrmLead,
   updateCrmLeadStage,
@@ -22,6 +25,8 @@ import {
   formatDateTime,
   toInputDateTime,
 } from "./CrmShared.jsx";
+import CrmEmailComposer from "./CrmEmailComposer.jsx";
+import CrmEmailView from "./CrmEmailView.jsx";
 
 const STAGES = ["new", "qualified", "outreach", "engaged", "demo", "trial", "negotiation", "won", "lost"];
 const MENUPLY_STATUSES = [
@@ -35,6 +40,19 @@ const MENUPLY_STATUSES = [
   "inactive",
   "disqualified",
 ];
+const CONTACT_FUNCTIONS = ["owner", "manager", "sales", "marketing", "operations", "management", "region", "other"];
+
+const EMPTY_CONTACT = {
+  first_name: "",
+  last_name: "",
+  email: "",
+  phone: "",
+  job_title: "",
+  contact_function: "owner",
+  region: "",
+  notes: "",
+  is_primary: false,
+};
 
 export default function CrmLeadDetail() {
   const { t } = useLanguage();
@@ -48,6 +66,12 @@ export default function CrmLeadDetail() {
   const [activityForm, setActivityForm] = useState({ activity_type: "call", direction: "outbound", subject: "", body: "", follow_up_at: "" });
   const [taskForm, setTaskForm] = useState({ title: "", task_type: "follow_up_call", priority: "normal", due_at: "" });
   const [linkRestaurantId, setLinkRestaurantId] = useState("");
+  const [contacts, setContacts] = useState([]);
+  const [emailHistory, setEmailHistory] = useState([]);
+  const [contactForm, setContactForm] = useState(EMPTY_CONTACT);
+  const [showContactForm, setShowContactForm] = useState(false);
+  const [showComposer, setShowComposer] = useState(false);
+  const [viewEmailId, setViewEmailId] = useState(null);
 
   useEffect(() => {
     loadLead();
@@ -78,8 +102,27 @@ export default function CrmLeadDetail() {
       });
       setStageForm((current) => ({ ...current, pipeline_stage: json.lead?.pipeline_stage || "new" }));
       setStatusForm((current) => ({ ...current, lead_status: inferMenuplyStatus(json.lead) }));
+      await loadRestaurantCrmExtras(json.lead?.restaurant_id);
     } catch (err) {
       setError(err.message || "Unable to load lead");
+    }
+  }
+
+  async function loadRestaurantCrmExtras(restaurantId) {
+    if (!restaurantId) {
+      setContacts([]);
+      setEmailHistory([]);
+      return;
+    }
+    try {
+      const [contactJson, emailJson] = await Promise.all([
+        getCrmRestaurantContacts(restaurantId),
+        getCrmRestaurantEmailHistory(restaurantId),
+      ]);
+      setContacts(contactJson.contacts || []);
+      setEmailHistory(emailJson.emails || []);
+    } catch (err) {
+      setError(err.message || "Unable to load restaurant contacts/email history");
     }
   }
 
@@ -160,6 +203,24 @@ export default function CrmLeadDetail() {
     }
   }
 
+  async function handleCreateContact(event) {
+    event.preventDefault();
+    if (!lead?.restaurant_id) {
+      setError("Link a restaurant before adding contacts.");
+      return;
+    }
+    try {
+      setError("");
+      await createCrmRestaurantContact(lead.restaurant_id, contactForm);
+      setSuccess("Contact added.");
+      setContactForm(EMPTY_CONTACT);
+      setShowContactForm(false);
+      await loadRestaurantCrmExtras(lead.restaurant_id);
+    } catch (err) {
+      setError(err.message || "Unable to create contact");
+    }
+  }
+
   async function handleLinkRestaurant(event) {
     event.preventDefault();
     try {
@@ -181,7 +242,16 @@ export default function CrmLeadDetail() {
   return (
     <CrmPage
       title={lead ? `CRM Lead: ${lead.lead_name}` : "CRM Lead"}
-      actions={<Link to="/crm/leads" style={backLinkStyle}>Back to leads</Link>}
+      actions={
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          {lead?.restaurant_id ? (
+            <button type="button" onClick={() => setShowComposer(true)} style={primaryButtonStyle}>
+              Send Email
+            </button>
+          ) : null}
+          <Link to="/crm/leads" style={backLinkStyle}>Back to leads</Link>
+        </div>
+      }
     >
       <ErrorBanner message={error} />
       <SuccessBanner message={success} />
@@ -305,6 +375,137 @@ export default function CrmLeadDetail() {
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18, marginBottom: 18 }}>
+            <CrmCard
+              title="Contacts"
+              subtitle="Multiple contacts per restaurant. Primary is typically the owner or manager."
+              action={
+                lead.restaurant_id ? (
+                  <button type="button" onClick={() => setShowContactForm((v) => !v)} style={secondaryButtonStyle}>
+                    {showContactForm ? "Cancel" : "Add contact"}
+                  </button>
+                ) : null
+              }
+            >
+              {!lead.restaurant_id ? (
+                <EmptyState>Link a restaurant to manage contacts and email history for this business.</EmptyState>
+              ) : (
+                <>
+                  {showContactForm ? (
+                    <form onSubmit={handleCreateContact} style={{ display: "grid", gap: 10, marginBottom: 14, padding: 12, border: "1px solid #d9e0ea", borderRadius: 12, background: "#f8fafc" }}>
+                      <div style={twoColStyle}>
+                        <input value={contactForm.first_name} onChange={(e) => setContactForm({ ...contactForm, first_name: e.target.value })} placeholder="First name" style={inputStyle} />
+                        <input value={contactForm.last_name} onChange={(e) => setContactForm({ ...contactForm, last_name: e.target.value })} placeholder="Last name" style={inputStyle} />
+                      </div>
+                      <input value={contactForm.email} onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })} placeholder="Email" style={inputStyle} required />
+                      <div style={twoColStyle}>
+                        <input value={contactForm.phone} onChange={(e) => setContactForm({ ...contactForm, phone: e.target.value })} placeholder="Phone" style={inputStyle} />
+                        <input value={contactForm.job_title} onChange={(e) => setContactForm({ ...contactForm, job_title: e.target.value })} placeholder="Job title" style={inputStyle} />
+                      </div>
+                      <div style={twoColStyle}>
+                        <select value={contactForm.contact_function} onChange={(e) => setContactForm({ ...contactForm, contact_function: e.target.value })} style={inputStyle}>
+                          {CONTACT_FUNCTIONS.map((value) => <option key={value} value={value}>{value}</option>)}
+                        </select>
+                        <input value={contactForm.region} onChange={(e) => setContactForm({ ...contactForm, region: e.target.value })} placeholder="Region" style={inputStyle} />
+                      </div>
+                      <textarea value={contactForm.notes} onChange={(e) => setContactForm({ ...contactForm, notes: e.target.value })} placeholder="Notes" rows={2} style={{ ...inputStyle, resize: "vertical" }} />
+                      <label style={{ display: "flex", gap: 8, alignItems: "center", fontWeight: 600, fontSize: 13 }}>
+                        <input type="checkbox" checked={contactForm.is_primary} onChange={(e) => setContactForm({ ...contactForm, is_primary: e.target.checked })} />
+                        Primary contact
+                      </label>
+                      <button type="submit" style={primaryButtonStyle}>Save contact</button>
+                    </form>
+                  ) : null}
+                  {!contacts.length ? (
+                    <EmptyState>No contacts yet for this restaurant.</EmptyState>
+                  ) : (
+                    <div style={{ display: "grid", gap: 10 }}>
+                      {contacts.map((c) => {
+                        const name = [c.first_name, c.last_name].filter(Boolean).join(" ") || c.email;
+                        return (
+                          <div key={c.id} style={{ border: "1px solid #d9e0ea", borderRadius: 12, padding: 12, background: "#fff" }}>
+                            <div style={{ fontWeight: 700 }}>
+                              <Link to={`/crm/contacts?highlight=${encodeURIComponent(c.id)}`} style={{ color: "#194b3a", textDecoration: "none" }}>
+                                {name}
+                              </Link>
+                            </div>
+                            <div style={{ marginTop: 4, color: "#64748b", fontSize: 13 }}>
+                              {c.email}{c.phone ? ` · ${c.phone}` : ""}
+                            </div>
+                            <div style={{ marginTop: 8, display: "flex", gap: 8, flexWrap: "wrap" }}>
+                              {c.is_primary ? <Badge type="status" value="primary" /> : null}
+                              {c.contact_function ? <Badge type="account" value={c.contact_function} /> : null}
+                              {c.display_job_title || c.job_title ? <Badge type="account" value={c.display_job_title || c.job_title} /> : null}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </>
+              )}
+            </CrmCard>
+
+            <CrmCard
+              title="Follow-Up"
+              subtitle="Next action date for this prospect"
+              action={
+                lead.restaurant_id ? (
+                  <button type="button" onClick={() => setShowComposer(true)} style={secondaryButtonStyle}>
+                    Send Email
+                  </button>
+                ) : null
+              }
+            >
+              <div style={overviewGridStyle}>
+                <Field label="Lead status" value={<Badge type="status" value={lead.status} />} />
+                <Field label="Last contacted" value={formatDateTime(lead.last_contacted_at)} />
+                <Field label="Next follow-up" value={formatDateTime(lead.next_follow_up_at)} />
+                <Field label="Notes" value={fieldValue(lead.notes_summary)} />
+              </div>
+            </CrmCard>
+          </div>
+
+          <CrmCard
+            title="Email History"
+            subtitle="All emails for this restaurant across every contact"
+            style={{ marginBottom: 18 }}
+          >
+            {!lead.restaurant_id ? (
+              <EmptyState>Link a restaurant to attach email history to the business record.</EmptyState>
+            ) : !emailHistory.length ? (
+              <EmptyState>No emails sent yet for this restaurant.</EmptyState>
+            ) : (
+              <div style={{ display: "grid", gap: 10 }}>
+                {emailHistory.map((email) => {
+                  const toName = [email.contact_first_name, email.contact_last_name].filter(Boolean).join(" ") || email.contact_email || "—";
+                  return (
+                    <div key={email.id} style={{ border: "1px solid #d9e0ea", borderRadius: 12, padding: 12, background: "#fff", display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+                      <div>
+                        <div style={{ fontSize: 12, color: "#94a3b8", fontWeight: 700 }}>{formatDateTime(email.sent_at)}</div>
+                        <div style={{ marginTop: 4, fontWeight: 800 }}>{email.template_name || "Custom email"}</div>
+                        <div style={{ marginTop: 4, fontSize: 13, color: "#64748b" }}>
+                          To:{" "}
+                          {email.contact_id ? (
+                            <Link to={`/crm/contacts?highlight=${encodeURIComponent(email.contact_id)}`} style={{ color: "#194b3a", fontWeight: 700 }}>
+                              {toName}
+                            </Link>
+                          ) : (
+                            toName
+                          )}
+                        </div>
+                        <div style={{ marginTop: 4, fontWeight: 700 }}>{email.subject_rendered}</div>
+                      </div>
+                      <button type="button" onClick={() => setViewEmailId(email.id)} style={secondaryButtonStyle}>
+                        View Email
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </CrmCard>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18, marginBottom: 18 }}>
             <CrmCard title="Activity Composer">
               <form onSubmit={handleActivityCreate} style={{ display: "grid", gap: 10 }}>
                 <div style={twoColStyle}>
@@ -400,6 +601,20 @@ export default function CrmLeadDetail() {
               </div>
             )} />
           </CrmCard>
+
+          {showComposer ? (
+            <CrmEmailComposer
+              leadId={lead.id}
+              restaurantId={lead.restaurant_id}
+              onClose={() => setShowComposer(false)}
+              onSent={() => {
+                setShowComposer(false);
+                setSuccess("Email marked as sent and saved to restaurant history.");
+                loadLead();
+              }}
+            />
+          ) : null}
+          {viewEmailId ? <CrmEmailView emailSendId={viewEmailId} onClose={() => setViewEmailId(null)} /> : null}
         </>
       )}
     </CrmPage>

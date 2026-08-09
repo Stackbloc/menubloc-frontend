@@ -152,6 +152,71 @@ export const updateCrmMarketplaceServiceListing = (id, body) =>
     method: "PATCH",
     body: JSON.stringify(body),
   });
+
+// ── CRM Email / Contacts / Follow-ups ──────────────────────────────────────
+export const getCrmEmailTemplates = (params = {}) => {
+  const qs = new URLSearchParams(
+    Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== "")
+  ).toString();
+  return get(`/api/crm/email-templates${qs ? `?${qs}` : ""}`);
+};
+export const getCrmEmailTemplate = (id) => get(`/api/crm/email-templates/${id}`);
+export const createCrmEmailTemplate = (body) => post("/api/crm/email-templates", body);
+export const updateCrmEmailTemplate = (id, body) => put(`/api/crm/email-templates/${id}`, body);
+export const getCrmEmailAccounts = () => get("/api/crm/email-accounts");
+
+export const getCrmContacts = (params = {}) => {
+  const qs = new URLSearchParams(
+    Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== "")
+  ).toString();
+  return get(`/api/crm/contacts${qs ? `?${qs}` : ""}`);
+};
+export const getCrmContact = (id) => get(`/api/crm/contacts/${id}`);
+export const updateCrmContact = (id, body) => put(`/api/crm/contacts/${id}`, body);
+export const deleteCrmContact = (id) => req(`/api/crm/contacts/${id}`, { method: "DELETE" });
+export const getCrmRestaurantContacts = (restaurantId, params = {}) => {
+  const qs = new URLSearchParams(
+    Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== "")
+  ).toString();
+  return get(`/api/crm/restaurants/${encodeURIComponent(restaurantId)}/contacts${qs ? `?${qs}` : ""}`);
+};
+export const createCrmRestaurantContact = (restaurantId, body) =>
+  post(`/api/crm/restaurants/${encodeURIComponent(restaurantId)}/contacts`, body);
+
+export const getCrmRestaurantEmailHistory = (restaurantId, params = {}) => {
+  const qs = new URLSearchParams(
+    Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== "")
+  ).toString();
+  return get(`/api/crm/restaurants/${encodeURIComponent(restaurantId)}/email-history${qs ? `?${qs}` : ""}`);
+};
+export const getCrmEmailSend = (id) => get(`/api/crm/email-sends/${id}`);
+export const getCrmEmailActivity = (params = {}) => {
+  const qs = new URLSearchParams(
+    Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== "")
+  ).toString();
+  return get(`/api/crm/email-activity${qs ? `?${qs}` : ""}`);
+};
+export const getCrmLeadEmails = (leadId, params = {}) => {
+  const qs = new URLSearchParams(
+    Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== "")
+  ).toString();
+  return get(`/api/crm/leads/${encodeURIComponent(leadId)}/emails${qs ? `?${qs}` : ""}`);
+};
+export const previewCrmLeadEmail = (leadId, body) =>
+  post(`/api/crm/leads/${encodeURIComponent(leadId)}/emails/preview`, body);
+export const sendCrmLeadEmail = (leadId, body) =>
+  post(`/api/crm/leads/${encodeURIComponent(leadId)}/emails`, body);
+
+export const getCrmFollowUps = (params = {}) => {
+  const qs = new URLSearchParams(
+    Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== "")
+  ).toString();
+  return get(`/api/crm/follow-ups${qs ? `?${qs}` : ""}`);
+};
+export const scheduleCrmFollowUp = (leadId, body) =>
+  post(`/api/crm/follow-ups/${encodeURIComponent(leadId)}/schedule`, body);
+export const markCrmFollowUpStatus = (leadId, body) =>
+  post(`/api/crm/follow-ups/${encodeURIComponent(leadId)}/status`, body);
 export const getCrmMarketplaceServiceProjects = () => get("/api/crm/marketplace/service-projects");
 export const updateCrmMarketplaceServiceProject = (id, body) =>
   req(`/api/crm/marketplace/service-projects/${encodeURIComponent(id)}`, {
