@@ -83,3 +83,12 @@ export const patchDistributorProfileUpdate = (updateId, body) =>
   patch(`/distributor/profile-updates/${encodeURIComponent(updateId)}`, body);
 export const deleteDistributorProfileUpdate = (updateId) =>
   del(`/distributor/profile-updates/${encodeURIComponent(updateId)}`);
+
+/** Menuply relationship contacts (portal only — never public) */
+export const listDistributorMenuplyContacts = () => get("/distributor/menuply-contacts");
+export const createDistributorMenuplyContact = (body) =>
+  post("/distributor/menuply-contacts", body);
+export const updateDistributorMenuplyContact = (contactId, body) =>
+  patch(`/distributor/menuply-contacts/${encodeURIComponent(contactId)}`, body);
+export const deleteDistributorMenuplyContact = (contactId) =>
+  del(`/distributor/menuply-contacts/${encodeURIComponent(contactId)}`);

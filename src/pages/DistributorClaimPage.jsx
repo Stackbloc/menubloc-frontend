@@ -32,6 +32,13 @@ export default function DistributorClaimPage() {
   const [businessEmail, setBusinessEmail] = useState("");
   const [title, setTitle] = useState("");
   const [phone, setPhone] = useState("");
+  const [menuplyFirst, setMenuplyFirst] = useState("");
+  const [menuplyLast, setMenuplyLast] = useState("");
+  const [menuplyTitle, setMenuplyTitle] = useState("");
+  const [menuplyEmail, setMenuplyEmail] = useState("");
+  const [menuplyPhone, setMenuplyPhone] = useState("");
+  const [menuplyDept, setMenuplyDept] = useState("");
+  const [menuplyRegion, setMenuplyRegion] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [success, setSuccess] = useState(null);
@@ -97,6 +104,19 @@ export default function DistributorClaimPage() {
         business_email: businessEmail.trim(),
         title: title.trim(),
         phone: phone.trim() || undefined,
+        menuply_contacts: [
+          {
+            first_name: menuplyFirst.trim(),
+            last_name: menuplyLast.trim(),
+            job_title: menuplyTitle.trim() || undefined,
+            email: menuplyEmail.trim(),
+            phone: menuplyPhone.trim() || undefined,
+            department_function: menuplyDept.trim() || undefined,
+            region: menuplyRegion.trim() || undefined,
+            contact_function: "primary_menuply",
+            is_primary_menuply_contact: true,
+          },
+        ],
       });
       if (result?.claim?.id) {
         sessionStorage.setItem(CLAIM_STORAGE_KEY, result.claim.id);
@@ -230,10 +250,12 @@ export default function DistributorClaimPage() {
         <h1 style={styles.title}>Claim {distributor.display_name} on Menuply</h1>
         <p style={styles.body}>
           Are you authorized to represent {distributor.display_name}? Submit your
-          details below. You do not need to sign in first.
+          details below. You do not need to sign in first. The person submitting
+          this form is not automatically the Primary Menuply Contact.
         </p>
 
         <form onSubmit={handleSubmit} style={styles.panel}>
+          <p style={{ ...styles.body, fontWeight: 800, margin: 0 }}>Profile administrator</p>
           <label style={styles.label}>
             Full name
             <input
@@ -279,6 +301,83 @@ export default function DistributorClaimPage() {
               autoComplete="tel"
             />
           </label>
+
+          <div data-testid="menuply-contact-section" style={{ display: "grid", gap: 12, marginTop: 8 }}>
+            <p style={{ ...styles.body, fontWeight: 800, margin: 0 }}>Your Menuply Contact</p>
+            <p style={{ ...styles.body, margin: 0, fontSize: 14 }}>
+              Who should be the primary contact person for Menuply? This is private to Menuply
+              and is not shown as a restaurant contact on the public profile.
+            </p>
+            <label style={styles.label}>
+              First name
+              <input
+                value={menuplyFirst}
+                onChange={(e) => setMenuplyFirst(e.target.value)}
+                style={styles.input}
+                required
+                maxLength={80}
+              />
+            </label>
+            <label style={styles.label}>
+              Last name
+              <input
+                value={menuplyLast}
+                onChange={(e) => setMenuplyLast(e.target.value)}
+                style={styles.input}
+                required
+                maxLength={80}
+              />
+            </label>
+            <label style={styles.label}>
+              Job title
+              <input
+                value={menuplyTitle}
+                onChange={(e) => setMenuplyTitle(e.target.value)}
+                style={styles.input}
+                maxLength={120}
+              />
+            </label>
+            <label style={styles.label}>
+              Email
+              <input
+                type="email"
+                value={menuplyEmail}
+                onChange={(e) => setMenuplyEmail(e.target.value)}
+                style={styles.input}
+                required
+                maxLength={200}
+              />
+            </label>
+            <label style={styles.label}>
+              Direct phone number
+              <input
+                type="tel"
+                value={menuplyPhone}
+                onChange={(e) => setMenuplyPhone(e.target.value)}
+                style={styles.input}
+                maxLength={40}
+              />
+            </label>
+            <label style={styles.label}>
+              Department / function
+              <input
+                value={menuplyDept}
+                onChange={(e) => setMenuplyDept(e.target.value)}
+                style={styles.input}
+                maxLength={120}
+              />
+            </label>
+            <label style={styles.label}>
+              Region <span style={styles.optional}>(if applicable)</span>
+              <input
+                value={menuplyRegion}
+                onChange={(e) => setMenuplyRegion(e.target.value)}
+                style={styles.input}
+                maxLength={120}
+              />
+            </label>
+          </div>
+
           {submitError ? <p style={styles.error}>{submitError}</p> : null}
           <button type="submit" disabled={submitting} style={styles.primaryCta}>
             {submitting ? "Submitting…" : "Submit claim request"}

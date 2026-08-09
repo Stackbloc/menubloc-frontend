@@ -6,6 +6,10 @@ import {
   listDistributorProfileUpdates,
   createDistributorProfileUpdate,
   deleteDistributorProfileUpdate,
+  listDistributorMenuplyContacts,
+  createDistributorMenuplyContact,
+  updateDistributorMenuplyContact,
+  deleteDistributorMenuplyContact,
 } from "../../lib/distributorApi.js";
 
 const EMPTY = {
@@ -20,12 +24,25 @@ const EMPTY = {
   postal_code: "",
   service_area_note: "",
   founded_year: "",
+  product_categories: "",
+  geographic_markets: "",
+};
+
+const EMPTY_CONTACT = {
+  first_name: "",
+  last_name: "",
+  job_title: "",
+  email: "",
+  phone: "",
+  department_function: "",
+  region: "",
+  contact_function: "other",
+  is_primary_menuply_contact: false,
 };
 
 /**
  * Edit permitted public profile fields after claim acceptance.
- * Cannot change canonical distributor id / slug / onboarding relationships.
- * Updates posts appear on the public /distributors/:slug page.
+ * Menuply contacts are private (portal only) — never shown on public profiles.
  */
 export default function DistributorProfileEditPage() {
   const [form, setForm] = useState(EMPTY);
@@ -39,16 +56,29 @@ export default function DistributorProfileEditPage() {
   const [postBody, setPostBody] = useState("");
   const [posting, setPosting] = useState(false);
   const [postError, setPostError] = useState("");
+  const [contacts, setContacts] = useState([]);
+  const [contactDraft, setContactDraft] = useState(EMPTY_CONTACT);
+  const [contactError, setContactError] = useState("");
+  const [contactBusy, setContactBusy] = useState(false);
 
   async function reloadUpdates() {
     const data = await listDistributorProfileUpdates();
     setUpdates(Array.isArray(data.updates) ? data.updates : []);
   }
 
+  async function reloadContacts() {
+    const data = await listDistributorMenuplyContacts();
+    setContacts(Array.isArray(data.contacts) ? data.contacts : []);
+  }
+
   useEffect(() => {
     let cancelled = false;
-    Promise.all([getDistributorPublicProfile(), listDistributorProfileUpdates().catch(() => ({ updates: [] }))])
-      .then(([data, updatesData]) => {
+    Promise.all([
+      getDistributorPublicProfile(),
+      listDistributorProfileUpdates().catch(() => ({ updates: [] })),
+      listDistributorMenuplyContacts().catch(() => ({ contacts: [] })),
+    ])
+      .then(([data, updatesData, contactsData]) => {
         if (cancelled) return;
         const d = data.distributor || {};
         setIdentity({
@@ -68,9 +98,16 @@ export default function DistributorProfileEditPage() {
           postal_code: d.postal_code || "",
           service_area_note: d.service_area_note || "",
           founded_year: d.founded_year != null ? String(d.founded_year) : "",
+          product_categories: Array.isArray(d.product_categories)
+            ? d.product_categories.join(", ")
+            : "",
+          geographic_markets: Array.isArray(d.geographic_markets)
+            ? d.geographic_markets.join(", ")
+            : "",
         });
         setStatus(d.profile_claim_status || "");
         setUpdates(Array.isArray(updatesData.updates) ? updatesData.updates : []);
+        setContacts(Array.isArray(contactsData.contacts) ? contactsData.contacts : []);
         setLoaded(true);
       })
       .catch((err) => {
@@ -93,6 +130,8 @@ export default function DistributorProfileEditPage() {
       const payload = {
         ...form,
         founded_year: form.founded_year === "" ? null : form.founded_year,
+        product_categories: form.product_categories,
+        geographic_markets: form.geographic_markets,
       };
       const data = await updateDistributorPublicProfile(payload);
       const d = data.distributor || {};
@@ -135,6 +174,54 @@ export default function DistributorProfileEditPage() {
     }
   }
 
+  async function handleAddContact(e) {
+    e.preventDefault();
+    setContactBusy(true);
+    setContactError("");
+    try {
+      await createDistributorMenuplyContact(contactDraft);
+      setContactDraft(EMPTY_CONTACT);
+      await reloadContacts();
+    } catch (err) {
+      setContactError(err.message || "Could not add contact");
+    } finally {
+      setContactBusy(false);
+    }
+  }
+
+  async function makePrimary(contactId) {
+    setContactBusy(true);
+    setContactError("");
+    try {
+      const current = contacts.find((c) => c.id === contactId);
+      if (!current) return;
+      await updateDistributorMenuplyContact(contactId, {
+        ...current,
+        is_primary_menuply_contact: true,
+        contact_function: "primary_menuply",
+      });
+      await reloadContacts();
+    } catch (err) {
+      setContactError(err.message || "Could not update primary contact");
+    } finally {
+      setContactBusy(false);
+    }
+  }
+
+  async function removeContact(contactId) {
+    if (!window.confirm("Remove this Menuply contact?")) return;
+    setContactBusy(true);
+    setContactError("");
+    try {
+      await deleteDistributorMenuplyContact(contactId);
+      await reloadContacts();
+    } catch (err) {
+      setContactError(err.message || "Could not remove contact");
+    } finally {
+      setContactBusy(false);
+    }
+  }
+
   const canEdit = status === "CLAIMED" || status === "VERIFIED";
 
   return (
@@ -165,12 +252,6 @@ export default function DistributorProfileEditPage() {
             ) : null}
           </div>
         ) : null}
-        {status ? (
-          <p style={{ color: DIST_COLORS.muted, fontWeight: 700, marginTop: 0 }}>
-            Status: {status}
-            {status === "VERIFIED" ? " · ✓ Verified Distributor" : ""}
-          </p>
-        ) : null}
         {error ? <div style={{ color: "#b91c1c", marginBottom: 12 }}>{error}</div> : null}
         {!loaded ? (
           <p>Loading…</p>
@@ -186,13 +267,15 @@ export default function DistributorProfileEditPage() {
               ["founded_year", "Founded (year)", "text"],
               ["website_url", "Website URL", "text"],
               ["logo_url", "Logo URL", "text"],
-              ["phone", "Public phone", "text"],
+              ["phone", "Main company phone", "text"],
               ["email", "Public email", "text"],
-              ["address_line1", "Address", "text"],
+              ["address_line1", "Headquarters address", "text"],
               ["city", "City", "text"],
               ["state", "State", "text"],
               ["postal_code", "Postal code", "text"],
-              ["service_area_note", "Service area", "textarea"],
+              ["product_categories", "Distributor / product categories (comma-separated)", "text"],
+              ["geographic_markets", "Geographic markets served (comma-separated)", "text"],
+              ["service_area_note", "Service area note", "textarea"],
             ].map(([key, label, kind]) => (
               <label key={key} style={{ display: "grid", gap: 4, fontWeight: 700, fontSize: 13 }}>
                 {label}
@@ -233,6 +316,162 @@ export default function DistributorProfileEditPage() {
           </form>
         )}
       </PageCard>
+
+      {canEdit ? (
+        <PageCard>
+          <SectionTitle
+            title="Your Menuply Contact"
+            subtitle="Who should be the primary contact person for Menuply? These contacts are private to Menuply — they are not shown on your public profile or to restaurants."
+          />
+          {contactError ? (
+            <div style={{ color: "#b91c1c", marginBottom: 12 }}>{contactError}</div>
+          ) : null}
+          <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gap: 10 }}>
+            {contacts.length === 0 ? (
+              <li style={{ color: DIST_COLORS.muted, fontSize: 14 }}>No Menuply contacts yet.</li>
+            ) : (
+              contacts.map((c) => (
+                <li
+                  key={c.id}
+                  style={{
+                    padding: "12px 14px",
+                    borderRadius: 12,
+                    border: `1px solid ${DIST_COLORS.line}`,
+                    background: c.is_primary_menuply_contact ? "#ecfdf5" : "#fff",
+                  }}
+                >
+                  <div style={{ fontWeight: 800 }}>
+                    {c.first_name} {c.last_name}
+                    {c.is_primary_menuply_contact ? " · Primary Menuply Contact" : ""}
+                  </div>
+                  <div style={{ fontSize: 13, color: DIST_COLORS.muted, marginTop: 4 }}>
+                    {[c.job_title, c.email, c.phone, c.region].filter(Boolean).join(" · ")}
+                  </div>
+                  <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
+                    {!c.is_primary_menuply_contact ? (
+                      <button
+                        type="button"
+                        disabled={contactBusy}
+                        onClick={() => makePrimary(c.id)}
+                        style={linkBtn}
+                      >
+                        Make primary
+                      </button>
+                    ) : null}
+                    {!c.is_primary_menuply_contact ? (
+                      <button
+                        type="button"
+                        disabled={contactBusy}
+                        onClick={() => removeContact(c.id)}
+                        style={{ ...linkBtn, color: "#b91c1c" }}
+                      >
+                        Remove
+                      </button>
+                    ) : null}
+                  </div>
+                </li>
+              ))
+            )}
+          </ul>
+          <form onSubmit={handleAddContact} style={{ display: "grid", gap: 10, maxWidth: 520, marginTop: 16 }}>
+            <div style={{ fontWeight: 800, fontSize: 14 }}>+ Add Another Menuply Contact</div>
+            <div style={{ display: "grid", gap: 10, gridTemplateColumns: "1fr 1fr" }}>
+              <label style={fieldLabel}>
+                First name *
+                <input
+                  required
+                  style={inputStyle}
+                  value={contactDraft.first_name}
+                  onChange={(e) => setContactDraft((p) => ({ ...p, first_name: e.target.value }))}
+                />
+              </label>
+              <label style={fieldLabel}>
+                Last name *
+                <input
+                  required
+                  style={inputStyle}
+                  value={contactDraft.last_name}
+                  onChange={(e) => setContactDraft((p) => ({ ...p, last_name: e.target.value }))}
+                />
+              </label>
+            </div>
+            <label style={fieldLabel}>
+              Email *
+              <input
+                type="email"
+                required
+                style={inputStyle}
+                value={contactDraft.email}
+                onChange={(e) => setContactDraft((p) => ({ ...p, email: e.target.value }))}
+              />
+            </label>
+            <label style={fieldLabel}>
+              Job title
+              <input
+                style={inputStyle}
+                value={contactDraft.job_title}
+                onChange={(e) => setContactDraft((p) => ({ ...p, job_title: e.target.value }))}
+              />
+            </label>
+            <label style={fieldLabel}>
+              Direct phone
+              <input
+                style={inputStyle}
+                value={contactDraft.phone}
+                onChange={(e) => setContactDraft((p) => ({ ...p, phone: e.target.value }))}
+              />
+            </label>
+            <label style={fieldLabel}>
+              Department / function
+              <input
+                style={inputStyle}
+                value={contactDraft.department_function}
+                onChange={(e) =>
+                  setContactDraft((p) => ({ ...p, department_function: e.target.value }))
+                }
+              />
+            </label>
+            <label style={fieldLabel}>
+              Region
+              <input
+                style={inputStyle}
+                value={contactDraft.region}
+                onChange={(e) => setContactDraft((p) => ({ ...p, region: e.target.value }))}
+              />
+            </label>
+            <label style={{ display: "flex", gap: 8, alignItems: "center", fontWeight: 700, fontSize: 13 }}>
+              <input
+                type="checkbox"
+                checked={contactDraft.is_primary_menuply_contact}
+                onChange={(e) =>
+                  setContactDraft((p) => ({
+                    ...p,
+                    is_primary_menuply_contact: e.target.checked,
+                    contact_function: e.target.checked ? "primary_menuply" : p.contact_function,
+                  }))
+                }
+              />
+              Designate as Primary Menuply Contact
+            </label>
+            <button
+              type="submit"
+              disabled={contactBusy}
+              style={{
+                padding: "12px 16px",
+                borderRadius: 999,
+                border: "none",
+                background: DIST_COLORS.accent || "#15803d",
+                color: "#fff",
+                fontWeight: 800,
+                cursor: "pointer",
+                width: "fit-content",
+              }}
+            >
+              {contactBusy ? "Saving…" : "Add Menuply contact"}
+            </button>
+          </form>
+        </PageCard>
+      ) : null}
 
       {canEdit ? (
         <PageCard>
@@ -344,4 +583,16 @@ const inputStyle = {
   fontWeight: 500,
   fontFamily: "inherit",
   fontSize: 14,
+};
+
+const fieldLabel = { display: "grid", gap: 4, fontWeight: 700, fontSize: 13 };
+
+const linkBtn = {
+  border: "none",
+  background: "transparent",
+  color: "#0f766e",
+  fontWeight: 700,
+  fontSize: 13,
+  cursor: "pointer",
+  padding: 0,
 };

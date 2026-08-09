@@ -145,6 +145,11 @@ export async function fetchPublicDistributor(slug, options = {}) {
   return apiGet(`/public/distributors/${key}`, options);
 }
 
+/** Unauthenticated self-serve distributor profile registration */
+export async function registerPublicDistributor(body) {
+  return apiPost(`/public/distributors/register`, body);
+}
+
 /** Unauthenticated distributor profile claim submit */
 export async function submitPublicDistributorClaim(slug, body) {
   const key = encodeURIComponent(String(slug || "").trim().toLowerCase());

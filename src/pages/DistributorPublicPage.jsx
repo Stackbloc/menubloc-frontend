@@ -61,19 +61,6 @@ function useIsMobile(breakpoint = 720) {
   return isMobile;
 }
 
-function statusBadgeStyle(claimStatus) {
-  if (claimStatus === "VERIFIED") {
-    return { label: "Verified", bg: "#ecfdf5", color: "#047857" };
-  }
-  if (claimStatus === "CLAIMED") {
-    return { label: "Claimed", bg: "#eff6ff", color: "#1d4ed8" };
-  }
-  if (claimStatus === "CLAIM_PENDING") {
-    return { label: "Claim Pending", bg: "#fff7ed", color: "#c2410c" };
-  }
-  return { label: "Unclaimed", bg: "rgba(250,250,249,0.16)", color: "#fafaf9" };
-}
-
 export default function DistributorPublicPage() {
   const { slug } = useParams();
   const isMobile = useIsMobile();
@@ -195,7 +182,6 @@ export default function DistributorPublicPage() {
 
   const d = distributor;
   const claimStatus = String(d.profile_claim_status || "UNCLAIMED").toUpperCase();
-  const badge = statusBadgeStyle(claimStatus);
   const cityLine = [[d.city, d.state].filter(Boolean).join(", "), d.postal_code]
     .filter(Boolean)
     .join(" ");
@@ -208,6 +194,8 @@ export default function DistributorPublicPage() {
   const websiteLabel = formatWebsiteHostLabel(website);
   const phone = d.phone || "";
   const callHref = phone ? `tel:${String(phone).replace(/[^\d+]/g, "")}` : "";
+  const companyEmail = d.email || "";
+  const mailHref = companyEmail ? `mailto:${companyEmail}` : "";
   const aboutText = d.description || d.short_note || "";
   const foundedText = d.founded_year != null ? String(d.founded_year) : "";
   const updates = Array.isArray(d.profile_updates) ? d.profile_updates : [];
@@ -215,6 +203,7 @@ export default function DistributorPublicPage() {
   const ink = "#fafaf9";
   const muted = "rgba(250,250,249,0.88)";
   const linkColor = "rgba(250,250,249,0.92)";
+  const hasHeroContact = Boolean(phone || website || companyEmail);
 
   return (
     <div style={styles.page} data-testid="distributor-public-profile">
@@ -296,20 +285,6 @@ export default function DistributorPublicPage() {
                 >
                   Food Distributor
                 </div>
-                <div
-                  style={{
-                    display: "inline-block",
-                    marginTop: 8,
-                    padding: "5px 10px",
-                    borderRadius: 999,
-                    background: badge.bg,
-                    color: badge.color,
-                    fontWeight: 800,
-                    fontSize: 12,
-                  }}
-                >
-                  {badge.label}
-                </div>
 
                 {hasAddress ? (
                   mapsHref ? (
@@ -348,7 +323,7 @@ export default function DistributorPublicPage() {
                   )
                 ) : null}
 
-                {phone || website ? (
+                {hasHeroContact ? (
                   <div
                     data-testid="profile-hero-contact"
                     style={{
@@ -368,6 +343,15 @@ export default function DistributorPublicPage() {
                         style={{ color: linkColor, textDecoration: "none", fontWeight: 600 }}
                       >
                         {phone}
+                      </a>
+                    ) : null}
+                    {companyEmail ? (
+                      <a
+                        href={mailHref}
+                        data-testid="profile-hero-email"
+                        style={{ color: linkColor, textDecoration: "none", fontWeight: 600 }}
+                      >
+                        {companyEmail}
                       </a>
                     ) : null}
                     {website ? (
@@ -482,6 +466,45 @@ export default function DistributorPublicPage() {
           aboutBlankMessage="Tell restaurants about this distributor."
           foundedBlankMessage="Add the year founded."
         />
+
+        {(Array.isArray(d.product_categories) && d.product_categories.length) ||
+        (Array.isArray(d.geographic_markets) && d.geographic_markets.length) ||
+        d.service_area_note ? (
+          <section
+            data-testid="distributor-markets-categories"
+            style={{
+              marginBottom: 20,
+              padding: "16px 16px",
+              borderRadius: 14,
+              border: `1px solid ${profileCardBorderVar}`,
+              background: "#fff",
+              boxShadow: profileCardShadowVar,
+            }}
+          >
+            {Array.isArray(d.product_categories) && d.product_categories.length ? (
+              <div style={{ marginBottom: d.geographic_markets?.length || d.service_area_note ? 12 : 0 }}>
+                <div style={{ fontSize: 12, fontWeight: 800, color: PROFILE_MUTED, letterSpacing: 0.4, textTransform: "uppercase" }}>
+                  Categories
+                </div>
+                <div style={{ marginTop: 6, fontSize: 14, color: PROFILE_INK, lineHeight: 1.45 }}>
+                  {d.product_categories.join(" · ")}
+                </div>
+              </div>
+            ) : null}
+            {(Array.isArray(d.geographic_markets) && d.geographic_markets.length) || d.service_area_note ? (
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 800, color: PROFILE_MUTED, letterSpacing: 0.4, textTransform: "uppercase" }}>
+                  Markets served
+                </div>
+                <div style={{ marginTop: 6, fontSize: 14, color: PROFILE_INK, lineHeight: 1.45 }}>
+                  {Array.isArray(d.geographic_markets) && d.geographic_markets.length
+                    ? d.geographic_markets.join(" · ")
+                    : d.service_area_note}
+                </div>
+              </div>
+            ) : null}
+          </section>
+        ) : null}
 
         <ProfileUpdates
           updates={updates}

@@ -1,6 +1,7 @@
 /**
  * Public food distributors directory — /distributors
- * Lists controlled-list foodservice distributors; each card links to /distributors/:slug.
+ * Ecosystem intro + create-profile CTA; cards link to /distributors/:slug.
+ * Claim status is not shown (Menuply relationship is separate from public directory).
  */
 
 import React, { useEffect, useMemo, useState } from "react";
@@ -12,7 +13,7 @@ import { fetchPublicDistributors, toConsumerErrorMessage } from "../lib/api.js";
 
 const DIRECTORY_PAGE_TITLE = "Food Distributors on Menuply";
 const DIRECTORY_META_DESCRIPTION =
-  "Browse Menuply profiles for major foodservice distributors. Tap a company to view its public profile.";
+  "Join the Menuply foodservice ecosystem. Browse distributor profiles and create your free Menuply distributor profile.";
 const CANONICAL_BASE = "https://menuply.com";
 
 const DISTRIBUTOR_ACCENT = { border: "#0f766e", bg: "#f0fdfa" };
@@ -24,7 +25,7 @@ const CARD_SHELL = {
   width: "100%",
   maxWidth: "100%",
   minWidth: 0,
-  minHeight: 220,
+  minHeight: 200,
   aspectRatio: "1 / 1",
   padding: "1.1rem",
   borderRadius: 6,
@@ -47,31 +48,20 @@ function clampLines(maxLines) {
   };
 }
 
-function claimBadge(distributor) {
-  const status = String(distributor.profile_claim_status || "UNCLAIMED").toUpperCase();
-  if (status === "VERIFIED" || distributor.is_verified) {
-    return { label: "Verified", bg: "#ecfdf5", color: "#047857" };
-  }
-  if (status === "CLAIMED" || distributor.is_claimed) {
-    return { label: "Claimed", bg: "#eff6ff", color: "#1d4ed8" };
-  }
-  if (status === "CLAIM_PENDING") {
-    return { label: "Claim Pending", bg: "#fff7ed", color: "#c2410c" };
-  }
-  return { label: "Unclaimed", bg: "#f3f4f6", color: "#4b5563" };
-}
-
 function locationLine(distributor) {
   if (distributor.city && distributor.state) {
     return `${distributor.city}, ${distributor.state}`;
   }
+  const markets = Array.isArray(distributor.geographic_markets)
+    ? distributor.geographic_markets.filter(Boolean)
+    : [];
+  if (markets.length) return markets.slice(0, 2).join(" · ");
   if (distributor.service_area_note) return distributor.service_area_note;
   return null;
 }
 
 function DistributorDirectoryCard({ distributor }) {
   const href = `/distributors/${encodeURIComponent(distributor.slug)}`;
-  const badge = claimBadge(distributor);
   const location = locationLine(distributor);
 
   return (
@@ -110,20 +100,6 @@ function DistributorDirectoryCard({ distributor }) {
               {location}
             </div>
           ) : null}
-          <span
-            style={{
-              display: "inline-flex",
-              alignSelf: "flex-start",
-              padding: "0.2rem 0.5rem",
-              borderRadius: 999,
-              fontSize: "0.72rem",
-              fontWeight: 700,
-              background: badge.bg,
-              color: badge.color,
-            }}
-          >
-            {badge.label}
-          </span>
         </div>
         <div
           style={{
@@ -191,7 +167,9 @@ export default function DistributorsDirectoryPage() {
     const needle = q.trim().toLowerCase();
     if (!needle) return distributors;
     return distributors.filter((d) => {
-      const hay = [d.display_name, d.city, d.state, d.service_area_note, d.slug]
+      const markets = Array.isArray(d.geographic_markets) ? d.geographic_markets.join(" ") : "";
+      const cats = Array.isArray(d.product_categories) ? d.product_categories.join(" ") : "";
+      const hay = [d.display_name, d.city, d.state, d.service_area_note, d.slug, markets, cats]
         .filter(Boolean)
         .join(" ")
         .toLowerCase();
@@ -217,20 +195,66 @@ export default function DistributorsDirectoryPage() {
             border: "1px solid #dbe7df",
             background: "#ffffff",
             borderRadius: 18,
-            padding: "1rem 1.1rem",
+            padding: "1.25rem 1.2rem",
             marginBottom: "1rem",
             boxShadow: "0 8px 24px rgba(15,23,42,0.05)",
             display: "grid",
-            gap: "0.75rem",
+            gap: "0.85rem",
           }}
         >
-          <h1 style={{ margin: 0, fontSize: "1.65rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.02em" }}>
-            Food distributors
+          <h1 style={{ margin: 0, fontSize: "1.65rem", fontWeight: 800, color: "#111827", letterSpacing: "-0.02em" }}>
+            Join the Menuply Foodservice Ecosystem
           </h1>
-          <p style={{ margin: 0, color: "#4b5563", fontSize: "0.95rem", lineHeight: 1.5 }}>
-            Menuply profiles for major foodservice distributors. Tap a card to open that company&apos;s
-            public profile.
-          </p>
+          <div style={{ display: "grid", gap: "0.7rem", color: "#374151", fontSize: "0.98rem", lineHeight: 1.55 }}>
+            <p style={{ margin: 0 }}>
+              Menuply is a new platform built to strengthen the foodservice industry by serving{" "}
+              <strong>restaurants, diners, and the businesses that support restaurants</strong>.
+            </p>
+            <p style={{ margin: 0 }}>
+              Restaurants are at the center of the ecosystem. Menuply helps restaurants market their
+              businesses, publish and share their menus, connect with diners, and sell directly. We are
+              also creating a dedicated platform where restaurants can discover food distributors, learn
+              about their products and services, and establish business relationships.
+            </p>
+            <p style={{ margin: 0 }}>
+              We believe there is an opportunity to make the restaurant industry{" "}
+              <strong>more connected, accessible, and efficient</strong>
+              —and we are building Menuply to help make that happen.
+            </p>
+            <p style={{ margin: 0, fontWeight: 700, color: "#111827" }}>
+              Become part of the solution as we create a new way of doing business in the restaurant
+              industry.
+            </p>
+          </div>
+          <Link
+            to="/distributors/join"
+            style={{
+              display: "inline-flex",
+              justifyContent: "center",
+              alignItems: "center",
+              width: "fit-content",
+              maxWidth: "100%",
+              padding: "0.85rem 1.25rem",
+              borderRadius: 12,
+              background: "linear-gradient(135deg, #0f766e 0%, #115e59 100%)",
+              color: "#fff",
+              fontWeight: 800,
+              fontSize: "1.05rem",
+              textDecoration: "none",
+              boxShadow: "0 4px 14px rgba(15, 118, 110, 0.35)",
+            }}
+          >
+            Create your free distributor profile today
+          </Link>
+        </header>
+
+        <section aria-labelledby="distributor-directory-list-heading" style={{ display: "grid", gap: "0.75rem" }}>
+          <h2
+            id="distributor-directory-list-heading"
+            style={{ margin: 0, fontSize: "1.25rem", fontWeight: 750, color: "#111827" }}
+          >
+            Food distributors on Menuply
+          </h2>
           <input
             type="search"
             enterKeyHint="search"
@@ -249,29 +273,33 @@ export default function DistributorsDirectoryPage() {
               padding: "0.65rem 0.75rem",
             }}
           />
-        </header>
 
-        <p style={{ margin: "0 0 0.75rem", color: "#6b7280", fontSize: "0.9rem", fontWeight: 600 }}>
-          {loading
-            ? "Loading distributors…"
-            : error
-              ? error
-              : `${filtered.length} distributor${filtered.length === 1 ? "" : "s"} — tap a card to view the profile.`}
-        </p>
-
-        {!loading && !error ? (
-          <div style={CLUSTER_DIRECTORY_GRID_STYLE}>
-            {filtered.map((d) => (
-              <DistributorDirectoryCard key={d.slug || d.id} distributor={d} />
-            ))}
-          </div>
-        ) : null}
-
-        {!loading && !error && filtered.length === 0 ? (
-          <p style={{ textAlign: "center", color: "#6b7280", padding: "2rem 1rem" }}>
-            No distributors match that search.
+          <p style={{ margin: 0, color: "#6b7280", fontSize: "0.9rem", fontWeight: 600 }}>
+            {loading
+              ? "Loading distributors…"
+              : error
+                ? error
+                : `${filtered.length} distributor${filtered.length === 1 ? "" : "s"} — tap a card to view the profile.`}
           </p>
-        ) : null}
+
+          {!loading && !error ? (
+            <div style={CLUSTER_DIRECTORY_GRID_STYLE}>
+              {filtered.map((d) => (
+                <DistributorDirectoryCard key={d.slug || d.id} distributor={d} />
+              ))}
+            </div>
+          ) : null}
+
+          {!loading && !error && filtered.length === 0 ? (
+            <p style={{ textAlign: "center", color: "#6b7280", padding: "2rem 1rem" }}>
+              No distributors match that search.{" "}
+              <Link to="/distributors/join" style={{ color: "#0f766e", fontWeight: 700 }}>
+                Create your free distributor profile
+              </Link>
+              .
+            </p>
+          ) : null}
+        </section>
       </div>
       <BottomNav />
     </div>
