@@ -303,6 +303,9 @@ export const unpublishMenuConsoleMenu = (restaurantId, menuId) =>
   post(`/api/owner/menu-console/restaurants/${restaurantId}/menus/${menuId}/unpublish`, {});
 export const deleteMenuConsoleMenu = (restaurantId, menuId) =>
   req(`/api/owner/menu-console/restaurants/${restaurantId}/menus/${menuId}`, { method: "DELETE" });
+/** Hide all visible CK dishes; keep public.menus shell for Update OCR from scratch. */
+export const clearMenuConsoleMenuItems = (restaurantId, menuId) =>
+  post(`/api/owner/menu-console/restaurants/${restaurantId}/menus/${menuId}/clear-items`, {});
 export const addMenuConsoleItem = (restaurantId, menuId, body) =>
   post(`/api/owner/menu-console/restaurants/${restaurantId}/menus/${menuId}/items`, body);
 export const updateMenuConsoleItem = (restaurantId, menuId, itemId, body) =>

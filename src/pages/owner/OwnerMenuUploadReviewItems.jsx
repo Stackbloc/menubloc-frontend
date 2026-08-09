@@ -10,6 +10,10 @@ import {
   rejectReviewItem,
   bulkReviewItems,
 } from "../../lib/ownerApi.js";
+import {
+  looksGluedForSplitFields,
+  splitGluedMenuItemFields,
+} from "../../lib/splitGluedMenuItemLine.js";
 
 function resolveItemSection(item) {
   return String(
@@ -333,6 +337,33 @@ export default function OwnerMenuUploadReviewItems() {
         return next;
       });
     }
+  }
+
+  /** Fill Name / Price / Description from a glued OCR name cell (local only until Approve). */
+  function handleSplitFields(itemId) {
+    const edit = getEdit(itemId);
+    const source = [edit.name, edit.description].filter(Boolean).join(" ").trim()
+      || String(edit.name || "").trim();
+    const split = splitGluedMenuItemFields(source);
+    if (!split) {
+      setError("Could not split this line into name, price, and description. Edit the fields manually.");
+      return;
+    }
+    setEdits((prev) => ({
+      ...prev,
+      [itemId]: {
+        ...prev[itemId],
+        name: split.name,
+        price: String(split.price),
+        description: split.description || prev[itemId]?.description || "",
+      },
+    }));
+    setStatusMsg(
+      split.fragment_count > 1
+        ? `Split fields applied (first of ${split.fragment_count} dishes found). Approve or edit, then handle other dishes separately if needed.`
+        : "Split fields applied — review Name, Price, and Description, then Approve."
+    );
+    setError("");
   }
 
   /** Sections typed on any row become dropdown options for all subsequent rows. */
@@ -757,8 +788,29 @@ export default function OwnerMenuUploadReviewItems() {
                                 placeholder="Item name"
                                 rows={2}
                               />
-                              <div style={{ marginTop: 4 }}>
+                              <div style={{ marginTop: 4, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
                                 <SourceTextToggle text={item.original_text || item.raw_text} />
+                                {looksGluedForSplitFields(edit.name, edit.price) ? (
+                                  <button
+                                    type="button"
+                                    data-testid="owner-review-split-fields"
+                                    disabled={isBusy}
+                                    onClick={() => handleSplitFields(item.id)}
+                                    title="Pull name, price, and description out of a glued OCR line"
+                                    style={{
+                                      border: "none",
+                                      background: "none",
+                                      padding: 0,
+                                      fontSize: 11,
+                                      fontWeight: 700,
+                                      color: OWNER_COLORS.accent,
+                                      cursor: isBusy ? "not-allowed" : "pointer",
+                                      textDecoration: "underline",
+                                    }}
+                                  >
+                                    Split fields
+                                  </button>
+                                ) : null}
                               </div>
                             </div>
                           )}

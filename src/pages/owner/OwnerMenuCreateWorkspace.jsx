@@ -21,6 +21,7 @@ import {
   updateMenuConsoleMenu,
   updateMenuConsoleRestaurant,
   deleteMenuConsoleMenu,
+  clearMenuConsoleMenuItems,
   deleteMenuConsoleRestaurant,
   getMenuConsoleRestaurantDeleteImpact,
 } from "../../lib/ownerApi.js";
@@ -524,15 +525,53 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
     }
   }
 
+  async function handleClearMenuDishes(targetMenu) {
+    if (!rid || !targetMenu?.id) return;
+    const label = targetMenu.display_name || targetMenu.name || `Menu #${targetMenu.id}`;
+    if (
+      !window.confirm(
+        `Clear all dishes from "${label}"?\n\nThis hides every dish so you can Update OCR from scratch. The menu shell stays — do not delete the menu for a re-upload.`
+      )
+    ) {
+      return;
+    }
+    setPublishing(true);
+    setActionMsg("");
+    setUploadMsg(null);
+    try {
+      const res = await clearMenuConsoleMenuItems(rid, targetMenu.id);
+      await reloadMenus(targetMenu.id);
+      await loadMenuState();
+      setActionMsg(
+        res?.message ||
+          `Cleared ${res?.cleared_count ?? 0} dishes. Use Update OCR above to upload a fresh menu.`
+      );
+    } catch (err) {
+      setActionMsg(err?.payload?.error || err?.message || "Could not clear dishes.");
+    } finally {
+      setPublishing(false);
+    }
+  }
+
   async function handleDeleteMenuRow(targetMenu) {
     if (!rid || !targetMenu?.id) return;
-    if (targetMenu.is_primary) {
-      setActionMsg("Cannot delete the primary menu.");
+    if (targetMenu.is_primary || menusWithItems.length <= 1) {
+      setActionMsg(
+        "This is the only / primary menu. Use Clear dishes, then Update OCR — deleting the shell is blocked."
+      );
       return;
     }
     const label = targetMenu.display_name || targetMenu.name || `Menu #${targetMenu.id}`;
-    if (!window.confirm(`Delete "${label}" and its items? This cannot be undone.`)) return;
+    if (
+      !window.confirm(
+        `Delete menu shell "${label}"?\n\nFor a fresh OCR upload, prefer Clear dishes instead. Delete removes this extra menu.`
+      )
+    ) {
+      return;
+    }
     setPublishing(true);
+    setActionMsg("");
+    setUploadMsg(null);
     try {
       await deleteMenuConsoleMenu(rid, targetMenu.id);
       await handleMenuDeleted(targetMenu.id);
@@ -1179,7 +1218,7 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
         subtitle={
           restaurantNeedsMenuContent
             ? "Fastest path: select one PDF or multiple photos, then Upload & Parse. The system builds the menu for you."
-            : "Update OCR: add PDF or photos to this menu. New dishes are added; same-named dishes replace prior versions (price/description updated)."
+            : "Update OCR: add PDF or photos to this menu. New dishes are added; same-named dishes replace prior versions. To wipe everything first, use Clear dishes on the menu below."
         }
       />
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12, marginTop: 12 }}>
@@ -1411,7 +1450,22 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
                       >
                         {active ? "Editing" : "Edit items"}
                       </button>
-                      {!m.is_primary ? (
+                      <button
+                        type="button"
+                        data-testid="owner-menu-clear-dishes"
+                        disabled={publishing}
+                        onClick={() => handleClearMenuDishes(m)}
+                        title="Hide all dishes so you can Update OCR from scratch"
+                        style={{
+                          padding: "8px 12px", borderRadius: 8,
+                          border: `1px solid ${OWNER_COLORS.line}`,
+                          background: "#fff", color: OWNER_COLORS.ink,
+                          fontWeight: 700, fontSize: 12, cursor: publishing ? "not-allowed" : "pointer",
+                        }}
+                      >
+                        Clear dishes
+                      </button>
+                      {!m.is_primary && menusWithItems.length > 1 ? (
                         <button
                           type="button"
                           disabled={publishing}
@@ -1421,7 +1475,7 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
                             background: "#fff", color: "#991b1b", fontWeight: 700, fontSize: 12, cursor: "pointer",
                           }}
                         >
-                          Delete
+                          Delete menu
                         </button>
                       ) : null}
                     </div>
