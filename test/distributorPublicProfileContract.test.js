@@ -17,8 +17,10 @@ function read(rel) {
 }
 
 describe("distributor public profile contracts", () => {
-  it("routes /distributors/:slug and claim path; portal stays /distributor", () => {
+  it("routes /distributors index before :slug; claim path; portal stays /distributor", () => {
     const app = read("src/App.jsx");
+    assert.match(app, /DistributorsDirectoryPage/);
+    assert.match(app, /path="\/distributors"/);
     assert.match(app, /\/distributors\/:slug\/claim/);
     assert.match(app, /\/distributors\/:slug/);
     assert.match(app, /DistributorPublicPage/);
@@ -28,14 +30,29 @@ describe("distributor public profile contracts", () => {
     assert.match(app, /\/distributor\/account\/signup/);
     assert.match(app, /\/distributor\/account\/login/);
     assert.match(app, /\/distributor\/profile/);
+    const indexIdx = app.indexOf('path="/distributors"');
+    const slugIdx = app.indexOf('path="/distributors/:slug"');
+    assert.ok(indexIdx >= 0 && slugIdx >= 0);
+    assert.ok(indexIdx < slugIdx, "directory route must precede :slug");
   });
 
   it("api helper uses shared apiGet / Railway fallback path", () => {
     const api = read("src/lib/api.js");
+    assert.match(api, /fetchPublicDistributors/);
     assert.match(api, /fetchPublicDistributor/);
     assert.match(api, /submitPublicDistributorClaim/);
-    assert.match(api, /\/public\/distributors\//);
+    assert.match(api, /\/public\/distributors/);
     assert.match(api, /DEFAULT_PROD_API_BASE/);
+  });
+
+  it("directory page lists cards linking to /distributors/:slug", () => {
+    const page = read("src/pages/DistributorsDirectoryPage.jsx");
+    assert.match(page, /fetchPublicDistributors/);
+    assert.match(page, /\/distributors\/\$\{/);
+    assert.match(page, /Food distributors/);
+    assert.match(page, /View profile/);
+    assert.match(page, /StickyPageHeader/);
+    assert.match(page, /BottomNav/);
   });
 
   it("distributorApi exposes profile-updates write helpers", () => {

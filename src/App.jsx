@@ -170,6 +170,7 @@ import ProfileSearchPage from "./pages/ProfileSearchPage.jsx";
 import RestaurantProfile from "./pages/RestaurantProfile.jsx";
 import RestaurantPublicPage from "./pages/RestaurantPublicPage.jsx";
 import DistributorPublicPage from "./pages/DistributorPublicPage.jsx";
+import DistributorsDirectoryPage from "./pages/DistributorsDirectoryPage.jsx";
 import DistributorClaimPage from "./pages/DistributorClaimPage.jsx";
 import DistributorProfileEditPage from "./pages/distributor/DistributorProfileEditPage.jsx";
 import RestaurantsLandingPage from "./pages/RestaurantsLandingPage.jsx";
@@ -731,6 +732,7 @@ function AppShell({ easyMenu, crmHost }) {
         {/* Single-segment: market aggregator when slug is city-state, profile otherwise */}
         <Route path="/restaurants/:slugOrId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantOrMarketRouter />} />
         <Route path="/restaurants/:slugOrId/menu" element={crmHost ? <HostRouteRedirect to="/crm" /> : <PublicMenuPage />} />
+        <Route path="/distributors" element={crmHost ? <HostRouteRedirect to="/crm" /> : <DistributorsDirectoryPage />} />
         <Route path="/distributors/:slug/claim" element={crmHost ? <HostRouteRedirect to="/crm" /> : <DistributorClaimPage />} />
         <Route path="/distributors/:slug" element={crmHost ? <HostRouteRedirect to="/crm" /> : <DistributorPublicPage />} />
         <Route path="/menu-template-preview" element={crmHost ? <HostRouteRedirect to="/crm" /> : <PublicMenuPage />} />

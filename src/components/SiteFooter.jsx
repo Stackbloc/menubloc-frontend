@@ -73,6 +73,10 @@ export default function SiteFooter() {
             {t("discovery.footer.clusters", "Clusters")}
           </Link>
 
+          <Link to="/distributors" style={footerLinkStyle}>
+            {t("discovery.footer.distributors", "Distributors")}
+          </Link>
+
           <Link to="/terms" style={footerLinkStyle}>
             {t("discovery.footer.terms", "Terms of Use")}
           </Link>

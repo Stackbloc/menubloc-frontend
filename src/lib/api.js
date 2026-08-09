@@ -136,6 +136,10 @@ export async function fetchRestaurantMenuPreview(restaurantId, options = {}) {
   return apiGet(`/public/restaurants/${id}/menu-preview${qs}`, options);
 }
 
+export async function fetchPublicDistributors(options = {}) {
+  return apiGet(`/public/distributors`, options);
+}
+
 export async function fetchPublicDistributor(slug, options = {}) {
   const key = encodeURIComponent(String(slug || "").trim().toLowerCase());
   return apiGet(`/public/distributors/${key}`, options);
