@@ -642,7 +642,6 @@ export default function OwnerMenuUploadReviewItems() {
       <OcrEditSplitLayout
         pages={pages}
         liveItems={liveItems}
-        liveMenuHref={menuHref}
         railTitle="Source menu"
         defaultRailMode="ocr"
       >

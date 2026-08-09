@@ -43,14 +43,43 @@ function formatPrice(price) {
   return `$${n.toFixed(n % 1 === 0 ? 0 : 2)}`;
 }
 
+function ViewOcrAction({ onViewOcr, ocrHref, hasOcrSource }) {
+  if (hasOcrSource && typeof onViewOcr === "function") {
+    return (
+      <button
+        type="button"
+        className="live-menu-reference__open-link"
+        onClick={onViewOcr}
+      >
+        View OCR
+      </button>
+    );
+  }
+  if (ocrHref) {
+    return (
+      <a href={ocrHref} className="live-menu-reference__open-link">
+        View OCR →
+      </a>
+    );
+  }
+  return (
+    <span className="live-menu-reference__ocr-unavailable" title="No OCR source for this menu">
+      No OCR source for this menu
+    </span>
+  );
+}
+
 /**
  * Plain live-menu reference for Mode 2 (post-publication editing).
  * Name / price / description only — no macros, coach UI, or chips.
+ * Public live-menu preview stays on the Edit dishes header — this rail offers View OCR.
  */
 export default function LiveMenuReferencePanel({
   items = [],
   title = "Live menu",
-  liveMenuHref = null,
+  onViewOcr = null,
+  ocrHref = null,
+  hasOcrSource = false,
   onClose = null,
   loading = false,
   error = "",
@@ -75,16 +104,7 @@ export default function LiveMenuReferencePanel({
           {total > 0 ? ` (${total} item${total !== 1 ? "s" : ""})` : ""}
         </span>
         <div className="live-menu-reference__header-actions">
-          {liveMenuHref ? (
-            <a
-              href={liveMenuHref}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="live-menu-reference__open-link"
-            >
-              Open full menu ↗
-            </a>
-          ) : null}
+          <ViewOcrAction onViewOcr={onViewOcr} ocrHref={ocrHref} hasOcrSource={hasOcrSource} />
           {onClose ? (
             <button
               type="button"

@@ -272,6 +272,7 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
   const [reviewItems, setReviewItems] = useState([]);
   const [reviewSessions, setReviewSessions] = useState([]);
   const [sourcePages, setSourcePages] = useState([]);
+  const [latestUploadId, setLatestUploadId] = useState(null);
   const [bulkActing, setBulkActing] = useState(false);
   const [actionMsg, setActionMsg] = useState("");
   const [publishing, setPublishing] = useState(false);
@@ -415,6 +416,7 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
     setReviewItems([]);
     setReviewSessions([]);
     setSourcePages([]);
+    setLatestUploadId(null);
     setProfile(EMPTY_PROFILE);
     setMenuName("Main Menu");
     setMenuType("main");
@@ -728,6 +730,8 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
     );
     setReviewSessions(sessions);
     if (!pendingUploadId && pending[0]?.id) setPendingUploadId(pending[0].id);
+    // Latest upload even when holds are empty (partial publish — View OCR → Review Queue).
+    setLatestUploadId(uploads[0]?.id || null);
 
     // OCR companion rail: prefer pending upload pages, else most recent upload with pages
     let pagesForRail = [];
@@ -1451,14 +1455,13 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
           <OcrEditSplitLayout
             pages={sourcePages}
             liveItems={menuDetail.sections || []}
-            liveMenuHref={`/public/restaurants/${rid}/menu`}
-            railTitle="Source menu"
-            defaultRailMode={
-              String(menuDetail.menu?.status || "").toLowerCase() === "published" ||
-              Number(menuDetail.item_count || 0) > 0
-                ? "live"
-                : "ocr"
+            ocrHref={
+              latestUploadId
+                ? `/owner/menu-manager/uploads/${latestUploadId}/review-items`
+                : null
             }
+            railTitle="Source menu"
+            defaultRailMode={sourcePages.length > 0 ? "ocr" : "live"}
           >
             <PageCard style={{ padding: 20, marginBottom: 16 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap", marginBottom: 12 }}>

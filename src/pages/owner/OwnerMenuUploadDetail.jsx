@@ -321,11 +321,9 @@ function ParsedItemsSection({ uploadId, upload, pages = [] }) {
     <OcrEditSplitLayout
       pages={pages}
       liveItems={promotedItems}
-      liveMenuHref={
-        canPreviewLiveMenu ? `/restaurants/${publicRestaurantId}/menu` : null
-      }
+      ocrHref={uploadId ? `/owner/menu-manager/uploads/${uploadId}/review-items` : null}
       railTitle="Source menu"
-      defaultRailMode={promotedItems.length > 0 ? "live" : "ocr"}
+      defaultRailMode={pages.length > 0 ? "ocr" : promotedItems.length > 0 ? "live" : "ocr"}
     >
     <PageCard style={{ padding: 22, marginBottom: 18 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>

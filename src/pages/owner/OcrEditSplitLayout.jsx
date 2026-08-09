@@ -19,7 +19,7 @@ const FIXED_BOTTOM_PX = 16;
 export default function OcrEditSplitLayout({
   pages = [],
   liveItems = null,
-  liveMenuHref = null,
+  ocrHref = null,
   children,
   railTitle = "Source menu",
   defaultOpen = true,
@@ -143,7 +143,9 @@ export default function OcrEditSplitLayout({
   const panel = showingLive ? (
     <LiveMenuReferencePanel
       items={normalizedLive}
-      liveMenuHref={liveMenuHref}
+      hasOcrSource={hasPages}
+      onViewOcr={hasPages ? () => setRailMode("ocr") : null}
+      ocrHref={!hasPages && ocrHref ? ocrHref : null}
       onClose={isDrawer ? () => setRailOpen(false) : null}
     />
   ) : showingOcr ? (

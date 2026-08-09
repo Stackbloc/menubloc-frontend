@@ -2,6 +2,7 @@
  * Contract: OCR Edit split layout — Mode 1 OCR rail + Mode 2 plain live menu.
  * Guards against regressing to stacked image|OCR above the editor without a source rail,
  * and against putting nutrition into the Mode 2 live-menu reference panel.
+ * Live rail CTA is View OCR (not Open full menu) for incomplete-capture recovery.
  */
 import { describe, it, expect } from "vitest";
 import fs from "node:fs";
@@ -36,19 +37,25 @@ describe("OCR edit split pane contract", () => {
     expect(css).toMatch(/ocr-source-evidence__magnify-cue/);
   });
 
-  it("defines plain LiveMenuReferencePanel without nutrition", () => {
+  it("defines plain LiveMenuReferencePanel with View OCR and without nutrition", () => {
     const src = read("LiveMenuReferencePanel.jsx");
     expect(src).toMatch(/LiveMenuReferencePanel/);
     expect(src).toMatch(/normalizeLiveMenuItems/);
     expect(src).toMatch(/live-menu-reference/);
-    expect(src).toMatch(/Open full menu/);
+    expect(src).toMatch(/View OCR/);
+    expect(src).toMatch(/onViewOcr/);
+    expect(src).toMatch(/ocrHref/);
+    expect(src).toMatch(/hasOcrSource/);
+    expect(src).toMatch(/No OCR source for this menu/);
+    expect(src).not.toMatch(/Open full menu/);
+    expect(src).not.toMatch(/liveMenuHref/);
     expect(src).not.toMatch(/nutrition/i);
     expect(src).not.toMatch(/calories/i);
     expect(src).not.toMatch(/verdict/i);
     expect(src).not.toMatch(/allergen/i);
   });
 
-  it("defines OcrEditSplitLayout with OCR/Live mode toggle and drawer containment", () => {
+  it("defines OcrEditSplitLayout with OCR/Live mode toggle and View OCR switch", () => {
     const layout = read("OcrEditSplitLayout.jsx");
     const css = read("ocrEditSplitLayout.css");
     const shell = fs.readFileSync(
@@ -59,8 +66,12 @@ describe("OCR edit split pane contract", () => {
     expect(layout).toMatch(/LiveMenuReferencePanel/);
     expect(layout).toMatch(/defaultRailMode/);
     expect(layout).toMatch(/liveItems/);
+    expect(layout).toMatch(/ocrHref/);
+    expect(layout).toMatch(/setRailMode\("ocr"\)/);
+    expect(layout).toMatch(/hasOcrSource=\{hasPages\}/);
     expect(layout).toMatch(/Source menu · OCR/);
     expect(layout).toMatch(/Live menu/);
+    expect(layout).not.toMatch(/liveMenuHref/);
     expect(layout).toMatch(/ocr-edit-split__rail-slot/);
     expect(layout).toMatch(/ocr-edit-split__rail--fixed/);
     expect(layout).toMatch(/getBoundingClientRect/);
@@ -69,6 +80,7 @@ describe("OCR edit split pane contract", () => {
     expect(css).toMatch(/ocr-edit-split__rail/);
     expect(css).toMatch(/ocr-edit-split__mode-toggle/);
     expect(css).toMatch(/live-menu-reference/);
+    expect(css).toMatch(/live-menu-reference__ocr-unavailable/);
     expect(css).toMatch(/overflow-y:\s*auto/);
     expect(css).toMatch(/ocr-edit-split__rail--fixed/);
     expect(css).toMatch(/ocr-edit-split__rail-slot/);
@@ -92,20 +104,27 @@ describe("OCR edit split pane contract", () => {
     expect(src).not.toMatch(/Source Pages \(/);
   });
 
-  it("Edit dishes defaults to Live menu when published or has items", () => {
+  it("Edit dishes defaults to OCR rail when source pages exist", () => {
     const src = read("OwnerMenuCreateWorkspace.jsx");
     expect(src).toMatch(/OcrEditSplitLayout/);
     expect(src).toMatch(/liveItems=\{menuDetail\.sections/);
-    expect(src).toMatch(/defaultRailMode/);
-    expect(src).toMatch(/published/);
+    expect(src).toMatch(/sourcePages/);
+    expect(src).toMatch(/latestUploadId/);
+    expect(src).toMatch(/defaultRailMode=\{sourcePages\.length > 0 \? "ocr" : "live"\}/);
+    expect(src).toMatch(/ocrHref=/);
+    expect(src).toMatch(/review-items/);
     expect(src).toMatch(/Edit dishes/);
+    expect(src).toMatch(/View live menu/);
+    expect(src).not.toMatch(/liveMenuHref=/);
   });
 
-  it("Upload Detail Parsed Items uses dual-mode split when pages or live exist", () => {
+  it("Upload Detail prefers OCR rail when pages exist", () => {
     const src = read("OwnerMenuUploadDetail.jsx");
     expect(src).toMatch(/OcrEditSplitLayout/);
     expect(src).toMatch(/liveItems=\{promotedItems\}/);
-    expect(src).toMatch(/defaultRailMode=\{promotedItems\.length > 0 \? "live" : "ocr"\}/);
+    expect(src).toMatch(/defaultRailMode=\{pages\.length > 0 \? "ocr" : promotedItems\.length > 0 \? "live" : "ocr"\}/);
     expect(src).toMatch(/pages=\{pages\}/);
+    expect(src).toMatch(/ocrHref=/);
+    expect(src).not.toMatch(/liveMenuHref=/);
   });
 });
