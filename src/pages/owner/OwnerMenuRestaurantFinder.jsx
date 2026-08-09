@@ -18,6 +18,13 @@ function loadRecentRestaurants() {
   }
 }
 
+function formatLocationLine(restaurant) {
+  const cityState = [restaurant.city, restaurant.state].filter(Boolean).join(", ");
+  const zip = String(restaurant.postal_code || "").trim();
+  if (cityState && zip) return `${cityState} ${zip}`;
+  return cityState || zip || "";
+}
+
 export function saveRecentRestaurant(restaurant) {
   if (!restaurant?.id) return;
   const entry = {
@@ -25,6 +32,8 @@ export function saveRecentRestaurant(restaurant) {
     name: restaurant.name || restaurant.restaurant_name,
     city: restaurant.city,
     state: restaurant.state,
+    address_line1: restaurant.address_line1 || restaurant.address || "",
+    postal_code: restaurant.postal_code || "",
     menu_count: restaurant.menu_count,
     item_count: restaurant.item_count,
   };
@@ -34,10 +43,24 @@ export function saveRecentRestaurant(restaurant) {
 
 function ResultRow({ restaurant, onSelect }) {
   const name = restaurant.name || restaurant.restaurant_name || "Restaurant";
+  const street = String(restaurant.address_line1 || restaurant.address || "").trim();
+  const location = formatLocationLine(restaurant);
+  const metaParts = [];
+  metaParts.push(street || "No address on file");
+  if (location) metaParts.push(location);
+  metaParts.push(`#${restaurant.id}`);
+  if (restaurant.menu_count != null) {
+    metaParts.push(`${restaurant.menu_count} menu${restaurant.menu_count === 1 ? "" : "s"}`);
+  }
+  if (restaurant.item_count != null) {
+    metaParts.push(`${restaurant.item_count} item${restaurant.item_count === 1 ? "" : "s"}`);
+  }
+
   return (
     <button
       type="button"
       onClick={() => onSelect(restaurant)}
+      data-testid="owner-menu-restaurant-result"
       style={{
         display: "block",
         width: "100%",
@@ -50,11 +73,15 @@ function ResultRow({ restaurant, onSelect }) {
       }}
     >
       <div style={{ fontWeight: 700, fontSize: 14, color: OWNER_COLORS.ink }}>{name}</div>
-      <div style={{ fontSize: 12, color: OWNER_COLORS.muted, marginTop: 4 }}>
-        #{restaurant.id}
-        {restaurant.city || restaurant.state ? ` · ${[restaurant.city, restaurant.state].filter(Boolean).join(", ")}` : ""}
-        {restaurant.menu_count != null ? ` · ${restaurant.menu_count} menu${restaurant.menu_count === 1 ? "" : "s"}` : ""}
-        {restaurant.item_count != null ? ` · ${restaurant.item_count} items` : ""}
+      <div
+        style={{
+          fontSize: 12,
+          color: street ? OWNER_COLORS.muted : "#b45309",
+          marginTop: 4,
+          fontWeight: street ? 400 : 600,
+        }}
+      >
+        {metaParts.join(" · ")}
       </div>
     </button>
   );
@@ -66,7 +93,7 @@ export default function OwnerMenuRestaurantFinder({
   onSelect,
   onClear,
   title = "Find Restaurant",
-  subtitle = "Search by name, city, state, or restaurant ID. Selecting a restaurant loads it into the workspace below.",
+  subtitle = "Search by name, address, city, state, or restaurant ID. Select a restaurant to load it below for profile/address edits, menus, and Update OCR.",
 }) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState(null);
@@ -140,6 +167,11 @@ export default function OwnerMenuRestaurantFinder({
     onClear?.();
   }
 
+  const selectedAddress =
+    selectedRestaurant?.address_line1 ||
+    selectedRestaurant?.address ||
+    "";
+
   return (
     <PageCard style={{ padding: 20, marginBottom: 16 }}>
       <SectionTitle
@@ -161,6 +193,8 @@ export default function OwnerMenuRestaurantFinder({
           id={selectedRestaurant.id}
           city={selectedRestaurant.city}
           state={selectedRestaurant.state}
+          addressLine1={selectedAddress}
+          postalCode={selectedRestaurant.postal_code || ""}
         >
           <button
             type="button"
@@ -185,7 +219,7 @@ export default function OwnerMenuRestaurantFinder({
             type="search"
             value={query}
             onChange={handleQueryChange}
-            placeholder="Restaurant name, city, state, or ID…"
+            placeholder="Restaurant name, address, city, state, or ID…"
             autoComplete="off"
             spellCheck={false}
             style={{ ...inputStyle, marginTop: 4 }}

@@ -1,6 +1,6 @@
 /**
- * Menu Manager: post-selection screens show restaurant name · #id · city, state
- * via shared OwnerRestaurantContextBar.
+ * Menu Manager: post-selection screens show restaurant name · street · city/state
+ * via shared OwnerRestaurantContextBar; finder ResultRow shows address_line1.
  */
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -16,11 +16,14 @@ const detailSrc = fs.readFileSync(path.join(ownerDir, "OwnerMenuUploadDetail.jsx
 const editorSrc = fs.readFileSync(path.join(ownerDir, "OwnerMenuEditorPage.jsx"), "utf8");
 const finderSrc = fs.readFileSync(path.join(ownerDir, "OwnerMenuRestaurantFinder.jsx"), "utf8");
 
-// Shared bar formats name + #id + city/state
+// Shared bar formats name + street (when supplied) + city/state + #id
 assert.match(barSrc, /data-testid="owner-restaurant-context-bar"/);
 assert.match(barSrc, /#\$\{idNum\}/);
 assert.match(barSrc, /metaParts\.join\(" · "\)/);
 assert.match(barSrc, /Unknown/);
+assert.match(barSrc, /addressLine1/);
+assert.match(barSrc, /No address on file/);
+assert.match(barSrc, /streetProvided/);
 
 // Review queue stores upload restaurant fields and renders the bar
 assert.match(reviewSrc, /import OwnerRestaurantContextBar/);
@@ -33,15 +36,24 @@ assert.match(detailSrc, /import OwnerRestaurantContextBar/);
 assert.match(detailSrc, /<OwnerRestaurantContextBar/);
 assert.match(detailSrc, /label="Restaurant ID"/);
 
-// Menu editor shows bar from loaded restaurant
+// Menu editor shows bar from loaded restaurant including address
 assert.match(editorSrc, /import OwnerRestaurantContextBar/);
 assert.match(editorSrc, /<OwnerRestaurantContextBar/);
 assert.match(editorSrc, /restaurant\.city/);
 assert.match(editorSrc, /restaurant\.state/);
+assert.match(editorSrc, /addressLine1=\{restaurant\.address_line1/);
 
-// Workspace finder reuses shared bar for selected restaurant
+// Workspace finder: ResultRow address + shared bar for selected restaurant
 assert.match(finderSrc, /import OwnerRestaurantContextBar/);
 assert.match(finderSrc, /<OwnerRestaurantContextBar/);
 assert.match(finderSrc, /Change restaurant/);
+assert.match(finderSrc, /address_line1/);
+assert.match(finderSrc, /No address on file/);
+assert.match(finderSrc, /addressLine1=\{selectedAddress\}/);
+assert.match(finderSrc, /postal_code/);
+assert.match(
+  finderSrc,
+  /Select a restaurant to load it below for profile\/address edits, menus, and Update OCR/
+);
 
 console.log("ownerMenuManagerRestaurantContextContract: ok");

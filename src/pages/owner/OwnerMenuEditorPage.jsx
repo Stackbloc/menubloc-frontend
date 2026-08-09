@@ -336,6 +336,8 @@ export default function OwnerMenuEditorPage() {
           id={restaurant.id || rid}
           city={restaurant.city}
           state={restaurant.state}
+          addressLine1={restaurant.address_line1 ?? restaurant.address ?? ""}
+          postalCode={restaurant.postal_code ?? ""}
           style={{ marginBottom: 16 }}
         />
       ) : null}

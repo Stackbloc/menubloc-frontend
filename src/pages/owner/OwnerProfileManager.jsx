@@ -715,6 +715,8 @@ export default function OwnerProfileManager() {
             menuplyPublicId={selected.menuply_public_id}
             city={form.city || selected.city}
             state={form.state || selected.state}
+            addressLine1={form.address_line1 ?? selected.address_line1 ?? ""}
+            postalCode={form.postal_code ?? selected.postal_code ?? ""}
             style={{ marginBottom: 16 }}
           >
             <button

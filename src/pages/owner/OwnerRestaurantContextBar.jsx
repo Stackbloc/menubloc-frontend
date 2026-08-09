@@ -4,8 +4,7 @@ import MenuplyRestaurantIdBadge from "../../components/restaurant/MenuplyRestaur
 
 /**
  * Shared restaurant identity chip for Menu Manager post-selection screens.
- * Shows: name · Menuply ID · city, state (omits missing parts).
- * Numeric #id remains available as a secondary admin hint when public id is absent.
+ * Shows: name · street address · city/state/zip · Menuply ID / #id.
  */
 export default function OwnerRestaurantContextBar({
   name,
@@ -13,17 +12,25 @@ export default function OwnerRestaurantContextBar({
   menuplyPublicId = "",
   city,
   state,
+  addressLine1,
+  postalCode,
   style,
   children = null,
 }) {
   const displayName = String(name || "").trim() || "Unknown";
-  const location = [city, state].filter(Boolean).join(", ");
+  const streetProvided = addressLine1 !== undefined && addressLine1 !== null;
+  const street = String(addressLine1 || "").trim();
+  const cityState = [city, state].filter(Boolean).join(", ");
+  const zip = String(postalCode || "").trim();
+  const location = cityState && zip ? `${cityState} ${zip}` : cityState || zip || "";
   const publicId = String(menuplyPublicId || "").trim();
   const idNum = Number(id);
   const hasId = Number.isFinite(idNum) && idNum > 0;
   const metaParts = [];
-  if (!publicId && hasId) metaParts.push(`#${idNum}`);
+  // Only when caller supplies addressLine1 (Menu Manager select/load): show street or explicit missing.
+  if (streetProvided) metaParts.push(street || "No address on file");
   if (location) metaParts.push(location);
+  if (!publicId && hasId) metaParts.push(`#${idNum}`);
 
   return (
     <div
@@ -49,7 +56,14 @@ export default function OwnerRestaurantContextBar({
           </div>
         ) : null}
         {metaParts.length > 0 ? (
-          <div style={{ fontSize: 12, color: OWNER_COLORS.muted, marginTop: 4 }}>
+          <div
+            style={{
+              fontSize: 12,
+              color: streetProvided && !street ? "#b45309" : OWNER_COLORS.muted,
+              marginTop: 4,
+              fontWeight: streetProvided && !street ? 600 : 400,
+            }}
+          >
             {metaParts.join(" · ")}
           </div>
         ) : null}
