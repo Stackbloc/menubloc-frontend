@@ -29,7 +29,7 @@ const PAGE = {
   width: "100%",
   boxSizing: "border-box",
   minHeight: "100dvh",
-  background: "#fff",
+  background: "linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)",
   color: "#111827",
   fontFamily: '"DM Sans", "Segoe UI", system-ui, sans-serif',
 };
@@ -169,11 +169,12 @@ function StadiumSearchForm({
         style={{
           padding: "0.65rem 1rem",
           borderRadius: 8,
-          border: "none",
-          background: searchInput.trim() ? "#111827" : "#9ca3af",
-          color: "#fff",
+          border: "1px solid #d1d5db",
+          background: searchInput.trim() ? "#fff" : "#f9fafb",
+          color: searchInput.trim() ? "#111827" : "#9ca3af",
           cursor: searchInput.trim() ? "pointer" : "not-allowed",
           alignSelf: "flex-start",
+          fontWeight: 700,
         }}
       >
         Search
@@ -584,7 +585,7 @@ export default function DestinationVenueFoodPage() {
                   cursor: "pointer",
                 }}
               >
-                View menu
+                Explore →
               </button>
               {itemDetail.ck_menu_item_id ? (
                 <Link
@@ -614,13 +615,13 @@ export default function DestinationVenueFoodPage() {
             type="button"
             onClick={() => addItemToOrder(itemDetail)}
             style={{
-              minHeight: 48,
+              minHeight: 44,
               width: "100%",
-              borderRadius: 10,
-              border: "none",
-              background: "#111827",
-              color: "#fff",
-              fontSize: "1rem",
+              borderRadius: 8,
+              border: "1px solid #16a34a",
+              background: "#fff",
+              color: "#15803d",
+              fontSize: "0.95rem",
               fontWeight: 700,
               cursor: "pointer",
             }}
@@ -1007,11 +1008,22 @@ export default function DestinationVenueFoodPage() {
             )}
           </>
         ) : (
-          <div style={{ display: "grid", gap: 10 }}>
+          <div style={{ display: "grid", gap: 8 }}>
             {vendors.map((v) => {
               const locLine = locationsLine(v.locations, (v.locations || []).length > 0);
               return (
-                <article key={v.id} style={VENDOR_CARD}>
+                <button
+                  key={v.id}
+                  type="button"
+                  onClick={() => openVendor(v.slug)}
+                  style={{
+                    ...VENDOR_CARD,
+                    width: "100%",
+                    textAlign: "left",
+                    cursor: "pointer",
+                    font: "inherit",
+                  }}
+                >
                   <div style={{ fontWeight: 700, fontSize: "1.05rem", color: "#111827" }}>{v.name}</div>
                   <div style={{ color: "#6b7280", fontSize: "0.88rem" }}>
                     {v.has_menu
@@ -1022,25 +1034,10 @@ export default function DestinationVenueFoodPage() {
                       : ""}
                   </div>
                   <div style={{ color: "#9ca3af", fontSize: "0.82rem" }}>{locLine}</div>
-                  <button
-                    type="button"
-                    onClick={() => openVendor(v.slug)}
-                    style={{
-                      marginTop: 4,
-                      alignSelf: "flex-start",
-                      minHeight: 40,
-                      borderRadius: 8,
-                      border: "none",
-                      background: "#111827",
-                      color: "#fff",
-                      padding: "0 14px",
-                      fontWeight: 700,
-                      cursor: "pointer",
-                    }}
-                  >
-                    {v.has_menu ? "View menu" : "View vendor"}
-                  </button>
-                </article>
+                  <div style={{ marginTop: 2, fontWeight: 700, color: "#2563eb", fontSize: "0.9rem" }}>
+                    Explore →
+                  </div>
+                </button>
               );
             })}
           </div>

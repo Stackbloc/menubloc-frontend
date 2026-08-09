@@ -19,6 +19,10 @@ function run() {
   assert.match(page, /league: "nfl"/);
   assert.match(page, /\/destination-venues\//);
   assert.match(page, /teamLabel|teams/);
+  assert.match(page, /CLUSTER_DIRECTORY_GRID_STYLE/);
+  assert.match(page, /Explore →/);
+  assert.match(page, /#f8fafc|#ffffff/);
+  assert.doesNotMatch(page, /#0c1620|#0f1a24/);
   assert.doesNotMatch(page, /HomeNext/);
   assert.doesNotMatch(page, /FoodInterestsPage/);
 

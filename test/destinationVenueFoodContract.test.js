@@ -24,8 +24,9 @@ function run() {
   assert.doesNotMatch(api, /const API = \(import\.meta\.env/);
 
   const hub = read("src/pages/DestinationVenuePage.jsx");
-  assert.match(hub, /Explore Food & Drink/);
+  assert.match(hub, /Explore →|Explore Food & Drink/);
   assert.match(hub, /\/destination-venues\/\$\{encodeURIComponent\(slug\)\}\/food/);
+  assert.doesNotMatch(hub, /#0c1620|#0f1a24/);
   assert.doesNotMatch(hub, /HomeNext/);
   assert.doesNotMatch(hub, /FoodInterestsPage/);
 
@@ -43,8 +44,10 @@ function run() {
   assert.match(page, /Demo seat delivery/);
   assert.match(page, /BottomNav/);
   // LA Live-aligned light chrome (not dark concessions shell)
-  assert.match(page, /background: "#fff"/);
+  assert.match(page, /#f8fafc|#ffffff|#fff/);
+  assert.match(page, /Explore →/);
   assert.doesNotMatch(page, /#0f1a24/);
+  assert.doesNotMatch(page, /View menu/);
   assert.doesNotMatch(page, /menu_research_status/);
   assert.doesNotMatch(page, /HomeNext/);
   assert.doesNotMatch(page, /FoodInterestsPage/);

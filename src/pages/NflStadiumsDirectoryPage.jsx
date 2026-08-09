@@ -1,95 +1,42 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import BottomNav from "../components/BottomNav.jsx";
+import StickyPageHeader from "../components/StickyPageHeader.jsx";
+import { CLUSTER_DIRECTORY_GRID_STYLE } from "../components/cluster/ClusterDirectoryCard.jsx";
 import { fetchDestinationVenueDirectory } from "../lib/destinationVenueApi.js";
 
-const css = {
-  page: {
-    minHeight: "100dvh",
-    background: "linear-gradient(165deg, #0c1620 0%, #152a3a 45%, #1a3344 100%)",
-    color: "#f2f5f7",
-    fontFamily: '"DM Sans", "Segoe UI", system-ui, sans-serif',
-    paddingBottom: 96,
-  },
-  header: {
-    padding: "24px 20px 12px",
-    borderBottom: "1px solid rgba(255,255,255,0.08)",
-  },
-  eyebrow: {
-    margin: 0,
-    fontSize: 12,
-    fontWeight: 700,
-    letterSpacing: "0.1em",
-    textTransform: "uppercase",
-    color: "rgba(61,214,140,0.9)",
-  },
-  title: {
-    margin: "8px 0 0",
-    fontSize: "clamp(28px, 7vw, 36px)",
-    fontWeight: 800,
-    letterSpacing: "-0.03em",
-    lineHeight: 1.1,
-  },
-  subtitle: {
-    margin: "8px 0 0",
-    fontSize: 15,
-    color: "rgba(242,245,247,0.65)",
-    maxWidth: 420,
-    lineHeight: 1.4,
-  },
-  search: {
-    width: "100%",
-    boxSizing: "border-box",
-    marginTop: 14,
-    borderRadius: 14,
-    border: "1px solid rgba(255,255,255,0.14)",
-    background: "rgba(255,255,255,0.06)",
-    color: "#fff",
-    fontSize: 16,
-    padding: "13px 14px",
-    outline: "none",
-  },
-  body: { padding: "12px 16px 24px" },
-  count: {
-    margin: "0 0 10px",
-    fontSize: 13,
-    color: "rgba(242,245,247,0.5)",
-    fontWeight: 600,
-  },
-  card: {
-    display: "block",
-    textDecoration: "none",
-    color: "inherit",
-    borderRadius: 16,
-    background: "rgba(255,255,255,0.05)",
-    border: "1px solid rgba(255,255,255,0.08)",
-    padding: "14px 14px 12px",
-    marginBottom: 10,
-    minHeight: 72,
-  },
-  stadium: {
-    margin: 0,
-    fontSize: 17,
-    fontWeight: 800,
-    letterSpacing: "-0.015em",
-  },
-  teams: {
-    margin: "6px 0 0",
-    fontSize: 14,
-    fontWeight: 700,
-    color: "#3dd68c",
-  },
-  place: {
-    margin: "4px 0 0",
-    fontSize: 13,
-    color: "rgba(242,245,247,0.55)",
-  },
-  empty: {
-    textAlign: "center",
-    padding: "40px 16px",
-    color: "rgba(242,245,247,0.55)",
-  },
+/** Same accent as ClustersDirectoryPage TYPE_ACCENTS.stadium */
+const STADIUM_ACCENT = { border: "#2563eb", bg: "#eff6ff" };
+
+const CARD_SHELL = {
+  display: "flex",
+  flexDirection: "column",
+  justifyContent: "space-between",
+  width: "100%",
+  maxWidth: "100%",
+  minWidth: 0,
+  minHeight: 220,
+  aspectRatio: "1 / 1",
+  padding: "1.1rem",
+  borderRadius: 6,
+  borderWidth: 2,
+  borderStyle: "solid",
+  borderColor: STADIUM_ACCENT.border,
+  background: STADIUM_ACCENT.bg,
+  boxSizing: "border-box",
+  boxShadow: "0 2px 0 rgba(15, 23, 42, 0.08)",
+  overflow: "hidden",
+  color: "inherit",
 };
+
+function clampLines(maxLines) {
+  return {
+    display: "-webkit-box",
+    WebkitLineClamp: maxLines,
+    WebkitBoxOrient: "vertical",
+    overflow: "hidden",
+  };
+}
 
 function teamLabel(teams) {
   if (!teams?.length) return "NFL";
@@ -97,6 +44,69 @@ function teamLabel(teams) {
     .map((t) => t.name || t.short_name || t.abbreviation)
     .filter(Boolean)
     .join(" · ");
+}
+
+function StadiumDirectoryCard({ venue }) {
+  const href = `/destination-venues/${encodeURIComponent(venue.slug)}`;
+  const teams = teamLabel(venue.teams);
+
+  return (
+    <Link
+      to={href}
+      style={{ display: "block", color: "inherit", textDecoration: "none", minWidth: 0, maxWidth: "100%" }}
+    >
+      <article style={CARD_SHELL}>
+        <div style={{ display: "grid", gap: "0.55rem", minHeight: 0, minWidth: 0 }}>
+          <div
+            style={{
+              ...clampLines(3),
+              fontSize: "1.05rem",
+              fontWeight: 700,
+              color: "#111827",
+              lineHeight: 1.3,
+              overflowWrap: "anywhere",
+            }}
+          >
+            {venue.name}
+          </div>
+          <div
+            style={{
+              fontSize: "0.8rem",
+              fontWeight: 700,
+              color: "#4b5563",
+              textTransform: "uppercase",
+              letterSpacing: "0.04em",
+              overflowWrap: "anywhere",
+            }}
+          >
+            Stadium
+          </div>
+          {venue.city && venue.state ? (
+            <div style={{ color: "#6b7280", fontSize: "0.88rem", lineHeight: 1.4, overflowWrap: "anywhere" }}>
+              {venue.city}, {venue.state}
+            </div>
+          ) : null}
+          <div style={{ ...clampLines(3), color: "#4b5563", fontSize: "0.84rem", lineHeight: 1.45 }}>
+            {teams}
+            {" — food, drinks, and menus at the venue."}
+          </div>
+        </div>
+        <div
+          style={{
+            display: "grid",
+            gap: "0.3rem",
+            marginTop: "0.75rem",
+            paddingTop: "0.75rem",
+            borderTop: `1px solid ${STADIUM_ACCENT.border}`,
+          }}
+        >
+          <div style={{ fontWeight: 700, color: STADIUM_ACCENT.border, fontSize: "0.92rem" }}>
+            Explore →
+          </div>
+        </div>
+      </article>
+    </Link>
+  );
 }
 
 export default function NflStadiumsDirectoryPage() {
@@ -147,52 +157,92 @@ export default function NflStadiumsDirectoryPage() {
   }, [venues, q]);
 
   return (
-    <div style={css.page}>
-      <header style={css.header}>
-        <p style={css.eyebrow}>NFL</p>
-        <h1 style={css.title}>Stadiums</h1>
-        <p style={css.subtitle}>
-          Explore food & drink at every NFL stadium. Shared venues list both home
-          teams.
-        </p>
-        <input
-          style={css.search}
-          type="search"
-          enterKeyHint="search"
-          placeholder="Search team or stadium…"
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          aria-label="Search NFL stadiums or teams"
-        />
-      </header>
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)",
+        padding: "0 1rem 5rem",
+        width: "100%",
+        boxSizing: "border-box",
+        overflowX: "clip",
+      }}
+    >
+      <StickyPageHeader />
+      <div style={{ maxWidth: 1080, margin: "0 auto", width: "100%", minWidth: 0, paddingTop: "1rem" }}>
+        <header
+          style={{
+            border: "1px solid #dbe7df",
+            background: "#ffffff",
+            borderRadius: 18,
+            padding: "1rem 1.1rem",
+            marginBottom: "1rem",
+            boxShadow: "0 8px 24px rgba(15,23,42,0.05)",
+            display: "grid",
+            gap: "0.75rem",
+          }}
+        >
+          <div>
+            <Link
+              to="/clusters"
+              style={{
+                color: "#374151",
+                textDecoration: "none",
+                fontWeight: 600,
+                fontSize: "0.9rem",
+              }}
+            >
+              ← All clusters
+            </Link>
+          </div>
+          <h1 style={{ margin: 0, fontSize: "1.65rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.02em" }}>
+            NFL stadiums
+          </h1>
+          <p style={{ margin: 0, color: "#4b5563", fontSize: "0.95rem", lineHeight: 1.5 }}>
+            Explore food and drink at every NFL stadium — same Menuply destination
+            format as L.A. Live. Tap a card to open that venue.
+          </p>
+          <input
+            type="search"
+            enterKeyHint="search"
+            placeholder="Search team or stadium…"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            aria-label="Search NFL stadiums or teams"
+            style={{
+              width: "100%",
+              boxSizing: "border-box",
+              borderRadius: 8,
+              border: "1px solid #d1d5db",
+              background: "#fff",
+              color: "#111827",
+              fontSize: "1rem",
+              padding: "0.65rem 0.75rem",
+            }}
+          />
+        </header>
 
-      <main style={css.body}>
-        {loading ? <div style={css.empty}>Loading stadiums…</div> : null}
-        {error ? <div style={css.empty}>{error}</div> : null}
+        <p style={{ margin: "0 0 0.75rem", color: "#6b7280", fontSize: "0.9rem", fontWeight: 600 }}>
+          {loading
+            ? "Loading stadiums…"
+            : error
+              ? error
+              : `${filtered.length} stadium${filtered.length === 1 ? "" : "s"} — tap a card to explore.`}
+        </p>
+
         {!loading && !error ? (
-          <>
-            <p style={css.count}>
-              {filtered.length} stadium{filtered.length === 1 ? "" : "s"}
-            </p>
+          <div style={CLUSTER_DIRECTORY_GRID_STYLE}>
             {filtered.map((v) => (
-              <Link
-                key={v.slug}
-                to={`/destination-venues/${encodeURIComponent(v.slug)}`}
-                style={css.card}
-              >
-                <h2 style={css.stadium}>{v.name}</h2>
-                <p style={css.teams}>{teamLabel(v.teams)}</p>
-                <p style={css.place}>
-                  {v.city}, {v.state}
-                </p>
-              </Link>
+              <StadiumDirectoryCard key={v.slug} venue={v} />
             ))}
-            {filtered.length === 0 ? (
-              <div style={css.empty}>No stadiums match that search.</div>
-            ) : null}
-          </>
+          </div>
         ) : null}
-      </main>
+
+        {!loading && !error && filtered.length === 0 ? (
+          <p style={{ textAlign: "center", color: "#6b7280", padding: "2rem 1rem" }}>
+            No stadiums match that search.
+          </p>
+        ) : null}
+      </div>
       <BottomNav />
     </div>
   );
