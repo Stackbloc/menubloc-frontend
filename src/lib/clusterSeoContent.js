@@ -8,7 +8,7 @@
  * so copy can ship without production data updates.
  */
 
-/** @typedef {"airport"|"university"|"stadium"|"entertainment_complex"|"downtown"|"other"} ClusterSeoType */
+/** @typedef {"airport"|"university"|"stadium"|"entertainment_complex"|"convention_district"|"downtown"|"other"} ClusterSeoType */
 
 /**
  * @typedef {object} ClusterSeoEntry
@@ -27,6 +27,7 @@
 /** Public Cluster slugs that must have unique SEO config. */
 export const PUBLIC_CLUSTER_SEO_SLUGS = Object.freeze([
   "la-live",
+  "lacc",
   "lax",
   "atl-airport",
   "american-airlines-center",
@@ -53,6 +54,21 @@ export const CLUSTER_SEO_CONTENT = Object.freeze({
     metaDescription:
       "Explore available restaurants, menus, food, and drinks around L.A. Live in Los Angeles, CA. Search dining options with Menuply.",
     searchPlaceholder: "Search L.A. Live menus",
+  }),
+  lacc: Object.freeze({
+    slug: "lacc",
+    displayName: "Los Angeles Convention Center",
+    city: "Los Angeles",
+    state: "CA",
+    clusterType: "convention_district",
+    intro:
+      "Discover available restaurants, menus, drinks, and dining options within walking distance of the Los Angeles Convention Center in downtown Los Angeles, California. Browse participating restaurants near the convention campus and neighboring dining — including options around nearby L.A. Live — before events, conferences, and shows. Use Menuply to explore menu items and plan where to eat when you are visiting this part of downtown Los Angeles.",
+    cardDescription:
+      "Available restaurants and menus within walking distance of the Los Angeles Convention Center.",
+    seoTitle: "Los Angeles Convention Center Restaurants, Menus & Food | Menuply",
+    metaDescription:
+      "Explore available restaurants, menus, food, and drinks near the Los Angeles Convention Center in Los Angeles, CA. Search dining options with Menuply.",
+    searchPlaceholder: "Search Convention Center menus",
   }),
   lax: Object.freeze({
     slug: "lax",
