@@ -8,8 +8,6 @@ import { useLanguage } from "../context/LanguageContext.jsx";
 
 const FOOTER_LINK_PATH_PREFIXES = ["/operator", "/owner"];
 const FOOTER_HIDDEN_PATHS = new Set(["/checkout"]);
-/** Distributors stays routed at /distributors; omit the footer link on home only. */
-const DISTRIBUTORS_FOOTER_HIDDEN_PATHS = new Set(["/", "/home-next"]);
 
 function isPublicPath(pathname) {
   const path = String(pathname || "");
@@ -25,7 +23,6 @@ const footerLinkStyle = {
 export default function SiteFooter() {
   const location = useLocation();
   const { language, setLanguage, t } = useLanguage();
-  const showDistributorsLink = !DISTRIBUTORS_FOOTER_HIDDEN_PATHS.has(location.pathname);
 
   if (!isPublicPath(location.pathname)) return null;
   if (FOOTER_HIDDEN_PATHS.has(location.pathname)) return null;
@@ -76,11 +73,7 @@ export default function SiteFooter() {
             {t("discovery.footer.clusters", "Clusters")}
           </Link>
 
-          {showDistributorsLink ? (
-            <Link to="/distributors" style={footerLinkStyle}>
-              {t("discovery.footer.distributors", "Distributors")}
-            </Link>
-          ) : null}
+          {/* /distributors stays routed for invite-only direct links — no public footer entry */}
 
           <Link to="/terms" style={footerLinkStyle}>
             {t("discovery.footer.terms", "Terms of Use")}

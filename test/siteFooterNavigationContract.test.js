@@ -1,6 +1,7 @@
 /**
  * Public SiteFooter navigation — canonical marketplace links (2026-07-09 d333af2).
- * Diners / Restaurants (onboarding) / Clusters; Creators page route kept for indexing.
+ * Diners / Restaurants (onboarding) / Clusters; Creators + Distributors routes kept for
+ * invite/direct access — no public footer entry for Distributors.
  * no restaurant auth links in footer row.
  */
 import assert from "node:assert/strict";
@@ -19,16 +20,21 @@ function testFooterMarketplaceLinks() {
   assert.match(src, /<Link to="\/diner\/signup"/);
   assert.match(src, /<Link to="\/restaurant\/onboarding"/);
   assert.match(src, /<Link to="\/clusters"/);
-  assert.match(src, /<Link to="\/distributors"/);
+  assert.doesNotMatch(src, /<Link to="\/distributors"/);
   assert.doesNotMatch(src, /<Link to="\/creative-pros"/);
   assert.doesNotMatch(src, /<Link to="\/operator\/login"/);
   assert.doesNotMatch(src, /discovery\.footer\.signup/);
   assert.doesNotMatch(src, /discovery\.footer\.signin/);
-  // Home hides Distributors link only; SiteFooter stays; /distributors remains routed.
-  assert.match(src, /showDistributorsLink/);
-  assert.match(src, /DISTRIBUTORS_FOOTER_HIDDEN_PATHS/);
-  assert.match(src, /\{showDistributorsLink \? \(/);
   assert.doesNotMatch(src, /FOOTER_HIDDEN_PATHS = new Set\(\["\/checkout", "\/"/);
+}
+
+function testDistributorsPathRemainsRouted() {
+  const src = read("src/App.jsx");
+  assert.match(
+    src,
+    /path="\/distributors"/,
+    "expected /distributors to remain routed for invite-only direct links"
+  );
 }
 
 function testCreatorsPathRemainsRouted() {
@@ -62,6 +68,7 @@ function testOperatorLoginUsesAuthPageFrame() {
 }
 
 testFooterMarketplaceLinks();
+testDistributorsPathRemainsRouted();
 testCreatorsPathRemainsRouted();
 testRestaurantsRouteUsesLandingPage();
 testOperatorLoginUsesAuthPageFrame();
