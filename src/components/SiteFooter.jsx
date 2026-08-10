@@ -7,7 +7,8 @@ import { Link, useLocation } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext.jsx";
 
 const FOOTER_LINK_PATH_PREFIXES = ["/operator", "/owner"];
-const FOOTER_HIDDEN_PATHS = new Set(["/checkout"]);
+/** Hide chrome on checkout + home — keep SiteFooter + all linked routes elsewhere. */
+const FOOTER_HIDDEN_PATHS = new Set(["/checkout", "/", "/home-next"]);
 
 function isPublicPath(pathname) {
   const path = String(pathname || "");

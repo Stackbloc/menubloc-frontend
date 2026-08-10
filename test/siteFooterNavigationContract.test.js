@@ -24,6 +24,9 @@ function testFooterMarketplaceLinks() {
   assert.doesNotMatch(src, /<Link to="\/operator\/login"/);
   assert.doesNotMatch(src, /discovery\.footer\.signup/);
   assert.doesNotMatch(src, /discovery\.footer\.signin/);
+  // Home must not show SiteFooter; linked paths (e.g. /distributors) remain routed.
+  assert.match(src, /FOOTER_HIDDEN_PATHS[\s\S]*"\/"/);
+  assert.match(src, /FOOTER_HIDDEN_PATHS[\s\S]*"\/home-next"/);
 }
 
 function testCreatorsPathRemainsRouted() {
