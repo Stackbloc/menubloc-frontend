@@ -92,7 +92,7 @@ export default function OwnerDashboard() {
         <section style={{ marginBottom: 28 }}>
           <SectionTitle
             title="Growth & conversion"
-            subtitle="Abandoned restaurant Stripe checkouts, new subscriptions by plan, logins, and new diner accounts. Click a count for details."
+            subtitle="Abandoned restaurant Stripe checkouts, new subscriptions by plan, logins, and new diner accounts. Click any metric name or count to open details."
           />
           <GrowthMetricsPanel growth={data.growth} />
         </section>
@@ -211,10 +211,40 @@ function GrowthMetricsPanel({ growth }) {
             {rows.map((row) => (
               <tr key={row.id}>
                 <td style={TD_STYLE}>
-                  <div style={{ fontWeight: 700, color: OWNER_COLORS.ink }}>{row.label}</div>
-                  {row.hint ? (
-                    <div style={{ marginTop: 4, fontSize: 12, color: OWNER_COLORS.muted }}>{row.hint}</div>
-                  ) : null}
+                  <button
+                    type="button"
+                    onClick={() => toggleSelection({ metric: row.id, interval: "today" })}
+                    data-testid={`growth-metric-${row.id}`}
+                    style={{
+                      border: "none",
+                      background: "transparent",
+                      padding: 0,
+                      margin: 0,
+                      cursor: "pointer",
+                      textAlign: "left",
+                      width: "100%",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontWeight: 700,
+                        color:
+                          selection?.metric === row.id && !selection?.plan_code
+                            ? OWNER_COLORS.accent
+                            : OWNER_COLORS.ink,
+                        textDecoration: "underline",
+                        textUnderlineOffset: 2,
+                      }}
+                    >
+                      {row.label}
+                    </div>
+                    {row.hint ? (
+                      <div style={{ marginTop: 4, fontSize: 12, color: OWNER_COLORS.muted }}>{row.hint}</div>
+                    ) : null}
+                    <div style={{ marginTop: 6, fontSize: 12, fontWeight: 700, color: OWNER_COLORS.accent }}>
+                      View details →
+                    </div>
+                  </button>
                 </td>
                 {intervals.map((key) => {
                   const active =
@@ -370,19 +400,22 @@ function GrowthCountButton({ value, onClick, active, large = false, testId }) {
       type="button"
       onClick={onClick}
       data-testid={testId}
-      title="View details"
+      title="View details for this period"
+      aria-pressed={active ? "true" : "false"}
       style={{
-        border: "none",
-        background: "transparent",
-        padding: "2px 4px",
+        border: active ? `1px solid ${OWNER_COLORS.accent}` : `1px solid ${OWNER_COLORS.line}`,
+        background: active ? "#eef6f1" : "#fff",
+        padding: large ? "6px 10px" : "4px 8px",
         margin: 0,
         cursor: "pointer",
         fontWeight: 800,
         fontVariantNumeric: "tabular-nums",
         fontSize: large ? 22 : 13,
-        color: active ? OWNER_COLORS.accent : OWNER_COLORS.ink,
-        textDecoration: active ? "underline" : "none",
-        borderRadius: 6,
+        color: OWNER_COLORS.accent,
+        textDecoration: "underline",
+        textUnderlineOffset: 2,
+        borderRadius: 8,
+        minWidth: large ? 64 : 40,
       }}
     >
       {formatCount(value)}

@@ -30,5 +30,7 @@ describe("owner growth detail drilldowns", () => {
     assert.match(dash, /data-testid="growth-detail-panel"/);
     assert.match(dash, /new_diner_accounts/);
     assert.match(dash, /market area/i);
+    assert.match(dash, /data-testid=\{`growth-metric-\$\{row\.id\}`\}/);
+    assert.match(dash, /View details →/);
   });
 });
