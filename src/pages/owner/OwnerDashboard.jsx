@@ -1,13 +1,28 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import OwnerLayout, { OWNER_COLORS, PageCard, SectionTitle } from "./OwnerLayout.jsx";
-import { getOwnerDashboardSummary } from "../../lib/ownerApi.js";
+import { getOwnerDashboardSummary, getOwnerGrowthDetails } from "../../lib/ownerApi.js";
 import { SimpleTable } from "./intelligence/intelligenceShared.jsx";
 
 const METRIC_GRID = {
   display: "grid",
   gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
   gap: 14,
+};
+
+const INTERVAL_LABELS = {
+  today: "Today",
+  yesterday: "Yesterday",
+  "7d": "7 days",
+  "30d": "30 days",
+};
+
+const GROWTH_METRIC_LABELS = {
+  abandoned_checkouts: "Abandoned checkouts",
+  restaurant_logins: "Restaurant logins",
+  diner_logins: "Diner logins",
+  new_diner_accounts: "New diner accounts",
+  new_subscriptions: "New subscriptions",
 };
 
 export default function OwnerDashboard() {
@@ -77,7 +92,7 @@ export default function OwnerDashboard() {
         <section style={{ marginBottom: 28 }}>
           <SectionTitle
             title="Growth & conversion"
-            subtitle="Abandoned restaurant Stripe checkouts, new subscriptions by plan, logins, and new diner accounts."
+            subtitle="Abandoned restaurant Stripe checkouts, new subscriptions by plan, logins, and new diner accounts. Click a count for details."
           />
           <GrowthMetricsPanel growth={data.growth} />
         </section>
@@ -135,16 +150,17 @@ export default function OwnerDashboard() {
   );
 }
 
+function selectionKey(sel) {
+  if (!sel) return "";
+  return `${sel.metric}|${sel.interval}|${sel.plan_code || ""}`;
+}
+
 function GrowthMetricsPanel({ growth }) {
   const intervals = growth?.intervals?.length
     ? growth.intervals
     : ["today", "yesterday", "7d", "30d"];
-  const labels = {
-    today: "Today",
-    yesterday: "Yesterday",
-    "7d": "7 days",
-    "30d": "30 days",
-  };
+
+  const [selection, setSelection] = useState(null);
 
   const rows = [
     {
@@ -168,10 +184,14 @@ function GrowthMetricsPanel({ growth }) {
     {
       id: "new_diner_accounts",
       label: "New diner accounts",
-      hint: "From market signup log",
+      hint: "From market signup log — includes market area when known",
       values: growth.new_diner_accounts || {},
     },
   ];
+
+  function toggleSelection(next) {
+    setSelection((prev) => (selectionKey(prev) === selectionKey(next) ? null : next));
+  }
 
   return (
     <PageCard style={{ padding: 22 }}>
@@ -182,7 +202,7 @@ function GrowthMetricsPanel({ growth }) {
               <th style={TH_STYLE}>Metric</th>
               {intervals.map((key) => (
                 <th key={key} style={{ ...TH_STYLE, textAlign: "right" }}>
-                  {labels[key] || key}
+                  {INTERVAL_LABELS[key] || key}
                 </th>
               ))}
             </tr>
@@ -196,11 +216,22 @@ function GrowthMetricsPanel({ growth }) {
                     <div style={{ marginTop: 4, fontSize: 12, color: OWNER_COLORS.muted }}>{row.hint}</div>
                   ) : null}
                 </td>
-                {intervals.map((key) => (
-                  <td key={key} style={{ ...TD_STYLE, textAlign: "right", fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>
-                    {formatCount(row.values?.[key])}
-                  </td>
-                ))}
+                {intervals.map((key) => {
+                  const active =
+                    selection?.metric === row.id &&
+                    selection?.interval === key &&
+                    !selection?.plan_code;
+                  return (
+                    <td key={key} style={{ ...TD_STYLE, textAlign: "right" }}>
+                      <GrowthCountButton
+                        active={active}
+                        value={row.values?.[key]}
+                        onClick={() => toggleSelection({ metric: row.id, interval: key })}
+                        testId={`growth-count-${row.id}-${key}`}
+                      />
+                    </td>
+                  );
+                })}
               </tr>
             ))}
             <tr>
@@ -215,44 +246,101 @@ function GrowthMetricsPanel({ growth }) {
                   {intervals.map((key) => {
                     const plans = growth.new_subscriptions_by_plan?.[key] || [];
                     const total = plans.reduce((sum, p) => sum + (Number(p.count) || 0), 0);
+                    const totalActive =
+                      selection?.metric === "new_subscriptions" &&
+                      selection?.interval === key &&
+                      !selection?.plan_code;
                     return (
                       <div
                         key={key}
                         style={{
-                          border: `1px solid ${OWNER_COLORS.line}`,
+                          border: `1px solid ${totalActive ? OWNER_COLORS.accent : OWNER_COLORS.line}`,
                           borderRadius: 10,
                           padding: "10px 12px",
                           background: "#fff",
                         }}
                       >
                         <div style={{ fontSize: 12, fontWeight: 800, color: OWNER_COLORS.muted, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                          {labels[key] || key}
+                          {INTERVAL_LABELS[key] || key}
                         </div>
-                        <div style={{ marginTop: 6, fontSize: 22, fontWeight: 800, color: OWNER_COLORS.ink }}>
-                          {formatCount(total)}
+                        <div style={{ marginTop: 6 }}>
+                          <GrowthCountButton
+                            active={totalActive}
+                            value={total}
+                            large
+                            onClick={() =>
+                              toggleSelection({ metric: "new_subscriptions", interval: key })
+                            }
+                            testId={`growth-count-new_subscriptions-${key}`}
+                          />
                         </div>
                         {plans.length === 0 ? (
                           <div style={{ marginTop: 8, fontSize: 12, color: OWNER_COLORS.muted }}>No new paid plans</div>
                         ) : (
                           <ul style={{ margin: "8px 0 0", padding: 0, listStyle: "none" }}>
-                            {plans.map((plan) => (
-                              <li
-                                key={`${key}-${plan.plan_code}`}
-                                style={{
-                                  display: "flex",
-                                  justifyContent: "space-between",
-                                  gap: 8,
-                                  fontSize: 12,
-                                  color: OWNER_COLORS.ink,
-                                  padding: "3px 0",
-                                }}
-                              >
-                                <span>{plan.plan_name || plan.plan_code}</span>
-                                <span style={{ fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>
-                                  {formatCount(plan.count)}
-                                </span>
-                              </li>
-                            ))}
+                            {plans.map((plan) => {
+                              const planActive =
+                                selection?.metric === "new_subscriptions" &&
+                                selection?.interval === key &&
+                                selection?.plan_code === plan.plan_code;
+                              return (
+                                <li
+                                  key={`${key}-${plan.plan_code}`}
+                                  style={{
+                                    display: "flex",
+                                    justifyContent: "space-between",
+                                    gap: 8,
+                                    fontSize: 12,
+                                    color: OWNER_COLORS.ink,
+                                    padding: "3px 0",
+                                  }}
+                                >
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      toggleSelection({
+                                        metric: "new_subscriptions",
+                                        interval: key,
+                                        plan_code: plan.plan_code,
+                                      })
+                                    }
+                                    style={{
+                                      border: "none",
+                                      background: "transparent",
+                                      padding: 0,
+                                      cursor: "pointer",
+                                      color: planActive ? OWNER_COLORS.accent : OWNER_COLORS.ink,
+                                      fontWeight: planActive ? 800 : 500,
+                                      textAlign: "left",
+                                    }}
+                                  >
+                                    {plan.plan_name || plan.plan_code}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      toggleSelection({
+                                        metric: "new_subscriptions",
+                                        interval: key,
+                                        plan_code: plan.plan_code,
+                                      })
+                                    }
+                                    data-testid={`growth-count-new_subscriptions-${key}-${plan.plan_code}`}
+                                    style={{
+                                      border: "none",
+                                      background: "transparent",
+                                      padding: 0,
+                                      cursor: "pointer",
+                                      fontWeight: 700,
+                                      fontVariantNumeric: "tabular-nums",
+                                      color: planActive ? OWNER_COLORS.accent : OWNER_COLORS.ink,
+                                    }}
+                                  >
+                                    {formatCount(plan.count)}
+                                  </button>
+                                </li>
+                              );
+                            })}
                           </ul>
                         )}
                       </div>
@@ -264,12 +352,131 @@ function GrowthMetricsPanel({ growth }) {
           </tbody>
         </table>
       </div>
+
+      {selection ? <GrowthDetailPanel selection={selection} onClose={() => setSelection(null)} /> : null}
+
       {growth.notes ? (
         <div style={{ marginTop: 14, fontSize: 12, color: OWNER_COLORS.muted, lineHeight: 1.45 }}>
           {growth.notes}
         </div>
       ) : null}
     </PageCard>
+  );
+}
+
+function GrowthCountButton({ value, onClick, active, large = false, testId }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      data-testid={testId}
+      title="View details"
+      style={{
+        border: "none",
+        background: "transparent",
+        padding: "2px 4px",
+        margin: 0,
+        cursor: "pointer",
+        fontWeight: 800,
+        fontVariantNumeric: "tabular-nums",
+        fontSize: large ? 22 : 13,
+        color: active ? OWNER_COLORS.accent : OWNER_COLORS.ink,
+        textDecoration: active ? "underline" : "none",
+        borderRadius: 6,
+      }}
+    >
+      {formatCount(value)}
+    </button>
+  );
+}
+
+function GrowthDetailPanel({ selection, onClose }) {
+  const [payload, setPayload] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError("");
+    setPayload(null);
+    getOwnerGrowthDetails({
+      metric: selection.metric,
+      interval: selection.interval,
+      plan_code: selection.plan_code || undefined,
+    })
+      .then((data) => {
+        if (!cancelled) setPayload(data);
+      })
+      .catch(() => {
+        if (!cancelled) setError("Could not load growth details.");
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selection.metric, selection.interval, selection.plan_code]);
+
+  const title = GROWTH_METRIC_LABELS[selection.metric] || selection.metric;
+  const intervalLabel = INTERVAL_LABELS[selection.interval] || selection.interval;
+  const columns = (payload?.columns || []).map((col) => [col.label, col.key]);
+  const rows = payload?.rows || [];
+
+  return (
+    <div
+      data-testid="growth-detail-panel"
+      style={{
+        marginTop: 18,
+        padding: 16,
+        borderRadius: 12,
+        border: `1px solid ${OWNER_COLORS.line}`,
+        background: "#faf7f4",
+      }}
+    >
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}>
+        <div>
+          <div style={{ fontSize: 14, fontWeight: 800, color: OWNER_COLORS.ink }}>
+            {title} · {intervalLabel}
+            {selection.plan_code ? ` · ${selection.plan_code}` : ""}
+          </div>
+          <div style={{ marginTop: 4, fontSize: 12, color: OWNER_COLORS.muted }}>
+            {loading
+              ? "Loading details…"
+              : `${formatCount(payload?.total)} total${rows.length && payload?.total > rows.length ? ` (showing ${rows.length})` : ""}`}
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          style={{
+            padding: "6px 12px",
+            borderRadius: 8,
+            border: `1px solid ${OWNER_COLORS.line}`,
+            background: "#fff",
+            fontSize: 12,
+            fontWeight: 700,
+            cursor: "pointer",
+            color: OWNER_COLORS.ink,
+          }}
+        >
+          Close
+        </button>
+      </div>
+      {error ? (
+        <div style={{ marginTop: 12, color: "#8b2e1a", fontSize: 13 }}>{error}</div>
+      ) : null}
+      {!loading && !error ? (
+        <div style={{ marginTop: 12, overflowX: "auto", background: "#fff", borderRadius: 10, border: `1px solid ${OWNER_COLORS.line}` }}>
+          <SimpleTable
+            rows={rows}
+            columns={columns.length ? columns : [["Detail", "id"]]}
+            emptyLabel="No events in this window."
+          />
+        </div>
+      ) : null}
+    </div>
   );
 }
 

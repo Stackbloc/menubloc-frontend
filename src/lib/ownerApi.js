@@ -54,6 +54,15 @@ export const verifyOwner2FA = (code) => post("/api/owner/auth/verify-2fa", { cod
 export const logoutOwner = () => post("/api/owner/auth/logout", {});
 
 export const getOwnerDashboardSummary = () => get("/api/owner/dashboard/summary");
+export const getOwnerGrowthDetails = (params = {}) => {
+  const qs = new URLSearchParams();
+  if (params.metric) qs.set("metric", params.metric);
+  if (params.interval) qs.set("interval", params.interval);
+  if (params.plan_code) qs.set("plan_code", params.plan_code);
+  if (params.limit != null) qs.set("limit", String(params.limit));
+  const serialized = qs.toString();
+  return get(`/api/owner/dashboard/growth/details${serialized ? `?${serialized}` : ""}`);
+};
 export const getOwnerTrafficAnalytics = (params = {}) => {
   const qs = new URLSearchParams(params).toString();
   return get(`/api/owner/analytics/traffic${qs ? `?${qs}` : ""}`);
