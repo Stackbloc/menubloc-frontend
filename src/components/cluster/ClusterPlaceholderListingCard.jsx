@@ -20,6 +20,7 @@ export default function ClusterPlaceholderListingCard({ listing, showBeverageTyp
 
   return (
     <div
+      className="cluster-themed-card"
       style={{
         display: "grid",
         gap: "0.35rem",
@@ -29,9 +30,9 @@ export default function ClusterPlaceholderListingCard({ listing, showBeverageTyp
         background: "#fff",
       }}
     >
-      <div style={{ fontWeight: 600, color: "#111827", overflowWrap: "anywhere" }}>{name}</div>
+      <div className="cluster-card-title" style={{ fontWeight: 600, color: "#111827", overflowWrap: "anywhere" }}>{name}</div>
       {location ? (
-        <div style={{ color: "#6b7280", fontSize: "0.85rem", lineHeight: 1.4, overflowWrap: "anywhere" }}>{location}</div>
+        <div className="cluster-card-muted" style={{ color: "#6b7280", fontSize: "0.85rem", lineHeight: 1.4, overflowWrap: "anywhere" }}>{location}</div>
       ) : null}
       {menuItems.length > 0 ? (
         <ul
@@ -80,7 +81,7 @@ export function ClusterPlaceholderSection({ section, showBeverageType = false })
 
   return (
     <section style={{ display: "grid", gap: "0.65rem" }}>
-      <h3 style={{ margin: 0, fontSize: "1rem", color: "#111827" }}>{area}</h3>
+      <h3 className="cluster-card-title" style={{ margin: 0, fontSize: "1rem", color: "#111827" }}>{area}</h3>
       <div style={{ display: "grid", gap: "0.65rem" }}>
         {listings.map((listing) => (
           <ClusterPlaceholderListingCard

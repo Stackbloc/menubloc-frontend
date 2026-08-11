@@ -183,6 +183,7 @@
 }
 
 .cluster-theme-la-live article,
+.cluster-theme-la-live .cluster-themed-card,
 .cluster-theme-la-live [style*="background: #fff"],
 .cluster-theme-la-live [style*='background: "#fff"'] {
   background: linear-gradient(165deg, #1a2030 0%, #141925 100%) !important;
@@ -191,15 +192,30 @@
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28) !important;
 }
 
-.cluster-theme-la-live article [style*="color: #111827"],
-.cluster-theme-la-live article [style*="color: #4b5563"],
-.cluster-theme-la-live article [style*="color: #374151"] {
+/*
+ * React applies inline colors via CSSOM (often rgb()), so hex attribute
+ * selectors never match — leaving dark #111827 names on forced dark cards.
+ * Class hooks beat inline styles with !important.
+ */
+.cluster-theme-la-live .cluster-card-title {
   color: var(--lalive-ink) !important;
 }
 
-.cluster-theme-la-live article [style*="color: #6b7280"],
-.cluster-theme-la-live article [style*="color: #9ca3af"] {
+.cluster-theme-la-live .cluster-card-meta {
+  color: #d6d0c4 !important;
+}
+
+.cluster-theme-la-live .cluster-card-muted {
   color: var(--lalive-muted) !important;
+}
+
+.cluster-theme-la-live a.cluster-themed-card-link,
+.cluster-theme-la-live a:has(.cluster-themed-card) {
+  color: inherit;
+}
+
+.cluster-theme-la-live a:has(.cluster-themed-card) .cluster-card-title {
+  color: var(--lalive-ink) !important;
 }
 
 .cluster-theme-la-live input,

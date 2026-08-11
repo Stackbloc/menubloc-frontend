@@ -29,6 +29,7 @@ import {
   buildMenuBrowserPages,
   resolveMenuBrowserVenueSlug,
 } from "../lib/menuBrowserVenueCover.js";
+import { isMenuBrowserClusterScope } from "../lib/menuBrowserClusterSequence.js";
 
 function useIsMobile(breakpoint = 900) {
   const [isMobile, setIsMobile] = useState(() => {
@@ -121,6 +122,7 @@ export default function BrowseMenus() {
     urlCity,
     urlState,
     index: hookRestaurantIndex,
+    clusterSlug: isMenuBrowserClusterScope(venueSlug) ? venueSlug : null,
   });
 
   const pages = useMemo(() => buildMenuBrowserPages(entries, venueSlug), [entries, venueSlug]);

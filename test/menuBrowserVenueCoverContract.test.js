@@ -45,6 +45,7 @@ test("BrowseMenus wires venue cover + ad pages", () => {
   assert.match(browseSrc, /venueSlug=\{venueSlug\}/);
   assert.match(browseSrc, /MenuBrowserVenueAdPage/);
   assert.match(browseSrc, /buildMenuBrowserPages/);
+  assert.match(browseSrc, /isMenuBrowserClusterScope/);
   assert.match(modeSrc, /menu-browser-venue-cover/);
   assert.match(modeSrc, /menu-browser-choose-prompt/);
 });

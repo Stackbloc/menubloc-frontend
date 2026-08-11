@@ -24,6 +24,12 @@ test("cluster restaurant card avoids webkit-box name clamp garble", () => {
   assert.match(src, /fontSynthesis:\s*"none"/);
 });
 
+test("cluster restaurant card exposes themeable title class for dark place themes", () => {
+  assert.match(src, /cluster-card-title/);
+  assert.match(src, /cluster-restaurant-directory-card/);
+  assert.match(src, /cluster-themed-card/);
+});
+
 test("formatClusterListingNoteForDisplay drops SOURCE STATUS seed text", () => {
   assert.equal(
     formatClusterListingNoteForDisplay("SOURCE STATUS: historical_reference — long audit text"),

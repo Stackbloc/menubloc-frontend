@@ -38,6 +38,7 @@ export default function ClusterRestaurantDirectoryCard({
 
   const content = (
     <article
+      className="cluster-restaurant-directory-card cluster-themed-card"
       style={{
         display: "flex",
         flexDirection: "column",
@@ -73,6 +74,7 @@ export default function ClusterRestaurantDirectoryCard({
         </div>
         <div style={{ minWidth: 0, flexShrink: 0 }}>
           <div
+            className="cluster-card-title"
             style={{
               fontSize: "1.05rem",
               fontWeight: 700,
@@ -88,6 +90,7 @@ export default function ClusterRestaurantDirectoryCard({
           </div>
           {listingNote ? (
             <div
+              className="cluster-card-muted"
               data-testid="cluster-restaurant-listing-note"
               style={{
                 marginTop: "0.25rem",
@@ -104,6 +107,7 @@ export default function ClusterRestaurantDirectoryCard({
         </div>
         {cuisineLabel ? (
           <div
+            className="cluster-card-meta"
             style={{
               fontSize: "0.8rem",
               fontWeight: 700,
@@ -119,6 +123,7 @@ export default function ClusterRestaurantDirectoryCard({
         ) : null}
         {addressHint ? (
           <div
+            className="cluster-card-muted"
             style={{
               color: "#6b7280",
               fontSize: "0.82rem",
@@ -131,7 +136,7 @@ export default function ClusterRestaurantDirectoryCard({
           </div>
         ) : null}
         {priceTierLabel ? (
-          <div style={{ color: "#374151", fontSize: "0.88rem", fontWeight: 700, flexShrink: 0 }}>
+          <div className="cluster-card-meta" style={{ color: "#374151", fontSize: "0.88rem", fontWeight: 700, flexShrink: 0 }}>
             {priceTierLabel}
           </div>
         ) : null}
@@ -162,7 +167,7 @@ export default function ClusterRestaurantDirectoryCard({
         >
           {status.text}
         </span>
-        <div style={{ fontWeight: 700, color: "#111827", fontSize: "0.92rem", overflowWrap: "anywhere" }}>
+        <div className="cluster-card-title" style={{ fontWeight: 700, color: "#111827", fontSize: "0.92rem", overflowWrap: "anywhere" }}>
           {menuReady ? "View menu →" : "View profile →"}
         </div>
       </div>
@@ -172,7 +177,11 @@ export default function ClusterRestaurantDirectoryCard({
   if (!href) return content;
 
   return (
-    <Link to={href} style={{ display: "block", color: "inherit", textDecoration: "none", minWidth: 0, maxWidth: "100%" }}>
+    <Link
+      to={href}
+      className="cluster-themed-card-link"
+      style={{ display: "block", color: "inherit", textDecoration: "none", minWidth: 0, maxWidth: "100%" }}
+    >
       {content}
     </Link>
   );

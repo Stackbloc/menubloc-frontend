@@ -25,6 +25,13 @@ test("L.A. LIVE theme uses night entertainment palette complementary to district
   assert.doesNotMatch(themeSrc, /lalive\.com\/.*\.(png|jpg|svg)/i);
 });
 
+test("L.A. LIVE theme forces readable card titles via class hooks (not hex attribute selectors)", () => {
+  assert.match(themeSrc, /\.cluster-card-title/);
+  assert.match(themeSrc, /\.cluster-card-muted/);
+  assert.match(themeSrc, /React applies inline colors via CSSOM/);
+  assert.doesNotMatch(themeSrc, /article \[style\*="color: #111827"\]/);
+});
+
 test("Coachella theme remains independently wired", () => {
   assert.match(pageSrc, /clusterCoachellaTheme\.css/);
   assert.match(pageSrc, /cluster-theme-coachella-2027/);
