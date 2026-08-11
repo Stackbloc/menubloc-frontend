@@ -55,7 +55,7 @@ export default function MenuBrowserVenueAdPage({ venueSlug, pageRegion }) {
           fontWeight: 600,
           lineHeight: 1.45,
           color: cover.muted,
-          maxWidth: 36rem,
+          maxWidth: "36rem",
         }}
       >
         {cover.subhead}
