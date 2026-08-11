@@ -1,12 +1,14 @@
 /**
- * Coachella Food list excerpt trial — fill the name/price gap with a short
+ * Place Food list excerpt — fill the name/price gap with a short
  * decision-helper line when CK description exists.
  */
 
-export const CLUSTER_DISH_EXCERPT_TRIAL_SLUGS = Object.freeze(["coachella-2027"]);
-
+/**
+ * @param {string|null|undefined} clusterSlug
+ * @returns {boolean}
+ */
 export function clusterShowsDishExcerpt(clusterSlug) {
-  return CLUSTER_DISH_EXCERPT_TRIAL_SLUGS.includes(String(clusterSlug || "").trim().toLowerCase());
+  return Boolean(String(clusterSlug || "").trim());
 }
 
 /**

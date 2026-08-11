@@ -16,9 +16,12 @@ const beExplorerSrc = readFileSync(
   "utf8"
 );
 
-test("dish excerpt trial is Coachella-only", () => {
+test("dish excerpts enabled for all Place cluster slugs", () => {
   assert.equal(clusterShowsDishExcerpt("coachella-2027"), true);
-  assert.equal(clusterShowsDishExcerpt("la-live"), false);
+  assert.equal(clusterShowsDishExcerpt("la-live"), true);
+  assert.equal(clusterShowsDishExcerpt("lacc"), true);
+  assert.equal(clusterShowsDishExcerpt(""), false);
+  assert.equal(clusterShowsDishExcerpt(null), false);
 });
 
 test("formatClusterDishExcerpt strips seed disclaimer and truncates", () => {
