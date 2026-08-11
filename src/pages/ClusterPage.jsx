@@ -51,8 +51,10 @@ import {
   CLUSTER_DRINK_SUBCATEGORY_ALL,
   isClusterBeveragesCategory,
   normalizeClusterDrinkSubcategory,
+  resolveAvailableDrinkCategoriesFromResponse,
   visibleClusterDrinkSubcategoryChips,
 } from "../lib/clusterDrinkSubcategories.js";
+import { rememberMenuBrowserVenueSession } from "../lib/menuBrowserVenueContext.js";
 import ChipRail from "../components/chips/ChipRail.jsx";
 
 const CANONICAL_BASE = "https://menuply.com";
@@ -574,14 +576,7 @@ function ClusterMenuExplorerTab({
         setItems(Array.isArray(data.menu_items) ? data.menu_items : []);
         setPagination(data.pagination || null);
         if (isClusterBeveragesCategory(selectedCategory)) {
-          const fromApi = Array.isArray(data.available_drink_categories)
-            ? data.available_drink_categories
-            : Array.isArray(data.drink_categories)
-              ? data.drink_categories
-              : [];
-          setAvailableDrinkCategories(
-            fromApi.map((id) => String(id || "").trim().toLowerCase()).filter(Boolean)
-          );
+          setAvailableDrinkCategories(resolveAvailableDrinkCategoriesFromResponse(data));
         }
         setStatus("ok");
       })
@@ -1018,6 +1013,8 @@ export default function ClusterPage() {
 
   useEffect(() => {
     if (!clusterSlug) return undefined;
+
+    rememberMenuBrowserVenueSession(clusterSlug);
 
     const controller = new AbortController();
     setStatus("loading");

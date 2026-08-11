@@ -4,19 +4,25 @@ import { useOrderCart } from "../context/OrderCartContext.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import WaiterFaceIcon from "./icons/WaiterFaceIcon.jsx";
 import BrowseMenusIcon from "./icons/BrowseMenusIcon.jsx";
+import { resolveBrowseMenusHref } from "../lib/menuBrowserVenueContext.js";
 
 export default function BottomNav() {
   const { t } = useLanguage();
   const navRef = useRef(null);
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
   const { itemCount } = useOrderCart();
+
+  const browseMenusHref = useMemo(
+    () => resolveBrowseMenusHref({ pathname, search }),
+    [pathname, search]
+  );
 
   const tabs = useMemo(() => [
     { label: t("nav.home", "Home"), icon: "🏠", to: "/" },
     { label: t("nav.waiter", "Waiter"), iconComponent: WaiterFaceIcon, iconSize: 28, to: "/waiter" },
-    { label: t("nav.browseMenus", "Browse"), iconComponent: BrowseMenusIcon, to: "/browse-menus" },
+    { label: t("nav.browseMenus", "Browse"), iconComponent: BrowseMenusIcon, to: browseMenusHref },
     { label: t("nav.basket", "Basket"), icon: "🛒", to: "/checkout" },
-  ], [t]);
+  ], [t, browseMenusHref]);
 
   useEffect(() => {
     const el = navRef.current;
@@ -48,23 +54,23 @@ export default function BottomNav() {
     >
       {tabs.map((tab) => {
         const isCheckout = tab.to === "/checkout";
+        const isBrowseTab = String(tab.to || "").startsWith("/browse-menus");
         const active =
           isCheckout
             ? pathname.startsWith("/checkout")
-            : tab.to === "/browse-menus"
+            : isBrowseTab
               ? pathname === "/browse-menus" || pathname.startsWith("/browse-menus")
               : pathname === tab.to ||
                 (tab.to !== "/" && pathname.startsWith(tab.to));
         const showBadge = tab.to === "/checkout" && itemCount > 0;
         const iconSize = tab.iconSize || 22;
-        const isBrowseTab = tab.to === "/browse-menus";
         const linkColor = isBrowseTab
           ? (active ? "#CA8A04" : "#EAB308")
           : (active ? "#1d4ed8" : "#9ca3af");
         return (
           <Link
-            key={tab.to}
-            to={tab.buildHref ? tab.buildHref() : tab.to}
+            key={isBrowseTab ? "browse-menus" : tab.to}
+            to={tab.to}
             aria-label={
               tab.to === "/checkout" && itemCount > 0
                 ? t("nav.basketWithCount", "Basket with {count} items").replace("{count}", String(itemCount))
@@ -92,7 +98,7 @@ export default function BottomNav() {
               {tab.iconComponent ? (
                 <tab.iconComponent
                   size={iconSize}
-                  active={tab.to === "/browse-menus" ? active : undefined}
+                  active={isBrowseTab ? active : undefined}
                   aria-hidden
                 />
               ) : (

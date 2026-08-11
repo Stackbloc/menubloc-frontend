@@ -62,15 +62,17 @@ const VENUE_COVERS = Object.freeze({
 
 /**
  * @param {string|null|undefined} raw
- * @param {{ hostname?: string|null }} [opts]
+ * @param {{ hostname?: string|null, sessionSlug?: string|null }} [opts]
  */
-export function resolveMenuBrowserVenueSlug(raw, { hostname = null } = {}) {
+export function resolveMenuBrowserVenueSlug(raw, { hostname = null, sessionSlug = null } = {}) {
   const slug = String(raw || "").trim().toLowerCase();
   if (MENU_BROWSER_VENUE_SLUGS.includes(slug)) return slug;
   const host = String(hostname || "").trim().toLowerCase();
   if (host === "venues.menuply.com" || host === "www.venues.menuply.com") {
     return "coachella-2027";
   }
+  const session = String(sessionSlug || "").trim().toLowerCase();
+  if (MENU_BROWSER_VENUE_SLUGS.includes(session)) return session;
   // Demo default for Yellow Browser cover until more venues ship covers.
   return "la-live";
 }

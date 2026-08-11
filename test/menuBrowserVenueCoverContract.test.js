@@ -20,6 +20,10 @@ test("resolveMenuBrowserVenueSlug defaults and hosts", () => {
     resolveMenuBrowserVenueSlug(null, { hostname: "venues.menuply.com" }),
     "coachella-2027"
   );
+  assert.equal(
+    resolveMenuBrowserVenueSlug(null, { sessionSlug: "coachella-2027" }),
+    "coachella-2027"
+  );
 });
 
 test("venue covers keep Food/Drinks prompt", () => {

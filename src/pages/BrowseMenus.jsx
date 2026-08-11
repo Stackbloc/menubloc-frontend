@@ -30,6 +30,10 @@ import {
   resolveMenuBrowserVenueSlug,
 } from "../lib/menuBrowserVenueCover.js";
 import { isMenuBrowserClusterScope } from "../lib/menuBrowserClusterSequence.js";
+import {
+  readMenuBrowserVenueSession,
+  rememberMenuBrowserVenueSession,
+} from "../lib/menuBrowserVenueContext.js";
 
 function useIsMobile(breakpoint = 900) {
   const [isMobile, setIsMobile] = useState(() => {
@@ -87,9 +91,19 @@ export default function BrowseMenus() {
     () =>
       resolveMenuBrowserVenueSlug(urlParams.get("cluster"), {
         hostname: typeof window !== "undefined" ? window.location.hostname : null,
+        sessionSlug: readMenuBrowserVenueSession(),
       }),
     [urlParams]
   );
+
+  useEffect(() => {
+    if (!venueSlug) return;
+    rememberMenuBrowserVenueSession(venueSlug);
+    if (urlParams.get("cluster") === venueSlug) return;
+    const next = new URLSearchParams(search);
+    next.set("cluster", venueSlug);
+    navigate({ search: `?${next.toString()}` }, { replace: true });
+  }, [navigate, search, urlParams, venueSlug]);
   const activeSection = isDrinksMode
     ? (urlSection || MENU_CATALOG_DRINKS_DEFAULT_SECTION)
     : (urlSection || MENU_CATALOG_DEFAULT_SECTION);

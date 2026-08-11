@@ -8,6 +8,7 @@ import { formatClusterListingNoteForDisplay } from "../src/lib/clusterListingNot
 import {
   CLUSTER_DRINK_SUBCATEGORY_CHIPS,
   isClusterBeveragesCategory,
+  resolveAvailableDrinkCategoriesFromResponse,
   visibleClusterDrinkSubcategoryChips,
 } from "../src/lib/clusterDrinkSubcategories.js";
 
@@ -44,6 +45,39 @@ test("visibleClusterDrinkSubcategoryChips hides empty Yellow Browser types", () 
   assert.ok(typedIds.includes("beer"));
   assert.ok(!typedIds.includes("wine"));
   assert.ok(!typedIds.includes("cocktails"));
+});
+
+test("resolveAvailableDrinkCategoriesFromResponse ignores legacy advertising drink_categories", () => {
+  const onlyCoffeeItems = {
+    drink_categories: [
+      "cocktails",
+      "beer",
+      "wine",
+      "spirits",
+      "coffee",
+      "tea",
+      "smoothies",
+      "juice",
+      "mocktails",
+      "non_alcoholic",
+      "happy_hour",
+    ],
+    menu_items: [{ name: "Cold Brew", drinks_browser_categories: ["coffee"] }],
+  };
+  assert.deepEqual(resolveAvailableDrinkCategoriesFromResponse(onlyCoffeeItems), ["coffee"]);
+  assert.deepEqual(
+    resolveAvailableDrinkCategoriesFromResponse({
+      available_drink_categories: ["coffee", "beer"],
+      drink_categories: onlyCoffeeItems.drink_categories,
+      menu_items: [],
+    }),
+    ["coffee", "beer"]
+  );
+});
+
+test("ClusterPage uses resolveAvailableDrinkCategoriesFromResponse", () => {
+  assert.match(pageSrc, /resolveAvailableDrinkCategoriesFromResponse/);
+  assert.match(pageSrc, /rememberMenuBrowserVenueSession/);
 });
 
 test("collectAvailableBeverageFilterOptions hides empty restaurant-tab drink chips", () => {

@@ -37,6 +37,35 @@ export function visibleClusterDrinkSubcategoryChips(availableIds) {
   ].filter(Boolean);
 }
 
+/**
+ * Prefer membership-scoped available_drink_categories.
+ * Never trust legacy full drink_categories advertising lists alone.
+ * Fall back to categories present on returned menu items.
+ */
+export function resolveAvailableDrinkCategoriesFromResponse(data) {
+  const typed = Array.isArray(data?.available_drink_categories)
+    ? data.available_drink_categories
+        .map((id) => String(id || "").trim().toLowerCase())
+        .filter(Boolean)
+    : [];
+  if (typed.length > 0) return typed;
+
+  const fromItems = new Set();
+  const items = Array.isArray(data?.menu_items) ? data.menu_items : [];
+  for (const item of items) {
+    const cats = Array.isArray(item?.drinks_browser_categories)
+      ? item.drinks_browser_categories
+      : [];
+    for (const id of cats) {
+      const key = String(id || "").trim().toLowerCase();
+      if (key && CLUSTER_DRINK_SUBCATEGORY_CHIPS.some((chip) => chip.id === key)) {
+        fromItems.add(key);
+      }
+    }
+  }
+  return Array.from(fromItems);
+}
+
 export function isClusterBeveragesCategory(category) {
   return String(category?.code || category || "").trim().toUpperCase() === "BEVERAGES";
 }
