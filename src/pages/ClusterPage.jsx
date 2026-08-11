@@ -40,6 +40,7 @@ import {
   getClusterZoneNoun,
 } from "../lib/clusterZoneBrowse.js";
 import "../styles/clusterCoachellaTheme.css";
+import "../styles/clusterLaLiveTheme.css";
 import {
   buildClusterReturnPath,
   buildClusterRestaurantsReturnPath,
@@ -48,9 +49,9 @@ import {
 } from "../lib/clusterReturnNavigation.js";
 import {
   CLUSTER_DRINK_SUBCATEGORY_ALL,
-  CLUSTER_DRINK_SUBCATEGORY_CHIPS,
   isClusterBeveragesCategory,
   normalizeClusterDrinkSubcategory,
+  visibleClusterDrinkSubcategoryChips,
 } from "../lib/clusterDrinkSubcategories.js";
 import ChipRail from "../components/chips/ChipRail.jsx";
 
@@ -453,9 +454,14 @@ function ClusterMenuExplorerTab({
   const [priceSort, setPriceSort] = useState("default");
   const [selectedZone, setSelectedZone] = useState(null);
   const [drinkSubcategory, setDrinkSubcategory] = useState(CLUSTER_DRINK_SUBCATEGORY_ALL);
+  const [availableDrinkCategories, setAvailableDrinkCategories] = useState([]);
 
   const searchActive = Boolean(submittedSearch.trim());
   const drinksCategorySelected = isClusterBeveragesCategory(selectedCategory);
+  const visibleDrinkChips = useMemo(
+    () => visibleClusterDrinkSubcategoryChips(availableDrinkCategories),
+    [availableDrinkCategories],
+  );
 
   const availableZones = useMemo(() => collectClusterZones(items), [items]);
   const zoneNoun = useMemo(() => getClusterZoneNoun(cluster), [cluster]);
@@ -465,6 +471,16 @@ function ClusterMenuExplorerTab({
       setSelectedZone(null);
     }
   }, [selectedZone, availableZones]);
+
+  useEffect(() => {
+    if (
+      drinkSubcategory !== CLUSTER_DRINK_SUBCATEGORY_ALL &&
+      availableDrinkCategories.length > 0 &&
+      !availableDrinkCategories.includes(drinkSubcategory)
+    ) {
+      setDrinkSubcategory(CLUSTER_DRINK_SUBCATEGORY_ALL);
+    }
+  }, [drinkSubcategory, availableDrinkCategories]);
 
   const displayItems = useMemo(
     () =>
@@ -507,11 +523,13 @@ function ClusterMenuExplorerTab({
     setSelectedCategory(null);
     setItems([]);
     setPagination(null);
+    setAvailableDrinkCategories([]);
 
     fetchClusterMenuItems(clusterSlug, { summary: true, signal: controller.signal })
       .then((data) => {
         if (!data?.ok) throw new Error(data?.error || "Could not load food categories");
-        setMksCategories(Array.isArray(data.mks_categories) ? data.mks_categories : []);
+        const cats = Array.isArray(data.mks_categories) ? data.mks_categories : [];
+        setMksCategories(cats.filter((c) => Number(c?.item_count || 0) > 0 || c?.item_count == null));
         setPagination(data.pagination || null);
         setStatus("ok");
       })
@@ -534,6 +552,9 @@ function ClusterMenuExplorerTab({
     setPagination(null);
     setPriceSort("default");
     setSelectedZone(null);
+    if (!isClusterBeveragesCategory(selectedCategory)) {
+      setAvailableDrinkCategories([]);
+    }
 
     const drinkCategory =
       isClusterBeveragesCategory(selectedCategory) &&
@@ -552,6 +573,16 @@ function ClusterMenuExplorerTab({
         if (!data?.ok) throw new Error(data?.error || "Could not load food for this category.");
         setItems(Array.isArray(data.menu_items) ? data.menu_items : []);
         setPagination(data.pagination || null);
+        if (isClusterBeveragesCategory(selectedCategory)) {
+          const fromApi = Array.isArray(data.available_drink_categories)
+            ? data.available_drink_categories
+            : Array.isArray(data.drink_categories)
+              ? data.drink_categories
+              : [];
+          setAvailableDrinkCategories(
+            fromApi.map((id) => String(id || "").trim().toLowerCase()).filter(Boolean)
+          );
+        }
         setStatus("ok");
       })
       .catch((err) => {
@@ -815,13 +846,13 @@ function ClusterMenuExplorerTab({
               })}
             </div>
           ) : null}
-          {drinksCategorySelected ? (
+          {drinksCategorySelected && visibleDrinkChips.length > 0 ? (
             <ChipRail
               data-testid="cluster-food-drink-subcategory-chips"
               aria-label="Drink subcategories"
               style={{ paddingTop: 2, paddingBottom: 2 }}
             >
-              {CLUSTER_DRINK_SUBCATEGORY_CHIPS.map((chip) => {
+              {visibleDrinkChips.map((chip) => {
                 const selected = drinkSubcategory === chip.id;
                 return (
                   <button
@@ -1162,10 +1193,16 @@ export default function ClusterPage() {
   );
 
   const isCoachella2027 = String(cluster.slug || "").toLowerCase() === "coachella-2027";
+  const isLaLive = String(cluster.slug || "").toLowerCase() === "la-live";
+  const themeClass = isCoachella2027
+    ? "cluster-theme-coachella-2027"
+    : isLaLive
+      ? "cluster-theme-la-live"
+      : undefined;
 
   return (
     <div
-      className={isCoachella2027 ? "cluster-theme-coachella-2027" : undefined}
+      className={themeClass}
       data-cluster-slug={cluster.slug}
       style={{ maxWidth: 900, margin: "0 auto", padding: "1.25rem 1rem 5rem", width: "100%", boxSizing: "border-box" }}
     >
@@ -1180,6 +1217,18 @@ export default function ClusterPage() {
             <p className="cluster-coachella-sub">
               Search festival menus, browse vendors by area, and explore destination advertising —
               the same Menuply Place platform used for L.A. LIVE.
+            </p>
+          </div>
+        ) : null}
+        {isLaLive ? (
+          <div className="cluster-lalive-hero" data-testid="cluster-lalive-hero">
+            <p className="cluster-lalive-powered" data-testid="cluster-lalive-powered">
+              L.A. LIVE powered by Menuply
+            </p>
+            <p className="cluster-lalive-kicker">Downtown&apos;s sports &amp; entertainment district</p>
+            <p className="cluster-lalive-sub">
+              Browse restaurants, menus, and drinks around Crypto.com Arena, Peacock Theater, and the
+              Figueroa corridor — before the tip-off, show, or night out.
             </p>
           </div>
         ) : null}

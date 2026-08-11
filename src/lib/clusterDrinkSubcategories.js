@@ -16,6 +16,27 @@ export const CLUSTER_DRINK_SUBCATEGORY_CHIPS = [
   ),
 ];
 
+/**
+ * Yellow Browser drink chips present in this cluster only.
+ * Hides empty subcategory chips; hides the whole set when nothing beyond All would show.
+ * @param {string[]|null|undefined} availableIds from API available_drink_categories
+ */
+export function visibleClusterDrinkSubcategoryChips(availableIds) {
+  const ids = Array.isArray(availableIds)
+    ? availableIds.map((id) => String(id || "").trim().toLowerCase()).filter(Boolean)
+    : null;
+  if (!ids || ids.length === 0) return [];
+  const present = new Set(ids);
+  const typed = CLUSTER_DRINK_SUBCATEGORY_CHIPS.filter(
+    (chip) => chip.id !== CLUSTER_DRINK_SUBCATEGORY_ALL && present.has(chip.id)
+  );
+  if (typed.length === 0) return [];
+  return [
+    CLUSTER_DRINK_SUBCATEGORY_CHIPS.find((chip) => chip.id === CLUSTER_DRINK_SUBCATEGORY_ALL),
+    ...typed,
+  ].filter(Boolean);
+}
+
 export function isClusterBeveragesCategory(category) {
   return String(category?.code || category || "").trim().toUpperCase() === "BEVERAGES";
 }

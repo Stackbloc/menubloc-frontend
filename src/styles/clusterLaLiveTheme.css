@@ -1,0 +1,257 @@
+/**
+ * L.A. LIVE destination atmosphere — scoped to ClusterPage only.
+ * Structure remains shared Cluster Place; visuals are slug-gated (`la-live`).
+ *
+ * Brand alignment (not imitation):
+ * - Nighttime entertainment-district energy complementary to lalive.com
+ *   (marquee glow, red-carpet warmth, downtown charcoal) without proprietary
+ *   logos, LED tower art, or scraped assets from AEG / L.A. LIVE.
+ */
+
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,500&family=Syne:wght@600;700;800&display=swap");
+
+.cluster-theme-la-live {
+  --lalive-ink: #f4f1ea;
+  --lalive-muted: #b8b3a8;
+  --lalive-night: #0a0c10;
+  --lalive-stage: #12161f;
+  --lalive-concrete: #1c2230;
+  --lalive-gold: #e8c56a;
+  --lalive-gold-soft: #f0d78c;
+  --lalive-carpet: #c81d3a;
+  --lalive-carpet-glow: rgba(200, 29, 58, 0.35);
+  --lalive-line: rgba(244, 241, 234, 0.12);
+  --lalive-glow: rgba(232, 197, 106, 0.22);
+  position: relative;
+  isolation: isolate;
+  overflow: clip;
+  color: var(--lalive-ink);
+  background:
+    radial-gradient(85% 55% at 12% -10%, rgba(200, 29, 58, 0.28), transparent 55%),
+    radial-gradient(70% 45% at 95% 5%, rgba(232, 197, 106, 0.16), transparent 50%),
+    radial-gradient(55% 40% at 50% 100%, rgba(40, 70, 140, 0.18), transparent 55%),
+    linear-gradient(180deg, #0a0c10 0%, #10141c 48%, #161b27 100%);
+  border-radius: 0;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.cluster-theme-la-live::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 6px;
+  background: linear-gradient(
+    90deg,
+    var(--lalive-carpet) 0%,
+    #ff4d6d 22%,
+    var(--lalive-gold) 48%,
+    #8ab4ff 78%,
+    #3d5a80 100%
+  );
+  z-index: 2;
+  pointer-events: none;
+}
+
+.cluster-theme-la-live::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(244, 241, 234, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(244, 241, 234, 0.03) 1px, transparent 1px),
+    radial-gradient(circle at 20% 30%, rgba(232, 197, 106, 0.12) 0 1px, transparent 2px),
+    radial-gradient(circle at 78% 18%, rgba(200, 29, 58, 0.2) 0 1.5px, transparent 3px);
+  background-size: 48px 48px, 48px 48px, 160px 160px, 200px 200px;
+  opacity: 0.55;
+  pointer-events: none;
+  z-index: 0;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.25) 70%, transparent);
+}
+
+.cluster-theme-la-live > * {
+  position: relative;
+  z-index: 1;
+}
+
+.cluster-theme-la-live .cluster-lalive-hero {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0.15rem 0 0.35rem;
+  padding: 1rem 1.05rem 1.1rem;
+  border-radius: 1rem;
+  background:
+    linear-gradient(145deg, rgba(28, 34, 48, 0.92), rgba(18, 22, 31, 0.88)),
+    linear-gradient(160deg, rgba(200, 29, 58, 0.18), rgba(232, 197, 106, 0.08));
+  border: 1px solid rgba(232, 197, 106, 0.28);
+  box-shadow:
+    0 16px 36px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 0 40px rgba(200, 29, 58, 0.08);
+}
+
+.cluster-theme-la-live .cluster-lalive-powered {
+  margin: 0;
+  font-family: "DM Sans", "Avenir Next", "Segoe UI", sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--lalive-gold);
+  font-weight: 700;
+}
+
+.cluster-theme-la-live .cluster-lalive-kicker {
+  margin: 0;
+  font-family: "Syne", "Avenir Next", "Segoe UI", sans-serif;
+  font-size: clamp(1.55rem, 4.2vw, 2.2rem);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  font-weight: 800;
+  background: linear-gradient(
+    105deg,
+    #ffffff 0%,
+    var(--lalive-gold-soft) 42%,
+    #ff8a9a 88%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.cluster-theme-la-live .cluster-lalive-sub {
+  margin: 0;
+  max-width: 38rem;
+  font-family: "DM Sans", "Avenir Next", "Segoe UI", sans-serif;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--lalive-muted);
+  font-weight: 500;
+}
+
+.cluster-theme-la-live h1,
+.cluster-theme-la-live [data-testid="cluster-sticky-title"] {
+  font-family: "Syne", "Avenir Next", "Segoe UI", sans-serif !important;
+  color: var(--lalive-ink) !important;
+}
+
+.cluster-theme-la-live h1 {
+  letter-spacing: -0.03em !important;
+  background: linear-gradient(105deg, #fff 0%, var(--lalive-gold-soft) 70%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent !important;
+}
+
+.cluster-theme-la-live header p,
+.cluster-theme-la-live main p,
+.cluster-theme-la-live [data-testid="cluster-dining-by-zone-heading"],
+.cluster-theme-la-live h2,
+.cluster-theme-la-live h3 {
+  color: var(--lalive-ink) !important;
+}
+
+.cluster-theme-la-live header p[style*="color: #374151"],
+.cluster-theme-la-live p[style*="color: #374151"],
+.cluster-theme-la-live p[style*="color: #444"],
+.cluster-theme-la-live p[style*="color: #6b7280"],
+.cluster-theme-la-live p[style*="color: #666"],
+.cluster-theme-la-live p[style*="color: #888"] {
+  color: var(--lalive-muted) !important;
+}
+
+.cluster-theme-la-live [data-testid="cluster-sticky-chrome"] {
+  background: rgba(10, 12, 16, 0.92) !important;
+  border-bottom: 1px solid var(--lalive-line) !important;
+  backdrop-filter: blur(10px);
+}
+
+.cluster-theme-la-live button[aria-pressed="true"],
+.cluster-theme-la-live [data-testid="cluster-food-zone-all"][aria-pressed="true"],
+.cluster-theme-la-live [data-testid^="cluster-food-zone-"][aria-pressed="true"] {
+  background: var(--lalive-gold) !important;
+  border-color: var(--lalive-gold) !important;
+  color: #12161f !important;
+  box-shadow: 0 0 0 3px var(--lalive-glow);
+}
+
+.cluster-theme-la-live button[aria-pressed="false"],
+.cluster-theme-la-live [data-testid^="cluster-food-zone-"][aria-pressed="false"],
+.cluster-theme-la-live button[style*="background: #fff"],
+.cluster-theme-la-live button[style*='background: "#fff"'] {
+  background: rgba(28, 34, 48, 0.9) !important;
+  border-color: rgba(244, 241, 234, 0.18) !important;
+  color: var(--lalive-ink) !important;
+}
+
+.cluster-theme-la-live article,
+.cluster-theme-la-live [style*="background: #fff"],
+.cluster-theme-la-live [style*='background: "#fff"'] {
+  background: linear-gradient(165deg, #1a2030 0%, #141925 100%) !important;
+  border-color: rgba(232, 197, 106, 0.22) !important;
+  color: var(--lalive-ink) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28) !important;
+}
+
+.cluster-theme-la-live article [style*="color: #111827"],
+.cluster-theme-la-live article [style*="color: #4b5563"],
+.cluster-theme-la-live article [style*="color: #374151"] {
+  color: var(--lalive-ink) !important;
+}
+
+.cluster-theme-la-live article [style*="color: #6b7280"],
+.cluster-theme-la-live article [style*="color: #9ca3af"] {
+  color: var(--lalive-muted) !important;
+}
+
+.cluster-theme-la-live input,
+.cluster-theme-la-live textarea {
+  background: rgba(18, 22, 31, 0.95) !important;
+  border-color: rgba(244, 241, 234, 0.18) !important;
+  color: var(--lalive-ink) !important;
+}
+
+.cluster-theme-la-live footer {
+  border-top-color: var(--lalive-line) !important;
+  color: var(--lalive-muted) !important;
+}
+
+.cluster-theme-la-live a {
+  color: var(--lalive-gold-soft);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .cluster-theme-la-live .cluster-lalive-hero {
+    animation: lalive-hero-in 640ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .cluster-theme-la-live::before {
+    animation: lalive-marquee-shimmer 7s linear infinite;
+    background-size: 200% 100%;
+  }
+}
+
+@keyframes lalive-hero-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes lalive-marquee-shimmer {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 200% 50%;
+  }
+}
+
+@media (max-width: 640px) {
+  .cluster-theme-la-live .cluster-lalive-hero {
+    padding: 0.85rem 0.9rem 0.95rem;
+    border-radius: 0.9rem;
+  }
+}

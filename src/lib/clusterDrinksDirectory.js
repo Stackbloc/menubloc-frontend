@@ -40,3 +40,27 @@ export function countDrinkListings(sections) {
     0
   );
 }
+
+export const CLUSTER_BEVERAGE_FILTER_OPTIONS = Object.freeze([
+  { id: "all", label: "All" },
+  { id: "coffee", label: "Coffee" },
+  { id: "cocktails", label: "Cocktails" },
+  { id: "wine", label: "Wine" },
+  { id: "beer", label: "Beer" },
+]);
+
+/** Only chips with ≥1 matching listing (plus All). Empty types are hidden. */
+export function collectAvailableBeverageFilterOptions(sections) {
+  const present = new Set();
+  for (const section of Array.isArray(sections) ? sections : []) {
+    for (const listing of Array.isArray(section?.listings) ? section.listings : []) {
+      const type = String(listing?.beverage_type || "").trim().toLowerCase();
+      if (type) present.add(type);
+    }
+  }
+  const typed = CLUSTER_BEVERAGE_FILTER_OPTIONS.filter(
+    (option) => option.id !== "all" && present.has(option.id)
+  );
+  if (typed.length === 0) return [];
+  return [CLUSTER_BEVERAGE_FILTER_OPTIONS[0], ...typed];
+}

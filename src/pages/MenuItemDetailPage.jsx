@@ -63,6 +63,10 @@ import { getLocalizedField } from "../utils/getLocalizedField.js";
 import { getDisplayMenuItemName } from "../utils/getDisplayMenuItemName.js";
 import { formatMenuItemName } from "../utils/formatMenuItemName.js";
 import { formatMoney, getConsumerDisplayPrice } from "../lib/pricingDisplay.js";
+import {
+  buildGoogleMapsDirectionsUrl,
+  buildGoogleMapsUrlForRestaurant,
+} from "../lib/catalogMenuUtils.js";
 import { useOrderCart } from "../context/OrderCartContext.jsx";
 import { sendPageVisit } from "../lib/analyticsPageVisitSend.js";
 import { getNormalizedMenuItemId, isValidMenuItemRouteId } from "../lib/menuItemIdentity.js";
@@ -168,14 +172,40 @@ function normalizeResultItem(raw) {
       name: restaurantName || "Unknown Restaurant",
       slug: raw?.restaurant_slug || raw?.restaurant?.slug || raw?.slug || null,
       city: raw?.restaurant?.city || raw?.city || null,
+      state: raw?.restaurant?.state || raw?.state || null,
       cuisine: raw?.restaurant?.cuisine || raw?.cuisine || null,
       logoUrl: restaurantLogoUrl,
+      addressLine1:
+        raw?.restaurant?.address_line1 ||
+        raw?.restaurant?.addressLine1 ||
+        raw?.address_line1 ||
+        null,
+      lat: raw?.restaurant?.lat ?? raw?.lat ?? null,
+      lng: raw?.restaurant?.lng ?? raw?.lng ?? null,
       subscription: restaurantSubscription,
       isPro:
         raw?.restaurant?.is_pro === true || raw?.restaurant?.isPro === true ||
         restaurantSubscription?.is_pro === true || restaurantSubscription?.isPro === true || false,
     },
   };
+}
+
+/** Directions deep-link for the item's restaurant (Google Maps). */
+export function buildMenuItemRestaurantDirectionsHref(restaurant) {
+  if (!restaurant || typeof restaurant !== "object") return "";
+  const byGeoOrAddress = buildGoogleMapsUrlForRestaurant({
+    addressLine1: restaurant.addressLine1 || restaurant.address_line1 || "",
+    city: restaurant.city || "",
+    state: restaurant.state || "",
+    lat: restaurant.lat,
+    lng: restaurant.lng,
+  });
+  if (byGeoOrAddress) return byGeoOrAddress;
+  const fallback = [restaurant.name, restaurant.city, restaurant.state]
+    .map((part) => String(part || "").trim())
+    .filter(Boolean)
+    .join(", ");
+  return buildGoogleMapsDirectionsUrl(fallback);
 }
 
 function formatMacro(value, suffix = "") {
@@ -1468,6 +1498,7 @@ export default function MenuItemDetailPage() {
   const effectiveAllergenFilter = isAuthenticated ? allergenFilter || null : null;
   const showStickyVerdict = !isAlcoholicBeverage && !indulgencePresentation && !detailSystem?.bread_score;
   const itemDescription = getLocalizedField(item, "description", language) || item.description;
+  const directionsHref = buildMenuItemRestaurantDirectionsHref(item.restaurant);
   const fullMenuHref = item
     ? appendMenuHighlightQuery(
         buildCanonicalMenuPath({
@@ -1542,6 +1573,24 @@ export default function MenuItemDetailPage() {
                     <div style={{ marginTop: 4, fontSize: 13, color: "#9CA3AF" }}>
                       {[item.restaurant.city, item.restaurant.cuisine].filter(Boolean).join(" · ")}
                     </div>
+                  ) : null}
+                  {directionsHref ? (
+                    <a
+                      href={directionsHref}
+                      target="_blank"
+                      rel="noreferrer"
+                      data-testid="menu-item-directions"
+                      style={{
+                        display: "inline-flex",
+                        marginTop: 8,
+                        fontSize: 13,
+                        fontWeight: 800,
+                        color: "#93C5FD",
+                        textDecoration: "none",
+                      }}
+                    >
+                      Get directions
+                    </a>
                   ) : null}
                 </div>
               </div>

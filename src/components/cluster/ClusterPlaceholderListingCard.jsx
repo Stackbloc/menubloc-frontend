@@ -1,4 +1,6 @@
+import { useEffect } from "react";
 import { placeholderMenuItemDescription, placeholderMenuItemLabel } from "../../lib/placeholderMenuItems.js";
+import { collectAvailableBeverageFilterOptions } from "../../lib/clusterDrinksDirectory.js";
 
 export default function ClusterPlaceholderListingCard({ listing, showBeverageType = false }) {
   const name = listing?.name || "Coming soon";
@@ -95,35 +97,56 @@ export function ClusterPlaceholderSection({ section, showBeverageType = false })
 export function ClusterDrinksDirectory({ sections, beverageFilter = "all", onFilterChange }) {
   const filteredSections = filterDrinkSectionsForUi(sections, beverageFilter);
   const visibleCount = countVisibleDrinkListings(filteredSections);
+  const availableFilterOptions = collectAvailableBeverageFilterOptions(sections);
+  const availableFilterKey = availableFilterOptions.map((o) => o.id).join("|");
+
+  useEffect(() => {
+    if (
+      beverageFilter &&
+      beverageFilter !== "all" &&
+      availableFilterOptions.length > 0 &&
+      !availableFilterOptions.some((o) => o.id === beverageFilter)
+    ) {
+      onFilterChange?.("all");
+    }
+  }, [beverageFilter, availableFilterKey, onFilterChange]);
 
   if (!Array.isArray(sections) || sections.length === 0) return null;
 
   return (
     <div style={{ display: "grid", gap: "0.85rem" }}>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.45rem" }}>
-        {CLUSTER_BEVERAGE_FILTER_OPTIONS.map((option) => {
-          const active = option.id === beverageFilter;
-          return (
-            <button
-              key={option.id}
-              type="button"
-              onClick={() => onFilterChange?.(option.id)}
-              style={{
-                padding: "0.35rem 0.7rem",
-                borderRadius: 999,
-                border: active ? "1px solid #7c3aed" : "1px solid #d1d5db",
-                background: active ? "#f5f3ff" : "#fff",
-                color: active ? "#6d28d9" : "#374151",
-                fontSize: "0.82rem",
-                fontWeight: 600,
-                cursor: "pointer",
-              }}
-            >
-              {option.label}
-            </button>
-          );
-        })}
-      </div>
+      {availableFilterOptions.length > 1 ? (
+        <div
+          role="group"
+          aria-label="Filter drinks by type"
+          data-testid="cluster-drinks-beverage-filter"
+          style={{ display: "flex", flexWrap: "wrap", gap: "0.45rem" }}
+        >
+          {availableFilterOptions.map((option) => {
+            const active = option.id === beverageFilter;
+            return (
+              <button
+                key={option.id}
+                type="button"
+                data-testid={`cluster-drinks-filter-${option.id}`}
+                onClick={() => onFilterChange?.(option.id)}
+                style={{
+                  padding: "0.35rem 0.7rem",
+                  borderRadius: 999,
+                  border: active ? "1px solid #7c3aed" : "1px solid #d1d5db",
+                  background: active ? "#f5f3ff" : "#fff",
+                  color: active ? "#6d28d9" : "#374151",
+                  fontSize: "0.82rem",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                {option.label}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
       {visibleCount > 0 ? (
         filteredSections.map((section) => (
           <ClusterPlaceholderSection key={`drinks-${section.area}`} section={section} showBeverageType />
@@ -136,14 +159,6 @@ export function ClusterDrinksDirectory({ sections, beverageFilter = "all", onFil
     </div>
   );
 }
-
-const CLUSTER_BEVERAGE_FILTER_OPTIONS = [
-  { id: "all", label: "All" },
-  { id: "coffee", label: "Coffee" },
-  { id: "cocktails", label: "Cocktails" },
-  { id: "wine", label: "Wine" },
-  { id: "beer", label: "Beer" },
-];
 
 function filterDrinkSectionsForUi(sections, beverageFilter) {
   const normalizedFilter = String(beverageFilter || "all").trim().toLowerCase();
