@@ -752,8 +752,21 @@ function HomeFeedCacheSection() {
     },
     { label: "Rows cached", value: data?.rows_cached ?? "—" },
     { label: "Eligible restaurants", value: data?.eligible_restaurants ?? "—" },
+    { label: "Fresh rows", value: data?.fresh_rows ?? "—" },
+    { label: "Stale rows", value: data?.stale_row_count ?? "—" },
+    {
+      label: "Stale %",
+      value: data?.stale_percentage != null ? `${data.stale_percentage}%` : "—",
+    },
+    { label: "Oldest stale row", value: data?.oldest_stale_minutes != null ? `${data.oldest_stale_minutes} min` : "—" },
     { label: "Incompatible version rows", value: data?.incompatible_version_count ?? "—" },
     { label: "Cache hit rate", value: data?.cache_hit_rate != null ? `${data.cache_hit_rate}%` : "—" },
+    { label: "Cache hits (fresh)", value: data?.cache_hits_fresh ?? "—" },
+    { label: "Cache hits (stale)", value: data?.cache_hits_stale ?? "—" },
+    {
+      label: "Fresh hit rate",
+      value: data?.cache_fresh_hit_rate != null ? `${data.cache_fresh_hit_rate}%` : "—",
+    },
     { label: "Cache misses", value: data?.cache_misses ?? "—" },
     { label: "Fallback-to-live", value: data?.fallback_to_live ?? "—" },
     { label: "Fallback / hour", value: data?.fallback_to_live_per_hour ?? "—" },
@@ -762,9 +775,16 @@ function HomeFeedCacheSection() {
       label: "Failed / hour",
       value: data?.failed_refreshes_hour_count ?? "—",
     },
+    {
+      label: "Refresh success rate",
+      value: data?.refresh_success_rate != null ? `${data.refresh_success_rate}%` : "—",
+    },
+    {
+      label: "Refresh failure rate",
+      value: data?.refresh_failure_rate != null ? `${data.refresh_failure_rate}%` : "—",
+    },
+    { label: "Refresh throughput", value: data?.refresh_throughput ?? "—" },
     { label: "Avg refresh time", value: data?.average_refresh_ms != null ? `${data.average_refresh_ms} ms` : "—" },
-    { label: "Oldest stale row", value: data?.oldest_stale_minutes != null ? `${data.oldest_stale_minutes} min` : "—" },
-    { label: "Stale rows", value: data?.stale_row_count ?? "—" },
     { label: "Queue depth", value: data?.queue_depth ?? "—" },
     { label: "Feed chains", value: data?.feed_diversity?.chains_represented ?? "—" },
     { label: "Feed categories", value: data?.feed_diversity?.categories_represented ?? "—" },
@@ -825,6 +845,32 @@ function HomeFeedCacheSection() {
               No active cache alerts.
             </div>
           )}
+          {Array.isArray(data.recent_refresh_failures) && data.recent_refresh_failures.length > 0 ? (
+            <div style={{ marginTop: 16 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 8, color: OWNER_COLORS.ink }}>
+                Recent refresh failures
+              </div>
+              <div style={{ display: "grid", gap: 6 }}>
+                {data.recent_refresh_failures.slice(-5).reverse().map((f, idx) => (
+                  <div
+                    key={`${f.at || "err"}-${idx}`}
+                    style={{
+                      padding: "8px 12px",
+                      borderRadius: 8,
+                      border: `1px solid ${OWNER_COLORS.line}`,
+                      fontSize: 12,
+                      color: OWNER_COLORS.muted,
+                    }}
+                  >
+                    {fmtTime(f.at)}
+                    {f.restaurant_id != null ? ` · restaurant ${f.restaurant_id}` : ""}
+                    {f.code ? ` · ${f.code}` : ""}
+                    {f.message ? ` — ${f.message}` : ""}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
         </>
       ) : null}
     </PageCard>
