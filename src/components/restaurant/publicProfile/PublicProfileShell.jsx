@@ -13,7 +13,6 @@ import ProfileFavoriteMenuItems from "./ProfileFavoriteMenuItems.jsx";
 import ProfileUpdates from "./ProfileUpdates.jsx";
 import ProfileDealsSection from "./ProfileDealsSection.jsx";
 import FoodTruckUpcomingStops from "./FoodTruckUpcomingStops.jsx";
-import { clusterTypeLabel } from "../../../lib/clusterUrl.js";
 import {
   ProfileSection,
   normalizeScheduleStops,
@@ -163,11 +162,6 @@ export default function PublicProfileShell({
   const clusterName = !isFoodTruck && displayCluster?.name ? String(displayCluster.name) : "";
   const clusterHref =
     !isFoodTruck && displayCluster?.public_url ? String(displayCluster.public_url) : null;
-  const clusterSuffix =
-    !isFoodTruck && displayCluster?.cluster_type
-      ? ` · ${clusterTypeLabel(displayCluster.cluster_type)}`
-      : "";
-  const clusterLabel = clusterName ? `${clusterName}${clusterSuffix}` : "";
   const sectionGap = isMobile ? 16 : 20;
 
   return (
@@ -203,7 +197,7 @@ export default function PublicProfileShell({
         showClaimInvites={showClaimInvites}
         metaBits={metaBits}
         venueLabel={isFoodTruck ? "" : primaryVenue}
-        clusterName={clusterLabel}
+        clusterName={clusterName}
         clusterHref={clusterHref}
         saveContactControl={saveContactControl}
         foodTruckLocation={location}

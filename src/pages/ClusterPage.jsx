@@ -138,7 +138,8 @@ function ClusterViewToggle({ viewMode, onChange, disabled }) {
 }
 
 function ClusterRestaurantsTab({ clusterSlug, cluster, enabled, placeReturnPath, placeReturnLabel }) {
-  const PAGE_SIZE = 20;
+  // Match BE MAX_CLUSTER_RESTAURANTS_LIMIT so district lists (e.g. LACC ~31) fit one page.
+  const PAGE_SIZE = 36;
   const [status, setStatus] = useState(enabled ? "loading" : "idle");
   const [restaurants, setRestaurants] = useState([]);
   const [placeholders, setPlaceholders] = useState([]);

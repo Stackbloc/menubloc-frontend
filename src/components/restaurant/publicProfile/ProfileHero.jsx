@@ -127,7 +127,7 @@ export default function ProfileHero({
 
   const venue = String(venueLabel || "").trim();
   const cluster = String(clusterName || "").trim();
-  const showIdentityMeta = profileType === "restaurant" && (venue || cluster || metaBits.length);
+  const showIdentityMeta = profileType === "restaurant" && (venue || metaBits.length);
   const cuisineLabel = metaBits[0] || "";
   const openLabel =
     openStatus?.label ||
@@ -353,24 +353,32 @@ export default function ProfileHero({
             ) : metaBits[0] ? (
               <span data-testid="profile-hero-venue">{metaBits[0]}</span>
             ) : null}
-            {(venue || metaBits[0]) && cluster ? (
-              <span aria-hidden="true" style={{ margin: "0 8px", opacity: 0.55 }}>
-                ·
-              </span>
-            ) : null}
-            {cluster ? (
-              clusterHref ? (
-                <Link
-                  to={clusterHref}
-                  data-testid="profile-hero-cluster"
-                  style={{ color: linkColor, textDecoration: "none", fontWeight: 700 }}
-                >
-                  {cluster}
-                </Link>
-              ) : (
-                <span data-testid="profile-hero-cluster">{cluster}</span>
-              )
-            ) : null}
+          </div>
+        ) : null}
+
+        {showRestaurantContact && cluster ? (
+          <div
+            data-testid="profile-hero-cluster-field"
+            style={{
+              marginTop: 8,
+              fontSize: 14,
+              lineHeight: 1.4,
+              color: muted,
+              fontWeight: 600,
+            }}
+          >
+            {"Cluster: "}
+            {clusterHref ? (
+              <Link
+                to={clusterHref}
+                data-testid="profile-hero-cluster"
+                style={{ color: linkColor, textDecoration: "none", fontWeight: 700 }}
+              >
+                {cluster}
+              </Link>
+            ) : (
+              <span data-testid="profile-hero-cluster">{cluster}</span>
+            )}
           </div>
         ) : null}
 

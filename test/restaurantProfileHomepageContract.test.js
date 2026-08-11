@@ -74,6 +74,9 @@ function testUnclaimedHomepageBlanks() {
   assert.match(hero, /profile-hero-instagram/);
   assert.match(hero, /profile-hero-website/);
   assert.match(hero, /profile-hero-phone/);
+  assert.match(hero, /profile-hero-cluster-field/);
+  assert.match(hero, /Cluster: /);
+  assert.match(hero, /showRestaurantContact && cluster/);
   assert.doesNotMatch(hero, /profile-hero-phone-blank/);
   assert.doesNotMatch(hero, /profile-hero-instagram-blank/);
   assert.doesNotMatch(hero, /profile-hero-website-blank/);
@@ -86,6 +89,9 @@ function testUnclaimedHomepageBlanks() {
   assert.match(shell, /ProfileAboutFounded/);
   assert.match(shell, /ProfileClaimBanner/);
   assert.match(shell, /showClaimInvites=\{showClaimInvites\}/);
+  assert.match(shell, /clusterName=\{clusterName\}/);
+  assert.doesNotMatch(shell, /clusterLabel/);
+  assert.doesNotMatch(shell, /clusterTypeLabel/);
   assert.doesNotMatch(shell, /ProfileRestaurantInfo/);
   assert.doesNotMatch(shell, /ProfileAtAGlance/);
 }

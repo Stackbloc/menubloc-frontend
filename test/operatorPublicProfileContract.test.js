@@ -217,6 +217,8 @@ function testClaimedProfileUsesEditorialPresentation() {
   assert.match(hero, /openStatus/);
   assert.match(hero, /shortDescription/);
   assert.match(hero, /profile-hero-identity-meta|profile-hero-venue/);
+  assert.match(hero, /profile-hero-cluster-field/);
+  assert.match(hero, /Cluster: /);
   assert.doesNotMatch(hero, /borderRadius: 999/);
   // Homepage section order.
   const billboardIdx = shell.indexOf("<ProfileBillboardBlock");
