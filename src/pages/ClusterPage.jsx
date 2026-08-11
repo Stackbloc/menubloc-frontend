@@ -55,6 +55,7 @@ import {
   visibleClusterDrinkSubcategoryChips,
 } from "../lib/clusterDrinkSubcategories.js";
 import { rememberMenuBrowserVenueSession } from "../lib/menuBrowserVenueContext.js";
+import { clusterShowsDishExcerpt } from "../lib/clusterDishExcerpt.js";
 import ChipRail from "../components/chips/ChipRail.jsx";
 
 const CANONICAL_BASE = "https://menuply.com";
@@ -894,6 +895,7 @@ function ClusterMenuExplorerTab({
               items={displayItems}
               clusterReturnTo={clusterReturnTo}
               clusterReturnLabel={clusterDestinationLabel}
+              showExcerpt={clusterShowsDishExcerpt(clusterSlug)}
               insertAfterIndex={
                 displayItems.length >= 4 ? Math.min(3, displayItems.length - 2) : null
               }

@@ -2,6 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { restaurantMenuPathFromRow } from "../../lib/canonicalUrl.js";
 import { appendClusterReturnQuery } from "../../lib/clusterReturnNavigation.js";
+import { formatClusterDishExcerpt } from "../../lib/clusterDishExcerpt.js";
 import { formatMoney, getConsumerDisplayPrice } from "../../lib/pricingDisplay.js";
 
 export const CLUSTER_PLACEHOLDER_FOOD_CARD_STYLE = {
@@ -79,11 +80,12 @@ function buildDishHref(item, clusterReturnTo, clusterReturnLabel) {
     : menuPath;
 }
 
-function ClusterDishChipContent({ item }) {
+function ClusterDishChipContent({ item, showExcerpt = false }) {
   const restaurantName = String(item?.restaurant_name || "").trim();
   const area = String(item?.area || "").trim();
   const priceCents = getConsumerDisplayPrice(item);
   const priceLabel = priceCents != null ? formatMoney(priceCents) : null;
+  const excerpt = showExcerpt ? formatClusterDishExcerpt(item) : null;
 
   return (
     <>
@@ -126,6 +128,25 @@ function ClusterDishChipContent({ item }) {
             </span>
           ) : null}
         </span>
+        {excerpt ? (
+          <span
+            className="cluster-card-muted"
+            data-testid="cluster-dish-excerpt"
+            style={{
+              fontWeight: 500,
+              fontSize: "0.82rem",
+              lineHeight: 1.35,
+              color: "#4b5563",
+              overflowWrap: "anywhere",
+              display: "-webkit-box",
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: "vertical",
+              overflow: "hidden",
+            }}
+          >
+            {excerpt}
+          </span>
+        ) : null}
         {restaurantName ? (
           <span
             data-testid="cluster-dish-restaurant"
@@ -171,7 +192,12 @@ function ClusterDishChipContent({ item }) {
   );
 }
 
-export function ClusterDishChip({ item, clusterReturnTo = null, clusterReturnLabel = null }) {
+export function ClusterDishChip({
+  item,
+  clusterReturnTo = null,
+  clusterReturnLabel = null,
+  showExcerpt = false,
+}) {
   if (!item?.name) return null;
 
   if (item?.placeholder_item) {
@@ -179,7 +205,7 @@ export function ClusterDishChip({ item, clusterReturnTo = null, clusterReturnLab
   }
 
   const href = buildDishHref(item, clusterReturnTo, clusterReturnLabel);
-  const content = <ClusterDishChipContent item={item} />;
+  const content = <ClusterDishChipContent item={item} showExcerpt={showExcerpt} />;
 
   if (!href) {
     return <div style={CLUSTER_DISH_CHIP_STYLE}>{content}</div>;
@@ -199,6 +225,7 @@ export function ClusterDishList({
   clusterReturnLabel = null,
   midListAd = null,
   insertAfterIndex = null,
+  showExcerpt = false,
 }) {
   if (!Array.isArray(items) || items.length === 0) return null;
 
@@ -237,6 +264,7 @@ export function ClusterDishList({
               item={item}
               clusterReturnTo={clusterReturnTo}
               clusterReturnLabel={clusterReturnLabel}
+              showExcerpt={showExcerpt}
             />
             {index === insertAt ? midListAd : null}
           </React.Fragment>

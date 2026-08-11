@@ -53,3 +53,13 @@ test("BrowseMenus wires venue cover + ad pages", () => {
   assert.match(modeSrc, /menu-browser-venue-cover/);
   assert.match(modeSrc, /menu-browser-choose-prompt/);
 });
+
+test("venue ad page centers content in the Yellow Browser pane", () => {
+  const adSrc = readFileSync(
+    join(root, "src/components/menuCatalog/MenuBrowserVenueAdPage.jsx"),
+    "utf8"
+  );
+  assert.match(adSrc, /justifyContent:\s*"center"/);
+  assert.match(adSrc, /alignItems:\s*"center"/);
+  assert.match(adSrc, /textAlign:\s*"center"/);
+});
