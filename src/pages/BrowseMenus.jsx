@@ -14,6 +14,7 @@ import MenuCatalogDrinkCategoryTabs from "../components/menuCatalog/MenuCatalogD
 import MenuCatalogModePage from "../components/menuCatalog/MenuCatalogModePage.jsx";
 import MenuCatalogIntroSplash from "../components/menuCatalog/MenuCatalogIntroSplash.jsx";
 import MenuCatalogModeToggleFab from "../components/menuCatalog/MenuCatalogModeToggleFab.jsx";
+import MenuBrowserVenueAdPage from "../components/menuCatalog/MenuBrowserVenueAdPage.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import useMenuCatalogSequence from "../hooks/useMenuCatalogSequence.js";
 import {
@@ -24,6 +25,10 @@ import {
 import { MENU_CATALOG_DRINKS_DEFAULT_SECTION, isDrinksCatalogSection } from "../lib/menuCatalogDrinkCategories.js";
 import { computeMenuBrowserLoadTarget, useSmoothedProgress } from "../lib/menuCatalogIntroProgress.js";
 import { asFiniteNumber } from "../lib/catalogMenuUtils.js";
+import {
+  buildMenuBrowserPages,
+  resolveMenuBrowserVenueSlug,
+} from "../lib/menuBrowserVenueCover.js";
 
 function useIsMobile(breakpoint = 900) {
   const [isMobile, setIsMobile] = useState(() => {
@@ -77,32 +82,37 @@ export default function BrowseMenus() {
   const isDrinksMode = urlParams.get("mode") === "drinks";
   const urlSection = urlParams.get("section") || "";
   const isModeChosen = Boolean(urlSection) || isDrinksMode;
+  const venueSlug = useMemo(
+    () =>
+      resolveMenuBrowserVenueSlug(urlParams.get("cluster"), {
+        hostname: typeof window !== "undefined" ? window.location.hostname : null,
+      }),
+    [urlParams]
+  );
   const activeSection = isDrinksMode
     ? (urlSection || MENU_CATALOG_DRINKS_DEFAULT_SECTION)
     : (urlSection || MENU_CATALOG_DEFAULT_SECTION);
   const urlIndex = asFiniteNumber(urlParams.get("i")) ?? 0;
 
-  const [locationParams, setLocationParams] = useState({ city: urlCity || null, state: urlState || null });
-  const [bookPhase, setBookPhase] = useState(() => (isModeChosen ? "browse" : "splash"));
+  // Venue cover replaces the generic yellow book splash as the front page.
+  const [bookPhase, setBookPhase] = useState(() => (isModeChosen ? "browse" : "chooseMode"));
   const [introMinElapsed, setIntroMinElapsed] = useState(false);
   const [browseBootComplete, setBrowseBootComplete] = useState(false);
   const [menuLoadStatus, setMenuLoadStatus] = useState("idle");
   const [initialMenuReady, setInitialMenuReady] = useState(false);
+  const [locationParams, setLocationParams] = useState({ city: urlCity || null, state: urlState || null });
+  const [hookRestaurantIndex, setHookRestaurantIndex] = useState(0);
   const browseAreaRef = useRef(null);
   const swipeRef = useRef({ startX: 0, startY: 0, active: false, axis: null });
 
   const {
     entries,
-    currentEntry,
-    activeIndex,
     totalCount,
     loading,
     loadingMore,
     error,
-    hasNext,
-    hasPrev,
+    hasMore: sequenceHasMore,
     waitingForPage,
-    clampToIndex,
     isEmpty,
     locationPending,
   } = useMenuCatalogSequence({
@@ -110,8 +120,40 @@ export default function BrowseMenus() {
     drinksMode: isDrinksMode,
     urlCity,
     urlState,
-    index: urlIndex,
+    index: hookRestaurantIndex,
   });
+
+  const pages = useMemo(() => buildMenuBrowserPages(entries, venueSlug), [entries, venueSlug]);
+  const pageIndex = pages.length === 0 ? 0 : Math.min(Math.max(0, urlIndex), pages.length - 1);
+  const currentPage = pages[pageIndex] || null;
+  const currentEntry = currentPage?.kind === "menu" ? currentPage.entry : null;
+  const isVenueAdPage = currentPage?.kind === "venue_ad";
+  const activeIndex = pageIndex;
+  const hasNext = pageIndex < pages.length - 1 || Boolean(sequenceHasMore);
+  const hasPrev = pageIndex > 0;
+
+  const restaurantBrowseIndex = useMemo(() => {
+    if (currentPage?.kind === "menu") return currentPage.entryIndex;
+    for (let i = pageIndex - 1; i >= 0; i -= 1) {
+      if (pages[i]?.kind === "menu") return pages[i].entryIndex;
+    }
+    for (let i = pageIndex + 1; i < pages.length; i += 1) {
+      if (pages[i]?.kind === "menu") return pages[i].entryIndex;
+    }
+    return Math.max(0, entries.length - 1);
+  }, [currentPage, pageIndex, pages, entries.length]);
+
+  useEffect(() => {
+    setHookRestaurantIndex(restaurantBrowseIndex);
+  }, [restaurantBrowseIndex]);
+
+  // When user advances past the last built page but more menus exist, nudge the
+  // catalog hook to load more so interleaved pages can grow.
+  useEffect(() => {
+    if (!sequenceHasMore || loadingMore || loading) return;
+    if (urlIndex < pages.length) return;
+    setHookRestaurantIndex((prev) => Math.max(prev, entries.length));
+  }, [urlIndex, pages.length, sequenceHasMore, loadingMore, loading, entries.length]);
 
   useEffect(() => {
     if (isModeChosen) return;
@@ -176,8 +218,9 @@ export default function BrowseMenus() {
     next.set("i", String(Math.max(0, index)));
     if (urlCity) next.set("city", urlCity);
     if (urlState) next.set("state", urlState);
+    if (venueSlug) next.set("cluster", venueSlug);
     navigate({ search: `?${next.toString()}` }, { replace: true });
-  }, [isDrinksMode, navigate, search, urlCity, urlState]);
+  }, [isDrinksMode, navigate, search, urlCity, urlState, venueSlug]);
 
   function selectSection(sectionId) {
     updateUrl(sectionId, 0);
@@ -212,14 +255,16 @@ export default function BrowseMenus() {
   }, [activeIndex, activeSection, hasPrev, updateUrl]);
 
   useEffect(() => {
-    if (clampToIndex != null && urlIndex !== clampToIndex) {
-      updateUrl(activeSection, clampToIndex);
+    if (pages.length === 0) return;
+    if (urlIndex > pages.length - 1 && !sequenceHasMore) {
+      updateUrl(activeSection, pages.length - 1);
     }
-  }, [activeSection, clampToIndex, updateUrl, urlIndex]);
+  }, [activeSection, pages.length, sequenceHasMore, updateUrl, urlIndex]);
 
   useEffect(() => {
-    const prev = entries[activeIndex - 1];
-    const next = entries[activeIndex + 1];
+    const menuIdx = restaurantBrowseIndex;
+    const prev = entries[menuIdx - 1];
+    const next = entries[menuIdx + 1];
     const prefetch = isDrinksMode ? prefetchCatalogDrinksMenu : prefetchCatalogMenu;
     if (prev?.restaurant_id) {
       if (isDrinksMode) prefetch(prev.restaurant_id, locationParams, activeSection);
@@ -229,7 +274,7 @@ export default function BrowseMenus() {
       if (isDrinksMode) prefetch(next.restaurant_id, locationParams, activeSection);
       else prefetch(next.restaurant_id, locationParams, language);
     }
-  }, [activeSection, entries, activeIndex, isDrinksMode, locationParams, language]);
+  }, [activeSection, entries, restaurantBrowseIndex, isDrinksMode, locationParams, language]);
 
   useEffect(() => {
     function handleKeyDown(event) {
@@ -249,17 +294,26 @@ export default function BrowseMenus() {
 
   useEffect(() => {
     setInitialMenuReady(false);
-  }, [currentEntry?.restaurant_id, activeIndex, isDrinksMode]);
+  }, [currentEntry?.restaurant_id, activeIndex, isDrinksMode, isVenueAdPage]);
 
   useEffect(() => {
+    if (isVenueAdPage) {
+      setMenuLoadStatus("ok");
+      setInitialMenuReady(true);
+      return;
+    }
     if (menuLoadStatus === "ok") {
       setInitialMenuReady(true);
     }
-  }, [menuLoadStatus]);
+  }, [menuLoadStatus, isVenueAdPage]);
 
   useEffect(() => {
+    if (isVenueAdPage) {
+      setMenuLoadStatus("ok");
+      return;
+    }
     setMenuLoadStatus("idle");
-  }, [currentEntry?.restaurant_id, activeIndex, activeSection]);
+  }, [currentEntry?.restaurant_id, activeIndex, activeSection, isVenueAdPage]);
 
   const handleMenuLoadStateChange = useCallback((status) => {
     setMenuLoadStatus(status);
@@ -269,18 +323,18 @@ export default function BrowseMenus() {
     () =>
       computeMenuBrowserLoadTarget({
         loading: loading || locationPending,
-        currentEntry,
+        currentEntry: isVenueAdPage ? { restaurant_id: "ad" } : currentEntry,
         menuStatus: menuLoadStatus,
         isEmpty,
         error,
       }),
-    [loading, locationPending, currentEntry, menuLoadStatus, isEmpty, error]
+    [loading, locationPending, currentEntry, menuLoadStatus, isEmpty, error, isVenueAdPage]
   );
 
   // After the first browse boot, never show the yellow loading splash for category tab changes.
   useEffect(() => {
     if (!isModeChosen || browseBootComplete) return;
-    if (introMinElapsed && menuLoadStatus === "ok" && currentEntry) {
+    if (introMinElapsed && (menuLoadStatus === "ok") && (currentEntry || isVenueAdPage)) {
       setBrowseBootComplete(true);
     }
   }, [
@@ -289,10 +343,11 @@ export default function BrowseMenus() {
     introMinElapsed,
     isModeChosen,
     menuLoadStatus,
+    isVenueAdPage,
   ]);
 
-  const listPending = isModeChosen && (loading || locationPending || waitingForPage || (loadingMore && !currentEntry));
-  const menuPending = isModeChosen && currentEntry && (menuLoadStatus === "idle" || menuLoadStatus === "loading");
+  const listPending = isModeChosen && (loading || locationPending || waitingForPage || (loadingMore && !currentEntry && !isVenueAdPage));
+  const menuPending = isModeChosen && currentEntry && !isVenueAdPage && (menuLoadStatus === "idle" || menuLoadStatus === "loading");
   const initialHold = isModeChosen && !browseBootComplete && !introMinElapsed;
   const showSplashIntro = !isModeChosen && bookPhase === "splash";
   const showChooseMode = !isModeChosen && bookPhase === "chooseMode";
@@ -303,8 +358,8 @@ export default function BrowseMenus() {
   const showModeToggleFab = isModeChosen && !showSplashIntro && !showChooseMode;
   const menuRendering = showLoadingSplash;
   const introProgress = useSmoothedProgress(loadTarget, showLoadingSplash);
-  const currentMenuNumber = currentEntry ? (activeIndex + 1) : 0;
-  const totalMenuCount = Math.max(totalCount || 0, entries.length || 0);
+  const currentMenuNumber = pages.length ? activeIndex + 1 : 0;
+  const totalMenuCount = Math.max(pages.length || 0, entries.length || 0, totalCount || 0);
 
   const trySwipeNavigation = useCallback((dx, dy) => {
     if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy) * 1.2) return false;
@@ -433,7 +488,7 @@ export default function BrowseMenus() {
         ) : null}
 
         {showChooseMode ? (
-          <MenuCatalogModePage onSelect={selectMode} />
+          <MenuCatalogModePage onSelect={selectMode} venueSlug={venueSlug} />
         ) : null}
 
         {showLoadingSplash ? (
@@ -523,7 +578,7 @@ export default function BrowseMenus() {
               whiteSpace: "nowrap",
             }}
           >
-            Menu {currentMenuNumber} of {totalMenuCount}
+            {isVenueAdPage ? "Sponsored" : "Menu"} {currentMenuNumber} of {totalMenuCount}
           </div>
         ) : null}
 
@@ -547,7 +602,27 @@ export default function BrowseMenus() {
           </div>
         ) : null}
 
-        {currentEntry ? (
+        {isVenueAdPage ? (
+          <div
+            style={{
+              flex: 1,
+              minHeight: 0,
+              display: "flex",
+              flexDirection: "column",
+              overflow: "hidden",
+              visibility: showBookOverlay ? "hidden" : "visible",
+              pointerEvents: showBookOverlay ? "none" : "auto",
+            }}
+            aria-hidden={showBookOverlay}
+          >
+            <MenuBrowserVenueAdPage
+              venueSlug={currentPage.venueSlug || venueSlug}
+              pageRegion={currentPage.pageRegion}
+            />
+          </div>
+        ) : null}
+
+        {currentEntry && !isVenueAdPage ? (
           <div
             style={{
               flex: 1,
