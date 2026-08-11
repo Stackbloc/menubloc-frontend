@@ -25,7 +25,19 @@ function testFooterMarketplaceLinks() {
   assert.doesNotMatch(src, /<Link to="\/operator\/login"/);
   assert.doesNotMatch(src, /discovery\.footer\.signup/);
   assert.doesNotMatch(src, /discovery\.footer\.signin/);
-  assert.doesNotMatch(src, /FOOTER_HIDDEN_PATHS = new Set\(\["\/checkout", "\/"/);
+  // Site Footer Protection Contract: never hide whole footer on home without confirmation.
+  assert.match(src, /FOOTER_HIDDEN_PATHS = new Set\(\["\/checkout"\]\)/);
+  assert.doesNotMatch(src, /FOOTER_HIDDEN_PATHS[\s\S]{0,120}"\/"/);
+  assert.doesNotMatch(src, /FOOTER_HIDDEN_PATHS[\s\S]{0,120}"\/home-next"/);
+}
+
+function testSiteFooterRemainsMountedOnPublicApp() {
+  const src = read("src/App.jsx");
+  assert.match(
+    src,
+    /\{hidePublicChrome \? null : <SiteFooter \/>\}/,
+    "expected SiteFooter to remain mounted for public chrome"
+  );
 }
 
 function testDistributorsPathRemainsRouted() {
@@ -68,6 +80,7 @@ function testOperatorLoginUsesAuthPageFrame() {
 }
 
 testFooterMarketplaceLinks();
+testSiteFooterRemainsMountedOnPublicApp();
 testDistributorsPathRemainsRouted();
 testCreatorsPathRemainsRouted();
 testRestaurantsRouteUsesLandingPage();

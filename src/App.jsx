@@ -7,6 +7,7 @@
  *   Domain-aware routing:
  *     - easymenuupload.com -> EasyMenuLanding on "/"
  *     - crm.menuply.com (primary) / crm.grubbid.com (legacy) -> internal CRM shell
+ *     - venues.menuply.com -> venue destination demo (Coachella 2027 Place)
  *     - grubbid.com (and everything else) -> HomeRoot on "/" (HomeNext live; legacy via flag or /home-legacy)
  *
  *   Public route support:
@@ -348,6 +349,18 @@ function isCrmHost() {
   return host === "crm.menuply.com" || host === "crm.grubbid.com";
 }
 
+/** AEG / venue destination demo host — public Place experience, not CRM. */
+function isVenuesHost() {
+  const host = (window?.location?.hostname || "").toLowerCase();
+  return host === "venues.menuply.com" || host === "www.venues.menuply.com";
+}
+
+const VENUES_DEMO_CLUSTER_PATH = "/clusters/california/indio/coachella-2027";
+
+function VenuesHostRoot() {
+  return <Navigate to={VENUES_DEMO_CLUSTER_PATH} replace />;
+}
+
 function CrmHostRoot() {
   const { isAuthenticated, loading } = useCrm();
   if (loading) return null;
@@ -645,7 +658,7 @@ function CanonicalUpdater() {
   return null;
 }
 
-function AppShell({ easyMenu, crmHost }) {
+function AppShell({ easyMenu, crmHost, venuesHost }) {
   const location = useLocation();
   const joinLandingRoute = isJoinLandingPath(location.pathname);
   const joinSignupRoute =
@@ -675,9 +688,22 @@ function AppShell({ easyMenu, crmHost }) {
       {hidePublicChrome ? null : <BasketResumePrompt />}
       {hidePublicChrome ? null : <ConsumerSessionToast />}
       <SentryRoutes>
-        <Route path="/" element={crmHost ? <CrmHostRoot /> : easyMenu ? <EasyMenuLanding /> : <HomeRoot />} />
+        <Route
+          path="/"
+          element={
+            crmHost ? (
+              <CrmHostRoot />
+            ) : venuesHost ? (
+              <VenuesHostRoot />
+            ) : easyMenu ? (
+              <EasyMenuLanding />
+            ) : (
+              <HomeRoot />
+            )
+          }
+        />
         <Route path="/home-legacy" element={crmHost ? <HostRouteRedirect to="/crm" /> : <LegacyDiscoveryHome />} />
-        <Route path="/home-next" element={crmHost ? <HostRouteRedirect to="/crm" /> : <HomeNext />} />
+        <Route path="/home-next" element={crmHost ? <HostRouteRedirect to="/crm" /> : venuesHost ? <VenuesHostRoot /> : <HomeNext />} />
 
         <Route path="/clusters" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ClustersDirectoryPage />} />
         <Route path="/clusters/community/new" element={crmHost ? <HostRouteRedirect to="/crm" /> : <CommunityClusterCreatePage />} />
@@ -974,6 +1000,7 @@ function AppShell({ easyMenu, crmHost }) {
 export default function App() {
   const easyMenu = isEasyMenuHost();
   const crmHost = isCrmHost();
+  const venuesHost = isVenuesHost();
 
   return (
     <ConsumerProvider>
@@ -987,7 +1014,7 @@ export default function App() {
                 <OrderCartProvider>
                   <BrowserRouter>
                     <SentryRoutePerformance />
-                    <AppShell easyMenu={easyMenu} crmHost={crmHost} />
+                    <AppShell easyMenu={easyMenu} crmHost={crmHost} venuesHost={venuesHost} />
               </BrowserRouter>
                 </OrderCartProvider>
               </LanguageProvider>

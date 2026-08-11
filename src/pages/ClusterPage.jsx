@@ -39,6 +39,7 @@ import {
   getClusterDiningByZoneHeading,
   getClusterZoneNoun,
 } from "../lib/clusterZoneBrowse.js";
+import "../styles/clusterCoachellaTheme.css";
 import {
   buildClusterReturnPath,
   buildClusterRestaurantsReturnPath,
@@ -1160,10 +1161,28 @@ export default function ClusterPage() {
     </>
   );
 
+  const isCoachella2027 = String(cluster.slug || "").toLowerCase() === "coachella-2027";
+
   return (
-    <div style={{ maxWidth: 900, margin: "0 auto", padding: "1.25rem 1rem 5rem", width: "100%", boxSizing: "border-box" }}>
+    <div
+      className={isCoachella2027 ? "cluster-theme-coachella-2027" : undefined}
+      data-cluster-slug={cluster.slug}
+      style={{ maxWidth: 900, margin: "0 auto", padding: "1.25rem 1rem 5rem", width: "100%", boxSizing: "border-box" }}
+    >
       <header style={{ marginBottom: "0.85rem", minWidth: 0, display: "grid", gap: "0.75rem" }}>
         <ClusterBackButton fallbackTo={clusterCityBack} label={cityBackLabel} />
+        {isCoachella2027 ? (
+          <div className="cluster-coachella-hero" data-testid="cluster-coachella-hero">
+            <p className="cluster-coachella-powered" data-testid="cluster-coachella-powered">
+              Coachella 2027 powered by Menuply
+            </p>
+            <p className="cluster-coachella-kicker">Food &amp; Drink at the Empire Polo Club</p>
+            <p className="cluster-coachella-sub">
+              Search festival menus, browse vendors by area, and explore destination advertising —
+              the same Menuply Place platform used for L.A. LIVE.
+            </p>
+          </div>
+        ) : null}
         <h1
           style={{
             margin: 0,

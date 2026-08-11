@@ -1,0 +1,180 @@
+/**
+ * Coachella 2027 destination atmosphere — scoped to ClusterPage only.
+ * Structure remains L.A. LIVE / ClusterPage; visuals are slug-gated.
+ *
+ * Brand alignment (not imitation):
+ * - Desert heat / cream / dusk palette complementary to classic festival energy
+ * - Soft, tactile craft feel (publicly described 2026 craft direction) without
+ *   proprietary felt artwork, logos, or scraped assets
+ */
+
+@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap");
+
+.cluster-theme-coachella-2027 {
+  --coachella-ink: #010100;
+  --coachella-cream: #fff3e3;
+  --coachella-sand: #f7e7d3;
+  --coachella-sun: #ff8a3d;
+  --coachella-heat: #ff6f33;
+  --coachella-ember: #e4572e;
+  --coachella-dusk: #3b1d5c;
+  --coachella-violet: #6b3fa0;
+  --coachella-line: rgba(1, 1, 0, 0.1);
+  --coachella-glow: rgba(255, 111, 51, 0.28);
+  position: relative;
+  isolation: isolate;
+  overflow: clip;
+  color: var(--coachella-ink);
+  background:
+    radial-gradient(90% 55% at 8% -8%, rgba(255, 138, 61, 0.35), transparent 58%),
+    radial-gradient(70% 50% at 100% 0%, rgba(107, 63, 160, 0.18), transparent 52%),
+    radial-gradient(60% 40% at 70% 100%, rgba(228, 87, 46, 0.12), transparent 55%),
+    linear-gradient(180deg, #fff8ef 0%, var(--coachella-cream) 42%, var(--coachella-sand) 100%);
+  border-radius: 0;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
+}
+
+.cluster-theme-coachella-2027::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 7px;
+  background: linear-gradient(
+    90deg,
+    var(--coachella-heat) 0%,
+    var(--coachella-sun) 28%,
+    #ffc857 52%,
+    var(--coachella-violet) 78%,
+    var(--coachella-dusk) 100%
+  );
+  z-index: 2;
+  pointer-events: none;
+}
+
+.cluster-theme-coachella-2027::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 18% 22%, rgba(255, 255, 255, 0.35) 0 1px, transparent 2px),
+    radial-gradient(circle at 72% 38%, rgba(255, 111, 51, 0.18) 0 1.5px, transparent 3px),
+    radial-gradient(circle at 44% 68%, rgba(59, 29, 92, 0.12) 0 1px, transparent 2px);
+  background-size: 140px 140px, 180px 180px, 120px 120px;
+  opacity: 0.55;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.cluster-theme-coachella-2027 > * {
+  position: relative;
+  z-index: 1;
+}
+
+.cluster-theme-coachella-2027 .cluster-coachella-hero {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0.15rem 0 0.35rem;
+  padding: 0.95rem 1rem 1.05rem;
+  border-radius: 1.15rem;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.55), rgba(255, 243, 227, 0.35)),
+    linear-gradient(160deg, rgba(255, 111, 51, 0.12), rgba(59, 29, 92, 0.08));
+  border: 1px solid rgba(255, 111, 51, 0.22);
+  box-shadow:
+    0 10px 28px rgba(255, 111, 51, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(6px);
+}
+
+.cluster-theme-coachella-2027 .cluster-coachella-powered {
+  margin: 0;
+  font-family: "Outfit", "Avenir Next", "Segoe UI", sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--coachella-ember);
+  font-weight: 700;
+}
+
+.cluster-theme-coachella-2027 .cluster-coachella-kicker {
+  margin: 0;
+  font-family: "Fraunces", Georgia, serif;
+  font-size: clamp(1.55rem, 4.2vw, 2.15rem);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  font-weight: 700;
+  background: linear-gradient(
+    105deg,
+    var(--coachella-ink) 0%,
+    var(--coachella-dusk) 42%,
+    var(--coachella-heat) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.cluster-theme-coachella-2027 .cluster-coachella-sub {
+  margin: 0;
+  max-width: 36rem;
+  font-family: "Outfit", "Avenir Next", "Segoe UI", sans-serif;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  color: rgba(1, 1, 0, 0.72);
+  font-weight: 500;
+}
+
+.cluster-theme-coachella-2027 h1,
+.cluster-theme-coachella-2027 [data-testid="cluster-sticky-title"] {
+  font-family: "Fraunces", Georgia, serif !important;
+  letter-spacing: -0.03em !important;
+  color: var(--coachella-ink) !important;
+}
+
+.cluster-theme-coachella-2027 h1 {
+  font-size: clamp(1.7rem, 4.5vw, 2.05rem) !important;
+  background: linear-gradient(105deg, var(--coachella-ink) 0%, var(--coachella-dusk) 55%, var(--coachella-heat) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent !important;
+}
+
+.cluster-theme-coachella-2027 header {
+  border-bottom: none;
+  padding-bottom: 0.35rem;
+}
+
+.cluster-theme-coachella-2027 [data-testid="cluster-sticky-chrome"] {
+  background: rgba(255, 248, 239, 0.92) !important;
+  border-bottom: 1px solid var(--coachella-line) !important;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 20px rgba(255, 111, 51, 0.06);
+}
+
+.cluster-theme-coachella-2027 button[aria-pressed="true"],
+.cluster-theme-coachella-2027 [data-testid="cluster-food-zone-all"][aria-pressed="true"],
+.cluster-theme-coachella-2027 [data-testid^="cluster-food-zone-"][aria-pressed="true"] {
+  background: var(--coachella-ink) !important;
+  border-color: var(--coachella-ink) !important;
+  color: #fff8ef !important;
+  box-shadow: 0 0 0 3px var(--coachella-glow);
+}
+
+.cluster-theme-coachella-2027 button[aria-pressed="false"],
+.cluster-theme-coachella-2027 [data-testid^="cluster-food-zone-"][aria-pressed="false"] {
+  border-color: rgba(255, 111, 51, 0.35) !important;
+  background: rgba(255, 255, 255, 0.72) !important;
+  color: var(--coachella-ink) !important;
+}
+
+.cluster-theme-coachella-2027 footer {
+  border-top-color: var(--coachella-line) !important;
+  color: rgba(1, 1, 0, 0.62) !important;
+}
+
+@media (max-width: 640px) {
+  .cluster-theme-coachella-2027 .cluster-coachella-hero {
+    padding: 0.85rem 0.85rem 0.95rem;
+    border-radius: 1rem;
+  }
+}

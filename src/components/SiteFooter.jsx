@@ -1,6 +1,8 @@
 // Path: menubloc-frontend/src/components/SiteFooter.jsx
 // Date: 2026-07-04
-// Purpose: Public site footer navigation.
+// Purpose: Public site footer navigation — primary gateway for new business activity.
+// Guardrail: docs/guardrails/2026-08-10_site-footer-protection-contract.md
+// Never remove/blank this footer on public pages (incl. home) without explicit confirmation.
 
 import React from "react";
 import { Link, useLocation } from "react-router-dom";

@@ -28,6 +28,7 @@
 export const PUBLIC_CLUSTER_SEO_SLUGS = Object.freeze([
   "la-live",
   "lacc",
+  "coachella-2027",
   "lax",
   "atl-airport",
   "american-airlines-center",
@@ -69,6 +70,21 @@ export const CLUSTER_SEO_CONTENT = Object.freeze({
     metaDescription:
       "Explore available restaurants, menus, food, and drinks near the Los Angeles Convention Center in Los Angeles, CA. Search dining options with Menuply.",
     searchPlaceholder: "Search Convention Center menus",
+  }),
+  "coachella-2027": Object.freeze({
+    slug: "coachella-2027",
+    displayName: "Coachella 2027",
+    city: "Indio",
+    state: "CA",
+    clusterType: "entertainment_complex",
+    intro:
+      "Discover Coachella 2027 food and drink powered by Menuply — browse festival vendors across Indio Central Market, Street Food Alley, Terrace, and more at the Empire Polo Club in Indio, California. Search menu items, explore vendors by area, and plan where to eat between sets. Coverage is a Menuply destination proof-of-concept; some listings are historical/reference until 2027 menus are confirmed. Menuply is independent and not affiliated with Coachella, Goldenvoice, or AEG unless expressly stated.",
+    cardDescription:
+      "Festival food and drink for Coachella 2027 at the Empire Polo Club in Indio — powered by Menuply.",
+    seoTitle: "Coachella 2027 Food & Drink | Menuply",
+    metaDescription:
+      "Explore Coachella 2027 festival food, drinks, and vendors in Indio, CA with Menuply. Search menus across Indio Central Market, Street Food Alley, and more.",
+    searchPlaceholder: "Search Coachella menus",
   }),
   lax: Object.freeze({
     slug: "lax",
