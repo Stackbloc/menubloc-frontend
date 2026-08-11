@@ -234,6 +234,14 @@
   color: var(--lalive-gold-soft);
 }
 
+/*
+ * ClusterBackButton uses inline #374151 — invisible on night charcoal.
+ * Class hook beats inline color the same way .cluster-card-title does.
+ */
+.cluster-theme-la-live .cluster-back-button {
+  color: var(--lalive-gold-soft) !important;
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .cluster-theme-la-live .cluster-lalive-hero {
     animation: lalive-hero-in 640ms cubic-bezier(0.22, 1, 0.36, 1) both;

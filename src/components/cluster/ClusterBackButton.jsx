@@ -21,6 +21,8 @@ export default function ClusterBackButton({ fallbackTo = "/clusters", label = "B
   return (
     <Link
       to={fallbackTo}
+      data-testid="cluster-back-button"
+      className="cluster-back-button"
       aria-label={label === "Back" ? "Go back" : label}
       style={BACK_BUTTON_STYLE}
     >

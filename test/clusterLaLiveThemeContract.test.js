@@ -32,6 +32,15 @@ test("L.A. LIVE theme forces readable card titles via class hooks (not hex attri
   assert.doesNotMatch(themeSrc, /article \[style\*="color: #111827"\]/);
 });
 
+test("L.A. LIVE theme forces readable ClusterBackButton via class hook", () => {
+  const backSrc = readFileSync(join(root, "src/components/cluster/ClusterBackButton.jsx"), "utf8");
+  assert.match(backSrc, /className="cluster-back-button"/);
+  assert.match(backSrc, /data-testid="cluster-back-button"/);
+  assert.match(pageSrc, /ClusterBackButton/);
+  assert.match(themeSrc, /\.cluster-back-button/);
+  assert.match(themeSrc, /color: var\(--lalive-gold-soft\) !important/);
+});
+
 test("Coachella theme remains independently wired", () => {
   assert.match(pageSrc, /clusterCoachellaTheme\.css/);
   assert.match(pageSrc, /cluster-theme-coachella-2027/);
