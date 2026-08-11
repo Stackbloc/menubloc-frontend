@@ -19,6 +19,7 @@ test("ClusterPage mounts sticky product title + Food/Restaurants chrome", () => 
   assert.match(pageSrc, /data-testid="cluster-sticky-title"/);
   assert.match(pageSrc, /position:\s*"sticky"/);
   assert.match(pageSrc, /<ClusterViewToggle/);
+  assert.match(pageSrc, /renderStickyLead/);
   assert.match(pageSrc, /overflowX:\s*"clip"/);
 });
 

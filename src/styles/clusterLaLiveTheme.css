@@ -175,17 +175,46 @@
 
 .cluster-theme-la-live button[aria-pressed="false"],
 .cluster-theme-la-live [data-testid^="cluster-food-zone-"][aria-pressed="false"],
-.cluster-theme-la-live button[style*="background: #fff"],
-.cluster-theme-la-live button[style*='background: "#fff"'] {
+.cluster-theme-la-live button[style*="background: #fff"]:not(.cluster-view-toggle),
+.cluster-theme-la-live button[style*='background: "#fff"']:not(.cluster-view-toggle) {
   background: rgba(28, 34, 48, 0.9) !important;
   border-color: rgba(244, 241, 234, 0.18) !important;
   color: var(--lalive-ink) !important;
 }
 
+/*
+ * Food/Restaurants radios previously used selected=#111827 (invisible on night)
+ * and unselected=#fff (restyled into a visible pill) — selection looked inverted.
+ */
+.cluster-theme-la-live .cluster-view-toggle[aria-pressed="true"],
+.cluster-theme-la-live .cluster-view-toggle.is-selected {
+  background: var(--lalive-gold) !important;
+  border-color: var(--lalive-gold) !important;
+  color: #12161f !important;
+  box-shadow: 0 0 0 3px var(--lalive-glow);
+}
+
+.cluster-theme-la-live .cluster-view-toggle[aria-pressed="false"]:not(.is-selected) {
+  background: rgba(28, 34, 48, 0.9) !important;
+  border-color: rgba(244, 241, 234, 0.22) !important;
+  color: var(--lalive-ink) !important;
+  box-shadow: none;
+}
+
+.cluster-theme-la-live .cluster-view-toggle.is-selected .cluster-view-toggle-dot {
+  border: 3px solid #12161f !important;
+  background: #12161f !important;
+}
+
+.cluster-theme-la-live .cluster-view-toggle[aria-pressed="false"] .cluster-view-toggle-dot {
+  border: 1px solid rgba(244, 241, 234, 0.45) !important;
+  background: transparent !important;
+}
+
 .cluster-theme-la-live article,
 .cluster-theme-la-live .cluster-themed-card,
-.cluster-theme-la-live [style*="background: #fff"],
-.cluster-theme-la-live [style*='background: "#fff"'] {
+.cluster-theme-la-live [style*="background: #fff"]:not(.cluster-view-toggle),
+.cluster-theme-la-live [style*='background: "#fff"']:not(.cluster-view-toggle) {
   background: linear-gradient(165deg, #1a2030 0%, #141925 100%) !important;
   border-color: rgba(232, 197, 106, 0.22) !important;
   color: var(--lalive-ink) !important;

@@ -89,11 +89,17 @@ function ClusterViewToggle({ viewMode, onChange, disabled }) {
     { id: CLUSTER_VIEW_MODES.RESTAURANTS, label: "Restaurants" },
   ];
 
+  function selectView(nextView) {
+    if (disabled || nextView === viewMode) return;
+    onChange(nextView);
+  }
+
   return (
     <div
       role="radiogroup"
       aria-label="Cluster view"
-      style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}
+      data-testid="cluster-view-toggle"
+      style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", position: "relative", zIndex: 2 }}
     >
         {options.map((option) => {
           const selected = viewMode === option.id;
@@ -103,8 +109,17 @@ function ClusterViewToggle({ viewMode, onChange, disabled }) {
               type="button"
               role="radio"
               aria-checked={selected}
+              aria-pressed={selected}
+              data-testid={`cluster-view-${option.id}`}
+              className={`cluster-view-toggle${selected ? " is-selected" : ""}`}
               disabled={disabled}
-              onClick={() => onChange(option.id)}
+              // pointerdown commits before a view-branch remount can swallow the click
+              onPointerDown={(event) => {
+                if (disabled || event.button !== 0) return;
+                event.preventDefault();
+                selectView(option.id);
+              }}
+              onClick={() => selectView(option.id)}
               style={{
                 display: "inline-flex",
                 alignItems: "center",
@@ -116,10 +131,14 @@ function ClusterViewToggle({ viewMode, onChange, disabled }) {
                 color: disabled ? "#9ca3af" : selected ? "#fff" : "#111827",
                 cursor: disabled ? "not-allowed" : "pointer",
                 whiteSpace: "nowrap",
+                touchAction: "manipulation",
+                position: "relative",
+                zIndex: 1,
               }}
             >
               <span
                 aria-hidden="true"
+                className="cluster-view-toggle-dot"
                 style={{
                   width: 12,
                   height: 12,
@@ -1113,51 +1132,55 @@ export default function ClusterPage() {
   const cityBackLabel = cluster.city ? `Back to ${cluster.city}` : "All clusters";
   const restaurantsReturnPath = cluster ? buildClusterRestaurantsReturnPath(cluster) : null;
 
-  const stickyLead = (
-    <>
-      <h2
-        data-testid="cluster-sticky-title"
-        style={{
-          margin: 0,
-          color: "#111827",
-          fontSize: "1.2rem",
-          lineHeight: 1.2,
-          fontWeight: 700,
-          minWidth: 0,
-          overflowWrap: "anywhere",
-          letterSpacing: "-0.02em",
-        }}
-      >
-        {productTitle}
-      </h2>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "flex-start",
-          gap: "0.55rem",
-          flexWrap: "wrap",
-          minWidth: 0,
-        }}
-      >
-        <ClusterViewToggle viewMode={resolvedViewMode} onChange={setViewMode} disabled={false} />
-        {shareData ? (
-          <ShareButton
-            shareData={shareData}
-            analyticsContext={{
-              pageType: "cluster",
-              clusterSlug: cluster.slug,
-              clusterName: cluster.name,
-            }}
-            label="Share"
-            iconOnly
-            tone="ghost"
-            size="compact"
-          />
-        ) : null}
-      </div>
-    </>
-  );
+  // Fresh element tree per call — both Food and Restaurants panels stay mounted,
+  // so a single React element object must not be reused in two places.
+  function renderStickyLead() {
+    return (
+      <>
+        <h2
+          data-testid="cluster-sticky-title"
+          style={{
+            margin: 0,
+            color: "#111827",
+            fontSize: "1.2rem",
+            lineHeight: 1.2,
+            fontWeight: 700,
+            minWidth: 0,
+            overflowWrap: "anywhere",
+            letterSpacing: "-0.02em",
+          }}
+        >
+          {productTitle}
+        </h2>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "flex-start",
+            gap: "0.55rem",
+            flexWrap: "wrap",
+            minWidth: 0,
+          }}
+        >
+          <ClusterViewToggle viewMode={resolvedViewMode} onChange={setViewMode} disabled={false} />
+          {shareData ? (
+            <ShareButton
+              shareData={shareData}
+              analyticsContext={{
+                pageType: "cluster",
+                clusterSlug: cluster.slug,
+                clusterName: cluster.name,
+              }}
+              label="Share"
+              iconOnly
+              tone="ghost"
+              size="compact"
+            />
+          ) : null}
+        </div>
+      </>
+    );
+  }
 
   const clusterFoodHero = (
     <SpacedClusterAdSlot clusterSlug={cluster.slug} pageRegion="cluster_landing_hero" />
@@ -1248,43 +1271,51 @@ export default function ClusterPage() {
         <ClusterDescription cluster={cluster} />
       </header>
 
-      {resolvedViewMode === CLUSTER_VIEW_MODES.MENU ? (
+      {/* Keep both views mounted so the Food/Restaurants toggle is not destroyed mid-tap. */}
+      <div
+        data-testid="cluster-view-panel-menu"
+        hidden={resolvedViewMode !== CLUSTER_VIEW_MODES.MENU}
+        aria-hidden={resolvedViewMode !== CLUSTER_VIEW_MODES.MENU}
+      >
         <ClusterMenuExplorerTab
           clusterSlug={cluster.slug}
           cluster={cluster}
           enabled
-          stickyLead={stickyLead}
+          stickyLead={renderStickyLead()}
           preContent={clusterFoodHero}
           postContent={clusterFoodTail}
         />
-      ) : (
-        <>
-          <div data-testid="cluster-sticky-chrome" style={CLUSTER_STICKY_CHROME_STYLE}>
-            {stickyLead}
-          </div>
-          <div style={{ overflowX: "clip", minWidth: 0 }}>
-            <main
-              aria-label="Cluster content"
-              style={{
-                display: "grid",
-                gap: "0.75rem",
-                minWidth: 0,
-                paddingTop: "0.25rem",
-                paddingBottom: "1.5rem",
-              }}
-            >
-              <ClusterRestaurantsTab
-                clusterSlug={cluster.slug}
-                cluster={cluster}
-                enabled
-                placeReturnPath={restaurantsReturnPath}
-                placeReturnLabel={clusterLabel}
-              />
-            </main>
-            {clusterRestaurantsTail}
-          </div>
-        </>
-      )}
+      </div>
+      <div
+        data-testid="cluster-view-panel-restaurants"
+        hidden={resolvedViewMode !== CLUSTER_VIEW_MODES.RESTAURANTS}
+        aria-hidden={resolvedViewMode !== CLUSTER_VIEW_MODES.RESTAURANTS}
+      >
+        <div data-testid="cluster-sticky-chrome" style={CLUSTER_STICKY_CHROME_STYLE}>
+          {renderStickyLead()}
+        </div>
+        <div style={{ overflowX: "clip", minWidth: 0 }}>
+          <main
+            aria-label="Cluster restaurants"
+            style={{
+              display: "grid",
+              gap: "0.75rem",
+              minWidth: 0,
+              paddingTop: "0.25rem",
+              paddingBottom: "1.5rem",
+            }}
+          >
+            <ClusterRestaurantsTab
+              clusterSlug={cluster.slug}
+              cluster={cluster}
+              enabled
+              placeReturnPath={restaurantsReturnPath}
+              placeReturnLabel={clusterLabel}
+            />
+          </main>
+          {clusterRestaurantsTail}
+        </div>
+      </div>
 
       <BottomNav />
     </div>

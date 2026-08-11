@@ -41,6 +41,11 @@ test("L.A. LIVE theme forces readable ClusterBackButton via class hook", () => {
   assert.match(themeSrc, /color: var\(--lalive-gold-soft\) !important/);
 });
 
+test("L.A. LIVE theme forces readable selected Food/Restaurants toggle", () => {
+  assert.match(themeSrc, /\.cluster-view-toggle\[aria-pressed="true"\]/);
+  assert.match(themeSrc, /selection looked inverted/);
+});
+
 test("Coachella theme remains independently wired", () => {
   assert.match(pageSrc, /clusterCoachellaTheme\.css/);
   assert.match(pageSrc, /cluster-theme-coachella-2027/);
