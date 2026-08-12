@@ -21,7 +21,7 @@
  * ============================================================
  */
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { BrowserRouter, Route, Navigate, useParams, useLocation } from "react-router-dom";
 import SentryRoutePerformance from "./components/SentryRoutePerformance.jsx";
 import { SentryRoutes } from "./instrument.js";
@@ -30,6 +30,7 @@ import { useCanonical } from "./hooks/useCanonical.js";
 import { captureEvent, initPostHog } from "./services/posthog.js";
 import { sendPageVisit, setAnalyticsStaffSession } from "./lib/analyticsPageVisitSend.js";
 import { isCityStateSlug } from "./lib/cityStateSlug.js";
+import { apiGet } from "./lib/api.js";
 import { CartProvider } from "./context/CartContext.jsx";
 import { OrderCartProvider } from "./context/OrderCartContext.jsx";
 import { LanguageProvider } from "./context/LanguageContext.jsx";
@@ -392,12 +393,41 @@ function OldUploadReviewRedirect() {
 }
 
 // Disambiguation: /restaurants/:slugOrId is both the profile URL and the market aggregator URL.
-// When the segment matches {words}-{valid-state-code} it renders the market aggregator.
-// All other slugs render the existing restaurant profile page.
+// City-state heuristic alone false-positives real restaurant slugs that end in a
+// state code (e.g. chipotle-los-angeles-ca). Prefer an exact restaurant slug match.
 function RestaurantOrMarketRouter() {
   const { slugOrId } = useParams();
-  if (isCityStateSlug(slugOrId)) return <MarketAggregatorPage />;
-  return <RestaurantPublicPage />;
+  const looksLikeMarket = isCityStateSlug(slugOrId);
+  const [mode, setMode] = useState(() => (looksLikeMarket ? "checking" : "restaurant"));
+
+  useEffect(() => {
+    if (!looksLikeMarket) {
+      setMode("restaurant");
+      return undefined;
+    }
+    let cancelled = false;
+    setMode("checking");
+    apiGet(`/public/restaurants/${encodeURIComponent(String(slugOrId || ""))}`)
+      .then((data) => {
+        if (cancelled) return;
+        const restaurant = data?.restaurant || data;
+        const hasRestaurant =
+          data?.ok !== false &&
+          restaurant &&
+          (restaurant.id != null || restaurant.slug || restaurant.restaurant_name || restaurant.name);
+        setMode(hasRestaurant ? "restaurant" : "market");
+      })
+      .catch(() => {
+        if (!cancelled) setMode("market");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [slugOrId, looksLikeMarket]);
+
+  if (!looksLikeMarket || mode === "restaurant") return <RestaurantPublicPage />;
+  if (mode === "market") return <MarketAggregatorPage />;
+  return null;
 }
 
 // Handles the canonical 3-segment route /restaurants/:state/:city/:restaurantSlug.
