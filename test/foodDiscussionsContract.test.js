@@ -23,10 +23,20 @@ assert.match(component, /What diners are saying|title/);
 assert.match(component, /listPublicFoodComments/);
 assert.match(component, /createFoodComment/);
 assert.match(component, /Sign in/);
+assert.match(component, /Posting as/);
+assert.match(component, /food-comment-topic/);
+assert.match(component, /This restaurant/);
+assert.match(component, /food-comments-menu-items/);
+assert.match(component, /Menu item:/);
+assert.match(component, /updateConsumerProfile/);
+assert.match(component, /display_name_required/);
+assert.match(component, /menuItemPath/);
 
 const shell = read("src/components/restaurant/publicProfile/PublicProfileShell.jsx");
 assert.match(shell, /FoodComments/);
 assert.match(shell, /What diners are saying/);
+assert.match(shell, /restaurantSlug=/);
+assert.match(shell, /menuPreviewItems=/);
 
 const detail = read("src/pages/MenuItemDetailPage.jsx");
 assert.match(detail, /FoodComments/);

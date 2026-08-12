@@ -83,7 +83,14 @@ export default function PublicProfileShell({
   void featuredText;
   void featuredItem;
   void todaysSpecial;
-  void menuPreviewItems;
+
+  const restaurantSlug =
+    profile?.slug ||
+    profile?.restaurant_slug ||
+    null;
+  const restaurantCity = profile?.city || null;
+  const restaurantState = profile?.state || null;
+  const previewForComments = Array.isArray(menuPreviewItems) ? menuPreviewItems : null;
 
   const effectiveStyleKey = useMemo(() => {
     const fromApi = profile?.effective_profile_style;
@@ -261,6 +268,10 @@ export default function PublicProfileShell({
         {restaurantId ? (
           <FoodComments
             restaurantId={restaurantId}
+            restaurantSlug={restaurantSlug}
+            restaurantCity={restaurantCity}
+            restaurantState={restaurantState}
+            menuPreviewItems={previewForComments}
             showFeaturedFirst
             title="What diners are saying"
             compact={isMobile}
