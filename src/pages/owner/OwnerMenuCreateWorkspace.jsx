@@ -42,9 +42,78 @@ const STEPS = [
   { key: "review", label: "3. Review & Edit" },
 ];
 
+const MAX_MENU_UPLOAD_BYTES = 20 * 1024 * 1024;
+
 /** Stable-ish key so re-picking the same phone photo does not duplicate the queue. */
 function ownerUploadFileKey(file) {
   return `${file.name}::${file.size}::${file.lastModified}`;
+}
+
+function formatOwnerUploadBytes(bytes) {
+  const n = Number(bytes) || 0;
+  if (n < 1024 * 1024) return `${Math.max(1, Math.round(n / 1024))} KB`;
+  return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function ownerUploadTooLargeMessage(file) {
+  return `${file.name} is too large (${formatOwnerUploadBytes(file.size)}). Maximum is 20 MB. Compress the PDF or upload page photos instead.`;
+}
+
+const FALLBACK_MENU_TYPE_OPTIONS = [
+  { value: "lunch", label: "Lunch" },
+  { value: "dinner", label: "Dinner" },
+  { value: "breakfast", label: "Breakfast" },
+  { value: "brunch", label: "Brunch" },
+  { value: "bar", label: "Bar" },
+  { value: "happy_hour", label: "Happy Hour" },
+  { value: "late_night", label: "Late Night" },
+  { value: "drinks", label: "Drinks" },
+  { value: "catering", label: "Catering" },
+  { value: "other", label: "Other" },
+];
+
+function normalizeMenuNameKey(value) {
+  return String(value || "").trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+function nextAdditionalMenuDraft(existingMenus, schemaTypes) {
+  const options = (Array.isArray(schemaTypes) && schemaTypes.length)
+    ? schemaTypes
+    : FALLBACK_MENU_TYPE_OPTIONS;
+  const usedTypes = new Set(
+    (existingMenus || [])
+      .map((m) => String(m.menu_type || "").trim().toLowerCase())
+      .filter(Boolean)
+  );
+  const unused = options.find((opt) => opt?.value && !usedTypes.has(String(opt.value).toLowerCase()))
+    || options.find((opt) => String(opt?.value || "").toLowerCase() !== "main")
+    || options[0]
+    || { value: "other", label: "Other" };
+  const typeValue = String(unused.value || "other").toLowerCase();
+  const typeLabel = unused.label || typeValue;
+  const usedNames = new Set(
+    (existingMenus || []).map((m) => normalizeMenuNameKey(m.display_name || m.name))
+  );
+  let name = `${typeLabel} Menu`;
+  if (usedNames.has(normalizeMenuNameKey(name))) {
+    let n = 2;
+    while (usedNames.has(normalizeMenuNameKey(`${typeLabel} Menu ${n}`))) n += 1;
+    name = `${typeLabel} Menu ${n}`;
+  }
+  return { display_name: name, menu_type: typeValue };
+}
+
+function sortMenusByDisplayPriority(menus) {
+  return [...(menus || [])].sort((a, b) => {
+    const aRaw = Number(a?.display_priority ?? a?.sort_order);
+    const bRaw = Number(b?.display_priority ?? b?.sort_order);
+    const aPri = Number.isFinite(aRaw) ? aRaw : Number.MAX_SAFE_INTEGER;
+    const bPri = Number.isFinite(bRaw) ? bRaw : Number.MAX_SAFE_INTEGER;
+    if (aPri !== bPri) return aPri - bPri;
+    if (a.is_primary && !b.is_primary) return -1;
+    if (!a.is_primary && b.is_primary) return 1;
+    return Number(a.id || 0) - Number(b.id || 0);
+  });
 }
 
 function mergeOwnerUploadFiles(existing, incoming) {
@@ -278,6 +347,7 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
   const [actionMsg, setActionMsg] = useState("");
   const [publishing, setPublishing] = useState(false);
   const [showProfilePanel, setShowProfilePanel] = useState(false);
+  const [menuTabBusy, setMenuTabBusy] = useState(false);
 
   const loadGenerationRef = useRef(0);
   const suppressUrlLoadRef = useRef(false);
@@ -509,19 +579,94 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
 
   async function handleAddMenu() {
     if (!rid) return;
+    const draft = nextAdditionalMenuDraft(availableMenus, schema?.menu_types);
     setPublishing(true);
     setActionMsg("");
+    setUploadMsg(null);
     try {
       const created = await createMenuConsoleMenu(rid, {
-        display_name: menuName.trim() || "New Menu",
-        menu_type: menuType || "main",
+        display_name: draft.display_name,
+        menu_type: draft.menu_type,
       });
-      await reloadMenus(created.menu?.id);
-      setActionMsg(`Menu "${created.menu?.display_name || "New Menu"}" created.`);
+      const newId = created.menu?.id;
+      await reloadMenus(newId);
+      setMenuName(draft.display_name);
+      setMenuType(draft.menu_type);
+      setFiles([]);
+      if (fileRef.current) fileRef.current.value = "";
+      setActionMsg(
+        `Added “${draft.display_name}” as a new tab. Upload that menu’s PDF or photos above — it does not replace other menus.`
+      );
     } catch (err) {
-      setActionMsg(err?.payload?.error || err?.message || "Could not create menu.");
+      setActionMsg(err?.payload?.error || err?.message || "Could not add another menu.");
     } finally {
       setPublishing(false);
+    }
+  }
+
+  async function handleSetPrimaryMenu(menuId) {
+    if (!rid || !menuId) return;
+    setMenuTabBusy(true);
+    setActionMsg("");
+    try {
+      await updateMenuConsoleMenu(rid, menuId, { is_primary: true });
+      await reloadMenus(menuId);
+      setActionMsg("Default public tab updated.");
+    } catch (err) {
+      setActionMsg(err?.payload?.error || err?.message || "Could not set default menu.");
+    } finally {
+      setMenuTabBusy(false);
+    }
+  }
+
+  async function handleToggleMenuActive(menuId, currentlyActive) {
+    if (!rid || !menuId) return;
+    const nextActive = !currentlyActive;
+    setMenuTabBusy(true);
+    setActionMsg("");
+    try {
+      await updateMenuConsoleMenu(rid, menuId, {
+        is_active: nextActive,
+        is_public: nextActive,
+      });
+      await reloadMenus(menuId);
+      setActionMsg(nextActive ? "Menu activated for public tabs." : "Menu hidden from public tabs.");
+    } catch (err) {
+      setActionMsg(err?.payload?.error || err?.message || "Could not update menu visibility.");
+    } finally {
+      setMenuTabBusy(false);
+    }
+  }
+
+  async function handleReorderMenu(menuId, direction) {
+    if (!rid || !menuId) return;
+    const ordered = sortMenusByDisplayPriority(availableMenus);
+    const index = ordered.findIndex((m) => Number(m.id) === Number(menuId));
+    const swapWith = index + direction;
+    if (index < 0 || swapWith < 0 || swapWith >= ordered.length) return;
+    const a = ordered[index];
+    const b = ordered[swapWith];
+    let aPri = Number(a.display_priority);
+    let bPri = Number(b.display_priority);
+    if (!Number.isFinite(aPri)) aPri = index * 10;
+    if (!Number.isFinite(bPri)) bPri = swapWith * 10;
+    if (aPri === bPri) {
+      aPri = index * 10;
+      bPri = swapWith * 10;
+    }
+    setMenuTabBusy(true);
+    setActionMsg("");
+    try {
+      await Promise.all([
+        updateMenuConsoleMenu(rid, a.id, { display_priority: bPri }),
+        updateMenuConsoleMenu(rid, b.id, { display_priority: aPri }),
+      ]);
+      await reloadMenus(mid);
+      setActionMsg("Menu tab order updated.");
+    } catch (err) {
+      setActionMsg(err?.payload?.error || err?.message || "Could not reorder menus.");
+    } finally {
+      setMenuTabBusy(false);
     }
   }
 
@@ -555,7 +700,7 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
 
   async function handleDeleteMenuRow(targetMenu) {
     if (!rid || !targetMenu?.id) return;
-    if (targetMenu.is_primary || menusWithItems.length <= 1) {
+    if (targetMenu.is_primary || availableMenus.length <= 1) {
       setActionMsg(
         "This is the only / primary menu. Use Clear dishes, then Update OCR — deleting the shell is blocked."
       );
@@ -882,6 +1027,17 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
       setUploadMsg({ ok: false, message: "Choose a PDF and/or photo files first." });
       return;
     }
+    const oversized = files.find((file) => Number(file.size) > MAX_MENU_UPLOAD_BYTES);
+    if (oversized) {
+      setUploadMsg({
+        ok: false,
+        restaurantId: rid,
+        menuId: mid,
+        parseStatus: "upload_failed",
+        message: ownerUploadTooLargeMessage(oversized),
+      });
+      return;
+    }
     setUploading(true);
     setUploadMsg(null);
     setPendingUploadId(null);
@@ -932,7 +1088,7 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
           totalSuperseded > 0
             ? ` Replaced ${totalSuperseded} prior same-named dish${totalSuperseded === 1 ? "" : "es"}.`
             : "";
-        const prefix = restaurantNeedsMenuContent ? "Parsed" : "Update OCR: parsed";
+        const prefix = (Number(menuDetail?.item_count) || 0) === 0 ? "Parsed" : "Update OCR: parsed";
         setUploadMsg({
           ok: saved,
           restaurantId: rid,
@@ -949,7 +1105,7 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
           totalSuperseded > 0
             ? ` Replaced ${totalSuperseded} prior same-named dish${totalSuperseded === 1 ? "" : "es"}.`
             : "";
-        const prefix = restaurantNeedsMenuContent ? "Parsed" : "Update OCR: parsed";
+        const prefix = (Number(menuDetail?.item_count) || 0) === 0 ? "Parsed" : "Update OCR: parsed";
         setUploadMsg({
           ok: true,
           restaurantId: rid,
@@ -988,8 +1144,12 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
     || (restaurant && !existingRestaurant)
   );
   const menusWithItems = availableMenus.filter((m) => Number(m.item_count) > 0);
+  const orderedMenus = sortMenusByDisplayPriority(availableMenus);
+  const selectedMenuRow = orderedMenus.find((m) => Number(m.id) === Number(mid)) || null;
+  const selectedMenuItemCount = Number(menuDetail?.item_count) || Number(selectedMenuRow?.item_count) || 0;
+  const selectedMenuNeedsContent = Boolean(restaurant && selectedMenuItemCount === 0);
   const restaurantNeedsMenuContent = Boolean(
-    restaurant && (Number(menuDetail?.item_count) || 0) === 0 && menusWithItems.length === 0
+    restaurant && selectedMenuNeedsContent && menusWithItems.length === 0
   );
 
   const profileFormCard = showProfileFormCard ? (
@@ -1214,11 +1374,11 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
   const uploadCard = restaurant ? (
     <PageCard style={{ padding: 20, marginBottom: 16 }} data-testid="owner-upload-menu-panel">
       <SectionTitle
-        title={restaurantNeedsMenuContent ? "Upload menu" : "Update OCR"}
+        title={selectedMenuNeedsContent ? "Upload menu" : "Update OCR"}
         subtitle={
-          restaurantNeedsMenuContent
-            ? "Fastest path: select one PDF or multiple photos, then Upload & Parse. The system builds the menu for you."
-            : "Update OCR: add PDF or photos to this menu. New dishes are added; same-named dishes replace prior versions. To wipe everything first, use Clear dishes on the menu below."
+          selectedMenuNeedsContent
+            ? "Fastest path: select one PDF or multiple photos, then Upload & Parse. The system builds this tab’s menu for you."
+            : "Update OCR: add PDF or photos to the selected menu tab. New dishes are added; same-named dishes replace prior versions. To wipe everything first, use Clear dishes on the menu below."
         }
       />
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12, marginTop: 12 }}>
@@ -1233,6 +1393,9 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
         <div style={{ fontSize: 12, color: OWNER_COLORS.muted, marginBottom: 6, lineHeight: 1.45 }}>
           Desktop: select many at once. Phone: add one photo at a time — each pick is added to the list below.
         </div>
+        <div data-testid="owner-menu-upload-size-hint" style={{ fontSize: 12, color: OWNER_COLORS.muted, marginBottom: 6 }}>
+          PDF, JPEG, PNG, or WebP — max 20 MB each.
+        </div>
         <input
           ref={fileRef}
           type="file"
@@ -1240,8 +1403,17 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
           accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp"
           onChange={(e) => {
             const picked = Array.from(e.target.files || []);
-            if (picked.length) {
-              setFiles((prev) => mergeOwnerUploadFiles(prev, picked));
+            const tooBig = picked.filter((file) => Number(file.size) > MAX_MENU_UPLOAD_BYTES);
+            const ok = picked.filter((file) => Number(file.size) <= MAX_MENU_UPLOAD_BYTES);
+            if (ok.length) {
+              setFiles((prev) => mergeOwnerUploadFiles(prev, ok));
+            }
+            if (tooBig.length) {
+              setUploadMsg({
+                ok: false,
+                parseStatus: "upload_failed",
+                message: tooBig.map(ownerUploadTooLargeMessage).join(" "),
+              });
             }
             // Reset so the same path can be chosen again and another phone pick can open.
             e.target.value = "";
@@ -1302,6 +1474,7 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
                 >
                   <span style={{ color: OWNER_COLORS.ink, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis" }}>
                     {f.name}
+                    <span style={{ color: OWNER_COLORS.muted, fontWeight: 500 }}> · {formatOwnerUploadBytes(f.size)}</span>
                   </span>
                   <button
                     type="button"
@@ -1328,7 +1501,7 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
             </ul>
             <div style={{ marginTop: 8, fontSize: 12, color: OWNER_COLORS.muted }}>
               Need another page? Choose a file again to add it, then{" "}
-              {restaurantNeedsMenuContent ? "Upload & Parse" : "Update OCR"}.
+              {selectedMenuNeedsContent ? "Upload & Parse" : "Update OCR"}.
             </div>
           </div>
         ) : null}
@@ -1350,10 +1523,10 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
           }}
         >
           {uploading
-            ? restaurantNeedsMenuContent
+            ? selectedMenuNeedsContent
               ? "Uploading & parsing…"
               : "Updating OCR…"
-            : restaurantNeedsMenuContent
+            : selectedMenuNeedsContent
               ? "Upload & Parse"
               : "Update OCR"}
         </button>
@@ -1401,91 +1574,186 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
     </PageCard>
   ) : null;
 
-  const menusCard = restaurant && menusWithItems.length > 0 ? (
-        <PageCard style={{ padding: 20, marginBottom: 16 }}>
+  const menusCard = restaurant ? (
+        <PageCard style={{ padding: 20, marginBottom: 16 }} data-testid="owner-menu-tabs-panel">
           <SectionTitle
             title="Menus"
-            subtitle="Menus with dishes. Empty shells are hidden — upload builds the first real menu."
+            subtitle="All menus share this screen as tabs. Set display order, default tab, and which menus appear on the public page."
           />
-            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 12 }}>
-              {menusWithItems.map((m) => {
+            <div
+              data-testid="owner-menu-tab-list"
+              style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center", marginTop: 12 }}
+            >
+              {orderedMenus.length === 0 ? (
+                <span style={{ fontSize: 13, color: OWNER_COLORS.muted }}>No menus yet</span>
+              ) : orderedMenus.map((m) => {
                 const active = Number(m.id) === Number(mid);
                 const label = m.display_name || m.name || `Menu #${m.id}`;
                 return (
-                  <div
+                  <button
                     key={m.id}
+                    type="button"
+                    data-testid="owner-menu-tab"
+                    onClick={() => switchMenu(m)}
                     style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      gap: 12,
-                      flexWrap: "wrap",
-                      padding: "12px 14px",
-                      borderRadius: 10,
-                      border: `1px solid ${active ? OWNER_COLORS.accent : OWNER_COLORS.line}`,
-                      background: active ? OWNER_COLORS.accentSoft : "#fff",
+                      padding: "7px 14px",
+                      borderRadius: 999,
+                      border: active ? `2px solid ${OWNER_COLORS.accent}` : `1.5px solid ${OWNER_COLORS.line}`,
+                      background: active ? OWNER_COLORS.accent : "#fff",
+                      color: active ? "#fff" : OWNER_COLORS.ink,
+                      fontWeight: active ? 700 : 500,
+                      fontSize: 13,
+                      cursor: "pointer",
+                      whiteSpace: "nowrap",
                     }}
                   >
-                    <div>
-                      <div style={{ fontWeight: 700, fontSize: 14 }}>{label}</div>
-                      <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 4, flexWrap: "wrap" }}>
-                        <StatusChip status={m.status} />
-                        <span style={{ fontSize: 12, color: OWNER_COLORS.muted }}>
-                          #{m.id}{m.menu_type ? ` · ${m.menu_type}` : ""} · {m.item_count} items
-                          {m.is_primary ? " · primary" : ""}
-                        </span>
-                      </div>
-                    </div>
-                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-                      <button
-                        type="button"
-                        onClick={() => switchMenu(m)}
-                        style={{
-                          padding: "8px 12px", borderRadius: 8,
-                          background: active ? OWNER_COLORS.accent : "#fff",
-                          color: active ? "#fff" : OWNER_COLORS.ink,
-                          border: active ? "none" : `1px solid ${OWNER_COLORS.line}`,
-                          fontWeight: 700, fontSize: 12, cursor: "pointer",
-                        }}
-                      >
-                        {active ? "Editing" : "Edit items"}
-                      </button>
-                      <button
-                        type="button"
-                        data-testid="owner-menu-clear-dishes"
-                        disabled={publishing}
-                        onClick={() => handleClearMenuDishes(m)}
-                        title="Hide all dishes so you can Update OCR from scratch"
-                        style={{
-                          padding: "8px 12px", borderRadius: 8,
-                          border: `1px solid ${OWNER_COLORS.line}`,
-                          background: "#fff", color: OWNER_COLORS.ink,
-                          fontWeight: 700, fontSize: 12, cursor: publishing ? "not-allowed" : "pointer",
-                        }}
-                      >
-                        Clear dishes
-                      </button>
-                      {!m.is_primary && menusWithItems.length > 1 ? (
-                        <button
-                          type="button"
-                          disabled={publishing}
-                          onClick={() => handleDeleteMenuRow(m)}
-                          style={{
-                            padding: "8px 12px", borderRadius: 8, border: "1px solid #fca5a5",
-                            background: "#fff", color: "#991b1b", fontWeight: 700, fontSize: 12, cursor: "pointer",
-                          }}
-                        >
-                          Delete menu
-                        </button>
-                      ) : null}
-                    </div>
-                  </div>
+                    {label}
+                    {m.is_primary ? <span style={{ marginLeft: 6, opacity: 0.85, fontSize: 11 }}>default</span> : null}
+                    {m.is_active === false ? <span style={{ marginLeft: 6, opacity: 0.7, fontSize: 11 }}>off</span> : null}
+                    {Number(m.item_count) === 0 ? <span style={{ marginLeft: 6, opacity: 0.7, fontSize: 11 }}>empty</span> : null}
+                  </button>
                 );
               })}
             </div>
+            {selectedMenuRow ? (
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  gap: 12,
+                  flexWrap: "wrap",
+                  marginTop: 12,
+                  padding: "12px 14px",
+                  borderRadius: 10,
+                  border: `1px solid ${OWNER_COLORS.line}`,
+                  background: "#fff",
+                }}
+              >
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 14 }}>
+                    {selectedMenuRow.display_name || selectedMenuRow.name || `Menu #${selectedMenuRow.id}`}
+                  </div>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 4, flexWrap: "wrap" }}>
+                    <StatusChip status={selectedMenuRow.status} />
+                    <span style={{ fontSize: 12, color: OWNER_COLORS.muted }}>
+                      #{selectedMenuRow.id}
+                      {selectedMenuRow.menu_type ? ` · ${selectedMenuRow.menu_type}` : ""}
+                      {" · "}{selectedMenuRow.item_count || 0} items
+                      {selectedMenuRow.is_primary ? " · default" : ""}
+                    </span>
+                  </div>
+                </div>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+                  <button
+                    type="button"
+                    data-testid="owner-menu-set-default"
+                    disabled={menuTabBusy || selectedMenuRow.is_primary === true}
+                    onClick={() => handleSetPrimaryMenu(selectedMenuRow.id)}
+                    title="Show this menu first on the public page when entitled"
+                    style={{
+                      padding: "8px 12px", borderRadius: 8,
+                      border: `1px solid ${OWNER_COLORS.line}`,
+                      background: "#fff", color: OWNER_COLORS.ink,
+                      fontWeight: 700, fontSize: 12,
+                      cursor: menuTabBusy || selectedMenuRow.is_primary ? "not-allowed" : "pointer",
+                    }}
+                  >
+                    {selectedMenuRow.is_primary ? "Default" : "Set default"}
+                  </button>
+                  <button
+                    type="button"
+                    data-testid="owner-menu-toggle-active"
+                    disabled={menuTabBusy}
+                    onClick={() => handleToggleMenuActive(selectedMenuRow.id, selectedMenuRow.is_active !== false)}
+                    style={{
+                      padding: "8px 12px", borderRadius: 8,
+                      border: `1px solid ${OWNER_COLORS.line}`,
+                      background: "#fff", color: OWNER_COLORS.ink,
+                      fontWeight: 700, fontSize: 12, cursor: menuTabBusy ? "not-allowed" : "pointer",
+                    }}
+                  >
+                    {selectedMenuRow.is_active === false ? "Activate" : "Deactivate"}
+                  </button>
+                  <button
+                    type="button"
+                    data-testid="owner-menu-order-earlier"
+                    disabled={menuTabBusy || orderedMenus.findIndex((m) => Number(m.id) === Number(selectedMenuRow.id)) <= 0}
+                    onClick={() => handleReorderMenu(selectedMenuRow.id, -1)}
+                    title="Move tab earlier"
+                    style={{
+                      padding: "8px 12px", borderRadius: 8,
+                      border: `1px solid ${OWNER_COLORS.line}`,
+                      background: "#fff", color: OWNER_COLORS.ink,
+                      fontWeight: 700, fontSize: 12, cursor: "pointer",
+                    }}
+                  >
+                    ← Order
+                  </button>
+                  <button
+                    type="button"
+                    data-testid="owner-menu-order-later"
+                    disabled={
+                      menuTabBusy
+                      || orderedMenus.findIndex((m) => Number(m.id) === Number(selectedMenuRow.id)) >= orderedMenus.length - 1
+                    }
+                    onClick={() => handleReorderMenu(selectedMenuRow.id, 1)}
+                    title="Move tab later"
+                    style={{
+                      padding: "8px 12px", borderRadius: 8,
+                      border: `1px solid ${OWNER_COLORS.line}`,
+                      background: "#fff", color: OWNER_COLORS.ink,
+                      fontWeight: 700, fontSize: 12, cursor: "pointer",
+                    }}
+                  >
+                    Order →
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => switchMenu(selectedMenuRow)}
+                    style={{
+                      padding: "8px 12px", borderRadius: 8,
+                      background: OWNER_COLORS.accent, color: "#fff",
+                      border: "none", fontWeight: 700, fontSize: 12, cursor: "pointer",
+                    }}
+                  >
+                    Edit items
+                  </button>
+                  <button
+                    type="button"
+                    data-testid="owner-menu-clear-dishes"
+                    disabled={publishing}
+                    onClick={() => handleClearMenuDishes(selectedMenuRow)}
+                    title="Hide all dishes so you can Update OCR from scratch"
+                    style={{
+                      padding: "8px 12px", borderRadius: 8,
+                      border: `1px solid ${OWNER_COLORS.line}`,
+                      background: "#fff", color: OWNER_COLORS.ink,
+                      fontWeight: 700, fontSize: 12, cursor: publishing ? "not-allowed" : "pointer",
+                    }}
+                  >
+                    Clear dishes
+                  </button>
+                  {!selectedMenuRow.is_primary && availableMenus.length > 1 ? (
+                    <button
+                      type="button"
+                      disabled={publishing}
+                      onClick={() => handleDeleteMenuRow(selectedMenuRow)}
+                      style={{
+                        padding: "8px 12px", borderRadius: 8, border: "1px solid #fca5a5",
+                        background: "#fff", color: "#991b1b", fontWeight: 700, fontSize: 12, cursor: "pointer",
+                      }}
+                    >
+                      Delete menu
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 14, alignItems: "center" }}>
             <button
               type="button"
+              data-testid="owner-add-another-menu"
               disabled={publishing}
               onClick={handleAddMenu}
               style={{

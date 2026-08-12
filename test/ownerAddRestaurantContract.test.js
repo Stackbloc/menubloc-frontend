@@ -111,8 +111,13 @@ describe("owner Add Restaurant restore", () => {
 
   it("upload-first workspace accepts multiple PDF/photo files", () => {
     const workspace = read("src/pages/owner/OwnerMenuCreateWorkspace.jsx");
-    assert.match(workspace, /title=\{restaurantNeedsMenuContent \? "Upload menu" : "Update OCR"\}/);
+    assert.match(workspace, /title=\{selectedMenuNeedsContent \? "Upload menu" : "Update OCR"\}/);
     assert.match(workspace, /data-testid="owner-menu-upload-input"/);
+    assert.match(workspace, /data-testid="owner-menu-upload-size-hint"/);
+    assert.match(workspace, /max 20 MB each/);
+    assert.match(workspace, /MAX_MENU_UPLOAD_BYTES = 20 \* 1024 \* 1024/);
+    assert.match(workspace, /ownerUploadTooLargeMessage/);
+    assert.match(workspace, /is too large/);
     assert.match(workspace, /multiple\n\s*accept=/);
     assert.match(workspace, /const \[files, setFiles\] = useState\(\[\]\)/);
     assert.match(workspace, /for \(let i = 0; i < files\.length; i \+= 1\)/);
@@ -123,9 +128,15 @@ describe("owner Add Restaurant restore", () => {
     assert.match(workspace, /superseded_count/);
     assert.match(workspace, /Replaced \$\{totalSuperseded\} prior same-named/);
     assert.match(workspace, /"Update OCR"/);
-    // Empty shells hidden; prefer menus with items; do not auto-create on load.
+    // Initial load still prefers a menu that already has items; tabs show every shell.
     assert.match(workspace, /menusWithItems/);
     assert.match(workspace, /Prefer a menu that already has items/);
+    assert.match(workspace, /data-testid="owner-menu-tabs-panel"/);
+    assert.match(workspace, /data-testid="owner-menu-tab"/);
+    assert.match(workspace, /sortMenusByDisplayPriority/);
+    assert.match(workspace, /handleSetPrimaryMenu/);
+    assert.match(workspace, /handleReorderMenu/);
+    assert.match(workspace, /handleAddMenu/);
     assert.doesNotMatch(workspace, /showImportPanel/);
     const uploadIdx = workspace.indexOf("{uploadCard}");
     const menusIdx = workspace.indexOf("{menusCard}");

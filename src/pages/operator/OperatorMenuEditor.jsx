@@ -33,6 +33,19 @@ import MenuItemModifiersEditor, {
   fromEditorGroups,
 } from "../../components/menuEditor/MenuItemModifiersEditor.jsx";
 
+function sortMenusByDisplayPriority(menus) {
+  return [...(menus || [])].sort((a, b) => {
+    const aRaw = Number(a?.display_priority ?? a?.sort_order);
+    const bRaw = Number(b?.display_priority ?? b?.sort_order);
+    const aPri = Number.isFinite(aRaw) ? aRaw : Number.MAX_SAFE_INTEGER;
+    const bPri = Number.isFinite(bRaw) ? bRaw : Number.MAX_SAFE_INTEGER;
+    if (aPri !== bPri) return aPri - bPri;
+    if (a.is_primary && !b.is_primary) return -1;
+    if (!a.is_primary && b.is_primary) return 1;
+    return Number(a.id || 0) - Number(b.id || 0);
+  });
+}
+
 const CANONICAL_MENU_CATEGORIES = [
   "Appetizers",
   "Drinks",
@@ -1054,12 +1067,13 @@ export default function OperatorMenuEditor() {
     setError("");
     api.getMenus(rid)
       .then(d => {
-        const list = d.menus || [];
+        const list = sortMenusByDisplayPriority(d.menus || []);
         setMenus(list);
         if (list.length) {
           setSelectedMenuId((prev) => {
             if (prev && list.some((m) => m.id === prev)) return prev;
-            return list[0].id;
+            const primary = list.find((m) => m.is_primary);
+            return (primary || list[0]).id;
           });
         } else {
           setSelectedMenuId(null);
@@ -1298,7 +1312,7 @@ export default function OperatorMenuEditor() {
         api.updateMenu(rid, b.id, { display_priority: aPri }),
       ]);
       const refreshed = await api.getMenus(rid);
-      setMenus(Array.isArray(refreshed?.menus) ? refreshed.menus : ordered);
+      setMenus(sortMenusByDisplayPriority(Array.isArray(refreshed?.menus) ? refreshed.menus : ordered));
       showSuccess("Menu order updated.");
     } catch (e) {
       setError(e.message || "Could not reorder menus.");
@@ -1442,7 +1456,7 @@ export default function OperatorMenuEditor() {
           <span style={{ color: "#8a9ab0", fontSize: 13 }}>No menus yet</span>
         ) : (
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
-            {menus.map(m => {
+            {sortMenusByDisplayPriority(menus).map(m => {
               const active = m.id === selectedMenuId;
               return (
                 <button

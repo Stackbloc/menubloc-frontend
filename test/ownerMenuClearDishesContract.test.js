@@ -20,7 +20,7 @@ assert.match(workspace, /clearMenuConsoleMenuItems/);
 assert.match(workspace, /handleClearMenuDishes/);
 assert.match(workspace, /data-testid="owner-menu-clear-dishes"/);
 assert.match(workspace, /Clear dishes/);
-assert.match(workspace, /menusWithItems\.length > 1/);
+assert.match(workspace, /availableMenus\.length > 1/);
 assert.match(workspace, /Use Clear dishes/);
 
 console.log("ownerMenuClearDishesContract: ok");
