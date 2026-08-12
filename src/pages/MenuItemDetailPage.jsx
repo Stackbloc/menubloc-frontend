@@ -58,6 +58,7 @@ import { fetchCompareItems } from "../lib/api.js";
 import { isSimilarRowCompareEligible } from "../lib/comparePolicy.js";
 import { sortSimilarItemsByMatchStrength } from "../lib/searchCardSimilar.js";
 import CompareItemsModal from "../components/menu/CompareItemsModal.jsx";
+import FoodComments from "../components/comments/FoodComments.jsx";
 import PreferenceIngredientAdvisory from "../components/menu/PreferenceIngredientAdvisory.jsx";
 import { getLocalizedField } from "../utils/getLocalizedField.js";
 import { getDisplayMenuItemName } from "../utils/getDisplayMenuItemName.js";
@@ -1741,6 +1742,21 @@ export default function MenuItemDetailPage() {
           t={t}
           allergenFilter={effectiveAllergenFilter}
         />
+      ) : null}
+
+      {item.menu_item_id && Number.isFinite(Number(item.menu_item_id)) ? (
+        <Surface style={{ marginTop: 20, padding: isMobile ? 16 : 20 }}>
+          <FoodComments
+            menuItemId={Number(item.menu_item_id)}
+            restaurantId={
+              item.restaurant?.id != null && Number.isFinite(Number(item.restaurant.id))
+                ? Number(item.restaurant.id)
+                : null
+            }
+            title="Discussion"
+            compact={isMobile}
+          />
+        </Surface>
       ) : null}
 
       {isAlcoholicBeverage ? <ResponsibleDrinkingNotice t={t} /> : null}

@@ -13,6 +13,7 @@ import ProfileFavoriteMenuItems from "./ProfileFavoriteMenuItems.jsx";
 import ProfileUpdates from "./ProfileUpdates.jsx";
 import ProfileDealsSection from "./ProfileDealsSection.jsx";
 import FoodTruckUpcomingStops from "./FoodTruckUpcomingStops.jsx";
+import FoodComments from "../../comments/FoodComments.jsx";
 import {
   ProfileSection,
   normalizeScheduleStops,
@@ -256,6 +257,15 @@ export default function PublicProfileShell({
         />
 
         <ProfileUpdates updates={updates} isMobile={isMobile} showClaimInvites={showClaimInvites} />
+
+        {restaurantId ? (
+          <FoodComments
+            restaurantId={restaurantId}
+            showFeaturedFirst
+            title="What diners are saying"
+            compact={isMobile}
+          />
+        ) : null}
 
         {isFoodTruck && (stops.length || showClaimInvites) ? (
           <ProfileSection title="Upcoming locations">

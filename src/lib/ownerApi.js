@@ -187,6 +187,30 @@ export const deleteOwnerRestaurantProfileUpdate = (restaurantId, updateId) =>
   del(
     `/api/owner/restaurants/${encodeURIComponent(restaurantId)}/profile-updates/${encodeURIComponent(updateId)}`
   );
+export const getOwnerRestaurantComments = (restaurantId, params = {}) => {
+  const qs = new URLSearchParams(
+    Object.entries(params).filter(
+      ([, value]) => value !== undefined && value !== null && value !== ""
+    )
+  ).toString();
+  return get(
+    `/api/owner/restaurants/${encodeURIComponent(restaurantId)}/comments${qs ? `?${qs}` : ""}`
+  );
+};
+export const replyOwnerRestaurantComment = (restaurantId, commentId, content) =>
+  post(
+    `/api/owner/restaurants/${encodeURIComponent(restaurantId)}/comments/${encodeURIComponent(commentId)}/replies`,
+    { content }
+  );
+export const featureOwnerRestaurantComment = (restaurantId, commentId) =>
+  post(
+    `/api/owner/restaurants/${encodeURIComponent(restaurantId)}/comments/${encodeURIComponent(commentId)}/feature`,
+    {}
+  );
+export const unfeatureOwnerRestaurantComment = (restaurantId, commentId) =>
+  del(
+    `/api/owner/restaurants/${encodeURIComponent(restaurantId)}/comments/${encodeURIComponent(commentId)}/feature`
+  );
 export const getOwnerRestaurantStatusBanners = (restaurantId) =>
   get(`/api/owner/restaurants/${encodeURIComponent(restaurantId)}/status-banners`);
 export const updateOwnerRestaurantStatusBanners = (restaurantId, statusBanners) =>

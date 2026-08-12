@@ -23,6 +23,10 @@ import {
   getOwnerRestaurantStatusBanners,
   createOwnerRestaurantProfileUpdate,
   deleteOwnerRestaurantProfileUpdate,
+  getOwnerRestaurantComments,
+  replyOwnerRestaurantComment,
+  featureOwnerRestaurantComment,
+  unfeatureOwnerRestaurantComment,
   keepOwnerRestaurantMenuWallpaper,
   randomizeOwnerRestaurantMenuWallpaper,
   searchMenuConsoleRestaurants,
@@ -114,6 +118,9 @@ export default function OwnerProfileManager() {
   const [hoursBaseline, setHoursBaseline] = useState(emptyHours);
   const [menuItems, setMenuItems] = useState([]);
   const [profileUpdates, setProfileUpdates] = useState([]);
+  const [communityComments, setCommunityComments] = useState([]);
+  const [communityBusy, setCommunityBusy] = useState(false);
+  const [replyDrafts, setReplyDrafts] = useState({});
   const [updateDraft, setUpdateDraft] = useState({ title: "", body: "" });
   const [updateSaving, setUpdateSaving] = useState(false);
   const [cuisineOptions, setCuisineOptions] = useState([]);
@@ -192,7 +199,7 @@ export default function OwnerProfileManager() {
     setError("");
     setMessage("");
     try {
-      const [profileRes, styleRes, appearanceRes, wallpaperRes, bannersRes, hoursRes, candidatesRes, favoritesRes, updatesRes] =
+      const [profileRes, styleRes, appearanceRes, wallpaperRes, bannersRes, hoursRes, candidatesRes, favoritesRes, updatesRes, commentsRes] =
         await Promise.all([
           getMenuConsoleRestaurant(restaurantId),
           getOwnerRestaurantProfileStyle(restaurantId).catch(() => null),
@@ -203,6 +210,7 @@ export default function OwnerProfileManager() {
           getOwnerRestaurantFeaturedDishCandidates(restaurantId, { limit: 200 }).catch(() => null),
           getOwnerRestaurantFavoriteMenuItems(restaurantId).catch(() => null),
           getOwnerRestaurantProfileUpdates(restaurantId).catch(() => null),
+          getOwnerRestaurantComments(restaurantId).catch(() => null),
         ]);
       const r = profileRes.restaurant || {};
       const style = styleRes?.restaurant || {};
@@ -283,6 +291,8 @@ export default function OwnerProfileManager() {
       setHoursBaseline(schedule);
       setMenuItems(items);
       setProfileUpdates(Array.isArray(updatesRes?.profile_updates) ? updatesRes.profile_updates : []);
+      setCommunityComments(Array.isArray(commentsRes?.comments) ? commentsRes.comments : []);
+      setReplyDrafts({});
       setUpdateDraft({ title: "", body: "" });
       setResults([]);
       setQuery("");
@@ -295,6 +305,8 @@ export default function OwnerProfileManager() {
       setHoursBaseline(emptyHours());
       setMenuItems([]);
       setProfileUpdates([]);
+      setCommunityComments([]);
+      setReplyDrafts({});
       setError(err?.message || "Could not load restaurant profile.");
     } finally {
       setLoading(false);
@@ -315,6 +327,8 @@ export default function OwnerProfileManager() {
     setHoursBaseline(emptyHours());
     setMenuItems([]);
     setProfileUpdates([]);
+    setCommunityComments([]);
+    setReplyDrafts({});
     setUpdateDraft({ title: "", body: "" });
     setMessage("");
     setError("");
@@ -381,6 +395,46 @@ export default function OwnerProfileManager() {
       setError(err?.message || "Could not delete update.");
     } finally {
       setUpdateSaving(false);
+    }
+  }
+
+  async function refreshCommunityComments() {
+    if (!selected?.id) return;
+    const commentsRes = await getOwnerRestaurantComments(selected.id).catch(() => null);
+    setCommunityComments(Array.isArray(commentsRes?.comments) ? commentsRes.comments : []);
+  }
+
+  async function handleCommunityReply(commentId) {
+    if (!selected?.id || !commentId) return;
+    const content = String(replyDrafts[commentId] || "").trim();
+    if (!content) return;
+    setCommunityBusy(true);
+    setError("");
+    try {
+      await replyOwnerRestaurantComment(selected.id, commentId, content);
+      setReplyDrafts((prev) => ({ ...prev, [commentId]: "" }));
+      await refreshCommunityComments();
+      setMessage("Restaurant reply posted.");
+    } catch (err) {
+      setError(err?.message || "Could not post restaurant reply.");
+    } finally {
+      setCommunityBusy(false);
+    }
+  }
+
+  async function handleCommunityFeature(commentId, featured) {
+    if (!selected?.id || !commentId) return;
+    setCommunityBusy(true);
+    setError("");
+    try {
+      if (featured) await featureOwnerRestaurantComment(selected.id, commentId);
+      else await unfeatureOwnerRestaurantComment(selected.id, commentId);
+      await refreshCommunityComments();
+      setMessage(featured ? "Comment featured on profile." : "Comment unfeatured.");
+    } catch (err) {
+      setError(err?.message || "Could not update featured comment.");
+    } finally {
+      setCommunityBusy(false);
     }
   }
 
@@ -1091,6 +1145,108 @@ export default function OwnerProfileManager() {
                     ) : (
                       <div style={{ fontSize: 12, color: OWNER_COLORS.muted }}>
                         No active updates yet.
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div style={{ marginTop: 18 }}>
+                  <Label>Community comments</Label>
+                  <div
+                    data-testid="owner-profile-manager-community-comments"
+                    style={{
+                      border: `1px solid ${OWNER_COLORS.line}`,
+                      borderRadius: 10,
+                      padding: 12,
+                      background: "#fff",
+                      display: "grid",
+                      gap: 12,
+                    }}
+                  >
+                    <div style={{ fontSize: 12, color: OWNER_COLORS.muted }}>
+                      Reply as the restaurant and choose diner comments to feature on the public profile.
+                      Consumer text cannot be edited.
+                    </div>
+                    {communityComments.length ? (
+                      <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gap: 12 }}>
+                        {communityComments.map((c) => (
+                          <li
+                            key={c.id}
+                            style={{
+                              borderTop: `1px solid ${OWNER_COLORS.line}`,
+                              paddingTop: 10,
+                              display: "grid",
+                              gap: 8,
+                            }}
+                          >
+                            <div style={{ fontSize: 12, fontWeight: 700 }}>
+                              {c.author_label || c.author_display_name || "Diner"}
+                              {c.is_featured ? " · Featured" : ""}
+                              {c.menu_item_id ? ` · Item #${c.menu_item_id}` : ""}
+                            </div>
+                            <div style={{ fontSize: 13 }}>{c.content}</div>
+                            {(c.replies || []).length ? (
+                              <ul style={{ listStyle: "none", margin: 0, padding: "0 0 0 12px", display: "grid", gap: 6 }}>
+                                {c.replies.map((r) => (
+                                  <li key={r.id} style={{ fontSize: 12, color: OWNER_COLORS.muted }}>
+                                    <strong>{r.author_label || r.author_display_name}</strong>: {r.content}
+                                  </li>
+                                ))}
+                              </ul>
+                            ) : null}
+                            {c.author_type === "consumer" ? (
+                              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
+                                <button
+                                  type="button"
+                                  disabled={communityBusy}
+                                  onClick={() => handleCommunityFeature(c.id, !c.is_featured)}
+                                  style={{
+                                    border: `1px solid ${OWNER_COLORS.line}`,
+                                    borderRadius: 8,
+                                    padding: "6px 10px",
+                                    background: "#fff",
+                                    fontWeight: 700,
+                                    fontSize: 12,
+                                    cursor: "pointer",
+                                  }}
+                                >
+                                  {c.is_featured ? "Unfeature" : "Feature on profile"}
+                                </button>
+                                <input
+                                  style={{ ...inputStyle, flex: 1, minWidth: 160 }}
+                                  value={replyDrafts[c.id] || ""}
+                                  onChange={(e) =>
+                                    setReplyDrafts((prev) => ({ ...prev, [c.id]: e.target.value }))
+                                  }
+                                  placeholder="Restaurant reply…"
+                                />
+                                <button
+                                  type="button"
+                                  disabled={communityBusy || !String(replyDrafts[c.id] || "").trim()}
+                                  onClick={() => handleCommunityReply(c.id)}
+                                  style={{
+                                    border: "none",
+                                    borderRadius: 8,
+                                    padding: "8px 12px",
+                                    background: OWNER_COLORS.accent,
+                                    color: "#fff",
+                                    fontWeight: 700,
+                                    fontSize: 12,
+                                    cursor: "pointer",
+                                    opacity:
+                                      communityBusy || !String(replyDrafts[c.id] || "").trim() ? 0.6 : 1,
+                                  }}
+                                >
+                                  Reply
+                                </button>
+                              </div>
+                            ) : null}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <div style={{ fontSize: 12, color: OWNER_COLORS.muted }}>
+                        No community comments yet.
                       </div>
                     )}
                   </div>

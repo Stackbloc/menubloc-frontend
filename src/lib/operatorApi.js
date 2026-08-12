@@ -662,6 +662,21 @@ export const getRestaurantOrderFeedback = (rid, params = {}) => {
   );
 };
 
+export const getRestaurantFoodComments = (rid, params = {}) => {
+  const qs = new URLSearchParams(
+    Object.entries({ scope: "all", ...params }).filter(
+      ([, value]) => value !== undefined && value !== null && value !== ""
+    )
+  ).toString();
+  return get(`/operator/restaurants/${rid}/comments${qs ? `?${qs}` : ""}`);
+};
+export const replyRestaurantFoodComment = (rid, commentId, content) =>
+  post(`/operator/restaurants/${rid}/comments/${commentId}/replies`, { content });
+export const featureRestaurantFoodComment = (rid, commentId) =>
+  post(`/operator/restaurants/${rid}/comments/${commentId}/feature`, {});
+export const unfeatureRestaurantFoodComment = (rid, commentId) =>
+  del(`/operator/restaurants/${rid}/comments/${commentId}/feature`);
+
 // ── Restaurant: Menu Studio — Schedules (Pro) ─────────────────────────────
 export const duplicateMenu = (rid, mid) =>
   post(`/operator/restaurants/${rid}/menus/${mid}/duplicate`, {});
