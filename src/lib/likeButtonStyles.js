@@ -36,7 +36,15 @@ export function likeButtonVisualStyle({
           : dark
             ? "rgba(255,255,255,0.04)"
             : "linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(241,245,249,0.96) 100%)",
-    color: selected ? accent : inline ? "inherit" : dark ? "#f8fafc" : "#0f172a",
+    color: selected
+      ? accent
+      : inline
+        ? "inherit"
+        : ghost
+          ? "#0f172a"
+          : dark
+            ? "#f8fafc"
+            : "#0f172a",
     boxShadow: inline
       ? "none"
       : selected
