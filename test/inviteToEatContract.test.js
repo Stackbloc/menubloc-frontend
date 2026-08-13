@@ -10,7 +10,7 @@ function read(rel) {
   return readFileSync(join(root, rel), "utf8");
 }
 
-test("InviteToEatButton tooltip and no SMS send path", () => {
+test("InviteToEatButton tooltip and Invitation Ready confirmation", () => {
   const btn = read("src/components/InviteToEatButton.jsx");
   assert.match(btn, /Invite to Eat/);
   assert.match(btn, /InviteToEatModal/);
@@ -18,24 +18,41 @@ test("InviteToEatButton tooltip and no SMS send path", () => {
 
   const modal = read("src/components/InviteToEatModal.jsx");
   assert.match(modal, /Create Invitation/);
-  assert.match(modal, /Share \/ Send/);
+  assert.match(modal, /Invitation Ready/);
+  assert.match(modal, /Send via Messages/);
+  assert.match(modal, /navigator\.share/);
   assert.match(modal, /ShareModal/);
   assert.match(modal, /does not send SMS/);
-  // Share must not stack under Invite's higher z-index overlay.
+  assert.match(modal, /Ready to Send/);
+  assert.doesNotMatch(modal, /Invitation Sent/);
   assert.match(modal, /shareOpen && shareData/);
   assert.match(modal, /While sharing/);
   assert.doesNotMatch(modal, /navigator\.contacts|getUserMedia/);
 });
 
-test("Eat invitation public page and App route exist", () => {
+test("Eat invitation public page and App routes exist", () => {
   const page = read("src/pages/EatInvitationPage.jsx");
+  assert.match(page, /You've Been Invited to Eat/);
   assert.match(page, /Accept/);
   assert.match(page, /Maybe/);
   assert.match(page, /Can&apos;t Make It|Can't Make It/);
   assert.match(page, /respondToEatInvitation/);
+  assert.match(page, /View Menu/);
+  assert.match(page, /Create a free Menuply account to respond/);
+  assert.match(page, /formatDateLabel/);
+  assert.match(page, /\\d\{4\}-\\d\{2\}-\\d\{2\}/);
+  assert.match(page, /Open in Maps/);
+  assert.match(page, /invite-restaurant-address/);
+  assert.match(page, /buildGoogleMapsDirectionsUrl|buildGoogleMapsUrlForRestaurant/);
+  assert.match(page, /formatHoursRows/);
+  assert.match(page, /Restaurant information/);
+  assert.match(page, /invited you to eat at/);
+  assert.match(page, /invite-organizer-status/);
+  assert.doesNotMatch(page, /Join Menuply because/);
 
   const app = read("src/App.jsx");
   assert.match(app, /path=["']\/eat\/:token["']/);
+  assert.match(app, /path=["']\/invite\/:token["']/);
   assert.match(app, /EatInvitationPage/);
 });
 

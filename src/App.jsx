@@ -855,6 +855,7 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
         <Route path="/checkout" element={crmHost ? <HostRouteRedirect to="/crm" /> : <CheckoutPage />} />
         <Route path="/bmt/:token" element={crmHost ? <HostRouteRedirect to="/crm" /> : <BuyMeThisPage />} />
         <Route path="/eat/:token" element={crmHost ? <HostRouteRedirect to="/crm" /> : <EatInvitationPage />} />
+        <Route path="/invite/:token" element={crmHost ? <HostRouteRedirect to="/crm" /> : <EatInvitationPage />} />
         <Route path="/orders/confirmation/:publicOrderToken" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OrderConfirmationPage />} />
         <Route path="/orders/:orderId/confirmation" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OrderConfirmationPage />} />
         <Route path="/restaurants/:restaurantSlug/menu-items/:id" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MenuItemDetailPage />} />

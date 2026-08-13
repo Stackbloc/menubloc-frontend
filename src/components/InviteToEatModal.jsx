@@ -12,8 +12,59 @@ function tomorrowIsoDate() {
   return `${yyyy}-${mm}-${dd}`;
 }
 
+function formatDateLabel(isoDate) {
+  if (!isoDate) return "";
+  const raw = String(isoDate).trim();
+  const ymd = raw.match(/^(\d{4}-\d{2}-\d{2})/)?.[1] || null;
+  try {
+    const d = ymd ? new Date(`${ymd}T12:00:00`) : new Date(raw);
+    if (Number.isNaN(d.getTime())) return ymd || raw;
+    return d.toLocaleDateString(undefined, {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+    });
+  } catch {
+    return ymd || raw;
+  }
+}
+
+function formatTimeLabel(time) {
+  if (!time) return "";
+  const parts = String(time).split(":");
+  const h = Number(parts[0]);
+  const m = Number(parts[1] || 0);
+  if (!Number.isFinite(h)) return time;
+  const d = new Date();
+  d.setHours(h, m, 0, 0);
+  return d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+}
+
+function canNativeShare(shareData) {
+  if (typeof navigator === "undefined" || typeof navigator.share !== "function") return false;
+  if (typeof navigator.canShare !== "function") return true;
+  try {
+    return navigator.canShare({
+      title: shareData?.title,
+      text: shareData?.text,
+      url: shareData?.url,
+    });
+  } catch {
+    return true;
+  }
+}
+
+function buildShareText({ organizerName, restaurantName, dateLabel, timeLabel, menuItemName, url }) {
+  const who = organizerName || "A Menuply diner";
+  const place = restaurantName || "a restaurant";
+  const when = [dateLabel, timeLabel].filter(Boolean).join(" at ");
+  const dish = menuItemName ? ` and recommends the ${menuItemName}` : "";
+  const whenPart = when ? ` ${when}` : "";
+  return `${who} invited you to eat at ${place}${whenPart}${dish}. View the invitation: ${url}`;
+}
+
 /**
- * Compose Invite to Eat → create → share unique link (no SMS blast).
+ * Compose Invite to Eat → Invitation Ready → native share (no SMS blast).
  */
 export default function InviteToEatModal({
   open,
@@ -30,17 +81,28 @@ export default function InviteToEatModal({
   const [error, setError] = useState("");
   const [created, setCreated] = useState(null);
   const [shareOpen, setShareOpen] = useState(false);
+  const [shareHint, setShareHint] = useState("");
 
   const shareData = useMemo(() => {
     if (!created?.url) return null;
-    const who = restaurantName || "a restaurant";
-    const dish = menuItemName ? ` Recommended: ${menuItemName}.` : "";
+    const dateLabel = formatDateLabel(created.scheduled_date || date);
+    const timeLabel = formatTimeLabel(created.scheduled_time || time);
+    const dishName = created.menu_item_name || menuItemName || null;
+    const place = created.restaurant_name || restaurantName || "a restaurant";
+    const text = buildShareText({
+      organizerName: created.organizer_display_name,
+      restaurantName: place,
+      dateLabel,
+      timeLabel,
+      menuItemName: dishName,
+      url: created.url,
+    });
     return {
-      title: `Invite to Eat — ${who}`,
-      text: `Join me at ${who}.${dish}`,
+      title: `Invite to Eat — ${place}`,
+      text,
       url: created.url,
     };
-  }, [created, restaurantName, menuItemName]);
+  }, [created, date, time, restaurantName, menuItemName]);
 
   if (!open) return null;
 
@@ -49,6 +111,7 @@ export default function InviteToEatModal({
     if (busy) return;
     setBusy(true);
     setError("");
+    setShareHint("");
     try {
       const data = await createEatInvitation({
         restaurant_id: restaurantId,
@@ -67,6 +130,26 @@ export default function InviteToEatModal({
     } finally {
       setBusy(false);
     }
+  }
+
+  async function handleSendViaMessages() {
+    if (!shareData) return;
+    setShareHint("");
+    if (canNativeShare(shareData)) {
+      try {
+        await navigator.share({
+          title: shareData.title,
+          text: shareData.text,
+          url: shareData.url,
+        });
+        setShareHint("Returned from share. Status remains Ready to Send until guests open the link.");
+        return;
+      } catch (err) {
+        if (err?.name === "AbortError") return;
+        // Fall through to ShareModal if native share fails.
+      }
+    }
+    setShareOpen(true);
   }
 
   // ShareModal uses z-index 1200; Invite overlay is 12000. While sharing, unmount the
@@ -88,6 +171,12 @@ export default function InviteToEatModal({
       document.body
     );
   }
+
+  const dateLabel = formatDateLabel(created?.scheduled_date || date);
+  const timeLabel = formatTimeLabel(created?.scheduled_time || time);
+  const placeName = created?.restaurant_name || restaurantName || "Restaurant";
+  const dishName = created?.menu_item_name || menuItemName || null;
+  const statusLabel = created?.status_label || "Ready to Send";
 
   const overlay = (
     <div
@@ -122,7 +211,9 @@ export default function InviteToEatModal({
         }}
       >
         <div style={{ display: "flex", justifyContent: "space-between", gap: 12, marginBottom: 12 }}>
-          <div style={{ fontSize: 18, fontWeight: 800 }}>Invite to Eat</div>
+          <div style={{ fontSize: 18, fontWeight: 800 }}>
+            {created ? "Invitation Ready" : "Invite to Eat"}
+          </div>
           <button
             type="button"
             onClick={onClose}
@@ -140,85 +231,121 @@ export default function InviteToEatModal({
           </button>
         </div>
 
-        <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>
-          {restaurantName || "Restaurant"}
-        </div>
-        {menuItemName ? (
-          <div style={{ fontSize: 13, color: "#57534e", marginBottom: 12 }}>
-            Recommended: <strong>{menuItemName}</strong>
-          </div>
-        ) : (
-          <div style={{ height: 8 }} />
-        )}
-
         {!created ? (
-          <form onSubmit={handleCreate} style={{ display: "grid", gap: 10 }}>
-            <label style={{ display: "grid", gap: 4, fontSize: 12, fontWeight: 700 }}>
-              Date
-              <input
-                type="date"
-                required
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                data-testid="invite-date"
-                style={inputStyle}
-              />
-            </label>
-            <label style={{ display: "grid", gap: 4, fontSize: 12, fontWeight: 700 }}>
-              Time
-              <input
-                type="time"
-                required
-                value={time}
-                onChange={(e) => setTime(e.target.value)}
-                data-testid="invite-time"
-                style={inputStyle}
-              />
-            </label>
-            <div style={{ fontSize: 13, color: "#57534e", lineHeight: 1.45 }}>
-              Who would you like to invite? After you create the invitation, share the link with
-              anyone via Messages or other apps. Menuply does not send SMS for you.
-            </div>
-            <label style={{ display: "grid", gap: 4, fontSize: 12, fontWeight: 700 }}>
-              Message (optional)
-              <textarea
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                rows={3}
-                maxLength={2000}
-                placeholder="Want to grab dinner?"
-                data-testid="invite-message"
-                style={{ ...inputStyle, resize: "vertical" }}
-              />
-            </label>
-            {error ? (
-              <div role="alert" style={{ color: "#b91c1c", fontSize: 13 }}>
-                {error}
+          <>
+            <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>{placeName}</div>
+            {dishName ? (
+              <div style={{ fontSize: 13, color: "#57534e", marginBottom: 12 }}>
+                Recommended: <strong>{dishName}</strong>
               </div>
-            ) : null}
-            <button
-              type="submit"
-              disabled={busy || !restaurantId}
-              data-testid="invite-create"
-              style={{
-                marginTop: 4,
-                height: 44,
-                borderRadius: 999,
-                border: "none",
-                background: busy ? "#a3a3a3" : "#166534",
-                color: "#fff",
-                fontWeight: 800,
-                cursor: busy ? "wait" : "pointer",
-              }}
-            >
-              {busy ? "Creating…" : "Create Invitation"}
-            </button>
-          </form>
+            ) : (
+              <div style={{ height: 8 }} />
+            )}
+            <form onSubmit={handleCreate} style={{ display: "grid", gap: 10 }}>
+              <label style={{ display: "grid", gap: 4, fontSize: 12, fontWeight: 700 }}>
+                Date
+                <input
+                  type="date"
+                  required
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  data-testid="invite-date"
+                  style={inputStyle}
+                />
+              </label>
+              <label style={{ display: "grid", gap: 4, fontSize: 12, fontWeight: 700 }}>
+                Time
+                <input
+                  type="time"
+                  required
+                  value={time}
+                  onChange={(e) => setTime(e.target.value)}
+                  data-testid="invite-time"
+                  style={inputStyle}
+                />
+              </label>
+              <div style={{ fontSize: 13, color: "#57534e", lineHeight: 1.45 }}>
+                After you create the invitation, send it through Messages or another app. Menuply
+                does not send SMS for you and does not need your contacts.
+              </div>
+              <label style={{ display: "grid", gap: 4, fontSize: 12, fontWeight: 700 }}>
+                Message (optional)
+                <textarea
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  rows={3}
+                  maxLength={2000}
+                  placeholder="Want to grab dinner?"
+                  data-testid="invite-message"
+                  style={{ ...inputStyle, resize: "vertical" }}
+                />
+              </label>
+              {error ? (
+                <div role="alert" style={{ color: "#b91c1c", fontSize: 13 }}>
+                  {error}
+                </div>
+              ) : null}
+              <button
+                type="submit"
+                disabled={busy || !restaurantId}
+                data-testid="invite-create"
+                style={{
+                  marginTop: 4,
+                  height: 44,
+                  borderRadius: 999,
+                  border: "none",
+                  background: busy ? "#a3a3a3" : "#166534",
+                  color: "#fff",
+                  fontWeight: 800,
+                  cursor: busy ? "wait" : "pointer",
+                }}
+              >
+                {busy ? "Creating…" : "Create Invitation"}
+              </button>
+            </form>
+          </>
         ) : (
           <div style={{ display: "grid", gap: 12 }} data-testid="invite-created">
-            <div style={{ fontSize: 14, color: "#44403c", lineHeight: 1.45 }}>
-              Your invitation is ready. Share this link with the people you want to invite.
+            <div
+              data-testid="invite-status-label"
+              style={{
+                display: "inline-flex",
+                alignSelf: "flex-start",
+                padding: "4px 10px",
+                borderRadius: 999,
+                background: "#ecfdf5",
+                color: "#166534",
+                fontSize: 12,
+                fontWeight: 800,
+              }}
+            >
+              {statusLabel}
             </div>
+            <div style={{ fontSize: 16, fontWeight: 800 }}>{placeName}</div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: "#44403c" }}>
+              {dateLabel}
+              {dateLabel && timeLabel ? " · " : ""}
+              {timeLabel}
+            </div>
+            {dishName ? (
+              <div style={{ fontSize: 13, color: "#57534e" }}>
+                Recommended: <strong>{dishName}</strong>
+              </div>
+            ) : null}
+            {created.message || message.trim() ? (
+              <div
+                style={{
+                  padding: "10px 12px",
+                  borderRadius: 10,
+                  background: "#f5f5f4",
+                  fontSize: 14,
+                  lineHeight: 1.45,
+                  color: "#292524",
+                }}
+              >
+                “{created.message || message.trim()}”
+              </div>
+            ) : null}
             <input
               readOnly
               value={created.url}
@@ -228,8 +355,8 @@ export default function InviteToEatModal({
             />
             <button
               type="button"
-              data-testid="invite-share-send"
-              onClick={() => setShareOpen(true)}
+              data-testid="invite-send-via-messages"
+              onClick={handleSendViaMessages}
               style={{
                 height: 44,
                 borderRadius: 999,
@@ -240,8 +367,15 @@ export default function InviteToEatModal({
                 cursor: "pointer",
               }}
             >
-              Share / Send
+              Send via Messages
             </button>
+            {shareHint ? (
+              <div style={{ fontSize: 12, color: "#57534e", lineHeight: 1.4 }}>{shareHint}</div>
+            ) : (
+              <div style={{ fontSize: 12, color: "#78716c", lineHeight: 1.4 }}>
+                Opens your device share sheet. You can edit the message before sending.
+              </div>
+            )}
             <button
               type="button"
               onClick={onClose}
