@@ -87,3 +87,16 @@ test("Detail action rail order includes Invite after Share", () => {
   const inviteIdx = src.indexOf("<InviteToEatButton");
   assert.ok(likeIdx > 0 && shareIdx > likeIdx && inviteIdx > shareIdx);
 });
+
+test("Restaurant profile hero includes Invite and Comment after Share", () => {
+  const hero = read("src/components/restaurant/publicProfile/ProfileHero.jsx");
+  assert.match(hero, /InviteToEatButton/);
+  assert.match(hero, /FoodCommentNavButton/);
+  const railStart = hero.indexOf('data-testid="profile-hero-actions"');
+  assert.ok(railStart > -1);
+  const railSlice = hero.slice(railStart, railStart + 2200);
+  assert.match(
+    railSlice,
+    /ShareButton[\s\S]*InviteToEatButton[\s\S]*FoodCommentNavButton/
+  );
+});

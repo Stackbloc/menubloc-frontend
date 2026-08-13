@@ -149,7 +149,7 @@ function testPublicProfileMenuLikeShareRail() {
   const railStart = hero.indexOf('data-testid="profile-hero-actions"');
   const railSlice = hero.slice(railStart, railStart + 1600);
   assert.ok(railStart > -1, "hero actions rail missing");
-  assert.match(railSlice, /ViewMenuLink[\s\S]*FollowRestaurantButton[\s\S]*ShareButton/);
+  assert.match(railSlice, /ViewMenuLink[\s\S]*FollowRestaurantButton[\s\S]*ShareButton[\s\S]*InviteToEatButton[\s\S]*FoodCommentNavButton/);
   assert.doesNotMatch(page, />\s*Follow\s*</);
   assert.doesNotMatch(page, /Following/);
 }

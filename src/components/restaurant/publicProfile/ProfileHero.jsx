@@ -1,12 +1,14 @@
 /**
  * Shared public-profile hero: cover/banner + logo + name + contact under the name
  * + hours on the right of the green box (stacked on mobile).
- * Action rail: View Menu icon next to name, then Like / Share / Call / Order.
+ * Action rail: View Menu, Follow, Share, Invite to Eat, Comment, Call, Order.
  */
 import { Link } from "react-router-dom";
 import RestaurantStatusLight from "../../RestaurantStatusLight.jsx";
 import FollowRestaurantButton from "../../FollowRestaurantButton.jsx";
 import ShareButton from "../../share/ShareButton.jsx";
+import InviteToEatButton from "../../InviteToEatButton.jsx";
+import FoodCommentNavButton from "../../FoodCommentNavButton.jsx";
 import FoodTruckCurrentLocation from "./FoodTruckCurrentLocation.jsx";
 import {
   LogoMark,
@@ -282,6 +284,27 @@ export default function ProfileHero({
                 tone="ghost"
                 shareData={shareData}
                 analyticsContext={shareAnalytics || undefined}
+              />
+            ) : null}
+            {restaurantId ? (
+              <InviteToEatButton
+                restaurantId={restaurantId}
+                restaurantName={name}
+                tone="ghost"
+                size={MENU_ROW_ICON_SIZE}
+                dark={onPhoto}
+              />
+            ) : null}
+            {restaurantId ? (
+              <FoodCommentNavButton
+                target="restaurant"
+                restaurantId={restaurantId}
+                restaurantSlug={profile?.slug || null}
+                restaurantCity={profile?.city || null}
+                restaurantState={profile?.state || profile?.region || null}
+                tone="ghost"
+                size={MENU_ROW_ICON_SIZE}
+                dark={onPhoto}
               />
             ) : null}
             {callHref ? (
