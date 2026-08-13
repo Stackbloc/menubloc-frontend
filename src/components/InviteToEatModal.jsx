@@ -2,6 +2,11 @@ import React, { useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import ShareModal from "./share/ShareModal.jsx";
 import { createEatInvitation } from "../lib/eatInvitationsApi.js";
+import {
+  buildEatInviteShareText,
+  formatInviteDateLabel,
+  formatInviteTimeLabel,
+} from "../lib/eatInviteShareCopy.js";
 
 function tomorrowIsoDate() {
   const d = new Date();
@@ -10,43 +15,6 @@ function tomorrowIsoDate() {
   const mm = String(d.getMonth() + 1).padStart(2, "0");
   const dd = String(d.getDate()).padStart(2, "0");
   return `${yyyy}-${mm}-${dd}`;
-}
-
-function formatDateLabel(isoDate) {
-  if (!isoDate) return "";
-  const raw = String(isoDate).trim();
-  const ymd = raw.match(/^(\d{4}-\d{2}-\d{2})/)?.[1] || null;
-  try {
-    const d = ymd ? new Date(`${ymd}T12:00:00`) : new Date(raw);
-    if (Number.isNaN(d.getTime())) return ymd || raw;
-    return d.toLocaleDateString(undefined, {
-      weekday: "long",
-      month: "long",
-      day: "numeric",
-    });
-  } catch {
-    return ymd || raw;
-  }
-}
-
-function formatTimeLabel(time) {
-  if (!time) return "";
-  const parts = String(time).split(":");
-  const h = Number(parts[0]);
-  const m = Number(parts[1] || 0);
-  if (!Number.isFinite(h)) return time;
-  const d = new Date();
-  d.setHours(h, m, 0, 0);
-  return d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
-}
-
-function buildShareText({ organizerName, restaurantName, dateLabel, timeLabel, menuItemName, url }) {
-  const who = organizerName || "A Menuply diner";
-  const place = restaurantName || "a restaurant";
-  const when = [dateLabel, timeLabel].filter(Boolean).join(" at ");
-  const dish = menuItemName ? ` and recommends the ${menuItemName}` : "";
-  const whenPart = when ? ` ${when}` : "";
-  return `${who} invited you to eat at ${place}${whenPart}${dish}. View the invitation: ${url}`;
 }
 
 /**
@@ -70,12 +38,11 @@ export default function InviteToEatModal({
 
   const shareData = useMemo(() => {
     if (!created?.url) return null;
-    const dateLabel = formatDateLabel(created.scheduled_date || date);
-    const timeLabel = formatTimeLabel(created.scheduled_time || time);
+    const dateLabel = formatInviteDateLabel(created.scheduled_date || date);
+    const timeLabel = formatInviteTimeLabel(created.scheduled_time || time);
     const dishName = created.menu_item_name || menuItemName || null;
     const place = created.restaurant_name || restaurantName || "a restaurant";
-    const text = buildShareText({
-      organizerName: created.organizer_display_name,
+    const text = buildEatInviteShareText({
       restaurantName: place,
       dateLabel,
       timeLabel,
@@ -136,8 +103,8 @@ export default function InviteToEatModal({
     );
   }
 
-  const dateLabel = formatDateLabel(created?.scheduled_date || date);
-  const timeLabel = formatTimeLabel(created?.scheduled_time || time);
+  const dateLabel = formatInviteDateLabel(created?.scheduled_date || date);
+  const timeLabel = formatInviteTimeLabel(created?.scheduled_time || time);
   const placeName = created?.restaurant_name || restaurantName || "Restaurant";
   const dishName = created?.menu_item_name || menuItemName || null;
   const statusLabel = created?.status_label || "Ready to Send";

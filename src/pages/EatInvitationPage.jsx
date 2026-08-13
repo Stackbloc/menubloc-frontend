@@ -1,14 +1,21 @@
 /**
- * Public Invite to Eat landing — view without login; respond requires auth.
- * Invitation-first practical details (who/where/when/how) without forcing signup.
+ * Public Invite to Eat landing — shared outing / party roster.
+ * View without login; respond requires auth. No auto-friendship.
  */
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { useConsumer } from "../context/ConsumerContext.jsx";
+import ShareModal from "../components/share/ShareModal.jsx";
 import {
   fetchPublicEatInvitation,
   respondToEatInvitation,
 } from "../lib/eatInvitationsApi.js";
+import {
+  buildEatInviteShareText,
+  formatInviteDateLabel,
+  formatInviteTimeLabel,
+} from "../lib/eatInviteShareCopy.js";
 import { restaurantPath } from "../lib/canonicalUrlCore.js";
 import { clusterPath } from "../lib/clusterUrl.js";
 import {
@@ -18,36 +25,8 @@ import {
 } from "../lib/catalogMenuUtils.js";
 import { formatHoursRows } from "../components/restaurant/publicProfile/profilePrimitives.jsx";
 
-function formatDateLabel(isoDate) {
-  if (!isoDate) return "";
-  const raw = String(isoDate).trim();
-  const ymd = raw.match(/^(\d{4}-\d{2}-\d{2})/)?.[1] || null;
-  try {
-    const d = ymd ? new Date(`${ymd}T12:00:00`) : new Date(raw);
-    if (Number.isNaN(d.getTime())) return ymd || raw;
-    return d.toLocaleDateString(undefined, {
-      weekday: "long",
-      month: "long",
-      day: "numeric",
-    });
-  } catch {
-    return ymd || raw;
-  }
-}
-
-function formatTimeLabel(time) {
-  if (!time) return "";
-  const parts = String(time).split(":");
-  const h = Number(parts[0]);
-  const m = Number(parts[1] || 0);
-  if (!Number.isFinite(h)) return time;
-  const d = new Date();
-  d.setHours(h, m, 0, 0);
-  return d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
-}
-
 function responseLabel(status) {
-  if (status === "accepted") return "Accepted";
+  if (status === "accepted") return "Going";
   if (status === "maybe") return "Maybe";
   if (status === "declined") return "Can't Make It";
   return status || "";
@@ -58,6 +37,64 @@ function buildStreetAddress(invitation) {
     .map((part) => String(part || "").trim())
     .filter(Boolean)
     .join(", ");
+}
+
+function emptyParty() {
+  return {
+    going: [],
+    maybe: [],
+    cant: [],
+    counts: { going: 0, maybe: 0, cant: 0 },
+  };
+}
+
+function PartyRoster({ party }) {
+  const p = party || emptyParty();
+  const sections = [
+    { key: "going", title: "Going", people: p.going || [], count: p.counts?.going ?? 0 },
+    { key: "maybe", title: "Maybe", people: p.maybe || [], count: p.counts?.maybe ?? 0 },
+    { key: "cant", title: "Can't Make It", people: p.cant || [], count: p.counts?.cant ?? 0 },
+  ].filter((section) => section.count > 0);
+
+  if (sections.length === 0) return null;
+
+  return (
+    <div data-testid="invite-party-roster" style={{ display: "grid", gap: 14, marginTop: 18 }}>
+      {sections.map((section) => (
+        <div key={section.key} style={{ display: "grid", gap: 6 }}>
+          <div style={{ fontWeight: 800, fontSize: 15, color: "#1c1917" }}>
+            {section.title} ({section.count})
+          </div>
+          <ul
+            style={{
+              listStyle: "none",
+              margin: 0,
+              padding: 0,
+              display: "grid",
+              gap: 4,
+            }}
+          >
+            {(section.people || []).map((person) => (
+              <li
+                key={`${section.key}-${person.user_id}`}
+                style={{
+                  fontSize: 14,
+                  fontWeight: 600,
+                  color: "#44403c",
+                  padding: "6px 10px",
+                  borderRadius: 8,
+                  background: "#fafaf9",
+                  border: "1px solid #e7e5e4",
+                }}
+              >
+                {person.display_name || "Menuply diner"}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 export default function EatInvitationPage() {
@@ -71,6 +108,7 @@ export default function EatInvitationPage() {
   const [busy, setBusy] = useState(false);
   const [responded, setResponded] = useState(null);
   const [authPrompt, setAuthPrompt] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -165,6 +203,40 @@ export default function EatInvitationPage() {
     [invitation]
   );
 
+  const party = invitation?.party || emptyParty();
+  const partyTotal =
+    (party.counts?.going || 0) + (party.counts?.maybe || 0) + (party.counts?.cant || 0);
+  const hasOtherParticipants = partyTotal > 1;
+
+  const organizerName = invitation?.organizer_display_name || "A Menuply diner";
+  const placeName = invitation?.restaurant_name || "a restaurant";
+  const dateLabel = formatInviteDateLabel(invitation?.scheduled_date);
+  const timeLabel = formatInviteTimeLabel(invitation?.scheduled_time);
+  const phone = String(invitation?.restaurant_phone || "").trim();
+  const logoUrl = String(invitation?.restaurant_logo_url || "").trim();
+
+  const shareData = useMemo(() => {
+    if (!invitation?.url && !token) return null;
+    const url =
+      invitation?.url ||
+      (typeof window !== "undefined"
+        ? `${window.location.origin}/invite/${encodeURIComponent(String(token))}`
+        : "");
+    if (!url) return null;
+    const place = invitation?.restaurant_name || "a restaurant";
+    return {
+      title: `Invite to Eat — ${place}`,
+      text: buildEatInviteShareText({
+        restaurantName: place,
+        dateLabel: formatInviteDateLabel(invitation?.scheduled_date),
+        timeLabel: formatInviteTimeLabel(invitation?.scheduled_time),
+        menuItemName: invitation?.menu_item_name || null,
+        url,
+      }),
+      url,
+    };
+  }, [invitation, token]);
+
   async function handleRespond(status) {
     if (busy) return;
     if (!isAuthenticated) {
@@ -177,7 +249,14 @@ export default function EatInvitationPage() {
     try {
       const data = await respondToEatInvitation(token, status);
       setResponded(data?.response?.status || status);
-      if (data?.invitation) setInvitation((prev) => ({ ...prev, ...data.invitation }));
+      const nextParty = data?.party || data?.invitation?.party;
+      if (data?.invitation || nextParty) {
+        setInvitation((prev) => ({
+          ...prev,
+          ...(data.invitation || {}),
+          party: nextParty || data.invitation?.party || prev?.party,
+        }));
+      }
     } catch (err) {
       setError(err?.message || "Could not save your response");
     } finally {
@@ -195,12 +274,23 @@ export default function EatInvitationPage() {
     navigate("/account/signup", { state: { redirectTo } });
   }
 
-  const organizerName = invitation?.organizer_display_name || "A Menuply diner";
-  const placeName = invitation?.restaurant_name || "a restaurant";
-  const dateLabel = formatDateLabel(invitation?.scheduled_date);
-  const timeLabel = formatTimeLabel(invitation?.scheduled_time);
-  const phone = String(invitation?.restaurant_phone || "").trim();
-  const logoUrl = String(invitation?.restaurant_logo_url || "").trim();
+  if (shareOpen && shareData) {
+    return createPortal(
+      <ShareModal
+        open
+        onClose={() => setShareOpen(false)}
+        modalTitle="Share invitation"
+        shareData={shareData}
+        analyticsContext={{
+          pageType: "invite_to_eat",
+          restaurantId: invitation?.restaurant_id,
+          menuItemId: invitation?.menu_item_id,
+          shareTarget: "eat_invitation",
+        }}
+      />,
+      document.body
+    );
+  }
 
   return (
     <div
@@ -239,19 +329,30 @@ export default function EatInvitationPage() {
 
         {invitation ? (
           <>
-            {/* 1. Who invited */}
             <h1 style={{ margin: "10px 0 6px", fontSize: 26, lineHeight: 1.2, fontWeight: 800 }}>
-              {invitation.is_organizer ? "Your invitation" : "You've Been Invited to Eat"}
+              {invitation.is_organizer
+                ? `Dinner at ${placeName}`
+                : "You're Invited to Eat"}
             </h1>
             {!invitation.is_organizer ? (
               <div style={{ fontSize: 15, color: "#44403c", lineHeight: 1.45 }}>
-                <strong>{organizerName}</strong> invited you to eat at:
+                {hasOtherParticipants ? (
+                  <>
+                    Join <strong>{organizerName}</strong> and friends at{" "}
+                    <strong>{placeName}</strong>
+                  </>
+                ) : (
+                  <>
+                    Organized by <strong>{organizerName}</strong>
+                  </>
+                )}
               </div>
             ) : (
-              <div style={{ fontSize: 14, color: "#57534e" }}>Ready for guests at:</div>
+              <div style={{ fontSize: 14, color: "#57534e" }} data-testid="invite-organizer-status">
+                {invitation.status_label || "Ready to Send"} — share one link for this outing.
+              </div>
             )}
 
-            {/* 2. Restaurant name + optional logo */}
             <div
               style={{
                 display: "flex",
@@ -278,7 +379,6 @@ export default function EatInvitationPage() {
               <div style={{ fontSize: 22, fontWeight: 800, lineHeight: 1.2 }}>{placeName}</div>
             </div>
 
-            {/* 3. Address + Open in Maps */}
             {(streetAddr || cityLine) ? (
               <div data-testid="invite-restaurant-address" style={{ marginTop: 12 }}>
                 {streetAddr ? (
@@ -314,13 +414,11 @@ export default function EatInvitationPage() {
               </div>
             ) : null}
 
-            {/* 4–5. Date / time */}
             <div style={{ fontSize: 17, fontWeight: 700, marginTop: 16, color: "#292524" }}>
               {dateLabel}
             </div>
             <div style={{ fontSize: 17, fontWeight: 700, color: "#44403c" }}>{timeLabel}</div>
 
-            {/* 6. Optional message */}
             {invitation.message ? (
               <blockquote
                 style={{
@@ -334,12 +432,11 @@ export default function EatInvitationPage() {
                   color: "#292524",
                 }}
               >
-                <div style={{ fontWeight: 800, marginBottom: 4 }}>{organizerName} says:</div>
+                <div style={{ fontWeight: 800, marginBottom: 4 }}>{organizerName}:</div>
                 “{invitation.message}”
               </blockquote>
             ) : null}
 
-            {/* 7. Recommended menu item */}
             {invitation.menu_item_name ? (
               <div style={{ marginTop: 16, fontSize: 14, color: "#44403c", lineHeight: 1.45 }}>
                 <div style={{ fontWeight: 800, marginBottom: 4 }}>Recommended</div>
@@ -358,7 +455,6 @@ export default function EatInvitationPage() {
               </div>
             ) : null}
 
-            {/* Soft destination context */}
             {clusterHref && invitation.cluster_name ? (
               <div style={{ marginTop: 12, fontSize: 13, color: "#57534e" }}>
                 Near{" "}
@@ -368,58 +464,22 @@ export default function EatInvitationPage() {
               </div>
             ) : null}
 
-            {/* 8. Respond / organizer status */}
+            <PartyRoster party={party} />
+
             {invitation.is_organizer ? (
-              <div style={{ marginTop: 20, display: "grid", gap: 12 }} data-testid="invite-organizer-status">
-                <div
-                  style={{
-                    display: "inline-flex",
-                    alignSelf: "flex-start",
-                    padding: "4px 10px",
-                    borderRadius: 999,
-                    background: "#ecfdf5",
-                    color: "#166534",
-                    fontSize: 12,
-                    fontWeight: 800,
-                  }}
-                >
-                  {invitation.status_label || "Ready to Send"}
-                </div>
+              <div style={{ marginTop: 20, display: "grid", gap: 12 }}>
                 <div style={{ fontSize: 13, color: "#57534e", lineHeight: 1.45 }}>
-                  Share this link with guests. Menuply records when the invitation page is opened and
-                  when guests respond — not whether Messages delivered the text.
+                  Share this outing link with as many people as you like. Menuply records page opens
+                  and RSVPs — not whether Messages delivered the text.
                 </div>
-                {Array.isArray(invitation.responses) && invitation.responses.length > 0 ? (
-                  <div style={{ display: "grid", gap: 8 }}>
-                    <div style={{ fontWeight: 800, fontSize: 14 }}>Guest responses</div>
-                    {invitation.responses.map((row) => (
-                      <div
-                        key={row.id}
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          gap: 10,
-                          padding: "8px 10px",
-                          borderRadius: 10,
-                          background: "#fafaf9",
-                          border: "1px solid #e7e5e4",
-                          fontSize: 14,
-                        }}
-                      >
-                        <span style={{ fontWeight: 700 }}>{row.display_name}</span>
-                        <span style={{ color: "#166534", fontWeight: 700 }}>
-                          {responseLabel(row.status)}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div style={{ fontSize: 13, color: "#78716c" }}>
-                    {invitation.first_opened_at
-                      ? "Opened — waiting for guest responses."
-                      : "Not yet opened by a guest."}
-                  </div>
-                )}
+                <button
+                  type="button"
+                  data-testid="invite-share-send"
+                  onClick={() => setShareOpen(true)}
+                  style={btnPrimary}
+                >
+                  Share Invitation
+                </button>
               </div>
             ) : (
               <div style={{ marginTop: 20, display: "grid", gap: 10 }}>
@@ -451,7 +511,7 @@ export default function EatInvitationPage() {
                     onClick={() => handleRespond("accepted")}
                     style={btnPrimary}
                   >
-                    Accept
+                    I&apos;m Going
                   </button>
                   <button
                     type="button"
@@ -472,6 +532,14 @@ export default function EatInvitationPage() {
                     Can&apos;t Make It
                   </button>
                 </div>
+                <button
+                  type="button"
+                  data-testid="invite-guest-share"
+                  onClick={() => setShareOpen(true)}
+                  style={{ ...btnSecondary, justifySelf: "start" }}
+                >
+                  Share Invitation
+                </button>
                 {authPrompt || !isAuthenticated ? (
                   <div
                     data-testid="invite-auth-prompt"
@@ -511,7 +579,6 @@ export default function EatInvitationPage() {
               </div>
             )}
 
-            {/* 9. Restaurant / menu on Menuply */}
             <div
               style={{
                 marginTop: 24,
