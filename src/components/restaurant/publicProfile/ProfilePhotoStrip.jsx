@@ -1,7 +1,6 @@
 /**
- * Horizontal photo strip from real billboard / hero assets only.
- * Collapses when no remaining images — no empty placeholders.
- * Phase 1.5: larger tiles; exclude hero URL to avoid triple-repeat.
+ * Horizontal photo strip from billboard / hero assets.
+ * Includes paused gallery posts; excludes the active hero image to avoid repeat.
  */
 import { PROFILE_INK, PROFILE_MUTED, ProfileSectionBlank } from "./profilePrimitives.jsx";
 

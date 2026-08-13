@@ -43,6 +43,7 @@ import UnclaimedRestaurantBrandSplash, {
 import ClaimedRestaurantBillboardSplash, {
   pickClaimedBillboardSplashPosts,
 } from "../components/restaurant/ClaimedRestaurantBillboardSplash.jsx";
+import { isActiveBillboardSplashPost } from "../lib/claimedRestaurantBillboardSplash.js";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { useOperator } from "../context/OperatorContext.jsx";
 import { fetchRestaurantMenuPreview, toConsumerErrorMessage } from "../lib/api.js";
@@ -487,11 +488,10 @@ export default function RestaurantPublicPage() {
   const dealItems = Array.isArray(data?.deal_items) ? data.deal_items : [];
   const billboardPreview = Array.isArray(data?.billboard_preview) ? data.billboard_preview : [];
   const splashPosts = claimedBillboardSplashPosts;
-  // Prefer real creative images for hero, then cover/hero, then Menuply gradient (never fake food).
+  // Hero uses active billboard creatives only — paused posts stay for Photos strip.
+  const firstActiveBillboard = billboardPreview.find((p) => isActiveBillboardSplashPost(p));
   const firstBillboardImage =
-    billboardPreview.find((p) => p?.image_url || p?.photo_url)?.image_url ||
-    billboardPreview.find((p) => p?.image_url || p?.photo_url)?.photo_url ||
-    null;
+    String(firstActiveBillboard?.image_url || firstActiveBillboard?.photo_url || "").trim() || null;
   const bannerPhotoUrl =
     firstBillboardImage ||
     data?.hero_image_url ||

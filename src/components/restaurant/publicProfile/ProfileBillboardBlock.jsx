@@ -1,8 +1,9 @@
 /**
  * Compact in-page Billboard below the hero.
- * Reuses billboard_preview creatives; collapses when empty.
+ * Reuses active billboard_preview creatives only (paused posts are Photos gallery).
  * Entrance splash remains separate (ClaimedRestaurantBillboardSplash).
  */
+import { isActiveBillboardSplashPost } from "../../../lib/claimedRestaurantBillboardSplash.js";
 import {
   PROFILE_INK,
   PROFILE_MUTED,
@@ -28,7 +29,7 @@ export default function ProfileBillboardBlock({
   showClaimInvites = false,
 }) {
   const posts = (Array.isArray(billboardPreview) ? billboardPreview : []).filter(
-    (p) => postImage(p) || postTitle(p) || postBody(p)
+    (p) => isActiveBillboardSplashPost(p) && (postImage(p) || postTitle(p) || postBody(p))
   );
   if (!posts.length && !showClaimInvites) return null;
 

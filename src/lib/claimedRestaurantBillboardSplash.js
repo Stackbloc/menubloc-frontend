@@ -9,6 +9,18 @@ export const CLAIMED_BILLBOARD_SPLASH_REDUCED_MS = 600;
 export const CLAIMED_BILLBOARD_SPLASH_IMAGE_WAIT_MS = 12000;
 export const CLAIMED_BILLBOARD_SPLASH_MAX_SLIDES = 6;
 
+/** Active splash/profile-billboard creatives only (paused gallery posts excluded). */
+export function isActiveBillboardSplashPost(post) {
+  if (!post || typeof post !== "object") return false;
+  const status = String(post.status || "").trim().toLowerCase();
+  if (status && status !== "current") return false;
+  const billboardStatus = String(post.billboard_status || "").trim().toLowerCase();
+  if (billboardStatus && billboardStatus !== "active") return false;
+  const imageUrl = String(post.image_url || post.photo_url || "").trim();
+  const headline = String(post.headline_override || post.title || "").trim();
+  return Boolean(imageUrl || headline);
+}
+
 /**
  * Pick ordered current splash creatives (max 6) for the entrance carousel.
  * @param {unknown} posts
@@ -23,14 +35,7 @@ export function pickClaimedBillboardSplashPosts(posts, opts = {}) {
   const list = Array.isArray(posts) ? posts : [];
   const eligible = [];
   for (const post of list) {
-    if (!post || typeof post !== "object") continue;
-    const status = String(post.status || "").trim().toLowerCase();
-    if (status && status !== "current") continue;
-    const billboardStatus = String(post.billboard_status || "").trim().toLowerCase();
-    if (billboardStatus && billboardStatus !== "active") continue;
-    const imageUrl = String(post.image_url || post.photo_url || "").trim();
-    const headline = String(post.headline_override || post.title || "").trim();
-    if (!imageUrl && !headline) continue;
+    if (!isActiveBillboardSplashPost(post)) continue;
     eligible.push(post);
   }
   eligible.sort((a, b) => {
