@@ -668,8 +668,18 @@ export default function FoodComments({
 
   const canPost = Boolean(draft.trim()) && !busy && (!needsScreenName || screenNameDraft.trim());
 
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+    if (window.location.hash !== "#food-comments") return undefined;
+    const t = window.setTimeout(() => {
+      document.getElementById("food-comments")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 120);
+    return () => window.clearTimeout(t);
+  }, [loading, comments.length]);
+
   return (
     <section
+      id="food-comments"
       data-testid="food-comments"
       aria-label={title}
       style={{ marginBottom: compact ? 16 : 28 }}

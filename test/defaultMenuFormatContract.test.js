@@ -4,7 +4,7 @@
  * Locked from the 2026-08-03 Fixins Soul Kitchen reference:
  * - Restaurant header: name, then like + share immediately adjacent
  * - Every section labeled (uppercase), including the first
- * - Item row: name | like + share + price
+ * - Item row: name | like + share + comment + price
  *
  * Custom gallery layouts (v12–v15) are out of scope for this contract.
  */
@@ -69,16 +69,29 @@ test("MenuHeaderNameWithActions keeps like/share beside the restaurant name", ()
   assert.doesNotMatch(src, /marginLeft:\s*["']?auto["']?/);
 });
 
-test("PublicMenuItemCard editorial row order is like → share → price", () => {
+test("PublicMenuItemCard editorial row order is like → share → comment → price", () => {
   const src = read("src/components/menu-templates/PublicMenuItemCard.jsx");
   const editorialBlock = src.slice(src.indexOf("editorialRefresh ? ("), src.indexOf(") : compactActions ? ("));
   assert.ok(editorialBlock.length > 200, "expected editorialRefresh title/actions block");
   const likeIdx = editorialBlock.indexOf("LikeMenuItemButton");
   const shareIdx = editorialBlock.indexOf("ShareButton");
+  const commentIdx = editorialBlock.indexOf("FoodCommentNavButton");
   const priceIdx = editorialBlock.indexOf("{price ? (");
   assert.ok(likeIdx > 0, "LikeMenuItemButton in editorial row");
   assert.ok(shareIdx > likeIdx, "ShareButton after Like");
-  assert.ok(priceIdx > shareIdx, "price after Share");
+  assert.ok(commentIdx > shareIdx, "FoodCommentNavButton after Share");
+  assert.ok(priceIdx > commentIdx, "price after Comment");
+});
+
+test("Classic and Fine menu headers include restaurant comment nav", () => {
+  for (const rel of [
+    "src/components/menu-templates/ClassicMenuTemplate.jsx",
+    "src/components/menu-templates/FineMenuTemplate.jsx",
+  ]) {
+    const src = read(rel);
+    assert.match(src, /FoodCommentNavButton/);
+    assert.match(src, /target=["']restaurant["']/);
+  }
 });
 
 test("PublicMenuItemCard row opens detail; add box only when ordering available", () => {

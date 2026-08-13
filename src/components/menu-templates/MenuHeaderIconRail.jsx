@@ -1,7 +1,7 @@
 import RestaurantVerificationBadge from "../RestaurantVerificationBadge.jsx";
 import { MENU_ROW_HEADER_ICON_GAP } from "./menuPresentationUtils.js";
 
-/** Restaurant name + verification badge, then like + share immediately after. */
+/** Restaurant name + verification badge, then like + share + comment immediately after. */
 export default function MenuHeaderNameWithActions({
   nameSlot,
   onActionsClick,

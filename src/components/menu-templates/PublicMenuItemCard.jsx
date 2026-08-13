@@ -1,5 +1,6 @@
 import ShareButton from "../share/ShareButton.jsx";
 import LikeMenuItemButton from "../LikeMenuItemButton.jsx";
+import FoodCommentNavButton from "../FoodCommentNavButton.jsx";
 import PreferenceIngredientAdvisory from "../menu/PreferenceIngredientAdvisory.jsx";
 import MenuItemDealsIndicator from "../menu/MenuItemDealsIndicator.jsx";
 import { getLocalizedField } from "../../utils/getLocalizedField.js";
@@ -517,6 +518,14 @@ export default function PublicMenuItemCard({
                     }}
                   />
                 ) : null}
+                {canNavigate ? (
+                  <FoodCommentNavButton
+                    target="menu_item"
+                    menuItemId={normalizedItemId}
+                    tone="ghost"
+                    size="row"
+                  />
+                ) : null}
                 {price ? (
                   <span
                     style={{
@@ -585,6 +594,14 @@ export default function PublicMenuItemCard({
                     }}
                   />
                 ) : null}
+                {canNavigate ? (
+                  <FoodCommentNavButton
+                    target="menu_item"
+                    menuItemId={normalizedItemId}
+                    tone="ghost"
+                    size="row"
+                  />
+                ) : null}
                 {price ? (
                   <span
                     style={{
@@ -640,6 +657,14 @@ export default function PublicMenuItemCard({
                       pageType: "public_menu",
                       shareTarget: "dish",
                     }}
+                  />
+                ) : null}
+                {canNavigate ? (
+                  <FoodCommentNavButton
+                    target="menu_item"
+                    menuItemId={normalizedItemId}
+                    tone="ghost"
+                    size="row"
                   />
                 ) : null}
                 {price ? (
