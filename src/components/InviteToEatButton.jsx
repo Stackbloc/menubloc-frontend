@@ -1,6 +1,4 @@
 import { useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import { useConsumer } from "../context/ConsumerContext.jsx";
 import { likeButtonVisualStyle } from "../lib/likeButtonStyles.js";
 import IconHoverLabel from "./IconHoverLabel.jsx";
 import InviteToEatIcon from "./icons/InviteToEatIcon.jsx";
@@ -8,7 +6,7 @@ import InviteToEatModal from "./InviteToEatModal.jsx";
 
 /**
  * Ghost Invite to Eat control — restaurant or menu-item context.
- * Tooltip: "Invite to Eat". Opens compose modal (link-first share).
+ * Tooltip: "Invite to Eat". Opens compose modal (no account required).
  */
 export default function InviteToEatButton({
   restaurantId = null,
@@ -19,9 +17,6 @@ export default function InviteToEatButton({
   size = "row",
   dark = false,
 }) {
-  const { isAuthenticated } = useConsumer();
-  const navigate = useNavigate();
-  const location = useLocation();
   const [open, setOpen] = useState(false);
 
   const rid = restaurantId != null && String(restaurantId).trim() !== "" ? restaurantId : null;
@@ -34,11 +29,6 @@ export default function InviteToEatButton({
   function handleClick(e) {
     e.preventDefault();
     e.stopPropagation();
-    if (!isAuthenticated) {
-      const redirectTo = `${location.pathname}${location.search || ""}${location.hash || ""}`;
-      navigate("/account/login", { state: { redirectTo } });
-      return;
-    }
     setOpen(true);
   }
 

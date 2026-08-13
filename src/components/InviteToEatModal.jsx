@@ -1,7 +1,14 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import ShareModal from "./share/ShareModal.jsx";
+import { useConsumer } from "../context/ConsumerContext.jsx";
 import { createEatInvitation } from "../lib/eatInvitationsApi.js";
+import {
+  getEatInviteGuestDisplayName,
+  getOrCreateEatInviteGuestKey,
+  rememberOrganizerInviteToken,
+  setEatInviteGuestDisplayName,
+} from "../lib/eatInviteGuestIdentity.js";
 import {
   buildEatInviteShareText,
   formatInviteDateLabel,
@@ -20,6 +27,7 @@ function tomorrowIsoDate() {
 /**
  * Invite to Eat: Who → Compose → Invitation Ready → ShareModal.
  * invite_kind: private (1:1) | group (shared outing).
+ * No Menuply account required — guests provide a short display name.
  */
 export default function InviteToEatModal({
   open,
@@ -29,7 +37,9 @@ export default function InviteToEatModal({
   menuItemId = null,
   menuItemName = null,
 }) {
+  const { isAuthenticated } = useConsumer();
   const [inviteKind, setInviteKind] = useState(null);
+  const [guestName, setGuestName] = useState("");
   const [date, setDate] = useState(tomorrowIsoDate);
   const [time, setTime] = useState("19:00");
   const [message, setMessage] = useState("");
@@ -41,6 +51,7 @@ export default function InviteToEatModal({
   useEffect(() => {
     if (!open) return;
     setInviteKind(null);
+    setGuestName(getEatInviteGuestDisplayName());
     setDate(tomorrowIsoDate());
     setTime("19:00");
     setMessage("");
@@ -80,17 +91,42 @@ export default function InviteToEatModal({
     setBusy(true);
     setError("");
     try {
-      const data = await createEatInvitation({
+      const body = {
         restaurant_id: restaurantId,
         menu_item_id: menuItemId || undefined,
         scheduled_date: date,
         scheduled_time: time,
         message: message.trim() || undefined,
         invite_kind: inviteKind,
-      });
+      };
+      if (!isAuthenticated) {
+        const name = String(guestName || "").trim();
+        if (!name) {
+          throw new Error("Enter your name so friends know who invited them");
+        }
+        const guestKey = getOrCreateEatInviteGuestKey();
+        body.guest_key = guestKey;
+        body.display_name = name;
+        setEatInviteGuestDisplayName(name);
+      }
+      const data = await createEatInvitation(body);
       const invitation = data?.invitation || null;
       if (!invitation?.url) {
         throw new Error(data?.error || "Could not create invitation");
+      }
+      if (invitation.invitation_token && invitation.organizer_guest_key) {
+        rememberOrganizerInviteToken(
+          invitation.invitation_token,
+          invitation.organizer_guest_key
+        );
+      } else if (!isAuthenticated) {
+        const tokenFromUrl = String(invitation.url || "")
+          .split("/invite/")
+          .pop()
+          ?.split(/[?#]/)[0];
+        if (tokenFromUrl) {
+          rememberOrganizerInviteToken(tokenFromUrl, getOrCreateEatInviteGuestKey());
+        }
       }
       setCreated(invitation);
     } catch (err) {
@@ -253,6 +289,22 @@ export default function InviteToEatModal({
               <div style={{ height: 8 }} />
             )}
             <form onSubmit={handleCreate} style={{ display: "grid", gap: 10 }}>
+              {!isAuthenticated ? (
+                <label style={{ display: "grid", gap: 4, fontSize: 12, fontWeight: 700 }}>
+                  Your name
+                  <input
+                    type="text"
+                    required
+                    maxLength={80}
+                    value={guestName}
+                    onChange={(e) => setGuestName(e.target.value)}
+                    placeholder="So friends know who invited them"
+                    data-testid="invite-guest-name"
+                    autoComplete="nickname"
+                    style={inputStyle}
+                  />
+                </label>
+              ) : null}
               <label style={{ display: "grid", gap: 4, fontSize: 12, fontWeight: 700 }}>
                 Date
                 <input

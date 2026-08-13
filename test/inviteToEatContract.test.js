@@ -16,6 +16,8 @@ test("InviteToEatButton tooltip and Invitation Ready confirmation", () => {
   assert.match(btn, /Invite to Eat/);
   assert.match(btn, /InviteToEatModal/);
   assert.doesNotMatch(btn, /sendSms|twilio|contact.*sync/i);
+  assert.doesNotMatch(btn, /\/account\/login/);
+  assert.doesNotMatch(btn, /isAuthenticated/);
 
   const modal = read("src/components/InviteToEatModal.jsx");
   assert.match(modal, /Who do you want to invite/);
@@ -31,12 +33,23 @@ test("InviteToEatButton tooltip and Invitation Ready confirmation", () => {
   assert.match(modal, /Ready to Send/);
   assert.match(modal, /buildEatInviteShareText/);
   assert.match(modal, /invite_kind/);
+  assert.match(modal, /invite-guest-name/);
+  assert.match(modal, /getOrCreateEatInviteGuestKey/);
+  assert.match(modal, /guest_key/);
   assert.doesNotMatch(modal, /Invitation Sent/);
   assert.doesNotMatch(modal, /invite-first-name|organizer_first_name/);
   assert.doesNotMatch(modal, /navigator\.share/);
   assert.match(modal, /shareOpen && shareData/);
   assert.doesNotMatch(modal, /navigator\.contacts|getUserMedia/);
   assert.doesNotMatch(modal, /\bDate\b.*category|dating/i);
+
+  const api = read("src/lib/eatInvitationsApi.js");
+  assert.match(api, /\/public\/eat-invitations/);
+  assert.doesNotMatch(api, /\/api\/consumer\/eat-invitations/);
+
+  const guestId = read("src/lib/eatInviteGuestIdentity.js");
+  assert.match(guestId, /getOrCreateEatInviteGuestKey/);
+  assert.match(guestId, /setEatInviteGuestDisplayName/);
 });
 
 test("Share copy: private is 1:1; group asks who wants to join me", () => {
@@ -76,7 +89,8 @@ test("Eat invitation public page supports private vs group", () => {
   assert.match(page, /Can&apos;t Make It|Can't Make It/);
   assert.match(page, /respondToEatInvitation/);
   assert.match(page, /View Menu/);
-  assert.match(page, /Create a free Menuply account to respond/);
+  assert.match(page, /invite-guest-name/);
+  assert.match(page, /getOrCreateEatInviteGuestKey/);
   assert.match(page, /Open in Maps/);
   assert.match(page, /invite-restaurant-address/);
   assert.match(page, /invite-party-roster|PartyRoster/);
@@ -88,6 +102,9 @@ test("Eat invitation public page supports private vs group", () => {
   assert.doesNotMatch(page, /Not responded/);
   assert.doesNotMatch(page, /Join Menuply because/);
   assert.doesNotMatch(page, /invite-first-name/);
+  assert.doesNotMatch(page, /Create a free Menuply account to respond/);
+  assert.doesNotMatch(page, /invite-auth-prompt/);
+  assert.doesNotMatch(page, /\/account\/login/);
 
   const app = read("src/App.jsx");
   assert.match(app, /path=["']\/eat\/:token["']/);

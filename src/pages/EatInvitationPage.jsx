@@ -1,16 +1,23 @@
 /**
  * Public Invite to Eat landing — shared outing / party roster.
- * View without login; respond requires auth. No auto-friendship.
+ * View and RSVP without a Menuply account (display name only for guests).
+ * No auto-friendship.
  */
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { useConsumer } from "../context/ConsumerContext.jsx";
 import ShareModal from "../components/share/ShareModal.jsx";
 import {
   fetchPublicEatInvitation,
   respondToEatInvitation,
 } from "../lib/eatInvitationsApi.js";
+import {
+  getEatInviteGuestDisplayName,
+  getOrCreateEatInviteGuestKey,
+  getOrganizerGuestKeyForToken,
+  setEatInviteGuestDisplayName,
+} from "../lib/eatInviteGuestIdentity.js";
 import {
   buildEatInviteShareText,
   formatInviteDateLabel,
@@ -74,9 +81,9 @@ function PartyRoster({ party }) {
               gap: 4,
             }}
           >
-            {(section.people || []).map((person) => (
+            {(section.people || []).map((person, idx) => (
               <li
-                key={`${section.key}-${person.user_id}`}
+                key={`${section.key}-${person.party_person_id || person.user_id || idx}`}
                 style={{
                   fontSize: 14,
                   fontWeight: 600,
@@ -87,7 +94,7 @@ function PartyRoster({ party }) {
                   border: "1px solid #e7e5e4",
                 }}
               >
-                {person.display_name || "Menuply diner"}
+                {person.display_name || "Someone"}
               </li>
             ))}
           </ul>
@@ -100,22 +107,20 @@ function PartyRoster({ party }) {
 export default function EatInvitationPage() {
   const { token } = useParams();
   const { isAuthenticated } = useConsumer();
-  const navigate = useNavigate();
-  const location = useLocation();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [invitation, setInvitation] = useState(null);
   const [busy, setBusy] = useState(false);
   const [responded, setResponded] = useState(null);
-  const [authPrompt, setAuthPrompt] = useState(false);
+  const [guestName, setGuestName] = useState(() => getEatInviteGuestDisplayName());
   const [shareOpen, setShareOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
     setError("");
-    setAuthPrompt(false);
-    fetchPublicEatInvitation(token)
+    const guestKey = getOrganizerGuestKeyForToken(token);
+    fetchPublicEatInvitation(token, { guestKey })
       .then((data) => {
         if (cancelled) return;
         const inv = data?.invitation || null;
@@ -241,15 +246,20 @@ export default function EatInvitationPage() {
 
   async function handleRespond(status) {
     if (busy) return;
-    if (!isAuthenticated) {
-      setAuthPrompt(true);
-      return;
-    }
     setBusy(true);
     setError("");
-    setAuthPrompt(false);
     try {
-      const data = await respondToEatInvitation(token, status);
+      const opts = {};
+      if (!isAuthenticated) {
+        const name = String(guestName || "").trim();
+        if (!name) {
+          throw new Error("Enter your name so the host knows who is coming");
+        }
+        opts.guestKey = getOrCreateEatInviteGuestKey();
+        opts.displayName = name;
+        setEatInviteGuestDisplayName(name);
+      }
+      const data = await respondToEatInvitation(token, status, opts);
       setResponded(data?.response?.status || status);
       const nextParty = data?.party || data?.invitation?.party;
       if (data?.invitation || nextParty) {
@@ -264,16 +274,6 @@ export default function EatInvitationPage() {
     } finally {
       setBusy(false);
     }
-  }
-
-  function goSignIn() {
-    const redirectTo = `${location.pathname}${location.search || ""}`;
-    navigate("/account/login", { state: { redirectTo } });
-  }
-
-  function goSignUp() {
-    const redirectTo = `${location.pathname}${location.search || ""}`;
-    navigate("/account/signup", { state: { redirectTo } });
   }
 
   if (shareOpen && shareData) {
@@ -510,6 +510,31 @@ export default function EatInvitationPage() {
                     Your response: {responseLabel(responded)}
                   </div>
                 ) : null}
+                {!isAuthenticated ? (
+                  <label
+                    style={{ display: "grid", gap: 4, fontSize: 12, fontWeight: 700 }}
+                    data-testid="invite-guest-name-field"
+                  >
+                    Your name
+                    <input
+                      type="text"
+                      maxLength={80}
+                      value={guestName}
+                      onChange={(e) => setGuestName(e.target.value)}
+                      placeholder="So the host knows who is coming"
+                      data-testid="invite-guest-name"
+                      autoComplete="nickname"
+                      style={{
+                        width: "100%",
+                        boxSizing: "border-box",
+                        borderRadius: 10,
+                        border: "1px solid #d6d3d1",
+                        padding: "10px 12px",
+                        fontSize: 14,
+                      }}
+                    />
+                  </label>
+                ) : null}
                 {error ? (
                   <div role="alert" style={{ color: "#b91c1c", fontSize: 13 }}>
                     {error}
@@ -553,42 +578,6 @@ export default function EatInvitationPage() {
                   >
                     Share Invitation
                   </button>
-                ) : null}
-                {authPrompt || !isAuthenticated ? (
-                  <div
-                    data-testid="invite-auth-prompt"
-                    style={{
-                      marginTop: 4,
-                      padding: "12px 14px",
-                      borderRadius: 12,
-                      background: "#fafaf9",
-                      border: "1px solid #e7e5e4",
-                      fontSize: 13,
-                      color: "#44403c",
-                      lineHeight: 1.45,
-                    }}
-                  >
-                    {authPrompt ? (
-                      <>
-                        <div style={{ fontWeight: 800, marginBottom: 6 }}>
-                          Create a free Menuply account to respond to this invitation.
-                        </div>
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                          <button type="button" onClick={goSignUp} style={btnPrimary}>
-                            Create account
-                          </button>
-                          <button type="button" onClick={goSignIn} style={btnSecondary}>
-                            Sign in
-                          </button>
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        You can read this invitation without an account. Sign in only when you are
-                        ready to respond.
-                      </>
-                    )}
-                  </div>
                 ) : null}
               </div>
             )}

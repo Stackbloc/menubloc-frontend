@@ -1,18 +1,22 @@
 /**
- * Invite to Eat API — create + public preview + respond.
+ * Invite to Eat API — public create/preview/respond (account optional).
  */
 import { apiGet, apiPost } from "./api.js";
+import { getOrCreateEatInviteGuestKey } from "./eatInviteGuestIdentity.js";
 
 export async function createEatInvitation(body) {
-  return apiPost("/api/consumer/eat-invitations", body);
+  return apiPost("/public/eat-invitations", body);
 }
 
-export async function fetchPublicEatInvitation(token) {
-  return apiGet(`/public/eat-invitations/${encodeURIComponent(String(token))}`);
+export async function fetchPublicEatInvitation(token, { guestKey } = {}) {
+  const gk = guestKey || getOrCreateEatInviteGuestKey();
+  const q = gk ? `?guest_key=${encodeURIComponent(gk)}` : "";
+  return apiGet(`/public/eat-invitations/${encodeURIComponent(String(token))}${q}`);
 }
 
-export async function respondToEatInvitation(token, status) {
-  return apiPost(`/api/consumer/eat-invitations/${encodeURIComponent(String(token))}/respond`, {
-    status,
-  });
+export async function respondToEatInvitation(token, status, { guestKey, displayName } = {}) {
+  const body = { status };
+  if (guestKey) body.guest_key = guestKey;
+  if (displayName) body.display_name = displayName;
+  return apiPost(`/public/eat-invitations/${encodeURIComponent(String(token))}/respond`, body);
 }
