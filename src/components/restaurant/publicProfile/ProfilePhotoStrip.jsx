@@ -1,6 +1,7 @@
 /**
  * Horizontal photo strip from billboard / hero assets.
  * Includes paused gallery posts; excludes the active hero image to avoid repeat.
+ * "Photos" heading only when empty (claim invite blank) — hidden once any photo exists.
  */
 import { PROFILE_INK, PROFILE_MUTED, ProfileSectionBlank } from "./profilePrimitives.jsx";
 
@@ -44,8 +45,9 @@ export default function ProfilePhotoStrip({
 
   const tileW = embedded ? (isMobile ? 132 : 168) : isMobile ? 168 : 260;
   const tileH = embedded ? (isMobile ? 99 : 126) : isMobile ? 126 : 180;
+  const showPhotosHeading = photos.length === 0;
 
-  const label = (
+  const label = showPhotosHeading ? (
     <div
       style={{
         fontSize: embedded ? 12 : 13,
@@ -57,7 +59,7 @@ export default function ProfilePhotoStrip({
     >
       Photos
     </div>
-  );
+  ) : null;
 
   const body = !photos.length ? (
     <ProfileSectionBlank testId="profile-photos-blank" message="No additional photos yet." />

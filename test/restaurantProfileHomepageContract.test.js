@@ -86,6 +86,8 @@ function testUnclaimedHomepageBlanks() {
   assert.match(fav, /profile-favorites-blank/);
   assert.match(deals, /profile-deals-blank/);
   assert.match(photos, /profile-photos-blank/);
+  assert.match(photos, /showPhotosHeading/);
+  assert.match(photos, /photos\.length === 0/);
   assert.match(shell, /ProfileAboutFounded/);
   assert.match(shell, /ProfileClaimBanner/);
   assert.match(shell, /showClaimInvites=\{showClaimInvites\}/);
