@@ -19,12 +19,12 @@ test("InviteToEatButton tooltip and Invitation Ready confirmation", () => {
   const modal = read("src/components/InviteToEatModal.jsx");
   assert.match(modal, /Create Invitation/);
   assert.match(modal, /Invitation Ready/);
-  assert.match(modal, /Send via Messages/);
-  assert.match(modal, /navigator\.share/);
+  assert.match(modal, /Share \/ Send/);
   assert.match(modal, /ShareModal/);
   assert.match(modal, /does not send SMS/);
   assert.match(modal, /Ready to Send/);
   assert.doesNotMatch(modal, /Invitation Sent/);
+  assert.doesNotMatch(modal, /navigator\.share/);
   assert.match(modal, /shareOpen && shareData/);
   assert.match(modal, /While sharing/);
   assert.doesNotMatch(modal, /navigator\.contacts|getUserMedia/);

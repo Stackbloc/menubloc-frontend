@@ -40,20 +40,6 @@ function formatTimeLabel(time) {
   return d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
 }
 
-function canNativeShare(shareData) {
-  if (typeof navigator === "undefined" || typeof navigator.share !== "function") return false;
-  if (typeof navigator.canShare !== "function") return true;
-  try {
-    return navigator.canShare({
-      title: shareData?.title,
-      text: shareData?.text,
-      url: shareData?.url,
-    });
-  } catch {
-    return true;
-  }
-}
-
 function buildShareText({ organizerName, restaurantName, dateLabel, timeLabel, menuItemName, url }) {
   const who = organizerName || "A Menuply diner";
   const place = restaurantName || "a restaurant";
@@ -64,7 +50,7 @@ function buildShareText({ organizerName, restaurantName, dateLabel, timeLabel, m
 }
 
 /**
- * Compose Invite to Eat → Invitation Ready → native share (no SMS blast).
+ * Compose Invite to Eat → Invitation Ready → Menuply ShareModal (no SMS blast).
  */
 export default function InviteToEatModal({
   open,
@@ -81,7 +67,6 @@ export default function InviteToEatModal({
   const [error, setError] = useState("");
   const [created, setCreated] = useState(null);
   const [shareOpen, setShareOpen] = useState(false);
-  const [shareHint, setShareHint] = useState("");
 
   const shareData = useMemo(() => {
     if (!created?.url) return null;
@@ -111,7 +96,6 @@ export default function InviteToEatModal({
     if (busy) return;
     setBusy(true);
     setError("");
-    setShareHint("");
     try {
       const data = await createEatInvitation({
         restaurant_id: restaurantId,
@@ -130,26 +114,6 @@ export default function InviteToEatModal({
     } finally {
       setBusy(false);
     }
-  }
-
-  async function handleSendViaMessages() {
-    if (!shareData) return;
-    setShareHint("");
-    if (canNativeShare(shareData)) {
-      try {
-        await navigator.share({
-          title: shareData.title,
-          text: shareData.text,
-          url: shareData.url,
-        });
-        setShareHint("Returned from share. Status remains Ready to Send until guests open the link.");
-        return;
-      } catch (err) {
-        if (err?.name === "AbortError") return;
-        // Fall through to ShareModal if native share fails.
-      }
-    }
-    setShareOpen(true);
   }
 
   // ShareModal uses z-index 1200; Invite overlay is 12000. While sharing, unmount the
@@ -355,8 +319,8 @@ export default function InviteToEatModal({
             />
             <button
               type="button"
-              data-testid="invite-send-via-messages"
-              onClick={handleSendViaMessages}
+              data-testid="invite-share-send"
+              onClick={() => setShareOpen(true)}
               style={{
                 height: 44,
                 borderRadius: 999,
@@ -367,15 +331,12 @@ export default function InviteToEatModal({
                 cursor: "pointer",
               }}
             >
-              Send via Messages
+              Share / Send
             </button>
-            {shareHint ? (
-              <div style={{ fontSize: 12, color: "#57534e", lineHeight: 1.4 }}>{shareHint}</div>
-            ) : (
-              <div style={{ fontSize: 12, color: "#78716c", lineHeight: 1.4 }}>
-                Opens your device share sheet. You can edit the message before sending.
-              </div>
-            )}
+            <div style={{ fontSize: 12, color: "#78716c", lineHeight: 1.4 }}>
+              Opens Menuply share options (Copy Link, Messages, and more). Menuply does not send SMS
+              for you.
+            </div>
             <button
               type="button"
               onClick={onClose}
