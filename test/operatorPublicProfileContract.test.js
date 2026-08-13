@@ -120,7 +120,7 @@ function testPublicProfileForcedLight() {
   assert.equal(whitePageBgMatches.length, 1);
 }
 
-/** Profile header actions: View Menu icon next to name, then Like / Share / Call / Order. */
+/** Profile header actions: View Menu, Follow, Share, Invite, Comment (no Call icon). */
 function testPublicProfileMenuLikeShareRail() {
   const page = read("src/pages/RestaurantPublicPage.jsx");
   const editorial = read("src/components/restaurant/RestaurantPublicEditorial.jsx");
@@ -137,7 +137,8 @@ function testPublicProfileMenuLikeShareRail() {
   assert.match(hero, /source=\{followSource\}/);
   assert.match(hero, /variant="menu"/);
   assert.match(hero, /profile-hero-actions/);
-  assert.match(hero, /profile-hero-call/);
+  assert.doesNotMatch(hero, /profile-hero-call/);
+  assert.match(hero, /profile-hero-phone/);
   assert.match(hero, /profile-hero-maps-address/);
   assert.doesNotMatch(hero, /profile-hero-directions/);
   assert.match(hero, /profile-action-order/);
@@ -150,6 +151,7 @@ function testPublicProfileMenuLikeShareRail() {
   const railSlice = hero.slice(railStart, railStart + 1600);
   assert.ok(railStart > -1, "hero actions rail missing");
   assert.match(railSlice, /ViewMenuLink[\s\S]*FollowRestaurantButton[\s\S]*ShareButton[\s\S]*InviteToEatButton[\s\S]*FoodCommentNavButton/);
+  assert.doesNotMatch(railSlice, /profile-hero-call|label="Call"/);
   assert.doesNotMatch(page, />\s*Follow\s*</);
   assert.doesNotMatch(page, /Following/);
 }
