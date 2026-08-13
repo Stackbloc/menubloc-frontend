@@ -20,7 +20,11 @@ import { resolveEffectiveMenuAppearance } from "../../lib/menuAppearanceRecommen
 import { buildMenuChromeRootStyle } from "../../lib/menuWallpapers.js";
 import { formatMoney, getBaseMenuPrice, getConsumerDisplayPrice } from "../../lib/pricingDisplay.js";
 import { buildMenuShareMetadata } from "../share/shareUtils.js";
-import { buildRestaurantStatusLightProps, shouldShowMenuPurchaseWaiterHint } from "../../lib/restaurantStatusLight.js";
+import {
+  buildRestaurantStatusLightProps,
+  isOnlineOrderingAvailable,
+  shouldShowMenuPurchaseWaiterHint,
+} from "../../lib/restaurantStatusLight.js";
 import { toConsumerErrorMessage } from "../../lib/api.js";
 import CatalogItemDetailSheet from "./CatalogItemDetailSheet.jsx";
 import MenuPreferencesAppliedBanner from "../menu/MenuPreferencesAppliedBanner.jsx";
@@ -496,6 +500,7 @@ export default function CatalogMenuRenderer({
   }, [pageState.data]);
 
   function commitMenuItemToBasket(item, itemName, itemDescription, modifiers = [], preparationInstructions = null) {
+    if (!isOnlineOrderingAvailable(data)) return null;
     return addMenuItem({
       restaurant: cartRestaurant,
       item: {

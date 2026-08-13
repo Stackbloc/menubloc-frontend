@@ -81,6 +81,20 @@ test("PublicMenuItemCard editorial row order is like → share → price", () =>
   assert.ok(priceIdx > shareIdx, "price after Share");
 });
 
+test("PublicMenuItemCard row opens detail; add box only when ordering available", () => {
+  const src = read("src/components/menu-templates/PublicMenuItemCard.jsx");
+  assert.match(src, /function AddToOrderBox/);
+  assert.match(src, /isOnlineOrderingAvailable\(data\)/);
+  assert.match(src, /canAddToOrder/);
+  assert.match(src, /openMenuItemDetail/);
+  assert.match(src, /navigate\(`\/menu-items\/\$\{normalizedItemId\}\?from=menu`\)/);
+  // Row click must not call commitMenuItemToBasket directly.
+  const onClickIdx = src.indexOf("onClick={() => {\n        if (canNavigate) {\n          openMenuItemDetail();");
+  assert.ok(onClickIdx > 0, "row onClick navigates to detail");
+  const onClickBlock = src.slice(onClickIdx, onClickIdx + 220);
+  assert.doesNotMatch(onClickBlock, /commitMenuItemToBasket/);
+});
+
 test("normalizeMenuDisplaySections never drops section titles", async () => {
   const { normalizeMenuDisplaySections } = await import(
     "../src/lib/menuClientPreferenceFilter.js"

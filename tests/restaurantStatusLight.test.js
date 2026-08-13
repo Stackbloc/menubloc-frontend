@@ -4,6 +4,7 @@ import {
   resolveRestaurantStatusLightTone,
   buildMenuVerificationAttributionText,
   buildRestaurantStatusLightProps,
+  isOnlineOrderingAvailable,
 } from "../src/lib/restaurantStatusLight.js";
 
 test("resolveRestaurantStatusLightTone defaults unclaimed restaurants to red", () => {
@@ -58,4 +59,41 @@ test("buildRestaurantStatusLightProps includes subscription and claim fields", (
   assert.equal(props.claimStatus, "unclaimed");
   assert.equal(props.subscriptionPlan, "unverified");
   assert.equal(props.tone, "red");
+});
+
+test("isOnlineOrderingAvailable respects ordering_availability.available", () => {
+  assert.equal(
+    isOnlineOrderingAvailable({
+      ordering_availability: { available: false, reason_code: "ordering_disabled" },
+      order_acceptance_status: "accepting_orders",
+      subscription_plan: "pro",
+    }),
+    false
+  );
+  assert.equal(
+    isOnlineOrderingAvailable({
+      ordering_availability: { available: true },
+      order_acceptance_status: "accepting_orders",
+      subscription_plan: "pro",
+    }),
+    true
+  );
+});
+
+test("isOnlineOrderingAvailable fails closed without availability payload for unpaid restaurants", () => {
+  assert.equal(
+    isOnlineOrderingAvailable({
+      order_acceptance_status: "accepting_orders",
+      subscription_plan: "unverified",
+    }),
+    false
+  );
+  assert.equal(
+    isOnlineOrderingAvailable({
+      order_acceptance_status: "accepting_orders",
+      subscription_plan: "pro",
+      is_pro: true,
+    }),
+    true
+  );
 });

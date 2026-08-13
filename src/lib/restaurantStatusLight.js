@@ -121,10 +121,10 @@ export function isOnlineOrderingAvailable(data) {
   if (availability && typeof availability.available === "boolean") {
     return availability.available === true;
   }
-  return hasOnlineOrderingEnabled({
-    orderAcceptanceStatus:
-      data?.order_acceptance_status || data?.restaurant?.order_acceptance_status,
-  });
+  // Fail closed when the menu payload omits ordering_availability: require a paid
+  // subscriber plan AND accepting_orders (zero unpaid restaurants may add to cart).
+  const props = buildRestaurantStatusLightProps(data);
+  return hasPaidSubscriptionPlan(props) && hasOnlineOrderingEnabled(props);
 }
 
 /** Tap-to-order coach on public menus — paid plan + accepting online orders only. */

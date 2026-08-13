@@ -95,7 +95,11 @@ import { useConsumer } from "../context/ConsumerContext.jsx";
 import { toConsumerErrorMessage, API_BASE } from "../lib/api.js";
 import { appendSavedMenuPreferenceQueryParams } from "../lib/dietaryParams.js";
 import { trackRestaurantView } from "../lib/analytics.js";
-import { buildRestaurantStatusLightProps, shouldShowMenuPurchaseWaiterHint } from "../lib/restaurantStatusLight.js";
+import {
+  buildRestaurantStatusLightProps,
+  isOnlineOrderingAvailable,
+  shouldShowMenuPurchaseWaiterHint,
+} from "../lib/restaurantStatusLight.js";
 import { sendPageVisit } from "../lib/analyticsPageVisitSend.js";
 import TasteIndexBadge from "../components/TasteIndexBadge.jsx";
 import { useOperator } from "../context/OperatorContext.jsx";
@@ -1459,6 +1463,7 @@ export default function PublicMenuPage() {
 
 
   function commitMenuItemToBasket(item, itemName, itemDescription, modifiers = [], preparationInstructions = null) {
+    if (!isOnlineOrderingAvailable(presentationData || data)) return null;
     return addMenuItem({
       restaurant: cartRestaurant,
       item: {

@@ -12,6 +12,7 @@ import { getMenuItemImageUrl } from "./menuImageUtils.js";
 import { MenuDesignPhotoSlot, useMenuDesignPhotoEdit } from "./MenuDesignPhotoEditOverlay.jsx";
 import { normalizeMenuThemeSettings } from "./menuThemeSettings.js";
 import { getNormalizedMenuItemId } from "../../lib/menuItemIdentity.js";
+import { isOnlineOrderingAvailable } from "../../lib/restaurantStatusLight.js";
 import {
   useIsTabletRange,
   MENU_ROW_ICON_GAP,
@@ -92,6 +93,39 @@ function AffordancePillButton({ label, color, hairline, hoverBg, onClick }) {
       }}
     >
       {label}
+    </button>
+  );
+}
+
+/** Separate add-to-order control — row click opens item detail instead. */
+function AddToOrderBox({ accent, ink, hairline, editorial, ariaLabel, onClick }) {
+  const size = editorial ? 28 : 26;
+  return (
+    <button
+      type="button"
+      aria-label={ariaLabel}
+      title={ariaLabel}
+      onClick={onClick}
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        width: size,
+        height: size,
+        flexShrink: 0,
+        borderRadius: editorial ? 6 : 8,
+        border: `1.5px solid ${editorial ? hairline : accent}`,
+        background: "transparent",
+        color: editorial ? ink : accent,
+        fontSize: editorial ? 18 : 16,
+        fontWeight: 500,
+        lineHeight: 1,
+        cursor: "pointer",
+        padding: 0,
+        WebkitTapHighlightColor: "transparent",
+      }}
+    >
+      +
     </button>
   );
 }
@@ -238,6 +272,8 @@ export default function PublicMenuItemCard({
   const deal = normalizedItemId != null ? dealMap.get(normalizedItemId) : undefined;
   const hasDeal = !!deal;
   const itemIsOrderable = isItemOrderable(it, getConsumerDisplayPrice);
+  const restaurantOrderingAvailable = isOnlineOrderingAvailable(data);
+  const canAddToOrder = restaurantOrderingAvailable && itemIsOrderable;
   const dishShareData = canNavigate
     ? buildDishShareData({
         restaurant: {
@@ -310,6 +346,33 @@ export default function PublicMenuItemCard({
     });
   }
 
+  function openMenuItemDetail() {
+    if (!canNavigate || !navigate) return;
+    navigate(`/menu-items/${normalizedItemId}?from=menu`);
+  }
+
+  function addItemToOrder(e) {
+    e?.stopPropagation?.();
+    if (!canAddToOrder) return;
+    if (itemHasRequiredModifiers(it)) {
+      openSheet();
+      return;
+    }
+    commitMenuItemToBasket(it, name, desc);
+    setAddedConfirmation({ itemId: normalizedItemId, name });
+  }
+
+  const addToOrderBox = canAddToOrder ? (
+    <AddToOrderBox
+      editorial={editorialRefresh}
+      accent={accent}
+      ink={ed.ink}
+      hairline={ed.hairline}
+      ariaLabel={t("menu.addToOrder", "Add to order")}
+      onClick={addItemToOrder}
+    />
+  ) : null;
+
   return (
     <div
       key={itemKey}
@@ -319,15 +382,11 @@ export default function PublicMenuItemCard({
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
-          if (!itemIsOrderable) {
-            if (canNavigate && itemHasInsightsData(it)) openSheet();
+          if (canNavigate) {
+            openMenuItemDetail();
             return;
           }
-          if (itemHasRequiredModifiers(it)) openSheet();
-          else {
-            commitMenuItemToBasket(it, name, desc);
-            setAddedConfirmation({ itemId: normalizedItemId, name });
-          }
+          if (itemHasInsightsData(it)) openSheet();
         }
       }}
       onMouseEnter={() => {
@@ -335,16 +394,11 @@ export default function PublicMenuItemCard({
       }}
       onMouseLeave={() => setHoveredItemId(null)}
       onClick={() => {
-        if (!itemIsOrderable) {
-          if (canNavigate && itemHasInsightsData(it)) openSheet();
+        if (canNavigate) {
+          openMenuItemDetail();
           return;
         }
-        if (itemHasRequiredModifiers(it)) {
-          openSheet();
-        } else {
-          commitMenuItemToBasket(it, name, desc);
-          setAddedConfirmation({ itemId: normalizedItemId, name });
-        }
+        if (itemHasInsightsData(it)) openSheet();
       }}
       style={{
         border: editorialRefresh
@@ -488,6 +542,7 @@ export default function PublicMenuItemCard({
                     {hasDeal ? <MenuItemDealsIndicator onClick={openSheet} /> : null}
                   </span>
                 ) : null}
+                {addToOrderBox}
               </div>
             </div>
           ) : compactActions ? (
@@ -544,6 +599,7 @@ export default function PublicMenuItemCard({
                     {hasDeal ? <MenuItemDealsIndicator onClick={openSheet} /> : null}
                   </span>
                 ) : null}
+                {addToOrderBox}
               </div>
             </div>
           ) : (
@@ -600,6 +656,7 @@ export default function PublicMenuItemCard({
                     {hasDeal ? <MenuItemDealsIndicator onClick={openSheet} /> : null}
                   </span>
                 ) : null}
+                {addToOrderBox}
               </div>
             </div>
           )}
