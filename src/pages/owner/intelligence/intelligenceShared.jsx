@@ -650,7 +650,7 @@ export function IntelligenceSection({ id, title, subtitle, children }) {
   );
 }
 
-export function useIntelligenceData(fetcher, range) {
+export function useIntelligenceData(fetcher, params) {
   const [data, setData] = React.useState(null);
   const [error, setError] = React.useState("");
   const [loading, setLoading] = React.useState(true);
@@ -659,7 +659,7 @@ export function useIntelligenceData(fetcher, range) {
     let cancelled = false;
     setLoading(true);
     setError("");
-    fetcher(range)
+    fetcher(params)
       .then((payload) => {
         if (!cancelled) setData(payload);
       })
@@ -670,7 +670,13 @@ export function useIntelligenceData(fetcher, range) {
         if (!cancelled) setLoading(false);
       });
     return () => { cancelled = true; };
-  }, [fetcher, range.start_date, range.end_date, range.timezone]);
+  }, [
+    fetcher,
+    params.start_date,
+    params.end_date,
+    params.timezone,
+    params.location_label,
+  ]);
 
   return { data, error, loading };
 }

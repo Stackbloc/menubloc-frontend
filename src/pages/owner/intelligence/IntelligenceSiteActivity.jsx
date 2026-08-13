@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from "react";
-import { EmptyState } from "../OwnerLayout.jsx";
+import React, { useCallback, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
+import { EmptyState, OWNER_COLORS, PageCard } from "../OwnerLayout.jsx";
 import { usePlatformIntelligenceRange } from "./PlatformIntelligenceContext.jsx";
 import {
   ErrorBanner,
@@ -22,18 +23,61 @@ function formatAvgSession(value) {
   return formatMetricValue(value);
 }
 
+function cityScopeSuffix(selectedCity) {
+  return selectedCity ? ` Scoped to ${selectedCity}.` : "";
+}
+
 export default function IntelligenceSiteActivity() {
   const { range } = usePlatformIntelligenceRange();
-  const { data, error, loading } = useIntelligenceData(getOwnerIntelligenceSiteActivity, range);
-  const [selectedCity, setSelectedCity] = useState(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const selectedCity = String(searchParams.get("location_label") || "").trim() || null;
 
-  useEffect(() => {
-    setSelectedCity(null);
-  }, [range.start_date, range.end_date, range.timezone]);
+  const setSelectedCity = useCallback(
+    (nextCity) => {
+      const params = new URLSearchParams(searchParams);
+      if (nextCity) params.set("location_label", nextCity);
+      else params.delete("location_label");
+      setSearchParams(params, { replace: true });
+    },
+    [searchParams, setSearchParams]
+  );
 
-  if (loading) return <LoadingState label="Loading site activity…" />;
+  const fetchParams = useMemo(
+    () => ({
+      start_date: range.start_date,
+      end_date: range.end_date,
+      timezone: range.timezone,
+      ...(selectedCity ? { location_label: selectedCity } : {}),
+    }),
+    [range.start_date, range.end_date, range.timezone, selectedCity]
+  );
+
+  const { data, error, loading } = useIntelligenceData(
+    getOwnerIntelligenceSiteActivity,
+    fetchParams
+  );
+
+  if (loading) {
+    return (
+      <LoadingState
+        label={
+          selectedCity
+            ? `Loading site activity for ${selectedCity}…`
+            : "Loading site activity…"
+        }
+      />
+    );
+  }
   if (error) return <ErrorBanner message={error} />;
-  if (!data?.available) return <EmptyState>No site activity in this range.</EmptyState>;
+  if (!data?.available) {
+    return (
+      <EmptyState>
+        {selectedCity
+          ? `No site activity for ${selectedCity} in this range.`
+          : "No site activity in this range."}
+      </EmptyState>
+    );
+  }
 
   const browsers = Array.isArray(data.browsers) ? data.browsers : null;
   const operatingSystems = Array.isArray(data.operating_systems) ? data.operating_systems : null;
@@ -44,12 +88,58 @@ export default function IntelligenceSiteActivity() {
     data.avg_session_length && typeof data.avg_session_length === "object"
       ? `${data.avg_session_length.avg_page_views ?? "—"} pages / session · ${data.avg_session_length.session_count ?? 0} sessions`
       : null;
+  const scopeNote = cityScopeSuffix(selectedCity);
 
   return (
     <div style={{ display: "grid", gap: 18 }}>
       <AnalyticsScopeNote note={data.analytics_scope} />
 
-      <IntelligenceSection title="Visits by Day" subtitle="Visitor sessions (distinct) and consumer page views per day.">
+      {selectedCity ? (
+        <PageCard
+          style={{
+            padding: 16,
+            borderColor: OWNER_COLORS.accent,
+            background: "#fffaf6",
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 12,
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 14, fontWeight: 800, color: OWNER_COLORS.ink }}>
+              Showing Site Activity for {selectedCity}
+            </div>
+            <div style={{ marginTop: 4, fontSize: 12, color: OWNER_COLORS.muted, lineHeight: 1.45 }}>
+              {data.city_scope_note ||
+                "All metrics below use market-attributed visits for this city (not IP). Visitors by City stays platform-wide so you can switch."}
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setSelectedCity(null)}
+            style={{
+              flexShrink: 0,
+              padding: "8px 12px",
+              borderRadius: 10,
+              border: `1px solid ${OWNER_COLORS.line}`,
+              background: "#fff",
+              color: OWNER_COLORS.ink,
+              fontWeight: 700,
+              cursor: "pointer",
+              fontSize: 13,
+            }}
+          >
+            Clear city
+          </button>
+        </PageCard>
+      ) : null}
+
+      <IntelligenceSection
+        title="Visits by Day"
+        subtitle={`Visitor sessions (distinct) and consumer page views per day.${scopeNote}`}
+      >
         <SimpleTable
           rows={data.visits_by_day}
           columns={[
@@ -62,7 +152,7 @@ export default function IntelligenceSiteActivity() {
 
       <IntelligenceSection
         title="Visitors by City"
-        subtitle="Distinct sessions and page views by market (city/state). Click a city to see how those visitors arrived."
+        subtitle="Distinct sessions and page views by market (city/state). Click a city to scope the whole page to that market."
       >
         <SimpleTable
           rows={data.visitors_by_city}
@@ -75,8 +165,8 @@ export default function IntelligenceSiteActivity() {
                   label={row.location_label}
                   selected={selectedCity === row.location_label}
                   onClick={() =>
-                    setSelectedCity((prev) =>
-                      prev === row.location_label ? null : row.location_label
+                    setSelectedCity(
+                      selectedCity === row.location_label ? null : row.location_label
                     )
                   }
                 />
@@ -100,7 +190,10 @@ export default function IntelligenceSiteActivity() {
         className="owner-responsive-grid-2"
         style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.35fr) minmax(0, 1fr)", gap: 18, minWidth: 0 }}
       >
-        <IntelligenceSection title="Top Pages" subtitle="Consumer page views by path. Browse carousel steps (&i=N) are rolled up.">
+        <IntelligenceSection
+          title="Top Pages"
+          subtitle={`Consumer page views by path. Browse carousel steps (&i=N) are rolled up.${scopeNote}`}
+        >
           <SimpleTable
             rows={data.top_pages}
             columns={[
@@ -111,7 +204,7 @@ export default function IntelligenceSiteActivity() {
             wrapKeys={["path"]}
           />
         </IntelligenceSection>
-        <IntelligenceSection title="Referral Sources" subtitle="Where traffic originates.">
+        <IntelligenceSection title="Referral Sources" subtitle={`Where traffic originates.${scopeNote}`}>
           <SimpleTable
             rows={data.referral_sources}
             columns={[
@@ -124,7 +217,7 @@ export default function IntelligenceSiteActivity() {
       </div>
 
       <div className="owner-responsive-grid-2" style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: 18, minWidth: 0, alignItems: "start" }}>
-        <IntelligenceSection title="Top Entry Pages" subtitle="First path in each visitor session.">
+        <IntelligenceSection title="Top Entry Pages" subtitle={`First path in each visitor session.${scopeNote}`}>
           <SimpleTable
             rows={data.top_entry_pages}
             columns={[
@@ -135,7 +228,7 @@ export default function IntelligenceSiteActivity() {
             maxHeight={360}
           />
         </IntelligenceSection>
-        <IntelligenceSection title="Top Exit Pages" subtitle="Last path in each visitor session.">
+        <IntelligenceSection title="Top Exit Pages" subtitle={`Last path in each visitor session.${scopeNote}`}>
           <SimpleTable
             rows={data.top_exit_pages}
             columns={[
@@ -169,7 +262,7 @@ export default function IntelligenceSiteActivity() {
         />
       </div>
 
-      <IntelligenceSection title="Device Types" subtitle="Desktop / mobile / tablet with share of visits.">
+      <IntelligenceSection title="Device Types" subtitle={`Desktop / mobile / tablet with share of visits.${scopeNote}`}>
         <SimpleTable
           rows={data.device_types || []}
           columns={[
@@ -181,7 +274,7 @@ export default function IntelligenceSiteActivity() {
       </IntelligenceSection>
 
       <div className="owner-responsive-grid-2" style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: 18, minWidth: 0 }}>
-        <IntelligenceSection title="Browsers" subtitle="From page visit metadata (new visits after enrichment).">
+        <IntelligenceSection title="Browsers" subtitle={`From page visit metadata (new visits after enrichment).${scopeNote}`}>
           {browsers ? (
             <SimpleTable
               rows={browsers}
@@ -194,7 +287,7 @@ export default function IntelligenceSiteActivity() {
             <EmptyState>{formatMetricValue(data.browsers)}</EmptyState>
           )}
         </IntelligenceSection>
-        <IntelligenceSection title="Operating Systems" subtitle="From page visit metadata (new visits after enrichment).">
+        <IntelligenceSection title="Operating Systems" subtitle={`From page visit metadata (new visits after enrichment).${scopeNote}`}>
           {operatingSystems ? (
             <SimpleTable
               rows={operatingSystems}
@@ -211,7 +304,7 @@ export default function IntelligenceSiteActivity() {
 
       <IntelligenceSection
         title="Language Intelligence"
-        subtitle={data.language_intelligence?.note || "Language capture not yet implemented."}
+        subtitle={`${data.language_intelligence?.note || "Language capture not yet implemented."}${scopeNote}`}
       >
         {languageByCity ? (
           <SimpleTable
