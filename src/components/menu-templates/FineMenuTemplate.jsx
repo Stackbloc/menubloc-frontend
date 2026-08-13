@@ -9,6 +9,7 @@ import MenuAddressLines from "./MenuAddressLines.jsx";
 import MenuRestaurantDistanceLine from "./MenuRestaurantDistanceLine.jsx";
 import RestaurantProfileLogoLink from "./RestaurantProfileLogoLink.jsx";
 import FollowRestaurantButton from "../FollowRestaurantButton.jsx";
+import InviteToEatButton from "../InviteToEatButton.jsx";
 import FoodCommentNavButton from "../FoodCommentNavButton.jsx";
 import MenuHeaderNameWithActions from "./MenuHeaderIconRail.jsx";
 
@@ -207,6 +208,12 @@ export default function FineMenuTemplate(ctx) {
                     tone="ghost"
                     shareData={shareData}
                     analyticsContext={shareAnalyticsContext}
+                  />
+                  <InviteToEatButton
+                    restaurantId={currentRestaurantId}
+                    restaurantName={restaurantName}
+                    tone="ghost"
+                    size={MENU_ROW_ICON_SIZE}
                   />
                   <FoodCommentNavButton
                     target="restaurant"

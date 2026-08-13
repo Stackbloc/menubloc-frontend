@@ -200,6 +200,7 @@ import DemoPage from "./pages/DemoPage.jsx";
 import DemoPresentation from "./presentation/DemoPresentation.jsx";
 import CheckoutPage from "./pages/CheckoutPage.jsx";
 import BuyMeThisPage from "./pages/BuyMeThisPage.jsx";
+import EatInvitationPage from "./pages/EatInvitationPage.jsx";
 import OrderConfirmationPage from "./pages/OrderConfirmationPage.jsx";
 import BrowseMenus from "./pages/BrowseMenus.jsx";
 import FoodInterestsPage from "./pages/FoodInterestsPage.jsx";
@@ -853,6 +854,7 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
         <Route path="/public/restaurants/:id/display" element={crmHost ? <HostRouteRedirect to="/crm" /> : <PublicMenuDisplayPage />} />
         <Route path="/checkout" element={crmHost ? <HostRouteRedirect to="/crm" /> : <CheckoutPage />} />
         <Route path="/bmt/:token" element={crmHost ? <HostRouteRedirect to="/crm" /> : <BuyMeThisPage />} />
+        <Route path="/eat/:token" element={crmHost ? <HostRouteRedirect to="/crm" /> : <EatInvitationPage />} />
         <Route path="/orders/confirmation/:publicOrderToken" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OrderConfirmationPage />} />
         <Route path="/orders/:orderId/confirmation" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OrderConfirmationPage />} />
         <Route path="/restaurants/:restaurantSlug/menu-items/:id" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MenuItemDetailPage />} />

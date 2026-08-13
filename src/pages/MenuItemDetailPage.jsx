@@ -60,6 +60,7 @@ import { sortSimilarItemsByMatchStrength } from "../lib/searchCardSimilar.js";
 import CompareItemsModal from "../components/menu/CompareItemsModal.jsx";
 import FoodComments from "../components/comments/FoodComments.jsx";
 import FoodCommentNavButton from "../components/FoodCommentNavButton.jsx";
+import InviteToEatButton from "../components/InviteToEatButton.jsx";
 import PreferenceIngredientAdvisory from "../components/menu/PreferenceIngredientAdvisory.jsx";
 import { scheduleScrollToFoodComments } from "../lib/foodCommentsScroll.js";
 import { getLocalizedField } from "../utils/getLocalizedField.js";
@@ -1582,6 +1583,13 @@ export default function MenuItemDetailPage() {
                         {item.restaurant.name}
                       </Link>
                     </div>
+                    <InviteToEatButton
+                      restaurantId={item.restaurant.id}
+                      restaurantName={item.restaurant.name}
+                      tone="ghost"
+                      size="row"
+                      dark
+                    />
                     <FoodCommentNavButton
                       target="restaurant"
                       restaurantId={item.restaurant.id}
@@ -1664,6 +1672,8 @@ export default function MenuItemDetailPage() {
                 <MenuItemDetailActionRail
                   menuItemId={item.menu_item_id}
                   itemName={displayItemName}
+                  restaurantId={item.restaurant.id}
+                  restaurantName={item.restaurant.name}
                   shareData={shareData}
                   shareAnalyticsContext={{
                     restaurantId: item.restaurant.id,

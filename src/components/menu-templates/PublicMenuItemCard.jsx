@@ -1,5 +1,6 @@
 import ShareButton from "../share/ShareButton.jsx";
 import LikeMenuItemButton from "../LikeMenuItemButton.jsx";
+import InviteToEatButton from "../InviteToEatButton.jsx";
 import FoodCommentNavButton from "../FoodCommentNavButton.jsx";
 import PreferenceIngredientAdvisory from "../menu/PreferenceIngredientAdvisory.jsx";
 import MenuItemDealsIndicator from "../menu/MenuItemDealsIndicator.jsx";
@@ -518,6 +519,14 @@ export default function PublicMenuItemCard({
                     }}
                   />
                 ) : null}
+                <InviteToEatButton
+                  restaurantId={currentRestaurantId}
+                  restaurantName={restaurantName}
+                  menuItemId={canNavigate ? normalizedItemId : null}
+                  menuItemName={name}
+                  tone="ghost"
+                  size="row"
+                />
                 {canNavigate ? (
                   <FoodCommentNavButton
                     target="menu_item"
@@ -594,6 +603,14 @@ export default function PublicMenuItemCard({
                     }}
                   />
                 ) : null}
+                <InviteToEatButton
+                  restaurantId={currentRestaurantId}
+                  restaurantName={restaurantName}
+                  menuItemId={canNavigate ? normalizedItemId : null}
+                  menuItemName={name}
+                  tone="ghost"
+                  size="row"
+                />
                 {canNavigate ? (
                   <FoodCommentNavButton
                     target="menu_item"
@@ -659,6 +676,14 @@ export default function PublicMenuItemCard({
                     }}
                   />
                 ) : null}
+                <InviteToEatButton
+                  restaurantId={currentRestaurantId}
+                  restaurantName={restaurantName}
+                  menuItemId={canNavigate ? normalizedItemId : null}
+                  menuItemName={name}
+                  tone="ghost"
+                  size="row"
+                />
                 {canNavigate ? (
                   <FoodCommentNavButton
                     target="menu_item"
