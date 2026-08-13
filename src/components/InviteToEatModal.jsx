@@ -69,6 +69,26 @@ export default function InviteToEatModal({
     }
   }
 
+  // ShareModal uses z-index 1200; Invite overlay is 12000. While sharing, unmount the
+  // invite sheet so Copy Link / SMS / etc. are not trapped under a higher dim layer.
+  if (shareOpen && shareData) {
+    return createPortal(
+      <ShareModal
+        open
+        onClose={() => setShareOpen(false)}
+        modalTitle="Share invitation"
+        shareData={shareData}
+        analyticsContext={{
+          pageType: "invite_to_eat",
+          restaurantId,
+          menuItemId,
+          shareTarget: "eat_invitation",
+        }}
+      />,
+      document.body
+    );
+  }
+
   const overlay = (
     <div
       data-testid="invite-to-eat-modal"
@@ -239,22 +259,6 @@ export default function InviteToEatModal({
           </div>
         )}
       </div>
-
-      {shareData ? (
-        <ShareModal
-          open={shareOpen}
-          onClose={() => setShareOpen(false)}
-          title="Share invitation"
-          modalTitle="Share invitation"
-          shareData={shareData}
-          analyticsContext={{
-            pageType: "invite_to_eat",
-            restaurantId,
-            menuItemId,
-            shareTarget: "eat_invitation",
-          }}
-        />
-      ) : null}
     </div>
   );
 

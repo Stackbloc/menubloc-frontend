@@ -21,6 +21,9 @@ test("InviteToEatButton tooltip and no SMS send path", () => {
   assert.match(modal, /Share \/ Send/);
   assert.match(modal, /ShareModal/);
   assert.match(modal, /does not send SMS/);
+  // Share must not stack under Invite's higher z-index overlay.
+  assert.match(modal, /shareOpen && shareData/);
+  assert.match(modal, /While sharing/);
   assert.doesNotMatch(modal, /navigator\.contacts|getUserMedia/);
 });
 
