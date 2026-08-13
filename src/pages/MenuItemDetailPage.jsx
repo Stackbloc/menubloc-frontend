@@ -30,7 +30,7 @@
  */
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import BottomNav from "../components/BottomNav.jsx";
 import IndulgenceMeter from "../components/IndulgenceMeter.jsx";
@@ -59,7 +59,9 @@ import { isSimilarRowCompareEligible } from "../lib/comparePolicy.js";
 import { sortSimilarItemsByMatchStrength } from "../lib/searchCardSimilar.js";
 import CompareItemsModal from "../components/menu/CompareItemsModal.jsx";
 import FoodComments from "../components/comments/FoodComments.jsx";
+import FoodCommentNavButton from "../components/FoodCommentNavButton.jsx";
 import PreferenceIngredientAdvisory from "../components/menu/PreferenceIngredientAdvisory.jsx";
+import { scheduleScrollToFoodComments } from "../lib/foodCommentsScroll.js";
 import { getLocalizedField } from "../utils/getLocalizedField.js";
 import { getDisplayMenuItemName } from "../utils/getDisplayMenuItemName.js";
 import { formatMenuItemName } from "../utils/formatMenuItemName.js";
@@ -1334,7 +1336,9 @@ export default function MenuItemDetailPage() {
   const { id: routeId, restaurantSlug, itemSlug } = useParams();
   const id = routeId ?? itemSlug;
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
+  const focusFoodComments = location.hash === "#food-comments";
   const isMobile = useIsMobile();
   const { language, t } = useLanguage();
   const { isAuthenticated, allergenFilter } = useConsumer();
@@ -1364,6 +1368,11 @@ export default function MenuItemDetailPage() {
     // Intentionally fire once when item first loads for this id
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [item?.menu_item_id, id]);
+
+  useEffect(() => {
+    if (!item?.menu_item_id || !focusFoodComments) return undefined;
+    return scheduleScrollToFoodComments({ attempts: 12, delayMs: 100 });
+  }, [item?.menu_item_id, focusFoodComments, loading]);
 
   const displayItemName = useMemo(
     () => getDisplayMenuItemName(item, language, item?.name || "Untitled Item"),
@@ -1544,7 +1553,9 @@ export default function MenuItemDetailPage() {
       )}
 
       {/* ── 1. Hero / Item Identity ── */}
-      <Surface style={{
+      <Surface
+        data-menu-item-sticky-hero
+        style={{
         padding: isMobile ? 18 : 18,
         position: "sticky",
         top: STICKY_ITEM_HERO_TOP_PX,
@@ -1565,10 +1576,22 @@ export default function MenuItemDetailPage() {
                   />
                 ) : null}
                 <div>
-                  <div style={{ fontSize: 13, color: "#9CA3AF", fontWeight: 800 }}>
-                    <Link to={`/restaurants/${item.restaurant.slug || item.restaurant.id}`} style={{ color: "inherit", textDecoration: "none" }}>
-                      {item.restaurant.name}
-                    </Link>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                    <div style={{ fontSize: 13, color: "#9CA3AF", fontWeight: 800 }}>
+                      <Link to={`/restaurants/${item.restaurant.slug || item.restaurant.id}`} style={{ color: "inherit", textDecoration: "none" }}>
+                        {item.restaurant.name}
+                      </Link>
+                    </div>
+                    <FoodCommentNavButton
+                      target="restaurant"
+                      restaurantId={item.restaurant.id}
+                      restaurantSlug={item.restaurant.slug || null}
+                      restaurantCity={item.restaurant.city || null}
+                      restaurantState={item.restaurant.state || null}
+                      tone="ghost"
+                      size="row"
+                      dark
+                    />
                   </div>
                   {(item.restaurant.city || item.restaurant.cuisine) ? (
                     <div style={{ marginTop: 4, fontSize: 13, color: "#9CA3AF" }}>
@@ -1731,6 +1754,22 @@ export default function MenuItemDetailPage() {
         <MissingNutritionState />
       )}
 
+      {focusFoodComments && item.menu_item_id && Number.isFinite(Number(item.menu_item_id)) ? (
+        <Surface style={{ marginTop: 20, padding: isMobile ? 16 : 20 }}>
+          <FoodComments
+            menuItemId={Number(item.menu_item_id)}
+            menuItemName={displayItemName}
+            restaurantId={
+              item.restaurant?.id != null && Number.isFinite(Number(item.restaurant.id))
+                ? Number(item.restaurant.id)
+                : null
+            }
+            title="Discussion"
+            compact={isMobile}
+          />
+        </Surface>
+      ) : null}
+
       {!isAlcoholicBeverage ? (
         <ExploreSimilarDishes
           itemId={item.menu_item_id}
@@ -1744,10 +1783,11 @@ export default function MenuItemDetailPage() {
         />
       ) : null}
 
-      {item.menu_item_id && Number.isFinite(Number(item.menu_item_id)) ? (
+      {!focusFoodComments && item.menu_item_id && Number.isFinite(Number(item.menu_item_id)) ? (
         <Surface style={{ marginTop: 20, padding: isMobile ? 16 : 20 }}>
           <FoodComments
             menuItemId={Number(item.menu_item_id)}
+            menuItemName={displayItemName}
             restaurantId={
               item.restaurant?.id != null && Number.isFinite(Number(item.restaurant.id))
                 ? Number(item.restaurant.id)

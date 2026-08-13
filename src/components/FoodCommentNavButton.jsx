@@ -1,10 +1,9 @@
 import { useNavigate } from "react-router-dom";
 import { likeButtonVisualStyle } from "../lib/likeButtonStyles.js";
 import { restaurantPath } from "../lib/canonicalUrlCore.js";
+import { FOOD_COMMENTS_HASH } from "../lib/foodCommentsScroll.js";
 import IconHoverLabel from "./IconHoverLabel.jsx";
 import CommentBubbleIcon from "./icons/CommentBubbleIcon.jsx";
-
-export const FOOD_COMMENTS_HASH = "food-comments";
 
 /**
  * Ghost speech-bubble control — opens restaurant or dish discussion thread.

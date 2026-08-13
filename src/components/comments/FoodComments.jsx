@@ -14,6 +14,7 @@ import {
   listPublicFoodComments,
   updateFoodComment,
 } from "../../lib/foodCommentsApi.js";
+import { scheduleScrollToFoodComments } from "../../lib/foodCommentsScroll.js";
 
 const TOPIC_RESTAURANT = "";
 
@@ -364,6 +365,7 @@ function CommentThreadList({
 export default function FoodComments({
   restaurantId = null,
   menuItemId = null,
+  menuItemName = null,
   restaurantSlug = null,
   restaurantCity = null,
   restaurantState = null,
@@ -390,6 +392,8 @@ export default function FoodComments({
 
   const myId = consumer?.id != null ? Number(consumer.id) : null;
   const isProfileThread = Boolean(restaurantId) && !menuItemId;
+  const isDishThread = Boolean(menuItemId);
+  const dishLabel = String(menuItemName || "").trim();
   const screenName = String(profile?.display_name || "").trim();
   const needsScreenName = isAuthenticated && !screenName;
 
@@ -669,13 +673,17 @@ export default function FoodComments({
   const canPost = Boolean(draft.trim()) && !busy && (!needsScreenName || screenNameDraft.trim());
 
   useEffect(() => {
-    if (typeof window === "undefined") return undefined;
-    if (window.location.hash !== "#food-comments") return undefined;
-    const t = window.setTimeout(() => {
-      document.getElementById("food-comments")?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 120);
-    return () => window.clearTimeout(t);
-  }, [loading, comments.length]);
+    return scheduleScrollToFoodComments({ attempts: 10, delayMs: 100 });
+  }, [loading, comments.length, menuItemId, restaurantId]);
+
+  const composePlaceholder = isDishThread
+    ? "Share a tip about this dish…"
+    : topicMenuItemId && topicMenuItemId !== TOPIC_RESTAURANT
+      ? "Share a tip about this dish…"
+      : "Share a tip about this restaurant…";
+  const emptyHint = isDishThread
+    ? "No comments yet. Be the first to share a tip about this dish."
+    : "No comments yet. Be the first to share a tip about this restaurant.";
 
   return (
     <section
@@ -708,7 +716,7 @@ export default function FoodComments({
 
       {!loading && !comments.length ? (
         <div style={{ fontSize: 13, color: "#78716c", marginBottom: 12 }}>
-          No comments yet. Be the first to share a tip.
+          {emptyHint}
         </div>
       ) : null}
 
@@ -768,14 +776,25 @@ export default function FoodComments({
               style={{ display: "grid", gap: 8, marginBottom: 14 }}
             >
               {restaurantSplit.featured.map((c) => (
-                <CommentBody key={`feat-${c.id}`} comment={c} />
+                <CommentBody
+                  key={`feat-${c.id}`}
+                  comment={{
+                    ...c,
+                    menu_item_name: c.menu_item_name || dishLabel || null,
+                  }}
+                  showMenuItemLead={isDishThread}
+                />
               ))}
             </div>
           ) : null}
           <CommentThreadList
             {...threadProps}
-            comments={restaurantSplit.thread}
-            showMenuItemLead={false}
+            comments={restaurantSplit.thread.map((c) =>
+              isDishThread && dishLabel && !c.menu_item_name
+                ? { ...c, menu_item_name: dishLabel }
+                : c
+            )}
+            showMenuItemLead={isDishThread}
           />
         </>
       ) : null}
@@ -808,11 +827,19 @@ export default function FoodComments({
                 </select>
               </label>
             ) : null}
+            {isDishThread ? (
+              <div
+                data-testid="food-comment-dish-topic-lead"
+                style={{ fontSize: 13, color: "#44403c", lineHeight: 1.4 }}
+              >
+                Menu item: <strong>{dishLabel || "This dish"}</strong>
+              </div>
+            ) : null}
             <textarea
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               rows={3}
-              placeholder="Share a tip about this place or dish…"
+              placeholder={composePlaceholder}
               data-testid="food-comment-compose"
               style={textareaStyle}
             />
