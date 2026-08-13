@@ -18,6 +18,11 @@ test("InviteToEatButton tooltip and Invitation Ready confirmation", () => {
   assert.doesNotMatch(btn, /sendSms|twilio|contact.*sync/i);
 
   const modal = read("src/components/InviteToEatModal.jsx");
+  assert.match(modal, /Who do you want to invite/);
+  assert.match(modal, /invite-kind-private/);
+  assert.match(modal, /invite-kind-group/);
+  assert.match(modal, /One Person/);
+  assert.match(modal, /A Group/);
   assert.match(modal, /Create Invitation/);
   assert.match(modal, /Invitation Ready/);
   assert.match(modal, /Share \/ Send/);
@@ -25,54 +30,64 @@ test("InviteToEatButton tooltip and Invitation Ready confirmation", () => {
   assert.match(modal, /does not send SMS/);
   assert.match(modal, /Ready to Send/);
   assert.match(modal, /buildEatInviteShareText/);
+  assert.match(modal, /invite_kind/);
   assert.doesNotMatch(modal, /Invitation Sent/);
   assert.doesNotMatch(modal, /invite-first-name|organizer_first_name/);
   assert.doesNotMatch(modal, /navigator\.share/);
   assert.match(modal, /shareOpen && shareData/);
-  assert.match(modal, /While sharing/);
   assert.doesNotMatch(modal, /navigator\.contacts|getUserMedia/);
+  assert.doesNotMatch(modal, /\bDate\b.*category|dating/i);
 });
 
-test("Shared outing share copy is group-oriented", () => {
-  const text = buildEatInviteShareText({
+test("Share copy: private is 1:1; group asks who wants to join me", () => {
+  const privateText = buildEatInviteShareText({
+    inviteKind: "private",
     restaurantName: "Fixins",
     dateLabel: "Saturday, August 15",
     timeLabel: "7:00 PM",
-    menuItemName: "Fried Chicken",
     url: "https://menuply.com/invite/abc",
   });
-  assert.match(text, /Join us:/);
-  assert.match(text, /Fixins/);
-  assert.match(text, /menuply\.com\/invite\/abc/);
-  assert.doesNotMatch(text, /invited you/);
+  assert.match(privateText, /Want to grab dinner at Fixins with me/);
+  assert.match(privateText, /Saturday, August 15 at 7:00 PM/);
+  assert.match(privateText, /menuply\.com\/invite\/abc/);
+  assert.doesNotMatch(privateText, /join me|Join us|and friends/i);
+
+  const groupText = buildEatInviteShareText({
+    inviteKind: "group",
+    restaurantName: "Fixins",
+    dateLabel: "Saturday, August 15",
+    timeLabel: "7:00 PM",
+    url: "https://menuply.com/invite/xyz",
+  });
+  assert.match(groupText, /I'm getting dinner at Fixins/);
+  assert.match(groupText, /Who wants to join me\?/);
+  assert.doesNotMatch(groupText, /join us/i);
+  assert.doesNotMatch(groupText, /Want to grab dinner at Fixins with me/);
 });
 
-test("Eat invitation public page is shared outing with party roster", () => {
+test("Eat invitation public page supports private vs group", () => {
   const page = read("src/pages/EatInvitationPage.jsx");
   assert.match(page, /You're Invited to Eat/);
+  assert.match(page, /invited you to eat/);
+  assert.match(page, /invite_kind/);
+  assert.match(page, /isPrivate/);
   assert.match(page, /I'm Going|I&apos;m Going/);
   assert.match(page, /Maybe/);
   assert.match(page, /Can&apos;t Make It|Can't Make It/);
   assert.match(page, /respondToEatInvitation/);
   assert.match(page, /View Menu/);
   assert.match(page, /Create a free Menuply account to respond/);
-  assert.match(page, /formatInviteDateLabel|formatInviteDateLabel/);
-  assert.match(page, /\\d\{4\}-\\d\{2\}-\\d\{2\}|formatInviteDateLabel/);
   assert.match(page, /Open in Maps/);
   assert.match(page, /invite-restaurant-address/);
-  assert.match(page, /buildGoogleMapsDirectionsUrl|buildGoogleMapsUrlForRestaurant/);
-  assert.match(page, /formatHoursRows/);
-  assert.match(page, /Restaurant information/);
   assert.match(page, /invite-party-roster|PartyRoster/);
-  assert.match(page, /Going/);
+  assert.match(page, /isGroup \? <PartyRoster/);
   assert.match(page, /and friends/);
   assert.match(page, /ShareModal/);
   assert.match(page, /Share Invitation/);
   assert.match(page, /invite-organizer-status/);
   assert.doesNotMatch(page, /Not responded/);
-  assert.doesNotMatch(page, /invited you to eat at/);
   assert.doesNotMatch(page, /Join Menuply because/);
-  assert.doesNotMatch(page, /first_name|invite-first-name/);
+  assert.doesNotMatch(page, /invite-first-name/);
 
   const app = read("src/App.jsx");
   assert.match(app, /path=["']\/eat\/:token["']/);

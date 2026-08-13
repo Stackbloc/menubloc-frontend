@@ -1,6 +1,5 @@
 /**
- * Shared outing share copy for Invite to Eat (ShareModal text).
- * Group-oriented by default — not 1:1 “X invited you…”.
+ * Invite to Eat share copy — private (1:1) vs group outing.
  */
 
 export function formatInviteDateLabel(isoDate) {
@@ -31,19 +30,37 @@ export function formatInviteTimeLabel(time) {
   return d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
 }
 
+function whenParts(dateLabel, timeLabel) {
+  const date = String(dateLabel || "").trim();
+  const time = String(timeLabel || "").trim();
+  if (date && time) return { date, time, joined: `${date} at ${time}` };
+  if (date) return { date, time: "", joined: date };
+  if (time) return { date: "", time, joined: time };
+  return { date: "", time: "", joined: "" };
+}
+
 /**
- * Default editable ShareModal body for a shared outing link.
+ * Default editable ShareModal body.
+ * private: "Want to grab dinner at X with me DATE at TIME?"
+ * group: "I'm getting dinner at X DATE at TIME. Who wants to join me?"
  */
 export function buildEatInviteShareText({
+  inviteKind = "group",
   restaurantName,
   dateLabel,
   timeLabel,
-  menuItemName,
   url,
 }) {
   const place = restaurantName || "a restaurant";
-  const when = [dateLabel, timeLabel].filter(Boolean).join(" at ");
-  const whenPart = when ? ` ${when}` : "";
-  const dish = menuItemName ? ` Trying the ${menuItemName}.` : "";
-  return `Let's grab dinner at ${place}${whenPart}.${dish} Join us: ${url || ""}`;
+  const when = whenParts(dateLabel, timeLabel);
+  const link = url || "";
+  const kind = String(inviteKind || "group").toLowerCase() === "private" ? "private" : "group";
+
+  if (kind === "private") {
+    const whenClause = when.joined ? ` ${when.joined}` : "";
+    return `Want to grab dinner at ${place} with me${whenClause}? ${link}`.trim();
+  }
+
+  const whenClause = when.joined ? ` ${when.joined}` : "";
+  return `I'm getting dinner at ${place}${whenClause}. Who wants to join me? ${link}`.trim();
 }

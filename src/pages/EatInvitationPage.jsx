@@ -204,9 +204,11 @@ export default function EatInvitationPage() {
   );
 
   const party = invitation?.party || emptyParty();
+  const isPrivate = invitation?.invite_kind === "private";
+  const isGroup = !isPrivate;
   const partyTotal =
     (party.counts?.going || 0) + (party.counts?.maybe || 0) + (party.counts?.cant || 0);
-  const hasOtherParticipants = partyTotal > 1;
+  const hasOtherParticipants = isGroup && partyTotal > 1;
 
   const organizerName = invitation?.organizer_display_name || "A Menuply diner";
   const placeName = invitation?.restaurant_name || "a restaurant";
@@ -227,10 +229,10 @@ export default function EatInvitationPage() {
     return {
       title: `Invite to Eat — ${place}`,
       text: buildEatInviteShareText({
+        inviteKind: invitation?.invite_kind || "group",
         restaurantName: place,
         dateLabel: formatInviteDateLabel(invitation?.scheduled_date),
         timeLabel: formatInviteTimeLabel(invitation?.scheduled_time),
-        menuItemName: invitation?.menu_item_name || null,
         url,
       }),
       url,
@@ -332,11 +334,17 @@ export default function EatInvitationPage() {
             <h1 style={{ margin: "10px 0 6px", fontSize: 26, lineHeight: 1.2, fontWeight: 800 }}>
               {invitation.is_organizer
                 ? `Dinner at ${placeName}`
-                : "You're Invited to Eat"}
+                : isPrivate
+                  ? `${organizerName} invited you to eat`
+                  : "You're Invited to Eat"}
             </h1>
             {!invitation.is_organizer ? (
               <div style={{ fontSize: 15, color: "#44403c", lineHeight: 1.45 }}>
-                {hasOtherParticipants ? (
+                {isPrivate ? (
+                  <>
+                    at <strong>{placeName}</strong>
+                  </>
+                ) : hasOtherParticipants ? (
                   <>
                     Join <strong>{organizerName}</strong> and friends at{" "}
                     <strong>{placeName}</strong>
@@ -349,7 +357,10 @@ export default function EatInvitationPage() {
               </div>
             ) : (
               <div style={{ fontSize: 14, color: "#57534e" }} data-testid="invite-organizer-status">
-                {invitation.status_label || "Ready to Send"} — share one link for this outing.
+                {invitation.status_label || "Ready to Send"}
+                {isPrivate
+                  ? " — private invitation for one person."
+                  : " — share one link for this outing."}
               </div>
             )}
 
@@ -464,13 +475,14 @@ export default function EatInvitationPage() {
               </div>
             ) : null}
 
-            <PartyRoster party={party} />
+            {isGroup ? <PartyRoster party={party} /> : null}
 
             {invitation.is_organizer ? (
               <div style={{ marginTop: 20, display: "grid", gap: 12 }}>
                 <div style={{ fontSize: 13, color: "#57534e", lineHeight: 1.45 }}>
-                  Share this outing link with as many people as you like. Menuply records page opens
-                  and RSVPs — not whether Messages delivered the text.
+                  {isPrivate
+                    ? "Send this invitation to one person. Menuply records page opens and RSVPs — not whether Messages delivered the text."
+                    : "Share this outing link with as many people as you like. Menuply records page opens and RSVPs — not whether Messages delivered the text."}
                 </div>
                 <button
                   type="button"
@@ -532,14 +544,16 @@ export default function EatInvitationPage() {
                     Can&apos;t Make It
                   </button>
                 </div>
-                <button
-                  type="button"
-                  data-testid="invite-guest-share"
-                  onClick={() => setShareOpen(true)}
-                  style={{ ...btnSecondary, justifySelf: "start" }}
-                >
-                  Share Invitation
-                </button>
+                {isGroup ? (
+                  <button
+                    type="button"
+                    data-testid="invite-guest-share"
+                    onClick={() => setShareOpen(true)}
+                    style={{ ...btnSecondary, justifySelf: "start" }}
+                  >
+                    Share Invitation
+                  </button>
+                ) : null}
                 {authPrompt || !isAuthenticated ? (
                   <div
                     data-testid="invite-auth-prompt"

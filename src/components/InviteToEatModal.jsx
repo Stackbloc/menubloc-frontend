@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import ShareModal from "./share/ShareModal.jsx";
 import { createEatInvitation } from "../lib/eatInvitationsApi.js";
@@ -18,7 +18,8 @@ function tomorrowIsoDate() {
 }
 
 /**
- * Compose Invite to Eat → Invitation Ready → Menuply ShareModal (no SMS blast).
+ * Invite to Eat: Who → Compose → Invitation Ready → ShareModal.
+ * invite_kind: private (1:1) | group (shared outing).
  */
 export default function InviteToEatModal({
   open,
@@ -28,6 +29,7 @@ export default function InviteToEatModal({
   menuItemId = null,
   menuItemName = null,
 }) {
+  const [inviteKind, setInviteKind] = useState(null);
   const [date, setDate] = useState(tomorrowIsoDate);
   const [time, setTime] = useState("19:00");
   const [message, setMessage] = useState("");
@@ -36,17 +38,31 @@ export default function InviteToEatModal({
   const [created, setCreated] = useState(null);
   const [shareOpen, setShareOpen] = useState(false);
 
+  useEffect(() => {
+    if (!open) return;
+    setInviteKind(null);
+    setDate(tomorrowIsoDate());
+    setTime("19:00");
+    setMessage("");
+    setBusy(false);
+    setError("");
+    setCreated(null);
+    setShareOpen(false);
+  }, [open]);
+
+  const resolvedKind =
+    created?.invite_kind === "private" || inviteKind === "private" ? "private" : "group";
+
   const shareData = useMemo(() => {
     if (!created?.url) return null;
     const dateLabel = formatInviteDateLabel(created.scheduled_date || date);
     const timeLabel = formatInviteTimeLabel(created.scheduled_time || time);
-    const dishName = created.menu_item_name || menuItemName || null;
     const place = created.restaurant_name || restaurantName || "a restaurant";
     const text = buildEatInviteShareText({
+      inviteKind: created.invite_kind || resolvedKind,
       restaurantName: place,
       dateLabel,
       timeLabel,
-      menuItemName: dishName,
       url: created.url,
     });
     return {
@@ -54,13 +70,13 @@ export default function InviteToEatModal({
       text,
       url: created.url,
     };
-  }, [created, date, time, restaurantName, menuItemName]);
+  }, [created, date, time, restaurantName, resolvedKind]);
 
   if (!open) return null;
 
   async function handleCreate(e) {
     e.preventDefault();
-    if (busy) return;
+    if (busy || !inviteKind) return;
     setBusy(true);
     setError("");
     try {
@@ -70,6 +86,7 @@ export default function InviteToEatModal({
         scheduled_date: date,
         scheduled_time: time,
         message: message.trim() || undefined,
+        invite_kind: inviteKind,
       });
       const invitation = data?.invitation || null;
       if (!invitation?.url) {
@@ -83,8 +100,6 @@ export default function InviteToEatModal({
     }
   }
 
-  // ShareModal uses z-index 1200; Invite overlay is 12000. While sharing, unmount the
-  // invite sheet so Copy Link / SMS / etc. are not trapped under a higher dim layer.
   if (shareOpen && shareData) {
     return createPortal(
       <ShareModal
@@ -97,6 +112,7 @@ export default function InviteToEatModal({
           restaurantId,
           menuItemId,
           shareTarget: "eat_invitation",
+          inviteKind: resolvedKind,
         }}
       />,
       document.body
@@ -108,6 +124,18 @@ export default function InviteToEatModal({
   const placeName = created?.restaurant_name || restaurantName || "Restaurant";
   const dishName = created?.menu_item_name || menuItemName || null;
   const statusLabel = created?.status_label || "Ready to Send";
+  const kindLabel = resolvedKind === "private" ? "One person" : "Group";
+
+  const choiceBtn = {
+    height: 48,
+    borderRadius: 12,
+    border: "1px solid #d6d3d1",
+    background: "#fff",
+    color: "#1c1917",
+    fontWeight: 800,
+    fontSize: 16,
+    cursor: "pointer",
+  };
 
   const overlay = (
     <div
@@ -143,7 +171,13 @@ export default function InviteToEatModal({
       >
         <div style={{ display: "flex", justifyContent: "space-between", gap: 12, marginBottom: 12 }}>
           <div style={{ fontSize: 18, fontWeight: 800 }}>
-            {created ? "Invitation Ready" : "Invite to Eat"}
+            {created
+              ? "Invitation Ready"
+              : !inviteKind
+                ? "Invite to Eat"
+                : inviteKind === "private"
+                  ? "Invite one person"
+                  : "Invite a group"}
           </div>
           <button
             type="button"
@@ -162,8 +196,54 @@ export default function InviteToEatModal({
           </button>
         </div>
 
-        {!created ? (
+        {!created && !inviteKind ? (
+          <div data-testid="invite-kind-choice" style={{ display: "grid", gap: 14 }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: "#44403c" }}>
+              Who do you want to invite?
+            </div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "#1c1917" }}>{placeName}</div>
+            <button
+              type="button"
+              data-testid="invite-kind-private"
+              onClick={() => setInviteKind("private")}
+              style={choiceBtn}
+            >
+              One Person
+            </button>
+            <button
+              type="button"
+              data-testid="invite-kind-group"
+              onClick={() => setInviteKind("group")}
+              style={choiceBtn}
+            >
+              A Group
+            </button>
+          </div>
+        ) : null}
+
+        {!created && inviteKind ? (
           <>
+            <button
+              type="button"
+              data-testid="invite-kind-back"
+              onClick={() => {
+                setInviteKind(null);
+                setError("");
+              }}
+              style={{
+                border: "none",
+                background: "transparent",
+                color: "#166534",
+                fontWeight: 700,
+                fontSize: 13,
+                padding: 0,
+                marginBottom: 8,
+                cursor: "pointer",
+                textAlign: "left",
+              }}
+            >
+              ← Who do you want to invite?
+            </button>
             <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>{placeName}</div>
             {dishName ? (
               <div style={{ fontSize: 13, color: "#57534e", marginBottom: 12 }}>
@@ -206,7 +286,11 @@ export default function InviteToEatModal({
                   onChange={(e) => setMessage(e.target.value)}
                   rows={3}
                   maxLength={2000}
-                  placeholder="Want to grab dinner?"
+                  placeholder={
+                    inviteKind === "private"
+                      ? "Want to grab dinner?"
+                      : "I'm getting dinner — who wants to join me?"
+                  }
                   data-testid="invite-message"
                   style={{ ...inputStyle, resize: "vertical" }}
                 />
@@ -235,7 +319,9 @@ export default function InviteToEatModal({
               </button>
             </form>
           </>
-        ) : (
+        ) : null}
+
+        {created ? (
           <div style={{ display: "grid", gap: 12 }} data-testid="invite-created">
             <div
               data-testid="invite-status-label"
@@ -250,7 +336,7 @@ export default function InviteToEatModal({
                 fontWeight: 800,
               }}
             >
-              {statusLabel}
+              {statusLabel} · {kindLabel}
             </div>
             <div style={{ fontSize: 16, fontWeight: 800 }}>{placeName}</div>
             <div style={{ fontSize: 15, fontWeight: 700, color: "#44403c" }}>
@@ -319,7 +405,7 @@ export default function InviteToEatModal({
               Done
             </button>
           </div>
-        )}
+        ) : null}
       </div>
     </div>
   );
