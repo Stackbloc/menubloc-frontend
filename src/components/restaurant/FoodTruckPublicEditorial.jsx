@@ -34,6 +34,7 @@ export default function FoodTruckPublicEditorial({
   dealItems = [],
   favoriteMenuItems = null,
   profileUpdates = null,
+  displayCluster = null,
   showClaimInvites = false,
   claimHref = null,
   isMobile,
@@ -72,6 +73,7 @@ export default function FoodTruckPublicEditorial({
       dealItems={dealItems}
       favoriteMenuItems={favoriteMenuItems}
       profileUpdates={profileUpdates}
+      displayCluster={displayCluster}
       showClaimInvites={showClaimInvites}
       claimHref={claimHref}
       isMobile={isMobile}

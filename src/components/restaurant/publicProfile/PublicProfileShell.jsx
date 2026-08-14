@@ -183,9 +183,8 @@ export default function PublicProfileShell({
       ? profile.deal_items
       : [];
 
-  const clusterName = !isFoodTruck && displayCluster?.name ? String(displayCluster.name) : "";
-  const clusterHref =
-    !isFoodTruck && displayCluster?.public_url ? String(displayCluster.public_url) : null;
+  const clusterName = displayCluster?.name ? String(displayCluster.name) : "";
+  const clusterHref = displayCluster?.public_url ? String(displayCluster.public_url) : null;
   const sectionGap = isMobile ? 16 : 20;
 
   return (

@@ -1262,6 +1262,7 @@ export default function FoodTruckPage() {
             json?.public_profile_mode ?? base?.public_profile_mode ?? "standard",
           public_ordering_mode:
             json?.public_ordering_mode ?? base?.public_ordering_mode ?? "standard",
+          display_cluster: json?.display_cluster ?? base?.display_cluster ?? null,
         };
 
         // Never mount a black/empty splash: wait briefly for art, else skip entrance.
@@ -1520,6 +1521,7 @@ export default function FoodTruckPage() {
           profileUpdates={
             Array.isArray(profile?.profile_updates) ? profile.profile_updates : []
           }
+          displayCluster={profile?.display_cluster || null}
           showClaimInvites={Boolean(profile) && !isClaimedFoodTruck(profile)}
           isMobile={isMobile}
         />

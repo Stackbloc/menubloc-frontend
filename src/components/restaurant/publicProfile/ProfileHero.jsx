@@ -387,7 +387,7 @@ export default function ProfileHero({
           </div>
         ) : null}
 
-        {showRestaurantContact && cluster ? (
+        {cluster ? (
           <div
             data-testid="profile-hero-cluster-field"
             style={{
