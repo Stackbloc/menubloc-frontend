@@ -70,7 +70,9 @@ function testUnclaimedHomepageBlanks() {
   assert.match(shell, /showPhotos=\{false\}/);
   assert.match(hero, /profile-hero-maps-address/);
   assert.match(hero, /profile-hero-hours/);
-  assert.match(hero, /Hours:/);
+  assert.match(hero, /formatFoodTruckHoursTodayHeading/);
+  assert.match(hero, /includeTodayLine:\s*false/);
+  assert.doesNotMatch(hero, /"Hours:"/);
   assert.match(hero, /fit-content/);
   assert.match(hero, /formatHoursRows\(operatingHours,\s*\{/);
   assert.match(hero, /timezone:\s*hoursTimezone/);

@@ -157,10 +157,13 @@ export default function ProfileHero({
       : `@${String(ig).replace(/^@/, "")}`
     : "";
   const isFoodTruck = profileType === "food_truck";
-  const hoursTimezone = profile?.timezone || null;
+  const hoursTimezone =
+    profile?.timezone || profile?.restaurant_timezone || null;
+  // All public profiles: dated Today heading + chronological ranges from tomorrow
+  // (same programming for restaurants and food trucks).
   const hoursRows = formatHoursRows(operatingHours, {
     timezone: hoursTimezone,
-    includeTodayLine: !isFoodTruck,
+    includeTodayLine: false,
   });
   const showRestaurantContact = profileType === "restaurant";
   const hasAddress = Boolean(streetAddr || cityLine);
@@ -173,9 +176,7 @@ export default function ProfileHero({
     : "";
 
   const hoursEmpty = hoursRows.length === 0;
-  const hoursHeading = isFoodTruck
-    ? `${formatFoodTruckHoursTodayHeading(hoursTimezone)}:`
-    : "Hours:";
+  const hoursHeading = `${formatFoodTruckHoursTodayHeading(hoursTimezone)}:`;
   const hoursPanel = (
     <div
       data-testid="profile-hero-hours"

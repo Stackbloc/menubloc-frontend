@@ -12,6 +12,7 @@ import {
   firstNonEmpty,
 } from "./profilePrimitives.jsx";
 import { formatWebsiteHostLabel } from "../../../lib/formatWebsiteHostLabel.js";
+import { formatFoodTruckHoursTodayHeading } from "../../../lib/formatOperatingHours.js";
 
 function InfoBlank({ testId, label }) {
   return (
@@ -41,7 +42,11 @@ export default function ProfileRestaurantInfo({
   showClaimInvites = false,
   isMobile = false,
 }) {
-  const hoursRows = formatHoursRows(operatingHours, { timezone });
+  const hoursRows = formatHoursRows(operatingHours, {
+    timezone,
+    includeTodayLine: false,
+  });
+  const hoursLabel = `${formatFoodTruckHoursTodayHeading(timezone)}:`;
   const websiteLabel = formatWebsiteHostLabel(websiteRaw || website);
   const ig = firstNonEmpty(instagram);
   const igHref = ig
@@ -89,7 +94,7 @@ export default function ProfileRestaurantInfo({
         {hoursRows.length ? (
           <div data-testid="profile-info-hours">
             <div style={{ fontSize: 12, fontWeight: 700, color: PROFILE_MUTED, marginBottom: 6 }}>
-              Hours
+              {hoursLabel}
             </div>
             <div style={{ display: "grid", gap: 2 }}>
               {hoursRows.map((row) => (

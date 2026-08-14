@@ -32,6 +32,7 @@ import {
 } from "../lib/catalogMenuUtils.js";
 import { normalizeDisplayAddress } from "../lib/displayAddress.js";
 import { formatHoursRows } from "../components/restaurant/publicProfile/profilePrimitives.jsx";
+import { formatFoodTruckHoursTodayHeading } from "../lib/formatOperatingHours.js";
 
 function responseLabel(status) {
   if (status === "accepted") return "Going";
@@ -215,13 +216,16 @@ export default function EatInvitationPage() {
     if (byCoords) return byCoords;
     return mapsDestination ? buildGoogleMapsDirectionsUrl(mapsDestination) : "";
   }, [invitation, mapsDestination]);
+  const hoursTimezone = invitation?.restaurant_timezone || invitation?.timezone || null;
   const hoursRows = useMemo(
     () =>
       formatHoursRows(invitation?.operating_hours || [], {
-        timezone: invitation?.restaurant_timezone || invitation?.timezone || null,
+        timezone: hoursTimezone,
+        includeTodayLine: false,
       }),
-    [invitation]
+    [invitation, hoursTimezone]
   );
+  const hoursHeading = `${formatFoodTruckHoursTodayHeading(hoursTimezone)}:`;
 
   const party = invitation?.party || emptyParty();
   const isPrivate = invitation?.invite_kind === "private";
@@ -683,7 +687,7 @@ export default function EatInvitationPage() {
                   {hoursRows.length > 0 ? (
                     <div>
                       <div style={{ fontSize: 12, fontWeight: 700, color: "#78716c", marginBottom: 4 }}>
-                        Hours
+                        {hoursHeading}
                       </div>
                       <div style={{ display: "grid", gap: 2 }}>
                         {hoursRows.map((row) => (

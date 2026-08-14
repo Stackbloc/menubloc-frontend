@@ -57,8 +57,8 @@ export function getTodayDayOfWeek(timezone = null, now = new Date()) {
 }
 
 /**
- * Food-truck hours hero heading: "Today, Friday, June 1, 2026"
- * Uses restaurant timezone when provided.
+ * Public-profile hours hero heading: "Today, Friday, June 1, 2026"
+ * Uses restaurant timezone when provided. Shared by restaurants and food trucks.
  */
 export function formatFoodTruckHoursTodayHeading(timezone = null, now = new Date()) {
   const tz = asStr(timezone).trim();
@@ -119,8 +119,8 @@ function isNextCalendarDay(prevDow, nextDow) {
  *
  * @param {object[]} rows
  * @param {{ timezone?: string|null, now?: Date, includeTodayLine?: boolean }} [opts]
- *   includeTodayLine — default true. Food-truck hero sets false and labels the
- *   heading with the dated Today line instead.
+ *   includeTodayLine — default true (legacy). Public profile heroes set false and
+ *   label the heading with the dated Today line instead.
  */
 export function formatHoursRows(
   rows,
