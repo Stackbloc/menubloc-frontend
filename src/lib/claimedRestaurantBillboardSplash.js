@@ -118,9 +118,29 @@ export function waitForBillboardSplashImage(posts, opts = {}) {
     try {
       img.decoding = "async";
       img.src = url;
-      if (img.complete && img.naturalWidth > 0) {
-        clear();
-        finish(true);
+      const settleFromElement = () => {
+        if (img.complete && img.naturalWidth > 0) {
+          if (typeof img.decode === "function") {
+            img
+              .decode()
+              .then(() => {
+                clear();
+                finish(true);
+              })
+              .catch(() => {
+                clear();
+                finish(true);
+              });
+          } else {
+            clear();
+            finish(true);
+          }
+        }
+      };
+      // Cached images may already be complete before onload; also wait a tick.
+      settleFromElement();
+      if (!settled) {
+        requestAnimationFrame(settleFromElement);
       }
     } catch {
       clear();

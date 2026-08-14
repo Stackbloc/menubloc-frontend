@@ -39,11 +39,15 @@ assert.match(splash, /cta_url/);
 assert.match(splash, /Tap to continue/);
 assert.match(splash, /position:\s*"fixed"/);
 assert.match(splash, /zIndex:\s*12000/);
-assert.match(splash, /opacity:\s*1/);
+assert.match(splash, /imagePainted/);
+assert.match(splash, /decoding="sync"/);
 assert.match(splash, /CLAIMED_BILLBOARD_SPLASH_SHELL_BG/);
+assert.match(helper, /\.decode\(/);
 assert.doesNotMatch(splash, /opacity:\s*imageReady/);
-assert.doesNotMatch(splash, /0\.12/);
+assert.doesNotMatch(splash, /opacity:\s*0\.12/);
 assert.doesNotMatch(splash, /#0b0b0f/);
+// Dark scrim must not mount before the image has painted (reload black-flash regression).
+assert.match(splash, /\{imagePainted \? \(/);
 
 assert.equal(CLAIMED_BILLBOARD_SPLASH_MS, 3500);
 assert.equal(CLAIMED_BILLBOARD_SPLASH_REDUCED_MS, 600);

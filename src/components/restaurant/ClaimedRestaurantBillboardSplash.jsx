@@ -1,7 +1,10 @@
 /**
  * Full-screen billboard entrance for restaurant profiles.
- * Carousel of up to 6 ordered slides; hold starts on mount.
- * Never mounts a black void — cream shell; parents skip splash if art is not ready.
+ * Carousel of up to 6 ordered slides.
+ *
+ * Reload-safe: never paint dark overlay / dark art until the DOM image has
+ * actually decoded. Cached images used to mount the splash instantly with a
+ * heavy dark scrim — reading as a black screen before the truck photo settled.
  */
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
@@ -92,12 +95,15 @@ export default function ClaimedRestaurantBillboardSplash({
   const ctaLabel = String(current?.cta_label || "").trim();
   const ctaUrl = String(current?.cta_url || "").trim();
   const imageFitRaw = String(current?.image_fit || "").trim().toLowerCase();
-  // Prefer cover on entrance so letterboxed "black bars" never dominate the viewport.
+  // Prefer cover on entrance so letterboxed bars never dominate the viewport.
   const imageFit = ["cover", "contain", "fill"].includes(imageFitRaw)
     ? (imageFitRaw === "contain" ? "cover" : imageFitRaw)
     : "cover";
   const ariaLabel = [displayName, headline].filter(Boolean).join(". ");
   const dismissedRef = useRef(false);
+  const imageRef = useRef(null);
+  // Headline-only slides are ready immediately; image slides wait for DOM decode.
+  const [imagePainted, setImagePainted] = useState(!imageUrl);
 
   function dismiss() {
     if (dismissedRef.current) return;
@@ -105,13 +111,54 @@ export default function ClaimedRestaurantBillboardSplash({
     onDismiss?.();
   }
 
+  function markImagePainted() {
+    setImagePainted(true);
+  }
+
   useEffect(() => {
     setIndex(0);
   }, [slideList.map((p) => p?.id).join("|")]);
 
-  // Hold timer starts when the slide mounts — do not wait for image decode.
+  // Reset paint gate per slide / URL; detect already-decoded cached bitmaps.
   useEffect(() => {
-    if (!current) return undefined;
+    if (!imageUrl) {
+      setImagePainted(true);
+      return undefined;
+    }
+    setImagePainted(false);
+    let cancelled = false;
+    const raf = window.requestAnimationFrame(() => {
+      const img = imageRef.current;
+      if (!img) return;
+      if (img.complete && img.naturalWidth > 0) {
+        if (typeof img.decode === "function") {
+          img
+            .decode()
+            .then(() => {
+              if (!cancelled) markImagePainted();
+            })
+            .catch(() => {
+              if (!cancelled) markImagePainted();
+            });
+        } else {
+          markImagePainted();
+        }
+      }
+    });
+    // Fail-open: never leave cream forever if onLoad is swallowed.
+    const failOpen = window.setTimeout(() => {
+      if (!cancelled) markImagePainted();
+    }, CLAIMED_BILLBOARD_SPLASH_IMAGE_WAIT_MS);
+    return () => {
+      cancelled = true;
+      window.cancelAnimationFrame(raf);
+      window.clearTimeout(failOpen);
+    };
+  }, [imageUrl, index]);
+
+  // Hold only after the slide is actually painted (cream → art, never black void).
+  useEffect(() => {
+    if (!current || !imagePainted) return undefined;
     const holdMs = resolveSplashDurationMs(current, { reducedMotion });
     const timer = window.setTimeout(() => {
       if (index < slideList.length - 1) {
@@ -122,7 +169,7 @@ export default function ClaimedRestaurantBillboardSplash({
     }, holdMs);
     return () => window.clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [reducedMotion, index, current, slideList.length]);
+  }, [imagePainted, reducedMotion, index, current, slideList.length]);
 
   if (!current) return null;
 
@@ -132,6 +179,7 @@ export default function ClaimedRestaurantBillboardSplash({
       aria-label={ariaLabel || displayName}
       onClick={() => dismiss()}
       data-testid="claimed-billboard-splash"
+      data-image-painted={imagePainted ? "true" : "false"}
       style={{
         position: "fixed",
         inset: 0,
@@ -155,11 +203,14 @@ export default function ClaimedRestaurantBillboardSplash({
     >
       {imageUrl ? (
         <img
+          ref={imageRef}
           src={imageUrl}
           alt={alt}
           loading="eager"
-          decoding="async"
+          decoding="sync"
           fetchPriority="high"
+          onLoad={markImagePainted}
+          onError={markImagePainted}
           style={{
             position: "absolute",
             inset: 0,
@@ -169,8 +220,10 @@ export default function ClaimedRestaurantBillboardSplash({
             objectPosition: "center",
             display: "block",
             pointerEvents: "none",
-            opacity: 1,
+            // Stay invisible until decoded so dark truck photos never flash as a black frame.
+            opacity: imagePainted ? 1 : 0,
             background: CLAIMED_BILLBOARD_SPLASH_SHELL_BG,
+            transition: reducedMotion ? "none" : "opacity 160ms ease",
           }}
         />
       ) : (
@@ -183,16 +236,19 @@ export default function ClaimedRestaurantBillboardSplash({
         />
       )}
 
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          background: imageUrl
-            ? "linear-gradient(to top, rgba(28,25,23,0.72) 0%, rgba(28,25,23,0.18) 42%, rgba(28,25,23,0.04) 100%)"
-            : "linear-gradient(to top, rgba(28,25,23,0.35) 0%, transparent 55%)",
-          pointerEvents: "none",
-        }}
-      />
+      {/* Soft scrim only after art is visible — never a full-screen dark sheet over empty cream. */}
+      {imagePainted ? (
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            background: imageUrl
+              ? "linear-gradient(to top, rgba(28,25,23,0.55) 0%, rgba(28,25,23,0.12) 38%, rgba(28,25,23,0) 70%)"
+              : "linear-gradient(to top, rgba(28,25,23,0.28) 0%, transparent 55%)",
+            pointerEvents: "none",
+          }}
+        />
+      ) : null}
 
       <div
         style={{
@@ -202,6 +258,9 @@ export default function ClaimedRestaurantBillboardSplash({
           maxWidth: 720,
           padding: isNarrow ? "20px 16px 28px" : "28px 24px 40px",
           boxSizing: "border-box",
+          // Hide chrome until art paints so reload doesn't show white text on cream then jump.
+          opacity: imagePainted ? 1 : 0,
+          transition: reducedMotion ? "none" : "opacity 160ms ease",
         }}
       >
         {slideList.length > 1 ? (
