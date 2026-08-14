@@ -10,6 +10,9 @@ import {
   MENU_ROW_ICON_SIZE,
 } from "../../menu-templates/menuPresentationUtils.js";
 import { buildGoogleMapsDirectionsUrl } from "../../../lib/catalogMenuUtils.js";
+import { formatHoursRows, getTodayDayOfWeek } from "../../../lib/formatOperatingHours.js";
+
+export { formatHoursRows, getTodayDayOfWeek };
 
 export const PROFILE_PAGE_BG = "#fafaf9";
 export const PROFILE_INK = "#1c1917";
@@ -26,8 +29,6 @@ export const profileCardBorderVar = "var(--profile-card-border, #e7e5e4)";
 export const profileCardShadowVar = "var(--profile-card-shadow, 0 1px 2px rgba(28,25,23,0.04))";
 export const profileButtonBgVar = `var(--profile-button-background, ${PROFILE_GREEN})`;
 export const profileButtonTextVar = "var(--profile-button-text, #ffffff)";
-
-const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export function asStr(v) {
   return v == null ? "" : String(v);
@@ -315,31 +316,6 @@ export function LogoMark({ name, logoUrl, onPhoto = false }) {
   );
 }
 
-function formatTimeLabel(raw) {
-  const s = asStr(raw).trim();
-  if (!s) return "";
-  const m = s.match(/^(\d{1,2}):(\d{2})/);
-  if (!m) return s;
-  let h = Number(m[1]);
-  const min = m[2];
-  const ampm = h >= 12 ? "PM" : "AM";
-  h = h % 12 || 12;
-  return `${h}:${min} ${ampm}`;
-}
-
-export function formatHoursRows(rows) {
-  if (!Array.isArray(rows) || !rows.length) return [];
-  return [...rows]
-    .sort((a, b) => Number(a.day_of_week) - Number(b.day_of_week))
-    .map((row) => {
-      const day = DAY_LABELS[Number(row.day_of_week)] || `Day ${row.day_of_week}`;
-      if (row.is_closed) return { day, text: "Closed" };
-      if (row.label) return { day, text: String(row.label) };
-      const open = formatTimeLabel(row.opens_at);
-      const close = formatTimeLabel(row.closes_at);
-      if (open && close) return { day, text: `${open} – ${close}` };
-      return { day, text: open || close || "—" };
-    });
 }
 
 export function normalizeScheduleStops(profile) {

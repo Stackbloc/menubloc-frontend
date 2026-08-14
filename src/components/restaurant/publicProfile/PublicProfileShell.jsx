@@ -2,7 +2,7 @@
  * Unified Menuply public profile shell — restaurant homepage layout.
  * Claimed: Hero → Billboard → About Us + Founded + Photos → Favorites → Deals → Updates
  * Unclaimed: Hero → About Us + Founded + Photos → Favorites → Deals → Updates
- * (+ FT upcoming stops when food truck entity/plan).
+ * Food truck: Hero (address / current location) → Upcoming locations → then shared sections.
  * Contact + hours live in the hero. No bottom Information box.
  */
 import { useMemo } from "react";
@@ -230,6 +230,19 @@ export default function PublicProfileShell({
           boxSizing: "border-box",
         }}
       >
+        {isFoodTruck && (stops.length || showClaimInvites) ? (
+          <ProfileSection title="Upcoming locations">
+            {stops.length ? (
+              <FoodTruckUpcomingStops stops={stops} />
+            ) : (
+              <ProfileSectionBlank
+                testId="profile-upcoming-blank"
+                message="No upcoming locations yet."
+              />
+            )}
+          </ProfileSection>
+        ) : null}
+
         {showClaimInvites ? (
           <ProfileClaimBanner claimHref={claimHref} claimState={claimState} />
         ) : null}
@@ -276,19 +289,6 @@ export default function PublicProfileShell({
             title="What diners are saying"
             compact={isMobile}
           />
-        ) : null}
-
-        {isFoodTruck && (stops.length || showClaimInvites) ? (
-          <ProfileSection title="Upcoming locations">
-            {stops.length ? (
-              <FoodTruckUpcomingStops stops={stops} />
-            ) : (
-              <ProfileSectionBlank
-                testId="profile-upcoming-blank"
-                message="No upcoming locations yet."
-              />
-            )}
-          </ProfileSection>
         ) : null}
 
         <div style={{ height: sectionGap }} aria-hidden="true" />

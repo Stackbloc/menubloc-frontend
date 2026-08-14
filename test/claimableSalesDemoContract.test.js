@@ -31,6 +31,8 @@ test("FoodTruckPage uses personality editorial with homepage shell (no inline me
   const location = read("src/components/restaurant/publicProfile/FoodTruckCurrentLocation.jsx");
   const upcoming = read("src/components/restaurant/publicProfile/FoodTruckUpcomingStops.jsx");
   const primitives = read("src/components/restaurant/publicProfile/profilePrimitives.jsx");
+  assert.match(source, /StickyPageHeader/);
+  assert.doesNotMatch(source, /HomeButton/);
   assert.match(source, /FoodTruckPublicEditorial/);
   assert.match(source, /public_ordering_mode === "display_only"/);
   assert.match(source, /isClaimedFoodTruck/);
@@ -60,6 +62,14 @@ test("FoodTruckPage uses personality editorial with homepage shell (no inline me
   assert.match(shell, /Located today|buildCurrentLocation|FoodTruckUpcomingStops/);
   assert.match(shell, /Upcoming locations|FoodTruckUpcomingStops/);
   assert.match(shell, /isFoodTruckProfile/);
+  {
+    const upcomingIdx = shell.indexOf("Upcoming locations");
+    const aboutIdx = shell.indexOf("<ProfileAboutFounded");
+    assert.ok(
+      upcomingIdx > -1 && aboutIdx > upcomingIdx,
+      "Upcoming locations must sit under hero, before About"
+    );
+  }
   assert.doesNotMatch(shell, /ProfileRestaurantHighlights/);
   assert.doesNotMatch(shell, /Food truck highlights/);
   assert.doesNotMatch(shell, /Business information/);

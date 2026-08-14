@@ -204,7 +204,10 @@ export default function EatInvitationPage() {
     return mapsDestination ? buildGoogleMapsDirectionsUrl(mapsDestination) : "";
   }, [invitation, mapsDestination]);
   const hoursRows = useMemo(
-    () => formatHoursRows(invitation?.operating_hours || []),
+    () =>
+      formatHoursRows(invitation?.operating_hours || [], {
+        timezone: invitation?.restaurant_timezone || invitation?.timezone || null,
+      }),
     [invitation]
   );
 

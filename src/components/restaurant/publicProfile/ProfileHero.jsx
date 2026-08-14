@@ -155,7 +155,9 @@ export default function ProfileHero({
         : ig
       : `@${String(ig).replace(/^@/, "")}`
     : "";
-  const hoursRows = formatHoursRows(operatingHours);
+  const hoursRows = formatHoursRows(operatingHours, {
+    timezone: profile?.timezone || null,
+  });
   const showRestaurantContact = profileType === "restaurant";
   const hasAddress = Boolean(streetAddr || cityLine);
 
@@ -164,10 +166,10 @@ export default function ProfileHero({
     <div
       data-testid="profile-hero-hours"
       style={{
-        flex: hoursEmpty ? "0 0 auto" : isMobile ? "1 1 auto" : "0 0 220px",
+        flex: hoursEmpty ? "0 0 auto" : isMobile ? "1 1 auto" : "0 0 240px",
         alignSelf: "flex-start",
-        minWidth: hoursEmpty ? undefined : isMobile ? 0 : 180,
-        maxWidth: isMobile ? "100%" : hoursEmpty ? "fit-content" : 240,
+        minWidth: hoursEmpty ? undefined : isMobile ? 0 : 200,
+        maxWidth: isMobile ? "100%" : hoursEmpty ? "fit-content" : 280,
         width: hoursEmpty ? "fit-content" : undefined,
         marginTop: isMobile ? 10 : 0,
         padding: hoursEmpty ? "6px 10px" : isMobile ? "10px 12px" : "12px 14px",
@@ -198,13 +200,15 @@ export default function ProfileHero({
               key={row.day}
               style={{
                 display: "grid",
-                gridTemplateColumns: "36px 1fr",
-                gap: 8,
+                gridTemplateColumns: "auto 1fr",
+                gap: 10,
                 fontSize: 12,
                 color: ink,
               }}
             >
-              <span style={{ color: muted, fontWeight: 700 }}>{row.day}</span>
+              <span style={{ color: muted, fontWeight: 700, whiteSpace: "nowrap" }}>
+                {row.day}
+              </span>
               <span>{row.text}</span>
             </div>
           ))}

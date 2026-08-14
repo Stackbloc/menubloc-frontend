@@ -71,6 +71,9 @@ function testUnclaimedHomepageBlanks() {
   assert.match(hero, /profile-hero-hours/);
   assert.match(hero, /Hours:/);
   assert.match(hero, /fit-content/);
+  assert.match(hero, /formatHoursRows\(operatingHours,\s*\{/);
+  assert.match(hero, /timezone:\s*profile\?\.timezone/);
+  assert.match(hero, /gridTemplateColumns: "auto 1fr"/);
   assert.match(hero, /profile-hero-instagram/);
   assert.match(hero, /profile-hero-website/);
   assert.match(hero, /profile-hero-phone/);

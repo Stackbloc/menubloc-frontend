@@ -247,6 +247,9 @@ function testSharedPublicProfileShell() {
   assert.match(shell, /FoodTruckUpcomingStops/);
   assert.match(shell, /ProfileBillboardBlock/);
   assert.match(shell, /ProfileFavoriteMenuItems/);
+  const upcomingIdx = shell.indexOf("Upcoming locations");
+  const aboutIdxShell = shell.indexOf("<ProfileAboutFounded");
+  assert.ok(upcomingIdx > -1 && aboutIdxShell > upcomingIdx, "FT upcoming locations under hero, before about");
   assert.doesNotMatch(shell, /ProfileRestaurantHighlights/);
   assert.doesNotMatch(shell, /ProfilePrimaryActions/);
   assert.doesNotMatch(shell, /ProfileMenuHighlights/);

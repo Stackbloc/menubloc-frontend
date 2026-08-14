@@ -18,7 +18,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext.jsx";
-import { HomeButton } from "../components/NavButton.jsx";
 import MenuItemInsightsPanel from "../components/MenuItemInsightsPanel.jsx";
 import ShareIcon from "../components/share/ShareIcon.jsx";
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
@@ -1291,6 +1290,7 @@ export default function FoodTruckPage() {
 
   const pageWrap = (children) => (
     <>
+      <StickyPageHeader />
       <div
         style={{
           minHeight: "100vh",
@@ -1302,7 +1302,7 @@ export default function FoodTruckPage() {
           boxSizing: "border-box",
         }}
       >
-        <div style={{ maxWidth: 600, margin: "0 auto", width: "100%", minWidth: 0 }}>
+        <div style={{ maxWidth: 1040, margin: "0 auto", width: "100%", minWidth: 0 }}>
           {children}
         </div>
       </div>
@@ -1310,73 +1310,34 @@ export default function FoodTruckPage() {
     </>
   );
 
-  const navBar = (
-    <div
-      style={{
-        display: "flex",
-        alignItems: isMobile ? "flex-start" : "center",
-        justifyContent: "space-between",
-        gap: 12,
-        marginBottom: isMobile ? 16 : 20,
-      }}
-    >
-      <HomeButton />
-      <button
-        type="button"
-        onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
-        style={{
-          height: 32,
-          padding: "0 12px",
-          fontSize: 11,
-          fontWeight: 700,
-          borderRadius: 8,
-          background: "transparent",
-          cursor: "pointer",
-          border: isDark ? "1px solid rgba(255,255,255,0.14)" : "1px solid #cbd5e1",
-          color: c.muted,
-          flexShrink: 0,
-        }}
-        aria-label="Toggle theme"
-      >
-        {isDark ? "Light" : "Dark"}
-      </button>
-    </div>
-  );
-
   if (profileState.status === "loading") {
     return pageWrap(
-      <>
-        {navBar}
-        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          <Skel w="100%" h={280} isDark={isDark} radius={20} />
-          <Skel w={80} h={13} isDark={isDark} />
-          <Skel w="100%" h={72} isDark={isDark} radius={14} />
-          <Skel w="100%" h={72} isDark={isDark} radius={14} />
-          <Skel w="100%" h={72} isDark={isDark} radius={14} />
-        </div>
-      </>
+      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        <Skel w="100%" h={280} isDark={isDark} radius={20} />
+        <Skel w={80} h={13} isDark={isDark} />
+        <Skel w="100%" h={72} isDark={isDark} radius={14} />
+        <Skel w="100%" h={72} isDark={isDark} radius={14} />
+        <Skel w="100%" h={72} isDark={isDark} radius={14} />
+      </div>
     );
   }
 
   if (profileState.status === "error") {
     return pageWrap(
-      <>
-        {navBar}
-        <div
-          style={{
-            padding: "16px 18px",
-            borderRadius: 14,
-            fontSize: 14,
-            fontWeight: 600,
-            background: isDark ? "rgba(248,113,113,0.07)" : "#fff5f5",
-            border: isDark ? "1px solid rgba(248,113,113,0.25)" : "1px solid #fca5a5",
-            color: isDark ? "#fca5a5" : "#b91c1c",
-            wordBreak: "break-word",
-          }}
-        >
-          {profileState.error}
-        </div>
-      </>
+      <div
+        style={{
+          padding: "16px 18px",
+          borderRadius: 14,
+          fontSize: 14,
+          fontWeight: 600,
+          background: isDark ? "rgba(248,113,113,0.07)" : "#fff5f5",
+          border: isDark ? "1px solid rgba(248,113,113,0.25)" : "1px solid #fca5a5",
+          color: isDark ? "#fca5a5" : "#b91c1c",
+          wordBreak: "break-word",
+        }}
+      >
+        {profileState.error}
+      </div>
     );
   }
 

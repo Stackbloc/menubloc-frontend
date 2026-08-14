@@ -28,6 +28,7 @@ function InfoBlank({ testId, label }) {
 
 export default function ProfileRestaurantInfo({
   operatingHours = [],
+  timezone = null,
   phone = "",
   streetAddr = "",
   cityLine = "",
@@ -40,7 +41,7 @@ export default function ProfileRestaurantInfo({
   showClaimInvites = false,
   isMobile = false,
 }) {
-  const hoursRows = formatHoursRows(operatingHours);
+  const hoursRows = formatHoursRows(operatingHours, { timezone });
   const websiteLabel = formatWebsiteHostLabel(websiteRaw || website);
   const ig = firstNonEmpty(instagram);
   const igHref = ig
@@ -96,12 +97,14 @@ export default function ProfileRestaurantInfo({
                   key={row.day}
                   style={{
                     display: "grid",
-                    gridTemplateColumns: "48px 1fr",
-                    gap: 8,
+                    gridTemplateColumns: "auto 1fr",
+                    gap: 10,
                     fontSize: 13,
                   }}
                 >
-                  <span style={{ color: PROFILE_MUTED, fontWeight: 600 }}>{row.day}</span>
+                  <span style={{ color: PROFILE_MUTED, fontWeight: 600, whiteSpace: "nowrap" }}>
+                    {row.day}
+                  </span>
                   <span>{row.text}</span>
                 </div>
               ))}
