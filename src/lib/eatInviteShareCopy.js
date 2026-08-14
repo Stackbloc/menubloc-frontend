@@ -1,8 +1,16 @@
 /**
- * Invite to Eat share copy — private (1:1) vs group outing.
- * Quietly seeds conversational shorthand (LDL/LDD/LHC/MMH) + light emoji in
- * generated drafts only. Not a product feature; users may edit freely.
+ * Invite to Eat share / compose copy helpers.
+ * Draft options (LDL/LDD/LHC/MMH + light emoji) are selectable copy, not a glossary feature.
  */
+
+export const INVITE_MESSAGE_SEED_CODES = ["LDL", "LDD", "LHC", "MMH"];
+
+export const INVITE_COPY_SEEDS = {
+  LHC: { code: "LHC", emoji: "☕", verbPhrase: "Let's have coffee", meal: "coffee" },
+  LDL: { code: "LDL", emoji: "🥗", verbPhrase: "Let's do lunch", meal: "lunch" },
+  LDD: { code: "LDD", emoji: "🍽️", verbPhrase: "Let's do dinner", meal: "dinner" },
+  MMH: { code: "MMH", emoji: "📍", verbPhrase: "Meet me here", meal: "meet" },
+};
 
 export function formatInviteDateLabel(isoDate) {
   if (!isoDate) return "";
@@ -60,25 +68,24 @@ function hourFromTimeLabelOrRaw(timeLabel, scheduledTime) {
 }
 
 /**
- * Pick a quiet conversational seed from scheduled hour.
- * Returns { code, emoji, verbPhrase } — decorative only.
+ * Default seed from scheduled hour (used when opening compose).
  */
 export function pickInviteCopySeed({ scheduledTime = null, timeLabel = null } = {}) {
   const hour = hourFromTimeLabelOrRaw(timeLabel, scheduledTime);
-  if (hour != null && hour >= 7 && hour <= 10) {
-    return { code: "LHC", emoji: "☕", verbPhrase: "Let's have coffee", meal: "coffee" };
-  }
-  if (hour != null && hour >= 11 && hour <= 15) {
-    return { code: "LDL", emoji: "🥗", verbPhrase: "Let's do lunch", meal: "lunch" };
-  }
-  if (hour != null && hour >= 16 && hour <= 22) {
-    return { code: "LDD", emoji: "🍽️", verbPhrase: "Let's do dinner", meal: "dinner" };
-  }
-  return { code: "MMH", emoji: "📍", verbPhrase: "Meet me here", meal: "meet" };
+  if (hour != null && hour >= 7 && hour <= 10) return INVITE_COPY_SEEDS.LHC;
+  if (hour != null && hour >= 11 && hour <= 15) return INVITE_COPY_SEEDS.LDL;
+  if (hour != null && hour >= 16 && hour <= 22) return INVITE_COPY_SEEDS.LDD;
+  return INVITE_COPY_SEEDS.MMH;
+}
+
+function resolveSeed(seedCode, scheduledTime, timeLabel) {
+  const code = String(seedCode || "").trim().toUpperCase();
+  if (INVITE_COPY_SEEDS[code]) return INVITE_COPY_SEEDS[code];
+  return pickInviteCopySeed({ scheduledTime, timeLabel });
 }
 
 /**
- * Default editable compose placeholder / ShareModal body seed (no URL).
+ * Draft message body for a given seed code (no URL).
  */
 export function buildEatInviteMessageDraft({
   inviteKind = "group",
@@ -86,10 +93,11 @@ export function buildEatInviteMessageDraft({
   dateLabel,
   timeLabel,
   scheduledTime = null,
+  seedCode = null,
 } = {}) {
   const place = restaurantName || "a restaurant";
   const when = whenParts(dateLabel, timeLabel);
-  const seed = pickInviteCopySeed({ scheduledTime, timeLabel });
+  const seed = resolveSeed(seedCode, scheduledTime, timeLabel);
   const kind = String(inviteKind || "group").toLowerCase() === "private" ? "private" : "group";
 
   if (seed.code === "MMH") {
@@ -105,7 +113,30 @@ export function buildEatInviteMessageDraft({
 }
 
 /**
- * Default editable ShareModal body (includes invite URL).
+ * Radio options for compose: each seed draft + write-your-own sentinel.
+ */
+export function listInviteMessageOptions({
+  inviteKind = "group",
+  restaurantName,
+  dateLabel,
+  timeLabel,
+  scheduledTime = null,
+} = {}) {
+  return INVITE_MESSAGE_SEED_CODES.map((code) => ({
+    code,
+    text: buildEatInviteMessageDraft({
+      inviteKind,
+      restaurantName,
+      dateLabel,
+      timeLabel,
+      scheduledTime,
+      seedCode: code,
+    }),
+  }));
+}
+
+/**
+ * ShareModal body. Prefer an explicit message (selected radio / write-your-own).
  */
 export function buildEatInviteShareText({
   inviteKind = "group",
@@ -113,15 +144,21 @@ export function buildEatInviteShareText({
   dateLabel,
   timeLabel,
   scheduledTime = null,
+  seedCode = null,
+  message = null,
   url,
 }) {
-  const draft = buildEatInviteMessageDraft({
-    inviteKind,
-    restaurantName,
-    dateLabel,
-    timeLabel,
-    scheduledTime,
-  });
+  const custom = String(message || "").trim();
+  const draft =
+    custom ||
+    buildEatInviteMessageDraft({
+      inviteKind,
+      restaurantName,
+      dateLabel,
+      timeLabel,
+      scheduledTime,
+      seedCode,
+    });
   const link = String(url || "").trim();
   if (!link) return draft;
   return `${draft}\n${link}`.trim();

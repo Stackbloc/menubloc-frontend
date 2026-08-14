@@ -14,6 +14,8 @@ import {
   buildEatInviteShareText,
   formatInviteDateLabel,
   formatInviteTimeLabel,
+  listInviteMessageOptions,
+  pickInviteCopySeed,
 } from "../lib/eatInviteShareCopy.js";
 
 function tomorrowIsoDate() {
@@ -41,8 +43,10 @@ export default function InviteToEatModal({
   const { isAuthenticated } = useConsumer();
   const [inviteKind, setInviteKind] = useState(null);
   const [guestName, setGuestName] = useState("");
+  const [inviteeName, setInviteeName] = useState("");
   const [date, setDate] = useState(tomorrowIsoDate);
   const [time, setTime] = useState("19:00");
+  const [messageMode, setMessageMode] = useState("LDD");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -53,8 +57,11 @@ export default function InviteToEatModal({
     if (!open) return;
     setInviteKind(null);
     setGuestName(getEatInviteGuestDisplayName());
+    setInviteeName("");
     setDate(tomorrowIsoDate());
     setTime("19:00");
+    const seed = pickInviteCopySeed({ scheduledTime: "19:00" });
+    setMessageMode(seed.code);
     setMessage("");
     setBusy(false);
     setError("");
@@ -65,17 +72,45 @@ export default function InviteToEatModal({
   const resolvedKind =
     created?.invite_kind === "private" || inviteKind === "private" ? "private" : "group";
 
+  const placeName = created?.restaurant_name || restaurantName || "Restaurant";
+  const dateLabel = formatInviteDateLabel(created?.scheduled_date || date);
+  const timeLabel = formatInviteTimeLabel(created?.scheduled_time || time);
+
+  const messageOptions = useMemo(
+    () =>
+      listInviteMessageOptions({
+        inviteKind: inviteKind || "group",
+        restaurantName: placeName,
+        dateLabel: formatInviteDateLabel(date),
+        timeLabel: formatInviteTimeLabel(time),
+        scheduledTime: time,
+      }),
+    [inviteKind, placeName, date, time]
+  );
+
+  const selectedDraft =
+    messageMode === "custom"
+      ? message
+      : messageOptions.find((opt) => opt.code === messageMode)?.text ||
+        buildEatInviteMessageDraft({
+          inviteKind: inviteKind || "group",
+          restaurantName: placeName,
+          dateLabel: formatInviteDateLabel(date),
+          timeLabel: formatInviteTimeLabel(time),
+          scheduledTime: time,
+          seedCode: messageMode,
+        });
+
   const shareData = useMemo(() => {
     if (!created?.url) return null;
-    const dateLabel = formatInviteDateLabel(created.scheduled_date || date);
-    const timeLabel = formatInviteTimeLabel(created.scheduled_time || time);
     const place = created.restaurant_name || restaurantName || "a restaurant";
     const text = buildEatInviteShareText({
       inviteKind: created.invite_kind || resolvedKind,
       restaurantName: place,
-      dateLabel,
-      timeLabel,
+      dateLabel: formatInviteDateLabel(created.scheduled_date || date),
+      timeLabel: formatInviteTimeLabel(created.scheduled_time || time),
       scheduledTime: created.scheduled_time || time,
+      message: created.message || selectedDraft || message,
       url: created.url,
     });
     return {
@@ -83,7 +118,7 @@ export default function InviteToEatModal({
       text,
       url: created.url,
     };
-  }, [created, date, time, restaurantName, resolvedKind]);
+  }, [created, date, time, restaurantName, resolvedKind, selectedDraft, message]);
 
   if (!open) return null;
 
@@ -93,14 +128,23 @@ export default function InviteToEatModal({
     setBusy(true);
     setError("");
     try {
+      const resolvedMessage =
+        messageMode === "custom" ? String(message || "").trim() : String(selectedDraft || "").trim();
       const body = {
         restaurant_id: restaurantId,
         menu_item_id: menuItemId || undefined,
         scheduled_date: date,
         scheduled_time: time,
-        message: message.trim() || undefined,
+        message: resolvedMessage || undefined,
         invite_kind: inviteKind,
       };
+      if (inviteKind === "private") {
+        const invitee = String(inviteeName || "").trim();
+        if (!invitee) {
+          throw new Error("Enter the name of the person you are inviting");
+        }
+        body.invitee_display_name = invitee;
+      }
       if (!isAuthenticated) {
         const name = String(guestName || "").trim();
         if (!name) {
@@ -157,9 +201,6 @@ export default function InviteToEatModal({
     );
   }
 
-  const dateLabel = formatInviteDateLabel(created?.scheduled_date || date);
-  const timeLabel = formatInviteTimeLabel(created?.scheduled_time || time);
-  const placeName = created?.restaurant_name || restaurantName || "Restaurant";
   const dishName = created?.menu_item_name || menuItemName || null;
   const statusLabel = created?.status_label || "Ready to Send";
   const kindLabel = resolvedKind === "private" ? "One person" : "Group";
@@ -173,6 +214,21 @@ export default function InviteToEatModal({
     fontWeight: 800,
     fontSize: 16,
     cursor: "pointer",
+  };
+
+  const radioLabel = {
+    display: "flex",
+    gap: 10,
+    alignItems: "flex-start",
+    padding: "10px 12px",
+    borderRadius: 10,
+    border: "1px solid #e7e5e4",
+    background: "#fafaf9",
+    cursor: "pointer",
+    fontSize: 13,
+    lineHeight: 1.4,
+    fontWeight: 600,
+    color: "#292524",
   };
 
   const overlay = (
@@ -200,6 +256,8 @@ export default function InviteToEatModal({
         style={{
           width: "100%",
           maxWidth: 440,
+          maxHeight: "92vh",
+          overflowY: "auto",
           background: "#fff",
           borderRadius: 16,
           padding: 18,
@@ -243,7 +301,10 @@ export default function InviteToEatModal({
             <button
               type="button"
               data-testid="invite-kind-private"
-              onClick={() => setInviteKind("private")}
+              onClick={() => {
+                setInviteKind("private");
+                setMessageMode(pickInviteCopySeed({ scheduledTime: time }).code);
+              }}
               style={choiceBtn}
             >
               One Person
@@ -251,7 +312,10 @@ export default function InviteToEatModal({
             <button
               type="button"
               data-testid="invite-kind-group"
-              onClick={() => setInviteKind("group")}
+              onClick={() => {
+                setInviteKind("group");
+                setMessageMode(pickInviteCopySeed({ scheduledTime: time }).code);
+              }}
               style={choiceBtn}
             >
               A Group
@@ -307,6 +371,22 @@ export default function InviteToEatModal({
                   />
                 </label>
               ) : null}
+              {inviteKind === "private" ? (
+                <label style={{ display: "grid", gap: 4, fontSize: 12, fontWeight: 700 }}>
+                  Invitee&apos;s name
+                  <input
+                    type="text"
+                    required
+                    maxLength={80}
+                    value={inviteeName}
+                    onChange={(e) => setInviteeName(e.target.value)}
+                    placeholder="Who are you inviting?"
+                    data-testid="invite-invitee-name"
+                    autoComplete="name"
+                    style={inputStyle}
+                  />
+                </label>
+              ) : null}
               <label style={{ display: "grid", gap: 4, fontSize: 12, fontWeight: 700 }}>
                 Date
                 <input
@@ -333,24 +413,74 @@ export default function InviteToEatModal({
                 After you create the invitation, send it through Messages or another app. Menuply
                 does not send SMS for you and does not need your contacts.
               </div>
-              <label style={{ display: "grid", gap: 4, fontSize: 12, fontWeight: 700 }}>
-                Message (optional)
-                <textarea
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  rows={3}
-                  maxLength={2000}
-                  placeholder={buildEatInviteMessageDraft({
-                    inviteKind,
-                    restaurantName: placeName,
-                    dateLabel: formatInviteDateLabel(date),
-                    timeLabel: formatInviteTimeLabel(time),
-                    scheduledTime: time,
-                  })}
-                  data-testid="invite-message"
-                  style={{ ...inputStyle, resize: "vertical" }}
-                />
-              </label>
+
+              <fieldset
+                data-testid="invite-message-options"
+                style={{
+                  margin: 0,
+                  padding: 0,
+                  border: "none",
+                  display: "grid",
+                  gap: 8,
+                }}
+              >
+                <legend style={{ fontSize: 12, fontWeight: 700, padding: 0, marginBottom: 4 }}>
+                  Message
+                </legend>
+                {messageOptions.map((opt) => (
+                  <label
+                    key={opt.code}
+                    style={{
+                      ...radioLabel,
+                      borderColor: messageMode === opt.code ? "#86efac" : "#e7e5e4",
+                      background: messageMode === opt.code ? "#f0fdf4" : "#fafaf9",
+                    }}
+                  >
+                    <input
+                      type="radio"
+                      name="invite-message-mode"
+                      value={opt.code}
+                      checked={messageMode === opt.code}
+                      onChange={() => {
+                        setMessageMode(opt.code);
+                      }}
+                      data-testid={`invite-message-option-${opt.code}`}
+                      style={{ marginTop: 3 }}
+                    />
+                    <span style={{ whiteSpace: "pre-wrap" }}>{opt.text}</span>
+                  </label>
+                ))}
+                <label
+                  style={{
+                    ...radioLabel,
+                    borderColor: messageMode === "custom" ? "#86efac" : "#e7e5e4",
+                    background: messageMode === "custom" ? "#f0fdf4" : "#fafaf9",
+                  }}
+                >
+                  <input
+                    type="radio"
+                    name="invite-message-mode"
+                    value="custom"
+                    checked={messageMode === "custom"}
+                    onChange={() => setMessageMode("custom")}
+                    data-testid="invite-message-option-custom"
+                    style={{ marginTop: 3 }}
+                  />
+                  <span>Write your own</span>
+                </label>
+                {messageMode === "custom" ? (
+                  <textarea
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    rows={3}
+                    maxLength={2000}
+                    placeholder="Write a short invitation message"
+                    data-testid="invite-message"
+                    style={{ ...inputStyle, resize: "vertical" }}
+                  />
+                ) : null}
+              </fieldset>
+
               {error ? (
                 <div role="alert" style={{ color: "#b91c1c", fontSize: 13 }}>
                   {error}
@@ -395,6 +525,11 @@ export default function InviteToEatModal({
               {statusLabel} · {kindLabel}
             </div>
             <div style={{ fontSize: 16, fontWeight: 800 }}>{placeName}</div>
+            {created.invitee_display_name ? (
+              <div style={{ fontSize: 14, color: "#44403c" }} data-testid="invite-created-invitee">
+                Inviting <strong>{created.invitee_display_name}</strong>
+              </div>
+            ) : null}
             <div style={{ fontSize: 15, fontWeight: 700, color: "#44403c" }}>
               {dateLabel}
               {dateLabel && timeLabel ? " · " : ""}
@@ -405,7 +540,7 @@ export default function InviteToEatModal({
                 Recommended: <strong>{dishName}</strong>
               </div>
             ) : null}
-            {created.message || message.trim() ? (
+            {created.message || selectedDraft || message.trim() ? (
               <div
                 style={{
                   padding: "10px 12px",
@@ -414,9 +549,10 @@ export default function InviteToEatModal({
                   fontSize: 14,
                   lineHeight: 1.45,
                   color: "#292524",
+                  whiteSpace: "pre-wrap",
                 }}
               >
-                “{created.message || message.trim()}”
+                {created.message || selectedDraft || message.trim()}
               </div>
             ) : null}
             <input

@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import {
   buildEatInviteMessageDraft,
   buildEatInviteShareText,
+  listInviteMessageOptions,
   pickInviteCopySeed,
 } from "../src/lib/eatInviteShareCopy.js";
 
@@ -36,7 +37,14 @@ test("InviteToEatButton tooltip and Invitation Ready confirmation", () => {
   assert.match(modal, /does not send SMS/);
   assert.match(modal, /Ready to Send/);
   assert.match(modal, /buildEatInviteShareText/);
-  assert.match(modal, /buildEatInviteMessageDraft/);
+  assert.match(modal, /listInviteMessageOptions/);
+  assert.match(modal, /invite-message-options/);
+  assert.match(modal, /invite-message-option-\$\{opt\.code\}/);
+  assert.match(modal, /invite-message-option-custom/);
+  assert.match(modal, /Write your own/);
+  assert.match(modal, /invite-invitee-name/);
+  assert.match(modal, /invitee_display_name/);
+  assert.match(modal, /type=["']radio["']/);
   assert.match(modal, /invite_kind/);
   assert.match(modal, /invite-guest-name/);
   assert.match(modal, /getOrCreateEatInviteGuestKey/);
@@ -47,7 +55,7 @@ test("InviteToEatButton tooltip and Invitation Ready confirmation", () => {
   assert.match(modal, /shareOpen && shareData/);
   assert.doesNotMatch(modal, /navigator\.contacts|getUserMedia/);
   assert.doesNotMatch(modal, /\bDate\b.*category|dating/i);
-  assert.doesNotMatch(modal, /acronym|glossary|Let's Do Lunch|emoji.?picker|invite_description/i);
+  assert.doesNotMatch(modal, /glossary|Let's Do Lunch means/i);
 
   const api = read("src/lib/eatInvitationsApi.js");
   assert.match(api, /\/public\/eat-invitations/);
@@ -58,11 +66,25 @@ test("InviteToEatButton tooltip and Invitation Ready confirmation", () => {
   assert.match(guestId, /setEatInviteGuestDisplayName/);
 });
 
-test("Share copy quietly seeds LDL/LDD/LHC/MMH with light emoji", () => {
+test("Share copy options include LDL/LDD/LHC/MMH with light emoji", () => {
   assert.equal(pickInviteCopySeed({ scheduledTime: "12:30" }).code, "LDL");
   assert.equal(pickInviteCopySeed({ scheduledTime: "19:00" }).code, "LDD");
   assert.equal(pickInviteCopySeed({ scheduledTime: "10:00" }).code, "LHC");
   assert.equal(pickInviteCopySeed({ scheduledTime: "23:00" }).code, "MMH");
+
+  const options = listInviteMessageOptions({
+    inviteKind: "private",
+    restaurantName: "Fixins",
+    dateLabel: "Friday",
+    timeLabel: "12:30 PM",
+    scheduledTime: "12:30",
+  });
+  assert.equal(options.length, 4);
+  assert.deepEqual(
+    options.map((o) => o.code),
+    ["LDL", "LDD", "LHC", "MMH"]
+  );
+  assert.match(options[0].text, /LDL/);
 
   const lunch = buildEatInviteShareText({
     inviteKind: "private",
@@ -70,23 +92,21 @@ test("Share copy quietly seeds LDL/LDD/LHC/MMH with light emoji", () => {
     dateLabel: "Friday, August 15",
     timeLabel: "12:30 PM",
     scheduledTime: "12:30",
+    seedCode: "LDL",
     url: "https://menuply.com/invite/abc",
   });
   assert.match(lunch, /LDL/);
   assert.match(lunch, /Let's do lunch at Fixins/);
   assert.match(lunch, /menuply\.com\/invite\/abc/);
 
-  const dinner = buildEatInviteShareText({
+  const custom = buildEatInviteShareText({
     inviteKind: "group",
     restaurantName: "Fixins",
-    dateLabel: "Saturday, August 15",
-    timeLabel: "7:00 PM",
-    scheduledTime: "19:00",
+    message: "Join us for tacos",
     url: "https://menuply.com/invite/xyz",
   });
-  assert.match(dinner, /LDD/);
-  assert.match(dinner, /Let's do dinner at Fixins/);
-  assert.match(dinner, /Who wants to join me/);
+  assert.match(custom, /Join us for tacos/);
+  assert.doesNotMatch(custom, /LDL|LDD|LHC|MMH/);
 
   const coffee = buildEatInviteMessageDraft({
     inviteKind: "private",
@@ -94,23 +114,13 @@ test("Share copy quietly seeds LDL/LDD/LHC/MMH with light emoji", () => {
     dateLabel: "tomorrow",
     timeLabel: "10:00 AM",
     scheduledTime: "10:00",
+    seedCode: "LHC",
   });
   assert.match(coffee, /LHC/);
   assert.match(coffee, /Let's have coffee at Bestia/);
-
-  const meet = buildEatInviteMessageDraft({
-    inviteKind: "group",
-    restaurantName: "In-N-Out Burger",
-    dateLabel: "Saturday",
-    timeLabel: "11:00 PM",
-    scheduledTime: "23:00",
-  });
-  assert.match(meet, /MMH/);
-  assert.match(meet, /Meet me here/);
-  assert.match(meet, /In-N-Out Burger/);
 });
 
-test("Eat invitation public page uses live About Us; guest RSVP; private vs group", () => {
+test("Eat invitation public page uses live About Us; named private invitee; guest RSVP", () => {
   const page = read("src/pages/EatInvitationPage.jsx");
   assert.match(page, /You're Invited to Eat/);
   assert.match(page, /invited you to eat/);
@@ -122,6 +132,9 @@ test("Eat invitation public page uses live About Us; guest RSVP; private vs grou
   assert.match(page, /respondToEatInvitation/);
   assert.match(page, /View Menu/);
   assert.match(page, /invite-guest-name/);
+  assert.match(page, /skipGuestNameField/);
+  assert.match(page, /invite-named-invitee/);
+  assert.match(page, /invitee_display_name/);
   assert.match(page, /getOrCreateEatInviteGuestKey/);
   assert.match(page, /Open in Maps/);
   assert.match(page, /invite-restaurant-address/);

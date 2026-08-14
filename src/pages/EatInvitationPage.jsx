@@ -224,6 +224,9 @@ export default function EatInvitationPage() {
   const timeLabel = formatInviteTimeLabel(invitation?.scheduled_time);
   const phone = String(invitation?.restaurant_phone || "").trim();
   const logoUrl = String(invitation?.restaurant_logo_url || "").trim();
+  const namedInvitee = String(invitation?.invitee_display_name || "").trim();
+  const skipGuestNameField =
+    Boolean(isPrivate && namedInvitee && !invitation?.is_organizer && !isAuthenticated);
 
   const shareData = useMemo(() => {
     if (!invitation?.url && !token) return null;
@@ -242,6 +245,7 @@ export default function EatInvitationPage() {
         dateLabel: formatInviteDateLabel(invitation?.scheduled_date),
         timeLabel: formatInviteTimeLabel(invitation?.scheduled_time),
         scheduledTime: invitation?.scheduled_time,
+        message: invitation?.message || null,
         url,
       }),
       url,
@@ -255,7 +259,8 @@ export default function EatInvitationPage() {
     try {
       const opts = {};
       if (!isAuthenticated) {
-        const name = String(guestName || "").trim();
+        const fromOrganizer = isPrivate ? namedInvitee : "";
+        const name = String(guestName || fromOrganizer || "").trim();
         if (!name) {
           throw new Error("Enter your name so the host knows who is coming");
         }
@@ -537,7 +542,7 @@ export default function EatInvitationPage() {
                     Your response: {responseLabel(responded)}
                   </div>
                 ) : null}
-                {!isAuthenticated ? (
+                {!isAuthenticated && !skipGuestNameField ? (
                   <label
                     style={{ display: "grid", gap: 4, fontSize: 12, fontWeight: 700 }}
                     data-testid="invite-guest-name-field"
@@ -561,6 +566,14 @@ export default function EatInvitationPage() {
                       }}
                     />
                   </label>
+                ) : null}
+                {!isAuthenticated && skipGuestNameField ? (
+                  <div
+                    data-testid="invite-named-invitee"
+                    style={{ fontSize: 14, color: "#44403c", fontWeight: 600 }}
+                  >
+                    Responding as <strong>{namedInvitee}</strong>
+                  </div>
                 ) : null}
                 {error ? (
                   <div role="alert" style={{ color: "#b91c1c", fontSize: 13 }}>
