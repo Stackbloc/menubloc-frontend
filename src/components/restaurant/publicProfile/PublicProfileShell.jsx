@@ -1,7 +1,7 @@
 /**
  * Unified Menuply public profile shell — restaurant homepage layout.
- * Claimed: Hero → Windows → About Us + Founded + Photos → Favorites → Deals → Updates
- * Unclaimed: Hero → About Us + Founded + Photos → Favorites → Deals → Updates
+ * Claimed: Hero → Windows → About [Name] + Founded + Photos → Favorites → Deals → Updates
+ * Unclaimed: Hero → About [Name] + Founded + Photos → Favorites → Deals → Updates
  * Food truck: Hero (address / current location) → Upcoming locations → then shared sections.
  * Contact + hours live in the hero. No bottom Information box.
  */

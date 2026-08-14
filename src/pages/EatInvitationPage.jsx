@@ -241,6 +241,7 @@ export default function EatInvitationPage() {
         restaurantName: place,
         dateLabel: formatInviteDateLabel(invitation?.scheduled_date),
         timeLabel: formatInviteTimeLabel(invitation?.scheduled_time),
+        scheduledTime: invitation?.scheduled_time,
         url,
       }),
       url,
@@ -392,6 +393,29 @@ export default function EatInvitationPage() {
               ) : null}
               <div style={{ fontSize: 22, fontWeight: 800, lineHeight: 1.2 }}>{placeName}</div>
             </div>
+
+            {String(invitation.restaurant_cuisine || "").trim() ? (
+              <div
+                data-testid="invite-restaurant-cuisine"
+                style={{ marginTop: 8, fontSize: 14, fontWeight: 600, color: "#57534e" }}
+              >
+                {String(invitation.restaurant_cuisine).trim()}
+              </div>
+            ) : null}
+
+            {String(invitation.restaurant_about_us || "").trim() ? (
+              <p
+                data-testid="invite-restaurant-about-us"
+                style={{
+                  margin: "12px 0 0",
+                  fontSize: 15,
+                  lineHeight: 1.5,
+                  color: "#44403c",
+                }}
+              >
+                {String(invitation.restaurant_about_us).trim()}
+              </p>
+            ) : null}
 
             {(streetAddr || cityLine) ? (
               <div data-testid="invite-restaurant-address" style={{ marginTop: 12 }}>

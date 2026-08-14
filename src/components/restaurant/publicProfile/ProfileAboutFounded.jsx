@@ -1,6 +1,7 @@
 /**
- * About Us + Founded on every public profile.
+ * About [Restaurant Name] + Founded on every public profile.
  * Unclaimed missing Founded (and About) render empty slots; claim CTA is page-level.
+ * about_us content remains the single description source for Invite to Eat preview.
  */
 import ProfilePhotoStrip from "./ProfilePhotoStrip.jsx";
 import {
@@ -30,11 +31,13 @@ export default function ProfileAboutFounded({
   void claimState;
   const about = firstNonEmpty(aboutText);
   const founded = firstNonEmpty(foundedText);
+  const placeName = String(name || "").trim() || "this restaurant";
+  const aboutHeading = `About ${placeName}`;
 
   return (
     <section
       data-testid="profile-about-founded"
-      aria-label="About Us"
+      aria-label={aboutHeading}
       style={{ marginBottom: isMobile ? 20 : 28 }}
     >
       <div
@@ -46,7 +49,7 @@ export default function ProfileAboutFounded({
           marginBottom: 12,
         }}
       >
-        About Us
+        {aboutHeading}
       </div>
       <div
         style={{

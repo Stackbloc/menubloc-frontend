@@ -10,6 +10,7 @@ import {
   setEatInviteGuestDisplayName,
 } from "../lib/eatInviteGuestIdentity.js";
 import {
+  buildEatInviteMessageDraft,
   buildEatInviteShareText,
   formatInviteDateLabel,
   formatInviteTimeLabel,
@@ -74,6 +75,7 @@ export default function InviteToEatModal({
       restaurantName: place,
       dateLabel,
       timeLabel,
+      scheduledTime: created.scheduled_time || time,
       url: created.url,
     });
     return {
@@ -338,11 +340,13 @@ export default function InviteToEatModal({
                   onChange={(e) => setMessage(e.target.value)}
                   rows={3}
                   maxLength={2000}
-                  placeholder={
-                    inviteKind === "private"
-                      ? "Want to grab dinner?"
-                      : "I'm getting dinner — who wants to join me?"
-                  }
+                  placeholder={buildEatInviteMessageDraft({
+                    inviteKind,
+                    restaurantName: placeName,
+                    dateLabel: formatInviteDateLabel(date),
+                    timeLabel: formatInviteTimeLabel(time),
+                    scheduledTime: time,
+                  })}
                   data-testid="invite-message"
                   style={{ ...inputStyle, resize: "vertical" }}
                 />

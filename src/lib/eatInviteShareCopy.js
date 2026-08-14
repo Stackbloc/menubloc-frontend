@@ -1,5 +1,7 @@
 /**
  * Invite to Eat share copy — private (1:1) vs group outing.
+ * Quietly seeds conversational shorthand (LDL/LDD/LHC/MMH) + light emoji in
+ * generated drafts only. Not a product feature; users may edit freely.
  */
 
 export function formatInviteDateLabel(isoDate) {
@@ -39,28 +41,88 @@ function whenParts(dateLabel, timeLabel) {
   return { date: "", time: "", joined: "" };
 }
 
+function hourFromTimeLabelOrRaw(timeLabel, scheduledTime) {
+  const fromRaw = String(scheduledTime || "").trim().match(/^(\d{1,2})/);
+  if (fromRaw) {
+    const h = Number(fromRaw[1]);
+    if (Number.isFinite(h) && h >= 0 && h <= 23) return h;
+  }
+  const label = String(timeLabel || "").trim().toLowerCase();
+  if (!label) return null;
+  const m = label.match(/^(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/i);
+  if (!m) return null;
+  let h = Number(m[1]);
+  const ap = (m[3] || "").toLowerCase();
+  if (ap === "pm" && h < 12) h += 12;
+  if (ap === "am" && h === 12) h = 0;
+  if (!Number.isFinite(h) || h < 0 || h > 23) return null;
+  return h;
+}
+
 /**
- * Default editable ShareModal body.
- * private: "Want to grab dinner at X with me DATE at TIME?"
- * group: "I'm getting dinner at X DATE at TIME. Who wants to join me?"
+ * Pick a quiet conversational seed from scheduled hour.
+ * Returns { code, emoji, verbPhrase } — decorative only.
+ */
+export function pickInviteCopySeed({ scheduledTime = null, timeLabel = null } = {}) {
+  const hour = hourFromTimeLabelOrRaw(timeLabel, scheduledTime);
+  if (hour != null && hour >= 7 && hour <= 10) {
+    return { code: "LHC", emoji: "☕", verbPhrase: "Let's have coffee", meal: "coffee" };
+  }
+  if (hour != null && hour >= 11 && hour <= 15) {
+    return { code: "LDL", emoji: "🥗", verbPhrase: "Let's do lunch", meal: "lunch" };
+  }
+  if (hour != null && hour >= 16 && hour <= 22) {
+    return { code: "LDD", emoji: "🍽️", verbPhrase: "Let's do dinner", meal: "dinner" };
+  }
+  return { code: "MMH", emoji: "📍", verbPhrase: "Meet me here", meal: "meet" };
+}
+
+/**
+ * Default editable compose placeholder / ShareModal body seed (no URL).
+ */
+export function buildEatInviteMessageDraft({
+  inviteKind = "group",
+  restaurantName,
+  dateLabel,
+  timeLabel,
+  scheduledTime = null,
+} = {}) {
+  const place = restaurantName || "a restaurant";
+  const when = whenParts(dateLabel, timeLabel);
+  const seed = pickInviteCopySeed({ scheduledTime, timeLabel });
+  const kind = String(inviteKind || "group").toLowerCase() === "private" ? "private" : "group";
+
+  if (seed.code === "MMH") {
+    const whenLine = [when.date, when.time].filter(Boolean).join(" · ");
+    return [`${seed.code} ${seed.emoji} — Meet me here.`, place, whenLine].filter(Boolean).join("\n");
+  }
+
+  const whenClause = when.joined ? ` ${when.joined}` : "";
+  if (kind === "private") {
+    return `${seed.code} ${seed.emoji} — ${seed.verbPhrase} at ${place}${whenClause}.`;
+  }
+  return `${seed.code} ${seed.emoji} — ${seed.verbPhrase} at ${place}${whenClause}. Who wants to join me?`;
+}
+
+/**
+ * Default editable ShareModal body (includes invite URL).
  */
 export function buildEatInviteShareText({
   inviteKind = "group",
   restaurantName,
   dateLabel,
   timeLabel,
+  scheduledTime = null,
   url,
 }) {
-  const place = restaurantName || "a restaurant";
-  const when = whenParts(dateLabel, timeLabel);
-  const link = url || "";
-  const kind = String(inviteKind || "group").toLowerCase() === "private" ? "private" : "group";
-
-  if (kind === "private") {
-    const whenClause = when.joined ? ` ${when.joined}` : "";
-    return `Want to grab dinner at ${place} with me${whenClause}? ${link}`.trim();
-  }
-
-  const whenClause = when.joined ? ` ${when.joined}` : "";
-  return `I'm getting dinner at ${place}${whenClause}. Who wants to join me? ${link}`.trim();
+  const draft = buildEatInviteMessageDraft({
+    inviteKind,
+    restaurantName,
+    dateLabel,
+    timeLabel,
+    scheduledTime,
+  });
+  const link = String(url || "").trim();
+  if (!link) return draft;
+  return `${draft}\n${link}`.trim();
 }

@@ -158,8 +158,8 @@ function testPublicProfileMenuLikeShareRail() {
 
 /**
  * Claimed and ordinary unclaimed restaurants use shared homepage public profile.
- * Claimed: Hero → Windows → About Us + Founded + Photos → Favorites → Deals → Updates.
- * Unclaimed: Hero → About Us + Founded + Photos → Favorites → Deals → Updates.
+ * Claimed: Hero → Windows → About [Name] + Founded + Photos → Favorites → Deals → Updates.
+ * Unclaimed: Hero → About [Name] + Founded + Photos → Favorites → Deals → Updates.
  */
 function testClaimedProfileUsesEditorialPresentation() {
   const page = read("src/pages/RestaurantPublicPage.jsx");
@@ -205,6 +205,8 @@ function testClaimedProfileUsesEditorialPresentation() {
   assert.match(updates, /profile-updates/);
   assert.match(deals, /profile-deals-section/);
   assert.match(about, /profile-about-founded/);
+  assert.match(about, /About \$\{placeName\}/);
+  assert.doesNotMatch(about, />About Us</);
   assert.match(about, /profile-founded/);
   assert.match(about, /profile-founded-blank/);
   assert.match(shell, /ProfileClaimBanner/);
