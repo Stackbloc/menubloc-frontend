@@ -102,16 +102,25 @@ function dayRangeLabel(startDow, endDow) {
   return `${start} – ${end}`;
 }
 
+/** True when `nextDow` is the calendar day after `prevDow` (week wraps). */
+function isNextCalendarDay(prevDow, nextDow) {
+  return (Number(prevDow) + 1) % 7 === Number(nextDow);
+}
+
 /**
- * Concise hours for public profiles:
+ * Concise hours for public profiles, chronological from today:
  *   Today: 10:30 AM – 1:00 AM
- *   Sun – Thu  10:30 AM – 1:00 AM
- *   Fri – Sat  10:30 AM – 1:30 AM
+ *   Sat – Sun  10:30 AM – 1:00 AM
+ *   Mon – Tue  Closed
+ *   Wed – Fri  10:30 AM – 1:00 AM
+ *
+ * After the Today line (or food-truck Today heading), remaining rows start
+ * tomorrow and wrap for 7 days, merging consecutive days with the same hours.
  *
  * @param {object[]} rows
  * @param {{ timezone?: string|null, now?: Date, includeTodayLine?: boolean }} [opts]
  *   includeTodayLine — default true. Food-truck hero sets false and labels the
- *   Hours header with "Today" instead (avoids a duplicate Today row).
+ *   heading with the dated Today line instead.
  */
 export function formatHoursRows(
   rows,
@@ -134,20 +143,28 @@ export function formatHoursRows(
     out.push({ day: "Today", text: scheduleTextForRow(todayRow) });
   }
 
-  const ordered = [...byDow.entries()].sort((a, b) => a[0] - b[0]);
-  let rangeStart = ordered[0][0];
-  let rangeEnd = ordered[0][0];
-  let rangeKey = scheduleKeyForRow(ordered[0][1]);
-  let rangeText = scheduleTextForRow(ordered[0][1]);
+  // Next 7 days starting tomorrow (includes today at the end of the wrap).
+  const sequence = [];
+  for (let i = 1; i <= 7; i += 1) {
+    const dow = (todayDow + i) % 7;
+    if (!byDow.has(dow)) continue;
+    sequence.push([dow, byDow.get(dow)]);
+  }
+  if (!sequence.length) return out;
+
+  let rangeStart = sequence[0][0];
+  let rangeEnd = sequence[0][0];
+  let rangeKey = scheduleKeyForRow(sequence[0][1]);
+  let rangeText = scheduleTextForRow(sequence[0][1]);
 
   const flush = () => {
     out.push({ day: dayRangeLabel(rangeStart, rangeEnd), text: rangeText });
   };
 
-  for (let i = 1; i < ordered.length; i += 1) {
-    const [dow, row] = ordered[i];
+  for (let i = 1; i < sequence.length; i += 1) {
+    const [dow, row] = sequence[i];
     const key = scheduleKeyForRow(row);
-    if (key === rangeKey && dow === rangeEnd + 1) {
+    if (key === rangeKey && isNextCalendarDay(rangeEnd, dow)) {
       rangeEnd = dow;
       continue;
     }
