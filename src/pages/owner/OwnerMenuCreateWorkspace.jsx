@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import OwnerLayout, { OWNER_COLORS, PageCard, SectionTitle } from "./OwnerLayout.jsx";
 import { MenuEditor, StatusChip, inputStyle } from "./ownerMenuEditorComponents.jsx";
@@ -327,6 +327,7 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
   const [loadRestaurantErr, setLoadRestaurantErr] = useState("");
   const [menu, setMenu] = useState(null);
   const [menuDetail, setMenuDetail] = useState(null);
+  const [itemPhotoUrls, setItemPhotoUrls] = useState({});
 
   const [menuName, setMenuName] = useState("Main Menu");
   const [menuType, setMenuType] = useState("main");
@@ -357,6 +358,18 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
   const step = !restaurant ? "profile" : reviewItems.length > 0 || menuDetail?.item_count > 0 ? "review" : "attach";
   const rid = restaurant?.id;
   const mid = menu?.id;
+
+  const liveItemsWithPhotos = useMemo(() => {
+    const sections = menuDetail?.sections || [];
+    if (!sections.length) return sections;
+    return sections.map((sec) => ({
+      ...sec,
+      items: (sec.items || []).map((it) => ({
+        ...it,
+        photo_url: itemPhotoUrls[it.id] || it.photo_url || null,
+      })),
+    }));
+  }, [menuDetail?.sections, itemPhotoUrls]);
 
   function scrollToMenuEditor() {
     requestAnimationFrame(() => {
@@ -1825,7 +1838,7 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
         <div ref={menuEditorRef}>
           <OcrEditSplitLayout
             pages={sourcePages}
-            liveItems={menuDetail.sections || []}
+            liveItems={liveItemsWithPhotos}
             ocrHref={
               latestUploadId
                 ? `/owner/menu-manager/uploads/${latestUploadId}/review-items`
@@ -1860,6 +1873,7 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
                 onMenuUpdated={(updated) => setMenuDetail((prev) => (prev ? { ...prev, menu: { ...prev.menu, ...updated } } : prev))}
                 onMenuDeleted={handleMenuDeleted}
                 onReload={loadMenuState}
+                onItemPhotosChange={setItemPhotoUrls}
               />
             </PageCard>
           </OcrEditSplitLayout>

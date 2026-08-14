@@ -98,7 +98,15 @@ function StatusBadge({ status }) {
 }
 
 // ── New/Edit item form ─────────────────────────────────────────────────────
-function ItemForm({ initial = {}, onSave, onCancel, busy }) {
+function ItemForm({
+  initial = {},
+  onSave,
+  onCancel,
+  busy,
+  photoUrl = null,
+  onPhotoUpload = null,
+  onPhotoRemove = null,
+}) {
   const [form, setForm] = useState({
     name: initial.name || "",
     description: initial.description || "",
@@ -109,7 +117,20 @@ function ItemForm({ initial = {}, onSave, onCancel, busy }) {
   const [modifierGroups, setModifierGroups] = useState(() =>
     toEditorGroups(initial.modifier_groups)
   );
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const fileRef = useRef(null);
   const f = (k) => (e) => setForm(p => ({ ...p, [k]: e.target.value }));
+
+  function handlePhotoFile(e) {
+    const file = e.target.files?.[0];
+    if (!file || !onPhotoUpload || !initial.id) return;
+    setPhotoBusy(true);
+    Promise.resolve(onPhotoUpload(initial, file))
+      .finally(() => {
+        setPhotoBusy(false);
+        e.target.value = "";
+      });
+  }
 
   return (
     <div style={{
@@ -151,6 +172,58 @@ function ItemForm({ initial = {}, onSave, onCancel, busy }) {
           <input style={{ ...INPUT, width: "100%" }} value={form.display_category_label} onChange={f("display_category_label")} placeholder="e.g. Mains or Starters" />
         </div>
       </div>
+      {initial.id && typeof onPhotoUpload === "function" ? (
+        <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 0" }}>
+          {photoUrl ? (
+            <img
+              src={photoUrl}
+              alt=""
+              style={{ width: 72, height: 54, borderRadius: 8, objectFit: "cover", flexShrink: 0, background: "#0f1720" }}
+            />
+          ) : (
+            <div style={{
+              width: 72, height: 54, borderRadius: 8, background: "#eef2f6",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 11, color: "#8a9ab0", flexShrink: 0,
+            }}>
+              No photo
+            </div>
+          )}
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              style={{ display: "none" }}
+              onChange={handlePhotoFile}
+            />
+            <button
+              type="button"
+              style={{ ...BTN("muted"), fontSize: 12, padding: "6px 12px", width: "fit-content", opacity: photoBusy ? 0.6 : 1 }}
+              disabled={photoBusy || busy}
+              onClick={() => fileRef.current?.click()}
+            >
+              {photoBusy ? "Uploading…" : photoUrl ? "Replace photo" : "Add photo"}
+            </button>
+            {photoUrl && typeof onPhotoRemove === "function" ? (
+              <button
+                type="button"
+                style={{ ...BTN("ghost"), fontSize: 12, padding: 0, width: "fit-content", color: "#8a9ab0" }}
+                disabled={photoBusy || busy}
+                onClick={() => {
+                  setPhotoBusy(true);
+                  Promise.resolve(onPhotoRemove(initial)).finally(() => setPhotoBusy(false));
+                }}
+              >
+                Remove photo
+              </button>
+            ) : null}
+            <span style={{ fontSize: 11, color: "#8a9ab0" }}>
+              JPG, PNG, or WEBP. Cropped to fit the menu thumbnail.
+            </span>
+          </div>
+        </div>
+      ) : null}
       <MenuItemModifiersEditor value={modifierGroups} onChange={setModifierGroups} />
       <div className="operator-responsive-card-actions" style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
         <button style={BTN("muted")} onClick={onCancel} type="button">Cancel</button>
@@ -1098,7 +1171,9 @@ export default function OperatorMenuEditor() {
             const primary =
               (photos?.photos || []).find((p) => p.status === "active" && p.is_primary) ||
               (photos?.photos || []).find((p) => p.status === "active");
-            return primary?.photo_url ? [item.id, primary.photo_url] : null;
+            return primary?.photo_url
+              ? [item.id, { url: primary.photo_url, photoId: primary.id ?? null }]
+              : null;
           } catch {
             return null;
           }
@@ -1121,7 +1196,24 @@ export default function OperatorMenuEditor() {
     try {
       const json = await api.uploadMenuItemPhoto(item.id, file, { isPrimary: true });
       const url = json.photo?.photo_url;
-      if (url) setItemPhotos((prev) => ({ ...prev, [item.id]: url }));
+      const photoId = json.photo?.id ?? null;
+      if (url) setItemPhotos((prev) => ({ ...prev, [item.id]: { url, photoId } }));
+    } catch (e) {
+      setError(e.message);
+    }
+  }
+
+  async function handlePhotoRemove(item) {
+    try {
+      const meta = itemPhotos[item.id];
+      if (meta?.photoId) {
+        await api.deleteMenuItemPhoto(meta.photoId);
+      }
+      setItemPhotos((prev) => {
+        const next = { ...prev };
+        delete next[item.id];
+        return next;
+      });
     } catch (e) {
       setError(e.message);
     }
@@ -1904,12 +1996,15 @@ export default function OperatorMenuEditor() {
                     onSave={handleEditSave}
                     onCancel={() => setEditingItem(null)}
                     busy={actionBusy}
+                    photoUrl={itemPhotos[item.id]?.url || null}
+                    onPhotoUpload={handlePhotoUpload}
+                    onPhotoRemove={handlePhotoRemove}
                   />
                 ) : (
                   <ItemRow
                     key={item.id}
                     item={item}
-                    photoUrl={itemPhotos[item.id] || null}
+                    photoUrl={itemPhotos[item.id]?.url || null}
                     onEdit={handleStartEdit}
                     onPublish={handlePublish}
                     onDelete={handleDelete}

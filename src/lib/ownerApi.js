@@ -364,6 +364,34 @@ export const deleteMenuConsoleItem = (restaurantId, menuId, itemId) =>
   req(`/api/owner/menu-console/restaurants/${restaurantId}/menus/${menuId}/items/${itemId}`, {
     method: "DELETE",
   });
+
+/** List dish photos for a CK menu item (Menu Manager). */
+export const listMenuConsoleItemPhotos = (restaurantId, menuId, itemId) =>
+  get(
+    `/api/owner/menu-console/restaurants/${restaurantId}/menus/${menuId}/items/${itemId}/photos`
+  );
+
+/** Upload dish photo (multipart field `photo`); processed to 4:3 cover WebP. */
+export const uploadMenuConsoleItemPhoto = (
+  restaurantId,
+  menuId,
+  itemId,
+  file,
+  { isPrimary = true } = {}
+) => {
+  const formData = new FormData();
+  formData.append("photo", file);
+  if (isPrimary) formData.append("is_primary", "true");
+  return postFormData(
+    `/api/owner/menu-console/restaurants/${restaurantId}/menus/${menuId}/items/${itemId}/photo`,
+    formData
+  );
+};
+
+/** Soft-delete a dish photo by photo row id. */
+export const deleteMenuConsoleItemPhoto = (photoId) =>
+  del(`/api/owner/menu-console/menu-item-photos/${photoId}`);
+
 export const searchMenuConsoleItems = (restaurantId, params = {}) => {
   const qs = new URLSearchParams(params).toString();
   return get(`/api/owner/menu-console/restaurants/${restaurantId}/items/search${qs ? `?${qs}` : ""}`);

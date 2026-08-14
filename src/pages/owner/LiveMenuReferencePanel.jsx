@@ -18,6 +18,8 @@ export function normalizeLiveMenuItems(input) {
           name: String(it.name || it.item_name || "").trim(),
           price: it.price != null && it.price !== "" ? it.price : null,
           description: String(it.description || "").trim(),
+          photo_url: String(it.photo_url || it.image_url || "").trim() || null,
+          id: it.id ?? null,
         });
       }
     }
@@ -32,6 +34,8 @@ export function normalizeLiveMenuItems(input) {
       name: String(it.name || it.item_name || "").trim(),
       price: it.price != null && it.price !== "" ? it.price : null,
       description: String(it.description || "").trim(),
+      photo_url: String(it.photo_url || it.image_url || "").trim() || null,
+      id: it.id ?? null,
     }))
     .filter((r) => r.name);
 }
@@ -135,7 +139,24 @@ export default function LiveMenuReferencePanel({
                 {rows.map((row, idx) => (
                   <li key={`${section}-${row.name}-${idx}`} className="live-menu-reference__item">
                     <div className="live-menu-reference__item-row">
-                      <span className="live-menu-reference__name">{row.name}</span>
+                      {row.photo_url ? (
+                        <img
+                          src={row.photo_url}
+                          alt=""
+                          className="live-menu-reference__thumb"
+                          style={{
+                            width: 40,
+                            height: 40,
+                            borderRadius: 6,
+                            objectFit: "cover",
+                            flexShrink: 0,
+                            background: "#0f1720",
+                          }}
+                        />
+                      ) : null}
+                      <span className="live-menu-reference__name" style={{ flex: 1 }}>
+                        {row.name}
+                      </span>
                       {row.price != null && row.price !== "" ? (
                         <span className="live-menu-reference__price">{formatPrice(row.price)}</span>
                       ) : null}

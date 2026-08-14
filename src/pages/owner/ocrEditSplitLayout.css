@@ -556,7 +556,7 @@
   display: flex;
   justify-content: space-between;
   gap: 10px;
-  align-items: baseline;
+  align-items: flex-start;
 }
 
 .live-menu-reference__name {

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   deriveSectionList,
   resolveSectionCanonical,
@@ -211,12 +211,13 @@ export function StatusChip({ status }) {
  * @param {object} props
  * @param {number|string} props.restaurantId
  * @param {object} props.menuDetail — { menu, sections, item_count }
- * @param {object} props.api — { updateItem, deleteItem, addItem, updateMenu, publishMenu, unpublishMenu, deleteMenu? }
+ * @param {object} props.api — { updateItem, deleteItem, addItem, updateMenu, publishMenu, unpublishMenu, deleteMenu?, listItemPhotos?, uploadItemPhoto?, deleteItemPhoto? }
  * @param {boolean} [props.allowDeleteMenu=true]
  * @param {object} [props.colors]
  * @param {function} [props.onMenuUpdated]
  * @param {function} [props.onMenuDeleted]
  * @param {function} [props.onReload]
+ * @param {function} [props.onItemPhotosChange] — ({ [itemId]: photoUrl })
  */
 export function MenuEditor({
   restaurantId,
@@ -225,6 +226,7 @@ export function MenuEditor({
   onMenuUpdated,
   onMenuDeleted,
   onReload,
+  onItemPhotosChange,
   allowDeleteMenu = true,
   colors = MENU_EDITOR_COLORS,
   PageCard = DefaultPageCard,
@@ -243,6 +245,9 @@ export function MenuEditor({
 
   const [pendingEdits, setPendingEdits] = useState({});
   const [editingItemId, setEditingItemId] = useState(null);
+  /** @type {[{ [id: string]: { url: string, photoId: number|null } }, Function]} */
+  const [itemPhotos, setItemPhotos] = useState({});
+  const [photoBusyId, setPhotoBusyId] = useState(null);
 
   const [newItemSection, setNewItemSection] = useState(null);
   const [newItem, setNewItem] = useState({ name: "", description: "", price: "", section: "" });
@@ -267,6 +272,9 @@ export function MenuEditor({
     letterSpacing: "0.05em",
   };
 
+  const canManagePhotos =
+    typeof api.listItemPhotos === "function" && typeof api.uploadItemPhoto === "function";
+
   useEffect(() => {
     setSections(menuDetail.sections || []);
     setUnsaved(false);
@@ -275,6 +283,105 @@ export function MenuEditor({
     setSaveMsg("");
     setMenuNameDraft(menuDetail.menu?.display_name || menuDetail.menu?.name || "");
   }, [menuDetail]);
+
+  useEffect(() => {
+    if (!canManagePhotos || !menu?.id || !restaurantId) {
+      setItemPhotos({});
+      return undefined;
+    }
+    let cancelled = false;
+    const allItems = (menuDetail.sections || []).flatMap((s) => s.items || []);
+    (async () => {
+      const entries = await Promise.all(
+        allItems.map(async (item) => {
+          try {
+            const data = await api.listItemPhotos(restaurantId, menu.id, item.id);
+            const primary =
+              (data?.photos || []).find((p) => p.status === "active" && p.is_primary) ||
+              (data?.photos || []).find((p) => p.status === "active");
+            if (!primary?.photo_url) return null;
+            return [item.id, { url: primary.photo_url, photoId: primary.id ?? null }];
+          } catch {
+            return null;
+          }
+        })
+      );
+      if (cancelled) return;
+      const next = {};
+      for (const entry of entries) {
+        if (entry) next[entry[0]] = entry[1];
+      }
+      setItemPhotos(next);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [canManagePhotos, restaurantId, menu?.id, menuDetail]);
+
+  useEffect(() => {
+    if (typeof onItemPhotosChange !== "function") return;
+    const urlMap = {};
+    for (const [id, meta] of Object.entries(itemPhotos)) {
+      if (meta?.url) urlMap[id] = meta.url;
+    }
+    onItemPhotosChange(urlMap);
+  }, [itemPhotos, onItemPhotosChange]);
+
+  async function handlePhotoUpload(itemId, file) {
+    if (!canManagePhotos || !file || !menu?.id) return;
+    setPhotoBusyId(itemId);
+    setSaveMsg("");
+    try {
+      const json = await api.uploadItemPhoto(restaurantId, menu.id, itemId, file, {
+        isPrimary: true,
+      });
+      const url = json?.photo?.photo_url;
+      const photoId = json?.photo?.id ?? null;
+      if (url) {
+        setItemPhotos((prev) => ({ ...prev, [itemId]: { url, photoId } }));
+        setSaveMsg("Photo saved.");
+        setSaveMsgOk(true);
+      }
+    } catch (err) {
+      setSaveMsg(err?.payload?.error || err?.message || "Photo upload failed.");
+      setSaveMsgOk(false);
+    } finally {
+      setPhotoBusyId(null);
+      setTimeout(() => setSaveMsg(""), 3000);
+    }
+  }
+
+  async function handlePhotoRemove(itemId) {
+    if (!canManagePhotos || !menu?.id) return;
+    const meta = itemPhotos[itemId];
+    if (!meta?.photoId && typeof api.deleteItemPhoto !== "function") {
+      setItemPhotos((prev) => {
+        const next = { ...prev };
+        delete next[itemId];
+        return next;
+      });
+      return;
+    }
+    setPhotoBusyId(itemId);
+    try {
+      if (meta?.photoId && typeof api.deleteItemPhoto === "function") {
+        await api.deleteItemPhoto(meta.photoId);
+      }
+      setItemPhotos((prev) => {
+        const next = { ...prev };
+        delete next[itemId];
+        return next;
+      });
+      setSaveMsg("Photo removed.");
+      setSaveMsgOk(true);
+    } catch (err) {
+      setSaveMsg(err?.payload?.error || err?.message || "Could not remove photo.");
+      setSaveMsgOk(false);
+    } finally {
+      setPhotoBusyId(null);
+      setTimeout(() => setSaveMsg(""), 3000);
+    }
+  }
 
   function startEditItem(itemId) {
     const allItems = sections.flatMap((s) => s.items);
@@ -708,6 +815,11 @@ export function MenuEditor({
             onUpdateEdit={updatePendingEdit}
             onSaveEdit={saveEditItem}
             onDeleteItem={handleDeleteItem}
+            itemPhotos={itemPhotos}
+            photoBusyId={photoBusyId}
+            canManagePhotos={canManagePhotos}
+            onPhotoUpload={handlePhotoUpload}
+            onPhotoRemove={handlePhotoRemove}
             newItemSection={newItemSection}
             newItem={newItem}
             onSetNewItem={setNewItem}
@@ -773,6 +885,11 @@ function SectionEditor({
   onUpdateEdit,
   onSaveEdit,
   onDeleteItem,
+  itemPhotos = {},
+  photoBusyId = null,
+  canManagePhotos = false,
+  onPhotoUpload,
+  onPhotoRemove,
   newItemSection,
   newItem,
   onSetNewItem,
@@ -840,6 +957,11 @@ function SectionEditor({
           onUpdateEdit={(field, value) => onUpdateEdit(item.id, field, value)}
           onSaveEdit={() => onSaveEdit(item.id)}
           onDelete={() => onDeleteItem(item.id)}
+          photoUrl={itemPhotos[item.id]?.url || null}
+          photoBusy={photoBusyId === item.id}
+          canManagePhotos={canManagePhotos}
+          onPhotoUpload={(file) => onPhotoUpload?.(item.id, file)}
+          onPhotoRemove={() => onPhotoRemove?.(item.id)}
         />
       ))}
 
@@ -878,7 +1000,112 @@ function ItemRow({
   onUpdateEdit,
   onSaveEdit,
   onDelete,
+  photoUrl = null,
+  photoBusy = false,
+  canManagePhotos = false,
+  onPhotoUpload,
+  onPhotoRemove,
 }) {
+  const fileRef = useRef(null);
+
+  function onFileChange(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    onPhotoUpload?.(file);
+    e.target.value = "";
+  }
+
+  const photoControls = canManagePhotos ? (
+    <div style={{ marginBottom: 12 }}>
+      <label style={labelStyle}>Item photo</label>
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        {photoUrl ? (
+          <img
+            src={photoUrl}
+            alt=""
+            style={{
+              width: 72,
+              height: 54,
+              borderRadius: 8,
+              objectFit: "cover",
+              flexShrink: 0,
+              border: `1px solid ${colors.line}`,
+              background: "#0f1720",
+            }}
+          />
+        ) : (
+          <div
+            style={{
+              width: 72,
+              height: 54,
+              borderRadius: 8,
+              background: "#f1f5f9",
+              border: `1px dashed ${colors.line}`,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 11,
+              color: colors.muted,
+              flexShrink: 0,
+            }}
+          >
+            No photo
+          </div>
+        )}
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            style={{ display: "none" }}
+            onChange={onFileChange}
+          />
+          <button
+            type="button"
+            disabled={photoBusy || saving}
+            onClick={() => fileRef.current?.click()}
+            style={{
+              padding: "7px 12px",
+              borderRadius: 8,
+              background: "#fff",
+              border: `1px solid ${colors.line}`,
+              fontWeight: 600,
+              fontSize: 12,
+              cursor: photoBusy ? "not-allowed" : "pointer",
+              opacity: photoBusy ? 0.6 : 1,
+              width: "fit-content",
+            }}
+          >
+            {photoBusy ? "Uploading…" : photoUrl ? "Replace photo" : "Add photo"}
+          </button>
+          {photoUrl ? (
+            <button
+              type="button"
+              disabled={photoBusy || saving}
+              onClick={onPhotoRemove}
+              style={{
+                padding: 0,
+                border: "none",
+                background: "none",
+                color: colors.muted,
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: photoBusy ? "not-allowed" : "pointer",
+                textAlign: "left",
+                width: "fit-content",
+              }}
+            >
+              Remove photo
+            </button>
+          ) : null}
+          <span style={{ fontSize: 11, color: colors.muted }}>
+            JPG, PNG, or WEBP. Cropped to fit the menu thumbnail.
+          </span>
+        </div>
+      </div>
+    </div>
+  ) : null;
+
   if (isEditing && pendingEdit) {
     return (
       <div
@@ -934,6 +1161,7 @@ function ItemRow({
             fieldStyle={fieldStyle}
           />
         </div>
+        {photoControls}
         <MenuItemModifiersEditor
           value={pendingEdit.modifier_groups || []}
           onChange={(next) => onUpdateEdit("modifier_groups", next)}
@@ -989,6 +1217,31 @@ function ItemRow({
         gap: 12,
       }}
     >
+      {photoUrl ? (
+        <img
+          src={photoUrl}
+          alt=""
+          style={{
+            width: 40,
+            height: 40,
+            borderRadius: 6,
+            objectFit: "cover",
+            flexShrink: 0,
+            background: "#0f1720",
+          }}
+        />
+      ) : canManagePhotos ? (
+        <div
+          style={{
+            width: 40,
+            height: 40,
+            borderRadius: 6,
+            background: "#f1f5f9",
+            flexShrink: 0,
+            border: `1px dashed ${colors.line}`,
+          }}
+        />
+      ) : null}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontWeight: 600, fontSize: 13 }}>{item.name}</div>
         {item.description && (
