@@ -30,6 +30,7 @@ export function isActiveBillboardSplashPost(post) {
 
 /**
  * Pick ordered current splash creatives (max 6) for the entrance carousel.
+ * Dedicated window offers (content_type=window) do not drive the entrance splash.
  * @param {unknown} posts
  * @param {{ limit?: number }} [opts]
  * @returns {object[]}
@@ -43,6 +44,8 @@ export function pickClaimedBillboardSplashPosts(posts, opts = {}) {
   const eligible = [];
   for (const post of list) {
     if (!isActiveBillboardSplashPost(post)) continue;
+    const contentType = String(post?.content_type || "").trim().toLowerCase();
+    if (contentType === "window") continue;
     eligible.push(post);
   }
   eligible.sort((a, b) => {

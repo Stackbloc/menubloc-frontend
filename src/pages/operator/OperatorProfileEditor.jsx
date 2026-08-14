@@ -910,7 +910,7 @@ export function OperatorRestaurantProfileForm({ embedded = false } = {}) {
 
         <Section
           title="Billboards & deals"
-          sub="Billboard creatives fill the public splash, Windows block, and photo strip. Set Windows photo orientation (portrait/landscape) on Billboards. Deals fill the public Deals section."
+          sub="Public Windows is temporary for In-N-Out only — deal and brand splash creatives do not auto-fill Windows for other restaurants. Set Windows photo orientation (portrait/landscape) here. Deals fill the public Deals section."
         >
           <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
             <Link

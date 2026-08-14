@@ -158,7 +158,7 @@ function testPublicProfileMenuLikeShareRail() {
 
 /**
  * Claimed and ordinary unclaimed restaurants use shared homepage public profile.
- * Claimed: Hero → Windows → About [Name] + Founded + Photos → Favorites → Deals → Updates.
+ * Claimed: Hero → Windows (if offers) → About [Name] + Founded + Photos → Favorites → Deals → Updates.
  * Unclaimed: Hero → About [Name] + Founded + Photos → Favorites → Deals → Updates.
  */
 function testClaimedProfileUsesEditorialPresentation() {
@@ -214,12 +214,15 @@ function testClaimedProfileUsesEditorialPresentation() {
   assert.match(about, /ProfilePhotoStrip/);
   assert.match(billboard, /profile-billboard-block/);
   assert.match(billboard, /Windows/);
-  assert.match(billboard, /WINDOWS_MAX_SLIDES\s*=\s*4/);
+  assert.match(billboard, /pickWindowsPosts/);
+  assert.match(read("src/lib/profileWindows.js"), /WINDOWS_MAX_SLIDES\s*=\s*4/);
   assert.match(billboard, /Previous window/);
   assert.match(billboard, /Next window/);
   assert.match(billboard, /›/);
   assert.match(billboard, /‹/);
   assert.doesNotMatch(billboard, />\s*Billboard\s*</);
+  assert.doesNotMatch(billboard, /No Windows yet/);
+  assert.doesNotMatch(billboard, /postBody|postTitle/);
   assert.match(favorites, /showClaimInvites|ProfileSectionBlank/);
   assert.match(updates, /showClaimInvites|ProfileSectionBlank/);
   assert.match(hero, /profile-hero-actions/);

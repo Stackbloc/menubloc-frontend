@@ -41,7 +41,9 @@ const billboard = read("src/components/restaurant/publicProfile/ProfileBillboard
 assert.match(billboard, /windowsPhotoOrientation/);
 assert.match(billboard, /aspectRatio:\s*frameAspect/);
 assert.match(billboard, /data-windows-orientation/);
+assert.match(billboard, /pickWindowsPosts|frameMaxWidth/);
 assert.doesNotMatch(billboard, /height:\s*isMobile\s*\?\s*160/);
+assert.doesNotMatch(billboard, /No Windows yet/);
 
 const photos = read("src/components/restaurant/publicProfile/ProfilePhotoStrip.jsx");
 assert.match(photos, /windowsPhotoOrientation/);

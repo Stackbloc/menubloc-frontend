@@ -659,8 +659,9 @@ export default function OperatorBillboardsPage() {
               Windows photo orientation
             </div>
             <p style={{ margin: "4px 0 0", fontSize: 12, color: "#64748b", lineHeight: 1.45 }}>
-              One setting for the whole public profile. All Windows slides and Photos tiles use the same frame.
-              Default is portrait.
+              Windows is temporary for In-N-Out only on public profiles. Brand splash, hero art, and deal billboards
+              do not auto-fill Windows for other restaurants. Orientation still applies to Photos tiles. Default is
+              portrait.
             </p>
           </div>
           <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
