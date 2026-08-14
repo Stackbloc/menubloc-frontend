@@ -1628,6 +1628,34 @@ export default function MenuItemDetailPage() {
               </div>
             </div>
 
+            <div
+              style={{
+                display: "flex",
+                alignItems: "flex-start",
+                gap: isMobile ? 12 : 16,
+              }}
+            >
+              {showItemPhoto ? (
+                <div
+                  data-testid="menu-item-detail-photo"
+                  style={{
+                    flexShrink: 0,
+                    width: isMobile ? 88 : 112,
+                    height: isMobile ? 88 : 112,
+                    borderRadius: 16,
+                    overflow: "hidden",
+                    border: "1px solid var(--gb-color-border)",
+                    background: "var(--gb-color-surface)",
+                  }}
+                >
+                  <img
+                    src={item.itemPhotoUrl}
+                    alt={`${displayItemName} photo`}
+                    style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                  />
+                </div>
+              ) : null}
+              <div style={{ flex: "1 1 auto", minWidth: 0, display: "grid", gap: isMobile ? 12 : 12 }}>
             <div>
               <div
                 style={{
@@ -1725,36 +1753,12 @@ export default function MenuItemDetailPage() {
                 {item.badges.deal       ? <BadgePill tone="caution">{t("common.deals", "Deal")}</BadgePill> : null}
               </div>
             )}
+              </div>
+            </div>
 
           </div>
-
-        {showItemPhoto && isMobile ? (
-          <div style={{ minHeight: isMobile ? 280 : 100, borderRadius: 22, overflow: "hidden", border: "1px solid var(--gb-color-border)", background: "var(--gb-color-surface)" }}>
-            <img src={item.itemPhotoUrl} alt={`${displayItemName} photo`} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-          </div>
-        ) : null}
         </div>
       </Surface>
-
-      {showItemPhoto && !isMobile ? (
-        <Surface style={{ marginTop: 16, padding: 0, overflow: "hidden" }}>
-          <div
-            style={{
-              minHeight: 320,
-              borderRadius: 22,
-              overflow: "hidden",
-              border: "1px solid var(--gb-color-border)",
-              background: "var(--gb-color-surface)",
-            }}
-          >
-            <img
-              src={item.itemPhotoUrl}
-              alt={`${displayItemName} photo`}
-              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-            />
-          </div>
-        </Surface>
-      ) : null}
 
       {isBrokenFranchiseLink && (
         <Surface style={{ marginTop: 20, padding: isMobile ? 16 : 20, background: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.2)" }}>

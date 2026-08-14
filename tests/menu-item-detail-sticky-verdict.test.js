@@ -10,6 +10,10 @@ test("MenuItemDetailPage sticky hero carries compact verdict (no duplicate rail)
   assert.match(source, /showStickyVerdict/);
   assert.match(source, /<VerdictBlock[\s\S]*compact/);
   assert.doesNotMatch(source, /<StickyVerdictRail/);
+  assert.match(source, /data-testid="menu-item-detail-photo"/);
+  assert.match(source, /width: isMobile \? 88 : 112/);
+  assert.doesNotMatch(source, /showItemPhoto && isMobile/);
+  assert.doesNotMatch(source, /minHeight:\s*320/);
 });
 
 test("MenuItemDetailPage compact VerdictBlock renders brief explanation", () => {
