@@ -1632,7 +1632,7 @@ export default function MenuItemDetailPage() {
               style={{
                 display: "flex",
                 alignItems: "flex-start",
-                gap: isMobile ? 12 : 16,
+                gap: isMobile ? 18 : 24,
               }}
             >
               {showItemPhoto ? (
@@ -1640,8 +1640,8 @@ export default function MenuItemDetailPage() {
                   data-testid="menu-item-detail-photo"
                   style={{
                     flexShrink: 0,
-                    width: isMobile ? 88 : 112,
-                    height: isMobile ? 88 : 112,
+                    width: isMobile ? 101 : 129,
+                    height: isMobile ? 101 : 129,
                     borderRadius: 16,
                     overflow: "hidden",
                     border: "1px solid var(--gb-color-border)",

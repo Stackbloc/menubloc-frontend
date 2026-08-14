@@ -57,7 +57,7 @@ export function getTodayDayOfWeek(timezone = null, now = new Date()) {
 }
 
 /**
- * Public-profile hours hero heading: "Today, Friday, June 1, 2026"
+ * Public-profile hours hero heading: "Today, Friday, June 1"
  * Uses restaurant timezone when provided. Shared by restaurants and food trucks.
  */
 export function formatFoodTruckHoursTodayHeading(timezone = null, now = new Date()) {
@@ -66,7 +66,6 @@ export function formatFoodTruckHoursTodayHeading(timezone = null, now = new Date
     weekday: "long",
     month: "long",
     day: "numeric",
-    year: "numeric",
     ...(tz ? { timeZone: tz } : {}),
   };
   try {
@@ -74,9 +73,8 @@ export function formatFoodTruckHoursTodayHeading(timezone = null, now = new Date
     const weekday = parts.find((p) => p.type === "weekday")?.value || "";
     const month = parts.find((p) => p.type === "month")?.value || "";
     const day = parts.find((p) => p.type === "day")?.value || "";
-    const year = parts.find((p) => p.type === "year")?.value || "";
-    if (weekday && month && day && year) {
-      return `Today, ${weekday}, ${month} ${day}, ${year}`;
+    if (weekday && month && day) {
+      return `Today, ${weekday}, ${month} ${day}`;
     }
   } catch {
     /* fall through */
@@ -86,9 +84,8 @@ export function formatFoodTruckHoursTodayHeading(timezone = null, now = new Date
       weekday: "long",
       month: "long",
       day: "numeric",
-      year: "numeric",
     }).format(now);
-    // "Friday, June 1, 2026" → "Today, Friday, June 1, 2026"
+    // "Friday, June 1" → "Today, Friday, June 1"
     return `Today, ${fallback}`;
   } catch {
     return "Today";
