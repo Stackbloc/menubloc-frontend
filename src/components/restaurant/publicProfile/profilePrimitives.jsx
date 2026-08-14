@@ -316,8 +316,6 @@ export function LogoMark({ name, logoUrl, onPhoto = false }) {
   );
 }
 
-}
-
 export function normalizeScheduleStops(profile) {
   const raw = profile?.schedule || profile?.scheduled_locations;
   if (!Array.isArray(raw)) return [];
