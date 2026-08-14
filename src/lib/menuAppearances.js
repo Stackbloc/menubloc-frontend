@@ -101,6 +101,13 @@ function patternArtisan(stroke = "#9a3412", opacity = 0.3) {
   );
 }
 
+/** A-frame Klaudette — palm + green frame on yellow chrome */
+function patternJamaicanPalm(green = "#0B5C2E", maroon = "#7A1F1F", opacity = 0.32) {
+  return svgDataUri(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48"><g fill="none" stroke="${green}" stroke-opacity="${opacity}" stroke-width="1.1" stroke-linecap="round"><path d="M24 44v-18"/><path d="M24 28c-6-2-12-8-14-14M24 28c6-2 12-8 14-14M24 30c-8 0-14-4-18-8M24 30c8 0 14-4 18-8"/></g><path d="M6 6h36v36H6z" fill="none" stroke="${green}" stroke-opacity="${opacity * 0.45}" stroke-width="1.6"/><circle cx="12" cy="12" r="1" fill="${maroon}" fill-opacity="${opacity * 0.5}"/><circle cx="36" cy="36" r="1" fill="${maroon}" fill-opacity="${opacity * 0.5}"/></svg>`
+  );
+}
+
 /**
  * @typedef {object} MenuAppearanceTokens
  * @property {string} name
@@ -305,6 +312,21 @@ export const menuAppearances = {
     border: "#e0c8b2",
     shadow: "0 1px 3px rgba(154,52,18,0.09)",
     ...MENU_APPEARANCE_READABILITY,
+  },
+  // A-frame board: yellow chrome, green accent, maroon headers, readable cream surface
+  jamaican: {
+    name: "Jamaican",
+    pageBackground: "#F5E06A",
+    backgroundPattern: patternJamaicanPalm("#0B5C2E", "#7A1F1F", 0.28),
+    menuSurface: "#fffdf5",
+    accent: "#0B5C2E",
+    divider: "#e8d978",
+    sectionHeader: "#7A1F1F",
+    border: "#d4c45a",
+    shadow: "0 1px 3px rgba(11,92,46,0.12)",
+    ink: "#1c1917",
+    muted: "#44403c",
+    onPage: "#14532d",
   },
   dark: {
     name: "Dark",

@@ -27,10 +27,11 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
 
 describe("Menu Appearance registry", () => {
-  it("has 16 approved keys including modern_minimal and dark", () => {
-    assert.equal(MENU_APPEARANCE_KEYS.length, 16);
+  it("has 17 approved keys including modern_minimal, jamaican, and dark", () => {
+    assert.equal(MENU_APPEARANCE_KEYS.length, 17);
     assert.ok(isValidMenuAppearanceKey("modern_minimal"));
     assert.ok(isValidMenuAppearanceKey("artisan"));
+    assert.ok(isValidMenuAppearanceKey("jamaican"));
     assert.ok(isValidMenuAppearanceKey("dark"));
     assert.equal(isValidMenuAppearanceKey("bogus"), false);
   });

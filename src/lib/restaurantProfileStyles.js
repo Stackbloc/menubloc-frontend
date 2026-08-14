@@ -159,6 +159,13 @@ function patternSunriseStripes(stroke = "#ea580c", opacity = 0.4) {
   );
 }
 
+/** Klaudette A-frame inspired — palm silhouette + soft tropical weave on yellow */
+function patternJamaicanPalm(green = "#0B5C2E", maroon = "#7A1F1F", opacity = 0.42) {
+  return svgDataUri(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48"><g fill="none" stroke="${green}" stroke-opacity="${opacity}" stroke-width="1.2" stroke-linecap="round"><path d="M24 44v-18"/><path d="M24 28c-6-2-12-8-14-14M24 28c6-2 12-8 14-14M24 30c-8 0-14-4-18-8M24 30c8 0 14-4 18-8M24 26c-4-6-4-12-2-16M24 26c4-6 4-12 2-16"/></g><path d="M4 8h40M4 40h40M8 4v40M40 4v40" fill="none" stroke="${green}" stroke-opacity="${opacity * 0.35}" stroke-width="1.4"/><circle cx="10" cy="10" r="1.2" fill="${maroon}" fill-opacity="${opacity * 0.55}"/><circle cx="38" cy="38" r="1.2" fill="${maroon}" fill-opacity="${opacity * 0.55}"/></svg>`
+  );
+}
+
 function parseHex(hex) {
   const h = String(hex || "").replace("#", "").trim();
   if (!/^[0-9a-fA-F]{6}$/.test(h)) return { r: 22, g: 101, b: 52 };
@@ -443,6 +450,18 @@ export const restaurantProfileStyles = {
     cardShadow: "0 1px 3px rgba(154,52,18,0.1)",
     buttonBackground: "#ea580c",
     buttonText: "#fff7ed",
+  },
+  // A-frame board inspired — sunny yellow, dark green frame, maroon brand energy
+  jamaican: {
+    name: "Jamaican",
+    pageBackground: "#F5E06A",
+    backgroundPattern: patternJamaicanPalm("#0B5C2E", "#7A1F1F", 0.45),
+    accent: "#0B5C2E",
+    sectionLabel: "#7A1F1F",
+    cardBorder: "#c4b24a",
+    cardShadow: "0 1px 3px rgba(11,92,46,0.14)",
+    buttonBackground: "#0B5C2E",
+    buttonText: "#fffbeb",
   },
 };
 

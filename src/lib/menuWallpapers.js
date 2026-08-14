@@ -340,6 +340,7 @@ export const RANDOM_APPEARANCE_POOL = Object.freeze([
   "executive",
   "heritage",
   "artisan",
+  "jamaican",
 ]);
 
 /**
@@ -362,6 +363,7 @@ export const APPEARANCE_TO_WALLPAPER_POOL = Object.freeze({
   executive: ["executive_lines", "soft_grid", "fine_hatch", "open_lattice"],
   heritage: ["heritage_cross", "rustic_plank", "parchment_flecks", "stone_blocks"],
   artisan: ["soft_rings", "confetti_specks", "parchment_flecks", "rustic_plank"],
+  jamaican: ["linen_weave", "parchment_flecks", "soft_grain", "confetti_specks"],
   dark: ["soft_grid", "fine_hatch", "executive_lines", "quiet_dots"],
 });
 

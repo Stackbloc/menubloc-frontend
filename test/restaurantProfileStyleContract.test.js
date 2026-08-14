@@ -44,11 +44,12 @@ const EXPECTED_NAMES = {
   vineyard: "Vineyard",
   soft_pastel: "Soft Pastels",
   sunrise: "Sunrise",
+  jamaican: "Jamaican",
 };
 
 describe("restaurant profile styles registry", () => {
-  it("has 21 styles with branded Smart Theme names", () => {
-    assert.equal(PROFILE_STYLE_KEYS.length, 21);
+  it("has 22 styles with branded Smart Theme names", () => {
+    assert.equal(PROFILE_STYLE_KEYS.length, 22);
     assert.ok(isValidProfileStyleKey("modern_minimal"));
     assert.equal(getProfileStyleTokens("coastal").name, "Coastal Blue");
     assert.equal(getProfileStyleTokens("sports_bar").name, "Dark Leather");
