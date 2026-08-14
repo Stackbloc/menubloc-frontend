@@ -3,9 +3,10 @@
  * Food-offer photos only (not brand splash/hero billboard art), unless the
  * temporary In-N-Out exception applies. Section is omitted when empty.
  * Photos only — no title/body caption under the frame.
- * Up to 4 slides with Yellow Browser–style ‹ › arrows.
+ * All window photos shown in a row; click opens fullscreen lightbox.
  */
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { pickWindowsPosts } from "../../../lib/profileWindows.js";
 import { resolveBillboardImageObjectPosition } from "../../../lib/billboardImageObjectPosition.js";
 import {
@@ -18,28 +19,6 @@ function postImage(post) {
   return String(post?.image_url || post?.photo_url || "").trim();
 }
 
-function arrowButtonStyle(side, disabled) {
-  return {
-    position: "absolute",
-    [side]: 2,
-    top: "50%",
-    transform: "translateY(-50%)",
-    zIndex: 2,
-    width: 22,
-    height: 32,
-    borderRadius: 6,
-    border: "1px solid rgba(255,255,255,0.35)",
-    background: disabled ? "rgba(0,0,0,0.28)" : "rgba(0,0,0,0.55)",
-    color: "#fff",
-    fontSize: 14,
-    fontWeight: 900,
-    cursor: disabled ? "default" : "pointer",
-    lineHeight: 1,
-    padding: 0,
-    opacity: disabled ? 0.45 : 1,
-  };
-}
-
 export default function ProfileBillboardBlock({
   billboardPreview = [],
   profile = null,
@@ -47,26 +26,109 @@ export default function ProfileBillboardBlock({
   windowsPhotoOrientation = "portrait",
 }) {
   const posts = pickWindowsPosts(billboardPreview, profile);
-  const [index, setIndex] = useState(0);
+  const [lightboxIndex, setLightboxIndex] = useState(null);
   const orientation = normalizeWindowsPhotoOrientation(windowsPhotoOrientation);
   const frameAspect = windowsFrameAspectRatio(orientation);
+  // Compact thumb so Windows is visible without scrolling past the hero.
+  const frameMaxWidth = isMobile ? 88 : 104;
 
   useEffect(() => {
-    setIndex(0);
+    setLightboxIndex(null);
   }, [posts.map((p) => p?.id || postImage(p)).join("|")]);
+
+  useEffect(() => {
+    if (lightboxIndex == null) return undefined;
+    const onKey = (e) => {
+      if (e.key === "Escape") setLightboxIndex(null);
+    };
+    window.addEventListener("keydown", onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [lightboxIndex]);
 
   // No empty state — Windows only exists after owner/operator adds a window offer.
   if (!posts.length) return null;
 
-  const safeIndex = Math.min(index, posts.length - 1);
-  const current = posts[safeIndex] || null;
-  const img = current ? postImage(current) : "";
-  const hasPrev = safeIndex > 0;
-  const hasNext = safeIndex < posts.length - 1;
-  const showArrows = posts.length > 1;
-  // Compact thumb so Windows is visible without scrolling past the hero.
-  const frameMaxWidth = isMobile ? 88 : 104;
-  const imageObjectPosition = resolveBillboardImageObjectPosition(current);
+  const lightboxPost =
+    lightboxIndex != null && lightboxIndex >= 0 && lightboxIndex < posts.length
+      ? posts[lightboxIndex]
+      : null;
+  const lightboxImg = lightboxPost ? postImage(lightboxPost) : "";
+  const lightboxObjectPosition = lightboxPost
+    ? resolveBillboardImageObjectPosition(lightboxPost)
+    : "center";
+
+  const lightbox =
+    lightboxPost && typeof document !== "undefined"
+      ? createPortal(
+          <div
+            data-testid="profile-windows-lightbox"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Window photo"
+            onClick={() => setLightboxIndex(null)}
+            style={{
+              position: "fixed",
+              inset: 0,
+              zIndex: 10000,
+              background: "rgba(0,0,0,0.92)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: 16,
+              boxSizing: "border-box",
+              cursor: "zoom-out",
+            }}
+          >
+            <button
+              type="button"
+              aria-label="Close"
+              data-testid="profile-windows-lightbox-close"
+              onClick={() => setLightboxIndex(null)}
+              style={{
+                position: "absolute",
+                top: 12,
+                right: 12,
+                zIndex: 2,
+                width: 40,
+                height: 40,
+                borderRadius: 999,
+                border: "1px solid rgba(255,255,255,0.35)",
+                background: "rgba(0,0,0,0.55)",
+                color: "#fff",
+                fontSize: 22,
+                fontWeight: 700,
+                cursor: "pointer",
+                lineHeight: 1,
+              }}
+            >
+              ×
+            </button>
+            {lightboxImg ? (
+              <img
+                src={lightboxImg}
+                alt={`Window ${(lightboxIndex ?? 0) + 1} enlarged`}
+                onClick={(e) => e.stopPropagation()}
+                style={{
+                  maxWidth: "100%",
+                  maxHeight: "100%",
+                  width: "auto",
+                  height: "auto",
+                  objectFit: "contain",
+                  objectPosition: lightboxObjectPosition,
+                  display: "block",
+                  cursor: "default",
+                }}
+              />
+            ) : null}
+          </div>,
+          document.body
+        )
+      : null;
 
   return (
     <section
@@ -87,92 +149,68 @@ export default function ProfileBillboardBlock({
       >
         Windows
       </div>
-      <article
-        data-testid="profile-billboard-card"
+      <div
+        data-testid="profile-windows-row"
         style={{
-          maxWidth: frameMaxWidth,
-          borderRadius: 8,
-          overflow: "hidden",
-          border: `1px solid ${profileCardBorderVar}`,
-          background: "#fff",
+          display: "flex",
+          flexWrap: "wrap",
+          gap: isMobile ? 8 : 10,
+          alignItems: "flex-start",
         }}
       >
-        <div style={{ position: "relative" }}>
-          {img ? (
-            <img
-              key={current?.id || img || safeIndex}
-              src={img}
-              alt={`Window ${safeIndex + 1}`}
-              loading="eager"
+        {posts.map((post, i) => {
+          const img = postImage(post);
+          const imageObjectPosition = resolveBillboardImageObjectPosition(post);
+          return (
+            <button
+              key={post?.id || img || i}
+              type="button"
+              data-testid="profile-billboard-card"
+              aria-label={`Enlarge window photo ${i + 1}`}
+              onClick={() => setLightboxIndex(i)}
               style={{
-                width: "100%",
-                aspectRatio: frameAspect,
-                height: "auto",
-                objectFit: "cover",
-                objectPosition: imageObjectPosition,
+                width: frameMaxWidth,
+                maxWidth: frameMaxWidth,
+                padding: 0,
+                margin: 0,
+                borderRadius: 8,
+                overflow: "hidden",
+                border: `1px solid ${profileCardBorderVar}`,
+                background: "#fff",
+                cursor: "zoom-in",
                 display: "block",
-                background: "#e7e5e4",
               }}
-            />
-          ) : (
-            <div
-              style={{
-                width: "100%",
-                aspectRatio: frameAspect,
-                background: "linear-gradient(160deg, #f5f5f4 0%, #e7e5e4 100%)",
-              }}
-              aria-hidden
-            />
-          )}
-
-          {showArrows ? (
-            <>
-              <button
-                type="button"
-                aria-label="Previous window"
-                disabled={!hasPrev}
-                onClick={() => {
-                  if (!hasPrev) return;
-                  setIndex((i) => Math.max(0, i - 1));
-                }}
-                style={arrowButtonStyle("left", !hasPrev)}
-              >
-                ‹
-              </button>
-              <button
-                type="button"
-                aria-label="Next window"
-                disabled={!hasNext}
-                onClick={() => {
-                  if (!hasNext) return;
-                  setIndex((i) => Math.min(posts.length - 1, i + 1));
-                }}
-                style={arrowButtonStyle("right", !hasNext)}
-              >
-                ›
-              </button>
-              <div
-                aria-live="polite"
-                style={{
-                  position: "absolute",
-                  right: 4,
-                  bottom: 4,
-                  zIndex: 2,
-                  padding: "1px 5px",
-                  borderRadius: 999,
-                  background: "rgba(0,0,0,0.45)",
-                  color: "#fff",
-                  fontSize: 9,
-                  fontWeight: 700,
-                  letterSpacing: 0.02,
-                }}
-              >
-                {safeIndex + 1} / {posts.length}
-              </div>
-            </>
-          ) : null}
-        </div>
-      </article>
+            >
+              {img ? (
+                <img
+                  src={img}
+                  alt={`Window ${i + 1}`}
+                  loading={i === 0 ? "eager" : "lazy"}
+                  style={{
+                    width: "100%",
+                    aspectRatio: frameAspect,
+                    height: "auto",
+                    objectFit: "cover",
+                    objectPosition: imageObjectPosition,
+                    display: "block",
+                    background: "#e7e5e4",
+                  }}
+                />
+              ) : (
+                <div
+                  style={{
+                    width: "100%",
+                    aspectRatio: frameAspect,
+                    background: "linear-gradient(160deg, #f5f5f4 0%, #e7e5e4 100%)",
+                  }}
+                  aria-hidden
+                />
+              )}
+            </button>
+          );
+        })}
+      </div>
+      {lightbox}
     </section>
   );
 }

@@ -216,10 +216,10 @@ function testClaimedProfileUsesEditorialPresentation() {
   assert.match(billboard, /Windows/);
   assert.match(billboard, /pickWindowsPosts/);
   assert.match(read("src/lib/profileWindows.js"), /WINDOWS_MAX_SLIDES\s*=\s*4/);
-  assert.match(billboard, /Previous window/);
-  assert.match(billboard, /Next window/);
-  assert.match(billboard, /›/);
-  assert.match(billboard, /‹/);
+  assert.match(billboard, /profile-windows-row/);
+  assert.match(billboard, /profile-windows-lightbox/);
+  assert.doesNotMatch(billboard, /Previous window/);
+  assert.doesNotMatch(billboard, /Next window/);
   assert.doesNotMatch(billboard, />\s*Billboard\s*</);
   assert.doesNotMatch(billboard, /No Windows yet/);
   assert.doesNotMatch(billboard, /postBody|postTitle/);

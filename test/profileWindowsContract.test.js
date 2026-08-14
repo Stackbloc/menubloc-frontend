@@ -74,6 +74,13 @@ test("Empty Windows means no section (no blank placeholder)", () => {
   assert.match(block, /pickWindowsPosts/);
   assert.match(block, /frameMaxWidth/);
   assert.match(block, /isMobile \? 88 : 104/);
+  assert.match(block, /profile-windows-row/);
+  assert.match(block, /profile-windows-lightbox/);
+  assert.match(block, /setLightboxIndex/);
+  assert.match(block, /createPortal/);
+  assert.doesNotMatch(block, /Previous window/);
+  assert.doesNotMatch(block, /Next window/);
+  assert.doesNotMatch(block, /arrowButtonStyle/);
   assert.doesNotMatch(block, /No Windows yet/);
   assert.doesNotMatch(block, /ProfileSectionBlank/);
   assert.doesNotMatch(block, /showClaimInvites/);

@@ -2,7 +2,7 @@
  * Unified Menuply public profile shell — restaurant homepage layout.
  * Claimed: Hero → Windows (if any) → About [Name] + Founded → Favorites → Deals → Updates
  * Unclaimed: Hero → About [Name] + Founded → Favorites → Deals → Updates
- * Photos strip temporarily hidden (showPhotos=false) — Windows remains the photo carousel.
+ * Photos strip temporarily hidden (showPhotos=false) — Windows remains the photo row.
  * Windows shows only manually added window/deal offers (not brand splash art); In-N-Out exception.
  * Food truck: Hero (address / current location) → Upcoming locations → then shared sections.
  * Contact + hours live in the hero. No bottom Information box.
