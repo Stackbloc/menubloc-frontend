@@ -227,6 +227,8 @@ function testClaimedProfileUsesEditorialPresentation() {
   assert.match(updates, /showClaimInvites|ProfileSectionBlank/);
   assert.match(hero, /profile-hero-actions/);
   assert.match(hero, /profile-hero-hours/);
+  assert.match(hero, /formatFoodTruckHoursTodayHeading/);
+  assert.match(hero, /includeTodayLine:\s*!isFoodTruck/);
   assert.match(hero, /profile-hero-maps-address/);
   assert.match(hero, /openStatus/);
   assert.match(hero, /shortDescription/);

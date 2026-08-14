@@ -11,9 +11,9 @@ import {
 } from "../../menu-templates/menuPresentationUtils.js";
 import { buildGoogleMapsDirectionsUrl } from "../../../lib/catalogMenuUtils.js";
 import { normalizeDisplayAddress, formatAddressQuery } from "../../../lib/displayAddress.js";
-import { formatHoursRows, getTodayDayOfWeek } from "../../../lib/formatOperatingHours.js";
+import { formatHoursRows, getTodayDayOfWeek, formatFoodTruckHoursTodayHeading } from "../../../lib/formatOperatingHours.js";
 
-export { formatHoursRows, getTodayDayOfWeek };
+export { formatHoursRows, getTodayDayOfWeek, formatFoodTruckHoursTodayHeading };
 
 export const PROFILE_PAGE_BG = "#fafaf9";
 export const PROFILE_INK = "#1c1917";

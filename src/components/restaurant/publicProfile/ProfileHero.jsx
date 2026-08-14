@@ -19,6 +19,7 @@ import {
   ghostIconStyle,
   canShowOrderAction,
   formatHoursRows,
+  formatFoodTruckHoursTodayHeading,
   firstNonEmpty,
 } from "./profilePrimitives.jsx";
 import IconHoverLabel from "../../IconHoverLabel.jsx";
@@ -155,13 +156,16 @@ export default function ProfileHero({
         : ig
       : `@${String(ig).replace(/^@/, "")}`
     : "";
+  const isFoodTruck = profileType === "food_truck";
+  const hoursTimezone = profile?.timezone || null;
   const hoursRows = formatHoursRows(operatingHours, {
-    timezone: profile?.timezone || null,
+    timezone: hoursTimezone,
+    includeTodayLine: !isFoodTruck,
   });
   const showRestaurantContact = profileType === "restaurant";
   const hasAddress = Boolean(streetAddr || cityLine);
   const showFoodTruckHomeAddress =
-    profileType === "food_truck" &&
+    isFoodTruck &&
     !foodTruckLocation?.hasPostedLocation &&
     hasAddress;
   const foodTruckHomeMapsHref = showFoodTruckHomeAddress
@@ -169,6 +173,9 @@ export default function ProfileHero({
     : "";
 
   const hoursEmpty = hoursRows.length === 0;
+  const hoursHeading = isFoodTruck
+    ? `${formatFoodTruckHoursTodayHeading(hoursTimezone)}:`
+    : "Hours:";
   const hoursPanel = (
     <div
       data-testid="profile-hero-hours"
@@ -198,7 +205,8 @@ export default function ProfileHero({
           lineHeight: 1.4,
         }}
       >
-        Hours:{openLabel ? ` ${openLabel}` : hoursEmpty ? " not posted" : ""}
+        {hoursHeading}
+        {openLabel ? ` ${openLabel}` : hoursEmpty ? " not posted" : ""}
       </div>
       {hoursRows.length ? (
         <div style={{ display: "grid", gap: 3 }}>

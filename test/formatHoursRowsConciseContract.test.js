@@ -3,6 +3,7 @@
  */
 import assert from "node:assert/strict";
 import {
+  formatFoodTruckHoursTodayHeading,
   formatHoursRows,
   getTodayDayOfWeek,
 } from "../src/lib/formatOperatingHours.js";
@@ -80,6 +81,28 @@ function testClosedDayBreaksRange() {
   );
 }
 
+function testOmitTodayLineForFoodTruck() {
+  const rows = [0, 1, 2, 3, 4, 5, 6].map((d) => hourRow(d, "09:00", "17:00"));
+  const out = formatHoursRows(rows, {
+    timezone: "America/Los_Angeles",
+    now: new Date("2026-08-12T18:00:00Z"),
+    includeTodayLine: false,
+  });
+  assert.equal(out[0].day, "Sun – Sat");
+  assert.equal(out[0].text, "9:00 AM – 5:00 PM");
+  assert.equal(out.length, 1);
+  assert.ok(!out.some((r) => r.day === "Today"));
+}
+
+function testFoodTruckTodayHeadingFormat() {
+  // 2026-06-01 18:00 UTC = Monday morning in America/Los_Angeles
+  const heading = formatFoodTruckHoursTodayHeading(
+    "America/Los_Angeles",
+    new Date("2026-06-01T18:00:00Z")
+  );
+  assert.equal(heading, "Today, Monday, June 1, 2026");
+}
+
 function testEmptyAndTodayDow() {
   assert.deepEqual(formatHoursRows([]), []);
   assert.deepEqual(formatHoursRows(null), []);
@@ -91,6 +114,8 @@ function main() {
   testInNOutStyleGrouping();
   testAllSameWeek();
   testClosedDayBreaksRange();
+  testOmitTodayLineForFoodTruck();
+  testFoodTruckTodayHeadingFormat();
   testEmptyAndTodayDow();
   console.log("formatHoursRowsConciseContract: ok");
 }

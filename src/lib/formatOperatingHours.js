@@ -56,6 +56,45 @@ export function getTodayDayOfWeek(timezone = null, now = new Date()) {
   return now.getDay();
 }
 
+/**
+ * Food-truck hours hero heading: "Today, Friday, June 1, 2026"
+ * Uses restaurant timezone when provided.
+ */
+export function formatFoodTruckHoursTodayHeading(timezone = null, now = new Date()) {
+  const tz = asStr(timezone).trim();
+  const opts = {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+    ...(tz ? { timeZone: tz } : {}),
+  };
+  try {
+    const parts = new Intl.DateTimeFormat("en-US", opts).formatToParts(now);
+    const weekday = parts.find((p) => p.type === "weekday")?.value || "";
+    const month = parts.find((p) => p.type === "month")?.value || "";
+    const day = parts.find((p) => p.type === "day")?.value || "";
+    const year = parts.find((p) => p.type === "year")?.value || "";
+    if (weekday && month && day && year) {
+      return `Today, ${weekday}, ${month} ${day}, ${year}`;
+    }
+  } catch {
+    /* fall through */
+  }
+  try {
+    const fallback = new Intl.DateTimeFormat("en-US", {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    }).format(now);
+    // "Friday, June 1, 2026" → "Today, Friday, June 1, 2026"
+    return `Today, ${fallback}`;
+  } catch {
+    return "Today";
+  }
+}
+
 function dayRangeLabel(startDow, endDow) {
   const start = DAY_LABELS[startDow] || `Day ${startDow}`;
   if (startDow === endDow) return start;
@@ -68,8 +107,16 @@ function dayRangeLabel(startDow, endDow) {
  *   Today: 10:30 AM – 1:00 AM
  *   Sun – Thu  10:30 AM – 1:00 AM
  *   Fri – Sat  10:30 AM – 1:30 AM
+ *
+ * @param {object[]} rows
+ * @param {{ timezone?: string|null, now?: Date, includeTodayLine?: boolean }} [opts]
+ *   includeTodayLine — default true. Food-truck hero sets false and labels the
+ *   Hours header with "Today" instead (avoids a duplicate Today row).
  */
-export function formatHoursRows(rows, { timezone = null, now = new Date() } = {}) {
+export function formatHoursRows(
+  rows,
+  { timezone = null, now = new Date(), includeTodayLine = true } = {}
+) {
   if (!Array.isArray(rows) || !rows.length) return [];
 
   const byDow = new Map();
@@ -82,7 +129,10 @@ export function formatHoursRows(rows, { timezone = null, now = new Date() } = {}
 
   const todayDow = getTodayDayOfWeek(timezone, now);
   const todayRow = byDow.get(todayDow);
-  const out = [{ day: "Today", text: scheduleTextForRow(todayRow) }];
+  const out = [];
+  if (includeTodayLine !== false) {
+    out.push({ day: "Today", text: scheduleTextForRow(todayRow) });
+  }
 
   const ordered = [...byDow.entries()].sort((a, b) => a[0] - b[0]);
   let rangeStart = ordered[0][0];
