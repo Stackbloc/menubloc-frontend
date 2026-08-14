@@ -46,6 +46,8 @@ test("FoodTruckPage uses personality editorial with homepage shell (no inline me
   assert.doesNotMatch(source, /Claim this profile/);
   assert.match(source, /SaveContactButton/);
   assert.match(source, /food-truck-save-contact/);
+  assert.match(source, /rgba\(255,255,255,0\.96\)/);
+  assert.doesNotMatch(source, /food-truck-save-contact[\s\S]{0,400}rgba\(255,255,255,0\.04\)/);
   assert.match(source, /restaurantMenuPathFromRow/);
   assert.match(source, /menuHref/);
   assert.doesNotMatch(source, /Full menu/);

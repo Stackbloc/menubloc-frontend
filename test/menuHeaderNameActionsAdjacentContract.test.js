@@ -11,14 +11,10 @@ const rail = fs.readFileSync(railPath, "utf8");
 
 assert.match(
   rail,
-  /flex:\s*["']0 1 auto["']/,
-  "MenuHeaderNameWithActions name block must use flex 0 1 auto so like/share sit next to the name"
+  /flex:\s*isNarrow \? ["']1 1 100%["'] : ["']0 1 auto["']/,
+  "MenuHeaderNameWithActions: wrap name on narrow; keep 0 1 auto adjacency on wide"
 );
-assert.doesNotMatch(
-  rail,
-  /flex:\s*1[,\n]/,
-  "MenuHeaderNameWithActions must not grow the name block with flex:1 (pushes icons to price-column edge)"
-);
+assert.match(rail, /useIsNarrowMenuViewport/);
 assert.doesNotMatch(rail, /marginLeft:\s*["']?auto["']?/, "header actions must not use marginLeft auto");
 
 const templatesDir = path.join(root, "src/components/menu-templates");
@@ -29,8 +25,6 @@ const templateFiles = fs
 for (const file of templateFiles) {
   const src = fs.readFileSync(path.join(templatesDir, file), "utf8");
   if (!src.includes("ShareButton") && !src.includes("MenuHeaderNameWithActions")) continue;
-  // Templates that wrap the rail in flex:1 are OK if the rail itself does not grow the name.
-  // Forbid space-between / marginLeft auto on the same row as ShareButton for name adjacency.
   if (src.includes("MenuHeaderNameWithActions")) continue;
   if (/ShareButton[\s\S]{0,400}marginLeft:\s*["']?auto/.test(src)) {
     assert.fail(`${file}: ShareButton cluster must not use marginLeft auto`);

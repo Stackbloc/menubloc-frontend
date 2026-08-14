@@ -285,7 +285,7 @@ function Badge({ label, bg, color, border }) {
 
 /* ─── SaveContactButton (vCard: name, phone, profile URL) ─── */
 
-function SaveContactButton({ truckName, truckPhone, size = 36, dark = false }) {
+function SaveContactButton({ truckName, truckPhone, size = 28, dark = false }) {
   const anchorRef = useRef(null);
 
   const permanentUrl =
@@ -322,6 +322,9 @@ function SaveContactButton({ truckName, truckPhone, size = 36, dark = false }) {
     setTimeout(() => URL.revokeObjectURL(url), 5000);
   }
 
+  // Match Share / Invite / Comment ghost circles (white disc), including on photo heroes.
+  void dark;
+
   return (
     <>
       <a ref={anchorRef} style={{ display: "none" }} aria-hidden="true" />
@@ -338,16 +341,17 @@ function SaveContactButton({ truckName, truckPhone, size = 36, dark = false }) {
             justifyContent: "center",
             width: size,
             height: size,
+            minWidth: size,
+            minHeight: size,
             padding: 0,
             borderRadius: "50%",
-            border: dark ? "1px solid rgba(255,255,255,0.16)" : "1px solid rgba(15,23,42,0.16)",
-            background: dark
-              ? "rgba(255,255,255,0.04)"
-              : "linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(241,245,249,0.96) 100%)",
-            color: dark ? "#f8fafc" : "#0f172a",
+            border: "1px solid rgba(55,65,81,0.22)",
+            background: "rgba(255,255,255,0.96)",
+            color: "#0f172a",
+            boxShadow: "0 2px 8px rgba(15, 23, 42, 0.12)",
             cursor: "pointer",
-            fontSize: Math.max(14, Math.round(size * 0.42)),
-            lineHeight: 1,
+            fontSize: Math.max(12, Math.round(size * 0.42)),
+            lineHeight: 0,
             flexShrink: 0,
           }}
         >
@@ -1443,7 +1447,7 @@ export default function FoodTruckPage() {
     }) || (profile?.id ? `/public/restaurants/${profile.id}/menu` : null);
 
   const saveContactControl = (
-    <SaveContactButton truckName={name} truckPhone={phone} size={36} dark />
+    <SaveContactButton truckName={name} truckPhone={phone} size={28} dark />
   );
 
   if (splashPosts.length && billboardSplashReady && !billboardSplashDone) {

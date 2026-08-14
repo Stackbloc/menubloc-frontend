@@ -1,5 +1,8 @@
 import RestaurantVerificationBadge from "../RestaurantVerificationBadge.jsx";
-import { MENU_ROW_HEADER_ICON_GAP } from "./menuPresentationUtils.js";
+import {
+  useIsNarrowMenuViewport,
+  resolveMenuRowSpacing,
+} from "./menuPresentationUtils.js";
 
 /** Restaurant name + verification badge, then like + share + comment immediately after. */
 export default function MenuHeaderNameWithActions({
@@ -17,19 +20,40 @@ export default function MenuHeaderNameWithActions({
   isPaidSubscriber,
   orderAcceptanceStatus,
 }) {
+  const isNarrow = useIsNarrowMenuViewport();
+  const spacing = resolveMenuRowSpacing(isNarrow);
+
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "nowrap", minWidth: 0 }}>
+    <div
+      data-testid="menu-header-name-actions"
+      style={{
+        display: "flex",
+        alignItems: isNarrow ? "flex-start" : "center",
+        gap: isNarrow ? 8 : 10,
+        flexWrap: isNarrow ? "wrap" : "nowrap",
+        minWidth: 0,
+      }}
+    >
       <div
         style={{
           minWidth: 0,
-          flex: "0 1 auto",
+          flex: isNarrow ? "1 1 100%" : "0 1 auto",
           display: "flex",
           alignItems: "center",
           gap: 0,
-          overflow: "hidden",
+          overflow: isNarrow ? "visible" : "hidden",
         }}
       >
-        <div style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>{nameSlot}</div>
+        <div
+          style={{
+            minWidth: 0,
+            overflow: isNarrow ? "visible" : "hidden",
+            textOverflow: isNarrow ? undefined : "ellipsis",
+            flex: isNarrow ? "1 1 auto" : undefined,
+          }}
+        >
+          {nameSlot}
+        </div>
         <RestaurantVerificationBadge
           size="md"
           tone={tone}
@@ -42,7 +66,7 @@ export default function MenuHeaderNameWithActions({
           isPro={isPro}
           isPaidSubscriber={isPaidSubscriber}
           orderAcceptanceStatus={orderAcceptanceStatus}
-          style={{ marginLeft: 8 }}
+          style={{ marginLeft: 8, flexShrink: 0 }}
         />
       </div>
       <div
@@ -50,7 +74,7 @@ export default function MenuHeaderNameWithActions({
         style={{
           display: "flex",
           alignItems: "center",
-          gap: MENU_ROW_HEADER_ICON_GAP,
+          gap: spacing.headerIconGap,
           flexShrink: 0,
         }}
       >

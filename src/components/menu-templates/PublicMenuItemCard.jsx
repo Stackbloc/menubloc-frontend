@@ -17,10 +17,8 @@ import { getNormalizedMenuItemId } from "../../lib/menuItemIdentity.js";
 import { isOnlineOrderingAvailable } from "../../lib/restaurantStatusLight.js";
 import {
   useIsTabletRange,
-  MENU_ROW_ICON_GAP,
-  MENU_ROW_ACTIONS_INSET_RIGHT,
-  MENU_ROW_OUTER_GAP,
-  MENU_ROW_PRICE_MIN_WIDTH,
+  useIsNarrowMenuViewport,
+  resolveMenuRowSpacing,
 } from "./menuPresentationUtils.js";
 
 // Editorial (Apple-inspired) neutral palettes — isolated to editorialRefresh only.
@@ -64,6 +62,81 @@ function SoftBadge({ label, color, hairline }) {
     >
       {label}
     </span>
+  );
+}
+
+/**
+ * Title + icons + price. On narrow phones: title+price on row 1 (title wraps),
+ * icons on row 2 — avoids truncating dish names against a fixed icon rail.
+ */
+function TitlePriceActionsBlock({
+  stack,
+  outerGap,
+  iconGap,
+  actionsInsetRight,
+  priceMinWidth,
+  titleStyle,
+  title,
+  price,
+  priceTextStyle,
+  hasDeal,
+  openSheet,
+  iconButtons,
+  addToOrderBox,
+}) {
+  const priceEl = price ? (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        whiteSpace: "nowrap",
+        minWidth: priceMinWidth,
+        justifyContent: "flex-end",
+        flexShrink: 0,
+      }}
+    >
+      <span style={priceTextStyle}>{price}</span>
+      {hasDeal ? <MenuItemDealsIndicator onClick={openSheet} /> : null}
+    </span>
+  ) : null;
+
+  const titleEl = <span style={titleStyle}>{title}</span>;
+
+  const iconsRow = (
+    <div
+      onClick={(e) => e.stopPropagation()}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: iconGap,
+        flexShrink: 0,
+        flexWrap: "wrap",
+        paddingRight: actionsInsetRight,
+      }}
+    >
+      {iconButtons}
+      {!stack ? priceEl : null}
+      {addToOrderBox}
+    </div>
+  );
+
+  if (stack) {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 6, minWidth: 0, width: "100%" }}>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: outerGap, minWidth: 0 }}>
+          {titleEl}
+          {priceEl}
+        </div>
+        {iconsRow}
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ display: "flex", alignItems: "flex-start", gap: outerGap, minWidth: 0 }}>
+      {titleEl}
+      {iconsRow}
+    </div>
   );
 }
 
@@ -298,6 +371,8 @@ export default function PublicMenuItemCard({
   const cartState = getCartItemStateForItem(activeCartItems, normalizedItemId);
   const inCartCount = cartState.totalQuantity;
   const isTablet = useIsTabletRange();
+  const isNarrowMenu = useIsNarrowMenuViewport();
+  const rowSpacing = resolveMenuRowSpacing(isNarrowMenu);
   const ed = ED_PALETTES[editorialColorScheme] || ED_PALETTES.light;
   // Cap descriptive badges at 2 (editorialRefresh only) so the row never shows
   // a wall of tags. Priority: featured dish, unavailability, deal, then diet flags.
@@ -490,232 +565,224 @@ export default function PublicMenuItemCard({
         ) : null}
         <div style={{ minWidth: 0, flex: 1 }}>
           {editorialRefresh ? (
-            <div style={{ display: "flex", alignItems: "flex-start", gap: MENU_ROW_OUTER_GAP }}>
-              <span
-                style={{
-                  fontSize: titleSize,
-                  fontWeight: 600,
-                  color: ed.ink,
-                  lineHeight: 1.3,
-                  minWidth: 0,
-                  flex: 1,
-                }}
-              >
-                {name}
-              </span>
-              <div
-                onClick={(e) => e.stopPropagation()}
-                style={{ display: "flex", alignItems: "center", gap: MENU_ROW_ICON_GAP, flexShrink: 0, paddingRight: MENU_ROW_ACTIONS_INSET_RIGHT }}
-              >
-                {canNavigate ? (
-                  <LikeMenuItemButton menuItemId={normalizedItemId} tone="ghost" size="row" />
-                ) : null}
-                {dishShareData ? (
-                  <ShareButton
-                    variant="dish"
-                    iconOnly={true}
-                    tone="ghost"
-                    shareData={dishShareData}
-                    analyticsContext={{
-                      restaurantId: currentRestaurantId,
-                      restaurantSlug: data?.slug || null,
-                      menuItemId: normalizedItemId,
-                      menuItemName: name,
-                      pageType: "public_menu",
-                      shareTarget: "dish",
-                    }}
-                  />
-                ) : null}
-                <InviteToEatButton
-                  restaurantId={currentRestaurantId}
-                  restaurantName={restaurantName}
-                  menuItemId={canNavigate ? normalizedItemId : null}
-                  menuItemName={name}
-                  tone="ghost"
-                  size="row"
-                />
-                {canNavigate ? (
-                  <FoodCommentNavButton
-                    target="menu_item"
-                    menuItemId={normalizedItemId}
-                    tone="ghost"
-                    size="row"
-                  />
-                ) : null}
-                {price ? (
-                  <span
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      whiteSpace: "nowrap",
-                      minWidth: MENU_ROW_PRICE_MIN_WIDTH,
-                      justifyContent: "flex-end",
-                    }}
-                  >
-                    <span
-                      style={{
-                        fontSize: titleSize,
-                        fontWeight: 600,
-                        color: ed.ink,
-                        whiteSpace: "nowrap",
-                        fontVariantNumeric: "tabular-nums",
-                        textAlign: "right",
+            <TitlePriceActionsBlock
+              stack={rowSpacing.stackTitleAndActions}
+              outerGap={rowSpacing.outerGap}
+              iconGap={rowSpacing.iconGap}
+              actionsInsetRight={rowSpacing.actionsInsetRight}
+              priceMinWidth={rowSpacing.priceMinWidth}
+              title={name}
+              titleStyle={{
+                fontSize: titleSize,
+                fontWeight: 600,
+                color: ed.ink,
+                lineHeight: 1.3,
+                minWidth: 0,
+                flex: 1,
+                overflowWrap: rowSpacing.stackTitleAndActions ? "anywhere" : undefined,
+              }}
+              price={price}
+              priceTextStyle={{
+                fontSize: titleSize,
+                fontWeight: 600,
+                color: ed.ink,
+                whiteSpace: "nowrap",
+                fontVariantNumeric: "tabular-nums",
+                textAlign: "right",
+              }}
+              hasDeal={hasDeal}
+              openSheet={openSheet}
+              iconButtons={
+                <>
+                  {canNavigate ? (
+                    <LikeMenuItemButton menuItemId={normalizedItemId} tone="ghost" size="row" />
+                  ) : null}
+                  {dishShareData ? (
+                    <ShareButton
+                      variant="dish"
+                      iconOnly={true}
+                      tone="ghost"
+                      shareData={dishShareData}
+                      analyticsContext={{
+                        restaurantId: currentRestaurantId,
+                        restaurantSlug: data?.slug || null,
+                        menuItemId: normalizedItemId,
+                        menuItemName: name,
+                        pageType: "public_menu",
+                        shareTarget: "dish",
                       }}
-                    >
-                      {price}
-                    </span>
-                    {hasDeal ? <MenuItemDealsIndicator onClick={openSheet} /> : null}
-                  </span>
-                ) : null}
-                {addToOrderBox}
-              </div>
-            </div>
+                    />
+                  ) : null}
+                  <InviteToEatButton
+                    restaurantId={currentRestaurantId}
+                    restaurantName={restaurantName}
+                    menuItemId={canNavigate ? normalizedItemId : null}
+                    menuItemName={name}
+                    tone="ghost"
+                    size="row"
+                  />
+                  {canNavigate ? (
+                    <FoodCommentNavButton
+                      target="menu_item"
+                      menuItemId={normalizedItemId}
+                      tone="ghost"
+                      size="row"
+                    />
+                  ) : null}
+                </>
+              }
+              addToOrderBox={addToOrderBox}
+            />
           ) : compactActions ? (
-            <div style={{ display: "flex", alignItems: "flex-start", gap: MENU_ROW_OUTER_GAP }}>
-              <span
-                style={{
-                  fontSize: titleSize,
-                  fontWeight: density === "cinematic" || density === "bold-casual" ? 800 : density === "classic" ? 700 : 600,
-                  color: "#FFFFFF",
-                  lineHeight: 1.2,
-                  minWidth: 0,
-                  flex: 1,
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: density === "takeout" ? "nowrap" : "normal",
-                }}
-              >
-                {name}
-              </span>
-              <div
-                onClick={(e) => e.stopPropagation()}
-                style={{ display: "flex", alignItems: "center", gap: MENU_ROW_ICON_GAP, flexShrink: 0, paddingRight: MENU_ROW_ACTIONS_INSET_RIGHT }}
-              >
-                {canNavigate ? (
-                  <LikeMenuItemButton menuItemId={normalizedItemId} tone="ghost" size="row" />
-                ) : null}
-                {dishShareData ? (
-                  <ShareButton
-                    variant="dish"
-                    iconOnly={true}
-                    tone="ghost"
-                    shareData={dishShareData}
-                    analyticsContext={{
-                      restaurantId: currentRestaurantId,
-                      restaurantSlug: data?.slug || null,
-                      menuItemId: normalizedItemId,
-                      menuItemName: name,
-                      pageType: "public_menu",
-                      shareTarget: "dish",
-                    }}
-                  />
-                ) : null}
-                <InviteToEatButton
-                  restaurantId={currentRestaurantId}
-                  restaurantName={restaurantName}
-                  menuItemId={canNavigate ? normalizedItemId : null}
-                  menuItemName={name}
-                  tone="ghost"
-                  size="row"
-                />
-                {canNavigate ? (
-                  <FoodCommentNavButton
-                    target="menu_item"
-                    menuItemId={normalizedItemId}
+            <TitlePriceActionsBlock
+              stack={rowSpacing.stackTitleAndActions}
+              outerGap={rowSpacing.outerGap}
+              iconGap={rowSpacing.iconGap}
+              actionsInsetRight={rowSpacing.actionsInsetRight}
+              priceMinWidth={rowSpacing.priceMinWidth}
+              title={name}
+              titleStyle={{
+                fontSize: titleSize,
+                fontWeight: density === "cinematic" || density === "bold-casual" ? 800 : density === "classic" ? 700 : 600,
+                color: "#FFFFFF",
+                lineHeight: 1.2,
+                minWidth: 0,
+                flex: 1,
+                overflow: rowSpacing.stackTitleAndActions ? "visible" : "hidden",
+                textOverflow: rowSpacing.stackTitleAndActions ? undefined : "ellipsis",
+                whiteSpace: rowSpacing.stackTitleAndActions
+                  ? "normal"
+                  : density === "takeout"
+                    ? "nowrap"
+                    : "normal",
+                overflowWrap: rowSpacing.stackTitleAndActions ? "anywhere" : undefined,
+              }}
+              price={price}
+              priceTextStyle={{
+                fontSize: titleSize,
+                fontWeight: 700,
+                color: accent,
+                whiteSpace: "nowrap",
+                textAlign: "right",
+              }}
+              hasDeal={hasDeal}
+              openSheet={openSheet}
+              iconButtons={
+                <>
+                  {canNavigate ? (
+                    <LikeMenuItemButton menuItemId={normalizedItemId} tone="ghost" size="row" />
+                  ) : null}
+                  {dishShareData ? (
+                    <ShareButton
+                      variant="dish"
+                      iconOnly={true}
+                      tone="ghost"
+                      shareData={dishShareData}
+                      analyticsContext={{
+                        restaurantId: currentRestaurantId,
+                        restaurantSlug: data?.slug || null,
+                        menuItemId: normalizedItemId,
+                        menuItemName: name,
+                        pageType: "public_menu",
+                        shareTarget: "dish",
+                      }}
+                    />
+                  ) : null}
+                  <InviteToEatButton
+                    restaurantId={currentRestaurantId}
+                    restaurantName={restaurantName}
+                    menuItemId={canNavigate ? normalizedItemId : null}
+                    menuItemName={name}
                     tone="ghost"
                     size="row"
                   />
-                ) : null}
-                {price ? (
-                  <span
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      whiteSpace: "nowrap",
-                      minWidth: MENU_ROW_PRICE_MIN_WIDTH,
-                      justifyContent: "flex-end",
-                    }}
-                  >
-                    <span style={{ fontSize: titleSize, fontWeight: 700, color: accent, whiteSpace: "nowrap", textAlign: "right" }}>{price}</span>
-                    {hasDeal ? <MenuItemDealsIndicator onClick={openSheet} /> : null}
-                  </span>
-                ) : null}
-                {addToOrderBox}
-              </div>
-            </div>
+                  {canNavigate ? (
+                    <FoodCommentNavButton
+                      target="menu_item"
+                      menuItemId={normalizedItemId}
+                      tone="ghost"
+                      size="row"
+                    />
+                  ) : null}
+                </>
+              }
+              addToOrderBox={addToOrderBox}
+            />
           ) : (
-            <div style={{ display: "flex", alignItems: "flex-start", gap: MENU_ROW_OUTER_GAP }}>
-              <span
-                style={{
-                  fontSize: titleSize,
-                  fontWeight: density === "cinematic" || density === "bold-casual" ? 800 : density === "classic" ? 700 : 600,
-                  color: "#FFFFFF",
-                  lineHeight: 1.2,
-                  minWidth: 0,
-                  flex: 1,
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: density === "takeout" ? "nowrap" : "normal",
-                }}
-              >
-                {name}
-              </span>
-              <div
-                onClick={(e) => e.stopPropagation()}
-                style={{ display: "flex", alignItems: "center", gap: MENU_ROW_ICON_GAP, flexShrink: 0, paddingRight: MENU_ROW_ACTIONS_INSET_RIGHT }}
-              >
-                {canNavigate ? (
-                  <LikeMenuItemButton menuItemId={normalizedItemId} tone="ghost" size="row" />
-                ) : null}
-                {dishShareData ? (
-                  <ShareButton
-                    variant="dish"
-                    iconOnly={true}
-                    tone="ghost"
-                    shareData={dishShareData}
-                    analyticsContext={{
-                      restaurantId: currentRestaurantId,
-                      restaurantSlug: data?.slug || null,
-                      menuItemId: normalizedItemId,
-                      menuItemName: name,
-                      pageType: "public_menu",
-                      shareTarget: "dish",
-                    }}
-                  />
-                ) : null}
-                <InviteToEatButton
-                  restaurantId={currentRestaurantId}
-                  restaurantName={restaurantName}
-                  menuItemId={canNavigate ? normalizedItemId : null}
-                  menuItemName={name}
-                  tone="ghost"
-                  size="row"
-                />
-                {canNavigate ? (
-                  <FoodCommentNavButton
-                    target="menu_item"
-                    menuItemId={normalizedItemId}
+            <TitlePriceActionsBlock
+              stack={rowSpacing.stackTitleAndActions}
+              outerGap={rowSpacing.outerGap}
+              iconGap={rowSpacing.iconGap}
+              actionsInsetRight={rowSpacing.actionsInsetRight}
+              priceMinWidth={rowSpacing.priceMinWidth}
+              title={name}
+              titleStyle={{
+                fontSize: titleSize,
+                fontWeight: density === "cinematic" || density === "bold-casual" ? 800 : density === "classic" ? 700 : 600,
+                color: "#FFFFFF",
+                lineHeight: 1.2,
+                minWidth: 0,
+                flex: 1,
+                overflow: rowSpacing.stackTitleAndActions ? "visible" : "hidden",
+                textOverflow: rowSpacing.stackTitleAndActions ? undefined : "ellipsis",
+                whiteSpace: rowSpacing.stackTitleAndActions
+                  ? "normal"
+                  : density === "takeout"
+                    ? "nowrap"
+                    : "normal",
+                overflowWrap: rowSpacing.stackTitleAndActions ? "anywhere" : undefined,
+              }}
+              price={price}
+              priceTextStyle={{
+                fontSize: titleSize,
+                fontWeight: 700,
+                color: accent,
+                whiteSpace: "nowrap",
+                textAlign: "right",
+              }}
+              hasDeal={hasDeal}
+              openSheet={openSheet}
+              iconButtons={
+                <>
+                  {canNavigate ? (
+                    <LikeMenuItemButton menuItemId={normalizedItemId} tone="ghost" size="row" />
+                  ) : null}
+                  {dishShareData ? (
+                    <ShareButton
+                      variant="dish"
+                      iconOnly={true}
+                      tone="ghost"
+                      shareData={dishShareData}
+                      analyticsContext={{
+                        restaurantId: currentRestaurantId,
+                        restaurantSlug: data?.slug || null,
+                        menuItemId: normalizedItemId,
+                        menuItemName: name,
+                        pageType: "public_menu",
+                        shareTarget: "dish",
+                      }}
+                    />
+                  ) : null}
+                  <InviteToEatButton
+                    restaurantId={currentRestaurantId}
+                    restaurantName={restaurantName}
+                    menuItemId={canNavigate ? normalizedItemId : null}
+                    menuItemName={name}
                     tone="ghost"
                     size="row"
                   />
-                ) : null}
-                {price ? (
-                  <span
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      whiteSpace: "nowrap",
-                      minWidth: MENU_ROW_PRICE_MIN_WIDTH,
-                      justifyContent: "flex-end",
-                    }}
-                  >
-                    <span style={{ fontSize: titleSize, fontWeight: 700, color: accent, whiteSpace: "nowrap", textAlign: "right" }}>{price}</span>
-                    {hasDeal ? <MenuItemDealsIndicator onClick={openSheet} /> : null}
-                  </span>
-                ) : null}
-                {addToOrderBox}
-              </div>
-            </div>
+                  {canNavigate ? (
+                    <FoodCommentNavButton
+                      target="menu_item"
+                      menuItemId={normalizedItemId}
+                      tone="ghost"
+                      size="row"
+                    />
+                  ) : null}
+                </>
+              }
+              addToOrderBox={addToOrderBox}
+            />
           )}
 
           {(editorialRefresh ? visibleBadges.length > 0 : (hasDeal || it?.is_vegan || it?.is_gluten_free || !itemIsOrderable)) || inCartCount > 0 ? (

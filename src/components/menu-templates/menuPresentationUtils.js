@@ -105,3 +105,44 @@ export const MENU_ROW_HEADER_ICON_GAP = 10;
 export const MENU_ROW_ACTIONS_INSET_RIGHT = 6;
 export const MENU_ROW_ICON_SIZE = 28;
 export const MENU_ROW_PRICE_MIN_WIDTH = 56;
+
+/**
+ * Phone-width menus need a denser row: stacked title/price + icons, smaller gaps.
+ * Independent of page-level isMobile cutoffs (often 900px).
+ */
+export function useIsNarrowMenuViewport(max = 640) {
+  const [isNarrow, setIsNarrow] = useState(
+    typeof window !== "undefined" ? window.innerWidth <= max : false
+  );
+  useEffect(() => {
+    function onResize() {
+      setIsNarrow(window.innerWidth <= max);
+    }
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [max]);
+  return isNarrow;
+}
+
+/** Spacing + layout mode for public menu item / header action rows. */
+export function resolveMenuRowSpacing(isNarrow = false) {
+  if (isNarrow) {
+    return {
+      outerGap: 8,
+      iconGap: 6,
+      headerIconGap: 6,
+      actionsInsetRight: 4,
+      priceMinWidth: 44,
+      stackTitleAndActions: true,
+    };
+  }
+  return {
+    outerGap: MENU_ROW_OUTER_GAP,
+    iconGap: MENU_ROW_ICON_GAP,
+    headerIconGap: MENU_ROW_HEADER_ICON_GAP,
+    actionsInsetRight: MENU_ROW_ACTIONS_INSET_RIGHT,
+    priceMinWidth: MENU_ROW_PRICE_MIN_WIDTH,
+    stackTitleAndActions: false,
+  };
+}
+

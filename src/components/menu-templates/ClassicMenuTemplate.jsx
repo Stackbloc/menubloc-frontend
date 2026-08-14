@@ -206,9 +206,10 @@ export default function ClassicMenuTemplate(ctx) {
                       color: ink,
                       textDecoration: "none",
                       display: "block",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
+                      overflow: isMobile ? "visible" : "hidden",
+                      textOverflow: isMobile ? undefined : "ellipsis",
+                      whiteSpace: isMobile ? "normal" : "nowrap",
+                      overflowWrap: isMobile ? "anywhere" : undefined,
                       cursor: "pointer",
                     }}
                   >
@@ -222,9 +223,10 @@ export default function ClassicMenuTemplate(ctx) {
                       letterSpacing: "-0.02em",
                       lineHeight: 1.15,
                       color: ink,
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
+                      overflow: isMobile ? "visible" : "hidden",
+                      textOverflow: isMobile ? undefined : "ellipsis",
+                      whiteSpace: isMobile ? "normal" : "nowrap",
+                      overflowWrap: isMobile ? "anywhere" : undefined,
                     }}
                   >
                     {restaurantName}
