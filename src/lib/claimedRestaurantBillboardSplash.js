@@ -5,9 +5,16 @@
 /** Default hold after a slide is visible when post has no duration. */
 export const CLAIMED_BILLBOARD_SPLASH_MS = 3500;
 export const CLAIMED_BILLBOARD_SPLASH_REDUCED_MS = 600;
-/** Max wait for a large billboard image before starting the hold timer anyway. */
-export const CLAIMED_BILLBOARD_SPLASH_IMAGE_WAIT_MS = 12000;
+/**
+ * Max wait to decode the first splash image before skipping the entrance entirely.
+ * Never leave the user on an empty/black full-screen shell.
+ */
+export const CLAIMED_BILLBOARD_SPLASH_IMAGE_WAIT_MS = 1500;
 export const CLAIMED_BILLBOARD_SPLASH_MAX_SLIDES = 6;
+/** Soft shell — never pure black while art is missing or letterboxed. */
+export const CLAIMED_BILLBOARD_SPLASH_SHELL_BG = "#f2f1ec";
+/** Hard cap on per-slide hold (product: entrance, not a 15s blackout). */
+export const CLAIMED_BILLBOARD_SPLASH_MAX_HOLD_MS = 5000;
 
 /** Active splash/profile-billboard creatives only (paused gallery posts excluded). */
 export function isActiveBillboardSplashPost(post) {
@@ -58,11 +65,95 @@ export function pickClaimedBillboardSplashPost(posts) {
   return pickClaimedBillboardSplashPosts(posts, { limit: 1 })[0] || null;
 }
 
+function firstSplashImageUrl(posts) {
+  const list = pickClaimedBillboardSplashPosts(posts);
+  for (const post of list) {
+    const url = String(post?.image_url || post?.photo_url || "").trim();
+    if (url) return url;
+  }
+  return "";
+}
+
+/**
+ * Resolve when the first splash image is decoded, or false if it times out / errors.
+ * Callers must skip the entrance splash when this returns false — never show black void.
+ * @param {unknown} posts
+ * @param {{ timeoutMs?: number }} [opts]
+ * @returns {Promise<boolean>}
+ */
+export function waitForBillboardSplashImage(posts, opts = {}) {
+  const url = firstSplashImageUrl(posts);
+  if (!url) {
+    // Headline-only splash is allowed without an image.
+    return Promise.resolve(pickClaimedBillboardSplashPosts(posts).length > 0);
+  }
+  if (typeof Image === "undefined") return Promise.resolve(false);
+
+  const timeoutMs = Math.max(
+    200,
+    Number(opts.timeoutMs) || CLAIMED_BILLBOARD_SPLASH_IMAGE_WAIT_MS
+  );
+
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = (ok) => {
+      if (settled) return;
+      settled = true;
+      resolve(Boolean(ok));
+    };
+
+    const img = new Image();
+    const timer = setTimeout(() => finish(false), timeoutMs);
+    const clear = () => clearTimeout(timer);
+
+    img.onload = () => {
+      clear();
+      const w = Number(img.naturalWidth) || 0;
+      finish(w > 0);
+    };
+    img.onerror = () => {
+      clear();
+      finish(false);
+    };
+    try {
+      img.decoding = "async";
+      img.src = url;
+      if (img.complete && img.naturalWidth > 0) {
+        clear();
+        finish(true);
+      }
+    } catch {
+      clear();
+      finish(false);
+    }
+  });
+}
+
+/** Warm billboard splash images so entrance art is ready when the splash mounts. */
+export function prefetchBillboardSplashImages(posts) {
+  if (typeof Image === "undefined") return;
+  const list = pickClaimedBillboardSplashPosts(posts);
+  for (const post of list) {
+    const url = String(post?.image_url || post?.photo_url || "").trim();
+    if (!url) continue;
+    try {
+      const img = new Image();
+      img.decoding = "async";
+      img.src = url;
+    } catch {
+      /* ignore */
+    }
+  }
+}
+
 export function resolveSplashDurationMs(post, { reducedMotion = false } = {}) {
   if (reducedMotion) return CLAIMED_BILLBOARD_SPLASH_REDUCED_MS;
   const ms = Number(post?.display_duration_ms);
   if (Number.isFinite(ms) && ms >= 1000) {
-    return Math.min(15000, Math.max(1000, Math.round(ms)));
+    return Math.min(
+      CLAIMED_BILLBOARD_SPLASH_MAX_HOLD_MS,
+      Math.max(1000, Math.round(ms))
+    );
   }
   return CLAIMED_BILLBOARD_SPLASH_MS;
 }

@@ -1,7 +1,7 @@
 /**
  * Full-screen billboard entrance for restaurant profiles.
- * Carousel of up to 6 ordered slides; each holds for its display_duration_ms
- * after the image is visible. Mobile-safe contain fit by default.
+ * Carousel of up to 6 ordered slides; hold starts on mount.
+ * Never mounts a black void — cream shell; parents skip splash if art is not ready.
  */
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
@@ -10,8 +10,11 @@ import {
   CLAIMED_BILLBOARD_SPLASH_REDUCED_MS,
   CLAIMED_BILLBOARD_SPLASH_IMAGE_WAIT_MS,
   CLAIMED_BILLBOARD_SPLASH_MAX_SLIDES,
+  CLAIMED_BILLBOARD_SPLASH_SHELL_BG,
   pickClaimedBillboardSplashPost,
   pickClaimedBillboardSplashPosts,
+  prefetchBillboardSplashImages,
+  waitForBillboardSplashImage,
   resolveSplashDurationMs,
 } from "../../lib/claimedRestaurantBillboardSplash.js";
 
@@ -20,8 +23,11 @@ export {
   CLAIMED_BILLBOARD_SPLASH_REDUCED_MS,
   CLAIMED_BILLBOARD_SPLASH_IMAGE_WAIT_MS,
   CLAIMED_BILLBOARD_SPLASH_MAX_SLIDES,
+  CLAIMED_BILLBOARD_SPLASH_SHELL_BG,
   pickClaimedBillboardSplashPost,
   pickClaimedBillboardSplashPosts,
+  prefetchBillboardSplashImages,
+  waitForBillboardSplashImage,
   resolveSplashDurationMs,
 };
 
@@ -86,13 +92,12 @@ export default function ClaimedRestaurantBillboardSplash({
   const ctaLabel = String(current?.cta_label || "").trim();
   const ctaUrl = String(current?.cta_url || "").trim();
   const imageFitRaw = String(current?.image_fit || "").trim().toLowerCase();
+  // Prefer cover on entrance so letterboxed "black bars" never dominate the viewport.
   const imageFit = ["cover", "contain", "fill"].includes(imageFitRaw)
-    ? imageFitRaw
-    : (isNarrow ? "contain" : "contain");
+    ? (imageFitRaw === "contain" ? "cover" : imageFitRaw)
+    : "cover";
   const ariaLabel = [displayName, headline].filter(Boolean).join(". ");
-  const [imageReady, setImageReady] = useState(!imageUrl);
   const dismissedRef = useRef(false);
-  const imageRef = useRef(null);
 
   function dismiss() {
     if (dismissedRef.current) return;
@@ -100,36 +105,13 @@ export default function ClaimedRestaurantBillboardSplash({
     onDismiss?.();
   }
 
-  function markImageReady() {
-    setImageReady(true);
-  }
-
   useEffect(() => {
     setIndex(0);
   }, [slideList.map((p) => p?.id).join("|")]);
 
+  // Hold timer starts when the slide mounts — do not wait for image decode.
   useEffect(() => {
-    if (!imageUrl) {
-      setImageReady(true);
-      return undefined;
-    }
-    setImageReady(false);
-    const maxWait = window.setTimeout(() => setImageReady(true), CLAIMED_BILLBOARD_SPLASH_IMAGE_WAIT_MS);
-    // Cached images often skip onLoad; detect already-decoded bitmaps after paint.
-    const raf = window.requestAnimationFrame(() => {
-      const img = imageRef.current;
-      if (img && img.complete && img.naturalWidth > 0) {
-        setImageReady(true);
-      }
-    });
-    return () => {
-      window.clearTimeout(maxWait);
-      window.cancelAnimationFrame(raf);
-    };
-  }, [imageUrl, index]);
-
-  useEffect(() => {
-    if (!imageReady || !current) return undefined;
+    if (!current) return undefined;
     const holdMs = resolveSplashDurationMs(current, { reducedMotion });
     const timer = window.setTimeout(() => {
       if (index < slideList.length - 1) {
@@ -140,7 +122,7 @@ export default function ClaimedRestaurantBillboardSplash({
     }, holdMs);
     return () => window.clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [imageReady, reducedMotion, index, current, slideList.length]);
+  }, [reducedMotion, index, current, slideList.length]);
 
   if (!current) return null;
 
@@ -149,6 +131,7 @@ export default function ClaimedRestaurantBillboardSplash({
       role="presentation"
       aria-label={ariaLabel || displayName}
       onClick={() => dismiss()}
+      data-testid="claimed-billboard-splash"
       style={{
         position: "fixed",
         inset: 0,
@@ -163,23 +146,20 @@ export default function ClaimedRestaurantBillboardSplash({
         alignItems: "center",
         justifyContent: "flex-end",
         overflow: "hidden",
-        background: "#0b0b0f",
+        background: CLAIMED_BILLBOARD_SPLASH_SHELL_BG,
         fontFamily: "var(--font-ui, ui-sans-serif, system-ui, sans-serif)",
         textAlign: "left",
-        color: "#f8fafc",
+        color: "#1c1917",
         cursor: "pointer",
       }}
     >
       {imageUrl ? (
         <img
-          ref={imageRef}
           src={imageUrl}
           alt={alt}
           loading="eager"
           decoding="async"
           fetchPriority="high"
-          onLoad={markImageReady}
-          onError={markImageReady}
           style={{
             position: "absolute",
             inset: 0,
@@ -189,9 +169,8 @@ export default function ClaimedRestaurantBillboardSplash({
             objectPosition: "center",
             display: "block",
             pointerEvents: "none",
-            opacity: imageReady ? 1 : 0.12,
-            transition: reducedMotion ? "none" : "opacity 220ms ease",
-            background: "#0b0b0f",
+            opacity: 1,
+            background: CLAIMED_BILLBOARD_SPLASH_SHELL_BG,
           }}
         />
       ) : (
@@ -199,7 +178,7 @@ export default function ClaimedRestaurantBillboardSplash({
           style={{
             position: "absolute",
             inset: 0,
-            background: "linear-gradient(160deg, #111827 0%, #0f172a 55%, #14532d 100%)",
+            background: "linear-gradient(160deg, #ecfdf5 0%, #f2f1ec 55%, #d1fae5 100%)",
           }}
         />
       )}
@@ -209,8 +188,8 @@ export default function ClaimedRestaurantBillboardSplash({
           position: "absolute",
           inset: 0,
           background: imageUrl
-            ? "linear-gradient(to top, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.22) 42%, rgba(0,0,0,0.06) 100%)"
-            : "linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 55%)",
+            ? "linear-gradient(to top, rgba(28,25,23,0.72) 0%, rgba(28,25,23,0.18) 42%, rgba(28,25,23,0.04) 100%)"
+            : "linear-gradient(to top, rgba(28,25,23,0.35) 0%, transparent 55%)",
           pointerEvents: "none",
         }}
       />
@@ -242,7 +221,7 @@ export default function ClaimedRestaurantBillboardSplash({
                   width: i === index ? 18 : 8,
                   height: 8,
                   borderRadius: 999,
-                  background: i === index ? "#86efac" : "rgba(248,250,252,0.35)",
+                  background: i === index ? "#86efac" : "rgba(250,250,249,0.45)",
                   transition: reducedMotion ? "none" : "width 180ms ease",
                 }}
               />
@@ -256,7 +235,7 @@ export default function ClaimedRestaurantBillboardSplash({
             fontWeight: 800,
             letterSpacing: "0.1em",
             textTransform: "uppercase",
-            color: "rgba(248,250,252,0.72)",
+            color: "rgba(250,250,249,0.78)",
             marginBottom: 10,
           }}
         >
@@ -270,7 +249,7 @@ export default function ClaimedRestaurantBillboardSplash({
               lineHeight: 1.1,
               fontWeight: 900,
               letterSpacing: "-0.02em",
-              color: "#f8fafc",
+              color: "#fafaf9",
               wordBreak: "break-word",
             }}
           >
@@ -283,7 +262,7 @@ export default function ClaimedRestaurantBillboardSplash({
               margin: "12px 0 0",
               fontSize: "clamp(0.95rem, 2.2vw, 1.1rem)",
               lineHeight: 1.45,
-              color: "rgba(248,250,252,0.78)",
+              color: "rgba(28,25,23,0.72)",
               maxWidth: "36ch",
             }}
           >
@@ -317,7 +296,7 @@ export default function ClaimedRestaurantBillboardSplash({
               margin: 0,
               fontSize: 13,
               fontWeight: 600,
-              color: "rgba(248,250,252,0.55)",
+              color: "rgba(250,250,249,0.7)",
             }}
           >
             Tap to continue

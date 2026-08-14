@@ -16,7 +16,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useLocation, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import MenuItemInsightsPanel from "../components/MenuItemInsightsPanel.jsx";
 import ShareIcon from "../components/share/ShareIcon.jsx";
@@ -24,6 +24,7 @@ import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import FoodTruckPublicEditorial from "../components/restaurant/FoodTruckPublicEditorial.jsx";
 import ClaimedRestaurantBillboardSplash, {
   pickClaimedBillboardSplashPosts,
+  waitForBillboardSplashImage,
 } from "../components/restaurant/ClaimedRestaurantBillboardSplash.jsx";
 import { isActiveBillboardSplashPost } from "../lib/claimedRestaurantBillboardSplash.js";
 import { toConsumerErrorMessage, fetchRestaurantMenuPreview } from "../lib/api.js";
@@ -1188,7 +1189,6 @@ function AboutSection({ profile, isDark, c }) {
 export default function FoodTruckPage() {
   const { t } = useLanguage();
   const { slugOrId } = useParams();
-  const location = useLocation();
   const isMobile = useIsMobile();
 
   const [theme, setTheme] = useState(readTheme);
@@ -1201,9 +1201,8 @@ export default function FoodTruckPage() {
     error: null,
   });
   const [menuPreviewItems, setMenuPreviewItems] = useState([]);
-  const [billboardSplashDone, setBillboardSplashDone] = useState(() =>
-    Boolean(location.state?.billboardSplashConsumed)
-  );
+  const [billboardSplashDone, setBillboardSplashDone] = useState(false);
+  const [billboardSplashReady, setBillboardSplashReady] = useState(false);
 
   useEffect(() => {
     saveTheme(theme);
@@ -1215,7 +1214,8 @@ export default function FoodTruckPage() {
 
     setProfileState({ status: "loading", data: null, error: null });
     setMenuPreviewItems([]);
-    setBillboardSplashDone(Boolean(location.state?.billboardSplashConsumed));
+    setBillboardSplashDone(false);
+    setBillboardSplashReady(false);
 
     (async () => {
       try {
@@ -1257,6 +1257,21 @@ export default function FoodTruckPage() {
             json?.public_ordering_mode ?? base?.public_ordering_mode ?? "standard",
         };
 
+        // Never mount a black/empty splash: wait briefly for art, else skip entrance.
+        const splashPosts = pickClaimedBillboardSplashPosts(restaurant.billboard_preview);
+        if (splashPosts.length) {
+          const artReady = await waitForBillboardSplashImage(splashPosts);
+          if (cancelled) return;
+          if (artReady) {
+            setBillboardSplashReady(true);
+          } else {
+            setBillboardSplashDone(true);
+            setBillboardSplashReady(false);
+          }
+        } else {
+          setBillboardSplashDone(true);
+        }
+
         setProfileState({
           status: "ok",
           data: restaurant,
@@ -1295,7 +1310,7 @@ export default function FoodTruckPage() {
     return () => {
       cancelled = true;
     };
-  }, [slugOrId, location.state?.billboardSplashConsumed]);
+  }, [slugOrId]);
 
   const pageWrap = (children) => (
     <>
@@ -1320,27 +1335,16 @@ export default function FoodTruckPage() {
   );
 
   if (profileState.status === "loading") {
-    // Dark full-bleed loader (no sticky chrome) so entrance splash can take over cleanly.
+    // Neutral wait — never a black full-screen "empty splash" before the photo billboard.
     return (
       <div
-        style={{
-          position: "fixed",
-          inset: 0,
-          zIndex: 11900,
-          background: "#0b0b0f",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
         aria-busy="true"
         aria-label="Loading"
-      >
-        <div style={{ width: "min(320px, 70vw)", display: "flex", flexDirection: "column", gap: 12 }}>
-          <Skel w="100%" h={180} isDark radius={16} />
-          <Skel w="60%" h={12} isDark />
-          <Skel w="100%" h={12} isDark />
-        </div>
-      </div>
+        style={{
+          minHeight: "100vh",
+          background: "#f2f1ec",
+        }}
+      />
     );
   }
 
@@ -1427,7 +1431,7 @@ export default function FoodTruckPage() {
     <SaveContactButton truckName={name} truckPhone={phone} size={36} dark />
   );
 
-  if (splashPosts.length && !billboardSplashDone) {
+  if (splashPosts.length && billboardSplashReady && !billboardSplashDone) {
     return (
       <ClaimedRestaurantBillboardSplash
         restaurantName={name}

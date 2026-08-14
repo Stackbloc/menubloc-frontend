@@ -42,6 +42,7 @@ import UnclaimedRestaurantBrandSplash, {
 } from "../components/restaurant/UnclaimedRestaurantBrandSplash.jsx";
 import ClaimedRestaurantBillboardSplash, {
   pickClaimedBillboardSplashPosts,
+  waitForBillboardSplashImage,
 } from "../components/restaurant/ClaimedRestaurantBillboardSplash.jsx";
 import { isActiveBillboardSplashPost } from "../lib/claimedRestaurantBillboardSplash.js";
 import { useLanguage } from "../context/LanguageContext.jsx";
@@ -281,6 +282,7 @@ export default function RestaurantPublicPage() {
   const [data, setData] = useState(null);
   const [menuPreview, setMenuPreview] = useState(null);
   const [billboardSplashDone, setBillboardSplashDone] = useState(false);
+  const [billboardSplashReady, setBillboardSplashReady] = useState(false);
   const [unclaimedSplashDone, setUnclaimedSplashDone] = useState(false);
 
   const isDark = PUBLIC_PROFILE_IS_DARK;
@@ -305,14 +307,31 @@ export default function RestaurantPublicPage() {
     setData(null);
     setMenuPreview(null);
     setBillboardSplashDone(false);
+    setBillboardSplashReady(false);
     setUnclaimedSplashDone(false);
 
     fetch(dataUrl)
       .then((r) => r.json())
-      .then((json) => {
+      .then(async (json) => {
         if (!alive) return;
         if (!json?.ok) throw new Error(json?.error || "Not found");
-        setData(applyPublicRestaurantPayload(json));
+        const payload = applyPublicRestaurantPayload(json);
+        setData(payload);
+
+        // Food trucks splash only on FoodTruckPage. Others: wait for art or skip.
+        if (!isFoodTruckListing(payload)) {
+          const posts = pickClaimedBillboardSplashPosts(payload?.billboard_preview);
+          if (posts.length) {
+            const artReady = await waitForBillboardSplashImage(posts);
+            if (!alive) return;
+            if (artReady) setBillboardSplashReady(true);
+            else setBillboardSplashDone(true);
+          } else {
+            setBillboardSplashDone(true);
+          }
+        } else {
+          setBillboardSplashDone(true);
+        }
       })
       .catch((e) => {
         if (alive) {
@@ -335,7 +354,8 @@ export default function RestaurantPublicPage() {
 
   const claimedBillboardSplashPosts = useMemo(() => {
     if (loading || err || !data) return [];
-    // Food trucks may splash here before Navigate to /foodtrucks (avoids chrome flash).
+    // Food-truck entrance splash runs only on FoodTruckPage (avoids double splash).
+    if (isFoodTruckListing(data)) return [];
     return pickClaimedBillboardSplashPosts(data?.billboard_preview);
   }, [data, loading, err]);
 
@@ -412,6 +432,14 @@ export default function RestaurantPublicPage() {
       restaurant_id: Number(data.id),
     });
   }, [data?.id, data?.restaurant_name, data?.name, data?.slug, resolvedSlug, loading, err]);
+
+  // Food trucks use FoodTruckPage only — do not splash here (prevents empty+photo double entrance).
+  if (!loading && !err && data && isFoodTruckListing(data)) {
+    const foodTruckHref = buildFoodTruckProfileHref(data, resolvedSlug, location);
+    if (foodTruckHref) {
+      return <Navigate to={foodTruckHref} replace />;
+    }
+  }
 
   const tier = resolvePublicProfileTier(data);
   const isPro = tier === "pro";
@@ -499,7 +527,7 @@ export default function RestaurantPublicPage() {
     !isOwner &&
     (isOrdinaryUnclaimed || isFullClaimablePublicProfile(data));
 
-  if (!loading && !err && data && splashPosts.length && !billboardSplashDone) {
+  if (!loading && !err && data && splashPosts.length && billboardSplashReady && !billboardSplashDone) {
     return (
       <ClaimedRestaurantBillboardSplash
         restaurantName={name}
@@ -510,23 +538,6 @@ export default function RestaurantPublicPage() {
         }}
       />
     );
-  }
-
-  // Food trucks use FoodTruckPage after entrance splash (or immediately if none).
-  if (!loading && !err && data && isFoodTruckListing(data)) {
-    const foodTruckHref = buildFoodTruckProfileHref(data, resolvedSlug, location);
-    if (foodTruckHref) {
-      return (
-        <Navigate
-          to={foodTruckHref}
-          replace
-          state={{
-            ...(location.state && typeof location.state === "object" ? location.state : {}),
-            billboardSplashConsumed: true,
-          }}
-        />
-      );
-    }
   }
 
   if (

@@ -1,6 +1,7 @@
 /**
  * Claimed billboard entrance splash remains on restaurant profiles.
  * Public /billboard page and on-profile Billboard block stay removed.
+ * Never show a black/empty full-screen shell — art must be ready or splash is skipped.
  */
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -11,6 +12,8 @@ import {
   CLAIMED_BILLBOARD_SPLASH_REDUCED_MS,
   CLAIMED_BILLBOARD_SPLASH_IMAGE_WAIT_MS,
   CLAIMED_BILLBOARD_SPLASH_MAX_SLIDES,
+  CLAIMED_BILLBOARD_SPLASH_SHELL_BG,
+  CLAIMED_BILLBOARD_SPLASH_MAX_HOLD_MS,
   pickClaimedBillboardSplashPost,
   pickClaimedBillboardSplashPosts,
   resolveSplashDurationMs,
@@ -26,22 +29,28 @@ const helper = read("src/lib/claimedRestaurantBillboardSplash.js");
 assert.match(helper, /CLAIMED_BILLBOARD_SPLASH_MS\s*=\s*3500/);
 assert.match(helper, /CLAIMED_BILLBOARD_SPLASH_MAX_SLIDES\s*=\s*6/);
 assert.match(helper, /pickClaimedBillboardSplashPosts/);
+assert.match(helper, /waitForBillboardSplashImage/);
+assert.match(helper, /CLAIMED_BILLBOARD_SPLASH_SHELL_BG/);
 
 const splash = read("src/components/restaurant/ClaimedRestaurantBillboardSplash.jsx");
 assert.match(splash, /pickClaimedBillboardSplashPosts/);
 assert.match(splash, /objectFit:\s*imageFit/);
 assert.match(splash, /cta_url/);
 assert.match(splash, /Tap to continue/);
-assert.match(splash, /contain/);
 assert.match(splash, /position:\s*"fixed"/);
 assert.match(splash, /zIndex:\s*12000/);
-assert.match(splash, /naturalWidth/);
-assert.match(splash, /img\.complete/);
+assert.match(splash, /opacity:\s*1/);
+assert.match(splash, /CLAIMED_BILLBOARD_SPLASH_SHELL_BG/);
+assert.doesNotMatch(splash, /opacity:\s*imageReady/);
+assert.doesNotMatch(splash, /0\.12/);
+assert.doesNotMatch(splash, /#0b0b0f/);
 
 assert.equal(CLAIMED_BILLBOARD_SPLASH_MS, 3500);
 assert.equal(CLAIMED_BILLBOARD_SPLASH_REDUCED_MS, 600);
-assert.equal(CLAIMED_BILLBOARD_SPLASH_IMAGE_WAIT_MS, 12000);
+assert.equal(CLAIMED_BILLBOARD_SPLASH_IMAGE_WAIT_MS, 1500);
 assert.equal(CLAIMED_BILLBOARD_SPLASH_MAX_SLIDES, 6);
+assert.equal(CLAIMED_BILLBOARD_SPLASH_SHELL_BG, "#f2f1ec");
+assert.equal(CLAIMED_BILLBOARD_SPLASH_MAX_HOLD_MS, 5000);
 
 const ordered = pickClaimedBillboardSplashPosts([
   { id: 2, status: "current", display_order: 2, title: "B", image_url: "https://example.com/b.jpg" },
@@ -61,28 +70,33 @@ assert.equal(
 );
 
 assert.equal(resolveSplashDurationMs({ display_duration_ms: 5000 }), 5000);
+assert.equal(resolveSplashDurationMs({ display_duration_ms: 15000 }), 5000);
 assert.equal(resolveSplashDurationMs({ display_duration_ms: 5000 }, { reducedMotion: true }), 600);
 
 const page = read("src/pages/RestaurantPublicPage.jsx");
 assert.match(page, /ClaimedRestaurantBillboardSplash/);
 assert.match(page, /pickClaimedBillboardSplashPosts/);
+assert.match(page, /waitForBillboardSplashImage/);
+assert.match(page, /billboardSplashReady/);
 assert.match(page, /claimedBillboardSplashPosts|billboardSplashPosts/);
 assert.match(page, /posts=\{/);
-assert.match(page, /billboardSplashConsumed/);
 assert.doesNotMatch(page, /billboardHref/);
-// Food trucks splash on restaurant route before Navigate to /foodtrucks.
-assert.doesNotMatch(
-  page,
-  /if \(isFoodTruckListing\(data\)\) return \[\];/
-);
+assert.doesNotMatch(page, /billboardSplashConsumed/);
+// Food-truck entrance splash is FoodTruckPage-only (no double empty+photo splash).
+assert.match(page, /if \(isFoodTruckListing\(data\)\) return \[\];/);
 
 // Food trucks redirect off RestaurantPublicPage before splash — entrance lives on FoodTruckPage.
 const foodTruckPage = read("src/pages/FoodTruckPage.jsx");
 assert.match(foodTruckPage, /ClaimedRestaurantBillboardSplash/);
 assert.match(foodTruckPage, /pickClaimedBillboardSplashPosts/);
+assert.match(foodTruckPage, /waitForBillboardSplashImage/);
+assert.match(foodTruckPage, /billboardSplashReady/);
 assert.match(foodTruckPage, /billboardSplashDone/);
 assert.match(foodTruckPage, /isActiveBillboardSplashPost/);
 assert.match(foodTruckPage, /posts=\{splashPosts\}/);
+assert.doesNotMatch(foodTruckPage, /zIndex:\s*11900/);
+assert.doesNotMatch(foodTruckPage, /billboardSplashConsumed/);
+assert.doesNotMatch(foodTruckPage, /#0b0b0f/);
 
 const shell = read("src/components/restaurant/publicProfile/PublicProfileShell.jsx");
 assert.doesNotMatch(shell, /ProfileBillboardFeature/);
