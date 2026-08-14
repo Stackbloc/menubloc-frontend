@@ -66,6 +66,14 @@ assert.match(page, /claimedBillboardSplashPosts|billboardSplashPosts/);
 assert.match(page, /posts=\{/);
 assert.doesNotMatch(page, /billboardHref/);
 
+// Food trucks redirect off RestaurantPublicPage before splash — entrance lives on FoodTruckPage.
+const foodTruckPage = read("src/pages/FoodTruckPage.jsx");
+assert.match(foodTruckPage, /ClaimedRestaurantBillboardSplash/);
+assert.match(foodTruckPage, /pickClaimedBillboardSplashPosts/);
+assert.match(foodTruckPage, /billboardSplashDone/);
+assert.match(foodTruckPage, /isActiveBillboardSplashPost/);
+assert.match(foodTruckPage, /posts=\{splashPosts\}/);
+
 const shell = read("src/components/restaurant/publicProfile/PublicProfileShell.jsx");
 assert.doesNotMatch(shell, /ProfileBillboardFeature/);
 

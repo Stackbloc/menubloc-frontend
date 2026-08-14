@@ -33,6 +33,8 @@ test("FoodTruckPage uses personality editorial with homepage shell (no inline me
   const primitives = read("src/components/restaurant/publicProfile/profilePrimitives.jsx");
   assert.match(source, /StickyPageHeader/);
   assert.doesNotMatch(source, /HomeButton/);
+  assert.match(source, /ClaimedRestaurantBillboardSplash/);
+  assert.match(source, /pickClaimedBillboardSplashPosts/);
   assert.match(source, /FoodTruckPublicEditorial/);
   assert.match(source, /public_ordering_mode === "display_only"/);
   assert.match(source, /isClaimedFoodTruck/);

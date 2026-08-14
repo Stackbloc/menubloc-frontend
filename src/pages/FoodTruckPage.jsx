@@ -22,6 +22,10 @@ import MenuItemInsightsPanel from "../components/MenuItemInsightsPanel.jsx";
 import ShareIcon from "../components/share/ShareIcon.jsx";
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import FoodTruckPublicEditorial from "../components/restaurant/FoodTruckPublicEditorial.jsx";
+import ClaimedRestaurantBillboardSplash, {
+  pickClaimedBillboardSplashPosts,
+} from "../components/restaurant/ClaimedRestaurantBillboardSplash.jsx";
+import { isActiveBillboardSplashPost } from "../lib/claimedRestaurantBillboardSplash.js";
 import { toConsumerErrorMessage, fetchRestaurantMenuPreview } from "../lib/api.js";
 import BottomNav from "../components/BottomNav.jsx";
 import { getDisplayMenuItemName } from "../utils/getDisplayMenuItemName.js";
@@ -1196,6 +1200,7 @@ export default function FoodTruckPage() {
     error: null,
   });
   const [menuPreviewItems, setMenuPreviewItems] = useState([]);
+  const [billboardSplashDone, setBillboardSplashDone] = useState(false);
 
   useEffect(() => {
     saveTheme(theme);
@@ -1207,6 +1212,7 @@ export default function FoodTruckPage() {
 
     setProfileState({ status: "loading", data: null, error: null });
     setMenuPreviewItems([]);
+    setBillboardSplashDone(false);
 
     (async () => {
       try {
@@ -1381,11 +1387,11 @@ export default function FoodTruckPage() {
   const billboardPreview = Array.isArray(profile?.billboard_preview)
     ? profile.billboard_preview
     : [];
-  // Phase 1.5: billboard image first, then cover/hero, then Menuply gradient (never fake food).
+  const splashPosts = pickClaimedBillboardSplashPosts(billboardPreview);
+  // Phase 1.5: active billboard image first, then cover/hero, then Menuply gradient (never fake food).
+  const firstActiveBillboard = billboardPreview.find((p) => isActiveBillboardSplashPost(p));
   const firstBillboardImage =
-    billboardPreview.find((p) => p?.image_url || p?.photo_url)?.image_url ||
-    billboardPreview.find((p) => p?.image_url || p?.photo_url)?.photo_url ||
-    null;
+    String(firstActiveBillboard?.image_url || firstActiveBillboard?.photo_url || "").trim() || null;
   const bannerPhotoUrl =
     firstBillboardImage ||
     profile?.hero_image_url ||
@@ -1404,6 +1410,16 @@ export default function FoodTruckPage() {
   const saveContactControl = (
     <SaveContactButton truckName={name} truckPhone={phone} size={36} dark />
   );
+
+  if (splashPosts.length && !billboardSplashDone) {
+    return (
+      <ClaimedRestaurantBillboardSplash
+        restaurantName={name}
+        posts={splashPosts}
+        onDismiss={() => setBillboardSplashDone(true)}
+      />
+    );
+  }
 
   return (
     <>
