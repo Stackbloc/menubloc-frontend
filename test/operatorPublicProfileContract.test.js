@@ -158,7 +158,7 @@ function testPublicProfileMenuLikeShareRail() {
 
 /**
  * Claimed and ordinary unclaimed restaurants use shared homepage public profile.
- * Claimed: Hero → Billboard → About Us + Founded + Photos → Favorites → Deals → Updates.
+ * Claimed: Hero → Windows → About Us + Founded + Photos → Favorites → Deals → Updates.
  * Unclaimed: Hero → About Us + Founded + Photos → Favorites → Deals → Updates.
  */
 function testClaimedProfileUsesEditorialPresentation() {
@@ -211,6 +211,13 @@ function testClaimedProfileUsesEditorialPresentation() {
   assert.match(about, /profile-founded-blank/);
   assert.match(about, /ProfilePhotoStrip/);
   assert.match(billboard, /profile-billboard-block/);
+  assert.match(billboard, /Windows/);
+  assert.match(billboard, /WINDOWS_MAX_SLIDES\s*=\s*4/);
+  assert.match(billboard, /Previous window/);
+  assert.match(billboard, /Next window/);
+  assert.match(billboard, /›/);
+  assert.match(billboard, /‹/);
+  assert.doesNotMatch(billboard, />\s*Billboard\s*</);
   assert.match(favorites, /showClaimInvites|ProfileSectionBlank/);
   assert.match(updates, /showClaimInvites|ProfileSectionBlank/);
   assert.match(hero, /profile-hero-actions/);
@@ -228,7 +235,7 @@ function testClaimedProfileUsesEditorialPresentation() {
   const favIdx = shell.indexOf("<ProfileFavoriteMenuItems");
   const dealsIdx = shell.indexOf("<ProfileDealsSection");
   const updatesIdx = shell.indexOf("<ProfileUpdates");
-  assert.ok(billboardIdx > -1 && aboutIdx > billboardIdx, "about/founded after billboard");
+  assert.ok(billboardIdx > -1 && aboutIdx > billboardIdx, "about/founded after windows");
   assert.ok(favIdx > aboutIdx, "favorites after about/founded");
   assert.ok(dealsIdx > favIdx, "deals after favorites");
   assert.ok(updatesIdx > dealsIdx, "updates after deals");
