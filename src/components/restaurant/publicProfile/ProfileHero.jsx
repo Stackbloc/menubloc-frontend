@@ -358,9 +358,32 @@ export default function ProfileHero({
           </div>
         ) : null}
 
-        {cuisineLabel && profileType === "food_truck" ? (
-          <div style={{ marginTop: 6, fontSize: 13, fontWeight: 600, color: muted }}>
-            {cuisineLabel}
+        {profileType === "food_truck" && (cuisineLabel || cluster) ? (
+          <div
+            data-testid="profile-hero-cuisine-cluster"
+            style={{
+              marginTop: 6,
+              fontSize: 13,
+              fontWeight: 600,
+              color: muted,
+              lineHeight: 1.35,
+            }}
+          >
+            {cuisineLabel ? <span data-testid="profile-hero-cuisine">{cuisineLabel}</span> : null}
+            {cuisineLabel && cluster ? <span aria-hidden="true">{" - "}</span> : null}
+            {cluster ? (
+              clusterHref ? (
+                <Link
+                  to={clusterHref}
+                  data-testid="profile-hero-cluster"
+                  style={{ color: linkColor, textDecoration: "none", fontWeight: 700 }}
+                >
+                  {cluster}
+                </Link>
+              ) : (
+                <span data-testid="profile-hero-cluster">{cluster}</span>
+              )
+            ) : null}
           </div>
         ) : null}
 
@@ -387,7 +410,7 @@ export default function ProfileHero({
           </div>
         ) : null}
 
-        {cluster ? (
+        {profileType !== "food_truck" && cluster ? (
           <div
             data-testid="profile-hero-cluster-field"
             style={{

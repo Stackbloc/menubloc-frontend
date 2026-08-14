@@ -19,10 +19,10 @@ assert.doesNotMatch(shell, /clusterName = !isFoodTruck && displayCluster/);
 assert.match(editorial, /displayCluster=\{displayCluster\}/);
 assert.match(page, /display_cluster:\s*json\?\.display_cluster/);
 assert.match(page, /displayCluster=\{profile\?\.display_cluster/);
-assert.match(hero, /data-testid="profile-hero-cluster-field"/);
-assert.doesNotMatch(
-  hero,
-  /showRestaurantContact && cluster \?/
-);
+assert.match(hero, /data-testid="profile-hero-cuisine-cluster"/);
+assert.match(hero, /\{\s*" - "\s*\}/);
+assert.match(hero, /profileType !== "food_truck" && cluster/);
+assert.doesNotMatch(hero, /showRestaurantContact && cluster \?/);
+
 
 console.log("foodTruckClusterCuisineContract: ok");
