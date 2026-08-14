@@ -1341,6 +1341,26 @@ export default function MenuItemInfoPage() {
         </div>
       </Surface>
 
+      {showItemPhoto && !isMobile ? (
+        <Surface style={{ marginTop: 16, padding: 0, overflow: "hidden" }}>
+          <div
+            style={{
+              minHeight: 320,
+              borderRadius: 22,
+              overflow: "hidden",
+              border: "1px solid var(--gb-color-border)",
+              background: "var(--gb-color-page-warm)",
+            }}
+          >
+            <img
+              src={item.itemPhotoUrl}
+              alt={`${displayItemName} photo`}
+              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+            />
+          </div>
+        </Surface>
+      ) : null}
+
       {!isMobile ? (
         <StickyVerdictRail
           detailSystem={detailSystem}

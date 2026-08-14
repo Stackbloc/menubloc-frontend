@@ -1426,6 +1426,17 @@ function ItemRow({
   const omitPlaceLocation = isPlaceScopedReturn(returnNavigation);
   const refinementMatchLabel = buildRefinementMatchLabel(displayRow, activeRefinement);
   const priceLabel = fmtPrice(row);
+  const itemPhotoUrl = pick(
+    displayRow,
+    ["item_photo_url", "itemPhotoUrl", "photo_url", "image_url"],
+    displayRow?.item?.item_photo_url ||
+      displayRow?.item?.photo_url ||
+      displayRow?.item?.image_url ||
+      null
+  );
+  const showItemPhoto =
+    typeof itemPhotoUrl === "string" &&
+    /^https?:\/\//i.test(itemPhotoUrl.trim());
 
   const factsLine = venueRenderedAbove
     ? ""
@@ -1719,7 +1730,58 @@ function ItemRow({
         borderBottom: "1px solid var(--gb-color-border)",
       }}
     >
-      {/* 1. Item name + price */}
+      {/* 1. Item photo (optional) + name + price */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "flex-start",
+          gap: 12,
+        }}
+      >
+        {showItemPhoto ? (
+          href ? (
+            <Link
+              to={href}
+              onClick={() => trackMenuItemInteraction(mid, "click")}
+              aria-label={`${name} photo`}
+              style={{
+                flexShrink: 0,
+                width: 72,
+                height: 72,
+                borderRadius: 14,
+                overflow: "hidden",
+                border: "1px solid rgba(255,255,255,0.12)",
+                background: "#111827",
+                display: "block",
+              }}
+            >
+              <img
+                src={itemPhotoUrl.trim()}
+                alt=""
+                style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+              />
+            </Link>
+          ) : (
+            <div
+              style={{
+                flexShrink: 0,
+                width: 72,
+                height: 72,
+                borderRadius: 14,
+                overflow: "hidden",
+                border: "1px solid rgba(255,255,255,0.12)",
+                background: "#111827",
+              }}
+            >
+              <img
+                src={itemPhotoUrl.trim()}
+                alt=""
+                style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+              />
+            </div>
+          )
+        ) : null}
+        <div style={{ flex: "1 1 auto", minWidth: 0 }}>
       <div
         style={{
           display: "flex",
@@ -1776,6 +1838,8 @@ function ItemRow({
             {priceLabel}
           </div>
         ) : null}
+      </div>
+        </div>
       </div>
 
       {/* 2. Action icons — view menu, like, share */}
