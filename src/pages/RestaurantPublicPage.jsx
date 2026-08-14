@@ -335,7 +335,7 @@ export default function RestaurantPublicPage() {
 
   const claimedBillboardSplashPosts = useMemo(() => {
     if (loading || err || !data) return [];
-    if (isFoodTruckListing(data)) return [];
+    // Food trucks may splash here before Navigate to /foodtrucks (avoids chrome flash).
     return pickClaimedBillboardSplashPosts(data?.billboard_preview);
   }, [data, loading, err]);
 
@@ -412,14 +412,6 @@ export default function RestaurantPublicPage() {
       restaurant_id: Number(data.id),
     });
   }, [data?.id, data?.restaurant_name, data?.name, data?.slug, resolvedSlug, loading, err]);
-
-  // Food trucks always use the dedicated custom FoodTruckPage profile.
-  if (!loading && !err && data && isFoodTruckListing(data)) {
-    const foodTruckHref = buildFoodTruckProfileHref(data, resolvedSlug, location);
-    if (foodTruckHref) {
-      return <Navigate to={foodTruckHref} replace />;
-    }
-  }
 
   const tier = resolvePublicProfileTier(data);
   const isPro = tier === "pro";
@@ -518,6 +510,23 @@ export default function RestaurantPublicPage() {
         }}
       />
     );
+  }
+
+  // Food trucks use FoodTruckPage after entrance splash (or immediately if none).
+  if (!loading && !err && data && isFoodTruckListing(data)) {
+    const foodTruckHref = buildFoodTruckProfileHref(data, resolvedSlug, location);
+    if (foodTruckHref) {
+      return (
+        <Navigate
+          to={foodTruckHref}
+          replace
+          state={{
+            ...(location.state && typeof location.state === "object" ? location.state : {}),
+            billboardSplashConsumed: true,
+          }}
+        />
+      );
+    }
   }
 
   if (

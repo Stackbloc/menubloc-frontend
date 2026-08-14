@@ -33,6 +33,10 @@ assert.match(splash, /objectFit:\s*imageFit/);
 assert.match(splash, /cta_url/);
 assert.match(splash, /Tap to continue/);
 assert.match(splash, /contain/);
+assert.match(splash, /position:\s*"fixed"/);
+assert.match(splash, /zIndex:\s*12000/);
+assert.match(splash, /naturalWidth/);
+assert.match(splash, /img\.complete/);
 
 assert.equal(CLAIMED_BILLBOARD_SPLASH_MS, 3500);
 assert.equal(CLAIMED_BILLBOARD_SPLASH_REDUCED_MS, 600);
@@ -64,7 +68,13 @@ assert.match(page, /ClaimedRestaurantBillboardSplash/);
 assert.match(page, /pickClaimedBillboardSplashPosts/);
 assert.match(page, /claimedBillboardSplashPosts|billboardSplashPosts/);
 assert.match(page, /posts=\{/);
+assert.match(page, /billboardSplashConsumed/);
 assert.doesNotMatch(page, /billboardHref/);
+// Food trucks splash on restaurant route before Navigate to /foodtrucks.
+assert.doesNotMatch(
+  page,
+  /if \(isFoodTruckListing\(data\)\) return \[\];/
+);
 
 // Food trucks redirect off RestaurantPublicPage before splash — entrance lives on FoodTruckPage.
 const foodTruckPage = read("src/pages/FoodTruckPage.jsx");

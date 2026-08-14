@@ -16,7 +16,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import MenuItemInsightsPanel from "../components/MenuItemInsightsPanel.jsx";
 import ShareIcon from "../components/share/ShareIcon.jsx";
@@ -1188,6 +1188,7 @@ function AboutSection({ profile, isDark, c }) {
 export default function FoodTruckPage() {
   const { t } = useLanguage();
   const { slugOrId } = useParams();
+  const location = useLocation();
   const isMobile = useIsMobile();
 
   const [theme, setTheme] = useState(readTheme);
@@ -1200,7 +1201,9 @@ export default function FoodTruckPage() {
     error: null,
   });
   const [menuPreviewItems, setMenuPreviewItems] = useState([]);
-  const [billboardSplashDone, setBillboardSplashDone] = useState(false);
+  const [billboardSplashDone, setBillboardSplashDone] = useState(() =>
+    Boolean(location.state?.billboardSplashConsumed)
+  );
 
   useEffect(() => {
     saveTheme(theme);
@@ -1212,7 +1215,7 @@ export default function FoodTruckPage() {
 
     setProfileState({ status: "loading", data: null, error: null });
     setMenuPreviewItems([]);
-    setBillboardSplashDone(false);
+    setBillboardSplashDone(Boolean(location.state?.billboardSplashConsumed));
 
     (async () => {
       try {
@@ -1292,7 +1295,7 @@ export default function FoodTruckPage() {
     return () => {
       cancelled = true;
     };
-  }, [slugOrId]);
+  }, [slugOrId, location.state?.billboardSplashConsumed]);
 
   const pageWrap = (children) => (
     <>
@@ -1317,13 +1320,26 @@ export default function FoodTruckPage() {
   );
 
   if (profileState.status === "loading") {
-    return pageWrap(
-      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-        <Skel w="100%" h={280} isDark={isDark} radius={20} />
-        <Skel w={80} h={13} isDark={isDark} />
-        <Skel w="100%" h={72} isDark={isDark} radius={14} />
-        <Skel w="100%" h={72} isDark={isDark} radius={14} />
-        <Skel w="100%" h={72} isDark={isDark} radius={14} />
+    // Dark full-bleed loader (no sticky chrome) so entrance splash can take over cleanly.
+    return (
+      <div
+        style={{
+          position: "fixed",
+          inset: 0,
+          zIndex: 11900,
+          background: "#0b0b0f",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+        aria-busy="true"
+        aria-label="Loading"
+      >
+        <div style={{ width: "min(320px, 70vw)", display: "flex", flexDirection: "column", gap: 12 }}>
+          <Skel w="100%" h={180} isDark radius={16} />
+          <Skel w="60%" h={12} isDark />
+          <Skel w="100%" h={12} isDark />
+        </div>
       </div>
     );
   }

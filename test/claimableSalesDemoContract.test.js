@@ -98,6 +98,8 @@ test("RestaurantPublicPage redirects food_truck listings to /foodtrucks custom p
   const source = read("src/pages/RestaurantPublicPage.jsx");
   assert.match(source, /isFoodTruckListing/);
   assert.match(source, /buildFoodTruckProfileHref/);
-  assert.match(source, /Navigate to=\{foodTruckHref\}/);
+  assert.match(source, /<Navigate/);
+  assert.match(source, /to=\{foodTruckHref\}/);
+  assert.match(source, /billboardSplashConsumed/);
   assert.match(source, /\/foodtrucks\/\$\{encodeURIComponent\(target\)\}/);
 });

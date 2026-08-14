@@ -14,6 +14,7 @@ import ProfileUpdates from "./ProfileUpdates.jsx";
 import ProfileDealsSection from "./ProfileDealsSection.jsx";
 import FoodTruckUpcomingStops from "./FoodTruckUpcomingStops.jsx";
 import FoodComments from "../../comments/FoodComments.jsx";
+import { isActiveBillboardSplashPost } from "../../../lib/claimedRestaurantBillboardSplash.js";
 import {
   ProfileSection,
   normalizeScheduleStops,
@@ -115,6 +116,9 @@ export default function PublicProfileShell({
   );
 
   const isFoodTruck = isFoodTruckProfile(profile, profileType);
+  const hasActiveBillboard = (Array.isArray(billboardPreview) ? billboardPreview : []).some(
+    (p) => isActiveBillboardSplashPost(p)
+  );
   const contentMax = PROFILE_CONTENT_MAX;
   const classification = profile?.classification || null;
   const primaryVenue =
@@ -247,8 +251,12 @@ export default function PublicProfileShell({
           <ProfileClaimBanner claimHref={claimHref} claimState={claimState} />
         ) : null}
 
-        {!showClaimInvites ? (
-          <ProfileBillboardBlock billboardPreview={billboardPreview} isMobile={isMobile} />
+        {hasActiveBillboard || !showClaimInvites ? (
+          <ProfileBillboardBlock
+            billboardPreview={billboardPreview}
+            isMobile={isMobile}
+            showClaimInvites={showClaimInvites}
+          />
         ) : null}
 
         <ProfileAboutFounded

@@ -92,11 +92,16 @@ export default function ClaimedRestaurantBillboardSplash({
   const ariaLabel = [displayName, headline].filter(Boolean).join(". ");
   const [imageReady, setImageReady] = useState(!imageUrl);
   const dismissedRef = useRef(false);
+  const imageRef = useRef(null);
 
   function dismiss() {
     if (dismissedRef.current) return;
     dismissedRef.current = true;
     onDismiss?.();
+  }
+
+  function markImageReady() {
+    setImageReady(true);
   }
 
   useEffect(() => {
@@ -110,7 +115,17 @@ export default function ClaimedRestaurantBillboardSplash({
     }
     setImageReady(false);
     const maxWait = window.setTimeout(() => setImageReady(true), CLAIMED_BILLBOARD_SPLASH_IMAGE_WAIT_MS);
-    return () => window.clearTimeout(maxWait);
+    // Cached images often skip onLoad; detect already-decoded bitmaps after paint.
+    const raf = window.requestAnimationFrame(() => {
+      const img = imageRef.current;
+      if (img && img.complete && img.naturalWidth > 0) {
+        setImageReady(true);
+      }
+    });
+    return () => {
+      window.clearTimeout(maxWait);
+      window.cancelAnimationFrame(raf);
+    };
   }, [imageUrl, index]);
 
   useEffect(() => {
@@ -135,6 +150,9 @@ export default function ClaimedRestaurantBillboardSplash({
       aria-label={ariaLabel || displayName}
       onClick={() => dismiss()}
       style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 12000,
         minHeight: "100vh",
         width: "100%",
         margin: 0,
@@ -144,7 +162,6 @@ export default function ClaimedRestaurantBillboardSplash({
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "flex-end",
-        position: "relative",
         overflow: "hidden",
         background: "#0b0b0f",
         fontFamily: "var(--font-ui, ui-sans-serif, system-ui, sans-serif)",
@@ -155,13 +172,14 @@ export default function ClaimedRestaurantBillboardSplash({
     >
       {imageUrl ? (
         <img
+          ref={imageRef}
           src={imageUrl}
           alt={alt}
           loading="eager"
           decoding="async"
           fetchPriority="high"
-          onLoad={() => setImageReady(true)}
-          onError={() => setImageReady(true)}
+          onLoad={markImageReady}
+          onError={markImageReady}
           style={{
             position: "absolute",
             inset: 0,
