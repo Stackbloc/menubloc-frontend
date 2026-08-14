@@ -712,6 +712,12 @@ export const getBrandProfile = (rid) =>
   get(`/operator/restaurants/${rid}/brand`);
 export const updateBrandProfile = (rid, body) =>
   patch(`/operator/restaurants/${rid}/brand`, body);
+export const getWindowsPhotoOrientation = (rid) =>
+  get(`/operator/restaurants/${rid}/brand/windows-photo-orientation`);
+export const updateWindowsPhotoOrientation = (rid, windows_photo_orientation) =>
+  patch(`/operator/restaurants/${rid}/brand/windows-photo-orientation`, {
+    windows_photo_orientation,
+  });
 export const uploadBrandLogo = (rid, body) =>
   post(`/operator/restaurants/${rid}/brand/logo`, body);
 export const removeBrandLogo = (rid) =>

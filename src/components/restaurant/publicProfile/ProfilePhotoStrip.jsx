@@ -4,6 +4,10 @@
  * "Photos" heading only when empty (claim invite blank) — hidden once any photo exists.
  */
 import { PROFILE_INK, PROFILE_MUTED, ProfileSectionBlank } from "./profilePrimitives.jsx";
+import {
+  normalizeWindowsPhotoOrientation,
+  windowsPhotoStripTileSize,
+} from "../../../lib/windowsPhotoOrientation.js";
 
 function collectPhotoUrls({ bannerPhotoUrl, billboardPreview, excludeHeroUrl }) {
   const urls = [];
@@ -35,6 +39,7 @@ export default function ProfilePhotoStrip({
   isMobile = false,
   showClaimInvites = false,
   embedded = false,
+  windowsPhotoOrientation = "portrait",
 }) {
   const photos = collectPhotoUrls({
     bannerPhotoUrl,
@@ -43,8 +48,12 @@ export default function ProfilePhotoStrip({
   });
   if (!photos.length && !showClaimInvites) return null;
 
-  const tileW = embedded ? (isMobile ? 132 : 168) : isMobile ? 168 : 260;
-  const tileH = embedded ? (isMobile ? 99 : 126) : isMobile ? 126 : 180;
+  const orientation = normalizeWindowsPhotoOrientation(windowsPhotoOrientation);
+  const { tileW, tileH } = windowsPhotoStripTileSize({
+    orientation,
+    isMobile,
+    embedded,
+  });
   const showPhotosHeading = photos.length === 0;
 
   const label = showPhotosHeading ? (
@@ -99,7 +108,11 @@ export default function ProfilePhotoStrip({
 
   if (embedded) {
     return (
-      <div data-testid="profile-photo-strip" aria-label={`${name} photos`}>
+      <div
+        data-testid="profile-photo-strip"
+        data-windows-orientation={orientation}
+        aria-label={`${name} photos`}
+      >
         {label}
         {body}
       </div>
@@ -109,6 +122,7 @@ export default function ProfilePhotoStrip({
   return (
     <section
       data-testid="profile-photo-strip"
+      data-windows-orientation={orientation}
       aria-label={`${name} photos`}
       style={{ marginBottom: isMobile ? 20 : 24 }}
     >

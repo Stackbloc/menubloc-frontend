@@ -7,6 +7,10 @@
 import { useEffect, useState } from "react";
 import { isActiveBillboardSplashPost } from "../../../lib/claimedRestaurantBillboardSplash.js";
 import {
+  normalizeWindowsPhotoOrientation,
+  windowsFrameAspectRatio,
+} from "../../../lib/windowsPhotoOrientation.js";
+import {
   PROFILE_INK,
   PROFILE_MUTED,
   profileCardBorderVar,
@@ -53,12 +57,15 @@ export default function ProfileBillboardBlock({
   billboardPreview = [],
   isMobile = false,
   showClaimInvites = false,
+  windowsPhotoOrientation = "portrait",
 }) {
   const posts = (Array.isArray(billboardPreview) ? billboardPreview : [])
     .filter((p) => isActiveBillboardSplashPost(p) && (postImage(p) || postTitle(p) || postBody(p)))
     .slice(0, WINDOWS_MAX_SLIDES);
 
   const [index, setIndex] = useState(0);
+  const orientation = normalizeWindowsPhotoOrientation(windowsPhotoOrientation);
+  const frameAspect = windowsFrameAspectRatio(orientation);
 
   useEffect(() => {
     setIndex(0);
@@ -79,6 +86,7 @@ export default function ProfileBillboardBlock({
     <section
       data-testid="profile-billboard-block"
       data-section="windows"
+      data-windows-orientation={orientation}
       aria-label="Windows"
       style={{ marginBottom: isMobile ? 20 : 28 }}
     >
@@ -117,7 +125,8 @@ export default function ProfileBillboardBlock({
                 loading="eager"
                 style={{
                   width: "100%",
-                  height: isMobile ? 160 : 200,
+                  aspectRatio: frameAspect,
+                  height: "auto",
                   objectFit: "cover",
                   display: "block",
                   background: "#e7e5e4",
@@ -127,7 +136,7 @@ export default function ProfileBillboardBlock({
               <div
                 style={{
                   width: "100%",
-                  height: isMobile ? 160 : 200,
+                  aspectRatio: frameAspect,
                   background: "linear-gradient(160deg, #f5f5f4 0%, #e7e5e4 100%)",
                 }}
                 aria-hidden

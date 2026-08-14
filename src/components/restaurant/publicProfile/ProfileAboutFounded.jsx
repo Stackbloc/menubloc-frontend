@@ -26,6 +26,7 @@ export default function ProfileAboutFounded({
   showPhotos = true,
   aboutBlankMessage = "Tell diners about this restaurant.",
   foundedBlankMessage = "Add the year or date founded.",
+  windowsPhotoOrientation = "portrait",
 }) {
   void claimHref;
   void claimState;
@@ -97,6 +98,7 @@ export default function ProfileAboutFounded({
             isMobile={isMobile}
             showClaimInvites={showClaimInvites}
             embedded
+            windowsPhotoOrientation={windowsPhotoOrientation}
           />
         ) : null}
       </div>

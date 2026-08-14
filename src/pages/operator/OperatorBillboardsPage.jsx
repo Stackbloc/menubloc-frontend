@@ -506,6 +506,9 @@ export default function OperatorBillboardsPage() {
   const [mode, setMode] = useState("list"); // list | create | edit
   const [editingDeal, setEditingDeal] = useState(null);
   const [editingBillboard, setEditingBillboard] = useState(null);
+  const [windowsOrientation, setWindowsOrientation] = useState("portrait");
+  const [windowsOrientationSaving, setWindowsOrientationSaving] = useState(false);
+  const [windowsOrientationMsg, setWindowsOrientationMsg] = useState("");
 
   const load = useCallback(async () => {
     if (!rid) {
@@ -531,6 +534,46 @@ export default function OperatorBillboardsPage() {
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    if (!rid) {
+      setWindowsOrientation("portrait");
+      setWindowsOrientationMsg("");
+      return;
+    }
+    let cancelled = false;
+    api
+      .getWindowsPhotoOrientation(rid)
+      .then((data) => {
+        if (cancelled) return;
+        const value = String(data?.windows_photo_orientation || "").toLowerCase();
+        setWindowsOrientation(value === "landscape" ? "landscape" : "portrait");
+      })
+      .catch(() => {
+        if (!cancelled) setWindowsOrientation("portrait");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [rid]);
+
+  async function saveWindowsOrientation(next) {
+    if (!rid) return;
+    const value = next === "landscape" ? "landscape" : "portrait";
+    const prev = windowsOrientation;
+    setWindowsOrientation(value);
+    setWindowsOrientationSaving(true);
+    setWindowsOrientationMsg("");
+    try {
+      await api.updateWindowsPhotoOrientation(rid, value);
+      setWindowsOrientationMsg("Windows photo orientation saved.");
+    } catch (err) {
+      setWindowsOrientation(prev);
+      setWindowsOrientationMsg(err.message || "Unable to save orientation.");
+    } finally {
+      setWindowsOrientationSaving(false);
+    }
+  }
 
   useEffect(() => {
     if (!rid) return;
@@ -599,6 +642,55 @@ export default function OperatorBillboardsPage() {
             {error}
           </div>
         ) : null}
+
+        <div
+          data-testid="windows-photo-orientation-control"
+          style={{
+            background: "#fff",
+            border: "1px solid #e4e9f0",
+            borderRadius: 12,
+            padding: "14px 16px",
+            display: "grid",
+            gap: 10,
+          }}
+        >
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 800, color: "#0f1720" }}>
+              Windows photo orientation
+            </div>
+            <p style={{ margin: "4px 0 0", fontSize: 12, color: "#64748b", lineHeight: 1.45 }}>
+              One setting for the whole public profile. All Windows slides and Photos tiles use the same frame.
+              Default is portrait.
+            </p>
+          </div>
+          <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+            <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 600 }}>
+              <input
+                type="radio"
+                name="windows-photo-orientation"
+                checked={windowsOrientation === "portrait"}
+                disabled={windowsOrientationSaving}
+                onChange={() => saveWindowsOrientation("portrait")}
+                data-testid="windows-orientation-portrait"
+              />
+              Portrait
+            </label>
+            <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 600 }}>
+              <input
+                type="radio"
+                name="windows-photo-orientation"
+                checked={windowsOrientation === "landscape"}
+                disabled={windowsOrientationSaving}
+                onChange={() => saveWindowsOrientation("landscape")}
+                data-testid="windows-orientation-landscape"
+              />
+              Landscape
+            </label>
+          </div>
+          {windowsOrientationMsg ? (
+            <div style={{ fontSize: 12, color: "#475569", fontWeight: 600 }}>{windowsOrientationMsg}</div>
+          ) : null}
+        </div>
 
         {mode === "create" ? (
           <BillboardEditor

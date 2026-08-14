@@ -76,6 +76,7 @@ function emptyForm() {
     about_us: "",
     founded_year: "",
     team_intro: "",
+    windows_photo_orientation: "portrait",
     featured_menu_item_id: "",
     favorite_menu_item_ids: [],
     now_hiring: false,
@@ -260,6 +261,10 @@ export default function OwnerProfileManager() {
         about_us: r.about_us || "",
         founded_year: r.founded_year != null ? String(r.founded_year) : "",
         team_intro: r.team_intro || "",
+        windows_photo_orientation:
+          String(r.windows_photo_orientation || "").toLowerCase() === "landscape"
+            ? "landscape"
+            : "portrait",
         featured_menu_item_id: favoriteIds[0] != null ? String(favoriteIds[0]) : "",
         favorite_menu_item_ids: favoriteIds.map(String),
         now_hiring: banners.includes("now_hiring"),
@@ -463,6 +468,8 @@ export default function OwnerProfileManager() {
         about_us: form.about_us,
         founded_year: form.founded_year === "" ? null : form.founded_year,
         team_intro: form.team_intro || null,
+        windows_photo_orientation:
+          form.windows_photo_orientation === "landscape" ? "landscape" : "portrait",
       };
       const styleChanged =
         (form.profile_style_key ?? null) !== (baseline.profile_style_key ?? null);
@@ -943,6 +950,41 @@ export default function OwnerProfileManager() {
                   These fields publish to the public profile: About Us, Founded, Favorite Menu Items, and Updates.
                   Photos come from the banner/logo plus operator billboards. Deals and billboards are edited in the
                   operator console (<code>/operator/billboards</code>, <code>/operator/deals</code>).
+                </div>
+                <div
+                  data-testid="owner-windows-photo-orientation"
+                  style={{ marginBottom: 14 }}
+                >
+                  <Label>Windows photo orientation</Label>
+                  <div style={{ fontSize: 12, color: OWNER_COLORS.muted, marginBottom: 8, lineHeight: 1.4 }}>
+                    One frame for all Windows slides and Photos tiles on the public profile. Default is portrait.
+                  </div>
+                  <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+                    <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 600 }}>
+                      <input
+                        type="radio"
+                        name="owner-windows-photo-orientation"
+                        checked={form.windows_photo_orientation !== "landscape"}
+                        onChange={() =>
+                          setForm((prev) => ({ ...prev, windows_photo_orientation: "portrait" }))
+                        }
+                        data-testid="owner-windows-orientation-portrait"
+                      />
+                      Portrait
+                    </label>
+                    <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 600 }}>
+                      <input
+                        type="radio"
+                        name="owner-windows-photo-orientation"
+                        checked={form.windows_photo_orientation === "landscape"}
+                        onChange={() =>
+                          setForm((prev) => ({ ...prev, windows_photo_orientation: "landscape" }))
+                        }
+                        data-testid="owner-windows-orientation-landscape"
+                      />
+                      Landscape
+                    </label>
+                  </div>
                 </div>
                 <div style={{ marginBottom: 14 }}>
                   <Label>About Us</Label>

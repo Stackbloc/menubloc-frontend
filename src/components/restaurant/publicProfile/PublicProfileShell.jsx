@@ -32,6 +32,7 @@ import {
   DEFAULT_PROFILE_STYLE_KEY,
 } from "../../../lib/restaurantProfileStyles.js";
 import { resolveEffectiveProfileStyle } from "../../../lib/restaurantProfileStyleRecommendation.js";
+import { normalizeWindowsPhotoOrientation } from "../../../lib/windowsPhotoOrientation.js";
 
 export default function PublicProfileShell({
   profileType = "restaurant",
@@ -75,6 +76,7 @@ export default function PublicProfileShell({
   claimState = null,
   showClaimInvites = false,
   isMobile = false,
+  windowsPhotoOrientation = null,
 }) {
   void landmarks;
   void menuItemCount;
@@ -92,6 +94,9 @@ export default function PublicProfileShell({
   const restaurantCity = profile?.city || null;
   const restaurantState = profile?.state || null;
   const previewForComments = Array.isArray(menuPreviewItems) ? menuPreviewItems : null;
+  const resolvedWindowsOrientation = normalizeWindowsPhotoOrientation(
+    windowsPhotoOrientation ?? profile?.windows_photo_orientation
+  );
 
   const effectiveStyleKey = useMemo(() => {
     const fromApi = profile?.effective_profile_style;
@@ -256,6 +261,7 @@ export default function PublicProfileShell({
             billboardPreview={billboardPreview}
             isMobile={isMobile}
             showClaimInvites={showClaimInvites}
+            windowsPhotoOrientation={resolvedWindowsOrientation}
           />
         ) : null}
 
@@ -269,6 +275,7 @@ export default function PublicProfileShell({
           claimState={claimState}
           isMobile={isMobile}
           showClaimInvites={showClaimInvites}
+          windowsPhotoOrientation={resolvedWindowsOrientation}
         />
 
         <ProfileFavoriteMenuItems

@@ -910,7 +910,7 @@ export function OperatorRestaurantProfileForm({ embedded = false } = {}) {
 
         <Section
           title="Billboards & deals"
-          sub="Billboard creatives fill the public splash, Billboard block, and photo strip. Deals fill the public Deals section."
+          sub="Billboard creatives fill the public splash, Windows block, and photo strip. Set Windows photo orientation (portrait/landscape) on Billboards. Deals fill the public Deals section."
         >
           <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
             <Link
