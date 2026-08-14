@@ -474,7 +474,14 @@ export default function PublicMenuItemCard({
                 src={imageUrl}
                 alt=""
                 loading="lazy"
-                style={{ width: "100%", height: "100%", objectFit: imageObjectFit, display: "block" }}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  maxWidth: "100%",
+                  maxHeight: "100%",
+                  objectFit: imageObjectFit,
+                  display: "block",
+                }}
               />
             ) : designEdit?.enabled ? (
               <div style={{ width: "100%", height: "100%", background: "rgba(148,163,184,0.25)" }} />

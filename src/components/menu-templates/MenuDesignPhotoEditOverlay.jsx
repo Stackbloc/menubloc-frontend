@@ -349,7 +349,14 @@ export function MenuDesignPhotoSlot({
   const [error, setError] = useState("");
 
   if (!enabled) {
-    return children || null;
+    if (!children) return null;
+    // Always keep the sized wrapper in consumer view. Returning bare <img>
+    // drops width/height/overflow/flexShrink and blows photos up to intrinsic size.
+    return (
+      <div style={style} data-menu-photo-slot={slotKey} data-menu-photo-kind={kind}>
+        {children}
+      </div>
+    );
   }
 
   const showEmptyActions = !imageUrl;
