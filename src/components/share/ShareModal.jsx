@@ -17,7 +17,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { useLanguage } from "../../context/LanguageContext.jsx";
-import { buildShareLinks, copyText, trackShareEvent } from "./shareUtils.js";
+import { buildShareLinks, copyText, normalizeConsumerShareUrl, trackShareEvent } from "./shareUtils.js";
 import { trackMenuShare } from "../../lib/analytics.js";
 
 const ACTION_KEYS = [
@@ -29,14 +29,20 @@ const ACTION_KEYS = [
   { key: "whatsapp", labelKey: "share.whatsapp", fallback: "WhatsApp" },
 ];
 
+function resolveShareUrl(shareData) {
+  return normalizeConsumerShareUrl(shareData?.url) || "";
+}
+
 function canUseNativeShare(shareData) {
+  const url = resolveShareUrl(shareData);
+  if (!url) return false;
   if (typeof navigator === "undefined" || typeof navigator.share !== "function") return false;
   if (typeof navigator.canShare !== "function") return true;
   try {
     return navigator.canShare({
       title: shareData?.title,
       text: shareData?.text,
-      url: shareData?.url,
+      url,
     });
   } catch {
     return true;
@@ -81,6 +87,8 @@ export default function ShareModal({
     label: t(a.labelKey, a.fallback),
   }));
   const links = useMemo(() => buildShareLinks(shareData), [shareData]);
+  const shareUrl = useMemo(() => resolveShareUrl(shareData), [shareData]);
+  const nativeShareAvailable = canUseNativeShare(shareData);
 
   useEffect(() => {
     if (!open || typeof document === "undefined") return undefined;
@@ -109,7 +117,11 @@ export default function ShareModal({
 
   async function handleCopy() {
     try {
-      const copied = await copyText(shareData?.url);
+      if (!shareUrl) {
+        setCopyState("error");
+        return;
+      }
+      const copied = await copyText(shareUrl);
       if (!copied) {
         setCopyState("error");
         return;
@@ -131,7 +143,7 @@ export default function ShareModal({
   }
 
   async function handleNativeShare() {
-    if (!canUseNativeShare(shareData)) return;
+    if (!nativeShareAvailable || !shareUrl) return;
     try {
       trackShareEvent(eventNameForAction(variant, "native"), analyticsContext);
       if (variant === "menu") {
@@ -145,7 +157,7 @@ export default function ShareModal({
       await navigator.share({
         title: shareData?.title,
         text: shareData?.text,
-        url: shareData?.url,
+        url: shareUrl,
       });
       onClose?.();
     } catch {
@@ -196,8 +208,6 @@ export default function ShareModal({
       : "10px 18px calc(18px + env(safe-area-inset-bottom, 0px))",
     boxSizing: "border-box",
   };
-
-  const nativeShareAvailable = canUseNativeShare(shareData);
 
   const actionStyle = {
     width: "100%",
@@ -317,10 +327,10 @@ export default function ShareModal({
             textOverflow: "ellipsis",
             userSelect: "all",
           }}
-          title={shareData?.url}
+          title={shareUrl}
           data-testid="share-url-preview"
         >
-          {shareData?.url}
+          {shareUrl}
         </div>
       </div>
     </div>,

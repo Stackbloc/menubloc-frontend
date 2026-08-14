@@ -36,6 +36,7 @@ import {
   buildMenuShareMetadata,
 } from "../components/share/shareUtils.js";
 import { restaurantMenuPath } from "../lib/canonicalUrl.js";
+import { resolvePublicMenuAddressDisplay } from "../lib/displayAddress.js";
 import BottomNav from "../components/BottomNav.jsx";
 
 function useIsMobile(breakpoint = 900) {
@@ -1296,11 +1297,13 @@ export default function PublicMenuPage() {
         search: searchParams.toString() ? `?${searchParams.toString()}` : "",
       }
     : null;
-  const addressLine1    = asStr(data?.address_line1 || data?.address).trim();
-  const addressLine2    = buildAddressLocalityLine(data?.city, data?.state, data?.zip);
-  const addressLine     = asStr(data?.address_line).trim() || [addressLine1, addressLine2].filter(Boolean).join(", ");
-  const directionsHref  = buildGoogleMapsDirectionsUrl(addressLine);
-  // Use tabSections if a tab was explicitly switched to; fall back to initial page data.
+  const {
+    addressLine1,
+    addressLine2,
+    addressLine,
+    directionsHref,
+  } = resolvePublicMenuAddressDisplay(data, { isFoodTruck });
+  // Use tabSections if a menu with a real day+time schedule is currently active.
   // tabSections?.sections may still show a prior menu's content during a background fetch —
   // this is intentional: never blank the display while waiting for a new tab to load.
   const sections        = tabSections?.sections ?? normalizeSections(presentationData || data);

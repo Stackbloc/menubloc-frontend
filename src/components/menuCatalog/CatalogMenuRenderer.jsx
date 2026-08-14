@@ -49,6 +49,7 @@ import {
   resolveRestaurantProfileHref,
   normalizeSections,
 } from "../../lib/catalogMenuUtils.js";
+import { resolvePublicMenuAddressDisplay } from "../../lib/displayAddress.js";
 import { appendSavedMenuPreferenceQueryParams } from "../../lib/dietaryParams.js";
 
 const API = (import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? "http://localhost:3001" : "")).replace(/\/$/, "");
@@ -355,19 +356,22 @@ export default function CatalogMenuRenderer({
     isFoodTruck,
   });
 
-  const addressLine1 = asStr(data?.address_line1 || data?.address).trim();
-  const addressLine2 = buildAddressLocalityLine(data?.city, data?.state, data?.zip);
-  const addressLine = asStr(data?.address_line).trim() || [addressLine1, addressLine2].filter(Boolean).join(", ");
-  const directionsHref = buildGoogleMapsUrlForRestaurant({
-    addressLine,
-    addressLine1,
-    addressLine2,
-    city: data?.city,
-    state: data?.state,
-    zip: data?.zip,
-    lat: data?.lat ?? entry?.lat,
-    lng: data?.lng ?? entry?.lng,
-  });
+  const addressDisplay = resolvePublicMenuAddressDisplay(data, { isFoodTruck });
+  const addressLine1 = addressDisplay.addressLine1;
+  const addressLine2 = addressDisplay.addressLine2;
+  const addressLine = addressDisplay.addressLine;
+  const directionsHref =
+    addressDisplay.directionsHref ||
+    buildGoogleMapsUrlForRestaurant({
+      addressLine,
+      addressLine1,
+      addressLine2,
+      city: data?.city,
+      state: data?.state,
+      zip: data?.zip,
+      lat: data?.lat ?? entry?.lat,
+      lng: data?.lng ?? entry?.lng,
+    });
   const distanceMiles = useMemo(() => {
     const fromEntry = asFiniteNumber(entry?.distance_miles ?? entry?.restaurant_distance_miles);
     if (fromEntry != null) return fromEntry;

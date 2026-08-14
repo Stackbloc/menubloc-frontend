@@ -17,15 +17,21 @@
  */
 
 import { formatMenuItemName } from "../../utils/formatMenuItemName.js";
-import { menuItemPath, restaurantMenuPath, restaurantPath } from "../../lib/canonicalUrl.js";
+import {
+  absoluteCanonicalUrl,
+  CANONICAL_ORIGIN,
+  menuItemPath,
+  restaurantMenuPath,
+  restaurantPath,
+} from "../../lib/canonicalUrl.js";
 import { clusterPath } from "../../lib/clusterUrl.js";
 import {
   buildClusterShareDescription,
   buildClusterShareTitle,
 } from "../../lib/clusterLegalCopy.js";
 
-const DEFAULT_PUBLIC_ORIGIN = "https://menuply.com";
 const DEFAULT_SHARE_IMAGE_PATH = "/menuply-share-default.svg";
+const ALLOWED_SHARE_HOSTS = new Set(["menuply.com", "www.menuply.com"]);
 
 function asText(value) {
   return value == null ? "" : String(value).trim();
@@ -39,15 +45,27 @@ function pickFirstText(...values) {
   return "";
 }
 
-function getWindowOrigin() {
-  if (typeof window === "undefined" || !window.location?.origin) return "";
-  return String(window.location.origin).trim();
+function isLocalDevOrigin(origin) {
+  const raw = asText(origin).toLowerCase();
+  if (!raw) return false;
+  try {
+    const host = new URL(raw).hostname;
+    return host === "localhost" || host === "127.0.0.1" || host === "[::1]";
+  } catch {
+    return false;
+  }
 }
 
+/**
+ * Consumer share links always use https://menuply.com except local Vite smoke.
+ * Never use window.location.origin (preview / share.google shells).
+ */
 export function getPublicOrigin() {
-  const envOrigin = asText(import.meta.env.VITE_PUBLIC_APP_URL);
-  const origin = envOrigin || getWindowOrigin() || DEFAULT_PUBLIC_ORIGIN;
-  return origin.replace(/\/$/, "");
+  if (typeof window !== "undefined" && window.location?.origin) {
+    const live = String(window.location.origin).trim().replace(/\/$/, "");
+    if (isLocalDevOrigin(live)) return live;
+  }
+  return CANONICAL_ORIGIN;
 }
 
 export function toAbsoluteUrl(value, origin = getPublicOrigin()) {
@@ -59,6 +77,37 @@ export function toAbsoluteUrl(value, origin = getPublicOrigin()) {
   } catch {
     return "";
   }
+}
+
+/**
+ * Reject Google-wrapped / non-Menuply hosts before Copy Link or navigator.share.
+ * Localhost absolute URLs are allowed only for local smoke.
+ */
+export function normalizeConsumerShareUrl(url) {
+  const raw = asText(url);
+  if (!raw) return "";
+
+  try {
+    const parsed = new URL(raw, CANONICAL_ORIGIN);
+    const host = parsed.hostname.toLowerCase();
+    if (ALLOWED_SHARE_HOSTS.has(host)) {
+      parsed.protocol = "https:";
+      parsed.hostname = "menuply.com";
+      return parsed.toString();
+    }
+    if (isLocalDevOrigin(parsed.origin)) return parsed.toString();
+    return "";
+  } catch {
+    return "";
+  }
+}
+
+function toConsumerShareAbsolute(pathOrUrl) {
+  const raw = asText(pathOrUrl);
+  if (!raw) return "";
+  if (/^https?:\/\//i.test(raw)) return normalizeConsumerShareUrl(raw);
+  const absolute = absoluteCanonicalUrl(raw.startsWith("/") ? raw : `/${raw}`);
+  return normalizeConsumerShareUrl(absolute || "");
 }
 
 export function buildCanonicalMenuPath({ restaurantSlug, restaurantId, city, state }) {
@@ -112,17 +161,18 @@ export function menuItemDomId(menuItemId) {
   return `menu-item-${String(menuItemId)}`;
 }
 
-export function buildCanonicalMenuUrl({ restaurantSlug, restaurantId, city, state, origin = getPublicOrigin() }) {
-  return toAbsoluteUrl(buildCanonicalMenuPath({ restaurantSlug, restaurantId, city, state }), origin);
+export function buildCanonicalMenuUrl({ restaurantSlug, restaurantId, city, state }) {
+  return toConsumerShareAbsolute(
+    buildCanonicalMenuPath({ restaurantSlug, restaurantId, city, state })
+  );
 }
 
-export function getCanonicalMenuUrl(restaurant, origin = getPublicOrigin()) {
+export function getCanonicalMenuUrl(restaurant) {
   return buildCanonicalMenuUrl({
     restaurantSlug: restaurant?.slug || restaurant?.restaurant_slug || restaurant?.restaurantSlug || null,
     restaurantId: restaurant?.id || restaurant?.restaurant_id || restaurant?.restaurantId || null,
     city: restaurant?.city || restaurant?.restaurant_city || null,
     state: restaurant?.state || restaurant?.restaurant_state || null,
-    origin,
   });
 }
 
@@ -144,7 +194,7 @@ export function buildMenuShareMetadata({
   const safeRestaurantName = pickFirstText(restaurantName, "this restaurant");
   const title = `Check out the menu for ${safeRestaurantName} on Menuply`;
   const text = `Explore the menu, deals, and nutrition insights for ${safeRestaurantName} on Menuply.`;
-  const url = buildCanonicalMenuUrl({ restaurantSlug, restaurantId, city, state, origin });
+  const url = buildCanonicalMenuUrl({ restaurantSlug, restaurantId, city, state });
   const image = resolveShareImageUrl({ imageUrl: logoUrl, origin });
 
   return { title, text, url, image, restaurantName: safeRestaurantName };
@@ -160,8 +210,8 @@ export function getCanonicalMenuItemPath({ restaurant, menuItem }) {
   return path || `/menu-items/${encodeURIComponent(itemId)}`;
 }
 
-export function getCanonicalMenuItemUrl({ restaurant, menuItem, origin = getPublicOrigin() }) {
-  return toAbsoluteUrl(getCanonicalMenuItemPath({ restaurant, menuItem }), origin);
+export function getCanonicalMenuItemUrl({ restaurant, menuItem }) {
+  return toConsumerShareAbsolute(getCanonicalMenuItemPath({ restaurant, menuItem }));
 }
 
 export function buildDishShareData({
@@ -188,7 +238,8 @@ export function buildDishShareData({
       "this dish"
     )
   );
-  const canonicalUrl = asText(url) || getCanonicalMenuItemUrl({ restaurant, menuItem, origin });
+  const canonicalUrl =
+    normalizeConsumerShareUrl(asText(url)) || getCanonicalMenuItemUrl({ restaurant, menuItem });
   const image = resolveShareImageUrl({
     imageUrl: pickFirstText(
       menuItem?.itemPhotoUrl,
@@ -231,9 +282,8 @@ export function buildRestaurantShareData({
   const title = `${safeRestaurantName} on Menuply`;
   const text = `Check out ${safeRestaurantName} on Menuply — view the menu, nutrition insights, and deals.`;
   const path = restaurantPath({ slug: restaurantSlug, city, state });
-  const url = toAbsoluteUrl(
-    path || (restaurantId ? `/public/restaurants/${encodeURIComponent(String(restaurantId))}` : "/"),
-    origin
+  const url = toConsumerShareAbsolute(
+    path || (restaurantId ? `/public/restaurants/${encodeURIComponent(String(restaurantId))}` : "/")
   );
   const image = resolveShareImageUrl({ imageUrl: logoUrl, origin });
   return { title, text, url, image, restaurantName: safeRestaurantName };
@@ -245,7 +295,7 @@ export function buildClusterShareData({ cluster, origin = getPublicOrigin() }) {
   const state = pickFirstText(cluster?.state);
   const slug = pickFirstText(cluster?.slug);
   const path = clusterPath({ state, city, slug });
-  const url = toAbsoluteUrl(path || "/", origin);
+  const url = toConsumerShareAbsolute(path || "/");
   const image = resolveShareImageUrl({
     imageUrl: pickFirstText(cluster?.og_image_url),
     origin,
@@ -259,7 +309,7 @@ export function buildClusterShareData({ cluster, origin = getPublicOrigin() }) {
 export function buildShareLinks({ title, text, url }) {
   const safeTitle = asText(title);
   const safeText = asText(text);
-  const safeUrl = asText(url);
+  const safeUrl = normalizeConsumerShareUrl(url) || asText(url);
   const combinedText = [safeText, safeUrl].filter(Boolean).join(" ");
   const emailBody = [safeText, "", safeUrl].filter(Boolean).join("\n");
 

@@ -123,3 +123,73 @@ export function formatAddressQuery(parts) {
       : normalizeDisplayAddress(parts || {});
   return [normalized.streetAddr, normalized.cityLine].filter(Boolean).join(", ");
 }
+
+function asFiniteCoord(value) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+/**
+ * Public menu header address for restaurants and food trucks.
+ * Food trucks prefer live current_pickup_location; fall back to home base.
+ * Returns street/city lines only — no "Current Location" label (menu chrome).
+ */
+export function resolvePublicMenuAddressDisplay(data, { isFoodTruck = false } = {}) {
+  const pickup = data?.current_pickup_location || null;
+  const pickupStreet = firstNonEmpty(
+    pickup?.current_pickup_address,
+    pickup?.current_pickup_label
+  );
+  const pickupLat = asFiniteCoord(pickup?.current_pickup_lat);
+  const pickupLng = asFiniteCoord(pickup?.current_pickup_lng);
+  const usePickup =
+    isFoodTruck === true &&
+    Boolean(pickupStreet || (pickupLat != null && pickupLng != null));
+
+  const normalized = normalizeDisplayAddress(
+    usePickup
+      ? {
+          address_line1: pickupStreet || data?.address_line1 || data?.address,
+          city: data?.city,
+          state: data?.state,
+          postal_code: data?.postal_code || data?.zip,
+          zip: data?.zip,
+        }
+      : {
+          address_line1: data?.address_line1 || data?.address,
+          city: data?.city,
+          state: data?.state,
+          postal_code: data?.postal_code || data?.zip,
+          zip: data?.zip,
+        }
+  );
+
+  let addressLine1 = normalized.streetAddr;
+  let addressLine2 = normalized.cityLine;
+  if (!addressLine1 && usePickup && pickupStreet) {
+    addressLine1 = pickupStreet;
+  }
+  if (!addressLine1 && !addressLine2 && asStr(data?.address_line)) {
+    const fromLine = normalizeDisplayAddress({ address_line1: data.address_line });
+    addressLine1 = fromLine.streetAddr;
+    addressLine2 = fromLine.cityLine || addressLine2;
+  }
+
+  const addressLine = [addressLine1, addressLine2].filter(Boolean).join(", ");
+  let directionsHref = "";
+  if (usePickup && pickupLat != null && pickupLng != null) {
+    directionsHref = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
+      `${pickupLat},${pickupLng}`
+    )}`;
+  } else if (addressLine) {
+    directionsHref = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(addressLine)}`;
+  }
+
+  return {
+    addressLine1,
+    addressLine2,
+    addressLine,
+    directionsHref,
+    usedCurrentPickup: usePickup,
+  };
+}

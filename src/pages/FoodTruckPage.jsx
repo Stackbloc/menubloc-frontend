@@ -20,6 +20,7 @@ import { useParams } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import MenuItemInsightsPanel from "../components/MenuItemInsightsPanel.jsx";
 import ShareIcon from "../components/share/ShareIcon.jsx";
+import ShareButton from "../components/share/ShareButton.jsx";
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import FoodTruckPublicEditorial from "../components/restaurant/FoodTruckPublicEditorial.jsx";
 import ClaimedRestaurantBillboardSplash, {
@@ -31,7 +32,7 @@ import { toConsumerErrorMessage, fetchRestaurantMenuPreview } from "../lib/api.j
 import BottomNav from "../components/BottomNav.jsx";
 import { getDisplayMenuItemName } from "../utils/getDisplayMenuItemName.js";
 import { buildRestaurantStatusLightProps } from "../lib/restaurantStatusLight.js";
-import { buildRestaurantShareData } from "../components/share/shareUtils.js";
+import { buildRestaurantShareData, copyText, normalizeConsumerShareUrl } from "../components/share/shareUtils.js";
 import { restaurantMenuPathFromRow } from "../lib/canonicalUrl.js";
 import { normalizeDisplayAddress } from "../lib/displayAddress.js";
 import IconHoverLabel from "../components/IconHoverLabel.jsx";
@@ -405,23 +406,25 @@ function ProfileHeaderCard({ profile, slug, isDark, c, isMobile }) {
 
   const website = normalizeUrl(firstNonEmpty(profile?.website, profile?.website_url));
 
+  const truckShareData = buildRestaurantShareData({
+    restaurantName: name,
+    restaurantSlug: profile?.slug || slug,
+    restaurantId: profile?.id,
+    city: firstNonEmpty(profile?.city),
+    state: firstNonEmpty(profile?.state),
+    logoUrl: profile?.logo_url || "",
+  });
+
   async function handleShare() {
-    const shareUrl = window.location.href;
-    const shareTitle = name || "Food Truck";
+    const shareUrl = normalizeConsumerShareUrl(truckShareData.url);
+    if (!shareUrl) return;
 
     try {
-      if (navigator.share) {
-        await navigator.share({
-          title: shareTitle,
-          text: `Check out ${shareTitle} on Menuply`,
-          url: shareUrl,
-        });
-      } else {
-        await navigator.clipboard.writeText(shareUrl);
-        setShared(true);
-        clearTimeout(shareTimerRef.current);
-        shareTimerRef.current = setTimeout(() => setShared(false), 2000);
-      }
+      const copied = await copyText(shareUrl);
+      if (!copied) return;
+      setShared(true);
+      clearTimeout(shareTimerRef.current);
+      shareTimerRef.current = setTimeout(() => setShared(false), 2000);
     } catch {
       // cancelled
     }
