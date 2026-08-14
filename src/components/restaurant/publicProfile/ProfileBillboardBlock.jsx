@@ -7,6 +7,7 @@
  */
 import { useEffect, useState } from "react";
 import { pickWindowsPosts } from "../../../lib/profileWindows.js";
+import { resolveBillboardImageObjectPosition } from "../../../lib/billboardImageObjectPosition.js";
 import {
   normalizeWindowsPhotoOrientation,
   windowsFrameAspectRatio,
@@ -65,6 +66,7 @@ export default function ProfileBillboardBlock({
   const showArrows = posts.length > 1;
   // Compact thumb so Windows is visible without scrolling past the hero.
   const frameMaxWidth = isMobile ? 88 : 104;
+  const imageObjectPosition = resolveBillboardImageObjectPosition(current);
 
   return (
     <section
@@ -107,6 +109,7 @@ export default function ProfileBillboardBlock({
                 aspectRatio: frameAspect,
                 height: "auto",
                 objectFit: "cover",
+                objectPosition: imageObjectPosition,
                 display: "block",
                 background: "#e7e5e4",
               }}

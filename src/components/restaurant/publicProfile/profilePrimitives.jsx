@@ -10,6 +10,7 @@ import {
   MENU_ROW_ICON_SIZE,
 } from "../../menu-templates/menuPresentationUtils.js";
 import { buildGoogleMapsDirectionsUrl } from "../../../lib/catalogMenuUtils.js";
+import { normalizeDisplayAddress, formatAddressQuery } from "../../../lib/displayAddress.js";
 import { formatHoursRows, getTodayDayOfWeek } from "../../../lib/formatOperatingHours.js";
 
 export { formatHoursRows, getTodayDayOfWeek };
@@ -338,24 +339,32 @@ export function normalizeScheduleStops(profile) {
 }
 
 export function buildCurrentLocation(profile, streetAddr, cityLine) {
-  const locName = firstNonEmpty(profile?.current_location_name, profile?.current_location, profile?.current_pickup_label);
-  const street = firstNonEmpty(
-    profile?.current_address,
-    profile?.current_pickup_address,
-    streetAddr,
-    profile?.address_line1,
-    profile?.address
+  const locName = firstNonEmpty(
+    profile?.current_location_name,
+    profile?.current_location,
+    profile?.current_pickup_label
   );
-  const city = firstNonEmpty(profile?.current_city, profile?.city);
-  const state = firstNonEmpty(profile?.current_state, profile?.state);
-  const liveCityLine = [city, state].filter(Boolean).join(", ") || cityLine;
-
   const hasPostedLocation = Boolean(
     locName ||
       profile?.current_pickup_address ||
       profile?.current_address ||
       profile?.is_currently_serving === true
   );
+
+  const normalized = normalizeDisplayAddress({
+    address_line1: firstNonEmpty(
+      profile?.current_address,
+      profile?.current_pickup_address,
+      streetAddr,
+      profile?.address_line1,
+      profile?.address
+    ),
+    city: firstNonEmpty(profile?.current_city, profile?.city),
+    state: firstNonEmpty(profile?.current_state, profile?.state),
+    postal_code: firstNonEmpty(profile?.postal_code, profile?.zip),
+  });
+  const street = normalized.streetAddr;
+  const liveCityLine = normalized.cityLine || cityLine || "";
 
   const parts = [];
   if (locName) parts.push(locName);
@@ -366,7 +375,9 @@ export function buildCurrentLocation(profile, streetAddr, cityLine) {
 
   const text = parts.join(" · ") || "";
   const mapsDest = hasPostedLocation
-    ? [street, liveCityLine].filter(Boolean).join(", ") || locName || text
+    ? formatAddressQuery({ streetAddr: street, cityLine: liveCityLine }) ||
+      locName ||
+      text
     : "";
   const directionsUrl = mapsDest ? buildGoogleMapsDirectionsUrl(mapsDest) : "";
 

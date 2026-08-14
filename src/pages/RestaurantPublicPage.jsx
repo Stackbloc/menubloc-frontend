@@ -55,6 +55,10 @@ import { getLocalizedField } from "../utils/getLocalizedField.js";
 import { getDisplayMenuItemName } from "../utils/getDisplayMenuItemName.js";
 import { buildRestaurantStatusLightProps } from "../lib/restaurantStatusLight.js";
 import { buildRestaurantShareData } from "../components/share/shareUtils.js";
+import {
+  formatAddressQuery,
+  normalizeDisplayAddress,
+} from "../lib/displayAddress.js";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 
@@ -452,14 +456,24 @@ export default function RestaurantPublicPage() {
     data?.restaurant_name ||
     data?.name ||
     `Restaurant ${resolvedSlug}`;
-  const streetAddr = data?.address || data?.address_line1 || "";
-  const city = data?.city || "";
-  const stateVal = data?.state || data?.region || "";
-  const zipVal = data?.zip || data?.postal_code || data?.postcode || "";
+  const {
+    streetAddr,
+    cityLine,
+    city,
+    state: stateVal,
+  } = normalizeDisplayAddress({
+    address_line1: data?.address_line1,
+    address_line2: data?.address_line2,
+    address: data?.address,
+    city: data?.city,
+    state: data?.state || data?.region,
+    postal_code: data?.postal_code,
+    zip: data?.zip,
+    postcode: data?.postcode,
+  });
   const streetDirectionsUrl = buildGoogleMapsDirectionsUrl(
-    [streetAddr, city, stateVal, zipVal].filter(Boolean).join(", ")
+    formatAddressQuery({ streetAddr, cityLine })
   );
-  const cityLine = [city, stateVal].filter(Boolean).join(", ") + (zipVal ? ` ${zipVal}` : "");
   const websiteRaw = data?.website || data?.website_url || "";
   const website = normalizeUrl(websiteRaw);
   const phone = data?.phone || data?.phone_number || data?.contact_phone || "";
@@ -508,13 +522,15 @@ export default function RestaurantPublicPage() {
   const dealItems = Array.isArray(data?.deal_items) ? data.deal_items : [];
   const billboardPreview = Array.isArray(data?.billboard_preview) ? data.billboard_preview : [];
   const splashPosts = claimedBillboardSplashPosts;
-  // Hero uses active billboard creatives only — paused posts stay for Photos strip.
+  // Hero prefers brand hero_image_url when set (e.g. In-N-Out landscape storefront)
+  // so entrance billboard can use a portrait splash crop without changing the banner.
+  // Active billboard image is the fallback when no dedicated hero is configured.
   const firstActiveBillboard = billboardPreview.find((p) => isActiveBillboardSplashPost(p));
   const firstBillboardImage =
     String(firstActiveBillboard?.image_url || firstActiveBillboard?.photo_url || "").trim() || null;
   const bannerPhotoUrl =
-    firstBillboardImage ||
     data?.hero_image_url ||
+    firstBillboardImage ||
     data?.cover_image_url ||
     data?.banner_url ||
     null;

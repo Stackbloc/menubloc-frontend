@@ -33,6 +33,8 @@ import { getDisplayMenuItemName } from "../utils/getDisplayMenuItemName.js";
 import { buildRestaurantStatusLightProps } from "../lib/restaurantStatusLight.js";
 import { buildRestaurantShareData } from "../components/share/shareUtils.js";
 import { restaurantMenuPathFromRow } from "../lib/canonicalUrl.js";
+import { normalizeDisplayAddress } from "../lib/displayAddress.js";
+import IconHoverLabel from "../components/IconHoverLabel.jsx";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 const THEME_KEY = "grubbid_theme";
@@ -322,33 +324,35 @@ function SaveContactButton({ truckName, truckPhone, size = 36, dark = false }) {
   return (
     <>
       <a ref={anchorRef} style={{ display: "none" }} aria-hidden="true" />
-      <button
-        type="button"
-        data-testid="food-truck-save-contact"
-        onClick={handleSaveContact}
-        aria-label={`Save ${truckName || "this food truck"} to contacts`}
-        title="Save to contacts"
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          justifyContent: "center",
-          width: size,
-          height: size,
-          padding: 0,
-          borderRadius: "50%",
-          border: dark ? "1px solid rgba(255,255,255,0.16)" : "1px solid rgba(15,23,42,0.16)",
-          background: dark
-            ? "rgba(255,255,255,0.04)"
-            : "linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(241,245,249,0.96) 100%)",
-          color: dark ? "#f8fafc" : "#0f172a",
-          cursor: "pointer",
-          fontSize: Math.max(14, Math.round(size * 0.42)),
-          lineHeight: 1,
-          flexShrink: 0,
-        }}
-      >
-        <span aria-hidden="true">📇</span>
-      </button>
+      <IconHoverLabel label="Add to Contacts">
+        <button
+          type="button"
+          data-testid="food-truck-save-contact"
+          onClick={handleSaveContact}
+          aria-label={`Add ${truckName || "this food truck"} to Contacts`}
+          title="Add to Contacts"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: size,
+            height: size,
+            padding: 0,
+            borderRadius: "50%",
+            border: dark ? "1px solid rgba(255,255,255,0.16)" : "1px solid rgba(15,23,42,0.16)",
+            background: dark
+              ? "rgba(255,255,255,0.04)"
+              : "linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(241,245,249,0.96) 100%)",
+            color: dark ? "#f8fafc" : "#0f172a",
+            cursor: "pointer",
+            fontSize: Math.max(14, Math.round(size * 0.42)),
+            lineHeight: 1,
+            flexShrink: 0,
+          }}
+        >
+          <span aria-hidden="true">📇</span>
+        </button>
+      </IconHoverLabel>
     </>
   );
 }
@@ -1372,17 +1376,24 @@ export default function FoodTruckPage() {
 
   const name =
     firstNonEmpty(profile?.restaurant_name, profile?.name) || `Food truck ${slugOrId}`;
-  const streetAddr = firstNonEmpty(
-    profile?.current_address,
-    profile?.current_pickup_address,
-    profile?.address_line1,
-    profile?.address
-  );
-  const city = firstNonEmpty(profile?.current_city, profile?.city);
-  const stateVal = firstNonEmpty(profile?.current_state, profile?.state);
-  const zipVal = firstNonEmpty(profile?.postal_code, profile?.zip);
-  const cityLine =
-    [city, stateVal].filter(Boolean).join(", ") + (zipVal ? ` ${zipVal}` : "");
+  const {
+    streetAddr,
+    cityLine,
+    city,
+    state: stateVal,
+    postalCode: zipVal,
+  } = normalizeDisplayAddress({
+    address_line1: firstNonEmpty(
+      profile?.current_address,
+      profile?.current_pickup_address,
+      profile?.address_line1,
+      profile?.address
+    ),
+    address_line2: profile?.address_line2,
+    city: firstNonEmpty(profile?.current_city, profile?.city),
+    state: firstNonEmpty(profile?.current_state, profile?.state),
+    postal_code: firstNonEmpty(profile?.postal_code, profile?.zip),
+  });
   const websiteRaw = firstNonEmpty(profile?.website, profile?.website_url);
   const website = normalizeUrl(websiteRaw);
   const phone = firstNonEmpty(profile?.phone);

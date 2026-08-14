@@ -22,8 +22,8 @@ export default function ProfileAboutFounded({
   claimState = null,
   isMobile = false,
   showClaimInvites = false,
-  /** Distributor public profiles omit the photo strip. */
-  showPhotos = true,
+  /** Additional Photos strip — temporarily off on restaurant/food-truck profiles. */
+  showPhotos = false,
   aboutBlankMessage = "Tell diners about this restaurant.",
   foundedBlankMessage = "Add the year or date founded.",
   windowsPhotoOrientation = "portrait",

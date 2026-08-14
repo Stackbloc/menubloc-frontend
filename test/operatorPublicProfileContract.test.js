@@ -211,7 +211,7 @@ function testClaimedProfileUsesEditorialPresentation() {
   assert.match(about, /profile-founded-blank/);
   assert.match(shell, /ProfileClaimBanner/);
   assert.match(about, /profile-founded-blank/);
-  assert.match(about, /ProfilePhotoStrip/);
+  assert.match(shell, /showPhotos=\{false\}/);
   assert.match(billboard, /profile-billboard-block/);
   assert.match(billboard, /Windows/);
   assert.match(billboard, /pickWindowsPosts/);
@@ -247,6 +247,7 @@ function testClaimedProfileUsesEditorialPresentation() {
   assert.match(page, /canonicalRestaurantSlug/);
   assert.match(page, /\/restaurants\/:state\/:city\/:restaurantSlug/);
   assert.match(page, /firstBillboardImage/);
+  assert.match(page, /data\?\.hero_image_url/);
   assert.match(page, /showClaimInvites/);
 }
 

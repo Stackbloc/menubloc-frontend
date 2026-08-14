@@ -12,6 +12,7 @@ import BottomNav from "../components/BottomNav.jsx";
 import { fetchPublicDistributor, toConsumerErrorMessage } from "../lib/api.js";
 import { formatWebsiteHostLabel } from "../lib/formatWebsiteHostLabel.js";
 import { buildGoogleMapsDirectionsUrl } from "../lib/catalogMenuUtils.js";
+import { formatAddressQuery, normalizeDisplayAddress } from "../lib/displayAddress.js";
 import ProfileAboutFounded from "../components/restaurant/publicProfile/ProfileAboutFounded.jsx";
 import ProfileUpdates from "../components/restaurant/publicProfile/ProfileUpdates.jsx";
 import {
@@ -182,13 +183,15 @@ export default function DistributorPublicPage() {
 
   const d = distributor;
   const claimStatus = String(d.profile_claim_status || "UNCLAIMED").toUpperCase();
-  const cityLine = [[d.city, d.state].filter(Boolean).join(", "), d.postal_code]
-    .filter(Boolean)
-    .join(" ");
-  const streetAddr = d.address_line1 || "";
-  const hasAddress = Boolean(streetAddr || cityLine);
+  const { streetAddr, cityLine, hasAddress } = normalizeDisplayAddress({
+    address_line1: d.address_line1,
+    address_line2: d.address_line2,
+    city: d.city,
+    state: d.state,
+    postal_code: d.postal_code,
+  });
   const mapsHref = hasAddress
-    ? buildGoogleMapsDirectionsUrl([streetAddr, cityLine].filter(Boolean).join(", "))
+    ? buildGoogleMapsDirectionsUrl(formatAddressQuery({ streetAddr, cityLine }))
     : "";
   const website = d.website_url || "";
   const websiteLabel = formatWebsiteHostLabel(website);

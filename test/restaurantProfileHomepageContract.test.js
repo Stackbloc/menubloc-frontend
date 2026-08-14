@@ -67,6 +67,7 @@ function testUnclaimedHomepageBlanks() {
   assert.match(about, /profile-founded-empty/);
   assert.doesNotMatch(about, /profile-about-claim/);
   assert.match(about, /ProfilePhotoStrip/);
+  assert.match(shell, /showPhotos=\{false\}/);
   assert.match(hero, /profile-hero-maps-address/);
   assert.match(hero, /profile-hero-hours/);
   assert.match(hero, /Hours:/);

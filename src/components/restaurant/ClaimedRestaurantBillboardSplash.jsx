@@ -20,6 +20,7 @@ import {
   waitForBillboardSplashImage,
   resolveSplashDurationMs,
 } from "../../lib/claimedRestaurantBillboardSplash.js";
+import { resolveBillboardImageObjectPosition } from "../../lib/billboardImageObjectPosition.js";
 
 export {
   CLAIMED_BILLBOARD_SPLASH_MS,
@@ -99,6 +100,7 @@ export default function ClaimedRestaurantBillboardSplash({
   const imageFit = ["cover", "contain", "fill"].includes(imageFitRaw)
     ? (imageFitRaw === "contain" ? "cover" : imageFitRaw)
     : "cover";
+  const imageObjectPosition = resolveBillboardImageObjectPosition(current);
   const ariaLabel = [displayName, headline].filter(Boolean).join(". ");
   const dismissedRef = useRef(false);
   const imageRef = useRef(null);
@@ -217,7 +219,7 @@ export default function ClaimedRestaurantBillboardSplash({
             width: "100%",
             height: "100%",
             objectFit: imageFit,
-            objectPosition: "center",
+            objectPosition: imageObjectPosition,
             display: "block",
             pointerEvents: "none",
             // Stay invisible until decoded so dark truck photos never flash as a black frame.

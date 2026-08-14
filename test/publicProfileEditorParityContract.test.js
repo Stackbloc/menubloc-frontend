@@ -36,6 +36,7 @@ function testPublicShellConsumesHomepageFields() {
   assert.match(about, /founded/);
   assert.match(about, /about|shortDescription|About/);
   assert.match(about, /ProfilePhotoStrip/);
+  assert.match(shell, /showPhotos=\{false\}/);
   assert.match(fav, /favoriteMenuItems|Favorite Menu Items/);
   assert.match(updates, /profile_updates|profileUpdates|Updates/);
   assert.match(deals, /dealItems|Deals/);

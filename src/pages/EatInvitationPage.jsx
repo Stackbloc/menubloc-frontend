@@ -30,6 +30,7 @@ import {
   buildGoogleMapsDirectionsUrl,
   buildGoogleMapsUrlForRestaurant,
 } from "../lib/catalogMenuUtils.js";
+import { normalizeDisplayAddress } from "../lib/displayAddress.js";
 import { formatHoursRows } from "../components/restaurant/publicProfile/profilePrimitives.jsx";
 
 function responseLabel(status) {
@@ -40,10 +41,13 @@ function responseLabel(status) {
 }
 
 function buildStreetAddress(invitation) {
-  return [invitation?.restaurant_address_line1, invitation?.restaurant_address_line2]
-    .map((part) => String(part || "").trim())
-    .filter(Boolean)
-    .join(", ");
+  return normalizeDisplayAddress({
+    address_line1: invitation?.restaurant_address_line1,
+    address_line2: invitation?.restaurant_address_line2,
+    city: invitation?.restaurant_city,
+    state: invitation?.restaurant_state,
+    postal_code: invitation?.restaurant_postal_code,
+  }).streetAddr;
 }
 
 function emptyParty() {
@@ -177,15 +181,23 @@ export default function EatInvitationPage() {
   }, [invitation]);
 
   const streetAddr = useMemo(() => buildStreetAddress(invitation), [invitation]);
-  const cityLine = useMemo(
-    () =>
+  const cityLine = useMemo(() => {
+    const normalized = normalizeDisplayAddress({
+      address_line1: invitation?.restaurant_address_line1,
+      address_line2: invitation?.restaurant_address_line2,
+      city: invitation?.restaurant_city,
+      state: invitation?.restaurant_state,
+      postal_code: invitation?.restaurant_postal_code,
+    });
+    return (
+      normalized.cityLine ||
       buildAddressLocalityLine(
         invitation?.restaurant_city,
         invitation?.restaurant_state,
         invitation?.restaurant_postal_code
-      ),
-    [invitation]
-  );
+      )
+    );
+  }, [invitation]);
   const mapsDestination = useMemo(() => {
     return [streetAddr, cityLine].filter(Boolean).join(", ");
   }, [streetAddr, cityLine]);

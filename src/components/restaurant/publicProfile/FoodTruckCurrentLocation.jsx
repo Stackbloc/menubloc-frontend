@@ -45,18 +45,25 @@ export default function FoodTruckCurrentLocation({
             {statusLabel}
           </div>
         ) : null}
-        <span style={{ fontWeight: 700, color: ink }}>Current Location:</span>{" "}
+        <span style={{ fontWeight: 700, color: ink, display: "block", marginBottom: 4 }}>
+          Current Location:
+        </span>
         {directionsUrl ? (
           <a
             href={directionsUrl}
             target="_blank"
             rel="noreferrer"
-            style={{ color: muted, textDecoration: "underline", textUnderlineOffset: 2 }}
+            style={{
+              color: muted,
+              textDecoration: "underline",
+              textUnderlineOffset: 2,
+              display: "block",
+            }}
           >
             {locationText}
           </a>
         ) : (
-          <span>{locationText}</span>
+          <span style={{ display: "block" }}>{locationText}</span>
         )}
       </div>
       {directionsUrl ? (

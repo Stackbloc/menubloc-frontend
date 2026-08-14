@@ -160,6 +160,13 @@ export default function ProfileHero({
   });
   const showRestaurantContact = profileType === "restaurant";
   const hasAddress = Boolean(streetAddr || cityLine);
+  const showFoodTruckHomeAddress =
+    profileType === "food_truck" &&
+    !foodTruckLocation?.hasPostedLocation &&
+    hasAddress;
+  const foodTruckHomeMapsHref = showFoodTruckHomeAddress
+    ? mapsHref || directionsUrl || ""
+    : "";
 
   const hoursEmpty = hoursRows.length === 0;
   const hoursPanel = (
@@ -506,6 +513,61 @@ export default function ProfileHero({
             name={name}
             onPhoto={onPhoto}
           />
+        ) : null}
+
+        {showFoodTruckHomeAddress ? (
+          <div
+            data-testid="food-truck-home-address"
+            style={{
+              margin: "8px 0 0",
+              fontSize: 14,
+              lineHeight: 1.4,
+              color: muted,
+            }}
+          >
+            <div style={{ fontWeight: 700, color: ink, marginBottom: 4 }}>Current Location:</div>
+            {foodTruckHomeMapsHref ? (
+              <a
+                href={foodTruckHomeMapsHref}
+                target="_blank"
+                rel="noreferrer"
+                aria-label={`Open ${name} in Google Maps`}
+                title="Open in Google Maps"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "flex-start",
+                  gap: 8,
+                  color: muted,
+                  textDecoration: "none",
+                  maxWidth: "100%",
+                }}
+              >
+                <span
+                  aria-hidden="true"
+                  style={{
+                    flexShrink: 0,
+                    marginTop: 1,
+                    width: 16,
+                    height: 16,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <MapsPin />
+                </span>
+                <span style={{ display: "flex", flexDirection: "column", gap: 1, minWidth: 0 }}>
+                  {streetAddr ? <span>{streetAddr}</span> : null}
+                  {cityLine ? <span>{cityLine}</span> : null}
+                </span>
+              </a>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                {streetAddr ? <div>{streetAddr}</div> : null}
+                {cityLine ? <div>{cityLine}</div> : null}
+              </div>
+            )}
+          </div>
         ) : null}
 
         {profileType === "food_truck" && (phone || website) ? (

@@ -1,7 +1,8 @@
 /**
  * Unified Menuply public profile shell — restaurant homepage layout.
- * Claimed: Hero → Windows (if any) → About [Name] + Founded + Photos → Favorites → Deals → Updates
- * Unclaimed: Hero → About [Name] + Founded + Photos → Favorites → Deals → Updates
+ * Claimed: Hero → Windows (if any) → About [Name] + Founded → Favorites → Deals → Updates
+ * Unclaimed: Hero → About [Name] + Founded → Favorites → Deals → Updates
+ * Photos strip temporarily hidden (showPhotos=false) — Windows remains the photo carousel.
  * Windows shows only manually added window/deal offers (not brand splash art); In-N-Out exception.
  * Food truck: Hero (address / current location) → Upcoming locations → then shared sections.
  * Contact + hours live in the hero. No bottom Information box.
@@ -16,6 +17,8 @@ import ProfileDealsSection from "./ProfileDealsSection.jsx";
 import FoodTruckUpcomingStops from "./FoodTruckUpcomingStops.jsx";
 import FoodComments from "../../comments/FoodComments.jsx";
 import { pickWindowsPosts } from "../../../lib/profileWindows.js";
+import { formatAddressQuery } from "../../../lib/displayAddress.js";
+import { buildGoogleMapsDirectionsUrl } from "../../../lib/catalogMenuUtils.js";
 import {
   ProfileSection,
   normalizeScheduleStops,
@@ -149,6 +152,11 @@ export default function PublicProfileShell({
     () => (isFoodTruck ? buildCurrentLocation(profile, streetAddr, cityLine) : null),
     [isFoodTruck, profile, streetAddr, cityLine]
   );
+  const homeDirectionsUrl = useMemo(() => {
+    if (directionsUrl) return directionsUrl;
+    const query = formatAddressQuery({ streetAddr, cityLine });
+    return query ? buildGoogleMapsDirectionsUrl(query) : "";
+  }, [directionsUrl, streetAddr, cityLine]);
 
   const shortDescription = firstNonEmpty(bioText, aboutText, profile?.bio, profile?.about_us);
   const founded = firstNonEmpty(
@@ -198,9 +206,9 @@ export default function PublicProfileShell({
         profileType={isFoodTruck ? "food_truck" : "restaurant"}
         name={name}
         businessTypeLabel={isFoodTruck ? "Food Truck" : ""}
-        cityLine={isFoodTruck ? "" : cityLine}
-        streetAddr={isFoodTruck ? "" : streetAddr}
-        directionsUrl={isFoodTruck ? "" : directionsUrl}
+        cityLine={cityLine}
+        streetAddr={streetAddr}
+        directionsUrl={isFoodTruck ? homeDirectionsUrl : directionsUrl}
         logoUrl={logoUrl}
         bannerPhotoUrl={bannerPhotoUrl}
         statusLightProps={statusLightProps}
@@ -274,6 +282,7 @@ export default function PublicProfileShell({
           claimState={claimState}
           isMobile={isMobile}
           showClaimInvites={showClaimInvites}
+          showPhotos={false}
           windowsPhotoOrientation={resolvedWindowsOrientation}
         />
 

@@ -947,10 +947,57 @@ export default function OwnerProfileManager() {
                   Public homepage story
                 </div>
                 <div style={{ fontSize: 13, color: OWNER_COLORS.muted, marginBottom: 14, lineHeight: 1.45 }}>
-                  These fields publish to the public profile: About Us, Founded, Favorite Menu Items, and Updates.
-                  Photos come from the banner/logo plus operator billboards. Deals and billboards are edited in the
-                  operator console (<code>/operator/billboards</code>, <code>/operator/deals</code>).
+                  These fields publish to the public profile after you click{" "}
+                  <strong style={{ color: OWNER_COLORS.ink }}>Save profile</strong> at the top (or the Save button
+                  below): About Us, Founded, Favorite Menu Items, and contact fields.{" "}
+                  <strong style={{ color: OWNER_COLORS.ink }}>Profile Updates</strong> are separate news posts — they
+                  use their own <strong style={{ color: OWNER_COLORS.ink }}>Add update</strong> button and need a
+                  title. Photos come from the banner/logo plus operator billboards. Deals and billboards are edited
+                  in the operator console (<code>/operator/billboards</code>, <code>/operator/deals</code>).
                 </div>
+                {dirty ? (
+                  <div
+                    data-testid="owner-profile-manager-unsaved-banner"
+                    style={{
+                      marginBottom: 14,
+                      padding: "10px 12px",
+                      borderRadius: 10,
+                      background: "#fff7ed",
+                      border: "1px solid #fdba74",
+                      display: "flex",
+                      flexWrap: "wrap",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: 10,
+                    }}
+                  >
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "#9a3412", lineHeight: 1.4 }}>
+                      You have unsaved profile changes (favorites, About Us, address, etc.). They are not live until
+                      you save.
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleSave}
+                      disabled={saving || !dirty || loading}
+                      data-testid="owner-profile-manager-save-inline"
+                      style={{
+                        padding: "8px 14px",
+                        borderRadius: 8,
+                        border: "none",
+                        background: OWNER_COLORS.accent,
+                        color: "#fff",
+                        cursor: saving ? "default" : "pointer",
+                        fontSize: 12,
+                        fontWeight: 800,
+                        fontFamily: "inherit",
+                        opacity: saving ? 0.7 : 1,
+                        flexShrink: 0,
+                      }}
+                    >
+                      {saving ? "Saving…" : "Save profile"}
+                    </button>
+                  </div>
+                ) : null}
                 <div
                   data-testid="owner-windows-photo-orientation"
                   style={{ marginBottom: 14 }}
@@ -1062,7 +1109,8 @@ export default function OwnerProfileManager() {
                       First selection is also the featured dish on the menu.
                       {(form.favorite_menu_item_ids || []).length
                         ? ` Selected ${(form.favorite_menu_item_ids || []).length}/3.`
-                        : ""}
+                        : ""}{" "}
+                      Click <strong>Save profile</strong> to publish favorites — this does not use Add update.
                     </div>
                     {menuItems.length === 0 ? (
                       <div style={{ marginTop: 8, fontSize: 12, color: OWNER_COLORS.muted, lineHeight: 1.45 }}>
@@ -1106,6 +1154,10 @@ export default function OwnerProfileManager() {
 
                 <div style={{ marginTop: 18 }}>
                   <Label>Profile Updates</Label>
+                  <div style={{ fontSize: 12, color: OWNER_COLORS.muted, marginBottom: 8, lineHeight: 1.4 }}>
+                    Short news posts on the public profile (separate from favorite dishes). Enter a title to enable{" "}
+                    <strong>Add update</strong>.
+                  </div>
                   <div
                     data-testid="owner-profile-manager-updates"
                     style={{
@@ -1121,7 +1173,7 @@ export default function OwnerProfileManager() {
                       style={inputStyle}
                       value={updateDraft.title}
                       onChange={(e) => setUpdateDraft((p) => ({ ...p, title: e.target.value }))}
-                      placeholder="e.g. Live music Friday"
+                      placeholder="Update title (required) — e.g. Live music Friday"
                       data-testid="owner-profile-update-title"
                     />
                     <textarea
@@ -1134,20 +1186,37 @@ export default function OwnerProfileManager() {
                       type="button"
                       onClick={handleCreateUpdate}
                       disabled={updateSaving || !String(updateDraft.title || "").trim()}
+                      data-testid="owner-profile-add-update"
+                      title={
+                        String(updateDraft.title || "").trim()
+                          ? "Publish this update on the public profile"
+                          : "Enter an update title to enable Add update"
+                      }
                       style={{
                         alignSelf: "start",
                         padding: "8px 14px",
                         borderRadius: 8,
                         border: "none",
-                        background: OWNER_COLORS.accent,
+                        background: String(updateDraft.title || "").trim()
+                          ? OWNER_COLORS.accent
+                          : "#d6d3d1",
                         color: "#fff",
                         fontWeight: 700,
-                        cursor: "pointer",
-                        opacity: updateSaving || !String(updateDraft.title || "").trim() ? 0.6 : 1,
+                        cursor: String(updateDraft.title || "").trim() && !updateSaving ? "pointer" : "default",
+                        opacity: updateSaving ? 0.7 : 1,
                       }}
                     >
                       {updateSaving ? "Saving…" : "Add update"}
                     </button>
+                    {!String(updateDraft.title || "").trim() ? (
+                      <div
+                        data-testid="owner-profile-add-update-hint"
+                        style={{ fontSize: 12, color: OWNER_COLORS.muted, marginTop: -4 }}
+                      >
+                        Add update stays dimmed until you type a title. Favorite menu items are saved with Save
+                        profile, not here.
+                      </div>
+                    ) : null}
                     {profileUpdates.length ? (
                       <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gap: 8 }}>
                         {profileUpdates.map((u) => (
