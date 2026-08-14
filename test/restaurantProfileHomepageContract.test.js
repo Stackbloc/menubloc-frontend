@@ -80,7 +80,8 @@ function testUnclaimedHomepageBlanks() {
   assert.match(hero, /profile-hero-phone/);
   assert.match(hero, /profile-hero-cluster-field/);
   assert.match(hero, /Cluster: /);
-  assert.match(hero, /showRestaurantContact && cluster/);
+  assert.match(hero, /\{cluster \? \(/);
+  assert.doesNotMatch(hero, /showRestaurantContact && cluster/);
   assert.doesNotMatch(hero, /profile-hero-phone-blank/);
   assert.doesNotMatch(hero, /profile-hero-instagram-blank/);
   assert.doesNotMatch(hero, /profile-hero-website-blank/);
