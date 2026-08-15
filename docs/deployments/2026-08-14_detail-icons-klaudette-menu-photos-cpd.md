@@ -5,7 +5,8 @@
 
 ## Shipped
 
-- Commit: `8b1fb4b` on `menubloc-frontend-main` @ `main` (clean)
+- Feature commit: `8b1fb4b` (detail icons + Klaudette photo thumbs + Fine enable)
+- Tip HEAD: `c06e13c` on `menubloc-frontend-main` @ `main` (clean) — also includes `38157df` dish photo clamps
 - Detail: restaurant Like → Share → Invite → Comment; dish Comment after Invite
 - Menu thumbs ~15% larger (search 83 / editorial 74 / cinematic 115×83)
 - Fine + gallery defaults enable Klaudette-style left dish photo thumbs
@@ -13,12 +14,11 @@
 ## Deploy
 
 - Path: `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main`
-- `npx vercel --prod --yes` → `menubloc-frontend-ermw9wrlu-menuply.vercel.app`
-- Alias: `menuply.com`, `www.menuply.com`, `crm.menuply.com` → ermw9wrlu
-- Bundle: `index-V7CvAska.js`
+- Production tip: `menubloc-frontend-p1d88wprn-menuply.vercel.app` (content-identical lock also lists `gbli18jhr`)
+- Alias: `menuply.com`, `www.menuply.com`, `crm.menuply.com`
+- Bundle: `index-BYCUQwwR.js`
 - Tip-gate: PASS apex + www
-- Bundle markers: `menu-item-detail-restaurant-actions`, `width:83`, railway=61 localhost=9
-- `venues.menuply.com` alias: cert error (non-blocking for apex/www CPD)
+- Bundle markers: `menu-item-detail-restaurant-actions`; railway=61 localhost=9
 
 ## BE
 
