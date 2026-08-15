@@ -525,16 +525,16 @@ export default function PublicMenuItemCard({
             onFitChange={(fit) => designEdit.setSlotFit(itemSlotKey, fit)}
             onRestoreStock={() => designEdit.restoreStock(itemSlotKey, imageUrlRaw)}
             style={editorialRefresh ? {
-              width: 64,
-              height: 64,
+              width: 74,
+              height: 74,
               borderRadius: 10,
               overflow: "hidden",
               flexShrink: 0,
               background: ed.unavailableBg,
               marginTop: 2,
             } : {
-              width: density === "cinematic" ? 100 : 72,
-              height: density === "cinematic" ? 72 : 72,
+              width: density === "cinematic" ? 115 : 83,
+              height: density === "cinematic" ? 83 : 83,
               borderRadius: density === "refined-editorial" ? 14 : 12,
               overflow: "hidden",
               flexShrink: 0,

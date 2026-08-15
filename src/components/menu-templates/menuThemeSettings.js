@@ -20,9 +20,10 @@ export const DEFAULT_MENU_THEME_SETTINGS = {
   shell_background_color: null,
   background_style: "light",
   hero_enabled: true,
-  image_density: "none",
+  // Klaudette / Classic public-menu default: left dish thumbs when photos exist
+  image_density: "thumbnail",
   section_heading_style: "default",
-  item_image_style: "auto",
+  item_image_style: "thumbnail",
   price_placement: "right",
   intelligence_display_style: "subtle",
   intelligence_density: "subtle",

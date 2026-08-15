@@ -35,3 +35,25 @@ test("MenuItemDetailPage has restaurant comment icon and hash-focused Discussion
   assert.match(src, /focusFoodComments/);
   assert.match(src, /scheduleScrollToFoodComments/);
 });
+
+test("MenuItemDetailPage restaurant actions order is like → share → invite → comment", () => {
+  const src = read("src/pages/MenuItemDetailPage.jsx");
+  const railStart = src.indexOf('data-testid="menu-item-detail-restaurant-actions"');
+  assert.ok(railStart > -1, "restaurant actions rail present");
+  const railSlice = src.slice(railStart, railStart + 1800);
+  assert.match(
+    railSlice,
+    /FollowRestaurantButton[\s\S]*ShareButton[\s\S]*InviteToEatButton[\s\S]*FoodCommentNavButton/
+  );
+  assert.match(railSlice, /target=["']restaurant["']/);
+});
+
+test("MenuItemDetailActionRail includes dish comment after invite", () => {
+  const src = read("src/components/menu/MenuItemDetailActionRail.jsx");
+  const likeIdx = src.indexOf("LikeMenuItemButton");
+  const shareIdx = src.indexOf("<ShareButton");
+  const inviteIdx = src.indexOf("<InviteToEatButton");
+  const commentIdx = src.indexOf('target="menu_item"');
+  assert.ok(likeIdx > 0 && shareIdx > likeIdx && inviteIdx > shareIdx);
+  assert.ok(commentIdx > inviteIdx, "dish FoodCommentNavButton after Invite");
+});

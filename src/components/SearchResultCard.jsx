@@ -1746,8 +1746,8 @@ function ItemRow({
               aria-label={`${name} photo`}
               style={{
                 flexShrink: 0,
-                width: 72,
-                height: 72,
+                width: 83,
+                height: 83,
                 borderRadius: 14,
                 overflow: "hidden",
                 border: "1px solid rgba(255,255,255,0.12)",
@@ -1765,8 +1765,8 @@ function ItemRow({
             <div
               style={{
                 flexShrink: 0,
-                width: 72,
-                height: 72,
+                width: 83,
+                height: 83,
                 borderRadius: 14,
                 overflow: "hidden",
                 border: "1px solid rgba(255,255,255,0.12)",

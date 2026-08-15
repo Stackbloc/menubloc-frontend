@@ -168,12 +168,14 @@ test("Public profile About heading uses restaurant name", () => {
   assert.doesNotMatch(about, />About Us</);
 });
 
-test("Detail action rail order includes Invite after Share", () => {
+test("Detail action rail order includes Invite after Share and Comment after Invite", () => {
   const src = read("src/components/menu/MenuItemDetailActionRail.jsx");
   const likeIdx = src.indexOf("LikeMenuItemButton");
   const shareIdx = src.indexOf("<ShareButton");
   const inviteIdx = src.indexOf("<InviteToEatButton");
+  const commentIdx = src.indexOf('target="menu_item"');
   assert.ok(likeIdx > 0 && shareIdx > likeIdx && inviteIdx > shareIdx);
+  assert.ok(commentIdx > inviteIdx, "Comment after Invite");
 });
 
 test("Restaurant profile hero includes Invite and Comment after Share", () => {

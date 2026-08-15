@@ -38,6 +38,7 @@ import MenuItemDetailActionRail from "../components/menu/MenuItemDetailActionRai
 import {
   applyDocumentSocialMetadata,
   buildDishShareData,
+  buildRestaurantShareData,
   buildCanonicalMenuPath,
   appendMenuHighlightQuery,
   highlightMenuLinkExtrasFromSearch,
@@ -60,9 +61,12 @@ import { sortSimilarItemsByMatchStrength } from "../lib/searchCardSimilar.js";
 import CompareItemsModal from "../components/menu/CompareItemsModal.jsx";
 import FoodComments from "../components/comments/FoodComments.jsx";
 import FoodCommentNavButton from "../components/FoodCommentNavButton.jsx";
+import FollowRestaurantButton from "../components/FollowRestaurantButton.jsx";
 import InviteToEatButton from "../components/InviteToEatButton.jsx";
+import ShareButton from "../components/share/ShareButton.jsx";
 import PreferenceIngredientAdvisory from "../components/menu/PreferenceIngredientAdvisory.jsx";
 import { scheduleScrollToFoodComments } from "../lib/foodCommentsScroll.js";
+import { MENU_ROW_ICON_SIZE } from "../components/menu-templates/menuPresentationUtils.js";
 import { getLocalizedField } from "../utils/getLocalizedField.js";
 import { getDisplayMenuItemName } from "../utils/getDisplayMenuItemName.js";
 import { formatMenuItemName } from "../utils/formatMenuItemName.js";
@@ -1391,6 +1395,18 @@ export default function MenuItemDetailPage() {
     });
   }, [item, displayItemName]);
 
+  const restaurantShareData = useMemo(() => {
+    if (!item?.restaurant?.id && !item?.restaurant?.slug) return null;
+    return buildRestaurantShareData({
+      restaurantName: item.restaurant.name,
+      restaurantSlug: item.restaurant.slug || null,
+      restaurantId: item.restaurant.id,
+      city: item.restaurant.city || null,
+      state: item.restaurant.state || null,
+      logoUrl: item.restaurant.logoUrl || null,
+    });
+  }, [item]);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -1583,23 +1599,56 @@ export default function MenuItemDetailPage() {
                         {item.restaurant.name}
                       </Link>
                     </div>
-                    <InviteToEatButton
-                      restaurantId={item.restaurant.id}
-                      restaurantName={item.restaurant.name}
-                      tone="ghost"
-                      size="row"
-                      dark
-                    />
-                    <FoodCommentNavButton
-                      target="restaurant"
-                      restaurantId={item.restaurant.id}
-                      restaurantSlug={item.restaurant.slug || null}
-                      restaurantCity={item.restaurant.city || null}
-                      restaurantState={item.restaurant.state || null}
-                      tone="ghost"
-                      size="row"
-                      dark
-                    />
+                    <div
+                      data-testid="menu-item-detail-restaurant-actions"
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 6,
+                        flexShrink: 0,
+                      }}
+                    >
+                      <FollowRestaurantButton
+                        restaurantId={item.restaurant.id}
+                        restaurantName={item.restaurant.name}
+                        source="menu_item_detail"
+                        size={MENU_ROW_ICON_SIZE}
+                        dark
+                      />
+                      {restaurantShareData ? (
+                        <ShareButton
+                          variant="menu"
+                          iconOnly
+                          tone="ghost"
+                          label="Share"
+                          modalTitle={`Share ${item.restaurant.name || "restaurant"}`}
+                          shareData={restaurantShareData}
+                          analyticsContext={{
+                            restaurantId: item.restaurant.id,
+                            restaurantSlug: item.restaurant.slug || null,
+                            pageType: "menu_item_detail",
+                            shareTarget: "restaurant",
+                          }}
+                        />
+                      ) : null}
+                      <InviteToEatButton
+                        restaurantId={item.restaurant.id}
+                        restaurantName={item.restaurant.name}
+                        tone="ghost"
+                        size="row"
+                        dark
+                      />
+                      <FoodCommentNavButton
+                        target="restaurant"
+                        restaurantId={item.restaurant.id}
+                        restaurantSlug={item.restaurant.slug || null}
+                        restaurantCity={item.restaurant.city || null}
+                        restaurantState={item.restaurant.state || null}
+                        tone="ghost"
+                        size="row"
+                        dark
+                      />
+                    </div>
                   </div>
                   {(item.restaurant.city || item.restaurant.cuisine) ? (
                     <div style={{ marginTop: 4, fontSize: 13, color: "#9CA3AF" }}>

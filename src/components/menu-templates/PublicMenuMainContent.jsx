@@ -17,7 +17,7 @@ import { resolveTemplateMenuStyle } from "./menuPresentationUtils.js";
  *   v14 Fast Casual → ModernAsianMenuTemplate (photo card grid)
  *   v15 Family Dining → RusticItalianMenuTemplate
  *   v16 Brand Tint → ClassicMenuTemplate + operator shell tint
- *   v17 Fine → FineMenuTemplate (black/white serif, text-forward)
+ *   v17 Fine → FineMenuTemplate (warm serif + Klaudette-style dish thumbs when enabled)
  */
 export default function PublicMenuMainContent({ menuStyle: rawStyle, templateContext: ctx }) {
   const menuStyle = resolveTemplateMenuStyle(rawStyle);

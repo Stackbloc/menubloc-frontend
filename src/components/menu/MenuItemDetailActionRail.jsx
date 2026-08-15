@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import ShareButton from "../share/ShareButton.jsx";
 import LikeMenuItemButton from "../LikeMenuItemButton.jsx";
 import InviteToEatButton from "../InviteToEatButton.jsx";
+import FoodCommentNavButton from "../FoodCommentNavButton.jsx";
 import IconHoverLabel from "../IconHoverLabel.jsx";
 import ViewMenuIcon from "../icons/ViewMenuIcon.jsx";
 import { MENU_ROW_ICON_GAP, MENU_ROW_ICON_SIZE } from "../menu-templates/menuPresentationUtils.js";
@@ -69,7 +70,7 @@ function ReturnToSearchButton({ onClick, label = "Return to results" }) {
 
 /**
  * Detail-page action icons — same ghost controls as public menu rows.
- * Order: View Full Menu (or return-to-search), Like, Share, Invite.
+ * Order: View Full Menu (or return-to-search), Like, Share, Invite, Comment.
  */
 export default function MenuItemDetailActionRail({
   menuItemId,
@@ -123,6 +124,14 @@ export default function MenuItemDetailActionRail({
           restaurantName={restaurantName}
           menuItemId={menuItemId}
           menuItemName={itemName}
+          tone="ghost"
+          size="row"
+        />
+      ) : null}
+      {menuItemId ? (
+        <FoodCommentNavButton
+          target="menu_item"
+          menuItemId={menuItemId}
           tone="ghost"
           size="row"
         />

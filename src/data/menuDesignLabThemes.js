@@ -227,7 +227,7 @@ const THEMES = [
       },
       imageRules: {
         hero: "large hero",
-        itemImages: "optional",
+        itemImages: "thumbnails",
         sectionImages: "subtle breaks",
       },
       sectionHeadingStyle: "brass all-caps",
@@ -678,7 +678,7 @@ const THEMES = [
     style: "v17",
     name: "Fine",
     bestFit: "Fine dining, chef-driven, print-style menus",
-    description: "Warm brown page with espresso serif type, uppercase section titles, and a text-forward layout — no stock photo chrome.",
+    description: "Warm brown page with espresso serif type, uppercase section titles, and Klaudette-style left dish photo thumbs when photos are attached.",
     visibleInGallery: true,
     previewPayload: makePreviewPayload(MENU_THEME_PREVIEW_PAYLOADS.v1, {
       restaurant_name: "TABL M",
@@ -708,11 +708,11 @@ const THEMES = [
       },
       imageRules: {
         hero: "none",
-        itemImages: "none",
+        itemImages: "thumbnails",
         sectionImages: "none",
       },
       sectionHeadingStyle: "serif all-caps",
-      itemPresentationStyle: "text rows",
+      itemPresentationStyle: "text rows with dish thumbs",
       buttonStyle: "outline",
       pricePlacement: "right",
       intelligence: makeIntelligencePreset({

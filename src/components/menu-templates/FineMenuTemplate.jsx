@@ -12,10 +12,12 @@ import FollowRestaurantButton from "../FollowRestaurantButton.jsx";
 import InviteToEatButton from "../InviteToEatButton.jsx";
 import FoodCommentNavButton from "../FoodCommentNavButton.jsx";
 import MenuHeaderNameWithActions from "./MenuHeaderIconRail.jsx";
+import { shouldShowItemImages } from "./menuThemeSettings.js";
 
 /**
  * V17 Fine — warm brown serif, text-forward public menu inspired by
  * classic print menus. Own layout identity; does not alter Classic (v1).
+ * Dish photos use the same left-thumb row layout as Classic / Klaudette when enabled.
  */
 const FONT_STACK = '"Palatino Linotype", Palatino, Georgia, "Times New Roman", serif';
 const PAGE = "#B8956A";
@@ -125,6 +127,7 @@ export default function FineMenuTemplate(ctx) {
   const isTablet = useIsTabletRange();
   const edgeBleed = isMobile ? -12 : -20;
   const accent = brand?.accent ?? ACCENT_DEFAULT;
+  const showItemImages = shouldShowItemImages(menuThemeSettings);
 
   return (
     <div style={{ fontFamily: FONT_STACK, background: PAGE, color: INK, marginLeft: edgeBleed, marginRight: edgeBleed }}>
@@ -418,7 +421,7 @@ export default function FineMenuTemplate(ctx) {
                         getConsumerDisplayPrice={getConsumerDisplayPrice}
                         brand={brand}
                         menuThemeSettings={menuThemeSettings}
-                        showImage={false}
+                        showImage={showItemImages}
                       />
                     ))}
                   </div>
