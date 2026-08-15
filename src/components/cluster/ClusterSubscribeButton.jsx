@@ -65,8 +65,7 @@ export default function ClusterSubscribeButton({ clusterId, clusterName = "" }) 
           <Link to={`/account/login?next=${encodeURIComponent(loginNext)}`} style={styles.link}>
             Sign in
           </Link>{" "}
-          to have Waiter monitor {clusterName || "this cluster"}. The public Cluster Feed above does
-          not require following.
+          to follow {clusterName || "this place"} for personalized food updates.
         </p>
       ) : (
         <button
@@ -76,13 +75,11 @@ export default function ClusterSubscribeButton({ clusterId, clusterName = "" }) 
           disabled={busy}
           onClick={toggle}
         >
-          {subscribed ? "Waiter is monitoring" : "Follow for Waiter"}
+          {subscribed ? "Following" : "Follow"}
         </button>
       )}
       {isAuthenticated && !subscribed ? (
-        <p style={styles.subhint}>
-          Optional — anyone can still read the public Cluster Feed without following.
-        </p>
+        <p style={styles.subhint}>Optional — you can browse without following.</p>
       ) : null}
       {error ? (
         <p style={styles.error} role="alert">

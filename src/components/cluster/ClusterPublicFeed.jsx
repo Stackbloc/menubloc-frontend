@@ -1,11 +1,19 @@
 /**
- * Public Cluster Feed — automatic "what's happening" for a Place/cluster.
- * Not Waiter. No subscription required. Authenticated or anonymous.
+ * Public Cluster Feed — what's happening now in this cluster.
+ * No subscription required. Not a product explainer.
  */
 
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { fetchClusterPublicFeed } from "../../lib/clusterApi.js";
+
+function clusterDisplayName(cluster) {
+  const name = String(cluster?.name || "").trim();
+  if (name) return name;
+  const slug = String(cluster?.slug || "").trim();
+  if (!slug) return "this cluster";
+  return slug.replace(/-/g, " ");
+}
 
 export default function ClusterPublicFeed({ cluster }) {
   const [items, setItems] = useState([]);
@@ -13,6 +21,7 @@ export default function ClusterPublicFeed({ cluster }) {
   const [loading, setLoading] = useState(false);
 
   const slug = cluster?.slug;
+  const placeName = clusterDisplayName(cluster);
 
   useEffect(() => {
     let cancelled = false;
@@ -33,7 +42,7 @@ export default function ClusterPublicFeed({ cluster }) {
       .catch(() => {
         if (!cancelled) {
           setItems([]);
-          setNotice("Cluster feed temporarily unavailable.");
+          setNotice("");
         }
       })
       .finally(() => {
@@ -54,23 +63,18 @@ export default function ClusterPublicFeed({ cluster }) {
       aria-label="Cluster Feed"
       style={styles.section}
     >
-      <div style={styles.headerRow}>
-        <div style={styles.sectionTitle}>Cluster Feed</div>
-        <span style={styles.publicBadge} data-testid="cluster-feed-public-badge">
-          Public
-        </span>
-      </div>
-      <p style={styles.lead}>
-        What&apos;s happening here — diner statuses, food photos, new places, and deals. Anyone can
-        view this feed. Following a cluster only personalizes Waiter; it is not required to read the
-        feed.
+      <div style={styles.sectionTitle}>Cluster Feed</div>
+      <p style={styles.lead} data-testid="cluster-feed-happening-now">
+        What&apos;s happening at {placeName}:
       </p>
 
-      {loading ? <p style={styles.muted}>Loading feed…</p> : null}
+      {loading ? <p style={styles.muted}>Loading…</p> : null}
 
       {!loading && items.length === 0 ? (
         <p style={styles.muted} data-testid="cluster-feed-empty">
-          {notice || "No recent public food activity in this cluster yet."}
+          {notice && !/subscription|waiter|follow/i.test(notice)
+            ? notice
+            : "Nothing new here yet."}
         </p>
       ) : null}
 
@@ -91,7 +95,9 @@ export default function ClusterPublicFeed({ cluster }) {
               ) : (
                 <div style={styles.title}>{item.title}</div>
               )}
-              {item.detail ? <p style={styles.detail}>{item.detail}</p> : null}
+              {item.detail && !isMetaDetail(item.detail) ? (
+                <p style={styles.detail}>{item.detail}</p>
+              ) : null}
               {item.photo_url ? (
                 <img
                   src={item.photo_url}
@@ -108,17 +114,23 @@ export default function ClusterPublicFeed({ cluster }) {
   );
 }
 
+/** Hide product/policy blurbs that are not real feed reporting. */
+function isMetaDetail(detail) {
+  const t = String(detail || "").toLowerCase();
+  return (
+    t.includes("not a sellable") ||
+    t.includes("experience reports") ||
+    t.includes("does not track") ||
+    t.includes("subscription") ||
+    t.includes("waiter")
+  );
+}
+
 const styles = {
   section: {
     marginBottom: 18,
     padding: "14px 0 4px",
     borderTop: "1px solid #e5e7eb",
-  },
-  headerRow: {
-    display: "flex",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 6,
   },
   sectionTitle: {
     fontSize: 13,
@@ -126,23 +138,14 @@ const styles = {
     letterSpacing: 0.4,
     color: "#111827",
     textTransform: "uppercase",
-  },
-  publicBadge: {
-    fontSize: 10,
-    fontWeight: 700,
-    letterSpacing: 0.3,
-    textTransform: "uppercase",
-    color: "#14532d",
-    background: "#ecfdf5",
-    border: "1px solid #a7f3d0",
-    borderRadius: 999,
-    padding: "2px 8px",
+    marginBottom: 6,
   },
   lead: {
     margin: "0 0 12px",
-    fontSize: 14,
-    color: "#374151",
-    lineHeight: 1.45,
+    fontSize: 15,
+    fontWeight: 600,
+    color: "#111827",
+    lineHeight: 1.4,
   },
   muted: { fontSize: 13, color: "#6b7280", margin: "0 0 8px" },
   list: { listStyle: "none", margin: 0, padding: 0, display: "grid", gap: 10 },

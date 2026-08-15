@@ -277,10 +277,8 @@ export default function PublicProfileShell({
       >
         {isDiningHall ? (
           <ProfileSection title="Campus dining" testId="dining-hall-campus-note">
-            Dining halls are campus facilities — not restaurant businesses Menuply sells menus for.
-            Share what it&apos;s like on campus today (lines, vibe, what&apos;s tasting good). Menuply
-            does not track dining-hall menus here; these profiles cannot be claimed by restaurant
-            owners.
+            Dining halls are campus facilities — not claimable restaurant businesses.
+            Share what it&apos;s like on campus today (lines, vibe, what&apos;s tasting good).
           </ProfileSection>
         ) : null}
 

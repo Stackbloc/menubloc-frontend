@@ -18,12 +18,13 @@ test("Cluster subscriptions UI + report feed (Waiter wired)", () => {
 
   const btn = read("src/components/cluster/ClusterSubscribeButton.jsx");
   assert.match(btn, /cluster-subscribe-toggle/);
-  assert.match(btn, /Follow for Waiter|Waiter is monitoring/);
+  assert.match(btn, /Following|"Follow"/);
+  assert.doesNotMatch(btn, /\bWaiter\b/);
 
   const page = read("src/pages/consumer/ClusterSubscriptionsPage.jsx");
-  assert.match(page, /public Cluster Feed|My Waiter clusters/);
+  assert.match(page, /Followed places|followed places|Cluster Feed/i);
   assert.match(page, /cluster-report-item/);
-  assert.match(page, /selected clusters|Your clusters/);
+  assert.doesNotMatch(page, /\bWaiter\b/);
 
   const clusterPage = read("src/pages/ClusterPage.jsx");
   assert.match(clusterPage, /ClusterSubscribeButton/);

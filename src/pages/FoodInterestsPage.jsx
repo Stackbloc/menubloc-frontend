@@ -180,7 +180,7 @@ export default function FoodInterestsPage() {
   const subheading = (() => {
     if (subscriptionCount > 0 && clusterNames.length) {
       const more = subscriptionCount > clusterNames.length ? ` +${subscriptionCount - clusterNames.length}` : "";
-      return `Waiter report from ${clusterNames.join(", ")}${more} public feeds.`;
+      return `Food updates from ${clusterNames.join(", ")}${more}.`;
     }
     if (locationLabel) return `Food picks for ${locationLabel}.`;
     return "Your local food market intelligence.";
@@ -210,13 +210,13 @@ export default function FoodInterestsPage() {
           <p style={{ margin: "8px 0 0", fontSize: 14, color: "#CBD5E1", lineHeight: 1.55 }}>{subheading}</p>
           {!isAuthenticated ? (
             <div style={{ marginTop: 16, borderRadius: 16, border: "1px solid rgba(34,197,94,0.18)", background: "rgba(34,197,94,0.08)", padding: "12px 14px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-              <div style={{ fontSize: 13, color: "#DCFCE7", lineHeight: 1.45 }}>Sign in to follow clusters and personalize Waiter.</div>
+              <div style={{ fontSize: 13, color: "#DCFCE7", lineHeight: 1.45 }}>Sign in to follow places and personalize your food updates.</div>
               <button type="button" onClick={() => navigate("/account/login")} style={{ border: "none", borderRadius: 999, background: "#22C55E", color: "#0B0F0C", fontSize: 12, fontWeight: 800, padding: "10px 12px", cursor: "pointer", whiteSpace: "nowrap" }}>Sign In</button>
             </div>
           ) : (
             <div style={{ marginTop: 12, fontSize: 12 }}>
               <Link to="/account/cluster-subscriptions" style={{ color: "#86EFAC", fontWeight: 700, textDecoration: "none" }}>
-                Manage Waiter clusters
+                Manage followed places
               </Link>
             </div>
           )}
@@ -251,7 +251,7 @@ export default function FoodInterestsPage() {
             <div style={{ fontSize: 14, color: "#9CA3AF", padding: "12px 0" }}>Loading recommendations…</div>
           ) : !canFetchBriefing ? (
             <div style={{ fontSize: 13, color: "#6B7280", lineHeight: 1.55, padding: "12px 0" }}>
-              Set your location on the home screen or sign in to follow clusters for Waiter.
+              Set your location on the home screen or sign in to follow places for personalized updates.
             </div>
           ) : groups.length ? (
             <div style={{ display: "grid", gap: 12 }}>

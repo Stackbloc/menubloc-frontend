@@ -1,6 +1,5 @@
 /**
- * Manage cluster subscriptions + view subscribed-cluster food report feed.
- * Waiter-compatible data; Waiter UI not modified in this phase without Waiter naming.
+ * Manage followed places + personalized food updates from their public Cluster Feeds.
  */
 
 import React, { useCallback, useEffect, useState } from "react";
@@ -67,12 +66,11 @@ export default function ClusterSubscriptionsPage() {
 
   return (
     <>
-      <StickyPageHeader title="My Waiter clusters" />
+      <StickyPageHeader title="Followed places" />
       <div style={styles.page}>
         <p style={styles.lead}>
-          Choose which clusters Waiter monitors. Waiter reports from each cluster&apos;s{" "}
-          <strong>public Cluster Feed</strong> — it does not create a separate activity stream.
-          Anyone can still open a cluster and read its public feed without following.
+          Places you follow for personalized food updates. Each place still has a public Cluster Feed
+          anyone can open.
         </p>
         {error ? <p style={styles.error}>{error}</p> : null}
 

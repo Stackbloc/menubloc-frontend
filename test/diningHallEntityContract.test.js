@@ -27,9 +27,9 @@ test("public profile shell treats dining halls as non-claimable campus facilitie
   assert.match(src, /isDiningHallProfile/);
   assert.match(src, /dining_hall/);
   assert.match(src, /allowClaimInvites/);
-  assert.match(src, /cannot be[\s\S]*claimed by restaurant owners/);
+  assert.match(src, /not claimable restaurant businesses|cannot be claimed/);
   assert.match(src, /dining-hall-public-editorial/);
-  assert.match(src, /does not track dining-hall menus/);
+  assert.match(src, /lines, vibe|tasting good/);
   assert.match(src, /experienceMode=\{isDiningHall\}/);
   assert.match(src, /menuHref=\{isDiningHall \? null : menuHref\}/);
 });
@@ -57,6 +57,7 @@ test("diner status composer supports busy + dining-hall experience mode", () => 
 test("campus dining section is experience-only (no menu framing)", () => {
   const src = read("src/components/cluster/CampusDiningSection.jsx");
   assert.match(src, /experienceMode/);
-  assert.match(src, /does not track dining-hall menus/);
+  assert.match(src, /lines, vibe|what.*tasting good/i);
   assert.doesNotMatch(src, /full menu/);
+  assert.doesNotMatch(src, /\bWaiter\b/);
 });
