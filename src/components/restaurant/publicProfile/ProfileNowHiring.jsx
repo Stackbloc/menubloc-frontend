@@ -2,7 +2,7 @@
  * Restrained Now Hiring module — only when status_banners includes now_hiring.
  * Does not invent job listings.
  */
-import { PROFILE_GREEN, PROFILE_INK, PROFILE_MUTED } from "./profilePrimitives.jsx";
+import { PROFILE_GREEN, PROFILE_INK, PROFILE_MUTED, profileReadableSurfaceStyle } from "./profilePrimitives.jsx";
 
 export default function ProfileNowHiring({
   isActive = false,
@@ -14,11 +14,13 @@ export default function ProfileNowHiring({
   return (
     <section
       data-testid="profile-now-hiring"
+      data-profile-surface="card"
       aria-label="Now hiring"
       style={{
-        marginBottom: isMobile ? 16 : 20,
-        padding: isMobile ? "14px 14px" : "16px 18px",
-        borderRadius: 14,
+        ...profileReadableSurfaceStyle({
+          marginBottom: isMobile ? 16 : 20,
+          padding: isMobile ? "14px 14px" : "16px 18px",
+        }),
         border: "1px solid #86efac",
         background: "linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%)",
       }}

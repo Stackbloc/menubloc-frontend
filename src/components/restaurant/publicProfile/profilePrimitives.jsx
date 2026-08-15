@@ -190,13 +190,14 @@ export function ProfileClaimBanner({ claimHref = "/onboarding", claimState = nul
   return (
     <div
       data-testid="profile-claim-banner"
+      data-profile-surface="card"
       style={{
-        marginBottom: 20,
-        padding: "14px 16px",
+        ...profileReadableSurfaceStyle({
+          marginBottom: 20,
+          padding: "14px 16px",
+        }),
         borderRadius: 14,
-        border: `1px solid ${profileCardBorderVar}`,
         background: "#fffbeb",
-        boxShadow: profileCardShadowVar,
       }}
     >
       <div style={{ fontSize: 15, fontWeight: 800, color: PROFILE_INK, letterSpacing: "-0.02em" }}>

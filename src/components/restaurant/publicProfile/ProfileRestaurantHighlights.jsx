@@ -13,6 +13,7 @@ import {
   PROFILE_GREEN,
   PROFILE_INK,
   PROFILE_MUTED,
+  profileReadableSurfaceStyle,
 } from "./profilePrimitives.jsx";
 
 function AttributeChip({ children, href, testId }) {
@@ -125,16 +126,12 @@ export default function ProfileRestaurantHighlights({
   return (
     <section
       data-testid="profile-restaurant-highlights"
+      data-profile-surface="card"
       aria-label={title}
-      style={{
+      style={profileReadableSurfaceStyle({
         marginBottom: isMobile ? 16 : 0,
         padding: isMobile ? "16px 14px" : "18px 18px",
-        borderRadius: 16,
-        background: "#fff",
-        border: "1px solid #e7e5e4",
-        boxShadow: "0 8px 28px rgba(28, 25, 23, 0.04)",
-        minWidth: 0,
-      }}
+      })}
     >
       <div
         style={{

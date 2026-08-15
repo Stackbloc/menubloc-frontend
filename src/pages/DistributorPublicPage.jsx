@@ -24,6 +24,7 @@ import {
   profileCardBorderVar,
   profileCardShadowVar,
   profileAccentVar,
+  profileReadableSurfaceStyle,
 } from "../components/restaurant/publicProfile/profilePrimitives.jsx";
 
 const CANONICAL_BASE = "https://menuply.com";
@@ -475,14 +476,11 @@ export default function DistributorPublicPage() {
         d.service_area_note ? (
           <section
             data-testid="distributor-markets-categories"
-            style={{
+            data-profile-surface="card"
+            style={profileReadableSurfaceStyle({
               marginBottom: 20,
               padding: "16px 16px",
-              borderRadius: 14,
-              border: `1px solid ${profileCardBorderVar}`,
-              background: "#fff",
-              boxShadow: profileCardShadowVar,
-            }}
+            })}
           >
             {Array.isArray(d.product_categories) && d.product_categories.length ? (
               <div style={{ marginBottom: d.geographic_markets?.length || d.service_area_note ? 12 : 0 }}>
@@ -524,13 +522,11 @@ export default function DistributorPublicPage() {
 
         {d.is_claimed && !d.show_claim_cta ? (
           <section
-            style={{
+            data-profile-surface="card"
+            style={profileReadableSurfaceStyle({
               marginBottom: 28,
               padding: "14px 16px",
-              borderRadius: 14,
-              border: `1px solid ${profileCardBorderVar}`,
-              background: "#fff",
-            }}
+            })}
           >
             <div
               style={{

@@ -9,8 +9,7 @@ import {
   PROFILE_MUTED,
   profileAccentVar,
   profileSectionLabelVar,
-  profileCardBorderVar,
-  profileCardShadowVar,
+  profileReadableSurfaceStyle,
 } from "./profilePrimitives.jsx";
 
 function GlanceRow({ label, children, testId, muted = false }) {
@@ -162,16 +161,12 @@ export default function ProfileAtAGlance({
   return (
     <section
       data-testid="profile-at-a-glance"
+      data-profile-surface="card"
       aria-label="At a glance"
-      style={{
+      style={profileReadableSurfaceStyle({
         marginBottom: isMobile ? 16 : 0,
         padding: isMobile ? "16px 14px" : "18px 18px",
-        borderRadius: 16,
-        background: "#fff",
-        border: `1px solid ${profileCardBorderVar}`,
-        boxShadow: profileCardShadowVar,
-        minWidth: 0,
-      }}
+      })}
     >
       <div
         style={{

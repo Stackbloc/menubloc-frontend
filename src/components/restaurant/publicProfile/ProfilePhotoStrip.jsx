@@ -3,7 +3,7 @@
  * Includes paused gallery posts; excludes the active hero image to avoid repeat.
  * "Photos" heading only when empty (claim invite blank) — hidden once any photo exists.
  */
-import { PROFILE_INK, PROFILE_MUTED, ProfileSectionBlank } from "./profilePrimitives.jsx";
+import { PROFILE_INK, PROFILE_MUTED, ProfileSectionBlank, profileReadableSurfaceStyle } from "./profilePrimitives.jsx";
 import {
   normalizeWindowsPhotoOrientation,
   windowsPhotoStripTileSize,
@@ -123,8 +123,11 @@ export default function ProfilePhotoStrip({
     <section
       data-testid="profile-photo-strip"
       data-windows-orientation={orientation}
+      data-profile-surface="card"
       aria-label={`${name} photos`}
-      style={{ marginBottom: isMobile ? 20 : 24 }}
+      style={profileReadableSurfaceStyle({
+        marginBottom: isMobile ? 20 : 24,
+      })}
     >
       {label}
       {body}

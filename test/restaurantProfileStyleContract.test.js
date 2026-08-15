@@ -180,15 +180,23 @@ describe("operator + public profile style wiring", () => {
     assert.match(primitives, /profileCardBorderVar/);
     assert.match(primitives, /profileReadableSurfaceStyle/);
 
-    for (const rel of [
+    const mustUseReadableSurface = [
       "src/components/restaurant/publicProfile/ProfileDealsSection.jsx",
       "src/components/restaurant/publicProfile/ProfileUpdates.jsx",
       "src/components/restaurant/publicProfile/ProfileFavoriteMenuItems.jsx",
       "src/components/restaurant/publicProfile/ProfileAboutFounded.jsx",
       "src/components/restaurant/publicProfile/ProfileBillboardBlock.jsx",
+      "src/components/restaurant/publicProfile/ProfileRestaurantInfo.jsx",
+      "src/components/restaurant/publicProfile/ProfilePhotoStrip.jsx",
+      "src/components/restaurant/publicProfile/ProfileAtAGlance.jsx",
+      "src/components/restaurant/publicProfile/ProfileMenuHighlights.jsx",
+      "src/components/restaurant/publicProfile/ProfileRestaurantHighlights.jsx",
+      "src/components/restaurant/publicProfile/ProfileNowHiring.jsx",
       "src/components/restaurant/WhatDinersAreSaying.jsx",
       "src/components/comments/FoodComments.jsx",
-    ]) {
+      "src/pages/DistributorPublicPage.jsx",
+    ];
+    for (const rel of mustUseReadableSurface) {
       const src = readFileSync(join(root, rel), "utf8");
       assert.match(
         src,
@@ -196,6 +204,13 @@ describe("operator + public profile style wiring", () => {
         `${rel} must use readable surface on patterned styles`
       );
     }
+
+    const featured = readFileSync(
+      join(root, "src/components/restaurant/publicProfile/ProfileFeaturedContent.jsx"),
+      "utf8"
+    );
+    assert.match(featured, /data-profile-surface="card"/);
+    assert.match(featured, /background:\s*"linear-gradient/);
   });
 
   it("RestaurantStyleSelector has Use Recommended + preview cards emphasizing pattern body", () => {

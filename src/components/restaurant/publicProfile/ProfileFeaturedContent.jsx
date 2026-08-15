@@ -1,6 +1,7 @@
 /**
  * Featured content — operator-set special / signature / promotion only.
  * Does NOT auto-promote ordinary menu items. Collapses when empty.
+ * Solid dark surface — readable on patterned Restaurant Styles.
  */
 export default function ProfileFeaturedContent({
   featuredItem = null,
@@ -44,6 +45,7 @@ export default function ProfileFeaturedContent({
   return (
     <section
       data-testid="profile-featured-content"
+      data-profile-surface="card"
       aria-label={featured.kind}
       style={{
         marginBottom: isMobile ? 18 : 24,

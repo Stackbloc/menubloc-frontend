@@ -6,10 +6,10 @@ import { Link } from "react-router-dom";
 import {
   PROFILE_INK,
   PROFILE_MUTED,
-  profileCardBorderVar,
   profileAccentVar,
   formatHoursRows,
   firstNonEmpty,
+  profileReadableSurfaceStyle,
 } from "./profilePrimitives.jsx";
 import { formatWebsiteHostLabel } from "../../../lib/formatWebsiteHostLabel.js";
 import { formatFoodTruckHoursTodayHeading } from "../../../lib/formatOperatingHours.js";
@@ -64,8 +64,12 @@ export default function ProfileRestaurantInfo({
   return (
     <section
       data-testid="profile-restaurant-info"
+      data-profile-surface="card"
       aria-label="Restaurant Information"
-      style={{ marginBottom: isMobile ? 24 : 32 }}
+      style={profileReadableSurfaceStyle({
+        marginBottom: isMobile ? 24 : 32,
+        padding: isMobile ? "12px 14px" : "14px 16px",
+      })}
     >
       <div
         style={{
@@ -80,10 +84,6 @@ export default function ProfileRestaurantInfo({
       </div>
       <div
         style={{
-          padding: isMobile ? "12px 14px" : "14px 16px",
-          borderRadius: 14,
-          border: `1px solid ${profileCardBorderVar}`,
-          background: "#fff",
           display: "grid",
           gap: 10,
           fontSize: 14,
