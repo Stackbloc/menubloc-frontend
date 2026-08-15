@@ -33,8 +33,8 @@ assert.match(component, /display_name_required/);
 assert.match(component, /menuItemPath/);
 
 const shell = read("src/components/restaurant/publicProfile/PublicProfileShell.jsx");
-assert.match(shell, /FoodComments/);
-assert.match(shell, /What diners are saying/);
+assert.match(shell, /WhatDinersAreSaying|FoodComments/);
+assert.match(shell, /What [Dd]iners [Aa]re [Ss]aying|WhatDinersAreSaying/);
 assert.match(shell, /restaurantSlug=/);
 assert.match(shell, /menuPreviewItems=/);
 

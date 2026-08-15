@@ -15,7 +15,7 @@ import ProfileFavoriteMenuItems from "./ProfileFavoriteMenuItems.jsx";
 import ProfileUpdates from "./ProfileUpdates.jsx";
 import ProfileDealsSection from "./ProfileDealsSection.jsx";
 import FoodTruckUpcomingStops from "./FoodTruckUpcomingStops.jsx";
-import FoodComments from "../../comments/FoodComments.jsx";
+import WhatDinersAreSaying from "../WhatDinersAreSaying.jsx";
 import { pickWindowsPosts } from "../../../lib/profileWindows.js";
 import { formatAddressQuery } from "../../../lib/displayAddress.js";
 import { buildGoogleMapsDirectionsUrl } from "../../../lib/catalogMenuUtils.js";
@@ -301,14 +301,12 @@ export default function PublicProfileShell({
         <ProfileUpdates updates={updates} isMobile={isMobile} showClaimInvites={showClaimInvites} />
 
         {restaurantId ? (
-          <FoodComments
+          <WhatDinersAreSaying
             restaurantId={restaurantId}
             restaurantSlug={restaurantSlug}
             restaurantCity={restaurantCity}
             restaurantState={restaurantState}
             menuPreviewItems={previewForComments}
-            showFeaturedFirst
-            title="What diners are saying"
             compact={isMobile}
           />
         ) : null}
