@@ -1,58 +1,101 @@
 /**
  * UCLA Place atmosphere — scoped to ClusterPage only (slug `ucla`).
- * Brand alignment (not imitation): UCLA blue + gold energy complementary to
- * UCLA identity without logos, seals, or scraped university assets.
+ * Westwood courtyard / Pacific daylight — cool stone + deep blue panels.
+ * Distinct from USC (warm cream + cardinal serif) and Coachella festival type.
+ * Brand alignment (not imitation): no logos, seals, or scraped university assets.
  */
 
-@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Figtree:wght@500;600;700;800&family=Sora:wght@600;700;800&display=swap");
+
+@keyframes ucla-hero-shimmer {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(2px);
+  }
+}
+
+@keyframes ucla-feed-heading-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 
 .cluster-theme-ucla {
-  --ucla-ink: #0b1f33;
+  --ucla-ink: #0a1628;
   --ucla-blue: #2774ae;
-  --ucla-blue-deep: #1a4f7a;
+  --ucla-blue-deep: #003b5c;
+  --ucla-blue-panel: #1e5a8a;
   --ucla-gold: #ffd100;
   --ucla-gold-soft: #ffe566;
-  --ucla-sky: #e8f3fb;
-  --ucla-mist: #d5e8f6;
-  --ucla-line: rgba(39, 116, 174, 0.16);
-  --ucla-glow: rgba(39, 116, 174, 0.2);
+  --ucla-stone: #f4f7fa;
+  --ucla-mist: #e3eef7;
+  --ucla-line: rgba(0, 59, 92, 0.14);
+  --ucla-glow: rgba(39, 116, 174, 0.22);
   position: relative;
   isolation: isolate;
   overflow: clip;
   color: var(--ucla-ink);
   background:
-    radial-gradient(90% 55% at 5% -8%, rgba(39, 116, 174, 0.28), transparent 58%),
-    radial-gradient(70% 48% at 100% 0%, rgba(255, 209, 0, 0.26), transparent 52%),
-    radial-gradient(55% 40% at 70% 100%, rgba(39, 116, 174, 0.1), transparent 55%),
-    linear-gradient(180deg, #f7fbfe 0%, var(--ucla-sky) 46%, var(--ucla-mist) 100%);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+    linear-gradient(
+      180deg,
+      rgba(0, 59, 92, 0.04) 0%,
+      transparent 12%
+    ),
+    repeating-linear-gradient(
+      180deg,
+      transparent 0,
+      transparent 47px,
+      rgba(39, 116, 174, 0.045) 47px,
+      rgba(39, 116, 174, 0.045) 48px
+    ),
+    radial-gradient(55% 40% at 92% 8%, rgba(255, 209, 0, 0.14), transparent 55%),
+    linear-gradient(180deg, #ffffff 0%, var(--ucla-stone) 42%, var(--ucla-mist) 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
+/* Thin gold light edge — not a USC-style multi-color top ribbon */
 .cluster-theme-ucla::before {
   content: "";
   position: absolute;
   inset: 0 0 auto 0;
-  height: 7px;
+  height: 3px;
   background: linear-gradient(
     90deg,
     var(--ucla-blue-deep) 0%,
-    var(--ucla-blue) 34%,
-    var(--ucla-gold) 72%,
-    #fff6b8 100%
+    var(--ucla-blue) 40%,
+    var(--ucla-gold) 100%
   );
   z-index: 2;
   pointer-events: none;
 }
 
+/* Courtyard bands + sparse gold flecks (not USC radial dots) */
 .cluster-theme-ucla::after {
   content: "";
   position: absolute;
   inset: 0;
   background-image:
-    radial-gradient(circle at 16% 20%, rgba(39, 116, 174, 0.14) 0 1px, transparent 2px),
-    radial-gradient(circle at 74% 36%, rgba(255, 209, 0, 0.2) 0 1.5px, transparent 3px);
-  background-size: 136px 136px, 172px 172px;
-  opacity: 0.5;
+    linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(39, 116, 174, 0.03) 18%,
+      transparent 36%
+    ),
+    radial-gradient(circle at 12% 28%, rgba(255, 209, 0, 0.35) 0 1px, transparent 2px),
+    radial-gradient(circle at 88% 62%, rgba(255, 209, 0, 0.28) 0 1.2px, transparent 2.5px),
+    radial-gradient(circle at 64% 18%, rgba(39, 116, 174, 0.2) 0 1px, transparent 2px);
+  background-size: 100% 100%, 160px 160px, 210px 210px, 140px 140px;
+  opacity: 0.65;
   pointer-events: none;
   z-index: 0;
 }
@@ -62,96 +105,113 @@
   z-index: 1;
 }
 
-.cluster-theme-ucla .cluster-campus-hero {
+/* Asymmetric split panel: left blue ink bar + right stone body */
+.cluster-theme-ucla .cluster-ucla-hero {
   display: grid;
-  gap: 0.45rem;
-  margin: 0.1rem 0 0.3rem;
-  padding: 0.9rem 1rem 1rem;
-  border-radius: 1.1rem;
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.7), rgba(232, 243, 251, 0.5)),
-    linear-gradient(160deg, rgba(39, 116, 174, 0.1), rgba(255, 209, 0, 0.1));
-  border: 1px solid rgba(39, 116, 174, 0.2);
+  grid-template-columns: 10px 1fr;
+  gap: 0;
+  margin: 0.15rem 0 0.4rem;
+  border-radius: 0.35rem 1.05rem 1.05rem 0.35rem;
+  overflow: hidden;
+  background: linear-gradient(165deg, #ffffff 0%, var(--ucla-stone) 100%);
+  border: 1px solid rgba(0, 59, 92, 0.16);
   box-shadow:
-    0 10px 26px rgba(39, 116, 174, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.85);
+    0 14px 32px rgba(0, 59, 92, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
 }
 
-.cluster-theme-ucla .cluster-campus-powered {
+.cluster-theme-ucla .cluster-ucla-hero::before {
+  content: "";
+  grid-row: 1 / -1;
+  background: linear-gradient(
+    180deg,
+    var(--ucla-blue-deep) 0%,
+    var(--ucla-blue-panel) 55%,
+    var(--ucla-blue) 100%
+  );
+  box-shadow: inset -1px 0 0 rgba(255, 209, 0, 0.35);
+  animation: ucla-hero-shimmer 5.5s ease-in-out infinite;
+}
+
+.cluster-theme-ucla .cluster-ucla-hero-body {
+  display: grid;
+  gap: 0.5rem;
+  padding: 1rem 1.1rem 1.1rem 1rem;
+}
+
+.cluster-theme-ucla .cluster-ucla-powered {
   margin: 0;
-  font-family: "Outfit", "Avenir Next", "Segoe UI", sans-serif;
-  font-size: 0.72rem;
-  letter-spacing: 0.14em;
+  font-family: "Figtree", "Avenir Next", "Segoe UI", sans-serif;
+  font-size: 0.7rem;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--ucla-blue-deep);
   font-weight: 800;
 }
 
-.cluster-theme-ucla .cluster-campus-kicker {
+.cluster-theme-ucla .cluster-ucla-kicker {
   margin: 0;
-  font-family: "Fraunces", Georgia, serif;
-  font-size: clamp(1.45rem, 4vw, 2rem);
-  line-height: 1.08;
-  letter-spacing: -0.03em;
+  font-family: "Sora", "Avenir Next", "Segoe UI", sans-serif;
+  font-size: clamp(1.4rem, 3.8vw, 1.95rem);
+  line-height: 1.1;
+  letter-spacing: -0.035em;
   font-weight: 700;
-  background: linear-gradient(
-    105deg,
-    var(--ucla-blue-deep) 0%,
-    var(--ucla-blue) 50%,
-    #0e7490 100%
-  );
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: var(--ucla-blue-deep);
 }
 
-.cluster-theme-ucla .cluster-campus-sub {
+.cluster-theme-ucla .cluster-ucla-sub {
   margin: 0;
-  max-width: 36rem;
-  font-family: "Outfit", "Avenir Next", "Segoe UI", sans-serif;
-  font-size: 0.94rem;
-  line-height: 1.45;
-  color: rgba(11, 31, 51, 0.72);
+  max-width: 38rem;
+  font-family: "Figtree", "Avenir Next", "Segoe UI", sans-serif;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: rgba(10, 22, 40, 0.72);
   font-weight: 600;
 }
 
 .cluster-theme-ucla h1,
 .cluster-theme-ucla [data-testid="cluster-sticky-title"] {
-  font-family: "Fraunces", Georgia, serif !important;
-  letter-spacing: -0.03em !important;
+  font-family: "Sora", "Avenir Next", "Segoe UI", sans-serif !important;
+  letter-spacing: -0.035em !important;
 }
 
 .cluster-theme-ucla h1 {
-  font-size: clamp(1.75rem, 4.6vw, 2.2rem) !important;
-  background: linear-gradient(105deg, var(--ucla-blue-deep), var(--ucla-blue) 55%, #0369a1);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent !important;
+  font-size: clamp(1.7rem, 4.4vw, 2.15rem) !important;
+  color: var(--ucla-blue-deep) !important;
+  background: none !important;
+  -webkit-background-clip: unset !important;
+  background-clip: unset !important;
 }
 
 .cluster-theme-ucla [data-testid="cluster-sticky-chrome"] {
-  background: rgba(247, 251, 254, 0.94) !important;
+  background: rgba(244, 247, 250, 0.92) !important;
   border-bottom: 1px solid var(--ucla-line) !important;
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(12px);
 }
 
 .cluster-theme-ucla [data-testid="cluster-public-feed"] {
   border-top-color: var(--ucla-line) !important;
 }
 
+.cluster-theme-ucla [data-testid="cluster-feed-happening-now"],
 .cluster-theme-ucla .cluster-feed-heading {
-  font-family: "Fraunces", Georgia, serif !important;
-  font-size: 1.35rem !important;
+  font-family: "Sora", "Avenir Next", "Segoe UI", sans-serif !important;
+}
+
+.cluster-theme-ucla .cluster-feed-heading {
+  font-size: 1.28rem !important;
   font-weight: 700 !important;
-  letter-spacing: -0.02em !important;
+  letter-spacing: -0.03em !important;
   color: var(--ucla-blue-deep) !important;
   text-transform: none !important;
+  animation: ucla-feed-heading-in 0.55s ease-out both;
 }
 
 .cluster-theme-ucla .cluster-feed-section-label {
-  font-family: "Outfit", "Avenir Next", sans-serif !important;
+  font-family: "Figtree", "Avenir Next", sans-serif !important;
   color: var(--ucla-blue) !important;
-  letter-spacing: 0.08em !important;
+  letter-spacing: 0.1em !important;
+  font-weight: 700 !important;
 }
 
 .cluster-theme-ucla [data-testid="cluster-feed-item"] {
@@ -159,34 +219,46 @@
 }
 
 .cluster-theme-ucla .cluster-feed-item-title {
-  font-family: "Outfit", "Avenir Next", sans-serif !important;
+  font-family: "Figtree", "Avenir Next", sans-serif !important;
   font-weight: 800 !important;
   color: var(--ucla-ink) !important;
 }
 
 .cluster-theme-ucla button[aria-pressed="true"],
 .cluster-theme-ucla .cluster-view-toggle[aria-pressed="true"] {
-  background: var(--ucla-blue) !important;
-  border-color: var(--ucla-blue) !important;
-  color: #f7fbfe !important;
+  background: var(--ucla-blue-deep) !important;
+  border-color: var(--ucla-blue-deep) !important;
+  color: #f4f7fa !important;
   box-shadow: 0 0 0 3px var(--ucla-glow);
 }
 
 .cluster-theme-ucla button[aria-pressed="false"],
 .cluster-theme-ucla .cluster-view-toggle[aria-pressed="false"] {
-  border-color: rgba(39, 116, 174, 0.3) !important;
-  background: rgba(255, 255, 255, 0.78) !important;
+  border-color: rgba(0, 59, 92, 0.28) !important;
+  background: rgba(255, 255, 255, 0.88) !important;
   color: var(--ucla-ink) !important;
 }
 
 .cluster-theme-ucla .cluster-back-button {
   color: var(--ucla-blue-deep) !important;
   font-weight: 700 !important;
+  font-family: "Figtree", "Avenir Next", sans-serif !important;
 }
 
 @media (max-width: 640px) {
-  .cluster-theme-ucla .cluster-campus-hero {
-    padding: 0.8rem 0.85rem 0.9rem;
-    border-radius: 1rem;
+  .cluster-theme-ucla .cluster-ucla-hero {
+    grid-template-columns: 8px 1fr;
+    border-radius: 0.3rem 0.95rem 0.95rem 0.3rem;
+  }
+
+  .cluster-theme-ucla .cluster-ucla-hero-body {
+    padding: 0.85rem 0.9rem 0.95rem 0.85rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cluster-theme-ucla .cluster-ucla-hero::before,
+  .cluster-theme-ucla .cluster-feed-heading {
+    animation: none;
   }
 }

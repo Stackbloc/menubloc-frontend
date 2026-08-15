@@ -1279,13 +1279,15 @@ export default function ClusterPage() {
           </div>
         ) : null}
         {isUcla ? (
-          <div className="cluster-campus-hero" data-testid="cluster-ucla-hero">
-            <p className="cluster-campus-powered">UCLA powered by Menuply</p>
-            <p className="cluster-campus-kicker">Westwood campus food, at a glance</p>
-            <p className="cluster-campus-sub">
-              Dining halls, Bruins Plate energy, and diner reports from around campus —
-              what&apos;s happening with food here.
-            </p>
+          <div className="cluster-ucla-hero" data-testid="cluster-ucla-hero">
+            <div className="cluster-ucla-hero-body">
+              <p className="cluster-ucla-powered">UCLA powered by Menuply</p>
+              <p className="cluster-ucla-kicker">Westwood dining, in one Place</p>
+              <p className="cluster-ucla-sub">
+                Campus halls and nearby food signals — what&apos;s happening with food here,
+                without digging venue menus.
+              </p>
+            </div>
           </div>
         ) : null}
         <h1
