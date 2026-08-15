@@ -5,6 +5,7 @@ import { useConsumer } from "../context/ConsumerContext.jsx";
 import { fetchWaiterBriefing } from "../lib/waiterApi.js";
 import { WAITER_MEAL_PERIODS, getDefaultMealPeriod, normalizeMealPeriodId } from "../lib/waiterMealPeriod.js";
 import { getTimezoneForUsState } from "../lib/timeZoneUtils.js";
+import { readMenuBrowserVenueSession } from "../lib/menuBrowserVenueContext.js";
 
 // ⚠️ WAITER PROTECTION GUARDRAIL (2026-07-02)
 // This file is FROZEN. Do NOT add MarketFallback, CommunityGrowthCard, or
@@ -117,6 +118,13 @@ export default function FoodInterestsPage() {
 
   const location = parseSessionLocation(locationLabel);
 
+  // Prefer current Place/cluster when known (query param, then Yellow Browser session).
+  const clusterSlug =
+    String(searchParams.get("cluster") || searchParams.get("cluster_slug") || "").trim() ||
+    readMenuBrowserVenueSession() ||
+    "";
+  const clusterId = String(searchParams.get("cluster_id") || "").trim();
+
   const [mealPeriod, setMealPeriod] = useState(() => {
     const fromUrl = normalizeMealPeriodId(searchParams.get("meal_period"));
     if (fromUrl) return fromUrl;
@@ -132,12 +140,15 @@ export default function FoodInterestsPage() {
     if (!location.city || !location.state) return undefined;
     let cancelled = false;
     setBriefingLoading(true);
-    fetchWaiterBriefing(location.city, location.state, mealPeriod)
+    fetchWaiterBriefing(location.city, location.state, mealPeriod, {
+      clusterId: clusterId || undefined,
+      clusterSlug: clusterSlug || undefined,
+    })
       .then((data) => { if (!cancelled) setBriefing(data?.ok ? data : null); })
       .catch(() => { if (!cancelled) setBriefing(null); })
       .finally(() => { if (!cancelled) setBriefingLoading(false); });
     return () => { cancelled = true; };
-  }, [location.city, location.state, mealPeriod]);
+  }, [location.city, location.state, mealPeriod, clusterId, clusterSlug]);
 
   function selectMealPeriod(id) {
     setMealPeriod(id);

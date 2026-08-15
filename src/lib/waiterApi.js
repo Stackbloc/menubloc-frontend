@@ -1,8 +1,14 @@
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 
-export async function fetchWaiterBriefing(city, state, mealPeriod) {
+export async function fetchWaiterBriefing(city, state, mealPeriod, options = {}) {
   if (!city || !state) return { ok: true, city: null, state: null, recommendations: [] };
-  const url = `${API}/api/waiter/briefing?city=${encodeURIComponent(city)}&state=${encodeURIComponent(state)}&meal_period=${encodeURIComponent(mealPeriod || "lunch")}`;
+  const params = new URLSearchParams();
+  params.set("city", city);
+  params.set("state", state);
+  params.set("meal_period", mealPeriod || "lunch");
+  if (options.clusterId) params.set("cluster_id", String(options.clusterId));
+  if (options.clusterSlug) params.set("cluster_slug", String(options.clusterSlug));
+  const url = `${API}/api/waiter/briefing?${params.toString()}`;
   const res = await fetch(url, { credentials: "include" });
   if (!res.ok) throw new Error(`Briefing fetch failed: ${res.status}`);
   return res.json();
@@ -17,9 +23,28 @@ export async function fetchWaiterIntent(q, options = {}) {
   if (options.family_id) params.set("family_id", options.family_id);
   if (options.form_id) params.set("form_id", options.form_id);
   if (options.food_id) params.set("food_id", options.food_id);
+  if (options.clusterId) params.set("cluster_id", String(options.clusterId));
+  if (options.clusterSlug) params.set("cluster_slug", String(options.clusterSlug));
+  if (options.city) params.set("city", String(options.city));
+  if (options.state) params.set("state", String(options.state));
   const url = `${API}/api/waiter/intent?${params.toString()}`;
   const res = await fetch(url, { credentials: "include" });
   if (!res.ok) throw new Error(`Waiter intent fetch failed: ${res.status}`);
+  return res.json();
+}
+
+/** Canonical food_activity → What People Are Eating for Waiter. */
+export async function fetchWaiterPeopleEating(options = {}) {
+  const params = new URLSearchParams();
+  if (options.q) params.set("q", String(options.q));
+  if (options.clusterId) params.set("cluster_id", String(options.clusterId));
+  if (options.clusterSlug) params.set("cluster_slug", String(options.clusterSlug));
+  if (options.city) params.set("city", String(options.city));
+  if (options.state) params.set("state", String(options.state));
+  if (options.limit) params.set("limit", String(options.limit));
+  const url = `${API}/api/waiter/people-eating?${params.toString()}`;
+  const res = await fetch(url, { credentials: "include" });
+  if (!res.ok) throw new Error(`Waiter people-eating fetch failed: ${res.status}`);
   return res.json();
 }
 
