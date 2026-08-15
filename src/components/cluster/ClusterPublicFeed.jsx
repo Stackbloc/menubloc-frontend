@@ -1,10 +1,10 @@
 /**
- * Public Cluster Feed — what's happening now in this cluster.
- * No subscription required. Not a product explainer.
+ * Cluster food-intel board — overview of what's active across the whole cluster.
+ * Reads like a status board (not a menu of venue links).
+ * No subscription required.
  */
 
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { fetchClusterPublicFeed } from "../../lib/clusterApi.js";
 
 function clusterDisplayName(cluster) {
@@ -60,12 +60,12 @@ export default function ClusterPublicFeed({ cluster }) {
     <section
       id="cluster-feed"
       data-testid="cluster-public-feed"
-      aria-label="Cluster Feed"
+      aria-label="Where is everyone eating today?"
       style={styles.section}
     >
-      <div style={styles.sectionTitle}>Cluster Feed</div>
+      <div style={styles.sectionTitle}>Where is everyone eating today?</div>
       <p style={styles.lead} data-testid="cluster-feed-happening-now">
-        What&apos;s happening at {placeName}:
+        Food intel across {placeName}
       </p>
 
       {loading ? <p style={styles.muted}>Loading…</p> : null}
@@ -74,41 +74,40 @@ export default function ClusterPublicFeed({ cluster }) {
         <p style={styles.muted} data-testid="cluster-feed-empty">
           {notice && !/subscription|waiter|follow/i.test(notice)
             ? notice
-            : "Nothing new here yet."}
+            : "Quiet for now — check back later."}
         </p>
       ) : null}
 
       {!loading && items.length > 0 ? (
-        <ul style={styles.list} data-testid="cluster-feed-list">
+        <ol style={styles.list} data-testid="cluster-feed-list">
           {items.map((item, index) => (
             <li
-              key={`${item.type}-${item.link || item.title}-${index}`}
+              key={`${item.type}-${item.title}-${index}`}
               data-testid="cluster-feed-item"
               data-feed-type={item.type || ""}
-              style={styles.card}
+              style={styles.row}
             >
-              {item.label ? <div style={styles.label}>{item.label}</div> : null}
-              {item.link ? (
-                <Link to={item.link} style={styles.titleLink}>
-                  {item.title}
-                </Link>
-              ) : (
+              <span style={styles.rank} aria-hidden="true">
+                {index + 1}
+              </span>
+              <div style={styles.body}>
+                {item.label ? <div style={styles.label}>{item.label}</div> : null}
                 <div style={styles.title}>{item.title}</div>
-              )}
-              {item.detail && !isMetaDetail(item.detail) ? (
-                <p style={styles.detail}>{item.detail}</p>
-              ) : null}
-              {item.photo_url ? (
-                <img
-                  src={item.photo_url}
-                  alt=""
-                  loading="lazy"
-                  style={styles.photo}
-                />
-              ) : null}
+                {item.detail && !isMetaDetail(item.detail) ? (
+                  <p style={styles.detail}>{item.detail}</p>
+                ) : null}
+                {item.photo_url ? (
+                  <img
+                    src={item.photo_url}
+                    alt=""
+                    loading="lazy"
+                    style={styles.photo}
+                  />
+                ) : null}
+              </div>
             </li>
           ))}
-        </ul>
+        </ol>
       ) : null}
     </section>
   );
@@ -133,51 +132,61 @@ const styles = {
     borderTop: "1px solid #e5e7eb",
   },
   sectionTitle: {
-    fontSize: 13,
+    fontSize: 18,
     fontWeight: 800,
-    letterSpacing: 0.4,
+    letterSpacing: 0,
     color: "#111827",
-    textTransform: "uppercase",
-    marginBottom: 6,
+    textTransform: "none",
+    marginBottom: 4,
   },
   lead: {
     margin: "0 0 12px",
-    fontSize: 15,
-    fontWeight: 600,
-    color: "#111827",
-    lineHeight: 1.4,
+    fontSize: 14,
+    fontWeight: 500,
+    color: "#4b5563",
+    lineHeight: 1.35,
   },
   muted: { fontSize: 13, color: "#6b7280", margin: "0 0 8px" },
-  list: { listStyle: "none", margin: 0, padding: 0, display: "grid", gap: 10 },
-  card: {
+  list: {
+    listStyle: "none",
     margin: 0,
-    padding: "12px 14px",
-    borderRadius: 12,
-    border: "1px solid #e5e7eb",
-    background: "#fff",
+    padding: 0,
+    display: "grid",
+    gap: 0,
+    borderTop: "1px solid #e5e7eb",
   },
+  row: {
+    margin: 0,
+    padding: "10px 0",
+    display: "grid",
+    gridTemplateColumns: "28px 1fr",
+    gap: 10,
+    alignItems: "start",
+    borderBottom: "1px solid #e5e7eb",
+  },
+  rank: {
+    fontSize: 13,
+    fontWeight: 700,
+    color: "#9ca3af",
+    lineHeight: "22px",
+    textAlign: "right",
+    fontVariantNumeric: "tabular-nums",
+  },
+  body: { minWidth: 0 },
   label: {
     fontSize: 11,
     fontWeight: 700,
     letterSpacing: 0.3,
     textTransform: "uppercase",
     color: "#0f766e",
-    marginBottom: 4,
+    marginBottom: 2,
   },
   title: { fontSize: 15, fontWeight: 700, color: "#111827", lineHeight: 1.35 },
-  titleLink: {
-    fontSize: 15,
-    fontWeight: 700,
-    color: "#166534",
-    textDecoration: "none",
-    lineHeight: 1.35,
-    display: "block",
-  },
-  detail: { margin: "4px 0 0", fontSize: 13, color: "#6b7280", lineHeight: 1.4 },
+  detail: { margin: "3px 0 0", fontSize: 13, color: "#6b7280", lineHeight: 1.4 },
   photo: {
     marginTop: 8,
     maxWidth: "100%",
-    maxHeight: 160,
+    maxHeight: 140,
     borderRadius: 8,
     objectFit: "cover",
   },
