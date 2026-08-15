@@ -30,6 +30,8 @@ import { itemHasInsightsData } from "../components/basket/ItemInsightsSheet.jsx"
 import ShareButton from "../components/share/ShareButton.jsx";
 import MenuItemInsightsPanel from "../components/MenuItemInsightsPanel.jsx";
 import { formatMoney, getBaseMenuPrice, getConsumerDisplayPrice } from "../lib/pricingDisplay.js";
+import { getMenuItemImageUrl } from "../components/menu-templates/menuImageUtils.js";
+import { DISH_PHOTO_COVER_IMG_STYLE } from "../lib/dishPhotoDisplay.js";
 import {
   applyDocumentSocialMetadata,
   buildCanonicalMenuPath,
@@ -503,6 +505,7 @@ function ItemDetailSheet({
   const softBorder = brand?.accentBorder ?? "1px solid rgba(34,197,94,0.3)";
   const primaryGradient = `linear-gradient(180deg, ${accent} 0%, ${accentStrong} 100%)`;
   const { item, name, desc, price, hasDeal, indulgencePresentation, canNavigate } = sheetData;
+  const itemPhotoUrl = getMenuItemImageUrl(item);
   const nutritionChip = item?.chips?.nutrition_chip || null;
   const hasItemInsightsContent = !!(
     itemHasInsightsData(item) ||
@@ -557,6 +560,27 @@ function ItemDetailSheet({
         </div>
 
         <div style={{ padding: "4px 20px 96px" }}>
+
+          {itemPhotoUrl ? (
+            <div
+              style={{
+                marginBottom: 14,
+                width: "100%",
+                maxHeight: 220,
+                aspectRatio: "4 / 3",
+                borderRadius: 16,
+                overflow: "hidden",
+                border: "1px solid rgba(255,255,255,0.08)",
+                background: "#0f1720",
+              }}
+            >
+              <img
+                src={itemPhotoUrl}
+                alt={`${name || "Dish"} photo`}
+                style={DISH_PHOTO_COVER_IMG_STYLE}
+              />
+            </div>
+          ) : null}
 
           {/* Name + badges */}
           <div style={{ marginBottom: 6 }}>

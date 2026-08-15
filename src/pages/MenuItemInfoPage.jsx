@@ -1266,6 +1266,42 @@ export default function MenuItemInfoPage() {
               <div
                 style={{
                   display: "flex",
+                  alignItems: "flex-start",
+                  gap: isMobile ? 18 : 24,
+                }}
+              >
+                {showItemPhoto ? (
+                  <div
+                    data-testid="menu-item-info-photo"
+                    style={{
+                      flexShrink: 0,
+                      width: isMobile ? 101 : 129,
+                      height: isMobile ? 101 : 129,
+                      borderRadius: 16,
+                      overflow: "hidden",
+                      border: "1px solid var(--gb-color-border)",
+                      background: "var(--gb-color-page-warm)",
+                      minWidth: 0,
+                    }}
+                  >
+                    <img
+                      src={item.itemPhotoUrl}
+                      alt={`${displayItemName} photo`}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        maxWidth: "100%",
+                        maxHeight: "100%",
+                        objectFit: "cover",
+                        display: "block",
+                      }}
+                    />
+                  </div>
+                ) : null}
+                <div style={{ flex: "1 1 auto", minWidth: 0 }}>
+              <div
+                style={{
+                  display: "flex",
                   alignItems: "center",
                   gap: 12,
                   flexWrap: "wrap",
@@ -1329,37 +1365,12 @@ export default function MenuItemInfoPage() {
                   {item.badges.deal       ? <BadgePill tone="caution">{t("common.deals", "Deal")}</BadgePill> : null}
                 </div>
               )}
-
+                </div>
+              </div>
             </div>
           </div>
-
-          {showItemPhoto && isMobile ? (
-            <div style={{ minHeight: isMobile ? 280 : 100, borderRadius: 22, overflow: "hidden", border: "1px solid var(--gb-color-border)", background: "var(--gb-color-page-warm)" }}>
-              <img src={item.itemPhotoUrl} alt={`${displayItemName} photo`} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-            </div>
-          ) : null}
         </div>
       </Surface>
-
-      {showItemPhoto && !isMobile ? (
-        <Surface style={{ marginTop: 16, padding: 0, overflow: "hidden" }}>
-          <div
-            style={{
-              minHeight: 320,
-              borderRadius: 22,
-              overflow: "hidden",
-              border: "1px solid var(--gb-color-border)",
-              background: "var(--gb-color-page-warm)",
-            }}
-          >
-            <img
-              src={item.itemPhotoUrl}
-              alt={`${displayItemName} photo`}
-              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-            />
-          </div>
-        </Surface>
-      ) : null}
 
       {!isMobile ? (
         <StickyVerdictRail

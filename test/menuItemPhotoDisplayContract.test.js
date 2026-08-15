@@ -74,3 +74,40 @@ test("DEFAULT_MENU_THEME_SETTINGS enables Klaudette-style item thumbs", async ()
   assert.equal(DEFAULT_MENU_THEME_SETTINGS.item_image_style, "thumbnail");
   assert.equal(shouldShowItemImages(DEFAULT_MENU_THEME_SETTINGS), true);
 });
+
+test("MenuItemInfoPage uses compact sticky-hero dish thumb (no unbounded minHeight photo)", () => {
+  const info = fs.readFileSync(
+    path.join(root, "src/pages/MenuItemInfoPage.jsx"),
+    "utf8"
+  );
+  assert.match(info, /data-testid="menu-item-info-photo"/);
+  assert.match(info, /width:\s*isMobile\s*\?\s*101\s*:\s*129/);
+  assert.match(info, /maxWidth:\s*"100%"/);
+  assert.doesNotMatch(info, /showItemPhoto\s*&&\s*isMobile/);
+  assert.doesNotMatch(info, /minHeight:\s*isMobile\s*\?\s*280/);
+});
+
+test("dishPhotoDisplay exports cover clamp styles", () => {
+  const src = fs.readFileSync(
+    path.join(root, "src/lib/dishPhotoDisplay.js"),
+    "utf8"
+  );
+  assert.match(src, /DISH_PHOTO_COVER_IMG_STYLE/);
+  assert.match(src, /maxWidth:\s*"100%"/);
+  assert.match(src, /objectFit:\s*"cover"/);
+});
+
+test("menu item sheets clamp dish photos when present", () => {
+  const publicMenu = fs.readFileSync(
+    path.join(root, "src/pages/PublicMenuPage.jsx"),
+    "utf8"
+  );
+  const catalogSheet = fs.readFileSync(
+    path.join(root, "src/components/menuCatalog/CatalogItemDetailSheet.jsx"),
+    "utf8"
+  );
+  assert.match(publicMenu, /DISH_PHOTO_COVER_IMG_STYLE/);
+  assert.match(publicMenu, /aspectRatio:\s*"4 \/ 3"/);
+  assert.match(catalogSheet, /DISH_PHOTO_COVER_IMG_STYLE/);
+  assert.match(catalogSheet, /aspectRatio:\s*"4 \/ 3"/);
+});

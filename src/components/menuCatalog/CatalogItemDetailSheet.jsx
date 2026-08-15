@@ -6,6 +6,8 @@ import { itemHasRequiredModifiers } from "../basket/modifierModel.js";
 import { itemHasInsightsData } from "../basket/ItemInsightsSheet.jsx";
 import { getConsumerDisplayPrice } from "../../lib/pricingDisplay.js";
 import { getCartItemState } from "../../lib/catalogMenuUtils.js";
+import { getMenuItemImageUrl } from "../menu-templates/menuImageUtils.js";
+import { DISH_PHOTO_COVER_IMG_STYLE } from "../../lib/dishPhotoDisplay.js";
 
 function Badge({ label, bg, color, border }) {
   return (
@@ -79,6 +81,7 @@ export default function CatalogItemDetailSheet({
   const softBorder = brand?.accentBorder ?? "1px solid rgba(34,197,94,0.3)";
   const primaryGradient = `linear-gradient(180deg, ${accent} 0%, ${accentStrong} 100%)`;
   const { item, name, desc, price, hasDeal, indulgencePresentation, canNavigate } = sheetData;
+  const itemPhotoUrl = getMenuItemImageUrl(item);
   const nutritionChip = item?.chips?.nutrition_chip || null;
   const hasItemInsightsContent = !!(
     itemHasInsightsData(item) ||
@@ -132,6 +135,26 @@ export default function CatalogItemDetailSheet({
         </div>
 
         <div style={{ padding: "4px 20px 96px" }}>
+          {itemPhotoUrl ? (
+            <div
+              style={{
+                marginBottom: 14,
+                width: "100%",
+                maxHeight: 220,
+                aspectRatio: "4 / 3",
+                borderRadius: 16,
+                overflow: "hidden",
+                border: "1px solid rgba(255,255,255,0.08)",
+                background: "#0f1720",
+              }}
+            >
+              <img
+                src={itemPhotoUrl}
+                alt={`${name || "Dish"} photo`}
+                style={DISH_PHOTO_COVER_IMG_STYLE}
+              />
+            </div>
+          ) : null}
           <div style={{ marginBottom: 6 }}>
             <div style={{ fontSize: 21, fontWeight: 900, color: "#FFFFFF", lineHeight: 1.2 }}>{name}</div>
             {(hasDeal || item?.is_vegan || item?.is_gluten_free) && (

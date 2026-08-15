@@ -516,7 +516,19 @@ export function MenuDesignHeroSlot({ heroImageUrl, isStock = false, style, imgSt
     if (!heroImageUrl) return children || null;
     return children || (
       <div style={style}>
-        <img src={heroImageUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", ...imgStyle }} />
+        <img
+          src={heroImageUrl}
+          alt=""
+          style={{
+            width: "100%",
+            height: "100%",
+            maxWidth: "100%",
+            maxHeight: "100%",
+            objectFit: "cover",
+            display: "block",
+            ...imgStyle,
+          }}
+        />
       </div>
     );
   }
@@ -544,7 +556,15 @@ export function MenuDesignHeroSlot({ heroImageUrl, isStock = false, style, imgSt
         <img
           src={visibleUrl}
           alt=""
-          style={{ width: "100%", height: "100%", objectFit, display: "block", ...imgStyle }}
+          style={{
+            width: "100%",
+            height: "100%",
+            maxWidth: "100%",
+            maxHeight: "100%",
+            objectFit,
+            display: "block",
+            ...imgStyle,
+          }}
         />
       ) : (
         <div style={{ width: "100%", height: "100%", minHeight: 120, background: "rgba(148,163,184,0.2)" }} />
@@ -584,6 +604,8 @@ export function MenuDesignSectionSlot({
           style={{
             width: "100%",
             height: resolvedHeight ?? "100%",
+            maxWidth: "100%",
+            maxHeight: "100%",
             objectFit: "cover",
             display: "block",
             ...imgStyle,
@@ -625,6 +647,8 @@ export function MenuDesignSectionSlot({
           style={{
             width: "100%",
             height: resolvedHeight ?? "100%",
+            maxWidth: "100%",
+            maxHeight: "100%",
             objectFit,
             display: "block",
             ...imgStyle,
