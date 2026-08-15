@@ -401,6 +401,15 @@ export default function ConsumerProfile() {
           </Link>
         </Section>
 
+        <Section title="Dining Crews">
+          <p style={styles.sectionDesc}>
+            Who wants to eat? Create a small crew, invite people, and start a meal conversation.
+          </p>
+          <Link to="/account/dining-crews" style={styles.followingLink}>
+            Open Dining Crews
+          </Link>
+        </Section>
+
         <Section title="Connections">
           <p style={styles.sectionDesc}>
             People you interact with through Menuply meals and invitations — not a Friend

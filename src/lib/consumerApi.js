@@ -82,6 +82,35 @@ export const declineConnection = (id) =>
 export const removeConnection = (id) =>
   del(`/api/consumer/connections/${encodeURIComponent(String(id))}`);
 
+// ── Dining Crews ──────────────────────────────────────────────────────────
+export const listDiningCrews = () => get("/api/consumer/dining-crews");
+export const createDiningCrew = (name) => post("/api/consumer/dining-crews", { name });
+export const getDiningCrew = (crewId) =>
+  get(`/api/consumer/dining-crews/${encodeURIComponent(String(crewId))}`);
+export const inviteToDiningCrew = (crewId, body = {}) =>
+  post(`/api/consumer/dining-crews/${encodeURIComponent(String(crewId))}/invitations`, body);
+export const getDiningCrewInvitation = (token) =>
+  get(`/api/consumer/dining-crews/invitations/${encodeURIComponent(String(token))}`);
+export const acceptDiningCrewInvitation = (token) =>
+  post(`/api/consumer/dining-crews/invitations/${encodeURIComponent(String(token))}/accept`, {});
+export const declineDiningCrewInvitation = (token) =>
+  post(`/api/consumer/dining-crews/invitations/${encodeURIComponent(String(token))}/decline`, {});
+export const listDiningCrewConversations = (crewId) =>
+  get(`/api/consumer/dining-crews/${encodeURIComponent(String(crewId))}/conversations`);
+export const startDiningCrewConversation = (crewId, title = null) =>
+  post(`/api/consumer/dining-crews/${encodeURIComponent(String(crewId))}/conversations`, {
+    title,
+  });
+export const listDiningCrewMessages = (conversationId) =>
+  get(
+    `/api/consumer/dining-crews/conversations/${encodeURIComponent(String(conversationId))}/messages`
+  );
+export const postDiningCrewMessage = (conversationId, body) =>
+  post(
+    `/api/consumer/dining-crews/conversations/${encodeURIComponent(String(conversationId))}/messages`,
+    body
+  );
+
 // ── Profile ───────────────────────────────────────────────────────────────
 export const getConsumerProfile    = ()     => get("/api/consumer/profile");
 export const updateConsumerProfile = (body) => put("/api/consumer/profile", body);
