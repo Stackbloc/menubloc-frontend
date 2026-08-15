@@ -62,6 +62,7 @@ import DiningCrewsPage, {
   DiningCrewInvitePage,
 } from "./pages/consumer/DiningCrewsPage.jsx";
 import ImEatingPage from "./pages/consumer/ImEatingPage.jsx";
+import SocialOnboardingPage from "./pages/consumer/SocialOnboardingPage.jsx";
 import ConsumerOrderFeedbackPage from "./pages/consumer/ConsumerOrderFeedbackPage.jsx";
 import ProviderApp from "./pages/provider/ProviderApp.jsx";
 import AccountWelcome from "./pages/consumer/AccountWelcome.jsx";
@@ -889,6 +890,7 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
         <Route path="/account/edu-verify" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <ConsumerEduVerify />} />
         <Route path="/account" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ConsumerProfile />} />
         <Route path="/account/welcome" element={crmHost ? <HostRouteRedirect to="/crm" /> : <AccountWelcome />} />
+        <Route path="/account/social-onboarding" element={crmHost ? <HostRouteRedirect to="/crm" /> : <SocialOnboardingPage />} />
         <Route path="/account/following" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ConsumerFollowing />} />
         <Route path="/account/connections" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ConsumerConnections />} />
         <Route path="/account/dining-crews" element={crmHost ? <HostRouteRedirect to="/crm" /> : <DiningCrewsPage />} />

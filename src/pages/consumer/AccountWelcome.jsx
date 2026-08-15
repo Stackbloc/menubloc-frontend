@@ -59,7 +59,11 @@ const HOME_REDIRECT_MS = 3200;
 export default function AccountWelcome() {
   const navigate = useNavigate();
   const location = useLocation();
-  const redirectTo = location.state?.redirectTo || "/";
+  // After dietary welcome, introduce social activation unless a deep-link redirect was set.
+  const redirectTo =
+    location.state?.redirectTo && location.state.redirectTo !== "/"
+      ? location.state.redirectTo
+      : "/account/social-onboarding";
 
   const [zip, setZip] = useState("");
   const [zipError, setZipError] = useState("");
@@ -148,7 +152,8 @@ export default function AccountWelcome() {
             Your account is all set up. You can add additional preferences using the Waiter.
           </p>
           <p style={{ ...BODY_COPY, marginBottom: 28 }}>
-            We are taking you to the home screen.
+            Next we&apos;ll ask a few optional questions about who you eat with — you can skip any
+            step.
           </p>
           <div
             style={{

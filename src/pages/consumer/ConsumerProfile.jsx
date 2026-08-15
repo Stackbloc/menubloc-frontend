@@ -410,6 +410,16 @@ export default function ConsumerProfile() {
           </Link>
         </Section>
 
+        <Section title="Getting started">
+          <p style={styles.sectionDesc}>
+            Optional guided intro: Dining Crew, meeting people around food, What People Are Eating,
+            and Waiter. Every step is skippable.
+          </p>
+          <Link to="/account/social-onboarding" style={styles.followingLink}>
+            Who do you eat with?
+          </Link>
+        </Section>
+
         <Section title="Dining Crews">
           <p style={styles.sectionDesc}>
             Who wants to eat? Create a small crew, invite people, and start a meal conversation.

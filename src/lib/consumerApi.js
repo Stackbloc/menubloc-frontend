@@ -130,6 +130,10 @@ export const createImEating = (body) => post("/api/consumer/food-activity", body
 export const deleteMyFoodActivity = (id) =>
   del(`/api/consumer/food-activity/${encodeURIComponent(String(id))}`);
 
+export const getSocialOnboarding = () => get("/api/consumer/social-onboarding");
+export const putSocialOnboarding = (onboarding) =>
+  put("/api/consumer/social-onboarding", { onboarding });
+
 // ── Profile ───────────────────────────────────────────────────────────────
 export const getConsumerProfile    = ()     => get("/api/consumer/profile");
 export const updateConsumerProfile = (body) => put("/api/consumer/profile", body);
