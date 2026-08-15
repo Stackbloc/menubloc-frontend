@@ -20,7 +20,7 @@ import {
   waitForBillboardSplashImage,
   resolveSplashDurationMs,
 } from "../../lib/claimedRestaurantBillboardSplash.js";
-import { resolveBillboardImageObjectPosition } from "../../lib/billboardImageObjectPosition.js";
+import { resolveBillboardDisplayImageUrl, resolveBillboardImageObjectPosition } from "../../lib/billboardImageObjectPosition.js";
 
 export {
   CLAIMED_BILLBOARD_SPLASH_MS,
@@ -89,7 +89,8 @@ export default function ClaimedRestaurantBillboardSplash({
   })();
   const [index, setIndex] = useState(0);
   const current = slideList[Math.min(index, Math.max(0, slideList.length - 1))] || null;
-  const imageUrl = String(current?.image_url || current?.photo_url || "").trim();
+  const rawImageUrl = String(current?.image_url || current?.photo_url || "").trim();
+  const imageUrl = resolveBillboardDisplayImageUrl(rawImageUrl || current, { narrow: isNarrow });
   const headline = String(current?.headline_override || current?.title || "").trim();
   const sub = String(current?.subheadline_override || "").trim();
   const alt = String(current?.image_alt_text || headline || displayName).trim();
@@ -100,7 +101,7 @@ export default function ClaimedRestaurantBillboardSplash({
   const imageFit = ["cover", "contain", "fill"].includes(imageFitRaw)
     ? (imageFitRaw === "contain" ? "cover" : imageFitRaw)
     : "cover";
-  const imageObjectPosition = resolveBillboardImageObjectPosition(current);
+  const imageObjectPosition = resolveBillboardImageObjectPosition(current, { narrow: isNarrow });
   const ariaLabel = [displayName, headline].filter(Boolean).join(". ");
   const dismissedRef = useRef(false);
   const imageRef = useRef(null);

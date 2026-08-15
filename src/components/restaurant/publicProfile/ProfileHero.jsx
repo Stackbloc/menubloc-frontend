@@ -24,6 +24,10 @@ import {
 } from "./profilePrimitives.jsx";
 import IconHoverLabel from "../../IconHoverLabel.jsx";
 import { formatWebsiteHostLabel } from "../../../lib/formatWebsiteHostLabel.js";
+import {
+  resolveBillboardDisplayImageUrl,
+  resolveBillboardImageObjectPosition,
+} from "../../../lib/billboardImageObjectPosition.js";
 
 function HeroIconButton({ href, onClick, label, testId, children, as: As = "a" }) {
   const style = ghostIconStyle(true);
@@ -123,7 +127,13 @@ export default function ProfileHero({
   void showClaimInvites;
 
   const maxW = contentMax ?? PROFILE_CONTENT_MAX;
-  const hasPhoto = Boolean(bannerPhotoUrl);
+  const resolvedBannerUrl = resolveBillboardDisplayImageUrl(bannerPhotoUrl, {
+    narrow: isMobile,
+  });
+  const hasPhoto = Boolean(resolvedBannerUrl);
+  const bannerObjectPosition = resolveBillboardImageObjectPosition(bannerPhotoUrl, {
+    narrow: isMobile,
+  });
   const onPhoto = true;
   const ink = "#fafaf9";
   const muted = "rgba(250,250,249,0.88)";
@@ -659,10 +669,10 @@ export default function ProfileHero({
         minHeight: isMobile ? 260 : 340,
         backgroundColor: "#e7e5e4",
         backgroundImage: `linear-gradient(to top, rgba(28,25,23,0.78) 0%, rgba(28,25,23,0.28) 48%, transparent 72%), url(${JSON.stringify(
-          String(bannerPhotoUrl)
+          String(resolvedBannerUrl)
         )})`,
         backgroundSize: "cover",
-        backgroundPosition: "center",
+        backgroundPosition: bannerObjectPosition,
       }
     : {
         position: "relative",

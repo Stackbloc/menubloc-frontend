@@ -3,7 +3,10 @@ import test from "node:test";
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { resolveBillboardImageObjectPosition } from "../src/lib/billboardImageObjectPosition.js";
+import {
+  resolveBillboardDisplayImageUrl,
+  resolveBillboardImageObjectPosition,
+} from "../src/lib/billboardImageObjectPosition.js";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -11,17 +14,20 @@ function read(rel) {
   return readFileSync(join(root, rel), "utf8");
 }
 
+const LANDSCAPE = "https://menuply.com/billboards/in-n-out-building.jpg";
+const SPLASH = "https://menuply.com/billboards/in-n-out-building-splash.jpg";
+
 test("In-N-Out building crops keep the neon logo in frame", () => {
   assert.equal(
-    resolveBillboardImageObjectPosition({
-      image_url: "https://menuply.com/billboards/in-n-out-building.jpg",
-    }),
+    resolveBillboardImageObjectPosition({ image_url: LANDSCAPE }),
     "left center"
   );
   assert.equal(
-    resolveBillboardImageObjectPosition({
-      image_url: "https://menuply.com/billboards/in-n-out-building-splash.jpg",
-    }),
+    resolveBillboardImageObjectPosition({ image_url: LANDSCAPE }, { narrow: true }),
+    "center top"
+  );
+  assert.equal(
+    resolveBillboardImageObjectPosition({ image_url: SPLASH }),
     "center top"
   );
   assert.equal(
@@ -39,12 +45,32 @@ test("In-N-Out building crops keep the neon logo in frame", () => {
   );
 
   const splash = read("src/components/restaurant/ClaimedRestaurantBillboardSplash.jsx");
+  assert.match(splash, /resolveBillboardDisplayImageUrl/);
   assert.match(splash, /resolveBillboardImageObjectPosition/);
   assert.match(splash, /objectPosition: imageObjectPosition/);
+  assert.match(splash, /narrow:\s*isNarrow/);
 
   const windows = read("src/components/restaurant/publicProfile/ProfileBillboardBlock.jsx");
   assert.match(windows, /resolveBillboardImageObjectPosition/);
+  assert.match(windows, /narrow:\s*isMobile/);
+
+  const hero = read("src/components/restaurant/publicProfile/ProfileHero.jsx");
+  assert.match(hero, /resolveBillboardDisplayImageUrl/);
+  assert.match(hero, /backgroundPosition: bannerObjectPosition/);
 
   const page = read("src/pages/RestaurantPublicPage.jsx");
   assert.match(page, /data\?\.hero_image_url[\s\S]*firstBillboardImage/);
+});
+
+test("narrow viewports swap In-N-Out landscape building to portrait splash", () => {
+  assert.equal(resolveBillboardDisplayImageUrl(LANDSCAPE, { narrow: false }), LANDSCAPE);
+  assert.equal(resolveBillboardDisplayImageUrl(LANDSCAPE, { narrow: true }), SPLASH);
+  assert.equal(resolveBillboardDisplayImageUrl(SPLASH, { narrow: true }), SPLASH);
+  assert.equal(
+    resolveBillboardDisplayImageUrl(
+      "https://menuply.com/billboards/klaudettes-kitchen-banner.jpg",
+      { narrow: true }
+    ),
+    "https://menuply.com/billboards/klaudettes-kitchen-banner.jpg"
+  );
 });

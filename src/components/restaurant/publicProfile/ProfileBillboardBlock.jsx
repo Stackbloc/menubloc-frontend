@@ -8,15 +8,19 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { pickWindowsPosts } from "../../../lib/profileWindows.js";
-import { resolveBillboardImageObjectPosition } from "../../../lib/billboardImageObjectPosition.js";
+import {
+  resolveBillboardDisplayImageUrl,
+  resolveBillboardImageObjectPosition,
+} from "../../../lib/billboardImageObjectPosition.js";
 import {
   normalizeWindowsPhotoOrientation,
   windowsFrameAspectRatio,
 } from "../../../lib/windowsPhotoOrientation.js";
 import { PROFILE_INK, profileCardBorderVar } from "./profilePrimitives.jsx";
 
-function postImage(post) {
-  return String(post?.image_url || post?.photo_url || "").trim();
+function postImage(post, { narrow = false } = {}) {
+  const raw = String(post?.image_url || post?.photo_url || "").trim();
+  return resolveBillboardDisplayImageUrl(raw || post, { narrow });
 }
 
 export default function ProfileBillboardBlock({
@@ -34,7 +38,7 @@ export default function ProfileBillboardBlock({
 
   useEffect(() => {
     setLightboxIndex(null);
-  }, [posts.map((p) => p?.id || postImage(p)).join("|")]);
+  }, [posts.map((p) => p?.id || postImage(p, { narrow: isMobile })).join("|"), isMobile]);
 
   useEffect(() => {
     if (lightboxIndex == null) return undefined;
@@ -57,9 +61,9 @@ export default function ProfileBillboardBlock({
     lightboxIndex != null && lightboxIndex >= 0 && lightboxIndex < posts.length
       ? posts[lightboxIndex]
       : null;
-  const lightboxImg = lightboxPost ? postImage(lightboxPost) : "";
+  const lightboxImg = lightboxPost ? postImage(lightboxPost, { narrow: isMobile }) : "";
   const lightboxObjectPosition = lightboxPost
-    ? resolveBillboardImageObjectPosition(lightboxPost)
+    ? resolveBillboardImageObjectPosition(lightboxPost, { narrow: isMobile })
     : "center";
 
   const lightbox =
@@ -159,8 +163,10 @@ export default function ProfileBillboardBlock({
         }}
       >
         {posts.map((post, i) => {
-          const img = postImage(post);
-          const imageObjectPosition = resolveBillboardImageObjectPosition(post);
+          const img = postImage(post, { narrow: isMobile });
+          const imageObjectPosition = resolveBillboardImageObjectPosition(post, {
+            narrow: isMobile,
+          });
           return (
             <button
               key={post?.id || img || i}
