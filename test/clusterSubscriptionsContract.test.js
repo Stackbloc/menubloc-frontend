@@ -18,15 +18,16 @@ test("Cluster subscriptions UI + report feed (Waiter wired)", () => {
 
   const btn = read("src/components/cluster/ClusterSubscribeButton.jsx");
   assert.match(btn, /cluster-subscribe-toggle/);
-  assert.match(btn, /Follow cluster/);
+  assert.match(btn, /Follow for Waiter|Waiter is monitoring/);
 
   const page = read("src/pages/consumer/ClusterSubscriptionsPage.jsx");
-  assert.match(page, /Cluster food report|Food report/);
+  assert.match(page, /public Cluster Feed|My Waiter clusters/);
   assert.match(page, /cluster-report-item/);
-  assert.match(page, /selected clusters/);
+  assert.match(page, /selected clusters|Your clusters/);
 
   const clusterPage = read("src/pages/ClusterPage.jsx");
   assert.match(clusterPage, /ClusterSubscribeButton/);
+  assert.match(clusterPage, /ClusterPublicFeed/);
 
   const app = read("src/App.jsx");
   assert.match(app, /\/account\/cluster-subscriptions/);

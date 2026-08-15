@@ -60,8 +60,8 @@ export default function CampusDiningSection({ cluster }) {
     >
       <div style={styles.sectionTitle}>Campus Dining</div>
       <p style={styles.lead}>
-        Where students eat on campus — diner comments and shared food activity, even without a
-        full menu.
+        Where students eat on campus — report lines, vibe, and what&apos;s tasting good. Menuply does
+        not track dining-hall menus here.
       </p>
 
       {loading ? <p style={styles.muted}>Loading campus dining…</p> : null}
@@ -97,7 +97,9 @@ export default function CampusDiningSection({ cluster }) {
                 restaurantSlug={loc.slug}
                 restaurantCity={loc.city}
                 restaurantState={loc.state}
+                restaurantName={loc.name || ""}
                 compact
+                experienceMode
               />
             </article>
           ))

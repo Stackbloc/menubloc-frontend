@@ -180,7 +180,7 @@ export default function FoodInterestsPage() {
   const subheading = (() => {
     if (subscriptionCount > 0 && clusterNames.length) {
       const more = subscriptionCount > clusterNames.length ? ` +${subscriptionCount - clusterNames.length}` : "";
-      return `Food report for ${clusterNames.join(", ")}${more}.`;
+      return `Waiter report from ${clusterNames.join(", ")}${more} public feeds.`;
     }
     if (locationLabel) return `Food picks for ${locationLabel}.`;
     return "Your local food market intelligence.";
@@ -216,7 +216,7 @@ export default function FoodInterestsPage() {
           ) : (
             <div style={{ marginTop: 12, fontSize: 12 }}>
               <Link to="/account/cluster-subscriptions" style={{ color: "#86EFAC", fontWeight: 700, textDecoration: "none" }}>
-                Manage followed clusters
+                Manage Waiter clusters
               </Link>
             </div>
           )}

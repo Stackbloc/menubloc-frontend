@@ -67,12 +67,12 @@ export default function ClusterSubscriptionsPage() {
 
   return (
     <>
-      <StickyPageHeader title="Cluster food report" />
+      <StickyPageHeader title="My Waiter clusters" />
       <div style={styles.page}>
         <p style={styles.lead}>
-          Follow clusters (UCLA, LA Live, stadiums, neighborhoods) to get a food intelligence
-          report — diner statuses, what people are eating, deals, and new places. This is not a
-          generic social feed.
+          Choose which clusters Waiter monitors. Waiter reports from each cluster&apos;s{" "}
+          <strong>public Cluster Feed</strong> — it does not create a separate activity stream.
+          Anyone can still open a cluster and read its public feed without following.
         </p>
         {error ? <p style={styles.error}>{error}</p> : null}
 

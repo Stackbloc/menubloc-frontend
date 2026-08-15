@@ -492,15 +492,19 @@ export default function RestaurantPublicPage() {
       })
     : null;
 
-  const menuHref =
-    (typeof menuPreview?.menu_url === "string" && menuPreview.menu_url.trim()) ||
-    restaurantMenuPathFromRow({
-      slug: data?.slug || resolvedSlug,
-      city,
-      state: stateVal,
-      id: data?.id,
-    }) ||
-    (data?.id ? `/public/restaurants/${data.id}/menu` : null);
+  const isDiningHall =
+    normalizeFoodTruckToken(data?.restaurant_type || data?.entity_type) === "dining_hall";
+
+  const menuHref = isDiningHall
+    ? null
+    : (typeof menuPreview?.menu_url === "string" && menuPreview.menu_url.trim()) ||
+      restaurantMenuPathFromRow({
+        slug: data?.slug || resolvedSlug,
+        city,
+        state: stateVal,
+        id: data?.id,
+      }) ||
+      (data?.id ? `/public/restaurants/${data.id}/menu` : null);
 
   const aboutText =
     getLocalizedField(data, "about_us", language) ||

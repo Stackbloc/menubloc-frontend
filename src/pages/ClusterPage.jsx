@@ -60,6 +60,7 @@ import ChipRail from "../components/chips/ChipRail.jsx";
 import WhatPeopleAreEating from "../components/cluster/WhatPeopleAreEating.jsx";
 import CampusDiningSection from "../components/cluster/CampusDiningSection.jsx";
 import ClusterSubscribeButton from "../components/cluster/ClusterSubscribeButton.jsx";
+import ClusterPublicFeed from "../components/cluster/ClusterPublicFeed.jsx";
 
 const CANONICAL_BASE = "https://menuply.com";
 const CLUSTER_VIEW_MODES = Object.freeze({
@@ -1276,6 +1277,9 @@ export default function ClusterPage() {
           <ClusterSubscribeButton clusterId={cluster.id} clusterName={cluster.name || pageHeading} />
         ) : null}
       </header>
+
+      {/* Public Cluster Feed — no subscription required (Phase 6). Not Waiter. */}
+      {cluster.slug ? <ClusterPublicFeed cluster={cluster} /> : null}
 
       {/* Public discovery — available without sign-in (Social Engine Phase 7). */}
       {cluster.id ? (

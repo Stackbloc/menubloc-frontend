@@ -230,7 +230,7 @@ export default function PublicProfileShell({
         bannerPhotoUrl={bannerPhotoUrl}
         statusLightProps={statusLightProps}
         restaurantId={restaurantId}
-        menuHref={menuHref}
+        menuHref={isDiningHall ? null : menuHref}
         shareData={shareData}
         shareAnalytics={shareAnalytics}
         followSource={
@@ -242,7 +242,7 @@ export default function PublicProfileShell({
         }
         viewMenuTestId={
           isDiningHall
-            ? "dining-hall-view-menu"
+            ? "dining-hall-no-view-menu"
             : isFoodTruck
               ? "food-truck-view-menu"
               : "restaurant-profile-view-menu"
@@ -277,9 +277,10 @@ export default function PublicProfileShell({
       >
         {isDiningHall ? (
           <ProfileSection title="Campus dining" testId="dining-hall-campus-note">
-            Dining halls are campus facilities. Menuply shows available campus dining information —
-            menus appear when published. These profiles are not restaurant businesses and cannot be
-            claimed by restaurant owners.
+            Dining halls are campus facilities — not restaurant businesses Menuply sells menus for.
+            Share what it&apos;s like on campus today (lines, vibe, what&apos;s tasting good). Menuply
+            does not track dining-hall menus here; these profiles cannot be claimed by restaurant
+            owners.
           </ProfileSection>
         ) : null}
 
@@ -323,20 +324,26 @@ export default function PublicProfileShell({
           windowsPhotoOrientation={resolvedWindowsOrientation}
         />
 
-        <ProfileFavoriteMenuItems
-          items={favorites}
-          isMobile={isMobile}
-          showClaimInvites={allowClaimInvites}
-        />
+        {isDiningHall ? null : (
+          <ProfileFavoriteMenuItems
+            items={favorites}
+            isMobile={isMobile}
+            showClaimInvites={allowClaimInvites}
+          />
+        )}
 
-        <ProfileDealsSection
-          dealItems={deals}
-          restaurantId={restaurantId}
-          isMobile={isMobile}
-          showClaimInvites={allowClaimInvites}
-        />
+        {isDiningHall ? null : (
+          <ProfileDealsSection
+            dealItems={deals}
+            restaurantId={restaurantId}
+            isMobile={isMobile}
+            showClaimInvites={allowClaimInvites}
+          />
+        )}
 
-        <ProfileUpdates updates={updates} isMobile={isMobile} showClaimInvites={allowClaimInvites} />
+        {isDiningHall ? null : (
+          <ProfileUpdates updates={updates} isMobile={isMobile} showClaimInvites={allowClaimInvites} />
+        )}
 
         {restaurantId ? (
           <WhatDinersAreSaying
@@ -345,8 +352,9 @@ export default function PublicProfileShell({
             restaurantCity={restaurantCity}
             restaurantState={restaurantState}
             restaurantName={name || ""}
-            menuPreviewItems={previewForComments}
+            menuPreviewItems={isDiningHall ? null : previewForComments}
             compact={isMobile}
+            experienceMode={isDiningHall}
           />
         ) : null}
 

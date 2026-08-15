@@ -72,6 +72,19 @@ export async function fetchClusterCampusDining(clusterSlug, { limit = 24, signal
   return apiGet(path, { signal });
 }
 
+/**
+ * Public Cluster Feed — no auth, no subscription required.
+ * Same underlying activity Waiter personalizes for followed clusters.
+ */
+export async function fetchClusterPublicFeed(clusterSlug, { hours = 72, limit = 24, signal } = {}) {
+  const params = new URLSearchParams();
+  if (hours != null) params.set("hours", String(hours));
+  if (limit != null) params.set("limit", String(limit));
+  const qs = params.toString();
+  const path = `/public/clusters/${encodeURIComponent(clusterSlug)}/feed${qs ? `?${qs}` : ""}`;
+  return apiGet(path, { signal });
+}
+
 export async function fetchClusterMenuItems(
   clusterSlug,
   { limit = 40, offset = 0, summary = false, mksCategory = null, drinkCategory = null, signal } = {}

@@ -54,6 +54,7 @@ export default function DinerStatusFeed({
   showComposer = true,
   compact = false,
   title = "Diner statuses",
+  experienceMode = false,
 }) {
   const [statuses, setStatuses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -93,12 +94,16 @@ export default function DinerStatusFeed({
     >
       <div style={styles.sectionTitle}>{title}</div>
       <p style={styles.disclaimer}>
-        Quick diner signals — not star ratings or verified reviews.
+        {experienceMode
+          ? "Campus experience signals — lines, vibe, what's tasting good. Not menus or star ratings."
+          : "Quick diner signals — not star ratings or verified reviews."}
       </p>
       {loading ? <p style={styles.muted}>Loading statuses…</p> : null}
       {!loading && statuses.length === 0 ? (
         <p style={styles.muted} data-testid="diner-status-empty">
-          No diner statuses here yet.
+          {experienceMode
+            ? "No dining hall updates yet. Be the first to report how it is today."
+            : "No diner statuses here yet."}
         </p>
       ) : null}
       {!loading && statuses.length > 0 ? (
@@ -111,10 +116,11 @@ export default function DinerStatusFeed({
       {showComposer && restaurantId ? (
         <DinerStatusComposer
           restaurantId={restaurantId}
-          menuItemId={menuItemId}
+          menuItemId={experienceMode ? null : menuItemId}
           restaurantName={restaurantName}
-          menuItemName={menuItemName}
+          menuItemName={experienceMode ? null : menuItemName}
           compact={compact}
+          experienceMode={experienceMode}
           onPosted={() => load()}
         />
       ) : null}

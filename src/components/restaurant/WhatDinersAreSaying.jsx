@@ -73,6 +73,8 @@ export default function WhatDinersAreSaying({
   restaurantName = "",
   menuPreviewItems = null,
   compact = false,
+  /** Dining halls: experience reports only — no menu framing. */
+  experienceMode = false,
 }) {
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -127,9 +129,13 @@ export default function WhatDinersAreSaying({
           padding: compact ? "14px 14px" : "16px 16px",
         })}
       >
-        <div style={styles.sectionTitle}>What Diners Are Saying</div>
+        <div style={styles.sectionTitle}>
+          {experienceMode ? "Dining hall experiences" : "What Diners Are Saying"}
+        </div>
         <p style={styles.disclaimer}>
-          User-reported food activity — Menuply does not verify purchases.
+          {experienceMode
+            ? "Diner-reported campus experiences (lines, vibe, what's good today). Menuply does not track dining-hall menus here."
+            : "User-reported food activity — Menuply does not verify purchases."}
         </p>
 
         <DinerStatusFeed
@@ -137,23 +143,24 @@ export default function WhatDinersAreSaying({
           restaurantName={restaurantName}
           showComposer
           compact={compact}
-          title="Diner statuses"
+          experienceMode={experienceMode}
+          title={experienceMode ? "Campus updates" : "Diner statuses"}
         />
 
-        {loading ? <p style={styles.muted}>Loading activity…</p> : null}
-        {error ? (
+        {experienceMode ? null : loading ? <p style={styles.muted}>Loading activity…</p> : null}
+        {experienceMode ? null : error ? (
           <p style={styles.error} role="alert">
             {error}
           </p>
         ) : null}
 
-        {!loading && activities.length === 0 ? (
+        {experienceMode ? null : !loading && activities.length === 0 ? (
           <p style={styles.muted} data-testid="diners-saying-empty">
             No one has shared what they&apos;re eating here yet.
           </p>
         ) : null}
 
-        {!loading && activities.length > 0 ? (
+        {experienceMode ? null : !loading && activities.length > 0 ? (
           <div style={styles.list} data-testid="diners-saying-list">
             {activities.map((a) => (
               <ActivityCard key={a.id} activity={a} />
@@ -167,7 +174,7 @@ export default function WhatDinersAreSaying({
             restaurantSlug={restaurantSlug}
             restaurantCity={restaurantCity}
             restaurantState={restaurantState}
-            menuPreviewItems={menuPreviewItems}
+            menuPreviewItems={experienceMode ? null : menuPreviewItems}
             showFeaturedFirst
             hideTitle
             embedded

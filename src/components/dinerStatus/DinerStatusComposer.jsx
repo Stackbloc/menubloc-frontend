@@ -12,6 +12,15 @@ const EXPRESSIONS = [
   { key: "mind_blown", emoji: "🤯", label: "Mind-blown" },
   { key: "love", emoji: "❤️", label: "Love" },
   { key: "worth_trying", emoji: "✨", label: "Worth trying" },
+  { key: "busy", emoji: "⏳", label: "Busy" },
+];
+
+const EXPERIENCE_EXPRESSIONS = [
+  { key: "busy", emoji: "⏳", label: "Busy" },
+  { key: "fire", emoji: "🔥", label: "Fire" },
+  { key: "love", emoji: "❤️", label: "Love" },
+  { key: "worth_trying", emoji: "✨", label: "Worth trying" },
+  { key: "mind_blown", emoji: "🤯", label: "Mind-blown" },
 ];
 
 export default function DinerStatusComposer({
@@ -21,9 +30,11 @@ export default function DinerStatusComposer({
   menuItemName = null,
   onPosted = null,
   compact = false,
+  /** Dining halls: experience reports only (lines, vibe) — not dish menus. */
+  experienceMode = false,
 }) {
   const { isAuthenticated } = useConsumer();
-  const [expression, setExpression] = useState("fire");
+  const [expression, setExpression] = useState(experienceMode ? "busy" : "fire");
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -40,7 +51,8 @@ export default function DinerStatusComposer({
     try {
       const data = await createDinerStatus({
         restaurant_id: restaurantId,
-        menu_item_id: menuItemId || undefined,
+        // Dining halls never attach menu items — experience is place-level.
+        menu_item_id: experienceMode ? undefined : menuItemId || undefined,
         expression,
         status_text: text.trim() || undefined,
         visibility: "public",
@@ -55,20 +67,31 @@ export default function DinerStatusComposer({
     }
   }
 
-  const target = menuItemName || restaurantName || "this place";
+  const target = experienceMode
+    ? restaurantName || "this dining hall"
+    : menuItemName || restaurantName || "this place";
+  const expressionOptions = experienceMode ? EXPERIENCE_EXPRESSIONS : EXPRESSIONS;
+  const placeholder = experienceMode
+    ? "Optional note (e.g. Long lines today, pizza is good)"
+    : "Optional note (e.g. The chicken sandwich)";
 
   return (
     <div
       data-testid="diner-status-composer"
+      data-experience-mode={experienceMode ? "true" : "false"}
       style={{
         marginTop: compact ? 8 : 12,
         padding: compact ? "10px 0 0" : "12px 0 0",
         borderTop: "1px solid #e7e5e4",
       }}
     >
-      <div style={styles.title}>Quick diner status</div>
+      <div style={styles.title}>
+        {experienceMode ? "Dining hall update" : "Quick diner status"}
+      </div>
       <p style={styles.hint}>
-        Not a star rating — just a fast signal about {target}.
+        {experienceMode
+          ? `Not a rating or menu — a fast campus signal about ${target}.`
+          : `Not a star rating — just a fast signal about ${target}.`}
       </p>
       {!isAuthenticated ? (
         <p style={styles.hint}>
@@ -80,7 +103,7 @@ export default function DinerStatusComposer({
       ) : (
         <form onSubmit={handleSubmit} style={styles.form}>
           <div style={styles.emojiRow} role="group" aria-label="Status expression">
-            {EXPRESSIONS.map((opt) => (
+            {expressionOptions.map((opt) => (
               <button
                 key={opt.key}
                 type="button"
@@ -102,7 +125,7 @@ export default function DinerStatusComposer({
             value={text}
             onChange={(e) => setText(e.target.value)}
             maxLength={200}
-            placeholder="Optional note (e.g. The chicken sandwich)"
+            placeholder={placeholder}
             disabled={busy}
           />
           <button type="submit" style={styles.primaryBtn} disabled={busy}>
