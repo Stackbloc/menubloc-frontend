@@ -41,6 +41,8 @@ import {
 } from "../lib/clusterZoneBrowse.js";
 import "../styles/clusterCoachellaTheme.css";
 import "../styles/clusterLaLiveTheme.css";
+import "../styles/clusterUscTheme.css";
+import "../styles/clusterUclaTheme.css";
 import {
   buildClusterReturnPath,
   buildClusterRestaurantsReturnPath,
@@ -1219,13 +1221,20 @@ export default function ClusterPage() {
     </>
   );
 
-  const isCoachella2027 = String(cluster.slug || "").toLowerCase() === "coachella-2027";
-  const isLaLive = String(cluster.slug || "").toLowerCase() === "la-live";
+  const clusterSlug = String(cluster.slug || "").toLowerCase();
+  const isCoachella2027 = clusterSlug === "coachella-2027";
+  const isLaLive = clusterSlug === "la-live";
+  const isUsc = clusterSlug === "usc";
+  const isUcla = clusterSlug === "ucla";
   const themeClass = isCoachella2027
     ? "cluster-theme-coachella-2027"
     : isLaLive
       ? "cluster-theme-la-live"
-      : undefined;
+      : isUsc
+        ? "cluster-theme-usc"
+        : isUcla
+          ? "cluster-theme-ucla"
+          : undefined;
 
   return (
     <div
@@ -1256,6 +1265,26 @@ export default function ClusterPage() {
             <p className="cluster-lalive-sub">
               Browse restaurants, menus, and drinks around Crypto.com Arena, Peacock Theater, and the
               Figueroa corridor — before the tip-off, show, or night out.
+            </p>
+          </div>
+        ) : null}
+        {isUsc ? (
+          <div className="cluster-campus-hero" data-testid="cluster-usc-hero">
+            <p className="cluster-campus-powered">USC powered by Menuply</p>
+            <p className="cluster-campus-kicker">Food around University Park</p>
+            <p className="cluster-campus-sub">
+              Dining halls, nearby spots, and what Trojans are saying about food right now —
+              without digging through venue menus.
+            </p>
+          </div>
+        ) : null}
+        {isUcla ? (
+          <div className="cluster-campus-hero" data-testid="cluster-ucla-hero">
+            <p className="cluster-campus-powered">UCLA powered by Menuply</p>
+            <p className="cluster-campus-kicker">Westwood campus food, at a glance</p>
+            <p className="cluster-campus-sub">
+              Dining halls, Bruins Plate energy, and diner reports from around campus —
+              what&apos;s happening with food here.
             </p>
           </div>
         ) : null}

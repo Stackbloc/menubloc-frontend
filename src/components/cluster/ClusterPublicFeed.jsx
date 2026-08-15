@@ -103,7 +103,9 @@ export default function ClusterPublicFeed({ cluster }) {
       aria-label="What's happening with food here?"
       style={styles.section}
     >
-      <div style={styles.sectionTitle}>What&apos;s happening with food here?</div>
+      <div className="cluster-feed-heading" style={styles.sectionTitle}>
+        What&apos;s happening with food here?
+      </div>
       <p style={styles.lead} data-testid="cluster-feed-happening-now">
         Food activity across {placeName} — from Menuply diners and Menuply data
       </p>
@@ -127,7 +129,9 @@ export default function ClusterPublicFeed({ cluster }) {
               data-section={group.key}
               style={styles.group}
             >
-              <div style={styles.groupLabel}>{group.label}</div>
+              <div className="cluster-feed-section-label" style={styles.groupLabel}>
+                {group.label}
+              </div>
               <ul style={styles.list}>
                 {group.items.map((item, index) => (
                   <li
@@ -136,7 +140,9 @@ export default function ClusterPublicFeed({ cluster }) {
                     data-feed-type={item.type || ""}
                     style={styles.row}
                   >
-                    <div style={styles.title}>{item.title}</div>
+                    <div className="cluster-feed-item-title" style={styles.title}>
+                      {item.title}
+                    </div>
                     {item.detail && !isMetaDetail(item.detail) ? (
                       <p style={styles.detail}>{item.detail}</p>
                     ) : null}
