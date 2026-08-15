@@ -1,5 +1,5 @@
 /**
- * Operator camera menu upload — one page at a time, review before Common Knowledge insert.
+ * Operator camera menu upload — select all photos, upload & OCR once, then review before CK insert.
  */
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -29,6 +29,23 @@ const STATUS_LABEL = {
   confirmed: "Confirmed",
   failed: "Failed",
 };
+
+/** Stable-ish key so re-picking the same phone photo does not duplicate the queue. */
+function cameraUploadFileKey(file) {
+  return `${file.name}::${file.size}::${file.lastModified}`;
+}
+
+function mergeQueuedFiles(existing, incoming) {
+  const seen = new Set(existing.map(cameraUploadFileKey));
+  const next = [...existing];
+  for (const file of incoming) {
+    const key = cameraUploadFileKey(file);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    next.push(file);
+  }
+  return next;
+}
 
 function emptyItem() {
   return { name: "", description: "", price: "", section: "Entrees", modifier_group: "" };
@@ -151,8 +168,8 @@ export default function OperatorMenuCameraUpload() {
   const [view, setView] = useState("capture");
   const [activePage, setActivePage] = useState(null);
   const [editItems, setEditItems] = useState([]);
-  const [previewUrl, setPreviewUrl] = useState("");
-  const [captureFile, setCaptureFile] = useState(null);
+  const [queuedFiles, setQueuedFiles] = useState([]);
+  const [queuePreviewUrls, setQueuePreviewUrls] = useState([]);
   const fileRef = useRef(null);
 
   const nextPageNumber = useMemo(() => {
@@ -160,14 +177,18 @@ export default function OperatorMenuCameraUpload() {
     return Math.max(...pages.map((p) => p.page_number)) + 1;
   }, [pages]);
 
-  const refreshSession = useCallback(async () => {
-    if (!sessionId || !restaurantId) return;
-    const data = await getMenuCameraSession(sessionId, restaurantId);
-    setPages(data.pages || []);
-    setSessionMeta(data.session || null);
-    setSummary(data.summary || null);
-    return data;
-  }, [sessionId, restaurantId]);
+  const refreshSession = useCallback(
+    async (sessionIdOverride) => {
+      const sid = sessionIdOverride || sessionId;
+      if (!sid || !restaurantId) return;
+      const data = await getMenuCameraSession(sid, restaurantId);
+      setPages(data.pages || []);
+      setSessionMeta(data.session || null);
+      setSummary(data.summary || null);
+      return data;
+    },
+    [sessionId, restaurantId]
+  );
 
   useEffect(() => {
     if (!sessionId || !restaurantId) return;
@@ -175,14 +196,12 @@ export default function OperatorMenuCameraUpload() {
   }, [sessionId, restaurantId, refreshSession]);
 
   useEffect(() => {
-    if (!captureFile) {
-      setPreviewUrl("");
-      return undefined;
-    }
-    const url = buildCapturePreviewUrl(captureFile);
-    setPreviewUrl(url);
-    return () => URL.revokeObjectURL(url);
-  }, [captureFile]);
+    const urls = queuedFiles.map((file) => buildCapturePreviewUrl(file));
+    setQueuePreviewUrls(urls);
+    return () => {
+      urls.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [queuedFiles]);
 
   const ensureSession = async () => {
     if (sessionId) return sessionId;
@@ -195,30 +214,98 @@ export default function OperatorMenuCameraUpload() {
     return id;
   };
 
-  const handleCapturePage = async () => {
-    if (!captureFile || !restaurantId) return;
+  const clearQueue = () => {
+    setQueuedFiles([]);
+    if (fileRef.current) fileRef.current.value = "";
+  };
+
+  const handleQueuePick = (e) => {
+    const picked = Array.from(e.target.files || []).filter((f) => f && f.type?.startsWith("image/"));
+    if (picked.length) {
+      setQueuedFiles((prev) => mergeQueuedFiles(prev, picked));
+    }
+    e.target.value = "";
+  };
+
+  const removeQueuedFile = (index) => {
+    setQueuedFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  /** Upload every queued photo, then OCR each new page — one wait for the whole batch. */
+  const handleUploadAndReadAll = async () => {
+    if (!queuedFiles.length || !restaurantId) return;
     setBusy(true);
     setError("");
     setMessage("");
+    const total = queuedFiles.length;
+    const startPage = nextPageNumber;
+    const uploadedPageNumbers = [];
+    const failedSteps = [];
+
     try {
       const sid = await ensureSession();
-      const pdfFile = await convertImageFileToPdf(captureFile);
-      const form = new FormData();
-      form.append("image_file", captureFile);
-      form.append("pdf_file", pdfFile);
-      await uploadMenuCameraPage(sid, restaurantId, nextPageNumber, form);
-      setCaptureFile(null);
-      if (fileRef.current) fileRef.current.value = "";
-      const data = await refreshSession();
-      const uploaded = (data?.pages || []).find((p) => p.page_number === nextPageNumber);
-      if (uploaded) {
-        setActivePage(uploaded);
-        setEditItems(uploaded.items?.length ? uploaded.items : []);
-        setView("review");
-        setMessage("Page saved. Tap “Read this page” to extract menu items.");
+
+      let uploadFailIndex = -1;
+      for (let i = 0; i < queuedFiles.length; i += 1) {
+        const file = queuedFiles[i];
+        const pageNumber = startPage + i;
+        setMessage(`Uploading ${i + 1}/${total}…`);
+        try {
+          const pdfFile = await convertImageFileToPdf(file);
+          const form = new FormData();
+          form.append("image_file", file);
+          form.append("pdf_file", pdfFile);
+          await uploadMenuCameraPage(sid, restaurantId, pageNumber, form);
+          uploadedPageNumbers.push(pageNumber);
+        } catch (err) {
+          failedSteps.push(`Upload page ${pageNumber} (${file.name}): ${err.message || "failed"}`);
+          uploadFailIndex = i;
+          break;
+        }
+      }
+
+      for (let i = 0; i < uploadedPageNumbers.length; i += 1) {
+        const pageNumber = uploadedPageNumbers[i];
+        setMessage(`Reading ${i + 1}/${uploadedPageNumbers.length}…`);
+        try {
+          await processMenuCameraPage(sid, restaurantId, pageNumber);
+        } catch (err) {
+          failedSteps.push(`Read page ${pageNumber}: ${err.message || "failed"}`);
+        }
+      }
+
+      // Drop only files that uploaded; keep remainder for retry on phones / partial failure.
+      if (uploadFailIndex < 0) {
+        clearQueue();
+      } else if (uploadFailIndex > 0) {
+        setQueuedFiles((prev) => prev.slice(uploadFailIndex));
+        if (fileRef.current) fileRef.current.value = "";
+      }
+
+      await refreshSession(sid);
+      setActivePage(null);
+
+      if (failedSteps.length) {
+        setError(failedSteps.join(" · "));
+        setMessage(
+          uploadedPageNumbers.length
+            ? `Saved ${uploadedPageNumbers.length} of ${total} pages. Review what succeeded; remaining photos stay in the queue to retry.`
+            : "Upload failed. Photos remain in the queue — fix and try again."
+        );
+        setView(uploadedPageNumbers.length ? "list" : "capture");
+      } else {
+        setMessage(
+          `Uploaded and read ${uploadedPageNumbers.length} page${uploadedPageNumbers.length === 1 ? "" : "s"}. Review each page, then confirm.`
+        );
+        setView("list");
       }
     } catch (err) {
-      setError(err.message || "Could not upload page");
+      setError(err.message || "Could not upload and read pages");
+      try {
+        if (sessionId) await refreshSession(sessionId);
+      } catch {
+        /* ignore */
+      }
     } finally {
       setBusy(false);
     }
@@ -341,8 +428,8 @@ export default function OperatorMenuCameraUpload() {
         </button>
         <h1 style={{ fontSize: 22, fontWeight: 800, margin: "0 0 6px" }}>Camera menu upload</h1>
         <p style={{ fontSize: 14, color: "#64748b", marginBottom: 16, lineHeight: 1.5 }}>
-          Photograph each menu page, review items on your phone, then publish one combined menu. You can leave and
-          return anytime — your session is saved.
+          Select all menu photos, then upload once. Review items on your phone, then publish one combined menu. You can
+          leave and return anytime — your session is saved.
         </p>
 
         {error ? (
@@ -426,7 +513,7 @@ export default function OperatorMenuCameraUpload() {
               onClick={() => setView("capture")}
               style={primaryBtn(false)}
             >
-              + Add another page
+              + Add more photos
             </button>
             {allConfirmed ? (
               <button type="button" disabled={busy} onClick={handleFinalize} style={{ ...primaryBtn(busy), marginTop: 10 }}>
@@ -442,46 +529,99 @@ export default function OperatorMenuCameraUpload() {
 
         {view === "capture" ? (
           <>
-            <label style={{ display: "block", fontWeight: 700, marginBottom: 8 }}>Take menu photo</label>
+            <label style={{ display: "block", fontWeight: 700, marginBottom: 8 }}>
+              Select menu photos
+            </label>
+            <p style={{ fontSize: 13, color: "#64748b", margin: "0 0 10px", lineHeight: 1.45 }}>
+              Choose all pages at once from your library, or add one photo at a time on phones that only allow a single
+              pick. Upload &amp; read runs after your queue is ready.
+            </p>
             <input
               ref={fileRef}
               type="file"
               accept="image/*"
-              capture="environment"
-              onChange={(e) => setCaptureFile(e.target.files?.[0] || null)}
+              multiple
+              data-testid="operator-camera-upload-file-input"
+              onChange={handleQueuePick}
               style={{ width: "100%", marginBottom: 12 }}
             />
-            {previewUrl ? (
-              <img
-                src={previewUrl}
-                alt="Preview"
-                style={{ width: "100%", borderRadius: 12, marginBottom: 12, maxHeight: 320, objectFit: "contain" }}
-              />
-            ) : null}
-            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-              <button
-                type="button"
-                disabled={!captureFile || busy}
-                onClick={handleCapturePage}
-                style={primaryBtn(busy)}
+            {queuedFiles.length ? (
+              <div
+                data-testid="operator-camera-upload-file-list"
+                style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 12 }}
               >
-                {busy ? "Saving…" : sessionId ? "Save page" : "Start session & save page"}
-              </button>
-              {captureFile ? (
+                {queuedFiles.map((file, index) => (
+                  <div
+                    key={`${cameraUploadFileKey(file)}-${index}`}
+                    style={{
+                      display: "flex",
+                      gap: 10,
+                      alignItems: "center",
+                      padding: 8,
+                      borderRadius: 10,
+                      border: "1px solid #e2e8f0",
+                      background: "#fff",
+                    }}
+                  >
+                    {queuePreviewUrls[index] ? (
+                      <img
+                        src={queuePreviewUrls[index]}
+                        alt=""
+                        style={{ width: 48, height: 48, objectFit: "cover", borderRadius: 8, flexShrink: 0 }}
+                      />
+                    ) : null}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 600, fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        Page {nextPageNumber + index}: {file.name}
+                      </div>
+                      <div style={{ fontSize: 11, color: "#94a3b8" }}>
+                        {Math.max(1, Math.round(file.size / 1024))} KB
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      disabled={busy}
+                      data-testid="operator-camera-upload-remove-file"
+                      onClick={() => removeQueuedFile(index)}
+                      style={{
+                        background: "transparent",
+                        border: "none",
+                        color: "#b91c1c",
+                        fontSize: 13,
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        flexShrink: 0,
+                      }}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
                 <button
                   type="button"
                   disabled={busy}
-                  onClick={() => {
-                    setCaptureFile(null);
-                    if (fileRef.current) fileRef.current.value = "";
-                  }}
+                  data-testid="operator-camera-upload-clear-files"
+                  onClick={clearQueue}
                   style={ghostBtn()}
                 >
-                  Retake
+                  Clear all
                 </button>
-              ) : null}
+              </div>
+            ) : null}
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <button
+                type="button"
+                disabled={!queuedFiles.length || busy}
+                data-testid="operator-camera-upload-and-read"
+                onClick={handleUploadAndReadAll}
+                style={primaryBtn(busy || !queuedFiles.length)}
+              >
+                {busy
+                  ? message || "Working…"
+                  : `Upload & read all pages${queuedFiles.length ? ` (${queuedFiles.length})` : ""}`}
+              </button>
               {pages.length ? (
-                <button type="button" onClick={() => setView("list")} style={ghostBtn()}>
+                <button type="button" disabled={busy} onClick={() => setView("list")} style={ghostBtn()}>
                   View pages ({pages.length})
                 </button>
               ) : null}
