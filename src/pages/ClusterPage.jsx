@@ -1221,11 +1221,11 @@ export default function ClusterPage() {
     </>
   );
 
-  const clusterSlug = String(cluster.slug || "").toLowerCase();
-  const isCoachella2027 = clusterSlug === "coachella-2027";
-  const isLaLive = clusterSlug === "la-live";
-  const isUsc = clusterSlug === "usc";
-  const isUcla = clusterSlug === "ucla";
+  const themeSlug = String(cluster.slug || "").toLowerCase();
+  const isCoachella2027 = themeSlug === "coachella-2027";
+  const isLaLive = themeSlug === "la-live";
+  const isUsc = themeSlug === "usc";
+  const isUcla = themeSlug === "ucla";
   const themeClass = isCoachella2027
     ? "cluster-theme-coachella-2027"
     : isLaLive
