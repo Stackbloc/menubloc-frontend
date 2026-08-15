@@ -1,5 +1,7 @@
-import React from "react";
+import React, { useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { useLanguage } from "../../context/LanguageContext.jsx";
+import { isAppleAuthConfigured } from "../../components/consumer/ConsumerAuthShared.jsx";
 
 const styles = {
   page: {
@@ -31,10 +33,46 @@ const styles = {
     color: "#5b6571",
     fontSize: "15px",
   },
+  link: {
+    display: "inline-block",
+    marginTop: "16px",
+    color: "#0f1720",
+    fontWeight: 600,
+  },
 };
 
 export default function AppleAuthCallback() {
   const { t } = useLanguage();
+  const navigate = useNavigate();
+  const appleReady = isAppleAuthConfigured();
+
+  useEffect(() => {
+    if (!appleReady) {
+      navigate("/account/login", { replace: true });
+    }
+  }, [appleReady, navigate]);
+
+  if (!appleReady) {
+    return (
+      <div style={styles.page}>
+        <div style={styles.card}>
+          <h1 style={styles.heading}>
+            {t("auth.appleUnavailableTitle", "Apple sign-in unavailable")}
+          </h1>
+          <p style={styles.text}>
+            {t(
+              "auth.appleUnavailableBody",
+              "Apple sign-in is not available. Use email or phone to continue."
+            )}
+          </p>
+          <Link to="/account/login" style={styles.link}>
+            {t("auth.backToSignIn", "Back to sign in")}
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={styles.page}>
       <div style={styles.card}>

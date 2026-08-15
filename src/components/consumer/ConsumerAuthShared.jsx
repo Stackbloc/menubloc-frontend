@@ -188,6 +188,19 @@ export function Divider() {
   );
 }
 
+/** True when FE has Google Sign-In client id (buttons must not render otherwise). */
+export function isGoogleAuthConfigured() {
+  return Boolean(String(import.meta.env.VITE_GOOGLE_CLIENT_ID || "").trim());
+}
+
+/** True when FE has Apple client id + redirect URI. */
+export function isAppleAuthConfigured() {
+  return Boolean(
+    String(import.meta.env.VITE_APPLE_CLIENT_ID || "").trim() &&
+      String(import.meta.env.VITE_APPLE_REDIRECT_URI || "").trim()
+  );
+}
+
 function GoogleButtonFallback({ onClick, disabled, label }) {
   return (
     <button type="button" onClick={onClick} disabled={disabled} style={{ ...styles.oauthButton, ...(disabled ? styles.oauthButtonDisabled : null) }}>
@@ -242,14 +255,8 @@ export function GoogleSignInButton({ onCredential, onError, disabled, contextLab
     };
   }, [clientId, contextLabel, disabled, onCredential, onError]);
 
-  if (!clientId) {
-    return (
-      <GoogleButtonFallback
-        label={t("auth.google", "Google")}
-        disabled
-      />
-    );
-  }
+  // Never render a dead Google control — hide until configured.
+  if (!clientId) return null;
 
   if (disabled) {
     return (
@@ -274,12 +281,11 @@ export function AppleSignInButton({ onSuccess, onError, disabled }) {
   const clientId = String(import.meta.env.VITE_APPLE_CLIENT_ID || "").trim();
   const redirectURI = String(import.meta.env.VITE_APPLE_REDIRECT_URI || "").trim();
 
+  // Never render a dead Apple control — hide until configured.
+  if (!clientId || !redirectURI) return null;
+
   async function handleClick() {
     if (disabled) return;
-    if (!clientId || !redirectURI) {
-      onError?.(t("auth.appleNotConfigured", "Apple sign-in is not configured for this environment"));
-      return;
-    }
 
     try {
       await loadScript(APPLE_SCRIPT);
@@ -334,11 +340,8 @@ export function SocialAuthSection({
   onGoogleCredential,
   onApplePayload,
 }) {
-  const googleConfigured = Boolean(String(import.meta.env.VITE_GOOGLE_CLIENT_ID || "").trim());
-  const appleConfigured = Boolean(
-    String(import.meta.env.VITE_APPLE_CLIENT_ID || "").trim() &&
-      String(import.meta.env.VITE_APPLE_REDIRECT_URI || "").trim()
-  );
+  const googleConfigured = isGoogleAuthConfigured();
+  const appleConfigured = isAppleAuthConfigured();
   const showGoogle = googleConfigured && typeof onGoogleCredential === "function";
   const showApple = appleConfigured && typeof onApplePayload === "function";
 
