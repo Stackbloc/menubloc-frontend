@@ -1,10 +1,10 @@
 /**
- * Cluster food-intel board — overview of what's active across the whole cluster.
- * Reads like a status board (not a menu of venue links).
- * No subscription required.
+ * Public Cluster Feed — "What's happening with food here?"
+ * Food-intel overview board from diner activity + Menuply data.
+ * No subscription required. Not a venue-menu directory. No external events.
  */
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { fetchClusterPublicFeed } from "../../lib/clusterApi.js";
 
 function clusterDisplayName(cluster) {
@@ -15,6 +15,45 @@ function clusterDisplayName(cluster) {
   return slug.replace(/-/g, " ");
 }
 
+const SECTION_ORDER = [
+  "dining_conditions",
+  "food_buzz",
+  "where_diners",
+  "recent_food",
+  "new",
+  "diner_crew",
+];
+
+function groupBySection(items) {
+  const map = new Map();
+  for (const item of items) {
+    const key = item.section || "food_buzz";
+    if (!map.has(key)) map.set(key, []);
+    map.get(key).push(item);
+  }
+  const groups = [];
+  for (const key of SECTION_ORDER) {
+    const list = map.get(key);
+    if (list?.length) {
+      groups.push({
+        key,
+        label: list[0].section_label || key,
+        items: list,
+      });
+    }
+  }
+  for (const [key, list] of map.entries()) {
+    if (!SECTION_ORDER.includes(key) && list.length) {
+      groups.push({
+        key,
+        label: list[0].section_label || key,
+        items: list,
+      });
+    }
+  }
+  return groups;
+}
+
 export default function ClusterPublicFeed({ cluster }) {
   const [items, setItems] = useState([]);
   const [notice, setNotice] = useState("");
@@ -22,6 +61,7 @@ export default function ClusterPublicFeed({ cluster }) {
 
   const slug = cluster?.slug;
   const placeName = clusterDisplayName(cluster);
+  const groups = useMemo(() => groupBySection(items), [items]);
 
   useEffect(() => {
     let cancelled = false;
@@ -60,12 +100,12 @@ export default function ClusterPublicFeed({ cluster }) {
     <section
       id="cluster-feed"
       data-testid="cluster-public-feed"
-      aria-label="Where is everyone eating today?"
+      aria-label="What's happening with food here?"
       style={styles.section}
     >
-      <div style={styles.sectionTitle}>Where is everyone eating today?</div>
+      <div style={styles.sectionTitle}>What&apos;s happening with food here?</div>
       <p style={styles.lead} data-testid="cluster-feed-happening-now">
-        Food intel across {placeName}
+        Food activity across {placeName} — from Menuply diners and Menuply data
       </p>
 
       {loading ? <p style={styles.muted}>Loading…</p> : null}
@@ -74,46 +114,56 @@ export default function ClusterPublicFeed({ cluster }) {
         <p style={styles.muted} data-testid="cluster-feed-empty">
           {notice && !/subscription|waiter|follow/i.test(notice)
             ? notice
-            : "Quiet for now — check back later."}
+            : "Quiet for now — check back when diners post."}
         </p>
       ) : null}
 
-      {!loading && items.length > 0 ? (
-        <ol style={styles.list} data-testid="cluster-feed-list">
-          {items.map((item, index) => (
-            <li
-              key={`${item.type}-${item.title}-${index}`}
-              data-testid="cluster-feed-item"
-              data-feed-type={item.type || ""}
-              style={styles.row}
+      {!loading && groups.length > 0 ? (
+        <div data-testid="cluster-feed-list">
+          {groups.map((group) => (
+            <div
+              key={group.key}
+              data-testid="cluster-feed-section"
+              data-section={group.key}
+              style={styles.group}
             >
-              <span style={styles.rank} aria-hidden="true">
-                {index + 1}
-              </span>
-              <div style={styles.body}>
-                {item.label ? <div style={styles.label}>{item.label}</div> : null}
-                <div style={styles.title}>{item.title}</div>
-                {item.detail && !isMetaDetail(item.detail) ? (
-                  <p style={styles.detail}>{item.detail}</p>
-                ) : null}
-                {item.photo_url ? (
-                  <img
-                    src={item.photo_url}
-                    alt=""
-                    loading="lazy"
-                    style={styles.photo}
-                  />
-                ) : null}
-              </div>
-            </li>
+              <div style={styles.groupLabel}>{group.label}</div>
+              <ul style={styles.list}>
+                {group.items.map((item, index) => (
+                  <li
+                    key={`${item.type}-${item.title}-${index}`}
+                    data-testid="cluster-feed-item"
+                    data-feed-type={item.type || ""}
+                    style={styles.row}
+                  >
+                    <div style={styles.title}>{item.title}</div>
+                    {item.detail && !isMetaDetail(item.detail) ? (
+                      <p style={styles.detail}>{item.detail}</p>
+                    ) : null}
+                    {item.reported_ago ? (
+                      <p style={styles.ago} data-testid="cluster-feed-reported-ago">
+                        {item.reported_ago}
+                      </p>
+                    ) : null}
+                    {item.photo_url ? (
+                      <img
+                        src={item.photo_url}
+                        alt=""
+                        loading="lazy"
+                        style={styles.photo}
+                      />
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            </div>
           ))}
-        </ol>
+        </div>
       ) : null}
     </section>
   );
 }
 
-/** Hide product/policy blurbs that are not real feed reporting. */
 function isMetaDetail(detail) {
   const t = String(detail || "").toLowerCase();
   return (
@@ -140,13 +190,22 @@ const styles = {
     marginBottom: 4,
   },
   lead: {
-    margin: "0 0 12px",
+    margin: "0 0 14px",
     fontSize: 14,
     fontWeight: 500,
     color: "#4b5563",
     lineHeight: 1.35,
   },
   muted: { fontSize: 13, color: "#6b7280", margin: "0 0 8px" },
+  group: { marginBottom: 14 },
+  groupLabel: {
+    fontSize: 12,
+    fontWeight: 800,
+    letterSpacing: 0.35,
+    textTransform: "uppercase",
+    color: "#0f766e",
+    marginBottom: 6,
+  },
   list: {
     listStyle: "none",
     margin: 0,
@@ -158,31 +217,11 @@ const styles = {
   row: {
     margin: 0,
     padding: "10px 0",
-    display: "grid",
-    gridTemplateColumns: "28px 1fr",
-    gap: 10,
-    alignItems: "start",
     borderBottom: "1px solid #e5e7eb",
   },
-  rank: {
-    fontSize: 13,
-    fontWeight: 700,
-    color: "#9ca3af",
-    lineHeight: "22px",
-    textAlign: "right",
-    fontVariantNumeric: "tabular-nums",
-  },
-  body: { minWidth: 0 },
-  label: {
-    fontSize: 11,
-    fontWeight: 700,
-    letterSpacing: 0.3,
-    textTransform: "uppercase",
-    color: "#0f766e",
-    marginBottom: 2,
-  },
   title: { fontSize: 15, fontWeight: 700, color: "#111827", lineHeight: 1.35 },
-  detail: { margin: "3px 0 0", fontSize: 13, color: "#6b7280", lineHeight: 1.4 },
+  detail: { margin: "3px 0 0", fontSize: 14, color: "#374151", lineHeight: 1.4 },
+  ago: { margin: "3px 0 0", fontSize: 12, color: "#6b7280", lineHeight: 1.35 },
   photo: {
     marginTop: 8,
     maxWidth: "100%",

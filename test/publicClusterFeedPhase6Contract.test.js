@@ -1,5 +1,5 @@
 /**
- * Contract: Public Cluster Feed UI — food-intel overview board (not venue menus).
+ * Contract: Public Cluster Feed UI — food activity overview (spec-aligned).
  */
 
 import test from "node:test";
@@ -25,19 +25,21 @@ test("ClusterPage mounts public Cluster Feed", () => {
   assert.match(page, /ClusterPublicFeed/);
 });
 
-test("ClusterPublicFeed is a food-intel overview board, not clickable venue menus", () => {
+test("ClusterPublicFeed answers food-here question; no everyone-eating claim; no venue Links", () => {
   const src = read("src/components/cluster/ClusterPublicFeed.jsx");
   assert.match(src, /cluster-public-feed/);
-  assert.match(src, /Where is everyone eating today\?/);
-  assert.match(src, /Food intel across/);
+  assert.match(src, /What.?s happening with food here/);
+  assert.match(src, /Food activity across/);
+  assert.match(src, /cluster-feed-section/);
+  assert.match(src, /reported_ago/);
   assert.match(src, /fetchClusterPublicFeed/);
   assert.doesNotMatch(src, /from "react-router-dom"/);
   assert.doesNotMatch(src, /<Link\b/);
   assert.doesNotMatch(src, /\bWaiter\b/);
+  assert.doesNotMatch(src, /Where is everyone eating/i);
+  assert.doesNotMatch(src, /everyone is eating/i);
   assert.doesNotMatch(src, /does not require following|personalizes|Anyone can view/i);
-  assert.doesNotMatch(src, /Public<\/span>|cluster-feed-public-badge/);
   assert.doesNotMatch(src, /Today'?s Hot Spots/i);
-  assert.doesNotMatch(src, /sectionTitle[\s\S]*Right now/);
 });
 
 test("subscribe button does not say Waiter", () => {
