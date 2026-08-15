@@ -34,32 +34,32 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www **and** 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` @ clean `main` |
-| Git commit | `fd9c663` — hide dead Google/Apple SSO controls (+ harden null-when-unconfigured) |
-| Vercel deployment | `menubloc-frontend-8siyrjdn2-menuply.vercel.app` |
-| Live bundle | `index-CTBCiaj0.js` |
+| Git commit | `bd2e0a7` — UCLA Place Westwood courtyard design (distinct from USC) |
+| Vercel deployment | `menubloc-frontend-dkyh8n497-menuply.vercel.app` |
+| Live bundle | `index-UoLq1e4f.js` |
 | Aliases | `menuply.com`, `www.menuply.com`, `crm.menuply.com`, `venues.menuply.com` |
 | Tip-gate | **PASS** (apex + www) verified 2026-08-15 |
-| Feature | Google/Apple sign-in UI hidden until FE+BE OAuth configured |
+| Feature | UCLA Place: Sora/Figtree, split-panel hero, courtyard atmosphere |
 
 ### Backend (Railway)
 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-backend-main` @ clean `main` |
-| Git commit | `06aa0fc1` — tip-record (SSO flags still off: `ENABLE_GOOGLE_AUTH` / `ENABLE_APPLE_AUTH` false) |
+| Git commit | `06aa0fc1` — unchanged this CPD |
 | Health URL | `https://menubloc-backend-production.up.railway.app/health` |
 | `commit_hash` | `06aa0fc1` (starts with) |
 | Migrations | `0250`–`0256` applied (+ UCLA dining-hall seed) |
-| Smoke | Consumer login/signup show no Google/Apple buttons while OAuth off |
+| Smoke | FE-only CPD; BE unchanged |
 
 ### Restore current tip (if tip-gate fails mid-change)
 
 ```bash
 cd /Users/andrebarber/Desktop/menubloc/menubloc-frontend-main
-npx vercel alias set menubloc-frontend-8siyrjdn2-menuply.vercel.app menuply.com
-npx vercel alias set menubloc-frontend-8siyrjdn2-menuply.vercel.app www.menuply.com
-npx vercel alias set menubloc-frontend-8siyrjdn2-menuply.vercel.app crm.menuply.com
-npx vercel alias set menubloc-frontend-8siyrjdn2-menuply.vercel.app venues.menuply.com
+npx vercel alias set menubloc-frontend-dkyh8n497-menuply.vercel.app menuply.com
+npx vercel alias set menubloc-frontend-dkyh8n497-menuply.vercel.app www.menuply.com
+npx vercel alias set menubloc-frontend-dkyh8n497-menuply.vercel.app crm.menuply.com
+npx vercel alias set menubloc-frontend-dkyh8n497-menuply.vercel.app venues.menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 ```
@@ -120,7 +120,8 @@ Newest superseded first. Restoring drops everything shipped after that tip.
 
 | Deployment id | Bundle | Approx feature / CPD |
 |---------------|--------|----------------------|
-| `8siyrjdn2` | `index-CTBCiaj0.js` | **CURRENT** — hide dead Google/Apple SSO (`fd9c663`) |
+| `dkyh8n497` | `index-UoLq1e4f.js` | **CURRENT** — UCLA Place Westwood courtyard (`bd2e0a7`) |
+| `8siyrjdn2` | `index-CTBCiaj0.js` | hide dead Google/Apple SSO |
 | `8u2p5tci4` | `index-b_Ovc7EK.js` | USC/UCLA campus Place themes |
 | `3ejgczu00` | `index-BrTJV97-.js` | Campus Dining |
 | `a38ku52a4` | `index-BLw4kaBB.js` | All-profile readable white cards |
