@@ -110,6 +110,14 @@ export const postDiningCrewMessage = (conversationId, body) =>
     `/api/consumer/dining-crews/conversations/${encodeURIComponent(String(conversationId))}/messages`,
     body
   );
+export const searchDiningCrewEntities = ({ type, q = "", restaurant_id = null, limit = 8 } = {}) => {
+  const params = new URLSearchParams();
+  if (type) params.set("type", String(type));
+  if (q) params.set("q", String(q));
+  if (restaurant_id) params.set("restaurant_id", String(restaurant_id));
+  if (limit) params.set("limit", String(limit));
+  return get(`/api/consumer/dining-crews/entity-search?${params.toString()}`);
+};
 
 // ── Profile ───────────────────────────────────────────────────────────────
 export const getConsumerProfile    = ()     => get("/api/consumer/profile");

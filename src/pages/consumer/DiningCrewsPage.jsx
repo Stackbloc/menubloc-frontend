@@ -21,37 +21,53 @@ import {
   listDiningCrewMessages,
   postDiningCrewMessage,
 } from "../../lib/consumerApi.js";
+import DiningCrewFoodEntityPicker from "../../components/diningCrews/DiningCrewFoodEntityPicker.jsx";
+
+function restaurantHref(entity) {
+  const key = entity?.restaurant_slug || entity?.restaurant_id;
+  return key ? `/restaurants/${key}` : null;
+}
 
 function EntityCard({ entity, type }) {
   if (!entity) return null;
   if (type === "restaurant") {
+    const href = restaurantHref(entity);
     return (
       <div style={styles.entityCard}>
+        <div style={styles.entityKind}>Restaurant</div>
         <strong>{entity.restaurant_name}</strong>
         {(entity.city || entity.state) && (
           <div style={styles.muted}>
             {[entity.city, entity.state].filter(Boolean).join(", ")}
           </div>
         )}
-        {entity.restaurant_id ? (
-          <Link to={`/restaurants/${entity.restaurant_id}`} style={styles.link}>
-            Open restaurant
+        {href ? (
+          <Link to={href} style={styles.link}>
+            Open on Menuply
           </Link>
         ) : null}
       </div>
     );
   }
   if (type === "menu") {
+    const href = restaurantHref(entity);
     return (
       <div style={styles.entityCard}>
+        <div style={styles.entityKind}>Menu</div>
         <strong>{entity.menu_name}</strong>
         <div style={styles.muted}>{entity.restaurant_name}</div>
+        {href ? (
+          <Link to={href} style={styles.link}>
+            Open restaurant
+          </Link>
+        ) : null}
       </div>
     );
   }
   if (type === "menu_item") {
     return (
       <div style={styles.entityCard}>
+        <div style={styles.entityKind}>Menu item</div>
         <strong>{entity.item_name}</strong>
         <div style={styles.muted}>{entity.restaurant_name}</div>
         {entity.menu_item_id ? (
@@ -152,9 +168,8 @@ export function DiningCrewDetailPage() {
   const [inviteeId, setInviteeId] = useState("");
   const [inviteUrl, setInviteUrl] = useState("");
   const [entityType, setEntityType] = useState("text");
-  const [restaurantId, setRestaurantId] = useState("");
-  const [menuId, setMenuId] = useState("");
-  const [menuItemId, setMenuItemId] = useState("");
+  const [selectedEntity, setSelectedEntity] = useState(null);
+  const [text, setText] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -235,16 +250,21 @@ export function DiningCrewDetailPage() {
       if (entityType === "text") {
         payload.body = text.trim();
       } else {
+        if (!selectedEntity) {
+          throw new Error("Select a restaurant, menu, or menu item to share");
+        }
         payload.body = text.trim() || null;
-        payload.restaurant_id = Number(restaurantId) || null;
-        if (entityType === "menu") payload.menu_id = Number(menuId) || null;
+        payload.restaurant_id = selectedEntity.restaurant_id || null;
+        if (entityType === "menu") payload.menu_id = selectedEntity.menu_id || null;
         if (entityType === "menu_item") {
-          payload.menu_item_id = Number(menuItemId) || null;
-          if (menuId) payload.menu_id = Number(menuId) || null;
+          payload.menu_item_id = selectedEntity.menu_item_id || null;
+          if (selectedEntity.menu_id) payload.menu_id = selectedEntity.menu_id;
         }
       }
       await postDiningCrewMessage(activeConvoId, payload);
       setText("");
+      setSelectedEntity(null);
+      setEntityType("text");
       await loadMessages(activeConvoId);
     } catch (err) {
       setError(err.message || "Unable to send");
@@ -343,54 +363,27 @@ export function DiningCrewDetailPage() {
                     ))}
                   </div>
                   <form onSubmit={handleSend} style={{ marginTop: 12 }}>
-                    <select
-                      value={entityType}
-                      onChange={(e) => setEntityType(e.target.value)}
-                      style={{ ...styles.input, marginBottom: 8 }}
-                    >
-                      <option value="text">Text</option>
-                      <option value="restaurant">Share restaurant</option>
-                      <option value="menu">Share menu</option>
-                      <option value="menu_item">Share menu item</option>
-                    </select>
-                    {entityType !== "text" ? (
-                      <div style={{ display: "grid", gap: 8, marginBottom: 8 }}>
-                        <input
-                          style={styles.input}
-                          value={restaurantId}
-                          onChange={(e) => setRestaurantId(e.target.value)}
-                          placeholder="restaurant_id"
-                          required
-                        />
-                        {entityType === "menu" || entityType === "menu_item" ? (
-                          <input
-                            style={styles.input}
-                            value={menuId}
-                            onChange={(e) => setMenuId(e.target.value)}
-                            placeholder="menu_id"
-                            required={entityType === "menu"}
-                          />
-                        ) : null}
-                        {entityType === "menu_item" ? (
-                          <input
-                            style={styles.input}
-                            value={menuItemId}
-                            onChange={(e) => setMenuItemId(e.target.value)}
-                            placeholder="menu_item_id"
-                            required
-                          />
-                        ) : null}
-                      </div>
-                    ) : null}
-                    <div style={styles.form}>
-                      <input
-                        style={styles.input}
-                        value={text}
-                        onChange={(e) => setText(e.target.value)}
-                        placeholder={entityType === "text" ? "Message…" : "Optional note"}
-                        required={entityType === "text"}
-                      />
-                      <button type="submit" style={styles.primaryBtn} disabled={busy}>
+                    <DiningCrewFoodEntityPicker
+                      messageType={entityType}
+                      onMessageTypeChange={(type) => {
+                        setEntityType(type);
+                        setSelectedEntity(null);
+                      }}
+                      selected={selectedEntity}
+                      onSelectedChange={setSelectedEntity}
+                      note={text}
+                      onNoteChange={setText}
+                      disabled={busy}
+                    />
+                    <div style={{ marginTop: 8 }}>
+                      <button
+                        type="submit"
+                        style={styles.primaryBtn}
+                        disabled={
+                          busy ||
+                          (entityType === "text" ? !text.trim() : !selectedEntity)
+                        }
+                      >
                         Send
                       </button>
                     </div>
@@ -579,5 +572,12 @@ const styles = {
     borderRadius: 8,
     border: "1px solid #bbf7d0",
     fontSize: 14,
+  },
+  entityKind: {
+    fontSize: 11,
+    fontWeight: 700,
+    color: "#166534",
+    textTransform: "uppercase",
+    marginBottom: 2,
   },
 };
