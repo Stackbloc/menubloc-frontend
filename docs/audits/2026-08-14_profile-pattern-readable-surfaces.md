@@ -23,4 +23,6 @@ Titles and muted text rendered outside white surfaces on `--profile-pattern`.
 
 ## Deployment Status
 
-Pending FE CPD from this change.
+- FE `58d7bca` → `menubloc-frontend-6sk4due4f-menuply.vercel.app` / `index-D-I_Y4hm.js`
+- Aliased menuply.com + www (+ crm); tip-gate PASS
+- **CPD COMPLETE**
