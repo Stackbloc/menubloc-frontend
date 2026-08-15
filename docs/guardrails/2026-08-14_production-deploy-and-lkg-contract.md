@@ -25,7 +25,7 @@ Do **not** deploy from memory or from quarantined checkouts.
 
 ---
 
-## CURRENT LAST KNOWN GOOD (live production — 2026-08-14)
+## CURRENT LAST KNOWN GOOD (live production — 2026-08-15)
 
 Update this section **only** after tip-gate `RESULT=PASS` on apex + www **and** Railway `/health` matches the shipped BE SHA.
 
@@ -34,32 +34,32 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www **and** 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` @ clean `main` |
-| Git commit | `eb1b377` — CAMPUS DINING — College Cluster section + place-only I'm Eating |
-| Vercel deployment | `menubloc-frontend-3ejgczu00-menuply.vercel.app` |
-| Live bundle | `index-BrTJV97-.js` |
-| Aliases | `menuply.com`, `www.menuply.com`, `crm.menuply.com` (venues alias may need cert retry) |
-| Tip-gate | **PASS** (apex + www) verified 2026-08-14 |
-| Feature | College Cluster Campus Dining |
+| Git commit | `fd9c663` — hide dead Google/Apple SSO controls (+ harden null-when-unconfigured) |
+| Vercel deployment | `menubloc-frontend-8siyrjdn2-menuply.vercel.app` |
+| Live bundle | `index-CTBCiaj0.js` |
+| Aliases | `menuply.com`, `www.menuply.com`, `crm.menuply.com`, `venues.menuply.com` |
+| Tip-gate | **PASS** (apex + www) verified 2026-08-15 |
+| Feature | Google/Apple sign-in UI hidden until FE+BE OAuth configured |
 
 ### Backend (Railway)
 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-backend-main` @ clean `main` |
-| Git commit | `e0c5542d` — docs LKG/CPD (includes Campus Dining `a2ae326c`) |
+| Git commit | `06aa0fc1` — tip-record (SSO flags still off: `ENABLE_GOOGLE_AUTH` / `ENABLE_APPLE_AUTH` false) |
 | Health URL | `https://menubloc-backend-production.up.railway.app/health` |
-| `commit_hash` | `e0c5542d72040c9e1b41643dd4fb659d3168255b` |
-| Migrations | `0248` `cluster_restaurants.is_campus_dining` applied |
-| Seed | USC Campus Dining — 3 halls (Village, Parkside, Everybody's Kitchen) |
-| Smoke | `GET /public/clusters/usc/campus-dining` → 3 locations |
+| `commit_hash` | `06aa0fc1` (starts with) |
+| Migrations | `0250`–`0256` applied (+ UCLA dining-hall seed) |
+| Smoke | Consumer login/signup show no Google/Apple buttons while OAuth off |
 
 ### Restore current tip (if tip-gate fails mid-change)
 
 ```bash
 cd /Users/andrebarber/Desktop/menubloc/menubloc-frontend-main
-npx vercel alias set menubloc-frontend-3ejgczu00-menuply.vercel.app menuply.com
-npx vercel alias set menubloc-frontend-3ejgczu00-menuply.vercel.app www.menuply.com
-npx vercel alias set menubloc-frontend-3ejgczu00-menuply.vercel.app crm.menuply.com
+npx vercel alias set menubloc-frontend-8siyrjdn2-menuply.vercel.app menuply.com
+npx vercel alias set menubloc-frontend-8siyrjdn2-menuply.vercel.app www.menuply.com
+npx vercel alias set menubloc-frontend-8siyrjdn2-menuply.vercel.app crm.menuply.com
+npx vercel alias set menubloc-frontend-8siyrjdn2-menuply.vercel.app venues.menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 ```
@@ -120,7 +120,9 @@ Newest superseded first. Restoring drops everything shipped after that tip.
 
 | Deployment id | Bundle | Approx feature / CPD |
 |---------------|--------|----------------------|
-| `3ejgczu00` | `index-BrTJV97-.js` | **CURRENT** — Campus Dining |
+| `8siyrjdn2` | `index-CTBCiaj0.js` | **CURRENT** — hide dead Google/Apple SSO (`fd9c663`) |
+| `8u2p5tci4` | `index-b_Ovc7EK.js` | USC/UCLA campus Place themes |
+| `3ejgczu00` | `index-BrTJV97-.js` | Campus Dining |
 | `a38ku52a4` | `index-BLw4kaBB.js` | All-profile readable white cards |
 | `e9kop4og8` | `index-Di87A4Tc.js` | Social Onboarding text-invite |
 | `1hqxwet9z` | `index-B0JBd4cG.js` | Pre text-invite onboarding |
