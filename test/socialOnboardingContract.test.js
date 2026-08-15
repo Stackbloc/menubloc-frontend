@@ -83,6 +83,7 @@ test("onboarding page reuses existing social surfaces and skippable copy", () =>
   assert.match(page, /people shared|user-reported|does not claim verified purchases/i);
   assert.doesNotMatch(page, /navigator\.contacts|ContactsManager|requestPermission/);
   assert.doesNotMatch(page, /Create Dining Crew/);
+  assert.doesNotMatch(page, /Menuply user id|invitee_user_id|recipient_user_id/);
 });
 
 test("App route and account entry points wired", () => {

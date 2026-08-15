@@ -14,7 +14,6 @@ import {
   listDiningCrews,
   createDiningCrew,
   inviteToDiningCrew,
-  requestConnection,
   sendEduVerification,
   createImEating,
   getSocialOnboarding,
@@ -76,12 +75,10 @@ export default function SocialOnboardingPage() {
   // Dining crew step
   const [crewReady, setCrewReady] = useState(false);
   const [inviteUrl, setInviteUrl] = useState("");
-  const [inviteeId, setInviteeId] = useState("");
   const [activeCrewId, setActiveCrewId] = useState(null);
 
   // Expand step
   const [expandMode, setExpandMode] = useState(false);
-  const [connectId, setConnectId] = useState("");
 
   // Student step
   const [eduEmail, setEduEmail] = useState("");
@@ -197,36 +194,12 @@ export default function SocialOnboardingPage() {
         }
         setActiveCrewId(crewId);
       }
-      const body = {};
-      const id = Number(String(inviteeId).trim());
-      if (Number.isFinite(id) && id > 0) body.invitee_user_id = id;
-      const invited = await inviteToDiningCrew(crewId, body);
+      const invited = await inviteToDiningCrew(crewId, {});
       setInviteUrl(invited.invitation?.url || "");
-      setInviteeId("");
       setCrewReady(true);
       setNotice("Your Dining Crew is ready");
     } catch (err) {
       setError(err.message || "Unable to set up Dining Crew");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function handleConnect(e) {
-    e.preventDefault();
-    setBusy(true);
-    setError("");
-    try {
-      const id = Number(String(connectId).trim());
-      if (!Number.isFinite(id) || id <= 0) throw new Error("Enter a Menuply user id to connect");
-      await requestConnection({
-        recipient_user_id: id,
-        source: "social_onboarding",
-      });
-      setConnectId("");
-      setNotice("Connection request sent. You can keep inviting people with your Dining Crew link.");
-    } catch (err) {
-      setError(err.message || "Unable to connect");
     } finally {
       setBusy(false);
     }
@@ -355,16 +328,10 @@ export default function SocialOnboardingPage() {
               </div>
             ) : (
               <form onSubmit={handleAddPeople} style={styles.form}>
-                <label style={styles.label}>
-                  Optional Menuply user id
-                  <input
-                    style={styles.input}
-                    value={inviteeId}
-                    onChange={(e) => setInviteeId(e.target.value)}
-                    placeholder="Leave blank to create a shareable invite link"
-                    inputMode="numeric"
-                  />
-                </label>
+                <p style={styles.soft}>
+                  We&apos;ll create your Dining Crew and give you a link to share — no phone contacts
+                  needed.
+                </p>
                 <button type="submit" style={styles.primaryBtn} disabled={busy}>
                   Add people
                 </button>
@@ -407,24 +374,27 @@ export default function SocialOnboardingPage() {
                 Find people
               </button>
             ) : (
-              <form onSubmit={handleConnect} style={styles.form}>
+              <div style={styles.form}>
                 <p style={styles.body}>
-                  Connect with someone already on Menuply, or use your Dining Crew invite link from
-                  the previous step. No phone contacts required.
+                  Share your Dining Crew invite link with people you want to eat with. No phone
+                  contacts required.
                 </p>
-                <label style={styles.label}>
-                  Menuply user id
-                  <input
-                    style={styles.input}
-                    value={connectId}
-                    onChange={(e) => setConnectId(e.target.value)}
-                    inputMode="numeric"
-                    placeholder="User id"
-                  />
-                </label>
-                <button type="submit" style={styles.primaryBtn} disabled={busy}>
-                  Connect
-                </button>
+                {inviteUrl ? (
+                  <p style={styles.body}>
+                    Your invite link:{" "}
+                    <a href={inviteUrl} style={styles.inlineLink}>
+                      {inviteUrl}
+                    </a>
+                  </p>
+                ) : (
+                  <p style={styles.soft}>
+                    If you set up a Dining Crew earlier, open Dining Crews anytime to copy a fresh
+                    invite link.
+                  </p>
+                )}
+                <Link to="/account/dining-crews" style={styles.secondaryLink}>
+                  Open Dining Crews
+                </Link>
                 <Link to="/account/connections" style={styles.secondaryLink}>
                   Open Connections
                 </Link>
@@ -436,7 +406,7 @@ export default function SocialOnboardingPage() {
                 >
                   Continue
                 </button>
-              </form>
+              </div>
             )}
             <SkipButton disabled={busy} onClick={() => settle("expand_crew", "skipped")} />
           </section>
