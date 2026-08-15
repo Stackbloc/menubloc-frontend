@@ -169,7 +169,6 @@ export function DiningCrewDetailPage() {
   const [inviteUrl, setInviteUrl] = useState("");
   const [entityType, setEntityType] = useState("text");
   const [selectedEntity, setSelectedEntity] = useState(null);
-  const [text, setText] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
