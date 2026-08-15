@@ -334,22 +334,37 @@ export function SocialAuthSection({
   onGoogleCredential,
   onApplePayload,
 }) {
+  const googleConfigured = Boolean(String(import.meta.env.VITE_GOOGLE_CLIENT_ID || "").trim());
+  const appleConfigured = Boolean(
+    String(import.meta.env.VITE_APPLE_CLIENT_ID || "").trim() &&
+      String(import.meta.env.VITE_APPLE_REDIRECT_URI || "").trim()
+  );
+  const showGoogle = googleConfigured && typeof onGoogleCredential === "function";
+  const showApple = appleConfigured && typeof onApplePayload === "function";
+
+  // Do not show dead OAuth placeholders when providers are not configured.
+  if (!showGoogle && !showApple) return null;
+
   return (
-    <div style={styles.oauthSection}>
+    <div style={styles.oauthSection} data-testid="consumer-social-auth">
       <Divider />
       {error ? <p style={styles.errorBanner}>{error}</p> : null}
       <div style={styles.oauthStack}>
-        <GoogleSignInButton
-          contextLabel={mode}
-          disabled={disabled}
-          onCredential={onGoogleCredential}
-          onError={onError}
-        />
-        <AppleSignInButton
-          disabled={disabled}
-          onSuccess={onApplePayload}
-          onError={onError}
-        />
+        {showGoogle ? (
+          <GoogleSignInButton
+            contextLabel={mode}
+            disabled={disabled}
+            onCredential={onGoogleCredential}
+            onError={onError}
+          />
+        ) : null}
+        {showApple ? (
+          <AppleSignInButton
+            disabled={disabled}
+            onSuccess={onApplePayload}
+            onError={onError}
+          />
+        ) : null}
       </div>
     </div>
   );
