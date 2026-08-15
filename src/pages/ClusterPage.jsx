@@ -57,6 +57,7 @@ import {
 import { rememberMenuBrowserVenueSession } from "../lib/menuBrowserVenueContext.js";
 import { clusterShowsDishExcerpt } from "../lib/clusterDishExcerpt.js";
 import ChipRail from "../components/chips/ChipRail.jsx";
+import WhatPeopleAreEating from "../components/cluster/WhatPeopleAreEating.jsx";
 
 const CANONICAL_BASE = "https://menuply.com";
 const CLUSTER_VIEW_MODES = Object.freeze({
@@ -1270,6 +1271,11 @@ export default function ClusterPage() {
         </h1>
         <ClusterDescription cluster={cluster} />
       </header>
+
+      {/* Public discovery — available without sign-in (Social Engine Phase 7). */}
+      {cluster.id ? (
+        <WhatPeopleAreEating clusterId={cluster.id} />
+      ) : null}
 
       {/* Keep both views mounted so the Food/Restaurants toggle is not destroyed mid-tap. */}
       <div

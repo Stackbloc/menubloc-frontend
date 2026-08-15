@@ -104,7 +104,7 @@ export default function ImEatingPage() {
         <p style={styles.lead}>
           Share what you&apos;re eating as{" "}
           <strong>user-reported food activity</strong> — not a verified order. Public shares
-          may appear on restaurant and cluster surfaces later.
+          may appear on restaurant and cluster surfaces.
         </p>
 
         {error ? <p style={styles.error}>{error}</p> : null}
