@@ -14,36 +14,49 @@ function restaurantHref(item) {
 }
 
 function ItemCard({ item }) {
-  const dishHref = item?.menu_item_id
-    ? `/menu-items/${encodeURIComponent(String(item.menu_item_id))}`
-    : null;
+  const isPlace = item?.share_kind === "place" || !item?.menu_item_id;
+  const dishHref =
+    !isPlace && item?.menu_item_id
+      ? `/menu-items/${encodeURIComponent(String(item.menu_item_id))}`
+      : null;
   const restHref = restaurantHref(item);
   const label =
     item?.people_shared_label ||
     `${item?.people_shared_count || 0} ${
       Number(item?.people_shared_count) === 1 ? "person shared this" : "people shared this"
     }`;
+  const title = isPlace
+    ? item.restaurant_name || item.item_name || "Campus dining"
+    : item.item_name || "Menu item";
 
   return (
-    <article data-testid="people-eating-item" style={styles.card}>
+    <article data-testid="people-eating-item" data-share-kind={isPlace ? "place" : "dish"} style={styles.card}>
       <div style={styles.dish}>
         {dishHref ? (
           <Link to={dishHref} style={styles.dishLink}>
-            {item.item_name || "Menu item"}
+            {title}
+          </Link>
+        ) : restHref && isPlace ? (
+          <Link to={restHref} style={styles.dishLink}>
+            {title}
           </Link>
         ) : (
-          <strong>{item.item_name || "Menu item"}</strong>
+          <strong>{title}</strong>
         )}
       </div>
-      <div style={styles.restaurant}>
-        {restHref ? (
-          <Link to={restHref} style={styles.restLink}>
-            {item.restaurant_name || "Restaurant"}
-          </Link>
-        ) : (
-          <span>{item.restaurant_name || "Restaurant"}</span>
-        )}
-      </div>
+      {!isPlace ? (
+        <div style={styles.restaurant}>
+          {restHref ? (
+            <Link to={restHref} style={styles.restLink}>
+              {item.restaurant_name || "Restaurant"}
+            </Link>
+          ) : (
+            <span>{item.restaurant_name || "Restaurant"}</span>
+          )}
+        </div>
+      ) : (
+        <div style={styles.restaurant}>People shared they&apos;re eating here</div>
+      )}
       <div style={styles.count} data-testid="people-eating-count">
         {label}
       </div>
@@ -117,7 +130,7 @@ export default function WhatPeopleAreEating({ clusterId, compact = false }) {
         <div style={styles.list} data-testid="people-eating-list">
           {items.map((item) => (
             <ItemCard
-              key={`${item.menu_item_id}-${item.restaurant_id}`}
+              key={`${item.share_kind || "dish"}-${item.menu_item_id || "place"}-${item.restaurant_id}`}
               item={item}
             />
           ))}

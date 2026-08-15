@@ -21,12 +21,16 @@ function ActivityCard({ activity }) {
   const itemHref = activity?.menu_item_id
     ? `/menu-items/${encodeURIComponent(String(activity.menu_item_id))}`
     : null;
-  const itemName = activity?.item_name || "Menu item";
+  const isPlaceOnly = !activity?.menu_item_id;
+  const itemName = isPlaceOnly
+    ? activity?.restaurant_name || "this place"
+    : activity?.item_name || "Menu item";
   const badge = activity?.edu_verification_badge || null;
 
   return (
     <article
       data-testid="diners-saying-activity"
+      data-share-kind={isPlaceOnly ? "place" : "dish"}
       style={styles.card}
     >
       <div style={styles.nameRow}>

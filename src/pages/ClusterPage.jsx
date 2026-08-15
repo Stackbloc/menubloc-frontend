@@ -58,6 +58,7 @@ import { rememberMenuBrowserVenueSession } from "../lib/menuBrowserVenueContext.
 import { clusterShowsDishExcerpt } from "../lib/clusterDishExcerpt.js";
 import ChipRail from "../components/chips/ChipRail.jsx";
 import WhatPeopleAreEating from "../components/cluster/WhatPeopleAreEating.jsx";
+import CampusDiningSection from "../components/cluster/CampusDiningSection.jsx";
 
 const CANONICAL_BASE = "https://menuply.com";
 const CLUSTER_VIEW_MODES = Object.freeze({
@@ -1276,6 +1277,9 @@ export default function ClusterPage() {
       {cluster.id ? (
         <WhatPeopleAreEating clusterId={cluster.id} />
       ) : null}
+
+      {/* University clusters only — hidden when no campus dining members. */}
+      <CampusDiningSection cluster={cluster} />
 
       {/* Keep both views mounted so the Food/Restaurants toggle is not destroyed mid-tap. */}
       <div

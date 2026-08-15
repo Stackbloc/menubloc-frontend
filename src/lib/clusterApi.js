@@ -63,6 +63,15 @@ export async function fetchClusterRestaurants(clusterSlug, { limit = 20, offset 
   return apiGet(path, { signal });
 }
 
+/** University clusters only — empty for non-college clusters / before data exists. */
+export async function fetchClusterCampusDining(clusterSlug, { limit = 24, signal } = {}) {
+  const params = new URLSearchParams();
+  if (limit != null) params.set("limit", String(limit));
+  const qs = params.toString();
+  const path = `/public/clusters/${encodeURIComponent(clusterSlug)}/campus-dining${qs ? `?${qs}` : ""}`;
+  return apiGet(path, { signal });
+}
+
 export async function fetchClusterMenuItems(
   clusterSlug,
   { limit = 40, offset = 0, summary = false, mksCategory = null, drinkCategory = null, signal } = {}

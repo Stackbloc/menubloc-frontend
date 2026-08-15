@@ -53,8 +53,12 @@ export default function ImEatingPage() {
 
   async function handleShare(e) {
     e.preventDefault();
-    if (!restaurant?.restaurant_id || !menuItem?.menu_item_id) {
-      setError("Choose a restaurant and a menu item.");
+    if (!restaurant?.restaurant_id) {
+      setError("Choose a restaurant or campus dining location.");
+      return;
+    }
+    if (!menuItem?.menu_item_id && !comment.trim()) {
+      setError("Add a brief note when sharing without a menu item.");
       return;
     }
     setBusy(true);
@@ -63,8 +67,8 @@ export default function ImEatingPage() {
     try {
       const data = await createImEating({
         restaurant_id: restaurant.restaurant_id,
-        menu_item_id: menuItem.menu_item_id,
-        menu_id: menuItem.menu_id || null,
+        menu_item_id: menuItem?.menu_item_id || null,
+        menu_id: menuItem?.menu_id || null,
         comment: comment.trim() || null,
         visibility,
       });
@@ -104,7 +108,8 @@ export default function ImEatingPage() {
         <p style={styles.lead}>
           Share what you&apos;re eating as{" "}
           <strong>user-reported food activity</strong> — not a verified order. Public shares
-          may appear on restaurant and cluster surfaces.
+          may appear on restaurant and cluster surfaces. Campus dining works with or without a
+          structured menu item (add a short note if you skip the dish).
         </p>
 
         {error ? <p style={styles.error}>{error}</p> : null}

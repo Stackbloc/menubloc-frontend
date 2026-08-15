@@ -138,17 +138,29 @@ export default function ImEatingComposer({
               ))}
             </ul>
           ) : null}
+          {restaurant && !menuItem ? (
+            <p style={styles.muted}>
+              No structured menu needed — add a note below and share the place itself (campus dining,
+              food courts, etc.).
+            </p>
+          ) : null}
         </>
       ) : null}
 
-      <label style={styles.label}>Note (optional)</label>
+      <label style={styles.label}>
+        {restaurant && !menuItem ? "Note (required without a menu item)" : "Note (optional)"}
+      </label>
       <textarea
         value={comment}
         disabled={disabled}
         onChange={(e) => onCommentChange(e.target.value)}
         maxLength={500}
         rows={3}
-        placeholder='e.g. "Really good."'
+        placeholder={
+          restaurant && !menuItem
+            ? 'e.g. "Lunch today." or "Long line around noon."'
+            : 'e.g. "Really good."'
+        }
         style={styles.textarea}
       />
 
