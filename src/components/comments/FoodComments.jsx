@@ -373,6 +373,8 @@ export default function FoodComments({
   menuPreviewItems = null,
   showFeaturedFirst = true,
   title = "What diners are saying",
+  hideTitle = false,
+  embedded = false,
   compact = false,
 }) {
   const { isAuthenticated, consumer, profile, refreshSession } = useConsumer();
@@ -686,28 +688,44 @@ export default function FoodComments({
     ? "No comments yet. Be the first to share a tip about this dish."
     : "No comments yet. Be the first to share a tip about this restaurant.";
 
+  const sectionStyle = embedded
+    ? {
+        marginBottom: 0,
+        padding: 0,
+        background: "transparent",
+        border: "none",
+        boxShadow: "none",
+      }
+    : profileReadableSurfaceStyle({
+        marginBottom: compact ? 16 : 28,
+        padding: compact ? "14px 14px" : "16px 16px",
+      });
+  const ariaLabel =
+    hideTitle || !String(title || "").trim()
+      ? "What Diners Are Saying comments"
+      : title;
+
   return (
     <section
       id="food-comments"
       data-testid="food-comments"
-      data-profile-surface="card"
-      aria-label={title}
-      style={profileReadableSurfaceStyle({
-        marginBottom: compact ? 16 : 28,
-        padding: compact ? "14px 14px" : "16px 16px",
-      })}
+      data-profile-surface={embedded ? undefined : "card"}
+      aria-label={ariaLabel}
+      style={sectionStyle}
     >
-      <div
-        style={{
-          fontSize: 13,
-          fontWeight: 800,
-          letterSpacing: 0.4,
-          color: "#1c1917",
-          marginBottom: 12,
-        }}
-      >
-        {title}
-      </div>
+      {!hideTitle && String(title || "").trim() ? (
+        <div
+          style={{
+            fontSize: 13,
+            fontWeight: 800,
+            letterSpacing: 0.4,
+            color: "#1c1917",
+            marginBottom: 12,
+          }}
+        >
+          {title}
+        </div>
+      ) : null}
 
       {error ? (
         <div style={{ color: "#b91c1c", fontSize: 13, marginBottom: 10 }} role="alert">

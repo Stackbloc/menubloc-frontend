@@ -38,6 +38,11 @@ assert.match(shell, /What [Dd]iners [Aa]re [Ss]aying|WhatDinersAreSaying/);
 assert.match(shell, /restaurantSlug=/);
 assert.match(shell, /menuPreviewItems=/);
 
+const dinersSaying = read("src/components/restaurant/WhatDinersAreSaying.jsx");
+assert.match(dinersSaying, /FoodComments/);
+assert.match(dinersSaying, /hideTitle/);
+assert.doesNotMatch(dinersSaying, /Tips & discussion/);
+
 const detail = read("src/pages/MenuItemDetailPage.jsx");
 assert.match(detail, /FoodComments/);
 assert.match(detail, /menuItemId=\{Number\(item\.menu_item_id\)\}/);

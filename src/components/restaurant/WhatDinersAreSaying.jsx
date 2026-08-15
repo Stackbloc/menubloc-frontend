@@ -1,7 +1,7 @@
 /**
  * Restaurant profile: What Diners Are Saying
  * Derived from canonical food_activity (I'm Eating) — not verified purchase data.
- * Existing FoodComments remain as tips/discussion under the same section.
+ * FoodComments (tips/discussion) live under the same section — no second heading.
  * Not a conventional rating system.
  */
 
@@ -150,18 +150,21 @@ export default function WhatDinersAreSaying({
             ))}
           </div>
         ) : null}
-      </div>
 
-      <FoodComments
-        restaurantId={restaurantId}
-        restaurantSlug={restaurantSlug}
-        restaurantCity={restaurantCity}
-        restaurantState={restaurantState}
-        menuPreviewItems={menuPreviewItems}
-        showFeaturedFirst
-        title="Tips & discussion"
-        compact={compact}
-      />
+        <div style={styles.commentsWrap} data-testid="diners-saying-comments">
+          <FoodComments
+            restaurantId={restaurantId}
+            restaurantSlug={restaurantSlug}
+            restaurantCity={restaurantCity}
+            restaurantState={restaurantState}
+            menuPreviewItems={menuPreviewItems}
+            showFeaturedFirst
+            hideTitle
+            embedded
+            compact={compact}
+          />
+        </div>
+      </div>
     </section>
   );
 }
@@ -183,6 +186,11 @@ const styles = {
   muted: { fontSize: 13, color: "#78716c", margin: "0 0 12px" },
   error: { fontSize: 13, color: "#b91c1c", margin: "0 0 12px" },
   list: { display: "grid", gap: 10, marginBottom: 4 },
+  commentsWrap: {
+    marginTop: 16,
+    paddingTop: 14,
+    borderTop: "1px solid #e7e5e4",
+  },
   card: {
     padding: "12px 14px",
     borderRadius: 12,

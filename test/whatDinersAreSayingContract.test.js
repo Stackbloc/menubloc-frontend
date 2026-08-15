@@ -28,8 +28,22 @@ describe("What Diners Are Saying (restaurant)", () => {
     expect(section).toMatch(/\/menu-items\//);
     expect(section).toMatch(/User-reported food activity/);
     expect(section).toMatch(/FoodComments/);
+    expect(section).toMatch(/hideTitle/);
+    expect(section).toMatch(/embedded/);
+    expect(section).not.toMatch(/Tips & discussion/);
     expect(section).not.toMatch(/five.?star|★|ratingValue/i);
     expect(section).not.toMatch(/order_count|verified_order/i);
+  });
+
+  it("FoodComments supports hideTitle/embedded without removing tip functionality", () => {
+    const comments = fs.readFileSync(
+      path.join(root, "src/components/comments/FoodComments.jsx"),
+      "utf8"
+    );
+    expect(comments).toMatch(/hideTitle/);
+    expect(comments).toMatch(/embedded/);
+    expect(comments).toMatch(/listPublicFoodComments/);
+    expect(comments).toMatch(/createFoodComment/);
   });
 
   it("public profile shell mounts WhatDinersAreSaying", () => {
