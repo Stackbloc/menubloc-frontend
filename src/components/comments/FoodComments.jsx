@@ -15,6 +15,7 @@ import {
   updateFoodComment,
 } from "../../lib/foodCommentsApi.js";
 import { scheduleScrollToFoodComments } from "../../lib/foodCommentsScroll.js";
+import { profileReadableSurfaceStyle } from "../restaurant/publicProfile/profilePrimitives.jsx";
 
 const TOPIC_RESTAURANT = "";
 
@@ -689,8 +690,12 @@ export default function FoodComments({
     <section
       id="food-comments"
       data-testid="food-comments"
+      data-profile-surface="card"
       aria-label={title}
-      style={{ marginBottom: compact ? 16 : 28 }}
+      style={profileReadableSurfaceStyle({
+        marginBottom: compact ? 16 : 28,
+        padding: compact ? "14px 14px" : "16px 16px",
+      })}
     >
       <div
         style={{

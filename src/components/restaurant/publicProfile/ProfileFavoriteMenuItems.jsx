@@ -9,6 +9,7 @@ import {
   profileCardBorderVar,
   firstNonEmpty,
   ProfileSectionBlank,
+  profileReadableSurfaceStyle,
 } from "./profilePrimitives.jsx";
 
 function formatItemPrice(raw) {
@@ -43,8 +44,11 @@ export default function ProfileFavoriteMenuItems({
   return (
     <section
       data-testid="profile-favorite-menu-items"
+      data-profile-surface="card"
       aria-label="Favorite Menu Items"
-      style={{ marginBottom: isMobile ? 20 : 28 }}
+      style={profileReadableSurfaceStyle({
+        marginBottom: isMobile ? 20 : 28,
+      })}
     >
       <div
         style={{

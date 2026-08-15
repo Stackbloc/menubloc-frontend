@@ -31,6 +31,25 @@ export const profileCardShadowVar = "var(--profile-card-shadow, 0 1px 2px rgba(2
 export const profileButtonBgVar = `var(--profile-button-background, ${PROFILE_GREEN})`;
 export const profileButtonTextVar = "var(--profile-button-text, #ffffff)";
 
+/**
+ * Solid white surface for section titles + muted copy on patterned Restaurant Styles.
+ * Prefer this over bare ink/muted text on `--profile-pattern`.
+ */
+export function profileReadableSurfaceStyle({
+  marginBottom = 28,
+  padding = "16px 16px",
+} = {}) {
+  return {
+    marginBottom,
+    padding,
+    borderRadius: 16,
+    background: "#fff",
+    border: `1px solid ${profileCardBorderVar}`,
+    boxShadow: profileCardShadowVar,
+    minWidth: 0,
+  };
+}
+
 export function asStr(v) {
   return v == null ? "" : String(v);
 }
@@ -211,15 +230,7 @@ export function ProfileSection({ title, children, empty = false, testId }) {
   if (children == null || children === false || children === "") return null;
   return (
     <section
-      style={{
-        marginBottom: 28,
-        padding: "18px 18px",
-        borderRadius: 16,
-        background: "#fff",
-        border: `1px solid ${profileCardBorderVar}`,
-        boxShadow: profileCardShadowVar,
-        minWidth: 0,
-      }}
+      style={profileReadableSurfaceStyle({ marginBottom: 28, padding: "18px 18px" })}
       data-empty={empty ? "true" : undefined}
       data-testid={testId}
       data-profile-surface="card"

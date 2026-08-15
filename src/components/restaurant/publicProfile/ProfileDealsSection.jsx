@@ -9,6 +9,7 @@ import {
   profileAccentVar,
   firstNonEmpty,
   ProfileSectionBlank,
+  profileReadableSurfaceStyle,
 } from "./profilePrimitives.jsx";
 
 function formatPrice(raw) {
@@ -39,8 +40,11 @@ export default function ProfileDealsSection({
   return (
     <section
       data-testid="profile-deals-section"
+      data-profile-surface="card"
       aria-label="Deals"
-      style={{ marginBottom: isMobile ? 20 : 28 }}
+      style={profileReadableSurfaceStyle({
+        marginBottom: isMobile ? 20 : 28,
+      })}
     >
       <div
         style={{

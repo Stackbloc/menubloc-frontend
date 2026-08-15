@@ -9,6 +9,7 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import FoodComments from "../comments/FoodComments.jsx";
 import { listPublicRestaurantFoodActivity } from "../../lib/foodActivityApi.js";
+import { profileReadableSurfaceStyle } from "./publicProfile/profilePrimitives.jsx";
 
 function dinerLabel(activity) {
   const name = String(activity?.display_name || "").trim();
@@ -111,46 +112,52 @@ export default function WhatDinersAreSaying({
       id="what-diners-are-saying"
       data-testid="what-diners-are-saying"
       aria-label="What Diners Are Saying"
-      style={{ marginBottom: compact ? 16 : 28 }}
+      style={{ marginBottom: 0 }}
     >
-      <div style={styles.sectionTitle}>What Diners Are Saying</div>
-      <p style={styles.disclaimer}>
-        User-reported food activity — Menuply does not verify purchases.
-      </p>
-
-      {loading ? <p style={styles.muted}>Loading activity…</p> : null}
-      {error ? (
-        <p style={styles.error} role="alert">
-          {error}
+      <div
+        data-profile-surface="card"
+        style={profileReadableSurfaceStyle({
+          marginBottom: 16,
+          padding: compact ? "14px 14px" : "16px 16px",
+        })}
+      >
+        <div style={styles.sectionTitle}>What Diners Are Saying</div>
+        <p style={styles.disclaimer}>
+          User-reported food activity — Menuply does not verify purchases.
         </p>
-      ) : null}
 
-      {!loading && activities.length === 0 ? (
-        <p style={styles.muted} data-testid="diners-saying-empty">
-          No one has shared what they&apos;re eating here yet.
-        </p>
-      ) : null}
+        {loading ? <p style={styles.muted}>Loading activity…</p> : null}
+        {error ? (
+          <p style={styles.error} role="alert">
+            {error}
+          </p>
+        ) : null}
 
-      {!loading && activities.length > 0 ? (
-        <div style={styles.list} data-testid="diners-saying-list">
-          {activities.map((a) => (
-            <ActivityCard key={a.id} activity={a} />
-          ))}
-        </div>
-      ) : null}
+        {!loading && activities.length === 0 ? (
+          <p style={styles.muted} data-testid="diners-saying-empty">
+            No one has shared what they&apos;re eating here yet.
+          </p>
+        ) : null}
 
-      <div style={{ marginTop: 16 }}>
-        <FoodComments
-          restaurantId={restaurantId}
-          restaurantSlug={restaurantSlug}
-          restaurantCity={restaurantCity}
-          restaurantState={restaurantState}
-          menuPreviewItems={menuPreviewItems}
-          showFeaturedFirst
-          title="Tips & discussion"
-          compact={compact}
-        />
+        {!loading && activities.length > 0 ? (
+          <div style={styles.list} data-testid="diners-saying-list">
+            {activities.map((a) => (
+              <ActivityCard key={a.id} activity={a} />
+            ))}
+          </div>
+        ) : null}
       </div>
+
+      <FoodComments
+        restaurantId={restaurantId}
+        restaurantSlug={restaurantSlug}
+        restaurantCity={restaurantCity}
+        restaurantState={restaurantState}
+        menuPreviewItems={menuPreviewItems}
+        showFeaturedFirst
+        title="Tips & discussion"
+        compact={compact}
+      />
     </section>
   );
 }

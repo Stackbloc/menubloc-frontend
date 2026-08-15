@@ -16,7 +16,7 @@ import {
   normalizeWindowsPhotoOrientation,
   windowsFrameAspectRatio,
 } from "../../../lib/windowsPhotoOrientation.js";
-import { PROFILE_INK, profileCardBorderVar } from "./profilePrimitives.jsx";
+import { PROFILE_INK, profileCardBorderVar, profileReadableSurfaceStyle } from "./profilePrimitives.jsx";
 
 function postImage(post, { narrow = false } = {}) {
   const raw = String(post?.image_url || post?.photo_url || "").trim();
@@ -139,8 +139,12 @@ export default function ProfileBillboardBlock({
       data-testid="profile-billboard-block"
       data-section="windows"
       data-windows-orientation={orientation}
+      data-profile-surface="card"
       aria-label="Windows"
-      style={{ marginBottom: isMobile ? 14 : 18 }}
+      style={profileReadableSurfaceStyle({
+        marginBottom: isMobile ? 14 : 18,
+        padding: isMobile ? "12px 12px" : "14px 14px",
+      })}
     >
       <div
         style={{

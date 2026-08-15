@@ -7,9 +7,9 @@ import ProfilePhotoStrip from "./ProfilePhotoStrip.jsx";
 import {
   PROFILE_INK,
   PROFILE_MUTED,
-  profileCardBorderVar,
   firstNonEmpty,
   ProfileSectionBlank,
+  profileReadableSurfaceStyle,
 } from "./profilePrimitives.jsx";
 
 export default function ProfileAboutFounded({
@@ -38,8 +38,12 @@ export default function ProfileAboutFounded({
   return (
     <section
       data-testid="profile-about-founded"
+      data-profile-surface="card"
       aria-label={aboutHeading}
-      style={{ marginBottom: isMobile ? 20 : 28 }}
+      style={profileReadableSurfaceStyle({
+        marginBottom: isMobile ? 20 : 28,
+        padding: isMobile ? "12px 14px" : "14px 16px",
+      })}
     >
       <div
         style={{
@@ -54,10 +58,6 @@ export default function ProfileAboutFounded({
       </div>
       <div
         style={{
-          padding: isMobile ? "12px 14px" : "14px 16px",
-          borderRadius: 14,
-          border: `1px solid ${profileCardBorderVar}`,
-          background: "#fff",
           display: "grid",
           gap: 14,
         }}

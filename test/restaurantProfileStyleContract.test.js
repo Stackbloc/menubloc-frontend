@@ -174,9 +174,28 @@ describe("operator + public profile style wiring", () => {
       "utf8"
     );
     assert.match(primitives, /function ProfileSection/);
+    assert.match(primitives, /function profileReadableSurfaceStyle/);
     assert.match(primitives, /data-profile-surface="card"/);
     assert.match(primitives, /background:\s*"#fff"/);
     assert.match(primitives, /profileCardBorderVar/);
+    assert.match(primitives, /profileReadableSurfaceStyle/);
+
+    for (const rel of [
+      "src/components/restaurant/publicProfile/ProfileDealsSection.jsx",
+      "src/components/restaurant/publicProfile/ProfileUpdates.jsx",
+      "src/components/restaurant/publicProfile/ProfileFavoriteMenuItems.jsx",
+      "src/components/restaurant/publicProfile/ProfileAboutFounded.jsx",
+      "src/components/restaurant/publicProfile/ProfileBillboardBlock.jsx",
+      "src/components/restaurant/WhatDinersAreSaying.jsx",
+      "src/components/comments/FoodComments.jsx",
+    ]) {
+      const src = readFileSync(join(root, rel), "utf8");
+      assert.match(
+        src,
+        /profileReadableSurfaceStyle/,
+        `${rel} must use readable surface on patterned styles`
+      );
+    }
   });
 
   it("RestaurantStyleSelector has Use Recommended + preview cards emphasizing pattern body", () => {

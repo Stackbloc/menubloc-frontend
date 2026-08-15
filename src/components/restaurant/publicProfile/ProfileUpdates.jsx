@@ -7,6 +7,7 @@ import {
   PROFILE_MUTED,
   profileCardBorderVar,
   ProfileSectionBlank,
+  profileReadableSurfaceStyle,
 } from "./profilePrimitives.jsx";
 
 export default function ProfileUpdates({
@@ -22,8 +23,11 @@ export default function ProfileUpdates({
   return (
     <section
       data-testid="profile-updates"
+      data-profile-surface="card"
       aria-label="Updates"
-      style={{ marginBottom: isMobile ? 20 : 28 }}
+      style={profileReadableSurfaceStyle({
+        marginBottom: isMobile ? 20 : 28,
+      })}
     >
       <div
         style={{
