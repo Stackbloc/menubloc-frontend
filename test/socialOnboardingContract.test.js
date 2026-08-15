@@ -77,6 +77,10 @@ test("onboarding page reuses existing social surfaces and skippable copy", () =>
   assert.match(page, /ImEatingComposer/);
   assert.match(page, /createDiningCrew/);
   assert.match(page, /inviteToDiningCrew/);
+  assert.match(page, /Text an invite/);
+  assert.match(page, /buildShareLinks/);
+  assert.match(page, /Messages app/);
+  assert.match(page, /normalizeConsumerShareUrl/);
   assert.match(page, /sendEduVerification/);
   assert.match(page, /createImEating/);
   assert.match(page, /fetchWaiterPeopleEating/);

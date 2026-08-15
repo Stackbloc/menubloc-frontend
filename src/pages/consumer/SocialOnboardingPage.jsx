@@ -25,6 +25,11 @@ import {
 import { fetchWaiterPeopleEating } from "../../lib/waiterApi.js";
 import { clusterPath } from "../../lib/clusterUrl.js";
 import {
+  buildShareLinks,
+  copyText,
+  normalizeConsumerShareUrl,
+} from "../../components/share/shareUtils.js";
+import {
   DEFAULT_ONBOARDING_CLUSTER,
   SOCIAL_ONBOARDING_STEPS,
   emptySocialOnboardingState,
@@ -42,6 +47,29 @@ const USC_CLUSTER_HREF =
     city: DEFAULT_ONBOARDING_CLUSTER.city,
     slug: DEFAULT_ONBOARDING_CLUSTER.slug,
   }) || "/clusters";
+
+/** Force invite URLs onto https://menuply.com (never preview / share.google origins). */
+function menuplyInviteUrl(apiUrl) {
+  const raw = String(apiUrl || "").trim();
+  if (!raw) return "";
+  try {
+    const parsed = new URL(raw, "https://menuply.com");
+    return (
+      normalizeConsumerShareUrl(`https://menuply.com${parsed.pathname}${parsed.search}`) || ""
+    );
+  } catch {
+    return normalizeConsumerShareUrl(raw) || "";
+  }
+}
+
+function diningCrewInviteShareData(inviteUrl) {
+  const url = menuplyInviteUrl(inviteUrl);
+  return {
+    title: "Join my Dining Crew on Menuply",
+    text: "Join my Dining Crew on Menuply — let's decide where and what to eat together.",
+    url,
+  };
+}
 
 const STEP_META = {
   dining_crew: { title: "Who do you eat with?" },
@@ -76,6 +104,7 @@ export default function SocialOnboardingPage() {
   const [crewReady, setCrewReady] = useState(false);
   const [inviteUrl, setInviteUrl] = useState("");
   const [activeCrewId, setActiveCrewId] = useState(null);
+  const [copyState, setCopyState] = useState("idle");
 
   // Expand step
   const [expandMode, setExpandMode] = useState(false);
@@ -177,31 +206,63 @@ export default function SocialOnboardingPage() {
     }
   }
 
-  async function handleAddPeople(e) {
-    e.preventDefault();
+  async function ensureDiningCrewInvite() {
+    let crewId = activeCrewId;
+    if (!crewId) {
+      const existing = await listDiningCrews();
+      const crews = existing.crews || [];
+      if (crews[0]?.id) {
+        crewId = crews[0].id;
+      } else {
+        const created = await createDiningCrew("My Dining Crew");
+        crewId = created.crew?.id;
+      }
+      setActiveCrewId(crewId);
+    }
+    const invited = await inviteToDiningCrew(crewId, {});
+    const url = menuplyInviteUrl(invited.invitation?.url || "");
+    setInviteUrl(url);
+    setCrewReady(true);
+    return url;
+  }
+
+  async function handleTextInvite(e) {
+    e?.preventDefault?.();
     setBusy(true);
     setError("");
     try {
-      let crewId = activeCrewId;
-      if (!crewId) {
-        const existing = await listDiningCrews();
-        const crews = existing.crews || [];
-        if (crews[0]?.id) {
-          crewId = crews[0].id;
-        } else {
-          const created = await createDiningCrew("My Dining Crew");
-          crewId = created.crew?.id;
-        }
-        setActiveCrewId(crewId);
+      const url = await ensureDiningCrewInvite();
+      if (!url) throw new Error("Unable to create invite link");
+      const links = buildShareLinks(diningCrewInviteShareData(url));
+      setNotice("Your Dining Crew is ready — pick who to text.");
+      // Opens the device Messages app with the Menuply invite (no phone-book harvest).
+      if (typeof window !== "undefined" && links.sms) {
+        window.location.href = links.sms;
       }
-      const invited = await inviteToDiningCrew(crewId, {});
-      setInviteUrl(invited.invitation?.url || "");
-      setCrewReady(true);
-      setNotice("Your Dining Crew is ready");
     } catch (err) {
       setError(err.message || "Unable to set up Dining Crew");
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function handleCopyInvite() {
+    setError("");
+    try {
+      let url = inviteUrl;
+      if (!url) {
+        setBusy(true);
+        url = await ensureDiningCrewInvite();
+        setBusy(false);
+      }
+      if (!url) throw new Error("Unable to create invite link");
+      const ok = await copyText(url);
+      setCopyState(ok ? "success" : "error");
+      setNotice(ok ? "Invite link copied — paste it into a text message." : "Could not copy link");
+    } catch (err) {
+      setBusy(false);
+      setError(err.message || "Unable to copy invite");
+      setCopyState("error");
     }
   }
 
@@ -306,17 +367,32 @@ export default function SocialOnboardingPage() {
               Add the people you usually eat with so you can easily decide where and what to eat
               together.
             </p>
+            <p style={styles.body}>
+              Start by texting them an invite — they open the link and join your crew.
+            </p>
             {crewReady ? (
               <div style={styles.card}>
                 <strong>Your Dining Crew is ready</strong>
-                {inviteUrl ? (
-                  <p style={styles.body}>
-                    Share this invite link:{" "}
-                    <a href={inviteUrl} style={styles.inlineLink}>
-                      {inviteUrl}
-                    </a>
-                  </p>
-                ) : null}
+                <p style={{ ...styles.soft, marginTop: 8 }}>
+                  Text as many people as you want. Matching by phone, email, or QR can come later —
+                  texting is the easiest way to start.
+                </p>
+                <button
+                  type="button"
+                  style={styles.primaryBtn}
+                  disabled={busy}
+                  onClick={handleTextInvite}
+                >
+                  Text another invite
+                </button>
+                <button
+                  type="button"
+                  style={styles.secondaryBtn}
+                  disabled={busy}
+                  onClick={handleCopyInvite}
+                >
+                  {copyState === "success" ? "Link copied" : "Copy invite link"}
+                </button>
                 <button
                   type="button"
                   style={styles.primaryBtn}
@@ -327,15 +403,29 @@ export default function SocialOnboardingPage() {
                 </button>
               </div>
             ) : (
-              <form onSubmit={handleAddPeople} style={styles.form}>
-                <p style={styles.soft}>
-                  We&apos;ll create your Dining Crew and give you a link to share — no phone contacts
-                  needed.
-                </p>
-                <button type="submit" style={styles.primaryBtn} disabled={busy}>
-                  Add people
+              <div style={styles.form}>
+                <button
+                  type="button"
+                  style={styles.primaryBtn}
+                  disabled={busy}
+                  onClick={handleTextInvite}
+                  data-testid="dining-crew-text-invite"
+                >
+                  Text an invite
                 </button>
-              </form>
+                <button
+                  type="button"
+                  style={styles.secondaryBtn}
+                  disabled={busy}
+                  onClick={handleCopyInvite}
+                >
+                  {copyState === "success" ? "Link copied" : "Copy invite link"}
+                </button>
+                <p style={styles.soft}>
+                  Opens your Messages app with a Menuply invite link. We never ask for your phone
+                  contacts.
+                </p>
+              </div>
             )}
             <SkipButton disabled={busy} onClick={() => settle("dining_crew", "skipped")} />
           </section>
@@ -376,22 +466,17 @@ export default function SocialOnboardingPage() {
             ) : (
               <div style={styles.form}>
                 <p style={styles.body}>
-                  Share your Dining Crew invite link with people you want to eat with. No phone
-                  contacts required.
+                  Keep growing your crew the same way — text an invite when you meet someone over
+                  food. Phone, email, or QR matching can help later; it is not required here.
                 </p>
-                {inviteUrl ? (
-                  <p style={styles.body}>
-                    Your invite link:{" "}
-                    <a href={inviteUrl} style={styles.inlineLink}>
-                      {inviteUrl}
-                    </a>
-                  </p>
-                ) : (
-                  <p style={styles.soft}>
-                    If you set up a Dining Crew earlier, open Dining Crews anytime to copy a fresh
-                    invite link.
-                  </p>
-                )}
+                <button
+                  type="button"
+                  style={styles.primaryBtn}
+                  disabled={busy}
+                  onClick={handleTextInvite}
+                >
+                  Text an invite
+                </button>
                 <Link to="/account/dining-crews" style={styles.secondaryLink}>
                   Open Dining Crews
                 </Link>
@@ -629,6 +714,20 @@ const styles = {
     background: "linear-gradient(180deg, #22c55e 0%, #16a34a 100%)",
     color: "#fff",
     fontWeight: 800,
+    fontSize: 15,
+    cursor: "pointer",
+    marginBottom: 10,
+  },
+  secondaryBtn: {
+    display: "inline-flex",
+    justifyContent: "center",
+    alignItems: "center",
+    border: "1px solid #d1d5db",
+    borderRadius: 12,
+    padding: "12px 16px",
+    background: "#fff",
+    color: "#111827",
+    fontWeight: 700,
     fontSize: 15,
     cursor: "pointer",
     marginBottom: 10,
