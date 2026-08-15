@@ -1,11 +1,27 @@
 # College Cluster Campus Dining
 
 **Date:** 2026-08-14  
-**Status:** LOCAL COMPLETE — migrate `0248` + USC seed + deploy not run
+**Status:** CPD COMPLETE — FE `eb1b377` / tip `3ejgczu00` / `index-BrTJV97-.js`; BE `a2ae326c` + migration `0248` + USC seed
 
 ## Summary
 
 Lightweight Campus Dining on `university` clusters only. Reuses `public.restaurants`, `cluster_restaurants.is_campus_dining`, `food_activity`, and existing What Diners Are Saying / What People Are Eating. No menu analysis, no new activity table, no Waiter UI redesign.
+
+## Deployment Status
+
+**CPD COMPLETE.** See `docs/deployments/2026-08-14_campus-dining-cpd.md` and LKG registry `docs/guardrails/2026-08-14_production-deploy-and-lkg-contract.md`.
+
+## Verification Results
+
+- FE/BE campusDiningContract — pass  
+- Tip-gate apex+www — PASS  
+- USC campus-dining API — 3 locations  
+- Railway health — `a2ae326c…`
+
+## Final Verdict
+
+Shipped. Agents must treat tip `3ejgczu00` / BE `a2ae326c` as current LKG until the next tip-gate PASS updates the LKG contract.
+
 
 ## Problem Statement
 

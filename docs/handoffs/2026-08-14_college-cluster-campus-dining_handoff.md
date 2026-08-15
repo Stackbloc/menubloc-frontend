@@ -4,7 +4,15 @@ Add Campus Dining to applicable university College Clusters using existing resta
 
 # Current Status
 
-**LOCAL COMPLETE** (code + contract tests). Not committed. Migration `0248` and USC seed not applied to production. Deploy not attempted.
+**CPD COMPLETE** (2026-08-14).
+
+| Layer | Value |
+|-------|--------|
+| FE tip | `menubloc-frontend-3ejgczu00-menuply.vercel.app` / `index-BrTJV97-.js` @ `eb1b377` |
+| BE | Railway health `a2ae326c` |
+| DB | migration `0248` + USC seed (3 halls) |
+| Agent LKG | `docs/guardrails/2026-08-14_production-deploy-and-lkg-contract.md` |
+| CPD | `docs/deployments/2026-08-14_campus-dining-cpd.md` |
 
 # Files Changed
 
@@ -33,7 +41,7 @@ Add Campus Dining to applicable university College Clusters using existing resta
 # Database Changes
 
 - Column: `public.cluster_restaurants.is_campus_dining BOOLEAN NOT NULL DEFAULT FALSE`
-- Seed (when applied): USC Village Dining Hall, Parkside Dining Hall, Everybody's Kitchen + membership flags
+- Seed applied: USC Village Dining Hall, Parkside Dining Hall, Everybody's Kitchen
 
 # Decisions Made
 
@@ -42,37 +50,33 @@ Add Campus Dining to applicable university College Clusters using existing resta
 - Reuse `food_activity` — no `campus_dining_activity`
 - Place-only I'm Eating requires a note
 - Waiter: reuse people-eating path; minimal shaping for place; no Waiter page rewrite
-- Do not invent halls beyond the three known USC residential/village shells
 
 # Remaining Work
 
-1. Andre: authorize commit (or commit on request)
-2. Apply migration: `CONFIRM_PRODUCTION_TARGET=true railway run … node scripts/apply-campus-dining-0248.js --allow-production`
-3. Seed: `CONFIRM_PRODUCTION_TARGET=true … node scripts/seed/seedUscCampusDining.js --apply --allow-production` (dry-run first)
-4. Deploy BE from `menubloc-backend-main` @ clean `main`; FE from `menubloc-frontend-main` + alias + tip-gate
-5. Smoke: USC shows Campus Dining; LA Live / non-university does not; place-only I'm Eating; logged-out view
+1. Optional human smoke on `/clusters/usc`
+2. Retry `venues.menuply.com` alias if cert issuance fails again
+3. Keep LKG contract CURRENT section in sync on every future tip-gate PASS
 
 # Risks / Known Issues
 
-- Seed INSERT column set assumes current restaurants schema
-- Until migrate+seed, Campus Dining section stays hidden on USC
+- `venues.menuply.com` alias hit certificate issuance error during CPD (apex/www/crm OK)
 
 # Verification Status
 
 | Check | Result |
 |-------|--------|
-| FE campusDiningContract | PASS |
-| BE campusDiningContract | PASS |
-| Prod migrate/seed | NOT RUN |
-| Live smoke | NOT RUN |
+| FE/BE campusDiningContract | PASS |
+| Prod migrate/seed | PASS |
+| Tip-gate apex+www | PASS |
+| USC campus-dining API | 3 locations |
+| Live UI smoke | optional human |
 
 # Resume Instructions
 
-1. Read this handoff + `docs/audits/2026-08-14_college-cluster-campus-dining.md`
-2. Commit FE/BE if Andre asks
-3. Migrate + seed with production consent
-4. Deploy authorized paths only; tip-gate PASS
+1. Read LKG contract first: `docs/guardrails/2026-08-14_production-deploy-and-lkg-contract.md`
+2. Do not restore prior tips unless Andre names them
+3. Next Campus Dining work: more university halls only when known (no scrape pipeline)
 
 # Git Status
 
-Uncommitted local changes on `menubloc-frontend-main` and `menubloc-backend-main` `main` (ahead/behind per remote at commit time).
+FE `eb1b377` and BE `a2ae326c` on `origin/main` (clean at CPD close).
