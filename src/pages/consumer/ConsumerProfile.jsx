@@ -22,11 +22,13 @@ import {
   changePassword,
   getLikedMenuItems,
   unlikeMenuItem,
+  sendEduVerification,
 } from "../../lib/consumerApi.js";
 import { resetMenuPreferenceSessionForLogin } from "../../lib/menuCatalogBrowsePreferences.js";
 import { fetchMyClusters } from "../../lib/clusterApi.js";
 import { useLanguage } from "../../context/LanguageContext.jsx";
 import SmsAuthModal from "../../components/auth/SmsAuthModal.jsx";
+import { getEduVerificationFromConsumer } from "../../lib/eduVerificationDisplay.js";
 
 const DIETARY_OPTIONS = [
   { key: "vegetarian", label: "Vegetarian" },
@@ -129,6 +131,11 @@ export default function ConsumerProfile() {
   const [lastName, setLastName] = useState("");
   const [changePhoneOpen, setChangePhoneOpen] = useState(false);
   const [phoneChangeNotice, setPhoneChangeNotice] = useState("");
+  const [eduEmailInput, setEduEmailInput] = useState("");
+  const [eduBusy, setEduBusy] = useState(false);
+  const [eduNotice, setEduNotice] = useState("");
+  const [eduError, setEduError] = useState("");
+  const [eduStatus, setEduStatus] = useState(null);
 
   const [dietPrefs, setDietPrefs] = useState({});
   const [allergenPrefs, setAllergenPrefs] = useState({});
@@ -166,7 +173,7 @@ export default function ConsumerProfile() {
         getLikedMenuItems().catch(() => ({ likes: [] })),
         fetchMyClusters().catch(() => ({ clusters: [] })),
       ]);
-      const { profile, dietary_preferences, allergen_preferences, saved_locations, coins_wallet } = data;
+      const { profile, dietary_preferences, allergen_preferences, saved_locations, coins_wallet, consumer: profileConsumer } = data;
 
       const avoidMap = {};
       for (const key of avoidData?.foods_to_avoid || []) {
@@ -177,6 +184,9 @@ export default function ConsumerProfile() {
       setDisplayName(profile.display_name || "");
       setFirstName(profile.first_name || "");
       setLastName(profile.last_name || "");
+      setEduStatus(getEduVerificationFromConsumer(profileConsumer || {}));
+      setEduNotice("");
+      setEduError("");
 
       const dietMap = {};
       for (const pref of dietary_preferences || []) {
@@ -241,6 +251,21 @@ export default function ConsumerProfile() {
     }
     setAllergenNoneSelected(false);
     setAllergenPrefs((prev) => ({ ...prev, [key]: value }));
+  }
+
+  async function handleSendEduVerification() {
+    setEduBusy(true);
+    setEduNotice("");
+    setEduError("");
+    try {
+      const result = await sendEduVerification(eduEmailInput.trim());
+      setEduNotice(result.message || "Check your .edu inbox for a verification link.");
+      setEduEmailInput("");
+    } catch (err) {
+      setEduError(err.message || "Unable to start .edu verification");
+    } finally {
+      setEduBusy(false);
+    }
   }
 
   async function saveProfilePreferences() {
@@ -476,6 +501,59 @@ export default function ConsumerProfile() {
                 {phoneChangeNotice}
               </div>
             ) : null}
+          </div>
+
+          <div style={styles.field}>
+            <label style={styles.fieldLabel}>
+              School verification <span style={styles.optText}>(optional .edu)</span>
+            </label>
+            {eduStatus?.edu_verified ? (
+              <>
+                <p style={{ ...styles.readOnly, color: "#14532d", fontWeight: 700 }}>
+                  {eduStatus.badge}
+                </p>
+                <p style={styles.sectionDesc}>
+                  Shows school affiliation only. Does not prove current enrollment.
+                  Your .edu email is never shown publicly.
+                </p>
+              </>
+            ) : (
+              <>
+                <p style={styles.sectionDesc}>
+                  Optionally verify a school email ending in .edu. This is an affiliation signal —
+                  not enrollment proof — and is not required to use Menuply.
+                </p>
+                <div style={styles.phoneRow}>
+                  <input
+                    type="email"
+                    value={eduEmailInput}
+                    onChange={(e) => setEduEmailInput(e.target.value)}
+                    style={styles.input}
+                    placeholder="you@school.edu"
+                    aria-label="School .edu email"
+                    autoComplete="email"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleSendEduVerification}
+                    disabled={eduBusy || !eduEmailInput.trim()}
+                    style={styles.changePhoneBtn}
+                  >
+                    {eduBusy ? "Sending…" : "Send link"}
+                  </button>
+                </div>
+                {eduNotice ? (
+                  <div style={{ marginTop: 8, fontSize: 13, color: "#14532d", fontWeight: 700 }}>
+                    {eduNotice}
+                  </div>
+                ) : null}
+                {eduError ? (
+                  <div style={{ marginTop: 8, fontSize: 13, color: "#b91c1c", fontWeight: 700 }}>
+                    {eduError}
+                  </div>
+                ) : null}
+              </>
+            )}
           </div>
         </Section>
 

@@ -60,6 +60,12 @@ export const verifySmsCode         = (phone_number, code, verification_sid = nul
 export const sendPhoneChangeCode   = (phone_number)        => post("/api/consumer-auth/phone/send", { phone_number });
 export const verifyPhoneChangeCode = (phone_number, code, verification_sid = null) =>
   post("/api/consumer-auth/phone/verify", { phone_number, code, verification_sid });
+export const sendEduVerification = (edu_email) =>
+  post("/api/consumer-auth/edu/send", { edu_email });
+export const peekEduVerification = (token) =>
+  get(`/api/consumer-auth/edu/verify?token=${encodeURIComponent(token)}`);
+export const confirmEduVerification = (token) =>
+  post("/api/consumer-auth/edu/verify", { token });
 
 // ── Profile ───────────────────────────────────────────────────────────────
 export const getConsumerProfile    = ()     => get("/api/consumer/profile");

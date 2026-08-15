@@ -53,6 +53,7 @@ import ConsumerLogin from "./pages/consumer/ConsumerLogin.jsx";
 import AppleAuthCallback from "./pages/consumer/AppleAuthCallback.jsx";
 import ConsumerForgotPassword from "./pages/consumer/ConsumerForgotPassword.jsx";
 import ConsumerResetPassword from "./pages/consumer/ConsumerResetPassword.jsx";
+import ConsumerEduVerify from "./pages/consumer/ConsumerEduVerify.jsx";
 import ConsumerProfile from "./pages/consumer/ConsumerProfile.jsx";
 import ConsumerFollowing from "./pages/consumer/ConsumerFollowing.jsx";
 import ConsumerOrderFeedbackPage from "./pages/consumer/ConsumerOrderFeedbackPage.jsx";
@@ -879,6 +880,7 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
         <Route path="/auth/apple/callback" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <AppleAuthCallback />} />
         <Route path="/account/forgot-password" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <ConsumerForgotPassword />} />
         <Route path="/account/reset-password" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <ConsumerResetPassword />} />
+        <Route path="/account/edu-verify" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <ConsumerEduVerify />} />
         <Route path="/account" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ConsumerProfile />} />
         <Route path="/account/welcome" element={crmHost ? <HostRouteRedirect to="/crm" /> : <AccountWelcome />} />
         <Route path="/account/following" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ConsumerFollowing />} />
