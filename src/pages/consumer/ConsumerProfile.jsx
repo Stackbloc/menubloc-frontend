@@ -401,6 +401,16 @@ export default function ConsumerProfile() {
           </Link>
         </Section>
 
+        <Section title="Connections">
+          <p style={styles.sectionDesc}>
+            People you interact with through Menuply meals and invitations — not a Friend
+            list or stranger directory.
+          </p>
+          <Link to="/account/connections" style={styles.followingLink}>
+            Manage Connections
+          </Link>
+        </Section>
+
         <Section title="Following">
           <p style={styles.sectionDesc}>
             See the restaurants you follow and remove them from one place.

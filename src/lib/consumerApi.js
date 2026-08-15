@@ -67,6 +67,21 @@ export const peekEduVerification = (token) =>
 export const confirmEduVerification = (token) =>
   post("/api/consumer-auth/edu/verify", { token });
 
+// ── Connections (people — not restaurant Following) ───────────────────────
+export const listConnections = (status = null) =>
+  get(
+    status
+      ? `/api/consumer/connections?status=${encodeURIComponent(status)}`
+      : "/api/consumer/connections"
+  );
+export const requestConnection = (body) => post("/api/consumer/connections", body);
+export const acceptConnection = (id) =>
+  post(`/api/consumer/connections/${encodeURIComponent(String(id))}/accept`, {});
+export const declineConnection = (id) =>
+  post(`/api/consumer/connections/${encodeURIComponent(String(id))}/decline`, {});
+export const removeConnection = (id) =>
+  del(`/api/consumer/connections/${encodeURIComponent(String(id))}`);
+
 // ── Profile ───────────────────────────────────────────────────────────────
 export const getConsumerProfile    = ()     => get("/api/consumer/profile");
 export const updateConsumerProfile = (body) => put("/api/consumer/profile", body);
