@@ -1,10 +1,9 @@
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 
 export async function fetchWaiterBriefing(city, state, mealPeriod, options = {}) {
-  if (!city || !state) return { ok: true, city: null, state: null, recommendations: [] };
   const params = new URLSearchParams();
-  params.set("city", city);
-  params.set("state", state);
+  if (city) params.set("city", String(city));
+  if (state) params.set("state", String(state));
   params.set("meal_period", mealPeriod || "lunch");
   if (options.clusterId) params.set("cluster_id", String(options.clusterId));
   if (options.clusterSlug) params.set("cluster_slug", String(options.clusterSlug));

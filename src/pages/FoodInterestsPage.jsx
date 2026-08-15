@@ -11,6 +11,7 @@ import { readMenuBrowserVenueSession } from "../lib/menuBrowserVenueContext.js";
 // This file is FROZEN. Do NOT add MarketFallback, CommunityGrowthCard, or
 // remove the meal period selector without explicit user instruction.
 // One card per recommendation category. See CLAUDE.md Waiter guardrail.
+// 2026-08-15 Phase 6 (user-authorized): cluster subscription report leads briefing.
 
 const SESSION_LOCATION_KEY = "grubbid.discovery.location";
 const SESSION_AUTO_LABEL_KEY = "grubbid.discovery.auto_label";
@@ -77,6 +78,11 @@ function capitalizeHeading(value) {
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
+function itemDetailLine(item) {
+  // Backend cluster report already embeds cluster_name in detail when present.
+  return String(item.detail || "").trim();
+}
+
 // Renders one card for an entire category (e.g. all "New for Dinner" items).
 // Each item title is directly clickable — no separate "View dish →" link.
 function CategoryCard({ group }) {
@@ -84,20 +90,23 @@ function CategoryCard({ group }) {
     <div style={CARD_STYLE}>
       {group.label ? <div style={LABEL_STYLE}>{capitalizeHeading(group.label)}</div> : null}
       <div style={{ display: "grid", gap: 10 }}>
-        {group.items.map((item, index) => (
-          <div key={item.link || item.title || index}>
-            {item.link ? (
-              <Link to={item.link} style={{ ...ITEM_LINK_STYLE, display: "block", fontWeight: 600, color: "#E5E7EB" }}>
-                {item.title}
-              </Link>
-            ) : (
-              <span style={{ ...ITEM_LINK_STYLE, fontWeight: 600, color: "#E5E7EB" }}>{item.title}</span>
-            )}
-            {item.detail ? (
-              <div style={{ fontSize: 11, color: "#6B7280", lineHeight: 1.4, marginTop: 2 }}>{item.detail}</div>
-            ) : null}
-          </div>
-        ))}
+        {group.items.map((item, index) => {
+          const detail = itemDetailLine(item);
+          return (
+            <div key={item.link || item.title || index}>
+              {item.link ? (
+                <Link to={item.link} style={{ ...ITEM_LINK_STYLE, display: "block", fontWeight: 600, color: "#E5E7EB" }}>
+                  {item.title}
+                </Link>
+              ) : (
+                <span style={{ ...ITEM_LINK_STYLE, fontWeight: 600, color: "#E5E7EB" }}>{item.title}</span>
+              )}
+              {detail ? (
+                <div style={{ fontSize: 11, color: "#6B7280", lineHeight: 1.4, marginTop: 2 }}>{detail}</div>
+              ) : null}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -131,13 +140,17 @@ export default function FoodInterestsPage() {
     return getDefaultMealPeriod(new Date(), getTimezoneForUsState(location.state));
   });
 
+  const canFetchBriefing = Boolean((location.city && location.state) || isAuthenticated);
+
   const [briefing, setBriefing] = useState(null);
-  const [briefingLoading, setBriefingLoading] = useState(
-    Boolean(location.city && location.state)
-  );
+  const [briefingLoading, setBriefingLoading] = useState(canFetchBriefing);
 
   useEffect(() => {
-    if (!location.city || !location.state) return undefined;
+    if (!canFetchBriefing) {
+      setBriefing(null);
+      setBriefingLoading(false);
+      return undefined;
+    }
     let cancelled = false;
     setBriefingLoading(true);
     fetchWaiterBriefing(location.city, location.state, mealPeriod, {
@@ -148,7 +161,7 @@ export default function FoodInterestsPage() {
       .catch(() => { if (!cancelled) setBriefing(null); })
       .finally(() => { if (!cancelled) setBriefingLoading(false); });
     return () => { cancelled = true; };
-  }, [location.city, location.state, mealPeriod, clusterId, clusterSlug]);
+  }, [canFetchBriefing, location.city, location.state, mealPeriod, clusterId, clusterSlug]);
 
   function selectMealPeriod(id) {
     setMealPeriod(id);
@@ -159,12 +172,23 @@ export default function FoodInterestsPage() {
     });
   }
 
-  const subheading = locationLabel
-    ? `Food picks for ${locationLabel}.`
-    : "Your local food market intelligence.";
+  const subscriptionCount = Number(briefing?.cluster_report?.followed_total || 0);
+  const clusterNames = (briefing?.cluster_report?.subscriptions || [])
+    .map((c) => c?.name)
+    .filter(Boolean)
+    .slice(0, 3);
+  const subheading = (() => {
+    if (subscriptionCount > 0 && clusterNames.length) {
+      const more = subscriptionCount > clusterNames.length ? ` +${subscriptionCount - clusterNames.length}` : "";
+      return `Food report for ${clusterNames.join(", ")}${more}.`;
+    }
+    if (locationLabel) return `Food picks for ${locationLabel}.`;
+    return "Your local food market intelligence.";
+  })();
 
-  // briefing.recommendations is the correct field (not briefing.cards)
+  // Use recommendations from the briefing payload (never the legacy cards field).
   const groups = groupByType(briefing?.recommendations);
+  const clusterNotice = briefing?.cluster_report?.notice || null;
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--gb-color-page)", color: "var(--gb-color-ink)", paddingBottom: "calc(var(--bottom-nav-h, 72px) + 28px)" }}>
@@ -186,10 +210,16 @@ export default function FoodInterestsPage() {
           <p style={{ margin: "8px 0 0", fontSize: 14, color: "#CBD5E1", lineHeight: 1.55 }}>{subheading}</p>
           {!isAuthenticated ? (
             <div style={{ marginTop: 16, borderRadius: 16, border: "1px solid rgba(34,197,94,0.18)", background: "rgba(34,197,94,0.08)", padding: "12px 14px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-              <div style={{ fontSize: 13, color: "#DCFCE7", lineHeight: 1.45 }}>Sign in to like dishes and improve Waiter recommendations.</div>
+              <div style={{ fontSize: 13, color: "#DCFCE7", lineHeight: 1.45 }}>Sign in to follow clusters and personalize Waiter.</div>
               <button type="button" onClick={() => navigate("/account/login")} style={{ border: "none", borderRadius: 999, background: "#22C55E", color: "#0B0F0C", fontSize: 12, fontWeight: 800, padding: "10px 12px", cursor: "pointer", whiteSpace: "nowrap" }}>Sign In</button>
             </div>
-          ) : null}
+          ) : (
+            <div style={{ marginTop: 12, fontSize: 12 }}>
+              <Link to="/account/cluster-subscriptions" style={{ color: "#86EFAC", fontWeight: 700, textDecoration: "none" }}>
+                Manage followed clusters
+              </Link>
+            </div>
+          )}
         </div>
 
         {/* Meal period selector */}
@@ -219,9 +249,9 @@ export default function FoodInterestsPage() {
         <section style={{ marginTop: 14 }} aria-live="polite">
           {briefingLoading ? (
             <div style={{ fontSize: 14, color: "#9CA3AF", padding: "12px 0" }}>Loading recommendations…</div>
-          ) : !location.city ? (
+          ) : !canFetchBriefing ? (
             <div style={{ fontSize: 13, color: "#6B7280", lineHeight: 1.55, padding: "12px 0" }}>
-              Set your location on the home screen to receive local recommendations.
+              Set your location on the home screen or sign in to follow clusters for Waiter.
             </div>
           ) : groups.length ? (
             <div style={{ display: "grid", gap: 12 }}>
@@ -231,7 +261,14 @@ export default function FoodInterestsPage() {
             </div>
           ) : (
             <div style={{ fontSize: 13, color: "#9CA3AF", lineHeight: 1.55, padding: "12px 0" }}>
-              No recommendations available for your area right now. Check back soon.
+              {clusterNotice || "No recommendations available for your area right now. Check back soon."}
+              {isAuthenticated && subscriptionCount === 0 ? (
+                <div style={{ marginTop: 8 }}>
+                  <Link to="/clusters" style={{ color: "#86EFAC", fontWeight: 700, textDecoration: "none" }}>
+                    Browse clusters to follow
+                  </Link>
+                </div>
+              ) : null}
             </div>
           )}
         </section>

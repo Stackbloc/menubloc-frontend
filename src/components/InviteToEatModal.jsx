@@ -39,11 +39,13 @@ export default function InviteToEatModal({
   restaurantName = "",
   menuItemId = null,
   menuItemName = null,
+  diningCrewId = null,
 }) {
   const { isAuthenticated } = useConsumer();
   const [inviteKind, setInviteKind] = useState(null);
   const [guestName, setGuestName] = useState("");
   const [inviteeName, setInviteeName] = useState("");
+  const [scheduleMode, setScheduleMode] = useState("organizer");
   const [date, setDate] = useState(tomorrowIsoDate);
   const [time, setTime] = useState("19:00");
   const [messageMode, setMessageMode] = useState("LDD");
@@ -55,9 +57,10 @@ export default function InviteToEatModal({
 
   useEffect(() => {
     if (!open) return;
-    setInviteKind(null);
+    setInviteKind(diningCrewId ? "group" : null);
     setGuestName(getEatInviteGuestDisplayName());
     setInviteeName("");
+    setScheduleMode("organizer");
     setDate(tomorrowIsoDate());
     setTime("19:00");
     const seed = pickInviteCopySeed({ scheduledTime: "19:00" });
@@ -67,25 +70,31 @@ export default function InviteToEatModal({
     setError("");
     setCreated(null);
     setShareOpen(false);
-  }, [open]);
+  }, [open, diningCrewId]);
 
   const resolvedKind =
     created?.invite_kind === "private" || inviteKind === "private" ? "private" : "group";
 
   const placeName = created?.restaurant_name || restaurantName || "Restaurant";
-  const dateLabel = formatInviteDateLabel(created?.scheduled_date || date);
-  const timeLabel = formatInviteTimeLabel(created?.scheduled_time || time);
+  const recipientChooses =
+    (created?.schedule_mode || scheduleMode) === "recipient_chooses";
+  const dateLabel = recipientChooses
+    ? ""
+    : formatInviteDateLabel(created?.scheduled_date || date);
+  const timeLabel = recipientChooses
+    ? ""
+    : formatInviteTimeLabel(created?.scheduled_time || time);
 
   const messageOptions = useMemo(
     () =>
       listInviteMessageOptions({
         inviteKind: inviteKind || "group",
         restaurantName: placeName,
-        dateLabel: formatInviteDateLabel(date),
-        timeLabel: formatInviteTimeLabel(time),
-        scheduledTime: time,
+        dateLabel: scheduleMode === "recipient_chooses" ? "" : formatInviteDateLabel(date),
+        timeLabel: scheduleMode === "recipient_chooses" ? "" : formatInviteTimeLabel(time),
+        scheduledTime: scheduleMode === "recipient_chooses" ? null : time,
       }),
-    [inviteKind, placeName, date, time]
+    [inviteKind, placeName, date, time, scheduleMode]
   );
 
   const selectedDraft =
@@ -95,21 +104,23 @@ export default function InviteToEatModal({
         buildEatInviteMessageDraft({
           inviteKind: inviteKind || "group",
           restaurantName: placeName,
-          dateLabel: formatInviteDateLabel(date),
-          timeLabel: formatInviteTimeLabel(time),
-          scheduledTime: time,
+          dateLabel: scheduleMode === "recipient_chooses" ? "" : formatInviteDateLabel(date),
+          timeLabel: scheduleMode === "recipient_chooses" ? "" : formatInviteTimeLabel(time),
+          scheduledTime: scheduleMode === "recipient_chooses" ? null : time,
           seedCode: messageMode,
         });
 
   const shareData = useMemo(() => {
     if (!created?.url) return null;
     const place = created.restaurant_name || restaurantName || "a restaurant";
+    const chooses =
+      created.schedule_mode === "recipient_chooses" || scheduleMode === "recipient_chooses";
     const text = buildEatInviteShareText({
       inviteKind: created.invite_kind || resolvedKind,
       restaurantName: place,
-      dateLabel: formatInviteDateLabel(created.scheduled_date || date),
-      timeLabel: formatInviteTimeLabel(created.scheduled_time || time),
-      scheduledTime: created.scheduled_time || time,
+      dateLabel: chooses ? "" : formatInviteDateLabel(created.scheduled_date || date),
+      timeLabel: chooses ? "" : formatInviteTimeLabel(created.scheduled_time || time),
+      scheduledTime: chooses ? null : created.scheduled_time || time,
       message: created.message || selectedDraft || message,
       url: created.url,
     });
@@ -118,7 +129,7 @@ export default function InviteToEatModal({
       text,
       url: created.url,
     };
-  }, [created, date, time, restaurantName, resolvedKind, selectedDraft, message]);
+  }, [created, date, time, restaurantName, resolvedKind, selectedDraft, message, scheduleMode]);
 
   if (!open) return null;
 
@@ -133,11 +144,18 @@ export default function InviteToEatModal({
       const body = {
         restaurant_id: restaurantId,
         menu_item_id: menuItemId || undefined,
-        scheduled_date: date,
-        scheduled_time: time,
+        schedule_mode: scheduleMode,
         message: resolvedMessage || undefined,
         invite_kind: inviteKind,
       };
+      if (diningCrewId) {
+        body.dining_crew_id = diningCrewId;
+        body.invite_kind = "group";
+      }
+      if (scheduleMode === "organizer") {
+        body.scheduled_date = date;
+        body.scheduled_time = time;
+      }
       if (inviteKind === "private") {
         const invitee = String(inviteeName || "").trim();
         if (!invitee) {
@@ -387,28 +405,90 @@ export default function InviteToEatModal({
                   />
                 </label>
               ) : null}
-              <label style={{ display: "grid", gap: 4, fontSize: 12, fontWeight: 700 }}>
-                Date
-                <input
-                  type="date"
-                  required
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  data-testid="invite-date"
-                  style={inputStyle}
-                />
-              </label>
-              <label style={{ display: "grid", gap: 4, fontSize: 12, fontWeight: 700 }}>
-                Time
-                <input
-                  type="time"
-                  required
-                  value={time}
-                  onChange={(e) => setTime(e.target.value)}
-                  data-testid="invite-time"
-                  style={inputStyle}
-                />
-              </label>
+              <fieldset
+                data-testid="invite-schedule-mode"
+                style={{
+                  margin: 0,
+                  padding: 0,
+                  border: "none",
+                  display: "grid",
+                  gap: 8,
+                }}
+              >
+                <legend style={{ fontSize: 12, fontWeight: 700, padding: 0, marginBottom: 4 }}>
+                  Date &amp; time
+                </legend>
+                <label
+                  style={{
+                    ...radioLabel,
+                    borderColor: scheduleMode === "organizer" ? "#86efac" : "#e7e5e4",
+                    background: scheduleMode === "organizer" ? "#f0fdf4" : "#fafaf9",
+                  }}
+                >
+                  <input
+                    type="radio"
+                    name="invite-schedule-mode"
+                    value="organizer"
+                    checked={scheduleMode === "organizer"}
+                    onChange={() => setScheduleMode("organizer")}
+                    data-testid="invite-schedule-organizer"
+                    style={{ marginTop: 3 }}
+                  />
+                  <span>I&apos;ll pick the date &amp; time</span>
+                </label>
+                <label
+                  style={{
+                    ...radioLabel,
+                    borderColor: scheduleMode === "recipient_chooses" ? "#86efac" : "#e7e5e4",
+                    background: scheduleMode === "recipient_chooses" ? "#f0fdf4" : "#fafaf9",
+                  }}
+                >
+                  <input
+                    type="radio"
+                    name="invite-schedule-mode"
+                    value="recipient_chooses"
+                    checked={scheduleMode === "recipient_chooses"}
+                    onChange={() => setScheduleMode("recipient_chooses")}
+                    data-testid="invite-schedule-recipient-chooses"
+                    style={{ marginTop: 3 }}
+                  />
+                  <span>Let them choose the date &amp; time</span>
+                </label>
+              </fieldset>
+              {scheduleMode === "organizer" ? (
+                <>
+                  <label style={{ display: "grid", gap: 4, fontSize: 12, fontWeight: 700 }}>
+                    Date
+                    <input
+                      type="date"
+                      required
+                      value={date}
+                      onChange={(e) => setDate(e.target.value)}
+                      data-testid="invite-date"
+                      style={inputStyle}
+                    />
+                  </label>
+                  <label style={{ display: "grid", gap: 4, fontSize: 12, fontWeight: 700 }}>
+                    Time
+                    <input
+                      type="time"
+                      required
+                      value={time}
+                      onChange={(e) => setTime(e.target.value)}
+                      data-testid="invite-time"
+                      style={inputStyle}
+                    />
+                  </label>
+                </>
+              ) : (
+                <p
+                  data-testid="invite-recipient-chooses-note"
+                  style={{ margin: 0, fontSize: 13, color: "#57534e", lineHeight: 1.45 }}
+                >
+                  Recipients will propose a date and time when they respond. Each person can suggest
+                  a different time — the invitation itself stays open.
+                </p>
+              )}
               <div style={{ fontSize: 13, color: "#57534e", lineHeight: 1.45 }}>
                 After you create the invitation, send it through Messages or another app. Menuply
                 does not send SMS for you and does not need your contacts.
@@ -530,10 +610,10 @@ export default function InviteToEatModal({
                 Inviting <strong>{created.invitee_display_name}</strong>
               </div>
             ) : null}
-            <div style={{ fontSize: 15, fontWeight: 700, color: "#44403c" }}>
-              {dateLabel}
-              {dateLabel && timeLabel ? " · " : ""}
-              {timeLabel}
+            <div style={{ fontSize: 15, fontWeight: 700, color: "#44403c" }} data-testid="invite-created-schedule">
+              {recipientChooses
+                ? "Recipients choose the date & time"
+                : `${dateLabel}${dateLabel && timeLabel ? " · " : ""}${timeLabel}`}
             </div>
             {dishName ? (
               <div style={{ fontSize: 13, color: "#57534e" }}>

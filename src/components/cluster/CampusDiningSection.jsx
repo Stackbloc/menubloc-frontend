@@ -81,6 +81,13 @@ export default function CampusDiningSection({ cluster }) {
                 ) : (
                   <strong style={styles.name}>{loc.name}</strong>
                 )}
+                {loc.entity_label ||
+                String(loc.entity_type || loc.restaurant_type || "").toLowerCase() ===
+                  "dining_hall" ? (
+                  <span style={styles.entityBadge} data-testid="campus-dining-entity-type">
+                    {loc.entity_label || "Dining Hall"}
+                  </span>
+                ) : null}
               </div>
               {loc.short_description ? (
                 <p style={styles.desc}>{loc.short_description}</p>
@@ -128,13 +135,30 @@ const styles = {
     border: "1px solid #e5e7eb",
     background: "#fff",
   },
-  nameRow: { marginBottom: 6 },
+  nameRow: {
+    marginBottom: 6,
+    display: "flex",
+    flexWrap: "wrap",
+    gap: 8,
+    alignItems: "center",
+  },
   name: { fontSize: 17, fontWeight: 800, color: "#111827" },
   nameLink: {
     fontSize: 17,
     fontWeight: 800,
     color: "#166534",
     textDecoration: "none",
+  },
+  entityBadge: {
+    fontSize: 11,
+    fontWeight: 700,
+    letterSpacing: 0.3,
+    textTransform: "uppercase",
+    color: "#14532d",
+    background: "#ecfdf5",
+    border: "1px solid #a7f3d0",
+    borderRadius: 999,
+    padding: "2px 8px",
   },
   desc: { margin: "0 0 8px", fontSize: 13, color: "#6b7280", lineHeight: 1.4 },
 };

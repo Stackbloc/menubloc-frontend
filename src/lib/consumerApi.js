@@ -42,6 +42,7 @@ async function req(path, opts = {}) {
 const get  = (path)        => req(path);
 const post = (path, body)  => req(path, { method: "POST",   body: JSON.stringify(body) });
 const put  = (path, body)  => req(path, { method: "PUT",    body: JSON.stringify(body) });
+const patch = (path, body) => req(path, { method: "PATCH",  body: JSON.stringify(body) });
 const del  = (path)        => req(path, { method: "DELETE" });
 
 // ── Auth ──────────────────────────────────────────────────────────────────
@@ -84,11 +85,51 @@ export const removeConnection = (id) =>
 
 // ── Dining Crews ──────────────────────────────────────────────────────────
 export const listDiningCrews = () => get("/api/consumer/dining-crews");
-export const createDiningCrew = (name) => post("/api/consumer/dining-crews", { name });
+export const discoverPublicDiningCrews = ({ q = "", limit = 20 } = {}) => {
+  const params = new URLSearchParams();
+  if (q) params.set("q", q);
+  if (limit) params.set("limit", String(limit));
+  const qs = params.toString();
+  return get(`/api/consumer/dining-crews/discover${qs ? `?${qs}` : ""}`);
+};
+export const createDiningCrew = (payload) => {
+  const body =
+    typeof payload === "string" || payload == null
+      ? { name: payload }
+      : {
+          name: payload.name,
+          description: payload.description,
+          visibility: payload.visibility,
+          max_members: payload.max_members,
+          membership_approval: payload.membership_approval,
+        };
+  return post("/api/consumer/dining-crews", body);
+};
 export const getDiningCrew = (crewId) =>
   get(`/api/consumer/dining-crews/${encodeURIComponent(String(crewId))}`);
+export const updateDiningCrew = (crewId, body = {}) =>
+  patch(`/api/consumer/dining-crews/${encodeURIComponent(String(crewId))}`, body);
 export const inviteToDiningCrew = (crewId, body = {}) =>
   post(`/api/consumer/dining-crews/${encodeURIComponent(String(crewId))}/invitations`, body);
+export const requestJoinDiningCrew = (crewId) =>
+  post(`/api/consumer/dining-crews/${encodeURIComponent(String(crewId))}/join-requests`, {});
+export const listDiningCrewJoinRequests = (crewId) =>
+  get(`/api/consumer/dining-crews/${encodeURIComponent(String(crewId))}/join-requests`);
+export const resolveDiningCrewJoinRequest = (crewId, requestId, decision) =>
+  post(
+    `/api/consumer/dining-crews/${encodeURIComponent(String(crewId))}/join-requests/${encodeURIComponent(String(requestId))}/resolve`,
+    { decision }
+  );
+export const voteDiningCrewJoinRequest = (crewId, requestId, vote) =>
+  post(
+    `/api/consumer/dining-crews/${encodeURIComponent(String(crewId))}/join-requests/${encodeURIComponent(String(requestId))}/vote`,
+    { vote }
+  );
+export const setDiningCrewMemberRole = (crewId, userId, role) =>
+  post(
+    `/api/consumer/dining-crews/${encodeURIComponent(String(crewId))}/members/${encodeURIComponent(String(userId))}/role`,
+    { role }
+  );
 export const getDiningCrewInvitation = (token) =>
   get(`/api/consumer/dining-crews/invitations/${encodeURIComponent(String(token))}`);
 export const acceptDiningCrewInvitation = (token) =>
@@ -110,6 +151,34 @@ export const postDiningCrewMessage = (conversationId, body) =>
     `/api/consumer/dining-crews/conversations/${encodeURIComponent(String(conversationId))}/messages`,
     body
   );
+export async function postDiningCrewPhoto(conversationId, { file, body = null, restaurant_id = null, menu_item_id = null, cluster_id = null } = {}) {
+  const language = readStoredLanguage();
+  const path = appendLanguageParam(
+    `/api/consumer/dining-crews/conversations/${encodeURIComponent(String(conversationId))}/photos`,
+    language
+  );
+  const form = new FormData();
+  form.append("photo", file);
+  if (body) form.append("body", body);
+  if (restaurant_id) form.append("restaurant_id", String(restaurant_id));
+  if (menu_item_id) form.append("menu_item_id", String(menu_item_id));
+  if (cluster_id) form.append("cluster_id", String(cluster_id));
+  const res = await fetch(`${API}${path}`, {
+    method: "POST",
+    credentials: "include",
+    headers: withLanguageHeaders({}, language),
+    body: form,
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const error = new Error(json.error || `Request failed (${res.status})`);
+    error.status = res.status;
+    error.payload = json;
+    throw error;
+  }
+  return json;
+}
+export const CONSUMER_API_BASE = API;
 export const searchDiningCrewEntities = ({ type, q = "", restaurant_id = null, limit = 8 } = {}) => {
   const params = new URLSearchParams();
   if (type) params.set("type", String(type));
@@ -129,6 +198,36 @@ export const listMyFoodActivity = (limit = null) =>
 export const createImEating = (body) => post("/api/consumer/food-activity", body);
 export const deleteMyFoodActivity = (id) =>
   del(`/api/consumer/food-activity/${encodeURIComponent(String(id))}`);
+
+// ── Diner Status (quick emoji signals) ────────────────────────────────────
+export const listMyDinerStatuses = (limit = null) =>
+  get(
+    limit
+      ? `/api/consumer/diner-statuses?limit=${encodeURIComponent(String(limit))}`
+      : "/api/consumer/diner-statuses"
+  );
+export const createDinerStatus = (body) => post("/api/consumer/diner-statuses", body);
+export const deleteMyDinerStatus = (id) =>
+  del(`/api/consumer/diner-statuses/${encodeURIComponent(String(id))}`);
+
+// ── Cluster subscriptions (food report feed) ──────────────────────────────
+export const listMyClusterSubscriptions = (includePaused = false) =>
+  get(
+    `/api/consumer/cluster-subscriptions${includePaused ? "?include_paused=1" : ""}`
+  );
+export const getClusterSubscriptionStatus = (clusterId) =>
+  get(`/api/consumer/cluster-subscriptions/${encodeURIComponent(String(clusterId))}`);
+export const subscribeToCluster = (clusterId) =>
+  post(`/api/consumer/cluster-subscriptions/${encodeURIComponent(String(clusterId))}`, {});
+export const unsubscribeFromCluster = (clusterId) =>
+  del(`/api/consumer/cluster-subscriptions/${encodeURIComponent(String(clusterId))}`);
+export const fetchClusterReportFeed = ({ hours = 72, maxClusters = 8 } = {}) => {
+  const params = new URLSearchParams();
+  if (hours) params.set("hours", String(hours));
+  if (maxClusters) params.set("max_clusters", String(maxClusters));
+  const qs = params.toString();
+  return get(`/api/consumer/cluster-report-feed${qs ? `?${qs}` : ""}`);
+};
 
 export const getSocialOnboarding = () => get("/api/consumer/social-onboarding");
 export const putSocialOnboarding = (onboarding) =>

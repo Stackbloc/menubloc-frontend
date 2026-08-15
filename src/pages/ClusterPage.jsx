@@ -59,6 +59,7 @@ import { clusterShowsDishExcerpt } from "../lib/clusterDishExcerpt.js";
 import ChipRail from "../components/chips/ChipRail.jsx";
 import WhatPeopleAreEating from "../components/cluster/WhatPeopleAreEating.jsx";
 import CampusDiningSection from "../components/cluster/CampusDiningSection.jsx";
+import ClusterSubscribeButton from "../components/cluster/ClusterSubscribeButton.jsx";
 
 const CANONICAL_BASE = "https://menuply.com";
 const CLUSTER_VIEW_MODES = Object.freeze({
@@ -1271,6 +1272,9 @@ export default function ClusterPage() {
           {pageHeading}
         </h1>
         <ClusterDescription cluster={cluster} />
+        {cluster.id ? (
+          <ClusterSubscribeButton clusterId={cluster.id} clusterName={cluster.name || pageHeading} />
+        ) : null}
       </header>
 
       {/* Public discovery — available without sign-in (Social Engine Phase 7). */}

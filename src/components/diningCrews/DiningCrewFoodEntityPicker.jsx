@@ -21,6 +21,8 @@ export default function DiningCrewFoodEntityPicker({
   note,
   onNoteChange,
   disabled = false,
+  hideNote = false,
+  forceRestaurantOnly = false,
 }) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
@@ -92,28 +94,32 @@ export default function DiningCrewFoodEntityPicker({
 
   return (
     <div style={styles.wrap}>
-      <div style={styles.typeRow}>
-        {TYPE_OPTIONS.map((opt) => (
-          <button
-            key={opt.value}
-            type="button"
-            disabled={disabled}
-            onClick={() => {
-              onMessageTypeChange(opt.value);
-              onSelectedChange(null);
-              setQuery("");
-              setResults([]);
-              setError("");
-              if (opt.value === "text" || opt.value === "restaurant") {
-                setAnchorRestaurant(null);
-              }
-            }}
-            style={messageType === opt.value ? styles.typeActive : styles.typeBtn}
-          >
-            {opt.label}
-          </button>
-        ))}
-      </div>
+      {!forceRestaurantOnly ? (
+        <div style={styles.typeRow}>
+          {TYPE_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              disabled={disabled}
+              onClick={() => {
+                onMessageTypeChange(opt.value);
+                onSelectedChange(null);
+                setQuery("");
+                setResults([]);
+                setError("");
+                if (opt.value === "text" || opt.value === "restaurant") {
+                  setAnchorRestaurant(null);
+                }
+              }}
+              style={messageType === opt.value ? styles.typeActive : styles.typeBtn}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      ) : (
+        <p style={styles.hint}>Search for a restaurant for this crew outing.</p>
+      )}
 
       {messageType === "menu" && !anchorRestaurant && !selected ? (
         <p style={styles.hint}>
@@ -239,13 +245,15 @@ export default function DiningCrewFoodEntityPicker({
         </div>
       ) : null}
 
-      <input
-        style={{ ...styles.input, marginTop: 8 }}
-        value={note}
-        disabled={disabled}
-        onChange={(e) => onNoteChange(e.target.value)}
-        placeholder={messageType === "text" ? "Message…" : "Optional note"}
-      />
+      {!hideNote ? (
+        <input
+          style={{ ...styles.input, marginTop: 8 }}
+          value={note}
+          disabled={disabled}
+          onChange={(e) => onNoteChange(e.target.value)}
+          placeholder={messageType === "text" ? "Message…" : "Optional note"}
+        />
+      ) : null}
     </div>
   );
 }

@@ -28,6 +28,7 @@ import {
   PROFILE_CONTENT_MAX,
   profilePageBgVar,
   isFoodTruckProfile,
+  isDiningHallProfile,
   ProfileSectionBlank,
   ProfileClaimBanner,
 } from "./profilePrimitives.jsx";
@@ -125,13 +126,22 @@ export default function PublicProfileShell({
   );
 
   const isFoodTruck = isFoodTruckProfile(profile, profileType);
+  const isDiningHall = isDiningHallProfile(profile, profileType);
+  const resolvedProfileType = isDiningHall
+    ? "dining_hall"
+    : isFoodTruck
+      ? "food_truck"
+      : profileType || "restaurant";
+  const allowClaimInvites = showClaimInvites && !isDiningHall;
   const windowsPosts = pickWindowsPosts(billboardPreview, profile);
   const contentMax = PROFILE_CONTENT_MAX;
   const classification = profile?.classification || null;
   const primaryVenue =
     firstNonEmpty(
       classification?.primary_venue_type?.display_name,
-      classification?.primary_venue_type?.name
+      classification?.primary_venue_type?.name,
+      isDiningHall ? "Dining Hall" : "",
+      profile?.entity_label
     ) || "";
   const cuisineFromClass = Array.isArray(classification?.cuisines)
     ? classification.cuisines.map((c) => c?.display_name || c?.name).filter(Boolean)
@@ -140,7 +150,7 @@ export default function PublicProfileShell({
 
   const metaBits = isFoodTruck
     ? [cuisineLabel].filter(Boolean)
-    : [primaryVenue, cuisineLabel]
+    : [primaryVenue, isDiningHall ? null : cuisineLabel]
         .filter(Boolean)
         .filter((v, i, a) => a.findIndex((x) => String(x).toLowerCase() === String(v).toLowerCase()) === i);
 
@@ -189,8 +199,14 @@ export default function PublicProfileShell({
 
   return (
     <div
-      data-testid={isFoodTruck ? "food-truck-public-editorial" : "restaurant-public-editorial"}
-      data-profile-type={isFoodTruck ? "food_truck" : "restaurant"}
+      data-testid={
+        isDiningHall
+          ? "dining-hall-public-editorial"
+          : isFoodTruck
+            ? "food-truck-public-editorial"
+            : "restaurant-public-editorial"
+      }
+      data-profile-type={resolvedProfileType}
       data-profile-style={effectiveStyleKey || DEFAULT_PROFILE_STYLE_KEY}
       style={{
         minHeight: "100vh",
@@ -202,9 +218,11 @@ export default function PublicProfileShell({
       }}
     >
       <ProfileHero
-        profileType={isFoodTruck ? "food_truck" : "restaurant"}
+        profileType={resolvedProfileType}
         name={name}
-        businessTypeLabel={isFoodTruck ? "Food Truck" : ""}
+        businessTypeLabel={
+          isDiningHall ? "Dining Hall" : isFoodTruck ? "Food Truck" : ""
+        }
         cityLine={cityLine}
         streetAddr={streetAddr}
         directionsUrl={isFoodTruck ? homeDirectionsUrl : directionsUrl}
@@ -215,9 +233,21 @@ export default function PublicProfileShell({
         menuHref={menuHref}
         shareData={shareData}
         shareAnalytics={shareAnalytics}
-        followSource={isFoodTruck ? "food_truck_profile" : "restaurant_profile"}
-        viewMenuTestId={isFoodTruck ? "food-truck-view-menu" : "restaurant-profile-view-menu"}
-        showClaimInvites={showClaimInvites}
+        followSource={
+          isDiningHall
+            ? "dining_hall_profile"
+            : isFoodTruck
+              ? "food_truck_profile"
+              : "restaurant_profile"
+        }
+        viewMenuTestId={
+          isDiningHall
+            ? "dining-hall-view-menu"
+            : isFoodTruck
+              ? "food-truck-view-menu"
+              : "restaurant-profile-view-menu"
+        }
+        showClaimInvites={allowClaimInvites}
         metaBits={metaBits}
         venueLabel={isFoodTruck ? "" : primaryVenue}
         clusterName={clusterName}
@@ -245,7 +275,15 @@ export default function PublicProfileShell({
           boxSizing: "border-box",
         }}
       >
-        {isFoodTruck && (stops.length || showClaimInvites) ? (
+        {isDiningHall ? (
+          <ProfileSection title="Campus dining" testId="dining-hall-campus-note">
+            Dining halls are campus facilities. Menuply shows available campus dining information —
+            menus appear when published. These profiles are not restaurant businesses and cannot be
+            claimed by restaurant owners.
+          </ProfileSection>
+        ) : null}
+
+        {isFoodTruck && (stops.length || allowClaimInvites) ? (
           <ProfileSection title="Upcoming locations">
             {stops.length ? (
               <FoodTruckUpcomingStops stops={stops} />
@@ -258,7 +296,7 @@ export default function PublicProfileShell({
           </ProfileSection>
         ) : null}
 
-        {showClaimInvites ? (
+        {allowClaimInvites ? (
           <ProfileClaimBanner claimHref={claimHref} claimState={claimState} />
         ) : null}
 
@@ -280,7 +318,7 @@ export default function PublicProfileShell({
           claimHref={claimHref}
           claimState={claimState}
           isMobile={isMobile}
-          showClaimInvites={showClaimInvites}
+          showClaimInvites={allowClaimInvites}
           showPhotos={false}
           windowsPhotoOrientation={resolvedWindowsOrientation}
         />
@@ -288,17 +326,17 @@ export default function PublicProfileShell({
         <ProfileFavoriteMenuItems
           items={favorites}
           isMobile={isMobile}
-          showClaimInvites={showClaimInvites}
+          showClaimInvites={allowClaimInvites}
         />
 
         <ProfileDealsSection
           dealItems={deals}
           restaurantId={restaurantId}
           isMobile={isMobile}
-          showClaimInvites={showClaimInvites}
+          showClaimInvites={allowClaimInvites}
         />
 
-        <ProfileUpdates updates={updates} isMobile={isMobile} showClaimInvites={showClaimInvites} />
+        <ProfileUpdates updates={updates} isMobile={isMobile} showClaimInvites={allowClaimInvites} />
 
         {restaurantId ? (
           <WhatDinersAreSaying
@@ -306,6 +344,7 @@ export default function PublicProfileShell({
             restaurantSlug={restaurantSlug}
             restaurantCity={restaurantCity}
             restaurantState={restaurantState}
+            restaurantName={name || ""}
             menuPreviewItems={previewForComments}
             compact={isMobile}
           />

@@ -35,10 +35,30 @@ import { formatHoursRows } from "../components/restaurant/publicProfile/profileP
 import { formatFoodTruckHoursTodayHeading } from "../lib/formatOperatingHours.js";
 
 function responseLabel(status) {
-  if (status === "accepted") return "Going";
-  if (status === "maybe") return "Maybe";
-  if (status === "declined") return "Can't Make It";
-  return status || "";
+  const s = typeof status === "object" && status ? status.status : status;
+  if (s === "accepted") return "Going";
+  if (s === "maybe") return "Maybe";
+  if (s === "declined") return "Can't Make It";
+  return s || "";
+}
+
+function normalizeMyResponse(raw) {
+  if (!raw) return null;
+  if (typeof raw === "string") return { status: raw, proposed_date: null, proposed_time: null };
+  return {
+    status: raw.status || null,
+    proposed_date: raw.proposed_date || null,
+    proposed_time: raw.proposed_time || null,
+  };
+}
+
+function proposedWhenLabel(person) {
+  const date = formatInviteDateLabel(person?.proposed_date);
+  const time = formatInviteTimeLabel(person?.proposed_time);
+  if (date && time) return `${date} · ${time}`;
+  if (date) return date;
+  if (time) return time;
+  return "";
 }
 
 function buildStreetAddress(invitation) {
@@ -78,30 +98,19 @@ function PartyRoster({ party }) {
             {section.title} ({section.count})
           </div>
           <ul
-            style={{
-              listStyle: "none",
-              margin: 0,
-              padding: 0,
-              display: "grid",
-              gap: 4,
-            }}
+            style={{ margin: 0, paddingLeft: 18, display: "grid", gap: 4, fontSize: 14, color: "#44403c" }}
           >
-            {(section.people || []).map((person, idx) => (
-              <li
-                key={`${section.key}-${person.party_person_id || person.user_id || idx}`}
-                style={{
-                  fontSize: 14,
-                  fontWeight: 600,
-                  color: "#44403c",
-                  padding: "6px 10px",
-                  borderRadius: 8,
-                  background: "#fafaf9",
-                  border: "1px solid #e7e5e4",
-                }}
-              >
-                {person.display_name || "Someone"}
-              </li>
-            ))}
+            {(section.people || []).map((person) => {
+              const when = proposedWhenLabel(person);
+              return (
+                <li key={person.party_person_id || person.display_name}>
+                  {person.display_name || "Someone"}
+                  {when ? (
+                    <span style={{ color: "#78716c", fontWeight: 600 }}> — {when}</span>
+                  ) : null}
+                </li>
+              );
+            })}
           </ul>
         </div>
       ))}
@@ -117,6 +126,8 @@ export default function EatInvitationPage() {
   const [invitation, setInvitation] = useState(null);
   const [busy, setBusy] = useState(false);
   const [responded, setResponded] = useState(null);
+  const [proposedDate, setProposedDate] = useState("");
+  const [proposedTime, setProposedTime] = useState("19:00");
   const [guestName, setGuestName] = useState(() => getEatInviteGuestDisplayName());
   const [shareOpen, setShareOpen] = useState(false);
 
@@ -131,7 +142,13 @@ export default function EatInvitationPage() {
         const inv = data?.invitation || null;
         if (!inv) throw new Error(data?.error || "Invitation not found");
         setInvitation(inv);
-        setResponded(inv.my_response || null);
+        const mine = normalizeMyResponse(inv.my_response);
+        setResponded(mine?.status || null);
+        if (mine?.proposed_date) setProposedDate(mine.proposed_date);
+        if (mine?.proposed_time) {
+          const t = String(mine.proposed_time).slice(0, 5);
+          setProposedTime(t || "19:00");
+        }
       })
       .catch((err) => {
         if (!cancelled) {
@@ -236,8 +253,15 @@ export default function EatInvitationPage() {
 
   const organizerName = invitation?.organizer_display_name || "A Menuply diner";
   const placeName = invitation?.restaurant_name || "a restaurant";
-  const dateLabel = formatInviteDateLabel(invitation?.scheduled_date);
-  const timeLabel = formatInviteTimeLabel(invitation?.scheduled_time);
+  const recipientChooses =
+    invitation?.schedule_mode === "recipient_chooses" ||
+    invitation?.recipient_chooses_schedule === true;
+  const dateLabel = recipientChooses
+    ? "You choose the date & time"
+    : formatInviteDateLabel(invitation?.scheduled_date);
+  const timeLabel = recipientChooses
+    ? ""
+    : formatInviteTimeLabel(invitation?.scheduled_time);
   const phone = String(invitation?.restaurant_phone || "").trim();
   const logoUrl = String(invitation?.restaurant_logo_url || "").trim();
   const namedInvitee = String(invitation?.invitee_display_name || "").trim();
@@ -258,9 +282,16 @@ export default function EatInvitationPage() {
       text: buildEatInviteShareText({
         inviteKind: invitation?.invite_kind || "group",
         restaurantName: place,
-        dateLabel: formatInviteDateLabel(invitation?.scheduled_date),
-        timeLabel: formatInviteTimeLabel(invitation?.scheduled_time),
-        scheduledTime: invitation?.scheduled_time,
+        dateLabel: invitation?.schedule_mode === "recipient_chooses"
+          ? ""
+          : formatInviteDateLabel(invitation?.scheduled_date),
+        timeLabel: invitation?.schedule_mode === "recipient_chooses"
+          ? ""
+          : formatInviteTimeLabel(invitation?.scheduled_time),
+        scheduledTime:
+          invitation?.schedule_mode === "recipient_chooses"
+            ? null
+            : invitation?.scheduled_time,
         message: invitation?.message || null,
         url,
       }),
@@ -283,6 +314,16 @@ export default function EatInvitationPage() {
         opts.guestKey = getOrCreateEatInviteGuestKey();
         opts.displayName = name;
         setEatInviteGuestDisplayName(name);
+      }
+      if (
+        recipientChooses &&
+        (status === "accepted" || status === "maybe")
+      ) {
+        if (!proposedDate || !proposedTime) {
+          throw new Error("Pick a date and time that works for you");
+        }
+        opts.proposedDate = proposedDate;
+        opts.proposedTime = proposedTime;
       }
       const data = await respondToEatInvitation(token, status, opts);
       setResponded(data?.response?.status || status);
@@ -473,10 +514,15 @@ export default function EatInvitationPage() {
               </div>
             ) : null}
 
-            <div style={{ fontSize: 17, fontWeight: 700, marginTop: 16, color: "#292524" }}>
+            <div
+              style={{ fontSize: 17, fontWeight: 700, marginTop: 16, color: "#292524" }}
+              data-testid="invite-schedule-summary"
+            >
               {dateLabel}
             </div>
-            <div style={{ fontSize: 17, fontWeight: 700, color: "#44403c" }}>{timeLabel}</div>
+            {timeLabel ? (
+              <div style={{ fontSize: 17, fontWeight: 700, color: "#44403c" }}>{timeLabel}</div>
+            ) : null}
 
             {invitation.message ? (
               <blockquote
@@ -556,6 +602,11 @@ export default function EatInvitationPage() {
                     }}
                   >
                     Your response: {responseLabel(responded)}
+                    {recipientChooses && proposedDate
+                      ? ` · ${formatInviteDateLabel(proposedDate)}${
+                          proposedTime ? ` · ${formatInviteTimeLabel(proposedTime)}` : ""
+                        }`
+                      : ""}
                   </div>
                 ) : null}
                 {!isAuthenticated && !skipGuestNameField ? (
@@ -582,6 +633,52 @@ export default function EatInvitationPage() {
                       }}
                     />
                   </label>
+                ) : null}
+                {recipientChooses && !responded ? (
+                  <div
+                    data-testid="invite-propose-schedule"
+                    style={{ display: "grid", gap: 10, marginBottom: 4 }}
+                  >
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "#44403c" }}>
+                      Choose a date &amp; time that works for you
+                    </div>
+                    <label style={{ display: "grid", gap: 4, fontSize: 12, fontWeight: 700 }}>
+                      Date
+                      <input
+                        type="date"
+                        required
+                        value={proposedDate}
+                        onChange={(e) => setProposedDate(e.target.value)}
+                        data-testid="invite-proposed-date"
+                        style={{
+                          width: "100%",
+                          boxSizing: "border-box",
+                          borderRadius: 10,
+                          border: "1px solid #d6d3d1",
+                          padding: "10px 12px",
+                          fontSize: 14,
+                        }}
+                      />
+                    </label>
+                    <label style={{ display: "grid", gap: 4, fontSize: 12, fontWeight: 700 }}>
+                      Time
+                      <input
+                        type="time"
+                        required
+                        value={proposedTime}
+                        onChange={(e) => setProposedTime(e.target.value)}
+                        data-testid="invite-proposed-time"
+                        style={{
+                          width: "100%",
+                          boxSizing: "border-box",
+                          borderRadius: 10,
+                          border: "1px solid #d6d3d1",
+                          padding: "10px 12px",
+                          fontSize: 14,
+                        }}
+                      />
+                    </label>
+                  </div>
                 ) : null}
                 {!isAuthenticated && skipGuestNameField ? (
                   <div

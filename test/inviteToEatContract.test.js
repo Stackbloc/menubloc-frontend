@@ -44,11 +44,18 @@ test("InviteToEatButton tooltip and Invitation Ready confirmation", () => {
   assert.match(modal, /Write your own/);
   assert.match(modal, /invite-invitee-name/);
   assert.match(modal, /invitee_display_name/);
+  assert.match(modal, /invite-schedule-mode/);
+  assert.match(modal, /invite-schedule-recipient-chooses/);
+  assert.match(modal, /Let them choose the date/);
+  assert.match(modal, /schedule_mode/);
+  assert.match(modal, /recipient_chooses/);
   assert.match(modal, /type=["']radio["']/);
   assert.match(modal, /invite_kind/);
   assert.match(modal, /invite-guest-name/);
   assert.match(modal, /getOrCreateEatInviteGuestKey/);
   assert.match(modal, /guest_key/);
+  assert.match(modal, /diningCrewId/);
+  assert.match(modal, /dining_crew_id/);
   assert.doesNotMatch(modal, /Invitation Sent/);
   assert.doesNotMatch(modal, /invite-first-name|organizer_first_name/);
   assert.doesNotMatch(modal, /navigator\.share/);
@@ -118,6 +125,15 @@ test("Share copy options include LDL/LDD/LHC/MMH with light emoji", () => {
   });
   assert.match(coffee, /LHC/);
   assert.match(coffee, /Let's have coffee at Bestia/);
+
+  const chooseTime = buildEatInviteMessageDraft({
+    inviteKind: "private",
+    restaurantName: "Bestia",
+    dateLabel: "",
+    timeLabel: "",
+    seedCode: "LDD",
+  });
+  assert.match(chooseTime, /You pick the date/);
 });
 
 test("Eat invitation public page uses live About Us; named private invitee; guest RSVP", () => {
@@ -147,6 +163,9 @@ test("Eat invitation public page uses live About Us; named private invitee; gues
   assert.match(page, /ShareModal/);
   assert.match(page, /Share Invitation/);
   assert.match(page, /invite-organizer-status/);
+  assert.match(page, /invite-propose-schedule|proposedDate|proposed_date/);
+  assert.match(page, /recipient_chooses|recipientChooses/);
+  assert.match(page, /You choose the date/);
   assert.doesNotMatch(page, /Not responded/);
   assert.doesNotMatch(page, /Join Menuply because/);
   assert.doesNotMatch(page, /invite-first-name/);

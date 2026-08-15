@@ -28,12 +28,21 @@ test("social onboarding step order matches product questions", () => {
   assert.deepEqual(SOCIAL_ONBOARDING_STEPS, [
     "dining_crew",
     "expand_crew",
+    "food_camera",
     "student_edu",
     "people_eating",
     "im_eating",
     "waiter",
   ]);
   assert.equal(SOCIAL_ONBOARDING_ROUTE, "/account/social-onboarding");
+});
+
+test("food camera step frames community food photography", () => {
+  const page = read("src/pages/consumer/SocialOnboardingPage.jsx");
+  assert.match(page, /food_camera/);
+  assert.match(page, /take photos of food and share them with the\s+Menuply community/);
+  assert.match(page, /not just a profile picture/i);
+  assert.match(page, /social-onboarding-food-camera/);
 });
 
 test("skip-all settles to completed without errors", () => {
@@ -49,7 +58,7 @@ test("skip-all settles to completed without errors", () => {
 test("partial progress leaves next pending step", () => {
   let state = markSocialOnboardingStep(emptySocialOnboardingState(), "dining_crew", "done");
   state = markSocialOnboardingStep(state, "expand_crew", "skipped");
-  assert.equal(nextPendingStep(state), "student_edu");
+  assert.equal(nextPendingStep(state), "food_camera");
   assert.equal(isSocialOnboardingComplete(state), false);
 });
 
@@ -109,6 +118,7 @@ test("backend social-onboarding route exists and is mounted", () => {
   const index = fs.readFileSync(path.join(beRoot, "src/routes/consumer/index.js"), "utf8");
   assert.match(route, /\/social-onboarding/);
   assert.match(route, /social_onboarding/);
+  assert.match(route, /food_camera/);
   assert.match(index, /socialOnboarding/);
   const migration = fs.readFileSync(
     path.join(beRoot, "sql/migrations/20260814_0247_consumer_social_onboarding.sql"),

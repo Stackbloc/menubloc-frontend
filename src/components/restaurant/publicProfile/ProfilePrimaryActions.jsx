@@ -22,7 +22,8 @@ export default function ProfilePrimaryActions({
   void phone;
   void website;
   const isFoodTruck = profileType === "food_truck";
-  const showOrder = !isFoodTruck && canShowOrderAction(profile, menuHref);
+  const isDiningHall = profileType === "dining_hall";
+  const showOrder = !isFoodTruck && !isDiningHall && canShowOrderAction(profile, menuHref);
 
   const chips = [];
   if (showOrder) {
@@ -32,7 +33,7 @@ export default function ProfilePrimaryActions({
       </Link>
     );
   }
-  if (claimHref) {
+  if (claimHref && !isDiningHall) {
     chips.push(
       <Link
         key="claim"

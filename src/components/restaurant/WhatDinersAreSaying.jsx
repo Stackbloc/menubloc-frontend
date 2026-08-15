@@ -10,6 +10,7 @@ import { Link } from "react-router-dom";
 import FoodComments from "../comments/FoodComments.jsx";
 import { listPublicRestaurantFoodActivity } from "../../lib/foodActivityApi.js";
 import { profileReadableSurfaceStyle } from "./publicProfile/profilePrimitives.jsx";
+import DinerStatusFeed from "../dinerStatus/DinerStatusFeed.jsx";
 
 function dinerLabel(activity) {
   const name = String(activity?.display_name || "").trim();
@@ -69,6 +70,7 @@ export default function WhatDinersAreSaying({
   restaurantSlug = null,
   restaurantCity = null,
   restaurantState = null,
+  restaurantName = "",
   menuPreviewItems = null,
   compact = false,
 }) {
@@ -129,6 +131,14 @@ export default function WhatDinersAreSaying({
         <p style={styles.disclaimer}>
           User-reported food activity — Menuply does not verify purchases.
         </p>
+
+        <DinerStatusFeed
+          restaurantId={restaurantId}
+          restaurantName={restaurantName}
+          showComposer
+          compact={compact}
+          title="Diner statuses"
+        />
 
         {loading ? <p style={styles.muted}>Loading activity…</p> : null}
         {error ? (

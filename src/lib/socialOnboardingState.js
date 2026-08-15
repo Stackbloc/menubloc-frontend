@@ -6,6 +6,7 @@
 export const SOCIAL_ONBOARDING_STEPS = [
   "dining_crew",
   "expand_crew",
+  "food_camera",
   "student_edu",
   "people_eating",
   "im_eating",

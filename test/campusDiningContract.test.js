@@ -28,6 +28,8 @@ test("CampusDiningSection is university-gated and hidden when empty", () => {
   assert.match(src, /locations\.length === 0\) return null/);
   assert.match(src, /WhatDinersAreSaying/);
   assert.match(src, /fetchClusterCampusDining/);
+  assert.match(src, /Dining Hall/);
+  assert.match(src, /entity_label|entity_type|campus-dining-entity-type/);
   assert.doesNotMatch(src, /paywall|NONSUBSCRIBER|requireSubscription/i);
 });
 

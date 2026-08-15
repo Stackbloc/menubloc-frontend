@@ -410,6 +410,24 @@ export default function ConsumerProfile() {
           </Link>
         </Section>
 
+        <Section title="Diner Status">
+          <p style={styles.sectionDesc}>
+            Quick food signals like 🔥 — not star ratings or long reviews.
+          </p>
+          <Link to="/account/diner-status" style={styles.followingLink}>
+            Post a diner status
+          </Link>
+        </Section>
+
+        <Section title="Cluster food report">
+          <p style={styles.sectionDesc}>
+            Follow clusters for food intelligence — statuses, what people are eating, deals.
+          </p>
+          <Link to="/account/cluster-subscriptions" style={styles.followingLink}>
+            Manage cluster subscriptions
+          </Link>
+        </Section>
+
         <Section title="Getting started">
           <p style={styles.sectionDesc}>
             Optional guided intro: Dining Crew, meeting people around food, What People Are Eating,

@@ -78,6 +78,8 @@ export function humanizeRestaurantType(raw) {
     pub: "Pub",
     food_truck: "Food truck",
     foodtruck: "Food truck",
+    dining_hall: "Dining Hall",
+    cafeteria: "Cafeteria",
     ghost_kitchen: "Ghost kitchen",
     bakery: "Bakery",
     catering: "Catering",
@@ -440,6 +442,21 @@ export function isFoodTruckProfile(profile, profileType = null) {
     .trim()
     .toLowerCase();
   return FOOD_TRUCK_PLAN_CODES.has(plan);
+}
+
+/** Campus Dining Hall — institutional, not restaurant-owned / not claimable. */
+export function isDiningHallProfile(profile, profileType = null) {
+  if (profileType === "dining_hall") return true;
+  if (profile?.claimable === false && String(profile?.entity_type || "").toLowerCase() === "dining_hall") {
+    return true;
+  }
+  const entity = String(
+    profile?.restaurant_type || profile?.entity_type || profile?.category || ""
+  )
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, "_");
+  return entity === "dining_hall" || entity === "dininghall";
 }
 
 export function actionChipStyle() {

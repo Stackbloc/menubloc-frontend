@@ -74,6 +74,7 @@ function diningCrewInviteShareData(inviteUrl) {
 const STEP_META = {
   dining_crew: { title: "Who do you eat with?" },
   expand_crew: { title: "Want to expand your Dining Crew by meeting new people?" },
+  food_camera: { title: "Share food with the Menuply community" },
   student_edu: { title: "Are you a student?" },
   people_eating: { title: "What are people eating?" },
   im_eating: { title: "What are you eating?" },
@@ -494,6 +495,39 @@ export default function SocialOnboardingPage() {
               </div>
             )}
             <SkipButton disabled={busy} onClick={() => settle("expand_crew", "skipped")} />
+          </section>
+        ) : null}
+
+        {stepId === "food_camera" ? (
+          <section data-testid="social-onboarding-food-camera">
+            <p style={styles.body}>
+              Menuply users can use the camera to take photos of food and share them with the
+              Menuply community — in Dining Crew conversations, around restaurants and dishes, and
+              as part of food discovery.
+            </p>
+            <div style={styles.card}>
+              <p style={styles.cardTitle}>Food photos, not just a profile picture</p>
+              <p style={styles.body}>
+                Snap what you are eating, optionally tag the restaurant or dish, and keep the
+                conversation going with text. Camera is part of Menuply’s food experience — not only
+                account setup.
+              </p>
+              <p style={styles.example}>
+                Open a Dining Crew meal conversation → Camera / food photo → Share food photo.
+              </p>
+              <Link to="/account/dining-crews" style={styles.secondaryLink}>
+                Open Dining Crews
+              </Link>
+            </div>
+            <button
+              type="button"
+              style={styles.primaryBtn}
+              disabled={busy}
+              onClick={() => settle("food_camera", "done")}
+            >
+              Got it
+            </button>
+            <SkipButton disabled={busy} onClick={() => settle("food_camera", "skipped")} />
           </section>
         ) : null}
 

@@ -62,6 +62,8 @@ import DiningCrewsPage, {
   DiningCrewInvitePage,
 } from "./pages/consumer/DiningCrewsPage.jsx";
 import ImEatingPage from "./pages/consumer/ImEatingPage.jsx";
+import DinerStatusPage from "./pages/consumer/DinerStatusPage.jsx";
+import ClusterSubscriptionsPage from "./pages/consumer/ClusterSubscriptionsPage.jsx";
 import SocialOnboardingPage from "./pages/consumer/SocialOnboardingPage.jsx";
 import ConsumerOrderFeedbackPage from "./pages/consumer/ConsumerOrderFeedbackPage.jsx";
 import ProviderApp from "./pages/provider/ProviderApp.jsx";
@@ -897,6 +899,8 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
         <Route path="/account/dining-crews/invite/:token" element={crmHost ? <HostRouteRedirect to="/crm" /> : <DiningCrewInvitePage />} />
         <Route path="/account/dining-crews/:crewId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <DiningCrewDetailPage />} />
         <Route path="/account/im-eating" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ImEatingPage />} />
+        <Route path="/account/diner-status" element={crmHost ? <HostRouteRedirect to="/crm" /> : <DinerStatusPage />} />
+        <Route path="/account/cluster-subscriptions" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ClusterSubscriptionsPage />} />
         <Route path="/account/feedback" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ConsumerOrderFeedbackPage />} />
 
         <Route path="/provider/*" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ProviderApp />} />

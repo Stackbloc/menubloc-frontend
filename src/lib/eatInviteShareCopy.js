@@ -100,16 +100,26 @@ export function buildEatInviteMessageDraft({
   const seed = resolveSeed(seedCode, scheduledTime, timeLabel);
   const kind = String(inviteKind || "group").toLowerCase() === "private" ? "private" : "group";
 
+  const whenClause = when.joined ? ` ${when.joined}` : "";
+  const chooseClause = !when.joined ? " You pick the date & time." : "";
   if (seed.code === "MMH") {
     const whenLine = [when.date, when.time].filter(Boolean).join(" · ");
-    return [`${seed.code} ${seed.emoji} — Meet me here.`, place, whenLine].filter(Boolean).join("\n");
+    const lines = [`${seed.code} ${seed.emoji} — Meet me here.`, place];
+    if (whenLine) lines.push(whenLine);
+    else lines.push("You pick the date & time.");
+    return lines.filter(Boolean).join("\n");
   }
 
-  const whenClause = when.joined ? ` ${when.joined}` : "";
   if (kind === "private") {
-    return `${seed.code} ${seed.emoji} — ${seed.verbPhrase} at ${place}${whenClause}.`;
+    return `${seed.code} ${seed.emoji} — ${seed.verbPhrase} at ${place}${whenClause}.${chooseClause}`.replace(
+      /\.\s+\./,
+      "."
+    );
   }
-  return `${seed.code} ${seed.emoji} — ${seed.verbPhrase} at ${place}${whenClause}. Who wants to join me?`;
+  return `${seed.code} ${seed.emoji} — ${seed.verbPhrase} at ${place}${whenClause}.${chooseClause} Who wants to join me?`.replace(
+    /\.\s+\./,
+    "."
+  );
 }
 
 /**

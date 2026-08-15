@@ -541,6 +541,8 @@ export default function RestaurantPublicPage() {
     Boolean(data) &&
     !isClaimedRestaurant(data) &&
     !isOwner &&
+    data?.claimable !== false &&
+    normalizeFoodTruckToken(data?.restaurant_type || data?.entity_type) !== "dining_hall" &&
     (isOrdinaryUnclaimed || isFullClaimablePublicProfile(data));
 
   if (!loading && !err && data && splashPosts.length && billboardSplashReady && !billboardSplashDone) {

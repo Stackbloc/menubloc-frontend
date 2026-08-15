@@ -7,6 +7,10 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { listPublicClusterFoodActivity } from "../../lib/foodActivityApi.js";
+import DinerStatusFeed from "../dinerStatus/DinerStatusFeed.jsx";
+import {
+  listPublicClusterDinerStatusSignals,
+} from "../../lib/dinerStatusApi.js";
 
 function restaurantHref(item) {
   const key = item?.restaurant_slug || item?.restaurant_id;
@@ -66,25 +70,32 @@ function ItemCard({ item }) {
 
 export default function WhatPeopleAreEating({ clusterId, compact = false }) {
   const [items, setItems] = useState([]);
+  const [signals, setSignals] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     if (!clusterId) {
       setItems([]);
+      setSignals([]);
       setLoading(false);
       return undefined;
     }
 
     setLoading(true);
-    listPublicClusterFoodActivity(clusterId, { limit: 20 })
-      .then((data) => {
+    Promise.all([
+      listPublicClusterFoodActivity(clusterId, { limit: 20 }),
+      listPublicClusterDinerStatusSignals(clusterId, { limit: 6, hours: 72 }),
+    ])
+      .then(([activityData, signalData]) => {
         if (cancelled) return;
-        setItems(Array.isArray(data.items) ? data.items : []);
+        setItems(Array.isArray(activityData.items) ? activityData.items : []);
+        setSignals(Array.isArray(signalData.signals) ? signalData.signals : []);
       })
       .catch((err) => {
         if (cancelled) return;
         setItems([]);
+        setSignals([]);
         if (import.meta.env?.DEV) {
           console.warn("[WhatPeopleAreEating]", err?.message || err);
         }
@@ -118,6 +129,22 @@ export default function WhatPeopleAreEating({ clusterId, compact = false }) {
         Counts are people who shared they&apos;re eating these dishes — not verified purchases.
       </p>
 
+      {!loading && signals.length > 0 ? (
+        <div style={styles.signalList} data-testid="diner-status-cluster-signals">
+          {signals.map((sig, idx) => (
+            <p key={`${sig.expression_key}-${sig.restaurant_id}-${idx}`} style={styles.signal}>
+              {sig.report_line}
+            </p>
+          ))}
+        </div>
+      ) : null}
+
+      <DinerStatusFeed
+        clusterId={clusterId}
+        showComposer={false}
+        compact={compact}
+        title="Recent diner statuses"
+      />
       {loading ? <p style={styles.muted}>Loading activity…</p> : null}
 
       {!loading && items.length === 0 ? (
@@ -176,4 +203,12 @@ const styles = {
   restaurant: { fontSize: 14, color: "#4b5563" },
   restLink: { color: "#2563eb", textDecoration: "none" },
   count: { fontSize: 13, fontWeight: 600, color: "#14532d", marginTop: 2 },
+  signalList: { display: "grid", gap: 6, marginBottom: 12 },
+  signal: {
+    margin: 0,
+    fontSize: 14,
+    fontWeight: 600,
+    color: "#14532d",
+    lineHeight: 1.4,
+  },
 };
