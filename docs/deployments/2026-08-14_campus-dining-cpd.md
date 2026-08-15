@@ -19,7 +19,7 @@ Lightweight Campus Dining on `university` clusters: place shells + `food_activit
 | BE path | `/Users/andrebarber/Desktop/menubloc/menubloc-backend-main` @ clean `main` |
 | BE path-gate | PASS |
 | BE push | `origin/main` → Railway |
-| BE health | `commit_hash` `a2ae326c2abd12baa713cfdee339cfe5e83dc3c7` |
+| BE health | `commit_hash` `e0c5542d…` (docs tip; feature landed in `a2ae326c`) |
 | Migration | `0248` `is_campus_dining` — RESULT=PASS |
 | Seed | USC Village / Parkside / Everybody's Kitchen — RESULT=PASS count=3 |
 | FE path | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` @ clean `main` |

@@ -46,9 +46,9 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www **and** 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-backend-main` @ clean `main` |
-| Git commit | `a2ae326c` — CAMPUS DINING — university cluster locations + place-only food activity |
+| Git commit | `e0c5542d` — docs LKG/CPD (includes Campus Dining `a2ae326c`) |
 | Health URL | `https://menubloc-backend-production.up.railway.app/health` |
-| `commit_hash` | `a2ae326c2abd12baa713cfdee339cfe5e83dc3c7` |
+| `commit_hash` | `e0c5542d72040c9e1b41643dd4fb659d3168255b` |
 | Migrations | `0248` `cluster_restaurants.is_campus_dining` applied |
 | Seed | USC Campus Dining — 3 halls (Village, Parkside, Everybody's Kitchen) |
 | Smoke | `GET /public/clusters/usc/campus-dining` → 3 locations |
