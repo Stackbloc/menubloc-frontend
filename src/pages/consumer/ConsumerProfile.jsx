@@ -401,6 +401,15 @@ export default function ConsumerProfile() {
           </Link>
         </Section>
 
+        <Section title="I'm Eating">
+          <p style={styles.sectionDesc}>
+            Share what you&apos;re eating as user-reported food activity (not a verified order).
+          </p>
+          <Link to="/account/im-eating" style={styles.followingLink}>
+            Share I&apos;m Eating
+          </Link>
+        </Section>
+
         <Section title="Dining Crews">
           <p style={styles.sectionDesc}>
             Who wants to eat? Create a small crew, invite people, and start a meal conversation.

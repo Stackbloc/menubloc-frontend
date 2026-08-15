@@ -119,6 +119,17 @@ export const searchDiningCrewEntities = ({ type, q = "", restaurant_id = null, l
   return get(`/api/consumer/dining-crews/entity-search?${params.toString()}`);
 };
 
+// ── I'm Eating / food activity ────────────────────────────────────────────
+export const listMyFoodActivity = (limit = null) =>
+  get(
+    limit
+      ? `/api/consumer/food-activity?limit=${encodeURIComponent(String(limit))}`
+      : "/api/consumer/food-activity"
+  );
+export const createImEating = (body) => post("/api/consumer/food-activity", body);
+export const deleteMyFoodActivity = (id) =>
+  del(`/api/consumer/food-activity/${encodeURIComponent(String(id))}`);
+
 // ── Profile ───────────────────────────────────────────────────────────────
 export const getConsumerProfile    = ()     => get("/api/consumer/profile");
 export const updateConsumerProfile = (body) => put("/api/consumer/profile", body);
