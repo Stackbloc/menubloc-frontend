@@ -18,189 +18,222 @@ const statementStyle = {
   fontWeight: 700,
 };
 
-const listStyle = {
-  margin: "0 0 18px",
-  paddingLeft: 22,
-  color: "#374151",
-  fontSize: "15px",
-  lineHeight: 1.8,
-};
-
-const listItemStyle = {
-  marginBottom: 8,
-};
-
 export default function AboutMenuply() {
   const { t } = useLanguage();
 
   return (
     <>
-    <PageShell width="reading">
-      <div style={{ marginBottom: 16 }}>
-        <BrandLogo height={36} radius={8} matchPageBackground={false} />
-      </div>
+      <PageShell width="reading">
+        <div style={{ marginBottom: 16 }}>
+          <BrandLogo height={36} radius={8} matchPageBackground={false} />
+        </div>
 
-      <PageHero title={t("about.title", "About Menuply")} />
+        <PageHero title={t("about.title", "About Menuply")} />
 
-      <div style={{ maxWidth: 720 }}>
-        <SectionTitle style={{ marginTop: 8, marginBottom: 16 }}>
-          {t("about.section1Title", "Food Intelligence for Everyone")}
-        </SectionTitle>
+        <div style={{ maxWidth: 720 }}>
+          <SectionTitle style={{ marginTop: 8, marginBottom: 16 }}>
+            {t("about.sectionFoodSocial", "Food is social.")}
+          </SectionTitle>
 
-        <p style={{ ...statementStyle, fontSize: "17px", marginBottom: 18 }}>
-          {t(
-            "about.lead",
-            "Food intelligence built to make restaurant choices more discoverable, not more judgmental."
-          )}
-        </p>
-
-        <p style={paragraphStyle}>
-          {t("about.p1", "Menuply is building a different kind of restaurant platform.")}
-        </p>
-
-        <p style={paragraphStyle}>
-          {t(
-            "about.p2",
-            "The idea behind the name is simple: menus become more valuable when they work together instead of existing in isolation. By connecting restaurant menus into a single intelligent network, our vision is to give diners access to thousands of dining options through one connected experience."
-          )}
-        </p>
-
-        <p style={paragraphStyle}>
-          {t("about.missionIntro", "Our mission is straightforward:")}
-        </p>
-
-        <ul style={listStyle}>
-          <li style={listItemStyle}>
-            {t("about.mission1", "Make restaurant menus more accessible and accurate.")}
-          </li>
-          <li style={listItemStyle}>
+          <p style={{ ...statementStyle, fontSize: "17px", marginBottom: 18 }}>
             {t(
-              "about.mission2",
-              "Help reduce menu price inflation by reducing restaurant marketing costs."
+              "about.identity",
+              "Menuply helps people find, explore, share, and experience food together."
             )}
-          </li>
-          <li style={listItemStyle}>
+          </p>
+
+          <p style={paragraphStyle}>
             {t(
-              "about.mission3",
-              "Help restaurants build and maintain direct relationships with their customers."
+              "about.heroDiscover",
+              "Discover restaurants, menus, dishes, deals, and what people are eating around you. Compare the things that matter to you, share what you find, invite someone to eat, and use Waiter to discover what's happening around the food you care about."
             )}
-          </li>
-        </ul>
+          </p>
 
-        <p style={paragraphStyle}>
-          {t(
-            "about.p3",
-            "When diners visit Menuply, they aren't just searching for restaurants. We aspire to build the most comprehensive collection of restaurant menus, allowing diners to compare dishes, ingredients, prices, nutrition, dietary preferences, and other food intelligence across practically all restaurants in a given market."
-          )}
-        </p>
+          <p style={paragraphStyle}>
+            {t("about.heroBeliefPrefix", "We believe food is about more than finding a restaurant. It's about ")}
+            <strong>
+              {t(
+                "about.heroBeliefStrong",
+                "what you eat, who you eat with, and discovering something good."
+              )}
+            </strong>
+          </p>
 
-        <p style={paragraphStyle}>
-          {t("about.p4", "We believe better information leads to better decisions.")}
-        </p>
+          <hr
+            style={{
+              border: "none",
+              borderTop: "1px solid var(--gb-color-border, #e5e7eb)",
+              margin: "8px 0 28px",
+            }}
+          />
 
-        <p style={paragraphStyle}>
-          {t(
-            "about.p5",
-            "Even though we provide nutrition information about menu choices, Menuply doesn't tell people what they should eat. It gives them the information to decide for themselves."
-          )}
-        </p>
+          <SectionTitle style={{ marginTop: 0, marginBottom: 16 }}>
+            {t(
+              "about.sectionInfoTitle",
+              "Better information. More choice. No judgment."
+            )}
+          </SectionTitle>
 
-        <p style={paragraphStyle}>
-          {t(
-            "about.p6",
-            "Whether you're looking for comfort food, trying to increase protein, reduce sodium, avoid certain ingredients, compare menu prices, or simply discover somewhere new to eat, Menuply is designed to make restaurant decisions easier, faster, and more transparent."
-          )}
-        </p>
+          <p style={paragraphStyle}>
+            {t(
+              "about.infoP1",
+              "Menuply brings restaurant information together so diners can make better-informed choices."
+            )}
+          </p>
 
-        <hr style={{ border: "none", borderTop: "1px solid var(--gb-color-border, #e5e7eb)", margin: "8px 0 28px" }} />
+          <p style={paragraphStyle}>
+            {t(
+              "about.infoP2",
+              "We make menus more accessible and useful, helping people explore dishes, ingredients, prices, nutrition, dietary preferences, and other information that can matter when deciding where and what to eat."
+            )}
+          </p>
 
-        <SectionTitle style={{ marginTop: 0, marginBottom: 16 }}>
-          {t("about.section2Title", "Building a Fairer Restaurant Economy")}
-        </SectionTitle>
+          <p style={paragraphStyle}>
+            {t(
+              "about.infoP3",
+              "Whether you're looking for comfort food, trying to increase protein, reduce sodium, avoid certain ingredients, compare prices, find a deal, or simply discover somewhere new, Menuply is designed to make the decision easier."
+            )}
+          </p>
 
-        <p style={paragraphStyle}>
-          {t(
-            "about.p7",
-            "Restaurants benefit as well. Menuply gives them the tools to manage accurate menus, build engaging profiles, communicate directly with diners, and participate in a growing food intelligence network that helps customers discover them."
-          )}
-        </p>
+          <p style={{ ...statementStyle, fontSize: "17px", marginBottom: 18 }}>
+            {t("about.infoDecide", "We provide information. You decide what to eat.")}
+          </p>
 
-        <p style={paragraphStyle}>
-          {t(
-            "about.p8",
-            "We also believe the restaurant industry and diners deserve a lower-cost alternative."
-          )}
-        </p>
+          <hr
+            style={{
+              border: "none",
+              borderTop: "1px solid var(--gb-color-border, #e5e7eb)",
+              margin: "8px 0 28px",
+            }}
+          />
 
-        <p style={paragraphStyle}>
-          {t(
-            "about.p9",
-            "As third-party marketplace fees have increased, many restaurants have little choice but to raise menu prices to protect already thin margins. Those higher costs are ultimately passed on to diners."
-          )}
-        </p>
+          <SectionTitle style={{ marginTop: 0, marginBottom: 16 }}>
+            {t("about.sectionEatingSocial", "Eating is social.")}
+          </SectionTitle>
 
-        <p style={paragraphStyle}>
-          {t(
-            "about.p10",
-            "Menuply was built with a different philosophy. By keeping our costs lower than traditional marketplaces, we give restaurants the opportunity to offer lower prices on Menuply while still keeping more of what they earn. Everyone benefits: restaurants retain more revenue, diners pay less, and local restaurants become more competitive."
-          )}
-        </p>
+          <p style={paragraphStyle}>
+            {t(
+              "about.socialP1",
+              "Sometimes you eat alone. Sometimes you eat with friends or family. Sometimes you want to meet someone new through food."
+            )}
+          </p>
 
-        <p style={{ ...statementStyle, fontSize: "17px", marginTop: 8, marginBottom: 18 }}>
-          {t("about.cta", "Is your restaurant bold enough to join the movement?")}
-        </p>
+          <p style={paragraphStyle}>
+            {t("about.socialP2", "Menuply gives you ways to make eating more social.")}
+          </p>
 
-        <p style={paragraphStyle}>
-          {t(
-            "about.p11",
-            "We're looking for restaurants that believe there is a better way."
-          )}
-        </p>
+          <p style={paragraphStyle}>
+            <strong>
+              {t("about.socialConnectLead", "Connect with the people you eat with.")}
+            </strong>{" "}
+            {t(
+              "about.socialConnectBody",
+              "Share food photos and comments. See what people around you are eating. Discover food activity in places that interest you. Meet people through food. And invite someone when you find something good."
+            )}
+          </p>
 
-        <p style={paragraphStyle}>
-          {t(
-            "about.p12",
-            "Restaurants that have the courage to help create an alternative to the exorbitant platform fees causing unsustainable menu price inflation."
-          )}
-        </p>
+          <p style={{ ...statementStyle, fontSize: "17px", marginBottom: 18 }}>
+            {t(
+              "about.socialClose",
+              "Find something good. Share it. Invite someone. Eat together."
+            )}
+          </p>
 
-        <p style={paragraphStyle}>
-          {t(
-            "about.p13",
-            "Restaurants that are willing to help reshape the future of restaurant technology."
-          )}
-        </p>
+          <hr
+            style={{
+              border: "none",
+              borderTop: "1px solid var(--gb-color-border, #e5e7eb)",
+              margin: "8px 0 28px",
+            }}
+          />
 
-        <p style={paragraphStyle}>
-          {t(
-            "about.p14",
-            "We believe the future of restaurant technology isn't just online ordering. It's making restaurants more independent so they have better control over their menus, pricing, and customer relationships."
-          )}
-        </p>
+          <SectionTitle style={{ marginTop: 0, marginBottom: 16 }}>
+            {t("about.sectionRestaurants", "For Restaurants")}
+          </SectionTitle>
 
-        <p style={{ ...statementStyle, marginTop: 28 }}>{t("about.closer1", "Enjoy your food.")}</p>
-        <p style={statementStyle}>{t("about.closer2", "Understand your food.")}</p>
-        <p style={statementStyle}>{t("about.closer3", "That's Menuply.")}</p>
+          <p style={paragraphStyle}>
+            {t(
+              "about.restP1",
+              "Restaurants deserve better tools and a better relationship with their customers."
+            )}
+          </p>
 
-        <p style={{ ...statementStyle, marginTop: 18, marginBottom: 0, fontSize: "17px" }}>
-          {t("about.tagline", "One Menu. Multiplied by Thousands.")}
-        </p>
+          <p style={paragraphStyle}>
+            {t(
+              "about.restP2",
+              "Menuply helps restaurants maintain their menus, build their presence, communicate with diners, and become easier to discover."
+            )}
+          </p>
 
-        <p style={{ ...paragraphStyle, marginTop: 26, fontSize: "13px", color: "#6B7280" }}>
-          {t("about.dataAttributionPrefix", "Certain data provided to Menuply by ")}
-          <a
-            href="https://simplemaps.com/data/businesses"
-            target="_blank"
-            rel="noreferrer"
-            style={{ color: "#1D4ED8" }}
-          >
-            SimpleMaps.com
-          </a>
-          {t("about.dataAttributionSuffix", ".")}
-        </p>
-      </div>
-    </PageShell>
-    <BottomNav />
+          <p style={paragraphStyle}>
+            {t(
+              "about.restP3",
+              "We also believe restaurants and diners deserve an alternative to the high costs of traditional third-party marketplaces."
+            )}
+          </p>
+
+          <p style={paragraphStyle}>
+            {t(
+              "about.restP4",
+              "When restaurants pay substantial commissions and fees, those costs can contribute to higher menu prices. Menuply's goal is to operate at a lower cost so restaurants can keep more of what they earn and have more flexibility in how they price and serve their customers."
+            )}
+          </p>
+
+          <p style={{ ...statementStyle, fontSize: "17px", marginBottom: 18 }}>
+            {t(
+              "about.restClose",
+              "Better economics for restaurants can mean better prices and choices for diners."
+            )}
+          </p>
+
+          <hr
+            style={{
+              border: "none",
+              borderTop: "1px solid var(--gb-color-border, #e5e7eb)",
+              margin: "8px 0 28px",
+            }}
+          />
+
+          <SectionTitle style={{ marginTop: 0, marginBottom: 16 }}>
+            {t("about.sectionDifferent", "A Different Kind of Food Platform")}
+          </SectionTitle>
+
+          <p style={paragraphStyle}>
+            {t("about.diffP1", "Menuply isn't just a place to look up restaurants.")}
+          </p>
+
+          <p style={paragraphStyle}>
+            {t("about.diffP2Prefix", "It's a place to ")}
+            <strong>
+              {t(
+                "about.diffP2Strong",
+                "discover food, understand your choices, share what you're eating, connect with people, and decide where to eat next."
+              )}
+            </strong>
+          </p>
+
+          <p style={{ ...statementStyle, marginTop: 28 }}>
+            {t("about.closer1", "Enjoy your food.")}
+          </p>
+          <p style={statementStyle}>{t("about.closer2", "Understand your food.")}</p>
+          <p style={statementStyle}>{t("about.closerShare", "Share your food.")}</p>
+          <p style={statementStyle}>{t("about.closer3", "That's Menuply.")}</p>
+
+          <p style={{ ...paragraphStyle, marginTop: 26, fontSize: "13px", color: "#6B7280" }}>
+            {t("about.dataAttributionPrefix", "Certain data provided to Menuply by ")}
+            <a
+              href="https://simplemaps.com/data/businesses"
+              target="_blank"
+              rel="noreferrer"
+              style={{ color: "#1D4ED8" }}
+            >
+              SimpleMaps.com
+            </a>
+            {t("about.dataAttributionSuffix", ".")}
+          </p>
+        </div>
+      </PageShell>
+      <BottomNav />
     </>
   );
 }

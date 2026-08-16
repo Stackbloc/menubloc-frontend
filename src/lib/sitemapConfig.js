@@ -19,7 +19,7 @@ export const INDEXABLE_STATIC_PAGES = [
   page("/browse-menus", "Browse Restaurant Menus | Menuply", "Explore restaurant menus in your area on Menuply. Find the best local dishes near you.", "daily", 0.9),
   page("/deals", "Restaurant Deals | Menuply", "Browse current restaurant deals available through Menuply.", "daily", 0.7),
   page("/foodtrucks", "Food Truck Directory | Menuply", "Discover public food truck profiles and schedules on Menuply.", "weekly", 0.6),
-  page("/about", "About Menuply | Food Intelligence Platform", "Learn how Menuply helps you explore restaurant menus, compare dishes, and make better food choices."),
+  page("/about", "About Menuply | Find, Explore & Share Food", "Menuply helps people find, explore, share, and experience food together—menus, social dining, and better restaurant economics."),
   page("/contact", "Contact Menuply | Get in Touch", "Contact the Menuply team for support, restaurant partnerships, or general inquiries.", "monthly", 0.4),
   page("/pricing", "Restaurant Pricing | Menuply", "Review Menuply restaurant plans and pricing.", "monthly", 0.4),
   page("/terms", "Terms of Service | Menuply", "Read the Menuply Terms of Service governing use of the platform.", "monthly", 0.3),

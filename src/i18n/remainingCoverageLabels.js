@@ -47,46 +47,52 @@ const EN = {
   "basket.summary.view": "View basket",
   "about.breadcrumb": "About",
   "about.title": "About Menuply",
-  "about.section1Title": "Food Intelligence for Everyone",
-  "about.lead":
-    "Food intelligence built to make restaurant choices more discoverable, not more judgmental.",
-  "about.p1": "Menuply is building a different kind of restaurant platform.",
-  "about.p2":
-    "The idea behind the name is simple: menus become more valuable when they work together instead of existing in isolation. By connecting restaurant menus into a single intelligent network, our vision is to give diners access to thousands of dining options through one connected experience.",
-  "about.missionIntro": "Our mission is straightforward:",
-  "about.mission1": "Make restaurant menus more accessible and accurate.",
-  "about.mission2":
-    "Help reduce menu price inflation by reducing restaurant marketing costs.",
-  "about.mission3":
-    "Help restaurants build and maintain direct relationships with their customers.",
-  "about.p3":
-    "When diners visit Menuply, they aren't just searching for restaurants. We aspire to build the most comprehensive collection of restaurant menus, allowing diners to compare dishes, ingredients, prices, nutrition, dietary preferences, and other food intelligence across practically all restaurants in a given market.",
-  "about.p4": "We believe better information leads to better decisions.",
-  "about.p5":
-    "Even though we provide nutrition information about menu choices, Menuply doesn't tell people what they should eat. It gives them the information to decide for themselves.",
-  "about.p6":
-    "Whether you're looking for comfort food, trying to increase protein, reduce sodium, avoid certain ingredients, compare menu prices, or simply discover somewhere new to eat, Menuply is designed to make restaurant decisions easier, faster, and more transparent.",
-  "about.section2Title": "Building a Fairer Restaurant Economy",
-  "about.p7":
-    "Restaurants benefit as well. Menuply gives them the tools to manage accurate menus, build engaging profiles, communicate directly with diners, and participate in a growing food intelligence network that helps customers discover them.",
-  "about.p8":
-    "We also believe the restaurant industry and diners deserve a lower-cost alternative.",
-  "about.p9":
-    "As third-party marketplace fees have increased, many restaurants have little choice but to raise menu prices to protect already thin margins. Those higher costs are ultimately passed on to diners.",
-  "about.p10":
-    "Menuply was built with a different philosophy. By keeping our costs lower than traditional marketplaces, we give restaurants the opportunity to offer lower prices on Menuply while still keeping more of what they earn. Everyone benefits: restaurants retain more revenue, diners pay less, and local restaurants become more competitive.",
-  "about.cta": "Is your restaurant bold enough to join the movement?",
-  "about.p11": "We're looking for restaurants that believe there is a better way.",
-  "about.p12":
-    "Restaurants that have the courage to help create an alternative to the exorbitant platform fees causing unsustainable menu price inflation.",
-  "about.p13":
-    "Restaurants that are willing to help reshape the future of restaurant technology.",
-  "about.p14":
-    "We believe the future of restaurant technology isn't just online ordering. It's making restaurants more independent so they have better control over their menus, pricing, and customer relationships.",
+  "about.sectionFoodSocial": "Food is social.",
+  "about.identity":
+    "Menuply helps people find, explore, share, and experience food together.",
+  "about.heroDiscover":
+    "Discover restaurants, menus, dishes, deals, and what people are eating around you. Compare the things that matter to you, share what you find, invite someone to eat, and use Waiter to discover what's happening around the food you care about.",
+  "about.heroBeliefPrefix":
+    "We believe food is about more than finding a restaurant. It's about ",
+  "about.heroBeliefStrong":
+    "what you eat, who you eat with, and discovering something good.",
+  "about.sectionInfoTitle": "Better information. More choice. No judgment.",
+  "about.infoP1":
+    "Menuply brings restaurant information together so diners can make better-informed choices.",
+  "about.infoP2":
+    "We make menus more accessible and useful, helping people explore dishes, ingredients, prices, nutrition, dietary preferences, and other information that can matter when deciding where and what to eat.",
+  "about.infoP3":
+    "Whether you're looking for comfort food, trying to increase protein, reduce sodium, avoid certain ingredients, compare prices, find a deal, or simply discover somewhere new, Menuply is designed to make the decision easier.",
+  "about.infoDecide": "We provide information. You decide what to eat.",
+  "about.sectionEatingSocial": "Eating is social.",
+  "about.socialP1":
+    "Sometimes you eat alone. Sometimes you eat with friends or family. Sometimes you want to meet someone new through food.",
+  "about.socialP2": "Menuply gives you ways to make eating more social.",
+  "about.socialConnectLead": "Connect with the people you eat with.",
+  "about.socialConnectBody":
+    "Share food photos and comments. See what people around you are eating. Discover food activity in places that interest you. Meet people through food. And invite someone when you find something good.",
+  "about.socialClose":
+    "Find something good. Share it. Invite someone. Eat together.",
+  "about.sectionRestaurants": "For Restaurants",
+  "about.restP1":
+    "Restaurants deserve better tools and a better relationship with their customers.",
+  "about.restP2":
+    "Menuply helps restaurants maintain their menus, build their presence, communicate with diners, and become easier to discover.",
+  "about.restP3":
+    "We also believe restaurants and diners deserve an alternative to the high costs of traditional third-party marketplaces.",
+  "about.restP4":
+    "When restaurants pay substantial commissions and fees, those costs can contribute to higher menu prices. Menuply's goal is to operate at a lower cost so restaurants can keep more of what they earn and have more flexibility in how they price and serve their customers.",
+  "about.restClose":
+    "Better economics for restaurants can mean better prices and choices for diners.",
+  "about.sectionDifferent": "A Different Kind of Food Platform",
+  "about.diffP1": "Menuply isn't just a place to look up restaurants.",
+  "about.diffP2Prefix": "It's a place to ",
+  "about.diffP2Strong":
+    "discover food, understand your choices, share what you're eating, connect with people, and decide where to eat next.",
   "about.closer1": "Enjoy your food.",
   "about.closer2": "Understand your food.",
+  "about.closerShare": "Share your food.",
   "about.closer3": "That's Menuply.",
-  "about.tagline": "One Menu. Multiplied by Thousands.",
   "contact.intro": "Use the contact options below so your message goes to the right place.",
   "contact.inquiryType": "Inquiry type",
   "contact.inquiry.general": "General inquiry",

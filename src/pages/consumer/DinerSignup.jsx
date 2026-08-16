@@ -49,6 +49,31 @@ const styles = {
     margin: "4px 0 0",
     fontWeight: 700,
   },
+  pitchSection: { marginTop: 22 },
+  pitchSectionTitle: {
+    fontSize: 16,
+    fontWeight: 800,
+    color: "#0B0F0C",
+    margin: "0 0 8px",
+    letterSpacing: "-0.02em",
+  },
+  pitchClose: {
+    marginTop: 28,
+    paddingTop: 20,
+    borderTop: "1px solid #E5E7EB",
+  },
+  pitchCloseLead: {
+    fontSize: 16,
+    fontWeight: 800,
+    color: "#0B0F0C",
+    margin: "0 0 6px",
+  },
+  pitchCloseTag: {
+    fontSize: 15,
+    fontWeight: 700,
+    color: "#166534",
+    margin: 0,
+  },
   signupBlock: {
     marginTop: 40,
     background: "#ffffff",
@@ -171,18 +196,77 @@ export default function DinerSignup() {
         <div style={styles.pitchBlock}>
           <header style={styles.header}>
             <BrandLogo height={48} radius={14} matchPageBackground={false} />
-            <h1 style={styles.pageTitle}>Diner Signup</h1>
-            <p style={styles.intro}>Menuply is different.</p>
+            <h1 style={styles.pageTitle}>Menuply is different.</h1>
             <p style={styles.intro}>
-              We built Menuply to help you discover <strong>all</strong> restaurant menus in your city—not just the restaurants that sell through our platform. We enhance menus with estimated nutrition information, giving you new ways to search for food based on your dietary preferences and nutrition goals.
-            </p>
-            <p style={styles.intro}>
-              We believe ordering food shouldn&apos;t cost a small fortune. That&apos;s why Menuply keeps restaurant fees low, giving participating restaurants more room to offer better prices to diners. We encourage every participating restaurant to pass those savings on to you.
-            </p>
-            <p style={styles.introLast}>
-              Join today and discover a smarter way to search for food—and better value every time you order.
+              Menuply helps you discover food, find places to eat, and make social dining plans
+              with your friends.
             </p>
           </header>
+
+          <section style={styles.pitchSection} aria-labelledby="diner-signup-menus">
+            <h2 id="diner-signup-menus" style={styles.pitchSectionTitle}>
+              Explore restaurant menus
+            </h2>
+            <p style={styles.intro}>
+              Explore restaurant menus across your city—including restaurants that sell through
+              Menuply and those that don&apos;t. We&apos;re constantly adding new menus—and you can
+              add menus, too.
+            </p>
+            <p style={styles.intro}>
+              Search for food any way you like: by restaurant name, menu item, nutrition goals
+              like “low carb,” or dietary preferences such as a keto diet.
+            </p>
+            <p style={styles.intro}>
+              Menuply is designed to let you explore food the way you want to.
+            </p>
+          </section>
+
+          <section style={styles.pitchSection} aria-labelledby="diner-signup-live">
+            <h2 id="diner-signup-live" style={styles.pitchSectionTitle}>
+              See what&apos;s happening around you
+            </h2>
+            <p style={styles.intro}>
+              Discover where people are eating, what&apos;s getting attention, and what diners are
+              saying about the food. Follow the communities and places you care about through live
+              local food feeds.
+            </p>
+          </section>
+
+          <section style={styles.pitchSection} aria-labelledby="diner-signup-social">
+            <h2 id="diner-signup-social" style={styles.pitchSectionTitle}>
+              Make plans with your friends
+            </h2>
+            <p style={styles.intro}>
+              Create Diner Crews, invite friends to eat, suggest a restaurant and time, or
+              counter-propose a different place or time until you find something that works for
+              everyone.
+            </p>
+          </section>
+
+          <section style={styles.pitchSection} aria-labelledby="diner-signup-events">
+            <h2 id="diner-signup-events" style={styles.pitchSectionTitle}>
+              Go together
+            </h2>
+            <p style={styles.intro}>
+              Discover restaurant and venue events, buy tickets, create groups, and get your
+              friends together for experiences worth sharing.
+            </p>
+          </section>
+
+          <section style={styles.pitchSection} aria-labelledby="diner-signup-share">
+            <h2 id="diner-signup-share" style={styles.pitchSectionTitle}>
+              Share what you find
+            </h2>
+            <p style={styles.intro}>
+              Post food photos, quick reactions, and recommendations that help your friends—and
+              your local food community—discover what&apos;s worth trying.
+            </p>
+          </section>
+
+          <div style={styles.pitchClose}>
+            <p style={styles.pitchCloseLead}>Join Menuply and make food more social.</p>
+            <p style={styles.pitchCloseTag}>Discover. Plan. Eat.</p>
+          </div>
         </div>
 
         <hr style={styles.pitchDivider} aria-hidden="true" />
