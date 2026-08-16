@@ -34,32 +34,32 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www **and** 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` @ clean `main` |
-| Git commit | `2eb3c23` — Diner onboarding guided introduction |
-| Vercel deployment | `menubloc-frontend-p1q70m1e8-menuply.vercel.app` |
-| Live bundle | `index-xVp-udQI.js` |
+| Git commit | `2736d0c` — Waiter additive cluster updates (keep meal/time-of-day picks) |
+| Vercel deployment | `menubloc-frontend-aae62r0rr-menuply.vercel.app` |
+| Live bundle | `index-CEl-scxL.js` |
 | Aliases | `menuply.com`, `www.menuply.com`, `crm.menuply.com`, `venues.menuply.com` |
 | Tip-gate | **PASS** (apex + www) verified 2026-08-15 |
-| Feature | Educate-first social onboarding; optional actions; no forced invites |
+| Feature | Core Waiter meal-period picks + additive followed-cluster updates |
 
 ### Backend (Railway)
 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-backend-main` @ clean `main` |
-| Git commit | `25e8b850` — social onboarding welcome step soft-migrate |
+| Git commit | `fc5deb53` — Waiter cluster report additive to core meal briefing |
 | Health URL | `https://menubloc-backend-production.up.railway.app/health` |
-| `commit_hash` | `25e8b850` (starts with) |
+| `commit_hash` | `fc5deb53` (starts with) |
 | Migrations | `0250`–`0256` applied (+ UCLA dining-hall seed) |
-| Smoke | FE+BE CPD; `/health` matches `25e8b850` |
+| Smoke | Briefing `meal_period=dinner|breakfast` returns time-of-day meal ideas |
 
 ### Restore current tip (if tip-gate fails mid-change)
 
 ```bash
 cd /Users/andrebarber/Desktop/menubloc/menubloc-frontend-main
-npx vercel alias set menubloc-frontend-p1q70m1e8-menuply.vercel.app menuply.com
-npx vercel alias set menubloc-frontend-p1q70m1e8-menuply.vercel.app www.menuply.com
-npx vercel alias set menubloc-frontend-p1q70m1e8-menuply.vercel.app crm.menuply.com
-npx vercel alias set menubloc-frontend-p1q70m1e8-menuply.vercel.app venues.menuply.com
+npx vercel alias set menubloc-frontend-aae62r0rr-menuply.vercel.app menuply.com
+npx vercel alias set menubloc-frontend-aae62r0rr-menuply.vercel.app www.menuply.com
+npx vercel alias set menubloc-frontend-aae62r0rr-menuply.vercel.app crm.menuply.com
+npx vercel alias set menubloc-frontend-aae62r0rr-menuply.vercel.app venues.menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 ```
@@ -120,7 +120,8 @@ Newest superseded first. Restoring drops everything shipped after that tip.
 
 | Deployment id | Bundle | Approx feature / CPD |
 |---------------|--------|----------------------|
-| `p1q70m1e8` | `index-xVp-udQI.js` | **CURRENT** — Diner onboarding guided introduction (`2eb3c23`) |
+| `aae62r0rr` | `index-CEl-scxL.js` | **CURRENT** — Waiter additive cluster updates (`2736d0c`) |
+| `p1q70m1e8` | `index-xVp-udQI.js` | Diner onboarding guided introduction (`2eb3c23`) |
 | `dkyh8n497` | `index-UoLq1e4f.js` | UCLA Place Westwood courtyard (`bd2e0a7`) |
 | `8siyrjdn2` | `index-CTBCiaj0.js` | hide dead Google/Apple SSO |
 | `8u2p5tci4` | `index-b_Ovc7EK.js` | USC/UCLA campus Place themes |
