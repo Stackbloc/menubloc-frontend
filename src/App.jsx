@@ -88,6 +88,8 @@ import OperatorMenuWorksheetHubPage from "./pages/operator/OperatorMenuWorksheet
 import OperatorMenuCameraUpload from "./pages/operator/OperatorMenuCameraUpload.jsx";
 import OperatorDealsEditor from "./pages/operator/OperatorDealsEditor.jsx";
 import OperatorVenuePackagePage from "./pages/operator/OperatorVenuePackagePage.jsx";
+import OperatorEventsEditor from "./pages/operator/OperatorEventsEditor.jsx";
+import EventDetailPage from "./pages/EventDetailPage.jsx";
 import OperatorClaimSearch from "./pages/operator/OperatorClaimSearch.jsx";
 import OperatorProfileEditor from "./pages/operator/OperatorProfileEditor.jsx";
 import OperatorHoursEditor from "./pages/operator/OperatorHoursEditor.jsx";
@@ -782,6 +784,7 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
         <Route path="/waiter" element={crmHost ? <HostRouteRedirect to="/crm" /> : <FoodInterestsPage />} />
         <Route path="/deals" element={crmHost ? <HostRouteRedirect to="/crm" /> : <DealsPage />} />
         <Route path="/deals/:dealId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <DealDetailPage />} />
+        <Route path="/events/:slug" element={crmHost ? <HostRouteRedirect to="/crm" /> : <EventDetailPage />} />
 
         <Route path="/restaurants/:id/qr-codes" element={crmHost ? <HostRouteRedirect to="/crm" /> : <QrCodesPage />} />
 
@@ -942,6 +945,7 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
         <Route path="/operator/design" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorAdobeStudio /></OperatorRoute>} />
         <Route path="/operator/deals" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorDealsEditor /></OperatorRoute>} />
         <Route path="/operator/events" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorVenuePackagePage /></OperatorRoute>} />
+        <Route path="/operator/events/manage" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorEventsEditor /></OperatorRoute>} />
         <Route path="/operator/hours" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorHoursEditor /></OperatorRoute>} />
         <Route path="/operator/bid-free-bidding" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorCartNegotiationSettings /></OperatorRoute>} />
         <Route path="/operator/marketplace" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorQrKitOrder /></OperatorRoute>} />

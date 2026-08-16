@@ -840,3 +840,49 @@ export const setRestaurantCapability = (rid, key, body = {}) =>
 
 export const getRestaurantVenuePackage = (rid) =>
   get(`/operator/restaurants/${encodeURIComponent(String(rid))}/capabilities/venue-package`);
+
+export const listVenueEvents = (rid, params = {}) => {
+  const qs = new URLSearchParams(params).toString();
+  return get(
+    `/operator/restaurants/${encodeURIComponent(String(rid))}/events${qs ? `?${qs}` : ""}`
+  );
+};
+export const createVenueEvent = (rid, body) =>
+  post(`/operator/restaurants/${encodeURIComponent(String(rid))}/events`, body);
+export const getVenueEvent = (rid, eventId) =>
+  get(
+    `/operator/restaurants/${encodeURIComponent(String(rid))}/events/${encodeURIComponent(String(eventId))}`
+  );
+export const updateVenueEvent = (rid, eventId, body) =>
+  patch(
+    `/operator/restaurants/${encodeURIComponent(String(rid))}/events/${encodeURIComponent(String(eventId))}`,
+    body
+  );
+export const publishVenueEvent = (rid, eventId) =>
+  post(
+    `/operator/restaurants/${encodeURIComponent(String(rid))}/events/${encodeURIComponent(String(eventId))}/publish`,
+    {}
+  );
+export const pauseVenueEvent = (rid, eventId) =>
+  post(
+    `/operator/restaurants/${encodeURIComponent(String(rid))}/events/${encodeURIComponent(String(eventId))}/pause`,
+    {}
+  );
+export const deleteVenueEvent = (rid, eventId) =>
+  del(
+    `/operator/restaurants/${encodeURIComponent(String(rid))}/events/${encodeURIComponent(String(eventId))}`
+  );
+export const createVenueEventTicketType = (rid, eventId, body) =>
+  post(
+    `/operator/restaurants/${encodeURIComponent(String(rid))}/events/${encodeURIComponent(String(eventId))}/ticket-types`,
+    body
+  );
+export const updateVenueEventTicketType = (rid, eventId, ticketTypeId, body) =>
+  patch(
+    `/operator/restaurants/${encodeURIComponent(String(rid))}/events/${encodeURIComponent(String(eventId))}/ticket-types/${encodeURIComponent(String(ticketTypeId))}`,
+    body
+  );
+export const deleteVenueEventTicketType = (rid, eventId, ticketTypeId) =>
+  del(
+    `/operator/restaurants/${encodeURIComponent(String(rid))}/events/${encodeURIComponent(String(eventId))}/ticket-types/${encodeURIComponent(String(ticketTypeId))}`
+  );

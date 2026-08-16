@@ -67,8 +67,9 @@ export default function OperatorVenuePackagePage() {
       <div data-testid="operator-venue-package" style={{ maxWidth: 720, display: "grid", gap: 16 }}>
         <div style={{ fontSize: 14, color: "#5b6675", lineHeight: 1.5 }}>
           Venue is a capability you attach to this business — it does not change whether you are a
-          restaurant, bar, brewery, cafe, or nightclub. Enabling Venue unlocks the Events package
-          shell. Ticket purchase and full event objects arrive in later phases.
+          restaurant, bar, brewery, cafe, or nightclub. Enabling Venue unlocks Events. Create and
+          publish Event objects with ticket configuration; purchase checkout arrives with existing
+          commerce later.
         </div>
 
         {loading ? <div style={{ color: "#5b6675" }}>Loading…</div> : null}
@@ -124,13 +125,28 @@ export default function OperatorVenuePackagePage() {
               {modules.map((mod) => (
                 <li key={mod.key} data-testid={`venue-module-${mod.key}`}>
                   <strong>{mod.title}</strong>
-                  <span style={{ color: "#78716c", fontWeight: 600 }}> — shell</span>
+                  <span style={{ color: "#78716c", fontWeight: 600 }}>
+                    {" "}
+                    — {mod.status === "ready" ? "ready" : "shell"}
+                  </span>
                   {mod.description ? (
                     <div style={{ fontSize: 12, color: "#5b6675" }}>{mod.description}</div>
                   ) : null}
                 </li>
               ))}
             </ul>
+            <Link
+              to="/operator/events/manage"
+              data-testid="operator-events-manage-link"
+              style={{
+                display: "inline-block",
+                fontWeight: 800,
+                color: "#166534",
+                fontSize: 14,
+              }}
+            >
+              Manage events →
+            </Link>
             <div
               style={{
                 fontSize: 12,
@@ -140,8 +156,8 @@ export default function OperatorVenuePackagePage() {
                 borderRadius: 8,
               }}
             >
-              Creating events, ticketing, and group offers are not available in this phase. Structure
-              only.
+              Event groups and group offers remain shell until Phases 5–6. Ticket purchase is
+              config-only for now.
             </div>
           </div>
         ) : (
