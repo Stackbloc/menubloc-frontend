@@ -25,7 +25,7 @@ Do **not** deploy from memory or from quarantined checkouts.
 
 ---
 
-## CURRENT LAST KNOWN GOOD (live production — 2026-08-15)
+## CURRENT LAST KNOWN GOOD (live production — 2026-08-16)
 
 Update this section **only** after tip-gate `RESULT=PASS` on apex + www **and** Railway `/health` matches the shipped BE SHA.
 
@@ -34,32 +34,32 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www **and** 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` @ clean `main` |
-| Git commit | `2736d0c` — Waiter additive cluster updates (keep meal/time-of-day picks) |
-| Vercel deployment | `menubloc-frontend-aae62r0rr-menuply.vercel.app` |
-| Live bundle | `index-CEl-scxL.js` |
+| Git commit | `4ec654f` — Dining Crew invite ShareModal CPD (includes `42c415b` diner-qr same-origin fix) |
+| Vercel deployment | `menubloc-frontend-nzkm72fy0-menuply.vercel.app` |
+| Live bundle | `index-DyvhJLLC.js` |
 | Aliases | `menuply.com`, `www.menuply.com`, `crm.menuply.com`, `venues.menuply.com` |
-| Tip-gate | **PASS** (apex + www) verified 2026-08-15 |
-| Feature | Core Waiter meal-period picks + additive followed-cluster updates |
+| Tip-gate | **PASS** (apex + www) verified 2026-08-16 |
+| Feature | Dining Crew Share invite via ShareModal (menuply.com); optional onboarding share |
 
 ### Backend (Railway)
 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-backend-main` @ clean `main` |
-| Git commit | `fc5deb53` — Waiter cluster report additive to core meal briefing |
+| Git commit | `45123b8c` — diner-qr cross-origin embed fix (BE unchanged for invite-share feature) |
 | Health URL | `https://menubloc-backend-production.up.railway.app/health` |
-| `commit_hash` | `fc5deb53` (starts with) |
-| Migrations | `0250`–`0256` applied (+ UCLA dining-hall seed) |
-| Smoke | Briefing `meal_period=dinner|breakfast` returns time-of-day meal ideas |
+| `commit_hash` | `45123b8c` (starts with) |
+| Migrations | `0250`–`0258` applied (`0258` invite counter proposals) |
+| Smoke | Live bundle has Share invite; no Member id prototype |
 
 ### Restore current tip (if tip-gate fails mid-change)
 
 ```bash
 cd /Users/andrebarber/Desktop/menubloc/menubloc-frontend-main
-npx vercel alias set menubloc-frontend-aae62r0rr-menuply.vercel.app menuply.com
-npx vercel alias set menubloc-frontend-aae62r0rr-menuply.vercel.app www.menuply.com
-npx vercel alias set menubloc-frontend-aae62r0rr-menuply.vercel.app crm.menuply.com
-npx vercel alias set menubloc-frontend-aae62r0rr-menuply.vercel.app venues.menuply.com
+npx vercel alias set menubloc-frontend-nzkm72fy0-menuply.vercel.app menuply.com
+npx vercel alias set menubloc-frontend-nzkm72fy0-menuply.vercel.app www.menuply.com
+npx vercel alias set menubloc-frontend-nzkm72fy0-menuply.vercel.app crm.menuply.com
+npx vercel alias set menubloc-frontend-nzkm72fy0-menuply.vercel.app venues.menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 ```
@@ -120,7 +120,8 @@ Newest superseded first. Restoring drops everything shipped after that tip.
 
 | Deployment id | Bundle | Approx feature / CPD |
 |---------------|--------|----------------------|
-| `aae62r0rr` | `index-CEl-scxL.js` | **CURRENT** — Waiter additive cluster updates (`2736d0c`) |
+| `nzkm72fy0` | `index-DyvhJLLC.js` | **CURRENT** — Dining Crew invite ShareModal (`4ec654f`) |
+| `aae62r0rr` | `index-CEl-scxL.js` | Waiter additive cluster updates (`2736d0c`) |
 | `p1q70m1e8` | `index-xVp-udQI.js` | Diner onboarding guided introduction (`2eb3c23`) |
 | `dkyh8n497` | `index-UoLq1e4f.js` | UCLA Place Westwood courtyard (`bd2e0a7`) |
 | `8siyrjdn2` | `index-CTBCiaj0.js` | hide dead Google/Apple SSO |

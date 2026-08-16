@@ -1,30 +1,32 @@
 # CPD — Dining Crew invite ShareModal (replace prototype)
 
 **Date:** 2026-08-16  
-**Scope:** FE (invite share UX). BE unchanged this CPD.
+**Scope:** FE (invite share UX). BE unchanged for this feature.
 
 | Field | Value |
 |-------|-------|
 | FE path | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` @ clean `main` |
-| Feature commit | `bd3a8e5` (Share invite helper + UI; also in later tips) |
-| Tip (this CPD) | Updated after deploy of tip including Share invite + pending FE HEAD |
-| Bundle | set after tip-gate PASS |
+| FE commit | `4ec654f` (feature since `bd3a8e5`; tip also includes `42c415b` diner-qr fix) |
+| Tip | `menubloc-frontend-nzkm72fy0-menuply.vercel.app` |
+| Bundle | `index-DyvhJLLC.js` |
 | Aliases | menuply.com, www, crm, venues |
-| Tip-gate | PASS apex + www (post-alias) |
-| BE | unchanged for this feature; health at CPD start `5d111f78…` |
+| Tip-gate | PASS apex + www |
+| BE health | `45123b8c` (unchanged for invite-share; not pushed from dirty BE tree) |
+| Path-gate BE | not run for push (FE-only CPD; BE working tree has unrelated untracked files) |
 | Exception | none |
 
 ## Feature
 
-Prototype Dining Crew invite (raw `<code>` URL + member id) replaced with ShareModal: Copy Link primary + SMS/Email/WhatsApp. Optional on social onboarding after Create Dining Crew. URLs locked to `https://menuply.com/...`.
+Prototype Dining Crew invite (raw URL + member id) → ShareModal Share invite. Optional on onboarding.
 
 ## Verify
 
-- Live bundle contains `Share invite`, `dining-crew-share-invite`, `Join my Dining Crew on Menuply`
-- No `Member id (optional)` / `Create invite link` prototype dump
-- `npm run test:share-contract` — pass (ShareModal consume-only)
-- Contract: `test/diningCrewInviteShareContract.test.js`
+- Live: `Share invite`, `dining-crew-share-invite`, `Join my Dining Crew on Menuply`
+- Tip-gate PASS
 
 ## Restore
 
-Use CURRENT LKG tip from `scripts/assert-menuply-production-tip.sh` after this CPD updates locks.
+```bash
+npx vercel alias set menubloc-frontend-nzkm72fy0-menuply.vercel.app menuply.com
+npx vercel alias set menubloc-frontend-nzkm72fy0-menuply.vercel.app www.menuply.com
+```

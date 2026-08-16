@@ -4,7 +4,8 @@ Replace prototype Dining Crew invite share with ShareModal (menuply.com locked).
 
 # Current Status
 
-**LOCAL COMPLETE** — contracts pass. Not committed / not CPD’d.
+**CPD COMPLETE 2026-08-16** — tip `nzkm72fy0` / `index-DyvhJLLC.js` @ `4ec654f`; tip-gate PASS.  
+Live: Share invite / dining-crew-share-invite in production bundle.
 
 # Files Changed
 

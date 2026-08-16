@@ -59,4 +59,4 @@ CPD when Andre authorizes.
 
 # Final Verdict
 
-**LOCAL COMPLETE** — prototype invite share replaced with ShareModal.
+**CPD COMPLETE** — tip `nzkm72fy0` / `index-DyvhJLLC.js`; Share invite live.
