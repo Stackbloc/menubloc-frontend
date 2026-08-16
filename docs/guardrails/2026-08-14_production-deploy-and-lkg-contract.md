@@ -34,32 +34,32 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www **and** 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` @ clean `main` |
-| Git commit | `4ec654f` — Dining Crew invite ShareModal CPD (includes `42c415b` diner-qr same-origin fix) |
-| Vercel deployment | `menubloc-frontend-nzkm72fy0-menuply.vercel.app` |
-| Live bundle | `index-DyvhJLLC.js` |
+| Git commit | `42c415b` — diner-qr same-origin QR image + Invite option align (tip also includes Dining Crew ShareModal) |
+| Vercel deployment | `menubloc-frontend-e2toazdpi-menuply.vercel.app` |
+| Live bundle | `index-Cx2bTWAc.js` |
 | Aliases | `menuply.com`, `www.menuply.com`, `crm.menuply.com`, `venues.menuply.com` |
 | Tip-gate | **PASS** (apex + www) verified 2026-08-16 |
-| Feature | Dining Crew Share invite via ShareModal (menuply.com); optional onboarding share |
+| Feature | Diner Card QR visible (same-origin `/d/.../image`); Invite dialog options aligned |
 
 ### Backend (Railway)
 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-backend-main` @ clean `main` |
-| Git commit | `45123b8c` — diner-qr cross-origin embed fix (BE unchanged for invite-share feature) |
+| Git commit | `45123b8c` — diner-qr image CORP cross-origin embed |
 | Health URL | `https://menubloc-backend-production.up.railway.app/health` |
 | `commit_hash` | `45123b8c` (starts with) |
 | Migrations | `0250`–`0258` applied (`0258` invite counter proposals) |
-| Smoke | Live bundle has Share invite; no Member id prototype |
+| Smoke | Live bundle uses `/d/{token}/image`; BE health `45123b8c` |
 
 ### Restore current tip (if tip-gate fails mid-change)
 
 ```bash
 cd /Users/andrebarber/Desktop/menubloc/menubloc-frontend-main
-npx vercel alias set menubloc-frontend-nzkm72fy0-menuply.vercel.app menuply.com
-npx vercel alias set menubloc-frontend-nzkm72fy0-menuply.vercel.app www.menuply.com
-npx vercel alias set menubloc-frontend-nzkm72fy0-menuply.vercel.app crm.menuply.com
-npx vercel alias set menubloc-frontend-nzkm72fy0-menuply.vercel.app venues.menuply.com
+npx vercel alias set menubloc-frontend-e2toazdpi-menuply.vercel.app menuply.com
+npx vercel alias set menubloc-frontend-e2toazdpi-menuply.vercel.app www.menuply.com
+npx vercel alias set menubloc-frontend-e2toazdpi-menuply.vercel.app crm.menuply.com
+npx vercel alias set menubloc-frontend-e2toazdpi-menuply.vercel.app venues.menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 ```
@@ -120,7 +120,8 @@ Newest superseded first. Restoring drops everything shipped after that tip.
 
 | Deployment id | Bundle | Approx feature / CPD |
 |---------------|--------|----------------------|
-| `nzkm72fy0` | `index-DyvhJLLC.js` | **CURRENT** — Dining Crew invite ShareModal (`4ec654f`) |
+| `e2toazdpi` | `index-Cx2bTWAc.js` | **CURRENT** — diner-qr CORP blank + Invite align (`42c415b`) |
+| `nzkm72fy0` | `index-DyvhJLLC.js` | Dining Crew invite ShareModal tip lock (`4ec654f`) — superseded by `e2toazdpi` |
 | `aae62r0rr` | `index-CEl-scxL.js` | Waiter additive cluster updates (`2736d0c`) |
 | `p1q70m1e8` | `index-xVp-udQI.js` | Diner onboarding guided introduction (`2eb3c23`) |
 | `dkyh8n497` | `index-UoLq1e4f.js` | UCLA Place Westwood courtyard (`bd2e0a7`) |
