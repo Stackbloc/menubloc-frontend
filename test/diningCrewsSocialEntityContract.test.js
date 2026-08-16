@@ -21,7 +21,11 @@ test("Dining Crews Phase 3 social entity UI + API client", () => {
   assert.match(page, /dining-crew-food-photo-input/);
   assert.match(page, /Share food photo/);
   assert.match(page, /postDiningCrewPhoto/);
+  assert.match(page, /ShareModal/);
+  assert.match(page, /Share invite/);
   assert.doesNotMatch(page, /crew_deal|createCrewDeal|CrewDealModal/);
+  assert.doesNotMatch(page, /Share link:\s*<code/);
+  assert.doesNotMatch(page, /Member id \(optional\)/);
 
   const api = read("src/lib/consumerApi.js");
   assert.match(api, /discoverPublicDiningCrews/);

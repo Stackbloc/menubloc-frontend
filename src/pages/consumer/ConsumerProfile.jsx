@@ -447,6 +447,18 @@ export default function ConsumerProfile() {
           </Link>
         </Section>
 
+        <Section title="My Diner QR">
+          <p style={styles.sectionDesc}>
+            Your personal Menuply QR and Diner Card — others scan to connect with you.
+          </p>
+          <Link to="/account/diner-qr" style={styles.followingLink}>
+            My Diner QR
+          </Link>
+          <Link to="/account/diner-qr" style={{ ...styles.followingLink, marginTop: 8, display: "inline-block" }}>
+            Share My Menuply
+          </Link>
+        </Section>
+
         <Section title="Connections">
           <p style={styles.sectionDesc}>
             People you interact with through Menuply meals and invitations — not a Friend

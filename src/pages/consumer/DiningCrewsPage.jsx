@@ -9,6 +9,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import StickyPageHeader from "../../components/StickyPageHeader.jsx";
 import BottomNav from "../../components/BottomNav.jsx";
 import InviteToEatModal from "../../components/InviteToEatModal.jsx";
+import ShareModal from "../../components/share/ShareModal.jsx";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
 import {
   listDiningCrews,
@@ -33,6 +34,7 @@ import {
   CONSUMER_API_BASE,
 } from "../../lib/consumerApi.js";
 import DiningCrewFoodEntityPicker from "../../components/diningCrews/DiningCrewFoodEntityPicker.jsx";
+import { buildDiningCrewInviteShareData } from "../../lib/diningCrewInviteShare.js";
 
 function resolveMediaUrl(url) {
   if (!url) return null;
@@ -262,8 +264,8 @@ export function DiningCrewDetailPage() {
   const [activeConvoId, setActiveConvoId] = useState(null);
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
-  const [inviteeId, setInviteeId] = useState("");
-  const [inviteUrl, setInviteUrl] = useState("");
+  const [inviteShareData, setInviteShareData] = useState(null);
+  const [inviteShareOpen, setInviteShareOpen] = useState(false);
   const [entityType, setEntityType] = useState("text");
   const [selectedEntity, setSelectedEntity] = useState(null);
   const [error, setError] = useState("");
@@ -327,17 +329,15 @@ export function DiningCrewDetailPage() {
     }
   }, [activeConvoId, loadMessages]);
 
-  async function handleInvite(e) {
-    e.preventDefault();
+  async function handleShareInvite() {
     setBusy(true);
     setError("");
     try {
-      const body = {};
-      const id = Number(String(inviteeId).trim());
-      if (Number.isFinite(id) && id > 0) body.invitee_user_id = id;
-      const data = await inviteToDiningCrew(crewId, body);
-      setInviteUrl(data.invitation?.url || "");
-      setInviteeId("");
+      const data = await inviteToDiningCrew(crewId, {});
+      const shareData = buildDiningCrewInviteShareData(data.invitation?.url || "");
+      if (!shareData?.url) throw new Error("Unable to create invite link");
+      setInviteShareData(shareData);
+      setInviteShareOpen(true);
     } catch (err) {
       setError(err.message || "Invite failed");
     } finally {
@@ -629,24 +629,21 @@ export function DiningCrewDetailPage() {
 
             <section style={styles.section}>
               <h2 style={styles.h2}>Invite members</h2>
-              <form onSubmit={handleInvite} style={styles.form}>
-                <input
-                  style={styles.input}
-                  value={inviteeId}
-                  onChange={(e) => setInviteeId(e.target.value)}
-                  placeholder="Member id (optional)"
-                />
-                <button type="submit" style={styles.primaryBtn} disabled={busy || crew.is_full}>
-                  Create invite link
-                </button>
-              </form>
+              <p style={styles.muted}>
+                Share an invite link so friends can join your Dining Crew. Copy Link or send by text —
+                no phone contacts required.
+              </p>
+              <button
+                type="button"
+                style={styles.primaryBtn}
+                disabled={busy || crew.is_full}
+                onClick={handleShareInvite}
+                data-testid="dining-crew-share-invite"
+              >
+                Share invite
+              </button>
               {crew.is_full ? (
                 <p style={styles.muted}>This crew is full. Increase the max in settings to invite more.</p>
-              ) : null}
-              {inviteUrl ? (
-                <p style={styles.notice}>
-                  Share link: <code style={{ wordBreak: "break-all" }}>{inviteUrl}</code>
-                </p>
               ) : null}
             </section>
 
@@ -793,6 +790,18 @@ export function DiningCrewDetailPage() {
           restaurantId={inviteRestaurant.restaurant_id}
           restaurantName={inviteRestaurant.restaurant_name || inviteRestaurant.label || ""}
           diningCrewId={Number(crewId)}
+        />
+      ) : null}
+      {inviteShareData ? (
+        <ShareModal
+          open={inviteShareOpen}
+          onClose={() => setInviteShareOpen(false)}
+          modalTitle="Share Dining Crew invite"
+          shareData={inviteShareData}
+          analyticsContext={{
+            pageType: "dining_crew_invite",
+            crewId: Number(crewId) || null,
+          }}
         />
       ) : null}
     </>

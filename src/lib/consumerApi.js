@@ -83,6 +83,44 @@ export const declineConnection = (id) =>
 export const removeConnection = (id) =>
   del(`/api/consumer/connections/${encodeURIComponent(String(id))}`);
 
+// ── Personal Diner QR (Phase 1) ───────────────────────────────────────────
+export const getMyDinerQr = () => get("/api/consumer/diner-qr");
+export const updateDinerQrPrivacy = (body) => put("/api/consumer/diner-qr/privacy", body);
+export const connectViaDinerQr = (token) =>
+  post(`/api/consumer/diner-qr/${encodeURIComponent(String(token))}/connect`, {});
+export const fetchPublicDinerQr = (token) =>
+  get(`/api/public/diner-qr/${encodeURIComponent(String(token))}`);
+
+export async function uploadDinerAvatar(file) {
+  const language = readStoredLanguage();
+  const form = new FormData();
+  form.append("avatar", file);
+  const localizedPath = appendLanguageParam("/api/consumer/profile/avatar", language);
+  const res = await fetch(`${API}${localizedPath}`, {
+    method: "POST",
+    credentials: "include",
+    headers: withLanguageHeaders({}, language),
+    body: form,
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const error = new Error(json.error || `Upload failed (${res.status})`);
+    error.status = res.status;
+    error.payload = json;
+    throw error;
+  }
+  return json;
+}
+
+/** Absolute URL for diner avatar or QR image paths served by the API. */
+export function resolveConsumerMediaUrl(pathOrUrl) {
+  const raw = String(pathOrUrl || "").trim();
+  if (!raw) return "";
+  if (/^https?:\/\//i.test(raw)) return raw;
+  if (raw.startsWith("/")) return `${API}${raw}`;
+  return `${API}/${raw}`;
+}
+
 // ── Dining Crews ──────────────────────────────────────────────────────────
 export const listDiningCrews = () => get("/api/consumer/dining-crews");
 export const discoverPublicDiningCrews = ({ q = "", limit = 20 } = {}) => {

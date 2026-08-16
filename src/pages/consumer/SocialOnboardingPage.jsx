@@ -9,11 +9,13 @@ import StickyPageHeader from "../../components/StickyPageHeader.jsx";
 import BottomNav from "../../components/BottomNav.jsx";
 import WhatPeopleAreEating from "../../components/cluster/WhatPeopleAreEating.jsx";
 import ImEatingComposer from "../../components/foodActivity/ImEatingComposer.jsx";
+import ShareModal from "../../components/share/ShareModal.jsx";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
 import {
   listDiningCrews,
   createDiningCrew,
   updateDiningCrew,
+  inviteToDiningCrew,
   sendEduVerification,
   createImEating,
   getSocialOnboarding,
@@ -24,6 +26,7 @@ import {
 } from "../../lib/eduVerificationDisplay.js";
 import { fetchWaiterPeopleEating } from "../../lib/waiterApi.js";
 import { clusterPath } from "../../lib/clusterUrl.js";
+import { buildDiningCrewInviteShareData } from "../../lib/diningCrewInviteShare.js";
 import {
   DEFAULT_ONBOARDING_CLUSTER,
   SOCIAL_ONBOARDING_STEPS,
@@ -98,6 +101,8 @@ export default function SocialOnboardingPage() {
   const [activeCrewId, setActiveCrewId] = useState(null);
   const [crewName, setCrewName] = useState("");
   const [crewNameSaved, setCrewNameSaved] = useState(false);
+  const [inviteShareData, setInviteShareData] = useState(null);
+  const [inviteShareOpen, setInviteShareOpen] = useState(false);
 
   // Expand / share / I'm Eating optional reveals
   const [showFindPeople, setShowFindPeople] = useState(false);
@@ -256,9 +261,26 @@ export default function SocialOnboardingPage() {
       const updated = await updateDiningCrew(activeCrewId, { name: nextName });
       setCrewName(updated.crew?.name || nextName);
       setCrewNameSaved(true);
-      setNotice("Dining Crew name saved. Invite people anytime from Dining Crews.");
+      setNotice("Dining Crew name saved.");
     } catch (err) {
       setError(err.message || "Unable to update Dining Crew name");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleShareInvite() {
+    if (!activeCrewId) return;
+    setBusy(true);
+    setError("");
+    try {
+      const invited = await inviteToDiningCrew(activeCrewId, {});
+      const shareData = buildDiningCrewInviteShareData(invited.invitation?.url || "");
+      if (!shareData?.url) throw new Error("Unable to create invite link");
+      setInviteShareData(shareData);
+      setInviteShareOpen(true);
+    } catch (err) {
+      setError(err.message || "Unable to create invite");
     } finally {
       setBusy(false);
     }
@@ -392,8 +414,8 @@ export default function SocialOnboardingPage() {
               <div style={styles.card}>
                 <strong>Your Dining Crew is ready</strong>
                 <p style={{ ...styles.soft, marginTop: 8 }}>
-                  Rename it if you like. Invite people later from Dining Crews — no invite is
-                  required here.
+                  Rename it if you like. Sharing an invite is optional — you can Continue without
+                  inviting anyone.
                 </p>
                 <label style={styles.label}>
                   Dining Crew name
@@ -415,6 +437,15 @@ export default function SocialOnboardingPage() {
                   onClick={handleSaveCrewName}
                 >
                   {crewNameSaved ? "Name saved" : "Save name"}
+                </button>
+                <button
+                  type="button"
+                  style={styles.secondaryBtn}
+                  disabled={busy || !activeCrewId}
+                  onClick={handleShareInvite}
+                  data-testid="dining-crew-share-invite"
+                >
+                  Share invite
                 </button>
                 <Link to="/account/dining-crews" style={styles.secondaryLink}>
                   Open Dining Crews
@@ -765,6 +796,18 @@ export default function SocialOnboardingPage() {
           Skip introduction
         </button>
       </div>
+      {inviteShareData ? (
+        <ShareModal
+          open={inviteShareOpen}
+          onClose={() => setInviteShareOpen(false)}
+          modalTitle="Share Dining Crew invite"
+          shareData={inviteShareData}
+          analyticsContext={{
+            pageType: "dining_crew_invite_onboarding",
+            crewId: activeCrewId || null,
+          }}
+        />
+      ) : null}
       <BottomNav />
     </>
   );

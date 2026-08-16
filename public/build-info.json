@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "fa030e727ffef54eb5e7e4f88fe70f54b5cf1bcd",
-  "gitShortSha": "fa030e7",
+  "gitSha": "0f1801ccd2774dd5e6f72b5e2c09cadc7a0263d1",
+  "gitShortSha": "0f1801c",
   "branch": "main",
-  "buildTime": "2026-07-24T19:41:49.062Z",
+  "buildTime": "2026-08-16T16:22:59.343Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "feat(marketplace): primary /operator/marketplace hub and legacy redirect"
+  "commitMessage": "docs: Waiter additive cluster updates CPD tip record."
 }

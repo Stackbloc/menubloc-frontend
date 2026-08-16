@@ -111,6 +111,9 @@ test("onboarding page is educational with optional actions — not forced tasks"
   assert.match(page, /Eating is social/);
   assert.match(page, /Who do you eat with\?/);
   assert.match(page, /Create Dining Crew/);
+  assert.match(page, /Share invite/);
+  assert.match(page, /buildDiningCrewInviteShareData/);
+  assert.match(page, /ShareModal/);
   assert.match(page, /Want to expand your Dining Crew\?/);
   assert.match(page, /Meet people through food/);
   assert.match(page, /Are you a student\?/);
@@ -125,6 +128,7 @@ test("onboarding page is educational with optional actions — not forced tasks"
   assert.match(page, /ImEatingComposer/);
   assert.match(page, /createDiningCrew/);
   assert.match(page, /updateDiningCrew/);
+  assert.match(page, /inviteToDiningCrew/);
   assert.match(page, /defaultDiningCrewNameFromProfile/);
   assert.match(page, /sendEduVerification/);
   assert.match(page, /createImEating/);
@@ -134,7 +138,6 @@ test("onboarding page is educational with optional actions — not forced tasks"
   assert.doesNotMatch(page, /Step \$\{stepIndex\} of/);
   assert.doesNotMatch(page, /navigator\.contacts|ContactsManager|requestPermission/);
   assert.doesNotMatch(page, /Text an invite/);
-  assert.doesNotMatch(page, /inviteToDiningCrew/);
   assert.doesNotMatch(page, /notification permission|enable push/i);
   assert.doesNotMatch(page, /Menuply user id|invitee_user_id|recipient_user_id/);
 });
