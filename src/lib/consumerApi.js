@@ -314,3 +314,24 @@ export const getEligibleOrderFeedback = () =>
 export const getMyOrderFeedback = () => get("/api/consumer/order-feedback");
 export const submitOrderFeedback = (body) =>
   post("/api/consumer/order-feedback", body);
+
+// ── Venue Event Groups + RSVP (Phase 5) ───────────────────────────────────
+export const setVenueEventRsvp = (eventIdOrSlug, status) =>
+  post(`/api/consumer/events/${encodeURIComponent(String(eventIdOrSlug))}/rsvp`, { status });
+export const createVenueEventGroup = (eventIdOrSlug, body) =>
+  post(`/api/consumer/events/${encodeURIComponent(String(eventIdOrSlug))}/groups`, body);
+export const getVenueEventGroup = (groupIdOrSlug) =>
+  get(`/api/consumer/event-groups/${encodeURIComponent(String(groupIdOrSlug))}`);
+export const joinVenueEventGroup = (groupIdOrSlug) =>
+  post(`/api/consumer/event-groups/${encodeURIComponent(String(groupIdOrSlug))}/join`, {});
+export const leaveVenueEventGroup = (groupIdOrSlug) =>
+  post(`/api/consumer/event-groups/${encodeURIComponent(String(groupIdOrSlug))}/leave`, {});
+export const inviteToVenueEventGroup = (groupIdOrSlug, body = {}) =>
+  post(
+    `/api/consumer/event-groups/${encodeURIComponent(String(groupIdOrSlug))}/invitations`,
+    body
+  );
+export const getVenueEventGroupInvitation = (token) =>
+  get(`/api/consumer/event-groups/invitations/${encodeURIComponent(String(token))}`);
+export const acceptVenueEventGroupInvitation = (token) =>
+  post(`/api/consumer/event-groups/invitations/${encodeURIComponent(String(token))}/accept`, {});

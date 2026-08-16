@@ -1,13 +1,15 @@
 /**
- * Public venue event detail page (Phase 4).
- * Shows age requirement as a real constraint; ticket purchase is config-only.
+ * Public venue event detail — Phase 4 tickets + Phase 5 social groups/RSVP.
+ * Ticket purchase remains stubbed. Phase 6 volume offers intentionally skipped.
  */
 import React, { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import BottomNav from "../components/BottomNav.jsx";
 import { apiGet } from "../lib/api.js";
 import { restaurantPathFromRow } from "../lib/canonicalUrl.js";
+import { useConsumer } from "../context/ConsumerContext.jsx";
+import * as consumerApi from "../lib/consumerApi.js";
 
 function formatCents(cents) {
   if (!Number.isFinite(Number(cents))) return null;
@@ -35,36 +37,88 @@ function formatWhen(event) {
 
 export default function EventDetailPage() {
   const { slug } = useParams();
+  const navigate = useNavigate();
+  const { isAuthenticated } = useConsumer();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [event, setEvent] = useState(null);
+  const [social, setSocial] = useState(null);
   const [purchaseMsg, setPurchaseMsg] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [groupName, setGroupName] = useState("");
+  const [groupVisibility, setGroupVisibility] = useState("public");
+  const [actionMsg, setActionMsg] = useState("");
+
+  async function load() {
+    setLoading(true);
+    setError("");
+    try {
+      const data = await apiGet(`/public/events/${encodeURIComponent(String(slug || ""))}`);
+      setEvent(data?.event || null);
+      setSocial(data?.social || null);
+      setPurchaseMsg(data?.purchase?.message || "");
+    } catch (err) {
+      setError(err?.message || "Event not found");
+      setEvent(null);
+      setSocial(null);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      setLoading(true);
-      setError("");
-      try {
-        const data = await apiGet(`/public/events/${encodeURIComponent(String(slug || ""))}`);
-        if (cancelled) return;
-        setEvent(data?.event || null);
-        setPurchaseMsg(data?.purchase?.message || "");
-      } catch (err) {
-        if (cancelled) return;
-        setError(err?.message || "Event not found");
-        setEvent(null);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
     load();
-    return () => {
-      cancelled = true;
-    };
   }, [slug]);
 
   const restaurantHref = event?.restaurant ? restaurantPathFromRow(event.restaurant) : null;
+  const rsvpCounts = social?.rsvp_counts || { interested: 0, going: 0, not_going: 0 };
+  const publicGroups = Array.isArray(social?.public_groups) ? social.public_groups : [];
+
+  function requireAuth() {
+    if (!isAuthenticated) {
+      navigate(`/account/login?next=${encodeURIComponent(`/events/${slug}`)}`);
+      return false;
+    }
+    return true;
+  }
+
+  async function setRsvp(status) {
+    if (!requireAuth() || busy) return;
+    setBusy(true);
+    setActionMsg("");
+    try {
+      const data = await consumerApi.setVenueEventRsvp(event.id || slug, status);
+      setSocial((prev) => ({
+        ...(prev || {}),
+        viewer_rsvp: data.status,
+        rsvp_counts: data.rsvp_counts || prev?.rsvp_counts,
+      }));
+    } catch (err) {
+      setActionMsg(err?.message || "Could not update RSVP");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function createGroup(e) {
+    e.preventDefault();
+    if (!requireAuth() || busy) return;
+    setBusy(true);
+    setActionMsg("");
+    try {
+      const data = await consumerApi.createVenueEventGroup(event.id || slug, {
+        name: groupName.trim(),
+        visibility: groupVisibility,
+      });
+      setGroupName("");
+      if (data?.group?.slug) navigate(`/events/groups/${encodeURIComponent(data.group.slug)}`);
+      else await load();
+    } catch (err) {
+      setActionMsg(err?.message || "Could not create group");
+    } finally {
+      setBusy(false);
+    }
+  }
 
   return (
     <div data-testid="event-detail-page" style={{ minHeight: "100vh", background: "#f8fafc" }}>
@@ -74,6 +128,11 @@ export default function EventDetailPage() {
         {error ? (
           <div role="alert" style={{ color: "#b91c1c" }}>
             {error}
+          </div>
+        ) : null}
+        {actionMsg ? (
+          <div role="status" style={{ color: "#9a3412", fontSize: 13 }}>
+            {actionMsg}
           </div>
         ) : null}
 
@@ -133,6 +192,81 @@ export default function EventDetailPage() {
                 {event.description}
               </p>
             ) : null}
+
+            <section
+              data-testid="event-social-section"
+              style={{ display: "grid", gap: 10, padding: 14, background: "#fff", borderRadius: 12, border: "1px solid #e7e5e4" }}
+            >
+              <h2 style={{ margin: 0, fontSize: 18 }}>Going with friends</h2>
+              <div style={{ fontSize: 13, color: "#5b6675" }}>
+                Interested {rsvpCounts.interested || 0} · Going {rsvpCounts.going || 0}
+                {social?.viewer_rsvp ? ` · You: ${social.viewer_rsvp.replace("_", " ")}` : ""}
+              </div>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <button type="button" disabled={busy} onClick={() => setRsvp("interested")}>
+                  Interested
+                </button>
+                <button type="button" disabled={busy} onClick={() => setRsvp("going")} style={{ fontWeight: 700 }}>
+                  Going
+                </button>
+                <button type="button" disabled={busy} onClick={() => setRsvp("not_going")}>
+                  Not going
+                </button>
+              </div>
+
+              <div style={{ fontWeight: 700, marginTop: 4 }}>Public groups</div>
+              {publicGroups.length ? (
+                <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "grid", gap: 8 }}>
+                  {publicGroups.map((g) => (
+                    <li key={g.id}>
+                      <Link
+                        to={`/events/groups/${encodeURIComponent(g.slug)}`}
+                        style={{
+                          display: "block",
+                          padding: "10px 12px",
+                          borderRadius: 10,
+                          border: "1px solid #e7e5e4",
+                          textDecoration: "none",
+                          color: "inherit",
+                        }}
+                      >
+                        <strong>{g.name}</strong>
+                        <span style={{ color: "#78716c", fontSize: 13 }}>
+                          {" "}
+                          · {g.member_count} {g.member_count === 1 ? "person" : "people"}
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div style={{ fontSize: 13, color: "#5b6675" }}>No public groups yet — start one.</div>
+              )}
+
+              <form onSubmit={createGroup} style={{ display: "grid", gap: 8, marginTop: 4 }}>
+                <div style={{ fontWeight: 700, fontSize: 14 }}>Create a group</div>
+                <input
+                  required
+                  placeholder="e.g. UCLA NYE Crew"
+                  value={groupName}
+                  onChange={(e) => setGroupName(e.target.value)}
+                  data-testid="event-group-name"
+                />
+                <label style={{ fontSize: 13, display: "flex", gap: 8, alignItems: "center" }}>
+                  Visibility
+                  <select
+                    value={groupVisibility}
+                    onChange={(e) => setGroupVisibility(e.target.value)}
+                  >
+                    <option value="public">Public</option>
+                    <option value="private">Private (invite only)</option>
+                  </select>
+                </label>
+                <button type="submit" disabled={busy || !groupName.trim()} style={{ fontWeight: 700 }}>
+                  Create group
+                </button>
+              </form>
+            </section>
 
             {(event.rules || event.refund_policy || event.capacity != null) ? (
               <section style={{ display: "grid", gap: 8, padding: 14, background: "#fff", borderRadius: 12, border: "1px solid #e7e5e4" }}>

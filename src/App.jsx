@@ -90,6 +90,9 @@ import OperatorDealsEditor from "./pages/operator/OperatorDealsEditor.jsx";
 import OperatorVenuePackagePage from "./pages/operator/OperatorVenuePackagePage.jsx";
 import OperatorEventsEditor from "./pages/operator/OperatorEventsEditor.jsx";
 import EventDetailPage from "./pages/EventDetailPage.jsx";
+import EventGroupDetailPage, {
+  EventGroupInvitePage,
+} from "./pages/EventGroupDetailPage.jsx";
 import OperatorClaimSearch from "./pages/operator/OperatorClaimSearch.jsx";
 import OperatorProfileEditor from "./pages/operator/OperatorProfileEditor.jsx";
 import OperatorHoursEditor from "./pages/operator/OperatorHoursEditor.jsx";
@@ -784,6 +787,8 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
         <Route path="/waiter" element={crmHost ? <HostRouteRedirect to="/crm" /> : <FoodInterestsPage />} />
         <Route path="/deals" element={crmHost ? <HostRouteRedirect to="/crm" /> : <DealsPage />} />
         <Route path="/deals/:dealId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <DealDetailPage />} />
+        <Route path="/events/groups/invite/:token" element={crmHost ? <HostRouteRedirect to="/crm" /> : <EventGroupInvitePage />} />
+        <Route path="/events/groups/:slug" element={crmHost ? <HostRouteRedirect to="/crm" /> : <EventGroupDetailPage />} />
         <Route path="/events/:slug" element={crmHost ? <HostRouteRedirect to="/crm" /> : <EventDetailPage />} />
 
         <Route path="/restaurants/:id/qr-codes" element={crmHost ? <HostRouteRedirect to="/crm" /> : <QrCodesPage />} />

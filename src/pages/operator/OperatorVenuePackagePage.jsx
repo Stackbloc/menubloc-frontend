@@ -156,8 +156,8 @@ export default function OperatorVenuePackagePage() {
                 borderRadius: 8,
               }}
             >
-              Event groups and group offers remain shell until Phases 5–6. Ticket purchase is
-              config-only for now.
+              Event groups are ready on public event pages (RSVP, create/join/invite). Group volume
+              offers remain skipped (Phase 6).
             </div>
           </div>
         ) : (
