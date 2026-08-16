@@ -1,6 +1,6 @@
 # Handoffs Index
 
-- `2026-08-16_dining-crew-invite-share-modal_handoff.md` — Dining Crew invite ShareModal (**CPD COMPLETE** — tip `nzkm72fy0` / `DyvhJLLC`)
+- `2026-08-16_dining-crew-invite-share-modal_handoff.md` — Dining Crew invite ShareModal (**CPD COMPLETE** — live on tip `e2toazdpi` / `Cx2bTWAc`)
 - `../deployments/2026-08-16_dining-crew-invite-share-modal-cpd.md` — CPD record
 - `../guardrails/2026-08-14_production-deploy-and-lkg-contract.md` — Production deploy + LKG registry (CURRENT tip/BE).
 - `../deployments/2026-08-14_campus-dining-cpd.md` — Campus Dining CPD.

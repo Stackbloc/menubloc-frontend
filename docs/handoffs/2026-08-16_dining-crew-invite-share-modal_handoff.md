@@ -4,8 +4,8 @@ Replace prototype Dining Crew invite share with ShareModal (menuply.com locked).
 
 # Current Status
 
-**CPD COMPLETE 2026-08-16** — tip `nzkm72fy0` / `index-DyvhJLLC.js` @ `4ec654f`; tip-gate PASS.  
-Live: Share invite / dining-crew-share-invite in production bundle.
+**CPD COMPLETE 2026-08-16** — live on CURRENT tip `e2toazdpi` / `index-Cx2bTWAc.js` (includes Share invite; superseded first lock `nzkm72fy0` / `DyvhJLLC`).  
+Tip-gate PASS. Live: Share invite / dining-crew-share-invite in production bundle.
 
 # Files Changed
 
@@ -26,7 +26,7 @@ None.
 
 # Remaining Work
 
-None — CPD complete. Tip restored 2026-08-16 after transient drift to `index-Cx2bTWAc.js`.
+None — CPD complete. Live on CURRENT tip `e2toazdpi` / `Cx2bTWAc` (do not restore superseded `nzkm72fy0` unless Andre names it).
 
 # Risks / Known Issues
 
