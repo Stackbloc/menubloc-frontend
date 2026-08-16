@@ -4,7 +4,7 @@ Ship Phase 4 Venue Event Objects on top of Phase 3 Venue capability.
 
 # Current Status
 
-Implementation complete in authorized main checkouts. Not production-deployed until CPD.
+**CPD COMPLETE** 2026-08-16. Live tip `hzs2u21r1` / `index-DfVlLYXq.js`; BE health `17beca0b`; migration `0260` applied.
 
 # Files Changed
 

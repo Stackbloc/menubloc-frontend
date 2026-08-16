@@ -34,32 +34,32 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www **and** 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` @ clean `main` |
-| Git commit | `42c415b` — diner-qr same-origin QR image + Invite option align (tip also includes Dining Crew ShareModal) |
-| Vercel deployment | `menubloc-frontend-e2toazdpi-menuply.vercel.app` |
-| Live bundle | `index-Cx2bTWAc.js` |
+| Git commit | `7e85661` — Venue Event Objects Phase 4 (editor + `/events/:slug`) |
+| Vercel deployment | `menubloc-frontend-hzs2u21r1-menuply.vercel.app` |
+| Live bundle | `index-DfVlLYXq.js` |
 | Aliases | `menuply.com`, `www.menuply.com`, `crm.menuply.com`, `venues.menuply.com` |
 | Tip-gate | **PASS** (apex + www) verified 2026-08-16 |
-| Feature | Diner Card QR visible (same-origin `/d/.../image`); Invite dialog options aligned |
+| Feature | Venue events CRUD, ticket type config, public event page, profile upcoming links; purchase stubbed |
 
 ### Backend (Railway)
 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-backend-main` @ clean `main` |
-| Git commit | `45123b8c` — diner-qr image CORP cross-origin embed |
+| Git commit | `d9178a7e` feature / tip `17beca0b` docs — Venue Event Objects Phase 4 |
 | Health URL | `https://menubloc-backend-production.up.railway.app/health` |
-| `commit_hash` | `45123b8c` (starts with) |
-| Migrations | `0250`–`0258` applied (`0258` invite counter proposals) |
-| Smoke | Live bundle uses `/d/{token}/image`; BE health `45123b8c` |
+| `commit_hash` | `17beca0b` (starts with) |
+| Migrations | `0250`–`0260` applied (`0260` venue_events + ticket types) |
+| Smoke | Operator `/events`; public `GET /public/events/:slug`; `upcoming_events` from published rows |
 
 ### Restore current tip (if tip-gate fails mid-change)
 
 ```bash
 cd /Users/andrebarber/Desktop/menubloc/menubloc-frontend-main
-npx vercel alias set menubloc-frontend-e2toazdpi-menuply.vercel.app menuply.com
-npx vercel alias set menubloc-frontend-e2toazdpi-menuply.vercel.app www.menuply.com
-npx vercel alias set menubloc-frontend-e2toazdpi-menuply.vercel.app crm.menuply.com
-npx vercel alias set menubloc-frontend-e2toazdpi-menuply.vercel.app venues.menuply.com
+npx vercel alias set menubloc-frontend-hzs2u21r1-menuply.vercel.app menuply.com
+npx vercel alias set menubloc-frontend-hzs2u21r1-menuply.vercel.app www.menuply.com
+npx vercel alias set menubloc-frontend-hzs2u21r1-menuply.vercel.app crm.menuply.com
+npx vercel alias set menubloc-frontend-hzs2u21r1-menuply.vercel.app venues.menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 ```
