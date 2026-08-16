@@ -85,3 +85,9 @@ Add a PHMS/UI regression check detecting unexpected changes to home DOM structur
 ## Standing rule
 
 Platform evolution occurs **around** the home page unless the home page itself is the subject of the work.
+
+## Related: home menu window meal importance
+
+Which items appear as chips inside home restaurant menu windows is governed by
+[Home Menu Window Meal Importance Contract](./2026-08-16_home-menu-window-meal-importance-contract.md)
+(ranks 1–4 only; presentation filter; full menu intact). Existing homePreview add-on denylists alone are not sufficient.
