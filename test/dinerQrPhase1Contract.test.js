@@ -30,15 +30,18 @@ test("diner QR share locks menuply.com /d/{token}", () => {
 
 test("Diner Card page has branding CTA and optional selfie path", () => {
   const page = read("src/pages/consumer/DinerQrPage.jsx");
-  assert.match(page, /Scan to connect on Menuply/);
-  assert.match(page, /Menuply/);
+  assert.match(page, /SCAN TO CONNECT ON MENUPLY/);
+  assert.match(page, /MENUPLY/);
+  assert.match(page, /menuply-qr-logo-x\.svg/);
   assert.match(page, /uploadDinerAvatar/);
   assert.match(page, /ShareModal/);
   assert.match(page, /buildDinerQrShareData/);
   assert.match(page, /avatarFallback|initialsFromName/);
+  assert.match(page, /Add or change selfie/);
   // Same-origin /d/:token/image — Railway CORP same-origin blanks cross-origin <img>
   assert.match(page, /\/d\/\$\{encodeURIComponent\(String\(token\)\)\}\/image/);
   assert.doesNotMatch(page, /resolveConsumerMediaUrl\(path\)/);
+  assert.doesNotMatch(page, /SCAN TO VIEW MENU/);
 });
 
 test("connect landing uses public projection only", () => {

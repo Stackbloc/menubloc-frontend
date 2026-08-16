@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Menuply green X mark — promo / Diner Card lockup (no wordmark; no white plate) -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <defs>
+    <linearGradient id="menuplyXg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6acf3e"/>
+      <stop offset="50%" stop-color="#2db825"/>
+      <stop offset="100%" stop-color="#1a7a1e"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(60,60)">
+    <rect x="-46" y="-11" width="92" height="22" rx="11" fill="url(#menuplyXg)" transform="rotate(45)"/>
+    <rect x="-46" y="-11" width="92" height="22" rx="11" fill="url(#menuplyXg)" transform="rotate(-45)"/>
+  </g>
+</svg>

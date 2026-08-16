@@ -1,6 +1,7 @@
 /**
  * Owner view: Personal Diner Card + QR (Phase 1).
  * Route: /account/diner-qr
+ * Card chrome matches Menuply promo QR format (X + MENUPLY + framed QR + CTA pill).
  */
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
@@ -18,6 +19,8 @@ import {
 } from "../../lib/consumerApi.js";
 import { buildDinerQrShareData } from "../../lib/dinerQrShare.js";
 
+const MENUPLY_X_SRC = "/menuply-qr-logo-x.svg";
+
 function initialsFromName(name) {
   const parts = String(name || "")
     .trim()
@@ -26,6 +29,20 @@ function initialsFromName(name) {
   if (parts.length === 0) return "M";
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
   return `${parts[0][0] || ""}${parts[1][0] || ""}`.toUpperCase();
+}
+
+function ScanPhoneIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden fill="none">
+      <rect x="8" y="3" width="8" height="18" rx="1.5" stroke="#fff" strokeWidth="1.8" />
+      <path
+        d="M4.5 8.5c-.9.9-.9 2.1 0 3M19.5 8.5c.9.9.9 2.1 0 3M3 6c-1.5 1.5-1.5 3.5 0 5M21 6c1.5 1.5 1.5 3.5 0 5"
+        stroke="#fff"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
 }
 
 export default function DinerQrPage() {
@@ -75,8 +92,7 @@ export default function DinerQrPage() {
   const qrImageSrc = useMemo(() => {
     const token = payload?.qr?.token;
     if (!token) return "";
-    // Same-origin /d/:token/image on menuply.com (Vercel rewrite). Loading the
-    // Railway host directly is blanked by helmet Cross-Origin-Resource-Policy.
+    // Same-origin /d/:token/image on menuply.com (Vercel rewrite).
     const path = `/d/${encodeURIComponent(String(token))}/image`;
     if (import.meta.env.DEV) {
       return `${CONSUMER_API_BASE}${path}`;
@@ -84,10 +100,12 @@ export default function DinerQrPage() {
     return path;
   }, [payload]);
 
+  const showAvatar = payload?.privacy?.show_avatar !== false;
   const avatarSrc = useMemo(() => {
+    if (!showAvatar) return "";
     const url = payload?.card?.avatar_url;
     return url ? resolveConsumerMediaUrl(url) : "";
-  }, [payload]);
+  }, [payload, showAvatar]);
 
   async function togglePrivacy(field, value) {
     setBusy(true);
@@ -123,6 +141,7 @@ export default function DinerQrPage() {
   }
 
   const displayName = payload?.card?.display_name || "Menuply diner";
+  const showEdu = payload?.card?.edu_verified && payload?.privacy?.show_edu;
 
   return (
     <>
@@ -142,42 +161,58 @@ export default function DinerQrPage() {
           <p style={styles.muted}>Diner QR is unavailable. Verify your phone, then try again.</p>
         ) : (
           <>
-            <article style={styles.card} aria-label="Diner Card">
-              <div style={styles.brandRow}>
-                <span style={styles.brandMark}>M</span>
-                <span style={styles.brandName}>Menuply</span>
-              </div>
+            <div style={styles.stage} aria-label="Diner Card preview">
+              <article style={styles.card} aria-label="Diner Card">
+                <div style={styles.brandBlock}>
+                  <img src={MENUPLY_X_SRC} alt="" style={styles.brandX} width={56} height={56} />
+                  <div style={styles.brandWord}>MENUPLY</div>
+                  <p style={styles.tagline}>
+                    One menu — <span style={styles.taglineAccent}>multiplied by thousands.</span>
+                  </p>
+                </div>
 
-              <div style={styles.identity}>
-                {avatarSrc ? (
-                  <img src={avatarSrc} alt="" style={styles.avatar} />
-                ) : (
-                  <div style={styles.avatarFallback} aria-hidden>
-                    {initialsFromName(displayName)}
+                <div style={styles.identity}>
+                  {avatarSrc ? (
+                    <img src={avatarSrc} alt="" style={styles.avatar} />
+                  ) : (
+                    <div style={styles.avatarFallback} aria-hidden>
+                      {initialsFromName(displayName)}
+                    </div>
+                  )}
+                  <div style={styles.identityText}>
+                    <h1 style={styles.screenName}>{displayName}</h1>
+                    {showEdu ? (
+                      <p style={styles.edu}>{payload.card.edu_verification_badge}</p>
+                    ) : (
+                      <p style={styles.identityHint}>Menuply diner</p>
+                    )}
                   </div>
-                )}
-                <div>
-                  <h1 style={styles.name}>{displayName}</h1>
-                  {payload.card?.edu_verified && payload.privacy?.show_edu ? (
-                    <p style={styles.edu}>{payload.card.edu_verification_badge}</p>
+                </div>
+
+                <div style={styles.qrFrame}>
+                  {qrImageSrc ? (
+                    <img
+                      src={qrImageSrc}
+                      alt="Personal Menuply QR code"
+                      style={styles.qrImage}
+                      width={240}
+                      height={240}
+                    />
                   ) : null}
                 </div>
-              </div>
 
-              <div style={styles.qrWrap}>
-                {qrImageSrc ? (
-                  <img
-                    src={qrImageSrc}
-                    alt="Personal Menuply QR code"
-                    style={styles.qrImage}
-                    width={280}
-                    height={280}
-                  />
-                ) : null}
-              </div>
+                <div style={styles.ctaPill} role="presentation">
+                  <ScanPhoneIcon />
+                  <span>SCAN TO CONNECT ON MENUPLY</span>
+                </div>
 
-              <p style={styles.cta}>Scan to connect on Menuply</p>
-            </article>
+                <div style={styles.footerRule}>
+                  <span style={styles.footerLine} />
+                  <span style={styles.footerLabel}>CONNECT</span>
+                  <span style={styles.footerLine} />
+                </div>
+              </article>
+            </div>
 
             <div style={styles.actions}>
               <button
@@ -189,7 +224,7 @@ export default function DinerQrPage() {
                 Share My Menuply
               </button>
               <label style={styles.secondaryBtn}>
-                {busy ? "Working…" : "Add or change photo"}
+                {busy ? "Working…" : "Add or change selfie"}
                 <input
                   type="file"
                   accept="image/jpeg,image/png,image/webp"
@@ -212,7 +247,7 @@ export default function DinerQrPage() {
                   disabled={busy}
                   onChange={(e) => togglePrivacy("show_avatar", e.target.checked)}
                 />
-                Show my profile photo
+                Show my profile photo on this card
               </label>
               <label style={styles.check}>
                 <input
@@ -248,6 +283,11 @@ export default function DinerQrPage() {
   );
 }
 
+const GREEN = "#2db825";
+const GREEN_DEEP = "#1a7a1e";
+const INK = "#0B0F0C";
+const STAGE = "#5c6b3a";
+
 const styles = {
   page: {
     maxWidth: 480,
@@ -259,71 +299,154 @@ const styles = {
   muted: { color: "#64748b", fontSize: 14 },
   error: { color: "#b91c1c", fontSize: 14, fontWeight: 600 },
   notice: { color: "#166534", fontSize: 14, fontWeight: 600 },
-  card: {
-    background: "linear-gradient(165deg, #0f172a 0%, #14532d 55%, #166534 100%)",
-    color: "#f8fafc",
-    borderRadius: 20,
-    padding: "22px 20px 28px",
-    boxShadow: "0 18px 40px rgba(15, 23, 42, 0.28)",
-  },
-  brandRow: { display: "flex", alignItems: "center", gap: 10, marginBottom: 18 },
-  brandMark: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    background: "#22c55e",
-    color: "#052e16",
-    display: "inline-flex",
-    alignItems: "center",
+  stage: {
+    background: STAGE,
+    borderRadius: 24,
+    padding: "22px 16px 26px",
+    display: "flex",
     justifyContent: "center",
-    fontWeight: 900,
-    fontSize: 14,
   },
-  brandName: { fontWeight: 800, letterSpacing: 0.4, fontSize: 15 },
-  identity: { display: "flex", alignItems: "center", gap: 14, marginBottom: 18 },
+  card: {
+    width: "100%",
+    maxWidth: 340,
+    background: "#f3f3f1",
+    color: INK,
+    borderRadius: 22,
+    padding: "22px 18px 20px",
+    boxShadow: "0 18px 40px rgba(15, 23, 42, 0.22)",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+  },
+  brandBlock: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    textAlign: "center",
+    marginBottom: 14,
+  },
+  brandX: {
+    width: 56,
+    height: 56,
+    display: "block",
+    marginBottom: 6,
+  },
+  brandWord: {
+    fontSize: 28,
+    fontWeight: 900,
+    letterSpacing: "0.04em",
+    lineHeight: 1,
+    color: INK,
+  },
+  tagline: {
+    margin: "8px 0 0",
+    fontSize: 13,
+    fontWeight: 600,
+    color: INK,
+    lineHeight: 1.35,
+  },
+  taglineAccent: {
+    textDecoration: "underline",
+    textDecorationColor: GREEN,
+    textDecorationThickness: 3,
+    textUnderlineOffset: 3,
+  },
+  identity: {
+    display: "flex",
+    alignItems: "center",
+    gap: 12,
+    width: "100%",
+    marginBottom: 14,
+    padding: "0 4px",
+  },
   avatar: {
-    width: 64,
-    height: 64,
+    width: 56,
+    height: 56,
     borderRadius: "50%",
     objectFit: "cover",
-    border: "2px solid rgba(248,250,252,0.45)",
+    border: `2px solid ${GREEN}`,
+    flexShrink: 0,
+    background: "#fff",
   },
   avatarFallback: {
-    width: 64,
-    height: 64,
+    width: 56,
+    height: 56,
     borderRadius: "50%",
-    background: "rgba(248,250,252,0.16)",
-    border: "2px solid rgba(248,250,252,0.35)",
+    background: "#e8efe3",
+    border: `2px solid ${GREEN}`,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     fontWeight: 800,
-    fontSize: 20,
+    fontSize: 18,
+    color: GREEN_DEEP,
+    flexShrink: 0,
   },
-  name: { margin: 0, fontSize: 22, fontWeight: 800, lineHeight: 1.2 },
-  edu: { margin: "4px 0 0", fontSize: 12, color: "#bbf7d0", fontWeight: 600 },
-  qrWrap: {
-    background: "#fff",
-    borderRadius: 16,
-    padding: 14,
-    display: "flex",
-    justifyContent: "center",
-    marginBottom: 14,
-  },
-  qrImage: { width: "100%", maxWidth: 280, height: "auto", display: "block" },
-  cta: {
+  identityText: { minWidth: 0, flex: 1 },
+  screenName: {
     margin: 0,
+    fontSize: 18,
+    fontWeight: 800,
+    lineHeight: 1.2,
+    color: INK,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  },
+  identityHint: { margin: "3px 0 0", fontSize: 12, fontWeight: 600, color: "#667085" },
+  edu: { margin: "3px 0 0", fontSize: 12, color: GREEN_DEEP, fontWeight: 700 },
+  qrFrame: {
+    width: "100%",
+    maxWidth: 248,
+    border: `3px solid ${GREEN_DEEP}`,
+    borderRadius: 8,
+    padding: 8,
+    background: "#fff",
+    boxSizing: "border-box",
+    marginBottom: 16,
+  },
+  qrImage: { width: "100%", height: "auto", display: "block" },
+  ctaPill: {
+    width: "100%",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    background: `linear-gradient(180deg, ${GREEN} 0%, ${GREEN_DEEP} 100%)`,
+    color: "#fff",
+    fontWeight: 800,
+    fontSize: 12,
+    letterSpacing: "0.04em",
+    borderRadius: 999,
+    padding: "12px 14px",
     textAlign: "center",
-    fontWeight: 700,
-    fontSize: 15,
-    letterSpacing: 0.2,
+    boxSizing: "border-box",
+  },
+  footerRule: {
+    marginTop: 14,
+    width: "100%",
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+  },
+  footerLine: {
+    flex: 1,
+    height: 2,
+    background: GREEN,
+    borderRadius: 2,
+  },
+  footerLabel: {
+    fontSize: 12,
+    fontWeight: 800,
+    letterSpacing: "0.12em",
+    color: GREEN,
   },
   actions: { display: "grid", gap: 10, marginTop: 18 },
   primaryBtn: {
     border: "none",
     borderRadius: 12,
-    background: "linear-gradient(90deg, #16a34a, #22c55e)",
-    color: "#052e16",
+    background: `linear-gradient(90deg, ${GREEN_DEEP}, ${GREEN})`,
+    color: "#fff",
     fontWeight: 800,
     fontSize: 15,
     padding: "12px 14px",
