@@ -12,6 +12,7 @@ import {
   buildDishShareData,
   buildMenuShareMetadata,
   buildRestaurantShareData,
+  buildShareLinks,
   normalizeConsumerShareUrl,
 } from "../src/components/share/shareUtils.js";
 
@@ -77,6 +78,15 @@ test("normalizeConsumerShareUrl rejects share.google and other non-Menuply hosts
     normalizeConsumerShareUrl("https://www.menuply.com/restaurants/california/los-angeles/savoca-los-angeles/menu"),
     "https://menuply.com/restaurants/california/los-angeles/savoca-los-angeles/menu"
   );
+});
+
+test("buildShareLinks tolerates null/undefined shareData (Diner QR blank-page guard)", () => {
+  assert.doesNotThrow(() => buildShareLinks(null));
+  assert.doesNotThrow(() => buildShareLinks(undefined));
+  const empty = buildShareLinks(null);
+  assert.equal(typeof empty.sms, "string");
+  assert.equal(typeof empty.email, "string");
+  assert.equal(typeof empty.facebook, "string");
 });
 
 test("shareUtils must not use window.location.origin for consumer share origin", () => {

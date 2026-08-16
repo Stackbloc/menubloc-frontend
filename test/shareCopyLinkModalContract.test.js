@@ -30,3 +30,11 @@ test("ShareModal exposes Copy Link as the primary share action", () => {
   assert.match(shareModal, /data-testid="share-url-preview"/);
   assert.match(shareModal, /Share via device/);
 });
+
+test("ShareModal null-safes buildShareLinks before early return", () => {
+  assert.match(
+    shareModal,
+    /buildShareLinks\(shareData\s*\|\|\s*\{\}\)/,
+    "ShareModal must not call buildShareLinks(null) while closed"
+  );
+});

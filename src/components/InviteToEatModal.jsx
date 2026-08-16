@@ -243,9 +243,9 @@ export default function InviteToEatModal({
 
   const radioLabel = {
     display: "grid",
-    gridTemplateColumns: "18px minmax(0, 1fr)",
+    gridTemplateColumns: "16px minmax(0, 1fr)",
     columnGap: 10,
-    alignItems: "start",
+    alignItems: "center",
     padding: "10px 12px",
     borderRadius: 10,
     border: "1px solid #e7e5e4",
@@ -260,8 +260,9 @@ export default function InviteToEatModal({
   const radioControl = {
     width: 16,
     height: 16,
-    margin: "2px 0 0",
+    margin: 0,
     accentColor: "#166534",
+    flexShrink: 0,
   };
 
   const overlay = (

@@ -86,7 +86,7 @@ export default function ShareModal({
     key: a.key,
     label: t(a.labelKey, a.fallback),
   }));
-  const links = useMemo(() => buildShareLinks(shareData), [shareData]);
+  const links = useMemo(() => buildShareLinks(shareData || {}), [shareData]);
   const shareUrl = useMemo(() => resolveShareUrl(shareData), [shareData]);
   const nativeShareAvailable = canUseNativeShare(shareData);
 

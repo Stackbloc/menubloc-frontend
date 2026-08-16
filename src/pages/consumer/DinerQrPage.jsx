@@ -234,13 +234,15 @@ export default function DinerQrPage() {
         )}
       </div>
 
-      <ShareModal
-        open={shareOpen}
-        onClose={() => setShareOpen(false)}
-        shareData={shareData}
-        variant="menu"
-        modalTitle="Share My Menuply"
-      />
+      {shareData ? (
+        <ShareModal
+          open={shareOpen}
+          onClose={() => setShareOpen(false)}
+          shareData={shareData}
+          variant="menu"
+          modalTitle="Share My Menuply"
+        />
+      ) : null}
       <BottomNav />
     </>
   );

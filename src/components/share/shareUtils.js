@@ -306,7 +306,10 @@ export function buildClusterShareData({ cluster, origin = getPublicOrigin() }) {
   return { title, text, url, image, description, clusterName: name };
 }
 
-export function buildShareLinks({ title, text, url }) {
+export function buildShareLinks(shareData) {
+  // ShareModal mounts closed with null shareData (e.g. /account/diner-qr before QR loads).
+  // Destructuring null throws and blanks the whole route — keep this null-safe.
+  const { title, text, url } = shareData && typeof shareData === "object" ? shareData : {};
   const safeTitle = asText(title);
   const safeText = asText(text);
   const safeUrl = normalizeConsumerShareUrl(url) || asText(url);
