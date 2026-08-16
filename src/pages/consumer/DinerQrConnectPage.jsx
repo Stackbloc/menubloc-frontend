@@ -1,7 +1,8 @@
 /**
  * Scanner landing for Personal Diner QR (Phase 1).
  * Route: /connect/d/:token
- * Shows public projection only; Connect creates a Connection request.
+ * Invitation-style: "{Name} has invited you to connect" + how to connect.
+ * Lunch / restaurant proposals use Meet Me Here → /invite/:token (separate).
  */
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
@@ -15,6 +16,7 @@ import {
   getMyDinerQr,
   resolveConsumerMediaUrl,
 } from "../../lib/consumerApi.js";
+import { formatDinerInviteName } from "../../lib/dinerQrShare.js";
 
 function initialsFromName(name) {
   const parts = String(name || "")
@@ -36,6 +38,7 @@ export default function DinerQrConnectPage() {
   const [projection, setProjection] = useState(null);
   const [selfScan, setSelfScan] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [requestSent, setRequestSent] = useState(false);
 
   const load = useCallback(async () => {
     setError("");
@@ -76,7 +79,9 @@ export default function DinerQrConnectPage() {
     return url ? resolveConsumerMediaUrl(url) : "";
   }, [projection]);
 
-  const displayName = projection?.diner?.display_name || "A Menuply diner";
+  const rawName = projection?.diner?.display_name || "";
+  const inviteName = formatDinerInviteName(rawName) || rawName.trim() || "A diner";
+  const headline = `${inviteName} has invited you to connect on Menuply`;
   const loginNext = `/connect/d/${encodeURIComponent(String(token || ""))}`;
 
   async function handleConnect() {
@@ -89,15 +94,18 @@ export default function DinerQrConnectPage() {
     setNotice("");
     try {
       await connectViaDinerQr(token);
-      setNotice("Connection request sent. They can accept it in Connections.");
+      setRequestSent(true);
+      setNotice(
+        `Connection request sent to ${inviteName}. They can accept it in Connections — then you can message and invite each other to eat.`
+      );
     } catch (err) {
       if (err?.payload?.code === "self_scan") {
         setSelfScan(true);
         setNotice("This is your own Diner QR.");
       } else if (err?.payload?.code === "already_connected") {
-        setNotice("You are already connected.");
+        setNotice(`You are already connected with ${inviteName}.`);
       } else if (err?.payload?.code === "already_pending") {
-        setNotice("A Connection request is already pending.");
+        setNotice(`A Connection request to ${inviteName} is already pending.`);
       } else {
         setError(err.message || "Unable to connect");
       }
@@ -117,42 +125,72 @@ export default function DinerQrConnectPage() {
         ) : (
           <>
             <section style={styles.card}>
-              <p style={styles.eyebrow}>Menuply</p>
+              <p style={styles.eyebrow}>Connection invite</p>
               <div style={styles.identity}>
                 {avatarSrc ? (
                   <img src={avatarSrc} alt="" style={styles.avatar} />
                 ) : (
                   <div style={styles.avatarFallback} aria-hidden>
-                    {initialsFromName(displayName)}
+                    {initialsFromName(inviteName)}
                   </div>
                 )}
                 <div>
-                  <h1 style={styles.name}>{displayName}</h1>
+                  <h1 style={styles.headline}>{headline}</h1>
                   {projection?.diner?.edu_verified ? (
                     <p style={styles.edu}>{projection.diner.edu_verification_badge}</p>
                   ) : null}
                 </div>
               </div>
-              <p style={styles.blurb}>
-                Scan complete. Connect to interact on Menuply — private location, crews, and
-                activity stay private.
-              </p>
+
+              {selfScan ? (
+                <p style={styles.blurb}>
+                  This is your personal Diner QR. Share it so someone else can open this page and
+                  send you a connection request.
+                </p>
+              ) : (
+                <>
+                  <p style={styles.blurb}>
+                    Connecting lets you stay in touch on Menuply. It does not share your private
+                    location, crews, or activity.
+                  </p>
+                  <ol style={styles.steps}>
+                    <li>
+                      {isAuthenticated
+                        ? `Tap Connect with ${inviteName} below.`
+                        : "Sign in or create a free diner account (takes a minute)."}
+                    </li>
+                    <li>
+                      {isAuthenticated
+                        ? `${inviteName} accepts your request in Connections.`
+                        : `Then return here and tap Connect with ${inviteName}.`}
+                    </li>
+                    <li>
+                      After you are connected, you can invite each other to eat (Invite to Eat /
+                      Meet Me Here) for lunch or a restaurant plan.
+                    </li>
+                  </ol>
+                </>
+              )}
             </section>
 
             {error ? <p style={styles.error}>{error}</p> : null}
             {notice ? <p style={styles.notice}>{notice}</p> : null}
 
-            {selfScan ? (
-              <p style={styles.notice}>This is your Diner Card. Share it so others can connect with you.</p>
-            ) : isAuthenticated ? (
-              <button
-                type="button"
-                style={styles.primaryBtn}
-                disabled={busy}
-                onClick={handleConnect}
-              >
-                {busy ? "Sending…" : projection?.cta || "Connect on Menuply"}
-              </button>
+            {selfScan ? null : isAuthenticated ? (
+              requestSent ? (
+                <Link to="/account/connections" style={styles.primaryLink}>
+                  Open Connections
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  style={styles.primaryBtn}
+                  disabled={busy}
+                  onClick={handleConnect}
+                >
+                  {busy ? "Sending…" : `Connect with ${inviteName}`}
+                </button>
+              )
             ) : (
               <div style={styles.actions}>
                 <Link
@@ -170,7 +208,7 @@ export default function DinerQrConnectPage() {
               </div>
             )}
 
-            {isAuthenticated ? (
+            {isAuthenticated && !selfScan ? (
               <p style={styles.back}>
                 <Link to="/account/connections" style={styles.link}>
                   Open Connections
@@ -183,6 +221,14 @@ export default function DinerQrConnectPage() {
                     </Link>
                   </>
                 ) : null}
+              </p>
+            ) : null}
+
+            {!selfScan ? (
+              <p style={styles.footnote}>
+                Planning lunch at a restaurant? Ask {inviteName} to show a{" "}
+                <strong>Meet Me Here</strong> QR — that opens an Invite to Eat with the place and
+                time.
               </p>
             ) : null}
           </>
@@ -202,7 +248,7 @@ const styles = {
   },
   muted: { color: "#64748b", fontSize: 14 },
   error: { color: "#b91c1c", fontSize: 14, fontWeight: 600 },
-  notice: { color: "#166534", fontSize: 14, fontWeight: 600, marginTop: 12 },
+  notice: { color: "#166534", fontSize: 14, fontWeight: 600, marginTop: 12, lineHeight: 1.45 },
   card: {
     borderRadius: 16,
     border: "1px solid #e2e8f0",
@@ -218,13 +264,14 @@ const styles = {
     color: "#16a34a",
     textTransform: "uppercase",
   },
-  identity: { display: "flex", alignItems: "center", gap: 14 },
+  identity: { display: "flex", alignItems: "flex-start", gap: 14 },
   avatar: {
     width: 64,
     height: 64,
     borderRadius: "50%",
     objectFit: "cover",
     border: "1px solid #e2e8f0",
+    flexShrink: 0,
   },
   avatarFallback: {
     width: 64,
@@ -237,10 +284,26 @@ const styles = {
     justifyContent: "center",
     fontWeight: 800,
     fontSize: 20,
+    flexShrink: 0,
   },
-  name: { margin: 0, fontSize: 22, fontWeight: 800, color: "#0f172a" },
-  edu: { margin: "4px 0 0", fontSize: 12, color: "#14532d", fontWeight: 600 },
+  headline: {
+    margin: 0,
+    fontSize: 20,
+    fontWeight: 800,
+    color: "#0f172a",
+    lineHeight: 1.25,
+  },
+  edu: { margin: "6px 0 0", fontSize: 12, color: "#14532d", fontWeight: 600 },
   blurb: { margin: "14px 0 0", color: "#475569", fontSize: 14, lineHeight: 1.45 },
+  steps: {
+    margin: "12px 0 0",
+    paddingLeft: 20,
+    color: "#334155",
+    fontSize: 14,
+    lineHeight: 1.5,
+    display: "grid",
+    gap: 8,
+  },
   primaryBtn: {
     width: "100%",
     border: "none",
@@ -277,4 +340,10 @@ const styles = {
   },
   back: { marginTop: 18, fontSize: 14 },
   link: { color: "#166534", fontWeight: 700, textDecoration: "none" },
+  footnote: {
+    marginTop: 20,
+    fontSize: 13,
+    lineHeight: 1.45,
+    color: "#64748b",
+  },
 };

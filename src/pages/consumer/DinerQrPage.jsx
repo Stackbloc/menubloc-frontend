@@ -94,10 +94,16 @@ export default function DinerQrPage() {
     if (!token) return "";
     // Same-origin /d/:token/image on menuply.com (Vercel rewrite).
     const path = `/d/${encodeURIComponent(String(token))}/image`;
+    const bust = [
+      payload?.privacy?.show_avatar === false ? "0" : "1",
+      payload?.card?.avatar_url || "",
+      payload?.card?.display_name || "",
+    ].join("|");
+    const withV = `${path}?v=${encodeURIComponent(bust)}`;
     if (import.meta.env.DEV) {
-      return `${CONSUMER_API_BASE}${path}`;
+      return `${CONSUMER_API_BASE}${withV}`;
     }
-    return path;
+    return withV;
   }, [payload]);
 
   const showAvatar = payload?.privacy?.show_avatar !== false;
@@ -140,7 +146,7 @@ export default function DinerQrPage() {
     }
   }
 
-  const displayName = payload?.card?.display_name || "Menuply diner";
+  const displayName = payload?.card?.display_name || "Diner";
   const showEdu = payload?.card?.edu_verified && payload?.privacy?.show_edu;
 
   return (
@@ -183,9 +189,7 @@ export default function DinerQrPage() {
                     <h1 style={styles.screenName}>{displayName}</h1>
                     {showEdu ? (
                       <p style={styles.edu}>{payload.card.edu_verification_badge}</p>
-                    ) : (
-                      <p style={styles.identityHint}>Menuply diner</p>
-                    )}
+                    ) : null}
                   </div>
                 </div>
 
@@ -393,7 +397,6 @@ const styles = {
     textOverflow: "ellipsis",
     whiteSpace: "nowrap",
   },
-  identityHint: { margin: "3px 0 0", fontSize: 12, fontWeight: 600, color: "#667085" },
   edu: { margin: "3px 0 0", fontSize: 12, color: GREEN_DEEP, fontWeight: 700 },
   qrFrame: {
     width: "100%",

@@ -24,8 +24,14 @@ test("diner QR share locks menuply.com /d/{token}", () => {
   });
   assert.ok(data);
   assert.equal(data.url, `https://menuply.com/d/${token}`);
-  assert.match(data.text, /Scan to connect/i);
+  assert.match(data.text, /has invited you to connect/i);
   assert.equal(buildDinerQrShareData({}), null);
+});
+
+test("formatDinerInviteName matches First L. strip style", async () => {
+  const { formatDinerInviteName } = await import("../src/lib/dinerQrShare.js");
+  assert.equal(formatDinerInviteName("Andre Barber"), "Andre B.");
+  assert.equal(formatDinerInviteName("Alex"), "Alex");
 });
 
 test("Diner Card page has branding CTA and optional selfie path", () => {
@@ -42,13 +48,21 @@ test("Diner Card page has branding CTA and optional selfie path", () => {
   assert.match(page, /\/d\/\$\{encodeURIComponent\(String\(token\)\)\}\/image/);
   assert.doesNotMatch(page, /resolveConsumerMediaUrl\(path\)/);
   assert.doesNotMatch(page, /SCAN TO VIEW MENU/);
+  assert.doesNotMatch(page, /Menuply diner/);
+  assert.match(page, /\?v=\$\{encodeURIComponent\(bust\)\}/);
 });
 
-test("connect landing uses public projection only", () => {
+test("connect landing uses invitation copy and public projection only", () => {
   const page = read("src/pages/consumer/DinerQrConnectPage.jsx");
   assert.match(page, /fetchPublicDinerQr/);
   assert.match(page, /connectViaDinerQr/);
+  assert.match(page, /has invited you to connect on Menuply/);
+  assert.match(page, /formatDinerInviteName/);
+  assert.match(page, /Connect with \$\{inviteName\}/);
+  assert.match(page, /Meet Me Here/);
   assert.doesNotMatch(page, /phone_number|current.?location|dining.?crew|conversation/i);
+  assert.doesNotMatch(page, /A Menuply diner/);
+  assert.doesNotMatch(page, /Scan complete\. Connect to interact/);
 });
 
 test("profile links My Diner QR; SPA owns /d/:token scan; image still rewritten", () => {
