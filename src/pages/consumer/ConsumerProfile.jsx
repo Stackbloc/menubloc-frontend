@@ -459,6 +459,16 @@ export default function ConsumerProfile() {
           </Link>
         </Section>
 
+        <Section title="Meet Me Here">
+          <p style={styles.sectionDesc}>
+            Temporary QR for someone nearby — they join your invite without needing your
+            phone number or username. Separate from your permanent Diner QR.
+          </p>
+          <Link to="/account/meet-me-here" style={styles.followingLink}>
+            Meet Me Here
+          </Link>
+        </Section>
+
         <Section title="Connections">
           <p style={styles.sectionDesc}>
             People you interact with through Menuply meals and invitations — not a Friend

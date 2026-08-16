@@ -91,6 +91,9 @@ export const connectViaDinerQr = (token) =>
 export const fetchPublicDinerQr = (token) =>
   get(`/api/public/diner-qr/${encodeURIComponent(String(token))}`);
 
+/** Phase 7 Meet Me Here — creates eat invitation + temporary contextual QR */
+export const createMeetMeHere = (body) => post("/api/consumer/meet-me-here", body);
+
 export async function uploadDinerAvatar(file) {
   const language = readStoredLanguage();
   const form = new FormData();
