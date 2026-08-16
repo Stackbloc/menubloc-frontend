@@ -1,9 +1,10 @@
 /**
- * Social onboarding step ids + local/server state helpers.
- * Orchestration only — reuses Dining Crew, Connections, edu, food activity, Waiter APIs.
+ * Social onboarding — guided introduction step ids + local/server state helpers.
+ * Educational screens with optional actions. Orchestration only — reuses existing APIs.
  */
 
 export const SOCIAL_ONBOARDING_STEPS = [
+  "welcome",
   "dining_crew",
   "expand_crew",
   "food_camera",
@@ -28,15 +29,29 @@ export function emptySocialOnboardingState() {
   };
 }
 
+/**
+ * Soft-migrate pre-welcome progress so completed users are not forced back to Screen 1.
+ */
+function applyWelcomeSoftMigrate(steps, rawStatus) {
+  if (steps.welcome !== "pending") return steps;
+  const later = SOCIAL_ONBOARDING_STEPS.filter((id) => id !== "welcome");
+  const laterSettled = later.every((id) => steps[id] === "done" || steps[id] === "skipped");
+  if (laterSettled || String(rawStatus || "").toLowerCase() === "completed") {
+    return { ...steps, welcome: "done" };
+  }
+  return steps;
+}
+
 export function normalizeSocialOnboardingState(raw) {
   const base = emptySocialOnboardingState();
   if (!raw || typeof raw !== "object") return base;
-  const steps = { ...base.steps };
+  let steps = { ...base.steps };
   const incoming = raw.steps && typeof raw.steps === "object" ? raw.steps : {};
   for (const id of SOCIAL_ONBOARDING_STEPS) {
     const v = String(incoming[id] || "pending").toLowerCase();
     steps[id] = v === "done" || v === "skipped" ? v : "pending";
   }
+  steps = applyWelcomeSoftMigrate(steps, raw.status);
   let status = String(raw.status || "not_started").toLowerCase();
   const allSettled = SOCIAL_ONBOARDING_STEPS.every(
     (id) => steps[id] === "done" || steps[id] === "skipped"
@@ -102,3 +117,13 @@ export const DEFAULT_ONBOARDING_CLUSTER = {
   city: "Los Angeles",
   state: "CA",
 };
+
+/** Possessive Dining Crew name from consumer profile identity. */
+export function defaultDiningCrewNameFromProfile(profile) {
+  const first = String(profile?.first_name || "").trim();
+  const display = String(profile?.display_name || "").trim();
+  const base = first || display.split(/\s+/)[0] || "";
+  if (!base) return "My Dining Crew";
+  const possessive = /s$/i.test(base) ? `${base}'` : `${base}'s`;
+  return `${possessive} Dining Crew`;
+}

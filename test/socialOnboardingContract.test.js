@@ -1,5 +1,5 @@
 /**
- * Social onboarding guided-activation contract tests (no network).
+ * Social onboarding guided-introduction contract tests (no network).
  */
 
 import test from "node:test";
@@ -10,6 +10,7 @@ import { fileURLToPath } from "node:url";
 import {
   SOCIAL_ONBOARDING_STEPS,
   SOCIAL_ONBOARDING_ROUTE,
+  defaultDiningCrewNameFromProfile,
   emptySocialOnboardingState,
   isSocialOnboardingComplete,
   markSocialOnboardingStep,
@@ -24,8 +25,9 @@ function read(rel) {
   return fs.readFileSync(path.join(root, rel), "utf8");
 }
 
-test("social onboarding step order matches product questions", () => {
+test("social onboarding step order is guided introduction sequence", () => {
   assert.deepEqual(SOCIAL_ONBOARDING_STEPS, [
+    "welcome",
     "dining_crew",
     "expand_crew",
     "food_camera",
@@ -37,12 +39,42 @@ test("social onboarding step order matches product questions", () => {
   assert.equal(SOCIAL_ONBOARDING_ROUTE, "/account/social-onboarding");
 });
 
-test("food camera step frames community food photography", () => {
+test("default Dining Crew name uses diner identity possessive", () => {
+  assert.equal(
+    defaultDiningCrewNameFromProfile({ first_name: "Andre" }),
+    "Andre's Dining Crew"
+  );
+  assert.equal(
+    defaultDiningCrewNameFromProfile({ first_name: "James" }),
+    "James' Dining Crew"
+  );
+  assert.equal(defaultDiningCrewNameFromProfile({}), "My Dining Crew");
+});
+
+test("welcome soft-migrates completed legacy progress", () => {
+  const state = normalizeSocialOnboardingState({
+    status: "completed",
+    steps: {
+      dining_crew: "done",
+      expand_crew: "skipped",
+      food_camera: "done",
+      student_edu: "skipped",
+      people_eating: "done",
+      im_eating: "skipped",
+      waiter: "done",
+    },
+  });
+  assert.equal(state.steps.welcome, "done");
+  assert.equal(state.status, "completed");
+});
+
+test("share food step frames photos and comments without forced camera jargon", () => {
   const page = read("src/pages/consumer/SocialOnboardingPage.jsx");
   assert.match(page, /food_camera/);
-  assert.match(page, /take photos of food and share them with the\s+Menuply community/);
-  assert.match(page, /not just a profile picture/i);
+  assert.match(page, /Food is worth sharing/);
+  assert.match(page, /Share photos or comments/);
   assert.match(page, /social-onboarding-food-camera/);
+  assert.doesNotMatch(page, /not just a profile picture/i);
 });
 
 test("skip-all settles to completed without errors", () => {
@@ -56,7 +88,8 @@ test("skip-all settles to completed without errors", () => {
 });
 
 test("partial progress leaves next pending step", () => {
-  let state = markSocialOnboardingStep(emptySocialOnboardingState(), "dining_crew", "done");
+  let state = markSocialOnboardingStep(emptySocialOnboardingState(), "welcome", "done");
+  state = markSocialOnboardingStep(state, "dining_crew", "done");
   state = markSocialOnboardingStep(state, "expand_crew", "skipped");
   assert.equal(nextPendingStep(state), "food_camera");
   assert.equal(isSocialOnboardingComplete(state), false);
@@ -69,33 +102,40 @@ test("normalize rejects unknown step values", () => {
   });
   assert.equal(state.steps.dining_crew, "done");
   assert.equal(state.steps.expand_crew, "pending");
+  assert.equal(state.steps.welcome, "pending");
 });
 
-test("onboarding page reuses existing social surfaces and skippable copy", () => {
+test("onboarding page is educational with optional actions — not forced tasks", () => {
   const page = read("src/pages/consumer/SocialOnboardingPage.jsx");
+  assert.match(page, /Welcome to Menuply/);
+  assert.match(page, /Eating is social/);
   assert.match(page, /Who do you eat with\?/);
-  assert.match(page, /This is your Dining Crew/);
-  assert.match(page, /Want to expand your Dining Crew by meeting new people\?/);
+  assert.match(page, /Create Dining Crew/);
+  assert.match(page, /Want to expand your Dining Crew\?/);
+  assert.match(page, /Meet people through food/);
   assert.match(page, /Are you a student\?/);
-  assert.match(page, /Not a student\? No problem/);
   assert.match(page, /What are people eating\?/);
   assert.match(page, /What are you eating\?/);
   assert.match(page, /Ask Waiter/);
-  assert.match(page, /Skip this step/);
+  assert.match(page, /guided introduction to Menuply/);
+  assert.match(page, /Skip introduction/);
+  assert.match(page, /Nothing is required/);
+  assert.match(page, /Cluster → Subscribe → Food activity → Waiter updates/);
   assert.match(page, /WhatPeopleAreEating/);
   assert.match(page, /ImEatingComposer/);
   assert.match(page, /createDiningCrew/);
-  assert.match(page, /inviteToDiningCrew/);
-  assert.match(page, /Text an invite/);
-  assert.match(page, /buildShareLinks/);
-  assert.match(page, /Messages app/);
-  assert.match(page, /normalizeConsumerShareUrl/);
+  assert.match(page, /updateDiningCrew/);
+  assert.match(page, /defaultDiningCrewNameFromProfile/);
   assert.match(page, /sendEduVerification/);
   assert.match(page, /createImEating/);
   assert.match(page, /fetchWaiterPeopleEating/);
-  assert.match(page, /people shared|user-reported|does not claim verified purchases/i);
+  assert.match(page, /user-reported/);
+  assert.doesNotMatch(page, /Step \{?stepIndex\}? of/);
+  assert.doesNotMatch(page, /Step \$\{stepIndex\} of/);
   assert.doesNotMatch(page, /navigator\.contacts|ContactsManager|requestPermission/);
-  assert.doesNotMatch(page, /Create Dining Crew/);
+  assert.doesNotMatch(page, /Text an invite/);
+  assert.doesNotMatch(page, /inviteToDiningCrew/);
+  assert.doesNotMatch(page, /notification permission|enable push/i);
   assert.doesNotMatch(page, /Menuply user id|invitee_user_id|recipient_user_id/);
 });
 
@@ -109,7 +149,7 @@ test("App route and account entry points wired", () => {
   assert.match(profile, /\/account\/social-onboarding/);
 });
 
-test("backend social-onboarding route exists and is mounted", () => {
+test("backend social-onboarding route includes welcome step", () => {
   const beRoot = path.join(root, "..", "menubloc-backend-main");
   const route = fs.readFileSync(
     path.join(beRoot, "src/routes/consumer/socialOnboarding.js"),
@@ -118,7 +158,9 @@ test("backend social-onboarding route exists and is mounted", () => {
   const index = fs.readFileSync(path.join(beRoot, "src/routes/consumer/index.js"), "utf8");
   assert.match(route, /\/social-onboarding/);
   assert.match(route, /social_onboarding/);
+  assert.match(route, /"welcome"/);
   assert.match(route, /food_camera/);
+  assert.match(route, /applyWelcomeSoftMigrate/);
   assert.match(index, /socialOnboarding/);
   const migration = fs.readFileSync(
     path.join(beRoot, "sql/migrations/20260814_0247_consumer_social_onboarding.sql"),

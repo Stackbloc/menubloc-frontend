@@ -1,6 +1,6 @@
 /**
- * Guided Social Onboarding — discovery questions over existing Social Engine APIs.
- * Every step is skippable. Not a college-only product.
+ * Guided Social Onboarding — educational introduction to Menuply.
+ * Informational screens with optional actions. Nothing is required to continue.
  */
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
@@ -13,7 +13,7 @@ import { useConsumer } from "../../context/ConsumerContext.jsx";
 import {
   listDiningCrews,
   createDiningCrew,
-  inviteToDiningCrew,
+  updateDiningCrew,
   sendEduVerification,
   createImEating,
   getSocialOnboarding,
@@ -25,13 +25,9 @@ import {
 import { fetchWaiterPeopleEating } from "../../lib/waiterApi.js";
 import { clusterPath } from "../../lib/clusterUrl.js";
 import {
-  buildShareLinks,
-  copyText,
-  normalizeConsumerShareUrl,
-} from "../../components/share/shareUtils.js";
-import {
   DEFAULT_ONBOARDING_CLUSTER,
   SOCIAL_ONBOARDING_STEPS,
+  defaultDiningCrewNameFromProfile,
   emptySocialOnboardingState,
   isSocialOnboardingComplete,
   loadLocalSocialOnboarding,
@@ -48,32 +44,10 @@ const USC_CLUSTER_HREF =
     slug: DEFAULT_ONBOARDING_CLUSTER.slug,
   }) || "/clusters";
 
-/** Force invite URLs onto https://menuply.com (never preview / share.google origins). */
-function menuplyInviteUrl(apiUrl) {
-  const raw = String(apiUrl || "").trim();
-  if (!raw) return "";
-  try {
-    const parsed = new URL(raw, "https://menuply.com");
-    return (
-      normalizeConsumerShareUrl(`https://menuply.com${parsed.pathname}${parsed.search}`) || ""
-    );
-  } catch {
-    return normalizeConsumerShareUrl(raw) || "";
-  }
-}
-
-function diningCrewInviteShareData(inviteUrl) {
-  const url = menuplyInviteUrl(inviteUrl);
-  return {
-    title: "Join my Dining Crew on Menuply",
-    text: "Join my Dining Crew on Menuply — let's decide where and what to eat together.",
-    url,
-  };
-}
-
 const STEP_META = {
-  dining_crew: { title: "Who do you eat with?" },
-  expand_crew: { title: "Want to expand your Dining Crew by meeting new people?" },
+  welcome: { title: "Welcome to Menuply" },
+  dining_crew: { title: "Eating is social." },
+  expand_crew: { title: "Want to expand your Dining Crew?" },
   food_camera: { title: "Share food with the Menuply community" },
   student_edu: { title: "Are you a student?" },
   people_eating: { title: "What are people eating?" },
@@ -81,17 +55,35 @@ const STEP_META = {
   waiter: { title: "Ask Waiter" },
 };
 
-function SkipButton({ onClick, disabled, label = "Skip this step" }) {
+function ProgressDots({ stepId }) {
+  const index = SOCIAL_ONBOARDING_STEPS.indexOf(stepId);
+  if (index < 0) return null;
   return (
-    <button type="button" style={styles.skipBtn} disabled={disabled} onClick={onClick}>
-      {label}
-    </button>
+    <div
+      style={styles.dots}
+      role="progressbar"
+      aria-valuemin={1}
+      aria-valuemax={SOCIAL_ONBOARDING_STEPS.length}
+      aria-valuenow={index + 1}
+      aria-label="Onboarding progress"
+    >
+      {SOCIAL_ONBOARDING_STEPS.map((id, i) => (
+        <span
+          key={id}
+          style={{
+            ...styles.dot,
+            background: i <= index ? "#16a34a" : "#d1d5db",
+          }}
+        />
+      ))}
+    </div>
   );
 }
 
 export default function SocialOnboardingPage() {
   const navigate = useNavigate();
-  const { consumer, isAuthenticated, loading: authLoading, refreshSession } = useConsumer();
+  const { consumer, profile, isAuthenticated, loading: authLoading, refreshSession } =
+    useConsumer();
   const userId = consumer?.id;
   const edu = getEduVerificationFromConsumer(consumer);
 
@@ -102,13 +94,16 @@ export default function SocialOnboardingPage() {
   const [notice, setNotice] = useState("");
 
   // Dining crew step
-  const [crewReady, setCrewReady] = useState(false);
-  const [inviteUrl, setInviteUrl] = useState("");
+  const [crewCreated, setCrewCreated] = useState(false);
   const [activeCrewId, setActiveCrewId] = useState(null);
-  const [copyState, setCopyState] = useState("idle");
+  const [crewName, setCrewName] = useState("");
+  const [crewNameSaved, setCrewNameSaved] = useState(false);
 
-  // Expand step
-  const [expandMode, setExpandMode] = useState(false);
+  // Expand / share / I'm Eating optional reveals
+  const [showFindPeople, setShowFindPeople] = useState(false);
+  const [showShareFood, setShowShareFood] = useState(false);
+  const [showImEating, setShowImEating] = useState(false);
+  const [showEduForm, setShowEduForm] = useState(false);
 
   // Student step
   const [eduEmail, setEduEmail] = useState("");
@@ -158,7 +153,6 @@ export default function SocialOnboardingPage() {
         const remote = await getSocialOnboarding();
         if (remote?.onboarding) {
           const r = normalizeSocialOnboardingState(remote.onboarding);
-          // Prefer completed remote; else merge local progress.
           if (r.status === "completed" || r.updated_at >= (local.updated_at || "")) {
             merged = r;
           }
@@ -207,63 +201,66 @@ export default function SocialOnboardingPage() {
     }
   }
 
-  async function ensureDiningCrewInvite() {
-    let crewId = activeCrewId;
-    if (!crewId) {
-      const existing = await listDiningCrews();
-      const crews = existing.crews || [];
-      if (crews[0]?.id) {
-        crewId = crews[0].id;
-      } else {
-        const created = await createDiningCrew("My Dining Crew");
-        crewId = created.crew?.id;
-      }
-      setActiveCrewId(crewId);
-    }
-    const invited = await inviteToDiningCrew(crewId, {});
-    const url = menuplyInviteUrl(invited.invitation?.url || "");
-    setInviteUrl(url);
-    setCrewReady(true);
-    return url;
-  }
-
-  async function handleTextInvite(e) {
-    e?.preventDefault?.();
+  async function skipEntireIntroduction() {
     setBusy(true);
     setError("");
     try {
-      const url = await ensureDiningCrewInvite();
-      if (!url) throw new Error("Unable to create invite link");
-      const links = buildShareLinks(diningCrewInviteShareData(url));
-      setNotice("Your Dining Crew is ready — pick who to text.");
-      // Opens the device Messages app with the Menuply invite (no phone-book harvest).
-      if (typeof window !== "undefined" && links.sms) {
-        window.location.href = links.sms;
+      let next = state;
+      for (const id of SOCIAL_ONBOARDING_STEPS) {
+        if (next.steps?.[id] === "pending") {
+          next = markSocialOnboardingStep(next, id, "skipped");
+        }
       }
-    } catch (err) {
-      setError(err.message || "Unable to set up Dining Crew");
+      await persist(next);
     } finally {
       setBusy(false);
     }
   }
 
-  async function handleCopyInvite() {
+  async function handleCreateDiningCrew() {
+    setBusy(true);
+    setError("");
+    setNotice("");
+    try {
+      const existing = await listDiningCrews();
+      const crews = existing.crews || [];
+      let crew = crews[0] || null;
+      const defaultName = defaultDiningCrewNameFromProfile(profile);
+      if (!crew?.id) {
+        const created = await createDiningCrew({ name: defaultName });
+        crew = created.crew;
+      }
+      if (!crew?.id) throw new Error("Unable to create Dining Crew");
+      setActiveCrewId(crew.id);
+      setCrewName(crew.name || defaultName);
+      setCrewCreated(true);
+      setCrewNameSaved(false);
+      setNotice("Your Dining Crew is ready. You can rename it now or add people later.");
+    } catch (err) {
+      setError(err.message || "Unable to create Dining Crew");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleSaveCrewName() {
+    if (!activeCrewId) return;
+    const nextName = String(crewName || "").trim();
+    if (!nextName) {
+      setError("Enter a name for your Dining Crew.");
+      return;
+    }
+    setBusy(true);
     setError("");
     try {
-      let url = inviteUrl;
-      if (!url) {
-        setBusy(true);
-        url = await ensureDiningCrewInvite();
-        setBusy(false);
-      }
-      if (!url) throw new Error("Unable to create invite link");
-      const ok = await copyText(url);
-      setCopyState(ok ? "success" : "error");
-      setNotice(ok ? "Invite link copied — paste it into a text message." : "Could not copy link");
+      const updated = await updateDiningCrew(activeCrewId, { name: nextName });
+      setCrewName(updated.crew?.name || nextName);
+      setCrewNameSaved(true);
+      setNotice("Dining Crew name saved. Invite people anytime from Dining Crews.");
     } catch (err) {
+      setError(err.message || "Unable to update Dining Crew name");
+    } finally {
       setBusy(false);
-      setError(err.message || "Unable to copy invite");
-      setCopyState("error");
     }
   }
 
@@ -300,7 +297,7 @@ export default function SocialOnboardingPage() {
         visibility,
       });
       setSharedOk(true);
-      setNotice("Your post can help other people discover what to eat.");
+      setNotice("Thanks for sharing.");
       await settle("im_eating", "done");
     } catch (err) {
       setError(err.message || "Unable to share");
@@ -326,11 +323,12 @@ export default function SocialOnboardingPage() {
       <>
         <StickyPageHeader title="You're ready" />
         <div style={styles.page} data-testid="social-onboarding-complete">
-          <h1 style={styles.h1}>You're ready to explore Menuply</h1>
-          <p style={styles.lead}>
-            Dining Crew, What People Are Eating, I'm Eating, and Waiter stay available anytime from
-            your account — nothing is required.
+          <h1 style={styles.h1}>You're ready to explore Menuply.</h1>
+          <p style={styles.body}>
+            Dining Crew, <strong>What People Are Eating</strong>, <strong>I'm Eating</strong>, and{" "}
+            <strong>Waiter</strong> remain available from your account.
           </p>
+          <p style={styles.lead}>Nothing is required.</p>
           {edu.edu_verified ? <p style={styles.badge}>{edu.badge}</p> : null}
           <div style={styles.actions}>
             <Link to="/" style={styles.primaryLink}>
@@ -347,198 +345,202 @@ export default function SocialOnboardingPage() {
   }
 
   const meta = STEP_META[stepId] || { title: "Getting started" };
-  const stepIndex = SOCIAL_ONBOARDING_STEPS.indexOf(stepId) + 1;
 
   return (
     <>
       <StickyPageHeader title="Getting started" />
       <div style={styles.page} data-testid="social-onboarding" data-step={stepId}>
-        <p style={styles.progress}>
-          Step {stepIndex} of {SOCIAL_ONBOARDING_STEPS.length}
-        </p>
+        <p style={styles.kicker}>A guided introduction to Menuply</p>
+        <ProgressDots stepId={stepId} />
         <h1 style={styles.h1}>{meta.title}</h1>
 
         {error ? <p style={styles.error}>{error}</p> : null}
         {notice ? <p style={styles.notice}>{notice}</p> : null}
 
+        {stepId === "welcome" ? (
+          <section data-testid="social-onboarding-welcome">
+            <p style={styles.body}>
+              <strong>
+                Menuply helps you find, explore, and share food. Discover restaurants, menus,
+                dishes, deals, and what people around you are eating.
+              </strong>
+            </p>
+            <button
+              type="button"
+              style={styles.primaryBtn}
+              disabled={busy}
+              onClick={() => settle("welcome", "done")}
+            >
+              Continue
+            </button>
+          </section>
+        ) : null}
+
         {stepId === "dining_crew" ? (
-          <section>
-            <p style={styles.lead}>This is your Dining Crew.</p>
+          <section data-testid="social-onboarding-dining-crew">
             <p style={styles.body}>
-              Add the people you usually eat with so you can easily decide where and what to eat
-              together.
+              Eating alone is always an option, but eating with friends and family is a different
+              experience.
             </p>
+            <p style={styles.lead}>Who do you eat with?</p>
             <p style={styles.body}>
-              Start by texting them an invite — they open the link and join your crew.
+              Create your own <strong>Dining Crew</strong> to bring the people you eat with together
+              so you can decide where and what to eat—and invite them when you find something good.
             </p>
-            {crewReady ? (
+
+            {crewCreated ? (
               <div style={styles.card}>
                 <strong>Your Dining Crew is ready</strong>
                 <p style={{ ...styles.soft, marginTop: 8 }}>
-                  Text as many people as you want. Matching by phone, email, or QR can come later —
-                  texting is the easiest way to start.
+                  Rename it if you like. Invite people later from Dining Crews — no invite is
+                  required here.
                 </p>
-                <button
-                  type="button"
-                  style={styles.primaryBtn}
-                  disabled={busy}
-                  onClick={handleTextInvite}
-                >
-                  Text another invite
-                </button>
+                <label style={styles.label}>
+                  Dining Crew name
+                  <input
+                    style={styles.input}
+                    type="text"
+                    value={crewName}
+                    onChange={(e) => {
+                      setCrewName(e.target.value);
+                      setCrewNameSaved(false);
+                    }}
+                    data-testid="dining-crew-name-input"
+                  />
+                </label>
                 <button
                   type="button"
                   style={styles.secondaryBtn}
-                  disabled={busy}
-                  onClick={handleCopyInvite}
+                  disabled={busy || !String(crewName || "").trim()}
+                  onClick={handleSaveCrewName}
                 >
-                  {copyState === "success" ? "Link copied" : "Copy invite link"}
+                  {crewNameSaved ? "Name saved" : "Save name"}
                 </button>
-                <button
-                  type="button"
-                  style={styles.primaryBtn}
-                  disabled={busy}
-                  onClick={() => settle("dining_crew", "done")}
-                >
-                  Continue
-                </button>
+                <Link to="/account/dining-crews" style={styles.secondaryLink}>
+                  Open Dining Crews
+                </Link>
               </div>
             ) : (
-              <div style={styles.form}>
-                <button
-                  type="button"
-                  style={styles.primaryBtn}
-                  disabled={busy}
-                  onClick={handleTextInvite}
-                  data-testid="dining-crew-text-invite"
-                >
-                  Text an invite
-                </button>
-                <button
-                  type="button"
-                  style={styles.secondaryBtn}
-                  disabled={busy}
-                  onClick={handleCopyInvite}
-                >
-                  {copyState === "success" ? "Link copied" : "Copy invite link"}
-                </button>
-                <p style={styles.soft}>
-                  Opens your Messages app with a Menuply invite link. We never ask for your phone
-                  contacts.
-                </p>
-              </div>
+              <button
+                type="button"
+                style={styles.secondaryBtn}
+                disabled={busy}
+                onClick={handleCreateDiningCrew}
+                data-testid="create-dining-crew"
+              >
+                Create Dining Crew
+              </button>
             )}
-            <SkipButton disabled={busy} onClick={() => settle("dining_crew", "skipped")} />
+
+            <button
+              type="button"
+              style={styles.primaryBtn}
+              disabled={busy}
+              onClick={() => settle("dining_crew", "done")}
+            >
+              Continue
+            </button>
           </section>
         ) : null}
 
         {stepId === "expand_crew" ? (
           <section>
+            <p style={styles.lead}>Meet people through food.</p>
             <p style={styles.body}>
-              Discover other people who are looking for people to eat with — always around food and
-              restaurants, not blind stranger networking.
+              Menuply can help you discover people who are looking to eat together around
+              restaurants, dishes, coffee, lunch, dinner, and other food experiences.
             </p>
-            {edu.edu_verified ? (
-              <p style={styles.soft}>
-                Students from your school who are looking for people to eat with may appear with{" "}
-                {edu.badge}.
-              </p>
-            ) : null}
-            <div style={styles.card}>
-              <p style={styles.cardTitle}>Food context</p>
-              <p style={styles.body}>
-                Example: people gather around a restaurant and meal — not private locations.
-              </p>
-              <p style={styles.example}>
-                ABC Restaurant · Tonight at 7 PM
-                <br />
-                Connections and verified students can show interest around the same meal.
-              </p>
-              <WhatPeopleAreEating clusterId={DEFAULT_ONBOARDING_CLUSTER.id} compact />
-            </div>
-            {!expandMode ? (
+            <p style={styles.body}>
+              It&apos;s about <strong>connecting through food</strong>, not generic stranger
+              networking.
+            </p>
+
+            {!showFindPeople ? (
               <button
                 type="button"
-                style={styles.primaryBtn}
-                onClick={() => setExpandMode(true)}
+                style={styles.secondaryBtn}
+                onClick={() => setShowFindPeople(true)}
               >
-                Find people
+                Find People
               </button>
             ) : (
-              <div style={styles.form}>
+              <div style={styles.card}>
                 <p style={styles.body}>
-                  Keep growing your crew the same way — text an invite when you meet someone over
-                  food. Phone, email, or QR matching can help later; it is not required here.
+                  Browse public food activity and connections when you&apos;re ready. Nothing is
+                  required now.
                 </p>
-                <button
-                  type="button"
-                  style={styles.primaryBtn}
-                  disabled={busy}
-                  onClick={handleTextInvite}
-                >
-                  Text an invite
-                </button>
+                <WhatPeopleAreEating clusterId={DEFAULT_ONBOARDING_CLUSTER.id} compact />
                 <Link to="/account/dining-crews" style={styles.secondaryLink}>
                   Open Dining Crews
                 </Link>
                 <Link to="/account/connections" style={styles.secondaryLink}>
                   Open Connections
                 </Link>
-                <button
-                  type="button"
-                  style={styles.primaryBtn}
-                  disabled={busy}
-                  onClick={() => settle("expand_crew", "done")}
-                >
-                  Continue
-                </button>
               </div>
             )}
-            <SkipButton disabled={busy} onClick={() => settle("expand_crew", "skipped")} />
+
+            <button
+              type="button"
+              style={styles.primaryBtn}
+              disabled={busy}
+              onClick={() => settle("expand_crew", "done")}
+            >
+              Continue
+            </button>
           </section>
         ) : null}
 
         {stepId === "food_camera" ? (
           <section data-testid="social-onboarding-food-camera">
+            <p style={styles.lead}>Food is worth sharing.</p>
             <p style={styles.body}>
-              Menuply users can use the camera to take photos of food and share them with the
-              Menuply community — in Dining Crew conversations, around restaurants and dishes, and
-              as part of food discovery.
+              Share photos or comments about what you&apos;re eating as part of Menuply&apos;s food
+              discovery experience.
             </p>
-            <div style={styles.card}>
-              <p style={styles.cardTitle}>Food photos, not just a profile picture</p>
-              <p style={styles.body}>
-                Snap what you are eating, optionally tag the restaurant or dish, and keep the
-                conversation going with text. Camera is part of Menuply’s food experience — not only
-                account setup.
-              </p>
-              <p style={styles.example}>
-                Open a Dining Crew meal conversation → Camera / food photo → Share food photo.
-              </p>
-              <Link to="/account/dining-crews" style={styles.secondaryLink}>
-                Open Dining Crews
-              </Link>
-            </div>
+
+            {!showShareFood ? (
+              <button
+                type="button"
+                style={styles.secondaryBtn}
+                onClick={() => setShowShareFood(true)}
+              >
+                Share Food
+              </button>
+            ) : (
+              <div style={styles.card}>
+                <p style={styles.body}>
+                  Share from Dining Crew conversations or when you post what you&apos;re eating —
+                  photos and comments both count.
+                </p>
+                <Link to="/account/dining-crews" style={styles.secondaryLink}>
+                  Open Dining Crews
+                </Link>
+              </div>
+            )}
+
             <button
               type="button"
               style={styles.primaryBtn}
               disabled={busy}
               onClick={() => settle("food_camera", "done")}
             >
-              Got it
+              Continue
             </button>
-            <SkipButton disabled={busy} onClick={() => settle("food_camera", "skipped")} />
           </section>
         ) : null}
 
         {stepId === "student_edu" ? (
           <section>
-            <p style={styles.optBadge}>Optional step for students</p>
+            <p style={styles.optBadge}>Optional</p>
             <p style={styles.body}>
-              Verify your .edu address to show your school affiliation and connect with other
-              students on Menuply. This is an affiliation signal — not proof of current enrollment.
+              Verify your <strong>.edu</strong> email to add school affiliation context to your
+              Menuply experience.
             </p>
-            <p style={styles.soft}>Not a student? No problem. You can skip this step and use Menuply normally.</p>
+            <p style={styles.soft}>Your email is never shown publicly.</p>
+            <p style={styles.soft}>
+              This is an affiliation signal — not proof of current enrollment.
+            </p>
+
             {edu.edu_verified ? (
               <div style={styles.card}>
                 <p style={styles.badge}>{edu.badge}</p>
@@ -551,65 +553,90 @@ export default function SocialOnboardingPage() {
                 </button>
               </div>
             ) : (
-              <form onSubmit={handleEdu} style={styles.form}>
-                <label style={styles.label}>
-                  School .edu email
-                  <input
-                    style={styles.input}
-                    type="email"
-                    value={eduEmail}
-                    onChange={(e) => setEduEmail(e.target.value)}
-                    placeholder="you@school.edu"
-                    required
-                  />
-                </label>
-                <button type="submit" style={styles.primaryBtn} disabled={busy || !eduEmail.trim()}>
-                  Verify .edu address
-                </button>
-                {eduSent ? (
-                  <p style={styles.soft}>
-                    Check your inbox, then return here after confirming the link. Your email is never
-                    shown publicly.
-                  </p>
-                ) : null}
-                {eduSent ? (
+              <>
+                {!showEduForm ? (
                   <button
                     type="button"
-                    style={styles.primaryBtn}
-                    onClick={async () => {
-                      await refreshSession().catch(() => {});
-                      await settle("student_edu", "done");
-                    }}
+                    style={styles.secondaryBtn}
+                    onClick={() => setShowEduForm(true)}
                   >
-                    Continue
+                    Verify Student Status
                   </button>
-                ) : null}
-              </form>
+                ) : (
+                  <form onSubmit={handleEdu} style={styles.form}>
+                    <label style={styles.label}>
+                      School .edu email
+                      <input
+                        style={styles.input}
+                        type="email"
+                        value={eduEmail}
+                        onChange={(e) => setEduEmail(e.target.value)}
+                        placeholder="you@school.edu"
+                        required
+                      />
+                    </label>
+                    <button
+                      type="submit"
+                      style={styles.primaryBtn}
+                      disabled={busy || !eduEmail.trim()}
+                    >
+                      Verify .edu address
+                    </button>
+                    {eduSent ? (
+                      <p style={styles.soft}>
+                        Check your inbox, then continue after confirming the link.
+                      </p>
+                    ) : null}
+                    {eduSent ? (
+                      <button
+                        type="button"
+                        style={styles.primaryBtn}
+                        onClick={async () => {
+                          await refreshSession().catch(() => {});
+                          await settle("student_edu", "done");
+                        }}
+                      >
+                        Continue
+                      </button>
+                    ) : null}
+                  </form>
+                )}
+                <button
+                  type="button"
+                  style={styles.skipBtn}
+                  disabled={busy}
+                  onClick={() => settle("student_edu", "skipped")}
+                >
+                  Skip
+                </button>
+              </>
             )}
-            <SkipButton disabled={busy} onClick={() => settle("student_edu", "skipped")} />
           </section>
         ) : null}
 
         {stepId === "people_eating" ? (
           <section>
-            <p style={styles.body}>See what people are eating around you.</p>
+            <p style={styles.lead}>See what people are eating around you.</p>
+            <p style={styles.body}>
+              Explore public, user-generated food activity around you and within Menuply clusters.{" "}
+              <strong>
+                Subscribe to the clusters that interest you, and Waiter will automatically keep you
+                updated on what&apos;s happening with food there.
+              </strong>
+            </p>
             <p style={styles.soft}>
-              Around {DEFAULT_ONBOARDING_CLUSTER.name}: see what people are eating around campus.
-              Public discovery — no subscription required.
+              Cluster → Subscribe → Food activity → Waiter updates. No separate notification setup
+              required.
             </p>
             <div style={styles.card}>
+              <p style={styles.example}>“What are people eating around USC?”</p>
               <WhatPeopleAreEating clusterId={DEFAULT_ONBOARDING_CLUSTER.id} />
-              <p style={styles.soft}>
-                Nothing happening here yet? Be the first to share what you&apos;re eating in the next
-                step.
-              </p>
             </div>
-            <Link
-              to={USC_CLUSTER_HREF}
-              style={styles.primaryLink}
-              onClick={() => settle("people_eating", "done")}
-            >
+            <Link to={USC_CLUSTER_HREF} style={styles.secondaryLink}>
               Explore
+            </Link>
+            <Link to="/account/cluster-subscriptions" style={styles.secondaryLink}>
+              Manage cluster subscriptions
             </Link>
             <button
               type="button"
@@ -618,54 +645,84 @@ export default function SocialOnboardingPage() {
             >
               Continue
             </button>
-            <SkipButton disabled={busy} onClick={() => settle("people_eating", "skipped")} />
           </section>
         ) : null}
 
         {stepId === "im_eating" ? (
           <section>
+            <p style={styles.lead}>Share what you&apos;re eating to help others discover food.</p>
             <p style={styles.body}>
-              Share what you&apos;re eating and help other people discover what to try.
+              Tell Menuply what you&apos;re eating and help other diners discover restaurants,
+              dishes, and food experiences.
             </p>
             <p style={styles.soft}>
-              This is user-reported activity — Menuply does not claim verified purchases or orders.
+              Food reports are <strong>user-reported</strong> and are not represented as verified
+              purchases or orders.
             </p>
+
             {sharedOk ? (
               <div style={styles.card}>
-                <p style={styles.body}>Your post can help other people discover what to eat.</p>
-                <button type="button" style={styles.primaryBtn} onClick={() => settle("im_eating", "done")}>
+                <p style={styles.body}>Thanks for sharing.</p>
+                <button
+                  type="button"
+                  style={styles.primaryBtn}
+                  onClick={() => settle("im_eating", "done")}
+                >
                   Continue
                 </button>
               </div>
             ) : (
-              <form onSubmit={handleShareEating} style={styles.form}>
-                <ImEatingComposer
-                  restaurant={restaurant}
-                  menuItem={menuItem}
-                  onRestaurantChange={setRestaurant}
-                  onMenuItemChange={setMenuItem}
-                  comment={comment}
-                  onCommentChange={setComment}
-                  visibility={visibility}
-                  onVisibilityChange={setVisibility}
+              <>
+                {!showImEating ? (
+                  <button
+                    type="button"
+                    style={styles.secondaryBtn}
+                    onClick={() => setShowImEating(true)}
+                  >
+                    I&apos;m Eating
+                  </button>
+                ) : (
+                  <form onSubmit={handleShareEating} style={styles.form}>
+                    <ImEatingComposer
+                      restaurant={restaurant}
+                      menuItem={menuItem}
+                      onRestaurantChange={setRestaurant}
+                      onMenuItemChange={setMenuItem}
+                      comment={comment}
+                      onCommentChange={setComment}
+                      visibility={visibility}
+                      onVisibilityChange={setVisibility}
+                      disabled={busy}
+                    />
+                    <button type="submit" style={styles.primaryBtn} disabled={busy}>
+                      Share what I&apos;m eating
+                    </button>
+                  </form>
+                )}
+                <button
+                  type="button"
+                  style={styles.skipBtn}
                   disabled={busy}
-                />
-                <button type="submit" style={styles.primaryBtn} disabled={busy}>
-                  Share what I&apos;m eating
+                  onClick={() => settle("im_eating", "skipped")}
+                >
+                  Skip
                 </button>
-              </form>
+              </>
             )}
-            <SkipButton disabled={busy} onClick={() => settle("im_eating", "skipped")} />
           </section>
         ) : null}
 
         {stepId === "waiter" ? (
           <section>
             <p style={styles.body}>
-              Ask about restaurants, menus, dishes, and what&apos;s happening around you.
+              <strong>
+                Ask about food, restaurants, menus, dishes, deals, and what&apos;s happening around
+                you.
+              </strong>
             </p>
+            <p style={styles.body}>You can even ask:</p>
             <div style={styles.card}>
-              <p style={styles.example}>&quot;What are people eating around USC?&quot;</p>
+              <p style={styles.example}>“What are people eating around USC?”</p>
               {waiterPreview?.items?.length ? (
                 <ul style={styles.list}>
                   {waiterPreview.items.slice(0, 5).map((item) => (
@@ -678,13 +735,16 @@ export default function SocialOnboardingPage() {
               ) : (
                 <p style={styles.soft}>
                   {waiterPreview?.notice ||
-                    "Nothing happening here yet. Ask Waiter anytime as activity grows."}
+                    "Ask Waiter anytime as food activity grows around you."}
                 </p>
               )}
             </div>
+            <p style={styles.body}>
+              Waiter can also keep you updated about the <strong>Menuply clusters you subscribe to</strong>.
+            </p>
             <Link
               to="/waiter"
-              style={styles.primaryLink}
+              style={styles.secondaryLink}
               onClick={() => settle("waiter", "done")}
             >
               Ask Waiter
@@ -692,9 +752,18 @@ export default function SocialOnboardingPage() {
             <button type="button" style={styles.primaryBtn} onClick={() => settle("waiter", "done")}>
               Continue
             </button>
-            <SkipButton disabled={busy} onClick={() => settle("waiter", "skipped")} />
           </section>
         ) : null}
+
+        <button
+          type="button"
+          style={styles.skipAllBtn}
+          disabled={busy}
+          onClick={skipEntireIntroduction}
+          data-testid="skip-entire-introduction"
+        >
+          Skip introduction
+        </button>
       </div>
       <BottomNav />
     </>
@@ -709,7 +778,25 @@ const styles = {
     fontFamily: "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial",
     color: "#0B0F0C",
   },
-  progress: { fontSize: 13, color: "#6b7280", margin: "0 0 8px", fontWeight: 600 },
+  kicker: {
+    fontSize: 13,
+    color: "#6b7280",
+    margin: "0 0 10px",
+    fontWeight: 600,
+    letterSpacing: "0.01em",
+  },
+  dots: {
+    display: "flex",
+    gap: 6,
+    marginBottom: 14,
+    alignItems: "center",
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 999,
+    display: "inline-block",
+  },
   h1: {
     fontSize: 26,
     fontWeight: 800,
@@ -751,6 +838,7 @@ const styles = {
     fontSize: 15,
     cursor: "pointer",
     marginBottom: 10,
+    width: "100%",
   },
   secondaryBtn: {
     display: "inline-flex",
@@ -765,11 +853,12 @@ const styles = {
     fontSize: 15,
     cursor: "pointer",
     marginBottom: 10,
+    width: "100%",
   },
   skipBtn: {
     display: "block",
     width: "100%",
-    marginTop: 8,
+    marginTop: 4,
     border: "none",
     background: "transparent",
     color: "#6b7280",
@@ -778,6 +867,19 @@ const styles = {
     textDecoration: "underline",
     cursor: "pointer",
     padding: "10px 0",
+  },
+  skipAllBtn: {
+    display: "block",
+    width: "100%",
+    marginTop: 20,
+    border: "none",
+    background: "transparent",
+    color: "#9ca3af",
+    fontSize: 13,
+    fontWeight: 600,
+    textDecoration: "underline",
+    cursor: "pointer",
+    padding: "8px 0",
   },
   primaryLink: {
     display: "inline-flex",
@@ -793,12 +895,11 @@ const styles = {
     marginBottom: 10,
   },
   secondaryLink: {
-    display: "inline-block",
+    display: "block",
     color: "#15803d",
     fontWeight: 700,
     marginBottom: 10,
   },
-  inlineLink: { color: "#15803d", wordBreak: "break-all" },
   card: {
     border: "1px solid #e5e7eb",
     borderRadius: 14,
@@ -806,7 +907,6 @@ const styles = {
     marginBottom: 14,
     background: "#fafafa",
   },
-  cardTitle: { fontWeight: 800, margin: "0 0 8px" },
   example: {
     fontSize: 14,
     lineHeight: 1.5,
@@ -816,6 +916,7 @@ const styles = {
     padding: 12,
     border: "1px solid #e5e7eb",
     marginBottom: 12,
+    fontStyle: "italic",
   },
   list: { margin: "8px 0 0", paddingLeft: 18, color: "#374151", fontSize: 14, lineHeight: 1.5 },
   badge: { fontWeight: 800, color: "#15803d", margin: "0 0 12px" },
