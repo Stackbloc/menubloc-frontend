@@ -59,6 +59,9 @@ import ConsumerFollowing from "./pages/consumer/ConsumerFollowing.jsx";
 import ConsumerConnections from "./pages/consumer/ConsumerConnections.jsx";
 import DinerQrPage from "./pages/consumer/DinerQrPage.jsx";
 import MeetMeHerePage from "./pages/consumer/MeetMeHerePage.jsx";
+import WhatWeDoingPage from "./pages/consumer/WhatWeDoingPage.jsx";
+import WhatWeDoingSessionPage from "./pages/consumer/WhatWeDoingSessionPage.jsx";
+import ConsumerNotificationsPage from "./pages/consumer/ConsumerNotificationsPage.jsx";
 import DinerQrConnectPage from "./pages/consumer/DinerQrConnectPage.jsx";
 import DinerQrScanRedirectPage from "./pages/consumer/DinerQrScanRedirectPage.jsx";
 import DiningCrewsPage, {
@@ -910,6 +913,9 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
         <Route path="/account/connections" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ConsumerConnections />} />
         <Route path="/account/diner-qr" element={crmHost ? <HostRouteRedirect to="/crm" /> : <DinerQrPage />} />
         <Route path="/account/meet-me-here" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MeetMeHerePage />} />
+        <Route path="/account/what-we-doing" element={crmHost ? <HostRouteRedirect to="/crm" /> : <WhatWeDoingPage />} />
+        <Route path="/account/what-we-doing/:token" element={crmHost ? <HostRouteRedirect to="/crm" /> : <WhatWeDoingSessionPage />} />
+        <Route path="/account/notifications" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ConsumerNotificationsPage />} />
         <Route path="/d/:token" element={crmHost ? <HostRouteRedirect to="/crm" /> : <DinerQrScanRedirectPage />} />
         <Route path="/connect/d/:token" element={crmHost ? <HostRouteRedirect to="/crm" /> : <DinerQrConnectPage />} />
         <Route path="/account/dining-crews" element={crmHost ? <HostRouteRedirect to="/crm" /> : <DiningCrewsPage />} />

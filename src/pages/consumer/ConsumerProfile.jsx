@@ -459,6 +459,22 @@ export default function ConsumerProfile() {
           </Link>
         </Section>
 
+        <Section title="What We Doing?">
+          <p style={styles.sectionDesc}>
+            Plan with Connections or a Dining Crew — suggest restaurants, venues, or events, vote,
+            then Make It a Plan.
+          </p>
+          <Link to="/account/what-we-doing" style={styles.followingLink}>
+            What We Doing?
+          </Link>
+          <Link
+            to="/account/notifications"
+            style={{ ...styles.followingLink, marginTop: 8, display: "inline-block" }}
+          >
+            Notifications
+          </Link>
+        </Section>
+
         <Section title="Meet Me Here">
           <p style={styles.sectionDesc}>
             Temporary QR for someone nearby — they join your invite without needing your

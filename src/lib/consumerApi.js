@@ -113,6 +113,33 @@ export async function resolveDinerQrScan(token) {
 /** Phase 7 Meet Me Here — creates eat invitation + temporary contextual QR */
 export const createMeetMeHere = (body) => post("/api/consumer/meet-me-here", body);
 
+// ── What We Doing? (group planning) ───────────────────────────────────────
+export const listWhatWeDoingSessions = () => get("/api/consumer/what-we-doing");
+export const createWhatWeDoingSession = (body) => post("/api/consumer/what-we-doing", body);
+export const getWhatWeDoingSession = (tokenOrId) =>
+  get(`/api/consumer/what-we-doing/${encodeURIComponent(String(tokenOrId))}`);
+export const addWhatWeDoingParticipants = (tokenOrId, body) =>
+  post(`/api/consumer/what-we-doing/${encodeURIComponent(String(tokenOrId))}/participants`, body);
+export const addWhatWeDoingSuggestion = (tokenOrId, body) =>
+  post(`/api/consumer/what-we-doing/${encodeURIComponent(String(tokenOrId))}/suggestions`, body);
+export const voteWhatWeDoing = (tokenOrId, suggestion_id) =>
+  post(`/api/consumer/what-we-doing/${encodeURIComponent(String(tokenOrId))}/votes`, {
+    suggestion_id,
+  });
+export const closeWhatWeDoingVoting = (tokenOrId) =>
+  post(`/api/consumer/what-we-doing/${encodeURIComponent(String(tokenOrId))}/close-voting`, {});
+export const makeWhatWeDoingPlan = (tokenOrId, body = {}) =>
+  post(`/api/consumer/what-we-doing/${encodeURIComponent(String(tokenOrId))}/make-plan`, body);
+export const searchWhatWeDoingRestaurants = (q) =>
+  get(`/api/consumer/what-we-doing/search/restaurants?q=${encodeURIComponent(String(q || ""))}`);
+export const searchWhatWeDoingVenues = (q) =>
+  get(`/api/consumer/what-we-doing/search/venues?q=${encodeURIComponent(String(q || ""))}`);
+export const searchWhatWeDoingEvents = (q) =>
+  get(`/api/consumer/what-we-doing/search/events?q=${encodeURIComponent(String(q || ""))}`);
+export const listConsumerNotifications = () => get("/api/consumer/notifications");
+export const markConsumerNotificationRead = (id) =>
+  post(`/api/consumer/notifications/${encodeURIComponent(String(id))}/read`, {});
+
 export async function uploadDinerAvatar(file) {
   const language = readStoredLanguage();
   const form = new FormData();
