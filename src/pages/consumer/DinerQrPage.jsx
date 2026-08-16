@@ -73,10 +73,15 @@ export default function DinerQrPage() {
   }, [payload]);
 
   const qrImageSrc = useMemo(() => {
-    const path = payload?.qr?.image_url;
-    if (!path) return "";
-    // Prefer API host so local/dev cards render without menuply.com rewrite.
-    return resolveConsumerMediaUrl(path) || `${CONSUMER_API_BASE}${path}`;
+    const token = payload?.qr?.token;
+    if (!token) return "";
+    // Same-origin /d/:token/image on menuply.com (Vercel rewrite). Loading the
+    // Railway host directly is blanked by helmet Cross-Origin-Resource-Policy.
+    const path = `/d/${encodeURIComponent(String(token))}/image`;
+    if (import.meta.env.DEV) {
+      return `${CONSUMER_API_BASE}${path}`;
+    }
+    return path;
   }, [payload]);
 
   const avatarSrc = useMemo(() => {

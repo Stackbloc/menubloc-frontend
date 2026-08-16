@@ -36,6 +36,9 @@ test("Diner Card page has branding CTA and optional selfie path", () => {
   assert.match(page, /ShareModal/);
   assert.match(page, /buildDinerQrShareData/);
   assert.match(page, /avatarFallback|initialsFromName/);
+  // Same-origin /d/:token/image — Railway CORP same-origin blanks cross-origin <img>
+  assert.match(page, /\/d\/\$\{encodeURIComponent\(String\(token\)\)\}\/image/);
+  assert.doesNotMatch(page, /resolveConsumerMediaUrl\(path\)/);
 });
 
 test("connect landing uses public projection only", () => {

@@ -242,9 +242,10 @@ export default function InviteToEatModal({
   };
 
   const radioLabel = {
-    display: "flex",
-    gap: 10,
-    alignItems: "flex-start",
+    display: "grid",
+    gridTemplateColumns: "18px minmax(0, 1fr)",
+    columnGap: 10,
+    alignItems: "start",
     padding: "10px 12px",
     borderRadius: 10,
     border: "1px solid #e7e5e4",
@@ -254,6 +255,13 @@ export default function InviteToEatModal({
     lineHeight: 1.4,
     fontWeight: 600,
     color: "#292524",
+  };
+
+  const radioControl = {
+    width: 16,
+    height: 16,
+    margin: "2px 0 0",
+    accentColor: "#166534",
   };
 
   const overlay = (
@@ -439,7 +447,7 @@ export default function InviteToEatModal({
                     checked={scheduleMode === "organizer"}
                     onChange={() => setScheduleMode("organizer")}
                     data-testid="invite-schedule-organizer"
-                    style={{ marginTop: 3 }}
+                    style={radioControl}
                   />
                   <span>I&apos;ll pick the date &amp; time</span>
                 </label>
@@ -457,7 +465,7 @@ export default function InviteToEatModal({
                     checked={scheduleMode === "recipient_chooses"}
                     onChange={() => setScheduleMode("recipient_chooses")}
                     data-testid="invite-schedule-recipient-chooses"
-                    style={{ marginTop: 3 }}
+                    style={radioControl}
                   />
                   <span>Let them choose the date &amp; time</span>
                 </label>
@@ -521,7 +529,7 @@ export default function InviteToEatModal({
                     checked={restaurantNegotiable}
                     onChange={(e) => setRestaurantNegotiable(e.target.checked)}
                     data-testid="invite-restaurant-negotiable"
-                    style={{ marginTop: 3 }}
+                    style={radioControl}
                   />
                   <span>
                     Allow restaurant changes
@@ -543,7 +551,7 @@ export default function InviteToEatModal({
                       checked={scheduleNegotiable}
                       onChange={(e) => setScheduleNegotiable(e.target.checked)}
                       data-testid="invite-schedule-negotiable"
-                      style={{ marginTop: 3 }}
+                      style={radioControl}
                     />
                     <span>Allow date &amp; time counters</span>
                   </label>
@@ -592,7 +600,7 @@ export default function InviteToEatModal({
                         setMessageMode(opt.code);
                       }}
                       data-testid={`invite-message-option-${opt.code}`}
-                      style={{ marginTop: 3 }}
+                      style={radioControl}
                     />
                     <span style={{ whiteSpace: "pre-wrap" }}>{opt.text}</span>
                   </label>
@@ -611,7 +619,7 @@ export default function InviteToEatModal({
                     checked={messageMode === "custom"}
                     onChange={() => setMessageMode("custom")}
                     data-testid="invite-message-option-custom"
-                    style={{ marginTop: 3 }}
+                    style={radioControl}
                   />
                   <span>Write your own</span>
                 </label>
