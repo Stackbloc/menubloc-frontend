@@ -42,10 +42,6 @@
       "source": "/d/:token/image",
       "destination": "https://menubloc-backend-production.up.railway.app/d/:token/image"
     },
-    {
-      "source": "/d/:token",
-      "destination": "https://menubloc-backend-production.up.railway.app/d/:token"
-    },
     { "source": "/(.*)", "destination": "/" }
   ],
   "headers": [

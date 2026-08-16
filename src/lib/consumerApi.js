@@ -91,6 +91,25 @@ export const connectViaDinerQr = (token) =>
 export const fetchPublicDinerQr = (token) =>
   get(`/api/public/diner-qr/${encodeURIComponent(String(token))}`);
 
+/** Resolve scan landing for /d/:token (personal or Meet Me Here). Hits API host directly. */
+export async function resolveDinerQrScan(token) {
+  const language = readStoredLanguage();
+  const path = `/d/${encodeURIComponent(String(token))}?format=json`;
+  const localizedPath = appendLanguageParam(path, language);
+  const res = await fetch(`${API}${localizedPath}`, {
+    credentials: "omit",
+    headers: withLanguageHeaders({ Accept: "application/json" }, language),
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const error = new Error(json.error || `Request failed (${res.status})`);
+    error.status = res.status;
+    error.payload = json;
+    throw error;
+  }
+  return json;
+}
+
 /** Phase 7 Meet Me Here — creates eat invitation + temporary contextual QR */
 export const createMeetMeHere = (body) => post("/api/consumer/meet-me-here", body);
 

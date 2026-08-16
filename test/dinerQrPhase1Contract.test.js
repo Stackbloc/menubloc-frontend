@@ -48,15 +48,24 @@ test("connect landing uses public projection only", () => {
   assert.doesNotMatch(page, /phone_number|current.?location|dining.?crew|conversation/i);
 });
 
-test("profile links My Diner QR; vercel rewrites /d", () => {
+test("profile links My Diner QR; SPA owns /d/:token scan; image still rewritten", () => {
   const profile = read("src/pages/consumer/ConsumerProfile.jsx");
   assert.match(profile, /\/account\/diner-qr/);
   assert.match(profile, /My Diner QR/);
   const vercel = read("vercel.json");
   assert.match(vercel, /\/d\/:token\/image/);
-  assert.match(vercel, /\/d\/:token/);
+  // Scan HTML must not proxy through Railway (BE outage → phone "site can't be reached")
+  assert.doesNotMatch(vercel, /"source"\s*:\s*"\/d\/:token"/);
   const app = read("src/App.jsx");
   assert.match(app, /DinerQrPage/);
   assert.match(app, /DinerQrConnectPage/);
+  assert.match(app, /DinerQrScanRedirectPage/);
+  assert.match(app, /\/d\/:token/);
   assert.match(app, /\/connect\/d\/:token/);
+  const scan = read("src/pages/consumer/DinerQrScanRedirectPage.jsx");
+  assert.match(scan, /resolveDinerQrScan/);
+  assert.match(scan, /fetchPublicDinerQr/);
+  const api = read("src/lib/consumerApi.js");
+  assert.match(api, /export async function resolveDinerQrScan/);
+  assert.match(api, /\/d\/\$\{encodeURIComponent\(String\(token\)\)\}\?format=json/);
 });

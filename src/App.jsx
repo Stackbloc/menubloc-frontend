@@ -60,6 +60,7 @@ import ConsumerConnections from "./pages/consumer/ConsumerConnections.jsx";
 import DinerQrPage from "./pages/consumer/DinerQrPage.jsx";
 import MeetMeHerePage from "./pages/consumer/MeetMeHerePage.jsx";
 import DinerQrConnectPage from "./pages/consumer/DinerQrConnectPage.jsx";
+import DinerQrScanRedirectPage from "./pages/consumer/DinerQrScanRedirectPage.jsx";
 import DiningCrewsPage, {
   DiningCrewDetailPage,
   DiningCrewInvitePage,
@@ -909,6 +910,7 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
         <Route path="/account/connections" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ConsumerConnections />} />
         <Route path="/account/diner-qr" element={crmHost ? <HostRouteRedirect to="/crm" /> : <DinerQrPage />} />
         <Route path="/account/meet-me-here" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MeetMeHerePage />} />
+        <Route path="/d/:token" element={crmHost ? <HostRouteRedirect to="/crm" /> : <DinerQrScanRedirectPage />} />
         <Route path="/connect/d/:token" element={crmHost ? <HostRouteRedirect to="/crm" /> : <DinerQrConnectPage />} />
         <Route path="/account/dining-crews" element={crmHost ? <HostRouteRedirect to="/crm" /> : <DiningCrewsPage />} />
         <Route path="/account/dining-crews/invite/:token" element={crmHost ? <HostRouteRedirect to="/crm" /> : <DiningCrewInvitePage />} />
