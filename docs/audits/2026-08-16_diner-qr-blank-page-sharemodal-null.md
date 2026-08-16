@@ -42,15 +42,18 @@ None for this FE crash. (Earlier probe created a personal QR for consumer user i
 
 # Commits
 
-Pending (local fix; not yet committed unless Andre requests).
+- FE `e612c63` fix(diner-qr): ShareModal null crash
+- FE `ced3f53` docs audit
+- Shipped in CPD tip `ro8l1scif` / `index-BVISDgrs.js` with Phase 5
 
 # Deployment Status
 
-Not deployed. Fix is local on `menubloc-frontend-main` (also contains unpushed Phase 5 FE). Do not CPD Phase 5 until this blank-page fix ships.
+**CPD COMPLETE 2026-08-16.** FE tip `menubloc-frontend-ro8l1scif-menuply.vercel.app` / `index-BVISDgrs.js`. BE health `cff8658a`. See `docs/deployments/2026-08-16_phase5-event-groups-diner-qr-blank-cpd.md`.
 
 # Verification Results
 
-- `npm run test:share-contract` — run after edit.
+- `npm run test:share-contract` — 10/10 pass.
+- Tip-gate PASS apex + www after lock update.
 - Manual: open `/account/diner-qr` logged in → page chrome + card (or phone-verify message), not white blank.
 
 # Remaining Risks
