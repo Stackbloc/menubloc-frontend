@@ -38,24 +38,27 @@ None.
 
 # Commits
 
-None yet (local).
+- Feature: `bd3a8e5` (and related); tip content includes `42c415b`
+- CPD tip lock: `4ec654f`, `6f117e5`
 
 # Deployment Status
 
-**LOCAL** — not CPD’d.
+**CPD COMPLETE 2026-08-16** — tip `menubloc-frontend-nzkm72fy0-menuply.vercel.app` / `index-DyvhJLLC.js`; tip-gate PASS (aliases restored after `index-Cx2bTWAc.js` drift).
 
 # Verification Results
 
 - `node --test test/diningCrewInviteShareContract.test.js` (+ related) — pass
 - `npm run test:share-contract` — 8 pass
+- Live bundle: Share invite / dining-crew-share-invite / Join my Dining Crew on Menuply
+- Tip-gate PASS apex + www
 
 # Remaining Risks
 
-Human E2E: create crew → Share invite → Copy Link / SMS on mobile.
+Human E2E: create crew → Share invite → Copy Link / SMS on mobile. Concurrent deploys can move the tip — restore via CPD Restore commands.
 
 # Follow-Up Work
 
-CPD when Andre authorizes.
+None.
 
 # Final Verdict
 

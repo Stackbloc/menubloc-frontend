@@ -22,11 +22,13 @@ Prototype Dining Crew invite (raw URL + member id) → ShareModal Share invite. 
 ## Verify
 
 - Live: `Share invite`, `dining-crew-share-invite`, `Join my Dining Crew on Menuply`
-- Tip-gate PASS
+- Tip-gate PASS apex + www (reconfirmed after restoring aliases from transient `index-Cx2bTWAc.js` drift)
 
 ## Restore
 
 ```bash
 npx vercel alias set menubloc-frontend-nzkm72fy0-menuply.vercel.app menuply.com
 npx vercel alias set menubloc-frontend-nzkm72fy0-menuply.vercel.app www.menuply.com
+npx vercel alias set menubloc-frontend-nzkm72fy0-menuply.vercel.app crm.menuply.com
+npx vercel alias set menubloc-frontend-nzkm72fy0-menuply.vercel.app venues.menuply.com
 ```

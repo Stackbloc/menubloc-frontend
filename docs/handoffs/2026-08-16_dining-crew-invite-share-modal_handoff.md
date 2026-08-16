@@ -26,7 +26,7 @@ None.
 
 # Remaining Work
 
-CPD when Andre authorizes.
+None — CPD complete. Tip restored 2026-08-16 after transient drift to `index-Cx2bTWAc.js`.
 
 # Risks / Known Issues
 
