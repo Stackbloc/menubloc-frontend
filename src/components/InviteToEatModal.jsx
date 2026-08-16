@@ -48,6 +48,8 @@ export default function InviteToEatModal({
   const [scheduleMode, setScheduleMode] = useState("organizer");
   const [date, setDate] = useState(tomorrowIsoDate);
   const [time, setTime] = useState("19:00");
+  const [restaurantNegotiable, setRestaurantNegotiable] = useState(true);
+  const [scheduleNegotiable, setScheduleNegotiable] = useState(true);
   const [messageMode, setMessageMode] = useState("LDD");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
@@ -63,6 +65,8 @@ export default function InviteToEatModal({
     setScheduleMode("organizer");
     setDate(tomorrowIsoDate());
     setTime("19:00");
+    setRestaurantNegotiable(true);
+    setScheduleNegotiable(true);
     const seed = pickInviteCopySeed({ scheduledTime: "19:00" });
     setMessageMode(seed.code);
     setMessage("");
@@ -156,6 +160,9 @@ export default function InviteToEatModal({
         body.scheduled_date = date;
         body.scheduled_time = time;
       }
+      body.restaurant_negotiable = restaurantNegotiable;
+      body.schedule_negotiable =
+        scheduleMode === "recipient_chooses" ? true : scheduleNegotiable;
       if (inviteKind === "private") {
         const invitee = String(inviteeName || "").trim();
         if (!invitee) {
@@ -489,6 +496,66 @@ export default function InviteToEatModal({
                   a different time — the invitation itself stays open.
                 </p>
               )}
+              <fieldset
+                data-testid="invite-negotiable-fields"
+                style={{
+                  margin: 0,
+                  padding: 0,
+                  border: "none",
+                  display: "grid",
+                  gap: 8,
+                }}
+              >
+                <legend style={{ fontSize: 12, fontWeight: 700, padding: 0, marginBottom: 4 }}>
+                  Counter proposals
+                </legend>
+                <label
+                  style={{
+                    ...radioLabel,
+                    borderColor: restaurantNegotiable ? "#86efac" : "#e7e5e4",
+                    background: restaurantNegotiable ? "#f0fdf4" : "#fafaf9",
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={restaurantNegotiable}
+                    onChange={(e) => setRestaurantNegotiable(e.target.checked)}
+                    data-testid="invite-restaurant-negotiable"
+                    style={{ marginTop: 3 }}
+                  />
+                  <span>
+                    Allow restaurant changes
+                    <span style={{ display: "block", fontWeight: 500, color: "#78716c", marginTop: 2 }}>
+                      Turn off for fixed-location events.
+                    </span>
+                  </span>
+                </label>
+                {scheduleMode === "organizer" ? (
+                  <label
+                    style={{
+                      ...radioLabel,
+                      borderColor: scheduleNegotiable ? "#86efac" : "#e7e5e4",
+                      background: scheduleNegotiable ? "#f0fdf4" : "#fafaf9",
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={scheduleNegotiable}
+                      onChange={(e) => setScheduleNegotiable(e.target.checked)}
+                      data-testid="invite-schedule-negotiable"
+                      style={{ marginTop: 3 }}
+                    />
+                    <span>Allow date &amp; time counters</span>
+                  </label>
+                ) : (
+                  <p
+                    data-testid="invite-schedule-negotiable-auto"
+                    style={{ margin: 0, fontSize: 12, color: "#78716c", lineHeight: 1.4 }}
+                  >
+                    Date &amp; time stay negotiable when recipients choose the schedule.
+                  </p>
+                )}
+              </fieldset>
               <div style={{ fontSize: 13, color: "#57534e", lineHeight: 1.45 }}>
                 After you create the invitation, send it through Messages or another app. Menuply
                 does not send SMS for you and does not need your contacts.

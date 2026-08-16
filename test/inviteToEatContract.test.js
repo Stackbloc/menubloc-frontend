@@ -49,6 +49,10 @@ test("InviteToEatButton tooltip and Invitation Ready confirmation", () => {
   assert.match(modal, /Let them choose the date/);
   assert.match(modal, /schedule_mode/);
   assert.match(modal, /recipient_chooses/);
+  assert.match(modal, /restaurant_negotiable|restaurantNegotiable/);
+  assert.match(modal, /schedule_negotiable|scheduleNegotiable/);
+  assert.match(modal, /invite-restaurant-negotiable/);
+  assert.match(modal, /Allow restaurant changes|fixed-location/);
   assert.match(modal, /type=["']radio["']/);
   assert.match(modal, /invite_kind/);
   assert.match(modal, /invite-guest-name/);
@@ -66,6 +70,9 @@ test("InviteToEatButton tooltip and Invitation Ready confirmation", () => {
 
   const api = read("src/lib/eatInvitationsApi.js");
   assert.match(api, /\/public\/eat-invitations/);
+  assert.match(api, /createEatInvitationCounterProposal/);
+  assert.match(api, /resolveEatInvitationProposal/);
+  assert.match(api, /\/proposals/);
   assert.doesNotMatch(api, /\/api\/consumer\/eat-invitations/);
 
   const guestId = read("src/lib/eatInviteGuestIdentity.js");
@@ -166,7 +173,19 @@ test("Eat invitation public page uses live About Us; named private invitee; gues
   assert.match(page, /invite-propose-schedule|proposedDate|proposed_date/);
   assert.match(page, /recipient_chooses|recipientChooses/);
   assert.match(page, /You choose the date/);
+  assert.match(page, /createEatInvitationCounterProposal/);
+  assert.match(page, /resolveEatInvitationProposal/);
+  assert.match(page, /invite-proposal-history|ProposalHistory/);
+  assert.match(page, /invite-counter-form|Propose a change/);
+  assert.match(page, /invite-proposal-accept/);
+  assert.match(page, /Counter again/);
+  assert.match(page, /restaurant_negotiable|restaurantNegotiable/);
+  assert.match(page, /invite-restaurant-fixed|Restaurant is fixed/);
   assert.doesNotMatch(page, /Not responded/);
+  const inviteApi = read("src/lib/eatInvitationsApi.js");
+  assert.match(inviteApi, /\/proposals/);
+  assert.match(inviteApi, /resolveEatInvitationProposal/);
+  assert.match(inviteApi, /createEatInvitationCounterProposal/);
   assert.doesNotMatch(page, /Join Menuply because/);
   assert.doesNotMatch(page, /invite-first-name/);
   assert.doesNotMatch(page, /Create a free Menuply account to respond/);
