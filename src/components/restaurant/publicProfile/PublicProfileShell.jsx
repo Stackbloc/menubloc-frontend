@@ -15,6 +15,7 @@ import ProfileFavoriteMenuItems from "./ProfileFavoriteMenuItems.jsx";
 import ProfileUpdates from "./ProfileUpdates.jsx";
 import ProfileDealsSection from "./ProfileDealsSection.jsx";
 import FoodTruckUpcomingStops from "./FoodTruckUpcomingStops.jsx";
+import ProfileUpcomingEvents from "./ProfileUpcomingEvents.jsx";
 import WhatDinersAreSaying from "../WhatDinersAreSaying.jsx";
 import { pickWindowsPosts } from "../../../lib/profileWindows.js";
 import { formatAddressQuery } from "../../../lib/displayAddress.js";
@@ -158,6 +159,12 @@ export default function PublicProfileShell({
     () => (isFoodTruck ? normalizeScheduleStops(profile) : []),
     [isFoodTruck, profile]
   );
+  const venueCapabilityEnabled =
+    profile?.venue_capability_enabled === true ||
+    profile?.capabilities?.venue === true;
+  const upcomingEvents = Array.isArray(profile?.upcoming_events)
+    ? profile.upcoming_events
+    : [];
   const location = useMemo(
     () => (isFoodTruck ? buildCurrentLocation(profile, streetAddr, cityLine) : null),
     [isFoodTruck, profile, streetAddr, cityLine]
@@ -292,6 +299,12 @@ export default function PublicProfileShell({
                 message="No upcoming locations yet."
               />
             )}
+          </ProfileSection>
+        ) : null}
+
+        {venueCapabilityEnabled ? (
+          <ProfileSection title="Upcoming Events" testId="profile-upcoming-events-section">
+            <ProfileUpcomingEvents events={upcomingEvents} />
           </ProfileSection>
         ) : null}
 

@@ -827,3 +827,16 @@ export const finalizeMenuCameraSession = (sessionId, restaurantId) =>
     `/operator/menu-camera-upload/sessions/${encodeURIComponent(sessionId)}/finalize`,
     { restaurant_id: restaurantId }
   );
+
+/** Phase 3 Venue capability + Events/Venue package shell */
+export const getRestaurantCapabilities = (rid) =>
+  get(`/operator/restaurants/${encodeURIComponent(String(rid))}/capabilities`);
+
+export const setRestaurantCapability = (rid, key, body = {}) =>
+  put(
+    `/operator/restaurants/${encodeURIComponent(String(rid))}/capabilities/${encodeURIComponent(String(key))}`,
+    body
+  );
+
+export const getRestaurantVenuePackage = (rid) =>
+  get(`/operator/restaurants/${encodeURIComponent(String(rid))}/capabilities/venue-package`);

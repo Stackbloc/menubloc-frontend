@@ -392,6 +392,11 @@ export default function OperatorLayout({ title, children }) {
             icon: "⊹",
           },
           {
+            to: "/operator/events",
+            label: t("operator.nav.eventsVenue", "Events / Venue"),
+            icon: "▣",
+          },
+          {
             to: "/operator/bid-free-bidding",
             label: t("operator.nav.bidFree", "Bid-Free Bidding™"),
             icon: "◇",
