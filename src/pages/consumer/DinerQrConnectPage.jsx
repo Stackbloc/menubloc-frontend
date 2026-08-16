@@ -1,7 +1,7 @@
 /**
  * Scanner landing for Personal Diner QR (Phase 1).
  * Route: /connect/d/:token
- * Invitation-style: "{Name} has invited you to connect" + how to connect.
+ * Copy is for the person being invited to connect (not the QR owner).
  * Lunch / restaurant proposals use Meet Me Here → /invite/:token (separate).
  */
 
@@ -81,7 +81,8 @@ export default function DinerQrConnectPage() {
 
   const rawName = projection?.diner?.display_name || "";
   const inviteName = formatDinerInviteName(rawName) || rawName.trim() || "A diner";
-  const headline = `${inviteName} has invited you to connect on Menuply`;
+  const headline = `${inviteName} has invited you to connect on Menuply, a social app for discovering and sharing food and events.`;
+  const continueLine = `Continue to review ${inviteName}'s invitation.`;
   const loginNext = `/connect/d/${encodeURIComponent(String(token || ""))}`;
 
   async function handleConnect() {
@@ -96,12 +97,12 @@ export default function DinerQrConnectPage() {
       await connectViaDinerQr(token);
       setRequestSent(true);
       setNotice(
-        `Connection request sent to ${inviteName}. They can accept it in Connections — then you can message and invite each other to eat.`
+        `Connection request sent to ${inviteName}. They can accept it in Connections — then you can invite each other to eat.`
       );
     } catch (err) {
       if (err?.payload?.code === "self_scan") {
         setSelfScan(true);
-        setNotice("This is your own Diner QR.");
+        setNotice("You opened your own connect invite. Share the link or QR with someone else.");
       } else if (err?.payload?.code === "already_connected") {
         setNotice(`You are already connected with ${inviteName}.`);
       } else if (err?.payload?.code === "already_pending") {
@@ -144,11 +145,13 @@ export default function DinerQrConnectPage() {
 
               {selfScan ? (
                 <p style={styles.blurb}>
-                  This is your personal Diner QR. Share it so someone else can open this page and
-                  send you a connection request.
+                  You opened your own connect invite. Share your QR or link with the person you want
+                  to connect with — they will see this invitation and can send you a connection
+                  request.
                 </p>
               ) : (
                 <>
+                  <p style={styles.continue}>{continueLine}</p>
                   <p style={styles.blurb}>
                     Connecting lets you stay in touch on Menuply. It does not share your private
                     location, crews, or activity.
@@ -156,13 +159,13 @@ export default function DinerQrConnectPage() {
                   <ol style={styles.steps}>
                     <li>
                       {isAuthenticated
-                        ? `Tap Connect with ${inviteName} below.`
+                        ? `Tap Connect with ${inviteName} below to accept this invitation.`
                         : "Sign in or create a free diner account (takes a minute)."}
                     </li>
                     <li>
                       {isAuthenticated
-                        ? `${inviteName} accepts your request in Connections.`
-                        : `Then return here and tap Connect with ${inviteName}.`}
+                        ? `${inviteName} confirms the connection in Connections.`
+                        : `Then return here and continue to review ${inviteName}'s invitation.`}
                     </li>
                     <li>
                       After you are connected, you can invite each other to eat (Invite to Eat /
@@ -294,6 +297,13 @@ const styles = {
     lineHeight: 1.25,
   },
   edu: { margin: "6px 0 0", fontSize: 12, color: "#14532d", fontWeight: 600 },
+  continue: {
+    margin: "14px 0 0",
+    color: "#0f172a",
+    fontSize: 15,
+    fontWeight: 700,
+    lineHeight: 1.4,
+  },
   blurb: { margin: "14px 0 0", color: "#475569", fontSize: 14, lineHeight: 1.45 },
   steps: {
     margin: "12px 0 0",

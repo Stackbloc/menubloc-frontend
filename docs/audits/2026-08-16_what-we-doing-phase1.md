@@ -2,7 +2,7 @@
 
 **Date:** 2026-08-16  
 **Paths:** `menubloc-backend-main`, `menubloc-frontend-main`  
-**Status:** Implemented locally — migration **not applied** / **not CPD’d**
+**Status:** CPD complete — migration `0263` applied; FE tip `8pl3zm05l` / `index-DxsHvAHk.js`; BE health `4a03818e`
 
 ## Summary
 

@@ -154,8 +154,8 @@ export default function DinerQrPage() {
       <StickyPageHeader title="My Diner QR" />
       <div style={styles.page}>
         <p style={styles.lead}>
-          Your personal Menuply QR. Others can scan it to connect with you — without seeing
-          your private location, crews, or activity.
+          Share this QR or link to invite someone to connect with you on Menuply. Whoever opens it
+          sees your connection invitation — not your location, crews, or activity.
         </p>
 
         {error ? <p style={styles.error}>{error}</p> : null}

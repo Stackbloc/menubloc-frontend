@@ -45,10 +45,10 @@ export function buildDinerQrShareData({ scan_url, token, display_name } = {}) {
   if (!url) return null;
   const inviteName = formatDinerInviteName(display_name) || String(display_name || "").trim();
   return {
-    title: inviteName ? `${inviteName} on Menuply` : "Connect with me on Menuply",
+    title: inviteName ? `${inviteName} on Menuply` : "Connect on Menuply",
     text: inviteName
-      ? `${inviteName} has invited you to connect on Menuply`
-      : "You've been invited to connect on Menuply",
+      ? `${inviteName} has invited you to connect on Menuply, a social app for discovering and sharing food and events. Continue to review ${inviteName}'s invitation.`
+      : "You've been invited to connect on Menuply, a social app for discovering and sharing food and events.",
     url,
   };
 }

@@ -24,7 +24,8 @@ test("diner QR share locks menuply.com /d/{token}", () => {
   });
   assert.ok(data);
   assert.equal(data.url, `https://menuply.com/d/${token}`);
-  assert.match(data.text, /has invited you to connect/i);
+  assert.match(data.text, /has invited you to connect on Menuply, a social app/i);
+  assert.match(data.text, /Continue to review Alex's invitation/);
   assert.equal(buildDinerQrShareData({}), null);
 });
 
@@ -56,10 +57,12 @@ test("connect landing uses invitation copy and public projection only", () => {
   const page = read("src/pages/consumer/DinerQrConnectPage.jsx");
   assert.match(page, /fetchPublicDinerQr/);
   assert.match(page, /connectViaDinerQr/);
-  assert.match(page, /has invited you to connect on Menuply/);
+  assert.match(page, /has invited you to connect on Menuply, a social app/);
+  assert.match(page, /Continue to review \$\{inviteName\}'s invitation/);
   assert.match(page, /formatDinerInviteName/);
   assert.match(page, /Connect with \$\{inviteName\}/);
   assert.match(page, /Meet Me Here/);
+  assert.doesNotMatch(page, /This is your personal Diner QR/);
   assert.doesNotMatch(page, /phone_number|current.?location|dining.?crew|conversation/i);
   assert.doesNotMatch(page, /A Menuply diner/);
   assert.doesNotMatch(page, /Scan complete\. Connect to interact/);
