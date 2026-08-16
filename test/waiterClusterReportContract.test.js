@@ -18,6 +18,9 @@ test("Waiter surfaces subscribed-cluster report without forbidden UI", () => {
   assert.match(page, /cluster_report/);
   assert.match(page, /\/account\/cluster-subscriptions/);
   assert.match(page, /Today&apos;s food highlights|Today's food highlights/);
+  assert.match(page, /plus updates from/);
+  assert.match(page, /Food picks for/);
+  assert.match(page, /emptyMessage/);
   assert.doesNotMatch(page, /import\s+.*MarketFallback|<[Mm]arketFallback|CommunityGrowthCard\s*[({]/);
   assert.doesNotMatch(page, /\bbriefing\.cards\b/);
   assert.match(page, /briefing\?\.recommendations/);

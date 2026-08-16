@@ -11,7 +11,8 @@ import { readMenuBrowserVenueSession } from "../lib/menuBrowserVenueContext.js";
 // This file is FROZEN. Do NOT add MarketFallback, CommunityGrowthCard, or
 // remove the meal period selector without explicit user instruction.
 // One card per recommendation category. See CLAUDE.md Waiter guardrail.
-// 2026-08-15 Phase 6 (user-authorized): cluster subscription report leads briefing.
+// 2026-08-15 Phase 6 (user-authorized): cluster subscription report is additive to core Waiter.
+// 2026-08-15: core meal/location Waiter always runs with city+state; clusters never replace it.
 
 const SESSION_LOCATION_KEY = "grubbid.discovery.location";
 const SESSION_AUTO_LABEL_KEY = "grubbid.discovery.auto_label";
@@ -177,18 +178,27 @@ export default function FoodInterestsPage() {
     .map((c) => c?.name)
     .filter(Boolean)
     .slice(0, 3);
+  const hasLocation = Boolean(location.city && location.state);
   const subheading = (() => {
+    if (hasLocation && subscriptionCount > 0 && clusterNames.length) {
+      const more = subscriptionCount > clusterNames.length ? ` +${subscriptionCount - clusterNames.length}` : "";
+      return `Food picks for ${locationLabel}, plus updates from ${clusterNames.join(", ")}${more}.`;
+    }
+    if (hasLocation || locationLabel) return `Food picks for ${locationLabel || `${location.city}, ${location.state}`}.`;
     if (subscriptionCount > 0 && clusterNames.length) {
       const more = subscriptionCount > clusterNames.length ? ` +${subscriptionCount - clusterNames.length}` : "";
       return `Food updates from ${clusterNames.join(", ")}${more}.`;
     }
-    if (locationLabel) return `Food picks for ${locationLabel}.`;
     return "Your local food market intelligence.";
   })();
 
   // Use recommendations from the briefing payload (never the legacy cards field).
   const groups = groupByType(briefing?.recommendations);
   const clusterNotice = briefing?.cluster_report?.notice || null;
+  const emptyMessage = hasLocation
+    ? "No recommendations available for your area right now. Check back soon."
+    : clusterNotice ||
+      "Set your location on the home screen or sign in to follow places for personalized updates.";
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--gb-color-page)", color: "var(--gb-color-ink)", paddingBottom: "calc(var(--bottom-nav-h, 72px) + 28px)" }}>
@@ -261,8 +271,8 @@ export default function FoodInterestsPage() {
             </div>
           ) : (
             <div style={{ fontSize: 13, color: "#9CA3AF", lineHeight: 1.55, padding: "12px 0" }}>
-              {clusterNotice || "No recommendations available for your area right now. Check back soon."}
-              {isAuthenticated && subscriptionCount === 0 ? (
+              {emptyMessage}
+              {isAuthenticated && !hasLocation && subscriptionCount === 0 ? (
                 <div style={{ marginTop: 8 }}>
                   <Link to="/clusters" style={{ color: "#86EFAC", fontWeight: 700, textDecoration: "none" }}>
                     Browse clusters to follow
