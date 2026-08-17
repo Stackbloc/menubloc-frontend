@@ -17,15 +17,16 @@ const API = (
 ).replace(/\/$/, "");
 
 async function req(path, opts = {}) {
-  const language = opts.language || readStoredLanguage();
+  const { language: langOpt, headers: hdrs, ...fetchOpts } = opts;
+  const language = langOpt || readStoredLanguage();
   const localizedPath = appendLanguageParam(path, language);
   const res = await fetch(`${API}${localizedPath}`, {
     credentials: "include",
+    ...fetchOpts,
     headers: withLanguageHeaders(
-      { "Content-Type": "application/json", ...(opts.headers || {}) },
+      { "Content-Type": "application/json", ...(hdrs || {}) },
       language,
     ),
-    ...opts,
   });
 
   const json = await res.json().catch(() => ({}));
@@ -39,7 +40,7 @@ async function req(path, opts = {}) {
   return json;
 }
 
-const get  = (path)        => req(path);
+const get  = (path, opts = {}) => req(path, opts);
 const post = (path, body)  => req(path, { method: "POST",   body: JSON.stringify(body) });
 const put  = (path, body)  => req(path, { method: "PUT",    body: JSON.stringify(body) });
 const patch = (path, body) => req(path, { method: "PATCH",  body: JSON.stringify(body) });
@@ -379,6 +380,8 @@ export const submitOrderFeedback = (body) =>
   post("/api/consumer/order-feedback", body);
 
 // ── Venue Event Groups + RSVP (Phase 5) ───────────────────────────────────
+export const listMyVenueEvents = () => get("/api/consumer/my/events");
+export const listMyVenueEventGroups = () => get("/api/consumer/my/event-groups");
 export const setVenueEventRsvp = (eventIdOrSlug, status) =>
   post(`/api/consumer/events/${encodeURIComponent(String(eventIdOrSlug))}/rsvp`, { status });
 export const createVenueEventGroup = (eventIdOrSlug, body) =>
@@ -398,3 +401,52 @@ export const getVenueEventGroupInvitation = (token) =>
   get(`/api/consumer/event-groups/invitations/${encodeURIComponent(String(token))}`);
 export const acceptVenueEventGroupInvitation = (token) =>
   post(`/api/consumer/event-groups/invitations/${encodeURIComponent(String(token))}/accept`, {});
+
+function localDateYmd(d = new Date()) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+export const listWhatIAteToday = (eatenOn = localDateYmd()) =>
+  get(`/api/consumer/what-i-ate-today?eaten_on=${encodeURIComponent(eatenOn)}`);
+export const listPeerWhatIAteToday = (userId, eatenOn = localDateYmd()) =>
+  get(
+    `/api/consumer/what-i-ate-today/users/${encodeURIComponent(String(userId))}?eaten_on=${encodeURIComponent(eatenOn)}`
+  );
+export const setWhatIAteTodayVisibility = (visible) =>
+  put("/api/consumer/what-i-ate-today/visibility", { visible: Boolean(visible) });
+export const suggestWhatIAteTodayMenuItems = (q, { signal } = {}) =>
+  get(
+    `/api/consumer/what-i-ate-today/suggestions?q=${encodeURIComponent(String(q || ""))}`,
+    signal ? { signal } : undefined
+  );
+export const createWhatIAteToday = (body) => post("/api/consumer/what-i-ate-today", body);
+export const updateWhatIAteToday = (id, body) =>
+  patch(`/api/consumer/what-i-ate-today/${encodeURIComponent(String(id))}`, body);
+export const deleteWhatIAteToday = (id) =>
+  del(`/api/consumer/what-i-ate-today/${encodeURIComponent(String(id))}`);
+
+export async function uploadWhatIAteTodayPhoto(file) {
+  const language = readStoredLanguage();
+  const form = new FormData();
+  form.append("photo", file);
+  const localizedPath = appendLanguageParam("/api/consumer/what-i-ate-today/photo", language);
+  const res = await fetch(`${API}${localizedPath}`, {
+    method: "POST",
+    credentials: "include",
+    headers: withLanguageHeaders({}, language),
+    body: form,
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const error = new Error(json.error || `Upload failed (${res.status})`);
+    error.status = res.status;
+    error.payload = json;
+    throw error;
+  }
+  return json;
+}
+
+export { localDateYmd as whatIAteTodayLocalDate };

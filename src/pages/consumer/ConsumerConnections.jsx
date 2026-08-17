@@ -177,7 +177,12 @@ export default function ConsumerConnections() {
                 <ul style={styles.list}>
                   {accepted.map((c) => (
                     <li key={c.id} style={styles.card}>
-                      <PeerLine peer={c.peer} />
+                      <Link
+                        to={c.peer?.id ? `/account/connections/${encodeURIComponent(String(c.peer.id))}` : "/account/connections"}
+                        style={styles.peerLink}
+                      >
+                        <PeerLine peer={c.peer} />
+                      </Link>
                       <button
                         type="button"
                         style={styles.secondaryBtn}
@@ -286,4 +291,5 @@ const styles = {
     cursor: "pointer",
   },
   link: { color: "#0f766e", fontWeight: 600, textDecoration: "none" },
+  peerLink: { color: "inherit", textDecoration: "none", flex: "1 1 auto", minWidth: 0 },
 };

@@ -8,6 +8,8 @@ import {
   inviteToDiningCrew,
   listConnections,
   listDiningCrews,
+  listMyVenueEventGroups,
+  listMyVenueEvents,
   listWhatWeDoingSessions,
 } from "../../../lib/consumerApi.js";
 import { buildDiningCrewInviteShareData } from "../../../lib/diningCrewInviteShare.js";
@@ -15,12 +17,25 @@ import { formatWhatWeDoingTitle } from "../../../lib/whatWeDoingTitle.js";
 import AccountActionLink from "./AccountActionLink.jsx";
 import { accountStyles as styles } from "./accountDashboardStyles.js";
 import ImEatingAtPanel from "../../../components/foodActivity/ImEatingAtPanel.jsx";
+import WhatIAteTodaySection from "../../../components/consumer/WhatIAteTodaySection.jsx";
 
 function memberNames(crew) {
   const members = crew?.members_preview || crew?.members || [];
   return members
     .map((m) => m.display_name || (m.user_id ? `Member #${m.user_id}` : ""))
     .filter(Boolean);
+}
+
+function connectionName(c) {
+  return c?.peer?.display_name || (c?.peer?.id ? `Member #${c.peer.id}` : "Connection");
+}
+
+function formatEventWhen(ev) {
+  const raw = ev?.starts_at || ev?.event_date;
+  if (!raw) return "";
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleString(undefined, { weekday: "short", month: "short", day: "numeric" });
 }
 
 export default function SocialCrewTab() {
@@ -32,6 +47,8 @@ export default function SocialCrewTab() {
   const [accepted, setAccepted] = useState([]);
   const [pendingIncoming, setPendingIncoming] = useState([]);
   const [sessions, setSessions] = useState([]);
+  const [eventGroups, setEventGroups] = useState([]);
+  const [myEvents, setMyEvents] = useState([]);
   const [newCrewName, setNewCrewName] = useState("");
   const [busy, setBusy] = useState(false);
   const [inviteShareData, setInviteShareData] = useState(null);
@@ -48,13 +65,17 @@ export default function SocialCrewTab() {
       setError(err.message || "Unable to load Dining Crew");
     }
     try {
-      const [connData, sessData] = await Promise.all([
+      const [connData, sessData, groupData, eventData] = await Promise.all([
         listConnections().catch(() => ({ accepted: [], pending_incoming: [] })),
         listWhatWeDoingSessions().catch(() => ({ sessions: [] })),
+        listMyVenueEventGroups().catch(() => ({ groups: [] })),
+        listMyVenueEvents().catch(() => ({ events: [] })),
       ]);
       setAccepted(connData.accepted || []);
       setPendingIncoming(connData.pending_incoming || []);
       setSessions(sessData.sessions || []);
+      setEventGroups(groupData.groups || []);
+      setMyEvents(eventData.events || []);
     } catch (err) {
       setError((prev) => prev || err.message || "Unable to load social activity");
     } finally {
@@ -134,25 +155,79 @@ export default function SocialCrewTab() {
     return <p style={styles.muted}>Loading Dining Crew…</p>;
   }
 
+  const connectionCount = accepted.length;
+  const connectionCountLabel = `${connectionCount} connection${connectionCount === 1 ? "" : "s"}`;
+
   return (
     <div>
       {error ? <p style={styles.statusErr}>{error}</p> : null}
       {notice ? <p style={styles.statusOk}>{notice}</p> : null}
 
-      <section style={styles.section} data-testid="im-eating-at-social">
+      <section style={styles.section} data-testid="social-connections">
         <div style={styles.sectionHead}>
-          <h2 style={styles.sectionTitle}>I&apos;m Eating At</h2>
+          <h2 style={styles.sectionTitle}>Connections</h2>
+          <Link to="/account/connections" style={styles.textBtn}>
+            Manage Connections
+          </Link>
         </div>
         <p style={styles.sectionDesc}>
-          Tell Menuply where you&apos;re eating and what you&apos;re experiencing. After you
-          share, you can optionally turn on Join Me — I&apos;m here now, come join me.
+          People you interact with through Menuply meals and invitations — not a Friend list.
         </p>
-        <ImEatingAtPanel compact onPosted={() => {}} />
+        <p style={styles.summary} data-testid="social-connections-count">
+          {connectionCountLabel}
+        </p>
+        {pendingIncoming.length > 0
+          ? pendingIncoming.map((c) => (
+              <div key={c.id} style={styles.actionRow}>
+                <div style={styles.actionCopy}>
+                  <p style={styles.actionTitle}>{connectionName(c)}</p>
+                  <p style={styles.muted}>Wants to connect</p>
+                </div>
+                <div style={styles.actions}>
+                  <button
+                    type="button"
+                    style={styles.primaryBtn}
+                    disabled={busy}
+                    onClick={() => handleAccept(c.id)}
+                  >
+                    Accept
+                  </button>
+                  <button
+                    type="button"
+                    style={styles.secondaryBtn}
+                    disabled={busy}
+                    onClick={() => handleDecline(c.id)}
+                  >
+                    Decline
+                  </button>
+                </div>
+              </div>
+            ))
+          : null}
+        {accepted.length === 0 ? (
+          <p style={styles.muted}>No connections yet. They form through meals and invitations.</p>
+        ) : (
+          accepted.map((c, idx) => {
+            const peerId = c.peer?.id;
+            if (!peerId) return null;
+            return (
+              <AccountActionLink
+                key={c.id}
+                to={`/account/connections/${encodeURIComponent(String(peerId))}`}
+                title={connectionName(c)}
+                description={c.peer?.edu_verified ? c.peer.edu_verification_badge : null}
+                last={idx === accepted.length - 1}
+              />
+            );
+          })
+        )}
       </section>
 
-      <section style={styles.section}>
+      <WhatIAteTodaySection />
+
+      <section style={styles.section} data-testid="social-groups">
         <div style={styles.sectionHead}>
-          <h2 style={styles.sectionTitle}>Dining Crew</h2>
+          <h2 style={styles.sectionTitle}>Groups</h2>
           {crews.length > 0 ? (
             <Link to="/account/dining-crews" style={styles.textBtn}>
               Manage
@@ -160,8 +235,7 @@ export default function SocialCrewTab() {
           ) : null}
         </div>
         <p style={styles.sectionDesc}>
-          Who you eat with on Menuply. Invite people, plan meals, and share food experiences —
-          not a generic friend list.
+          Dining Crews you belong to, plus event groups you joined — not a generic friend list.
         </p>
 
         {crews.length === 0 ? (
@@ -189,39 +263,85 @@ export default function SocialCrewTab() {
               </button>
             </form>
           </div>
-        ) : (
-          crews.map((crew) => {
-            const names = memberNames(crew);
-            return (
-              <div key={crew.id} style={styles.crewBlock}>
-                <p style={styles.actionTitle}>{crew.name}</p>
-                <p style={styles.memberLine}>
-                  {crew.member_count} {crew.member_count === 1 ? "member" : "members"}
-                  {crew.visibility ? ` · ${crew.visibility}` : ""}
-                </p>
-                <p style={styles.memberLine}>
-                  {names.length ? names.join(" · ") : "Open the crew to see who is in it."}
-                </p>
-                <div style={styles.actions}>
-                  <Link to={`/account/dining-crews/${crew.id}`} style={styles.primaryBtn}>
-                    Open crew
-                  </Link>
-                  <button
-                    type="button"
-                    style={styles.secondaryBtn}
-                    disabled={busy || crew.is_full}
-                    onClick={() => handleShareInvite(crew.id)}
-                  >
-                    Invite
-                  </button>
-                </div>
-                {crew.is_full ? (
-                  <p style={styles.muted}>This crew is full. Open the crew to raise the member limit.</p>
-                ) : null}
+        ) : null}
+
+        {crews.map((crew) => {
+          const names = memberNames(crew);
+          return (
+            <div key={crew.id} style={styles.crewBlock}>
+              <p style={styles.actionTitle}>{crew.name}</p>
+              <p style={styles.memberLine}>
+                Dining Crew · {crew.member_count} {crew.member_count === 1 ? "member" : "members"}
+                {crew.visibility ? ` · ${crew.visibility}` : ""}
+              </p>
+              <p style={styles.memberLine}>
+                {names.length ? names.join(" · ") : "Open the crew to see who is in it."}
+              </p>
+              <div style={styles.actions}>
+                <Link to={`/account/dining-crews/${crew.id}`} style={styles.primaryBtn}>
+                  Open crew
+                </Link>
+                <button
+                  type="button"
+                  style={styles.secondaryBtn}
+                  disabled={busy || crew.is_full}
+                  onClick={() => handleShareInvite(crew.id)}
+                >
+                  Invite
+                </button>
               </div>
+              {crew.is_full ? (
+                <p style={styles.muted}>This crew is full. Open the crew to raise the member limit.</p>
+              ) : null}
+            </div>
+          );
+        })}
+
+        {eventGroups.map((g, idx) => (
+          <AccountActionLink
+            key={`eg-${g.id}`}
+            to={`/events/groups/${encodeURIComponent(String(g.slug))}`}
+            title={g.name}
+            description={g.event_name ? `Event group · ${g.event_name}` : "Event group"}
+            last={idx === eventGroups.length - 1 && crews.length > 0}
+          />
+        ))}
+      </section>
+
+      <section style={styles.section} data-testid="social-events">
+        <div style={styles.sectionHead}>
+          <h2 style={styles.sectionTitle}>Events</h2>
+        </div>
+        <p style={styles.sectionDesc}>Venue events you marked Going or Interested.</p>
+        {myEvents.length === 0 ? (
+          <p style={styles.muted}>No events yet.</p>
+        ) : (
+          myEvents.map((ev, idx) => {
+            const when = formatEventWhen(ev);
+            const rsvp = ev.rsvp_status === "going" ? "Going" : "Interested";
+            const place = [ev.restaurant_name, ev.city].filter(Boolean).join(" · ");
+            return (
+              <AccountActionLink
+                key={ev.id || ev.slug}
+                to={`/events/${encodeURIComponent(String(ev.slug))}`}
+                title={ev.name}
+                description={[rsvp, when, place].filter(Boolean).join(" · ")}
+                last={idx === myEvents.length - 1}
+              />
             );
           })
         )}
+      </section>
+
+      <section style={styles.section} data-testid="im-eating-at-social">
+        <div style={styles.sectionHead}>
+          <h2 style={styles.sectionTitle}>I&apos;m Eating At</h2>
+        </div>
+        <p style={styles.sectionDesc}>
+          Tell Menuply where you&apos;re eating and what you&apos;re experiencing. After you
+          share, you can optionally turn on Join Me — I&apos;m here now, come join me.
+        </p>
+        <ImEatingAtPanel compact onPosted={() => {}} />
       </section>
 
       <section style={styles.section}>
@@ -277,54 +397,6 @@ export default function SocialCrewTab() {
           description="Temporary QR for someone nearby — separate from your Diner QR."
           last
         />
-      </section>
-
-      <section style={styles.section}>
-        <div style={styles.sectionHead}>
-          <h2 style={styles.sectionTitle}>Connections</h2>
-          <Link to="/account/connections" style={styles.textBtn}>
-            Manage Connections
-          </Link>
-        </div>
-        <p style={styles.sectionDesc}>
-          People you interact with through Menuply meals and invitations — not a Friend list.
-        </p>
-        {pendingIncoming.length > 0 ? (
-          pendingIncoming.map((c) => (
-            <div key={c.id} style={styles.actionRow}>
-              <div style={styles.actionCopy}>
-                <p style={styles.actionTitle}>
-                  {c.peer?.display_name || `Member #${c.peer?.id || c.id}`}
-                </p>
-                <p style={styles.muted}>Wants to connect</p>
-              </div>
-              <div style={styles.actions}>
-                <button
-                  type="button"
-                  style={styles.primaryBtn}
-                  disabled={busy}
-                  onClick={() => handleAccept(c.id)}
-                >
-                  Accept
-                </button>
-                <button
-                  type="button"
-                  style={styles.secondaryBtn}
-                  disabled={busy}
-                  onClick={() => handleDecline(c.id)}
-                >
-                  Decline
-                </button>
-              </div>
-            </div>
-          ))
-        ) : (
-          <p style={styles.muted}>
-            {accepted.length
-              ? `${accepted.length} connection${accepted.length === 1 ? "" : "s"}`
-              : "No connections yet. They form through meals and invitations."}
-          </p>
-        )}
       </section>
 
       <section style={{ ...styles.section, ...styles.sectionLast }}>

@@ -57,6 +57,7 @@ import ConsumerEduVerify from "./pages/consumer/ConsumerEduVerify.jsx";
 import ConsumerProfile from "./pages/consumer/ConsumerProfile.jsx";
 import ConsumerFollowing from "./pages/consumer/ConsumerFollowing.jsx";
 import ConsumerConnections from "./pages/consumer/ConsumerConnections.jsx";
+import ConsumerConnectionPeerPage from "./pages/consumer/ConsumerConnectionPeerPage.jsx";
 import DinerQrPage from "./pages/consumer/DinerQrPage.jsx";
 import MeetMeHerePage from "./pages/consumer/MeetMeHerePage.jsx";
 import WhatWeDoingPage from "./pages/consumer/WhatWeDoingPage.jsx";
@@ -912,6 +913,7 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
         <Route path="/account/welcome" element={crmHost ? <HostRouteRedirect to="/crm" /> : <AccountWelcome />} />
         <Route path="/account/social-onboarding" element={crmHost ? <HostRouteRedirect to="/crm" /> : <SocialOnboardingPage />} />
         <Route path="/account/following" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ConsumerFollowing />} />
+        <Route path="/account/connections/:peerId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ConsumerConnectionPeerPage />} />
         <Route path="/account/connections" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ConsumerConnections />} />
         <Route path="/account/diner-qr" element={crmHost ? <HostRouteRedirect to="/crm" /> : <DinerQrPage />} />
         <Route path="/account/meet-me-here" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MeetMeHerePage />} />

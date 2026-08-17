@@ -26,6 +26,7 @@ function readDashboard() {
     "src/pages/consumer/accountDashboard/PreferenceChips.jsx",
     "src/pages/consumer/accountDashboard/AccountActionLink.jsx",
     "src/pages/consumer/accountDashboard/SummaryEditSection.jsx",
+    "src/components/consumer/WhatIAteTodaySection.jsx",
   ]
     .map(read)
     .join("\n");
@@ -116,6 +117,7 @@ test("every dashboard button has an action and links map to App routes", () => {
     "src/pages/consumer/accountDashboard/PreferenceChips.jsx",
     "src/pages/consumer/accountDashboard/SummaryEditSection.jsx",
     "src/pages/consumer/accountDashboard/AccountActionLink.jsx",
+    "src/components/consumer/WhatIAteTodaySection.jsx",
   ];
   for (const rel of files) {
     const src = read(rel);
@@ -144,6 +146,33 @@ test("every dashboard button has an action and links map to App routes", () => {
     const escaped = pathOnly.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     assert.match(app, new RegExp(escaped), `Unrouted dashboard link: ${href}`);
   }
+});
+
+test("profile and social tabs mount optional What I Ate Today", () => {
+  const profile = read("src/pages/consumer/accountDashboard/ProfileTab.jsx");
+  const social = read("src/pages/consumer/accountDashboard/SocialCrewTab.jsx");
+  const section = read("src/components/consumer/WhatIAteTodaySection.jsx");
+  const api = read("src/lib/consumerApi.js");
+  assert.match(profile, /WhatIAteTodaySection/);
+  assert.match(social, /WhatIAteTodaySection/);
+  assert.match(section, /Show this section on my profile/);
+  assert.match(section, /suggestWhatIAteTodayMenuItems/);
+  assert.match(api, /\/api\/consumer\/what-i-ate-today\/suggestions/);
+  assert.doesNotMatch(api, /what-i-ate-today[\s\S]*\/search/);
+  assert.doesNotMatch(section, /calorie|meal planner|food type taxonomy/i);
+});
+
+test("social tab shows connection count, clickable connections, groups, and events", () => {
+  const social = read("src/pages/consumer/accountDashboard/SocialCrewTab.jsx");
+  assert.match(social, /social-connections-count/);
+  assert.match(social, /\/account\/connections\/\$\{/);
+  assert.match(social, /data-testid="social-groups"/);
+  assert.match(social, /data-testid="social-events"/);
+  assert.match(social, /listMyVenueEvents/);
+  assert.match(social, /listMyVenueEventGroups/);
+  const app = read("src/App.jsx");
+  assert.match(app, /\/account\/connections\/:peerId/);
+  assert.match(app, /ConsumerConnectionPeerPage/);
 });
 
 test("empty states and share/unlike actions use real existing functions", () => {

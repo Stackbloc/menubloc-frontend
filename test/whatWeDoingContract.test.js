@@ -39,6 +39,9 @@ test("routes and profile entry exist; HomeNext and Waiter untouched", () => {
   assert.match(profile, /\/account\/what-we-doing/);
   assert.match(profile, /\/account\/notifications/);
 
+  const planPage = read("src/pages/consumer/WhatWeDoingPage.jsx");
+  assert.match(planPage, /searchParams\.get\("with"\)/);
+
   const api = read("src/lib/consumerApi.js");
   assert.match(api, /createWhatWeDoingSession/);
   assert.match(api, /makeWhatWeDoingPlan/);

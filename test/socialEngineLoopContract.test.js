@@ -18,6 +18,7 @@ describe("Social Engine loop wiring (Phases 1–8)", () => {
     const app = read("src/App.jsx");
     expect(app).toMatch(/\/account\/edu-verify|ConsumerEduVerify/);
     expect(app).toMatch(/\/account\/connections/);
+    expect(app).toMatch(/\/account\/connections\/:peerId/);
     expect(app).toMatch(/\/account\/dining-crews/);
     expect(app).toMatch(/\/account\/im-eating/);
     expect(app).toMatch(/\/waiter/);

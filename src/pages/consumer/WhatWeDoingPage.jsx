@@ -4,7 +4,7 @@
  */
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import StickyPageHeader from "../../components/StickyPageHeader.jsx";
 import BottomNav from "../../components/BottomNav.jsx";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
@@ -18,6 +18,7 @@ import { formatWhatWeDoingTitle } from "../../lib/whatWeDoingTitle.js";
 
 export default function WhatWeDoingPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { isAuthenticated, loading: authLoading } = useConsumer();
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -59,6 +60,17 @@ export default function WhatWeDoingPage() {
     }
     if (!authLoading && isAuthenticated) load();
   }, [authLoading, isAuthenticated, navigate, load]);
+
+  useEffect(() => {
+    const withId = Number(searchParams.get("with"));
+    if (!Number.isFinite(withId) || withId <= 0) return;
+    setSelectedPeers((prev) => {
+      if (prev.has(withId)) return prev;
+      const next = new Set(prev);
+      next.add(withId);
+      return next;
+    });
+  }, [searchParams]);
 
   function togglePeer(id) {
     setSelectedPeers((prev) => {

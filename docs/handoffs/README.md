@@ -1,6 +1,7 @@
 # Handoffs Index
 
 - `2026-08-17_add-menu-contribution_handoff.md` — Add Menu for unclaimed restaurants without a usable menu (**CPD COMPLETE** — tip `3vre2srp8` / `index-DQKfgzho.js`; BE `7bff0469`).
+- `2026-08-17_social-tab-connections-groups-events_handoff.md` — Social tab connection count, clickable Connections, groups, events (**LOCAL until CPD**).
 - `2026-08-17_cluster-landing-consumer-dashboard_handoff.md` — Cluster page scan-first dashboard (**CPD COMPLETE** — tip `30qbi67vq` / `index-CMXfgjwr.js`; BE `a8980221`).
 - `../deployments/2026-08-17_cluster-landing-consumer-dashboard-cpd.md` — CPD record.
 - `2026-08-17_dining-hall-status-comments-lock_handoff.md` — Dining halls: status + comments only; no menu analysis (**CPD COMPLETE** — tip `9ijik4t7p` / `index-HPBXNwnC.js`; BE `1e546d61`).

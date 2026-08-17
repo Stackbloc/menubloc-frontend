@@ -12,6 +12,7 @@ import { accountStyles as styles } from "./accountDashboardStyles.js";
 import AccountActionLink from "./AccountActionLink.jsx";
 import PreferenceChips from "./PreferenceChips.jsx";
 import SummaryEditSection from "./SummaryEditSection.jsx";
+import WhatIAteTodaySection from "../../../components/consumer/WhatIAteTodaySection.jsx";
 
 function SaveStatus({ status, isError }) {
   if (!status) return null;
@@ -263,6 +264,8 @@ export default function ProfileTab({
           onToggle={onToggleFoodToAvoid}
         />
       </SummaryEditSection>
+
+      <WhatIAteTodaySection />
 
       <section style={{ ...styles.section, ...styles.sectionLast }}>
         <div style={styles.sectionHead}>
