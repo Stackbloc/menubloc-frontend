@@ -25,7 +25,7 @@ Do **not** deploy from memory or from quarantined checkouts.
 
 ---
 
-## CURRENT LAST KNOWN GOOD (live production — 2026-08-16)
+## CURRENT LAST KNOWN GOOD (live production — 2026-08-17)
 
 Update this section **only** after tip-gate `RESULT=PASS` on apex + www **and** Railway `/health` matches the shipped BE SHA.
 
@@ -34,32 +34,32 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www **and** 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` @ clean `main` |
-| Git commit | `7e85661` — Venue Event Objects Phase 4 (editor + `/events/:slug`) |
-| Vercel deployment | `menubloc-frontend-hzs2u21r1-menuply.vercel.app` |
-| Live bundle | `index-DfVlLYXq.js` |
+| Git commit | `2b0b024` — Account dashboard four tabs |
+| Vercel deployment | `menubloc-frontend-kgtgek3l4-menuply.vercel.app` |
+| Live bundle | `index-Br9O-thi.js` |
 | Aliases | `menuply.com`, `www.menuply.com`, `crm.menuply.com`, `venues.menuply.com` |
-| Tip-gate | **PASS** (apex + www) verified 2026-08-16 |
-| Feature | Venue events CRUD, ticket type config, public event page, profile upcoming links; purchase stubbed |
+| Tip-gate | **PASS** (apex + www) verified 2026-08-17 |
+| Feature | `/account` Profile / Social & Crew / Wallet & Activity / Security & Account over existing diner APIs |
 
 ### Backend (Railway)
 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-backend-main` @ clean `main` |
-| Git commit | `d9178a7e` feature / tip `17beca0b` docs — Venue Event Objects Phase 4 |
+| Git commit | `fc669272` — Venue Phase 6 deferred docs (What We Doing APIs from `4a03818e`) |
 | Health URL | `https://menubloc-backend-production.up.railway.app/health` |
-| `commit_hash` | `17beca0b` (starts with) |
-| Migrations | `0250`–`0260` applied (`0260` venue_events + ticket types) |
-| Smoke | Operator `/events`; public `GET /public/events/:slug`; `upcoming_events` from published rows |
+| `commit_hash` | starts with `fc669272` |
+| Migrations | `0250`–`0263` applied (`0263` what_we_doing + consumer_notifications) |
+| Smoke | Health MATCH; four-tab dashboard strings in live FE bundle; BE unchanged |
 
 ### Restore current tip (if tip-gate fails mid-change)
 
 ```bash
 cd /Users/andrebarber/Desktop/menubloc/menubloc-frontend-main
-npx vercel alias set menubloc-frontend-hzs2u21r1-menuply.vercel.app menuply.com
-npx vercel alias set menubloc-frontend-hzs2u21r1-menuply.vercel.app www.menuply.com
-npx vercel alias set menubloc-frontend-hzs2u21r1-menuply.vercel.app crm.menuply.com
-npx vercel alias set menubloc-frontend-hzs2u21r1-menuply.vercel.app venues.menuply.com
+npx vercel alias set menubloc-frontend-kgtgek3l4-menuply.vercel.app menuply.com
+npx vercel alias set menubloc-frontend-kgtgek3l4-menuply.vercel.app www.menuply.com
+npx vercel alias set menubloc-frontend-kgtgek3l4-menuply.vercel.app crm.menuply.com
+npx vercel alias set menubloc-frontend-kgtgek3l4-menuply.vercel.app venues.menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 ```

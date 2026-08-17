@@ -4,7 +4,7 @@ Refactor consumer `/account` into a four-tab Menuply account dashboard (Profile,
 
 # Current Status
 
-**LOCAL COMPLETE — not committed, not deployed.**
+**CPD COMPLETE — live on menuply.com.** Tip `kgtgek3l4` / `index-Br9O-thi.js` (`2b0b024`). BE unchanged (`fc669272`).
 
 Implementation lives in `menubloc-frontend-main`. `/account` still mounts `ConsumerProfile`, which now orchestrates tabs.
 
@@ -34,9 +34,8 @@ None.
 
 # Remaining Work
 
-- Commit when requested
-- Human verify all four tabs
-- CPD / Vercel alias only if Andre asks to ship
+- Human verify all four tabs while signed in
+- No further deploy unless a follow-up is requested
 
 # Risks / Known Issues
 

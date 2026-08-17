@@ -46,11 +46,11 @@ Frontend-only reorganization in `menubloc-frontend-main`:
 
 # Commits
 
-Not committed (not requested).
+Committed `2b0b024` on `menubloc-frontend-main` @ `main` and pushed `origin/main`.
 
 # Deployment Status
 
-Not deployed. Local FE only in `menubloc-frontend-main`. Production tip unchanged.
+**CPD COMPLETE.** FE tip `menubloc-frontend-kgtgek3l4-menuply.vercel.app` / `index-Br9O-thi.js`. Aliases: menuply.com, www, crm, venues. Tip-gate PASS (apex + www) 2026-08-17. BE unchanged (`fc669272`).
 
 # Verification Results
 
@@ -96,8 +96,7 @@ Not run: logged-in browser session (needs diner cookie). `test:menu-experience-c
 # Follow-Up Work
 
 - Human verify on `/account` (all four tabs, chip save, crew empty + invite, password editor, logout).
-- Commit + CPD when Andre requests.
 
 # Final Verdict
 
-UX refactor complete locally: `/account` is a four-tab diner dashboard over existing Menuply functionality. Not production-complete until commit/deploy/alias and human verification.
+UX refactor is live: `/account` is a four-tab diner dashboard over existing Menuply functionality (`2b0b024` / `kgtgek3l4` / `index-Br9O-thi.js`). Human signed-in pass still recommended.
