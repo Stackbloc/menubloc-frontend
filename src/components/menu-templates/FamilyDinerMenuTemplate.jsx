@@ -36,6 +36,7 @@ export default function FamilyDinerMenuTemplate(ctx) {
     logoPlacement = "top-left",
     shareData,
     shareAnalyticsContext,
+    menuHeaderLeadingAction,
     franchiseSlot,
     intakeBannerSlot,
     allergenBannerSlot,
@@ -107,6 +108,7 @@ export default function FamilyDinerMenuTemplate(ctx) {
             {menuTypeLabel || "Sample menu design"}
           </div>
           <MenuHeaderNameWithActions
+            leadingAction={menuHeaderLeadingAction}
             tone={tone}
             claimStatus={claimStatus}
             subscriptionPlan={subscriptionPlan}

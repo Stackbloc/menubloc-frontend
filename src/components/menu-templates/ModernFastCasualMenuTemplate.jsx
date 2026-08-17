@@ -19,6 +19,7 @@ export default function ModernFastCasualMenuTemplate(ctx) {
     logoPlacement = "top-left",
     shareData,
     shareAnalyticsContext,
+    menuHeaderLeadingAction,
     franchiseSlot,
     intakeBannerSlot,
     allergenBannerSlot,
@@ -80,6 +81,7 @@ export default function ModernFastCasualMenuTemplate(ctx) {
               {menuTypeLabel || "Sample menu design"}
             </div>
             <MenuHeaderNameWithActions
+              leadingAction={menuHeaderLeadingAction}
               tone={tone}
               claimStatus={claimStatus}
               subscriptionPlan={subscriptionPlan}

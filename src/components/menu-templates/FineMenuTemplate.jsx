@@ -94,6 +94,7 @@ export default function FineMenuTemplate(ctx) {
     logoPlacement = "top-left",
     shareData,
     shareAnalyticsContext,
+    menuHeaderLeadingAction,
     franchiseSlot,
     intakeBannerSlot,
     allergenBannerSlot,
@@ -149,6 +150,7 @@ export default function FineMenuTemplate(ctx) {
           ) : null}
           <div style={{ minWidth: 0, flex: 1 }}>
             <MenuHeaderNameWithActions
+              leadingAction={menuHeaderLeadingAction}
               tone={tone}
               claimStatus={claimStatus}
               subscriptionPlan={subscriptionPlan}

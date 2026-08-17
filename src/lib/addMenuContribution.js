@@ -1,5 +1,9 @@
 import { isClaimedRestaurantProfile } from "./restaurantStatusLight.js";
 
+/** Hover + aria copy for Add Menu icon (header rail and cards). */
+export const ADD_MENU_HOVER_LABEL =
+  "Add menu — use the camera at the top of the app to photograph the menu";
+
 function normalizeEntityType(row) {
   return String(row?.restaurant_type || row?.entity_type || row?.category || "")
     .trim()

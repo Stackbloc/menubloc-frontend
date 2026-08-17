@@ -63,8 +63,8 @@ import MenuPreferencesAppliedBanner from "../components/menu/MenuPreferencesAppl
 import MenuPurchaseWaiterHint from "../components/menu/MenuPurchaseWaiterHint.jsx";
 import OrderingUnavailableBanner from "../components/menu/OrderingUnavailableBanner.jsx";
 import PublicMenuMainContent from "../components/menu-templates/PublicMenuMainContent.jsx";
-import AddMenuEmptyPlaceholder from "../components/AddMenuEmptyPlaceholder.jsx";
-import { restaurantFromAddMenuContext } from "../lib/addMenuContribution.js";
+import AddMenuAction from "../components/AddMenuAction.jsx";
+import { restaurantFromAddMenuContext, canShowAddMenu } from "../lib/addMenuContribution.js";
 import { normalizeMenuStyle, pickHeroImageUrl, resolveTemplateMenuStyle } from "../components/menu-templates/menuPresentationUtils.js";
 import {
   enrichMenuPayloadWithStyleStockPhotos,
@@ -1571,6 +1571,9 @@ export default function PublicMenuPage() {
           logoPlacement: menuThemeSettings.logo_placement || "top-left",
           shareData,
           shareAnalyticsContext,
+          menuHeaderLeadingAction: canShowAddMenu(addMenuRestaurant) ? (
+            <AddMenuAction restaurant={addMenuRestaurant} testId="add-menu-menu-header" />
+          ) : null,
           franchiseSlot,
           intakeBannerSlot: (
             <>
@@ -1759,10 +1762,6 @@ export default function PublicMenuPage() {
               "Preview mode — sample data only. Use ?previewStyle=v1|v12|v13|v14|v15. On a live menu add ?menuStyle=v13."
             )}
           </div>
-        ) : null}
-
-        {totalMenuItemCount === 0 && !isMenuTemplatePreview ? (
-          <AddMenuEmptyPlaceholder restaurant={addMenuRestaurant} testId="add-menu-public-menu-empty" />
         ) : null}
 
         {applyMenuAppearance && appearanceTokens ? (

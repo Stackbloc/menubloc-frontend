@@ -3,6 +3,7 @@ import { useConsumer } from "../context/ConsumerContext.jsx";
 import IconHoverLabel from "./IconHoverLabel.jsx";
 import AddMenuIcon from "./icons/AddMenuIcon.jsx";
 import {
+  ADD_MENU_HOVER_LABEL,
   buildAddMenuLoginPath,
   buildAddMenuPath,
   canShowAddMenu,
@@ -14,7 +15,6 @@ export default function AddMenuAction({
   dark = false,
   size = 14,
   testId = "add-menu-action",
-  prominent = false,
 }) {
   const navigate = useNavigate();
   const { isAuthenticated } = useConsumer();
@@ -35,43 +35,24 @@ export default function AddMenuAction({
     navigate(addMenuPath);
   }
 
-  const buttonStyle = prominent
-    ? {
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-        width: 72,
-        height: 72,
-        padding: 0,
-        borderRadius: "50%",
-        border: "1.5px solid #d6d3d1",
-        background: "#fff",
-        color: "#0f172a",
-        cursor: "pointer",
-        appearance: "none",
-        lineHeight: 0,
-        boxShadow: "0 8px 24px rgba(15, 23, 42, 0.08)",
-      }
-    : {
-        ...ghostIconStyle(dark),
-        appearance: "none",
-        width: MENU_ROW_ICON_SIZE,
-        height: MENU_ROW_ICON_SIZE,
-        minWidth: MENU_ROW_ICON_SIZE,
-        minHeight: MENU_ROW_ICON_SIZE,
-      };
-
   return (
-    <IconHoverLabel label="Add Menu">
+    <IconHoverLabel label={ADD_MENU_HOVER_LABEL} wrap maxWidth={240}>
       <button
         type="button"
         data-testid={testId}
-        aria-label="Add Menu"
-        title="Add Menu"
+        aria-label={ADD_MENU_HOVER_LABEL}
+        title={ADD_MENU_HOVER_LABEL}
         onClick={handleClick}
-        style={buttonStyle}
+        style={{
+          ...ghostIconStyle(dark),
+          appearance: "none",
+          width: MENU_ROW_ICON_SIZE,
+          height: MENU_ROW_ICON_SIZE,
+          minWidth: MENU_ROW_ICON_SIZE,
+          minHeight: MENU_ROW_ICON_SIZE,
+        }}
       >
-        <AddMenuIcon size={prominent ? 28 : size} color="currentColor" />
+        <AddMenuIcon size={size} color="currentColor" />
       </button>
     </IconHoverLabel>
   );

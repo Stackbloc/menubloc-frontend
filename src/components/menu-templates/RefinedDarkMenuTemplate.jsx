@@ -67,6 +67,7 @@ export default function RefinedDarkMenuTemplate(ctx) {
     heroImageUrl,
     shareData,
     shareAnalyticsContext,
+    menuHeaderLeadingAction,
     franchiseSlot,
     intakeBannerSlot,
     allergenBannerSlot,
@@ -167,6 +168,7 @@ export default function RefinedDarkMenuTemplate(ctx) {
           />}
           <div style={{ minWidth: 0, flex: 1 }}>
             <MenuHeaderNameWithActions
+              leadingAction={menuHeaderLeadingAction}
               tone={tone}
               claimStatus={claimStatus}
               subscriptionPlan={subscriptionPlan}

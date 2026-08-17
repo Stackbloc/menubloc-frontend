@@ -98,6 +98,7 @@ export default function EditorialDarkMenuTemplate(ctx) {
     heroImageUrl,
     shareData,
     shareAnalyticsContext,
+    menuHeaderLeadingAction,
     franchiseSlot,
     intakeBannerSlot,
     allergenBannerSlot,
@@ -166,6 +167,7 @@ export default function EditorialDarkMenuTemplate(ctx) {
           ) : null}
           <div style={{ minWidth: 0, flex: 1 }}>
             <MenuHeaderNameWithActions
+              leadingAction={menuHeaderLeadingAction}
               tone={tone}
               claimStatus={claimStatus}
               subscriptionPlan={subscriptionPlan}

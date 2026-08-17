@@ -8,6 +8,7 @@ import {
 export default function MenuHeaderNameWithActions({
   nameSlot,
   onActionsClick,
+  leadingAction = null,
   actions,
   tone,
   claimStatus,
@@ -78,6 +79,7 @@ export default function MenuHeaderNameWithActions({
           flexShrink: 0,
         }}
       >
+        {leadingAction}
         {actions}
       </div>
     </div>

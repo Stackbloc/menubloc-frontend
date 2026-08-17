@@ -13,6 +13,7 @@ import {
   buildAddMenuLoginPath,
   buildAddMenuPath,
   canShowAddMenu,
+  ADD_MENU_HOVER_LABEL,
   hasUsableActiveMenu,
   isDiningHallEntity,
   isUnclaimedForAddMenu,
@@ -69,10 +70,21 @@ assert.equal(
   "login path preserves return"
 );
 
+const addMenuContribution = read("src/lib/addMenuContribution.js");
+assert.ok(addMenuContribution.includes("camera at the top"), "hover copy explains top camera");
+
 const addMenuAction = read("src/components/AddMenuAction.jsx");
-assert.ok(addMenuAction.includes("Add Menu"), "tooltip copy is Add Menu");
+assert.ok(addMenuAction.includes("ADD_MENU_HOVER_LABEL"), "uses shared hover copy");
 assert.ok(addMenuAction.includes("AddMenuIcon"), "uses camera-menu icon");
 assert.ok(addMenuAction.includes("buildAddMenuLoginPath"), "signed-out users go to login");
+assert.doesNotMatch(addMenuAction, /prominent/);
+
+const publicMenuPage = read("src/pages/PublicMenuPage.jsx");
+assert.ok(publicMenuPage.includes("menuHeaderLeadingAction"), "empty menu uses header rail Add Menu");
+assert.doesNotMatch(publicMenuPage, /AddMenuEmptyPlaceholder/);
+
+const menuHeaderRail = read("src/components/menu-templates/MenuHeaderIconRail.jsx");
+assert.ok(menuHeaderRail.includes("leadingAction"), "menu header accepts leading action slot");
 
 const menuCapture = read("src/pages/MenuCapturePage.jsx");
 assert.ok(menuCapture.includes("restaurantLocked"), "capture skips identity when restaurant known");

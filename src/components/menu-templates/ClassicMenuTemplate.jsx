@@ -105,6 +105,7 @@ export default function ClassicMenuTemplate(ctx) {
     heroImageUrl,
     shareData,
     shareAnalyticsContext,
+    menuHeaderLeadingAction,
     franchiseSlot,
     intakeBannerSlot,
     allergenBannerSlot,
@@ -183,6 +184,7 @@ export default function ClassicMenuTemplate(ctx) {
           ) : null}
           <div style={{ minWidth: 0, flex: 1 }}>
             <MenuHeaderNameWithActions
+              leadingAction={menuHeaderLeadingAction}
               tone={tone}
               claimStatus={claimStatus}
               subscriptionPlan={subscriptionPlan}

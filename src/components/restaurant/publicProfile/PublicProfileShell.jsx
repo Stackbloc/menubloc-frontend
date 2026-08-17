@@ -18,8 +18,7 @@ import FoodTruckUpcomingStops from "./FoodTruckUpcomingStops.jsx";
 import ProfileUpcomingEvents from "./ProfileUpcomingEvents.jsx";
 import WhatDinersAreSaying from "../WhatDinersAreSaying.jsx";
 import { pickWindowsPosts } from "../../../lib/profileWindows.js";
-import AddMenuEmptyPlaceholder from "../../AddMenuEmptyPlaceholder.jsx";
-import { canShowAddMenu, restaurantFromAddMenuContext } from "../../../lib/addMenuContribution.js";
+import { restaurantFromAddMenuContext } from "../../../lib/addMenuContribution.js";
 import { formatAddressQuery } from "../../../lib/displayAddress.js";
 import { buildGoogleMapsDirectionsUrl } from "../../../lib/catalogMenuUtils.js";
 import {
@@ -214,7 +213,6 @@ export default function PublicProfileShell({
     address: streetAddr,
     menuPreviewItems,
   });
-  const showAddMenu = !isDiningHall && canShowAddMenu(addMenuRestaurant);
 
   return (
     <div
@@ -320,8 +318,6 @@ export default function PublicProfileShell({
             <ProfileUpcomingEvents events={upcomingEvents} />
           </ProfileSection>
         ) : null}
-
-        {showAddMenu ? <AddMenuEmptyPlaceholder restaurant={addMenuRestaurant} /> : null}
 
         {allowClaimInvites ? (
           <ProfileClaimBanner claimHref={claimHref} claimState={claimState} />

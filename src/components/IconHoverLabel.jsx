@@ -4,7 +4,7 @@ import { useState } from "react";
  * Wraps an icon button and reveals a short text label on hover — the same
  * affordance used by Follow / Share / Like on public menu pages.
  */
-export default function IconHoverLabel({ label, children, style }) {
+export default function IconHoverLabel({ label, children, style, wrap = false, maxWidth = 220 }) {
   const [hovered, setHovered] = useState(false);
 
   if (!label) return children;
@@ -37,7 +37,10 @@ export default function IconHoverLabel({ label, children, style }) {
             color: "#FFFFFF",
             fontSize: 11,
             fontWeight: 600,
-            whiteSpace: "nowrap",
+            whiteSpace: wrap ? "normal" : "nowrap",
+            maxWidth: wrap ? maxWidth : undefined,
+            textAlign: wrap ? "center" : undefined,
+            lineHeight: wrap ? 1.35 : undefined,
             pointerEvents: "none",
             zIndex: 20,
             boxShadow: "0 4px 12px rgba(0, 0, 0, 0.14)",
