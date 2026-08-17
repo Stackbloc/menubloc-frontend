@@ -411,9 +411,17 @@ function localDateYmd(d = new Date()) {
 
 export const listWhatIAteToday = (eatenOn = localDateYmd()) =>
   get(`/api/consumer/what-i-ate-today?eaten_on=${encodeURIComponent(eatenOn)}`);
+export const listWhatIAteTodayCalendar = (from, to) =>
+  get(
+    `/api/consumer/what-i-ate-today/calendar?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`
+  );
 export const listPeerWhatIAteToday = (userId, eatenOn = localDateYmd()) =>
   get(
     `/api/consumer/what-i-ate-today/users/${encodeURIComponent(String(userId))}?eaten_on=${encodeURIComponent(eatenOn)}`
+  );
+export const listPeerWhatIAteTodayCalendar = (userId, from, to) =>
+  get(
+    `/api/consumer/what-i-ate-today/users/${encodeURIComponent(String(userId))}/calendar?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`
   );
 export const setWhatIAteTodayVisibility = (visible) =>
   put("/api/consumer/what-i-ate-today/visibility", { visible: Boolean(visible) });

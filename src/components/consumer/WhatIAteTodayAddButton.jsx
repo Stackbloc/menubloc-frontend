@@ -7,6 +7,7 @@ import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
 import { createWhatIAteToday, whatIAteTodayLocalDate } from "../../lib/consumerApi.js";
+import { defaultWhatIAteMealPeriod } from "../../lib/whatIAteTodayMealPeriod.js";
 
 export default function WhatIAteTodayAddButton({ menuItemId, foodName }) {
   const navigate = useNavigate();
@@ -35,6 +36,7 @@ export default function WhatIAteTodayAddButton({ menuItemId, foodName }) {
         food_name: name || "Menu item",
         menu_item_id: hasCkId ? ckId : undefined,
         eaten_on: whatIAteTodayLocalDate(),
+        meal_period: defaultWhatIAteMealPeriod(),
       });
       setNotice("Added to What I Ate Today.");
     } catch (err) {

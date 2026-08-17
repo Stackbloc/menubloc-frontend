@@ -1,15 +1,19 @@
 /**
- * Optional What I Ate Today profile section.
+ * Optional What I Ate Today profile section with calendar + meal slots.
  * Owner: add / edit / remove / visibility. Viewer: read-only if the owner opted in.
  */
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { searchReportPlaces } from "../../lib/foodActivityApi.js";
+import { restaurantPath } from "../../lib/canonicalUrlCore.js";
 import {
   createWhatIAteToday,
   deleteWhatIAteToday,
   listPeerWhatIAteToday,
+  listPeerWhatIAteTodayCalendar,
   listWhatIAteToday,
+  listWhatIAteTodayCalendar,
   resolveConsumerMediaUrl,
   setWhatIAteTodayVisibility,
   suggestWhatIAteTodayMenuItems,
@@ -17,45 +21,98 @@ import {
   uploadWhatIAteTodayPhoto,
   whatIAteTodayLocalDate,
 } from "../../lib/consumerApi.js";
+import {
+  WHAT_I_ATE_MEAL_PERIODS,
+  defaultWhatIAteMealPeriod,
+  groupEntriesByMealPeriod,
+  mealPeriodLabel,
+} from "../../lib/whatIAteTodayMealPeriod.js";
+import WhatIAteTodayCalendar, {
+  calendarRangeForMonth,
+  defaultYmdForViewMonth,
+  isYmdInViewMonth,
+} from "./WhatIAteTodayCalendar.jsx";
+import "./whatIAteTodayPage.css";
 import { accountStyles as styles } from "../../pages/consumer/accountDashboard/accountDashboardStyles.js";
 
 function entryHref(entry) {
-  if (entry?.href) return entry.href;
-  if (entry?.menu_item_id) return `/menu-items/${encodeURIComponent(String(entry.menu_item_id))}`;
-  return null;
+  if (entry?.menu_item_id) {
+    return `/menu-items/${encodeURIComponent(String(entry.menu_item_id))}`;
+  }
+  return restaurantPath({
+    slug: entry?.restaurant_slug,
+    city: entry?.restaurant_city,
+    state: entry?.restaurant_state,
+  });
+}
+
+function entryRestaurantHref(entry) {
+  if (!entry?.restaurant_id) return null;
+  return restaurantPath({
+    slug: entry?.restaurant_slug,
+    city: entry?.restaurant_city,
+    state: entry?.restaurant_state,
+  });
+}
+
+function parseSelectedMonth(selectedDate) {
+  const [y, m] = String(selectedDate || "").split("-").map(Number);
+  if (!y || !m) return new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+  return new Date(y, m - 1, 1);
 }
 
 export default function WhatIAteTodaySection({
   mode = "owner",
   peerUserId = null,
+  layout = "section",
   last = false,
 }) {
+  const isPage = layout === "page";
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [visible, setVisible] = useState(false);
   const [entries, setEntries] = useState([]);
+  const [calendarDays, setCalendarDays] = useState([]);
+  const [selectedDate, setSelectedDate] = useState(() => whatIAteTodayLocalDate());
+  const [viewMonth, setViewMonth] = useState(() => parseSelectedMonth(whatIAteTodayLocalDate()));
   const [foodName, setFoodName] = useState("");
   const [comment, setComment] = useState("");
   const [photoUrl, setPhotoUrl] = useState("");
+  const [mealPeriod, setMealPeriod] = useState(() => defaultWhatIAteMealPeriod());
   const [linked, setLinked] = useState(null);
+  const [tagRestaurant, setTagRestaurant] = useState(null);
   const [suggestions, setSuggestions] = useState([]);
   const [suggesting, setSuggesting] = useState(false);
   const [busy, setBusy] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [editName, setEditName] = useState("");
   const [editComment, setEditComment] = useState("");
+  const [editMealPeriod, setEditMealPeriod] = useState("lunch");
   const suggestTimer = useRef(null);
   const suggestAbort = useRef(null);
 
-  const load = useCallback(async () => {
-    setError("");
+  const loadCalendar = useCallback(async () => {
+    const { from, to } = calendarRangeForMonth(viewMonth);
     try {
-      const eatenOn = whatIAteTodayLocalDate();
       const data =
         mode === "viewer"
-          ? await listPeerWhatIAteToday(peerUserId, eatenOn)
-          : await listWhatIAteToday(eatenOn);
+          ? await listPeerWhatIAteTodayCalendar(peerUserId, from, to)
+          : await listWhatIAteTodayCalendar(from, to);
+      setCalendarDays(Array.isArray(data.days) ? data.days : []);
+      if (mode === "viewer") setVisible(data.visible === true);
+    } catch {
+      setCalendarDays([]);
+    }
+  }, [mode, peerUserId, viewMonth]);
+
+  const loadDay = useCallback(async () => {
+    setError("");
+    try {
+      const data =
+        mode === "viewer"
+          ? await listPeerWhatIAteToday(peerUserId, selectedDate)
+          : await listWhatIAteToday(selectedDate);
       setVisible(data.visible === true);
       setEntries(Array.isArray(data.entries) ? data.entries : []);
     } catch (err) {
@@ -64,11 +121,15 @@ export default function WhatIAteTodaySection({
     } finally {
       setLoading(false);
     }
-  }, [mode, peerUserId]);
+  }, [mode, peerUserId, selectedDate]);
 
   useEffect(() => {
-    load();
-  }, [load]);
+    loadCalendar();
+  }, [loadCalendar]);
+
+  useEffect(() => {
+    loadDay();
+  }, [loadDay]);
 
   useEffect(() => {
     return () => {
@@ -142,17 +203,21 @@ export default function WhatIAteTodaySection({
       await createWhatIAteToday({
         food_name: name,
         menu_item_id: linked?.menu_item_id || undefined,
+        restaurant_id: linked?.menu_item_id ? undefined : tagRestaurant?.restaurant_id || undefined,
         comment: comment.trim() || undefined,
         photo_url: photoUrl || undefined,
-        eaten_on: whatIAteTodayLocalDate(),
+        eaten_on: selectedDate,
+        meal_period: mealPeriod,
       });
       setFoodName("");
       setComment("");
       setPhotoUrl("");
       setLinked(null);
+      setTagRestaurant(null);
       setSuggestions([]);
-      setNotice("Added to What I Ate Today.");
-      await load();
+      setMealPeriod(defaultWhatIAteMealPeriod());
+      setNotice("Added to your food diary.");
+      await Promise.all([loadDay(), loadCalendar()]);
     } catch (err) {
       setError(err.message || "Unable to add food");
     } finally {
@@ -167,9 +232,10 @@ export default function WhatIAteTodaySection({
       await updateWhatIAteToday(entry.id, {
         food_name: editName.trim() || entry.food_name,
         comment: editComment,
+        meal_period: editMealPeriod,
       });
       setEditingId(null);
-      await load();
+      await Promise.all([loadDay(), loadCalendar()]);
     } catch (err) {
       setError(err.message || "Unable to update");
     } finally {
@@ -182,7 +248,7 @@ export default function WhatIAteTodaySection({
     setError("");
     try {
       await deleteWhatIAteToday(id);
-      await load();
+      await Promise.all([loadDay(), loadCalendar()]);
     } catch (err) {
       setError(err.message || "Unable to remove");
     } finally {
@@ -190,66 +256,70 @@ export default function WhatIAteTodaySection({
     }
   }
 
-  if (mode === "viewer") {
-    if (loading) return null;
-    if (!visible || entries.length === 0) return null;
-    return (
-      <section style={{ marginTop: 16 }} data-testid="what-i-ate-today">
-        <h2 style={{ ...styles.sectionTitle, marginBottom: 8 }}>What I Ate Today</h2>
-        <EntryList entries={entries} />
-      </section>
-    );
+  function handleSelectDate(ymd) {
+    setSelectedDate(ymd || whatIAteTodayLocalDate());
+    setViewMonth(parseSelectedMonth(ymd));
+    setLoading(true);
   }
 
-  if (loading) {
-    return <p style={styles.muted}>Loading What I Ate Today…</p>;
+  function handleViewMonthChange(nextMonth) {
+    setViewMonth(nextMonth);
+    setSelectedDate((prev) => {
+      if (isYmdInViewMonth(prev, nextMonth)) return prev;
+      return defaultYmdForViewMonth(nextMonth);
+    });
+    setLoading(true);
   }
 
-  return (
-    <section
-      style={{ ...styles.section, ...(last ? styles.sectionLast : null) }}
-      data-testid="what-i-ate-today"
-    >
-      <div style={styles.sectionHead}>
-        <h2 style={styles.sectionTitle}>What I Ate Today</h2>
-      </div>
-      <p style={styles.sectionDesc}>
-        Optional. Add what you ate — restaurant food, something at home, a snack, leftovers.
-        Link a Menuply menu item when it applies. Lookup never blocks posting.
-      </p>
-      {error ? <p style={styles.statusErr}>{error}</p> : null}
-      {notice ? <p style={styles.statusOk}>{notice}</p> : null}
+  const grouped = groupEntriesByMealPeriod(entries);
+  const isToday = selectedDate === whatIAteTodayLocalDate();
 
-      <label style={styles.checkLabel || localStyles.check}>
-        <input
-          type="checkbox"
-          checked={visible}
-          disabled={busy}
-          onChange={handleToggleVisible}
-        />
-        Show this section on my profile
-      </label>
+  const calendarBlock = (
+    <WhatIAteTodayCalendar
+      selectedDate={selectedDate}
+      onSelectDate={handleSelectDate}
+      viewMonth={viewMonth}
+      onViewMonthChange={handleViewMonthChange}
+      dayCounts={calendarDays}
+      readOnly={mode === "viewer"}
+    />
+  );
 
-      <EntryList
-        entries={entries}
-        owner
-        busy={busy}
-        editingId={editingId}
-        editName={editName}
-        editComment={editComment}
-        onEditName={setEditName}
-        onEditComment={setEditComment}
-        onStartEdit={(entry) => {
-          setEditingId(entry.id);
-          setEditName(entry.food_name || "");
-          setEditComment(entry.comment || "");
-        }}
-        onCancelEdit={() => setEditingId(null)}
-        onSaveEdit={handleSaveEdit}
-        onRemove={handleRemove}
-      />
+  const entriesBlock = (
+    <GroupedEntryList
+      grouped={grouped}
+      owner={mode === "owner"}
+      busy={busy}
+      editingId={editingId}
+      editName={editName}
+      editComment={editComment}
+      editMealPeriod={editMealPeriod}
+      onEditName={setEditName}
+      onEditComment={setEditComment}
+      onEditMealPeriod={setEditMealPeriod}
+      onStartEdit={(entry) => {
+        setEditingId(entry.id);
+        setEditName(entry.food_name || "");
+        setEditComment(entry.comment || "");
+        setEditMealPeriod(entry.meal_period || defaultWhatIAteMealPeriod());
+      }}
+      onCancelEdit={() => setEditingId(null)}
+      onSaveEdit={handleSaveEdit}
+      onRemove={handleRemove}
+      emptyLabel={
+        mode === "owner"
+          ? isToday
+            ? "Nothing added today yet."
+            : "Nothing logged for this day."
+          : "Nothing logged for this day."
+      }
+    />
+  );
 
+  const addForm =
+    mode === "owner" ? (
       <form onSubmit={handlePost} style={localStyles.form}>
+        <MealPeriodPicker value={mealPeriod} onChange={setMealPeriod} disabled={busy} />
         <div style={styles.field}>
           <label style={styles.fieldLabel} htmlFor="what-i-ate-food-name">
             What did you eat?
@@ -264,6 +334,7 @@ export default function WhatIAteTodaySection({
               if (linked && next.trim() !== String(linked.item_name || "").trim()) {
                 setLinked(null);
               }
+              if (tagRestaurant) setTagRestaurant(null);
               runSuggest(next);
             }}
             placeholder="Chicken sandwich, banana, leftover pasta…"
@@ -273,13 +344,28 @@ export default function WhatIAteTodaySection({
         </div>
         {linked ? (
           <p style={styles.muted}>
-            Linked: {linked.item_name}
-            {linked.restaurant_name ? ` · ${linked.restaurant_name}` : ""}
-            {" "}
-            <button type="button" style={styles.textBtn} onClick={() => setLinked(null)}>
+            Menu item: {linked.item_name}
+            {linked.restaurant_name ? ` · ${linked.restaurant_name}` : ""}{" "}
+            <button
+              type="button"
+              style={styles.textBtn}
+              onClick={() => {
+                setLinked(null);
+              }}
+            >
               Unlink
             </button>
           </p>
+        ) : null}
+        {!linked ? (
+          <WhatIAteTagPicker
+            restaurant={tagRestaurant}
+            onRestaurantChange={(next) => {
+              setTagRestaurant(next);
+              if (next?.restaurant_id) setLinked(null);
+            }}
+            disabled={busy}
+          />
         ) : null}
         {suggesting ? <p style={styles.muted}>Looking up menu items…</p> : null}
         {suggestions.length > 0 ? (
@@ -291,6 +377,7 @@ export default function WhatIAteTodaySection({
                   style={localStyles.suggestBtn}
                   onClick={() => {
                     setLinked(s);
+                    setTagRestaurant(null);
                     setFoodName(s.item_name || "");
                     setSuggestions([]);
                   }}
@@ -332,10 +419,322 @@ export default function WhatIAteTodaySection({
           style={styles.primaryBtn}
           disabled={busy || !(foodName.trim() || linked)}
         >
-          {busy ? "Posting…" : "Add food"}
+          {busy ? "Posting…" : `Add to ${mealPeriodLabel(mealPeriod)}`}
         </button>
       </form>
+    ) : null;
+
+  const diaryBody = isPage ? (
+    <div className="what-i-ate-page-grid">
+      <div>{calendarBlock}</div>
+      <div className="what-i-ate-diary-col">
+        {entriesBlock}
+        {addForm}
+      </div>
+    </div>
+  ) : (
+    <>
+      {calendarBlock}
+      {entriesBlock}
+    </>
+  );
+
+  const ownerIntro = (
+    <p style={styles.sectionDesc}>
+      Optional food diary. Pick a day on the calendar, log by meal slot, and let Connections browse
+      your eating patterns when you turn sharing on. Just what you ate — not nutrition tracking.
+    </p>
+  );
+
+  const viewerIntro = (
+    <p style={styles.sectionDesc}>
+      A dated food diary by meal — breakfast through late night. Connections only when shared.
+    </p>
+  );
+
+  if (mode === "viewer") {
+    if (loading) {
+      return isPage ? <p style={styles.muted}>Loading food diary…</p> : null;
+    }
+    if (!visible) {
+      if (isPage) {
+        return (
+          <div className="what-i-ate-page-root" data-testid="what-i-ate-today">
+            <p style={styles.muted}>This Connection has not turned on food diary sharing.</p>
+          </div>
+        );
+      }
+      return null;
+    }
+    const hasAnyHistory = calendarDays.some((d) => (d.entry_count || 0) > 0);
+    if (!hasAnyHistory && entries.length === 0 && !isPage) return null;
+    if (isPage) {
+      return (
+        <div className="what-i-ate-page-root" data-testid="what-i-ate-today">
+          {viewerIntro}
+          {error ? <p style={styles.statusErr}>{error}</p> : null}
+          {diaryBody}
+        </div>
+      );
+    }
+    return (
+      <section style={{ marginTop: 16 }} data-testid="what-i-ate-today">
+        <h2 style={{ ...styles.sectionTitle, marginBottom: 8 }}>What I Ate</h2>
+        {viewerIntro}
+        {diaryBody}
+      </section>
+    );
+  }
+
+  if (loading) {
+    return <p style={styles.muted}>Loading What I Ate Today…</p>;
+  }
+
+  if (isPage) {
+    return (
+      <div
+        className="what-i-ate-page-root"
+        data-testid="what-i-ate-today"
+        style={last ? { marginBottom: 0 } : undefined}
+      >
+        {ownerIntro}
+        {error ? <p style={styles.statusErr}>{error}</p> : null}
+        {notice ? <p style={styles.statusOk}>{notice}</p> : null}
+        <label style={localStyles.check}>
+          <input
+            type="checkbox"
+            checked={visible}
+            disabled={busy}
+            onChange={handleToggleVisible}
+          />
+          Show my food diary to Connections and on tagged restaurant profiles and on tagged restaurant profiles
+        </label>
+        {diaryBody}
+      </div>
+    );
+  }
+
+  return (
+    <section
+      style={{ ...styles.section, ...(last ? styles.sectionLast : null) }}
+      data-testid="what-i-ate-today"
+    >
+      <div style={styles.sectionHead}>
+        <h2 style={styles.sectionTitle}>What I Ate</h2>
+      </div>
+      {ownerIntro}
+      {error ? <p style={styles.statusErr}>{error}</p> : null}
+      {notice ? <p style={styles.statusOk}>{notice}</p> : null}
+      <label style={localStyles.check}>
+        <input
+          type="checkbox"
+          checked={visible}
+          disabled={busy}
+          onChange={handleToggleVisible}
+        />
+        Show my food diary to Connections and on tagged restaurant profiles
+      </label>
+      {diaryBody}
+      {addForm}
     </section>
+  );
+}
+
+function WhatIAteTagPicker({ restaurant, onRestaurantChange, disabled = false }) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const q = query.trim();
+    if (!open || q.length < 2) {
+      setResults([]);
+      return undefined;
+    }
+    const handle = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const data = await searchReportPlaces({ type: "restaurant", q, limit: 8 });
+        setResults(data.results || []);
+      } catch {
+        setResults([]);
+      } finally {
+        setLoading(false);
+      }
+    }, 250);
+    return () => clearTimeout(handle);
+  }, [open, query]);
+
+  if (restaurant?.restaurant_id) {
+    return (
+      <p style={styles.muted} data-testid="what-i-ate-tag-restaurant">
+        Restaurant: {restaurant.restaurant_name}{" "}
+        <button
+          type="button"
+          style={styles.textBtn}
+          disabled={disabled}
+          onClick={() => onRestaurantChange(null)}
+        >
+          Unlink
+        </button>
+      </p>
+    );
+  }
+
+  return (
+    <div style={localStyles.tagPicker} data-testid="what-i-ate-tag-picker">
+      {!open ? (
+        <button
+          type="button"
+          style={styles.textBtn}
+          disabled={disabled}
+          onClick={() => setOpen(true)}
+        >
+          Tag a restaurant (optional)
+        </button>
+      ) : (
+        <>
+          <label style={styles.fieldLabel} htmlFor="what-i-ate-tag-restaurant">
+            Tag restaurant
+          </label>
+          <input
+            id="what-i-ate-tag-restaurant"
+            style={styles.input}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search restaurants…"
+            autoComplete="off"
+          />
+          {loading ? <p style={styles.muted}>Searching…</p> : null}
+          {results.length > 0 ? (
+            <ul style={localStyles.suggestList}>
+              {results.map((row) => (
+                <li key={row.restaurant_id}>
+                  <button
+                    type="button"
+                    style={localStyles.suggestBtn}
+                    onClick={() => {
+                      onRestaurantChange(row);
+                      setOpen(false);
+                      setQuery("");
+                      setResults([]);
+                    }}
+                  >
+                    <span style={styles.actionTitle}>{row.restaurant_name}</span>
+                    <span style={styles.muted}>
+                      {[row.city, row.state].filter(Boolean).join(", ")}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          <button type="button" style={styles.textBtn} onClick={() => setOpen(false)}>
+            Cancel
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
+function MealPeriodPicker({ value, onChange, disabled = false }) {
+  return (
+    <div style={localStyles.mealPicker} data-testid="what-i-ate-meal-period">
+      <p style={styles.fieldLabel}>Meal</p>
+      <div style={styles.chipWrap}>
+        {WHAT_I_ATE_MEAL_PERIODS.map((period) => (
+          <button
+            key={period.id}
+            type="button"
+            disabled={disabled}
+            aria-pressed={value === period.id}
+            onClick={() => onChange(period.id)}
+            style={{
+              ...styles.chip,
+              ...(value === period.id ? styles.chipSelected : null),
+            }}
+          >
+            {period.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function GroupedEntryList({
+  grouped,
+  owner,
+  busy,
+  editingId,
+  editName,
+  editComment,
+  editMealPeriod,
+  onEditName,
+  onEditComment,
+  onEditMealPeriod,
+  onStartEdit,
+  onCancelEdit,
+  onSaveEdit,
+  onRemove,
+  emptyLabel,
+}) {
+  const hasAny =
+    WHAT_I_ATE_MEAL_PERIODS.some(({ id }) => grouped.buckets[id]?.length) || grouped.other.length > 0;
+  if (!hasAny) {
+    return owner || emptyLabel ? <p style={styles.muted}>{emptyLabel}</p> : null;
+  }
+  return (
+    <div style={localStyles.grouped}>
+      {WHAT_I_ATE_MEAL_PERIODS.map(({ id, label }) => {
+        const items = grouped.buckets[id] || [];
+        if (!items.length) return null;
+        return (
+          <section key={id} style={localStyles.mealBlock} data-testid={`what-i-ate-meal-${id}`}>
+            <h3 style={localStyles.mealTitle}>{label}</h3>
+            <EntryList
+              entries={items}
+              owner={owner}
+              busy={busy}
+              editingId={editingId}
+              editName={editName}
+              editComment={editComment}
+              editMealPeriod={editMealPeriod}
+              onEditName={onEditName}
+              onEditComment={onEditComment}
+              onEditMealPeriod={onEditMealPeriod}
+              onStartEdit={onStartEdit}
+              onCancelEdit={onCancelEdit}
+              onSaveEdit={onSaveEdit}
+              onRemove={onRemove}
+            />
+          </section>
+        );
+      })}
+      {grouped.other.length > 0 ? (
+        <section style={localStyles.mealBlock}>
+          <h3 style={localStyles.mealTitle}>Other</h3>
+          <EntryList
+            entries={grouped.other}
+            owner={owner}
+            busy={busy}
+            editingId={editingId}
+            editName={editName}
+            editComment={editComment}
+            editMealPeriod={editMealPeriod}
+            onEditName={onEditName}
+            onEditComment={onEditComment}
+            onEditMealPeriod={onEditMealPeriod}
+            onStartEdit={onStartEdit}
+            onCancelEdit={onCancelEdit}
+            onSaveEdit={onSaveEdit}
+            onRemove={onRemove}
+          />
+        </section>
+      ) : null}
+    </div>
   );
 }
 
@@ -346,20 +745,20 @@ function EntryList({
   editingId = null,
   editName = "",
   editComment = "",
+  editMealPeriod = "lunch",
   onEditName,
   onEditComment,
+  onEditMealPeriod,
   onStartEdit,
   onCancelEdit,
   onSaveEdit,
   onRemove,
 }) {
-  if (!entries.length) {
-    return owner ? <p style={styles.muted}>Nothing added today yet.</p> : null;
-  }
   return (
     <ul style={localStyles.list}>
       {entries.map((entry) => {
         const href = entryHref(entry);
+        const restaurantHref = entryRestaurantHref(entry);
         const nameNode = href ? (
           <Link to={href} style={localStyles.itemLink}>
             {entry.food_name}
@@ -371,6 +770,7 @@ function EntryList({
           <li key={entry.id} style={localStyles.row}>
             {editingId === entry.id ? (
               <div style={{ display: "grid", gap: 8, flex: 1 }}>
+                <MealPeriodPicker value={editMealPeriod} onChange={onEditMealPeriod} disabled={busy} />
                 <input
                   style={styles.input}
                   value={editName}
@@ -397,8 +797,28 @@ function EntryList({
               <>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <p style={{ margin: 0 }}>{nameNode}</p>
+                  {entry.item_name && entry.menu_item_id ? (
+                    <p style={styles.muted}>
+                      Menu item:{" "}
+                      <Link
+                        to={`/menu-items/${encodeURIComponent(String(entry.menu_item_id))}`}
+                        style={localStyles.itemLink}
+                      >
+                        {entry.item_name}
+                      </Link>
+                    </p>
+                  ) : null}
                   {entry.restaurant_name ? (
-                    <p style={styles.muted}>{entry.restaurant_name}</p>
+                    <p style={styles.muted}>
+                      {entry.menu_item_id ? "at " : "Restaurant: "}
+                      {restaurantHref ? (
+                        <Link to={restaurantHref} style={localStyles.itemLink}>
+                          {entry.restaurant_name}
+                        </Link>
+                      ) : (
+                        entry.restaurant_name
+                      )}
+                    </p>
                   ) : null}
                   {entry.comment ? <p style={styles.muted}>{entry.comment}</p> : null}
                   {entry.photo_url ? (
@@ -448,7 +868,17 @@ const localStyles = {
     margin: "0 0 14px",
   },
   form: { display: "grid", gap: 10, marginTop: 12 },
-  list: { listStyle: "none", padding: 0, margin: "0 0 12px", display: "grid", gap: 10 },
+  mealPicker: { marginBottom: 4 },
+  grouped: { display: "grid", gap: 14, margin: "0 0 12px" },
+  mealBlock: { padding: "0 0 4px" },
+  mealTitle: {
+    margin: "0 0 6px",
+    fontSize: 14,
+    fontWeight: 800,
+    color: "#334155",
+    letterSpacing: "-0.01em",
+  },
+  list: { listStyle: "none", padding: 0, margin: 0, display: "grid", gap: 10 },
   row: {
     display: "flex",
     alignItems: "flex-start",
@@ -471,6 +901,7 @@ const localStyles = {
     borderRadius: 8,
   },
   suggestList: { listStyle: "none", padding: 0, margin: 0, display: "grid", gap: 4 },
+  tagPicker: { margin: "0 0 8px" },
   suggestBtn: {
     width: "100%",
     textAlign: "left",

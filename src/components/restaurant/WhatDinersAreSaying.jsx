@@ -13,6 +13,7 @@ import { profileReadableSurfaceStyle } from "./publicProfile/profilePrimitives.j
 import DinerStatusFeed from "../dinerStatus/DinerStatusFeed.jsx";
 import ImEatingAtPanel from "../foodActivity/ImEatingAtPanel.jsx";
 import JoinMeNowStrip from "../foodActivity/JoinMeNowStrip.jsx";
+import WhatIAteTodayAtRestaurant from "./WhatIAteTodayAtRestaurant.jsx";
 
 function dinerLabel(activity) {
   const name = String(activity?.display_name || "").trim();
@@ -171,6 +172,8 @@ export default function WhatDinersAreSaying({
             ))}
           </div>
         ) : null}
+
+        {experienceMode ? null : <WhatIAteTodayAtRestaurant restaurantId={restaurantId} />}
 
         {restaurantId ? (
           <ImEatingAtPanel

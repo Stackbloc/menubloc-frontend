@@ -148,18 +148,30 @@ test("every dashboard button has an action and links map to App routes", () => {
   }
 });
 
-test("profile and social tabs mount optional What I Ate Today", () => {
+test("profile and social tabs link to dedicated What I Ate page", () => {
   const profile = read("src/pages/consumer/accountDashboard/ProfileTab.jsx");
   const social = read("src/pages/consumer/accountDashboard/SocialCrewTab.jsx");
   const section = read("src/components/consumer/WhatIAteTodaySection.jsx");
+  const page = read("src/pages/consumer/WhatIAteTodayPage.jsx");
   const api = read("src/lib/consumerApi.js");
-  assert.match(profile, /WhatIAteTodaySection/);
-  assert.match(social, /WhatIAteTodaySection/);
-  assert.match(section, /Show this section on my profile/);
+  const app = read("src/App.jsx");
+  assert.match(profile, /\/account\/what-i-ate/);
+  assert.match(social, /\/account\/what-i-ate/);
+  assert.match(social, /\/account\/im-eating/);
+  assert.match(social, /data-testid="what-i-ate-social"/);
+  assert.doesNotMatch(social, /WhatIAteTodaySection/);
+  assert.doesNotMatch(social, /ImEatingAtPanel/);
+  assert.match(page, /WhatIAteTodaySection/);
+  assert.match(page, /layout="page"/);
+  assert.match(section, /Show my food diary to Connections and on tagged restaurant profiles/);
+  assert.match(section, /layout === "page"/);
+  assert.match(section, /what-i-ate-page-grid/);
   assert.match(section, /suggestWhatIAteTodayMenuItems/);
+  assert.match(app, /\/account\/what-i-ate/);
+  assert.match(app, /\/account\/connections\/:peerId\/what-i-ate/);
   assert.match(api, /\/api\/consumer\/what-i-ate-today\/suggestions/);
   assert.doesNotMatch(api, /what-i-ate-today[\s\S]*\/search/);
-  assert.doesNotMatch(section, /calorie|meal planner|food type taxonomy/i);
+  assert.doesNotMatch(section, /meal planner|food type taxonomy|nutrition score|calorie count/i);
 });
 
 test("social tab shows connection count, clickable connections, groups, and events", () => {

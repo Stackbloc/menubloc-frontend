@@ -9,7 +9,6 @@ import StickyPageHeader from "../../components/StickyPageHeader.jsx";
 import BottomNav from "../../components/BottomNav.jsx";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
 import { listConnections } from "../../lib/consumerApi.js";
-import WhatIAteTodaySection from "../../components/consumer/WhatIAteTodaySection.jsx";
 
 export default function ConsumerConnectionPeerPage() {
   const navigate = useNavigate();
@@ -69,15 +68,18 @@ export default function ConsumerConnectionPeerPage() {
               <Link to={`/account/what-we-doing?with=${encodeURIComponent(String(peer.id))}`} style={styles.primaryBtn}>
                 Start a plan
               </Link>
+              <Link
+                to={`/account/connections/${encodeURIComponent(String(peer.id))}/what-i-ate`}
+                style={styles.secondaryBtn}
+              >
+                What I Ate
+              </Link>
               <Link to="/account/connections" style={styles.secondaryBtn}>
                 All Connections
               </Link>
             </div>
           </section>
         )}
-        {connection?.peer?.id ? (
-          <WhatIAteTodaySection mode="viewer" peerUserId={connection.peer.id} />
-        ) : null}
         <p style={{ marginTop: 24 }}>
           <Link to="/account?tab=social" style={styles.link}>
             Back to Social

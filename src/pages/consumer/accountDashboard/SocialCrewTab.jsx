@@ -16,8 +16,6 @@ import { buildDiningCrewInviteShareData } from "../../../lib/diningCrewInviteSha
 import { formatWhatWeDoingTitle } from "../../../lib/whatWeDoingTitle.js";
 import AccountActionLink from "./AccountActionLink.jsx";
 import { accountStyles as styles } from "./accountDashboardStyles.js";
-import ImEatingAtPanel from "../../../components/foodActivity/ImEatingAtPanel.jsx";
-import WhatIAteTodaySection from "../../../components/consumer/WhatIAteTodaySection.jsx";
 
 function memberNames(crew) {
   const members = crew?.members_preview || crew?.members || [];
@@ -223,7 +221,37 @@ export default function SocialCrewTab() {
         )}
       </section>
 
-      <WhatIAteTodaySection />
+      <section style={styles.section} data-testid="im-eating-at-social">
+        <div style={styles.sectionHead}>
+          <h2 style={styles.sectionTitle}>I&apos;m Eating At</h2>
+        </div>
+        <p style={styles.sectionDesc}>
+          Tell Menuply where you&apos;re eating and what you&apos;re experiencing. After you share,
+          you can optionally turn on Join Me — I&apos;m here now, come join me.
+        </p>
+        <AccountActionLink
+          to="/account/im-eating"
+          title="Share where you're eating"
+          description="Full-page composer, recent activity, and Join Me."
+          actionLabel="Open"
+        />
+      </section>
+
+      <section style={styles.section} data-testid="what-i-ate-social">
+        <div style={styles.sectionHead}>
+          <h2 style={styles.sectionTitle}>What I Ate</h2>
+        </div>
+        <p style={styles.sectionDesc}>
+          Optional dated food diary by meal — calendar, breakfast through late night, Connections-only
+          sharing.
+        </p>
+        <AccountActionLink
+          to="/account/what-i-ate"
+          title="Open food diary"
+          description="Pick a day, log by meal slot, browse your eating patterns."
+          actionLabel="Open"
+        />
+      </section>
 
       <section style={styles.section} data-testid="social-groups">
         <div style={styles.sectionHead}>
@@ -333,18 +361,7 @@ export default function SocialCrewTab() {
         )}
       </section>
 
-      <section style={styles.section} data-testid="im-eating-at-social">
-        <div style={styles.sectionHead}>
-          <h2 style={styles.sectionTitle}>I&apos;m Eating At</h2>
-        </div>
-        <p style={styles.sectionDesc}>
-          Tell Menuply where you&apos;re eating and what you&apos;re experiencing. After you
-          share, you can optionally turn on Join Me — I&apos;m here now, come join me.
-        </p>
-        <ImEatingAtPanel compact onPosted={() => {}} />
-      </section>
-
-      <section style={styles.section}>
+      <section style={styles.section} data-testid="social-groups">
         <div style={styles.sectionHead}>
           <h2 style={styles.sectionTitle}>Dining invitations</h2>
           <Link to="/account/what-we-doing" style={styles.textBtn}>

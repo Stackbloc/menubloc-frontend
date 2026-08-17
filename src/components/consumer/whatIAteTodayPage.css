@@ -1,0 +1,21 @@
+/* Full-page What I Ate layout — calendar + diary side by side on wider screens */
+.what-i-ate-page-grid {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: 1fr;
+  align-items: start;
+}
+
+@media (min-width: 720px) {
+  .what-i-ate-page-grid {
+    grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+  }
+}
+
+.what-i-ate-page-root {
+  width: 100%;
+}
+
+.what-i-ate-diary-col {
+  min-width: 0;
+}

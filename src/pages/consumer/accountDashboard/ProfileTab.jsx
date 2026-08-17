@@ -12,7 +12,6 @@ import { accountStyles as styles } from "./accountDashboardStyles.js";
 import AccountActionLink from "./AccountActionLink.jsx";
 import PreferenceChips from "./PreferenceChips.jsx";
 import SummaryEditSection from "./SummaryEditSection.jsx";
-import WhatIAteTodaySection from "../../../components/consumer/WhatIAteTodaySection.jsx";
 
 function SaveStatus({ status, isError }) {
   if (!status) return null;
@@ -265,7 +264,20 @@ export default function ProfileTab({
         />
       </SummaryEditSection>
 
-      <WhatIAteTodaySection />
+      <section style={styles.section}>
+        <h2 style={styles.sectionTitle}>What I Ate</h2>
+        <p style={styles.sectionDesc}>
+          Optional dated food diary by meal — open the full calendar to log and browse your eating
+          patterns.
+        </p>
+        <AccountActionLink
+          to="/account/what-i-ate"
+          title="Open food diary"
+          description="Calendar, meal slots, and Connections-only sharing."
+          actionLabel="Open"
+          last
+        />
+      </section>
 
       <section style={{ ...styles.section, ...styles.sectionLast }}>
         <div style={styles.sectionHead}>

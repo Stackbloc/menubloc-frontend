@@ -70,6 +70,8 @@ import DiningCrewsPage, {
   DiningCrewInvitePage,
 } from "./pages/consumer/DiningCrewsPage.jsx";
 import ImEatingPage from "./pages/consumer/ImEatingPage.jsx";
+import WhatIAteTodayPage from "./pages/consumer/WhatIAteTodayPage.jsx";
+import ConnectionPeerWhatIAtePage from "./pages/consumer/ConnectionPeerWhatIAtePage.jsx";
 import DinerStatusPage from "./pages/consumer/DinerStatusPage.jsx";
 import ClusterSubscriptionsPage from "./pages/consumer/ClusterSubscriptionsPage.jsx";
 import SocialOnboardingPage from "./pages/consumer/SocialOnboardingPage.jsx";
@@ -913,6 +915,7 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
         <Route path="/account/welcome" element={crmHost ? <HostRouteRedirect to="/crm" /> : <AccountWelcome />} />
         <Route path="/account/social-onboarding" element={crmHost ? <HostRouteRedirect to="/crm" /> : <SocialOnboardingPage />} />
         <Route path="/account/following" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ConsumerFollowing />} />
+        <Route path="/account/connections/:peerId/what-i-ate" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ConnectionPeerWhatIAtePage />} />
         <Route path="/account/connections/:peerId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ConsumerConnectionPeerPage />} />
         <Route path="/account/connections" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ConsumerConnections />} />
         <Route path="/account/diner-qr" element={crmHost ? <HostRouteRedirect to="/crm" /> : <DinerQrPage />} />
@@ -926,6 +929,7 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
         <Route path="/account/dining-crews/invite/:token" element={crmHost ? <HostRouteRedirect to="/crm" /> : <DiningCrewInvitePage />} />
         <Route path="/account/dining-crews/:crewId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <DiningCrewDetailPage />} />
         <Route path="/account/im-eating" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ImEatingPage />} />
+        <Route path="/account/what-i-ate" element={crmHost ? <HostRouteRedirect to="/crm" /> : <WhatIAteTodayPage />} />
         <Route path="/account/diner-status" element={crmHost ? <HostRouteRedirect to="/crm" /> : <DinerStatusPage />} />
         <Route path="/account/cluster-subscriptions" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ClusterSubscriptionsPage />} />
         <Route path="/account/feedback" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ConsumerOrderFeedbackPage />} />
