@@ -25,7 +25,7 @@ test("App mounts /account/meet-me-here; account links to Meet Me Here", () => {
   const app = read("src/App.jsx");
   assert.match(app, /MeetMeHerePage/);
   assert.match(app, /\/account\/meet-me-here/);
-  const profile = read("src/pages/consumer/ConsumerProfile.jsx");
+  const profile = read("src/pages/consumer/accountDashboard/SocialCrewTab.jsx");
   assert.match(profile, /\/account\/meet-me-here/);
 });
 

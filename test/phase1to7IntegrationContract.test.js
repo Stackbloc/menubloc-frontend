@@ -33,7 +33,7 @@ test("Meet Me Here and Personal Diner QR remain separate pages", () => {
 });
 
 test("Account exposes Meet Me Here and Diner QR entry points", () => {
-  const profile = read("src/pages/consumer/ConsumerProfile.jsx");
+  const profile = read("src/pages/consumer/accountDashboard/SocialCrewTab.jsx");
   assert.match(profile, /\/account\/diner-qr/);
   assert.match(profile, /\/account\/meet-me-here/);
 });

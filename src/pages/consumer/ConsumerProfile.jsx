@@ -2,13 +2,13 @@
  * ============================================================
  * Path: menubloc-frontend/src/pages/consumer/ConsumerProfile.jsx
  * Purpose:
- *   Consumer account settings page.
- *   Single-save profile/preferences workflow.
+ *   Consumer /account dashboard — four tabs:
+ *   Profile, Social & Crew, Wallet & Activity, Security & Account.
  * ============================================================
  */
 
 import React, { useState, useEffect, useCallback } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
 import StickyPageHeader from "../../components/StickyPageHeader.jsx";
 import BottomNav from "../../components/BottomNav.jsx";
@@ -29,86 +29,19 @@ import { fetchMyClusters } from "../../lib/clusterApi.js";
 import { useLanguage } from "../../context/LanguageContext.jsx";
 import SmsAuthModal from "../../components/auth/SmsAuthModal.jsx";
 import { getEduVerificationFromConsumer } from "../../lib/eduVerificationDisplay.js";
-
-const DIETARY_OPTIONS = [
-  { key: "vegetarian", label: "Vegetarian" },
-  { key: "vegan", label: "Vegan" },
-  { key: "gluten_free", label: "Gluten-free" },
-  { key: "dairy_free", label: "Dairy-free" },
-  { key: "low_carb", label: "Low-carb" },
-  { key: "high_protein", label: "High protein" },
-  { key: "low_sodium", label: "Low sodium" },
-  { key: "diabetic_friendly", label: "Diabetic-friendly" },
-  { key: "nut_free", label: "Nut-free" },
-  { key: "keto", label: "Keto" },
-];
-
-const ALLERGEN_OPTIONS = [
-  { key: "peanuts", label: "Peanuts" },
-  { key: "tree_nuts", label: "Tree nuts" },
-  { key: "dairy", label: "Dairy" },
-  { key: "gluten", label: "Gluten" },
-  { key: "shellfish", label: "Shellfish" },
-  { key: "soy", label: "Soy" },
-  { key: "eggs", label: "Eggs" },
-  { key: "fish", label: "Fish" },
-  { key: "sesame", label: "Sesame" },
-  { key: "wheat", label: "Wheat" },
-];
-const ALLERGEN_NONE_KEY = "__none__";
-
-const FOODS_TO_AVOID_OPTIONS = [
-  { key: "spicy_foods",  label: "Spicy Foods" },
-  { key: "mushrooms",    label: "Mushrooms" },
-  { key: "onions",       label: "Onions" },
-  { key: "tomatoes",     label: "Tomatoes" },
-  { key: "olives",       label: "Olives" },
-  { key: "cilantro",     label: "Cilantro" },
-  { key: "seafood",      label: "Seafood" },
-  { key: "anchovies",    label: "Anchovies" },
-  { key: "blue_cheese",  label: "Blue Cheese" },
-  { key: "coconut",      label: "Coconut" },
-  { key: "pickles",      label: "Pickles" },
-  { key: "organ_meats",  label: "Organ Meats" },
-  { key: "fried_foods",  label: "Fried Foods" },
-];
-
-function PreferenceToggle({ label, checked, onChange, disabled = false }) {
-  return (
-    <label style={{ ...styles.prefToggle, ...(disabled ? styles.prefToggleDisabled : null) }}>
-      <input
-        type="checkbox"
-        checked={checked}
-        disabled={disabled}
-        onChange={(e) => onChange(e.target.checked)}
-        style={styles.checkbox}
-      />
-      <span style={styles.prefLabel}>{label}</span>
-    </label>
-  );
-}
-
-function Section({ title, children, id }) {
-  return (
-    <div id={id} style={styles.section}>
-      <h2 style={styles.sectionTitle}>{title}</h2>
-      {children}
-    </div>
-  );
-}
-
-function SaveStatus({ status, isError = false }) {
-  if (!status) return null;
-  return (
-    <span style={{ ...styles.saveStatus, color: isError ? "#F87171" : "#22C55E" }}>
-      {status}
-    </span>
-  );
-}
-
-function formatMoney(cents) {
-  return `$${(Number(cents || 0) / 100).toFixed(2)}`;
-}
+import AccountTabNav from "./accountDashboard/AccountTabNav.jsx";
+import ProfileTab from "./accountDashboard/ProfileTab.jsx";
+import SocialCrewTab from "./accountDashboard/SocialCrewTab.jsx";
+import WalletActivityTab from "./accountDashboard/WalletActivityTab.jsx";
+import SecurityAccountTab from "./accountDashboard/SecurityAccountTab.jsx";
+import {
+  ALLERGEN_NONE_KEY,
+  ALLERGEN_OPTIONS,
+  DIETARY_OPTIONS,
+  FOODS_TO_AVOID_OPTIONS,
+  normalizeAccountTab,
+} from "./accountDashboard/accountDashboardOptions.js";
+import { accountStyles as styles } from "./accountDashboard/accountDashboardStyles.js";
 
 export default function ConsumerProfile() {
   const { t } = useLanguage();
@@ -122,6 +55,8 @@ export default function ConsumerProfile() {
     verifyPhoneChangeCode,
   } = useConsumer();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = normalizeAccountTab(searchParams.get("tab"));
 
   const [pageLoading, setPageLoading] = useState(true);
   const [pageError, setPageError] = useState(null);
@@ -129,6 +64,7 @@ export default function ConsumerProfile() {
   const [displayName, setDisplayName] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [homeZip, setHomeZip] = useState("");
   const [changePhoneOpen, setChangePhoneOpen] = useState(false);
   const [phoneChangeNotice, setPhoneChangeNotice] = useState("");
   const [eduEmailInput, setEduEmailInput] = useState("");
@@ -150,11 +86,21 @@ export default function ConsumerProfile() {
   });
 
   const [likedMeals, setLikedMeals] = useState([]);
-  const [mealsToUnlike, setMealsToUnlike] = useState(new Set());
+  const [unlikeBusyId, setUnlikeBusyId] = useState(null);
+  const [unlikeError, setUnlikeError] = useState("");
 
-  const [saving, setSaving] = useState(false);
-  const [saveMessage, setSaveMessage] = useState("");
-  const [saveError, setSaveError] = useState("");
+  const [identitySaving, setIdentitySaving] = useState(false);
+  const [identityStatus, setIdentityStatus] = useState("");
+  const [identityError, setIdentityError] = useState("");
+  const [zipSaving, setZipSaving] = useState(false);
+  const [zipStatus, setZipStatus] = useState("");
+  const [zipError, setZipError] = useState("");
+  const [dietStatus, setDietStatus] = useState("");
+  const [dietError, setDietError] = useState("");
+  const [allergenStatus, setAllergenStatus] = useState("");
+  const [allergenError, setAllergenError] = useState("");
+  const [avoidStatus, setAvoidStatus] = useState("");
+  const [avoidError, setAvoidError] = useState("");
   const [supportOpen, setSupportOpen] = useState(false);
 
   const [currentPassword, setCurrentPassword] = useState("");
@@ -173,7 +119,14 @@ export default function ConsumerProfile() {
         getLikedMenuItems().catch(() => ({ likes: [] })),
         fetchMyClusters().catch(() => ({ clusters: [] })),
       ]);
-      const { profile, dietary_preferences, allergen_preferences, saved_locations, coins_wallet, consumer: profileConsumer } = data;
+      const {
+        profile,
+        dietary_preferences,
+        allergen_preferences,
+        saved_locations,
+        coins_wallet,
+        consumer: profileConsumer,
+      } = data;
 
       const avoidMap = {};
       for (const key of avoidData?.foods_to_avoid || []) {
@@ -184,6 +137,7 @@ export default function ConsumerProfile() {
       setDisplayName(profile.display_name || "");
       setFirstName(profile.first_name || "");
       setLastName(profile.last_name || "");
+      setHomeZip(profile.home_zip || "");
       setEduStatus(getEduVerificationFromConsumer(profileConsumer || {}));
       setEduNotice("");
       setEduError("");
@@ -201,12 +155,11 @@ export default function ConsumerProfile() {
       setAllergenPrefs(allergenMap);
       setAllergenNoneSelected(
         Array.isArray(allergen_preferences) &&
-        allergen_preferences.length > 0 &&
-        !allergen_preferences.some((pref) => pref.is_enabled)
+          allergen_preferences.length > 0 &&
+          !allergen_preferences.some((pref) => pref.is_enabled)
       );
 
       setLikedMeals(likedData?.likes || []);
-      setMealsToUnlike(new Set());
       setSavedLocations(saved_locations || []);
       setMyClusters(Array.isArray(clusterData?.clusters) ? clusterData.clusters : []);
       setCoinsWallet({
@@ -231,26 +184,153 @@ export default function ConsumerProfile() {
     }
   }, [authLoading, isAuthenticated, navigate, loadProfile]);
 
-  function toggleDiet(key, value) {
-    setDietPrefs((prev) => ({ ...prev, [key]: value }));
+  function setTab(id) {
+    const next = new URLSearchParams(searchParams);
+    if (id === "profile") next.delete("tab");
+    else next.set("tab", id);
+    setSearchParams(next, { replace: true });
   }
 
-  function toggleFoodToAvoid(key, value) {
-    setFoodsToAvoid((prev) => ({ ...prev, [key]: value }));
+  function maybeResetMenuPrefs(nextDiet, nextAllergen, noneSelected) {
+    const dietOn = DIETARY_OPTIONS.some(({ key }) => Boolean(nextDiet[key]));
+    const allergenOn =
+      !noneSelected && ALLERGEN_OPTIONS.some(({ key }) => Boolean(nextAllergen[key]));
+    if (dietOn || allergenOn) resetMenuPreferenceSessionForLogin();
   }
 
-  function toggleAllergen(key, value) {
-    if (key === ALLERGEN_NONE_KEY) {
-      setAllergenNoneSelected(value);
-      if (value) {
-        setAllergenPrefs(
-          Object.fromEntries(ALLERGEN_OPTIONS.map(({ key: allergenKey }) => [allergenKey, false]))
-        );
-      }
-      return;
+  async function handleSaveIdentity() {
+    setIdentitySaving(true);
+    setIdentityStatus("");
+    setIdentityError("");
+    try {
+      await updateConsumerProfile({
+        display_name: displayName.trim() || null,
+        first_name: firstName.trim() || null,
+        last_name: lastName.trim() || null,
+      });
+      await refreshSession().catch(() => {});
+      setIdentityStatus("Saved");
+      return true;
+    } catch (err) {
+      setIdentityError(err.message || "Could not save profile information.");
+      return false;
+    } finally {
+      setIdentitySaving(false);
     }
-    setAllergenNoneSelected(false);
-    setAllergenPrefs((prev) => ({ ...prev, [key]: value }));
+  }
+
+  async function handleSaveHomeZip() {
+    const trimmed = String(homeZip || "").trim();
+    if (trimmed && !/^\d{5}(-\d{4})?$/.test(trimmed)) {
+      setZipError("Enter a valid 5-digit Zip Code");
+      setZipStatus("");
+      return false;
+    }
+    setZipSaving(true);
+    setZipStatus("");
+    setZipError("");
+    try {
+      await updateConsumerProfile({ home_zip: trimmed || null });
+      setHomeZip(trimmed);
+      setZipStatus("Saved");
+      return true;
+    } catch (err) {
+      setZipError(err.message || "Could not save zip.");
+      return false;
+    } finally {
+      setZipSaving(false);
+    }
+  }
+
+  async function handleToggleDiet(key, value) {
+    const previous = dietPrefs;
+    const next = { ...dietPrefs, [key]: value };
+    setDietPrefs(next);
+    setDietStatus("Saving…");
+    setDietError("");
+    try {
+      await updatePreferences({
+        dietary_preferences: DIETARY_OPTIONS.map((opt) => ({
+          key: opt.key,
+          is_enabled: Boolean(next[opt.key]),
+        })),
+      });
+      maybeResetMenuPrefs(next, allergenPrefs, allergenNoneSelected);
+      setDietStatus("Saved");
+    } catch (err) {
+      setDietPrefs(previous);
+      setDietStatus("");
+      setDietError(err.message || "Could not save dietary preferences.");
+    }
+  }
+
+  async function handleToggleAllergen(key, value) {
+    const previousPrefs = allergenPrefs;
+    const previousNone = allergenNoneSelected;
+    let nextPrefs = allergenPrefs;
+    let nextNone = allergenNoneSelected;
+
+    if (key === ALLERGEN_NONE_KEY) {
+      nextNone = value;
+      if (value) {
+        nextPrefs = Object.fromEntries(ALLERGEN_OPTIONS.map(({ key: k }) => [k, false]));
+      }
+    } else {
+      nextNone = false;
+      nextPrefs = { ...allergenPrefs, [key]: value };
+    }
+
+    setAllergenNoneSelected(nextNone);
+    setAllergenPrefs(nextPrefs);
+    setAllergenStatus("Saving…");
+    setAllergenError("");
+    try {
+      await updatePreferences({
+        allergen_preferences: ALLERGEN_OPTIONS.map((opt) => ({
+          key: opt.key,
+          is_enabled: nextNone ? false : Boolean(nextPrefs[opt.key]),
+        })),
+      });
+      maybeResetMenuPrefs(dietPrefs, nextPrefs, nextNone);
+      setAllergenStatus("Saved");
+    } catch (err) {
+      setAllergenPrefs(previousPrefs);
+      setAllergenNoneSelected(previousNone);
+      setAllergenStatus("");
+      setAllergenError(err.message || "Could not save allergen preferences.");
+    }
+  }
+
+  async function handleToggleFoodToAvoid(key, value) {
+    const previous = foodsToAvoid;
+    const next = { ...foodsToAvoid, [key]: value };
+    setFoodsToAvoid(next);
+    setAvoidStatus("Saving…");
+    setAvoidError("");
+    try {
+      const avoid_keys = FOODS_TO_AVOID_OPTIONS.filter(({ key: k }) => Boolean(next[k])).map(
+        ({ key: k }) => k
+      );
+      await updateFoodsToAvoid(avoid_keys);
+      setAvoidStatus("Saved");
+    } catch (err) {
+      setFoodsToAvoid(previous);
+      setAvoidStatus("");
+      setAvoidError(err.message || "Could not save avoided ingredients.");
+    }
+  }
+
+  async function handleUnlikeMeal(id) {
+    setUnlikeBusyId(id);
+    setUnlikeError("");
+    try {
+      await unlikeMenuItem(id);
+      setLikedMeals((prev) => prev.filter((meal) => meal.menu_item_id !== id));
+    } catch (err) {
+      setUnlikeError(err.message || "Could not remove liked meal.");
+    } finally {
+      setUnlikeBusyId(null);
+    }
   }
 
   async function handleSendEduVerification() {
@@ -265,55 +345,6 @@ export default function ConsumerProfile() {
       setEduError(err.message || "Unable to start .edu verification");
     } finally {
       setEduBusy(false);
-    }
-  }
-
-  async function saveProfilePreferences() {
-    setSaving(true);
-    setSaveMessage("");
-    setSaveError("");
-
-    try {
-      const dietary_preferences = DIETARY_OPTIONS.map(({ key }) => ({
-        key,
-        is_enabled: Boolean(dietPrefs[key]),
-      }));
-      const allergen_preferences = ALLERGEN_OPTIONS.map(({ key }) => ({
-        key,
-        is_enabled: allergenNoneSelected ? false : Boolean(allergenPrefs[key]),
-      }));
-      const avoid_keys = FOODS_TO_AVOID_OPTIONS
-        .filter(({ key }) => Boolean(foodsToAvoid[key]))
-        .map(({ key }) => key);
-
-      const unlikes = [...mealsToUnlike].map((id) => unlikeMenuItem(id));
-      await Promise.all([
-        updateConsumerProfile({
-          display_name: displayName.trim() || null,
-          first_name: firstName.trim() || null,
-          last_name: lastName.trim() || null,
-        }),
-        updatePreferences({
-          dietary_preferences,
-          allergen_preferences,
-        }),
-        updateFoodsToAvoid(avoid_keys),
-        ...unlikes,
-      ]);
-
-      const likedData = await getLikedMenuItems().catch(() => ({ likes: [] }));
-      setLikedMeals(likedData?.likes || []);
-      setMealsToUnlike(new Set());
-      await refreshSession().catch(() => {});
-      const hasEnabledPrefs =
-        dietary_preferences.some((row) => row.is_enabled) ||
-        allergen_preferences.some((row) => row.is_enabled);
-      if (hasEnabledPrefs) resetMenuPreferenceSessionForLogin();
-      setSaveMessage("Profile preferences saved.");
-    } catch (err) {
-      setSaveError(err.message || "Could not save profile preferences.");
-    } finally {
-      setSaving(false);
     }
   }
 
@@ -348,13 +379,13 @@ export default function ConsumerProfile() {
   if (authLoading || pageLoading) {
     return (
       <>
-      <StickyPageHeader title={t("consumer.profile.title", "My account")} />
-      <div style={styles.page}>
-        <div style={styles.card}>
-          <p style={styles.subheading}>Loading your account…</p>
+        <StickyPageHeader title={t("consumer.profile.title", "My account")} />
+        <div style={styles.page}>
+          <div style={styles.card}>
+            <p style={styles.muted}>Loading your account…</p>
+          </div>
         </div>
-      </div>
-      <BottomNav />
+        <BottomNav />
       </>
     );
   }
@@ -362,826 +393,146 @@ export default function ConsumerProfile() {
   if (pageError) {
     return (
       <>
-      <StickyPageHeader title={t("consumer.profile.title", "My account")} />
-      <div style={styles.page}>
-        <div style={styles.card}>
-          <p style={styles.errorBlock}>{pageError}</p>
-          <button onClick={loadProfile} style={styles.retryBtn}>Retry</button>
+        <StickyPageHeader title={t("consumer.profile.title", "My account")} />
+        <div style={styles.page}>
+          <div style={styles.card}>
+            <p style={styles.statusErr}>{pageError}</p>
+            <button onClick={loadProfile} style={styles.retryBtn}>
+              Retry
+            </button>
+          </div>
         </div>
-      </div>
-      <BottomNav />
+        <BottomNav />
       </>
     );
   }
 
   const defaultLoc = savedLocations.find((location) => location.is_default);
   const locationSummary = defaultLoc
-    ? [
-        defaultLoc.label || "",
-        [defaultLoc.city, defaultLoc.state].filter(Boolean).join(", "),
-      ].filter(Boolean).join(" — ")
+    ? [defaultLoc.label || "", [defaultLoc.city, defaultLoc.state].filter(Boolean).join(", ")]
+        .filter(Boolean)
+        .join(" — ")
     : "";
-  const supportContactName =
-    [firstName, lastName].filter(Boolean).join(" ") || displayName.trim();
+  const supportContactName = [firstName, lastName].filter(Boolean).join(" ") || displayName.trim();
 
   return (
     <>
-    <StickyPageHeader title={t("consumer.profile.title", "My account")} />
-    <div style={styles.page}>
-      <div style={styles.pageInner}>
-        <h1 style={styles.pageTitle}>Account Settings</h1>
-
-        <Section title="Send Feedback">
-          <p style={styles.sectionDesc}>
-            Tell a restaurant privately how a recent Menuply order went. You can
-            send feedback anytime within 45 days of a completed order.
+      <StickyPageHeader title={t("consumer.profile.title", "My account")} />
+      <div style={styles.page}>
+        <div style={styles.pageInner}>
+          <h1 style={styles.pageTitle}>My account</h1>
+          <p style={styles.pageLead}>
+            Who you are, who you eat with, what you&apos;ve saved, and how you manage this account.
           </p>
-          <Link to="/account/feedback" style={styles.followingLink}>
-            Send Feedback
-          </Link>
-        </Section>
+          <AccountTabNav activeTab={activeTab} onChange={setTab} />
 
-        <Section title="I'm Eating">
-          <p style={styles.sectionDesc}>
-            Share what you&apos;re eating as user-reported food activity (not a verified order).
-          </p>
-          <Link to="/account/im-eating" style={styles.followingLink}>
-            Share I&apos;m Eating
-          </Link>
-        </Section>
-
-        <Section title="Diner Status">
-          <p style={styles.sectionDesc}>
-            Quick food signals like 🔥 — not star ratings or long reviews.
-          </p>
-          <Link to="/account/diner-status" style={styles.followingLink}>
-            Post a diner status
-          </Link>
-        </Section>
-
-        <Section title="Cluster food report">
-          <p style={styles.sectionDesc}>
-            Follow clusters for food intelligence — statuses, what people are eating, deals.
-          </p>
-          <Link to="/account/cluster-subscriptions" style={styles.followingLink}>
-            Manage cluster subscriptions
-          </Link>
-        </Section>
-
-        <Section title="Getting started">
-          <p style={styles.sectionDesc}>
-            Optional guided intro: Dining Crew, meeting people around food, What People Are Eating,
-            and Waiter. Every step is skippable.
-          </p>
-          <Link to="/account/social-onboarding" style={styles.followingLink}>
-            Who do you eat with?
-          </Link>
-        </Section>
-
-        <Section title="Dining Crews">
-          <p style={styles.sectionDesc}>
-            Who wants to eat? Create a small crew, invite people, and start a meal conversation.
-          </p>
-          <Link to="/account/dining-crews" style={styles.followingLink}>
-            Open Dining Crews
-          </Link>
-        </Section>
-
-        <Section title="My Diner QR">
-          <p style={styles.sectionDesc}>
-            Your personal Menuply QR and Diner Card — others scan to connect with you.
-          </p>
-          <Link to="/account/diner-qr" style={styles.followingLink}>
-            My Diner QR
-          </Link>
-          <Link to="/account/diner-qr" style={{ ...styles.followingLink, marginTop: 8, display: "inline-block" }}>
-            Share My Menuply
-          </Link>
-        </Section>
-
-        <Section title="What We Doing?">
-          <p style={styles.sectionDesc}>
-            Plan with Connections or a Dining Crew — suggest restaurants, venues, or events, vote,
-            then Make It a Plan.
-          </p>
-          <Link to="/account/what-we-doing" style={styles.followingLink}>
-            What We Doing?
-          </Link>
-          <Link
-            to="/account/notifications"
-            style={{ ...styles.followingLink, marginTop: 8, display: "inline-block" }}
-          >
-            Notifications
-          </Link>
-        </Section>
-
-        <Section title="Meet Me Here">
-          <p style={styles.sectionDesc}>
-            Temporary QR for someone nearby — they join your invite without needing your
-            phone number or username. Separate from your permanent Diner QR.
-          </p>
-          <Link to="/account/meet-me-here" style={styles.followingLink}>
-            Meet Me Here
-          </Link>
-        </Section>
-
-        <Section title="Connections">
-          <p style={styles.sectionDesc}>
-            People you interact with through Menuply meals and invitations — not a Friend
-            list or stranger directory.
-          </p>
-          <Link to="/account/connections" style={styles.followingLink}>
-            Manage Connections
-          </Link>
-        </Section>
-
-        <Section title="Following">
-          <p style={styles.sectionDesc}>
-            See the restaurants you follow and remove them from one place.
-          </p>
-          <Link to="/account/following" style={styles.followingLink}>Open Following feed</Link>
-        </Section>
-
-        <Section title="My Clusters">
-          {myClusters.length === 0 ? (
-            <p style={styles.sectionDesc}>You have not created any clusters yet.</p>
-          ) : (
-            <div style={{ display: "grid", gap: "10px" }}>
-              {myClusters.map((cluster) => (
-                <div key={cluster.id} style={styles.currentLocation}>
-                  <div style={{ flex: 1 }}>
-                    <strong>{cluster.name}</strong>
-                    <div style={styles.locationHint}>
-                      {cluster.visibility} · {cluster.status} · {cluster.restaurant_count || 0} restaurants
-                    </div>
-                    <div style={styles.locationHint}>
-                      <Link to={`/clusters`}>Open directory</Link>
-                      {" · "}
-                      <span>{cluster.share_token ? "Share link ready" : "Share link unavailable"}</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </Section>
-
-        <Section title="Account">
-          <div style={styles.field}>
-            <label style={styles.fieldLabel}>Email</label>
-            <p style={styles.readOnly}>{consumer?.email}</p>
-          </div>
-
-          <div style={styles.row}>
-            <div style={styles.field}>
-              <label style={styles.fieldLabel}>First name</label>
-              <input
-                type="text"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                style={styles.input}
-                placeholder="First name"
-              />
-            </div>
-            <div style={styles.field}>
-              <label style={styles.fieldLabel}>Last name</label>
-              <input
-                type="text"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                style={styles.input}
-                placeholder="Last name"
-              />
-            </div>
-          </div>
-
-          <div style={styles.field}>
-            <label style={styles.fieldLabel}>Display name <span style={styles.optText}>(optional)</span></label>
-            <input
-              type="text"
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              style={styles.input}
-              placeholder="How you want to be known"
+          {activeTab === "profile" ? (
+            <ProfileTab
+              firstName={firstName}
+              lastName={lastName}
+              displayName={displayName}
+              onFirstNameChange={setFirstName}
+              onLastNameChange={setLastName}
+              onDisplayNameChange={setDisplayName}
+              onSaveIdentity={handleSaveIdentity}
+              identitySaving={identitySaving}
+              identityStatus={identityStatus}
+              identityError={identityError}
+              homeZip={homeZip}
+              onHomeZipChange={setHomeZip}
+              onSaveHomeZip={handleSaveHomeZip}
+              zipSaving={zipSaving}
+              zipStatus={zipStatus}
+              zipError={zipError}
+              locationSummary={locationSummary}
+              dietPrefs={dietPrefs}
+              onToggleDiet={handleToggleDiet}
+              dietStatus={dietStatus}
+              dietError={dietError}
+              allergenPrefs={allergenPrefs}
+              allergenNoneSelected={allergenNoneSelected}
+              onToggleAllergen={handleToggleAllergen}
+              allergenStatus={allergenStatus}
+              allergenError={allergenError}
+              foodsToAvoid={foodsToAvoid}
+              onToggleFoodToAvoid={handleToggleFoodToAvoid}
+              avoidStatus={avoidStatus}
+              avoidError={avoidError}
+              eduStatus={eduStatus}
+              eduEmailInput={eduEmailInput}
+              onEduEmailChange={setEduEmailInput}
+              onSendEduVerification={handleSendEduVerification}
+              eduBusy={eduBusy}
+              eduNotice={eduNotice}
+              eduError={eduError}
             />
-          </div>
-
-          <div style={styles.field}>
-            <label style={styles.fieldLabel}>
-              Phone <span style={styles.optText}>(verified)</span>
-            </label>
-            <div style={styles.phoneRow}>
-              <input
-                type="tel"
-                value={consumer?.phone_number || ""}
-                readOnly
-                style={{ ...styles.input, ...styles.inputReadonly }}
-                placeholder="No verified phone"
-                aria-label="Verified phone number"
-              />
-              <button
-                type="button"
-                onClick={() => {
-                  setPhoneChangeNotice("");
-                  setChangePhoneOpen(true);
-                }}
-                style={styles.changePhoneBtn}
-              >
-                Change phone
-              </button>
-            </div>
-            {phoneChangeNotice ? (
-              <div style={{ marginTop: 8, fontSize: 13, color: "#14532d", fontWeight: 700 }}>
-                {phoneChangeNotice}
-              </div>
-            ) : null}
-          </div>
-
-          <div style={styles.field}>
-            <label style={styles.fieldLabel}>
-              School verification <span style={styles.optText}>(optional .edu)</span>
-            </label>
-            {eduStatus?.edu_verified ? (
-              <>
-                <p style={{ ...styles.readOnly, color: "#14532d", fontWeight: 700 }}>
-                  {eduStatus.badge}
-                </p>
-                <p style={styles.sectionDesc}>
-                  Shows school affiliation only. Does not prove current enrollment.
-                  Your .edu email is never shown publicly.
-                </p>
-              </>
-            ) : (
-              <>
-                <p style={styles.sectionDesc}>
-                  Optionally verify a school email ending in .edu. This is an affiliation signal —
-                  not enrollment proof — and is not required to use Menuply.
-                </p>
-                <div style={styles.phoneRow}>
-                  <input
-                    type="email"
-                    value={eduEmailInput}
-                    onChange={(e) => setEduEmailInput(e.target.value)}
-                    style={styles.input}
-                    placeholder="you@school.edu"
-                    aria-label="School .edu email"
-                    autoComplete="email"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleSendEduVerification}
-                    disabled={eduBusy || !eduEmailInput.trim()}
-                    style={styles.changePhoneBtn}
-                  >
-                    {eduBusy ? "Sending…" : "Send link"}
-                  </button>
-                </div>
-                {eduNotice ? (
-                  <div style={{ marginTop: 8, fontSize: 13, color: "#14532d", fontWeight: 700 }}>
-                    {eduNotice}
-                  </div>
-                ) : null}
-                {eduError ? (
-                  <div style={{ marginTop: 8, fontSize: 13, color: "#b91c1c", fontWeight: 700 }}>
-                    {eduError}
-                  </div>
-                ) : null}
-              </>
-            )}
-          </div>
-        </Section>
-
-        <Section title="Food Preferences">
-          <p style={styles.sectionDesc}>
-            Select your dietary preferences. These personalize discovery without needing a separate save step.
-          </p>
-          <div style={styles.prefGrid}>
-            {DIETARY_OPTIONS.map(({ key, label }) => (
-              <PreferenceToggle
-                key={key}
-                label={label}
-                checked={Boolean(dietPrefs[key])}
-                onChange={(value) => toggleDiet(key, value)}
-              />
-            ))}
-          </div>
-        </Section>
-
-        <Section title="Foods I Avoid">
-          <p style={styles.sectionDesc}>
-            Tell Waiter what you usually do not want recommended. These are not hard filters — items stay on the menu and show a soft “may contain” notice when relevant. Searching for a food you avoid will still show it.
-          </p>
-          <div style={styles.prefGrid}>
-            {FOODS_TO_AVOID_OPTIONS.map(({ key, label }) => (
-              <PreferenceToggle
-                key={key}
-                label={label}
-                checked={Boolean(foodsToAvoid[key])}
-                onChange={(value) => toggleFoodToAvoid(key, value)}
-              />
-            ))}
-          </div>
-        </Section>
-
-        <Section title="Allergen Exclusions" id="allergen-preferences">
-          <p style={styles.sectionDesc}>
-            Select allergens you want to avoid. Choose None if you do not want any allergen exclusions. These settings control the allergen filter status shown across discovery.
-          </p>
-          <div style={styles.prefGrid}>
-            <PreferenceToggle
-              key={ALLERGEN_NONE_KEY}
-              label="None"
-              checked={allergenNoneSelected}
-              onChange={(value) => toggleAllergen(ALLERGEN_NONE_KEY, value)}
-            />
-            {ALLERGEN_OPTIONS.map(({ key, label }) => (
-              <PreferenceToggle
-                key={key}
-                label={label}
-                checked={Boolean(allergenPrefs[key])}
-                disabled={allergenNoneSelected}
-                onChange={(value) => toggleAllergen(key, value)}
-              />
-            ))}
-          </div>
-        </Section>
-
-        <Section title="Meals You've Liked" id="meals-liked">
-          <p style={styles.sectionDesc}>
-            Uncheck any meal to remove it from your liked list.
-          </p>
-          {likedMeals.length === 0 ? (
-            <p style={styles.sectionDesc}>No liked meals yet. Like dishes from any menu to see them here.</p>
-          ) : (
-            <div style={styles.prefGrid}>
-              {likedMeals.map((meal) => (
-                <PreferenceToggle
-                  key={meal.menu_item_id}
-                  label={`${meal.item_name} — ${meal.restaurant_name}`}
-                  checked={!mealsToUnlike.has(meal.menu_item_id)}
-                  onChange={(checked) => {
-                    setMealsToUnlike((prev) => {
-                      const next = new Set(prev);
-                      if (!checked) next.add(meal.menu_item_id);
-                      else next.delete(meal.menu_item_id);
-                      return next;
-                    });
-                  }}
-                />
-              ))}
-            </div>
-          )}
-        </Section>
-
-        <Section title="Default Location">
-          {locationSummary ? (
-            <div style={styles.currentLocation}>
-              <span style={styles.locationIcon}>📍</span>
-              <div>
-                <strong>{locationSummary}</strong>
-                <div style={styles.locationHint}>
-                  Change your default search location from Discovery.
-                </div>
-              </div>
-            </div>
-          ) : (
-            <p style={styles.sectionDesc}>
-              Default search location can be set or changed from the Discovery screen.
-            </p>
-          )}
-        </Section>
-
-        <Section title="Mx Coins">
-          <p style={styles.sectionDesc}>
-            Platform credit applied automatically toward qualifying Menuply Checkout orders.
-          </p>
-          <div style={styles.coinsGrid}>
-            <div style={styles.coinTile}>
-              <span style={styles.coinLabel}>Available balance</span>
-              <strong style={styles.coinValue}>{formatMoney(coinsWallet.balance_cents)}</strong>
-            </div>
-            <div style={styles.coinTile}>
-              <span style={styles.coinLabel}>Lifetime earned</span>
-              <strong style={styles.coinValue}>{formatMoney(coinsWallet.lifetime_earned_cents)}</strong>
-            </div>
-            <div style={styles.coinTile}>
-              <span style={styles.coinLabel}>Lifetime redeemed</span>
-              <strong style={styles.coinValue}>{formatMoney(coinsWallet.lifetime_redeemed_cents)}</strong>
-            </div>
-          </div>
-        </Section>
-
-        <Section title="Change Your Password">
-          <div style={styles.field}>
-            <label style={styles.fieldLabel}>Current password</label>
-            <input
-              type="password"
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-              style={styles.input}
-              placeholder="Current password"
-              autoComplete="current-password"
-            />
-          </div>
-          <div style={styles.field}>
-            <label style={styles.fieldLabel}>New password</label>
-            <input
-              type="password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              style={styles.input}
-              placeholder="New password"
-              autoComplete="new-password"
-            />
-          </div>
-          <div style={styles.field}>
-            <label style={styles.fieldLabel}>Confirm new password</label>
-            <input
-              type="password"
-              value={confirmNewPassword}
-              onChange={(e) => setConfirmNewPassword(e.target.value)}
-              style={styles.input}
-              placeholder="Confirm new password"
-              autoComplete="new-password"
-            />
-          </div>
-          <div style={styles.saveRow}>
-            <button
-              type="button"
-              onClick={handleChangePassword}
-              style={{ ...styles.saveBtn, ...(passwordSaving ? styles.saveBtnDisabled : null) }}
-              disabled={passwordSaving}
-            >
-              {passwordSaving ? "Updating..." : "Update Password"}
-            </button>
-            <SaveStatus status={passwordError || passwordMessage} isError={Boolean(passwordError)} />
-          </div>
-        </Section>
-
-        <Section title={t("consumer.profile.support", "Support")}>
-          <p style={styles.sectionDesc}>
-            {t(
-              "consumer.profile.supportDesc",
-              "Need help with your account, search, restaurant information, or the app? Contact Menuply Support."
-            )}
-          </p>
-          <button
-            type="button"
-            onClick={() => setSupportOpen(true)}
-            style={styles.supportBtn}
-          >
-            {t("consumer.profile.contactSupport", "Contact Support")}
-          </button>
-        </Section>
-
-        <Section title="Save">
-          <p style={styles.sectionDesc}>
-            Save all profile preferences in one action.
-          </p>
-          <div style={styles.saveRow}>
-            <button
-              type="button"
-              onClick={saveProfilePreferences}
-              style={{ ...styles.saveBtn, ...(saving ? styles.saveBtnDisabled : null) }}
-              disabled={saving}
-            >
-              {saving ? "Saving..." : "Save Profile Preferences"}
-            </button>
-            <SaveStatus status={saveError || saveMessage} isError={Boolean(saveError)} />
-          </div>
-          {saveMessage ? (
-            <div style={styles.discoveryCtaRow}>
-              <button type="button" onClick={() => navigate("/")} style={styles.discoveryBtn}>
-                Go to Discovery
-              </button>
-            </div>
           ) : null}
-        </Section>
-        <Section title={t("consumer.profile.signOut", "Sign out")}>
-          <button type="button" onClick={handleLogout} style={styles.logoutBtn}>Log out</button>
-        </Section>
+
+          {activeTab === "social" ? <SocialCrewTab /> : null}
+
+          {activeTab === "wallet" ? (
+            <WalletActivityTab
+              coinsWallet={coinsWallet}
+              likedMeals={likedMeals}
+              onUnlikeMeal={handleUnlikeMeal}
+              unlikeBusyId={unlikeBusyId}
+              unlikeError={unlikeError}
+              myClusters={myClusters}
+            />
+          ) : null}
+
+          {activeTab === "security" ? (
+            <SecurityAccountTab
+              email={consumer?.email}
+              phoneNumber={consumer?.phone_number}
+              onChangePhone={() => {
+                setPhoneChangeNotice("");
+                setChangePhoneOpen(true);
+              }}
+              phoneChangeNotice={phoneChangeNotice}
+              currentPassword={currentPassword}
+              newPassword={newPassword}
+              confirmNewPassword={confirmNewPassword}
+              onCurrentPasswordChange={setCurrentPassword}
+              onNewPasswordChange={setNewPassword}
+              onConfirmPasswordChange={setConfirmNewPassword}
+              onChangePassword={handleChangePassword}
+              passwordSaving={passwordSaving}
+              passwordMessage={passwordMessage}
+              passwordError={passwordError}
+              onLogout={handleLogout}
+              onOpenSupport={() => setSupportOpen(true)}
+              supportTitle={t("consumer.profile.support", "Support")}
+              supportDesc={t(
+                "consumer.profile.supportDesc",
+                "Need help with your account, search, restaurant information, or the app? Contact Menuply Support."
+              )}
+              supportButtonLabel={t("consumer.profile.contactSupport", "Contact Support")}
+              signOutTitle={t("consumer.profile.signOut", "Sign out")}
+            />
+          ) : null}
+        </div>
       </div>
-    </div>
-    <BottomNav />
-    {supportOpen ? (
-      <DinerSupportDialog
-        open
-        onClose={() => setSupportOpen(false)}
-        initialName={supportContactName}
-        initialEmail={consumer?.email || ""}
+      <BottomNav />
+      {supportOpen ? (
+        <DinerSupportDialog
+          open
+          onClose={() => setSupportOpen(false)}
+          initialName={supportContactName}
+          initialEmail={consumer?.email || ""}
+        />
+      ) : null}
+      <SmsAuthModal
+        open={changePhoneOpen}
+        purpose="changePhone"
+        sendSmsCode={sendPhoneChangeCode}
+        verifySmsCode={verifyPhoneChangeCode}
+        onClose={() => setChangePhoneOpen(false)}
+        onSuccess={async () => {
+          setPhoneChangeNotice("Phone number updated.");
+          await refreshSession().catch(() => {});
+        }}
       />
-    ) : null}
-    <SmsAuthModal
-      open={changePhoneOpen}
-      purpose="changePhone"
-      sendSmsCode={sendPhoneChangeCode}
-      verifySmsCode={verifyPhoneChangeCode}
-      onClose={() => setChangePhoneOpen(false)}
-      onSuccess={async () => {
-        setPhoneChangeNotice("Phone number updated.");
-        await refreshSession().catch(() => {});
-      }}
-    />
     </>
   );
 }
-
-const styles = {
-  page: {
-    minHeight: "100vh",
-    background: "var(--gb-color-page)",
-    fontFamily: "Inter, Arial, sans-serif",
-    padding: "0 0 calc(80px + env(safe-area-inset-bottom, 0px))",
-  },
-  pageInner: {
-    maxWidth: "680px",
-    margin: "0 auto",
-    padding: "0 16px",
-  },
-  topNav: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: "20px 0",
-    borderBottom: "1px solid #1F2937",
-    marginBottom: "32px",
-  },
-  brand: {
-    fontSize: "20px",
-    fontWeight: 800,
-    color: "#22C55E",
-    textDecoration: "none",
-  },
-  logoutBtn: {
-    background: "none",
-    border: "1.5px solid #374151",
-    borderRadius: "8px",
-    padding: "6px 14px",
-    fontSize: "14px",
-    fontWeight: 600,
-    cursor: "pointer",
-    color: "#9CA3AF",
-    fontFamily: "inherit",
-  },
-  pageTitle: {
-    fontSize: "26px",
-    fontWeight: 700,
-    color: "#FFFFFF",
-    marginBottom: "32px",
-  },
-  section: {
-    background: "#121A14",
-    borderRadius: "14px",
-    padding: "28px",
-    marginBottom: "20px",
-    boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
-  },
-  sectionTitle: {
-    fontSize: "17px",
-    fontWeight: 700,
-    color: "#FFFFFF",
-    margin: "0 0 16px",
-  },
-  sectionDesc: {
-    fontSize: "14px",
-    color: "#9CA3AF",
-    margin: "0 0 16px",
-    lineHeight: 1.5,
-  },
-  field: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "6px",
-    flex: 1,
-    marginBottom: "14px",
-  },
-  row: {
-    display: "flex",
-    gap: "12px",
-    flexWrap: "wrap",
-  },
-  fieldLabel: {
-    fontSize: "13px",
-    fontWeight: 600,
-    color: "#D1D5DB",
-  },
-  optText: {
-    fontWeight: 400,
-    color: "#6B7280",
-    fontSize: "12px",
-  },
-  readOnly: {
-    fontSize: "15px",
-    color: "#FFFFFF",
-    margin: 0,
-    padding: "10px 14px",
-    background: "#0B0F0C",
-    borderRadius: "8px",
-    border: "1.5px solid #1F2937",
-  },
-  input: {
-    padding: "10px 14px",
-    borderRadius: "8px",
-    border: "1.5px solid #374151",
-    background: "#1A2419",
-    color: "#FFFFFF",
-    fontSize: "15px",
-    outline: "none",
-    fontFamily: "inherit",
-    width: "100%",
-    boxSizing: "border-box",
-  },
-  phoneRow: {
-    display: "flex",
-    gap: "10px",
-    alignItems: "center",
-    flexWrap: "wrap",
-  },
-  inputReadonly: {
-    background: "#0B0F0C",
-    borderColor: "#1F2937",
-    color: "#D1D5DB",
-    cursor: "default",
-    flex: "1 1 180px",
-  },
-  changePhoneBtn: {
-    border: "1.5px solid #374151",
-    borderRadius: "8px",
-    background: "#11211a",
-    color: "#fff",
-    padding: "10px 14px",
-    fontSize: "14px",
-    fontWeight: 700,
-    cursor: "pointer",
-    fontFamily: "inherit",
-    whiteSpace: "nowrap",
-  },
-  saveRow: {
-    display: "flex",
-    alignItems: "center",
-    gap: "14px",
-    marginTop: "6px",
-    flexWrap: "wrap",
-  },
-  saveBtn: {
-    padding: "10px 20px",
-    borderRadius: "10px",
-    background: "linear-gradient(180deg, #22C55E 0%, #16A34A 100%)",
-    color: "#0B0F0C",
-    fontSize: "14px",
-    fontWeight: 700,
-    border: "none",
-    cursor: "pointer",
-    fontFamily: "inherit",
-  },
-  saveBtnDisabled: {
-    opacity: 0.72,
-    cursor: "default",
-  },
-  saveStatus: {
-    fontSize: "13px",
-    fontWeight: 600,
-  },
-  prefGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))",
-    gap: "10px",
-  },
-  prefToggle: {
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-    cursor: "pointer",
-  },
-  checkbox: {
-    width: "16px",
-    height: "16px",
-    accentColor: "#22C55E",
-    flexShrink: 0,
-  },
-  prefLabel: {
-    fontSize: "14px",
-    color: "#FFFFFF",
-  },
-  coinsGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
-    gap: "12px",
-  },
-  prefToggleDisabled: {
-    opacity: 0.52,
-    cursor: "not-allowed",
-  },
-  coinTile: {
-    borderRadius: "12px",
-    border: "1px solid #1F2937",
-    background: "#1A2419",
-    padding: "14px 16px",
-    display: "grid",
-    gap: "6px",
-  },
-  coinLabel: {
-    fontSize: "12px",
-    fontWeight: 700,
-    color: "#9CA3AF",
-    textTransform: "uppercase",
-    letterSpacing: "0.04em",
-  },
-  coinValue: {
-    fontSize: "22px",
-    color: "#FFFFFF",
-  },
-  currentLocation: {
-    display: "flex",
-    alignItems: "flex-start",
-    gap: "10px",
-    padding: "14px 16px",
-    background: "#0B0F0C",
-    borderRadius: "10px",
-  },
-  locationIcon: {
-    fontSize: "18px",
-    lineHeight: 1,
-  },
-  locationHint: {
-    marginTop: "6px",
-    fontSize: "13px",
-    color: "#9CA3AF",
-    fontWeight: 500,
-  },
-  discoveryCtaRow: {
-    marginTop: "14px",
-    display: "flex",
-    alignItems: "center",
-  },
-  discoveryBtn: {
-    padding: "10px 16px",
-    borderRadius: "10px",
-    border: "1px solid #374151",
-    background: "#121A14",
-    color: "#FFFFFF",
-    fontSize: "14px",
-    fontWeight: 800,
-    cursor: "pointer",
-    fontFamily: "inherit",
-  },
-  followingLink: {
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: "42px",
-    padding: "0 16px",
-    borderRadius: "10px",
-    background: "linear-gradient(180deg, #22C55E 0%, #16A34A 100%)",
-    color: "#0B0F0C",
-    textDecoration: "none",
-    fontSize: "14px",
-    fontWeight: 700,
-  },
-  supportBtn: {
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: "42px",
-    padding: "0 16px",
-    borderRadius: "10px",
-    border: "1.5px solid #374151",
-    background: "#1A2419",
-    color: "#FFFFFF",
-    fontSize: "14px",
-    fontWeight: 700,
-    cursor: "pointer",
-    fontFamily: "inherit",
-  },
-  card: {
-    maxWidth: "520px",
-    margin: "80px auto 0",
-    padding: "28px",
-    background: "#121A14",
-    borderRadius: "14px",
-    boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
-  },
-  subheading: {
-    fontSize: "15px",
-    color: "#9CA3AF",
-    marginTop: "14px",
-  },
-  errorBlock: {
-    fontSize: "15px",
-    color: "#F87171",
-    marginTop: "14px",
-    lineHeight: 1.6,
-  },
-  retryBtn: {
-    marginTop: "16px",
-    padding: "10px 16px",
-    borderRadius: "10px",
-    border: "none",
-    background: "linear-gradient(180deg, #22C55E 0%, #16A34A 100%)",
-    color: "#0B0F0C",
-    fontSize: "14px",
-    fontWeight: 700,
-    cursor: "pointer",
-    fontFamily: "inherit",
-  },
-};

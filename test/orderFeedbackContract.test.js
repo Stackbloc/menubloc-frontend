@@ -24,7 +24,7 @@ describe("order feedback contracts", () => {
   });
 
   it("profile exposes Send Feedback entry", () => {
-    const page = read("src/pages/consumer/ConsumerProfile.jsx");
+    const page = read("src/pages/consumer/accountDashboard/WalletActivityTab.jsx");
     assert.match(page, /Send Feedback/);
     assert.match(page, /\/account\/feedback/);
   });

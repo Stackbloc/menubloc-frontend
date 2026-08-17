@@ -69,7 +69,7 @@ test("connect landing uses invitation copy and public projection only", () => {
 });
 
 test("profile links My Diner QR; SPA owns /d/:token scan; image still rewritten", () => {
-  const profile = read("src/pages/consumer/ConsumerProfile.jsx");
+  const profile = read("src/pages/consumer/accountDashboard/SocialCrewTab.jsx");
   assert.match(profile, /\/account\/diner-qr/);
   assert.match(profile, /My Diner QR/);
   const vercel = read("vercel.json");

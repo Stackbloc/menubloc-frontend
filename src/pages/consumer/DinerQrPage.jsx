@@ -5,7 +5,7 @@
  */
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import StickyPageHeader from "../../components/StickyPageHeader.jsx";
 import BottomNav from "../../components/BottomNav.jsx";
 import ShareModal from "../../components/share/ShareModal.jsx";
@@ -47,6 +47,7 @@ function ScanPhoneIcon() {
 
 export default function DinerQrPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { isAuthenticated, loading: authLoading } = useConsumer();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -88,6 +89,15 @@ export default function DinerQrPage() {
       display_name: payload.card?.display_name,
     });
   }, [payload]);
+
+  useEffect(() => {
+    if (!shareData) return;
+    if (searchParams.get("share") !== "1") return;
+    setShareOpen(true);
+    const next = new URLSearchParams(searchParams);
+    next.delete("share");
+    setSearchParams(next, { replace: true });
+  }, [shareData, searchParams, setSearchParams]);
 
   const qrImageSrc = useMemo(() => {
     const token = payload?.qr?.token;

@@ -44,7 +44,7 @@ describe("I'm Eating food activity", () => {
     expect(app).toMatch(/ImEatingPage/);
 
     const profile = fs.readFileSync(
-      path.join(root, "src/pages/consumer/ConsumerProfile.jsx"),
+      path.join(root, "src/pages/consumer/accountDashboard/WalletActivityTab.jsx"),
       "utf8"
     );
     expect(profile).toMatch(/\/account\/im-eating/);

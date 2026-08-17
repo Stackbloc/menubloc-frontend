@@ -148,7 +148,7 @@ test("App route and account entry points wired", () => {
   assert.match(app, /\/account\/social-onboarding/);
   const welcome = read("src/pages/consumer/AccountWelcome.jsx");
   assert.match(welcome, /\/account\/social-onboarding/);
-  const profile = read("src/pages/consumer/ConsumerProfile.jsx");
+  const profile = read("src/pages/consumer/accountDashboard/SocialCrewTab.jsx");
   assert.match(profile, /\/account\/social-onboarding/);
 });
 

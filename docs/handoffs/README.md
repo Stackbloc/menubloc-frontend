@@ -1,5 +1,6 @@
 # Handoffs Index
 
+- `2026-08-17_account-dashboard-four-tabs_handoff.md` — Consumer `/account` four-tab dashboard (CPD in progress).
 - `2026-08-16_dining-crew-invite-share-modal_handoff.md` — Dining Crew invite ShareModal (**CPD COMPLETE** — live on tip `e2toazdpi` / `Cx2bTWAc`)
 - `../deployments/2026-08-16_dining-crew-invite-share-modal-cpd.md` — CPD record
 - `../guardrails/2026-08-14_production-deploy-and-lkg-contract.md` — Production deploy + LKG registry (CURRENT tip/BE).

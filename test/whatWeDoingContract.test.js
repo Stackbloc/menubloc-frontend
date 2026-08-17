@@ -34,7 +34,7 @@ test("routes and profile entry exist; HomeNext and Waiter untouched", () => {
   assert.match(app, /\/account\/what-we-doing/);
   assert.match(app, /\/account\/notifications/);
 
-  const profile = read("src/pages/consumer/ConsumerProfile.jsx");
+  const profile = read("src/pages/consumer/accountDashboard/SocialCrewTab.jsx");
   assert.match(profile, /What We Doing\?/);
   assert.match(profile, /\/account\/what-we-doing/);
   assert.match(profile, /\/account\/notifications/);

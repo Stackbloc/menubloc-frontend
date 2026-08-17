@@ -56,7 +56,7 @@ function testCatalogMenuPassesFilterParamsToApi() {
 }
 
 function testProfileOmitsUnsupportedDietOptions() {
-  const src = read("src/pages/consumer/ConsumerProfile.jsx");
+  const src = read("src/pages/consumer/accountDashboard/accountDashboardOptions.js");
   assert.doesNotMatch(src, /\bhalal\b/);
   assert.doesNotMatch(src, /\bkosher\b/);
   assert.doesNotMatch(src, /\bpaleo\b/);
