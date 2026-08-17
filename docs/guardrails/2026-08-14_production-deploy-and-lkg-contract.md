@@ -34,32 +34,32 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www **and** 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` @ clean `main` |
-| Git commit | `2b0b024` — Account dashboard four tabs |
-| Vercel deployment | `menubloc-frontend-kgtgek3l4-menuply.vercel.app` |
-| Live bundle | `index-Br9O-thi.js` |
+| Git commit | `b8404e9` — Diner phone-verification token |
+| Vercel deployment | `menubloc-frontend-nax94uq0u-menuply.vercel.app` |
+| Live bundle | `index-DAjZPkYd.js` |
 | Aliases | `menuply.com`, `www.menuply.com`, `crm.menuply.com`, `venues.menuply.com` |
 | Tip-gate | **PASS** (apex + www) verified 2026-08-17 |
-| Feature | `/account` Profile / Social & Crew / Wallet & Activity / Security & Account over existing diner APIs |
+| Feature | Signup/login SMS uses signed `phone_verification_token` (no cross-site pending cookie required) |
 
 ### Backend (Railway)
 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-backend-main` @ clean `main` |
-| Git commit | `fc669272` — Venue Phase 6 deferred docs (What We Doing APIs from `4a03818e`) |
+| Git commit | `4a603a12` — diner phone-verification token |
 | Health URL | `https://menubloc-backend-production.up.railway.app/health` |
-| `commit_hash` | starts with `fc669272` |
+| `commit_hash` | `null` (CLI git-archive deploy of HEAD `4a603a12`; GitHub auto-deploy did not start; `railway up` from worktree 413) |
 | Migrations | `0250`–`0263` applied (`0263` what_we_doing + consumer_notifications) |
-| Smoke | Health MATCH; four-tab dashboard strings in live FE bundle; BE unchanged |
+| Smoke | Health `ok`; live FE bundle contains `phone_verification_token` |
 
 ### Restore current tip (if tip-gate fails mid-change)
 
 ```bash
 cd /Users/andrebarber/Desktop/menubloc/menubloc-frontend-main
-npx vercel alias set menubloc-frontend-kgtgek3l4-menuply.vercel.app menuply.com
-npx vercel alias set menubloc-frontend-kgtgek3l4-menuply.vercel.app www.menuply.com
-npx vercel alias set menubloc-frontend-kgtgek3l4-menuply.vercel.app crm.menuply.com
-npx vercel alias set menubloc-frontend-kgtgek3l4-menuply.vercel.app venues.menuply.com
+npx vercel alias set menubloc-frontend-nax94uq0u-menuply.vercel.app menuply.com
+npx vercel alias set menubloc-frontend-nax94uq0u-menuply.vercel.app www.menuply.com
+npx vercel alias set menubloc-frontend-nax94uq0u-menuply.vercel.app crm.menuply.com
+npx vercel alias set menubloc-frontend-nax94uq0u-menuply.vercel.app venues.menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 ```
@@ -120,7 +120,18 @@ Newest superseded first. Restoring drops everything shipped after that tip.
 
 | Deployment id | Bundle | Approx feature / CPD |
 |---------------|--------|----------------------|
-| `e2toazdpi` | `index-Cx2bTWAc.js` | **CURRENT** — diner-qr CORP blank + Invite align (`42c415b`) |
+| `nax94uq0u` | `index-DAjZPkYd.js` | **CURRENT** — Diner phone-verification token (`b8404e9`) |
+| `kgtgek3l4` | `index-Br9O-thi.js` | Account dashboard four tabs (`2b0b024`) — superseded by `nax94uq0u` |
+| `iyxv62rs6` | `index-6JpzKw-R.js` | Diner QR invitee connect copy (`7d5c7df`) — superseded by `kgtgek3l4` |
+| `8pl3zm05l` | `index-DxsHvAHk.js` | What We Doing? Phase 1 (`4aff138`) — superseded by `iyxv62rs6` |
+| `aj3cufw78` | `index-B2nAFBvm.js` | Diner QR invite connect + card (`d9d58fa`) — superseded by `8pl3zm05l` |
+| `pvekgpaay` | `index-DOGT2NT-.js` | Diner Card promo + `/d` SPA scan (`0ed0a8a`) — superseded by `aj3cufw78` |
+| `c07vv7d3s` | `index-BUPZP4ci.js` | About + diner signup copy (`f9b0535`) — superseded by `pvekgpaay` |
+| `fnn23dmbl` | `index-UMv0E4Zu.js` | Phase 7 Meet Me Here (`9dec266`) — superseded by `c07vv7d3s` |
+| `ro8l1scif` | `index-BVISDgrs.js` | Phase 5 Event Groups + diner-qr ShareModal null blank fix — superseded by `fnn23dmbl` |
+| `hzs2u21r1` | `index-DfVlLYXq.js` | Venue Event Objects Phase 4 — superseded |
+| `o3qnf739i` | `index-CxIJlzl-.js` | Venue Capability Phase 3 — superseded |
+| `e2toazdpi` | `index-Cx2bTWAc.js` | diner-qr CORP blank + Invite align (`42c415b`) — superseded |
 | `nzkm72fy0` | `index-DyvhJLLC.js` | Dining Crew invite ShareModal tip lock (`4ec654f`) — superseded by `e2toazdpi` |
 | `aae62r0rr` | `index-CEl-scxL.js` | Waiter additive cluster updates (`2736d0c`) |
 | `p1q70m1e8` | `index-xVp-udQI.js` | Diner onboarding guided introduction (`2eb3c23`) |

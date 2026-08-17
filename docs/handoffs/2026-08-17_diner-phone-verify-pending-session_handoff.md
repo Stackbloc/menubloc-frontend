@@ -4,7 +4,7 @@ Unstick diners (including sethb…) who can create an email/password account but
 
 # Current Status
 
-**LOCAL COMPLETE — not committed, not deployed.**
+**CPD COMPLETE — live.** FE tip `nax94uq0u` / `index-DAjZPkYd.js` (`b8404e9`). BE shipped `4a603a12` (Railway health `commit_hash` null — CLI archive).
 
 Authorized checkouts: `menubloc-backend-main` and `menubloc-frontend-main` on `main`.
 
@@ -38,8 +38,8 @@ None. No manual verify of id 36.
 
 # Remaining Work
 
-- Commit + CPD when Andre asks
-- After deploy: diner signs in with email/password, enters phone, completes SMS
+- Human: diner **Signs in** (not Create account) and completes the SMS modal
+- Optional: GitHub → Railway auto-deploy still did not stamp `/health` `commit_hash` (live code is CLI archive of `4a603a12`)
 
 # Risks / Known Issues
 
@@ -47,15 +47,14 @@ Twilio send can still fail for invalid/blocked numbers. Unique phone 409 if numb
 
 # Verification Status
 
-Unit/contract tests in this session. Live SMS after CPD.
+Unit/contract tests in the implementation turn. Tip-gate **PASS** apex + www (`index-DAjZPkYd.js`). Railway health `ok` with `commit_hash` null. Live SMS to the diner’s handset: human step remaining.
 
 # Resume Instructions
 
-1. Run BE: `node --test test/phoneVerificationToken.test.js test/consumerPhoneVerificationGate.test.js test/smsAuthService.test.js`
-2. Run FE: `node --test tests/sms-auth-flow.test.js tests/dinerPhoneVerificationFlow.test.js`
-3. CPD BE from `menubloc-backend-main` then FE from `menubloc-frontend-main`
-4. Ask diner to Sign in (not Create account) and complete the SMS modal
+1. Ask diner to **Sign in** (not Create account) and complete the SMS modal
+2. Do not restore `kgtgek3l4` / `index-Br9O-thi.js` unless rolling back this CPD
+3. Do not `railway up` from dirty `menubloc-backend/`
 
 # Git Status
 
-Dirty working trees on both authorized mains until commit.
+FE `b8404e9` + docs CPD commit; BE `4a603a12` shipped. Working trees expected clean after docs commits.

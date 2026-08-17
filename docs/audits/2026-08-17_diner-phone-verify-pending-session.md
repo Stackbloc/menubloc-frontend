@@ -42,11 +42,13 @@ Read-only on production via `railway run --environment production --service menu
 
 # Commits
 
-Not committed in this turn (user did not request commit).
+- BE `4a603a12` — `fix(auth): bind diner phone verification to a signed token.`
+- FE `b8404e9` — `fix(auth): send diner phone-verification token with SMS send and verify.`
+- FE docs CPD commit after tip-gate PASS
 
 # Deployment Status
 
-**LOCAL ONLY.** Production still on BE `fc669272` / FE `2b0b024` (`kgtgek3l4`). Diner remains stuck until BE+FE CPD.
+**CPD COMPLETE.** FE tip `menubloc-frontend-nax94uq0u-menuply.vercel.app` / `index-DAjZPkYd.js`. BE `4a603a12` via Railway CLI git-archive (`commit_hash` null).
 
 # Verification Results
 
@@ -60,9 +62,9 @@ Contract/unit tests run in this turn (see handoff). Live SMS to the diner’s ha
 
 # Follow-Up Work
 
-- CPD backend then frontend (or both) so sethb can Sign in → verify phone
-- Do not manually set `is_phone_verified` without SMS
+- Diner **Signs in** and completes SMS (do not manually set `is_phone_verified`)
+- Optional: restore GitHub → Railway auto-deploy so `/health` `commit_hash` matches HEAD
 
 # Final Verdict
 
-Defect is a pending-session bind failure, not a missing account. Token-based verification is implemented locally; production is not fixed until deploy.
+Defect was a pending-session bind failure, not a missing account. Production now ships the signed token. The diner must still complete SMS on Sign in.

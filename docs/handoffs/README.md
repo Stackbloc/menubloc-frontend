@@ -1,6 +1,7 @@
 # Handoffs Index
 
-- `2026-08-17_diner-phone-verify-pending-session_handoff.md` — Diner phone verify without pending cookie (**LOCAL** — needs CPD).
+- `2026-08-17_diner-phone-verify-pending-session_handoff.md` — Diner phone verify without pending cookie (**CPD COMPLETE** — tip `nax94uq0u` / `index-DAjZPkYd.js`; BE `4a603a12`).
+- `../deployments/2026-08-17_diner-phone-verify-pending-session-cpd.md` — CPD record.
 - `2026-08-17_account-dashboard-four-tabs_handoff.md` — Consumer `/account` four-tab dashboard (**CPD COMPLETE** — tip `kgtgek3l4` / `Br9O-thi`).
 - `2026-08-16_dining-crew-invite-share-modal_handoff.md` — Dining Crew invite ShareModal (**CPD COMPLETE** — live on tip `e2toazdpi` / `Cx2bTWAc`)
 - `../deployments/2026-08-16_dining-crew-invite-share-modal-cpd.md` — CPD record
