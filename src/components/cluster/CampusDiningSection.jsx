@@ -1,12 +1,11 @@
 /**
  * Campus Dining — university Cluster section only.
- * Reuses restaurant profiles + What Diners Are Saying (food_activity).
- * Hidden when empty / non-university. No subscription gate.
+ * Place list (halls + campus spots). Comments live on the cluster dashboard.
+ * No dining-hall menu analysis.
  */
 
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import WhatDinersAreSaying from "../restaurant/WhatDinersAreSaying.jsx";
 import { fetchClusterCampusDining } from "../../lib/clusterApi.js";
 
 function isUniversityCluster(cluster) {
@@ -55,13 +54,13 @@ export default function CampusDiningSection({ cluster }) {
     <section
       id="campus-dining"
       data-testid="campus-dining"
-      aria-label="Campus Dining"
+      aria-label="On campus"
       style={styles.section}
     >
-      <div style={styles.sectionTitle}>Campus Dining</div>
-      <p style={styles.lead}>
-        Where students eat on campus — lines, vibe, and what&apos;s tasting good.
-      </p>
+      <div className="cluster-feed-section-label" style={styles.sectionTitle}>
+        On campus
+      </div>
+      <p style={styles.lead}>Places to eat on campus — tap a name for what&apos;s going on there.</p>
 
       {loading ? <p style={styles.muted}>Loading campus dining…</p> : null}
 
@@ -91,15 +90,6 @@ export default function CampusDiningSection({ cluster }) {
               {loc.short_description ? (
                 <p style={styles.desc}>{loc.short_description}</p>
               ) : null}
-              <WhatDinersAreSaying
-                restaurantId={loc.restaurant_id}
-                restaurantSlug={loc.slug}
-                restaurantCity={loc.city}
-                restaurantState={loc.state}
-                restaurantName={loc.name || ""}
-                compact
-                experienceMode
-              />
             </article>
           ))
         : null}
@@ -112,13 +102,12 @@ const styles = {
     marginBottom: 20,
     padding: "14px 0 4px",
     borderTop: "1px solid #e5e7eb",
-    borderBottom: "1px solid #e5e7eb",
   },
   sectionTitle: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: 800,
     letterSpacing: 0.4,
-    color: "#111827",
+    color: "#0f766e",
     marginBottom: 6,
     textTransform: "uppercase",
   },
@@ -130,22 +119,21 @@ const styles = {
   },
   muted: { fontSize: 13, color: "#6b7280", margin: "0 0 8px" },
   card: {
-    marginBottom: 14,
+    marginBottom: 10,
     padding: "12px 14px",
     borderRadius: 12,
     border: "1px solid #e5e7eb",
     background: "#fff",
   },
   nameRow: {
-    marginBottom: 6,
     display: "flex",
     flexWrap: "wrap",
     gap: 8,
     alignItems: "center",
   },
-  name: { fontSize: 17, fontWeight: 800, color: "#111827" },
+  name: { fontSize: 16, fontWeight: 800, color: "#111827" },
   nameLink: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: 800,
     color: "#166534",
     textDecoration: "none",
@@ -161,5 +149,5 @@ const styles = {
     borderRadius: 999,
     padding: "2px 8px",
   },
-  desc: { margin: "0 0 8px", fontSize: 13, color: "#6b7280", lineHeight: 1.4 },
+  desc: { margin: "6px 0 0", fontSize: 13, color: "#6b7280", lineHeight: 1.4 },
 };

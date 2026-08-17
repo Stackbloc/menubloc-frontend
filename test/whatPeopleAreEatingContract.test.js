@@ -32,14 +32,18 @@ describe("What People Are Eating (cluster)", () => {
     expect(section).not.toMatch(/Friend/);
   });
 
-  it("ClusterPage mounts section for all visitors (no subscriber gate)", () => {
+  it("ClusterPage dashboard uses public food activity without a subscriber gate", () => {
     const page = fs.readFileSync(path.join(root, "src/pages/ClusterPage.jsx"), "utf8");
-    expect(page).toMatch(/WhatPeopleAreEating/);
-    expect(page).toMatch(/clusterId=\{cluster\.id\}/);
-    expect(page).toMatch(/available without sign-in/);
-    const mountIdx = page.indexOf("<WhatPeopleAreEating");
+    expect(page).toMatch(/ClusterPublicFeed/);
+    expect(page).not.toMatch(/isAuthenticated|requireAuth/);
+    const feed = fs.readFileSync(
+      path.join(root, "src/components/cluster/ClusterPublicFeed.jsx"),
+      "utf8"
+    );
+    expect(feed).toMatch(/listPublicClusterFoodActivity/);
+    expect(feed).toMatch(/Today.?s Hotspots/);
+    const mountIdx = page.indexOf("<ClusterPublicFeed");
     expect(mountIdx).toBeGreaterThan(-1);
-    // Not gated on consumer session near the mount site.
     const before = page.slice(Math.max(0, mountIdx - 120), mountIdx);
     expect(before).not.toMatch(/isAuthenticated|useConsumer|requireAuth/);
   });

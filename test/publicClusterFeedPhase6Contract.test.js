@@ -14,32 +14,36 @@ function read(rel) {
   return readFileSync(join(root, rel), "utf8");
 }
 
-test("public cluster feed API helper exists", () => {
+test("cluster API exposes public feed + nearby events helpers", () => {
   const api = read("src/lib/clusterApi.js");
   assert.match(api, /fetchClusterPublicFeed/);
   assert.match(api, /\/feed/);
+  assert.match(api, /fetchClusterNearbyEvents/);
+  assert.match(api, /\/events/);
 });
 
-test("ClusterPage mounts public Cluster Feed", () => {
+test("ClusterPage mounts public Cluster Feed dashboard and nearby events", () => {
   const page = read("src/pages/ClusterPage.jsx");
   assert.match(page, /ClusterPublicFeed/);
+  assert.match(page, /ClusterNearbyEvents/);
+  assert.match(page, /resolveClusterCardDescription/);
 });
 
-test("ClusterPublicFeed answers food-here question; no everyone-eating claim; no venue Links", () => {
+test("ClusterPublicFeed is a consumer dashboard; no everyone-eating claim", () => {
   const src = read("src/components/cluster/ClusterPublicFeed.jsx");
   assert.match(src, /cluster-public-feed/);
-  assert.match(src, /What.?s happening with food here/);
-  assert.match(src, /Food activity across/);
+  assert.match(src, /cluster-dashboard-clock/);
+  assert.match(src, /Today.?s Hotspots/);
+  assert.match(src, /Popular today/);
+  assert.match(src, /Who.?s eating here/);
   assert.match(src, /cluster-feed-section/);
-  assert.match(src, /reported_ago/);
+  assert.match(src, /listPublicClusterFoodActivity/);
   assert.match(src, /fetchClusterPublicFeed/);
-  assert.doesNotMatch(src, /from "react-router-dom"/);
-  assert.doesNotMatch(src, /<Link\b/);
+  assert.match(src, /from "react-router-dom"/);
   assert.doesNotMatch(src, /\bWaiter\b/);
   assert.doesNotMatch(src, /Where is everyone eating/i);
   assert.doesNotMatch(src, /everyone is eating/i);
   assert.doesNotMatch(src, /does not require following|personalizes|Anyone can view/i);
-  assert.doesNotMatch(src, /Today'?s Hot Spots/i);
 });
 
 test("subscribe button does not say Waiter", () => {

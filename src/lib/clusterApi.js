@@ -85,6 +85,22 @@ export async function fetchClusterPublicFeed(clusterSlug, { hours = 72, limit = 
   return apiGet(path, { signal });
 }
 
+/**
+ * Published venue events near this cluster (default 30 miles).
+ * Landing overview only — not the food Cluster Feed.
+ */
+export async function fetchClusterNearbyEvents(
+  clusterSlug,
+  { radiusMiles = 30, limit = 16, signal } = {}
+) {
+  const params = new URLSearchParams();
+  if (radiusMiles != null) params.set("radius_miles", String(radiusMiles));
+  if (limit != null) params.set("limit", String(limit));
+  const qs = params.toString();
+  const path = `/public/clusters/${encodeURIComponent(clusterSlug)}/events${qs ? `?${qs}` : ""}`;
+  return apiGet(path, { signal });
+}
+
 export async function fetchClusterMenuItems(
   clusterSlug,
   { limit = 40, offset = 0, summary = false, mksCategory = null, drinkCategory = null, signal } = {}

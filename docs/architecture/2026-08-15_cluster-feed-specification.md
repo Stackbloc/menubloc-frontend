@@ -104,7 +104,27 @@ Dining-condition / busy reports:
 
 ---
 
-## UX organization
+## Public landing (consumer dashboard)
+
+The **cluster page** is a quick overview a student can scan — not a dense report.
+
+Order:
+
+1. Cluster **name** + **brief** description  
+2. **Day, date, and local time**  
+3. **Today's Hotspots** — up to 10 restaurants with one related comment; link if there are more  
+4. **Popular today** — menu items (never dining-hall SKUs)  
+5. **Who's eating here** — diner comments, de-duplicated against hotspot lines  
+6. **On campus** — campus eating options (status + comments on the place; no hall menus)  
+7. **Events nearby** — published Menuply venue events today and upcoming within **30 miles**  
+
+Omit empty sections. Full Food / Restaurants browse stays **below** the dashboard.
+
+The Waiter path still consumes the shared food-activity **builder**. Events on the landing page are **not** injected into that builder.
+
+---
+
+## UX organization (Waiter / shared builder buckets)
 
 Answer: **“What's happening with food here?”**
 
@@ -149,7 +169,7 @@ Hierarchy strings:
 - Section keys on items; relative `reported_ago` on time-sensitive rows
 - Dining-condition staleness window
 - Safe popularity wording
-- FE headline: “What's happening with food here?”
+- FE landing: consumer dashboard (clock → hotspots → popular → comments); events nearby are a **separate** landing section, not a feed-builder source
 
 **Deferred (architecture reserved, not required for feed to function):**
 

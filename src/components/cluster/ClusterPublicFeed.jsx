@@ -1,11 +1,25 @@
 /**
- * Public Cluster Feed — "What's happening with food here?"
- * Food-intel overview board from diner activity + Menuply data.
- * No subscription required. Not a venue-menu directory. No external events.
+ * Public Cluster landing dashboard — a quick overview, not a dense report.
+ * Clock → Today's Hotspots → Popular today → Who's eating here.
+ * Campus dining and events mount on ClusterPage after this board.
  */
 
 import React, { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { fetchClusterPublicFeed } from "../../lib/clusterApi.js";
+import { listPublicClusterFoodActivity } from "../../lib/foodActivityApi.js";
+import {
+  listPublicClusterDinerStatuses,
+  listPublicClusterDinerStatusSignals,
+} from "../../lib/dinerStatusApi.js";
+import { getTimezoneForUsState } from "../../lib/timeZoneUtils.js";
+import { clusterPath } from "../../lib/clusterUrl.js";
+import {
+  buildHotspots,
+  buildPopularItems,
+  buildWhoIsEatingComments,
+  formatClusterNowLine,
+} from "../../lib/clusterDashboardModel.js";
 
 function clusterDisplayName(cluster) {
   const name = String(cluster?.name || "").trim();
@@ -15,74 +29,110 @@ function clusterDisplayName(cluster) {
   return slug.replace(/-/g, " ");
 }
 
-const SECTION_ORDER = [
-  "dining_conditions",
-  "food_buzz",
-  "where_diners",
-  "recent_food",
-  "new",
-  "diner_crew",
-];
+function ClusterNowClock({ timeZone }) {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 30000);
+    return () => clearInterval(id);
+  }, []);
+  return (
+    <p className="cluster-feed-heading" style={styles.clock} data-testid="cluster-dashboard-clock">
+      {formatClusterNowLine(now, timeZone)}
+    </p>
+  );
+}
 
-function groupBySection(items) {
-  const map = new Map();
-  for (const item of items) {
-    const key = item.section || "food_buzz";
-    if (!map.has(key)) map.set(key, []);
-    map.get(key).push(item);
-  }
-  const groups = [];
-  for (const key of SECTION_ORDER) {
-    const list = map.get(key);
-    if (list?.length) {
-      groups.push({
-        key,
-        label: list[0].section_label || key,
-        items: list,
-      });
-    }
-  }
-  for (const [key, list] of map.entries()) {
-    if (!SECTION_ORDER.includes(key) && list.length) {
-      groups.push({
-        key,
-        label: list[0].section_label || key,
-        items: list,
-      });
-    }
-  }
-  return groups;
+function StatusLine({ status }) {
+  const restHref =
+    status?.restaurant_slug || status?.restaurant_id
+      ? `/restaurants/${encodeURIComponent(String(status.restaurant_slug || status.restaurant_id))}`
+      : null;
+  const name = String(status?.display_name || "").trim() || "Someone";
+  return (
+    <li data-testid="cluster-who-comment" style={styles.row}>
+      <div className="cluster-feed-item-title" style={styles.title}>
+        {name}
+      </div>
+      <p style={styles.detail}>{status.display_line}</p>
+      {restHref ? (
+        <Link to={restHref} style={styles.inlineLink}>
+          {status.restaurant_name || "See place"}
+        </Link>
+      ) : null}
+    </li>
+  );
 }
 
 export default function ClusterPublicFeed({ cluster }) {
-  const [items, setItems] = useState([]);
-  const [notice, setNotice] = useState("");
+  const [activityItems, setActivityItems] = useState([]);
+  const [statuses, setStatuses] = useState([]);
+  const [signals, setSignals] = useState([]);
+  const [feedNotice, setFeedNotice] = useState("");
   const [loading, setLoading] = useState(false);
 
   const slug = cluster?.slug;
   const placeName = clusterDisplayName(cluster);
-  const groups = useMemo(() => groupBySection(items), [items]);
+  const timeZone = getTimezoneForUsState(cluster?.state);
+  const restaurantsHref = useMemo(() => {
+    const path = clusterPath({
+      state: cluster?.state,
+      city: cluster?.city,
+      slug: cluster?.slug,
+    });
+    return path ? `${path}?view=restaurants` : "?view=restaurants";
+  }, [cluster?.state, cluster?.city, cluster?.slug]);
+
+  const hotspots = useMemo(
+    () => buildHotspots({ activityItems, statuses, signals }),
+    [activityItems, statuses, signals]
+  );
+  const popular = useMemo(() => buildPopularItems(activityItems), [activityItems]);
+  const comments = useMemo(
+    () =>
+      buildWhoIsEatingComments({
+        statuses,
+        hotspotComments: hotspots.items.map((h) => h.comment),
+      }),
+    [statuses, hotspots.items]
+  );
 
   useEffect(() => {
     let cancelled = false;
-    if (!slug) {
-      setItems([]);
-      setNotice("");
+    if (!slug && !cluster?.id) {
+      setActivityItems([]);
+      setStatuses([]);
+      setSignals([]);
+      setFeedNotice("");
       setLoading(false);
       return undefined;
     }
 
     setLoading(true);
-    fetchClusterPublicFeed(slug, { hours: 72, limit: 24 })
-      .then((data) => {
+    Promise.all([
+      slug ? fetchClusterPublicFeed(slug, { hours: 24, limit: 24 }) : Promise.resolve({}),
+      cluster?.id
+        ? listPublicClusterFoodActivity(cluster.id, { limit: 20, hours: 24 })
+        : Promise.resolve({ items: [] }),
+      cluster?.id
+        ? listPublicClusterDinerStatuses(cluster.id, { limit: 16, hours: 24 })
+        : Promise.resolve({ statuses: [] }),
+      cluster?.id
+        ? listPublicClusterDinerStatusSignals(cluster.id, { limit: 10, hours: 24 })
+        : Promise.resolve({ signals: [] }),
+    ])
+      .then(([feed, activity, statusData, signalData]) => {
         if (cancelled) return;
-        setItems(Array.isArray(data?.items) ? data.items : []);
-        setNotice(data?.notice || "");
+        setActivityItems(Array.isArray(activity?.items) ? activity.items : []);
+        setStatuses(Array.isArray(statusData?.statuses) ? statusData.statuses : []);
+        setSignals(Array.isArray(signalData?.signals) ? signalData.signals : []);
+        setFeedNotice(feed?.notice || "");
       })
       .catch(() => {
         if (!cancelled) {
-          setItems([]);
-          setNotice("");
+          setActivityItems([]);
+          setStatuses([]);
+          setSignals([]);
+          setFeedNotice("");
         }
       })
       .finally(() => {
@@ -92,122 +142,136 @@ export default function ClusterPublicFeed({ cluster }) {
     return () => {
       cancelled = true;
     };
-  }, [slug]);
+  }, [slug, cluster?.id]);
 
   if (!slug) return null;
+
+  const quiet =
+    !loading &&
+    hotspots.items.length === 0 &&
+    popular.length === 0 &&
+    comments.length === 0;
 
   return (
     <section
       id="cluster-feed"
       data-testid="cluster-public-feed"
-      aria-label="What's happening with food here?"
+      aria-label={`Today at ${placeName}`}
       style={styles.section}
     >
-      <div className="cluster-feed-heading" style={styles.sectionTitle}>
-        What&apos;s happening with food here?
-      </div>
+      <ClusterNowClock timeZone={timeZone} />
       <p style={styles.lead} data-testid="cluster-feed-happening-now">
-        Food activity across {placeName} — from Menuply diners and Menuply data
+        A quick look at {placeName} today
       </p>
 
       {loading ? <p style={styles.muted}>Loading…</p> : null}
 
-      {!loading && items.length === 0 ? (
+      {quiet ? (
         <p style={styles.muted} data-testid="cluster-feed-empty">
-          {notice && !/subscription|waiter|follow/i.test(notice)
-            ? notice
-            : "Quiet for now — check back when diners post."}
+          {feedNotice && !/subscription|waiter|follow/i.test(feedNotice)
+            ? feedNotice
+            : "Quiet so far today — check back when people post."}
         </p>
       ) : null}
 
-      {!loading && groups.length > 0 ? (
-        <div data-testid="cluster-feed-list">
-          {groups.map((group) => (
-            <div
-              key={group.key}
-              data-testid="cluster-feed-section"
-              data-section={group.key}
-              style={styles.group}
-            >
-              <div className="cluster-feed-section-label" style={styles.groupLabel}>
-                {group.label}
-              </div>
-              <ul style={styles.list}>
-                {group.items.map((item, index) => (
-                  <li
-                    key={`${item.type}-${item.title}-${index}`}
-                    data-testid="cluster-feed-item"
-                    data-feed-type={item.type || ""}
-                    style={styles.row}
-                  >
-                    <div className="cluster-feed-item-title" style={styles.title}>
-                      {item.title}
-                    </div>
-                    {item.detail && !isMetaDetail(item.detail) ? (
-                      <p style={styles.detail}>{item.detail}</p>
-                    ) : null}
-                    {item.reported_ago ? (
-                      <p style={styles.ago} data-testid="cluster-feed-reported-ago">
-                        {item.reported_ago}
-                      </p>
-                    ) : null}
-                    {item.photo_url ? (
-                      <img
-                        src={item.photo_url}
-                        alt=""
-                        loading="lazy"
-                        style={styles.photo}
-                      />
-                    ) : null}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+      {!loading && hotspots.items.length > 0 ? (
+        <div data-testid="cluster-feed-section" data-section="hotspots" style={styles.group}>
+          <div className="cluster-feed-section-label" style={styles.groupLabel}>
+            Today&apos;s Hotspots
+          </div>
+          <ul style={styles.list} data-testid="cluster-feed-list">
+            {hotspots.items.map((spot) => (
+              <li
+                key={spot.href || spot.restaurant_name}
+                data-testid="cluster-feed-item"
+                style={styles.row}
+              >
+                <div className="cluster-feed-item-title" style={styles.title}>
+                  {spot.href ? (
+                    <Link to={spot.href} style={styles.nameLink}>
+                      {spot.restaurant_name}
+                    </Link>
+                  ) : (
+                    spot.restaurant_name
+                  )}
+                </div>
+                {spot.comment ? <p style={styles.detail}>{spot.comment}</p> : null}
+              </li>
+            ))}
+          </ul>
+          {hotspots.moreCount > 0 ? (
+            <Link to={restaurantsHref} style={styles.moreLink} data-testid="cluster-hotspots-more">
+              See {hotspots.moreCount} more {hotspots.moreCount === 1 ? "place" : "places"}
+            </Link>
+          ) : null}
+        </div>
+      ) : null}
+
+      {!loading && popular.length > 0 ? (
+        <div data-testid="cluster-feed-section" data-section="popular" style={styles.group}>
+          <div className="cluster-feed-section-label" style={styles.groupLabel}>
+            Popular today
+          </div>
+          <ul style={styles.list}>
+            {popular.map((item) => (
+              <li key={item.menu_item_id} data-testid="cluster-popular-item" style={styles.row}>
+                <div className="cluster-feed-item-title" style={styles.title}>
+                  <Link to={item.href} style={styles.nameLink}>
+                    {item.item_name}
+                  </Link>
+                </div>
+                {item.restaurant_name ? (
+                  <p style={styles.detail}>{item.restaurant_name}</p>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      {!loading && comments.length > 0 ? (
+        <div data-testid="cluster-feed-section" data-section="who" style={styles.group}>
+          <div className="cluster-feed-section-label" style={styles.groupLabel}>
+            Who&apos;s eating here
+          </div>
+          <ul style={styles.list} data-testid="cluster-who-list">
+            {comments.map((status) => (
+              <StatusLine key={status.id || status.display_line} status={status} />
+            ))}
+          </ul>
         </div>
       ) : null}
     </section>
   );
 }
 
-function isMetaDetail(detail) {
-  const t = String(detail || "").toLowerCase();
-  return (
-    t.includes("not a sellable") ||
-    t.includes("experience reports") ||
-    t.includes("does not track") ||
-    t.includes("subscription") ||
-    t.includes("waiter")
-  );
-}
-
 const styles = {
   section: {
     marginBottom: 18,
-    padding: "14px 0 4px",
+    padding: "10px 0 4px",
     borderTop: "1px solid #e5e7eb",
   },
-  sectionTitle: {
-    fontSize: 18,
+  clock: {
+    fontSize: 22,
     fontWeight: 800,
-    letterSpacing: 0,
+    letterSpacing: "-0.03em",
     color: "#111827",
-    textTransform: "none",
-    marginBottom: 4,
+    margin: "0 0 4px",
+    lineHeight: 1.2,
   },
   lead: {
-    margin: "0 0 14px",
-    fontSize: 14,
+    margin: "0 0 16px",
+    fontSize: 15,
     fontWeight: 500,
     color: "#4b5563",
     lineHeight: 1.35,
   },
   muted: { fontSize: 13, color: "#6b7280", margin: "0 0 8px" },
-  group: { marginBottom: 14 },
+  group: { marginBottom: 16 },
   groupLabel: {
     fontSize: 12,
     fontWeight: 800,
-    letterSpacing: 0.35,
+    letterSpacing: 0.4,
     textTransform: "uppercase",
     color: "#0f766e",
     marginBottom: 6,
@@ -225,14 +289,23 @@ const styles = {
     padding: "10px 0",
     borderBottom: "1px solid #e5e7eb",
   },
-  title: { fontSize: 15, fontWeight: 700, color: "#111827", lineHeight: 1.35 },
+  title: { fontSize: 16, fontWeight: 700, color: "#111827", lineHeight: 1.35 },
   detail: { margin: "3px 0 0", fontSize: 14, color: "#374151", lineHeight: 1.4 },
-  ago: { margin: "3px 0 0", fontSize: 12, color: "#6b7280", lineHeight: 1.35 },
-  photo: {
-    marginTop: 8,
-    maxWidth: "100%",
-    maxHeight: 140,
-    borderRadius: 8,
-    objectFit: "cover",
+  nameLink: { color: "#111827", textDecoration: "none", fontWeight: 700 },
+  inlineLink: {
+    display: "inline-block",
+    marginTop: 4,
+    fontSize: 13,
+    fontWeight: 600,
+    color: "#166534",
+    textDecoration: "none",
+  },
+  moreLink: {
+    display: "inline-block",
+    marginTop: 10,
+    fontSize: 14,
+    fontWeight: 700,
+    color: "#166534",
+    textDecoration: "none",
   },
 };

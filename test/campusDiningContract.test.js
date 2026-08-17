@@ -19,17 +19,20 @@ function read(rel, base = root) {
 test("Campus Dining mounts only via CampusDiningSection on ClusterPage", () => {
   const page = read("src/pages/ClusterPage.jsx");
   assert.match(page, /CampusDiningSection/);
-  assert.match(page, /WhatPeopleAreEating/);
+  assert.match(page, /ClusterPublicFeed/);
+  assert.match(page, /ClusterNearbyEvents/);
 });
 
 test("CampusDiningSection is university-gated and hidden when empty", () => {
   const src = read("src/components/cluster/CampusDiningSection.jsx");
   assert.match(src, /university/);
   assert.match(src, /locations\.length === 0\) return null/);
-  assert.match(src, /WhatDinersAreSaying/);
+  assert.match(src, /On campus/);
   assert.match(src, /fetchClusterCampusDining/);
   assert.match(src, /Dining Hall/);
   assert.match(src, /entity_label|entity_type|campus-dining-entity-type/);
+  assert.doesNotMatch(src, /WhatDinersAreSaying/);
+  assert.doesNotMatch(src, /Today.?s Menu|View Menu/);
   assert.doesNotMatch(src, /paywall|NONSUBSCRIBER|requireSubscription/i);
 });
 

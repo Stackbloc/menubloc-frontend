@@ -27,7 +27,7 @@ import {
   getClusterProductTitle,
 } from "../lib/clusterLegalCopy.js";
 import {
-  resolveClusterIntro,
+  resolveClusterCardDescription,
   resolveClusterSearchPlaceholder,
   resolveClusterDocumentMeta,
 } from "../lib/clusterSeoContent.js";
@@ -59,10 +59,10 @@ import {
 import { rememberMenuBrowserVenueSession } from "../lib/menuBrowserVenueContext.js";
 import { clusterShowsDishExcerpt } from "../lib/clusterDishExcerpt.js";
 import ChipRail from "../components/chips/ChipRail.jsx";
-import WhatPeopleAreEating from "../components/cluster/WhatPeopleAreEating.jsx";
 import CampusDiningSection from "../components/cluster/CampusDiningSection.jsx";
 import ClusterSubscribeButton from "../components/cluster/ClusterSubscribeButton.jsx";
 import ClusterPublicFeed from "../components/cluster/ClusterPublicFeed.jsx";
+import ClusterNearbyEvents from "../components/cluster/ClusterNearbyEvents.jsx";
 
 const CANONICAL_BASE = "https://menuply.com";
 const CLUSTER_VIEW_MODES = Object.freeze({
@@ -72,7 +72,7 @@ const CLUSTER_VIEW_MODES = Object.freeze({
 
 function ClusterDescription({ cluster }) {
   if (!cluster) return null;
-  const intro = resolveClusterIntro(cluster);
+  const intro = resolveClusterCardDescription(cluster);
   if (!intro) return null;
 
   return (
@@ -1309,16 +1309,13 @@ export default function ClusterPage() {
         ) : null}
       </header>
 
-      {/* Public Cluster Feed — no subscription required (Phase 6). Not Waiter. */}
+      {/* Public cluster dashboard — clock, hotspots, popular, comments. */}
       {cluster.slug ? <ClusterPublicFeed cluster={cluster} /> : null}
-
-      {/* Public discovery — available without sign-in (Social Engine Phase 7). */}
-      {cluster.id ? (
-        <WhatPeopleAreEating clusterId={cluster.id} />
-      ) : null}
 
       {/* University clusters only — hidden when no campus dining members. */}
       <CampusDiningSection cluster={cluster} />
+
+      {cluster.slug ? <ClusterNearbyEvents cluster={cluster} /> : null}
 
       {/* Keep both views mounted so the Food/Restaurants toggle is not destroyed mid-tap. */}
       <div

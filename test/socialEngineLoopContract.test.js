@@ -28,8 +28,8 @@ describe("Social Engine loop wiring (Phases 1–8)", () => {
     expect(shell).toMatch(/WhatDinersAreSaying/);
 
     const cluster = read("src/pages/ClusterPage.jsx");
-    expect(cluster).toMatch(/WhatPeopleAreEating/);
-    expect(cluster).toMatch(/available without sign-in/);
+    expect(cluster).toMatch(/ClusterPublicFeed/);
+    expect(cluster).toMatch(/ClusterNearbyEvents/);
 
     const people = read("src/components/cluster/WhatPeopleAreEating.jsx");
     expect(people).toMatch(/listPublicClusterFoodActivity/);

@@ -1,5 +1,6 @@
 # Handoffs Index
 
+- `2026-08-17_cluster-landing-consumer-dashboard_handoff.md` — Cluster page scan-first dashboard (**LOCAL until CPD**).
 - `2026-08-17_dining-hall-status-comments-lock_handoff.md` — Dining halls: status + comments only; no menu analysis (**CPD COMPLETE** — tip `9ijik4t7p` / `index-HPBXNwnC.js`; BE `1e546d61`).
 - `2026-08-17_guest-open-reporting_handoff.md` — Guest first-class IEA/diner-status reporting; accounts unlock identity/social (**CPD COMPLETE** — tip `37tsmprgc` / `index-HPBXNwnC.js`; BE `a32d95dd`).
 - `../audits/2026-08-17_account-profile-diner-qr-share.md` — Profile tab diner QR + Share My Menuply after Profile information (**CPD COMPLETE** — tip `1urgwayz1` / `index-FsvPkVHt.js`).
