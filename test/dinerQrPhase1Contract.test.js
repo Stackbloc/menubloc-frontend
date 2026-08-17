@@ -7,7 +7,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { buildDinerQrShareData, menuplyDinerQrUrl } from "../src/lib/dinerQrShare.js";
+import { buildDinerQrShareData, menuplyDinerConnectUrl, menuplyDinerQrUrl } from "../src/lib/dinerQrShare.js";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -15,17 +15,21 @@ function read(rel) {
   return readFileSync(join(root, rel), "utf8");
 }
 
-test("diner QR share locks menuply.com /d/{token}", () => {
+test("diner QR share locks menuply.com connect invite URL", () => {
   const token = "11111111-1111-4111-8111-111111111111";
   assert.equal(menuplyDinerQrUrl(token), `https://menuply.com/d/${token}`);
+  assert.equal(
+    menuplyDinerConnectUrl(token),
+    `https://menuply.com/connect/d/${token}`
+  );
   const data = buildDinerQrShareData({
     scan_url: `https://preview.example/d/${token}`,
     display_name: "Alex",
   });
   assert.ok(data);
-  assert.equal(data.url, `https://menuply.com/d/${token}`);
-  assert.match(data.text, /has invited you to connect on Menuply, a social app/i);
-  assert.match(data.text, /Continue to review Alex's invitation/);
+  assert.equal(data.url, `https://menuply.com/connect/d/${token}`);
+  assert.match(data.text, /Create a free diner account/i);
+  assert.match(data.text, /link with Alex/i);
   assert.equal(buildDinerQrShareData({}), null);
 });
 
@@ -58,14 +62,21 @@ test("connect landing uses invitation copy and public projection only", () => {
   assert.match(page, /fetchPublicDinerQr/);
   assert.match(page, /connectViaDinerQr/);
   assert.match(page, /has invited you to connect on Menuply, a social app/);
-  assert.match(page, /Continue to review \$\{inviteName\}'s invitation/);
+  assert.match(page, /Create a diner account/);
+  assert.match(page, /sendConnectionRequest/);
   assert.match(page, /formatDinerInviteName/);
-  assert.match(page, /Connect with \$\{inviteName\}/);
+  assert.match(page, /Link with \$\{inviteName\}/);
   assert.match(page, /Meet Me Here/);
   assert.doesNotMatch(page, /This is your personal Diner QR/);
   assert.doesNotMatch(page, /phone_number|current.?location|dining.?crew|conversation/i);
   assert.doesNotMatch(page, /A Menuply diner/);
   assert.doesNotMatch(page, /Scan complete\. Connect to interact/);
+});
+
+test("signup skips welcome when returning to diner QR connect invite", () => {
+  const signup = read("src/pages/consumer/ConsumerSignup.jsx");
+  assert.match(signup, /isDinerQrConnectPath/);
+  assert.match(signup, /navigateAfterAuth/);
 });
 
 test("profile links My Diner QR; SPA owns /d/:token scan; image still rewritten", () => {

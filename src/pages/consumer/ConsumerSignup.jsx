@@ -5,6 +5,7 @@ import { useConsumer } from "../../context/ConsumerContext.jsx";
 import { useLanguage } from "../../context/LanguageContext.jsx";
 import { buildLegalConsentPayload } from "../../lib/legalConsent.js";
 import { resolveConsumerAuthNext, withConsumerAuthNext } from "../../lib/consumerAuthNext.js";
+import { isDinerQrConnectPath } from "../../lib/dinerQrShare.js";
 import {
   AuthPageFrame,
   FormError,
@@ -28,6 +29,14 @@ export default function ConsumerSignup() {
   const [loading, setLoading] = useState(false);
   const [smsOpen, setSmsOpen] = useState(false);
   const [phoneVerificationToken, setPhoneVerificationToken] = useState("");
+
+  function navigateAfterAuth() {
+    if (isDinerQrConnectPath(redirectTo)) {
+      navigate(redirectTo, { replace: true });
+      return;
+    }
+    navigate("/account/welcome", { replace: true, state: { redirectTo } });
+  }
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -56,7 +65,7 @@ export default function ConsumerSignup() {
         setSmsOpen(true);
         return;
       }
-      navigate("/account/welcome", { replace: true, state: { redirectTo } });
+      navigateAfterAuth();
     } catch (error) {
       setFormError(error.message || t("auth.signUpFailed", "Sign up failed. Please try again."));
     } finally {
@@ -170,7 +179,7 @@ export default function ConsumerSignup() {
         onClose={() => setSmsOpen(false)}
         purpose="signup"
         verificationToken={phoneVerificationToken || null}
-        onSuccess={() => navigate("/account/welcome", { replace: true, state: { redirectTo } })}
+        onSuccess={navigateAfterAuth}
       />
     </>
   );

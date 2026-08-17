@@ -4,20 +4,46 @@
 
 import { normalizeConsumerShareUrl } from "../components/share/shareUtils.js";
 
-export function menuplyDinerQrUrl(scanUrlOrToken) {
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+export function extractDinerQrToken(scanUrlOrToken) {
   const raw = String(scanUrlOrToken || "").trim();
   if (!raw) return "";
+  if (UUID_RE.test(raw)) return raw.toLowerCase();
   try {
-    if (/^[0-9a-f-]{36}$/i.test(raw)) {
-      return normalizeConsumerShareUrl(`https://menuply.com/d/${raw}`) || "";
-    }
     const parsed = new URL(raw, "https://menuply.com");
-    return (
-      normalizeConsumerShareUrl(`https://menuply.com${parsed.pathname}${parsed.search}`) || ""
-    );
+    const parts = parsed.pathname.split("/").filter(Boolean);
+    const idx = parts.findIndex((p) => p === "d" || p === "connect");
+    const candidate = idx >= 0 ? parts[idx + 1] : parts[parts.length - 1];
+    if (UUID_RE.test(String(candidate || ""))) return String(candidate).toLowerCase();
   } catch {
-    return normalizeConsumerShareUrl(raw) || "";
+    // fall through
   }
+  return "";
+}
+
+/** QR scan encoding — phone cameras open /d/{token}. */
+export function menuplyDinerQrUrl(scanUrlOrToken) {
+  const token = extractDinerQrToken(scanUrlOrToken);
+  if (!token) {
+    const raw = String(scanUrlOrToken || "").trim();
+    return raw ? normalizeConsumerShareUrl(raw) || "" : "";
+  }
+  return normalizeConsumerShareUrl(`https://menuply.com/d/${token}`) || "";
+}
+
+/** Copy Link share — invite landing with signup + connect. */
+export function menuplyDinerConnectUrl(scanUrlOrToken) {
+  const token = extractDinerQrToken(scanUrlOrToken);
+  if (!token) return "";
+  return normalizeConsumerShareUrl(`https://menuply.com/connect/d/${token}`) || "";
+}
+
+export function isDinerQrConnectPath(path) {
+  const raw = String(path || "").trim();
+  if (!raw.startsWith("/connect/d/")) return false;
+  const token = raw.slice("/connect/d/".length).split(/[?#]/)[0];
+  return UUID_RE.test(token);
 }
 
 /**
@@ -41,14 +67,14 @@ export function formatDinerInviteName(displayName) {
  * @param {{ scan_url?: string, token?: string, display_name?: string|null }} opts
  */
 export function buildDinerQrShareData({ scan_url, token, display_name } = {}) {
-  const url = menuplyDinerQrUrl(scan_url || token);
+  const url = menuplyDinerConnectUrl(scan_url || token);
   if (!url) return null;
   const inviteName = formatDinerInviteName(display_name) || String(display_name || "").trim();
   return {
-    title: inviteName ? `${inviteName} on Menuply` : "Connect on Menuply",
+    title: inviteName ? `Connect with ${inviteName} on Menuply` : "Connect on Menuply",
     text: inviteName
-      ? `${inviteName} has invited you to connect on Menuply, a social app for discovering and sharing food and events. Continue to review ${inviteName}'s invitation.`
-      : "You've been invited to connect on Menuply, a social app for discovering and sharing food and events.",
+      ? `${inviteName} invited you to connect on Menuply. Create a free diner account to link with ${inviteName} and discover food together.`
+      : "You've been invited to connect on Menuply. Create a free diner account to link with the person who sent this link.",
     url,
   };
 }

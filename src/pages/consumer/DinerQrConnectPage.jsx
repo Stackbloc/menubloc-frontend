@@ -5,7 +5,7 @@
  * Lunch / restaurant proposals use Meet Me Here → /invite/:token (separate).
  */
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import StickyPageHeader from "../../components/StickyPageHeader.jsx";
 import BottomNav from "../../components/BottomNav.jsx";
@@ -39,6 +39,7 @@ export default function DinerQrConnectPage() {
   const [selfScan, setSelfScan] = useState(false);
   const [busy, setBusy] = useState(false);
   const [requestSent, setRequestSent] = useState(false);
+  const autoConnectAttempted = useRef(false);
 
   const load = useCallback(async () => {
     setError("");
@@ -84,12 +85,9 @@ export default function DinerQrConnectPage() {
   const headline = `${inviteName} has invited you to connect on Menuply, a social app for discovering and sharing food and events.`;
   const continueLine = `Continue to review ${inviteName}'s invitation.`;
   const loginNext = `/connect/d/${encodeURIComponent(String(token || ""))}`;
+  const signupNext = loginNext;
 
-  async function handleConnect() {
-    if (!isAuthenticated) {
-      navigate(`/account/login?next=${encodeURIComponent(loginNext)}`);
-      return;
-    }
+  const sendConnectionRequest = useCallback(async () => {
     setBusy(true);
     setError("");
     setNotice("");
@@ -104,8 +102,10 @@ export default function DinerQrConnectPage() {
         setSelfScan(true);
         setNotice("You opened your own connect invite. Share the link or QR with someone else.");
       } else if (err?.payload?.code === "already_connected") {
+        setRequestSent(true);
         setNotice(`You are already connected with ${inviteName}.`);
       } else if (err?.payload?.code === "already_pending") {
+        setRequestSent(true);
         setNotice(`A Connection request to ${inviteName} is already pending.`);
       } else {
         setError(err.message || "Unable to connect");
@@ -113,7 +113,43 @@ export default function DinerQrConnectPage() {
     } finally {
       setBusy(false);
     }
+  }, [token, inviteName]);
+
+  async function handleConnect() {
+    if (!isAuthenticated) {
+      navigate(`/account/signup?next=${encodeURIComponent(signupNext)}`);
+      return;
+    }
+    await sendConnectionRequest();
   }
+
+  useEffect(() => {
+    if (
+      autoConnectAttempted.current ||
+      !isAuthenticated ||
+      authLoading ||
+      loading ||
+      selfScan ||
+      requestSent ||
+      busy ||
+      !projection ||
+      !token
+    ) {
+      return;
+    }
+    autoConnectAttempted.current = true;
+    sendConnectionRequest();
+  }, [
+    isAuthenticated,
+    authLoading,
+    loading,
+    selfScan,
+    requestSent,
+    busy,
+    projection,
+    token,
+    sendConnectionRequest,
+  ]);
 
   return (
     <>
@@ -159,13 +195,13 @@ export default function DinerQrConnectPage() {
                   <ol style={styles.steps}>
                     <li>
                       {isAuthenticated
-                        ? `Tap Connect with ${inviteName} below to accept this invitation.`
-                        : "Sign in or create a free diner account (takes a minute)."}
+                        ? `We are linking you with ${inviteName} now.`
+                        : "Create a free diner account (takes about a minute)."}
                     </li>
                     <li>
                       {isAuthenticated
                         ? `${inviteName} confirms the connection in Connections.`
-                        : `Then return here and continue to review ${inviteName}'s invitation.`}
+                        : `After signup, you return here and we link you with ${inviteName}.`}
                     </li>
                     <li>
                       After you are connected, you can invite each other to eat (Invite to Eat /
@@ -180,7 +216,7 @@ export default function DinerQrConnectPage() {
             {notice ? <p style={styles.notice}>{notice}</p> : null}
 
             {selfScan ? null : isAuthenticated ? (
-              requestSent ? (
+              requestSent || busy ? (
                 <Link to="/account/connections" style={styles.primaryLink}>
                   Open Connections
                 </Link>
@@ -191,22 +227,22 @@ export default function DinerQrConnectPage() {
                   disabled={busy}
                   onClick={handleConnect}
                 >
-                  {busy ? "Sending…" : `Connect with ${inviteName}`}
+                  {busy ? "Linking…" : `Link with ${inviteName}`}
                 </button>
               )
             ) : (
               <div style={styles.actions}>
                 <Link
-                  to={`/account/login?next=${encodeURIComponent(loginNext)}`}
+                  to={`/account/signup?next=${encodeURIComponent(signupNext)}`}
                   style={styles.primaryLink}
                 >
-                  Sign in to connect
+                  Create a diner account
                 </Link>
                 <Link
-                  to={`/account/signup?next=${encodeURIComponent(loginNext)}`}
+                  to={`/account/login?next=${encodeURIComponent(loginNext)}`}
                   style={styles.secondaryLink}
                 >
-                  Create a diner account
+                  Already have an account? Sign in
                 </Link>
               </div>
             )}
