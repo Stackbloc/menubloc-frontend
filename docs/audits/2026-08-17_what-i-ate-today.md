@@ -3,7 +3,7 @@
 **Date:** 2026-08-17  
 **Agent/session:** Cursor (What I Ate Today)  
 **Branches:** `menubloc-frontend-main` @ `main`, `menubloc-backend-main` @ `main`  
-**Status:** LOCAL — not committed, not deployed, migration `0266` not applied
+**Status:** LOCAL — not committed, shipped tip lb1gjtgsw / CQT15_ja, migration `0266` not applied
 
 ## Summary
 
