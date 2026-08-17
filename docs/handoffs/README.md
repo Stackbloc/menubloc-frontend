@@ -1,6 +1,6 @@
 # Handoffs Index
 
-- `2026-08-17_guest-open-reporting_handoff.md` — Guest first-class IEA/diner-status reporting; accounts unlock identity/social (**LOCAL** — not deployed).
+- `2026-08-17_guest-open-reporting_handoff.md` — Guest first-class IEA/diner-status reporting; accounts unlock identity/social (**CPD COMPLETE** — tip `37tsmprgc` / `index-HPBXNwnC.js`; BE `a32d95dd`).
 - `../audits/2026-08-17_account-profile-diner-qr-share.md` — Profile tab diner QR + Share My Menuply after Profile information (**CPD COMPLETE** — tip `1urgwayz1` / `index-FsvPkVHt.js`).
 - `../deployments/2026-08-17_account-profile-diner-qr-share-cpd.md` — CPD record.
 - `2026-08-17_diner-phone-verify-pending-session_handoff.md` — Diner phone verify without pending cookie (**CPD COMPLETE** — tip `nax94uq0u` / `index-DAjZPkYd.js`; BE `4a603a12`).

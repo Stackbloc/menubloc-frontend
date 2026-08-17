@@ -4,7 +4,7 @@ Treat Guest as a first-class Menuply contributor: anyone can post I'm Eating At 
 
 # Current Status
 
-**LOCAL COMPLETE — not committed, not deployed.** Code lives in `menubloc-backend-main` and `menubloc-frontend-main`. Production guest writes need migration `20260817_0265_guest_open_reporting.sql`.
+**CPD COMPLETE — live on menuply.com.** Tip `37tsmprgc` / `index-HPBXNwnC.js` (`81b9bdd`). BE health MATCH `a32d95dd`. Migrations `0264` Join Me and `0265` guest open reporting applied.
 
 Product principle (locked): **Anyone can contribute. Accounts unlock identity and social features.**  
 Contract: `docs/guardrails/2026-08-17_guest-open-reporting-contract.md`

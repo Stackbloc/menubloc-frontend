@@ -34,32 +34,32 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www **and** 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` @ clean `main` |
-| Git commit | `da0bb15` — Profile diner QR + Share My Menuply |
-| Vercel deployment | `menubloc-frontend-1urgwayz1-menuply.vercel.app` |
-| Live bundle | `index-FsvPkVHt.js` |
+| Git commit | `81b9bdd` — Guest open reporting |
+| Vercel deployment | `menubloc-frontend-37tsmprgc-menuply.vercel.app` |
+| Live bundle | `index-HPBXNwnC.js` |
 | Aliases | `menuply.com`, `www.menuply.com`, `crm.menuply.com`, `venues.menuply.com` |
 | Tip-gate | **PASS** (apex + www) verified 2026-08-17 |
-| Feature | Profile tab: Profile information → My Diner QR → Share My Menuply |
+| Feature | Anyone can contribute I'm Eating At / diner-status; accounts unlock Join Me and identity social |
 
 ### Backend (Railway)
 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-backend-main` @ clean `main` |
-| Git commit | `4a603a12` — diner phone-verification token |
+| Git commit | `a32d95dd` — guest open reporting + Join Me |
 | Health URL | `https://menubloc-backend-production.up.railway.app/health` |
-| `commit_hash` | `null` (CLI git-archive deploy of HEAD `4a603a12`; GitHub auto-deploy did not start; `railway up` from worktree 413) |
-| Migrations | `0250`–`0263` applied (`0263` what_we_doing + consumer_notifications) |
-| Smoke | Health `ok`; live FE bundle contains `phone_verification_token` |
+| `commit_hash` | `a32d95dd8c4638b2a4ce77e9693d3755e07e4c8e` |
+| Migrations | `0250`–`0265` applied (`0264` Join Me; `0265` guest open reporting) |
+| Smoke | Health MATCH; guest POST without key → `guest_session_required`; Join Me POST → 401 |
 
 ### Restore current tip (if tip-gate fails mid-change)
 
 ```bash
 cd /Users/andrebarber/Desktop/menubloc/menubloc-frontend-main
-npx vercel alias set menubloc-frontend-1urgwayz1-menuply.vercel.app menuply.com
-npx vercel alias set menubloc-frontend-1urgwayz1-menuply.vercel.app www.menuply.com
-npx vercel alias set menubloc-frontend-1urgwayz1-menuply.vercel.app crm.menuply.com
-npx vercel alias set menubloc-frontend-1urgwayz1-menuply.vercel.app venues.menuply.com
+npx vercel alias set menubloc-frontend-37tsmprgc-menuply.vercel.app menuply.com
+npx vercel alias set menubloc-frontend-37tsmprgc-menuply.vercel.app www.menuply.com
+npx vercel alias set menubloc-frontend-37tsmprgc-menuply.vercel.app crm.menuply.com
+npx vercel alias set menubloc-frontend-37tsmprgc-menuply.vercel.app venues.menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 ```
@@ -120,7 +120,8 @@ Newest superseded first. Restoring drops everything shipped after that tip.
 
 | Deployment id | Bundle | Approx feature / CPD |
 |---------------|--------|----------------------|
-| `1urgwayz1` | `index-FsvPkVHt.js` | **CURRENT** — Profile diner QR + Share My Menuply (`da0bb15`) |
+| `37tsmprgc` | `index-HPBXNwnC.js` | **CURRENT** — Guest open reporting (`81b9bdd`) |
+| `1urgwayz1` | `index-FsvPkVHt.js` | Profile diner QR + Share My Menuply (`da0bb15`) — superseded by `37tsmprgc` |
 | `nax94uq0u` | `index-DAjZPkYd.js` | Diner phone-verification token (`b8404e9`) — superseded by `1urgwayz1` |
 | `kgtgek3l4` | `index-Br9O-thi.js` | Account dashboard four tabs (`2b0b024`) — superseded by `nax94uq0u` |
 | `iyxv62rs6` | `index-6JpzKw-R.js` | Diner QR invitee connect copy (`7d5c7df`) — superseded by `kgtgek3l4` |

@@ -49,7 +49,7 @@ None.
 
 # Deployment Status
 
-**LOCAL ONLY.** Not committed. Not pushed. Not Railway/Vercel deployed. `0265` not applied.
+**CPD COMPLETE.** FE `81b9bdd` / `37tsmprgc` / `index-HPBXNwnC.js`. BE `a32d95dd` MATCH. Migrations `0264`–`0265` applied.
 
 # Verification Results
 
@@ -61,7 +61,6 @@ None.
 
 # Remaining Risks
 
-- Production guest INSERT falls back to 503 until migration
 - Guest_key in localStorage can be cleared; abuse then relies on IP hash
 - Restaurant name typeahead is still national ILIKE (composer, not dish search)
 - GPS permission denied → `location_confidence=unknown` (allowed)
@@ -75,4 +74,4 @@ None.
 
 # Final Verdict
 
-**LOCAL IMPLEMENTATION COMPLETE — NOT PRODUCTION.** Guest contribution is open in code; identity social remains gated; registration is after-success only.
+**CPD COMPLETE.** FE tip `menubloc-frontend-37tsmprgc-menuply.vercel.app` / `index-HPBXNwnC.js` (`81b9bdd`). BE health MATCH `a32d95dd`. Migrations `0264`–`0265` applied.
