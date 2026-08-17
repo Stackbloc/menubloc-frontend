@@ -6,7 +6,7 @@ Make the cluster page a quick, consumer-friendly overview (dashboard): name, clo
 
 ## Current Status
 
-**CPD COMPLETE.** Tip `menubloc-frontend-30qbi67vq-menuply.vercel.app` / `index-CMXfgjwr.js` (`11e792e`). BE shipped `a8980221`; Railway `/health` MATCH `a89802214c080b0ade35d3a99fb16c43edfcd982` at alias time.
+**CPD COMPLETE.** Tip `menubloc-frontend-30qbi67vq-menuply.vercel.app` / `index-CMXfgjwr.js` (`11e792e`). BE feature `a8980221`; live health MATCH docs `82beb3d9e4455005c81212cc6c12aca14a6120a2`.
 
 ## Files Changed
 
@@ -32,7 +32,7 @@ None for this CPD. Optional later: shared market clock helper.
 
 ## Risks / Known Issues
 
-Empty clusters show a quiet state. Event list is empty until published geo-located venue events exist. BE docs commit may change live `/health` SHA — record it; do not redeploy to chase.
+Empty clusters show a quiet state. Event list is empty until published geo-located venue events exist.
 
 ## Verification Status
 
@@ -44,4 +44,4 @@ Do not put events into `clusterReportFeedService`. Do not add dining-hall menus.
 
 ## Git Status
 
-FE `menubloc-frontend-main` @ `11e792e` (plus CPD docs). BE `menubloc-backend-main` @ `a8980221` (plus CPD docs).
+FE `menubloc-frontend-main` @ `bac3371` (feature `11e792e` plus CPD docs). BE `menubloc-backend-main` @ `82beb3d9` (feature `a8980221` plus CPD docs). Do not push BE again to chase health.

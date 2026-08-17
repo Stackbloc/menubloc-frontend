@@ -21,9 +21,9 @@ Shipped a scan-first cluster page: name + short blurb, local day/date/time, Toda
 
 ## BE health
 
-- Shipped SHA: `a89802214c080b0ade35d3a99fb16c43edfcd982`
-- Railway `/health` `commit_hash`: **MATCH**
-- GitHub auto-deploy SUCCESS (`3ab07e64-79b5-4040-966d-d946ce33fa01`)
+- Feature SHA: `a89802214c080b0ade35d3a99fb16c43edfcd982`
+- Live `/health` after CPD docs: **MATCH** `82beb3d9e4455005c81212cc6c12aca14a6120a2`
+- GitHub auto-deploy SUCCESS (`f74c97ba` docs; prior feature `3ab07e64`)
 - `GET /public/clusters/usc/events` returns `ok: true` (events may be empty)
 
 ## Database

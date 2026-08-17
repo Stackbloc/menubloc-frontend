@@ -44,7 +44,7 @@ None against production. New events list uses existing `venue_events` + restaura
 
 ## Deployment Status
 
-**CPD COMPLETE.** Tip `30qbi67vq` / `index-CMXfgjwr.js`. Railway `/health` MATCH `a89802214c080b0ade35d3a99fb16c43edfcd982` at alias time. Docs push may move live health to the BE docs SHA — record without chasing further deploys.
+**CPD COMPLETE.** Tip `30qbi67vq` / `index-CMXfgjwr.js`. Railway `/health` MATCH live docs `82beb3d9e4455005c81212cc6c12aca14a6120a2` (feature `a8980221`).
 
 ## Verification Results
 
