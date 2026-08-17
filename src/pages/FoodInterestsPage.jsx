@@ -6,6 +6,7 @@ import { fetchWaiterBriefing } from "../lib/waiterApi.js";
 import { WAITER_MEAL_PERIODS, getDefaultMealPeriod, normalizeMealPeriodId } from "../lib/waiterMealPeriod.js";
 import { getTimezoneForUsState } from "../lib/timeZoneUtils.js";
 import { readMenuBrowserVenueSession } from "../lib/menuBrowserVenueContext.js";
+import { readDetectedLocation } from "../lib/discoveryLocationPersistence.js";
 
 // ⚠️ WAITER PROTECTION GUARDRAIL (2026-07-02)
 // This file is FROZEN. Do NOT add MarketFallback, CommunityGrowthCard, or
@@ -23,6 +24,41 @@ function parseSessionLocation(raw) {
   const comma = str.lastIndexOf(",");
   if (comma === -1) return { city: str, state: "" };
   return { city: str.slice(0, comma).trim(), state: str.slice(comma + 1).trim() };
+}
+
+function resolveWaiterMarketLabel() {
+  if (typeof window === "undefined") return "";
+  const sessionLabel =
+    String(window.sessionStorage.getItem(SESSION_LOCATION_KEY) || "").trim() ||
+    String(window.sessionStorage.getItem(SESSION_AUTO_LABEL_KEY) || "").trim();
+  if (sessionLabel) return sessionLabel;
+  const detected = readDetectedLocation(window.localStorage);
+  if (detected?.city && detected?.state) {
+    return String(detected.label || `${detected.city}, ${detected.state}`).trim();
+  }
+  return "";
+}
+
+// Meal-period picks first; cluster updates additive at the end (matches backend merge order).
+const WAITER_GROUP_ORDER = [
+  "what_people_are_eating",
+  "liked_signal",
+  "new_item",
+  "trending_dish",
+  "meal_recommendation",
+  "active_deal",
+  "new_restaurant",
+  "cluster_report",
+  "dining_hall_update",
+  "dining_conditions",
+];
+
+function sortWaiterGroups(groups) {
+  const rank = (type) => {
+    const idx = WAITER_GROUP_ORDER.indexOf(type);
+    return idx === -1 ? WAITER_GROUP_ORDER.length : idx;
+  };
+  return [...groups].sort((a, b) => rank(a.type) - rank(b.type));
 }
 
 // ONE group per type — enforces the one-card-per-category rule.
@@ -118,13 +154,7 @@ export default function FoodInterestsPage() {
   const { isAuthenticated } = useConsumer();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const [locationLabel] = useState(() => {
-    if (typeof window === "undefined") return "";
-    return (
-      String(window.sessionStorage.getItem(SESSION_LOCATION_KEY) || "").trim() ||
-      String(window.sessionStorage.getItem(SESSION_AUTO_LABEL_KEY) || "").trim()
-    );
-  });
+  const [locationLabel] = useState(resolveWaiterMarketLabel);
 
   const location = parseSessionLocation(locationLabel);
 
@@ -193,7 +223,7 @@ export default function FoodInterestsPage() {
   })();
 
   // Use recommendations from the briefing payload (never the legacy cards field).
-  const groups = groupByType(briefing?.recommendations);
+  const groups = sortWaiterGroups(groupByType(briefing?.recommendations));
   const clusterNotice = briefing?.cluster_report?.notice || null;
   const emptyMessage = hasLocation
     ? "No recommendations available for your area right now. Check back soon."
