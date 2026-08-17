@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "40a58108b961784373dc0529b33eae4bbd1c0fdc",
-  "gitShortSha": "40a5810",
+  "gitSha": "6914b4eb06f4b5e39b629b657fa8eb8fef34b7f7",
+  "gitShortSha": "6914b4e",
   "branch": "main",
-  "buildTime": "2026-08-17T23:19:26.180Z",
+  "buildTime": "2026-08-17T23:51:49.948Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "fix(diner-qr): share link routes invitees to signup and auto-connect."
+  "commitMessage": "fix(diner-qr): confirm session before connect after SMS verify."
 }
