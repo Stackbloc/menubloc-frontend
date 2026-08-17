@@ -51,6 +51,21 @@ test("account dashboard uses progressive disclosure instead of Save All", () => 
   assert.match(src, /aria-pressed/);
 });
 
+test("profile tab lists My Diner QR and Share My Menuply after Profile information", () => {
+  const src = read("src/pages/consumer/accountDashboard/ProfileTab.jsx");
+  const info = src.indexOf("Profile information");
+  const qr = src.indexOf("My Diner QR");
+  const share = src.indexOf("Share My Menuply");
+  const dining = src.indexOf("Dining preferences");
+  assert.ok(info >= 0, "missing Profile information");
+  assert.ok(qr > info, "My Diner QR must follow Profile information");
+  assert.ok(share > qr, "Share My Menuply must follow My Diner QR");
+  assert.ok(dining > share, "Dining preferences must follow Share My Menuply");
+  assert.match(src, /to="\/account\/diner-qr"/);
+  assert.match(src, /to="\/account\/diner-qr\?share=1"/);
+  assert.doesNotMatch(src, /navigator\.share\(/);
+});
+
 test("account dashboard preserves existing diner surfaces", () => {
   const src = readDashboard();
   assert.match(src, /\/account\/dining-crews/);

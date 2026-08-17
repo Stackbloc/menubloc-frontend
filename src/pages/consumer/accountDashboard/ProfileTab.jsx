@@ -9,6 +9,7 @@ import {
   selectedLabels,
 } from "./accountDashboardOptions.js";
 import { accountStyles as styles } from "./accountDashboardStyles.js";
+import AccountActionLink from "./AccountActionLink.jsx";
 import PreferenceChips from "./PreferenceChips.jsx";
 import SummaryEditSection from "./SummaryEditSection.jsx";
 
@@ -135,6 +136,24 @@ export default function ProfileTab({
           {identitySaving ? "Saving…" : "Save name"}
         </button>
       </SummaryEditSection>
+
+      <section style={styles.section}>
+        <AccountActionLink
+          to="/account/diner-qr"
+          title="My Diner QR"
+          description="Your personal Menuply QR — others scan to connect with you."
+          last
+        />
+      </section>
+      <section style={styles.section}>
+        <AccountActionLink
+          to="/account/diner-qr?share=1"
+          title="Share My Menuply"
+          description="Opens your Diner Card share sheet — Copy Link is primary."
+          actionLabel="Share"
+          last
+        />
+      </section>
 
       <SummaryEditSection
         title="Dining preferences"
