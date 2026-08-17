@@ -46,9 +46,9 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www **and** 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-backend-main` @ clean `main` |
-| Git commit | `1e546d61` — dining-hall status+comments lock |
+| Git commit | `c9b4cd51` — dining-hall status+comments lock + CPD docs (`1e546d61`) |
 | Health URL | `https://menubloc-backend-production.up.railway.app/health` |
-| `commit_hash` | `1e546d6171b8400bd8a4a05657c9b51ffa6ea6a0` |
+| `commit_hash` | `c9b4cd51b45370a873e537b2b0bf1f224a665212` |
 | Migrations | `0250`–`0265` applied (`0264` Join Me; `0265` guest open reporting) |
 | Smoke | Health MATCH; guest POST without key → `guest_session_required`; Join Me POST → 401 |
 
