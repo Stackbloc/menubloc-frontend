@@ -660,6 +660,7 @@ export default function MenuCapturePage() {
           >
             Back to Menuply
           </button>
+          </div>
         </div>
       </>
     );
