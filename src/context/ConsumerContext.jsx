@@ -187,23 +187,7 @@ export function ConsumerProvider({ children }) {
   }, []);
 
   const verifySmsCode = useCallback(async (phoneNumber, code, verificationSid = null, verificationToken = null) => {
-    const verified = await verifyConsumerSmsCode(phoneNumber, code, verificationSid, verificationToken);
-    if (verified?.consumer) {
-      applySession(verified);
-      maybeResetMenuPreferenceSession(verified, {
-        dietary_preferences: verified?.dietary_preferences,
-        allergen_preferences: verified?.allergen_preferences,
-      });
-      if (
-        !hasActiveAllergenExclusions(
-          verified?.allergen_filter || null,
-          verified?.allergen_preferences || []
-        )
-      ) {
-        setAuthToast("You're signed in ✓");
-      }
-      return verified;
-    }
+    await verifyConsumerSmsCode(phoneNumber, code, verificationSid, verificationToken);
     const data = await loadMe();
     maybeResetMenuPreferenceSession(data, {
       dietary_preferences: data?.dietary_preferences,
@@ -218,7 +202,7 @@ export function ConsumerProvider({ children }) {
       setAuthToast("You're signed in ✓");
     }
     return data;
-  }, [applySession, loadMe, maybeResetMenuPreferenceSession]);
+  }, [loadMe, maybeResetMenuPreferenceSession]);
 
   const sendPhoneChangeCode = useCallback(async (phoneNumber) => {
     return sendConsumerPhoneChangeCode(phoneNumber);

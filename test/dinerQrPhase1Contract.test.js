@@ -66,6 +66,9 @@ test("connect landing uses invitation copy and public projection only", () => {
   assert.match(page, /sendConnectionRequest/);
   assert.match(page, /formatDinerInviteName/);
   assert.match(page, /Link with \$\{inviteName\}/);
+  assert.match(page, /refreshSession/);
+  assert.match(page, /Sign-in did not finish linking/);
+  assert.match(page, /authentication required/i);
   assert.match(page, /Meet Me Here/);
   assert.doesNotMatch(page, /This is your personal Diner QR/);
   assert.doesNotMatch(page, /phone_number|current.?location|dining.?crew|conversation/i);
@@ -77,6 +80,14 @@ test("signup skips welcome when returning to diner QR connect invite", () => {
   const signup = read("src/pages/consumer/ConsumerSignup.jsx");
   assert.match(signup, /isDinerQrConnectPath/);
   assert.match(signup, /navigateAfterAuth/);
+});
+
+test("SMS verify confirms cookie session before treating diner as signed in", () => {
+  const ctx = read("src/context/ConsumerContext.jsx");
+  const verifyBlock = ctx.slice(ctx.indexOf("const verifySmsCode"), ctx.indexOf("const sendPhoneChangeCode"));
+  assert.match(verifyBlock, /await verifyConsumerSmsCode/);
+  assert.match(verifyBlock, /const data = await loadMe\(\)/);
+  assert.doesNotMatch(verifyBlock, /if \(verified\?\.consumer\)/);
 });
 
 test("profile links My Diner QR; SPA owns /d/:token scan; image still rewritten", () => {

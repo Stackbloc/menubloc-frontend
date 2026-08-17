@@ -31,7 +31,7 @@ function initialsFromName(name) {
 export default function DinerQrConnectPage() {
   const { token } = useParams();
   const navigate = useNavigate();
-  const { isAuthenticated, loading: authLoading, consumer } = useConsumer();
+  const { isAuthenticated, loading: authLoading, consumer, refreshSession } = useConsumer();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -87,17 +87,25 @@ export default function DinerQrConnectPage() {
   const loginNext = `/connect/d/${encodeURIComponent(String(token || ""))}`;
   const signupNext = loginNext;
 
-  const sendConnectionRequest = useCallback(async () => {
+  const sendConnectionRequest = useCallback(async ({ retryAfterAuthRefresh = false } = {}) => {
     setBusy(true);
     setError("");
     setNotice("");
     try {
+      if (retryAfterAuthRefresh) {
+        await refreshSession();
+      }
       await connectViaDinerQr(token);
       setRequestSent(true);
       setNotice(
         `Connection request sent to ${inviteName}. They can accept it in Connections — then you can invite each other to eat.`
       );
     } catch (err) {
+      const authFailure =
+        err?.status === 401 ||
+        err?.payload?.code === "auth_required" ||
+        String(err?.message || "").toLowerCase().includes("authentication required");
+
       if (err?.payload?.code === "self_scan") {
         setSelfScan(true);
         setNotice("You opened your own connect invite. Share the link or QR with someone else.");
@@ -107,13 +115,23 @@ export default function DinerQrConnectPage() {
       } else if (err?.payload?.code === "already_pending") {
         setRequestSent(true);
         setNotice(`A Connection request to ${inviteName} is already pending.`);
+      } else if (authFailure) {
+        autoConnectAttempted.current = false;
+        try {
+          await refreshSession();
+        } catch {
+          // refreshSession clears stale optimistic auth when the cookie is missing.
+        }
+        setError(
+          `Sign-in did not finish linking you with ${inviteName}. Tap "Link with ${inviteName}" again, or sign in below and return here.`
+        );
       } else {
         setError(err.message || "Unable to connect");
       }
     } finally {
       setBusy(false);
     }
-  }, [token, inviteName]);
+  }, [token, inviteName, refreshSession]);
 
   async function handleConnect() {
     if (!isAuthenticated) {
