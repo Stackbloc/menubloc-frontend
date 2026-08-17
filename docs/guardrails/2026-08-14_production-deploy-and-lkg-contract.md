@@ -34,21 +34,21 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www **and** 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` @ clean `main` |
-| Git commit | `a1ccafe` — Dining-hall status+comments lock (same bundle as guest open reporting) |
-| Vercel deployment | `menubloc-frontend-9ijik4t7p-menuply.vercel.app` |
-| Live bundle | `index-HPBXNwnC.js` |
+| Git commit | `11e792e` — Cluster landing consumer dashboard |
+| Vercel deployment | `menubloc-frontend-30qbi67vq-menuply.vercel.app` |
+| Live bundle | `index-CMXfgjwr.js` |
 | Aliases | `menuply.com`, `www.menuply.com`, `crm.menuply.com`, `venues.menuply.com` |
 | Tip-gate | **PASS** (apex + www) verified 2026-08-17 |
-| Feature | Dining halls: status reports + comments only; no menu/item analysis |
+| Feature | Scan-first cluster dashboard: clock, hotspots, popular today, comments, campus, nearby events |
 
 ### Backend (Railway)
 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-backend-main` @ clean `main` |
-| Git commit | `c9b4cd51` — dining-hall status+comments lock + CPD docs (`1e546d61`) |
+| Git commit | `a8980221` — cluster nearby events for landing |
 | Health URL | `https://menubloc-backend-production.up.railway.app/health` |
-| `commit_hash` | `c9b4cd51b45370a873e537b2b0bf1f224a665212` |
+| `commit_hash` | `a89802214c080b0ade35d3a99fb16c43edfcd982` |
 | Migrations | `0250`–`0265` applied (`0264` Join Me; `0265` guest open reporting) |
 | Smoke | Health MATCH; guest POST without key → `guest_session_required`; Join Me POST → 401 |
 
@@ -56,10 +56,10 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www **and** 
 
 ```bash
 cd /Users/andrebarber/Desktop/menubloc/menubloc-frontend-main
-npx vercel alias set menubloc-frontend-9ijik4t7p-menuply.vercel.app menuply.com
-npx vercel alias set menubloc-frontend-9ijik4t7p-menuply.vercel.app www.menuply.com
-npx vercel alias set menubloc-frontend-9ijik4t7p-menuply.vercel.app crm.menuply.com
-npx vercel alias set menubloc-frontend-9ijik4t7p-menuply.vercel.app venues.menuply.com
+npx vercel alias set menubloc-frontend-30qbi67vq-menuply.vercel.app menuply.com
+npx vercel alias set menubloc-frontend-30qbi67vq-menuply.vercel.app www.menuply.com
+npx vercel alias set menubloc-frontend-30qbi67vq-menuply.vercel.app crm.menuply.com
+npx vercel alias set menubloc-frontend-30qbi67vq-menuply.vercel.app venues.menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 ```
@@ -120,7 +120,8 @@ Newest superseded first. Restoring drops everything shipped after that tip.
 
 | Deployment id | Bundle | Approx feature / CPD |
 |---------------|--------|----------------------|
-| `9ijik4t7p` | `index-HPBXNwnC.js` | **CURRENT** — Dining-hall status+comments lock (`a1ccafe`; same JS as guest open reporting) |
+| `30qbi67vq` | `index-CMXfgjwr.js` | **CURRENT** — Cluster landing consumer dashboard (`11e792e`) |
+| `9ijik4t7p` | `index-HPBXNwnC.js` | Dining-hall status+comments lock (`a1ccafe`) — superseded by `30qbi67vq` |
 | `37tsmprgc` | `index-HPBXNwnC.js` | Guest open reporting (`81b9bdd`) — superseded by `9ijik4t7p` |
 | `1urgwayz1` | `index-FsvPkVHt.js` | Profile diner QR + Share My Menuply (`da0bb15`) — superseded by `37tsmprgc` |
 | `nax94uq0u` | `index-DAjZPkYd.js` | Diner phone-verification token (`b8404e9`) — superseded by `1urgwayz1` |

@@ -38,16 +38,20 @@ None against production. New events list uses existing `venue_events` + restaura
 
 ## Commits
 
-Not committed until Andre asks / CPD.
+- FE `11e792e` — `feat(cluster): show a scan-first dashboard on cluster pages.`
+- BE `a8980221` — `feat(cluster): list nearby published events for cluster landing.`
+- CPD docs: this file + `docs/deployments/2026-08-17_cluster-landing-consumer-dashboard-cpd.md`
 
 ## Deployment Status
 
-Not deployed.
+**CPD COMPLETE.** Tip `30qbi67vq` / `index-CMXfgjwr.js`. Railway `/health` MATCH `a89802214c080b0ade35d3a99fb16c43edfcd982` at alias time. Docs push may move live health to the BE docs SHA — record without chasing further deploys.
 
 ## Verification Results
 
 - FE: public cluster feed, campus dining, dining-hall entity, campus theme, dashboard model, What People Are Eating, social engine loop, cluster subscriptions contracts — pass
 - BE: `publicClusterFeedPhase6Contract` — pass
+- Tip-gate PASS apex + www (`30qbi67vq` / `index-CMXfgjwr.js`)
+- `GET /public/clusters/usc/events` → `ok: true`, `event_count: 0` (no published geo events yet)
 - Waiter files not edited
 
 ## Remaining Risks
@@ -57,8 +61,8 @@ Not deployed.
 
 ## Follow-Up Work
 
-CPD when Andre asks. Optional: tick the clock from a shared market clock helper.
+Optional: tick the clock from a shared market clock helper. Do not add dining-hall menus. Do not put events into the Waiter feed builder.
 
 ## Final Verdict
 
-Cluster landing is a scan-first dashboard. Food explorer remains below. Dining halls stay status/comments only. Waiter still uses the shared food builder without events.
+**CPD COMPLETE.** Cluster landing is a scan-first dashboard. Food explorer remains below. Dining halls stay status/comments only. Waiter still uses the shared food builder without events.
