@@ -6,6 +6,8 @@ import { getDisplayItemCount, getMenuAvailabilityLabel, shouldLinkRestaurantCard
 import { getLocalizedField, getLocalizedPreviewLabel } from "../../utils/getLocalizedField.js";
 import { appendLanguageParam } from "../../lib/languageApi.js";
 import { restaurantMenuPathFromRow, restaurantPathFromRow } from "../../lib/canonicalUrl.js";
+import AddMenuAction from "../AddMenuAction.jsx";
+import { canShowAddMenu } from "../../lib/addMenuContribution.js";
 
 function buildMergedSearch(baseSearch, extra) {
   const params = new URLSearchParams(baseSearch || "");
@@ -116,7 +118,8 @@ export default function FeaturedDiscoveryCard({
   const distance = formatDistance(menu?.distance_miles);
   const itemCount = getDisplayItemCount({ restaurant: menu, hasActiveFilters });
   const menuReady = shouldLinkRestaurantCardToMenu(menu);
-  const availabilityLabel = getMenuAvailabilityLabel(menu, t);
+  const showAddMenu = canShowAddMenu(menu);
+  const availabilityLabel = showAddMenu ? null : getMenuAvailabilityLabel(menu, t);
   const hasDeals = menuReady && (menu?.has_deals || false);
   const previewSource = menuReady && Array.isArray(menu?.preview_menu_items) && menu.preview_menu_items.length
     ? menu.preview_menu_items
@@ -128,7 +131,7 @@ export default function FeaturedDiscoveryCard({
   const menuHref = restaurantMenuPathFromRow(menu) || `/public/restaurants/${id}/menu`;
   const cardSearch = buildMergedSearch(location.search, activeFilterParams);
   const href = appendLanguageParam(
-    menuReady ? `${menuHref}${cardSearch}` : `${profileHref}${cardSearch}#claim-profile`,
+    menuReady ? `${menuHref}${cardSearch}` : `${profileHref}${cardSearch}`,
     language
   );
   const { gradient, emoji } = getCuisineStyle(cuisine);
@@ -231,6 +234,9 @@ export default function FeaturedDiscoveryCard({
                 </div>
               )}
             </div>
+            {showAddMenu ? (
+              <AddMenuAction restaurant={menu} dark testId="add-menu-featured-card" />
+            ) : null}
           </div>
 
           {/* Meta pills row */}

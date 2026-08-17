@@ -1,19 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLanguage } from "../context/LanguageContext.jsx";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
+import { useConsumer } from "../context/ConsumerContext.jsx";
+import { API_BASE, apiPost, apiPostForm } from "../lib/api.js";
+import { buildAddMenuLoginPath } from "../lib/addMenuContribution.js";
 import {
   buildCapturePreviewUrl,
   convertImageFileToPdf,
   isCaptureImageFile,
 } from "../lib/menuCaptureImagePdf.js";
-
-const API = (
-  import.meta.env.VITE_API_BASE_URL ||
-  (import.meta.env.DEV
-    ? "http://localhost:3001"
-    : "https://menubloc-backend-production.up.railway.app")
-).replace(/\/$/, "");
 const MAX_FILE_BYTES = 25 * 1024 * 1024;
 function OcrProgressSpinner() {
   return (
@@ -208,12 +204,16 @@ function CaptureQualityGuide({ onContinue }) {
   );
 }
 
-function captureFlowStep(phase) {
+function captureFlowStep(phase, restaurantLocked) {
   if (phase === "guide") return 1;
-  if (phase === "identity") return 2;
-  if (phase === "menu") return 3;
-  if (phase === "review") return 4;
+  if (phase === "identity") return restaurantLocked ? null : 2;
+  if (phase === "menu") return restaurantLocked ? 2 : 3;
+  if (phase === "review") return restaurantLocked ? 3 : 4;
   return null;
+}
+
+function captureStepTotal(restaurantLocked) {
+  return restaurantLocked ? 3 : 4;
 }
 
 /**
@@ -222,7 +222,11 @@ function captureFlowStep(phase) {
 export default function MenuCapturePage() {
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { isAuthenticated, loading: authLoading, consumer } = useConsumer();
   const menuInputRef = useRef(null);
+  const lockedRestaurantId = Number(searchParams.get("restaurant_id") || "");
+  const restaurantLocked = Number.isFinite(lockedRestaurantId) && lockedRestaurantId > 0;
 
   const [phase, setPhase] = useState("guide");
   const [captureSessionId, setCaptureSessionId] = useState("");
@@ -231,11 +235,11 @@ export default function MenuCapturePage() {
   const [menuPageCount, setMenuPageCount] = useState(0);
   const [menuThumbUrls, setMenuThumbUrls] = useState([]);
 
-  const [restaurantName, setRestaurantName] = useState("");
+  const [restaurantName, setRestaurantName] = useState(() => String(searchParams.get("name") || ""));
   const [phone, setPhone] = useState("");
-  const [address, setAddress] = useState("");
-  const [city, setCity] = useState("");
-  const [stateField, setStateField] = useState("");
+  const [address, setAddress] = useState(() => String(searchParams.get("address") || ""));
+  const [city, setCity] = useState(() => String(searchParams.get("city") || ""));
+  const [stateField, setStateField] = useState(() => String(searchParams.get("state") || ""));
   const [website, setWebsite] = useState("");
   const [email, setEmail] = useState("");
 
@@ -255,71 +259,84 @@ export default function MenuCapturePage() {
       fd.append("pdf_file", pdfFile, pdfFile.name);
 
       setSavingPhoto(true);
-      const res = await fetch(
-        `${API}/menus-claim-upload-clean/capture-session/${captureSessionId}/page`,
-        { method: "POST", body: fd, credentials: "include" }
-      );
-      const json = await res.json().catch(() => ({}));
-      setSavingPhoto(false);
-
-      if (!res.ok || !json?.ok) {
-        const err = new Error(json?.error || `Upload failed (${res.status})`);
-        err.status = res.status;
-        throw err;
+      try {
+        const json = await apiPostForm(
+          `/menus-claim-upload-clean/capture-session/${captureSessionId}/page`,
+          fd
+        );
+        if (!json?.ok) {
+          const err = new Error(json?.error || "Upload failed");
+          throw err;
+        }
+        return json;
+      } finally {
+        setSavingPhoto(false);
       }
-      return json;
     },
     [captureSessionId]
   );
 
-  async function startCaptureSessionFromIdentity() {
-    if (!restaurantName.trim()) {
-      setErrorMsg("Please enter the restaurant name.");
-      return;
-    }
-    if (!city.trim()) {
-      setErrorMsg("Please enter the city.");
-      return;
-    }
-    if (!stateField.trim()) {
-      setErrorMsg("Please enter the state.");
-      return;
+  async function startCaptureSession({ skipIdentityValidation = false } = {}) {
+    if (!skipIdentityValidation) {
+      if (!restaurantName.trim()) {
+        setErrorMsg("Please enter the restaurant name.");
+        return false;
+      }
+      if (!city.trim()) {
+        setErrorMsg("Please enter the city.");
+        return false;
+      }
+      if (!stateField.trim()) {
+        setErrorMsg("Please enter the state.");
+        return false;
+      }
     }
     setErrorMsg("");
     setSessionStartError("");
     if (captureSessionId) {
       setPhase("menu");
-      return;
+      return true;
     }
     setSavingPhoto(true);
     try {
-      const res = await fetch(`${API}/menus-claim-upload-clean/capture-session/start`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          email: email.trim() || "",
-          restaurant_name_input: restaurantName.trim(),
-          restaurant_address_input: address.trim(),
-          locked_city: city.trim(),
-          locked_state: stateField.trim(),
-          phone: phone.trim(),
-          website: website.trim(),
-        }),
+      const data = await apiPost("/menus-claim-upload-clean/capture-session/start", {
+        email: email.trim() || consumer?.email || "",
+        restaurant_id: restaurantLocked ? lockedRestaurantId : undefined,
+        restaurant_name_input: restaurantName.trim(),
+        restaurant_address_input: address.trim(),
+        locked_city: city.trim(),
+        locked_state: stateField.trim(),
+        phone: phone.trim(),
+        website: website.trim(),
       });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok || !data?.ok || !data.capture_session_id) {
+      if (!data?.ok || !data.capture_session_id) {
         setSessionStartError(data?.error || "Could not start upload session.");
-        return;
+        return false;
       }
       setCaptureSessionId(data.capture_session_id);
       setNextPageNumber(1);
+      if (data.restaurant_name_input && !restaurantName.trim()) {
+        setRestaurantName(String(data.restaurant_name_input));
+      }
+      if (data.locked_city && !city.trim()) setCity(String(data.locked_city));
+      if (data.locked_state && !stateField.trim()) setStateField(String(data.locked_state));
       setPhase("menu");
-    } catch {
-      setSessionStartError("Could not start upload session.");
+      return true;
+    } catch (err) {
+      if (Number(err?.status) === 401) {
+        const next = `${window.location.pathname}${window.location.search}`;
+        navigate(buildAddMenuLoginPath(next), { state: { redirectTo: next } });
+        return false;
+      }
+      setSessionStartError(err?.message || "Could not start upload session.");
+      return false;
     } finally {
       setSavingPhoto(false);
     }
+  }
+
+  async function startCaptureSessionFromIdentity() {
+    await startCaptureSession({ skipIdentityValidation: restaurantLocked });
   }
 
   function validateImageFile(f) {
@@ -365,14 +382,16 @@ export default function MenuCapturePage() {
   }
 
   async function finalizeSubmit() {
-    const name = restaurantName.trim();
-    if (!name) {
-      setErrorMsg("Please enter the restaurant name before submitting.");
-      return;
-    }
-    if (!city.trim() || !stateField.trim()) {
-      setErrorMsg("City and state are required.");
-      return;
+    if (!restaurantLocked) {
+      const name = restaurantName.trim();
+      if (!name) {
+        setErrorMsg("Please enter the restaurant name before submitting.");
+        return;
+      }
+      if (!city.trim() || !stateField.trim()) {
+        setErrorMsg("City and state are required.");
+        return;
+      }
     }
     if (!captureSessionId) {
       setErrorMsg("Session missing. Refresh and try again.");
@@ -381,26 +400,20 @@ export default function MenuCapturePage() {
     setErrorMsg("");
     setSubmitting(true);
     try {
-      const res = await fetch(
-        `${API}/menus-claim-upload-clean/capture-session/${captureSessionId}/finish`,
+      const json = await apiPost(
+        `/menus-claim-upload-clean/capture-session/${captureSessionId}/finish`,
         {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({
-            restaurant_name: name,
-            phone: phone.trim(),
-            address: address.trim(),
-            city: city.trim(),
-            state: stateField.trim(),
-            website: website.trim(),
-            email: email.trim(),
-          }),
+          restaurant_name: restaurantName.trim(),
+          phone: phone.trim(),
+          address: address.trim(),
+          city: city.trim(),
+          state: stateField.trim(),
+          website: website.trim(),
+          email: email.trim() || consumer?.email || "",
         }
       );
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok || !json?.ok) {
-        throw new Error(json?.error || `Submit failed (${res.status})`);
+      if (!json?.ok) {
+        throw new Error(json?.error || "Submit failed");
       }
       if (!json.queued) {
         throw new Error("Unexpected response from server. Please try again.");
@@ -421,7 +434,7 @@ export default function MenuCapturePage() {
     async function poll() {
       try {
         const res = await fetch(
-          `${API}/menus-claim-upload-clean/capture-session/${captureSessionId}/status`,
+          `${API_BASE}/menus-claim-upload-clean/capture-session/${captureSessionId}/status`,
           { credentials: "include" }
         );
         const json = await res.json().catch(() => ({}));
@@ -447,6 +460,28 @@ export default function MenuCapturePage() {
       clearInterval(id);
     };
   }, [phase, captureSessionId]);
+
+  useEffect(() => {
+    if (authLoading) return;
+    if (isAuthenticated) return;
+    const next = `${window.location.pathname}${window.location.search}`;
+    navigate(buildAddMenuLoginPath(next), { replace: true, state: { redirectTo: next } });
+  }, [authLoading, isAuthenticated, navigate]);
+
+  useEffect(() => {
+    if (consumer?.email && !email) setEmail(String(consumer.email));
+  }, [consumer?.email, email]);
+
+  if (authLoading || !isAuthenticated) {
+    return (
+      <>
+        <StickyPageHeader />
+        <div style={{ maxWidth: 480, margin: "0 auto", padding: "40px 16px", color: "#64748b", fontSize: 14 }}>
+          {authLoading ? "Loading…" : "Sign in to add a menu."}
+        </div>
+      </>
+    );
+  }
 
   const progressCard = savingPhoto ? (
     <div
@@ -584,13 +619,13 @@ export default function MenuCapturePage() {
               lineHeight: 1.6,
             }}
           >
-            What happens next: your upload stays connected to this restaurant while review continues. Sign in to My
-            Account to manage menu setup, or check your public restaurant profile for published updates.
+            What happens next: Menuply is adding this menu to the restaurant. It may take a few minutes to appear.
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 16 }}>
+            {restaurantLocked ? (
             <button
               type="button"
-              onClick={() => navigate("/operator/login")}
+              onClick={() => navigate(`/restaurants/${lockedRestaurantId}`)}
               style={{
                 display: "block",
                 width: "100%",
@@ -604,9 +639,9 @@ export default function MenuCapturePage() {
                 cursor: "pointer",
               }}
             >
-              Sign in to My Account
+              Back to restaurant
             </button>
-          </div>
+            ) : null}
           <button
             type="button"
             onClick={() => navigate("/")}
@@ -645,7 +680,9 @@ export default function MenuCapturePage() {
           {phase === "guide" ? "How to photograph the menu" : "Add a menu"}
         </h1>
         <p style={{ fontSize: 12, color: "#94a3b8", marginBottom: 16 }}>
-          {captureFlowStep(phase) != null ? `Step ${captureFlowStep(phase)} of 4` : null}
+          {captureFlowStep(phase, restaurantLocked) != null
+            ? `Step ${captureFlowStep(phase, restaurantLocked)} of ${captureStepTotal(restaurantLocked)}`
+            : null}
         </p>
 
         {sessionStartError && phase === "identity" && (
@@ -666,9 +703,19 @@ export default function MenuCapturePage() {
 
         {phase !== "guide" && progressCard}
 
-        {phase === "guide" && <CaptureQualityGuide onContinue={() => setPhase("identity")} />}
+        {phase === "guide" && (
+          <CaptureQualityGuide
+            onContinue={async () => {
+              if (restaurantLocked) {
+                await startCaptureSession({ skipIdentityValidation: true });
+                return;
+              }
+              setPhase("identity");
+            }}
+          />
+        )}
 
-        {phase === "identity" && (
+        {phase === "identity" && !restaurantLocked && (
           <>
             <p style={{ fontSize: 14, color: "#64748b", marginBottom: 16, lineHeight: 1.6 }}>
               Enter the restaurant this menu belongs to. Street address is optional. Phone and website are optional.
@@ -853,6 +900,7 @@ export default function MenuCapturePage() {
             >
               Continue to review
             </button>
+            {!restaurantLocked ? (
             <button
               type="button"
               onClick={() => {
@@ -873,6 +921,7 @@ export default function MenuCapturePage() {
             >
               ← Edit restaurant details
             </button>
+            ) : null}
             <button
               type="button"
               onClick={() => setPhase("guide")}

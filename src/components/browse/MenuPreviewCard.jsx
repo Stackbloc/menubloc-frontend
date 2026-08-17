@@ -5,6 +5,8 @@ import RestaurantVerificationBadge, { verificationBadgePropsFromRow } from "../R
 import { getLocalizedField } from "../../utils/getLocalizedField.js";
 import { getDisplayItemCount, getMenuAvailabilityLabel, shouldLinkRestaurantCardToMenu } from "../../lib/publicCardCounts.js";
 import { restaurantMenuPathFromRow, restaurantPathFromRow } from "../../lib/canonicalUrl.js";
+import AddMenuAction from "../AddMenuAction.jsx";
+import { canShowAddMenu } from "../../lib/addMenuContribution.js";
 
 function buildMergedSearch(search, extraParams) {
   const params = new URLSearchParams(search || "");
@@ -272,6 +274,8 @@ export default function MenuPreviewCard({
   const { language, t } = useLanguage();
   const location = useLocation();
   const menuReady = shouldLinkRestaurantCardToMenu(menu);
+  const showAddMenu = canShowAddMenu(menu);
+  const availabilityLabel = showAddMenu ? null : getMenuAvailabilityLabel(menu, t);
   const profileHref = restaurantPathFromRow(menu) || `/public/restaurants/${menu?.restaurant_id}`;
   const menuHref = restaurantMenuPathFromRow(menu) || `/public/restaurants/${menu?.restaurant_id}/menu`;
   const baseHref = menuReady ? menuHref : profileHref;
@@ -290,7 +294,6 @@ export default function MenuPreviewCard({
   const cuisine = localizeCanonicalLabel(menu?.cuisine, "cuisine", t) || null;
   const emoji = getCuisineEmoji(restaurantName, menu?.cuisine || menu?.category);
   const itemCount = getDisplayItemCount({ restaurant: menu, hasActiveFilters });
-  const availabilityLabel = getMenuAvailabilityLabel(menu, t);
   const itemCountLabel = itemCount > 0
     ? activeFilterLabel
       ? `${itemCount} ${activeFilterLabel} ${t(itemCount === 1 ? "common.itemSingular" : "common.itemPlural")}`
@@ -472,6 +475,9 @@ export default function MenuPreviewCard({
               padding: "0 16px",
             }}
           >
+            {showAddMenu ? (
+              <AddMenuAction restaurant={menu} dark testId="add-menu-preview-card" />
+            ) : null}
             {phone && (
               <button
                 type="button"
@@ -537,7 +543,9 @@ export default function MenuPreviewCard({
           }}>
             {menuReady
               ? t("common.viewMenuShort", "View Menu")
-              : (availabilityLabel || t("discovery.viewProfile", "View Profile"))}
+              : showAddMenu
+                ? t("common.addMenu", "Add Menu")
+                : (availabilityLabel || t("discovery.viewProfile", "View Profile"))}
           </div>
         </div>
 

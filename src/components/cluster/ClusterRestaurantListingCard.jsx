@@ -1,6 +1,8 @@
 import { Link } from "react-router-dom";
 import { restaurantMenuPathFromRow, restaurantPathFromRow } from "../../lib/canonicalUrl.js";
 import { isRestaurantMenuReady } from "../../lib/publicCardCounts.js";
+import AddMenuAction from "../AddMenuAction.jsx";
+import { canShowAddMenu } from "../../lib/addMenuContribution.js";
 
 function clusterMenuStatusLabel(restaurant) {
   const menuReady = isRestaurantMenuReady(restaurant);
@@ -20,6 +22,7 @@ export default function ClusterRestaurantListingCard({ restaurant }) {
   const status = clusterMenuStatusLabel(restaurant);
   const canLinkProfile = Boolean(profileHref);
   const canLinkMenu = menuReady === true && Boolean(menuHref);
+  const showAddMenu = canShowAddMenu(restaurant);
 
   const cardBody = (
   <div
@@ -70,6 +73,7 @@ export default function ClusterRestaurantListingCard({ restaurant }) {
           View menu
         </Link>
       ) : null}
+      {showAddMenu ? <AddMenuAction restaurant={restaurant} testId="add-menu-cluster-listing" /> : null}
     </div>
   </div>
   );

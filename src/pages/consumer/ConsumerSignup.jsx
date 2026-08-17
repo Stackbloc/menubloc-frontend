@@ -4,6 +4,7 @@ import SmsAuthModal from "../../components/auth/SmsAuthModal.jsx";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
 import { useLanguage } from "../../context/LanguageContext.jsx";
 import { buildLegalConsentPayload } from "../../lib/legalConsent.js";
+import { resolveConsumerAuthNext, withConsumerAuthNext } from "../../lib/consumerAuthNext.js";
 import {
   AuthPageFrame,
   FormError,
@@ -17,10 +18,7 @@ export default function ConsumerSignup() {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
-  const redirectTo = useMemo(() => {
-    const next = location.state?.redirectTo;
-    return typeof next === "string" && next.trim() ? next : "/";
-  }, [location.state]);
+  const redirectTo = useMemo(() => resolveConsumerAuthNext(location, "/"), [location]);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -98,7 +96,7 @@ export default function ConsumerSignup() {
         footer={(
           <p style={styles.footer}>
             Already have an account?{" "}
-            <Link to="/account/login" style={styles.link}>Sign in</Link>
+            <Link to={withConsumerAuthNext("/account/login", redirectTo)} style={styles.link}>Sign in</Link>
           </p>
         )}
       >

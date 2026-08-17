@@ -22,6 +22,8 @@ import {
   formatFoodTruckHoursTodayHeading,
   firstNonEmpty,
 } from "./profilePrimitives.jsx";
+import AddMenuAction from "../../AddMenuAction.jsx";
+import { canShowAddMenu } from "../../../lib/addMenuContribution.js";
 import IconHoverLabel from "../../IconHoverLabel.jsx";
 import { formatWebsiteHostLabel } from "../../../lib/formatWebsiteHostLabel.js";
 import {
@@ -101,6 +103,7 @@ export default function ProfileHero({
   statusLightProps,
   restaurantId,
   menuHref,
+  addMenuRestaurant = null,
   shareData,
   shareAnalytics,
   followSource = "restaurant_profile",
@@ -147,6 +150,7 @@ export default function ProfileHero({
     openStatus?.label ||
     (openStatus?.is_open === true ? "Open" : openStatus?.is_open === false ? "Closed" : "");
   const showOrder = profileType !== "food_truck" && canShowOrderAction(profile, menuHref);
+  const showAddMenu = profileType !== "dining_hall" && canShowAddMenu(addMenuRestaurant);
   const callHref = phone ? `tel:${String(phone).replace(/\s+/g, "")}` : "";
   const mapsHref =
     profileType === "food_truck"
@@ -298,7 +302,15 @@ export default function ProfileHero({
               flexShrink: 0,
             }}
           >
-            <ViewMenuLink href={menuHref} dark={onPhoto} testId={viewMenuTestId} />
+            {showAddMenu ? (
+              <AddMenuAction
+                restaurant={addMenuRestaurant}
+                dark={onPhoto}
+                testId="add-menu-profile-hero"
+              />
+            ) : (
+              <ViewMenuLink href={menuHref} dark={onPhoto} testId={viewMenuTestId} />
+            )}
             {restaurantId ? (
               <FollowRestaurantButton
                 restaurantId={restaurantId}

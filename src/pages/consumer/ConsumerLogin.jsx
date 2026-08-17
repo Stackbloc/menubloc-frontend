@@ -12,16 +12,14 @@ import {
   SocialAuthSection,
   styles,
 } from "../../components/consumer/ConsumerAuthShared.jsx";
+import { resolveConsumerAuthNext, withConsumerAuthNext } from "../../lib/consumerAuthNext.js";
 
 export default function ConsumerLogin() {
   const { login, loginWithGoogle, loginWithApple } = useConsumer();
   const { t } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
-  const redirectTo = useMemo(() => {
-    const next = location.state?.redirectTo;
-    return typeof next === "string" && next.trim() ? next : "/";
-  }, [location.state]);
+  const redirectTo = useMemo(() => resolveConsumerAuthNext(location, "/"), [location]);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -129,7 +127,7 @@ export default function ConsumerLogin() {
             </p>
             <p style={{ ...styles.footer, marginTop: "12px" }}>
               {t("auth.newToMenuply", "New to Menuply?")}{" "}
-              <Link to="/account/signup" style={styles.link}>
+              <Link to={withConsumerAuthNext("/account/signup", redirectTo)} style={styles.link}>
                 {t("auth.createAccount", "Create account")}
               </Link>
             </p>

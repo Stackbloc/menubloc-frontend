@@ -10,6 +10,8 @@ import {
   resolveClusterRestaurantStatus,
 } from "../../lib/clusterRestaurantDisplay.js";
 import { formatClusterListingNoteForDisplay } from "../../lib/clusterListingNoteDisplay.js";
+import AddMenuAction from "../AddMenuAction.jsx";
+import { canShowAddMenu } from "../../lib/addMenuContribution.js";
 
 export default function ClusterRestaurantDirectoryCard({
   restaurant,
@@ -28,6 +30,7 @@ export default function ClusterRestaurantDirectoryCard({
   const priceTierLabel = formatRestaurantPriceTier(restaurant);
   const status = resolveClusterRestaurantStatus(restaurant);
   const menuReady = isRestaurantMenuReady(restaurant);
+  const showAddMenu = canShowAddMenu(restaurant);
   const profileHref = restaurantPathFromRow(restaurant);
   const menuHref = restaurantMenuPathFromRow(restaurant);
   const rawHref = menuReady && menuHref ? menuHref : profileHref;
@@ -167,8 +170,17 @@ export default function ClusterRestaurantDirectoryCard({
         >
           {status.text}
         </span>
-        <div className="cluster-card-title" style={{ fontWeight: 700, color: "#111827", fontSize: "0.92rem", overflowWrap: "anywhere" }}>
-          {menuReady ? "View menu →" : "View profile →"}
+        <div
+          style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}
+          className="cluster-card-title"
+        >
+          {showAddMenu ? (
+            <AddMenuAction restaurant={restaurant} testId="add-menu-cluster-directory" />
+          ) : (
+            <span style={{ fontWeight: 700, color: "#111827", fontSize: "0.92rem", overflowWrap: "anywhere" }}>
+              {menuReady ? "View menu →" : "View profile →"}
+            </span>
+          )}
         </div>
       </div>
     </article>

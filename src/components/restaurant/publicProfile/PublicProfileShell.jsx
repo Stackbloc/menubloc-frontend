@@ -18,6 +18,8 @@ import FoodTruckUpcomingStops from "./FoodTruckUpcomingStops.jsx";
 import ProfileUpcomingEvents from "./ProfileUpcomingEvents.jsx";
 import WhatDinersAreSaying from "../WhatDinersAreSaying.jsx";
 import { pickWindowsPosts } from "../../../lib/profileWindows.js";
+import AddMenuEmptyPlaceholder from "../../AddMenuEmptyPlaceholder.jsx";
+import { canShowAddMenu, restaurantFromAddMenuContext } from "../../../lib/addMenuContribution.js";
 import { formatAddressQuery } from "../../../lib/displayAddress.js";
 import { buildGoogleMapsDirectionsUrl } from "../../../lib/catalogMenuUtils.js";
 import {
@@ -203,6 +205,16 @@ export default function PublicProfileShell({
   const clusterName = displayCluster?.name ? String(displayCluster.name) : "";
   const clusterHref = displayCluster?.public_url ? String(displayCluster.public_url) : null;
   const sectionGap = isMobile ? 16 : 20;
+  const addMenuRestaurant = restaurantFromAddMenuContext({
+    profile,
+    restaurantId,
+    name,
+    city: restaurantCity,
+    state: restaurantState,
+    address: streetAddr,
+    menuPreviewItems,
+  });
+  const showAddMenu = !isDiningHall && canShowAddMenu(addMenuRestaurant);
 
   return (
     <div
@@ -238,6 +250,7 @@ export default function PublicProfileShell({
         statusLightProps={statusLightProps}
         restaurantId={restaurantId}
         menuHref={isDiningHall ? null : menuHref}
+        addMenuRestaurant={isDiningHall ? null : addMenuRestaurant}
         shareData={shareData}
         shareAnalytics={shareAnalytics}
         followSource={
@@ -307,6 +320,8 @@ export default function PublicProfileShell({
             <ProfileUpcomingEvents events={upcomingEvents} />
           </ProfileSection>
         ) : null}
+
+        {showAddMenu ? <AddMenuEmptyPlaceholder restaurant={addMenuRestaurant} /> : null}
 
         {allowClaimInvites ? (
           <ProfileClaimBanner claimHref={claimHref} claimState={claimState} />

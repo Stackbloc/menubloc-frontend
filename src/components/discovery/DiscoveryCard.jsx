@@ -6,6 +6,8 @@ import { getDisplayItemCount, getMenuAvailabilityLabel, shouldLinkRestaurantCard
 import { getLocalizedField, getLocalizedPreviewLabel } from "../../utils/getLocalizedField.js";
 import { appendLanguageParam } from "../../lib/languageApi.js";
 import { restaurantMenuPathFromRow, restaurantPathFromRow } from "../../lib/canonicalUrl.js";
+import AddMenuAction from "../AddMenuAction.jsx";
+import { canShowAddMenu } from "../../lib/addMenuContribution.js";
 
 function buildMergedSearch(baseSearch, extra) {
   const params = new URLSearchParams(baseSearch || "");
@@ -109,7 +111,8 @@ export default function DiscoveryCard({
   const locationCount = menu?.location_count || 1;
   const itemCount = getDisplayItemCount({ restaurant: menu, hasActiveFilters });
   const menuReady = shouldLinkRestaurantCardToMenu(menu);
-  const availabilityLabel = getMenuAvailabilityLabel(menu, t);
+  const showAddMenu = canShowAddMenu(menu);
+  const availabilityLabel = showAddMenu ? null : getMenuAvailabilityLabel(menu, t);
   const previewSource = menuReady && Array.isArray(menu?.preview_menu_items) && menu.preview_menu_items.length
     ? menu.preview_menu_items
     : menuReady ? (menu?.preview_items || []) : [];
@@ -127,7 +130,7 @@ export default function DiscoveryCard({
   const menuHref = restaurantMenuPathFromRow(menu) || `/public/restaurants/${id}/menu`;
   const cardSearch = buildMergedSearch(location.search, activeFilterParams);
   const href = appendLanguageParam(
-    menuReady ? `${menuHref}${cardSearch}` : `${profileHref}${cardSearch}#claim-profile`,
+    menuReady ? `${menuHref}${cardSearch}` : `${profileHref}${cardSearch}`,
     language
   );
 
@@ -200,8 +203,10 @@ export default function DiscoveryCard({
               {name}
             </div>
           </div>
-          {onSave ? (
+          {onSave || showAddMenu ? (
             <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+              {showAddMenu ? <AddMenuAction restaurant={menu} testId="add-menu-discovery-card" /> : null}
+              {onSave ? (
               <button
                 type="button"
                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); onSave(id); }}
@@ -217,6 +222,7 @@ export default function DiscoveryCard({
                   flexShrink: 0,
                 }}
               >🔖</button>
+              ) : null}
             </div>
           ) : null}
         </div>

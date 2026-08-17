@@ -63,6 +63,8 @@ import MenuPreferencesAppliedBanner from "../components/menu/MenuPreferencesAppl
 import MenuPurchaseWaiterHint from "../components/menu/MenuPurchaseWaiterHint.jsx";
 import OrderingUnavailableBanner from "../components/menu/OrderingUnavailableBanner.jsx";
 import PublicMenuMainContent from "../components/menu-templates/PublicMenuMainContent.jsx";
+import AddMenuEmptyPlaceholder from "../components/AddMenuEmptyPlaceholder.jsx";
+import { restaurantFromAddMenuContext } from "../lib/addMenuContribution.js";
 import { normalizeMenuStyle, pickHeroImageUrl, resolveTemplateMenuStyle } from "../components/menu-templates/menuPresentationUtils.js";
 import {
   enrichMenuPayloadWithStyleStockPhotos,
@@ -1361,6 +1363,15 @@ export default function PublicMenuPage() {
   const isIntakePreview = data?.menu_source === "intake";
   const franchiseGroup  = data?.franchise_group || null;
   const currentRestaurantId = data?.restaurant_id || routeState.restaurantId;
+  const addMenuRestaurant = restaurantFromAddMenuContext({
+    profile: data,
+    restaurantId: currentRestaurantId,
+    name: restaurantName,
+    city: data?.city,
+    state: data?.state,
+    address: data?.address_line1 || data?.address,
+    menuPreviewItems: [],
+  });
   const shareData = buildMenuShareMetadata({
     restaurantName,
     restaurantSlug: data?.slug,
@@ -1748,6 +1759,10 @@ export default function PublicMenuPage() {
               "Preview mode — sample data only. Use ?previewStyle=v1|v12|v13|v14|v15. On a live menu add ?menuStyle=v13."
             )}
           </div>
+        ) : null}
+
+        {totalMenuItemCount === 0 && !isMenuTemplatePreview ? (
+          <AddMenuEmptyPlaceholder restaurant={addMenuRestaurant} testId="add-menu-public-menu-empty" />
         ) : null}
 
         {applyMenuAppearance && appearanceTokens ? (

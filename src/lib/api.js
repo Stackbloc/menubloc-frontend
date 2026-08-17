@@ -83,9 +83,28 @@ export async function apiPost(path, body) {
   if (!res.ok) {
     const msg = (data && (data.error || data.message)) || `POST ${url} failed (${res.status})`;
     const error = new Error(msg);
+    error.status = res.status;
     if (data && typeof data === "object") {
       Object.assign(error, data);
     }
+    throw error;
+  }
+  return data;
+}
+
+export async function apiPostForm(path, formData) {
+  const url = `${API_BASE}${path.startsWith("/") ? "" : "/"}${path}`;
+  const res = await fetch(url, {
+    method: "POST",
+    credentials: "include",
+    body: formData,
+  });
+  const data = await safeJson(res);
+  if (!res.ok) {
+    const msg = (data && (data.error || data.message)) || `POST ${url} failed (${res.status})`;
+    const error = new Error(msg);
+    error.status = res.status;
+    if (data && typeof data === "object") Object.assign(error, data);
     throw error;
   }
   return data;
