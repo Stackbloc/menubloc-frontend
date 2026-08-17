@@ -215,7 +215,6 @@ export default function WhatIAteTodaySection({
       setLinked(null);
       setTagRestaurant(null);
       setSuggestions([]);
-      setMealPeriod(defaultWhatIAteMealPeriod());
       setNotice("Added to your food diary.");
       await Promise.all([loadDay(), loadCalendar()]);
     } catch (err) {
@@ -226,16 +225,26 @@ export default function WhatIAteTodaySection({
   }
 
   async function handleSaveEdit(entry) {
+    const nextName = editName.trim() || entry.food_name;
+    const nextComment = editComment;
+    const nextPeriod = editMealPeriod;
     setBusy(true);
     setError("");
     try {
       await updateWhatIAteToday(entry.id, {
-        food_name: editName.trim() || entry.food_name,
-        comment: editComment,
-        meal_period: editMealPeriod,
+        food_name: nextName,
+        comment: nextComment,
+        meal_period: nextPeriod,
       });
+      setEntries((prev) =>
+        prev.map((row) =>
+          row.id === entry.id
+            ? { ...row, food_name: nextName, comment: nextComment, meal_period: nextPeriod }
+            : row
+        )
+      );
       setEditingId(null);
-      await Promise.all([loadDay(), loadCalendar()]);
+      await loadCalendar();
     } catch (err) {
       setError(err.message || "Unable to update");
     } finally {
@@ -290,6 +299,7 @@ export default function WhatIAteTodaySection({
       grouped={grouped}
       owner={mode === "owner"}
       busy={busy}
+      showEmptyMealSlots={isPage}
       editingId={editingId}
       editName={editName}
       editComment={editComment}
@@ -479,7 +489,7 @@ export default function WhatIAteTodaySection({
     }
     return (
       <section style={{ marginTop: 16 }} data-testid="what-i-ate-today">
-        <h2 style={{ ...styles.sectionTitle, marginBottom: 8 }}>What I Ate</h2>
+        <h2 style={{ ...styles.sectionTitle, marginBottom: 8 }}>What I Ate Today</h2>
         {viewerIntro}
         {diaryBody}
       </section>
@@ -507,7 +517,7 @@ export default function WhatIAteTodaySection({
             disabled={busy}
             onChange={handleToggleVisible}
           />
-          Show my food diary to Connections and on tagged restaurant profiles and on tagged restaurant profiles
+          Show my food diary to Connections and on tagged restaurant profiles
         </label>
         {diaryBody}
       </div>
@@ -520,7 +530,7 @@ export default function WhatIAteTodaySection({
       data-testid="what-i-ate-today"
     >
       <div style={styles.sectionHead}>
-        <h2 style={styles.sectionTitle}>What I Ate</h2>
+        <h2 style={styles.sectionTitle}>What I Ate Today</h2>
       </div>
       {ownerIntro}
       {error ? <p style={styles.statusErr}>{error}</p> : null}
@@ -668,6 +678,7 @@ function GroupedEntryList({
   grouped,
   owner,
   busy,
+  showEmptyMealSlots = false,
   editingId,
   editName,
   editComment,
@@ -683,33 +694,37 @@ function GroupedEntryList({
 }) {
   const hasAny =
     WHAT_I_ATE_MEAL_PERIODS.some(({ id }) => grouped.buckets[id]?.length) || grouped.other.length > 0;
-  if (!hasAny) {
+  if (!hasAny && !showEmptyMealSlots) {
     return owner || emptyLabel ? <p style={styles.muted}>{emptyLabel}</p> : null;
   }
   return (
     <div style={localStyles.grouped}>
       {WHAT_I_ATE_MEAL_PERIODS.map(({ id, label }) => {
         const items = grouped.buckets[id] || [];
-        if (!items.length) return null;
+        if (!items.length && !showEmptyMealSlots) return null;
         return (
           <section key={id} style={localStyles.mealBlock} data-testid={`what-i-ate-meal-${id}`}>
             <h3 style={localStyles.mealTitle}>{label}</h3>
-            <EntryList
-              entries={items}
-              owner={owner}
-              busy={busy}
-              editingId={editingId}
-              editName={editName}
-              editComment={editComment}
-              editMealPeriod={editMealPeriod}
-              onEditName={onEditName}
-              onEditComment={onEditComment}
-              onEditMealPeriod={onEditMealPeriod}
-              onStartEdit={onStartEdit}
-              onCancelEdit={onCancelEdit}
-              onSaveEdit={onSaveEdit}
-              onRemove={onRemove}
-            />
+            {items.length ? (
+              <EntryList
+                entries={items}
+                owner={owner}
+                busy={busy}
+                editingId={editingId}
+                editName={editName}
+                editComment={editComment}
+                editMealPeriod={editMealPeriod}
+                onEditName={onEditName}
+                onEditComment={onEditComment}
+                onEditMealPeriod={onEditMealPeriod}
+                onStartEdit={onStartEdit}
+                onCancelEdit={onCancelEdit}
+                onSaveEdit={onSaveEdit}
+                onRemove={onRemove}
+              />
+            ) : (
+              <div style={localStyles.mealEmpty} aria-hidden />
+            )}
           </section>
         );
       })}
@@ -877,6 +892,9 @@ const localStyles = {
     fontWeight: 800,
     color: "#334155",
     letterSpacing: "-0.01em",
+  },
+  mealEmpty: {
+    minHeight: 4,
   },
   list: { listStyle: "none", padding: 0, margin: 0, display: "grid", gap: 10 },
   row: {

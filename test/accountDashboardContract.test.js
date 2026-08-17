@@ -181,7 +181,7 @@ test("social tab shows connection count, clickable connections, groups, and even
   assert.match(social, /data-testid="social-groups"/);
   assert.match(social, /data-testid="social-events"/);
   assert.match(social, /listMyVenueEvents/);
-  assert.match(social, /listMyVenueEventGroups/);
+  assert.match(social, /sectionTitle\}>Crews</);
   const app = read("src/App.jsx");
   assert.match(app, /\/account\/connections\/:peerId/);
   assert.match(app, /ConsumerConnectionPeerPage/);

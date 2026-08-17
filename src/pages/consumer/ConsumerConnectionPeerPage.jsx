@@ -72,7 +72,7 @@ export default function ConsumerConnectionPeerPage() {
                 to={`/account/connections/${encodeURIComponent(String(peer.id))}/what-i-ate`}
                 style={styles.secondaryBtn}
               >
-                What I Ate
+                What I Ate Today
               </Link>
               <Link to="/account/connections" style={styles.secondaryBtn}>
                 All Connections

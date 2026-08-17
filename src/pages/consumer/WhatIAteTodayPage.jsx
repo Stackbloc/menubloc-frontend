@@ -1,5 +1,5 @@
 /**
- * What I Ate — full-page food diary with calendar + meal slots.
+ * What I Ate Today — full-page food diary with calendar + meal slots.
  */
 
 import React, { useEffect } from "react";
@@ -23,7 +23,7 @@ export default function WhatIAteTodayPage() {
 
   return (
     <>
-      <StickyPageHeader title="What I Ate" />
+      <StickyPageHeader title="What I Ate Today" />
       <div style={styles.page} data-testid="what-i-ate-today-page">
         {!authLoading && isAuthenticated ? (
           <WhatIAteTodaySection layout="page" last />

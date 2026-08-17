@@ -112,7 +112,7 @@ export default function WalletActivityTab({
         />
         <AccountActionLink
           to="/account/what-i-ate"
-          title="What I Ate"
+          title="What I Ate Today"
           description="Dated food diary by meal — calendar and Connections-only sharing."
           actionLabel="Open"
         />

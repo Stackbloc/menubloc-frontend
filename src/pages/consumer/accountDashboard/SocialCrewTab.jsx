@@ -239,7 +239,7 @@ export default function SocialCrewTab() {
 
       <section style={styles.section} data-testid="what-i-ate-social">
         <div style={styles.sectionHead}>
-          <h2 style={styles.sectionTitle}>What I Ate</h2>
+          <h2 style={styles.sectionTitle}>What I Ate Today</h2>
         </div>
         <p style={styles.sectionDesc}>
           Optional dated food diary by meal — calendar, breakfast through late night, Connections-only
@@ -255,7 +255,7 @@ export default function SocialCrewTab() {
 
       <section style={styles.section} data-testid="social-groups">
         <div style={styles.sectionHead}>
-          <h2 style={styles.sectionTitle}>Groups</h2>
+          <h2 style={styles.sectionTitle}>Crews</h2>
           {crews.length > 0 ? (
             <Link to="/account/dining-crews" style={styles.textBtn}>
               Manage

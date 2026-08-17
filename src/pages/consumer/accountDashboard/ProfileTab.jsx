@@ -265,7 +265,7 @@ export default function ProfileTab({
       </SummaryEditSection>
 
       <section style={styles.section}>
-        <h2 style={styles.sectionTitle}>What I Ate</h2>
+        <h2 style={styles.sectionTitle}>What I Ate Today</h2>
         <p style={styles.sectionDesc}>
           Optional dated food diary by meal — open the full calendar to log and browse your eating
           patterns.

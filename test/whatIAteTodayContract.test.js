@@ -24,6 +24,7 @@ test("What I Ate Today is optional, fail-open, and not a search engine", () => {
   const peerDiary = read("src/pages/consumer/ConnectionPeerWhatIAtePage.jsx");
   const mealLib = read("src/lib/whatIAteTodayMealPeriod.js");
   const app = read("src/App.jsx");
+  const page = read("src/pages/consumer/WhatIAteTodayPage.jsx");
 
   assert.match(section, /WhatIAteTagPicker/);
   assert.match(section, /searchReportPlaces/);
@@ -37,10 +38,16 @@ test("What I Ate Today is optional, fail-open, and not a search engine", () => {
   assert.match(section, /defaultYmdForViewMonth/);
   assert.match(calendar, /what-i-ate-today-calendar/);
   assert.match(calendar, /defaultYmdForViewMonth/);
+  assert.doesNotMatch(calendar, /formatDayHeading/);
+  assert.doesNotMatch(calendar, /weekday:\s*"long"/);
   assert.match(section, /what-i-ate-meal-period/);
   assert.match(mealLib, /breakfast/);
   assert.match(mealLib, /late_night/);
   assert.match(api, /listWhatIAteTodayCalendar/);
+  assert.match(section, /What I Ate Today/);
+  assert.doesNotMatch(section, /sectionTitle\}>What I Ate<\//);
+  assert.match(section, /showEmptyMealSlots=\{isPage\}/);
+  assert.match(section, /mealEmpty/);
   assert.match(section, /Show my food diary to Connections/);
   assert.match(section, /meal_period/);
   assert.match(section, /createWhatIAteToday/);
@@ -58,5 +65,6 @@ test("What I Ate Today is optional, fail-open, and not a search engine", () => {
   assert.match(peerDiary, /mode="viewer"/);
   assert.match(peerDiary, /layout="page"/);
   assert.match(app, /WhatIAteTodayPage/);
-  assert.match(app, /ConnectionPeerWhatIAtePage/);
+  assert.match(page, /What I Ate Today/);
+  assert.match(mealLib, /groupEntriesByMealPeriod/);
 });

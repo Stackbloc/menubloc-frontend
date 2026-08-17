@@ -25,17 +25,6 @@ function monthBounds(viewMonth) {
   return { from: toYmd(start), to: toYmd(end) };
 }
 
-function formatDayHeading(ymd) {
-  const d = parseYmd(ymd);
-  if (!d) return ymd;
-  return d.toLocaleDateString(undefined, {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  });
-}
-
 export function calendarRangeForMonth(viewMonth) {
   return monthBounds(viewMonth);
 }
@@ -85,38 +74,20 @@ export default function WhatIAteTodayCalendar({
     onViewMonthChange(new Date(viewMonth.getFullYear(), viewMonth.getMonth() + delta, 1));
   }
 
-  function shiftDay(delta) {
-    const base = parseYmd(selectedDate) || new Date();
-    base.setDate(base.getDate() + delta);
-    onSelectDate(toYmd(base));
-  }
-
   return (
     <div data-testid="what-i-ate-today-calendar" style={styles.wrap}>
-      <div style={styles.dayNav}>
-        <button type="button" style={styles.navBtn} onClick={() => shiftDay(-1)} aria-label="Previous day">
-          ‹
-        </button>
-        <div style={styles.dayHead}>
-          <p style={styles.dayTitle}>{formatDayHeading(selectedDate)}</p>
-          {selectedDate !== today ? (
-            <button type="button" style={styles.todayBtn} onClick={() => onSelectDate(today)}>
-              Today
-            </button>
-          ) : (
-            <span style={styles.todayBadge}>Today</span>
-          )}
-        </div>
-        <button type="button" style={styles.navBtn} onClick={() => shiftDay(1)} aria-label="Next day">
-          ›
-        </button>
-      </div>
-
       <div style={styles.monthHead}>
         <button type="button" style={styles.navBtn} onClick={() => shiftMonth(-1)} aria-label="Previous month">
           ‹
         </button>
-        <p style={styles.monthTitle}>{monthLabel}</p>
+        <div style={styles.monthTitleWrap}>
+          <p style={styles.monthTitle}>{monthLabel}</p>
+          {selectedDate !== today ? (
+            <button type="button" style={styles.todayBtn} onClick={() => onSelectDate(today)}>
+              Today
+            </button>
+          ) : null}
+        </div>
         <button type="button" style={styles.navBtn} onClick={() => shiftMonth(1)} aria-label="Next month">
           ›
         </button>
@@ -162,15 +133,6 @@ export default function WhatIAteTodayCalendar({
 
 const styles = {
   wrap: { margin: "0 0 14px" },
-  dayNav: {
-    display: "grid",
-    gridTemplateColumns: "40px 1fr 40px",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 12,
-  },
-  dayHead: { textAlign: "center" },
-  dayTitle: { margin: 0, fontSize: 15, fontWeight: 800, color: "#0f172a", lineHeight: 1.35 },
   todayBtn: {
     appearance: "none",
     border: "none",
@@ -181,7 +143,6 @@ const styles = {
     cursor: "pointer",
     marginTop: 4,
   },
-  todayBadge: { display: "inline-block", marginTop: 4, fontSize: 12, fontWeight: 700, color: "#15803d" },
   navBtn: {
     appearance: "none",
     border: "1px solid #d1d5db",
@@ -201,6 +162,7 @@ const styles = {
     gap: 8,
     marginBottom: 8,
   },
+  monthTitleWrap: { textAlign: "center" },
   monthTitle: { margin: 0, textAlign: "center", fontSize: 14, fontWeight: 800, color: "#334155" },
   weekHead: {
     display: "grid",
