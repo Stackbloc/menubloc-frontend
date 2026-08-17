@@ -7,6 +7,8 @@ export const SMS_AUTH_MESSAGES = Object.freeze({
   verifyFailed: "Unable to verify code.",
   verificationSessionRequired:
     "Create your account with email and password first, then enter your phone for a one-time code.",
+  verificationSessionRequiredLogin:
+    "Sign in with your email and password again, then enter your phone for a one-time code.",
   verificationSessionExpired:
     "Your verification session expired. Close this window, click Create account again, and we'll text you a new code.",
 });
@@ -26,16 +28,20 @@ export function formatCodeSentNotice({ verificationTtlMinutes = null, expiresInS
   return "Code sent.";
 }
 
-export function resolveSmsAuthErrorMessage(error, fallback = SMS_AUTH_MESSAGES.verifyFailed) {
+export function resolveSmsAuthErrorMessage(error, fallback = SMS_AUTH_MESSAGES.verifyFailed, purpose = "signup") {
   const code = String(error?.payload?.code || "").trim();
   if (code === "verification_session_required") {
-    return SMS_AUTH_MESSAGES.verificationSessionRequired;
+    return purpose === "login"
+      ? SMS_AUTH_MESSAGES.verificationSessionRequiredLogin
+      : SMS_AUTH_MESSAGES.verificationSessionRequired;
   }
 
   const message = String(error?.message || error?.payload?.error || "").trim();
   if (message) {
     if (/start signup or sign in/i.test(message)) {
-      return SMS_AUTH_MESSAGES.verificationSessionRequired;
+      return purpose === "login"
+        ? SMS_AUTH_MESSAGES.verificationSessionRequiredLogin
+        : SMS_AUTH_MESSAGES.verificationSessionRequired;
     }
     return message;
   }

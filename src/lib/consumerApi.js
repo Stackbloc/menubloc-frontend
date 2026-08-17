@@ -56,8 +56,18 @@ export const forgotPassword        = (email)               => post("/api/consume
 export const validateResetToken    = (token)               => get(`/api/consumer-auth/reset-password?token=${encodeURIComponent(token)}`);
 export const resetPassword         = (token, password)     => post("/api/consumer-auth/reset-password", { token, password });
 export const changePassword        = (currentPassword, newPassword) => post("/api/consumer-auth/change-password", { current_password: currentPassword, new_password: newPassword });
-export const sendSmsCode           = (phone_number)        => post("/api/consumer-auth/sms/send",   { phone_number });
-export const verifySmsCode         = (phone_number, code, verification_sid = null)  => post("/api/consumer-auth/sms/verify", { phone_number, code, verification_sid });
+export const sendSmsCode           = (phone_number, phone_verification_token = null) =>
+  post("/api/consumer-auth/sms/send", {
+    phone_number,
+    ...(phone_verification_token ? { phone_verification_token } : {}),
+  });
+export const verifySmsCode         = (phone_number, code, verification_sid = null, phone_verification_token = null)  =>
+  post("/api/consumer-auth/sms/verify", {
+    phone_number,
+    code,
+    verification_sid,
+    ...(phone_verification_token ? { phone_verification_token } : {}),
+  });
 export const sendPhoneChangeCode   = (phone_number)        => post("/api/consumer-auth/phone/send", { phone_number });
 export const verifyPhoneChangeCode = (phone_number, code, verification_sid = null) =>
   post("/api/consumer-auth/phone/verify", { phone_number, code, verification_sid });

@@ -150,6 +150,7 @@ export default function DinerSignup() {
   const [formError, setFormError] = useState("");
   const [loading, setLoading] = useState(false);
   const [smsOpen, setSmsOpen] = useState(false);
+  const [phoneVerificationToken, setPhoneVerificationToken] = useState("");
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -173,6 +174,7 @@ export default function DinerSignup() {
         ...buildLegalConsentPayload(),
       });
       if (result?.requires_phone_verification) {
+        setPhoneVerificationToken(result.phone_verification_token || "");
         setSmsOpen(true);
         return;
       }
@@ -335,6 +337,7 @@ export default function DinerSignup() {
         open={smsOpen}
         onClose={() => setSmsOpen(false)}
         purpose="signup"
+        verificationToken={phoneVerificationToken || null}
         onSuccess={() => navigate("/account/welcome", { replace: true, state: { redirectTo } })}
       />
     </div>

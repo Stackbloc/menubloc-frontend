@@ -29,6 +29,7 @@ export default function ConsumerSignup() {
   const [socialError, setSocialError] = useState("");
   const [loading, setLoading] = useState(false);
   const [smsOpen, setSmsOpen] = useState(false);
+  const [phoneVerificationToken, setPhoneVerificationToken] = useState("");
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -53,6 +54,7 @@ export default function ConsumerSignup() {
         ...buildLegalConsentPayload(),
       });
       if (result?.requires_phone_verification) {
+        setPhoneVerificationToken(result.phone_verification_token || "");
         setSmsOpen(true);
         return;
       }
@@ -76,7 +78,8 @@ export default function ConsumerSignup() {
       await loginWithGoogle(credential, buildLegalConsentPayload());
       navigate(redirectTo, { replace: true });
     } catch (error) {
-      if (error?.payload?.code === "phone_verification_required") {
+      if (error?.payload?.code === "phone_verification_required" || error?.payload?.requires_phone_verification) {
+        setPhoneVerificationToken(error.payload?.phone_verification_token || "");
         setSmsOpen(true);
         return;
       }
@@ -168,6 +171,7 @@ export default function ConsumerSignup() {
         open={smsOpen}
         onClose={() => setSmsOpen(false)}
         purpose="signup"
+        verificationToken={phoneVerificationToken || null}
         onSuccess={() => navigate("/account/welcome", { replace: true, state: { redirectTo } })}
       />
     </>

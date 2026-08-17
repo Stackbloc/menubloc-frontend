@@ -16,6 +16,8 @@ test("signup uses email and password with one-time phone verification", () => {
 
   assert.match(dinerSignup, /type="email"/);
   assert.match(dinerSignup, /<SmsAuthModal/);
+  assert.match(dinerSignup, /verificationToken=\{phoneVerificationToken/);
+  assert.match(consumerSignup, /verificationToken=\{phoneVerificationToken/);
   assert.match(dinerSignup, /requires_phone_verification/);
   assert.match(dinerSignup, /onSuccess=.*account\/welcome/);
   assert.doesNotMatch(dinerSignup, /Create account with phone number/);
@@ -24,6 +26,9 @@ test("signup uses email and password with one-time phone verification", () => {
 test("login keeps phone verification only for unverified accounts", () => {
   assert.match(consumerLogin, /phone_verification_required/);
   assert.match(consumerLogin, /<SmsAuthModal/);
+  assert.match(consumerLogin, /verificationToken=\{phoneVerificationToken/);
+  assert.match(consumerLogin, /\blogin\(/);
+  assert.doesNotMatch(consumerLogin, /localhost:3001/);
   assert.doesNotMatch(consumerLogin, /Sign in with phone number/);
 });
 

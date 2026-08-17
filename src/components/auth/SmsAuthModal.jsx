@@ -12,6 +12,7 @@ export default function SmsAuthModal({
   onClose,
   onSuccess,
   purpose = "signup",
+  verificationToken = null,
   sendSmsCode: sendSmsCodeOverride = null,
   verifySmsCode: verifySmsCodeOverride = null,
 }) {
@@ -129,10 +130,10 @@ export default function SmsAuthModal({
 
     try {
       const phoneToSend = verifiedPhone || phoneInput;
-      const result = await sendSmsCode(phoneToSend);
+      const result = await sendSmsCode(phoneToSend, verificationToken || null);
       applySendResult(result);
     } catch (err) {
-      setError(resolveSmsAuthErrorMessage(err, SMS_AUTH_MESSAGES.sendFailed));
+      setError(resolveSmsAuthErrorMessage(err, SMS_AUTH_MESSAGES.sendFailed, purpose));
     } finally {
       setLoading(false);
     }
@@ -150,11 +151,11 @@ export default function SmsAuthModal({
     setError("");
 
     try {
-      await verifySmsCode(verifiedPhone, code, verificationSid || null);
+      await verifySmsCode(verifiedPhone, code, verificationSid || null, verificationToken || null);
       onSuccess?.();
       onClose?.();
     } catch (err) {
-      setError(resolveSmsAuthErrorMessage(err, SMS_AUTH_MESSAGES.verifyFailed));
+      setError(resolveSmsAuthErrorMessage(err, SMS_AUTH_MESSAGES.verifyFailed, purpose));
     } finally {
       setLoading(false);
     }

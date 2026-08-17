@@ -13,10 +13,8 @@ import {
   styles,
 } from "../../components/consumer/ConsumerAuthShared.jsx";
 
-const API_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
-
 export default function ConsumerLogin() {
-  const { refreshSession, loginWithGoogle, loginWithApple } = useConsumer();
+  const { login, loginWithGoogle, loginWithApple } = useConsumer();
   const { t } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
@@ -32,6 +30,12 @@ export default function ConsumerLogin() {
   const [socialError, setSocialError] = useState("");
   const [loading, setLoading] = useState(false);
   const [smsOpen, setSmsOpen] = useState(false);
+  const [phoneVerificationToken, setPhoneVerificationToken] = useState("");
+
+  function openPhoneVerification(payload) {
+    setPhoneVerificationToken(payload?.phone_verification_token || "");
+    setSmsOpen(true);
+  }
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -57,46 +61,14 @@ export default function ConsumerLogin() {
     setLoading(true);
 
     try {
-      console.log("LOGIN CLICKED");
-      console.log("EMAIL:", trimmedEmail);
-      console.log("API BASE:", API_BASE);
-      console.log("ABOUT TO FETCH");
-
-      const res = await fetch(`${API_BASE}/api/consumer-auth/login`, {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: trimmedEmail,
-          password,
-        }),
-      });
-
-      console.log("FETCH RESPONSE", res.status);
-
-      let payload = {};
-      try {
-        payload = await res.json();
-      } catch (parseError) {
-        console.error("LOGIN RESPONSE PARSE ERROR", parseError);
-      }
-
-      if (!res.ok) {
-        const message = payload?.error || `Login failed (${res.status})`;
-        if (payload?.code === "phone_verification_required") {
-          setFormError(message);
-          setSmsOpen(true);
-          return;
-        }
-        throw new Error(message);
-      }
-
-      await refreshSession();
+      await login(trimmedEmail, password);
       navigate(redirectTo, { replace: true });
     } catch (err) {
       console.error("LOGIN ERROR", err);
+      if (err?.payload?.code === "phone_verification_required" || err?.payload?.requires_phone_verification) {
+        openPhoneVerification(err.payload);
+        return;
+      }
       setFormError(err?.message || t("auth.signInFailed", "Sign in failed. Please try again."));
     } finally {
       setLoading(false);
@@ -112,8 +84,9 @@ export default function ConsumerLogin() {
       navigate(redirectTo, { replace: true });
     } catch (error) {
       console.error("GOOGLE LOGIN ERROR", error);
-      if (error?.payload?.code === "phone_verification_required") {
-        setSmsOpen(true);
+      if (error?.payload?.code === "phone_verification_required" || error?.payload?.requires_phone_verification) {
+        openPhoneVerification(error.payload);
+        return;
       }
       setSocialError(error.message || t("auth.googleSignInFailed", "Google sign-in failed. Please try again."));
     } finally {
@@ -130,8 +103,9 @@ export default function ConsumerLogin() {
       navigate(redirectTo, { replace: true });
     } catch (error) {
       console.error("APPLE LOGIN ERROR", error);
-      if (error?.payload?.code === "phone_verification_required") {
-        setSmsOpen(true);
+      if (error?.payload?.code === "phone_verification_required" || error?.payload?.requires_phone_verification) {
+        openPhoneVerification(error.payload);
+        return;
       }
       setSocialError(error.message || t("auth.appleSignInFailed", "Apple sign-in failed. Please try again."));
     } finally {
@@ -222,6 +196,7 @@ export default function ConsumerLogin() {
         open={smsOpen}
         onClose={() => setSmsOpen(false)}
         purpose="login"
+        verificationToken={phoneVerificationToken || null}
         onSuccess={() => navigate(redirectTo, { replace: true })}
       />
       <BottomNav />

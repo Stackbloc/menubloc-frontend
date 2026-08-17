@@ -126,7 +126,13 @@ export function ConsumerProvider({ children }) {
   }, [loadMe, maybeResetMenuPreferenceSession]);
 
   const login = useCallback(async (email, password) => {
-    await loginConsumer(email, password);
+    const payload = await loginConsumer(email, password);
+    if (payload?.requires_phone_verification || payload?.code === "phone_verification_required") {
+      const error = new Error(payload?.error || "Complete phone verification to continue.");
+      error.payload = payload;
+      error.status = 202;
+      throw error;
+    }
     const data = await loadMe();
     maybeResetMenuPreferenceSession(data, {
       dietary_preferences: data?.dietary_preferences,
@@ -136,7 +142,13 @@ export function ConsumerProvider({ children }) {
   }, [loadMe, maybeResetMenuPreferenceSession]);
 
   const loginWithGoogle = useCallback(async (credential, consent) => {
-    await loginConsumerWithGoogle(credential, consent);
+    const payload = await loginConsumerWithGoogle(credential, consent);
+    if (payload?.requires_phone_verification || payload?.code === "phone_verification_required") {
+      const error = new Error(payload?.error || "Complete phone verification to continue.");
+      error.payload = payload;
+      error.status = 202;
+      throw error;
+    }
     const data = await loadMe();
     maybeResetMenuPreferenceSession(data, {
       dietary_preferences: data?.dietary_preferences,
@@ -146,7 +158,13 @@ export function ConsumerProvider({ children }) {
   }, [loadMe, maybeResetMenuPreferenceSession]);
 
   const loginWithApple = useCallback(async (payload) => {
-    await loginConsumerWithApple(payload);
+    const result = await loginConsumerWithApple(payload);
+    if (result?.requires_phone_verification || result?.code === "phone_verification_required") {
+      const error = new Error(result?.error || "Complete phone verification to continue.");
+      error.payload = result;
+      error.status = 202;
+      throw error;
+    }
     const data = await loadMe();
     maybeResetMenuPreferenceSession(data, {
       dietary_preferences: data?.dietary_preferences,
@@ -164,12 +182,12 @@ export function ConsumerProvider({ children }) {
     clearSession();
   }, [clearSession]);
 
-  const sendSmsCode = useCallback(async (phoneNumber) => {
-    return sendConsumerSmsCode(phoneNumber);
+  const sendSmsCode = useCallback(async (phoneNumber, verificationToken = null) => {
+    return sendConsumerSmsCode(phoneNumber, verificationToken);
   }, []);
 
-  const verifySmsCode = useCallback(async (phoneNumber, code, verificationSid = null) => {
-    const verified = await verifyConsumerSmsCode(phoneNumber, code, verificationSid);
+  const verifySmsCode = useCallback(async (phoneNumber, code, verificationSid = null, verificationToken = null) => {
+    const verified = await verifyConsumerSmsCode(phoneNumber, code, verificationSid, verificationToken);
     if (verified?.consumer) {
       applySession(verified);
       maybeResetMenuPreferenceSession(verified, {
