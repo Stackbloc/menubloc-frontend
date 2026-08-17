@@ -4,7 +4,7 @@ Ship **Add Menu** contribution for unclaimed restaurants without usable menus â€
 
 # Current Status
 
-**LOCAL complete (FE + BE code).** Not committed, not deployed, no live E2E upload verified.
+**CPD COMPLETE.** Live tip `3vre2srp8` / `index-DQKfgzho.js` (`074a217`). BE health MATCH `7bff0469`. Manual diner E2E upload still recommended.
 
 # Files Changed
 

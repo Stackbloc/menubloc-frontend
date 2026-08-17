@@ -3,7 +3,7 @@
 **Date:** 2026-08-17  
 **Agent:** Cursor  
 **Branch:** `main` (local, uncommitted)  
-**Status:** LOCAL — not CPD
+**Status:** CPD COMPLETE — tip `3vre2srp8` / `index-DQKfgzho.js`; BE `7bff0469` MATCH
 
 # Summary
 
