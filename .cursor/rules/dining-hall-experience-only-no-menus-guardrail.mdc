@@ -1,0 +1,35 @@
+---
+description: Dining halls are status reports + comments only. Do not analyze dining-hall menus or menu items.
+alwaysApply: true
+---
+
+# Dining Hall Experience-Only (No Menus)
+
+**Contract (authoritative):** `docs/guardrails/2026-08-15_dining-hall-experience-only-no-menus.md`  
+**Clarified:** 2026-08-17 — menus are irrelevant; status reports do not need menu data
+
+## Hard rule
+
+**Menuply does not analyze dining-hall menus or menu items.** Dining halls exist so users can report **what is going on** (status) and **comment**. Menu data is not required.
+
+## Never without explicit current-turn approval
+
+- View Menu / Today’s Menu / CK / OCR / menu-item identity for `restaurant_type = dining_hall`
+- Using menu data as a prerequisite for dining-hall status reports
+- Treating dining halls as claimable restaurant businesses
+
+## Allowed
+
+- Status reports (wait, seating, sold-out, venue ops, busy, notes)
+- Comments on the place / those reports
+- Guest contribution under the guest open reporting contract
+
+## Agent stop line
+
+> This change would add dining-hall menu tracking, menu-item analysis, or a Today’s Menu / View Menu surface. I have not done that. Dining halls are status reports + comments only.
+
+## Mandatory on EVERY task completion
+
+End every response with:
+
+> ☐ DINING HALL CERTIFICATION: Dining-hall menus [unchanged unused | user-approved menu work]; status+comments [unchanged | implemented].
