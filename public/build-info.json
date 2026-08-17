@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "0f1801ccd2774dd5e6f72b5e2c09cadc7a0263d1",
-  "gitShortSha": "0f1801c",
+  "gitSha": "40a58108b961784373dc0529b33eae4bbd1c0fdc",
+  "gitShortSha": "40a5810",
   "branch": "main",
-  "buildTime": "2026-08-16T16:22:59.343Z",
+  "buildTime": "2026-08-17T23:19:26.180Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "docs: Waiter additive cluster updates CPD tip record."
+  "commitMessage": "fix(diner-qr): share link routes invitees to signup and auto-connect."
 }
