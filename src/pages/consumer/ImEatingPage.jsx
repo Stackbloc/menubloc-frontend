@@ -1,31 +1,29 @@
 /**
- * I'm Eating — share canonical food activity (not verified purchase/order).
+ * I'm Eating At — share canonical food activity, optionally Join Me.
  */
 
-import React, { useCallback, useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import StickyPageHeader from "../../components/StickyPageHeader.jsx";
 import BottomNav from "../../components/BottomNav.jsx";
-import ImEatingComposer from "../../components/foodActivity/ImEatingComposer.jsx";
+import ShareModal from "../../components/share/ShareModal.jsx";
+import ImEatingAtPanel from "../../components/foodActivity/ImEatingAtPanel.jsx";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
 import {
-  createImEating,
-  listMyFoodActivity,
+  activateJoinMe,
   deleteMyFoodActivity,
+  endJoinMe,
+  listMyFoodActivity,
 } from "../../lib/consumerApi.js";
+import { buildJoinMeShareData, formatJoinMeLocationLabel } from "../../lib/joinMeShare.js";
 
 export default function ImEatingPage() {
-  const navigate = useNavigate();
   const { isAuthenticated, loading: authLoading } = useConsumer();
-  const [restaurant, setRestaurant] = useState(null);
-  const [menuItem, setMenuItem] = useState(null);
-  const [comment, setComment] = useState("");
-  const [visibility, setVisibility] = useState("public");
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
+  const [shareInvite, setShareInvite] = useState(null);
 
   const load = useCallback(async () => {
     setError("");
@@ -40,49 +38,51 @@ export default function ImEatingPage() {
   }, []);
 
   useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      navigate(`/account/login?next=${encodeURIComponent("/account/im-eating")}`, {
-        replace: true,
-      });
-      return;
-    }
     if (!authLoading && isAuthenticated) {
       load();
     }
-  }, [authLoading, isAuthenticated, navigate, load]);
+    if (!authLoading && !isAuthenticated) {
+      setLoading(false);
+    }
+  }, [authLoading, isAuthenticated, load]);
 
-  async function handleShare(e) {
-    e.preventDefault();
-    if (!restaurant?.restaurant_id) {
-      setError("Choose a restaurant or campus dining location.");
-      return;
-    }
-    if (!menuItem?.menu_item_id && !comment.trim()) {
-      setError("Add a brief note when sharing without a menu item.");
-      return;
-    }
+  const shareData = useMemo(() => {
+    if (!shareInvite) return null;
+    return buildJoinMeShareData({
+      token: shareInvite.invitation_token,
+      url: shareInvite.url,
+      organizerName: shareInvite.organizer_display_name,
+      restaurantName: shareInvite.restaurant_name,
+      addressLine1: shareInvite.restaurant_address_line1,
+      city: shareInvite.restaurant_city,
+      state: shareInvite.restaurant_state,
+      locationLabel: shareInvite.location_label,
+    });
+  }, [shareInvite]);
+
+  async function handleJoinMe(activity) {
     setBusy(true);
     setError("");
-    setNotice("");
     try {
-      const data = await createImEating({
-        restaurant_id: restaurant.restaurant_id,
-        menu_item_id: menuItem?.menu_item_id || null,
-        menu_id: menuItem?.menu_id || null,
-        comment: comment.trim() || null,
-        visibility,
-      });
-      setNotice(
-        data.notice ||
-          "Shared as user-reported food activity. Menuply does not verify that you purchased this item."
-      );
-      setRestaurant(null);
-      setMenuItem(null);
-      setComment("");
-      setVisibility("public");
+      const data = await activateJoinMe({ food_activity_id: activity.id });
+      setShareInvite(data.invitation || null);
       await load();
     } catch (err) {
-      setError(err.message || "Unable to share");
+      setError(err.message || "Unable to start Join Me");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleEndJoinMe(token) {
+    setBusy(true);
+    setError("");
+    try {
+      await endJoinMe(token);
+      setShareInvite(null);
+      await load();
+    } catch (err) {
+      setError(err.message || "Unable to end Join Me");
     } finally {
       setBusy(false);
     }
@@ -103,35 +103,20 @@ export default function ImEatingPage() {
 
   return (
     <>
-      <StickyPageHeader title="I'm Eating" />
+      <StickyPageHeader title="I'm Eating At" />
       <div style={styles.page}>
         <p style={styles.lead}>
-          Share what you&apos;re eating as{" "}
-          <strong>user-reported food activity</strong> — not a verified order. Public shares
-          may appear on restaurant and cluster surfaces. Campus dining works with or without a
-          structured menu item (add a short note if you skip the dish).
+          Tell Menuply where you&apos;re eating. Anyone can contribute. Public shares may appear
+          on restaurant and cluster surfaces as{" "}
+          <strong>user-reported food activity</strong> — not a verified order.{" "}
+          <strong>Join Me</strong> and a personal history need a Menuply account.
         </p>
 
         {error ? <p style={styles.error}>{error}</p> : null}
-        {notice ? <p style={styles.notice}>{notice}</p> : null}
 
-        <form onSubmit={handleShare} style={styles.form}>
-          <ImEatingComposer
-            restaurant={restaurant}
-            menuItem={menuItem}
-            onRestaurantChange={setRestaurant}
-            onMenuItemChange={setMenuItem}
-            comment={comment}
-            onCommentChange={setComment}
-            visibility={visibility}
-            onVisibilityChange={setVisibility}
-            disabled={busy}
-          />
-          <button type="submit" style={styles.primary} disabled={busy}>
-            {busy ? "Sharing…" : "Share I'm Eating"}
-          </button>
-        </form>
+        <ImEatingAtPanel onPosted={() => isAuthenticated && load()} disabled={busy} />
 
+        {isAuthenticated ? (
         <section style={styles.section}>
           <h2 style={styles.h2}>Your recent activity</h2>
           {loading ? (
@@ -140,42 +125,105 @@ export default function ImEatingPage() {
             <p style={styles.muted}>No activity yet.</p>
           ) : (
             <ul style={styles.list}>
-              {activities.map((a) => (
-                <li key={a.id} style={styles.card}>
-                  <div>
-                    <strong>{a.item_name || "Menu item"}</strong>
-                    <div style={styles.muted}>
-                      at{" "}
-                      {a.restaurant_slug || a.restaurant_id ? (
-                        <Link
-                          to={`/restaurants/${a.restaurant_slug || a.restaurant_id}`}
-                          style={styles.link}
-                        >
-                          {a.restaurant_name || "Restaurant"}
-                        </Link>
+              {activities.map((a) => {
+                const place = formatJoinMeLocationLabel({
+                  restaurant_name: a.restaurant_name,
+                  address_line1: a.restaurant_address_line1,
+                  city: a.restaurant_city,
+                  state: a.restaurant_state,
+                  location_label: a.location_label,
+                });
+                const jm = a.join_me;
+                return (
+                  <li key={a.id} style={styles.card}>
+                    <div>
+                      <strong>{a.item_name || place}</strong>
+                      <div style={styles.muted}>
+                        at{" "}
+                        {a.restaurant_slug || a.restaurant_id ? (
+                          <Link
+                            to={`/restaurants/${a.restaurant_slug || a.restaurant_id}`}
+                            style={styles.link}
+                          >
+                            {place}
+                          </Link>
+                        ) : (
+                          place
+                        )}
+                      </div>
+                      {a.comment ? <p style={styles.comment}>{a.comment}</p> : null}
+                      <div style={styles.meta}>
+                        {a.visibility} · {a.created_at ? new Date(a.created_at).toLocaleString() : ""}
+                      </div>
+                      {jm?.active ? (
+                        <div style={styles.joinOn}>Join Me is on</div>
+                      ) : null}
+                    </div>
+                    <div style={styles.side}>
+                      {jm?.active ? (
+                        <>
+                          <button
+                            type="button"
+                            style={styles.joinMini}
+                            disabled={busy}
+                            onClick={() =>
+                              setShareInvite({
+                                invitation_token: jm.invitation_token,
+                                restaurant_name: a.restaurant_name,
+                                restaurant_address_line1: a.restaurant_address_line1,
+                                restaurant_city: a.restaurant_city,
+                                restaurant_state: a.restaurant_state,
+                                location_label: place,
+                              })
+                            }
+                          >
+                            Share
+                          </button>
+                          <button
+                            type="button"
+                            style={styles.remove}
+                            disabled={busy}
+                            onClick={() => handleEndJoinMe(jm.invitation_token)}
+                          >
+                            End
+                          </button>
+                        </>
                       ) : (
-                        a.restaurant_name || "Restaurant"
+                        <button
+                          type="button"
+                          style={styles.joinMini}
+                          disabled={busy}
+                          onClick={() => handleJoinMe(a)}
+                        >
+                          Join Me
+                        </button>
                       )}
+                      <button
+                        type="button"
+                        style={styles.remove}
+                        disabled={busy}
+                        onClick={() => handleDelete(a.id)}
+                      >
+                        Remove
+                      </button>
                     </div>
-                    {a.comment ? <p style={styles.comment}>{a.comment}</p> : null}
-                    <div style={styles.meta}>
-                      {a.visibility} · {a.created_at ? new Date(a.created_at).toLocaleString() : ""}
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    style={styles.remove}
-                    disabled={busy}
-                    onClick={() => handleDelete(a.id)}
-                  >
-                    Remove
-                  </button>
-                </li>
-              ))}
+                  </li>
+                );
+              })}
             </ul>
           )}
         </section>
+        ) : null}
       </div>
+      {shareData ? (
+        <ShareModal
+          open={Boolean(shareInvite)}
+          onClose={() => setShareInvite(null)}
+          modalTitle="Share Join Me"
+          shareData={shareData}
+          analyticsContext={{ pageType: "join_me" }}
+        />
+      ) : null}
       <BottomNav />
     </>
   );
@@ -190,17 +238,6 @@ const styles = {
     gap: 16,
   },
   lead: { margin: 0, fontSize: 14, lineHeight: 1.5, color: "#475569" },
-  form: { display: "grid", gap: 12 },
-  primary: {
-    border: "none",
-    borderRadius: 12,
-    padding: "12px 16px",
-    background: "linear-gradient(135deg, #16a34a, #15803d)",
-    color: "#fff",
-    fontWeight: 700,
-    fontSize: 15,
-    cursor: "pointer",
-  },
   section: { display: "grid", gap: 10 },
   h2: { margin: 0, fontSize: 18, color: "#0f172a" },
   list: { listStyle: "none", margin: 0, padding: 0, display: "grid", gap: 10 },
@@ -218,6 +255,18 @@ const styles = {
   meta: { marginTop: 6, fontSize: 12, color: "#94a3b8" },
   muted: { fontSize: 13, color: "#64748b" },
   link: { color: "#2563eb", textDecoration: "none" },
+  side: { display: "grid", gap: 6, justifyItems: "end", flexShrink: 0 },
+  joinMini: {
+    border: "none",
+    borderRadius: 8,
+    padding: "8px 10px",
+    background: "#0f172a",
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: 800,
+    cursor: "pointer",
+  },
+  joinOn: { marginTop: 6, fontSize: 12, fontWeight: 700, color: "#14532d" },
   remove: {
     border: "none",
     background: "transparent",
@@ -227,5 +276,4 @@ const styles = {
     flexShrink: 0,
   },
   error: { margin: 0, color: "#b91c1c", fontSize: 14 },
-  notice: { margin: 0, color: "#14532d", fontSize: 14, fontWeight: 600 },
 };

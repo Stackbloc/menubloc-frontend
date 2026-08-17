@@ -14,6 +14,7 @@ import { buildDiningCrewInviteShareData } from "../../../lib/diningCrewInviteSha
 import { formatWhatWeDoingTitle } from "../../../lib/whatWeDoingTitle.js";
 import AccountActionLink from "./AccountActionLink.jsx";
 import { accountStyles as styles } from "./accountDashboardStyles.js";
+import ImEatingAtPanel from "../../../components/foodActivity/ImEatingAtPanel.jsx";
 
 function memberNames(crew) {
   const members = crew?.members_preview || crew?.members || [];
@@ -137,6 +138,17 @@ export default function SocialCrewTab() {
     <div>
       {error ? <p style={styles.statusErr}>{error}</p> : null}
       {notice ? <p style={styles.statusOk}>{notice}</p> : null}
+
+      <section style={styles.section} data-testid="im-eating-at-social">
+        <div style={styles.sectionHead}>
+          <h2 style={styles.sectionTitle}>I&apos;m Eating At</h2>
+        </div>
+        <p style={styles.sectionDesc}>
+          Tell Menuply where you&apos;re eating and what you&apos;re experiencing. After you
+          share, you can optionally turn on Join Me — I&apos;m here now, come join me.
+        </p>
+        <ImEatingAtPanel compact onPosted={() => {}} />
+      </section>
 
       <section style={styles.section}>
         <div style={styles.sectionHead}>

@@ -41,8 +41,10 @@ test("cluster API exposes campus-dining fetch", () => {
 
 test("I'm Eating allows place-only share with note", () => {
   const page = read("src/pages/consumer/ImEatingPage.jsx");
-  assert.match(page, /without a menu item/);
-  assert.match(page, /menu_item_id: menuItem\?\.menu_item_id \|\| null/);
+  assert.match(page, /ImEatingAtPanel/);
+  const panel = read("src/components/foodActivity/ImEatingAtPanel.jsx");
+  assert.match(panel, /without a menu item/);
+  assert.match(panel, /menu_item_id: menuItem\?\.menu_item_id \|\| null/);
   const composer = read("src/components/foodActivity/ImEatingComposer.jsx");
   assert.match(composer, /No structured menu needed/);
   assert.match(composer, /required without a menu item/);

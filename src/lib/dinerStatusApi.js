@@ -3,7 +3,8 @@
  * Authenticated create/list/delete live on consumerApi.
  * Uses api.js — never same-origin menuply.com HTML.
  */
-import { apiGet } from "./api.js";
+import { apiGet, apiPost } from "./api.js";
+import { getOrCreateGuestReporterKey } from "./guestReporterSession.js";
 
 function buildQuery(params = {}) {
   const qs = new URLSearchParams();
@@ -81,4 +82,12 @@ export async function listPublicClusterDinerStatusSignals(clusterId, { limit = 1
     window_hours: data?.window_hours ?? null,
     signals: Array.isArray(data?.signals) ? data.signals : [],
   };
+}
+
+export async function createPublicDinerStatus(body = {}) {
+  const payload = {
+    ...body,
+    guest_key: body.guest_key || getOrCreateGuestReporterKey(),
+  };
+  return apiPost("/public/diner-statuses", payload);
 }

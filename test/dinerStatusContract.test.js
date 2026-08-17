@@ -26,7 +26,10 @@ test("Diner Status Phase 5 UI + API (no ratings, no Waiter edits)", () => {
 
   const composer = read("src/components/dinerStatus/DinerStatusComposer.jsx");
   assert.match(composer, /expression/);
-  assert.match(composer, /fire/);
+  assert.match(composer, /wait_long|30\+ min wait/);
+  assert.match(composer, /createPublicDinerStatus/);
+  assert.doesNotMatch(composer, /Sign in/);
+  assert.match(composer, /GuestContributeNextStep|Your report is live/);
 
   const saying = read("src/components/restaurant/WhatDinersAreSaying.jsx");
   assert.match(saying, /DinerStatusFeed/);

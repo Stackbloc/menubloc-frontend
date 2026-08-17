@@ -3,30 +3,31 @@
  */
 
 import React, { useCallback, useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import StickyPageHeader from "../../components/StickyPageHeader.jsx";
 import BottomNav from "../../components/BottomNav.jsx";
 import ImEatingComposer from "../../components/foodActivity/ImEatingComposer.jsx";
+import GuestContributeNextStep from "../../components/foodActivity/GuestContributeNextStep.jsx";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
-import {
-  createDinerStatus,
-  listMyDinerStatuses,
-  deleteMyDinerStatus,
-} from "../../lib/consumerApi.js";
+import { listMyDinerStatuses, deleteMyDinerStatus } from "../../lib/consumerApi.js";
+import { createPublicDinerStatus } from "../../lib/dinerStatusApi.js";
+import { readOptionalReporterCoords } from "../../lib/guestReporterSession.js";
 
 const EXPRESSIONS = [
+  { key: "wait_long", emoji: "🔴", label: "30+ min wait" },
+  { key: "wait_medium", emoji: "🟡", label: "10–20 min" },
+  { key: "seating_full", emoji: "🚫", label: "Seating full" },
+  { key: "sold_out", emoji: "❌", label: "Sold out" },
+  { key: "busy", emoji: "⏳", label: "Busy" },
   { key: "fire", emoji: "🔥", label: "Fire" },
-  { key: "mind_blown", emoji: "🤯", label: "Mind-blown" },
   { key: "love", emoji: "❤️", label: "Love" },
-  { key: "worth_trying", emoji: "✨", label: "Worth trying" },
 ];
 
 export default function DinerStatusPage() {
-  const navigate = useNavigate();
   const { isAuthenticated, loading: authLoading } = useConsumer();
   const [restaurant, setRestaurant] = useState(null);
   const [menuItem, setMenuItem] = useState(null);
-  const [expression, setExpression] = useState("fire");
+  const [expression, setExpression] = useState("wait_long");
   const [text, setText] = useState("");
   const [statuses, setStatuses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -47,16 +48,13 @@ export default function DinerStatusPage() {
   }, []);
 
   useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      navigate(`/account/login?next=${encodeURIComponent("/account/diner-status")}`, {
-        replace: true,
-      });
-      return;
-    }
     if (!authLoading && isAuthenticated) {
       load();
     }
-  }, [authLoading, isAuthenticated, navigate, load]);
+    if (!authLoading && !isAuthenticated) {
+      setLoading(false);
+    }
+  }, [authLoading, isAuthenticated, load]);
 
   async function handlePost(e) {
     e.preventDefault();
@@ -68,18 +66,21 @@ export default function DinerStatusPage() {
     setError("");
     setNotice("");
     try {
-      const data = await createDinerStatus({
+      const coords = await readOptionalReporterCoords();
+      const data = await createPublicDinerStatus({
         restaurant_id: restaurant.restaurant_id,
         menu_item_id: menuItem?.menu_item_id || null,
         expression,
         status_text: text.trim() || null,
         visibility: "public",
+        lat: coords.lat,
+        lng: coords.lng,
       });
       setNotice(data.notice || "Status posted.");
       setText("");
       setRestaurant(null);
       setMenuItem(null);
-      await load();
+      if (isAuthenticated) await load();
     } catch (err) {
       setError(err.message || "Unable to post status");
     } finally {
@@ -105,8 +106,7 @@ export default function DinerStatusPage() {
       <StickyPageHeader title="Diner Status" />
       <div style={styles.page}>
         <p style={styles.lead}>
-          Post a quick food signal — 🔥, 🤯, ❤️, or worth trying. This is not a star rating and not
-          a long review. Separate from I&apos;m Eating and conversations.
+          Post a live wait, seating, or sold-out update — no account required. This is not a star rating. Join Me and personal history need a Menuply account.
         </p>
         {error ? <p style={styles.error}>{error}</p> : null}
         {notice ? <p style={styles.notice}>{notice}</p> : null}
@@ -123,6 +123,7 @@ export default function DinerStatusPage() {
             visibility="public"
             onVisibilityChange={() => {}}
             disabled={busy}
+            isAuthenticated={isAuthenticated}
           />
           <div style={styles.emojiRow}>
             {EXPRESSIONS.map((opt) => (
@@ -147,6 +148,11 @@ export default function DinerStatusPage() {
           </button>
         </section>
 
+        {notice && !isAuthenticated ? (
+          <GuestContributeNextStep identityAction="Join Me and a personal history" />
+        ) : null}
+
+        {isAuthenticated ? (
         <section style={styles.section}>
           <h2 style={styles.h2}>Your statuses</h2>
           {loading ? <p style={styles.muted}>Loading…</p> : null}
@@ -175,6 +181,7 @@ export default function DinerStatusPage() {
             </ul>
           )}
         </section>
+        ) : null}
 
         <p style={{ marginTop: 24 }}>
           <Link to="/account/im-eating" style={styles.link}>

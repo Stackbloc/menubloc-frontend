@@ -366,6 +366,7 @@ export default function PublicProfileShell({
             menuPreviewItems={isDiningHall ? null : previewForComments}
             compact={isMobile}
             experienceMode={isDiningHall}
+            venueMode={venueCapabilityEnabled}
           />
         ) : null}
 

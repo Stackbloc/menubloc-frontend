@@ -2,7 +2,8 @@
  * Public food activity API — derive restaurant/cluster surfaces from canonical food_activity.
  * Uses api.js (Railway production fallback) — never same-origin /menuply.com HTML.
  */
-import { apiGet } from "./api.js";
+import { apiGet, apiPost } from "./api.js";
+import { getOrCreateGuestReporterKey } from "./guestReporterSession.js";
 
 function buildQuery(params = {}) {
   const qs = new URLSearchParams();
@@ -46,4 +47,19 @@ export async function listPublicClusterFoodActivity(clusterId, { limit = 20, hou
     wording: data?.wording || "people shared this",
     items: Array.isArray(data?.items) ? data.items : [],
   };
+}
+
+export async function searchReportPlaces({ type, q = "", restaurant_id = null, limit = 8 } = {}) {
+  const data = await apiGet(
+    `/public/food-activity/places${buildQuery({ type, q, restaurant_id, limit })}`
+  );
+  return { results: Array.isArray(data?.results) ? data.results : [] };
+}
+
+export async function createPublicFoodActivity(body = {}) {
+  const payload = {
+    ...body,
+    guest_key: body.guest_key || getOrCreateGuestReporterKey(),
+  };
+  return apiPost("/public/food-activity", payload);
 }

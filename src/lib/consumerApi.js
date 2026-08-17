@@ -296,6 +296,10 @@ export const createImEating = (body) => post("/api/consumer/food-activity", body
 export const deleteMyFoodActivity = (id) =>
   del(`/api/consumer/food-activity/${encodeURIComponent(String(id))}`);
 
+export const activateJoinMe = (body) => post("/api/consumer/join-me", body);
+export const endJoinMe = (token) =>
+  post(`/api/consumer/join-me/${encodeURIComponent(String(token))}/end`, {});
+
 // ── Diner Status (quick emoji signals) ────────────────────────────────────
 export const listMyDinerStatuses = (limit = null) =>
   get(

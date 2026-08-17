@@ -8,6 +8,7 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { listPublicClusterFoodActivity } from "../../lib/foodActivityApi.js";
 import DinerStatusFeed from "../dinerStatus/DinerStatusFeed.jsx";
+import JoinMeNowStrip from "../foodActivity/JoinMeNowStrip.jsx";
 import {
   listPublicClusterDinerStatusSignals,
 } from "../../lib/dinerStatusApi.js";
@@ -163,6 +164,8 @@ export default function WhatPeopleAreEating({ clusterId, compact = false }) {
           ))}
         </div>
       ) : null}
+
+      <JoinMeNowStrip clusterId={clusterId} />
     </section>
   );
 }

@@ -55,6 +55,7 @@ export default function DinerStatusFeed({
   compact = false,
   title = "Diner statuses",
   experienceMode = false,
+  venueMode = false,
 }) {
   const [statuses, setStatuses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -121,6 +122,7 @@ export default function DinerStatusFeed({
           menuItemName={experienceMode ? null : menuItemName}
           compact={compact}
           experienceMode={experienceMode}
+          venueMode={venueMode}
           onPosted={() => load()}
         />
       ) : null}

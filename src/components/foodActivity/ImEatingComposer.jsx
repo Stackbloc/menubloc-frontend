@@ -4,7 +4,7 @@
  */
 
 import React, { useEffect, useState } from "react";
-import { searchDiningCrewEntities } from "../../lib/consumerApi.js";
+import { searchReportPlaces } from "../../lib/foodActivityApi.js";
 
 export default function ImEatingComposer({
   restaurant,
@@ -16,6 +16,8 @@ export default function ImEatingComposer({
   visibility,
   onVisibilityChange,
   disabled = false,
+  isAuthenticated = false,
+  lockRestaurant = false,
 }) {
   const [step, setStep] = useState(restaurant ? "item" : "restaurant");
   const [query, setQuery] = useState("");
@@ -38,7 +40,7 @@ export default function ImEatingComposer({
       setLoading(true);
       setError("");
       try {
-        const data = await searchDiningCrewEntities({
+        const data = await searchReportPlaces({
           type: step === "restaurant" ? "restaurant" : "menu_item",
           q,
           restaurant_id: step === "item" ? restaurant.restaurant_id : null,
@@ -89,7 +91,12 @@ export default function ImEatingComposer({
         <div style={styles.selected}>
           <div style={styles.kind}>Restaurant</div>
           <strong>{restaurant.restaurant_name}</strong>
-          <button type="button" style={styles.clear} disabled={disabled} onClick={resetRestaurant}>
+          {restaurant.address_line1 || restaurant.city ? (
+            <span style={styles.muted}>
+              {[restaurant.address_line1, restaurant.city, restaurant.state].filter(Boolean).join(", ")}
+            </span>
+          ) : null}
+          <button type="button" style={styles.clear} disabled={disabled || lockRestaurant} onClick={resetRestaurant}>
             Change
           </button>
         </div>
@@ -130,7 +137,7 @@ export default function ImEatingComposer({
                     </strong>
                     <span style={styles.muted}>
                       {r.type === "restaurant"
-                        ? [r.city, r.state].filter(Boolean).join(", ")
+                        ? r.subtitle || [r.address_line1, r.city, r.state].filter(Boolean).join(", ")
                         : r.restaurant_name}
                     </span>
                   </button>
@@ -164,17 +171,23 @@ export default function ImEatingComposer({
         style={styles.textarea}
       />
 
-      <label style={styles.label}>Visibility</label>
-      <select
-        value={visibility}
-        disabled={disabled}
-        onChange={(e) => onVisibilityChange(e.target.value)}
-        style={styles.input}
-      >
-        <option value="public">Public — may appear on restaurant & cluster surfaces</option>
-        <option value="connections">Connections only</option>
-        <option value="private">Private (only you)</option>
-      </select>
+      {isAuthenticated ? (
+        <>
+          <label style={styles.label}>Visibility</label>
+          <select
+            value={visibility}
+            disabled={disabled}
+            onChange={(e) => onVisibilityChange(e.target.value)}
+            style={styles.input}
+          >
+            <option value="public">Public — may appear on restaurant & cluster surfaces</option>
+            <option value="connections">Connections only</option>
+            <option value="private">Private (only you)</option>
+          </select>
+        </>
+      ) : (
+        <p style={styles.muted}>Posted publicly to restaurant and cluster intelligence.</p>
+      )}
     </div>
   );
 }

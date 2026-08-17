@@ -106,8 +106,8 @@ export default function WalletActivityTab({
         />
         <AccountActionLink
           to="/account/im-eating"
-          title="I'm Eating"
-          description="Share what you're eating as user-reported food activity."
+          title="I'm Eating At"
+          description="Share where you're eating, then optionally Join Me — I'm here now."
           actionLabel="Share"
         />
         <AccountActionLink

@@ -5,7 +5,7 @@
  */
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { Link, useParams } from "react-router-dom";
+import { Link, Navigate, useParams } from "react-router-dom";
 import { useConsumer } from "../context/ConsumerContext.jsx";
 import ShareModal from "../components/share/ShareModal.jsx";
 import {
@@ -561,6 +561,10 @@ export default function EatInvitationPage() {
     } finally {
       setBusy(false);
     }
+  }
+
+  if (!loading && invitation?.invite_kind === "join_me") {
+    return <Navigate to={`/join-me/${encodeURIComponent(String(token))}`} replace />;
   }
 
   if (shareOpen && shareData) {

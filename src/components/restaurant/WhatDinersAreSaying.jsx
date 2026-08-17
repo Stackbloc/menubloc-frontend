@@ -11,6 +11,8 @@ import FoodComments from "../comments/FoodComments.jsx";
 import { listPublicRestaurantFoodActivity } from "../../lib/foodActivityApi.js";
 import { profileReadableSurfaceStyle } from "./publicProfile/profilePrimitives.jsx";
 import DinerStatusFeed from "../dinerStatus/DinerStatusFeed.jsx";
+import ImEatingAtPanel from "../foodActivity/ImEatingAtPanel.jsx";
+import JoinMeNowStrip from "../foodActivity/JoinMeNowStrip.jsx";
 
 function dinerLabel(activity) {
   const name = String(activity?.display_name || "").trim();
@@ -75,6 +77,7 @@ export default function WhatDinersAreSaying({
   compact = false,
   /** Dining halls: experience reports only — no menu framing. */
   experienceMode = false,
+  venueMode = false,
 }) {
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -144,7 +147,8 @@ export default function WhatDinersAreSaying({
           showComposer
           compact={compact}
           experienceMode={experienceMode}
-          title={experienceMode ? "Campus updates" : "Diner statuses"}
+          venueMode={venueMode}
+          title={experienceMode ? "Campus updates" : "What's happening now"}
         />
 
         {experienceMode ? null : loading ? <p style={styles.muted}>Loading activity…</p> : null}
@@ -167,6 +171,24 @@ export default function WhatDinersAreSaying({
             ))}
           </div>
         ) : null}
+
+        {restaurantId ? (
+          <ImEatingAtPanel
+            compact
+            lockRestaurant
+            initialRestaurant={{
+              restaurant_id: restaurantId,
+              restaurant_name: restaurantName,
+            }}
+            onPosted={() => {
+              listPublicRestaurantFoodActivity(restaurantId, { limit: 20 })
+                .then((data) => setActivities(data.activities || []))
+                .catch(() => {});
+            }}
+          />
+        ) : null}
+
+        {experienceMode ? null : <JoinMeNowStrip restaurantId={restaurantId} />}
 
         <div style={styles.commentsWrap} data-testid="diners-saying-comments">
           <FoodComments
