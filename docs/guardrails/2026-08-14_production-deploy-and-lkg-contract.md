@@ -34,12 +34,12 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www **and** 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` @ clean `main` |
-| Git commit | `b8404e9` — Diner phone-verification token |
-| Vercel deployment | `menubloc-frontend-nax94uq0u-menuply.vercel.app` |
-| Live bundle | `index-DAjZPkYd.js` |
+| Git commit | `da0bb15` — Profile diner QR + Share My Menuply |
+| Vercel deployment | `menubloc-frontend-1urgwayz1-menuply.vercel.app` |
+| Live bundle | `index-FsvPkVHt.js` |
 | Aliases | `menuply.com`, `www.menuply.com`, `crm.menuply.com`, `venues.menuply.com` |
 | Tip-gate | **PASS** (apex + www) verified 2026-08-17 |
-| Feature | Signup/login SMS uses signed `phone_verification_token` (no cross-site pending cookie required) |
+| Feature | Profile tab: Profile information → My Diner QR → Share My Menuply |
 
 ### Backend (Railway)
 
@@ -56,10 +56,10 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www **and** 
 
 ```bash
 cd /Users/andrebarber/Desktop/menubloc/menubloc-frontend-main
-npx vercel alias set menubloc-frontend-nax94uq0u-menuply.vercel.app menuply.com
-npx vercel alias set menubloc-frontend-nax94uq0u-menuply.vercel.app www.menuply.com
-npx vercel alias set menubloc-frontend-nax94uq0u-menuply.vercel.app crm.menuply.com
-npx vercel alias set menubloc-frontend-nax94uq0u-menuply.vercel.app venues.menuply.com
+npx vercel alias set menubloc-frontend-1urgwayz1-menuply.vercel.app menuply.com
+npx vercel alias set menubloc-frontend-1urgwayz1-menuply.vercel.app www.menuply.com
+npx vercel alias set menubloc-frontend-1urgwayz1-menuply.vercel.app crm.menuply.com
+npx vercel alias set menubloc-frontend-1urgwayz1-menuply.vercel.app venues.menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 ```
@@ -120,7 +120,8 @@ Newest superseded first. Restoring drops everything shipped after that tip.
 
 | Deployment id | Bundle | Approx feature / CPD |
 |---------------|--------|----------------------|
-| `nax94uq0u` | `index-DAjZPkYd.js` | **CURRENT** — Diner phone-verification token (`b8404e9`) |
+| `1urgwayz1` | `index-FsvPkVHt.js` | **CURRENT** — Profile diner QR + Share My Menuply (`da0bb15`) |
+| `nax94uq0u` | `index-DAjZPkYd.js` | Diner phone-verification token (`b8404e9`) — superseded by `1urgwayz1` |
 | `kgtgek3l4` | `index-Br9O-thi.js` | Account dashboard four tabs (`2b0b024`) — superseded by `nax94uq0u` |
 | `iyxv62rs6` | `index-6JpzKw-R.js` | Diner QR invitee connect copy (`7d5c7df`) — superseded by `kgtgek3l4` |
 | `8pl3zm05l` | `index-DxsHvAHk.js` | What We Doing? Phase 1 (`4aff138`) — superseded by `iyxv62rs6` |

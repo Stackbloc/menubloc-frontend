@@ -33,11 +33,11 @@ None.
 
 # Commits
 
-FE feature commit on `menubloc-frontend-main` @ `main` as part of CPD.
+FE `da0bb15` — `feat(account): show Diner QR and Share My Menuply on Profile.`
 
 # Deployment Status
 
-CPD in progress.
+**CPD COMPLETE.** FE tip `menubloc-frontend-1urgwayz1-menuply.vercel.app` / `index-FsvPkVHt.js`. BE unchanged (`4a603a12`).
 
 # Verification Results
 
@@ -50,9 +50,8 @@ CPD in progress.
 
 # Follow-Up Work
 
-- Commit + CPD when Andre asks
 - Optional: drop Social & Crew duplicates if Profile is the only desired home
 
 # Final Verdict
 
-Profile tab order is Profile information → My Diner QR → Share My Menuply → Dining preferences. Existing diner QR and share behavior unchanged.
+**CPD COMPLETE.** Profile tab order is live: Profile information → My Diner QR → Share My Menuply → Dining preferences.
