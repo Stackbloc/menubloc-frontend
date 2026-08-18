@@ -26,6 +26,7 @@ test("Waiter surfaces subscribed-cluster report without forbidden UI", () => {
   assert.doesNotMatch(page, /import\s+.*MarketFallback|<[Mm]arketFallback|CommunityGrowthCard\s*[({]/);
   assert.doesNotMatch(page, /\bbriefing\.cards\b/);
   assert.match(page, /briefing\?\.recommendations/);
+  assert.match(page, /WaiterPublicActivity/);
 
   const api = read("src/lib/waiterApi.js");
   assert.match(api, /fetchWaiterBriefing/);

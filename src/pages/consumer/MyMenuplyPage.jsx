@@ -221,7 +221,7 @@ export default function MyMenuplyPage() {
               <SectionHead
                 title="What's happening"
                 desc="Public and nearby food activity — not your connections."
-                to="/activity"
+                to="/waiter#activity"
               />
             </section>
 

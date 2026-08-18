@@ -45,11 +45,15 @@ test("Connections eating cards link to menu items and Join Me / Invite to Eat", 
 });
 
 test("Activity is broader happening and does not replace connections eating", () => {
-  const activity = read("src/pages/ActivityPage.jsx");
+  const activity = read("src/components/WaiterPublicActivity.jsx");
+  const redirect = read("src/pages/ActivityPage.jsx");
+  const waiter = read("src/pages/FoodInterestsPage.jsx");
   assert.match(activity, /not what your connections are eating/i);
   assert.match(activity, /\/my-menuply/);
   assert.match(activity, /What People Are Eating/);
   assert.doesNotMatch(activity, /What My Connections Are Eating/);
+  assert.match(redirect, /\/waiter#activity/);
+  assert.match(waiter, /WaiterPublicActivity/);
 });
 
 test("Settings dashboard stays at /account and points to My Menuply", () => {

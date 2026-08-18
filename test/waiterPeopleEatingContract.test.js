@@ -26,6 +26,6 @@ describe("Waiter What People Are Eating", () => {
     expect(page).toMatch(/clusterId:/);
     expect(page).toMatch(/groupByType/);
     expect(page).toMatch(/briefing\?\.recommendations/);
-    expect(page).not.toMatch(/<MarketFallback|<CommunityGrowthCard/);
+    expect(page).not.toMatch(/<[Mm]arketFallback|<CommunityGrowthCard/);
   });
 });

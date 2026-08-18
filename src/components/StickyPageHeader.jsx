@@ -2,7 +2,6 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { BrandLogo } from "./BrandLogo.jsx";
 import { useConsumer } from "../context/ConsumerContext.jsx";
-import { useOrderCart } from "../context/OrderCartContext.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import DiscoveryDrawer from "./grubbid/DiscoveryDrawer.jsx";
 import { loadDietPrefs, saveDietPrefs } from "../hooks/useDietPreferences.js";
@@ -34,9 +33,7 @@ export default function StickyPageHeader({
     return () => ro.disconnect();
   }, []);
   const { isAuthenticated: consumerLoggedIn, loading: consumerLoading } = useConsumer();
-  const { itemCount } = useOrderCart();
   const { t } = useLanguage();
-  const basketBadge = itemCount > 9 ? "9+" : String(itemCount);
 
   const [filters, setFilters] = useState(() => loadDietPrefs());
   const [excludedAllergens, setExcludedAllergens] = useState(() => {
@@ -124,39 +121,6 @@ export default function StickyPageHeader({
                   textDecoration: "none", whiteSpace: "nowrap", letterSpacing: "0.01em",
                 }}
               >🔥 {t("nav.deals", "Deals")}</Link>
-              <Link
-                to="/checkout"
-                aria-label={
-                  itemCount > 0
-                    ? t("nav.basketWithCount", "Basket with {count} items").replace("{count}", String(itemCount))
-                    : t("nav.basket", "Basket")
-                }
-                style={{ position: "relative", fontSize: 20, textDecoration: "none", lineHeight: 1 }}
-              >
-                <span aria-hidden="true">🛒</span>
-                {itemCount > 0 ? (
-                  <span
-                    style={{
-                      position: "absolute",
-                      top: -6,
-                      right: -8,
-                      minWidth: 16,
-                      height: 16,
-                      padding: "0 4px",
-                      borderRadius: 999,
-                      background: "#dc2626",
-                      color: "#fff",
-                      fontSize: 9,
-                      fontWeight: 800,
-                      lineHeight: "16px",
-                      textAlign: "center",
-                      boxSizing: "border-box",
-                    }}
-                  >
-                    {basketBadge}
-                  </span>
-                ) : null}
-              </Link>
               {!consumerLoading && (
                 consumerLoggedIn
                   ? <Link to="/my-menuply" aria-label={t("nav.myMenuply", "My Menuply")} style={{ fontSize: 22, textDecoration: "none" }}>👤</Link>

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import BottomNav from "../components/BottomNav.jsx";
+import WaiterPublicActivity from "../components/WaiterPublicActivity.jsx";
 import { useConsumer } from "../context/ConsumerContext.jsx";
 import { fetchWaiterBriefing } from "../lib/waiterApi.js";
 import { WAITER_MEAL_PERIODS, getDefaultMealPeriod, normalizeMealPeriodId } from "../lib/waiterMealPeriod.js";
@@ -14,6 +15,8 @@ import { readDetectedLocation } from "../lib/discoveryLocationPersistence.js";
 // One card per recommendation category. See CLAUDE.md Waiter guardrail.
 // 2026-08-15 Phase 6 (user-authorized): cluster subscription report is additive to core Waiter.
 // 2026-08-15: core meal/location Waiter always runs with city+state; clusters never replace it.
+// 2026-08-18 (user-authorized): public Activity ("What's happening") is additive on Waiter.
+// Do not replace recommendation cards. Do not add MarketFallback, CommunityGrowthCard, or greetings.
 
 const SESSION_LOCATION_KEY = "grubbid.discovery.location";
 const SESSION_AUTO_LABEL_KEY = "grubbid.discovery.auto_label";
@@ -194,6 +197,14 @@ export default function FoodInterestsPage() {
     return () => { cancelled = true; };
   }, [canFetchBriefing, location.city, location.state, mealPeriod, clusterId, clusterSlug]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+    if (window.location.hash !== "#activity") return undefined;
+    const el = document.getElementById("activity");
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    return undefined;
+  }, [briefingLoading]);
+
   function selectMealPeriod(id) {
     setMealPeriod(id);
     setSearchParams((prev) => {
@@ -312,6 +323,8 @@ export default function FoodInterestsPage() {
             </div>
           )}
         </section>
+
+        <WaiterPublicActivity />
       </div>
       <BottomNav />
     </div>

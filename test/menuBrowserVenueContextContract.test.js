@@ -35,6 +35,12 @@ test("resolveBrowseMenusHref prefers Coachella path over bare browse", () => {
   assert.equal(resolveBrowseMenusHref({ pathname: "/", search: "" }), "/browse-menus");
 });
 
+test("BottomNav uses venue-aware Yellow Browser href", () => {
+  const nav = readFileSync(join(root, "src/components/BottomNav.jsx"), "utf8");
+  assert.match(nav, /resolveBrowseMenusHref/);
+  assert.match(nav, /BrowseMenusIcon/);
+});
+
 test("BrowseMenus wires venue session/path into Yellow Browser", () => {
   assert.match(browseSrc, /readMenuBrowserVenueSession/);
   assert.match(browseSrc, /rememberMenuBrowserVenueSession/);

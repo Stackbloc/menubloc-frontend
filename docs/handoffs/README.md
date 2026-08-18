@@ -1,5 +1,6 @@
 # Handoffs Index
 
+- [2026-08-18_bottom-nav-restore-waiter-activity_handoff.md](./2026-08-18_bottom-nav-restore-waiter-activity_handoff.md) — Restore Home/Waiter/Yellow Browser/Basket + X (`post.`) + My Menuply; Activity on Waiter (**LOCAL**)
 - [2026-08-18_pre-my-menuply-lkg-checkpoint_handoff.md](./2026-08-18_pre-my-menuply-lkg-checkpoint_handoff.md) — Pre–My Menuply LKG tag `menuply-last-known-good-2026-08-18` (**SAVED**)
 - [2026-08-18_my-menuply-ia_handoff.md](./2026-08-18_my-menuply-ia_handoff.md) — My Menuply IA + diner About/photos (**CPD COMPLETE** — tip `83npukyp6` / `index-KbRqQ3I0.js`; BE `03132162`)
 - [2026-08-17_dining-hall-profile-human-copy_handoff.md](./2026-08-17_dining-hall-profile-human-copy_handoff.md) — Dining-hall human copy + founded years (**CPD COMPLETE** — tip `2fw9x27jj` / `index-fjLns99U.js`; BE `6fc782c3`)
