@@ -44,14 +44,17 @@ export function resolveConsumerLoginErrorMessage(
   if (error?.status === 401 && /authentication required/i.test(message)) {
     return CONSUMER_AUTH_ERRORS.sessionNotSaved;
   }
-  if (/invalid email or password/i.test(message)) {
+  if (code === "invalid_credentials" || /invalid email or password/i.test(message)) {
     return CONSUMER_AUTH_ERRORS.invalidCredentials;
   }
-  if (/account is inactive/i.test(message)) {
+  if (code === "account_inactive" || /account is inactive/i.test(message)) {
     return CONSUMER_AUTH_ERRORS.accountInactive;
   }
-  if (/google|apple|reset your password/i.test(message)) {
+  if (code === "social_only" || /google|apple|reset your password/i.test(message)) {
     return CONSUMER_AUTH_ERRORS.socialOnly;
+  }
+  if (code === "not_signed_in") {
+    return CONSUMER_AUTH_ERRORS.authenticationRequired;
   }
   if (
     normalized === "failed to fetch" ||
@@ -82,6 +85,7 @@ export function resolveConsumerConnectErrorMessage(error, inviteName = "this din
   if (
     error?.status === 401 ||
     code === "auth_required" ||
+    code === "not_signed_in" ||
     /authentication required/i.test(message)
   ) {
     return CONSUMER_AUTH_ERRORS.connectSessionLost;

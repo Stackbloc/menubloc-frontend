@@ -83,9 +83,11 @@ test("signup skips welcome when returning to diner QR connect invite", () => {
 
 test("SMS verify hydrates session after auth without clearing optimistic login", () => {
   const ctx = read("src/context/ConsumerContext.jsx");
-  const verifyBlock = ctx.slice(ctx.indexOf("const verifySmsCode"), ctx.indexOf("const sendPhoneChangeCode"));
-  assert.match(verifyBlock, /hydrateSessionAfterAuth/);
+  assert.match(ctx, /hydrateSessionAfterAuth/);
   assert.match(ctx, /clearOn401: false/);
+  const hydrateBlock = ctx.slice(ctx.indexOf("const hydrateSessionAfterAuth"), ctx.indexOf("useEffect(() => {"));
+  assert.match(hydrateBlock, /applySession\(payload\)/);
+  assert.doesNotMatch(hydrateBlock, /throw lastErr/);
 });
 
 test("profile links My Diner QR; SPA owns /d/:token scan; image still rewritten", () => {

@@ -76,10 +76,7 @@ export function ConsumerProvider({ children }) {
     try {
       const [data, preferences] = await Promise.all([
         getConsumerSession(),
-        getPreferences().catch((err) => {
-          if (err?.status === 401) throw err;
-          return null;
-        }),
+        getPreferences().catch(() => null),
       ]);
       const avoidData = await getFoodsToAvoid().catch(() => ({ foods_to_avoid: [] }));
       const avoidKeys = Array.isArray(avoidData?.foods_to_avoid) ? avoidData.foods_to_avoid : [];
@@ -109,30 +106,22 @@ export function ConsumerProvider({ children }) {
   }, []);
 
   const hydrateSessionAfterAuth = useCallback(async (payload) => {
-    if (payload?.consumer) {
-      applySession(payload);
+    if (!payload?.consumer) {
+      const err = new Error("Sign in did not return an account. Try again.");
+      err.code = "session_not_saved";
+      throw err;
     }
 
-    const retryDelaysMs = [0, 200, 500];
-    let lastErr = null;
-    for (const delayMs of retryDelaysMs) {
-      if (delayMs > 0) {
-        await new Promise((resolve) => setTimeout(resolve, delayMs));
-      }
-      try {
-        const data = await loadMe({ clearOn401: false });
-        maybeResetMenuPreferenceSession(data, {
-          dietary_preferences: data?.dietary_preferences,
-          allergen_preferences: data?.allergen_preferences,
-        });
-        return data;
-      } catch (err) {
-        lastErr = err;
-        if (err?.status !== 401) throw err;
-      }
-    }
+    applySession(payload);
 
-    if (payload?.consumer) {
+    try {
+      const data = await loadMe({ clearOn401: false });
+      maybeResetMenuPreferenceSession(data, {
+        dietary_preferences: data?.dietary_preferences,
+        allergen_preferences: data?.allergen_preferences,
+      });
+      return data;
+    } catch {
       const fallback = {
         ...payload,
         dietary_preferences: [],
@@ -143,10 +132,7 @@ export function ConsumerProvider({ children }) {
       maybeResetMenuPreferenceSession(fallback, fallback);
       return fallback;
     }
-
-    if (lastErr?.status === 401) clearSession();
-    throw lastErr;
-  }, [applySession, loadMe, maybeResetMenuPreferenceSession, clearSession]);
+  }, [applySession, loadMe, maybeResetMenuPreferenceSession]);
 
   useEffect(() => {
     let cancelled = false;

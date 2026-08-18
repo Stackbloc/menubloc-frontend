@@ -8,6 +8,12 @@ import {
 
 test("resolveConsumerLoginErrorMessage maps invalid credentials", () => {
   assert.equal(
+    resolveConsumerLoginErrorMessage({
+      payload: { code: "invalid_credentials", error: "nope" },
+    }),
+    CONSUMER_AUTH_ERRORS.invalidCredentials,
+  );
+  assert.equal(
     resolveConsumerLoginErrorMessage(new Error("Invalid email or password")),
     CONSUMER_AUTH_ERRORS.invalidCredentials,
   );
