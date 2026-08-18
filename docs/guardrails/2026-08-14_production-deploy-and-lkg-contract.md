@@ -34,32 +34,32 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www **and** 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` @ clean `main` |
-| Git commit | `c550dfd` — My Menuply hub with prominent diner About and photos |
-| Vercel deployment | `menubloc-frontend-83npukyp6-menuply.vercel.app` |
-| Live bundle | `index-KbRqQ3I0.js` |
+| Git commit | `ea7eb4e` — Post X aligned; Creators footer; Waiter/Yellow Browser/Basket restored |
+| Vercel deployment | `menubloc-frontend-lsmdx3d9x-menuply.vercel.app` |
+| Live bundle | `index-C7QEDuzy.js` |
 | Aliases | `menuply.com`, `www.menuply.com`, `crm.menuply.com`, `venues.menuply.com` |
 | Tip-gate | **PASS** (apex + www) verified 2026-08-18 |
-| Feature | Diner primary nav + My Menuply identity (photo upload, short bio, connections eating/planning) |
+| Feature | Bottom nav Home/Waiter/Menu Browser/X (Post)/Basket/My Menuply; Activity on Waiter; Creators `/creative-pros` |
 
 ### Backend (Railway)
 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-backend-main` @ clean `main` |
-| Git commit | `03132162` — diner About + connections food activity |
+| Git commit | `f137c7dd` — My Menuply CPD LKG docs lock (feature `03132162`) |
 | Health URL | `https://menubloc-backend-production.up.railway.app/health` |
-| `commit_hash` | `03132162335e8a07d6cb33f6327077faffc97137` |
+| `commit_hash` | `f137c7dd8791ec478ca3e7af4ab536c6fd7e720b` |
 | Migrations | `0250`–`0270` applied (`diner_about`) |
-| Smoke | Health MATCH `03132162`; tip-gate PASS `83npukyp6` / `index-KbRqQ3I0.js`; prior git tag `menuply-last-known-good-2026-08-18` |
+| Smoke | Health MATCH `f137c7dd`; tip-gate PASS `lsmdx3d9x` / `index-C7QEDuzy.js`; prior git tag `menuply-last-known-good-2026-08-18` |
 
 ### Restore current tip (if tip-gate fails mid-change)
 
 ```bash
 cd /Users/andrebarber/Desktop/menubloc/menubloc-frontend-main
-npx vercel alias set menubloc-frontend-83npukyp6-menuply.vercel.app menuply.com
-npx vercel alias set menubloc-frontend-83npukyp6-menuply.vercel.app www.menuply.com
-npx vercel alias set menubloc-frontend-83npukyp6-menuply.vercel.app crm.menuply.com
-npx vercel alias set menubloc-frontend-83npukyp6-menuply.vercel.app venues.menuply.com
+npx vercel alias set menubloc-frontend-lsmdx3d9x-menuply.vercel.app menuply.com
+npx vercel alias set menubloc-frontend-lsmdx3d9x-menuply.vercel.app www.menuply.com
+npx vercel alias set menubloc-frontend-lsmdx3d9x-menuply.vercel.app crm.menuply.com
+npx vercel alias set menubloc-frontend-lsmdx3d9x-menuply.vercel.app venues.menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 ```
@@ -121,6 +121,8 @@ Newest superseded first. Restoring drops everything shipped after that tip.
 
 | Deployment id | Bundle | Approx feature / CPD |
 |---------------|--------|----------------------|
+| `1vjhrbfcc` | `index-DUbMTrel.js` | Nav restore without Post align / Creators (`a9b7365`) — superseded by `lsmdx3d9x` |
+| `83npukyp6` | `index-KbRqQ3I0.js` | My Menuply hub (`c550dfd`) — superseded by bottom-nav restore |
 | `2fw9x27jj` | `index-fjLns99U.js` | Dining-hall human copy (`98687fd`) — superseded by My Menuply `83npukyp6` |
 | `ohxjeg0sj` | `index-DFFHQ6JS.js` | Diner sign-in invariant (`fc7e0f1`) — superseded by `74hi7bc73` |
 | `3vre2srp8` | `index-DQKfgzho.js` | Add Menu contribution (`074a217`) — superseded |

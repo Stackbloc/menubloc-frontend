@@ -4,7 +4,7 @@ Restore Home / Waiter / Yellow Browser / Basket, keep My Menuply and the bottom 
 
 # Current Status
 
-**LOCAL — not CPD.** Code is in `menubloc-frontend-main` working tree.
+**CPD COMPLETE.** Live tip `lsmdx3d9x` / `index-C7QEDuzy.js`. BE `f137c7dd` health MATCH.
 
 # Files Changed
 
