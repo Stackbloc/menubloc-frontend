@@ -4,7 +4,7 @@ Redesign diner-facing navigation around My Menuply as a personal food/social hom
 
 # Current Status
 
-Local implementation complete in authorized trees (`menubloc-frontend-main`, `menubloc-backend-main`). Not committed. Not deployed. Migration `0270` not applied.
+**CPD COMPLETE.** Live tip `83npukyp6` / `index-KbRqQ3I0.js`. BE `03132162` health MATCH. Migration `0270` applied.
 
 # Files Changed
 

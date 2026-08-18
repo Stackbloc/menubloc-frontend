@@ -25,7 +25,7 @@ Do **not** deploy from memory or from quarantined checkouts.
 
 ---
 
-## CURRENT LAST KNOWN GOOD (live production — 2026-08-17)
+## CURRENT LAST KNOWN GOOD (live production — 2026-08-18)
 
 Update this section **only** after tip-gate `RESULT=PASS` on apex + www **and** Railway `/health` matches the shipped BE SHA.
 
@@ -34,32 +34,32 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www **and** 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` @ clean `main` |
-| Git commit | `98687fd` — Dining-hall human copy (Post what's good today; share your thoughts); git checkpoint `0450a53` / `menuply-last-known-good-2026-08-18` |
-| Vercel deployment | `menubloc-frontend-2fw9x27jj-menuply.vercel.app` |
-| Live bundle | `index-fjLns99U.js` |
+| Git commit | `c550dfd` — My Menuply hub with prominent diner About and photos |
+| Vercel deployment | `menubloc-frontend-83npukyp6-menuply.vercel.app` |
+| Live bundle | `index-KbRqQ3I0.js` |
 | Aliases | `menuply.com`, `www.menuply.com`, `crm.menuply.com`, `venues.menuply.com` |
-| Tip-gate | **PASS** (apex + www) verified 2026-08-17 |
-| Feature | Dining-hall profiles: human copy, hide empty Founded, skip menu-item on halls |
+| Tip-gate | **PASS** (apex + www) verified 2026-08-18 |
+| Feature | Diner primary nav + My Menuply identity (photo upload, short bio, connections eating/planning) |
 
 ### Backend (Railway)
 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-backend-main` @ clean `main` |
-| Git commit | `fb54f0b4` — dining-hall CPD LKG docs lock (feature `6fc782c3` founded-year script) |
+| Git commit | `03132162` — diner About + connections food activity |
 | Health URL | `https://menubloc-backend-production.up.railway.app/health` |
-| `commit_hash` | `fb54f0b4656d77e4f94ba2ae8c28c880abb4c417` |
-| Migrations | `0250`–`0268` applied; founded years via ops script (no migration) |
-| Smoke | Health MATCH `fb54f0b4`; Bruin Plate `founded_year=2013`; tip-gate PASS `2fw9x27jj` / `index-fjLns99U.js`; git tag `menuply-last-known-good-2026-08-18` |
+| `commit_hash` | `03132162335e8a07d6cb33f6327077faffc97137` |
+| Migrations | `0250`–`0270` applied (`diner_about`) |
+| Smoke | Health MATCH `03132162`; tip-gate PASS `83npukyp6` / `index-KbRqQ3I0.js`; prior git tag `menuply-last-known-good-2026-08-18` |
 
 ### Restore current tip (if tip-gate fails mid-change)
 
 ```bash
 cd /Users/andrebarber/Desktop/menubloc/menubloc-frontend-main
-npx vercel alias set menubloc-frontend-2fw9x27jj-menuply.vercel.app menuply.com
-npx vercel alias set menubloc-frontend-2fw9x27jj-menuply.vercel.app www.menuply.com
-npx vercel alias set menubloc-frontend-2fw9x27jj-menuply.vercel.app crm.menuply.com
-npx vercel alias set menubloc-frontend-2fw9x27jj-menuply.vercel.app venues.menuply.com
+npx vercel alias set menubloc-frontend-83npukyp6-menuply.vercel.app menuply.com
+npx vercel alias set menubloc-frontend-83npukyp6-menuply.vercel.app www.menuply.com
+npx vercel alias set menubloc-frontend-83npukyp6-menuply.vercel.app crm.menuply.com
+npx vercel alias set menubloc-frontend-83npukyp6-menuply.vercel.app venues.menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 ```
@@ -121,6 +121,7 @@ Newest superseded first. Restoring drops everything shipped after that tip.
 
 | Deployment id | Bundle | Approx feature / CPD |
 |---------------|--------|----------------------|
+| `2fw9x27jj` | `index-fjLns99U.js` | Dining-hall human copy (`98687fd`) — superseded by My Menuply `83npukyp6` |
 | `ohxjeg0sj` | `index-DFFHQ6JS.js` | Diner sign-in invariant (`fc7e0f1`) — superseded by `74hi7bc73` |
 | `3vre2srp8` | `index-DQKfgzho.js` | Add Menu contribution (`074a217`) — superseded |
 | `30qbi67vq` | `index-CMXfgjwr.js` | Cluster landing consumer dashboard (`11e792e`) — superseded by `3vre2srp8` |
