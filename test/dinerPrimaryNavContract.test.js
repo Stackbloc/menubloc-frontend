@@ -1,5 +1,5 @@
 /**
- * Diner primary nav: Home | Waiter | Menu Browser | X (post.) | Basket | My Menuply.
+ * Diner primary nav: Home | Waiter | Menu Browser | X (Post) | Basket | My Menuply.
  * Activity lives on Waiter. Search is not a bottom-nav tab.
  */
 import test from "node:test";
@@ -24,7 +24,9 @@ test("BottomNav is Home Waiter Menu Browser X Basket My Menuply", () => {
   assert.match(nav, /MenuplyXMark/);
   assert.match(nav, /MenuplyActionSheet/);
   assert.match(nav, /title=\{POST_LABEL\}/);
-  assert.match(nav, /const POST_LABEL = "post\."/);
+  assert.match(nav, /const POST_LABEL = "Post"/);
+  assert.match(nav, /iconWrapStyle/);
+  assert.match(nav, /visibility: "hidden"/);
   assert.match(nav, /to: "\/checkout"/);
   assert.match(nav, /to: "\/my-menuply"/);
   assert.match(nav, /<span>Menu<\/span>/);

@@ -1,7 +1,7 @@
 /**
  * Public SiteFooter navigation — canonical marketplace links (2026-07-09 d333af2).
- * Diners / Restaurants (onboarding) / Clusters; Creators + Distributors routes kept for
- * invite/direct access — no public footer entry for Distributors.
+ * Diners / Restaurants (onboarding) / Clusters / Creators (`/creative-pros`).
+ * Distributors route kept for invite/direct access — no public footer entry.
  * no restaurant auth links in footer row.
  */
 import assert from "node:assert/strict";
@@ -31,8 +31,10 @@ function testFooterMarketplaceLinks() {
   assert.match(src, /<Link to="\/waiter"/);
   assert.match(src, /<Link to="\/browse-menus"/);
   assert.match(src, /What People Are Eating/);
+  assert.match(src, /<Link to="\/creative-pros"/);
+  assert.match(src, /discovery\.footer\.creators/);
+  assert.doesNotMatch(src, /Owner tools/);
   assert.doesNotMatch(src, /<Link to="\/distributors"/);
-  assert.doesNotMatch(src, /<Link to="\/creative-pros"/);
   assert.doesNotMatch(src, /<Link to="\/operator\/login"/);
   assert.doesNotMatch(src, /discovery\.footer\.signup/);
   assert.doesNotMatch(src, /discovery\.footer\.signin/);

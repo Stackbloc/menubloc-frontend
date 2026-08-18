@@ -8,7 +8,7 @@ import MenuplyXMark from "./MenuplyXMark.jsx";
 import MenuplyActionSheet from "./MenuplyActionSheet.jsx";
 import { resolveBrowseMenusHref } from "../lib/menuBrowserVenueContext.js";
 
-const POST_LABEL = "post.";
+const POST_LABEL = "Post";
 
 export default function BottomNav() {
   const { t } = useLanguage();
@@ -69,17 +69,32 @@ export default function BottomNav() {
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
+    justifyContent: "flex-start",
     gap: 2,
     textDecoration: "none",
     flex: 1,
     minWidth: 0,
+    alignSelf: "stretch",
     fontSize: 10,
+    lineHeight: 1,
     padding: "2px 4px",
     transition: "color 150ms ease",
     background: "transparent",
     border: "none",
     cursor: "pointer",
     fontFamily: "inherit",
+    appearance: "none",
+    WebkitAppearance: "none",
+  };
+  const iconWrapStyle = {
+    position: "relative",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: 28,
+    height: 28,
+    fontSize: 22,
+    lineHeight: 1,
   };
 
   return (
@@ -97,6 +112,7 @@ export default function BottomNav() {
         borderTop: "1px solid #e4e7ec",
         display: "flex",
         justifyContent: "space-around",
+        alignItems: "flex-start",
         padding: "6px 0 env(safe-area-inset-bottom, 8px)",
         boxShadow: "0 -2px 12px rgba(0,0,0,0.06)",
         overflow: "visible",
@@ -115,7 +131,12 @@ export default function BottomNav() {
               onClick={() => setPostOpen(true)}
               style={{ ...itemStyle, color: postOpen ? "#1d4ed8" : "#9ca3af", fontWeight: 500 }}
             >
-              <MenuplyXMark size={28} active={postOpen} />
+              <span style={iconWrapStyle}>
+                <MenuplyXMark size={22} active={postOpen} />
+              </span>
+              <span aria-hidden="true" style={{ visibility: "hidden", lineHeight: 1.05 }}>
+                {POST_LABEL}
+              </span>
             </button>
           );
         }
@@ -158,16 +179,7 @@ export default function BottomNav() {
               fontWeight: active ? 800 : 500,
             }}
           >
-            <span
-              style={{
-                position: "relative",
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: 22,
-                lineHeight: 1,
-              }}
-            >
+            <span style={iconWrapStyle}>
               {tab.iconComponent ? (
                 <tab.iconComponent
                   size={iconSize}

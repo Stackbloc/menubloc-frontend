@@ -103,7 +103,9 @@ export default function SiteFooter() {
               {t("discovery.footer.restaurants", "Restaurants")}
             </Link><br />
             <Link to="/join" style={footerLinkStyle}>Venues</Link><br />
-            <Link to="/restaurant/onboarding" style={footerLinkStyle}>Owner tools</Link>
+            <Link to="/creative-pros" style={footerLinkStyle}>
+              {t("discovery.footer.creators", "Creators")}
+            </Link>
           </div>
 
           <div>
