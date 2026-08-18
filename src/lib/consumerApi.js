@@ -135,6 +135,8 @@ export const getWhatWeDoingSession = (tokenOrId) =>
   get(`/api/consumer/what-we-doing/${encodeURIComponent(String(tokenOrId))}`);
 export const addWhatWeDoingParticipants = (tokenOrId, body) =>
   post(`/api/consumer/what-we-doing/${encodeURIComponent(String(tokenOrId))}/participants`, body);
+export const joinWhatWeDoingSession = (tokenOrId) =>
+  post(`/api/consumer/what-we-doing/${encodeURIComponent(String(tokenOrId))}/join`, {});
 export const addWhatWeDoingSuggestion = (tokenOrId, body) =>
   post(`/api/consumer/what-we-doing/${encodeURIComponent(String(tokenOrId))}/suggestions`, body);
 export const voteWhatWeDoing = (tokenOrId, suggestion_id) =>

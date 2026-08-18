@@ -8,7 +8,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import FoodComments from "../comments/FoodComments.jsx";
-import { listPublicRestaurantFoodActivity } from "../../lib/foodActivityApi.js";
+import { listPublicRestaurantFoodActivity, getRestaurantUpcomingEatingPlans } from "../../lib/foodActivityApi.js";
 import { profileReadableSurfaceStyle } from "./publicProfile/profilePrimitives.jsx";
 import DinerStatusFeed from "../dinerStatus/DinerStatusFeed.jsx";
 import ImEatingAtPanel from "../foodActivity/ImEatingAtPanel.jsx";
@@ -81,6 +81,7 @@ export default function WhatDinersAreSaying({
   venueMode = false,
 }) {
   const [activities, setActivities] = useState([]);
+  const [upcomingLine, setUpcomingLine] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -88,22 +89,30 @@ export default function WhatDinersAreSaying({
     let cancelled = false;
     if (!restaurantId) {
       setActivities([]);
+      setUpcomingLine(null);
       setLoading(false);
       return undefined;
     }
 
     setLoading(true);
     setError("");
-    listPublicRestaurantFoodActivity(restaurantId, { limit: 20 })
-      .then((data) => {
+    Promise.all([
+      listPublicRestaurantFoodActivity(restaurantId, { limit: 20 }),
+      experienceMode
+        ? Promise.resolve({ line: null })
+        : getRestaurantUpcomingEatingPlans(restaurantId).catch(() => ({ line: null })),
+    ])
+      .then(([data, plans]) => {
         if (cancelled) return;
         setActivities(data.activities || []);
+        setUpcomingLine(plans?.line || null);
       })
       .catch((err) => {
         if (cancelled) return;
         // Soft-fail when migration not applied yet — still show discussion.
         setError("");
         setActivities([]);
+        setUpcomingLine(null);
         if (import.meta.env?.DEV) {
           console.warn("[WhatDinersAreSaying]", err?.message || err);
         }
@@ -115,7 +124,7 @@ export default function WhatDinersAreSaying({
     return () => {
       cancelled = true;
     };
-  }, [restaurantId]);
+  }, [restaurantId, experienceMode]);
 
   if (!restaurantId) return null;
 
@@ -141,6 +150,11 @@ export default function WhatDinersAreSaying({
             ? "Post what's good today."
             : "User-reported food activity — Menuply does not verify purchases."}
         </p>
+        {experienceMode || !upcomingLine ? null : (
+          <p style={styles.plansLine} data-testid="upcoming-eating-plans-line">
+            {upcomingLine}
+          </p>
+        )}
 
         <DinerStatusFeed
           restaurantId={restaurantId}
@@ -226,6 +240,13 @@ const styles = {
     margin: "0 0 12px",
     fontSize: 12,
     color: "#78716c",
+    lineHeight: 1.4,
+  },
+  plansLine: {
+    margin: "0 0 12px",
+    fontSize: 14,
+    fontWeight: 700,
+    color: "#1c1917",
     lineHeight: 1.4,
   },
   muted: { fontSize: 13, color: "#78716c", margin: "0 0 12px" },

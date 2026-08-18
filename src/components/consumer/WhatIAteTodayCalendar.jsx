@@ -48,6 +48,7 @@ export default function WhatIAteTodayCalendar({
   onViewMonthChange,
   dayCounts = [],
   readOnly = false,
+  testId = "what-i-ate-today-calendar",
 }) {
   const today = whatIAteTodayLocalDate();
   const selectedDate = selectedDateProp || today;
@@ -75,7 +76,7 @@ export default function WhatIAteTodayCalendar({
   }
 
   return (
-    <div data-testid="what-i-ate-today-calendar" style={styles.wrap}>
+    <div data-testid={testId} style={styles.wrap}>
       <div style={styles.monthHead}>
         <button type="button" style={styles.navBtn} onClick={() => shiftMonth(-1)} aria-label="Previous month">
           ‹

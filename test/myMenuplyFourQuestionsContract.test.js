@@ -28,8 +28,11 @@ test("My Menuply is the diner's personal home", () => {
   assert.match(page, /data-testid="my-events"/);
   assert.match(page, /What I'm Eating/);
   assert.match(page, /title="My Eating Plans"/);
+  assert.match(page, /eating-plans-calendar/);
+  assert.match(page, /EatingPlanDayForm/);
   assert.match(page, /Invite Me/);
   assert.match(page, /Join Me/);
+  assert.ok(page.indexOf("eating-plans-calendar") < page.indexOf("Invite Me"));
   assert.match(page, /What I Want to Eat/);
   assert.match(page, /My Crews/);
   assert.match(page, /My Events/);
@@ -37,6 +40,15 @@ test("My Menuply is the diner's personal home", () => {
   assert.match(page, /createWhatIAteToday/);
   assert.match(page, /createWhatWeDoingSession/);
   assert.match(page, /createDiningCrew/);
+  const form = read("src/pages/consumer/myMenuply/EatingPlanDayForm.jsx");
+  assert.match(form, /People can join/);
+  assert.match(form, /How many can join/);
+  assert.match(form, /searchReportPlaces/);
+  assert.match(form, /eating-plan-selected-restaurant/);
+  assert.match(bits, /EatingPlanCard/);
+  assert.match(bits, /Restaurant/);
+  const api = read("src/lib/consumerApi.js");
+  assert.match(api, /joinWhatWeDoingSession/);
   assert.match(hero, /About Me/);
   assert.match(hero, /My Connections/);
   assert.match(hero, /\/my-menuply\/connections-eating/);

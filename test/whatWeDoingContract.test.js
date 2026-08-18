@@ -44,11 +44,13 @@ test("routes and profile entry exist; HomeNext and Waiter untouched", () => {
 
   const api = read("src/lib/consumerApi.js");
   assert.match(api, /createWhatWeDoingSession/);
+  assert.match(api, /joinWhatWeDoingSession/);
   assert.match(api, /makeWhatWeDoingPlan/);
   assert.match(api, /listConsumerNotifications/);
 
   const session = read("src/pages/consumer/WhatWeDoingSessionPage.jsx");
   assert.match(session, /Make It a Plan/);
+  assert.match(session, /Join this plan/);
   assert.match(session, /My vote/);
   assert.match(session, /Leading/);
 

@@ -102,6 +102,39 @@ export function ConnectionFoodCard({ item }) {
   );
 }
 
+export function EatingPlanCard({ plan }) {
+  const name = plan.restaurant_name || plan.place_label || plan.title || "Plan";
+  const when = formatPlanWhen(plan.plan_date);
+  const restHref = restaurantHref({
+    restaurant_id: plan.restaurant_id,
+    restaurant_slug: plan.restaurant_slug,
+    slug: plan.restaurant_slug,
+    city: plan.restaurant_city,
+    state: plan.restaurant_state,
+  });
+  return (
+    <div style={s.card} data-testid="eating-plan-card">
+      <Link to={`/account/what-we-doing/${plan.token}`} style={{ ...s.sectionTitleLink, fontWeight: 800 }}>
+        {name}
+      </Link>
+      {when ? <div style={s.muted}>{when}</div> : null}
+      <div style={s.muted}>
+        {plan.joinable ? `${plan.joiner_count || 0}/${plan.join_capacity || 0} joined` : "Just me"}
+      </div>
+      <div style={s.actions}>
+        <Link to={`/account/what-we-doing/${plan.token}`} style={s.chipBtn}>
+          Plan
+        </Link>
+        {restHref ? (
+          <Link to={restHref} style={s.chipBtn}>
+            Restaurant
+          </Link>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 export function PlanCard({ item }) {
   const name = item.peer?.display_name || "A diner";
   const when = formatPlanWhen(item.plan_date);

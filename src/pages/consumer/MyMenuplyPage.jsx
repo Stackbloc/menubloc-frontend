@@ -30,16 +30,24 @@ import {
 } from "../../lib/consumerApi.js";
 import { restaurantPathFromRow } from "../../lib/canonicalUrl.js";
 import { defaultWhatIAteMealPeriod } from "../../lib/whatIAteTodayMealPeriod.js";
-import { formatWhatWeDoingTitle } from "../../lib/whatWeDoingTitle.js";
+import WhatIAteTodayCalendar from "../../components/consumer/WhatIAteTodayCalendar.jsx";
 import * as s from "./myMenuply/myMenuplyStyles.js";
 import DinerIdentityHero from "./myMenuply/DinerIdentityHero.jsx";
 import QuickCompose from "./myMenuply/QuickCompose.jsx";
+import EatingPlanDayForm from "./myMenuply/EatingPlanDayForm.jsx";
 import {
   PhotoGrid,
   SectionHead,
+  EatingPlanCard,
   foodHref,
   restaurantHref,
 } from "./myMenuply/myMenuplyBits.jsx";
+
+function planYmd(value) {
+  const raw = String(value || "").trim();
+  if (/^\d{4}-\d{2}-\d{2}/.test(raw)) return raw.slice(0, 10);
+  return "";
+}
 
 function formatEventWhen(ev) {
   const raw = ev?.starts_at || ev?.event_date;
@@ -61,13 +69,17 @@ export default function MyMenuplyPage() {
   const [postBusy, setPostBusy] = useState("");
   const [eating, setEating] = useState([]);
   const [plans, setPlans] = useState([]);
-  const [joinMe, setJoinMe] = useState([]);
   const [connections, setConnections] = useState([]);
   const [followed, setFollowed] = useState([]);
   const [liked, setLiked] = useState([]);
   const [crews, setCrews] = useState([]);
   const [events, setEvents] = useState([]);
   const [eventGroups, setEventGroups] = useState([]);
+  const [planDate, setPlanDate] = useState(() => whatIAteTodayLocalDate());
+  const [planMonth, setPlanMonth] = useState(() => {
+    const t = new Date();
+    return new Date(t.getFullYear(), t.getMonth(), 1);
+  });
 
   const load = useCallback(async () => {
     setError("");
@@ -111,12 +123,6 @@ export default function MyMenuplyPage() {
         kind: "what_i_ate",
       }));
       setEating([...diaryItems, ...activityItems].slice(0, 12));
-      setJoinMe(
-        (activityRes.activities || []).filter((row) => {
-          const jm = row.join_me;
-          return jm && jm.join_me_active !== false && (jm.invitation_token || jm.url);
-        })
-      );
       setPlans(planRes.sessions || []);
       setConnections(connRes.accepted || []);
       setFollowed(followRes.restaurants || followRes.items || []);
@@ -191,12 +197,17 @@ export default function MyMenuplyPage() {
     }
   }
 
-  async function postPlan({ text }) {
+  async function postPlan({ planDate: day, restaurantId, placeLabel, joinable, joinCapacity }) {
     setPostBusy("plans");
     setError("");
     try {
-      const plan_date = text || whatIAteTodayLocalDate();
-      await createWhatWeDoingSession({ plan_date });
+      await createWhatWeDoingSession({
+        plan_date: day || planDate,
+        restaurant_id: restaurantId || undefined,
+        place_label: placeLabel,
+        joinable: Boolean(joinable),
+        join_capacity: joinable ? joinCapacity : undefined,
+      });
       await load();
     } catch (err) {
       setError(err.message || "Unable to add");
@@ -270,7 +281,44 @@ export default function MyMenuplyPage() {
 
             <section style={s.section} data-testid="eating-plans">
               <SectionHead title="My Eating Plans" to="/account/what-we-doing" />
-              <div style={s.labelRow}>
+              <WhatIAteTodayCalendar
+                testId="eating-plans-calendar"
+                selectedDate={planDate}
+                onSelectDate={setPlanDate}
+                viewMonth={planMonth}
+                onViewMonthChange={setPlanMonth}
+                dayCounts={plans
+                  .map((plan) => planYmd(plan.plan_date))
+                  .filter(Boolean)
+                  .reduce((rows, ymd) => {
+                    const found = rows.find((r) => r.eaten_on === ymd);
+                    if (found) found.entry_count += 1;
+                    else rows.push({ eaten_on: ymd, entry_count: 1 });
+                    return rows;
+                  }, [])}
+              />
+              {plans.filter((plan) => planYmd(plan.plan_date) === planDate).length === 0 ? (
+                <p style={s.muted}>No plan this day yet.</p>
+              ) : (
+                plans
+                  .filter((plan) => planYmd(plan.plan_date) === planDate)
+                  .map((plan) => <EatingPlanCard key={plan.token || plan.id} plan={plan} />)
+              )}
+              {plans.filter((plan) => planYmd(plan.plan_date) !== planDate).length > 0 ? (
+                <>
+                  {plans
+                    .filter((plan) => planYmd(plan.plan_date) !== planDate)
+                    .slice(0, 12)
+                    .map((plan) => <EatingPlanCard key={plan.token || plan.id} plan={plan} />)}
+                </>
+              ) : null}
+              <EatingPlanDayForm
+                planDate={planDate}
+                busy={postBusy === "plans"}
+                onSubmit={postPlan}
+                followed={followed}
+              />
+              <div style={{ ...s.labelRow, marginTop: 14 }}>
                 <Link to="/account/what-we-doing" style={s.subLabel}>
                   Invite Me
                 </Link>
@@ -278,37 +326,6 @@ export default function MyMenuplyPage() {
                   Join Me
                 </Link>
               </div>
-              {plans.length === 0 && joinMe.length === 0 ? (
-                <p style={s.muted}>Nothing yet.</p>
-              ) : (
-                <>
-                  {plans.slice(0, 4).map((plan) => (
-                    <Link
-                      key={plan.token || plan.id}
-                      to={`/account/what-we-doing/${plan.token}`}
-                      style={s.card}
-                    >
-                      <div style={{ fontWeight: 800 }}>
-                        {plan.title || formatWhatWeDoingTitle(plan.plan_date)}
-                      </div>
-                      <div style={s.muted}>{plan.plan_date}</div>
-                    </Link>
-                  ))}
-                  {joinMe.slice(0, 2).map((row) => (
-                    <Link key={row.id} to="/account/im-eating" style={s.card}>
-                      <div style={{ fontWeight: 800 }}>Join Me</div>
-                      <div style={s.muted}>{row.restaurant_name || row.item_name || "Now"}</div>
-                    </Link>
-                  ))}
-                </>
-              )}
-              <QuickCompose
-                testId="compose-plan"
-                inputType="date"
-                defaultValue={whatIAteTodayLocalDate()}
-                busy={postBusy === "plans"}
-                onSubmit={postPlan}
-              />
             </section>
 
             <section style={s.section} data-testid="want-to-eat">

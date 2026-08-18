@@ -56,6 +56,14 @@ test("diner status composer supports busy + dining-hall experience mode", () => 
   assert.doesNotMatch(src, /No account needed/);
 });
 
+test("dining halls skip restaurant upcoming eating-plan counts", () => {
+  const src = read("src/components/restaurant/WhatDinersAreSaying.jsx");
+  assert.match(src, /experienceMode/);
+  assert.match(src, /getRestaurantUpcomingEatingPlans/);
+  assert.match(src, /experienceMode[\s\S]*\? Promise\.resolve\(\{ line: null \}\)/);
+  assert.match(src, /experienceMode \|\| !upcomingLine/);
+});
+
 test("campus dining section is experience-only (no menu framing)", () => {
   const src = read("src/components/cluster/CampusDiningSection.jsx");
   assert.match(src, /On campus/);

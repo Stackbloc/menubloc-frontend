@@ -14,6 +14,7 @@ import {
   closeWhatWeDoingVoting,
   getWhatWeDoingSession,
   makeWhatWeDoingPlan,
+  joinWhatWeDoingSession,
   searchWhatWeDoingEvents,
   searchWhatWeDoingRestaurants,
   searchWhatWeDoingVenues,
@@ -168,6 +169,20 @@ export default function WhatWeDoingSessionPage() {
     }
   }
 
+  async function onJoin() {
+    setBusy(true);
+    setError("");
+    try {
+      const data = await joinWhatWeDoingSession(token);
+      setPayload(data);
+      setNotice("You're on this plan.");
+    } catch (err) {
+      setError(err.message || "Unable to join");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const session = payload?.session;
   const suggestions = payload?.suggestions || [];
   const shareUrl = normalizeConsumerShareUrl(menuplyWhatWeDoingUrl(token));
@@ -185,6 +200,14 @@ export default function WhatWeDoingSessionPage() {
         ) : (
           <>
             <h1 style={styles.title}>{session?.title}</h1>
+            {session?.restaurant_name || session?.place_label ? (
+              <p style={styles.meta}>{session.restaurant_name || session.place_label}</p>
+            ) : null}
+            {payload?.can_join ? (
+              <button type="button" style={styles.primary} disabled={busy} onClick={onJoin}>
+                {busy ? "…" : "Join this plan"}
+              </button>
+            ) : null}
             <p style={styles.meta}>
               Status: <strong>{session?.status}</strong>
               {session?.voting_closes_at
@@ -245,6 +268,8 @@ export default function WhatWeDoingSessionPage() {
               </div>
             ) : null}
 
+            {payload?.is_participant === false ? null : (
+            <>
             <h2 style={styles.h2}>Suggestions</h2>
             {suggestions.length === 0 ? (
               <p style={styles.muted}>No suggestions yet — be the first.</p>
@@ -349,6 +374,8 @@ export default function WhatWeDoingSessionPage() {
                 )}
               </section>
             ) : null}
+            </>
+            )}
 
             <p style={styles.back}>
               <Link to="/account/what-we-doing" style={styles.link}>

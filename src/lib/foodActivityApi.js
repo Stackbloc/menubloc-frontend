@@ -49,6 +49,20 @@ export async function listPublicClusterFoodActivity(clusterId, { limit = 20, hou
   };
 }
 
+export async function getRestaurantUpcomingEatingPlans(restaurantId) {
+  const rid = restaurantId != null ? String(restaurantId).trim() : "";
+  if (!rid) return { diner_count: 0, window_days: 7, line: null };
+  const data = await apiGet(
+    `/public/food-activity/restaurants/${encodeURIComponent(rid)}/upcoming-plans`
+  );
+  const dinerCount = Number(data?.diner_count) || 0;
+  return {
+    diner_count: dinerCount,
+    window_days: data?.window_days ?? 7,
+    line: data?.line || null,
+  };
+}
+
 export async function searchReportPlaces({ type, q = "", restaurant_id = null, limit = 8 } = {}) {
   const data = await apiGet(
     `/public/food-activity/places${buildQuery({ type, q, restaurant_id, limit })}`

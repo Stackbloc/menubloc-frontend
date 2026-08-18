@@ -54,4 +54,19 @@ describe("What Diners Are Saying (restaurant)", () => {
     expect(shell).toMatch(/WhatDinersAreSaying/);
     expect(shell).toMatch(/restaurantId=\{restaurantId\}/);
   });
+
+  it("restaurant profiles show next-week eating-plan diner count (not dining halls)", () => {
+    const api = fs.readFileSync(path.join(root, "src/lib/foodActivityApi.js"), "utf8");
+    const section = fs.readFileSync(
+      path.join(root, "src/components/restaurant/WhatDinersAreSaying.jsx"),
+      "utf8"
+    );
+    expect(api).toMatch(/getRestaurantUpcomingEatingPlans/);
+    expect(api).toMatch(/\/upcoming-plans/);
+    expect(api).toMatch(/from ["'].*api\.js["']/);
+    expect(section).toMatch(/getRestaurantUpcomingEatingPlans/);
+    expect(section).toMatch(/upcoming-eating-plans-line/);
+    expect(section).toMatch(/experienceMode \|\| !upcomingLine/);
+    expect(section).not.toMatch(/guest_key|ip_hash/);
+  });
 });
