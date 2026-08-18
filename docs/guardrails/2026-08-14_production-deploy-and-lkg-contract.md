@@ -34,32 +34,32 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www **and** 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` @ clean `main` |
-| Git commit | `074a217` — Add Menu contribution (feature `3cc314e` + JSX fix) |
-| Vercel deployment | `menubloc-frontend-3vre2srp8-menuply.vercel.app` |
-| Live bundle | `index-DQKfgzho.js` |
+| Git commit | `196dc29` — Site Activity unique visitors (not repeat same-day page views) |
+| Vercel deployment | `menubloc-frontend-74hi7bc73-menuply.vercel.app` |
+| Live bundle | `index-B7aS-oSM.js` |
 | Aliases | `menuply.com`, `www.menuply.com`, `crm.menuply.com`, `venues.menuply.com` |
 | Tip-gate | **PASS** (apex + www) verified 2026-08-17 |
-| Feature | Add Menu icon on unclaimed no-menu restaurants; signed-in public capture with restaurant lock |
+| Feature | Site Activity / owner dashboard count unique people; client skips same path same local day |
 
 ### Backend (Railway)
 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-backend-main` @ clean `main` |
-| Git commit | `7bff0469` — Add Menu capture lock + consumer auth |
+| Git commit | `479ef798` — Site Activity unique visitors |
 | Health URL | `https://menubloc-backend-production.up.railway.app/health` |
-| `commit_hash` | `7bff0469675834428a46c474666c074c065b9cbc` |
-| Migrations | `0250`–`0265` applied (no new migration for Add Menu) |
-| Smoke | Health MATCH `7bff0469`; capture start requires consumer auth |
+| `commit_hash` | `479ef798afb10e7bcc52276347b5d570f6c6abc2` |
+| Migrations | `0250`–`0268` applied |
+| Smoke | Health MATCH `479ef798`; tip-gate PASS `74hi7bc73` / `index-B7aS-oSM.js` |
 
 ### Restore current tip (if tip-gate fails mid-change)
 
 ```bash
 cd /Users/andrebarber/Desktop/menubloc/menubloc-frontend-main
-npx vercel alias set menubloc-frontend-3vre2srp8-menuply.vercel.app menuply.com
-npx vercel alias set menubloc-frontend-3vre2srp8-menuply.vercel.app www.menuply.com
-npx vercel alias set menubloc-frontend-3vre2srp8-menuply.vercel.app crm.menuply.com
-npx vercel alias set menubloc-frontend-3vre2srp8-menuply.vercel.app venues.menuply.com
+npx vercel alias set menubloc-frontend-74hi7bc73-menuply.vercel.app menuply.com
+npx vercel alias set menubloc-frontend-74hi7bc73-menuply.vercel.app www.menuply.com
+npx vercel alias set menubloc-frontend-74hi7bc73-menuply.vercel.app crm.menuply.com
+npx vercel alias set menubloc-frontend-74hi7bc73-menuply.vercel.app venues.menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 ```
