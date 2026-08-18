@@ -51,6 +51,9 @@ test("What I Ate Today is optional, fail-open, and not a search engine", () => {
   assert.match(section, /Show my food diary to Connections/);
   assert.match(section, /meal_period/);
   assert.match(section, /createWhatIAteToday/);
+  assert.match(section, /QuickCompose/);
+  assert.match(section, /what-i-ate-meal-card/);
+  assert.match(section, /what-i-ate-meal-heading/);
   assert.match(add, /Add to What I Ate Today/);
   assert.match(add, /\/account\/login\?next=/);
   assert.match(add, /createWhatIAteToday/);
@@ -67,4 +70,6 @@ test("What I Ate Today is optional, fail-open, and not a search engine", () => {
   assert.match(app, /WhatIAteTodayPage/);
   assert.match(page, /What I Ate Today/);
   assert.match(mealLib, /groupEntriesByMealPeriod/);
+  assert.match(mealLib, /pickEntryForMeal/);
+  assert.match(section, /QuickCompose/);
 });

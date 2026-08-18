@@ -1,5 +1,9 @@
 # Handoffs Index
 
+- [2026-08-18_diner-instagram-easy-compose_handoff.md](./2026-08-18_diner-instagram-easy-compose_handoff.md) — One-line diner compose + personal My Menuply (**LOCAL until CPD**)
+- [2026-08-18_my-menuply-clickable-labels_handoff.md](./2026-08-18_my-menuply-clickable-labels_handoff.md) — My Eating Plans; clickable titles; no click-coaching (**LOCAL until CPD**)
+- [2026-08-18_my-menuply-connections-label_handoff.md](./2026-08-18_my-menuply-connections-label_handoff.md) — My Connections first; click → eating list (**LOCAL until CPD**)
+- [2026-08-18_my-menuply-remove-whats-happening_handoff.md](./2026-08-18_my-menuply-remove-whats-happening_handoff.md) — Drop public What's happening from My Menuply (**LOCAL until CPD**)
 - [2026-08-18_bottom-nav-restore-waiter-activity_handoff.md](./2026-08-18_bottom-nav-restore-waiter-activity_handoff.md) — Restore Home/Waiter/Yellow Browser/Basket + X (Post) + My Menuply; Activity on Waiter (**CPD COMPLETE** — tip `lsmdx3d9x` / `index-C7QEDuzy.js`; BE `f137c7dd`)
 - [2026-08-18_pre-my-menuply-lkg-checkpoint_handoff.md](./2026-08-18_pre-my-menuply-lkg-checkpoint_handoff.md) — Pre–My Menuply LKG tag `menuply-last-known-good-2026-08-18` (**SAVED**)
 - [2026-08-18_my-menuply-ia_handoff.md](./2026-08-18_my-menuply-ia_handoff.md) — My Menuply IA + diner About/photos (**CPD COMPLETE** — tip `83npukyp6` / `index-KbRqQ3I0.js`; BE `03132162`)

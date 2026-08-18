@@ -3,18 +3,16 @@
  * Route: /account/what-we-doing
  */
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import StickyPageHeader from "../../components/StickyPageHeader.jsx";
 import BottomNav from "../../components/BottomNav.jsx";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
 import {
   createWhatWeDoingSession,
-  listConnections,
-  listDiningCrews,
   listWhatWeDoingSessions,
+  whatIAteTodayLocalDate,
 } from "../../lib/consumerApi.js";
-import { formatWhatWeDoingTitle } from "../../lib/whatWeDoingTitle.js";
 
 export default function WhatWeDoingPage() {
   const navigate = useNavigate();
@@ -24,26 +22,14 @@ export default function WhatWeDoingPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const [planDate, setPlanDate] = useState("");
-  const [votingClosesAt, setVotingClosesAt] = useState("");
-  const [connections, setConnections] = useState([]);
-  const [crews, setCrews] = useState([]);
+  const [planDate, setPlanDate] = useState(() => whatIAteTodayLocalDate());
   const [selectedPeers, setSelectedPeers] = useState(() => new Set());
-  const [crewId, setCrewId] = useState("");
-
-  const titlePreview = useMemo(() => formatWhatWeDoingTitle(planDate), [planDate]);
 
   const load = useCallback(async () => {
     setError("");
     try {
-      const [sess, conn, crewList] = await Promise.all([
-        listWhatWeDoingSessions(),
-        listConnections("accepted"),
-        listDiningCrews(),
-      ]);
+      const sess = await listWhatWeDoingSessions();
       setSessions(sess.sessions || []);
-      setConnections(conn.accepted || []);
-      setCrews(crewList.crews || crewList.items || []);
     } catch (err) {
       setError(err.message || "Unable to load");
     } finally {
@@ -72,15 +58,6 @@ export default function WhatWeDoingPage() {
     });
   }, [searchParams]);
 
-  function togglePeer(id) {
-    setSelectedPeers((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }
-
   async function onCreate(e) {
     e.preventDefault();
     if (!planDate) {
@@ -90,15 +67,10 @@ export default function WhatWeDoingPage() {
     setBusy(true);
     setError("");
     try {
-      const body = {
+      const data = await createWhatWeDoingSession({
         plan_date: planDate,
         connection_user_ids: [...selectedPeers],
-      };
-      if (crewId) body.dining_crew_id = Number(crewId);
-      if (votingClosesAt) {
-        body.voting_closes_at = new Date(votingClosesAt).toISOString();
-      }
-      const data = await createWhatWeDoingSession(body);
+      });
       const token = data?.session?.token;
       if (token) navigate(`/account/what-we-doing/${token}`);
       else await load();
@@ -113,77 +85,19 @@ export default function WhatWeDoingPage() {
     <>
       <StickyPageHeader title="What We Doing?" />
       <div style={styles.page}>
-        <p style={styles.lead}>
-          Ask your Connections or a Dining Crew what to do — suggest places, vote, then make it a
-          plan.
-        </p>
+        <p style={styles.lead}>Pick a day.</p>
         {error ? <p style={styles.error}>{error}</p> : null}
 
-        <form onSubmit={onCreate} style={styles.card}>
-          <label style={styles.label}>
-            When?
-            <input
-              type="date"
-              value={planDate}
-              onChange={(e) => setPlanDate(e.target.value)}
-              style={styles.input}
-              required
-            />
-          </label>
-          <p style={styles.preview} aria-live="polite">
-            {planDate ? titlePreview : "What we doing [pick a date]?"}
-          </p>
-
-          <label style={styles.label}>
-            Voting closes (optional)
-            <input
-              type="datetime-local"
-              value={votingClosesAt}
-              onChange={(e) => setVotingClosesAt(e.target.value)}
-              style={styles.input}
-            />
-          </label>
-
-          <fieldset style={styles.fieldset}>
-            <legend style={styles.legend}>Invite Connections</legend>
-            {connections.length === 0 ? (
-              <p style={styles.muted}>No accepted Connections yet.</p>
-            ) : (
-              connections.map((c) => {
-                const id = Number(c.peer?.id);
-                if (!id) return null;
-                return (
-                  <label key={c.id} style={styles.check}>
-                    <input
-                      type="checkbox"
-                      checked={selectedPeers.has(id)}
-                      onChange={() => togglePeer(id)}
-                    />
-                    {c.peer?.display_name || "Connection"}
-                  </label>
-                );
-              })
-            )}
-          </fieldset>
-
-          <label style={styles.label}>
-            Or invite a Dining Crew
-            <select
-              value={crewId}
-              onChange={(e) => setCrewId(e.target.value)}
-              style={styles.input}
-            >
-              <option value="">None</option>
-              {(crews || []).map((crew) => (
-                <option key={crew.id} value={crew.id}>
-                  {crew.name}
-                </option>
-              ))}
-            </select>
-          </label>
-
+        <form onSubmit={onCreate} style={styles.card} data-testid="quick-compose">
+          <input
+            type="date"
+            value={planDate}
+            onChange={(e) => setPlanDate(e.target.value)}
+            style={styles.input}
+            required
+          />
           <button type="submit" style={styles.primary} disabled={busy || !planDate}>
-            {busy ? "Starting…" : "Start planning"}
+            {busy ? "…" : "Post"}
           </button>
         </form>
 
@@ -233,10 +147,11 @@ const styles = {
   card: {
     border: "1px solid #e2e8f0",
     borderRadius: 16,
-    padding: 16,
+    padding: 12,
     background: "#fff",
-    display: "grid",
-    gap: 12,
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
     marginTop: 12,
   },
   label: { display: "grid", gap: 6, fontSize: 13, fontWeight: 700, color: "#0f172a" },
@@ -246,6 +161,8 @@ const styles = {
     padding: "10px 12px",
     borderRadius: 10,
     border: "1px solid #cbd5e1",
+    flex: 1,
+    minHeight: 44,
   },
   preview: {
     margin: 0,

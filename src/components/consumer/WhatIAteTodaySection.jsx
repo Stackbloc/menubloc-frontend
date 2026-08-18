@@ -3,7 +3,7 @@
  * Owner: add / edit / remove / visibility. Viewer: read-only if the owner opted in.
  */
 
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { searchReportPlaces } from "../../lib/foodActivityApi.js";
 import { restaurantPath } from "../../lib/canonicalUrlCore.js";
@@ -16,16 +16,15 @@ import {
   listWhatIAteTodayCalendar,
   resolveConsumerMediaUrl,
   setWhatIAteTodayVisibility,
-  suggestWhatIAteTodayMenuItems,
   updateWhatIAteToday,
   uploadWhatIAteTodayPhoto,
   whatIAteTodayLocalDate,
 } from "../../lib/consumerApi.js";
+import QuickCompose from "../../pages/consumer/myMenuply/QuickCompose.jsx";
 import {
   WHAT_I_ATE_MEAL_PERIODS,
   defaultWhatIAteMealPeriod,
   groupEntriesByMealPeriod,
-  mealPeriodLabel,
 } from "../../lib/whatIAteTodayMealPeriod.js";
 import WhatIAteTodayCalendar, {
   calendarRangeForMonth,
@@ -76,21 +75,11 @@ export default function WhatIAteTodaySection({
   const [calendarDays, setCalendarDays] = useState([]);
   const [selectedDate, setSelectedDate] = useState(() => whatIAteTodayLocalDate());
   const [viewMonth, setViewMonth] = useState(() => parseSelectedMonth(whatIAteTodayLocalDate()));
-  const [foodName, setFoodName] = useState("");
-  const [comment, setComment] = useState("");
-  const [photoUrl, setPhotoUrl] = useState("");
-  const [mealPeriod, setMealPeriod] = useState(() => defaultWhatIAteMealPeriod());
-  const [linked, setLinked] = useState(null);
-  const [tagRestaurant, setTagRestaurant] = useState(null);
-  const [suggestions, setSuggestions] = useState([]);
-  const [suggesting, setSuggesting] = useState(false);
   const [busy, setBusy] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [editName, setEditName] = useState("");
   const [editComment, setEditComment] = useState("");
   const [editMealPeriod, setEditMealPeriod] = useState("lunch");
-  const suggestTimer = useRef(null);
-  const suggestAbort = useRef(null);
 
   const loadCalendar = useCallback(async () => {
     const { from, to } = calendarRangeForMonth(viewMonth);
@@ -131,39 +120,6 @@ export default function WhatIAteTodaySection({
     loadDay();
   }, [loadDay]);
 
-  useEffect(() => {
-    return () => {
-      if (suggestTimer.current) clearTimeout(suggestTimer.current);
-      if (suggestAbort.current) suggestAbort.current.abort();
-    };
-  }, []);
-
-  function runSuggest(q) {
-    if (suggestTimer.current) clearTimeout(suggestTimer.current);
-    if (suggestAbort.current) suggestAbort.current.abort();
-    const query = String(q || "").trim();
-    if (query.length < 2) {
-      setSuggestions([]);
-      setSuggesting(false);
-      return;
-    }
-    suggestTimer.current = setTimeout(async () => {
-      const controller = new AbortController();
-      suggestAbort.current = controller;
-      const kill = setTimeout(() => controller.abort(), 800);
-      setSuggesting(true);
-      try {
-        const data = await suggestWhatIAteTodayMenuItems(query, { signal: controller.signal });
-        setSuggestions(Array.isArray(data.suggestions) ? data.suggestions : []);
-      } catch {
-        setSuggestions([]);
-      } finally {
-        clearTimeout(kill);
-        setSuggesting(false);
-      }
-    }, 150);
-  }
-
   async function handleToggleVisible() {
     const next = !visible;
     setBusy(true);
@@ -178,44 +134,24 @@ export default function WhatIAteTodaySection({
     }
   }
 
-  async function handlePhoto(file) {
-    if (!file) return;
-    setBusy(true);
-    setError("");
-    try {
-      const data = await uploadWhatIAteTodayPhoto(file);
-      setPhotoUrl(data.photo_url || "");
-    } catch (err) {
-      setError(err.message || "Photo upload failed — you can still post without a photo.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function handlePost(e) {
-    e.preventDefault();
-    const name = foodName.trim() || linked?.item_name || "";
+  async function handleQuickAdd(mealId, { text, file }) {
+    const name = String(text || "").trim() || (file ? "Food" : "");
     if (!name) return;
     setBusy(true);
     setError("");
     setNotice("");
     try {
+      let photo_url;
+      if (file) {
+        const up = await uploadWhatIAteTodayPhoto(file);
+        photo_url = up.photo_url || undefined;
+      }
       await createWhatIAteToday({
         food_name: name,
-        menu_item_id: linked?.menu_item_id || undefined,
-        restaurant_id: linked?.menu_item_id ? undefined : tagRestaurant?.restaurant_id || undefined,
-        comment: comment.trim() || undefined,
-        photo_url: photoUrl || undefined,
+        photo_url,
         eaten_on: selectedDate,
-        meal_period: mealPeriod,
+        meal_period: mealId || defaultWhatIAteMealPeriod(),
       });
-      setFoodName("");
-      setComment("");
-      setPhotoUrl("");
-      setLinked(null);
-      setTagRestaurant(null);
-      setSuggestions([]);
-      setNotice("Added to your food diary.");
       await Promise.all([loadDay(), loadCalendar()]);
     } catch (err) {
       setError(err.message || "Unable to add food");
@@ -316,131 +252,21 @@ export default function WhatIAteTodaySection({
       onCancelEdit={() => setEditingId(null)}
       onSaveEdit={handleSaveEdit}
       onRemove={handleRemove}
+      onQuickAdd={mode === "owner" ? handleQuickAdd : null}
       emptyLabel={
         mode === "owner"
           ? isToday
-            ? "Nothing added today yet."
+            ? "Nothing yet."
             : "Nothing logged for this day."
           : "Nothing logged for this day."
       }
     />
   );
 
-  const addForm =
-    mode === "owner" ? (
-      <form onSubmit={handlePost} style={localStyles.form}>
-        <MealPeriodPicker value={mealPeriod} onChange={setMealPeriod} disabled={busy} />
-        <div style={styles.field}>
-          <label style={styles.fieldLabel} htmlFor="what-i-ate-food-name">
-            What did you eat?
-          </label>
-          <input
-            id="what-i-ate-food-name"
-            style={styles.input}
-            value={foodName}
-            onChange={(e) => {
-              const next = e.target.value;
-              setFoodName(next);
-              if (linked && next.trim() !== String(linked.item_name || "").trim()) {
-                setLinked(null);
-              }
-              if (tagRestaurant) setTagRestaurant(null);
-              runSuggest(next);
-            }}
-            placeholder="Chicken sandwich, banana, leftover pasta…"
-            maxLength={160}
-            autoComplete="off"
-          />
-        </div>
-        {linked ? (
-          <p style={styles.muted}>
-            Menu item: {linked.item_name}
-            {linked.restaurant_name ? ` · ${linked.restaurant_name}` : ""}{" "}
-            <button
-              type="button"
-              style={styles.textBtn}
-              onClick={() => {
-                setLinked(null);
-              }}
-            >
-              Unlink
-            </button>
-          </p>
-        ) : null}
-        {!linked ? (
-          <WhatIAteTagPicker
-            restaurant={tagRestaurant}
-            onRestaurantChange={(next) => {
-              setTagRestaurant(next);
-              if (next?.restaurant_id) setLinked(null);
-            }}
-            disabled={busy}
-          />
-        ) : null}
-        {suggesting ? <p style={styles.muted}>Looking up menu items…</p> : null}
-        {suggestions.length > 0 ? (
-          <ul style={localStyles.suggestList}>
-            {suggestions.map((s) => (
-              <li key={s.menu_item_id}>
-                <button
-                  type="button"
-                  style={localStyles.suggestBtn}
-                  onClick={() => {
-                    setLinked(s);
-                    setTagRestaurant(null);
-                    setFoodName(s.item_name || "");
-                    setSuggestions([]);
-                  }}
-                >
-                  <span style={styles.actionTitle}>{s.item_name}</span>
-                  <span style={styles.muted}>{s.restaurant_name}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        ) : null}
-        <div style={styles.field}>
-          <label style={styles.fieldLabel} htmlFor="what-i-ate-comment">
-            Comment <span style={styles.optText}>(optional)</span>
-          </label>
-          <input
-            id="what-i-ate-comment"
-            style={styles.input}
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-            maxLength={500}
-            placeholder="Optional note"
-          />
-        </div>
-        <div style={styles.field}>
-          <label style={styles.fieldLabel} htmlFor="what-i-ate-photo">
-            Photo <span style={styles.optText}>(optional)</span>
-          </label>
-          <input
-            id="what-i-ate-photo"
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            onChange={(e) => handlePhoto(e.target.files?.[0])}
-          />
-        </div>
-        {photoUrl ? <p style={styles.muted}>Photo attached.</p> : null}
-        <button
-          type="submit"
-          style={styles.primaryBtn}
-          disabled={busy || !(foodName.trim() || linked)}
-        >
-          {busy ? "Posting…" : `Add to ${mealPeriodLabel(mealPeriod)}`}
-        </button>
-      </form>
-    ) : null;
-
   const diaryBody = isPage ? (
     <div className="what-i-ate-page-grid">
       <div>{calendarBlock}</div>
-      <div className="what-i-ate-diary-col">
-        {entriesBlock}
-        {addForm}
-      </div>
+      <div className="what-i-ate-diary-col">{entriesBlock}</div>
     </div>
   ) : (
     <>
@@ -449,18 +275,9 @@ export default function WhatIAteTodaySection({
     </>
   );
 
-  const ownerIntro = (
-    <p style={styles.sectionDesc}>
-      Optional food diary. Pick a day on the calendar, log by meal slot, and let Connections browse
-      your eating patterns when you turn sharing on. Just what you ate — not nutrition tracking.
-    </p>
-  );
+  const ownerIntro = null;
 
-  const viewerIntro = (
-    <p style={styles.sectionDesc}>
-      A dated food diary by meal — breakfast through late night. Connections only when shared.
-    </p>
-  );
+  const viewerIntro = null;
 
   if (mode === "viewer") {
     if (loading) {
@@ -545,7 +362,6 @@ export default function WhatIAteTodaySection({
         Show my food diary to Connections and on tagged restaurant profiles
       </label>
       {diaryBody}
-      {addForm}
     </section>
   );
 }
@@ -690,6 +506,7 @@ function GroupedEntryList({
   onCancelEdit,
   onSaveEdit,
   onRemove,
+  onQuickAdd,
   emptyLabel,
 }) {
   const hasAny =
@@ -698,13 +515,13 @@ function GroupedEntryList({
     return owner || emptyLabel ? <p style={styles.muted}>{emptyLabel}</p> : null;
   }
   return (
-    <div style={localStyles.grouped}>
+    <div className="what-i-ate-meal-list">
       {WHAT_I_ATE_MEAL_PERIODS.map(({ id, label }) => {
         const items = grouped.buckets[id] || [];
-        if (!items.length && !showEmptyMealSlots) return null;
+        if (!items.length && !showEmptyMealSlots && !onQuickAdd) return null;
         return (
-          <section key={id} style={localStyles.mealBlock} data-testid={`what-i-ate-meal-${id}`}>
-            <h3 style={localStyles.mealTitle}>{label}</h3>
+          <section key={id} className="what-i-ate-meal-card" data-testid={`what-i-ate-meal-${id}`}>
+            <h3 className="what-i-ate-meal-heading">{label}</h3>
             {items.length ? (
               <EntryList
                 entries={items}
@@ -723,14 +540,25 @@ function GroupedEntryList({
                 onRemove={onRemove}
               />
             ) : (
-              <div style={localStyles.mealEmpty} aria-hidden />
+              <div className="what-i-ate-meal-empty" style={localStyles.mealEmpty} />
             )}
+            {onQuickAdd ? (
+              <div style={{ padding: "0 10px 10px" }}>
+                <QuickCompose
+                  testId={`compose-meal-${id}`}
+                  placeholder="What did you eat?"
+                  acceptPhoto
+                  busy={busy}
+                  onSubmit={(payload) => onQuickAdd(id, payload)}
+                />
+              </div>
+            ) : null}
           </section>
         );
       })}
       {grouped.other.length > 0 ? (
-        <section style={localStyles.mealBlock}>
-          <h3 style={localStyles.mealTitle}>Other</h3>
+        <section className="what-i-ate-meal-card">
+          <h3 className="what-i-ate-meal-heading">Other</h3>
           <EntryList
             entries={grouped.other}
             owner={owner}
@@ -775,11 +603,11 @@ function EntryList({
         const href = entryHref(entry);
         const restaurantHref = entryRestaurantHref(entry);
         const nameNode = href ? (
-          <Link to={href} style={localStyles.itemLink}>
+          <Link to={href} className="what-i-ate-food-name" style={localStyles.itemLink}>
             {entry.food_name}
           </Link>
         ) : (
-          <span style={styles.actionTitle}>{entry.food_name}</span>
+          <span className="what-i-ate-food-name" style={styles.actionTitle}>{entry.food_name}</span>
         );
         return (
           <li key={entry.id} style={localStyles.row}>

@@ -16,18 +16,18 @@ export function foodHref(item) {
   return restaurantHref(item) || "/account/what-i-ate";
 }
 
-export function SectionHead({ title, desc, to, actionLabel = "See all", testId }) {
+export function SectionHead({ title, to, testId }) {
   return (
     <div style={s.row} data-testid={testId}>
-      <div>
-        <h2 style={s.sectionTitle}>{title}</h2>
-        {desc ? <p style={s.sectionDesc}>{desc}</p> : null}
-      </div>
-      {to ? (
-        <Link to={to} style={s.link}>
-          {actionLabel}
-        </Link>
-      ) : null}
+      <h2 style={s.sectionTitle}>
+        {to ? (
+          <Link to={to} style={s.sectionTitleLink}>
+            {title}
+          </Link>
+        ) : (
+          title
+        )}
+      </h2>
     </div>
   );
 }

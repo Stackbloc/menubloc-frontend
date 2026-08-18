@@ -26,9 +26,10 @@ test("My Menuply identity hero is prominent with photo upload and short bio", ()
   assert.match(hero, /diner-about-input/);
   assert.match(hero, /maxLength=\{ABOUT_MAX\}/);
   assert.match(hero, /LA food explorer/);
-  assert.match(hero, /Add a dining photo/);
-  assert.match(hero, /\/account\/im-eating/);
-  assert.match(hero, /\/account\/what-i-ate/);
+  assert.match(hero, /My Connections/);
+  assert.match(hero, /\/my-menuply\/connections-eating/);
+  assert.match(page, /QuickCompose/);
+  assert.doesNotMatch(hero, /Add a dining photo/);
   assert.doesNotMatch(hero, /vegetarian|gluten_free|allergen/i);
   assert.doesNotMatch(hero, /questionnaire|favorite cuisine|hometown/i);
 });

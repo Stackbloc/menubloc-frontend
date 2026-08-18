@@ -14,25 +14,49 @@ function read(rel) {
   return fs.readFileSync(path.join(root, rel), "utf8");
 }
 
-test("My Menuply exposes the four food questions as distinct sections", () => {
+test("My Menuply is the diner's personal home", () => {
   const page = read("src/pages/consumer/MyMenuplyPage.jsx");
-  assert.match(page, /data-testid="what-im-eating"/);
-  assert.match(page, /data-testid="connections-eating"/);
-  assert.match(page, /data-testid="eating-plans"/);
-  assert.match(page, /data-testid="connections-planning"/);
-  assert.match(page, /What I'm Eating/);
-  assert.match(page, /What My Connections Are Eating/);
-  assert.match(page, /Eating Plans/);
-  assert.match(page, /What My Connections Are Planning/);
-  assert.match(page, /Where I Eat/);
-  assert.match(page, /Want to Eat/);
-  assert.match(page, /Dining Crews/);
+  const bits = read("src/pages/consumer/myMenuply/myMenuplyBits.jsx");
+  const hero = read("src/pages/consumer/myMenuply/DinerIdentityHero.jsx");
+  const compose = read("src/pages/consumer/myMenuply/QuickCompose.jsx");
+  const eatingPage = read("src/pages/consumer/ConnectionsEatingPage.jsx");
   assert.match(page, /DinerIdentityHero/);
+  assert.match(page, /data-testid="what-im-eating"/);
+  assert.match(page, /data-testid="eating-plans"/);
+  assert.match(page, /data-testid="want-to-eat"/);
+  assert.match(page, /data-testid="dining-crews"/);
+  assert.match(page, /data-testid="my-events"/);
+  assert.match(page, /What I'm Eating/);
+  assert.match(page, /title="My Eating Plans"/);
+  assert.match(page, /Invite Me/);
+  assert.match(page, /Join Me/);
+  assert.match(page, /What I Want to Eat/);
+  assert.match(page, /My Crews/);
+  assert.match(page, /My Events/);
+  assert.match(page, /QuickCompose/);
+  assert.match(page, /createWhatIAteToday/);
+  assert.match(page, /createWhatWeDoingSession/);
+  assert.match(page, /createDiningCrew/);
+  assert.match(hero, /About Me/);
+  assert.match(hero, /My Connections/);
+  assert.match(hero, /\/my-menuply\/connections-eating/);
+  assert.match(eatingPage, /StickyPageHeader title="My Connections"/);
+  assert.match(compose, /acceptPhoto/);
+  assert.ok(page.indexOf("DinerIdentityHero") < page.indexOf("what-im-eating"));
+  assert.ok(page.indexOf("what-im-eating") < page.indexOf("eating-plans"));
+  assert.doesNotMatch(page, /What My Connections Are Eating/);
+  assert.doesNotMatch(page, /What My Connections Are Planning/);
+  assert.doesNotMatch(page, /Where I Eat/);
+  assert.doesNotMatch(page, /Dining Crews/);
+  assert.doesNotMatch(page, /actionLabel/);
+  assert.doesNotMatch(page, /See all/);
+  assert.doesNotMatch(page, /What's happening/);
+  assert.doesNotMatch(page, /public-activity/);
+  assert.doesNotMatch(page, /\/waiter#activity/);
   assert.doesNotMatch(page, /allergen/i);
   assert.doesNotMatch(page, /dietary_preferences/);
-  const hero = read("src/pages/consumer/myMenuply/DinerIdentityHero.jsx");
+  assert.doesNotMatch(bits, /actionLabel/);
   assert.match(hero, /Settings/);
-  assert.match(hero, /About Me/);
 });
 
 test("Connections eating cards link to menu items and Join Me / Invite to Eat", () => {

@@ -9,6 +9,7 @@ export default function DinerIdentityHero({
   displayName,
   avatarUrl,
   about,
+  connections = [],
   busy,
   notice,
   error,
@@ -40,7 +41,7 @@ export default function DinerIdentityHero({
     <section style={s.section} data-testid="about-me">
       <p style={s.kicker}>Diner profile</p>
       <h2 style={s.sectionTitle}>About Me</h2>
-      <p style={s.sectionDesc}>Your food identity — not account settings.</p>
+      <p style={s.sectionDesc}>Tell people a little about you.</p>
 
       <div style={s.identity}>
         <button
@@ -92,13 +93,35 @@ export default function DinerIdentityHero({
       {error ? <p style={s.error}>{error}</p> : null}
       {notice ? <p style={{ ...s.muted, color: "#027A48", marginBottom: 10 }}>{notice}</p> : null}
 
+      <div style={{ marginTop: 16 }} data-testid="about-me-connections">
+        <h3 style={s.sectionTitle}>
+          <Link to="/my-menuply/connections-eating" style={s.sectionTitleLink}>
+            My Connections
+          </Link>
+        </h3>
+        {connections.length === 0 ? (
+          <p style={s.muted}>No connections yet.</p>
+        ) : (
+          <div style={s.nameList}>
+            {connections.slice(0, 12).map((c) => {
+              const peerId = c.peer?.id;
+              const name = c.peer?.display_name || "Connection";
+              if (!peerId) return null;
+              return (
+                <Link
+                  key={c.id || peerId}
+                  to={`/account/connections/${encodeURIComponent(String(peerId))}`}
+                  style={s.nameLink}
+                >
+                  {name}
+                </Link>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
       <div style={s.actions}>
-        <Link to="/account/im-eating" style={s.primaryBtn}>
-          Add a dining photo
-        </Link>
-        <Link to="/account/what-i-ate" style={s.chipBtn}>
-          Add What I Ate
-        </Link>
         <Link to="/account/diner-qr?share=1" style={s.chipBtn}>
           Share My Menuply
         </Link>

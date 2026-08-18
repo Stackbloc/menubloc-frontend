@@ -1,38 +1,41 @@
 /**
- * My Menuply — personal food/social home.
- * Four questions: what I ate, what I am planning, what connections are eating, what they are planning.
- * Not the account settings dashboard.
+ * My Menuply — the diner's personal food home.
+ * About Me (with Connections), what she's eating, her plans, wants, crews, events.
  */
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import StickyPageHeader from "../../components/StickyPageHeader.jsx";
 import BottomNav from "../../components/BottomNav.jsx";
-import InviteToEatButton from "../../components/InviteToEatButton.jsx";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
 import {
+  createDiningCrew,
+  createWhatIAteToday,
+  createWhatWeDoingSession,
   getConsumerProfile,
   getFollowedRestaurants,
   getLikedMenuItems,
-  listConnectionsEating,
-  listConnectionsPlanning,
+  listConnections,
   listDiningCrews,
   listMyFoodActivity,
+  listMyVenueEventGroups,
   listMyVenueEvents,
   listWhatIAteToday,
   listWhatWeDoingSessions,
   resolveConsumerMediaUrl,
   updateConsumerProfile,
   uploadDinerAvatar,
+  uploadWhatIAteTodayPhoto,
+  whatIAteTodayLocalDate,
 } from "../../lib/consumerApi.js";
 import { restaurantPathFromRow } from "../../lib/canonicalUrl.js";
+import { defaultWhatIAteMealPeriod } from "../../lib/whatIAteTodayMealPeriod.js";
 import { formatWhatWeDoingTitle } from "../../lib/whatWeDoingTitle.js";
 import * as s from "./myMenuply/myMenuplyStyles.js";
 import DinerIdentityHero from "./myMenuply/DinerIdentityHero.jsx";
+import QuickCompose from "./myMenuply/QuickCompose.jsx";
 import {
-  ConnectionFoodCard,
   PhotoGrid,
-  PlanCard,
   SectionHead,
   foodHref,
   restaurantHref,
@@ -55,14 +58,16 @@ export default function MyMenuplyPage() {
   const [identityBusy, setIdentityBusy] = useState(false);
   const [identityNotice, setIdentityNotice] = useState("");
   const [identityError, setIdentityError] = useState("");
+  const [postBusy, setPostBusy] = useState("");
   const [eating, setEating] = useState([]);
   const [plans, setPlans] = useState([]);
-  const [connEating, setConnEating] = useState([]);
-  const [connPlanning, setConnPlanning] = useState([]);
+  const [joinMe, setJoinMe] = useState([]);
+  const [connections, setConnections] = useState([]);
   const [followed, setFollowed] = useState([]);
   const [liked, setLiked] = useState([]);
   const [crews, setCrews] = useState([]);
   const [events, setEvents] = useState([]);
+  const [eventGroups, setEventGroups] = useState([]);
 
   const load = useCallback(async () => {
     setError("");
@@ -72,23 +77,23 @@ export default function MyMenuplyPage() {
         activityRes,
         ateRes,
         planRes,
-        eatConn,
-        planConn,
+        connRes,
         followRes,
         likeRes,
         crewRes,
         eventRes,
+        groupRes,
       ] = await Promise.all([
         getConsumerProfile().catch(() => null),
         listMyFoodActivity(20).catch(() => ({ activities: [] })),
         listWhatIAteToday().catch(() => ({ entries: [] })),
         listWhatWeDoingSessions().catch(() => ({ sessions: [] })),
-        listConnectionsEating(8).catch(() => ({ items: [] })),
-        listConnectionsPlanning(8).catch(() => ({ items: [] })),
+        listConnections().catch(() => ({ accepted: [] })),
         getFollowedRestaurants().catch(() => ({ restaurants: [] })),
         getLikedMenuItems().catch(() => ({ likes: [] })),
         listDiningCrews().catch(() => ({ crews: [] })),
         listMyVenueEvents().catch(() => ({ events: [] })),
+        listMyVenueEventGroups().catch(() => ({ groups: [] })),
       ]);
       const nextProfile = profileRes?.profile || null;
       setProfile(nextProfile);
@@ -106,13 +111,19 @@ export default function MyMenuplyPage() {
         kind: "what_i_ate",
       }));
       setEating([...diaryItems, ...activityItems].slice(0, 12));
+      setJoinMe(
+        (activityRes.activities || []).filter((row) => {
+          const jm = row.join_me;
+          return jm && jm.join_me_active !== false && (jm.invitation_token || jm.url);
+        })
+      );
       setPlans(planRes.sessions || []);
-      setConnEating(eatConn.items || []);
-      setConnPlanning(planConn.items || []);
+      setConnections(connRes.accepted || []);
       setFollowed(followRes.restaurants || followRes.items || []);
       setLiked(likeRes.likes || []);
       setCrews(crewRes.crews || crewRes.items || []);
       setEvents(eventRes.events || []);
+      setEventGroups(groupRes.groups || []);
     } catch (err) {
       setError(err.message || "Unable to load My Menuply");
     } finally {
@@ -124,16 +135,6 @@ export default function MyMenuplyPage() {
     if (!authLoading && isAuthenticated) load();
     if (!authLoading && !isAuthenticated) setLoading(false);
   }, [authLoading, isAuthenticated, load]);
-
-  const placesIEat = useMemo(() => {
-    const map = new Map();
-    for (const item of eating) {
-      const id = item.restaurant_id || item.restaurant_slug;
-      if (!id || map.has(String(id))) continue;
-      map.set(String(id), item);
-    }
-    return [...map.values()];
-  }, [eating]);
 
   const displayName =
     profile?.display_name ||
@@ -167,20 +168,67 @@ export default function MyMenuplyPage() {
     }
   }
 
+  async function postEating({ text, file }) {
+    setPostBusy("eating");
+    setError("");
+    try {
+      let photo_url;
+      if (file) {
+        const up = await uploadWhatIAteTodayPhoto(file);
+        photo_url = up.photo_url || undefined;
+      }
+      await createWhatIAteToday({
+        food_name: text || "Food",
+        photo_url,
+        eaten_on: whatIAteTodayLocalDate(),
+        meal_period: defaultWhatIAteMealPeriod(),
+      });
+      await load();
+    } catch (err) {
+      setError(err.message || "Unable to add");
+    } finally {
+      setPostBusy("");
+    }
+  }
+
+  async function postPlan({ text }) {
+    setPostBusy("plans");
+    setError("");
+    try {
+      const plan_date = text || whatIAteTodayLocalDate();
+      await createWhatWeDoingSession({ plan_date });
+      await load();
+    } catch (err) {
+      setError(err.message || "Unable to add");
+    } finally {
+      setPostBusy("");
+    }
+  }
+
+  async function postCrew({ text }) {
+    setPostBusy("crews");
+    setError("");
+    try {
+      await createDiningCrew({ name: text });
+      await load();
+    } catch (err) {
+      setError(err.message || "Unable to add");
+    } finally {
+      setPostBusy("");
+    }
+  }
+
   return (
     <>
       <StickyPageHeader title="My Menuply" />
       <div style={s.page} data-testid="my-menuply-page">
         <p style={s.kicker}>My food. My people. My plans.</p>
         <h1 style={s.h1}>My Menuply</h1>
-        <p style={s.lead}>Your food life — not account settings.</p>
         {error ? <p style={s.error}>{error}</p> : null}
 
         {!authLoading && !isAuthenticated ? (
           <div style={s.signInBox}>
-            <p style={{ margin: "0 0 12px", color: "#475467" }}>
-              Sign in to see what you ate, what you are planning, and what your connections are eating.
-            </p>
+            <p style={{ margin: "0 0 12px", color: "#475467" }}>Sign in for My Menuply.</p>
             <Link to="/account/login?next=/my-menuply" style={s.primaryBtn}>
               Sign in
             </Link>
@@ -200,6 +248,7 @@ export default function MyMenuplyPage() {
               displayName={displayName}
               avatarUrl={avatarUrl}
               about={profile?.diner_about || ""}
+              connections={connections}
               busy={identityBusy}
               notice={identityNotice}
               error={identityError}
@@ -208,172 +257,142 @@ export default function MyMenuplyPage() {
             />
 
             <section style={s.section} data-testid="what-im-eating">
-              <SectionHead
-                title="What I'm Eating"
-                desc="Photos from your dining history — tap to open the food or place."
-                to="/account/what-i-ate"
-                actionLabel="Add photo"
+              <SectionHead title="What I'm Eating" to="/account/what-i-ate" />
+              <PhotoGrid items={eating} empty="Nothing yet." />
+              <QuickCompose
+                testId="compose-eating"
+                placeholder="What did you eat?"
+                acceptPhoto
+                busy={postBusy === "eating"}
+                onSubmit={postEating}
               />
-              <PhotoGrid items={eating} empty="No dining photos yet. Add I'm Eating At or What I Ate Today." />
-            </section>
-
-            <section style={s.section} data-testid="public-activity">
-              <SectionHead
-                title="What's happening"
-                desc="Public and nearby food activity — not your connections."
-                to="/waiter#activity"
-              />
-            </section>
-
-            <section style={s.section} data-testid="connections-eating">
-              <SectionHead
-                title="What My Connections Are Eating"
-                desc="What are my connections eating?"
-                to="/my-menuply/connections-eating"
-              />
-              {connEating.length === 0 ? (
-                <p style={s.muted}>No connection food activity yet. Eat together starts here.</p>
-              ) : (
-                connEating.slice(0, 4).map((item) => <ConnectionFoodCard key={item.id} item={item} />)
-              )}
             </section>
 
             <section style={s.section} data-testid="eating-plans">
-              <SectionHead
-                title="Eating Plans"
-                desc="What am I planning to eat?"
-                to="/account/what-we-doing"
-                actionLabel="Create Eating Plan"
+              <SectionHead title="My Eating Plans" to="/account/what-we-doing" />
+              <div style={s.labelRow}>
+                <Link to="/account/what-we-doing" style={s.subLabel}>
+                  Invite Me
+                </Link>
+                <Link to="/account/im-eating" style={s.subLabel}>
+                  Join Me
+                </Link>
+              </div>
+              {plans.length === 0 && joinMe.length === 0 ? (
+                <p style={s.muted}>Nothing yet.</p>
+              ) : (
+                <>
+                  {plans.slice(0, 4).map((plan) => (
+                    <Link
+                      key={plan.token || plan.id}
+                      to={`/account/what-we-doing/${plan.token}`}
+                      style={s.card}
+                    >
+                      <div style={{ fontWeight: 800 }}>
+                        {plan.title || formatWhatWeDoingTitle(plan.plan_date)}
+                      </div>
+                      <div style={s.muted}>{plan.plan_date}</div>
+                    </Link>
+                  ))}
+                  {joinMe.slice(0, 2).map((row) => (
+                    <Link key={row.id} to="/account/im-eating" style={s.card}>
+                      <div style={{ fontWeight: 800 }}>Join Me</div>
+                      <div style={s.muted}>{row.restaurant_name || row.item_name || "Now"}</div>
+                    </Link>
+                  ))}
+                </>
+              )}
+              <QuickCompose
+                testId="compose-plan"
+                inputType="date"
+                defaultValue={whatIAteTodayLocalDate()}
+                busy={postBusy === "plans"}
+                onSubmit={postPlan}
               />
-              {plans.length === 0 ? (
-                <p style={s.muted}>No upcoming plans. Create one and invite people.</p>
-              ) : (
-                plans.slice(0, 4).map((plan) => (
-                  <Link
-                    key={plan.token || plan.id}
-                    to={`/account/what-we-doing/${plan.token}`}
-                    style={s.card}
-                  >
-                    <div style={{ fontWeight: 800 }}>
-                      {plan.title || formatWhatWeDoingTitle(plan.plan_date)}
-                    </div>
-                    <div style={s.muted}>{plan.plan_date}</div>
-                  </Link>
-                ))
-              )}
-            </section>
-
-            <section style={s.section} data-testid="connections-planning">
-              <SectionHead
-                title="What My Connections Are Planning"
-                desc="What are my connections planning to eat?"
-                to="/my-menuply/connections-planning"
-              />
-              {connPlanning.length === 0 ? (
-                <p style={s.muted}>No shared plans yet. Join Me when someone is looking.</p>
-              ) : (
-                connPlanning.slice(0, 4).map((item) => <PlanCard key={item.id} item={item} />)
-              )}
-            </section>
-
-            <section style={s.section} data-testid="where-i-eat">
-              <h2 style={s.sectionTitle}>Where I Eat</h2>
-              <p style={s.sectionDesc}>Places I eat — existing restaurant profiles, not a duplicate list.</p>
-              <h3 style={{ ...s.kicker, marginTop: 8 }}>Places I Eat</h3>
-              {placesIEat.length === 0 ? (
-                <p style={s.muted}>Restaurants from your eating history will show here.</p>
-              ) : (
-                placesIEat.slice(0, 6).map((place) => (
-                  <Link key={place.restaurant_id || place.restaurant_slug} to={restaurantHref(place) || "/"} style={s.card}>
-                    {place.restaurant_name || "Restaurant"}
-                  </Link>
-                ))
-              )}
-              <h3 style={{ ...s.kicker, marginTop: 16 }}>Places I Want to Eat</h3>
-              {followed.length === 0 ? (
-                <p style={s.muted}>
-                  Follow restaurants to save them.{" "}
-                  <Link to="/account/following" style={s.link}>
-                    Following
-                  </Link>
-                </p>
-              ) : (
-                followed.slice(0, 6).map((place) => (
-                  <Link
-                    key={place.restaurant_id || place.id}
-                    to={restaurantPathFromRow(place) || `/restaurants/${place.restaurant_id || place.id}`}
-                    style={s.card}
-                  >
-                    {place.restaurant_name || place.name}
-                  </Link>
-                ))
-              )}
             </section>
 
             <section style={s.section} data-testid="want-to-eat">
-              <SectionHead title="Want to Eat" desc="Dishes and places you want to try." to="/search" actionLabel="Find food" />
+              <SectionHead title="What I Want to Eat" />
               {liked.length === 0 && followed.length === 0 ? (
-                <p style={s.muted}>Like a dish or follow a restaurant to build this list.</p>
+                <p style={s.muted}>Nothing yet.</p>
               ) : (
                 <>
                   {liked.slice(0, 6).map((meal) => (
-                    <div key={meal.menu_item_id} style={s.card}>
-                      <Link to={foodHref(meal)} style={{ ...s.link, color: "#0B0F0C", fontWeight: 800 }}>
-                        {meal.item_name}
-                      </Link>
+                    <Link key={meal.menu_item_id} to={foodHref(meal)} style={s.card}>
+                      <div style={{ fontWeight: 800 }}>{meal.item_name}</div>
                       <div style={s.muted}>{meal.restaurant_name}</div>
-                      <div style={s.actions}>
-                        {meal.restaurant_id ? (
-                          <InviteToEatButton
-                            restaurantId={meal.restaurant_id}
-                            restaurantName={meal.restaurant_name}
-                            menuItemId={meal.menu_item_id}
-                            menuItemName={meal.item_name}
-                            size="compact"
-                          />
-                        ) : null}
-                      </div>
-                    </div>
+                    </Link>
+                  ))}
+                  {followed.slice(0, 6).map((place) => (
+                    <Link
+                      key={place.restaurant_id || place.id}
+                      to={restaurantPathFromRow(place) || restaurantHref(place) || "/"}
+                      style={s.card}
+                    >
+                      {place.restaurant_name || place.name}
+                    </Link>
                   ))}
                 </>
               )}
             </section>
 
             <section style={s.section} data-testid="dining-crews">
-              <SectionHead title="Dining Crews" to="/account/dining-crews" />
+              <SectionHead title="My Crews" to="/account/dining-crews" />
               {crews.length === 0 ? (
-                <p style={s.muted}>No Dining Crew yet — not a follower list.</p>
+                <p style={s.muted}>Nothing yet.</p>
               ) : (
                 crews.slice(0, 4).map((crew) => (
-                  <Link
-                    key={crew.id}
-                    to={`/account/dining-crews/${crew.id}`}
-                    style={s.card}
-                  >
+                  <Link key={crew.id} to={`/account/dining-crews/${crew.id}`} style={s.card}>
                     {crew.name}
                     <div style={s.muted}>
+                      {crew.viewer_role === "owner" ? "Organized" : null}
+                      {crew.viewer_role === "owner" ? " · " : ""}
                       {crew.member_count || 0} {crew.member_count === 1 ? "member" : "members"}
                     </div>
                   </Link>
                 ))
               )}
+              <QuickCompose
+                testId="compose-crew"
+                placeholder="Crew name"
+                busy={postBusy === "crews"}
+                onSubmit={postCrew}
+              />
             </section>
 
             <section style={s.section} data-testid="my-events">
-              <SectionHead title="Events" desc="Attending, interested, and created." to="/clusters" actionLabel="Find events" />
-              {events.length === 0 ? (
-                <p style={s.muted}>No events yet.</p>
+              <SectionHead title="My Events" />
+              {events.length === 0 && eventGroups.length === 0 ? (
+                <p style={s.muted}>Nothing yet.</p>
               ) : (
-                events.slice(0, 4).map((ev) => (
-                  <Link key={ev.id || ev.slug} to={`/events/${encodeURIComponent(String(ev.slug))}`} style={s.card}>
-                    {ev.name}
-                    <div style={s.muted}>
-                      {[ev.rsvp_status === "going" ? "Going" : "Interested", formatEventWhen(ev)]
-                        .filter(Boolean)
-                        .join(" · ")}
-                    </div>
-                  </Link>
-                ))
+                <>
+                  {events.slice(0, 4).map((ev) => (
+                    <Link
+                      key={ev.id || ev.slug}
+                      to={`/events/${encodeURIComponent(String(ev.slug))}`}
+                      style={s.card}
+                    >
+                      {ev.name}
+                      <div style={s.muted}>
+                        {[ev.rsvp_status === "going" ? "Going" : "Interested", formatEventWhen(ev)]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </div>
+                    </Link>
+                  ))}
+                  {eventGroups.slice(0, 4).map((g) => (
+                    <Link
+                      key={g.id || g.slug}
+                      to={`/events/groups/${encodeURIComponent(String(g.slug))}`}
+                      style={s.card}
+                    >
+                      {g.name}
+                      <div style={s.muted}>
+                        {[g.role === "owner" ? "Organized" : null, g.event_name].filter(Boolean).join(" · ")}
+                      </div>
+                    </Link>
+                  ))}
+                </>
               )}
             </section>
           </>

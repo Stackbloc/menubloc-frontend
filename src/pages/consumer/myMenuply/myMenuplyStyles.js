@@ -43,6 +43,40 @@ export const sectionTitle = {
   color: "#0B0F0C",
 };
 
+export const sectionTitleLink = {
+  color: "inherit",
+  textDecoration: "none",
+  font: "inherit",
+};
+
+export const labelRow = {
+  display: "flex",
+  flexWrap: "wrap",
+  gap: 16,
+  margin: "0 0 10px",
+};
+
+export const subLabel = {
+  color: "#0B0F0C",
+  fontWeight: 800,
+  fontSize: 15,
+  textDecoration: "none",
+};
+
+export const nameList = {
+  display: "flex",
+  flexWrap: "wrap",
+  gap: 8,
+  margin: "8px 0 0",
+};
+
+export const nameLink = {
+  color: "#0B0F0C",
+  fontWeight: 700,
+  fontSize: 14,
+  textDecoration: "none",
+};
+
 export const sectionDesc = {
   margin: "0 0 12px",
   fontSize: 13,

@@ -162,7 +162,7 @@ export default function SocialCrewTab() {
         <AccountActionLink
           to="/my-menuply"
           title="Open My Menuply"
-          description="Your food life — what you ate, plans, and what connections are eating. This tab is Settings, not the diner home."
+          description="What you ate, your plans, and what your connections are eating."
           actionLabel="Open"
           last
         />

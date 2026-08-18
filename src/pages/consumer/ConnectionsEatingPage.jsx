@@ -31,7 +31,7 @@ export default function ConnectionsEatingPage() {
 
   return (
     <>
-      <StickyPageHeader title="What My Connections Are Eating" />
+      <StickyPageHeader title="My Connections" />
       <div style={s.page} data-testid="connections-eating-page">
         <p style={s.lead}>Food from people you already eat with — Join Me when you can eat together.</p>
         {error ? <p style={s.error}>{error}</p> : null}

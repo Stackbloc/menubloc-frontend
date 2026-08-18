@@ -848,13 +848,7 @@ export default function DiningCrewsPage() {
     setBusy(true);
     setError("");
     try {
-      const data = await createDiningCrew({
-        name: name.trim(),
-        description: description.trim() || null,
-        visibility,
-        max_members: maxMembers === "unlimited" ? "unlimited" : Number(maxMembers),
-        membership_approval: membershipApproval,
-      });
+      const data = await createDiningCrew({ name: name.trim() });
       setName("");
       setDescription("");
       navigate(`/account/dining-crews/${data.crew.id}`);
@@ -885,15 +879,12 @@ export default function DiningCrewsPage() {
     <>
       <StickyPageHeader title="Dining Crews" />
       <div style={styles.page}>
-        <p style={styles.lead}>
-          Persistent groups who eat together. Set a purpose, public/private status, member
-          limit, and approval rules — then invite friends or organize an Invite to Eat.
-        </p>
+        <p style={styles.lead}>Your crews.</p>
         {error ? <p style={styles.error}>{error}</p> : null}
 
         <section style={styles.section}>
           <h2 style={styles.h2}>Create a Dining Crew</h2>
-          <form onSubmit={handleCreate} style={styles.formCol}>
+          <form onSubmit={handleCreate} style={styles.form} data-testid="quick-compose">
             <input
               style={styles.input}
               value={name}
@@ -902,19 +893,8 @@ export default function DiningCrewsPage() {
               maxLength={80}
               required
             />
-            <CrewSettingsFields
-              description={description}
-              setDescription={setDescription}
-              visibility={visibility}
-              setVisibility={setVisibility}
-              maxMembers={maxMembers}
-              setMaxMembers={setMaxMembers}
-              membershipApproval={membershipApproval}
-              setMembershipApproval={setMembershipApproval}
-              disabled={busy}
-            />
             <button type="submit" style={styles.primaryBtn} disabled={busy || !name.trim()}>
-              Create
+              {busy ? "…" : "Post"}
             </button>
           </form>
         </section>

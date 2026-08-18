@@ -51,3 +51,13 @@ export function groupEntriesByMealPeriod(entries) {
   }
   return { buckets, other };
 }
+
+/** Latest diary row for a meal chip, or null when that slot is empty. */
+export function pickEntryForMeal(entries, mealPeriod) {
+  const slot = normalizeWhatIAteMealPeriod(mealPeriod);
+  if (!slot) return null;
+  const matches = (entries || []).filter(
+    (entry) => normalizeWhatIAteMealPeriod(entry?.meal_period) === slot
+  );
+  return matches.length ? matches[matches.length - 1] : null;
+}
