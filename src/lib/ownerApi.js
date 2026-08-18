@@ -63,6 +63,12 @@ export const getOwnerGrowthDetails = (params = {}) => {
   const serialized = qs.toString();
   return get(`/api/owner/dashboard/growth/details${serialized ? `?${serialized}` : ""}`);
 };
+export const getOwnerDinerAccounts = (params = {}) => {
+  const qs = new URLSearchParams();
+  if (params.limit != null) qs.set("limit", String(params.limit));
+  const serialized = qs.toString();
+  return get(`/api/owner/dashboard/diners${serialized ? `?${serialized}` : ""}`);
+};
 export const getOwnerTrafficAnalytics = (params = {}) => {
   const qs = new URLSearchParams(params).toString();
   return get(`/api/owner/analytics/traffic${qs ? `?${qs}` : ""}`);

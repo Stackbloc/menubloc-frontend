@@ -92,6 +92,25 @@ export default function OwnerDashboard() {
           <SectionTitle
             title="Growth & conversion"
             subtitle="Abandoned restaurant Stripe checkouts, new subscriptions by plan, logins, and new diner accounts. Click any metric name or count to open details."
+            action={
+              <Link
+                to="/owner/diners"
+                data-testid="view-all-diner-accounts"
+                style={{
+                  padding: "8px 14px",
+                  borderRadius: 10,
+                  border: `1px solid ${OWNER_COLORS.line}`,
+                  background: "#fff",
+                  color: OWNER_COLORS.ink,
+                  textDecoration: "none",
+                  fontSize: 13,
+                  fontWeight: 700,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                View all diner accounts →
+              </Link>
+            }
           />
           <GrowthMetricsPanel growth={data.growth} />
         </section>
