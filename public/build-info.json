@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "d2555763c28f30618deab49ef9b2d8ac70a120b0",
-  "gitShortSha": "d255576",
+  "gitSha": "d8996d81e80058062cbd433834bcea01ae938990",
+  "gitShortSha": "d8996d8",
   "branch": "main",
-  "buildTime": "2026-08-18T00:14:46.897Z",
+  "buildTime": "2026-08-18T20:15:56.854Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "fix(auth): keep sign-in session and show specific diner errors."
+  "commitMessage": "feat(diners): make My Menuply personal with one-line compose."
 }
