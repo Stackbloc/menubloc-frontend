@@ -105,13 +105,8 @@ export default function IntelligenceOverview() {
           />
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14 }}>
             <LinkedMetric
-              label="Visitor sessions"
+              label="Unique visitors"
               value={s.unique_visitors}
-              to={{ pathname: "/owner/intelligence/site-activity", search }}
-            />
-            <LinkedMetric
-              label="Page views"
-              value={s.total_visits}
               to={{ pathname: "/owner/intelligence/site-activity", search }}
             />
             <LinkedMetric
@@ -158,13 +153,12 @@ export default function IntelligenceOverview() {
 
           <div className="owner-responsive-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
             <PageCard style={{ padding: 22 }}>
-              <SectionTitle title="Top visitor cities" subtitle="Distinct sessions by market." />
+              <SectionTitle title="Top visitor cities" subtitle="Unique visitors by market." />
               <SimpleTable
                 rows={c.visitors_by_city?.slice(0, 8)}
                 columns={[
                   ["City", "location_label"],
                   ["Visitors", "visitors"],
-                  ["Page views", "page_views"],
                 ]}
               />
               <div style={{ marginTop: 12 }}>

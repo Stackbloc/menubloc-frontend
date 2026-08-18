@@ -138,21 +138,20 @@ export default function IntelligenceSiteActivity() {
 
       <IntelligenceSection
         title="Visits by Day"
-        subtitle={`Visitor sessions (distinct) and consumer page views per day.${scopeNote}`}
+        subtitle={`Unique visitors per day (each person once that day).${scopeNote}`}
       >
         <SimpleTable
           rows={data.visits_by_day}
           columns={[
             ["Day", "day"],
-            ["Visitor sessions", "visitor_sessions"],
-            ["Page views", "page_views"],
+            ["Visitors", "visitor_sessions"],
           ]}
         />
       </IntelligenceSection>
 
       <IntelligenceSection
         title="Visitors by City"
-        subtitle="Distinct sessions and page views by market (city/state). Click a city to scope the whole page to that market."
+        subtitle="Unique visitors by market (city/state). Click a city to scope the whole page to that market."
       >
         <SimpleTable
           rows={data.visitors_by_city}
@@ -173,7 +172,6 @@ export default function IntelligenceSiteActivity() {
               ),
             ],
             ["Visitors", "visitors"],
-            ["Page views", "page_views"],
           ]}
         />
       </IntelligenceSection>
@@ -192,24 +190,26 @@ export default function IntelligenceSiteActivity() {
       >
         <IntelligenceSection
           title="Top Pages"
-          subtitle={`Consumer page views by path. Browse carousel steps (&i=N) are rolled up.${scopeNote}`}
+          subtitle={`Each person is counted once per path in this range — not repeat views the same day. Browse carousel steps (&i=N) are rolled up.${scopeNote}`}
         >
           <SimpleTable
             rows={data.top_pages}
             columns={[
               ["Path", "path"],
-              ["Page views", "visits"],
-              ["Sessions", "sessions"],
+              ["Visitors", "visits"],
             ]}
             wrapKeys={["path"]}
           />
         </IntelligenceSection>
-        <IntelligenceSection title="Referral Sources" subtitle={`Where traffic originates.${scopeNote}`}>
+        <IntelligenceSection
+          title="Referral Sources"
+          subtitle={`First landing source, counted once per visitor in this range.${scopeNote}`}
+        >
           <SimpleTable
             rows={data.referral_sources}
             columns={[
               ["Source", "source"],
-              ["Visits", "visits"],
+              ["Visitors", "visits"],
             ]}
             wrapKeys={["source"]}
           />
@@ -217,23 +217,23 @@ export default function IntelligenceSiteActivity() {
       </div>
 
       <div className="owner-responsive-grid-2" style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: 18, minWidth: 0, alignItems: "start" }}>
-        <IntelligenceSection title="Top Entry Pages" subtitle={`First path in each visitor session.${scopeNote}`}>
+        <IntelligenceSection title="Top Entry Pages" subtitle={`First path for each unique visitor in this range.${scopeNote}`}>
           <SimpleTable
             rows={data.top_entry_pages}
             columns={[
               ["Path", "path"],
-              ["Sessions", "sessions"],
+              ["Visitors", "sessions"],
             ]}
             wrapKeys={["path"]}
             maxHeight={360}
           />
         </IntelligenceSection>
-        <IntelligenceSection title="Top Exit Pages" subtitle={`Last path in each visitor session.${scopeNote}`}>
+        <IntelligenceSection title="Top Exit Pages" subtitle={`Last path for each unique visitor in this range.${scopeNote}`}>
           <SimpleTable
             rows={data.top_exit_pages}
             columns={[
               ["Path", "path"],
-              ["Sessions", "sessions"],
+              ["Visitors", "sessions"],
             ]}
             wrapKeys={["path"]}
             maxHeight={360}
@@ -262,38 +262,38 @@ export default function IntelligenceSiteActivity() {
         />
       </div>
 
-      <IntelligenceSection title="Device Types" subtitle={`Desktop / mobile / tablet with share of visits.${scopeNote}`}>
+      <IntelligenceSection title="Device Types" subtitle={`Desktop / mobile / tablet, counted once per visitor.${scopeNote}`}>
         <SimpleTable
           rows={data.device_types || []}
           columns={[
             ["Device", "device_type"],
-            ["Visits", "visits"],
+            ["Visitors", "visits"],
             ["Share", "pct", (row) => `${row.pct}%`],
           ]}
         />
       </IntelligenceSection>
 
       <div className="owner-responsive-grid-2" style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: 18, minWidth: 0 }}>
-        <IntelligenceSection title="Browsers" subtitle={`From page visit metadata (new visits after enrichment).${scopeNote}`}>
+        <IntelligenceSection title="Browsers" subtitle={`From page visit metadata, counted once per visitor.${scopeNote}`}>
           {browsers ? (
             <SimpleTable
               rows={browsers}
               columns={[
                 ["Browser", "browser"],
-                ["Visits", "visits"],
+                ["Visitors", "visits"],
               ]}
             />
           ) : (
             <EmptyState>{formatMetricValue(data.browsers)}</EmptyState>
           )}
         </IntelligenceSection>
-        <IntelligenceSection title="Operating Systems" subtitle={`From page visit metadata (new visits after enrichment).${scopeNote}`}>
+        <IntelligenceSection title="Operating Systems" subtitle={`From page visit metadata, counted once per visitor.${scopeNote}`}>
           {operatingSystems ? (
             <SimpleTable
               rows={operatingSystems}
               columns={[
                 ["OS", "os"],
-                ["Visits", "visits"],
+                ["Visitors", "visits"],
               ]}
             />
           ) : (
@@ -312,7 +312,7 @@ export default function IntelligenceSiteActivity() {
             columns={[
               ["City", "location_label"],
               ["Language", "language"],
-              ["Visits", "visits"],
+              ["Visitors", "visits"],
             ]}
           />
         ) : (

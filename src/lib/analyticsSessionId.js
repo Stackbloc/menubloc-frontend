@@ -1,5 +1,21 @@
 const SESSION_KEY = "grubbid.analytics.session_id";
+const VISITOR_KEY = "grubbid.analytics.visitor_id";
 const STAFF_KEY = "grubbid.analytics.is_staff";
+
+export function getAnalyticsVisitorId() {
+  try {
+    let id = String(window.localStorage.getItem(VISITOR_KEY) || "");
+    if (!id) {
+      id = typeof window.crypto?.randomUUID === "function"
+        ? window.crypto.randomUUID()
+        : `vis-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      window.localStorage.setItem(VISITOR_KEY, id);
+    }
+    return id;
+  } catch {
+    return getAnalyticsSessionId();
+  }
+}
 
 export function getAnalyticsSessionId() {
   try {

@@ -60,8 +60,7 @@ export default function OwnerDashboard() {
 
       <PageCard style={{ padding: "18px 22px", marginBottom: 22 }}>
         <div style={{ fontSize: 14, color: OWNER_COLORS.ink, lineHeight: 1.55 }}>
-          Real consumer traffic and search for today. Visitor sessions are distinct browsers —
-          page views count every route change. Owner console and internal routes are excluded.
+          Real consumer visitors. Each person is counted once in the selected window — not how many times they opened the same page. Owner console and internal routes are excluded.
         </div>
         {data?.analytics_scope ? (
           <div style={{ marginTop: 10, fontSize: 12, color: OWNER_COLORS.muted, lineHeight: 1.45 }}>
@@ -112,7 +111,6 @@ export default function OwnerDashboard() {
                 columns={[
                   ["City", "location_label"],
                   ["Visitors", "visitors"],
-                  ["Page views", "page_views"],
                 ]}
                 emptyLabel="No visitor geo data for today yet."
               />

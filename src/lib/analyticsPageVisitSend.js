@@ -1,5 +1,6 @@
 import {
   getAnalyticsSessionId,
+  getAnalyticsVisitorId,
   isAnalyticsStaffSession,
   appendSearchAnalyticsParams,
   setAnalyticsStaffSession,
@@ -8,6 +9,7 @@ import {
   classifyDeviceType,
   getAnalyticsClientHints,
 } from "./analyticsClientHints.js";
+import { shouldRecordPageVisit } from "./analyticsPageVisitDedupe.js";
 
 const API = (
   import.meta.env.VITE_API_BASE_URL ||
@@ -16,11 +18,17 @@ const API = (
 
 export {
   getAnalyticsSessionId,
+  getAnalyticsVisitorId,
   appendSearchAnalyticsParams,
   setAnalyticsStaffSession,
   isAnalyticsStaffSession,
 } from "./analyticsSessionId.js";
 export { getAnalyticsClientHints, classifyBrowser, classifyOs, classifyDeviceType } from "./analyticsClientHints.js";
+export {
+  resetPageVisitDedupeForTests,
+  shouldRecordPageVisit,
+  localCalendarDay,
+} from "./analyticsPageVisitDedupe.js";
 
 export function sendPageVisit({
   path,
@@ -45,6 +53,8 @@ export function sendPageVisit({
   if (staff) return;
 
   const session_id = getAnalyticsSessionId();
+  const visitor_id = getAnalyticsVisitorId();
+  if (!shouldRecordPageVisit(visitor_id || session_id, path)) return;
   const referrer = document.referrer || null;
   const ua = navigator.userAgent || "";
   const device_type = classifyDeviceType(ua);
@@ -55,6 +65,7 @@ export function sendPageVisit({
     os: hints.os,
     language: hints.language,
     browser_language: hints.browser_language,
+    ...(visitor_id ? { visitor_id } : {}),
   };
 
   fetch(`${API}/api/analytics/page-visit`, {

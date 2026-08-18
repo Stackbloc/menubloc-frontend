@@ -336,15 +336,14 @@ export function CityVisitorInsightPanel({ locationLabel, range, onClose }) {
           </div>
 
           {!data.available ? (
-            <EmptyState>No visitor sessions attributed to this city in the selected range.</EmptyState>
+            <EmptyState>No unique visitors attributed to this city in the selected range.</EmptyState>
           ) : (
             <>
               <div
                 className="owner-responsive-grid-2"
                 style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(140px, 1fr))", gap: 12 }}
               >
-                <MetricCard label="Visitor sessions" value={data.summary?.visitors ?? 0} />
-                <MetricCard label="Page views" value={data.summary?.page_views ?? 0} />
+                <MetricCard label="Unique visitors" value={data.summary?.visitors ?? 0} />
               </div>
 
               <div

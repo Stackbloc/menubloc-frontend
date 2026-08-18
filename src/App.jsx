@@ -679,10 +679,10 @@ function AnalyticsTracker() {
       });
     }
 
-    // Restaurant pages own their analytics send so they can include restaurant_id
-    // after their data loads — even for slug-based URLs where the ID is not in the path.
-    const RESTAURANT_PREFIXES = ["/restaurants/", "/public/restaurants/"];
-    if (RESTAURANT_PREFIXES.some((p) => location.pathname.startsWith(p))) return;
+    // Restaurant and dish-detail pages own their analytics send so they can
+    // include restaurant_id / menu_item_id after data loads.
+    const PAGE_OWNED_VISIT_PREFIXES = ["/restaurants/", "/public/restaurants/", "/menu-items/"];
+    if (PAGE_OWNED_VISIT_PREFIXES.some((p) => location.pathname.startsWith(p))) return;
 
     // Owner/operator traffic is excluded from consumer Platform Intelligence.
     if (isStaff) {
