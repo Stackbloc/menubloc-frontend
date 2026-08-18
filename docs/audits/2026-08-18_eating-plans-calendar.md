@@ -31,11 +31,11 @@ None against production. Migration `0271` written, not applied this turn.
 
 # Commits
 
-Local until CPD.
+FE `0d126d9`. BE `2923b248`.
 
 # Deployment Status
 
-Not deployed. Needs BE migration `0271` + FE together.
+**CPD COMPLETE.** FE tip `n7gxy1luu` / `index-DbN-zhDW.js`. BE `2923b248`. Migration `0271` applied.
 
 # Verification Results
 
@@ -43,11 +43,11 @@ FE contracts 10 pass. BE `whatWeDoingContract` 2 pass.
 
 # Remaining Risks
 
-Live create with joinable fields fails until `0271` is applied. Production not migrated this turn.
+None for this ship. Profile line stays hidden until at least one diner has a named restaurant plan this week.
 
 # Follow-Up Work
 
-Say `cpd` to ship FE + BE (path-gate on `menubloc-backend-main`) and apply `0271`.
+None required for this CPD.
 
 # Final Verdict
 

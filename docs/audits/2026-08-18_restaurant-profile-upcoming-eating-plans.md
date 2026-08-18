@@ -32,11 +32,11 @@ None against production. Count SQL is `COUNT(DISTINCT p.consumer_user_id)` on no
 
 # Commits
 
-Local until CPD.
+FE `0d126d9`. BE `2923b248`.
 
 # Deployment Status
 
-Not deployed. Needs FE + BE together and production `0271`.
+**CPD COMPLETE.** FE tip `n7gxy1luu` / `index-DbN-zhDW.js`. BE `2923b248` health MATCH. Migration `0271` applied.
 
 # Verification Results
 

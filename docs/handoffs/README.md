@@ -1,6 +1,6 @@
 # Handoffs Index
 
-- [2026-08-18_eating-plans-calendar_handoff.md](./2026-08-18_eating-plans-calendar_handoff.md) — Calendar eating plans + join seats + restaurant profile next-week count (**LOCAL until CPD**)
+- [2026-08-18_eating-plans-calendar_handoff.md](./2026-08-18_eating-plans-calendar_handoff.md) — Calendar eating plans + join seats + restaurant profile next-week count (**CPD COMPLETE** — tip `n7gxy1luu` / `index-DbN-zhDW.js`; BE `2923b248`)
 - [2026-08-18_my-menuply-no-share-settings_handoff.md](./2026-08-18_my-menuply-no-share-settings_handoff.md) — Share + Settings off My Menuply (**LOCAL until CPD**)
 - [2026-08-18_diner-instagram-easy-compose_handoff.md](./2026-08-18_diner-instagram-easy-compose_handoff.md) — One-line diner compose + personal My Menuply (**LOCAL until CPD**)
 - [2026-08-18_my-menuply-clickable-labels_handoff.md](./2026-08-18_my-menuply-clickable-labels_handoff.md) — My Eating Plans; clickable titles; no click-coaching (**LOCAL until CPD**)
