@@ -36,3 +36,13 @@ export function buildDiningCrewInviteShareData(inviteUrl) {
     url,
   };
 }
+
+export function buildMenuplyPathShareData(path, { title, text } = {}) {
+  const url = menuplyDiningCrewInviteUrl(path);
+  if (!url) return null;
+  return {
+    title: title || "Menuply",
+    text: text || "",
+    url,
+  };
+}

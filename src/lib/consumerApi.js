@@ -453,6 +453,11 @@ export const updateWhatIAteToday = (id, body) =>
 export const deleteWhatIAteToday = (id) =>
   del(`/api/consumer/what-i-ate-today/${encodeURIComponent(String(id))}`);
 
+export const listWantToEat = () => get("/api/consumer/want-to-eat");
+export const createWantToEat = (body) => post("/api/consumer/want-to-eat", body);
+export const updateWantToEat = (id, body) =>
+  patch(`/api/consumer/want-to-eat/${encodeURIComponent(String(id))}`, body);
+
 export async function uploadWhatIAteTodayPhoto(file) {
   const language = readStoredLanguage();
   const form = new FormData();

@@ -118,6 +118,17 @@ export const photoCard = {
   minHeight: 108,
 };
 
+export const photoButton = {
+  ...photoCard,
+  appearance: "none",
+  border: "none",
+  padding: 0,
+  width: "100%",
+  textAlign: "left",
+  cursor: "pointer",
+  font: "inherit",
+};
+
 export const photo = {
   width: "100%",
   height: 108,

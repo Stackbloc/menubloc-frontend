@@ -7,19 +7,24 @@ import React, { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import StickyPageHeader from "../../components/StickyPageHeader.jsx";
 import BottomNav from "../../components/BottomNav.jsx";
+import ShareModal from "../../components/share/ShareModal.jsx";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
 import {
   createDiningCrew,
   createWhatIAteToday,
   createWhatWeDoingSession,
+  createWantToEat,
   getConsumerProfile,
   getFollowedRestaurants,
   getLikedMenuItems,
+  inviteToDiningCrew,
+  inviteToVenueEventGroup,
   listConnections,
   listDiningCrews,
   listMyFoodActivity,
   listMyVenueEventGroups,
   listMyVenueEvents,
+  listWantToEat,
   listWhatIAteToday,
   listWhatWeDoingSessions,
   resolveConsumerMediaUrl,
@@ -28,8 +33,11 @@ import {
   uploadWhatIAteTodayPhoto,
   whatIAteTodayLocalDate,
 } from "../../lib/consumerApi.js";
-import { restaurantPathFromRow } from "../../lib/canonicalUrl.js";
 import { defaultWhatIAteMealPeriod } from "../../lib/whatIAteTodayMealPeriod.js";
+import {
+  buildDiningCrewInviteShareData,
+  buildMenuplyPathShareData,
+} from "../../lib/diningCrewInviteShare.js";
 import WhatIAteTodayCalendar from "../../components/consumer/WhatIAteTodayCalendar.jsx";
 import * as s from "./myMenuply/myMenuplyStyles.js";
 import DinerIdentityHero from "./myMenuply/DinerIdentityHero.jsx";
@@ -39,8 +47,8 @@ import {
   PhotoGrid,
   SectionHead,
   EatingPlanCard,
+  NamedShareCard,
   foodHref,
-  restaurantHref,
 } from "./myMenuply/myMenuplyBits.jsx";
 
 function planYmd(value) {
@@ -88,6 +96,7 @@ export default function MyMenuplyPage() {
   const [connections, setConnections] = useState([]);
   const [followed, setFollowed] = useState([]);
   const [liked, setLiked] = useState([]);
+  const [wants, setWants] = useState([]);
   const [crews, setCrews] = useState([]);
   const [events, setEvents] = useState([]);
   const [eventGroups, setEventGroups] = useState([]);
@@ -97,6 +106,8 @@ export default function MyMenuplyPage() {
     return new Date(t.getFullYear(), t.getMonth(), 1);
   });
   const [lastPost, setLastPost] = useState(null);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [sharePayload, setSharePayload] = useState(null);
 
   const load = useCallback(async () => {
     setError("");
@@ -109,17 +120,19 @@ export default function MyMenuplyPage() {
         connRes,
         followRes,
         likeRes,
+        wantRes,
         crewRes,
         eventRes,
         groupRes,
       ] = await Promise.all([
         getConsumerProfile().catch(() => null),
         listMyFoodActivity(20).catch(() => ({ activities: [] })),
-        listWhatIAteToday(planDate).catch(() => ({ entries: [] })),
+        listWhatIAteToday(whatIAteTodayLocalDate()).catch(() => ({ entries: [] })),
         listWhatWeDoingSessions().catch(() => ({ sessions: [] })),
         listConnections().catch(() => ({ accepted: [] })),
         getFollowedRestaurants().catch(() => ({ restaurants: [] })),
         getLikedMenuItems().catch(() => ({ likes: [] })),
+        listWantToEat().catch(() => ({ items: [] })),
         listDiningCrews().catch(() => ({ crews: [] })),
         listMyVenueEvents().catch(() => ({ events: [] })),
         listMyVenueEventGroups().catch(() => ({ groups: [] })),
@@ -136,6 +149,7 @@ export default function MyMenuplyPage() {
       const diaryItems = (ateRes.entries || []).map((row) => ({
         ...row,
         id: `wia-${row.id}`,
+        entry_id: row.id,
         food_name: row.item_name || row.food_name || "Food",
         kind: "what_i_ate",
       }));
@@ -144,6 +158,7 @@ export default function MyMenuplyPage() {
       setConnections(connRes.accepted || []);
       setFollowed(followRes.restaurants || followRes.items || []);
       setLiked(likeRes.likes || []);
+      setWants(wantRes.items || []);
       setCrews(crewRes.crews || crewRes.items || []);
       setEvents(eventRes.events || []);
       setEventGroups(groupRes.groups || []);
@@ -152,7 +167,7 @@ export default function MyMenuplyPage() {
     } finally {
       setLoading(false);
     }
-  }, [planDate]);
+  }, []);
 
   useEffect(() => {
     if (!authLoading && isAuthenticated) load();
@@ -225,14 +240,108 @@ export default function MyMenuplyPage() {
     }
   }
 
+  async function postWant({ text }) {
+    setPostBusy("want");
+    setError("");
+    try {
+      const data = await createWantToEat({ food_name: text });
+      const item = data.item || data;
+      setLastPost({
+        kind: "want",
+        id: item.id,
+        food_name: item.food_name,
+        comment: item.comment,
+        meal_period: item.meal_period,
+      });
+      await load();
+    } catch (err) {
+      setError(err.message || "Unable to add");
+    } finally {
+      setPostBusy("");
+    }
+  }
+
   async function postCrew({ text }) {
     setPostBusy("crews");
     setError("");
     try {
-      await createDiningCrew({ name: text });
+      await createDiningCrew({
+        name: text,
+        visibility: "public",
+        membership_approval: "organizer",
+      });
       await load();
     } catch (err) {
       setError(err.message || "Unable to add");
+    } finally {
+      setPostBusy("");
+    }
+  }
+
+  function openShare(shareData, { modalTitle, analyticsContext }) {
+    if (!shareData?.url) throw new Error("Unable to create join link");
+    setSharePayload({ shareData, modalTitle, analyticsContext });
+    setShareOpen(true);
+  }
+
+  async function shareCrewInvite(crew) {
+    setPostBusy("invite");
+    setError("");
+    try {
+      const data = await inviteToDiningCrew(crew.id, {});
+      openShare(buildDiningCrewInviteShareData(data.invitation?.url || ""), {
+        modalTitle: "Share crew invite",
+        analyticsContext: { pageType: "dining_crew_invite", crewId: Number(crew.id) || null },
+      });
+    } catch (err) {
+      setError(err.message || "Invite failed");
+    } finally {
+      setPostBusy("");
+    }
+  }
+
+  async function shareEventInvite(ev) {
+    setPostBusy("invite");
+    setError("");
+    try {
+      const slug = String(ev.slug || "").trim();
+      if (!slug) throw new Error("Event link is missing");
+      const name = String(ev.name || "this event").trim();
+      openShare(
+        buildMenuplyPathShareData(`/events/${encodeURIComponent(slug)}`, {
+          title: name,
+          text: `Join me at ${name} on Menuply.`,
+        }),
+        {
+          modalTitle: "Share event",
+          analyticsContext: { pageType: "venue_event_invite", eventSlug: slug },
+        }
+      );
+    } catch (err) {
+      setError(err.message || "Unable to share event");
+    } finally {
+      setPostBusy("");
+    }
+  }
+
+  async function shareEventGroupInvite(group) {
+    setPostBusy("invite");
+    setError("");
+    try {
+      const data = await inviteToVenueEventGroup(group.id || group.slug);
+      const name = String(group.name || "this event group").trim();
+      openShare(
+        buildMenuplyPathShareData(data.invitation?.url || "", {
+          title: name,
+          text: `Join ${name} on Menuply.`,
+        }),
+        {
+          modalTitle: "Share event group invite",
+          analyticsContext: { pageType: "venue_event_group_invite", groupId: Number(group.id) || null },
+        }
+      );
+    } catch (err) {
+      setError(err.message || "Invite failed");
     } finally {
       setPostBusy("");
     }
@@ -285,6 +394,35 @@ export default function MyMenuplyPage() {
                 busy={postBusy === "eating"}
                 onSubmit={postEating}
               />
+              <PhotoGrid
+                items={eating}
+                onSelect={(item) => {
+                  if (item?.kind !== "what_i_ate") return;
+                  setLastPost({
+                    kind: "diary",
+                    id: item.entry_id,
+                    meal_period: item.meal_period,
+                    comment: item.comment,
+                    food_name: item.food_name,
+                    restaurant_id: item.restaurant_id,
+                    restaurant_name: item.restaurant_name,
+                    menu_item_id: item.menu_item_id,
+                    item_name: item.food_name,
+                  });
+                }}
+              />
+              {lastPost?.kind === "diary" ? (
+                <PostAfterActions
+                  kind="diary"
+                  record={lastPost}
+                  busy={postBusy === "eating"}
+                  followed={followed}
+                  onTagged={async () => {
+                    setLastPost(null);
+                    await load();
+                  }}
+                />
+              ) : null}
               <WhatIAteTodayCalendar
                 testId="eating-plans-calendar"
                 selectedDate={planDate}
@@ -301,21 +439,31 @@ export default function MyMenuplyPage() {
                     return rows;
                   }, [])}
               />
-              <PhotoGrid items={eating} empty="Nothing yet." />
-              {plans.filter((plan) => planYmd(plan.plan_date) === planDate).map((plan) => (
-                <EatingPlanCard key={plan.token || plan.id} plan={plan} />
-              ))}
-              {plans.filter((plan) => planYmd(plan.plan_date) !== planDate).length > 0 ? (
-                <>
-                  {plans
-                    .filter((plan) => planYmd(plan.plan_date) !== planDate)
-                    .slice(0, 12)
-                    .map((plan) => <EatingPlanCard key={plan.token || plan.id} plan={plan} />)}
-                </>
-              ) : null}
-              {lastPost ? (
+              <h2 style={s.sectionTitle}>Future plans</h2>
+              {plans
+                .filter((plan) => compareYmd(plan.plan_date) > 0)
+                .slice(0, 12)
+                .map((plan) => (
+                  <EatingPlanCard
+                    key={plan.token || plan.id}
+                    plan={plan}
+                    onAddDetails={(next) => {
+                      setLastPost({
+                        kind: "plan",
+                        token: next.token,
+                        id: next.id,
+                        joinable: next.joinable,
+                        join_capacity: next.join_capacity,
+                        restaurant_id: next.restaurant_id,
+                        restaurant_name: next.restaurant_name,
+                        place_label: next.place_label,
+                      });
+                    }}
+                  />
+                ))}
+              {lastPost?.kind === "plan" ? (
                 <PostAfterActions
-                  kind={lastPost.kind}
+                  kind="plan"
                   record={lastPost}
                   busy={postBusy === "eating"}
                   followed={followed}
@@ -337,27 +485,53 @@ export default function MyMenuplyPage() {
 
             <section style={s.section} data-testid="want-to-eat">
               <SectionHead title="What I Want to Eat" />
-              {liked.length === 0 && followed.length === 0 ? (
-                <p style={s.muted}>Nothing yet.</p>
-              ) : (
-                <>
-                  {liked.slice(0, 6).map((meal) => (
-                    <Link key={meal.menu_item_id} to={foodHref(meal)} style={s.card}>
-                      <div style={{ fontWeight: 800 }}>{meal.item_name}</div>
-                      <div style={s.muted}>{meal.restaurant_name}</div>
-                    </Link>
-                  ))}
-                  {followed.slice(0, 6).map((place) => (
-                    <Link
-                      key={place.restaurant_id || place.id}
-                      to={restaurantPathFromRow(place) || restaurantHref(place) || "/"}
-                      style={s.card}
-                    >
-                      {place.restaurant_name || place.name}
-                    </Link>
-                  ))}
-                </>
-              )}
+              <QuickCompose
+                testId="compose-want"
+                placeholder="What do you want to eat?"
+                busy={postBusy === "want"}
+                onSubmit={postWant}
+              />
+              {wants.map((want) => (
+                <button
+                  key={want.id}
+                  type="button"
+                  style={{ ...s.card, appearance: "none", width: "100%", textAlign: "left", cursor: "pointer", font: "inherit" }}
+                  onClick={() =>
+                    setLastPost({
+                      kind: "want",
+                      id: want.id,
+                      food_name: want.food_name,
+                      comment: want.comment,
+                      meal_period: want.meal_period,
+                      restaurant_id: want.restaurant_id,
+                      restaurant_name: want.restaurant_name,
+                      menu_item_id: want.menu_item_id,
+                      item_name: want.item_name || want.food_name,
+                    })
+                  }
+                >
+                  <div style={{ fontWeight: 800 }}>{want.food_name}</div>
+                  {want.restaurant_name ? <div style={s.muted}>{want.restaurant_name}</div> : null}
+                </button>
+              ))}
+              {lastPost?.kind === "want" ? (
+                <PostAfterActions
+                  kind="want"
+                  record={lastPost}
+                  busy={postBusy === "want"}
+                  followed={followed}
+                  onTagged={async () => {
+                    setLastPost(null);
+                    await load();
+                  }}
+                />
+              ) : null}
+              {liked.slice(0, 6).map((meal) => (
+                <Link key={meal.menu_item_id} to={foodHref(meal)} style={s.card}>
+                  <div style={{ fontWeight: 800 }}>{meal.item_name}</div>
+                  <div style={s.muted}>{meal.restaurant_name}</div>
+                </Link>
+              ))}
             </section>
 
             <section style={s.section} data-testid="dining-crews">
@@ -366,14 +540,22 @@ export default function MyMenuplyPage() {
                 <p style={s.muted}>Nothing yet.</p>
               ) : (
                 crews.slice(0, 4).map((crew) => (
-                  <Link key={crew.id} to={`/account/dining-crews/${crew.id}`} style={s.card}>
-                    {crew.name}
-                    <div style={s.muted}>
-                      {crew.viewer_role === "owner" ? "Organized" : null}
-                      {crew.viewer_role === "owner" ? " · " : ""}
-                      {crew.member_count || 0} {crew.member_count === 1 ? "member" : "members"}
-                    </div>
-                  </Link>
+                  <NamedShareCard
+                    key={crew.id}
+                    name={crew.name}
+                    href={`/account/dining-crews/${crew.id}`}
+                    meta={[
+                      crew.viewer_role === "owner" ? "Organized" : null,
+                      `${crew.member_count || 0} ${crew.member_count === 1 ? "member" : "members"}`,
+                      crew.visibility === "public"
+                        ? "Others can request to join"
+                        : "Invite people to join",
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                    onInvite={() => shareCrewInvite(crew)}
+                    inviteLabel="Invite people to join"
+                  />
                 ))
               )}
               <QuickCompose
@@ -391,30 +573,35 @@ export default function MyMenuplyPage() {
               ) : (
                 <>
                   {events.slice(0, 4).map((ev) => (
-                    <Link
+                    <NamedShareCard
                       key={ev.id || ev.slug}
-                      to={`/events/${encodeURIComponent(String(ev.slug))}`}
-                      style={s.card}
-                    >
-                      {ev.name}
-                      <div style={s.muted}>
-                        {[ev.rsvp_status === "going" ? "Going" : "Interested", formatEventWhen(ev)]
-                          .filter(Boolean)
-                          .join(" · ")}
-                      </div>
-                    </Link>
+                      name={ev.name}
+                      href={`/events/${encodeURIComponent(String(ev.slug))}`}
+                      meta={[
+                        ev.rsvp_status === "going" ? "Going" : "Interested",
+                        formatEventWhen(ev),
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
+                      onInvite={() => shareEventInvite(ev)}
+                      inviteLabel="Invite people to join"
+                    />
                   ))}
                   {eventGroups.slice(0, 4).map((g) => (
-                    <Link
+                    <NamedShareCard
                       key={g.id || g.slug}
-                      to={`/events/groups/${encodeURIComponent(String(g.slug))}`}
-                      style={s.card}
-                    >
-                      {g.name}
-                      <div style={s.muted}>
-                        {[g.role === "owner" ? "Organized" : null, g.event_name].filter(Boolean).join(" · ")}
-                      </div>
-                    </Link>
+                      name={g.name}
+                      href={`/events/groups/${encodeURIComponent(String(g.slug))}`}
+                      meta={[
+                        g.role === "owner" ? "Organized" : null,
+                        g.event_name,
+                        g.visibility === "public" ? "Others can request to join" : null,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
+                      onInvite={() => shareEventGroupInvite(g)}
+                      inviteLabel="Invite people to join"
+                    />
                   ))}
                 </>
               )}
@@ -423,6 +610,15 @@ export default function MyMenuplyPage() {
         ) : null}
       </div>
       <BottomNav />
+      {sharePayload?.shareData ? (
+        <ShareModal
+          open={shareOpen}
+          onClose={() => setShareOpen(false)}
+          modalTitle={sharePayload.modalTitle}
+          shareData={sharePayload.shareData}
+          analyticsContext={sharePayload.analyticsContext}
+        />
+      ) : null}
     </>
   );
 }

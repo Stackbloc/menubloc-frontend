@@ -32,20 +32,68 @@ export function SectionHead({ title, to, testId }) {
   );
 }
 
-export function PhotoGrid({ items, empty }) {
-  if (!items.length) return <p style={s.muted}>{empty}</p>;
+export function PhotoGrid({ items, onSelect }) {
+  if (!items.length) return null;
   return (
-    <div style={s.grid}>
-      {items.map((item) => (
-        <Link key={item.id || item.menu_item_id || item.food_name} to={foodHref(item)} style={s.photoCard}>
-          {item.photo_url ? (
-            <img src={resolveConsumerMediaUrl(item.photo_url)} alt="" style={s.photo} />
-          ) : (
-            <div style={{ ...s.photo, display: "grid", placeItems: "center", fontSize: 22 }}>🍽️</div>
-          )}
-          <div style={s.photoLabel}>{item.food_name || item.item_name || item.itemName || "Food"}</div>
+    <div style={s.grid} data-testid="what-im-eating-photos">
+      {items.map((item) => {
+        const label = item.food_name || item.item_name || item.itemName || "Food";
+        const inner = (
+          <>
+            {item.photo_url ? (
+              <img src={resolveConsumerMediaUrl(item.photo_url)} alt="" style={s.photo} />
+            ) : (
+              <div style={{ ...s.photo, display: "grid", placeItems: "center", fontSize: 22 }}>🍽️</div>
+            )}
+            <div style={s.photoLabel}>{label}</div>
+          </>
+        );
+        if (onSelect) {
+          return (
+            <button
+              key={item.id || item.menu_item_id || item.food_name}
+              type="button"
+              style={s.photoButton}
+              onClick={() => onSelect(item)}
+              aria-label={`Add details for ${label}`}
+            >
+              {inner}
+            </button>
+          );
+        }
+        return (
+          <Link key={item.id || item.menu_item_id || item.food_name} to={foodHref(item)} style={s.photoCard}>
+            {inner}
+          </Link>
+        );
+      })}
+    </div>
+  );
+}
+
+export function NamedShareCard({ name, href, meta, onInvite, inviteLabel = "Invite people to join" }) {
+  const title = String(name || "").trim() || "Untitled";
+  return (
+    <div style={s.card} data-testid="named-share-card">
+      {href ? (
+        <Link to={href} style={{ ...s.sectionTitleLink, fontWeight: 800, fontSize: 16 }}>
+          {title}
         </Link>
-      ))}
+      ) : (
+        <div style={{ fontWeight: 800, fontSize: 16 }}>{title}</div>
+      )}
+      {meta ? <div style={s.muted}>{meta}</div> : null}
+      <div style={s.actions}>
+        {onInvite ? (
+          <button
+            type="button"
+            style={{ ...s.chipBtn, appearance: "none", cursor: "pointer", font: "inherit" }}
+            onClick={onInvite}
+          >
+            {inviteLabel}
+          </button>
+        ) : null}
+      </div>
     </div>
   );
 }
@@ -102,9 +150,12 @@ export function ConnectionFoodCard({ item }) {
   );
 }
 
-export function EatingPlanCard({ plan }) {
-  const name = plan.restaurant_name || plan.place_label || plan.title || "Plan";
+export function EatingPlanCard({ plan, onAddDetails }) {
   const when = formatPlanWhen(plan.plan_date);
+  const place =
+    plan.restaurant_id || (plan.place_label && plan.place_label !== plan.title)
+      ? plan.restaurant_name || plan.place_label
+      : "";
   const restHref = restaurantHref({
     restaurant_id: plan.restaurant_id,
     restaurant_slug: plan.restaurant_slug,
@@ -114,17 +165,21 @@ export function EatingPlanCard({ plan }) {
   });
   return (
     <div style={s.card} data-testid="eating-plan-card">
-      <Link to={`/account/what-we-doing/${plan.token}`} style={{ ...s.sectionTitleLink, fontWeight: 800 }}>
-        {name}
-      </Link>
-      {when ? <div style={s.muted}>{when}</div> : null}
+      {when ? <div style={{ fontWeight: 800 }}>{when}</div> : null}
+      <div style={place ? { fontWeight: 700, marginTop: 4 } : s.muted}>{place || "Add restaurant, dish, and details"}</div>
       <div style={s.muted}>
         {plan.joinable ? `${plan.joiner_count || 0}/${plan.join_capacity || 0} joined` : "Just me"}
       </div>
       <div style={s.actions}>
-        <Link to={`/account/what-we-doing/${plan.token}`} style={s.chipBtn}>
-          Plan
-        </Link>
+        {onAddDetails ? (
+          <button type="button" style={{ ...s.chipBtn, appearance: "none", cursor: "pointer", font: "inherit" }} onClick={() => onAddDetails(plan)}>
+            Add details
+          </button>
+        ) : (
+          <Link to={`/account/what-we-doing/${plan.token}`} style={s.chipBtn}>
+            Plan
+          </Link>
+        )}
         {restHref ? (
           <Link to={restHref} style={s.chipBtn}>
             Restaurant

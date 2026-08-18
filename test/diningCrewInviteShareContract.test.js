@@ -9,6 +9,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   buildDiningCrewInviteShareData,
+  buildMenuplyPathShareData,
   menuplyDiningCrewInviteUrl,
 } from "../src/lib/diningCrewInviteShare.js";
 
@@ -34,6 +35,19 @@ test("dining crew invite share locks menuply.com URL", () => {
   assert.equal(buildDiningCrewInviteShareData(""), null);
 });
 
+test("event and event-group share paths lock to menuply.com", () => {
+  const eventShare = buildMenuplyPathShareData("/events/coachella-saturday", {
+    title: "Coachella Saturday",
+    text: "Join me at Coachella Saturday on Menuply.",
+  });
+  assert.equal(eventShare.url, "https://menuply.com/events/coachella-saturday");
+  assert.equal(eventShare.title, "Coachella Saturday");
+  const groupInvite = buildMenuplyPathShareData(
+    "https://preview.vercel.app/events/groups/invite/tok123"
+  );
+  assert.equal(groupInvite.url, "https://menuply.com/events/groups/invite/tok123");
+});
+
 test("Dining Crew detail uses ShareModal invite share — not prototype code dump", () => {
   const page = read("src/pages/consumer/DiningCrewsPage.jsx");
   assert.match(page, /ShareModal/);
@@ -54,4 +68,15 @@ test("social onboarding optional Share invite uses ShareModal", () => {
   assert.match(page, /Sharing an invite is optional/);
   assert.match(page, /Continue/);
   assert.doesNotMatch(page, /navigator\.contacts|ContactsManager/);
+});
+
+test("My Menuply crew and event names share via ShareModal menuply.com URLs", () => {
+  const page = read("src/pages/consumer/MyMenuplyPage.jsx");
+  assert.match(page, /ShareModal/);
+  assert.match(page, /buildDiningCrewInviteShareData/);
+  assert.match(page, /buildMenuplyPathShareData/);
+  assert.match(page, /inviteToDiningCrew/);
+  assert.match(page, /inviteToVenueEventGroup/);
+  assert.match(page, /NamedShareCard/);
+  assert.doesNotMatch(page, /navigator\.share/);
 });

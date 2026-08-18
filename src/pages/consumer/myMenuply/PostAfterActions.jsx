@@ -1,5 +1,6 @@
 /**
- * After a simple What I'm Eating post: optional restaurant, dish, people can join.
+ * After a simple What I'm Eating post, or when a diner taps a posted item:
+ * restaurant, dish, recipe note, meal category, optional join seats.
  */
 
 import { useEffect, useState } from "react";
@@ -10,7 +11,8 @@ import {
   restaurantLabel,
   searchReportPlaces,
 } from "../../../lib/foodActivityApi.js";
-import { updateWhatIAteToday, updateWhatWeDoingSession } from "../../../lib/consumerApi.js";
+import { updateWhatIAteToday, updateWhatWeDoingSession, updateWantToEat } from "../../../lib/consumerApi.js";
+import { WHAT_I_ATE_MEAL_PERIODS } from "../../../lib/whatIAteTodayMealPeriod.js";
 import * as s from "./myMenuplyStyles.js";
 
 export default function PostAfterActions({
@@ -29,8 +31,22 @@ export default function PostAfterActions({
   const [dish, setDish] = useState(null);
   const [joinable, setJoinable] = useState(false);
   const [joinCapacity, setJoinCapacity] = useState("4");
+  const [mealPeriod, setMealPeriod] = useState("");
+  const [recipe, setRecipe] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setMealPeriod(String(record?.meal_period || "").trim());
+    setRecipe(String(record?.comment || record?.recipe || "").trim());
+    setJoinable(Boolean(record?.joinable));
+    setJoinCapacity(String(record?.join_capacity || "4"));
+    setRestaurant(record?.restaurant_id ? asRestaurantPlace(record) : null);
+    setDish(record?.menu_item_id ? asDishPlace(record) : null);
+    setQuery("");
+    setDishQuery("");
+    setError("");
+  }, [record?.id, record?.token, record?.kind]);
 
   useEffect(() => {
     const q = query.trim();
@@ -98,21 +114,34 @@ export default function PostAfterActions({
     setSaving(true);
     setError("");
     try {
+      const mealLabel = WHAT_I_ATE_MEAL_PERIODS.find((p) => p.id === mealPeriod)?.label || "";
       if (kind === "plan") {
         const token = record.token || record.id;
         const placeLabel =
-          [restaurantLabel(restaurant), dishLabel(dish)].filter(Boolean).join(" · ") || undefined;
+          [mealLabel, restaurantLabel(restaurant), dishLabel(dish), recipe.trim()]
+            .filter(Boolean)
+            .join(" · ") || undefined;
         await updateWhatWeDoingSession(token, {
           restaurant_id: restaurant?.restaurant_id || undefined,
           place_label: placeLabel,
           joinable,
           join_capacity: joinable ? Number(joinCapacity) : undefined,
         });
+      } else if (kind === "want") {
+        await updateWantToEat(record.id, {
+          restaurant_id: restaurant?.restaurant_id || undefined,
+          menu_item_id: dish?.menu_item_id || undefined,
+          food_name: dishLabel(dish) || record.food_name || undefined,
+          meal_period: mealPeriod || undefined,
+          comment: recipe,
+        });
       } else {
         await updateWhatIAteToday(record.id, {
           restaurant_id: restaurant?.restaurant_id || undefined,
           menu_item_id: dish?.menu_item_id || undefined,
-          food_name: dishLabel(dish) || undefined,
+          food_name: dishLabel(dish) || record.food_name || undefined,
+          meal_period: mealPeriod || undefined,
+          comment: recipe,
         });
       }
       setRestaurant(null);
@@ -128,13 +157,37 @@ export default function PostAfterActions({
   }
 
   const followedPicks = (followed || []).filter((row) => row?.restaurant_id).slice(0, 8);
-  const canSave = Boolean(restaurant || dish || (kind === "plan" && joinable));
+  const canSave = Boolean(
+    restaurant || dish || recipe.trim() || mealPeriod || (kind === "plan" && joinable)
+  );
   const disabled = busy || saving;
 
   return (
     <form onSubmit={handleSave} data-testid="post-after-actions" style={styles.form}>
-      <div style={styles.kicker}>Optional</div>
-      <p style={s.muted}>Tag a restaurant or dish, or let people join. Skip if you want.</p>
+      <div style={styles.kicker}>Add details</div>
+      <p style={s.muted}>Restaurant, menu item, recipe, and meal time.</p>
+      <div style={styles.meals} role="group" aria-label="Meal category">
+        {WHAT_I_ATE_MEAL_PERIODS.map((period) => (
+          <button
+            key={period.id}
+            type="button"
+            style={mealPeriod === period.id ? styles.mealOn : styles.meal}
+            disabled={disabled}
+            onClick={() => setMealPeriod((prev) => (prev === period.id ? "" : period.id))}
+          >
+            {period.label}
+          </button>
+        ))}
+      </div>
+      <textarea
+        value={recipe}
+        onChange={(e) => setRecipe(e.target.value.slice(0, 500))}
+        placeholder="Recipe or notes"
+        disabled={disabled}
+        rows={3}
+        style={styles.recipe}
+        aria-label="Recipe"
+      />
       {error ? <p style={s.error}>{error}</p> : null}
 
       {restaurant ? (
@@ -268,7 +321,7 @@ export default function PostAfterActions({
       ) : null}
 
       <button type="submit" disabled={disabled || !canSave} style={s.primaryBtn}>
-        {saving ? "…" : "Save tags"}
+        {saving ? "…" : "Save details"}
       </button>
     </form>
   );
@@ -368,12 +421,47 @@ const styles = {
     fontWeight: 700,
     color: "#0B0F0C",
   },
-  num: {
-    width: 72,
-    minHeight: 40,
-    borderRadius: 10,
+  meals: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  meal: {
+    appearance: "none",
     border: "1.5px solid #d1d5db",
-    padding: "0 8px",
+    background: "#fff",
+    color: "#0B0F0C",
+    borderRadius: 999,
+    minHeight: 36,
+    padding: "0 12px",
     font: "inherit",
+    fontWeight: 700,
+    fontSize: 13,
+    cursor: "pointer",
+  },
+  mealOn: {
+    appearance: "none",
+    border: "1.5px solid #1F4E3D",
+    background: "#1F4E3D",
+    color: "#fff",
+    borderRadius: 999,
+    minHeight: 36,
+    padding: "0 12px",
+    font: "inherit",
+    fontWeight: 800,
+    fontSize: 13,
+    cursor: "pointer",
+  },
+  recipe: {
+    width: "100%",
+    border: "1.5px solid #d1d5db",
+    borderRadius: 12,
+    padding: "10px 12px",
+    fontSize: 15,
+    fontFamily: "inherit",
+    color: "#0B0F0C",
+    background: "#fff",
+    boxSizing: "border-box",
+    resize: "vertical",
   },
 };
