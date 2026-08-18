@@ -376,6 +376,7 @@ export default function FoodComments({
   hideTitle = false,
   embedded = false,
   compact = false,
+  experienceMode = false,
 }) {
   const { isAuthenticated, consumer, profile, refreshSession } = useConsumer();
   const location = useLocation();
@@ -679,14 +680,18 @@ export default function FoodComments({
     return scheduleScrollToFoodComments({ attempts: 10, delayMs: 100 });
   }, [loading, comments.length, menuItemId, restaurantId]);
 
-  const composePlaceholder = isDishThread
-    ? "Share a tip about this dish…"
-    : topicMenuItemId && topicMenuItemId !== TOPIC_RESTAURANT
-      ? "Share a tip about this dish…"
-      : "Share a tip about this restaurant…";
-  const emptyHint = isDishThread
-    ? "No comments yet. Be the first to share a tip about this dish."
-    : "No comments yet. Be the first to share a tip about this restaurant.";
+  const composePlaceholder = experienceMode
+    ? "Post what's good today."
+    : isDishThread
+      ? "Share your thoughts about this dish…"
+      : topicMenuItemId && topicMenuItemId !== TOPIC_RESTAURANT
+        ? "Share your thoughts about this dish…"
+        : "Share your thoughts about this restaurant…";
+  const emptyHint = experienceMode
+    ? "Nobody's posted yet. Post what's good today."
+    : isDishThread
+      ? "No comments yet. Be the first to share your thoughts about this dish."
+      : "No comments yet. Be the first to share your thoughts about this restaurant.";
 
   const sectionStyle = embedded
     ? {
@@ -826,7 +831,7 @@ export default function FoodComments({
         {isAuthenticated ? (
           <form onSubmit={handleCreate} style={{ display: "grid", gap: 8 }}>
             {screenNameGate}
-            {isProfileThread ? (
+            {isProfileThread && !experienceMode ? (
               <label style={{ display: "grid", gap: 4, fontSize: 12, fontWeight: 700, color: "#44403c" }}>
                 Comment about
                 <select

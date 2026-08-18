@@ -1,7 +1,7 @@
 /**
  * Restaurant profile: What Diners Are Saying
  * Derived from canonical food_activity (I'm Eating) — not verified purchase data.
- * FoodComments (tips/discussion) live under the same section — no second heading.
+ * FoodComments (discussion) live under the same section — no second heading.
  * Not a conventional rating system.
  */
 
@@ -134,11 +134,11 @@ export default function WhatDinersAreSaying({
         })}
       >
         <div style={styles.sectionTitle}>
-          {experienceMode ? "Dining hall experiences" : "What Diners Are Saying"}
+          {experienceMode ? "What's going on" : "What Diners Are Saying"}
         </div>
         <p style={styles.disclaimer}>
           {experienceMode
-            ? "Diner-reported campus experiences (lines, vibe, what's good today). Menuply does not track dining-hall menus here."
+            ? "Post what's good today."
             : "User-reported food activity — Menuply does not verify purchases."}
         </p>
 
@@ -179,9 +179,11 @@ export default function WhatDinersAreSaying({
           <ImEatingAtPanel
             compact
             lockRestaurant
+            skipMenuItem={experienceMode}
             initialRestaurant={{
               restaurant_id: restaurantId,
               restaurant_name: restaurantName,
+              restaurant_type: experienceMode ? "dining_hall" : undefined,
             }}
             onPosted={() => {
               listPublicRestaurantFoodActivity(restaurantId, { limit: 20 })
@@ -204,6 +206,7 @@ export default function WhatDinersAreSaying({
             hideTitle
             embedded
             compact={compact}
+            experienceMode={experienceMode}
           />
         </div>
       </div>

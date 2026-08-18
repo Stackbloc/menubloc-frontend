@@ -22,6 +22,8 @@ export default function ProfileAboutFounded({
   claimState = null,
   isMobile = false,
   showClaimInvites = false,
+  /** Dining halls: hide Founded when the year is still unknown. */
+  omitEmptyFounded = false,
   /** Additional Photos strip — temporarily off on restaurant/food-truck profiles. */
   showPhotos = false,
   aboutBlankMessage = "Tell diners about this restaurant.",
@@ -73,22 +75,24 @@ export default function ProfileAboutFounded({
           <ProfileSectionBlank testId="profile-about-blank" message={aboutBlankMessage} />
         ) : null}
 
-        <div data-testid="profile-founded">
-          <div style={{ fontSize: 12, fontWeight: 700, color: PROFILE_MUTED, marginBottom: 4 }}>
-            Founded
+        {founded || showClaimInvites || !omitEmptyFounded ? (
+          <div data-testid="profile-founded">
+            <div style={{ fontSize: 12, fontWeight: 700, color: PROFILE_MUTED, marginBottom: 4 }}>
+              Founded
+            </div>
+            {founded ? (
+              <div data-testid="profile-founded-value" style={{ fontSize: 14, fontWeight: 600, color: PROFILE_INK }}>
+                {founded}
+              </div>
+            ) : showClaimInvites ? (
+              <ProfileSectionBlank testId="profile-founded-blank" message={foundedBlankMessage} />
+            ) : omitEmptyFounded ? null : (
+              <div data-testid="profile-founded-empty" style={{ fontSize: 14, color: PROFILE_MUTED }}>
+                —
+              </div>
+            )}
           </div>
-          {founded ? (
-            <div data-testid="profile-founded-value" style={{ fontSize: 14, fontWeight: 600, color: PROFILE_INK }}>
-              {founded}
-            </div>
-          ) : showClaimInvites ? (
-            <ProfileSectionBlank testId="profile-founded-blank" message={foundedBlankMessage} />
-          ) : (
-            <div data-testid="profile-founded-empty" style={{ fontSize: 14, color: PROFILE_MUTED }}>
-              —
-            </div>
-          )}
-        </div>
+        ) : null}
 
         {showPhotos ? (
           <ProfilePhotoStrip

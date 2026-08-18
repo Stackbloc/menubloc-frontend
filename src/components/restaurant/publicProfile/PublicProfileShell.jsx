@@ -293,13 +293,6 @@ export default function PublicProfileShell({
           boxSizing: "border-box",
         }}
       >
-        {isDiningHall ? (
-          <ProfileSection title="Campus dining" testId="dining-hall-campus-note">
-            Dining halls are campus facilities — not claimable restaurant businesses.
-            Share what it&apos;s like on campus today (lines, vibe, what&apos;s tasting good).
-          </ProfileSection>
-        ) : null}
-
         {isFoodTruck && (stops.length || allowClaimInvites) ? (
           <ProfileSection title="Upcoming locations">
             {stops.length ? (
@@ -342,6 +335,7 @@ export default function PublicProfileShell({
           claimState={claimState}
           isMobile={isMobile}
           showClaimInvites={allowClaimInvites}
+          omitEmptyFounded={isDiningHall}
           showPhotos={false}
           windowsPhotoOrientation={resolvedWindowsOrientation}
         />

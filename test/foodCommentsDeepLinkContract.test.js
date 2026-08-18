@@ -19,8 +19,8 @@ test("food comments scroll helper exports hash and schedule", async () => {
 
 test("FoodComments dish thread uses dish-only copy and menu item lead", () => {
   const src = read("src/components/comments/FoodComments.jsx");
-  assert.match(src, /Share a tip about this dish/);
-  assert.match(src, /Share a tip about this restaurant/);
+  assert.match(src, /Share your thoughts about this dish/);
+  assert.match(src, /Share your thoughts about this restaurant/);
   assert.match(src, /food-comment-dish-topic-lead/);
   assert.match(src, /Menu item: <strong>/);
   assert.match(src, /scheduleScrollToFoodComments/);

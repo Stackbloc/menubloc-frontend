@@ -106,7 +106,7 @@ export default function DinerStatusPage() {
       <StickyPageHeader title="Diner Status" />
       <div style={styles.page}>
         <p style={styles.lead}>
-          Post a live wait, seating, or sold-out update — no account required. This is not a star rating. Join Me and personal history need a Menuply account.
+          Post a live wait, seating, or sold-out update. This is not a star rating. Join Me and personal history need a Menuply account.
         </p>
         {error ? <p style={styles.error}>{error}</p> : null}
         {notice ? <p style={styles.notice}>{notice}</p> : null}

@@ -49,8 +49,10 @@ test("I'm Eating allows place-only share with note", () => {
   assert.match(panel, /without a menu item/);
   assert.match(panel, /menu_item_id: menuItem\?\.menu_item_id \|\| null/);
   const composer = read("src/components/foodActivity/ImEatingComposer.jsx");
-  assert.match(composer, /No structured menu needed/);
-  assert.match(composer, /required without a menu item/);
+  assert.match(composer, /skipMenuItem/);
+  assert.match(composer, /Post what's good today/);
+  assert.doesNotMatch(composer, /No structured menu needed/);
+  assert.doesNotMatch(composer, /Find menu item at this restaurant/);
 });
 
 test("What Diners Are Saying handles place-only activity", () => {

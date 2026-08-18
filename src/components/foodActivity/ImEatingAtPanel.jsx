@@ -43,6 +43,7 @@ export default function ImEatingAtPanel({
   disabled = false,
   initialRestaurant = null,
   lockRestaurant = false,
+  skipMenuItem = false,
 }) {
   const { isAuthenticated } = useConsumer();
   const [restaurant, setRestaurant] = useState(initialRestaurant);
@@ -81,7 +82,7 @@ export default function ImEatingAtPanel({
       return;
     }
     if (!menuItem?.menu_item_id && !comment.trim()) {
-      setError("Add a brief note when sharing without a menu item.");
+      setError(skipMenuItem ? "Say what's good today." : "Add a brief note when sharing without a menu item.");
       return;
     }
     setBusy(true);
@@ -169,9 +170,10 @@ export default function ImEatingAtPanel({
           disabled={busy || disabled}
           isAuthenticated={isAuthenticated}
           lockRestaurant={lockRestaurant}
+          skipMenuItem={skipMenuItem}
         />
         <button type="submit" style={styles.primary} disabled={busy || disabled}>
-          {busy ? "Sharing…" : "Share I'm Eating At"}
+          {busy ? "Sharing…" : skipMenuItem ? "Post what's good today" : "Share I'm Eating At"}
         </button>
       </form>
 

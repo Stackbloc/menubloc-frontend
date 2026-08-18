@@ -26,7 +26,8 @@ test("Guest reporting is open; accounts unlock identity", () => {
 
   const composer = read("src/components/dinerStatus/DinerStatusComposer.jsx");
   assert.doesNotMatch(composer, /Sign in/);
-  assert.match(composer, /No account needed/);
+  assert.doesNotMatch(composer, /No account needed/);
+  assert.match(composer, /Post what's good today/);
   assert.match(composer, /wait_long/);
   assert.match(composer, /GuestContributeNextStep/);
 

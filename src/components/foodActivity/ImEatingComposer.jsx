@@ -6,6 +6,13 @@
 import React, { useEffect, useState } from "react";
 import { searchReportPlaces } from "../../lib/foodActivityApi.js";
 
+function isDiningHallRestaurant(restaurant) {
+  const type = String(restaurant?.restaurant_type || restaurant?.entity_type || "")
+    .trim()
+    .toLowerCase();
+  return type === "dining_hall" || type === "dininghall";
+}
+
 export default function ImEatingComposer({
   restaurant,
   menuItem,
@@ -18,12 +25,22 @@ export default function ImEatingComposer({
   disabled = false,
   isAuthenticated = false,
   lockRestaurant = false,
+  skipMenuItem = false,
 }) {
-  const [step, setStep] = useState(restaurant ? "item" : "restaurant");
+  const [step, setStep] = useState(
+    restaurant && !(skipMenuItem || isDiningHallRestaurant(restaurant)) ? "item" : "restaurant"
+  );
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const placeOnly = skipMenuItem || isDiningHallRestaurant(restaurant);
+  const showPlaceSearch = !restaurant;
+  const showItemSearch = Boolean(restaurant) && !menuItem && !placeOnly;
+
+  useEffect(() => {
+    if (placeOnly) setStep("restaurant");
+  }, [placeOnly]);
 
   useEffect(() => {
     const q = query.trim();
@@ -31,7 +48,7 @@ export default function ImEatingComposer({
       setResults([]);
       return;
     }
-    if (step === "item" && !restaurant?.restaurant_id) {
+    if (step === "item" && (placeOnly || !restaurant?.restaurant_id)) {
       setResults([]);
       return;
     }
@@ -55,13 +72,14 @@ export default function ImEatingComposer({
     }, 250);
 
     return () => clearTimeout(handle);
-  }, [query, step, restaurant?.restaurant_id]);
+  }, [query, step, restaurant?.restaurant_id, placeOnly]);
 
   function pick(result) {
     if (step === "restaurant") {
       onRestaurantChange(result);
       onMenuItemChange(null);
-      setStep("item");
+      const hall = skipMenuItem || isDiningHallRestaurant(result);
+      setStep(hall ? "restaurant" : "item");
       setQuery("");
       setResults([]);
       return;
@@ -102,7 +120,7 @@ export default function ImEatingComposer({
         </div>
       ) : null}
 
-      {menuItem ? (
+      {menuItem && !placeOnly ? (
         <div style={styles.selected}>
           <div style={styles.kind}>Menu item</div>
           <strong>{menuItem.item_name}</strong>
@@ -112,17 +130,17 @@ export default function ImEatingComposer({
         </div>
       ) : null}
 
-      {!(restaurant && menuItem) ? (
+      {showPlaceSearch || showItemSearch ? (
         <>
           <label style={styles.label}>
-            {step === "restaurant" ? "Find restaurant" : "Find menu item at this restaurant"}
+            {showPlaceSearch ? "Find restaurant" : "Find a dish here"}
           </label>
           <input
             type="search"
             value={query}
             disabled={disabled}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder={step === "restaurant" ? "Restaurant name" : "Dish name"}
+            placeholder={showPlaceSearch ? "Restaurant name" : "Dish name"}
             style={styles.input}
           />
           {loading ? <p style={styles.muted}>Searching…</p> : null}
@@ -145,17 +163,15 @@ export default function ImEatingComposer({
               ))}
             </ul>
           ) : null}
-          {restaurant && !menuItem ? (
-            <p style={styles.muted}>
-              No structured menu needed — add a note below and share the place itself (campus dining,
-              food courts, etc.).
-            </p>
-          ) : null}
         </>
       ) : null}
 
       <label style={styles.label}>
-        {restaurant && !menuItem ? "Note (required without a menu item)" : "Note (optional)"}
+        {placeOnly
+          ? "What's good today?"
+          : restaurant && !menuItem
+            ? "Note (required without a menu item)"
+            : "Note (optional)"}
       </label>
       <textarea
         value={comment}
@@ -164,9 +180,11 @@ export default function ImEatingComposer({
         maxLength={500}
         rows={3}
         placeholder={
-          restaurant && !menuItem
-            ? 'e.g. "Lunch today." or "Long line around noon."'
-            : 'e.g. "Really good."'
+          placeOnly
+            ? "Post what's good today."
+            : restaurant && !menuItem
+              ? 'e.g. "Lunch today." or "Long line around noon."'
+              : 'e.g. "Really good."'
         }
         style={styles.textarea}
       />
@@ -186,7 +204,7 @@ export default function ImEatingComposer({
           </select>
         </>
       ) : (
-        <p style={styles.muted}>Posted publicly to restaurant and cluster intelligence.</p>
+        <p style={styles.muted}>This post is public.</p>
       )}
     </div>
   );

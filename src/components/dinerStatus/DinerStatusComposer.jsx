@@ -96,16 +96,14 @@ export default function DinerStatusComposer({
     }
   }
 
-  const target = experienceMode
-    ? restaurantName || "this dining hall"
-    : venueMode
-      ? restaurantName || "this venue"
-      : menuItemName || restaurantName || "this place";
+  const target = venueMode
+    ? restaurantName || "this venue"
+    : menuItemName || restaurantName || "this place";
   const placeholder = experienceMode
-    ? "Optional note (e.g. Long line at Grill)"
+    ? "What's tasting good? How's the line?"
     : venueMode
-      ? "Optional note (e.g. West gate is slow)"
-      : "Optional note (e.g. Birria tacos sold out)";
+      ? "West gate is slow…"
+      : "Birria tacos sold out…";
 
   return (
     <div
@@ -119,13 +117,19 @@ export default function DinerStatusComposer({
       }}
     >
       <div style={styles.title}>
-        {experienceMode ? "Dining hall update" : venueMode ? "Venue update" : "What's happening now"}
-      </div>
-      <p style={styles.hint}>
         {experienceMode
-          ? `No account needed — a fast campus signal about ${target}.`
-          : `No account needed — report a wait, seating, or sold-out condition at ${target}.`}
-      </p>
+          ? "Post what's good today."
+          : venueMode
+            ? "What's happening here?"
+            : "What's happening now"}
+      </div>
+      {experienceMode ? null : (
+        <p style={styles.hint}>
+          {venueMode
+            ? `How's it going at ${target}?`
+            : `How's the wait at ${target}? Seating? Anything sold out?`}
+        </p>
+      )}
       <form onSubmit={handleSubmit} style={styles.form}>
         <div style={styles.emojiRow} role="group" aria-label="Status expression">
           {expressionOptions.map((opt) => (
@@ -152,7 +156,7 @@ export default function DinerStatusComposer({
           disabled={busy}
         />
         <button type="submit" style={styles.primaryBtn} disabled={busy}>
-          Post update
+          {experienceMode ? "Post what's good today" : "Post update"}
         </button>
       </form>
       {error ? (

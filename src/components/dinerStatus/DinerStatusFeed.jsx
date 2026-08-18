@@ -96,14 +96,14 @@ export default function DinerStatusFeed({
       <div style={styles.sectionTitle}>{title}</div>
       <p style={styles.disclaimer}>
         {experienceMode
-          ? "Campus experience signals — lines, vibe, what's tasting good. Not menus or star ratings."
+          ? "What's tasting good? How's the line?"
           : "Quick diner signals — not star ratings or verified reviews."}
       </p>
       {loading ? <p style={styles.muted}>Loading statuses…</p> : null}
       {!loading && statuses.length === 0 ? (
         <p style={styles.muted} data-testid="diner-status-empty">
           {experienceMode
-            ? "No dining hall updates yet. Be the first to report how it is today."
+            ? "Nobody's posted yet. Post what's good today."
             : "No diner statuses here yet."}
         </p>
       ) : null}
