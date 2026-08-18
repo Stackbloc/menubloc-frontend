@@ -120,15 +120,6 @@ export default function DinerIdentityHero({
           </div>
         )}
       </div>
-
-      <div style={s.actions}>
-        <Link to="/account/diner-qr?share=1" style={s.chipBtn}>
-          Share My Menuply
-        </Link>
-        <Link to="/account" style={s.chipBtn}>
-          Settings
-        </Link>
-      </div>
     </section>
   );
 }

@@ -29,6 +29,8 @@ test("My Menuply identity hero is prominent with photo upload and short bio", ()
   assert.match(hero, /My Connections/);
   assert.match(hero, /\/my-menuply\/connections-eating/);
   assert.match(page, /QuickCompose/);
+  assert.doesNotMatch(hero, /Share My Menuply/);
+  assert.doesNotMatch(hero, /Settings/);
   assert.doesNotMatch(hero, /Add a dining photo/);
   assert.doesNotMatch(hero, /vegetarian|gluten_free|allergen/i);
   assert.doesNotMatch(hero, /questionnaire|favorite cuisine|hometown/i);

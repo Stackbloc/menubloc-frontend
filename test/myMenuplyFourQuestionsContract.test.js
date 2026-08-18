@@ -1,6 +1,6 @@
 /**
  * My Menuply four questions + connections eat-together conversion.
- * Settings remain at /account. Allergies not on the social hub.
+ * Settings and Share stay on /account, not on My Menuply. Allergies not on the hub.
  */
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -56,7 +56,9 @@ test("My Menuply is the diner's personal home", () => {
   assert.doesNotMatch(page, /allergen/i);
   assert.doesNotMatch(page, /dietary_preferences/);
   assert.doesNotMatch(bits, /actionLabel/);
-  assert.match(hero, /Settings/);
+  assert.doesNotMatch(hero, /Share My Menuply/);
+  assert.doesNotMatch(hero, /Settings/);
+  assert.doesNotMatch(hero, /\/account\/diner-qr/);
 });
 
 test("Connections eating cards link to menu items and Join Me / Invite to Eat", () => {
