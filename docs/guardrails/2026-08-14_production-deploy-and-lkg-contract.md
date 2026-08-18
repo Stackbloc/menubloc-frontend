@@ -46,11 +46,11 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www **and** 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-backend-main` @ clean `main` |
-| Git commit | `f137c7dd` — My Menuply CPD LKG docs lock (feature `03132162`) |
+| Git commit | `c662a20a` — Post-align Creators FE tip LKG mirror (docs lock after `f137c7dd`) |
 | Health URL | `https://menubloc-backend-production.up.railway.app/health` |
-| `commit_hash` | `f137c7dd8791ec478ca3e7af4ab536c6fd7e720b` |
+| `commit_hash` | `c662a20af848e5d6b8183d0e5bb4b92133edb3dd` |
 | Migrations | `0250`–`0270` applied (`diner_about`) |
-| Smoke | Health MATCH `f137c7dd`; tip-gate PASS `lsmdx3d9x` / `index-C7QEDuzy.js`; prior git tag `menuply-last-known-good-2026-08-18` |
+| Smoke | Health MATCH `c662a20a`; tip-gate PASS `lsmdx3d9x` / `index-C7QEDuzy.js`; prior git tag `menuply-last-known-good-2026-08-18` |
 
 ### Restore current tip (if tip-gate fails mid-change)
 

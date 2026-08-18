@@ -9,7 +9,7 @@ Shipped diner bottom nav **Home | Waiter | Menu Browser | X (Post) | Basket | My
 | Layer | Path | Branch | Commit | Tree |
 |-------|------|--------|--------|------|
 | FE | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` | `main` | `ea7eb4e` (nav restore `a9b7365`) | clean at `vercel --prod` |
-| BE | `/Users/andrebarber/Desktop/menubloc/menubloc-backend-main` | `main` | `f137c7dd` | clean; **not pushed** (FE-only) |
+| BE | `/Users/andrebarber/Desktop/menubloc/menubloc-backend-main` | `main` | `c662a20a` | clean; path-gate **PASS**; docs lock only |
 
 ## FE tip
 
@@ -22,8 +22,8 @@ Shipped diner bottom nav **Home | Waiter | Menu Browser | X (Post) | Basket | My
 
 ## BE health
 
-- Railway `/health` `commit_hash`: **MATCH** `f137c7dd8791ec478ca3e7af4ab536c6fd7e720b`
-- Path-gate: not run (no BE production push)
+- Railway `/health` `commit_hash`: **MATCH** `c662a20af848e5d6b8183d0e5bb4b92133edb3dd`
+- Path-gate: **PASS** on `menubloc-backend-main` @ `main` `c662a20a`
 
 ## Database
 
@@ -42,7 +42,7 @@ curl -s "https://menuply.com/" | grep -oE 'index-[A-Za-z0-9_-]+\.js' | head -1
 # index-C7QEDuzy.js
 
 curl -s "https://menubloc-backend-production.up.railway.app/health" | grep commit_hash
-# f137c7dd8791ec478ca3e7af4ab536c6fd7e720b
+# c662a20af848e5d6b8183d0e5bb4b92133edb3dd
 
 bash scripts/assert-menuply-production-tip.sh https://menuply.com
 bash scripts/assert-menuply-production-tip.sh https://www.menuply.com
