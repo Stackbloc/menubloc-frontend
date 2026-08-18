@@ -34,32 +34,32 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www **and** 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` @ clean `main` |
-| Git commit | `0d126d9` — Calendar eating plans; restaurant next-week diner count; Share/Settings off My Menuply |
-| Vercel deployment | `menubloc-frontend-n7gxy1luu-menuply.vercel.app` |
-| Live bundle | `index-DbN-zhDW.js` |
+| Git commit | `12945f5` — Owner diner accounts roster page |
+| Vercel deployment | `menubloc-frontend-5vl6kfuh6-menuply.vercel.app` |
+| Live bundle | `index-BZBfCuwA.js` |
 | Aliases | `menuply.com`, `www.menuply.com`, `crm.menuply.com`, `venues.menuply.com` |
 | Tip-gate | **PASS** (apex + www) verified 2026-08-18 |
-| Feature | My Eating Plans calendar + required restaurant; profile “[X] diners confirm plans to eat here in the next week.” |
+| Feature | Owner console `/owner/diners` lifetime diner roster (name, email, open/close, market, counts) |
 
 ### Backend (Railway)
 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-backend-main` @ clean `main` |
-| Git commit | `2923b248` — Eating-plan place/join seats + public upcoming-plans count |
+| Git commit | `942e7c10` — Owner diner accounts roster API |
 | Health URL | `https://menubloc-backend-production.up.railway.app/health` |
-| `commit_hash` | `2923b24873b448491a18255a9ff82d96d6f02973` |
+| `commit_hash` | `942e7c10d62a2ca1f21a21101d9ce8a928164d76` |
 | Migrations | `0250`–`0271` applied (`diner_about` + eating-plan place/joinable) |
-| Smoke | Health MATCH `2923b248`; tip-gate PASS `n7gxy1luu` / `index-DbN-zhDW.js`; prior git tag `menuply-last-known-good-2026-08-18` |
+| Smoke | Health MATCH `942e7c10`; tip-gate PASS `5vl6kfuh6` / `index-BZBfCuwA.js`; prior git tag `menuply-last-known-good-2026-08-18` |
 
 ### Restore current tip (if tip-gate fails mid-change)
 
 ```bash
 cd /Users/andrebarber/Desktop/menubloc/menubloc-frontend-main
-npx vercel alias set menubloc-frontend-n7gxy1luu-menuply.vercel.app menuply.com
-npx vercel alias set menubloc-frontend-n7gxy1luu-menuply.vercel.app www.menuply.com
-npx vercel alias set menubloc-frontend-n7gxy1luu-menuply.vercel.app crm.menuply.com
-npx vercel alias set menubloc-frontend-n7gxy1luu-menuply.vercel.app venues.menuply.com
+npx vercel alias set menubloc-frontend-5vl6kfuh6-menuply.vercel.app menuply.com
+npx vercel alias set menubloc-frontend-5vl6kfuh6-menuply.vercel.app www.menuply.com
+npx vercel alias set menubloc-frontend-5vl6kfuh6-menuply.vercel.app crm.menuply.com
+npx vercel alias set menubloc-frontend-5vl6kfuh6-menuply.vercel.app venues.menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 ```
@@ -121,6 +121,8 @@ Newest superseded first. Restoring drops everything shipped after that tip.
 
 | Deployment id | Bundle | Approx feature / CPD |
 |---------------|--------|----------------------|
+| `psmauf4vh` | `index-WZh2e4sk.js` | Dish prefill + Post about (`8a1a961`) — superseded by owner diner accounts `5vl6kfuh6` |
+| `n7gxy1luu` | `index-DbN-zhDW.js` | Eating-plans calendar + restaurant next-week count (`0d126d9`) — superseded by dish-prefill `psmauf4vh` |
 | `lsmdx3d9x` | `index-C7QEDuzy.js` | Post-align Creators footer (`ea7eb4e`) — superseded by eating-plans `n7gxy1luu` |
 | `1vjhrbfcc` | `index-DUbMTrel.js` | Nav restore without Post align / Creators (`a9b7365`) — superseded by `lsmdx3d9x` |
 | `83npukyp6` | `index-KbRqQ3I0.js` | My Menuply hub (`c550dfd`) — superseded by bottom-nav restore |

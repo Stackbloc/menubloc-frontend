@@ -1,39 +1,44 @@
 # Objective
 
-Dish prefill + Post about + merge eating plans into What I'm Eating.
+Prefill I'm Eating At with restaurant **and dish**; Facebook-like post flow; merge plans into What I'm Eating; larger X; sheet title Post about.
 
 # Current Status
 
-Implemented on `menubloc-frontend-main`. Not committed. Not CPD.
+**WRAPPED.** Live tip `5vl6kfuh6` / `index-BZBfCuwA.js` (FE `12945f5` includes `8a1a961`). Live BE `942e7c10` includes `4695ba64`. Do not re-alias `psmauf4vh`.
 
 # Files Changed
 
-See workspace audit `docs/audits/2026-08-18_dish-prefill-post-about.md`.
+FE: `foodActivityApi.js`, `ImEatingComposer.jsx`, `ImEatingAtPanel.jsx`, `ImEatingPage.jsx`, `MenuplyActionSheet.jsx`, `BottomNav.jsx`, `MyMenuplyPage.jsx`, `PostAfterActions.jsx`, contract tests.
+
+BE: `updateSessionDetails` + PATCH (already present); `whatWeDoingContract.test.js` assertions.
 
 # Database Changes
 
-None on FE.
+None new. Uses `0271` place/joinable columns.
 
 # Decisions Made
 
-Query-param hydrate from dish/restaurant pages. No MenuItemDetailPage edits.
+- Dish (not “dhis”). Prefill via query params from action sheet, not MenuItemDetailPage edits.
+- Restaurant not required to post. Tag after.
+- Future date → `what_we_doing`; today/past → `what_i_ate_today`.
+- Join Me for “I'm here now” stays on I'm Eating At.
 
 # Remaining Work
 
-Commit/deploy only when Andre says `cpd`.
+None for this feature. Do not re-alias `psmauf4vh`. Site Activity dirt stays uncommitted.
 
 # Risks / Known Issues
 
-Plan dish tag is `place_label` text.
+Plan dish tags live in `place_label` only.
 
 # Verification Status
 
-Local contract tests.
+Live menuply.com bundle contains `Post about` / `im-eating-selected-dish`. Tip-gate locked to `index-BZBfCuwA.js`.
 
 # Resume Instructions
 
-Work only in `menubloc-frontend-main`. Do not deploy from `menubloc-frontend/`.
+Done. Next agent: do not restore `psmauf4vh`. Current LKG is `5vl6kfuh6` / `index-BZBfCuwA.js` + BE `942e7c10`.
 
 # Git Status
 
-Dirty authorized tree; Site Activity files may also be dirty — leave them out of this commit.
+Uncommitted on authorized paths. Do not deploy from `menubloc-frontend/` or `menubloc-backend/`.
