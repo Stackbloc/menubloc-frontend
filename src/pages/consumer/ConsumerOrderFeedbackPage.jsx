@@ -12,6 +12,7 @@ import {
   getEligibleOrderFeedback,
   submitOrderFeedback,
 } from "../../lib/consumerApi.js";
+import OrderFeedbackMenuItemPicker from "../../components/consumer/OrderFeedbackMenuItemPicker.jsx";
 
 const RATING_FIELDS = [
   { key: "taste_food_quality_rating", label: "Taste / Food Quality" },
@@ -70,6 +71,7 @@ export default function ConsumerOrderFeedbackPage() {
   const [selected, setSelected] = useState(null);
   const [ratings, setRatings] = useState({});
   const [comment, setComment] = useState("");
+  const [items, setItems] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
 
@@ -111,6 +113,16 @@ export default function ConsumerOrderFeedbackPage() {
         order_id: selected.order_id,
         ...ratings,
         comment: comment.trim() || undefined,
+        items: items.map((item) => ({
+          canonical_menu_item_id: item.canonical_menu_item_id || undefined,
+          unmatched_item_name: item.canonical_menu_item_id
+            ? undefined
+            : item.unmatched_item_name || item.display_name,
+          display_name: item.display_name,
+          source: item.source,
+          rating: item.rating || undefined,
+          comment: (item.comment || "").trim() || undefined,
+        })),
       });
       setSuccess(true);
     } catch (err) {
@@ -121,7 +133,9 @@ export default function ConsumerOrderFeedbackPage() {
   }
 
   const hasSignal =
-    RATING_FIELDS.some((f) => ratings[f.key] != null) || comment.trim().length > 0;
+    RATING_FIELDS.some((f) => ratings[f.key] != null) ||
+    comment.trim().length > 0 ||
+    items.length > 0;
 
   return (
     <>
@@ -133,8 +147,9 @@ export default function ConsumerOrderFeedbackPage() {
           </Link>
           <h1 style={styles.title}>Send Feedback</h1>
           <p style={styles.lede}>
-            Private feedback about a recent Menuply order. The restaurant sees
-            your ratings and comment — this is not a public review.
+            Private feedback about dishes you tried on a recent Menuply order.
+            The restaurant sees your ratings and comments — this is not a public
+            review.
           </p>
 
           {error ? <p style={styles.error}>{error}</p> : null}
@@ -179,6 +194,7 @@ export default function ConsumerOrderFeedbackPage() {
                           setSelected(order);
                           setRatings({});
                           setComment("");
+                          setItems([]);
                           setError("");
                         }}
                       >
@@ -218,6 +234,13 @@ export default function ConsumerOrderFeedbackPage() {
                   {` · Order #${selected.order_id}`}
                 </div>
               </div>
+
+              <OrderFeedbackMenuItemPicker
+                orderId={selected.order_id}
+                initialItems={selected.items_summary || []}
+                selected={items}
+                onChange={setItems}
+              />
 
               <h2 style={styles.sectionTitle}>How was your experience?</h2>
               <p style={styles.muted}>Rate only what you want — all categories are optional.</p>

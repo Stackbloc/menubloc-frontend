@@ -32,6 +32,7 @@ describe("order feedback contracts", () => {
   it("consumer API uses Railway production fallback", () => {
     const api = read("src/lib/consumerApi.js");
     assert.match(api, /getEligibleOrderFeedback/);
+    assert.match(api, /getOrderFeedbackMenuCandidates/);
     assert.match(api, /submitOrderFeedback/);
     assert.match(api, /DEFAULT_PROD_API_BASE/);
     assert.match(api, /menubloc-backend-production/);
@@ -44,8 +45,22 @@ describe("order feedback contracts", () => {
     assert.match(page, /Overall Experience/);
     assert.match(page, /Anything else you/);
     assert.match(page, /restaurant to know/);
+    assert.match(page, /OrderFeedbackMenuItemPicker/);
     assert.doesNotMatch(page, /What does this feedback relate to/);
     assert.doesNotMatch(page, /\$50 off/);
+  });
+
+  it("menu-item picker links existing items and caps at 3", () => {
+    const picker = read("src/components/consumer/OrderFeedbackMenuItemPicker.jsx");
+    assert.match(picker, /MAX_ITEMS = 3/);
+    assert.match(picker, /What did you try/);
+    assert.match(picker, /getOrderFeedbackMenuCandidates/);
+    assert.match(picker, /find it\? Add what you ate/);
+    assert.match(picker, /not create a new menu item/);
+    assert.doesNotMatch(picker, /insertMenuItems/);
+    const api = read("src/lib/consumerApi.js");
+    assert.match(api, /order-feedback\/menu-candidates/);
+    assert.match(api, /getOrderFeedbackMenuCandidates/);
   });
 
   it("operator nav and API wire Recent Feedback", () => {
@@ -54,5 +69,8 @@ describe("order feedback contracts", () => {
     const api = read("src/lib/operatorApi.js");
     assert.match(api, /getRestaurantOrderFeedback/);
     assert.match(api, /order-feedback/);
+    const opPage = read("src/pages/operator/OperatorOrderFeedbackPage.jsx");
+    assert.match(opPage, /Dishes they tried/);
+    assert.doesNotMatch(opPage, /consumer_user_id/);
   });
 });

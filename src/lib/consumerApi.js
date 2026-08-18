@@ -376,6 +376,15 @@ export const unlikeMenuItem = (menuItemId) =>
 export const getEligibleOrderFeedback = () =>
   get("/api/consumer/order-feedback/eligible");
 export const getMyOrderFeedback = () => get("/api/consumer/order-feedback");
+export const getOrderFeedbackMenuCandidates = (orderId, q = "", { signal } = {}) => {
+  const params = new URLSearchParams({ order_id: String(orderId) });
+  const query = String(q || "").trim();
+  if (query) params.set("q", query);
+  return get(
+    `/api/consumer/order-feedback/menu-candidates?${params.toString()}`,
+    signal ? { signal } : undefined
+  );
+};
 export const submitOrderFeedback = (body) =>
   post("/api/consumer/order-feedback", body);
 

@@ -126,6 +126,25 @@ export default function OperatorOrderFeedbackPage() {
                   </div>
                 ))}
               </dl>
+              {Array.isArray(row.items) && row.items.length ? (
+                <div style={{ marginTop: 14 }}>
+                  <div style={{ fontWeight: 700, fontSize: 13, color: "#334155" }}>
+                    Dishes they tried
+                  </div>
+                  <ul style={{ margin: "8px 0 0", paddingLeft: 18 }}>
+                    {row.items.map((item) => (
+                      <li key={item.id || item.display_name} style={{ marginBottom: 8, fontSize: 14 }}>
+                        <strong>{item.display_name}</strong>
+                        {item.canonical_menu_item_id ? "" : " (not matched to menu)"}
+                        {item.rating != null ? ` · ${stars(item.rating)}` : ""}
+                        {item.comment ? (
+                          <div style={{ color: "#475569", marginTop: 2 }}>{item.comment}</div>
+                        ) : null}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
               {row.comment ? (
                 <blockquote
                   style={{
