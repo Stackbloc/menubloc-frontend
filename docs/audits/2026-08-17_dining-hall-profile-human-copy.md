@@ -43,22 +43,23 @@ None this turn (not requested).
 
 ## Deployment Status
 
-LOCAL ONLY. Founded years will not show on live profiles until the ops script is applied and FE is deployed.
+**CPD COMPLETE** — FE tip `2fw9x27jj` / `index-fjLns99U.js`; BE `6fc782c3`; five founded years applied on production.
 
 ## Verification Results
 
 - FE: `diningHallEntityContract`, `campusDiningContract`, `guestOpenReportingContract`, `foodCommentsDeepLinkContract` — 18 pass
 - BE: `diningHallEntityContract` — 8 pass
+- Live bundle: `Post what's good today`, `Share your thoughts`; no `Share a tip` / `not claimable restaurant businesses`
+- Bruin Plate API: `founded_year=2013`
 
 ## Remaining Risks
 
-- De Neve / EVK founded years still unknown.
-- Founded years not written to production yet.
+- De Neve / EVK founded years still unknown (Founded hidden when empty).
 
 ## Follow-Up Work
 
-Run `CONFIRM_PRODUCTION_TARGET=true node scripts/ops/setDiningHallFoundedYears.js --apply --allow-production` from `menubloc-backend-main`. Deploy FE when Andre asks CPD.
+Optional: add `restaurant_type` to global I'm Eating place search.
 
 ## Final Verdict
 
-Copy is human. Founded years are sourced, not guessed. Production data fill + FE deploy still required for live profiles.
+**SHIPPED.** Human copy live on menuply.com. Tip-gate PASS apex + www.

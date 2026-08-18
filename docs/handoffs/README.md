@@ -1,6 +1,7 @@
 # Handoffs Index
 
-- [2026-08-17_dining-hall-profile-human-copy_handoff.md](./2026-08-17_dining-hall-profile-human-copy_handoff.md) — Dining-hall human copy + founded years (**LOCAL** — not CPD)
+- [2026-08-17_dining-hall-profile-human-copy_handoff.md](./2026-08-17_dining-hall-profile-human-copy_handoff.md) — Dining-hall human copy + founded years (**CPD COMPLETE** — tip `2fw9x27jj` / `index-fjLns99U.js`; BE `6fc782c3`)
+- `../deployments/2026-08-17_dining-hall-profile-human-copy-cpd.md` — CPD record.
 - `2026-08-17_add-menu-contribution_handoff.md` — Add Menu for unclaimed restaurants without a usable menu (**CPD COMPLETE** — tip `3vre2srp8` / `index-DQKfgzho.js`; BE `7bff0469`).
 - `2026-08-17_social-tab-connections-groups-events_handoff.md` — Social tab connection count, clickable Connections, groups, events (**LOCAL until CPD**).
 - `2026-08-17_cluster-landing-consumer-dashboard_handoff.md` — Cluster page scan-first dashboard (**CPD COMPLETE** — tip `30qbi67vq` / `index-CMXfgjwr.js`; BE `a8980221`).

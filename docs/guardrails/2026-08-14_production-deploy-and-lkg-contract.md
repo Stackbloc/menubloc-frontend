@@ -34,32 +34,32 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www **and** 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` @ clean `main` |
-| Git commit | `196dc29` — Site Activity unique visitors (not repeat same-day page views) |
-| Vercel deployment | `menubloc-frontend-74hi7bc73-menuply.vercel.app` |
-| Live bundle | `index-B7aS-oSM.js` |
+| Git commit | `98687fd` — Dining-hall human copy (Post what's good today; share your thoughts) |
+| Vercel deployment | `menubloc-frontend-2fw9x27jj-menuply.vercel.app` |
+| Live bundle | `index-fjLns99U.js` |
 | Aliases | `menuply.com`, `www.menuply.com`, `crm.menuply.com`, `venues.menuply.com` |
 | Tip-gate | **PASS** (apex + www) verified 2026-08-17 |
-| Feature | Site Activity / owner dashboard count unique people; client skips same path same local day |
+| Feature | Dining-hall profiles: human copy, hide empty Founded, skip menu-item on halls |
 
 ### Backend (Railway)
 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-backend-main` @ clean `main` |
-| Git commit | `479ef798` — Site Activity unique visitors |
+| Git commit | `6fc782c3` — Dining-hall founded-year ops script |
 | Health URL | `https://menubloc-backend-production.up.railway.app/health` |
-| `commit_hash` | `479ef798afb10e7bcc52276347b5d570f6c6abc2` |
-| Migrations | `0250`–`0268` applied |
-| Smoke | Health MATCH `479ef798`; tip-gate PASS `74hi7bc73` / `index-B7aS-oSM.js` |
+| `commit_hash` | `6fc782c3bd2d8b4258bf68492d8e6214fc146494` |
+| Migrations | `0250`–`0268` applied; founded years via ops script (no migration) |
+| Smoke | Health MATCH `6fc782c3`; Bruin Plate `founded_year=2013`; tip-gate PASS `2fw9x27jj` / `index-fjLns99U.js` |
 
 ### Restore current tip (if tip-gate fails mid-change)
 
 ```bash
 cd /Users/andrebarber/Desktop/menubloc/menubloc-frontend-main
-npx vercel alias set menubloc-frontend-74hi7bc73-menuply.vercel.app menuply.com
-npx vercel alias set menubloc-frontend-74hi7bc73-menuply.vercel.app www.menuply.com
-npx vercel alias set menubloc-frontend-74hi7bc73-menuply.vercel.app crm.menuply.com
-npx vercel alias set menubloc-frontend-74hi7bc73-menuply.vercel.app venues.menuply.com
+npx vercel alias set menubloc-frontend-2fw9x27jj-menuply.vercel.app menuply.com
+npx vercel alias set menubloc-frontend-2fw9x27jj-menuply.vercel.app www.menuply.com
+npx vercel alias set menubloc-frontend-2fw9x27jj-menuply.vercel.app crm.menuply.com
+npx vercel alias set menubloc-frontend-2fw9x27jj-menuply.vercel.app venues.menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 ```
@@ -120,7 +120,8 @@ Newest superseded first. Restoring drops everything shipped after that tip.
 
 | Deployment id | Bundle | Approx feature / CPD |
 |---------------|--------|----------------------|
-| `3vre2srp8` | `index-DQKfgzho.js` | **CURRENT** — Add Menu contribution (`074a217`) |
+| `ohxjeg0sj` | `index-DFFHQ6JS.js` | Diner sign-in invariant (`fc7e0f1`) — superseded by `74hi7bc73` |
+| `3vre2srp8` | `index-DQKfgzho.js` | Add Menu contribution (`074a217`) — superseded |
 | `30qbi67vq` | `index-CMXfgjwr.js` | Cluster landing consumer dashboard (`11e792e`) — superseded by `3vre2srp8` |
 | `9ijik4t7p` | `index-HPBXNwnC.js` | Dining-hall status+comments lock (`a1ccafe`) — superseded by `30qbi67vq` |
 | `37tsmprgc` | `index-HPBXNwnC.js` | Guest open reporting (`81b9bdd`) — superseded by `9ijik4t7p` |
@@ -178,7 +179,8 @@ Full historical “do not restore” list also lives in `.cursor/rules/frontend-
 2. `.cursor/rules/frontend-production-deploy-path-guardrail.mdc` — Current production tip  
 3. `docs/guardrails/2026-07-24_frontend-production-deploy-path-contract.md` — Locked live tip table  
 4. **This file** — CURRENT LAST KNOWN GOOD section + prepend new row to prior tips  
-5. CPD under `docs/deployments/`  
+5. **Mirrors:** copy this file to `menubloc-frontend-main/docs/guardrails/` and `menubloc-backend-main/docs/guardrails/` (stale mirrors have caused wrong restore targets)  
+6. CPD under `docs/deployments/`  
 
 If any of these disagree, treat tip-gate script + live `menuply.com` bundle as source of truth, then reconcile docs.
 
