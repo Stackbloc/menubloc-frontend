@@ -31,8 +31,19 @@ test("BottomNav is Home Waiter Menu Browser X Basket My Menuply", () => {
   assert.match(nav, /to: "\/my-menuply"/);
   assert.match(nav, /<span>Menu<\/span>/);
   assert.match(nav, /<span>Browser<\/span>/);
+  assert.match(nav, /MenuplyXMark size=\{28\}/);
   assert.doesNotMatch(nav, /to: "\/search"/);
   assert.doesNotMatch(nav, /to: "\/activity"/);
+});
+
+test("X sheet is Post about and carries restaurant or dish context", () => {
+  const sheet = read("src/components/MenuplyActionSheet.jsx");
+  assert.match(sheet, /Post about/);
+  assert.doesNotMatch(sheet, /Do something/);
+  assert.match(sheet, /menu_item_id/);
+  assert.match(sheet, /restaurant_id/);
+  assert.match(sheet, /What I'm Eating/);
+  assert.doesNotMatch(sheet, /Create Eating Plan/);
 });
 
 test("StickyPageHeader person goes to My Menuply; basket lives in BottomNav", () => {

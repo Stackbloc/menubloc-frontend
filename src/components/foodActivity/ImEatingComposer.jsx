@@ -4,7 +4,7 @@
  */
 
 import React, { useEffect, useState } from "react";
-import { searchReportPlaces } from "../../lib/foodActivityApi.js";
+import { searchReportPlaces, restaurantLabel, dishLabel, asRestaurantPlace, asDishPlace } from "../../lib/foodActivityApi.js";
 
 function isDiningHallRestaurant(restaurant) {
   const type = String(restaurant?.restaurant_type || restaurant?.entity_type || "")
@@ -43,6 +43,14 @@ export default function ImEatingComposer({
   }, [placeOnly]);
 
   useEffect(() => {
+    if (!restaurant) {
+      setStep("restaurant");
+      return;
+    }
+    if (!placeOnly && !menuItem) setStep("item");
+  }, [restaurant, menuItem, placeOnly]);
+
+  useEffect(() => {
     const q = query.trim();
     if (q.length < 2) {
       setResults([]);
@@ -76,7 +84,7 @@ export default function ImEatingComposer({
 
   function pick(result) {
     if (step === "restaurant") {
-      onRestaurantChange(result);
+      onRestaurantChange(asRestaurantPlace(result));
       onMenuItemChange(null);
       const hall = skipMenuItem || isDiningHallRestaurant(result);
       setStep(hall ? "restaurant" : "item");
@@ -84,7 +92,7 @@ export default function ImEatingComposer({
       setResults([]);
       return;
     }
-    onMenuItemChange(result);
+    onMenuItemChange(asDishPlace(result));
     setQuery("");
     setResults([]);
   }
@@ -106,9 +114,9 @@ export default function ImEatingComposer({
   return (
     <div style={styles.wrap}>
       {restaurant ? (
-        <div style={styles.selected}>
+        <div style={styles.selected} data-testid="im-eating-selected-restaurant">
           <div style={styles.kind}>Restaurant</div>
-          <strong>{restaurant.restaurant_name}</strong>
+          <strong>{restaurantLabel(restaurant) || "Selected restaurant"}</strong>
           {restaurant.address_line1 || restaurant.city ? (
             <span style={styles.muted}>
               {[restaurant.address_line1, restaurant.city, restaurant.state].filter(Boolean).join(", ")}
@@ -121,9 +129,9 @@ export default function ImEatingComposer({
       ) : null}
 
       {menuItem && !placeOnly ? (
-        <div style={styles.selected}>
-          <div style={styles.kind}>Menu item</div>
-          <strong>{menuItem.item_name}</strong>
+        <div style={styles.selected} data-testid="im-eating-selected-dish">
+          <div style={styles.kind}>Dish</div>
+          <strong>{dishLabel(menuItem) || "Selected dish"}</strong>
           <button type="button" style={styles.clear} disabled={disabled} onClick={clearItem}>
             Change
           </button>
@@ -151,7 +159,7 @@ export default function ImEatingComposer({
                 <li key={`${r.type}-${r.restaurant_id || ""}-${r.menu_item_id || ""}`}>
                   <button type="button" style={styles.resultBtn} disabled={disabled} onClick={() => pick(r)}>
                     <strong>
-                      {r.type === "restaurant" ? r.restaurant_name : r.item_name}
+                      {r.type === "restaurant" ? restaurantLabel(r) || "Restaurant" : dishLabel(r) || "Dish"}
                     </strong>
                     <span style={styles.muted}>
                       {r.type === "restaurant"

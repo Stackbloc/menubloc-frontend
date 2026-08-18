@@ -131,6 +131,8 @@ export const createMeetMeHere = (body) => post("/api/consumer/meet-me-here", bod
 // ── What We Doing? (group planning) ───────────────────────────────────────
 export const listWhatWeDoingSessions = () => get("/api/consumer/what-we-doing");
 export const createWhatWeDoingSession = (body) => post("/api/consumer/what-we-doing", body);
+export const updateWhatWeDoingSession = (tokenOrId, body) =>
+  patch(`/api/consumer/what-we-doing/${encodeURIComponent(String(tokenOrId))}`, body);
 export const getWhatWeDoingSession = (tokenOrId) =>
   get(`/api/consumer/what-we-doing/${encodeURIComponent(String(tokenOrId))}`);
 export const addWhatWeDoingParticipants = (tokenOrId, body) =>

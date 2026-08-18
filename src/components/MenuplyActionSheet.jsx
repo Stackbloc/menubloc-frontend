@@ -5,8 +5,25 @@
 
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useConsumer } from "../context/ConsumerContext.jsx";
+
+function imEatingPath(pathname) {
+  const parts = String(pathname || "").split("/").filter(Boolean);
+  const menuIdx = parts.findIndex((part) => part === "menu-items" || part === "menu-item-info");
+  if (menuIdx >= 0 && parts[menuIdx + 1]) {
+    return `/account/im-eating?menu_item_id=${encodeURIComponent(decodeURIComponent(parts[menuIdx + 1]))}`;
+  }
+  const restIdx = parts.findIndex((part) => part === "restaurants");
+  if (restIdx >= 0 && !["operator", "owner", "distributor"].includes(parts[0])) {
+    const rest = parts
+      .slice(restIdx + 1)
+      .filter((part) => !["menu", "billboard", "qr-codes", "display"].includes(part));
+    const slug = rest[rest.length - 1];
+    if (slug) return `/account/im-eating?restaurant_id=${encodeURIComponent(slug)}`;
+  }
+  return "/account/im-eating";
+}
 
 const ACTIONS = [
   {
@@ -15,6 +32,7 @@ const ACTIONS = [
     description: "Share where you are eating right now.",
     to: "/account/im-eating",
     guestOk: true,
+    eatingContext: true,
   },
   {
     id: "share-food",
@@ -32,9 +50,9 @@ const ACTIONS = [
   },
   {
     id: "plan",
-    title: "Create Eating Plan",
-    description: "Plan a meal with connections or a Dining Crew.",
-    to: "/account/what-we-doing",
+    title: "What I'm Eating",
+    description: "Post now, or pick a future day. Tag a restaurant or dish after.",
+    to: "/my-menuply",
     guestOk: false,
   },
   {
@@ -55,6 +73,7 @@ const ACTIONS = [
 
 export default function MenuplyActionSheet({ open, onClose }) {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const { isAuthenticated } = useConsumer();
 
   useEffect(() => {
@@ -75,11 +94,12 @@ export default function MenuplyActionSheet({ open, onClose }) {
 
   function go(action) {
     onClose();
+    const to = action.eatingContext ? imEatingPath(pathname) : action.to;
     if (!action.guestOk && !isAuthenticated) {
-      navigate(`/account/login?next=${encodeURIComponent(action.to)}`);
+      navigate(`/account/login?next=${encodeURIComponent(to)}`);
       return;
     }
-    navigate(action.to);
+    navigate(to);
   }
 
   return createPortal(
@@ -94,13 +114,13 @@ export default function MenuplyActionSheet({ open, onClose }) {
       <div role="dialog" aria-modal="true" aria-labelledby="menuply-x-title" style={styles.sheet}>
         <div style={styles.head}>
           <h2 id="menuply-x-title" style={styles.title}>
-            Do something
+            Post about
           </h2>
           <button type="button" onClick={onClose} aria-label="Close" style={styles.close}>
             Close
           </button>
         </div>
-        <p style={styles.lead}>I'm Eating At is first. Eat together — not a giant menu.</p>
+        <p style={styles.lead}>Post first. Tag a restaurant or dish after if you want.</p>
         <ul style={styles.list}>
           {ACTIONS.map((action) => (
             <li key={action.id}>

@@ -63,6 +63,97 @@ export async function getRestaurantUpcomingEatingPlans(restaurantId) {
   };
 }
 
+export function restaurantLabel(row) {
+  return String(
+    row?.restaurant_name || row?.label || row?.name || row?.location_label || ""
+  ).trim();
+}
+
+export function dishLabel(row) {
+  return String(row?.item_name || row?.label || row?.name || "").trim();
+}
+
+function positiveId(value) {
+  const n = Number(value);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+function coerceMenuItemId(value) {
+  const n = positiveId(value);
+  if (n) return n;
+  const s = String(value || "").trim();
+  if (/^cmi:/i.test(s)) return s;
+  return null;
+}
+
+export function asRestaurantPlace(row) {
+  if (!row) return null;
+  const restaurant_id = positiveId(row.restaurant_id) || positiveId(row.id);
+  if (!restaurant_id) return null;
+  return {
+    ...row,
+    restaurant_id,
+    restaurant_name: restaurantLabel(row),
+    restaurant_slug: row.restaurant_slug || row.slug || null,
+    address_line1: row.address_line1 || row.address || null,
+    city: row.city || null,
+    state: row.state || null,
+  };
+}
+
+export function asDishPlace(row) {
+  if (!row) return null;
+  const menu_item_id = coerceMenuItemId(row.menu_item_id) || coerceMenuItemId(row.id);
+  if (!menu_item_id) return null;
+  return {
+    ...row,
+    menu_item_id,
+    item_name: dishLabel(row),
+    restaurant_id: positiveId(row.restaurant_id),
+    menu_id: positiveId(row.menu_id),
+  };
+}
+
+/** Prefill I'm Eating At from a selected restaurant and/or dish. */
+export async function resolveEatingPrefill({ restaurantId = null, menuItemId = null } = {}) {
+  const mid = menuItemId != null ? String(menuItemId).trim() : "";
+  const rid = restaurantId != null ? String(restaurantId).trim() : "";
+  let restaurant = null;
+  let menuItem = null;
+  if (mid) {
+    const data = await apiGet(`/menu-items/${encodeURIComponent(mid)}`);
+    const item = data?.item || data?.menu_item || data || {};
+    menuItem = asDishPlace({
+      menu_item_id: item.menu_item_id || item.id || mid,
+      item_name: item.item_name || item.name,
+      name: item.name,
+      restaurant_id: item.restaurant_id || item.restaurant?.id,
+      menu_id: item.menu_id,
+    });
+    restaurant = asRestaurantPlace({
+      restaurant_id: item.restaurant_id || item.restaurant?.id,
+      restaurant_name: item.restaurant_name || item.restaurant?.restaurant_name || item.restaurant?.name,
+      restaurant_slug: item.restaurant_slug || item.restaurant?.slug,
+      address_line1: item.address_line1 || item.restaurant?.address_line1,
+      city: item.city || item.restaurant?.city,
+      state: item.state || item.restaurant?.state,
+    });
+  }
+  if (!restaurant && rid) {
+    const data = await apiGet(`/public/restaurants/${encodeURIComponent(rid)}`);
+    const r = data?.restaurant || data || {};
+    restaurant = asRestaurantPlace({
+      restaurant_id: r.id || r.restaurant_id || rid,
+      restaurant_name: r.restaurant_name || r.name,
+      restaurant_slug: r.slug,
+      address_line1: r.address_line1 || r.address,
+      city: r.city,
+      state: r.state,
+    });
+  }
+  return { restaurant, menuItem };
+}
+
 export async function searchReportPlaces({ type, q = "", restaurant_id = null, limit = 8 } = {}) {
   const data = await apiGet(
     `/public/food-activity/places${buildQuery({ type, q, restaurant_id, limit })}`

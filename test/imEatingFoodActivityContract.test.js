@@ -19,6 +19,8 @@ describe("I'm Eating food activity", () => {
     const publicApi = fs.readFileSync(path.join(root, "src/lib/foodActivityApi.js"), "utf8");
     expect(publicApi).toMatch(/createPublicFoodActivity/);
     expect(publicApi).toMatch(/searchReportPlaces/);
+    expect(publicApi).toMatch(/resolveEatingPrefill/);
+    expect(publicApi).toMatch(/dishLabel/);
   });
 
   it("composer picks restaurant + menu item via entity search", () => {
@@ -28,6 +30,8 @@ describe("I'm Eating food activity", () => {
     );
     expect(composer).toMatch(/searchReportPlaces/);
     expect(composer).toMatch(/menu_item/);
+    expect(composer).toMatch(/im-eating-selected-dish/);
+    expect(composer).toMatch(/Dish/);
     expect(composer).toMatch(/Visibility/);
     expect(composer).not.toMatch(/Friend/);
   });
@@ -38,6 +42,8 @@ describe("I'm Eating food activity", () => {
       "utf8"
     );
     expect(page).toMatch(/ImEatingAtPanel/);
+    expect(page).toMatch(/resolveEatingPrefill/);
+    expect(page).toMatch(/menu_item_id/);
     expect(page).toMatch(/user-reported food activity/);
     expect(page).toMatch(/not a verified order/i);
     expect(page).toMatch(/Join Me/);

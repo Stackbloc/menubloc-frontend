@@ -132,7 +132,7 @@ export default function BottomNav() {
               style={{ ...itemStyle, color: postOpen ? "#1d4ed8" : "#9ca3af", fontWeight: 500 }}
             >
               <span style={iconWrapStyle}>
-                <MenuplyXMark size={22} active={postOpen} />
+                <MenuplyXMark size={28} active={postOpen} />
               </span>
               <span aria-hidden="true" style={{ visibility: "hidden", lineHeight: 1.05 }}>
                 {POST_LABEL}

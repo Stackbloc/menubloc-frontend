@@ -8,7 +8,7 @@ import ShareModal from "../share/ShareModal.jsx";
 import ImEatingComposer from "./ImEatingComposer.jsx";
 import GuestContributeNextStep from "./GuestContributeNextStep.jsx";
 import { activateJoinMe, endJoinMe } from "../../lib/consumerApi.js";
-import { createPublicFoodActivity } from "../../lib/foodActivityApi.js";
+import { createPublicFoodActivity, asRestaurantPlace, asDishPlace } from "../../lib/foodActivityApi.js";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
 import { readOptionalReporterCoords } from "../../lib/guestReporterSession.js";
 import { buildJoinMeShareData, formatJoinMeLocationLabel } from "../../lib/joinMeShare.js";
@@ -42,12 +42,13 @@ export default function ImEatingAtPanel({
   onPosted = null,
   disabled = false,
   initialRestaurant = null,
+  initialMenuItem = null,
   lockRestaurant = false,
   skipMenuItem = false,
 }) {
   const { isAuthenticated } = useConsumer();
-  const [restaurant, setRestaurant] = useState(initialRestaurant);
-  const [menuItem, setMenuItem] = useState(null);
+  const [restaurant, setRestaurant] = useState(() => asRestaurantPlace(initialRestaurant));
+  const [menuItem, setMenuItem] = useState(() => asDishPlace(initialMenuItem));
   const [comment, setComment] = useState("");
   const [visibility, setVisibility] = useState("public");
   const [busy, setBusy] = useState(false);
@@ -58,8 +59,14 @@ export default function ImEatingAtPanel({
   const [shareOpen, setShareOpen] = useState(false);
 
   useEffect(() => {
-    if (initialRestaurant?.restaurant_id) setRestaurant(initialRestaurant);
+    const next = asRestaurantPlace(initialRestaurant);
+    if (next?.restaurant_id) setRestaurant(next);
   }, [initialRestaurant]);
+
+  useEffect(() => {
+    const next = asDishPlace(initialMenuItem);
+    if (next?.menu_item_id) setMenuItem(next);
+  }, [initialMenuItem]);
 
   const shareData = useMemo(() => {
     if (!joinMe?.invitation_token && !joinMe?.url) return null;

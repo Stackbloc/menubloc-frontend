@@ -3,7 +3,7 @@
  */
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
 import StickyPageHeader from "../../components/StickyPageHeader.jsx";
 import BottomNav from "../../components/BottomNav.jsx";
 import ShareModal from "../../components/share/ShareModal.jsx";
@@ -16,9 +16,13 @@ import {
   listMyFoodActivity,
 } from "../../lib/consumerApi.js";
 import { buildJoinMeShareData, formatJoinMeLocationLabel } from "../../lib/joinMeShare.js";
+import { asDishPlace, asRestaurantPlace, resolveEatingPrefill } from "../../lib/foodActivityApi.js";
 
 export default function ImEatingPage() {
   const { isAuthenticated, loading: authLoading } = useConsumer();
+  const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const [prefill, setPrefill] = useState({ restaurant: null, menuItem: null });
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -45,6 +49,42 @@ export default function ImEatingPage() {
       setLoading(false);
     }
   }, [authLoading, isAuthenticated, load]);
+
+  useEffect(() => {
+    const fromState = {
+      restaurant: asRestaurantPlace(location.state?.restaurant),
+      menuItem: asDishPlace(location.state?.menuItem),
+    };
+    const restaurantId = searchParams.get("restaurant_id") || fromState.restaurant?.restaurant_id;
+    const menuItemId = searchParams.get("menu_item_id") || fromState.menuItem?.menu_item_id;
+    if (fromState.restaurant || fromState.menuItem) {
+      setPrefill(fromState);
+    }
+    if (!restaurantId && !menuItemId) {
+      if (!fromState.restaurant && !fromState.menuItem) {
+        setPrefill({ restaurant: null, menuItem: null });
+      }
+      return undefined;
+    }
+    let cancelled = false;
+    resolveEatingPrefill({ restaurantId, menuItemId })
+      .then((next) => {
+        if (!cancelled) {
+          setPrefill({
+            restaurant: next.restaurant || fromState.restaurant,
+            menuItem: next.menuItem || fromState.menuItem,
+          });
+        }
+      })
+      .catch(() => {
+        if (!cancelled && !fromState.restaurant && !fromState.menuItem) {
+          setPrefill({ restaurant: null, menuItem: null });
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [searchParams, location.state]);
 
   const shareData = useMemo(() => {
     if (!shareInvite) return null;
@@ -114,7 +154,13 @@ export default function ImEatingPage() {
 
         {error ? <p style={styles.error}>{error}</p> : null}
 
-        <ImEatingAtPanel onPosted={() => isAuthenticated && load()} disabled={busy} />
+        <ImEatingAtPanel
+          key={`${prefill.restaurant?.restaurant_id || ""}-${prefill.menuItem?.menu_item_id || ""}`}
+          onPosted={() => isAuthenticated && load()}
+          disabled={busy}
+          initialRestaurant={prefill.restaurant}
+          initialMenuItem={prefill.menuItem}
+        />
 
         {isAuthenticated ? (
         <section style={styles.section}>
