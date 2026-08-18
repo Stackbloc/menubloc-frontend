@@ -145,6 +145,14 @@ export const card = {
   marginBottom: 8,
 };
 
+export const actions = {
+  display: "flex",
+  flexWrap: "wrap",
+  gap: 8,
+  marginTop: 8,
+  alignItems: "center",
+};
+
 export const chipBtn = {
   display: "inline-flex",
   alignItems: "center",
