@@ -72,7 +72,7 @@ export function ConsumerProvider({ children }) {
     if (message) setAuthToast(message);
   }, []);
 
-  const loadMe = useCallback(async () => {
+  const loadMe = useCallback(async ({ clearOn401 = true } = {}) => {
     try {
       const [data, preferences] = await Promise.all([
         getConsumerSession(),
@@ -93,7 +93,7 @@ export function ConsumerProvider({ children }) {
         foods_to_avoid: avoidKeys,
       };
     } catch (err) {
-      if (err?.status === 401) clearSession();
+      if (err?.status === 401 && clearOn401) clearSession();
       throw err;
     }
   }, [applySession, clearSession, publishSessionToast]);
@@ -107,6 +107,46 @@ export function ConsumerProvider({ children }) {
       resetMenuPreferenceSessionForLogin();
     }
   }, []);
+
+  const hydrateSessionAfterAuth = useCallback(async (payload) => {
+    if (payload?.consumer) {
+      applySession(payload);
+    }
+
+    const retryDelaysMs = [0, 200, 500];
+    let lastErr = null;
+    for (const delayMs of retryDelaysMs) {
+      if (delayMs > 0) {
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+      }
+      try {
+        const data = await loadMe({ clearOn401: false });
+        maybeResetMenuPreferenceSession(data, {
+          dietary_preferences: data?.dietary_preferences,
+          allergen_preferences: data?.allergen_preferences,
+        });
+        return data;
+      } catch (err) {
+        lastErr = err;
+        if (err?.status !== 401) throw err;
+      }
+    }
+
+    if (payload?.consumer) {
+      const fallback = {
+        ...payload,
+        dietary_preferences: [],
+        allergen_preferences: [],
+        allergen_filter: payload?.allergen_filter || null,
+        foods_to_avoid: [],
+      };
+      maybeResetMenuPreferenceSession(fallback, fallback);
+      return fallback;
+    }
+
+    if (lastErr?.status === 401) clearSession();
+    throw lastErr;
+  }, [applySession, loadMe, maybeResetMenuPreferenceSession, clearSession]);
 
   useEffect(() => {
     let cancelled = false;
@@ -133,13 +173,9 @@ export function ConsumerProvider({ children }) {
       error.status = 202;
       throw error;
     }
-    const data = await loadMe();
-    maybeResetMenuPreferenceSession(data, {
-      dietary_preferences: data?.dietary_preferences,
-      allergen_preferences: data?.allergen_preferences,
-    });
+    const data = await hydrateSessionAfterAuth(payload);
     return data;
-  }, [loadMe, maybeResetMenuPreferenceSession]);
+  }, [hydrateSessionAfterAuth]);
 
   const loginWithGoogle = useCallback(async (credential, consent) => {
     const payload = await loginConsumerWithGoogle(credential, consent);
@@ -149,13 +185,8 @@ export function ConsumerProvider({ children }) {
       error.status = 202;
       throw error;
     }
-    const data = await loadMe();
-    maybeResetMenuPreferenceSession(data, {
-      dietary_preferences: data?.dietary_preferences,
-      allergen_preferences: data?.allergen_preferences,
-    });
-    return data;
-  }, [loadMe, maybeResetMenuPreferenceSession]);
+    return hydrateSessionAfterAuth(payload);
+  }, [hydrateSessionAfterAuth]);
 
   const loginWithApple = useCallback(async (payload) => {
     const result = await loginConsumerWithApple(payload);
@@ -165,13 +196,8 @@ export function ConsumerProvider({ children }) {
       error.status = 202;
       throw error;
     }
-    const data = await loadMe();
-    maybeResetMenuPreferenceSession(data, {
-      dietary_preferences: data?.dietary_preferences,
-      allergen_preferences: data?.allergen_preferences,
-    });
-    return data;
-  }, [loadMe, maybeResetMenuPreferenceSession]);
+    return hydrateSessionAfterAuth(result);
+  }, [hydrateSessionAfterAuth]);
 
   const signup = useCallback(async (signupData) => {
     return signupConsumer(signupData);
@@ -187,12 +213,8 @@ export function ConsumerProvider({ children }) {
   }, []);
 
   const verifySmsCode = useCallback(async (phoneNumber, code, verificationSid = null, verificationToken = null) => {
-    await verifyConsumerSmsCode(phoneNumber, code, verificationSid, verificationToken);
-    const data = await loadMe();
-    maybeResetMenuPreferenceSession(data, {
-      dietary_preferences: data?.dietary_preferences,
-      allergen_preferences: data?.allergen_preferences,
-    });
+    const verified = await verifyConsumerSmsCode(phoneNumber, code, verificationSid, verificationToken);
+    const data = await hydrateSessionAfterAuth(verified);
     if (
       !hasActiveAllergenExclusions(
         data?.allergen_filter || null,
@@ -202,7 +224,7 @@ export function ConsumerProvider({ children }) {
       setAuthToast("You're signed in ✓");
     }
     return data;
-  }, [loadMe, maybeResetMenuPreferenceSession]);
+  }, [hydrateSessionAfterAuth]);
 
   const sendPhoneChangeCode = useCallback(async (phoneNumber) => {
     return sendConsumerPhoneChangeCode(phoneNumber);

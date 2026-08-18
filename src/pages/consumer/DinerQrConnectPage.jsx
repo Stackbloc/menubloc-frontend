@@ -17,6 +17,7 @@ import {
   resolveConsumerMediaUrl,
 } from "../../lib/consumerApi.js";
 import { formatDinerInviteName } from "../../lib/dinerQrShare.js";
+import { resolveConsumerConnectErrorMessage } from "../../lib/consumerAuthErrors.js";
 
 function initialsFromName(name) {
   const parts = String(name || "")
@@ -101,32 +102,29 @@ export default function DinerQrConnectPage() {
         `Connection request sent to ${inviteName}. They can accept it in Connections — then you can invite each other to eat.`
       );
     } catch (err) {
-      const authFailure =
-        err?.status === 401 ||
-        err?.payload?.code === "auth_required" ||
-        String(err?.message || "").toLowerCase().includes("authentication required");
-
       if (err?.payload?.code === "self_scan") {
         setSelfScan(true);
-        setNotice("You opened your own connect invite. Share the link or QR with someone else.");
+        setNotice(resolveConsumerConnectErrorMessage(err, inviteName));
       } else if (err?.payload?.code === "already_connected") {
         setRequestSent(true);
-        setNotice(`You are already connected with ${inviteName}.`);
+        setNotice(resolveConsumerConnectErrorMessage(err, inviteName));
       } else if (err?.payload?.code === "already_pending") {
         setRequestSent(true);
-        setNotice(`A Connection request to ${inviteName} is already pending.`);
-      } else if (authFailure) {
-        autoConnectAttempted.current = false;
-        try {
-          await refreshSession();
-        } catch {
-          // refreshSession clears stale optimistic auth when the cookie is missing.
-        }
-        setError(
-          `Sign-in did not finish linking you with ${inviteName}. Tap "Link with ${inviteName}" again, or sign in below and return here.`
-        );
+        setNotice(resolveConsumerConnectErrorMessage(err, inviteName));
       } else {
-        setError(err.message || "Unable to connect");
+        const authFailure =
+          err?.status === 401 ||
+          err?.payload?.code === "auth_required" ||
+          String(err?.message || "").toLowerCase().includes("authentication required");
+        if (authFailure) {
+          autoConnectAttempted.current = false;
+          try {
+            await refreshSession();
+          } catch {
+            // refreshSession clears stale optimistic auth when the cookie is missing.
+          }
+        }
+        setError(resolveConsumerConnectErrorMessage(err, inviteName));
       }
     } finally {
       setBusy(false);

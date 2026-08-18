@@ -6,6 +6,7 @@ import { useLanguage } from "../../context/LanguageContext.jsx";
 import { buildLegalConsentPayload } from "../../lib/legalConsent.js";
 import { resolveConsumerAuthNext, withConsumerAuthNext } from "../../lib/consumerAuthNext.js";
 import { isDinerQrConnectPath } from "../../lib/dinerQrShare.js";
+import { resolveConsumerLoginErrorMessage, CONSUMER_AUTH_ERRORS } from "../../lib/consumerAuthErrors.js";
 import {
   AuthPageFrame,
   FormError,
@@ -67,7 +68,9 @@ export default function ConsumerSignup() {
       }
       navigateAfterAuth();
     } catch (error) {
-      setFormError(error.message || t("auth.signUpFailed", "Sign up failed. Please try again."));
+      setFormError(
+        resolveConsumerLoginErrorMessage(error, CONSUMER_AUTH_ERRORS.genericSignUpFailed)
+      );
     } finally {
       setLoading(false);
     }

@@ -13,6 +13,7 @@ import {
   styles,
 } from "../../components/consumer/ConsumerAuthShared.jsx";
 import { resolveConsumerAuthNext, withConsumerAuthNext } from "../../lib/consumerAuthNext.js";
+import { resolveConsumerLoginErrorMessage } from "../../lib/consumerAuthErrors.js";
 
 export default function ConsumerLogin() {
   const { login, loginWithGoogle, loginWithApple } = useConsumer();
@@ -67,7 +68,9 @@ export default function ConsumerLogin() {
         openPhoneVerification(err.payload);
         return;
       }
-      setFormError(err?.message || t("auth.signInFailed", "Sign in failed. Please try again."));
+      setFormError(
+        resolveConsumerLoginErrorMessage(err, t("auth.signInFailed", "Sign in failed. Please try again."))
+      );
     } finally {
       setLoading(false);
     }
@@ -86,7 +89,12 @@ export default function ConsumerLogin() {
         openPhoneVerification(error.payload);
         return;
       }
-      setSocialError(error.message || t("auth.googleSignInFailed", "Google sign-in failed. Please try again."));
+      setSocialError(
+        resolveConsumerLoginErrorMessage(
+          error,
+          t("auth.googleSignInFailed", "Google sign-in failed. Please try again.")
+        )
+      );
     } finally {
       setLoading(false);
     }
@@ -105,7 +113,12 @@ export default function ConsumerLogin() {
         openPhoneVerification(error.payload);
         return;
       }
-      setSocialError(error.message || t("auth.appleSignInFailed", "Apple sign-in failed. Please try again."));
+      setSocialError(
+        resolveConsumerLoginErrorMessage(
+          error,
+          t("auth.appleSignInFailed", "Apple sign-in failed. Please try again.")
+        )
+      );
     } finally {
       setLoading(false);
     }
