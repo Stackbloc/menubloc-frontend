@@ -34,7 +34,7 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www **and** 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` @ clean `main` |
-| Git commit | `98687fd` — Dining-hall human copy (Post what's good today; share your thoughts) |
+| Git commit | `98687fd` — Dining-hall human copy (Post what's good today; share your thoughts); git checkpoint `0450a53` / `menuply-last-known-good-2026-08-18` |
 | Vercel deployment | `menubloc-frontend-2fw9x27jj-menuply.vercel.app` |
 | Live bundle | `index-fjLns99U.js` |
 | Aliases | `menuply.com`, `www.menuply.com`, `crm.menuply.com`, `venues.menuply.com` |
@@ -46,11 +46,11 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www **and** 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-backend-main` @ clean `main` |
-| Git commit | `6fc782c3` — Dining-hall founded-year ops script |
+| Git commit | `fb54f0b4` — dining-hall CPD LKG docs lock (feature `6fc782c3` founded-year script) |
 | Health URL | `https://menubloc-backend-production.up.railway.app/health` |
-| `commit_hash` | `6fc782c3bd2d8b4258bf68492d8e6214fc146494` |
+| `commit_hash` | `fb54f0b4656d77e4f94ba2ae8c28c880abb4c417` |
 | Migrations | `0250`–`0268` applied; founded years via ops script (no migration) |
-| Smoke | Health MATCH `6fc782c3`; Bruin Plate `founded_year=2013`; tip-gate PASS `2fw9x27jj` / `index-fjLns99U.js` |
+| Smoke | Health MATCH `fb54f0b4`; Bruin Plate `founded_year=2013`; tip-gate PASS `2fw9x27jj` / `index-fjLns99U.js`; git tag `menuply-last-known-good-2026-08-18` |
 
 ### Restore current tip (if tip-gate fails mid-change)
 
@@ -107,6 +107,7 @@ When Andre says **cpd**, agents must:
 
 | Tag | Repo | SHA (at tag) | Meaning |
 |-----|------|--------------|---------|
+| `menuply-last-known-good-2026-08-18` | FE + BE authorized mains | FE `0450a53` · BE `fb54f0b4` | **Pre–My Menuply IA** (dining-hall human copy tip live; tags pushed) |
 | `menuply-last-known-good-2026-08-14` | FE + BE authorized mains | FE `5c06c787` · BE `856d70dd` | Pre–Social Engine code checkpoint |
 | `menuply-social-engine-known-good-2026-08-14` | FE + BE | FE `a89e0d6` · BE `b001e41e` | Pre–Social Onboarding |
 

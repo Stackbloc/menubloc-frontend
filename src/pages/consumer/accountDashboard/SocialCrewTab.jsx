@@ -158,6 +158,15 @@ export default function SocialCrewTab() {
 
   return (
     <div>
+      <section style={styles.section}>
+        <AccountActionLink
+          to="/my-menuply"
+          title="Open My Menuply"
+          description="Your food life — what you ate, plans, and what connections are eating. This tab is Settings, not the diner home."
+          actionLabel="Open"
+          last
+        />
+      </section>
       {error ? <p style={styles.statusErr}>{error}</p> : null}
       {notice ? <p style={styles.statusOk}>{notice}</p> : null}
 

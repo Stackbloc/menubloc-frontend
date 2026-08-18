@@ -20,6 +20,17 @@ function testFooterMarketplaceLinks() {
   assert.match(src, /<Link to="\/diner\/signup"/);
   assert.match(src, /<Link to="\/restaurant\/onboarding"/);
   assert.match(src, /<Link to="\/clusters"/);
+  assert.match(src, />Discover</);
+  assert.match(src, />Diners</);
+  assert.match(src, />For Businesses</);
+  assert.match(src, />Menuply</);
+  assert.match(src, /<Link to="\/my-menuply"/);
+  assert.match(src, /<Link to="\/activity"/);
+  assert.match(src, /<Link to="\/account\/dining-crews"/);
+  assert.match(src, /<Link to="\/account\/what-we-doing"/);
+  assert.match(src, /<Link to="\/waiter"/);
+  assert.match(src, /<Link to="\/browse-menus"/);
+  assert.match(src, /What People Are Eating/);
   assert.doesNotMatch(src, /<Link to="\/distributors"/);
   assert.doesNotMatch(src, /<Link to="\/creative-pros"/);
   assert.doesNotMatch(src, /<Link to="\/operator\/login"/);

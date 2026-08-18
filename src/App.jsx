@@ -72,6 +72,10 @@ import DiningCrewsPage, {
 import ImEatingPage from "./pages/consumer/ImEatingPage.jsx";
 import WhatIAteTodayPage from "./pages/consumer/WhatIAteTodayPage.jsx";
 import ConnectionPeerWhatIAtePage from "./pages/consumer/ConnectionPeerWhatIAtePage.jsx";
+import MyMenuplyPage from "./pages/consumer/MyMenuplyPage.jsx";
+import ConnectionsEatingPage from "./pages/consumer/ConnectionsEatingPage.jsx";
+import ConnectionsPlanningPage from "./pages/consumer/ConnectionsPlanningPage.jsx";
+import ActivityPage from "./pages/ActivityPage.jsx";
 import DinerStatusPage from "./pages/consumer/DinerStatusPage.jsx";
 import ClusterSubscriptionsPage from "./pages/consumer/ClusterSubscriptionsPage.jsx";
 import SocialOnboardingPage from "./pages/consumer/SocialOnboardingPage.jsx";
@@ -912,6 +916,10 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
         <Route path="/account/reset-password" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <ConsumerResetPassword />} />
         <Route path="/account/edu-verify" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <ConsumerEduVerify />} />
         <Route path="/account" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ConsumerProfile />} />
+        <Route path="/my-menuply" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MyMenuplyPage />} />
+        <Route path="/my-menuply/connections-eating" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ConnectionsEatingPage />} />
+        <Route path="/my-menuply/connections-planning" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ConnectionsPlanningPage />} />
+        <Route path="/activity" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ActivityPage />} />
         <Route path="/account/welcome" element={crmHost ? <HostRouteRedirect to="/crm" /> : <AccountWelcome />} />
         <Route path="/account/social-onboarding" element={crmHost ? <HostRouteRedirect to="/crm" /> : <SocialOnboardingPage />} />
         <Route path="/account/following" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ConsumerFollowing />} />

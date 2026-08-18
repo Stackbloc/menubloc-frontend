@@ -93,6 +93,10 @@ export const declineConnection = (id) =>
   post(`/api/consumer/connections/${encodeURIComponent(String(id))}/decline`, {});
 export const removeConnection = (id) =>
   del(`/api/consumer/connections/${encodeURIComponent(String(id))}`);
+export const listConnectionsEating = (limit = 30) =>
+  get(`/api/consumer/connections/eating?limit=${encodeURIComponent(String(limit))}`);
+export const listConnectionsPlanning = (limit = 30) =>
+  get(`/api/consumer/connections/planning?limit=${encodeURIComponent(String(limit))}`);
 
 // ── Personal Diner QR (Phase 1) ───────────────────────────────────────────
 export const getMyDinerQr = () => get("/api/consumer/diner-qr");

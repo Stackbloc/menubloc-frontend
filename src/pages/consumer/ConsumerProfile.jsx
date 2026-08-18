@@ -379,7 +379,7 @@ export default function ConsumerProfile() {
   if (authLoading || pageLoading) {
     return (
       <>
-        <StickyPageHeader title={t("consumer.profile.title", "My account")} />
+        <StickyPageHeader title={t("consumer.profile.title", "Settings")} />
         <div style={styles.page}>
           <div style={styles.card}>
             <p style={styles.muted}>Loading your account…</p>
@@ -393,7 +393,7 @@ export default function ConsumerProfile() {
   if (pageError) {
     return (
       <>
-        <StickyPageHeader title={t("consumer.profile.title", "My account")} />
+        <StickyPageHeader title={t("consumer.profile.title", "Settings")} />
         <div style={styles.page}>
           <div style={styles.card}>
             <p style={styles.statusErr}>{pageError}</p>
@@ -417,12 +417,12 @@ export default function ConsumerProfile() {
 
   return (
     <>
-      <StickyPageHeader title={t("consumer.profile.title", "My account")} />
+      <StickyPageHeader title={t("consumer.profile.title", "Settings")} />
       <div style={styles.page}>
         <div style={styles.pageInner}>
-          <h1 style={styles.pageTitle}>My account</h1>
+          <h1 style={styles.pageTitle}>Settings</h1>
           <p style={styles.pageLead}>
-            Who you are, who you eat with, what you&apos;ve saved, and how you manage this account.
+            Private preferences, wallet, and account security. Your food life lives on My Menuply.
           </p>
           <AccountTabNav activeTab={activeTab} onChange={setTab} />
 

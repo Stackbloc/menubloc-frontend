@@ -210,12 +210,34 @@ export default function DiscoveryDrawer({
 
         <div style={{ padding: "0 20px 48px", flex: 1 }}>
 
+          <Section label={t("drawer.go", "Go")} />
+          <Link to="/my-menuply" onClick={onClose} style={{
+            display: "block", padding: "12px 0",
+            fontSize: 15, fontWeight: 700, color: "#1F4E3D", textDecoration: "none",
+          }}>{t("nav.myMenuply", "My Menuply")}</Link>
+          <Link to="/activity" onClick={onClose} style={{
+            display: "block", padding: "12px 0",
+            fontSize: 15, fontWeight: 700, color: "#1F4E3D", textDecoration: "none",
+          }}>{t("nav.activity", "Activity")}</Link>
+          <Link to="/search" onClick={onClose} style={{
+            display: "block", padding: "12px 0",
+            fontSize: 15, fontWeight: 700, color: "#1F4E3D", textDecoration: "none",
+          }}>{t("nav.search", "Search")}</Link>
+          <Link to="/waiter" onClick={onClose} style={{
+            display: "block", padding: "12px 0",
+            fontSize: 15, fontWeight: 700, color: "#1F4E3D", textDecoration: "none",
+          }}>{t("nav.waiter", "Waiter")}</Link>
+          <Link to="/browse-menus" onClick={onClose} style={{
+            display: "block", padding: "12px 0",
+            fontSize: 15, fontWeight: 700, color: "#1F4E3D", textDecoration: "none",
+          }}>{t("nav.browseMenus", "Menu Browser")}</Link>
+
           <Section label={t("drawer.account", "Account")} />
           {loggedIn ? (
             <Link to="/account" onClick={onClose} style={{
               display: "block", padding: "12px 0",
               fontSize: 15, fontWeight: 700, color: "#1F4E3D", textDecoration: "none",
-            }}>{t("nav.myAccount", "My account")}</Link>
+            }}>{t("nav.settings", "Settings")}</Link>
           ) : (
             <div style={{ paddingTop: 10, display: "flex", flexDirection: "column", gap: 10 }}>
               <Link to="/account/login" onClick={onClose} style={{
