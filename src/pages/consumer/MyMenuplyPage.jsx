@@ -583,7 +583,7 @@ export default function MyMenuplyPage() {
                     });
                   }}
                 />
-              )}
+              ))}
               {viewingPlans && shownPlans.length === 0 ? (
                 <p style={s.muted}>No Plans Scheduled.</p>
               ) : null}
