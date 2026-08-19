@@ -735,7 +735,7 @@ export default function MyMenuplyPage() {
 
             <section style={s.section} data-testid="want-to-eat" ref={wantSectionRef}>
               <SectionHead title="What I Want to Eat" />
-              <p style={s.muted}>Your aspirational list lives here — connections can see it on your hub.</p>
+              <p style={s.muted}>Items you want to try. Connections can see this on your hub.</p>
               <QuickCompose
                 testId="compose-want"
                 placeholder="What do you want to eat?"
@@ -749,7 +749,7 @@ export default function MyMenuplyPage() {
               !wants.some((row) => Number(row.id) === Number(lastPost.id)) ? (
                 <div style={s.card} data-testid="want-to-eat-just-posted">
                   <div style={{ fontWeight: 800 }}>{lastPost.food_name}</div>
-                  <div style={{ ...s.muted, fontSize: 12, marginTop: 4 }}>Just posted — link a menu item below</div>
+                  <div style={{ ...s.muted, fontSize: 12, marginTop: 4 }}>Saved — link a menu item below</div>
                 </div>
               ) : null}
               {lastPost?.kind === "want" ? (

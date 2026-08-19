@@ -114,7 +114,7 @@ export function PhotoGrid({ items, onSelect, onPhotoPick, hideJoinMe = false }) 
           {item.photo_url ? (
             <img src={resolveConsumerMediaUrl(item.photo_url)} alt="" style={s.photo} />
           ) : (
-            <div style={{ ...s.photo, display: "grid", placeItems: "center", fontSize: 28, color: "#14532d" }}>
+            <div style={{ ...s.photo, display: "grid", placeItems: "center", fontSize: 14, color: "#64748b", fontWeight: 600 }}>
               🌭
             </div>
           )}
@@ -208,11 +208,11 @@ export function NamedShareCard({
   return (
     <div style={s.card} data-testid="named-share-card">
       {href ? (
-        <Link to={href} style={{ ...s.sectionTitleLink, fontWeight: 800, fontSize: 16, color: "#14532d" }}>
+        <Link to={href} style={{ ...s.sectionTitleLink, fontWeight: 700, fontSize: 15 }}>
           {title}
         </Link>
       ) : (
-        <div style={{ fontWeight: 800, fontSize: 16, color: "#14532d" }}>{title}</div>
+        <div style={{ fontWeight: 700, fontSize: 15, color: "#0f172a" }}>{title}</div>
       )}
       {meta ? <div style={s.muted}>{meta}</div> : null}
       {description ? <div style={{ ...s.muted, marginTop: 4 }}>{description}</div> : null}

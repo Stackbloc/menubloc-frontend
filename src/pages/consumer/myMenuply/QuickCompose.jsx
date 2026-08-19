@@ -35,12 +35,12 @@ export default function QuickCompose({
         <>
           <button
             type="button"
-            aria-label="Photo"
+            aria-label="Add photo"
             disabled={busy}
             onClick={() => fileRef.current?.click()}
             style={styles.iconBtn}
           >
-            {file ? "✓" : "📷"}
+            {file ? "Added" : "Photo"}
           </button>
           <input
             ref={fileRef}
@@ -88,32 +88,36 @@ const styles = {
     minWidth: 0,
     minHeight: 44,
     padding: "10px 12px",
-    borderRadius: 999,
-    border: "1.5px solid #86efac",
+    borderRadius: 10,
+    border: "1.5px solid #d1d5db",
     fontSize: 15,
     fontFamily: "inherit",
-    color: "#14532d",
+    color: "#0f172a",
     background: "#fff",
+    boxSizing: "border-box",
   },
   iconBtn: {
     appearance: "none",
-    width: 44,
-    height: 44,
-    borderRadius: 999,
-    border: "1.5px solid #86efac",
-    background: "#f0fdf4",
+    minHeight: 44,
+    padding: "0 12px",
+    borderRadius: 10,
+    border: "1.5px solid #d1d5db",
+    background: "#ffffff",
+    color: "#334155",
     cursor: "pointer",
-    fontSize: 18,
+    fontSize: 13,
+    fontWeight: 700,
+    fontFamily: "inherit",
     flexShrink: 0,
   },
   post: {
     appearance: "none",
     minHeight: 44,
     padding: "0 16px",
-    borderRadius: 999,
+    borderRadius: 10,
     border: "none",
-    background: "#16a34a",
-    color: "#fff",
+    background: "linear-gradient(180deg, #22C55E 0%, #16A34A 100%)",
+    color: "#0B0F0C",
     fontWeight: 800,
     fontSize: 14,
     cursor: "pointer",
