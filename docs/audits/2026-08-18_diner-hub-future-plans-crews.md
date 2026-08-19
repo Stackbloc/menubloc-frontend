@@ -78,4 +78,4 @@ Not deployed. Say `cpd` to ship from `menubloc-frontend-main` @ `main` and `menu
 
 # Final Verdict
 
-Local implementation matches the requested diner-hub behavior. Not production until CPD.
+Local implementation matches the requested diner-hub behavior. **CPD COMPLETE** — tip `o8xa604sx` / `index-DZR4cTvb.js`; FE `ef9bb7a`; BE health `0976be42`.

@@ -4,7 +4,7 @@ Fix My Menuply / Connection hub: visible restaurant name after pick; photo add i
 
 # Current Status
 
-Implemented locally in `menubloc-frontend-main` and `menubloc-backend-main`. **Not committed. Not deployed.**
+Implemented and **CPD COMPLETE**. FE tip `o8xa604sx` / `index-DZR4cTvb.js` (`ef9bb7a`). BE health `0976be42`.
 
 # Files Changed
 

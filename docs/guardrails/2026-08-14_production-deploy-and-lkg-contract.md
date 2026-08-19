@@ -34,33 +34,33 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` @ clean `main` |
-| Git commit | `063ffd7` — Join Me allow-list; only eligible acceptors see that future plan |
-| Vercel deployment | `menubloc-frontend-89eyeudh1-menuply.vercel.app` |
-| Live bundle | `index-DjXskZ76.js` |
+| Git commit | `ef9bb7a` — Collapse Future Plans; restaurant name; photo hint; real crews |
+| Vercel deployment | `menubloc-frontend-o8xa604sx-menuply.vercel.app` |
+| Live bundle | `index-DZR4cTvb.js` |
 | Aliases | `menuply.com`, `www.menuply.com`, `crm.menuply.com`, `venues.menuply.com` |
-| Tip-gate | **PASS** (apex + www) verified 2026-08-18 after Join Me allow-list CPD |
-| Feature | Anyone Connect or selected Connections + pending Invites; ineligible diners do not see that plan |
+| Tip-gate | **PASS** (apex + www) verified 2026-08-18 after Future Plans collapse CPD |
+| Feature | No Plans Scheduled / Plans Scheduled / Click to Schedule; visible restaurant name; clickable crews |
 
 ### Backend (Railway)
 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-backend-main` @ clean `main` |
-| Git on origin | `a1b751c3` — Join Me allow-list + migration `0273` — **not yet live on Railway** |
-| Live health SHA | `970062ac408c03559c8d5e2cf672c1f96537b968` (What I Want to Eat API) |
+| Git on origin | `0976be42` — diner visible crews for Connections (`GET /dining-crews/for-diner/:dinerId`) |
+| Live health SHA | `0976be427a42e6ced2ec18058245fac81a81a4d5` |
 | Health URL | `https://menubloc-backend-production.up.railway.app/health` |
-| `commit_hash` | `970062ac408c03559c8d5e2cf672c1f96537b968` |
-| Migrations | `0250`–`0272` applied; `0273` waits on Railway `a1b751c3` |
-| Smoke | Health `970062ac`; tip-gate PASS `89eyeudh1` / `index-DjXskZ76.js` |
+| `commit_hash` | `0976be427a42e6ced2ec18058245fac81a81a4d5` |
+| Migrations | `0250`–`0272` applied; `0273` is in git (Join Me allow-list, since `a1b751c3`) — apply status not independently verified this CPD |
+| Smoke | Health `0976be42`; tip-gate PASS `o8xa604sx` / `index-DZR4cTvb.js` |
 
 ### Restore current tip (if tip-gate fails mid-change)
 
 ```bash
 cd /Users/andrebarber/Desktop/menubloc/menubloc-frontend-main
-npx vercel alias set menubloc-frontend-89eyeudh1-menuply.vercel.app menuply.com
-npx vercel alias set menubloc-frontend-89eyeudh1-menuply.vercel.app www.menuply.com
-npx vercel alias set menubloc-frontend-89eyeudh1-menuply.vercel.app crm.menuply.com
-npx vercel alias set menubloc-frontend-89eyeudh1-menuply.vercel.app venues.menuply.com
+npx vercel alias set menubloc-frontend-o8xa604sx-menuply.vercel.app menuply.com
+npx vercel alias set menubloc-frontend-o8xa604sx-menuply.vercel.app www.menuply.com
+npx vercel alias set menubloc-frontend-o8xa604sx-menuply.vercel.app crm.menuply.com
+npx vercel alias set menubloc-frontend-o8xa604sx-menuply.vercel.app venues.menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 ```
@@ -122,6 +122,7 @@ Newest superseded first. Restoring drops everything shipped after that tip.
 
 | Deployment id | Bundle | Approx feature / CPD |
 |---------------|--------|----------------------|
+| `89eyeudh1` | `index-DjXskZ76.js` | Join Me allow-list (`063ffd7`) — superseded by Future Plans collapse `o8xa604sx` |
 | `3vk7ie3cf` | `index-He0r-RTw.js` | Post X bottom-nav align (`9cd7303`) — superseded by Join Me allow-list `89eyeudh1` |
 | `bzddqa61v` | `index-DF-s_Lo_.js` | Diner-hub same-layout casual photos (`a7eb57d`) — never LKG-locked; superseded by `89eyeudh1` |
 | `683cf6yk3` | `index-CZS4phIY.js` | My Menuply hub photos-first / want-to-eat / crew join (`e7c319b`) — superseded by Post X align `3vk7ie3cf` |

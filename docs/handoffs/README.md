@@ -1,6 +1,6 @@
 # Handoffs Index
 
-- [2026-08-18_diner-hub-future-plans-crews_handoff.md](./2026-08-18_diner-hub-future-plans-crews_handoff.md) — Collapsed Future Plans, restaurant name, photo hint, peer crews (**LOCAL**)
+- [2026-08-18_diner-hub-future-plans-crews_handoff.md](./2026-08-18_diner-hub-future-plans-crews_handoff.md) — Collapsed Future Plans, restaurant name, photo hint, peer crews (**CPD COMPLETE** — tip `o8xa604sx` / `index-DZR4cTvb.js`)
 - [2026-08-18_future-plan-join-me-allow-list_handoff.md](./2026-08-18_future-plan-join-me-allow-list_handoff.md) — Future plan visible only to Join Me acceptors; pending Invites selectable (**CPD COMPLETE** — tip `89eyeudh1` / `index-DjXskZ76.js`)
 - [2026-08-18_diner-hub-peer-connections_handoff.md](./2026-08-18_diner-hub-peer-connections_handoff.md) — Every diner hub shows that diner’s Connections (**LOCAL**)
 - [2026-08-18_diner-hub-color-casual-photos_handoff.md](./2026-08-18_diner-hub-color-casual-photos_handoff.md) — Cream/green diner hub; casual food photos; calendar chip (**LOCAL**)
