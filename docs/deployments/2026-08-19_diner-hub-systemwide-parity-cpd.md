@@ -9,7 +9,10 @@ Connection peer hubs (e.g. Joe Johnson at `/account/connections/:peerId`) now us
 | Field | Value |
 |-------|-------|
 | Path | `menubloc-frontend-main` @ clean `main` |
-| Commit | _(fill after commit)_ |
+| Commit | `139263a` |
+| Deployment | `menubloc-frontend-o91cxjxfw-menuply.vercel.app` |
+| Bundle | `index-B1Y0hVDJ.js` |
+| Tip gate | PASS (apex + www) |
 | Change | `mergeEatingFeedForHub` on peer page; shared `WantToEatList`; hub mappers in `eatingFeedMerge.js` |
 | Guardrail | `docs/guardrails/2026-08-19_diner-hub-systemwide-parity-contract.md` |
 
