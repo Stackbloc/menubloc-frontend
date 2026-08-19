@@ -242,6 +242,14 @@ export const actions = {
   alignItems: "center",
 };
 
+export const socialActions = {
+  display: "flex",
+  flexWrap: "wrap",
+  gap: 4,
+  marginTop: 10,
+  alignItems: "center",
+};
+
 export const chipBtn = {
   display: "inline-flex",
   alignItems: "center",

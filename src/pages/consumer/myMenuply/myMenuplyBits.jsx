@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { useMemo, useRef, useState } from "react";
 import InviteToEatButton from "../../../components/InviteToEatButton.jsx";
 import { restaurantPathFromRow } from "../../../lib/canonicalUrl.js";
+import EatingSocialActions from "./EatingSocialActions.jsx";
 import { resolveConsumerMediaUrl } from "../../../lib/consumerApi.js";
 import {
   compareMealPeriod,
@@ -114,8 +115,17 @@ export function PhotoGrid({ items, onSelect, onPhotoPick, hideJoinMe = false }) 
           {item.photo_url ? (
             <img src={resolveConsumerMediaUrl(item.photo_url)} alt="" style={s.photo} />
           ) : (
-            <div style={{ ...s.photo, display: "grid", placeItems: "center", fontSize: 14, color: "#64748b", fontWeight: 600 }}>
-              🌭
+            <div
+              style={{
+                ...s.photo,
+                display: "grid",
+                placeItems: "center",
+                fontSize: 13,
+                color: "#64748b",
+                fontWeight: 600,
+              }}
+            >
+              Add photo
             </div>
           )}
           {showPhotoHint && photoHover ? (
@@ -137,6 +147,7 @@ export function PhotoGrid({ items, onSelect, onPhotoPick, hideJoinMe = false }) 
             )
           ) : null}
           {note ? <div style={s.photoMeta}>{note}</div> : null}
+          <EatingSocialActions item={item} />
           {ordered.length > 1 ? (
             <div style={s.actions}>
               <button
@@ -177,14 +188,6 @@ export function PhotoGrid({ items, onSelect, onPhotoPick, hideJoinMe = false }) 
               <Link to={joinHref} style={s.primaryBtn}>
                 Join Me
               </Link>
-            ) : !hideJoinMe && item.restaurant_id ? (
-              <InviteToEatButton
-                restaurantId={item.restaurant_id}
-                restaurantName={place}
-                menuItemId={item.menu_item_id}
-                menuItemName={label}
-                size="compact"
-              />
             ) : null}
           </div>
         </div>
@@ -252,33 +255,55 @@ export function ConnectionFoodCard({ item }) {
   const name = item.peer?.display_name || "A diner";
   const restaurantName = item.restaurant_name;
   const joinHref = item.join_me_href;
+  const restHref = restaurantHref(item);
+  const href = foodHref(item);
   return (
     <div style={s.card} data-testid="connections-eating-card">
       <strong style={{ display: "block", fontSize: 14 }}>{name}</strong>
-      <Link to={foodHref(item)} style={{ ...s.link, display: "block", marginTop: 8 }}>
-        {item.photo_url ? (
-          <img
-            src={resolveConsumerMediaUrl(item.photo_url)}
-            alt=""
-            style={{ width: "100%", height: 160, objectFit: "cover", borderRadius: 10 }}
-          />
-        ) : null}
-        <span style={{ display: "block", marginTop: 8, color: "#0B0F0C", fontWeight: 800 }}>
-          {item.food_name}
-        </span>
+      {item.photo_url ? (
+        <img
+          src={resolveConsumerMediaUrl(item.photo_url)}
+          alt=""
+          style={{ width: "100%", height: 168, objectFit: "cover", borderRadius: 10, marginTop: 10 }}
+        />
+      ) : (
+        <div
+          style={{
+            width: "100%",
+            height: 168,
+            marginTop: 10,
+            borderRadius: 10,
+            background: "#f1f5f9",
+            display: "grid",
+            placeItems: "center",
+            fontSize: 13,
+            fontWeight: 600,
+            color: "#64748b",
+          }}
+        >
+          No photo
+        </div>
+      )}
+      <Link to={href} style={{ ...s.link, display: "block", marginTop: 8, fontSize: 15, fontWeight: 800 }}>
+        {item.food_name}
       </Link>
       {restaurantName ? (
-        <Link to={restaurantHref(item) || "#"} style={{ ...s.muted, display: "block", marginTop: 4, color: "#667085" }}>
-          {restaurantName}
-        </Link>
+        restHref ? (
+          <Link to={restHref} style={{ ...s.muted, display: "block", marginTop: 4 }}>
+            {restaurantName}
+          </Link>
+        ) : (
+          <div style={{ ...s.muted, marginTop: 4 }}>{restaurantName}</div>
+        )
       ) : null}
+      <EatingSocialActions item={item} testId="connections-eating-social-actions" />
       <div style={s.actions}>
         {item.menu_item_id || item.menu_item_href ? (
-          <Link to={foodHref(item)} style={s.chipBtn}>
+          <Link to={href} style={s.chipBtn}>
             View Menu Item
           </Link>
         ) : (
-          <Link to={foodHref(item)} style={s.chipBtn}>
+          <Link to={href} style={s.chipBtn}>
             View food
           </Link>
         )}
@@ -286,14 +311,6 @@ export function ConnectionFoodCard({ item }) {
           <Link to={joinHref} style={s.primaryBtn}>
             Join Me
           </Link>
-        ) : item.restaurant_id ? (
-          <InviteToEatButton
-            restaurantId={item.restaurant_id}
-            restaurantName={restaurantName}
-            menuItemId={item.menu_item_id}
-            menuItemName={item.food_name}
-            size="compact"
-          />
         ) : null}
       </div>
     </div>

@@ -135,11 +135,19 @@ test("My Menuply is the diner's personal home", () => {
 
 test("Connections eating cards link to menu items and Join Me / Invite to Eat", () => {
   const bits = read("src/pages/consumer/myMenuply/myMenuplyBits.jsx");
+  const social = read("src/pages/consumer/myMenuply/EatingSocialActions.jsx");
   assert.match(bits, /View Menu Item/);
   assert.match(bits, /Join Me/);
-  assert.match(bits, /InviteToEatButton/);
+  assert.match(bits, /EatingSocialActions/);
   assert.match(bits, /\/menu-items\//);
   assert.doesNotMatch(bits, /follower/);
+  assert.match(social, /LikeMenuItemButton/);
+  assert.match(social, /ShareButton/);
+  assert.match(social, /InviteToEatButton/);
+  assert.match(social, /#food-comments/);
+  assert.match(social, /buildDishShareData/);
+  assert.doesNotMatch(bits, /🌭/);
+  assert.match(bits, /Add photo/);
 });
 
 test("Activity is broader happening and does not replace connections eating", () => {
