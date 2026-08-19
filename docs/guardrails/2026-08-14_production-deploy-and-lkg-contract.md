@@ -25,9 +25,56 @@ Do **not** deploy from memory or from quarantined checkouts.
 
 ---
 
-## CURRENT LAST KNOWN GOOD (live production — 2026-08-18)
+## CURRENT LAST KNOWN GOOD (live production — 2026-08-19)
 
 Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway `/health` is recorded separately; it may lag `origin/main`.
+
+### Frontend (menuply.com)
+
+| Field | Value |
+|-------|-------|
+| Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` @ clean `main` |
+| Git commit | `fba813a` — Food social MVP Stages 1–2: Post sheet wiring, Events browse, I'm Eating At photos |
+| Vercel deployment | `menubloc-frontend-ns16qypm7-menuply.vercel.app` |
+| Live bundle | `index-BcsalcQZ.js` |
+| Aliases | `menuply.com`, `www.menuply.com`, `crm.menuply.com`, `venues.menuply.com` |
+| Tip-gate | **PASS** (apex + www) verified 2026-08-19 after food social MVP CPD |
+| Feature | Post (X): Want → My Menuply; Invite → invite start; Events → `/events`; I'm Eating At photo publish + hub mirror |
+
+### Backend (Railway)
+
+| Field | Value |
+|-------|-------|
+| Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-backend-main` @ clean `main` |
+| Git on origin | `492dd058` — `GET /public/events` + food-activity photo uploads |
+| Live health SHA | `492dd0581c93258e3e82e9cea353ac7216c0bc75` |
+| Health URL | `https://menubloc-backend-production.up.railway.app/health` |
+| `commit_hash` | `492dd0581c93258e3e82e9cea353ac7216c0bc75` |
+| Smoke | `GET /public/events?lat=34.05&lng=-118.24` → `ok: true`; tip-gate PASS `ns16qypm7` / `index-BcsalcQZ.js` |
+
+### Restore current tip (if tip-gate fails mid-change)
+
+```bash
+cd /Users/andrebarber/Desktop/menubloc/menubloc-frontend-main
+npx vercel alias set menubloc-frontend-ns16qypm7-menuply.vercel.app menuply.com
+npx vercel alias set menubloc-frontend-ns16qypm7-menuply.vercel.app www.menuply.com
+npx vercel alias set menubloc-frontend-ns16qypm7-menuply.vercel.app crm.menuply.com
+npx vercel alias set menubloc-frontend-ns16qypm7-menuply.vercel.app venues.menuply.com
+bash ../../scripts/assert-menuply-production-tip.sh https://menuply.com
+bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
+```
+
+### Prior tip — Future plans calendar events (rollback target)
+
+| Field | Value |
+|-------|-------|
+| Deployment | `menubloc-frontend-4iy54g5qc-menuply.vercel.app` |
+| Bundle | `index-6H0iynJH.js` |
+| Commit | `1e18d55` |
+
+---
+
+## PREVIOUS LAST KNOWN GOOD (2026-08-18 — Future plans calendar events)
 
 ### Frontend (menuply.com)
 
@@ -53,7 +100,7 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway
 | Migrations | `0250`–`0272` applied; `0273` is in git (Join Me allow-list, since `a1b751c3`) — apply status not independently verified this CPD |
 | Smoke | Health `06b8ff3f`; tip-gate PASS `4iy54g5qc` / `index-6H0iynJH.js` |
 
-### Restore current tip (if tip-gate fails mid-change)
+### Restore prior tip (Future plans only)
 
 ```bash
 cd /Users/andrebarber/Desktop/menubloc/menubloc-frontend-main
