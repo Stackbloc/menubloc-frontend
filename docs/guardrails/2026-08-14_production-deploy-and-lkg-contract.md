@@ -27,39 +27,40 @@ Do **not** deploy from memory or from quarantined checkouts.
 
 ## CURRENT LAST KNOWN GOOD (live production — 2026-08-18)
 
-Update this section **only** after tip-gate `RESULT=PASS` on apex + www **and** Railway `/health` matches the shipped BE SHA.
+Update this section **only** after tip-gate `RESULT=PASS` on apex + www **and** Railway `/health` matches the shipped BE SHA. FE tip below is live and tip-gate-locked. BE `/health` has **not** yet moved to `970062ac`.
 
 ### Frontend (menuply.com)
 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` @ clean `main` |
-| Git commit | `12945f5` — Owner diner accounts roster page |
-| Vercel deployment | `menubloc-frontend-5vl6kfuh6-menuply.vercel.app` |
-| Live bundle | `index-BZBfCuwA.js` |
+| Git commit | `e7c319b` — My Menuply photos-first, want-to-eat compose, crew/event join |
+| Vercel deployment | `menubloc-frontend-683cf6yk3-menuply.vercel.app` |
+| Live bundle | `index-CZS4phIY.js` |
 | Aliases | `menuply.com`, `www.menuply.com`, `crm.menuply.com`, `venues.menuply.com` |
-| Tip-gate | **PASS** (apex + www) verified 2026-08-18 |
-| Feature | Owner console `/owner/diners` lifetime diner roster (name, email, open/close, market, counts) |
+| Tip-gate | **PASS** (apex + www) verified 2026-08-18 after lock catch-up |
+| Feature | My Menuply hub: photos before calendar, want-to-eat compose, named crew/event invite |
 
 ### Backend (Railway)
 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-backend-main` @ clean `main` |
-| Git commit | `942e7c10` — Owner diner accounts roster API |
+| Git on origin | `970062ac` — What I Want to Eat API (`0272`) — **not yet live on Railway** |
+| Live health SHA | `942e7c10d62a2ca1f21a21101d9ce8a928164d76` (owner diner accounts) |
 | Health URL | `https://menubloc-backend-production.up.railway.app/health` |
 | `commit_hash` | `942e7c10d62a2ca1f21a21101d9ce8a928164d76` |
-| Migrations | `0250`–`0271` applied (`diner_about` + eating-plan place/joinable) |
-| Smoke | Health MATCH `942e7c10`; tip-gate PASS `5vl6kfuh6` / `index-BZBfCuwA.js`; prior git tag `menuply-last-known-good-2026-08-18` |
+| Migrations | `0250`–`0272` applied (`diner_want_to_eat` table exists; API waits on `970062ac`) |
+| Smoke | Health still `942e7c10`; tip-gate PASS `683cf6yk3` / `index-CZS4phIY.js` |
 
 ### Restore current tip (if tip-gate fails mid-change)
 
 ```bash
 cd /Users/andrebarber/Desktop/menubloc/menubloc-frontend-main
-npx vercel alias set menubloc-frontend-5vl6kfuh6-menuply.vercel.app menuply.com
-npx vercel alias set menubloc-frontend-5vl6kfuh6-menuply.vercel.app www.menuply.com
-npx vercel alias set menubloc-frontend-5vl6kfuh6-menuply.vercel.app crm.menuply.com
-npx vercel alias set menubloc-frontend-5vl6kfuh6-menuply.vercel.app venues.menuply.com
+npx vercel alias set menubloc-frontend-683cf6yk3-menuply.vercel.app menuply.com
+npx vercel alias set menubloc-frontend-683cf6yk3-menuply.vercel.app www.menuply.com
+npx vercel alias set menubloc-frontend-683cf6yk3-menuply.vercel.app crm.menuply.com
+npx vercel alias set menubloc-frontend-683cf6yk3-menuply.vercel.app venues.menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 ```
@@ -121,6 +122,7 @@ Newest superseded first. Restoring drops everything shipped after that tip.
 
 | Deployment id | Bundle | Approx feature / CPD |
 |---------------|--------|----------------------|
+| `5vl6kfuh6` | `index-BZBfCuwA.js` | Owner diner accounts roster (`12945f5`) — superseded by My Menuply hub `683cf6yk3` |
 | `psmauf4vh` | `index-WZh2e4sk.js` | Dish prefill + Post about (`8a1a961`) — superseded by owner diner accounts `5vl6kfuh6` |
 | `n7gxy1luu` | `index-DbN-zhDW.js` | Eating-plans calendar + restaurant next-week count (`0d126d9`) — superseded by dish-prefill `psmauf4vh` |
 | `lsmdx3d9x` | `index-C7QEDuzy.js` | Post-align Creators footer (`ea7eb4e`) — superseded by eating-plans `n7gxy1luu` |

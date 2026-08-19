@@ -31,7 +31,8 @@ test("BottomNav is Home Waiter Menu Browser X Basket My Menuply", () => {
   assert.match(nav, /to: "\/my-menuply"/);
   assert.match(nav, /<span>Menu<\/span>/);
   assert.match(nav, /<span>Browser<\/span>/);
-  assert.match(nav, /MenuplyXMark size=\{28\}/);
+  assert.match(nav, /MenuplyXMark size=\{24\}/);
+  assert.match(nav, /translateY\(6px\)/);
   assert.doesNotMatch(nav, /to: "\/search"/);
   assert.doesNotMatch(nav, /to: "\/activity"/);
 });

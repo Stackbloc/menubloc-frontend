@@ -131,8 +131,14 @@ export default function BottomNav() {
               onClick={() => setPostOpen(true)}
               style={{ ...itemStyle, color: postOpen ? "#1d4ed8" : "#9ca3af", fontWeight: 500 }}
             >
-              <span style={iconWrapStyle}>
-                <MenuplyXMark size={28} active={postOpen} />
+              <span
+                style={{
+                  ...iconWrapStyle,
+                  /* Logo X fills the box to the corners; nudge down to the emoji/icon optical row. */
+                  transform: "translateY(6px)",
+                }}
+              >
+                <MenuplyXMark size={24} active={postOpen} />
               </span>
               <span aria-hidden="true" style={{ visibility: "hidden", lineHeight: 1.05 }}>
                 {POST_LABEL}
