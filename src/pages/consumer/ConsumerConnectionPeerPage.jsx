@@ -24,8 +24,13 @@ import {
 } from "../../lib/consumerApi.js";
 import * as s from "./myMenuply/myMenuplyStyles.js";
 import DinerIdentityHero from "./myMenuply/DinerIdentityHero.jsx";
-import { FuturePlanRow, NamedShareCard, PhotoGrid, SectionHead, isScheduledEatingPlan } from "./myMenuply/myMenuplyBits.jsx";
+import { FuturePlanRow, NamedShareCard, PhotoGrid, SectionHead, WantToEatList, isScheduledEatingPlan } from "./myMenuply/myMenuplyBits.jsx";
 import { futurePlanKey, futurePlanRestaurantName } from "./myMenuply/dinerHubFormat.js";
+import {
+  mapConnectionsEatingForHub,
+  mapDiaryEntriesForHub,
+  mergeEatingFeedForHub,
+} from "../../lib/eatingFeedMerge.js";
 
 function planYmd(value) {
   const raw = String(value || "").trim();
@@ -135,15 +140,10 @@ export default function ConsumerConnectionPeerPage() {
           : accepted
       );
       const eatItems = (eatData.items || []).filter((item) => Number(item.peer?.id) === peerId);
-      const diaryItems = (diaryData.entries || []).map((row) => ({
-        ...row,
-        id: `wia-${row.id}`,
-        entry_id: row.id,
-        food_name: row.item_name || row.food_name || "Food",
-        kind: "what_i_ate",
-      }));
+      const diaryItems = mapDiaryEntriesForHub(diaryData.entries || []);
+      const activityItems = mapConnectionsEatingForHub(eatItems, peerId);
       const planItems = (planData.items || []).filter((item) => Number(item.peer?.id) === peerId);
-      setEating(diaryItems.length ? diaryItems : eatItems);
+      setEating(mergeEatingFeedForHub(diaryItems, activityItems).slice(0, 12));
       setPlans(planItems.filter((item) => item.kind !== "join_me" && item.href).map(asPlan));
       setCrews(crewData.crews || crewData.items || []);
       setPeerProfileMedia(mediaData?.items || []);
@@ -314,23 +314,11 @@ export default function ConsumerConnectionPeerPage() {
 
             <section style={s.section} data-testid="want-to-eat">
               <SectionHead title="What I Want to Eat" />
-              {peerWants.length === 0 ? (
-                <p style={s.muted}>Nothing yet.</p>
-              ) : (
-                peerWants.slice(0, 12).map((want) => (
-                  <div key={want.id} style={s.card}>
-                    {want.photo_url ? (
-                      <img
-                        src={resolveConsumerMediaUrl(want.photo_url)}
-                        alt=""
-                        style={{ ...s.photo, height: 120, borderRadius: 12, marginBottom: 8 }}
-                      />
-                    ) : null}
-                    <div style={{ fontWeight: 800 }}>{want.food_name}</div>
-                    {want.restaurant_name ? <div style={s.muted}>{want.restaurant_name}</div> : null}
-                  </div>
-                ))
-              )}
+              <WantToEatList
+                readOnly
+                items={peerWants}
+                emptyMessage="Nothing yet."
+              />
             </section>
 
             <section style={s.section} data-testid="dining-crews">

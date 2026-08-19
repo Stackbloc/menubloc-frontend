@@ -58,10 +58,11 @@ import {
   FuturePlanRow,
   NamedShareCard,
   foodHref,
+  WantToEatList,
   isScheduledEatingPlan,
 } from "./myMenuply/myMenuplyBits.jsx";
 import { futurePlanKey, futurePlanRestaurantName } from "./myMenuply/dinerHubFormat.js";
-import { mergeEatingFeedForHub } from "../../lib/eatingFeedMerge.js";
+import { mergeEatingFeedForHub, mapDiaryEntriesForHub, mapFoodActivityForHub } from "../../lib/eatingFeedMerge.js";
 
 function planYmd(value) {
   const raw = String(value || "").trim();
@@ -174,19 +175,8 @@ export default function MyMenuplyPage() {
       setProfile(nextProfile);
       setAvatarUrl(resolveConsumerMediaUrl(nextProfile?.avatar_url || ""));
       setProfileMedia(mediaRes?.items || []);
-      const activityItems = (activityRes.activities || []).map((row) => ({
-        ...row,
-        id: `fa-${row.id}`,
-        food_name: row.item_name || row.comment || "Food",
-        kind: "im_eating",
-      }));
-      const diaryItems = (ateRes.entries || []).map((row) => ({
-        ...row,
-        id: `wia-${row.id}`,
-        entry_id: row.id,
-        food_name: row.item_name || row.food_name || "Food",
-        kind: "what_i_ate",
-      }));
+      const activityItems = mapFoodActivityForHub(activityRes.activities || []);
+      const diaryItems = mapDiaryEntriesForHub(ateRes.entries || []);
       setEating(mergeEatingFeedForHub(diaryItems, activityItems).slice(0, 12));
       setPlans(planRes.sessions || []);
       setConnections(connRes.accepted || []);
@@ -780,38 +770,9 @@ export default function MyMenuplyPage() {
                   Nothing on your want list yet. Post above, then link a menu item if you like.
                 </p>
               ) : null}
-              {wants.map((want) => {
-                const href = want.menu_item_id ? `/menu-items/${want.menu_item_id}` : null;
-                const body = (
-                  <>
-                    {want.photo_url ? (
-                      <img
-                        src={resolveConsumerMediaUrl(want.photo_url)}
-                        alt=""
-                        style={{ ...s.photo, height: 120, borderRadius: 12, marginBottom: 8 }}
-                      />
-                    ) : null}
-                    <div style={{ fontWeight: 800 }}>{want.food_name}</div>
-                    {want.restaurant_name ? <div style={s.muted}>{want.restaurant_name}</div> : null}
-                    {want.menu_item_id ? (
-                      <div style={{ ...s.muted, fontSize: 12, marginTop: 4 }}>Menu item linked</div>
-                    ) : (
-                      <div style={{ ...s.muted, fontSize: 12, marginTop: 4 }}>Tap to link a menu item</div>
-                    )}
-                  </>
-                );
-                const cardStyle = {
-                  ...s.card,
-                  appearance: "none",
-                  width: "100%",
-                  textAlign: "left",
-                  cursor: "pointer",
-                  font: "inherit",
-                  display: "block",
-                  textDecoration: "none",
-                  color: "inherit",
-                };
-                const openTag = () =>
+              <WantToEatList
+                items={wants}
+                onSelectItem={(want) =>
                   setLastPost({
                     kind: "want",
                     id: want.id,
@@ -822,20 +783,9 @@ export default function MyMenuplyPage() {
                     restaurant_name: want.restaurant_name,
                     menu_item_id: want.menu_item_id,
                     item_name: want.item_name || want.food_name,
-                  });
-                if (href) {
-                  return (
-                    <Link key={want.id} to={href} style={cardStyle} data-testid="want-to-eat-item">
-                      {body}
-                    </Link>
-                  );
+                  })
                 }
-                return (
-                  <button key={want.id} type="button" style={cardStyle} data-testid="want-to-eat-item" onClick={openTag}>
-                    {body}
-                  </button>
-                );
-              })}
+              />
               {liked.slice(0, 6).map((meal) => (
                 <Link key={meal.menu_item_id} to={foodHref(meal)} style={s.card}>
                   <div style={{ fontWeight: 800 }}>{meal.item_name}</div>

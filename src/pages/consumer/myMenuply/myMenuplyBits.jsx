@@ -450,3 +450,82 @@ function formatPlanWhen(planDate) {
   if (Number.isNaN(d.getTime())) return "";
   return d.toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric", timeZone: "UTC" });
 }
+
+/** Shared want-list cards for My Menuply and Connection peer hubs. */
+export function WantToEatList({
+  items = [],
+  readOnly = false,
+  onSelectItem,
+  emptyMessage = null,
+  limit = 12,
+}) {
+  const rows = (items || []).slice(0, limit);
+  if (!rows.length) {
+    return emptyMessage ? (
+      <p style={s.muted} data-testid="want-to-eat-empty">
+        {emptyMessage}
+      </p>
+    ) : null;
+  }
+
+  return rows.map((want) => {
+    const href = want.menu_item_id ? `/menu-items/${want.menu_item_id}` : null;
+    const body = (
+      <>
+        {want.photo_url ? (
+          <img
+            src={resolveConsumerMediaUrl(want.photo_url)}
+            alt=""
+            style={{ ...s.photo, height: 120, borderRadius: 12, marginBottom: 8 }}
+          />
+        ) : null}
+        <div style={{ fontWeight: 800 }}>{want.food_name}</div>
+        {want.restaurant_name ? <div style={s.muted}>{want.restaurant_name}</div> : null}
+        {readOnly ? null : want.menu_item_id ? (
+          <div style={{ ...s.muted, fontSize: 12, marginTop: 4 }}>Menu item linked</div>
+        ) : (
+          <div style={{ ...s.muted, fontSize: 12, marginTop: 4 }}>Tap to link a menu item</div>
+        )}
+      </>
+    );
+    const cardStyle = {
+      ...s.card,
+      appearance: "none",
+      width: "100%",
+      textAlign: "left",
+      cursor: readOnly && !href ? "default" : "pointer",
+      font: "inherit",
+      display: "block",
+      textDecoration: "none",
+      color: "inherit",
+    };
+
+    if (href) {
+      return (
+        <Link key={want.id} to={href} style={cardStyle} data-testid="want-to-eat-item">
+          {body}
+        </Link>
+      );
+    }
+
+    if (readOnly) {
+      return (
+        <div key={want.id} style={cardStyle} data-testid="want-to-eat-item">
+          {body}
+        </div>
+      );
+    }
+
+    return (
+      <button
+        key={want.id}
+        type="button"
+        style={cardStyle}
+        data-testid="want-to-eat-item"
+        onClick={() => onSelectItem?.(want)}
+      >
+        {body}
+      </button>
+    );
+  });
+}

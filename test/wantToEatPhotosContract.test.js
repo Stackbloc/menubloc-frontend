@@ -15,10 +15,12 @@ function read(rel) {
 
 test("My Menuply want list shows posts and menu-item link path", () => {
   const page = read("src/pages/consumer/MyMenuplyPage.jsx");
-  assert.match(page, /want-to-eat-item/);
+  const bits = read("src/pages/consumer/myMenuply/myMenuplyBits.jsx");
+  assert.match(page, /WantToEatList/);
+  assert.match(bits, /want-to-eat-item/);
   assert.match(page, /want-to-eat-just-posted/);
   assert.match(page, /wantListError/);
-  assert.match(page, /Tap to link a menu item/);
+  assert.match(bits, /Tap to link a menu item/);
 });
 
 test("My Menuply want compose accepts optional photo upload", () => {

@@ -45,6 +45,8 @@ test("Connection diner page uses the same hub layout as My Menuply", () => {
 
   assert.match(peer, /readOnly/);
   assert.match(peer, /\/what-i-ate/);
+  assert.match(peer, /mergeEatingFeedForHub/);
+  assert.match(peer, /WantToEatList/);
   assert.doesNotMatch(peer, /QuickCompose/);
   assert.doesNotMatch(peer, /onAvatarFile/);
   assert.match(hero, /readOnly/);
