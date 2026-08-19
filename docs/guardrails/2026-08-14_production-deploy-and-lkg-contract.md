@@ -34,12 +34,12 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` @ clean `main` |
-| Git commit | `f7b6c0e` — camera-first eating media; compact empty photo rows (no blank hero) |
-| Vercel deployment | `menubloc-frontend-5gd67czv9-menuply.vercel.app` |
-| Live bundle | `index-Cd48RTdf.js` |
+| Git commit | `ca4bf97` — profile gallery Take photo + Record video side by side |
+| Vercel deployment | `menubloc-frontend-82q3dednw-menuply.vercel.app` |
+| Live bundle | `index-Ied-bxNY.js` |
 | Aliases | `menuply.com`, `www.menuply.com`, `crm.menuply.com`, `venues.menuply.com` |
-| Tip-gate | **PASS** (apex + www) verified 2026-08-19 after camera + compact placeholder CPD |
-| Feature | Inline camera on all devices; full photo height only when media exists; Eating hub from `80b6d41` |
+| Tip-gate | **PASS** (apex + www) verified 2026-08-19 after profile gallery layout CPD |
+| Feature | Eating hub + camera-first from `f7b6c0e`; profile capture buttons horizontal |
 
 ### Backend (Railway)
 
@@ -51,7 +51,7 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway
 | Health URL | `https://menubloc-backend-production.up.railway.app/health` |
 | `commit_hash` | `57e08927` (live at CPD certify) |
 | DB | `0277` eating media video + food_activity link (deploy with BE) |
-| Smoke | tip-gate PASS `5gd67czv9` / `index-Cd48RTdf.js`; health `57e08927`; bundle railway=59 localhost=9 |
+| Smoke | tip-gate PASS `82q3dednw` / `index-Ied-bxNY.js`; health `f880c631`; bundle railway=59 localhost=9 |
 
 ### Restore current tip (if tip-gate fails mid-change)
 
