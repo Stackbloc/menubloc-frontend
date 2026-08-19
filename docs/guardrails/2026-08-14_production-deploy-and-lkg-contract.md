@@ -34,9 +34,9 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` @ clean `main` |
-| Git commit | `3d81100` — camera Permissions-Policy `(self)` + native camera fallback |
-| Vercel deployment | `menubloc-frontend-6o01ok4ww-menuply.vercel.app` |
-| Live bundle | `index-D0BpzNQF.js` |
+| Git commit | `9935730` — menu item + icon → save-to-My-Menuply choice screen |
+| Vercel deployment | `menubloc-frontend-c7nyeh8xt-menuply.vercel.app` |
+| Live bundle | `index-gxB9JJHj.js` |
 | Aliases | `menuply.com`, `www.menuply.com`, `crm.menuply.com`, `venues.menuply.com` |
 | Tip-gate | **PASS** (apex + www) verified 2026-08-19 after camera permissions CPD |
 | Feature | Live camera preview on My Menuply; header `camera=(self)`; Open phone camera fallback |
