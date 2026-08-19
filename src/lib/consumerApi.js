@@ -80,12 +80,13 @@ export const confirmEduVerification = (token) =>
   post("/api/consumer-auth/edu/verify", { token });
 
 // ── Connections (people — not restaurant Following) ───────────────────────
-export const listConnections = (status = null) =>
-  get(
-    status
-      ? `/api/consumer/connections?status=${encodeURIComponent(status)}`
-      : "/api/consumer/connections"
-  );
+export const listConnections = (status = null, peerId = null) => {
+  const q = new URLSearchParams();
+  if (status) q.set("status", String(status));
+  if (peerId) q.set("peer_id", String(peerId));
+  const qs = q.toString();
+  return get(qs ? `/api/consumer/connections?${qs}` : "/api/consumer/connections");
+};
 export const requestConnection = (body) => post("/api/consumer/connections", body);
 export const acceptConnection = (id) =>
   post(`/api/consumer/connections/${encodeURIComponent(String(id))}/accept`, {});
@@ -145,6 +146,8 @@ export const addWhatWeDoingParticipants = (tokenOrId, body) =>
   post(`/api/consumer/what-we-doing/${encodeURIComponent(String(tokenOrId))}/participants`, body);
 export const joinWhatWeDoingSession = (tokenOrId) =>
   post(`/api/consumer/what-we-doing/${encodeURIComponent(String(tokenOrId))}/join`, {});
+export const listPendingEatInvitePeople = () =>
+  get("/api/consumer/eat-invitations/pending-people");
 export const addWhatWeDoingSuggestion = (tokenOrId, body) =>
   post(`/api/consumer/what-we-doing/${encodeURIComponent(String(tokenOrId))}/suggestions`, body);
 export const voteWhatWeDoing = (tokenOrId, suggestion_id) =>

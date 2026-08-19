@@ -1,7 +1,13 @@
 import { Link } from "react-router-dom";
+import { useMemo, useRef, useState } from "react";
 import InviteToEatButton from "../../../components/InviteToEatButton.jsx";
 import { restaurantPathFromRow } from "../../../lib/canonicalUrl.js";
 import { resolveConsumerMediaUrl } from "../../../lib/consumerApi.js";
+import {
+  compareMealPeriod,
+  normalizeWhatIAteMealPeriod,
+} from "../../../lib/whatIAteTodayMealPeriod.js";
+import { formatEatingCaption } from "./dinerHubFormat.js";
 import * as s from "./myMenuplyStyles.js";
 
 export function restaurantHref(row) {
@@ -33,71 +39,138 @@ export function SectionHead({ title, to, testId, aside = null }) {
   );
 }
 
-export function PhotoGrid({ items, onSelect }) {
-  if (!items.length) return null;
+export function PhotoGrid({ items, onSelect, onPhotoPick, hideJoinMe = false }) {
+  const ordered = useMemo(
+    () =>
+      [...(items || [])].sort((a, b) =>
+        compareMealPeriod(
+          normalizeWhatIAteMealPeriod(a.meal_period),
+          normalizeWhatIAteMealPeriod(b.meal_period)
+        )
+      ),
+    [items]
+  );
+  const [index, setIndex] = useState(0);
+  const fileRef = useRef(null);
+  if (!ordered.length) return null;
+  const safeIndex = Math.min(index, ordered.length - 1);
+  const item = ordered[safeIndex];
+  const label = item.food_name || item.item_name || item.itemName || "Food";
+  const place = item.restaurant_name || item.place_label || "";
+  const note = String(item.comment || "").trim();
+  const href = foodHref(item);
+  const restHref = restaurantHref(item);
+  const joinHref = hideJoinMe ? null : item.join_me_href;
+  const caption = formatEatingCaption(item);
+  const canPick = typeof onPhotoPick === "function";
+
+  function pickPhoto() {
+    if (!canPick) return;
+    fileRef.current?.click();
+  }
+
   return (
     <div style={s.grid} data-testid="what-im-eating-photos">
-      {items.map((item, index) => {
-        const label = item.food_name || item.item_name || item.itemName || "Food";
-        const place = item.restaurant_name || item.place_label || "";
-        const note = String(item.comment || "").trim();
-        const when = String(item.meal_period || "").replace(/_/g, " ").trim();
-        const href = foodHref(item);
-        const restHref = restaurantHref(item);
-        const joinHref = item.join_me_href;
-        return (
-          <article key={item.id || item.entry_id || item.menu_item_id || `${label}-${index}`} style={s.photoCard}>
-            {item.photo_url ? (
-              <img src={resolveConsumerMediaUrl(item.photo_url)} alt="" style={s.photo} />
-            ) : (
-              <div style={{ ...s.photo, display: "grid", placeItems: "center", fontSize: 28, color: "#14532d" }}>
-                🌭
-              </div>
-            )}
-            <div style={s.photoLabel}>
-              <div>{label}</div>
-              {place ? (
-                restHref ? (
-                  <Link to={restHref} style={{ ...s.photoMeta, display: "block" }}>
-                    {place}
-                  </Link>
-                ) : (
-                  <div style={s.photoMeta}>{place}</div>
-                )
-              ) : null}
-              {when ? <div style={s.photoMeta}>{when}</div> : null}
-              {note ? <div style={s.photoMeta}>{note}</div> : null}
-              <div style={s.actions}>
-                <Link to={href} style={s.chipBtn}>
-                  View dish
-                </Link>
-                {onSelect && item.kind === "what_i_ate" ? (
-                  <button
-                    type="button"
-                    style={{ ...s.chipBtn, appearance: "none", cursor: "pointer", font: "inherit" }}
-                    onClick={() => onSelect(item)}
-                  >
-                    Add details
-                  </button>
-                ) : null}
-                {joinHref ? (
-                  <Link to={joinHref} style={s.primaryBtn}>
-                    Join Me
-                  </Link>
-                ) : item.restaurant_id ? (
-                  <InviteToEatButton
-                    restaurantId={item.restaurant_id}
-                    restaurantName={place}
-                    menuItemId={item.menu_item_id}
-                    menuItemName={label}
-                    size="compact"
-                  />
-                ) : null}
-              </div>
+      <article key={item.id || item.entry_id || `${label}-${safeIndex}`} style={s.photoCard}>
+        {canPick ? (
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            hidden
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              event.target.value = "";
+              if (file) onPhotoPick(item, file);
+            }}
+          />
+        ) : null}
+        <button
+          type="button"
+          data-testid="eating-photo-slot"
+          onClick={pickPhoto}
+          disabled={!canPick}
+          style={{
+            ...s.photoButton,
+            cursor: canPick ? "pointer" : "default",
+            border: 0,
+            borderRadius: 0,
+            boxShadow: "none",
+          }}
+          aria-label={canPick ? "Add a photo of what you ate" : caption}
+        >
+          {item.photo_url ? (
+            <img src={resolveConsumerMediaUrl(item.photo_url)} alt="" style={s.photo} />
+          ) : (
+            <div style={{ ...s.photo, display: "grid", placeItems: "center", fontSize: 28, color: "#14532d" }}>
+              🌭
             </div>
-          </article>
-        );
-      })}
+          )}
+        </button>
+        <div style={s.photoLabel}>
+          <div data-testid="eating-photo-caption">{caption}</div>
+          {place ? (
+            restHref ? (
+              <Link to={restHref} style={{ ...s.photoMeta, display: "block" }}>
+                {place}
+              </Link>
+            ) : (
+              <div style={s.photoMeta}>{place}</div>
+            )
+          ) : null}
+          {note ? <div style={s.photoMeta}>{note}</div> : null}
+          {ordered.length > 1 ? (
+            <div style={s.actions}>
+              <button
+                type="button"
+                style={{ ...s.chipBtn, appearance: "none", cursor: "pointer", font: "inherit" }}
+                onClick={() => setIndex((i) => (i === 0 ? ordered.length - 1 : i - 1))}
+                aria-label="Previous food photo"
+              >
+                Prev
+              </button>
+              <span style={s.photoMeta}>
+                {safeIndex + 1} / {ordered.length}
+              </span>
+              <button
+                type="button"
+                style={{ ...s.chipBtn, appearance: "none", cursor: "pointer", font: "inherit" }}
+                onClick={() => setIndex((i) => (i + 1) % ordered.length)}
+                aria-label="Next food photo"
+              >
+                Next
+              </button>
+            </div>
+          ) : null}
+          <div style={s.actions}>
+            <Link to={href} style={s.chipBtn}>
+              View dish
+            </Link>
+            {onSelect && item.kind === "what_i_ate" ? (
+              <button
+                type="button"
+                style={{ ...s.chipBtn, appearance: "none", cursor: "pointer", font: "inherit" }}
+                onClick={() => onSelect(item)}
+              >
+                Add details
+              </button>
+            ) : null}
+            {joinHref ? (
+              <Link to={joinHref} style={s.primaryBtn}>
+                Join Me
+              </Link>
+            ) : !hideJoinMe && item.restaurant_id ? (
+              <InviteToEatButton
+                restaurantId={item.restaurant_id}
+                restaurantName={place}
+                menuItemId={item.menu_item_id}
+                menuItemName={label}
+                size="compact"
+              />
+            ) : null}
+          </div>
+        </div>
+      </article>
     </div>
   );
 }
@@ -214,6 +287,11 @@ export function EatingPlanCard({ plan, onAddDetails }) {
         {restHref ? (
           <Link to={restHref} style={s.chipBtn}>
             Restaurant
+          </Link>
+        ) : null}
+        {plan.join_me_href ? (
+          <Link to={plan.join_me_href} style={s.primaryBtn}>
+            Join Me
           </Link>
         ) : null}
       </div>

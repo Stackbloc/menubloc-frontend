@@ -1,5 +1,7 @@
 # Handoffs Index
 
+- [2026-08-18_future-plan-join-me-allow-list_handoff.md](./2026-08-18_future-plan-join-me-allow-list_handoff.md) — Future plan visible only to Join Me acceptors; pending Invites selectable (**LOCAL until CPD**)
+- [2026-08-18_diner-hub-peer-connections_handoff.md](./2026-08-18_diner-hub-peer-connections_handoff.md) — Every diner hub shows that diner’s Connections (**LOCAL**)
 - [2026-08-18_diner-hub-color-casual-photos_handoff.md](./2026-08-18_diner-hub-color-casual-photos_handoff.md) — Cream/green diner hub; casual food photos; calendar chip (**LOCAL**)
 - [2026-08-18_dish-prefill-post-about_handoff.md](./2026-08-18_dish-prefill-post-about_handoff.md) — Dish prefill, Post about, merge plans into What I'm Eating (**LIVE** in diner-accounts tip `5vl6kfuh6` / `index-BZBfCuwA.js`; BE `942e7c10`)
 - [2026-08-18_eating-plans-calendar_handoff.md](./2026-08-18_eating-plans-calendar_handoff.md) — Calendar eating plans + join seats + restaurant profile next-week count (**CPD COMPLETE** — tip `n7gxy1luu` / `index-DbN-zhDW.js`; BE `2923b248`)

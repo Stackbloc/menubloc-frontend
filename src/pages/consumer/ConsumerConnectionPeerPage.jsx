@@ -14,6 +14,7 @@ import {
   listConnections,
   listConnectionsEating,
   listConnectionsPlanning,
+  listPeerWhatIAteToday,
   resolveConsumerMediaUrl,
   whatIAteTodayLocalDate,
 } from "../../lib/consumerApi.js";
@@ -60,6 +61,7 @@ function asPlan(item) {
     joinable: item.joinable,
     join_capacity: item.join_capacity,
     joiner_count: item.participant_count || item.joiner_count,
+    join_me_href: item.join_me_href || (item.joinable ? item.href : null),
     title: item.title,
   };
 }
@@ -68,15 +70,22 @@ export default function ConsumerConnectionPeerPage() {
   const navigate = useNavigate();
   const { peerId: peerIdParam } = useParams();
   const peerId = Number(peerIdParam);
-  const { isAuthenticated, loading: authLoading } = useConsumer();
+  const { isAuthenticated, loading: authLoading, consumer, profile } = useConsumer();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [connection, setConnection] = useState(null);
+  const [peerConnections, setPeerConnections] = useState([]);
   const [eating, setEating] = useState([]);
   const [plans, setPlans] = useState([]);
   const [joinMeHref, setJoinMeHref] = useState("");
+  const [eatingDate, setEatingDate] = useState(() => whatIAteTodayLocalDate());
   const [planDate, setPlanDate] = useState(() => whatIAteTodayLocalDate());
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const [plansCalendarOpen, setPlansCalendarOpen] = useState(false);
+  const [eatingMonth, setEatingMonth] = useState(() => {
+    const t = new Date();
+    return new Date(t.getFullYear(), t.getMonth(), 1);
+  });
   const [planMonth, setPlanMonth] = useState(() => {
     const t = new Date();
     return new Date(t.getFullYear(), t.getMonth(), 1);
@@ -85,25 +94,51 @@ export default function ConsumerConnectionPeerPage() {
   const load = useCallback(async () => {
     setError("");
     try {
-      const [connData, eatData, planData] = await Promise.all([
+      const [connData, peerConnData, eatData, planData, diaryData] = await Promise.all([
         listConnections("accepted"),
+        listConnections("accepted", peerId).catch(() => ({ accepted: [] })),
         listConnectionsEating(40, peerId).catch(() => ({ items: [] })),
         listConnectionsPlanning(40, peerId).catch(() => ({ items: [] })),
+        listPeerWhatIAteToday(peerId, eatingDate).catch(() => ({ entries: [] })),
       ]);
       const match = (connData.accepted || []).find((c) => Number(c.peer?.id) === peerId);
       setConnection(match || null);
+      const accepted = peerConnData.accepted || [];
+      const ignoredPeerId = accepted.some((c) => Number(c.peer?.id) === peerId);
+      setPeerConnections(
+        ignoredPeerId
+          ? consumer?.id
+            ? [
+                {
+                  id: `viewer-${consumer.id}`,
+                  peer: {
+                    id: consumer.id,
+                    display_name: profile?.display_name || "You",
+                  },
+                },
+              ]
+            : []
+          : accepted
+      );
       const eatItems = (eatData.items || []).filter((item) => Number(item.peer?.id) === peerId);
+      const diaryItems = (diaryData.entries || []).map((row) => ({
+        ...row,
+        id: `wia-${row.id}`,
+        entry_id: row.id,
+        food_name: row.item_name || row.food_name || "Food",
+        kind: "what_i_ate",
+      }));
       const planItems = (planData.items || []).filter((item) => Number(item.peer?.id) === peerId);
-      setEating(eatItems);
+      setEating(diaryItems.length ? diaryItems : eatItems);
       setPlans(planItems.filter((item) => item.kind !== "join_me" && item.href).map(asPlan));
-      const join = [...eatItems, ...planItems].find((item) => item.join_me_href)?.join_me_href || "";
+      const join = planItems.find((item) => item.join_me_href)?.join_me_href || "";
       setJoinMeHref(join);
     } catch (err) {
       setError(err.message || "Unable to load Connection");
     } finally {
       setLoading(false);
     }
-  }, [peerId]);
+  }, [peerId, consumer?.id, profile?.display_name, eatingDate]);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -144,48 +179,71 @@ export default function ConsumerConnectionPeerPage() {
               displayName={name}
               avatarUrl={resolveConsumerMediaUrl(peer?.avatar_url || "")}
               about={peer?.diner_about || ""}
-              connections={[]}
+              connections={peerConnections}
+              viewerUserId={consumer?.id}
             />
 
             <section style={s.section} data-testid="what-im-eating">
               <SectionHead
                 title="What I'm Eating"
                 to={diaryHref}
-                aside={<DinerCalendarTrigger selectedDate={planDate} onOpen={() => setCalendarOpen(true)} />}
+                aside={<DinerCalendarTrigger selectedDate={eatingDate} onOpen={() => setCalendarOpen(true)} />}
               />
-              <PhotoGrid items={eating} />
+              <PhotoGrid items={eating} hideJoinMe />
               <DinerCalendarSheet
                 open={calendarOpen}
                 onClose={() => setCalendarOpen(false)}
                 testId="eating-plans-calendar"
-                selectedDate={planDate}
-                onSelectDate={setPlanDate}
-                viewMonth={planMonth}
-                onViewMonthChange={setPlanMonth}
-                dayCounts={[
-                  ...plans.map((plan) => planYmd(plan.plan_date)),
-                  ...eating.map((row) => planYmd(row.created_at || row.eaten_on)),
-                ]
+                selectedDate={eatingDate}
+                onSelectDate={setEatingDate}
+                viewMonth={eatingMonth}
+                onViewMonthChange={setEatingMonth}
+                maxYmd={whatIAteTodayLocalDate()}
+                dayCounts={eating
+                  .map((row) => planYmd(row.eaten_on || row.created_at))
                   .filter(Boolean)
                   .reduce((rows, ymd) => {
                     bumpDayCount(rows, ymd);
                     return rows;
                   }, [])}
               />
-              <h2 style={s.sectionTitle}>Future plans</h2>
+              <div style={s.row}>
+                <h2 style={s.sectionTitle}>Future plans</h2>
+                <DinerCalendarTrigger selectedDate={planDate} onOpen={() => setPlansCalendarOpen(true)} />
+              </div>
               {plans
-                .filter((plan) => compareYmd(plan.plan_date) > 0)
+                .filter((plan) => compareYmd(plan.plan_date) >= 0 && planYmd(plan.plan_date) === planDate)
                 .slice(0, 12)
                 .map((plan) => (
                   <EatingPlanCard key={plan.token || plan.id} plan={plan} />
                 ))}
+              <DinerCalendarSheet
+                open={plansCalendarOpen}
+                onClose={() => setPlansCalendarOpen(false)}
+                testId="future-plans-calendar"
+                selectedDate={planDate}
+                onSelectDate={setPlanDate}
+                viewMonth={planMonth}
+                onViewMonthChange={setPlanMonth}
+                minYmd={whatIAteTodayLocalDate()}
+                dayCounts={plans
+                  .filter((plan) => compareYmd(plan.plan_date) >= 0)
+                  .map((plan) => planYmd(plan.plan_date))
+                  .filter(Boolean)
+                  .reduce((rows, ymd) => {
+                    bumpDayCount(rows, ymd);
+                    return rows;
+                  }, [])}
+              />
               <div style={{ ...s.labelRow, marginTop: 14 }}>
                 <Link to={inviteHref} style={s.subLabel}>
                   Invite Me
                 </Link>
-                <Link to={joinMeHref || inviteHref} style={s.subLabel}>
-                  Join Me
-                </Link>
+                {joinMeHref ? (
+                  <Link to={joinMeHref} style={s.subLabel}>
+                    Join Me
+                  </Link>
+                ) : null}
               </div>
             </section>
 

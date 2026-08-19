@@ -10,6 +10,7 @@ export default function DinerIdentityHero({
   avatarUrl,
   about,
   connections = [],
+  viewerUserId = null,
   busy,
   notice,
   error,
@@ -130,10 +131,11 @@ export default function DinerIdentityHero({
               const peerId = c.peer?.id;
               const name = c.peer?.display_name || "Connection";
               if (!peerId) return null;
+              const isSelf = viewerUserId != null && Number(peerId) === Number(viewerUserId);
               return (
                 <Link
                   key={c.id || peerId}
-                  to={`/account/connections/${encodeURIComponent(String(peerId))}`}
+                  to={isSelf ? "/my-menuply" : `/account/connections/${encodeURIComponent(String(peerId))}`}
                   style={s.nameLink}
                 >
                   {name}

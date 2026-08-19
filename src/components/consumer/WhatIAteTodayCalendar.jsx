@@ -49,6 +49,8 @@ export default function WhatIAteTodayCalendar({
   dayCounts = [],
   readOnly = false,
   testId = "what-i-ate-today-calendar",
+  minYmd = null,
+  maxYmd = null,
 }) {
   const today = whatIAteTodayLocalDate();
   const selectedDate = selectedDateProp || today;
@@ -107,11 +109,12 @@ export default function WhatIAteTodayCalendar({
           const count = countMap.get(ymd) || 0;
           const selected = ymd === selectedDate;
           const isToday = ymd === today;
+          const outOfRange = (minYmd && ymd < minYmd) || (maxYmd && ymd > maxYmd);
           return (
             <button
               key={ymd}
               type="button"
-              disabled={readOnly && count === 0}
+              disabled={outOfRange || (readOnly && count === 0)}
               onClick={() => onSelectDate(ymd)}
               style={{
                 ...styles.dayCell,

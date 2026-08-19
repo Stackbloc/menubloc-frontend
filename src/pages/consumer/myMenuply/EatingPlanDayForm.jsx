@@ -4,6 +4,7 @@
 
 import { useEffect, useState } from "react";
 import { searchReportPlaces } from "../../../lib/foodActivityApi.js";
+import JoinMeAudiencePicker from "./JoinMeAudiencePicker.jsx";
 import * as s from "./myMenuplyStyles.js";
 
 export default function EatingPlanDayForm({
@@ -11,12 +12,15 @@ export default function EatingPlanDayForm({
   busy = false,
   onSubmit,
   followed = [],
+  joinCandidates = [],
 }) {
   const [query, setQuery] = useState("");
   const [hits, setHits] = useState([]);
   const [searching, setSearching] = useState(false);
   const [restaurant, setRestaurant] = useState(null);
   const [joinable, setJoinable] = useState(false);
+  const [joinAudience, setJoinAudience] = useState("connections");
+  const [selectedIds, setSelectedIds] = useState([]);
   const [joinCapacity, setJoinCapacity] = useState("4");
 
   useEffect(() => {
@@ -62,12 +66,16 @@ export default function EatingPlanDayForm({
       placeLabel: restaurant.restaurant_name,
       restaurantSlug: restaurant.restaurant_slug,
       joinable,
+      joinAudience: joinable ? joinAudience : "none",
+      joinAllowedUserIds: joinable && joinAudience === "selected" ? selectedIds : [],
       joinCapacity: joinable ? Number(joinCapacity) : null,
     });
     setRestaurant(null);
     setQuery("");
     setHits([]);
     setJoinable(false);
+    setJoinAudience("connections");
+    setSelectedIds([]);
     setJoinCapacity("4");
   }
 
@@ -148,31 +156,27 @@ export default function EatingPlanDayForm({
           ) : null}
         </>
       )}
-      <label style={styles.check}>
-        <input
-          type="checkbox"
-          checked={joinable}
-          disabled={busy}
-          onChange={(e) => setJoinable(e.target.checked)}
-        />
-        People can join
-      </label>
-      {joinable ? (
-        <label style={styles.seats}>
-          How many can join
-          <input
-            type="number"
-            min={1}
-            max={99}
-            value={joinCapacity}
-            disabled={busy}
-            onChange={(e) => setJoinCapacity(e.target.value)}
-            style={styles.num}
-            aria-label="How many can join"
-          />
-        </label>
-      ) : null}
-      <button type="submit" disabled={busy || !restaurant?.restaurant_id} style={s.primaryBtn}>
+      <JoinMeAudiencePicker
+        joinable={joinable}
+        onJoinableChange={setJoinable}
+        audience={joinAudience}
+        onAudienceChange={setJoinAudience}
+        selectedIds={selectedIds}
+        onSelectedIdsChange={setSelectedIds}
+        candidates={joinCandidates}
+        joinCapacity={joinCapacity}
+        onJoinCapacityChange={setJoinCapacity}
+        disabled={busy}
+      />
+      <button
+        type="submit"
+        disabled={
+          busy ||
+          !restaurant?.restaurant_id ||
+          (joinable && joinAudience === "selected" && selectedIds.length === 0)
+        }
+        style={s.primaryBtn}
+      >
         {busy ? "…" : "Post"}
       </button>
     </form>

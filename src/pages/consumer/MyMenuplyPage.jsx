@@ -24,6 +24,7 @@ import {
   listMyFoodActivity,
   listMyVenueEventGroups,
   listMyVenueEvents,
+  listPendingEatInvitePeople,
   listWantToEat,
   listWhatIAteToday,
   listWhatWeDoingSessions,
@@ -31,6 +32,7 @@ import {
   updateConsumerProfile,
   uploadDinerAvatar,
   uploadWhatIAteTodayPhoto,
+  updateWhatIAteToday,
   whatIAteTodayLocalDate,
 } from "../../lib/consumerApi.js";
 import { defaultWhatIAteMealPeriod } from "../../lib/whatIAteTodayMealPeriod.js";
@@ -43,6 +45,8 @@ import * as s from "./myMenuply/myMenuplyStyles.js";
 import DinerIdentityHero from "./myMenuply/DinerIdentityHero.jsx";
 import QuickCompose from "./myMenuply/QuickCompose.jsx";
 import PostAfterActions from "./myMenuply/PostAfterActions.jsx";
+import EatingPlanDayForm from "./myMenuply/EatingPlanDayForm.jsx";
+import { buildJoinMeCandidates } from "./myMenuply/joinMeCandidates.js";
 import {
   PhotoGrid,
   SectionHead,
@@ -82,7 +86,7 @@ function formatEventWhen(ev) {
 }
 
 export default function MyMenuplyPage() {
-  const { isAuthenticated, loading: authLoading } = useConsumer();
+  const { isAuthenticated, loading: authLoading, consumer } = useConsumer();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [profile, setProfile] = useState(null);
@@ -101,7 +105,12 @@ export default function MyMenuplyPage() {
   const [events, setEvents] = useState([]);
   const [eventGroups, setEventGroups] = useState([]);
   const [planDate, setPlanDate] = useState(() => whatIAteTodayLocalDate());
+  const [eatingDate, setEatingDate] = useState(() => whatIAteTodayLocalDate());
   const [planMonth, setPlanMonth] = useState(() => {
+    const t = new Date();
+    return new Date(t.getFullYear(), t.getMonth(), 1);
+  });
+  const [eatingMonth, setEatingMonth] = useState(() => {
     const t = new Date();
     return new Date(t.getFullYear(), t.getMonth(), 1);
   });
@@ -109,6 +118,8 @@ export default function MyMenuplyPage() {
   const [shareOpen, setShareOpen] = useState(false);
   const [sharePayload, setSharePayload] = useState(null);
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const [plansCalendarOpen, setPlansCalendarOpen] = useState(false);
+  const [joinCandidates, setJoinCandidates] = useState([]);
 
   const load = useCallback(async () => {
     setError("");
@@ -119,6 +130,7 @@ export default function MyMenuplyPage() {
         ateRes,
         planRes,
         connRes,
+        inviteRes,
         followRes,
         likeRes,
         wantRes,
@@ -128,9 +140,10 @@ export default function MyMenuplyPage() {
       ] = await Promise.all([
         getConsumerProfile().catch(() => null),
         listMyFoodActivity(20).catch(() => ({ activities: [] })),
-        listWhatIAteToday(whatIAteTodayLocalDate()).catch(() => ({ entries: [] })),
+        listWhatIAteToday(eatingDate).catch(() => ({ entries: [] })),
         listWhatWeDoingSessions().catch(() => ({ sessions: [] })),
         listConnections().catch(() => ({ accepted: [] })),
+        listPendingEatInvitePeople().catch(() => ({ people: [] })),
         getFollowedRestaurants().catch(() => ({ restaurants: [] })),
         getLikedMenuItems().catch(() => ({ likes: [] })),
         listWantToEat().catch(() => ({ items: [] })),
@@ -157,6 +170,12 @@ export default function MyMenuplyPage() {
       setEating([...diaryItems, ...activityItems].slice(0, 12));
       setPlans(planRes.sessions || []);
       setConnections(connRes.accepted || []);
+      setJoinCandidates(
+        buildJoinMeCandidates({
+          connections: connRes.accepted || [],
+          pendingInvites: inviteRes.people || [],
+        })
+      );
       setFollowed(followRes.restaurants || followRes.items || []);
       setLiked(likeRes.likes || []);
       setWants(wantRes.items || []);
@@ -168,7 +187,7 @@ export default function MyMenuplyPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [eatingDate]);
 
   useEffect(() => {
     if (!authLoading && isAuthenticated) load();
@@ -211,31 +230,70 @@ export default function MyMenuplyPage() {
     setPostBusy("eating");
     setError("");
     try {
-      if (compareYmd(planDate) > 0) {
-        const data = await createWhatWeDoingSession({
-          plan_date: planDate,
-          place_label: text || undefined,
-        });
-        const session = data.session || data;
-        setLastPost({ kind: "plan", token: session.token, id: session.id });
-      } else {
-        let photo_url;
-        if (file) {
-          const up = await uploadWhatIAteTodayPhoto(file);
-          photo_url = up.photo_url || undefined;
-        }
-        const data = await createWhatIAteToday({
-          food_name: text || "Food",
-          photo_url,
-          eaten_on: planDate,
-          meal_period: defaultWhatIAteMealPeriod(),
-        });
-        const entry = data.entry || data;
-        setLastPost({ kind: "diary", id: entry.id });
+      if (compareYmd(eatingDate) > 0) return;
+      let photo_url;
+      if (file) {
+        const up = await uploadWhatIAteTodayPhoto(file);
+        photo_url = up.photo_url || undefined;
       }
+      const data = await createWhatIAteToday({
+        food_name: text || "Food",
+        photo_url,
+        eaten_on: eatingDate,
+        meal_period: defaultWhatIAteMealPeriod(),
+      });
+      const entry = data.entry || data;
+      setLastPost({ kind: "diary", id: entry.id });
       await load();
     } catch (err) {
       setError(err.message || "Unable to add");
+    } finally {
+      setPostBusy("");
+    }
+  }
+
+  async function postPlan(payload) {
+    setPostBusy("eating");
+    setError("");
+    try {
+      const data = await createWhatWeDoingSession({
+        plan_date: payload.planDate,
+        restaurant_id: payload.restaurantId,
+        place_label: payload.placeLabel,
+        joinable: payload.joinable,
+        join_capacity: payload.joinCapacity,
+        join_audience: payload.joinAudience,
+        join_allowed_user_ids: payload.joinAllowedUserIds,
+      });
+      const session = data.session || data;
+      setLastPost({ kind: "plan", token: session.token, id: session.id });
+      await load();
+    } catch (err) {
+      setError(err.message || "Unable to add plan");
+    } finally {
+      setPostBusy("");
+    }
+  }
+
+  async function onEatingPhotoPick(item, file) {
+    setPostBusy("eating");
+    setError("");
+    try {
+      const up = await uploadWhatIAteTodayPhoto(file);
+      const photo_url = up.photo_url;
+      if (item?.kind === "what_i_ate" && item.entry_id) {
+        await updateWhatIAteToday(item.entry_id, { photo_url });
+      } else {
+        await createWhatIAteToday({
+          food_name: item?.food_name || "Food",
+          photo_url,
+          eaten_on: eatingDate,
+          meal_period: item?.meal_period || defaultWhatIAteMealPeriod(),
+        });
+      }
+      await load();
+    } catch (err) {
+      setError(err.message || "Unable to add photo");
     } finally {
       setPostBusy("");
     }
@@ -379,6 +437,7 @@ export default function MyMenuplyPage() {
               avatarUrl={avatarUrl}
               about={profile?.diner_about || ""}
               connections={connections}
+              viewerUserId={consumer?.id}
               busy={identityBusy}
               notice={identityNotice}
               error={identityError}
@@ -390,17 +449,31 @@ export default function MyMenuplyPage() {
               <SectionHead
                 title="What I'm Eating"
                 to="/account/what-i-ate"
-                aside={<DinerCalendarTrigger selectedDate={planDate} onOpen={() => setCalendarOpen(true)} />}
+                aside={<DinerCalendarTrigger selectedDate={eatingDate} onOpen={() => setCalendarOpen(true)} />}
               />
               <QuickCompose
                 testId="compose-eating"
-                placeholder={compareYmd(planDate) > 0 ? "What are you eating?" : "What did you eat?"}
-                acceptPhoto={compareYmd(planDate) <= 0}
+                placeholder="What did you eat?"
+                acceptPhoto
                 busy={postBusy === "eating"}
                 onSubmit={postEating}
               />
               <PhotoGrid
-                items={eating}
+                items={
+                  eating.length
+                    ? eating
+                    : [
+                        {
+                          id: "placeholder",
+                          food_name: "Food",
+                          eaten_on: eatingDate,
+                          meal_period: defaultWhatIAteMealPeriod(),
+                          kind: "what_i_ate",
+                        },
+                      ]
+                }
+                hideJoinMe
+                onPhotoPick={onEatingPhotoPick}
                 onSelect={(item) => {
                   if (item?.kind !== "what_i_ate") return;
                   setLastPost({
@@ -432,23 +505,32 @@ export default function MyMenuplyPage() {
                 open={calendarOpen}
                 onClose={() => setCalendarOpen(false)}
                 testId="eating-plans-calendar"
-                selectedDate={planDate}
-                onSelectDate={setPlanDate}
-                viewMonth={planMonth}
-                onViewMonthChange={setPlanMonth}
-                dayCounts={[
-                  ...plans.map((plan) => planYmd(plan.plan_date)),
-                  ...eating.map((row) => planYmd(row.eaten_on)),
-                ]
+                selectedDate={eatingDate}
+                onSelectDate={setEatingDate}
+                viewMonth={eatingMonth}
+                onViewMonthChange={setEatingMonth}
+                maxYmd={whatIAteTodayLocalDate()}
+                dayCounts={eating
+                  .map((row) => planYmd(row.eaten_on))
                   .filter(Boolean)
                   .reduce((rows, ymd) => {
                     bumpDayCount(rows, ymd);
                     return rows;
                   }, [])}
               />
-              <h2 style={s.sectionTitle}>Future plans</h2>
+              <div style={s.row}>
+                <h2 style={s.sectionTitle}>Future plans</h2>
+                <DinerCalendarTrigger selectedDate={planDate} onOpen={() => setPlansCalendarOpen(true)} />
+              </div>
+              <EatingPlanDayForm
+                planDate={planDate}
+                busy={postBusy === "eating"}
+                followed={followed}
+                joinCandidates={joinCandidates}
+                onSubmit={postPlan}
+              />
               {plans
-                .filter((plan) => compareYmd(plan.plan_date) > 0)
+                .filter((plan) => compareYmd(plan.plan_date) >= 0 && planYmd(plan.plan_date) === planDate)
                 .slice(0, 12)
                 .map((plan) => (
                   <EatingPlanCard
@@ -480,14 +562,32 @@ export default function MyMenuplyPage() {
                   }}
                 />
               ) : null}
+              <DinerCalendarSheet
+                open={plansCalendarOpen}
+                onClose={() => setPlansCalendarOpen(false)}
+                testId="future-plans-calendar"
+                selectedDate={planDate}
+                onSelectDate={setPlanDate}
+                viewMonth={planMonth}
+                onViewMonthChange={setPlanMonth}
+                minYmd={whatIAteTodayLocalDate()}
+                dayCounts={plans
+                  .filter((plan) => compareYmd(plan.plan_date) >= 0)
+                  .map((plan) => planYmd(plan.plan_date))
+                  .filter(Boolean)
+                  .reduce((rows, ymd) => {
+                    bumpDayCount(rows, ymd);
+                    return rows;
+                  }, [])}
+              />
               <div style={{ ...s.labelRow, marginTop: 14 }}>
                 <Link to="/account/what-we-doing" style={s.subLabel}>
                   Invite Me
                 </Link>
-                <Link to="/account/im-eating" style={s.subLabel}>
-                  Join Me
-                </Link>
               </div>
+              <p style={s.muted}>
+                Only people you open Join Me to can see that future plan.
+              </p>
             </section>
 
             <section style={s.section} data-testid="want-to-eat">

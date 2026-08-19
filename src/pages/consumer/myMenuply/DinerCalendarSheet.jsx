@@ -48,6 +48,8 @@ export default function DinerCalendarSheet({
   onViewMonthChange,
   dayCounts,
   testId = "eating-plans-calendar",
+  minYmd = null,
+  maxYmd = null,
 }) {
   useEffect(() => {
     if (!open) return undefined;
@@ -91,6 +93,8 @@ export default function DinerCalendarSheet({
           viewMonth={viewMonth}
           onViewMonthChange={onViewMonthChange}
           dayCounts={dayCounts}
+          minYmd={minYmd}
+          maxYmd={maxYmd}
         />
       </div>
     </div>,
