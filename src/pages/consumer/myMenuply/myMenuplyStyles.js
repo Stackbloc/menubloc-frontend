@@ -440,14 +440,17 @@ export const profileMediaAdd = {
   fontSize: 12,
   padding: 8,
   display: "flex",
-  flexDirection: "column",
-  gap: 6,
+  flexDirection: "row",
+  flexWrap: "wrap",
+  alignItems: "center",
+  gap: 8,
   justifyContent: "center",
 };
 
 export const profileMediaCaptureBtn = {
   appearance: "none",
-  width: "100%",
+  flex: "1 1 0",
+  minWidth: 0,
   border: `1px solid ${BORDER_INPUT}`,
   borderRadius: 8,
   background: "#ffffff",
