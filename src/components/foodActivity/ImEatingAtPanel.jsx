@@ -6,9 +6,24 @@
 import React, { useEffect, useMemo, useState } from "react";
 import ShareModal from "../share/ShareModal.jsx";
 import ImEatingComposer from "./ImEatingComposer.jsx";
+import EatingMediaAttach from "./EatingMediaAttach.jsx";
 import GuestContributeNextStep from "./GuestContributeNextStep.jsx";
-import { activateJoinMe, endJoinMe } from "../../lib/consumerApi.js";
-import { createPublicFoodActivity, asRestaurantPlace, asDishPlace } from "../../lib/foodActivityApi.js";
+import {
+  activateJoinMe,
+  createImEating,
+  createWhatIAteToday,
+  endJoinMe,
+  resolveConsumerMediaUrl,
+  uploadFoodActivityPhoto,
+  whatIAteTodayLocalDate,
+} from "../../lib/consumerApi.js";
+import {
+  createPublicFoodActivity,
+  uploadPublicFoodActivityPhoto,
+  asRestaurantPlace,
+  asDishPlace,
+} from "../../lib/foodActivityApi.js";
+import { defaultWhatIAteMealPeriod } from "../../lib/whatIAteTodayMealPeriod.js";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
 import { readOptionalReporterCoords } from "../../lib/guestReporterSession.js";
 import { buildJoinMeShareData, formatJoinMeLocationLabel } from "../../lib/joinMeShare.js";
@@ -37,6 +52,16 @@ function locationOf(activity, restaurant) {
   });
 }
 
+function resolvedFoodName({ foodName, menuItem, comment, skipMenuItem }) {
+  const fromItem = String(menuItem?.item_name || "").trim();
+  if (fromItem) return fromItem;
+  const fromField = String(foodName || "").trim();
+  if (fromField) return fromField;
+  const fromComment = String(comment || "").trim();
+  if (fromComment && skipMenuItem) return fromComment.slice(0, 120);
+  return "";
+}
+
 export default function ImEatingAtPanel({
   compact = false,
   onPosted = null,
@@ -49,6 +74,8 @@ export default function ImEatingAtPanel({
   const { isAuthenticated } = useConsumer();
   const [restaurant, setRestaurant] = useState(() => asRestaurantPlace(initialRestaurant));
   const [menuItem, setMenuItem] = useState(() => asDishPlace(initialMenuItem));
+  const [foodName, setFoodName] = useState("");
+  const [mediaFile, setMediaFile] = useState(null);
   const [comment, setComment] = useState("");
   const [visibility, setVisibility] = useState("public");
   const [busy, setBusy] = useState(false);
@@ -65,7 +92,10 @@ export default function ImEatingAtPanel({
 
   useEffect(() => {
     const next = asDishPlace(initialMenuItem);
-    if (next?.menu_item_id) setMenuItem(next);
+    if (next?.menu_item_id) {
+      setMenuItem(next);
+      if (next.item_name) setFoodName(next.item_name);
+    }
   }, [initialMenuItem]);
 
   const shareData = useMemo(() => {
@@ -88,25 +118,71 @@ export default function ImEatingAtPanel({
       setError("Choose a specific restaurant location.");
       return;
     }
-    if (!menuItem?.menu_item_id && !comment.trim()) {
-      setError(skipMenuItem ? "Say what's good today." : "Add a brief note when sharing without a menu item.");
+    const name = resolvedFoodName({ foodName, menuItem, comment, skipMenuItem });
+    if (!menuItem?.menu_item_id && !name && !comment.trim()) {
+      setError(
+        skipMenuItem
+          ? "Say what's good today."
+          : "Name what you ate, pick a menu item, or add a brief note."
+      );
       return;
     }
+
     setBusy(true);
     setError("");
     setNotice("");
     try {
+      let photo_url;
+      if (mediaFile) {
+        const up = isAuthenticated
+          ? await uploadFoodActivityPhoto(mediaFile)
+          : await uploadPublicFoodActivityPhoto(mediaFile);
+        photo_url = up.photo_url || undefined;
+      }
+
       const coords = await readOptionalReporterCoords();
-      const data = await createPublicFoodActivity({
+      const note =
+        comment.trim() ||
+        (name && !menuItem?.menu_item_id ? name : "") ||
+        null;
+      const body = {
         restaurant_id: restaurant.restaurant_id,
         menu_item_id: menuItem?.menu_item_id || null,
         menu_id: menuItem?.menu_id || null,
-        comment: comment.trim() || null,
+        comment: note,
+        photo_url,
         visibility: isAuthenticated ? visibility : "public",
         lat: coords.lat,
         lng: coords.lng,
-      });
-      setLastPosted(data.activity || null);
+      };
+
+      const data = isAuthenticated
+        ? await createImEating(body)
+        : await createPublicFoodActivity(body);
+
+      const activity = data.activity || null;
+
+      if (isAuthenticated && activity) {
+        const diaryName =
+          name ||
+          activity.item_name ||
+          activity.comment ||
+          restaurant.restaurant_name ||
+          "Food";
+        await createWhatIAteToday({
+          food_name: diaryName,
+          menu_item_id: menuItem?.menu_item_id || undefined,
+          restaurant_id: restaurant.restaurant_id,
+          comment: note || undefined,
+          photo_url,
+          eaten_on: whatIAteTodayLocalDate(),
+          meal_period: defaultWhatIAteMealPeriod(),
+        }).catch(() => {
+          /* diary mirror is best-effort; food_activity is canonical for restaurant feed */
+        });
+      }
+
+      setLastPosted(activity);
       setJoinMe(null);
       setNotice(
         data.notice ||
@@ -114,9 +190,11 @@ export default function ImEatingAtPanel({
       );
       if (!lockRestaurant) setRestaurant(null);
       setMenuItem(null);
+      setFoodName("");
+      setMediaFile(null);
       setComment("");
       setVisibility("public");
-      if (onPosted) onPosted(data.activity);
+      if (onPosted) onPosted(activity);
     } catch (err) {
       setError(err.message || "Unable to share");
     } finally {
@@ -158,6 +236,7 @@ export default function ImEatingAtPanel({
   }
 
   const place = lastPosted ? locationOf(lastPosted, restaurant) : "";
+  const showFoodName = !menuItem?.menu_item_id && !skipMenuItem;
 
   return (
     <div data-testid="im-eating-at-panel">
@@ -165,11 +244,33 @@ export default function ImEatingAtPanel({
       {notice ? <p style={styles.notice}>{notice}</p> : null}
 
       <form onSubmit={handleShare} style={styles.form}>
+        <EatingMediaAttach disabled={busy || disabled} file={mediaFile} onFileChange={setMediaFile} />
+        {showFoodName ? (
+          <>
+            <label style={styles.label} htmlFor="im-eating-food-name">
+              What did you eat?
+            </label>
+            <input
+              id="im-eating-food-name"
+              type="text"
+              value={foodName}
+              disabled={busy || disabled}
+              onChange={(e) => setFoodName(e.target.value)}
+              placeholder="Spicy chicken sandwich"
+              maxLength={120}
+              style={styles.input}
+              data-testid="im-eating-food-name"
+            />
+          </>
+        ) : null}
         <ImEatingComposer
           restaurant={restaurant}
           menuItem={menuItem}
           onRestaurantChange={setRestaurant}
-          onMenuItemChange={setMenuItem}
+          onMenuItemChange={(next) => {
+            setMenuItem(next);
+            if (next?.item_name) setFoodName(next.item_name);
+          }}
           comment={comment}
           onCommentChange={setComment}
           visibility={visibility}
@@ -180,16 +281,24 @@ export default function ImEatingAtPanel({
           skipMenuItem={skipMenuItem}
         />
         <button type="submit" style={styles.primary} disabled={busy || disabled}>
-          {busy ? "Sharing…" : skipMenuItem ? "Post what's good today" : "Share I'm Eating At"}
+          {busy ? "Sharing…" : skipMenuItem ? "Post what's good today" : "Publish"}
         </button>
       </form>
 
       {lastPosted ? (
         <div data-testid="im-eating-at-posted" style={styles.posted}>
           <div style={styles.kicker}>I'm Eating At</div>
+          {lastPosted.photo_url ? (
+            <img
+              src={resolveConsumerMediaUrl(lastPosted.photo_url)}
+              alt=""
+              style={styles.postedPhoto}
+              data-testid="im-eating-posted-photo"
+            />
+          ) : null}
           <strong style={styles.place}>{place}</strong>
           <p style={styles.meta}>
-            {[lastPosted.item_name, lastPosted.comment, relativeAgo(lastPosted.created_at)]
+            {[lastPosted.item_name || foodName, lastPosted.comment, relativeAgo(lastPosted.created_at)]
               .filter(Boolean)
               .join(" · ")}
           </p>
@@ -246,6 +355,15 @@ export default function ImEatingAtPanel({
 
 const styles = {
   form: { display: "grid", gap: 12 },
+  label: { fontSize: 13, fontWeight: 600, color: "#334155" },
+  input: {
+    width: "100%",
+    boxSizing: "border-box",
+    padding: "10px 12px",
+    borderRadius: 10,
+    border: "1px solid #cbd5e1",
+    fontSize: 15,
+  },
   primary: {
     border: "none",
     borderRadius: 12,
@@ -284,6 +402,13 @@ const styles = {
     background: "#f8fafc",
     display: "grid",
     gap: 8,
+  },
+  postedPhoto: {
+    width: "100%",
+    maxHeight: 240,
+    objectFit: "cover",
+    borderRadius: 10,
+    display: "block",
   },
   kicker: {
     fontSize: 11,

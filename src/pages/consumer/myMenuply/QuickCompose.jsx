@@ -13,6 +13,7 @@ export default function QuickCompose({
   defaultValue = "",
   submitLabel = "Post",
   testId = "quick-compose",
+  autoFocus = false,
 }) {
   const [text, setText] = useState(defaultValue);
   const [file, setFile] = useState(null);
@@ -61,6 +62,7 @@ export default function QuickCompose({
         disabled={busy}
         maxLength={inputType === "text" ? 160 : undefined}
         autoComplete="off"
+        autoFocus={autoFocus}
         style={styles.input}
       />
       <button

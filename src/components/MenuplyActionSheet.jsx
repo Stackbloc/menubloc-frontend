@@ -25,6 +25,31 @@ function imEatingPath(pathname) {
   return "/account/im-eating";
 }
 
+function inviteToEatPath(pathname) {
+  const parts = String(pathname || "").split("/").filter(Boolean);
+  const menuIdx = parts.findIndex((part) => part === "menu-items" || part === "menu-item-info");
+  if (menuIdx >= 0 && parts[menuIdx + 1]) {
+    const item = decodeURIComponent(parts[menuIdx + 1]);
+    const restIdx = parts.findIndex((part) => part === "restaurants");
+    const rest = restIdx >= 0
+      ? parts.slice(restIdx + 1).filter((part) => !["menu", "billboard", "qr-codes", "display"].includes(part))
+      : [];
+    const slug = rest[rest.length - 1];
+    const qs = new URLSearchParams({ menu_item_id: item });
+    if (slug) qs.set("restaurant_id", slug);
+    return `/account/invite-to-eat?${qs.toString()}`;
+  }
+  const restIdx = parts.findIndex((part) => part === "restaurants");
+  if (restIdx >= 0 && !["operator", "owner", "distributor"].includes(parts[0])) {
+    const rest = parts
+      .slice(restIdx + 1)
+      .filter((part) => !["menu", "billboard", "qr-codes", "display"].includes(part));
+    const slug = rest[rest.length - 1];
+    if (slug) return `/account/invite-to-eat?restaurant_id=${encodeURIComponent(slug)}`;
+  }
+  return "/account/invite-to-eat";
+}
+
 const ACTIONS = [
   {
     id: "im-eating",
@@ -44,9 +69,10 @@ const ACTIONS = [
   {
     id: "invite",
     title: "Invite to Eat",
-    description: "Find a restaurant, then invite from the profile.",
-    to: "/search",
+    description: "Pick a restaurant, invite friends, and share the link.",
+    to: "/account/invite-to-eat",
     guestOk: true,
+    inviteContext: true,
   },
   {
     id: "plan",
@@ -58,15 +84,15 @@ const ACTIONS = [
   {
     id: "want",
     title: "Add to Want to Eat",
-    description: "Search a dish or restaurant to save it.",
-    to: "/search",
+    description: "Save a dish, photo, or food idea for later.",
+    to: "/my-menuply?focus=want",
     guestOk: false,
   },
   {
     id: "events",
     title: "Find events",
-    description: "See events at restaurants, venues, and clusters.",
-    to: "/clusters",
+    description: "Browse dining events at restaurants and venues near you.",
+    to: "/events",
     guestOk: true,
   },
 ];
@@ -94,7 +120,9 @@ export default function MenuplyActionSheet({ open, onClose }) {
 
   function go(action) {
     onClose();
-    const to = action.eatingContext ? imEatingPath(pathname) : action.to;
+    let to = action.to;
+    if (action.eatingContext) to = imEatingPath(pathname);
+    if (action.inviteContext) to = inviteToEatPath(pathname);
     if (!action.guestOk && !isAuthenticated) {
       navigate(`/account/login?next=${encodeURIComponent(to)}`);
       return;

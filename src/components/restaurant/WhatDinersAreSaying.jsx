@@ -9,6 +9,7 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import FoodComments from "../comments/FoodComments.jsx";
 import { listPublicRestaurantFoodActivity, getRestaurantUpcomingEatingPlans } from "../../lib/foodActivityApi.js";
+import { resolveConsumerMediaUrl } from "../../lib/consumerApi.js";
 import { profileReadableSurfaceStyle } from "./publicProfile/profilePrimitives.jsx";
 import DinerStatusFeed from "../dinerStatus/DinerStatusFeed.jsx";
 import ImEatingAtPanel from "../foodActivity/ImEatingAtPanel.jsx";
@@ -58,7 +59,7 @@ function ActivityCard({ activity }) {
       ) : null}
       {activity?.photo_url ? (
         <img
-          src={activity.photo_url}
+          src={resolveConsumerMediaUrl(activity.photo_url)}
           alt=""
           style={styles.photo}
           loading="lazy"

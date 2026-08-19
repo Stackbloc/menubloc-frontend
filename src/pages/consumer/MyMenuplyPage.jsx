@@ -3,8 +3,8 @@
  * About Me (with Connections), what she's eating, her plans, wants, crews, events.
  */
 
-import React, { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import StickyPageHeader from "../../components/StickyPageHeader.jsx";
 import BottomNav from "../../components/BottomNav.jsx";
 import ShareModal from "../../components/share/ShareModal.jsx";
@@ -56,6 +56,7 @@ import {
   isScheduledEatingPlan,
 } from "./myMenuply/myMenuplyBits.jsx";
 import { futurePlanKey, futurePlanRestaurantName } from "./myMenuply/dinerHubFormat.js";
+import { mergeEatingFeedForHub } from "../../lib/eatingFeedMerge.js";
 
 function planYmd(value) {
   const raw = String(value || "").trim();
@@ -89,6 +90,8 @@ function formatEventWhen(ev) {
 
 export default function MyMenuplyPage() {
   const { isAuthenticated, loading: authLoading, consumer } = useConsumer();
+  const [searchParams] = useSearchParams();
+  const wantSectionRef = useRef(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [profile, setProfile] = useState(null);
@@ -171,7 +174,7 @@ export default function MyMenuplyPage() {
         food_name: row.item_name || row.food_name || "Food",
         kind: "what_i_ate",
       }));
-      setEating([...diaryItems, ...activityItems].slice(0, 12));
+      setEating(mergeEatingFeedForHub(diaryItems, activityItems).slice(0, 12));
       setPlans(planRes.sessions || []);
       setConnections(connRes.accepted || []);
       setJoinCandidates(
@@ -197,6 +200,17 @@ export default function MyMenuplyPage() {
     if (!authLoading && isAuthenticated) load();
     if (!authLoading && !isAuthenticated) setLoading(false);
   }, [authLoading, isAuthenticated, load]);
+
+  useEffect(() => {
+    if (searchParams.get("focus") !== "want") return undefined;
+    if (loading || !isAuthenticated) return undefined;
+    const timer = window.setTimeout(() => {
+      wantSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      const input = wantSectionRef.current?.querySelector("input[type='text']");
+      input?.focus();
+    }, 120);
+    return () => window.clearTimeout(timer);
+  }, [searchParams, loading, isAuthenticated]);
 
   const displayName =
     profile?.display_name ||
@@ -639,12 +653,13 @@ export default function MyMenuplyPage() {
               </p>
             </section>
 
-            <section style={s.section} data-testid="want-to-eat">
+            <section style={s.section} data-testid="want-to-eat" ref={wantSectionRef}>
               <SectionHead title="What I Want to Eat" />
               <QuickCompose
                 testId="compose-want"
                 placeholder="What do you want to eat?"
                 busy={postBusy === "want"}
+                autoFocus={searchParams.get("focus") === "want"}
                 onSubmit={postWant}
               />
               {wants.map((want) => (

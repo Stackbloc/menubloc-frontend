@@ -36,6 +36,26 @@ describe("I'm Eating food activity", () => {
     expect(composer).not.toMatch(/Friend/);
   });
 
+  it("panel supports photo upload and diary mirror on publish", () => {
+    const panel = fs.readFileSync(
+      path.join(root, "src/components/foodActivity/ImEatingAtPanel.jsx"),
+      "utf8"
+    );
+    expect(panel).toMatch(/EatingMediaAttach/);
+    expect(panel).toMatch(/uploadFoodActivityPhoto/);
+    expect(panel).toMatch(/uploadPublicFoodActivityPhoto/);
+    expect(panel).toMatch(/createWhatIAteToday/);
+    expect(panel).toMatch(/im-eating-food-name/);
+
+    const api = fs.readFileSync(path.join(root, "src/lib/consumerApi.js"), "utf8");
+    expect(api).toMatch(/uploadFoodActivityPhoto/);
+    expect(api).toMatch(/\/api\/consumer\/food-activity\/photo/);
+
+    const publicApi = fs.readFileSync(path.join(root, "src/lib/foodActivityApi.js"), "utf8");
+    expect(publicApi).toMatch(/uploadPublicFoodActivityPhoto/);
+    expect(publicApi).toMatch(/\/public\/food-activity\/photo/);
+  });
+
   it("account page mounts I'm Eating route and truthfully labels activity", () => {
     const page = fs.readFileSync(
       path.join(root, "src/pages/consumer/ImEatingPage.jsx"),

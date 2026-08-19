@@ -70,6 +70,8 @@ import DiningCrewsPage, {
   DiningCrewInvitePage,
 } from "./pages/consumer/DiningCrewsPage.jsx";
 import ImEatingPage from "./pages/consumer/ImEatingPage.jsx";
+import InviteToEatStartPage from "./pages/consumer/InviteToEatStartPage.jsx";
+import EventsBrowsePage from "./pages/EventsBrowsePage.jsx";
 import WhatIAteTodayPage from "./pages/consumer/WhatIAteTodayPage.jsx";
 import ConnectionPeerWhatIAtePage from "./pages/consumer/ConnectionPeerWhatIAtePage.jsx";
 import MyMenuplyPage from "./pages/consumer/MyMenuplyPage.jsx";
@@ -803,6 +805,7 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
         <Route path="/deals/:dealId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <DealDetailPage />} />
         <Route path="/events/groups/invite/:token" element={crmHost ? <HostRouteRedirect to="/crm" /> : <EventGroupInvitePage />} />
         <Route path="/events/groups/:slug" element={crmHost ? <HostRouteRedirect to="/crm" /> : <EventGroupDetailPage />} />
+        <Route path="/events" element={crmHost ? <HostRouteRedirect to="/crm" /> : <EventsBrowsePage />} />
         <Route path="/events/:slug" element={crmHost ? <HostRouteRedirect to="/crm" /> : <EventDetailPage />} />
 
         <Route path="/restaurants/:id/qr-codes" element={crmHost ? <HostRouteRedirect to="/crm" /> : <QrCodesPage />} />
@@ -929,6 +932,7 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
         <Route path="/account/connections" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ConsumerConnections />} />
         <Route path="/account/diner-qr" element={crmHost ? <HostRouteRedirect to="/crm" /> : <DinerQrPage />} />
         <Route path="/account/meet-me-here" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MeetMeHerePage />} />
+        <Route path="/account/invite-to-eat" element={crmHost ? <HostRouteRedirect to="/crm" /> : <InviteToEatStartPage />} />
         <Route path="/account/what-we-doing" element={crmHost ? <HostRouteRedirect to="/crm" /> : <WhatWeDoingPage />} />
         <Route path="/account/what-we-doing/:token" element={crmHost ? <HostRouteRedirect to="/crm" /> : <WhatWeDoingSessionPage />} />
         <Route path="/account/notifications" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ConsumerNotificationsPage />} />

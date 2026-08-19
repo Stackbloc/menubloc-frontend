@@ -313,6 +313,27 @@ export const listMyFoodActivity = (limit = null) =>
       : "/api/consumer/food-activity"
   );
 export const createImEating = (body) => post("/api/consumer/food-activity", body);
+
+export async function uploadFoodActivityPhoto(file) {
+  const language = readStoredLanguage();
+  const form = new FormData();
+  form.append("photo", file);
+  const localizedPath = appendLanguageParam("/api/consumer/food-activity/photo", language);
+  const res = await fetch(`${API}${localizedPath}`, {
+    method: "POST",
+    credentials: "include",
+    headers: withLanguageHeaders({}, language),
+    body: form,
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const error = new Error(json.error || `Upload failed (${res.status})`);
+    error.status = res.status;
+    error.payload = json;
+    throw error;
+  }
+  return json;
+}
 export const deleteMyFoodActivity = (id) =>
   del(`/api/consumer/food-activity/${encodeURIComponent(String(id))}`);
 
