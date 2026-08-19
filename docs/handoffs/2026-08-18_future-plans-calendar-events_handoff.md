@@ -4,7 +4,7 @@ Show future plans by month inside the existing calendar icon, with each event cl
 
 # Current Status
 
-Implemented in `menubloc-frontend-main`. CPD in progress.
+**CPD COMPLETE.** FE tip `menubloc-frontend-4iy54g5qc-menuply.vercel.app` / `index-6H0iynJH.js` (`1e18d55`). BE health `06b8ff3f` (unchanged).
 
 # Files Changed
 
@@ -32,7 +32,7 @@ None.
 
 # Remaining Work
 
-- CPD (this turn).
+None.
 
 # Risks / Known Issues
 
@@ -40,15 +40,12 @@ No clock-time column on sessions; meal/notes come from `place_label`.
 
 # Verification Status
 
-10/10 related contract tests passed.
+10/10 contract tests passed. Tip-gate PASS apex + www.
 
 # Resume Instructions
 
-```bash
-cd /Users/andrebarber/Desktop/menubloc/menubloc-frontend-main
-node --test test/myMenuplyFourQuestionsContract.test.js test/connectionPeerHubContract.test.js test/futurePlansCalendarEvents.test.js test/whatIAteTodayContract.test.js
-```
+Hard-refresh https://menuply.com/my-menuply → Future plans calendar icon → tap a restaurant event → detail box opens.
 
 # Git Status
 
-FE worktree `menubloc-frontend-main`. Uncommitted unless Andre asked to commit.
+FE `1e18d55` on `origin/main`. LKG docs lock committed with CPD record.

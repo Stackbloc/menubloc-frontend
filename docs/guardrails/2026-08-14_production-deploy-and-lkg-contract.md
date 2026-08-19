@@ -34,33 +34,33 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` @ clean `main` |
-| Git commit | `ef9bb7a` — Collapse Future Plans; restaurant name; photo hint; real crews |
-| Vercel deployment | `menubloc-frontend-o8xa604sx-menuply.vercel.app` |
-| Live bundle | `index-DZR4cTvb.js` |
+| Git commit | `1e18d55` — Future plans calendar month view; clickable events; Restaurant [date] list |
+| Vercel deployment | `menubloc-frontend-4iy54g5qc-menuply.vercel.app` |
+| Live bundle | `index-6H0iynJH.js` |
 | Aliases | `menuply.com`, `www.menuply.com`, `crm.menuply.com`, `venues.menuply.com` |
-| Tip-gate | **PASS** (apex + www) verified 2026-08-18 after Future Plans collapse CPD |
-| Feature | No Plans Scheduled / Plans Scheduled / Click to Schedule; visible restaurant name; clickable crews |
+| Tip-gate | **PASS** (apex + www) verified 2026-08-18 after Future plans calendar events CPD |
+| Feature | Calendar icon beside Future plans; month grid with clickable Restaurant [date] events; no Plans Scheduled toggle |
 
 ### Backend (Railway)
 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-backend-main` @ clean `main` |
-| Git on origin | `0976be42` — diner visible crews for Connections (`GET /dining-crews/for-diner/:dinerId`) |
-| Live health SHA | `0976be427a42e6ced2ec18058245fac81a81a4d5` |
+| Git on origin | `06b8ff3f` — diner visible crews + Future Plans collapse LKG lock (`GET /dining-crews/for-diner/:dinerId`) |
+| Live health SHA | `06b8ff3f6addd93762d98fe7d773239ffe0aabd3` |
 | Health URL | `https://menubloc-backend-production.up.railway.app/health` |
-| `commit_hash` | `0976be427a42e6ced2ec18058245fac81a81a4d5` |
+| `commit_hash` | `06b8ff3f6addd93762d98fe7d773239ffe0aabd3` |
 | Migrations | `0250`–`0272` applied; `0273` is in git (Join Me allow-list, since `a1b751c3`) — apply status not independently verified this CPD |
-| Smoke | Health `0976be42`; tip-gate PASS `o8xa604sx` / `index-DZR4cTvb.js` |
+| Smoke | Health `06b8ff3f`; tip-gate PASS `4iy54g5qc` / `index-6H0iynJH.js` |
 
 ### Restore current tip (if tip-gate fails mid-change)
 
 ```bash
 cd /Users/andrebarber/Desktop/menubloc/menubloc-frontend-main
-npx vercel alias set menubloc-frontend-o8xa604sx-menuply.vercel.app menuply.com
-npx vercel alias set menubloc-frontend-o8xa604sx-menuply.vercel.app www.menuply.com
-npx vercel alias set menubloc-frontend-o8xa604sx-menuply.vercel.app crm.menuply.com
-npx vercel alias set menubloc-frontend-o8xa604sx-menuply.vercel.app venues.menuply.com
+npx vercel alias set menubloc-frontend-4iy54g5qc-menuply.vercel.app menuply.com
+npx vercel alias set menubloc-frontend-4iy54g5qc-menuply.vercel.app www.menuply.com
+npx vercel alias set menubloc-frontend-4iy54g5qc-menuply.vercel.app crm.menuply.com
+npx vercel alias set menubloc-frontend-4iy54g5qc-menuply.vercel.app venues.menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 ```
@@ -122,6 +122,7 @@ Newest superseded first. Restoring drops everything shipped after that tip.
 
 | Deployment id | Bundle | Approx feature / CPD |
 |---------------|--------|----------------------|
+| `o8xa604sx` | `index-DZR4cTvb.js` | Future Plans collapse + crews (`ef9bb7a`) — superseded by calendar events `4iy54g5qc` |
 | `89eyeudh1` | `index-DjXskZ76.js` | Join Me allow-list (`063ffd7`) — superseded by Future Plans collapse `o8xa604sx` |
 | `3vk7ie3cf` | `index-He0r-RTw.js` | Post X bottom-nav align (`9cd7303`) — superseded by Join Me allow-list `89eyeudh1` |
 | `bzddqa61v` | `index-DF-s_Lo_.js` | Diner-hub same-layout casual photos (`a7eb57d`) — never LKG-locked; superseded by `89eyeudh1` |
