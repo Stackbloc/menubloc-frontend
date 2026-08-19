@@ -15,6 +15,7 @@ export default function DinerIdentityHero({
   error,
   onAvatarFile,
   onAboutSave,
+  readOnly = false,
 }) {
   const fileRef = useRef(null);
   const [draft, setDraft] = useState(about || "");
@@ -41,52 +42,70 @@ export default function DinerIdentityHero({
     <section style={s.section} data-testid="about-me">
       <p style={s.kicker}>Diner profile</p>
       <h2 style={s.sectionTitle}>About Me</h2>
-      <p style={s.sectionDesc}>Tell people a little about you.</p>
+      {readOnly ? null : <p style={s.sectionDesc}>Tell people a little about you.</p>}
 
       <div style={s.identity}>
-        <button
-          type="button"
-          style={s.identityPhotoBtn}
-          aria-label="Change profile photo"
-          disabled={busy}
-          onClick={() => fileRef.current?.click()}
-        >
-          {avatarUrl ? (
-            <img src={avatarUrl} alt="" style={s.identityPhoto} />
-          ) : (
-            <div style={s.identityInitial}>{initial}</div>
-          )}
-          <span style={s.identityCamera} aria-hidden>
-            📷
-          </span>
-        </button>
-        <input
-          ref={fileRef}
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          style={{ display: "none" }}
-          disabled={busy}
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            e.target.value = "";
-            if (file) onAvatarFile(file);
-          }}
-        />
+        {readOnly ? (
+          <div style={{ ...s.identityPhotoBtn, cursor: "default" }}>
+            {avatarUrl ? (
+              <img src={avatarUrl} alt="" style={s.identityPhoto} />
+            ) : (
+              <div style={s.identityInitial}>{initial}</div>
+            )}
+          </div>
+        ) : (
+          <button
+            type="button"
+            style={s.identityPhotoBtn}
+            aria-label="Change profile photo"
+            disabled={busy}
+            onClick={() => fileRef.current?.click()}
+          >
+            {avatarUrl ? (
+              <img src={avatarUrl} alt="" style={s.identityPhoto} />
+            ) : (
+              <div style={s.identityInitial}>{initial}</div>
+            )}
+            <span style={s.identityCamera} aria-hidden>
+              📷
+            </span>
+          </button>
+        )}
+        {readOnly ? null : (
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            style={{ display: "none" }}
+            disabled={busy}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              e.target.value = "";
+              if (file) onAvatarFile(file);
+            }}
+          />
+        )}
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={s.identityName}>{displayName}</div>
-          <textarea
-            data-testid="diner-about-input"
-            style={s.aboutArea}
-            maxLength={ABOUT_MAX}
-            rows={3}
-            value={draft}
-            placeholder={ABOUT_PLACEHOLDER}
-            disabled={busy || saving}
-            onChange={(e) => setDraft(e.target.value.slice(0, ABOUT_MAX))}
-            onBlur={saveAbout}
-            aria-label="About"
-          />
-          <p style={s.aboutCount}>{draft.length}/{ABOUT_MAX}</p>
+          {readOnly ? (
+            <p style={{ ...s.aboutArea, minHeight: 0 }}>{String(about || "").trim() || "No about yet."}</p>
+          ) : (
+            <>
+              <textarea
+                data-testid="diner-about-input"
+                style={s.aboutArea}
+                maxLength={ABOUT_MAX}
+                rows={3}
+                value={draft}
+                placeholder={ABOUT_PLACEHOLDER}
+                disabled={busy || saving}
+                onChange={(e) => setDraft(e.target.value.slice(0, ABOUT_MAX))}
+                onBlur={saveAbout}
+                aria-label="About"
+              />
+              <p style={s.aboutCount}>{draft.length}/{ABOUT_MAX}</p>
+            </>
+          )}
         </div>
       </div>
 
@@ -95,9 +114,13 @@ export default function DinerIdentityHero({
 
       <div style={{ marginTop: 16 }} data-testid="about-me-connections">
         <h3 style={s.sectionTitle}>
-          <Link to="/my-menuply/connections-eating" style={s.sectionTitleLink}>
-            My Connections
-          </Link>
+          {readOnly ? (
+            "My Connections"
+          ) : (
+            <Link to="/my-menuply/connections-eating" style={s.sectionTitleLink}>
+              My Connections
+            </Link>
+          )}
         </h3>
         {connections.length === 0 ? (
           <p style={s.muted}>No connections yet.</p>

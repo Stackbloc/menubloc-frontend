@@ -29,6 +29,7 @@ test("My Menuply is the diner's personal home", () => {
   assert.match(page, /What I'm Eating/);
   assert.doesNotMatch(page, /title="My Eating Plans"/);
   assert.match(page, /eating-plans-calendar/);
+  assert.match(page, /DinerCalendarTrigger/);
   assert.match(page, /PostAfterActions/);
   assert.match(page, /Invite Me/);
   assert.match(page, /Join Me/);
@@ -68,6 +69,8 @@ test("My Menuply is the diner's personal home", () => {
   assert.match(after, /updateWhatIAteToday/);
   assert.match(bits, /EatingPlanCard/);
   assert.match(bits, /Add details/);
+  assert.match(bits, /View dish/);
+  assert.match(bits, /restaurant_name/);
   assert.match(bits, /Restaurant/);
   assert.match(bits, /NamedShareCard/);
   assert.match(bits, /Invite people to join/);
@@ -79,6 +82,8 @@ test("My Menuply is the diner's personal home", () => {
   assert.match(hero, /\/my-menuply\/connections-eating/);
   assert.match(eatingPage, /StickyPageHeader title="My Connections"/);
   assert.match(compose, /acceptPhoto/);
+  const calendar = read("src/pages/consumer/myMenuply/DinerCalendarSheet.jsx");
+  assert.match(calendar, /diner-calendar-open/);
   assert.ok(page.indexOf("DinerIdentityHero") < page.indexOf("what-im-eating"));
   assert.ok(page.indexOf("what-im-eating") < page.indexOf("want-to-eat"));
   assert.doesNotMatch(page, /What My Connections Are Eating/);

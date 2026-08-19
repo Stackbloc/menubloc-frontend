@@ -1,6 +1,6 @@
 export const page = {
   minHeight: "100vh",
-  background: "var(--gb-color-page, #f8fafc)",
+  background: "linear-gradient(180deg, #F4FBF6 0%, #FFF8F0 42%, #F7F3EA 100%)",
   fontFamily: "Inter, Arial, sans-serif",
   padding: "16px 16px calc(var(--bottom-nav-h, 72px) + 16px)",
   maxWidth: 576,
@@ -13,16 +13,16 @@ export const kicker = {
   fontWeight: 900,
   letterSpacing: 0.9,
   textTransform: "uppercase",
-  color: "#9CA3AF",
+  color: "#15803d",
   margin: "0 0 4px",
 };
 
 export const h1 = {
   margin: "0 0 6px",
-  fontSize: 26,
+  fontSize: 28,
   fontWeight: 950,
   letterSpacing: "-0.03em",
-  color: "#0B0F0C",
+  color: "#14532d",
 };
 
 export const lead = {
@@ -38,9 +38,9 @@ export const section = {
 
 export const sectionTitle = {
   margin: "0 0 4px",
-  fontSize: 18,
+  fontSize: 20,
   fontWeight: 900,
-  color: "#0B0F0C",
+  color: "#14532d",
 };
 
 export const sectionTitleLink = {
@@ -57,10 +57,13 @@ export const labelRow = {
 };
 
 export const subLabel = {
-  color: "#0B0F0C",
+  color: "#fff",
   fontWeight: 800,
-  fontSize: 15,
+  fontSize: 14,
   textDecoration: "none",
+  background: "#16a34a",
+  borderRadius: 999,
+  padding: "8px 14px",
 };
 
 export const nameList = {
@@ -71,10 +74,13 @@ export const nameList = {
 };
 
 export const nameLink = {
-  color: "#0B0F0C",
+  color: "#14532d",
   fontWeight: 700,
-  fontSize: 14,
+  fontSize: 13,
   textDecoration: "none",
+  background: "#dcfce7",
+  borderRadius: 999,
+  padding: "6px 12px",
 };
 
 export const sectionDesc = {
@@ -104,24 +110,24 @@ export const link = {
 
 export const grid = {
   display: "grid",
-  gridTemplateColumns: "repeat(3, 1fr)",
-  gap: 8,
+  gap: 14,
 };
 
 export const photoCard = {
   display: "block",
   textDecoration: "none",
   color: "inherit",
-  borderRadius: 12,
+  borderRadius: 20,
   overflow: "hidden",
-  background: "#e5e7eb",
-  minHeight: 108,
+  background: "#fff",
+  boxShadow: "0 10px 28px rgba(20, 83, 45, 0.12)",
+  border: "1px solid #bbf7d0",
 };
 
 export const photoButton = {
   ...photoCard,
   appearance: "none",
-  border: "none",
+  border: "1px solid #bbf7d0",
   padding: 0,
   width: "100%",
   textAlign: "left",
@@ -129,20 +135,30 @@ export const photoButton = {
   font: "inherit",
 };
 
+/* Casual snapshot — a hotdog on a plate. Not an Instagram Stories hero. */
 export const photo = {
   width: "100%",
-  height: 108,
+  height: 168,
   objectFit: "cover",
   display: "block",
+  background: "linear-gradient(180deg, #bbf7d0 0%, #86efac 100%)",
 };
 
 export const photoLabel = {
-  padding: "6px 8px 8px",
-  fontSize: 11,
-  fontWeight: 700,
-  color: "#0B0F0C",
+  padding: "10px 12px 12px",
+  fontSize: 16,
+  fontWeight: 900,
+  color: "#14532d",
   lineHeight: 1.25,
-  background: "#fff",
+  background: "#FFF8F0",
+};
+
+export const photoMeta = {
+  margin: "4px 0 0",
+  fontSize: 13,
+  fontWeight: 600,
+  color: "#3f6212",
+  lineHeight: 1.35,
 };
 
 export const card = {
@@ -150,10 +166,11 @@ export const card = {
   textDecoration: "none",
   color: "inherit",
   background: "#fff",
-  border: "1px solid #e4e7ec",
-  borderRadius: 14,
-  padding: 12,
+  border: "1px solid #bbf7d0",
+  borderRadius: 16,
+  padding: 14,
   marginBottom: 8,
+  boxShadow: "0 6px 18px rgba(20, 83, 45, 0.08)",
 };
 
 export const actions = {
@@ -170,9 +187,9 @@ export const chipBtn = {
   minHeight: 28,
   padding: "0 10px",
   borderRadius: 999,
-  border: "1px solid #d0d5dd",
-  background: "#fff",
-  color: "#1F4E3D",
+  border: "1px solid #86efac",
+  background: "#f0fdf4",
+  color: "#14532d",
   fontSize: 12,
   fontWeight: 800,
   textDecoration: "none",
@@ -180,7 +197,7 @@ export const chipBtn = {
 
 export const primaryBtn = {
   ...chipBtn,
-  background: "#1F4E3D",
+  background: "#16a34a",
   color: "#fff",
   border: "none",
 };
@@ -207,8 +224,8 @@ export const identityPhotoBtn = {
   borderRadius: "50%",
   padding: 0,
   border: "3px solid #fff",
-  boxShadow: "0 0 0 1px #e4e7ec, 0 8px 20px rgba(15,23,42,0.12)",
-  background: "#e5e7eb",
+  boxShadow: "0 0 0 3px #86efac, 0 8px 20px rgba(20,83,45,0.14)",
+  background: "#dcfce7",
   overflow: "hidden",
   cursor: "pointer",
   flexShrink: 0,
@@ -252,21 +269,21 @@ export const identityName = {
   fontSize: 22,
   fontWeight: 950,
   letterSpacing: "-0.03em",
-  color: "#0B0F0C",
+  color: "#14532d",
 };
 
 export const aboutArea = {
   width: "100%",
   minHeight: 72,
   resize: "vertical",
-  border: "1px solid #e4e7ec",
+  border: "1px solid #bbf7d0",
   borderRadius: 12,
   padding: "10px 12px",
   fontSize: 14,
   lineHeight: 1.45,
   fontFamily: "inherit",
-  color: "#0B0F0C",
-  background: "#fff",
+  color: "#14532d",
+  background: "#f0fdf4",
   boxSizing: "border-box",
 };
 

@@ -38,7 +38,7 @@ import {
   buildDiningCrewInviteShareData,
   buildMenuplyPathShareData,
 } from "../../lib/diningCrewInviteShare.js";
-import WhatIAteTodayCalendar from "../../components/consumer/WhatIAteTodayCalendar.jsx";
+import DinerCalendarSheet, { DinerCalendarTrigger } from "./myMenuply/DinerCalendarSheet.jsx";
 import * as s from "./myMenuply/myMenuplyStyles.js";
 import DinerIdentityHero from "./myMenuply/DinerIdentityHero.jsx";
 import QuickCompose from "./myMenuply/QuickCompose.jsx";
@@ -108,6 +108,7 @@ export default function MyMenuplyPage() {
   const [lastPost, setLastPost] = useState(null);
   const [shareOpen, setShareOpen] = useState(false);
   const [sharePayload, setSharePayload] = useState(null);
+  const [calendarOpen, setCalendarOpen] = useState(false);
 
   const load = useCallback(async () => {
     setError("");
@@ -386,7 +387,11 @@ export default function MyMenuplyPage() {
             />
 
             <section style={s.section} data-testid="what-im-eating">
-              <SectionHead title="What I'm Eating" to="/account/what-i-ate" />
+              <SectionHead
+                title="What I'm Eating"
+                to="/account/what-i-ate"
+                aside={<DinerCalendarTrigger selectedDate={planDate} onOpen={() => setCalendarOpen(true)} />}
+              />
               <QuickCompose
                 testId="compose-eating"
                 placeholder={compareYmd(planDate) > 0 ? "What are you eating?" : "What did you eat?"}
@@ -423,7 +428,9 @@ export default function MyMenuplyPage() {
                   }}
                 />
               ) : null}
-              <WhatIAteTodayCalendar
+              <DinerCalendarSheet
+                open={calendarOpen}
+                onClose={() => setCalendarOpen(false)}
                 testId="eating-plans-calendar"
                 selectedDate={planDate}
                 onSelectDate={setPlanDate}

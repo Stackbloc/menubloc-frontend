@@ -16,7 +16,7 @@ export function foodHref(item) {
   return restaurantHref(item) || "/account/what-i-ate";
 }
 
-export function SectionHead({ title, to, testId }) {
+export function SectionHead({ title, to, testId, aside = null }) {
   return (
     <div style={s.row} data-testid={testId}>
       <h2 style={s.sectionTitle}>
@@ -28,6 +28,7 @@ export function SectionHead({ title, to, testId }) {
           title
         )}
       </h2>
+      {aside}
     </div>
   );
 }
@@ -36,35 +37,65 @@ export function PhotoGrid({ items, onSelect }) {
   if (!items.length) return null;
   return (
     <div style={s.grid} data-testid="what-im-eating-photos">
-      {items.map((item) => {
+      {items.map((item, index) => {
         const label = item.food_name || item.item_name || item.itemName || "Food";
-        const inner = (
-          <>
+        const place = item.restaurant_name || item.place_label || "";
+        const note = String(item.comment || "").trim();
+        const when = String(item.meal_period || "").replace(/_/g, " ").trim();
+        const href = foodHref(item);
+        const restHref = restaurantHref(item);
+        const joinHref = item.join_me_href;
+        return (
+          <article key={item.id || item.entry_id || item.menu_item_id || `${label}-${index}`} style={s.photoCard}>
             {item.photo_url ? (
               <img src={resolveConsumerMediaUrl(item.photo_url)} alt="" style={s.photo} />
             ) : (
-              <div style={{ ...s.photo, display: "grid", placeItems: "center", fontSize: 22 }}>🍽️</div>
+              <div style={{ ...s.photo, display: "grid", placeItems: "center", fontSize: 28, color: "#14532d" }}>
+                🌭
+              </div>
             )}
-            <div style={s.photoLabel}>{label}</div>
-          </>
-        );
-        if (onSelect) {
-          return (
-            <button
-              key={item.id || item.menu_item_id || item.food_name}
-              type="button"
-              style={s.photoButton}
-              onClick={() => onSelect(item)}
-              aria-label={`Add details for ${label}`}
-            >
-              {inner}
-            </button>
-          );
-        }
-        return (
-          <Link key={item.id || item.menu_item_id || item.food_name} to={foodHref(item)} style={s.photoCard}>
-            {inner}
-          </Link>
+            <div style={s.photoLabel}>
+              <div>{label}</div>
+              {place ? (
+                restHref ? (
+                  <Link to={restHref} style={{ ...s.photoMeta, display: "block" }}>
+                    {place}
+                  </Link>
+                ) : (
+                  <div style={s.photoMeta}>{place}</div>
+                )
+              ) : null}
+              {when ? <div style={s.photoMeta}>{when}</div> : null}
+              {note ? <div style={s.photoMeta}>{note}</div> : null}
+              <div style={s.actions}>
+                <Link to={href} style={s.chipBtn}>
+                  View dish
+                </Link>
+                {onSelect && item.kind === "what_i_ate" ? (
+                  <button
+                    type="button"
+                    style={{ ...s.chipBtn, appearance: "none", cursor: "pointer", font: "inherit" }}
+                    onClick={() => onSelect(item)}
+                  >
+                    Add details
+                  </button>
+                ) : null}
+                {joinHref ? (
+                  <Link to={joinHref} style={s.primaryBtn}>
+                    Join Me
+                  </Link>
+                ) : item.restaurant_id ? (
+                  <InviteToEatButton
+                    restaurantId={item.restaurant_id}
+                    restaurantName={place}
+                    menuItemId={item.menu_item_id}
+                    menuItemName={label}
+                    size="compact"
+                  />
+                ) : null}
+              </div>
+            </div>
+          </article>
         );
       })}
     </div>

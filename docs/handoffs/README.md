@@ -1,5 +1,6 @@
 # Handoffs Index
 
+- [2026-08-18_diner-hub-color-casual-photos_handoff.md](./2026-08-18_diner-hub-color-casual-photos_handoff.md) — Cream/green diner hub; casual food photos; calendar chip (**LOCAL**)
 - [2026-08-18_dish-prefill-post-about_handoff.md](./2026-08-18_dish-prefill-post-about_handoff.md) — Dish prefill, Post about, merge plans into What I'm Eating (**LIVE** in diner-accounts tip `5vl6kfuh6` / `index-BZBfCuwA.js`; BE `942e7c10`)
 - [2026-08-18_eating-plans-calendar_handoff.md](./2026-08-18_eating-plans-calendar_handoff.md) — Calendar eating plans + join seats + restaurant profile next-week count (**CPD COMPLETE** — tip `n7gxy1luu` / `index-DbN-zhDW.js`; BE `2923b248`)
 - [2026-08-18_my-menuply-no-share-settings_handoff.md](./2026-08-18_my-menuply-no-share-settings_handoff.md) — Share + Settings off My Menuply (**LOCAL until CPD**)
