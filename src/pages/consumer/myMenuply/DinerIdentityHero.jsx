@@ -80,7 +80,8 @@ export default function DinerIdentityHero({
           <input
             ref={fileRef}
             type="file"
-            accept="image/jpeg,image/png,image/webp"
+            accept="image/jpeg,image/png,image/webp,image/*"
+            capture="user"
             style={{ display: "none" }}
             disabled={busy}
             onChange={(e) => {

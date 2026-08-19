@@ -389,8 +389,25 @@ export const profileMediaAdd = {
   color: MUTED,
   fontWeight: 700,
   fontSize: 12,
-  cursor: "pointer",
   padding: 8,
+  display: "flex",
+  flexDirection: "column",
+  gap: 6,
+  justifyContent: "center",
+};
+
+export const profileMediaCaptureBtn = {
+  appearance: "none",
+  width: "100%",
+  border: `1px solid ${BORDER_INPUT}`,
+  borderRadius: 8,
+  background: "#ffffff",
+  color: INK,
+  fontWeight: 700,
+  fontSize: 12,
+  padding: "8px 10px",
+  cursor: "pointer",
+  fontFamily: "inherit",
 };
 
 export const identityName = {

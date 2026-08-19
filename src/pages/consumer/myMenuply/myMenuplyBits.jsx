@@ -85,6 +85,7 @@ export function PhotoGrid({ items, onSelect, onPhotoPick, hideJoinMe = false }) 
             ref={fileRef}
             type="file"
             accept="image/*"
+            capture="environment"
             hidden
             onChange={(event) => {
               const file = event.target.files?.[0];
