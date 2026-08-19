@@ -410,6 +410,13 @@ export const putSocialOnboarding = (onboarding) =>
 // ── Profile ───────────────────────────────────────────────────────────────
 export const getConsumerProfile    = ()     => get("/api/consumer/profile");
 export const updateConsumerProfile = (body) => put("/api/consumer/profile", body);
+export const updatePrimaryLocation = (body) => put("/api/consumer/profile/primary-location", body);
+export const searchDiners = (query, cityId = null) => {
+  const q = new URLSearchParams();
+  if (query) q.set("q", String(query));
+  if (cityId) q.set("city_id", String(cityId));
+  return get(`/api/consumer/diners/search?${q}`);
+};
 export const getFollowedRestaurants = ()    => get("/api/consumer/followed-restaurants");
 
 // ── Preferences ───────────────────────────────────────────────────────────

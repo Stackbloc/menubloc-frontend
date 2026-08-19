@@ -160,6 +160,15 @@ export default function SocialCrewTab() {
     <div>
       <section style={styles.section}>
         <AccountActionLink
+          to="/account/find-diners"
+          title="Find Diners"
+          description="Search by name, member ID, city, neighborhood, or school — with privacy respected."
+          actionLabel="Search"
+          last
+        />
+      </section>
+      <section style={styles.section}>
+        <AccountActionLink
           to="/my-menuply"
           title="Open My Menuply"
           description="What you ate, your plans, and what your connections are eating."

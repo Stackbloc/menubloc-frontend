@@ -1,0 +1,55 @@
+/**
+ * Diner primary location + Find Diners contract tests (no network).
+ */
+
+import test from "node:test";
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const ROOT = path.resolve(__dirname, "..");
+
+function read(rel) {
+  return fs.readFileSync(path.join(ROOT, rel), "utf8");
+}
+
+test("PrimaryLocationPicker uses canonical location reference API", () => {
+  const picker = read("src/components/consumer/PrimaryLocationPicker.jsx");
+  assert.match(picker, /searchUsCities/);
+  assert.match(picker, /fetchUsStates/);
+});
+
+test("Find Diners page integrates search + connections", () => {
+  const findPage = read("src/pages/consumer/FindDinersPage.jsx");
+  assert.match(findPage, /Find Diners/);
+  assert.match(findPage, /searchDiners/);
+  assert.match(findPage, /requestConnection/);
+  assert.match(findPage, /mutual/);
+  assert.match(findPage, /location_label/);
+  assert.doesNotMatch(findPage, /navigator\.share/);
+});
+
+test("Profile tab exposes location + discoverability", () => {
+  const profileTab = read("src/pages/consumer/accountDashboard/ProfileTab.jsx");
+  assert.match(profileTab, /Who can find me/);
+  assert.match(profileTab, /PrimaryLocationPicker/);
+});
+
+test("Routes and API client wired", () => {
+  const api = read("src/lib/consumerApi.js");
+  assert.match(api, /updatePrimaryLocation/);
+  assert.match(api, /searchDiners/);
+  const app = read("src/App.jsx");
+  assert.match(app, /FindDinersPage/);
+  assert.match(app, /\/account\/find-diners/);
+});
+
+test("Onboarding and identity surfaces include primary location", () => {
+  const welcome = read("src/pages/consumer/AccountWelcome.jsx");
+  assert.match(welcome, /PrimaryLocationPicker/);
+  assert.match(welcome, /updatePrimaryLocation/);
+  const hero = read("src/pages/consumer/myMenuply/DinerIdentityHero.jsx");
+  assert.match(hero, /locationLabel/);
+});

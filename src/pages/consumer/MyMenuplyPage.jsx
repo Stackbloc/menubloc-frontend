@@ -46,6 +46,7 @@ import {
 } from "../../lib/diningCrewInviteShare.js";
 import DinerCalendarSheet, { DinerCalendarTrigger } from "./myMenuply/DinerCalendarSheet.jsx";
 import * as s from "./myMenuply/myMenuplyStyles.js";
+import ProfileCompletionBanner from "../../components/consumer/ProfileCompletionBanner.jsx";
 import DinerIdentityHero from "./myMenuply/DinerIdentityHero.jsx";
 import QuickCompose from "./myMenuply/QuickCompose.jsx";
 import PostAfterActions from "./myMenuply/PostAfterActions.jsx";
@@ -539,10 +540,14 @@ export default function MyMenuplyPage() {
 
         {isAuthenticated && !loading ? (
           <>
+            {profile?.profile_completion?.needs_primary_location ? (
+              <ProfileCompletionBanner message="Add your primary location so friends and nearby diners can find you when you choose." />
+            ) : null}
             <DinerIdentityHero
               displayName={displayName}
               avatarUrl={avatarUrl}
               about={profile?.diner_about || ""}
+              locationLabel={profile?.primary_location?.public_label || null}
               connections={connections}
               viewerUserId={consumer?.id}
               busy={identityBusy}

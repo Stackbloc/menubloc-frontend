@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { BrandLogo } from "../../components/BrandLogo.jsx";
+import PrimaryLocationPicker from "../../components/consumer/PrimaryLocationPicker.jsx";
+import { updatePrimaryLocation } from "../../lib/consumerApi.js";
 
 const VITE_ENV = import.meta.env || {};
 const DEFAULT_PROD_API_BASE = "https://menubloc-backend-production.up.railway.app";
@@ -72,6 +74,9 @@ export default function AccountWelcome() {
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
   const [showReady, setShowReady] = useState(false);
+  const [primaryLocation, setPrimaryLocation] = useState(null);
+  const [primaryNeighborhood, setPrimaryNeighborhood] = useState("");
+  const [primaryPostalCode, setPrimaryPostalCode] = useState("");
 
   useEffect(() => {
     if (!showReady) return undefined;
@@ -131,6 +136,15 @@ export default function AccountWelcome() {
           body: JSON.stringify({
             dietary_preferences: selectedDietary.map((key) => ({ key, is_enabled: true })),
           }),
+        }).catch(() => {});
+      }
+
+      if (primaryLocation?.us_city_id) {
+        await updatePrimaryLocation({
+          us_city_id: primaryLocation.us_city_id,
+          neighborhood: primaryNeighborhood.trim() || null,
+          postal_code: primaryPostalCode.trim() || zip.trim() || null,
+          country_code: "US",
         }).catch(() => {});
       }
 
@@ -237,6 +251,33 @@ export default function AccountWelcome() {
                 Used for local restaurant recommendations and market tracking.
               </div>
             )}
+          </div>
+
+          <div style={{ marginBottom: 28 }}>
+            <label
+              style={{
+                display: "block",
+                fontWeight: 800,
+                marginBottom: 8,
+                fontSize: 14,
+                color: "#0B0F0C",
+              }}
+            >
+              Primary location{" "}
+              <span style={{ color: "#9CA3AF", fontWeight: 600 }}>(recommended)</span>
+            </label>
+            <p style={{ ...BODY_COPY, marginBottom: 12 }}>
+              Where are you generally based? Only city and state appear publicly — not your street address.
+            </p>
+            <PrimaryLocationPicker
+              value={primaryLocation}
+              onChange={setPrimaryLocation}
+              neighborhood={primaryNeighborhood}
+              onNeighborhoodChange={setPrimaryNeighborhood}
+              postalCode={primaryPostalCode}
+              onPostalCodeChange={setPrimaryPostalCode}
+              disabled={saving}
+            />
           </div>
 
           <div style={{ marginBottom: 28 }}>

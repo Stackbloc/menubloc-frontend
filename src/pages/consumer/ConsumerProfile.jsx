@@ -16,6 +16,7 @@ import { DinerSupportDialog } from "../../components/grubbid/DiscoveryDrawer.jsx
 import {
   getConsumerProfile,
   updateConsumerProfile,
+  updatePrimaryLocation,
   updatePreferences,
   getFoodsToAvoid,
   updateFoodsToAvoid,
@@ -65,6 +66,10 @@ export default function ConsumerProfile() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [homeZip, setHomeZip] = useState("");
+  const [primaryLocation, setPrimaryLocation] = useState(null);
+  const [primaryNeighborhood, setPrimaryNeighborhood] = useState("");
+  const [primaryPostalCode, setPrimaryPostalCode] = useState("");
+  const [discoverability, setDiscoverability] = useState("nobody");
   const [changePhoneOpen, setChangePhoneOpen] = useState(false);
   const [phoneChangeNotice, setPhoneChangeNotice] = useState("");
   const [eduEmailInput, setEduEmailInput] = useState("");
@@ -95,6 +100,12 @@ export default function ConsumerProfile() {
   const [zipSaving, setZipSaving] = useState(false);
   const [zipStatus, setZipStatus] = useState("");
   const [zipError, setZipError] = useState("");
+  const [primaryLocationSaving, setPrimaryLocationSaving] = useState(false);
+  const [primaryLocationStatus, setPrimaryLocationStatus] = useState("");
+  const [primaryLocationError, setPrimaryLocationError] = useState("");
+  const [discoverabilitySaving, setDiscoverabilitySaving] = useState(false);
+  const [discoverabilityStatus, setDiscoverabilityStatus] = useState("");
+  const [discoverabilityError, setDiscoverabilityError] = useState("");
   const [dietStatus, setDietStatus] = useState("");
   const [dietError, setDietError] = useState("");
   const [allergenStatus, setAllergenStatus] = useState("");
@@ -138,6 +149,10 @@ export default function ConsumerProfile() {
       setFirstName(profile.first_name || "");
       setLastName(profile.last_name || "");
       setHomeZip(profile.home_zip || "");
+      setPrimaryLocation(profile.primary_location || null);
+      setPrimaryNeighborhood(profile.primary_location?.neighborhood || "");
+      setPrimaryPostalCode("");
+      setDiscoverability(profile.discoverability || "nobody");
       setEduStatus(getEduVerificationFromConsumer(profileConsumer || {}));
       setEduNotice("");
       setEduError("");
@@ -239,6 +254,50 @@ export default function ConsumerProfile() {
       return false;
     } finally {
       setZipSaving(false);
+    }
+  }
+
+  async function handleSavePrimaryLocation() {
+    const cityId = primaryLocation?.us_city_id;
+    if (!cityId) {
+      setPrimaryLocationError("Select a city from the list.");
+      setPrimaryLocationStatus("");
+      return false;
+    }
+    setPrimaryLocationSaving(true);
+    setPrimaryLocationStatus("");
+    setPrimaryLocationError("");
+    try {
+      const data = await updatePrimaryLocation({
+        us_city_id: cityId,
+        neighborhood: primaryNeighborhood.trim() || null,
+        postal_code: primaryPostalCode.trim() || null,
+        country_code: primaryLocation?.country_code || "US",
+      });
+      setPrimaryLocation(data.primary_location || primaryLocation);
+      setPrimaryLocationStatus("Saved");
+      return true;
+    } catch (err) {
+      setPrimaryLocationError(err.message || "Could not save primary location.");
+      return false;
+    } finally {
+      setPrimaryLocationSaving(false);
+    }
+  }
+
+  async function handleSaveDiscoverability() {
+    setDiscoverabilitySaving(true);
+    setDiscoverabilityStatus("");
+    setDiscoverabilityError("");
+    try {
+      await updateConsumerProfile({ discoverability });
+      setDiscoverabilityStatus("Saved");
+      return true;
+    } catch (err) {
+      setDiscoverabilityError(err.message || "Could not save privacy setting.");
+      return false;
+    } finally {
+      setDiscoverabilitySaving(false);
     }
   }
 
@@ -465,6 +524,22 @@ export default function ConsumerProfile() {
               eduBusy={eduBusy}
               eduNotice={eduNotice}
               eduError={eduError}
+              primaryLocation={primaryLocation}
+              onPrimaryLocationChange={setPrimaryLocation}
+              primaryNeighborhood={primaryNeighborhood}
+              onPrimaryNeighborhoodChange={setPrimaryNeighborhood}
+              primaryPostalCode={primaryPostalCode}
+              onPrimaryPostalCodeChange={setPrimaryPostalCode}
+              onSavePrimaryLocation={handleSavePrimaryLocation}
+              primaryLocationSaving={primaryLocationSaving}
+              primaryLocationStatus={primaryLocationStatus}
+              primaryLocationError={primaryLocationError}
+              discoverability={discoverability}
+              onDiscoverabilityChange={setDiscoverability}
+              onSaveDiscoverability={handleSaveDiscoverability}
+              discoverabilitySaving={discoverabilitySaving}
+              discoverabilityStatus={discoverabilityStatus}
+              discoverabilityError={discoverabilityError}
             />
           ) : null}
 

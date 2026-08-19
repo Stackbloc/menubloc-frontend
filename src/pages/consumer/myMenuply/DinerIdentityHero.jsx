@@ -12,6 +12,7 @@ export default function DinerIdentityHero({
   displayName,
   avatarUrl,
   about,
+  locationLabel = null,
   connections = [],
   viewerUserId = null,
   busy,
@@ -118,6 +119,11 @@ export default function DinerIdentityHero({
         )}
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={s.identityName}>{displayName}</div>
+          {locationLabel ? (
+            <p style={{ margin: "4px 0 0", fontSize: 14, color: "#475467", fontWeight: 600 }}>
+              📍 {locationLabel}
+            </p>
+          ) : null}
           {readOnly ? (
             <p style={{ ...s.aboutArea, minHeight: 0 }}>{String(about || "").trim() || "No about yet."}</p>
           ) : (

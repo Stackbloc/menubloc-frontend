@@ -200,8 +200,9 @@ export default function ConsumerConnections() {
             <section style={styles.section}>
               <h2 style={styles.h2}>Request a Connection</h2>
               <p style={styles.muted}>
-                Use a member id from a shared invitation or meal context. Do not harvest
-                contacts or browse strangers.
+                Use a member id from a shared invitation or meal context, or{" "}
+                <Link to="/account/find-diners">Find Diners</Link> when someone has chosen to be
+                discoverable.
               </p>
               <form onSubmit={handleRequest} style={styles.form}>
                 <input

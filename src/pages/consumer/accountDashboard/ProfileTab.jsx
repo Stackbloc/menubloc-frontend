@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import PrimaryLocationPicker from "../../../components/consumer/PrimaryLocationPicker.jsx";
 import {
   ALLERGEN_NONE_KEY,
   ALLERGEN_OPTIONS,
@@ -60,6 +61,22 @@ export default function ProfileTab({
   eduBusy,
   eduNotice,
   eduError,
+  primaryLocation,
+  onPrimaryLocationChange,
+  primaryNeighborhood,
+  onPrimaryNeighborhoodChange,
+  primaryPostalCode,
+  onPrimaryPostalCodeChange,
+  onSavePrimaryLocation,
+  primaryLocationSaving,
+  primaryLocationStatus,
+  primaryLocationError,
+  discoverability,
+  onDiscoverabilityChange,
+  onSaveDiscoverability,
+  discoverabilitySaving,
+  discoverabilityStatus,
+  discoverabilityError,
 }) {
   const [editingIdentity, setEditingIdentity] = useState(false);
   const [editingZip, setEditingZip] = useState(false);
@@ -67,6 +84,14 @@ export default function ProfileTab({
   const [editingAllergens, setEditingAllergens] = useState(false);
   const [editingAvoid, setEditingAvoid] = useState(false);
   const [editingEdu, setEditingEdu] = useState(false);
+  const [editingPrimaryLocation, setEditingPrimaryLocation] = useState(false);
+  const [editingDiscoverability, setEditingDiscoverability] = useState(false);
+
+  const discoverabilityLabels = {
+    nobody: "Nobody — not searchable",
+    area: "People in my area",
+    members: "Menuply members",
+  };
 
   const fullName = [firstName, lastName].filter(Boolean).join(" ");
   const identitySummary = [displayName || fullName || "Add your name", fullName && displayName ? fullName : ""]
@@ -134,6 +159,84 @@ export default function ProfileTab({
           disabled={identitySaving}
         >
           {identitySaving ? "Saving…" : "Save name"}
+        </button>
+      </SummaryEditSection>
+
+      <SummaryEditSection
+        title="Location"
+        summary={
+          primaryLocation?.public_label
+            ? `📍 ${primaryLocation.public_label}`
+            : "Add where you're generally based"
+        }
+        description="Your primary location is where you're generally based — not live GPS. Only city and state appear on your public profile."
+        editing={editingPrimaryLocation}
+        onEdit={() => setEditingPrimaryLocation(true)}
+        onDone={async () => {
+          const ok = await onSavePrimaryLocation();
+          if (ok !== false) setEditingPrimaryLocation(false);
+        }}
+        editLabel={primaryLocation?.public_label ? "Change" : "Add"}
+        status={primaryLocationError || primaryLocationStatus}
+        statusError={Boolean(primaryLocationError)}
+      >
+        <PrimaryLocationPicker
+          value={primaryLocation}
+          onChange={onPrimaryLocationChange}
+          neighborhood={primaryNeighborhood}
+          onNeighborhoodChange={onPrimaryNeighborhoodChange}
+          postalCode={primaryPostalCode}
+          onPostalCodeChange={onPrimaryPostalCodeChange}
+          disabled={primaryLocationSaving}
+        />
+        <button
+          type="button"
+          onClick={onSavePrimaryLocation}
+          style={styles.primaryBtn}
+          disabled={primaryLocationSaving}
+        >
+          {primaryLocationSaving ? "Saving…" : "Save location"}
+        </button>
+      </SummaryEditSection>
+
+      <SummaryEditSection
+        title="Who can find me?"
+        summary={discoverabilityLabels[discoverability] || discoverabilityLabels.nobody}
+        description="Control whether other diners can find you in search. Nobody is the default and safest option."
+        editing={editingDiscoverability}
+        onEdit={() => setEditingDiscoverability(true)}
+        onDone={async () => {
+          const ok = await onSaveDiscoverability();
+          if (ok !== false) setEditingDiscoverability(false);
+        }}
+        status={discoverabilityError || discoverabilityStatus}
+        statusError={Boolean(discoverabilityError)}
+      >
+        <div style={{ display: "grid", gap: 8 }}>
+          {[
+            ["members", "Menuply members"],
+            ["area", "People in my area"],
+            ["nobody", "Nobody"],
+          ].map(([value, label]) => (
+            <label key={value} style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 14 }}>
+              <input
+                type="radio"
+                name="discoverability"
+                value={value}
+                checked={discoverability === value}
+                onChange={() => onDiscoverabilityChange(value)}
+              />
+              {label}
+            </label>
+          ))}
+        </div>
+        <button
+          type="button"
+          onClick={onSaveDiscoverability}
+          style={styles.primaryBtn}
+          disabled={discoverabilitySaving}
+        >
+          {discoverabilitySaving ? "Saving…" : "Save privacy setting"}
         </button>
       </SummaryEditSection>
 
