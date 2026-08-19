@@ -34,12 +34,12 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` @ clean `main` |
-| Git commit | `80b6d41` — unified Eating hub, tap-to-open Apple-style calendar, crew purpose |
-| Vercel deployment | `menubloc-frontend-j027bdhch-menuply.vercel.app` |
-| Live bundle | `index-CtFIYW11.js` |
+| Git commit | `f7b6c0e` — camera-first eating media; compact empty photo rows (no blank hero) |
+| Vercel deployment | `menubloc-frontend-5gd67czv9-menuply.vercel.app` |
+| Live bundle | `index-Cd48RTdf.js` |
 | Aliases | `menuply.com`, `www.menuply.com`, `crm.menuply.com`, `venues.menuply.com` |
-| Tip-gate | **PASS** (apex + www) verified 2026-08-19 after Eating hub CPD |
-| Feature | Single Eating section; calendar sheet; crew name + purpose; Waiter want-list card |
+| Tip-gate | **PASS** (apex + www) verified 2026-08-19 after camera + compact placeholder CPD |
+| Feature | Inline camera on all devices; full photo height only when media exists; Eating hub from `80b6d41` |
 
 ### Backend (Railway)
 
@@ -51,7 +51,7 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway
 | Health URL | `https://menubloc-backend-production.up.railway.app/health` |
 | `commit_hash` | `57e08927` (live at CPD certify) |
 | DB | `0277` eating media video + food_activity link (deploy with BE) |
-| Smoke | tip-gate PASS `j027bdhch` / `index-CtFIYW11.js`; health `57e08927`; bundle railway=59 localhost=9 |
+| Smoke | tip-gate PASS `5gd67czv9` / `index-Cd48RTdf.js`; health `57e08927`; bundle railway=59 localhost=9 |
 
 ### Restore current tip (if tip-gate fails mid-change)
 
