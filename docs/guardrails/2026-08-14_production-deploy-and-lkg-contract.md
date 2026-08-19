@@ -34,12 +34,12 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` @ clean `main` |
-| Git commit | `307764d` — camera capture for My Menuply eating + profile media |
-| Vercel deployment | `menubloc-frontend-8amk8p0ex-menuply.vercel.app` |
-| Live bundle | `index-DrQANdWA.js` |
+| Git commit | `168f689` — inline getUserMedia camera for My Menuply photos/video |
+| Vercel deployment | `menubloc-frontend-5052pfbfo-menuply.vercel.app` |
+| Live bundle | `index-CXConZRZ.js` |
 | Aliases | `menuply.com`, `www.menuply.com`, `crm.menuply.com`, `venues.menuply.com` |
-| Tip-gate | **PASS** (apex + www) verified 2026-08-19 after camera-capture CPD |
-| Feature | Mobile camera-first photo/video on My Menuply; Stage 6 social action row retained |
+| Tip-gate | **PASS** (apex + www) verified 2026-08-19 after inline camera CPD |
+| Feature | Live camera preview + Capture on phone; Photo library fallback where shown |
 
 ### Backend (Railway)
 
@@ -51,16 +51,16 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway
 | Health URL | `https://menubloc-backend-production.up.railway.app/health` |
 | `commit_hash` | `b967e80f` (live at CPD certify) |
 | DB | `0274`–`0275` applied 2026-08-19 |
-| Smoke | tip-gate PASS `8amk8p0ex` / `index-DrQANdWA.js`; health `b967e80f` |
+| Smoke | tip-gate PASS `5052pfbfo` / `index-CXConZRZ.js`; health `b967e80f` |
 
 ### Restore current tip (if tip-gate fails mid-change)
 
 ```bash
 cd /Users/andrebarber/Desktop/menubloc/menubloc-frontend-main
-npx vercel alias set menubloc-frontend-8amk8p0ex-menuply.vercel.app menuply.com
-npx vercel alias set menubloc-frontend-8amk8p0ex-menuply.vercel.app www.menuply.com
-npx vercel alias set menubloc-frontend-8amk8p0ex-menuply.vercel.app crm.menuply.com
-npx vercel alias set menubloc-frontend-8amk8p0ex-menuply.vercel.app venues.menuply.com
+npx vercel alias set menubloc-frontend-5052pfbfo-menuply.vercel.app menuply.com
+npx vercel alias set menubloc-frontend-5052pfbfo-menuply.vercel.app www.menuply.com
+npx vercel alias set menubloc-frontend-5052pfbfo-menuply.vercel.app crm.menuply.com
+npx vercel alias set menubloc-frontend-5052pfbfo-menuply.vercel.app venues.menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 ```
