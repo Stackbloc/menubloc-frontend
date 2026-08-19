@@ -189,6 +189,33 @@ export async function uploadDinerAvatar(file) {
   return json;
 }
 
+export async function uploadConsumerProfileMedia(file) {
+  const language = readStoredLanguage();
+  const form = new FormData();
+  form.append("media", file);
+  const localizedPath = appendLanguageParam("/api/consumer/profile/media", language);
+  const res = await fetch(`${API}${localizedPath}`, {
+    method: "POST",
+    credentials: "include",
+    headers: withLanguageHeaders({}, language),
+    body: form,
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const error = new Error(json.error || `Upload failed (${res.status})`);
+    error.status = res.status;
+    error.payload = json;
+    throw error;
+  }
+  return json;
+}
+
+export const listConsumerProfileMedia = () => get("/api/consumer/profile/media");
+export const listPeerProfileMedia = (userId) =>
+  get(`/api/consumer/profile/users/${encodeURIComponent(String(userId))}/media`);
+export const deleteConsumerProfileMedia = (id) =>
+  del(`/api/consumer/profile/media/${encodeURIComponent(String(id))}`);
+
 /** Absolute URL for diner avatar or QR image paths served by the API. */
 export function resolveConsumerMediaUrl(pathOrUrl) {
   const raw = String(pathOrUrl || "").trim();
@@ -486,9 +513,32 @@ export const deleteWhatIAteToday = (id) =>
   del(`/api/consumer/what-i-ate-today/${encodeURIComponent(String(id))}`);
 
 export const listWantToEat = () => get("/api/consumer/want-to-eat");
+export const listPeerWantToEat = (userId) =>
+  get(`/api/consumer/want-to-eat/users/${encodeURIComponent(String(userId))}`);
 export const createWantToEat = (body) => post("/api/consumer/want-to-eat", body);
 export const updateWantToEat = (id, body) =>
   patch(`/api/consumer/want-to-eat/${encodeURIComponent(String(id))}`, body);
+
+export async function uploadWantToEatPhoto(file) {
+  const language = readStoredLanguage();
+  const form = new FormData();
+  form.append("photo", file);
+  const localizedPath = appendLanguageParam("/api/consumer/want-to-eat/photo", language);
+  const res = await fetch(`${API}${localizedPath}`, {
+    method: "POST",
+    credentials: "include",
+    headers: withLanguageHeaders({}, language),
+    body: form,
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const error = new Error(json.error || `Upload failed (${res.status})`);
+    error.status = res.status;
+    error.payload = json;
+    throw error;
+  }
+  return json;
+}
 
 export async function uploadWhatIAteTodayPhoto(file) {
   const language = readStoredLanguage();

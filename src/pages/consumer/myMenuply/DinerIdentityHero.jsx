@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import ProfileMediaGallery from "./ProfileMediaGallery.jsx";
 import * as s from "./myMenuplyStyles.js";
 
 const ABOUT_MAX = 280;
@@ -16,6 +17,9 @@ export default function DinerIdentityHero({
   error,
   onAvatarFile,
   onAboutSave,
+  profileMedia = [],
+  onProfileMediaAdd,
+  onProfileMediaRemove,
   readOnly = false,
 }) {
   const fileRef = useRef(null);
@@ -112,6 +116,14 @@ export default function DinerIdentityHero({
 
       {error ? <p style={s.error}>{error}</p> : null}
       {notice ? <p style={{ ...s.muted, color: "#027A48", marginBottom: 10 }}>{notice}</p> : null}
+
+      <ProfileMediaGallery
+        items={profileMedia}
+        readOnly={readOnly}
+        busy={busy}
+        onAddFile={onProfileMediaAdd}
+        onRemove={onProfileMediaRemove}
+      />
 
       <div style={{ marginTop: 16 }} data-testid="about-me-connections">
         <h3 style={s.sectionTitle}>

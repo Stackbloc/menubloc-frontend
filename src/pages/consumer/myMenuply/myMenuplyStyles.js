@@ -310,6 +310,55 @@ export const identityCamera = {
   boxShadow: "0 2px 6px rgba(0,0,0,0.25)",
 };
 
+export const profileMediaGrid = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fill, minmax(96px, 1fr))",
+  gap: 10,
+};
+
+export const profileMediaTile = {
+  position: "relative",
+  borderRadius: 14,
+  overflow: "hidden",
+  background: "#ecfdf5",
+  border: "1px solid #bbf7d0",
+  minHeight: 96,
+};
+
+export const profileMediaThumb = {
+  width: "100%",
+  height: 96,
+  objectFit: "cover",
+  display: "block",
+  background: "#d1fae5",
+};
+
+export const profileMediaRemove = {
+  position: "absolute",
+  right: 4,
+  top: 4,
+  border: "none",
+  borderRadius: 999,
+  padding: "4px 8px",
+  fontSize: 10,
+  fontWeight: 800,
+  background: "rgba(20, 83, 45, 0.82)",
+  color: "#fff",
+  cursor: "pointer",
+};
+
+export const profileMediaAdd = {
+  minHeight: 96,
+  borderRadius: 14,
+  border: "2px dashed #86efac",
+  background: "#f0fdf4",
+  color: "#15803d",
+  fontWeight: 800,
+  fontSize: 12,
+  cursor: "pointer",
+  padding: 8,
+};
+
 export const identityName = {
   margin: "4px 0 6px",
   fontSize: 22,

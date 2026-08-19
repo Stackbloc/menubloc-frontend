@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "d8996d81e80058062cbd433834bcea01ae938990",
-  "gitShortSha": "d8996d8",
+  "gitSha": "fba813a77a8c1cb4346a8c7e81370f3f44996348",
+  "gitShortSha": "fba813a",
   "branch": "main",
-  "buildTime": "2026-08-18T20:15:56.854Z",
+  "buildTime": "2026-08-19T17:26:31.635Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "feat(diners): make My Menuply personal with one-line compose."
+  "commitMessage": "feat(food-social-mvp): wire Post actions, Events browse, and eating photos."
 }

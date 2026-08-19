@@ -16,6 +16,8 @@ import {
   listConnectionsPlanning,
   listDinerDiningCrews,
   listPeerWhatIAteToday,
+  listPeerProfileMedia,
+  listPeerWantToEat,
   requestJoinDiningCrew,
   resolveConsumerMediaUrl,
   whatIAteTodayLocalDate,
@@ -88,6 +90,8 @@ export default function ConsumerConnectionPeerPage() {
   const [selectedPlanKey, setSelectedPlanKey] = useState("");
   const [crews, setCrews] = useState([]);
   const [crewJoinBusy, setCrewJoinBusy] = useState("");
+  const [peerProfileMedia, setPeerProfileMedia] = useState([]);
+  const [peerWants, setPeerWants] = useState([]);
   const [eatingMonth, setEatingMonth] = useState(() => {
     const t = new Date();
     return new Date(t.getFullYear(), t.getMonth(), 1);
@@ -100,13 +104,16 @@ export default function ConsumerConnectionPeerPage() {
   const load = useCallback(async () => {
     setError("");
     try {
-      const [connData, peerConnData, eatData, planData, diaryData, crewData] = await Promise.all([
+      const [connData, peerConnData, eatData, planData, diaryData, crewData, mediaData, wantData] =
+        await Promise.all([
         listConnections("accepted"),
         listConnections("accepted", peerId).catch(() => ({ accepted: [] })),
         listConnectionsEating(40, peerId).catch(() => ({ items: [] })),
         listConnectionsPlanning(40, peerId).catch(() => ({ items: [] })),
         listPeerWhatIAteToday(peerId, eatingDate).catch(() => ({ entries: [] })),
         listDinerDiningCrews(peerId).catch(() => ({ crews: [] })),
+        listPeerProfileMedia(peerId).catch(() => ({ items: [] })),
+        listPeerWantToEat(peerId).catch(() => ({ items: [] })),
       ]);
       const match = (connData.accepted || []).find((c) => Number(c.peer?.id) === peerId);
       setConnection(match || null);
@@ -139,6 +146,8 @@ export default function ConsumerConnectionPeerPage() {
       setEating(diaryItems.length ? diaryItems : eatItems);
       setPlans(planItems.filter((item) => item.kind !== "join_me" && item.href).map(asPlan));
       setCrews(crewData.crews || crewData.items || []);
+      setPeerProfileMedia(mediaData?.items || []);
+      setPeerWants(wantData?.items || []);
       const join = planItems.find((item) => item.join_me_href)?.join_me_href || "";
       setJoinMeHref(join);
     } catch (err) {
@@ -216,6 +225,7 @@ export default function ConsumerConnectionPeerPage() {
               about={peer?.diner_about || ""}
               connections={peerConnections}
               viewerUserId={consumer?.id}
+              profileMedia={peerProfileMedia}
             />
 
             <section style={s.section} data-testid="what-im-eating">
@@ -304,7 +314,23 @@ export default function ConsumerConnectionPeerPage() {
 
             <section style={s.section} data-testid="want-to-eat">
               <SectionHead title="What I Want to Eat" />
-              <p style={s.muted}>Nothing yet.</p>
+              {peerWants.length === 0 ? (
+                <p style={s.muted}>Nothing yet.</p>
+              ) : (
+                peerWants.slice(0, 12).map((want) => (
+                  <div key={want.id} style={s.card}>
+                    {want.photo_url ? (
+                      <img
+                        src={resolveConsumerMediaUrl(want.photo_url)}
+                        alt=""
+                        style={{ ...s.photo, height: 120, borderRadius: 12, marginBottom: 8 }}
+                      />
+                    ) : null}
+                    <div style={{ fontWeight: 800 }}>{want.food_name}</div>
+                    {want.restaurant_name ? <div style={s.muted}>{want.restaurant_name}</div> : null}
+                  </div>
+                ))
+              )}
             </section>
 
             <section style={s.section} data-testid="dining-crews">

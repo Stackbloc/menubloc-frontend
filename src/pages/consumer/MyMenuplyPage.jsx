@@ -20,6 +20,7 @@ import {
   inviteToDiningCrew,
   inviteToVenueEventGroup,
   listConnections,
+  listConsumerProfileMedia,
   listDiningCrews,
   listMyFoodActivity,
   listMyVenueEventGroups,
@@ -29,8 +30,12 @@ import {
   listWhatIAteToday,
   listWhatWeDoingSessions,
   resolveConsumerMediaUrl,
+  listWantToEat,
+  uploadWantToEatPhoto,
   updateConsumerProfile,
   uploadDinerAvatar,
+  uploadConsumerProfileMedia,
+  deleteConsumerProfileMedia,
   uploadWhatIAteTodayPhoto,
   updateWhatIAteToday,
   whatIAteTodayLocalDate,
@@ -99,6 +104,7 @@ export default function MyMenuplyPage() {
   const [identityBusy, setIdentityBusy] = useState(false);
   const [identityNotice, setIdentityNotice] = useState("");
   const [identityError, setIdentityError] = useState("");
+  const [profileMedia, setProfileMedia] = useState([]);
   const [postBusy, setPostBusy] = useState("");
   const [eating, setEating] = useState([]);
   const [plans, setPlans] = useState([]);
@@ -144,6 +150,7 @@ export default function MyMenuplyPage() {
         crewRes,
         eventRes,
         groupRes,
+        mediaRes,
       ] = await Promise.all([
         getConsumerProfile().catch(() => null),
         listMyFoodActivity(20).catch(() => ({ activities: [] })),
@@ -157,10 +164,12 @@ export default function MyMenuplyPage() {
         listDiningCrews().catch(() => ({ crews: [] })),
         listMyVenueEvents().catch(() => ({ events: [] })),
         listMyVenueEventGroups().catch(() => ({ groups: [] })),
+        listConsumerProfileMedia().catch(() => ({ items: [] })),
       ]);
       const nextProfile = profileRes?.profile || null;
       setProfile(nextProfile);
       setAvatarUrl(resolveConsumerMediaUrl(nextProfile?.avatar_url || ""));
+      setProfileMedia(mediaRes?.items || []);
       const activityItems = (activityRes.activities || []).map((row) => ({
         ...row,
         id: `fa-${row.id}`,
@@ -254,6 +263,38 @@ export default function MyMenuplyPage() {
     }
   }
 
+  async function onProfileMediaAdd(file) {
+    setIdentityBusy(true);
+    setIdentityError("");
+    setIdentityNotice("");
+    try {
+      const data = await uploadConsumerProfileMedia(file);
+      const item = data?.item;
+      if (item) setProfileMedia((prev) => [...prev, item]);
+      setIdentityNotice("Profile media added.");
+    } catch (err) {
+      setIdentityError(err.message || "Unable to upload profile media");
+    } finally {
+      setIdentityBusy(false);
+    }
+  }
+
+  async function onProfileMediaRemove(item) {
+    if (!item?.id) return;
+    setIdentityBusy(true);
+    setIdentityError("");
+    setIdentityNotice("");
+    try {
+      await deleteConsumerProfileMedia(item.id);
+      setProfileMedia((prev) => prev.filter((row) => Number(row.id) !== Number(item.id)));
+      setIdentityNotice("Profile media removed.");
+    } catch (err) {
+      setIdentityError(err.message || "Unable to remove profile media");
+    } finally {
+      setIdentityBusy(false);
+    }
+  }
+
   async function postEating({ text, file }) {
     setPostBusy("eating");
     setError("");
@@ -329,11 +370,16 @@ export default function MyMenuplyPage() {
     }
   }
 
-  async function postWant({ text }) {
+  async function postWant({ text, file }) {
     setPostBusy("want");
     setError("");
     try {
-      const data = await createWantToEat({ food_name: text });
+      let photo_url;
+      if (file) {
+        const up = await uploadWantToEatPhoto(file);
+        photo_url = up.photo_url || undefined;
+      }
+      const data = await createWantToEat({ food_name: text || "Food", photo_url });
       const item = data.item || data;
       setLastPost({
         kind: "want",
@@ -473,6 +519,9 @@ export default function MyMenuplyPage() {
               error={identityError}
               onAvatarFile={onAvatarFile}
               onAboutSave={onAboutSave}
+              profileMedia={profileMedia}
+              onProfileMediaAdd={onProfileMediaAdd}
+              onProfileMediaRemove={onProfileMediaRemove}
             />
 
             <section style={s.section} data-testid="what-im-eating">
@@ -658,6 +707,7 @@ export default function MyMenuplyPage() {
               <QuickCompose
                 testId="compose-want"
                 placeholder="What do you want to eat?"
+                acceptPhoto
                 busy={postBusy === "want"}
                 autoFocus={searchParams.get("focus") === "want"}
                 onSubmit={postWant}
@@ -681,6 +731,13 @@ export default function MyMenuplyPage() {
                     })
                   }
                 >
+                  {want.photo_url ? (
+                    <img
+                      src={resolveConsumerMediaUrl(want.photo_url)}
+                      alt=""
+                      style={{ ...s.photo, height: 120, borderRadius: 12, marginBottom: 8 }}
+                    />
+                  ) : null}
                   <div style={{ fontWeight: 800 }}>{want.food_name}</div>
                   {want.restaurant_name ? <div style={s.muted}>{want.restaurant_name}</div> : null}
                 </button>

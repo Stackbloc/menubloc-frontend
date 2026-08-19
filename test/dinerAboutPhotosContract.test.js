@@ -17,23 +17,37 @@ function read(rel) {
 test("My Menuply identity hero is prominent with photo upload and short bio", () => {
   const page = read("src/pages/consumer/MyMenuplyPage.jsx");
   const hero = read("src/pages/consumer/myMenuply/DinerIdentityHero.jsx");
+  const gallery = read("src/pages/consumer/myMenuply/ProfileMediaGallery.jsx");
   assert.match(page, /DinerIdentityHero/);
   assert.match(page, /uploadDinerAvatar/);
+  assert.match(page, /listConsumerProfileMedia/);
+  assert.match(page, /uploadConsumerProfileMedia/);
   assert.match(page, /diner_about/);
   assert.ok(page.indexOf("DinerIdentityHero") < page.indexOf("what-im-eating"));
   assert.match(hero, /Change profile photo/);
+  assert.match(hero, /ProfileMediaGallery/);
   assert.match(hero, /type="file"/);
   assert.match(hero, /diner-about-input/);
   assert.match(hero, /maxLength=\{ABOUT_MAX\}/);
   assert.match(hero, /LA food explorer/);
   assert.match(hero, /My Connections/);
   assert.match(hero, /\/my-menuply\/connections-eating/);
+  assert.match(gallery, /about-me-profile-media/);
+  assert.match(gallery, /Add profile photo or video/);
+  assert.match(gallery, /not your eating diary/i);
   assert.match(page, /QuickCompose/);
   assert.doesNotMatch(hero, /Share My Menuply/);
   assert.doesNotMatch(hero, /Settings/);
   assert.doesNotMatch(hero, /Add a dining photo/);
+  assert.doesNotMatch(gallery, /Add a dining photo/);
   assert.doesNotMatch(hero, /vegetarian|gluten_free|allergen/i);
   assert.doesNotMatch(hero, /questionnaire|favorite cuisine|hometown/i);
+});
+
+test("Connection peer hub shows read-only profile media gallery", () => {
+  const peer = read("src/pages/consumer/ConsumerConnectionPeerPage.jsx");
+  assert.match(peer, /listPeerProfileMedia/);
+  assert.match(peer, /profileMedia=\{peerProfileMedia\}/);
 });
 
 test("Diner About is not restaurant, dining-hall, or venue about", () => {
