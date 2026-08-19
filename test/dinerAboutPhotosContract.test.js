@@ -27,7 +27,8 @@ test("My Menuply identity hero is prominent with photo upload and short bio", ()
   assert.ok(page.indexOf("DinerIdentityHero") < page.indexOf("what-im-eating"));
   assert.match(hero, /Change profile photo/);
   assert.match(hero, /ProfileMediaGallery/);
-  assert.match(hero, /capture="user"/);
+  assert.match(hero, /ConsumerCameraSheet/);
+  assert.match(hero, /consumerCameraCapture/);
   assert.match(hero, /diner-about-input/);
   assert.match(hero, /maxLength=\{ABOUT_MAX\}/);
   assert.match(hero, /LA food explorer/);
@@ -36,10 +37,12 @@ test("My Menuply identity hero is prominent with photo upload and short bio", ()
   assert.match(gallery, /about-me-profile-media/);
   assert.match(gallery, /Take photo/);
   assert.match(gallery, /Record video/);
-  assert.match(gallery, /capture="environment"/);
+  assert.match(gallery, /ConsumerCameraPickButton/);
+  const cameraLib = read("src/lib/consumerCameraCapture.js");
+  assert.match(cameraLib, /getUserMedia/);
   assert.match(gallery, /not your eating diary/i);
   assert.match(page, /QuickCompose/);
-  assert.match(compose, /capture="environment"/);
+  assert.match(compose, /ConsumerCameraPickButton/);
   assert.doesNotMatch(hero, /Share My Menuply/);
   assert.doesNotMatch(hero, /Settings/);
   assert.doesNotMatch(hero, /Add a dining photo/);

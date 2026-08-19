@@ -54,7 +54,7 @@ test("panel supports photo upload and diary mirror on publish", () => {
   assert.match(publicApi, /\/public\/food-activity\/photo/);
 
   const attach = read("src/components/foodActivity/EatingMediaAttach.jsx");
-  assert.match(attach, /capture="environment"/);
+  assert.match(attach, /ConsumerCameraPickButton/);
 });
 
 test("account page mounts I'm Eating route and truthfully labels activity", () => {

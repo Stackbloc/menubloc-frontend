@@ -1,6 +1,11 @@
 import { Link } from "react-router-dom";
 import { useMemo, useRef, useState } from "react";
+import ConsumerCameraSheet from "../../../components/consumer/ConsumerCameraSheet.jsx";
 import InviteToEatButton from "../../../components/InviteToEatButton.jsx";
+import {
+  inlineCameraSupported,
+  preferInlineCamera,
+} from "../../../lib/consumerCameraCapture.js";
 import { restaurantPathFromRow } from "../../../lib/canonicalUrl.js";
 import EatingSocialActions from "./EatingSocialActions.jsx";
 import { resolveConsumerMediaUrl } from "../../../lib/consumerApi.js";
@@ -58,6 +63,7 @@ export function PhotoGrid({ items, onSelect, onPhotoPick, hideJoinMe = false }) 
   );
   const [index, setIndex] = useState(0);
   const [photoHover, setPhotoHover] = useState(false);
+  const [cameraOpen, setCameraOpen] = useState(false);
   const fileRef = useRef(null);
   if (!ordered.length) return null;
   const safeIndex = Math.min(index, ordered.length - 1);
@@ -74,25 +80,42 @@ export function PhotoGrid({ items, onSelect, onPhotoPick, hideJoinMe = false }) 
 
   function pickPhoto() {
     if (!canPick) return;
+    if (inlineCameraSupported() && preferInlineCamera()) {
+      setCameraOpen(true);
+      return;
+    }
     fileRef.current?.click();
+  }
+
+  function handlePhotoFile(file) {
+    if (file) onPhotoPick(item, file);
   }
 
   return (
     <div style={s.grid} data-testid="what-im-eating-photos">
       <article key={item.id || item.entry_id || `${label}-${safeIndex}`} style={s.photoCard}>
         {canPick ? (
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*"
-            capture="environment"
-            hidden
-            onChange={(event) => {
-              const file = event.target.files?.[0];
-              event.target.value = "";
-              if (file) onPhotoPick(item, file);
-            }}
-          />
+          <>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              capture=""
+              hidden
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                event.target.value = "";
+                handlePhotoFile(file);
+              }}
+            />
+            <ConsumerCameraSheet
+              open={cameraOpen}
+              mode="photo"
+              facingMode="environment"
+              onClose={() => setCameraOpen(false)}
+              onCapture={handlePhotoFile}
+            />
+          </>
         ) : null}
         <button
           type="button"

@@ -2,7 +2,8 @@
  * One-line compose — type and post, optional photo. No extra fields.
  */
 
-import { useRef, useState } from "react";
+import { useState } from "react";
+import ConsumerCameraPickButton from "../../../components/consumer/ConsumerCameraPickButton.jsx";
 
 export default function QuickCompose({
   placeholder,
@@ -17,7 +18,6 @@ export default function QuickCompose({
 }) {
   const [text, setText] = useState(defaultValue);
   const [file, setFile] = useState(null);
-  const fileRef = useRef(null);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -26,34 +26,23 @@ export default function QuickCompose({
     await onSubmit({ text: value, file });
     setText(inputType === "date" ? defaultValue || value : "");
     setFile(null);
-    if (fileRef.current) fileRef.current.value = "";
   }
 
   return (
     <form onSubmit={handleSubmit} data-testid={testId} style={styles.form}>
       {acceptPhoto ? (
-        <>
-          <button
-            type="button"
-            aria-label="Add photo"
-            disabled={busy}
-            onClick={() => fileRef.current?.click()}
-            style={styles.iconBtn}
-          >
-            {file ? "Added" : "Photo"}
-          </button>
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp,image/*"
-            capture="environment"
-            style={{ display: "none" }}
-            disabled={busy}
-            onChange={(e) => {
-              setFile(e.target.files?.[0] || null);
-            }}
-          />
-        </>
+        <ConsumerCameraPickButton
+          mode="photo"
+          facingMode="environment"
+          onFile={setFile}
+          disabled={busy}
+          testId="quick-compose-photo"
+          ariaLabel="Take photo with camera"
+          showLibraryLink={false}
+          buttonStyle={styles.iconBtn}
+        >
+          {file ? "Added" : "Photo"}
+        </ConsumerCameraPickButton>
       ) : null}
       <input
         type={inputType}

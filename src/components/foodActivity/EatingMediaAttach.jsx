@@ -1,8 +1,9 @@
 /**
- * Photo attach for eating posts — capture/select, preview, replace, remove.
+ * Photo attach for eating posts — inline camera sheet + library fallback.
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
+import ConsumerCameraPickButton from "../consumer/ConsumerCameraPickButton.jsx";
 
 export default function EatingMediaAttach({
   disabled = false,
@@ -11,7 +12,6 @@ export default function EatingMediaAttach({
   previewUrl = "",
   testId = "eating-media-attach",
 }) {
-  const inputRef = useRef(null);
   const [localPreview, setLocalPreview] = useState("");
 
   useEffect(() => {
@@ -26,49 +26,46 @@ export default function EatingMediaAttach({
 
   const shown = localPreview || previewUrl || "";
 
-  function pick() {
-    if (disabled) return;
-    inputRef.current?.click();
-  }
-
   function clear() {
     onFileChange(null);
-    if (inputRef.current) inputRef.current.value = "";
   }
 
   return (
     <div data-testid={testId} style={styles.wrap}>
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/jpeg,image/png,image/webp,image/*"
-        capture="environment"
-        hidden
-        disabled={disabled}
-        onChange={(e) => {
-          const next = e.target.files?.[0] || null;
-          onFileChange(next);
-        }}
-      />
       {shown ? (
         <div style={styles.previewWrap}>
           <img src={shown} alt="" style={styles.preview} />
           <div style={styles.actions}>
-            <button type="button" style={styles.secondary} disabled={disabled} onClick={pick}>
+            <ConsumerCameraPickButton
+              mode="photo"
+              facingMode="environment"
+              onFile={onFileChange}
+              disabled={disabled}
+              testId="eating-media-replace"
+              ariaLabel="Replace photo with camera"
+              showLibraryLink
+              buttonStyle={styles.secondary}
+            >
               Replace
-            </button>
+            </ConsumerCameraPickButton>
             <button type="button" style={styles.secondary} disabled={disabled} onClick={clear}>
               Remove
             </button>
           </div>
         </div>
       ) : (
-        <button type="button" style={styles.addBtn} disabled={disabled} onClick={pick}>
-          <span style={styles.addIcon} aria-hidden>
-            📷
-          </span>
-          <span>Add photo</span>
-        </button>
+        <ConsumerCameraPickButton
+          mode="photo"
+          facingMode="environment"
+          onFile={onFileChange}
+          disabled={disabled}
+          testId="eating-media-add"
+          ariaLabel="Add photo with camera"
+          showLibraryLink
+          buttonStyle={styles.addBtn}
+        >
+          Add photo
+        </ConsumerCameraPickButton>
       )}
     </div>
   );
@@ -90,8 +87,8 @@ const styles = {
     fontSize: 15,
     cursor: "pointer",
     width: "100%",
+    fontFamily: "inherit",
   },
-  addIcon: { fontSize: 20 },
   previewWrap: { display: "grid", gap: 8 },
   preview: {
     width: "100%",
@@ -101,7 +98,7 @@ const styles = {
     display: "block",
     background: "#f1f5f9",
   },
-  actions: { display: "flex", gap: 8, flexWrap: "wrap" },
+  actions: { display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" },
   secondary: {
     border: "1px solid #cbd5e1",
     borderRadius: 10,
@@ -111,5 +108,6 @@ const styles = {
     fontWeight: 600,
     fontSize: 13,
     cursor: "pointer",
+    fontFamily: "inherit",
   },
 };

@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import ConsumerCameraSheet from "../../../components/consumer/ConsumerCameraSheet.jsx";
+import { inlineCameraSupported, preferInlineCamera } from "../../../lib/consumerCameraCapture.js";
 import ProfileMediaGallery from "./ProfileMediaGallery.jsx";
 import * as s from "./myMenuplyStyles.js";
 
@@ -25,6 +27,7 @@ export default function DinerIdentityHero({
   const fileRef = useRef(null);
   const [draft, setDraft] = useState(about || "");
   const [saving, setSaving] = useState(false);
+  const [avatarCameraOpen, setAvatarCameraOpen] = useState(false);
 
   useEffect(() => {
     setDraft(about || "");
@@ -42,6 +45,15 @@ export default function DinerIdentityHero({
   }
 
   const initial = String(displayName || "You").trim().slice(0, 1).toUpperCase() || "Y";
+
+  function openAvatarPicker() {
+    if (busy) return;
+    if (inlineCameraSupported() && preferInlineCamera()) {
+      setAvatarCameraOpen(true);
+      return;
+    }
+    fileRef.current?.click();
+  }
 
   return (
     <section style={s.section} data-testid="about-me">
@@ -64,7 +76,7 @@ export default function DinerIdentityHero({
             style={s.identityPhotoBtn}
             aria-label="Change profile photo"
             disabled={busy}
-            onClick={() => fileRef.current?.click()}
+            onClick={openAvatarPicker}
           >
             {avatarUrl ? (
               <img src={avatarUrl} alt="" style={s.identityPhoto} />
@@ -77,19 +89,31 @@ export default function DinerIdentityHero({
           </button>
         )}
         {readOnly ? null : (
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp,image/*"
-            capture="user"
-            style={{ display: "none" }}
-            disabled={busy}
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              e.target.value = "";
-              if (file) onAvatarFile(file);
-            }}
-          />
+          <>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              capture=""
+              style={{ display: "none" }}
+              disabled={busy}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                e.target.value = "";
+                if (file) onAvatarFile(file);
+              }}
+            />
+            <ConsumerCameraSheet
+              open={avatarCameraOpen}
+              mode="photo"
+              facingMode="user"
+              onClose={() => setAvatarCameraOpen(false)}
+              onCapture={(file) => {
+                setAvatarCameraOpen(false);
+                if (file) onAvatarFile(file);
+              }}
+            />
+          </>
         )}
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={s.identityName}>{displayName}</div>

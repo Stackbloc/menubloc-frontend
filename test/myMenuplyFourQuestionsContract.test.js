@@ -84,7 +84,7 @@ test("My Menuply is the diner's personal home", () => {
   assert.match(bits, /restaurant_name/);
   assert.match(bits, /Restaurant/);
   assert.match(bits, /Click to add photo of meal/);
-  assert.match(bits, /capture="environment"/);
+  assert.match(bits, /ConsumerCameraSheet/);
   assert.match(bits, /Request to join/);
   assert.match(bits, /isScheduledEatingPlan/);
   const form = read("src/pages/consumer/myMenuply/EatingPlanDayForm.jsx");
