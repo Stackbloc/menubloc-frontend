@@ -34,35 +34,64 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` @ clean `main` |
-| Git commit | `fba813a` — Food social MVP Stages 1–2: Post sheet wiring, Events browse, I'm Eating At photos |
-| Vercel deployment | `menubloc-frontend-ns16qypm7-menuply.vercel.app` |
-| Live bundle | `index-BcsalcQZ.js` |
+| Git commit | `af0f5a9` — Food social MVP Stages 3–4: About Me profile media gallery + Want to Eat photos |
+| Vercel deployment | `menubloc-frontend-asye7pvem-menuply.vercel.app` |
+| Live bundle | `index-B4WVHrrh.js` |
 | Aliases | `menuply.com`, `www.menuply.com`, `crm.menuply.com`, `venues.menuply.com` |
-| Tip-gate | **PASS** (apex + www) verified 2026-08-19 after food social MVP CPD |
-| Feature | Post (X): Want → My Menuply; Invite → invite start; Events → `/events`; I'm Eating At photo publish + hub mirror |
+| Tip-gate | **PASS** (apex + www) verified 2026-08-19 after food social MVP Stages 3–4 CPD |
+| Feature | About Me profile photo/video gallery; Want to Eat photo compose; menu-item “Add to Want”; peer want list on connection hub |
 
 ### Backend (Railway)
 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-backend-main` @ clean `main` |
-| Git on origin | `492dd058` — `GET /public/events` + food-activity photo uploads |
-| Live health SHA | `492dd0581c93258e3e82e9cea353ac7216c0bc75` |
+| Git on origin | `31b40a44` — profile media routes + want-to-eat photo uploads |
+| Live health SHA | `31b40a44c1029e8100f253d8baa0fa409f65269c` |
 | Health URL | `https://menubloc-backend-production.up.railway.app/health` |
-| `commit_hash` | `492dd0581c93258e3e82e9cea353ac7216c0bc75` |
-| Smoke | `GET /public/events?lat=34.05&lng=-118.24` → `ok: true`; tip-gate PASS `ns16qypm7` / `index-BcsalcQZ.js` |
+| `commit_hash` | `31b40a44c1029e8100f253d8baa0fa409f65269c` |
+| DB | `0274_consumer_profile_media`, `0275_diner_want_to_eat_photo` applied 2026-08-19 |
+| Smoke | tip-gate PASS `asye7pvem` / `index-B4WVHrrh.js`; health `31b40a44` |
 
 ### Restore current tip (if tip-gate fails mid-change)
 
 ```bash
 cd /Users/andrebarber/Desktop/menubloc/menubloc-frontend-main
-npx vercel alias set menubloc-frontend-ns16qypm7-menuply.vercel.app menuply.com
-npx vercel alias set menubloc-frontend-ns16qypm7-menuply.vercel.app www.menuply.com
-npx vercel alias set menubloc-frontend-ns16qypm7-menuply.vercel.app crm.menuply.com
-npx vercel alias set menubloc-frontend-ns16qypm7-menuply.vercel.app venues.menuply.com
+npx vercel alias set menubloc-frontend-asye7pvem-menuply.vercel.app menuply.com
+npx vercel alias set menubloc-frontend-asye7pvem-menuply.vercel.app www.menuply.com
+npx vercel alias set menubloc-frontend-asye7pvem-menuply.vercel.app crm.menuply.com
+npx vercel alias set menubloc-frontend-asye7pvem-menuply.vercel.app venues.menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 ```
+
+### Prior tip — Food social MVP Stages 1–2 (rollback target)
+
+| Field | Value |
+|-------|-------|
+| Deployment | `menubloc-frontend-ns16qypm7-menuply.vercel.app` |
+| Bundle | `index-BcsalcQZ.js` |
+| FE commit | `fba813a` |
+| BE health | `492dd058` |
+
+---
+
+## PREVIOUS LAST KNOWN GOOD (2026-08-19 — Food social MVP Stages 1–2)
+
+### Frontend (menuply.com)
+
+| Field | Value |
+|-------|-------|
+| Git commit | `fba813a` — Food social MVP Stages 1–2: Post sheet wiring, Events browse, I'm Eating At photos |
+| Vercel deployment | `menubloc-frontend-ns16qypm7-menuply.vercel.app` |
+| Live bundle | `index-BcsalcQZ.js` |
+
+### Backend (Railway)
+
+| Field | Value |
+|-------|-------|
+| Git on origin | `492dd058` |
+| Live health SHA | `492dd0581c93258e3e82e9cea353ac7216c0bc75` |
 
 ### Prior tip — Future plans calendar events (rollback target)
 
