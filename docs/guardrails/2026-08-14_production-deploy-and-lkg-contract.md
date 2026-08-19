@@ -34,33 +34,33 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` @ clean `main` |
-| Git commit | `551dfc5` — My Menuply neutral styling + connection events on `/events` |
-| Vercel deployment | `menubloc-frontend-1s885krhn-menuply.vercel.app` |
-| Live bundle | `index-BAw7e0iT.js` |
+| Git commit | `33cffa0` — Food social Stage 6 eating card social actions |
+| Vercel deployment | `menubloc-frontend-8zd42uhpe-menuply.vercel.app` |
+| Live bundle | `index-t-p_pQcX.js` |
 | Aliases | `menuply.com`, `www.menuply.com`, `crm.menuply.com`, `venues.menuply.com` |
-| Tip-gate | **PASS** (apex + www) verified 2026-08-19 after my-menuply styling + Stage 5 events CPD |
-| Feature | Account-dashboard-aligned My Menuply UI; connection events on `/events`; want-to-eat visibility |
+| Tip-gate | **PASS** (apex + www) verified 2026-08-19 after Stage 6 eating social actions CPD |
+| Feature | Like / Comment / Share / Invite icon row on My Menuply eating cards + connection eating cards |
 
 ### Backend (Railway)
 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-backend-main` @ clean `main` |
-| Git on origin | `516b2127` — connection-sourced events API |
-| Live health SHA | `516b2127c9b2e52501fa99c9c5b3280b5b150e87` |
+| Git on origin | `b967e80f` — docs mirror (feature `516b2127` connection events API) |
+| Live health SHA | `b967e80f…` (verified 2026-08-19 Stage 6 CPD) |
 | Health URL | `https://menubloc-backend-production.up.railway.app/health` |
-| `commit_hash` | `516b2127c9b2e52501fa99c9c5b3280b5b150e87` |
+| `commit_hash` | `b967e80f` (live at CPD certify) |
 | DB | `0274`–`0275` applied 2026-08-19 |
-| Smoke | tip-gate PASS `1s885krhn` / `index-BAw7e0iT.js`; health `516b2127` |
+| Smoke | tip-gate PASS `8zd42uhpe` / `index-t-p_pQcX.js`; health `b967e80f` |
 
 ### Restore current tip (if tip-gate fails mid-change)
 
 ```bash
 cd /Users/andrebarber/Desktop/menubloc/menubloc-frontend-main
-npx vercel alias set menubloc-frontend-1s885krhn-menuply.vercel.app menuply.com
-npx vercel alias set menubloc-frontend-1s885krhn-menuply.vercel.app www.menuply.com
-npx vercel alias set menubloc-frontend-1s885krhn-menuply.vercel.app crm.menuply.com
-npx vercel alias set menubloc-frontend-1s885krhn-menuply.vercel.app venues.menuply.com
+npx vercel alias set menubloc-frontend-8zd42uhpe-menuply.vercel.app menuply.com
+npx vercel alias set menubloc-frontend-8zd42uhpe-menuply.vercel.app www.menuply.com
+npx vercel alias set menubloc-frontend-8zd42uhpe-menuply.vercel.app crm.menuply.com
+npx vercel alias set menubloc-frontend-8zd42uhpe-menuply.vercel.app venues.menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 ```
