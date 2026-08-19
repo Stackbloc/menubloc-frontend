@@ -108,6 +108,7 @@ export default function DinerIdentityHero({
               mode="photo"
               facingMode="user"
               onClose={() => setAvatarCameraOpen(false)}
+              onNativeFallback={() => fileRef.current?.click()}
               onCapture={(file) => {
                 setAvatarCameraOpen(false);
                 if (file) onAvatarFile(file);

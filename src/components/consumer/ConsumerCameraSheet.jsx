@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import {
-  inlineCameraSupported,
-  openCameraStream,
-  openVideoStream,
+  formatCameraError,
+  openCameraStreamWithFallback,
+  openVideoStreamWithFallback,
   photoFileFromVideoElement,
   pickRecorderMimeType,
   stopMediaStream,
@@ -17,6 +17,7 @@ export default function ConsumerCameraSheet({
   mode = "photo",
   facingMode = "environment",
   onCapture,
+  onNativeFallback,
 }) {
   const videoRef = useRef(null);
   const streamRef = useRef(null);
@@ -34,7 +35,7 @@ export default function ConsumerCameraSheet({
     setRecording(false);
     chunksRef.current = [];
 
-    const openStream = mode === "video" ? openVideoStream : openCameraStream;
+    const openStream = mode === "video" ? openVideoStreamWithFallback : openCameraStreamWithFallback;
     openStream(facingMode)
       .then((stream) => {
         if (!alive) {
@@ -49,9 +50,7 @@ export default function ConsumerCameraSheet({
         }
       })
       .catch((err) => {
-        if (alive) {
-          setError(err?.message || "Camera access was blocked. Allow camera in browser settings.");
-        }
+        if (alive) setError(formatCameraError(err));
       })
       .finally(() => {
         if (alive) setBusy(false);
@@ -84,7 +83,7 @@ export default function ConsumerCameraSheet({
       onCapture?.(file);
       onClose?.();
     } catch (err) {
-      setError(err?.message || "Could not take photo");
+      setError(formatCameraError(err));
     } finally {
       setBusy(false);
     }
@@ -94,7 +93,7 @@ export default function ConsumerCameraSheet({
     if (busy || recording || !streamRef.current) return;
     const mime = pickRecorderMimeType();
     if (!mime) {
-      setError("Video recording is not supported in this browser. Try again from a newer phone browser.");
+      setError("Video recording is not supported in this browser. Use Open phone camera below.");
       return;
     }
     setError("");
@@ -114,7 +113,7 @@ export default function ConsumerCameraSheet({
           onCapture?.(file);
           onClose?.();
         } catch (err) {
-          setError(err?.message || "Could not save video");
+          setError(formatCameraError(err));
         } finally {
           setBusy(false);
           setRecording(false);
@@ -123,7 +122,7 @@ export default function ConsumerCameraSheet({
       recorder.start();
       setRecording(true);
     } catch (err) {
-      setError(err?.message || "Could not start recording");
+      setError(formatCameraError(err));
     }
   }
 
@@ -148,7 +147,24 @@ export default function ConsumerCameraSheet({
           <video ref={videoRef} playsInline muted autoPlay style={styles.preview} />
           {busy && !recording ? <div style={styles.loading}>Opening camera…</div> : null}
         </div>
-        {error ? <p style={styles.error}>{error}</p> : null}
+        {error ? (
+          <div style={styles.errorWrap}>
+            <p style={styles.error}>{error}</p>
+            {onNativeFallback ? (
+              <button
+                type="button"
+                style={styles.fallbackBtn}
+                data-testid="consumer-camera-native-fallback"
+                onClick={() => {
+                  onClose?.();
+                  onNativeFallback();
+                }}
+              >
+                Open phone camera
+              </button>
+            ) : null}
+          </div>
+        ) : null}
         <div style={styles.actions}>
           <button type="button" style={styles.secondary} disabled={busy} onClick={() => onClose?.()}>
             Cancel
@@ -214,11 +230,25 @@ const styles = {
     fontWeight: 600,
     background: "rgba(15, 23, 42, 0.35)",
   },
-  error: {
+  errorWrap: {
     margin: "10px 14px 0",
+  },
+  error: {
+    margin: 0,
     fontSize: 13,
     color: "#b91c1c",
-    lineHeight: 1.4,
+    lineHeight: 1.45,
+  },
+  fallbackBtn: {
+    marginTop: 10,
+    width: "100%",
+    minHeight: 40,
+    borderRadius: 10,
+    border: "1.5px solid #d1d5db",
+    background: "#fff",
+    fontWeight: 700,
+    fontSize: 13,
+    cursor: "pointer",
   },
   actions: {
     display: "flex",

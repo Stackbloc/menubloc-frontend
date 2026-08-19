@@ -40,6 +40,9 @@ test("My Menuply identity hero is prominent with photo upload and short bio", ()
   assert.match(gallery, /ConsumerCameraPickButton/);
   const cameraLib = read("src/lib/consumerCameraCapture.js");
   assert.match(cameraLib, /getUserMedia/);
+  const vercel = read("vercel.json");
+  assert.match(vercel, /camera=\(self\)/);
+  assert.doesNotMatch(vercel, /camera=\(\)/);
   assert.match(gallery, /not your eating diary/i);
   assert.match(page, /QuickCompose/);
   assert.match(compose, /ConsumerCameraPickButton/);

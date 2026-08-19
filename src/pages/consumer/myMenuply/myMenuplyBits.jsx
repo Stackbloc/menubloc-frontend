@@ -113,7 +113,11 @@ export function PhotoGrid({ items, onSelect, onPhotoPick, hideJoinMe = false }) 
               mode="photo"
               facingMode="environment"
               onClose={() => setCameraOpen(false)}
-              onCapture={handlePhotoFile}
+              onNativeFallback={() => fileRef.current?.click()}
+              onCapture={(file) => {
+                setCameraOpen(false);
+                handlePhotoFile(file);
+              }}
             />
           </>
         ) : null}

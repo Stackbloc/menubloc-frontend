@@ -95,6 +95,7 @@ export default function ConsumerCameraPickButton({
         mode={mode}
         facingMode={facingMode}
         onClose={() => setSheetOpen(false)}
+        onNativeFallback={() => cameraInputRef.current?.click()}
         onCapture={(file) => {
           setSheetOpen(false);
           onFile?.(file);

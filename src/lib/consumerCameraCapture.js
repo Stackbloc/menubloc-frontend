@@ -90,3 +90,52 @@ export function pickRecorderMimeType() {
   if (MediaRecorder.isTypeSupported?.("video/mp4")) return "video/mp4";
   return "";
 }
+
+export function formatCameraError(err) {
+  const name = String(err?.name || "");
+  const message = String(err?.message || "");
+  if (
+    name === "NotAllowedError" ||
+    name === "SecurityError" ||
+    /permission denied/i.test(message)
+  ) {
+    return "Camera blocked. Allow Camera for menuply.com in your browser settings, reload this page, then tap Allow when asked.";
+  }
+  if (name === "NotFoundError" || name === "DevicesNotFoundError") {
+    return "No camera found on this device.";
+  }
+  if (name === "NotReadableError") {
+    return "Camera is in use by another app. Close it and try again.";
+  }
+  return message || "Could not open camera.";
+}
+
+export async function openCameraStreamWithFallback(facingMode = "environment") {
+  try {
+    return await openCameraStream(facingMode);
+  } catch (first) {
+    try {
+      return await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: facingMode } },
+        audio: false,
+      });
+    } catch {
+      throw first;
+    }
+  }
+}
+
+export async function openVideoStreamWithFallback(facingMode = "environment") {
+  try {
+    return await openVideoStream(facingMode);
+  } catch (first) {
+    try {
+      return await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: facingMode } },
+        audio: true,
+      });
+    } catch {
+      throw first;
+    }
+  }
+}
