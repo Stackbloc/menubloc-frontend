@@ -30,7 +30,6 @@ import {
   listWhatIAteToday,
   listWhatWeDoingSessions,
   resolveConsumerMediaUrl,
-  listWantToEat,
   uploadWantToEatPhoto,
   updateConsumerProfile,
   uploadDinerAvatar,

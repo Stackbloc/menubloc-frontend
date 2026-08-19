@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "fba813a77a8c1cb4346a8c7e81370f3f44996348",
-  "gitShortSha": "fba813a",
+  "gitSha": "4213c41c24d8926a11180df22a7c8a8547428a70",
+  "gitShortSha": "4213c41",
   "branch": "main",
-  "buildTime": "2026-08-19T17:26:31.635Z",
+  "buildTime": "2026-08-19T17:46:57.486Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "feat(food-social-mvp): wire Post actions, Events browse, and eating photos."
+  "commitMessage": "feat(food-social-mvp): About Me gallery and Want to Eat photos."
 }
