@@ -181,6 +181,35 @@ export const photo = {
   background: "#f1f5f9",
 };
 
+/** Compact eating row when there is no photo/video yet — save hero size for real media. */
+export const eatingRowCompact = {
+  display: "block",
+  textDecoration: "none",
+  color: "inherit",
+  borderRadius: 12,
+  background: "#fff",
+  border: `1px solid ${BORDER}`,
+  padding: "12px 14px",
+  boxShadow: "0 1px 2px rgba(15, 23, 42, 0.04)",
+};
+
+export const eatingMediaAddBtn = {
+  appearance: "none",
+  display: "inline-flex",
+  alignItems: "center",
+  minHeight: 32,
+  padding: "0 10px",
+  marginTop: 8,
+  borderRadius: 999,
+  border: `1.5px dashed ${BORDER_INPUT}`,
+  background: "#fafafa",
+  color: MUTED,
+  fontSize: 12,
+  fontWeight: 600,
+  cursor: "pointer",
+  fontFamily: "inherit",
+};
+
 export const photoLabel = {
   padding: "10px 12px 12px",
   fontSize: 15,

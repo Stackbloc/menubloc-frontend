@@ -8,11 +8,9 @@ export function inlineCameraSupported() {
 }
 
 export function preferInlineCamera() {
-  if (typeof window === "undefined") return false;
-  const coarse = window.matchMedia?.("(pointer: coarse)")?.matches;
-  const narrow = window.innerWidth <= 900;
-  const mobileUa = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "");
-  return mobileUa || coarse || narrow;
+  // Prefer the in-app camera sheet whenever getUserMedia exists. Hidden file inputs
+  // show a generic "upload files" picker on desktop and unreliable capture on mobile.
+  return inlineCameraSupported();
 }
 
 export function videoRecorderSupported() {

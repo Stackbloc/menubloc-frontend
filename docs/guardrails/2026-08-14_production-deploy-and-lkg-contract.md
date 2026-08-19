@@ -34,24 +34,24 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` @ clean `main` |
-| Git commit | `98de2ad` — sticky ← My Menuply back link on Connection peer profiles |
-| Vercel deployment | `menubloc-frontend-i20ol5ufo-menuply.vercel.app` |
-| Live bundle | `index-BgGXGGfN.js` |
+| Git commit | `80b6d41` — unified Eating hub, tap-to-open Apple-style calendar, crew purpose |
+| Vercel deployment | `menubloc-frontend-j027bdhch-menuply.vercel.app` |
+| Live bundle | `index-CtFIYW11.js` |
 | Aliases | `menuply.com`, `www.menuply.com`, `crm.menuply.com`, `venues.menuply.com` |
-| Tip-gate | **PASS** (apex + www) verified 2026-08-19 after Connection peer back-link CPD |
-| Feature | StickyPageHeader backTo on peer diner hubs; Find Diners backTo now wired |
+| Tip-gate | **PASS** (apex + www) verified 2026-08-19 after Eating hub CPD |
+| Feature | Single Eating section; calendar sheet; crew name + purpose; Waiter want-list card |
 
 ### Backend (Railway)
 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-backend-main` @ clean `main` |
-| Git on origin | `b967e80f` — docs mirror (feature `516b2127` connection events API) |
-| Live health SHA | `b967e80f…` (verified 2026-08-19 Stage 6 CPD) |
+| Git on origin | `57e08927` — Waiter want-list briefing + eating media video (migration 0277) |
+| Live health SHA | `57e08927…` (verified 2026-08-19 Eating hub CPD) |
 | Health URL | `https://menubloc-backend-production.up.railway.app/health` |
-| `commit_hash` | `b967e80f` (live at CPD certify) |
-| DB | `0274`–`0275` applied 2026-08-19 |
-| Smoke | tip-gate PASS `6o01ok4ww` / `index-D0BpzNQF.js`; health `b967e80f`; `Permissions-Policy: camera=(self)` |
+| `commit_hash` | `57e08927` (live at CPD certify) |
+| DB | `0277` eating media video + food_activity link (deploy with BE) |
+| Smoke | tip-gate PASS `j027bdhch` / `index-CtFIYW11.js`; health `57e08927`; bundle railway=59 localhost=9 |
 
 ### Restore current tip (if tip-gate fails mid-change)
 

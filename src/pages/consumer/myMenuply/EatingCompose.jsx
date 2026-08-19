@@ -62,14 +62,14 @@ export default function EatingCompose({
       </div>
       <form onSubmit={handleSubmit} style={styles.form}>
         {acceptMedia ? (
-          <>
+          <div style={styles.mediaRow}>
             <ConsumerCameraPickButton
               mode="photo"
               facingMode="environment"
               onFile={setFile}
               disabled={busy}
               testId="eating-compose-photo"
-              ariaLabel="Add photo"
+              ariaLabel="Take photo"
               showLibraryLink={false}
               buttonStyle={styles.mediaBtn}
             >
@@ -82,15 +82,21 @@ export default function EatingCompose({
                 onFile={setFile}
                 disabled={busy}
                 testId="eating-compose-video"
-                ariaLabel="Add video"
+                ariaLabel="Record video"
                 showLibraryLink={false}
                 buttonStyle={styles.mediaBtn}
               >
                 Video
               </ConsumerCameraPickButton>
             ) : null}
-          </>
+            {file ? (
+              <button type="button" style={styles.clearMedia} disabled={busy} onClick={() => setFile(null)}>
+                Remove {isVideoFile(file) ? "video" : "photo"}
+              </button>
+            ) : null}
+          </div>
         ) : null}
+        <div style={styles.inputRow}>
         <input
           type="text"
           value={text}
@@ -108,6 +114,7 @@ export default function EatingCompose({
         >
           {busy ? "…" : category === "plan" ? "Schedule" : "Post"}
         </button>
+        </div>
       </form>
     </div>
   );
@@ -139,6 +146,30 @@ const styles = {
     borderColor: "#1C1C1E",
   },
   form: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "stretch",
+    gap: 8,
+  },
+  mediaRow: {
+    display: "flex",
+    flexWrap: "wrap",
+    alignItems: "center",
+    gap: 8,
+  },
+  clearMedia: {
+    appearance: "none",
+    border: "none",
+    background: "transparent",
+    color: "#64748b",
+    fontSize: 12,
+    fontWeight: 600,
+    textDecoration: "underline",
+    cursor: "pointer",
+    padding: 0,
+    fontFamily: "inherit",
+  },
+  inputRow: {
     display: "flex",
     alignItems: "center",
     gap: 8,

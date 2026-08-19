@@ -15,7 +15,6 @@ import {
 } from "./myMenuplyBits.jsx";
 import { formatPlanBracketDate, futurePlanKey } from "./dinerHubFormat.js";
 import { compareYmd, EATING_FILTERS, planYmd } from "./eatingHubUtils.js";
-import { defaultWhatIAteMealPeriod } from "../../../lib/whatIAteTodayMealPeriod.js";
 import { whatIAteTodayLocalDate } from "../../../lib/consumerApi.js";
 import * as s from "./myMenuplyStyles.js";
 
@@ -153,24 +152,17 @@ export default function EatingHubSection({
                 ? eatingForDay.length
                   ? eatingForDay
                   : eating.slice(0, 12)
-                : eatingForDay.length
-                  ? eatingForDay
-                  : dateCmp <= 0
-                    ? [
-                        {
-                          id: "placeholder",
-                          food_name: "Food",
-                          eaten_on: hubDate,
-                          meal_period: defaultWhatIAteMealPeriod(),
-                          kind: "what_i_ate",
-                        },
-                      ]
-                    : []
+                : eatingForDay
             }
             hideJoinMe
             onPhotoPick={readOnly ? undefined : onEatingPhotoPick}
             onSelect={readOnly ? undefined : onDiarySelect}
           />
+          {!readOnly && dateCmp <= 0 && eatingForDay.length === 0 ? (
+            <p style={{ ...s.muted, margin: "0 0 4px", fontSize: 13 }} data-testid="eating-ate-empty-day">
+              Nothing logged for this day yet — use Ate above to post.
+            </p>
+          ) : null}
           {lastPost?.kind === "diary" ? (
             <PostAfterActions
               kind="diary"

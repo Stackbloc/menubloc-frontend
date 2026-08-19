@@ -77,7 +77,7 @@ export function PhotoGrid({ items, onSelect, onPhotoPick, hideJoinMe = false }) 
   const caption = formatEatingCaption(item);
   const canPick = typeof onPhotoPick === "function";
   const hasMedia = Boolean(item.photo_url || item.video_url);
-  const showPhotoHint = canPick && !hasMedia;
+  const isPlaceholder = String(item.id || "") === "placeholder" && !item.entry_id;
 
   function pickPhoto() {
     if (!canPick) return;
@@ -92,9 +92,47 @@ export function PhotoGrid({ items, onSelect, onPhotoPick, hideJoinMe = false }) 
     if (file) onPhotoPick(item, file);
   }
 
+  if (isPlaceholder) return null;
+
+  const mediaBlock = hasMedia ? (
+    <button
+      type="button"
+      data-testid="eating-photo-slot"
+      onClick={canPick ? pickPhoto : undefined}
+      disabled={!canPick}
+      onMouseEnter={() => setPhotoHover(true)}
+      onMouseLeave={() => setPhotoHover(false)}
+      onFocus={() => setPhotoHover(true)}
+      onBlur={() => setPhotoHover(false)}
+      style={{
+        ...s.photoButton,
+        cursor: canPick ? "pointer" : "default",
+        border: 0,
+        borderRadius: 0,
+        boxShadow: "none",
+      }}
+      aria-label={canPick ? "Tap to replace photo or video" : caption}
+    >
+      {item.video_url ? (
+        <video
+          src={resolveConsumerMediaUrl(item.video_url)}
+          style={s.photo}
+          controls
+          playsInline
+          preload="metadata"
+        />
+      ) : (
+        <img src={resolveConsumerMediaUrl(item.photo_url)} alt="" style={s.photo} />
+      )}
+      {canPick && photoHover ? (
+        <div style={s.photoHoverHint}>Tap to replace photo or video</div>
+      ) : null}
+    </button>
+  ) : null;
+
   return (
     <div style={s.grid} data-testid="what-im-eating-photos">
-      <article key={item.id || item.entry_id || `${label}-${safeIndex}`} style={s.photoCard}>
+      <article key={item.id || item.entry_id || `${label}-${safeIndex}`} style={hasMedia ? s.photoCard : s.eatingRowCompact}>
         {canPick ? (
           <>
             <input
@@ -122,57 +160,8 @@ export function PhotoGrid({ items, onSelect, onPhotoPick, hideJoinMe = false }) 
             />
           </>
         ) : null}
-        <button
-          type="button"
-          data-testid="eating-photo-slot"
-          onClick={pickPhoto}
-          disabled={!canPick}
-          onMouseEnter={() => setPhotoHover(true)}
-          onMouseLeave={() => setPhotoHover(false)}
-          onFocus={() => setPhotoHover(true)}
-          onBlur={() => setPhotoHover(false)}
-          style={{
-            ...s.photoButton,
-            cursor: canPick ? "pointer" : "default",
-            border: 0,
-            borderRadius: 0,
-            boxShadow: "none",
-          }}
-          aria-label={canPick ? "Click to add photo or video of meal" : caption}
-          title={showPhotoHint ? "Click to add photo or video of meal" : undefined}
-        >
-          {item.video_url ? (
-            <video
-              src={resolveConsumerMediaUrl(item.video_url)}
-              style={s.photo}
-              controls
-              playsInline
-              preload="metadata"
-            />
-          ) : item.photo_url ? (
-            <img src={resolveConsumerMediaUrl(item.photo_url)} alt="" style={s.photo} />
-          ) : (
-            <div
-              style={{
-                ...s.photo,
-                display: "grid",
-                placeItems: "center",
-                fontSize: 13,
-                color: "#64748b",
-                fontWeight: 600,
-              }}
-            >
-              Photo or video
-            </div>
-          )}
-          {showPhotoHint && photoHover ? (
-            <div style={s.photoHoverHint}>Click to add photo or video of meal</div>
-          ) : null}
-          {showPhotoHint && !photoHover ? (
-            <div style={s.photoHintBar}>Click to add photo or video of meal</div>
-          ) : null}
-        </button>
-        <div style={s.photoLabel}>
+        {mediaBlock}
+        <div style={hasMedia ? s.photoLabel : undefined}>
           <div data-testid="eating-photo-caption">{caption}</div>
           {place ? (
             restHref ? (
@@ -184,6 +173,16 @@ export function PhotoGrid({ items, onSelect, onPhotoPick, hideJoinMe = false }) 
             )
           ) : null}
           {note ? <div style={s.photoMeta}>{note}</div> : null}
+          {canPick && !hasMedia ? (
+            <button
+              type="button"
+              data-testid="eating-photo-slot"
+              style={s.eatingMediaAddBtn}
+              onClick={pickPhoto}
+            >
+              Add photo or video
+            </button>
+          ) : null}
           <EatingSocialActions item={item} />
           {ordered.length > 1 ? (
             <div style={s.actions}>
@@ -360,24 +359,7 @@ export function ConnectionFoodCard({ item }) {
           alt=""
           style={{ width: "100%", height: 168, objectFit: "cover", borderRadius: 10, marginTop: 10 }}
         />
-      ) : (
-        <div
-          style={{
-            width: "100%",
-            height: 168,
-            marginTop: 10,
-            borderRadius: 10,
-            background: "#f1f5f9",
-            display: "grid",
-            placeItems: "center",
-            fontSize: 13,
-            fontWeight: 600,
-            color: "#64748b",
-          }}
-        >
-          No photo
-        </div>
-      )}
+      ) : null}
       <Link to={href} style={{ ...s.link, display: "block", marginTop: 8, fontSize: 15, fontWeight: 800 }}>
         {item.food_name}
       </Link>
