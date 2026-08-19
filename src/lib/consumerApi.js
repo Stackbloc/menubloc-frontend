@@ -200,6 +200,8 @@ export function resolveConsumerMediaUrl(pathOrUrl) {
 
 // ── Dining Crews ──────────────────────────────────────────────────────────
 export const listDiningCrews = () => get("/api/consumer/dining-crews");
+export const listDinerDiningCrews = (dinerId) =>
+  get(`/api/consumer/dining-crews/for-diner/${encodeURIComponent(String(dinerId))}`);
 export const discoverPublicDiningCrews = ({ q = "", limit = 20 } = {}) => {
   const params = new URLSearchParams();
   if (q) params.set("q", q);

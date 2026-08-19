@@ -24,6 +24,8 @@ test("Connection diner page uses the same hub layout as My Menuply", () => {
     assert.match(page, /data-testid="my-events"/);
     assert.match(page, /What I'm Eating/);
     assert.match(page, /Future plans/);
+    assert.match(page, /No Plans Scheduled/);
+    assert.match(page, /Plans Scheduled/);
     assert.match(page, /What I Want to Eat/);
     assert.match(page, /My Crews/);
     assert.match(page, /My Events/);
@@ -49,6 +51,9 @@ test("Connection diner page uses the same hub layout as My Menuply", () => {
   assert.match(hero, /viewerUserId/);
   assert.doesNotMatch(peer, /connections=\{\[\]\}/);
   assert.match(peer, /listConnections\("accepted", peerId\)/);
+  assert.match(peer, /listDinerDiningCrews/);
+  assert.match(peer, /Request to join/);
+  assert.match(peer, /NamedShareCard/);
   assert.match(peer, /peerConnections/);
 
   const calendar = read("src/pages/consumer/myMenuply/DinerCalendarSheet.jsx");

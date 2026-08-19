@@ -3,7 +3,7 @@
  */
 
 import { useEffect, useState } from "react";
-import { searchReportPlaces } from "../../../lib/foodActivityApi.js";
+import { asRestaurantPlace, restaurantLabel, searchReportPlaces } from "../../../lib/foodActivityApi.js";
 import JoinMeAudiencePicker from "./JoinMeAudiencePicker.jsx";
 import * as s from "./myMenuplyStyles.js";
 
@@ -45,14 +45,9 @@ export default function EatingPlanDayForm({
   }, [query, restaurant]);
 
   function pickRestaurant(row) {
-    if (!row?.restaurant_id) return;
-    setRestaurant({
-      restaurant_id: Number(row.restaurant_id),
-      restaurant_name: row.restaurant_name || row.label || row.name,
-      restaurant_slug: row.restaurant_slug || row.slug || null,
-      city: row.city || null,
-      state: row.state || null,
-    });
+    const next = asRestaurantPlace(row);
+    if (!next) return;
+    setRestaurant(next);
     setQuery("");
     setHits([]);
   }
@@ -63,7 +58,7 @@ export default function EatingPlanDayForm({
     await onSubmit({
       planDate,
       restaurantId: restaurant.restaurant_id,
-      placeLabel: restaurant.restaurant_name,
+      placeLabel: restaurantLabel(restaurant),
       restaurantSlug: restaurant.restaurant_slug,
       joinable,
       joinAudience: joinable ? joinAudience : "none",
@@ -94,8 +89,8 @@ export default function EatingPlanDayForm({
       {restaurant ? (
         <div style={styles.selected} data-testid="eating-plan-selected-restaurant">
           <div>
-            <div style={{ fontWeight: 800 }}>{restaurant.restaurant_name}</div>
-            {restaurant.city ? (
+            <div style={styles.selectedName}>{restaurantLabel(restaurant) || "Restaurant"}</div>
+            {restaurant.city || restaurant.state ? (
               <div style={s.muted}>
                 {[restaurant.city, restaurant.state].filter(Boolean).join(", ")}
               </div>
@@ -132,7 +127,7 @@ export default function EatingPlanDayForm({
                     style={styles.hitBtn}
                     onClick={() => pickRestaurant(hit)}
                   >
-                    {hit.restaurant_name || hit.label}
+                    {restaurantLabel(hit) || hit.label}
                     {hit.subtitle ? ` · ${hit.subtitle}` : hit.city ? ` · ${hit.city}` : ""}
                   </button>
                 </li>
@@ -149,7 +144,7 @@ export default function EatingPlanDayForm({
                   disabled={busy}
                   onClick={() => pickRestaurant(row)}
                 >
-                  {row.restaurant_name}
+                  {restaurantLabel(row)}
                 </button>
               ))}
             </div>
@@ -216,6 +211,13 @@ const styles = {
     border: "1.5px solid #1F4E3D",
     borderRadius: 12,
     background: "#f4f9f6",
+    color: "#14532d",
+  },
+  selectedName: {
+    fontWeight: 800,
+    fontSize: 16,
+    lineHeight: 1.25,
+    color: "#14532d",
   },
   change: {
     appearance: "none",

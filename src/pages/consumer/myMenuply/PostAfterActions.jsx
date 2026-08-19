@@ -193,7 +193,7 @@ export default function PostAfterActions({
       {restaurant ? (
         <div style={styles.selected} data-testid="post-after-restaurant">
           <div>
-            <div style={{ fontWeight: 800 }}>{restaurantLabel(restaurant)}</div>
+            <div style={styles.selectedName}>{restaurantLabel(restaurant) || "Restaurant"}</div>
             {restaurant.city ? (
               <div style={s.muted}>
                 {[restaurant.city, restaurant.state].filter(Boolean).join(", ")}
@@ -368,6 +368,13 @@ const styles = {
     border: "1.5px solid #1F4E3D",
     borderRadius: 12,
     background: "#f4f9f6",
+    color: "#14532d",
+  },
+  selectedName: {
+    fontWeight: 800,
+    fontSize: 16,
+    lineHeight: 1.25,
+    color: "#14532d",
   },
   change: {
     appearance: "none",

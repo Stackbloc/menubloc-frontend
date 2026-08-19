@@ -133,6 +133,8 @@ export const photoButton = {
   textAlign: "left",
   cursor: "pointer",
   font: "inherit",
+  position: "relative",
+  overflow: "hidden",
 };
 
 /* Casual snapshot — a hotdog on a plate. Not an Instagram Stories hero. */
@@ -159,6 +161,50 @@ export const photoMeta = {
   fontWeight: 600,
   color: "#3f6212",
   lineHeight: 1.35,
+};
+
+export const photoHintBar = {
+  position: "absolute",
+  left: 0,
+  right: 0,
+  bottom: 0,
+  padding: "8px 10px",
+  background: "rgba(20, 83, 45, 0.82)",
+  color: "#fff",
+  fontSize: 13,
+  fontWeight: 800,
+  textAlign: "center",
+  pointerEvents: "none",
+};
+
+export const photoHoverHint = {
+  position: "absolute",
+  inset: 0,
+  display: "grid",
+  placeItems: "center",
+  background: "rgba(15, 23, 42, 0.5)",
+  color: "#fff",
+  fontSize: 15,
+  fontWeight: 800,
+  textAlign: "center",
+  padding: 16,
+  pointerEvents: "none",
+};
+
+export const planSummaryBtn = {
+  appearance: "none",
+  width: "100%",
+  textAlign: "left",
+  border: "1px solid #bbf7d0",
+  background: "#fff",
+  borderRadius: 16,
+  padding: "14px 16px",
+  font: "inherit",
+  fontWeight: 800,
+  fontSize: 16,
+  color: "#14532d",
+  cursor: "pointer",
+  marginBottom: 8,
 };
 
 export const card = {

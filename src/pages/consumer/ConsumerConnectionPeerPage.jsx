@@ -14,13 +14,15 @@ import {
   listConnections,
   listConnectionsEating,
   listConnectionsPlanning,
+  listDinerDiningCrews,
   listPeerWhatIAteToday,
+  requestJoinDiningCrew,
   resolveConsumerMediaUrl,
   whatIAteTodayLocalDate,
 } from "../../lib/consumerApi.js";
 import * as s from "./myMenuply/myMenuplyStyles.js";
 import DinerIdentityHero from "./myMenuply/DinerIdentityHero.jsx";
-import { EatingPlanCard, PhotoGrid, SectionHead } from "./myMenuply/myMenuplyBits.jsx";
+import { EatingPlanCard, NamedShareCard, PhotoGrid, SectionHead, isScheduledEatingPlan } from "./myMenuply/myMenuplyBits.jsx";
 
 function planYmd(value) {
   const raw = String(value || "").trim();
@@ -82,6 +84,9 @@ export default function ConsumerConnectionPeerPage() {
   const [planDate, setPlanDate] = useState(() => whatIAteTodayLocalDate());
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [plansCalendarOpen, setPlansCalendarOpen] = useState(false);
+  const [viewingPlans, setViewingPlans] = useState(false);
+  const [crews, setCrews] = useState([]);
+  const [crewJoinBusy, setCrewJoinBusy] = useState("");
   const [eatingMonth, setEatingMonth] = useState(() => {
     const t = new Date();
     return new Date(t.getFullYear(), t.getMonth(), 1);
@@ -94,12 +99,13 @@ export default function ConsumerConnectionPeerPage() {
   const load = useCallback(async () => {
     setError("");
     try {
-      const [connData, peerConnData, eatData, planData, diaryData] = await Promise.all([
+      const [connData, peerConnData, eatData, planData, diaryData, crewData] = await Promise.all([
         listConnections("accepted"),
         listConnections("accepted", peerId).catch(() => ({ accepted: [] })),
         listConnectionsEating(40, peerId).catch(() => ({ items: [] })),
         listConnectionsPlanning(40, peerId).catch(() => ({ items: [] })),
         listPeerWhatIAteToday(peerId, eatingDate).catch(() => ({ entries: [] })),
+        listDinerDiningCrews(peerId).catch(() => ({ crews: [] })),
       ]);
       const match = (connData.accepted || []).find((c) => Number(c.peer?.id) === peerId);
       setConnection(match || null);
@@ -131,6 +137,7 @@ export default function ConsumerConnectionPeerPage() {
       const planItems = (planData.items || []).filter((item) => Number(item.peer?.id) === peerId);
       setEating(diaryItems.length ? diaryItems : eatItems);
       setPlans(planItems.filter((item) => item.kind !== "join_me" && item.href).map(asPlan));
+      setCrews(crewData.crews || crewData.items || []);
       const join = planItems.find((item) => item.join_me_href)?.join_me_href || "";
       setJoinMeHref(join);
     } catch (err) {
@@ -159,6 +166,28 @@ export default function ConsumerConnectionPeerPage() {
   const diaryHref = peer?.id
     ? `/account/connections/${encodeURIComponent(String(peer.id))}/what-i-ate`
     : "/account/what-i-ate";
+  const scheduledPlans = plans.filter(
+    (plan) => compareYmd(plan.plan_date) >= 0 && isScheduledEatingPlan(plan)
+  );
+  const dayPlans = scheduledPlans.filter((plan) => planYmd(plan.plan_date) === planDate);
+  const shownPlans = viewingPlans ? (dayPlans.length ? dayPlans : scheduledPlans).slice(0, 12) : [];
+
+  async function requestCrewJoin(crewId) {
+    setCrewJoinBusy(String(crewId));
+    setError("");
+    try {
+      await requestJoinDiningCrew(crewId);
+      setCrews((prev) =>
+        prev.map((crew) =>
+          Number(crew.id) === Number(crewId) ? { ...crew, join_request_pending: true } : crew
+        )
+      );
+    } catch (err) {
+      setError(err.message || "Unable to request join");
+    } finally {
+      setCrewJoinBusy("");
+    }
+  }
 
   return (
     <>
@@ -209,14 +238,28 @@ export default function ConsumerConnectionPeerPage() {
               />
               <div style={s.row}>
                 <h2 style={s.sectionTitle}>Future plans</h2>
-                <DinerCalendarTrigger selectedDate={planDate} onOpen={() => setPlansCalendarOpen(true)} />
+                {viewingPlans ? (
+                  <DinerCalendarTrigger selectedDate={planDate} onOpen={() => setPlansCalendarOpen(true)} />
+                ) : null}
               </div>
-              {plans
-                .filter((plan) => compareYmd(plan.plan_date) >= 0 && planYmd(plan.plan_date) === planDate)
-                .slice(0, 12)
-                .map((plan) => (
-                  <EatingPlanCard key={plan.token || plan.id} plan={plan} />
-                ))}
+              {scheduledPlans.length === 0 ? (
+                <p style={s.muted} data-testid="future-plans-summary">
+                  No Plans Scheduled.
+                </p>
+              ) : !viewingPlans ? (
+                <button
+                  type="button"
+                  data-testid="future-plans-summary"
+                  style={s.planSummaryBtn}
+                  onClick={() => setViewingPlans(true)}
+                >
+                  Plans Scheduled
+                </button>
+              ) : shownPlans.length > 0 ? (
+                shownPlans.map((plan) => <EatingPlanCard key={plan.token || plan.id} plan={plan} />)
+              ) : (
+                <p style={s.muted}>No Plans Scheduled.</p>
+              )}
               <DinerCalendarSheet
                 open={plansCalendarOpen}
                 onClose={() => setPlansCalendarOpen(false)}
@@ -254,7 +297,39 @@ export default function ConsumerConnectionPeerPage() {
 
             <section style={s.section} data-testid="dining-crews">
               <SectionHead title="My Crews" />
-              <p style={s.muted}>Nothing yet.</p>
+              {crews.length === 0 ? (
+                <p style={s.muted}>No crews to show.</p>
+              ) : (
+                crews.slice(0, 8).map((crew) => {
+                  const isMember = Boolean(crew.viewer_role);
+                  const canRequest =
+                    crew.visibility === "public" && !isMember && !crew.is_full;
+                  return (
+                    <NamedShareCard
+                      key={crew.id}
+                      name={crew.name}
+                      href={`/account/dining-crews/${crew.id}`}
+                      description={crew.description}
+                      meta={[
+                        `${crew.member_count || 0} ${crew.member_count === 1 ? "member" : "members"}`,
+                        crew.visibility === "public" ? "Public" : "Private",
+                        isMember ? "Member" : null,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
+                      onRequestJoin={canRequest ? () => requestCrewJoin(crew.id) : undefined}
+                      requestLabel={
+                        crew.join_request_pending || String(crewJoinBusy) === String(crew.id)
+                          ? "Request sent"
+                          : "Request to join"
+                      }
+                      requestDisabled={
+                        Boolean(crew.join_request_pending) || String(crewJoinBusy) === String(crew.id)
+                      }
+                    />
+                  );
+                })
+              )}
             </section>
 
             <section style={s.section} data-testid="my-events">

@@ -51,6 +51,7 @@ export function PhotoGrid({ items, onSelect, onPhotoPick, hideJoinMe = false }) 
     [items]
   );
   const [index, setIndex] = useState(0);
+  const [photoHover, setPhotoHover] = useState(false);
   const fileRef = useRef(null);
   if (!ordered.length) return null;
   const safeIndex = Math.min(index, ordered.length - 1);
@@ -63,6 +64,7 @@ export function PhotoGrid({ items, onSelect, onPhotoPick, hideJoinMe = false }) 
   const joinHref = hideJoinMe ? null : item.join_me_href;
   const caption = formatEatingCaption(item);
   const canPick = typeof onPhotoPick === "function";
+  const showPhotoHint = canPick && !item.photo_url;
 
   function pickPhoto() {
     if (!canPick) return;
@@ -90,6 +92,10 @@ export function PhotoGrid({ items, onSelect, onPhotoPick, hideJoinMe = false }) 
           data-testid="eating-photo-slot"
           onClick={pickPhoto}
           disabled={!canPick}
+          onMouseEnter={() => setPhotoHover(true)}
+          onMouseLeave={() => setPhotoHover(false)}
+          onFocus={() => setPhotoHover(true)}
+          onBlur={() => setPhotoHover(false)}
           style={{
             ...s.photoButton,
             cursor: canPick ? "pointer" : "default",
@@ -97,7 +103,8 @@ export function PhotoGrid({ items, onSelect, onPhotoPick, hideJoinMe = false }) 
             borderRadius: 0,
             boxShadow: "none",
           }}
-          aria-label={canPick ? "Add a photo of what you ate" : caption}
+          aria-label={canPick ? "Click to add photo of meal" : caption}
+          title={showPhotoHint ? "Click to add photo of meal" : undefined}
         >
           {item.photo_url ? (
             <img src={resolveConsumerMediaUrl(item.photo_url)} alt="" style={s.photo} />
@@ -106,6 +113,12 @@ export function PhotoGrid({ items, onSelect, onPhotoPick, hideJoinMe = false }) 
               🌭
             </div>
           )}
+          {showPhotoHint && photoHover ? (
+            <div style={s.photoHoverHint}>Click to add photo of meal</div>
+          ) : null}
+          {showPhotoHint && !photoHover ? (
+            <div style={s.photoHintBar}>Click to add photo of meal</div>
+          ) : null}
         </button>
         <div style={s.photoLabel}>
           <div data-testid="eating-photo-caption">{caption}</div>
@@ -175,18 +188,29 @@ export function PhotoGrid({ items, onSelect, onPhotoPick, hideJoinMe = false }) 
   );
 }
 
-export function NamedShareCard({ name, href, meta, onInvite, inviteLabel = "Invite people to join" }) {
+export function NamedShareCard({
+  name,
+  href,
+  meta,
+  description,
+  onInvite,
+  inviteLabel = "Invite people to join",
+  onRequestJoin,
+  requestLabel = "Request to join",
+  requestDisabled = false,
+}) {
   const title = String(name || "").trim() || "Untitled";
   return (
     <div style={s.card} data-testid="named-share-card">
       {href ? (
-        <Link to={href} style={{ ...s.sectionTitleLink, fontWeight: 800, fontSize: 16 }}>
+        <Link to={href} style={{ ...s.sectionTitleLink, fontWeight: 800, fontSize: 16, color: "#14532d" }}>
           {title}
         </Link>
       ) : (
-        <div style={{ fontWeight: 800, fontSize: 16 }}>{title}</div>
+        <div style={{ fontWeight: 800, fontSize: 16, color: "#14532d" }}>{title}</div>
       )}
       {meta ? <div style={s.muted}>{meta}</div> : null}
+      {description ? <div style={{ ...s.muted, marginTop: 4 }}>{description}</div> : null}
       <div style={s.actions}>
         {onInvite ? (
           <button
@@ -197,9 +221,26 @@ export function NamedShareCard({ name, href, meta, onInvite, inviteLabel = "Invi
             {inviteLabel}
           </button>
         ) : null}
+        {onRequestJoin ? (
+          <button
+            type="button"
+            style={{ ...s.primaryBtn, appearance: "none", cursor: requestDisabled ? "default" : "pointer", font: "inherit" }}
+            disabled={requestDisabled}
+            onClick={onRequestJoin}
+          >
+            {requestLabel}
+          </button>
+        ) : null}
       </div>
     </div>
   );
+}
+
+export function isScheduledEatingPlan(plan) {
+  if (!plan) return false;
+  const place = String(plan.restaurant_name || plan.place_label || "").trim();
+  const title = String(plan.title || "").trim();
+  return Boolean(plan.restaurant_id) || (Boolean(place) && place !== title);
 }
 
 export function ConnectionFoodCard({ item }) {

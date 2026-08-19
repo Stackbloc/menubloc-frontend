@@ -291,6 +291,11 @@ export function DiningCrewDetailPage() {
       data.crew.max_members == null ? "unlimited" : String(data.crew.max_members)
     );
     setMembershipApproval(data.crew.membership_approval || "organizer");
+    if (!data.crew.viewer_role) {
+      setConversations([]);
+      setJoinRequests([]);
+      return;
+    }
     const convos = await listDiningCrewConversations(crewId);
     setConversations(convos.conversations || []);
     if (!activeConvoId && convos.conversations?.[0]) {
@@ -466,6 +471,23 @@ export function DiningCrewDetailPage() {
     }
   }
 
+  async function handleRequestJoinFromDetail() {
+    setBusy(true);
+    setError("");
+    try {
+      await requestJoinDiningCrew(crewId);
+      setCrew((prev) =>
+        prev
+          ? { ...prev, join_request_pending: true, viewer_can_request_join: false }
+          : prev
+      );
+    } catch (err) {
+      setError(err.message || "Unable to request join");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const canManageSettings = crew?.viewer_role === "owner" || crew?.viewer_role === "admin";
   const isOwner = crew?.viewer_role === "owner";
   const members = crew?.members || [];
@@ -495,6 +517,16 @@ export function DiningCrewDetailPage() {
                 {crew.is_full ? " · Full" : null}
               </p>
               {crew.description ? <p style={styles.lead}>{crew.description}</p> : null}
+              {!crew.viewer_role && crew.visibility === "public" ? (
+                <button
+                  type="button"
+                  style={styles.primaryBtn}
+                  disabled={busy || crew.is_full || crew.join_request_pending}
+                  onClick={handleRequestJoinFromDetail}
+                >
+                  {crew.join_request_pending ? "Request sent" : "Request to join"}
+                </button>
+              ) : null}
               {canManageSettings ? (
                 <button
                   type="button"
@@ -524,6 +556,8 @@ export function DiningCrewDetailPage() {
               ) : null}
             </section>
 
+            {crew.viewer_role ? (
+            <>
             <section style={styles.section}>
               <h2 style={styles.h2}>
                 Diner Crew — {crew.member_count} member{crew.member_count === 1 ? "" : "s"}
@@ -777,6 +811,8 @@ export function DiningCrewDetailPage() {
                 </>
               ) : null}
             </section>
+            </>
+            ) : null}
           </>
         ) : (
           <p style={styles.muted}>Loading…</p>

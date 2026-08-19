@@ -41,7 +41,10 @@ test("My Menuply is the diner's personal home", () => {
   assert.ok(page.indexOf("<PhotoGrid") < page.indexOf("eating-plans-calendar"));
   assert.ok(page.indexOf("eating-plans-calendar") < page.indexOf("Future plans"));
   assert.ok(page.indexOf("eating-plans-calendar") < page.indexOf("Invite Me"));
-  assert.match(page, /Future plans/);
+  assert.match(page, /Click to Schedule Future Plans/);
+  assert.match(page, /No Plans Scheduled/);
+  assert.match(page, /Plans Scheduled/);
+  assert.match(page, /isScheduledEatingPlan/);
   assert.doesNotMatch(page, /empty="Nothing yet."/);
   assert.match(page, /What I Want to Eat/);
   assert.match(page, /My Crews/);
@@ -76,8 +79,13 @@ test("My Menuply is the diner's personal home", () => {
   assert.match(bits, /View dish/);
   assert.match(bits, /restaurant_name/);
   assert.match(bits, /Restaurant/);
-  assert.match(bits, /hideJoinMe/);
+  assert.match(bits, /Click to add photo of meal/);
+  assert.match(bits, /Request to join/);
+  assert.match(bits, /isScheduledEatingPlan/);
   const form = read("src/pages/consumer/myMenuply/EatingPlanDayForm.jsx");
+  assert.match(form, /asRestaurantPlace/);
+  assert.match(form, /restaurantLabel/);
+  assert.match(form, /selectedName/);
   assert.match(form, /JoinMeAudiencePicker/);
   assert.match(form, /joinAllowedUserIds/);
   const picker = read("src/pages/consumer/myMenuply/JoinMeAudiencePicker.jsx");

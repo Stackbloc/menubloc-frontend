@@ -53,6 +53,7 @@ import {
   EatingPlanCard,
   NamedShareCard,
   foodHref,
+  isScheduledEatingPlan,
 } from "./myMenuply/myMenuplyBits.jsx";
 
 function planYmd(value) {
@@ -119,6 +120,8 @@ export default function MyMenuplyPage() {
   const [sharePayload, setSharePayload] = useState(null);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [plansCalendarOpen, setPlansCalendarOpen] = useState(false);
+  const [schedulingPlans, setSchedulingPlans] = useState(false);
+  const [viewingPlans, setViewingPlans] = useState(false);
   const [joinCandidates, setJoinCandidates] = useState([]);
 
   const load = useCallback(async () => {
@@ -198,6 +201,11 @@ export default function MyMenuplyPage() {
     profile?.display_name ||
     [profile?.first_name, profile?.last_name].filter(Boolean).join(" ") ||
     "You";
+  const scheduledPlans = plans.filter(
+    (plan) => compareYmd(plan.plan_date) >= 0 && isScheduledEatingPlan(plan)
+  );
+  const dayPlans = scheduledPlans.filter((plan) => planYmd(plan.plan_date) === planDate);
+  const shownPlans = viewingPlans ? (dayPlans.length ? dayPlans : scheduledPlans).slice(0, 12) : [];
 
   async function onAvatarFile(file) {
     setIdentityBusy(true);
@@ -267,6 +275,8 @@ export default function MyMenuplyPage() {
       });
       const session = data.session || data;
       setLastPost({ kind: "plan", token: session.token, id: session.id });
+      setSchedulingPlans(false);
+      setViewingPlans(true);
       await load();
     } catch (err) {
       setError(err.message || "Unable to add plan");
@@ -520,37 +530,64 @@ export default function MyMenuplyPage() {
               />
               <div style={s.row}>
                 <h2 style={s.sectionTitle}>Future plans</h2>
-                <DinerCalendarTrigger selectedDate={planDate} onOpen={() => setPlansCalendarOpen(true)} />
+                {schedulingPlans || viewingPlans ? (
+                  <DinerCalendarTrigger selectedDate={planDate} onOpen={() => setPlansCalendarOpen(true)} />
+                ) : null}
               </div>
-              <EatingPlanDayForm
-                planDate={planDate}
-                busy={postBusy === "eating"}
-                followed={followed}
-                joinCandidates={joinCandidates}
-                onSubmit={postPlan}
-              />
-              {plans
-                .filter((plan) => compareYmd(plan.plan_date) >= 0 && planYmd(plan.plan_date) === planDate)
-                .slice(0, 12)
-                .map((plan) => (
-                  <EatingPlanCard
-                    key={plan.token || plan.id}
-                    plan={plan}
-                    onAddDetails={(next) => {
-                      setLastPost({
-                        kind: "plan",
-                        token: next.token,
-                        id: next.id,
-                        joinable: next.joinable,
-                        join_capacity: next.join_capacity,
-                        restaurant_id: next.restaurant_id,
-                        restaurant_name: next.restaurant_name,
-                        place_label: next.place_label,
-                      });
+              {!schedulingPlans && !viewingPlans ? (
+                <div data-testid="future-plans-summary">
+                  {scheduledPlans.length > 0 ? (
+                    <button
+                      type="button"
+                      style={s.planSummaryBtn}
+                      onClick={() => setViewingPlans(true)}
+                    >
+                      Plans Scheduled
+                    </button>
+                  ) : null}
+                  <button
+                    type="button"
+                    style={{ ...s.primaryBtn, width: "100%", minHeight: 44, justifyContent: "center" }}
+                    onClick={() => {
+                      setSchedulingPlans(true);
+                      setPlansCalendarOpen(true);
                     }}
-                  />
-                ))}
-              {lastPost?.kind === "plan" ? (
+                  >
+                    Click to Schedule Future Plans
+                  </button>
+                </div>
+              ) : null}
+              {schedulingPlans ? (
+                <EatingPlanDayForm
+                  planDate={planDate}
+                  busy={postBusy === "eating"}
+                  followed={followed}
+                  joinCandidates={joinCandidates}
+                  onSubmit={postPlan}
+                />
+              ) : null}
+              {shownPlans.map((plan) => (
+                <EatingPlanCard
+                  key={plan.token || plan.id}
+                  plan={plan}
+                  onAddDetails={(next) => {
+                    setLastPost({
+                      kind: "plan",
+                      token: next.token,
+                      id: next.id,
+                      joinable: next.joinable,
+                      join_capacity: next.join_capacity,
+                      restaurant_id: next.restaurant_id,
+                      restaurant_name: next.restaurant_name,
+                      place_label: next.place_label,
+                    });
+                  }}
+                />
+              )}
+              {viewingPlans && shownPlans.length === 0 ? (
+                <p style={s.muted}>No Plans Scheduled.</p>
+              ) : null}
+              {(schedulingPlans || viewingPlans) && lastPost?.kind === "plan" ? (
                 <PostAfterActions
                   kind="plan"
                   record={lastPost}
@@ -651,6 +688,7 @@ export default function MyMenuplyPage() {
                     key={crew.id}
                     name={crew.name}
                     href={`/account/dining-crews/${crew.id}`}
+                    description={crew.description}
                     meta={[
                       crew.viewer_role === "owner" ? "Organized" : null,
                       `${crew.member_count || 0} ${crew.member_count === 1 ? "member" : "members"}`,
