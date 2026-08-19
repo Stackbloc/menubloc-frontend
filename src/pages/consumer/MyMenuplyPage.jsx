@@ -111,6 +111,7 @@ export default function MyMenuplyPage() {
   const [followed, setFollowed] = useState([]);
   const [liked, setLiked] = useState([]);
   const [wants, setWants] = useState([]);
+  const [wantListError, setWantListError] = useState("");
   const [crews, setCrews] = useState([]);
   const [events, setEvents] = useState([]);
   const [eventGroups, setEventGroups] = useState([]);
@@ -159,7 +160,10 @@ export default function MyMenuplyPage() {
         listPendingEatInvitePeople().catch(() => ({ people: [] })),
         getFollowedRestaurants().catch(() => ({ restaurants: [] })),
         getLikedMenuItems().catch(() => ({ likes: [] })),
-        listWantToEat().catch(() => ({ items: [] })),
+        listWantToEat().catch((err) => {
+          setWantListError(err?.message || "Unable to load want list");
+          return { items: [] };
+        }),
         listDiningCrews().catch(() => ({ crews: [] })),
         listMyVenueEvents().catch(() => ({ events: [] })),
         listMyVenueEventGroups().catch(() => ({ groups: [] })),
@@ -194,6 +198,7 @@ export default function MyMenuplyPage() {
       setFollowed(followRes.restaurants || followRes.items || []);
       setLiked(likeRes.likes || []);
       setWants(wantRes.items || []);
+      if ((wantRes.items || []).length > 0) setWantListError("");
       setCrews(crewRes.crews || crewRes.items || []);
       setEvents(eventRes.events || []);
       setEventGroups(groupRes.groups || []);
@@ -372,22 +377,49 @@ export default function MyMenuplyPage() {
   async function postWant({ text, file }) {
     setPostBusy("want");
     setError("");
+    setWantListError("");
     try {
       let photo_url;
       if (file) {
         const up = await uploadWantToEatPhoto(file);
         photo_url = up.photo_url || undefined;
       }
-      const data = await createWantToEat({ food_name: text || "Food", photo_url });
-      const item = data.item || data;
+      const name = String(text || "").trim() || (file ? "Want to eat" : "");
+      if (!name) {
+        setError("Enter what you want to eat");
+        return;
+      }
+      const data = await createWantToEat({ food_name: name, photo_url });
+      const item = data?.item;
+      if (!item?.id) {
+        throw new Error("Saved but response was incomplete — refresh and try again");
+      }
+      setWants((prev) => [item, ...prev.filter((row) => Number(row.id) !== Number(item.id))]);
       setLastPost({
         kind: "want",
         id: item.id,
         food_name: item.food_name,
         comment: item.comment,
         meal_period: item.meal_period,
+        restaurant_id: item.restaurant_id,
+        restaurant_name: item.restaurant_name,
+        menu_item_id: item.menu_item_id,
+        item_name: item.item_name || item.food_name,
       });
-      await load();
+      window.setTimeout(() => {
+        wantSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }, 80);
+      listWantToEat()
+        .then((fresh) => {
+          const items = fresh?.items || [];
+          if (items.length > 0) {
+            setWants(items);
+            setWantListError("");
+          }
+        })
+        .catch((err) => {
+          setWantListError(err?.message || "Unable to refresh want list");
+        });
     } catch (err) {
       setError(err.message || "Unable to add");
     } finally {
@@ -703,6 +735,7 @@ export default function MyMenuplyPage() {
 
             <section style={s.section} data-testid="want-to-eat" ref={wantSectionRef}>
               <SectionHead title="What I Want to Eat" />
+              <p style={s.muted}>Your aspirational list lives here — connections can see it on your hub.</p>
               <QuickCompose
                 testId="compose-want"
                 placeholder="What do you want to eat?"
@@ -711,48 +744,93 @@ export default function MyMenuplyPage() {
                 autoFocus={searchParams.get("focus") === "want"}
                 onSubmit={postWant}
               />
-              {wants.map((want) => (
-                <button
-                  key={want.id}
-                  type="button"
-                  style={{ ...s.card, appearance: "none", width: "100%", textAlign: "left", cursor: "pointer", font: "inherit" }}
-                  onClick={() =>
-                    setLastPost({
-                      kind: "want",
-                      id: want.id,
-                      food_name: want.food_name,
-                      comment: want.comment,
-                      meal_period: want.meal_period,
-                      restaurant_id: want.restaurant_id,
-                      restaurant_name: want.restaurant_name,
-                      menu_item_id: want.menu_item_id,
-                      item_name: want.item_name || want.food_name,
-                    })
-                  }
-                >
-                  {want.photo_url ? (
-                    <img
-                      src={resolveConsumerMediaUrl(want.photo_url)}
-                      alt=""
-                      style={{ ...s.photo, height: 120, borderRadius: 12, marginBottom: 8 }}
-                    />
-                  ) : null}
-                  <div style={{ fontWeight: 800 }}>{want.food_name}</div>
-                  {want.restaurant_name ? <div style={s.muted}>{want.restaurant_name}</div> : null}
-                </button>
-              ))}
+              {wantListError ? <p style={s.error}>{wantListError}</p> : null}
+              {lastPost?.kind === "want" &&
+              !wants.some((row) => Number(row.id) === Number(lastPost.id)) ? (
+                <div style={s.card} data-testid="want-to-eat-just-posted">
+                  <div style={{ fontWeight: 800 }}>{lastPost.food_name}</div>
+                  <div style={{ ...s.muted, fontSize: 12, marginTop: 4 }}>Just posted — link a menu item below</div>
+                </div>
+              ) : null}
               {lastPost?.kind === "want" ? (
                 <PostAfterActions
                   kind="want"
                   record={lastPost}
                   busy={postBusy === "want"}
                   followed={followed}
-                  onTagged={async () => {
+                  onTagged={async (updated) => {
+                    if (updated?.id) {
+                      setWants((prev) => {
+                        const rest = prev.filter((row) => Number(row.id) !== Number(updated.id));
+                        return [updated, ...rest];
+                      });
+                    }
                     setLastPost(null);
                     await load();
                   }}
                 />
               ) : null}
+              {wants.length === 0 && lastPost?.kind !== "want" ? (
+                <p style={s.muted} data-testid="want-to-eat-empty">
+                  Nothing on your want list yet. Post above, then link a menu item if you like.
+                </p>
+              ) : null}
+              {wants.map((want) => {
+                const href = want.menu_item_id ? `/menu-items/${want.menu_item_id}` : null;
+                const body = (
+                  <>
+                    {want.photo_url ? (
+                      <img
+                        src={resolveConsumerMediaUrl(want.photo_url)}
+                        alt=""
+                        style={{ ...s.photo, height: 120, borderRadius: 12, marginBottom: 8 }}
+                      />
+                    ) : null}
+                    <div style={{ fontWeight: 800 }}>{want.food_name}</div>
+                    {want.restaurant_name ? <div style={s.muted}>{want.restaurant_name}</div> : null}
+                    {want.menu_item_id ? (
+                      <div style={{ ...s.muted, fontSize: 12, marginTop: 4 }}>Menu item linked</div>
+                    ) : (
+                      <div style={{ ...s.muted, fontSize: 12, marginTop: 4 }}>Tap to link a menu item</div>
+                    )}
+                  </>
+                );
+                const cardStyle = {
+                  ...s.card,
+                  appearance: "none",
+                  width: "100%",
+                  textAlign: "left",
+                  cursor: "pointer",
+                  font: "inherit",
+                  display: "block",
+                  textDecoration: "none",
+                  color: "inherit",
+                };
+                const openTag = () =>
+                  setLastPost({
+                    kind: "want",
+                    id: want.id,
+                    food_name: want.food_name,
+                    comment: want.comment,
+                    meal_period: want.meal_period,
+                    restaurant_id: want.restaurant_id,
+                    restaurant_name: want.restaurant_name,
+                    menu_item_id: want.menu_item_id,
+                    item_name: want.item_name || want.food_name,
+                  });
+                if (href) {
+                  return (
+                    <Link key={want.id} to={href} style={cardStyle} data-testid="want-to-eat-item">
+                      {body}
+                    </Link>
+                  );
+                }
+                return (
+                  <button key={want.id} type="button" style={cardStyle} data-testid="want-to-eat-item" onClick={openTag}>
+                    {body}
+                  </button>
+                );
+              })}
               {liked.slice(0, 6).map((meal) => (
                 <Link key={meal.menu_item_id} to={foodHref(meal)} style={s.card}>
                   <div style={{ fontWeight: 800 }}>{meal.item_name}</div>

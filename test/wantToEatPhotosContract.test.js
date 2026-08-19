@@ -13,6 +13,14 @@ function read(rel) {
   return fs.readFileSync(path.join(root, rel), "utf8");
 }
 
+test("My Menuply want list shows posts and menu-item link path", () => {
+  const page = read("src/pages/consumer/MyMenuplyPage.jsx");
+  assert.match(page, /want-to-eat-item/);
+  assert.match(page, /want-to-eat-just-posted/);
+  assert.match(page, /wantListError/);
+  assert.match(page, /Tap to link a menu item/);
+});
+
 test("My Menuply want compose accepts optional photo upload", () => {
   const page = read("src/pages/consumer/MyMenuplyPage.jsx");
   assert.match(page, /uploadWantToEatPhoto/);

@@ -11,7 +11,12 @@ import {
   restaurantLabel,
   searchReportPlaces,
 } from "../../../lib/foodActivityApi.js";
-import { updateWhatIAteToday, updateWhatWeDoingSession, updateWantToEat } from "../../../lib/consumerApi.js";
+import {
+  suggestWhatIAteTodayMenuItems,
+  updateWhatIAteToday,
+  updateWhatWeDoingSession,
+  updateWantToEat,
+} from "../../../lib/consumerApi.js";
 import { WHAT_I_ATE_MEAL_PERIODS } from "../../../lib/whatIAteTodayMealPeriod.js";
 import * as s from "./myMenuplyStyles.js";
 
@@ -24,9 +29,12 @@ export default function PostAfterActions({
 }) {
   const [query, setQuery] = useState("");
   const [dishQuery, setDishQuery] = useState("");
+  const [globalDishQuery, setGlobalDishQuery] = useState("");
   const [hits, setHits] = useState([]);
   const [dishHits, setDishHits] = useState([]);
+  const [globalDishHits, setGlobalDishHits] = useState([]);
   const [searching, setSearching] = useState(false);
+  const [globalDishSearching, setGlobalDishSearching] = useState(false);
   const [restaurant, setRestaurant] = useState(null);
   const [dish, setDish] = useState(null);
   const [joinable, setJoinable] = useState(false);
@@ -45,6 +53,8 @@ export default function PostAfterActions({
     setDish(record?.menu_item_id ? asDishPlace(record) : null);
     setQuery("");
     setDishQuery("");
+    setGlobalDishQuery("");
+    setGlobalDishHits([]);
     setError("");
   }, [record?.id, record?.token, record?.kind]);
 
@@ -91,6 +101,32 @@ export default function PostAfterActions({
     return () => clearTimeout(t);
   }, [dishQuery, restaurant, dish]);
 
+  useEffect(() => {
+    if (kind !== "want" || dish) {
+      setGlobalDishHits([]);
+      setGlobalDishSearching(false);
+      return undefined;
+    }
+    const q = globalDishQuery.trim();
+    if (q.length < 2) {
+      setGlobalDishHits([]);
+      setGlobalDishSearching(false);
+      return undefined;
+    }
+    const t = setTimeout(async () => {
+      setGlobalDishSearching(true);
+      try {
+        const data = await suggestWhatIAteTodayMenuItems(q);
+        setGlobalDishHits(data?.suggestions || []);
+      } catch {
+        setGlobalDishHits([]);
+      } finally {
+        setGlobalDishSearching(false);
+      }
+    }, 220);
+    return () => clearTimeout(t);
+  }, [globalDishQuery, dish, kind]);
+
   function pickRestaurant(row) {
     const next = asRestaurantPlace(row);
     if (!next) return;
@@ -106,6 +142,30 @@ export default function PostAfterActions({
     setDish(next);
     setDishQuery("");
     setDishHits([]);
+    setGlobalDishQuery("");
+    setGlobalDishHits([]);
+  }
+
+  function pickWantMenuItem(row) {
+    const nextDish = asDishPlace({
+      menu_item_id: row.menu_item_id,
+      item_name: row.item_name || row.label,
+      restaurant_id: row.restaurant_id,
+    });
+    if (!nextDish) return;
+    const nextRestaurant = asRestaurantPlace({
+      restaurant_id: row.restaurant_id,
+      restaurant_name: row.restaurant_name,
+      restaurant_slug: row.restaurant_slug,
+      city: row.restaurant_city || row.city,
+      state: row.restaurant_state || row.state,
+    });
+    setDish(nextDish);
+    if (nextRestaurant) setRestaurant(nextRestaurant);
+    setGlobalDishQuery("");
+    setGlobalDishHits([]);
+    setQuery("");
+    setHits([]);
   }
 
   async function handleSave(e) {
@@ -128,13 +188,19 @@ export default function PostAfterActions({
           join_capacity: joinable ? Number(joinCapacity) : undefined,
         });
       } else if (kind === "want") {
-        await updateWantToEat(record.id, {
+        const data = await updateWantToEat(record.id, {
           restaurant_id: restaurant?.restaurant_id || undefined,
           menu_item_id: dish?.menu_item_id || undefined,
           food_name: dishLabel(dish) || record.food_name || undefined,
           meal_period: mealPeriod || undefined,
           comment: recipe,
         });
+        setRestaurant(null);
+        setDish(null);
+        setJoinable(false);
+        setJoinCapacity("4");
+        if (onTagged) await onTagged(data?.item || null);
+        return;
       } else {
         await updateWhatIAteToday(record.id, {
           restaurant_id: restaurant?.restaurant_id || undefined,
@@ -162,10 +228,44 @@ export default function PostAfterActions({
   );
   const disabled = busy || saving;
 
+  const isWant = kind === "want";
+
   return (
     <form onSubmit={handleSave} data-testid="post-after-actions" style={styles.form}>
-      <div style={styles.kicker}>Add details</div>
-      <p style={s.muted}>Restaurant, menu item, recipe, and meal time.</p>
+      <div style={styles.kicker}>{isWant ? "Link menu item" : "Add details"}</div>
+      <p style={s.muted}>
+        {isWant
+          ? "Search a dish to link it, or tag a restaurant. Saved to your want list below."
+          : "Restaurant, menu item, recipe, and meal time."}
+      </p>
+      {isWant && !dish ? (
+        <>
+          <input
+            type="search"
+            value={globalDishQuery}
+            onChange={(e) => setGlobalDishQuery(e.target.value.slice(0, 120))}
+            placeholder="Search menu item (e.g. McMuffin, pepperoni pizza)"
+            disabled={disabled}
+            autoComplete="off"
+            style={styles.place}
+            aria-label="Search menu item"
+            data-testid="want-link-menu-item"
+          />
+          {globalDishSearching ? <p style={s.muted}>Searching menus…</p> : null}
+          {globalDishHits.length > 0 ? (
+            <ul style={styles.hits} data-testid="want-menu-item-hits">
+              {globalDishHits.map((hit) => (
+                <li key={hit.menu_item_id}>
+                  <button type="button" style={styles.hitBtn} onClick={() => pickWantMenuItem(hit)}>
+                    {hit.item_name || hit.label}
+                    {hit.restaurant_name || hit.subtitle ? ` · ${hit.restaurant_name || hit.subtitle}` : ""}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </>
+      ) : null}
       <div style={styles.meals} role="group" aria-label="Meal category">
         {WHAT_I_ATE_MEAL_PERIODS.map((period) => (
           <button

@@ -74,6 +74,8 @@ test("My Menuply is the diner's personal home", () => {
   assert.match(after, /Recipe/);
   assert.match(after, /WHAT_I_ATE_MEAL_PERIODS/);
   assert.match(after, /updateWantToEat/);
+  assert.match(after, /suggestWhatIAteTodayMenuItems/);
+  assert.match(after, /want-link-menu-item/);
   assert.match(after, /updateWhatWeDoingSession/);
   assert.match(after, /updateWhatIAteToday/);
   assert.match(bits, /EatingPlanCard/);
