@@ -1,5 +1,5 @@
 /**
- * What I Want to Eat — photos + menu-item add path on My Menuply.
+ * What I Want to Eat — photos + menu-item add path on My Menuply (Eating hub).
  */
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -15,18 +15,22 @@ function read(rel) {
 
 test("My Menuply want list shows posts and menu-item link path", () => {
   const page = read("src/pages/consumer/MyMenuplyPage.jsx");
+  const section = read("src/pages/consumer/myMenuply/EatingHubSection.jsx");
   const bits = read("src/pages/consumer/myMenuply/myMenuplyBits.jsx");
-  assert.match(page, /WantToEatList/);
+  assert.match(section, /WantToEatList/);
+  assert.match(section, /eating-want-panel/);
   assert.match(bits, /want-to-eat-item/);
-  assert.match(page, /want-to-eat-just-posted/);
+  assert.match(section, /want-to-eat-just-posted/);
   assert.match(page, /wantListError/);
   assert.match(bits, /Tap to link a menu item/);
 });
 
 test("My Menuply want compose accepts optional photo upload", () => {
   const page = read("src/pages/consumer/MyMenuplyPage.jsx");
+  const compose = read("src/pages/consumer/myMenuply/EatingCompose.jsx");
   assert.match(page, /uploadWantToEatPhoto/);
-  assert.match(page, /compose-want[\s\S]*acceptPhoto/);
+  assert.match(compose, /eating-compose-\$\{chip\.id\}/);
+  assert.match(compose, /ConsumerCameraPickButton/);
   assert.match(page, /photo_url/);
 });
 
@@ -43,7 +47,9 @@ test("Menu item detail routes to save choice instead of inline want button", () 
 
 test("Connection peer hub shows peer want list when connected", () => {
   const peer = read("src/pages/consumer/ConsumerConnectionPeerPage.jsx");
+  const section = read("src/pages/consumer/myMenuply/EatingHubSection.jsx");
   assert.match(peer, /listPeerWantToEat/);
   assert.match(peer, /peerWants/);
-  assert.doesNotMatch(peer, /Nothing yet\.[\s\S]*want-to-eat[\s\S]*Nothing yet\./);
+  assert.match(section, /eating-want-panel/);
+  assert.doesNotMatch(section, /Nothing yet\.[\s\S]*Nothing yet\./);
 });

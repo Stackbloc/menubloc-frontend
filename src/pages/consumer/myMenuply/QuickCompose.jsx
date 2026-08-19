@@ -1,15 +1,17 @@
 /**
- * One-line compose — type and post, optional photo. No extra fields.
+ * One-line compose — type and post, optional photo or video.
  */
 
 import { useState } from "react";
 import ConsumerCameraPickButton from "../../../components/consumer/ConsumerCameraPickButton.jsx";
+import { eatingMediaLabel, isVideoFile } from "../../../lib/eatingMediaUtils.js";
 
 export default function QuickCompose({
   placeholder,
   onSubmit,
   busy = false,
   acceptPhoto = false,
+  acceptVideo = false,
   inputType = "text",
   defaultValue = "",
   submitLabel = "Post",
@@ -18,12 +20,14 @@ export default function QuickCompose({
 }) {
   const [text, setText] = useState(defaultValue);
   const [file, setFile] = useState(null);
+  const acceptMedia = acceptPhoto || acceptVideo;
+  const mediaLabel = file ? eatingMediaLabel(file) : null;
 
   async function handleSubmit(e) {
     e.preventDefault();
     const value = String(text || "").trim();
     if (!value && !file) return;
-    await onSubmit({ text: value, file });
+    await onSubmit({ text: value, file, mediaKind: isVideoFile(file) ? "video" : file ? "photo" : null });
     setText(inputType === "date" ? defaultValue || value : "");
     setFile(null);
   }
@@ -41,7 +45,21 @@ export default function QuickCompose({
           showLibraryLink={false}
           buttonStyle={styles.iconBtn}
         >
-          {file ? "Added" : "Photo"}
+          {mediaLabel === "Photo" ? "Added" : "Photo"}
+        </ConsumerCameraPickButton>
+      ) : null}
+      {acceptVideo ? (
+        <ConsumerCameraPickButton
+          mode="video"
+          facingMode="environment"
+          onFile={setFile}
+          disabled={busy}
+          testId="quick-compose-video"
+          ariaLabel="Record video with camera"
+          showLibraryLink={false}
+          buttonStyle={styles.iconBtn}
+        >
+          {mediaLabel === "Video" ? "Added" : "Video"}
         </ConsumerCameraPickButton>
       ) : null}
       <input
@@ -72,6 +90,7 @@ const styles = {
     alignItems: "center",
     gap: 8,
     margin: "8px 0 0",
+    flexWrap: "wrap",
   },
   input: {
     flex: 1,

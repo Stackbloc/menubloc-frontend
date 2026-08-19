@@ -16,15 +16,18 @@ function read(rel) {
 
 test("My Menuply identity hero is prominent with photo upload and short bio", () => {
   const page = read("src/pages/consumer/MyMenuplyPage.jsx");
+  const section = read("src/pages/consumer/myMenuply/EatingHubSection.jsx");
   const hero = read("src/pages/consumer/myMenuply/DinerIdentityHero.jsx");
   const gallery = read("src/pages/consumer/myMenuply/ProfileMediaGallery.jsx");
-  const compose = read("src/pages/consumer/myMenuply/QuickCompose.jsx");
+  const compose = read("src/pages/consumer/myMenuply/EatingCompose.jsx");
   assert.match(page, /DinerIdentityHero/);
+  assert.match(page, /EatingHubSection/);
   assert.match(page, /uploadDinerAvatar/);
   assert.match(page, /listConsumerProfileMedia/);
   assert.match(page, /uploadConsumerProfileMedia/);
   assert.match(page, /diner_about/);
-  assert.ok(page.indexOf("DinerIdentityHero") < page.indexOf("what-im-eating"));
+  assert.ok(page.indexOf("<DinerIdentityHero") < page.indexOf("<EatingHubSection"));
+  assert.match(section, /data-testid="eating"/);
   assert.match(hero, /Change profile photo/);
   assert.match(hero, /ProfileMediaGallery/);
   assert.match(hero, /ConsumerCameraSheet/);
@@ -44,7 +47,7 @@ test("My Menuply identity hero is prominent with photo upload and short bio", ()
   assert.match(vercel, /camera=\(self\)/);
   assert.doesNotMatch(vercel, /camera=\(\)/);
   assert.match(gallery, /not your eating diary/i);
-  assert.match(page, /QuickCompose/);
+  assert.match(page, /EatingHubSection/);
   assert.match(compose, /ConsumerCameraPickButton/);
   assert.doesNotMatch(hero, /Share My Menuply/);
   assert.doesNotMatch(hero, /Settings/);

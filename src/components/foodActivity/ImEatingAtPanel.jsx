@@ -27,6 +27,8 @@ import { defaultWhatIAteMealPeriod } from "../../lib/whatIAteTodayMealPeriod.js"
 import { useConsumer } from "../../context/ConsumerContext.jsx";
 import { readOptionalReporterCoords } from "../../lib/guestReporterSession.js";
 import { buildJoinMeShareData, formatJoinMeLocationLabel } from "../../lib/joinMeShare.js";
+import { eatingMediaFromUpload } from "../../lib/eatingMediaUtils.js";
+import * as cs from "./foodActivityComposeStyles.js";
 
 function relativeAgo(iso) {
   if (!iso) return "";
@@ -133,11 +135,12 @@ export default function ImEatingAtPanel({
     setNotice("");
     try {
       let photo_url;
+      let video_url;
       if (mediaFile) {
         const up = isAuthenticated
           ? await uploadFoodActivityPhoto(mediaFile)
           : await uploadPublicFoodActivityPhoto(mediaFile);
-        photo_url = up.photo_url || undefined;
+        ({ photo_url, video_url } = eatingMediaFromUpload(up));
       }
 
       const coords = await readOptionalReporterCoords();
@@ -151,6 +154,7 @@ export default function ImEatingAtPanel({
         menu_id: menuItem?.menu_id || null,
         comment: note,
         photo_url,
+        video_url,
         visibility: isAuthenticated ? visibility : "public",
         lat: coords.lat,
         lng: coords.lng,
@@ -175,6 +179,7 @@ export default function ImEatingAtPanel({
           restaurant_id: restaurant.restaurant_id,
           comment: note || undefined,
           photo_url,
+          video_url,
           eaten_on: whatIAteTodayLocalDate(),
           meal_period: defaultWhatIAteMealPeriod(),
         }).catch(() => {
@@ -239,15 +244,14 @@ export default function ImEatingAtPanel({
   const showFoodName = !menuItem?.menu_item_id && !skipMenuItem;
 
   return (
-    <div data-testid="im-eating-at-panel">
-      {error ? <p style={styles.error}>{error}</p> : null}
-      {notice ? <p style={styles.notice}>{notice}</p> : null}
+    <div data-testid="im-eating-at-panel" style={cs.panelShell(compact)}>
+      {error ? <p style={cs.error}>{error}</p> : null}
+      {notice ? <p style={cs.notice}>{notice}</p> : null}
 
-      <form onSubmit={handleShare} style={styles.form}>
-        <EatingMediaAttach disabled={busy || disabled} file={mediaFile} onFileChange={setMediaFile} />
+      <form onSubmit={handleShare} style={cs.form}>
         {showFoodName ? (
           <>
-            <label style={styles.label} htmlFor="im-eating-food-name">
+            <label style={cs.label} htmlFor="im-eating-food-name">
               What did you eat?
             </label>
             <input
@@ -258,7 +262,7 @@ export default function ImEatingAtPanel({
               onChange={(e) => setFoodName(e.target.value)}
               placeholder="Spicy chicken sandwich"
               maxLength={120}
-              style={styles.input}
+              style={cs.input}
               data-testid="im-eating-food-name"
             />
           </>
@@ -280,20 +284,33 @@ export default function ImEatingAtPanel({
           lockRestaurant={lockRestaurant}
           skipMenuItem={skipMenuItem}
         />
-        <button type="submit" style={styles.primary} disabled={busy || disabled}>
-          {busy ? "Sharing…" : skipMenuItem ? "Post what's good today" : "Publish"}
-        </button>
+        <div style={cs.actionRow} data-testid="im-eating-submit-row">
+          <EatingMediaAttach disabled={busy || disabled} file={mediaFile} onFileChange={setMediaFile} />
+          <button type="submit" style={cs.primaryBtn} disabled={busy || disabled}>
+            {busy ? "Sharing…" : skipMenuItem ? "Post" : "Publish"}
+          </button>
+        </div>
       </form>
 
       {lastPosted ? (
-        <div data-testid="im-eating-at-posted" style={styles.posted}>
-          <div style={styles.kicker}>I'm Eating At</div>
+        <div data-testid="im-eating-at-posted" style={cs.postedCard}>
+          <div style={cs.kicker}>I'm Eating At</div>
           {lastPosted.photo_url ? (
             <img
               src={resolveConsumerMediaUrl(lastPosted.photo_url)}
               alt=""
               style={styles.postedPhoto}
               data-testid="im-eating-posted-photo"
+            />
+          ) : null}
+          {lastPosted.video_url ? (
+            <video
+              src={resolveConsumerMediaUrl(lastPosted.video_url)}
+              style={styles.postedPhoto}
+              controls
+              playsInline
+              preload="metadata"
+              data-testid="im-eating-posted-video"
             />
           ) : null}
           <strong style={styles.place}>{place}</strong>
@@ -308,13 +325,13 @@ export default function ImEatingAtPanel({
               <div style={styles.actions}>
                 <button
                   type="button"
-                  style={styles.primary}
+                  style={cs.primaryBtn}
                   disabled={busy}
                   onClick={() => setShareOpen(true)}
                 >
                   Share Join Me
                 </button>
-                <button type="button" style={styles.secondary} disabled={busy} onClick={handleEndJoinMe}>
+                <button type="button" style={cs.secondaryBtn} disabled={busy} onClick={handleEndJoinMe}>
                   End
                 </button>
               </div>
@@ -329,7 +346,7 @@ export default function ImEatingAtPanel({
               <button
                 type="button"
                 data-testid="join-me-activate"
-                style={styles.joinBtn}
+                style={cs.joinBtn}
                 disabled={busy}
                 onClick={handleJoinMe}
               >
@@ -354,76 +371,18 @@ export default function ImEatingAtPanel({
 }
 
 const styles = {
-  form: { display: "grid", gap: 12 },
-  label: { fontSize: 13, fontWeight: 600, color: "#334155" },
-  input: {
-    width: "100%",
-    boxSizing: "border-box",
-    padding: "10px 12px",
-    borderRadius: 10,
-    border: "1px solid #cbd5e1",
-    fontSize: 15,
-  },
-  primary: {
-    border: "none",
-    borderRadius: 12,
-    padding: "12px 16px",
-    background: "linear-gradient(135deg, #16a34a, #15803d)",
-    color: "#fff",
-    fontWeight: 700,
-    fontSize: 15,
-    cursor: "pointer",
-  },
-  secondary: {
-    border: "1.5px solid #d1d5db",
-    borderRadius: 12,
-    padding: "12px 16px",
-    background: "#fff",
-    color: "#0f172a",
-    fontWeight: 700,
-    fontSize: 14,
-    cursor: "pointer",
-  },
-  joinBtn: {
-    border: "none",
-    borderRadius: 12,
-    padding: "12px 16px",
-    background: "#0f172a",
-    color: "#fff",
-    fontWeight: 800,
-    fontSize: 15,
-    cursor: "pointer",
-  },
-  posted: {
-    marginTop: 16,
-    padding: 14,
-    borderRadius: 12,
-    border: "1px solid #e2e8f0",
-    background: "#f8fafc",
-    display: "grid",
-    gap: 8,
-  },
   postedPhoto: {
     width: "100%",
-    maxHeight: 240,
+    maxHeight: 180,
     objectFit: "cover",
     borderRadius: 10,
     display: "block",
   },
-  kicker: {
-    fontSize: 11,
-    fontWeight: 800,
-    letterSpacing: "0.06em",
-    textTransform: "uppercase",
-    color: "#64748b",
-  },
-  place: { fontSize: 18, color: "#0f172a" },
-  meta: { margin: 0, fontSize: 13, color: "#64748b" },
+  place: { fontSize: 16, fontWeight: 700, color: cs.INK },
+  meta: { margin: 0, fontSize: 13, color: cs.MUTED },
   joinRow: { display: "grid", gap: 8, marginTop: 4 },
-  joinLead: { margin: 0, fontSize: 14, color: "#334155", lineHeight: 1.45 },
-  hint: { margin: 0, fontSize: 13, color: "#475569" },
+  joinLead: { margin: 0, fontSize: 14, color: cs.LABEL, lineHeight: 1.45 },
+  hint: { margin: 0, fontSize: 13, color: cs.MUTED },
   joinOn: { margin: 0, fontSize: 14, fontWeight: 700, color: "#14532d" },
-  actions: { display: "flex", gap: 8, flexWrap: "wrap" },
-  error: { margin: "0 0 10px", color: "#b91c1c", fontSize: 14 },
-  notice: { margin: "0 0 10px", color: "#14532d", fontSize: 14, fontWeight: 600 },
+  actions: { display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" },
 };

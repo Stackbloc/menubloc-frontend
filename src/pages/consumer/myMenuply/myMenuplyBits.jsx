@@ -76,7 +76,8 @@ export function PhotoGrid({ items, onSelect, onPhotoPick, hideJoinMe = false }) 
   const joinHref = hideJoinMe ? null : item.join_me_href;
   const caption = formatEatingCaption(item);
   const canPick = typeof onPhotoPick === "function";
-  const showPhotoHint = canPick && !item.photo_url;
+  const hasMedia = Boolean(item.photo_url || item.video_url);
+  const showPhotoHint = canPick && !hasMedia;
 
   function pickPhoto() {
     if (!canPick) return;
@@ -137,10 +138,18 @@ export function PhotoGrid({ items, onSelect, onPhotoPick, hideJoinMe = false }) 
             borderRadius: 0,
             boxShadow: "none",
           }}
-          aria-label={canPick ? "Click to add photo of meal" : caption}
-          title={showPhotoHint ? "Click to add photo of meal" : undefined}
+          aria-label={canPick ? "Click to add photo or video of meal" : caption}
+          title={showPhotoHint ? "Click to add photo or video of meal" : undefined}
         >
-          {item.photo_url ? (
+          {item.video_url ? (
+            <video
+              src={resolveConsumerMediaUrl(item.video_url)}
+              style={s.photo}
+              controls
+              playsInline
+              preload="metadata"
+            />
+          ) : item.photo_url ? (
             <img src={resolveConsumerMediaUrl(item.photo_url)} alt="" style={s.photo} />
           ) : (
             <div
@@ -153,14 +162,14 @@ export function PhotoGrid({ items, onSelect, onPhotoPick, hideJoinMe = false }) 
                 fontWeight: 600,
               }}
             >
-              Add photo
+              Photo or video
             </div>
           )}
           {showPhotoHint && photoHover ? (
-            <div style={s.photoHoverHint}>Click to add photo of meal</div>
+            <div style={s.photoHoverHint}>Click to add photo or video of meal</div>
           ) : null}
           {showPhotoHint && !photoHover ? (
-            <div style={s.photoHintBar}>Click to add photo of meal</div>
+            <div style={s.photoHintBar}>Click to add photo or video of meal</div>
           ) : null}
         </button>
         <div style={s.photoLabel}>
@@ -224,6 +233,63 @@ export function PhotoGrid({ items, onSelect, onPhotoPick, hideJoinMe = false }) 
   );
 }
 
+export function crewPurposeText(crew) {
+  return String(crew?.description || crew?.purpose || "").trim() || null;
+}
+
+export function DiningCrewHubCard({
+  crew,
+  href,
+  meta,
+  onInvite,
+  inviteLabel = "Invite people to join",
+  onRequestJoin,
+  requestLabel = "Request to join",
+  requestDisabled = false,
+}) {
+  const title = String(crew?.name || "").trim() || "Untitled";
+  const purpose = crewPurposeText(crew);
+  return (
+    <div style={s.card} data-testid="dining-crew-hub-card">
+      {href ? (
+        <Link to={href} style={s.cardTitleLink}>
+          {title}
+        </Link>
+      ) : (
+        <div style={{ fontWeight: 700, fontSize: 15, color: "#0f172a" }}>{title}</div>
+      )}
+      {purpose ? (
+        <div style={s.crewPurpose} data-testid="crew-purpose">
+          <span style={s.crewPurposeLabel}>Purpose</span>
+          <span>{purpose}</span>
+        </div>
+      ) : null}
+      {meta ? <div style={{ ...s.muted, marginTop: purpose ? 6 : 4 }}>{meta}</div> : null}
+      <div style={s.actions}>
+        {onInvite ? (
+          <button
+            type="button"
+            style={{ ...s.chipBtn, appearance: "none", cursor: "pointer", font: "inherit" }}
+            onClick={onInvite}
+          >
+            {inviteLabel}
+          </button>
+        ) : null}
+        {onRequestJoin ? (
+          <button
+            type="button"
+            style={{ ...s.primaryBtn, appearance: "none", cursor: requestDisabled ? "default" : "pointer", font: "inherit" }}
+            disabled={requestDisabled}
+            onClick={onRequestJoin}
+          >
+            {requestLabel}
+          </button>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 export function NamedShareCard({
   name,
   href,
@@ -239,7 +305,7 @@ export function NamedShareCard({
   return (
     <div style={s.card} data-testid="named-share-card">
       {href ? (
-        <Link to={href} style={{ ...s.sectionTitleLink, fontWeight: 700, fontSize: 15 }}>
+        <Link to={href} style={s.cardTitleLink}>
           {title}
         </Link>
       ) : (

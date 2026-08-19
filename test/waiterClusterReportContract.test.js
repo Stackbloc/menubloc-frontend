@@ -16,6 +16,7 @@ test("Waiter surfaces subscribed-cluster report without forbidden UI", () => {
   assert.match(page, /WAITER_MEAL_PERIODS/);
   assert.match(page, /briefing\?\.recommendations/);
   assert.match(page, /cluster_report/);
+  assert.match(page, /want_to_eat/);
   assert.match(page, /\/account\/cluster-subscriptions/);
   assert.match(page, /Today&apos;s food highlights|Today's food highlights/);
   assert.match(page, /plus updates from/);

@@ -884,7 +884,10 @@ export default function DiningCrewsPage() {
     setBusy(true);
     setError("");
     try {
-      const data = await createDiningCrew({ name: name.trim() });
+      const data = await createDiningCrew({
+        name: name.trim(),
+        description: description.trim() || null,
+      });
       setName("");
       setDescription("");
       navigate(`/account/dining-crews/${data.crew.id}`);
@@ -928,6 +931,13 @@ export default function DiningCrewsPage() {
               placeholder="Crew name"
               maxLength={80}
               required
+            />
+            <input
+              style={styles.input}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Purpose (optional)"
+              maxLength={160}
             />
             <button type="submit" style={styles.primaryBtn} disabled={busy || !name.trim()}>
               {busy ? "…" : "Post"}

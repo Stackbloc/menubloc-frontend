@@ -40,10 +40,10 @@ test("composer picks restaurant + menu item via entity search", () => {
 test("panel supports photo upload and diary mirror on publish", () => {
   const panel = read("src/components/foodActivity/ImEatingAtPanel.jsx");
   assert.match(panel, /EatingMediaAttach/);
-  assert.match(panel, /uploadFoodActivityPhoto/);
-  assert.match(panel, /uploadPublicFoodActivityPhoto/);
-  assert.match(panel, /createWhatIAteToday/);
-  assert.match(panel, /im-eating-food-name/);
+  assert.match(panel, /im-eating-submit-row/);
+  assert.match(panel, /primaryBtn/);
+  assert.match(panel, /eatingMediaFromUpload/);
+  assert.match(panel, /video_url/);
 
   const api = read("src/lib/consumerApi.js");
   assert.match(api, /uploadFoodActivityPhoto/);
@@ -55,6 +55,16 @@ test("panel supports photo upload and diary mirror on publish", () => {
 
   const attach = read("src/components/foodActivity/EatingMediaAttach.jsx");
   assert.match(attach, /ConsumerCameraPickButton/);
+  assert.match(attach, /eating-media-add-video/);
+  assert.match(attach, /mode="video"/);
+  assert.match(attach, /foodActivityComposeStyles/);
+
+  const quick = read("src/pages/consumer/myMenuply/QuickCompose.jsx");
+  assert.match(quick, /acceptVideo/);
+  assert.match(quick, /quick-compose-video/);
+
+  const mediaUtils = read("src/lib/eatingMediaUtils.js");
+  assert.match(mediaUtils, /eatingMediaFromUpload/);
 });
 
 test("account page mounts I'm Eating route and truthfully labels activity", () => {

@@ -20,6 +20,7 @@ import {
   uploadWhatIAteTodayPhoto,
   whatIAteTodayLocalDate,
 } from "../../lib/consumerApi.js";
+import { eatingMediaFromUpload } from "../../lib/eatingMediaUtils.js";
 import QuickCompose from "../../pages/consumer/myMenuply/QuickCompose.jsx";
 import {
   WHAT_I_ATE_MEAL_PERIODS,
@@ -142,13 +143,15 @@ export default function WhatIAteTodaySection({
     setNotice("");
     try {
       let photo_url;
+      let video_url;
       if (file) {
         const up = await uploadWhatIAteTodayPhoto(file);
-        photo_url = up.photo_url || undefined;
+        ({ photo_url, video_url } = eatingMediaFromUpload(up));
       }
       await createWhatIAteToday({
         food_name: name,
         photo_url,
+        video_url,
         eaten_on: selectedDate,
         meal_period: mealId || defaultWhatIAteMealPeriod(),
       });
@@ -548,6 +551,7 @@ function GroupedEntryList({
                   testId={`compose-meal-${id}`}
                   placeholder="What did you eat?"
                   acceptPhoto
+                  acceptVideo
                   busy={busy}
                   onSubmit={(payload) => onQuickAdd(id, payload)}
                 />

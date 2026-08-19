@@ -1,18 +1,22 @@
 /**
- * Photo attach for eating posts — inline camera sheet + library fallback.
+ * Photo or video attach for eating posts — profile compose row.
  */
 
 import { useEffect, useState } from "react";
 import ConsumerCameraPickButton from "../consumer/ConsumerCameraPickButton.jsx";
+import { isVideoFile } from "../../lib/eatingMediaUtils.js";
+import * as cs from "./foodActivityComposeStyles.js";
 
 export default function EatingMediaAttach({
   disabled = false,
   file,
   onFileChange,
   previewUrl = "",
+  previewKind = "",
   testId = "eating-media-attach",
 }) {
   const [localPreview, setLocalPreview] = useState("");
+  const isVideo = isVideoFile(file) || previewKind === "video";
 
   useEffect(() => {
     if (!file) {
@@ -30,84 +34,84 @@ export default function EatingMediaAttach({
     onFileChange(null);
   }
 
+  function pick(nextFile) {
+    onFileChange(nextFile || null);
+  }
+
   return (
-    <div data-testid={testId} style={styles.wrap}>
+    <div data-testid={testId} style={cs.actionRow}>
       {shown ? (
-        <div style={styles.previewWrap}>
-          <img src={shown} alt="" style={styles.preview} />
-          <div style={styles.actions}>
-            <ConsumerCameraPickButton
-              mode="photo"
-              facingMode="environment"
-              onFile={onFileChange}
-              disabled={disabled}
-              testId="eating-media-replace"
-              ariaLabel="Replace photo with camera"
-              showLibraryLink
-              buttonStyle={styles.secondary}
-            >
-              Replace
-            </ConsumerCameraPickButton>
-            <button type="button" style={styles.secondary} disabled={disabled} onClick={clear}>
-              Remove
-            </button>
-          </div>
-        </div>
+        <>
+          {isVideo ? (
+            <video
+              src={shown}
+              style={cs.mediaThumb}
+              controls
+              playsInline
+              preload="metadata"
+              data-testid="eating-media-preview"
+            />
+          ) : (
+            <img src={shown} alt="" style={cs.mediaThumb} data-testid="eating-media-preview" />
+          )}
+          <ConsumerCameraPickButton
+            mode="photo"
+            facingMode="environment"
+            onFile={pick}
+            disabled={disabled}
+            testId="eating-media-replace-photo"
+            ariaLabel="Replace with photo"
+            showLibraryLink
+            libraryLinkStyle={cs.libraryLink}
+            buttonStyle={cs.photoBtn}
+          >
+            Photo
+          </ConsumerCameraPickButton>
+          <ConsumerCameraPickButton
+            mode="video"
+            facingMode="environment"
+            onFile={pick}
+            disabled={disabled}
+            testId="eating-media-replace-video"
+            ariaLabel="Replace with video"
+            showLibraryLink={false}
+            buttonStyle={cs.photoBtn}
+          >
+            Video
+          </ConsumerCameraPickButton>
+          <button type="button" style={cs.textAction} disabled={disabled} onClick={clear}>
+            Remove
+          </button>
+        </>
       ) : (
-        <ConsumerCameraPickButton
-          mode="photo"
-          facingMode="environment"
-          onFile={onFileChange}
-          disabled={disabled}
-          testId="eating-media-add"
-          ariaLabel="Add photo with camera"
-          showLibraryLink
-          buttonStyle={styles.addBtn}
-        >
-          Add photo
-        </ConsumerCameraPickButton>
+        <>
+          <ConsumerCameraPickButton
+            mode="photo"
+            facingMode="environment"
+            onFile={pick}
+            disabled={disabled}
+            testId="eating-media-add-photo"
+            ariaLabel="Add photo"
+            showLibraryLink
+            libraryLinkStyle={cs.libraryLink}
+            buttonStyle={cs.photoBtn}
+          >
+            Photo
+          </ConsumerCameraPickButton>
+          <ConsumerCameraPickButton
+            mode="video"
+            facingMode="environment"
+            onFile={pick}
+            disabled={disabled}
+            testId="eating-media-add-video"
+            ariaLabel="Add video"
+            showLibraryLink={false}
+            buttonStyle={cs.photoBtn}
+          >
+            Video
+          </ConsumerCameraPickButton>
+        </>
       )}
     </div>
   );
 }
-
-const styles = {
-  wrap: { display: "grid", gap: 8 },
-  addBtn: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    minHeight: 52,
-    borderRadius: 12,
-    border: "1.5px dashed #86efac",
-    background: "#f0fdf4",
-    color: "#166534",
-    fontWeight: 700,
-    fontSize: 15,
-    cursor: "pointer",
-    width: "100%",
-    fontFamily: "inherit",
-  },
-  previewWrap: { display: "grid", gap: 8 },
-  preview: {
-    width: "100%",
-    maxHeight: 280,
-    objectFit: "cover",
-    borderRadius: 12,
-    display: "block",
-    background: "#f1f5f9",
-  },
-  actions: { display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" },
-  secondary: {
-    border: "1px solid #cbd5e1",
-    borderRadius: 10,
-    padding: "8px 12px",
-    background: "#fff",
-    color: "#0f172a",
-    fontWeight: 600,
-    fontSize: 13,
-    cursor: "pointer",
-    fontFamily: "inherit",
-  },
-};

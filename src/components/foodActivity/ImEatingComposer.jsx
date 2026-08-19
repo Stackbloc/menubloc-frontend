@@ -5,6 +5,7 @@
 
 import React, { useEffect, useState } from "react";
 import { searchReportPlaces, restaurantLabel, dishLabel, asRestaurantPlace, asDishPlace } from "../../lib/foodActivityApi.js";
+import * as cs from "./foodActivityComposeStyles.js";
 
 function isDiningHallRestaurant(restaurant) {
   const type = String(restaurant?.restaurant_type || restaurant?.entity_type || "")
@@ -112,7 +113,7 @@ export default function ImEatingComposer({
   }
 
   return (
-    <div style={styles.wrap}>
+    <div style={cs.fieldStack}>
       {restaurant ? (
         <div style={styles.selected} data-testid="im-eating-selected-restaurant">
           <div style={styles.kind}>Restaurant</div>
@@ -140,7 +141,7 @@ export default function ImEatingComposer({
 
       {showPlaceSearch || showItemSearch ? (
         <>
-          <label style={styles.label}>
+          <label style={cs.label}>
             {showPlaceSearch ? "Find restaurant" : "Find a dish here"}
           </label>
           <input
@@ -149,7 +150,7 @@ export default function ImEatingComposer({
             disabled={disabled}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={showPlaceSearch ? "Restaurant name" : "Dish name"}
-            style={styles.input}
+            style={cs.input}
           />
           {loading ? <p style={styles.muted}>Searching…</p> : null}
           {error ? <p style={styles.error}>{error}</p> : null}
@@ -174,7 +175,7 @@ export default function ImEatingComposer({
         </>
       ) : null}
 
-      <label style={styles.label}>
+      <label style={cs.label}>
         {placeOnly
           ? "What's good today?"
           : restaurant && !menuItem
@@ -194,17 +195,17 @@ export default function ImEatingComposer({
               ? 'e.g. "Lunch today." or "Long line around noon."'
               : 'e.g. "Really good."'
         }
-        style={styles.textarea}
+        style={cs.textarea}
       />
 
       {isAuthenticated ? (
         <>
-          <label style={styles.label}>Visibility</label>
+          <label style={cs.label}>Visibility</label>
           <select
             value={visibility}
             disabled={disabled}
             onChange={(e) => onVisibilityChange(e.target.value)}
-            style={styles.input}
+            style={cs.input}
           >
             <option value="public">Public — may appear on restaurant & cluster surfaces</option>
             <option value="connections">Connections only</option>
@@ -219,24 +220,26 @@ export default function ImEatingComposer({
 }
 
 const styles = {
-  wrap: { display: "grid", gap: 10 },
-  label: { fontSize: 13, fontWeight: 600, color: "#334155" },
-  input: {
-    width: "100%",
-    boxSizing: "border-box",
+  selected: {
+    display: "grid",
+    gap: 4,
     padding: "10px 12px",
     borderRadius: 10,
-    border: "1px solid #cbd5e1",
-    fontSize: 15,
+    background: "#fff",
+    border: `1px solid ${cs.DIVIDER}`,
+    position: "relative",
   },
-  textarea: {
-    width: "100%",
-    boxSizing: "border-box",
-    padding: "10px 12px",
-    borderRadius: 10,
-    border: "1px solid #cbd5e1",
-    fontSize: 15,
-    resize: "vertical",
+  kind: { fontSize: 11, textTransform: "uppercase", letterSpacing: "0.04em", color: cs.MUTED },
+  clear: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+    border: "none",
+    background: "transparent",
+    color: "#166534",
+    fontSize: 13,
+    fontWeight: 600,
+    cursor: "pointer",
   },
   list: { listStyle: "none", margin: 0, padding: 0, display: "grid", gap: 6 },
   resultBtn: {
@@ -246,30 +249,11 @@ const styles = {
     gap: 2,
     padding: "10px 12px",
     borderRadius: 10,
-    border: "1px solid #e2e8f0",
+    border: `1px solid ${cs.DIVIDER}`,
     background: "#fff",
     cursor: "pointer",
+    fontFamily: "inherit",
   },
-  selected: {
-    display: "grid",
-    gap: 4,
-    padding: "10px 12px",
-    borderRadius: 10,
-    background: "#f8fafc",
-    border: "1px solid #e2e8f0",
-    position: "relative",
-  },
-  kind: { fontSize: 11, textTransform: "uppercase", letterSpacing: "0.04em", color: "#64748b" },
-  clear: {
-    position: "absolute",
-    top: 8,
-    right: 8,
-    border: "none",
-    background: "transparent",
-    color: "#2563eb",
-    fontSize: 13,
-    cursor: "pointer",
-  },
-  muted: { fontSize: 13, color: "#64748b" },
-  error: { fontSize: 13, color: "#b91c1c" },
+  muted: { fontSize: 13, color: cs.MUTED, margin: 0 },
+  error: { fontSize: 13, color: "#b91c1c", margin: 0 },
 };

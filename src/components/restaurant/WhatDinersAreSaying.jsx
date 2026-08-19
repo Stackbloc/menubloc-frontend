@@ -65,6 +65,15 @@ function ActivityCard({ activity }) {
           loading="lazy"
         />
       ) : null}
+      {activity?.video_url ? (
+        <video
+          src={resolveConsumerMediaUrl(activity.video_url)}
+          style={styles.photo}
+          controls
+          playsInline
+          preload="metadata"
+        />
+      ) : null}
     </article>
   );
 }

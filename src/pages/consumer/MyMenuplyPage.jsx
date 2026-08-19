@@ -39,52 +39,32 @@ import {
   updateWhatIAteToday,
   whatIAteTodayLocalDate,
 } from "../../lib/consumerApi.js";
+import { eatingMediaFromUpload } from "../../lib/eatingMediaUtils.js";
 import { defaultWhatIAteMealPeriod } from "../../lib/whatIAteTodayMealPeriod.js";
 import {
   buildDiningCrewInviteShareData,
   buildMenuplyPathShareData,
 } from "../../lib/diningCrewInviteShare.js";
-import DinerCalendarSheet, { DinerCalendarTrigger } from "./myMenuply/DinerCalendarSheet.jsx";
+import EatingHubSection from "./myMenuply/EatingHubSection.jsx";
+import CrewQuickCompose from "./myMenuply/CrewQuickCompose.jsx";
+import { buildJoinMeCandidates } from "./myMenuply/joinMeCandidates.js";
+import {
+  buildEatingDayMarkers,
+  compareYmd,
+  planYmd,
+} from "./myMenuply/eatingHubUtils.js";
 import * as s from "./myMenuply/myMenuplyStyles.js";
 import ProfileCompletionBanner from "../../components/consumer/ProfileCompletionBanner.jsx";
 import DinerIdentityHero from "./myMenuply/DinerIdentityHero.jsx";
-import QuickCompose from "./myMenuply/QuickCompose.jsx";
-import PostAfterActions from "./myMenuply/PostAfterActions.jsx";
-import EatingPlanDayForm from "./myMenuply/EatingPlanDayForm.jsx";
-import { buildJoinMeCandidates } from "./myMenuply/joinMeCandidates.js";
 import {
-  PhotoGrid,
   SectionHead,
-  FuturePlanRow,
+  DiningCrewHubCard,
   NamedShareCard,
   foodHref,
-  WantToEatList,
   isScheduledEatingPlan,
 } from "./myMenuply/myMenuplyBits.jsx";
 import { futurePlanKey, futurePlanRestaurantName } from "./myMenuply/dinerHubFormat.js";
 import { mergeEatingFeedForHub, mapDiaryEntriesForHub, mapFoodActivityForHub } from "../../lib/eatingFeedMerge.js";
-
-function planYmd(value) {
-  const raw = String(value || "").trim();
-  if (/^\d{4}-\d{2}-\d{2}/.test(raw)) return raw.slice(0, 10);
-  return "";
-}
-
-function compareYmd(ymd, today = whatIAteTodayLocalDate()) {
-  const day = planYmd(ymd);
-  if (!day) return 0;
-  if (day > today) return 1;
-  if (day < today) return -1;
-  return 0;
-}
-
-function bumpDayCount(rows, ymd) {
-  const day = planYmd(ymd);
-  if (!day) return;
-  const found = rows.find((r) => r.eaten_on === day);
-  if (found) found.entry_count += 1;
-  else rows.push({ eaten_on: day, entry_count: 1 });
-}
 
 function formatEventWhen(ev) {
   const raw = ev?.starts_at || ev?.event_date;
@@ -97,7 +77,7 @@ function formatEventWhen(ev) {
 export default function MyMenuplyPage() {
   const { isAuthenticated, loading: authLoading, consumer } = useConsumer();
   const [searchParams] = useSearchParams();
-  const wantSectionRef = useRef(null);
+  const eatingSectionRef = useRef(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [profile, setProfile] = useState(null);
@@ -117,21 +97,16 @@ export default function MyMenuplyPage() {
   const [crews, setCrews] = useState([]);
   const [events, setEvents] = useState([]);
   const [eventGroups, setEventGroups] = useState([]);
-  const [planDate, setPlanDate] = useState(() => whatIAteTodayLocalDate());
-  const [eatingDate, setEatingDate] = useState(() => whatIAteTodayLocalDate());
-  const [planMonth, setPlanMonth] = useState(() => {
+  const [hubDate, setHubDate] = useState(() => whatIAteTodayLocalDate());
+  const [hubMonth, setHubMonth] = useState(() => {
     const t = new Date();
     return new Date(t.getFullYear(), t.getMonth(), 1);
   });
-  const [eatingMonth, setEatingMonth] = useState(() => {
-    const t = new Date();
-    return new Date(t.getFullYear(), t.getMonth(), 1);
-  });
+  const [eatingFilter, setEatingFilter] = useState("all");
   const [lastPost, setLastPost] = useState(null);
   const [shareOpen, setShareOpen] = useState(false);
   const [sharePayload, setSharePayload] = useState(null);
   const [calendarOpen, setCalendarOpen] = useState(false);
-  const [plansCalendarOpen, setPlansCalendarOpen] = useState(false);
   const [schedulingPlans, setSchedulingPlans] = useState(false);
   const [selectedPlanKey, setSelectedPlanKey] = useState("");
   const [joinCandidates, setJoinCandidates] = useState([]);
@@ -156,7 +131,7 @@ export default function MyMenuplyPage() {
       ] = await Promise.all([
         getConsumerProfile().catch(() => null),
         listMyFoodActivity(20).catch(() => ({ activities: [] })),
-        listWhatIAteToday(eatingDate).catch(() => ({ entries: [] })),
+        listWhatIAteToday(hubDate).catch(() => ({ entries: [] })),
         listWhatWeDoingSessions().catch(() => ({ sessions: [] })),
         listConnections().catch(() => ({ accepted: [] })),
         listPendingEatInvitePeople().catch(() => ({ people: [] })),
@@ -198,7 +173,7 @@ export default function MyMenuplyPage() {
     } finally {
       setLoading(false);
     }
-  }, [eatingDate]);
+  }, [hubDate]);
 
   useEffect(() => {
     if (!authLoading && isAuthenticated) load();
@@ -208,9 +183,10 @@ export default function MyMenuplyPage() {
   useEffect(() => {
     if (searchParams.get("focus") !== "want") return undefined;
     if (loading || !isAuthenticated) return undefined;
+    setEatingFilter("want");
     const timer = window.setTimeout(() => {
-      wantSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-      const input = wantSectionRef.current?.querySelector("input[type='text']");
+      eatingSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      const input = eatingSectionRef.current?.querySelector("input[type='text']");
       input?.focus();
     }, 120);
     return () => window.clearTimeout(timer);
@@ -230,6 +206,7 @@ export default function MyMenuplyPage() {
     label: futurePlanRestaurantName(plan),
     plan,
   }));
+  const dayMarkers = buildEatingDayMarkers({ eatingRows: eating, planRows: scheduledPlans });
 
   async function onAvatarFile(file) {
     setIdentityBusy(true);
@@ -294,16 +271,18 @@ export default function MyMenuplyPage() {
     setPostBusy("eating");
     setError("");
     try {
-      if (compareYmd(eatingDate) > 0) return;
+      if (compareYmd(hubDate) > 0) return;
       let photo_url;
+      let video_url;
       if (file) {
         const up = await uploadWhatIAteTodayPhoto(file);
-        photo_url = up.photo_url || undefined;
+        ({ photo_url, video_url } = eatingMediaFromUpload(up));
       }
       const data = await createWhatIAteToday({
         food_name: text || "Food",
         photo_url,
-        eaten_on: eatingDate,
+        video_url,
+        eaten_on: hubDate,
         meal_period: defaultWhatIAteMealPeriod(),
       });
       const entry = data.entry || data;
@@ -346,14 +325,15 @@ export default function MyMenuplyPage() {
     setError("");
     try {
       const up = await uploadWhatIAteTodayPhoto(file);
-      const photo_url = up.photo_url;
+      const { photo_url, video_url } = eatingMediaFromUpload(up);
       if (item?.kind === "what_i_ate" && item.entry_id) {
-        await updateWhatIAteToday(item.entry_id, { photo_url });
+        await updateWhatIAteToday(item.entry_id, { photo_url, video_url });
       } else {
         await createWhatIAteToday({
           food_name: item?.food_name || "Food",
           photo_url,
-          eaten_on: eatingDate,
+          video_url,
+          eaten_on: hubDate,
           meal_period: item?.meal_period || defaultWhatIAteMealPeriod(),
         });
       }
@@ -398,7 +378,7 @@ export default function MyMenuplyPage() {
         item_name: item.item_name || item.food_name,
       });
       window.setTimeout(() => {
-        wantSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        eatingSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
       }, 80);
       listWantToEat()
         .then((fresh) => {
@@ -418,12 +398,13 @@ export default function MyMenuplyPage() {
     }
   }
 
-  async function postCrew({ text }) {
+  async function postCrew({ name, purpose }) {
     setPostBusy("crews");
     setError("");
     try {
       await createDiningCrew({
-        name: text,
+        name,
+        description: purpose || null,
         visibility: "public",
         membership_approval: "organizer",
       });
@@ -504,6 +485,35 @@ export default function MyMenuplyPage() {
     }
   }
 
+  async function handleEatingCompose({ category, text, file }) {
+    if (category === "want") {
+      await postWant({ text, file });
+      setEatingFilter("want");
+      return;
+    }
+    if (category === "ate") {
+      await postEating({ text, file });
+      setEatingFilter("ate");
+    }
+  }
+
+  function handlePlanSchedule() {
+    setSchedulingPlans(true);
+    setCalendarOpen(true);
+    setEatingFilter("plans");
+  }
+
+  async function handlePostTagged(updated) {
+    if (lastPost?.kind === "want" && updated?.id) {
+      setWants((prev) => {
+        const rest = prev.filter((row) => Number(row.id) !== Number(updated.id));
+        return [updated, ...rest];
+      });
+    }
+    setLastPost(null);
+    await load();
+  }
+
   return (
     <>
       <StickyPageHeader title="My Menuply" />
@@ -550,249 +560,79 @@ export default function MyMenuplyPage() {
               onProfileMediaRemove={onProfileMediaRemove}
             />
 
-            <section style={s.section} data-testid="what-im-eating">
-              <SectionHead
-                title="What I'm Eating"
-                to="/account/what-i-ate"
-                aside={<DinerCalendarTrigger selectedDate={eatingDate} onOpen={() => setCalendarOpen(true)} />}
-              />
-              <QuickCompose
-                testId="compose-eating"
-                placeholder="What did you eat?"
-                acceptPhoto
-                busy={postBusy === "eating"}
-                onSubmit={postEating}
-              />
-              <PhotoGrid
-                items={
-                  eating.length
-                    ? eating
-                    : [
-                        {
-                          id: "placeholder",
-                          food_name: "Food",
-                          eaten_on: eatingDate,
-                          meal_period: defaultWhatIAteMealPeriod(),
-                          kind: "what_i_ate",
-                        },
-                      ]
-                }
-                hideJoinMe
-                onPhotoPick={onEatingPhotoPick}
-                onSelect={(item) => {
-                  if (item?.kind !== "what_i_ate") return;
-                  setLastPost({
-                    kind: "diary",
-                    id: item.entry_id,
-                    meal_period: item.meal_period,
-                    comment: item.comment,
-                    food_name: item.food_name,
-                    restaurant_id: item.restaurant_id,
-                    restaurant_name: item.restaurant_name,
-                    menu_item_id: item.menu_item_id,
-                    item_name: item.food_name,
-                  });
-                }}
-              />
-              {lastPost?.kind === "diary" ? (
-                <PostAfterActions
-                  kind="diary"
-                  record={lastPost}
-                  busy={postBusy === "eating"}
-                  followed={followed}
-                  onTagged={async () => {
-                    setLastPost(null);
-                    await load();
-                  }}
-                />
-              ) : null}
-              <DinerCalendarSheet
-                open={calendarOpen}
-                onClose={() => setCalendarOpen(false)}
-                testId="eating-plans-calendar"
-                selectedDate={eatingDate}
-                onSelectDate={setEatingDate}
-                viewMonth={eatingMonth}
-                onViewMonthChange={setEatingMonth}
-                maxYmd={whatIAteTodayLocalDate()}
-                dayCounts={eating
-                  .map((row) => planYmd(row.eaten_on))
-                  .filter(Boolean)
-                  .reduce((rows, ymd) => {
-                    bumpDayCount(rows, ymd);
-                    return rows;
-                  }, [])}
-              />
-              <div style={s.row}>
-                <h2 style={s.sectionTitle}>Future plans</h2>
-                <DinerCalendarTrigger selectedDate={planDate} onOpen={() => setPlansCalendarOpen(true)} />
-              </div>
-              {scheduledPlans.length === 0 ? (
-                <p style={s.muted} data-testid="future-plans-summary">
-                  No Plans Scheduled.
-                </p>
-              ) : (
-                shownPlans.map((plan) => {
-                  const key = futurePlanKey(plan);
-                  return (
-                    <FuturePlanRow
-                      key={key}
-                      plan={plan}
-                      open={selectedPlanKey === key}
-                      onToggle={() => setSelectedPlanKey((prev) => (prev === key ? "" : key))}
-                      onAddDetails={(next) => {
-                        setSelectedPlanKey(futurePlanKey(next));
-                        setLastPost({
-                          kind: "plan",
-                          token: next.token,
-                          id: next.id,
-                          joinable: next.joinable,
-                          join_capacity: next.join_capacity,
-                          restaurant_id: next.restaurant_id,
-                          restaurant_name: next.restaurant_name,
-                          place_label: next.place_label,
-                        });
-                      }}
-                    />
-                  );
+            <EatingHubSection
+              sectionRef={eatingSectionRef}
+              hubDate={hubDate}
+              onHubDateChange={setHubDate}
+              hubMonth={hubMonth}
+              onHubMonthChange={setHubMonth}
+              calendarOpen={calendarOpen}
+              onCalendarOpenChange={setCalendarOpen}
+              dayMarkers={dayMarkers}
+              calendarEvents={calendarEvents}
+              eatingFilter={eatingFilter}
+              onEatingFilterChange={setEatingFilter}
+              eating={eating}
+              scheduledPlans={scheduledPlans}
+              shownPlans={shownPlans}
+              selectedPlanKey={selectedPlanKey}
+              onSelectedPlanKeyChange={setSelectedPlanKey}
+              schedulingPlans={schedulingPlans}
+              onSchedulingPlansChange={setSchedulingPlans}
+              wants={wants}
+              wantListError={wantListError}
+              liked={liked}
+              lastPost={lastPost}
+              postBusy={postBusy}
+              followed={followed}
+              joinCandidates={joinCandidates}
+              onComposeSubmit={handleEatingCompose}
+              onPlanSchedule={handlePlanSchedule}
+              onPostPlan={postPlan}
+              onEatingPhotoPick={onEatingPhotoPick}
+              onWantSelect={(want) =>
+                setLastPost({
+                  kind: "want",
+                  id: want.id,
+                  food_name: want.food_name,
+                  comment: want.comment,
+                  meal_period: want.meal_period,
+                  restaurant_id: want.restaurant_id,
+                  restaurant_name: want.restaurant_name,
+                  menu_item_id: want.menu_item_id,
+                  item_name: want.item_name || want.food_name,
                 })
-              )}
-              {!schedulingPlans ? (
-                <button
-                  type="button"
-                  style={{ ...s.primaryBtn, width: "100%", minHeight: 44, justifyContent: "center", marginTop: 8 }}
-                  onClick={() => {
-                    setSchedulingPlans(true);
-                    setPlansCalendarOpen(true);
-                  }}
-                >
-                  Click to Schedule Future Plans
-                </button>
-              ) : (
-                <EatingPlanDayForm
-                  planDate={planDate}
-                  busy={postBusy === "eating"}
-                  followed={followed}
-                  joinCandidates={joinCandidates}
-                  onSubmit={postPlan}
-                />
-              )}
-              {lastPost?.kind === "plan" ? (
-                <PostAfterActions
-                  kind="plan"
-                  record={lastPost}
-                  busy={postBusy === "eating"}
-                  followed={followed}
-                  onTagged={async () => {
-                    setLastPost(null);
-                    await load();
-                  }}
-                />
-              ) : null}
-              <DinerCalendarSheet
-                open={plansCalendarOpen}
-                onClose={() => setPlansCalendarOpen(false)}
-                testId="future-plans-calendar"
-                title="Future plans"
-                selectedDate={planDate}
-                onSelectDate={(ymd) => {
-                  setPlanDate(ymd);
-                  const match = scheduledPlans.find((plan) => planYmd(plan.plan_date) === ymd);
-                  if (match) setSelectedPlanKey(futurePlanKey(match));
-                  else setSchedulingPlans(true);
-                }}
-                onSelectEvent={(event) => {
-                  setPlanDate(event.ymd);
-                  setSelectedPlanKey(event.key);
-                  setSchedulingPlans(false);
-                }}
-                viewMonth={planMonth}
-                onViewMonthChange={setPlanMonth}
-                minYmd={whatIAteTodayLocalDate()}
-                events={calendarEvents}
-                dayCounts={scheduledPlans
-                  .map((plan) => planYmd(plan.plan_date))
-                  .filter(Boolean)
-                  .reduce((rows, ymd) => {
-                    bumpDayCount(rows, ymd);
-                    return rows;
-                  }, [])}
-              />
-              <div style={{ ...s.labelRow, marginTop: 14 }}>
-                <Link to="/account/what-we-doing" style={s.subLabel}>
-                  Invite Me
-                </Link>
-              </div>
-              <p style={s.muted}>
-                Only people you open Join Me to can see that future plan.
-              </p>
-            </section>
-
-            <section style={s.section} data-testid="want-to-eat" ref={wantSectionRef}>
-              <SectionHead title="What I Want to Eat" />
-              <p style={s.muted}>Items you want to try. Connections can see this on your hub.</p>
-              <QuickCompose
-                testId="compose-want"
-                placeholder="What do you want to eat?"
-                acceptPhoto
-                busy={postBusy === "want"}
-                autoFocus={searchParams.get("focus") === "want"}
-                onSubmit={postWant}
-              />
-              {wantListError ? <p style={s.error}>{wantListError}</p> : null}
-              {lastPost?.kind === "want" &&
-              !wants.some((row) => Number(row.id) === Number(lastPost.id)) ? (
-                <div style={s.card} data-testid="want-to-eat-just-posted">
-                  <div style={{ fontWeight: 800 }}>{lastPost.food_name}</div>
-                  <div style={{ ...s.muted, fontSize: 12, marginTop: 4 }}>Saved — link a menu item below</div>
-                </div>
-              ) : null}
-              {lastPost?.kind === "want" ? (
-                <PostAfterActions
-                  kind="want"
-                  record={lastPost}
-                  busy={postBusy === "want"}
-                  followed={followed}
-                  onTagged={async (updated) => {
-                    if (updated?.id) {
-                      setWants((prev) => {
-                        const rest = prev.filter((row) => Number(row.id) !== Number(updated.id));
-                        return [updated, ...rest];
-                      });
-                    }
-                    setLastPost(null);
-                    await load();
-                  }}
-                />
-              ) : null}
-              {wants.length === 0 && lastPost?.kind !== "want" ? (
-                <p style={s.muted} data-testid="want-to-eat-empty">
-                  Nothing on your want list yet. Post above, then link a menu item if you like.
-                </p>
-              ) : null}
-              <WantToEatList
-                items={wants}
-                onSelectItem={(want) =>
-                  setLastPost({
-                    kind: "want",
-                    id: want.id,
-                    food_name: want.food_name,
-                    comment: want.comment,
-                    meal_period: want.meal_period,
-                    restaurant_id: want.restaurant_id,
-                    restaurant_name: want.restaurant_name,
-                    menu_item_id: want.menu_item_id,
-                    item_name: want.item_name || want.food_name,
-                  })
-                }
-              />
-              {liked.slice(0, 6).map((meal) => (
-                <Link key={meal.menu_item_id} to={foodHref(meal)} style={s.card}>
-                  <div style={{ fontWeight: 800 }}>{meal.item_name}</div>
-                  <div style={s.muted}>{meal.restaurant_name}</div>
-                </Link>
-              ))}
-            </section>
+              }
+              onDiarySelect={(item) => {
+                if (item?.kind !== "what_i_ate") return;
+                setLastPost({
+                  kind: "diary",
+                  id: item.entry_id,
+                  meal_period: item.meal_period,
+                  comment: item.comment,
+                  food_name: item.food_name,
+                  restaurant_id: item.restaurant_id,
+                  restaurant_name: item.restaurant_name,
+                  menu_item_id: item.menu_item_id,
+                  item_name: item.food_name,
+                });
+              }}
+              onPlanAddDetails={(next) => {
+                setSelectedPlanKey(futurePlanKey(next));
+                setLastPost({
+                  kind: "plan",
+                  token: next.token,
+                  id: next.id,
+                  joinable: next.joinable,
+                  join_capacity: next.join_capacity,
+                  restaurant_id: next.restaurant_id,
+                  restaurant_name: next.restaurant_name,
+                  place_label: next.place_label,
+                });
+              }}
+              onPostTagged={handlePostTagged}
+              foodHref={foodHref}
+            />
 
             <section style={s.section} data-testid="dining-crews">
               <SectionHead title="My Crews" to="/account/dining-crews" />
@@ -800,11 +640,10 @@ export default function MyMenuplyPage() {
                 <p style={s.muted}>Nothing yet.</p>
               ) : (
                 crews.slice(0, 4).map((crew) => (
-                  <NamedShareCard
+                  <DiningCrewHubCard
                     key={crew.id}
-                    name={crew.name}
+                    crew={crew}
                     href={`/account/dining-crews/${crew.id}`}
-                    description={crew.description}
                     meta={[
                       crew.viewer_role === "owner" ? "Organized" : null,
                       `${crew.member_count || 0} ${crew.member_count === 1 ? "member" : "members"}`,
@@ -819,9 +658,8 @@ export default function MyMenuplyPage() {
                   />
                 ))
               )}
-              <QuickCompose
+              <CrewQuickCompose
                 testId="compose-crew"
-                placeholder="Crew name"
                 busy={postBusy === "crews"}
                 onSubmit={postCrew}
               />

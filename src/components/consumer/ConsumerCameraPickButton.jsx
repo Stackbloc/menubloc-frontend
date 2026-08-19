@@ -19,6 +19,7 @@ export default function ConsumerCameraPickButton({
   ariaLabel,
   buttonStyle = {},
   showLibraryLink = true,
+  libraryLinkStyle,
 }) {
   const [sheetOpen, setSheetOpen] = useState(false);
   const cameraInputRef = useRef(null);
@@ -76,7 +77,7 @@ export default function ConsumerCameraPickButton({
             data-testid={testId ? `${testId}-library` : "camera-pick-library"}
             disabled={disabled}
             onClick={() => libraryInputRef.current?.click()}
-            style={libraryLinkStyle}
+            style={libraryLinkStyle || defaultLibraryLinkStyle}
           >
             Photo library
           </button>
@@ -105,7 +106,7 @@ export default function ConsumerCameraPickButton({
   );
 }
 
-const libraryLinkStyle = {
+const defaultLibraryLinkStyle = {
   appearance: "none",
   border: "none",
   background: "transparent",

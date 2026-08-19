@@ -60,6 +60,13 @@ export const sectionTitleLink = {
   font: "inherit",
 };
 
+export const cardTitleLink = {
+  color: INK,
+  textDecoration: "none",
+  fontWeight: 700,
+  fontSize: 15,
+};
+
 export const labelRow = {
   display: "flex",
   flexWrap: "wrap",
@@ -115,6 +122,19 @@ export const row = {
 };
 
 export const muted = { margin: 0, fontSize: 14, color: MUTED, lineHeight: 1.5 };
+
+export const crewPurpose = {
+  margin: "6px 0 0",
+  fontSize: 14,
+  color: "#334155",
+  lineHeight: 1.45,
+};
+
+export const crewPurposeLabel = {
+  fontWeight: 700,
+  color: INK,
+  marginRight: 6,
+};
 export const error = { margin: "0 0 12px", fontSize: 13, color: "#B42318" };
 
 export const link = {

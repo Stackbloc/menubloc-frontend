@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "4213c41c24d8926a11180df22a7c8a8547428a70",
-  "gitShortSha": "4213c41",
+  "gitSha": "841f599ffe95499046b669010484900dbb1349b3",
+  "gitShortSha": "841f599",
   "branch": "main",
-  "buildTime": "2026-08-19T17:46:57.486Z",
+  "buildTime": "2026-08-19T21:38:27.393Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "feat(food-social-mvp): About Me gallery and Want to Eat photos."
+  "commitMessage": "docs: update LKG tip lock after Connection peer back-link CPD."
 }

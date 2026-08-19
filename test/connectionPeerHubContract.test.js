@@ -15,39 +15,37 @@ test("Connection diner page uses the same hub layout as My Menuply", () => {
   const mine = read("src/pages/consumer/MyMenuplyPage.jsx");
   const peer = read("src/pages/consumer/ConsumerConnectionPeerPage.jsx");
   const hero = read("src/pages/consumer/myMenuply/DinerIdentityHero.jsx");
+  const section = read("src/pages/consumer/myMenuply/EatingHubSection.jsx");
 
   for (const page of [mine, peer]) {
     assert.match(page, /DinerIdentityHero/);
-    assert.match(page, /data-testid="what-im-eating"/);
-    assert.match(page, /data-testid="want-to-eat"/);
+    assert.match(page, /EatingHubSection/);
     assert.match(page, /data-testid="dining-crews"/);
     assert.match(page, /data-testid="my-events"/);
-    assert.match(page, /What I'm Eating/);
-    assert.match(page, /Future plans/);
-    assert.match(page, /No Plans Scheduled/);
-    assert.doesNotMatch(page, /^\s*Plans Scheduled\s*$/m);
-    assert.match(page, /FuturePlanRow/);
-    assert.match(page, /onSelectEvent/);
-    assert.match(page, /What I Want to Eat/);
     assert.match(page, /My Crews/);
     assert.match(page, /My Events/);
-    assert.match(page, /eating-plans-calendar/);
-    assert.match(page, /DinerCalendarTrigger/);
-    assert.match(page, /Invite Me/);
-    assert.match(page, /Join Me/);
-    assert.match(page, /future-plans-calendar/);
-    assert.ok(page.indexOf("DinerIdentityHero") < page.indexOf("what-im-eating"));
-    assert.ok(page.indexOf("what-im-eating") < page.indexOf("want-to-eat"));
-    assert.ok(page.indexOf("want-to-eat") < page.indexOf("dining-crews"));
+    assert.doesNotMatch(page, /data-testid="what-im-eating"/);
+    assert.doesNotMatch(page, /data-testid="want-to-eat"/);
+    assert.ok(page.indexOf("<DinerIdentityHero") < page.indexOf("<EatingHubSection"));
+    assert.ok(page.indexOf("<EatingHubSection") < page.indexOf("dining-crews"));
     assert.ok(page.indexOf("dining-crews") < page.indexOf("my-events"));
     assert.doesNotMatch(page, /People you interact with through Menuply meals/);
   }
 
+  assert.match(section, /data-testid="eating"/);
+  assert.match(section, /eating-calendar/);
+  assert.match(section, /DinerCalendarTrigger/);
+  assert.match(section, /Invite Me/);
+  assert.match(section, /future-plans-summary/);
+  assert.match(section, /FuturePlanRow/);
+
+  assert.match(section, /eating-want-panel/);
+  assert.match(section, /WantToEatList/);
+
   assert.match(peer, /readOnly/);
   assert.match(peer, /\/what-i-ate/);
   assert.match(peer, /mergeEatingFeedForHub/);
-  assert.match(peer, /WantToEatList/);
-  assert.doesNotMatch(peer, /QuickCompose/);
+  assert.doesNotMatch(peer, /EatingCompose/);
   assert.doesNotMatch(peer, /onAvatarFile/);
   assert.match(hero, /readOnly/);
   assert.match(hero, /About Me/);
@@ -57,7 +55,8 @@ test("Connection diner page uses the same hub layout as My Menuply", () => {
   assert.match(peer, /listConnections\("accepted", peerId\)/);
   assert.match(peer, /listDinerDiningCrews/);
   assert.match(peer, /Request to join/);
-  assert.match(peer, /NamedShareCard/);
+  assert.match(peer, /DiningCrewHubCard/);
+  assert.doesNotMatch(peer, /NamedShareCard/);
   assert.match(peer, /peerConnections/);
   assert.match(peer, /backTo="\/my-menuply"/);
   assert.match(peer, /backLabel="My Menuply"/);
@@ -65,7 +64,7 @@ test("Connection diner page uses the same hub layout as My Menuply", () => {
   const calendar = read("src/pages/consumer/myMenuply/DinerCalendarSheet.jsx");
   assert.match(calendar, /diner-calendar-open/);
   assert.match(calendar, /calendar-event/);
-  assert.match(calendar, /onSelectEvent/);
+  assert.match(calendar, /EatingHubCalendar/);
 });
 
 test("Diner hub photos are casual snapshots with food info, not Instagram heroes", () => {

@@ -43,9 +43,11 @@ function resolveWaiterMarketLabel() {
 }
 
 // Meal-period picks first; cluster updates additive at the end (matches backend merge order).
+// 2026-08-19 (user-authorized): want-to-eat list is additive personal signal for Waiter advice.
 const WAITER_GROUP_ORDER = [
   "what_people_are_eating",
   "liked_signal",
+  "want_to_eat",
   "new_item",
   "trending_dish",
   "meal_recommendation",
