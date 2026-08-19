@@ -3,6 +3,7 @@ import ShareButton from "../share/ShareButton.jsx";
 import LikeMenuItemButton from "../LikeMenuItemButton.jsx";
 import InviteToEatButton from "../InviteToEatButton.jsx";
 import FoodCommentNavButton from "../FoodCommentNavButton.jsx";
+import MenuItemSaveToMyMenuplyIcon from "../consumer/MenuItemSaveToMyMenuplyIcon.jsx";
 import IconHoverLabel from "../IconHoverLabel.jsx";
 import ViewMenuIcon from "../icons/ViewMenuIcon.jsx";
 import { MENU_ROW_ICON_GAP, MENU_ROW_ICON_SIZE } from "../menu-templates/menuPresentationUtils.js";
@@ -134,6 +135,13 @@ export default function MenuItemDetailActionRail({
           menuItemId={menuItemId}
           tone="ghost"
           size="row"
+        />
+      ) : null}
+      {showSaveToMyMenuply && menuItemId ? (
+        <MenuItemSaveToMyMenuplyIcon
+          menuItemId={menuItemId}
+          foodName={itemName}
+          returnTo={saveReturnTo}
         />
       ) : null}
     </div>

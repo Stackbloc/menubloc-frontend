@@ -61,7 +61,8 @@ test("What I Ate Today is optional, fail-open, and not a search engine", () => {
   assert.doesNotMatch(api, /what-i-ate-today[\s\S]{0,200}\/search/);
   assert.doesNotMatch(section, /\/search\?/);
   assert.doesNotMatch(add, /navigator\.share/);
-  assert.match(detail, /WhatIAteTodayAddButton/);
+  assert.match(detail, /showSaveToMyMenuply/);
+  assert.doesNotMatch(detail, /<WhatIAteTodayAddButton/);
   assert.match(detail, /<VerdictBlock[\s\S]*compact/);
   assert.doesNotMatch(detail, /<StickyVerdictRail/);
   assert.match(peer, /\/what-i-ate/);

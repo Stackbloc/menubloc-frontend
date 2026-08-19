@@ -39,16 +39,16 @@ test("MenuItemDetailPage accepts cmi: franchise route IDs", () => {
   assert.doesNotMatch(source, /\/\\^\\d\+\\\$\/\.test\(String\(id\)\)/);
 });
 
-test("MenuItemDetailPage action rail remains in hero (no duplicate full-menu CTA in removed rail)", () => {
+test("MenuItemDetailPage action rail includes save icon; no duplicate full-width add buttons", () => {
   const source = fs.readFileSync(DETAIL_PAGE, "utf8");
   assert.match(source, /MenuItemDetailActionRail/);
   assert.doesNotMatch(source, /function StickyVerdictRail/);
-  assert.match(source, /WhatIAteTodayAddButton/);
+  assert.match(source, /showSaveToMyMenuply/);
+  assert.doesNotMatch(source, /<WhatIAteTodayAddButton/);
+  assert.doesNotMatch(source, /<WantToEatAddButton/);
   const rail = source.indexOf("<MenuItemDetailActionRail");
-  const add = source.indexOf("<WhatIAteTodayAddButton");
   const verdict = source.indexOf("<VerdictBlock");
-  assert.ok(rail >= 0 && add > rail, "Add to What I Ate Today must sit below the action rail");
-  assert.ok(verdict > add, "compact VerdictBlock must remain after the add control");
+  assert.ok(rail >= 0 && verdict > rail, "compact VerdictBlock must remain after the action rail");
 });
 
 test("canonical menu item URLs with numeric itemSlug route to MenuItemDetailPage", () => {

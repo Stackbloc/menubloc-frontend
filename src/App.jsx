@@ -74,6 +74,7 @@ import ImEatingPage from "./pages/consumer/ImEatingPage.jsx";
 import InviteToEatStartPage from "./pages/consumer/InviteToEatStartPage.jsx";
 import EventsBrowsePage from "./pages/EventsBrowsePage.jsx";
 import WhatIAteTodayPage from "./pages/consumer/WhatIAteTodayPage.jsx";
+import MenuItemSaveChoicePage from "./pages/consumer/MenuItemSaveChoicePage.jsx";
 import ConnectionPeerWhatIAtePage from "./pages/consumer/ConnectionPeerWhatIAtePage.jsx";
 import MyMenuplyPage from "./pages/consumer/MyMenuplyPage.jsx";
 import ConnectionsEatingPage from "./pages/consumer/ConnectionsEatingPage.jsx";
@@ -945,6 +946,7 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
         <Route path="/account/dining-crews/:crewId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <DiningCrewDetailPage />} />
         <Route path="/account/im-eating" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ImEatingPage />} />
         <Route path="/account/what-i-ate" element={crmHost ? <HostRouteRedirect to="/crm" /> : <WhatIAteTodayPage />} />
+        <Route path="/account/menu-item/save" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MenuItemSaveChoicePage />} />
         <Route path="/account/diner-status" element={crmHost ? <HostRouteRedirect to="/crm" /> : <DinerStatusPage />} />
         <Route path="/account/cluster-subscriptions" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ClusterSubscriptionsPage />} />
         <Route path="/account/feedback" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ConsumerOrderFeedbackPage />} />

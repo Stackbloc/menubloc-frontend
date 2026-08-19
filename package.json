@@ -17,7 +17,7 @@
     "test": "node test/siteFooterNavigationContract.test.js && node --test tests/*.test.js test/manualMenuEntryModel.test.cjs && npx vitest run src/pages/__tests__/ManualMenuEntryPage.test.jsx && npm run verify:geo-routes && npm run verify:discovery-state-and-chip-rails",
     "test:menu-experience-contract": "node test/menuPurchaseWaiterHintContract.test.js && node test/consumerPreferenceFilterContract.test.js && node test/menuCatalogBrowsePreferences.test.js",
     "test:share-contract": "node --test test/shareCopyLinkModalContract.test.js test/shareCanonicalUrlContract.test.js",
-    "test:food-social-contract": "node --test test/menuplyActionSheetContract.test.js test/myMenuplyFourQuestionsContract.test.js test/dinerAboutPhotosContract.test.js test/wantToEatPhotosContract.test.js test/imEatingFoodActivityContract.test.js test/inviteToEatContract.test.js test/whatIAteTodayContract.test.js",
+    "test:food-social-contract": "node --test test/menuplyActionSheetContract.test.js test/myMenuplyFourQuestionsContract.test.js test/dinerAboutPhotosContract.test.js test/wantToEatPhotosContract.test.js test/imEatingFoodActivityContract.test.js test/inviteToEatContract.test.js test/whatIAteTodayContract.test.js test/menuItemSaveToMyMenuplyContract.test.js",
     "verify:geo-routes": "node scripts/verifyGeoRoutes.mjs",
     "verify:sitemap": "node scripts/validateSitemap.mjs",
     "verify:search-quality": "node scripts/verifyGeoRoutes.mjs",

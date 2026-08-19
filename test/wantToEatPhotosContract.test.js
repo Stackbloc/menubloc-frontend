@@ -28,13 +28,15 @@ test("My Menuply want compose accepts optional photo upload", () => {
   assert.match(page, /photo_url/);
 });
 
-test("Menu item detail adds to want list without blocking retry", () => {
+test("Menu item detail routes to save choice instead of inline want button", () => {
   const add = read("src/components/consumer/WantToEatAddButton.jsx");
   const detail = read("src/pages/MenuItemDetailPage.jsx");
+  const choice = read("src/pages/consumer/MenuItemSaveChoicePage.jsx");
   assert.match(add, /createWantToEat/);
   assert.match(add, /menu_item_id/);
-  assert.match(add, /Add to What I Want to Eat/);
-  assert.match(detail, /WantToEatAddButton/);
+  assert.match(choice, /What I want to eat/);
+  assert.match(detail, /showSaveToMyMenuply/);
+  assert.doesNotMatch(detail, /WantToEatAddButton/);
 });
 
 test("Connection peer hub shows peer want list when connected", () => {

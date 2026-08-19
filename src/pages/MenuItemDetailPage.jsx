@@ -35,8 +35,6 @@ import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import BottomNav from "../components/BottomNav.jsx";
 import IndulgenceMeter from "../components/IndulgenceMeter.jsx";
 import MenuItemDetailActionRail from "../components/menu/MenuItemDetailActionRail.jsx";
-import WhatIAteTodayAddButton from "../components/consumer/WhatIAteTodayAddButton.jsx";
-import WantToEatAddButton from "../components/consumer/WantToEatAddButton.jsx";
 import {
   applyDocumentSocialMetadata,
   buildDishShareData,
@@ -1776,14 +1774,8 @@ export default function MenuItemDetailPage() {
                     else navigate(-1);
                   }}
                   returnLabel={fromCluster ? clusterBackLabel : "Return to search results"}
-                />
-                <WhatIAteTodayAddButton
-                  menuItemId={item.menu_item_id}
-                  foodName={displayItemName}
-                />
-                <WantToEatAddButton
-                  menuItemId={item.menu_item_id}
-                  foodName={displayItemName}
+                  showSaveToMyMenuply
+                  saveReturnTo={`${location.pathname}${location.search || ""}`}
                 />
               </div>
 
