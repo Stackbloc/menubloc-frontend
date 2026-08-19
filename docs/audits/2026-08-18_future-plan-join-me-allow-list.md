@@ -1,6 +1,6 @@
 # Summary
 
-Future plans are visible only to people who can accept that plan’s Join Me. The Join Me picker is Anyone Connect, or a selected list of Connections plus pending Invite-to-Eat account holders. Guests without accounts cannot be selected. **LOCAL only** — not CPD.
+Future plans are visible only to people who can accept that plan’s Join Me. The Join Me picker is Anyone Connect, or a selected list of Connections plus pending Invite-to-Eat account holders. Guests without accounts cannot be selected. **CPD COMPLETE** — tip `89eyeudh1` / `index-DjXskZ76.js`; FE `063ffd7`. BE origin `a1b751c3`; Railway health still `970062ac`.
 
 # Problem Statement
 

@@ -27,40 +27,40 @@ Do **not** deploy from memory or from quarantined checkouts.
 
 ## CURRENT LAST KNOWN GOOD (live production — 2026-08-18)
 
-Update this section **only** after tip-gate `RESULT=PASS` on apex + www **and** Railway `/health` matches the shipped BE SHA. FE tip below is live and tip-gate-locked. BE `/health` has **not** yet moved to `970062ac`.
+Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway `/health` is recorded separately; it may lag `origin/main`.
 
 ### Frontend (menuply.com)
 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` @ clean `main` |
-| Git commit | `9cd7303` — Post X dropped onto the bottom-icon row |
-| Vercel deployment | `menubloc-frontend-3vk7ie3cf-menuply.vercel.app` |
-| Live bundle | `index-He0r-RTw.js` |
+| Git commit | `063ffd7` — Join Me allow-list; only eligible acceptors see that future plan |
+| Vercel deployment | `menubloc-frontend-89eyeudh1-menuply.vercel.app` |
+| Live bundle | `index-DjXskZ76.js` |
 | Aliases | `menuply.com`, `www.menuply.com`, `crm.menuply.com`, `venues.menuply.com` |
-| Tip-gate | **PASS** (apex + www) verified 2026-08-18 after Post X align CPD |
-| Feature | Bottom-nav Post X optical align (`translateY(6px)`, size 24) |
+| Tip-gate | **PASS** (apex + www) verified 2026-08-18 after Join Me allow-list CPD |
+| Feature | Anyone Connect or selected Connections + pending Invites; ineligible diners do not see that plan |
 
 ### Backend (Railway)
 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-backend-main` @ clean `main` |
-| Git on origin | `970062ac` — What I Want to Eat API (`0272`) — **not yet live on Railway** |
-| Live health SHA | `942e7c10d62a2ca1f21a21101d9ce8a928164d76` (owner diner accounts) |
+| Git on origin | `a1b751c3` — Join Me allow-list + migration `0273` — **not yet live on Railway** |
+| Live health SHA | `970062ac408c03559c8d5e2cf672c1f96537b968` (What I Want to Eat API) |
 | Health URL | `https://menubloc-backend-production.up.railway.app/health` |
-| `commit_hash` | `942e7c10d62a2ca1f21a21101d9ce8a928164d76` |
-| Migrations | `0250`–`0272` applied (`diner_want_to_eat` table exists; API waits on `970062ac`) |
-| Smoke | Health still `942e7c10`; tip-gate PASS `3vk7ie3cf` / `index-He0r-RTw.js` |
+| `commit_hash` | `970062ac408c03559c8d5e2cf672c1f96537b968` |
+| Migrations | `0250`–`0272` applied; `0273` waits on Railway `a1b751c3` |
+| Smoke | Health `970062ac`; tip-gate PASS `89eyeudh1` / `index-DjXskZ76.js` |
 
 ### Restore current tip (if tip-gate fails mid-change)
 
 ```bash
 cd /Users/andrebarber/Desktop/menubloc/menubloc-frontend-main
-npx vercel alias set menubloc-frontend-3vk7ie3cf-menuply.vercel.app menuply.com
-npx vercel alias set menubloc-frontend-3vk7ie3cf-menuply.vercel.app www.menuply.com
-npx vercel alias set menubloc-frontend-3vk7ie3cf-menuply.vercel.app crm.menuply.com
-npx vercel alias set menubloc-frontend-3vk7ie3cf-menuply.vercel.app venues.menuply.com
+npx vercel alias set menubloc-frontend-89eyeudh1-menuply.vercel.app menuply.com
+npx vercel alias set menubloc-frontend-89eyeudh1-menuply.vercel.app www.menuply.com
+npx vercel alias set menubloc-frontend-89eyeudh1-menuply.vercel.app crm.menuply.com
+npx vercel alias set menubloc-frontend-89eyeudh1-menuply.vercel.app venues.menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 ```
@@ -122,6 +122,8 @@ Newest superseded first. Restoring drops everything shipped after that tip.
 
 | Deployment id | Bundle | Approx feature / CPD |
 |---------------|--------|----------------------|
+| `3vk7ie3cf` | `index-He0r-RTw.js` | Post X bottom-nav align (`9cd7303`) — superseded by Join Me allow-list `89eyeudh1` |
+| `bzddqa61v` | `index-DF-s_Lo_.js` | Diner-hub same-layout casual photos (`a7eb57d`) — never LKG-locked; superseded by `89eyeudh1` |
 | `683cf6yk3` | `index-CZS4phIY.js` | My Menuply hub photos-first / want-to-eat / crew join (`e7c319b`) — superseded by Post X align `3vk7ie3cf` |
 | `5vl6kfuh6` | `index-BZBfCuwA.js` | Owner diner accounts roster (`12945f5`) — superseded by My Menuply hub `683cf6yk3` |
 | `psmauf4vh` | `index-WZh2e4sk.js` | Dish prefill + Post about (`8a1a961`) — superseded by owner diner accounts `5vl6kfuh6` |

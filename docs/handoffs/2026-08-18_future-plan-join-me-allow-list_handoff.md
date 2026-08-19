@@ -4,7 +4,7 @@ Future-plan Join Me: Anyone Connect or selected Connections + pending Invites. O
 
 # Current Status
 
-Implemented locally in `menubloc-frontend-main` and `menubloc-backend-main`. Not committed. Not CPD.
+CPD COMPLETE. FE tip `89eyeudh1` / `index-DjXskZ76.js` (`063ffd7`). BE origin `a1b751c3` not Railway-live (health `970062ac`).
 
 # Files Changed
 

@@ -1,22 +1,22 @@
 # Handoffs Index
 
-- [2026-08-18_future-plan-join-me-allow-list_handoff.md](./2026-08-18_future-plan-join-me-allow-list_handoff.md) — Future plan visible only to Join Me acceptors; pending Invites selectable (**LOCAL until CPD**)
+- [2026-08-18_future-plan-join-me-allow-list_handoff.md](./2026-08-18_future-plan-join-me-allow-list_handoff.md) — Future plan visible only to Join Me acceptors; pending Invites selectable (**CPD COMPLETE** — tip `89eyeudh1` / `index-DjXskZ76.js`)
 - [2026-08-18_diner-hub-peer-connections_handoff.md](./2026-08-18_diner-hub-peer-connections_handoff.md) — Every diner hub shows that diner’s Connections (**LOCAL**)
 - [2026-08-18_diner-hub-color-casual-photos_handoff.md](./2026-08-18_diner-hub-color-casual-photos_handoff.md) — Cream/green diner hub; casual food photos; calendar chip (**LOCAL**)
 - [2026-08-18_dish-prefill-post-about_handoff.md](./2026-08-18_dish-prefill-post-about_handoff.md) — Dish prefill, Post about, merge plans into What I'm Eating (**LIVE** in diner-accounts tip `5vl6kfuh6` / `index-BZBfCuwA.js`; BE `942e7c10`)
 - [2026-08-18_eating-plans-calendar_handoff.md](./2026-08-18_eating-plans-calendar_handoff.md) — Calendar eating plans + join seats + restaurant profile next-week count (**CPD COMPLETE** — tip `n7gxy1luu` / `index-DbN-zhDW.js`; BE `2923b248`)
-- [2026-08-18_my-menuply-no-share-settings_handoff.md](./2026-08-18_my-menuply-no-share-settings_handoff.md) — Share + Settings off My Menuply (**LOCAL until CPD**)
-- [2026-08-18_diner-instagram-easy-compose_handoff.md](./2026-08-18_diner-instagram-easy-compose_handoff.md) — One-line diner compose + personal My Menuply (**LOCAL until CPD**)
-- [2026-08-18_my-menuply-clickable-labels_handoff.md](./2026-08-18_my-menuply-clickable-labels_handoff.md) — My Eating Plans; clickable titles; no click-coaching (**LOCAL until CPD**)
-- [2026-08-18_my-menuply-connections-label_handoff.md](./2026-08-18_my-menuply-connections-label_handoff.md) — My Connections first; click → eating list (**LOCAL until CPD**)
-- [2026-08-18_my-menuply-remove-whats-happening_handoff.md](./2026-08-18_my-menuply-remove-whats-happening_handoff.md) — Drop public What's happening from My Menuply (**LOCAL until CPD**)
+- [2026-08-18_my-menuply-no-share-settings_handoff.md](./2026-08-18_my-menuply-no-share-settings_handoff.md) — Share + Settings off My Menuply (**CPD COMPLETE** — tip `89eyeudh1` / `index-DjXskZ76.js`)
+- [2026-08-18_diner-instagram-easy-compose_handoff.md](./2026-08-18_diner-instagram-easy-compose_handoff.md) — One-line diner compose + personal My Menuply (**CPD COMPLETE** — tip `89eyeudh1` / `index-DjXskZ76.js`)
+- [2026-08-18_my-menuply-clickable-labels_handoff.md](./2026-08-18_my-menuply-clickable-labels_handoff.md) — My Eating Plans; clickable titles; no click-coaching (**CPD COMPLETE** — tip `89eyeudh1` / `index-DjXskZ76.js`)
+- [2026-08-18_my-menuply-connections-label_handoff.md](./2026-08-18_my-menuply-connections-label_handoff.md) — My Connections first; click → eating list (**CPD COMPLETE** — tip `89eyeudh1` / `index-DjXskZ76.js`)
+- [2026-08-18_my-menuply-remove-whats-happening_handoff.md](./2026-08-18_my-menuply-remove-whats-happening_handoff.md) — Drop public What's happening from My Menuply (**CPD COMPLETE** — tip `89eyeudh1` / `index-DjXskZ76.js`)
 - [2026-08-18_bottom-nav-restore-waiter-activity_handoff.md](./2026-08-18_bottom-nav-restore-waiter-activity_handoff.md) — Restore Home/Waiter/Yellow Browser/Basket + X (Post) + My Menuply; Activity on Waiter (**CPD COMPLETE** — tip `lsmdx3d9x` / `index-C7QEDuzy.js`; BE `f137c7dd`)
 - [2026-08-18_pre-my-menuply-lkg-checkpoint_handoff.md](./2026-08-18_pre-my-menuply-lkg-checkpoint_handoff.md) — Pre–My Menuply LKG tag `menuply-last-known-good-2026-08-18` (**SAVED**)
 - [2026-08-18_my-menuply-ia_handoff.md](./2026-08-18_my-menuply-ia_handoff.md) — My Menuply IA + diner About/photos (**CPD COMPLETE** — tip `83npukyp6` / `index-KbRqQ3I0.js`; BE `03132162`)
 - [2026-08-17_dining-hall-profile-human-copy_handoff.md](./2026-08-17_dining-hall-profile-human-copy_handoff.md) — Dining-hall human copy + founded years (**CPD COMPLETE** — tip `2fw9x27jj` / `index-fjLns99U.js`; BE `6fc782c3`)
 - `../deployments/2026-08-17_dining-hall-profile-human-copy-cpd.md` — CPD record.
 - `2026-08-17_add-menu-contribution_handoff.md` — Add Menu for unclaimed restaurants without a usable menu (**CPD COMPLETE** — tip `3vre2srp8` / `index-DQKfgzho.js`; BE `7bff0469`).
-- `2026-08-17_social-tab-connections-groups-events_handoff.md` — Social tab connection count, clickable Connections, groups, events (**LOCAL until CPD**).
+- `2026-08-17_social-tab-connections-groups-events_handoff.md` — Social tab connection count, clickable Connections, groups, events (**CPD COMPLETE** — tip `89eyeudh1` / `index-DjXskZ76.js`).
 - `2026-08-17_cluster-landing-consumer-dashboard_handoff.md` — Cluster page scan-first dashboard (**CPD COMPLETE** — tip `30qbi67vq` / `index-CMXfgjwr.js`; BE `a8980221`).
 - `../deployments/2026-08-17_cluster-landing-consumer-dashboard-cpd.md` — CPD record.
 - `2026-08-17_dining-hall-status-comments-lock_handoff.md` — Dining halls: status + comments only; no menu analysis (**CPD COMPLETE** — tip `9ijik4t7p` / `index-HPBXNwnC.js`; BE `1e546d61`).
