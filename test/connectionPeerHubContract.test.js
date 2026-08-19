@@ -59,6 +59,8 @@ test("Connection diner page uses the same hub layout as My Menuply", () => {
   assert.match(peer, /Request to join/);
   assert.match(peer, /NamedShareCard/);
   assert.match(peer, /peerConnections/);
+  assert.match(peer, /backTo="\/my-menuply"/);
+  assert.match(peer, /backLabel="My Menuply"/);
 
   const calendar = read("src/pages/consumer/myMenuply/DinerCalendarSheet.jsx");
   assert.match(calendar, /diner-calendar-open/);

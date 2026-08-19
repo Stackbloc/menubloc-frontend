@@ -12,6 +12,9 @@ const ALLERGEN_NONE_ID = "none";
 export default function StickyPageHeader({
   title,
   children,
+  /** Optional back link shown above the title (e.g. peer diner hub → My Menuply). */
+  backTo,
+  backLabel = "Back",
   /** When set (e.g. public menu), tints bar + accents so the page matches restaurant brand */
   barBackground,
   linkAccent,
@@ -90,7 +93,7 @@ export default function StickyPageHeader({
       }}>
         <div style={{
           maxWidth: 576, margin: "0 auto",
-          paddingBottom: title || children ? 12 : 0,
+          paddingBottom: title || children || backTo ? 12 : 0,
         }}>
           <div style={{
             display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -128,11 +131,33 @@ export default function StickyPageHeader({
               )}
             </div>
           </div>
-          {title && (
+          {(backTo || title) && (
             <div style={{ padding: "0 16px" }}>
-              <span style={{ fontSize: 17, fontWeight: 900, color: barBackground ? "#FFFFFF" : "#0B0F0C", letterSpacing: "-0.02em" }}>
-                {title}
-              </span>
+              {backTo ? (
+                <Link
+                  to={backTo}
+                  data-testid="sticky-page-header-back"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 4,
+                    marginBottom: title ? 6 : 0,
+                    color: barBackground ? "#E5E7EB" : "#374151",
+                    fontSize: 14,
+                    fontWeight: 600,
+                    textDecoration: "none",
+                    lineHeight: 1.2,
+                  }}
+                >
+                  <span aria-hidden="true">←</span>
+                  <span>{backLabel}</span>
+                </Link>
+              ) : null}
+              {title ? (
+                <span style={{ display: "block", fontSize: 17, fontWeight: 900, color: barBackground ? "#FFFFFF" : "#0B0F0C", letterSpacing: "-0.02em" }}>
+                  {title}
+                </span>
+              ) : null}
             </div>
           )}
           {children}

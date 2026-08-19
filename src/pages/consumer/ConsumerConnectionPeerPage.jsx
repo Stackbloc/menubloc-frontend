@@ -206,7 +206,7 @@ export default function ConsumerConnectionPeerPage() {
 
   return (
     <>
-      <StickyPageHeader title={name} />
+      <StickyPageHeader title={name} backTo="/my-menuply" backLabel="My Menuply" />
       <div style={s.page} data-testid="connection-peer-hub">
         <p style={s.kicker}>My food. My people. My plans.</p>
         <h1 style={s.h1}>{name}</h1>

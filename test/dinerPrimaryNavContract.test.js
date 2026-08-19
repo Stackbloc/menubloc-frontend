@@ -50,6 +50,8 @@ test("X sheet is Post about and carries restaurant or dish context", () => {
 test("StickyPageHeader person goes to My Menuply; basket lives in BottomNav", () => {
   const header = read("src/components/StickyPageHeader.jsx");
   assert.match(header, /to="\/my-menuply"/);
+  assert.match(header, /backTo/);
+  assert.match(header, /sticky-page-header-back/);
   assert.doesNotMatch(header, /to="\/checkout"/);
   assert.doesNotMatch(header, /useOrderCart/);
 });

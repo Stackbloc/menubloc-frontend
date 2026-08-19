@@ -47,7 +47,11 @@ export default function ConnectionPeerWhatIAtePage() {
 
   return (
     <>
-      <StickyPageHeader title={`${name} — What I Ate Today`} />
+      <StickyPageHeader
+        title={`${name} — What I Ate Today`}
+        backTo="/my-menuply"
+        backLabel="My Menuply"
+      />
       <div style={styles.page} data-testid="what-i-ate-today-peer-page">
         {loading ? (
           <p style={styles.muted}>Loading…</p>
