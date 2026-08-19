@@ -104,6 +104,11 @@ export const listConnectionsPlanning = (limit = 30, peerId = null) => {
   if (peerId) q.set("peer_id", String(peerId));
   return get(`/api/consumer/connections/planning?${q}`);
 };
+export const listConnectionsEvents = (limit = 20, peerId = null) => {
+  const q = new URLSearchParams({ limit: String(limit) });
+  if (peerId) q.set("peer_id", String(peerId));
+  return get(`/api/consumer/connections/events?${q}`);
+};
 
 // ── Personal Diner QR (Phase 1) ───────────────────────────────────────────
 export const getMyDinerQr = () => get("/api/consumer/diner-qr");

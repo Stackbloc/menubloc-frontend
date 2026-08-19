@@ -10,7 +10,7 @@ import BottomNav from "../components/BottomNav.jsx";
 import { fetchPublicEventsNear } from "../lib/eventsApi.js";
 import { splitEventsByLocalDay } from "../lib/clusterDashboardModel.js";
 import { useConsumer } from "../context/ConsumerContext.jsx";
-import { listMyVenueEvents } from "../lib/consumerApi.js";
+import { listMyVenueEvents, listConnectionsEvents } from "../lib/consumerApi.js";
 
 const DEFAULT_LAT = 34.0522;
 const DEFAULT_LNG = -118.2437;
@@ -39,7 +39,9 @@ function EventCard({ event }) {
     <>
       <div style={styles.cardTitle}>{event.name || "Event"}</div>
       <p style={styles.cardMeta}>{[when, where, miles].filter(Boolean).join(" · ")}</p>
-      {event.age_requirement_label ? (
+      {event.connection_label ? (
+        <p style={styles.cardHint}>{event.connection_label}</p>
+      ) : event.age_requirement_label ? (
         <p style={styles.cardHint}>{event.age_requirement_label}</p>
       ) : null}
     </>
@@ -67,6 +69,7 @@ export default function EventsBrowsePage() {
   const [coords, setCoords] = useState({ lat: DEFAULT_LAT, lng: DEFAULT_LNG, source: "default" });
   const [events, setEvents] = useState([]);
   const [mine, setMine] = useState([]);
+  const [connectionEvents, setConnectionEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -119,16 +122,18 @@ export default function EventsBrowsePage() {
   useEffect(() => {
     if (!isAuthenticated) {
       setMine([]);
+      setConnectionEvents([]);
       return undefined;
     }
     let cancelled = false;
-    listMyVenueEvents()
-      .then((data) => {
-        if (!cancelled) setMine(Array.isArray(data?.events) ? data.events : []);
-      })
-      .catch(() => {
-        if (!cancelled) setMine([]);
-      });
+    Promise.all([
+      listMyVenueEvents().catch(() => ({ events: [] })),
+      listConnectionsEvents(20).catch(() => ({ events: [] })),
+    ]).then(([mineRes, connRes]) => {
+      if (cancelled) return;
+      setMine(Array.isArray(mineRes?.events) ? mineRes.events : []);
+      setConnectionEvents(Array.isArray(connRes?.events) ? connRes.events : []);
+    });
     return () => {
       cancelled = true;
     };
@@ -147,6 +152,17 @@ export default function EventsBrowsePage() {
           Dining events at restaurants and venues near you.
           {coords.source === "device" ? "" : " Showing Los Angeles area until location is available."}
         </p>
+
+        {isAuthenticated && connectionEvents.length > 0 ? (
+          <section style={styles.section} data-testid="events-browse-connections">
+            <h2 style={styles.sectionTitle}>From your connections</h2>
+            <ul style={styles.list}>
+              {connectionEvents.map((event) => (
+                <EventCard key={`conn-${event.id}`} event={event} />
+              ))}
+            </ul>
+          </section>
+        ) : null}
 
         {isAuthenticated && mine.length > 0 ? (
           <section style={styles.section} data-testid="events-browse-mine">

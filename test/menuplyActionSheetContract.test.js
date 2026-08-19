@@ -47,3 +47,12 @@ test("Events browse uses public events API", () => {
   assert.match(page, /fetchPublicEventsNear/);
   assert.match(api, /\/public\/events/);
 });
+
+test("Events browse shows connection RSVPs when signed in", () => {
+  const page = read("src/pages/EventsBrowsePage.jsx");
+  const api = read("src/lib/consumerApi.js");
+  assert.match(page, /listConnectionsEvents/);
+  assert.match(page, /events-browse-connections/);
+  assert.match(page, /From your connections/);
+  assert.match(api, /\/api\/consumer\/connections\/events/);
+});
