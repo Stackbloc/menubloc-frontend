@@ -54,7 +54,7 @@ test("InviteToEatButton tooltip and Invitation Ready confirmation", () => {
   assert.match(modal, /invite-restaurant-negotiable/);
   assert.match(modal, /Allow restaurant changes|fixed-location/);
   assert.match(modal, /type=["']radio["']/);
-  assert.match(modal, /gridTemplateColumns:\s*["']18px minmax\(0, 1fr\)["']/);
+  assert.match(modal, /gridTemplateColumns:\s*["']16px minmax\(0, 1fr\)["']/);
   assert.match(modal, /radioControl/);
   assert.doesNotMatch(modal, /marginTop:\s*3/);
   assert.match(modal, /invite_kind/);

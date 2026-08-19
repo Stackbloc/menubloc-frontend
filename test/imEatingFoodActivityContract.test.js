@@ -2,83 +2,77 @@
  * I'm Eating / food activity contract (Phase 5).
  */
 
-import { describe, expect, it } from "vitest";
+import test from "node:test";
+import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
-describe("I'm Eating food activity", () => {
-  it("exposes consumer food-activity API helpers", () => {
-    const api = fs.readFileSync(path.join(root, "src/lib/consumerApi.js"), "utf8");
-    expect(api).toMatch(/listMyFoodActivity/);
-    expect(api).toMatch(/createImEating/);
-    expect(api).toMatch(/deleteMyFoodActivity/);
-    expect(api).toMatch(/\/api\/consumer\/food-activity/);
-    const publicApi = fs.readFileSync(path.join(root, "src/lib/foodActivityApi.js"), "utf8");
-    expect(publicApi).toMatch(/createPublicFoodActivity/);
-    expect(publicApi).toMatch(/searchReportPlaces/);
-    expect(publicApi).toMatch(/resolveEatingPrefill/);
-    expect(publicApi).toMatch(/dishLabel/);
-  });
+function read(rel) {
+  return fs.readFileSync(path.join(root, rel), "utf8");
+}
 
-  it("composer picks restaurant + menu item via entity search", () => {
-    const composer = fs.readFileSync(
-      path.join(root, "src/components/foodActivity/ImEatingComposer.jsx"),
-      "utf8"
-    );
-    expect(composer).toMatch(/searchReportPlaces/);
-    expect(composer).toMatch(/menu_item/);
-    expect(composer).toMatch(/im-eating-selected-dish/);
-    expect(composer).toMatch(/Dish/);
-    expect(composer).toMatch(/Visibility/);
-    expect(composer).not.toMatch(/Friend/);
-  });
+test("exposes consumer food-activity API helpers", () => {
+  const api = read("src/lib/consumerApi.js");
+  assert.match(api, /listMyFoodActivity/);
+  assert.match(api, /createImEating/);
+  assert.match(api, /deleteMyFoodActivity/);
+  assert.match(api, /\/api\/consumer\/food-activity/);
+  const publicApi = read("src/lib/foodActivityApi.js");
+  assert.match(publicApi, /createPublicFoodActivity/);
+  assert.match(publicApi, /searchReportPlaces/);
+  assert.match(publicApi, /resolveEatingPrefill/);
+  assert.match(publicApi, /dishLabel/);
+});
 
-  it("panel supports photo upload and diary mirror on publish", () => {
-    const panel = fs.readFileSync(
-      path.join(root, "src/components/foodActivity/ImEatingAtPanel.jsx"),
-      "utf8"
-    );
-    expect(panel).toMatch(/EatingMediaAttach/);
-    expect(panel).toMatch(/uploadFoodActivityPhoto/);
-    expect(panel).toMatch(/uploadPublicFoodActivityPhoto/);
-    expect(panel).toMatch(/createWhatIAteToday/);
-    expect(panel).toMatch(/im-eating-food-name/);
+test("composer picks restaurant + menu item via entity search", () => {
+  const composer = read("src/components/foodActivity/ImEatingComposer.jsx");
+  assert.match(composer, /searchReportPlaces/);
+  assert.match(composer, /menu_item/);
+  assert.match(composer, /im-eating-selected-dish/);
+  assert.match(composer, /Dish/);
+  assert.match(composer, /Visibility/);
+  assert.doesNotMatch(composer, /Friend/);
+});
 
-    const api = fs.readFileSync(path.join(root, "src/lib/consumerApi.js"), "utf8");
-    expect(api).toMatch(/uploadFoodActivityPhoto/);
-    expect(api).toMatch(/\/api\/consumer\/food-activity\/photo/);
+test("panel supports photo upload and diary mirror on publish", () => {
+  const panel = read("src/components/foodActivity/ImEatingAtPanel.jsx");
+  assert.match(panel, /EatingMediaAttach/);
+  assert.match(panel, /uploadFoodActivityPhoto/);
+  assert.match(panel, /uploadPublicFoodActivityPhoto/);
+  assert.match(panel, /createWhatIAteToday/);
+  assert.match(panel, /im-eating-food-name/);
 
-    const publicApi = fs.readFileSync(path.join(root, "src/lib/foodActivityApi.js"), "utf8");
-    expect(publicApi).toMatch(/uploadPublicFoodActivityPhoto/);
-    expect(publicApi).toMatch(/\/public\/food-activity\/photo/);
-  });
+  const api = read("src/lib/consumerApi.js");
+  assert.match(api, /uploadFoodActivityPhoto/);
+  assert.match(api, /\/api\/consumer\/food-activity\/photo/);
 
-  it("account page mounts I'm Eating route and truthfully labels activity", () => {
-    const page = fs.readFileSync(
-      path.join(root, "src/pages/consumer/ImEatingPage.jsx"),
-      "utf8"
-    );
-    expect(page).toMatch(/ImEatingAtPanel/);
-    expect(page).toMatch(/resolveEatingPrefill/);
-    expect(page).toMatch(/menu_item_id/);
-    expect(page).toMatch(/user-reported food activity/);
-    expect(page).toMatch(/not a verified order/i);
-    expect(page).toMatch(/Join Me/);
-    expect(page).not.toMatch(/Friend list/);
-    expect(page).not.toMatch(/InviteToEatModal/);
-    expect(page).not.toMatch(/account\/login\?next=.*im-eating/);
+  const publicApi = read("src/lib/foodActivityApi.js");
+  assert.match(publicApi, /uploadPublicFoodActivityPhoto/);
+  assert.match(publicApi, /\/public\/food-activity\/photo/);
 
-    const app = fs.readFileSync(path.join(root, "src/App.jsx"), "utf8");
-    expect(app).toMatch(/\/account\/im-eating/);
-    expect(app).toMatch(/ImEatingPage/);
+  const attach = read("src/components/foodActivity/EatingMediaAttach.jsx");
+  assert.match(attach, /capture="environment"/);
+});
 
-    const profile = fs.readFileSync(
-      path.join(root, "src/pages/consumer/accountDashboard/WalletActivityTab.jsx"),
-      "utf8"
-    );
-    expect(profile).toMatch(/\/account\/im-eating/);
-  });
+test("account page mounts I'm Eating route and truthfully labels activity", () => {
+  const page = read("src/pages/consumer/ImEatingPage.jsx");
+  assert.match(page, /ImEatingAtPanel/);
+  assert.match(page, /resolveEatingPrefill/);
+  assert.match(page, /menu_item_id/);
+  assert.match(page, /user-reported food activity/);
+  assert.match(page, /not a verified order/i);
+  assert.match(page, /Join Me/);
+  assert.doesNotMatch(page, /Friend list/);
+  assert.doesNotMatch(page, /InviteToEatModal/);
+  assert.doesNotMatch(page, /account\/login\?next=.*im-eating/);
+
+  const app = read("src/App.jsx");
+  assert.match(app, /\/account\/im-eating/);
+  assert.match(app, /ImEatingPage/);
+
+  const profile = read("src/pages/consumer/accountDashboard/WalletActivityTab.jsx");
+  assert.match(profile, /\/account\/im-eating/);
 });
