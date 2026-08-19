@@ -34,12 +34,12 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` @ clean `main` |
-| Git commit | `139263a` — Connection peer hub eating/want parity + systemwide guardrail |
-| Vercel deployment | `menubloc-frontend-o91cxjxfw-menuply.vercel.app` |
-| Live bundle | `index-B1Y0hVDJ.js` |
+| Git commit | `98de2ad` — sticky ← My Menuply back link on Connection peer profiles |
+| Vercel deployment | `menubloc-frontend-i20ol5ufo-menuply.vercel.app` |
+| Live bundle | `index-BgGXGGfN.js` |
 | Aliases | `menuply.com`, `www.menuply.com`, `crm.menuply.com`, `venues.menuply.com` |
-| Tip-gate | **PASS** (apex + www) verified 2026-08-19 after diner hub peer parity CPD |
-| Feature | Connection peer hubs share My Menuply eating/want display; systemwide parity guardrail |
+| Tip-gate | **PASS** (apex + www) verified 2026-08-19 after Connection peer back-link CPD |
+| Feature | StickyPageHeader backTo on peer diner hubs; Find Diners backTo now wired |
 
 ### Backend (Railway)
 
