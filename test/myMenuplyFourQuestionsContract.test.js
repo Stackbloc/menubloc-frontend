@@ -43,8 +43,10 @@ test("My Menuply is the diner's personal home", () => {
   assert.ok(page.indexOf("eating-plans-calendar") < page.indexOf("Invite Me"));
   assert.match(page, /Click to Schedule Future Plans/);
   assert.match(page, /No Plans Scheduled/);
-  assert.match(page, /Plans Scheduled/);
+  assert.doesNotMatch(page, /^\s*Plans Scheduled\s*$/m);
   assert.match(page, /isScheduledEatingPlan/);
+  assert.match(page, /FuturePlanRow/);
+  assert.match(page, /onSelectEvent/);
   assert.doesNotMatch(page, /empty="Nothing yet."/);
   assert.match(page, /What I Want to Eat/);
   assert.match(page, /My Crews/);
@@ -109,6 +111,7 @@ test("My Menuply is the diner's personal home", () => {
   assert.match(compose, /acceptPhoto/);
   const calendar = read("src/pages/consumer/myMenuply/DinerCalendarSheet.jsx");
   assert.match(calendar, /diner-calendar-open/);
+  assert.match(calendar, /calendar-event/);
   assert.ok(page.indexOf("DinerIdentityHero") < page.indexOf("what-im-eating"));
   assert.ok(page.indexOf("what-im-eating") < page.indexOf("want-to-eat"));
   assert.doesNotMatch(page, /What My Connections Are Eating/);

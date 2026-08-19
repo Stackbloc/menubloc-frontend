@@ -22,7 +22,8 @@ import {
 } from "../../lib/consumerApi.js";
 import * as s from "./myMenuply/myMenuplyStyles.js";
 import DinerIdentityHero from "./myMenuply/DinerIdentityHero.jsx";
-import { EatingPlanCard, NamedShareCard, PhotoGrid, SectionHead, isScheduledEatingPlan } from "./myMenuply/myMenuplyBits.jsx";
+import { FuturePlanRow, NamedShareCard, PhotoGrid, SectionHead, isScheduledEatingPlan } from "./myMenuply/myMenuplyBits.jsx";
+import { futurePlanKey, futurePlanRestaurantName } from "./myMenuply/dinerHubFormat.js";
 
 function planYmd(value) {
   const raw = String(value || "").trim();
@@ -84,7 +85,7 @@ export default function ConsumerConnectionPeerPage() {
   const [planDate, setPlanDate] = useState(() => whatIAteTodayLocalDate());
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [plansCalendarOpen, setPlansCalendarOpen] = useState(false);
-  const [viewingPlans, setViewingPlans] = useState(false);
+  const [selectedPlanKey, setSelectedPlanKey] = useState("");
   const [crews, setCrews] = useState([]);
   const [crewJoinBusy, setCrewJoinBusy] = useState("");
   const [eatingMonth, setEatingMonth] = useState(() => {
@@ -169,8 +170,13 @@ export default function ConsumerConnectionPeerPage() {
   const scheduledPlans = plans.filter(
     (plan) => compareYmd(plan.plan_date) >= 0 && isScheduledEatingPlan(plan)
   );
-  const dayPlans = scheduledPlans.filter((plan) => planYmd(plan.plan_date) === planDate);
-  const shownPlans = viewingPlans ? (dayPlans.length ? dayPlans : scheduledPlans).slice(0, 12) : [];
+  const shownPlans = scheduledPlans.slice(0, 24);
+  const calendarEvents = shownPlans.map((plan) => ({
+    key: futurePlanKey(plan),
+    ymd: planYmd(plan.plan_date),
+    label: futurePlanRestaurantName(plan),
+    plan,
+  }));
 
   async function requestCrewJoin(crewId) {
     setCrewJoinBusy(String(crewId));
@@ -238,39 +244,45 @@ export default function ConsumerConnectionPeerPage() {
               />
               <div style={s.row}>
                 <h2 style={s.sectionTitle}>Future plans</h2>
-                {viewingPlans ? (
-                  <DinerCalendarTrigger selectedDate={planDate} onOpen={() => setPlansCalendarOpen(true)} />
-                ) : null}
+                <DinerCalendarTrigger selectedDate={planDate} onOpen={() => setPlansCalendarOpen(true)} />
               </div>
               {scheduledPlans.length === 0 ? (
                 <p style={s.muted} data-testid="future-plans-summary">
                   No Plans Scheduled.
                 </p>
-              ) : !viewingPlans ? (
-                <button
-                  type="button"
-                  data-testid="future-plans-summary"
-                  style={s.planSummaryBtn}
-                  onClick={() => setViewingPlans(true)}
-                >
-                  Plans Scheduled
-                </button>
-              ) : shownPlans.length > 0 ? (
-                shownPlans.map((plan) => <EatingPlanCard key={plan.token || plan.id} plan={plan} />)
               ) : (
-                <p style={s.muted}>No Plans Scheduled.</p>
+                shownPlans.map((plan) => {
+                  const key = futurePlanKey(plan);
+                  return (
+                    <FuturePlanRow
+                      key={key}
+                      plan={plan}
+                      open={selectedPlanKey === key}
+                      onToggle={() => setSelectedPlanKey((prev) => (prev === key ? "" : key))}
+                    />
+                  );
+                })
               )}
               <DinerCalendarSheet
                 open={plansCalendarOpen}
                 onClose={() => setPlansCalendarOpen(false)}
                 testId="future-plans-calendar"
+                title="Future plans"
                 selectedDate={planDate}
-                onSelectDate={setPlanDate}
+                onSelectDate={(ymd) => {
+                  setPlanDate(ymd);
+                  const match = scheduledPlans.find((plan) => planYmd(plan.plan_date) === ymd);
+                  if (match) setSelectedPlanKey(futurePlanKey(match));
+                }}
+                onSelectEvent={(event) => {
+                  setPlanDate(event.ymd);
+                  setSelectedPlanKey(event.key);
+                }}
                 viewMonth={planMonth}
                 onViewMonthChange={setPlanMonth}
                 minYmd={whatIAteTodayLocalDate()}
-                dayCounts={plans
-                  .filter((plan) => compareYmd(plan.plan_date) >= 0)
+                events={calendarEvents}
+                dayCounts={scheduledPlans
                   .map((plan) => planYmd(plan.plan_date))
                   .filter(Boolean)
                   .reduce((rows, ymd) => {

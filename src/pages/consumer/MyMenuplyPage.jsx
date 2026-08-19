@@ -50,11 +50,12 @@ import { buildJoinMeCandidates } from "./myMenuply/joinMeCandidates.js";
 import {
   PhotoGrid,
   SectionHead,
-  EatingPlanCard,
+  FuturePlanRow,
   NamedShareCard,
   foodHref,
   isScheduledEatingPlan,
 } from "./myMenuply/myMenuplyBits.jsx";
+import { futurePlanKey, futurePlanRestaurantName } from "./myMenuply/dinerHubFormat.js";
 
 function planYmd(value) {
   const raw = String(value || "").trim();
@@ -121,7 +122,7 @@ export default function MyMenuplyPage() {
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [plansCalendarOpen, setPlansCalendarOpen] = useState(false);
   const [schedulingPlans, setSchedulingPlans] = useState(false);
-  const [viewingPlans, setViewingPlans] = useState(false);
+  const [selectedPlanKey, setSelectedPlanKey] = useState("");
   const [joinCandidates, setJoinCandidates] = useState([]);
 
   const load = useCallback(async () => {
@@ -204,8 +205,13 @@ export default function MyMenuplyPage() {
   const scheduledPlans = plans.filter(
     (plan) => compareYmd(plan.plan_date) >= 0 && isScheduledEatingPlan(plan)
   );
-  const dayPlans = scheduledPlans.filter((plan) => planYmd(plan.plan_date) === planDate);
-  const shownPlans = viewingPlans ? (dayPlans.length ? dayPlans : scheduledPlans).slice(0, 12) : [];
+  const shownPlans = scheduledPlans.slice(0, 24);
+  const calendarEvents = shownPlans.map((plan) => ({
+    key: futurePlanKey(plan),
+    ymd: planYmd(plan.plan_date),
+    label: futurePlanRestaurantName(plan),
+    plan,
+  }));
 
   async function onAvatarFile(file) {
     setIdentityBusy(true);
@@ -276,7 +282,7 @@ export default function MyMenuplyPage() {
       const session = data.session || data;
       setLastPost({ kind: "plan", token: session.token, id: session.id });
       setSchedulingPlans(false);
-      setViewingPlans(true);
+      setSelectedPlanKey(futurePlanKey(session));
       await load();
     } catch (err) {
       setError(err.message || "Unable to add plan");
@@ -530,34 +536,50 @@ export default function MyMenuplyPage() {
               />
               <div style={s.row}>
                 <h2 style={s.sectionTitle}>Future plans</h2>
-                {schedulingPlans || viewingPlans ? (
-                  <DinerCalendarTrigger selectedDate={planDate} onOpen={() => setPlansCalendarOpen(true)} />
-                ) : null}
+                <DinerCalendarTrigger selectedDate={planDate} onOpen={() => setPlansCalendarOpen(true)} />
               </div>
-              {!schedulingPlans && !viewingPlans ? (
-                <div data-testid="future-plans-summary">
-                  {scheduledPlans.length > 0 ? (
-                    <button
-                      type="button"
-                      style={s.planSummaryBtn}
-                      onClick={() => setViewingPlans(true)}
-                    >
-                      Plans Scheduled
-                    </button>
-                  ) : null}
-                  <button
-                    type="button"
-                    style={{ ...s.primaryBtn, width: "100%", minHeight: 44, justifyContent: "center" }}
-                    onClick={() => {
-                      setSchedulingPlans(true);
-                      setPlansCalendarOpen(true);
-                    }}
-                  >
-                    Click to Schedule Future Plans
-                  </button>
-                </div>
-              ) : null}
-              {schedulingPlans ? (
+              {scheduledPlans.length === 0 ? (
+                <p style={s.muted} data-testid="future-plans-summary">
+                  No Plans Scheduled.
+                </p>
+              ) : (
+                shownPlans.map((plan) => {
+                  const key = futurePlanKey(plan);
+                  return (
+                    <FuturePlanRow
+                      key={key}
+                      plan={plan}
+                      open={selectedPlanKey === key}
+                      onToggle={() => setSelectedPlanKey((prev) => (prev === key ? "" : key))}
+                      onAddDetails={(next) => {
+                        setSelectedPlanKey(futurePlanKey(next));
+                        setLastPost({
+                          kind: "plan",
+                          token: next.token,
+                          id: next.id,
+                          joinable: next.joinable,
+                          join_capacity: next.join_capacity,
+                          restaurant_id: next.restaurant_id,
+                          restaurant_name: next.restaurant_name,
+                          place_label: next.place_label,
+                        });
+                      }}
+                    />
+                  );
+                })
+              )}
+              {!schedulingPlans ? (
+                <button
+                  type="button"
+                  style={{ ...s.primaryBtn, width: "100%", minHeight: 44, justifyContent: "center", marginTop: 8 }}
+                  onClick={() => {
+                    setSchedulingPlans(true);
+                    setPlansCalendarOpen(true);
+                  }}
+                >
+                  Click to Schedule Future Plans
+                </button>
+              ) : (
                 <EatingPlanDayForm
                   planDate={planDate}
                   busy={postBusy === "eating"}
@@ -565,29 +587,8 @@ export default function MyMenuplyPage() {
                   joinCandidates={joinCandidates}
                   onSubmit={postPlan}
                 />
-              ) : null}
-              {shownPlans.map((plan) => (
-                <EatingPlanCard
-                  key={plan.token || plan.id}
-                  plan={plan}
-                  onAddDetails={(next) => {
-                    setLastPost({
-                      kind: "plan",
-                      token: next.token,
-                      id: next.id,
-                      joinable: next.joinable,
-                      join_capacity: next.join_capacity,
-                      restaurant_id: next.restaurant_id,
-                      restaurant_name: next.restaurant_name,
-                      place_label: next.place_label,
-                    });
-                  }}
-                />
-              ))}
-              {viewingPlans && shownPlans.length === 0 ? (
-                <p style={s.muted}>No Plans Scheduled.</p>
-              ) : null}
-              {(schedulingPlans || viewingPlans) && lastPost?.kind === "plan" ? (
+              )}
+              {lastPost?.kind === "plan" ? (
                 <PostAfterActions
                   kind="plan"
                   record={lastPost}
@@ -603,13 +604,24 @@ export default function MyMenuplyPage() {
                 open={plansCalendarOpen}
                 onClose={() => setPlansCalendarOpen(false)}
                 testId="future-plans-calendar"
+                title="Future plans"
                 selectedDate={planDate}
-                onSelectDate={setPlanDate}
+                onSelectDate={(ymd) => {
+                  setPlanDate(ymd);
+                  const match = scheduledPlans.find((plan) => planYmd(plan.plan_date) === ymd);
+                  if (match) setSelectedPlanKey(futurePlanKey(match));
+                  else setSchedulingPlans(true);
+                }}
+                onSelectEvent={(event) => {
+                  setPlanDate(event.ymd);
+                  setSelectedPlanKey(event.key);
+                  setSchedulingPlans(false);
+                }}
                 viewMonth={planMonth}
                 onViewMonthChange={setPlanMonth}
                 minYmd={whatIAteTodayLocalDate()}
-                dayCounts={plans
-                  .filter((plan) => compareYmd(plan.plan_date) >= 0)
+                events={calendarEvents}
+                dayCounts={scheduledPlans
                   .map((plan) => planYmd(plan.plan_date))
                   .filter(Boolean)
                   .reduce((rows, ymd) => {

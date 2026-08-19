@@ -25,7 +25,9 @@ test("Connection diner page uses the same hub layout as My Menuply", () => {
     assert.match(page, /What I'm Eating/);
     assert.match(page, /Future plans/);
     assert.match(page, /No Plans Scheduled/);
-    assert.match(page, /Plans Scheduled/);
+    assert.doesNotMatch(page, /^\s*Plans Scheduled\s*$/m);
+    assert.match(page, /FuturePlanRow/);
+    assert.match(page, /onSelectEvent/);
     assert.match(page, /What I Want to Eat/);
     assert.match(page, /My Crews/);
     assert.match(page, /My Events/);
@@ -58,6 +60,8 @@ test("Connection diner page uses the same hub layout as My Menuply", () => {
 
   const calendar = read("src/pages/consumer/myMenuply/DinerCalendarSheet.jsx");
   assert.match(calendar, /diner-calendar-open/);
+  assert.match(calendar, /calendar-event/);
+  assert.match(calendar, /onSelectEvent/);
 });
 
 test("Diner hub photos are casual snapshots with food info, not Instagram heroes", () => {

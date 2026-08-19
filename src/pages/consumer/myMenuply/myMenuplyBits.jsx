@@ -7,7 +7,12 @@ import {
   compareMealPeriod,
   normalizeWhatIAteMealPeriod,
 } from "../../../lib/whatIAteTodayMealPeriod.js";
-import { formatEatingCaption } from "./dinerHubFormat.js";
+import {
+  formatEatingCaption,
+  formatFuturePlanRowLabel,
+  futurePlanDetailParts,
+  planJoinHref,
+} from "./dinerHubFormat.js";
 import * as s from "./myMenuplyStyles.js";
 
 export function restaurantHref(row) {
@@ -295,12 +300,27 @@ export function ConnectionFoodCard({ item }) {
   );
 }
 
+export function FuturePlanRow({ plan, open, onToggle, onAddDetails }) {
+  const label = formatFuturePlanRowLabel(plan);
+  return (
+    <div data-testid="future-plan-row">
+      <button type="button" style={s.planSummaryBtn} onClick={onToggle}>
+        {label}
+      </button>
+      {open ? (
+        <div data-testid="future-plan-detail">
+          <EatingPlanCard plan={plan} onAddDetails={onAddDetails} />
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export function EatingPlanCard({ plan, onAddDetails }) {
   const when = formatPlanWhen(plan.plan_date);
+  const { restaurant, meal, notes } = futurePlanDetailParts(plan);
   const place =
-    plan.restaurant_id || (plan.place_label && plan.place_label !== plan.title)
-      ? plan.restaurant_name || plan.place_label
-      : "";
+    plan.restaurant_id || (plan.place_label && plan.place_label !== plan.title) ? restaurant : "";
   const restHref = restaurantHref({
     restaurant_id: plan.restaurant_id,
     restaurant_slug: plan.restaurant_slug,
@@ -308,10 +328,13 @@ export function EatingPlanCard({ plan, onAddDetails }) {
     city: plan.restaurant_city,
     state: plan.restaurant_state,
   });
+  const joinHref = planJoinHref(plan);
   return (
     <div style={s.card} data-testid="eating-plan-card">
       {when ? <div style={{ fontWeight: 800 }}>{when}</div> : null}
+      {meal ? <div style={s.muted}>{meal}</div> : null}
       <div style={place ? { fontWeight: 700, marginTop: 4 } : s.muted}>{place || "Add restaurant, dish, and details"}</div>
+      {notes ? <div style={{ ...s.muted, marginTop: 4 }}>{notes}</div> : null}
       <div style={s.muted}>
         {plan.joinable ? `${plan.joiner_count || 0}/${plan.join_capacity || 0} joined` : "Just me"}
       </div>
@@ -330,8 +353,8 @@ export function EatingPlanCard({ plan, onAddDetails }) {
             Restaurant
           </Link>
         ) : null}
-        {plan.join_me_href ? (
-          <Link to={plan.join_me_href} style={s.primaryBtn}>
+        {joinHref ? (
+          <Link to={joinHref} style={s.primaryBtn}>
             Join Me
           </Link>
         ) : null}

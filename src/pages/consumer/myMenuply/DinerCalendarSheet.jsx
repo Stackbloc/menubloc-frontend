@@ -6,6 +6,7 @@
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
 import WhatIAteTodayCalendar from "../../../components/consumer/WhatIAteTodayCalendar.jsx";
+import { formatPlanBracketDate, ymdInMonth } from "./dinerHubFormat.js";
 
 function formatChipDate(ymd) {
   const raw = String(ymd || "").trim();
@@ -50,6 +51,9 @@ export default function DinerCalendarSheet({
   testId = "eating-plans-calendar",
   minYmd = null,
   maxYmd = null,
+  title = "Pick a day",
+  events = [],
+  onSelectEvent,
 }) {
   useEffect(() => {
     if (!open) return undefined;
@@ -67,6 +71,8 @@ export default function DinerCalendarSheet({
 
   if (!open || typeof document === "undefined") return null;
 
+  const monthEvents = (events || []).filter((event) => ymdInMonth(event.ymd, viewMonth));
+
   return createPortal(
     <div
       role="presentation"
@@ -78,7 +84,7 @@ export default function DinerCalendarSheet({
     >
       <div role="dialog" aria-modal="true" aria-label="Calendar" style={styles.sheet}>
         <div style={styles.head}>
-          <p style={styles.title}>Pick a day</p>
+          <p style={styles.title}>{title}</p>
           <button type="button" onClick={onClose} aria-label="Close calendar" style={styles.close}>
             Close
           </button>
@@ -88,7 +94,13 @@ export default function DinerCalendarSheet({
           selectedDate={selectedDate}
           onSelectDate={(ymd) => {
             onSelectDate(ymd);
-            onClose();
+            const dayEvents = (events || []).filter((event) => event.ymd === ymd);
+            if (dayEvents.length === 1) {
+              onSelectEvent?.(dayEvents[0]);
+              onClose();
+            } else if (dayEvents.length === 0) {
+              onClose();
+            }
           }}
           viewMonth={viewMonth}
           onViewMonthChange={onViewMonthChange}
@@ -96,6 +108,30 @@ export default function DinerCalendarSheet({
           minYmd={minYmd}
           maxYmd={maxYmd}
         />
+        {monthEvents.length > 0 ? (
+          <div data-testid="calendar-events" style={styles.events}>
+            {monthEvents.map((event) => {
+              const onDay = event.ymd === selectedDate;
+              return (
+                <button
+                  key={event.key}
+                  type="button"
+                  data-testid="calendar-event"
+                  onClick={() => {
+                    onSelectEvent?.(event);
+                    onClose();
+                  }}
+                  style={{
+                    ...styles.eventBtn,
+                    ...(onDay ? styles.eventBtnOnDay : null),
+                  }}
+                >
+                  {event.label} [{formatPlanBracketDate(event.ymd)}]
+                </button>
+              );
+            })}
+          </div>
+        ) : null}
       </div>
     </div>,
     document.body
@@ -153,5 +189,30 @@ const styles = {
     fontWeight: 700,
     cursor: "pointer",
     fontSize: 13,
+  },
+  events: {
+    display: "grid",
+    gap: 8,
+    margin: "4px 0 8px",
+    maxHeight: 220,
+    overflowY: "auto",
+  },
+  eventBtn: {
+    appearance: "none",
+    width: "100%",
+    textAlign: "left",
+    border: "1px solid #bbf7d0",
+    background: "#fff",
+    borderRadius: 12,
+    padding: "10px 12px",
+    font: "inherit",
+    fontWeight: 800,
+    fontSize: 14,
+    color: "#14532d",
+    cursor: "pointer",
+  },
+  eventBtnOnDay: {
+    border: "2px solid #16a34a",
+    background: "#f0fdf4",
   },
 };
