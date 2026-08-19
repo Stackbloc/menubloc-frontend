@@ -34,33 +34,33 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` @ clean `main` |
-| Git commit | `caac211` — Want to Eat posts visible + menu-item search after post |
-| Vercel deployment | `menubloc-frontend-4jidfeczc-menuply.vercel.app` |
-| Live bundle | `index-Cx502xzX.js` |
+| Git commit | `551dfc5` — My Menuply neutral styling + connection events on `/events` |
+| Vercel deployment | `menubloc-frontend-1s885krhn-menuply.vercel.app` |
+| Live bundle | `index-BAw7e0iT.js` |
 | Aliases | `menuply.com`, `www.menuply.com`, `crm.menuply.com`, `venues.menuply.com` |
-| Tip-gate | **PASS** (apex + www) verified 2026-08-19 after want-to-eat visibility CPD |
-| Feature | Want list shows posts immediately; global menu-item search after post; tap-to-link on cards; list errors surfaced |
+| Tip-gate | **PASS** (apex + www) verified 2026-08-19 after my-menuply styling + Stage 5 events CPD |
+| Feature | Account-dashboard-aligned My Menuply UI; connection events on `/events`; want-to-eat visibility |
 
 ### Backend (Railway)
 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-backend-main` @ clean `main` |
-| Git on origin | `31b40a44` — profile media routes + want-to-eat photo uploads |
-| Live health SHA | `31b40a44c1029e8100f253d8baa0fa409f65269c` |
+| Git on origin | `516b2127` — connection-sourced events API |
+| Live health SHA | `516b2127c9b2e52501fa99c9c5b3280b5b150e87` |
 | Health URL | `https://menubloc-backend-production.up.railway.app/health` |
-| `commit_hash` | `31b40a44c1029e8100f253d8baa0fa409f65269c` |
-| DB | `0274_consumer_profile_media`, `0275_diner_want_to_eat_photo` applied 2026-08-19 |
-| Smoke | tip-gate PASS `4jidfeczc` / `index-Cx502xzX.js`; health `31b40a44` |
+| `commit_hash` | `516b2127c9b2e52501fa99c9c5b3280b5b150e87` |
+| DB | `0274`–`0275` applied 2026-08-19 |
+| Smoke | tip-gate PASS `1s885krhn` / `index-BAw7e0iT.js`; health `516b2127` |
 
 ### Restore current tip (if tip-gate fails mid-change)
 
 ```bash
 cd /Users/andrebarber/Desktop/menubloc/menubloc-frontend-main
-npx vercel alias set menubloc-frontend-4jidfeczc-menuply.vercel.app menuply.com
-npx vercel alias set menubloc-frontend-4jidfeczc-menuply.vercel.app www.menuply.com
-npx vercel alias set menubloc-frontend-4jidfeczc-menuply.vercel.app crm.menuply.com
-npx vercel alias set menubloc-frontend-4jidfeczc-menuply.vercel.app venues.menuply.com
+npx vercel alias set menubloc-frontend-1s885krhn-menuply.vercel.app menuply.com
+npx vercel alias set menubloc-frontend-1s885krhn-menuply.vercel.app www.menuply.com
+npx vercel alias set menubloc-frontend-1s885krhn-menuply.vercel.app crm.menuply.com
+npx vercel alias set menubloc-frontend-1s885krhn-menuply.vercel.app venues.menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 ```
