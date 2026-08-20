@@ -43,23 +43,24 @@ test("consumerApi exposes month-in-food helpers", () => {
   assert.match(api, /\/api\/consumer\/connections\/.*month-in-food/);
 });
 
-test("footer share uses platform ShareButton + shareUtils", () => {
+test("footer Copy Link keeps placement; shareUtils + ShareModal for menuply.com URL", () => {
   const footer = read("src/pages/consumer/monthInFood/MonthInFoodFooter.jsx");
   assert.match(footer, /buildConsumerPathShareData/);
-  assert.match(footer, /ShareButton/);
+  assert.match(footer, /ShareModal/);
+  assert.match(footer, /Copy Link/);
   assert.match(footer, /data-testid="month-in-food-footer-share"/);
   assert.doesNotMatch(footer, /buildMenuplyPathShareData/);
   assert.doesNotMatch(footer, /diningCrewInviteShare/);
 });
 
-test("Month in Food title row exposes ShareButton with shareUtils path data", () => {
+test("share icon stays next to Month in Food title only (not sticky header)", () => {
   const page = read("src/pages/consumer/monthInFood/MonthInFoodPage.jsx");
   const sections = read("src/pages/consumer/monthInFood/MonthInFoodSections.jsx");
   assert.match(page, /buildConsumerPathShareData/);
   assert.match(page, /from "\.\.\/\.\.\/\.\.\/components\/share\/shareUtils\.js"/);
-  assert.match(page, /ShareButton/);
-  assert.match(page, /titleAccessory=\{shareAccessory\}/);
-  assert.match(page, /data-testid="month-in-food-share"/);
+  assert.match(page, /<StickyPageHeader title="My Month in Food" \/>/);
+  assert.doesNotMatch(page, /titleAccessory=\{shareAccessory\}/);
+  assert.doesNotMatch(page, /data-testid="month-in-food-share"/);
   assert.doesNotMatch(page, /buildMenuplyPathShareData/);
   assert.doesNotMatch(page, /diningCrewInviteShare/);
   assert.match(sections, /shareData/);

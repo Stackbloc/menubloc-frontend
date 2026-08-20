@@ -7,7 +7,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import StickyPageHeader from "../../../components/StickyPageHeader.jsx";
 import BottomNav from "../../../components/BottomNav.jsx";
-import ShareButton from "../../../components/share/ShareButton.jsx";
 import { buildConsumerPathShareData } from "../../../components/share/shareUtils.js";
 import { useConsumer } from "../../../context/ConsumerContext.jsx";
 import { getMonthInFood, getPeerMonthInFood } from "../../../lib/consumerApi.js";
@@ -96,6 +95,7 @@ export default function MonthInFoodPage() {
     ? `/account/connections/${encodeURIComponent(String(peerId))}/month-in-food?ym=${encodeURIComponent(ym)}`
     : `/my-menuply/month-in-food?ym=${encodeURIComponent(ym)}`;
 
+  // Share icon stays next to the page H1 (hero title row) — not sticky-header relocated.
   const shareData = useMemo(
     () =>
       buildConsumerPathShareData(sharePath, {
@@ -105,23 +105,9 @@ export default function MonthInFoodPage() {
     [sharePath]
   );
 
-  const shareAccessory = shareData ? (
-    <span data-testid="month-in-food-share">
-      <ShareButton
-        shareData={shareData}
-        iconOnly
-        size="compact"
-        tone="ghost"
-        label="Share"
-        modalTitle="Share Month in Food"
-        analyticsContext={{ surface: "month_in_food", path: sharePath }}
-      />
-    </span>
-  ) : null;
-
   return (
     <div style={s.page} data-testid="month-in-food-page">
-      <StickyPageHeader title="My Month in Food" titleAccessory={shareAccessory} />
+      <StickyPageHeader title="My Month in Food" />
       <div style={s.inner}>
         <p style={{ margin: "0 0 12px" }}>
           <Link to={backHref} style={{ ...s.viewAll, fontSize: 13 }}>

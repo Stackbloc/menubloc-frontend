@@ -25,7 +25,7 @@ export function MonthInFoodHero({ model, onPrev, onNext, shareData = null }) {
                 tone="ghost"
                 label="Share"
                 modalTitle="Share Month in Food"
-                analyticsContext={{ surface: "month_in_food_hero" }}
+                analyticsContext={{ surface: "month_in_food", path: shareData?.url || null }}
               />
             </span>
           ) : null}
