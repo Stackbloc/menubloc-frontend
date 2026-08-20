@@ -1,6 +1,7 @@
 /**
- * Compact X action launcher — eat-together actions only.
+ * Compact X action launcher — Post about.
  * I'm Eating At stays guest-open. Diners RSVP to events; operators create them.
+ * Ate / Want / Plan route into My Menuply compose (restaurant, dish, or homemade).
  */
 
 import { useEffect } from "react";
@@ -50,7 +51,8 @@ function inviteToEatPath(pathname) {
   return "/account/invite-to-eat";
 }
 
-const ACTIONS = [
+/** Actions shown under bottom-nav Post (X) → Post about. */
+export const POST_ABOUT_ACTIONS = [
   {
     id: "im-eating",
     title: "I'm Eating At",
@@ -60,32 +62,39 @@ const ACTIONS = [
     eatingContext: true,
   },
   {
-    id: "share-food",
-    title: "Share Food",
-    description: "Add what you ate — restaurant or homemade.",
-    to: "/account/what-i-ate",
+    id: "ate",
+    title: "What I Ate",
+    description: "Log a meal — restaurant, dish, or homemade. As much or as little as you want.",
+    to: "/my-menuply?compose=ate",
+    guestOk: false,
+  },
+  {
+    id: "want",
+    title: "Want to Eat",
+    description: "Save a dish or food idea for later. Optional restaurant or homemade.",
+    to: "/my-menuply?compose=want",
+    guestOk: false,
+  },
+  {
+    id: "plan",
+    title: "Plan to Eat",
+    description: "Schedule a future meal. Link a restaurant or mark it homemade.",
+    to: "/my-menuply?compose=plan",
     guestOk: false,
   },
   {
     id: "invite",
     title: "Invite to Eat",
-    description: "Pick a restaurant, invite friends, and share the link.",
+    description: "Pick a restaurant, invite connects, and share the link.",
     to: "/account/invite-to-eat",
     guestOk: true,
     inviteContext: true,
   },
   {
-    id: "plan",
-    title: "What I'm Eating",
-    description: "Post now, or pick a future day. Tag a restaurant or dish after.",
-    to: "/my-menuply",
-    guestOk: false,
-  },
-  {
-    id: "want",
-    title: "Add to Want to Eat",
-    description: "Save a dish, photo, or food idea for later.",
-    to: "/my-menuply?focus=want",
+    id: "connects",
+    title: "My Connects",
+    description: "See your connects and what they're eating.",
+    to: "/my-menuply?focus=connects",
     guestOk: false,
   },
   {
@@ -148,9 +157,11 @@ export default function MenuplyActionSheet({ open, onClose }) {
             Close
           </button>
         </div>
-        <p style={styles.lead}>Post first. Tag a restaurant or dish after if you want.</p>
+        <p style={styles.lead}>
+          Post as much or as little as you want — restaurant, dish, homemade, or just a note.
+        </p>
         <ul style={styles.list}>
-          {ACTIONS.map((action) => (
+          {POST_ABOUT_ACTIONS.map((action) => (
             <li key={action.id}>
               <button type="button" onClick={() => go(action)} style={styles.action}>
                 <span style={styles.actionTitle}>{action.title}</span>

@@ -14,6 +14,7 @@ import {
   createWhatIAteToday,
   createWhatWeDoingSession,
   createWantToEat,
+  followRestaurant,
   getConsumerProfile,
   getFollowedRestaurants,
   getLikedMenuItems,
@@ -73,7 +74,18 @@ import {
   isScheduledEatingPlan,
 } from "./myMenuply/myMenuplyBits.jsx";
 import { futurePlanKey, futurePlanRestaurantName } from "./myMenuply/dinerHubFormat.js";
+import { eatingFoodName, joinHomemadeComment } from "./myMenuply/eatingPlaceLink.js";
 import { mergeEatingFeedForHub, mapDiaryEntriesForHub, mapFoodActivityForHub } from "../../lib/eatingFeedMerge.js";
+
+async function maybeFollowRestaurant(restaurantId) {
+  const id = Number(restaurantId);
+  if (!Number.isFinite(id) || id <= 0) return;
+  try {
+    await followRestaurant(id);
+  } catch {
+    /* already following or unavailable */
+  }
+}
 
 function formatEventWhen(ev) {
   const raw = ev?.starts_at || ev?.event_date;
@@ -121,6 +133,8 @@ export default function MyMenuplyPage() {
   const [joinCandidates, setJoinCandidates] = useState([]);
   const [composeOpen, setComposeOpen] = useState(false);
   const [composeDefaultCategory, setComposeDefaultCategory] = useState("ate");
+  const [hubFocus, setHubFocus] = useState("");
+  const [planPrefill, setPlanPrefill] = useState(null);
 
   const load = useCallback(async () => {
     setError("");
@@ -197,14 +211,34 @@ export default function MyMenuplyPage() {
   }, [authLoading, isAuthenticated, load]);
 
   useEffect(() => {
-    if (searchParams.get("focus") !== "want") return undefined;
     if (loading || !isAuthenticated) return undefined;
-    setComposeDefaultCategory("want");
-    setComposeOpen(true);
-    const timer = window.setTimeout(() => {
-      eatingSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 120);
-    return () => window.clearTimeout(timer);
+    const compose = String(searchParams.get("compose") || "").trim().toLowerCase();
+    const focus = String(searchParams.get("focus") || "").trim().toLowerCase();
+    if (["ate", "want", "plan"].includes(compose)) {
+      setComposeDefaultCategory(compose);
+      if (compose === "plan") {
+        setSchedulingPlans(true);
+        setCalendarOpen(true);
+      } else {
+        setComposeOpen(true);
+      }
+      const timer = window.setTimeout(() => {
+        eatingSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 120);
+      return () => window.clearTimeout(timer);
+    }
+    if (["connects", "restaurants", "dishes", "events"].includes(focus)) {
+      setHubFocus(focus);
+    }
+    if (focus === "want") {
+      setComposeDefaultCategory("want");
+      setComposeOpen(true);
+      const timer = window.setTimeout(() => {
+        eatingSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 120);
+      return () => window.clearTimeout(timer);
+    }
+    return undefined;
   }, [searchParams, loading, isAuthenticated]);
 
   const displayName =
@@ -309,7 +343,7 @@ export default function MyMenuplyPage() {
     }
   }
 
-  async function postEating({ text, file, mealPeriod }) {
+  async function postEating({ text, file, mealPeriod, homemade, restaurant, dish }) {
     setPostBusy("eating");
     setError("");
     try {
@@ -320,13 +354,19 @@ export default function MyMenuplyPage() {
         const up = await uploadWhatIAteTodayPhoto(file);
         ({ photo_url, video_url } = eatingMediaFromUpload(up));
       }
+      const restaurantId = homemade ? null : restaurant?.restaurant_id || dish?.restaurant_id || undefined;
+      const menuItemId = homemade ? null : dish?.menu_item_id || undefined;
       const data = await createWhatIAteToday({
-        food_name: text || "Food",
+        food_name: eatingFoodName({ text, dish, restaurant, homemade }),
         photo_url,
         video_url,
         eaten_on: hubDate,
         meal_period: mealPeriod || defaultWhatIAteMealPeriod(),
+        restaurant_id: restaurantId,
+        menu_item_id: menuItemId,
+        comment: homemade ? joinHomemadeComment(true, text) : undefined,
       });
+      if (restaurantId) await maybeFollowRestaurant(restaurantId);
       const entry = data.entry || data;
       if (!entry?.id) {
         throw new Error("Saved but response was incomplete — refresh and try again");
@@ -377,13 +417,17 @@ export default function MyMenuplyPage() {
     try {
       const data = await createWhatWeDoingSession({
         plan_date: payload.planDate,
-        restaurant_id: payload.restaurantId,
+        restaurant_id: payload.homemade ? null : payload.restaurantId,
         place_label: payload.placeLabel,
         joinable: payload.joinable,
         join_capacity: payload.joinCapacity,
         join_audience: payload.joinAudience,
         join_allowed_user_ids: payload.joinAllowedUserIds,
       });
+      if (!payload.homemade && payload.restaurantId) {
+        await maybeFollowRestaurant(payload.restaurantId);
+      }
+      setPlanPrefill(null);
       const session = data.session || data;
       setLastPost({ kind: "plan", token: session.token, id: session.id });
       setSchedulingPlans(false);
@@ -421,7 +465,7 @@ export default function MyMenuplyPage() {
     }
   }
 
-  async function postWant({ text, file }) {
+  async function postWant({ text, file, homemade, restaurant, dish }) {
     setPostBusy("want");
     setError("");
     setWantListError("");
@@ -431,12 +475,21 @@ export default function MyMenuplyPage() {
         const up = await uploadWantToEatPhoto(file);
         photo_url = up.photo_url || undefined;
       }
-      const name = String(text || "").trim() || (file ? "Want to eat" : "");
+      const name = eatingFoodName({ text, dish, restaurant, homemade });
       if (!name) {
         setError("Enter what you want to eat");
         return;
       }
-      const data = await createWantToEat({ food_name: name, photo_url });
+      const restaurantId = homemade ? null : restaurant?.restaurant_id || dish?.restaurant_id || undefined;
+      const menuItemId = homemade ? null : dish?.menu_item_id || undefined;
+      const data = await createWantToEat({
+        food_name: name,
+        photo_url,
+        restaurant_id: restaurantId,
+        menu_item_id: menuItemId,
+        comment: homemade ? joinHomemadeComment(true, text) : undefined,
+      });
+      if (restaurantId) await maybeFollowRestaurant(restaurantId);
       const item = data?.item;
       if (!item?.id) {
         throw new Error("Saved but response was incomplete — refresh and try again");
@@ -561,19 +614,25 @@ export default function MyMenuplyPage() {
     }
   }
 
-  async function handleEatingCompose({ category, text, file, mealPeriod }) {
+  async function handleEatingCompose({ category, text, file, mealPeriod, homemade, restaurant, dish }) {
     if (category === "want") {
-      await postWant({ text, file });
+      await postWant({ text, file, homemade, restaurant, dish });
       setComposeDefaultCategory("want");
       return;
     }
     if (category === "ate") {
-      await postEating({ text, file, mealPeriod });
+      await postEating({ text, file, mealPeriod, homemade, restaurant, dish });
       setComposeDefaultCategory("ate");
     }
   }
 
-  function handlePlanSchedule() {
+  function handlePlanSchedule(payload = {}) {
+    setPlanPrefill({
+      text: payload.text || "",
+      homemade: Boolean(payload.homemade),
+      restaurant: payload.restaurant || null,
+      dish: payload.dish || null,
+    });
     setSchedulingPlans(true);
     setCalendarOpen(true);
   }
@@ -640,10 +699,17 @@ export default function MyMenuplyPage() {
 
             <MyMenuplyPresentationRails
               stats={dinerStats}
+              hubFocus={hubFocus}
+              onHubFocusChange={setHubFocus}
               highlights={topHighlights}
               followedRestaurants={followedRestaurantRails}
               wantSuggestions={wantSuggestions}
               connections={connections}
+              followed={followed}
+              liked={liked}
+              eating={eating}
+              events={events}
+              eventGroups={eventGroups}
               viewerUserId={consumer?.id}
               showFoodStoryCta={showFoodStoryCta}
               onLogFood={() => {
@@ -679,6 +745,7 @@ export default function MyMenuplyPage() {
               postBusy={postBusy}
               followed={followed}
               joinCandidates={joinCandidates}
+              planPrefill={planPrefill}
               onComposeSubmit={handleEatingCompose}
               onPlanSchedule={handlePlanSchedule}
               onPostPlan={postPlan}

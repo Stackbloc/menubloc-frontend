@@ -121,9 +121,9 @@ export function buildDinerStats({ connections = [], followed = [], liked = [], e
   const eventCount = (events?.length || 0) + (eventGroups?.length || 0);
   const dishCount = Math.max((liked?.length || 0), (eating?.length || 0));
   return [
-    { label: "Friends", value: connections.length },
-    { label: "Restaurants", value: followed.length },
-    { label: "Dishes", value: dishCount },
-    { label: "Events", value: eventCount },
+    { id: "connects", label: "Connects", value: connections.length },
+    { id: "restaurants", label: "Restaurants", value: followed.length },
+    { id: "dishes", label: "Dishes", value: dishCount },
+    { id: "events", label: "Events", value: eventCount },
   ];
 }

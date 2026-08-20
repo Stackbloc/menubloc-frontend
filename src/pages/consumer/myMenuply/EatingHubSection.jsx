@@ -81,6 +81,7 @@ export default function EatingHubSection({
   composeOpen: composeOpenProp,
   onComposeOpenChange,
   composeDefaultCategory = "ate",
+  planPrefill = null,
 }) {
   const [composeOpenLocal, setComposeOpenLocal] = useState(false);
   const composeOpen = composeOpenProp ?? composeOpenLocal;
@@ -285,6 +286,10 @@ export default function EatingHubSection({
             busy={postBusy === "eating"}
             followed={followed}
             joinCandidates={joinCandidates}
+            initialHomemade={Boolean(planPrefill?.homemade)}
+            initialRestaurant={planPrefill?.restaurant || null}
+            initialDish={planPrefill?.dish || null}
+            initialNote={planPrefill?.text || ""}
             onSubmit={onPostPlan}
           />
         ) : null}
@@ -322,6 +327,7 @@ export default function EatingHubSection({
           busy={postBusy === "eating" || postBusy === "want"}
           onSubmit={onComposeSubmit}
           onPlanSchedule={onPlanSchedule}
+          followed={followed}
         />
       ) : null}
 

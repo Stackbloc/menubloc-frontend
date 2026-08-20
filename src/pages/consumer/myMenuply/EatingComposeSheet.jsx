@@ -11,6 +11,7 @@ export default function EatingComposeSheet({
   busy = false,
   onSubmit,
   onPlanSchedule,
+  followed = [],
 }) {
   if (!open) return null;
 
@@ -44,12 +45,15 @@ export default function EatingComposeSheet({
             ✕
           </button>
         </div>
-        <p style={styles.lead}>Photo, caption, and meal time — separate from your diary view.</p>
+        <p style={styles.lead}>
+          Add as much or as little as you want — photo, restaurant, homemade, or just a note.
+        </p>
         <EatingCompose
           busy={busy}
           defaultCategory={defaultCategory}
           onSubmit={handleSubmit}
           onPlanSchedule={handlePlanSchedule}
+          followed={followed}
           inSheet
         />
       </div>

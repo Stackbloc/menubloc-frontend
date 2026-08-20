@@ -9,6 +9,7 @@ import {
   defaultWhatIAteMealPeriod,
 } from "../../../lib/whatIAteTodayMealPeriod.js";
 import { EATING_COMPOSE_CATEGORIES } from "./eatingHubUtils.js";
+import EatingPlaceFields from "./EatingPlaceFields.jsx";
 import { socialBtn, socialType } from "../../../lib/socialDesignTokens.js";
 
 export default function EatingCompose({
@@ -18,11 +19,15 @@ export default function EatingCompose({
   onSubmit,
   onPlanSchedule,
   inSheet = false,
+  followed = [],
 }) {
   const [category, setCategory] = useState(defaultCategory);
   const [text, setText] = useState("");
   const [file, setFile] = useState(null);
   const [mealPeriod, setMealPeriod] = useState(defaultWhatIAteMealPeriod());
+  const [homemade, setHomemade] = useState(false);
+  const [restaurant, setRestaurant] = useState(null);
+  const [dish, setDish] = useState(null);
 
   const meta = EATING_COMPOSE_CATEGORIES.find((c) => c.id === category) || EATING_COMPOSE_CATEGORIES[0];
   const acceptMedia = category === "ate" || category === "want";
@@ -30,19 +35,30 @@ export default function EatingCompose({
   async function handleSubmit(e) {
     e.preventDefault();
     if (category === "plan") {
-      onPlanSchedule?.({ text: String(text || "").trim() });
+      onPlanSchedule?.({
+        text: String(text || "").trim(),
+        homemade,
+        restaurant,
+        dish,
+      });
       return;
     }
     const value = String(text || "").trim();
-    if (!value && !file) return;
+    if (!value && !file && !homemade && !restaurant && !dish) return;
     await onSubmit({
       category,
       text: value,
       file,
       mealPeriod: category === "ate" ? mealPeriod : undefined,
+      homemade,
+      restaurant,
+      dish,
     });
     setText("");
     setFile(null);
+    setHomemade(false);
+    setRestaurant(null);
+    setDish(null);
   }
 
   return (
@@ -99,6 +115,16 @@ export default function EatingCompose({
             Optional — attach before you post.
           </p>
         ) : null}
+        <EatingPlaceFields
+          homemade={homemade}
+          onHomemadeChange={setHomemade}
+          restaurant={restaurant}
+          onRestaurantChange={setRestaurant}
+          dish={dish}
+          onDishChange={setDish}
+          followed={followed}
+          disabled={busy}
+        />
         {category === "ate" ? (
           <div style={styles.mealRow} role="group" aria-label="Meal time">
             {WHAT_I_ATE_MEAL_PERIODS.map((slot) => {
@@ -121,7 +147,15 @@ export default function EatingCompose({
         <div style={inSheet ? styles.submitRow : styles.submitBlock}>
           <button
             type="submit"
-            disabled={busy || (category !== "plan" && !String(text).trim() && !file)}
+            disabled={
+              busy ||
+              (category !== "plan" &&
+                !String(text).trim() &&
+                !file &&
+                !homemade &&
+                !restaurant &&
+                !dish)
+            }
             style={inSheet ? styles.submitBtn : socialBtn.primary}
           >
             {busy ? "…" : category === "plan" ? "Schedule" : "Post"}

@@ -5,6 +5,7 @@
 
 import { Link } from "react-router-dom";
 import DinerStatsBar from "./DinerStatsBar.jsx";
+import MyMenuplyHubFocus from "./MyMenuplyHubFocus.jsx";
 import { WantToEatList } from "./myMenuplyBits.jsx";
 import * as s from "./myMenuplyStyles.js";
 
@@ -136,10 +137,17 @@ function FoodStoryCta({ onLog }) {
 
 export default function MyMenuplyPresentationRails({
   stats = [],
+  hubFocus = "",
+  onHubFocusChange,
   highlights = [],
   followedRestaurants = [],
   wantSuggestions = [],
   connections = [],
+  followed = [],
+  liked = [],
+  eating = [],
+  events = [],
+  eventGroups = [],
   viewerUserId = null,
   showFoodStoryCta = false,
   onLogFood,
@@ -147,12 +155,26 @@ export default function MyMenuplyPresentationRails({
 }) {
   return (
     <>
-      <DinerStatsBar stats={stats} />
-      <ConnectionAvatarStrip connections={connections} viewerUserId={viewerUserId} />
+      <DinerStatsBar stats={stats} selectedId={hubFocus} onSelect={onHubFocusChange} />
+      <MyMenuplyHubFocus
+        focusId={hubFocus}
+        connections={connections}
+        followed={followed}
+        liked={liked}
+        eating={eating}
+        events={events}
+        eventGroups={eventGroups}
+        viewerUserId={viewerUserId}
+      />
+      {hubFocus !== "connects" ? (
+        <ConnectionAvatarStrip connections={connections} viewerUserId={viewerUserId} />
+      ) : null}
       <TopHighlightsGrid cards={highlights} />
-      <FollowedRestaurantsRail restaurants={followedRestaurants} />
+      {hubFocus !== "restaurants" ? (
+        <FollowedRestaurantsRail restaurants={followedRestaurants} />
+      ) : null}
       {showFoodStoryCta && !readOnly ? <FoodStoryCta onLog={onLogFood} /> : null}
-      {wantSuggestions.length ? (
+      {wantSuggestions.length > 0 && hubFocus !== "dishes" ? (
         <div style={s.presentationBlock} data-testid="want-suggestions-rail">
           <h3 style={s.displaySectionTitle}>Dishes you saved</h3>
           <p style={{ ...s.muted, margin: "0 0 10px", fontSize: 13 }}>

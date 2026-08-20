@@ -404,7 +404,7 @@ export function isScheduledEatingPlan(plan) {
   if (!plan) return false;
   const place = String(plan.restaurant_name || plan.place_label || "").trim();
   const title = String(plan.title || "").trim();
-  return Boolean(plan.restaurant_id) || (Boolean(place) && place !== title);
+  return Boolean(plan.restaurant_id) || (Boolean(place) && place !== title) || /^Homemade/i.test(place);
 }
 
 export function ConnectionFoodCard({ item }) {

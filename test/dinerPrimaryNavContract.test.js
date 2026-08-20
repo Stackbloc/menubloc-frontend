@@ -43,8 +43,22 @@ test("X sheet is Post about and carries restaurant or dish context", () => {
   assert.doesNotMatch(sheet, /Do something/);
   assert.match(sheet, /menu_item_id/);
   assert.match(sheet, /restaurant_id/);
-  assert.match(sheet, /What I'm Eating/);
+  assert.match(sheet, /What I Ate/);
+  assert.match(sheet, /Want to Eat/);
+  assert.match(sheet, /Plan to Eat/);
+  assert.match(sheet, /My Connects/);
+  assert.match(sheet, /compose=ate/);
+  assert.match(sheet, /compose=want/);
+  assert.match(sheet, /compose=plan/);
+  assert.match(sheet, /focus=connects/);
+  assert.match(sheet, /homemade/);
+  assert.match(sheet, /Invite to Eat/);
+  assert.match(sheet, /I'm Eating At/);
+  assert.match(sheet, /Find events/);
   assert.doesNotMatch(sheet, /Create Eating Plan/);
+  assert.doesNotMatch(sheet, /Share Food/);
+  assert.doesNotMatch(sheet, /What I'm Eating/);
+  assert.doesNotMatch(sheet, /friends/i);
 });
 
 test("StickyPageHeader person goes to My Menuply; basket lives in BottomNav", () => {

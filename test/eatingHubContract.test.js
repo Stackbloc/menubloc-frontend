@@ -45,6 +45,13 @@ test("My Menuply and peer hub use unified Eating section", () => {
 
   assert.match(compose, /eating-compose-\$\{chip\.id\}/);
   assert.match(compose, /EATING_COMPOSE_CATEGORIES/);
+  assert.match(compose, /EatingPlaceFields/);
+  assert.match(compose, /homemade/);
+  assert.match(section, /planPrefill/);
+  assert.match(mine, /maybeFollowRestaurant/);
+  assert.match(mine, /followRestaurant/);
+  assert.match(mine, /compose=ate|get\("compose"\)/);
+  assert.match(mine, /focus=connects|get\("focus"\)/);
 
   assert.match(peer, /readOnly/);
   assert.match(mine, /handleEatingCompose/);

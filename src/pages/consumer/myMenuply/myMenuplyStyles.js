@@ -102,6 +102,19 @@ export const statsCellDivider = {
   borderRight: `1px solid ${BORDER}`,
 };
 
+export const statsCellButton = {
+  appearance: "none",
+  border: "none",
+  background: "transparent",
+  cursor: "pointer",
+  fontFamily: "inherit",
+};
+
+export const statsCellSelected = {
+  background: "rgba(22, 163, 74, 0.12)",
+  borderRadius: 12,
+};
+
 export const statsValue = {
   fontSize: 20,
   fontWeight: 800,

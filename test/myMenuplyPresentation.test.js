@@ -62,5 +62,10 @@ test("buildWantSuggestions and stats helpers", () => {
     events: [{ id: 1 }],
     eventGroups: [],
   });
+  assert.deepEqual(
+    stats.map((row) => row.label),
+    ["Connects", "Restaurants", "Dishes", "Events"]
+  );
+  assert.deepEqual(stats.map((row) => row.id), ["connects", "restaurants", "dishes", "events"]);
   assert.deepEqual(stats.map((row) => row.value), [1, 2, 1, 1]);
 });

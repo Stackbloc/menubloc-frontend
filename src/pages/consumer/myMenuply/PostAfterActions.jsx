@@ -12,35 +12,15 @@ import {
   searchReportPlaces,
 } from "../../../lib/foodActivityApi.js";
 import {
+  followRestaurant,
   suggestWhatIAteTodayMenuItems,
   updateWhatIAteToday,
   updateWhatWeDoingSession,
   updateWantToEat,
 } from "../../../lib/consumerApi.js";
 import { WHAT_I_ATE_MEAL_PERIODS } from "../../../lib/whatIAteTodayMealPeriod.js";
+import { joinHomemadeComment, splitHomemadeComment } from "./eatingPlaceLink.js";
 import * as s from "./myMenuplyStyles.js";
-
-const HOMEMADE_PREFIX = "Homemade";
-
-function splitHomemadeComment(comment) {
-  const raw = String(comment || "").trim();
-  if (!raw) return { homemade: false, recipe: "" };
-  if (raw === HOMEMADE_PREFIX) return { homemade: true, recipe: "" };
-  if (raw.startsWith(`${HOMEMADE_PREFIX}. `)) {
-    return { homemade: true, recipe: raw.slice(HOMEMADE_PREFIX.length + 2).trim() };
-  }
-  if (raw.startsWith(`${HOMEMADE_PREFIX} `)) {
-    return { homemade: true, recipe: raw.slice(HOMEMADE_PREFIX.length).trim() };
-  }
-  return { homemade: false, recipe: raw };
-}
-
-function joinHomemadeComment(homemade, recipe) {
-  const note = String(recipe || "").trim();
-  if (homemade && note) return `${HOMEMADE_PREFIX}. ${note}`;
-  if (homemade) return HOMEMADE_PREFIX;
-  return note;
-}
 
 export default function PostAfterActions({
   kind,
@@ -204,24 +184,41 @@ export default function PostAfterActions({
       const mealLabel = WHAT_I_ATE_MEAL_PERIODS.find((p) => p.id === mealPeriod)?.label || "";
       if (kind === "plan") {
         const token = record.token || record.id;
-        const placeLabel =
-          [mealLabel, restaurantLabel(restaurant), dishLabel(dish), recipe.trim()]
-            .filter(Boolean)
-            .join(" · ") || undefined;
+        const placeLabel = homemade
+          ? joinHomemadeComment(true, [dishLabel(dish), recipe.trim()].filter(Boolean).join(" · "))
+          : [mealLabel, restaurantLabel(restaurant), dishLabel(dish), recipe.trim()]
+              .filter(Boolean)
+              .join(" · ") || undefined;
         await updateWhatWeDoingSession(token, {
-          restaurant_id: restaurant?.restaurant_id || undefined,
+          restaurant_id: homemade ? null : restaurant?.restaurant_id || undefined,
           place_label: placeLabel,
           joinable,
           join_capacity: joinable ? Number(joinCapacity) : undefined,
         });
+        if (!homemade && restaurant?.restaurant_id) {
+          try {
+            await followRestaurant(restaurant.restaurant_id);
+          } catch {
+            /* ignore */
+          }
+        }
       } else if (kind === "want") {
         const data = await updateWantToEat(record.id, {
-          restaurant_id: restaurant?.restaurant_id || undefined,
-          menu_item_id: dish?.menu_item_id || undefined,
-          food_name: dishLabel(dish) || record.food_name || undefined,
+          restaurant_id: homemade ? null : restaurant?.restaurant_id || undefined,
+          menu_item_id: homemade ? null : dish?.menu_item_id || undefined,
+          food_name: homemade
+            ? record.food_name
+            : dishLabel(dish) || record.food_name || undefined,
           meal_period: mealPeriod || undefined,
-          comment: recipe,
+          comment: joinHomemadeComment(homemade, recipe),
         });
+        if (!homemade && restaurant?.restaurant_id) {
+          try {
+            await followRestaurant(restaurant.restaurant_id);
+          } catch {
+            /* ignore */
+          }
+        }
         setRestaurant(null);
         setDish(null);
         setJoinable(false);
@@ -236,6 +233,13 @@ export default function PostAfterActions({
           meal_period: mealPeriod || undefined,
           comment: joinHomemadeComment(homemade, recipe),
         });
+        if (!homemade && restaurant?.restaurant_id) {
+          try {
+            await followRestaurant(restaurant.restaurant_id);
+          } catch {
+            /* ignore */
+          }
+        }
       }
       setRestaurant(null);
       setDish(null);
@@ -255,18 +259,14 @@ export default function PostAfterActions({
   );
   const disabled = busy || saving;
   const isWant = kind === "want";
-  const isDiary = kind === "diary";
 
   return (
     <form onSubmit={handleSave} data-testid="post-after-actions" style={styles.form}>
       <div style={styles.kicker}>{isWant ? "Link menu item" : "Add optional details"}</div>
       <p style={s.muted}>
-        {isWant
-          ? "Search a dish to link it, or tag a restaurant. Saved to your want list below."
-          : "Restaurant, menu item, homemade, and recipe are optional. Skip anytime."}
+        Restaurant, menu item, homemade, and notes are optional. Skip anytime.
       </p>
-      {isDiary ? (
-        <div style={styles.originRow} role="group" aria-label="Where was this from">
+      <div style={styles.originRow} role="group" aria-label="Where was this from">
           <button
             type="button"
             data-testid="post-after-homemade"
@@ -292,8 +292,7 @@ export default function PostAfterActions({
             Restaurant
           </button>
         </div>
-      ) : null}
-      {isWant && !dish ? (
+      {isWant && !dish && !homemade ? (
         <>
           <input
             type="search"

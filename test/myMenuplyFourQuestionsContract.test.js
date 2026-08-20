@@ -89,11 +89,14 @@ test("My Menuply is the diner's personal home", () => {
   assert.match(bits, /Request to join/);
   assert.match(bits, /isScheduledEatingPlan/);
   const form = read("src/pages/consumer/myMenuply/EatingPlanDayForm.jsx");
-  assert.match(form, /asRestaurantPlace/);
+  assert.match(form, /EatingPlaceFields/);
   assert.match(form, /restaurantLabel/);
-  assert.match(form, /selectedName/);
+  assert.match(form, /homemade/);
   assert.match(form, /JoinMeAudiencePicker/);
   assert.match(form, /joinAllowedUserIds/);
+  const placeFields = read("src/pages/consumer/myMenuply/EatingPlaceFields.jsx");
+  assert.match(placeFields, /asRestaurantPlace/);
+  assert.match(placeFields, /eating-place-homemade/);
   const picker = read("src/pages/consumer/myMenuply/JoinMeAudiencePicker.jsx");
   assert.match(picker, /Anyone Connect/);
   assert.match(picker, /Select specific/);
