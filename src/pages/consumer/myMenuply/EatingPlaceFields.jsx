@@ -1,6 +1,6 @@
 /**
  * Optional restaurant + menu item, or homemade (no restaurant/dish).
- * Diners may leave everything blank.
+ * Restaurant first, then that restaurant's menu items. Homemade is last.
  */
 
 import { useEffect, useState } from "react";
@@ -11,7 +11,7 @@ import {
   restaurantLabel,
   searchReportPlaces,
 } from "../../../lib/foodActivityApi.js";
-import { suggestWhatIAteTodayMenuItems } from "../../../lib/consumerApi.js";
+import { dishPhotoUrl } from "./eatingPlaceLink.js";
 import * as s from "./myMenuplyStyles.js";
 
 export default function EatingPlaceFields({
@@ -24,12 +24,16 @@ export default function EatingPlaceFields({
   followed = [],
   disabled = false,
   allowDishSearch = true,
+  locationCity = null,
+  locationState = null,
+  dishSearchPlaceholder = "Filter this restaurant's menu",
 }) {
   const [query, setQuery] = useState("");
   const [dishQuery, setDishQuery] = useState("");
   const [hits, setHits] = useState([]);
   const [dishHits, setDishHits] = useState([]);
   const [searching, setSearching] = useState(false);
+  const [loadingDishes, setLoadingDishes] = useState(false);
 
   useEffect(() => {
     const q = query.trim();
@@ -41,7 +45,13 @@ export default function EatingPlaceFields({
     const t = setTimeout(async () => {
       setSearching(true);
       try {
-        const data = await searchReportPlaces({ type: "restaurant", q, limit: 8 });
+        const data = await searchReportPlaces({
+          type: "restaurant",
+          q,
+          limit: 16,
+          city: locationCity,
+          state: locationState,
+        });
         setHits(data.results || []);
       } catch {
         setHits([]);
@@ -50,27 +60,31 @@ export default function EatingPlaceFields({
       }
     }, 220);
     return () => clearTimeout(t);
-  }, [query, restaurant, homemade]);
+  }, [query, restaurant, homemade, locationCity, locationState]);
 
   useEffect(() => {
-    const q = dishQuery.trim();
-    if (!allowDishSearch || homemade || !restaurant?.restaurant_id || dish || q.length < 2) {
+    if (!allowDishSearch || homemade || !restaurant?.restaurant_id || dish) {
       setDishHits([]);
+      setLoadingDishes(false);
       return undefined;
     }
+    const q = dishQuery.trim();
     const t = setTimeout(async () => {
+      setLoadingDishes(true);
       try {
         const data = await searchReportPlaces({
           type: "menu_item",
           q,
           restaurant_id: restaurant.restaurant_id,
-          limit: 8,
+          limit: 20,
         });
         setDishHits(data.results || []);
       } catch {
         setDishHits([]);
+      } finally {
+        setLoadingDishes(false);
       }
-    }, 220);
+    }, q ? 220 : 0);
     return () => clearTimeout(t);
   }, [dishQuery, restaurant, dish, homemade, allowDishSearch]);
 
@@ -82,33 +96,22 @@ export default function EatingPlaceFields({
     onDishChange?.(null);
     setQuery("");
     setHits([]);
+    setDishQuery("");
   }
 
   function pickDish(row) {
-    const next = asDishPlace(row);
+    const next = asDishPlace({
+      ...row,
+      item_photo_url: dishPhotoUrl(row) || row.item_photo_url,
+    });
     if (!next) return;
     onDishChange?.(next);
     setDishQuery("");
     setDishHits([]);
   }
 
-  async function pickGlobalDish(row) {
-    const nextDish = asDishPlace({
-      menu_item_id: row.menu_item_id,
-      item_name: row.item_name || row.label,
-      restaurant_id: row.restaurant_id,
-    });
-    if (!nextDish) return;
-    const nextRestaurant = asRestaurantPlace({
-      restaurant_id: row.restaurant_id,
-      restaurant_name: row.restaurant_name,
-      restaurant_slug: row.restaurant_slug,
-      city: row.restaurant_city || row.city,
-      state: row.restaurant_state || row.state,
-    });
+  function chooseRestaurant() {
     onHomemadeChange?.(false);
-    if (nextRestaurant) onRestaurantChange?.(nextRestaurant);
-    onDishChange?.(nextDish);
   }
 
   const followedPicks = (followed || []).filter((row) => row?.restaurant_id).slice(0, 8);
@@ -116,6 +119,15 @@ export default function EatingPlaceFields({
   return (
     <div data-testid="eating-place-fields" style={styles.wrap}>
       <div style={styles.originRow} role="group" aria-label="Where is this from">
+        <button
+          type="button"
+          data-testid="eating-place-restaurant"
+          style={!homemade && restaurant ? styles.originOn : styles.origin}
+          disabled={disabled}
+          onClick={chooseRestaurant}
+        >
+          Restaurant
+        </button>
         <button
           type="button"
           data-testid="eating-place-homemade"
@@ -130,15 +142,6 @@ export default function EatingPlaceFields({
           }}
         >
           Homemade
-        </button>
-        <button
-          type="button"
-          data-testid="eating-place-restaurant"
-          style={!homemade && restaurant ? styles.originOn : styles.origin}
-          disabled={disabled}
-          onClick={() => onHomemadeChange?.(false)}
-        >
-          Restaurant
         </button>
         {homemade || restaurant ? (
           <button
@@ -185,9 +188,17 @@ export default function EatingPlaceFields({
           </div>
           {allowDishSearch && dish ? (
             <div style={styles.selected} data-testid="eating-place-dish-selected">
-              <div>
-                <div style={styles.kind}>Menu item</div>
-                <div style={{ fontWeight: 800 }}>{dishLabel(dish)}</div>
+              <div style={styles.dishRow}>
+                {dishPhotoUrl(dish) ? (
+                  <img src={dishPhotoUrl(dish)} alt="" style={styles.dishThumb} />
+                ) : null}
+                <div>
+                  <div style={styles.kind}>Menu item</div>
+                  <div style={{ fontWeight: 800 }}>{dishLabel(dish)}</div>
+                  {dishPhotoUrl(dish) ? (
+                    <div style={{ ...s.muted, fontSize: 12 }}>Restaurant photo — take your own anytime</div>
+                  ) : null}
+                </div>
               </div>
               <button type="button" style={styles.change} disabled={disabled} onClick={() => onDishChange?.(null)}>
                 Change
@@ -199,23 +210,31 @@ export default function EatingPlaceFields({
                 type="search"
                 value={dishQuery}
                 onChange={(e) => setDishQuery(e.target.value.slice(0, 120))}
-                placeholder="Menu item (optional)"
+                placeholder={dishSearchPlaceholder}
                 disabled={disabled}
                 autoComplete="off"
                 style={styles.place}
-                aria-label="Link menu item"
+                aria-label="Select menu item"
                 data-testid="eating-place-dish-search"
               />
+              {loadingDishes ? <p style={s.muted}>Loading menu…</p> : null}
               {dishHits.length > 0 ? (
-                <ul style={styles.hits}>
+                <ul style={styles.hits} data-testid="eating-place-dish-hits">
                   {dishHits.map((hit) => (
                     <li key={hit.menu_item_id}>
                       <button type="button" style={styles.hitBtn} onClick={() => pickDish(hit)}>
-                        {dishLabel(hit)}
+                        <span style={styles.dishRow}>
+                          {dishPhotoUrl(hit) ? (
+                            <img src={dishPhotoUrl(hit)} alt="" style={styles.dishThumb} />
+                          ) : null}
+                          <span>{dishLabel(hit)}</span>
+                        </span>
                       </button>
                     </li>
                   ))}
                 </ul>
+              ) : !loadingDishes ? (
+                <p style={s.muted}>No menu items yet for this location — you can still post the restaurant.</p>
               ) : null}
             </>
           ) : null}
@@ -244,6 +263,7 @@ export default function EatingPlaceFields({
                   <button type="button" style={styles.hitBtn} onClick={() => pickRestaurant(hit)}>
                     {restaurantLabel(hit)}
                     {hit.city ? ` · ${hit.city}` : ""}
+                    {hit.state && !String(hit.city || "").includes(hit.state) ? `, ${hit.state}` : ""}
                   </button>
                 </li>
               ))}
@@ -264,73 +284,9 @@ export default function EatingPlaceFields({
               ))}
             </div>
           ) : null}
-          {allowDishSearch ? <GlobalDishSearch disabled={disabled} onPick={pickGlobalDish} /> : null}
         </>
       )}
     </div>
-  );
-}
-
-function GlobalDishSearch({ disabled, onPick }) {
-  const [q, setQ] = useState("");
-  const [hits, setHits] = useState([]);
-  const [searching, setSearching] = useState(false);
-
-  useEffect(() => {
-    const query = q.trim();
-    if (query.length < 2) {
-      setHits([]);
-      return undefined;
-    }
-    const t = setTimeout(async () => {
-      setSearching(true);
-      try {
-        const data = await suggestWhatIAteTodayMenuItems(query);
-        setHits(data?.suggestions || []);
-      } catch {
-        setHits([]);
-      } finally {
-        setSearching(false);
-      }
-    }, 220);
-    return () => clearTimeout(t);
-  }, [q]);
-
-  return (
-    <>
-      <input
-        type="search"
-        value={q}
-        onChange={(e) => setQ(e.target.value.slice(0, 120))}
-        placeholder="Or search a dish (optional)"
-        disabled={disabled}
-        autoComplete="off"
-        style={styles.place}
-        aria-label="Search dish"
-        data-testid="eating-place-global-dish-search"
-      />
-      {searching ? <p style={s.muted}>Searching menus…</p> : null}
-      {hits.length > 0 ? (
-        <ul style={styles.hits} data-testid="eating-place-global-dish-hits">
-          {hits.map((hit) => (
-            <li key={hit.menu_item_id}>
-              <button
-                type="button"
-                style={styles.hitBtn}
-                onClick={() => {
-                  onPick(hit);
-                  setQ("");
-                  setHits([]);
-                }}
-              >
-                {hit.item_name || hit.label}
-                {hit.restaurant_name ? ` · ${hit.restaurant_name}` : ""}
-              </button>
-            </li>
-          ))}
-        </ul>
-      ) : null}
-    </>
   );
 }
 
@@ -418,6 +374,8 @@ const styles = {
     borderRadius: 12,
     overflow: "hidden",
     background: "#fff",
+    maxHeight: 240,
+    overflowY: "auto",
   },
   hitBtn: {
     appearance: "none",
@@ -431,4 +389,13 @@ const styles = {
     cursor: "pointer",
   },
   followed: { display: "flex", flexWrap: "wrap", gap: 8 },
+  dishRow: { display: "flex", alignItems: "center", gap: 10 },
+  dishThumb: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    objectFit: "cover",
+    background: "#e5e7eb",
+    flex: "0 0 auto",
+  },
 };

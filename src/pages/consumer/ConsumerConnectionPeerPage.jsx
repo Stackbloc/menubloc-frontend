@@ -212,6 +212,9 @@ export default function ConsumerConnectionPeerPage() {
               connections={peerConnections}
               viewerUserId={consumer?.id}
               profileMedia={peerProfileMedia}
+              monthInFoodHref={
+                peerId ? `/account/connections/${encodeURIComponent(String(peerId))}/month-in-food` : null
+              }
             />
 
             <EatingHubSection

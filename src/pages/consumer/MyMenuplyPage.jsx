@@ -74,7 +74,7 @@ import {
   isScheduledEatingPlan,
 } from "./myMenuply/myMenuplyBits.jsx";
 import { futurePlanKey, futurePlanRestaurantName } from "./myMenuply/dinerHubFormat.js";
-import { eatingFoodName, joinHomemadeComment } from "./myMenuply/eatingPlaceLink.js";
+import { dishPhotoUrl, eatingFoodName, joinHomemadeComment } from "./myMenuply/eatingPlaceLink.js";
 import { mergeEatingFeedForHub, mapDiaryEntriesForHub, mapFoodActivityForHub } from "../../lib/eatingFeedMerge.js";
 
 async function maybeFollowRestaurant(restaurantId) {
@@ -135,6 +135,8 @@ export default function MyMenuplyPage() {
   const [composeDefaultCategory, setComposeDefaultCategory] = useState("ate");
   const [hubFocus, setHubFocus] = useState("");
   const [planPrefill, setPlanPrefill] = useState(null);
+  const locationCity = profile?.primary_location?.city_name || null;
+  const locationState = profile?.primary_location?.state_code || null;
 
   const load = useCallback(async () => {
     setError("");
@@ -471,9 +473,13 @@ export default function MyMenuplyPage() {
     setWantListError("");
     try {
       let photo_url;
+      let video_url;
       if (file) {
         const up = await uploadWantToEatPhoto(file);
-        photo_url = up.photo_url || undefined;
+        ({ photo_url, video_url } = eatingMediaFromUpload(up));
+      } else {
+        const catalogPhoto = dishPhotoUrl(dish);
+        if (catalogPhoto) photo_url = catalogPhoto;
       }
       const name = eatingFoodName({ text, dish, restaurant, homemade });
       if (!name) {
@@ -485,6 +491,7 @@ export default function MyMenuplyPage() {
       const data = await createWantToEat({
         food_name: name,
         photo_url,
+        video_url,
         restaurant_id: restaurantId,
         menu_item_id: menuItemId,
         comment: homemade ? joinHomemadeComment(true, text) : undefined,
@@ -695,6 +702,7 @@ export default function MyMenuplyPage() {
               profileMedia={profileMedia}
               onProfileMediaAdd={onProfileMediaAdd}
               onProfileMediaRemove={onProfileMediaRemove}
+              monthInFoodHref="/my-menuply/month-in-food"
             />
 
             <MyMenuplyPresentationRails
@@ -746,6 +754,8 @@ export default function MyMenuplyPage() {
               followed={followed}
               joinCandidates={joinCandidates}
               planPrefill={planPrefill}
+              locationCity={locationCity}
+              locationState={locationState}
               onComposeSubmit={handleEatingCompose}
               onPlanSchedule={handlePlanSchedule}
               onPostPlan={postPlan}

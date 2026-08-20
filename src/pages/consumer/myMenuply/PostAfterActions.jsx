@@ -1,24 +1,13 @@
 /**
- * After a simple What I'm Eating post, or when a diner taps a posted item:
- * restaurant, dish, recipe note, meal category, optional join seats.
+ * After a simple eating post, or when a diner taps a posted item:
+ * restaurant first, then that restaurant's menu item, homemade, notes, optional join seats.
  */
 
 import { useEffect, useState } from "react";
-import {
-  asDishPlace,
-  asRestaurantPlace,
-  dishLabel,
-  restaurantLabel,
-  searchReportPlaces,
-} from "../../../lib/foodActivityApi.js";
-import {
-  followRestaurant,
-  suggestWhatIAteTodayMenuItems,
-  updateWhatIAteToday,
-  updateWhatWeDoingSession,
-  updateWantToEat,
-} from "../../../lib/consumerApi.js";
+import { asDishPlace, asRestaurantPlace, dishLabel, restaurantLabel } from "../../../lib/foodActivityApi.js";
+import { followRestaurant, updateWhatIAteToday, updateWhatWeDoingSession, updateWantToEat } from "../../../lib/consumerApi.js";
 import { WHAT_I_ATE_MEAL_PERIODS } from "../../../lib/whatIAteTodayMealPeriod.js";
+import EatingPlaceFields from "./EatingPlaceFields.jsx";
 import { joinHomemadeComment, splitHomemadeComment } from "./eatingPlaceLink.js";
 import * as s from "./myMenuplyStyles.js";
 
@@ -27,17 +16,11 @@ export default function PostAfterActions({
   record,
   busy = false,
   followed = [],
+  locationCity = null,
+  locationState = null,
   onTagged,
   onSkip,
 }) {
-  const [query, setQuery] = useState("");
-  const [dishQuery, setDishQuery] = useState("");
-  const [globalDishQuery, setGlobalDishQuery] = useState("");
-  const [hits, setHits] = useState([]);
-  const [dishHits, setDishHits] = useState([]);
-  const [globalDishHits, setGlobalDishHits] = useState([]);
-  const [searching, setSearching] = useState(false);
-  const [globalDishSearching, setGlobalDishSearching] = useState(false);
   const [restaurant, setRestaurant] = useState(null);
   const [dish, setDish] = useState(null);
   const [joinable, setJoinable] = useState(false);
@@ -57,123 +40,8 @@ export default function PostAfterActions({
     setJoinCapacity(String(record?.join_capacity || "4"));
     setRestaurant(split.homemade ? null : record?.restaurant_id ? asRestaurantPlace(record) : null);
     setDish(split.homemade ? null : record?.menu_item_id ? asDishPlace(record) : null);
-    setQuery("");
-    setDishQuery("");
-    setGlobalDishQuery("");
-    setGlobalDishHits([]);
     setError("");
   }, [record?.id, record?.token, record?.kind]);
-
-  useEffect(() => {
-    const q = query.trim();
-    if (restaurant || q.length < 2) {
-      setHits([]);
-      setSearching(false);
-      return undefined;
-    }
-    const t = setTimeout(async () => {
-      setSearching(true);
-      try {
-        const data = await searchReportPlaces({ type: "restaurant", q, limit: 8 });
-        setHits(data.results || []);
-      } catch {
-        setHits([]);
-      } finally {
-        setSearching(false);
-      }
-    }, 220);
-    return () => clearTimeout(t);
-  }, [query, restaurant]);
-
-  useEffect(() => {
-    const q = dishQuery.trim();
-    if (!restaurant?.restaurant_id || dish || q.length < 2) {
-      setDishHits([]);
-      return undefined;
-    }
-    const t = setTimeout(async () => {
-      try {
-        const data = await searchReportPlaces({
-          type: "menu_item",
-          q,
-          restaurant_id: restaurant.restaurant_id,
-          limit: 8,
-        });
-        setDishHits(data.results || []);
-      } catch {
-        setDishHits([]);
-      }
-    }, 220);
-    return () => clearTimeout(t);
-  }, [dishQuery, restaurant, dish]);
-
-  useEffect(() => {
-    if (kind !== "want" || dish) {
-      setGlobalDishHits([]);
-      setGlobalDishSearching(false);
-      return undefined;
-    }
-    const q = globalDishQuery.trim();
-    if (q.length < 2) {
-      setGlobalDishHits([]);
-      setGlobalDishSearching(false);
-      return undefined;
-    }
-    const t = setTimeout(async () => {
-      setGlobalDishSearching(true);
-      try {
-        const data = await suggestWhatIAteTodayMenuItems(q);
-        setGlobalDishHits(data?.suggestions || []);
-      } catch {
-        setGlobalDishHits([]);
-      } finally {
-        setGlobalDishSearching(false);
-      }
-    }, 220);
-    return () => clearTimeout(t);
-  }, [globalDishQuery, dish, kind]);
-
-  function pickRestaurant(row) {
-    const next = asRestaurantPlace(row);
-    if (!next) return;
-    setHomemade(false);
-    setRestaurant(next);
-    setDish(null);
-    setQuery("");
-    setHits([]);
-  }
-
-  function pickDish(row) {
-    const next = asDishPlace(row);
-    if (!next) return;
-    setDish(next);
-    setDishQuery("");
-    setDishHits([]);
-    setGlobalDishQuery("");
-    setGlobalDishHits([]);
-  }
-
-  function pickWantMenuItem(row) {
-    const nextDish = asDishPlace({
-      menu_item_id: row.menu_item_id,
-      item_name: row.item_name || row.label,
-      restaurant_id: row.restaurant_id,
-    });
-    if (!nextDish) return;
-    const nextRestaurant = asRestaurantPlace({
-      restaurant_id: row.restaurant_id,
-      restaurant_name: row.restaurant_name,
-      restaurant_slug: row.restaurant_slug,
-      city: row.restaurant_city || row.city,
-      state: row.restaurant_state || row.state,
-    });
-    setDish(nextDish);
-    if (nextRestaurant) setRestaurant(nextRestaurant);
-    setGlobalDishQuery("");
-    setGlobalDishHits([]);
-    setQuery("");
-    setHits([]);
-  }
 
   async function handleSave(e) {
     e.preventDefault();
@@ -253,7 +121,6 @@ export default function PostAfterActions({
     }
   }
 
-  const followedPicks = (followed || []).filter((row) => row?.restaurant_id).slice(0, 8);
   const canSave = Boolean(
     homemade || restaurant || dish || recipe.trim() || mealPeriod || (kind === "plan" && joinable)
   );
@@ -262,64 +129,24 @@ export default function PostAfterActions({
 
   return (
     <form onSubmit={handleSave} data-testid="post-after-actions" style={styles.form}>
-      <div style={styles.kicker}>{isWant ? "Link menu item" : "Add optional details"}</div>
+      <div style={styles.kicker}>{isWant ? "Link restaurant and menu item" : "Add optional details"}</div>
       <p style={s.muted}>
-        Restaurant, menu item, homemade, and notes are optional. Skip anytime.
+        Photo or video is yours. Linking a restaurant and menu item is the metadata that makes it findable.
+        Skip anytime.
       </p>
-      <div style={styles.originRow} role="group" aria-label="Where was this from">
-          <button
-            type="button"
-            data-testid="post-after-homemade"
-            style={homemade ? styles.originOn : styles.origin}
-            disabled={disabled}
-            onClick={() => {
-              setHomemade(true);
-              setRestaurant(null);
-              setDish(null);
-              setQuery("");
-              setHits([]);
-            }}
-          >
-            Homemade
-          </button>
-          <button
-            type="button"
-            data-testid="post-after-restaurant-origin"
-            style={!homemade && restaurant ? styles.originOn : styles.origin}
-            disabled={disabled}
-            onClick={() => setHomemade(false)}
-          >
-            Restaurant
-          </button>
-        </div>
-      {isWant && !dish && !homemade ? (
-        <>
-          <input
-            type="search"
-            value={globalDishQuery}
-            onChange={(e) => setGlobalDishQuery(e.target.value.slice(0, 120))}
-            placeholder="Search menu item (e.g. McMuffin, pepperoni pizza)"
-            disabled={disabled}
-            autoComplete="off"
-            style={styles.place}
-            aria-label="Search menu item"
-            data-testid="want-link-menu-item"
-          />
-          {globalDishSearching ? <p style={s.muted}>Searching menus…</p> : null}
-          {globalDishHits.length > 0 ? (
-            <ul style={styles.hits} data-testid="want-menu-item-hits">
-              {globalDishHits.map((hit) => (
-                <li key={hit.menu_item_id}>
-                  <button type="button" style={styles.hitBtn} onClick={() => pickWantMenuItem(hit)}>
-                    {hit.item_name || hit.label}
-                    {hit.restaurant_name || hit.subtitle ? ` · ${hit.restaurant_name || hit.subtitle}` : ""}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          ) : null}
-        </>
-      ) : null}
+      <EatingPlaceFields
+        homemade={homemade}
+        onHomemadeChange={setHomemade}
+        restaurant={restaurant}
+        onRestaurantChange={setRestaurant}
+        dish={dish}
+        onDishChange={setDish}
+        followed={followed}
+        disabled={disabled}
+        locationCity={locationCity}
+        locationState={locationState}
+        dishSearchPlaceholder="Tag a dish"
+      />
       <div style={styles.meals} role="group" aria-label="Meal category">
         {WHAT_I_ATE_MEAL_PERIODS.map((period) => (
           <button
@@ -336,118 +163,13 @@ export default function PostAfterActions({
       <textarea
         value={recipe}
         onChange={(e) => setRecipe(e.target.value.slice(0, 500))}
-            placeholder="Recipe or notes (optional)"
+        placeholder="Recipe or notes (optional)"
         disabled={disabled}
         rows={3}
         style={styles.recipe}
         aria-label="Recipe"
       />
       {error ? <p style={s.error}>{error}</p> : null}
-
-      {homemade ? (
-        <p style={s.muted} data-testid="post-after-homemade-note">
-          Homemade — no restaurant or menu item needed.
-        </p>
-      ) : restaurant ? (
-        <div style={styles.selected} data-testid="post-after-restaurant">
-          <div>
-            <div style={styles.selectedName}>{restaurantLabel(restaurant) || "Restaurant"}</div>
-            {restaurant.city ? (
-              <div style={s.muted}>
-                {[restaurant.city, restaurant.state].filter(Boolean).join(", ")}
-              </div>
-            ) : null}
-          </div>
-          <button
-            type="button"
-            style={styles.change}
-            disabled={disabled}
-            onClick={() => {
-              setRestaurant(null);
-              setDish(null);
-            }}
-          >
-            Change
-          </button>
-        </div>
-      ) : (
-        <>
-          <input
-            type="search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value.slice(0, 120))}
-            placeholder="Restaurant (optional)"
-            disabled={disabled}
-            autoComplete="off"
-            style={styles.place}
-            aria-label="Tag restaurant"
-          />
-          {searching ? <p style={s.muted}>Searching…</p> : null}
-          {hits.length > 0 ? (
-            <ul style={styles.hits}>
-              {hits.map((hit) => (
-                <li key={hit.restaurant_id}>
-                  <button type="button" style={styles.hitBtn} onClick={() => pickRestaurant(hit)}>
-                    {restaurantLabel(hit)}
-                    {hit.city ? ` · ${hit.city}` : ""}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          ) : null}
-          {followedPicks.length > 0 ? (
-            <div style={styles.followed}>
-              {followedPicks.map((row) => (
-                <button
-                  key={row.restaurant_id}
-                  type="button"
-                  style={s.chipBtn}
-                  disabled={disabled}
-                  onClick={() => pickRestaurant(row)}
-                >
-                  {row.restaurant_name}
-                </button>
-              ))}
-            </div>
-          ) : null}
-        </>
-      )}
-
-      {restaurant && dish ? (
-        <div style={styles.selected} data-testid="post-after-dish">
-          <div>
-            <div style={styles.kind}>Dish</div>
-            <div style={{ fontWeight: 800 }}>{dishLabel(dish)}</div>
-          </div>
-          <button type="button" style={styles.change} disabled={disabled} onClick={() => setDish(null)}>
-            Change
-          </button>
-        </div>
-      ) : restaurant ? (
-        <>
-          <input
-            type="search"
-            value={dishQuery}
-            onChange={(e) => setDishQuery(e.target.value.slice(0, 120))}
-            placeholder="Menu item (optional)"
-            disabled={disabled}
-            autoComplete="off"
-            style={styles.place}
-            aria-label="Tag a dish"
-          />
-          {dishHits.length > 0 ? (
-            <ul style={styles.hits}>
-              {dishHits.map((hit) => (
-                <li key={hit.menu_item_id}>
-                  <button type="button" style={styles.hitBtn} onClick={() => pickDish(hit)}>
-                    {dishLabel(hit)}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          ) : null}
-        </>
-      ) : null}
 
       {kind === "plan" ? (
         <>
@@ -516,110 +238,11 @@ const styles = {
     textTransform: "uppercase",
     color: "#667085",
   },
-  originRow: {
-    display: "flex",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  origin: {
-    appearance: "none",
-    border: "1px solid #e5e7eb",
-    background: "#fff",
-    color: "#334155",
-    borderRadius: 999,
-    padding: "8px 14px",
-    fontSize: 13,
-    fontWeight: 700,
-    cursor: "pointer",
-    fontFamily: "inherit",
-  },
-  originOn: {
-    appearance: "none",
-    border: "1px solid #86efac",
-    background: "#ecfdf5",
-    color: "#166534",
-    borderRadius: 999,
-    padding: "8px 14px",
-    fontSize: 13,
-    fontWeight: 700,
-    cursor: "pointer",
-    fontFamily: "inherit",
-  },
   actionRow: {
     display: "flex",
     flexWrap: "wrap",
     gap: 8,
     alignItems: "center",
-  },
-  kind: {
-    fontSize: 11,
-    textTransform: "uppercase",
-    letterSpacing: "0.04em",
-    color: "#64748b",
-  },
-  place: {
-    width: "100%",
-    minHeight: 44,
-    border: "1.5px solid #d1d5db",
-    borderRadius: 12,
-    padding: "10px 12px",
-    fontSize: 15,
-    fontFamily: "inherit",
-    color: "#0B0F0C",
-    background: "#fff",
-    boxSizing: "border-box",
-  },
-  selected: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 8,
-    padding: "10px 12px",
-    border: "1.5px solid #d1d5db",
-    borderRadius: 10,
-    background: "#f8fafc",
-    color: "#0f172a",
-  },
-  selectedName: {
-    fontWeight: 700,
-    fontSize: 15,
-    lineHeight: 1.25,
-    color: "#0f172a",
-  },
-  change: {
-    appearance: "none",
-    border: "none",
-    background: "transparent",
-    color: "#15803d",
-    fontWeight: 700,
-    fontSize: 13,
-    cursor: "pointer",
-    fontFamily: "inherit",
-  },
-  hits: {
-    listStyle: "none",
-    margin: 0,
-    padding: 0,
-    border: "1px solid #e4e7ec",
-    borderRadius: 12,
-    overflow: "hidden",
-    background: "#fff",
-  },
-  hitBtn: {
-    appearance: "none",
-    width: "100%",
-    textAlign: "left",
-    padding: "10px 12px",
-    border: "none",
-    borderBottom: "1px solid #f2f4f7",
-    background: "#fff",
-    font: "inherit",
-    cursor: "pointer",
-  },
-  followed: {
-    display: "flex",
-    flexWrap: "wrap",
-    gap: 8,
   },
   check: {
     display: "flex",
@@ -680,5 +303,13 @@ const styles = {
     background: "#fff",
     boxSizing: "border-box",
     resize: "vertical",
+  },
+  num: {
+    width: 72,
+    minHeight: 36,
+    border: "1.5px solid #d1d5db",
+    borderRadius: 10,
+    padding: "0 8px",
+    font: "inherit",
   },
 };

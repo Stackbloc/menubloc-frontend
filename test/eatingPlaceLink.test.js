@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  dishPhotoUrl,
   eatingFoodName,
   joinHomemadeComment,
   splitHomemadeComment,
@@ -15,4 +16,7 @@ test("homemade comment round-trips and food name stays optional", () => {
     "Fries"
   );
   assert.equal(eatingFoodName({ text: "Tacos" }), "Tacos");
+  assert.equal(dishPhotoUrl({ item_photo_url: "https://cdn.example/dish.jpg" }), "https://cdn.example/dish.jpg");
+  assert.equal(dishPhotoUrl({ photo_url: "/uploads/a.jpg" }), "/uploads/a.jpg");
+  assert.equal(dishPhotoUrl({}), null);
 });

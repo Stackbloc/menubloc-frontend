@@ -19,6 +19,8 @@ export default function EatingPlanDayForm({
   initialRestaurant = null,
   initialDish = null,
   initialNote = "",
+  locationCity = null,
+  locationState = null,
 }) {
   const [restaurant, setRestaurant] = useState(initialRestaurant);
   const [dish, setDish] = useState(initialDish);
@@ -74,6 +76,8 @@ export default function EatingPlanDayForm({
         onDishChange={setDish}
         followed={followed}
         disabled={busy}
+        locationCity={locationCity}
+        locationState={locationState}
       />
       <input
         type="text"

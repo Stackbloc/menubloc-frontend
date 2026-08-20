@@ -20,6 +20,8 @@ export default function EatingCompose({
   onPlanSchedule,
   inSheet = false,
   followed = [],
+  locationCity = null,
+  locationState = null,
 }) {
   const [category, setCategory] = useState(defaultCategory);
   const [text, setText] = useState("");
@@ -93,7 +95,7 @@ export default function EatingCompose({
               disabled={busy}
               facingMode="environment"
               allowPhoto
-              allowVideo={category === "ate"}
+              allowVideo={category === "ate" || category === "want"}
               testId="eating-compose-media"
               ariaLabel="Add photo or video"
             />
@@ -112,7 +114,7 @@ export default function EatingCompose({
         </div>
         {acceptMedia ? (
           <p style={{ ...socialType.meta, margin: 0, fontSize: 12 }}>
-            Optional — attach before you post.
+            Optional photo or video. Linking a restaurant and menu item is what ties it to Menuply.
           </p>
         ) : null}
         <EatingPlaceFields
@@ -124,6 +126,8 @@ export default function EatingCompose({
           onDishChange={setDish}
           followed={followed}
           disabled={busy}
+          locationCity={locationCity}
+          locationState={locationState}
         />
         {category === "ate" ? (
           <div style={styles.mealRow} role="group" aria-label="Meal time">

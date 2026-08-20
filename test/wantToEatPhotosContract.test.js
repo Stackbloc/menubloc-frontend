@@ -22,7 +22,7 @@ test("My Menuply want list shows posts and menu-item link path", () => {
   assert.match(bits, /want-to-eat-item/);
   assert.match(section, /want-to-eat-just-posted/);
   assert.match(page, /wantListError/);
-  assert.match(bits, /Tap to link a menu item/);
+  assert.match(bits, /Tap to link restaurant and menu item/);
 });
 
 test("My Menuply want compose accepts optional photo upload", () => {
@@ -32,6 +32,8 @@ test("My Menuply want compose accepts optional photo upload", () => {
   assert.match(compose, /eating-compose-\$\{chip\.id\}/);
   assert.match(compose, /MenuplyMediaPicker/);
   assert.match(page, /photo_url/);
+  assert.match(page, /video_url/);
+  assert.match(compose, /allowVideo=\{category === "ate" \|\| category === "want"\}/);
 });
 
 test("Menu item detail routes to save choice instead of inline want button", () => {

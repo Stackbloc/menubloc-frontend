@@ -82,6 +82,8 @@ export default function EatingHubSection({
   onComposeOpenChange,
   composeDefaultCategory = "ate",
   planPrefill = null,
+  locationCity = null,
+  locationState = null,
 }) {
   const [composeOpenLocal, setComposeOpenLocal] = useState(false);
   const composeOpen = composeOpenProp ?? composeOpenLocal;
@@ -192,6 +194,8 @@ export default function EatingHubSection({
             record={lastPost}
             busy={postBusy === "eating"}
             followed={followed}
+            locationCity={locationCity}
+            locationState={locationState}
             onTagged={onPostTagged}
             onSkip={onSkipDetails}
           />
@@ -220,7 +224,7 @@ export default function EatingHubSection({
         !wants.some((row) => Number(row.id) === Number(lastPost.id)) ? (
           <div style={s.card} data-testid="want-to-eat-just-posted">
             <div style={{ fontWeight: 800 }}>{lastPost.food_name}</div>
-            <div style={{ ...s.muted, fontSize: 12, marginTop: 4 }}>Saved — link a menu item below</div>
+            <div style={{ ...s.muted, fontSize: 12, marginTop: 4 }}>Saved — link a restaurant and menu item below</div>
           </div>
         ) : null}
         {lastPost?.kind === "want" && !readOnly ? (
@@ -229,6 +233,8 @@ export default function EatingHubSection({
             record={lastPost}
             busy={postBusy === "want"}
             followed={followed}
+            locationCity={locationCity}
+            locationState={locationState}
             onTagged={onPostTagged}
           />
         ) : null}
@@ -290,6 +296,8 @@ export default function EatingHubSection({
             initialRestaurant={planPrefill?.restaurant || null}
             initialDish={planPrefill?.dish || null}
             initialNote={planPrefill?.text || ""}
+            locationCity={locationCity}
+            locationState={locationState}
             onSubmit={onPostPlan}
           />
         ) : null}
@@ -299,6 +307,8 @@ export default function EatingHubSection({
             record={lastPost}
             busy={postBusy === "eating"}
             followed={followed}
+            locationCity={locationCity}
+            locationState={locationState}
             onTagged={onPostTagged}
           />
         ) : null}
@@ -328,6 +338,8 @@ export default function EatingHubSection({
           onSubmit={onComposeSubmit}
           onPlanSchedule={onPlanSchedule}
           followed={followed}
+          locationCity={locationCity}
+          locationState={locationState}
         />
       ) : null}
 

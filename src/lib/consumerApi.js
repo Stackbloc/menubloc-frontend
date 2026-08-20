@@ -531,6 +531,16 @@ export const createWantToEat = (body) => post("/api/consumer/want-to-eat", body)
 export const updateWantToEat = (id, body) =>
   patch(`/api/consumer/want-to-eat/${encodeURIComponent(String(id))}`, body);
 
+/** My Month in Food scoreboard (calendar month YYYY-MM). */
+export const getMonthInFood = (ym) =>
+  get(`/api/consumer/month-in-food${ym ? `?ym=${encodeURIComponent(String(ym))}` : ""}`);
+export const getPeerMonthInFood = (peerId, ym) =>
+  get(
+    `/api/consumer/connections/${encodeURIComponent(String(peerId))}/month-in-food${
+      ym ? `?ym=${encodeURIComponent(String(ym))}` : ""
+    }`
+  );
+
 export async function uploadWantToEatPhoto(file) {
   const language = readStoredLanguage();
   const form = new FormData();

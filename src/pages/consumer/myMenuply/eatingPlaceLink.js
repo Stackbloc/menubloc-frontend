@@ -22,6 +22,11 @@ export function joinHomemadeComment(homemade, recipe) {
   return note;
 }
 
+export function dishPhotoUrl(dish) {
+  const url = String(dish?.item_photo_url || dish?.photo_url || "").trim();
+  return url || null;
+}
+
 export function eatingFoodName({ text, dish, restaurant, homemade }) {
   const named = String(text || "").trim();
   if (named) return named;

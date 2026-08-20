@@ -620,7 +620,7 @@ export function WantToEatList({
               {readOnly || layout === "scroll" ? null : want.menu_item_id ? (
                 <div style={wantStyles.hint}>Menu item linked</div>
               ) : (
-                <div style={wantStyles.hint}>Tap to link a menu item</div>
+                <div style={wantStyles.hint}>Tap to link restaurant and menu item</div>
               )}
             </div>
           </div>

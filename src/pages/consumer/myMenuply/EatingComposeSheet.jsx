@@ -12,6 +12,8 @@ export default function EatingComposeSheet({
   onSubmit,
   onPlanSchedule,
   followed = [],
+  locationCity = null,
+  locationState = null,
 }) {
   if (!open) return null;
 
@@ -46,7 +48,7 @@ export default function EatingComposeSheet({
           </button>
         </div>
         <p style={styles.lead}>
-          Add as much or as little as you want — photo, restaurant, homemade, or just a note.
+          Add as much or as little as you want — photo or video, restaurant, menu item, homemade, or just a note.
         </p>
         <EatingCompose
           busy={busy}
@@ -54,6 +56,8 @@ export default function EatingComposeSheet({
           onSubmit={handleSubmit}
           onPlanSchedule={handlePlanSchedule}
           followed={followed}
+          locationCity={locationCity}
+          locationState={locationState}
           inSheet
         />
       </div>

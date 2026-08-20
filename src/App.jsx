@@ -77,6 +77,7 @@ import WhatIAteTodayPage from "./pages/consumer/WhatIAteTodayPage.jsx";
 import MenuItemSaveChoicePage from "./pages/consumer/MenuItemSaveChoicePage.jsx";
 import ConnectionPeerWhatIAtePage from "./pages/consumer/ConnectionPeerWhatIAtePage.jsx";
 import MyMenuplyPage from "./pages/consumer/MyMenuplyPage.jsx";
+import MonthInFoodPage from "./pages/consumer/monthInFood/MonthInFoodPage.jsx";
 import ConnectionsEatingPage from "./pages/consumer/ConnectionsEatingPage.jsx";
 import ConnectionsPlanningPage from "./pages/consumer/ConnectionsPlanningPage.jsx";
 import ActivityPage from "./pages/ActivityPage.jsx";
@@ -923,12 +924,14 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
         <Route path="/account/edu-verify" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <ConsumerEduVerify />} />
         <Route path="/account" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ConsumerProfile />} />
         <Route path="/my-menuply" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MyMenuplyPage />} />
+        <Route path="/my-menuply/month-in-food" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MonthInFoodPage />} />
         <Route path="/my-menuply/connections-eating" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ConnectionsEatingPage />} />
         <Route path="/my-menuply/connections-planning" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ConnectionsPlanningPage />} />
         <Route path="/activity" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ActivityPage />} />
         <Route path="/account/welcome" element={crmHost ? <HostRouteRedirect to="/crm" /> : <AccountWelcome />} />
         <Route path="/account/social-onboarding" element={crmHost ? <HostRouteRedirect to="/crm" /> : <SocialOnboardingPage />} />
         <Route path="/account/following" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ConsumerFollowing />} />
+        <Route path="/account/connections/:peerId/month-in-food" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MonthInFoodPage />} />
         <Route path="/account/connections/:peerId/what-i-ate" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ConnectionPeerWhatIAtePage />} />
         <Route path="/account/connections/:peerId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ConsumerConnectionPeerPage />} />
         <Route path="/account/connections" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ConsumerConnections />} />

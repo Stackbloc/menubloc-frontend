@@ -141,6 +141,29 @@ export const displaySectionTitle = {
   fontFamily: 'Georgia, "Times New Roman", serif',
 };
 
+export const aboutTitleRow = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: 12,
+  flexWrap: "wrap",
+  marginBottom: 8,
+};
+
+export const monthInFoodIconLink = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  width: 36,
+  height: 36,
+  borderRadius: 10,
+  color: GREEN_BRIGHT,
+  background: "rgba(21, 128, 61, 0.08)",
+  border: "1px solid rgba(21, 128, 61, 0.22)",
+  textDecoration: "none",
+  flex: "0 0 auto",
+};
+
 export const sectionTitle = {
   margin: "0 0 4px",
   fontSize: 17,

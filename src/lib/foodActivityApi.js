@@ -154,9 +154,16 @@ export async function resolveEatingPrefill({ restaurantId = null, menuItemId = n
   return { restaurant, menuItem };
 }
 
-export async function searchReportPlaces({ type, q = "", restaurant_id = null, limit = 8 } = {}) {
+export async function searchReportPlaces({
+  type,
+  q = "",
+  restaurant_id = null,
+  limit = 8,
+  city = null,
+  state = null,
+} = {}) {
   const data = await apiGet(
-    `/public/food-activity/places${buildQuery({ type, q, restaurant_id, limit })}`
+    `/public/food-activity/places${buildQuery({ type, q, restaurant_id, limit, city, state })}`
   );
   return { results: Array.isArray(data?.results) ? data.results : [] };
 }

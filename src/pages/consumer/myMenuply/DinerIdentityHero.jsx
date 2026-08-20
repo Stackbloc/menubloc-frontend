@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import MenuplyMediaPicker from "../../../components/social/MenuplyMediaPicker.jsx";
 import ProfileMediaGallery from "./ProfileMediaGallery.jsx";
 import * as s from "./myMenuplyStyles.js";
@@ -23,6 +24,7 @@ export default function DinerIdentityHero({
   onProfileMediaAdd,
   onProfileMediaRemove,
   readOnly = false,
+  monthInFoodHref = null,
 }) {
   const [draft, setDraft] = useState(about || "");
   const [saving, setSaving] = useState(false);
@@ -43,11 +45,34 @@ export default function DinerIdentityHero({
   }
 
   const initial = String(displayName || "You").trim().slice(0, 1).toUpperCase() || "Y";
+  const scoreboardHref = monthInFoodHref || (readOnly ? null : "/my-menuply/month-in-food");
 
   return (
     <section style={s.identitySection} data-testid="about-me">
       <p style={{ ...s.kicker, color: GREEN_BRIGHT, marginBottom: 6 }}>Diner profile</p>
-      <h2 style={s.sectionTitle}>About Me</h2>
+      <div style={s.aboutTitleRow}>
+        <h2 style={{ ...s.sectionTitle, margin: 0 }}>About Me</h2>
+        {scoreboardHref ? (
+          <Link
+            to={scoreboardHref}
+            data-testid="month-in-food-link"
+            title="My Month in Food"
+            aria-label="My Month in Food"
+            style={s.monthInFoodIconLink}
+          >
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <rect x="3" y="5" width="18" height="16" rx="3" stroke="currentColor" strokeWidth="1.75" />
+              <path d="M3 9.5h18" stroke="currentColor" strokeWidth="1.75" />
+              <path d="M8 3.5v3.5M16 3.5v3.5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+              <circle cx="9" cy="14" r="1.15" fill="currentColor" />
+              <circle cx="12.5" cy="14" r="1.15" fill="currentColor" />
+              <circle cx="16" cy="14" r="1.15" fill="currentColor" />
+              <circle cx="9" cy="17.5" r="1.15" fill="currentColor" />
+              <circle cx="12.5" cy="17.5" r="1.15" fill="currentColor" />
+            </svg>
+          </Link>
+        ) : null}
+      </div>
       {readOnly ? null : <p style={s.sectionDesc}>Tell people a little about you.</p>}
 
       <div style={s.identity}>

@@ -47,6 +47,7 @@ test("My Menuply and peer hub use unified Eating section", () => {
   assert.match(compose, /EATING_COMPOSE_CATEGORIES/);
   assert.match(compose, /EatingPlaceFields/);
   assert.match(compose, /homemade/);
+  assert.match(compose, /allowVideo=\{category === "ate" \|\| category === "want"\}/);
   assert.match(section, /planPrefill/);
   assert.match(mine, /maybeFollowRestaurant/);
   assert.match(mine, /followRestaurant/);
@@ -55,6 +56,8 @@ test("My Menuply and peer hub use unified Eating section", () => {
 
   assert.match(peer, /readOnly/);
   assert.match(mine, /handleEatingCompose/);
+  assert.match(mine, /dishPhotoUrl/);
+  assert.match(mine, /video_url/);
   assert.ok(mine.indexOf("<DinerIdentityHero") < mine.indexOf("<EatingHubSection"));
   assert.ok(mine.indexOf("<EatingHubSection") < mine.indexOf('data-testid="dining-crews"'));
 });

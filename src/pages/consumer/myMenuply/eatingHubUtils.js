@@ -105,7 +105,7 @@ export const EATING_COMPOSE_CATEGORIES = [
     id: "want",
     label: "Want",
     placeholder: "What foods do you want to eat in the future?",
-    description: "Save cravings, menu picks, or weekend plans.",
+    description: "Save a craving with photo or video, then link the restaurant and menu item.",
   },
   {
     id: "plan",
