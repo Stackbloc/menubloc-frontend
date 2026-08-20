@@ -34,36 +34,44 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` @ clean `main` |
-| Git commit | `ff5f3ea` — What I Ate meal board, bold Upcoming Plans, Camera/library picker |
-| Vercel deployment | `menubloc-frontend-7ljmgxgm2-menuply.vercel.app` |
-| Live bundle | `index-CdB7Wbvg.js` |
+| Git commit | `990fc76` — camera-first meal slots, time-aware meal rows, Post about Upload from library |
+| Vercel deployment | `menubloc-frontend-l7pg7dpir-menuply.vercel.app` |
+| Live bundle | `index-C18CZMc2.js` |
 | Aliases | `menuply.com`, `www.menuply.com`, `crm.menuply.com`, `venues.menuply.com` |
-| Tip-gate | **PASS** (apex + www) verified 2026-08-20 after meal-board / Upcoming Plans CPD |
-| Feature | Meal-period What I Ate media board; bold Upcoming Plans + month calendar; Camera or Upload from library (Post about unchanged) |
+| Tip-gate | **PASS** (apex + www) verified 2026-08-20 after camera-slot / time-aware-rows CPD |
+| Feature | Empty meal slots → native camera → compose; + Log text-first; meal rows by time of day + filled entries; library via Post about |
 
 ### Backend (Railway)
 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-backend-main` @ clean `main` |
-| Git on origin | `00fe4885` — LKG docs after Want video / Month in Food (feature `f729764d` included) |
-| Live health SHA | `00fe4885…` (verified 2026-08-20 CPD) |
+| Git on origin | `ed869d91` — LKG docs mirror (no BE feature ship this CPD) |
+| Live health SHA | `ed869d91…` (verified 2026-08-20 CPD) |
 | Health URL | `https://menubloc-backend-production.up.railway.app/health` |
-| `commit_hash` | `00fe4885` (live at CPD certify) |
+| `commit_hash` | `ed869d91` (live at CPD certify) |
 | DB | `0279` want video; `0277` ate/food_activity video applied on prod 2026-08-20 |
-| Smoke | tip-gate PASS `7ljmgxgm2` / `index-CdB7Wbvg.js`; health `00fe4885`; bundle railway=61 localhost=9 |
+| Smoke | tip-gate PASS `l7pg7dpir` / `index-C18CZMc2.js`; health `ed869d91`; bundle railway ≫ localhost |
 
 ### Restore current tip (if tip-gate fails mid-change)
 
 ```bash
 cd /Users/andrebarber/Desktop/menubloc/menubloc-frontend-main
-npx vercel alias set menubloc-frontend-7ljmgxgm2-menuply.vercel.app menuply.com
-npx vercel alias set menubloc-frontend-7ljmgxgm2-menuply.vercel.app www.menuply.com
-npx vercel alias set menubloc-frontend-7ljmgxgm2-menuply.vercel.app crm.menuply.com
-npx vercel alias set menubloc-frontend-7ljmgxgm2-menuply.vercel.app venues.menuply.com
+npx vercel alias set menubloc-frontend-l7pg7dpir-menuply.vercel.app menuply.com
+npx vercel alias set menubloc-frontend-l7pg7dpir-menuply.vercel.app www.menuply.com
+npx vercel alias set menubloc-frontend-l7pg7dpir-menuply.vercel.app crm.menuply.com
+npx vercel alias set menubloc-frontend-l7pg7dpir-menuply.vercel.app venues.menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 ```
+
+### Prior tip — meal board + Upcoming Plans (rollback target)
+
+| Field | Value |
+|-------|-------|
+| Git commit | `ff5f3ea` |
+| Vercel deployment | `menubloc-frontend-7ljmgxgm2-menuply.vercel.app` |
+| Live bundle | `index-CdB7Wbvg.js` |
 
 ### Prior tip — Want video + Month in Food (rollback target)
 
@@ -261,6 +269,7 @@ Newest superseded first. Restoring drops everything shipped after that tip.
 
 | Deployment id | Bundle | Approx feature / CPD |
 |---------------|--------|----------------------|
+| `7ljmgxgm2` | `index-CdB7Wbvg.js` | Meal board + Upcoming Plans (`ff5f3ea`) — superseded by camera slots / time-aware rows `l7pg7dpir` |
 | `ip7mqupae` | `index-rdsNgKEW.js` | Want video + Month in Food (`2e67796`) — superseded by meal board / Upcoming Plans `7ljmgxgm2` |
 | `gp1hon3it` | `index-BshpJpXB.js` | Connects + Post about (`9196bfc`) — superseded by Want video / Month in Food `ip7mqupae` |
 | `o8xa604sx` | `index-DZR4cTvb.js` | Future Plans collapse + crews (`ef9bb7a`) — superseded by calendar events `4iy54g5qc` |
