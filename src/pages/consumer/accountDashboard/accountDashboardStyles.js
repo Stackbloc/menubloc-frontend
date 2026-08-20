@@ -13,6 +13,7 @@ export const accountStyles = {
     padding: "16px 16px 32px",
     boxSizing: "border-box",
     width: "100%",
+    color: "#0f172a",
   },
   pageTitle: {
     fontSize: 26,
@@ -201,6 +202,15 @@ export const accountStyles = {
     fontSize: 13,
     fontWeight: 700,
     color: "#334155",
+  },
+  choiceRow: {
+    display: "flex",
+    gap: 8,
+    alignItems: "center",
+    fontSize: 14,
+    fontWeight: 600,
+    color: "#0f172a",
+    cursor: "pointer",
   },
   optText: {
     fontWeight: 500,

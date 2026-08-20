@@ -26,6 +26,8 @@ describe("What Diners Are Saying (restaurant)", () => {
     expect(section).toMatch(/What Diners Are Saying/);
     expect(section).toMatch(/listPublicRestaurantFoodActivity/);
     expect(section).toMatch(/\/menu-items\//);
+    expect(section).toMatch(/height: 280/);
+    expect(section).toMatch(/cardMedia/);
     expect(section).toMatch(/User-reported food activity/);
     expect(section).toMatch(/FoodComments/);
     expect(section).toMatch(/hideTitle/);

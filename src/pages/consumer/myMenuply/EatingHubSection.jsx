@@ -77,6 +77,7 @@ export default function EatingHubSection({
   onDiarySelect,
   onPlanAddDetails,
   onPostTagged,
+  onSkipDetails,
   foodHref,
   sectionRef = null,
 }) {
@@ -88,7 +89,11 @@ export default function EatingHubSection({
   const showWant = eatingFilter === "all" || eatingFilter === "want";
   const showPlans = eatingFilter === "all" || eatingFilter === "plans";
 
-  const eatingForDay = eating.filter((row) => planYmd(row.eaten_on || row.created_at) === hubDate);
+  const eatingForDay = eating.filter((row) => {
+    if (planYmd(row.eaten_on || row.created_at) === hubDate) return true;
+    if (lastPost?.kind === "diary" && Number(row.entry_id) === Number(lastPost.id)) return true;
+    return false;
+  });
   const plansForDay = shownPlans.filter((plan) => planYmd(plan.plan_date) === hubDate);
   const plansToShow =
     eatingFilter === "plans" && dateCmp >= 0 ? plansForDay : showPlans ? shownPlans : [];
@@ -146,6 +151,16 @@ export default function EatingHubSection({
               {hubDate === today ? "Today" : formatPlanBracketDate(hubDate)}
             </p>
           ) : null}
+          {lastPost?.kind === "diary" && !readOnly ? (
+            <PostAfterActions
+              kind="diary"
+              record={lastPost}
+              busy={postBusy === "eating"}
+              followed={followed}
+              onTagged={onPostTagged}
+              onSkip={onSkipDetails}
+            />
+          ) : null}
           <PhotoGrid
             items={
               readOnly
@@ -158,19 +173,10 @@ export default function EatingHubSection({
             onPhotoPick={readOnly ? undefined : onEatingPhotoPick}
             onSelect={readOnly ? undefined : onDiarySelect}
           />
-          {!readOnly && dateCmp <= 0 && eatingForDay.length === 0 ? (
+          {!readOnly && dateCmp <= 0 && eatingForDay.length === 0 && lastPost?.kind !== "diary" ? (
             <p style={{ ...s.muted, margin: "0 0 4px", fontSize: 13 }} data-testid="eating-ate-empty-day">
               Nothing logged for this day yet — use Ate above to post.
             </p>
-          ) : null}
-          {lastPost?.kind === "diary" ? (
-            <PostAfterActions
-              kind="diary"
-              record={lastPost}
-              busy={postBusy === "eating"}
-              followed={followed}
-              onTagged={onPostTagged}
-            />
           ) : null}
         </div>
       ) : null}

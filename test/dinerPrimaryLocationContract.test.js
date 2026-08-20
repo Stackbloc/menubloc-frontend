@@ -33,8 +33,12 @@ test("Find Diners page integrates search + connections", () => {
 
 test("Profile tab exposes location + discoverability", () => {
   const profileTab = read("src/pages/consumer/accountDashboard/ProfileTab.jsx");
+  const styles = read("src/pages/consumer/accountDashboard/accountDashboardStyles.js");
   assert.match(profileTab, /Who can find me/);
   assert.match(profileTab, /PrimaryLocationPicker/);
+  assert.match(profileTab, /styles\.choiceRow/);
+  assert.match(styles, /choiceRow:[\s\S]*color: "#0f172a"/);
+  assert.match(styles, /pageInner:[\s\S]*color: "#0f172a"/);
 });
 
 test("Routes and API client wired", () => {

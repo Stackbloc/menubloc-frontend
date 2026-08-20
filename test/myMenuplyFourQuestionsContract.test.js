@@ -59,6 +59,8 @@ test("My Menuply is the diner's personal home", () => {
   assert.doesNotMatch(page, /navigator\.share/);
   assert.match(section, /EatingCompose/);
   assert.match(page, /createWhatIAteToday/);
+  assert.match(page, /mapDiaryEntriesForHub/);
+  assert.match(section, /onSkip/);
   assert.match(page, /createWhatWeDoingSession/);
   assert.match(page, /createDiningCrew/);
   assert.match(page, /createWantToEat/);
@@ -68,6 +70,9 @@ test("My Menuply is the diner's personal home", () => {
   assert.match(after, /searchReportPlaces/);
   assert.match(after, /Tag a dish/);
   assert.match(after, /Recipe/);
+  assert.match(after, /Homemade/);
+  assert.match(after, /Skip for now/);
+  assert.match(after, /optional/);
   assert.match(after, /WHAT_I_ATE_MEAL_PERIODS/);
   assert.match(after, /updateWantToEat/);
   assert.match(after, /suggestWhatIAteTodayMenuItems/);

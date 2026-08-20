@@ -93,6 +93,9 @@ export default function EatingCompose({
             data-testid="eating-compose-input"
           />
         </div>
+        {acceptMedia ? (
+          <p style={socialType.meta}>Photo or video is optional — you can take it before you post.</p>
+        ) : null}
         {category === "ate" ? (
           <div style={styles.mealRow} role="group" aria-label="Meal time">
             {WHAT_I_ATE_MEAL_PERIODS.map((slot) => {

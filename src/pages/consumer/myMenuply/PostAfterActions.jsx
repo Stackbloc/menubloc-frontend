@@ -20,12 +20,35 @@ import {
 import { WHAT_I_ATE_MEAL_PERIODS } from "../../../lib/whatIAteTodayMealPeriod.js";
 import * as s from "./myMenuplyStyles.js";
 
+const HOMEMADE_PREFIX = "Homemade";
+
+function splitHomemadeComment(comment) {
+  const raw = String(comment || "").trim();
+  if (!raw) return { homemade: false, recipe: "" };
+  if (raw === HOMEMADE_PREFIX) return { homemade: true, recipe: "" };
+  if (raw.startsWith(`${HOMEMADE_PREFIX}. `)) {
+    return { homemade: true, recipe: raw.slice(HOMEMADE_PREFIX.length + 2).trim() };
+  }
+  if (raw.startsWith(`${HOMEMADE_PREFIX} `)) {
+    return { homemade: true, recipe: raw.slice(HOMEMADE_PREFIX.length).trim() };
+  }
+  return { homemade: false, recipe: raw };
+}
+
+function joinHomemadeComment(homemade, recipe) {
+  const note = String(recipe || "").trim();
+  if (homemade && note) return `${HOMEMADE_PREFIX}. ${note}`;
+  if (homemade) return HOMEMADE_PREFIX;
+  return note;
+}
+
 export default function PostAfterActions({
   kind,
   record,
   busy = false,
   followed = [],
   onTagged,
+  onSkip,
 }) {
   const [query, setQuery] = useState("");
   const [dishQuery, setDishQuery] = useState("");
@@ -41,16 +64,19 @@ export default function PostAfterActions({
   const [joinCapacity, setJoinCapacity] = useState("4");
   const [mealPeriod, setMealPeriod] = useState("");
   const [recipe, setRecipe] = useState("");
+  const [homemade, setHomemade] = useState(false);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
+    const split = splitHomemadeComment(record?.comment || record?.recipe);
     setMealPeriod(String(record?.meal_period || "").trim());
-    setRecipe(String(record?.comment || record?.recipe || "").trim());
+    setRecipe(split.recipe);
+    setHomemade(split.homemade);
     setJoinable(Boolean(record?.joinable));
     setJoinCapacity(String(record?.join_capacity || "4"));
-    setRestaurant(record?.restaurant_id ? asRestaurantPlace(record) : null);
-    setDish(record?.menu_item_id ? asDishPlace(record) : null);
+    setRestaurant(split.homemade ? null : record?.restaurant_id ? asRestaurantPlace(record) : null);
+    setDish(split.homemade ? null : record?.menu_item_id ? asDishPlace(record) : null);
     setQuery("");
     setDishQuery("");
     setGlobalDishQuery("");
@@ -130,6 +156,7 @@ export default function PostAfterActions({
   function pickRestaurant(row) {
     const next = asRestaurantPlace(row);
     if (!next) return;
+    setHomemade(false);
     setRestaurant(next);
     setDish(null);
     setQuery("");
@@ -203,11 +230,11 @@ export default function PostAfterActions({
         return;
       } else {
         await updateWhatIAteToday(record.id, {
-          restaurant_id: restaurant?.restaurant_id || undefined,
-          menu_item_id: dish?.menu_item_id || undefined,
-          food_name: dishLabel(dish) || record.food_name || undefined,
+          restaurant_id: homemade ? null : restaurant?.restaurant_id || undefined,
+          menu_item_id: homemade ? null : dish?.menu_item_id || undefined,
+          food_name: homemade ? record.food_name : dishLabel(dish) || record.food_name || undefined,
           meal_period: mealPeriod || undefined,
-          comment: recipe,
+          comment: joinHomemadeComment(homemade, recipe),
         });
       }
       setRestaurant(null);
@@ -224,20 +251,48 @@ export default function PostAfterActions({
 
   const followedPicks = (followed || []).filter((row) => row?.restaurant_id).slice(0, 8);
   const canSave = Boolean(
-    restaurant || dish || recipe.trim() || mealPeriod || (kind === "plan" && joinable)
+    homemade || restaurant || dish || recipe.trim() || mealPeriod || (kind === "plan" && joinable)
   );
   const disabled = busy || saving;
-
   const isWant = kind === "want";
+  const isDiary = kind === "diary";
 
   return (
     <form onSubmit={handleSave} data-testid="post-after-actions" style={styles.form}>
-      <div style={styles.kicker}>{isWant ? "Link menu item" : "Add details"}</div>
+      <div style={styles.kicker}>{isWant ? "Link menu item" : "Add optional details"}</div>
       <p style={s.muted}>
         {isWant
           ? "Search a dish to link it, or tag a restaurant. Saved to your want list below."
-          : "Restaurant, menu item, recipe, and meal time."}
+          : "Restaurant, menu item, homemade, and recipe are optional. Skip anytime."}
       </p>
+      {isDiary ? (
+        <div style={styles.originRow} role="group" aria-label="Where was this from">
+          <button
+            type="button"
+            data-testid="post-after-homemade"
+            style={homemade ? styles.originOn : styles.origin}
+            disabled={disabled}
+            onClick={() => {
+              setHomemade(true);
+              setRestaurant(null);
+              setDish(null);
+              setQuery("");
+              setHits([]);
+            }}
+          >
+            Homemade
+          </button>
+          <button
+            type="button"
+            data-testid="post-after-restaurant-origin"
+            style={!homemade && restaurant ? styles.originOn : styles.origin}
+            disabled={disabled}
+            onClick={() => setHomemade(false)}
+          >
+            Restaurant
+          </button>
+        </div>
+      ) : null}
       {isWant && !dish ? (
         <>
           <input
@@ -282,7 +337,7 @@ export default function PostAfterActions({
       <textarea
         value={recipe}
         onChange={(e) => setRecipe(e.target.value.slice(0, 500))}
-        placeholder="Recipe or notes"
+            placeholder="Recipe or notes (optional)"
         disabled={disabled}
         rows={3}
         style={styles.recipe}
@@ -290,7 +345,11 @@ export default function PostAfterActions({
       />
       {error ? <p style={s.error}>{error}</p> : null}
 
-      {restaurant ? (
+      {homemade ? (
+        <p style={s.muted} data-testid="post-after-homemade-note">
+          Homemade — no restaurant or menu item needed.
+        </p>
+      ) : restaurant ? (
         <div style={styles.selected} data-testid="post-after-restaurant">
           <div>
             <div style={styles.selectedName}>{restaurantLabel(restaurant) || "Restaurant"}</div>
@@ -318,7 +377,7 @@ export default function PostAfterActions({
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value.slice(0, 120))}
-            placeholder="Tag restaurant"
+            placeholder="Restaurant (optional)"
             disabled={disabled}
             autoComplete="off"
             style={styles.place}
@@ -371,7 +430,7 @@ export default function PostAfterActions({
             type="search"
             value={dishQuery}
             onChange={(e) => setDishQuery(e.target.value.slice(0, 120))}
-            placeholder="Tag a dish"
+            placeholder="Menu item (optional)"
             disabled={disabled}
             autoComplete="off"
             style={styles.place}
@@ -420,9 +479,22 @@ export default function PostAfterActions({
         </>
       ) : null}
 
-      <button type="submit" disabled={disabled || !canSave} style={s.primaryBtn}>
-        {saving ? "…" : "Save details"}
-      </button>
+      <div style={styles.actionRow}>
+        {onSkip ? (
+          <button
+            type="button"
+            data-testid="post-after-skip"
+            disabled={disabled}
+            style={s.chipBtn}
+            onClick={() => onSkip()}
+          >
+            Skip for now
+          </button>
+        ) : null}
+        <button type="submit" disabled={disabled || !canSave} style={s.primaryBtn}>
+          {saving ? "…" : "Save details"}
+        </button>
+      </div>
     </form>
   );
 }
@@ -432,7 +504,11 @@ const styles = {
     display: "flex",
     flexDirection: "column",
     gap: 10,
-    margin: "10px 0 0",
+    margin: "10px 0 12px",
+    padding: "14px 14px 16px",
+    border: "1px solid #e5e7eb",
+    borderRadius: 16,
+    background: "#fff",
   },
   kicker: {
     fontSize: 11,
@@ -440,6 +516,41 @@ const styles = {
     letterSpacing: "0.06em",
     textTransform: "uppercase",
     color: "#667085",
+  },
+  originRow: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  origin: {
+    appearance: "none",
+    border: "1px solid #e5e7eb",
+    background: "#fff",
+    color: "#334155",
+    borderRadius: 999,
+    padding: "8px 14px",
+    fontSize: 13,
+    fontWeight: 700,
+    cursor: "pointer",
+    fontFamily: "inherit",
+  },
+  originOn: {
+    appearance: "none",
+    border: "1px solid #86efac",
+    background: "#ecfdf5",
+    color: "#166534",
+    borderRadius: 999,
+    padding: "8px 14px",
+    fontSize: 13,
+    fontWeight: 700,
+    cursor: "pointer",
+    fontFamily: "inherit",
+  },
+  actionRow: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: 8,
+    alignItems: "center",
   },
   kind: {
     fontSize: 11,

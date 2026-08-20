@@ -29,51 +29,44 @@ function ActivityCard({ activity }) {
   const isPlaceOnly = !activity?.menu_item_id;
   const itemName = isPlaceOnly
     ? activity?.restaurant_name || "this place"
-    : activity?.item_name || "Menu item";
+    : activity?.item_name || activity?.food_name || "Menu item";
   const badge = activity?.edu_verification_badge || null;
+  const photoUrl = activity?.photo_url ? resolveConsumerMediaUrl(activity.photo_url) : "";
+  const videoUrl = activity?.video_url ? resolveConsumerMediaUrl(activity.video_url) : "";
+  const hasMedia = Boolean(photoUrl || videoUrl);
 
   return (
     <article
       data-testid="diners-saying-activity"
       data-share-kind={isPlaceOnly ? "place" : "dish"}
-      style={styles.card}
+      style={hasMedia ? styles.cardMedia : styles.card}
     >
-      <div style={styles.nameRow}>
-        <strong style={styles.name}>{dinerLabel(activity)}</strong>
-        {badge ? <span style={styles.badge}>{badge}</span> : null}
+      {videoUrl ? (
+        <video src={videoUrl} style={styles.hero} controls playsInline preload="metadata" />
+      ) : photoUrl ? (
+        <img src={photoUrl} alt="" style={styles.hero} loading="lazy" />
+      ) : null}
+      <div style={hasMedia ? styles.cardBody : undefined}>
+        <div style={styles.nameRow}>
+          <strong style={styles.name}>{dinerLabel(activity)}</strong>
+          {badge ? <span style={styles.badge}>{badge}</span> : null}
+        </div>
+        <div style={styles.itemLine}>
+          {itemHref ? (
+            <Link to={itemHref} style={styles.itemLink}>
+              {itemName}
+            </Link>
+          ) : (
+            <span>{itemName}</span>
+          )}
+        </div>
+        <p style={styles.shared}>
+          {activity?.activity_label || "shared that they are eating"}
+        </p>
+        {activity?.comment ? (
+          <p style={styles.quote}>&ldquo;{activity.comment}&rdquo;</p>
+        ) : null}
       </div>
-      <div style={styles.itemLine}>
-        {itemHref ? (
-          <Link to={itemHref} style={styles.itemLink}>
-            {itemName}
-          </Link>
-        ) : (
-          <span>{itemName}</span>
-        )}
-      </div>
-      <p style={styles.shared}>
-        {activity?.activity_label || "shared that they are eating"}
-      </p>
-      {activity?.comment ? (
-        <p style={styles.quote}>&ldquo;{activity.comment}&rdquo;</p>
-      ) : null}
-      {activity?.photo_url ? (
-        <img
-          src={resolveConsumerMediaUrl(activity.photo_url)}
-          alt=""
-          style={styles.photo}
-          loading="lazy"
-        />
-      ) : null}
-      {activity?.video_url ? (
-        <video
-          src={resolveConsumerMediaUrl(activity.video_url)}
-          style={styles.photo}
-          controls
-          playsInline
-          preload="metadata"
-        />
-      ) : null}
     </article>
   );
 }
@@ -261,7 +254,7 @@ const styles = {
   },
   muted: { fontSize: 13, color: "#78716c", margin: "0 0 12px" },
   error: { fontSize: 13, color: "#b91c1c", margin: "0 0 12px" },
-  list: { display: "grid", gap: 10, marginBottom: 4 },
+  list: { display: "grid", gap: 14, marginBottom: 4 },
   commentsWrap: {
     marginTop: 16,
     paddingTop: 14,
@@ -269,30 +262,41 @@ const styles = {
   },
   card: {
     padding: "12px 14px",
-    borderRadius: 12,
+    borderRadius: 16,
     border: "1px solid #e7e5e4",
     background: "#fff",
+    display: "grid",
+    gap: 4,
+  },
+  cardMedia: {
+    padding: 0,
+    borderRadius: 16,
+    border: "1px solid #e7e5e4",
+    background: "#fff",
+    overflow: "hidden",
+  },
+  cardBody: {
+    padding: "12px 14px 14px",
     display: "grid",
     gap: 4,
   },
   nameRow: { display: "flex", flexWrap: "wrap", gap: 8, alignItems: "baseline" },
   name: { fontSize: 15, color: "#1c1917" },
   badge: { fontSize: 11, fontWeight: 600, color: "#14532d" },
-  itemLine: { fontSize: 15, fontWeight: 600, color: "#1c1917" },
+  itemLine: { fontSize: 16, fontWeight: 800, color: "#1c1917" },
   itemLink: { color: "#166534", textDecoration: "none" },
   shared: { margin: 0, fontSize: 12, color: "#78716c" },
   quote: {
     margin: "4px 0 0",
     fontSize: 14,
     color: "#44403c",
-    fontStyle: "italic",
-    lineHeight: 1.4,
+    lineHeight: 1.45,
   },
-  photo: {
-    marginTop: 8,
-    maxWidth: "100%",
-    maxHeight: 180,
-    borderRadius: 8,
+  hero: {
+    width: "100%",
+    height: 280,
     objectFit: "cover",
+    display: "block",
+    background: "#f5f5f4",
   },
 };

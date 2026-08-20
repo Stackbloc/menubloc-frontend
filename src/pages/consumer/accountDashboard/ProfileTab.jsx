@@ -214,11 +214,11 @@ export default function ProfileTab({
       >
         <div style={{ display: "grid", gap: 8 }}>
           {[
-            ["members", "Menuply members"],
-            ["area", "People in my area"],
-            ["nobody", "Nobody"],
-          ].map(([value, label]) => (
-            <label key={value} style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 14 }}>
+            ["members", "Menuply members", "Any signed-in diner can find you in search."],
+            ["area", "People in my area", "Diners near your primary location can find you."],
+            ["nobody", "Nobody", "Not searchable — safest default."],
+          ].map(([value, label, hint]) => (
+            <label key={value} style={styles.choiceRow}>
               <input
                 type="radio"
                 name="discoverability"
@@ -226,7 +226,10 @@ export default function ProfileTab({
                 checked={discoverability === value}
                 onChange={() => onDiscoverabilityChange(value)}
               />
-              {label}
+              <span>
+                <span style={{ display: "block" }}>{label}</span>
+                <span style={{ ...styles.muted, fontSize: 12 }}>{hint}</span>
+              </span>
             </label>
           ))}
         </div>

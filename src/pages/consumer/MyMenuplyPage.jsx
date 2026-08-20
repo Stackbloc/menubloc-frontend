@@ -286,8 +286,42 @@ export default function MyMenuplyPage() {
         meal_period: mealPeriod || defaultWhatIAteMealPeriod(),
       });
       const entry = data.entry || data;
-      setLastPost({ kind: "diary", id: entry.id });
+      if (!entry?.id) {
+        throw new Error("Saved but response was incomplete — refresh and try again");
+      }
+      const hubItem = mapDiaryEntriesForHub([
+        {
+          ...entry,
+          eaten_on: planYmd(entry.eaten_on) || hubDate,
+          food_name: entry.food_name || text || "Food",
+          photo_url: entry.photo_url || photo_url || null,
+          video_url: entry.video_url || video_url || null,
+        },
+      ])[0];
+      setEating((prev) => {
+        const rest = (prev || []).filter((row) => Number(row.entry_id) !== Number(entry.id));
+        return [hubItem, ...rest];
+      });
+      setLastPost({
+        kind: "diary",
+        id: entry.id,
+        food_name: hubItem.food_name,
+        meal_period: hubItem.meal_period,
+        comment: hubItem.comment,
+        eaten_on: hubItem.eaten_on,
+        photo_url: hubItem.photo_url,
+        video_url: hubItem.video_url,
+      });
+      window.setTimeout(() => {
+        eatingSectionRef.current
+          ?.querySelector('[data-testid="post-after-actions"]')
+          ?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }, 80);
       await load();
+      setEating((prev) => {
+        if ((prev || []).some((row) => Number(row.entry_id) === Number(entry.id))) return prev;
+        return [hubItem, ...(prev || [])];
+      });
     } catch (err) {
       setError(err.message || "Unable to add");
     } finally {
@@ -631,6 +665,7 @@ export default function MyMenuplyPage() {
                 });
               }}
               onPostTagged={handlePostTagged}
+              onSkipDetails={() => setLastPost(null)}
               foodHref={foodHref}
             />
 
