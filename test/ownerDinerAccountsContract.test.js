@@ -21,13 +21,17 @@ describe("owner diner accounts panel", () => {
     assert.match(api, /getOwnerDinerAccounts[\s\S]*return get\(`\/api\/owner\/dashboard\/diners/);
   });
 
-  it("OwnerDiners shows total diner count and requested columns", () => {
+  it("OwnerDiners shows total diner count and opened/closed with time of day", () => {
     const page = read("src/pages/owner/OwnerDiners.jsx");
     assert.match(page, /getOwnerDinerAccounts/);
     assert.match(page, /Total diners/);
     assert.match(page, /Account opened/);
     assert.match(page, /Account closed/);
     assert.match(page, /Geographic market/);
+    assert.match(page, /formatDateTime/);
+    assert.match(page, /hour:\s*"numeric"/);
+    assert.match(page, /minute:\s*"2-digit"/);
+    assert.match(page, /ids 2, 3, 4, 29/);
     assert.match(page, /data-testid="diner-accounts-table"/);
   });
 

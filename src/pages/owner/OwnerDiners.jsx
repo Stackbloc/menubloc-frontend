@@ -9,7 +9,7 @@ const METRIC_GRID = {
   gap: 14,
 };
 
-function formatDate(value) {
+function formatDateTime(value) {
   if (!value) return "—";
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return "—";
@@ -17,6 +17,8 @@ function formatDate(value) {
     year: "numeric",
     month: "short",
     day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
   });
 }
 
@@ -49,7 +51,7 @@ export default function OwnerDiners() {
     <OwnerLayout title="Diner accounts">
       <SectionTitle
         title="All diner accounts"
-        subtitle="Lifetime consumer accounts (not restaurant Stripe subscribers). Closed dates appear only when status is closed, disabled, deleted, inactive, or cancelled — there is no dedicated close-date column."
+        subtitle="Lifetime consumer accounts (not restaurant Stripe subscribers). Opened/closed show date and time of day. Platform staff accounts currently excluded from counts and this list (ids 2, 3, 4, 29 only — not future name matches). Closed times appear only when status is closed, disabled, deleted, inactive, or cancelled."
       />
 
       {error ? (
@@ -90,8 +92,8 @@ export default function OwnerDiners() {
             columns={[
               ["Name", "name", (row) => row.name || "—"],
               ["Email", "email", (row) => row.email || "—"],
-              ["Account opened", "opened_at", (row) => formatDate(row.opened_at)],
-              ["Account closed", "closed_at", (row) => formatDate(row.closed_at)],
+              ["Account opened", "opened_at", (row) => formatDateTime(row.opened_at)],
+              ["Account closed", "closed_at", (row) => formatDateTime(row.closed_at)],
               ["Geographic market", "geographic_market", (row) => row.geographic_market || "—"],
               ["Status", "status", (row) => row.status || "—"],
             ]}
