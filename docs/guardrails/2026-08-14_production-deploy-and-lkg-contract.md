@@ -34,36 +34,54 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` @ clean `main` |
-| Git commit | `7eaf78a` — live getUserMedia camera sheet on social camera icons |
-| Vercel deployment | `menubloc-frontend-bm2jkijow-menuply.vercel.app` |
-| Live bundle | `index-BkJqmepa.js` |
+| Git commit | `5c82ea4` — My Menuply hub access (Month in Food share, Settings, calendar, Diner QR, empty past diary) |
+| Vercel deployment | `menubloc-frontend-k2hpeyh3s-menuply.vercel.app` |
+| Live bundle | `index-DygwUgB7.js` |
 | Aliases | `menuply.com`, `www.menuply.com`, `crm.menuply.com`, `venues.menuply.com` |
-| Tip-gate | **PASS** (apex + www) verified 2026-08-20 after getUserMedia camera CPD |
-| Feature | Camera icons open live preview + Capture (ConsumerCameraSheet); library via Post about; menu upload unchanged |
+| Tip-gate | **PASS** (apex + www) verified 2026-08-20 after My Menuply hub access CPD |
+| Feature | Month in Food share; Settings from hub; calendar keeps selection + RSVP events; past empty What I Ate = No entries; Post about → My Diner QR first; menu-item middleware fix (`688adf4`) |
 
 ### Backend (Railway)
 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-backend-main` @ clean `main` |
-| Git on origin | `cce63630` — LKG docs mirror (no BE feature ship this CPD) |
-| Live health SHA | `cce63630…` (verified 2026-08-20 CPD) |
+| Git on origin | `9f997a6a` — Find Diners name/phone/email searchable |
+| Live health SHA | `9f997a6a…` (verified 2026-08-20 CPD; unchanged this FE ship) |
 | Health URL | `https://menubloc-backend-production.up.railway.app/health` |
-| `commit_hash` | `cce63630` (live at CPD certify) |
-| DB | `0279` want video; `0277` ate/food_activity video applied on prod 2026-08-20 |
-| Smoke | tip-gate PASS `bm2jkijow` / `index-BkJqmepa.js`; health `cce63630`; bundle railway ≫ localhost |
+| `commit_hash` | `9f997a6a` (live at CPD certify) |
+| DB | migrations through `0281` (`0280` connection food activity; `0281` LA Live cuisine; `0279` want video; `0277` ate video) |
+| Smoke | tip-gate PASS `k2hpeyh3s` / `index-DygwUgB7.js`; health `9f997a6a`; bundle railway ≫ localhost |
 
 ### Restore current tip (if tip-gate fails mid-change)
 
 ```bash
 cd /Users/andrebarber/Desktop/menubloc/menubloc-frontend-main
-npx vercel alias set menubloc-frontend-bm2jkijow-menuply.vercel.app menuply.com
-npx vercel alias set menubloc-frontend-bm2jkijow-menuply.vercel.app www.menuply.com
-npx vercel alias set menubloc-frontend-bm2jkijow-menuply.vercel.app crm.menuply.com
-npx vercel alias set menubloc-frontend-bm2jkijow-menuply.vercel.app venues.menuply.com
+npx vercel alias set menubloc-frontend-k2hpeyh3s-menuply.vercel.app menuply.com
+npx vercel alias set menubloc-frontend-k2hpeyh3s-menuply.vercel.app www.menuply.com
+npx vercel alias set menubloc-frontend-k2hpeyh3s-menuply.vercel.app crm.menuply.com
+npx vercel alias set menubloc-frontend-k2hpeyh3s-menuply.vercel.app venues.menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 ```
+
+### Prior tip — connection food activity + YB scope (rollback target)
+
+| Field | Value |
+|-------|-------|
+| Deployment | `menubloc-frontend-hzqhp15u6-menuply.vercel.app` |
+| Bundle | `index-DZq-yI_T.js` |
+| Commit | `d3eb1d2` |
+| Notes | Pre–My Menuply hub access CPD |
+
+### Prior tip — live getUserMedia camera (rollback target)
+
+| Field | Value |
+|-------|-------|
+| Deployment | `menubloc-frontend-bm2jkijow-menuply.vercel.app` |
+| Bundle | `index-BkJqmepa.js` |
+| Commit | `7eaf78a` |
+| Notes | Pre–connection-food / YB scope CPD |
 
 ### Prior tip — camera meal slots + time-aware rows (rollback target)
 
