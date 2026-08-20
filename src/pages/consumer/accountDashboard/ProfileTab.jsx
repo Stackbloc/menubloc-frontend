@@ -209,7 +209,7 @@ export default function ProfileTab({
       <SummaryEditSection
         title="Who can find me?"
         summary={discoverabilityLabels[discoverability] || discoverabilityLabels.nobody}
-        description="Control whether other diners can find you in search. Nobody is the default and safest option."
+        description="Control whether other diners can find you by name, phone number, or email. Nobody is the default and safest option."
         editing={editingDiscoverability}
         onEdit={() => setEditingDiscoverability(true)}
         onDone={async () => {
@@ -221,8 +221,8 @@ export default function ProfileTab({
       >
         <div style={{ display: "grid", gap: 8 }}>
           {[
-            ["members", "Menuply members", "Any signed-in diner can find you in search."],
-            ["area", "People in my area", "Diners near your primary location can find you."],
+            ["members", "Menuply members", "Any signed-in diner can find you by name, phone, or email."],
+            ["area", "People in my area", "Diners near your primary location can find you by name, phone, or email."],
             ["nobody", "Nobody", "Not searchable — safest default."],
           ].map(([value, label, hint]) => (
             <label key={value} style={styles.choiceRow}>

@@ -148,7 +148,8 @@ export default function FindDinersPage() {
       <StickyPageHeader title="Find Diners" backTo="/account?tab=social" />
       <main style={styles.main}>
         <p style={styles.lead}>
-          Search by name, member ID, city, neighborhood, or school. Results respect each diner&apos;s privacy settings.
+          Search by name, phone, email, member ID, city, neighborhood, or school. Results respect each diner&apos;s
+          privacy settings — only diners who chose to be searchable appear. Use Connect to send a connection request.
         </p>
 
         <form
@@ -162,7 +163,7 @@ export default function FindDinersPage() {
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Name, #member id, city, or school"
+            placeholder="Name, phone, email, or #member id"
             style={styles.searchInput}
             aria-label="Search diners"
           />
@@ -174,7 +175,7 @@ export default function FindDinersPage() {
         {error ? <p style={styles.error}>{error}</p> : null}
 
         {searched && !loading && results.length === 0 ? (
-          <p style={styles.empty}>No diners matched. Try a different name, city, or member ID.</p>
+          <p style={styles.empty}>No diners matched. Try a name, phone, email, city, or member ID.</p>
         ) : null}
 
         <ul style={styles.list}>
