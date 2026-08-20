@@ -102,12 +102,34 @@ export function normalizeConsumerShareUrl(url) {
   }
 }
 
-function toConsumerShareAbsolute(pathOrUrl) {
+/**
+ * Absolute menuply.com (or local-dev) share URL from a path or absolute URL.
+ * Same pipeline menus / dishes / clusters use — do not rebuild with window.location.
+ */
+export function toConsumerShareAbsolute(pathOrUrl) {
   const raw = asText(pathOrUrl);
   if (!raw) return "";
   if (/^https?:\/\//i.test(raw)) return normalizeConsumerShareUrl(raw);
   const absolute = absoluteCanonicalUrl(raw.startsWith("/") ? raw : `/${raw}`);
   return normalizeConsumerShareUrl(absolute || "");
+}
+
+/**
+ * Share payload for any public Menuply path (Month in Food, plans, etc.).
+ * Prefer this + ShareButton over ad-hoc URL builders.
+ */
+export function buildConsumerPathShareData(pathOrUrl, { title, text, image, origin = getPublicOrigin() } = {}) {
+  const url = toConsumerShareAbsolute(pathOrUrl);
+  if (!url) return null;
+  const payload = {
+    title: asText(title) || "Menuply",
+    text: asText(text),
+    url,
+  };
+  if (image) {
+    payload.image = resolveShareImageUrl({ imageUrl: image, origin });
+  }
+  return payload;
 }
 
 export function buildCanonicalMenuPath({ restaurantSlug, restaurantId, city, state }) {

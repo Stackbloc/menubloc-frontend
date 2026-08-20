@@ -1,12 +1,12 @@
 /**
  * Dining Crew invite share payload — menuply.com locked.
- * Reuses consumer share normalization; for ShareModal (Copy Link primary).
+ * Path shares delegate to shareUtils; invite URLs rewrite any host to pathname on menuply.com.
  */
 
-import { normalizeConsumerShareUrl } from "../components/share/shareUtils.js";
+import { toConsumerShareAbsolute } from "../components/share/shareUtils.js";
 
 /**
- * Force invite URLs onto https://menuply.com (never preview / share.google origins).
+ * Force invite URLs onto https://menuply.com (never preview / share.google / API origins).
  * @param {string} apiUrl
  * @returns {string}
  */
@@ -15,11 +15,9 @@ export function menuplyDiningCrewInviteUrl(apiUrl) {
   if (!raw) return "";
   try {
     const parsed = new URL(raw, "https://menuply.com");
-    return (
-      normalizeConsumerShareUrl(`https://menuply.com${parsed.pathname}${parsed.search}`) || ""
-    );
+    return toConsumerShareAbsolute(`${parsed.pathname}${parsed.search}`) || "";
   } catch {
-    return normalizeConsumerShareUrl(raw) || "";
+    return toConsumerShareAbsolute(raw) || "";
   }
 }
 
@@ -37,6 +35,7 @@ export function buildDiningCrewInviteShareData(inviteUrl) {
   };
 }
 
+/** Path / invite share for My Menuply events — rewrites foreign hosts like invite URLs. */
 export function buildMenuplyPathShareData(path, { title, text } = {}) {
   const url = menuplyDiningCrewInviteUrl(path);
   if (!url) return null;

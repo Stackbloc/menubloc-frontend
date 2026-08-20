@@ -43,20 +43,25 @@ test("consumerApi exposes month-in-food helpers", () => {
   assert.match(api, /\/api\/consumer\/connections\/.*month-in-food/);
 });
 
-test("footer share uses menuply path share helper", () => {
+test("footer share uses platform ShareButton + shareUtils", () => {
   const footer = read("src/pages/consumer/monthInFood/MonthInFoodFooter.jsx");
-  assert.match(footer, /buildMenuplyPathShareData/);
-  assert.match(footer, /ShareModal/);
-  assert.match(footer, /Copy Link/);
+  assert.match(footer, /buildConsumerPathShareData/);
+  assert.match(footer, /ShareButton/);
+  assert.match(footer, /data-testid="month-in-food-footer-share"/);
+  assert.doesNotMatch(footer, /buildMenuplyPathShareData/);
+  assert.doesNotMatch(footer, /diningCrewInviteShare/);
 });
 
-test("Month in Food title row exposes ShareButton with menuply share data", () => {
+test("Month in Food title row exposes ShareButton with shareUtils path data", () => {
   const page = read("src/pages/consumer/monthInFood/MonthInFoodPage.jsx");
   const sections = read("src/pages/consumer/monthInFood/MonthInFoodSections.jsx");
-  assert.match(page, /buildMenuplyPathShareData/);
+  assert.match(page, /buildConsumerPathShareData/);
+  assert.match(page, /from "\.\.\/\.\.\/\.\.\/components\/share\/shareUtils\.js"/);
   assert.match(page, /ShareButton/);
   assert.match(page, /titleAccessory=\{shareAccessory\}/);
   assert.match(page, /data-testid="month-in-food-share"/);
+  assert.doesNotMatch(page, /buildMenuplyPathShareData/);
+  assert.doesNotMatch(page, /diningCrewInviteShare/);
   assert.match(sections, /shareData/);
   assert.match(sections, /data-testid="month-in-food-title-share"/);
   assert.match(sections, /ShareButton/);

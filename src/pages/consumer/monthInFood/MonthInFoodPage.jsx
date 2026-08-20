@@ -8,8 +8,8 @@ import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom"
 import StickyPageHeader from "../../../components/StickyPageHeader.jsx";
 import BottomNav from "../../../components/BottomNav.jsx";
 import ShareButton from "../../../components/share/ShareButton.jsx";
+import { buildConsumerPathShareData } from "../../../components/share/shareUtils.js";
 import { useConsumer } from "../../../context/ConsumerContext.jsx";
-import { buildMenuplyPathShareData } from "../../../lib/diningCrewInviteShare.js";
 import { getMonthInFood, getPeerMonthInFood } from "../../../lib/consumerApi.js";
 import { buildMonthInFoodModel, shiftYm } from "./buildMonthInFoodModel.js";
 import {
@@ -98,7 +98,7 @@ export default function MonthInFoodPage() {
 
   const shareData = useMemo(
     () =>
-      buildMenuplyPathShareData(sharePath, {
+      buildConsumerPathShareData(sharePath, {
         title: "My Month in Food on Menuply",
         text: "Great food. Good people. Better together.",
       }),

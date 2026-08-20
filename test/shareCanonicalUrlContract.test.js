@@ -9,6 +9,7 @@ import path from "path";
 import { fileURLToPath } from "node:url";
 import {
   buildClusterShareData,
+  buildConsumerPathShareData,
   buildDishShareData,
   buildMenuShareMetadata,
   buildRestaurantShareData,
@@ -78,6 +79,17 @@ test("normalizeConsumerShareUrl rejects share.google and other non-Menuply hosts
     normalizeConsumerShareUrl("https://www.menuply.com/restaurants/california/los-angeles/savoca-los-angeles/menu"),
     "https://menuply.com/restaurants/california/los-angeles/savoca-los-angeles/menu"
   );
+});
+
+test("buildConsumerPathShareData locks Month in Food paths to menuply.com", () => {
+  const payload = buildConsumerPathShareData("/my-menuply/month-in-food?ym=2026-08", {
+    title: "My Month in Food on Menuply",
+    text: "Great food. Good people. Better together.",
+  });
+  assert.ok(payload);
+  assert.equal(payload.url, "https://menuply.com/my-menuply/month-in-food?ym=2026-08");
+  assert.equal(payload.title, "My Month in Food on Menuply");
+  assert.equal(buildConsumerPathShareData(""), null);
 });
 
 test("buildShareLinks tolerates null/undefined shareData (Diner QR blank-page guard)", () => {
