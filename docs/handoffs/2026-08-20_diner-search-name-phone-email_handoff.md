@@ -4,7 +4,7 @@ Make opted-in searchable diners findable by name, phone, and email on Find Diner
 
 # Current Status
 
-Implemented in `menubloc-backend-main` + `menubloc-frontend-main`. Contracts pass. CPD in progress.
+**COMPLETE** on authorized `main` (BE `9f997a6a`, FE `9cfd336`). Contracts pass. Connect reused; no new invite product.
 
 # Files Changed
 
@@ -29,20 +29,20 @@ None.
 
 # Remaining Work
 
-CPD: commit → BE push/Railway → FE vercel --prod + alias → tip-gate + health → update LKG locks.
+None for this plan.
 
 # Risks / Known Issues
 
-Unrelated dirty trees existed (drinks lexicon / middleware Dunkin redirect) — stashed or left out of this commit.
+None open for this scope.
 
 # Verification Status
 
-BE + FE `dinerPrimaryLocationContract` pass.
+BE + FE `dinerPrimaryLocationContract` pass; BE on `origin/main` and in production ancestry.
 
 # Resume Instructions
 
-If CPD interrupted: verify authorized paths clean `main`, push only this feature commits, tip-gate, update LKG.
+N/A — plan complete.
 
 # Git Status
 
-(Filled at CPD.)
+BE `9f997a6a` / FE `9cfd336` on `origin/main`.

@@ -42,11 +42,14 @@ None (read-path SQL change only; no migration).
 
 ## Commits
 
-(Filled at CPD.)
+- BE `9f997a6a` — feat(diner): match Find Diners by name, phone, and email when searchable
+- FE `9cfd336` — feat(diner): document name/phone/email Find Diners + Connect copy
 
 ## Deployment Status
 
-(Filled at CPD.)
+- BE: on `origin/main`; production `/health` includes `9f997a6a` ancestry (live tip commit after it)
+- FE: on `origin/main` (copy + contracts in subsequent production tips)
+- Plan out-of-scope: no separate CPD required for this feature alone
 
 ## Verification Results
 
@@ -64,4 +67,4 @@ None required for this scope.
 
 ## Final Verdict
 
-Implementation complete locally; CPD pending at end of session.
+**Implementation complete** — match keys + copy + contracts on authorized `main`; Connect unchanged.
