@@ -112,9 +112,12 @@ test("My Menuply is the diner's personal home", () => {
   assert.match(api, /listPendingEatInvitePeople/);
   assert.match(api, /\/api\/consumer\/want-to-eat/);
   assert.match(hero, /About Me/);
-  assert.match(hero, /My Connections/);
+  assert.match(read("src/pages/consumer/myMenuply/MyMenuplyPresentationRails.jsx"), /Connections/);
   assert.match(hero, /viewerUserId/);
-  assert.match(hero, /\/my-menuply\/connections-eating/);
+  assert.match(page, /MyMenuplyPresentationRails/);
+  assert.match(page, /buildTopHighlights/);
+  assert.match(read("src/pages/consumer/myMenuply/MyMenuplyPresentationRails.jsx"), /connections-avatar-strip/);
+  assert.match(read("src/pages/consumer/myMenuply/MyMenuplyPresentationRails.jsx"), /\/my-menuply\/connections-eating/);
   assert.match(eatingPage, /StickyPageHeader title="My Connections"/);
   const eatingCompose = read("src/pages/consumer/myMenuply/EatingCompose.jsx");
   assert.match(eatingCompose, /MenuplyMediaPicker/);
@@ -124,7 +127,8 @@ test("My Menuply is the diner's personal home", () => {
   assert.match(calendar, /diner-calendar-open/);
   assert.match(calendar, /calendar-event/);
   assert.match(calendar, /EatingHubCalendar/);
-  assert.ok(page.indexOf("<DinerIdentityHero") < page.indexOf("<EatingHubSection"));
+  assert.ok(page.indexOf("<DinerIdentityHero") < page.indexOf("<MyMenuplyPresentationRails"));
+  assert.ok(page.indexOf("<MyMenuplyPresentationRails") < page.indexOf("<EatingHubSection"));
   assert.ok(page.indexOf("<EatingHubSection") < page.indexOf('data-testid="dining-crews"'));
   assert.doesNotMatch(page, /What My Connections Are Eating/);
   assert.doesNotMatch(page, /What My Connections Are Planning/);

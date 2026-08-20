@@ -3,7 +3,7 @@
  * About Me (with Connections), what she's eating, her plans, wants, crews, events.
  */
 
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import StickyPageHeader from "../../components/StickyPageHeader.jsx";
 import BottomNav from "../../components/BottomNav.jsx";
@@ -58,6 +58,13 @@ import {
 import * as s from "./myMenuply/myMenuplyStyles.js";
 import ProfileCompletionBanner from "../../components/consumer/ProfileCompletionBanner.jsx";
 import DinerIdentityHero from "./myMenuply/DinerIdentityHero.jsx";
+import MyMenuplyPresentationRails from "./myMenuply/MyMenuplyPresentationRails.jsx";
+import {
+  buildDinerStats,
+  buildFollowedRestaurantRails,
+  buildTopHighlights,
+  buildWantSuggestions,
+} from "./myMenuply/myMenuplyPresentation.js";
 import {
   SectionHead,
   DiningCrewHubCard,
@@ -105,7 +112,6 @@ export default function MyMenuplyPage() {
     const t = new Date();
     return new Date(t.getFullYear(), t.getMonth(), 1);
   });
-  const [eatingFilter, setEatingFilter] = useState("all");
   const [lastPost, setLastPost] = useState(null);
   const [shareOpen, setShareOpen] = useState(false);
   const [sharePayload, setSharePayload] = useState(null);
@@ -113,6 +119,8 @@ export default function MyMenuplyPage() {
   const [schedulingPlans, setSchedulingPlans] = useState(false);
   const [selectedPlanKey, setSelectedPlanKey] = useState("");
   const [joinCandidates, setJoinCandidates] = useState([]);
+  const [composeOpen, setComposeOpen] = useState(false);
+  const [composeDefaultCategory, setComposeDefaultCategory] = useState("ate");
 
   const load = useCallback(async () => {
     setError("");
@@ -191,11 +199,10 @@ export default function MyMenuplyPage() {
   useEffect(() => {
     if (searchParams.get("focus") !== "want") return undefined;
     if (loading || !isAuthenticated) return undefined;
-    setEatingFilter("want");
+    setComposeDefaultCategory("want");
+    setComposeOpen(true);
     const timer = window.setTimeout(() => {
       eatingSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-      const input = eatingSectionRef.current?.querySelector("input[type='text']");
-      input?.focus();
     }, 120);
     return () => window.clearTimeout(timer);
   }, [searchParams, loading, isAuthenticated]);
@@ -216,6 +223,32 @@ export default function MyMenuplyPage() {
     plan,
   }));
   const dayMarkers = buildEatingDayMarkersFromCalendar(eatingCalendarDays, scheduledPlans);
+
+  const dinerStats = useMemo(
+    () =>
+      buildDinerStats({
+        connections,
+        followed,
+        liked,
+        eating,
+        events,
+        eventGroups,
+      }),
+    [connections, followed, liked, eating, events, eventGroups]
+  );
+  const topHighlights = useMemo(
+    () => buildTopHighlights({ eating, liked, followed }),
+    [eating, liked, followed]
+  );
+  const followedRestaurantRails = useMemo(
+    () => buildFollowedRestaurantRails(followed),
+    [followed]
+  );
+  const wantSuggestions = useMemo(() => {
+    if (wants.length > 0) return [];
+    return buildWantSuggestions(liked);
+  }, [wants.length, liked]);
+  const showFoodStoryCta = eating.length === 0 && wants.length === 0 && shownPlans.length === 0;
 
   async function onAvatarFile(file) {
     setIdentityBusy(true);
@@ -531,19 +564,18 @@ export default function MyMenuplyPage() {
   async function handleEatingCompose({ category, text, file, mealPeriod }) {
     if (category === "want") {
       await postWant({ text, file });
-      setEatingFilter("want");
+      setComposeDefaultCategory("want");
       return;
     }
     if (category === "ate") {
       await postEating({ text, file, mealPeriod });
-      setEatingFilter("ate");
+      setComposeDefaultCategory("ate");
     }
   }
 
   function handlePlanSchedule() {
     setSchedulingPlans(true);
     setCalendarOpen(true);
-    setEatingFilter("plans");
   }
 
   async function handlePostTagged(updated) {
@@ -561,9 +593,12 @@ export default function MyMenuplyPage() {
     <>
       <StickyPageHeader title="My Menuply" />
       <div style={s.page} data-testid="my-menuply-page">
-        <p style={s.kicker}>My food. My people. My plans.</p>
-        <h1 style={s.h1}>My Menuply</h1>
-        {error ? <p style={s.error}>{error}</p> : null}
+        <div style={s.pageHeroBand}>
+          <p style={s.kicker}>My food. My people. My plans.</p>
+          <h1 style={s.h1}>My Menuply</h1>
+          <p style={s.lead}>Your personal food home — diary, wishes, and plans.</p>
+        </div>
+        {error ? <p style={{ ...s.error, marginTop: 16 }}>{error}</p> : null}
 
         {!authLoading && !isAuthenticated ? (
           <div style={s.signInBox}>
@@ -603,8 +638,25 @@ export default function MyMenuplyPage() {
               onProfileMediaRemove={onProfileMediaRemove}
             />
 
+            <MyMenuplyPresentationRails
+              stats={dinerStats}
+              highlights={topHighlights}
+              followedRestaurants={followedRestaurantRails}
+              wantSuggestions={wantSuggestions}
+              connections={connections}
+              viewerUserId={consumer?.id}
+              showFoodStoryCta={showFoodStoryCta}
+              onLogFood={() => {
+                setComposeDefaultCategory("ate");
+                setComposeOpen(true);
+              }}
+            />
+
             <EatingHubSection
               sectionRef={eatingSectionRef}
+              composeOpen={composeOpen}
+              onComposeOpenChange={setComposeOpen}
+              composeDefaultCategory={composeDefaultCategory}
               hubDate={hubDate}
               onHubDateChange={setHubDate}
               hubMonth={hubMonth}
@@ -613,8 +665,6 @@ export default function MyMenuplyPage() {
               onCalendarOpenChange={setCalendarOpen}
               dayMarkers={dayMarkers}
               calendarEvents={calendarEvents}
-              eatingFilter={eatingFilter}
-              onEatingFilterChange={setEatingFilter}
               eating={eating}
               scheduledPlans={scheduledPlans}
               shownPlans={shownPlans}

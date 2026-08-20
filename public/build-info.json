@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "b3fa02f1cda9b36b9ddad342e3bb2fe9e3ad781e",
-  "gitShortSha": "b3fa02f",
+  "gitSha": "56c5d446a6656afb7201ff007cbf3fcfed07d1ca",
+  "gitShortSha": "56c5d44",
   "branch": "main",
-  "buildTime": "2026-08-20T00:04:00.295Z",
+  "buildTime": "2026-08-20T03:11:16.706Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "docs: update LKG tip lock after profile gallery horizontal capture CPD."
+  "commitMessage": "feat(diner): 90-day eating look-back, Food Distributors footer link."
 }

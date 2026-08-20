@@ -48,7 +48,7 @@ export function SectionHead({ title, to, testId, aside = null }) {
   );
 }
 
-export function PhotoGrid({ items, onSelect, onPhotoPick, hideJoinMe = false }) {
+export function PhotoGrid({ items, onSelect, onPhotoPick, hideJoinMe = false, presentation = false }) {
   const ordered = useMemo(
     () =>
       [...(items || [])].sort((a, b) =>
@@ -88,6 +88,10 @@ export function PhotoGrid({ items, onSelect, onPhotoPick, hideJoinMe = false }) 
 
   if (isPlaceholder) return null;
 
+  const mealBadge = item.meal_period
+    ? mealPeriodLabel(normalizeWhatIAteMealPeriod(item.meal_period))
+    : null;
+
   const mediaBlock = hasMedia ? (
     <button
       type="button"
@@ -99,11 +103,18 @@ export function PhotoGrid({ items, onSelect, onPhotoPick, hideJoinMe = false }) 
       onFocus={() => setPhotoHover(true)}
       onBlur={() => setPhotoHover(false)}
       style={{
-        ...s.photoButton,
+        ...(presentation ? s.heroMediaWrap : s.photoButton),
         cursor: canPick ? "pointer" : "default",
         border: 0,
         borderRadius: 0,
         boxShadow: "none",
+        padding: 0,
+        width: "100%",
+        appearance: "none",
+        font: "inherit",
+        textAlign: "left",
+        position: "relative",
+        overflow: "hidden",
       }}
       aria-label={canPick ? "Tap to replace photo or video" : caption}
     >
@@ -111,18 +122,34 @@ export function PhotoGrid({ items, onSelect, onPhotoPick, hideJoinMe = false }) 
         <video
           src={resolveConsumerMediaUrl(item.video_url)}
           style={s.photo}
-          controls
+          controls={!presentation}
           playsInline
           preload="metadata"
         />
       ) : (
         <img src={resolveConsumerMediaUrl(item.photo_url)} alt="" style={s.photo} />
       )}
-      {canPick && photoHover ? (
+      {presentation ? (
+        <>
+          <div style={s.heroOverlayTop}>
+            {mealBadge ? <span style={s.heroBadge}>{mealBadge}</span> : <span />}
+            {canPick && photoHover ? (
+              <span style={s.heroBadge}>Replace</span>
+            ) : null}
+          </div>
+          <div style={s.heroOverlayBottom}>
+            <div style={s.heroTitle}>{label}</div>
+            {place ? <div style={s.heroMeta}>{place}</div> : null}
+            {note ? <div style={s.heroCaption}>{note}</div> : null}
+          </div>
+        </>
+      ) : canPick && photoHover ? (
         <div style={s.photoHoverHint}>Tap to replace photo or video</div>
       ) : null}
     </button>
   ) : null;
+
+  const cardShell = hasMedia && presentation ? s.heroCard : hasMedia ? s.photoCard : s.eatingRowCompact;
 
   return (
     <div style={s.grid} data-testid="what-im-eating-photos">
@@ -139,92 +166,130 @@ export function PhotoGrid({ items, onSelect, onPhotoPick, hideJoinMe = false }) 
           ariaLabel="Add or replace eating photo or video"
         />
       ) : null}
-      <article key={item.id || item.entry_id || `${label}-${safeIndex}`} style={hasMedia ? s.photoCard : s.eatingRowCompact}>
+      <article key={item.id || item.entry_id || `${label}-${safeIndex}`} style={cardShell}>
         {mediaBlock}
-        <div style={hasMedia ? s.photoLabel : undefined}>
-          {hasMedia ? (
-            <div data-testid="eating-photo-caption" style={socialType.foodTitle}>
-              {label}
-            </div>
-          ) : (
-            <div data-testid="eating-photo-caption" style={socialType.meta}>
-              {caption}
-            </div>
-          )}
-          {hasMedia && item.meal_period ? (
-            <div style={socialType.meta}>
-              {mealPeriodLabel(normalizeWhatIAteMealPeriod(item.meal_period))}
-            </div>
-          ) : null}
-          {place ? (
-            restHref ? (
-              <Link to={restHref} style={{ ...s.photoMeta, display: "block" }}>
-                {place}
-              </Link>
-            ) : (
-              <div style={s.photoMeta}>{place}</div>
-            )
-          ) : null}
-          {note ? <div style={socialType.caption}>{note}</div> : null}
-          {canPick && !hasMedia ? (
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 10 }}>
-              <MenuplyMediaPicker
-                onFile={handlePhotoFile}
-                disabled={!canPick}
-                facingMode="environment"
-                allowPhoto
-                allowVideo
-                showPreview={false}
-                testId="eating-photo-slot"
-                ariaLabel="Add photo or video"
-              />
-              <span style={socialType.meta}>Add photo or video</span>
-            </div>
-          ) : null}
-          <EatingSocialActions item={item} />
-          {ordered.length > 1 ? (
-            <div style={s.actions}>
-              <button
-                type="button"
-                style={{ ...s.chipBtn, appearance: "none", cursor: "pointer", font: "inherit" }}
-                onClick={() => setIndex((i) => (i === 0 ? ordered.length - 1 : i - 1))}
-                aria-label="Previous food photo"
-              >
-                Prev
-              </button>
-              <span style={s.photoMeta}>
-                {safeIndex + 1} / {ordered.length}
-              </span>
-              <button
-                type="button"
-                style={{ ...s.chipBtn, appearance: "none", cursor: "pointer", font: "inherit" }}
-                onClick={() => setIndex((i) => (i + 1) % ordered.length)}
-                aria-label="Next food photo"
-              >
-                Next
-              </button>
-            </div>
-          ) : null}
-          <div style={s.actions}>
-            <Link to={href} style={s.chipBtn}>
-              View dish
-            </Link>
-            {onSelect && item.kind === "what_i_ate" ? (
-              <button
-                type="button"
-                style={{ ...s.chipBtn, appearance: "none", cursor: "pointer", font: "inherit" }}
-                onClick={() => onSelect(item)}
-              >
-                Add details
-              </button>
+        {!presentation || !hasMedia ? (
+          <div style={hasMedia ? s.photoLabel : undefined}>
+            {!hasMedia ? (
+              <div data-testid="eating-photo-caption" style={socialType.meta}>
+                {caption}
+              </div>
             ) : null}
-            {joinHref ? (
-              <Link to={joinHref} style={s.primaryBtn}>
-                Join Me
-              </Link>
+            {!hasMedia && item.meal_period ? (
+              <div style={socialType.meta}>
+                {mealPeriodLabel(normalizeWhatIAteMealPeriod(item.meal_period))}
+              </div>
+            ) : null}
+            {!hasMedia && place ? (
+              restHref ? (
+                <Link to={restHref} style={{ ...s.photoMeta, display: "block" }}>
+                  {place}
+                </Link>
+              ) : (
+                <div style={s.photoMeta}>{place}</div>
+              )
+            ) : null}
+            {!hasMedia && note ? <div style={socialType.caption}>{note}</div> : null}
+            {canPick && !hasMedia ? (
+              <div style={{ marginTop: 10 }}>
+                <MenuplyMediaPicker
+                  onFile={handlePhotoFile}
+                  disabled={!canPick}
+                  facingMode="environment"
+                  allowPhoto
+                  allowVideo
+                  showPreview={false}
+                  testId="eating-photo-slot"
+                  ariaLabel="Add photo or video"
+                  iconStyle={{ width: 36, height: 36, borderRadius: 999 }}
+                />
+              </div>
+            ) : null}
+            {!presentation ? (
+              <>
+                <EatingSocialActions item={item} />
+                {ordered.length > 1 ? (
+                  <div style={s.actions}>
+                    <button
+                      type="button"
+                      style={{ ...s.chipBtn, appearance: "none", cursor: "pointer", font: "inherit" }}
+                      onClick={() => setIndex((i) => (i === 0 ? ordered.length - 1 : i - 1))}
+                      aria-label="Previous food photo"
+                    >
+                      Prev
+                    </button>
+                    <span style={s.photoMeta}>
+                      {safeIndex + 1} / {ordered.length}
+                    </span>
+                    <button
+                      type="button"
+                      style={{ ...s.chipBtn, appearance: "none", cursor: "pointer", font: "inherit" }}
+                      onClick={() => setIndex((i) => (i + 1) % ordered.length)}
+                      aria-label="Next food photo"
+                    >
+                      Next
+                    </button>
+                  </div>
+                ) : null}
+                <div style={s.actions}>
+                  <Link to={href} style={s.chipBtn}>
+                    View dish
+                  </Link>
+                  {onSelect && item.kind === "what_i_ate" ? (
+                    <button
+                      type="button"
+                      style={{ ...s.chipBtn, appearance: "none", cursor: "pointer", font: "inherit" }}
+                      onClick={() => onSelect(item)}
+                    >
+                      Add details
+                    </button>
+                  ) : null}
+                  {joinHref ? (
+                    <Link to={joinHref} style={s.primaryBtn}>
+                      Join Me
+                    </Link>
+                  ) : null}
+                </div>
+              </>
             ) : null}
           </div>
-        </div>
+        ) : null}
+        {presentation && hasMedia ? (
+          <div style={s.heroBody}>
+            <EatingSocialActions item={item} />
+            <div style={s.heroActions}>
+              <Link to={href} style={s.textLink}>
+                View dish
+              </Link>
+              {onSelect && item.kind === "what_i_ate" ? (
+                <button type="button" style={s.textLinkBtn} onClick={() => onSelect(item)}>
+                  Add details
+                </button>
+              ) : null}
+              {joinHref ? (
+                <Link to={joinHref} style={s.textLinkAccent}>
+                  Join Me
+                </Link>
+              ) : null}
+            </div>
+            {ordered.length > 1 ? (
+              <div style={s.heroDotNav} aria-label="More meals">
+                {ordered.map((_, dotIndex) => (
+                  <button
+                    key={dotIndex}
+                    type="button"
+                    aria-label={`Meal ${dotIndex + 1}`}
+                    style={{
+                      ...s.heroDot,
+                      ...(dotIndex === safeIndex ? s.heroDotActive : null),
+                    }}
+                    onClick={() => setIndex(dotIndex)}
+                  />
+                ))}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
       </article>
     </div>
   );
@@ -504,6 +569,7 @@ export function WantToEatList({
   onSelectItem,
   emptyMessage = null,
   limit = 12,
+  layout = "stack",
 }) {
   const rows = (items || []).slice(0, limit);
   if (!rows.length) {
@@ -514,18 +580,21 @@ export function WantToEatList({
     ) : null;
   }
 
+  const listStyle = layout === "scroll" ? wantStyles.scrollList : wantStyles.list;
+
   return (
-    <div style={wantStyles.list} data-testid="want-to-eat-list">
+    <div style={listStyle} data-testid="want-to-eat-list">
       {rows.map((want) => {
         const href = want.menu_item_id ? `/menu-items/${want.menu_item_id}` : null;
         const mediaUrl = want.photo_url || want.video_url;
+        const cardStyle = layout === "scroll" ? wantStyles.scrollCard : wantStyles.card;
         const body = (
-          <div style={wantStyles.row}>
+          <div style={layout === "scroll" ? wantStyles.scrollRow : wantStyles.row}>
             {mediaUrl ? (
               want.video_url ? (
                 <video
                   src={resolveConsumerMediaUrl(want.video_url)}
-                  style={wantStyles.thumb}
+                  style={layout === "scroll" ? wantStyles.scrollThumb : wantStyles.thumb}
                   controls
                   playsInline
                   preload="metadata"
@@ -534,18 +603,21 @@ export function WantToEatList({
                 <img
                   src={resolveConsumerMediaUrl(want.photo_url)}
                   alt=""
-                  style={wantStyles.thumb}
+                  style={layout === "scroll" ? wantStyles.scrollThumb : wantStyles.thumb}
                 />
               )
             ) : (
-              <div style={wantStyles.thumbPlaceholder} aria-hidden>
+              <div
+                style={layout === "scroll" ? wantStyles.scrollThumbPlaceholder : wantStyles.thumbPlaceholder}
+                aria-hidden
+              >
                 🍽
               </div>
             )}
             <div style={wantStyles.copy}>
               <div style={wantStyles.title}>{want.food_name}</div>
               {want.restaurant_name ? <div style={socialType.meta}>{want.restaurant_name}</div> : null}
-              {readOnly ? null : want.menu_item_id ? (
+              {readOnly || layout === "scroll" ? null : want.menu_item_id ? (
                 <div style={wantStyles.hint}>Menu item linked</div>
               ) : (
                 <div style={wantStyles.hint}>Tap to link a menu item</div>
@@ -553,7 +625,6 @@ export function WantToEatList({
             </div>
           </div>
         );
-        const cardStyle = wantStyles.card;
 
         if (href) {
           return (
@@ -589,6 +660,15 @@ export function WantToEatList({
 
 const wantStyles = {
   list: { display: "grid", gap: 10 },
+  scrollList: {
+    display: "flex",
+    gap: 12,
+    overflowX: "auto",
+    paddingBottom: 4,
+    margin: "0 -4px",
+    scrollSnapType: "x mandatory",
+    WebkitOverflowScrolling: "touch",
+  },
   card: {
     display: "block",
     width: "100%",
@@ -602,13 +682,39 @@ const wantStyles = {
     overflow: "hidden",
     cursor: "pointer",
     font: "inherit",
+    boxShadow: "0 4px 16px rgba(15, 23, 42, 0.06)",
+  },
+  scrollCard: {
+    display: "block",
+    flex: "0 0 168px",
+    width: 168,
+    scrollSnapAlign: "start",
+    textAlign: "left",
+    textDecoration: "none",
+    color: "inherit",
+    borderRadius: 14,
+    border: "1px solid #e5e7eb",
+    background: "#fff",
+    padding: 0,
+    overflow: "hidden",
+    cursor: "pointer",
+    font: "inherit",
+    boxShadow: "0 6px 18px rgba(15, 23, 42, 0.08)",
   },
   row: { display: "flex", gap: 0, alignItems: "stretch" },
+  scrollRow: { display: "flex", flexDirection: "column", alignItems: "stretch" },
   thumb: {
     width: 112,
     minHeight: 112,
     objectFit: "cover",
     flexShrink: 0,
+    display: "block",
+    background: "#f1f5f9",
+  },
+  scrollThumb: {
+    width: "100%",
+    height: 120,
+    objectFit: "cover",
     display: "block",
     background: "#f1f5f9",
   },
@@ -622,7 +728,16 @@ const wantStyles = {
     background: "#f8fafc",
     fontSize: 28,
   },
+  scrollThumbPlaceholder: {
+    width: "100%",
+    height: 120,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    background: "#f8fafc",
+    fontSize: 28,
+  },
   copy: { padding: "12px 14px", flex: 1, minWidth: 0 },
-  title: { fontWeight: 800, fontSize: 16, color: "#0f172a", marginBottom: 4 },
+  title: { fontWeight: 800, fontSize: 15, color: "#0f172a", marginBottom: 4, lineHeight: 1.25 },
   hint: { fontSize: 12, color: "#64748b", marginTop: 6 },
 };

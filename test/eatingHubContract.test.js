@@ -24,8 +24,9 @@ test("My Menuply and peer hub use unified Eating section", () => {
   }
 
   assert.match(section, /data-testid="eating"/);
-  assert.match(section, /EatingCompose/);
-  assert.match(section, /eating-filters/);
+  assert.match(section, /EatingComposeSheet/);
+  assert.match(section, /eating-log-trigger/);
+  assert.match(section, /Journal day/);
   assert.match(section, /eating-calendar/);
   assert.match(section, /DinerCalendarTrigger/);
   assert.match(section, /dayMarkers/);

@@ -26,7 +26,8 @@ test("My Menuply identity hero is prominent with photo upload and short bio", ()
   assert.match(page, /listConsumerProfileMedia/);
   assert.match(page, /uploadConsumerProfileMedia/);
   assert.match(page, /diner_about/);
-  assert.ok(page.indexOf("<DinerIdentityHero") < page.indexOf("<EatingHubSection"));
+  assert.ok(page.indexOf("<DinerIdentityHero") < page.indexOf("<MyMenuplyPresentationRails"));
+  assert.ok(page.indexOf("<MyMenuplyPresentationRails") < page.indexOf("<EatingHubSection"));
   assert.match(section, /data-testid="eating"/);
   assert.match(hero, /Change profile photo/);
   assert.match(hero, /ProfileMediaGallery/);
@@ -35,8 +36,8 @@ test("My Menuply identity hero is prominent with photo upload and short bio", ()
   assert.match(hero, /diner-about-input/);
   assert.match(hero, /maxLength=\{ABOUT_MAX\}/);
   assert.match(hero, /LA food explorer/);
-  assert.match(hero, /My Connections/);
-  assert.match(hero, /\/my-menuply\/connections-eating/);
+  assert.match(read("src/pages/consumer/myMenuply/MyMenuplyPresentationRails.jsx"), /Connections/);
+  assert.match(read("src/pages/consumer/myMenuply/MyMenuplyPresentationRails.jsx"), /\/my-menuply\/connections-eating/);
   assert.match(gallery, /about-me-profile-media/);
   assert.match(gallery, /Add photo or video/);
   assert.match(gallery, /MenuplyMediaPicker/);

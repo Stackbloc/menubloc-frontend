@@ -17,6 +17,7 @@ export default function EatingCompose({
   defaultCategory = "ate",
   onSubmit,
   onPlanSchedule,
+  inSheet = false,
 }) {
   const [category, setCategory] = useState(defaultCategory);
   const [text, setText] = useState("");
@@ -94,7 +95,9 @@ export default function EatingCompose({
           />
         </div>
         {acceptMedia ? (
-          <p style={socialType.meta}>Photo or video is optional — you can take it before you post.</p>
+          <p style={{ ...socialType.meta, margin: 0, fontSize: 12 }}>
+            Optional — attach before you post.
+          </p>
         ) : null}
         {category === "ate" ? (
           <div style={styles.mealRow} role="group" aria-label="Meal time">
@@ -115,13 +118,15 @@ export default function EatingCompose({
             })}
           </div>
         ) : null}
-        <button
-          type="submit"
-          disabled={busy || (category !== "plan" && !String(text).trim() && !file)}
-          style={socialBtn.primary}
-        >
-          {busy ? "…" : category === "plan" ? "Schedule" : "Post"}
-        </button>
+        <div style={inSheet ? styles.submitRow : styles.submitBlock}>
+          <button
+            type="submit"
+            disabled={busy || (category !== "plan" && !String(text).trim() && !file)}
+            style={inSheet ? styles.submitBtn : socialBtn.primary}
+          >
+            {busy ? "…" : category === "plan" ? "Schedule" : "Post"}
+          </button>
+        </div>
       </form>
     </div>
   );
@@ -197,5 +202,27 @@ const styles = {
     background: "#ecfdf5",
     borderColor: "#86efac",
     color: "#166534",
+  },
+  submitRow: {
+    display: "flex",
+    justifyContent: "flex-end",
+    marginTop: 4,
+  },
+  submitBlock: {
+    display: "flex",
+    justifyContent: "stretch",
+  },
+  submitBtn: {
+    appearance: "none",
+    minHeight: 40,
+    padding: "0 20px",
+    borderRadius: 999,
+    border: "none",
+    background: "linear-gradient(180deg, #22C55E 0%, #16A34A 100%)",
+    color: "#0B0F0C",
+    fontWeight: 700,
+    fontSize: 14,
+    cursor: "pointer",
+    fontFamily: "inherit",
   },
 };

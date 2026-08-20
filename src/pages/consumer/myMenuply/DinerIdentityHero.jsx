@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import MenuplyMediaPicker from "../../../components/social/MenuplyMediaPicker.jsx";
 import ProfileMediaGallery from "./ProfileMediaGallery.jsx";
 import * as s from "./myMenuplyStyles.js";
+import { GREEN_BRIGHT } from "./myMenuplyStyles.js";
 
 const ABOUT_MAX = 280;
 const ABOUT_PLACEHOLDER = "LA food explorer. Always looking for great tacos and late-night spots.";
@@ -45,8 +45,8 @@ export default function DinerIdentityHero({
   const initial = String(displayName || "You").trim().slice(0, 1).toUpperCase() || "Y";
 
   return (
-    <section style={s.section} data-testid="about-me">
-      <p style={s.kicker}>Diner profile</p>
+    <section style={s.identitySection} data-testid="about-me">
+      <p style={{ ...s.kicker, color: GREEN_BRIGHT, marginBottom: 6 }}>Diner profile</p>
       <h2 style={s.sectionTitle}>About Me</h2>
       {readOnly ? null : <p style={s.sectionDesc}>Tell people a little about you.</p>}
 
@@ -128,39 +128,6 @@ export default function DinerIdentityHero({
         onAddFile={onProfileMediaAdd}
         onRemove={onProfileMediaRemove}
       />
-
-      <div style={{ marginTop: 16 }} data-testid="about-me-connections">
-        <h3 style={s.sectionTitle}>
-          {readOnly ? (
-            "My Connections"
-          ) : (
-            <Link to="/my-menuply/connections-eating" style={s.sectionTitleLink}>
-              My Connections
-            </Link>
-          )}
-        </h3>
-        {connections.length === 0 ? (
-          <p style={s.muted}>No connections yet.</p>
-        ) : (
-          <div style={s.nameList}>
-            {connections.slice(0, 12).map((c) => {
-              const peerId = c.peer?.id;
-              const name = c.peer?.display_name || "Connection";
-              if (!peerId) return null;
-              const isSelf = viewerUserId != null && Number(peerId) === Number(viewerUserId);
-              return (
-                <Link
-                  key={c.id || peerId}
-                  to={isSelf ? "/my-menuply" : `/account/connections/${encodeURIComponent(String(peerId))}`}
-                  style={s.nameLink}
-                >
-                  {name}
-                </Link>
-              );
-            })}
-          </div>
-        )}
-      </div>
     </section>
   );
 }
