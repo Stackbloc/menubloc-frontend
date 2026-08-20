@@ -25,7 +25,7 @@ function eatingCard(row) {
     sublabel: row.restaurant_name || row.place_label || "",
     badge: "Your meal",
     image,
-    href: row.menu_item_id ? `/menu-items/${row.menu_item_id}` : null,
+    href: row.menu_item_id ? `/menu-items/${encodeURIComponent(String(row.menu_item_id))}` : null,
     source: "user",
   };
 }
@@ -38,7 +38,7 @@ function likedCard(row) {
     sublabel: row.restaurant_name || "",
     badge: "Saved dish",
     image: null,
-    href: row.menu_item_id ? `/menu-items/${row.menu_item_id}` : null,
+    href: row.menu_item_id ? `/menu-items/${encodeURIComponent(String(row.menu_item_id))}` : null,
     source: "restaurant",
   };
 }

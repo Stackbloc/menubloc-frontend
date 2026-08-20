@@ -19,7 +19,7 @@ import {
 import * as s from "./myMenuply/myMenuplyStyles.js";
 import DinerIdentityHero from "./myMenuply/DinerIdentityHero.jsx";
 import { DiningCrewHubCard, SectionHead, isScheduledEatingPlan } from "./myMenuply/myMenuplyBits.jsx";
-import { futurePlanKey, futurePlanRestaurantName } from "./myMenuply/dinerHubFormat.js";
+import { futurePlanKey, futurePlanRestaurantName, futurePlanDetailParts } from "./myMenuply/dinerHubFormat.js";
 import {
   mapConnectionsEatingForHub,
   mapDiaryEntriesForHub,
@@ -164,12 +164,16 @@ export default function ConsumerConnectionPeerPage() {
     (plan) => compareYmd(plan.plan_date) >= 0 && isScheduledEatingPlan(plan)
   );
   const shownPlans = scheduledPlans;
-  const calendarEvents = shownPlans.map((plan) => ({
-    key: futurePlanKey(plan),
-    ymd: planYmd(plan.plan_date),
-    label: futurePlanRestaurantName(plan),
-    plan,
-  }));
+  const calendarEvents = shownPlans.map((plan) => {
+    const { meal } = futurePlanDetailParts(plan);
+    return {
+      key: futurePlanKey(plan),
+      ymd: planYmd(plan.plan_date),
+      label: futurePlanRestaurantName(plan),
+      timeLabel: meal || null,
+      plan,
+    };
+  });
 
   const dayMarkers = buildEatingDayMarkersFromCalendar(eatingCalendarDays, scheduledPlans);
 

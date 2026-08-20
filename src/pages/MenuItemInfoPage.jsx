@@ -39,7 +39,9 @@ import { isSimilarRowCompareEligible } from "../lib/comparePolicy.js";
 import CompareItemsModal from "../components/menu/CompareItemsModal.jsx";
 import { useOrderCart } from "../context/OrderCartContext.jsx";
 
-const BACKEND_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
+import { API_BASE } from "../lib/api.js";
+
+const BACKEND_BASE = String(API_BASE || "").replace(/\/$/, "");
 
 /** Offset below `StickyPageHeader` (nav-only row, no title) so sticky hero clears the bar. */
 const STICKY_ITEM_HERO_TOP_PX = 72;

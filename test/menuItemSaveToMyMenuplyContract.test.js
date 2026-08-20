@@ -14,7 +14,8 @@ test("detail action rail renders + last and only when signed in", () => {
   const rail = read("src/components/menu/MenuItemDetailActionRail.jsx");
   const icon = read("src/components/consumer/MenuItemSaveToMyMenuplyIcon.jsx");
   assert.match(rail, /MenuItemSaveToMyMenuplyIcon/);
-  assert.match(rail, /showSaveToMyMenuply/);
+  assert.match(rail, /showSaveToMyMenuply\s*=\s*false/);
+  assert.match(rail, /saveReturnTo\s*=\s*""/);
   assert.match(icon, /if \(!isAuthenticated\) return null/);
   assert.match(icon, /Save to My Menuply/);
   const commentIdx = rail.indexOf("FoodCommentNavButton");

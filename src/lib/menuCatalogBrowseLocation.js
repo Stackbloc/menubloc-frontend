@@ -148,7 +148,22 @@ export function buildMenuCatalogBrowseParams({
     };
   }
 
-  return null;
+  // After Place→city exit (no la-live default), unresolved location must not
+  // leave Yellow Browser with zero API params → empty "Try another category"
+  // on every chip. Fall back to the primary Menuply market.
+  return {
+    ...withBrowseSection(
+      buildBrowseLocationParams({
+        urlCity: "Los Angeles",
+        urlState: "CA",
+        coords: null,
+        radiusMiles: null,
+      }),
+      section,
+      drinksMode
+    ),
+    offset: loadMoreOffset,
+  };
 }
 
 export function menuCatalogLocationLabel({

@@ -76,6 +76,11 @@ test("Diner hub photos are casual snapshots with food info, not Instagram heroes
   assert.doesNotMatch(styles, /340px/);
   assert.match(mealBoard, /what-i-ate-meal-board/);
   assert.match(mealBoard, /video_url/);
+  // Universal meal-board shell: empty holders for today on owner and peer; camera is owner-only.
+  assert.match(mealBoard, /showEmptyHolders/);
+  assert.match(mealBoard, /Nothing here/);
+  assert.match(mealBoard, /allowEmptyCapture \? onSlotCapture/);
+  assert.doesNotMatch(mealBoard, /Nothing logged for this day\./);
   assert.match(bits, /View dish/);
   assert.match(bits, /restaurant_name/);
   assert.match(bits, /Join Me/);

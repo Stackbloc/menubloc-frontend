@@ -86,6 +86,8 @@ export default function MenuItemDetailActionRail({
   returnLabel = "Return to results",
   iconGap = MENU_ROW_ICON_GAP,
   shareStopPropagation = false,
+  showSaveToMyMenuply = false,
+  saveReturnTo = "",
 }) {
   return (
     <div

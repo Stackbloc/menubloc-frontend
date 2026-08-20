@@ -91,6 +91,11 @@ export function futurePlanDetailParts(plan) {
   return { restaurant, meal, notes };
 }
 
+/** Calendar day primary label (restaurant). Meal period is shown via event.timeLabel. */
+export function formatCalendarPlanLabel(plan) {
+  return futurePlanRestaurantName(plan);
+}
+
 export function planJoinHref(plan) {
   if (plan?.join_me_href) return plan.join_me_href;
   if (plan?.joinable && plan?.token) return `/account/what-we-doing/${plan.token}`;

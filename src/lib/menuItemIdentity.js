@@ -10,7 +10,13 @@ const present = (value) => value !== undefined && value !== null && String(value
  */
 export function parseMenuItemRouteId(raw) {
   if (raw == null || raw === "") return null;
-  const text = String(raw).trim();
+  let text = String(raw).trim();
+  try {
+    // React Router / browsers may leave cmi%3A63 encoded in the path param.
+    text = decodeURIComponent(text);
+  } catch {
+    // keep raw text
+  }
   const cmiMatch = CMI_ROUTE_RE.exec(text);
   if (cmiMatch) {
     const chainMenuItemId = Number(cmiMatch[1]);

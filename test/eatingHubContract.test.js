@@ -50,6 +50,17 @@ test("My Menuply and peer hub use unified Eating section", () => {
   const daySelectBlock = sheet.slice(daySelectIdx, daySelectIdx + 280);
   assert.match(daySelectBlock, /onSelectDate\(ymd\)/);
   assert.doesNotMatch(daySelectBlock, /onClose\(/);
+  assert.match(sheet, /dayEvents/);
+  assert.match(sheet, /No plans set/);
+  assert.match(sheet, /event\.ymd === selectedDate/);
+  assert.match(sheet, /event\.timeLabel/);
+
+  const format = read("src/pages/consumer/myMenuply/dinerHubFormat.js");
+  assert.match(format, /formatCalendarPlanLabel/);
+  assert.match(format, /futurePlanDetailParts/);
+  assert.match(mine, /futurePlanRestaurantName\(plan\)/);
+  assert.match(mine, /timeLabel: meal/);
+  assert.match(mine, /futurePlanDetailParts/);
 
   const mealBoard = read("src/pages/consumer/myMenuply/WhatIAteMealBoard.jsx");
   assert.match(mealBoard, /visibleWhatIAteMealPeriods/);
@@ -63,6 +74,8 @@ test("My Menuply and peer hub use unified Eating section", () => {
   assert.match(mealBoard, /isPastDay/);
   assert.match(mealBoard, /No entries/);
   assert.match(mealBoard, /allowEmptyCapture/);
+  assert.match(mealBoard, /showEmptyHolders/);
+  assert.match(mealBoard, /Nothing here/);
   assert.match(section, /handleSlotCapture/);
   assert.match(section, /composeMediaSource/);
   assert.match(section, /\+ Log/);

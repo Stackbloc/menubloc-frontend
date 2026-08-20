@@ -74,7 +74,7 @@ import {
   foodHref,
   isScheduledEatingPlan,
 } from "./myMenuply/myMenuplyBits.jsx";
-import { futurePlanKey, futurePlanRestaurantName } from "./myMenuply/dinerHubFormat.js";
+import { futurePlanKey, futurePlanRestaurantName, futurePlanDetailParts } from "./myMenuply/dinerHubFormat.js";
 import { dishPhotoUrl, eatingFoodName, joinHomemadeComment } from "./myMenuply/eatingPlaceLink.js";
 import { mergeEatingFeedForHub, mapDiaryEntriesForHub, mapFoodActivityForHub } from "../../lib/eatingFeedMerge.js";
 
@@ -258,21 +258,28 @@ export default function MyMenuplyPage() {
   );
   // Future plans are not date-capped — show all scheduled sessions.
   const shownPlans = scheduledPlans;
-  const planCalendarEvents = shownPlans.map((plan) => ({
-    key: futurePlanKey(plan),
-    ymd: planYmd(plan.plan_date),
-    label: futurePlanRestaurantName(plan),
-    kind: "plan",
-    plan,
-  }));
+  const planCalendarEvents = shownPlans.map((plan) => {
+    const { meal } = futurePlanDetailParts(plan);
+    return {
+      key: futurePlanKey(plan),
+      ymd: planYmd(plan.plan_date),
+      label: futurePlanRestaurantName(plan),
+      timeLabel: meal || null,
+      kind: "plan",
+      plan,
+    };
+  });
   const venueCalendarEvents = (events || [])
     .map((ev) => {
       const ymd = venueEventYmd(ev);
       if (!ymd || !ev?.slug) return null;
+      const timeLabel =
+        String(ev.start_time_label || ev.starts_at_label || ev.time_label || "").trim() || null;
       return {
         key: `venue-event-${ev.id || ev.slug}`,
         ymd,
         label: ev.name || "Event",
+        timeLabel,
         kind: "venue_event",
         href: `/events/${encodeURIComponent(String(ev.slug))}`,
         event: ev,

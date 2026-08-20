@@ -173,7 +173,15 @@ function matchesList(value, list) {
   const normalized = normalizeToken(value);
   return list.some((candidate) => {
     const token = normalizeToken(candidate);
-    return token && (normalized === token || normalized.includes(token) || token.includes(normalized));
+    if (!token) return false;
+    // Exact or whole-token containment only — avoid "american" matching
+    // cuisine list entry "italian american" via reverse includes().
+    if (normalized === token) return true;
+    if (normalized.includes(token)) {
+      const parts = normalized.split(" ");
+      return parts.includes(token) || normalized.startsWith(`${token} `) || normalized.endsWith(` ${token}`);
+    }
+    return false;
   });
 }
 

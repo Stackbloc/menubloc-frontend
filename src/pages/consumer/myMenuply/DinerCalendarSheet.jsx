@@ -71,6 +71,9 @@ export default function DinerCalendarSheet({
   if (!open || typeof document === "undefined") return null;
 
   const monthEvents = (events || []).filter((event) => ymdInMonth(event.ymd, viewMonth));
+  const dayEvents = monthEvents.filter((event) => event.ymd === selectedDate);
+  const plansMode = title === "Upcoming Plans" || title === "My Events";
+  const dayLabel = formatChipDate(selectedDate);
 
   return createPortal(
     <div
@@ -103,15 +106,51 @@ export default function DinerCalendarSheet({
           lookbackStart={lookbackStart}
           readOnly={readOnly}
         />
-        {monthEvents.length > 0 ? (
+        {plansMode ? (
           <div data-testid="calendar-events" style={styles.events}>
             <p style={styles.eventsLabel}>
-              {title === "Upcoming Plans"
-                ? "Plans this month"
-                : title === "My Events"
-                  ? "Events & plans this month"
-                  : "This month"}
+              {title === "My Events" ? `Events & plans · ${dayLabel}` : `Plans · ${dayLabel}`}
             </p>
+            {dayEvents.length > 0 ? (
+              dayEvents.map((event) => (
+                <button
+                  key={event.key}
+                  type="button"
+                  data-testid="calendar-event"
+                  onClick={() => {
+                    onSelectEvent?.(event);
+                    onClose();
+                  }}
+                  style={{
+                    ...styles.eventBtn,
+                    ...(title === "Upcoming Plans" ? styles.eventBtnPlans : null),
+                    ...styles.eventBtnOnDay,
+                    ...(title === "Upcoming Plans" ? styles.eventBtnOnDayPlans : null),
+                  }}
+                >
+                  <span
+                    style={{
+                      ...styles.eventDot,
+                      ...(title === "Upcoming Plans" ? styles.eventDotPlans : null),
+                    }}
+                    aria-hidden
+                  />
+                  <span style={styles.eventLabelCol}>
+                    <span>{event.label}</span>
+                    {event.timeLabel ? <span style={styles.eventTime}>{event.timeLabel}</span> : null}
+                  </span>
+                  <span style={styles.eventDate}>{formatPlanBracketDate(event.ymd)}</span>
+                </button>
+              ))
+            ) : (
+              <div data-testid="calendar-events-empty" style={styles.eventsEmptyDay}>
+                No plans set
+              </div>
+            )}
+          </div>
+        ) : monthEvents.length > 0 ? (
+          <div data-testid="calendar-events" style={styles.events}>
+            <p style={styles.eventsLabel}>This month</p>
             {monthEvents.map((event) => {
               const onDay = event.ymd === selectedDate;
               return (
@@ -125,29 +164,15 @@ export default function DinerCalendarSheet({
                   }}
                   style={{
                     ...styles.eventBtn,
-                    ...(title === "Upcoming Plans" ? styles.eventBtnPlans : null),
                     ...(onDay ? styles.eventBtnOnDay : null),
-                    ...(onDay && title === "Upcoming Plans" ? styles.eventBtnOnDayPlans : null),
                   }}
                 >
-                  <span
-                    style={{
-                      ...styles.eventDot,
-                      ...(title === "Upcoming Plans" ? styles.eventDotPlans : null),
-                    }}
-                    aria-hidden
-                  />
+                  <span style={styles.eventDot} aria-hidden />
                   {event.label}
                   <span style={styles.eventDate}>{formatPlanBracketDate(event.ymd)}</span>
                 </button>
               );
             })}
-          </div>
-        ) : title === "Upcoming Plans" || title === "My Events" ? (
-          <div data-testid="calendar-events-empty" style={styles.eventsEmpty}>
-            {title === "My Events"
-              ? "No events or plans on this month yet — pick a day to schedule."
-              : "No plans on this month yet — pick a day to schedule."}
           </div>
         ) : null}
       </div>
@@ -279,6 +304,18 @@ const styles = {
     fontWeight: 500,
     color: "#8E8E93",
   },
+  eventLabelCol: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 2,
+    minWidth: 0,
+    flex: "1 1 auto",
+  },
+  eventTime: {
+    fontSize: 12,
+    fontWeight: 600,
+    color: "#8E8E93",
+  },
   eventsEmpty: {
     marginTop: 12,
     paddingTop: 8,
@@ -286,5 +323,12 @@ const styles = {
     fontWeight: 600,
     color: "#8E8E93",
     lineHeight: 1.4,
+  },
+  eventsEmptyDay: {
+    fontSize: 14,
+    fontWeight: 600,
+    color: "#8E8E93",
+    lineHeight: 1.4,
+    padding: "8px 4px 4px",
   },
 };

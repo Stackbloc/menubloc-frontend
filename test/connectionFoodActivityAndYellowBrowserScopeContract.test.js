@@ -110,6 +110,14 @@ test("cluster food section filter matches cuisine and name hints", () => {
     ).length,
     1
   );
+  // "american" must not match italian via reverse substring on "italian american"
+  assert.equal(
+    clusterEntryMatchesFoodSection(
+      { restaurant_name: "Lazy Dog", cuisine: "American" },
+      "italian"
+    ),
+    false
+  );
 });
 
 test("ConnectionSocialProof mounts on restaurant + menu item; settings toggle present", () => {

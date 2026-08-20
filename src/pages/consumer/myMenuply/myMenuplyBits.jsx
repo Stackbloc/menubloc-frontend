@@ -25,7 +25,9 @@ export function restaurantHref(row) {
 }
 
 export function foodHref(item) {
-  if (item?.menu_item_id) return `/menu-items/${item.menu_item_id}`;
+  if (item?.menu_item_id) {
+    return `/menu-items/${encodeURIComponent(String(item.menu_item_id))}`;
+  }
   if (item?.menu_item_href) return item.menu_item_href;
   if (item?.diary_href) return item.diary_href;
   if (item?.kind === "what_i_ate") return "/account/what-i-ate";
@@ -600,7 +602,9 @@ export function WantToEatList({
   return (
     <div style={listStyle} data-testid="want-to-eat-list">
       {rows.map((want) => {
-        const href = want.menu_item_id ? `/menu-items/${want.menu_item_id}` : null;
+        const href = want.menu_item_id
+          ? `/menu-items/${encodeURIComponent(String(want.menu_item_id))}`
+          : null;
         const mediaUrl = want.photo_url || want.video_url;
         const cardStyle = layout === "scroll" ? wantStyles.scrollCard : wantStyles.card;
         const body = (

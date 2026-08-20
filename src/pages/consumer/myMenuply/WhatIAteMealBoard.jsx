@@ -140,10 +140,11 @@ function MealMediaCard({
 }
 
 function EmptyMealSlot({ mealId, readOnly, onCapture }) {
+  // Same dashed 168px holder for owner + peer (diner-hub parity). Capture is owner-only.
   if (readOnly || !onCapture) {
     return (
       <div
-        style={s.mealHolderEmpty}
+        style={{ ...s.mealHolderEmpty, cursor: "default" }}
         data-testid="what-i-ate-meal-empty"
         data-meal={mealId}
         aria-label={`${mealPeriodLabel(mealId)} — nothing logged`}
@@ -217,8 +218,11 @@ export default function WhatIAteMealBoard({
     todayYmd,
     filledPeriodIds,
   });
-  // Past look-back: never offer empty camera slots — only real entries (or copy).
+  // Owner capture only — peer still gets the same empty holder shell ("Nothing here").
   const allowEmptyCapture = Boolean(onSlotCapture) && !readOnly && !isPastDay;
+  // Universal layout: same meal rows + empty holders for owner and peer on today.
+  // Past look-back: only real entries (or "No entries"), never empty holders.
+  const showEmptyHolders = !isPastDay;
 
   if (isPastDay && !hasAny) {
     return (
@@ -247,11 +251,11 @@ export default function WhatIAteMealBoard({
                   onPhotoPick={onPhotoPick}
                 />
               ))}
-              {rows.length === 0 && allowEmptyCapture ? (
+              {rows.length === 0 && showEmptyHolders ? (
                 <EmptyMealSlot
                   mealId={meal.id}
                   readOnly={readOnly}
-                  onCapture={onSlotCapture}
+                  onCapture={allowEmptyCapture ? onSlotCapture : undefined}
                 />
               ) : null}
             </div>
@@ -273,11 +277,6 @@ export default function WhatIAteMealBoard({
             ))}
           </div>
         </div>
-      ) : null}
-      {!hasAny && readOnly ? (
-        <p style={s.mealBoardHint} data-testid="what-i-ate-meal-board-empty">
-          Nothing logged for this day.
-        </p>
       ) : null}
     </div>
   );

@@ -78,7 +78,7 @@ import {
 } from "../lib/catalogMenuUtils.js";
 import { useOrderCart } from "../context/OrderCartContext.jsx";
 import { sendPageVisit } from "../lib/analyticsPageVisitSend.js";
-import { getNormalizedMenuItemId, isValidMenuItemRouteId } from "../lib/menuItemIdentity.js";
+import { getNormalizedMenuItemId, isValidMenuItemRouteId, parseMenuItemRouteId } from "../lib/menuItemIdentity.js";
 import {
   hasAlcoholicBeverageContent,
   isAlcoholicBeverageItem,
@@ -87,7 +87,9 @@ import {
   RESPONSIBLE_DRINKING_TITLE,
 } from "../lib/alcoholicBeverageDetail.js";
 
-const BACKEND_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
+import { API_BASE } from "../lib/api.js";
+
+const BACKEND_BASE = String(API_BASE || "").replace(/\/$/, "");
 
 /** Offset below `StickyPageHeader` (nav-only row, no title) so sticky hero clears the bar. */
 const STICKY_ITEM_HERO_TOP_PX = 72;
@@ -1340,7 +1342,9 @@ function ExploreSimilarDishes({ itemId, itemName, currentSlug, geoLat, geoLng, a
 
 export default function MenuItemDetailPage() {
   const { id: routeId, restaurantSlug, itemSlug } = useParams();
-  const id = routeId ?? itemSlug;
+  const rawRouteId = routeId ?? itemSlug;
+  const parsedRoute = parseMenuItemRouteId(rawRouteId);
+  const id = parsedRoute?.routeId || rawRouteId;
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
