@@ -34,6 +34,15 @@ export function rememberMenuBrowserVenueSession(slug) {
   }
 }
 
+export function clearMenuBrowserVenueSession() {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.removeItem(MENU_BROWSER_VENUE_SESSION_KEY);
+  } catch {
+    // ignore
+  }
+}
+
 /** Extract Place slug from `/clusters/:state/:city/:slug`. */
 export function clusterSlugFromPathname(pathname) {
   const match = String(pathname || "").match(/\/clusters\/[^/]+\/[^/]+\/([^/?#]+)/i);

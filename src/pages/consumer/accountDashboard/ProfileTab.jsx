@@ -77,6 +77,12 @@ export default function ProfileTab({
   discoverabilitySaving,
   discoverabilityStatus,
   discoverabilityError,
+  showConnectionFoodActivity,
+  onShowConnectionFoodActivityChange,
+  onSaveConnectionFoodActivity,
+  connectionFoodActivitySaving,
+  connectionFoodActivityStatus,
+  connectionFoodActivityError,
 }) {
   const [editingIdentity, setEditingIdentity] = useState(false);
   const [editingZip, setEditingZip] = useState(false);
@@ -86,6 +92,7 @@ export default function ProfileTab({
   const [editingEdu, setEditingEdu] = useState(false);
   const [editingPrimaryLocation, setEditingPrimaryLocation] = useState(false);
   const [editingDiscoverability, setEditingDiscoverability] = useState(false);
+  const [editingConnectionFoodActivity, setEditingConnectionFoodActivity] = useState(false);
 
   const discoverabilityLabels = {
     nobody: "Nobody — not searchable",
@@ -240,6 +247,42 @@ export default function ProfileTab({
           disabled={discoverabilitySaving}
         >
           {discoverabilitySaving ? "Saving…" : "Save privacy setting"}
+        </button>
+      </SummaryEditSection>
+
+      <SummaryEditSection
+        title="Show my connections’ food activity"
+        summary={showConnectionFoodActivity !== false ? "On" : "Off"}
+        description="See which restaurants and menu items your Menuply connections like, have eaten, or plan to eat."
+        editing={editingConnectionFoodActivity}
+        onEdit={() => setEditingConnectionFoodActivity(true)}
+        onDone={async () => {
+          const ok = await onSaveConnectionFoodActivity();
+          if (ok !== false) setEditingConnectionFoodActivity(false);
+        }}
+        status={connectionFoodActivityError || connectionFoodActivityStatus}
+        statusError={Boolean(connectionFoodActivityError)}
+      >
+        <label style={styles.choiceRow}>
+          <input
+            type="checkbox"
+            checked={showConnectionFoodActivity !== false}
+            onChange={(e) => onShowConnectionFoodActivityChange(e.target.checked)}
+          />
+          <span>
+            <span style={{ display: "block" }}>Show connection food activity</span>
+            <span style={{ ...styles.muted, fontSize: 12 }}>
+              Default is ON. Turn off to hide connection signals on restaurant and menu item pages.
+            </span>
+          </span>
+        </label>
+        <button
+          type="button"
+          onClick={onSaveConnectionFoodActivity}
+          style={styles.primaryBtn}
+          disabled={connectionFoodActivitySaving}
+        >
+          {connectionFoodActivitySaving ? "Saving…" : "Save preference"}
         </button>
       </SummaryEditSection>
 

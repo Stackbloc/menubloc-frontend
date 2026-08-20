@@ -12,6 +12,7 @@ import {
   filterClusterRestaurantsForMenuBrowser,
   isMenuBrowserClusterScope,
 } from "../lib/menuBrowserClusterSequence.js";
+import { filterClusterEntriesByFoodSection } from "../lib/menuBrowserClusterCuisineFilter.js";
 import { getMenuBrowserVenueCover } from "../lib/menuBrowserVenueCover.js";
 import useDiscoveryAutoLocation from "./useDiscoveryAutoLocation.js";
 
@@ -59,7 +60,7 @@ export default function useMenuCatalogSequence({
 
   const scopeKey = useMemo(() => {
     if (scopedClusterSlug) {
-      // Food category tabs do not re-filter membership — one deck per Place.
+      // Membership fetch is one deck per Place; food chips filter client-side after load.
       return ["cluster", scopedClusterSlug, drinksMode ? "drinks" : "food"].join("::");
     }
     return [
@@ -263,29 +264,38 @@ export default function useMenuCatalogSequence({
   ]);
 
   const activeIndex = Math.max(0, index);
-  const currentEntry = activeIndex < entries.length ? entries[activeIndex] : null;
-  const waitingForPage = entries.length > 0 && activeIndex >= entries.length && (hasMore || loadingMore);
+  const displayEntries = useMemo(() => {
+    if (!scopedClusterSlug || drinksMode) return entries;
+    return filterClusterEntriesByFoodSection(entries, section);
+  }, [drinksMode, entries, scopedClusterSlug, section]);
+  const currentEntry = activeIndex < displayEntries.length ? displayEntries[activeIndex] : null;
+  const waitingForPage =
+    displayEntries.length > 0 && activeIndex >= displayEntries.length && (hasMore || loadingMore);
 
   useEffect(() => {
-    if (!entries.length || loading || loadingMore || !hasMore) return;
-    if (activeIndex >= entries.length - 2) {
+    if (!displayEntries.length || loading || loadingMore || !hasMore) return;
+    if (activeIndex >= displayEntries.length - 2) {
       loadMore();
     }
-  }, [activeIndex, entries.length, hasMore, loadMore, loading, loadingMore]);
+  }, [activeIndex, displayEntries.length, hasMore, loadMore, loading, loadingMore]);
 
   useEffect(() => {
     if (!waitingForPage || loadingMore) return;
     loadMore();
   }, [loadMore, loadingMore, waitingForPage]);
 
-  const displayTotal = totalCount || entries.length;
-  const hasNext = entries.length > 0 && (activeIndex < entries.length - 1 || hasMore);
+  const displayTotal = scopedClusterSlug && !drinksMode
+    ? displayEntries.length
+    : totalCount || displayEntries.length;
+  const hasNext = displayEntries.length > 0 && (activeIndex < displayEntries.length - 1 || hasMore);
   const hasPrev = activeIndex > 0;
   const clampToIndex =
-    !hasMore && entries.length > 0 && activeIndex >= entries.length ? entries.length - 1 : null;
+    !hasMore && displayEntries.length > 0 && activeIndex >= displayEntries.length
+      ? displayEntries.length - 1
+      : null;
 
   return {
-    entries,
+    entries: displayEntries,
     currentEntry,
     activeIndex,
     totalCount: displayTotal,
@@ -298,7 +308,7 @@ export default function useMenuCatalogSequence({
     hasMore,
     waitingForPage,
     clampToIndex,
-    isEmpty: !loading && entries.length === 0,
+    isEmpty: !loading && displayEntries.length === 0,
     locationPending: scopedClusterSlug
       ? false
       : autoLocation.status === "locating" && !buildApiParams(0),

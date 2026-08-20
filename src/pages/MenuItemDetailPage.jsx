@@ -65,6 +65,7 @@ import FollowRestaurantButton from "../components/FollowRestaurantButton.jsx";
 import InviteToEatButton from "../components/InviteToEatButton.jsx";
 import ShareButton from "../components/share/ShareButton.jsx";
 import PreferenceIngredientAdvisory from "../components/menu/PreferenceIngredientAdvisory.jsx";
+import ConnectionSocialProof from "../components/social/ConnectionSocialProof.jsx";
 import { scheduleScrollToFoodComments } from "../lib/foodCommentsScroll.js";
 import { MENU_ROW_ICON_SIZE } from "../components/menu-templates/menuPresentationUtils.js";
 import { getLocalizedField } from "../utils/getLocalizedField.js";
@@ -1845,6 +1846,14 @@ export default function MenuItemDetailPage() {
       ) : (
         <MissingNutritionState />
       )}
+
+      <ConnectionSocialProof
+        menuItemId={
+          item?.chain_menu_item_id
+            ? `cmi:${item.chain_menu_item_id}`
+            : id || item?.menu_item_id || null
+        }
+      />
 
       {focusFoodComments && item.menu_item_id && Number.isFinite(Number(item.menu_item_id)) ? (
         <Surface style={{ marginTop: 20, padding: isMobile ? 16 : 20 }}>

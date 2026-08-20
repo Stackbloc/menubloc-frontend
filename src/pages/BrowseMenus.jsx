@@ -27,10 +27,12 @@ import { computeMenuBrowserLoadTarget, useSmoothedProgress } from "../lib/menuCa
 import { asFiniteNumber } from "../lib/catalogMenuUtils.js";
 import {
   buildMenuBrowserPages,
-  resolveMenuBrowserVenueSlug,
+  getMenuBrowserVenueCover,
+  resolveMenuBrowserMembershipSlug,
 } from "../lib/menuBrowserVenueCover.js";
 import { isMenuBrowserClusterScope } from "../lib/menuBrowserClusterSequence.js";
 import {
+  clearMenuBrowserVenueSession,
   readMenuBrowserVenueSession,
   rememberMenuBrowserVenueSession,
 } from "../lib/menuBrowserVenueContext.js";
@@ -89,12 +91,17 @@ export default function BrowseMenus() {
   const isModeChosen = Boolean(urlSection) || isDrinksMode;
   const venueSlug = useMemo(
     () =>
-      resolveMenuBrowserVenueSlug(urlParams.get("cluster"), {
+      resolveMenuBrowserMembershipSlug(urlParams.get("cluster"), {
         hostname: typeof window !== "undefined" ? window.location.hostname : null,
         sessionSlug: readMenuBrowserVenueSession(),
       }),
     [urlParams]
   );
+  const venueCover = useMemo(
+    () => (venueSlug ? getMenuBrowserVenueCover(venueSlug) : null),
+    [venueSlug]
+  );
+  const isClusterScoped = isMenuBrowserClusterScope(venueSlug);
 
   useEffect(() => {
     if (!venueSlug) return;
@@ -104,6 +111,14 @@ export default function BrowseMenus() {
     next.set("cluster", venueSlug);
     navigate({ search: `?${next.toString()}` }, { replace: true });
   }, [navigate, search, urlParams, venueSlug]);
+
+  function browseCityWide() {
+    clearMenuBrowserVenueSession();
+    const next = new URLSearchParams(search);
+    next.delete("cluster");
+    next.set("i", "0");
+    navigate({ search: `?${next.toString()}` }, { replace: true });
+  }
   const activeSection = isDrinksMode
     ? (urlSection || MENU_CATALOG_DRINKS_DEFAULT_SECTION)
     : (urlSection || MENU_CATALOG_DEFAULT_SECTION);
@@ -136,7 +151,7 @@ export default function BrowseMenus() {
     urlCity,
     urlState,
     index: hookRestaurantIndex,
-    clusterSlug: isMenuBrowserClusterScope(venueSlug) ? venueSlug : null,
+    clusterSlug: isClusterScoped ? venueSlug : null,
   });
 
   const pages = useMemo(() => buildMenuBrowserPages(entries, venueSlug), [entries, venueSlug]);
@@ -472,6 +487,55 @@ export default function BrowseMenus() {
       }}
     >
       <StickyPageHeader />
+
+      {isClusterScoped && venueCover ? (
+        <div
+          data-testid="menu-browser-scope-bar"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 12,
+            maxWidth: 576,
+            width: "100%",
+            margin: "0 auto",
+            padding: "8px 16px 0",
+            boxSizing: "border-box",
+          }}
+        >
+          <span
+            style={{
+              fontSize: 13,
+              fontWeight: 700,
+              color: "var(--gb-color-ink)",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {venueCover.brandLine}
+          </span>
+          <button
+            type="button"
+            data-testid="menu-browser-browse-city"
+            onClick={browseCityWide}
+            style={{
+              flexShrink: 0,
+              border: "none",
+              background: "transparent",
+              color: "var(--gb-color-accent, #0f766e)",
+              fontSize: 13,
+              fontWeight: 700,
+              cursor: "pointer",
+              padding: "4px 0",
+              textDecoration: "underline",
+              textUnderlineOffset: 3,
+            }}
+          >
+            Browse city
+          </button>
+        </div>
+      ) : null}
 
       <div style={browseShellStyle}>
         {showCategoryTabs ? (

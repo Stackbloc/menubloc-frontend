@@ -6,6 +6,7 @@ import { test } from "node:test";
 import {
   buildMenuBrowserPages,
   getMenuBrowserVenueCover,
+  resolveMenuBrowserMembershipSlug,
   resolveMenuBrowserVenueSlug,
 } from "../src/lib/menuBrowserVenueCover.js";
 
@@ -24,6 +25,11 @@ test("resolveMenuBrowserVenueSlug defaults and hosts", () => {
     resolveMenuBrowserVenueSlug(null, { sessionSlug: "coachella-2027" }),
     "coachella-2027"
   );
+});
+
+test("resolveMenuBrowserMembershipSlug has no la-live default", () => {
+  assert.equal(resolveMenuBrowserMembershipSlug(null), null);
+  assert.equal(resolveMenuBrowserMembershipSlug("la-live"), "la-live");
 });
 
 test("venue covers keep Food/Drinks prompt", () => {
@@ -49,7 +55,8 @@ test("BrowseMenus wires venue cover + ad pages", () => {
   assert.match(browseSrc, /venueSlug=\{venueSlug\}/);
   assert.match(browseSrc, /MenuBrowserVenueAdPage/);
   assert.match(browseSrc, /buildMenuBrowserPages/);
-  assert.match(browseSrc, /isMenuBrowserClusterScope/);
+  assert.match(browseSrc, /isMenuBrowserClusterScope|isClusterScoped/);
+  assert.match(browseSrc, /resolveMenuBrowserMembershipSlug/);
   assert.match(modeSrc, /menu-browser-venue-cover/);
   assert.match(modeSrc, /menu-browser-choose-prompt/);
 });

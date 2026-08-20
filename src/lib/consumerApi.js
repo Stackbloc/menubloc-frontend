@@ -110,6 +110,16 @@ export const listConnectionsEvents = (limit = 20, peerId = null) => {
   return get(`/api/consumer/connections/events?${q}`);
 };
 
+export const fetchRestaurantConnectionSocialProof = (restaurantId) =>
+  get(
+    `/api/consumer/connections/social-proof/restaurant/${encodeURIComponent(String(restaurantId))}`
+  );
+
+export const fetchMenuItemConnectionSocialProof = (menuItemId) =>
+  get(
+    `/api/consumer/connections/social-proof/menu-item/${encodeURIComponent(String(menuItemId))}`
+  );
+
 // ── Personal Diner QR (Phase 1) ───────────────────────────────────────────
 export const getMyDinerQr = () => get("/api/consumer/diner-qr");
 export const updateDinerQrPrivacy = (body) => put("/api/consumer/diner-qr/privacy", body);

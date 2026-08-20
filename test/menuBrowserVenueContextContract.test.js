@@ -44,5 +44,7 @@ test("BottomNav uses venue-aware Yellow Browser href", () => {
 test("BrowseMenus wires venue session/path into Yellow Browser", () => {
   assert.match(browseSrc, /readMenuBrowserVenueSession/);
   assert.match(browseSrc, /rememberMenuBrowserVenueSession/);
+  assert.match(browseSrc, /clearMenuBrowserVenueSession/);
   assert.match(browseSrc, /sessionSlug/);
+  assert.match(browseSrc, /resolveMenuBrowserMembershipSlug/);
 });

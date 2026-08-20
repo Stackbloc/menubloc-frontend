@@ -17,6 +17,7 @@ import ProfileDealsSection from "./ProfileDealsSection.jsx";
 import FoodTruckUpcomingStops from "./FoodTruckUpcomingStops.jsx";
 import ProfileUpcomingEvents from "./ProfileUpcomingEvents.jsx";
 import WhatDinersAreSaying from "../WhatDinersAreSaying.jsx";
+import ConnectionSocialProof from "../../social/ConnectionSocialProof.jsx";
 import { pickWindowsPosts } from "../../../lib/profileWindows.js";
 import { restaurantFromAddMenuContext } from "../../../lib/addMenuContribution.js";
 import { formatAddressQuery } from "../../../lib/displayAddress.js";
@@ -362,17 +363,20 @@ export default function PublicProfileShell({
         )}
 
         {restaurantId ? (
-          <WhatDinersAreSaying
-            restaurantId={restaurantId}
-            restaurantSlug={restaurantSlug}
-            restaurantCity={restaurantCity}
-            restaurantState={restaurantState}
-            restaurantName={name || ""}
-            menuPreviewItems={isDiningHall ? null : previewForComments}
-            compact={isMobile}
-            experienceMode={isDiningHall}
-            venueMode={venueCapabilityEnabled}
-          />
+          <>
+            <ConnectionSocialProof restaurantId={restaurantId} />
+            <WhatDinersAreSaying
+              restaurantId={restaurantId}
+              restaurantSlug={restaurantSlug}
+              restaurantCity={restaurantCity}
+              restaurantState={restaurantState}
+              restaurantName={name || ""}
+              menuPreviewItems={isDiningHall ? null : previewForComments}
+              compact={isMobile}
+              experienceMode={isDiningHall}
+              venueMode={venueCapabilityEnabled}
+            />
+          </>
         ) : null}
 
         <div style={{ height: sectionGap }} aria-hidden="true" />

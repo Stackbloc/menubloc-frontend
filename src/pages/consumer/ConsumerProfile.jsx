@@ -70,6 +70,7 @@ export default function ConsumerProfile() {
   const [primaryNeighborhood, setPrimaryNeighborhood] = useState("");
   const [primaryPostalCode, setPrimaryPostalCode] = useState("");
   const [discoverability, setDiscoverability] = useState("nobody");
+  const [showConnectionFoodActivity, setShowConnectionFoodActivity] = useState(true);
   const [changePhoneOpen, setChangePhoneOpen] = useState(false);
   const [phoneChangeNotice, setPhoneChangeNotice] = useState("");
   const [eduEmailInput, setEduEmailInput] = useState("");
@@ -106,6 +107,9 @@ export default function ConsumerProfile() {
   const [discoverabilitySaving, setDiscoverabilitySaving] = useState(false);
   const [discoverabilityStatus, setDiscoverabilityStatus] = useState("");
   const [discoverabilityError, setDiscoverabilityError] = useState("");
+  const [connectionFoodActivitySaving, setConnectionFoodActivitySaving] = useState(false);
+  const [connectionFoodActivityStatus, setConnectionFoodActivityStatus] = useState("");
+  const [connectionFoodActivityError, setConnectionFoodActivityError] = useState("");
   const [dietStatus, setDietStatus] = useState("");
   const [dietError, setDietError] = useState("");
   const [allergenStatus, setAllergenStatus] = useState("");
@@ -153,6 +157,7 @@ export default function ConsumerProfile() {
       setPrimaryNeighborhood(profile.primary_location?.neighborhood || "");
       setPrimaryPostalCode("");
       setDiscoverability(profile.discoverability || "nobody");
+      setShowConnectionFoodActivity(profile.show_connection_food_activity !== false);
       setEduStatus(getEduVerificationFromConsumer(profileConsumer || {}));
       setEduNotice("");
       setEduError("");
@@ -298,6 +303,25 @@ export default function ConsumerProfile() {
       return false;
     } finally {
       setDiscoverabilitySaving(false);
+    }
+  }
+
+  async function handleSaveConnectionFoodActivity() {
+    setConnectionFoodActivitySaving(true);
+    setConnectionFoodActivityStatus("");
+    setConnectionFoodActivityError("");
+    try {
+      const data = await updateConsumerProfile({
+        show_connection_food_activity: showConnectionFoodActivity !== false,
+      });
+      setShowConnectionFoodActivity(data?.profile?.show_connection_food_activity !== false);
+      setConnectionFoodActivityStatus("Saved");
+      return true;
+    } catch (err) {
+      setConnectionFoodActivityError(err.message || "Could not save preference.");
+      return false;
+    } finally {
+      setConnectionFoodActivitySaving(false);
     }
   }
 
@@ -540,6 +564,12 @@ export default function ConsumerProfile() {
               discoverabilitySaving={discoverabilitySaving}
               discoverabilityStatus={discoverabilityStatus}
               discoverabilityError={discoverabilityError}
+              showConnectionFoodActivity={showConnectionFoodActivity}
+              onShowConnectionFoodActivityChange={setShowConnectionFoodActivity}
+              onSaveConnectionFoodActivity={handleSaveConnectionFoodActivity}
+              connectionFoodActivitySaving={connectionFoodActivitySaving}
+              connectionFoodActivityStatus={connectionFoodActivityStatus}
+              connectionFoodActivityError={connectionFoodActivityError}
             />
           ) : null}
 

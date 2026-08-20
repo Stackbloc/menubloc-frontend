@@ -63,8 +63,10 @@ const VENUE_COVERS = Object.freeze({
 /**
  * @param {string|null|undefined} raw
  * @param {{ hostname?: string|null, sessionSlug?: string|null }} [opts]
+ * @returns {string|null} Place slug for membership scope, or null for city-wide browse.
+ * Does NOT default to la-live — bare /browse-menus is city.
  */
-export function resolveMenuBrowserVenueSlug(raw, { hostname = null, sessionSlug = null } = {}) {
+export function resolveMenuBrowserMembershipSlug(raw, { hostname = null, sessionSlug = null } = {}) {
   const slug = String(raw || "").trim().toLowerCase();
   if (MENU_BROWSER_VENUE_SLUGS.includes(slug)) return slug;
   const host = String(hostname || "").trim().toLowerCase();
@@ -73,8 +75,19 @@ export function resolveMenuBrowserVenueSlug(raw, { hostname = null, sessionSlug 
   }
   const session = String(sessionSlug || "").trim().toLowerCase();
   if (MENU_BROWSER_VENUE_SLUGS.includes(session)) return session;
-  // Demo default for Yellow Browser cover until more venues ship covers.
-  return "la-live";
+  return null;
+}
+
+/**
+ * Cover branding resolver. When membership is unset, falls back to la-live cover assets only
+ * (not membership). Prefer resolveMenuBrowserMembershipSlug for deck scope.
+ * @param {string|null|undefined} raw
+ * @param {{ hostname?: string|null, sessionSlug?: string|null }} [opts]
+ */
+export function resolveMenuBrowserVenueSlug(raw, { hostname = null, sessionSlug = null } = {}) {
+  return (
+    resolveMenuBrowserMembershipSlug(raw, { hostname, sessionSlug }) || "la-live"
+  );
 }
 
 export function getMenuBrowserVenueCover(slug) {
