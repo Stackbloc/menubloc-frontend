@@ -1,6 +1,7 @@
 /**
- * Camera icon → Camera or Upload from library (no Menuply Photo vs Video sheet).
- * Photo vs video is inferred from the returned file. Menu/OCR uploads do not use this.
+ * Camera icon → native device camera (capture). Photo vs video inferred from the file.
+ * Library uploads go through Post about → Upload from library (source="library").
+ * Menu/OCR uploads do not use this.
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -26,6 +27,8 @@ export default function MenuplyMediaPicker({
   facingMode = "environment",
   allowPhoto = true,
   allowVideo = true,
+  /** "camera" = native capture; "library" = files/photos without capture */
+  source = "camera",
   testId = "menuply-media-picker",
   ariaLabel = "Add photo or video",
   showPreview = true,
@@ -33,33 +36,23 @@ export default function MenuplyMediaPicker({
   renderTrigger = null,
   openOnMount = false,
 }) {
-  const [sheetOpen, setSheetOpen] = useState(false);
   const [previewUrl, setPreviewUrl] = useState("");
-  const cameraInputRef = useRef(null);
-  const libraryInputRef = useRef(null);
+  const inputRef = useRef(null);
+  const useLibrary = source === "library";
 
   const accept = useMemo(
     () => buildAccept({ allowPhoto, allowVideo }),
     [allowPhoto, allowVideo]
   );
 
-  function openSourceSheet() {
+  function openNative() {
     if (disabled) return;
-    setSheetOpen(true);
-  }
-
-  function openCamera() {
-    setSheetOpen(false);
-    cameraInputRef.current?.click();
-  }
-
-  function openLibrary() {
-    setSheetOpen(false);
-    libraryInputRef.current?.click();
+    inputRef.current?.click();
   }
 
   useEffect(() => {
-    if (openOnMount && !disabled) setSheetOpen(true);
+    if (openOnMount && !disabled) openNative();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- open once on mount when requested
   }, [openOnMount, disabled]);
 
   useEffect(() => {
@@ -75,7 +68,6 @@ export default function MenuplyMediaPicker({
   function handlePick(event) {
     const picked = event.target.files?.[0] || null;
     event.target.value = "";
-    setSheetOpen(false);
     if (picked) onFile?.(picked);
   }
 
@@ -91,7 +83,7 @@ export default function MenuplyMediaPicker({
             <img src={previewUrl} alt="" style={previewStyles.media} />
           )}
           <div style={previewStyles.actions}>
-            <button type="button" style={previewStyles.link} disabled={disabled} onClick={openSourceSheet}>
+            <button type="button" style={previewStyles.link} disabled={disabled} onClick={openNative}>
               Replace
             </button>
             <button
@@ -105,13 +97,13 @@ export default function MenuplyMediaPicker({
           </div>
         </div>
       ) : renderTrigger ? (
-        renderTrigger({ open: openSourceSheet, disabled })
+        renderTrigger({ open: openNative, disabled })
       ) : (
         <button
           type="button"
           aria-label={ariaLabel}
           disabled={disabled}
-          onClick={openSourceSheet}
+          onClick={openNative}
           style={{ ...socialBtn.icon, ...iconStyle }}
           data-testid={`${testId}-trigger`}
         >
@@ -120,64 +112,15 @@ export default function MenuplyMediaPicker({
       )}
 
       <input
-        ref={cameraInputRef}
+        ref={inputRef}
         type="file"
         accept={accept}
-        capture={captureAttr(facingMode)}
+        {...(useLibrary ? {} : { capture: captureAttr(facingMode) })}
         hidden
         disabled={disabled}
-        data-testid={`${testId}-camera-input`}
+        data-testid={useLibrary ? `${testId}-library-input` : `${testId}-camera-input`}
         onChange={handlePick}
       />
-      <input
-        ref={libraryInputRef}
-        type="file"
-        accept={accept}
-        hidden
-        disabled={disabled}
-        data-testid={`${testId}-library-input`}
-        onChange={handlePick}
-      />
-
-      {sheetOpen ? (
-        <div
-          role="presentation"
-          style={sheetStyles.backdrop}
-          onClick={() => setSheetOpen(false)}
-          data-testid={`${testId}-sheet`}
-        >
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-label="Add media"
-            style={sheetStyles.panel}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <p style={sheetStyles.title}>Add media</p>
-            <button
-              type="button"
-              style={sheetStyles.option}
-              disabled={disabled}
-              data-testid={`${testId}-option-camera`}
-              onClick={openCamera}
-            >
-              Camera
-            </button>
-            <button
-              type="button"
-              style={sheetStyles.option}
-              disabled={disabled}
-              data-testid={`${testId}-option-library`}
-              onClick={openLibrary}
-            >
-              Upload from library
-            </button>
-            <button type="button" style={sheetStyles.cancel} onClick={() => setSheetOpen(false)}>
-              Cancel
-            </button>
-          </div>
-        </div>
-      ) : null}
     </div>
   );
 }
@@ -218,63 +161,6 @@ const previewStyles = {
     textDecoration: "underline",
     cursor: "pointer",
     padding: 0,
-    fontFamily: "inherit",
-  },
-};
-
-const sheetStyles = {
-  backdrop: {
-    position: "fixed",
-    inset: 0,
-    background: "rgba(15, 23, 42, 0.45)",
-    zIndex: 1200,
-    display: "flex",
-    alignItems: "flex-end",
-    justifyContent: "center",
-    padding: "0 12px calc(var(--bottom-nav-h, 72px) + 12px)",
-  },
-  panel: {
-    width: "100%",
-    maxWidth: 420,
-    background: "#fff",
-    borderRadius: "16px 16px 12px 12px",
-    padding: "12px 12px 8px",
-    boxShadow: "0 -8px 32px rgba(15, 23, 42, 0.12)",
-  },
-  title: {
-    margin: "4px 8px 10px",
-    fontSize: 13,
-    fontWeight: 700,
-    color: "#64748b",
-    textTransform: "uppercase",
-    letterSpacing: "0.04em",
-  },
-  option: {
-    appearance: "none",
-    width: "100%",
-    textAlign: "left",
-    border: "none",
-    background: "transparent",
-    padding: "14px 12px",
-    fontSize: 16,
-    fontWeight: 600,
-    color: "#0f172a",
-    borderRadius: 10,
-    cursor: "pointer",
-    fontFamily: "inherit",
-  },
-  cancel: {
-    appearance: "none",
-    width: "100%",
-    marginTop: 4,
-    padding: "14px 12px",
-    border: "none",
-    background: "#f8fafc",
-    borderRadius: 10,
-    fontSize: 16,
-    fontWeight: 700,
-    color: "#64748b",
-    cursor: "pointer",
     fontFamily: "inherit",
   },
 };

@@ -17,6 +17,9 @@ export default function EatingCompose({
   testId = "eating-compose",
   defaultCategory = "ate",
   defaultMealPeriod = null,
+  initialFile = null,
+  mediaSource = "camera",
+  openLibraryOnMount = false,
   onSubmit,
   onPlanSchedule,
   inSheet = false,
@@ -26,7 +29,7 @@ export default function EatingCompose({
 }) {
   const [category, setCategory] = useState(defaultCategory);
   const [text, setText] = useState("");
-  const [file, setFile] = useState(null);
+  const [file, setFile] = useState(initialFile || null);
   const [mealPeriod, setMealPeriod] = useState(
     defaultMealPeriod || defaultWhatIAteMealPeriod()
   );
@@ -97,10 +100,14 @@ export default function EatingCompose({
               onClear={() => setFile(null)}
               disabled={busy}
               facingMode="environment"
+              source={mediaSource === "library" ? "library" : "camera"}
+              openOnMount={Boolean(openLibraryOnMount && mediaSource === "library")}
               allowPhoto
               allowVideo={category === "ate" || category === "want"}
               testId="eating-compose-media"
-              ariaLabel="Add photo or video"
+              ariaLabel={
+                mediaSource === "library" ? "Upload photo or video from library" : "Take photo or video"
+              }
             />
           ) : null}
           <input

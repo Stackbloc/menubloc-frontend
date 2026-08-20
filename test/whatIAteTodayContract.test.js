@@ -72,5 +72,70 @@ test("What I Ate Today is optional, fail-open, and not a search engine", () => {
   assert.match(page, /What I Ate Today/);
   assert.match(mealLib, /groupEntriesByMealPeriod/);
   assert.match(mealLib, /pickEntryForMeal/);
+  assert.match(mealLib, /visibleWhatIAteMealPeriods/);
   assert.match(section, /QuickCompose/);
+});
+
+test("visibleWhatIAteMealPeriods hides future empty rows and keeps earlier backfill", async () => {
+  const {
+    visibleWhatIAteMealPeriods,
+  } = await import("../src/lib/whatIAteTodayMealPeriod.js");
+
+  const ids = (opts) => visibleWhatIAteMealPeriods(opts).map((p) => p.id);
+
+  assert.deepEqual(
+    ids({
+      now: new Date("2026-08-20T09:00:00"),
+      hubDateYmd: "2026-08-20",
+      todayYmd: "2026-08-20",
+    }),
+    ["breakfast"]
+  );
+
+  assert.deepEqual(
+    ids({
+      now: new Date("2026-08-20T13:00:00"),
+      hubDateYmd: "2026-08-20",
+      todayYmd: "2026-08-20",
+    }),
+    ["breakfast", "lunch"]
+  );
+
+  assert.deepEqual(
+    ids({
+      now: new Date("2026-08-20T13:00:00"),
+      hubDateYmd: "2026-08-20",
+      todayYmd: "2026-08-20",
+      filledPeriodIds: ["dinner"],
+    }),
+    ["breakfast", "lunch", "dinner"]
+  );
+
+  assert.deepEqual(
+    ids({
+      now: new Date("2026-08-20T13:00:00"),
+      hubDateYmd: "2026-08-19",
+      todayYmd: "2026-08-20",
+    }),
+    ["breakfast", "brunch", "lunch", "dinner", "late_night"]
+  );
+
+  assert.deepEqual(
+    ids({
+      now: new Date("2026-08-20T13:00:00"),
+      hubDateYmd: "2026-08-21",
+      todayYmd: "2026-08-20",
+      filledPeriodIds: ["lunch"],
+    }),
+    ["lunch"]
+  );
+
+  assert.deepEqual(
+    ids({
+      now: new Date("2026-08-20T02:00:00"),
+      hubDateYmd: "2026-08-20",
+      todayYmd: "2026-08-20",
+    }),
+    ["late_night"]
+  );
 });

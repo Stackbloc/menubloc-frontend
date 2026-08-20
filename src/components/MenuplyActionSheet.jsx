@@ -104,6 +104,13 @@ export const POST_ABOUT_ACTIONS = [
     to: "/events",
     guestOk: true,
   },
+  {
+    id: "upload-media",
+    title: "Upload from library",
+    description: "Add an edited photo or video from your library, then log what you ate.",
+    to: "/my-menuply?compose=ate&media=library",
+    guestOk: false,
+  },
 ];
 
 export default function MenuplyActionSheet({ open, onClose }) {

@@ -10,6 +10,18 @@ export const WHAT_I_ATE_MEAL_PERIODS = [
 
 const ORDER = WHAT_I_ATE_MEAL_PERIODS.map((p) => p.id);
 
+/**
+ * Local hour when an empty meal row becomes available on today's board.
+ * Aligns with defaultWhatIAteMealPeriod windows (brunch is mid-afternoon).
+ */
+export const WHAT_I_ATE_MEAL_PERIOD_START_HOUR = {
+  breakfast: 5,
+  lunch: 11,
+  brunch: 15,
+  dinner: 17,
+  late_night: 22,
+};
+
 export function normalizeWhatIAteMealPeriod(value) {
   const key = String(value || "")
     .trim()
@@ -39,6 +51,43 @@ export function defaultWhatIAteMealPeriod(date = new Date()) {
   if (hour >= 15 && hour < 17) return "brunch";
   if (hour >= 17 && hour < 22) return "dinner";
   return "late_night";
+}
+
+/**
+ * Which meal rows to show on the day board.
+ * - Today: periods whose window has started (earlier empty rows stay for backfill;
+ *   future empty rows stay hidden). Any period with user entries always shows.
+ * - Past hub day: full set (day is complete; backfill any meal).
+ * - Future hub day: only periods that already have entries.
+ */
+export function visibleWhatIAteMealPeriods({
+  now = new Date(),
+  hubDateYmd = null,
+  todayYmd = null,
+  filledPeriodIds = [],
+} = {}) {
+  const filled = new Set(
+    (filledPeriodIds || []).map(normalizeWhatIAteMealPeriod).filter(Boolean)
+  );
+
+  if (hubDateYmd && todayYmd) {
+    if (hubDateYmd > todayYmd) {
+      return WHAT_I_ATE_MEAL_PERIODS.filter((p) => filled.has(p.id));
+    }
+    if (hubDateYmd < todayYmd) {
+      return WHAT_I_ATE_MEAL_PERIODS.slice();
+    }
+  }
+
+  const hour = now.getHours();
+  return WHAT_I_ATE_MEAL_PERIODS.filter((period) => {
+    if (filled.has(period.id)) return true;
+    if (period.id === "late_night") {
+      return hour >= WHAT_I_ATE_MEAL_PERIOD_START_HOUR.late_night || hour < 5;
+    }
+    const start = WHAT_I_ATE_MEAL_PERIOD_START_HOUR[period.id];
+    return typeof start === "number" && hour >= start;
+  });
 }
 
 export function groupEntriesByMealPeriod(entries) {

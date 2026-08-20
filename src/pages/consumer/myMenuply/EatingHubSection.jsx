@@ -93,6 +93,8 @@ export default function EatingHubSection({
   composeOpen: composeOpenProp,
   onComposeOpenChange,
   composeDefaultCategory = "ate",
+  composeMediaSource = "camera",
+  onComposeMediaSourceChange,
   planPrefill = null,
   locationCity = null,
   locationState = null,
@@ -105,6 +107,31 @@ export default function EatingHubSection({
   const setComposeOpen = onComposeOpenChange ?? setComposeOpenLocal;
   const [calendarTitle, setCalendarTitle] = useState("Eating");
   const [composeDefaultMeal, setComposeDefaultMeal] = useState(defaultWhatIAteMealPeriod());
+  const [composeInitialFile, setComposeInitialFile] = useState(null);
+
+  function setMediaSource(next) {
+    onComposeMediaSourceChange?.(next);
+  }
+
+  function closeCompose() {
+    setComposeOpen(false);
+    setComposeInitialFile(null);
+    setMediaSource("camera");
+  }
+
+  function openComposeTextOnly(mealId = null) {
+    setComposeDefaultMeal(mealId || defaultWhatIAteMealPeriod());
+    setComposeInitialFile(null);
+    setMediaSource("camera");
+    setComposeOpen(true);
+  }
+
+  function handleSlotCapture(mealId, file) {
+    setComposeDefaultMeal(mealId || defaultWhatIAteMealPeriod());
+    setComposeInitialFile(file || null);
+    setMediaSource("camera");
+    setComposeOpen(true);
+  }
 
   const today = whatIAteTodayLocalDate();
   const lookbackStart = eatingHistoryStart(today);
@@ -174,11 +201,6 @@ export default function EatingHubSection({
     onCalendarOpenChange(true);
   }
 
-  function handleLogMeal(mealId) {
-    setComposeDefaultMeal(mealId || defaultWhatIAteMealPeriod());
-    setComposeOpen(true);
-  }
-
   return (
     <section style={s.section} data-testid="eating" ref={sectionRef}>
       <SectionHead
@@ -189,10 +211,7 @@ export default function EatingHubSection({
             {!readOnly ? (
               <LogFoodTrigger
                 disabled={Boolean(postBusy)}
-                onClick={() => {
-                  setComposeDefaultMeal(defaultWhatIAteMealPeriod());
-                  setComposeOpen(true);
-                }}
+                onClick={() => openComposeTextOnly()}
               />
             ) : null}
             <DinerCalendarTrigger selectedDate={hubDate} onOpen={openEatingCalendar} />
@@ -250,14 +269,16 @@ export default function EatingHubSection({
         <WhatIAteMealBoard
           items={eatingForDay}
           readOnly={readOnly}
+          hubDate={hubDate}
+          todayYmd={today}
           onSelect={readOnly ? undefined : onDiarySelect}
           onPhotoPick={readOnly ? undefined : onEatingPhotoPick}
-          onLogMeal={readOnly || dateCmp > 0 ? undefined : handleLogMeal}
+          onSlotCapture={readOnly || dateCmp > 0 ? undefined : handleSlotCapture}
         />
         {!readOnly && dateCmp <= 0 && eatingForDay.length === 0 && lastPost?.kind !== "diary" ? (
           <p style={styles.emptyDay} data-testid="eating-ate-empty-day">
             Nothing logged for this day yet.{" "}
-            <button type="button" style={styles.emptyLink} onClick={() => setComposeOpen(true)}>
+            <button type="button" style={styles.emptyLink} onClick={() => openComposeTextOnly()}>
               Log food
             </button>
           </p>
@@ -407,9 +428,12 @@ export default function EatingHubSection({
       {!readOnly ? (
         <EatingComposeSheet
           open={composeOpen}
-          onClose={() => setComposeOpen(false)}
+          onClose={closeCompose}
           defaultCategory={composeDefaultCategory}
           defaultMealPeriod={composeDefaultMeal}
+          initialFile={composeInitialFile}
+          mediaSource={composeMediaSource}
+          openLibraryOnMount={composeMediaSource === "library"}
           busy={postBusy === "eating" || postBusy === "want"}
           onSubmit={onComposeSubmit}
           onPlanSchedule={onPlanSchedule}

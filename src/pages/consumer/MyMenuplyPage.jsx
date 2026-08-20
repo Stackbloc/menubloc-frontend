@@ -133,6 +133,7 @@ export default function MyMenuplyPage() {
   const [joinCandidates, setJoinCandidates] = useState([]);
   const [composeOpen, setComposeOpen] = useState(false);
   const [composeDefaultCategory, setComposeDefaultCategory] = useState("ate");
+  const [composeMediaSource, setComposeMediaSource] = useState("camera");
   const [hubFocus, setHubFocus] = useState("");
   const [planPrefill, setPlanPrefill] = useState(null);
   const locationCity = profile?.primary_location?.city_name || null;
@@ -216,8 +217,10 @@ export default function MyMenuplyPage() {
     if (loading || !isAuthenticated) return undefined;
     const compose = String(searchParams.get("compose") || "").trim().toLowerCase();
     const focus = String(searchParams.get("focus") || "").trim().toLowerCase();
+    const media = String(searchParams.get("media") || "").trim().toLowerCase();
     if (["ate", "want", "plan"].includes(compose)) {
       setComposeDefaultCategory(compose);
+      setComposeMediaSource(media === "library" ? "library" : "camera");
       if (compose === "plan") {
         setSchedulingPlans(true);
         setCalendarOpen(true);
@@ -234,6 +237,7 @@ export default function MyMenuplyPage() {
     }
     if (focus === "want") {
       setComposeDefaultCategory("want");
+      setComposeMediaSource("camera");
       setComposeOpen(true);
       const timer = window.setTimeout(() => {
         eatingSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -722,6 +726,7 @@ export default function MyMenuplyPage() {
               showFoodStoryCta={showFoodStoryCta}
               onLogFood={() => {
                 setComposeDefaultCategory("ate");
+                setComposeMediaSource("camera");
                 setComposeOpen(true);
               }}
             />

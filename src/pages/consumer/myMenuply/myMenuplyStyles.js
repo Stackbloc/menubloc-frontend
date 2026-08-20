@@ -1010,6 +1010,20 @@ export const mealHolderEmptyLabel = {
   color: GREEN_MID,
 };
 
+export const mealHolderCameraBtn = {
+  appearance: "none",
+  border: "none",
+  background: "transparent",
+  width: "100%",
+  minHeight: 168,
+  display: "grid",
+  placeItems: "center",
+  cursor: "pointer",
+  color: GREEN,
+  font: "inherit",
+  padding: 0,
+};
+
 /* —— Upcoming Plans bold list —— */
 export const plansPanel = {
   marginTop: 4,

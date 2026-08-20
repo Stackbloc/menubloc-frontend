@@ -9,6 +9,9 @@ export default function EatingComposeSheet({
   onClose,
   defaultCategory = "ate",
   defaultMealPeriod = null,
+  initialFile = null,
+  mediaSource = "camera",
+  openLibraryOnMount = false,
   busy = false,
   onSubmit,
   onPlanSchedule,
@@ -27,6 +30,8 @@ export default function EatingComposeSheet({
     onPlanSchedule?.(payload);
     onClose?.();
   }
+
+  const fileKey = initialFile?.name || (initialFile ? "blob" : "nofile");
 
   return (
     <div
@@ -52,10 +57,13 @@ export default function EatingComposeSheet({
           Add as much or as little as you want — photo or video, restaurant, menu item, homemade, or just a note.
         </p>
         <EatingCompose
-          key={`${defaultCategory}-${defaultMealPeriod || "auto"}`}
+          key={`${defaultCategory}-${defaultMealPeriod || "auto"}-${mediaSource}-${fileKey}`}
           busy={busy}
           defaultCategory={defaultCategory}
           defaultMealPeriod={defaultMealPeriod}
+          initialFile={initialFile}
+          mediaSource={mediaSource}
+          openLibraryOnMount={openLibraryOnMount}
           onSubmit={handleSubmit}
           onPlanSchedule={handlePlanSchedule}
           followed={followed}

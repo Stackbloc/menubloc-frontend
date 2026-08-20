@@ -7,10 +7,10 @@ import { Link } from "react-router-dom";
 import MenuplyMediaPicker from "../../../components/social/MenuplyMediaPicker.jsx";
 import { resolveConsumerMediaUrl } from "../../../lib/consumerApi.js";
 import {
-  WHAT_I_ATE_MEAL_PERIODS,
   groupEntriesByMealPeriod,
   mealPeriodLabel,
   normalizeWhatIAteMealPeriod,
+  visibleWhatIAteMealPeriods,
 } from "../../../lib/whatIAteTodayMealPeriod.js";
 import { formatEatingCaption } from "./dinerHubFormat.js";
 import { foodHref, restaurantHref } from "./myMenuplyBits.jsx";
@@ -46,6 +46,7 @@ function MealMediaCard({
         <MenuplyMediaPicker
           onFile={handleFile}
           facingMode="environment"
+          source="camera"
           allowPhoto
           allowVideo
           showPreview={false}
@@ -113,6 +114,7 @@ function MealMediaCard({
               <MenuplyMediaPicker
                 onFile={handleFile}
                 facingMode="environment"
+                source="camera"
                 allowPhoto
                 allowVideo
                 showPreview={false}
@@ -137,25 +139,61 @@ function MealMediaCard({
   );
 }
 
-function EmptyMealSlot({ mealId, readOnly, onLog }) {
+function EmptyMealSlot({ mealId, readOnly, onCapture }) {
+  if (readOnly || !onCapture) {
+    return (
+      <div
+        style={s.mealHolderEmpty}
+        data-testid="what-i-ate-meal-empty"
+        data-meal={mealId}
+        aria-label={`${mealPeriodLabel(mealId)} — nothing logged`}
+      >
+        <span style={s.mealHolderEmptyLabel}>Nothing here</span>
+      </div>
+    );
+  }
+
   return (
-    <button
-      type="button"
-      style={s.mealHolderEmpty}
-      data-testid="what-i-ate-meal-empty"
-      data-meal={mealId}
-      disabled={readOnly || !onLog}
-      onClick={() => onLog?.(mealId)}
-      aria-label={
-        readOnly
-          ? `${mealPeriodLabel(mealId)} — nothing logged`
-          : `Log ${mealPeriodLabel(mealId)}`
-      }
-    >
-      <span style={s.mealHolderEmptyLabel}>
-        {readOnly ? "Nothing here" : "Add"}
-      </span>
-    </button>
+    <div style={s.mealHolderEmpty} data-testid="what-i-ate-meal-empty" data-meal={mealId}>
+      <MenuplyMediaPicker
+        source="camera"
+        facingMode="environment"
+        allowPhoto
+        allowVideo
+        showPreview={false}
+        testId={`meal-slot-camera-${mealId}`}
+        ariaLabel={`Take photo for ${mealPeriodLabel(mealId)}`}
+        onFile={(file) => {
+          if (file) onCapture(mealId, file);
+        }}
+        renderTrigger={({ open, disabled }) => (
+          <button
+            type="button"
+            style={s.mealHolderCameraBtn}
+            disabled={disabled}
+            onClick={open}
+            aria-label={`Take photo for ${mealPeriodLabel(mealId)}`}
+            data-testid={`what-i-ate-meal-camera-${mealId}`}
+          >
+            <MealSlotCameraIcon />
+          </button>
+        )}
+      />
+    </div>
+  );
+}
+
+function MealSlotCameraIcon() {
+  return (
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M9 4h6l1.5 2H19a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h2.5L9 4Z"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinejoin="round"
+      />
+      <circle cx="12" cy="13" r="3.5" stroke="currentColor" strokeWidth="1.75" />
+    </svg>
   );
 }
 
@@ -164,14 +202,24 @@ export default function WhatIAteMealBoard({
   readOnly = false,
   onSelect,
   onPhotoPick,
-  onLogMeal,
+  onSlotCapture,
+  hubDate = null,
+  todayYmd = null,
+  now = null,
 }) {
   const { buckets, other } = groupEntriesByMealPeriod(items);
   const hasAny = (items || []).length > 0;
+  const filledPeriodIds = Object.keys(buckets).filter((id) => (buckets[id] || []).length > 0);
+  const visibleMeals = visibleWhatIAteMealPeriods({
+    now: now || new Date(),
+    hubDateYmd: hubDate,
+    todayYmd,
+    filledPeriodIds,
+  });
 
   return (
     <div data-testid="what-i-ate-meal-board" style={s.mealBoard}>
-      {WHAT_I_ATE_MEAL_PERIODS.map((meal) => {
+      {visibleMeals.map((meal) => {
         const rows = buckets[meal.id] || [];
         return (
           <div key={meal.id} style={s.mealRow} data-testid={`what-i-ate-meal-row-${meal.id}`}>
@@ -187,7 +235,11 @@ export default function WhatIAteMealBoard({
                 />
               ))}
               {rows.length === 0 ? (
-                <EmptyMealSlot mealId={meal.id} readOnly={readOnly} onLog={onLogMeal} />
+                <EmptyMealSlot
+                  mealId={meal.id}
+                  readOnly={readOnly}
+                  onCapture={onSlotCapture}
+                />
               ) : null}
             </div>
           </div>

@@ -44,11 +44,23 @@ test("My Menuply and peer hub use unified Eating section", () => {
   assert.doesNotMatch(section, /PhotoGrid/);
 
   const mealBoard = read("src/pages/consumer/myMenuply/WhatIAteMealBoard.jsx");
-  assert.match(mealBoard, /WHAT_I_ATE_MEAL_PERIODS/);
+  assert.match(mealBoard, /visibleWhatIAteMealPeriods/);
   assert.match(mealBoard, /groupEntriesByMealPeriod/);
   assert.match(mealBoard, /what-i-ate-meal-row/);
   assert.match(mealBoard, /video_url/);
   assert.match(mealBoard, /photo_url/);
+  assert.match(mealBoard, /onSlotCapture/);
+  assert.match(mealBoard, /source="camera"/);
+  assert.match(mealBoard, /hubDate/);
+  assert.match(section, /handleSlotCapture/);
+  assert.match(section, /composeMediaSource/);
+  assert.match(section, /\+ Log/);
+  assert.match(section, /hubDate=\{hubDate\}/);
+  assert.match(mine, /media=library|get\("media"\)/);
+
+  const mealLib = read("src/lib/whatIAteTodayMealPeriod.js");
+  assert.match(mealLib, /visibleWhatIAteMealPeriods/);
+  assert.match(mealLib, /WHAT_I_ATE_MEAL_PERIOD_START_HOUR/);
 
   const bits = read("src/pages/consumer/myMenuply/myMenuplyBits.jsx");
   assert.match(bits, /planCardBold/);
