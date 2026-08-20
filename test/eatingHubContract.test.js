@@ -34,9 +34,26 @@ test("My Menuply and peer hub use unified Eating section", () => {
   assert.match(section, /eating-want-panel/);
   assert.match(section, /eating-plans-panel/);
   assert.match(section, /future-plans-summary/);
+  assert.match(section, /None scheduled/);
   assert.match(section, /Invite Me/);
+  assert.match(section, /upcoming-plans-calendar-open/);
+  assert.match(section, /WhatIAteMealBoard/);
+  assert.match(section, /what-i-ate-meal-board|WhatIAteMealBoard/);
   assert.doesNotMatch(section, /future-plans-calendar/);
   assert.doesNotMatch(section, /eating-plans-calendar/);
+  assert.doesNotMatch(section, /PhotoGrid/);
+
+  const mealBoard = read("src/pages/consumer/myMenuply/WhatIAteMealBoard.jsx");
+  assert.match(mealBoard, /WHAT_I_ATE_MEAL_PERIODS/);
+  assert.match(mealBoard, /groupEntriesByMealPeriod/);
+  assert.match(mealBoard, /what-i-ate-meal-row/);
+  assert.match(mealBoard, /video_url/);
+  assert.match(mealBoard, /photo_url/);
+
+  const bits = read("src/pages/consumer/myMenuply/myMenuplyBits.jsx");
+  assert.match(bits, /planCardBold/);
+  assert.match(bits, /onOpenCalendar/);
+  assert.match(bits, /Join Me open/);
 
   assert.match(calendar, /past_count/);
   assert.match(calendar, /future_count/);

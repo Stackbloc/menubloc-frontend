@@ -38,7 +38,7 @@ test("My Menuply is the diner's personal home", () => {
   assert.match(page, /listPendingEatInvitePeople/);
   assert.match(section, /future-plans-summary/);
   assert.match(section, /Schedule a plan/);
-  assert.match(section, /No plans scheduled/);
+  assert.match(section, /None scheduled/);
   assert.doesNotMatch(section, /^\s*Plans Scheduled\s*$/m);
   assert.match(page, /isScheduledEatingPlan/);
   assert.match(section, /FuturePlanRow/);

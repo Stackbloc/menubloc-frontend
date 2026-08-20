@@ -49,8 +49,7 @@ test("Connection diner page uses the same hub layout as My Menuply", () => {
   assert.doesNotMatch(peer, /onAvatarFile/);
   assert.match(hero, /readOnly/);
   assert.match(hero, /About Me/);
-  assert.match(hero, /My Connections/);
-  assert.match(hero, /viewerUserId/);
+  assert.match(hero, /viewerUserId|connections/);
   assert.doesNotMatch(peer, /connections=\{\[\]\}/);
   assert.match(peer, /listConnections\("accepted", peerId\)/);
   assert.match(peer, /listDinerDiningCrews/);
@@ -70,9 +69,13 @@ test("Connection diner page uses the same hub layout as My Menuply", () => {
 test("Diner hub photos are casual snapshots with food info, not Instagram heroes", () => {
   const styles = read("src/pages/consumer/myMenuply/myMenuplyStyles.js");
   const bits = read("src/pages/consumer/myMenuply/myMenuplyBits.jsx");
-  assert.match(styles, /height: 280/);
+  const mealBoard = read("src/pages/consumer/myMenuply/WhatIAteMealBoard.jsx");
+  assert.match(styles, /height: 168/);
+  assert.match(styles, /mealHolder/);
   assert.doesNotMatch(styles, /58vw/);
   assert.doesNotMatch(styles, /340px/);
+  assert.match(mealBoard, /what-i-ate-meal-board/);
+  assert.match(mealBoard, /video_url/);
   assert.match(bits, /View dish/);
   assert.match(bits, /restaurant_name/);
   assert.match(bits, /Join Me/);

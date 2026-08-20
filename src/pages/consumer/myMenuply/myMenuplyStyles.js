@@ -844,3 +844,255 @@ export const nameList = {
   gap: 8,
   margin: "8px 0 0",
 };
+
+/* —— What I Ate meal-period day board —— */
+export const mealBoard = {
+  display: "flex",
+  flexDirection: "column",
+  gap: 14,
+  marginTop: 8,
+};
+
+export const mealBoardHint = {
+  margin: "4px 0 0",
+  fontSize: 13,
+  color: MUTED,
+};
+
+export const mealRow = {
+  display: "grid",
+  gridTemplateColumns: "88px 1fr",
+  gap: 10,
+  alignItems: "stretch",
+};
+
+export const mealRowLabel = {
+  fontSize: 12,
+  fontWeight: 800,
+  letterSpacing: "0.04em",
+  textTransform: "uppercase",
+  color: GREEN,
+  paddingTop: 10,
+  lineHeight: 1.3,
+};
+
+export const mealRowTrack = {
+  display: "flex",
+  gap: 10,
+  overflowX: "auto",
+  paddingBottom: 4,
+  WebkitOverflowScrolling: "touch",
+  scrollbarWidth: "thin",
+};
+
+export const mealHolder = {
+  flex: "0 0 168px",
+  width: 168,
+  minHeight: 168,
+  borderRadius: 16,
+  overflow: "hidden",
+  background: "#fff",
+  border: `1px solid ${BORDER}`,
+  boxShadow: "0 10px 28px rgba(20, 83, 45, 0.1)",
+  position: "relative",
+};
+
+export const mealHolderMediaBtn = {
+  appearance: "none",
+  border: "none",
+  padding: 0,
+  margin: 0,
+  width: "100%",
+  height: 168,
+  display: "block",
+  position: "relative",
+  cursor: "pointer",
+  background: "#0f172a",
+  font: "inherit",
+  textAlign: "left",
+};
+
+export const mealHolderMedia = {
+  width: "100%",
+  height: "100%",
+  objectFit: "cover",
+  display: "block",
+};
+
+export const mealHolderScrim = {
+  position: "absolute",
+  left: 0,
+  right: 0,
+  bottom: 0,
+  padding: "28px 10px 10px",
+  background: "linear-gradient(180deg, transparent 0%, rgba(15,23,42,0.82) 100%)",
+  color: "#fff",
+};
+
+export const mealHolderTitle = {
+  fontSize: 14,
+  fontWeight: 800,
+  lineHeight: 1.25,
+  letterSpacing: "-0.01em",
+};
+
+export const mealHolderMeta = {
+  marginTop: 2,
+  fontSize: 11,
+  fontWeight: 600,
+  opacity: 0.9,
+};
+
+export const mealHolderText = {
+  appearance: "none",
+  border: "none",
+  width: "100%",
+  minHeight: 168,
+  padding: 12,
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "flex-start",
+  gap: 4,
+  background: CREAM_DEEP,
+  cursor: "pointer",
+  font: "inherit",
+  textAlign: "left",
+  boxSizing: "border-box",
+};
+
+export const mealHolderTitleDark = {
+  fontSize: 14,
+  fontWeight: 800,
+  color: INK,
+  lineHeight: 1.25,
+};
+
+export const mealHolderMetaDark = {
+  fontSize: 12,
+  fontWeight: 600,
+  color: GREEN_BRIGHT,
+  textDecoration: "none",
+};
+
+export const mealHolderCaption = {
+  fontSize: 11,
+  color: MUTED,
+  lineHeight: 1.35,
+  marginTop: 4,
+};
+
+export const mealHolderLink = {
+  marginTop: "auto",
+  fontSize: 12,
+  fontWeight: 700,
+  color: GREEN_BRIGHT,
+  textDecoration: "underline",
+};
+
+export const mealHolderEmpty = {
+  appearance: "none",
+  flex: "0 0 168px",
+  width: 168,
+  minHeight: 168,
+  borderRadius: 16,
+  border: `1.5px dashed ${BORDER_INPUT}`,
+  background: "rgba(255,255,255,0.55)",
+  display: "grid",
+  placeItems: "center",
+  cursor: "pointer",
+  font: "inherit",
+  color: MUTED,
+};
+
+export const mealHolderEmptyLabel = {
+  fontSize: 13,
+  fontWeight: 700,
+  color: GREEN_MID,
+};
+
+/* —— Upcoming Plans bold list —— */
+export const plansPanel = {
+  marginTop: 4,
+};
+
+export const plansEmpty = {
+  margin: "8px 0 0",
+  padding: "18px 16px",
+  borderRadius: 16,
+  background: "linear-gradient(165deg, #14532d 0%, #166534 55%, #15803d 100%)",
+  color: "#fff",
+  boxShadow: "0 12px 28px rgba(20, 83, 45, 0.2)",
+};
+
+export const plansEmptyText = {
+  margin: 0,
+  fontSize: 16,
+  fontWeight: 700,
+  letterSpacing: "-0.01em",
+  lineHeight: 1.4,
+};
+
+export const plansEmptyLink = {
+  color: "#bbf7d0",
+  fontWeight: 800,
+  textDecoration: "underline",
+};
+
+export const planCardBold = {
+  appearance: "none",
+  width: "100%",
+  textAlign: "left",
+  border: `1px solid ${BORDER}`,
+  background: "#fff",
+  borderRadius: 16,
+  padding: "16px 16px 14px",
+  font: "inherit",
+  cursor: "pointer",
+  marginBottom: 10,
+  boxShadow: "0 10px 24px rgba(20, 83, 45, 0.08)",
+  display: "block",
+};
+
+export const planCardBoldOpen = {
+  boxShadow: "0 12px 28px rgba(20, 83, 45, 0.14)",
+  borderColor: BORDER_INPUT,
+};
+
+export const planCardDate = {
+  fontSize: 11,
+  fontWeight: 800,
+  letterSpacing: "0.06em",
+  textTransform: "uppercase",
+  color: GREEN_BRIGHT,
+  marginBottom: 4,
+};
+
+export const planCardTitle = {
+  fontSize: 17,
+  fontWeight: 800,
+  color: INK,
+  letterSpacing: "-0.02em",
+  lineHeight: 1.25,
+};
+
+export const planCardMeta = {
+  marginTop: 4,
+  fontSize: 13,
+  color: MUTED,
+  fontWeight: 600,
+};
+
+export const plansCalendarBtn = {
+  appearance: "none",
+  border: `1.5px solid ${BORDER_INPUT}`,
+  background: "#fff",
+  color: GREEN,
+  borderRadius: 999,
+  width: 40,
+  height: 40,
+  display: "inline-grid",
+  placeItems: "center",
+  cursor: "pointer",
+  flexShrink: 0,
+  boxShadow: "0 4px 12px rgba(20, 83, 45, 0.1)",
+};

@@ -110,7 +110,9 @@ export default function DinerCalendarSheet({
         />
         {monthEvents.length > 0 ? (
           <div data-testid="calendar-events" style={styles.events}>
-            <p style={styles.eventsLabel}>Plans this month</p>
+            <p style={styles.eventsLabel}>
+              {title === "Upcoming Plans" ? "Plans this month" : "This month"}
+            </p>
             {monthEvents.map((event) => {
               const onDay = event.ymd === selectedDate;
               return (
@@ -124,15 +126,27 @@ export default function DinerCalendarSheet({
                   }}
                   style={{
                     ...styles.eventBtn,
+                    ...(title === "Upcoming Plans" ? styles.eventBtnPlans : null),
                     ...(onDay ? styles.eventBtnOnDay : null),
+                    ...(onDay && title === "Upcoming Plans" ? styles.eventBtnOnDayPlans : null),
                   }}
                 >
-                  <span style={styles.eventDot} aria-hidden />
+                  <span
+                    style={{
+                      ...styles.eventDot,
+                      ...(title === "Upcoming Plans" ? styles.eventDotPlans : null),
+                    }}
+                    aria-hidden
+                  />
                   {event.label}
                   <span style={styles.eventDate}>{formatPlanBracketDate(event.ymd)}</span>
                 </button>
               );
             })}
+          </div>
+        ) : title === "Upcoming Plans" ? (
+          <div data-testid="calendar-events-empty" style={styles.eventsEmpty}>
+            No plans on this month yet — pick a day to schedule.
           </div>
         ) : null}
       </div>
@@ -241,6 +255,13 @@ const styles = {
     background: "rgba(0,122,255,0.12)",
     boxShadow: "inset 0 0 0 1px rgba(0,122,255,0.35)",
   },
+  eventBtnPlans: {
+    background: "rgba(20, 83, 45, 0.06)",
+  },
+  eventBtnOnDayPlans: {
+    background: "rgba(22, 163, 74, 0.14)",
+    boxShadow: "inset 0 0 0 1.5px rgba(22, 163, 74, 0.45)",
+  },
   eventDot: {
     width: 8,
     height: 8,
@@ -248,10 +269,21 @@ const styles = {
     background: "#007AFF",
     flexShrink: 0,
   },
+  eventDotPlans: {
+    background: "#16A34A",
+  },
   eventDate: {
     marginLeft: "auto",
     fontSize: 12,
     fontWeight: 500,
     color: "#8E8E93",
+  },
+  eventsEmpty: {
+    marginTop: 12,
+    paddingTop: 8,
+    fontSize: 13,
+    fontWeight: 600,
+    color: "#8E8E93",
+    lineHeight: 1.4,
   },
 };

@@ -12,8 +12,9 @@ import {
 } from "../../../lib/whatIAteTodayMealPeriod.js";
 import {
   formatEatingCaption,
-  formatFuturePlanRowLabel,
+  formatPlanBracketDate,
   futurePlanDetailParts,
+  futurePlanRestaurantName,
   planJoinHref,
 } from "./dinerHubFormat.js";
 import * as s from "./myMenuplyStyles.js";
@@ -456,12 +457,26 @@ export function ConnectionFoodCard({ item }) {
   );
 }
 
-export function FuturePlanRow({ plan, open, onToggle, onAddDetails }) {
-  const label = formatFuturePlanRowLabel(plan);
+export function FuturePlanRow({ plan, open, onToggle, onOpenCalendar, onAddDetails }) {
+  const when = formatPlanBracketDate(plan?.plan_date);
+  const name = futurePlanRestaurantName(plan);
+  const { meal, notes } = futurePlanDetailParts(plan);
   return (
     <div data-testid="future-plan-row">
-      <button type="button" style={s.planSummaryBtn} onClick={onToggle}>
-        {label}
+      <button
+        type="button"
+        style={{ ...s.planCardBold, ...(open ? s.planCardBoldOpen : null) }}
+        onClick={() => {
+          if (onOpenCalendar) onOpenCalendar(plan);
+          else onToggle?.();
+        }}
+        aria-expanded={open}
+      >
+        {when ? <div style={s.planCardDate}>{when}</div> : null}
+        <div style={s.planCardTitle}>{name}</div>
+        <div style={s.planCardMeta}>
+          {[meal, plan.joinable ? "Join Me open" : "Just me", notes].filter(Boolean).join(" · ")}
+        </div>
       </button>
       {open ? (
         <div data-testid="future-plan-detail">

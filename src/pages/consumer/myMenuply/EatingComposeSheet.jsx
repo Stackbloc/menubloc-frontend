@@ -8,6 +8,7 @@ export default function EatingComposeSheet({
   open,
   onClose,
   defaultCategory = "ate",
+  defaultMealPeriod = null,
   busy = false,
   onSubmit,
   onPlanSchedule,
@@ -51,8 +52,10 @@ export default function EatingComposeSheet({
           Add as much or as little as you want — photo or video, restaurant, menu item, homemade, or just a note.
         </p>
         <EatingCompose
+          key={`${defaultCategory}-${defaultMealPeriod || "auto"}`}
           busy={busy}
           defaultCategory={defaultCategory}
+          defaultMealPeriod={defaultMealPeriod}
           onSubmit={handleSubmit}
           onPlanSchedule={handlePlanSchedule}
           followed={followed}

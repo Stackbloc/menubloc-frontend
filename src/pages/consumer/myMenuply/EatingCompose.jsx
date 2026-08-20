@@ -16,6 +16,7 @@ export default function EatingCompose({
   busy = false,
   testId = "eating-compose",
   defaultCategory = "ate",
+  defaultMealPeriod = null,
   onSubmit,
   onPlanSchedule,
   inSheet = false,
@@ -26,7 +27,9 @@ export default function EatingCompose({
   const [category, setCategory] = useState(defaultCategory);
   const [text, setText] = useState("");
   const [file, setFile] = useState(null);
-  const [mealPeriod, setMealPeriod] = useState(defaultWhatIAteMealPeriod());
+  const [mealPeriod, setMealPeriod] = useState(
+    defaultMealPeriod || defaultWhatIAteMealPeriod()
+  );
   const [homemade, setHomemade] = useState(false);
   const [restaurant, setRestaurant] = useState(null);
   const [dish, setDish] = useState(null);

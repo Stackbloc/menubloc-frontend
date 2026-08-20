@@ -1,21 +1,19 @@
 /**
- * Simple camera icon → Photo / Video choice → native capture or library → preview.
- * No custom in-app camera UI (MVP social media attach).
+ * Camera icon → Camera or Upload from library (no Menuply Photo vs Video sheet).
+ * Photo vs video is inferred from the returned file. Menu/OCR uploads do not use this.
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { isVideoFile } from "../../lib/eatingMediaUtils.js";
 import { socialBtn } from "../../lib/socialDesignTokens.js";
 
-const SHEET_OPTIONS = [
-  { id: "take-photo", label: "Take Photo", kind: "photo", source: "camera" },
-  { id: "record-video", label: "Record Video", kind: "video", source: "camera" },
-  { id: "choose-photo", label: "Choose Photo", kind: "photo", source: "library" },
-  { id: "choose-video", label: "Choose Video", kind: "video", source: "library" },
-];
+function buildAccept({ allowPhoto, allowVideo }) {
+  if (allowPhoto && allowVideo) return "image/*,video/*";
+  if (allowVideo) return "video/*";
+  return "image/*";
+}
 
-function captureAttr(facingMode, kind) {
-  if (kind !== "photo" && kind !== "video") return undefined;
+function captureAttr(facingMode) {
   if (facingMode === "user") return "user";
   return "environment";
 }
@@ -37,17 +35,28 @@ export default function MenuplyMediaPicker({
 }) {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [previewUrl, setPreviewUrl] = useState("");
-  const inputRefs = useRef({});
+  const cameraInputRef = useRef(null);
+  const libraryInputRef = useRef(null);
 
-  const options = useMemo(
-    () =>
-      SHEET_OPTIONS.filter((opt) => {
-        if (opt.kind === "photo" && !allowPhoto) return false;
-        if (opt.kind === "video" && !allowVideo) return false;
-        return true;
-      }),
+  const accept = useMemo(
+    () => buildAccept({ allowPhoto, allowVideo }),
     [allowPhoto, allowVideo]
   );
+
+  function openSourceSheet() {
+    if (disabled) return;
+    setSheetOpen(true);
+  }
+
+  function openCamera() {
+    setSheetOpen(false);
+    cameraInputRef.current?.click();
+  }
+
+  function openLibrary() {
+    setSheetOpen(false);
+    libraryInputRef.current?.click();
+  }
 
   useEffect(() => {
     if (openOnMount && !disabled) setSheetOpen(true);
@@ -70,16 +79,6 @@ export default function MenuplyMediaPicker({
     if (picked) onFile?.(picked);
   }
 
-  function openSheet() {
-    if (disabled) return;
-    setSheetOpen(true);
-  }
-
-  function triggerOption(opt) {
-    const key = `${opt.source}-${opt.kind}`;
-    inputRefs.current[key]?.click();
-  }
-
   const isVideo = isVideoFile(file);
 
   return (
@@ -92,7 +91,7 @@ export default function MenuplyMediaPicker({
             <img src={previewUrl} alt="" style={previewStyles.media} />
           )}
           <div style={previewStyles.actions}>
-            <button type="button" style={previewStyles.link} disabled={disabled} onClick={openSheet}>
+            <button type="button" style={previewStyles.link} disabled={disabled} onClick={openSourceSheet}>
               Replace
             </button>
             <button
@@ -106,13 +105,13 @@ export default function MenuplyMediaPicker({
           </div>
         </div>
       ) : renderTrigger ? (
-        renderTrigger({ open: openSheet, disabled })
+        renderTrigger({ open: openSourceSheet, disabled })
       ) : (
         <button
           type="button"
           aria-label={ariaLabel}
           disabled={disabled}
-          onClick={openSheet}
+          onClick={openSourceSheet}
           style={{ ...socialBtn.icon, ...iconStyle }}
           data-testid={`${testId}-trigger`}
         >
@@ -120,26 +119,25 @@ export default function MenuplyMediaPicker({
         </button>
       )}
 
-      {options.map((opt) => {
-        const key = `${opt.source}-${opt.kind}`;
-        const accept = opt.kind === "video" ? "video/*" : "image/*";
-        const capture = opt.source === "camera" ? captureAttr(facingMode, opt.kind) : undefined;
-        return (
-          <input
-            key={opt.id}
-            ref={(el) => {
-              inputRefs.current[key] = el;
-            }}
-            type="file"
-            accept={accept}
-            capture={capture}
-            hidden
-            disabled={disabled}
-            data-testid={`${testId}-${opt.id}`}
-            onChange={handlePick}
-          />
-        );
-      })}
+      <input
+        ref={cameraInputRef}
+        type="file"
+        accept={accept}
+        capture={captureAttr(facingMode)}
+        hidden
+        disabled={disabled}
+        data-testid={`${testId}-camera-input`}
+        onChange={handlePick}
+      />
+      <input
+        ref={libraryInputRef}
+        type="file"
+        accept={accept}
+        hidden
+        disabled={disabled}
+        data-testid={`${testId}-library-input`}
+        onChange={handlePick}
+      />
 
       {sheetOpen ? (
         <div
@@ -151,23 +149,29 @@ export default function MenuplyMediaPicker({
           <div
             role="dialog"
             aria-modal="true"
-            aria-label="Add photo or video"
+            aria-label="Add media"
             style={sheetStyles.panel}
             onClick={(e) => e.stopPropagation()}
           >
-            <p style={sheetStyles.title}>Add Photo or Video</p>
-            {options.map((opt) => (
-              <button
-                key={opt.id}
-                type="button"
-                style={sheetStyles.option}
-                disabled={disabled}
-                data-testid={`${testId}-option-${opt.id}`}
-                onClick={() => triggerOption(opt)}
-              >
-                {opt.label}
-              </button>
-            ))}
+            <p style={sheetStyles.title}>Add media</p>
+            <button
+              type="button"
+              style={sheetStyles.option}
+              disabled={disabled}
+              data-testid={`${testId}-option-camera`}
+              onClick={openCamera}
+            >
+              Camera
+            </button>
+            <button
+              type="button"
+              style={sheetStyles.option}
+              disabled={disabled}
+              data-testid={`${testId}-option-library`}
+              onClick={openLibrary}
+            >
+              Upload from library
+            </button>
             <button type="button" style={sheetStyles.cancel} onClick={() => setSheetOpen(false)}>
               Cancel
             </button>

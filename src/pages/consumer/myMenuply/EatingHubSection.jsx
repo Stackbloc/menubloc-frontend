@@ -1,5 +1,7 @@
 /**
  * Unified Eating hub — presentation feed + on-demand compose sheet (input separated).
+ * What I Ate = meal-period media board for the selected journal day.
+ * Upcoming Plans = bold list + month calendar (Post about unchanged).
  */
 
 import { useState } from "react";
@@ -8,13 +10,12 @@ import DinerCalendarSheet, { DinerCalendarTrigger } from "./DinerCalendarSheet.j
 import EatingComposeSheet from "./EatingComposeSheet.jsx";
 import EatingPlanDayForm from "./EatingPlanDayForm.jsx";
 import PostAfterActions from "./PostAfterActions.jsx";
+import WhatIAteMealBoard from "./WhatIAteMealBoard.jsx";
 import {
-  PhotoGrid,
   SectionHead,
   FuturePlanRow,
   WantToEatList,
 } from "./myMenuplyBits.jsx";
-import { formatPlanBracketDate, futurePlanKey } from "./dinerHubFormat.js";
 import {
   clampEatingLookbackDate,
   compareYmd,
@@ -22,7 +23,9 @@ import {
   planYmd,
   shiftYmd,
 } from "./eatingHubUtils.js";
+import { formatPlanBracketDate, futurePlanKey } from "./dinerHubFormat.js";
 import { whatIAteTodayLocalDate } from "../../../lib/consumerApi.js";
+import { defaultWhatIAteMealPeriod } from "../../../lib/whatIAteTodayMealPeriod.js";
 import * as s from "./myMenuplyStyles.js";
 
 function LogFoodTrigger({ onClick, disabled }) {
@@ -37,6 +40,15 @@ function LogFoodTrigger({ onClick, disabled }) {
     >
       + Log
     </button>
+  );
+}
+
+function PlansCalendarGlyph() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden fill="none">
+      <rect x="3" y="5" width="18" height="16" rx="3" stroke="currentColor" strokeWidth="1.8" />
+      <path d="M8 3v4M16 3v4M3 10h18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
   );
 }
 
@@ -85,9 +97,14 @@ export default function EatingHubSection({
   locationCity = null,
   locationState = null,
 }) {
+  void liked;
+  void foodHref;
+
   const [composeOpenLocal, setComposeOpenLocal] = useState(false);
   const composeOpen = composeOpenProp ?? composeOpenLocal;
   const setComposeOpen = onComposeOpenChange ?? setComposeOpenLocal;
+  const [calendarTitle, setCalendarTitle] = useState("Eating");
+  const [composeDefaultMeal, setComposeDefaultMeal] = useState(defaultWhatIAteMealPeriod());
 
   const today = whatIAteTodayLocalDate();
   const lookbackStart = eatingHistoryStart(today);
@@ -95,18 +112,24 @@ export default function EatingHubSection({
   const canGoBack = compareYmd(hubDate, lookbackStart) > 0;
   const canGoForward = true;
 
+  /** Selected journal day only — never fall back to other days' media. */
   const eatingForDay = eating.filter((row) => {
     if (planYmd(row.eaten_on || row.created_at) === hubDate) return true;
-    if (lastPost?.kind === "diary" && Number(row.entry_id) === Number(lastPost.id)) return true;
+    if (lastPost?.kind === "diary" && Number(row.entry_id) === Number(lastPost.id)) {
+      return planYmd(lastPost.eaten_on) === hubDate || !lastPost.eaten_on;
+    }
     return false;
   });
-  const presentationEating = readOnly
-    ? eatingForDay.length
-      ? eatingForDay
-      : eating.slice(0, 12)
-    : eatingForDay.length
-      ? eatingForDay
-      : eating.slice(0, 6);
+
+  function openEatingCalendar() {
+    setCalendarTitle("Eating");
+    onCalendarOpenChange(true);
+  }
+
+  function openPlansCalendar() {
+    setCalendarTitle("Upcoming Plans");
+    onCalendarOpenChange(true);
+  }
 
   function handleCalendarDate(ymd) {
     const cmp = compareYmd(ymd, today);
@@ -119,6 +142,7 @@ export default function EatingHubSection({
     }
     const clamped = clampEatingLookbackDate(ymd, today);
     onHubDateChange(clamped);
+    onSchedulingPlansChange?.(false);
   }
 
   function goDay(delta) {
@@ -130,6 +154,29 @@ export default function EatingHubSection({
     onHubDateChange(event.ymd);
     onSelectedPlanKeyChange?.(event.key);
     onSchedulingPlansChange?.(false);
+    const d = new Date(`${event.ymd}T12:00:00`);
+    if (!Number.isNaN(d.getTime())) {
+      onHubMonthChange?.(new Date(d.getFullYear(), d.getMonth(), 1));
+    }
+  }
+
+  function openPlanOnCalendar(plan) {
+    const ymd = planYmd(plan?.plan_date);
+    if (!ymd) return;
+    const d = new Date(`${ymd}T12:00:00`);
+    if (!Number.isNaN(d.getTime())) {
+      onHubMonthChange?.(new Date(d.getFullYear(), d.getMonth(), 1));
+    }
+    onHubDateChange(ymd);
+    onSelectedPlanKeyChange?.(futurePlanKey(plan));
+    onSchedulingPlansChange?.(false);
+    setCalendarTitle("Upcoming Plans");
+    onCalendarOpenChange(true);
+  }
+
+  function handleLogMeal(mealId) {
+    setComposeDefaultMeal(mealId || defaultWhatIAteMealPeriod());
+    setComposeOpen(true);
   }
 
   return (
@@ -142,13 +189,13 @@ export default function EatingHubSection({
             {!readOnly ? (
               <LogFoodTrigger
                 disabled={Boolean(postBusy)}
-                onClick={() => setComposeOpen(true)}
+                onClick={() => {
+                  setComposeDefaultMeal(defaultWhatIAteMealPeriod());
+                  setComposeOpen(true);
+                }}
               />
             ) : null}
-            <DinerCalendarTrigger
-              selectedDate={hubDate}
-              onOpen={() => onCalendarOpenChange(true)}
-            />
+            <DinerCalendarTrigger selectedDate={hubDate} onOpen={openEatingCalendar} />
           </div>
         }
       />
@@ -200,14 +247,14 @@ export default function EatingHubSection({
             onSkip={onSkipDetails}
           />
         ) : null}
-        <PhotoGrid
-          items={presentationEating}
-          presentation
-          hideJoinMe
-          onPhotoPick={readOnly ? undefined : onEatingPhotoPick}
+        <WhatIAteMealBoard
+          items={eatingForDay}
+          readOnly={readOnly}
           onSelect={readOnly ? undefined : onDiarySelect}
+          onPhotoPick={readOnly ? undefined : onEatingPhotoPick}
+          onLogMeal={readOnly || dateCmp > 0 ? undefined : handleLogMeal}
         />
-        {!readOnly && dateCmp <= 0 && presentationEating.length === 0 && lastPost?.kind !== "diary" ? (
+        {!readOnly && dateCmp <= 0 && eatingForDay.length === 0 && lastPost?.kind !== "diary" ? (
           <p style={styles.emptyDay} data-testid="eating-ate-empty-day">
             Nothing logged for this day yet.{" "}
             <button type="button" style={styles.emptyLink} onClick={() => setComposeOpen(true)}>
@@ -224,7 +271,9 @@ export default function EatingHubSection({
         !wants.some((row) => Number(row.id) === Number(lastPost.id)) ? (
           <div style={s.card} data-testid="want-to-eat-just-posted">
             <div style={{ fontWeight: 800 }}>{lastPost.food_name}</div>
-            <div style={{ ...s.muted, fontSize: 12, marginTop: 4 }}>Saved — link a restaurant and menu item below</div>
+            <div style={{ ...s.muted, fontSize: 12, marginTop: 4 }}>
+              Saved — link a restaurant and menu item below
+            </div>
           </div>
         ) : null}
         {lastPost?.kind === "want" && !readOnly ? (
@@ -252,12 +301,36 @@ export default function EatingHubSection({
         />
       </div>
 
-      <div data-testid="eating-plans-panel" style={s.presentationBlock}>
-        <SectionHead title="Upcoming Plans" />
+      <div data-testid="eating-plans-panel" style={{ ...s.presentationBlock, ...s.plansPanel }}>
+        <SectionHead
+          title="Upcoming Plans"
+          aside={
+            <button
+              type="button"
+              style={s.plansCalendarBtn}
+              data-testid="upcoming-plans-calendar-open"
+              aria-label="Open month calendar for upcoming plans"
+              onClick={openPlansCalendar}
+            >
+              <PlansCalendarGlyph />
+            </button>
+          }
+        />
+
         {shownPlans.length === 0 ? (
-          <p style={s.muted} data-testid="future-plans-summary">
-            No plans scheduled.
-          </p>
+          <div style={s.plansEmpty} data-testid="future-plans-summary">
+            <p style={s.plansEmptyText}>
+              None scheduled
+              {!readOnly ? (
+                <>
+                  {", "}
+                  <Link to={inviteHref} style={s.plansEmptyLink}>
+                    Invite Me
+                  </Link>
+                </>
+              ) : null}
+            </p>
+          </div>
         ) : (
           shownPlans.map((plan) => {
             const key = futurePlanKey(plan);
@@ -269,18 +342,20 @@ export default function EatingHubSection({
                 onToggle={() =>
                   onSelectedPlanKeyChange?.(selectedPlanKey === key ? "" : key)
                 }
+                onOpenCalendar={openPlanOnCalendar}
                 onAddDetails={readOnly ? undefined : onPlanAddDetails}
               />
             );
           })
         )}
+
         {!readOnly && !schedulingPlans ? (
           <button
             type="button"
             style={styles.scheduleLink}
             onClick={() => {
               onSchedulingPlansChange?.(true);
-              onCalendarOpenChange(true);
+              openPlansCalendar();
             }}
           >
             Schedule a plan
@@ -318,7 +393,7 @@ export default function EatingHubSection({
         open={calendarOpen}
         onClose={() => onCalendarOpenChange(false)}
         testId="eating-calendar"
-        title="Eating"
+        title={calendarTitle}
         selectedDate={hubDate}
         onSelectDate={handleCalendarDate}
         onSelectEvent={handleCalendarEvent}
@@ -334,6 +409,7 @@ export default function EatingHubSection({
           open={composeOpen}
           onClose={() => setComposeOpen(false)}
           defaultCategory={composeDefaultCategory}
+          defaultMealPeriod={composeDefaultMeal}
           busy={postBusy === "eating" || postBusy === "want"}
           onSubmit={onComposeSubmit}
           onPlanSchedule={onPlanSchedule}
@@ -343,18 +419,24 @@ export default function EatingHubSection({
         />
       ) : null}
 
-      <div style={{ ...s.labelRow, marginTop: 14 }}>
-        <Link to={inviteHref} style={s.subLabel}>
-          Invite Me
-        </Link>
-        {joinMeHref ? (
-          <Link to={joinMeHref} style={s.subLabel}>
-            Join Me
-          </Link>
-        ) : null}
-      </div>
+      {shownPlans.length > 0 || joinMeHref ? (
+        <div style={{ ...s.labelRow, marginTop: 14 }}>
+          {!readOnly ? (
+            <Link to={inviteHref} style={s.subLabel}>
+              Invite Me
+            </Link>
+          ) : null}
+          {joinMeHref ? (
+            <Link to={joinMeHref} style={s.subLabel}>
+              Join Me
+            </Link>
+          ) : null}
+        </div>
+      ) : null}
       {!readOnly ? (
-        <p style={{ ...s.muted, fontSize: 12 }}>Only people you open Join Me to can see that future plan.</p>
+        <p style={{ ...s.muted, fontSize: 12 }}>
+          Only people you open Join Me to can see that future plan.
+        </p>
       ) : null}
     </section>
   );

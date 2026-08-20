@@ -1,5 +1,5 @@
 /**
- * Menuply social media picker — native camera icon flow (no inline getUserMedia UI).
+ * Menuply social media picker — Camera or Upload from library (no Photo/Video sheet, no getUserMedia UI).
  */
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -13,12 +13,19 @@ function read(rel) {
   return fs.readFileSync(path.join(root, rel), "utf8");
 }
 
-test("MenuplyMediaPicker uses native file inputs and choice sheet", () => {
+test("MenuplyMediaPicker offers Camera and Upload from library without Photo/Video sheet", () => {
   const picker = read("src/components/social/MenuplyMediaPicker.jsx");
-  assert.match(picker, /Take Photo/);
-  assert.match(picker, /Record Video/);
-  assert.match(picker, /Choose Photo/);
-  assert.match(picker, /Choose Video/);
+  assert.match(picker, /image\/\*,video\/\*/);
+  assert.match(picker, /camera-input/);
+  assert.match(picker, /library-input/);
+  assert.match(picker, /Upload from library/);
+  assert.match(picker, /option-camera/);
+  assert.match(picker, /option-library/);
+  assert.match(picker, /capture=\{captureAttr\(facingMode\)\}/);
+  assert.doesNotMatch(picker, /Take Photo/);
+  assert.doesNotMatch(picker, /Record Video/);
+  assert.doesNotMatch(picker, /Choose Photo/);
+  assert.doesNotMatch(picker, /Choose Video/);
   assert.doesNotMatch(picker, /getUserMedia/);
   assert.doesNotMatch(picker, /ConsumerCameraSheet/);
 });
