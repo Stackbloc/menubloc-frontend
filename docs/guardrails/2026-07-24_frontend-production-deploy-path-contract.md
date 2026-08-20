@@ -36,19 +36,19 @@ Silence, prior CPDs, “Marketplace isn’t on main yet,” or debugging conveni
 
 | Field | Value |
 |-------|-------|
-| Deployment | `menubloc-frontend-l7pg7dpir-menuply.vercel.app` |
-| Live bundle | `index-C18CZMc2.js` |
+| Deployment | `menubloc-frontend-bm2jkijow-menuply.vercel.app` |
+| Live bundle | `index-BkJqmepa.js` |
 | Aliases | `menuply.com`, `www.menuply.com`, `crm.menuply.com`, `venues.menuply.com` |
-| Locked | 2026-08-20 (camera meal slots + time-aware rows `990fc76`; tip probe: apex/www = `index-C18CZMc2.js`) |
-| Notes | Current tip supersedes meal-board tip `7ljmgxgm2` / `CdB7Wbvg`. Deploy/push only from clean `menubloc-frontend-main` @ `main`. |
+| Locked | 2026-08-20 (live getUserMedia camera `7eaf78a`; tip probe: apex/www = `index-BkJqmepa.js`) |
+| Notes | Current tip supersedes file+capture tip `l7pg7dpir` / `C18CZMc2`. Deploy/push only from clean `menubloc-frontend-main` @ `main`. |
 
 Restore commands:
 
 ```bash
-npx vercel alias set menubloc-frontend-l7pg7dpir-menuply.vercel.app menuply.com
-npx vercel alias set menubloc-frontend-l7pg7dpir-menuply.vercel.app www.menuply.com
-npx vercel alias set menubloc-frontend-l7pg7dpir-menuply.vercel.app crm.menuply.com
-npx vercel alias set menubloc-frontend-l7pg7dpir-menuply.vercel.app venues.menuply.com
+npx vercel alias set menubloc-frontend-bm2jkijow-menuply.vercel.app menuply.com
+npx vercel alias set menubloc-frontend-bm2jkijow-menuply.vercel.app www.menuply.com
+npx vercel alias set menubloc-frontend-bm2jkijow-menuply.vercel.app crm.menuply.com
+npx vercel alias set menubloc-frontend-bm2jkijow-menuply.vercel.app venues.menuply.com
 ```
 
 Do **not** restore superseded tips (`8pl3zm05l`/`DxsHvAHk`, `aj3cufw78`/`B2nAFBvm`, `pvekgpaay`/`DOGT2NT-`, `c07vv7d3s`/`BUPZP4ci`, `fnn23dmbl`/`UMv0E4Zu`, `ro8l1scif`/`BVISDgrs`, `hzs2u21r1`/`DfVlLYXq`, `o3qnf739i`/`CxIJlzl-`, `e2toazdpi`/`Cx2bTWAc`, `nzkm72fy0`/`DyvhJLLC`, `ard1xo2ay`/`ChMndpoc`, `7xp2ldvwr`/`Dgg_SRjs`, `aae62r0rr`/`CEl-scxL`, `dkyh8n497`/`UoLq1e4f`, `8u2p5tci4`/`b_Ovc7EK`, `2zp3dc8qr`/`BkaKyAh2`, `1y5s6np0s`/`C2oEXWML`, `3363ed8na`/`DgrW5Jp2`, `jfonf570v`/`bXMEeelE`, `nrrimolxv`/`Cf7g9qd7`, `3ejgczu00`/`BrTJV97-`, `a38ku52a4`/`BLw4kaBB`, `e9kop4og8`/`Di87A4Tc`, `5cd91e4s5`/`Cs95NUwq`, `gbli18jhr`/`BYCUQwwR`, `ermw9wrlu`/`V7CvAska`, `n0cvd9sri`/`CFRkrIiH`, `5bgthc6ie`/`BTCcz1Bv`, `5zyfysc6d`/`BxC57MCe`, `4jqlqd3hr`/`NLdILVlC`, `m37gzyigo`/`Cp1jUXBJ`, `9oizfbmm2`/`DtrqjgyL`, `kfg4dznl9`/`jC_qINxe`, `oyhiq7f5v`/`B2LgNBCx`, `2fihqdros`/`jpkhi3pl`, `fvutufj8k`/`BbCfKWPa`, `p030mjw9s`/`CVVYzMJE`, `ggandazd7`/`CW3cbIM7`, `diczui6bk`/`5v6CEdEL`, `52risw9xb`/`Da4oetaO`, `b35hl7fdk`/`DaVDJi2q`, `lqaskgcbb`/`DhdKors_`, `qxv3nknvy`/`CGduqkJT`, `cvwot6151`/`B_urB9ER`, `mmxd28z81`/`Bj4ARjqe`, `d7g8pgf7s`/`CmyU_d_D`, `ctono3prh`/`Blsro3bI`, `ojq8s04k3`/`aYq2FlcY`, `jzr5jksx9`/`BUWRnnh8`, `ch3lz2de4`/`C5sVBRYU`, `7eibttikj`/`DtEgMpsm`, `m3tz7fpzy`/`CVaavDWL`, `4bovvv2oo`/`l5iPuTlz`, `foqkj8eae`/`C51uHPPN`, `nug9aum1i`/`yDAGjBXP`, `2cu2l3fps`/`9riEvbLS`, `61r6e3n4q`/`8OJFrFA-`, `k7nyczbiw`/`DivDzTpD`, `lrlt72lwy`/`BlRjkY9o`, `ltaga46ta`/`Aq-qW_jU`, `imzavo4v7`/`BJuwyHGd`, `o4husz8eq`/`D0QRCw-k`, `qcowwqjdd`/`D_ISHEMS`, `h4n5i2spn`/`D_ISHEMS`, `2n4ap2oez`/`DL7k39LL`, `99dry9fzi`/`BNX-ogYB`, `n1w11rczt`/`BHcRDvh-`, `5hy2ys8zx`/`D9J1MWH7`, `lk6ad851u`/`DXesCCEK`, `2j6x6fwmr`/`CwSotmcJ`, `70vbs58xh`/`CwSotmcJ`, `a9lbs1a0f`/`Cb2jJBL7`, `ebx8sqfwc`/`BYDuqkjZ`, `7hw88h03y`/`DOLvszeR`, `dhcdpqu8q`/`Cq7u4RFh`, `ad4fjjrfw`/`B0ov0E5L`, `2tkb6t6t0`/`DwEtRPrK`, `gdn1nk4p4`/`CE12xbvw`, `e9m20i9xl`/`BdR_9nij`, `3zf7v6lj3`/`CDHjhD1b`, `mx8z7aeau`/`DycE1gGZ`, `4onz8k9nw`/`DFwUYp9y`, `3y5622h6k`/`CEZBeYMs`, `fv41tme5z`/`DcXzkK6N`, `1fhl66453`/`BASJhs79`, `gltqad07l`/`shszZZc5`, Fine-only `l0vcijcnl`/`CT17TZbQ`, `kwtx9hw7x`/`CdOPUvIf`) unless Andre names an exception.
