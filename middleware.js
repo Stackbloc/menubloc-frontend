@@ -23,6 +23,12 @@ const CANONICAL_PROFILE_RE = /^\/restaurants\/([^/]+)\/([^/]+)\/([^/]+)\/?$/;
 // Legacy 1-segment: /restaurants/:slug[/menu]
 const RESTAURANT_MENU_RE = /^\/restaurants\/([^/]+)\/menu\/?$/;
 const RESTAURANT_PROFILE_RE = /^\/restaurants\/([^/]+)\/?$/;
+// Consumer detail: /restaurants/:restaurantSlug/menu-items/:id
+// MUST be matched before CANONICAL_PROFILE_RE — otherwise
+// /restaurants/in-n-out-burger-3/menu-items/24862 is parsed as
+// state=in-n-out-burger-3, city=menu-items, slug=24862 and 301s to
+// whatever restaurant id 24862 is (e.g. Dunkin' Knoxville).
+const RESTAURANT_MENU_ITEM_RE = /^\/restaurants\/([^/]+)\/menu-items\/([^/]+)\/?$/;
 // Legacy numeric from public path
 const LEGACY_NUMERIC_RE = /^\/public\/restaurants\/(\d+)\/menu\/?$/;
 const MENU_ITEM_RE = /^\/menu-items\/(\d+)\/?$/;
@@ -265,8 +271,21 @@ export default async function middleware(request) {
     return xmlResponse(sitemapUrlset(entries.slice(start, start + SITEMAP_LIMIT)));
   }
 
+  // --- /restaurants/:restaurantSlug/menu-items/:id (before 3-segment profile) ---
+  let m = RESTAURANT_MENU_ITEM_RE.exec(pathname);
+  if (m) {
+    const itemId = m[2];
+    const [shell, meta] = await Promise.all([
+      fetchShell(request.url),
+      fetchMeta(`/public/meta/menu-items/${encodeURIComponent(itemId)}`),
+    ]);
+    if (!shell || !meta || !meta.ok) return;
+    const { title, description, canonical } = buildMenuItemMeta(meta.data, itemId);
+    return injectedResponse(injectMeta(shell, title, description, canonical));
+  }
+
   // --- Canonical 3-segment: /restaurants/:state/:city/:slug/menu ---
-  let m = CANONICAL_MENU_RE.exec(pathname);
+  m = CANONICAL_MENU_RE.exec(pathname);
   if (m) {
     const slug = m[3];
     const [shell, meta] = await Promise.all([
@@ -289,6 +308,8 @@ export default async function middleware(request) {
   // --- Canonical 3-segment: /restaurants/:state/:city/:slug (profile) ---
   m = CANONICAL_PROFILE_RE.exec(pathname);
   if (m) {
+    // Guard: never treat .../menu-items/:id as state/city/slug.
+    if (m[2] === "menu-items") return;
     const slug = m[3];
     const [shell, meta] = await Promise.all([
       fetchShell(request.url),
