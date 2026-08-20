@@ -34,36 +34,54 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` @ clean `main` |
-| Git commit | `903f50e` — owner diner referral source capture + `/owner/diners` column |
-| Vercel deployment | `menubloc-frontend-86va47zyv-menuply.vercel.app` |
-| Live bundle | `index-iiZW0hGa.js` |
+| Git commit | `9196bfc` — My Menuply Connects, place links, Post about deep links |
+| Vercel deployment | `menubloc-frontend-gp1hon3it-menuply.vercel.app` |
+| Live bundle | `index-BshpJpXB.js` |
 | Aliases | `menuply.com`, `www.menuply.com`, `crm.menuply.com`, `venues.menuply.com` |
-| Tip-gate | **PASS** (apex + www) verified 2026-08-19 after owner diner referral source CPD |
-| Feature | Referral source on owner diner roster; signup attribution (Direct / QR code / Website referral) |
+| Tip-gate | **PASS** (apex + www) verified 2026-08-19 after Connects + Post about CPD |
+| Feature | Post about → I'm Eating At / ate-want-plan / Invite / Connects; restaurant+homemade place fields; auto-follow |
 
 ### Backend (Railway)
 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-backend-main` @ clean `main` |
-| Git on origin | `49be028d` — owner diner referral source on roster + signup log capture |
-| Live health SHA | `49be028d…` (verified 2026-08-19 owner diner referral source CPD) |
+| Git on origin | `8c4b9391` — LKG docs after referral source (includes `49be028d` diner referral source) |
+| Live health SHA | `8c4b9391…` (verified 2026-08-19 Connects/Post about CPD; no BE code change this CPD) |
 | Health URL | `https://menubloc-backend-production.up.railway.app/health` |
-| `commit_hash` | `49be028d` (live at CPD certify) |
+| `commit_hash` | `8c4b9391` (live at CPD certify) |
 | DB | `0278` CRM `food_distributor` role category (apply on prod if not yet) |
-| Smoke | tip-gate PASS `86va47zyv` / `index-iiZW0hGa.js`; health `49be028d`; bundle railway=60 localhost=9 |
+| Smoke | tip-gate PASS `gp1hon3it` / `index-BshpJpXB.js`; health `8c4b9391`; bundle railway=60 localhost=9 |
 
 ### Restore current tip (if tip-gate fails mid-change)
 
 ```bash
 cd /Users/andrebarber/Desktop/menubloc/menubloc-frontend-main
-npx vercel alias set menubloc-frontend-86va47zyv-menuply.vercel.app menuply.com
-npx vercel alias set menubloc-frontend-86va47zyv-menuply.vercel.app www.menuply.com
-npx vercel alias set menubloc-frontend-86va47zyv-menuply.vercel.app crm.menuply.com
-npx vercel alias set menubloc-frontend-86va47zyv-menuply.vercel.app venues.menuply.com
+npx vercel alias set menubloc-frontend-gp1hon3it-menuply.vercel.app menuply.com
+npx vercel alias set menubloc-frontend-gp1hon3it-menuply.vercel.app www.menuply.com
+npx vercel alias set menubloc-frontend-gp1hon3it-menuply.vercel.app crm.menuply.com
+npx vercel alias set menubloc-frontend-gp1hon3it-menuply.vercel.app venues.menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 ```
+
+### Prior tip — owner diner roster column overlap (rollback target)
+
+| Field | Value |
+|-------|-------|
+| Deployment | `menubloc-frontend-i5s4ory3h-menuply.vercel.app` |
+| Bundle | `index-9GkHkqdL.js` |
+| FE commit | `c090693` |
+| BE health | `8c4b9391` |
+
+### Prior tip — owner diner referral source (rollback target)
+
+| Field | Value |
+|-------|-------|
+| Deployment | `menubloc-frontend-86va47zyv-menuply.vercel.app` |
+| Bundle | `index-iiZW0hGa.js` |
+| FE commit | `903f50e` |
+| BE health | `49be028d` / later `8c4b9391` |
 
 ### Prior tip — My Menuply presentation + exhibit palette (rollback target)
 
