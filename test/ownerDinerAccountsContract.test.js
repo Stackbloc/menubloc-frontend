@@ -35,6 +35,11 @@ describe("owner diner accounts panel", () => {
     assert.match(page, /minute:\s*"2-digit"/);
     assert.match(page, /ids 2, 3, 4, 29/);
     assert.match(page, /data-testid="diner-accounts-table"/);
+    assert.doesNotMatch(
+      page,
+      /wrapKeys/,
+      "wrapKeys puts leftover diner columns on 88px metric cells and overlapping headers"
+    );
   });
 
   it("owner nav and dashboard link to /owner/diners", () => {

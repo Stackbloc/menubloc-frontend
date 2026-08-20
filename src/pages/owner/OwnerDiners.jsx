@@ -99,7 +99,6 @@ export default function OwnerDiners() {
               ["Status", "status", (row) => row.status || "—"],
             ]}
             emptyLabel={data ? "No diner accounts match this filter." : "Loading diner accounts…"}
-            wrapKeys={["name", "email", "geographic_market"]}
           />
         </div>
         {data?.rows?.length ? (
