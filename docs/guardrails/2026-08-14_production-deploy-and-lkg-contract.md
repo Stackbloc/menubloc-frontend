@@ -25,7 +25,7 @@ Do **not** deploy from memory or from quarantined checkouts.
 
 ---
 
-## CURRENT LAST KNOWN GOOD (live production — 2026-08-19)
+## CURRENT LAST KNOWN GOOD (live production — 2026-08-20)
 
 Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway `/health` is recorded separately; it may lag `origin/main`.
 
@@ -34,36 +34,45 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` @ clean `main` |
-| Git commit | `9196bfc` — My Menuply Connects, place links, Post about deep links |
-| Vercel deployment | `menubloc-frontend-gp1hon3it-menuply.vercel.app` |
-| Live bundle | `index-BshpJpXB.js` |
+| Git commit | `2e67796` — Want video, restaurant-first links, Month in Food |
+| Vercel deployment | `menubloc-frontend-ip7mqupae-menuply.vercel.app` |
+| Live bundle | `index-rdsNgKEW.js` |
 | Aliases | `menuply.com`, `www.menuply.com`, `crm.menuply.com`, `venues.menuply.com` |
-| Tip-gate | **PASS** (apex + www) verified 2026-08-19 after Connects + Post about CPD |
-| Feature | Post about → I'm Eating At / ate-want-plan / Invite / Connects; restaurant+homemade place fields; auto-follow |
+| Tip-gate | **PASS** (apex + www) verified 2026-08-20 after Want video + Month in Food CPD |
+| Feature | Want photo/video + restaurant/menu metadata; city-ranked place picker; About Me Month in Food scoreboard |
 
 ### Backend (Railway)
 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-backend-main` @ clean `main` |
-| Git on origin | `8c4b9391` — LKG docs after referral source (includes `49be028d` diner referral source) |
-| Live health SHA | `8c4b9391…` (verified 2026-08-19 Connects/Post about CPD; no BE code change this CPD) |
+| Git on origin | `f729764d` — Want `video_url`, city-ranked places, Month in Food API |
+| Live health SHA | `f729764d…` (verified 2026-08-20 CPD) |
 | Health URL | `https://menubloc-backend-production.up.railway.app/health` |
-| `commit_hash` | `8c4b9391` (live at CPD certify) |
-| DB | `0278` CRM `food_distributor` role category (apply on prod if not yet) |
-| Smoke | tip-gate PASS `gp1hon3it` / `index-BshpJpXB.js`; health `8c4b9391`; bundle railway=60 localhost=9 |
+| `commit_hash` | `f729764d` (live at CPD certify) |
+| DB | `0279` `diner_want_to_eat.video_url` applied on prod 2026-08-20 |
+| Smoke | tip-gate PASS `ip7mqupae` / `index-rdsNgKEW.js`; health `f729764d`; bundle railway=61 localhost=9 |
 
 ### Restore current tip (if tip-gate fails mid-change)
 
 ```bash
 cd /Users/andrebarber/Desktop/menubloc/menubloc-frontend-main
-npx vercel alias set menubloc-frontend-gp1hon3it-menuply.vercel.app menuply.com
-npx vercel alias set menubloc-frontend-gp1hon3it-menuply.vercel.app www.menuply.com
-npx vercel alias set menubloc-frontend-gp1hon3it-menuply.vercel.app crm.menuply.com
-npx vercel alias set menubloc-frontend-gp1hon3it-menuply.vercel.app venues.menuply.com
+npx vercel alias set menubloc-frontend-ip7mqupae-menuply.vercel.app menuply.com
+npx vercel alias set menubloc-frontend-ip7mqupae-menuply.vercel.app www.menuply.com
+npx vercel alias set menubloc-frontend-ip7mqupae-menuply.vercel.app crm.menuply.com
+npx vercel alias set menubloc-frontend-ip7mqupae-menuply.vercel.app venues.menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 ```
+
+### Prior tip — My Menuply Connects + Post about (rollback target)
+
+| Field | Value |
+|-------|-------|
+| Deployment | `menubloc-frontend-gp1hon3it-menuply.vercel.app` |
+| Bundle | `index-BshpJpXB.js` |
+| FE commit | `9196bfc` |
+| BE health | `8c4b9391` |
 
 ### Prior tip — owner diner roster column overlap (rollback target)
 
@@ -243,6 +252,7 @@ Newest superseded first. Restoring drops everything shipped after that tip.
 
 | Deployment id | Bundle | Approx feature / CPD |
 |---------------|--------|----------------------|
+| `gp1hon3it` | `index-BshpJpXB.js` | Connects + Post about (`9196bfc`) — superseded by Want video / Month in Food `ip7mqupae` |
 | `o8xa604sx` | `index-DZR4cTvb.js` | Future Plans collapse + crews (`ef9bb7a`) — superseded by calendar events `4iy54g5qc` |
 | `89eyeudh1` | `index-DjXskZ76.js` | Join Me allow-list (`063ffd7`) — superseded by Future Plans collapse `o8xa604sx` |
 | `3vk7ie3cf` | `index-He0r-RTw.js` | Post X bottom-nav align (`9cd7303`) — superseded by Join Me allow-list `89eyeudh1` |
