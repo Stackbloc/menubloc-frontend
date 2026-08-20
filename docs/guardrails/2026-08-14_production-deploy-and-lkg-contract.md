@@ -4,6 +4,7 @@
 **Type:** Contract (required procedure) + LKG registry  
 **Cursor rule:** `.cursor/rules/production-deploy-and-lkg-contract.mdc` (`alwaysApply`)  
 **Related:**  
+- [CPD agent playbook (start here)](./2026-08-20_cpd-agent-playbook.md)  
 - [Frontend deploy path](./2026-07-24_frontend-production-deploy-path-contract.md)  
 - [Backend deploy path](./2026-07-28_backend-production-deploy-path-contract.md)  
 **Tip gate:** `scripts/assert-menuply-production-tip.sh`  
@@ -34,36 +35,45 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` @ clean `main` |
-| Git commit | `5c82ea4` — My Menuply hub access (Month in Food share, Settings, calendar, Diner QR, empty past diary) |
-| Vercel deployment | `menubloc-frontend-k2hpeyh3s-menuply.vercel.app` |
-| Live bundle | `index-DygwUgB7.js` |
+| Git commit | `cbc7728` — Month in Food uses platform `ShareButton` + `buildConsumerPathShareData` |
+| Vercel deployment | `menubloc-frontend-6nzh7hvv5-menuply.vercel.app` |
+| Live bundle | `index-RmW9q_Gr.js` |
 | Aliases | `menuply.com`, `www.menuply.com`, `crm.menuply.com`, `venues.menuply.com` |
-| Tip-gate | **PASS** (apex + www) verified 2026-08-20 after My Menuply hub access CPD |
-| Feature | Month in Food share; Settings from hub; calendar keeps selection + RSVP events; past empty What I Ate = No entries; Post about → My Diner QR first; menu-item middleware fix (`688adf4`) |
+| Tip-gate | **PASS** (apex + www) verified 2026-08-20 after Month in Food platform share CPD |
+| Feature | Month in Food share via shareUtils (menuply.com Copy Link); prior hub-access UX retained |
 
 ### Backend (Railway)
 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-backend-main` @ clean `main` |
-| Git on origin | `9f997a6a` — Find Diners name/phone/email searchable |
-| Live health SHA | `9f997a6a…` (verified 2026-08-20 CPD; unchanged this FE ship) |
+| Git on origin | `5f06246f` — LKG mirror after hub-access FE CPD |
+| Live health SHA | `5f06246f…` (verified 2026-08-20 CPD; unchanged this FE ship) |
 | Health URL | `https://menubloc-backend-production.up.railway.app/health` |
-| `commit_hash` | `9f997a6a` (live at CPD certify) |
+| `commit_hash` | `5f06246f` (live at CPD certify) |
 | DB | migrations through `0281` (`0280` connection food activity; `0281` LA Live cuisine; `0279` want video; `0277` ate video) |
-| Smoke | tip-gate PASS `k2hpeyh3s` / `index-DygwUgB7.js`; health `9f997a6a`; bundle railway ≫ localhost |
+| Smoke | tip-gate PASS `6nzh7hvv5` / `index-RmW9q_Gr.js`; health `5f06246f`; bundle railway ≫ localhost |
 
 ### Restore current tip (if tip-gate fails mid-change)
 
 ```bash
 cd /Users/andrebarber/Desktop/menubloc/menubloc-frontend-main
-npx vercel alias set menubloc-frontend-k2hpeyh3s-menuply.vercel.app menuply.com
-npx vercel alias set menubloc-frontend-k2hpeyh3s-menuply.vercel.app www.menuply.com
-npx vercel alias set menubloc-frontend-k2hpeyh3s-menuply.vercel.app crm.menuply.com
-npx vercel alias set menubloc-frontend-k2hpeyh3s-menuply.vercel.app venues.menuply.com
+npx vercel alias set menubloc-frontend-6nzh7hvv5-menuply.vercel.app menuply.com
+npx vercel alias set menubloc-frontend-6nzh7hvv5-menuply.vercel.app www.menuply.com
+npx vercel alias set menubloc-frontend-6nzh7hvv5-menuply.vercel.app crm.menuply.com
+npx vercel alias set menubloc-frontend-6nzh7hvv5-menuply.vercel.app venues.menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 ```
+
+### Prior tip — My Menuply hub access (rollback target)
+
+| Field | Value |
+|-------|-------|
+| Deployment | `menubloc-frontend-k2hpeyh3s-menuply.vercel.app` |
+| Bundle | `index-DygwUgB7.js` |
+| Commit | `5c82ea4` |
+| Notes | Pre–Month in Food platform shareUtils CPD |
 
 ### Prior tip — connection food activity + YB scope (rollback target)
 
