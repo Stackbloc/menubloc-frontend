@@ -47,7 +47,7 @@ import {
   buildDiningCrewInviteShareData,
   buildMenuplyPathShareData,
 } from "../../lib/diningCrewInviteShare.js";
-import EatingHubSection from "./myMenuply/EatingHubSection.jsx";
+import EatingHubSection, { PlansCalendarGlyph } from "./myMenuply/EatingHubSection.jsx";
 import CrewQuickCompose from "./myMenuply/CrewQuickCompose.jsx";
 import { buildJoinMeCandidates } from "./myMenuply/joinMeCandidates.js";
 import {
@@ -55,6 +55,7 @@ import {
   compareYmd,
   eatingHistoryStart,
   planYmd,
+  venueEventYmd,
 } from "./myMenuply/eatingHubUtils.js";
 import * as s from "./myMenuply/myMenuplyStyles.js";
 import ProfileCompletionBanner from "../../components/consumer/ProfileCompletionBanner.jsx";
@@ -128,6 +129,7 @@ export default function MyMenuplyPage() {
   const [shareOpen, setShareOpen] = useState(false);
   const [sharePayload, setSharePayload] = useState(null);
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const [calendarTitle, setCalendarTitle] = useState("Eating");
   const [schedulingPlans, setSchedulingPlans] = useState(false);
   const [selectedPlanKey, setSelectedPlanKey] = useState("");
   const [joinCandidates, setJoinCandidates] = useState([]);
@@ -256,13 +258,38 @@ export default function MyMenuplyPage() {
   );
   // Future plans are not date-capped — show all scheduled sessions.
   const shownPlans = scheduledPlans;
-  const calendarEvents = shownPlans.map((plan) => ({
+  const planCalendarEvents = shownPlans.map((plan) => ({
     key: futurePlanKey(plan),
     ymd: planYmd(plan.plan_date),
     label: futurePlanRestaurantName(plan),
+    kind: "plan",
     plan,
   }));
-  const dayMarkers = buildEatingDayMarkersFromCalendar(eatingCalendarDays, scheduledPlans);
+  const venueCalendarEvents = (events || [])
+    .map((ev) => {
+      const ymd = venueEventYmd(ev);
+      if (!ymd || !ev?.slug) return null;
+      return {
+        key: `venue-event-${ev.id || ev.slug}`,
+        ymd,
+        label: ev.name || "Event",
+        kind: "venue_event",
+        href: `/events/${encodeURIComponent(String(ev.slug))}`,
+        event: ev,
+      };
+    })
+    .filter(Boolean);
+  const calendarEvents = [...planCalendarEvents, ...venueCalendarEvents];
+  const dayMarkers = buildEatingDayMarkersFromCalendar(
+    eatingCalendarDays,
+    scheduledPlans,
+    events
+  );
+
+  function openEventsCalendar() {
+    setCalendarTitle("My Events");
+    setCalendarOpen(true);
+  }
 
   const dinerStats = useMemo(
     () =>
@@ -661,11 +688,46 @@ export default function MyMenuplyPage() {
 
   return (
     <>
-      <StickyPageHeader title="My Menuply" />
+      <StickyPageHeader
+        title="My Menuply"
+        titleAccessory={
+          isAuthenticated ? (
+            <Link
+              to="/account"
+              data-testid="my-menuply-account-settings"
+              aria-label="Account settings"
+              title="Settings"
+              style={s.settingsIconLink}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path
+                  d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"
+                  stroke="currentColor"
+                  strokeWidth="1.75"
+                />
+                <path
+                  d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.604.852 1.01 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"
+                  stroke="currentColor"
+                  strokeWidth="1.75"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </Link>
+          ) : null
+        }
+      />
       <div style={s.page} data-testid="my-menuply-page">
         <div style={s.pageHeroBand}>
           <p style={s.kicker}>My food. My people. My plans.</p>
-          <h1 style={s.h1}>My Menuply</h1>
+          <div style={s.aboutTitleRow}>
+            <h1 style={{ ...s.h1, margin: 0 }}>My Menuply</h1>
+            {isAuthenticated ? (
+              <Link to="/account" data-testid="my-menuply-settings-text" style={s.settingsTextLink}>
+                Settings
+              </Link>
+            ) : null}
+          </div>
           <p style={s.lead}>Your personal food home — diary, wishes, and plans.</p>
         </div>
         {error ? <p style={{ ...s.error, marginTop: 16 }}>{error}</p> : null}
@@ -742,6 +804,8 @@ export default function MyMenuplyPage() {
               onHubMonthChange={setHubMonth}
               calendarOpen={calendarOpen}
               onCalendarOpenChange={setCalendarOpen}
+              calendarTitle={calendarTitle}
+              onCalendarTitleChange={setCalendarTitle}
               dayMarkers={dayMarkers}
               calendarEvents={calendarEvents}
               eating={eating}
@@ -842,7 +906,20 @@ export default function MyMenuplyPage() {
             </section>
 
             <section style={s.section} data-testid="my-events">
-              <SectionHead title="My Events" />
+              <SectionHead
+                title="My Events"
+                aside={
+                  <button
+                    type="button"
+                    style={s.plansCalendarBtn}
+                    data-testid="my-events-calendar-open"
+                    aria-label="Open month calendar for my events"
+                    onClick={openEventsCalendar}
+                  >
+                    <PlansCalendarGlyph />
+                  </button>
+                }
+              />
               {events.length === 0 && eventGroups.length === 0 ? (
                 <p style={s.muted}>Nothing yet.</p>
               ) : (

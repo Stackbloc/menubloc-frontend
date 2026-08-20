@@ -13,9 +13,21 @@ function read(rel) {
   return fs.readFileSync(path.join(root, rel), "utf8");
 }
 
+test("MenuplyActionSheet lists My Diner QR first for public access", () => {
+  const sheet = read("src/components/MenuplyActionSheet.jsx");
+  const firstIdx = sheet.indexOf("export const POST_ABOUT_ACTIONS");
+  const block = sheet.slice(firstIdx, firstIdx + 500);
+  assert.match(block, /id: "diner-qr"/);
+  assert.match(block, /My Diner QR/);
+  assert.match(block, /to: "\/account\/diner-qr"/);
+  const dinerIdx = sheet.indexOf('id: "diner-qr"');
+  const imEatingIdx = sheet.indexOf('id: "im-eating"');
+  assert.ok(dinerIdx > 0 && dinerIdx < imEatingIdx, "My Diner QR must be first Post about action");
+});
+
 test("MenuplyActionSheet routes Want to Eat to My Menuply compose", () => {
   const sheet = read("src/components/MenuplyActionSheet.jsx");
-  assert.match(sheet, /focus=want/);
+  assert.match(sheet, /compose=want/);
   assert.doesNotMatch(sheet, /id: "want"[\s\S]{0,120}to: "\/search"/);
 });
 

@@ -14,6 +14,11 @@ export function planYmd(value) {
   return "";
 }
 
+/** Calendar day for a venue event RSVP (`event_date` or `starts_at`). */
+export function venueEventYmd(ev) {
+  return planYmd(ev?.event_date) || planYmd(ev?.starts_at);
+}
+
 export function compareYmd(ymd, today = localDateYmd()) {
   const day = planYmd(ymd);
   if (!day) return 0;
@@ -67,7 +72,7 @@ export function buildEatingDayMarkers({ eatingRows = [], planRows = [] } = {}) {
   return [...map.values()];
 }
 
-export function buildEatingDayMarkersFromCalendar(calendarDays = [], planRows = []) {
+export function buildEatingDayMarkersFromCalendar(calendarDays = [], planRows = [], venueEvents = []) {
   const map = new Map();
   for (const day of calendarDays) {
     const ymd = planYmd(day.eaten_on || day.ymd);
@@ -79,6 +84,13 @@ export function buildEatingDayMarkersFromCalendar(calendarDays = [], planRows = 
   }
   for (const plan of planRows) {
     const ymd = planYmd(plan.plan_date);
+    if (!ymd) continue;
+    const row = map.get(ymd) || { ymd, past_count: 0, future_count: 0 };
+    row.future_count += 1;
+    map.set(ymd, row);
+  }
+  for (const ev of venueEvents) {
+    const ymd = venueEventYmd(ev);
     if (!ymd) continue;
     const row = map.get(ymd) || { ymd, past_count: 0, future_count: 0 };
     row.future_count += 1;

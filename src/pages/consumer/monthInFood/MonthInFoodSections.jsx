@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import ShareButton from "../../../components/share/ShareButton.jsx";
 import * as s from "./monthInFoodStyles.js";
 
 const ICONS = {
@@ -9,11 +10,26 @@ const ICONS = {
   flame: "🔥",
 };
 
-export function MonthInFoodHero({ model, onPrev, onNext }) {
+export function MonthInFoodHero({ model, onPrev, onNext, shareData = null }) {
   return (
     <div style={s.heroGrid} data-testid="month-in-food-hero">
       <div>
-        <h1 style={s.title}>My Month In Food</h1>
+        <div style={s.titleRow}>
+          <h1 style={{ ...s.title, margin: 0 }}>My Month In Food</h1>
+          {shareData ? (
+            <span data-testid="month-in-food-title-share">
+              <ShareButton
+                shareData={shareData}
+                iconOnly
+                size="compact"
+                tone="ghost"
+                label="Share"
+                modalTitle="Share Month in Food"
+                analyticsContext={{ surface: "month_in_food_hero" }}
+              />
+            </span>
+          ) : null}
+        </div>
         <div style={s.monthPill}>
           <button type="button" style={s.monthNavBtn} onClick={onPrev} aria-label="Previous month">
             ‹

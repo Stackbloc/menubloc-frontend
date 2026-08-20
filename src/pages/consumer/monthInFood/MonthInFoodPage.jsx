@@ -7,7 +7,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import StickyPageHeader from "../../../components/StickyPageHeader.jsx";
 import BottomNav from "../../../components/BottomNav.jsx";
+import ShareButton from "../../../components/share/ShareButton.jsx";
 import { useConsumer } from "../../../context/ConsumerContext.jsx";
+import { buildMenuplyPathShareData } from "../../../lib/diningCrewInviteShare.js";
 import { getMonthInFood, getPeerMonthInFood } from "../../../lib/consumerApi.js";
 import { buildMonthInFoodModel, shiftYm } from "./buildMonthInFoodModel.js";
 import {
@@ -94,9 +96,32 @@ export default function MonthInFoodPage() {
     ? `/account/connections/${encodeURIComponent(String(peerId))}/month-in-food?ym=${encodeURIComponent(ym)}`
     : `/my-menuply/month-in-food?ym=${encodeURIComponent(ym)}`;
 
+  const shareData = useMemo(
+    () =>
+      buildMenuplyPathShareData(sharePath, {
+        title: "My Month in Food on Menuply",
+        text: "Great food. Good people. Better together.",
+      }),
+    [sharePath]
+  );
+
+  const shareAccessory = shareData ? (
+    <span data-testid="month-in-food-share">
+      <ShareButton
+        shareData={shareData}
+        iconOnly
+        size="compact"
+        tone="ghost"
+        label="Share"
+        modalTitle="Share Month in Food"
+        analyticsContext={{ surface: "month_in_food", path: sharePath }}
+      />
+    </span>
+  ) : null;
+
   return (
     <div style={s.page} data-testid="month-in-food-page">
-      <StickyPageHeader title="My Month in Food" />
+      <StickyPageHeader title="My Month in Food" titleAccessory={shareAccessory} />
       <div style={s.inner}>
         <p style={{ margin: "0 0 12px" }}>
           <Link to={backHref} style={{ ...s.viewAll, fontSize: 13 }}>
@@ -109,7 +134,12 @@ export default function MonthInFoodPage() {
 
         {!loading && model ? (
           <>
-            <MonthInFoodHero model={model} onPrev={() => setYm(shiftYm(ym, -1))} onNext={() => setYm(shiftYm(ym, 1))} />
+            <MonthInFoodHero
+              model={model}
+              onPrev={() => setYm(shiftYm(ym, -1))}
+              onNext={() => setYm(shiftYm(ym, 1))}
+              shareData={shareData}
+            />
             <MonthInFoodStatsBar stats={model.stats} />
 
             <div

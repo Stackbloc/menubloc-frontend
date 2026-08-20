@@ -164,6 +164,28 @@ export const monthInFoodIconLink = {
   flex: "0 0 auto",
 };
 
+export const settingsIconLink = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  width: 34,
+  height: 34,
+  borderRadius: 10,
+  color: "#374151",
+  background: "rgba(15, 23, 42, 0.04)",
+  border: "1px solid rgba(15, 23, 42, 0.12)",
+  textDecoration: "none",
+  flex: "0 0 auto",
+};
+
+export const settingsTextLink = {
+  fontSize: 14,
+  fontWeight: 700,
+  color: GREEN_BRIGHT,
+  textDecoration: "none",
+  flex: "0 0 auto",
+};
+
 export const sectionTitle = {
   margin: "0 0 4px",
   fontSize: 17,

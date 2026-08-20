@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { BrandLogo } from "./BrandLogo.jsx";
 import { useConsumer } from "../context/ConsumerContext.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
@@ -12,6 +12,8 @@ const ALLERGEN_NONE_ID = "none";
 export default function StickyPageHeader({
   title,
   children,
+  /** Optional node rendered beside the page title (e.g. share / settings). */
+  titleAccessory = null,
   /** Optional back link shown above the title (e.g. peer diner hub → My Menuply). */
   backTo,
   backLabel = "Back",
@@ -37,6 +39,13 @@ export default function StickyPageHeader({
   }, []);
   const { isAuthenticated: consumerLoggedIn, loading: consumerLoading } = useConsumer();
   const { t } = useLanguage();
+  const location = useLocation();
+  // On My Menuply, 👤 goes to Settings (/account) — same icon otherwise opens the hub.
+  const onMyMenuply = String(location.pathname || "").startsWith("/my-menuply");
+  const accountHref = onMyMenuply ? "/account" : "/my-menuply";
+  const accountAria = onMyMenuply
+    ? t("nav.settings", "Settings")
+    : t("nav.myMenuply", "My Menuply");
 
   const [filters, setFilters] = useState(() => loadDietPrefs());
   const [excludedAllergens, setExcludedAllergens] = useState(() => {
@@ -126,7 +135,17 @@ export default function StickyPageHeader({
               >🔥 {t("nav.deals", "Deals")}</Link>
               {!consumerLoading && (
                 consumerLoggedIn
-                  ? <Link to="/my-menuply" aria-label={t("nav.myMenuply", "My Menuply")} style={{ fontSize: 22, textDecoration: "none" }}>👤</Link>
+                  ? (
+                    <Link
+                      to={accountHref}
+                      aria-label={accountAria}
+                      title={accountAria}
+                      data-testid={onMyMenuply ? "sticky-header-account-settings" : "sticky-header-my-menuply"}
+                      style={{ fontSize: 22, textDecoration: "none" }}
+                    >
+                      👤
+                    </Link>
+                  )
                   : <Link to="/account/login" style={{ fontSize: 13, fontWeight: 700, color: accent, textDecoration: "none" }}>{t("nav.signIn", "Sign in")}</Link>
               )}
             </div>
@@ -154,9 +173,23 @@ export default function StickyPageHeader({
                 </Link>
               ) : null}
               {title ? (
-                <span style={{ display: "block", fontSize: 17, fontWeight: 900, color: barBackground ? "#FFFFFF" : "#0B0F0C", letterSpacing: "-0.02em" }}>
-                  {title}
-                </span>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    minWidth: 0,
+                  }}
+                >
+                  <span style={{ display: "block", fontSize: 17, fontWeight: 900, color: barBackground ? "#FFFFFF" : "#0B0F0C", letterSpacing: "-0.02em", flex: "1 1 auto", minWidth: 0 }}>
+                    {title}
+                  </span>
+                  {titleAccessory ? (
+                    <span style={{ display: "inline-flex", alignItems: "center", flexShrink: 0 }}>
+                      {titleAccessory}
+                    </span>
+                  ) : null}
+                </div>
               ) : null}
             </div>
           )}

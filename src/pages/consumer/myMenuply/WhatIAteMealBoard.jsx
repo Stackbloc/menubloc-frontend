@@ -209,6 +209,7 @@ export default function WhatIAteMealBoard({
 }) {
   const { buckets, other } = groupEntriesByMealPeriod(items);
   const hasAny = (items || []).length > 0;
+  const isPastDay = Boolean(hubDate && todayYmd && hubDate < todayYmd);
   const filledPeriodIds = Object.keys(buckets).filter((id) => (buckets[id] || []).length > 0);
   const visibleMeals = visibleWhatIAteMealPeriods({
     now: now || new Date(),
@@ -216,6 +217,18 @@ export default function WhatIAteMealBoard({
     todayYmd,
     filledPeriodIds,
   });
+  // Past look-back: never offer empty camera slots — only real entries (or copy).
+  const allowEmptyCapture = Boolean(onSlotCapture) && !readOnly && !isPastDay;
+
+  if (isPastDay && !hasAny) {
+    return (
+      <div data-testid="what-i-ate-meal-board" style={s.mealBoard}>
+        <p style={s.mealBoardHint} data-testid="what-i-ate-meal-board-empty">
+          No entries
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div data-testid="what-i-ate-meal-board" style={s.mealBoard}>
@@ -234,7 +247,7 @@ export default function WhatIAteMealBoard({
                   onPhotoPick={onPhotoPick}
                 />
               ))}
-              {rows.length === 0 ? (
+              {rows.length === 0 && allowEmptyCapture ? (
                 <EmptyMealSlot
                   mealId={meal.id}
                   readOnly={readOnly}

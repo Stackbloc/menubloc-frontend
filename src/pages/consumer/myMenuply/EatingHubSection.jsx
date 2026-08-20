@@ -5,7 +5,7 @@
  */
 
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import DinerCalendarSheet, { DinerCalendarTrigger } from "./DinerCalendarSheet.jsx";
 import EatingComposeSheet from "./EatingComposeSheet.jsx";
 import EatingPlanDayForm from "./EatingPlanDayForm.jsx";
@@ -43,7 +43,7 @@ function LogFoodTrigger({ onClick, disabled }) {
   );
 }
 
-function PlansCalendarGlyph() {
+export function PlansCalendarGlyph() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden fill="none">
       <rect x="3" y="5" width="18" height="16" rx="3" stroke="currentColor" strokeWidth="1.8" />
@@ -63,6 +63,8 @@ export default function EatingHubSection({
   onHubMonthChange,
   calendarOpen,
   onCalendarOpenChange,
+  calendarTitle: calendarTitleProp = null,
+  onCalendarTitleChange = null,
   dayMarkers = [],
   calendarEvents = [],
   eating = [],
@@ -102,10 +104,13 @@ export default function EatingHubSection({
   void liked;
   void foodHref;
 
+  const navigate = useNavigate();
   const [composeOpenLocal, setComposeOpenLocal] = useState(false);
   const composeOpen = composeOpenProp ?? composeOpenLocal;
   const setComposeOpen = onComposeOpenChange ?? setComposeOpenLocal;
-  const [calendarTitle, setCalendarTitle] = useState("Eating");
+  const [calendarTitleLocal, setCalendarTitleLocal] = useState("Eating");
+  const calendarTitle = calendarTitleProp ?? calendarTitleLocal;
+  const setCalendarTitle = onCalendarTitleChange ?? setCalendarTitleLocal;
   const [composeDefaultMeal, setComposeDefaultMeal] = useState(defaultWhatIAteMealPeriod());
   const [composeInitialFile, setComposeInitialFile] = useState(null);
 
@@ -179,12 +184,17 @@ export default function EatingHubSection({
 
   function handleCalendarEvent(event) {
     onHubDateChange(event.ymd);
-    onSelectedPlanKeyChange?.(event.key);
-    onSchedulingPlansChange?.(false);
     const d = new Date(`${event.ymd}T12:00:00`);
     if (!Number.isNaN(d.getTime())) {
       onHubMonthChange?.(new Date(d.getFullYear(), d.getMonth(), 1));
     }
+    if (event.kind === "venue_event" && event.href) {
+      onSchedulingPlansChange?.(false);
+      navigate(event.href);
+      return;
+    }
+    onSelectedPlanKeyChange?.(event.key);
+    onSchedulingPlansChange?.(false);
   }
 
   function openPlanOnCalendar(plan) {

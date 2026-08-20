@@ -117,7 +117,17 @@ test("visibleWhatIAteMealPeriods hides future empty rows and keeps earlier backf
       hubDateYmd: "2026-08-19",
       todayYmd: "2026-08-20",
     }),
-    ["breakfast", "brunch", "lunch", "dinner", "late_night"]
+    []
+  );
+
+  assert.deepEqual(
+    ids({
+      now: new Date("2026-08-20T13:00:00"),
+      hubDateYmd: "2026-08-19",
+      todayYmd: "2026-08-20",
+      filledPeriodIds: ["lunch", "dinner"],
+    }),
+    ["lunch", "dinner"]
   );
 
   assert.deepEqual(

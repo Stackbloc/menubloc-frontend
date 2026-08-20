@@ -93,14 +93,9 @@ export default function DinerCalendarSheet({
           testId={`${testId}-grid`}
           selectedDate={selectedDate}
           onSelectDate={(ymd) => {
+            // Keep the sheet open so the selected day stays highlighted until Done.
+            // Event rows below still close after pick.
             onSelectDate(ymd);
-            const dayEvents = (events || []).filter((event) => event.ymd === ymd);
-            if (dayEvents.length === 1) {
-              onSelectEvent?.(dayEvents[0]);
-              onClose();
-            } else if (dayEvents.length === 0) {
-              onClose();
-            }
           }}
           viewMonth={viewMonth}
           onViewMonthChange={onViewMonthChange}
@@ -111,7 +106,11 @@ export default function DinerCalendarSheet({
         {monthEvents.length > 0 ? (
           <div data-testid="calendar-events" style={styles.events}>
             <p style={styles.eventsLabel}>
-              {title === "Upcoming Plans" ? "Plans this month" : "This month"}
+              {title === "Upcoming Plans"
+                ? "Plans this month"
+                : title === "My Events"
+                  ? "Events & plans this month"
+                  : "This month"}
             </p>
             {monthEvents.map((event) => {
               const onDay = event.ymd === selectedDate;
@@ -144,9 +143,11 @@ export default function DinerCalendarSheet({
               );
             })}
           </div>
-        ) : title === "Upcoming Plans" ? (
+        ) : title === "Upcoming Plans" || title === "My Events" ? (
           <div data-testid="calendar-events-empty" style={styles.eventsEmpty}>
-            No plans on this month yet — pick a day to schedule.
+            {title === "My Events"
+              ? "No events or plans on this month yet — pick a day to schedule."
+              : "No plans on this month yet — pick a day to schedule."}
           </div>
         ) : null}
       </div>

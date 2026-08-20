@@ -50,6 +50,29 @@ test("footer share uses menuply path share helper", () => {
   assert.match(footer, /Copy Link/);
 });
 
+test("Month in Food title row exposes ShareButton with menuply share data", () => {
+  const page = read("src/pages/consumer/monthInFood/MonthInFoodPage.jsx");
+  const sections = read("src/pages/consumer/monthInFood/MonthInFoodSections.jsx");
+  assert.match(page, /buildMenuplyPathShareData/);
+  assert.match(page, /ShareButton/);
+  assert.match(page, /titleAccessory=\{shareAccessory\}/);
+  assert.match(page, /data-testid="month-in-food-share"/);
+  assert.match(sections, /shareData/);
+  assert.match(sections, /data-testid="month-in-food-title-share"/);
+  assert.match(sections, /ShareButton/);
+});
+
+test("My Menuply surfaces Account settings without drawer-only path", () => {
+  const mine = read("src/pages/consumer/MyMenuplyPage.jsx");
+  const header = read("src/components/StickyPageHeader.jsx");
+  assert.match(mine, /data-testid="my-menuply-account-settings"/);
+  assert.match(mine, /to="\/account"/);
+  assert.match(mine, /data-testid="my-menuply-settings-text"/);
+  assert.match(header, /titleAccessory/);
+  assert.match(header, /sticky-header-account-settings/);
+  assert.match(header, /startsWith\("\/my-menuply"\)/);
+});
+
 test("shiftYm walks calendar months", () => {
   assert.equal(shiftYm("2025-05", -1), "2025-04");
   assert.equal(shiftYm("2025-01", -1), "2024-12");

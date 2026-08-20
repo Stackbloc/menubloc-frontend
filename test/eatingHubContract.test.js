@@ -43,6 +43,14 @@ test("My Menuply and peer hub use unified Eating section", () => {
   assert.doesNotMatch(section, /eating-plans-calendar/);
   assert.doesNotMatch(section, /PhotoGrid/);
 
+  const sheet = read("src/pages/consumer/myMenuply/DinerCalendarSheet.jsx");
+  assert.match(sheet, /Keep the sheet open so the selected day stays highlighted until Done/);
+  const daySelectIdx = sheet.indexOf("onSelectDate={(ymd) => {");
+  assert.ok(daySelectIdx > 0, "day cell onSelectDate handler present");
+  const daySelectBlock = sheet.slice(daySelectIdx, daySelectIdx + 280);
+  assert.match(daySelectBlock, /onSelectDate\(ymd\)/);
+  assert.doesNotMatch(daySelectBlock, /onClose\(/);
+
   const mealBoard = read("src/pages/consumer/myMenuply/WhatIAteMealBoard.jsx");
   assert.match(mealBoard, /visibleWhatIAteMealPeriods/);
   assert.match(mealBoard, /groupEntriesByMealPeriod/);
@@ -52,15 +60,27 @@ test("My Menuply and peer hub use unified Eating section", () => {
   assert.match(mealBoard, /onSlotCapture/);
   assert.match(mealBoard, /source="camera"/);
   assert.match(mealBoard, /hubDate/);
+  assert.match(mealBoard, /isPastDay/);
+  assert.match(mealBoard, /No entries/);
+  assert.match(mealBoard, /allowEmptyCapture/);
   assert.match(section, /handleSlotCapture/);
   assert.match(section, /composeMediaSource/);
   assert.match(section, /\+ Log/);
   assert.match(section, /hubDate=\{hubDate\}/);
+  assert.match(section, /kind === "venue_event"/);
   assert.match(mine, /media=library|get\("media"\)/);
+  assert.match(mine, /my-events-calendar-open/);
+  assert.match(mine, /kind: "venue_event"/);
+  assert.match(mine, /openEventsCalendar/);
+  assert.match(mine, /venueEventYmd/);
+  const utils = read("src/pages/consumer/myMenuply/eatingHubUtils.js");
+  assert.match(utils, /venueEventYmd/);
+  assert.match(utils, /venueEvents/);
 
   const mealLib = read("src/lib/whatIAteTodayMealPeriod.js");
   assert.match(mealLib, /visibleWhatIAteMealPeriods/);
   assert.match(mealLib, /WHAT_I_ATE_MEAL_PERIOD_START_HOUR/);
+  assert.match(mealLib, /empty days show copy, not camera slots/);
 
   const bits = read("src/pages/consumer/myMenuply/myMenuplyBits.jsx");
   assert.match(bits, /planCardBold/);
@@ -108,4 +128,13 @@ test("Eating journal look-back is 90 days; future plan dates are not capped", as
   assert.equal(mod.clampEatingLookbackDate("2026-04-01", "2026-08-19"), "2026-05-21");
   assert.equal(mod.clampEatingLookbackDate("2026-08-10", "2026-08-19"), "2026-08-10");
   assert.equal(mod.clampEatingLookbackDate("2027-12-01", "2026-08-19"), "2026-08-19");
+  assert.equal(mod.venueEventYmd({ event_date: "2026-09-01" }), "2026-09-01");
+  assert.equal(mod.venueEventYmd({ starts_at: "2026-09-02T18:00:00.000Z" }), "2026-09-02");
+  const markers = mod.buildEatingDayMarkersFromCalendar(
+    [{ eaten_on: "2026-08-10", entry_count: 2 }],
+    [{ plan_date: "2026-08-22" }],
+    [{ starts_at: "2026-08-22T19:00:00.000Z", name: "Show" }]
+  );
+  const day22 = markers.find((row) => row.ymd === "2026-08-22");
+  assert.equal(day22?.future_count, 2);
 });

@@ -41,6 +41,14 @@ export const title = {
   letterSpacing: "-0.02em",
 };
 
+export const titleRow = {
+  display: "flex",
+  alignItems: "center",
+  gap: 12,
+  flexWrap: "wrap",
+  marginBottom: 10,
+};
+
 export const monthPill = {
   display: "inline-flex",
   alignItems: "center",

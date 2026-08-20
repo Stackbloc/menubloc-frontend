@@ -55,15 +55,24 @@ test("X sheet is Post about and carries restaurant or dish context", () => {
   assert.match(sheet, /Invite to Eat/);
   assert.match(sheet, /I'm Eating At/);
   assert.match(sheet, /Find events/);
+  assert.match(sheet, /My Diner QR/);
+  assert.match(sheet, /\/account\/diner-qr/);
+  assert.ok(
+    sheet.indexOf('id: "diner-qr"') < sheet.indexOf('id: "im-eating"'),
+    "My Diner QR is first under Post about"
+  );
   assert.doesNotMatch(sheet, /Create Eating Plan/);
   assert.doesNotMatch(sheet, /Share Food/);
   assert.doesNotMatch(sheet, /What I'm Eating/);
   assert.doesNotMatch(sheet, /friends/i);
 });
 
-test("StickyPageHeader person goes to My Menuply; basket lives in BottomNav", () => {
+test("StickyPageHeader person goes to My Menuply (Settings when already on hub); basket lives in BottomNav", () => {
   const header = read("src/components/StickyPageHeader.jsx");
-  assert.match(header, /to="\/my-menuply"/);
+  assert.match(header, /accountHref/);
+  assert.match(header, /\/my-menuply/);
+  assert.match(header, /to=\{accountHref\}/);
+  assert.match(header, /sticky-header-my-menuply|sticky-header-account-settings/);
   assert.match(header, /backTo/);
   assert.match(header, /sticky-page-header-back/);
   assert.doesNotMatch(header, /to="\/checkout"/);

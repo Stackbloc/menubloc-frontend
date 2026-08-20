@@ -49,6 +49,8 @@ test("Empty What I Ate meal slots open native camera then compose", () => {
   assert.match(board, /onSlotCapture/);
   assert.match(board, /what-i-ate-meal-camera-/);
   assert.match(board, /visibleWhatIAteMealPeriods/);
+  assert.match(board, /isPastDay/);
+  assert.match(board, /No entries/);
   assert.doesNotMatch(board, /onLogMeal/);
 });
 

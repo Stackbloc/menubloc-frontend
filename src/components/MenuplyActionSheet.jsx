@@ -54,6 +54,13 @@ function inviteToEatPath(pathname) {
 /** Actions shown under bottom-nav Post (X) → Post about. */
 export const POST_ABOUT_ACTIONS = [
   {
+    id: "diner-qr",
+    title: "My Diner QR",
+    description: "Show your code so someone nearby can connect with you.",
+    to: "/account/diner-qr",
+    guestOk: false,
+  },
+  {
     id: "im-eating",
     title: "I'm Eating At",
     description: "Share where you are eating right now.",

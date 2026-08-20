@@ -57,7 +57,7 @@ export function defaultWhatIAteMealPeriod(date = new Date()) {
  * Which meal rows to show on the day board.
  * - Today: periods whose window has started (earlier empty rows stay for backfill;
  *   future empty rows stay hidden). Any period with user entries always shows.
- * - Past hub day: full set (day is complete; backfill any meal).
+ * - Past hub day: only periods with entries (empty days show copy, not camera slots).
  * - Future hub day: only periods that already have entries.
  */
 export function visibleWhatIAteMealPeriods({
@@ -75,7 +75,7 @@ export function visibleWhatIAteMealPeriods({
       return WHAT_I_ATE_MEAL_PERIODS.filter((p) => filled.has(p.id));
     }
     if (hubDateYmd < todayYmd) {
-      return WHAT_I_ATE_MEAL_PERIODS.slice();
+      return WHAT_I_ATE_MEAL_PERIODS.filter((p) => filled.has(p.id));
     }
   }
 
