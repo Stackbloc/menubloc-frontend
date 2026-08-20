@@ -34,12 +34,12 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` @ clean `main` |
-| Git commit | `981329a` — modern social UI native camera picker + image-forward My Menuply |
-| Vercel deployment | `menubloc-frontend-n3zkiupxn-menuply.vercel.app` |
-| Live bundle | `index-Dnt3vj6-.js` |
+| Git commit | `109e6fc` — Ate post skippable details + Who can find me labels + diner activity hero |
+| Vercel deployment | `menubloc-frontend-fuigm2qkl-menuply.vercel.app` |
+| Live bundle | `index-Dv-4gviG.js` |
 | Aliases | `menuply.com`, `www.menuply.com`, `crm.menuply.com`, `venues.menuply.com` |
-| Tip-gate | **PASS** (apex + www) verified 2026-08-19 after modern social UI CPD |
-| Feature | MenuplyMediaPicker native photo/video; hero eating posts; meal-time compose; footer Events → `/events` |
+| Tip-gate | **PASS** (apex + www) verified 2026-08-19 after ate-follow-up CPD |
+| Feature | Optimistic Ate card; optional restaurant/homemade/recipe; readable discoverability radios; diner activity 280px hero |
 
 ### Backend (Railway)
 
@@ -51,7 +51,7 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway
 | Health URL | `https://menubloc-backend-production.up.railway.app/health` |
 | `commit_hash` | `57e08927` (live at CPD certify) |
 | DB | `0277` eating media video + food_activity link (deploy with BE) |
-| Smoke | tip-gate PASS `n3zkiupxn` / `index-Dnt3vj6-.js`; health `3cfc3196`; bundle railway=59 localhost=9 |
+| Smoke | tip-gate PASS `fuigm2qkl` / `index-Dv-4gviG.js`; health `f593a846`; bundle railway=59 localhost=9 |
 
 ### Restore current tip (if tip-gate fails mid-change)
 
