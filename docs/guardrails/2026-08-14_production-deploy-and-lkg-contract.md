@@ -34,36 +34,45 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` @ clean `main` |
-| Git commit | `2e67796` — Want video, restaurant-first links, Month in Food |
-| Vercel deployment | `menubloc-frontend-ip7mqupae-menuply.vercel.app` |
-| Live bundle | `index-rdsNgKEW.js` |
+| Git commit | `ff5f3ea` — What I Ate meal board, bold Upcoming Plans, Camera/library picker |
+| Vercel deployment | `menubloc-frontend-7ljmgxgm2-menuply.vercel.app` |
+| Live bundle | `index-CdB7Wbvg.js` |
 | Aliases | `menuply.com`, `www.menuply.com`, `crm.menuply.com`, `venues.menuply.com` |
-| Tip-gate | **PASS** (apex + www) verified 2026-08-20 after Want video + Month in Food CPD |
-| Feature | Want photo/video + restaurant/menu metadata; city-ranked place picker; About Me Month in Food scoreboard |
+| Tip-gate | **PASS** (apex + www) verified 2026-08-20 after meal-board / Upcoming Plans CPD |
+| Feature | Meal-period What I Ate media board; bold Upcoming Plans + month calendar; Camera or Upload from library (Post about unchanged) |
 
 ### Backend (Railway)
 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-backend-main` @ clean `main` |
-| Git on origin | `f729764d` — Want `video_url`, city-ranked places, Month in Food API |
-| Live health SHA | `f729764d…` (verified 2026-08-20 CPD) |
+| Git on origin | `00fe4885` — LKG docs after Want video / Month in Food (feature `f729764d` included) |
+| Live health SHA | `00fe4885…` (verified 2026-08-20 CPD) |
 | Health URL | `https://menubloc-backend-production.up.railway.app/health` |
-| `commit_hash` | `f729764d` (live at CPD certify) |
-| DB | `0279` `diner_want_to_eat.video_url` applied on prod 2026-08-20 |
-| Smoke | tip-gate PASS `ip7mqupae` / `index-rdsNgKEW.js`; health `f729764d`; bundle railway=61 localhost=9 |
+| `commit_hash` | `00fe4885` (live at CPD certify) |
+| DB | `0279` want video; `0277` ate/food_activity video applied on prod 2026-08-20 |
+| Smoke | tip-gate PASS `7ljmgxgm2` / `index-CdB7Wbvg.js`; health `00fe4885`; bundle railway=61 localhost=9 |
 
 ### Restore current tip (if tip-gate fails mid-change)
 
 ```bash
 cd /Users/andrebarber/Desktop/menubloc/menubloc-frontend-main
-npx vercel alias set menubloc-frontend-ip7mqupae-menuply.vercel.app menuply.com
-npx vercel alias set menubloc-frontend-ip7mqupae-menuply.vercel.app www.menuply.com
-npx vercel alias set menubloc-frontend-ip7mqupae-menuply.vercel.app crm.menuply.com
-npx vercel alias set menubloc-frontend-ip7mqupae-menuply.vercel.app venues.menuply.com
+npx vercel alias set menubloc-frontend-7ljmgxgm2-menuply.vercel.app menuply.com
+npx vercel alias set menubloc-frontend-7ljmgxgm2-menuply.vercel.app www.menuply.com
+npx vercel alias set menubloc-frontend-7ljmgxgm2-menuply.vercel.app crm.menuply.com
+npx vercel alias set menubloc-frontend-7ljmgxgm2-menuply.vercel.app venues.menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 ```
+
+### Prior tip — Want video + Month in Food (rollback target)
+
+| Field | Value |
+|-------|-------|
+| Deployment | `menubloc-frontend-ip7mqupae-menuply.vercel.app` |
+| Bundle | `index-rdsNgKEW.js` |
+| FE commit | `2e67796` |
+| BE health | `f729764d` / later `00fe4885` |
 
 ### Prior tip — My Menuply Connects + Post about (rollback target)
 
@@ -252,6 +261,7 @@ Newest superseded first. Restoring drops everything shipped after that tip.
 
 | Deployment id | Bundle | Approx feature / CPD |
 |---------------|--------|----------------------|
+| `ip7mqupae` | `index-rdsNgKEW.js` | Want video + Month in Food (`2e67796`) — superseded by meal board / Upcoming Plans `7ljmgxgm2` |
 | `gp1hon3it` | `index-BshpJpXB.js` | Connects + Post about (`9196bfc`) — superseded by Want video / Month in Food `ip7mqupae` |
 | `o8xa604sx` | `index-DZR4cTvb.js` | Future Plans collapse + crews (`ef9bb7a`) — superseded by calendar events `4iy54g5qc` |
 | `89eyeudh1` | `index-DjXskZ76.js` | Join Me allow-list (`063ffd7`) — superseded by Future Plans collapse `o8xa604sx` |
