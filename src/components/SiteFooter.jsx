@@ -83,7 +83,7 @@ export default function SiteFooter() {
             <Link to="/clusters" style={footerLinkStyle}>
               {t("discovery.footer.clusters", "Clusters")}
             </Link><br />
-            <Link to="/clusters" style={footerLinkStyle}>Events</Link><br />
+            <Link to="/events" style={footerLinkStyle}>Events</Link><br />
             <Link to="/waiter" style={footerLinkStyle}>Waiter</Link>
           </div>
 

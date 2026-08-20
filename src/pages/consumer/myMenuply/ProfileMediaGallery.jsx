@@ -1,4 +1,4 @@
-import ConsumerCameraPickButton from "../../../components/consumer/ConsumerCameraPickButton.jsx";
+import MenuplyMediaPicker from "../../../components/social/MenuplyMediaPicker.jsx";
 import { resolveConsumerMediaUrl } from "../../../lib/consumerApi.js";
 import * as s from "./myMenuplyStyles.js";
 
@@ -51,31 +51,18 @@ export default function ProfileMediaGallery({
         })}
 
         {readOnly ? null : (
-          <div style={s.profileMediaAdd} data-testid="profile-media-add">
-            <ConsumerCameraPickButton
-              mode="photo"
-              facingMode="environment"
+          <div style={s.profileMediaAddTile} data-testid="profile-media-add">
+            <MenuplyMediaPicker
               onFile={handlePick}
               disabled={busy}
-              testId="profile-media-take-photo"
-              ariaLabel="Take profile photo with camera"
-              showLibraryLink={false}
-              buttonStyle={s.profileMediaCaptureBtn}
-            >
-              Take photo
-            </ConsumerCameraPickButton>
-            <ConsumerCameraPickButton
-              mode="video"
-              facingMode="environment"
-              onFile={handlePick}
-              disabled={busy}
-              testId="profile-media-record-video"
-              ariaLabel="Record profile video with camera"
-              showLibraryLink={false}
-              buttonStyle={s.profileMediaCaptureBtn}
-            >
-              Record video
-            </ConsumerCameraPickButton>
+              facingMode="user"
+              allowPhoto
+              allowVideo
+              showPreview={false}
+              testId="profile-media-picker"
+              ariaLabel="Add profile photo or video"
+            />
+            <span style={s.profileMediaAddLabel}>Add photo or video</span>
           </div>
         )}
       </div>

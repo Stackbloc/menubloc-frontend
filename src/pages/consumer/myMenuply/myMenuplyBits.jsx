@@ -1,16 +1,13 @@
 import { Link } from "react-router-dom";
-import { useMemo, useRef, useState } from "react";
-import ConsumerCameraSheet from "../../../components/consumer/ConsumerCameraSheet.jsx";
+import { useMemo, useState } from "react";
+import MenuplyMediaPicker from "../../../components/social/MenuplyMediaPicker.jsx";
 import InviteToEatButton from "../../../components/InviteToEatButton.jsx";
-import {
-  inlineCameraSupported,
-  preferInlineCamera,
-} from "../../../lib/consumerCameraCapture.js";
 import { restaurantPathFromRow } from "../../../lib/canonicalUrl.js";
 import EatingSocialActions from "./EatingSocialActions.jsx";
 import { resolveConsumerMediaUrl } from "../../../lib/consumerApi.js";
 import {
   compareMealPeriod,
+  mealPeriodLabel,
   normalizeWhatIAteMealPeriod,
 } from "../../../lib/whatIAteTodayMealPeriod.js";
 import {
@@ -20,6 +17,7 @@ import {
   planJoinHref,
 } from "./dinerHubFormat.js";
 import * as s from "./myMenuplyStyles.js";
+import { socialType } from "../../../lib/socialDesignTokens.js";
 
 export function restaurantHref(row) {
   return restaurantPathFromRow(row) || (row?.restaurant_id ? `/restaurants/${row.restaurant_id}` : null);
@@ -63,8 +61,7 @@ export function PhotoGrid({ items, onSelect, onPhotoPick, hideJoinMe = false }) 
   );
   const [index, setIndex] = useState(0);
   const [photoHover, setPhotoHover] = useState(false);
-  const [cameraOpen, setCameraOpen] = useState(false);
-  const fileRef = useRef(null);
+  const [replaceMediaOpen, setReplaceMediaOpen] = useState(false);
   if (!ordered.length) return null;
   const safeIndex = Math.min(index, ordered.length - 1);
   const item = ordered[safeIndex];
@@ -81,15 +78,12 @@ export function PhotoGrid({ items, onSelect, onPhotoPick, hideJoinMe = false }) 
 
   function pickPhoto() {
     if (!canPick) return;
-    if (inlineCameraSupported() && preferInlineCamera()) {
-      setCameraOpen(true);
-      return;
-    }
-    fileRef.current?.click();
+    setReplaceMediaOpen(true);
   }
 
   function handlePhotoFile(file) {
     if (file) onPhotoPick(item, file);
+    setReplaceMediaOpen(false);
   }
 
   if (isPlaceholder) return null;
@@ -132,37 +126,36 @@ export function PhotoGrid({ items, onSelect, onPhotoPick, hideJoinMe = false }) 
 
   return (
     <div style={s.grid} data-testid="what-im-eating-photos">
+      {replaceMediaOpen ? (
+        <MenuplyMediaPicker
+          onFile={handlePhotoFile}
+          disabled={!canPick}
+          facingMode="environment"
+          allowPhoto
+          allowVideo
+          showPreview={false}
+          openOnMount
+          testId="eating-photo-picker"
+          ariaLabel="Add or replace eating photo or video"
+        />
+      ) : null}
       <article key={item.id || item.entry_id || `${label}-${safeIndex}`} style={hasMedia ? s.photoCard : s.eatingRowCompact}>
-        {canPick ? (
-          <>
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/*"
-              capture=""
-              hidden
-              onChange={(event) => {
-                const file = event.target.files?.[0];
-                event.target.value = "";
-                handlePhotoFile(file);
-              }}
-            />
-            <ConsumerCameraSheet
-              open={cameraOpen}
-              mode="photo"
-              facingMode="environment"
-              onClose={() => setCameraOpen(false)}
-              onNativeFallback={() => fileRef.current?.click()}
-              onCapture={(file) => {
-                setCameraOpen(false);
-                handlePhotoFile(file);
-              }}
-            />
-          </>
-        ) : null}
         {mediaBlock}
         <div style={hasMedia ? s.photoLabel : undefined}>
-          <div data-testid="eating-photo-caption">{caption}</div>
+          {hasMedia ? (
+            <div data-testid="eating-photo-caption" style={socialType.foodTitle}>
+              {label}
+            </div>
+          ) : (
+            <div data-testid="eating-photo-caption" style={socialType.meta}>
+              {caption}
+            </div>
+          )}
+          {hasMedia && item.meal_period ? (
+            <div style={socialType.meta}>
+              {mealPeriodLabel(normalizeWhatIAteMealPeriod(item.meal_period))}
+            </div>
+          ) : null}
           {place ? (
             restHref ? (
               <Link to={restHref} style={{ ...s.photoMeta, display: "block" }}>
@@ -172,16 +165,21 @@ export function PhotoGrid({ items, onSelect, onPhotoPick, hideJoinMe = false }) 
               <div style={s.photoMeta}>{place}</div>
             )
           ) : null}
-          {note ? <div style={s.photoMeta}>{note}</div> : null}
+          {note ? <div style={socialType.caption}>{note}</div> : null}
           {canPick && !hasMedia ? (
-            <button
-              type="button"
-              data-testid="eating-photo-slot"
-              style={s.eatingMediaAddBtn}
-              onClick={pickPhoto}
-            >
-              Add photo or video
-            </button>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 10 }}>
+              <MenuplyMediaPicker
+                onFile={handlePhotoFile}
+                disabled={!canPick}
+                facingMode="environment"
+                allowPhoto
+                allowVideo
+                showPreview={false}
+                testId="eating-photo-slot"
+                ariaLabel="Add photo or video"
+              />
+              <span style={socialType.meta}>Add photo or video</span>
+            </div>
           ) : null}
           <EatingSocialActions item={item} />
           {ordered.length > 1 ? (
@@ -516,64 +514,115 @@ export function WantToEatList({
     ) : null;
   }
 
-  return rows.map((want) => {
-    const href = want.menu_item_id ? `/menu-items/${want.menu_item_id}` : null;
-    const body = (
-      <>
-        {want.photo_url ? (
-          <img
-            src={resolveConsumerMediaUrl(want.photo_url)}
-            alt=""
-            style={{ ...s.photo, height: 120, borderRadius: 12, marginBottom: 8 }}
-          />
-        ) : null}
-        <div style={{ fontWeight: 800 }}>{want.food_name}</div>
-        {want.restaurant_name ? <div style={s.muted}>{want.restaurant_name}</div> : null}
-        {readOnly ? null : want.menu_item_id ? (
-          <div style={{ ...s.muted, fontSize: 12, marginTop: 4 }}>Menu item linked</div>
-        ) : (
-          <div style={{ ...s.muted, fontSize: 12, marginTop: 4 }}>Tap to link a menu item</div>
-        )}
-      </>
-    );
-    const cardStyle = {
-      ...s.card,
-      appearance: "none",
-      width: "100%",
-      textAlign: "left",
-      cursor: readOnly && !href ? "default" : "pointer",
-      font: "inherit",
-      display: "block",
-      textDecoration: "none",
-      color: "inherit",
-    };
+  return (
+    <div style={wantStyles.list} data-testid="want-to-eat-list">
+      {rows.map((want) => {
+        const href = want.menu_item_id ? `/menu-items/${want.menu_item_id}` : null;
+        const mediaUrl = want.photo_url || want.video_url;
+        const body = (
+          <div style={wantStyles.row}>
+            {mediaUrl ? (
+              want.video_url ? (
+                <video
+                  src={resolveConsumerMediaUrl(want.video_url)}
+                  style={wantStyles.thumb}
+                  controls
+                  playsInline
+                  preload="metadata"
+                />
+              ) : (
+                <img
+                  src={resolveConsumerMediaUrl(want.photo_url)}
+                  alt=""
+                  style={wantStyles.thumb}
+                />
+              )
+            ) : (
+              <div style={wantStyles.thumbPlaceholder} aria-hidden>
+                🍽
+              </div>
+            )}
+            <div style={wantStyles.copy}>
+              <div style={wantStyles.title}>{want.food_name}</div>
+              {want.restaurant_name ? <div style={socialType.meta}>{want.restaurant_name}</div> : null}
+              {readOnly ? null : want.menu_item_id ? (
+                <div style={wantStyles.hint}>Menu item linked</div>
+              ) : (
+                <div style={wantStyles.hint}>Tap to link a menu item</div>
+              )}
+            </div>
+          </div>
+        );
+        const cardStyle = wantStyles.card;
 
-    if (href) {
-      return (
-        <Link key={want.id} to={href} style={cardStyle} data-testid="want-to-eat-item">
-          {body}
-        </Link>
-      );
-    }
+        if (href) {
+          return (
+            <Link key={want.id} to={href} style={cardStyle} data-testid="want-to-eat-item">
+              {body}
+            </Link>
+          );
+        }
 
-    if (readOnly) {
-      return (
-        <div key={want.id} style={cardStyle} data-testid="want-to-eat-item">
-          {body}
-        </div>
-      );
-    }
+        if (readOnly) {
+          return (
+            <div key={want.id} style={cardStyle} data-testid="want-to-eat-item">
+              {body}
+            </div>
+          );
+        }
 
-    return (
-      <button
-        key={want.id}
-        type="button"
-        style={cardStyle}
-        data-testid="want-to-eat-item"
-        onClick={() => onSelectItem?.(want)}
-      >
-        {body}
-      </button>
-    );
-  });
+        return (
+          <button
+            key={want.id}
+            type="button"
+            style={cardStyle}
+            data-testid="want-to-eat-item"
+            onClick={() => onSelectItem?.(want)}
+          >
+            {body}
+          </button>
+        );
+      })}
+    </div>
+  );
 }
+
+const wantStyles = {
+  list: { display: "grid", gap: 10 },
+  card: {
+    display: "block",
+    width: "100%",
+    textAlign: "left",
+    textDecoration: "none",
+    color: "inherit",
+    borderRadius: 14,
+    border: "1px solid #e5e7eb",
+    background: "#fff",
+    padding: 0,
+    overflow: "hidden",
+    cursor: "pointer",
+    font: "inherit",
+  },
+  row: { display: "flex", gap: 0, alignItems: "stretch" },
+  thumb: {
+    width: 112,
+    minHeight: 112,
+    objectFit: "cover",
+    flexShrink: 0,
+    display: "block",
+    background: "#f1f5f9",
+  },
+  thumbPlaceholder: {
+    width: 112,
+    minHeight: 112,
+    flexShrink: 0,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    background: "#f8fafc",
+    fontSize: 28,
+  },
+  copy: { padding: "12px 14px", flex: 1, minWidth: 0 },
+  title: { fontWeight: 800, fontSize: 16, color: "#0f172a", marginBottom: 4 },
+  hint: { fontSize: 12, color: "#64748b", marginTop: 6 },
+};

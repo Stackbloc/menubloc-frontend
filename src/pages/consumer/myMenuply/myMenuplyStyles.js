@@ -175,7 +175,7 @@ export const photoButton = {
 
 export const photo = {
   width: "100%",
-  height: 168,
+  height: 280,
   objectFit: "cover",
   display: "block",
   background: "#f1f5f9",
@@ -211,9 +211,9 @@ export const eatingMediaAddBtn = {
 };
 
 export const photoLabel = {
-  padding: "10px 12px 12px",
-  fontSize: 15,
-  fontWeight: 700,
+  padding: "14px 16px 16px",
+  fontSize: 17,
+  fontWeight: 800,
   color: INK,
   lineHeight: 1.35,
   background: "#fff",
@@ -445,6 +445,20 @@ export const profileMediaAdd = {
   alignItems: "center",
   gap: 8,
   justifyContent: "center",
+};
+
+export const profileMediaAddTile = {
+  ...profileMediaAdd,
+  flexDirection: "column",
+  justifyContent: "center",
+  gap: 6,
+};
+
+export const profileMediaAddLabel = {
+  fontSize: 11,
+  fontWeight: 700,
+  color: MUTED,
+  textAlign: "center",
 };
 
 export const profileMediaCaptureBtn = {

@@ -40,7 +40,22 @@ export const EATING_FILTERS = [
 ];
 
 export const EATING_COMPOSE_CATEGORIES = [
-  { id: "ate", label: "Ate", placeholder: "What did you eat?" },
-  { id: "want", label: "Want", placeholder: "What do you want to try?" },
-  { id: "plan", label: "Plan", placeholder: "Where are you going?" },
+  {
+    id: "ate",
+    label: "Ate",
+    placeholder: "What did you eat today?",
+    description: "Share what you ate — add a photo when you can.",
+  },
+  {
+    id: "want",
+    label: "Want",
+    placeholder: "What foods do you want to eat in the future?",
+    description: "Save cravings, menu picks, or weekend plans.",
+  },
+  {
+    id: "plan",
+    label: "Plan",
+    placeholder: "Where are you going?",
+    description: "Schedule future dining plans and invite others to join you.",
+  },
 ];

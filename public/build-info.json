@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "80b6d41b1b18b39cee42bda0f7059614e3f9f02e",
-  "gitShortSha": "80b6d41",
+  "gitSha": "b3fa02f1cda9b36b9ddad342e3bb2fe9e3ad781e",
+  "gitShortSha": "b3fa02f",
   "branch": "main",
-  "buildTime": "2026-08-19T21:51:06.288Z",
+  "buildTime": "2026-08-20T00:04:00.295Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "feat(diner): unified Eating hub with tap-to-open calendar and crew purpose."
+  "commitMessage": "docs: update LKG tip lock after profile gallery horizontal capture CPD."
 }

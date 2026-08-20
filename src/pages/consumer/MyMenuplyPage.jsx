@@ -267,7 +267,7 @@ export default function MyMenuplyPage() {
     }
   }
 
-  async function postEating({ text, file }) {
+  async function postEating({ text, file, mealPeriod }) {
     setPostBusy("eating");
     setError("");
     try {
@@ -283,7 +283,7 @@ export default function MyMenuplyPage() {
         photo_url,
         video_url,
         eaten_on: hubDate,
-        meal_period: defaultWhatIAteMealPeriod(),
+        meal_period: mealPeriod || defaultWhatIAteMealPeriod(),
       });
       const entry = data.entry || data;
       setLastPost({ kind: "diary", id: entry.id });
@@ -485,14 +485,14 @@ export default function MyMenuplyPage() {
     }
   }
 
-  async function handleEatingCompose({ category, text, file }) {
+  async function handleEatingCompose({ category, text, file, mealPeriod }) {
     if (category === "want") {
       await postWant({ text, file });
       setEatingFilter("want");
       return;
     }
     if (category === "ate") {
-      await postEating({ text, file });
+      await postEating({ text, file, mealPeriod });
       setEatingFilter("ate");
     }
   }

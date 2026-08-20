@@ -1,11 +1,15 @@
 /**
- * Unified Eating compose — category + caption + photo/video.
+ * Unified Eating compose — category + caption + camera icon media + meal time (Ate).
  */
 
 import { useState } from "react";
-import ConsumerCameraPickButton from "../../../components/consumer/ConsumerCameraPickButton.jsx";
-import { isVideoFile } from "../../../lib/eatingMediaUtils.js";
+import MenuplyMediaPicker from "../../../components/social/MenuplyMediaPicker.jsx";
+import {
+  WHAT_I_ATE_MEAL_PERIODS,
+  defaultWhatIAteMealPeriod,
+} from "../../../lib/whatIAteTodayMealPeriod.js";
 import { EATING_COMPOSE_CATEGORIES } from "./eatingHubUtils.js";
+import { socialBtn, socialType } from "../../../lib/socialDesignTokens.js";
 
 export default function EatingCompose({
   busy = false,
@@ -17,6 +21,7 @@ export default function EatingCompose({
   const [category, setCategory] = useState(defaultCategory);
   const [text, setText] = useState("");
   const [file, setFile] = useState(null);
+  const [mealPeriod, setMealPeriod] = useState(defaultWhatIAteMealPeriod());
 
   const meta = EATING_COMPOSE_CATEGORIES.find((c) => c.id === category) || EATING_COMPOSE_CATEGORIES[0];
   const acceptMedia = category === "ate" || category === "want";
@@ -33,7 +38,7 @@ export default function EatingCompose({
       category,
       text: value,
       file,
-      mediaKind: isVideoFile(file) ? "video" : file ? "photo" : null,
+      mealPeriod: category === "ate" ? mealPeriod : undefined,
     });
     setText("");
     setFile(null);
@@ -60,61 +65,60 @@ export default function EatingCompose({
           );
         })}
       </div>
+      {meta.description ? <p style={socialType.meta}>{meta.description}</p> : null}
       <form onSubmit={handleSubmit} style={styles.form}>
-        {acceptMedia ? (
-          <div style={styles.mediaRow}>
-            <ConsumerCameraPickButton
-              mode="photo"
-              facingMode="environment"
+        <div style={styles.composeRow}>
+          {acceptMedia ? (
+            <MenuplyMediaPicker
+              file={file}
               onFile={setFile}
+              onClear={() => setFile(null)}
               disabled={busy}
-              testId="eating-compose-photo"
-              ariaLabel="Take photo"
-              showLibraryLink={false}
-              buttonStyle={styles.mediaBtn}
-            >
-              Photo
-            </ConsumerCameraPickButton>
-            {category === "ate" ? (
-              <ConsumerCameraPickButton
-                mode="video"
-                facingMode="environment"
-                onFile={setFile}
-                disabled={busy}
-                testId="eating-compose-video"
-                ariaLabel="Record video"
-                showLibraryLink={false}
-                buttonStyle={styles.mediaBtn}
-              >
-                Video
-              </ConsumerCameraPickButton>
-            ) : null}
-            {file ? (
-              <button type="button" style={styles.clearMedia} disabled={busy} onClick={() => setFile(null)}>
-                Remove {isVideoFile(file) ? "video" : "photo"}
-              </button>
-            ) : null}
+              facingMode="environment"
+              allowPhoto
+              allowVideo={category === "ate"}
+              testId="eating-compose-media"
+              ariaLabel="Add photo or video"
+            />
+          ) : null}
+          <input
+            type="text"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder={meta.placeholder}
+            disabled={busy}
+            maxLength={160}
+            autoComplete="off"
+            style={styles.input}
+            data-testid="eating-compose-input"
+          />
+        </div>
+        {category === "ate" ? (
+          <div style={styles.mealRow} role="group" aria-label="Meal time">
+            {WHAT_I_ATE_MEAL_PERIODS.map((slot) => {
+              const active = mealPeriod === slot.id;
+              return (
+                <button
+                  key={slot.id}
+                  type="button"
+                  data-testid={`eating-meal-${slot.id}`}
+                  disabled={busy}
+                  style={{ ...styles.mealChip, ...(active ? styles.mealChipActive : null) }}
+                  onClick={() => setMealPeriod(slot.id)}
+                >
+                  {slot.label}
+                </button>
+              );
+            })}
           </div>
         ) : null}
-        <div style={styles.inputRow}>
-        <input
-          type="text"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder={meta.placeholder}
-          disabled={busy}
-          maxLength={160}
-          autoComplete="off"
-          style={styles.input}
-        />
         <button
           type="submit"
           disabled={busy || (category !== "plan" && !String(text).trim() && !file)}
-          style={styles.post}
+          style={socialBtn.primary}
         >
           {busy ? "…" : category === "plan" ? "Schedule" : "Post"}
         </button>
-        </div>
       </form>
     </div>
   );
@@ -149,31 +153,12 @@ const styles = {
     display: "flex",
     flexDirection: "column",
     alignItems: "stretch",
-    gap: 8,
+    gap: 10,
   },
-  mediaRow: {
+  composeRow: {
     display: "flex",
-    flexWrap: "wrap",
-    alignItems: "center",
-    gap: 8,
-  },
-  clearMedia: {
-    appearance: "none",
-    border: "none",
-    background: "transparent",
-    color: "#64748b",
-    fontSize: 12,
-    fontWeight: 600,
-    textDecoration: "underline",
-    cursor: "pointer",
-    padding: 0,
-    fontFamily: "inherit",
-  },
-  inputRow: {
-    display: "flex",
-    alignItems: "center",
-    gap: 8,
-    flexWrap: "wrap",
+    alignItems: "flex-start",
+    gap: 10,
   },
   input: {
     flex: "1 1 140px",
@@ -188,32 +173,26 @@ const styles = {
     background: "#fff",
     boxSizing: "border-box",
   },
-  mediaBtn: {
-    appearance: "none",
-    minHeight: 44,
-    padding: "0 12px",
-    borderRadius: 12,
-    border: "1px solid rgba(60,60,67,0.18)",
-    background: "#fff",
-    color: "#3C3C43",
-    cursor: "pointer",
-    fontSize: 13,
-    fontWeight: 600,
-    fontFamily: "inherit",
-    flexShrink: 0,
+  mealRow: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: 6,
   },
-  post: {
+  mealChip: {
     appearance: "none",
-    minHeight: 44,
-    padding: "0 18px",
-    borderRadius: 12,
-    border: "none",
-    background: "linear-gradient(180deg, #22C55E 0%, #16A34A 100%)",
-    color: "#0B0F0C",
+    border: "1px solid #e5e7eb",
+    background: "#fff",
+    color: "#475569",
+    borderRadius: 999,
+    padding: "6px 12px",
+    fontSize: 12,
     fontWeight: 700,
-    fontSize: 14,
     cursor: "pointer",
     fontFamily: "inherit",
-    flexShrink: 0,
+  },
+  mealChipActive: {
+    background: "#ecfdf5",
+    borderColor: "#86efac",
+    color: "#166534",
   },
 };

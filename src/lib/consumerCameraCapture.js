@@ -8,9 +8,8 @@ export function inlineCameraSupported() {
 }
 
 export function preferInlineCamera() {
-  // Prefer the in-app camera sheet whenever getUserMedia exists. Hidden file inputs
-  // show a generic "upload files" picker on desktop and unreliable capture on mobile.
-  return inlineCameraSupported();
+  // Social MVP: native device camera / media picker only (MenuplyMediaPicker).
+  return false;
 }
 
 export function videoRecorderSupported() {

@@ -1,10 +1,11 @@
 /**
- * One-line compose — type and post, optional photo or video.
+ * One-line compose — type and post, optional photo or video via camera icon.
  */
 
 import { useState } from "react";
-import ConsumerCameraPickButton from "../../../components/consumer/ConsumerCameraPickButton.jsx";
-import { eatingMediaLabel, isVideoFile } from "../../../lib/eatingMediaUtils.js";
+import MenuplyMediaPicker from "../../../components/social/MenuplyMediaPicker.jsx";
+import { isVideoFile } from "../../../lib/eatingMediaUtils.js";
+import { socialBtn } from "../../../lib/socialDesignTokens.js";
 
 export default function QuickCompose({
   placeholder,
@@ -21,7 +22,6 @@ export default function QuickCompose({
   const [text, setText] = useState(defaultValue);
   const [file, setFile] = useState(null);
   const acceptMedia = acceptPhoto || acceptVideo;
-  const mediaLabel = file ? eatingMediaLabel(file) : null;
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -34,33 +34,18 @@ export default function QuickCompose({
 
   return (
     <form onSubmit={handleSubmit} data-testid={testId} style={styles.form}>
-      {acceptPhoto ? (
-        <ConsumerCameraPickButton
-          mode="photo"
-          facingMode="environment"
+      {acceptMedia ? (
+        <MenuplyMediaPicker
+          file={file}
           onFile={setFile}
+          onClear={() => setFile(null)}
           disabled={busy}
-          testId="quick-compose-photo"
-          ariaLabel="Take photo with camera"
-          showLibraryLink={false}
-          buttonStyle={styles.iconBtn}
-        >
-          {mediaLabel === "Photo" ? "Added" : "Photo"}
-        </ConsumerCameraPickButton>
-      ) : null}
-      {acceptVideo ? (
-        <ConsumerCameraPickButton
-          mode="video"
           facingMode="environment"
-          onFile={setFile}
-          disabled={busy}
-          testId="quick-compose-video"
-          ariaLabel="Record video with camera"
-          showLibraryLink={false}
-          buttonStyle={styles.iconBtn}
-        >
-          {mediaLabel === "Video" ? "Added" : "Video"}
-        </ConsumerCameraPickButton>
+          allowPhoto={acceptPhoto}
+          allowVideo={acceptVideo}
+          testId="quick-compose-media"
+          ariaLabel="Add photo or video"
+        />
       ) : null}
       <input
         type={inputType}
@@ -76,7 +61,7 @@ export default function QuickCompose({
       <button
         type="submit"
         disabled={busy || (!String(text).trim() && !file)}
-        style={styles.post}
+        style={socialBtn.primary}
       >
         {busy ? "…" : submitLabel}
       </button>
@@ -87,7 +72,7 @@ export default function QuickCompose({
 const styles = {
   form: {
     display: "flex",
-    alignItems: "center",
+    alignItems: "flex-start",
     gap: 8,
     margin: "8px 0 0",
     flexWrap: "wrap",
@@ -104,33 +89,5 @@ const styles = {
     color: "#0f172a",
     background: "#fff",
     boxSizing: "border-box",
-  },
-  iconBtn: {
-    appearance: "none",
-    minHeight: 44,
-    padding: "0 12px",
-    borderRadius: 10,
-    border: "1.5px solid #d1d5db",
-    background: "#ffffff",
-    color: "#334155",
-    cursor: "pointer",
-    fontSize: 13,
-    fontWeight: 700,
-    fontFamily: "inherit",
-    flexShrink: 0,
-  },
-  post: {
-    appearance: "none",
-    minHeight: 44,
-    padding: "0 16px",
-    borderRadius: 10,
-    border: "none",
-    background: "linear-gradient(180deg, #22C55E 0%, #16A34A 100%)",
-    color: "#0B0F0C",
-    fontWeight: 800,
-    fontSize: 14,
-    cursor: "pointer",
-    fontFamily: "inherit",
-    flexShrink: 0,
   },
 };

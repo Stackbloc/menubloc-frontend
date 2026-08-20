@@ -80,7 +80,7 @@ test("My Menuply is the diner's personal home", () => {
   assert.match(bits, /restaurant_name/);
   assert.match(bits, /Restaurant/);
   assert.match(bits, /Add photo or video/);
-  assert.match(bits, /ConsumerCameraSheet/);
+  assert.match(bits, /MenuplyMediaPicker/);
   assert.match(bits, /Request to join/);
   assert.match(bits, /isScheduledEatingPlan/);
   const form = read("src/pages/consumer/myMenuply/EatingPlanDayForm.jsx");
@@ -112,8 +112,8 @@ test("My Menuply is the diner's personal home", () => {
   assert.match(hero, /\/my-menuply\/connections-eating/);
   assert.match(eatingPage, /StickyPageHeader title="My Connections"/);
   const eatingCompose = read("src/pages/consumer/myMenuply/EatingCompose.jsx");
-  assert.match(eatingCompose, /ConsumerCameraPickButton/);
-  assert.match(eatingCompose, /eating-compose-video/);
+  assert.match(eatingCompose, /MenuplyMediaPicker/);
+  assert.match(eatingCompose, /eating-compose-media/);
   assert.match(section, /WantToEatList/);
   const calendar = read("src/pages/consumer/myMenuply/DinerCalendarSheet.jsx");
   assert.match(calendar, /diner-calendar-open/);

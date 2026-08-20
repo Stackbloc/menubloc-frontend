@@ -249,6 +249,7 @@ export default function ImEatingAtPanel({
       {notice ? <p style={cs.notice}>{notice}</p> : null}
 
       <form onSubmit={handleShare} style={cs.form}>
+        <EatingMediaAttach disabled={busy || disabled} file={mediaFile} onFileChange={setMediaFile} />
         {showFoodName ? (
           <>
             <label style={cs.label} htmlFor="im-eating-food-name">
@@ -285,7 +286,6 @@ export default function ImEatingAtPanel({
           skipMenuItem={skipMenuItem}
         />
         <div style={cs.actionRow} data-testid="im-eating-submit-row">
-          <EatingMediaAttach disabled={busy || disabled} file={mediaFile} onFileChange={setMediaFile} />
           <button type="submit" style={cs.primaryBtn} disabled={busy || disabled}>
             {busy ? "Sharing…" : skipMenuItem ? "Post" : "Publish"}
           </button>

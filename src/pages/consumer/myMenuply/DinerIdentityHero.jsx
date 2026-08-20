@@ -1,7 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import ConsumerCameraSheet from "../../../components/consumer/ConsumerCameraSheet.jsx";
-import { inlineCameraSupported, preferInlineCamera } from "../../../lib/consumerCameraCapture.js";
+import MenuplyMediaPicker from "../../../components/social/MenuplyMediaPicker.jsx";
 import ProfileMediaGallery from "./ProfileMediaGallery.jsx";
 import * as s from "./myMenuplyStyles.js";
 
@@ -25,10 +24,8 @@ export default function DinerIdentityHero({
   onProfileMediaRemove,
   readOnly = false,
 }) {
-  const fileRef = useRef(null);
   const [draft, setDraft] = useState(about || "");
   const [saving, setSaving] = useState(false);
-  const [avatarCameraOpen, setAvatarCameraOpen] = useState(false);
 
   useEffect(() => {
     setDraft(about || "");
@@ -47,15 +44,6 @@ export default function DinerIdentityHero({
 
   const initial = String(displayName || "You").trim().slice(0, 1).toUpperCase() || "Y";
 
-  function openAvatarPicker() {
-    if (busy) return;
-    if (inlineCameraSupported() && preferInlineCamera()) {
-      setAvatarCameraOpen(true);
-      return;
-    }
-    fileRef.current?.click();
-  }
-
   return (
     <section style={s.section} data-testid="about-me">
       <p style={s.kicker}>Diner profile</p>
@@ -72,50 +60,34 @@ export default function DinerIdentityHero({
             )}
           </div>
         ) : (
-          <button
-            type="button"
-            style={s.identityPhotoBtn}
-            aria-label="Change profile photo"
+          <MenuplyMediaPicker
+            onFile={onAvatarFile}
             disabled={busy}
-            onClick={openAvatarPicker}
-          >
-            {avatarUrl ? (
-              <img src={avatarUrl} alt="" style={s.identityPhoto} />
-            ) : (
-              <div style={s.identityInitial}>{initial}</div>
+            facingMode="user"
+            allowPhoto
+            allowVideo={false}
+            showPreview={false}
+            testId="diner-avatar-picker"
+            ariaLabel="Change profile photo"
+            renderTrigger={({ open, disabled: pickerDisabled }) => (
+              <button
+                type="button"
+                style={s.identityPhotoBtn}
+                aria-label="Change profile photo"
+                disabled={busy || pickerDisabled}
+                onClick={open}
+              >
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt="" style={s.identityPhoto} />
+                ) : (
+                  <div style={s.identityInitial}>{initial}</div>
+                )}
+                <span style={s.identityCamera} aria-hidden>
+                  📷
+                </span>
+              </button>
             )}
-            <span style={s.identityCamera} aria-hidden>
-              📷
-            </span>
-          </button>
-        )}
-        {readOnly ? null : (
-          <>
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/*"
-              capture=""
-              style={{ display: "none" }}
-              disabled={busy}
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                e.target.value = "";
-                if (file) onAvatarFile(file);
-              }}
-            />
-            <ConsumerCameraSheet
-              open={avatarCameraOpen}
-              mode="photo"
-              facingMode="user"
-              onClose={() => setAvatarCameraOpen(false)}
-              onNativeFallback={() => fileRef.current?.click()}
-              onCapture={(file) => {
-                setAvatarCameraOpen(false);
-                if (file) onAvatarFile(file);
-              }}
-            />
-          </>
+          />
         )}
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={s.identityName}>{displayName}</div>

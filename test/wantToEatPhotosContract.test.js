@@ -30,7 +30,7 @@ test("My Menuply want compose accepts optional photo upload", () => {
   const compose = read("src/pages/consumer/myMenuply/EatingCompose.jsx");
   assert.match(page, /uploadWantToEatPhoto/);
   assert.match(compose, /eating-compose-\$\{chip\.id\}/);
-  assert.match(compose, /ConsumerCameraPickButton/);
+  assert.match(compose, /MenuplyMediaPicker/);
   assert.match(page, /photo_url/);
 });
 

@@ -1,10 +1,8 @@
 /**
- * Photo or video attach for eating posts — profile compose row.
+ * Photo or video attach — camera icon, native picker, preview.
  */
 
-import { useEffect, useState } from "react";
-import ConsumerCameraPickButton from "../consumer/ConsumerCameraPickButton.jsx";
-import { isVideoFile } from "../../lib/eatingMediaUtils.js";
+import MenuplyMediaPicker from "../social/MenuplyMediaPicker.jsx";
 import * as cs from "./foodActivityComposeStyles.js";
 
 export default function EatingMediaAttach({
@@ -14,104 +12,33 @@ export default function EatingMediaAttach({
   previewUrl = "",
   previewKind = "",
   testId = "eating-media-attach",
+  facingMode = "environment",
 }) {
-  const [localPreview, setLocalPreview] = useState("");
-  const isVideo = isVideoFile(file) || previewKind === "video";
-
-  useEffect(() => {
-    if (!file) {
-      setLocalPreview("");
-      return undefined;
-    }
-    const url = URL.createObjectURL(file);
-    setLocalPreview(url);
-    return () => URL.revokeObjectURL(url);
-  }, [file]);
-
-  const shown = localPreview || previewUrl || "";
-
-  function clear() {
-    onFileChange(null);
-  }
-
   function pick(nextFile) {
     onFileChange(nextFile || null);
   }
 
+  const hasExisting = Boolean(previewUrl) && !file;
+
   return (
     <div data-testid={testId} style={cs.actionRow}>
-      {shown ? (
-        <>
-          {isVideo ? (
-            <video
-              src={shown}
-              style={cs.mediaThumb}
-              controls
-              playsInline
-              preload="metadata"
-              data-testid="eating-media-preview"
-            />
-          ) : (
-            <img src={shown} alt="" style={cs.mediaThumb} data-testid="eating-media-preview" />
-          )}
-          <ConsumerCameraPickButton
-            mode="photo"
-            facingMode="environment"
-            onFile={pick}
-            disabled={disabled}
-            testId="eating-media-replace-photo"
-            ariaLabel="Replace with photo"
-            showLibraryLink
-            libraryLinkStyle={cs.libraryLink}
-            buttonStyle={cs.photoBtn}
-          >
-            Photo
-          </ConsumerCameraPickButton>
-          <ConsumerCameraPickButton
-            mode="video"
-            facingMode="environment"
-            onFile={pick}
-            disabled={disabled}
-            testId="eating-media-replace-video"
-            ariaLabel="Replace with video"
-            showLibraryLink={false}
-            buttonStyle={cs.photoBtn}
-          >
-            Video
-          </ConsumerCameraPickButton>
-          <button type="button" style={cs.textAction} disabled={disabled} onClick={clear}>
-            Remove
-          </button>
-        </>
-      ) : (
-        <>
-          <ConsumerCameraPickButton
-            mode="photo"
-            facingMode="environment"
-            onFile={pick}
-            disabled={disabled}
-            testId="eating-media-add-photo"
-            ariaLabel="Add photo"
-            showLibraryLink
-            libraryLinkStyle={cs.libraryLink}
-            buttonStyle={cs.photoBtn}
-          >
-            Photo
-          </ConsumerCameraPickButton>
-          <ConsumerCameraPickButton
-            mode="video"
-            facingMode="environment"
-            onFile={pick}
-            disabled={disabled}
-            testId="eating-media-add-video"
-            ariaLabel="Add video"
-            showLibraryLink={false}
-            buttonStyle={cs.photoBtn}
-          >
-            Video
-          </ConsumerCameraPickButton>
-        </>
-      )}
+      <MenuplyMediaPicker
+        file={file}
+        onFile={pick}
+        onClear={() => pick(null)}
+        disabled={disabled}
+        facingMode={facingMode}
+        allowPhoto
+        allowVideo
+        testId={testId}
+        ariaLabel="Add photo or video"
+        showPreview={Boolean(file)}
+      />
+      {hasExisting ? (
+        <span style={cs.libraryLink} data-testid="eating-media-existing">
+          Media attached
+        </span>
+      ) : null}
     </div>
   );
 }

@@ -54,14 +54,12 @@ test("panel supports photo upload and diary mirror on publish", () => {
   assert.match(publicApi, /\/public\/food-activity\/photo/);
 
   const attach = read("src/components/foodActivity/EatingMediaAttach.jsx");
-  assert.match(attach, /ConsumerCameraPickButton/);
-  assert.match(attach, /eating-media-add-video/);
-  assert.match(attach, /mode="video"/);
-  assert.match(attach, /foodActivityComposeStyles/);
+  assert.match(attach, /MenuplyMediaPicker/);
+  assert.match(attach, /eating-media-attach/);
 
   const quick = read("src/pages/consumer/myMenuply/QuickCompose.jsx");
-  assert.match(quick, /acceptVideo/);
-  assert.match(quick, /quick-compose-video/);
+  assert.match(quick, /MenuplyMediaPicker/);
+  assert.match(quick, /quick-compose-media/);
 
   const mediaUtils = read("src/lib/eatingMediaUtils.js");
   assert.match(mediaUtils, /eatingMediaFromUpload/);

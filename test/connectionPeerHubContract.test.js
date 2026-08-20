@@ -70,7 +70,7 @@ test("Connection diner page uses the same hub layout as My Menuply", () => {
 test("Diner hub photos are casual snapshots with food info, not Instagram heroes", () => {
   const styles = read("src/pages/consumer/myMenuply/myMenuplyStyles.js");
   const bits = read("src/pages/consumer/myMenuply/myMenuplyBits.jsx");
-  assert.match(styles, /height: 168/);
+  assert.match(styles, /height: 280/);
   assert.doesNotMatch(styles, /58vw/);
   assert.doesNotMatch(styles, /340px/);
   assert.match(bits, /View dish/);
