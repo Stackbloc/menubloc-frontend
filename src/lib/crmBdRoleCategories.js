@@ -15,6 +15,7 @@ export const BD_ROLE_CATEGORIES = [
   "investor",
   "strategic_partner",
   "creative_pro",
+  "food_distributor",
   "other",
 ];
 

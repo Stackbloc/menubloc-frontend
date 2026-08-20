@@ -47,6 +47,7 @@ export default function DinerCalendarSheet({
   viewMonth,
   onViewMonthChange,
   dayMarkers = [],
+  lookbackStart = null,
   testId = "eating-calendar",
   title = "Eating",
   events = [],
@@ -104,6 +105,7 @@ export default function DinerCalendarSheet({
           viewMonth={viewMonth}
           onViewMonthChange={onViewMonthChange}
           dayMarkers={dayMarkers}
+          lookbackStart={lookbackStart}
           readOnly={readOnly}
         />
         {monthEvents.length > 0 ? (

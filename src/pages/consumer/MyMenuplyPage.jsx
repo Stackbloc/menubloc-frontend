@@ -28,6 +28,7 @@ import {
   listPendingEatInvitePeople,
   listWantToEat,
   listWhatIAteToday,
+  listWhatIAteTodayCalendar,
   listWhatWeDoingSessions,
   resolveConsumerMediaUrl,
   uploadWantToEatPhoto,
@@ -49,8 +50,9 @@ import EatingHubSection from "./myMenuply/EatingHubSection.jsx";
 import CrewQuickCompose from "./myMenuply/CrewQuickCompose.jsx";
 import { buildJoinMeCandidates } from "./myMenuply/joinMeCandidates.js";
 import {
-  buildEatingDayMarkers,
+  buildEatingDayMarkersFromCalendar,
   compareYmd,
+  eatingHistoryStart,
   planYmd,
 } from "./myMenuply/eatingHubUtils.js";
 import * as s from "./myMenuply/myMenuplyStyles.js";
@@ -88,6 +90,7 @@ export default function MyMenuplyPage() {
   const [profileMedia, setProfileMedia] = useState([]);
   const [postBusy, setPostBusy] = useState("");
   const [eating, setEating] = useState([]);
+  const [eatingCalendarDays, setEatingCalendarDays] = useState([]);
   const [plans, setPlans] = useState([]);
   const [connections, setConnections] = useState([]);
   const [followed, setFollowed] = useState([]);
@@ -118,6 +121,7 @@ export default function MyMenuplyPage() {
         profileRes,
         activityRes,
         ateRes,
+        calendarRes,
         planRes,
         connRes,
         inviteRes,
@@ -132,6 +136,9 @@ export default function MyMenuplyPage() {
         getConsumerProfile().catch(() => null),
         listMyFoodActivity(20).catch(() => ({ activities: [] })),
         listWhatIAteToday(hubDate).catch(() => ({ entries: [] })),
+        listWhatIAteTodayCalendar(eatingHistoryStart(), whatIAteTodayLocalDate()).catch(() => ({
+          days: [],
+        })),
         listWhatWeDoingSessions().catch(() => ({ sessions: [] })),
         listConnections().catch(() => ({ accepted: [] })),
         listPendingEatInvitePeople().catch(() => ({ people: [] })),
@@ -153,6 +160,7 @@ export default function MyMenuplyPage() {
       const activityItems = mapFoodActivityForHub(activityRes.activities || []);
       const diaryItems = mapDiaryEntriesForHub(ateRes.entries || []);
       setEating(mergeEatingFeedForHub(diaryItems, activityItems).slice(0, 12));
+      setEatingCalendarDays(calendarRes?.days || []);
       setPlans(planRes.sessions || []);
       setConnections(connRes.accepted || []);
       setJoinCandidates(
@@ -199,14 +207,15 @@ export default function MyMenuplyPage() {
   const scheduledPlans = plans.filter(
     (plan) => compareYmd(plan.plan_date) >= 0 && isScheduledEatingPlan(plan)
   );
-  const shownPlans = scheduledPlans.slice(0, 24);
+  // Future plans are not date-capped — show all scheduled sessions.
+  const shownPlans = scheduledPlans;
   const calendarEvents = shownPlans.map((plan) => ({
     key: futurePlanKey(plan),
     ymd: planYmd(plan.plan_date),
     label: futurePlanRestaurantName(plan),
     plan,
   }));
-  const dayMarkers = buildEatingDayMarkers({ eatingRows: eating, planRows: scheduledPlans });
+  const dayMarkers = buildEatingDayMarkersFromCalendar(eatingCalendarDays, scheduledPlans);
 
   async function onAvatarFile(file) {
     setIdentityBusy(true);

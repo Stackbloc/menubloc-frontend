@@ -50,3 +50,22 @@ test("My Menuply and peer hub use unified Eating section", () => {
   assert.ok(mine.indexOf("<DinerIdentityHero") < mine.indexOf("<EatingHubSection"));
   assert.ok(mine.indexOf("<EatingHubSection") < mine.indexOf('data-testid="dining-crews"'));
 });
+
+test("Eating journal look-back is 90 days; future plan dates are not capped", async () => {
+  const utils = read("src/pages/consumer/myMenuply/eatingHubUtils.js");
+  const section = read("src/pages/consumer/myMenuply/EatingHubSection.jsx");
+  const calendar = read("src/pages/consumer/myMenuply/EatingHubCalendar.jsx");
+  assert.match(utils, /EATING_HISTORY_DAYS = 90/);
+  assert.doesNotMatch(utils, /EATING_HISTORY_DAYS = 45/);
+  assert.match(utils, /Future plans are not capped/);
+  assert.match(section, /canGoForward = true/);
+  assert.match(section, /lookbackStart/);
+  assert.match(calendar, /lookbackStart/);
+
+  const mod = await import("../src/pages/consumer/myMenuply/eatingHubUtils.js");
+  assert.equal(mod.EATING_HISTORY_DAYS, 90);
+  assert.equal(mod.eatingHistoryStart("2026-08-19"), "2026-05-21");
+  assert.equal(mod.clampEatingLookbackDate("2026-04-01", "2026-08-19"), "2026-05-21");
+  assert.equal(mod.clampEatingLookbackDate("2026-08-10", "2026-08-19"), "2026-08-10");
+  assert.equal(mod.clampEatingLookbackDate("2027-12-01", "2026-08-19"), "2026-08-19");
+});

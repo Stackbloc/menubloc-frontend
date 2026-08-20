@@ -106,6 +106,10 @@ export default function SiteFooter() {
             <Link to="/creative-pros" style={footerLinkStyle}>
               {t("discovery.footer.creators", "Creators")}
             </Link>
+            <br />
+            <Link to="/distributors" style={footerLinkStyle}>
+              {t("discovery.footer.foodDistributors", "Food Distributors")}
+            </Link>
           </div>
 
           <div>

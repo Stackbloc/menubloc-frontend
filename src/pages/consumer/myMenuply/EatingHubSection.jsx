@@ -14,7 +14,14 @@ import {
   WantToEatList,
 } from "./myMenuplyBits.jsx";
 import { formatPlanBracketDate, futurePlanKey } from "./dinerHubFormat.js";
-import { compareYmd, EATING_FILTERS, planYmd } from "./eatingHubUtils.js";
+import {
+  clampEatingLookbackDate,
+  compareYmd,
+  eatingHistoryStart,
+  EATING_FILTERS,
+  planYmd,
+  shiftYmd,
+} from "./eatingHubUtils.js";
 import { whatIAteTodayLocalDate } from "../../../lib/consumerApi.js";
 import * as s from "./myMenuplyStyles.js";
 
@@ -82,7 +89,11 @@ export default function EatingHubSection({
   sectionRef = null,
 }) {
   const today = whatIAteTodayLocalDate();
+  const lookbackStart = eatingHistoryStart(today);
   const dateCmp = compareYmd(hubDate, today);
+  const canGoBack = compareYmd(hubDate, lookbackStart) > 0;
+  // Future dining plans are not capped — day nav may move past today.
+  const canGoForward = true;
   const showAte = !readOnly
     ? eatingFilter === "all" || eatingFilter === "ate"
     : true;
@@ -99,16 +110,23 @@ export default function EatingHubSection({
     eatingFilter === "plans" && dateCmp >= 0 ? plansForDay : showPlans ? shownPlans : [];
 
   function handleCalendarDate(ymd) {
-    onHubDateChange(ymd);
     const cmp = compareYmd(ymd, today);
     if (cmp > 0) {
+      onHubDateChange(ymd);
       onEatingFilterChange?.("plans");
       onSchedulingPlansChange?.(true);
       const match = scheduledPlans.find((plan) => planYmd(plan.plan_date) === ymd);
       if (match) onSelectedPlanKeyChange?.(futurePlanKey(match));
-    } else if (cmp <= 0) {
-      onEatingFilterChange?.(eatingFilter === "plans" ? "ate" : eatingFilter);
+      return;
     }
+    const clamped = clampEatingLookbackDate(ymd, today);
+    onHubDateChange(clamped);
+    onEatingFilterChange?.(eatingFilter === "plans" ? "ate" : eatingFilter);
+  }
+
+  function goDay(delta) {
+    const next = shiftYmd(hubDate, delta, today);
+    handleCalendarDate(next);
   }
 
   function handleCalendarEvent(event) {
@@ -130,6 +148,37 @@ export default function EatingHubSection({
           />
         }
       />
+
+      <div style={styles.dayNav} data-testid="eating-day-nav">
+        <button
+          type="button"
+          style={{ ...styles.dayNavBtn, ...(!canGoBack ? styles.dayNavBtnDisabled : null) }}
+          disabled={!canGoBack}
+          onClick={() => goDay(-1)}
+          aria-label="Previous day"
+        >
+          ‹
+        </button>
+        <div style={styles.dayNavCenter}>
+          <span style={styles.dayNavLabel}>
+            {hubDate === today ? "Today" : formatPlanBracketDate(hubDate)}
+          </span>
+          {hubDate !== today ? (
+            <button type="button" style={styles.dayNavToday} onClick={() => handleCalendarDate(today)}>
+              Jump to today
+            </button>
+          ) : null}
+        </div>
+        <button
+          type="button"
+          style={styles.dayNavBtn}
+          disabled={!canGoForward}
+          onClick={() => goDay(1)}
+          aria-label="Next day"
+        >
+          ›
+        </button>
+      </div>
 
       {!readOnly ? (
         <>
@@ -176,6 +225,11 @@ export default function EatingHubSection({
           {!readOnly && dateCmp <= 0 && eatingForDay.length === 0 && lastPost?.kind !== "diary" ? (
             <p style={{ ...s.muted, margin: "0 0 4px", fontSize: 13 }} data-testid="eating-ate-empty-day">
               Nothing logged for this day yet — use Ate above to post.
+            </p>
+          ) : null}
+          {!readOnly ? (
+            <p style={{ ...s.muted, margin: "8px 0 0", fontSize: 12 }} data-testid="eating-lookback-note">
+              Journal look-back is 90 days. Future dining plans have no date cap.
             </p>
           ) : null}
         </div>
@@ -295,6 +349,7 @@ export default function EatingHubSection({
         viewMonth={hubMonth}
         onViewMonthChange={onHubMonthChange}
         dayMarkers={dayMarkers}
+        lookbackStart={lookbackStart}
         events={calendarEvents}
       />
 
@@ -316,6 +371,47 @@ export default function EatingHubSection({
 }
 
 const styles = {
+  dayNav: {
+    display: "grid",
+    gridTemplateColumns: "36px 1fr 36px",
+    alignItems: "center",
+    gap: 8,
+    margin: "0 0 12px",
+  },
+  dayNavBtn: {
+    appearance: "none",
+    border: "none",
+    background: "rgba(120,120,128,0.12)",
+    borderRadius: "50%",
+    width: 32,
+    height: 32,
+    fontSize: 22,
+    lineHeight: 1,
+    color: "#3C3C43",
+    cursor: "pointer",
+    display: "grid",
+    placeItems: "center",
+  },
+  dayNavBtnDisabled: { opacity: 0.35, cursor: "default" },
+  dayNavCenter: { textAlign: "center" },
+  dayNavLabel: {
+    display: "block",
+    fontSize: 15,
+    fontWeight: 700,
+    color: "#1C1C1E",
+    letterSpacing: "-0.02em",
+  },
+  dayNavToday: {
+    appearance: "none",
+    border: "none",
+    background: "transparent",
+    color: "#007AFF",
+    fontSize: 12,
+    fontWeight: 600,
+    marginTop: 2,
+    cursor: "pointer",
+    padding: 0,
+  },
   filters: {
     display: "flex",
     flexWrap: "wrap",

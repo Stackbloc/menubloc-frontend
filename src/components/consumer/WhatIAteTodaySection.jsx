@@ -27,6 +27,10 @@ import {
   defaultWhatIAteMealPeriod,
   groupEntriesByMealPeriod,
 } from "../../lib/whatIAteTodayMealPeriod.js";
+import {
+  clampEatingLookbackDate,
+  eatingHistoryStart,
+} from "../../pages/consumer/myMenuply/eatingHubUtils.js";
 import WhatIAteTodayCalendar, {
   calendarRangeForMonth,
   defaultYmdForViewMonth,
@@ -59,6 +63,19 @@ function parseSelectedMonth(selectedDate) {
   const [y, m] = String(selectedDate || "").split("-").map(Number);
   if (!y || !m) return new Date(new Date().getFullYear(), new Date().getMonth(), 1);
   return new Date(y, m - 1, 1);
+}
+
+function pad2(n) {
+  return String(n).padStart(2, "0");
+}
+
+function toMonthFirstYmd(viewMonth) {
+  return `${viewMonth.getFullYear()}-${pad2(viewMonth.getMonth() + 1)}-01`;
+}
+
+function toMonthLastYmd(viewMonth) {
+  const last = new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 0);
+  return `${last.getFullYear()}-${pad2(last.getMonth() + 1)}-${pad2(last.getDate())}`;
 }
 
 export default function WhatIAteTodaySection({
@@ -205,22 +222,44 @@ export default function WhatIAteTodaySection({
   }
 
   function handleSelectDate(ymd) {
-    setSelectedDate(ymd || whatIAteTodayLocalDate());
-    setViewMonth(parseSelectedMonth(ymd));
+    const today = whatIAteTodayLocalDate();
+    const next = clampEatingLookbackDate(ymd, today);
+    setSelectedDate(next);
+    setViewMonth(parseSelectedMonth(next));
     setLoading(true);
   }
 
   function handleViewMonthChange(nextMonth) {
+    const today = whatIAteTodayLocalDate();
+    const lookback = eatingHistoryStart(today);
+    const first = toMonthFirstYmd(nextMonth);
+    const last = toMonthLastYmd(nextMonth);
+    if (last < lookback) {
+      setViewMonth(parseSelectedMonth(lookback));
+      setSelectedDate(lookback);
+      setLoading(true);
+      return;
+    }
+    if (first > today) {
+      setViewMonth(parseSelectedMonth(today));
+      setSelectedDate(today);
+      setLoading(true);
+      return;
+    }
     setViewMonth(nextMonth);
     setSelectedDate((prev) => {
-      if (isYmdInViewMonth(prev, nextMonth)) return prev;
-      return defaultYmdForViewMonth(nextMonth);
+      if (isYmdInViewMonth(prev, nextMonth)) {
+        return clampEatingLookbackDate(prev, today);
+      }
+      return clampEatingLookbackDate(defaultYmdForViewMonth(nextMonth, today), today);
     });
     setLoading(true);
   }
 
   const grouped = groupEntriesByMealPeriod(entries);
   const isToday = selectedDate === whatIAteTodayLocalDate();
+  const diaryLookbackStart = eatingHistoryStart();
+  const diaryMaxYmd = whatIAteTodayLocalDate();
 
   const calendarBlock = (
     <WhatIAteTodayCalendar
@@ -230,6 +269,8 @@ export default function WhatIAteTodaySection({
       onViewMonthChange={handleViewMonthChange}
       dayCounts={calendarDays}
       readOnly={mode === "viewer"}
+      minYmd={diaryLookbackStart}
+      maxYmd={diaryMaxYmd}
     />
   );
 

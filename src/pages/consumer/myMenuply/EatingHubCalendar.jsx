@@ -22,6 +22,7 @@ export default function EatingHubCalendar({
   onViewMonthChange,
   dayMarkers = [],
   readOnly = false,
+  lookbackStart = null,
   testId = "eating-calendar-grid",
 }) {
   const today = whatIAteTodayLocalDate();
@@ -45,14 +46,28 @@ export default function EatingHubCalendar({
     cells.push(toYmd(new Date(viewMonth.getFullYear(), viewMonth.getMonth(), day)));
   }
 
+  function canShiftMonth(delta) {
+    if (delta > 0 || !lookbackStart) return true;
+    const next = new Date(viewMonth.getFullYear(), viewMonth.getMonth() + delta, 1);
+    const lastOfNext = toYmd(new Date(next.getFullYear(), next.getMonth() + 1, 0));
+    return lastOfNext >= lookbackStart;
+  }
+
   function shiftMonth(delta) {
+    if (!canShiftMonth(delta)) return;
     onViewMonthChange(new Date(viewMonth.getFullYear(), viewMonth.getMonth() + delta, 1));
   }
 
   return (
     <div data-testid={testId} style={styles.wrap}>
       <div style={styles.monthRow}>
-        <button type="button" style={styles.navBtn} onClick={() => shiftMonth(-1)} aria-label="Previous month">
+        <button
+          type="button"
+          style={{ ...styles.navBtn, ...(!canShiftMonth(-1) ? styles.navBtnDisabled : null) }}
+          onClick={() => shiftMonth(-1)}
+          disabled={!canShiftMonth(-1)}
+          aria-label="Previous month"
+        >
           ‹
         </button>
         <div style={styles.monthCenter}>
@@ -96,6 +111,7 @@ export default function EatingHubCalendar({
           const hasMarkers = pastCount > 0 || futureCount > 0;
           const selected = ymd === selectedDate;
           const isToday = ymd === today;
+          const beforeLookback = Boolean(lookbackStart && ymd < lookbackStart);
 
           const ariaParts = [ymd];
           if (pastCount) ariaParts.push(`${pastCount} ate`);
@@ -105,9 +121,9 @@ export default function EatingHubCalendar({
             <button
               key={ymd}
               type="button"
-              disabled={readOnly && !hasMarkers}
+              disabled={beforeLookback || (readOnly && !hasMarkers)}
               onClick={() => onSelectDate(ymd)}
-              style={styles.dayBtn}
+              style={{ ...styles.dayBtn, ...(beforeLookback ? styles.dayBtnDisabled : null) }}
               aria-pressed={selected}
               aria-label={ariaParts.join(", ")}
             >
@@ -157,6 +173,8 @@ const styles = {
     display: "grid",
     placeItems: "center",
   },
+  navBtnDisabled: { opacity: 0.35, cursor: "default" },
+  dayBtnDisabled: { opacity: 0.35, cursor: "default" },
   monthCenter: { textAlign: "center" },
   monthTitle: {
     margin: 0,

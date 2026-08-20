@@ -11,8 +11,9 @@ import BottomNav from "../../components/BottomNav.jsx";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
 import EatingHubSection from "./myMenuply/EatingHubSection.jsx";
 import {
-  buildEatingDayMarkers,
+  buildEatingDayMarkersFromCalendar,
   compareYmd,
+  eatingHistoryStart,
   planYmd,
 } from "./myMenuply/eatingHubUtils.js";
 import * as s from "./myMenuply/myMenuplyStyles.js";
@@ -30,6 +31,7 @@ import {
   listConnectionsPlanning,
   listDinerDiningCrews,
   listPeerWhatIAteToday,
+  listPeerWhatIAteTodayCalendar,
   listPeerProfileMedia,
   listPeerWantToEat,
   requestJoinDiningCrew,
@@ -69,6 +71,7 @@ export default function ConsumerConnectionPeerPage() {
   const [connection, setConnection] = useState(null);
   const [peerConnections, setPeerConnections] = useState([]);
   const [eating, setEating] = useState([]);
+  const [eatingCalendarDays, setEatingCalendarDays] = useState([]);
   const [plans, setPlans] = useState([]);
   const [joinMeHref, setJoinMeHref] = useState("");
   const [hubDate, setHubDate] = useState(() => whatIAteTodayLocalDate());
@@ -86,13 +89,16 @@ export default function ConsumerConnectionPeerPage() {
   const load = useCallback(async () => {
     setError("");
     try {
-      const [connData, peerConnData, eatData, planData, diaryData, crewData, mediaData, wantData] =
+      const [connData, peerConnData, eatData, planData, diaryData, calendarData, crewData, mediaData, wantData] =
         await Promise.all([
         listConnections("accepted"),
         listConnections("accepted", peerId).catch(() => ({ accepted: [] })),
         listConnectionsEating(40, peerId).catch(() => ({ items: [] })),
         listConnectionsPlanning(40, peerId).catch(() => ({ items: [] })),
         listPeerWhatIAteToday(peerId, hubDate).catch(() => ({ entries: [] })),
+        listPeerWhatIAteTodayCalendar(peerId, eatingHistoryStart(), whatIAteTodayLocalDate()).catch(() => ({
+          days: [],
+        })),
         listDinerDiningCrews(peerId).catch(() => ({ crews: [] })),
         listPeerProfileMedia(peerId).catch(() => ({ items: [] })),
         listPeerWantToEat(peerId).catch(() => ({ items: [] })),
@@ -121,6 +127,7 @@ export default function ConsumerConnectionPeerPage() {
       const activityItems = mapConnectionsEatingForHub(eatItems, peerId);
       const planItems = (planData.items || []).filter((item) => Number(item.peer?.id) === peerId);
       setEating(mergeEatingFeedForHub(diaryItems, activityItems).slice(0, 12));
+      setEatingCalendarDays(calendarData?.days || []);
       setPlans(planItems.filter((item) => item.kind !== "join_me" && item.href).map(asPlan));
       setCrews(crewData.crews || crewData.items || []);
       setPeerProfileMedia(mediaData?.items || []);
@@ -156,7 +163,7 @@ export default function ConsumerConnectionPeerPage() {
   const scheduledPlans = plans.filter(
     (plan) => compareYmd(plan.plan_date) >= 0 && isScheduledEatingPlan(plan)
   );
-  const shownPlans = scheduledPlans.slice(0, 24);
+  const shownPlans = scheduledPlans;
   const calendarEvents = shownPlans.map((plan) => ({
     key: futurePlanKey(plan),
     ymd: planYmd(plan.plan_date),
@@ -164,7 +171,7 @@ export default function ConsumerConnectionPeerPage() {
     plan,
   }));
 
-  const dayMarkers = buildEatingDayMarkers({ eatingRows: eating, planRows: scheduledPlans });
+  const dayMarkers = buildEatingDayMarkersFromCalendar(eatingCalendarDays, scheduledPlans);
 
   async function requestCrewJoin(crewId) {
     setCrewJoinBusy(String(crewId));

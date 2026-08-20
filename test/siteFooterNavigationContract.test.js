@@ -1,7 +1,7 @@
 /**
  * Public SiteFooter navigation — canonical marketplace links (2026-07-09 d333af2).
  * Diners / Restaurants (onboarding) / Clusters / Creators (`/creative-pros`).
- * Distributors route kept for invite/direct access — no public footer entry.
+ * Food Distributors is the last For Businesses link (`/distributors`).
  * no restaurant auth links in footer row.
  */
 import assert from "node:assert/strict";
@@ -33,8 +33,14 @@ function testFooterMarketplaceLinks() {
   assert.match(src, /What People Are Eating/);
   assert.match(src, /<Link to="\/creative-pros"/);
   assert.match(src, /discovery\.footer\.creators/);
+  assert.match(src, /<Link to="\/distributors"/);
+  assert.match(src, /discovery\.footer\.foodDistributors/);
   assert.doesNotMatch(src, /Owner tools/);
-  assert.doesNotMatch(src, /<Link to="\/distributors"/);
+  const businesses = src.slice(src.indexOf("For Businesses"), src.indexOf(">Menuply<"));
+  assert.ok(
+    businesses.lastIndexOf('<Link to="/distributors"') > businesses.lastIndexOf('<Link to="/creative-pros"'),
+    "expected Food Distributors to be the last For Businesses link"
+  );
   assert.doesNotMatch(src, /<Link to="\/operator\/login"/);
   assert.doesNotMatch(src, /discovery\.footer\.signup/);
   assert.doesNotMatch(src, /discovery\.footer\.signin/);
@@ -58,7 +64,7 @@ function testDistributorsPathRemainsRouted() {
   assert.match(
     src,
     /path="\/distributors"/,
-    "expected /distributors to remain routed for invite-only direct links"
+    "expected /distributors to remain routed for the public Food Distributors footer link"
   );
 }
 
