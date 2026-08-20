@@ -18,6 +18,8 @@ export default function ConsumerCameraSheet({
   facingMode = "environment",
   onCapture,
   onNativeFallback,
+  allowModeSwitch = false,
+  onModeChange,
 }) {
   const videoRef = useRef(null);
   const streamRef = useRef(null);
@@ -143,6 +145,30 @@ export default function ConsumerCameraSheet({
       }}
     >
       <div style={styles.sheet} onClick={(e) => e.stopPropagation()}>
+        {allowModeSwitch ? (
+          <div style={styles.modeRow} role="tablist" aria-label="Capture mode">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={mode === "photo"}
+              data-testid="consumer-camera-mode-photo"
+              style={{ ...styles.modeBtn, ...(mode === "photo" ? styles.modeBtnActive : null) }}
+              onClick={() => onModeChange?.("photo")}
+            >
+              Photo
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={mode === "video"}
+              data-testid="consumer-camera-mode-video"
+              style={{ ...styles.modeBtn, ...(mode === "video" ? styles.modeBtnActive : null) }}
+              onClick={() => onModeChange?.("video")}
+            >
+              Video
+            </button>
+          </div>
+        ) : null}
         <div style={styles.previewWrap}>
           <video ref={videoRef} playsInline muted autoPlay style={styles.preview} />
           {busy && !recording ? <div style={styles.loading}>Opening camera…</div> : null}
@@ -208,6 +234,27 @@ const styles = {
     borderRadius: 16,
     overflow: "hidden",
     boxShadow: "0 20px 50px rgba(0,0,0,0.28)",
+  },
+  modeRow: {
+    display: "flex",
+    gap: 8,
+    padding: "12px 14px 0",
+  },
+  modeBtn: {
+    flex: 1,
+    minHeight: 36,
+    borderRadius: 999,
+    border: "1.5px solid #d1d5db",
+    background: "#fff",
+    fontWeight: 700,
+    fontSize: 13,
+    cursor: "pointer",
+    color: "#334155",
+  },
+  modeBtnActive: {
+    borderColor: "#16A34A",
+    background: "rgba(34, 197, 94, 0.12)",
+    color: "#14532d",
   },
   previewWrap: {
     position: "relative",

@@ -18,8 +18,10 @@ test("Dining Crews Phase 3 social entity UI + API client", () => {
   assert.match(page, /Discover public crews/);
   assert.match(page, /Invite to Eat \(crew outing\)/);
   assert.match(page, /diningCrewId=\{Number\(crewId\)\}/);
-  assert.match(page, /dining-crew-food-photo-input/);
+  assert.match(page, /dining-crew-food-photo/);
+  assert.match(page, /MenuplyMediaPicker/);
   assert.match(page, /Share food photo/);
+  assert.doesNotMatch(page, /dining-crew-food-photo-input/);
   assert.match(page, /postDiningCrewPhoto/);
   assert.match(page, /ShareModal/);
   assert.match(page, /Share invite/);

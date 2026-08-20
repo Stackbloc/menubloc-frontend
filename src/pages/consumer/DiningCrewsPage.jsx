@@ -34,6 +34,7 @@ import {
   CONSUMER_API_BASE,
 } from "../../lib/consumerApi.js";
 import DiningCrewFoodEntityPicker from "../../components/diningCrews/DiningCrewFoodEntityPicker.jsx";
+import MenuplyMediaPicker from "../../components/social/MenuplyMediaPicker.jsx";
 import { buildDiningCrewInviteShareData } from "../../lib/diningCrewInviteShare.js";
 
 function resolveMediaUrl(url) {
@@ -280,7 +281,6 @@ export function DiningCrewDetailPage() {
   const [inviteRestaurant, setInviteRestaurant] = useState(null);
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [photoFile, setPhotoFile] = useState(null);
-  const photoInputRef = React.useRef(null);
 
   const loadCrew = useCallback(async () => {
     const data = await getDiningCrew(crewId);
@@ -440,7 +440,7 @@ export function DiningCrewDetailPage() {
         setText("");
         setSelectedEntity(null);
         setEntityType("text");
-        if (photoInputRef.current) photoInputRef.current.value = "";
+        setPhotoFile(null);
         await loadMessages(activeConvoId);
         return;
       }
@@ -776,14 +776,18 @@ export function DiningCrewDetailPage() {
                       disabled={busy}
                     />
                     <div style={{ marginTop: 8, display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-                      <input
-                        ref={photoInputRef}
-                        type="file"
-                        accept="image/jpeg,image/png,image/webp"
-                        capture="environment"
-                        data-testid="dining-crew-food-photo-input"
+                      <MenuplyMediaPicker
+                        source="camera"
+                        facingMode="environment"
+                        allowPhoto
+                        allowVideo={false}
+                        file={photoFile}
+                        onFile={setPhotoFile}
+                        onClear={() => setPhotoFile(null)}
                         disabled={busy}
-                        onChange={(e) => setPhotoFile(e.target.files?.[0] || null)}
+                        showPreview={Boolean(photoFile)}
+                        testId="dining-crew-food-photo"
+                        ariaLabel="Take food photo"
                       />
                       {photoFile ? (
                         <span style={styles.muted}>Photo ready: {photoFile.name}</span>

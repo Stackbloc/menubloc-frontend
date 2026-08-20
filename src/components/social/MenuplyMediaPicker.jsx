@@ -1,10 +1,14 @@
 /**
- * Camera icon → native device camera (capture). Photo vs video inferred from the file.
- * Library uploads go through Post about → Upload from library (source="library").
- * Menu/OCR uploads do not use this.
+ * Camera icon → live getUserMedia sheet (photo/video). Library via source="library"
+ * (Post about Upload from library). Menu/OCR uploads do not use this.
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import ConsumerCameraSheet from "../consumer/ConsumerCameraSheet.jsx";
+import {
+  inlineCameraSupported,
+  preferInlineCamera,
+} from "../../lib/consumerCameraCapture.js";
 import { isVideoFile } from "../../lib/eatingMediaUtils.js";
 import { socialBtn } from "../../lib/socialDesignTokens.js";
 
@@ -27,7 +31,7 @@ export default function MenuplyMediaPicker({
   facingMode = "environment",
   allowPhoto = true,
   allowVideo = true,
-  /** "camera" = native capture; "library" = files/photos without capture */
+  /** "camera" = live camera sheet; "library" = files without capture */
   source = "camera",
   testId = "menuply-media-picker",
   ariaLabel = "Add photo or video",
@@ -37,17 +41,39 @@ export default function MenuplyMediaPicker({
   openOnMount = false,
 }) {
   const [previewUrl, setPreviewUrl] = useState("");
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [sheetMode, setSheetMode] = useState(allowPhoto ? "photo" : "video");
   const inputRef = useRef(null);
   const useLibrary = source === "library";
+  const canInlineCamera = !useLibrary && inlineCameraSupported() && preferInlineCamera();
 
   const accept = useMemo(
     () => buildAccept({ allowPhoto, allowVideo }),
     [allowPhoto, allowVideo]
   );
 
-  function openNative() {
+  const fallbackAccept = useMemo(() => {
+    if (sheetMode === "video" || (!allowPhoto && allowVideo)) return "video/*";
+    return "image/*";
+  }, [sheetMode, allowPhoto, allowVideo]);
+
+  function openFileFallback() {
     if (disabled) return;
     inputRef.current?.click();
+  }
+
+  function openNative() {
+    if (disabled) return;
+    if (useLibrary) {
+      openFileFallback();
+      return;
+    }
+    if (canInlineCamera) {
+      setSheetMode(allowPhoto ? "photo" : "video");
+      setSheetOpen(true);
+      return;
+    }
+    openFileFallback();
   }
 
   useEffect(() => {
@@ -72,6 +98,7 @@ export default function MenuplyMediaPicker({
   }
 
   const isVideo = isVideoFile(file);
+  const showModeSwitch = allowPhoto && allowVideo && canInlineCamera;
 
   return (
     <div data-testid={testId} style={{ display: "inline-flex", flexDirection: "column", gap: 8 }}>
@@ -114,13 +141,29 @@ export default function MenuplyMediaPicker({
       <input
         ref={inputRef}
         type="file"
-        accept={accept}
+        accept={useLibrary ? accept : fallbackAccept}
         {...(useLibrary ? {} : { capture: captureAttr(facingMode) })}
         hidden
         disabled={disabled}
         data-testid={useLibrary ? `${testId}-library-input` : `${testId}-camera-input`}
         onChange={handlePick}
       />
+
+      {!useLibrary ? (
+        <ConsumerCameraSheet
+          open={sheetOpen}
+          onClose={() => setSheetOpen(false)}
+          mode={sheetMode}
+          facingMode={facingMode}
+          allowModeSwitch={showModeSwitch}
+          onModeChange={setSheetMode}
+          onCapture={(captured) => {
+            if (captured) onFile?.(captured);
+            setSheetOpen(false);
+          }}
+          onNativeFallback={openFileFallback}
+        />
+      ) : null}
     </div>
   );
 }

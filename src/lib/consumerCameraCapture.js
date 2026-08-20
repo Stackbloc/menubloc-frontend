@@ -8,8 +8,8 @@ export function inlineCameraSupported() {
 }
 
 export function preferInlineCamera() {
-  // Social MVP: native device camera / media picker only (MenuplyMediaPicker).
-  return false;
+  // Live getUserMedia sheet — hidden file+capture opens Files/Downloads on many phones.
+  return inlineCameraSupported();
 }
 
 export function videoRecorderSupported() {
