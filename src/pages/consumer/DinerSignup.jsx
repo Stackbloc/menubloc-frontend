@@ -5,6 +5,7 @@ import SmsAuthModal from "../../components/auth/SmsAuthModal.jsx";
 import SiteFooter from "../../components/SiteFooter.jsx";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
 import { buildLegalConsentPayload } from "../../lib/legalConsent.js";
+import { buildDinerSignupAttribution } from "../../lib/dinerSignupAttribution.js";
 import { FormError, PasswordField } from "../../components/consumer/ConsumerAuthShared.jsx";
 
 const styles = {
@@ -172,6 +173,7 @@ export default function DinerSignup() {
         password,
         confirm_password: password,
         ...buildLegalConsentPayload(),
+        ...buildDinerSignupAttribution({ signupPage: "diner" }),
       });
       if (result?.requires_phone_verification) {
         setPhoneVerificationToken(result.phone_verification_token || "");

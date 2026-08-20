@@ -7,6 +7,7 @@ import { buildLegalConsentPayload } from "../../lib/legalConsent.js";
 import { resolveConsumerAuthNext, withConsumerAuthNext } from "../../lib/consumerAuthNext.js";
 import { isDinerQrConnectPath } from "../../lib/dinerQrShare.js";
 import { resolveConsumerLoginErrorMessage, CONSUMER_AUTH_ERRORS } from "../../lib/consumerAuthErrors.js";
+import { buildDinerSignupAttribution } from "../../lib/dinerSignupAttribution.js";
 import {
   AuthPageFrame,
   FormError,
@@ -60,6 +61,9 @@ export default function ConsumerSignup() {
         password,
         confirm_password: password,
         ...buildLegalConsentPayload(),
+        ...buildDinerSignupAttribution({
+          fromQrConnect: isDinerQrConnectPath(redirectTo),
+        }),
       });
       if (result?.requires_phone_verification) {
         setPhoneVerificationToken(result.phone_verification_token || "");

@@ -26,6 +26,8 @@ describe("owner diner accounts panel", () => {
     assert.match(page, /getOwnerDinerAccounts/);
     assert.match(page, /Total diners/);
     assert.match(page, /Account opened/);
+    assert.match(page, /Referral source/);
+    assert.match(page, /referral_source_label/);
     assert.match(page, /Account closed/);
     assert.match(page, /Geographic market/);
     assert.match(page, /formatDateTime/);

@@ -39,7 +39,7 @@ export default function OwnerDiners() {
     const needle = query.trim().toLowerCase();
     if (!needle) return list;
     return list.filter((row) => {
-      const hay = [row.name, row.email, row.geographic_market, row.status]
+      const hay = [row.name, row.email, row.geographic_market, row.referral_source_label, row.status]
         .filter(Boolean)
         .join(" ")
         .toLowerCase();
@@ -51,7 +51,7 @@ export default function OwnerDiners() {
     <OwnerLayout title="Diner accounts">
       <SectionTitle
         title="All diner accounts"
-        subtitle="Lifetime consumer accounts (not restaurant Stripe subscribers). Opened/closed show date and time of day. Platform staff accounts currently excluded from counts and this list (ids 2, 3, 4, 29 only — not future name matches). Closed times appear only when status is closed, disabled, deleted, inactive, or cancelled."
+        subtitle="Lifetime consumer accounts (not restaurant Stripe subscribers). Referral source is Direct, QR code, or Website referral when captured at signup. Opened/closed show date and time of day. Platform staff accounts currently excluded from counts and this list (ids 2, 3, 4, 29 only — not future name matches). Closed times appear only when status is closed, disabled, deleted, inactive, or cancelled."
       />
 
       {error ? (
@@ -72,7 +72,7 @@ export default function OwnerDiners() {
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Name, email, market, or status"
+            placeholder="Name, email, market, referral source, or status"
             data-testid="diner-accounts-filter"
             style={{
               display: "block",
@@ -93,6 +93,7 @@ export default function OwnerDiners() {
               ["Name", "name", (row) => row.name || "—"],
               ["Email", "email", (row) => row.email || "—"],
               ["Account opened", "opened_at", (row) => formatDateTime(row.opened_at)],
+              ["Referral source", "referral_source_label", (row) => row.referral_source_label || "Direct"],
               ["Account closed", "closed_at", (row) => formatDateTime(row.closed_at)],
               ["Geographic market", "geographic_market", (row) => row.geographic_market || "—"],
               ["Status", "status", (row) => row.status || "—"],
