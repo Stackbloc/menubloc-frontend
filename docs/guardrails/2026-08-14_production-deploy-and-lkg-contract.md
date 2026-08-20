@@ -34,36 +34,54 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` @ clean `main` |
-| Git commit | `109e6fc` — Ate post skippable details + Who can find me labels + diner activity hero |
-| Vercel deployment | `menubloc-frontend-fuigm2qkl-menuply.vercel.app` |
-| Live bundle | `index-Dv-4gviG.js` |
+| Git commit | `2108f37` — My Menuply exhibit palette, presentation rails, compose sheet |
+| Vercel deployment | `menubloc-frontend-9yjbhvqe2-menuply.vercel.app` |
+| Live bundle | `index-B4EE7_sD.js` |
 | Aliases | `menuply.com`, `www.menuply.com`, `crm.menuply.com`, `venues.menuply.com` |
-| Tip-gate | **PASS** (apex + www) verified 2026-08-19 after ate-follow-up CPD |
-| Feature | Optimistic Ate card; optional restaurant/homemade/recipe; readable discoverability radios; diner activity 280px hero |
+| Tip-gate | **PASS** (apex + www) verified 2026-08-19 after My Menuply presentation CPD |
+| Feature | Cream/green exhibit styling; stats/highlights/rails; + Log compose sheet; prominent journal day nav |
 
 ### Backend (Railway)
 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-backend-main` @ clean `main` |
-| Git on origin | `57e08927` — Waiter want-list briefing + eating media video (migration 0277) |
-| Live health SHA | `57e08927…` (verified 2026-08-19 Eating hub CPD) |
+| Git on origin | `ad3d097a` — distributor join/claim registrations → BD CRM (`food_distributor`) |
+| Live health SHA | `ad3d097a…` (verified 2026-08-19 eating-lookback/distributors CPD) |
 | Health URL | `https://menubloc-backend-production.up.railway.app/health` |
-| `commit_hash` | `57e08927` (live at CPD certify) |
-| DB | `0277` eating media video + food_activity link (deploy with BE) |
-| Smoke | tip-gate PASS `fuigm2qkl` / `index-Dv-4gviG.js`; health `f593a846`; bundle railway=59 localhost=9 |
+| `commit_hash` | `ad3d097a` (live at CPD certify) |
+| DB | `0278` CRM `food_distributor` role category (apply on prod if not yet) |
+| Smoke | tip-gate PASS `9yjbhvqe2` / `index-B4EE7_sD.js`; health `ad3d097a`; bundle railway=60 localhost=9 |
 
 ### Restore current tip (if tip-gate fails mid-change)
 
 ```bash
 cd /Users/andrebarber/Desktop/menubloc/menubloc-frontend-main
-npx vercel alias set menubloc-frontend-6o01ok4ww-menuply.vercel.app menuply.com
-npx vercel alias set menubloc-frontend-6o01ok4ww-menuply.vercel.app www.menuply.com
-npx vercel alias set menubloc-frontend-6o01ok4ww-menuply.vercel.app crm.menuply.com
-npx vercel alias set menubloc-frontend-6o01ok4ww-menuply.vercel.app venues.menuply.com
+npx vercel alias set menubloc-frontend-9yjbhvqe2-menuply.vercel.app menuply.com
+npx vercel alias set menubloc-frontend-9yjbhvqe2-menuply.vercel.app www.menuply.com
+npx vercel alias set menubloc-frontend-9yjbhvqe2-menuply.vercel.app crm.menuply.com
+npx vercel alias set menubloc-frontend-9yjbhvqe2-menuply.vercel.app venues.menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 ```
+
+### Prior tip — 90-day eating look-back + Food Distributors footer (rollback target)
+
+| Field | Value |
+|-------|-------|
+| Deployment | `menubloc-frontend-8zfz8l0px-menuply.vercel.app` |
+| Bundle | `index-B855g_K3.js` |
+| FE commit | `56c5d44` |
+| BE health | `ad3d097a` |
+
+### Prior tip — Ate post follow-up + diner visual cards (rollback target)
+
+| Field | Value |
+|-------|-------|
+| Deployment | `menubloc-frontend-fuigm2qkl-menuply.vercel.app` |
+| Bundle | `index-Dv-4gviG.js` |
+| FE commit | `109e6fc` |
+| BE health | `57e08927` / `f593a846` |
 
 ### Prior tip — Food social MVP Stages 1–2 (rollback target)
 
