@@ -6,7 +6,7 @@ import { restaurantPathFromRow } from "../../../lib/canonicalUrl.js";
 import EatingSocialActions from "./EatingSocialActions.jsx";
 import { resolveConsumerMediaUrl } from "../../../lib/consumerApi.js";
 import { resolveEatingDishVisual } from "./eatingDishVisual.js";
-import { prefersHoverReveal } from "./mediaHoverReveal.js";
+import { useLongPressReveal } from "./mediaLongPressReveal.js";
 import {
   compareMealPeriod,
   mealPeriodLabel,
@@ -598,8 +598,7 @@ function WantToEatCard({
   const place = String(want.restaurant_name || "").trim();
   const foodName = String(want.food_name || "").trim() || "Want";
   const canDelete = !readOnly && typeof onDelete === "function" && want?.id != null;
-  const [hovered, setHovered] = useState(() => !prefersHoverReveal());
-  const showDelete = canDelete && (hovered || !prefersHoverReveal());
+  const { open, dismiss, consumeArmedClick, bind } = useLongPressReveal(canDelete);
 
   const cardStyle = isScroll
     ? showHeroVisual
@@ -700,7 +699,17 @@ function WantToEatCard({
   let main;
   if (href) {
     main = (
-      <Link to={href} style={cardStyle} data-testid="want-to-eat-item-link">
+      <Link
+        to={href}
+        style={cardStyle}
+        data-testid="want-to-eat-item-link"
+        onClick={(e) => {
+          if (consumeArmedClick() || open) {
+            e.preventDefault();
+            dismiss();
+          }
+        }}
+      >
         {body}
       </Link>
     );
@@ -716,7 +725,14 @@ function WantToEatCard({
         type="button"
         style={cardStyle}
         data-testid="want-to-eat-item-body"
-        onClick={() => onSelectItem?.(want)}
+        onClick={() => {
+          if (consumeArmedClick()) return;
+          if (open) {
+            dismiss();
+            return;
+          }
+          onSelectItem?.(want);
+        }}
       >
         {body}
       </button>
@@ -724,20 +740,9 @@ function WantToEatCard({
   }
 
   return (
-    <div
-      style={shellStyle}
-      data-testid="want-to-eat-item"
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(prefersHoverReveal() ? false : true)}
-      onFocusCapture={() => setHovered(true)}
-      onBlurCapture={(e) => {
-        if (!e.currentTarget.contains(e.relatedTarget)) {
-          setHovered(prefersHoverReveal() ? false : true);
-        }
-      }}
-    >
+    <div style={shellStyle} data-testid="want-to-eat-item" {...bind}>
       {main}
-      {showDelete ? (
+      {open ? (
         <button
           type="button"
           style={s.mealHolderDelete}
@@ -747,7 +752,9 @@ function WantToEatCard({
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
-            if (!deleteBusy) onDelete?.(want);
+            if (deleteBusy) return;
+            dismiss();
+            onDelete?.(want);
           }}
         >
           Delete
