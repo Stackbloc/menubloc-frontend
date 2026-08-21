@@ -43,14 +43,14 @@ test("Post about Upload from library opens compose with media=library", () => {
   assert.match(sheet, /id: "upload-media"/);
 });
 
-test("Empty What I Ate meal slots open native camera then compose", () => {
+test("What I Ate meal board is presentation-only (no empty cameras)", () => {
   const board = read("src/pages/consumer/myMenuply/WhatIAteMealBoard.jsx");
-  assert.match(board, /source="camera"/);
-  assert.match(board, /onSlotCapture/);
-  assert.match(board, /what-i-ate-meal-camera-/);
+  assert.match(board, /showEmptyHolders = false/);
   assert.match(board, /visibleWhatIAteMealPeriods/);
-  assert.match(board, /isPastDay/);
+  assert.match(board, /mealHeroCard|restaurant_logo_url/);
   assert.match(board, /No entries/);
+  assert.doesNotMatch(board, /meal-holder-add-media/);
+  assert.doesNotMatch(board, /what-i-ate-meal-camera-/);
   assert.doesNotMatch(board, /onLogMeal/);
 });
 
@@ -65,7 +65,7 @@ test("eating surfaces use MenuplyMediaPicker", () => {
   assert.match(compose, /openLibraryOnMount/);
   assert.match(attach, /MenuplyMediaPicker/);
   assert.match(quick, /MenuplyMediaPicker/);
-  assert.match(gallery, /MenuplyMediaPicker/);
+  assert.doesNotMatch(gallery, /MenuplyMediaPicker/);
   assert.match(hero, /MenuplyMediaPicker/);
   assert.match(hero, /facingMode="user"/);
 });
@@ -78,9 +78,10 @@ test("Dining crew food photo uses MenuplyMediaPicker (not raw file input)", () =
 
 test("Eating compose copy and meal time chips", () => {
   const utils = read("src/pages/consumer/myMenuply/eatingHubUtils.js");
-  assert.match(utils, /What did you eat today/);
-  assert.match(utils, /want to eat in the future/);
-  assert.match(utils, /Schedule future dining plans/);
+  assert.match(utils, /What I'm Eating/);
+  assert.match(utils, /Want to Eat/);
+  assert.match(utils, /Eating Plan/);
+  assert.match(utils, /Schedule a future meal/);
   const compose = read("src/pages/consumer/myMenuply/EatingCompose.jsx");
   assert.match(compose, /WHAT_I_ATE_MEAL_PERIODS/);
   assert.match(compose, /eating-meal-\$\{slot\.id\}/);

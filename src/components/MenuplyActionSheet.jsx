@@ -1,29 +1,12 @@
 /**
  * Compact X action launcher — create content for My Menuply.
- * Profile displays; X creates. I'm Eating At stays guest-open.
+ * Profile displays; X creates.
  */
 
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useConsumer } from "../context/ConsumerContext.jsx";
-
-function imEatingPath(pathname) {
-  const parts = String(pathname || "").split("/").filter(Boolean);
-  const menuIdx = parts.findIndex((part) => part === "menu-items" || part === "menu-item-info");
-  if (menuIdx >= 0 && parts[menuIdx + 1]) {
-    return `/account/im-eating?menu_item_id=${encodeURIComponent(decodeURIComponent(parts[menuIdx + 1]))}`;
-  }
-  const restIdx = parts.findIndex((part) => part === "restaurants");
-  if (restIdx >= 0 && !["operator", "owner", "distributor"].includes(parts[0])) {
-    const rest = parts
-      .slice(restIdx + 1)
-      .filter((part) => !["menu", "billboard", "qr-codes", "display"].includes(part));
-    const slug = rest[rest.length - 1];
-    if (slug) return `/account/im-eating?restaurant_id=${encodeURIComponent(slug)}`;
-  }
-  return "/account/im-eating";
-}
 
 function inviteToEatPath(pathname) {
   const parts = String(pathname || "").split("/").filter(Boolean);
@@ -52,6 +35,13 @@ function inviteToEatPath(pathname) {
 
 /** Actions shown under bottom-nav Post (X) — creation hub for My Menuply. */
 export const POST_ABOUT_ACTIONS = [
+  {
+    id: "diner-qr",
+    title: "My Diner QR",
+    description: "Show your code so someone nearby can connect with you.",
+    to: "/account/diner-qr",
+    guestOk: false,
+  },
   {
     id: "ate",
     title: "What I'm Eating",
@@ -95,14 +85,6 @@ export const POST_ABOUT_ACTIONS = [
     guestOk: true,
   },
   {
-    id: "im-eating",
-    title: "I'm Eating At",
-    description: "Share where you are eating right now.",
-    to: "/account/im-eating",
-    guestOk: true,
-    eatingContext: true,
-  },
-  {
     id: "invite",
     title: "Invite to Eat",
     description: "Pick a restaurant, invite connects, and share the link.",
@@ -111,24 +93,24 @@ export const POST_ABOUT_ACTIONS = [
     inviteContext: true,
   },
   {
-    id: "diner-qr",
-    title: "My Diner QR",
-    description: "Show your code so someone nearby can connect with you.",
-    to: "/account/diner-qr",
-    guestOk: false,
-  },
-  {
-    id: "connects",
-    title: "My Connects",
-    description: "See your connects and what they're eating.",
-    to: "/my-menuply?focus=connects",
-    guestOk: false,
-  },
-  {
     id: "upload-media",
     title: "Upload from library",
     description: "Add a photo or video from your library, then post What I'm Eating.",
     to: "/my-menuply?compose=ate&media=library",
+    guestOk: false,
+  },
+  {
+    id: "profile-gallery",
+    title: "Profile gallery",
+    description: "Add a photo or video with your camera, or upload from your library.",
+    to: "/my-menuply?compose=profile-gallery",
+    guestOk: false,
+  },
+  {
+    id: "my-account",
+    title: "My Account",
+    description: "Account settings, security, and preferences.",
+    to: "/account",
     guestOk: false,
   },
 ];
@@ -157,7 +139,6 @@ export default function MenuplyActionSheet({ open, onClose }) {
   function go(action) {
     onClose();
     let to = action.to;
-    if (action.eatingContext) to = imEatingPath(pathname);
     if (action.inviteContext) to = inviteToEatPath(pathname);
     if (!action.guestOk && !isAuthenticated) {
       navigate(`/account/login?next=${encodeURIComponent(to)}`);

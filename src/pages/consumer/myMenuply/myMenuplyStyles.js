@@ -881,11 +881,22 @@ export const mealBoardHint = {
   color: MUTED,
 };
 
+export const mealBoardHero = {
+  display: "grid",
+  gap: 18,
+  marginTop: 4,
+};
+
 export const mealRow = {
   display: "grid",
   gridTemplateColumns: "88px 1fr",
   gap: 10,
   alignItems: "stretch",
+};
+
+export const mealRowStack = {
+  display: "grid",
+  gap: 8,
 };
 
 export const mealRowLabel = {
@@ -907,6 +918,11 @@ export const mealRowTrack = {
   scrollbarWidth: "thin",
 };
 
+export const mealRowStackTrack = {
+  display: "grid",
+  gap: 12,
+};
+
 export const mealHolder = {
   flex: "0 0 168px",
   width: 168,
@@ -917,6 +933,99 @@ export const mealHolder = {
   border: `1px solid ${BORDER}`,
   boxShadow: "0 10px 28px rgba(20, 83, 45, 0.1)",
   position: "relative",
+};
+
+/** Full-width dish photo / logo hero for What I'm Eating. */
+export const mealHeroCard = {
+  width: "100%",
+  borderRadius: 18,
+  overflow: "hidden",
+  background: "#0f172a",
+  border: `1px solid ${BORDER}`,
+  boxShadow: "0 14px 36px rgba(20, 83, 45, 0.14)",
+  position: "relative",
+};
+
+export const mealHeroMediaBtn = {
+  appearance: "none",
+  border: "none",
+  padding: 0,
+  margin: 0,
+  width: "100%",
+  minHeight: 220,
+  aspectRatio: "4 / 3",
+  display: "block",
+  position: "relative",
+  cursor: "pointer",
+  background: "#0f172a",
+  font: "inherit",
+  textAlign: "left",
+};
+
+export const mealHeroMedia = {
+  width: "100%",
+  height: "100%",
+  objectFit: "cover",
+  display: "block",
+  position: "absolute",
+  inset: 0,
+};
+
+export const mealHeroLogo = {
+  width: "58%",
+  height: "58%",
+  maxWidth: 220,
+  maxHeight: 220,
+  objectFit: "contain",
+  display: "block",
+  position: "absolute",
+  left: "50%",
+  top: "42%",
+  transform: "translate(-50%, -50%)",
+  background: "#fff",
+  borderRadius: 16,
+  padding: 12,
+  boxSizing: "border-box",
+};
+
+export const mealHeroOverlayTop = {
+  position: "absolute",
+  top: 12,
+  left: 12,
+  right: 12,
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "flex-start",
+  gap: 8,
+  pointerEvents: "none",
+  zIndex: 1,
+};
+
+export const mealHeroScrim = {
+  position: "absolute",
+  left: 0,
+  right: 0,
+  bottom: 0,
+  padding: "40px 14px 14px",
+  background: "linear-gradient(180deg, transparent 0%, rgba(15,23,42,0.84) 100%)",
+  color: "#fff",
+  zIndex: 1,
+};
+
+export const mealHeroTitle = {
+  fontSize: 18,
+  fontWeight: 800,
+  lineHeight: 1.25,
+  letterSpacing: "-0.02em",
+};
+
+export const mealHeroMeta = {
+  marginTop: 4,
+  fontSize: 13,
+  fontWeight: 600,
+  opacity: 0.92,
+  color: "#fff",
+  textDecoration: "none",
 };
 
 export const mealHolderMediaBtn = {

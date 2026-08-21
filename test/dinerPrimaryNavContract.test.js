@@ -37,33 +37,53 @@ test("BottomNav is Home Waiter Menu Browser X Basket My Menuply", () => {
   assert.doesNotMatch(nav, /to: "\/activity"/);
 });
 
-test("X sheet is Post about and carries restaurant or dish context", () => {
+test("X sheet creates My Menuply content; Diner QR first; no I'm Eating At / My Connects", () => {
   const sheet = read("src/components/MenuplyActionSheet.jsx");
-  assert.match(sheet, /Post about/);
-  assert.doesNotMatch(sheet, /Do something/);
-  assert.match(sheet, /menu_item_id/);
-  assert.match(sheet, /restaurant_id/);
-  assert.match(sheet, /What I Ate/);
-  assert.match(sheet, /Want to Eat/);
-  assert.match(sheet, /Plan to Eat/);
-  assert.match(sheet, /My Connects/);
+  assert.match(sheet, /menuply-action-sheet/);
+  assert.match(sheet, /id: "diner-qr"/);
+  assert.match(sheet, /title: "My Diner QR"/);
+  assert.match(sheet, /\/account\/diner-qr/);
+  assert.ok(
+    sheet.indexOf('id: "diner-qr"') < sheet.indexOf('id: "ate"'),
+    "My Diner QR is the first action"
+  );
+  assert.match(sheet, /title: "What I'm Eating"/);
+  assert.match(sheet, /title: "What I Want to Eat"/);
+  assert.match(sheet, /title: "My Eating Plans"/);
+  assert.match(sheet, /title: "My Crews"/);
+  assert.match(sheet, /title: "My Events"/);
   assert.match(sheet, /compose=ate/);
   assert.match(sheet, /compose=want/);
   assert.match(sheet, /compose=plan/);
-  assert.match(sheet, /focus=connects/);
-  assert.match(sheet, /homemade/);
   assert.match(sheet, /Invite to Eat/);
-  assert.match(sheet, /I'm Eating At/);
-  assert.match(sheet, /Find events/);
-  assert.match(sheet, /My Diner QR/);
-  assert.match(sheet, /\/account\/diner-qr/);
+  assert.match(sheet, /Find venue events/);
+  assert.match(sheet, /id: "profile-gallery"/);
+  assert.match(sheet, /title: "Profile gallery"/);
+  assert.match(sheet, /compose=profile-gallery/);
+  assert.match(sheet, /id: "my-account"/);
+  assert.match(sheet, /title: "My Account"/);
+  assert.match(sheet, /to: "\/account"/);
   assert.ok(
-    sheet.indexOf('id: "diner-qr"') < sheet.indexOf('id: "im-eating"'),
-    "My Diner QR is first under Post about"
+    sheet.indexOf('id: "my-account"') > sheet.indexOf('id: "profile-gallery"'),
+    "My Account is after Profile gallery"
   );
+  assert.ok(
+    sheet.lastIndexOf('id: "my-account"') === sheet.indexOf('id: "my-account"') &&
+      sheet.indexOf('id: "my-account"') ===
+        Math.max(
+          ...["diner-qr", "ate", "want", "plan", "crew", "event", "events-browse", "invite", "upload-media", "profile-gallery", "my-account"].map(
+            (id) => sheet.indexOf(`id: "${id}"`)
+          )
+        ),
+    "My Account is the last action"
+  );
+  assert.doesNotMatch(sheet, /id: "im-eating"/);
+  assert.doesNotMatch(sheet, /I'm Eating At/);
+  assert.doesNotMatch(sheet, /id: "connects"/);
+  assert.doesNotMatch(sheet, /My Connects/);
+  assert.doesNotMatch(sheet, /focus=connects/);
   assert.doesNotMatch(sheet, /Create Eating Plan/);
   assert.doesNotMatch(sheet, /Share Food/);
-  assert.doesNotMatch(sheet, /What I'm Eating/);
   assert.doesNotMatch(sheet, /friends/i);
 });
 

@@ -37,6 +37,8 @@ test("My Menuply and peer hub use five-section presentation hub", () => {
   assert.match(section, /eating-plans-panel/);
   assert.match(section, /future-plans-summary/);
   assert.match(section, /None scheduled/);
+  assert.match(section, /want-invite-me/);
+  assert.match(section, /plans-join-me/);
   assert.match(section, /Invite Me/);
   assert.match(section, /upcoming-plans-calendar-open/);
   assert.match(section, /WhatIAteMealBoard/);

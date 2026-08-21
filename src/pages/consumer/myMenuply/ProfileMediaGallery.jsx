@@ -1,7 +1,10 @@
-import MenuplyMediaPicker from "../../../components/social/MenuplyMediaPicker.jsx";
 import { resolveConsumerMediaUrl } from "../../../lib/consumerApi.js";
 import * as s from "./myMenuplyStyles.js";
 
+/**
+ * Profile gallery — presentation of existing media only.
+ * Add/camera moves to bottom-nav X (not inline here).
+ */
 export default function ProfileMediaGallery({
   items = [],
   readOnly = false,
@@ -9,11 +12,8 @@ export default function ProfileMediaGallery({
   onAddFile,
   onRemove,
 }) {
-  if (!items.length && readOnly) return null;
-
-  function handlePick(file) {
-    if (file) onAddFile?.(file);
-  }
+  void onAddFile;
+  if (!items.length) return null;
 
   return (
     <div style={{ marginTop: 16 }} data-testid="about-me-profile-media">
@@ -49,22 +49,6 @@ export default function ProfileMediaGallery({
             </div>
           );
         })}
-
-        {readOnly ? null : (
-          <div style={s.profileMediaAddTile} data-testid="profile-media-add">
-            <MenuplyMediaPicker
-              onFile={handlePick}
-              disabled={busy}
-              facingMode="user"
-              allowPhoto
-              allowVideo
-              showPreview={false}
-              testId="profile-media-picker"
-              ariaLabel="Add profile photo or video"
-            />
-            <span style={s.profileMediaAddLabel}>Add photo or video</span>
-          </div>
-        )}
       </div>
     </div>
   );

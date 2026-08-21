@@ -65,6 +65,7 @@ import * as s from "./myMenuply/myMenuplyStyles.js";
 import ProfileCompletionBanner from "../../components/consumer/ProfileCompletionBanner.jsx";
 import DinerIdentityHero from "./myMenuply/DinerIdentityHero.jsx";
 import MyMenuplyPresentationRails from "./myMenuply/MyMenuplyPresentationRails.jsx";
+import ProfileGalleryComposeSheet from "./myMenuply/ProfileGalleryComposeSheet.jsx";
 import {
   buildDinerStats,
   buildFollowedRestaurantRails,
@@ -141,6 +142,8 @@ export default function MyMenuplyPage() {
   const [composeOpen, setComposeOpen] = useState(false);
   const [composeDefaultCategory, setComposeDefaultCategory] = useState("ate");
   const [composeMediaSource, setComposeMediaSource] = useState("camera");
+  const [profileGalleryPickerOpen, setProfileGalleryPickerOpen] = useState(false);
+  const [profileGalleryMediaSource, setProfileGalleryMediaSource] = useState(null);
   const [crewComposeOpen, setCrewComposeOpen] = useState(false);
   const [eventComposeOpen, setEventComposeOpen] = useState(false);
   const [hubFocus, setHubFocus] = useState("");
@@ -230,6 +233,16 @@ export default function MyMenuplyPage() {
     const compose = String(searchParams.get("compose") || "").trim().toLowerCase();
     const focus = String(searchParams.get("focus") || "").trim().toLowerCase();
     const media = String(searchParams.get("media") || "").trim().toLowerCase();
+    if (compose === "profile-gallery") {
+      setProfileGalleryMediaSource(media === "library" ? "library" : media === "camera" ? "camera" : null);
+      setProfileGalleryPickerOpen(true);
+      const timer = window.setTimeout(() => {
+        document
+          .querySelector('[data-testid="about-me"]')
+          ?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 120);
+      return () => window.clearTimeout(timer);
+    }
     if (["ate", "want", "plan", "crew", "event"].includes(compose)) {
       if (compose === "crew") {
         setCrewComposeOpen(true);
@@ -393,6 +406,9 @@ export default function MyMenuplyPage() {
   }
 
   async function onProfileMediaAdd(file) {
+    setProfileGalleryPickerOpen(false);
+    setProfileGalleryMediaSource(null);
+    if (!file) return;
     setIdentityBusy(true);
     setIdentityError("");
     setIdentityNotice("");
@@ -880,6 +896,17 @@ export default function MyMenuplyPage() {
               onProfileMediaRemove={onProfileMediaRemove}
               monthInFoodHref="/my-menuply/month-in-food"
             />
+            <ProfileGalleryComposeSheet
+              open={profileGalleryPickerOpen}
+              onClose={() => {
+                setProfileGalleryPickerOpen(false);
+                setProfileGalleryMediaSource(null);
+              }}
+              mediaSource={profileGalleryMediaSource}
+              onMediaSourceChange={setProfileGalleryMediaSource}
+              busy={identityBusy}
+              onFile={onProfileMediaAdd}
+            />
 
             <MyMenuplyPresentationRails
               stats={dinerStats}
@@ -905,6 +932,8 @@ export default function MyMenuplyPage() {
 
             <EatingHubSection
               sectionRef={eatingSectionRef}
+              inviteHref="/account/what-we-doing"
+              joinMeHref="/account/im-eating"
               composeOpen={composeOpen}
               onComposeOpenChange={setComposeOpen}
               composeDefaultCategory={composeDefaultCategory}

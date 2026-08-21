@@ -290,6 +290,16 @@ export default function EatingHubSection({
             onSelectItem={readOnly ? undefined : onWantSelect}
             emptyMessage={null}
           />
+          {/* Invite Me = invitation eligibility for a want (“eat this together”). */}
+          {!readOnly ? (
+            <p style={{ ...s.muted, fontSize: 13, marginTop: 10 }} data-testid="want-invite-me">
+              <Link to={inviteHref} style={s.plansEmptyLink}>
+                Invite Me
+              </Link>
+              {" — "}
+              invite me out so we can eat this together.
+            </p>
+          ) : null}
         </div>
       </section>
 
@@ -315,18 +325,9 @@ export default function EatingHubSection({
               <SectionEmptyState testId="eating-plans-empty">
                 Meals and outings you&apos;ve planned.
               </SectionEmptyState>
-              {!readOnly ? (
-                <p style={{ ...s.muted, fontSize: 13, marginTop: 8 }}>
-                  None scheduled ·{" "}
-                  <Link to={inviteHref} style={s.plansEmptyLink}>
-                    Invite Me
-                  </Link>
-                </p>
-              ) : (
-                <p style={{ ...s.muted, fontSize: 13, marginTop: 8 }} data-testid="plans-none-scheduled">
-                  None scheduled
-                </p>
-              )}
+              <p style={{ ...s.muted, fontSize: 13, marginTop: 8 }} data-testid="plans-none-scheduled">
+                None scheduled
+              </p>
             </div>
           ) : (
             shownPlans.map((plan) => {
@@ -356,6 +357,22 @@ export default function EatingHubSection({
               locationState={locationState}
               onTagged={onPostTagged}
             />
+          ) : null}
+
+          {/* Join Me = join this planned meal. */}
+          {joinMeHref ? (
+            <p style={{ ...s.muted, fontSize: 13, marginTop: 10 }} data-testid="plans-join-me">
+              <Link to={joinMeHref} style={s.plansEmptyLink}>
+                Join Me
+              </Link>
+              {" — "}
+              join me for this meal.
+            </p>
+          ) : null}
+          {!readOnly ? (
+            <p style={{ ...s.muted, fontSize: 12, marginTop: 6 }}>
+              Only people you open Join Me to can see that future plan.
+            </p>
           ) : null}
         </div>
       </section>
@@ -435,25 +452,6 @@ export default function EatingHubSection({
         </div>
       ) : null}
 
-      {shownPlans.length > 0 || joinMeHref ? (
-        <div style={{ ...s.labelRow, marginTop: 14 }}>
-          {!readOnly ? (
-            <Link to={inviteHref} style={s.subLabel}>
-              Invite Me
-            </Link>
-          ) : null}
-          {joinMeHref ? (
-            <Link to={joinMeHref} style={s.subLabel}>
-              Join Me
-            </Link>
-          ) : null}
-        </div>
-      ) : null}
-      {!readOnly ? (
-        <p style={{ ...s.muted, fontSize: 12 }}>
-          Only people you open Join Me to can see that future plan.
-        </p>
-      ) : null}
     </div>
   );
 }

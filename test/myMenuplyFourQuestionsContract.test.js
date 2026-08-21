@@ -35,6 +35,8 @@ test("My Menuply is the diner's personal home", () => {
   assert.match(section, /DinerCalendarTrigger/);
   assert.match(section, /PostAfterActions/);
   assert.match(section, /Invite Me/);
+  assert.match(section, /want-invite-me/);
+  assert.match(section, /plans-join-me/);
   assert.match(section, /EatingPlanDayForm/);
   assert.match(page, /joinCandidates/);
   assert.match(page, /listPendingEatInvitePeople/);
@@ -89,7 +91,7 @@ test("My Menuply is the diner's personal home", () => {
   assert.match(bits, /View dish/);
   assert.match(bits, /restaurant_name/);
   assert.match(bits, /Restaurant/);
-  assert.match(bits, /Add photo or video/);
+  assert.match(bits, /restaurant_logo_url/);
   assert.match(bits, /MenuplyMediaPicker/);
   assert.match(bits, /Request to join/);
   assert.match(bits, /isScheduledEatingPlan/);
@@ -175,7 +177,7 @@ test("Connections eating cards link to menu items and Join Me / Invite to Eat", 
   assert.match(social, /#food-comments/);
   assert.match(social, /buildDishShareData/);
   assert.doesNotMatch(bits, /🌭/);
-  assert.match(bits, /Add photo or video/);
+  assert.match(bits, /restaurant_logo_url/);
 });
 
 test("Activity is broader happening and does not replace connections eating", () => {

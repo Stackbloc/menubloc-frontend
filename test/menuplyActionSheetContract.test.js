@@ -25,6 +25,28 @@ test("MenuplyActionSheet creates My Events via My Menuply compose", () => {
   assert.doesNotMatch(sheet, /to: "\/clusters"/);
 });
 
+test("MenuplyActionSheet opens profile gallery compose from X", () => {
+  const sheet = read("src/components/MenuplyActionSheet.jsx");
+  const page = read("src/pages/consumer/MyMenuplyPage.jsx");
+  const gallerySheet = read("src/pages/consumer/myMenuply/ProfileGalleryComposeSheet.jsx");
+  assert.match(sheet, /compose=profile-gallery/);
+  assert.match(sheet, /id: "my-account"/);
+  assert.match(sheet, /camera, or upload from your library/i);
+  assert.ok(sheet.indexOf('id: "diner-qr"') < sheet.indexOf('id: "ate"'));
+  assert.ok(sheet.indexOf('id: "my-account"') > sheet.indexOf('id: "profile-gallery"'));
+  assert.doesNotMatch(sheet, /id: "im-eating"/);
+  assert.doesNotMatch(sheet, /id: "connects"/);
+  assert.match(page, /compose === "profile-gallery"/);
+  assert.match(page, /ProfileGalleryComposeSheet/);
+  assert.match(page, /uploadConsumerProfileMedia/);
+  assert.match(gallerySheet, /profile-gallery-option-camera/);
+  assert.match(gallerySheet, /profile-gallery-option-library/);
+  assert.match(gallerySheet, /source=\{mediaSource === "library" \? "library" : "camera"\}/);
+  assert.match(gallerySheet, /Native camera/);
+  assert.match(gallerySheet, /Upload from library/);
+  assert.match(gallerySheet, /profile-gallery-x-picker/);
+});
+
 test("My Menuply opens EventComposeSheet from compose=event", () => {
   const page = read("src/pages/consumer/MyMenuplyPage.jsx");
   assert.match(page, /EventComposeSheet/);

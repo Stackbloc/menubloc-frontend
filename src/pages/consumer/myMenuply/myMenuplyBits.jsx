@@ -76,11 +76,17 @@ export function PhotoGrid({ items, onSelect, onPhotoPick, hideJoinMe = false, pr
   const joinHref = hideJoinMe ? null : item.join_me_href;
   const caption = formatEatingCaption(item);
   const canPick = typeof onPhotoPick === "function";
-  const hasMedia = Boolean(item.photo_url || item.video_url);
+  const dishPhoto = String(item.photo_url || "").trim();
+  const dishVideo = String(item.video_url || "").trim();
+  const logoUrl = String(item.restaurant_logo_url || item.logo_url || "").trim();
+  const displayImage = dishPhoto || logoUrl;
+  const hasOwnMedia = Boolean(dishPhoto || dishVideo);
+  const hasMedia = Boolean(dishVideo || displayImage);
+  const isLogoFallback = !hasOwnMedia && Boolean(logoUrl);
   const isPlaceholder = String(item.id || "") === "placeholder" && !item.entry_id;
 
   function pickPhoto() {
-    if (!canPick) return;
+    if (!canPick || isLogoFallback) return;
     setReplaceMediaOpen(true);
   }
 
@@ -99,15 +105,15 @@ export function PhotoGrid({ items, onSelect, onPhotoPick, hideJoinMe = false, pr
     <button
       type="button"
       data-testid="eating-photo-slot"
-      onClick={canPick ? pickPhoto : undefined}
-      disabled={!canPick}
+      onClick={canPick && hasOwnMedia ? pickPhoto : undefined}
+      disabled={!canPick || isLogoFallback}
       onMouseEnter={() => setPhotoHover(true)}
       onMouseLeave={() => setPhotoHover(false)}
       onFocus={() => setPhotoHover(true)}
       onBlur={() => setPhotoHover(false)}
       style={{
         ...(presentation ? s.heroMediaWrap : s.photoButton),
-        cursor: canPick ? "pointer" : "default",
+        cursor: canPick && hasOwnMedia ? "pointer" : "default",
         border: 0,
         borderRadius: 0,
         boxShadow: "none",
@@ -119,24 +125,28 @@ export function PhotoGrid({ items, onSelect, onPhotoPick, hideJoinMe = false, pr
         position: "relative",
         overflow: "hidden",
       }}
-      aria-label={canPick ? "Tap to replace photo or video" : caption}
+      aria-label={canPick && hasOwnMedia ? "Tap to replace photo or video" : caption}
     >
-      {item.video_url ? (
+      {dishVideo ? (
         <video
-          src={resolveConsumerMediaUrl(item.video_url)}
+          src={resolveConsumerMediaUrl(dishVideo)}
           style={s.photo}
           controls={!presentation}
           playsInline
           preload="metadata"
         />
       ) : (
-        <img src={resolveConsumerMediaUrl(item.photo_url)} alt="" style={s.photo} />
+        <img
+          src={resolveConsumerMediaUrl(displayImage)}
+          alt=""
+          style={isLogoFallback ? { ...s.photo, objectFit: "contain", background: "#fff", padding: 24 } : s.photo}
+        />
       )}
       {presentation ? (
         <>
           <div style={s.heroOverlayTop}>
             {mealBadge ? <span style={s.heroBadge}>{mealBadge}</span> : <span />}
-            {canPick && photoHover ? (
+            {canPick && hasOwnMedia && photoHover ? (
               <span style={s.heroBadge}>Replace</span>
             ) : null}
           </div>
@@ -146,7 +156,7 @@ export function PhotoGrid({ items, onSelect, onPhotoPick, hideJoinMe = false, pr
             {note ? <div style={s.heroCaption}>{note}</div> : null}
           </div>
         </>
-      ) : canPick && photoHover ? (
+      ) : canPick && hasOwnMedia && photoHover ? (
         <div style={s.photoHoverHint}>Tap to replace photo or video</div>
       ) : null}
     </button>
@@ -193,21 +203,6 @@ export function PhotoGrid({ items, onSelect, onPhotoPick, hideJoinMe = false, pr
               )
             ) : null}
             {!hasMedia && note ? <div style={socialType.caption}>{note}</div> : null}
-            {canPick && !hasMedia ? (
-              <div style={{ marginTop: 10 }}>
-                <MenuplyMediaPicker
-                  onFile={handlePhotoFile}
-                  disabled={!canPick}
-                  facingMode="environment"
-                  allowPhoto
-                  allowVideo
-                  showPreview={false}
-                  testId="eating-photo-slot"
-                  ariaLabel="Add photo or video"
-                  iconStyle={{ width: 36, height: 36, borderRadius: 999 }}
-                />
-              </div>
-            ) : null}
             {!presentation ? (
               <>
                 <EatingSocialActions item={item} />
@@ -597,7 +592,8 @@ export function WantToEatList({
     ) : null;
   }
 
-  const listStyle = layout === "scroll" ? wantStyles.scrollList : wantStyles.list;
+  const isScroll = layout === "scroll";
+  const listStyle = isScroll ? wantStyles.scrollList : wantStyles.list;
 
   return (
     <div style={listStyle} data-testid="want-to-eat-list">
@@ -605,43 +601,96 @@ export function WantToEatList({
         const href = want.menu_item_id
           ? `/menu-items/${encodeURIComponent(String(want.menu_item_id))}`
           : null;
-        const mediaUrl = want.photo_url || want.video_url;
-        const cardStyle = layout === "scroll" ? wantStyles.scrollCard : wantStyles.card;
-        const body = (
-          <div style={layout === "scroll" ? wantStyles.scrollRow : wantStyles.row}>
-            {mediaUrl ? (
-              want.video_url ? (
+        const dishPhoto = String(want.photo_url || "").trim();
+        const dishVideo = String(want.video_url || "").trim();
+        const logoUrl = String(want.restaurant_logo_url || want.logo_url || "").trim();
+        const hasDishMedia = Boolean(dishPhoto || dishVideo);
+        const showLogo = !hasDishMedia && Boolean(logoUrl);
+        const place = String(want.restaurant_name || "").trim();
+        const foodName = String(want.food_name || "").trim() || "Want";
+
+        const cardStyle = isScroll
+          ? hasDishMedia
+            ? wantStyles.scrollCardPhoto
+            : wantStyles.scrollCard
+          : wantStyles.card;
+
+        let mediaBlock;
+        if (hasDishMedia) {
+          mediaBlock = (
+            <div
+              style={isScroll ? wantStyles.scrollPhotoWrap : wantStyles.stackPhotoWrap}
+              data-testid="want-to-eat-dish-media"
+            >
+              {dishVideo ? (
                 <video
-                  src={resolveConsumerMediaUrl(want.video_url)}
-                  style={layout === "scroll" ? wantStyles.scrollThumb : wantStyles.thumb}
-                  controls
+                  src={resolveConsumerMediaUrl(dishVideo)}
+                  style={isScroll ? wantStyles.scrollPhoto : wantStyles.stackPhoto}
                   playsInline
+                  muted
                   preload="metadata"
                 />
               ) : (
                 <img
-                  src={resolveConsumerMediaUrl(want.photo_url)}
+                  src={resolveConsumerMediaUrl(dishPhoto)}
                   alt=""
-                  style={layout === "scroll" ? wantStyles.scrollThumb : wantStyles.thumb}
+                  style={isScroll ? wantStyles.scrollPhoto : wantStyles.stackPhoto}
                 />
-              )
-            ) : (
-              <div
-                style={layout === "scroll" ? wantStyles.scrollThumbPlaceholder : wantStyles.thumbPlaceholder}
-                aria-hidden
-              >
-                🍽
-              </div>
-            )}
-            <div style={wantStyles.copy}>
-              <div style={wantStyles.title}>{want.food_name}</div>
-              {want.restaurant_name ? <div style={socialType.meta}>{want.restaurant_name}</div> : null}
-              {readOnly || layout === "scroll" ? null : want.menu_item_id ? (
-                <div style={wantStyles.hint}>Menu item linked</div>
-              ) : (
-                <div style={wantStyles.hint}>Tap to link restaurant and menu item</div>
               )}
+              {isScroll ? (
+                <div style={wantStyles.scrollPhotoScrim}>
+                  <div style={wantStyles.scrollPhotoTitle}>{foodName}</div>
+                  {place ? <div style={wantStyles.scrollPhotoMeta}>{place}</div> : null}
+                </div>
+              ) : null}
             </div>
+          );
+        } else if (showLogo) {
+          mediaBlock = (
+            <div
+              style={isScroll ? wantStyles.scrollThumbPlaceholder : wantStyles.thumbPlaceholder}
+              data-testid="want-to-eat-logo"
+            >
+              <img src={resolveConsumerMediaUrl(logoUrl)} alt="" style={wantStyles.logoThumb} />
+            </div>
+          );
+        } else {
+          mediaBlock = (
+            <div
+              style={isScroll ? wantStyles.scrollThumbPlaceholder : wantStyles.thumbPlaceholder}
+              aria-hidden
+              data-testid="want-to-eat-placeholder"
+            >
+              🍽
+            </div>
+          );
+        }
+
+        const showTextBelow = !(isScroll && hasDishMedia);
+        const copyBlock = showTextBelow ? (
+          <div style={wantStyles.copy}>
+            <div style={wantStyles.title}>{foodName}</div>
+            {place ? <div style={socialType.meta}>{place}</div> : null}
+            {readOnly || isScroll ? null : want.menu_item_id ? (
+              <div style={wantStyles.hint}>Menu item linked</div>
+            ) : (
+              <div style={wantStyles.hint}>Tap to link restaurant and menu item</div>
+            )}
+          </div>
+        ) : null;
+
+        const body = (
+          <div
+            style={
+              isScroll
+                ? wantStyles.scrollRow
+                : hasDishMedia
+                  ? wantStyles.stackPhotoRow
+                  : wantStyles.row
+            }
+          >
+            {mediaBlock}
+            {copyBlock}
           </div>
         );
 
@@ -720,7 +769,25 @@ const wantStyles = {
     font: "inherit",
     boxShadow: "0 6px 18px rgba(15, 23, 42, 0.08)",
   },
+  scrollCardPhoto: {
+    display: "block",
+    flex: "0 0 220px",
+    width: 220,
+    scrollSnapAlign: "start",
+    textAlign: "left",
+    textDecoration: "none",
+    color: "inherit",
+    borderRadius: 16,
+    border: "1px solid #e5e7eb",
+    background: "#0f172a",
+    padding: 0,
+    overflow: "hidden",
+    cursor: "pointer",
+    font: "inherit",
+    boxShadow: "0 10px 28px rgba(15, 23, 42, 0.14)",
+  },
   row: { display: "flex", gap: 0, alignItems: "stretch" },
+  stackPhotoRow: { display: "flex", flexDirection: "column", alignItems: "stretch" },
   scrollRow: { display: "flex", flexDirection: "column", alignItems: "stretch" },
   thumb: {
     width: 112,
@@ -730,12 +797,58 @@ const wantStyles = {
     display: "block",
     background: "#f1f5f9",
   },
-  scrollThumb: {
+  stackPhotoWrap: {
+    position: "relative",
     width: "100%",
-    height: 120,
+    minHeight: 180,
+    background: "#0f172a",
+  },
+  stackPhoto: {
+    width: "100%",
+    height: 180,
     objectFit: "cover",
     display: "block",
-    background: "#f1f5f9",
+  },
+  scrollPhotoWrap: {
+    position: "relative",
+    width: "100%",
+    height: 200,
+    background: "#0f172a",
+  },
+  scrollPhoto: {
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
+    display: "block",
+  },
+  scrollPhotoScrim: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    padding: "28px 10px 10px",
+    background: "linear-gradient(180deg, transparent 0%, rgba(15,23,42,0.82) 100%)",
+    color: "#fff",
+  },
+  scrollPhotoTitle: {
+    fontSize: 14,
+    fontWeight: 800,
+    lineHeight: 1.25,
+    letterSpacing: "-0.01em",
+  },
+  scrollPhotoMeta: {
+    marginTop: 2,
+    fontSize: 11,
+    fontWeight: 600,
+    opacity: 0.9,
+  },
+  logoThumb: {
+    width: "72%",
+    height: "72%",
+    maxWidth: 88,
+    maxHeight: 88,
+    objectFit: "contain",
+    display: "block",
   },
   thumbPlaceholder: {
     width: 112,

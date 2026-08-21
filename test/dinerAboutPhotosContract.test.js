@@ -36,11 +36,12 @@ test("My Menuply identity hero is prominent with photo upload and short bio", ()
   assert.match(hero, /diner-about-input/);
   assert.match(hero, /maxLength=\{ABOUT_MAX\}/);
   assert.match(hero, /LA food explorer/);
-  assert.match(read("src/pages/consumer/myMenuply/MyMenuplyPresentationRails.jsx"), /Connections/);
+  assert.match(read("src/pages/consumer/myMenuply/MyMenuplyPresentationRails.jsx"), /Connects/);
   assert.match(read("src/pages/consumer/myMenuply/MyMenuplyPresentationRails.jsx"), /\/my-menuply\/connections-eating/);
   assert.match(gallery, /about-me-profile-media/);
-  assert.match(gallery, /Add photo or video/);
-  assert.match(gallery, /MenuplyMediaPicker/);
+  assert.doesNotMatch(gallery, /Add photo or video/);
+  assert.doesNotMatch(gallery, /MenuplyMediaPicker/);
+  assert.doesNotMatch(gallery, /profile-media-add/);
   const cameraLib = read("src/lib/consumerCameraCapture.js");
   assert.match(cameraLib, /getUserMedia/);
   const vercel = read("vercel.json");
