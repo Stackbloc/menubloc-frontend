@@ -26,7 +26,7 @@ Do **not** deploy from memory or from quarantined checkouts.
 
 ---
 
-## CURRENT LAST KNOWN GOOD (live production — 2026-08-20)
+## CURRENT LAST KNOWN GOOD (live production — 2026-08-21)
 
 Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway `/health` is recorded separately; it may lag `origin/main`.
 
@@ -35,36 +35,45 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` @ clean `main` |
-| Git commit | `a37baf0` — Yellow Browser LA fallback; blank dish detail; Plans day-scope; peer What I Ate holders |
-| Vercel deployment | `menubloc-frontend-9acktyci6-menuply.vercel.app` |
-| Live bundle | `index-lG7D8UuY.js` |
+| Git commit | `3056680` — My Menuply five sections; X creation; My Events compose |
+| Vercel deployment | `menubloc-frontend-g8uuar69o-menuply.vercel.app` |
+| Live bundle | `index-BpozLIHf.js` |
 | Aliases | `menuply.com`, `www.menuply.com`, `crm.menuply.com`, `venues.menuply.com` |
-| Tip-gate | **PASS** (apex + www) verified 2026-08-20 after YB + hub calendar/parity CPD |
-| Feature | YB empty fix + dish detail action-rail props + Plans day text + peer meal-board parity |
+| Tip-gate | **PASS** (apex + www) verified 2026-08-21 after My Menuply five-section CPD |
+| Feature | Presentation hub (eating / want / plans / crews / events); editorial empties; X → My Events |
 
 ### Backend (Railway)
 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-backend-main` @ clean `main` |
-| Git on origin | (FE-only ship; BE not pushed) |
-| Live health SHA | `74a34f67…` (verified 2026-08-20 CPD; unchanged this FE ship) |
+| Git on origin | `6514a605` |
+| Live health SHA | `6514a605…` (verified 2026-08-21 CPD) |
 | Health URL | `https://menubloc-backend-production.up.railway.app/health` |
-| `commit_hash` | `74a34f67` (live at CPD certify) |
-| DB | migrations through `0281` (`0280` connection food activity; `0281` LA Live cuisine; `0279` want video; `0277` ate video) |
-| Smoke | tip-gate PASS `9acktyci6` / `index-lG7D8UuY.js`; health `74a34f67`; bundle railway ≫ localhost |
+| `commit_hash` | `6514a605` (live at CPD certify) |
+| DB | migrations through `0283` (`0282` meal/intent; `0283` diner social events; prior through `0281`) |
+| Smoke | tip-gate PASS `g8uuar69o` / `index-BpozLIHf.js`; health `6514a605`; bundle railway ≫ localhost |
 
 ### Restore current tip (if tip-gate fails mid-change)
 
 ```bash
 cd /Users/andrebarber/Desktop/menubloc/menubloc-frontend-main
-npx vercel alias set menubloc-frontend-9acktyci6-menuply.vercel.app menuply.com
-npx vercel alias set menubloc-frontend-9acktyci6-menuply.vercel.app www.menuply.com
-npx vercel alias set menubloc-frontend-9acktyci6-menuply.vercel.app crm.menuply.com
-npx vercel alias set menubloc-frontend-9acktyci6-menuply.vercel.app venues.menuply.com
+npx vercel alias set menubloc-frontend-g8uuar69o-menuply.vercel.app menuply.com
+npx vercel alias set menubloc-frontend-g8uuar69o-menuply.vercel.app www.menuply.com
+npx vercel alias set menubloc-frontend-g8uuar69o-menuply.vercel.app crm.menuply.com
+npx vercel alias set menubloc-frontend-g8uuar69o-menuply.vercel.app venues.menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 ```
+
+### Prior tip — YB empty + hub calendar/parity (rollback target)
+
+| Field | Value |
+|-------|-------|
+| Deployment | `menubloc-frontend-9acktyci6-menuply.vercel.app` |
+| Bundle | `index-lG7D8UuY.js` |
+| Commit | `a37baf0` |
+| Notes | Pre–My Menuply five-section / My Events CPD |
 
 ### Prior tip — Month in Food platform share (rollback target)
 

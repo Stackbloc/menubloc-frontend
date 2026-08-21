@@ -17,6 +17,8 @@ test("MenuplyActionSheet creates My Events via My Menuply compose", () => {
   const sheet = read("src/components/MenuplyActionSheet.jsx");
   assert.match(sheet, /id: "event"/);
   assert.match(sheet, /title: "My Events"/);
+  assert.match(sheet, /title: "My Eating Plans"/);
+  assert.match(sheet, /title: "My Crews"/);
   assert.match(sheet, /compose=event/);
   assert.match(sheet, /id: "events-browse"/);
   assert.match(sheet, /to: "\/events"/);

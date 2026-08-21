@@ -68,14 +68,14 @@ export const POST_ABOUT_ACTIONS = [
   },
   {
     id: "plan",
-    title: "Eating Plan",
+    title: "My Eating Plans",
     description: "Schedule a future meal. Join Me and invites stay on the plan.",
     to: "/my-menuply?compose=plan",
     guestOk: false,
   },
   {
     id: "crew",
-    title: "Dining Crew",
+    title: "My Crews",
     description: "Create or open a crew — groups of people you eat with.",
     to: "/my-menuply?compose=crew",
     guestOk: false,
