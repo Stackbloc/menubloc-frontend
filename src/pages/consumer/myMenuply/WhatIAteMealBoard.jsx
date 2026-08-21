@@ -1,11 +1,9 @@
 /**
  * What I'm Eating day board — presentation only.
- * Dish / diner photo front and center when present; else restaurant logo;
- * text-only cards when neither exists (no camera — creation stays on X).
+ * Prefer dish photo/video, then restaurant logo, then billboard; else text (no camera).
  */
 
 import { Link } from "react-router-dom";
-import { resolveConsumerMediaUrl } from "../../../lib/consumerApi.js";
 import {
   groupEntriesByMealPeriod,
   mealPeriodLabel,
@@ -13,34 +11,20 @@ import {
   visibleWhatIAteMealPeriods,
 } from "../../../lib/whatIAteTodayMealPeriod.js";
 import { formatEatingCaption } from "./dinerHubFormat.js";
+import { resolveEatingDishVisual } from "./eatingDishVisual.js";
 import { foodHref, restaurantHref } from "./myMenuplyBits.jsx";
 import * as s from "./myMenuplyStyles.js";
-
-function resolveDisplayMedia(item) {
-  const photo = String(item?.photo_url || "").trim();
-  const video = String(item?.video_url || "").trim();
-  const logo = String(item?.restaurant_logo_url || item?.logo_url || "").trim();
-  if (video) {
-    return { kind: "video", url: resolveConsumerMediaUrl(video), isLogo: false };
-  }
-  if (photo) {
-    return { kind: "image", url: resolveConsumerMediaUrl(photo), isLogo: false };
-  }
-  if (logo) {
-    return { kind: "image", url: resolveConsumerMediaUrl(logo), isLogo: true };
-  }
-  return null;
-}
 
 function MealMediaCard({ item, readOnly, onSelect }) {
   const label = item.food_name || item.item_name || item.itemName || "Food";
   const place = item.restaurant_name || item.place_label || "";
-  const media = resolveDisplayMedia(item);
+  const media = resolveEatingDishVisual(item);
   const restHref = restaurantHref(item);
   const dishHref = foodHref(item);
   const mealBadge = item.meal_period
     ? mealPeriodLabel(normalizeWhatIAteMealPeriod(item.meal_period))
     : null;
+  const useLogoFit = media?.source === "logo";
 
   if (media) {
     return (
@@ -48,7 +32,7 @@ function MealMediaCard({ item, readOnly, onSelect }) {
         style={s.mealHeroCard}
         data-testid="what-i-ate-meal-holder"
         data-meal={normalizeWhatIAteMealPeriod(item.meal_period) || "other"}
-        data-media={media.isLogo ? "logo" : media.kind}
+        data-media={media.source}
       >
         <button
           type="button"
@@ -70,7 +54,7 @@ function MealMediaCard({ item, readOnly, onSelect }) {
             <img
               src={media.url}
               alt=""
-              style={media.isLogo ? s.mealHeroLogo : s.mealHeroMedia}
+              style={useLogoFit ? s.mealHeroLogo : s.mealHeroMedia}
             />
           )}
           <div style={s.mealHeroOverlayTop}>

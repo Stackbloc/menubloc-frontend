@@ -47,7 +47,7 @@ test("What I Ate meal board is presentation-only (no empty cameras)", () => {
   const board = read("src/pages/consumer/myMenuply/WhatIAteMealBoard.jsx");
   assert.match(board, /showEmptyHolders = false/);
   assert.match(board, /visibleWhatIAteMealPeriods/);
-  assert.match(board, /mealHeroCard|restaurant_logo_url/);
+  assert.match(board, /mealHeroCard|restaurant_logo_url|resolveEatingDishVisual/);
   assert.match(board, /No entries/);
   assert.doesNotMatch(board, /meal-holder-add-media/);
   assert.doesNotMatch(board, /what-i-ate-meal-camera-/);

@@ -67,11 +67,14 @@ test("My Menuply and peer hub use five-section presentation hub", () => {
   assert.match(mine, /futurePlanDetailParts/);
 
   const mealBoard = read("src/pages/consumer/myMenuply/WhatIAteMealBoard.jsx");
+  const dishVisual = read("src/pages/consumer/myMenuply/eatingDishVisual.js");
   assert.match(mealBoard, /visibleWhatIAteMealPeriods/);
   assert.match(mealBoard, /groupEntriesByMealPeriod/);
   assert.match(mealBoard, /what-i-ate-meal-row/);
-  assert.match(mealBoard, /video_url/);
-  assert.match(mealBoard, /photo_url/);
+  assert.match(mealBoard, /resolveEatingDishVisual/);
+  assert.match(dishVisual, /video_url/);
+  assert.match(dishVisual, /photo_url/);
+  assert.match(dishVisual, /restaurant_billboard_image_url/);
   assert.match(mealBoard, /hubDate/);
   assert.match(mealBoard, /isPastDay/);
   assert.match(mealBoard, /No entries/);

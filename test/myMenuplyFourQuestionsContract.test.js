@@ -91,9 +91,12 @@ test("My Menuply is the diner's personal home", () => {
   assert.match(bits, /View dish/);
   assert.match(bits, /restaurant_name/);
   assert.match(bits, /Restaurant/);
-  assert.match(bits, /restaurant_logo_url/);
+  assert.match(bits, /resolveEatingDishVisual/);
   assert.match(bits, /MenuplyMediaPicker/);
   assert.match(bits, /Request to join/);
+  assert.match(read("src/pages/consumer/myMenuply/eatingDishVisual.js"), /restaurant_logo_url/);
+  assert.match(read("src/pages/consumer/myMenuply/eatingDishVisual.js"), /restaurant_billboard_image_url/);
+  assert.match(read("src/pages/consumer/myMenuply/eatingDishVisual.js"), /source: "billboard"/);
   assert.match(bits, /isScheduledEatingPlan/);
   const form = read("src/pages/consumer/myMenuply/EatingPlanDayForm.jsx");
   assert.match(form, /EatingPlaceFields/);
@@ -177,7 +180,7 @@ test("Connections eating cards link to menu items and Join Me / Invite to Eat", 
   assert.match(social, /#food-comments/);
   assert.match(social, /buildDishShareData/);
   assert.doesNotMatch(bits, /🌭/);
-  assert.match(bits, /restaurant_logo_url/);
+  assert.match(bits, /resolveEatingDishVisual/);
 });
 
 test("Activity is broader happening and does not replace connections eating", () => {

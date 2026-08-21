@@ -5,6 +5,7 @@ import InviteToEatButton from "../../../components/InviteToEatButton.jsx";
 import { restaurantPathFromRow } from "../../../lib/canonicalUrl.js";
 import EatingSocialActions from "./EatingSocialActions.jsx";
 import { resolveConsumerMediaUrl } from "../../../lib/consumerApi.js";
+import { resolveEatingDishVisual } from "./eatingDishVisual.js";
 import {
   compareMealPeriod,
   mealPeriodLabel,
@@ -76,17 +77,15 @@ export function PhotoGrid({ items, onSelect, onPhotoPick, hideJoinMe = false, pr
   const joinHref = hideJoinMe ? null : item.join_me_href;
   const caption = formatEatingCaption(item);
   const canPick = typeof onPhotoPick === "function";
-  const dishPhoto = String(item.photo_url || "").trim();
-  const dishVideo = String(item.video_url || "").trim();
-  const logoUrl = String(item.restaurant_logo_url || item.logo_url || "").trim();
-  const displayImage = dishPhoto || logoUrl;
-  const hasOwnMedia = Boolean(dishPhoto || dishVideo);
-  const hasMedia = Boolean(dishVideo || displayImage);
-  const isLogoFallback = !hasOwnMedia && Boolean(logoUrl);
+  const visual = resolveEatingDishVisual(item);
+  const hasOwnMedia = Boolean(String(item.photo_url || "").trim() || String(item.video_url || "").trim());
+  const hasMedia = Boolean(visual);
+  const isFallbackVisual = hasMedia && !hasOwnMedia;
+  const isLogoFallback = visual?.source === "logo";
   const isPlaceholder = String(item.id || "") === "placeholder" && !item.entry_id;
 
   function pickPhoto() {
-    if (!canPick || isLogoFallback) return;
+    if (!canPick || isFallbackVisual) return;
     setReplaceMediaOpen(true);
   }
 
@@ -106,7 +105,7 @@ export function PhotoGrid({ items, onSelect, onPhotoPick, hideJoinMe = false, pr
       type="button"
       data-testid="eating-photo-slot"
       onClick={canPick && hasOwnMedia ? pickPhoto : undefined}
-      disabled={!canPick || isLogoFallback}
+      disabled={!canPick || isFallbackVisual}
       onMouseEnter={() => setPhotoHover(true)}
       onMouseLeave={() => setPhotoHover(false)}
       onFocus={() => setPhotoHover(true)}
@@ -127,9 +126,9 @@ export function PhotoGrid({ items, onSelect, onPhotoPick, hideJoinMe = false, pr
       }}
       aria-label={canPick && hasOwnMedia ? "Tap to replace photo or video" : caption}
     >
-      {dishVideo ? (
+      {visual.kind === "video" ? (
         <video
-          src={resolveConsumerMediaUrl(dishVideo)}
+          src={visual.url}
           style={s.photo}
           controls={!presentation}
           playsInline
@@ -137,9 +136,13 @@ export function PhotoGrid({ items, onSelect, onPhotoPick, hideJoinMe = false, pr
         />
       ) : (
         <img
-          src={resolveConsumerMediaUrl(displayImage)}
+          src={visual.url}
           alt=""
-          style={isLogoFallback ? { ...s.photo, objectFit: "contain", background: "#fff", padding: 24 } : s.photo}
+          style={
+            isLogoFallback
+              ? { ...s.photo, objectFit: "contain", background: "#fff", padding: 24 }
+              : s.photo
+          }
         />
       )}
       {presentation ? (
@@ -601,30 +604,32 @@ export function WantToEatList({
         const href = want.menu_item_id
           ? `/menu-items/${encodeURIComponent(String(want.menu_item_id))}`
           : null;
-        const dishPhoto = String(want.photo_url || "").trim();
-        const dishVideo = String(want.video_url || "").trim();
-        const logoUrl = String(want.restaurant_logo_url || want.logo_url || "").trim();
-        const hasDishMedia = Boolean(dishPhoto || dishVideo);
-        const showLogo = !hasDishMedia && Boolean(logoUrl);
+        const visual = resolveEatingDishVisual(want);
+        const hasDishMedia = visual?.source === "dish";
+        const showLogo = visual?.source === "logo";
+        const showBillboard = visual?.source === "billboard";
+        const showHeroVisual = hasDishMedia || showBillboard;
         const place = String(want.restaurant_name || "").trim();
         const foodName = String(want.food_name || "").trim() || "Want";
 
         const cardStyle = isScroll
-          ? hasDishMedia
+          ? showHeroVisual
             ? wantStyles.scrollCardPhoto
             : wantStyles.scrollCard
           : wantStyles.card;
 
         let mediaBlock;
-        if (hasDishMedia) {
+        if (showHeroVisual) {
           mediaBlock = (
             <div
               style={isScroll ? wantStyles.scrollPhotoWrap : wantStyles.stackPhotoWrap}
-              data-testid="want-to-eat-dish-media"
+              data-testid={
+                showBillboard ? "want-to-eat-billboard-media" : "want-to-eat-dish-media"
+              }
             >
-              {dishVideo ? (
+              {visual.kind === "video" ? (
                 <video
-                  src={resolveConsumerMediaUrl(dishVideo)}
+                  src={visual.url}
                   style={isScroll ? wantStyles.scrollPhoto : wantStyles.stackPhoto}
                   playsInline
                   muted
@@ -632,7 +637,7 @@ export function WantToEatList({
                 />
               ) : (
                 <img
-                  src={resolveConsumerMediaUrl(dishPhoto)}
+                  src={visual.url}
                   alt=""
                   style={isScroll ? wantStyles.scrollPhoto : wantStyles.stackPhoto}
                 />
@@ -651,7 +656,7 @@ export function WantToEatList({
               style={isScroll ? wantStyles.scrollThumbPlaceholder : wantStyles.thumbPlaceholder}
               data-testid="want-to-eat-logo"
             >
-              <img src={resolveConsumerMediaUrl(logoUrl)} alt="" style={wantStyles.logoThumb} />
+              <img src={visual.url} alt="" style={wantStyles.logoThumb} />
             </div>
           );
         } else {
@@ -666,7 +671,7 @@ export function WantToEatList({
           );
         }
 
-        const showTextBelow = !(isScroll && hasDishMedia);
+        const showTextBelow = !(isScroll && showHeroVisual);
         const copyBlock = showTextBelow ? (
           <div style={wantStyles.copy}>
             <div style={wantStyles.title}>{foodName}</div>
@@ -684,7 +689,7 @@ export function WantToEatList({
             style={
               isScroll
                 ? wantStyles.scrollRow
-                : hasDishMedia
+                : showHeroVisual
                   ? wantStyles.stackPhotoRow
                   : wantStyles.row
             }
