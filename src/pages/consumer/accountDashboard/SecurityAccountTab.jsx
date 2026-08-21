@@ -1,4 +1,8 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import {
+  getNotificationPreferences,
+  updateNotificationPreferences,
+} from "../../lib/consumerApi.js";
 import { accountStyles as styles } from "./accountDashboardStyles.js";
 
 export default function SecurityAccountTab({
@@ -24,6 +28,46 @@ export default function SecurityAccountTab({
   signOutTitle = "Sign out",
 }) {
   const [editingPassword, setEditingPassword] = useState(false);
+  const [importantEmailOn, setImportantEmailOn] = useState(true);
+  const [importantEmailLoading, setImportantEmailLoading] = useState(true);
+  const [importantEmailSaving, setImportantEmailSaving] = useState(false);
+  const [importantEmailMsg, setImportantEmailMsg] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await getNotificationPreferences();
+        if (cancelled) return;
+        setImportantEmailOn(res?.important_action_email_enabled !== false);
+      } catch {
+        if (!cancelled) setImportantEmailOn(true);
+      } finally {
+        if (!cancelled) setImportantEmailLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function onToggleImportantEmail(next) {
+    setImportantEmailSaving(true);
+    setImportantEmailMsg("");
+    setImportantEmailOn(next);
+    try {
+      const res = await updateNotificationPreferences({
+        important_action_email_enabled: next,
+      });
+      setImportantEmailOn(res?.important_action_email_enabled !== false);
+      setImportantEmailMsg(next ? "Important emails on." : "Important emails off.");
+    } catch (err) {
+      setImportantEmailOn(!next);
+      setImportantEmailMsg(err?.message || "Could not update email preference.");
+    } finally {
+      setImportantEmailSaving(false);
+    }
+  }
 
   return (
     <div>
@@ -52,6 +96,36 @@ export default function SecurityAccountTab({
           </div>
           {phoneChangeNotice ? <p style={styles.statusOk}>{phoneChangeNotice}</p> : null}
         </div>
+      </section>
+
+      <section style={styles.section}>
+        <h2 style={styles.sectionTitle}>Important Menuply emails</h2>
+        <p style={{ ...styles.readOnly, marginTop: 8, marginBottom: 12 }}>
+          Email only when you need to accept, decline, vote, or respond — not for likes or
+          routine activity.
+        </p>
+        <label
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            cursor: importantEmailLoading || importantEmailSaving ? "default" : "pointer",
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={importantEmailOn}
+            disabled={importantEmailLoading || importantEmailSaving}
+            onChange={(e) => onToggleImportantEmail(e.target.checked)}
+            aria-label="Important Menuply email notifications"
+          />
+          <span style={styles.fieldLabel}>Important Menuply email notifications</span>
+        </label>
+        {importantEmailMsg ? (
+          <p style={importantEmailMsg.includes("Could not") ? styles.statusErr : styles.statusOk}>
+            {importantEmailMsg}
+          </p>
+        ) : null}
       </section>
 
       <section style={styles.section}>

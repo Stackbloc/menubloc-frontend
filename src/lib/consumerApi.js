@@ -432,6 +432,10 @@ export const getFollowedRestaurants = ()    => get("/api/consumer/followed-resta
 // ── Preferences ───────────────────────────────────────────────────────────
 export const getPreferences        = ()     => get("/api/consumer/profile/preferences");
 export const updatePreferences     = (body) => put("/api/consumer/profile/preferences", body);
+export const getNotificationPreferences = () =>
+  get("/api/consumer/notification-preferences");
+export const updateNotificationPreferences = (body) =>
+  put("/api/consumer/notification-preferences", body);
 
 // ── Saved Locations ───────────────────────────────────────────────────────
 export const getLocations          = ()         => get("/api/consumer/profile/locations");
