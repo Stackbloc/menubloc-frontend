@@ -6,6 +6,7 @@ import { restaurantPathFromRow } from "../../../lib/canonicalUrl.js";
 import EatingSocialActions from "./EatingSocialActions.jsx";
 import { resolveConsumerMediaUrl } from "../../../lib/consumerApi.js";
 import { resolveEatingDishVisual } from "./eatingDishVisual.js";
+import { prefersHoverReveal } from "./mediaHoverReveal.js";
 import {
   compareMealPeriod,
   mealPeriodLabel,
@@ -578,10 +579,190 @@ function formatPlanWhen(planDate) {
 }
 
 /** Shared want-list cards for My Menuply and Connection peer hubs. */
+function WantToEatCard({
+  want,
+  readOnly,
+  isScroll,
+  onSelectItem,
+  onDelete,
+  deleteBusy,
+}) {
+  const href = want.menu_item_id
+    ? `/menu-items/${encodeURIComponent(String(want.menu_item_id))}`
+    : null;
+  const visual = resolveEatingDishVisual(want);
+  const hasDishMedia = visual?.source === "dish";
+  const showLogo = visual?.source === "logo";
+  const showBillboard = visual?.source === "billboard";
+  const showHeroVisual = hasDishMedia || showBillboard;
+  const place = String(want.restaurant_name || "").trim();
+  const foodName = String(want.food_name || "").trim() || "Want";
+  const canDelete = !readOnly && typeof onDelete === "function" && want?.id != null;
+  const [hovered, setHovered] = useState(() => !prefersHoverReveal());
+  const showDelete = canDelete && (hovered || !prefersHoverReveal());
+
+  const cardStyle = isScroll
+    ? showHeroVisual
+      ? wantStyles.scrollCardPhoto
+      : wantStyles.scrollCard
+    : wantStyles.card;
+  const shellStyle = isScroll
+    ? {
+        position: "relative",
+        flex: cardStyle.flex,
+        width: cardStyle.width || undefined,
+        scrollSnapAlign: "start",
+        flexShrink: 0,
+      }
+    : { position: "relative", width: "100%" };
+
+  let mediaBlock;
+  if (showHeroVisual) {
+    mediaBlock = (
+      <div
+        style={isScroll ? wantStyles.scrollPhotoWrap : wantStyles.stackPhotoWrap}
+        data-testid={
+          showBillboard ? "want-to-eat-billboard-media" : "want-to-eat-dish-media"
+        }
+      >
+        {visual.kind === "video" ? (
+          <video
+            src={visual.url}
+            style={isScroll ? wantStyles.scrollPhoto : wantStyles.stackPhoto}
+            playsInline
+            muted
+            preload="metadata"
+          />
+        ) : (
+          <img
+            src={visual.url}
+            alt=""
+            style={isScroll ? wantStyles.scrollPhoto : wantStyles.stackPhoto}
+          />
+        )}
+        {isScroll ? (
+          <div style={wantStyles.scrollPhotoScrim}>
+            <div style={wantStyles.scrollPhotoTitle}>{foodName}</div>
+            {place ? <div style={wantStyles.scrollPhotoMeta}>{place}</div> : null}
+          </div>
+        ) : null}
+      </div>
+    );
+  } else if (showLogo) {
+    mediaBlock = (
+      <div
+        style={isScroll ? wantStyles.scrollThumbPlaceholder : wantStyles.thumbPlaceholder}
+        data-testid="want-to-eat-logo"
+      >
+        <img src={visual.url} alt="" style={wantStyles.logoThumb} />
+      </div>
+    );
+  } else {
+    mediaBlock = (
+      <div
+        style={isScroll ? wantStyles.scrollThumbPlaceholder : wantStyles.thumbPlaceholder}
+        aria-hidden
+        data-testid="want-to-eat-placeholder"
+      >
+        🍽
+      </div>
+    );
+  }
+
+  const showTextBelow = !(isScroll && showHeroVisual);
+  const copyBlock = showTextBelow ? (
+    <div style={wantStyles.copy}>
+      <div style={wantStyles.title}>{foodName}</div>
+      {place ? <div style={socialType.meta}>{place}</div> : null}
+      {readOnly || isScroll ? null : want.menu_item_id ? (
+        <div style={wantStyles.hint}>Menu item linked</div>
+      ) : (
+        <div style={wantStyles.hint}>Tap to link restaurant and menu item</div>
+      )}
+    </div>
+  ) : null;
+
+  const body = (
+    <div
+      style={
+        isScroll
+          ? wantStyles.scrollRow
+          : showHeroVisual
+            ? wantStyles.stackPhotoRow
+            : wantStyles.row
+      }
+    >
+      {mediaBlock}
+      {copyBlock}
+    </div>
+  );
+
+  let main;
+  if (href) {
+    main = (
+      <Link to={href} style={cardStyle} data-testid="want-to-eat-item-link">
+        {body}
+      </Link>
+    );
+  } else if (readOnly) {
+    main = (
+      <div style={cardStyle} data-testid="want-to-eat-item-body">
+        {body}
+      </div>
+    );
+  } else {
+    main = (
+      <button
+        type="button"
+        style={cardStyle}
+        data-testid="want-to-eat-item-body"
+        onClick={() => onSelectItem?.(want)}
+      >
+        {body}
+      </button>
+    );
+  }
+
+  return (
+    <div
+      style={shellStyle}
+      data-testid="want-to-eat-item"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(prefersHoverReveal() ? false : true)}
+      onFocusCapture={() => setHovered(true)}
+      onBlurCapture={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget)) {
+          setHovered(prefersHoverReveal() ? false : true);
+        }
+      }}
+    >
+      {main}
+      {showDelete ? (
+        <button
+          type="button"
+          style={s.mealHolderDelete}
+          data-testid="want-to-eat-delete"
+          aria-label={`Delete ${foodName}`}
+          disabled={deleteBusy}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (!deleteBusy) onDelete?.(want);
+          }}
+        >
+          Delete
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
 export function WantToEatList({
   items = [],
   readOnly = false,
   onSelectItem,
+  onDelete,
+  deleteBusy = false,
   emptyMessage = null,
   limit = 12,
   layout = "stack",
@@ -600,133 +781,17 @@ export function WantToEatList({
 
   return (
     <div style={listStyle} data-testid="want-to-eat-list">
-      {rows.map((want) => {
-        const href = want.menu_item_id
-          ? `/menu-items/${encodeURIComponent(String(want.menu_item_id))}`
-          : null;
-        const visual = resolveEatingDishVisual(want);
-        const hasDishMedia = visual?.source === "dish";
-        const showLogo = visual?.source === "logo";
-        const showBillboard = visual?.source === "billboard";
-        const showHeroVisual = hasDishMedia || showBillboard;
-        const place = String(want.restaurant_name || "").trim();
-        const foodName = String(want.food_name || "").trim() || "Want";
-
-        const cardStyle = isScroll
-          ? showHeroVisual
-            ? wantStyles.scrollCardPhoto
-            : wantStyles.scrollCard
-          : wantStyles.card;
-
-        let mediaBlock;
-        if (showHeroVisual) {
-          mediaBlock = (
-            <div
-              style={isScroll ? wantStyles.scrollPhotoWrap : wantStyles.stackPhotoWrap}
-              data-testid={
-                showBillboard ? "want-to-eat-billboard-media" : "want-to-eat-dish-media"
-              }
-            >
-              {visual.kind === "video" ? (
-                <video
-                  src={visual.url}
-                  style={isScroll ? wantStyles.scrollPhoto : wantStyles.stackPhoto}
-                  playsInline
-                  muted
-                  preload="metadata"
-                />
-              ) : (
-                <img
-                  src={visual.url}
-                  alt=""
-                  style={isScroll ? wantStyles.scrollPhoto : wantStyles.stackPhoto}
-                />
-              )}
-              {isScroll ? (
-                <div style={wantStyles.scrollPhotoScrim}>
-                  <div style={wantStyles.scrollPhotoTitle}>{foodName}</div>
-                  {place ? <div style={wantStyles.scrollPhotoMeta}>{place}</div> : null}
-                </div>
-              ) : null}
-            </div>
-          );
-        } else if (showLogo) {
-          mediaBlock = (
-            <div
-              style={isScroll ? wantStyles.scrollThumbPlaceholder : wantStyles.thumbPlaceholder}
-              data-testid="want-to-eat-logo"
-            >
-              <img src={visual.url} alt="" style={wantStyles.logoThumb} />
-            </div>
-          );
-        } else {
-          mediaBlock = (
-            <div
-              style={isScroll ? wantStyles.scrollThumbPlaceholder : wantStyles.thumbPlaceholder}
-              aria-hidden
-              data-testid="want-to-eat-placeholder"
-            >
-              🍽
-            </div>
-          );
-        }
-
-        const showTextBelow = !(isScroll && showHeroVisual);
-        const copyBlock = showTextBelow ? (
-          <div style={wantStyles.copy}>
-            <div style={wantStyles.title}>{foodName}</div>
-            {place ? <div style={socialType.meta}>{place}</div> : null}
-            {readOnly || isScroll ? null : want.menu_item_id ? (
-              <div style={wantStyles.hint}>Menu item linked</div>
-            ) : (
-              <div style={wantStyles.hint}>Tap to link restaurant and menu item</div>
-            )}
-          </div>
-        ) : null;
-
-        const body = (
-          <div
-            style={
-              isScroll
-                ? wantStyles.scrollRow
-                : showHeroVisual
-                  ? wantStyles.stackPhotoRow
-                  : wantStyles.row
-            }
-          >
-            {mediaBlock}
-            {copyBlock}
-          </div>
-        );
-
-        if (href) {
-          return (
-            <Link key={want.id} to={href} style={cardStyle} data-testid="want-to-eat-item">
-              {body}
-            </Link>
-          );
-        }
-
-        if (readOnly) {
-          return (
-            <div key={want.id} style={cardStyle} data-testid="want-to-eat-item">
-              {body}
-            </div>
-          );
-        }
-
-        return (
-          <button
-            key={want.id}
-            type="button"
-            style={cardStyle}
-            data-testid="want-to-eat-item"
-            onClick={() => onSelectItem?.(want)}
-          >
-            {body}
-          </button>
-        );
-      })}
+      {rows.map((want) => (
+        <WantToEatCard
+          key={want.id}
+          want={want}
+          readOnly={readOnly}
+          isScroll={isScroll}
+          onSelectItem={onSelectItem}
+          onDelete={onDelete}
+          deleteBusy={deleteBusy}
+        />
+      ))}
     </div>
   );
 }

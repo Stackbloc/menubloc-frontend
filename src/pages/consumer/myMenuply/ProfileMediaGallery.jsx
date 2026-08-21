@@ -1,10 +1,55 @@
+import { useState } from "react";
 import { resolveConsumerMediaUrl } from "../../../lib/consumerApi.js";
+import { prefersHoverReveal } from "./mediaHoverReveal.js";
 import * as s from "./myMenuplyStyles.js";
 
 /**
  * Profile gallery — presentation of existing media only.
  * Add/camera moves to bottom-nav X (not inline here).
+ * Owner: hover (or always on touch) to delete photo or video tiles.
  */
+function ProfileMediaTile({ item, readOnly, busy, onRemove }) {
+  const src = resolveConsumerMediaUrl(item.media_url || "");
+  const isVideo = item.media_kind === "video";
+  const canDelete = !readOnly && typeof onRemove === "function";
+  const [hovered, setHovered] = useState(() => !prefersHoverReveal());
+  const showDelete = canDelete && (hovered || !prefersHoverReveal());
+
+  return (
+    <div
+      style={s.profileMediaTile}
+      data-testid="profile-media-item"
+      data-media={isVideo ? "video" : "photo"}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(prefersHoverReveal() ? false : true)}
+      onFocusCapture={() => setHovered(true)}
+      onBlurCapture={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget)) {
+          setHovered(prefersHoverReveal() ? false : true);
+        }
+      }}
+    >
+      {isVideo ? (
+        <video src={src} style={s.profileMediaThumb} controls playsInline preload="metadata" />
+      ) : (
+        <img src={src} alt="" style={s.profileMediaThumb} loading="lazy" />
+      )}
+      {showDelete ? (
+        <button
+          type="button"
+          style={s.profileMediaRemove}
+          data-testid="profile-media-delete"
+          aria-label={isVideo ? "Delete profile video" : "Delete profile photo"}
+          disabled={busy}
+          onClick={() => onRemove?.(item)}
+        >
+          Delete
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
 export default function ProfileMediaGallery({
   items = [],
   readOnly = false,
@@ -25,30 +70,15 @@ export default function ProfileMediaGallery({
       ) : null}
 
       <div style={s.profileMediaGrid}>
-        {items.map((item) => {
-          const src = resolveConsumerMediaUrl(item.media_url || "");
-          const isVideo = item.media_kind === "video";
-          return (
-            <div key={item.id} style={s.profileMediaTile} data-testid="profile-media-item">
-              {isVideo ? (
-                <video src={src} style={s.profileMediaThumb} controls playsInline preload="metadata" />
-              ) : (
-                <img src={src} alt="" style={s.profileMediaThumb} loading="lazy" />
-              )}
-              {readOnly ? null : (
-                <button
-                  type="button"
-                  style={s.profileMediaRemove}
-                  aria-label="Remove profile media"
-                  disabled={busy}
-                  onClick={() => onRemove?.(item)}
-                >
-                  Remove
-                </button>
-              )}
-            </div>
-          );
-        })}
+        {items.map((item) => (
+          <ProfileMediaTile
+            key={item.id}
+            item={item}
+            readOnly={readOnly}
+            busy={busy}
+            onRemove={onRemove}
+          />
+        ))}
       </div>
     </div>
   );

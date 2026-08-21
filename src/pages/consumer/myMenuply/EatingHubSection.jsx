@@ -73,6 +73,10 @@ export default function EatingHubSection({
   onEatingPhotoPick,
   onWantSelect,
   onDiarySelect,
+  onDiaryDelete,
+  diaryDeleteBusy = false,
+  onWantDelete,
+  wantDeleteBusy = false,
   onPlanAddDetails,
   onPostTagged,
   onSkipDetails,
@@ -243,6 +247,8 @@ export default function EatingHubSection({
             hubDate={hubDate}
             todayYmd={today}
             onSelect={readOnly ? undefined : onDiarySelect}
+            onDelete={readOnly ? undefined : onDiaryDelete}
+            deleteBusy={diaryDeleteBusy}
             onPhotoPick={readOnly ? undefined : onEatingPhotoPick}
           />
           {eatingForDay.length === 0 && lastPost?.kind !== "diary" ? (
@@ -288,6 +294,8 @@ export default function EatingHubSection({
             readOnly={readOnly}
             layout="scroll"
             onSelectItem={readOnly ? undefined : onWantSelect}
+            onDelete={readOnly ? undefined : onWantDelete}
+            deleteBusy={wantDeleteBusy}
             emptyMessage={null}
           />
           {/* Invite Me = invitation eligibility for a want (“eat this together”). */}

@@ -14,6 +14,8 @@ import {
   createWhatIAteToday,
   createWhatWeDoingSession,
   createWantToEat,
+  deleteWantToEat,
+  deleteWhatIAteToday,
   followRestaurant,
   getConsumerProfile,
   getFollowedRestaurants,
@@ -569,6 +571,49 @@ export default function MyMenuplyPage() {
     }
   }
 
+  async function onDiaryDelete(item) {
+    if (item?.kind !== "what_i_ate" || item.entry_id == null) return;
+    setPostBusy("eating-delete");
+    setError("");
+    try {
+      await deleteWhatIAteToday(item.entry_id);
+      setEating((prev) =>
+        (prev || []).filter((row) => Number(row.entry_id) !== Number(item.entry_id))
+      );
+      setLastPost((prev) =>
+        prev?.kind === "diary" && Number(prev.id) === Number(item.entry_id) ? null : prev
+      );
+      const calendarRes = await listWhatIAteTodayCalendar(
+        eatingHistoryStart(),
+        whatIAteTodayLocalDate()
+      ).catch(() => null);
+      if (calendarRes?.days) setEatingCalendarDays(calendarRes.days);
+    } catch (err) {
+      setError(err.message || "Unable to delete");
+    } finally {
+      setPostBusy("");
+    }
+  }
+
+  async function onWantDelete(want) {
+    if (want?.id == null) return;
+    setPostBusy("want-delete");
+    setError("");
+    setWantListError("");
+    try {
+      await deleteWantToEat(want.id);
+      setWants((prev) => (prev || []).filter((row) => Number(row.id) !== Number(want.id)));
+      setLastPost((prev) =>
+        prev?.kind === "want" && Number(prev.id) === Number(want.id) ? null : prev
+      );
+    } catch (err) {
+      setError(err.message || "Unable to delete");
+      setWantListError(err.message || "Unable to delete");
+    } finally {
+      setPostBusy("");
+    }
+  }
+
   async function postWant({ text, file, homemade, restaurant, dish, wantKind }) {
     setPostBusy("want");
     setError("");
@@ -995,6 +1040,10 @@ export default function MyMenuplyPage() {
                   item_name: item.food_name,
                 });
               }}
+              onDiaryDelete={onDiaryDelete}
+              diaryDeleteBusy={postBusy === "eating-delete"}
+              onWantDelete={onWantDelete}
+              wantDeleteBusy={postBusy === "want-delete"}
               onPlanAddDetails={(next) => {
                 setSelectedPlanKey(futurePlanKey(next));
                 setLastPost({

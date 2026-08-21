@@ -3,8 +3,10 @@
  * Compact 168px holders; meal category badge on each card.
  * No meal-row labels — photos group in sequence by meal period
  * (all breakfast, then lunch, then dinner, …) for every diner hub.
+ * Owner: hover (or always on touch) to delete a diary entry.
  */
 
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   groupEntriesByMealPeriod,
@@ -14,10 +16,11 @@ import {
 } from "../../../lib/whatIAteTodayMealPeriod.js";
 import { formatEatingCaption } from "./dinerHubFormat.js";
 import { resolveEatingDishVisual } from "./eatingDishVisual.js";
+import { prefersHoverReveal } from "./mediaHoverReveal.js";
 import { foodHref, restaurantHref } from "./myMenuplyBits.jsx";
 import * as s from "./myMenuplyStyles.js";
 
-function MealMediaCard({ item, readOnly, onSelect }) {
+function MealMediaCard({ item, readOnly, onSelect, onDelete, deleteBusy }) {
   const label = item.food_name || item.item_name || item.itemName || "Food";
   const place = item.restaurant_name || item.place_label || "";
   const media = resolveEatingDishVisual(item);
@@ -26,6 +29,33 @@ function MealMediaCard({ item, readOnly, onSelect }) {
   const useLogoFit = media?.source === "logo";
   const mealId = normalizeWhatIAteMealPeriod(item.meal_period) || "other";
   const mealBadge = mealPeriodLabel(mealId);
+  const canDelete =
+    !readOnly &&
+    typeof onDelete === "function" &&
+    item?.kind === "what_i_ate" &&
+    item?.entry_id != null;
+  const [hovered, setHovered] = useState(() => !prefersHoverReveal());
+  const showDelete = canDelete && (hovered || !prefersHoverReveal());
+
+  function handleDelete(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (deleteBusy) return;
+    onDelete?.(item);
+  }
+
+  const deleteBtn = showDelete ? (
+    <button
+      type="button"
+      style={s.mealHolderDelete}
+      data-testid="what-i-ate-meal-delete"
+      aria-label={`Delete ${label}`}
+      disabled={deleteBusy}
+      onClick={handleDelete}
+    >
+      Delete
+    </button>
+  ) : null;
 
   if (media) {
     return (
@@ -34,6 +64,14 @@ function MealMediaCard({ item, readOnly, onSelect }) {
         data-testid="what-i-ate-meal-holder"
         data-meal={mealId}
         data-media={media.source}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(prefersHoverReveal() ? false : true)}
+        onFocusCapture={() => setHovered(true)}
+        onBlurCapture={(e) => {
+          if (!e.currentTarget.contains(e.relatedTarget)) {
+            setHovered(prefersHoverReveal() ? false : true);
+          }
+        }}
       >
         <button
           type="button"
@@ -78,6 +116,7 @@ function MealMediaCard({ item, readOnly, onSelect }) {
             ) : null}
           </div>
         </button>
+        {deleteBtn}
       </article>
     );
   }
@@ -88,6 +127,14 @@ function MealMediaCard({ item, readOnly, onSelect }) {
       data-testid="what-i-ate-meal-holder"
       data-meal={mealId}
       data-media="none"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(prefersHoverReveal() ? false : true)}
+      onFocusCapture={() => setHovered(true)}
+      onBlurCapture={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget)) {
+          setHovered(prefersHoverReveal() ? false : true);
+        }
+      }}
     >
       <button
         type="button"
@@ -122,6 +169,7 @@ function MealMediaCard({ item, readOnly, onSelect }) {
           </Link>
         ) : null}
       </button>
+      {deleteBtn}
     </article>
   );
 }
@@ -143,6 +191,8 @@ export default function WhatIAteMealBoard({
   items = [],
   readOnly = false,
   onSelect,
+  onDelete,
+  deleteBusy = false,
   onPhotoPick,
   onSlotCapture,
   hubDate = null,
@@ -178,6 +228,8 @@ export default function WhatIAteMealBoard({
             item={item}
             readOnly={readOnly}
             onSelect={onSelect}
+            onDelete={onDelete}
+            deleteBusy={deleteBusy}
           />
         ))}
       </div>

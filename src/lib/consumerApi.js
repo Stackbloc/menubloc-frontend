@@ -549,6 +549,8 @@ export const listPeerWantToEat = (userId) =>
 export const createWantToEat = (body) => post("/api/consumer/want-to-eat", body);
 export const updateWantToEat = (id, body) =>
   patch(`/api/consumer/want-to-eat/${encodeURIComponent(String(id))}`, body);
+export const deleteWantToEat = (id) =>
+  del(`/api/consumer/want-to-eat/${encodeURIComponent(String(id))}`);
 
 /** My Month in Food scoreboard (calendar month YYYY-MM). */
 export const getMonthInFood = (ym) =>

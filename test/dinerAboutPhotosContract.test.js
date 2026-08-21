@@ -39,6 +39,8 @@ test("My Menuply identity hero is prominent with photo upload and short bio", ()
   assert.match(read("src/pages/consumer/myMenuply/MyMenuplyPresentationRails.jsx"), /Connects/);
   assert.match(read("src/pages/consumer/myMenuply/MyMenuplyPresentationRails.jsx"), /\/my-menuply\/connections-eating/);
   assert.match(gallery, /about-me-profile-media/);
+  assert.match(gallery, /profile-media-delete/);
+  assert.match(gallery, /prefersHoverReveal|mediaHoverReveal/);
   assert.doesNotMatch(gallery, /Add photo or video/);
   assert.doesNotMatch(gallery, /MenuplyMediaPicker/);
   assert.doesNotMatch(gallery, /profile-media-add/);

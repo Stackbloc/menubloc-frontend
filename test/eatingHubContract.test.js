@@ -76,6 +76,10 @@ test("My Menuply and peer hub use five-section presentation hub", () => {
   assert.match(mealBoard, /what-i-ate-meal-sequence/);
   assert.doesNotMatch(mealBoard, /mealRowLabel/);
   assert.match(mealBoard, /mealHolderBadge/);
+  assert.match(mealBoard, /what-i-ate-meal-delete/);
+  assert.match(mealBoard, /onDelete/);
+  assert.match(section, /onDiaryDelete/);
+  assert.match(section, /onWantDelete/);
   assert.match(mealBoard, /resolveEatingDishVisual/);
   assert.match(dishVisual, /video_url/);
   assert.match(dishVisual, /photo_url/);
@@ -119,10 +123,10 @@ test("My Menuply and peer hub use five-section presentation hub", () => {
   assert.match(mealLib, /empty days show copy, not camera slots/);
 
   const bits = read("src/pages/consumer/myMenuply/myMenuplyBits.jsx");
+  assert.match(bits, /want-to-eat-delete/);
   assert.match(bits, /planCardBold/);
   assert.match(bits, /onOpenCalendar/);
   assert.match(bits, /Join Me open/);
-
   assert.match(calendar, /past_count/);
   assert.match(calendar, /future_count/);
   assert.match(calendar, /#007AFF/);

@@ -1075,6 +1075,23 @@ export const mealHolderBadge = {
   boxShadow: "0 2px 8px rgba(15,23,42,0.12)",
 };
 
+export const mealHolderDelete = {
+  position: "absolute",
+  top: 8,
+  right: 8,
+  zIndex: 2,
+  appearance: "none",
+  border: "none",
+  borderRadius: 8,
+  padding: "5px 9px",
+  fontSize: 11,
+  fontWeight: 700,
+  background: "rgba(15, 23, 42, 0.82)",
+  color: "#fff",
+  cursor: "pointer",
+  boxShadow: "0 2px 10px rgba(15,23,42,0.25)",
+};
+
 export const mealHolderBadgeDark = {
   display: "inline-flex",
   alignItems: "center",
