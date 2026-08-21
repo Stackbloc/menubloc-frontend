@@ -35,36 +35,54 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` @ clean `main` |
-| Git commit | `c21b76a` — My Menuply dish heroes, Invite/Join placement, X profile gallery |
-| Vercel deployment | `menubloc-frontend-7jj41b2cs-menuply.vercel.app` |
-| Live bundle | `index-Dy18r6lv.js` |
+| Git commit | `b46d3ed` — compact meal photos, menu-item photo prefer, long-press Delete |
+| Vercel deployment | `menubloc-frontend-fli5934kq-menuply.vercel.app` |
+| Live bundle | `index-D_zxLTdZ.js` |
 | Aliases | `menuply.com`, `www.menuply.com`, `crm.menuply.com`, `venues.menuply.com` |
-| Tip-gate | **PASS** (apex + www) verified 2026-08-21 after dish-hero / X gallery CPD |
-| Feature | Dish photo heroes + logo fallback; Invite Me / Join Me placement; X profile gallery camera+library |
+| Tip-gate | **PASS** (apex + www) verified 2026-08-21 after meal-photos / long-press delete CPD |
+| Feature | Compact meal-period sequence; menu item photos before logo/billboard; owner long-press Delete on eating/want/profile media |
 
 ### Backend (Railway)
 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-backend-main` @ clean `main` |
-| Git on origin | `0d33a21a` |
-| Live health SHA | `0d33a21a…` (verified 2026-08-21 CPD) |
+| Git on origin | `a24c775c` |
+| Live health SHA | `a24c775c…` (verified 2026-08-21 CPD) |
 | Health URL | `https://menubloc-backend-production.up.railway.app/health` |
-| `commit_hash` | `0d33a21a` (live at CPD certify) |
+| `commit_hash` | `a24c775c` (live at CPD certify) |
 | DB | migrations through `0284` (unchanged this ship) |
-| Smoke | tip-gate PASS `7jj41b2cs` / `index-Dy18r6lv.js`; health `0d33a21a`; bundle railway ≫ localhost |
+| Smoke | tip-gate PASS `fli5934kq` / `index-D_zxLTdZ.js`; health `a24c775c`; bundle railway ≫ localhost |
 
 ### Restore current tip (if tip-gate fails mid-change)
 
 ```bash
 cd /Users/andrebarber/Desktop/menubloc/menubloc-frontend-main
-npx vercel alias set menubloc-frontend-7jj41b2cs-menuply.vercel.app menuply.com
-npx vercel alias set menubloc-frontend-7jj41b2cs-menuply.vercel.app www.menuply.com
-npx vercel alias set menubloc-frontend-7jj41b2cs-menuply.vercel.app crm.menuply.com
-npx vercel alias set menubloc-frontend-7jj41b2cs-menuply.vercel.app venues.menuply.com
+npx vercel alias set menubloc-frontend-fli5934kq-menuply.vercel.app menuply.com
+npx vercel alias set menubloc-frontend-fli5934kq-menuply.vercel.app www.menuply.com
+npx vercel alias set menubloc-frontend-fli5934kq-menuply.vercel.app crm.menuply.com
+npx vercel alias set menubloc-frontend-fli5934kq-menuply.vercel.app venues.menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 ```
+
+### Prior tip — billboard fallback (rollback target)
+
+| Field | Value |
+|-------|-------|
+| Deployment | `menubloc-frontend-a304s1jgd-menuply.vercel.app` |
+| Bundle | `index-CvkADiUB.js` |
+| Commit | `9bd7574` |
+| Notes | Pre–compact photos / menu-item prefer / long-press Delete CPD |
+
+### Prior tip — My Menuply dish heroes + X gallery (rollback target)
+
+| Field | Value |
+|-------|-------|
+| Deployment | `menubloc-frontend-7jj41b2cs-menuply.vercel.app` |
+| Bundle | `index-Dy18r6lv.js` |
+| Commit | `c21b76a` |
+| Notes | Pre–billboard fallback CPD |
 
 ### Prior tip — important-action email Connect (rollback target)
 
