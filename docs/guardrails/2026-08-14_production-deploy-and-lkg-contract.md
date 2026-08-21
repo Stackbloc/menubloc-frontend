@@ -35,36 +35,54 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` @ clean `main` |
-| Git commit | `8bd0892` — My Menuply five sections; X creation; My Events compose |
-| Vercel deployment | `menubloc-frontend-6sm7u9cwb-menuply.vercel.app` |
-| Live bundle | `index-GXbrWt3V.js` |
+| Git commit | `c21b76a` — My Menuply dish heroes, Invite/Join placement, X profile gallery |
+| Vercel deployment | `menubloc-frontend-7jj41b2cs-menuply.vercel.app` |
+| Live bundle | `index-Dy18r6lv.js` |
 | Aliases | `menuply.com`, `www.menuply.com`, `crm.menuply.com`, `venues.menuply.com` |
-| Tip-gate | **PASS** (apex + www) verified 2026-08-21 after My Menuply five-section CPD |
-| Feature | Presentation hub (eating / want / plans / crews / events); editorial empties; X → My Events |
+| Tip-gate | **PASS** (apex + www) verified 2026-08-21 after dish-hero / X gallery CPD |
+| Feature | Dish photo heroes + logo fallback; Invite Me / Join Me placement; X profile gallery camera+library |
 
 ### Backend (Railway)
 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-backend-main` @ clean `main` |
-| Git on origin | `c2c656b2` |
-| Live health SHA | `c2c656b2…` (verified 2026-08-21 CPD) |
+| Git on origin | `0d33a21a` |
+| Live health SHA | `0d33a21a…` (verified 2026-08-21 CPD) |
 | Health URL | `https://menubloc-backend-production.up.railway.app/health` |
-| `commit_hash` | `c2c656b2` (live at CPD certify) |
-| DB | migrations through `0283` (`0282` meal/intent; `0283` diner social events; prior through `0281`) |
-| Smoke | tip-gate PASS `6sm7u9cwb` / `index-GXbrWt3V.js`; health `c2c656b2`; bundle railway ≫ localhost |
+| `commit_hash` | `0d33a21a` (live at CPD certify) |
+| DB | migrations through `0284` (unchanged this ship) |
+| Smoke | tip-gate PASS `7jj41b2cs` / `index-Dy18r6lv.js`; health `0d33a21a`; bundle railway ≫ localhost |
 
 ### Restore current tip (if tip-gate fails mid-change)
 
 ```bash
 cd /Users/andrebarber/Desktop/menubloc/menubloc-frontend-main
-npx vercel alias set menubloc-frontend-6sm7u9cwb-menuply.vercel.app menuply.com
-npx vercel alias set menubloc-frontend-6sm7u9cwb-menuply.vercel.app www.menuply.com
-npx vercel alias set menubloc-frontend-6sm7u9cwb-menuply.vercel.app crm.menuply.com
-npx vercel alias set menubloc-frontend-6sm7u9cwb-menuply.vercel.app venues.menuply.com
+npx vercel alias set menubloc-frontend-7jj41b2cs-menuply.vercel.app menuply.com
+npx vercel alias set menubloc-frontend-7jj41b2cs-menuply.vercel.app www.menuply.com
+npx vercel alias set menubloc-frontend-7jj41b2cs-menuply.vercel.app crm.menuply.com
+npx vercel alias set menubloc-frontend-7jj41b2cs-menuply.vercel.app venues.menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 ```
+
+### Prior tip — important-action email Connect (rollback target)
+
+| Field | Value |
+|-------|-------|
+| Deployment | `menubloc-frontend-b8kmlp3k2-menuply.vercel.app` |
+| Bundle | `index-DcJ2rrvn.js` |
+| Commit | `981db24` |
+| Notes | Pre–My Menuply dish-hero / X profile gallery CPD |
+
+### Prior tip — My Menuply five-section + X label polish (rollback target)
+
+| Field | Value |
+|-------|-------|
+| Deployment | `menubloc-frontend-6sm7u9cwb-menuply.vercel.app` |
+| Bundle | `index-GXbrWt3V.js` |
+| Commit | `8bd0892` |
+| Notes | Pre–important-action email CPD |
 
 ### Prior tip — My Menuply five-section first tip (rollback target)
 
