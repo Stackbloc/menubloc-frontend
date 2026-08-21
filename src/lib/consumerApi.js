@@ -338,6 +338,12 @@ export async function postDiningCrewPhoto(conversationId, { file, body = null, r
   return json;
 }
 export const CONSUMER_API_BASE = API;
+
+/** Common Knowledge cuisine vocabulary for Want-to-Eat cuisine picker. */
+export async function listMetaCuisines() {
+  return req("/api/meta/cuisines?source=vocabulary");
+}
+
 export const searchDiningCrewEntities = ({ type, q = "", restaurant_id = null, limit = 8 } = {}) => {
   const params = new URLSearchParams();
   if (type) params.set("type", String(type));

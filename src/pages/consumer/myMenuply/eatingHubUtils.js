@@ -129,7 +129,7 @@ export const EATING_COMPOSE_CATEGORIES = [
 
 /** What I Want to Eat intent levels (not forced to restaurant). */
 export const WANT_INTENT_KINDS = [
-  { id: "cuisine", label: "Cuisine", placeholder: "e.g. Korean" },
+  { id: "cuisine", label: "Cuisine", placeholder: "Select a cuisine" },
   { id: "restaurant", label: "Restaurant", placeholder: "Search restaurant" },
   { id: "menu_item", label: "Menu item", placeholder: "Restaurant → dish" },
   { id: "food_item", label: "Food item", placeholder: "e.g. Sushi" },

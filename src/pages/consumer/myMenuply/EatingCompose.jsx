@@ -4,7 +4,7 @@
  * Want: intent kind → cuisine | restaurant | menu item | food item.
  */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import MenuplyMediaPicker from "../../../components/social/MenuplyMediaPicker.jsx";
 import {
   WHAT_I_ATE_MEAL_PERIODS,
@@ -13,6 +13,7 @@ import {
 import { EATING_COMPOSE_CATEGORIES, WANT_INTENT_KINDS } from "./eatingHubUtils.js";
 import EatingPlaceFields from "./EatingPlaceFields.jsx";
 import { socialBtn, socialType } from "../../../lib/socialDesignTokens.js";
+import { listMetaCuisines } from "../../../lib/consumerApi.js";
 
 export default function EatingCompose({
   busy = false,
@@ -39,10 +40,46 @@ export default function EatingCompose({
   const [restaurant, setRestaurant] = useState(null);
   const [dish, setDish] = useState(null);
   const [wantKind, setWantKind] = useState("food_item");
+  const [cuisineSlug, setCuisineSlug] = useState("");
+  const [cuisineOptions, setCuisineOptions] = useState([]);
+  const [cuisinesLoading, setCuisinesLoading] = useState(false);
+  const [cuisinesError, setCuisinesError] = useState("");
 
   const meta = EATING_COMPOSE_CATEGORIES.find((c) => c.id === category) || EATING_COMPOSE_CATEGORIES[0];
   const acceptMedia = category === "ate" || category === "want";
   const wantMeta = WANT_INTENT_KINDS.find((k) => k.id === wantKind) || WANT_INTENT_KINDS[3];
+
+  useEffect(() => {
+    let cancelled = false;
+    if (category !== "want" || wantKind !== "cuisine") return undefined;
+    if (cuisineOptions.length > 0) return undefined;
+    setCuisinesLoading(true);
+    setCuisinesError("");
+    listMetaCuisines()
+      .then((data) => {
+        if (cancelled) return;
+        const rows = Array.isArray(data?.cuisines) ? data.cuisines : [];
+        setCuisineOptions(
+          rows
+            .map((row) => ({
+              value: String(row.value || row.slug || "").trim(),
+              label: String(row.label || row.display_name || row.value || "").trim(),
+            }))
+            .filter((row) => row.value && row.label)
+        );
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setCuisinesError(err?.message || "Unable to load cuisines");
+      })
+      .finally(() => {
+        if (!cancelled) setCuisinesLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [category, wantKind, cuisineOptions.length]);
+
 
   function resetPlace() {
     setHomemade(false);
@@ -53,9 +90,20 @@ export default function EatingCompose({
   function selectWantKind(next) {
     setWantKind(next);
     resetPlace();
-    if (next === "cuisine" || next === "food_item") {
+    setCuisineSlug("");
+    if (next === "cuisine") {
+      setText("");
+      setHomemade(true);
+    } else if (next === "food_item") {
       setHomemade(true);
     }
+  }
+
+  function selectCuisine(slug) {
+    const next = String(slug || "").trim();
+    setCuisineSlug(next);
+    const match = cuisineOptions.find((row) => row.value === next);
+    setText(match?.label || "");
   }
 
   async function handleSubmit(e) {
@@ -71,23 +119,27 @@ export default function EatingCompose({
     }
     const value = String(text || "").trim();
     if (category === "want") {
-      const needsText = wantKind === "cuisine" || wantKind === "food_item";
+      const needsCuisine = wantKind === "cuisine";
+      const needsText = wantKind === "food_item";
       const needsRestaurant = wantKind === "restaurant" || wantKind === "menu_item";
       const needsDish = wantKind === "menu_item";
+      if (needsCuisine && !cuisineSlug) return;
       if (needsText && !value) return;
       if (needsRestaurant && !restaurant) return;
       if (needsDish && !dish) return;
       await onSubmit({
         category,
-        text: value,
+        text: needsCuisine ? String(text || "").trim() || value : value,
         file,
         wantKind,
+        cuisineSlug: needsCuisine ? cuisineSlug : null,
         homemade: wantKind === "cuisine" || wantKind === "food_item",
         restaurant: needsRestaurant ? restaurant : null,
         dish: needsDish ? dish : null,
       });
       setText("");
       setFile(null);
+      setCuisineSlug("");
       resetPlace();
       return;
     }
@@ -110,11 +162,13 @@ export default function EatingCompose({
     category === "plan"
       ? true
       : category === "want"
-        ? wantKind === "cuisine" || wantKind === "food_item"
-          ? Boolean(String(text).trim())
-          : wantKind === "restaurant"
-            ? Boolean(restaurant)
-            : Boolean(restaurant && dish)
+        ? wantKind === "cuisine"
+          ? Boolean(cuisineSlug)
+          : wantKind === "food_item"
+            ? Boolean(String(text).trim())
+            : wantKind === "restaurant"
+              ? Boolean(restaurant)
+              : Boolean(restaurant && dish)
         : Boolean(
             String(text).trim() || file || homemade || restaurant || dish
           );
@@ -236,7 +290,36 @@ export default function EatingCompose({
 
         {category === "want" ? (
           <>
-            {wantKind === "cuisine" || wantKind === "food_item" ? (
+            {wantKind === "cuisine" ? (
+              <div style={styles.cuisineBlock}>
+                <label htmlFor="want-cuisine-select" style={styles.stepLabel}>
+                  Cuisine
+                </label>
+                <select
+                  id="want-cuisine-select"
+                  value={cuisineSlug}
+                  onChange={(e) => selectCuisine(e.target.value)}
+                  disabled={busy || cuisinesLoading}
+                  style={styles.input}
+                  data-testid="want-cuisine-select"
+                >
+                  <option value="">
+                    {cuisinesLoading ? "Loading cuisines…" : "Select a cuisine"}
+                  </option>
+                  {cuisineOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+                {cuisinesError ? (
+                  <p style={styles.cuisineError} data-testid="want-cuisine-error">
+                    {cuisinesError}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
+            {wantKind === "food_item" ? (
               <input
                 type="text"
                 value={text}
@@ -358,6 +441,17 @@ const styles = {
     color: "#475467",
     letterSpacing: "0.02em",
     textTransform: "uppercase",
+  },
+  cuisineBlock: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 6,
+  },
+  cuisineError: {
+    margin: 0,
+    fontSize: 12,
+    color: "#b91c1c",
+    fontWeight: 600,
   },
   input: {
     width: "100%",
