@@ -1,6 +1,8 @@
 /**
  * What I'm Eating day board — presentation only.
- * Prefer dish photo/video, then restaurant logo, then billboard; else text (no camera).
+ * Compact 168px holders; meal category badge on each card.
+ * No meal-row labels — photos group in sequence by meal period
+ * (all breakfast, then lunch, then dinner, …) for every diner hub.
  */
 
 import { Link } from "react-router-dom";
@@ -21,31 +23,30 @@ function MealMediaCard({ item, readOnly, onSelect }) {
   const media = resolveEatingDishVisual(item);
   const restHref = restaurantHref(item);
   const dishHref = foodHref(item);
-  const mealBadge = item.meal_period
-    ? mealPeriodLabel(normalizeWhatIAteMealPeriod(item.meal_period))
-    : null;
   const useLogoFit = media?.source === "logo";
+  const mealId = normalizeWhatIAteMealPeriod(item.meal_period) || "other";
+  const mealBadge = mealPeriodLabel(mealId);
 
   if (media) {
     return (
       <article
-        style={s.mealHeroCard}
+        style={s.mealHolder}
         data-testid="what-i-ate-meal-holder"
-        data-meal={normalizeWhatIAteMealPeriod(item.meal_period) || "other"}
+        data-meal={mealId}
         data-media={media.source}
       >
         <button
           type="button"
-          style={s.mealHeroMediaBtn}
+          style={s.mealHolderMediaBtn}
           data-testid="what-i-ate-meal-media"
           onClick={() => onSelect?.(item)}
           disabled={!onSelect}
-          aria-label={`${label}. Tap for details`}
+          aria-label={`${mealBadge}. ${label}. Tap for details`}
         >
           {media.kind === "video" ? (
             <video
               src={media.url}
-              style={s.mealHeroMedia}
+              style={s.mealHolderMedia}
               playsInline
               muted
               preload="metadata"
@@ -54,25 +55,25 @@ function MealMediaCard({ item, readOnly, onSelect }) {
             <img
               src={media.url}
               alt=""
-              style={useLogoFit ? s.mealHeroLogo : s.mealHeroMedia}
+              style={useLogoFit ? s.mealHolderLogo : s.mealHolderMedia}
             />
           )}
-          <div style={s.mealHeroOverlayTop}>
-            {mealBadge ? <span style={s.heroBadge}>{mealBadge}</span> : <span />}
+          <div style={s.mealHolderOverlayTop}>
+            <span style={s.mealHolderBadge}>{mealBadge}</span>
           </div>
-          <div style={s.mealHeroScrim}>
-            <div style={s.mealHeroTitle}>{label}</div>
+          <div style={s.mealHolderScrim}>
+            <div style={s.mealHolderTitle}>{label}</div>
             {place ? (
               restHref ? (
                 <Link
                   to={restHref}
-                  style={s.mealHeroMeta}
+                  style={s.mealHolderMeta}
                   onClick={(e) => e.stopPropagation()}
                 >
                   {place}
                 </Link>
               ) : (
-                <div style={s.mealHeroMeta}>{place}</div>
+                <div style={s.mealHolderMeta}>{place}</div>
               )
             ) : null}
           </div>
@@ -85,7 +86,7 @@ function MealMediaCard({ item, readOnly, onSelect }) {
     <article
       style={s.mealHolder}
       data-testid="what-i-ate-meal-holder"
-      data-meal={normalizeWhatIAteMealPeriod(item.meal_period) || "other"}
+      data-meal={mealId}
       data-media="none"
     >
       <button
@@ -95,6 +96,7 @@ function MealMediaCard({ item, readOnly, onSelect }) {
         onClick={() => onSelect?.(item)}
         disabled={!onSelect && readOnly}
       >
+        <span style={s.mealHolderBadgeDark}>{mealBadge}</span>
         <div style={s.mealHolderTitleDark}>{label}</div>
         {place ? (
           restHref ? (
@@ -124,6 +126,19 @@ function MealMediaCard({ item, readOnly, onSelect }) {
   );
 }
 
+/** Flatten meal buckets into one sequence: breakfast… then dinner… etc. */
+function orderedMealEntries(items) {
+  const { buckets, other } = groupEntriesByMealPeriod(items);
+  const filledPeriodIds = Object.keys(buckets).filter((id) => (buckets[id] || []).length > 0);
+  const visibleMeals = visibleWhatIAteMealPeriods({ filledPeriodIds });
+  const ordered = [];
+  for (const meal of visibleMeals) {
+    for (const item of buckets[meal.id] || []) ordered.push(item);
+  }
+  for (const item of other) ordered.push(item);
+  return ordered;
+}
+
 export default function WhatIAteMealBoard({
   items = [],
   readOnly = false,
@@ -137,11 +152,9 @@ export default function WhatIAteMealBoard({
   void onPhotoPick;
   void onSlotCapture;
   void now;
-  const { buckets, other } = groupEntriesByMealPeriod(items);
   const hasAny = (items || []).length > 0;
   const isPastDay = Boolean(hubDate && todayYmd && hubDate < todayYmd);
-  const filledPeriodIds = Object.keys(buckets).filter((id) => (buckets[id] || []).length > 0);
-  const visibleMeals = visibleWhatIAteMealPeriods({ filledPeriodIds });
+  const ordered = hasAny ? orderedMealEntries(items) : [];
   // No empty camera holders — presentation only (owner + peer parity).
   const showEmptyHolders = false;
   const allowEmptyCapture = false;
@@ -157,41 +170,17 @@ export default function WhatIAteMealBoard({
   }
 
   return (
-    <div data-testid="what-i-ate-meal-board" style={s.mealBoardHero}>
-      {visibleMeals.map((meal) => {
-        const rows = buckets[meal.id] || [];
-        if (!rows.length) return null;
-        return (
-          <div key={meal.id} style={s.mealRowStack} data-testid={`what-i-ate-meal-row-${meal.id}`}>
-            <div style={s.mealRowLabel}>{meal.label}</div>
-            <div style={s.mealRowStackTrack}>
-              {rows.map((item) => (
-                <MealMediaCard
-                  key={item.id || item.entry_id || `${meal.id}-${item.food_name}`}
-                  item={item}
-                  readOnly={readOnly}
-                  onSelect={onSelect}
-                />
-              ))}
-            </div>
-          </div>
-        );
-      })}
-      {other.length > 0 ? (
-        <div style={s.mealRowStack} data-testid="what-i-ate-meal-row-other">
-          <div style={s.mealRowLabel}>{mealPeriodLabel("other")}</div>
-          <div style={s.mealRowStackTrack}>
-            {other.map((item) => (
-              <MealMediaCard
-                key={item.id || item.entry_id || `other-${item.food_name}`}
-                item={item}
-                readOnly={readOnly}
-                onSelect={onSelect}
-              />
-            ))}
-          </div>
-        </div>
-      ) : null}
+    <div data-testid="what-i-ate-meal-board" style={s.mealBoard}>
+      <div style={s.mealBoardTrack} data-testid="what-i-ate-meal-sequence">
+        {ordered.map((item, index) => (
+          <MealMediaCard
+            key={item.id || item.entry_id || `${index}-${item.food_name}`}
+            item={item}
+            readOnly={readOnly}
+            onSelect={onSelect}
+          />
+        ))}
+      </div>
       {/* Keep contract markers for removed empty-slot path */}
       {showEmptyHolders && allowEmptyCapture ? null : null}
     </div>

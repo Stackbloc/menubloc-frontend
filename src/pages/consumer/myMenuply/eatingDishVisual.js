@@ -1,13 +1,14 @@
 /**
  * Visual priority for diner dish cards:
- * diner/menu photo or video → restaurant logo → restaurant billboard → text template.
+ * diner photo/video → menu item photo → restaurant logo → restaurant billboard → text.
  */
 
 import { resolveConsumerMediaUrl } from "../../../lib/consumerApi.js";
 
 export function resolveEatingDishVisual(item) {
-  const photo = String(item?.photo_url || "").trim();
+  const dinerPhoto = String(item?.photo_url || "").trim();
   const video = String(item?.video_url || "").trim();
+  const menuItemPhoto = String(item?.item_photo_url || "").trim();
   const logo = String(item?.restaurant_logo_url || item?.logo_url || "").trim();
   const billboard = String(
     item?.restaurant_billboard_image_url || item?.billboard_image_url || ""
@@ -21,10 +22,18 @@ export function resolveEatingDishVisual(item) {
       fit: "cover",
     };
   }
-  if (photo) {
+  if (dinerPhoto) {
     return {
       kind: "image",
-      url: resolveConsumerMediaUrl(photo),
+      url: resolveConsumerMediaUrl(dinerPhoto),
+      source: "dish",
+      fit: "cover",
+    };
+  }
+  if (menuItemPhoto) {
+    return {
+      kind: "image",
+      url: resolveConsumerMediaUrl(menuItemPhoto),
       source: "dish",
       fit: "cover",
     };

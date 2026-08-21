@@ -96,6 +96,7 @@ test("My Menuply is the diner's personal home", () => {
   assert.match(bits, /Request to join/);
   assert.match(read("src/pages/consumer/myMenuply/eatingDishVisual.js"), /restaurant_logo_url/);
   assert.match(read("src/pages/consumer/myMenuply/eatingDishVisual.js"), /restaurant_billboard_image_url/);
+  assert.match(read("src/pages/consumer/myMenuply/eatingDishVisual.js"), /item_photo_url/);
   assert.match(read("src/pages/consumer/myMenuply/eatingDishVisual.js"), /source: "billboard"/);
   assert.match(bits, /isScheduledEatingPlan/);
   const form = read("src/pages/consumer/myMenuply/EatingPlanDayForm.jsx");

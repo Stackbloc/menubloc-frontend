@@ -41,7 +41,10 @@ test("My Menuply and peer hub use five-section presentation hub", () => {
   assert.match(section, /plans-join-me/);
   assert.match(section, /Invite Me/);
   assert.match(section, /upcoming-plans-calendar-open/);
+  assert.match(peer, /EatingHubSection/);
+  assert.match(peer, /readOnly/);
   assert.match(section, /WhatIAteMealBoard/);
+  assert.match(section, /WantToEatList/);
   assert.match(section, /SectionEmptyState/);
   assert.doesNotMatch(section, /future-plans-calendar/);
   assert.doesNotMatch(section, /eating-plans-calendar/);
@@ -70,11 +73,26 @@ test("My Menuply and peer hub use five-section presentation hub", () => {
   const dishVisual = read("src/pages/consumer/myMenuply/eatingDishVisual.js");
   assert.match(mealBoard, /visibleWhatIAteMealPeriods/);
   assert.match(mealBoard, /groupEntriesByMealPeriod/);
-  assert.match(mealBoard, /what-i-ate-meal-row/);
+  assert.match(mealBoard, /what-i-ate-meal-sequence/);
+  assert.doesNotMatch(mealBoard, /mealRowLabel/);
+  assert.match(mealBoard, /mealHolderBadge/);
   assert.match(mealBoard, /resolveEatingDishVisual/);
   assert.match(dishVisual, /video_url/);
   assert.match(dishVisual, /photo_url/);
+  assert.match(dishVisual, /item_photo_url/);
   assert.match(dishVisual, /restaurant_billboard_image_url/);
+  // Priority order for all diners (mine + peer hubs share this helper).
+  {
+    const videoIdx = dishVisual.indexOf("if (video)");
+    const dinerIdx = dishVisual.indexOf("if (dinerPhoto)");
+    const menuIdx = dishVisual.indexOf("if (menuItemPhoto)");
+    const logoIdx = dishVisual.indexOf("if (logo)");
+    const billboardIdx = dishVisual.indexOf("if (billboard)");
+    assert.ok(videoIdx > 0 && dinerIdx > videoIdx);
+    assert.ok(menuIdx > dinerIdx && logoIdx > menuIdx && billboardIdx > logoIdx);
+  }
+  assert.match(mealBoard, /mealHolder/);
+  assert.doesNotMatch(mealBoard, /mealHeroCard/);
   assert.match(mealBoard, /hubDate/);
   assert.match(mealBoard, /isPastDay/);
   assert.match(mealBoard, /No entries/);

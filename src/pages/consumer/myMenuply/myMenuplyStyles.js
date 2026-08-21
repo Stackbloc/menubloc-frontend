@@ -875,6 +875,13 @@ export const mealBoard = {
   marginTop: 8,
 };
 
+export const mealBoardTrack = {
+  display: "flex",
+  flexWrap: "wrap",
+  gap: 10,
+  alignItems: "stretch",
+};
+
 export const mealBoardHint = {
   margin: "4px 0 0",
   fontSize: 13,
@@ -1043,11 +1050,67 @@ export const mealHolderMediaBtn = {
   textAlign: "left",
 };
 
+export const mealHolderOverlayTop = {
+  position: "absolute",
+  top: 8,
+  left: 8,
+  right: 8,
+  display: "flex",
+  justifyContent: "flex-start",
+  alignItems: "flex-start",
+  pointerEvents: "none",
+  zIndex: 1,
+};
+
+export const mealHolderBadge = {
+  display: "inline-flex",
+  alignItems: "center",
+  padding: "3px 8px",
+  borderRadius: 999,
+  background: "rgba(255,255,255,0.92)",
+  color: "#334155",
+  fontSize: 10,
+  fontWeight: 700,
+  letterSpacing: "0.02em",
+  boxShadow: "0 2px 8px rgba(15,23,42,0.12)",
+};
+
+export const mealHolderBadgeDark = {
+  display: "inline-flex",
+  alignItems: "center",
+  alignSelf: "flex-start",
+  padding: "3px 8px",
+  borderRadius: 999,
+  background: "rgba(20, 83, 45, 0.12)",
+  color: GREEN,
+  fontSize: 10,
+  fontWeight: 700,
+  letterSpacing: "0.02em",
+  marginBottom: 4,
+};
+
 export const mealHolderMedia = {
   width: "100%",
   height: "100%",
   objectFit: "cover",
   display: "block",
+};
+
+export const mealHolderLogo = {
+  width: "72%",
+  height: "72%",
+  maxWidth: 120,
+  maxHeight: 120,
+  objectFit: "contain",
+  display: "block",
+  position: "absolute",
+  left: "50%",
+  top: "42%",
+  transform: "translate(-50%, -50%)",
+  background: "#fff",
+  borderRadius: 12,
+  padding: 8,
+  boxSizing: "border-box",
 };
 
 export const mealHolderScrim = {
@@ -1072,6 +1135,8 @@ export const mealHolderMeta = {
   fontSize: 11,
   fontWeight: 600,
   opacity: 0.9,
+  color: "inherit",
+  textDecoration: "none",
 };
 
 export const mealHolderText = {

@@ -16,7 +16,7 @@ function mediaUrl(raw) {
 
 function eatingCard(row) {
   const label = row.food_name || row.item_name || "Food";
-  const image = mediaUrl(row.photo_url || row.video_url);
+  const image = mediaUrl(row.photo_url || row.item_photo_url || row.video_url);
   if (!image && !row.video_url) return null;
   return {
     key: `diary-${row.entry_id || row.id}`,

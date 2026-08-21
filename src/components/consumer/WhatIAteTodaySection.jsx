@@ -14,13 +14,13 @@ import {
   listPeerWhatIAteTodayCalendar,
   listWhatIAteToday,
   listWhatIAteTodayCalendar,
-  resolveConsumerMediaUrl,
   setWhatIAteTodayVisibility,
   updateWhatIAteToday,
   uploadWhatIAteTodayPhoto,
   whatIAteTodayLocalDate,
 } from "../../lib/consumerApi.js";
 import { eatingMediaFromUpload } from "../../lib/eatingMediaUtils.js";
+import { resolveEatingDishVisual } from "../../pages/consumer/myMenuply/eatingDishVisual.js";
 import QuickCompose from "../../pages/consumer/myMenuply/QuickCompose.jsx";
 import {
   WHAT_I_ATE_MEAL_PERIODS,
@@ -709,13 +709,22 @@ function EntryList({
                     </p>
                   ) : null}
                   {entry.comment ? <p style={styles.muted}>{entry.comment}</p> : null}
-                  {entry.photo_url ? (
-                    <img
-                      src={resolveConsumerMediaUrl(entry.photo_url)}
-                      alt=""
-                      style={localStyles.thumb}
-                    />
-                  ) : null}
+                  {(() => {
+                    const visual = resolveEatingDishVisual(entry);
+                    if (!visual || visual.kind !== "image") return null;
+                    return (
+                      <img
+                        src={visual.url}
+                        alt=""
+                        style={{
+                          ...localStyles.thumb,
+                          objectFit: visual.fit === "contain" ? "contain" : "cover",
+                          background: visual.source === "logo" ? "#fff" : undefined,
+                        }}
+                        data-media={visual.source}
+                      />
+                    );
+                  })()}
                 </div>
                 {owner ? (
                   <div style={styles.actions}>

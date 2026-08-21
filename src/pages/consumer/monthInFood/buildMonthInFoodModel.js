@@ -85,7 +85,7 @@ export function buildMonthInFoodModel(payload = {}) {
           restaurant_id: Number(row.restaurant_id),
           name: row.restaurant_name || "Restaurant",
           place: [row.restaurant_city, row.restaurant_state].filter(Boolean).join(", "),
-          image: mediaUrl(row.restaurant_logo_url || row.photo_url),
+          image: mediaUrl(row.restaurant_logo_url || row.photo_url || row.item_photo_url),
           slug: row.restaurant_slug || null,
         });
       }
@@ -98,7 +98,7 @@ export function buildMonthInFoodModel(payload = {}) {
       cuisineCounts.set(cuisine, (cuisineCounts.get(cuisine) || 0) + 1);
     }
 
-    const img = mediaUrl(row.photo_url || row.video_url);
+    const img = mediaUrl(row.photo_url || row.item_photo_url || row.video_url);
     if (img || row.video_url) {
       mediaMealCount += 1;
       if (img) momentUrls.push({ key: `d-${row.id}`, url: img, label: name });
