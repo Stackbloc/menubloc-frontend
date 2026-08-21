@@ -4,7 +4,7 @@ Finish My Menuply five-section architecture (presentation vs X creation) includi
 
 # Current Status
 
-**CPD complete 2026-08-21.** Live FE `3056680` / tip `g8uuar69o` / `index-BpozLIHf.js`. Live BE `6514a605`. Migrations `0282`+`0283` applied on production.
+**CPD complete 2026-08-21.** Live FE `8bd0892` / tip `6sm7u9cwb` / `index-GXbrWt3V.js`. Live BE `c2c656b2`. Migrations `0282`+`0283` applied on production.
 
 # Files Changed
 
@@ -31,10 +31,11 @@ Finish My Menuply five-section architecture (presentation vs X creation) includi
 
 # Remaining Work (next steps)
 
-1. Optional naming polish on X labels: “Eating Plan” → “My Eating Plans”, “Dining Crew” → “My Crews”
-2. Want `intent_kind` UI smoke on production (create cuisine/restaurant/menu_item/food_item)
+1. Human verify: create My Event end-to-end on menuply.com while signed in
+2. Want `intent_kind` UI smoke on production (cuisine/restaurant/menu_item/food_item)
 3. Deferred viral loops (Want This counts, campus FOMO, Month in Food polish, restaurant “What Diners Are Eating”) — do not start until Andre asks
-4. Human verify: create My Event end-to-end on menuply.com while signed in
+
+Done this turn: X labels aligned to My Eating Plans / My Crews / My Events (tip `6sm7u9cwb`).
 
 # Risks / Known Issues
 
@@ -45,7 +46,7 @@ Finish My Menuply five-section architecture (presentation vs X creation) includi
 
 - Contract tests (action sheet / hub / peer / diner social events / want): PASS pre-commit
 - Tip-gate apex + www: PASS
-- BE health: `6514a605`
+- BE health: `c2c656b2`
 - Social-events anonymous probe: `401 not_signed_in` (mounted)
 
 # Resume Instructions
@@ -54,6 +55,6 @@ Start from this handoff + `docs/deployments/2026-08-21_my-menuply-five-section-m
 
 # Git Status
 
-- FE main `3056680` pushed + deployed
-- BE main `6514a605` pushed + Railway live
+- FE main `8bd0892` pushed + deployed
+- BE main `c2c656b2` pushed + Railway live
 - Docs/LKG lock commit follows this handoff (docs-only; no redeploy)

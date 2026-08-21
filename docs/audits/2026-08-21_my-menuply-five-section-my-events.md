@@ -12,8 +12,8 @@ Product architecture lag — profile was used as both journal and create surface
 
 # Evidence Collected
 
-- Tip-gate PASS `g8uuar69o` / `index-BpozLIHf.js`
-- BE health `6514a605`
+- Tip-gate PASS `6sm7u9cwb` / `index-GXbrWt3V.js`
+- BE health `c2c656b2`
 - Migrations `0282`/`0283` applied via railway run
 - Anonymous `GET /api/consumer/social-events` → `401 not_signed_in`
 
@@ -31,12 +31,12 @@ FE five-section hub + EventCompose; BE social events + intent/meal periods; home
 
 # Commits
 
-- FE `3056680` (+ follow-up docs/label commit if present)
-- BE `6514a605`
+- FE `8bd0892` (+ follow-up docs/label commit if present)
+- BE `c2c656b2`
 
 # Deployment Status
 
-Live menuply.com tip `g8uuar69o`; Railway `6514a605`.
+Live menuply.com tip `6sm7u9cwb`; Railway `c2c656b2`.
 
 # Verification Results
 

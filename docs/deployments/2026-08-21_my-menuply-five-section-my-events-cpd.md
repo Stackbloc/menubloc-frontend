@@ -8,13 +8,13 @@ Ship presentation-only My Menuply (five sections + editorial empties) with botto
 
 | Layer | Path | Branch | Commit | Gate |
 |-------|------|--------|--------|------|
-| FE | menubloc-frontend-main | main | `3056680` | tip-gate PASS |
-| BE | menubloc-backend-main | main | `6514a605` | health `6514a605` |
+| FE | menubloc-frontend-main | main | `8bd0892` | tip-gate PASS |
+| BE | menubloc-backend-main | main | `c2c656b2` | health `c2c656b2` |
 
 ## Production tip
 
-- Deployment: `menubloc-frontend-g8uuar69o-menuply.vercel.app`
-- Bundle: `index-BpozLIHf.js`
+- Deployment: `menubloc-frontend-6sm7u9cwb-menuply.vercel.app`
+- Bundle: `index-GXbrWt3V.js`
 - Tip-gate: PASS apex + www
 - Bundle smoke: railway 59 ≫ localhost 9
 
@@ -34,4 +34,4 @@ Ship presentation-only My Menuply (five sections + editorial empties) with botto
 ## Rollback
 
 Prior tip `menubloc-frontend-9acktyci6-menuply.vercel.app` / `index-lG7D8UuY.js` (`a37baf0`).  
-BE: prior health `74a34f67` (docs-only LKG); feature rollback needs revert of `6514a605` + migration rollbacks if required.
+BE: prior health `74a34f67` (docs-only LKG); feature rollback needs revert of `c2c656b2` + migration rollbacks if required.
