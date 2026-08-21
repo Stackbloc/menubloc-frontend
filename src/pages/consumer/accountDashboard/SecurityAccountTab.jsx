@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import {
   getNotificationPreferences,
   updateNotificationPreferences,
-} from "../../lib/consumerApi.js";
+} from "../../../lib/consumerApi.js";
 import { accountStyles as styles } from "./accountDashboardStyles.js";
 
 export default function SecurityAccountTab({
