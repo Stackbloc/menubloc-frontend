@@ -1092,6 +1092,15 @@ export const mealHolderDelete = {
   boxShadow: "0 2px 10px rgba(15,23,42,0.25)",
 };
 
+/** Long-press Delete on hub cards (crews / events / plans) — not hover. */
+export const hubCardDelete = {
+  ...mealHolderDelete,
+};
+
+export const hubCardShell = {
+  position: "relative",
+};
+
 export const mealHolderBadgeDark = {
   display: "inline-flex",
   alignItems: "center",

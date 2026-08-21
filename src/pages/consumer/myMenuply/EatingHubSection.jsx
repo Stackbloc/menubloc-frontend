@@ -78,6 +78,8 @@ export default function EatingHubSection({
   onWantDelete,
   wantDeleteBusy = false,
   onPlanAddDetails,
+  onPlanDelete,
+  planDeleteBusy = false,
   onPostTagged,
   onSkipDetails,
   foodHref,
@@ -350,6 +352,12 @@ export default function EatingHubSection({
                   }
                   onOpenCalendar={openPlanOnCalendar}
                   onAddDetails={readOnly ? undefined : onPlanAddDetails}
+                  onDelete={
+                    readOnly || !onPlanDelete || plan?.is_creator !== true
+                      ? undefined
+                      : onPlanDelete
+                  }
+                  deleteBusy={planDeleteBusy}
                 />
               );
             })

@@ -152,6 +152,8 @@ export const createMeetMeHere = (body) => post("/api/consumer/meet-me-here", bod
 
 // ── What We Doing? (group planning) ───────────────────────────────────────
 export const listWhatWeDoingSessions = () => get("/api/consumer/what-we-doing");
+export const deleteWhatWeDoingSession = (tokenOrId) =>
+  del(`/api/consumer/what-we-doing/${encodeURIComponent(String(tokenOrId))}`);
 export const createWhatWeDoingSession = (body) => post("/api/consumer/what-we-doing", body);
 export const updateWhatWeDoingSession = (tokenOrId, body) =>
   patch(`/api/consumer/what-we-doing/${encodeURIComponent(String(tokenOrId))}`, body);
@@ -251,6 +253,9 @@ export const discoverPublicDiningCrews = ({ q = "", limit = 20 } = {}) => {
   const qs = params.toString();
   return get(`/api/consumer/dining-crews/discover${qs ? `?${qs}` : ""}`);
 };
+export const deleteDiningCrew = (crewId) =>
+  del(`/api/consumer/dining-crews/${encodeURIComponent(String(crewId))}`);
+
 export const createDiningCrew = (payload) => {
   const body =
     typeof payload === "string" || payload == null
@@ -494,6 +499,8 @@ export const listMyVenueEventGroups = () => get("/api/consumer/my/event-groups")
 /** Diner-created social events (My Menuply My Events — not venue_events). */
 export const listDinerSocialEvents = () => get("/api/consumer/social-events");
 export const createDinerSocialEvent = (body) => post("/api/consumer/social-events", body);
+export const deleteDinerSocialEvent = (eventId) =>
+  del(`/api/consumer/social-events/${encodeURIComponent(String(eventId))}`);
 
 export const setVenueEventRsvp = (eventIdOrSlug, status) =>
   post(`/api/consumer/events/${encodeURIComponent(String(eventIdOrSlug))}/rsvp`, { status });

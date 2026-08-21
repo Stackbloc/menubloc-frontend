@@ -11,6 +11,9 @@ import ShareModal from "../../components/share/ShareModal.jsx";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
 import {
   createDiningCrew,
+  deleteDiningCrew,
+  deleteDinerSocialEvent,
+  deleteWhatWeDoingSession,
   createWhatIAteToday,
   createWhatWeDoingSession,
   createWantToEat,
@@ -614,6 +617,56 @@ export default function MyMenuplyPage() {
     }
   }
 
+  async function onCrewDelete(crew) {
+    if (crew?.id == null) return;
+    setPostBusy(`crew-delete-${crew.id}`);
+    setError("");
+    try {
+      await deleteDiningCrew(crew.id);
+      setCrews((prev) => (prev || []).filter((row) => Number(row.id) !== Number(crew.id)));
+    } catch (err) {
+      setError(err.message || "Unable to delete group");
+    } finally {
+      setPostBusy("");
+    }
+  }
+
+  async function onSocialEventDelete(ev) {
+    if (ev?.id == null) return;
+    setPostBusy(`social-event-delete-${ev.id}`);
+    setError("");
+    try {
+      await deleteDinerSocialEvent(ev.id);
+      setSocialEvents((prev) => (prev || []).filter((row) => Number(row.id) !== Number(ev.id)));
+    } catch (err) {
+      setError(err.message || "Unable to delete event");
+    } finally {
+      setPostBusy("");
+    }
+  }
+
+  async function onPlanDelete(plan) {
+    const key = plan?.token || plan?.id;
+    if (key == null) return;
+    if (plan?.is_creator === false) return;
+    setPostBusy(`plan-delete-${key}`);
+    setError("");
+    try {
+      await deleteWhatWeDoingSession(key);
+      setPlans((prev) =>
+        (prev || []).filter((row) => String(row.token || row.id) !== String(key))
+      );
+      setSelectedPlanKey((prev) => (prev === futurePlanKey(plan) ? "" : prev));
+      setLastPost((prev) =>
+        prev?.kind === "plan" && String(prev.token || prev.id) === String(key) ? null : prev
+      );
+    } catch (err) {
+      setError(err.message || "Unable to delete eating plan");
+    } finally {
+      setPostBusy("");
+    }
+  }
+
   async function postWant({ text, file, homemade, restaurant, dish, wantKind }) {
     setPostBusy("want");
     setError("");
@@ -1044,6 +1097,8 @@ export default function MyMenuplyPage() {
               diaryDeleteBusy={postBusy === "eating-delete"}
               onWantDelete={onWantDelete}
               wantDeleteBusy={postBusy === "want-delete"}
+              onPlanDelete={onPlanDelete}
+              planDeleteBusy={String(postBusy).startsWith("plan-delete-")}
               onPlanAddDetails={(next) => {
                 setSelectedPlanKey(futurePlanKey(next));
                 setLastPost({
@@ -1085,6 +1140,8 @@ export default function MyMenuplyPage() {
                       .join(" · ")}
                     onInvite={() => shareCrewInvite(crew)}
                     inviteLabel="Invite people to join"
+                    onDelete={crew.viewer_role === "owner" ? onCrewDelete : undefined}
+                    deleteBusy={postBusy === `crew-delete-${crew.id}`}
                   />
                 ))
               )}
@@ -1124,6 +1181,9 @@ export default function MyMenuplyPage() {
                         .filter(Boolean)
                         .join(" · ")}
                       description={ev.description || null}
+                      onDelete={() => onSocialEventDelete(ev)}
+                      deleteBusy={postBusy === `social-event-delete-${ev.id}`}
+                      deleteLabel={`Delete event ${ev.title || ""}`.trim()}
                     />
                   ))}
                   {events.slice(0, 4).map((ev) => (

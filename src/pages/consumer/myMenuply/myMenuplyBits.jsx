@@ -310,13 +310,58 @@ export function DiningCrewHubCard({
   onRequestJoin,
   requestLabel = "Request to join",
   requestDisabled = false,
+  onDelete,
+  deleteBusy = false,
 }) {
   const title = String(crew?.name || "").trim() || "Untitled";
   const purpose = crewPurposeText(crew);
+  const canDelete = typeof onDelete === "function";
+  const { open, dismiss, consumeArmedClick, bind } = useLongPressReveal(canDelete);
+
+  function handleDelete(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (deleteBusy) return;
+    dismiss();
+    onDelete?.(crew);
+  }
+
   return (
-    <div style={s.card} data-testid="dining-crew-hub-card">
+    <div
+      style={{ ...s.card, ...s.hubCardShell }}
+      data-testid="dining-crew-hub-card"
+      {...bind}
+      onClick={(e) => {
+        if (consumeArmedClick() || open) {
+          e.preventDefault();
+          e.stopPropagation();
+          if (open && !e.target?.closest?.('[data-testid="hub-card-delete"]')) dismiss();
+        }
+      }}
+    >
+      {open ? (
+        <button
+          type="button"
+          style={s.hubCardDelete}
+          data-testid="hub-card-delete"
+          aria-label={`Delete ${title}`}
+          disabled={deleteBusy}
+          onClick={handleDelete}
+        >
+          Delete
+        </button>
+      ) : null}
       {href ? (
-        <Link to={href} style={s.cardTitleLink}>
+        <Link
+          to={href}
+          style={s.cardTitleLink}
+          onClick={(e) => {
+            if (consumeArmedClick() || open) {
+              e.preventDefault();
+              dismiss();
+            }
+          }}
+        >
           {title}
         </Link>
       ) : (
@@ -364,12 +409,58 @@ export function NamedShareCard({
   onRequestJoin,
   requestLabel = "Request to join",
   requestDisabled = false,
+  onDelete,
+  deleteBusy = false,
+  deleteLabel,
 }) {
   const title = String(name || "").trim() || "Untitled";
+  const canDelete = typeof onDelete === "function";
+  const { open, dismiss, consumeArmedClick, bind } = useLongPressReveal(canDelete);
+
+  function handleDelete(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (deleteBusy) return;
+    dismiss();
+    onDelete?.();
+  }
+
   return (
-    <div style={s.card} data-testid="named-share-card">
+    <div
+      style={{ ...s.card, ...s.hubCardShell }}
+      data-testid="named-share-card"
+      {...bind}
+      onClick={(e) => {
+        if (consumeArmedClick() || open) {
+          e.preventDefault();
+          e.stopPropagation();
+          if (open && !e.target?.closest?.('[data-testid="hub-card-delete"]')) dismiss();
+        }
+      }}
+    >
+      {open ? (
+        <button
+          type="button"
+          style={s.hubCardDelete}
+          data-testid="hub-card-delete"
+          aria-label={deleteLabel || `Delete ${title}`}
+          disabled={deleteBusy}
+          onClick={handleDelete}
+        >
+          Delete
+        </button>
+      ) : null}
       {href ? (
-        <Link to={href} style={s.cardTitleLink}>
+        <Link
+          to={href}
+          style={s.cardTitleLink}
+          onClick={(e) => {
+            if (consumeArmedClick() || open) {
+              e.preventDefault();
+              dismiss();
+            }
+          }}
+        >
           {title}
         </Link>
       ) : (
@@ -458,16 +549,56 @@ export function ConnectionFoodCard({ item }) {
   );
 }
 
-export function FuturePlanRow({ plan, open, onToggle, onOpenCalendar, onAddDetails }) {
+export function FuturePlanRow({
+  plan,
+  open,
+  onToggle,
+  onOpenCalendar,
+  onAddDetails,
+  onDelete,
+  deleteBusy = false,
+}) {
   const when = formatPlanBracketDate(plan?.plan_date);
   const name = futurePlanRestaurantName(plan);
   const { meal, notes } = futurePlanDetailParts(plan);
+  const canDelete = typeof onDelete === "function";
+  const {
+    open: deleteOpen,
+    dismiss,
+    consumeArmedClick,
+    bind,
+  } = useLongPressReveal(canDelete);
+
+  function handleDelete(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (deleteBusy) return;
+    dismiss();
+    onDelete?.(plan);
+  }
+
   return (
-    <div data-testid="future-plan-row">
+    <div style={s.hubCardShell} data-testid="future-plan-row" {...bind}>
+      {deleteOpen ? (
+        <button
+          type="button"
+          style={s.hubCardDelete}
+          data-testid="hub-card-delete"
+          aria-label={`Delete eating plan ${name}`}
+          disabled={deleteBusy}
+          onClick={handleDelete}
+        >
+          Delete
+        </button>
+      ) : null}
       <button
         type="button"
         style={{ ...s.planCardBold, ...(open ? s.planCardBoldOpen : null) }}
         onClick={() => {
+          if (consumeArmedClick() || deleteOpen) {
+            dismiss();
+            return;
+          }
           if (onOpenCalendar) onOpenCalendar(plan);
           else onToggle?.();
         }}
