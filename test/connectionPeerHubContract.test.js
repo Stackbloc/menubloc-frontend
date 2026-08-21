@@ -24,20 +24,23 @@ test("Connection diner page uses the same hub layout as My Menuply", () => {
     assert.match(page, /data-testid="my-events"/);
     assert.match(page, /My Crews/);
     assert.match(page, /My Events/);
-    assert.doesNotMatch(page, /data-testid="what-im-eating"/);
-    assert.doesNotMatch(page, /data-testid="want-to-eat"/);
     assert.ok(page.indexOf("<DinerIdentityHero") < page.indexOf("<EatingHubSection"));
-    assert.ok(page.indexOf("<EatingHubSection") < page.indexOf("dining-crews"));
-    assert.ok(page.indexOf("dining-crews") < page.indexOf("my-events"));
+    assert.ok(page.indexOf("<EatingHubSection") < page.lastIndexOf('data-testid="dining-crews"'));
+    assert.ok(
+      page.lastIndexOf('data-testid="dining-crews"') < page.lastIndexOf('data-testid="my-events"')
+    );
     assert.doesNotMatch(page, /People you interact with through Menuply meals/);
   }
 
   assert.match(section, /data-testid="eating"/);
+  assert.match(section, /data-testid="what-im-eating"/);
+  assert.match(section, /data-testid="want-to-eat"/);
   assert.match(section, /eating-calendar/);
   assert.match(section, /DinerCalendarTrigger/);
   assert.match(section, /Invite Me/);
   assert.match(section, /future-plans-summary/);
   assert.match(section, /FuturePlanRow/);
+  assert.match(section, /SectionEmptyState/);
 
   assert.match(section, /eating-want-panel/);
   assert.match(section, /WantToEatList/);
@@ -76,10 +79,9 @@ test("Diner hub photos are casual snapshots with food info, not Instagram heroes
   assert.doesNotMatch(styles, /340px/);
   assert.match(mealBoard, /what-i-ate-meal-board/);
   assert.match(mealBoard, /video_url/);
-  // Universal meal-board shell: empty holders for today on owner and peer; camera is owner-only.
-  assert.match(mealBoard, /showEmptyHolders/);
-  assert.match(mealBoard, /Nothing here/);
-  assert.match(mealBoard, /allowEmptyCapture \? onSlotCapture/);
+  // Presentation-only: no empty camera boxes (owner + peer).
+  assert.match(mealBoard, /showEmptyHolders = false/);
+  assert.doesNotMatch(mealBoard, /Nothing here/);
   assert.doesNotMatch(mealBoard, /Nothing logged for this day\./);
   assert.match(bits, /View dish/);
   assert.match(bits, /restaurant_name/);

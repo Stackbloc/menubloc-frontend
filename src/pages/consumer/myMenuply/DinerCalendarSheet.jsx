@@ -72,7 +72,8 @@ export default function DinerCalendarSheet({
 
   const monthEvents = (events || []).filter((event) => ymdInMonth(event.ymd, viewMonth));
   const dayEvents = monthEvents.filter((event) => event.ymd === selectedDate);
-  const plansMode = title === "Upcoming Plans" || title === "My Events";
+  const plansMode =
+    title === "Upcoming Plans" || title === "My Eating Plans" || title === "My Events";
   const dayLabel = formatChipDate(selectedDate);
 
   return createPortal(
@@ -123,15 +124,15 @@ export default function DinerCalendarSheet({
                   }}
                   style={{
                     ...styles.eventBtn,
-                    ...(title === "Upcoming Plans" ? styles.eventBtnPlans : null),
+                    ...(plansMode && title !== "My Events" ? styles.eventBtnPlans : null),
                     ...styles.eventBtnOnDay,
-                    ...(title === "Upcoming Plans" ? styles.eventBtnOnDayPlans : null),
+                    ...(plansMode && title !== "My Events" ? styles.eventBtnOnDayPlans : null),
                   }}
                 >
                   <span
                     style={{
                       ...styles.eventDot,
-                      ...(title === "Upcoming Plans" ? styles.eventDotPlans : null),
+                      ...(plansMode && title !== "My Events" ? styles.eventDotPlans : null),
                     }}
                     aria-hidden
                   />

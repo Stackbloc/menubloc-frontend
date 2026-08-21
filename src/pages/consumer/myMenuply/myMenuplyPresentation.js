@@ -117,8 +117,17 @@ export function buildWantSuggestions(liked = [], limit = 8) {
   }));
 }
 
-export function buildDinerStats({ connections = [], followed = [], liked = [], eating = [], events = [], eventGroups = [] }) {
-  const eventCount = (events?.length || 0) + (eventGroups?.length || 0);
+export function buildDinerStats({
+  connections = [],
+  followed = [],
+  liked = [],
+  eating = [],
+  events = [],
+  eventGroups = [],
+  socialEvents = [],
+}) {
+  const eventCount =
+    (events?.length || 0) + (eventGroups?.length || 0) + (socialEvents?.length || 0);
   const dishCount = Math.max((liked?.length || 0), (eating?.length || 0));
   return [
     { id: "connects", label: "Connects", value: connections.length },

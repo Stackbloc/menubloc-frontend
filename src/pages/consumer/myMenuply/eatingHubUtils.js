@@ -109,20 +109,28 @@ export const EATING_FILTERS = [
 export const EATING_COMPOSE_CATEGORIES = [
   {
     id: "ate",
-    label: "Ate",
-    placeholder: "What did you eat today?",
-    description: "Share what you ate — add a photo when you can.",
+    label: "What I'm Eating",
+    placeholder: "Anything to say? (optional)",
+    description: "Photo or video, restaurant or homemade, meal time, then post.",
   },
   {
     id: "want",
-    label: "Want",
-    placeholder: "What foods do you want to eat in the future?",
-    description: "Save a craving with photo or video, then link the restaurant and menu item.",
+    label: "Want to Eat",
+    placeholder: "What do you want?",
+    description: "Cuisine, restaurant, menu item, or a general food craving.",
   },
   {
     id: "plan",
-    label: "Plan",
+    label: "Eating Plan",
     placeholder: "Where are you going?",
-    description: "Schedule future dining plans and invite others to join you.",
+    description: "Schedule a future meal — Join Me stays on the plan form.",
   },
+];
+
+/** What I Want to Eat intent levels (not forced to restaurant). */
+export const WANT_INTENT_KINDS = [
+  { id: "cuisine", label: "Cuisine", placeholder: "e.g. Korean" },
+  { id: "restaurant", label: "Restaurant", placeholder: "Search restaurant" },
+  { id: "menu_item", label: "Menu item", placeholder: "Restaurant → dish" },
+  { id: "food_item", label: "Food item", placeholder: "e.g. Sushi" },
 ];

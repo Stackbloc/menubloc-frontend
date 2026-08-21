@@ -24,6 +24,7 @@ export default function EatingPlaceFields({
   followed = [],
   disabled = false,
   allowDishSearch = true,
+  allowHomemade = true,
   locationCity = null,
   locationState = null,
   dishSearchPlaceholder = "Filter this restaurant's menu",
@@ -128,21 +129,23 @@ export default function EatingPlaceFields({
         >
           Restaurant
         </button>
-        <button
-          type="button"
-          data-testid="eating-place-homemade"
-          style={homemade ? styles.originOn : styles.origin}
-          disabled={disabled}
-          onClick={() => {
-            onHomemadeChange?.(true);
-            onRestaurantChange?.(null);
-            onDishChange?.(null);
-            setQuery("");
-            setHits([]);
-          }}
-        >
-          Homemade
-        </button>
+        {allowHomemade ? (
+          <button
+            type="button"
+            data-testid="eating-place-homemade"
+            style={homemade ? styles.originOn : styles.origin}
+            disabled={disabled}
+            onClick={() => {
+              onHomemadeChange?.(true);
+              onRestaurantChange?.(null);
+              onDishChange?.(null);
+              setQuery("");
+              setHits([]);
+            }}
+          >
+            Homemade
+          </button>
+        ) : null}
         {homemade || restaurant ? (
           <button
             type="button"

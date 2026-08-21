@@ -16,7 +16,7 @@ function ConnectionAvatarStrip({ connections = [], viewerUserId = null }) {
   return (
     <div style={railStyles.connectionsWrap} data-testid="connections-avatar-strip">
       <div style={railStyles.connectionsHead}>
-        <span style={railStyles.connectionsTitle}>Connections</span>
+        <span style={railStyles.connectionsTitle}>Connects</span>
         <Link to="/my-menuply/connections-eating" style={railStyles.connectionsLink}>
           See who&apos;s eating
         </Link>
@@ -119,18 +119,13 @@ function FollowedRestaurantsRail({ restaurants = [] }) {
   );
 }
 
-function FoodStoryCta({ onLog }) {
+function FoodStoryCta() {
   return (
     <div style={railStyles.ctaCard} data-testid="food-story-cta">
       <p style={railStyles.ctaScript}>Your food story</p>
       <p style={railStyles.ctaBody}>
-        Log what you ate, save dishes you love, and build your Month in Food.
+        Use the ✕ button below to share What I&apos;m Eating, wants, plans, and more.
       </p>
-      {onLog ? (
-        <button type="button" style={s.primaryBtn} onClick={onLog}>
-          Log your first meal
-        </button>
-      ) : null}
     </div>
   );
 }
@@ -153,6 +148,7 @@ export default function MyMenuplyPresentationRails({
   onLogFood,
   readOnly = false,
 }) {
+  void onLogFood;
   return (
     <>
       <DinerStatsBar stats={stats} selectedId={hubFocus} onSelect={onHubFocusChange} />
@@ -173,7 +169,7 @@ export default function MyMenuplyPresentationRails({
       {hubFocus !== "restaurants" ? (
         <FollowedRestaurantsRail restaurants={followedRestaurants} />
       ) : null}
-      {showFoodStoryCta && !readOnly ? <FoodStoryCta onLog={onLogFood} /> : null}
+      {showFoodStoryCta && !readOnly ? <FoodStoryCta /> : null}
       {wantSuggestions.length > 0 && hubFocus !== "dishes" ? (
         <div style={s.presentationBlock} data-testid="want-suggestions-rail">
           <h3 style={s.displaySectionTitle}>Dishes you saved</h3>

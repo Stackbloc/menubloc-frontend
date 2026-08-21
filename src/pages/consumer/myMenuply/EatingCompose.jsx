@@ -1,5 +1,7 @@
 /**
- * Unified Eating compose — category + caption + camera icon media + meal time (Ate).
+ * Unified Eating compose — sheet-only creation (X → My Menuply).
+ * Ate: media → restaurant/homemade → meal time → optional comment.
+ * Want: intent kind → cuisine | restaurant | menu item | food item.
  */
 
 import { useState } from "react";
@@ -8,7 +10,7 @@ import {
   WHAT_I_ATE_MEAL_PERIODS,
   defaultWhatIAteMealPeriod,
 } from "../../../lib/whatIAteTodayMealPeriod.js";
-import { EATING_COMPOSE_CATEGORIES } from "./eatingHubUtils.js";
+import { EATING_COMPOSE_CATEGORIES, WANT_INTENT_KINDS } from "./eatingHubUtils.js";
 import EatingPlaceFields from "./EatingPlaceFields.jsx";
 import { socialBtn, socialType } from "../../../lib/socialDesignTokens.js";
 
@@ -36,9 +38,25 @@ export default function EatingCompose({
   const [homemade, setHomemade] = useState(false);
   const [restaurant, setRestaurant] = useState(null);
   const [dish, setDish] = useState(null);
+  const [wantKind, setWantKind] = useState("food_item");
 
   const meta = EATING_COMPOSE_CATEGORIES.find((c) => c.id === category) || EATING_COMPOSE_CATEGORIES[0];
   const acceptMedia = category === "ate" || category === "want";
+  const wantMeta = WANT_INTENT_KINDS.find((k) => k.id === wantKind) || WANT_INTENT_KINDS[3];
+
+  function resetPlace() {
+    setHomemade(false);
+    setRestaurant(null);
+    setDish(null);
+  }
+
+  function selectWantKind(next) {
+    setWantKind(next);
+    resetPlace();
+    if (next === "cuisine" || next === "food_item") {
+      setHomemade(true);
+    }
+  }
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -52,6 +70,27 @@ export default function EatingCompose({
       return;
     }
     const value = String(text || "").trim();
+    if (category === "want") {
+      const needsText = wantKind === "cuisine" || wantKind === "food_item";
+      const needsRestaurant = wantKind === "restaurant" || wantKind === "menu_item";
+      const needsDish = wantKind === "menu_item";
+      if (needsText && !value) return;
+      if (needsRestaurant && !restaurant) return;
+      if (needsDish && !dish) return;
+      await onSubmit({
+        category,
+        text: value,
+        file,
+        wantKind,
+        homemade: wantKind === "cuisine" || wantKind === "food_item",
+        restaurant: needsRestaurant ? restaurant : null,
+        dish: needsDish ? dish : null,
+      });
+      setText("");
+      setFile(null);
+      resetPlace();
+      return;
+    }
     if (!value && !file && !homemade && !restaurant && !dish) return;
     await onSubmit({
       category,
@@ -64,10 +103,21 @@ export default function EatingCompose({
     });
     setText("");
     setFile(null);
-    setHomemade(false);
-    setRestaurant(null);
-    setDish(null);
+    resetPlace();
   }
+
+  const canSubmit =
+    category === "plan"
+      ? true
+      : category === "want"
+        ? wantKind === "cuisine" || wantKind === "food_item"
+          ? Boolean(String(text).trim())
+          : wantKind === "restaurant"
+            ? Boolean(restaurant)
+            : Boolean(restaurant && dish)
+        : Boolean(
+            String(text).trim() || file || homemade || restaurant || dish
+          );
 
   return (
     <div data-testid={testId} style={styles.wrap}>
@@ -83,7 +133,10 @@ export default function EatingCompose({
               data-testid={`eating-compose-${chip.id}`}
               disabled={busy}
               style={{ ...styles.chip, ...(active ? styles.chipActive : null) }}
-              onClick={() => setCategory(chip.id)}
+              onClick={() => {
+                setCategory(chip.id);
+                resetPlace();
+              }}
             >
               {chip.label}
             </button>
@@ -92,8 +145,9 @@ export default function EatingCompose({
       </div>
       {meta.description ? <p style={socialType.meta}>{meta.description}</p> : null}
       <form onSubmit={handleSubmit} style={styles.form}>
-        <div style={styles.composeRow}>
-          {acceptMedia ? (
+        {acceptMedia ? (
+          <div style={styles.mediaBlock}>
+            <p style={styles.stepLabel}>Photo or video</p>
             <MenuplyMediaPicker
               file={file}
               onFile={setFile}
@@ -109,70 +163,151 @@ export default function EatingCompose({
                 mediaSource === "library" ? "Upload photo or video from library" : "Take photo or video"
               }
             />
-          ) : null}
-          <input
-            type="text"
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            placeholder={meta.placeholder}
-            disabled={busy}
-            maxLength={160}
-            autoComplete="off"
-            style={styles.input}
-            data-testid="eating-compose-input"
-          />
-        </div>
-        {acceptMedia ? (
-          <p style={{ ...socialType.meta, margin: 0, fontSize: 12 }}>
-            Optional photo or video. Linking a restaurant and menu item is what ties it to Menuply.
-          </p>
+          </div>
         ) : null}
-        <EatingPlaceFields
-          homemade={homemade}
-          onHomemadeChange={setHomemade}
-          restaurant={restaurant}
-          onRestaurantChange={setRestaurant}
-          dish={dish}
-          onDishChange={setDish}
-          followed={followed}
-          disabled={busy}
-          locationCity={locationCity}
-          locationState={locationState}
-        />
-        {category === "ate" ? (
-          <div style={styles.mealRow} role="group" aria-label="Meal time">
-            {WHAT_I_ATE_MEAL_PERIODS.map((slot) => {
-              const active = mealPeriod === slot.id;
+
+        {category === "want" ? (
+          <div style={styles.chips} role="group" aria-label="Want type">
+            {WANT_INTENT_KINDS.map((kind) => {
+              const active = wantKind === kind.id;
               return (
                 <button
-                  key={slot.id}
+                  key={kind.id}
                   type="button"
-                  data-testid={`eating-meal-${slot.id}`}
+                  data-testid={`want-intent-${kind.id}`}
                   disabled={busy}
-                  style={{ ...styles.mealChip, ...(active ? styles.mealChipActive : null) }}
-                  onClick={() => setMealPeriod(slot.id)}
+                  style={{ ...styles.chip, ...(active ? styles.chipActive : null) }}
+                  onClick={() => selectWantKind(kind.id)}
                 >
-                  {slot.label}
+                  {kind.label}
                 </button>
               );
             })}
           </div>
         ) : null}
+
+        {category === "ate" ? (
+          <>
+            <p style={styles.stepLabel}>What is this?</p>
+            <EatingPlaceFields
+              homemade={homemade}
+              onHomemadeChange={setHomemade}
+              restaurant={restaurant}
+              onRestaurantChange={setRestaurant}
+              dish={dish}
+              onDishChange={setDish}
+              followed={followed}
+              disabled={busy}
+              locationCity={locationCity}
+              locationState={locationState}
+            />
+            <p style={styles.stepLabel}>Meal time</p>
+            <div style={styles.mealRow} role="group" aria-label="Meal time">
+              {WHAT_I_ATE_MEAL_PERIODS.map((slot) => {
+                const active = mealPeriod === slot.id;
+                return (
+                  <button
+                    key={slot.id}
+                    type="button"
+                    data-testid={`eating-meal-${slot.id}`}
+                    disabled={busy}
+                    style={{ ...styles.mealChip, ...(active ? styles.mealChipActive : null) }}
+                    onClick={() => setMealPeriod(slot.id)}
+                  >
+                    {slot.label}
+                  </button>
+                );
+              })}
+            </div>
+            <p style={styles.stepLabel}>Anything to say?</p>
+            <input
+              type="text"
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder={meta.placeholder}
+              disabled={busy}
+              maxLength={160}
+              autoComplete="off"
+              style={styles.input}
+              data-testid="eating-compose-input"
+            />
+          </>
+        ) : null}
+
+        {category === "want" ? (
+          <>
+            {wantKind === "cuisine" || wantKind === "food_item" ? (
+              <input
+                type="text"
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                placeholder={wantMeta.placeholder}
+                disabled={busy}
+                maxLength={160}
+                autoComplete="off"
+                style={styles.input}
+                data-testid="eating-compose-input"
+              />
+            ) : null}
+            {wantKind === "restaurant" || wantKind === "menu_item" ? (
+              <EatingPlaceFields
+                homemade={false}
+                onHomemadeChange={() => {}}
+                restaurant={restaurant}
+                onRestaurantChange={setRestaurant}
+                dish={dish}
+                onDishChange={setDish}
+                followed={followed}
+                disabled={busy}
+                allowDishSearch={wantKind === "menu_item"}
+                allowHomemade={false}
+                locationCity={locationCity}
+                locationState={locationState}
+              />
+            ) : null}
+            {wantKind === "restaurant" && restaurant ? (
+              <p style={{ ...socialType.meta, margin: 0 }}>
+                Want to try {restaurant.restaurant_name}
+              </p>
+            ) : null}
+          </>
+        ) : null}
+
+        {category === "plan" ? (
+          <>
+            <input
+              type="text"
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder={meta.placeholder}
+              disabled={busy}
+              maxLength={160}
+              autoComplete="off"
+              style={styles.input}
+              data-testid="eating-compose-input"
+            />
+            <EatingPlaceFields
+              homemade={homemade}
+              onHomemadeChange={setHomemade}
+              restaurant={restaurant}
+              onRestaurantChange={setRestaurant}
+              dish={dish}
+              onDishChange={setDish}
+              followed={followed}
+              disabled={busy}
+              locationCity={locationCity}
+              locationState={locationState}
+            />
+          </>
+        ) : null}
+
         <div style={inSheet ? styles.submitRow : styles.submitBlock}>
           <button
             type="submit"
-            disabled={
-              busy ||
-              (category !== "plan" &&
-                !String(text).trim() &&
-                !file &&
-                !homemade &&
-                !restaurant &&
-                !dish)
-            }
+            disabled={busy || !canSubmit}
             style={inSheet ? styles.submitBtn : socialBtn.primary}
           >
-            {busy ? "…" : category === "plan" ? "Schedule" : "Post"}
+            {busy ? "…" : category === "plan" ? "Continue" : "Post"}
           </button>
         </div>
       </form>
@@ -211,14 +346,21 @@ const styles = {
     alignItems: "stretch",
     gap: 10,
   },
-  composeRow: {
+  mediaBlock: {
     display: "flex",
-    alignItems: "flex-start",
-    gap: 10,
+    flexDirection: "column",
+    gap: 6,
+  },
+  stepLabel: {
+    margin: 0,
+    fontSize: 12,
+    fontWeight: 700,
+    color: "#475467",
+    letterSpacing: "0.02em",
+    textTransform: "uppercase",
   },
   input: {
-    flex: "1 1 140px",
-    minWidth: 0,
+    width: "100%",
     minHeight: 44,
     padding: "10px 14px",
     borderRadius: 12,

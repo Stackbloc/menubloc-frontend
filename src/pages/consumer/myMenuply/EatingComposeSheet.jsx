@@ -48,13 +48,23 @@ export default function EatingComposeSheet({
         onClick={(e) => e.stopPropagation()}
       >
         <div style={styles.header}>
-          <p style={styles.title}>Log food</p>
+          <p style={styles.title}>
+            {defaultCategory === "want"
+              ? "What I Want to Eat"
+              : defaultCategory === "plan"
+                ? "Eating Plan"
+                : "What I'm Eating"}
+          </p>
           <button type="button" style={styles.close} onClick={() => onClose?.()} aria-label="Close">
             ✕
           </button>
         </div>
         <p style={styles.lead}>
-          Add as much or as little as you want — photo or video, restaurant, menu item, homemade, or just a note.
+          {defaultCategory === "want"
+            ? "Cuisine, restaurant, menu item, or a general food craving — no restaurant required."
+            : defaultCategory === "plan"
+              ? "Pick a place, then set the date and Join Me on the next step."
+              : "Photo or video, restaurant or homemade, meal time, then an optional comment."}
         </p>
         <EatingCompose
           key={`${defaultCategory}-${defaultMealPeriod || "auto"}-${mediaSource}-${fileKey}`}

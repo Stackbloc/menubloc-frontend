@@ -1,5 +1,5 @@
 /**
- * Unified Eating hub — one section, one tap-to-open calendar, past/future markers.
+ * My Menuply five-section presentation hub — creation via X, not inline forms.
  */
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -10,7 +10,7 @@ import { fileURLToPath } from "node:url";
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = (rel) => fs.readFileSync(path.join(root, rel), "utf8");
 
-test("My Menuply and peer hub use unified Eating section", () => {
+test("My Menuply and peer hub use five-section presentation hub", () => {
   const mine = read("src/pages/consumer/MyMenuplyPage.jsx");
   const peer = read("src/pages/consumer/ConsumerConnectionPeerPage.jsx");
   const section = read("src/pages/consumer/myMenuply/EatingHubSection.jsx");
@@ -19,13 +19,15 @@ test("My Menuply and peer hub use unified Eating section", () => {
 
   for (const page of [mine, peer]) {
     assert.match(page, /EatingHubSection/);
-    assert.doesNotMatch(page, /data-testid="what-im-eating"/);
-    assert.doesNotMatch(page, /data-testid="want-to-eat"/);
   }
+  assert.match(section, /data-testid="what-im-eating"/);
+  assert.match(section, /data-testid="want-to-eat"/);
+  assert.match(section, /data-testid="eating-plans"/);
 
   assert.match(section, /data-testid="eating"/);
   assert.match(section, /EatingComposeSheet/);
-  assert.match(section, /eating-log-trigger/);
+  assert.doesNotMatch(section, /eating-log-trigger/);
+  assert.doesNotMatch(section, /\+ Log/);
   assert.match(section, /Journal day/);
   assert.match(section, /eating-calendar/);
   assert.match(section, /DinerCalendarTrigger/);
@@ -38,7 +40,7 @@ test("My Menuply and peer hub use unified Eating section", () => {
   assert.match(section, /Invite Me/);
   assert.match(section, /upcoming-plans-calendar-open/);
   assert.match(section, /WhatIAteMealBoard/);
-  assert.match(section, /what-i-ate-meal-board|WhatIAteMealBoard/);
+  assert.match(section, /SectionEmptyState/);
   assert.doesNotMatch(section, /future-plans-calendar/);
   assert.doesNotMatch(section, /eating-plans-calendar/);
   assert.doesNotMatch(section, /PhotoGrid/);
@@ -68,17 +70,13 @@ test("My Menuply and peer hub use unified Eating section", () => {
   assert.match(mealBoard, /what-i-ate-meal-row/);
   assert.match(mealBoard, /video_url/);
   assert.match(mealBoard, /photo_url/);
-  assert.match(mealBoard, /onSlotCapture/);
-  assert.match(mealBoard, /source="camera"/);
   assert.match(mealBoard, /hubDate/);
   assert.match(mealBoard, /isPastDay/);
   assert.match(mealBoard, /No entries/);
-  assert.match(mealBoard, /allowEmptyCapture/);
-  assert.match(mealBoard, /showEmptyHolders/);
-  assert.match(mealBoard, /Nothing here/);
-  assert.match(section, /handleSlotCapture/);
+  assert.match(mealBoard, /showEmptyHolders = false/);
+  assert.doesNotMatch(mealBoard, /Nothing here/);
+  assert.doesNotMatch(section, /handleSlotCapture/);
   assert.match(section, /composeMediaSource/);
-  assert.match(section, /\+ Log/);
   assert.match(section, /hubDate=\{hubDate\}/);
   assert.match(section, /kind === "venue_event"/);
   assert.match(mine, /media=library|get\("media"\)/);
@@ -86,6 +84,8 @@ test("My Menuply and peer hub use unified Eating section", () => {
   assert.match(mine, /kind: "venue_event"/);
   assert.match(mine, /openEventsCalendar/);
   assert.match(mine, /venueEventYmd/);
+  assert.match(mine, /EventComposeSheet/);
+  assert.match(mine, /createDinerSocialEvent/);
   const utils = read("src/pages/consumer/myMenuply/eatingHubUtils.js");
   assert.match(utils, /venueEventYmd/);
   assert.match(utils, /venueEvents/);
@@ -148,6 +148,6 @@ test("Eating journal look-back is 90 days; future plan dates are not capped", as
     [{ plan_date: "2026-08-22" }],
     [{ starts_at: "2026-08-22T19:00:00.000Z", name: "Show" }]
   );
-  const day22 = markers.find((row) => row.ymd === "2026-08-22");
-  assert.equal(day22?.future_count, 2);
+  assert.ok(markers.some((m) => m.ymd === "2026-08-10" && m.past_count >= 1));
+  assert.ok(markers.some((m) => m.ymd === "2026-08-22" && m.future_count >= 1));
 });

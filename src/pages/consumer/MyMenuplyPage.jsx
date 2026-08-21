@@ -26,6 +26,8 @@ import {
   listMyFoodActivity,
   listMyVenueEventGroups,
   listMyVenueEvents,
+  listDinerSocialEvents,
+  createDinerSocialEvent,
   listPendingEatInvitePeople,
   listWantToEat,
   listWhatIAteToday,
@@ -49,6 +51,8 @@ import {
 } from "../../lib/diningCrewInviteShare.js";
 import EatingHubSection, { PlansCalendarGlyph } from "./myMenuply/EatingHubSection.jsx";
 import CrewQuickCompose from "./myMenuply/CrewQuickCompose.jsx";
+import EventComposeSheet from "./myMenuply/EventComposeSheet.jsx";
+import SectionEmptyState from "./myMenuply/SectionEmptyState.jsx";
 import { buildJoinMeCandidates } from "./myMenuply/joinMeCandidates.js";
 import {
   buildEatingDayMarkersFromCalendar,
@@ -120,6 +124,7 @@ export default function MyMenuplyPage() {
   const [crews, setCrews] = useState([]);
   const [events, setEvents] = useState([]);
   const [eventGroups, setEventGroups] = useState([]);
+  const [socialEvents, setSocialEvents] = useState([]);
   const [hubDate, setHubDate] = useState(() => whatIAteTodayLocalDate());
   const [hubMonth, setHubMonth] = useState(() => {
     const t = new Date();
@@ -136,6 +141,8 @@ export default function MyMenuplyPage() {
   const [composeOpen, setComposeOpen] = useState(false);
   const [composeDefaultCategory, setComposeDefaultCategory] = useState("ate");
   const [composeMediaSource, setComposeMediaSource] = useState("camera");
+  const [crewComposeOpen, setCrewComposeOpen] = useState(false);
+  const [eventComposeOpen, setEventComposeOpen] = useState(false);
   const [hubFocus, setHubFocus] = useState("");
   const [planPrefill, setPlanPrefill] = useState(null);
   const locationCity = profile?.primary_location?.city_name || null;
@@ -158,6 +165,7 @@ export default function MyMenuplyPage() {
         crewRes,
         eventRes,
         groupRes,
+        socialEventRes,
         mediaRes,
       ] = await Promise.all([
         getConsumerProfile().catch(() => null),
@@ -178,6 +186,7 @@ export default function MyMenuplyPage() {
         listDiningCrews().catch(() => ({ crews: [] })),
         listMyVenueEvents().catch(() => ({ events: [] })),
         listMyVenueEventGroups().catch(() => ({ groups: [] })),
+        listDinerSocialEvents().catch(() => ({ events: [] })),
         listConsumerProfileMedia().catch(() => ({ items: [] })),
       ]);
       const nextProfile = profileRes?.profile || null;
@@ -203,6 +212,7 @@ export default function MyMenuplyPage() {
       setCrews(crewRes.crews || crewRes.items || []);
       setEvents(eventRes.events || []);
       setEventGroups(groupRes.groups || []);
+      setSocialEvents(socialEventRes.events || []);
     } catch (err) {
       setError(err.message || "Unable to load My Menuply");
     } finally {
@@ -220,7 +230,23 @@ export default function MyMenuplyPage() {
     const compose = String(searchParams.get("compose") || "").trim().toLowerCase();
     const focus = String(searchParams.get("focus") || "").trim().toLowerCase();
     const media = String(searchParams.get("media") || "").trim().toLowerCase();
-    if (["ate", "want", "plan"].includes(compose)) {
+    if (["ate", "want", "plan", "crew", "event"].includes(compose)) {
+      if (compose === "crew") {
+        setCrewComposeOpen(true);
+        const timer = window.setTimeout(() => {
+          eatingSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+        }, 120);
+        return () => window.clearTimeout(timer);
+      }
+      if (compose === "event") {
+        setEventComposeOpen(true);
+        const timer = window.setTimeout(() => {
+          document
+            .querySelector('[data-testid="my-events"]')
+            ?.scrollIntoView({ behavior: "smooth", block: "start" });
+        }, 120);
+        return () => window.clearTimeout(timer);
+      }
       setComposeDefaultCategory(compose);
       setComposeMediaSource(media === "library" ? "library" : "camera");
       if (compose === "plan") {
@@ -286,11 +312,25 @@ export default function MyMenuplyPage() {
       };
     })
     .filter(Boolean);
-  const calendarEvents = [...planCalendarEvents, ...venueCalendarEvents];
+  const socialCalendarEvents = (socialEvents || [])
+    .map((ev) => {
+      const ymd = planYmd(ev.event_date);
+      if (!ymd) return null;
+      return {
+        key: `social-event-${ev.id}`,
+        ymd,
+        label: ev.title || "Event",
+        timeLabel: ev.start_time || null,
+        kind: "diner_social",
+        event: ev,
+      };
+    })
+    .filter(Boolean);
+  const calendarEvents = [...planCalendarEvents, ...venueCalendarEvents, ...socialCalendarEvents];
   const dayMarkers = buildEatingDayMarkersFromCalendar(
     eatingCalendarDays,
     scheduledPlans,
-    events
+    [...(events || []), ...(socialEvents || [])]
   );
 
   function openEventsCalendar() {
@@ -307,8 +347,9 @@ export default function MyMenuplyPage() {
         eating,
         events,
         eventGroups,
+        socialEvents,
       }),
-    [connections, followed, liked, eating, events, eventGroups]
+    [connections, followed, liked, eating, events, eventGroups, socialEvents]
   );
   const topHighlights = useMemo(
     () => buildTopHighlights({ eating, liked, followed }),
@@ -322,7 +363,7 @@ export default function MyMenuplyPage() {
     if (wants.length > 0) return [];
     return buildWantSuggestions(liked);
   }, [wants.length, liked]);
-  const showFoodStoryCta = eating.length === 0 && wants.length === 0 && shownPlans.length === 0;
+  const showFoodStoryCta = false;
 
   async function onAvatarFile(file) {
     setIdentityBusy(true);
@@ -396,15 +437,22 @@ export default function MyMenuplyPage() {
       }
       const restaurantId = homemade ? null : restaurant?.restaurant_id || dish?.restaurant_id || undefined;
       const menuItemId = homemade ? null : dish?.menu_item_id || undefined;
+      const note = String(text || "").trim();
+      const foodName = homemade
+        ? note || "Homemade"
+        : String(dish?.item_name || "").trim() ||
+          String(restaurant?.restaurant_name || "").trim() ||
+          note ||
+          "Food";
       const data = await createWhatIAteToday({
-        food_name: eatingFoodName({ text, dish, restaurant, homemade }),
+        food_name: foodName,
         photo_url,
         video_url,
         eaten_on: hubDate,
         meal_period: mealPeriod || defaultWhatIAteMealPeriod(),
         restaurant_id: restaurantId,
         menu_item_id: menuItemId,
-        comment: homemade ? joinHomemadeComment(true, text) : undefined,
+        comment: homemade ? joinHomemadeComment(true, note) : note || undefined,
       });
       if (restaurantId) await maybeFollowRestaurant(restaurantId);
       const entry = data.entry || data;
@@ -505,7 +553,7 @@ export default function MyMenuplyPage() {
     }
   }
 
-  async function postWant({ text, file, homemade, restaurant, dish }) {
+  async function postWant({ text, file, homemade, restaurant, dish, wantKind }) {
     setPostBusy("want");
     setError("");
     setWantListError("");
@@ -519,19 +567,34 @@ export default function MyMenuplyPage() {
         const catalogPhoto = dishPhotoUrl(dish);
         if (catalogPhoto) photo_url = catalogPhoto;
       }
-      const name = eatingFoodName({ text, dish, restaurant, homemade });
+      const intent = String(wantKind || "").trim() || null;
+      let name = "";
+      let restaurantId;
+      let menuItemId;
+      if (intent === "cuisine" || intent === "food_item" || (!intent && homemade)) {
+        name = String(text || "").trim();
+        restaurantId = undefined;
+        menuItemId = undefined;
+      } else if (intent === "restaurant") {
+        name = String(restaurant?.restaurant_name || text || "").trim();
+        restaurantId = restaurant?.restaurant_id || undefined;
+        menuItemId = undefined;
+      } else {
+        name = eatingFoodName({ text, dish, restaurant, homemade });
+        restaurantId = homemade ? null : restaurant?.restaurant_id || dish?.restaurant_id || undefined;
+        menuItemId = homemade ? null : dish?.menu_item_id || undefined;
+      }
       if (!name) {
         setError("Enter what you want to eat");
         return;
       }
-      const restaurantId = homemade ? null : restaurant?.restaurant_id || dish?.restaurant_id || undefined;
-      const menuItemId = homemade ? null : dish?.menu_item_id || undefined;
       const data = await createWantToEat({
         food_name: name,
         photo_url,
         video_url,
         restaurant_id: restaurantId,
         menu_item_id: menuItemId,
+        intent_kind: intent || undefined,
         comment: homemade ? joinHomemadeComment(true, text) : undefined,
       });
       if (restaurantId) await maybeFollowRestaurant(restaurantId);
@@ -585,6 +648,37 @@ export default function MyMenuplyPage() {
       await load();
     } catch (err) {
       setError(err.message || "Unable to add");
+    } finally {
+      setPostBusy("");
+    }
+  }
+
+  async function postSocialEvent({ title, eventDate, startTime, locationLabel, description, file }) {
+    setPostBusy("events");
+    setError("");
+    try {
+      let photo_url;
+      let video_url;
+      if (file) {
+        const up = await uploadWhatIAteTodayPhoto(file);
+        ({ photo_url, video_url } = eatingMediaFromUpload(up));
+      }
+      const data = await createDinerSocialEvent({
+        title,
+        event_date: eventDate,
+        start_time: startTime,
+        location_label: locationLabel,
+        description,
+        photo_url,
+        video_url,
+      });
+      const created = data?.event;
+      if (created?.id) {
+        setSocialEvents((prev) => [created, ...(prev || []).filter((row) => Number(row.id) !== Number(created.id))]);
+      }
+      await load();
+    } catch (err) {
+      setError(err.message || "Unable to create event");
     } finally {
       setPostBusy("");
     }
@@ -659,9 +753,18 @@ export default function MyMenuplyPage() {
     }
   }
 
-  async function handleEatingCompose({ category, text, file, mealPeriod, homemade, restaurant, dish }) {
+  async function handleEatingCompose({
+    category,
+    text,
+    file,
+    mealPeriod,
+    homemade,
+    restaurant,
+    dish,
+    wantKind,
+  }) {
     if (category === "want") {
-      await postWant({ text, file, homemade, restaurant, dish });
+      await postWant({ text, file, homemade, restaurant, dish, wantKind });
       setComposeDefaultCategory("want");
       return;
     }
@@ -735,7 +838,7 @@ export default function MyMenuplyPage() {
               </Link>
             ) : null}
           </div>
-          <p style={s.lead}>Your personal food home — diary, wishes, and plans.</p>
+          <p style={s.lead}>Your social food profile — browse what you share. Create with ✕.</p>
         </div>
         {error ? <p style={{ ...s.error, marginTop: 16 }}>{error}</p> : null}
 
@@ -884,7 +987,9 @@ export default function MyMenuplyPage() {
             <section style={s.section} data-testid="dining-crews">
               <SectionHead title="My Crews" to="/account/dining-crews" />
               {crews.length === 0 ? (
-                <p style={s.muted}>Nothing yet.</p>
+                <SectionEmptyState testId="crews-empty">
+                  The people you eat, hang out, and make plans with.
+                </SectionEmptyState>
               ) : (
                 crews.slice(0, 4).map((crew) => (
                   <DiningCrewHubCard
@@ -905,11 +1010,6 @@ export default function MyMenuplyPage() {
                   />
                 ))
               )}
-              <CrewQuickCompose
-                testId="compose-crew"
-                busy={postBusy === "crews"}
-                onSubmit={postCrew}
-              />
             </section>
 
             <section style={s.section} data-testid="my-events">
@@ -927,10 +1027,27 @@ export default function MyMenuplyPage() {
                   </button>
                 }
               />
-              {events.length === 0 && eventGroups.length === 0 ? (
-                <p style={s.muted}>Nothing yet.</p>
+              {events.length === 0 && eventGroups.length === 0 && socialEvents.length === 0 ? (
+                <SectionEmptyState testId="events-empty">
+                  Events you&apos;re creating or joining.
+                </SectionEmptyState>
               ) : (
                 <>
+                  {socialEvents.slice(0, 6).map((ev) => (
+                    <NamedShareCard
+                      key={`social-${ev.id}`}
+                      name={ev.title}
+                      meta={[
+                        "Yours",
+                        formatEventWhen(ev),
+                        ev.start_time || null,
+                        ev.location_label || null,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
+                      description={ev.description || null}
+                    />
+                  ))}
                   {events.slice(0, 4).map((ev) => (
                     <NamedShareCard
                       key={ev.id || ev.slug}
@@ -965,6 +1082,50 @@ export default function MyMenuplyPage() {
                 </>
               )}
             </section>
+
+            <EventComposeSheet
+              open={eventComposeOpen}
+              onClose={() => setEventComposeOpen(false)}
+              busy={postBusy === "events"}
+              onSubmit={postSocialEvent}
+            />
+
+            {crewComposeOpen ? (
+              <div
+                role="presentation"
+                style={crewSheetStyles.backdrop}
+                data-testid="crew-compose-sheet"
+                onClick={() => setCrewComposeOpen(false)}
+              >
+                <div
+                  role="dialog"
+                  aria-modal="true"
+                  aria-label="Create dining crew"
+                  style={crewSheetStyles.panel}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div style={crewSheetStyles.head}>
+                    <p style={crewSheetStyles.title}>New crew</p>
+                    <button
+                      type="button"
+                      style={crewSheetStyles.close}
+                      onClick={() => setCrewComposeOpen(false)}
+                      aria-label="Close"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                  <CrewQuickCompose
+                    testId="compose-crew"
+                    busy={postBusy === "crews"}
+                    onSubmit={async (payload) => {
+                      await postCrew(payload);
+                      setCrewComposeOpen(false);
+                    }}
+                  />
+                </div>
+              </div>
+            ) : null}
           </>
         ) : null}
       </div>
@@ -981,3 +1142,41 @@ export default function MyMenuplyPage() {
     </>
   );
 }
+
+const crewSheetStyles = {
+  backdrop: {
+    position: "fixed",
+    inset: 0,
+    background: "rgba(15, 23, 42, 0.48)",
+    zIndex: 1100,
+    display: "flex",
+    alignItems: "flex-end",
+    justifyContent: "center",
+    padding: "0 12px calc(var(--bottom-nav-h, 72px) + 12px)",
+  },
+  panel: {
+    width: "100%",
+    maxWidth: 480,
+    background: "#fff",
+    borderRadius: "20px 20px 14px 14px",
+    padding: "16px 16px 20px",
+    boxShadow: "0 -12px 40px rgba(15, 23, 42, 0.18)",
+  },
+  head: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 10,
+  },
+  title: { margin: 0, fontSize: 18, fontWeight: 800, color: "#0f172a" },
+  close: {
+    appearance: "none",
+    border: "none",
+    background: "rgba(120,120,128,0.12)",
+    width: 32,
+    height: 32,
+    borderRadius: "50%",
+    fontSize: 16,
+    cursor: "pointer",
+  },
+};

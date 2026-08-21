@@ -1,5 +1,5 @@
 /**
- * Post (X) action sheet wiring — MVP social launcher routes.
+ * Post (X) action sheet wiring — creation hub for My Menuply.
  */
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -13,16 +13,29 @@ function read(rel) {
   return fs.readFileSync(path.join(root, rel), "utf8");
 }
 
-test("MenuplyActionSheet lists My Diner QR first for public access", () => {
+test("MenuplyActionSheet creates My Events via My Menuply compose", () => {
   const sheet = read("src/components/MenuplyActionSheet.jsx");
-  const firstIdx = sheet.indexOf("export const POST_ABOUT_ACTIONS");
-  const block = sheet.slice(firstIdx, firstIdx + 500);
-  assert.match(block, /id: "diner-qr"/);
-  assert.match(block, /My Diner QR/);
-  assert.match(block, /to: "\/account\/diner-qr"/);
-  const dinerIdx = sheet.indexOf('id: "diner-qr"');
-  const imEatingIdx = sheet.indexOf('id: "im-eating"');
-  assert.ok(dinerIdx > 0 && dinerIdx < imEatingIdx, "My Diner QR must be first Post about action");
+  assert.match(sheet, /id: "event"/);
+  assert.match(sheet, /title: "My Events"/);
+  assert.match(sheet, /compose=event/);
+  assert.match(sheet, /id: "events-browse"/);
+  assert.match(sheet, /to: "\/events"/);
+  assert.doesNotMatch(sheet, /to: "\/clusters"/);
+});
+
+test("My Menuply opens EventComposeSheet from compose=event", () => {
+  const page = read("src/pages/consumer/MyMenuplyPage.jsx");
+  assert.match(page, /EventComposeSheet/);
+  assert.match(page, /compose === "event"/);
+  assert.match(page, /createDinerSocialEvent/);
+  assert.match(page, /listDinerSocialEvents/);
+  assert.match(page, /socialEvents/);
+  assert.match(page, /title="My Events"/);
+  const compose = read("src/pages/consumer/myMenuply/EventComposeSheet.jsx");
+  assert.match(compose, /event-compose-sheet/);
+  assert.match(compose, /My Events/);
+  assert.match(compose, /allowVideo/);
+  assert.match(compose, /Food is optional/);
 });
 
 test("MenuplyActionSheet routes Want to Eat to My Menuply compose", () => {
@@ -36,13 +49,6 @@ test("MenuplyActionSheet routes Invite to Eat to invite start page", () => {
   assert.match(sheet, /\/account\/invite-to-eat/);
   assert.match(sheet, /inviteContext/);
   assert.doesNotMatch(sheet, /id: "invite"[\s\S]{0,120}to: "\/search"/);
-});
-
-test("MenuplyActionSheet routes Find events to Events browse", () => {
-  const sheet = read("src/components/MenuplyActionSheet.jsx");
-  assert.match(sheet, /id: "events"/);
-  assert.match(sheet, /to: "\/events"/);
-  assert.doesNotMatch(sheet, /to: "\/clusters"/);
 });
 
 test("App exposes /events browse and invite-to-eat start routes", () => {
@@ -67,4 +73,5 @@ test("Events browse shows connection RSVPs when signed in", () => {
   assert.match(page, /events-browse-connections/);
   assert.match(page, /From your connections/);
   assert.match(api, /\/api\/consumer\/connections\/events/);
+  assert.match(api, /\/api\/consumer\/social-events/);
 });

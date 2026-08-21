@@ -1,25 +1,34 @@
-/** Meal slots for the What I Ate Today food diary — not Waiter, not nutrition. */
+/** Meal slots for What I'm Eating / What I Ate Today — not Waiter, not nutrition. */
 
+/** Compose + board chips (user-facing). Brunch remains valid for existing diary rows. */
 export const WHAT_I_ATE_MEAL_PERIODS = [
   { id: "breakfast", label: "Breakfast" },
-  { id: "brunch", label: "Brunch" },
   { id: "lunch", label: "Lunch" },
   { id: "dinner", label: "Dinner" },
+  { id: "snack", label: "Snack" },
+  { id: "dessert", label: "Dessert" },
   { id: "late_night", label: "Late Night" },
+  { id: "other", label: "Other" },
 ];
 
-const ORDER = WHAT_I_ATE_MEAL_PERIODS.map((p) => p.id);
+/** Legacy brunch still normalizes and displays when present on older entries. */
+const LEGACY_PERIODS = [{ id: "brunch", label: "Brunch" }];
+
+const ALL_PERIODS = [...WHAT_I_ATE_MEAL_PERIODS, ...LEGACY_PERIODS];
+const ORDER = ALL_PERIODS.map((p) => p.id);
 
 /**
  * Local hour when an empty meal row becomes available on today's board.
- * Aligns with defaultWhatIAteMealPeriod windows (brunch is mid-afternoon).
+ * Aligns with defaultWhatIAteMealPeriod windows.
  */
 export const WHAT_I_ATE_MEAL_PERIOD_START_HOUR = {
   breakfast: 5,
   lunch: 11,
-  brunch: 15,
+  snack: 14,
   dinner: 17,
+  dessert: 19,
   late_night: 22,
+  other: 0,
 };
 
 export function normalizeWhatIAteMealPeriod(value) {
@@ -31,7 +40,7 @@ export function normalizeWhatIAteMealPeriod(value) {
 }
 
 export function mealPeriodLabel(id) {
-  return WHAT_I_ATE_MEAL_PERIODS.find((p) => p.id === id)?.label || "Other";
+  return ALL_PERIODS.find((p) => p.id === id)?.label || "Other";
 }
 
 export function compareMealPeriod(a, b) {
@@ -48,57 +57,34 @@ export function defaultWhatIAteMealPeriod(date = new Date()) {
   const hour = date.getHours();
   if (hour >= 5 && hour < 11) return "breakfast";
   if (hour >= 11 && hour < 15) return "lunch";
-  if (hour >= 15 && hour < 17) return "brunch";
+  if (hour >= 15 && hour < 17) return "snack";
   if (hour >= 17 && hour < 22) return "dinner";
   return "late_night";
 }
 
 /**
  * Which meal rows to show on the day board.
- * - Today: periods whose window has started (earlier empty rows stay for backfill;
- *   future empty rows stay hidden). Any period with user entries always shows.
- * - Past hub day: only periods with entries (empty days show copy, not camera slots).
- * - Future hub day: only periods that already have entries.
+ * Presentation-only: only periods that already have entries (no empty camera slots).
+ * empty days show copy, not camera slots — at the section level.
  */
 export function visibleWhatIAteMealPeriods({
-  now = new Date(),
-  hubDateYmd = null,
-  todayYmd = null,
   filledPeriodIds = [],
 } = {}) {
   const filled = new Set(
     (filledPeriodIds || []).map(normalizeWhatIAteMealPeriod).filter(Boolean)
   );
-
-  if (hubDateYmd && todayYmd) {
-    if (hubDateYmd > todayYmd) {
-      return WHAT_I_ATE_MEAL_PERIODS.filter((p) => filled.has(p.id));
-    }
-    if (hubDateYmd < todayYmd) {
-      return WHAT_I_ATE_MEAL_PERIODS.filter((p) => filled.has(p.id));
-    }
-  }
-
-  const hour = now.getHours();
-  return WHAT_I_ATE_MEAL_PERIODS.filter((period) => {
-    if (filled.has(period.id)) return true;
-    if (period.id === "late_night") {
-      return hour >= WHAT_I_ATE_MEAL_PERIOD_START_HOUR.late_night || hour < 5;
-    }
-    const start = WHAT_I_ATE_MEAL_PERIOD_START_HOUR[period.id];
-    return typeof start === "number" && hour >= start;
-  });
+  return ALL_PERIODS.filter((p) => filled.has(p.id));
 }
 
 export function groupEntriesByMealPeriod(entries) {
   const buckets = Object.fromEntries(ORDER.map((id) => [id, []]));
-  const other = [];
+  const unclassified = [];
   for (const entry of entries || []) {
     const slot = normalizeWhatIAteMealPeriod(entry?.meal_period);
     if (slot) buckets[slot].push(entry);
-    else other.push(entry);
+    else unclassified.push(entry);
   }
-  return { buckets, other };
+  return { buckets, other: unclassified };
 }
 
 /** Latest diary row for a meal chip, or null when that slot is empty. */

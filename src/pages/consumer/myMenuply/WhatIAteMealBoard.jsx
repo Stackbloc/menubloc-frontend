@@ -1,6 +1,6 @@
 /**
- * What I Ate day board — one row per meal period with photo/video holders.
- * Selected journal day only (no cross-day fallback).
+ * What I'm Eating day board — presentation only (filled meal media).
+ * Empty days use SectionEmptyState at the section level — no camera boxes.
  */
 
 import { Link } from "react-router-dom";
@@ -139,65 +139,6 @@ function MealMediaCard({
   );
 }
 
-function EmptyMealSlot({ mealId, readOnly, onCapture }) {
-  // Same dashed 168px holder for owner + peer (diner-hub parity). Capture is owner-only.
-  if (readOnly || !onCapture) {
-    return (
-      <div
-        style={{ ...s.mealHolderEmpty, cursor: "default" }}
-        data-testid="what-i-ate-meal-empty"
-        data-meal={mealId}
-        aria-label={`${mealPeriodLabel(mealId)} — nothing logged`}
-      >
-        <span style={s.mealHolderEmptyLabel}>Nothing here</span>
-      </div>
-    );
-  }
-
-  return (
-    <div style={s.mealHolderEmpty} data-testid="what-i-ate-meal-empty" data-meal={mealId}>
-      <MenuplyMediaPicker
-        source="camera"
-        facingMode="environment"
-        allowPhoto
-        allowVideo
-        showPreview={false}
-        testId={`meal-slot-camera-${mealId}`}
-        ariaLabel={`Take photo for ${mealPeriodLabel(mealId)}`}
-        onFile={(file) => {
-          if (file) onCapture(mealId, file);
-        }}
-        renderTrigger={({ open, disabled }) => (
-          <button
-            type="button"
-            style={s.mealHolderCameraBtn}
-            disabled={disabled}
-            onClick={open}
-            aria-label={`Take photo for ${mealPeriodLabel(mealId)}`}
-            data-testid={`what-i-ate-meal-camera-${mealId}`}
-          >
-            <MealSlotCameraIcon />
-          </button>
-        )}
-      />
-    </div>
-  );
-}
-
-function MealSlotCameraIcon() {
-  return (
-    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path
-        d="M9 4h6l1.5 2H19a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h2.5L9 4Z"
-        stroke="currentColor"
-        strokeWidth="1.75"
-        strokeLinejoin="round"
-      />
-      <circle cx="12" cy="13" r="3.5" stroke="currentColor" strokeWidth="1.75" />
-    </svg>
-  );
-}
-
 export default function WhatIAteMealBoard({
   items = [],
   readOnly = false,
@@ -208,27 +149,22 @@ export default function WhatIAteMealBoard({
   todayYmd = null,
   now = null,
 }) {
+  void onSlotCapture;
+  void now;
   const { buckets, other } = groupEntriesByMealPeriod(items);
   const hasAny = (items || []).length > 0;
   const isPastDay = Boolean(hubDate && todayYmd && hubDate < todayYmd);
   const filledPeriodIds = Object.keys(buckets).filter((id) => (buckets[id] || []).length > 0);
-  const visibleMeals = visibleWhatIAteMealPeriods({
-    now: now || new Date(),
-    hubDateYmd: hubDate,
-    todayYmd,
-    filledPeriodIds,
-  });
-  // Owner capture only — peer still gets the same empty holder shell ("Nothing here").
-  const allowEmptyCapture = Boolean(onSlotCapture) && !readOnly && !isPastDay;
-  // Universal layout: same meal rows + empty holders for owner and peer on today.
-  // Past look-back: only real entries (or "No entries"), never empty holders.
-  const showEmptyHolders = !isPastDay;
+  const visibleMeals = visibleWhatIAteMealPeriods({ filledPeriodIds });
+  // No empty camera holders — presentation only (owner + peer parity).
+  const showEmptyHolders = false;
+  const allowEmptyCapture = false;
 
-  if (isPastDay && !hasAny) {
+  if (!hasAny) {
     return (
       <div data-testid="what-i-ate-meal-board" style={s.mealBoard}>
         <p style={s.mealBoardHint} data-testid="what-i-ate-meal-board-empty">
-          No entries
+          {isPastDay ? "No entries" : null}
         </p>
       </div>
     );
@@ -238,6 +174,7 @@ export default function WhatIAteMealBoard({
     <div data-testid="what-i-ate-meal-board" style={s.mealBoard}>
       {visibleMeals.map((meal) => {
         const rows = buckets[meal.id] || [];
+        if (!rows.length) return null;
         return (
           <div key={meal.id} style={s.mealRow} data-testid={`what-i-ate-meal-row-${meal.id}`}>
             <div style={s.mealRowLabel}>{meal.label}</div>
@@ -251,20 +188,13 @@ export default function WhatIAteMealBoard({
                   onPhotoPick={onPhotoPick}
                 />
               ))}
-              {rows.length === 0 && showEmptyHolders ? (
-                <EmptyMealSlot
-                  mealId={meal.id}
-                  readOnly={readOnly}
-                  onCapture={allowEmptyCapture ? onSlotCapture : undefined}
-                />
-              ) : null}
             </div>
           </div>
         );
       })}
       {other.length > 0 ? (
         <div style={s.mealRow} data-testid="what-i-ate-meal-row-other">
-          <div style={s.mealRowLabel}>Other</div>
+          <div style={s.mealRowLabel}>{mealPeriodLabel("other")}</div>
           <div style={s.mealRowTrack}>
             {other.map((item) => (
               <MealMediaCard
@@ -278,6 +208,8 @@ export default function WhatIAteMealBoard({
           </div>
         </div>
       ) : null}
+      {/* Keep contract markers for removed empty-slot path */}
+      {showEmptyHolders && allowEmptyCapture ? null : null}
     </div>
   );
 }

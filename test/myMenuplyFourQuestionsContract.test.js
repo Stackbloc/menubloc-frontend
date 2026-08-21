@@ -23,12 +23,14 @@ test("My Menuply is the diner's personal home", () => {
   assert.match(page, /DinerIdentityHero/);
   assert.match(page, /EatingHubSection/);
   assert.match(section, /data-testid="eating"/);
-  assert.doesNotMatch(page, /data-testid="eating-plans"/);
-  assert.doesNotMatch(page, /data-testid="what-im-eating"/);
-  assert.doesNotMatch(page, /data-testid="want-to-eat"/);
+  assert.match(section, /data-testid="what-im-eating"/);
+  assert.match(section, /data-testid="want-to-eat"/);
+  assert.match(section, /data-testid="eating-plans"/);
   assert.match(page, /data-testid="dining-crews"/);
   assert.match(page, /data-testid="my-events"/);
-  assert.doesNotMatch(page, /title="My Eating Plans"/);
+  assert.match(section, /title="My Eating Plans"/);
+  assert.match(section, /title="What I'm Eating"/);
+  assert.match(section, /title="What I Want to Eat"/);
   assert.match(section, /eating-calendar/);
   assert.match(section, /DinerCalendarTrigger/);
   assert.match(section, /PostAfterActions/);
@@ -37,8 +39,9 @@ test("My Menuply is the diner's personal home", () => {
   assert.match(page, /joinCandidates/);
   assert.match(page, /listPendingEatInvitePeople/);
   assert.match(section, /future-plans-summary/);
-  assert.match(section, /Schedule a plan/);
   assert.match(section, /None scheduled/);
+  assert.doesNotMatch(section, /Schedule a plan/);
+  assert.doesNotMatch(section, /eating-log-trigger/);
   assert.doesNotMatch(section, /^\s*Plans Scheduled\s*$/m);
   assert.match(page, /isScheduledEatingPlan/);
   assert.match(section, /FuturePlanRow/);
@@ -48,6 +51,9 @@ test("My Menuply is the diner's personal home", () => {
   assert.match(page, /DiningCrewHubCard/);
   assert.match(page, /NamedShareCard/);
   assert.match(page, /CrewQuickCompose/);
+  assert.match(page, /EventComposeSheet/);
+  assert.match(page, /compose === "event"/);
+  assert.match(page, /createDinerSocialEvent/);
   assert.match(page, /description: purpose/);
   assert.match(page, /Invite people to join/);
   assert.match(page, /inviteToDiningCrew/);
@@ -117,8 +123,9 @@ test("My Menuply is the diner's personal home", () => {
   assert.match(api, /joinWhatWeDoingSession/);
   assert.match(api, /listPendingEatInvitePeople/);
   assert.match(api, /\/api\/consumer\/want-to-eat/);
+  assert.match(api, /\/api\/consumer\/social-events/);
   assert.match(hero, /About Me/);
-  assert.match(read("src/pages/consumer/myMenuply/MyMenuplyPresentationRails.jsx"), /Connections/);
+  assert.match(read("src/pages/consumer/myMenuply/MyMenuplyPresentationRails.jsx"), /Connects/);
   assert.match(hero, /viewerUserId/);
   assert.match(page, /MyMenuplyPresentationRails/);
   assert.match(page, /buildTopHighlights/);
@@ -129,6 +136,7 @@ test("My Menuply is the diner's personal home", () => {
   assert.match(eatingCompose, /MenuplyMediaPicker/);
   assert.match(eatingCompose, /eating-compose-media/);
   assert.match(section, /WantToEatList/);
+  assert.match(section, /SectionEmptyState/);
   const calendar = read("src/pages/consumer/myMenuply/DinerCalendarSheet.jsx");
   assert.match(calendar, /diner-calendar-open/);
   assert.match(calendar, /calendar-event/);

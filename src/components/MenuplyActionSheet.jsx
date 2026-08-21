@@ -1,7 +1,6 @@
 /**
- * Compact X action launcher — Post about.
- * I'm Eating At stays guest-open. Diners RSVP to events; operators create them.
- * Ate / Want / Plan route into My Menuply compose (restaurant, dish, or homemade).
+ * Compact X action launcher — create content for My Menuply.
+ * Profile displays; X creates. I'm Eating At stays guest-open.
  */
 
 import { useEffect } from "react";
@@ -51,14 +50,49 @@ function inviteToEatPath(pathname) {
   return "/account/invite-to-eat";
 }
 
-/** Actions shown under bottom-nav Post (X) → Post about. */
+/** Actions shown under bottom-nav Post (X) — creation hub for My Menuply. */
 export const POST_ABOUT_ACTIONS = [
   {
-    id: "diner-qr",
-    title: "My Diner QR",
-    description: "Show your code so someone nearby can connect with you.",
-    to: "/account/diner-qr",
+    id: "ate",
+    title: "What I'm Eating",
+    description: "Photo or video of what you're eating — restaurant or homemade.",
+    to: "/my-menuply?compose=ate",
     guestOk: false,
+  },
+  {
+    id: "want",
+    title: "What I Want to Eat",
+    description: "Cuisine, restaurant, menu item, or a food craving.",
+    to: "/my-menuply?compose=want",
+    guestOk: false,
+  },
+  {
+    id: "plan",
+    title: "Eating Plan",
+    description: "Schedule a future meal. Join Me and invites stay on the plan.",
+    to: "/my-menuply?compose=plan",
+    guestOk: false,
+  },
+  {
+    id: "crew",
+    title: "Dining Crew",
+    description: "Create or open a crew — groups of people you eat with.",
+    to: "/my-menuply?compose=crew",
+    guestOk: false,
+  },
+  {
+    id: "event",
+    title: "My Events",
+    description: "Create any social event — dinner, concert, game, birthday. Food optional.",
+    to: "/my-menuply?compose=event",
+    guestOk: false,
+  },
+  {
+    id: "events-browse",
+    title: "Find venue events",
+    description: "Browse restaurant and venue events near you, then RSVP.",
+    to: "/events",
+    guestOk: true,
   },
   {
     id: "im-eating",
@@ -69,33 +103,19 @@ export const POST_ABOUT_ACTIONS = [
     eatingContext: true,
   },
   {
-    id: "ate",
-    title: "What I Ate",
-    description: "Log a meal — restaurant, dish, or homemade. As much or as little as you want.",
-    to: "/my-menuply?compose=ate",
-    guestOk: false,
-  },
-  {
-    id: "want",
-    title: "Want to Eat",
-    description: "Save a dish or food idea for later. Optional restaurant or homemade.",
-    to: "/my-menuply?compose=want",
-    guestOk: false,
-  },
-  {
-    id: "plan",
-    title: "Plan to Eat",
-    description: "Schedule a future meal. Link a restaurant or mark it homemade.",
-    to: "/my-menuply?compose=plan",
-    guestOk: false,
-  },
-  {
     id: "invite",
     title: "Invite to Eat",
     description: "Pick a restaurant, invite connects, and share the link.",
     to: "/account/invite-to-eat",
     guestOk: true,
     inviteContext: true,
+  },
+  {
+    id: "diner-qr",
+    title: "My Diner QR",
+    description: "Show your code so someone nearby can connect with you.",
+    to: "/account/diner-qr",
+    guestOk: false,
   },
   {
     id: "connects",
@@ -105,16 +125,9 @@ export const POST_ABOUT_ACTIONS = [
     guestOk: false,
   },
   {
-    id: "events",
-    title: "Find events",
-    description: "Browse dining events at restaurants and venues near you.",
-    to: "/events",
-    guestOk: true,
-  },
-  {
     id: "upload-media",
     title: "Upload from library",
-    description: "Add an edited photo or video from your library, then log what you ate.",
+    description: "Add a photo or video from your library, then post What I'm Eating.",
     to: "/my-menuply?compose=ate&media=library",
     guestOk: false,
   },
@@ -165,14 +178,14 @@ export default function MenuplyActionSheet({ open, onClose }) {
       <div role="dialog" aria-modal="true" aria-labelledby="menuply-x-title" style={styles.sheet}>
         <div style={styles.head}>
           <h2 id="menuply-x-title" style={styles.title}>
-            Post about
+            Create
           </h2>
           <button type="button" onClick={onClose} aria-label="Close" style={styles.close}>
             Close
           </button>
         </div>
         <p style={styles.lead}>
-          Post as much or as little as you want — restaurant, dish, homemade, or just a note.
+          Create something for My Menuply — What I&apos;m Eating, wants, plans, crews, or events.
         </p>
         <ul style={styles.list}>
           {POST_ABOUT_ACTIONS.map((action) => (

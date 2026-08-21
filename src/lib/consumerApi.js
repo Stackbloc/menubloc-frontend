@@ -480,6 +480,11 @@ export const submitOrderFeedback = (body) =>
 // ── Venue Event Groups + RSVP (Phase 5) ───────────────────────────────────
 export const listMyVenueEvents = () => get("/api/consumer/my/events");
 export const listMyVenueEventGroups = () => get("/api/consumer/my/event-groups");
+
+/** Diner-created social events (My Menuply My Events — not venue_events). */
+export const listDinerSocialEvents = () => get("/api/consumer/social-events");
+export const createDinerSocialEvent = (body) => post("/api/consumer/social-events", body);
+
 export const setVenueEventRsvp = (eventIdOrSlug, status) =>
   post(`/api/consumer/events/${encodeURIComponent(String(eventIdOrSlug))}/rsvp`, { status });
 export const createVenueEventGroup = (eventIdOrSlug, body) =>
