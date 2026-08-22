@@ -33,6 +33,7 @@ import {
   listMyVenueEvents,
   listDinerSocialEvents,
   createDinerSocialEvent,
+  ensureDinerSocialEventShareLink,
   listPendingEatInvitePeople,
   listWantToEat,
   listWhatIAteToday,
@@ -53,10 +54,12 @@ import { defaultWhatIAteMealPeriod } from "../../lib/whatIAteTodayMealPeriod.js"
 import {
   buildDiningCrewInviteShareData,
   buildMenuplyPathShareData,
+  buildSocialEventJoinShareData,
 } from "../../lib/diningCrewInviteShare.js";
 import EatingHubSection, { PlansCalendarGlyph } from "./myMenuply/EatingHubSection.jsx";
 import CrewQuickCompose from "./myMenuply/CrewQuickCompose.jsx";
 import EventComposeSheet from "./myMenuply/EventComposeSheet.jsx";
+import InvitePickerSheet from "./myMenuply/InvitePickerSheet.jsx";
 import SectionEmptyState from "./myMenuply/SectionEmptyState.jsx";
 import { buildJoinMeCandidates } from "./myMenuply/joinMeCandidates.js";
 import {
@@ -151,6 +154,8 @@ export default function MyMenuplyPage() {
   const [profileGalleryMediaSource, setProfileGalleryMediaSource] = useState(null);
   const [crewComposeOpen, setCrewComposeOpen] = useState(false);
   const [eventComposeOpen, setEventComposeOpen] = useState(false);
+  const [inviteCrewPickerOpen, setInviteCrewPickerOpen] = useState(false);
+  const [inviteEventPickerOpen, setInviteEventPickerOpen] = useState(false);
   const [hubFocus, setHubFocus] = useState("");
   const [planPrefill, setPlanPrefill] = useState(null);
   const locationCity = profile?.primary_location?.city_name || null;
@@ -275,6 +280,24 @@ export default function MyMenuplyPage() {
       }
       const timer = window.setTimeout(() => {
         eatingSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 120);
+      return () => window.clearTimeout(timer);
+    }
+    if (compose === "invite-crew") {
+      setInviteCrewPickerOpen(true);
+      const timer = window.setTimeout(() => {
+        document
+          .querySelector('[data-testid="dining-crews"]')
+          ?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 120);
+      return () => window.clearTimeout(timer);
+    }
+    if (compose === "invite-event") {
+      setInviteEventPickerOpen(true);
+      const timer = window.setTimeout(() => {
+        document
+          .querySelector('[data-testid="my-events"]')
+          ?.scrollIntoView({ behavior: "smooth", block: "start" });
       }, 120);
       return () => window.clearTimeout(timer);
     }
@@ -767,7 +790,15 @@ export default function MyMenuplyPage() {
     }
   }
 
-  async function postSocialEvent({ title, eventDate, startTime, locationLabel, description, file }) {
+  async function postSocialEvent({
+    title,
+    eventDate,
+    startTime,
+    locationLabel,
+    description,
+    joinMeOpen,
+    file,
+  }) {
     setPostBusy("events");
     setError("");
     try {
@@ -783,6 +814,7 @@ export default function MyMenuplyPage() {
         start_time: startTime,
         location_label: locationLabel,
         description,
+        join_me_open: Boolean(joinMeOpen),
         photo_url,
         video_url,
       });
@@ -815,6 +847,36 @@ export default function MyMenuplyPage() {
       });
     } catch (err) {
       setError(err.message || "Invite failed");
+    } finally {
+      setPostBusy("");
+    }
+  }
+
+  async function shareDinerSocialEventInvite(ev) {
+    setPostBusy("invite");
+    setError("");
+    try {
+      const data = await ensureDinerSocialEventShareLink(ev.id);
+      const token =
+        data?.invitation_token ||
+        data?.event?.invitation_token ||
+        ev.invitation_token;
+      if (!token) throw new Error("Unable to create join link");
+      openShare(
+        buildSocialEventJoinShareData({
+          title: ev.title,
+          joinPath: `/join-event/${encodeURIComponent(String(token))}`,
+        }),
+        {
+          modalTitle: "Share event Join Me",
+          analyticsContext: {
+            pageType: "diner_social_event_join",
+            eventId: Number(ev.id) || null,
+          },
+        }
+      );
+    } catch (err) {
+      setError(err.message || "Unable to share event");
     } finally {
       setPostBusy("");
     }
@@ -1138,8 +1200,6 @@ export default function MyMenuplyPage() {
                     ]
                       .filter(Boolean)
                       .join(" · ")}
-                    onInvite={() => shareCrewInvite(crew)}
-                    inviteLabel="Invite people to join"
                     onDelete={crew.viewer_role === "owner" ? onCrewDelete : undefined}
                     deleteBusy={postBusy === `crew-delete-${crew.id}`}
                   />
@@ -1268,6 +1328,28 @@ export default function MyMenuplyPage() {
         ) : null}
       </div>
       <BottomNav />
+      <InvitePickerSheet
+        open={inviteCrewPickerOpen}
+        kind="crew"
+        items={crews}
+        busy={postBusy === "invite"}
+        onClose={() => setInviteCrewPickerOpen(false)}
+        onPick={(crew) => {
+          setInviteCrewPickerOpen(false);
+          shareCrewInvite(crew);
+        }}
+      />
+      <InvitePickerSheet
+        open={inviteEventPickerOpen}
+        kind="event"
+        items={socialEvents}
+        busy={postBusy === "invite"}
+        onClose={() => setInviteEventPickerOpen(false)}
+        onPick={(ev) => {
+          setInviteEventPickerOpen(false);
+          shareDinerSocialEventInvite(ev);
+        }}
+      />
       {sharePayload?.shareData ? (
         <ShareModal
           open={shareOpen}

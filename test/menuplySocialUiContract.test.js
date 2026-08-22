@@ -36,11 +36,11 @@ test("preferInlineCamera prefers live camera when getUserMedia exists", () => {
   assert.match(lib, /return inlineCameraSupported\(\)/);
 });
 
-test("Post about Upload from library opens compose with media=library", () => {
+test("Post about no longer lists Upload from library in X sheet", () => {
   const sheet = read("src/components/MenuplyActionSheet.jsx");
-  assert.match(sheet, /Upload from library/);
-  assert.match(sheet, /compose=ate&media=library/);
-  assert.match(sheet, /id: "upload-media"/);
+  assert.doesNotMatch(sheet, /id: "upload-media"/);
+  assert.doesNotMatch(sheet, /Upload from library/);
+  assert.doesNotMatch(sheet, /compose=ate&media=library/);
 });
 
 test("What I Ate meal board is presentation-only (no empty cameras)", () => {

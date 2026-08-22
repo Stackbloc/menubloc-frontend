@@ -45,3 +45,15 @@ export function buildMenuplyPathShareData(path, { title, text } = {}) {
     url,
   };
 }
+
+/** Join Me link for diner social events (My Events). */
+export function buildSocialEventJoinShareData({ title, joinPath }) {
+  const url = menuplyDiningCrewInviteUrl(joinPath);
+  if (!url) return null;
+  const name = String(title || "my event").trim();
+  return {
+    title: `Join me: ${name}`,
+    text: `Join me at ${name} on Menuply.`,
+    url,
+  };
+}

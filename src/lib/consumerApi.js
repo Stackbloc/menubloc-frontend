@@ -501,6 +501,16 @@ export const listDinerSocialEvents = () => get("/api/consumer/social-events");
 export const createDinerSocialEvent = (body) => post("/api/consumer/social-events", body);
 export const deleteDinerSocialEvent = (eventId) =>
   del(`/api/consumer/social-events/${encodeURIComponent(String(eventId))}`);
+export const ensureDinerSocialEventShareLink = (eventId) =>
+  post(`/api/consumer/social-events/${encodeURIComponent(String(eventId))}/share-link`, {});
+export const fetchPublicSocialEventJoin = (token, { guestKey } = {}) => {
+  const params = new URLSearchParams();
+  if (guestKey) params.set("guest_key", guestKey);
+  const qs = params.toString();
+  return get(`/public/social-events/join/${encodeURIComponent(String(token))}${qs ? `?${qs}` : ""}`);
+};
+export const respondToSocialEventJoin = (token, body) =>
+  post(`/public/social-events/join/${encodeURIComponent(String(token))}/respond`, body);
 
 export const setVenueEventRsvp = (eventIdOrSlug, status) =>
   post(`/api/consumer/events/${encodeURIComponent(String(eventIdOrSlug))}/rsvp`, { status });

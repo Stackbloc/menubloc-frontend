@@ -31,7 +31,7 @@ test("MenuplyActionSheet opens profile gallery compose from X", () => {
   const gallerySheet = read("src/pages/consumer/myMenuply/ProfileGalleryComposeSheet.jsx");
   assert.match(sheet, /compose=profile-gallery/);
   assert.match(sheet, /id: "my-account"/);
-  assert.match(sheet, /camera, or upload from your library/i);
+  assert.match(sheet, /Add a photo or video with your camera/);
   assert.ok(sheet.indexOf('id: "diner-qr"') < sheet.indexOf('id: "ate"'));
   assert.ok(sheet.indexOf('id: "my-account"') > sheet.indexOf('id: "profile-gallery"'));
   assert.doesNotMatch(sheet, /id: "im-eating"/);
@@ -73,6 +73,21 @@ test("MenuplyActionSheet routes Invite to Eat to invite start page", () => {
   assert.match(sheet, /\/account\/invite-to-eat/);
   assert.match(sheet, /inviteContext/);
   assert.doesNotMatch(sheet, /id: "invite"[\s\S]{0,120}to: "\/search"/);
+});
+
+test("MenuplyActionSheet routes Search profiles to Find Diners", () => {
+  const sheet = read("src/components/MenuplyActionSheet.jsx");
+  assert.match(sheet, /id: "search-profiles"/);
+  assert.match(sheet, /title: "Search profiles"/);
+  assert.match(sheet, /to: "\/account\/find-diners"/);
+  assert.match(sheet, /"search-profiles"/);
+  assert.match(sheet, /id: "discover"/);
+});
+
+test("App exposes join-event route for diner social event Join Me", () => {
+  const app = read("src/App.jsx");
+  assert.match(app, /SocialEventJoinPage/);
+  assert.match(app, /\/join-event\/:token/);
 });
 
 test("App exposes /events browse and invite-to-eat start routes", () => {

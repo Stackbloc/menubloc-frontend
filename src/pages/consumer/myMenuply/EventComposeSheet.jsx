@@ -18,6 +18,7 @@ export default function EventComposeSheet({
   const [startTime, setStartTime] = useState("");
   const [locationLabel, setLocationLabel] = useState("");
   const [description, setDescription] = useState("");
+  const [joinMeOpen, setJoinMeOpen] = useState(false);
   const [file, setFile] = useState(null);
 
   if (!open) return null;
@@ -32,12 +33,14 @@ export default function EventComposeSheet({
       startTime: String(startTime || "").trim() || null,
       locationLabel: String(locationLabel || "").trim() || null,
       description: String(description || "").trim() || null,
+      joinMeOpen,
       file,
     });
     setTitle("");
     setStartTime("");
     setLocationLabel("");
     setDescription("");
+    setJoinMeOpen(false);
     setFile(null);
     onClose?.();
   }
@@ -131,17 +134,28 @@ export default function EventComposeSheet({
             />
           </label>
           <label style={styles.label}>
-            Notes
+            Description
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Optional details"
+              placeholder="What's this event about? (optional)"
               disabled={busy}
               maxLength={1000}
               rows={3}
               style={{ ...styles.input, minHeight: 72, resize: "vertical" }}
-              data-testid="event-compose-notes"
+              data-testid="event-compose-description"
             />
+          </label>
+          <label style={styles.checkRow} data-testid="event-compose-join-me">
+            <input
+              type="checkbox"
+              checked={joinMeOpen}
+              onChange={(e) => setJoinMeOpen(e.target.checked)}
+              disabled={busy}
+            />
+            <span>
+              <strong>Open Join Me</strong> — anyone with the link can accept
+            </span>
           </label>
           <button
             type="submit"
@@ -229,5 +243,14 @@ const styles = {
     fontSize: 15,
     cursor: "pointer",
     fontFamily: "inherit",
+  },
+  checkRow: {
+    display: "flex",
+    alignItems: "flex-start",
+    gap: 10,
+    fontSize: 13,
+    color: "#334155",
+    lineHeight: 1.45,
+    cursor: "pointer",
   },
 };

@@ -40,11 +40,12 @@ export default function CrewQuickCompose({
         type="text"
         value={purpose}
         onChange={(e) => setPurpose(e.target.value)}
-        placeholder="Purpose (optional)"
+        placeholder="Description (optional)"
         disabled={busy}
         maxLength={160}
         autoComplete="off"
         style={styles.input}
+        data-testid="crew-compose-description"
       />
       <button type="submit" disabled={busy || !String(name).trim()} style={styles.post}>
         {busy ? "…" : "Post"}

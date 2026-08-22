@@ -57,6 +57,8 @@ test("X sheet creates My Menuply content; Diner QR first; no I'm Eating At / My 
   assert.match(sheet, /compose=plan/);
   assert.match(sheet, /Invite to Eat/);
   assert.match(sheet, /Find venue events/);
+  assert.match(sheet, /title: "Search profiles"/);
+  assert.match(sheet, /\/account\/find-diners/);
   assert.match(sheet, /id: "profile-gallery"/);
   assert.match(sheet, /title: "Profile gallery"/);
   assert.match(sheet, /compose=profile-gallery/);
@@ -67,16 +69,9 @@ test("X sheet creates My Menuply content; Diner QR first; no I'm Eating At / My 
     sheet.indexOf('id: "my-account"') > sheet.indexOf('id: "profile-gallery"'),
     "My Account is after Profile gallery"
   );
-  assert.ok(
-    sheet.lastIndexOf('id: "my-account"') === sheet.indexOf('id: "my-account"') &&
-      sheet.indexOf('id: "my-account"') ===
-        Math.max(
-          ...["diner-qr", "ate", "want", "plan", "crew", "event", "events-browse", "invite", "upload-media", "profile-gallery", "my-account"].map(
-            (id) => sheet.indexOf(`id: "${id}"`)
-          )
-        ),
-    "My Account is the last action"
-  );
+  assert.match(sheet, /POST_ABOUT_SECTIONS/);
+  assert.match(sheet, /id: "account"/);
+  assert.doesNotMatch(sheet, /id: "upload-media"/);
   assert.doesNotMatch(sheet, /id: "im-eating"/);
   assert.doesNotMatch(sheet, /I'm Eating At/);
   assert.doesNotMatch(sheet, /id: "connects"/);
