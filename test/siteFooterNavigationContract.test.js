@@ -1,6 +1,7 @@
 /**
- * Public SiteFooter navigation — canonical marketplace links (2026-07-09 d333af2).
- * Diners / Restaurants (onboarding) / Clusters / Creators (`/creative-pros`).
+ * Public SiteFooter navigation.
+ * Discover column removed (2026-08-24) — Search/Restaurants/Menus/Dishes/Deals/Clusters/Events/Waiter.
+ * Diners / For Businesses (Restaurants onboarding) / Menuply remain.
  * Food Distributors is the last For Businesses link (`/distributors`).
  * no restaurant auth links in footer row.
  */
@@ -20,7 +21,12 @@ function testFooterMarketplaceLinks() {
   assert.match(src, /<Link to="\/diner\/signup"/);
   assert.match(src, /<Link to="\/restaurant\/onboarding"/);
   assert.match(src, /<Link to="\/clusters"/);
-  assert.match(src, />Discover</);
+  assert.doesNotMatch(src, />Discover</);
+  assert.doesNotMatch(src, /<Link to="\/waiter"/);
+  assert.doesNotMatch(src, /<Link to="\/browse-menus"/);
+  assert.doesNotMatch(src, /<Link to="\/deals"/);
+  assert.doesNotMatch(src, /<Link to="\/events"/);
+  assert.doesNotMatch(src, /to="\/restaurants"/);
   assert.match(src, />Diners</);
   assert.match(src, />For Businesses</);
   assert.match(src, />Menuply</);
@@ -28,8 +34,6 @@ function testFooterMarketplaceLinks() {
   assert.match(src, /<Link to="\/activity"/);
   assert.match(src, /<Link to="\/account\/dining-crews"/);
   assert.match(src, /<Link to="\/account\/what-we-doing"/);
-  assert.match(src, /<Link to="\/waiter"/);
-  assert.match(src, /<Link to="\/browse-menus"/);
   assert.match(src, /What People Are Eating/);
   assert.match(src, /<Link to="\/creative-pros"/);
   assert.match(src, /discovery\.footer\.creators/);
@@ -37,6 +41,10 @@ function testFooterMarketplaceLinks() {
   assert.match(src, /discovery\.footer\.foodDistributors/);
   assert.doesNotMatch(src, /Owner tools/);
   const businesses = src.slice(src.indexOf("For Businesses"), src.indexOf(">Menuply<"));
+  assert.ok(
+    businesses.includes('<Link to="/restaurant/onboarding"'),
+    "expected For Businesses Restaurants (onboarding) to remain"
+  );
   assert.ok(
     businesses.lastIndexOf('<Link to="/distributors"') > businesses.lastIndexOf('<Link to="/creative-pros"'),
     "expected Food Distributors to be the last For Businesses link"

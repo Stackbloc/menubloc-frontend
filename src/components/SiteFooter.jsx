@@ -72,22 +72,6 @@ export default function SiteFooter() {
           }}
         >
           <div>
-            <div style={groupTitleStyle}>Discover</div>
-            <Link to="/search" style={footerLinkStyle}>Search</Link><br />
-            <Link to="/restaurants" style={footerLinkStyle}>
-              {t("discovery.footer.restaurants", "Restaurants")}
-            </Link><br />
-            <Link to="/browse-menus" style={footerLinkStyle}>Menus</Link><br />
-            <Link to="/search" style={footerLinkStyle}>Dishes</Link><br />
-            <Link to="/deals" style={footerLinkStyle}>Deals</Link><br />
-            <Link to="/clusters" style={footerLinkStyle}>
-              {t("discovery.footer.clusters", "Clusters")}
-            </Link><br />
-            <Link to="/events" style={footerLinkStyle}>Events</Link><br />
-            <Link to="/waiter" style={footerLinkStyle}>Waiter</Link>
-          </div>
-
-          <div>
             <div style={groupTitleStyle}>Diners</div>
             <Link to="/diner/signup" style={footerLinkStyle}>Diners</Link><br />
             <Link to="/my-menuply" style={footerLinkStyle}>My Menuply</Link><br />

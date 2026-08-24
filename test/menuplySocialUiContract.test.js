@@ -63,10 +63,22 @@ test("preferInlineCamera and deviceId-based facing switch", () => {
   assert.match(lib, /openVideoCaptureStreamWithFallback/);
   assert.match(lib, /createCameraMediaRecorder/);
   assert.match(lib, /videoBitsPerSecond/);
+  assert.match(lib, /prefersMp4Recorder/);
+  assert.match(lib, /withSilentAudioForRecording/);
+  assert.match(lib, /withVideoPreviewSeek/);
   assert.match(lib, /"video\/mp4"/);
   assert.match(lib, /MIN_RECORDED_VIDEO_BYTES/);
   assert.match(lib, /MAX_UPLOAD_VIDEO_BYTES/);
   assert.match(lib, /MAX_RECORD_SECONDS/);
+});
+
+test("ConsumerCameraSheet reuses one video element for live and review", () => {
+  const sheet = read("src/components/consumer/ConsumerCameraSheet.jsx");
+  assert.match(sheet, /showBlobReview/);
+  assert.match(sheet, /srcObject = null/);
+  assert.match(sheet, /capturePosterFromVideoElement/);
+  assert.match(sheet, /withVideoPreviewSeek/);
+  assert.match(sheet, /consumer-camera-review-video/);
 });
 
 test("diner eating media upload maps Failed to fetch for video", () => {
@@ -146,9 +158,15 @@ test("Eating compose copy and meal time chips", () => {
   assert.match(compose, /eating-meal-\$\{slot\.id\}/);
 });
 
-test("Site footer Events routes to browse page not clusters", () => {
+test("Site footer has no Discover column (Events/Waiter/Menus removed)", () => {
   const footer = read("src/components/SiteFooter.jsx");
-  assert.match(footer, /to="\/events".*Events/s);
+  assert.doesNotMatch(footer, />Discover</);
+  assert.doesNotMatch(footer, /to="\/events"/);
+  assert.doesNotMatch(footer, /to="\/waiter"/);
+  assert.doesNotMatch(footer, /to="\/browse-menus"/);
+  assert.doesNotMatch(footer, /to="\/deals"/);
+  assert.match(footer, />For Businesses</);
+  assert.match(footer, /to="\/restaurant\/onboarding"/);
 });
 
 test("social design tokens exist", () => {

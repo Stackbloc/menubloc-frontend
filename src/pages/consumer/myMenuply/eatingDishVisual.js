@@ -4,6 +4,7 @@
  */
 
 import { resolveConsumerMediaUrl } from "../../../lib/consumerApi.js";
+import { withVideoPreviewSeek } from "../../../lib/consumerCameraCapture.js";
 
 export function resolveEatingDishVisual(item) {
   const dinerPhoto = String(item?.photo_url || "").trim();
@@ -15,9 +16,10 @@ export function resolveEatingDishVisual(item) {
   ).trim();
 
   if (video) {
+    const absolute = resolveConsumerMediaUrl(video);
     return {
       kind: "video",
-      url: resolveConsumerMediaUrl(video),
+      url: withVideoPreviewSeek(absolute),
       source: "dish",
       fit: "cover",
     };

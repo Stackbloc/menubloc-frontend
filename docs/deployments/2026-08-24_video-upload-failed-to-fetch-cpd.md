@@ -11,8 +11,9 @@ Eating video clips were dying with browser `Failed to fetch` on upload (photos O
 | Layer | Path | Branch | Commit | Gate |
 |-------|------|--------|--------|------|
 | FE feature | `menubloc-frontend-main` | `main` | `bc104af` | tip live |
+| FE tip lock docs | `menubloc-frontend-main` | `main` | `12a530b` | tip-gate PASS |
 | BE feature | `menubloc-backend-main` | `main` | `9174dbc9` | health match |
-| FE tip lock docs | `menubloc-frontend-main` | `main` | (docs lock commit) | tip-gate PASS |
+| BE LKG mirror | `menubloc-backend-main` | `main` | `3245a341` | docs only |
 
 ## Production tip
 

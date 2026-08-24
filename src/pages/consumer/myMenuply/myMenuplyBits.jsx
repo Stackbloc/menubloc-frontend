@@ -133,7 +133,10 @@ export function PhotoGrid({ items, onSelect, onPhotoPick, hideJoinMe = false, pr
           style={s.photo}
           controls={!presentation}
           playsInline
-          preload="metadata"
+          muted={Boolean(presentation)}
+          autoPlay={Boolean(presentation)}
+          loop={Boolean(presentation)}
+          preload="auto"
         />
       ) : (
         <img
@@ -761,7 +764,9 @@ function WantToEatCard({
             style={isScroll ? wantStyles.scrollPhoto : wantStyles.stackPhoto}
             playsInline
             muted
-            preload="metadata"
+            autoPlay
+            loop
+            preload="auto"
           />
         ) : (
           <img

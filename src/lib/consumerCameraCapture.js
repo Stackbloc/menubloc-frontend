@@ -17,7 +17,8 @@ export function videoRecorderSupported() {
     inlineCameraSupported() &&
     typeof MediaRecorder !== "undefined" &&
     (MediaRecorder.isTypeSupported?.("video/webm") ||
-      MediaRecorder.isTypeSupported?.("video/mp4"))
+      MediaRecorder.isTypeSupported?.("video/mp4") ||
+      MediaRecorder.isTypeSupported?.("video/webm;codecs=vp8"))
   );
 }
 
@@ -134,15 +135,42 @@ export async function photoFileFromVideoElement(videoEl, filenamePrefix = "photo
   return new File([blob], `${filenamePrefix}-${Date.now()}.jpg`, { type: "image/jpeg" });
 }
 
+/** True for Safari / iOS WebKit where MediaRecorder prefers mp4 containers. */
+export function prefersMp4Recorder() {
+  if (typeof navigator === "undefined") return false;
+  const ua = String(navigator.userAgent || "");
+  if (/iPhone|iPad|iPod/i.test(ua)) return true;
+  // Desktop Safari (not Chrome/Chromium/Firefox/Edge).
+  return /Safari/i.test(ua) && !/Chrome|Chromium|CriOS|Edg|Firefox|FxiOS/i.test(ua);
+}
+
+/**
+ * Append #t=0.001 so iOS paints a first frame for muted preview videos.
+ */
+export function withVideoPreviewSeek(url) {
+  const raw = String(url || "").trim();
+  if (!raw) return "";
+  if (raw.includes("#")) return raw;
+  return `${raw}#t=0.001`;
+}
+
 export function pickRecorderMimeType() {
   if (typeof MediaRecorder === "undefined") return "";
-  // Prefer mp4 first — Safari/iOS often cannot produce usable WebM.
-  const candidates = [
+  // Chrome often reports video/mp4 as supported but records unplayable/black clips.
+  // Prefer WebM on Chromium; mp4 only on Safari/iOS.
+  const safariFirst = [
     "video/mp4",
     "video/webm;codecs=vp8",
     "video/webm;codecs=vp9",
     "video/webm",
   ];
+  const chromiumFirst = [
+    "video/webm;codecs=vp8",
+    "video/webm;codecs=vp9",
+    "video/webm",
+    "video/mp4",
+  ];
+  const candidates = prefersMp4Recorder() ? safariFirst : chromiumFirst;
   for (const type of candidates) {
     if (MediaRecorder.isTypeSupported?.(type)) return type;
   }
@@ -150,8 +178,58 @@ export function pickRecorderMimeType() {
 }
 
 /**
- * Build a MediaRecorder. Uses video tracks only — audio+video containers often
- * produce black / unplayable clips on mobile Safari and some Chromium builds.
+ * Safari mp4 MediaRecorder often needs an audio track for a playable container.
+ * Use a silent AudioContext track (no mic permission / no audible audio).
+ */
+export function withSilentAudioForRecording(videoOnlyStream) {
+  const videoTracks = videoOnlyStream?.getVideoTracks?.() || [];
+  if (!videoTracks.length) {
+    return { stream: videoOnlyStream, cleanup: () => {} };
+  }
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) {
+      return { stream: new MediaStream(videoTracks), cleanup: () => {} };
+    }
+    const ctx = new AudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    gain.gain.value = 0;
+    const dest = ctx.createMediaStreamDestination();
+    osc.connect(gain);
+    gain.connect(dest);
+    osc.start();
+    const audioTrack = dest.stream.getAudioTracks()[0];
+    const stream = new MediaStream([...videoTracks, audioTrack].filter(Boolean));
+    return {
+      stream,
+      cleanup: () => {
+        try {
+          osc.stop();
+        } catch {
+          /* ignore */
+        }
+        try {
+          audioTrack?.stop();
+        } catch {
+          /* ignore */
+        }
+        try {
+          ctx.close();
+        } catch {
+          /* ignore */
+        }
+      },
+    };
+  } catch {
+    return { stream: new MediaStream(videoTracks), cleanup: () => {} };
+  }
+}
+
+/**
+ * Build a MediaRecorder.
+ * - Chromium: WebM video-only (most reliable preview + upload)
+ * - Safari/iOS mp4: silent audio track so the container is playable
  */
 export function createCameraMediaRecorder(stream) {
   const mimeType = pickRecorderMimeType();
@@ -164,13 +242,20 @@ export function createCameraMediaRecorder(stream) {
   if (!videoTracks.length) {
     throw new Error("No camera video track available to record.");
   }
-  const recordStream = new MediaStream(videoTracks);
+
+  const wantsMp4 = mimeType.startsWith("video/mp4");
+  const baseVideoStream = new MediaStream(videoTracks);
+  const { stream: recordStream, cleanup } = wantsMp4
+    ? withSilentAudioForRecording(baseVideoStream)
+    : { stream: baseVideoStream, cleanup: () => {} };
+
   const options = { mimeType, videoBitsPerSecond: 900_000 };
   try {
     return {
       recorder: new MediaRecorder(recordStream, options),
       mimeType,
       recordStream,
+      cleanup,
     };
   } catch {
     try {
@@ -178,14 +263,32 @@ export function createCameraMediaRecorder(stream) {
         recorder: new MediaRecorder(recordStream, { mimeType }),
         mimeType,
         recordStream,
+        cleanup,
       };
     } catch {
       return {
         recorder: new MediaRecorder(recordStream),
         mimeType: mimeType.split(";")[0] || "video/webm",
         recordStream,
+        cleanup,
       };
     }
+  }
+}
+
+/** Grab a still from the live preview for review poster when blob paint fails. */
+export function capturePosterFromVideoElement(videoEl) {
+  if (!videoEl || !videoEl.videoWidth) return "";
+  try {
+    const canvas = document.createElement("canvas");
+    canvas.width = videoEl.videoWidth;
+    canvas.height = videoEl.videoHeight;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return "";
+    ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL("image/jpeg", 0.72);
+  } catch {
+    return "";
   }
 }
 

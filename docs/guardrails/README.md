@@ -4,6 +4,7 @@ Dated guardrail documents for Menuply agents and reviewers.
 
 | Date | Topic | File |
 |------|-------|------|
+| 2026-08-24 | **Home food search parameters — no changes to search** — HomeNext food search params locked without Andre approval | [2026-08-24_home-food-search-parameters-no-changes-contract.md](2026-08-24_home-food-search-parameters-no-changes-contract.md) |
 | 2026-08-24 | **🔴 Production tip lock atomic (REQUIRED)** — after FE alias: lock tip-gate → tip-gate PASS → sync LKG; never panic-restore on `bundle != locked tip` alone | [2026-08-24_production-tip-lock-atomic-contract.md](2026-08-24_production-tip-lock-atomic-contract.md) |
 | 2026-08-20 | **CPD agent playbook** — short Commit→Push→Deploy procedure + traps (sandbox, alias, tip-lock order) | [2026-08-20_cpd-agent-playbook.md](2026-08-20_cpd-agent-playbook.md) |
 | 2026-08-19 | **Join Me vs Invite Me** — Join Me = future plans (per-instance eligibility); Invite Me = Food I Want to Eat (diner-set invite eligibility); do not swap | [2026-08-19_join-me-vs-invite-me-vocabulary.md](2026-08-19_join-me-vs-invite-me-vocabulary.md) |

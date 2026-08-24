@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import {
+  capturePosterFromVideoElement,
   countVideoInputDevices,
   createCameraMediaRecorder,
   formatBytes,
@@ -10,6 +11,7 @@ import {
   openVideoCaptureStreamWithFallback,
   photoFileFromVideoElement,
   stopMediaStream,
+  withVideoPreviewSeek,
 } from "../../lib/consumerCameraCapture.js";
 
 /**
@@ -27,9 +29,9 @@ export default function ConsumerCameraSheet({
   onModeChange,
 }) {
   const videoRef = useRef(null);
-  const reviewVideoRef = useRef(null);
   const streamRef = useRef(null);
   const recorderRef = useRef(null);
+  const recorderCleanupRef = useRef(() => {});
   const chunksRef = useRef([]);
   const mimeRef = useRef("video/webm");
   const recordStartedAtRef = useRef(0);
@@ -44,6 +46,7 @@ export default function ConsumerCameraSheet({
   const [canFlipCamera, setCanFlipCamera] = useState(true);
   const [reviewFile, setReviewFile] = useState(null);
   const [reviewUrl, setReviewUrl] = useState("");
+  const [reviewPoster, setReviewPoster] = useState("");
 
   function clearReview() {
     if (reviewUrlRef.current) {
@@ -52,6 +55,54 @@ export default function ConsumerCameraSheet({
     }
     setReviewFile(null);
     setReviewUrl("");
+    setReviewPoster("");
+  }
+
+  function attachLivePreview(stream) {
+    const el = videoRef.current;
+    if (!el || !stream) return;
+    el.removeAttribute("src");
+    el.srcObject = stream;
+    el.muted = true;
+    el.defaultMuted = true;
+    el.playsInline = true;
+    el.setAttribute("playsinline", "true");
+    el.setAttribute("webkit-playsinline", "true");
+    el.autoplay = true;
+    el.controls = false;
+    el.loop = false;
+    el.play().catch(() => {});
+  }
+
+  function showBlobReview(url, posterDataUrl) {
+    const el = videoRef.current;
+    if (!el) return;
+    // Safari: must clear srcObject before assigning blob src on the same element.
+    try {
+      el.pause();
+    } catch {
+      /* ignore */
+    }
+    el.removeAttribute("src");
+    el.srcObject = null;
+    el.load();
+    el.poster = posterDataUrl || "";
+    el.muted = true;
+    el.defaultMuted = true;
+    el.playsInline = true;
+    el.setAttribute("playsinline", "true");
+    el.setAttribute("webkit-playsinline", "true");
+    el.controls = true;
+    el.loop = true;
+    el.autoplay = true;
+    el.src = withVideoPreviewSeek(url);
+    el.load();
+    const tryPlay = () => {
+      el.play().catch(() => {});
+    };
+    el.addEventListener("loadeddata", tryPlay, { once: true });
+    el.addEventListener("canplay", tryPlay, { once: true });
+    tryPlay();
   }
 
   useEffect(() => {
@@ -87,12 +138,8 @@ export default function ConsumerCameraSheet({
 
         streamRef.current = stream;
 
-        const el = videoRef.current;
-        if (el) {
-          el.srcObject = stream;
-          el.muted = true;
-          el.playsInline = true;
-          el.play().catch(() => {});
+        if (!reviewUrlRef.current) {
+          attachLivePreview(stream);
         }
 
         try {
@@ -127,10 +174,17 @@ export default function ConsumerCameraSheet({
         }
       }
       recorderRef.current = null;
+      try {
+        recorderCleanupRef.current?.();
+      } catch {
+        /* ignore */
+      }
+      recorderCleanupRef.current = () => {};
       stopMediaStream(streamRef.current);
       streamRef.current = null;
       if (videoRef.current) {
         videoRef.current.srcObject = null;
+        videoRef.current.removeAttribute("src");
       }
       if (reviewUrlRef.current) {
         URL.revokeObjectURL(reviewUrlRef.current);
@@ -176,26 +230,11 @@ export default function ConsumerCameraSheet({
     };
   }, [recording]);
 
+  // When review blob is ready, paint it on the same <video> (Safari-safe).
   useEffect(() => {
-    const el = reviewVideoRef.current;
-    if (!el || !reviewUrl) return undefined;
-    const paintFrame = () => {
-      try {
-        if (el.duration && Number.isFinite(el.duration)) {
-          el.currentTime = Math.min(0.1, el.duration * 0.05);
-        }
-      } catch {
-        /* ignore seek errors */
-      }
-      el.play().catch(() => {});
-    };
-    el.addEventListener("loadeddata", paintFrame);
-    el.addEventListener("loadedmetadata", paintFrame);
-    return () => {
-      el.removeEventListener("loadeddata", paintFrame);
-      el.removeEventListener("loadedmetadata", paintFrame);
-    };
-  }, [reviewUrl]);
+    if (!reviewUrl || !reviewFile) return;
+    showBlobReview(reviewUrl, reviewPoster);
+  }, [reviewUrl, reviewFile, reviewPoster]);
 
   if (!open) return null;
 
@@ -225,9 +264,10 @@ export default function ConsumerCameraSheet({
     chunksRef.current = [];
 
     try {
-      const { recorder, mimeType } = createCameraMediaRecorder(streamRef.current);
+      const { recorder, mimeType, cleanup } = createCameraMediaRecorder(streamRef.current);
       mimeRef.current = mimeType;
       recorderRef.current = recorder;
+      recorderCleanupRef.current = typeof cleanup === "function" ? cleanup : () => {};
 
       recorder.ondataavailable = (event) => {
         if (event.data?.size) {
@@ -239,11 +279,18 @@ export default function ConsumerCameraSheet({
         setError("Recording failed. Try again or use Open phone camera.");
         setRecording(false);
         recorderRef.current = null;
+        try {
+          recorderCleanupRef.current?.();
+        } catch {
+          /* ignore */
+        }
+        recorderCleanupRef.current = () => {};
       };
 
       recorder.onstop = () => {
         setBusy(true);
         try {
+          const poster = capturePosterFromVideoElement(videoRef.current);
           const mime = mimeRef.current.split(";")[0] || "video/webm";
           const blob = new Blob(chunksRef.current, { type: mime });
           if (!chunksRef.current.length || blob.size < MIN_RECORDED_VIDEO_BYTES) {
@@ -266,14 +313,18 @@ export default function ConsumerCameraSheet({
           if (reviewUrlRef.current) URL.revokeObjectURL(reviewUrlRef.current);
           const url = URL.createObjectURL(file);
           reviewUrlRef.current = url;
+          setReviewPoster(poster || "");
           setReviewFile(file);
           setReviewUrl(url);
-          if (videoRef.current) {
-            videoRef.current.pause();
-          }
         } catch (err) {
           setError(formatCameraError(err));
         } finally {
+          try {
+            recorderCleanupRef.current?.();
+          } catch {
+            /* ignore */
+          }
+          recorderCleanupRef.current = () => {};
           setBusy(false);
           setRecording(false);
           recorderRef.current = null;
@@ -313,10 +364,8 @@ export default function ConsumerCameraSheet({
   function retakeVideo() {
     clearReview();
     setError("");
-    const el = videoRef.current;
-    if (el && streamRef.current) {
-      el.srcObject = streamRef.current;
-      el.play().catch(() => {});
+    if (streamRef.current) {
+      attachLivePreview(streamRef.current);
     }
   }
 
@@ -403,29 +452,18 @@ export default function ConsumerCameraSheet({
             ...(recording ? styles.previewWrapRecording : null),
           }}
         >
-          {reviewing ? (
-            <video
-              ref={reviewVideoRef}
-              key={reviewUrl}
-              src={reviewUrl}
-              style={styles.preview}
-              playsInline
-              muted
-              autoPlay
-              controls
-              loop
-              preload="auto"
-              data-testid="consumer-camera-review-video"
-            />
-          ) : (
-            <video
-              ref={videoRef}
-              playsInline
-              muted
-              autoPlay
-              style={styles.preview}
-            />
-          )}
+          <video
+            ref={videoRef}
+            style={styles.preview}
+            playsInline
+            muted
+            autoPlay={!reviewing}
+            controls={reviewing}
+            loop={reviewing}
+            preload={reviewing ? "auto" : "metadata"}
+            poster={reviewing ? reviewPoster || undefined : undefined}
+            data-testid={reviewing ? "consumer-camera-review-video" : "consumer-camera-live"}
+          />
 
           {busy && !recording && !reviewing ? (
             <div style={styles.loading}>Opening camera…</div>
