@@ -1,4 +1,3 @@
-```jsx
 /**
  * Unified Eating compose — sheet-only creation (X → My Menuply).
  * Ate: media → restaurant/homemade → meal time → optional comment.
@@ -263,7 +262,6 @@ export default function EatingCompose({
    * does not provide a reliable front/rear camera selector and
    * would bypass ConsumerCameraSheet.
    */
-  const useNativeCamera = false;
 
   return (
     <div data-testid={testId} style={styles.wrap}>
@@ -324,7 +322,6 @@ export default function EatingCompose({
                   ? "library"
                   : "camera"
               }
-              useNativeCamera={useNativeCamera}
               openOnMount={Boolean(
                 openLibraryOnMount &&
                   mediaSource === "library"
@@ -750,4 +747,3 @@ const styles = {
     fontFamily: "inherit",
   },
 };
-```

@@ -30,8 +30,11 @@ function MealMediaCard({ item, readOnly, onSelect, onDelete, deleteBusy }) {
   const canDelete =
     !readOnly &&
     typeof onDelete === "function" &&
-    item?.kind === "what_i_ate" &&
-    item?.entry_id != null;
+    ((item?.kind === "what_i_ate" && item?.entry_id != null) ||
+      ((item?.kind === "im_eating" || item?.kind === "what_i_ate") &&
+        (item?.source_id != null ||
+          item?.activity_id != null ||
+          /^fa[-:]?\d+$/i.test(String(item?.id || "")))));
   const { open, dismiss, consumeArmedClick, bind } = useLongPressReveal(canDelete);
 
   function handleDelete(e) {

@@ -1,8 +1,6 @@
-# Revised `ConsumerCameraSheet.jsx`
-
-```jsx
 import { useEffect, useRef, useState } from "react";
 import {
+  countVideoInputDevices,
   formatCameraError,
   openCameraStreamWithFallback,
   openVideoStreamWithFallback,
@@ -38,8 +36,8 @@ export default function ConsumerCameraSheet({
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [recording, setRecording] = useState(false);
-  const [currentFacingMode, setCurrentFacingMode] =
-    useState(facingMode);
+  const [currentFacingMode, setCurrentFacingMode] = useState(facingMode);
+  const [canFlipCamera, setCanFlipCamera] = useState(true);
 
   /*
    * Keep the initial facing preference supplied by the parent,
@@ -67,13 +65,14 @@ export default function ConsumerCameraSheet({
     setRecording(false);
     chunksRef.current = [];
 
-    const openStream =
-      mode === "video"
-        ? openVideoStreamWithFallback
-        : openCameraStreamWithFallback;
+    const previous = streamRef.current;
+    streamRef.current = null;
 
-    openStream(currentFacingMode)
-      .then((stream) => {
+    const openStream =
+      mode === "video" ? openVideoStreamWithFallback : openCameraStreamWithFallback;
+
+    openStream(currentFacingMode, previous)
+      .then(async (stream) => {
         if (!alive) {
           stopMediaStream(stream);
           return;
@@ -82,10 +81,16 @@ export default function ConsumerCameraSheet({
         streamRef.current = stream;
 
         const el = videoRef.current;
-
         if (el) {
           el.srcObject = stream;
           el.play().catch(() => {});
+        }
+
+        try {
+          const count = await countVideoInputDevices();
+          if (alive) setCanFlipCamera(count > 1);
+        } catch {
+          if (alive) setCanFlipCamera(true);
         }
       })
       .catch((err) => {
@@ -102,10 +107,7 @@ export default function ConsumerCameraSheet({
     return () => {
       alive = false;
 
-      if (
-        recorderRef.current &&
-        recorderRef.current.state !== "inactive"
-      ) {
+      if (recorderRef.current && recorderRef.current.state !== "inactive") {
         try {
           recorderRef.current.stop();
         } catch {
@@ -114,7 +116,6 @@ export default function ConsumerCameraSheet({
       }
 
       recorderRef.current = null;
-
       stopMediaStream(streamRef.current);
       streamRef.current = null;
 
@@ -236,14 +237,12 @@ export default function ConsumerCameraSheet({
 
   function switchCamera() {
     if (busy || recording) return;
-
+    if (!canFlipCamera) {
+      setError("This device only has one camera.");
+      return;
+    }
     setError("");
-
-    setCurrentFacingMode((previous) =>
-      previous === "environment"
-        ? "user"
-        : "environment"
-    );
+    setCurrentFacingMode((previous) => (previous === "environment" ? "user" : "environment"));
   }
 
   return (
@@ -330,9 +329,12 @@ export default function ConsumerCameraSheet({
             type="button"
             aria-label="Switch camera"
             data-testid="consumer-camera-switch"
-            disabled={busy || recording}
+            disabled={busy || recording || !canFlipCamera}
             onClick={switchCamera}
-            style={styles.switchCameraBtn}
+            style={{
+              ...styles.switchCameraBtn,
+              ...(canFlipCamera ? null : styles.switchCameraBtnDisabled),
+            }}
           >
             ↻
           </button>
@@ -500,6 +502,11 @@ const styles = {
     placeItems: "center",
   },
 
+  switchCameraBtnDisabled: {
+    opacity: 0.35,
+    cursor: "not-allowed",
+  },
+
   errorWrap: {
     margin: "10px 14px 0",
   },
@@ -553,4 +560,3 @@ const styles = {
     cursor: "pointer",
   },
 };
-```

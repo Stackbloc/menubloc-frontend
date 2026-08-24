@@ -1,4 +1,4 @@
-/** Inline camera capture — reliable on mobile where hidden file+capture opens Downloads only. */
+/** Inline camera capture — getUserMedia with exact front/rear device selection. */
 
 export function inlineCameraSupported() {
   return (
@@ -21,25 +21,73 @@ export function videoRecorderSupported() {
   );
 }
 
-export async function openCameraStream(facingMode = "environment") {
+function normalizeFacing(facingMode = "environment") {
+  return facingMode === "user" ? "user" : "environment";
+}
+
+/**
+ * Pick a videoinput deviceId that matches front (user) or rear (environment).
+ * Requires a prior getUserMedia grant so labels are populated on most browsers.
+ */
+export async function resolveCameraDeviceId(facingMode = "environment") {
+  if (!navigator.mediaDevices?.enumerateDevices) return null;
+  const want = normalizeFacing(facingMode);
+  const devices = await navigator.mediaDevices.enumerateDevices();
+  const cameras = devices.filter((d) => d.kind === "videoinput" && d.deviceId);
+  if (!cameras.length) return null;
+
+  const scored = cameras.map((device) => {
+    const label = String(device.label || "").toLowerCase();
+    let score = 0;
+    if (want === "user") {
+      if (/front|user|face|selfie/.test(label)) score += 10;
+      if (/back|rear|environment|world/.test(label)) score -= 5;
+    } else {
+      if (/back|rear|environment|world/.test(label)) score += 10;
+      if (/front|user|face|selfie/.test(label)) score -= 5;
+    }
+    return { deviceId: device.deviceId, score, label };
+  });
+
+  scored.sort((a, b) => b.score - a.score);
+  if (scored[0].score > 0) return scored[0].deviceId;
+  // Fallback: rear often listed first on phones; front often second.
+  if (want === "user" && scored.length > 1) return scored[1].deviceId;
+  return scored[0].deviceId;
+}
+
+export async function countVideoInputDevices() {
+  if (!navigator.mediaDevices?.enumerateDevices) return 0;
+  const devices = await navigator.mediaDevices.enumerateDevices();
+  return devices.filter((d) => d.kind === "videoinput").length;
+}
+
+function buildVideoConstraints(facingMode, deviceId, { forVideo = false } = {}) {
+  if (deviceId) {
+    return {
+      deviceId: { exact: deviceId },
+      width: { ideal: forVideo ? 1280 : 1920 },
+      height: { ideal: forVideo ? 720 : 1080 },
+    };
+  }
+  return {
+    facingMode: { exact: normalizeFacing(facingMode) },
+    width: { ideal: forVideo ? 1280 : 1920 },
+    height: { ideal: forVideo ? 720 : 1080 },
+  };
+}
+
+export async function openCameraStream(facingMode = "environment", deviceId = null) {
   const constraints = {
-    video: {
-      facingMode: { ideal: facingMode },
-      width: { ideal: 1920 },
-      height: { ideal: 1080 },
-    },
+    video: buildVideoConstraints(facingMode, deviceId, { forVideo: false }),
     audio: false,
   };
   return navigator.mediaDevices.getUserMedia(constraints);
 }
 
-export async function openVideoStream(facingMode = "environment") {
+export async function openVideoStream(facingMode = "environment", deviceId = null) {
   const constraints = {
-    video: {
-      facingMode: { ideal: facingMode },
-      width: { ideal: 1280 },
-      height: { ideal: 720 },
-    },
+    video: buildVideoConstraints(facingMode, deviceId, { forVideo: true }),
     audio: true,
   };
   return navigator.mediaDevices.getUserMedia(constraints);
@@ -98,8 +146,8 @@ export function formatCameraError(err) {
   ) {
     return "Camera blocked. Allow Camera for menuply.com in your browser settings, reload this page, then tap Allow when asked.";
   }
-  if (name === "NotFoundError" || name === "DevicesNotFoundError") {
-    return "No camera found on this device.";
+  if (name === "NotFoundError" || name === "DevicesNotFoundError" || name === "OverconstrainedError") {
+    return "No matching camera found on this device.";
   }
   if (name === "NotReadableError") {
     return "Camera is in use by another app. Close it and try again.";
@@ -107,14 +155,40 @@ export function formatCameraError(err) {
   return message || "Could not open camera.";
 }
 
-export async function openCameraStreamWithFallback(facingMode = "environment") {
+/**
+ * Open photo or video stream preferring an exact deviceId for the facing side.
+ * Stops any previousStream tracks first so flip can reopen cleanly.
+ */
+export async function openMediaStreamForFacing({
+  facingMode = "environment",
+  withAudio = false,
+  previousStream = null,
+} = {}) {
+  stopMediaStream(previousStream);
+
+  const facing = normalizeFacing(facingMode);
+  let deviceId = null;
+
+  // Warm permission so enumerateDevices returns labels, then resolve deviceId.
   try {
-    return await openCameraStream(facingMode);
+    const warm = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: facing } },
+      audio: false,
+    });
+    stopMediaStream(warm);
+    deviceId = await resolveCameraDeviceId(facing);
+  } catch {
+    deviceId = null;
+  }
+
+  const openExact = withAudio ? openVideoStream : openCameraStream;
+  try {
+    return await openExact(facing, deviceId);
   } catch (first) {
     try {
       return await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: facingMode } },
-        audio: false,
+        video: { facingMode: { ideal: facing } },
+        audio: withAudio,
       });
     } catch {
       throw first;
@@ -122,17 +196,18 @@ export async function openCameraStreamWithFallback(facingMode = "environment") {
   }
 }
 
-export async function openVideoStreamWithFallback(facingMode = "environment") {
-  try {
-    return await openVideoStream(facingMode);
-  } catch (first) {
-    try {
-      return await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: facingMode } },
-        audio: true,
-      });
-    } catch {
-      throw first;
-    }
-  }
+export async function openCameraStreamWithFallback(facingMode = "environment", previousStream = null) {
+  return openMediaStreamForFacing({
+    facingMode,
+    withAudio: false,
+    previousStream,
+  });
+}
+
+export async function openVideoStreamWithFallback(facingMode = "environment", previousStream = null) {
+  return openMediaStreamForFacing({
+    facingMode,
+    withAudio: true,
+    previousStream,
+  });
 }

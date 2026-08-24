@@ -30,10 +30,24 @@ test("MenuplyMediaPicker opens ConsumerCameraSheet for camera (not file-first)",
   assert.doesNotMatch(picker, /option-library/);
 });
 
-test("preferInlineCamera prefers live camera when getUserMedia exists", () => {
+test("preferInlineCamera and deviceId-based facing switch", () => {
   const lib = read("src/lib/consumerCameraCapture.js");
   assert.match(lib, /export function preferInlineCamera/);
   assert.match(lib, /return inlineCameraSupported\(\)/);
+  assert.match(lib, /resolveCameraDeviceId/);
+  assert.match(lib, /enumerateDevices/);
+  assert.match(lib, /deviceId: \{ exact: deviceId \}/);
+  assert.match(lib, /openMediaStreamForFacing/);
+});
+
+test("ConsumerCameraSheet supports photo video and front rear flip", () => {
+  const sheet = read("src/components/consumer/ConsumerCameraSheet.jsx");
+  assert.match(sheet, /consumer-camera-switch/);
+  assert.match(sheet, /consumer-camera-mode-photo/);
+  assert.match(sheet, /consumer-camera-mode-video/);
+  assert.match(sheet, /openCameraStreamWithFallback/);
+  assert.match(sheet, /openVideoStreamWithFallback/);
+  assert.match(sheet, /countVideoInputDevices/);
 });
 
 test("Post about no longer lists Upload from library in X sheet", () => {
@@ -49,6 +63,8 @@ test("What I Ate meal board is presentation-only (no empty cameras)", () => {
   assert.match(board, /visibleWhatIAteMealPeriods/);
   assert.match(board, /mealHolder|restaurant_logo_url|resolveEatingDishVisual/);
   assert.match(board, /No entries/);
+  assert.match(board, /im_eating/);
+  assert.match(board, /what-i-ate-meal-delete/);
   assert.doesNotMatch(board, /mealHeroCard/);
   assert.doesNotMatch(board, /meal-holder-add-media/);
   assert.doesNotMatch(board, /what-i-ate-meal-camera-/);
@@ -64,11 +80,14 @@ test("eating surfaces use MenuplyMediaPicker", () => {
   assert.match(compose, /MenuplyMediaPicker/);
   assert.match(compose, /mediaSource/);
   assert.match(compose, /openLibraryOnMount/);
+  assert.doesNotMatch(compose, /useNativeCamera/);
   assert.match(attach, /MenuplyMediaPicker/);
   assert.match(quick, /MenuplyMediaPicker/);
   assert.doesNotMatch(gallery, /MenuplyMediaPicker/);
-  assert.match(hero, /MenuplyMediaPicker/);
-  assert.match(hero, /facingMode="user"/);
+  // Avatar uses native capture=user; eating media uses MenuplyMediaPicker sheet.
+  assert.match(hero, /diner-avatar-native-camera-input/);
+  assert.match(hero, /capture="user"/);
+  assert.doesNotMatch(hero, /MenuplyMediaPicker/);
 });
 
 test("Dining crew food photo uses MenuplyMediaPicker (not raw file input)", () => {

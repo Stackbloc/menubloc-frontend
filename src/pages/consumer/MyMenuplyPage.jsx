@@ -19,6 +19,7 @@ import {
   createWantToEat,
   deleteWantToEat,
   deleteWhatIAteToday,
+  deleteMyFoodActivity,
   followRestaurant,
   getConsumerProfile,
   getFollowedRestaurants,
@@ -89,7 +90,7 @@ import {
 } from "./myMenuply/myMenuplyBits.jsx";
 import { futurePlanKey, futurePlanRestaurantName, futurePlanDetailParts } from "./myMenuply/dinerHubFormat.js";
 import { dishPhotoUrl, eatingFoodName, joinHomemadeComment } from "./myMenuply/eatingPlaceLink.js";
-import { mergeEatingFeedForHub, mapDiaryEntriesForHub, mapFoodActivityForHub } from "../../lib/eatingFeedMerge.js";
+import { mergeEatingFeedForHub, mapDiaryEntriesForHub, mapFoodActivityForHub, eatingFeedKey } from "../../lib/eatingFeedMerge.js";
 
 async function maybeFollowRestaurant(restaurantId) {
   const id = Number(restaurantId);
@@ -606,26 +607,61 @@ export default function MyMenuplyPage() {
   }
 
   async function onDiaryDelete(item) {
-    if (item?.kind !== "what_i_ate" || item.entry_id == null) return;
-    setPostBusy("eating-delete");
-    setError("");
-    try {
-      await deleteWhatIAteToday(item.entry_id);
-      setEating((prev) =>
-        (prev || []).filter((row) => Number(row.entry_id) !== Number(item.entry_id))
-      );
-      setLastPost((prev) =>
-        prev?.kind === "diary" && Number(prev.id) === Number(item.entry_id) ? null : prev
-      );
-      const calendarRes = await listWhatIAteTodayCalendar(
-        eatingHistoryStart(),
-        whatIAteTodayLocalDate()
-      ).catch(() => null);
-      if (calendarRes?.days) setEatingCalendarDays(calendarRes.days);
-    } catch (err) {
-      setError(err.message || "Unable to delete");
-    } finally {
-      setPostBusy("");
+    const entryId = item?.entry_id != null ? Number(item.entry_id) : null;
+    const activityRaw =
+      item?.source_id ??
+      item?.activity_id ??
+      (typeof item?.id === "string" && /^fa[-:]?\d+$/i.test(item.id)
+        ? item.id.replace(/^fa[-:]?/i, "")
+        : null);
+    const activityId = activityRaw != null && activityRaw !== "" ? Number(activityRaw) : null;
+
+    if (item?.kind === "what_i_ate" && entryId != null) {
+      setPostBusy("eating-delete");
+      setError("");
+      try {
+        await deleteWhatIAteToday(entryId);
+        setEating((prev) =>
+          (prev || []).filter((row) => {
+            if (Number(row.entry_id) === entryId) return false;
+            if (activityId != null && Number(row.source_id || row.activity_id) === activityId) {
+              return false;
+            }
+            const key = eatingFeedKey(item);
+            return eatingFeedKey(row) !== key;
+          })
+        );
+        setLastPost((prev) =>
+          prev?.kind === "diary" && Number(prev.id) === entryId ? null : prev
+        );
+        await load();
+      } catch (err) {
+        setError(err.message || "Unable to delete");
+      } finally {
+        setPostBusy("");
+      }
+      return;
+    }
+
+    if ((item?.kind === "im_eating" || item?.kind === "what_i_ate") && activityId != null) {
+      setPostBusy("eating-delete");
+      setError("");
+      try {
+        await deleteMyFoodActivity(activityId);
+        setEating((prev) =>
+          (prev || []).filter((row) => {
+            if (Number(row.source_id || row.activity_id) === activityId) return false;
+            const rid = String(row.id || "");
+            if (rid === `fa-${activityId}` || rid === `fa:${activityId}`) return false;
+            return true;
+          })
+        );
+        await load();
+      } catch (err) {
+        setError(err.message || "Unable to delete");
+      } finally {
+        setPostBusy("");
+      }
     }
   }
 
