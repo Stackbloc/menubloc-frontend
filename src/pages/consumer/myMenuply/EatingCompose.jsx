@@ -1,3 +1,4 @@
+```jsx
 /**
  * Unified Eating compose — sheet-only creation (X → My Menuply).
  * Ate: media → restaurant/homemade → meal time → optional comment.
@@ -101,6 +102,7 @@ export default function EatingCompose({
       })
       .catch((err) => {
         if (cancelled) return;
+
         setCuisinesError(
           err?.message || "Unable to load cuisines"
         );
@@ -249,17 +251,19 @@ export default function EatingCompose({
           );
 
   /*
-   * Camera mode:
+   * Camera behavior:
    *
-   * Explicitly use the device/browser native camera.
+   * Camera mode uses the existing Menuply ConsumerCameraSheet.
+   * This preserves the getUserMedia camera UI, including the
+   * front/rear camera switching provided by that component.
    *
-   * Library mode:
-   * Continue using the native file picker without capture.
+   * Library mode uses the native file picker.
    *
-   * This prevents EatingCompose from opening the custom
-   * ConsumerCameraSheet for the normal "Photo or video" flow.
+   * Do NOT force native <input capture> mode here. Native capture
+   * does not provide a reliable front/rear camera selector and
+   * would bypass ConsumerCameraSheet.
    */
-  const useNativeCamera = mediaSource !== "library";
+  const useNativeCamera = false;
 
   return (
     <div data-testid={testId} style={styles.wrap}>
@@ -508,9 +512,7 @@ export default function EatingCompose({
                 onChange={(e) =>
                   setText(e.target.value)
                 }
-                placeholder={
-                  wantMeta.placeholder
-                }
+                placeholder={wantMeta.placeholder}
                 disabled={busy}
                 maxLength={160}
                 autoComplete="off"
@@ -748,3 +750,4 @@ const styles = {
     fontFamily: "inherit",
   },
 };
+```
