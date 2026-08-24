@@ -1,10 +1,11 @@
 /**
- * Camera icon → live getUserMedia sheet (photo/video). Library via source="library"
- * (Post about Upload from library). Menu/OCR uploads do not use this.
+ * Camera icon → photo: live getUserMedia sheet. Video: OS native recorder (not MediaRecorder).
+ * Library via source="library" (Post about Upload from library).
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import ConsumerCameraSheet from "../consumer/ConsumerCameraSheet.jsx";
+import NativeVideoCapture from "../consumer/NativeVideoCapture.jsx";
 import {
   inlineCameraSupported,
   preferInlineCamera,
@@ -32,7 +33,7 @@ export default function MenuplyMediaPicker({
   facingMode = "environment",
   allowPhoto = true,
   allowVideo = true,
-  /** "camera" = live camera sheet; "library" = files without capture */
+  /** "camera" = live photo sheet + native video; "library" = files without capture */
   source = "camera",
   testId = "menuply-media-picker",
   ariaLabel = "Add photo or video",
@@ -43,42 +44,42 @@ export default function MenuplyMediaPicker({
 }) {
   const [previewUrl, setPreviewUrl] = useState("");
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [sheetMode, setSheetMode] = useState(allowPhoto ? "photo" : "video");
   const inputRef = useRef(null);
   const useLibrary = source === "library";
-  const canInlineCamera = !useLibrary && inlineCameraSupported() && preferInlineCamera();
+  const canInlinePhoto = !useLibrary && allowPhoto && inlineCameraSupported() && preferInlineCamera();
 
   const accept = useMemo(
     () => buildAccept({ allowPhoto, allowVideo }),
     [allowPhoto, allowVideo]
   );
 
-  const fallbackAccept = useMemo(() => {
-    if (sheetMode === "video" || (!allowPhoto && allowVideo)) return "video/*";
-    return "image/*";
-  }, [sheetMode, allowPhoto, allowVideo]);
+  const photoFallbackAccept = "image/*";
 
-  function openFileFallback() {
+  function openLibraryFallback() {
     if (disabled) return;
     inputRef.current?.click();
   }
 
-  function openNative() {
+  function openPhotoCapture() {
     if (disabled) return;
     if (useLibrary) {
-      openFileFallback();
+      openLibraryFallback();
       return;
     }
-    if (canInlineCamera) {
-      setSheetMode(allowPhoto ? "photo" : "video");
+    if (canInlinePhoto) {
       setSheetOpen(true);
       return;
     }
-    openFileFallback();
+    openLibraryFallback();
   }
 
   useEffect(() => {
-    if (openOnMount && !disabled && !file) openNative();
+    if (openOnMount && !disabled && !file) {
+      if (allowPhoto) openPhotoCapture();
+      else if (allowVideo && !useLibrary) {
+        /* video-only surfaces use NativeVideoCapture trigger separately */
+      } else openLibraryFallback();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- open once on mount when requested
   }, [openOnMount, disabled, file]);
 
@@ -99,7 +100,7 @@ export default function MenuplyMediaPicker({
   }
 
   const isVideo = isVideoFile(file);
-  const showModeSwitch = allowPhoto && allowVideo && canInlineCamera;
+  const showDualCapture = !useLibrary && allowPhoto && allowVideo;
 
   return (
     <div data-testid={testId} style={{ display: "inline-flex", flexDirection: "column", gap: 8 }}>
@@ -134,9 +135,21 @@ export default function MenuplyMediaPicker({
             {isVideo ? `Video ready · ${(file.size / 1024).toFixed(0)} KB` : "Photo ready"}
           </p>
           <div style={previewStyles.actions}>
-            <button type="button" style={previewStyles.link} disabled={disabled} onClick={openNative}>
-              Replace
-            </button>
+            {allowPhoto ? (
+              <button type="button" style={previewStyles.link} disabled={disabled} onClick={openPhotoCapture}>
+                Replace photo
+              </button>
+            ) : null}
+            {allowVideo ? (
+              <NativeVideoCapture
+                compact
+                disabled={disabled}
+                facingMode={facingMode}
+                testId={`${testId}-replace-video`}
+                buttonLabel="Replace video"
+                onFile={(next) => onFile?.(next)}
+              />
+            ) : null}
             <button
               type="button"
               style={previewStyles.link}
@@ -148,13 +161,39 @@ export default function MenuplyMediaPicker({
           </div>
         </div>
       ) : renderTrigger ? (
-        renderTrigger({ open: openNative, disabled })
+        renderTrigger({ open: openPhotoCapture, disabled })
+      ) : showDualCapture ? (
+        <div style={triggerStyles.row} data-testid={`${testId}-capture-row`}>
+          <button
+            type="button"
+            aria-label="Take photo"
+            disabled={disabled}
+            onClick={openPhotoCapture}
+            style={{ ...socialBtn.icon, ...iconStyle }}
+            data-testid={`${testId}-photo-trigger`}
+          >
+            <CameraIcon />
+          </button>
+          <NativeVideoCapture
+            disabled={disabled}
+            facingMode={facingMode}
+            testId={`${testId}-video`}
+            onFile={(next) => onFile?.(next)}
+          />
+        </div>
+      ) : allowVideo && !allowPhoto ? (
+        <NativeVideoCapture
+          disabled={disabled}
+          facingMode={facingMode}
+          testId={`${testId}-video`}
+          onFile={(next) => onFile?.(next)}
+        />
       ) : (
         <button
           type="button"
           aria-label={ariaLabel}
           disabled={disabled}
-          onClick={openNative}
+          onClick={openPhotoCapture}
           style={{ ...socialBtn.icon, ...iconStyle }}
           data-testid={`${testId}-trigger`}
         >
@@ -165,27 +204,23 @@ export default function MenuplyMediaPicker({
       <input
         ref={inputRef}
         type="file"
-        accept={useLibrary ? accept : fallbackAccept}
-        {...(useLibrary ? {} : { capture: captureAttr(facingMode) })}
+        accept={useLibrary ? accept : photoFallbackAccept}
+        {...(useLibrary ? {} : allowPhoto && !canInlinePhoto ? { capture: captureAttr(facingMode) } : {})}
         hidden
         disabled={disabled}
         data-testid={useLibrary ? `${testId}-library-input` : `${testId}-camera-input`}
         onChange={handlePick}
       />
 
-      {!useLibrary ? (
+      {canInlinePhoto ? (
         <ConsumerCameraSheet
           open={sheetOpen}
           onClose={() => setSheetOpen(false)}
-          mode={sheetMode}
           facingMode={facingMode}
-          allowModeSwitch={showModeSwitch}
-          onModeChange={setSheetMode}
           onCapture={(captured) => {
             if (captured) onFile?.(captured);
             setSheetOpen(false);
           }}
-          onNativeFallback={openFileFallback}
         />
       ) : null}
     </div>
@@ -206,6 +241,15 @@ function CameraIcon() {
   );
 }
 
+const triggerStyles = {
+  row: {
+    display: "flex",
+    flexWrap: "wrap",
+    alignItems: "flex-start",
+    gap: 10,
+  },
+};
+
 const previewStyles = {
   wrap: { display: "flex", flexDirection: "column", gap: 8, maxWidth: "100%" },
   media: {
@@ -223,7 +267,7 @@ const previewStyles = {
     fontWeight: 700,
     color: "#334155",
   },
-  actions: { display: "flex", gap: 12 },
+  actions: { display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center" },
   link: {
     appearance: "none",
     border: "none",

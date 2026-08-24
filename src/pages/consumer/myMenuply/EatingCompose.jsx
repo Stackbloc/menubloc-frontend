@@ -250,17 +250,12 @@ export default function EatingCompose({
           );
 
   /*
-   * Camera behavior:
+   * Camera behavior (2026-08-24 native video system):
    *
-   * Camera mode uses the existing Menuply ConsumerCameraSheet.
-   * This preserves the getUserMedia camera UI, including the
-   * front/rear camera switching provided by that component.
+   * Photo → Menuply ConsumerCameraSheet (getUserMedia, front/rear flip).
+   * Video → NativeVideoCapture (OS phone camera via <input capture>, not MediaRecorder).
    *
-   * Library mode uses the native file picker.
-   *
-   * Do NOT force native <input capture> mode here. Native capture
-   * does not provide a reliable front/rear camera selector and
-   * would bypass ConsumerCameraSheet.
+   * Library mode uses the native file picker for both.
    */
 
   return (

@@ -1,6 +1,5 @@
 /**
- * Menuply social media picker — live getUserMedia camera sheet; library via Post about.
- * No Take Photo / Choose Photo file chooser for camera icons.
+ * Menuply social media picker — photo via getUserMedia sheet; video via OS native capture.
  */
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -14,72 +13,50 @@ function read(rel) {
   return fs.readFileSync(path.join(root, rel), "utf8");
 }
 
-test("MenuplyMediaPicker opens ConsumerCameraSheet for camera (not file-first)", () => {
+test("MenuplyMediaPicker uses photo sheet + native video (not MediaRecorder sheet)", () => {
   const picker = read("src/components/social/MenuplyMediaPicker.jsx");
   assert.match(picker, /ConsumerCameraSheet/);
-  assert.match(picker, /preferInlineCamera/);
-  assert.match(picker, /inlineCameraSupported/);
+  assert.match(picker, /NativeVideoCapture/);
   assert.match(picker, /source = "camera"/);
   assert.match(picker, /source === "library"/);
   assert.match(picker, /camera-input/);
   assert.match(picker, /library-input/);
+  assert.doesNotMatch(picker, /createCameraMediaRecorder/);
+  assert.doesNotMatch(picker, /onNativeFallback/);
   assert.doesNotMatch(picker, /Take Photo/);
   assert.doesNotMatch(picker, /Choose Photo/);
-  assert.doesNotMatch(picker, /Choose Video/);
-  assert.doesNotMatch(picker, /option-camera/);
-  assert.doesNotMatch(picker, /option-library/);
 });
 
-test("ConsumerCameraSheet supports photo video and front rear flip", () => {
+test("ConsumerCameraSheet is photo-only", () => {
   const sheet = read("src/components/consumer/ConsumerCameraSheet.jsx");
   assert.match(sheet, /consumer-camera-switch/);
-  assert.match(sheet, /consumer-camera-mode-photo/);
-  assert.match(sheet, /consumer-camera-mode-video/);
-  assert.match(sheet, /openVideoCaptureStreamWithFallback/);
   assert.match(sheet, /openCameraStreamWithFallback/);
-  assert.doesNotMatch(sheet, /openVideoStreamWithFallback/);
-  assert.match(sheet, /countVideoInputDevices/);
-  assert.match(sheet, /createCameraMediaRecorder/);
-  assert.match(sheet, /recorder\.start\(250\)/);
-  assert.match(sheet, /requestData/);
-  assert.match(sheet, /MIN_RECORDED_VIDEO_BYTES/);
-  assert.match(sheet, /MAX_RECORD_SECONDS/);
-  assert.match(sheet, /consumer-camera-recording-badge/);
-  assert.match(sheet, /consumer-camera-recording-timer/);
-  assert.match(sheet, /consumer-camera-stop/);
-  assert.match(sheet, /consumer-camera-review-video/);
-  assert.match(sheet, /consumer-camera-use-video/);
-  assert.match(sheet, /consumer-camera-retake/);
+  assert.match(sheet, /consumer-camera-live/);
+  assert.doesNotMatch(sheet, /createCameraMediaRecorder/);
+  assert.doesNotMatch(sheet, /consumer-camera-mode-video/);
+  assert.doesNotMatch(sheet, /consumer-camera-record/);
+  assert.doesNotMatch(sheet, /validateRecordedVideoBlob/);
 });
 
-test("preferInlineCamera and deviceId-based facing switch", () => {
+test("nativeVideoCapture module validates OS clips", () => {
+  const lib = read("src/lib/nativeVideoCapture.js");
+  assert.match(lib, /probeNativeVideoFile/);
+  assert.match(lib, /validateNativeVideoFile/);
+  assert.match(lib, /video\.src = url/);
+  assert.doesNotMatch(lib, /withVideoPreviewSeek/);
+});
+
+test("preferInlineCamera and photo capture helpers remain", () => {
   const lib = read("src/lib/consumerCameraCapture.js");
   assert.match(lib, /export function preferInlineCamera/);
-  assert.match(lib, /return inlineCameraSupported\(\)/);
-  assert.match(lib, /resolveCameraDeviceId/);
-  assert.match(lib, /enumerateDevices/);
-  assert.match(lib, /deviceId: \{ exact: deviceId \}/);
-  assert.match(lib, /openMediaStreamForFacing/);
-  assert.match(lib, /openVideoCaptureStreamWithFallback/);
-  assert.match(lib, /createCameraMediaRecorder/);
-  assert.match(lib, /videoBitsPerSecond/);
-  assert.match(lib, /prefersMp4Recorder/);
-  assert.match(lib, /withSilentAudioForRecording/);
+  assert.match(lib, /photoFileFromVideoElement/);
   assert.match(lib, /withVideoPreviewSeek/);
   assert.match(lib, /raw\.startsWith\("blob:"\)/);
-  assert.match(lib, /"video\/mp4"/);
-  assert.match(lib, /MIN_RECORDED_VIDEO_BYTES/);
-  assert.match(lib, /MAX_UPLOAD_VIDEO_BYTES/);
-  assert.match(lib, /aspectRatio: \{ ideal: 9 \/ 16 \}/);
-  assert.match(lib, /SOCIAL_VIDEO_IDEAL_HEIGHT/);
-  assert.match(lib, /SOCIAL_VIDEO_MAX_RECORD_SECONDS/);
-  assert.match(lib, /MAX_RECORD_SECONDS/);
 });
 
-test("ConsumerCameraSheet keeps unified 3:4 preview for photo and video", () => {
+test("ConsumerCameraSheet keeps unified 3:4 photo preview", () => {
   const sheet = read("src/components/consumer/ConsumerCameraSheet.jsx");
   assert.match(sheet, /aspectRatio: "3 \/ 4"/);
-  assert.doesNotMatch(sheet, /previewWrapVideo/);
 });
 
 test("eating media utils define portrait capture (not oversized UI frames)", () => {
@@ -89,15 +66,6 @@ test("eating media utils define portrait capture (not oversized UI frames)", () 
   const styles = read("src/pages/consumer/myMenuply/myMenuplyStyles.js");
   assert.doesNotMatch(styles, /mealHolderVideo/);
   assert.match(styles, /socialVideoMedia/);
-});
-
-test("ConsumerCameraSheet reuses one video element for live and review", () => {
-  const sheet = read("src/components/consumer/ConsumerCameraSheet.jsx");
-  assert.match(sheet, /showBlobReview/);
-  assert.match(sheet, /srcObject = null/);
-  assert.match(sheet, /capturePosterFromVideoElement/);
-  assert.match(sheet, /withVideoPreviewSeek/);
-  assert.match(sheet, /consumer-camera-review-video/);
 });
 
 test("diner eating media upload maps Failed to fetch for video", () => {
@@ -112,7 +80,7 @@ test("diner eating media upload maps Failed to fetch for video", () => {
 test("X ate/want auto-opens camera sheet from compose", () => {
   const compose = read("src/pages/consumer/myMenuply/EatingCompose.jsx");
   const page = read("src/pages/consumer/MyMenuplyPage.jsx");
-  assert.match(compose, /mediaSource === "camera"/);
+  assert.match(compose, /MenuplyMediaPicker/);
   assert.match(compose, /openOnMount=\{/);
   assert.match(page, /COMPOSE_LOGIN_ACTIONS/);
   assert.match(page, /account\/login\?next=/);
@@ -154,7 +122,6 @@ test("eating surfaces use MenuplyMediaPicker", () => {
   assert.match(attach, /MenuplyMediaPicker/);
   assert.match(quick, /MenuplyMediaPicker/);
   assert.doesNotMatch(gallery, /MenuplyMediaPicker/);
-  // Avatar uses native capture=user; eating media uses MenuplyMediaPicker sheet.
   assert.match(hero, /diner-avatar-native-camera-input/);
   assert.match(hero, /capture="user"/);
   assert.doesNotMatch(hero, /MenuplyMediaPicker/);
