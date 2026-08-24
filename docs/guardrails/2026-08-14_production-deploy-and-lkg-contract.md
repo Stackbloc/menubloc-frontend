@@ -37,8 +37,8 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` @ clean `main` |
 | Git commit | `9036287` — X ate auto-camera + video REC harden cascade |
-| Vercel deployment | `menubloc-frontend-1s4sa4h5c-menuply.vercel.app` |
-| Live bundle | `index-Bs7F6aGK.js` |
+| Vercel deployment | `menubloc-frontend-rh505od55-menuply.vercel.app` |
+| Live bundle | `index-B1mo46YC.js` |
 | Aliases | `menuply.com`, `www.menuply.com`, `crm.menuply.com`, `venues.menuply.com` |
 | Tip-gate | **PASS** (apex + www) verified 2026-08-24 |
 | Feature | DeviceId camera flip; durable ate/want media; diary delete cascades food_activity |
@@ -53,16 +53,16 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway
 | Health URL | `https://menubloc-backend-production.up.railway.app/health` |
 | `commit_hash` | `be70eae1` (CPD certify push) |
 | DB | migrations through `0285` |
-| Smoke | tip-gate PASS `fa0lpz0yi` / `index-Bs7F6aGK.js`; BE certify `be70eae1` |
+| Smoke | tip-gate PASS `fa0lpz0yi` / `index-B1mo46YC.js`; BE certify `be70eae1` |
 
 ### Restore current tip (if tip-gate fails mid-change)
 
 ```bash
 cd /Users/andrebarber/Desktop/menubloc/menubloc-frontend-main
-npx vercel alias set menubloc-frontend-1s4sa4h5c-menuply.vercel.app menuply.com
-npx vercel alias set menubloc-frontend-1s4sa4h5c-menuply.vercel.app www.menuply.com
-npx vercel alias set menubloc-frontend-1s4sa4h5c-menuply.vercel.app crm.menuply.com
-npx vercel alias set menubloc-frontend-1s4sa4h5c-menuply.vercel.app venues.menuply.com
+npx vercel alias set menubloc-frontend-rh505od55-menuply.vercel.app menuply.com
+npx vercel alias set menubloc-frontend-rh505od55-menuply.vercel.app www.menuply.com
+npx vercel alias set menubloc-frontend-rh505od55-menuply.vercel.app crm.menuply.com
+npx vercel alias set menubloc-frontend-rh505od55-menuply.vercel.app venues.menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 ```
