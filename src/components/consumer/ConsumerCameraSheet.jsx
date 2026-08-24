@@ -11,6 +11,7 @@ import {
   openVideoCaptureStreamWithFallback,
   photoFileFromVideoElement,
   stopMediaStream,
+  validateRecordedVideoBlob,
   withVideoPreviewSeek,
 } from "../../lib/consumerCameraCapture.js";
 
@@ -287,7 +288,7 @@ export default function ConsumerCameraSheet({
         recorderCleanupRef.current = () => {};
       };
 
-      recorder.onstop = () => {
+      recorder.onstop = async () => {
         setBusy(true);
         try {
           const poster = capturePosterFromVideoElement(videoRef.current);
@@ -312,11 +313,22 @@ export default function ConsumerCameraSheet({
 
           if (reviewUrlRef.current) URL.revokeObjectURL(reviewUrlRef.current);
           const url = URL.createObjectURL(file);
+          await validateRecordedVideoBlob(file, url);
           reviewUrlRef.current = url;
           setReviewPoster(poster || "");
           setReviewFile(file);
           setReviewUrl(url);
         } catch (err) {
+          if (reviewUrlRef.current) {
+            URL.revokeObjectURL(reviewUrlRef.current);
+            reviewUrlRef.current = "";
+          }
+          setReviewFile(null);
+          setReviewUrl("");
+          setReviewPoster("");
+          if (streamRef.current) {
+            attachLivePreview(streamRef.current);
+          }
           setError(formatCameraError(err));
         } finally {
           try {
@@ -480,7 +492,7 @@ export default function ConsumerCameraSheet({
               <span data-testid="consumer-camera-recording-timer" style={styles.recTimer}>
                 {elapsedLabel}
               </span>
-              <span style={styles.recMaxHint}>/{MAX_RECORD_SECONDS}s</span>
+              <span style={styles.recMaxHint}>/{MAX_RECORD_SECONDS}s max</span>
             </div>
           ) : null}
 

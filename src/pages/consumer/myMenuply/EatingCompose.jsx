@@ -397,6 +397,12 @@ export default function EatingCompose({
               locationState={locationState}
             />
 
+            {dish?.item_name ? (
+              <p style={styles.dishSelected} data-testid="eating-compose-dish-name">
+                Menu item: <strong>{dish.item_name}</strong>
+              </p>
+            ) : null}
+
             <p style={styles.stepLabel}>
               Meal time
             </p>
@@ -671,6 +677,13 @@ const styles = {
     color: "#475467",
     letterSpacing: "0.02em",
     textTransform: "uppercase",
+  },
+
+  dishSelected: {
+    margin: 0,
+    fontSize: 14,
+    color: "#166534",
+    fontWeight: 600,
   },
 
   cuisineBlock: {

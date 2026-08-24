@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import MenuplyMediaPicker from "../../../components/social/MenuplyMediaPicker.jsx";
 import InviteToEatButton from "../../../components/InviteToEatButton.jsx";
 import { restaurantPathFromRow } from "../../../lib/canonicalUrl.js";
@@ -67,6 +67,8 @@ export function PhotoGrid({ items, onSelect, onPhotoPick, hideJoinMe = false, pr
   const [index, setIndex] = useState(0);
   const [photoHover, setPhotoHover] = useState(false);
   const [replaceMediaOpen, setReplaceMediaOpen] = useState(false);
+  const [videoBroken, setVideoBroken] = useState(false);
+  const [videoMuted, setVideoMuted] = useState(true);
   if (!ordered.length) return null;
   const safeIndex = Math.min(index, ordered.length - 1);
   const item = ordered[safeIndex];
@@ -84,6 +86,11 @@ export function PhotoGrid({ items, onSelect, onPhotoPick, hideJoinMe = false, pr
   const isFallbackVisual = hasMedia && !hasOwnMedia;
   const isLogoFallback = visual?.source === "logo";
   const isPlaceholder = String(item.id || "") === "placeholder" && !item.entry_id;
+
+  useEffect(() => {
+    setVideoBroken(false);
+    setVideoMuted(true);
+  }, [visual?.url, item?.id, item?.entry_id]);
 
   function pickPhoto() {
     if (!canPick || isFallbackVisual) return;
@@ -128,16 +135,35 @@ export function PhotoGrid({ items, onSelect, onPhotoPick, hideJoinMe = false, pr
       aria-label={canPick && hasOwnMedia ? "Tap to replace photo or video" : caption}
     >
       {visual.kind === "video" ? (
-        <video
-          src={visual.url}
-          style={s.photo}
-          controls={!presentation}
-          playsInline
-          muted={Boolean(presentation)}
-          autoPlay={Boolean(presentation)}
-          loop={Boolean(presentation)}
-          preload="auto"
-        />
+        <>
+          <video
+            src={visual.url}
+            style={s.socialVideoMedia}
+            controls={!presentation}
+            playsInline
+            muted={presentation ? videoMuted : true}
+            autoPlay={Boolean(presentation) && !videoBroken}
+            loop={Boolean(presentation) && !videoBroken}
+            preload="auto"
+            onError={() => setVideoBroken(true)}
+            onClick={(e) => {
+              if (presentation && !videoBroken) {
+                e.stopPropagation();
+                setVideoMuted((prev) => !prev);
+              }
+            }}
+          />
+          {presentation && !videoBroken ? (
+            <span style={s.socialVideoMuteBadge} aria-hidden>
+              {videoMuted ? "Tap for sound" : "Sound on"}
+            </span>
+          ) : null}
+          {videoBroken ? (
+            <div style={s.videoUnavailableOverlay} data-testid="eating-video-unavailable">
+              Video unavailable — tap to replace
+            </div>
+          ) : null}
+        </>
       ) : (
         <img
           src={visual.url}

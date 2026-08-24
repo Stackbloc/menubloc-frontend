@@ -69,7 +69,25 @@ test("preferInlineCamera and deviceId-based facing switch", () => {
   assert.match(lib, /"video\/mp4"/);
   assert.match(lib, /MIN_RECORDED_VIDEO_BYTES/);
   assert.match(lib, /MAX_UPLOAD_VIDEO_BYTES/);
+  assert.match(lib, /aspectRatio: \{ ideal: 9 \/ 16 \}/);
+  assert.match(lib, /SOCIAL_VIDEO_IDEAL_HEIGHT/);
+  assert.match(lib, /SOCIAL_VIDEO_MAX_RECORD_SECONDS/);
   assert.match(lib, /MAX_RECORD_SECONDS/);
+});
+
+test("ConsumerCameraSheet keeps unified 3:4 preview for photo and video", () => {
+  const sheet = read("src/components/consumer/ConsumerCameraSheet.jsx");
+  assert.match(sheet, /aspectRatio: "3 \/ 4"/);
+  assert.doesNotMatch(sheet, /previewWrapVideo/);
+});
+
+test("eating media utils define portrait capture (not oversized UI frames)", () => {
+  const utils = read("src/lib/eatingMediaUtils.js");
+  assert.match(utils, /SOCIAL_VIDEO_IDEAL_WIDTH/);
+  assert.match(utils, /SOCIAL_VIDEO_MAX_RECORD_SECONDS = 60/);
+  const styles = read("src/pages/consumer/myMenuply/myMenuplyStyles.js");
+  assert.doesNotMatch(styles, /mealHolderVideo/);
+  assert.match(styles, /socialVideoMedia/);
 });
 
 test("ConsumerCameraSheet reuses one video element for live and review", () => {

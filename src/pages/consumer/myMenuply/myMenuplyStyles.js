@@ -517,6 +517,26 @@ export const photo = {
   background: "#f1f5f9",
 };
 
+/** Portrait video plays inside the same photo frame — object-fit crops 9:16 capture. */
+export const socialVideoMedia = {
+  ...photo,
+  background: "#0f172a",
+};
+
+export const socialVideoMuteBadge = {
+  position: "absolute",
+  bottom: 10,
+  right: 10,
+  zIndex: 2,
+  padding: "4px 8px",
+  borderRadius: 999,
+  background: "rgba(15, 23, 42, 0.72)",
+  color: "#fff",
+  fontSize: 11,
+  fontWeight: 700,
+  pointerEvents: "none",
+};
+
 /** Compact eating row when there is no photo/video yet — save hero size for real media. */
 export const eatingRowCompact = {
   display: "block",
@@ -586,6 +606,20 @@ export const photoHoverHint = {
   color: "#fff",
   fontSize: 14,
   fontWeight: 600,
+  textAlign: "center",
+  padding: 16,
+  pointerEvents: "none",
+};
+
+export const videoUnavailableOverlay = {
+  position: "absolute",
+  inset: 0,
+  display: "grid",
+  placeItems: "center",
+  background: "rgba(15, 23, 42, 0.82)",
+  color: "#fff",
+  fontSize: 13,
+  fontWeight: 700,
   textAlign: "center",
   padding: 16,
   pointerEvents: "none",

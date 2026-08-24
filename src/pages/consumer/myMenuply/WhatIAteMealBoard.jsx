@@ -5,6 +5,7 @@
  * Owner: long-press (hard press) / right-click to reveal Delete — not hover.
  */
 
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   groupEntriesByMealPeriod,
@@ -36,6 +37,8 @@ function MealMediaCard({ item, readOnly, onSelect, onDelete, deleteBusy }) {
           item?.activity_id != null ||
           /^fa[-:]?\d+$/i.test(String(item?.id || "")))));
   const { open, dismiss, consumeArmedClick, bind } = useLongPressReveal(canDelete);
+  const isVideo = media?.kind === "video";
+  const [videoMuted, setVideoMuted] = useState(true);
 
   function handleDelete(e) {
     e.preventDefault();
@@ -73,7 +76,7 @@ function MealMediaCard({ item, readOnly, onSelect, onDelete, deleteBusy }) {
         style={s.mealHolder}
         data-testid="what-i-ate-meal-holder"
         data-meal={mealId}
-        data-media={media.source}
+        data-media={isVideo ? "video" : media.source}
         {...bind}
       >
         <button
@@ -84,15 +87,19 @@ function MealMediaCard({ item, readOnly, onSelect, onDelete, deleteBusy }) {
           disabled={!onSelect}
           aria-label={`${mealBadge}. ${label}. Tap for details. Long-press to delete.`}
         >
-          {media.kind === "video" ? (
+          {isVideo ? (
             <video
               src={media.url}
               style={s.mealHolderMedia}
               playsInline
-              muted
+              muted={videoMuted}
               autoPlay
               loop
               preload="auto"
+              onClick={(e) => {
+                e.stopPropagation();
+                setVideoMuted((prev) => !prev);
+              }}
             />
           ) : (
             <img
@@ -104,6 +111,11 @@ function MealMediaCard({ item, readOnly, onSelect, onDelete, deleteBusy }) {
           <div style={s.mealHolderOverlayTop}>
             <span style={s.mealHolderBadge}>{mealBadge}</span>
           </div>
+          {isVideo ? (
+            <span style={{ ...s.socialVideoMuteBadge, bottom: 48, fontSize: 9 }}>
+              {videoMuted ? "Tap sound" : "On"}
+            </span>
+          ) : null}
           <div style={s.mealHolderScrim}>
             <div style={s.mealHolderTitle}>{label}</div>
             {place ? (

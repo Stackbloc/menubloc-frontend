@@ -31,8 +31,6 @@ export default function EatingComposeSheet({
     onClose?.();
   }
 
-  const fileKey = initialFile?.name || (initialFile ? "blob" : "nofile");
-
   return (
     <div
       role="presentation"
@@ -67,7 +65,7 @@ export default function EatingComposeSheet({
               : "Photo or video, restaurant or homemade, meal time, then an optional comment."}
         </p>
         <EatingCompose
-          key={`${defaultCategory}-${defaultMealPeriod || "auto"}-${mediaSource}-${fileKey}`}
+          key={`${defaultCategory}-${defaultMealPeriod || "auto"}-${mediaSource}-${initialFile?.name || (initialFile ? "blob" : "none")}`}
           busy={busy}
           defaultCategory={defaultCategory}
           defaultMealPeriod={defaultMealPeriod}

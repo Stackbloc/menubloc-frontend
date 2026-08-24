@@ -107,6 +107,17 @@ export default function EatingPlaceFields({
     });
     if (!next) return;
     onDishChange?.(next);
+    if (next.restaurant_id && !restaurant?.restaurant_id) {
+      onRestaurantChange?.(
+        asRestaurantPlace({
+          restaurant_id: next.restaurant_id,
+          restaurant_name: row.restaurant_name || restaurant?.restaurant_name,
+          restaurant_slug: row.restaurant_slug || restaurant?.restaurant_slug,
+          city: row.city || restaurant?.city,
+          state: row.state || restaurant?.state,
+        })
+      );
+    }
     setDishQuery("");
     setDishHits([]);
   }

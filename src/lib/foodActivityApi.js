@@ -103,7 +103,10 @@ export function asRestaurantPlace(row) {
 
 export function asDishPlace(row) {
   if (!row) return null;
-  const menu_item_id = coerceMenuItemId(row.menu_item_id) || coerceMenuItemId(row.id);
+  const menu_item_id =
+    coerceMenuItemId(row.menu_item_id) ||
+    coerceMenuItemId(row.item_id) ||
+    coerceMenuItemId(row.id);
   if (!menu_item_id) return null;
   return {
     ...row,

@@ -8,6 +8,7 @@ import ConsumerCameraSheet from "../consumer/ConsumerCameraSheet.jsx";
 import {
   inlineCameraSupported,
   preferInlineCamera,
+  withVideoPreviewSeek,
 } from "../../lib/consumerCameraCapture.js";
 import { isVideoFile } from "../../lib/eatingMediaUtils.js";
 import { socialBtn } from "../../lib/socialDesignTokens.js";
@@ -107,7 +108,7 @@ export default function MenuplyMediaPicker({
           {isVideo ? (
             <video
               key={previewUrl}
-              src={previewUrl}
+              src={withVideoPreviewSeek(previewUrl)}
               style={previewStyles.media}
               controls
               playsInline

@@ -1,5 +1,13 @@
 /** Inline camera capture — getUserMedia with exact front/rear device selection. */
 
+import {
+  SOCIAL_VIDEO_IDEAL_HEIGHT,
+  SOCIAL_VIDEO_IDEAL_WIDTH,
+  SOCIAL_VIDEO_MAX_RECORD_SECONDS,
+} from "./eatingMediaUtils.js";
+
+export { SOCIAL_VIDEO_ASPECT_RATIO, SOCIAL_VIDEO_MAX_RECORD_SECONDS } from "./eatingMediaUtils.js";
+
 export function inlineCameraSupported() {
   return (
     typeof navigator !== "undefined" &&
@@ -64,9 +72,13 @@ export async function countVideoInputDevices() {
 }
 
 function buildVideoConstraints(facingMode, deviceId, { forVideo = false } = {}) {
-  // Video capture uses a smaller frame so short clips upload reliably on mobile networks.
+  // Portrait 9:16 for social video (Instagram Stories/Reels shape); landscape for stills.
   const size = forVideo
-    ? { width: { ideal: 720 }, height: { ideal: 720 } }
+    ? {
+        width: { ideal: SOCIAL_VIDEO_IDEAL_WIDTH },
+        height: { ideal: SOCIAL_VIDEO_IDEAL_HEIGHT },
+        aspectRatio: { ideal: 9 / 16 },
+      }
     : { width: { ideal: 1920 }, height: { ideal: 1080 } };
   if (deviceId) {
     return {
@@ -249,7 +261,7 @@ export function createCameraMediaRecorder(stream) {
     ? withSilentAudioForRecording(baseVideoStream)
     : { stream: baseVideoStream, cleanup: () => {} };
 
-  const options = { mimeType, videoBitsPerSecond: 900_000 };
+  const options = { mimeType, videoBitsPerSecond: 1_200_000 };
   try {
     return {
       recorder: new MediaRecorder(recordStream, options),
@@ -292,12 +304,84 @@ export function capturePosterFromVideoElement(videoEl) {
   }
 }
 
+/**
+ * Decode-check a recorded blob before review/upload — rejects blank/black containers
+ * that pass size gates but have no visible frames.
+ */
+export function validateRecordedVideoBlob(blob, existingObjectUrl = "") {
+  return new Promise((resolve, reject) => {
+    if (!blob || !Number(blob.size)) {
+      reject(new Error("No video was captured. Try again or use Open phone camera."));
+      return;
+    }
+    const video = document.createElement("video");
+    video.muted = true;
+    video.playsInline = true;
+    video.setAttribute("playsinline", "true");
+    const ownsUrl = !existingObjectUrl;
+    const url = existingObjectUrl || URL.createObjectURL(blob);
+    let settled = false;
+
+    const finish = (fn, value) => {
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(timerId);
+      try {
+        video.pause();
+      } catch {
+        /* ignore */
+      }
+      video.removeAttribute("src");
+      video.srcObject = null;
+      video.load();
+      if (ownsUrl) URL.revokeObjectURL(url);
+      fn(value);
+    };
+
+    const timerId = window.setTimeout(() => {
+      finish(reject, new Error("Could not read recorded video. Try Retake or Open phone camera."));
+    }, 8000);
+
+    video.onloadeddata = () => {
+      const ok =
+        video.videoWidth > 0 &&
+        video.videoHeight > 0 &&
+        Number.isFinite(video.duration) &&
+        video.duration > 0;
+      if (ok) {
+        finish(resolve, {
+          width: video.videoWidth,
+          height: video.videoHeight,
+          duration: video.duration,
+        });
+        return;
+      }
+      finish(
+        reject,
+        new Error(
+          "Recording was blank. Try Retake, switch camera, or use Open phone camera."
+        )
+      );
+    };
+
+    video.onerror = () => {
+      finish(
+        reject,
+        new Error("Could not play recorded video. Try Retake or Open phone camera.")
+      );
+    };
+
+    video.src = withVideoPreviewSeek(url);
+    video.load();
+  });
+}
+
 /** Minimum size for a non-empty short clip (headers alone are smaller). */
 export const MIN_RECORDED_VIDEO_BYTES = 8 * 1024;
 /** Soft client cap before upload — larger clips often die with "Failed to fetch". */
 export const MAX_UPLOAD_VIDEO_BYTES = 12 * 1024 * 1024;
 /** Auto-stop recording so clips stay uploadable on mobile networks. */
-export const MAX_RECORD_SECONDS = 15;
+export const MAX_RECORD_SECONDS = SOCIAL_VIDEO_MAX_RECORD_SECONDS;
 
 export function formatBytes(n) {
   const size = Number(n) || 0;
@@ -363,7 +447,12 @@ export async function openMediaStreamForFacing({
     try {
       return await navigator.mediaDevices.getUserMedia({
         video: forVideoCapture
-          ? { facingMode: { ideal: facing }, width: { ideal: 720 }, height: { ideal: 720 } }
+          ? {
+              facingMode: { ideal: facing },
+              width: { ideal: SOCIAL_VIDEO_IDEAL_WIDTH },
+              height: { ideal: SOCIAL_VIDEO_IDEAL_HEIGHT },
+              aspectRatio: { ideal: 9 / 16 },
+            }
           : { facingMode: { ideal: facing } },
         audio: withAudio,
       });
