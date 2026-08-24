@@ -4,8 +4,10 @@ import {
   createCameraMediaRecorder,
   formatBytes,
   formatCameraError,
+  MAX_RECORD_SECONDS,
   MIN_RECORDED_VIDEO_BYTES,
   openCameraStreamWithFallback,
+  openVideoCaptureStreamWithFallback,
   photoFileFromVideoElement,
   stopMediaStream,
 } from "../../lib/consumerCameraCapture.js";
@@ -72,9 +74,11 @@ export default function ConsumerCameraSheet({
     const previous = streamRef.current;
     streamRef.current = null;
 
-    // Video mode also uses video-only stream (no mic) — audio in MediaRecorder
-    // commonly yields black / unplayable clips on mobile browsers.
-    openCameraStreamWithFallback(currentFacingMode, previous)
+    // Video mode: smaller frames + video-only (no mic) so short clips upload
+    // reliably. Audio in MediaRecorder often yields black clips on mobile.
+    const openStream =
+      mode === "video" ? openVideoCaptureStreamWithFallback : openCameraStreamWithFallback;
+    openStream(currentFacingMode, previous)
       .then(async (stream) => {
         if (!alive) {
           stopMediaStream(stream);
@@ -146,7 +150,23 @@ export default function ConsumerCameraSheet({
     recordStartedAtRef.current = Date.now();
     setElapsedSec(0);
     timerRef.current = window.setInterval(() => {
-      setElapsedSec(Math.floor((Date.now() - recordStartedAtRef.current) / 1000));
+      const sec = Math.floor((Date.now() - recordStartedAtRef.current) / 1000);
+      setElapsedSec(sec);
+      if (sec >= MAX_RECORD_SECONDS) {
+        const recorder = recorderRef.current;
+        if (recorder && recorder.state === "recording") {
+          try {
+            if (typeof recorder.requestData === "function") recorder.requestData();
+          } catch {
+            /* ignore */
+          }
+          try {
+            recorder.stop();
+          } catch {
+            /* ignore */
+          }
+        }
+      }
     }, 250);
     return () => {
       if (timerRef.current) {
@@ -234,9 +254,13 @@ export default function ConsumerCameraSheet({
             return;
           }
 
-          const ext = blob.type.includes("mp4") ? "mp4" : "webm";
+          const baseType = String(blob.type || mime || "video/webm")
+            .split(";")[0]
+            .trim()
+            .toLowerCase();
+          const ext = baseType.includes("mp4") ? "mp4" : "webm";
           const file = new File([blob], `menuply-video-${Date.now()}.${ext}`, {
-            type: blob.type || mime,
+            type: baseType.includes("mp4") ? "video/mp4" : "video/webm",
           });
 
           if (reviewUrlRef.current) URL.revokeObjectURL(reviewUrlRef.current);
@@ -418,6 +442,7 @@ export default function ConsumerCameraSheet({
               <span data-testid="consumer-camera-recording-timer" style={styles.recTimer}>
                 {elapsedLabel}
               </span>
+              <span style={styles.recMaxHint}>/{MAX_RECORD_SECONDS}s</span>
             </div>
           ) : null}
 
@@ -635,6 +660,11 @@ const styles = {
     fontVariantNumeric: "tabular-nums",
     fontWeight: 700,
     opacity: 0.95,
+  },
+  recMaxHint: {
+    fontVariantNumeric: "tabular-nums",
+    fontWeight: 600,
+    opacity: 0.75,
   },
   reviewMeta: {
     position: "absolute",

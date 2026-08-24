@@ -63,23 +63,34 @@ export async function countVideoInputDevices() {
 }
 
 function buildVideoConstraints(facingMode, deviceId, { forVideo = false } = {}) {
+  // Video capture uses a smaller frame so short clips upload reliably on mobile networks.
+  const size = forVideo
+    ? { width: { ideal: 720 }, height: { ideal: 720 } }
+    : { width: { ideal: 1920 }, height: { ideal: 1080 } };
   if (deviceId) {
     return {
       deviceId: { exact: deviceId },
-      width: { ideal: forVideo ? 1280 : 1920 },
-      height: { ideal: forVideo ? 720 : 1080 },
+      ...size,
     };
   }
   return {
     facingMode: { exact: normalizeFacing(facingMode) },
-    width: { ideal: forVideo ? 1280 : 1920 },
-    height: { ideal: forVideo ? 720 : 1080 },
+    ...size,
   };
 }
 
 export async function openCameraStream(facingMode = "environment", deviceId = null) {
   const constraints = {
     video: buildVideoConstraints(facingMode, deviceId, { forVideo: false }),
+    audio: false,
+  };
+  return navigator.mediaDevices.getUserMedia(constraints);
+}
+
+/** Live preview + record path — smaller frames than still photos. */
+export async function openCameraStreamForVideoCapture(facingMode = "environment", deviceId = null) {
+  const constraints = {
+    video: buildVideoConstraints(facingMode, deviceId, { forVideo: true }),
     audio: false,
   };
   return navigator.mediaDevices.getUserMedia(constraints);
@@ -154,23 +165,36 @@ export function createCameraMediaRecorder(stream) {
     throw new Error("No camera video track available to record.");
   }
   const recordStream = new MediaStream(videoTracks);
+  const options = { mimeType, videoBitsPerSecond: 900_000 };
   try {
     return {
-      recorder: new MediaRecorder(recordStream, { mimeType }),
+      recorder: new MediaRecorder(recordStream, options),
       mimeType,
       recordStream,
     };
   } catch {
-    return {
-      recorder: new MediaRecorder(recordStream),
-      mimeType: mimeType.split(";")[0] || "video/webm",
-      recordStream,
-    };
+    try {
+      return {
+        recorder: new MediaRecorder(recordStream, { mimeType }),
+        mimeType,
+        recordStream,
+      };
+    } catch {
+      return {
+        recorder: new MediaRecorder(recordStream),
+        mimeType: mimeType.split(";")[0] || "video/webm",
+        recordStream,
+      };
+    }
   }
 }
 
 /** Minimum size for a non-empty short clip (headers alone are smaller). */
 export const MIN_RECORDED_VIDEO_BYTES = 8 * 1024;
+/** Soft client cap before upload — larger clips often die with "Failed to fetch". */
+export const MAX_UPLOAD_VIDEO_BYTES = 12 * 1024 * 1024;
+/** Auto-stop recording so clips stay uploadable on mobile networks. */
+export const MAX_RECORD_SECONDS = 15;
 
 export function formatBytes(n) {
   const size = Number(n) || 0;
@@ -205,6 +229,7 @@ export function formatCameraError(err) {
 export async function openMediaStreamForFacing({
   facingMode = "environment",
   withAudio = false,
+  forVideoCapture = false,
   previousStream = null,
 } = {}) {
   stopMediaStream(previousStream);
@@ -224,13 +249,19 @@ export async function openMediaStreamForFacing({
     deviceId = null;
   }
 
-  const openExact = withAudio ? openVideoStream : openCameraStream;
+  const openExact = withAudio
+    ? openVideoStream
+    : forVideoCapture
+      ? openCameraStreamForVideoCapture
+      : openCameraStream;
   try {
     return await openExact(facing, deviceId);
   } catch (first) {
     try {
       return await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: facing } },
+        video: forVideoCapture
+          ? { facingMode: { ideal: facing }, width: { ideal: 720 }, height: { ideal: 720 } }
+          : { facingMode: { ideal: facing } },
         audio: withAudio,
       });
     } catch {
@@ -243,6 +274,20 @@ export async function openCameraStreamWithFallback(facingMode = "environment", p
   return openMediaStreamForFacing({
     facingMode,
     withAudio: false,
+    forVideoCapture: false,
+    previousStream,
+  });
+}
+
+/** Prefer this for Video mode — smaller frames for upload reliability. */
+export async function openVideoCaptureStreamWithFallback(
+  facingMode = "environment",
+  previousStream = null
+) {
+  return openMediaStreamForFacing({
+    facingMode,
+    withAudio: false,
+    forVideoCapture: true,
     previousStream,
   });
 }
@@ -251,6 +296,7 @@ export async function openVideoStreamWithFallback(facingMode = "environment", pr
   return openMediaStreamForFacing({
     facingMode,
     withAudio: true,
+    forVideoCapture: true,
     previousStream,
   });
 }

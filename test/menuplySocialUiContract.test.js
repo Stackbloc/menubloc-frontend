@@ -35,6 +35,7 @@ test("ConsumerCameraSheet supports photo video and front rear flip", () => {
   assert.match(sheet, /consumer-camera-switch/);
   assert.match(sheet, /consumer-camera-mode-photo/);
   assert.match(sheet, /consumer-camera-mode-video/);
+  assert.match(sheet, /openVideoCaptureStreamWithFallback/);
   assert.match(sheet, /openCameraStreamWithFallback/);
   assert.doesNotMatch(sheet, /openVideoStreamWithFallback/);
   assert.match(sheet, /countVideoInputDevices/);
@@ -42,6 +43,7 @@ test("ConsumerCameraSheet supports photo video and front rear flip", () => {
   assert.match(sheet, /recorder\.start\(250\)/);
   assert.match(sheet, /requestData/);
   assert.match(sheet, /MIN_RECORDED_VIDEO_BYTES/);
+  assert.match(sheet, /MAX_RECORD_SECONDS/);
   assert.match(sheet, /consumer-camera-recording-badge/);
   assert.match(sheet, /consumer-camera-recording-timer/);
   assert.match(sheet, /consumer-camera-stop/);
@@ -58,9 +60,22 @@ test("preferInlineCamera and deviceId-based facing switch", () => {
   assert.match(lib, /enumerateDevices/);
   assert.match(lib, /deviceId: \{ exact: deviceId \}/);
   assert.match(lib, /openMediaStreamForFacing/);
+  assert.match(lib, /openVideoCaptureStreamWithFallback/);
   assert.match(lib, /createCameraMediaRecorder/);
+  assert.match(lib, /videoBitsPerSecond/);
   assert.match(lib, /"video\/mp4"/);
   assert.match(lib, /MIN_RECORDED_VIDEO_BYTES/);
+  assert.match(lib, /MAX_UPLOAD_VIDEO_BYTES/);
+  assert.match(lib, /MAX_RECORD_SECONDS/);
+});
+
+test("diner eating media upload maps Failed to fetch for video", () => {
+  const api = read("src/lib/consumerApi.js");
+  assert.match(api, /postDinerMediaMultipart/);
+  assert.match(api, /MAX_UPLOAD_VIDEO_BYTES/);
+  assert.match(api, /Video upload failed \(connection dropped\)/);
+  assert.match(api, /uploadWhatIAteTodayPhoto/);
+  assert.match(api, /uploadWantToEatPhoto/);
 });
 
 test("X ate/want auto-opens camera sheet from compose", () => {

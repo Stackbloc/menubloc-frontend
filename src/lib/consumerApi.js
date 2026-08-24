@@ -8,6 +8,10 @@
  */
 
 import { appendLanguageParam, readStoredLanguage, withLanguageHeaders } from "./languageApi.js";
+import {
+  formatBytes,
+  MAX_UPLOAD_VIDEO_BYTES,
+} from "./consumerCameraCapture.js";
 
 const VITE_ENV = import.meta.env || {};
 const DEFAULT_PROD_API_BASE = "https://menubloc-backend-production.up.railway.app";
@@ -15,6 +19,71 @@ const API = (
   VITE_ENV.VITE_API_BASE_URL ||
   (VITE_ENV.DEV ? "http://localhost:3001" : DEFAULT_PROD_API_BASE)
 ).replace(/\/$/, "");
+
+const UPLOAD_TIMEOUT_MS = 90_000;
+
+function isLikelyVideoUpload(file) {
+  const type = String(file?.type || "").toLowerCase();
+  const name = String(file?.name || "").toLowerCase();
+  return type.startsWith("video/") || /\.(mp4|webm|mov|m4v)$/.test(name);
+}
+
+function mapDinerMediaUploadNetworkError(err, file) {
+  const name = String(err?.name || "");
+  const msg = String(err?.message || "");
+  if (name === "AbortError" || /aborted|timeout/i.test(msg)) {
+    return new Error(
+      isLikelyVideoUpload(file)
+        ? "Video upload timed out. Try a shorter clip (under 15 seconds)."
+        : "Upload timed out. Check your connection and try again."
+    );
+  }
+  if (/failed to fetch|networkerror|load failed|network request failed/i.test(msg)) {
+    return new Error(
+      isLikelyVideoUpload(file)
+        ? "Video upload failed (connection dropped). Try a shorter clip (under 15 seconds)."
+        : "Upload failed — check your connection and try again."
+    );
+  }
+  return err instanceof Error ? err : new Error(msg || "Upload failed");
+}
+
+async function postDinerMediaMultipart(path, file) {
+  if (!file) throw new Error("No file selected");
+  if (isLikelyVideoUpload(file) && Number(file.size || 0) > MAX_UPLOAD_VIDEO_BYTES) {
+    throw new Error(
+      `Video is too large (${formatBytes(file.size)}). Record under 15 seconds and try again.`
+    );
+  }
+
+  const language = readStoredLanguage();
+  const form = new FormData();
+  form.append("photo", file);
+  const localizedPath = appendLanguageParam(path, language);
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), UPLOAD_TIMEOUT_MS);
+  try {
+    const res = await fetch(`${API}${localizedPath}`, {
+      method: "POST",
+      credentials: "include",
+      headers: withLanguageHeaders({}, language),
+      body: form,
+      signal: controller.signal,
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const error = new Error(json.error || `Upload failed (${res.status})`);
+      error.status = res.status;
+      error.payload = json;
+      throw error;
+    }
+    return json;
+  } catch (err) {
+    throw mapDinerMediaUploadNetworkError(err, file);
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
 
 async function req(path, opts = {}) {
   const { language: langOpt, headers: hdrs, ...fetchOpts } = opts;
@@ -586,45 +655,11 @@ export const getPeerMonthInFood = (peerId, ym) =>
   );
 
 export async function uploadWantToEatPhoto(file) {
-  const language = readStoredLanguage();
-  const form = new FormData();
-  form.append("photo", file);
-  const localizedPath = appendLanguageParam("/api/consumer/want-to-eat/photo", language);
-  const res = await fetch(`${API}${localizedPath}`, {
-    method: "POST",
-    credentials: "include",
-    headers: withLanguageHeaders({}, language),
-    body: form,
-  });
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    const error = new Error(json.error || `Upload failed (${res.status})`);
-    error.status = res.status;
-    error.payload = json;
-    throw error;
-  }
-  return json;
+  return postDinerMediaMultipart("/api/consumer/want-to-eat/photo", file);
 }
 
 export async function uploadWhatIAteTodayPhoto(file) {
-  const language = readStoredLanguage();
-  const form = new FormData();
-  form.append("photo", file);
-  const localizedPath = appendLanguageParam("/api/consumer/what-i-ate-today/photo", language);
-  const res = await fetch(`${API}${localizedPath}`, {
-    method: "POST",
-    credentials: "include",
-    headers: withLanguageHeaders({}, language),
-    body: form,
-  });
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    const error = new Error(json.error || `Upload failed (${res.status})`);
-    error.status = res.status;
-    error.payload = json;
-    throw error;
-  }
-  return json;
+  return postDinerMediaMultipart("/api/consumer/what-i-ate-today/photo", file);
 }
 
 export { localDateYmd as whatIAteTodayLocalDate };
