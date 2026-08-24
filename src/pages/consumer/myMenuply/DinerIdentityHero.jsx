@@ -1,12 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import MenuplyMediaPicker from "../../../components/social/MenuplyMediaPicker.jsx";
 import ProfileMediaGallery from "./ProfileMediaGallery.jsx";
 import * as s from "./myMenuplyStyles.js";
 import { GREEN_BRIGHT } from "./myMenuplyStyles.js";
 
 const ABOUT_MAX = 280;
-const ABOUT_PLACEHOLDER = "LA food explorer. Always looking for great tacos and late-night spots.";
+const ABOUT_PLACEHOLDER =
+  "LA food explorer. Always looking for great tacos and late-night spots.";
 
 export default function DinerIdentityHero({
   displayName,
@@ -28,6 +28,7 @@ export default function DinerIdentityHero({
 }) {
   const [draft, setDraft] = useState(about || "");
   const [saving, setSaving] = useState(false);
+  const avatarInputRef = useRef(null);
 
   useEffect(() => {
     setDraft(about || "");
@@ -35,8 +36,11 @@ export default function DinerIdentityHero({
 
   async function saveAbout() {
     const next = String(draft || "").trim().slice(0, ABOUT_MAX);
+
     if (next === String(about || "").trim()) return;
+
     setSaving(true);
+
     try {
       await onAboutSave(next);
     } finally {
@@ -44,14 +48,37 @@ export default function DinerIdentityHero({
     }
   }
 
-  const initial = String(displayName || "You").trim().slice(0, 1).toUpperCase() || "Y";
-  const scoreboardHref = monthInFoodHref || (readOnly ? null : "/my-menuply/month-in-food");
+  function openNativeAvatarCamera() {
+    if (busy || readOnly) return;
+    avatarInputRef.current?.click();
+  }
+
+  function handleNativeAvatarChange(event) {
+    const file = event.target.files?.[0] || null;
+
+    // Allow the same photo to be selected again later.
+    event.target.value = "";
+
+    if (file) {
+      onAvatarFile?.(file);
+    }
+  }
+
+  const initial =
+    String(displayName || "You").trim().slice(0, 1).toUpperCase() || "Y";
+
+  const scoreboardHref =
+    monthInFoodHref || (readOnly ? null : "/my-menuply/month-in-food");
 
   return (
     <section style={s.identitySection} data-testid="about-me">
-      <p style={{ ...s.kicker, color: GREEN_BRIGHT, marginBottom: 6 }}>Diner profile</p>
+      <p style={{ ...s.kicker, color: GREEN_BRIGHT, marginBottom: 6 }}>
+        Diner profile
+      </p>
+
       <div style={s.aboutTitleRow}>
         <h2 style={{ ...s.sectionTitle, margin: 0 }}>About Me</h2>
+
         {scoreboardHref ? (
           <Link
             to={scoreboardHref}
@@ -60,10 +87,33 @@ export default function DinerIdentityHero({
             aria-label="My Month in Food"
             style={s.monthInFoodIconLink}
           >
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <rect x="3" y="5" width="18" height="16" rx="3" stroke="currentColor" strokeWidth="1.75" />
-              <path d="M3 9.5h18" stroke="currentColor" strokeWidth="1.75" />
-              <path d="M8 3.5v3.5M16 3.5v3.5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+            <svg
+              width="22"
+              height="22"
+              viewBox="0 0 24 24"
+              fill="none"
+              aria-hidden="true"
+            >
+              <rect
+                x="3"
+                y="5"
+                width="18"
+                height="16"
+                rx="3"
+                stroke="currentColor"
+                strokeWidth="1.75"
+              />
+              <path
+                d="M3 9.5h18"
+                stroke="currentColor"
+                strokeWidth="1.75"
+              />
+              <path
+                d="M8 3.5v3.5M16 3.5v3.5"
+                stroke="currentColor"
+                strokeWidth="1.75"
+                strokeLinecap="round"
+              />
               <circle cx="9" cy="14" r="1.15" fill="currentColor" />
               <circle cx="12.5" cy="14" r="1.15" fill="currentColor" />
               <circle cx="16" cy="14" r="1.15" fill="currentColor" />
@@ -73,7 +123,10 @@ export default function DinerIdentityHero({
           </Link>
         ) : null}
       </div>
-      {readOnly ? null : <p style={s.sectionDesc}>Tell people a little about you.</p>}
+
+      {readOnly ? null : (
+        <p style={s.sectionDesc}>Tell people a little about you.</p>
+      )}
 
       <div style={s.identity}>
         {readOnly ? (
@@ -85,44 +138,59 @@ export default function DinerIdentityHero({
             )}
           </div>
         ) : (
-          <MenuplyMediaPicker
-            onFile={onAvatarFile}
-            disabled={busy}
-            facingMode="user"
-            allowPhoto
-            allowVideo={false}
-            showPreview={false}
-            testId="diner-avatar-picker"
-            ariaLabel="Change profile photo"
-            renderTrigger={({ open, disabled: pickerDisabled }) => (
-              <button
-                type="button"
-                style={s.identityPhotoBtn}
-                aria-label="Change profile photo"
-                disabled={busy || pickerDisabled}
-                onClick={open}
-              >
-                {avatarUrl ? (
-                  <img src={avatarUrl} alt="" style={s.identityPhoto} />
-                ) : (
-                  <div style={s.identityInitial}>{initial}</div>
-                )}
-                <span style={s.identityCamera} aria-hidden>
-                  📷
-                </span>
-              </button>
-            )}
-          />
+          <>
+            <input
+              ref={avatarInputRef}
+              type="file"
+              accept="image/*"
+              capture="user"
+              hidden
+              disabled={busy}
+              data-testid="diner-avatar-native-camera-input"
+              onChange={handleNativeAvatarChange}
+            />
+
+            <button
+              type="button"
+              style={s.identityPhotoBtn}
+              aria-label="Change profile photo"
+              disabled={busy}
+              onClick={openNativeAvatarCamera}
+              data-testid="diner-avatar-picker"
+            >
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="" style={s.identityPhoto} />
+              ) : (
+                <div style={s.identityInitial}>{initial}</div>
+              )}
+
+              <span style={s.identityCamera} aria-hidden>
+                📷
+              </span>
+            </button>
+          </>
         )}
+
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={s.identityName}>{displayName}</div>
+
           {locationLabel ? (
-            <p style={{ margin: "4px 0 0", fontSize: 14, color: "#475467", fontWeight: 600 }}>
+            <p
+              style={{
+                margin: "4px 0 0",
+                fontSize: 14,
+                color: "#475467",
+                fontWeight: 600,
+              }}
+            >
               📍 {locationLabel}
             </p>
           ) : null}
+
           {readOnly ? (
-            <p style={{ ...s.aboutArea, minHeight: 0 }}>{String(about || "").trim() || "No about yet."}</p>
+            <p style={{ ...s.aboutArea, minHeight: 0 }}>
+              {String(about || "").trim() || "No about yet."}
+            </p>
           ) : (
             <>
               <textarea
@@ -133,18 +201,34 @@ export default function DinerIdentityHero({
                 value={draft}
                 placeholder={ABOUT_PLACEHOLDER}
                 disabled={busy || saving}
-                onChange={(e) => setDraft(e.target.value.slice(0, ABOUT_MAX))}
+                onChange={(e) =>
+                  setDraft(e.target.value.slice(0, ABOUT_MAX))
+                }
                 onBlur={saveAbout}
                 aria-label="About"
               />
-              <p style={s.aboutCount}>{draft.length}/{ABOUT_MAX}</p>
+
+              <p style={s.aboutCount}>
+                {draft.length}/{ABOUT_MAX}
+              </p>
             </>
           )}
         </div>
       </div>
 
       {error ? <p style={s.error}>{error}</p> : null}
-      {notice ? <p style={{ ...s.muted, color: "#027A48", marginBottom: 10 }}>{notice}</p> : null}
+
+      {notice ? (
+        <p
+          style={{
+            ...s.muted,
+            color: "#027A48",
+            marginBottom: 10,
+          }}
+        >
+          {notice}
+        </p>
+      ) : null}
 
       <ProfileMediaGallery
         items={profileMedia}
