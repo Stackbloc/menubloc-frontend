@@ -48,12 +48,12 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-backend-main` @ clean `main` |
-| Git on origin | `9901800b` — inline diner media + durable uploads + delete cascade |
-| Live health SHA | `9901800b…` (verified 2026-08-24 CPD) |
+| Git on origin | `362523aa` — tip-lock contract mirror (feature: `9901800b` diner-media) |
+| Live health SHA | `362523aa…` (verified 2026-08-24 CPD certify) |
 | Health URL | `https://menubloc-backend-production.up.railway.app/health` |
-| `commit_hash` | `9901800b` (live at CPD certify) |
+| `commit_hash` | `362523aa` (live at CPD certify) |
 | DB | migrations through `0285` |
-| Smoke | tip-gate PASS `fa0lpz0yi` / `index-BKIe5jXc.js`; health `9901800b` |
+| Smoke | tip-gate PASS `fa0lpz0yi` / `index-BKIe5jXc.js`; health `362523aa` |
 
 ### Restore current tip (if tip-gate fails mid-change)
 
