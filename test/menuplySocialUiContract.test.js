@@ -30,16 +30,6 @@ test("MenuplyMediaPicker opens ConsumerCameraSheet for camera (not file-first)",
   assert.doesNotMatch(picker, /option-library/);
 });
 
-test("preferInlineCamera and deviceId-based facing switch", () => {
-  const lib = read("src/lib/consumerCameraCapture.js");
-  assert.match(lib, /export function preferInlineCamera/);
-  assert.match(lib, /return inlineCameraSupported\(\)/);
-  assert.match(lib, /resolveCameraDeviceId/);
-  assert.match(lib, /enumerateDevices/);
-  assert.match(lib, /deviceId: \{ exact: deviceId \}/);
-  assert.match(lib, /openMediaStreamForFacing/);
-});
-
 test("ConsumerCameraSheet supports photo video and front rear flip", () => {
   const sheet = read("src/components/consumer/ConsumerCameraSheet.jsx");
   assert.match(sheet, /consumer-camera-switch/);
@@ -48,6 +38,37 @@ test("ConsumerCameraSheet supports photo video and front rear flip", () => {
   assert.match(sheet, /openCameraStreamWithFallback/);
   assert.match(sheet, /openVideoStreamWithFallback/);
   assert.match(sheet, /countVideoInputDevices/);
+  assert.match(sheet, /createCameraMediaRecorder/);
+  assert.match(sheet, /recorder\.start\(250\)/);
+  assert.match(sheet, /requestData/);
+  assert.match(sheet, /MIN_RECORDED_VIDEO_BYTES/);
+  assert.match(sheet, /consumer-camera-recording-badge/);
+  assert.match(sheet, /consumer-camera-recording-timer/);
+  assert.match(sheet, /consumer-camera-stop/);
+});
+
+test("preferInlineCamera and deviceId-based facing switch", () => {
+  const lib = read("src/lib/consumerCameraCapture.js");
+  assert.match(lib, /export function preferInlineCamera/);
+  assert.match(lib, /return inlineCameraSupported\(\)/);
+  assert.match(lib, /resolveCameraDeviceId/);
+  assert.match(lib, /enumerateDevices/);
+  assert.match(lib, /deviceId: \{ exact: deviceId \}/);
+  assert.match(lib, /openMediaStreamForFacing/);
+  assert.match(lib, /createCameraMediaRecorder/);
+  assert.match(lib, /"video\/mp4"/);
+  assert.match(lib, /MIN_RECORDED_VIDEO_BYTES/);
+});
+
+test("X ate/want auto-opens camera sheet from compose", () => {
+  const compose = read("src/pages/consumer/myMenuply/EatingCompose.jsx");
+  const page = read("src/pages/consumer/MyMenuplyPage.jsx");
+  assert.match(compose, /mediaSource === "camera"/);
+  assert.match(compose, /openOnMount=\{/);
+  assert.match(page, /COMPOSE_LOGIN_ACTIONS/);
+  assert.match(page, /account\/login\?next=/);
+  assert.match(page, /setComposeOpen\(true\)/);
+  assert.match(page, /composeMediaSource/);
 });
 
 test("Post about no longer lists Upload from library in X sheet", () => {

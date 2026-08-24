@@ -322,10 +322,14 @@ export default function EatingCompose({
                   ? "library"
                   : "camera"
               }
-              openOnMount={Boolean(
-                openLibraryOnMount &&
-                  mediaSource === "library"
-              )}
+              openOnMount={
+                !initialFile &&
+                (mediaSource === "camera" ||
+                  Boolean(
+                    openLibraryOnMount &&
+                      mediaSource === "library"
+                  ))
+              }
               allowPhoto
               allowVideo={
                 category === "ate" ||

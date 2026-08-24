@@ -77,9 +77,9 @@ export default function MenuplyMediaPicker({
   }
 
   useEffect(() => {
-    if (openOnMount && !disabled) openNative();
+    if (openOnMount && !disabled && !file) openNative();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- open once on mount when requested
-  }, [openOnMount, disabled]);
+  }, [openOnMount, disabled, file]);
 
   useEffect(() => {
     if (!file) {

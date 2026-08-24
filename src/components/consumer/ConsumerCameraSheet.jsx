@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import {
   countVideoInputDevices,
+  createCameraMediaRecorder,
   formatCameraError,
+  MIN_RECORDED_VIDEO_BYTES,
   openCameraStreamWithFallback,
   openVideoStreamWithFallback,
   photoFileFromVideoElement,
-  pickRecorderMimeType,
   stopMediaStream,
 } from "../../lib/consumerCameraCapture.js";
 
@@ -32,29 +33,22 @@ export default function ConsumerCameraSheet({
   const streamRef = useRef(null);
   const recorderRef = useRef(null);
   const chunksRef = useRef([]);
+  const mimeRef = useRef("video/webm");
+  const recordStartedAtRef = useRef(0);
+  const timerRef = useRef(null);
 
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [recording, setRecording] = useState(false);
+  const [elapsedSec, setElapsedSec] = useState(0);
   const [currentFacingMode, setCurrentFacingMode] = useState(facingMode);
   const [canFlipCamera, setCanFlipCamera] = useState(true);
 
-  /*
-   * Keep the initial facing preference supplied by the parent,
-   * but allow the user to switch cameras while the sheet is open.
-   */
   useEffect(() => {
     if (!open) return;
     setCurrentFacingMode(facingMode);
   }, [open, facingMode]);
 
-  /*
-   * Open/reopen the camera whenever:
-   *
-   * - the sheet opens
-   * - Photo/Video mode changes
-   * - the user switches front/rear camera
-   */
   useEffect(() => {
     if (!open) return undefined;
 
@@ -63,6 +57,7 @@ export default function ConsumerCameraSheet({
     setError("");
     setBusy(true);
     setRecording(false);
+    setElapsedSec(0);
     chunksRef.current = [];
 
     const previous = streamRef.current;
@@ -83,6 +78,8 @@ export default function ConsumerCameraSheet({
         const el = videoRef.current;
         if (el) {
           el.srcObject = stream;
+          el.muted = true;
+          el.playsInline = true;
           el.play().catch(() => {});
         }
 
@@ -106,7 +103,10 @@ export default function ConsumerCameraSheet({
 
     return () => {
       alive = false;
-
+      if (timerRef.current) {
+        window.clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
       if (recorderRef.current && recorderRef.current.state !== "inactive") {
         try {
           recorderRef.current.stop();
@@ -114,16 +114,35 @@ export default function ConsumerCameraSheet({
           /* ignore */
         }
       }
-
       recorderRef.current = null;
       stopMediaStream(streamRef.current);
       streamRef.current = null;
-
       if (videoRef.current) {
         videoRef.current.srcObject = null;
       }
     };
   }, [open, mode, currentFacingMode]);
+
+  useEffect(() => {
+    if (!recording) {
+      if (timerRef.current) {
+        window.clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+      return undefined;
+    }
+    recordStartedAtRef.current = Date.now();
+    setElapsedSec(0);
+    timerRef.current = window.setInterval(() => {
+      setElapsedSec(Math.floor((Date.now() - recordStartedAtRef.current) / 1000));
+    }, 250);
+    return () => {
+      if (timerRef.current) {
+        window.clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    };
+  }, [recording]);
 
   if (!open) return null;
 
@@ -134,11 +153,7 @@ export default function ConsumerCameraSheet({
     setError("");
 
     try {
-      const file = await photoFileFromVideoElement(
-        videoRef.current,
-        "menuply-photo"
-      );
-
+      const file = await photoFileFromVideoElement(videoRef.current, "menuply-photo");
       onCapture?.(file);
       onClose?.();
     } catch (err) {
@@ -149,20 +164,7 @@ export default function ConsumerCameraSheet({
   }
 
   function startRecording() {
-    if (
-      busy ||
-      recording ||
-      !streamRef.current
-    ) {
-      return;
-    }
-
-    const mime = pickRecorderMimeType();
-
-    if (!mime) {
-      setError(
-        "Video recording is not supported in this browser. Use Open phone camera below."
-      );
+    if (busy || recording || !streamRef.current) {
       return;
     }
 
@@ -170,11 +172,8 @@ export default function ConsumerCameraSheet({
     chunksRef.current = [];
 
     try {
-      const recorder = new MediaRecorder(
-        streamRef.current,
-        { mimeType: mime }
-      );
-
+      const { recorder, mimeType } = createCameraMediaRecorder(streamRef.current);
+      mimeRef.current = mimeType;
       recorderRef.current = recorder;
 
       recorder.ondataavailable = (event) => {
@@ -183,28 +182,29 @@ export default function ConsumerCameraSheet({
         }
       };
 
+      recorder.onerror = () => {
+        setError("Recording failed. Try again or use Open phone camera.");
+        setRecording(false);
+        recorderRef.current = null;
+      };
+
       recorder.onstop = () => {
         setBusy(true);
-
         try {
-          const blob = new Blob(
-            chunksRef.current,
-            {
-              type:
-                mime.split(";")[0] ||
-                "video/webm",
-            }
-          );
+          const mime = mimeRef.current.split(";")[0] || "video/webm";
+          const blob = new Blob(chunksRef.current, { type: mime });
+          if (!chunksRef.current.length || blob.size < MIN_RECORDED_VIDEO_BYTES) {
+            setError(
+              "No video was captured. Try again, switch to Photo, or use Open phone camera."
+            );
+            setRecording(false);
+            return;
+          }
 
-          const ext = blob.type.includes("mp4")
-            ? "mp4"
-            : "webm";
-
-          const file = new File(
-            [blob],
-            `menuply-video-${Date.now()}.${ext}`,
-            { type: blob.type }
-          );
+          const ext = blob.type.includes("mp4") ? "mp4" : "webm";
+          const file = new File([blob], `menuply-video-${Date.now()}.${ext}`, {
+            type: blob.type || mime,
+          });
 
           onCapture?.(file);
           onClose?.();
@@ -217,7 +217,8 @@ export default function ConsumerCameraSheet({
         }
       };
 
-      recorder.start();
+      // Timeslice keeps chunks flowing on mobile browsers (empty blob without it).
+      recorder.start(250);
       setRecording(true);
     } catch (err) {
       setError(formatCameraError(err));
@@ -225,14 +226,32 @@ export default function ConsumerCameraSheet({
   }
 
   function stopRecording() {
-    if (
-      !recorderRef.current ||
-      recorderRef.current.state === "inactive"
-    ) {
+    const recorder = recorderRef.current;
+    if (!recorder || recorder.state === "inactive") {
       return;
     }
+    try {
+      if (typeof recorder.requestData === "function" && recorder.state === "recording") {
+        recorder.requestData();
+      }
+    } catch {
+      /* ignore */
+    }
+    recorder.stop();
+  }
 
-    recorderRef.current.stop();
+  function abandonAndClose() {
+    if (recorderRef.current && recorderRef.current.state !== "inactive") {
+      try {
+        recorderRef.current.onstop = null;
+        recorderRef.current.stop();
+      } catch {
+        /* ignore */
+      }
+      recorderRef.current = null;
+    }
+    setRecording(false);
+    onClose?.();
   }
 
   function switchCamera() {
@@ -242,75 +261,66 @@ export default function ConsumerCameraSheet({
       return;
     }
     setError("");
-    setCurrentFacingMode((previous) => (previous === "environment" ? "user" : "environment"));
+    setCurrentFacingMode((previous) =>
+      previous === "environment" ? "user" : "environment"
+    );
   }
+
+  const elapsedLabel = `${Math.floor(elapsedSec / 60)}:${String(elapsedSec % 60).padStart(2, "0")}`;
 
   return (
     <div
       data-testid="consumer-camera-sheet"
       role="dialog"
       aria-modal="true"
-      aria-label={
-        mode === "video"
-          ? "Record video"
-          : "Take photo"
-      }
+      aria-label={mode === "video" ? "Record video" : "Take photo"}
       style={styles.overlay}
       onClick={(e) => {
-        if (e.target === e.currentTarget) {
+        if (e.target === e.currentTarget && !recording) {
           onClose?.();
         }
       }}
     >
-      <div
-        style={styles.sheet}
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div style={styles.sheet} onClick={(e) => e.stopPropagation()}>
         {allowModeSwitch ? (
-          <div
-            style={styles.modeRow}
-            role="tablist"
-            aria-label="Capture mode"
-          >
+          <div style={styles.modeRow} role="tablist" aria-label="Capture mode">
             <button
               type="button"
               role="tab"
               aria-selected={mode === "photo"}
               data-testid="consumer-camera-mode-photo"
+              disabled={recording}
               style={{
                 ...styles.modeBtn,
-                ...(mode === "photo"
-                  ? styles.modeBtnActive
-                  : null),
+                ...(mode === "photo" ? styles.modeBtnActive : null),
               }}
-              onClick={() =>
-                onModeChange?.("photo")
-              }
+              onClick={() => onModeChange?.("photo")}
             >
               Photo
             </button>
-
             <button
               type="button"
               role="tab"
               aria-selected={mode === "video"}
               data-testid="consumer-camera-mode-video"
+              disabled={recording}
               style={{
                 ...styles.modeBtn,
-                ...(mode === "video"
-                  ? styles.modeBtnActive
-                  : null),
+                ...(mode === "video" ? styles.modeBtnActive : null),
               }}
-              onClick={() =>
-                onModeChange?.("video")
-              }
+              onClick={() => onModeChange?.("video")}
             >
               Video
             </button>
           </div>
         ) : null}
 
-        <div style={styles.previewWrap}>
+        <div
+          style={{
+            ...styles.previewWrap,
+            ...(recording ? styles.previewWrapRecording : null),
+          }}
+        >
           <video
             ref={videoRef}
             playsInline
@@ -320,8 +330,20 @@ export default function ConsumerCameraSheet({
           />
 
           {busy && !recording ? (
-            <div style={styles.loading}>
-              Opening camera…
+            <div style={styles.loading}>Opening camera…</div>
+          ) : null}
+
+          {recording ? (
+            <div
+              data-testid="consumer-camera-recording-badge"
+              style={styles.recBadge}
+              aria-live="polite"
+            >
+              <span style={styles.recDot} aria-hidden />
+              <span style={styles.recLabel}>REC</span>
+              <span data-testid="consumer-camera-recording-timer" style={styles.recTimer}>
+                {elapsedLabel}
+              </span>
             </div>
           ) : null}
 
@@ -342,10 +364,7 @@ export default function ConsumerCameraSheet({
 
         {error ? (
           <div style={styles.errorWrap}>
-            <p style={styles.error}>
-              {error}
-            </p>
-
+            <p style={styles.error}>{error}</p>
             {onNativeFallback ? (
               <button
                 type="button"
@@ -366,8 +385,8 @@ export default function ConsumerCameraSheet({
           <button
             type="button"
             style={styles.secondary}
-            disabled={busy}
-            onClick={() => onClose?.()}
+            disabled={busy && !recording}
+            onClick={abandonAndClose}
           >
             Cancel
           </button>
@@ -376,7 +395,8 @@ export default function ConsumerCameraSheet({
             recording ? (
               <button
                 type="button"
-                style={styles.primary}
+                style={styles.stopBtn}
+                data-testid="consumer-camera-stop"
                 disabled={busy}
                 onClick={stopRecording}
               >
@@ -386,9 +406,8 @@ export default function ConsumerCameraSheet({
               <button
                 type="button"
                 style={styles.primary}
-                disabled={
-                  busy || Boolean(error)
-                }
+                data-testid="consumer-camera-record"
+                disabled={busy || Boolean(error)}
                 onClick={startRecording}
               >
                 Record
@@ -398,9 +417,7 @@ export default function ConsumerCameraSheet({
             <button
               type="button"
               style={styles.primary}
-              disabled={
-                busy || Boolean(error)
-              }
+              disabled={busy || Boolean(error)}
               onClick={handleSnapPhoto}
             >
               Capture
@@ -408,6 +425,13 @@ export default function ConsumerCameraSheet({
           )}
         </div>
       </div>
+      <style>{`
+        @keyframes menuply-rec-pulse {
+          0% { box-shadow: 0 0 0 0 rgba(248, 113, 113, 0.7); opacity: 1; }
+          70% { box-shadow: 0 0 0 10px rgba(248, 113, 113, 0); opacity: 0.85; }
+          100% { box-shadow: 0 0 0 0 rgba(248, 113, 113, 0); opacity: 1; }
+        }
+      `}</style>
     </div>
   );
 }
@@ -423,23 +447,19 @@ const styles = {
     justifyContent: "center",
     padding: 12,
   },
-
   sheet: {
     width: "100%",
     maxWidth: 480,
     background: "#fff",
     borderRadius: 16,
     overflow: "hidden",
-    boxShadow:
-      "0 20px 50px rgba(0,0,0,0.28)",
+    boxShadow: "0 20px 50px rgba(0,0,0,0.28)",
   },
-
   modeRow: {
     display: "flex",
     gap: 8,
     padding: "12px 14px 0",
   },
-
   modeBtn: {
     flex: 1,
     minHeight: 36,
@@ -451,28 +471,26 @@ const styles = {
     cursor: "pointer",
     color: "#334155",
   },
-
   modeBtnActive: {
     borderColor: "#16A34A",
-    background:
-      "rgba(34, 197, 94, 0.12)",
+    background: "rgba(34, 197, 94, 0.12)",
     color: "#14532d",
   },
-
   previewWrap: {
     position: "relative",
     background: "#0f172a",
     aspectRatio: "3 / 4",
     maxHeight: "62vh",
   },
-
+  previewWrapRecording: {
+    boxShadow: "inset 0 0 0 3px #ef4444",
+  },
   preview: {
     width: "100%",
     height: "100%",
     objectFit: "cover",
     display: "block",
   },
-
   loading: {
     position: "absolute",
     inset: 0,
@@ -480,10 +498,38 @@ const styles = {
     placeItems: "center",
     color: "#fff",
     fontWeight: 600,
-    background:
-      "rgba(15, 23, 42, 0.35)",
+    background: "rgba(15, 23, 42, 0.35)",
   },
-
+  recBadge: {
+    position: "absolute",
+    top: 12,
+    left: 12,
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    padding: "6px 10px",
+    borderRadius: 999,
+    background: "rgba(127, 29, 29, 0.88)",
+    color: "#fff",
+    fontWeight: 800,
+    fontSize: 12,
+    letterSpacing: "0.04em",
+  },
+  recDot: {
+    width: 10,
+    height: 10,
+    borderRadius: "50%",
+    background: "#f87171",
+    animation: "menuply-rec-pulse 1.1s ease-out infinite",
+  },
+  recLabel: {
+    fontSize: 12,
+  },
+  recTimer: {
+    fontVariantNumeric: "tabular-nums",
+    fontWeight: 700,
+    opacity: 0.95,
+  },
   switchCameraBtn: {
     position: "absolute",
     top: 12,
@@ -501,23 +547,19 @@ const styles = {
     display: "grid",
     placeItems: "center",
   },
-
   switchCameraBtnDisabled: {
     opacity: 0.35,
     cursor: "not-allowed",
   },
-
   errorWrap: {
     margin: "10px 14px 0",
   },
-
   error: {
     margin: 0,
     fontSize: 13,
     color: "#b91c1c",
     lineHeight: 1.45,
   },
-
   fallbackBtn: {
     marginTop: 10,
     width: "100%",
@@ -529,13 +571,11 @@ const styles = {
     fontSize: 13,
     cursor: "pointer",
   },
-
   actions: {
     display: "flex",
     gap: 10,
     padding: 14,
   },
-
   secondary: {
     flex: 1,
     minHeight: 44,
@@ -546,15 +586,24 @@ const styles = {
     fontSize: 14,
     cursor: "pointer",
   },
-
   primary: {
     flex: 1,
     minHeight: 44,
     borderRadius: 10,
     border: "none",
-    background:
-      "linear-gradient(180deg, #22C55E 0%, #16A34A 100%)",
+    background: "linear-gradient(180deg, #22C55E 0%, #16A34A 100%)",
     color: "#0B0F0C",
+    fontWeight: 800,
+    fontSize: 14,
+    cursor: "pointer",
+  },
+  stopBtn: {
+    flex: 1,
+    minHeight: 44,
+    borderRadius: 10,
+    border: "none",
+    background: "linear-gradient(180deg, #f87171 0%, #dc2626 100%)",
+    color: "#fff",
     fontWeight: 800,
     fontSize: 14,
     cursor: "pointer",

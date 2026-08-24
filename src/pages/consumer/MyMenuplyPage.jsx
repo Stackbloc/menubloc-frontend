@@ -4,7 +4,7 @@
  */
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import StickyPageHeader from "../../components/StickyPageHeader.jsx";
 import BottomNav from "../../components/BottomNav.jsx";
 import ShareModal from "../../components/share/ShareModal.jsx";
@@ -110,9 +110,21 @@ function formatEventWhen(ev) {
   return d.toLocaleString(undefined, { weekday: "short", month: "short", day: "numeric" });
 }
 
+const COMPOSE_LOGIN_ACTIONS = new Set([
+  "ate",
+  "want",
+  "plan",
+  "crew",
+  "event",
+  "profile-gallery",
+  "invite-crew",
+  "invite-event",
+]);
+
 export default function MyMenuplyPage() {
   const { isAuthenticated, loading: authLoading, consumer } = useConsumer();
-  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const eatingSectionRef = useRef(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -240,13 +252,42 @@ export default function MyMenuplyPage() {
   }, [authLoading, isAuthenticated, load]);
 
   useEffect(() => {
+    if (authLoading) return;
+    const compose = String(searchParams.get("compose") || "").trim().toLowerCase();
+    if (!compose || !COMPOSE_LOGIN_ACTIONS.has(compose)) return;
+    if (isAuthenticated) return;
+    const media = String(searchParams.get("media") || "").trim().toLowerCase();
+    const next = new URLSearchParams();
+    next.set("compose", compose);
+    if (media) next.set("media", media);
+    navigate(`/account/login?next=${encodeURIComponent(`/my-menuply?${next.toString()}`)}`, {
+      replace: true,
+    });
+  }, [authLoading, isAuthenticated, searchParams, navigate]);
+
+  useEffect(() => {
     if (loading || !isAuthenticated) return undefined;
     const compose = String(searchParams.get("compose") || "").trim().toLowerCase();
     const focus = String(searchParams.get("focus") || "").trim().toLowerCase();
     const media = String(searchParams.get("media") || "").trim().toLowerCase();
+
+    function clearComposeParams() {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          if (!next.has("compose") && !next.has("media")) return prev;
+          next.delete("compose");
+          next.delete("media");
+          return next;
+        },
+        { replace: true }
+      );
+    }
+
     if (compose === "profile-gallery") {
       setProfileGalleryMediaSource(media === "library" ? "library" : media === "camera" ? "camera" : null);
       setProfileGalleryPickerOpen(true);
+      clearComposeParams();
       const timer = window.setTimeout(() => {
         document
           .querySelector('[data-testid="about-me"]')
@@ -257,6 +298,7 @@ export default function MyMenuplyPage() {
     if (["ate", "want", "plan", "crew", "event"].includes(compose)) {
       if (compose === "crew") {
         setCrewComposeOpen(true);
+        clearComposeParams();
         const timer = window.setTimeout(() => {
           eatingSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
         }, 120);
@@ -264,6 +306,7 @@ export default function MyMenuplyPage() {
       }
       if (compose === "event") {
         setEventComposeOpen(true);
+        clearComposeParams();
         const timer = window.setTimeout(() => {
           document
             .querySelector('[data-testid="my-events"]')
@@ -279,6 +322,7 @@ export default function MyMenuplyPage() {
       } else {
         setComposeOpen(true);
       }
+      clearComposeParams();
       const timer = window.setTimeout(() => {
         eatingSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       }, 120);
@@ -286,6 +330,7 @@ export default function MyMenuplyPage() {
     }
     if (compose === "invite-crew") {
       setInviteCrewPickerOpen(true);
+      clearComposeParams();
       const timer = window.setTimeout(() => {
         document
           .querySelector('[data-testid="dining-crews"]')
@@ -295,6 +340,7 @@ export default function MyMenuplyPage() {
     }
     if (compose === "invite-event") {
       setInviteEventPickerOpen(true);
+      clearComposeParams();
       const timer = window.setTimeout(() => {
         document
           .querySelector('[data-testid="my-events"]')
@@ -315,7 +361,7 @@ export default function MyMenuplyPage() {
       return () => window.clearTimeout(timer);
     }
     return undefined;
-  }, [searchParams, loading, isAuthenticated]);
+  }, [searchParams, loading, isAuthenticated, setSearchParams]);
 
   const displayName =
     profile?.display_name ||

@@ -125,16 +125,43 @@ export async function photoFileFromVideoElement(videoEl, filenamePrefix = "photo
 
 export function pickRecorderMimeType() {
   if (typeof MediaRecorder === "undefined") return "";
-  if (MediaRecorder.isTypeSupported?.("video/webm;codecs=vp9,opus")) {
-    return "video/webm;codecs=vp9,opus";
+  // Prefer mp4 first — Safari/iOS often cannot produce usable WebM.
+  const candidates = [
+    "video/mp4",
+    "video/webm;codecs=vp9,opus",
+    "video/webm;codecs=vp8,opus",
+    "video/webm;codecs=vp8",
+    "video/webm",
+  ];
+  for (const type of candidates) {
+    if (MediaRecorder.isTypeSupported?.(type)) return type;
   }
-  if (MediaRecorder.isTypeSupported?.("video/webm;codecs=vp8,opus")) {
-    return "video/webm;codecs=vp8,opus";
-  }
-  if (MediaRecorder.isTypeSupported?.("video/webm")) return "video/webm";
-  if (MediaRecorder.isTypeSupported?.("video/mp4")) return "video/mp4";
   return "";
 }
+
+/** Build a MediaRecorder with a usable mime; caller owns start/stop. */
+export function createCameraMediaRecorder(stream) {
+  const mimeType = pickRecorderMimeType();
+  if (!mimeType) {
+    throw new Error(
+      "Video recording is not supported in this browser. Use Open phone camera below."
+    );
+  }
+  try {
+    return {
+      recorder: new MediaRecorder(stream, { mimeType }),
+      mimeType,
+    };
+  } catch {
+    // Some browsers accept isTypeSupported but reject the constructor options.
+    return {
+      recorder: new MediaRecorder(stream),
+      mimeType: mimeType.split(";")[0] || "video/webm",
+    };
+  }
+}
+
+export const MIN_RECORDED_VIDEO_BYTES = 1024;
 
 export function formatCameraError(err) {
   const name = String(err?.name || "");
