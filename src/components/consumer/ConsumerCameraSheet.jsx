@@ -2,10 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import {
   countVideoInputDevices,
   createCameraMediaRecorder,
+  formatBytes,
   formatCameraError,
   MIN_RECORDED_VIDEO_BYTES,
   openCameraStreamWithFallback,
-  openVideoStreamWithFallback,
   photoFileFromVideoElement,
   stopMediaStream,
 } from "../../lib/consumerCameraCapture.js";
@@ -13,11 +13,6 @@ import {
 /**
  * Full-screen mobile camera sheet — photo snap or short video record
  * via getUserMedia.
- *
- * Supports:
- * - Photo / Video mode switching
- * - Front / Rear camera switching
- * - Native camera fallback when getUserMedia fails
  */
 export default function ConsumerCameraSheet({
   open,
@@ -30,12 +25,14 @@ export default function ConsumerCameraSheet({
   onModeChange,
 }) {
   const videoRef = useRef(null);
+  const reviewVideoRef = useRef(null);
   const streamRef = useRef(null);
   const recorderRef = useRef(null);
   const chunksRef = useRef([]);
   const mimeRef = useRef("video/webm");
   const recordStartedAtRef = useRef(0);
   const timerRef = useRef(null);
+  const reviewUrlRef = useRef("");
 
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -43,6 +40,17 @@ export default function ConsumerCameraSheet({
   const [elapsedSec, setElapsedSec] = useState(0);
   const [currentFacingMode, setCurrentFacingMode] = useState(facingMode);
   const [canFlipCamera, setCanFlipCamera] = useState(true);
+  const [reviewFile, setReviewFile] = useState(null);
+  const [reviewUrl, setReviewUrl] = useState("");
+
+  function clearReview() {
+    if (reviewUrlRef.current) {
+      URL.revokeObjectURL(reviewUrlRef.current);
+      reviewUrlRef.current = "";
+    }
+    setReviewFile(null);
+    setReviewUrl("");
+  }
 
   useEffect(() => {
     if (!open) return;
@@ -58,15 +66,15 @@ export default function ConsumerCameraSheet({
     setBusy(true);
     setRecording(false);
     setElapsedSec(0);
+    clearReview();
     chunksRef.current = [];
 
     const previous = streamRef.current;
     streamRef.current = null;
 
-    const openStream =
-      mode === "video" ? openVideoStreamWithFallback : openCameraStreamWithFallback;
-
-    openStream(currentFacingMode, previous)
+    // Video mode also uses video-only stream (no mic) — audio in MediaRecorder
+    // commonly yields black / unplayable clips on mobile browsers.
+    openCameraStreamWithFallback(currentFacingMode, previous)
       .then(async (stream) => {
         if (!alive) {
           stopMediaStream(stream);
@@ -120,6 +128,10 @@ export default function ConsumerCameraSheet({
       if (videoRef.current) {
         videoRef.current.srcObject = null;
       }
+      if (reviewUrlRef.current) {
+        URL.revokeObjectURL(reviewUrlRef.current);
+        reviewUrlRef.current = "";
+      }
     };
   }, [open, mode, currentFacingMode]);
 
@@ -144,10 +156,31 @@ export default function ConsumerCameraSheet({
     };
   }, [recording]);
 
+  useEffect(() => {
+    const el = reviewVideoRef.current;
+    if (!el || !reviewUrl) return undefined;
+    const paintFrame = () => {
+      try {
+        if (el.duration && Number.isFinite(el.duration)) {
+          el.currentTime = Math.min(0.1, el.duration * 0.05);
+        }
+      } catch {
+        /* ignore seek errors */
+      }
+      el.play().catch(() => {});
+    };
+    el.addEventListener("loadeddata", paintFrame);
+    el.addEventListener("loadedmetadata", paintFrame);
+    return () => {
+      el.removeEventListener("loadeddata", paintFrame);
+      el.removeEventListener("loadedmetadata", paintFrame);
+    };
+  }, [reviewUrl]);
+
   if (!open) return null;
 
   async function handleSnapPhoto() {
-    if (busy || !videoRef.current) return;
+    if (busy || reviewFile || !videoRef.current) return;
 
     setBusy(true);
     setError("");
@@ -164,7 +197,7 @@ export default function ConsumerCameraSheet({
   }
 
   function startRecording() {
-    if (busy || recording || !streamRef.current) {
+    if (busy || recording || reviewFile || !streamRef.current) {
       return;
     }
 
@@ -195,7 +228,7 @@ export default function ConsumerCameraSheet({
           const blob = new Blob(chunksRef.current, { type: mime });
           if (!chunksRef.current.length || blob.size < MIN_RECORDED_VIDEO_BYTES) {
             setError(
-              "No video was captured. Try again, switch to Photo, or use Open phone camera."
+              "No video was captured. Hold Record longer, try again, or use Open phone camera."
             );
             setRecording(false);
             return;
@@ -206,8 +239,14 @@ export default function ConsumerCameraSheet({
             type: blob.type || mime,
           });
 
-          onCapture?.(file);
-          onClose?.();
+          if (reviewUrlRef.current) URL.revokeObjectURL(reviewUrlRef.current);
+          const url = URL.createObjectURL(file);
+          reviewUrlRef.current = url;
+          setReviewFile(file);
+          setReviewUrl(url);
+          if (videoRef.current) {
+            videoRef.current.pause();
+          }
         } catch (err) {
           setError(formatCameraError(err));
         } finally {
@@ -217,7 +256,6 @@ export default function ConsumerCameraSheet({
         }
       };
 
-      // Timeslice keeps chunks flowing on mobile browsers (empty blob without it).
       recorder.start(250);
       setRecording(true);
     } catch (err) {
@@ -240,6 +278,24 @@ export default function ConsumerCameraSheet({
     recorder.stop();
   }
 
+  function useReviewedVideo() {
+    if (!reviewFile) return;
+    const file = reviewFile;
+    clearReview();
+    onCapture?.(file);
+    onClose?.();
+  }
+
+  function retakeVideo() {
+    clearReview();
+    setError("");
+    const el = videoRef.current;
+    if (el && streamRef.current) {
+      el.srcObject = streamRef.current;
+      el.play().catch(() => {});
+    }
+  }
+
   function abandonAndClose() {
     if (recorderRef.current && recorderRef.current.state !== "inactive") {
       try {
@@ -251,11 +307,12 @@ export default function ConsumerCameraSheet({
       recorderRef.current = null;
     }
     setRecording(false);
+    clearReview();
     onClose?.();
   }
 
   function switchCamera() {
-    if (busy || recording) return;
+    if (busy || recording || reviewFile) return;
     if (!canFlipCamera) {
       setError("This device only has one camera.");
       return;
@@ -267,6 +324,7 @@ export default function ConsumerCameraSheet({
   }
 
   const elapsedLabel = `${Math.floor(elapsedSec / 60)}:${String(elapsedSec % 60).padStart(2, "0")}`;
+  const reviewing = Boolean(reviewFile && reviewUrl);
 
   return (
     <div
@@ -277,12 +335,12 @@ export default function ConsumerCameraSheet({
       style={styles.overlay}
       onClick={(e) => {
         if (e.target === e.currentTarget && !recording) {
-          onClose?.();
+          abandonAndClose();
         }
       }}
     >
       <div style={styles.sheet} onClick={(e) => e.stopPropagation()}>
-        {allowModeSwitch ? (
+        {allowModeSwitch && !reviewing ? (
           <div style={styles.modeRow} role="tablist" aria-label="Capture mode">
             <button
               type="button"
@@ -321,15 +379,31 @@ export default function ConsumerCameraSheet({
             ...(recording ? styles.previewWrapRecording : null),
           }}
         >
-          <video
-            ref={videoRef}
-            playsInline
-            muted
-            autoPlay
-            style={styles.preview}
-          />
+          {reviewing ? (
+            <video
+              ref={reviewVideoRef}
+              key={reviewUrl}
+              src={reviewUrl}
+              style={styles.preview}
+              playsInline
+              muted
+              autoPlay
+              controls
+              loop
+              preload="auto"
+              data-testid="consumer-camera-review-video"
+            />
+          ) : (
+            <video
+              ref={videoRef}
+              playsInline
+              muted
+              autoPlay
+              style={styles.preview}
+            />
+          )}
 
-          {busy && !recording ? (
+          {busy && !recording && !reviewing ? (
             <div style={styles.loading}>Opening camera…</div>
           ) : null}
 
@@ -347,19 +421,27 @@ export default function ConsumerCameraSheet({
             </div>
           ) : null}
 
-          <button
-            type="button"
-            aria-label="Switch camera"
-            data-testid="consumer-camera-switch"
-            disabled={busy || recording || !canFlipCamera}
-            onClick={switchCamera}
-            style={{
-              ...styles.switchCameraBtn,
-              ...(canFlipCamera ? null : styles.switchCameraBtnDisabled),
-            }}
-          >
-            ↻
-          </button>
+          {reviewing ? (
+            <div data-testid="consumer-camera-review-meta" style={styles.reviewMeta}>
+              Review clip · {formatBytes(reviewFile.size)}
+            </div>
+          ) : null}
+
+          {!reviewing ? (
+            <button
+              type="button"
+              aria-label="Switch camera"
+              data-testid="consumer-camera-switch"
+              disabled={busy || recording || !canFlipCamera}
+              onClick={switchCamera}
+              style={{
+                ...styles.switchCameraBtn,
+                ...(canFlipCamera ? null : styles.switchCameraBtnDisabled),
+              }}
+            >
+              ↻
+            </button>
+          ) : null}
         </div>
 
         {error ? (
@@ -371,7 +453,7 @@ export default function ConsumerCameraSheet({
                 style={styles.fallbackBtn}
                 data-testid="consumer-camera-native-fallback"
                 onClick={() => {
-                  onClose?.();
+                  abandonAndClose();
                   onNativeFallback();
                 }}
               >
@@ -382,46 +464,69 @@ export default function ConsumerCameraSheet({
         ) : null}
 
         <div style={styles.actions}>
-          <button
-            type="button"
-            style={styles.secondary}
-            disabled={busy && !recording}
-            onClick={abandonAndClose}
-          >
-            Cancel
-          </button>
-
-          {mode === "video" ? (
-            recording ? (
+          {reviewing ? (
+            <>
               <button
                 type="button"
-                style={styles.stopBtn}
-                data-testid="consumer-camera-stop"
-                disabled={busy}
-                onClick={stopRecording}
+                style={styles.secondary}
+                data-testid="consumer-camera-retake"
+                onClick={retakeVideo}
               >
-                Stop
+                Retake
               </button>
-            ) : (
               <button
                 type="button"
                 style={styles.primary}
-                data-testid="consumer-camera-record"
-                disabled={busy || Boolean(error)}
-                onClick={startRecording}
+                data-testid="consumer-camera-use-video"
+                onClick={useReviewedVideo}
               >
-                Record
+                Use video
               </button>
-            )
+            </>
           ) : (
-            <button
-              type="button"
-              style={styles.primary}
-              disabled={busy || Boolean(error)}
-              onClick={handleSnapPhoto}
-            >
-              Capture
-            </button>
+            <>
+              <button
+                type="button"
+                style={styles.secondary}
+                disabled={busy && !recording}
+                onClick={abandonAndClose}
+              >
+                Cancel
+              </button>
+
+              {mode === "video" ? (
+                recording ? (
+                  <button
+                    type="button"
+                    style={styles.stopBtn}
+                    data-testid="consumer-camera-stop"
+                    disabled={busy}
+                    onClick={stopRecording}
+                  >
+                    Stop
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    style={styles.primary}
+                    data-testid="consumer-camera-record"
+                    disabled={busy || Boolean(error)}
+                    onClick={startRecording}
+                  >
+                    Record
+                  </button>
+                )
+              ) : (
+                <button
+                  type="button"
+                  style={styles.primary}
+                  disabled={busy || Boolean(error)}
+                  onClick={handleSnapPhoto}
+                >
+                  Capture
+                </button>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -490,6 +595,7 @@ const styles = {
     height: "100%",
     objectFit: "cover",
     display: "block",
+    background: "#0f172a",
   },
   loading: {
     position: "absolute",
@@ -529,6 +635,17 @@ const styles = {
     fontVariantNumeric: "tabular-nums",
     fontWeight: 700,
     opacity: 0.95,
+  },
+  reviewMeta: {
+    position: "absolute",
+    left: 12,
+    bottom: 12,
+    padding: "6px 10px",
+    borderRadius: 999,
+    background: "rgba(15, 23, 42, 0.78)",
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: 700,
   },
   switchCameraBtn: {
     position: "absolute",

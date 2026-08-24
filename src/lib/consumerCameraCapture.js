@@ -128,9 +128,8 @@ export function pickRecorderMimeType() {
   // Prefer mp4 first — Safari/iOS often cannot produce usable WebM.
   const candidates = [
     "video/mp4",
-    "video/webm;codecs=vp9,opus",
-    "video/webm;codecs=vp8,opus",
     "video/webm;codecs=vp8",
+    "video/webm;codecs=vp9",
     "video/webm",
   ];
   for (const type of candidates) {
@@ -139,7 +138,10 @@ export function pickRecorderMimeType() {
   return "";
 }
 
-/** Build a MediaRecorder with a usable mime; caller owns start/stop. */
+/**
+ * Build a MediaRecorder. Uses video tracks only — audio+video containers often
+ * produce black / unplayable clips on mobile Safari and some Chromium builds.
+ */
 export function createCameraMediaRecorder(stream) {
   const mimeType = pickRecorderMimeType();
   if (!mimeType) {
@@ -147,21 +149,35 @@ export function createCameraMediaRecorder(stream) {
       "Video recording is not supported in this browser. Use Open phone camera below."
     );
   }
+  const videoTracks = stream?.getVideoTracks?.() || [];
+  if (!videoTracks.length) {
+    throw new Error("No camera video track available to record.");
+  }
+  const recordStream = new MediaStream(videoTracks);
   try {
     return {
-      recorder: new MediaRecorder(stream, { mimeType }),
+      recorder: new MediaRecorder(recordStream, { mimeType }),
       mimeType,
+      recordStream,
     };
   } catch {
-    // Some browsers accept isTypeSupported but reject the constructor options.
     return {
-      recorder: new MediaRecorder(stream),
+      recorder: new MediaRecorder(recordStream),
       mimeType: mimeType.split(";")[0] || "video/webm",
+      recordStream,
     };
   }
 }
 
-export const MIN_RECORDED_VIDEO_BYTES = 1024;
+/** Minimum size for a non-empty short clip (headers alone are smaller). */
+export const MIN_RECORDED_VIDEO_BYTES = 8 * 1024;
+
+export function formatBytes(n) {
+  const size = Number(n) || 0;
+  if (size < 1024) return `${size} B`;
+  if (size < 1024 * 1024) return `${Math.round(size / 1024)} KB`;
+  return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 export function formatCameraError(err) {
   const name = String(err?.name || "");

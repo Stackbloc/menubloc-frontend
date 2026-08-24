@@ -105,10 +105,33 @@ export default function MenuplyMediaPicker({
       {showPreview && file && previewUrl ? (
         <div style={previewStyles.wrap} data-testid={`${testId}-preview`}>
           {isVideo ? (
-            <video src={previewUrl} style={previewStyles.media} controls playsInline preload="metadata" />
+            <video
+              key={previewUrl}
+              src={previewUrl}
+              style={previewStyles.media}
+              controls
+              playsInline
+              muted
+              autoPlay
+              loop
+              preload="auto"
+              onLoadedData={(e) => {
+                const el = e.currentTarget;
+                try {
+                  if (el.duration && Number.isFinite(el.duration)) {
+                    el.currentTime = Math.min(0.1, el.duration * 0.05);
+                  }
+                } catch {
+                  /* ignore */
+                }
+              }}
+            />
           ) : (
             <img src={previewUrl} alt="" style={previewStyles.media} />
           )}
+          <p style={previewStyles.caption}>
+            {isVideo ? `Video ready · ${(file.size / 1024).toFixed(0)} KB` : "Photo ready"}
+          </p>
           <div style={previewStyles.actions}>
             <button type="button" style={previewStyles.link} disabled={disabled} onClick={openNative}>
               Replace
@@ -190,8 +213,14 @@ const previewStyles = {
     height: 180,
     objectFit: "cover",
     borderRadius: 12,
-    background: "#f1f5f9",
+    background: "#0f172a",
     display: "block",
+  },
+  caption: {
+    margin: 0,
+    fontSize: 12,
+    fontWeight: 700,
+    color: "#334155",
   },
   actions: { display: "flex", gap: 12 },
   link: {

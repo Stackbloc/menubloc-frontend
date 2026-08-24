@@ -90,7 +90,9 @@ function MealMediaCard({ item, readOnly, onSelect, onDelete, deleteBusy }) {
               style={s.mealHolderMedia}
               playsInline
               muted
-              preload="metadata"
+              autoPlay
+              loop
+              preload="auto"
             />
           ) : (
             <img

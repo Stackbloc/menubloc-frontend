@@ -36,7 +36,7 @@ test("ConsumerCameraSheet supports photo video and front rear flip", () => {
   assert.match(sheet, /consumer-camera-mode-photo/);
   assert.match(sheet, /consumer-camera-mode-video/);
   assert.match(sheet, /openCameraStreamWithFallback/);
-  assert.match(sheet, /openVideoStreamWithFallback/);
+  assert.doesNotMatch(sheet, /openVideoStreamWithFallback/);
   assert.match(sheet, /countVideoInputDevices/);
   assert.match(sheet, /createCameraMediaRecorder/);
   assert.match(sheet, /recorder\.start\(250\)/);
@@ -45,6 +45,9 @@ test("ConsumerCameraSheet supports photo video and front rear flip", () => {
   assert.match(sheet, /consumer-camera-recording-badge/);
   assert.match(sheet, /consumer-camera-recording-timer/);
   assert.match(sheet, /consumer-camera-stop/);
+  assert.match(sheet, /consumer-camera-review-video/);
+  assert.match(sheet, /consumer-camera-use-video/);
+  assert.match(sheet, /consumer-camera-retake/);
 });
 
 test("preferInlineCamera and deviceId-based facing switch", () => {
