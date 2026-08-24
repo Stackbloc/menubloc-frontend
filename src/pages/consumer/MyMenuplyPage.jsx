@@ -407,6 +407,14 @@ export default function MyMenuplyPage() {
   const showFoodStoryCta = false;
 
   async function onAvatarFile(file) {
+  console.log("NATIVE CAMERA FILE:", {
+    name: file?.name,
+    type: file?.type,
+    size: file?.size,
+    lastModified: file?.lastModified,
+  });
+
+  // existing code continues below...
     setIdentityBusy(true);
     setIdentityError("");
     setIdentityNotice("");
