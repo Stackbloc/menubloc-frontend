@@ -36,12 +36,12 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` @ clean `main` |
-| Git commit | `ec2dbca` — eating video validate/upload UX; compose menu item persistence; portrait capture in existing frames |
-| Vercel deployment | `menubloc-frontend-5hahxk6st-menuply.vercel.app` |
-| Live bundle | `index-CYtSPDxP.js` |
+| Git commit | `ef4420d` — fix record Stop: no `#t` on blob URLs; 15s cap; WebM on live stream |
+| Vercel deployment | `menubloc-frontend-89jj1mz2b-menuply.vercel.app` |
+| Live bundle | `index-6lPa6XN2.js` |
 | Aliases | `menuply.com`, `www.menuply.com`, `crm.menuply.com`, `venues.menuply.com` |
 | Tip-gate | **PASS** (apex + www) verified 2026-08-24 |
-| Feature | 60s portrait capture; clip validation; menu item survives media capture; video error UI |
+| Feature | Record → Stop → review plays; 15s max; compose menu item (prior ship) |
 
 ### Backend (Railway)
 
@@ -49,23 +49,32 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-backend-main` @ clean `main` |
 | Git on origin | `d15c9260` — production diner media must persist to Supabase (no `/uploads/` paths) |
-| Live health SHA | `d15c9260` (verified `/health` at CPD) |
+| Live health SHA | `62557954` (docs mirror on `d15c9260`; verified `/health` at CPD) |
 | Health URL | `https://menubloc-backend-production.up.railway.app/health` |
-| `commit_hash` | `d15c9260` |
+| `commit_hash` | `62557954` |
 | DB | migrations through `0285` |
-| Smoke | tip-gate PASS `5hahxk6st` / `index-CYtSPDxP.js`; BE `d15c9260`; railway=59 localhost=9 |
+| Smoke | tip-gate PASS `89jj1mz2b` / `index-6lPa6XN2.js`; BE health; railway=59 localhost=9 |
 
 ### Restore current tip (if tip-gate fails mid-change)
 
 ```bash
 cd /Users/andrebarber/Desktop/menubloc/menubloc-frontend-main
-npx vercel alias set menubloc-frontend-5hahxk6st-menuply.vercel.app menuply.com
-npx vercel alias set menubloc-frontend-5hahxk6st-menuply.vercel.app www.menuply.com
-npx vercel alias set menubloc-frontend-5hahxk6st-menuply.vercel.app crm.menuply.com
-npx vercel alias set menubloc-frontend-5hahxk6st-menuply.vercel.app venues.menuply.com
+npx vercel alias set menubloc-frontend-89jj1mz2b-menuply.vercel.app menuply.com
+npx vercel alias set menubloc-frontend-89jj1mz2b-menuply.vercel.app www.menuply.com
+npx vercel alias set menubloc-frontend-89jj1mz2b-menuply.vercel.app crm.menuply.com
+npx vercel alias set menubloc-frontend-89jj1mz2b-menuply.vercel.app venues.menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 ```
+
+### Prior tip — eating video + compose menu item (rollback target)
+
+| Field | Value |
+|-------|-------|
+| Deployment | `menubloc-frontend-5hahxk6st-menuply.vercel.app` |
+| Bundle | `index-CYtSPDxP.js` |
+| FE commit | `ec2dbca` |
+| BE health | `d15c9260` |
 
 ### Prior tip — video upload Failed-to-fetch (rollback target)
 
