@@ -158,10 +158,12 @@ export function prefersMp4Recorder() {
 
 /**
  * Append #t=0.001 so iOS paints a first frame for muted preview videos.
+ * Never append to blob: URLs — fragments break decode in Chrome/Safari review + validation.
  */
 export function withVideoPreviewSeek(url) {
   const raw = String(url || "").trim();
   if (!raw) return "";
+  if (raw.startsWith("blob:")) return raw;
   if (raw.includes("#")) return raw;
   return `${raw}#t=0.001`;
 }
@@ -256,12 +258,13 @@ export function createCameraMediaRecorder(stream) {
   }
 
   const wantsMp4 = mimeType.startsWith("video/mp4");
-  const baseVideoStream = new MediaStream(videoTracks);
+  // WebM (Chromium): record the live preview stream — matches the pre-review working path.
+  // Safari mp4: clone video + silent audio so the container is playable.
   const { stream: recordStream, cleanup } = wantsMp4
-    ? withSilentAudioForRecording(baseVideoStream)
-    : { stream: baseVideoStream, cleanup: () => {} };
+    ? withSilentAudioForRecording(new MediaStream(videoTracks))
+    : { stream, cleanup: () => {} };
 
-  const options = { mimeType, videoBitsPerSecond: 1_200_000 };
+  const options = { mimeType, videoBitsPerSecond: 900_000 };
   try {
     return {
       recorder: new MediaRecorder(recordStream, options),
@@ -308,6 +311,10 @@ export function capturePosterFromVideoElement(videoEl) {
  * Decode-check a recorded blob before review/upload — rejects blank/black containers
  * that pass size gates but have no visible frames.
  */
+function recordedVideoHasFrames(video) {
+  return video.videoWidth > 0 && video.videoHeight > 0;
+}
+
 export function validateRecordedVideoBlob(blob, existingObjectUrl = "") {
   return new Promise((resolve, reject) => {
     if (!blob || !Number(blob.size)) {
@@ -318,6 +325,7 @@ export function validateRecordedVideoBlob(blob, existingObjectUrl = "") {
     video.muted = true;
     video.playsInline = true;
     video.setAttribute("playsinline", "true");
+    video.preload = "auto";
     const ownsUrl = !existingObjectUrl;
     const url = existingObjectUrl || URL.createObjectURL(blob);
     let settled = false;
@@ -331,6 +339,10 @@ export function validateRecordedVideoBlob(blob, existingObjectUrl = "") {
       } catch {
         /* ignore */
       }
+      video.onloadedmetadata = null;
+      video.onloadeddata = null;
+      video.oncanplay = null;
+      video.onerror = null;
       video.removeAttribute("src");
       video.srcObject = null;
       video.load();
@@ -342,27 +354,19 @@ export function validateRecordedVideoBlob(blob, existingObjectUrl = "") {
       finish(reject, new Error("Could not read recorded video. Try Retake or Open phone camera."));
     }, 8000);
 
-    video.onloadeddata = () => {
-      const ok =
-        video.videoWidth > 0 &&
-        video.videoHeight > 0 &&
-        Number.isFinite(video.duration) &&
-        video.duration > 0;
-      if (ok) {
-        finish(resolve, {
-          width: video.videoWidth,
-          height: video.videoHeight,
-          duration: video.duration,
-        });
-        return;
-      }
-      finish(
-        reject,
-        new Error(
-          "Recording was blank. Try Retake, switch camera, or use Open phone camera."
-        )
-      );
+    const tryAccept = () => {
+      if (!recordedVideoHasFrames(video)) return;
+      // WebM from MediaRecorder often reports duration Infinity/NaN — dimensions are enough.
+      finish(resolve, {
+        width: video.videoWidth,
+        height: video.videoHeight,
+        duration: video.duration,
+      });
     };
+
+    video.onloadedmetadata = tryAccept;
+    video.onloadeddata = tryAccept;
+    video.oncanplay = tryAccept;
 
     video.onerror = () => {
       finish(

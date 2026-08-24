@@ -34,14 +34,14 @@ function mapDinerMediaUploadNetworkError(err, file) {
   if (name === "AbortError" || /aborted|timeout/i.test(msg)) {
     return new Error(
       isLikelyVideoUpload(file)
-        ? "Video upload timed out. Try a shorter clip (under 60 seconds)."
+        ? "Video upload timed out. Try a shorter clip (under 15 seconds)."
         : "Upload timed out. Check your connection and try again."
     );
   }
   if (/failed to fetch|networkerror|load failed|network request failed/i.test(msg)) {
     return new Error(
       isLikelyVideoUpload(file)
-        ? "Video upload failed (connection dropped). Try a shorter clip (under 60 seconds)."
+        ? "Video upload failed (connection dropped). Try a shorter clip (under 15 seconds)."
         : "Upload failed — check your connection and try again."
     );
   }
@@ -52,7 +52,7 @@ async function postDinerMediaMultipart(path, file) {
   if (!file) throw new Error("No file selected");
   if (isLikelyVideoUpload(file) && Number(file.size || 0) > MAX_UPLOAD_VIDEO_BYTES) {
     throw new Error(
-      `Video is too large (${formatBytes(file.size)}). Record under 60 seconds and try again.`
+      `Video is too large (${formatBytes(file.size)}). Record under 15 seconds and try again.`
     );
   }
 

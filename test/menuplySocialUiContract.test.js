@@ -66,6 +66,7 @@ test("preferInlineCamera and deviceId-based facing switch", () => {
   assert.match(lib, /prefersMp4Recorder/);
   assert.match(lib, /withSilentAudioForRecording/);
   assert.match(lib, /withVideoPreviewSeek/);
+  assert.match(lib, /raw\.startsWith\("blob:"\)/);
   assert.match(lib, /"video\/mp4"/);
   assert.match(lib, /MIN_RECORDED_VIDEO_BYTES/);
   assert.match(lib, /MAX_UPLOAD_VIDEO_BYTES/);
@@ -84,7 +85,7 @@ test("ConsumerCameraSheet keeps unified 3:4 preview for photo and video", () => 
 test("eating media utils define portrait capture (not oversized UI frames)", () => {
   const utils = read("src/lib/eatingMediaUtils.js");
   assert.match(utils, /SOCIAL_VIDEO_IDEAL_WIDTH/);
-  assert.match(utils, /SOCIAL_VIDEO_MAX_RECORD_SECONDS = 60/);
+  assert.match(utils, /SOCIAL_VIDEO_MAX_RECORD_SECONDS = 15/);
   const styles = read("src/pages/consumer/myMenuply/myMenuplyStyles.js");
   assert.doesNotMatch(styles, /mealHolderVideo/);
   assert.match(styles, /socialVideoMedia/);
