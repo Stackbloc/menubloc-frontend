@@ -26,45 +26,64 @@ Do **not** deploy from memory or from quarantined checkouts.
 
 ---
 
-## CURRENT LAST KNOWN GOOD (live production — 2026-08-21)
+## CURRENT LAST KNOWN GOOD (live production — 2026-08-24)
 
-Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway `/health` is recorded separately; it may lag `origin/main`.
+Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway `/health` is recorded separately; it may lag `origin/main`.  
+**Tip lock procedure:** [2026-08-24_production-tip-lock-atomic-contract.md](./2026-08-24_production-tip-lock-atomic-contract.md)
 
 ### Frontend (menuply.com)
 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` @ clean `main` |
-| Git commit | `b46d3ed` — compact meal photos, menu-item photo prefer, long-press Delete |
-| Vercel deployment | `menubloc-frontend-fli5934kq-menuply.vercel.app` |
-| Live bundle | `index-D_zxLTdZ.js` |
+| Git commit | `9acc99a` — eating camera flip + hard-press delete cascade |
+| Vercel deployment | `menubloc-frontend-fa0lpz0yi-menuply.vercel.app` |
+| Live bundle | `index-BKIe5jXc.js` |
 | Aliases | `menuply.com`, `www.menuply.com`, `crm.menuply.com`, `venues.menuply.com` |
-| Tip-gate | **PASS** (apex + www) verified 2026-08-21 after meal-photos / long-press delete CPD |
-| Feature | Compact meal-period sequence; menu item photos before logo/billboard; owner long-press Delete on eating/want/profile media |
+| Tip-gate | **PASS** (apex + www) verified 2026-08-24 |
+| Feature | DeviceId camera flip; durable ate/want media; diary delete cascades food_activity |
 
 ### Backend (Railway)
 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-backend-main` @ clean `main` |
-| Git on origin | `a24c775c` |
-| Live health SHA | `a24c775c…` (verified 2026-08-21 CPD) |
+| Git on origin | `9901800b` — inline diner media + durable uploads + delete cascade |
+| Live health SHA | `9901800b…` (verified 2026-08-24 CPD) |
 | Health URL | `https://menubloc-backend-production.up.railway.app/health` |
-| `commit_hash` | `a24c775c` (live at CPD certify) |
-| DB | migrations through `0284` (unchanged this ship) |
-| Smoke | tip-gate PASS `fli5934kq` / `index-D_zxLTdZ.js`; health `a24c775c`; bundle railway ≫ localhost |
+| `commit_hash` | `9901800b` (live at CPD certify) |
+| DB | migrations through `0285` |
+| Smoke | tip-gate PASS `fa0lpz0yi` / `index-BKIe5jXc.js`; health `9901800b` |
 
 ### Restore current tip (if tip-gate fails mid-change)
 
 ```bash
 cd /Users/andrebarber/Desktop/menubloc/menubloc-frontend-main
-npx vercel alias set menubloc-frontend-fli5934kq-menuply.vercel.app menuply.com
-npx vercel alias set menubloc-frontend-fli5934kq-menuply.vercel.app www.menuply.com
-npx vercel alias set menubloc-frontend-fli5934kq-menuply.vercel.app crm.menuply.com
-npx vercel alias set menubloc-frontend-fli5934kq-menuply.vercel.app venues.menuply.com
+npx vercel alias set menubloc-frontend-fa0lpz0yi-menuply.vercel.app menuply.com
+npx vercel alias set menubloc-frontend-fa0lpz0yi-menuply.vercel.app www.menuply.com
+npx vercel alias set menubloc-frontend-fa0lpz0yi-menuply.vercel.app crm.menuply.com
+npx vercel alias set menubloc-frontend-fa0lpz0yi-menuply.vercel.app venues.menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 ```
+
+### Prior tip — grouped X / Search profiles / Join Me (rollback target)
+
+| Field | Value |
+|-------|-------|
+| Deployment | `menubloc-frontend-cey0mwaa7-menuply.vercel.app` |
+| Bundle | `index-BXhQToJa.js` |
+| Commit | `dce082a` |
+| Notes | Pre–eating camera flip / durable diner media CPD |
+
+### Prior tip — meal photos + long-press Delete (rollback target)
+
+| Field | Value |
+|-------|-------|
+| Deployment | `menubloc-frontend-fli5934kq-menuply.vercel.app` |
+| Bundle | `index-D_zxLTdZ.js` |
+| Commit | `b46d3ed` / `23b260e` |
+| Notes | Pre–grouped X / Search profiles / Join Me CPD |
 
 ### Prior tip — billboard fallback (rollback target)
 

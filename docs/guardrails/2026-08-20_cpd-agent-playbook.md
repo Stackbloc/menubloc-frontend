@@ -3,6 +3,7 @@
 **Established:** 2026-08-20  
 **Audience:** agents when Andre says `cpd`  
 **Purpose:** one short procedure so deploy does not turn into a 20-step archaeology session  
+**🔴 TIP LOCK (read first after every FE alias):** [2026-08-24_production-tip-lock-atomic-contract.md](./2026-08-24_production-tip-lock-atomic-contract.md) — `bundle != locked tip` is usually stale locks, **not** a reason to restore  
 **Authority for live tip / BE SHA:** [2026-08-14_production-deploy-and-lkg-contract.md](./2026-08-14_production-deploy-and-lkg-contract.md)  
 **Full path rules:** [FE](./2026-07-24_frontend-production-deploy-path-contract.md) · [BE](./2026-07-28_backend-production-deploy-path-contract.md)
 
@@ -10,7 +11,7 @@
 
 ## What `cpd` means
 
-**Commit → Push → Deploy → tip-gate PASS → lock LKG → write one CPD note.**
+**Commit → Push → Deploy → alias → lock tip-gate script → tip-gate PASS → sync LKG mirrors → write one CPD note.**
 
 Do only the layers that changed. FE-only ships do **not** push Railway. BE-only ships do **not** `vercel --prod`.
 
@@ -57,11 +58,15 @@ vercel alias set "$DEPLOY" venues.menuply.com
 # 4) Read live bundle
 curl -s "https://menuply.com/" | grep -oE 'index-[A-Za-z0-9_-]+\.js' | head -1
 
-# 5) Update tip lock FIRST, then tip-gate (order matters — see traps)
-# Edit scripts/assert-menuply-production-tip.sh LOCKED_BUNDLE + LOCKED_DEPLOY
+# 5) Lock tip-gate script FIRST, then tip-gate (atomic tip lock — see tip-lock contract)
+bash /Users/andrebarber/Desktop/menubloc/scripts/lock-menuply-production-tip.sh \
+  "$DEPLOY" "$BUNDLE" \
+  --fe-commit "$(git rev-parse --short HEAD)" \
+  --note "cpd"
 bash /Users/andrebarber/Desktop/menubloc/scripts/assert-menuply-production-tip.sh https://menuply.com
 bash /Users/andrebarber/Desktop/menubloc/scripts/assert-menuply-production-tip.sh https://www.menuply.com
 # Both must print RESULT=PASS
+# Do NOT restore prior tip on `bundle != locked tip` alone — that means locks were stale.
 
 # 6) Smoke
 BUNDLE=$(curl -s "https://menuply.com/" | grep -oE 'index-[A-Za-z0-9_-]+\.js' | head -1)
