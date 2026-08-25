@@ -34,8 +34,9 @@ test("My Menuply is the diner's personal home", () => {
   assert.match(section, /eating-calendar/);
   assert.match(section, /DinerCalendarTrigger/);
   assert.match(section, /PostAfterActions/);
-  assert.match(section, /Invite Me/);
-  assert.match(section, /want-invite-me/);
+  assert.match(section, /Invite Me Out/);
+  assert.match(section, /want-invite-me-out-settings/);
+  assert.match(section, /InviteMeOutAudiencePicker/);
   assert.match(section, /plans-join-me/);
   assert.match(section, /EatingPlanDayForm/);
   assert.match(page, /joinCandidates/);
@@ -135,6 +136,11 @@ test("My Menuply is the diner's personal home", () => {
   assert.match(hero, /viewerUserId/);
   assert.match(page, /MyMenuplyPresentationRails/);
   assert.match(page, /buildTopHighlights/);
+  const rails = read("src/pages/consumer/myMenuply/MyMenuplyPresentationRails.jsx");
+  assert.match(rails, /top-highlight-delete/);
+  assert.match(rails, /useLongPressReveal/);
+  assert.match(rails, /onHighlightDelete/);
+  assert.match(page, /onHighlightDelete/);
   assert.match(read("src/pages/consumer/myMenuply/MyMenuplyPresentationRails.jsx"), /connections-avatar-strip/);
   assert.match(read("src/pages/consumer/myMenuply/MyMenuplyPresentationRails.jsx"), /\/my-menuply\/connections-eating/);
   assert.match(eatingPage, /StickyPageHeader title="My Connections"/);

@@ -21,9 +21,11 @@ import {
   deleteWhatIAteToday,
   deleteMyFoodActivity,
   followRestaurant,
+  unfollowRestaurant,
   getConsumerProfile,
   getFollowedRestaurants,
   getLikedMenuItems,
+  unlikeMenuItem,
   inviteToDiningCrew,
   inviteToVenueEventGroup,
   listConnections,
@@ -160,6 +162,10 @@ export default function MyMenuplyPage() {
   const [schedulingPlans, setSchedulingPlans] = useState(false);
   const [selectedPlanKey, setSelectedPlanKey] = useState("");
   const [joinCandidates, setJoinCandidates] = useState([]);
+  const [inviteMeOutOpen, setInviteMeOutOpen] = useState(false);
+  const [inviteMeOutAudience, setInviteMeOutAudience] = useState("connections");
+  const [inviteMeOutSelectedIds, setInviteMeOutSelectedIds] = useState([]);
+  const [inviteMeOutBusy, setInviteMeOutBusy] = useState(false);
   const [composeOpen, setComposeOpen] = useState(false);
   const [composeDefaultCategory, setComposeDefaultCategory] = useState("ate");
   const [composeMediaSource, setComposeMediaSource] = useState("camera");
@@ -217,6 +223,14 @@ export default function MyMenuplyPage() {
       ]);
       const nextProfile = profileRes?.profile || null;
       setProfile(nextProfile);
+      const inviteAudience = String(nextProfile?.invite_me_out_audience || "none").toLowerCase();
+      setInviteMeOutOpen(inviteAudience !== "none");
+      setInviteMeOutAudience(inviteAudience === "selected" ? "selected" : "connections");
+      setInviteMeOutSelectedIds(
+        Array.isArray(nextProfile?.invite_me_out_allowed_user_ids)
+          ? nextProfile.invite_me_out_allowed_user_ids
+          : []
+      );
       setAvatarUrl(resolveConsumerMediaUrl(nextProfile?.avatar_url || ""));
       setProfileMedia(mediaRes?.items || []);
       const activityItems = mapFoodActivityForHub(activityRes.activities || []);
@@ -488,6 +502,31 @@ export default function MyMenuplyPage() {
     }
   }
 
+  async function saveInviteMeOutAudience() {
+    setInviteMeOutBusy(true);
+    setError("");
+    try {
+      const audience = inviteMeOutOpen ? inviteMeOutAudience : "none";
+      const data = await updateConsumerProfile({
+        invite_me_out_audience: audience,
+        invite_me_out_allowed_user_ids:
+          inviteMeOutOpen && inviteMeOutAudience === "selected" ? inviteMeOutSelectedIds : [],
+      });
+      const next = data?.profile || {};
+      setProfile((prev) => ({ ...(prev || {}), ...next }));
+      const savedAudience = String(next.invite_me_out_audience || audience).toLowerCase();
+      setInviteMeOutOpen(savedAudience !== "none");
+      setInviteMeOutAudience(savedAudience === "selected" ? "selected" : "connections");
+      setInviteMeOutSelectedIds(
+        Array.isArray(next.invite_me_out_allowed_user_ids) ? next.invite_me_out_allowed_user_ids : []
+      );
+    } catch (err) {
+      setError(err.message || "Unable to save Invite Me Out settings");
+    } finally {
+      setInviteMeOutBusy(false);
+    }
+  }
+
   async function onProfileMediaAdd(file) {
     setProfileGalleryPickerOpen(false);
     setProfileGalleryMediaSource(null);
@@ -725,6 +764,33 @@ export default function MyMenuplyPage() {
     } catch (err) {
       setError(err.message || "Unable to delete");
       setWantListError(err.message || "Unable to delete");
+    } finally {
+      setPostBusy("");
+    }
+  }
+
+  async function onHighlightDelete(card) {
+    if (!card?.deleteKind) return;
+    if (card.deleteKind === "diary" && card.deleteItem) {
+      await onDiaryDelete(card.deleteItem);
+      return;
+    }
+    setPostBusy("highlight-delete");
+    setError("");
+    try {
+      if (card.deleteKind === "like" && card.menu_item_id != null) {
+        await unlikeMenuItem(card.menu_item_id);
+        setLiked((prev) =>
+          (prev || []).filter((row) => Number(row.menu_item_id) !== Number(card.menu_item_id))
+        );
+      } else if (card.deleteKind === "follow" && card.restaurant_id != null) {
+        await unfollowRestaurant(card.restaurant_id);
+        setFollowed((prev) =>
+          (prev || []).filter((row) => Number(row.restaurant_id) !== Number(card.restaurant_id))
+        );
+      }
+    } catch (err) {
+      setError(err.message || "Unable to delete");
     } finally {
       setPostBusy("");
     }
@@ -1178,11 +1244,12 @@ export default function MyMenuplyPage() {
                 setComposeMediaSource("camera");
                 setComposeOpen(true);
               }}
+              onHighlightDelete={onHighlightDelete}
+              highlightDeleteBusy={Boolean(postBusy)}
             />
 
             <EatingHubSection
               sectionRef={eatingSectionRef}
-              inviteHref="/account/what-we-doing"
               joinMeHref="/account/im-eating"
               composeOpen={composeOpen}
               onComposeOpenChange={setComposeOpen}
@@ -1211,6 +1278,15 @@ export default function MyMenuplyPage() {
               postBusy={postBusy}
               followed={followed}
               joinCandidates={joinCandidates}
+              inviteMeOutOpen={inviteMeOutOpen}
+              onInviteMeOutOpenChange={setInviteMeOutOpen}
+              inviteMeOutAudience={inviteMeOutAudience}
+              onInviteMeOutAudienceChange={setInviteMeOutAudience}
+              inviteMeOutSelectedIds={inviteMeOutSelectedIds}
+              onInviteMeOutSelectedIdsChange={setInviteMeOutSelectedIds}
+              inviteMeOutCandidates={joinCandidates}
+              onInviteMeOutSave={saveInviteMeOutAudience}
+              inviteMeOutBusy={inviteMeOutBusy}
               planPrefill={planPrefill}
               locationCity={locationCity}
               locationState={locationState}

@@ -21,6 +21,8 @@ function eatingCard(row) {
   return {
     key: `diary-${row.entry_id || row.id}`,
     kind: "diary",
+    deleteKind: "diary",
+    deleteItem: row,
     label,
     sublabel: row.restaurant_name || row.place_label || "",
     badge: "Your meal",
@@ -34,6 +36,8 @@ function likedCard(row) {
   return {
     key: `like-${row.menu_item_id}`,
     kind: "like",
+    deleteKind: "like",
+    menu_item_id: row.menu_item_id,
     label: row.item_name || "Dish",
     sublabel: row.restaurant_name || "",
     badge: "Saved dish",
@@ -48,6 +52,8 @@ function followHighlight(restaurant, preview, index) {
   return {
     key: `follow-${restaurant.restaurant_id}-${index}`,
     kind: "follow",
+    deleteKind: "follow",
+    restaurant_id: restaurant.restaurant_id,
     label: preview?.headline_override || preview?.title || restaurant.restaurant_name,
     sublabel: [restaurant.city, restaurant.state].filter(Boolean).join(", ") || restaurant.restaurant_name,
     badge: "From places you follow",

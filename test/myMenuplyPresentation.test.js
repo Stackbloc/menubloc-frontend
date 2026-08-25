@@ -32,8 +32,12 @@ test("buildTopHighlights prefers user diary then liked then follows", () => {
   assert.equal(cards.length, 3);
   assert.equal(cards[0].source, "user");
   assert.equal(cards[0].badge, "Your meal");
+  assert.equal(cards[0].deleteKind, "diary");
+  assert.ok(cards[0].deleteItem);
   assert.match(cards[1].badge, /Saved dish/i);
+  assert.equal(cards[1].deleteKind, "like");
   assert.match(cards[2].badge, /places you follow/i);
+  assert.equal(cards[2].deleteKind, "follow");
 });
 
 test("buildFollowedRestaurantRails maps restaurant visit cards", () => {

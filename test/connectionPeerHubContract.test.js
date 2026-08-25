@@ -37,7 +37,8 @@ test("Connection diner page uses the same hub layout as My Menuply", () => {
   assert.match(section, /data-testid="want-to-eat"/);
   assert.match(section, /eating-calendar/);
   assert.match(section, /DinerCalendarTrigger/);
-  assert.match(section, /Invite Me/);
+  assert.match(section, /Invite Me Out/);
+  assert.match(section, /InviteMeOutAudiencePicker/);
   assert.match(section, /future-plans-summary/);
   assert.match(section, /FuturePlanRow/);
   assert.match(section, /SectionEmptyState/);
@@ -45,7 +46,8 @@ test("Connection diner page uses the same hub layout as My Menuply", () => {
   assert.match(section, /eating-want-panel/);
   assert.match(section, /WantToEatList/);
 
-  assert.match(peer, /readOnly/);
+  assert.match(peer, /InviteMeOutFlow/);
+  assert.match(peer, /viewerMayInviteMeOut/);
   assert.match(peer, /\/what-i-ate/);
   assert.match(peer, /mergeEatingFeedForHub/);
   assert.doesNotMatch(peer, /EatingCompose/);
@@ -62,6 +64,8 @@ test("Connection diner page uses the same hub layout as My Menuply", () => {
   assert.match(peer, /peerConnections/);
   assert.match(peer, /backTo="\/my-menuply"/);
   assert.match(peer, /backLabel="My Menuply"/);
+  assert.doesNotMatch(peer, /<h1 style=\{s\.h1\}/);
+  assert.doesNotMatch(peer, /s\.kicker/);
 
   const calendar = read("src/pages/consumer/myMenuply/DinerCalendarSheet.jsx");
   assert.match(calendar, /diner-calendar-open/);

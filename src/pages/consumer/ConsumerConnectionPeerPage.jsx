@@ -10,6 +10,7 @@ import StickyPageHeader from "../../components/StickyPageHeader.jsx";
 import BottomNav from "../../components/BottomNav.jsx";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
 import EatingHubSection from "./myMenuply/EatingHubSection.jsx";
+import InviteMeOutFlow from "./myMenuply/InviteMeOutFlow.jsx";
 import {
   buildEatingDayMarkersFromCalendar,
   compareYmd,
@@ -85,6 +86,8 @@ export default function ConsumerConnectionPeerPage() {
   const [crewJoinBusy, setCrewJoinBusy] = useState("");
   const [peerProfileMedia, setPeerProfileMedia] = useState([]);
   const [peerWants, setPeerWants] = useState([]);
+  const [viewerMayInviteMeOut, setViewerMayInviteMeOut] = useState(false);
+  const [inviteMeOutOpen, setInviteMeOutOpen] = useState(false);
 
   const load = useCallback(async () => {
     setError("");
@@ -132,6 +135,7 @@ export default function ConsumerConnectionPeerPage() {
       setCrews(crewData.crews || crewData.items || []);
       setPeerProfileMedia(mediaData?.items || []);
       setPeerWants(wantData?.items || []);
+      setViewerMayInviteMeOut(Boolean(wantData?.invite_me_out?.viewer_may_invite));
       const join = planItems.find((item) => item.join_me_href)?.join_me_href || "";
       setJoinMeHref(join);
     } catch (err) {
@@ -157,6 +161,7 @@ export default function ConsumerConnectionPeerPage() {
   const inviteHref = peer?.id
     ? `/account/what-we-doing?with=${encodeURIComponent(String(peer.id))}`
     : "/account/what-we-doing";
+  void inviteHref;
   const diaryHref = peer?.id
     ? `/account/connections/${encodeURIComponent(String(peer.id))}/what-i-ate`
     : "/account/what-i-ate";
@@ -198,8 +203,6 @@ export default function ConsumerConnectionPeerPage() {
     <>
       <StickyPageHeader title={name} backTo="/my-menuply" backLabel="My Menuply" />
       <div style={s.page} data-testid="connection-peer-hub">
-        <p style={s.kicker}>My food. My people. My plans.</p>
-        <h1 style={s.h1}>{name}</h1>
         {error ? <p style={s.error}>{error}</p> : null}
         {loading ? <p style={s.muted}>Loading…</p> : null}
         {!loading && !connection ? (
@@ -224,7 +227,6 @@ export default function ConsumerConnectionPeerPage() {
             <EatingHubSection
               readOnly
               diaryHref={diaryHref}
-              inviteHref={inviteHref}
               joinMeHref={joinMeHref}
               hubDate={hubDate}
               onHubDateChange={setHubDate}
@@ -239,6 +241,15 @@ export default function ConsumerConnectionPeerPage() {
               shownPlans={shownPlans}
               selectedPlanKey={selectedPlanKey}
               onSelectedPlanKeyChange={setSelectedPlanKey}
+              wants={peerWants}
+              viewerMayInviteMeOut={viewerMayInviteMeOut}
+              onInviteMeOut={() => setInviteMeOutOpen(true)}
+            />
+
+            <InviteMeOutFlow
+              open={inviteMeOutOpen}
+              onClose={() => setInviteMeOutOpen(false)}
+              peerName={name}
               wants={peerWants}
             />
 

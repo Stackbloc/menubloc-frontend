@@ -40,6 +40,10 @@ export default function InviteToEatModal({
   menuItemId = null,
   menuItemName = null,
   diningCrewId = null,
+  initialInviteKind = null,
+  initialInviteeName = "",
+  lockInviteKind = false,
+  flowTitle = "Invite to Eat",
 }) {
   const { isAuthenticated } = useConsumer();
   const [inviteKind, setInviteKind] = useState(null);
@@ -59,9 +63,9 @@ export default function InviteToEatModal({
 
   useEffect(() => {
     if (!open) return;
-    setInviteKind(diningCrewId ? "group" : null);
+    setInviteKind(diningCrewId ? "group" : initialInviteKind || null);
     setGuestName(getEatInviteGuestDisplayName());
-    setInviteeName("");
+    setInviteeName(String(initialInviteeName || "").trim());
     setScheduleMode("organizer");
     setDate(tomorrowIsoDate());
     setTime("19:00");
@@ -74,7 +78,7 @@ export default function InviteToEatModal({
     setError("");
     setCreated(null);
     setShareOpen(false);
-  }, [open, diningCrewId]);
+  }, [open, diningCrewId, initialInviteKind, initialInviteeName]);
 
   const resolvedKind =
     created?.invite_kind === "private" || inviteKind === "private" ? "private" : "group";
@@ -270,7 +274,7 @@ export default function InviteToEatModal({
       data-testid="invite-to-eat-modal"
       role="dialog"
       aria-modal="true"
-      aria-label="Invite to Eat"
+      aria-label={flowTitle}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose?.();
       }}
@@ -304,9 +308,11 @@ export default function InviteToEatModal({
             {created
               ? "Invitation Ready"
               : !inviteKind
-                ? "Invite to Eat"
+                ? flowTitle
                 : inviteKind === "private"
-                  ? "Invite one person"
+                  ? flowTitle === "Invite Me Out"
+                    ? "Invite Me Out"
+                    : "Invite one person"
                   : "Invite a group"}
           </div>
           <button
@@ -359,27 +365,29 @@ export default function InviteToEatModal({
 
         {!created && inviteKind ? (
           <>
-            <button
-              type="button"
-              data-testid="invite-kind-back"
-              onClick={() => {
-                setInviteKind(null);
-                setError("");
-              }}
-              style={{
-                border: "none",
-                background: "transparent",
-                color: "#166534",
-                fontWeight: 700,
-                fontSize: 13,
-                padding: 0,
-                marginBottom: 8,
-                cursor: "pointer",
-                textAlign: "left",
-              }}
-            >
-              ← Who do you want to invite?
-            </button>
+            {!lockInviteKind ? (
+              <button
+                type="button"
+                data-testid="invite-kind-back"
+                onClick={() => {
+                  setInviteKind(null);
+                  setError("");
+                }}
+                style={{
+                  border: "none",
+                  background: "transparent",
+                  color: "#166534",
+                  fontWeight: 700,
+                  fontSize: 13,
+                  padding: 0,
+                  marginBottom: 8,
+                  cursor: "pointer",
+                  textAlign: "left",
+                }}
+              >
+                ← Who do you want to invite?
+              </button>
+            ) : null}
             <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>{placeName}</div>
             {dishName ? (
               <div style={{ fontSize: 13, color: "#57534e", marginBottom: 12 }}>

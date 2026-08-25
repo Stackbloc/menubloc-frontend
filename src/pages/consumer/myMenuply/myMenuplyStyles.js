@@ -1302,11 +1302,15 @@ export const plansEmptyText = {
   lineHeight: 1.4,
 };
 
-export const plansEmptyLink = {
-  color: "#bbf7d0",
+/** Inline action links on cream panels (Invite Me, Join Me footnotes). */
+export const inviteMeLink = {
+  color: GREEN_MID,
   fontWeight: 800,
   textDecoration: "underline",
+  textUnderlineOffset: 2,
 };
+
+export const plansEmptyLink = inviteMeLink;
 
 export const planCardBold = {
   appearance: "none",

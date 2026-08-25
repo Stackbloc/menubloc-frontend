@@ -7,6 +7,7 @@ import { Link } from "react-router-dom";
 import DinerStatsBar from "./DinerStatsBar.jsx";
 import MyMenuplyHubFocus from "./MyMenuplyHubFocus.jsx";
 import { WantToEatList } from "./myMenuplyBits.jsx";
+import { useLongPressReveal } from "./mediaLongPressReveal.js";
 import * as s from "./myMenuplyStyles.js";
 
 function ConnectionAvatarStrip({ connections = [], viewerUserId = null }) {
@@ -47,7 +48,10 @@ function ConnectionAvatarStrip({ connections = [], viewerUserId = null }) {
   );
 }
 
-function HighlightCard({ card, large = false }) {
+function HighlightCard({ card, large = false, readOnly = false, onDelete, deleteBusy = false }) {
+  const canDelete = !readOnly && card?.deleteKind && typeof onDelete === "function";
+  const { open, dismiss, consumeArmedClick, bind } = useLongPressReveal(canDelete);
+
   const body = (
     <>
       <div style={{ ...railStyles.highlightMedia, ...(large ? railStyles.highlightMediaLarge : null) }}>
@@ -65,29 +69,84 @@ function HighlightCard({ card, large = false }) {
     </>
   );
 
+  const cardStyle = { ...railStyles.highlightCard, ...(large ? railStyles.highlightCardLarge : null) };
+  let main;
   if (card.href) {
-    return (
-      <Link to={card.href} style={{ ...railStyles.highlightCard, ...(large ? railStyles.highlightCardLarge : null) }}>
+    main = (
+      <Link
+        to={card.href}
+        style={cardStyle}
+        data-testid="top-highlight-link"
+        onClick={(e) => {
+          if (consumeArmedClick() || open) {
+            e.preventDefault();
+            dismiss();
+          }
+        }}
+      >
         {body}
       </Link>
     );
+  } else {
+    main = (
+      <div style={cardStyle} data-testid="top-highlight-body">
+        {body}
+      </div>
+    );
   }
+
   return (
-    <div style={{ ...railStyles.highlightCard, ...(large ? railStyles.highlightCardLarge : null) }}>{body}</div>
+    <div
+      style={{ position: "relative", ...(large ? { height: "100%" } : null) }}
+      data-testid="top-highlight-item"
+      {...bind}
+    >
+      {main}
+      {open ? (
+        <button
+          type="button"
+          style={s.mealHolderDelete}
+          data-testid="top-highlight-delete"
+          aria-label={`Delete ${card.label}`}
+          disabled={deleteBusy}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (deleteBusy) return;
+            dismiss();
+            onDelete?.(card);
+          }}
+        >
+          Delete
+        </button>
+      ) : null}
+    </div>
   );
 }
 
-function TopHighlightsGrid({ cards = [] }) {
+function TopHighlightsGrid({ cards = [], readOnly = false, onDelete, deleteBusy = false }) {
   if (!cards.length) return null;
   const [hero, ...rest] = cards;
   return (
     <div style={s.presentationBlock} data-testid="top-highlights">
       <h3 style={s.displaySectionTitle}>Top highlights</h3>
       <div style={railStyles.highlightGrid}>
-        <HighlightCard card={hero} large />
+        <HighlightCard
+          card={hero}
+          large
+          readOnly={readOnly}
+          onDelete={onDelete}
+          deleteBusy={deleteBusy}
+        />
         <div style={railStyles.highlightStack}>
           {rest.map((card) => (
-            <HighlightCard key={card.key} card={card} />
+            <HighlightCard
+              key={card.key}
+              card={card}
+              readOnly={readOnly}
+              onDelete={onDelete}
+              deleteBusy={deleteBusy}
+            />
           ))}
         </div>
       </div>
@@ -147,6 +206,8 @@ export default function MyMenuplyPresentationRails({
   showFoodStoryCta = false,
   onLogFood,
   readOnly = false,
+  onHighlightDelete,
+  highlightDeleteBusy = false,
 }) {
   void onLogFood;
   return (
@@ -165,7 +226,12 @@ export default function MyMenuplyPresentationRails({
       {hubFocus !== "connects" ? (
         <ConnectionAvatarStrip connections={connections} viewerUserId={viewerUserId} />
       ) : null}
-      <TopHighlightsGrid cards={highlights} />
+      <TopHighlightsGrid
+        cards={highlights}
+        readOnly={readOnly}
+        onDelete={readOnly ? undefined : onHighlightDelete}
+        deleteBusy={highlightDeleteBusy}
+      />
       {hubFocus !== "restaurants" ? (
         <FollowedRestaurantsRail restaurants={followedRestaurants} />
       ) : null}

@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "23b260e2573aab0032d4f5dc69599bfad1510281",
-  "gitShortSha": "23b260e",
+  "gitSha": "ee49c2e7cda27c670fea7480f8397057cab4b7a0",
+  "gitShortSha": "ee49c2e",
   "branch": "main",
-  "buildTime": "2026-08-22T12:03:37.136Z",
+  "buildTime": "2026-08-25T01:47:02.228Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "feat: long-press Delete for owned crews, events, and eating plans"
+  "commitMessage": "feat: replace in-app video recorder with OS-native capture"
 }
