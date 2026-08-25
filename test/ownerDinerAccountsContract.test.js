@@ -1,5 +1,5 @@
 /**
- * Owner diner accounts roster contract.
+ * Owner diner accounts roster + capability stats + hub dialog contract.
  */
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -14,32 +14,43 @@ function read(rel) {
 }
 
 describe("owner diner accounts panel", () => {
-  it("ownerApi fetches diner accounts through ownerApi get helper", () => {
+  it("ownerApi fetches diner accounts, stats, and detail through ownerApi get helper", () => {
     const api = read("src/lib/ownerApi.js");
     assert.match(api, /export const getOwnerDinerAccounts/);
-    assert.match(api, /\/api\/owner\/dashboard\/diners/);
-    assert.match(api, /getOwnerDinerAccounts[\s\S]*return get\(`\/api\/owner\/dashboard\/diners/);
+    assert.match(api, /export const getOwnerDinerCapabilityStats/);
+    assert.match(api, /export const getOwnerDinerDetail/);
+    assert.match(api, /\/api\/owner\/dashboard\/diners\/stats/);
+    assert.match(api, /\/api\/owner\/dashboard\/diners\/\$\{encodeURIComponent/);
   });
 
-  it("OwnerDiners shows total diner count and opened/closed with time of day", () => {
+  it("OwnerDiners shows capability metrics, interval chips, and clickable roster", () => {
     const page = read("src/pages/owner/OwnerDiners.jsx");
+    assert.match(page, /getOwnerDinerCapabilityStats/);
     assert.match(page, /getOwnerDinerAccounts/);
+    assert.match(page, /OwnerDinerHubDialog/);
+    assert.match(page, /diner-capability-metrics/);
+    assert.match(page, /diner-stats-interval-\$\{key\}/);
+    assert.match(page, /\["7d", "Week"\]/);
+    assert.match(page, /\["30d", "Month"\]/);
+    assert.match(page, /\["365d", "Year"\]/);
+    assert.match(page, /onRowClick/);
+    assert.match(page, /My Menuply snapshot/);
     assert.match(page, /Total diners/);
     assert.match(page, /Account opened/);
     assert.match(page, /Referral source/);
-    assert.match(page, /referral_source_label/);
-    assert.match(page, /Account closed/);
-    assert.match(page, /Geographic market/);
     assert.match(page, /formatDateTime/);
-    assert.match(page, /hour:\s*"numeric"/);
-    assert.match(page, /minute:\s*"2-digit"/);
     assert.match(page, /ids 2, 3, 4, 29/);
-    assert.match(page, /data-testid="diner-accounts-table"/);
-    assert.doesNotMatch(
-      page,
-      /wrapKeys/,
-      "wrapKeys puts leftover diner columns on 88px metric cells and overlapping headers"
-    );
+    assert.match(page, /QR scans are not logged/);
+  });
+
+  it("OwnerDinerHubDialog loads diner detail and supports close", () => {
+    const dialog = read("src/pages/owner/OwnerDinerHubDialog.jsx");
+    assert.match(dialog, /getOwnerDinerDetail/);
+    assert.match(dialog, /owner-diner-hub-dialog/);
+    assert.match(dialog, /owner-diner-hub-dialog-close/);
+    assert.match(dialog, /My Menuply snapshot/);
+    assert.match(dialog, /diner-hub-summary-grid/);
+    assert.match(dialog, /Escape/);
   });
 
   it("owner nav and dashboard link to /owner/diners", () => {

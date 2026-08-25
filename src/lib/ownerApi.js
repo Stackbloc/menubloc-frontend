@@ -69,6 +69,20 @@ export const getOwnerDinerAccounts = (params = {}) => {
   const serialized = qs.toString();
   return get(`/api/owner/dashboard/diners${serialized ? `?${serialized}` : ""}`);
 };
+export const getOwnerDinerCapabilityStats = (params = {}) => {
+  const qs = new URLSearchParams();
+  if (params.interval) qs.set("interval", params.interval);
+  const serialized = qs.toString();
+  return get(`/api/owner/dashboard/diners/stats${serialized ? `?${serialized}` : ""}`);
+};
+export const getOwnerDinerDetail = (id, params = {}) => {
+  const qs = new URLSearchParams();
+  if (params.interval) qs.set("interval", params.interval);
+  const serialized = qs.toString();
+  return get(
+    `/api/owner/dashboard/diners/${encodeURIComponent(String(id))}${serialized ? `?${serialized}` : ""}`
+  );
+};
 export const getOwnerTrafficAnalytics = (params = {}) => {
   const qs = new URLSearchParams(params).toString();
   return get(`/api/owner/analytics/traffic${qs ? `?${qs}` : ""}`);

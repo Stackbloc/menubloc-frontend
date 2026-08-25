@@ -139,6 +139,7 @@ export function SimpleTable({
   emptyLabel = "No rows for this range.",
   wrapKeys = [],
   maxHeight = null,
+  onRowClick = null,
 }) {
   if (!rows?.length) return <EmptyState>{emptyLabel}</EmptyState>;
   const wrapSet = new Set(wrapKeys);
@@ -174,7 +175,15 @@ export function SimpleTable({
         </thead>
         <tbody>
           {rows.map((row, index) => (
-            <tr key={index}>
+            <tr
+              key={index}
+              onClick={onRowClick ? () => onRowClick(row) : undefined}
+              style={
+                onRowClick
+                  ? { cursor: "pointer" }
+                  : undefined
+              }
+            >
               {columns.map(([label, key, formatter]) => {
                 const cell = formatter ? formatter(row) : formatCell(row[key]);
                 const wraps = wrapSet.has(key);
