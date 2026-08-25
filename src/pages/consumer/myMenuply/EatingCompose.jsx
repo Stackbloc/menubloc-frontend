@@ -10,6 +10,7 @@ import {
   WHAT_I_ATE_MEAL_PERIODS,
   defaultWhatIAteMealPeriod,
 } from "../../../lib/whatIAteTodayMealPeriod.js";
+import { isVideoFile } from "../../../lib/eatingMediaUtils.js";
 import {
   EATING_COMPOSE_CATEGORIES,
   WANT_INTENT_KINDS,
@@ -62,6 +63,11 @@ export default function EatingCompose({
   const [inviteMeOutSelectedIds, setInviteMeOutSelectedIds] = useState(
     Array.isArray(inviteMeOutSelectedIdsInitial) ? inviteMeOutSelectedIdsInitial : []
   );
+  const [isRecommend, setIsRecommend] = useState(false);
+
+  useEffect(() => {
+    if (!isVideoFile(file)) setIsRecommend(false);
+  }, [file]);
 
   const meta =
     EATING_COMPOSE_CATEGORIES.find((c) => c.id === category) ||
@@ -245,10 +251,15 @@ export default function EatingCompose({
       homemade,
       restaurant,
       dish,
+      isRecommend:
+        category === "ate" && isVideoFile(file)
+          ? isRecommend
+          : false,
     });
 
     setText("");
     setFile(null);
+    setIsRecommend(false);
     resetPlace();
   }
 
@@ -421,6 +432,20 @@ export default function EatingCompose({
               <p style={styles.dishSelected} data-testid="eating-compose-dish-name">
                 Menu item: <strong>{dish.item_name}</strong>
               </p>
+            ) : null}
+
+            {isVideoFile(file) ? (
+              <label style={styles.recommendRow} data-testid="eating-compose-recommend">
+                <input
+                  type="checkbox"
+                  checked={isRecommend}
+                  disabled={busy || (!restaurant && !dish) || homemade}
+                  onChange={(e) => setIsRecommend(e.target.checked)}
+                />
+                <span>
+                  Recommend this (needs a restaurant or Common Knowledge dish tag)
+                </span>
+              </label>
             ) : null}
 
             <p style={styles.stepLabel}>
@@ -723,6 +748,16 @@ const styles = {
     fontSize: 14,
     color: "#166534",
     fontWeight: 600,
+  },
+
+  recommendRow: {
+    display: "flex",
+    alignItems: "flex-start",
+    gap: 8,
+    margin: "4px 0 0",
+    fontSize: 13,
+    color: "#344054",
+    lineHeight: 1.4,
   },
 
   cuisineBlock: {

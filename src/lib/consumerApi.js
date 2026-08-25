@@ -168,6 +168,17 @@ export const listConnectionsEating = (limit = 30, peerId = null) => {
   if (peerId) q.set("peer_id", String(peerId));
   return get(`/api/consumer/connections/eating?${q}`);
 };
+
+/** Market See Who's Eating video reel (CK menu_item_id on items). */
+export const listSeeWhosEating = ({ city, state, limit = 20, cursor } = {}) => {
+  const q = new URLSearchParams();
+  if (city) q.set("city", String(city));
+  if (state) q.set("state", String(state));
+  if (limit) q.set("limit", String(limit));
+  if (cursor) q.set("cursor", String(cursor));
+  const qs = q.toString();
+  return get(`/api/consumer/see-whos-eating${qs ? `?${qs}` : ""}`);
+};
 export const listConnectionsPlanning = (limit = 30, peerId = null) => {
   const q = new URLSearchParams({ limit: String(limit) });
   if (peerId) q.set("peer_id", String(peerId));

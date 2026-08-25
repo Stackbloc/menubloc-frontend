@@ -18,9 +18,6 @@ function ConnectionAvatarStrip({ connections = [], viewerUserId = null }) {
     <div style={railStyles.connectionsWrap} data-testid="connections-avatar-strip">
       <div style={railStyles.connectionsHead}>
         <span style={railStyles.connectionsTitle}>Connects</span>
-        <Link to="/my-menuply/connections-eating" style={railStyles.connectionsLink}>
-          See who&apos;s eating
-        </Link>
       </div>
       <div style={railStyles.avatarRow}>
         {rows.map((c) => {

@@ -79,7 +79,6 @@ import MenuItemSaveChoicePage from "./pages/consumer/MenuItemSaveChoicePage.jsx"
 import ConnectionPeerWhatIAtePage from "./pages/consumer/ConnectionPeerWhatIAtePage.jsx";
 import MyMenuplyPage from "./pages/consumer/MyMenuplyPage.jsx";
 import MonthInFoodPage from "./pages/consumer/monthInFood/MonthInFoodPage.jsx";
-import ConnectionsEatingPage from "./pages/consumer/ConnectionsEatingPage.jsx";
 import ConnectionsPlanningPage from "./pages/consumer/ConnectionsPlanningPage.jsx";
 import ActivityPage from "./pages/ActivityPage.jsx";
 import DinerStatusPage from "./pages/consumer/DinerStatusPage.jsx";
@@ -926,7 +925,7 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
         <Route path="/account" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ConsumerProfile />} />
         <Route path="/my-menuply" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MyMenuplyPage />} />
         <Route path="/my-menuply/month-in-food" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MonthInFoodPage />} />
-        <Route path="/my-menuply/connections-eating" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ConnectionsEatingPage />} />
+        <Route path="/my-menuply/connections-eating" element={crmHost ? <HostRouteRedirect to="/crm" /> : <Navigate to="/my-menuply" replace />} />
         <Route path="/my-menuply/connections-planning" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ConnectionsPlanningPage />} />
         <Route path="/activity" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ActivityPage />} />
         <Route path="/account/welcome" element={crmHost ? <HostRouteRedirect to="/crm" /> : <AccountWelcome />} />

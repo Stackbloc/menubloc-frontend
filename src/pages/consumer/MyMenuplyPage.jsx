@@ -77,6 +77,7 @@ import ProfileCompletionBanner from "../../components/consumer/ProfileCompletion
 import DinerIdentityHero from "./myMenuply/DinerIdentityHero.jsx";
 import MyMenuplyPresentationRails from "./myMenuply/MyMenuplyPresentationRails.jsx";
 import ProfileGalleryComposeSheet from "./myMenuply/ProfileGalleryComposeSheet.jsx";
+import SeeWhosEatingSurface from "./myMenuply/SeeWhosEatingSurface.jsx";
 import {
   buildDinerStats,
   buildFollowedRestaurantRails,
@@ -533,7 +534,7 @@ export default function MyMenuplyPage() {
     }
   }
 
-  async function postEating({ text, file, mealPeriod, homemade, restaurant, dish }) {
+  async function postEating({ text, file, mealPeriod, homemade, restaurant, dish, isRecommend = false }) {
     setPostBusy("eating");
     setError("");
     try {
@@ -561,6 +562,7 @@ export default function MyMenuplyPage() {
         meal_period: mealPeriod || defaultWhatIAteMealPeriod(),
         restaurant_id: restaurantId,
         menu_item_id: menuItemId,
+        is_recommend: Boolean(video_url && isRecommend),
         comment: homemade ? joinHomemadeComment(true, note) : note || undefined,
       });
       if (restaurantId) await maybeFollowRestaurant(restaurantId);
@@ -1101,6 +1103,7 @@ export default function MyMenuplyPage() {
     homemade,
     restaurant,
     dish,
+    isRecommend,
     wantKind,
     inviteMeOutOpen: wantInviteOpen,
     inviteMeOutAudience: wantInviteAudience,
@@ -1122,7 +1125,15 @@ export default function MyMenuplyPage() {
       return;
     }
     if (category === "ate") {
-      await postEating({ text, file, mealPeriod, homemade, restaurant, dish });
+      await postEating({
+        text,
+        file,
+        mealPeriod,
+        homemade,
+        restaurant,
+        dish,
+        isRecommend,
+      });
       setComposeDefaultCategory("ate");
     }
   }
@@ -1182,7 +1193,12 @@ export default function MyMenuplyPage() {
       />
       <div style={s.page} data-testid="my-menuply-page">
         <div style={s.pageHeroBand}>
-          <p style={s.kicker}>My food. My people. My plans.</p>
+          <SeeWhosEatingSurface
+            city={locationCity}
+            state={locationState}
+            isAuthenticated={Boolean(isAuthenticated)}
+            viewerUserId={consumer?.id || null}
+          />
           <div style={s.aboutTitleRow}>
             <h1 style={{ ...s.h1, margin: 0 }}>My Menuply</h1>
             {isAuthenticated ? (
@@ -1191,13 +1207,19 @@ export default function MyMenuplyPage() {
               </Link>
             ) : null}
           </div>
-          <p style={s.lead}>Your social food profile — browse what you share. Create with ✕.</p>
+          {isAuthenticated ? (
+            <p style={s.lead}>Your social food profile — browse what you share. Create with ✕.</p>
+          ) : (
+            <p style={s.lead}>Watch who&apos;s eating nearby. Sign in for your own My Menuply.</p>
+          )}
         </div>
         {error ? <p style={{ ...s.error, marginTop: 16 }}>{error}</p> : null}
 
         {!authLoading && !isAuthenticated ? (
           <div style={s.signInBox}>
-            <p style={{ margin: "0 0 12px", color: "#475467" }}>Sign in for My Menuply.</p>
+            <p style={{ margin: "0 0 12px", color: "#475467" }}>
+              Sign in for your My Menuply profile, posts, and Connects.
+            </p>
             <Link to="/account/login?next=/my-menuply" style={s.primaryBtn}>
               Sign in
             </Link>

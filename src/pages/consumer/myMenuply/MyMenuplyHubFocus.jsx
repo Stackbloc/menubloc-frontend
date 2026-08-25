@@ -52,9 +52,6 @@ function ConnectsList({ connections, viewerUserId }) {
     <>
       <div style={styles.head}>
         <h3 style={{ ...s.displaySectionTitle, margin: 0 }}>Connects</h3>
-        <Link to="/my-menuply/connections-eating" style={styles.link}>
-          See who&apos;s eating
-        </Link>
       </div>
       <ul style={styles.list}>
         {rows.map((c) => {
