@@ -468,14 +468,9 @@ export default function MyMenuplyPage() {
   const showFoodStoryCta = false;
 
   async function onAvatarFile(file) {
-  console.log("NATIVE CAMERA FILE:", {
-    name: file?.name,
-    type: file?.type,
-    size: file?.size,
-    lastModified: file?.lastModified,
-  });
-
-  // existing code continues below...
+    if (!file) return;
+    const previewUrl = URL.createObjectURL(file);
+    setAvatarUrl(previewUrl);
     setIdentityBusy(true);
     setIdentityError("");
     setIdentityNotice("");
@@ -484,8 +479,10 @@ export default function MyMenuplyPage() {
       setAvatarUrl(resolveConsumerMediaUrl(data.avatar_url || data.card?.avatar_url || ""));
       setIdentityNotice("Profile photo updated.");
     } catch (err) {
+      setAvatarUrl(resolveConsumerMediaUrl(profile?.avatar_url || ""));
       setIdentityError(err.message || "Unable to upload photo");
     } finally {
+      URL.revokeObjectURL(previewUrl);
       setIdentityBusy(false);
     }
   }

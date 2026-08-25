@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import ProfileMediaGallery from "./ProfileMediaGallery.jsx";
+import AvatarComposeSheet from "./AvatarComposeSheet.jsx";
 import * as s from "./myMenuplyStyles.js";
 import { GREEN_BRIGHT } from "./myMenuplyStyles.js";
 
@@ -28,7 +29,8 @@ export default function DinerIdentityHero({
 }) {
   const [draft, setDraft] = useState(about || "");
   const [saving, setSaving] = useState(false);
-  const avatarInputRef = useRef(null);
+  const [avatarSheetOpen, setAvatarSheetOpen] = useState(false);
+  const [avatarMediaSource, setAvatarMediaSource] = useState(null);
 
   useEffect(() => {
     setDraft(about || "");
@@ -48,20 +50,20 @@ export default function DinerIdentityHero({
     }
   }
 
-  function openNativeAvatarCamera() {
+  function openAvatarSheet() {
     if (busy || readOnly) return;
-    avatarInputRef.current?.click();
+    setAvatarMediaSource(null);
+    setAvatarSheetOpen(true);
   }
 
-  function handleNativeAvatarChange(event) {
-    const file = event.target.files?.[0] || null;
+  function closeAvatarSheet() {
+    setAvatarSheetOpen(false);
+    setAvatarMediaSource(null);
+  }
 
-    // Allow the same photo to be selected again later.
-    event.target.value = "";
-
-    if (file) {
-      onAvatarFile?.(file);
-    }
+  function handleAvatarFile(file) {
+    closeAvatarSheet();
+    if (file) onAvatarFile?.(file);
   }
 
   const initial =
@@ -139,23 +141,12 @@ export default function DinerIdentityHero({
           </div>
         ) : (
           <>
-            <input
-              ref={avatarInputRef}
-              type="file"
-              accept="image/*"
-              capture="user"
-              hidden
-              disabled={busy}
-              data-testid="diner-avatar-native-camera-input"
-              onChange={handleNativeAvatarChange}
-            />
-
             <button
               type="button"
               style={s.identityPhotoBtn}
               aria-label="Change profile photo"
               disabled={busy}
-              onClick={openNativeAvatarCamera}
+              onClick={openAvatarSheet}
               data-testid="diner-avatar-picker"
             >
               {avatarUrl ? (
@@ -168,6 +159,15 @@ export default function DinerIdentityHero({
                 📷
               </span>
             </button>
+
+            <AvatarComposeSheet
+              open={avatarSheetOpen}
+              onClose={closeAvatarSheet}
+              mediaSource={avatarMediaSource}
+              onMediaSourceChange={setAvatarMediaSource}
+              busy={busy}
+              onFile={handleAvatarFile}
+            />
           </>
         )}
 

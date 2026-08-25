@@ -122,9 +122,12 @@ test("eating surfaces use MenuplyMediaPicker", () => {
   assert.match(attach, /MenuplyMediaPicker/);
   assert.match(quick, /MenuplyMediaPicker/);
   assert.doesNotMatch(gallery, /MenuplyMediaPicker/);
-  assert.match(hero, /diner-avatar-native-camera-input/);
-  assert.match(hero, /capture="user"/);
-  assert.doesNotMatch(hero, /MenuplyMediaPicker/);
+  const avatarSheet = read("src/pages/consumer/myMenuply/AvatarComposeSheet.jsx");
+  assert.match(hero, /AvatarComposeSheet/);
+  assert.match(avatarSheet, /diner-avatar-compose-sheet/);
+  assert.match(avatarSheet, /MenuplyMediaPicker/);
+  assert.match(avatarSheet, /facingMode="user"/);
+  assert.doesNotMatch(hero, /capture="user"/);
 });
 
 test("Dining crew food photo uses MenuplyMediaPicker (not raw file input)", () => {

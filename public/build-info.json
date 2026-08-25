@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "ee49c2e7cda27c670fea7480f8397057cab4b7a0",
-  "gitShortSha": "ee49c2e",
+  "gitSha": "65d3f2424bd7ccf73a78226185420ef72203e29f",
+  "gitShortSha": "65d3f24",
   "branch": "main",
-  "buildTime": "2026-08-25T01:47:02.228Z",
+  "buildTime": "2026-08-25T02:13:12.146Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "feat: replace in-app video recorder with OS-native capture"
+  "commitMessage": "docs: lock LKG tip for Invite Me Out CPD"
 }

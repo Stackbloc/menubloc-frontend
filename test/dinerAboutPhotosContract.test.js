@@ -31,8 +31,9 @@ test("My Menuply identity hero is prominent with photo upload and short bio", ()
   assert.match(section, /data-testid="eating"/);
   assert.match(hero, /Change profile photo/);
   assert.match(hero, /ProfileMediaGallery/);
-  assert.match(hero, /MenuplyMediaPicker/);
-  assert.match(hero, /facingMode="user"/);
+  assert.match(hero, /AvatarComposeSheet/);
+  assert.match(read("src/pages/consumer/myMenuply/AvatarComposeSheet.jsx"), /MenuplyMediaPicker/);
+  assert.match(read("src/pages/consumer/myMenuply/AvatarComposeSheet.jsx"), /facingMode="user"/);
   assert.match(hero, /diner-about-input/);
   assert.match(hero, /maxLength=\{ABOUT_MAX\}/);
   assert.match(hero, /LA food explorer/);
