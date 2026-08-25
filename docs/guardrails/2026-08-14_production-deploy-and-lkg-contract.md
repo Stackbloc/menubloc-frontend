@@ -36,36 +36,45 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` @ clean `main` |
-| Git commit | `e25acc5` — includes plan windows ~4× (`3f811b9`) + owner diner hub |
-| Vercel deployment | `menubloc-frontend-2q95zr9z7-menuply.vercel.app` |
-| Live bundle | `index-Bc6lB1Ap.js` |
+| Git commit | `598b299` — hybrid camera Photo\|Video + TikTok-class limits |
+| Vercel deployment | `menubloc-frontend-kp8teptm7-menuply.vercel.app` |
+| Live bundle | `index-DCAdIaFJ.js` |
 | Aliases | `menuply.com`, `www.menuply.com`, `crm.menuply.com`, `venues.menuply.com` |
-| Tip-gate | **PASS** (apex + www) verified 2026-08-24 |
-| Feature | Plan placement windows ~4× + My Events chrono + owner diner capability tip |
+| Tip-gate | **PASS** (apex + www) verified 2026-08-25 |
+| Feature | Hybrid camera (OS native video) + 10 min / ~287 MB limits |
 
 ### Backend (Railway)
 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-backend-main` @ clean `main` |
-| Git on origin | `c368ab73` — includes events upcoming-first (`b4c8fdd4`) |
-| Live health SHA | `c368ab73` |
+| Git on origin | `e53dc7a4` — diner-media video ceiling ~287 MB |
+| Live health SHA | `e53dc7a4` |
 | Health URL | `https://menubloc-backend-production.up.railway.app/health` |
-| `commit_hash` | `c368ab73` |
+| `commit_hash` | `e53dc7a4a7e5852f52d7a81adcec5119ee7b3698` |
 | DB | migrations through `0286` |
-| Smoke | tip-gate PASS `2q95zr9z7` / `index-Bc6lB1Ap.js`; BE health; railway=59 localhost=9 |
+| Smoke | tip-gate PASS `kp8teptm7` / `index-DCAdIaFJ.js`; BE health; railway=59 localhost=9 |
 
 ### Restore current tip (if tip-gate fails mid-change)
 
 ```bash
 cd /Users/andrebarber/Desktop/menubloc/menubloc-frontend-main
-npx vercel alias set menubloc-frontend-7ni0ufwgq-menuply.vercel.app menuply.com
-npx vercel alias set menubloc-frontend-7ni0ufwgq-menuply.vercel.app www.menuply.com
-npx vercel alias set menubloc-frontend-7ni0ufwgq-menuply.vercel.app crm.menuply.com
-npx vercel alias set menubloc-frontend-7ni0ufwgq-menuply.vercel.app venues.menuply.com
+npx vercel alias set menubloc-frontend-kp8teptm7-menuply.vercel.app menuply.com
+npx vercel alias set menubloc-frontend-kp8teptm7-menuply.vercel.app www.menuply.com
+npx vercel alias set menubloc-frontend-kp8teptm7-menuply.vercel.app crm.menuply.com
+npx vercel alias set menubloc-frontend-kp8teptm7-menuply.vercel.app venues.menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 ```
+
+### Prior tip — plan windows + events chrono (rollback target)
+
+| Field | Value |
+|-------|-------|
+| Deployment | `menubloc-frontend-2q95zr9z7-menuply.vercel.app` |
+| Live bundle | `index-Bc6lB1Ap.js` |
+| FE commit | `e25acc5` |
+| BE health | `c368ab73` |
 
 ### Prior tip — Invite Me Out (rollback target)
 
