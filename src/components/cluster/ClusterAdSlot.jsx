@@ -164,11 +164,8 @@ function resolveMediaStyle(size) {
     return {
       ...base,
       height: "auto",
-      aspectRatio: "16 / 9",
-      maxHeight: 420,
-      objectFit: "contain",
-      objectPosition: "center top",
-      background: "#ffffff",
+      maxWidth: "100%",
+      objectFit: "unset",
     };
   }
   return { ...base, height: "auto", objectFit: "contain", objectPosition: "center top" };
@@ -216,7 +213,14 @@ function resolveFrameStyle(type, size, style = {}) {
     ...style,
   };
 
-  if (size === "hero") return { ...base, background: "#ffffff" };
+  if (size === "hero") {
+    return {
+      ...base,
+      background: "#ffffff",
+      overflow: "visible",
+      border: "1px solid #e5e7eb",
+    };
+  }
 
   switch (type) {
     case "Sponsored Card":

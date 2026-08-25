@@ -59,6 +59,7 @@ describe("venue advertising Phase 1 contracts", () => {
     for (const name of [
       "ad-menuply-eating-is-social.jpg",
       "ad-menuply-eating-is-social-wide.jpg",
+      "ad-menuply-eating-is-social-wide-v2.jpg",
       "ad-menuply-eating-is-social-slim.jpg",
       "ad-menuply-eating-is-social-small.jpg",
     ]) {

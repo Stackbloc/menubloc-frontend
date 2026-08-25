@@ -49,9 +49,9 @@ def export_portrait(src: Image.Image) -> None:
 
 
 def export_wide(src: Image.Image) -> None:
-    """1280×720 — branding band on top, lifestyle photo below."""
+    """1280×720 — generous branding band on top, lifestyle photo below."""
     w, h = 1280, 720
-    branding_h = 290
+    branding_h = 340
     photo_h = h - branding_h
 
     branding = src.crop((0, 0, src.width, BRANDING_BOTTOM))
@@ -63,7 +63,11 @@ def export_wide(src: Image.Image) -> None:
     canvas = Image.new("RGB", (w, h), (255, 255, 255))
     canvas.paste(branding, (0, 0))
     canvas.paste(photo, (0, branding_h))
-    canvas.save(OUT / "ad-menuply-eating-is-social-wide.jpg", quality=88, optimize=True)
+    for name in (
+        "ad-menuply-eating-is-social-wide.jpg",
+        "ad-menuply-eating-is-social-wide-v2.jpg",
+    ):
+        canvas.save(OUT / name, quality=88, optimize=True)
 
 
 def export_slim(src: Image.Image) -> None:
