@@ -36,33 +36,33 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` @ clean `main` |
-| Git commit | `598b299` — hybrid camera Photo\|Video + TikTok-class limits |
-| Vercel deployment | `menubloc-frontend-kp8teptm7-menuply.vercel.app` |
-| Live bundle | `index-DCAdIaFJ.js` |
+| Git commit | `f6f663e` — includes owner diner capability reports (`e25acc5`) |
+| Vercel deployment | `menubloc-frontend-bhsmmn3j5-menuply.vercel.app` |
+| Live bundle | `index-COswfWJg.js` |
 | Aliases | `menuply.com`, `www.menuply.com`, `crm.menuply.com`, `venues.menuply.com` |
 | Tip-gate | **PASS** (apex + www) verified 2026-08-25 |
-| Feature | Hybrid camera (OS native video) + 10 min / ~287 MB limits |
+| Feature | Owner diner capability metrics + My Menuply dialog (on tip with later main) |
 
 ### Backend (Railway)
 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-backend-main` @ clean `main` |
-| Git on origin | `e53dc7a4` — diner-media video ceiling ~287 MB |
-| Live health SHA | `e53dc7a4` |
+| Git on origin | `dadb5bf9` |
+| Live health SHA | `dadb5bf9` |
 | Health URL | `https://menubloc-backend-production.up.railway.app/health` |
-| `commit_hash` | `e53dc7a4a7e5852f52d7a81adcec5119ee7b3698` |
+| `commit_hash` | `dadb5bf9ccc8edd223780ee6e666f9bca6c97636` |
 | DB | migrations through `0286` |
-| Smoke | tip-gate PASS `kp8teptm7` / `index-DCAdIaFJ.js`; BE health; railway=59 localhost=9 |
+| Smoke | tip-gate PASS `bhsmmn3j5` / `index-COswfWJg.js`; BE includes diner stats `c368ab73`; railway=59 localhost=9 |
 
 ### Restore current tip (if tip-gate fails mid-change)
 
 ```bash
 cd /Users/andrebarber/Desktop/menubloc/menubloc-frontend-main
-npx vercel alias set menubloc-frontend-kp8teptm7-menuply.vercel.app menuply.com
-npx vercel alias set menubloc-frontend-kp8teptm7-menuply.vercel.app www.menuply.com
-npx vercel alias set menubloc-frontend-kp8teptm7-menuply.vercel.app crm.menuply.com
-npx vercel alias set menubloc-frontend-kp8teptm7-menuply.vercel.app venues.menuply.com
+npx vercel alias set menubloc-frontend-bhsmmn3j5-menuply.vercel.app menuply.com
+npx vercel alias set menubloc-frontend-bhsmmn3j5-menuply.vercel.app www.menuply.com
+npx vercel alias set menubloc-frontend-bhsmmn3j5-menuply.vercel.app crm.menuply.com
+npx vercel alias set menubloc-frontend-bhsmmn3j5-menuply.vercel.app venues.menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 ```
