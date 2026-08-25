@@ -8,6 +8,7 @@ import {
 } from "../../lib/consumerCameraCapture.js";
 import {
   captureAttrForFacing,
+  formatVideoMaxDurationLabel,
   normalizeNativeVideoFile,
 } from "../../lib/nativeVideoCapture.js";
 
@@ -178,6 +179,8 @@ export default function ConsumerCameraSheet({
     setMode(next);
   }
 
+  const maxLabel = formatVideoMaxDurationLabel();
+
   return (
     <div
       data-testid="consumer-camera-sheet"
@@ -201,7 +204,10 @@ export default function ConsumerCameraSheet({
               data-testid="consumer-camera-live"
             />
           ) : (
-            <div style={styles.videoIdle} data-testid="consumer-camera-video-idle" aria-hidden="true" />
+            <div style={styles.videoIdle} data-testid="consumer-camera-video-idle">
+              <p style={styles.videoIdleTitle}>Record video (up to {maxLabel})</p>
+              <p style={styles.videoIdleHint}>Opens your phone camera to record</p>
+            </div>
           )}
 
           {busy ? <div style={styles.loading}>{photoMode ? "Opening camera…" : "Checking video…"}</div> : null}
@@ -341,7 +347,27 @@ const styles = {
   videoIdle: {
     width: "100%",
     height: "100%",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    padding: 24,
+    textAlign: "center",
     background: "linear-gradient(165deg, #080d09 0%, #0f172a 55%, #14532d 100%)",
+  },
+  videoIdleTitle: {
+    margin: 0,
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: 800,
+    lineHeight: 1.3,
+  },
+  videoIdleHint: {
+    margin: 0,
+    color: "rgba(255,255,255,0.72)",
+    fontSize: 13,
+    fontWeight: 600,
   },
   loading: {
     position: "absolute",
