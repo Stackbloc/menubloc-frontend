@@ -4,7 +4,7 @@
  */
 
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
@@ -49,8 +49,20 @@ describe("venue advertising Phase 1 contracts", () => {
     assert.match(slot, /inventoryKey/);
     assert.match(slot, /data-ad-size/);
     assert.match(slot, /small/);
+    assert.match(slot, /objectFit:\s*"cover"/);
+    assert.match(slot, /resolveMediaStyle/);
     assert.doesNotMatch(slot, /LALIVE_/);
     assert.doesNotMatch(slot, /LA Live/);
+  });
+
+  it("Menuply social sample-ad assets exist for portrait wide and slim", () => {
+    for (const name of [
+      "ad-menuply-eating-is-social.jpg",
+      "ad-menuply-eating-is-social-wide.jpg",
+      "ad-menuply-eating-is-social-slim.jpg",
+    ]) {
+      assert.equal(existsSync(join(root, "public/sample-ads", name)), true, name);
+    }
   });
 
   it("advertisementApi uses public Railway-safe apiGet paths", () => {

@@ -50,12 +50,7 @@ export default function ClusterAdSlot({
   const resolvedSize = size || sizeForPlacement(pageRegion, type);
   const href = ad.destination_url || undefined;
   const frameStyle = resolveFrameStyle(type, resolvedSize, style);
-  const mediaStyle = {
-    width: "100%",
-    height: "auto",
-    display: "block",
-    verticalAlign: "top",
-  };
+  const mediaStyle = resolveMediaStyle(resolvedSize);
 
   const media = (
     <img src={ad.image_url} alt={ad.headline || ad.name || "Advertisement"} style={mediaStyle} />
@@ -138,6 +133,27 @@ function sizeForPlacement(pageRegion, type) {
   if (type === "Native Promotion" || type === "Inline Banner") return "small";
   if (type === "Hero Banner") return "hero";
   return "standard";
+}
+
+/** Keep frame sizes; cover-crop creatives so portrait/wide/slim assets fill without stretch. */
+function resolveMediaStyle(size) {
+  const base = {
+    width: "100%",
+    display: "block",
+    verticalAlign: "top",
+    objectFit: "cover",
+    objectPosition: "center",
+  };
+  if (size === "slim") {
+    return { ...base, height: 220, maxHeight: 220 };
+  }
+  if (size === "small") {
+    return { ...base, height: 148, maxHeight: 148 };
+  }
+  if (size === "hero") {
+    return { ...base, height: "auto", aspectRatio: "16 / 9", maxHeight: 420 };
+  }
+  return { ...base, height: "auto" };
 }
 
 function resolveFrameStyle(type, size, style = {}) {
