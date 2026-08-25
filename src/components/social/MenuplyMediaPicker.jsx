@@ -102,7 +102,7 @@ export default function MenuplyMediaPicker({
   }
 
   const isVideo = isVideoFile(file);
-  /** One camera control opens the sheet (Photo | Video inside). No separate Upload video row. */
+  /** One camera control opens the sheet (Photo | Video inside). No separate Record video row. */
   const showUnifiedCamera = canInlineSheet;
   const showVideoOnlyNative = !useLibrary && allowVideo && !allowPhoto;
 
