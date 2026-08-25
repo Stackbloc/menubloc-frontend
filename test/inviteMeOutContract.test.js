@@ -30,11 +30,16 @@ test("Invite Me Out flow uses want picker then InviteToEatModal schedule", () =>
 
 test("Diner chooses Invite Me Out audience in X → What I Want to Eat compose", () => {
   const section = read("src/pages/consumer/myMenuply/EatingHubSection.jsx");
-  assert.doesNotMatch(section, /InviteMeOutAudiencePicker/);
   assert.doesNotMatch(section, /invite-me-out-save/);
   assert.doesNotMatch(section, /want-invite-me-out-settings/);
   assert.match(section, /viewerMayInviteMeOut/);
   assert.match(section, /want-invite-me-out/);
+  assert.match(section, /want-invite-me-out-toggle/);
+  assert.match(section, /Invite Me Out is on/);
+  assert.match(section, /Invite Me Out is off/);
+  assert.match(section, /invite-me-out-settings-sheet/);
+  assert.match(section, /InviteMeOutAudiencePicker/);
+  assert.match(section, /onInviteMeOutSave/);
   assert.doesNotMatch(section, />Invite Me</);
 
   const compose = read("src/pages/consumer/myMenuply/EatingCompose.jsx");
@@ -51,7 +56,8 @@ test("Diner chooses Invite Me Out audience in X → What I Want to Eat compose",
   assert.match(picker, /invite-me-out-select-list/);
 
   const mine = read("src/pages/consumer/MyMenuplyPage.jsx");
-  assert.doesNotMatch(mine, /saveInviteMeOutAudience/);
+  assert.match(mine, /saveInviteMeOutSettings/);
+  assert.match(mine, /onInviteMeOutSave=\{saveInviteMeOutSettings\}/);
   assert.match(mine, /invite_me_out_audience/);
   assert.match(mine, /async function postWant/);
 });

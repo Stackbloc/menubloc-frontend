@@ -27,6 +27,7 @@ import {
 import { formatPlanBracketDate, futurePlanKey } from "./dinerHubFormat.js";
 import { whatIAteTodayLocalDate } from "../../../lib/consumerApi.js";
 import { defaultWhatIAteMealPeriod } from "../../../lib/whatIAteTodayMealPeriod.js";
+import InviteMeOutAudiencePicker from "./InviteMeOutAudiencePicker.jsx";
 import * as s from "./myMenuplyStyles.js";
 
 export function PlansCalendarGlyph() {
@@ -98,6 +99,8 @@ export default function EatingHubSection({
   inviteMeOutAudience = "connections",
   inviteMeOutSelectedIds = [],
   inviteMeOutCandidates = [],
+  onInviteMeOutSave,
+  inviteMeOutToggleBusy = false,
 }) {
   void liked;
   void foodHref;
@@ -111,6 +114,10 @@ export default function EatingHubSection({
   const setCalendarTitle = onCalendarTitleChange ?? setCalendarTitleLocal;
   const [composeDefaultMeal, setComposeDefaultMeal] = useState(defaultWhatIAteMealPeriod());
   const [composeInitialFile, setComposeInitialFile] = useState(null);
+  const [inviteSettingsOpen, setInviteSettingsOpen] = useState(false);
+  const [draftInviteOpen, setDraftInviteOpen] = useState(false);
+  const [draftAudience, setDraftAudience] = useState("connections");
+  const [draftSelectedIds, setDraftSelectedIds] = useState([]);
 
   function setMediaSource(next) {
     onComposeMediaSourceChange?.(next);
@@ -193,6 +200,25 @@ export default function EatingHubSection({
     onSchedulingPlansChange?.(false);
     setCalendarTitle("My Eating Plans");
     onCalendarOpenChange(true);
+  }
+
+  function openInviteMeOutSettings() {
+    setDraftInviteOpen(Boolean(inviteMeOutOpen));
+    setDraftAudience(inviteMeOutAudience === "selected" ? "selected" : "connections");
+    setDraftSelectedIds(
+      Array.isArray(inviteMeOutSelectedIds) ? [...inviteMeOutSelectedIds] : []
+    );
+    setInviteSettingsOpen(true);
+  }
+
+  async function saveInviteMeOutSettings() {
+    if (typeof onInviteMeOutSave !== "function") return;
+    await onInviteMeOutSave({
+      open: draftInviteOpen,
+      audience: draftAudience,
+      selectedIds: draftSelectedIds,
+    });
+    setInviteSettingsOpen(false);
   }
 
   const canInviteMeOut =
@@ -312,7 +338,29 @@ export default function EatingHubSection({
             deleteBusy={wantDeleteBusy}
             emptyMessage={null}
           />
-          {/* Invite Me Out = peer invites diner out for a saved want. */}
+          {/* Own hub only: Invite Me Out on/off — opens eligibility dialog (peers never see this). */}
+          {!readOnly ? (
+            <p
+              style={{ ...s.muted, fontSize: 13, marginTop: 10 }}
+              data-testid={inviteMeOutOpen ? "want-invite-me-out-on" : "want-invite-me-out-off"}
+            >
+              <button
+                type="button"
+                onClick={openInviteMeOutSettings}
+                disabled={inviteMeOutToggleBusy}
+                style={inviteMeOutButtonStyle}
+                data-testid="want-invite-me-out-toggle"
+                aria-pressed={inviteMeOutOpen}
+              >
+                {inviteMeOutOpen ? "Invite Me Out is on" : "Invite Me Out is off"}
+              </button>
+              {" — "}
+              {inviteMeOutOpen
+                ? "Connections you allow can invite you out. Tap to change who."
+                : "Tap to choose who can invite you out for a restaurant-linked want."}
+            </p>
+          ) : null}
+          {/* Peer hub: actionable link only when viewer is eligible. */}
           {canInviteMeOut ? (
             <p style={{ ...s.muted, fontSize: 13, marginTop: 10 }} data-testid="want-invite-me-out">
               <button
@@ -444,6 +492,75 @@ export default function EatingHubSection({
           inviteMeOutSelectedIds={inviteMeOutSelectedIds}
           inviteMeOutCandidates={inviteMeOutCandidates}
         />
+      ) : null}
+
+      {!readOnly && inviteSettingsOpen ? (
+        <div
+          role="presentation"
+          style={styles.planSheetBackdrop}
+          data-testid="invite-me-out-settings-sheet"
+          onClick={() => !inviteMeOutToggleBusy && setInviteSettingsOpen(false)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Invite Me Out settings"
+            style={styles.planSheetPanel}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={styles.planSheetHead}>
+              <p style={styles.planSheetTitle}>Invite Me Out</p>
+              <button
+                type="button"
+                style={styles.planSheetClose}
+                onClick={() => setInviteSettingsOpen(false)}
+                aria-label="Close"
+                disabled={inviteMeOutToggleBusy}
+              >
+                ✕
+              </button>
+            </div>
+            <p style={{ ...s.muted, fontSize: 13, margin: "0 0 8px" }}>
+              Choose who can invite you out for food you want to eat.
+            </p>
+            <InviteMeOutAudiencePicker
+              open={draftInviteOpen}
+              onOpenChange={setDraftInviteOpen}
+              audience={draftAudience}
+              onAudienceChange={setDraftAudience}
+              selectedIds={draftSelectedIds}
+              onSelectedIdsChange={setDraftSelectedIds}
+              candidates={inviteMeOutCandidates}
+              disabled={inviteMeOutToggleBusy}
+            />
+            <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+              <button
+                type="button"
+                style={s.primaryBtn}
+                data-testid="invite-me-out-settings-save"
+                disabled={
+                  inviteMeOutToggleBusy ||
+                  (draftInviteOpen &&
+                    draftAudience === "selected" &&
+                    draftSelectedIds.length === 0)
+                }
+                onClick={() => {
+                  void saveInviteMeOutSettings();
+                }}
+              >
+                {inviteMeOutToggleBusy ? "Saving…" : "Save"}
+              </button>
+              <button
+                type="button"
+                style={s.chipBtn}
+                disabled={inviteMeOutToggleBusy}
+                onClick={() => setInviteSettingsOpen(false)}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
       ) : null}
 
       {!readOnly && schedulingPlans ? (

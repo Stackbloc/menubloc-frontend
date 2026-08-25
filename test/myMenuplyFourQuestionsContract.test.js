@@ -36,7 +36,9 @@ test("My Menuply is the diner's personal home", () => {
   assert.match(section, /PostAfterActions/);
   assert.match(section, /Invite Me Out/);
   assert.doesNotMatch(section, /want-invite-me-out-settings/);
-  assert.doesNotMatch(section, /InviteMeOutAudiencePicker/);
+  assert.match(section, /InviteMeOutAudiencePicker/);
+  assert.match(section, /invite-me-out-settings-sheet/);
+  assert.match(section, /want-invite-me-out-toggle/);
   const compose = read("src/pages/consumer/myMenuply/EatingCompose.jsx");
   assert.match(compose, /want-invite-me-out-settings/);
   assert.match(compose, /InviteMeOutAudiencePicker/);
@@ -145,7 +147,7 @@ test("My Menuply is the diner's personal home", () => {
   assert.match(rails, /onHighlightDelete/);
   assert.match(page, /onHighlightDelete/);
   assert.match(read("src/pages/consumer/myMenuply/MyMenuplyPresentationRails.jsx"), /connections-avatar-strip/);
-  assert.match(read("src/pages/consumer/myMenuply/MyMenuplyPresentationRails.jsx"), /\/my-menuply\/connections-eating/);
+  assert.doesNotMatch(read("src/pages/consumer/myMenuply/MyMenuplyPresentationRails.jsx"), /\/my-menuply\/connections-eating/);
   assert.match(eatingPage, /StickyPageHeader title="My Connections"/);
   const eatingCompose = read("src/pages/consumer/myMenuply/EatingCompose.jsx");
   assert.match(eatingCompose, /MenuplyMediaPicker/);

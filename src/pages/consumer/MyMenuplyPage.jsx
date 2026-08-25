@@ -166,6 +166,7 @@ export default function MyMenuplyPage() {
   const [inviteMeOutOpen, setInviteMeOutOpen] = useState(false);
   const [inviteMeOutAudience, setInviteMeOutAudience] = useState("connections");
   const [inviteMeOutSelectedIds, setInviteMeOutSelectedIds] = useState([]);
+  const [inviteMeOutToggleBusy, setInviteMeOutToggleBusy] = useState(false);
   const [composeOpen, setComposeOpen] = useState(false);
   const [composeDefaultCategory, setComposeDefaultCategory] = useState("ate");
   const [composeMediaSource, setComposeMediaSource] = useState("camera");
@@ -819,6 +820,38 @@ export default function MyMenuplyPage() {
     }
   }
 
+  async function saveInviteMeOutSettings({ open, audience, selectedIds }) {
+    setInviteMeOutToggleBusy(true);
+    setError("");
+    try {
+      const nextAudience = open
+        ? audience === "selected"
+          ? "selected"
+          : "connections"
+        : "none";
+      const profileData = await updateConsumerProfile({
+        invite_me_out_audience: nextAudience,
+        invite_me_out_allowed_user_ids:
+          nextAudience === "selected" ? selectedIds || [] : [],
+      });
+      const next = profileData?.profile || {};
+      setProfile((prev) => ({ ...(prev || {}), ...next }));
+      const savedAudience = String(next.invite_me_out_audience || nextAudience).toLowerCase();
+      setInviteMeOutOpen(savedAudience !== "none");
+      setInviteMeOutAudience(savedAudience === "selected" ? "selected" : "connections");
+      setInviteMeOutSelectedIds(
+        Array.isArray(next.invite_me_out_allowed_user_ids)
+          ? next.invite_me_out_allowed_user_ids
+          : []
+      );
+    } catch (err) {
+      setError(err.message || "Unable to update Invite Me Out");
+      throw err;
+    } finally {
+      setInviteMeOutToggleBusy(false);
+    }
+  }
+
   async function postWant({
     text,
     file,
@@ -1325,6 +1358,8 @@ export default function MyMenuplyPage() {
               inviteMeOutAudience={inviteMeOutAudience}
               inviteMeOutSelectedIds={inviteMeOutSelectedIds}
               inviteMeOutCandidates={joinCandidates}
+              onInviteMeOutSave={saveInviteMeOutSettings}
+              inviteMeOutToggleBusy={inviteMeOutToggleBusy}
               planPrefill={planPrefill}
               locationCity={locationCity}
               locationState={locationState}
