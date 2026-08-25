@@ -1,6 +1,9 @@
 /**
  * Native OS video capture — phone camera / file picker produces the clip.
  * Replaces in-app MediaRecorder (unreliable across Safari/Chrome).
+ *
+ * Decode probe is soft: many phone cameras produce HEVC/MOV that desktop Chrome
+ * cannot decode in a hidden <video>, but the file is still a valid upload.
  */
 
 import {
@@ -18,17 +21,32 @@ export {
   formatVideoMaxDurationLabel,
 };
 
+const VIDEO_NAME_RE = /\.(mp4|mov|m4v|webm|mkv)$/i;
+
 export function captureAttrForFacing(facingMode = "environment") {
   return facingMode === "user" ? "user" : "environment";
 }
 
-/** Sync gate before accept — type + upload size only. */
+function baseMime(file) {
+  return String(file?.type || "")
+    .toLowerCase()
+    .split(";")[0]
+    .trim();
+}
+
+export function looksLikeVideoFile(file) {
+  if (!file) return false;
+  const mime = baseMime(file);
+  if (mime.startsWith("video/")) return true;
+  return VIDEO_NAME_RE.test(String(file.name || ""));
+}
+
+/** Sync gate before accept — type/extension + upload size only. */
 export function validateNativeVideoFile(file) {
   if (!file || !Number(file.size)) {
     throw new Error("No video was selected. Try again.");
   }
-  const type = String(file.type || "").toLowerCase();
-  if (!type.startsWith("video/")) {
+  if (!looksLikeVideoFile(file)) {
     throw new Error("That file is not a video. Record again with your phone camera.");
   }
   if (file.size > MAX_UPLOAD_VIDEO_BYTES) {
@@ -40,7 +58,8 @@ export function validateNativeVideoFile(file) {
 }
 
 /**
- * Metadata probe after OS capture — no MediaRecorder blobs, no URL fragments.
+ * Best-effort metadata probe. Prefer dimensions; duration may be Infinity/NaN.
+ * Rejects only when duration is known and over the TikTok-class cap.
  */
 export function probeNativeVideoFile(file) {
   validateNativeVideoFile(file);
@@ -57,7 +76,14 @@ export function probeNativeVideoFile(file) {
       if (settled) return;
       settled = true;
       window.clearTimeout(timerId);
+      try {
+        video.pause();
+      } catch {
+        /* ignore */
+      }
       video.onloadedmetadata = null;
+      video.onloadeddata = null;
+      video.oncanplay = null;
       video.onerror = null;
       video.removeAttribute("src");
       video.load();
@@ -69,11 +95,7 @@ export function probeNativeVideoFile(file) {
       finish(reject, new Error("Could not read that video. Try recording again."));
     }, 12_000);
 
-    video.onloadedmetadata = () => {
-      if (video.videoWidth <= 0 || video.videoHeight <= 0) {
-        finish(reject, new Error("That video looks blank. Try recording again."));
-        return;
-      }
+    const tryAccept = () => {
       const dur = Number(video.duration);
       if (Number.isFinite(dur) && dur > SOCIAL_VIDEO_MAX_RECORD_SECONDS + 1.5) {
         finish(
@@ -84,12 +106,18 @@ export function probeNativeVideoFile(file) {
         );
         return;
       }
+      // Dimensions preferred; some containers report 0 until canplay — keep waiting.
+      if (video.videoWidth <= 0 || video.videoHeight <= 0) return;
       finish(resolve, {
         width: video.videoWidth,
         height: video.videoHeight,
         duration: dur,
       });
     };
+
+    video.onloadedmetadata = tryAccept;
+    video.onloadeddata = tryAccept;
+    video.oncanplay = tryAccept;
 
     video.onerror = () => {
       finish(reject, new Error("Could not read that video. Try recording again."));
@@ -100,11 +128,41 @@ export function probeNativeVideoFile(file) {
   });
 }
 
+function resolveVideoMimeAndExt(file) {
+  const mime = baseMime(file);
+  const name = String(file.name || "").toLowerCase();
+  if (mime.includes("webm") || name.endsWith(".webm")) {
+    return { type: mime || "video/webm", ext: "webm" };
+  }
+  if (mime.includes("quicktime") || name.endsWith(".mov")) {
+    return { type: mime || "video/quicktime", ext: "mov" };
+  }
+  if (name.endsWith(".m4v")) {
+    return { type: mime || "video/mp4", ext: "m4v" };
+  }
+  return { type: mime && mime.startsWith("video/") ? mime : "video/mp4", ext: "mp4" };
+}
+
+/**
+ * Normalize OS camera / picker file for compose + upload.
+ * Soft-probes decode: if the browser cannot preview HEVC/MOV, still accept after
+ * size/type gates so the diner can Post (upload path does not require browser decode).
+ */
 export async function normalizeNativeVideoFile(rawFile) {
-  await probeNativeVideoFile(rawFile);
-  const type = String(rawFile.type || "video/mp4").split(";")[0].trim().toLowerCase();
-  const ext = type.includes("mp4") ? "mp4" : type.includes("quicktime") ? "mov" : "webm";
+  validateNativeVideoFile(rawFile);
+
+  try {
+    await probeNativeVideoFile(rawFile);
+  } catch (err) {
+    const msg = String(err?.message || "");
+    // Hard gates only — decode/preview failures must not block Post.
+    if (/too long/i.test(msg) || /too large/i.test(msg) || /not a video/i.test(msg) || /No video was selected/i.test(msg)) {
+      throw err;
+    }
+  }
+
+  const { type, ext } = resolveVideoMimeAndExt(rawFile);
   const baseName = String(rawFile.name || "").trim() || `menuply-video-${Date.now()}.${ext}`;
-  if (rawFile.name && rawFile.type) return rawFile;
+  if (rawFile.name && baseMime(rawFile).startsWith("video/")) return rawFile;
   return new File([rawFile], baseName, { type: type || "video/mp4" });
 }

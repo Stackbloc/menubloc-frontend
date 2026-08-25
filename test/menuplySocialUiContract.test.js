@@ -36,6 +36,10 @@ test("ConsumerCameraSheet photo snap + Video mode launches OS native capture", (
   assert.match(sheet, /consumer-camera-record-native/);
   assert.match(sheet, /normalizeNativeVideoFile/);
   assert.match(sheet, /accept="video\/\*"/);
+  assert.match(sheet, /Upload video \(up to/);
+  assert.match(sheet, /Upload video/);
+  assert.doesNotMatch(sheet, /Record with your phone camera/);
+  assert.doesNotMatch(sheet, />Record video</);
   assert.doesNotMatch(sheet, /createCameraMediaRecorder/);
   assert.doesNotMatch(sheet, /validateRecordedVideoBlob/);
   assert.doesNotMatch(sheet, /consumer-camera-record(?!-native)/);
@@ -97,11 +101,12 @@ test("X ate/want auto-opens camera sheet from compose", () => {
   assert.match(page, /composeMediaSource/);
 });
 
-test("Post about no longer lists Upload from library in X sheet", () => {
+test("X sheet lists Upload media (library) separate from camera What I'm Eating", () => {
   const sheet = read("src/components/MenuplyActionSheet.jsx");
-  assert.doesNotMatch(sheet, /id: "upload-media"/);
-  assert.doesNotMatch(sheet, /Upload from library/);
-  assert.doesNotMatch(sheet, /compose=ate&media=library/);
+  assert.match(sheet, /id: "upload-media"/);
+  assert.match(sheet, /Upload media/);
+  assert.match(sheet, /compose=ate&media=library/);
+  assert.match(sheet, /"ate", "upload-media", "want"/);
 });
 
 test("What I Ate meal board is presentation-only (no empty cameras)", () => {

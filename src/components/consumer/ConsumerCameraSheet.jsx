@@ -186,7 +186,7 @@ export default function ConsumerCameraSheet({
       data-testid="consumer-camera-sheet"
       role="dialog"
       aria-modal="true"
-      aria-label={photoMode ? "Take photo" : "Record video"}
+      aria-label={photoMode ? "Take photo" : "Upload video"}
       style={styles.overlay}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose?.();
@@ -205,8 +205,8 @@ export default function ConsumerCameraSheet({
             />
           ) : (
             <div style={styles.videoIdle} data-testid="consumer-camera-video-idle">
-              <p style={styles.videoIdleTitle}>Record with your phone camera</p>
-              <p style={styles.videoIdleHint}>Up to {maxLabel} · uploads to Menuply</p>
+              <p style={styles.videoIdleTitle}>Upload video (up to {maxLabel})</p>
+              <p style={styles.videoIdleHint}>Uses your phone camera · uploads to Menuply</p>
             </div>
           )}
 
@@ -290,7 +290,7 @@ export default function ConsumerCameraSheet({
               onClick={openNativeVideoRecorder}
               data-testid="consumer-camera-record-native"
             >
-              Record video
+              Upload video
             </button>
           )}
         </div>

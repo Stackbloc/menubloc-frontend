@@ -15,7 +15,7 @@ export default function NativeVideoCapture({
   disabled = false,
   facingMode = "environment",
   testId = "native-video-capture",
-  buttonLabel = "Record video",
+  buttonLabel = "Upload video",
   compact = false,
 }) {
   const inputRef = useRef(null);

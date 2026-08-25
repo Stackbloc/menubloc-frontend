@@ -71,7 +71,8 @@ test("X sheet creates My Menuply content; Diner QR first; no I'm Eating At / My 
   );
   assert.match(sheet, /POST_ABOUT_SECTIONS/);
   assert.match(sheet, /id: "account"/);
-  assert.doesNotMatch(sheet, /id: "upload-media"/);
+  assert.match(sheet, /id: "upload-media"/);
+  assert.match(sheet, /compose=ate&media=library/);
   assert.doesNotMatch(sheet, /id: "im-eating"/);
   assert.doesNotMatch(sheet, /I'm Eating At/);
   assert.doesNotMatch(sheet, /id: "connects"/);

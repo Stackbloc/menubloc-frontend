@@ -44,8 +44,15 @@ const ACTION_DEFS = {
   ate: {
     id: "ate",
     title: "What I'm Eating",
-    description: "Photo or video of what you're eating — restaurant or homemade.",
+    description: "Camera — photo or video of what you're eating now.",
     to: "/my-menuply?compose=ate",
+    guestOk: false,
+  },
+  "upload-media": {
+    id: "upload-media",
+    title: "Upload media",
+    description: "Choose a photo or video from your phone library, then post.",
+    to: "/my-menuply?compose=ate&media=library",
     guestOk: false,
   },
   want: {
@@ -134,7 +141,7 @@ export const POST_ABOUT_SECTIONS = [
     id: "eating",
     title: "Eating",
     defaultOpen: true,
-    actionIds: ["ate", "want", "profile-gallery"],
+    actionIds: ["ate", "upload-media", "want", "profile-gallery"],
   },
   {
     id: "plan-invite",

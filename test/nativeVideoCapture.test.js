@@ -28,6 +28,20 @@ test("validateNativeVideoFile accepts video mime", () => {
   assert.equal(validateNativeVideoFile(file), file);
 });
 
+test("validateNativeVideoFile accepts empty mime with video extension", () => {
+  const file = new File([new Uint8Array(9000)], "clip.mov", { type: "" });
+  assert.equal(validateNativeVideoFile(file), file);
+});
+
+test("normalizeNativeVideoFile soft-accepts when probe cannot decode", async () => {
+  const { normalizeNativeVideoFile } = await import("../src/lib/nativeVideoCapture.js");
+  // Tiny non-decodable bytes with video mime — probe fails; normalize must still return a File.
+  const raw = new File([new Uint8Array(9000)], "phone-clip.mov", { type: "video/quicktime" });
+  const out = await normalizeNativeVideoFile(raw);
+  assert.ok(out instanceof File);
+  assert.ok(Number(out.size) > 0);
+});
+
 test("captureAttrForFacing maps user vs environment", () => {
   assert.equal(captureAttrForFacing("user"), "user");
   assert.equal(captureAttrForFacing("environment"), "environment");
@@ -48,6 +62,13 @@ test("ConsumerCameraSheet Video mode uses OS native capture (no MediaRecorder)",
   assert.match(sheet, /consumer-camera-record-native/);
   assert.doesNotMatch(sheet, /createCameraMediaRecorder/);
   assert.doesNotMatch(sheet, /validateRecordedVideoBlob/);
+});
+
+test("native video normalize soft-probes decode (does not hard-block Post)", () => {
+  const lib = read("src/lib/nativeVideoCapture.js");
+  assert.match(lib, /Soft-probes decode|soft-accept|Soft:/i);
+  assert.match(lib, /looksLikeVideoFile/);
+  assert.match(lib, /too long/i);
 });
 
 test("native video max record seconds is TikTok-like (10 minutes)", () => {
