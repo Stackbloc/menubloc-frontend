@@ -36,36 +36,56 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` @ clean `main` |
-| Git commit | `01ddc2d` — Record video copy restore (incl. `ecde436` Eating order, `5d6e26a` Android soft-accept) |
-| Vercel deployment | `menubloc-frontend-2cgb8v0pn-menuply.vercel.app` |
-| Live bundle | `index-DP4hQTxR.js` |
+| Git commit | `b6d894d` — sticky high-tech See Who’s Eating; drop My Menuply lead |
+| Vercel deployment | `menubloc-frontend-80fy979wl-menuply.vercel.app` |
+| Live bundle | `index-BfPQn7JE.js` |
 | Aliases | `menuply.com`, `www.menuply.com`, `crm.menuply.com`, `venues.menuply.com` |
 | Tip-gate | **PASS** (apex + www) verified 2026-08-25 |
-| Feature | Camera sheet says **Record video** again; X Upload media remains library path |
+| Feature | See Who’s Eating sticky HUD reel; Invite Me Out on/off; no hero “social food profile” lead |
 
 ### Backend (Railway)
 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-backend-main` @ clean `main` |
-| Git on origin | `b0781d7a` |
-| Live health SHA | `b0781d7a` |
+| Git on origin | `bacd8051` |
+| Live health SHA | `bacd8051` |
 | Health URL | `https://menubloc-backend-production.up.railway.app/health` |
-| `commit_hash` | `b0781d7a…` |
-| DB | migrations through `0286` |
-| Smoke | tip-gate PASS `2cgb8v0pn` / `index-DP4hQTxR.js`; `Record video (up to` in bundle; railway=59 localhost=9 |
+| `commit_hash` | `bacd8051…` |
+| DB | migrations through `0288` |
+| Smoke | tip-gate PASS `80fy979wl` / `index-BfPQn7JE.js`; railway=59 localhost=9 |
 
 ### Restore current tip (if tip-gate fails mid-change)
 
 ```bash
 cd /Users/andrebarber/Desktop/menubloc/menubloc-frontend-main
-npx vercel alias set menubloc-frontend-2cgb8v0pn-menuply.vercel.app menuply.com
-npx vercel alias set menubloc-frontend-2cgb8v0pn-menuply.vercel.app www.menuply.com
-npx vercel alias set menubloc-frontend-2cgb8v0pn-menuply.vercel.app crm.menuply.com
-npx vercel alias set menubloc-frontend-2cgb8v0pn-menuply.vercel.app venues.menuply.com
+npx vercel alias set menubloc-frontend-80fy979wl-menuply.vercel.app menuply.com
+npx vercel alias set menubloc-frontend-80fy979wl-menuply.vercel.app www.menuply.com
+npx vercel alias set menubloc-frontend-80fy979wl-menuply.vercel.app crm.menuply.com
+npx vercel alias set menubloc-frontend-80fy979wl-menuply.vercel.app venues.menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 ```
+
+### Prior tip — camera idle verbiage removed (rollback target)
+
+| Field | Value |
+|-------|-------|
+| Deployment | `menubloc-frontend-3mxbigczz-menuply.vercel.app` |
+| Live bundle | `index-DgFyE8U0.js` |
+| FE commit | `d8969f7` |
+| BE health | `b0781d7a` |
+| Notes | Blank video idle panel; pre–See Who’s Eating tip |
+
+### Prior tip — Record video copy restore (rollback target)
+
+| Field | Value |
+|-------|-------|
+| Deployment | `menubloc-frontend-2cgb8v0pn-menuply.vercel.app` |
+| Live bundle | `index-DP4hQTxR.js` |
+| FE commit | `01ddc2d` |
+| BE health | `b0781d7a` |
+| Notes | Idle panel still showed Record video (up to 10 minutes) |
 
 ### Prior tip — X sheet Eating order (rollback target)
 
@@ -75,7 +95,6 @@ bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 | Live bundle | `index-DON2o8Iy.js` |
 | FE commit | `ecde436` |
 | BE health | `b0781d7a` |
-| Notes | Camera still said Upload video |
 
 ### Prior tip — ShareModal mobile lift (rollback target)
 
