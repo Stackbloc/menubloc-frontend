@@ -21,11 +21,14 @@ test("eating plan visual helper prefers logo then billboard for restaurant-bound
 
 test("FuturePlanRow renders logo, billboard name overlay, or text fallback", () => {
   const bits = read("src/pages/consumer/myMenuply/myMenuplyBits.jsx");
+  const styles = read("src/pages/consumer/myMenuply/myMenuplyStyles.js");
   assert.match(bits, /EatingPlanRestaurantMark/);
   assert.match(bits, /eating-plan-logo/);
   assert.match(bits, /eating-plan-billboard/);
   assert.match(bits, /resolveEatingPlanVisual/);
   assert.match(bits, /planCardMarkBillboardName/);
+  assert.match(styles, /width: 192/);
+  assert.match(styles, /planCardMark = \{/);
 });
 
 test("EventComposeSheet stays open and shows error when create fails", () => {

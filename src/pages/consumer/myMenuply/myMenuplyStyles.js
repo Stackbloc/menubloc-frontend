@@ -1319,25 +1319,28 @@ export const planCardBold = {
   border: `1px solid ${BORDER}`,
   background: "#fff",
   borderRadius: 16,
-  padding: "16px 16px 14px",
+  padding: "14px 14px 12px",
   font: "inherit",
   cursor: "pointer",
-  marginBottom: 10,
+  marginBottom: 12,
   boxShadow: "0 10px 24px rgba(20, 83, 45, 0.08)",
   display: "block",
 };
 
 export const planCardHead = {
   display: "flex",
-  alignItems: "flex-start",
-  gap: 12,
+  alignItems: "center",
+  gap: 14,
 };
 
+/** Restaurant logo / billboard window — ~4× prior 48px mark. */
 export const planCardMark = {
   position: "relative",
-  width: 48,
-  height: 48,
-  borderRadius: 12,
+  width: 192,
+  maxWidth: "42%",
+  aspectRatio: "1 / 1",
+  height: "auto",
+  borderRadius: 16,
   overflow: "hidden",
   flexShrink: 0,
   background: "#f8fafc",
@@ -1351,7 +1354,7 @@ export const planCardMarkLogo = {
   width: "100%",
   height: "100%",
   objectFit: "contain",
-  padding: 4,
+  padding: 12,
   display: "block",
 };
 
@@ -1367,15 +1370,15 @@ export const planCardMarkBillboardScrim = {
   inset: 0,
   display: "flex",
   alignItems: "flex-end",
-  padding: "4px 6px",
-  background: "linear-gradient(180deg, transparent 35%, rgba(15, 23, 42, 0.82) 100%)",
+  padding: "12px 12px 10px",
+  background: "linear-gradient(180deg, transparent 40%, rgba(15, 23, 42, 0.85) 100%)",
 };
 
 export const planCardMarkBillboardName = {
-  fontSize: 9,
+  fontSize: 15,
   fontWeight: 800,
   color: "#fff",
-  lineHeight: 1.15,
+  lineHeight: 1.2,
   letterSpacing: "-0.01em",
   textShadow: "0 1px 2px rgba(0, 0, 0, 0.45)",
   overflow: "hidden",
@@ -1391,9 +1394,11 @@ export const planCardCopy = {
 
 export const planCardMarkDetail = {
   position: "relative",
-  width: 56,
-  height: 56,
-  borderRadius: 12,
+  width: 192,
+  maxWidth: "42%",
+  aspectRatio: "1 / 1",
+  height: "auto",
+  borderRadius: 16,
   overflow: "hidden",
   flexShrink: 0,
   background: "#f8fafc",
