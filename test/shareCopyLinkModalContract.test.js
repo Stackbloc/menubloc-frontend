@@ -29,6 +29,8 @@ test("ShareModal exposes Copy Link as the primary share action", () => {
   assert.match(shareModal, /Copy the link, then paste it into any app/);
   assert.match(shareModal, /data-testid="share-url-preview"/);
   assert.match(shareModal, /Share via device/);
+  assert.match(shareModal, /--bottom-nav-h/);
+  assert.match(shareModal, /maxHeight:/);
 });
 
 test("ShareModal null-safes buildShareLinks before early return", () => {

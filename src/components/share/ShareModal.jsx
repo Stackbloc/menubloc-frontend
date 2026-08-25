@@ -182,6 +182,9 @@ export default function ShareModal({
   const isWide =
     typeof window !== "undefined" && window.matchMedia?.("(min-width: 640px)")?.matches;
 
+  const bottomNavLift =
+    "calc(var(--bottom-nav-h, 72px) + env(safe-area-inset-bottom, 0px))";
+
   const overlayStyle = {
     position: "fixed",
     inset: 0,
@@ -190,12 +193,17 @@ export default function ShareModal({
     display: "flex",
     alignItems: isWide ? "center" : "flex-end",
     justifyContent: "center",
-    padding: isWide ? 24 : 0,
+    padding: isWide ? 24 : `0 0 ${bottomNavLift}`,
+    boxSizing: "border-box",
   };
 
   const cardStyle = {
     width: "100%",
     maxWidth: 480,
+    maxHeight: isWide
+      ? "min(90vh, 640px)"
+      : "min(85vh, calc(100vh - var(--bottom-nav-h, 72px) - env(safe-area-inset-bottom, 0px) - 16px))",
+    overflowY: "auto",
     borderRadius: isWide ? 20 : "20px 20px 0 0",
     background: "#ffffff",
     border: "1px solid rgba(15, 23, 42, 0.08)",
@@ -207,6 +215,7 @@ export default function ShareModal({
       ? "18px 18px 18px"
       : "10px 18px calc(18px + env(safe-area-inset-bottom, 0px))",
     boxSizing: "border-box",
+    WebkitOverflowScrolling: "touch",
   };
 
   const actionStyle = {
