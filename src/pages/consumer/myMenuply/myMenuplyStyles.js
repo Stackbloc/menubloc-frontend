@@ -23,11 +23,21 @@ export const page = {
 
 export const pageHeroBand = {
   margin: "0 -16px 0",
-  padding: "18px 16px 20px",
+  padding: "18px 16px 16px",
   background: "linear-gradient(165deg, #14532d 0%, #166534 48%, #15803d 100%)",
   color: "#fff",
-  borderRadius: "0 0 24px 24px",
-  boxShadow: "0 12px 32px rgba(20, 83, 45, 0.22)",
+  borderRadius: 0,
+  boxShadow: "none",
+};
+
+/** Sticky unit: green My Menuply title + See Who's Eating live feed. */
+export const stickyTitleAndFeed = {
+  position: "sticky",
+  top: "var(--sph-h, 56px)",
+  zIndex: 40,
+  margin: "0 -16px 14px",
+  background: "linear-gradient(165deg, #14532d 0%, #166534 40%, #0a1f14 100%)",
+  boxShadow: "0 12px 28px rgba(0, 0, 0, 0.28)",
 };
 
 export const kicker = {
@@ -176,6 +186,14 @@ export const settingsIconLink = {
   border: "1px solid rgba(15, 23, 42, 0.12)",
   textDecoration: "none",
   flex: "0 0 auto",
+};
+
+/** Gear on green hero band (My Menuply sticky head). */
+export const settingsIconLinkOnGreen = {
+  ...settingsIconLink,
+  color: "#ecfdf5",
+  background: "rgba(255,255,255,0.12)",
+  border: "1px solid rgba(255,255,255,0.28)",
 };
 
 export const settingsTextLink = {

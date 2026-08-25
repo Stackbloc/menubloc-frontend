@@ -61,6 +61,8 @@ function HighlightCard({ card, large = false, readOnly = false, onDelete, delete
             style={railStyles.highlightImg}
             playing={videoPlaying}
             onRequestPlay={() => setVideoPlaying(true)}
+            fallbackPoster={card.videoPosterUrl || ""}
+            fallbackPosterFit={card.videoPosterFit || "cover"}
             testId="top-highlight-video"
           />
         ) : card.image ? (

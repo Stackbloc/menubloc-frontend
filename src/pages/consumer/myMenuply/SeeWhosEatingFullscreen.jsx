@@ -1,16 +1,19 @@
 /**
- * Fullscreen vertical See Who's Eating reel.
- * Screen name tap → Connection request (notify) when signed in; guests → login.
- * Dish links use CK menu_item_id → /menu-items/:id.
+ * TikTok-style See Who's Eating fullscreen reel.
+ * Edge-to-edge cover video · swipe/flip up for next · clear exit (× / Escape / swipe down on first).
+ * Screen name → Connect request when signed in; guests → login.
  */
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Link, useNavigate } from "react-router-dom";
 import { requestConnection } from "../../../lib/consumerApi.js";
 import {
   MENUPY_CLOSE_LIVE_FEED_FULLSCREEN,
   stripMediaUrlFragment,
 } from "../../../lib/menuplyLiveFeedControl.js";
+
+const SWIPE_MIN_PX = 56;
 
 export default function SeeWhosEatingFullscreen({
   items = [],
@@ -25,6 +28,7 @@ export default function SeeWhosEatingFullscreen({
   const [connectNotice, setConnectNotice] = useState("");
   const [connectError, setConnectError] = useState("");
   const videoRef = useRef(null);
+  const touchStartY = useRef(null);
   const item = items[index] || null;
 
   useEffect(() => {
@@ -43,6 +47,18 @@ export default function SeeWhosEatingFullscreen({
     window.addEventListener(MENUPY_CLOSE_LIVE_FEED_FULLSCREEN, onForcedClose);
     return () => window.removeEventListener(MENUPY_CLOSE_LIVE_FEED_FULLSCREEN, onForcedClose);
   }, [onClose]);
+
+  // Lock page scroll while the reel owns the viewport.
+  useEffect(() => {
+    const prevOverflow = document.body.style.overflow;
+    const prevTouch = document.body.style.touchAction;
+    document.body.style.overflow = "hidden";
+    document.body.style.touchAction = "none";
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      document.body.style.touchAction = prevTouch;
+    };
+  }, []);
 
   useEffect(() => {
     const el = videoRef.current;
@@ -65,17 +81,54 @@ export default function SeeWhosEatingFullscreen({
 
   useEffect(() => {
     function onKey(e) {
-      if (e.key === "Escape") onClose?.();
-      if (e.key === "ArrowDown" || e.key === "ArrowRight") {
-        setIndex((i) => Math.min(i + 1, items.length - 1));
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onClose?.();
+        return;
       }
-      if (e.key === "ArrowUp" || e.key === "ArrowLeft") {
-        setIndex((i) => Math.max(i - 1, 0));
+      if (e.key === "ArrowDown" || e.key === "ArrowRight" || e.key === "j") {
+        e.preventDefault();
+        goNext();
+      }
+      if (e.key === "ArrowUp" || e.key === "ArrowLeft" || e.key === "k") {
+        e.preventDefault();
+        goPrevOrClose();
       }
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [items.length, onClose]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- goNext/goPrev close over latest index
+  }, [items.length, index, onClose]);
+
+  function goNext() {
+    setIndex((i) => (i + 1 < items.length ? i + 1 : i));
+  }
+
+  function goPrevOrClose() {
+    if (index <= 0) {
+      onClose?.();
+      return;
+    }
+    setIndex((i) => i - 1);
+  }
+
+  function onTouchStart(e) {
+    const t = e.changedTouches?.[0];
+    if (!t) return;
+    touchStartY.current = t.clientY;
+  }
+
+  function onTouchEnd(e) {
+    const start = touchStartY.current;
+    touchStartY.current = null;
+    const t = e.changedTouches?.[0];
+    if (start == null || !t) return;
+    const dy = t.clientY - start;
+    if (Math.abs(dy) < SWIPE_MIN_PX) return;
+    // Finger moves up → content flips up → next video (TikTok).
+    if (dy < 0) goNext();
+    else goPrevOrClose();
+  }
 
   async function onScreenNameClick(e) {
     e.preventDefault();
@@ -84,9 +137,7 @@ export default function SeeWhosEatingFullscreen({
     if (!peerId) return;
 
     if (!isAuthenticated) {
-      navigate(
-        `/account/login?next=${encodeURIComponent("/my-menuply")}`
-      );
+      navigate(`/account/login?next=${encodeURIComponent("/my-menuply")}`);
       return;
     }
 
@@ -124,7 +175,7 @@ export default function SeeWhosEatingFullscreen({
     }
   }
 
-  if (!item) return null;
+  if (!item || typeof document === "undefined") return null;
 
   const dishHref =
     item.menu_item_href ||
@@ -133,17 +184,38 @@ export default function SeeWhosEatingFullscreen({
     ? `/r/${encodeURIComponent(item.restaurant_slug)}`
     : null;
   const screenName = item.diner?.display_name || "A diner";
+  const atEnd = index >= items.length - 1;
+  const atStart = index <= 0;
 
-  return (
+  const ui = (
     <div
       style={styles.overlay}
       data-testid="see-whos-eating-fullscreen"
       role="dialog"
       aria-modal="true"
+      aria-label="See who's eating"
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
     >
-      <button type="button" style={styles.close} onClick={onClose} aria-label="Close">
+      <button
+        type="button"
+        style={styles.close}
+        onClick={onClose}
+        aria-label="Close fullscreen"
+        data-testid="see-whos-eating-fullscreen-close"
+      >
         ×
       </button>
+
+      <button
+        type="button"
+        style={styles.exitChip}
+        onClick={onClose}
+        data-testid="see-whos-eating-fullscreen-exit"
+      >
+        Exit
+      </button>
+
       <video
         key={item.id}
         ref={videoRef}
@@ -155,10 +227,15 @@ export default function SeeWhosEatingFullscreen({
         autoPlay
         controls={false}
         preload="auto"
-        onClick={() => {
-          setIndex((i) => (i + 1 < items.length ? i + 1 : i));
+        onClick={(e) => {
+          // Tap right half → next; left half → prev/close (common short-form pattern).
+          const rect = e.currentTarget.getBoundingClientRect();
+          const x = e.clientX - rect.left;
+          if (x > rect.width * 0.55) goNext();
+          else goPrevOrClose();
         }}
       />
+
       <div style={styles.meta}>
         <button
           type="button"
@@ -167,17 +244,13 @@ export default function SeeWhosEatingFullscreen({
           disabled={connectBusy}
           onClick={onScreenNameClick}
         >
-          {screenName}
+          @{screenName}
         </button>
         {connectNotice ? <p style={styles.notice}>{connectNotice}</p> : null}
         {connectError ? <p style={styles.error}>{connectError}</p> : null}
         {item.is_recommend ? <p style={styles.recommend}>Recommend</p> : null}
         {restaurantHref ? (
-          <Link
-            to={restaurantHref}
-            style={styles.link}
-            onClick={(e) => e.stopPropagation()}
-          >
+          <Link to={restaurantHref} style={styles.link} onClick={(e) => e.stopPropagation()}>
             {item.restaurant_name || "Restaurant"}
           </Link>
         ) : item.restaurant_name ? (
@@ -191,52 +264,84 @@ export default function SeeWhosEatingFullscreen({
           <p style={styles.place}>{item.item_name || item.food_name || ""}</p>
         )}
         <p style={styles.hint}>
-          {index + 1} / {items.length} · tap video for next · tap name to Connect
+          {index + 1} / {items.length}
+          {atEnd
+            ? " · swipe down for previous · Exit to leave"
+            : atStart
+              ? " · swipe up for next · swipe down or Exit to leave"
+              : " · swipe up next · swipe down previous"}
         </p>
       </div>
+
+      {!atEnd ? (
+        <div style={styles.swipeCue} aria-hidden="true">
+          ↑ Swipe up
+        </div>
+      ) : null}
     </div>
   );
+
+  return createPortal(ui, document.body);
 }
 
 const styles = {
   overlay: {
     position: "fixed",
     inset: 0,
-    zIndex: 10050,
+    width: "100vw",
+    height: "100dvh",
+    zIndex: 200000,
     background: "#000",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
+    overflow: "hidden",
+    overscrollBehavior: "none",
   },
   close: {
     position: "absolute",
-    top: 12,
-    right: 14,
-    zIndex: 2,
-    width: 40,
-    height: 40,
+    top: "max(12px, env(safe-area-inset-top))",
+    right: "max(12px, env(safe-area-inset-right))",
+    zIndex: 3,
+    width: 44,
+    height: 44,
     border: "none",
-    borderRadius: 20,
-    background: "rgba(0,0,0,0.45)",
+    borderRadius: 22,
+    background: "rgba(0,0,0,0.55)",
     color: "#fff",
-    fontSize: 28,
+    fontSize: 30,
     lineHeight: 1,
     cursor: "pointer",
   },
+  exitChip: {
+    position: "absolute",
+    top: "max(16px, env(safe-area-inset-top))",
+    left: "max(12px, env(safe-area-inset-left))",
+    zIndex: 3,
+    border: "1px solid rgba(255,255,255,0.45)",
+    borderRadius: 999,
+    padding: "8px 14px",
+    background: "rgba(0,0,0,0.5)",
+    color: "#fff",
+    fontSize: 13,
+    fontWeight: 700,
+    letterSpacing: "0.02em",
+    cursor: "pointer",
+  },
   video: {
+    position: "absolute",
+    inset: 0,
     width: "100%",
     height: "100%",
-    objectFit: "contain",
+    objectFit: "cover",
     background: "#000",
   },
   meta: {
     position: "absolute",
-    left: 16,
-    right: 16,
-    bottom: 28,
+    left: "max(16px, env(safe-area-inset-left))",
+    right: "max(16px, env(safe-area-inset-right))",
+    bottom: "max(28px, env(safe-area-inset-bottom))",
     color: "#fff",
     textShadow: "0 1px 4px rgba(0,0,0,0.65)",
     pointerEvents: "auto",
+    zIndex: 2,
   },
   screenNameBtn: {
     display: "inline-block",
@@ -276,5 +381,19 @@ const styles = {
     textDecoration: "underline",
   },
   place: { margin: "0 0 4px", fontSize: 14, fontWeight: 600 },
-  hint: { margin: 0, fontSize: 12, opacity: 0.75 },
+  hint: { margin: 0, fontSize: 12, opacity: 0.8 },
+  swipeCue: {
+    position: "absolute",
+    left: "50%",
+    bottom: "max(88px, calc(env(safe-area-inset-bottom) + 72px))",
+    transform: "translateX(-50%)",
+    zIndex: 2,
+    padding: "6px 12px",
+    borderRadius: 999,
+    background: "rgba(0,0,0,0.4)",
+    color: "rgba(255,255,255,0.85)",
+    fontSize: 12,
+    fontWeight: 600,
+    pointerEvents: "none",
+  },
 };

@@ -16,7 +16,8 @@ test("See Who's Eating reel: guest watch, CK dish, existing camera, Connect noti
   assert.match(surface, /listSeeWhosEating/);
   assert.match(surface, /SeeWhosEatingFullscreen/);
   assert.match(surface, /Watch freely/);
-  assert.match(surface, /MENUPY_PAUSE_LIVE_FEED|pause-live-feed/);
+  assert.match(surface, /embeddedShell/);
+  assert.match(surface, /sticky\s*=\s*true/);
   assert.match(surface, /position:\s*"sticky"/);
   assert.match(surface, /--sph-h/);
   assert.match(surface, /LIVE FEED/);
@@ -27,15 +28,28 @@ test("See Who's Eating reel: guest watch, CK dish, existing camera, Connect noti
   assert.match(fullscreen, /see_whos_eating/);
   assert.match(fullscreen, /see-whos-eating-screen-name/);
   assert.match(fullscreen, /menu_item_href|menu-items\//);
+  assert.match(fullscreen, /createPortal/);
+  assert.match(fullscreen, /100dvh|100vh/);
+  assert.match(fullscreen, /objectFit:\s*"cover"/);
+  assert.match(fullscreen, /see-whos-eating-fullscreen-close/);
+  assert.match(fullscreen, /see-whos-eating-fullscreen-exit/);
+  assert.match(fullscreen, /Swipe up|swipe up/);
+  assert.match(fullscreen, /SWIPE_MIN_PX|onTouchEnd/);
 
   const page = read("src/pages/consumer/MyMenuplyPage.jsx");
   assert.match(page, /SeeWhosEatingSurface/);
   assert.match(page, /is_recommend/);
   assert.doesNotMatch(page, /connections-eating/);
-  // Live feed stays at top of page (before EatingHub)
+  assert.match(page, /my-menuply-sticky-head/);
+  assert.match(page, /sticky=\{false\}/);
+  // Green title above live feed; cluster sticky above EatingHub
+  const heroIdx = page.indexOf("pageHeroBand");
   const seeIdx = page.indexOf("<SeeWhosEatingSurface");
   const eatingIdx = page.indexOf("<EatingHubSection");
-  assert.ok(seeIdx > 0 && eatingIdx > seeIdx, "sticky live feed remains above What I'm Eating");
+  assert.ok(
+    heroIdx > 0 && seeIdx > heroIdx && eatingIdx > seeIdx,
+    "green My Menuply title above live feed; sticky cluster above What I'm Eating"
+  );
 
   const compose = read("src/pages/consumer/myMenuply/EatingCompose.jsx");
   assert.match(compose, /MenuplyMediaPicker/);

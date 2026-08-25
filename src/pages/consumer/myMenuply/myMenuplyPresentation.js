@@ -21,6 +21,11 @@ function eatingCard(row) {
     ? null
     : mediaUrl(row.photo_url || row.item_photo_url);
   if (!image && !video) return null;
+  const videoPoster =
+    video &&
+    (mediaUrl(row.item_photo_url) ||
+      mediaUrl(row.restaurant_logo_url || row.logo_url) ||
+      mediaUrl(row.restaurant_billboard_image_url || row.billboard_image_url));
   return {
     key: `diary-${row.entry_id || row.id}`,
     kind: "diary",
@@ -31,6 +36,10 @@ function eatingCard(row) {
     badge: "Your meal",
     image,
     videoUrl: video,
+    videoPosterUrl: videoPoster || null,
+    videoPosterFit: videoPoster && mediaUrl(row.restaurant_logo_url || row.logo_url) === videoPoster
+      ? "contain"
+      : "cover",
     href: row.menu_item_id ? `/menu-items/${encodeURIComponent(String(row.menu_item_id))}` : null,
     source: "user",
   };

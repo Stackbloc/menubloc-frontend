@@ -11,8 +11,9 @@ import {
 
 /**
  * Still frame until the user activates playback.
- * Play src never includes #t= fragments (those break some CDN/range plays).
- * Seek fragment is only used on a hidden decoder for poster capture.
+ * Play src never includes #t= fragments.
+ * When the browser cannot decode a frame, show fallbackPoster (logo / billboard / item photo)
+ * with a play badge — tap plays the video immediately (no download dialog).
  */
 export default function VideoStillPreview({
   src,
@@ -22,17 +23,21 @@ export default function VideoStillPreview({
   muted = true,
   onRequestPlay,
   notifyLiveFeed = true,
+  /** Absolute image URL when video frame capture fails (menu photo / logo / billboard). */
+  fallbackPoster = "",
+  fallbackPosterFit = "cover",
   testId = "video-still-preview",
 }) {
   const videoRef = useRef(null);
   const [poster, setPoster] = useState("");
-  const [failed, setFailed] = useState(false);
+  const [frameFailed, setFrameFailed] = useState(false);
   const playSrc = stripMediaUrlFragment(src);
+  const fallback = String(fallbackPoster || "").trim();
 
   useEffect(() => {
     setPoster("");
-    setFailed(false);
-  }, [playSrc]);
+    setFrameFailed(false);
+  }, [playSrc, fallback]);
 
   useEffect(() => {
     if (!playing || !notifyLiveFeed) return undefined;
@@ -50,11 +55,7 @@ export default function VideoStillPreview({
     function tryPlay() {
       if (cancelled) return;
       const p = el.play();
-      if (p && typeof p.catch === "function") {
-        p.catch(() => {
-          if (!cancelled) setFailed(true);
-        });
-      }
+      if (p && typeof p.catch === "function") p.catch(() => {});
     }
 
     function onReady() {
@@ -104,95 +105,91 @@ export default function VideoStillPreview({
 
   if (!playSrc) return null;
 
+  const stillSrc = poster || fallback;
+  const stillFit = poster ? "cover" : fallbackPosterFit === "contain" ? "contain" : "cover";
+
   if (playing) {
     return (
       <div style={{ ...styles.wrap, ...(style || {}) }} data-testid={`${testId}-playing-wrap`}>
+        {stillSrc ? (
+          <img
+            src={stillSrc}
+            alt=""
+            style={{
+              ...styles.fill,
+              objectFit: stillFit,
+              position: "absolute",
+              inset: 0,
+              zIndex: 0,
+            }}
+            aria-hidden="true"
+          />
+        ) : null}
         <video
           ref={videoRef}
           src={playSrc}
-          style={styles.fill}
+          style={{ ...styles.fill, position: "relative", zIndex: 1 }}
           playsInline
           muted={muted}
           loop
           controls={false}
           preload="auto"
-          poster={poster || undefined}
+          poster={stillSrc || undefined}
           data-testid={`${testId}-playing`}
-          onError={() => setFailed(true)}
         />
-        {failed ? (
-          <div style={styles.unsupported} data-testid={`${testId}-unsupported`}>
-            <span style={styles.unsupportedTitle}>Can&apos;t preview this format</span>
-            <span style={styles.unsupportedHint}>Video was saved — playback needs a compatible codec</span>
-            <a
-              href={playSrc}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={styles.download}
-              onClick={(e) => e.stopPropagation()}
-            >
-              Open / download
-            </a>
-          </div>
-        ) : null}
       </div>
     );
   }
 
   return (
     <div style={{ ...styles.wrap, ...(style || {}) }} data-testid={testId}>
-      <video
-        key={playSrc}
-        src={withVideoPreviewSeek(playSrc)}
-        style={styles.hiddenVideo}
-        muted
-        playsInline
-        preload="auto"
-        aria-hidden="true"
-        onLoadedMetadata={handleLoadedMeta}
-        onLoadedData={(e) => tryCapture(e.currentTarget)}
-        onSeeked={(e) => tryCapture(e.currentTarget)}
-        onError={() => setFailed(true)}
-      />
-      {poster ? (
-        <img src={poster} alt={alt} style={styles.fill} data-testid={`${testId}-poster`} />
+      {!poster ? (
+        <video
+          key={playSrc}
+          src={withVideoPreviewSeek(playSrc)}
+          style={styles.hiddenVideo}
+          muted
+          playsInline
+          preload="auto"
+          aria-hidden="true"
+          onLoadedMetadata={handleLoadedMeta}
+          onLoadedData={(e) => tryCapture(e.currentTarget)}
+          onSeeked={(e) => tryCapture(e.currentTarget)}
+          onError={() => setFrameFailed(true)}
+        />
+      ) : null}
+      {stillSrc ? (
+        <img
+          src={stillSrc}
+          alt={alt}
+          style={{
+            ...styles.fill,
+            objectFit: stillFit,
+            ...(stillFit === "contain" ? styles.logoPad : null),
+          }}
+          data-testid={poster ? `${testId}-poster` : `${testId}-fallback-image`}
+        />
       ) : (
         <div
           style={styles.fallback}
-          data-testid={failed ? `${testId}-unsupported-still` : `${testId}-fallback`}
-          aria-label={failed ? "Can't preview this format" : "Loading video preview"}
+          data-testid={`${testId}-fallback`}
+          aria-label={frameFailed ? "Video" : "Loading video preview"}
         >
           <span style={styles.playGlyph} aria-hidden="true">
             ▶
           </span>
-          <span style={styles.fallbackLabel}>
-            {failed ? "Can't preview this format" : "Video"}
-          </span>
+          <span style={styles.fallbackLabel}>Video</span>
         </div>
       )}
-      {!failed ? (
-        <span style={styles.playBadge} aria-hidden="true">
-          ▶
-        </span>
-      ) : null}
-      {typeof onRequestPlay === "function" && !failed ? (
+      <span style={styles.playBadge} aria-hidden="true">
+        ▶
+      </span>
+      {typeof onRequestPlay === "function" ? (
         <button
           type="button"
           style={styles.hit}
           aria-label="Play video"
           data-testid={`${testId}-play`}
-          onClick={(e) => {
-            e.stopPropagation();
-            onRequestPlay();
-          }}
-        />
-      ) : null}
-      {failed && typeof onRequestPlay === "function" ? (
-        <button
-          type="button"
-          style={styles.hit}
-          aria-label="Try play video"
-          data-testid={`${testId}-play-anyway`}
           onClick={(e) => {
             e.stopPropagation();
             onRequestPlay();
@@ -216,6 +213,11 @@ const styles = {
     height: "100%",
     objectFit: "cover",
     display: "block",
+  },
+  logoPad: {
+    padding: "12%",
+    boxSizing: "border-box",
+    background: "#fff",
   },
   hiddenVideo: {
     position: "absolute",
@@ -267,6 +269,7 @@ const styles = {
     fontSize: 16,
     paddingLeft: 3,
     pointerEvents: "none",
+    zIndex: 2,
   },
   hit: {
     position: "absolute",
@@ -275,34 +278,6 @@ const styles = {
     background: "transparent",
     cursor: "pointer",
     padding: 0,
-  },
-  unsupported: {
-    position: "absolute",
-    inset: 0,
-    display: "grid",
-    placeItems: "center",
-    alignContent: "center",
-    gap: 8,
-    padding: 16,
-    background: "rgba(15, 23, 42, 0.92)",
-    color: "#ecfdf5",
-    textAlign: "center",
-  },
-  unsupportedTitle: {
-    fontSize: 13,
-    fontWeight: 700,
-  },
-  unsupportedHint: {
-    fontSize: 11,
-    opacity: 0.85,
-    maxWidth: 220,
-    lineHeight: 1.35,
-  },
-  download: {
-    marginTop: 4,
-    fontSize: 12,
-    fontWeight: 600,
-    color: "#5eead4",
-    textDecoration: "underline",
+    zIndex: 3,
   },
 };

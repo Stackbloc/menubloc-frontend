@@ -107,6 +107,8 @@ function MealMediaCard({ item, readOnly, onSelect, onDelete, deleteBusy }) {
               style={s.mealHolderMedia}
               playing={playing}
               muted={videoMuted}
+              fallbackPoster={media.posterFallbackUrl || ""}
+              fallbackPosterFit={media.posterFallbackFit || "cover"}
               testId="what-i-ate-meal-video"
             />
           ) : (

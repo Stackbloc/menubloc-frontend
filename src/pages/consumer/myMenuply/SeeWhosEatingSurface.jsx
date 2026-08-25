@@ -37,6 +37,8 @@ export default function SeeWhosEatingSurface({
   state = null,
   isAuthenticated = false,
   viewerUserId = null,
+  /** When true (default), this surface owns sticky positioning. Parent may set false when title+feed share one sticky shell. */
+  sticky = true,
 }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -118,7 +120,11 @@ export default function SeeWhosEatingSurface({
   }
 
   return (
-    <div style={styles.stickyShell} data-testid="see-whos-eating-surface">
+    <div
+      style={sticky ? styles.stickyShell : styles.embeddedShell}
+      data-testid="see-whos-eating-surface"
+      data-sticky={sticky ? "1" : "0"}
+    >
       <div style={styles.panel}>
         <div style={styles.hudRow}>
           <div style={styles.hudLeft}>
@@ -149,6 +155,7 @@ export default function SeeWhosEatingSurface({
           {preview?.video_url ? (
             <video
               ref={videoRef}
+              key={preview.id || preview.video_url}
               src={stripMediaUrlFragment(preview.video_url)}
               style={styles.video}
               muted
@@ -157,6 +164,16 @@ export default function SeeWhosEatingSurface({
               autoPlay
               controls={false}
               preload="auto"
+              onCanPlay={(e) => {
+                if (fullscreenOpen || getMealVideoPlayDepth() > 0) return;
+                const p = e.currentTarget.play();
+                if (p && typeof p.catch === "function") p.catch(() => {});
+              }}
+              onLoadedData={(e) => {
+                if (fullscreenOpen || getMealVideoPlayDepth() > 0) return;
+                const p = e.currentTarget.play();
+                if (p && typeof p.catch === "function") p.catch(() => {});
+              }}
             />
           ) : (
             <div style={styles.empty}>
@@ -180,7 +197,7 @@ export default function SeeWhosEatingSurface({
                 @{preview.diner?.display_name || "diner"}
               </span>
               {preview.is_recommend ? <span style={styles.badge}>REC</span> : null}
-              <span style={styles.tapHint}>TAP · FULLSCREEN</span>
+              <span style={styles.tapHint}>TAP · FULL SCREEN</span>
             </div>
           ) : null}
         </button>
@@ -227,6 +244,15 @@ const styles = {
     boxShadow: "0 12px 28px rgba(0, 0, 0, 0.35)",
     backdropFilter: "blur(10px)",
     WebkitBackdropFilter: "blur(10px)",
+  },
+  /** Nested under My Menuply sticky title+feed cluster — no second sticky. */
+  embeddedShell: {
+    position: "relative",
+    margin: 0,
+    padding: "8px 16px 12px",
+    background: PANEL_BG,
+    borderBottom: `1px solid rgba(94, 234, 212, 0.28)`,
+    borderRadius: "0 0 18px 18px",
   },
   panel: {
     maxWidth: 420,

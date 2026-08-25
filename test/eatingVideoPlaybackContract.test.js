@@ -49,9 +49,21 @@ test("VideoStillPreview play path strips fragment; seek only for poster", () => 
   const preview = read("src/components/consumer/VideoStillPreview.jsx");
   assert.match(preview, /stripMediaUrlFragment/);
   assert.match(preview, /withVideoPreviewSeek\(playSrc\)/);
-  assert.match(preview, /Can't preview this format|Can&apos;t preview this format/);
+  assert.match(preview, /fallbackPoster/);
   assert.match(preview, /notifyMealVideoPlaying/);
   assert.match(preview, /loadeddata|canplay/);
+  assert.doesNotMatch(preview, /Open \/ download|Can't preview this format|Can&apos;t preview this format/);
+});
+
+test("eating dish video includes poster fallback (item / logo / billboard)", () => {
+  const dish = read("src/pages/consumer/myMenuply/eatingDishVisual.js");
+  assert.match(dish, /resolveVideoPosterFallback/);
+  assert.match(dish, /posterFallbackUrl/);
+  assert.match(dish, /item_photo_url/);
+  assert.match(dish, /restaurant_logo_url/);
+  assert.match(dish, /billboard/);
+  const board = read("src/pages/consumer/myMenuply/WhatIAteMealBoard.jsx");
+  assert.match(board, /fallbackPoster=\{media\.posterFallbackUrl/);
 });
 
 test("See Who's Eating pauses on meal play and closes fullscreen", () => {

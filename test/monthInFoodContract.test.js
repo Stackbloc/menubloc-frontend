@@ -73,7 +73,8 @@ test("My Menuply surfaces Account settings without drawer-only path", () => {
   const header = read("src/components/StickyPageHeader.jsx");
   assert.match(mine, /data-testid="my-menuply-account-settings"/);
   assert.match(mine, /to="\/account"/);
-  assert.match(mine, /data-testid="my-menuply-settings-text"/);
+  assert.match(mine, /stickyTitleAndFeed|my-menuply-sticky-head/);
+  assert.doesNotMatch(mine, /StickyPageHeader\s*\n\s*title="My Menuply"/);
   assert.match(header, /titleAccessory/);
   assert.match(header, /sticky-header-account-settings/);
   assert.match(header, /startsWith\("\/my-menuply"\)/);
