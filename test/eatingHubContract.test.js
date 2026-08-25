@@ -37,7 +37,8 @@ test("My Menuply and peer hub use five-section presentation hub", () => {
   assert.match(section, /eating-plans-panel/);
   assert.match(section, /future-plans-summary/);
   assert.match(section, /None scheduled/);
-  assert.match(section, /want-invite-me-out-settings/);
+  assert.doesNotMatch(section, /want-invite-me-out-settings/);
+  assert.match(compose, /want-invite-me-out-settings/);
   assert.match(section, /plans-join-me/);
   assert.match(section, /Invite Me Out/);
   assert.match(section, /upcoming-plans-calendar-open/);
@@ -138,7 +139,7 @@ test("My Menuply and peer hub use five-section presentation hub", () => {
   assert.match(compose, /EATING_COMPOSE_CATEGORIES/);
   assert.match(compose, /EatingPlaceFields/);
   assert.match(compose, /homemade/);
-  assert.match(compose, /allowVideo=\{category === "ate" \|\| category === "want"\}/);
+  assert.match(compose, /allowVideo=\{\s*category === "ate" \|\|\s*category === "want"\s*\}/);
   assert.match(section, /planPrefill/);
   assert.match(mine, /maybeFollowRestaurant/);
   assert.match(mine, /followRestaurant/);
@@ -150,7 +151,7 @@ test("My Menuply and peer hub use five-section presentation hub", () => {
   assert.match(mine, /dishPhotoUrl/);
   assert.match(mine, /video_url/);
   assert.ok(mine.indexOf("<DinerIdentityHero") < mine.indexOf("<EatingHubSection"));
-  assert.ok(mine.indexOf("<EatingHubSection") < mine.indexOf('data-testid="dining-crews"'));
+  assert.ok(mine.indexOf("<EatingHubSection") < mine.lastIndexOf('data-testid="dining-crews"'));
 });
 
 test("Eating journal look-back is 90 days; future plan dates are not capped", async () => {

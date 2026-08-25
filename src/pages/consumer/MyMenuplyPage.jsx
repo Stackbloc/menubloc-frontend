@@ -165,7 +165,6 @@ export default function MyMenuplyPage() {
   const [inviteMeOutOpen, setInviteMeOutOpen] = useState(false);
   const [inviteMeOutAudience, setInviteMeOutAudience] = useState("connections");
   const [inviteMeOutSelectedIds, setInviteMeOutSelectedIds] = useState([]);
-  const [inviteMeOutBusy, setInviteMeOutBusy] = useState(false);
   const [composeOpen, setComposeOpen] = useState(false);
   const [composeDefaultCategory, setComposeDefaultCategory] = useState("ate");
   const [composeMediaSource, setComposeMediaSource] = useState("camera");
@@ -499,31 +498,6 @@ export default function MyMenuplyPage() {
     }
   }
 
-  async function saveInviteMeOutAudience() {
-    setInviteMeOutBusy(true);
-    setError("");
-    try {
-      const audience = inviteMeOutOpen ? inviteMeOutAudience : "none";
-      const data = await updateConsumerProfile({
-        invite_me_out_audience: audience,
-        invite_me_out_allowed_user_ids:
-          inviteMeOutOpen && inviteMeOutAudience === "selected" ? inviteMeOutSelectedIds : [],
-      });
-      const next = data?.profile || {};
-      setProfile((prev) => ({ ...(prev || {}), ...next }));
-      const savedAudience = String(next.invite_me_out_audience || audience).toLowerCase();
-      setInviteMeOutOpen(savedAudience !== "none");
-      setInviteMeOutAudience(savedAudience === "selected" ? "selected" : "connections");
-      setInviteMeOutSelectedIds(
-        Array.isArray(next.invite_me_out_allowed_user_ids) ? next.invite_me_out_allowed_user_ids : []
-      );
-    } catch (err) {
-      setError(err.message || "Unable to save Invite Me Out settings");
-    } finally {
-      setInviteMeOutBusy(false);
-    }
-  }
-
   async function onProfileMediaAdd(file) {
     setProfileGalleryPickerOpen(false);
     setProfileGalleryMediaSource(null);
@@ -843,11 +817,45 @@ export default function MyMenuplyPage() {
     }
   }
 
-  async function postWant({ text, file, homemade, restaurant, dish, wantKind }) {
+  async function postWant({
+    text,
+    file,
+    homemade,
+    restaurant,
+    dish,
+    wantKind,
+    inviteMeOutOpen: wantInviteOpen,
+    inviteMeOutAudience: wantInviteAudience,
+    inviteMeOutSelectedIds: wantInviteIds,
+  }) {
     setPostBusy("want");
     setError("");
     setWantListError("");
     try {
+      const open =
+        wantInviteOpen === undefined ? inviteMeOutOpen : Boolean(wantInviteOpen);
+      const audienceChoice =
+        wantInviteAudience === undefined ? inviteMeOutAudience : wantInviteAudience;
+      const selectedIds =
+        wantInviteIds === undefined ? inviteMeOutSelectedIds : wantInviteIds;
+      const audience = open
+        ? audienceChoice === "selected"
+          ? "selected"
+          : "connections"
+        : "none";
+      const profileData = await updateConsumerProfile({
+        invite_me_out_audience: audience,
+        invite_me_out_allowed_user_ids: audience === "selected" ? selectedIds || [] : [],
+      });
+      const next = profileData?.profile || {};
+      setProfile((prev) => ({ ...(prev || {}), ...next }));
+      const savedAudience = String(next.invite_me_out_audience || audience).toLowerCase();
+      setInviteMeOutOpen(savedAudience !== "none");
+      setInviteMeOutAudience(savedAudience === "selected" ? "selected" : "connections");
+      setInviteMeOutSelectedIds(
+        Array.isArray(next.invite_me_out_allowed_user_ids) ? next.invite_me_out_allowed_user_ids : []
+      );
+
       let photo_url;
       let video_url;
       if (file) {
@@ -920,6 +928,7 @@ export default function MyMenuplyPage() {
         });
     } catch (err) {
       setError(err.message || "Unable to add");
+      throw err;
     } finally {
       setPostBusy("");
     }
@@ -1093,9 +1102,22 @@ export default function MyMenuplyPage() {
     restaurant,
     dish,
     wantKind,
+    inviteMeOutOpen: wantInviteOpen,
+    inviteMeOutAudience: wantInviteAudience,
+    inviteMeOutSelectedIds: wantInviteIds,
   }) {
     if (category === "want") {
-      await postWant({ text, file, homemade, restaurant, dish, wantKind });
+      await postWant({
+        text,
+        file,
+        homemade,
+        restaurant,
+        dish,
+        wantKind,
+        inviteMeOutOpen: wantInviteOpen,
+        inviteMeOutAudience: wantInviteAudience,
+        inviteMeOutSelectedIds: wantInviteIds,
+      });
       setComposeDefaultCategory("want");
       return;
     }
@@ -1278,14 +1300,9 @@ export default function MyMenuplyPage() {
               followed={followed}
               joinCandidates={joinCandidates}
               inviteMeOutOpen={inviteMeOutOpen}
-              onInviteMeOutOpenChange={setInviteMeOutOpen}
               inviteMeOutAudience={inviteMeOutAudience}
-              onInviteMeOutAudienceChange={setInviteMeOutAudience}
               inviteMeOutSelectedIds={inviteMeOutSelectedIds}
-              onInviteMeOutSelectedIdsChange={setInviteMeOutSelectedIds}
               inviteMeOutCandidates={joinCandidates}
-              onInviteMeOutSave={saveInviteMeOutAudience}
-              inviteMeOutBusy={inviteMeOutBusy}
               planPrefill={planPrefill}
               locationCity={locationCity}
               locationState={locationState}

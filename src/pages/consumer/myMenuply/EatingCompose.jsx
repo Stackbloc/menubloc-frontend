@@ -15,6 +15,7 @@ import {
   WANT_INTENT_KINDS,
 } from "./eatingHubUtils.js";
 import EatingPlaceFields from "./EatingPlaceFields.jsx";
+import InviteMeOutAudiencePicker from "./InviteMeOutAudiencePicker.jsx";
 import {
   socialBtn,
   socialType,
@@ -35,6 +36,10 @@ export default function EatingCompose({
   followed = [],
   locationCity = null,
   locationState = null,
+  inviteMeOutOpen: inviteMeOutOpenInitial = false,
+  inviteMeOutAudience: inviteMeOutAudienceInitial = "connections",
+  inviteMeOutSelectedIds: inviteMeOutSelectedIdsInitial = [],
+  inviteMeOutCandidates = [],
 }) {
   const [category, setCategory] = useState(defaultCategory);
   const [text, setText] = useState("");
@@ -50,6 +55,13 @@ export default function EatingCompose({
   const [cuisineOptions, setCuisineOptions] = useState([]);
   const [cuisinesLoading, setCuisinesLoading] = useState(false);
   const [cuisinesError, setCuisinesError] = useState("");
+  const [inviteMeOutOpen, setInviteMeOutOpen] = useState(Boolean(inviteMeOutOpenInitial));
+  const [inviteMeOutAudience, setInviteMeOutAudience] = useState(
+    inviteMeOutAudienceInitial === "selected" ? "selected" : "connections"
+  );
+  const [inviteMeOutSelectedIds, setInviteMeOutSelectedIds] = useState(
+    Array.isArray(inviteMeOutSelectedIdsInitial) ? inviteMeOutSelectedIdsInitial : []
+  );
 
   const meta =
     EATING_COMPOSE_CATEGORIES.find((c) => c.id === category) ||
@@ -175,6 +187,13 @@ export default function EatingCompose({
       if (needsText && !value) return;
       if (needsRestaurant && !restaurant) return;
       if (needsDish && !dish) return;
+      if (
+        inviteMeOutOpen &&
+        inviteMeOutAudience === "selected" &&
+        inviteMeOutSelectedIds.length === 0
+      ) {
+        return;
+      }
 
       await onSubmit({
         category,
@@ -193,6 +212,9 @@ export default function EatingCompose({
           ? restaurant
           : null,
         dish: needsDish ? dish : null,
+        inviteMeOutOpen,
+        inviteMeOutAudience,
+        inviteMeOutSelectedIds,
       });
 
       setText("");
@@ -234,13 +256,18 @@ export default function EatingCompose({
     category === "plan"
       ? true
       : category === "want"
-        ? wantKind === "cuisine"
-          ? Boolean(cuisineSlug)
-          : wantKind === "food_item"
-            ? Boolean(String(text).trim())
-            : wantKind === "restaurant"
-              ? Boolean(restaurant)
-              : Boolean(restaurant && dish)
+        ? (wantKind === "cuisine"
+            ? Boolean(cuisineSlug)
+            : wantKind === "food_item"
+              ? Boolean(String(text).trim())
+              : wantKind === "restaurant"
+                ? Boolean(restaurant)
+                : Boolean(restaurant && dish)) &&
+          !(
+            inviteMeOutOpen &&
+            inviteMeOutAudience === "selected" &&
+            inviteMeOutSelectedIds.length === 0
+          )
         : Boolean(
             String(text).trim() ||
               file ||
@@ -555,6 +582,25 @@ export default function EatingCompose({
                 {restaurant.restaurant_name}
               </p>
             ) : null}
+
+            <div
+              data-testid="want-invite-me-out-settings"
+              style={{ marginTop: 4 }}
+            >
+              <InviteMeOutAudiencePicker
+                open={inviteMeOutOpen}
+                onOpenChange={setInviteMeOutOpen}
+                audience={inviteMeOutAudience}
+                onAudienceChange={setInviteMeOutAudience}
+                selectedIds={inviteMeOutSelectedIds}
+                onSelectedIdsChange={setInviteMeOutSelectedIds}
+                candidates={inviteMeOutCandidates}
+                disabled={busy}
+              />
+              <p style={{ ...socialType.meta, margin: "8px 0 0" }}>
+                Connections you allow can use Invite Me Out on food you save.
+              </p>
+            </div>
           </>
         ) : null}
 

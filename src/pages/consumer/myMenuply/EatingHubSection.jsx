@@ -24,7 +24,6 @@ import {
   planYmd,
   shiftYmd,
 } from "./eatingHubUtils.js";
-import InviteMeOutAudiencePicker from "./InviteMeOutAudiencePicker.jsx";
 import { formatPlanBracketDate, futurePlanKey } from "./dinerHubFormat.js";
 import { whatIAteTodayLocalDate } from "../../../lib/consumerApi.js";
 import { defaultWhatIAteMealPeriod } from "../../../lib/whatIAteTodayMealPeriod.js";
@@ -96,14 +95,9 @@ export default function EatingHubSection({
   onInviteMeOut,
   viewerMayInviteMeOut = false,
   inviteMeOutOpen = false,
-  onInviteMeOutOpenChange,
-  inviteMeOutAudience = "none",
-  onInviteMeOutAudienceChange,
+  inviteMeOutAudience = "connections",
   inviteMeOutSelectedIds = [],
-  onInviteMeOutSelectedIdsChange,
   inviteMeOutCandidates = [],
-  onInviteMeOutSave,
-  inviteMeOutBusy = false,
 }) {
   void liked;
   void foodHref;
@@ -332,39 +326,6 @@ export default function EatingHubSection({
               pick something they want to eat and choose when to go.
             </p>
           ) : null}
-          {!readOnly ? (
-            <div data-testid="want-invite-me-out-settings" style={{ marginTop: 10 }}>
-              <InviteMeOutAudiencePicker
-                open={inviteMeOutOpen}
-                onOpenChange={onInviteMeOutOpenChange}
-                audience={inviteMeOutAudience}
-                onAudienceChange={onInviteMeOutAudienceChange}
-                selectedIds={inviteMeOutSelectedIds}
-                onSelectedIdsChange={onInviteMeOutSelectedIdsChange}
-                candidates={inviteMeOutCandidates}
-                disabled={inviteMeOutBusy}
-              />
-              {typeof onInviteMeOutSave === "function" ? (
-                <button
-                  type="button"
-                  style={{ ...s.primaryBtn, marginTop: 10 }}
-                  data-testid="invite-me-out-save"
-                  disabled={
-                    inviteMeOutBusy ||
-                    (inviteMeOutOpen &&
-                      inviteMeOutAudience === "selected" &&
-                      inviteMeOutSelectedIds.length === 0)
-                  }
-                  onClick={onInviteMeOutSave}
-                >
-                  {inviteMeOutBusy ? "Saving…" : "Save Invite Me Out"}
-                </button>
-              ) : null}
-              <p style={{ ...s.muted, fontSize: 12, marginTop: 8 }} data-testid="want-invite-me">
-                Connections you allow can use Invite Me Out on food you&apos;ve saved here.
-              </p>
-            </div>
-          ) : null}
         </div>
       </section>
 
@@ -478,6 +439,10 @@ export default function EatingHubSection({
           followed={followed}
           locationCity={locationCity}
           locationState={locationState}
+          inviteMeOutOpen={inviteMeOutOpen}
+          inviteMeOutAudience={inviteMeOutAudience}
+          inviteMeOutSelectedIds={inviteMeOutSelectedIds}
+          inviteMeOutCandidates={inviteMeOutCandidates}
         />
       ) : null}
 

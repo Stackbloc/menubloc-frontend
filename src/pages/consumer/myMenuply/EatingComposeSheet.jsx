@@ -18,6 +18,10 @@ export default function EatingComposeSheet({
   followed = [],
   locationCity = null,
   locationState = null,
+  inviteMeOutOpen = false,
+  inviteMeOutAudience = "connections",
+  inviteMeOutSelectedIds = [],
+  inviteMeOutCandidates = [],
 }) {
   if (!open) return null;
 
@@ -77,6 +81,10 @@ export default function EatingComposeSheet({
           followed={followed}
           locationCity={locationCity}
           locationState={locationState}
+          inviteMeOutOpen={inviteMeOutOpen}
+          inviteMeOutAudience={inviteMeOutAudience}
+          inviteMeOutSelectedIds={inviteMeOutSelectedIds}
+          inviteMeOutCandidates={inviteMeOutCandidates}
           inSheet
         />
       </div>

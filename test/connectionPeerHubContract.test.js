@@ -38,7 +38,7 @@ test("Connection diner page uses the same hub layout as My Menuply", () => {
   assert.match(section, /eating-calendar/);
   assert.match(section, /DinerCalendarTrigger/);
   assert.match(section, /Invite Me Out/);
-  assert.match(section, /InviteMeOutAudiencePicker/);
+  assert.doesNotMatch(section, /InviteMeOutAudiencePicker/);
   assert.match(section, /future-plans-summary/);
   assert.match(section, /FuturePlanRow/);
   assert.match(section, /SectionEmptyState/);

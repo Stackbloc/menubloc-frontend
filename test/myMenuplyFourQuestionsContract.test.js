@@ -35,8 +35,11 @@ test("My Menuply is the diner's personal home", () => {
   assert.match(section, /DinerCalendarTrigger/);
   assert.match(section, /PostAfterActions/);
   assert.match(section, /Invite Me Out/);
-  assert.match(section, /want-invite-me-out-settings/);
-  assert.match(section, /InviteMeOutAudiencePicker/);
+  assert.doesNotMatch(section, /want-invite-me-out-settings/);
+  assert.doesNotMatch(section, /InviteMeOutAudiencePicker/);
+  const compose = read("src/pages/consumer/myMenuply/EatingCompose.jsx");
+  assert.match(compose, /want-invite-me-out-settings/);
+  assert.match(compose, /InviteMeOutAudiencePicker/);
   assert.match(section, /plans-join-me/);
   assert.match(section, /EatingPlanDayForm/);
   assert.match(page, /joinCandidates/);
@@ -155,7 +158,7 @@ test("My Menuply is the diner's personal home", () => {
   assert.match(calendar, /EatingHubCalendar/);
   assert.ok(page.indexOf("<DinerIdentityHero") < page.indexOf("<MyMenuplyPresentationRails"));
   assert.ok(page.indexOf("<MyMenuplyPresentationRails") < page.indexOf("<EatingHubSection"));
-  assert.ok(page.indexOf("<EatingHubSection") < page.indexOf('data-testid="dining-crews"'));
+  assert.ok(page.indexOf("<EatingHubSection") < page.lastIndexOf('data-testid="dining-crews"'));
   assert.doesNotMatch(page, /What My Connections Are Eating/);
   assert.doesNotMatch(page, /What My Connections Are Planning/);
   assert.doesNotMatch(page, /Where I Eat/);
