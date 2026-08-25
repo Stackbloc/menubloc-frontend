@@ -33,15 +33,39 @@ test("ConsumerCameraSheet photo snap + Video mode launches OS native capture", (
   assert.match(sheet, /openCameraStreamWithFallback/);
   assert.match(sheet, /consumer-camera-live/);
   assert.match(sheet, /consumer-camera-mode-video/);
+  assert.match(sheet, /consumer-camera-mode-photo/);
   assert.match(sheet, /consumer-camera-record-native/);
   assert.match(sheet, /normalizeNativeVideoFile/);
   assert.match(sheet, /accept="video\/\*"/);
-  assert.match(sheet, /Record video \(up to/);
+  assert.match(sheet, /initialMode = "video"/);
+  assert.match(sheet, /htmlFor=\{busy \? undefined : nativeVideoInputId\}/);
   assert.match(sheet, /\n\s+Record video\n/);
+  // Video chip must appear before Photo chip (Video | Photo)
+  const videoChip = sheet.indexOf('data-testid="consumer-camera-mode-video"');
+  const photoChip = sheet.indexOf('data-testid="consumer-camera-mode-photo"');
+  assert.ok(videoChip >= 0 && photoChip > videoChip, "Video chip must precede Photo chip");
   assert.doesNotMatch(sheet, />\s*Upload video\s*</);
+  assert.doesNotMatch(sheet, /Record video \(up to/);
   assert.doesNotMatch(sheet, /createCameraMediaRecorder/);
   assert.doesNotMatch(sheet, /validateRecordedVideoBlob/);
   assert.doesNotMatch(sheet, /consumer-camera-record(?!-native)/);
+  // Quarantined: button→input.click() opens file picker instead of camera
+  assert.doesNotMatch(sheet, /nativeVideoInputRef\.current\?\.click/);
+  assert.doesNotMatch(sheet, /inputRef\.current\?\.click\(\)/);
+});
+
+test("MenuplyMediaPicker defaults camera sheet to Video when allowVideo", () => {
+  const picker = read("src/components/social/MenuplyMediaPicker.jsx");
+  assert.match(picker, /defaultCameraMode = allowVideo \? "video" : "photo"/);
+  assert.match(picker, /openCameraSheet\(defaultCameraMode\)/);
+});
+
+test("NativeVideoCapture uses label→capture input (not JS click)", () => {
+  const native = read("src/components/consumer/NativeVideoCapture.jsx");
+  assert.match(native, /htmlFor=\{inactive \? undefined : inputId\}/);
+  assert.match(native, /capture=\{captureAttrForFacing\(facingMode\)\}/);
+  assert.doesNotMatch(native, /inputRef\.current\?\.click/);
+  assert.doesNotMatch(native, /\.current\?\.click\(\)/);
 });
 
 test("nativeVideoCapture module validates OS clips", () => {

@@ -60,8 +60,12 @@ test("ConsumerCameraSheet Video mode uses OS native capture (no MediaRecorder)",
   assert.match(sheet, /normalizeNativeVideoFile/);
   assert.match(sheet, /consumer-camera-mode-video/);
   assert.match(sheet, /consumer-camera-record-native/);
+  assert.match(sheet, /htmlFor=\{busy \? undefined : nativeVideoInputId\}/);
+  assert.match(sheet, /initialMode = "video"/);
   assert.doesNotMatch(sheet, /createCameraMediaRecorder/);
   assert.doesNotMatch(sheet, /validateRecordedVideoBlob/);
+  assert.doesNotMatch(sheet, /inputRef\.current\?\.click/);
+  assert.doesNotMatch(sheet, /nativeVideoInputRef\.current\?\.click/);
 });
 
 test("native video normalize soft-probes decode (does not hard-block Post)", () => {

@@ -1,5 +1,5 @@
 /**
- * Camera icon → ConsumerCameraSheet (photo snap + optional Video → OS native capture).
+ * Camera icon → ConsumerCameraSheet (Video | Photo when allowVideo; defaults to Video).
  * Library via source="library" (file picker without capture).
  * Diner avatar should pass allowVideo={false}.
  */
@@ -45,7 +45,9 @@ export default function MenuplyMediaPicker({
 }) {
   const [previewUrl, setPreviewUrl] = useState("");
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [sheetInitialMode, setSheetInitialMode] = useState("photo");
+  /** Prefer Video when allowVideo so chips open Video | Photo. */
+  const defaultCameraMode = allowVideo ? "video" : "photo";
+  const [sheetInitialMode, setSheetInitialMode] = useState(defaultCameraMode);
   const inputRef = useRef(null);
   const useLibrary = source === "library";
   const canInlineSheet =
@@ -61,14 +63,20 @@ export default function MenuplyMediaPicker({
     inputRef.current?.click();
   }
 
-  function openCameraSheet(initialMode = "photo") {
+  function openCameraSheet(initialMode = defaultCameraMode) {
     if (disabled) return;
     if (useLibrary) {
       openLibraryFallback();
       return;
     }
     if (canInlineSheet) {
-      setSheetInitialMode(allowVideo && initialMode === "video" ? "video" : "photo");
+      const next =
+        allowVideo && initialMode === "photo"
+          ? "photo"
+          : allowVideo
+            ? "video"
+            : "photo";
+      setSheetInitialMode(next);
       setSheetOpen(true);
       return;
     }
@@ -77,10 +85,11 @@ export default function MenuplyMediaPicker({
 
   useEffect(() => {
     if (openOnMount && !disabled && !file) {
-      if (allowPhoto) openCameraSheet("photo");
-      else if (allowVideo && !useLibrary) {
+      if (canInlineSheet && allowPhoto) openCameraSheet(defaultCameraMode);
+      else if (allowVideo && !useLibrary && !allowPhoto) {
         /* video-only surfaces use NativeVideoCapture trigger */
-      } else openLibraryFallback();
+      } else if (allowPhoto) openCameraSheet("photo");
+      else openLibraryFallback();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- open once on mount when requested
   }, [openOnMount, disabled, file]);
@@ -182,13 +191,13 @@ export default function MenuplyMediaPicker({
           </div>
         </div>
       ) : renderTrigger ? (
-        renderTrigger({ open: () => openCameraSheet("photo"), disabled })
+        renderTrigger({ open: () => openCameraSheet(defaultCameraMode), disabled })
       ) : showUnifiedCamera ? (
         <button
           type="button"
           aria-label={ariaLabel}
           disabled={disabled}
-          onClick={() => openCameraSheet("photo")}
+          onClick={() => openCameraSheet(defaultCameraMode)}
           style={{ ...socialBtn.icon, ...iconStyle }}
           data-testid={`${testId}-trigger`}
         >
@@ -206,7 +215,7 @@ export default function MenuplyMediaPicker({
           type="button"
           aria-label={ariaLabel}
           disabled={disabled}
-          onClick={() => openCameraSheet("photo")}
+          onClick={() => openCameraSheet(defaultCameraMode)}
           style={{ ...socialBtn.icon, ...iconStyle }}
           data-testid={`${testId}-trigger`}
         >

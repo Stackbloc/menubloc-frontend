@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useId, useState } from "react";
 import {
   captureAttrForFacing,
   formatVideoMaxDurationLabel,
@@ -8,7 +8,8 @@ import {
 import { socialBtn } from "../../lib/socialDesignTokens.js";
 
 /**
- * OS-native video recording via <input capture> — not MediaRecorder.
+ * OS-native video recording via <label> + <input capture> — not MediaRecorder,
+ * and not button→input.click() (that opens a file picker on many phones).
  */
 export default function NativeVideoCapture({
   onFile,
@@ -18,16 +19,11 @@ export default function NativeVideoCapture({
   buttonLabel = "Record video",
   compact = false,
 }) {
-  const inputRef = useRef(null);
+  const inputId = useId();
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const maxLabel = formatVideoMaxDurationLabel(SOCIAL_VIDEO_MAX_RECORD_SECONDS);
-
-  function openRecorder() {
-    if (disabled || busy) return;
-    setError("");
-    inputRef.current?.click();
-  }
+  const inactive = disabled || busy;
 
   async function handlePick(event) {
     const picked = event.target.files?.[0] || null;
@@ -48,21 +44,25 @@ export default function NativeVideoCapture({
 
   return (
     <div data-testid={testId} style={styles.wrap}>
-      <button
-        type="button"
-        disabled={disabled || busy}
-        onClick={openRecorder}
-        style={compact ? styles.compactBtn : styles.btn}
+      <label
+        htmlFor={inactive ? undefined : inputId}
+        style={{
+          ...(compact ? styles.compactBtn : styles.btn),
+          ...(inactive ? styles.inactive : null),
+        }}
         data-testid={`${testId}-trigger`}
         aria-label={`${buttonLabel} (up to ${maxLabel})`}
+        aria-disabled={inactive}
+        onClick={(e) => {
+          if (inactive) e.preventDefault();
+          else setError("");
+        }}
       >
         <VideoIcon />
         {!compact ? (
-          <span style={styles.label}>
-            {busy ? "Checking…" : buttonLabel}
-          </span>
+          <span style={styles.label}>{busy ? "Checking…" : buttonLabel}</span>
         ) : null}
-      </button>
+      </label>
       {!compact ? (
         <p style={styles.hint} data-testid={`${testId}-hint`}>
           Uses your phone camera · up to {maxLabel}
@@ -74,12 +74,12 @@ export default function NativeVideoCapture({
         </p>
       ) : null}
       <input
-        ref={inputRef}
+        id={inputId}
         type="file"
         accept="video/*"
         capture={captureAttrForFacing(facingMode)}
-        hidden
-        disabled={disabled || busy}
+        style={styles.visuallyHiddenInput}
+        disabled={inactive}
         data-testid={`${testId}-input`}
         onChange={handlePick}
       />
@@ -126,6 +126,8 @@ const styles = {
     alignItems: "center",
     fontWeight: 700,
     fontSize: 14,
+    cursor: "pointer",
+    boxSizing: "border-box",
   },
   compactBtn: {
     ...socialBtn.icon,
@@ -134,6 +136,12 @@ const styles = {
     padding: 0,
     display: "inline-grid",
     placeItems: "center",
+    cursor: "pointer",
+    boxSizing: "border-box",
+  },
+  inactive: {
+    opacity: 0.55,
+    cursor: "not-allowed",
   },
   label: { lineHeight: 1.2 },
   hint: {
@@ -149,5 +157,16 @@ const styles = {
     fontWeight: 600,
     maxWidth: 280,
     lineHeight: 1.4,
+  },
+  visuallyHiddenInput: {
+    position: "absolute",
+    width: 1,
+    height: 1,
+    padding: 0,
+    margin: -1,
+    overflow: "hidden",
+    clip: "rect(0, 0, 0, 0)",
+    whiteSpace: "nowrap",
+    border: 0,
   },
 };
