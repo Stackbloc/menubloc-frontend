@@ -36,8 +36,9 @@ test("ConsumerCameraSheet photo snap + Video mode launches OS native capture", (
   assert.match(sheet, /consumer-camera-record-native/);
   assert.match(sheet, /normalizeNativeVideoFile/);
   assert.match(sheet, /accept="video\/\*"/);
-  assert.match(sheet, /Record video \(up to/);
   assert.match(sheet, /\n\s+Record video\n/);
+  assert.doesNotMatch(sheet, /Record video \(up to/);
+  assert.doesNotMatch(sheet, /Opens your phone camera to record/);
   assert.doesNotMatch(sheet, />\s*Upload video\s*</);
   assert.doesNotMatch(sheet, /createCameraMediaRecorder/);
   assert.doesNotMatch(sheet, /validateRecordedVideoBlob/);
