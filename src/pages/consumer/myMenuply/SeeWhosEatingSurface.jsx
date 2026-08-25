@@ -1,5 +1,5 @@
 /**
- * My Menuply green-band See Who's Eating surface — muted autoplay reel.
+ * My Menuply See Who's Eating — sticky muted autoplay reel (high-tech frame).
  * Guests may watch; Connect on screen name requires sign-in.
  * Dish identity is CK menu_item_id only.
  */
@@ -65,6 +65,7 @@ export default function SeeWhosEatingSurface({
   }, [market.city, market.state]);
 
   const preview = items[0] || null;
+  const marketLabel = `${market.city}, ${market.state}`.toUpperCase();
 
   useEffect(() => {
     const el = videoRef.current;
@@ -80,56 +81,84 @@ export default function SeeWhosEatingSurface({
   }
 
   return (
-    <div style={styles.wrap} data-testid="see-whos-eating-surface">
-      <p style={styles.kicker}>See who&apos;s eating</p>
-      <button
-        type="button"
-        style={styles.reelBtn}
-        data-testid="see-whos-eating-preview"
-        onClick={() => openAt(0)}
-        disabled={!preview}
-        aria-label={preview ? "Open See who's eating reel" : "No market videos yet"}
-      >
-        {preview?.video_url ? (
-          <video
-            ref={videoRef}
-            src={`${preview.video_url}#t=0.001`}
-            style={styles.video}
-            muted
-            playsInline
-            loop
-            autoPlay
-            controls={false}
-          />
-        ) : (
-          <div style={styles.empty}>
-            {loading ? (
-              <span>Loading…</span>
-            ) : error ? (
-              <span>{error}</span>
-            ) : (
-              <span>
-                {emptyReason === "no_market" || emptyReason === "guest_market_required"
-                  ? "Add a location to see nearby diners."
-                  : "No eating videos in this market yet."}
+    <div style={styles.stickyShell} data-testid="see-whos-eating-surface">
+      <div style={styles.panel}>
+        <div style={styles.hudRow}>
+          <div style={styles.hudLeft}>
+            <span style={styles.liveDot} aria-hidden="true" />
+            <span style={styles.liveLabel}>LIVE FEED</span>
+            <span style={styles.divider}>/</span>
+            <span style={styles.kicker}>See who&apos;s eating</span>
+          </div>
+          <span style={styles.marketChip} title={marketLabel}>
+            {marketLabel}
+          </span>
+        </div>
+
+        <button
+          type="button"
+          style={styles.reelBtn}
+          data-testid="see-whos-eating-preview"
+          onClick={() => openAt(0)}
+          disabled={!preview}
+          aria-label={preview ? "Open See who's eating reel" : "No market videos yet"}
+        >
+          <span style={styles.cornerTL} aria-hidden="true" />
+          <span style={styles.cornerTR} aria-hidden="true" />
+          <span style={styles.cornerBL} aria-hidden="true" />
+          <span style={styles.cornerBR} aria-hidden="true" />
+          <span style={styles.scanOverlay} aria-hidden="true" />
+
+          {preview?.video_url ? (
+            <video
+              ref={videoRef}
+              src={`${preview.video_url}#t=0.001`}
+              style={styles.video}
+              muted
+              playsInline
+              loop
+              autoPlay
+              controls={false}
+            />
+          ) : (
+            <div style={styles.empty}>
+              {loading ? (
+                <span style={styles.emptyCode}>SYNCING MARKET…</span>
+              ) : error ? (
+                <span>{error}</span>
+              ) : (
+                <span style={styles.emptyCode}>
+                  {emptyReason === "no_market" || emptyReason === "guest_market_required"
+                    ? "NO GEO LOCK — ADD LOCATION"
+                    : "NO SIGNAL IN THIS MARKET"}
+                </span>
+              )}
+            </div>
+          )}
+
+          {preview ? (
+            <div style={styles.caption}>
+              <span style={styles.screenName}>
+                @{preview.diner?.display_name || "diner"}
               </span>
-            )}
-          </div>
+              {preview.is_recommend ? <span style={styles.badge}>REC</span> : null}
+              <span style={styles.tapHint}>TAP · FULLSCREEN</span>
+            </div>
+          ) : null}
+        </button>
+
+        {!isAuthenticated ? (
+          <p style={styles.guestHint}>
+            Watch freely. Sign in to Connect when you tap a screen name.
+          </p>
+        ) : (
+          <p style={styles.guestHint}>
+            {items.length
+              ? `${items.length} signal${items.length === 1 ? "" : "s"} in range · tap to expand`
+              : "Waiting for nearby diner video"}
+          </p>
         )}
-        {preview ? (
-          <div style={styles.caption}>
-            <span style={styles.screenName}>
-              {preview.diner?.display_name || "A diner"}
-            </span>
-            {preview.is_recommend ? <span style={styles.badge}>Recommend</span> : null}
-          </div>
-        ) : null}
-      </button>
-      {!isAuthenticated ? (
-        <p style={styles.guestHint}>
-          Watch freely. Sign in to Connect when you tap a screen name.
-        </p>
-      ) : null}
+      </div>
 
       {fullscreenOpen ? (
         <SeeWhosEatingFullscreen
@@ -144,38 +173,154 @@ export default function SeeWhosEatingSurface({
   );
 }
 
+const ACCENT = "#5eead4";
+const PANEL_BG =
+  "linear-gradient(165deg, rgba(2, 18, 12, 0.97) 0%, rgba(6, 46, 28, 0.94) 55%, rgba(4, 32, 20, 0.98) 100%)";
+
 const styles = {
-  wrap: {
-    margin: "0 0 12px",
+  stickyShell: {
+    position: "sticky",
+    top: "var(--sph-h, 56px)",
+    zIndex: 40,
+    margin: "0 -16px 14px",
+    padding: "10px 16px 12px",
+    background: PANEL_BG,
+    borderBottom: `1px solid rgba(94, 234, 212, 0.28)`,
+    boxShadow: "0 12px 28px rgba(0, 0, 0, 0.35)",
+    backdropFilter: "blur(10px)",
+    WebkitBackdropFilter: "blur(10px)",
+  },
+  panel: {
+    maxWidth: 420,
+    margin: "0 auto",
+  },
+  hudRow: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 10,
+    marginBottom: 8,
+  },
+  hudLeft: {
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+    minWidth: 0,
+    flexWrap: "wrap",
+  },
+  liveDot: {
+    width: 7,
+    height: 7,
+    borderRadius: "50%",
+    background: "#34d399",
+    boxShadow: "0 0 0 3px rgba(52, 211, 153, 0.25), 0 0 10px rgba(52, 211, 153, 0.8)",
+    flexShrink: 0,
+  },
+  liveLabel: {
+    fontSize: 10,
+    fontWeight: 800,
+    letterSpacing: "0.14em",
+    color: ACCENT,
+    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+  },
+  divider: {
+    color: "rgba(255,255,255,0.28)",
+    fontSize: 11,
   },
   kicker: {
     fontSize: 11,
-    fontWeight: 800,
-    letterSpacing: "0.08em",
+    fontWeight: 700,
+    letterSpacing: "0.06em",
     textTransform: "uppercase",
-    color: "rgba(255,255,255,0.72)",
-    margin: "0 0 8px",
+    color: "rgba(255,255,255,0.78)",
+  },
+  marketChip: {
+    fontSize: 9,
+    fontWeight: 700,
+    letterSpacing: "0.1em",
+    color: ACCENT,
+    border: `1px solid rgba(94, 234, 212, 0.35)`,
+    borderRadius: 4,
+    padding: "3px 7px",
+    whiteSpace: "nowrap",
+    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+    maxWidth: "42%",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
   },
   reelBtn: {
     display: "block",
     width: "100%",
     padding: 0,
-    border: "none",
-    borderRadius: 16,
+    border: `1px solid rgba(94, 234, 212, 0.45)`,
+    borderRadius: 10,
     overflow: "hidden",
-    background: "rgba(0,0,0,0.28)",
+    background: "rgba(0,0,0,0.55)",
     cursor: "pointer",
     position: "relative",
     aspectRatio: "9 / 16",
-    maxHeight: 280,
+    maxHeight: 240,
     margin: "0 auto",
+    boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.06), 0 0 24px rgba(52, 211, 153, 0.12)",
+  },
+  cornerTL: {
+    position: "absolute",
+    top: 6,
+    left: 6,
+    width: 14,
+    height: 14,
+    borderTop: `2px solid ${ACCENT}`,
+    borderLeft: `2px solid ${ACCENT}`,
+    zIndex: 2,
+    pointerEvents: "none",
+  },
+  cornerTR: {
+    position: "absolute",
+    top: 6,
+    right: 6,
+    width: 14,
+    height: 14,
+    borderTop: `2px solid ${ACCENT}`,
+    borderRight: `2px solid ${ACCENT}`,
+    zIndex: 2,
+    pointerEvents: "none",
+  },
+  cornerBL: {
+    position: "absolute",
+    bottom: 6,
+    left: 6,
+    width: 14,
+    height: 14,
+    borderBottom: `2px solid ${ACCENT}`,
+    borderLeft: `2px solid ${ACCENT}`,
+    zIndex: 2,
+    pointerEvents: "none",
+  },
+  cornerBR: {
+    position: "absolute",
+    bottom: 6,
+    right: 6,
+    width: 14,
+    height: 14,
+    borderBottom: `2px solid ${ACCENT}`,
+    borderRight: `2px solid ${ACCENT}`,
+    zIndex: 2,
+    pointerEvents: "none",
+  },
+  scanOverlay: {
+    position: "absolute",
+    inset: 0,
+    zIndex: 1,
+    pointerEvents: "none",
+    background:
+      "linear-gradient(180deg, rgba(94,234,212,0.08) 0%, transparent 18%, transparent 82%, rgba(0,0,0,0.35) 100%), repeating-linear-gradient(0deg, transparent 0 2px, rgba(0,0,0,0.04) 2px 3px)",
   },
   video: {
     width: "100%",
     height: "100%",
     objectFit: "cover",
     display: "block",
-    background: "#052e16",
+    background: "#020b07",
   },
   empty: {
     minHeight: 160,
@@ -184,35 +329,55 @@ const styles = {
     justifyContent: "center",
     padding: 16,
     color: "rgba(255,255,255,0.85)",
-    fontSize: 14,
+    fontSize: 13,
     textAlign: "center",
+  },
+  emptyCode: {
+    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+    letterSpacing: "0.08em",
+    fontSize: 11,
+    color: ACCENT,
   },
   caption: {
     position: "absolute",
-    left: 10,
-    right: 10,
-    bottom: 10,
+    left: 12,
+    right: 12,
+    bottom: 12,
+    zIndex: 3,
     display: "flex",
     alignItems: "center",
     gap: 8,
     color: "#fff",
-    textShadow: "0 1px 3px rgba(0,0,0,0.6)",
+    textShadow: "0 1px 3px rgba(0,0,0,0.75)",
   },
   screenName: {
     fontWeight: 800,
-    fontSize: 14,
+    fontSize: 13,
+    letterSpacing: "0.02em",
   },
   badge: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: 800,
-    letterSpacing: "0.05em",
-    textTransform: "uppercase",
-    color: "#bbf7d0",
+    letterSpacing: "0.12em",
+    color: "#052e16",
+    background: ACCENT,
+    borderRadius: 3,
+    padding: "2px 5px",
+  },
+  tapHint: {
+    marginLeft: "auto",
+    fontSize: 9,
+    fontWeight: 700,
+    letterSpacing: "0.1em",
+    color: "rgba(255,255,255,0.65)",
+    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
   },
   guestHint: {
     margin: "8px 0 0",
-    fontSize: 12,
-    color: "rgba(255,255,255,0.78)",
+    fontSize: 11,
+    color: "rgba(255,255,255,0.7)",
     lineHeight: 1.4,
+    letterSpacing: "0.02em",
+    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
   },
 };

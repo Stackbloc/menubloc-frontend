@@ -16,6 +16,10 @@ test("See Who's Eating reel: guest watch, CK dish, existing camera, Connect noti
   assert.match(surface, /listSeeWhosEating/);
   assert.match(surface, /SeeWhosEatingFullscreen/);
   assert.match(surface, /Watch freely/);
+  assert.match(surface, /position:\s*"sticky"/);
+  assert.match(surface, /--sph-h/);
+  assert.match(surface, /LIVE FEED/);
+  assert.match(surface, /see-whos-eating-surface/);
 
   const fullscreen = read("src/pages/consumer/myMenuply/SeeWhosEatingFullscreen.jsx");
   assert.match(fullscreen, /requestConnection/);

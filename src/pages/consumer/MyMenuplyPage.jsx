@@ -1225,13 +1225,13 @@ export default function MyMenuplyPage() {
         }
       />
       <div style={s.page} data-testid="my-menuply-page">
+        <SeeWhosEatingSurface
+          city={locationCity}
+          state={locationState}
+          isAuthenticated={Boolean(isAuthenticated)}
+          viewerUserId={consumer?.id || null}
+        />
         <div style={s.pageHeroBand}>
-          <SeeWhosEatingSurface
-            city={locationCity}
-            state={locationState}
-            isAuthenticated={Boolean(isAuthenticated)}
-            viewerUserId={consumer?.id || null}
-          />
           <div style={s.aboutTitleRow}>
             <h1 style={{ ...s.h1, margin: 0 }}>My Menuply</h1>
             {isAuthenticated ? (
@@ -1240,11 +1240,6 @@ export default function MyMenuplyPage() {
               </Link>
             ) : null}
           </div>
-          {isAuthenticated ? (
-            <p style={s.lead}>Your social food profile — browse what you share. Create with ✕.</p>
-          ) : (
-            <p style={s.lead}>Watch who&apos;s eating nearby. Sign in for your own My Menuply.</p>
-          )}
         </div>
         {error ? <p style={{ ...s.error, marginTop: 16 }}>{error}</p> : null}
 
