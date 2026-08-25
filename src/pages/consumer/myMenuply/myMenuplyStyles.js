@@ -40,6 +40,33 @@ export const stickyTitleAndFeed = {
   boxShadow: "0 12px 28px rgba(0, 0, 0, 0.28)",
 };
 
+/** Green sticky title row — title centered; settings absolute right. */
+export const stickyHeroTitleRow = {
+  position: "relative",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  minHeight: 40,
+  marginBottom: 0,
+};
+
+export const stickyHeroTitle = {
+  margin: 0,
+  fontSize: 30,
+  fontWeight: 800,
+  letterSpacing: "-0.03em",
+  color: "#fff",
+  fontFamily: 'Georgia, "Times New Roman", serif',
+  textAlign: "center",
+};
+
+export const stickyHeroSettings = {
+  position: "absolute",
+  right: 0,
+  top: "50%",
+  transform: "translateY(-50%)",
+};
+
 export const kicker = {
   fontSize: 11,
   fontWeight: 800,

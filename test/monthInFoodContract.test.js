@@ -74,6 +74,7 @@ test("My Menuply surfaces Account settings without drawer-only path", () => {
   assert.match(mine, /data-testid="my-menuply-account-settings"/);
   assert.match(mine, /to="\/account"/);
   assert.match(mine, /stickyTitleAndFeed|my-menuply-sticky-head/);
+  assert.match(mine, /stickyHeroTitleRow|stickyHeroTitle/);
   assert.doesNotMatch(mine, /StickyPageHeader\s*\n\s*title="My Menuply"/);
   assert.match(header, /titleAccessory/);
   assert.match(header, /sticky-header-account-settings/);

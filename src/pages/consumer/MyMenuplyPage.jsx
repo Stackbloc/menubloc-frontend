@@ -1199,15 +1199,15 @@ export default function MyMenuplyPage() {
       <div style={s.page} data-testid="my-menuply-page">
         <div style={s.stickyTitleAndFeed} data-testid="my-menuply-sticky-head">
           <div style={s.pageHeroBand}>
-            <div style={s.aboutTitleRow}>
-              <h1 style={{ ...s.h1, margin: 0 }}>My Menuply</h1>
+            <div style={s.stickyHeroTitleRow}>
+              <h1 style={s.stickyHeroTitle}>My Menuply</h1>
               {isAuthenticated ? (
                 <Link
                   to="/account"
                   data-testid="my-menuply-account-settings"
                   aria-label="Account settings"
                   title="Settings"
-                  style={s.settingsIconLinkOnGreen}
+                  style={{ ...s.settingsIconLinkOnGreen, ...s.stickyHeroSettings }}
                 >
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                     <path

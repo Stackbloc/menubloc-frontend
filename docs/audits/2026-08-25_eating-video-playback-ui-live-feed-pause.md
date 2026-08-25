@@ -34,7 +34,7 @@ None this turn.
 
 # Commits
 
-Local in `menubloc-frontend-main` — not CPD’d unless Andre says `cpd`.
+CPD: tip `menubloc-frontend-g0i59i1u8-menuply.vercel.app` / `index-Ckdz5Gru.js` (FE `1f850ff`).
 
 # Deployment Status
 

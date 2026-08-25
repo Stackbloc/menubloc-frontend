@@ -36,36 +36,56 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` @ clean `main` |
-| Git commit | `a53280c` — Video\|Photo default; label→capture Record video; E2E completion contract |
-| Vercel deployment | `menubloc-frontend-p15q2zbam-menuply.vercel.app` |
-| Live bundle | `index-BvGoNScn.js` |
+| Git commit | `1502c00` — sticky green My Menuply + live feed; TikTok fullscreen reel; video poster fallbacks |
+| Vercel deployment | `menubloc-frontend-1r469iprr-menuply.vercel.app` |
+| Live bundle | `index-CaMT7O9s.js` |
 | Aliases | `menuply.com`, `www.menuply.com`, `crm.menuply.com`, `venues.menuply.com` |
 | Tip-gate | **PASS** (apex + www) verified 2026-08-25 |
-| Feature | Video-first camera sheet; OS camera via label+capture (not file-picker click) |
+| Feature | Sticky title+feed; swipe-up fullscreen with Exit; meal cards use logo/billboard/item still when frames won’t decode |
 
 ### Backend (Railway)
 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-backend-main` @ clean `main` |
-| Git on origin | `d3449e93` |
-| Live health SHA | `d3449e93` |
+| Git on origin | `bbba2655` (docs mirror; diner-media code still live from `d3449e93`) |
+| Live health SHA | `bbba2655` |
 | Health URL | `https://menubloc-backend-production.up.railway.app/health` |
-| `commit_hash` | `d3449e939a0a…` |
+| `commit_hash` | `bbba2655ecb2…` |
 | DB | migrations through `0288` |
-| Smoke | tip-gate PASS `p15q2zbam` / `index-BvGoNScn.js`; railway=59 localhost=9; video upload→DB→HEAD **PASS** |
+| Smoke | tip-gate PASS `1r469iprr` / `index-CaMT7O9s.js`; railway=59 localhost=9 |
 
 ### Restore current tip (if tip-gate fails mid-change)
 
 ```bash
 cd /Users/andrebarber/Desktop/menubloc/menubloc-frontend-main
-npx vercel alias set menubloc-frontend-p15q2zbam-menuply.vercel.app menuply.com
-npx vercel alias set menubloc-frontend-p15q2zbam-menuply.vercel.app www.menuply.com
-npx vercel alias set menubloc-frontend-p15q2zbam-menuply.vercel.app crm.menuply.com
-npx vercel alias set menubloc-frontend-p15q2zbam-menuply.vercel.app venues.menuply.com
+npx vercel alias set menubloc-frontend-1r469iprr-menuply.vercel.app menuply.com
+npx vercel alias set menubloc-frontend-1r469iprr-menuply.vercel.app www.menuply.com
+npx vercel alias set menubloc-frontend-1r469iprr-menuply.vercel.app crm.menuply.com
+npx vercel alias set menubloc-frontend-1r469iprr-menuply.vercel.app venues.menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 ```
+
+### Prior tip — playback UI + live-feed pause (rollback target)
+
+| Field | Value |
+|-------|-------|
+| Deployment | `menubloc-frontend-g0i59i1u8-menuply.vercel.app` |
+| Live bundle | `index-Ckdz5Gru.js` |
+| FE commit | `1f850ff` |
+| BE health | `bbba2655` |
+| Notes | Clean play URLs; pause sticky feed on meal play; pre–sticky title / TikTok reel |
+
+### Prior tip — Video-first camera + diner-media (rollback target)
+
+| Field | Value |
+|-------|-------|
+| Deployment | `menubloc-frontend-p15q2zbam-menuply.vercel.app` |
+| Live bundle | `index-BvGoNScn.js` |
+| FE commit | `a53280c` |
+| BE health | `d3449e93` / later `bbba2655` |
+| Notes | Video\|Photo default; label→capture; pre–playback UI / live-feed pause |
 
 ### Prior tip — See Who’s Eating sticky HUD (rollback target)
 
