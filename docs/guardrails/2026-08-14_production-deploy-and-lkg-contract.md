@@ -36,12 +36,12 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` @ clean `main` |
-| Git commit | `1ef546c` — ShareModal above bottom nav on mobile (incl. `9b602dd` cluster hero ad fix, `5d6e26a` Android video) |
-| Vercel deployment | `menubloc-frontend-2pxw8wkr2-menuply.vercel.app` |
-| Live bundle | `index-BTEvldYm.js` |
+| Git commit | `01ddc2d` — Record video copy restore (incl. `ecde436` Eating order, `5d6e26a` Android soft-accept) |
+| Vercel deployment | `menubloc-frontend-2cgb8v0pn-menuply.vercel.app` |
+| Live bundle | `index-DP4hQTxR.js` |
 | Aliases | `menuply.com`, `www.menuply.com`, `crm.menuply.com`, `venues.menuply.com` |
 | Tip-gate | **PASS** (apex + www) verified 2026-08-25 |
-| Feature | ShareModal z-index lift on mobile; cluster hero ad full banner; Android video + Upload media |
+| Feature | Camera sheet says **Record video** again; X Upload media remains library path |
 
 ### Backend (Railway)
 
@@ -52,20 +52,40 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway
 | Live health SHA | `b0781d7a` |
 | Health URL | `https://menubloc-backend-production.up.railway.app/health` |
 | `commit_hash` | `b0781d7a…` |
-| DB | migrations through `0286`; 16 sample ads → Menuply social creatives |
-| Smoke | tip-gate PASS `2pxw8wkr2` / `index-BTEvldYm.js`; railway=59 localhost=9 |
+| DB | migrations through `0286` |
+| Smoke | tip-gate PASS `2cgb8v0pn` / `index-DP4hQTxR.js`; `Record video (up to` in bundle; railway=59 localhost=9 |
 
 ### Restore current tip (if tip-gate fails mid-change)
 
 ```bash
 cd /Users/andrebarber/Desktop/menubloc/menubloc-frontend-main
-npx vercel alias set menubloc-frontend-2pxw8wkr2-menuply.vercel.app menuply.com
-npx vercel alias set menubloc-frontend-2pxw8wkr2-menuply.vercel.app www.menuply.com
-npx vercel alias set menubloc-frontend-2pxw8wkr2-menuply.vercel.app crm.menuply.com
-npx vercel alias set menubloc-frontend-2pxw8wkr2-menuply.vercel.app venues.menuply.com
+npx vercel alias set menubloc-frontend-2cgb8v0pn-menuply.vercel.app menuply.com
+npx vercel alias set menubloc-frontend-2cgb8v0pn-menuply.vercel.app www.menuply.com
+npx vercel alias set menubloc-frontend-2cgb8v0pn-menuply.vercel.app crm.menuply.com
+npx vercel alias set menubloc-frontend-2cgb8v0pn-menuply.vercel.app venues.menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 ```
+
+### Prior tip — X sheet Eating order (rollback target)
+
+| Field | Value |
+|-------|-------|
+| Deployment | `menubloc-frontend-pu6h2i0ob-menuply.vercel.app` |
+| Live bundle | `index-DON2o8Iy.js` |
+| FE commit | `ecde436` |
+| BE health | `b0781d7a` |
+| Notes | Camera still said Upload video |
+
+### Prior tip — ShareModal mobile lift (rollback target)
+
+| Field | Value |
+|-------|-------|
+| Deployment | `menubloc-frontend-2pxw8wkr2-menuply.vercel.app` |
+| Live bundle | `index-BTEvldYm.js` |
+| FE commit | `1ef546c` |
+| BE health | `b0781d7a` |
+| Notes | Upload media was incorrectly 2nd in Eating section |
 
 ### Prior tip — cluster hero ad branding hotfix (rollback target)
 
