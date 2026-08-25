@@ -1,6 +1,7 @@
 /**
- * Camera icon → photo: live getUserMedia sheet. Video: OS native recorder (not MediaRecorder).
- * Library via source="library" (Post about Upload from library).
+ * Camera icon → ConsumerCameraSheet (photo snap + optional Video → OS native capture).
+ * Library via source="library" (file picker without capture).
+ * Diner avatar should pass allowVideo={false}.
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -33,7 +34,7 @@ export default function MenuplyMediaPicker({
   facingMode = "environment",
   allowPhoto = true,
   allowVideo = true,
-  /** "camera" = live photo sheet + native video; "library" = files without capture */
+  /** "camera" = live photo sheet (+ video mode when allowVideo); "library" = files without capture */
   source = "camera",
   testId = "menuply-media-picker",
   ariaLabel = "Add photo or video",
@@ -44,29 +45,30 @@ export default function MenuplyMediaPicker({
 }) {
   const [previewUrl, setPreviewUrl] = useState("");
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [sheetInitialMode, setSheetInitialMode] = useState("photo");
   const inputRef = useRef(null);
   const useLibrary = source === "library";
-  const canInlinePhoto = !useLibrary && allowPhoto && inlineCameraSupported() && preferInlineCamera();
+  const canInlineSheet =
+    !useLibrary && allowPhoto && inlineCameraSupported() && preferInlineCamera();
 
   const accept = useMemo(
     () => buildAccept({ allowPhoto, allowVideo }),
     [allowPhoto, allowVideo]
   );
 
-  const photoFallbackAccept = "image/*";
-
   function openLibraryFallback() {
     if (disabled) return;
     inputRef.current?.click();
   }
 
-  function openPhotoCapture() {
+  function openCameraSheet(initialMode = "photo") {
     if (disabled) return;
     if (useLibrary) {
       openLibraryFallback();
       return;
     }
-    if (canInlinePhoto) {
+    if (canInlineSheet) {
+      setSheetInitialMode(allowVideo && initialMode === "video" ? "video" : "photo");
       setSheetOpen(true);
       return;
     }
@@ -75,9 +77,9 @@ export default function MenuplyMediaPicker({
 
   useEffect(() => {
     if (openOnMount && !disabled && !file) {
-      if (allowPhoto) openPhotoCapture();
+      if (allowPhoto) openCameraSheet("photo");
       else if (allowVideo && !useLibrary) {
-        /* video-only surfaces use NativeVideoCapture trigger separately */
+        /* video-only surfaces use NativeVideoCapture trigger */
       } else openLibraryFallback();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- open once on mount when requested
@@ -100,7 +102,9 @@ export default function MenuplyMediaPicker({
   }
 
   const isVideo = isVideoFile(file);
-  const showDualCapture = !useLibrary && allowPhoto && allowVideo;
+  /** One camera control opens the sheet (Photo | Video inside). No separate Record video row. */
+  const showUnifiedCamera = canInlineSheet;
+  const showVideoOnlyNative = !useLibrary && allowVideo && !allowPhoto;
 
   return (
     <div data-testid={testId} style={{ display: "inline-flex", flexDirection: "column", gap: 8 }}>
@@ -136,19 +140,36 @@ export default function MenuplyMediaPicker({
           </p>
           <div style={previewStyles.actions}>
             {allowPhoto ? (
-              <button type="button" style={previewStyles.link} disabled={disabled} onClick={openPhotoCapture}>
+              <button
+                type="button"
+                style={previewStyles.link}
+                disabled={disabled}
+                onClick={() => openCameraSheet("photo")}
+              >
                 Replace photo
               </button>
             ) : null}
             {allowVideo ? (
-              <NativeVideoCapture
-                compact
-                disabled={disabled}
-                facingMode={facingMode}
-                testId={`${testId}-replace-video`}
-                buttonLabel="Replace video"
-                onFile={(next) => onFile?.(next)}
-              />
+              canInlineSheet ? (
+                <button
+                  type="button"
+                  style={previewStyles.link}
+                  disabled={disabled}
+                  onClick={() => openCameraSheet("video")}
+                  data-testid={`${testId}-replace-video`}
+                >
+                  Replace video
+                </button>
+              ) : (
+                <NativeVideoCapture
+                  compact
+                  disabled={disabled}
+                  facingMode={facingMode}
+                  testId={`${testId}-replace-video`}
+                  buttonLabel="Replace video"
+                  onFile={(next) => onFile?.(next)}
+                />
+              )
             ) : null}
             <button
               type="button"
@@ -161,27 +182,19 @@ export default function MenuplyMediaPicker({
           </div>
         </div>
       ) : renderTrigger ? (
-        renderTrigger({ open: openPhotoCapture, disabled })
-      ) : showDualCapture ? (
-        <div style={triggerStyles.row} data-testid={`${testId}-capture-row`}>
-          <button
-            type="button"
-            aria-label="Take photo"
-            disabled={disabled}
-            onClick={openPhotoCapture}
-            style={{ ...socialBtn.icon, ...iconStyle }}
-            data-testid={`${testId}-photo-trigger`}
-          >
-            <CameraIcon />
-          </button>
-          <NativeVideoCapture
-            disabled={disabled}
-            facingMode={facingMode}
-            testId={`${testId}-video`}
-            onFile={(next) => onFile?.(next)}
-          />
-        </div>
-      ) : allowVideo && !allowPhoto ? (
+        renderTrigger({ open: () => openCameraSheet("photo"), disabled })
+      ) : showUnifiedCamera ? (
+        <button
+          type="button"
+          aria-label={ariaLabel}
+          disabled={disabled}
+          onClick={() => openCameraSheet("photo")}
+          style={{ ...socialBtn.icon, ...iconStyle }}
+          data-testid={`${testId}-trigger`}
+        >
+          <CameraIcon />
+        </button>
+      ) : showVideoOnlyNative ? (
         <NativeVideoCapture
           disabled={disabled}
           facingMode={facingMode}
@@ -193,7 +206,7 @@ export default function MenuplyMediaPicker({
           type="button"
           aria-label={ariaLabel}
           disabled={disabled}
-          onClick={openPhotoCapture}
+          onClick={() => openCameraSheet("photo")}
           style={{ ...socialBtn.icon, ...iconStyle }}
           data-testid={`${testId}-trigger`}
         >
@@ -204,19 +217,25 @@ export default function MenuplyMediaPicker({
       <input
         ref={inputRef}
         type="file"
-        accept={useLibrary ? accept : photoFallbackAccept}
-        {...(useLibrary ? {} : allowPhoto && !canInlinePhoto ? { capture: captureAttr(facingMode) } : {})}
+        accept={useLibrary ? accept : allowVideo && !canInlineSheet ? accept : "image/*"}
+        {...(useLibrary
+          ? {}
+          : allowPhoto && !canInlineSheet
+            ? { capture: captureAttr(facingMode) }
+            : {})}
         hidden
         disabled={disabled}
         data-testid={useLibrary ? `${testId}-library-input` : `${testId}-camera-input`}
         onChange={handlePick}
       />
 
-      {canInlinePhoto ? (
+      {canInlineSheet ? (
         <ConsumerCameraSheet
           open={sheetOpen}
           onClose={() => setSheetOpen(false)}
           facingMode={facingMode}
+          allowVideo={allowVideo}
+          initialMode={sheetInitialMode}
           onCapture={(captured) => {
             if (captured) onFile?.(captured);
             setSheetOpen(false);
@@ -240,15 +259,6 @@ function CameraIcon() {
     </svg>
   );
 }
-
-const triggerStyles = {
-  row: {
-    display: "flex",
-    flexWrap: "wrap",
-    alignItems: "flex-start",
-    gap: 10,
-  },
-};
 
 const previewStyles = {
   wrap: { display: "flex", flexDirection: "column", gap: 8, maxWidth: "100%" },

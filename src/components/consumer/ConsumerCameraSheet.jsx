@@ -6,24 +6,38 @@ import {
   photoFileFromVideoElement,
   stopMediaStream,
 } from "../../lib/consumerCameraCapture.js";
+import {
+  captureAttrForFacing,
+  formatVideoMaxDurationLabel,
+  normalizeNativeVideoFile,
+} from "../../lib/nativeVideoCapture.js";
 
 /**
- * Full-screen mobile camera sheet — photo snap via getUserMedia.
- * Video uses NativeVideoCapture (OS camera), not this sheet.
+ * Full-screen mobile camera sheet.
+ * Photo → live getUserMedia snap.
+ * Video → OS-native recorder (`<input capture>`), not MediaRecorder.
  */
 export default function ConsumerCameraSheet({
   open,
   onClose,
   facingMode = "environment",
   onCapture,
+  allowVideo = false,
+  initialMode = "photo",
 }) {
   const videoRef = useRef(null);
   const streamRef = useRef(null);
+  const nativeVideoInputRef = useRef(null);
 
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [currentFacingMode, setCurrentFacingMode] = useState(facingMode);
   const [canFlipCamera, setCanFlipCamera] = useState(true);
+  const [mode, setMode] = useState(
+    allowVideo && initialMode === "video" ? "video" : "photo"
+  );
+
+  const photoMode = !allowVideo || mode === "photo";
 
   function attachLivePreview(stream) {
     const el = videoRef.current;
@@ -43,10 +57,23 @@ export default function ConsumerCameraSheet({
   useEffect(() => {
     if (!open) return;
     setCurrentFacingMode(facingMode);
-  }, [open, facingMode]);
+    setMode(allowVideo && initialMode === "video" ? "video" : "photo");
+    setError("");
+  }, [open, facingMode, allowVideo, initialMode]);
 
   useEffect(() => {
     if (!open) return undefined;
+
+    // Free the camera so the OS recorder can claim it in video mode.
+    if (!photoMode) {
+      stopMediaStream(streamRef.current);
+      streamRef.current = null;
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
+        videoRef.current.removeAttribute("src");
+      }
+      return undefined;
+    }
 
     let alive = true;
 
@@ -89,7 +116,7 @@ export default function ConsumerCameraSheet({
         videoRef.current.removeAttribute("src");
       }
     };
-  }, [open, currentFacingMode]);
+  }, [open, currentFacingMode, photoMode]);
 
   if (!open) return null;
 
@@ -110,8 +137,32 @@ export default function ConsumerCameraSheet({
     }
   }
 
-  function switchCamera() {
+  function openNativeVideoRecorder() {
     if (busy) return;
+    setError("");
+    nativeVideoInputRef.current?.click();
+  }
+
+  async function handleNativeVideoPick(event) {
+    const picked = event.target.files?.[0] || null;
+    event.target.value = "";
+    if (!picked) return;
+
+    setBusy(true);
+    setError("");
+    try {
+      const file = await normalizeNativeVideoFile(picked);
+      onCapture?.(file);
+      onClose?.();
+    } catch (err) {
+      setError(String(err?.message || "Could not use that video."));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function switchCamera() {
+    if (busy || !photoMode) return;
     if (!canFlipCamera) {
       setError("This device only has one camera.");
       return;
@@ -122,12 +173,20 @@ export default function ConsumerCameraSheet({
     );
   }
 
+  function selectMode(next) {
+    if (!allowVideo || busy) return;
+    setError("");
+    setMode(next);
+  }
+
+  const maxLabel = formatVideoMaxDurationLabel();
+
   return (
     <div
       data-testid="consumer-camera-sheet"
       role="dialog"
       aria-modal="true"
-      aria-label="Take photo"
+      aria-label={photoMode ? "Take photo" : "Record video"}
       style={styles.overlay}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose?.();
@@ -135,30 +194,72 @@ export default function ConsumerCameraSheet({
     >
       <div style={styles.sheet} onClick={(e) => e.stopPropagation()}>
         <div style={styles.previewWrap}>
-          <video
-            ref={videoRef}
-            style={styles.preview}
-            playsInline
-            muted
-            autoPlay
-            data-testid="consumer-camera-live"
-          />
+          {photoMode ? (
+            <video
+              ref={videoRef}
+              style={styles.preview}
+              playsInline
+              muted
+              autoPlay
+              data-testid="consumer-camera-live"
+            />
+          ) : (
+            <div style={styles.videoIdle} data-testid="consumer-camera-video-idle">
+              <p style={styles.videoIdleTitle}>Record with your phone camera</p>
+              <p style={styles.videoIdleHint}>Up to {maxLabel} · uploads to Menuply</p>
+            </div>
+          )}
 
-          {busy ? <div style={styles.loading}>Opening camera…</div> : null}
+          {busy ? <div style={styles.loading}>{photoMode ? "Opening camera…" : "Checking video…"}</div> : null}
 
-          <button
-            type="button"
-            aria-label="Switch camera"
-            data-testid="consumer-camera-switch"
-            disabled={busy || !canFlipCamera}
-            onClick={switchCamera}
-            style={{
-              ...styles.switchCameraBtn,
-              ...(canFlipCamera ? null : styles.switchCameraBtnDisabled),
-            }}
-          >
-            ↻
-          </button>
+          {photoMode ? (
+            <button
+              type="button"
+              aria-label="Switch camera"
+              data-testid="consumer-camera-switch"
+              disabled={busy || !canFlipCamera}
+              onClick={switchCamera}
+              style={{
+                ...styles.switchCameraBtn,
+                ...(canFlipCamera ? null : styles.switchCameraBtnDisabled),
+              }}
+            >
+              ↻
+            </button>
+          ) : null}
+
+          {allowVideo ? (
+            <div style={styles.modeRow} role="tablist" aria-label="Camera mode">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={photoMode}
+                data-testid="consumer-camera-mode-photo"
+                disabled={busy}
+                onClick={() => selectMode("photo")}
+                style={{
+                  ...styles.modeChip,
+                  ...(photoMode ? styles.modeChipActive : null),
+                }}
+              >
+                Photo
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={!photoMode}
+                data-testid="consumer-camera-mode-video"
+                disabled={busy}
+                onClick={() => selectMode("video")}
+                style={{
+                  ...styles.modeChip,
+                  ...(!photoMode ? styles.modeChipActive : null),
+                }}
+              >
+                Video
+              </button>
+            </div>
+          ) : null}
         </div>
 
         {error ? (
@@ -171,15 +272,41 @@ export default function ConsumerCameraSheet({
           <button type="button" style={styles.secondary} disabled={busy} onClick={() => onClose?.()}>
             Cancel
           </button>
-          <button
-            type="button"
-            style={styles.primary}
-            disabled={busy || Boolean(error)}
-            onClick={handleSnapPhoto}
-          >
-            Capture
-          </button>
+          {photoMode ? (
+            <button
+              type="button"
+              style={styles.primary}
+              disabled={busy || Boolean(error)}
+              onClick={handleSnapPhoto}
+              data-testid="consumer-camera-capture"
+            >
+              Capture
+            </button>
+          ) : (
+            <button
+              type="button"
+              style={styles.primary}
+              disabled={busy}
+              onClick={openNativeVideoRecorder}
+              data-testid="consumer-camera-record-native"
+            >
+              Record video
+            </button>
+          )}
         </div>
+
+        {allowVideo ? (
+          <input
+            ref={nativeVideoInputRef}
+            type="file"
+            accept="video/*"
+            capture={captureAttrForFacing(currentFacingMode)}
+            hidden
+            disabled={busy}
+            data-testid="consumer-camera-native-video-input"
+            onChange={handleNativeVideoPick}
+          />
+        ) : null}
       </div>
     </div>
   );
@@ -217,6 +344,31 @@ const styles = {
     display: "block",
     background: "#0f172a",
   },
+  videoIdle: {
+    width: "100%",
+    height: "100%",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    padding: 24,
+    textAlign: "center",
+    background: "linear-gradient(165deg, #080d09 0%, #0f172a 55%, #14532d 100%)",
+  },
+  videoIdleTitle: {
+    margin: 0,
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: 800,
+    lineHeight: 1.3,
+  },
+  videoIdleHint: {
+    margin: 0,
+    color: "rgba(255,255,255,0.72)",
+    fontSize: 13,
+    fontWeight: 600,
+  },
   loading: {
     position: "absolute",
     inset: 0,
@@ -246,6 +398,32 @@ const styles = {
   switchCameraBtnDisabled: {
     opacity: 0.35,
     cursor: "not-allowed",
+  },
+  modeRow: {
+    position: "absolute",
+    left: 12,
+    right: 12,
+    bottom: 12,
+    display: "flex",
+    gap: 8,
+    justifyContent: "center",
+  },
+  modeChip: {
+    minWidth: 88,
+    minHeight: 36,
+    padding: "0 14px",
+    borderRadius: 999,
+    border: "1px solid rgba(255,255,255,0.35)",
+    background: "rgba(0,0,0,0.45)",
+    color: "rgba(255,255,255,0.85)",
+    fontWeight: 700,
+    fontSize: 13,
+    cursor: "pointer",
+  },
+  modeChipActive: {
+    background: "#1dd8a0",
+    borderColor: "#1dd8a0",
+    color: "#06120d",
   },
   errorWrap: {
     margin: "10px 14px 0",

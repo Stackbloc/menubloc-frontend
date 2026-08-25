@@ -7,9 +7,16 @@ import {
   MAX_UPLOAD_VIDEO_BYTES,
   formatBytes,
 } from "./consumerCameraCapture.js";
-import { SOCIAL_VIDEO_MAX_RECORD_SECONDS } from "./eatingMediaUtils.js";
+import {
+  SOCIAL_VIDEO_MAX_RECORD_SECONDS,
+  formatVideoMaxDurationLabel,
+} from "./eatingMediaUtils.js";
 
-export { SOCIAL_VIDEO_MAX_RECORD_SECONDS, MAX_UPLOAD_VIDEO_BYTES };
+export {
+  SOCIAL_VIDEO_MAX_RECORD_SECONDS,
+  MAX_UPLOAD_VIDEO_BYTES,
+  formatVideoMaxDurationLabel,
+};
 
 export function captureAttrForFacing(facingMode = "environment") {
   return facingMode === "user" ? "user" : "environment";
@@ -26,7 +33,7 @@ export function validateNativeVideoFile(file) {
   }
   if (file.size > MAX_UPLOAD_VIDEO_BYTES) {
     throw new Error(
-      `Video is too large (${formatBytes(file.size)}). Record ${SOCIAL_VIDEO_MAX_RECORD_SECONDS} seconds or less and try again.`
+      `Video is too large (${formatBytes(file.size)}). Keep it under ${formatBytes(MAX_UPLOAD_VIDEO_BYTES)} (about ${formatVideoMaxDurationLabel()}).`
     );
   }
   return file;
@@ -72,7 +79,7 @@ export function probeNativeVideoFile(file) {
         finish(
           reject,
           new Error(
-            `Video is too long (${Math.round(dur)}s). Record ${SOCIAL_VIDEO_MAX_RECORD_SECONDS} seconds or less.`
+            `Video is too long (${Math.round(dur)}s). Record ${formatVideoMaxDurationLabel()} or less.`
           )
         );
         return;

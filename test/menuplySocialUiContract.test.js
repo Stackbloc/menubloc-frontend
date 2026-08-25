@@ -16,7 +16,7 @@ function read(rel) {
 test("MenuplyMediaPicker uses photo sheet + native video (not MediaRecorder sheet)", () => {
   const picker = read("src/components/social/MenuplyMediaPicker.jsx");
   assert.match(picker, /ConsumerCameraSheet/);
-  assert.match(picker, /NativeVideoCapture/);
+  assert.match(picker, /allowVideo=\{allowVideo\}/);
   assert.match(picker, /source = "camera"/);
   assert.match(picker, /source === "library"/);
   assert.match(picker, /camera-input/);
@@ -27,15 +27,18 @@ test("MenuplyMediaPicker uses photo sheet + native video (not MediaRecorder shee
   assert.doesNotMatch(picker, /Choose Photo/);
 });
 
-test("ConsumerCameraSheet is photo-only", () => {
+test("ConsumerCameraSheet photo snap + Video mode launches OS native capture", () => {
   const sheet = read("src/components/consumer/ConsumerCameraSheet.jsx");
   assert.match(sheet, /consumer-camera-switch/);
   assert.match(sheet, /openCameraStreamWithFallback/);
   assert.match(sheet, /consumer-camera-live/);
+  assert.match(sheet, /consumer-camera-mode-video/);
+  assert.match(sheet, /consumer-camera-record-native/);
+  assert.match(sheet, /normalizeNativeVideoFile/);
+  assert.match(sheet, /accept="video\/\*"/);
   assert.doesNotMatch(sheet, /createCameraMediaRecorder/);
-  assert.doesNotMatch(sheet, /consumer-camera-mode-video/);
-  assert.doesNotMatch(sheet, /consumer-camera-record/);
   assert.doesNotMatch(sheet, /validateRecordedVideoBlob/);
+  assert.doesNotMatch(sheet, /consumer-camera-record(?!-native)/);
 });
 
 test("nativeVideoCapture module validates OS clips", () => {
@@ -59,13 +62,19 @@ test("ConsumerCameraSheet keeps unified 3:4 photo preview", () => {
   assert.match(sheet, /aspectRatio: "3 \/ 4"/);
 });
 
-test("eating media utils define portrait capture (not oversized UI frames)", () => {
+test("eating media utils define TikTok-like video duration (10 minutes)", () => {
   const utils = read("src/lib/eatingMediaUtils.js");
   assert.match(utils, /SOCIAL_VIDEO_IDEAL_WIDTH/);
-  assert.match(utils, /SOCIAL_VIDEO_MAX_RECORD_SECONDS = 15/);
+  assert.match(utils, /SOCIAL_VIDEO_MAX_RECORD_SECONDS = 600/);
+  assert.match(utils, /formatVideoMaxDurationLabel/);
   const styles = read("src/pages/consumer/myMenuply/myMenuplyStyles.js");
   assert.doesNotMatch(styles, /mealHolderVideo/);
   assert.match(styles, /socialVideoMedia/);
+});
+
+test("diner avatar stays photo-only", () => {
+  const avatarSheet = read("src/pages/consumer/myMenuply/AvatarComposeSheet.jsx");
+  assert.match(avatarSheet, /allowVideo=\{false\}/);
 });
 
 test("diner eating media upload maps Failed to fetch for video", () => {

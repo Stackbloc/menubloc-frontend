@@ -33,21 +33,23 @@ test("captureAttrForFacing maps user vs environment", () => {
   assert.equal(captureAttrForFacing("environment"), "environment");
 });
 
-test("MenuplyMediaPicker uses native video capture instead of MediaRecorder sheet", () => {
+test("MenuplyMediaPicker opens ConsumerCameraSheet with optional native video mode", () => {
   const picker = read("src/components/social/MenuplyMediaPicker.jsx");
-  assert.match(picker, /NativeVideoCapture/);
-  assert.doesNotMatch(picker, /createCameraMediaRecorder/);
   assert.match(picker, /ConsumerCameraSheet/);
+  assert.match(picker, /allowVideo=\{allowVideo\}/);
+  assert.doesNotMatch(picker, /createCameraMediaRecorder/);
 });
 
-test("ConsumerCameraSheet is photo-only (no in-app video record)", () => {
+test("ConsumerCameraSheet Video mode uses OS native capture (no MediaRecorder)", () => {
   const sheet = read("src/components/consumer/ConsumerCameraSheet.jsx");
-  assert.match(sheet, /photo snap via getUserMedia/);
+  assert.match(sheet, /photo snap via getUserMedia|Photo → live getUserMedia/);
+  assert.match(sheet, /normalizeNativeVideoFile/);
+  assert.match(sheet, /consumer-camera-mode-video/);
+  assert.match(sheet, /consumer-camera-record-native/);
   assert.doesNotMatch(sheet, /createCameraMediaRecorder/);
   assert.doesNotMatch(sheet, /validateRecordedVideoBlob/);
-  assert.doesNotMatch(sheet, /consumer-camera-record/);
 });
 
-test("native video max record seconds", () => {
-  assert.equal(SOCIAL_VIDEO_MAX_RECORD_SECONDS, 15);
+test("native video max record seconds is TikTok-like (10 minutes)", () => {
+  assert.equal(SOCIAL_VIDEO_MAX_RECORD_SECONDS, 600);
 });

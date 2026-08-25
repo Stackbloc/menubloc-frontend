@@ -250,11 +250,9 @@ export default function EatingCompose({
           );
 
   /*
-   * Camera behavior (2026-08-24 native video system):
-   *
-   * Photo → Menuply ConsumerCameraSheet (getUserMedia, front/rear flip).
-   * Video → NativeVideoCapture (OS phone camera via <input capture>, not MediaRecorder).
-   *
+   * Camera behavior (hybrid sheet):
+   * Photo → ConsumerCameraSheet getUserMedia snap.
+   * Video → same sheet → OS phone camera (<input capture>), not MediaRecorder.
    * Library mode uses the native file picker for both.
    */
 

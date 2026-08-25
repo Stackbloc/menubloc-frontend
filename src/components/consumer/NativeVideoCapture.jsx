@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import {
   captureAttrForFacing,
+  formatVideoMaxDurationLabel,
   normalizeNativeVideoFile,
   SOCIAL_VIDEO_MAX_RECORD_SECONDS,
 } from "../../lib/nativeVideoCapture.js";
@@ -20,6 +21,7 @@ export default function NativeVideoCapture({
   const inputRef = useRef(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const maxLabel = formatVideoMaxDurationLabel(SOCIAL_VIDEO_MAX_RECORD_SECONDS);
 
   function openRecorder() {
     if (disabled || busy) return;
@@ -52,7 +54,7 @@ export default function NativeVideoCapture({
         onClick={openRecorder}
         style={compact ? styles.compactBtn : styles.btn}
         data-testid={`${testId}-trigger`}
-        aria-label={`${buttonLabel} (up to ${SOCIAL_VIDEO_MAX_RECORD_SECONDS} seconds)`}
+        aria-label={`${buttonLabel} (up to ${maxLabel})`}
       >
         <VideoIcon />
         {!compact ? (
@@ -63,7 +65,7 @@ export default function NativeVideoCapture({
       </button>
       {!compact ? (
         <p style={styles.hint} data-testid={`${testId}-hint`}>
-          Uses your phone camera · max {SOCIAL_VIDEO_MAX_RECORD_SECONDS}s
+          Uses your phone camera · up to {maxLabel}
         </p>
       ) : null}
       {error ? (
