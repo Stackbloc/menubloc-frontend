@@ -106,7 +106,7 @@ test("X sheet lists Upload media (library) separate from camera What I'm Eating"
   assert.match(sheet, /id: "upload-media"/);
   assert.match(sheet, /Upload media/);
   assert.match(sheet, /compose=ate&media=library/);
-  assert.match(sheet, /"ate", "upload-media", "want"/);
+  assert.match(sheet, /"ate", "want", "profile-gallery", "upload-media"/);
 });
 
 test("What I Ate meal board is presentation-only (no empty cameras)", () => {

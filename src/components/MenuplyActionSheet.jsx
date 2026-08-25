@@ -141,7 +141,7 @@ export const POST_ABOUT_SECTIONS = [
     id: "eating",
     title: "Eating",
     defaultOpen: true,
-    actionIds: ["ate", "upload-media", "want", "profile-gallery"],
+    actionIds: ["ate", "want", "profile-gallery", "upload-media"],
   },
   {
     id: "plan-invite",
