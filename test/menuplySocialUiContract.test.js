@@ -137,6 +137,7 @@ test("What I Ate meal board is presentation-only (no empty cameras)", () => {
   assert.match(board, /showEmptyHolders = false/);
   assert.match(board, /visibleWhatIAteMealPeriods/);
   assert.match(board, /mealHolder|restaurant_logo_url|resolveEatingDishVisual/);
+  assert.match(board, /VideoStillPreview/);
   assert.match(board, /No entries/);
   assert.match(board, /im_eating/);
   assert.match(board, /what-i-ate-meal-delete/);
@@ -144,6 +145,20 @@ test("What I Ate meal board is presentation-only (no empty cameras)", () => {
   assert.doesNotMatch(board, /meal-holder-add-media/);
   assert.doesNotMatch(board, /what-i-ate-meal-camera-/);
   assert.doesNotMatch(board, /onLogMeal/);
+  // Still frame until tap — no autoplay loop on the board card
+  assert.doesNotMatch(board, /autoPlay\s*\n\s*loop/);
+});
+
+test("Top highlights do not use video_url as img src", () => {
+  const presentation = read("src/pages/consumer/myMenuply/myMenuplyPresentation.js");
+  assert.match(presentation, /videoUrl: video/);
+  assert.doesNotMatch(
+    presentation,
+    /mediaUrl\(row\.photo_url \|\| row\.item_photo_url \|\| row\.video_url\)/
+  );
+  const rails = read("src/pages/consumer/myMenuply/MyMenuplyPresentationRails.jsx");
+  assert.match(rails, /card\.videoUrl/);
+  assert.match(rails, /VideoStillPreview/);
 });
 
 test("eating surfaces use MenuplyMediaPicker", () => {

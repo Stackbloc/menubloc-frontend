@@ -16,8 +16,11 @@ function mediaUrl(raw) {
 
 function eatingCard(row) {
   const label = row.food_name || row.item_name || "Food";
-  const image = mediaUrl(row.photo_url || row.item_photo_url || row.video_url);
-  if (!image && !row.video_url) return null;
+  const video = mediaUrl(row.video_url);
+  const image = video
+    ? null
+    : mediaUrl(row.photo_url || row.item_photo_url);
+  if (!image && !video) return null;
   return {
     key: `diary-${row.entry_id || row.id}`,
     kind: "diary",
@@ -27,6 +30,7 @@ function eatingCard(row) {
     sublabel: row.restaurant_name || row.place_label || "",
     badge: "Your meal",
     image,
+    videoUrl: video,
     href: row.menu_item_id ? `/menu-items/${encodeURIComponent(String(row.menu_item_id))}` : null,
     source: "user",
   };

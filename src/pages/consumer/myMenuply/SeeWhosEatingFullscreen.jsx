@@ -7,6 +7,10 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { requestConnection } from "../../../lib/consumerApi.js";
+import {
+  MENUPY_CLOSE_LIVE_FEED_FULLSCREEN,
+  stripMediaUrlFragment,
+} from "../../../lib/menuplyLiveFeedControl.js";
 
 export default function SeeWhosEatingFullscreen({
   items = [],
@@ -33,12 +37,30 @@ export default function SeeWhosEatingFullscreen({
   }, [index, item?.id]);
 
   useEffect(() => {
+    function onForcedClose() {
+      onClose?.();
+    }
+    window.addEventListener(MENUPY_CLOSE_LIVE_FEED_FULLSCREEN, onForcedClose);
+    return () => window.removeEventListener(MENUPY_CLOSE_LIVE_FEED_FULLSCREEN, onForcedClose);
+  }, [onClose]);
+
+  useEffect(() => {
     const el = videoRef.current;
     if (!el) return undefined;
     el.currentTime = 0;
-    const p = el.play();
-    if (p && typeof p.catch === "function") p.catch(() => {});
-    return undefined;
+    const onReady = () => {
+      const p = el.play();
+      if (p && typeof p.catch === "function") p.catch(() => {});
+    };
+    if (el.readyState >= 2) onReady();
+    else {
+      el.addEventListener("loadeddata", onReady);
+      el.addEventListener("canplay", onReady);
+    }
+    return () => {
+      el.removeEventListener("loadeddata", onReady);
+      el.removeEventListener("canplay", onReady);
+    };
   }, [index, item?.id]);
 
   useEffect(() => {
@@ -125,13 +147,14 @@ export default function SeeWhosEatingFullscreen({
       <video
         key={item.id}
         ref={videoRef}
-        src={item.video_url}
+        src={stripMediaUrlFragment(item.video_url)}
         style={styles.video}
         playsInline
         muted
         loop
         autoPlay
         controls={false}
+        preload="auto"
         onClick={() => {
           setIndex((i) => (i + 1 < items.length ? i + 1 : i));
         }}

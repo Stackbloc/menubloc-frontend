@@ -4,7 +4,7 @@
  */
 
 import { resolveConsumerMediaUrl } from "../../../lib/consumerApi.js";
-import { withVideoPreviewSeek } from "../../../lib/consumerCameraCapture.js";
+import { stripMediaUrlFragment } from "../../../lib/menuplyLiveFeedControl.js";
 
 export function resolveEatingDishVisual(item) {
   const dinerPhoto = String(item?.photo_url || "").trim();
@@ -16,10 +16,11 @@ export function resolveEatingDishVisual(item) {
   ).trim();
 
   if (video) {
-    const absolute = resolveConsumerMediaUrl(video);
+    // Clean play URL — never attach #t= here (poster seek is VideoStillPreview-only).
+    const absolute = stripMediaUrlFragment(resolveConsumerMediaUrl(video));
     return {
       kind: "video",
-      url: withVideoPreviewSeek(absolute),
+      url: absolute,
       source: "dish",
       fit: "cover",
     };

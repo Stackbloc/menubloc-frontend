@@ -8,6 +8,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import ConsumerCameraSheet from "../consumer/ConsumerCameraSheet.jsx";
 import NativeVideoCapture from "../consumer/NativeVideoCapture.jsx";
 import {
+  capturePosterFromVideoElement,
   inlineCameraSupported,
   preferInlineCamera,
   withVideoPreviewSeek,
@@ -111,6 +112,38 @@ export default function MenuplyMediaPicker({
   }
 
   const isVideo = isVideoFile(file);
+  const [composePoster, setComposePoster] = useState("");
+
+  useEffect(() => {
+    setComposePoster("");
+    if (!isVideo || !previewUrl || typeof document === "undefined") return undefined;
+    const video = document.createElement("video");
+    video.muted = true;
+    video.playsInline = true;
+    video.preload = "auto";
+    video.src = withVideoPreviewSeek(previewUrl);
+    const capture = () => {
+      const dataUrl = capturePosterFromVideoElement(video);
+      if (dataUrl) setComposePoster(dataUrl);
+    };
+    video.onloadeddata = () => {
+      try {
+        video.currentTime = 0.1;
+      } catch {
+        capture();
+      }
+    };
+    video.onseeked = capture;
+    video.onerror = () => setComposePoster("");
+    return () => {
+      video.onloadeddata = null;
+      video.onseeked = null;
+      video.onerror = null;
+      video.removeAttribute("src");
+      video.load();
+    };
+  }, [isVideo, previewUrl]);
+
   /** One camera control opens the sheet (Photo | Video inside). No separate Record video row. */
   const showUnifiedCamera = canInlineSheet;
   const showVideoOnlyNative = !useLibrary && allowVideo && !allowPhoto;
@@ -120,32 +153,46 @@ export default function MenuplyMediaPicker({
       {showPreview && file && previewUrl ? (
         <div style={previewStyles.wrap} data-testid={`${testId}-preview`}>
           {isVideo ? (
-            <video
-              key={previewUrl}
-              src={withVideoPreviewSeek(previewUrl)}
-              style={previewStyles.media}
-              controls
-              playsInline
-              muted
-              autoPlay
-              loop
-              preload="auto"
-              onLoadedData={(e) => {
-                const el = e.currentTarget;
-                try {
-                  if (el.duration && Number.isFinite(el.duration)) {
-                    el.currentTime = Math.min(0.1, el.duration * 0.05);
+            composePoster ? (
+              <img
+                src={composePoster}
+                alt=""
+                style={previewStyles.media}
+                data-testid={`${testId}-video-poster`}
+              />
+            ) : (
+              <video
+                key={previewUrl}
+                src={previewUrl}
+                style={previewStyles.media}
+                controls
+                playsInline
+                muted
+                preload="metadata"
+                onLoadedData={(e) => {
+                  const el = e.currentTarget;
+                  try {
+                    if (el.duration && Number.isFinite(el.duration)) {
+                      el.currentTime = Math.min(0.1, el.duration * 0.05);
+                    }
+                  } catch {
+                    /* ignore */
                   }
-                } catch {
-                  /* ignore */
-                }
-              }}
-            />
+                  const dataUrl = capturePosterFromVideoElement(el);
+                  if (dataUrl) setComposePoster(dataUrl);
+                }}
+                onError={() => {
+                  /* HEVC etc. — keep "Video ready" caption; poster may stay empty */
+                }}
+              />
+            )
           ) : (
             <img src={previewUrl} alt="" style={previewStyles.media} />
           )}
           <p style={previewStyles.caption}>
-            {isVideo ? `Video ready · ${(file.size / 1024).toFixed(0)} KB` : "Photo ready"}
+            {isVideo
+              ? `Video ready · ${(file.size / 1024).toFixed(0)} KB`
+              : "Photo ready"}
           </p>
           <div style={previewStyles.actions}>
             {allowPhoto ? (

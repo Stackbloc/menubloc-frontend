@@ -98,7 +98,8 @@ export function buildMonthInFoodModel(payload = {}) {
       cuisineCounts.set(cuisine, (cuisineCounts.get(cuisine) || 0) + 1);
     }
 
-    const img = mediaUrl(row.photo_url || row.item_photo_url || row.video_url);
+    // Never use video_url as an <img> src — photo stills only for moment mosaic.
+    const img = mediaUrl(row.photo_url || row.item_photo_url);
     if (img || row.video_url) {
       mediaMealCount += 1;
       if (img) momentUrls.push({ key: `d-${row.id}`, url: img, label: name });

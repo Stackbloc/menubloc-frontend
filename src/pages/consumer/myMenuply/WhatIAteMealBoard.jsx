@@ -5,8 +5,9 @@
  * Owner: long-press (hard press) / right-click to reveal Delete — not hover.
  */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import VideoStillPreview from "../../../components/consumer/VideoStillPreview.jsx";
 import {
   groupEntriesByMealPeriod,
   mealPeriodLabel,
@@ -38,7 +39,12 @@ function MealMediaCard({ item, readOnly, onSelect, onDelete, deleteBusy }) {
           /^fa[-:]?\d+$/i.test(String(item?.id || "")))));
   const { open, dismiss, consumeArmedClick, bind } = useLongPressReveal(canDelete);
   const isVideo = media?.kind === "video";
+  const [playing, setPlaying] = useState(false);
   const [videoMuted, setVideoMuted] = useState(true);
+
+  useEffect(() => {
+    setPlaying(false);
+  }, [item?.id, item?.entry_id, item?.video_url]);
 
   function handleDelete(e) {
     e.preventDefault();
@@ -52,6 +58,10 @@ function MealMediaCard({ item, readOnly, onSelect, onDelete, deleteBusy }) {
     if (consumeArmedClick()) return;
     if (open) {
       dismiss();
+      return;
+    }
+    if (isVideo && !playing) {
+      setPlaying(true);
       return;
     }
     onSelect?.(item);
@@ -84,22 +94,20 @@ function MealMediaCard({ item, readOnly, onSelect, onDelete, deleteBusy }) {
           style={s.mealHolderMediaBtn}
           data-testid="what-i-ate-meal-media"
           onClick={handleSelect}
-          disabled={!onSelect}
-          aria-label={`${mealBadge}. ${label}. Tap for details. Long-press to delete.`}
+          disabled={!onSelect && !isVideo}
+          aria-label={
+            isVideo && !playing
+              ? `${mealBadge}. ${label}. Video preview — tap to play.`
+              : `${mealBadge}. ${label}. Tap for details. Long-press to delete.`
+          }
         >
           {isVideo ? (
-            <video
+            <VideoStillPreview
               src={media.url}
               style={s.mealHolderMedia}
-              playsInline
+              playing={playing}
               muted={videoMuted}
-              autoPlay
-              loop
-              preload="auto"
-              onClick={(e) => {
-                e.stopPropagation();
-                setVideoMuted((prev) => !prev);
-              }}
+              testId="what-i-ate-meal-video"
             />
           ) : (
             <img
@@ -111,8 +119,22 @@ function MealMediaCard({ item, readOnly, onSelect, onDelete, deleteBusy }) {
           <div style={s.mealHolderOverlayTop}>
             <span style={s.mealHolderBadge}>{mealBadge}</span>
           </div>
-          {isVideo ? (
-            <span style={{ ...s.socialVideoMuteBadge, bottom: 48, fontSize: 9 }}>
+          {isVideo && playing ? (
+            <span
+              style={{ ...s.socialVideoMuteBadge, bottom: 48, fontSize: 9 }}
+              onClick={(e) => {
+                e.stopPropagation();
+                setVideoMuted((prev) => !prev);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.stopPropagation();
+                  setVideoMuted((prev) => !prev);
+                }
+              }}
+              role="button"
+              tabIndex={0}
+            >
               {videoMuted ? "Tap sound" : "On"}
             </span>
           ) : null}

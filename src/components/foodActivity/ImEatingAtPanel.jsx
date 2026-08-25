@@ -28,6 +28,7 @@ import { useConsumer } from "../../context/ConsumerContext.jsx";
 import { readOptionalReporterCoords } from "../../lib/guestReporterSession.js";
 import { buildJoinMeShareData, formatJoinMeLocationLabel } from "../../lib/joinMeShare.js";
 import { eatingMediaFromUpload } from "../../lib/eatingMediaUtils.js";
+import { stripMediaUrlFragment } from "../../lib/menuplyLiveFeedControl.js";
 import * as cs from "./foodActivityComposeStyles.js";
 
 function relativeAgo(iso) {
@@ -305,7 +306,7 @@ export default function ImEatingAtPanel({
           ) : null}
           {lastPosted.video_url ? (
             <video
-              src={resolveConsumerMediaUrl(lastPosted.video_url)}
+              src={stripMediaUrlFragment(resolveConsumerMediaUrl(lastPosted.video_url))}
               style={styles.postedPhoto}
               controls
               playsInline

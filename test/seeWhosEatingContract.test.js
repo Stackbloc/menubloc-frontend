@@ -16,6 +16,7 @@ test("See Who's Eating reel: guest watch, CK dish, existing camera, Connect noti
   assert.match(surface, /listSeeWhosEating/);
   assert.match(surface, /SeeWhosEatingFullscreen/);
   assert.match(surface, /Watch freely/);
+  assert.match(surface, /MENUPY_PAUSE_LIVE_FEED|pause-live-feed/);
   assert.match(surface, /position:\s*"sticky"/);
   assert.match(surface, /--sph-h/);
   assert.match(surface, /LIVE FEED/);
@@ -31,16 +32,16 @@ test("See Who's Eating reel: guest watch, CK dish, existing camera, Connect noti
   assert.match(page, /SeeWhosEatingSurface/);
   assert.match(page, /is_recommend/);
   assert.doesNotMatch(page, /connections-eating/);
+  // Live feed stays at top of page (before EatingHub)
+  const seeIdx = page.indexOf("<SeeWhosEatingSurface");
+  const eatingIdx = page.indexOf("<EatingHubSection");
+  assert.ok(seeIdx > 0 && eatingIdx > seeIdx, "sticky live feed remains above What I'm Eating");
 
   const compose = read("src/pages/consumer/myMenuply/EatingCompose.jsx");
   assert.match(compose, /MenuplyMediaPicker/);
   assert.match(compose, /isRecommend/);
   assert.match(compose, /isVideoFile/);
-  // Camera stays on existing MenuplyMediaPicker path (no second capture surface)
-  assert.equal(
-    (compose.match(/MenuplyMediaPicker/g) || []).length >= 1,
-    true
-  );
+  assert.equal((compose.match(/MenuplyMediaPicker/g) || []).length >= 1, true);
   assert.doesNotMatch(compose, /SeeWhosEating.*Camera|new.*video.*capture/i);
 
   const api = read("src/lib/consumerApi.js");

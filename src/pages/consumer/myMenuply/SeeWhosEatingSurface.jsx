@@ -7,6 +7,13 @@
 import { useEffect, useRef, useState } from "react";
 import { listSeeWhosEating } from "../../../lib/consumerApi.js";
 import { readDetectedLocation } from "../../../lib/discoveryLocationPersistence.js";
+import {
+  MENUPY_CLOSE_LIVE_FEED_FULLSCREEN,
+  MENUPY_PAUSE_LIVE_FEED,
+  MENUPY_RESUME_LIVE_FEED,
+  getMealVideoPlayDepth,
+  stripMediaUrlFragment,
+} from "../../../lib/menuplyLiveFeedControl.js";
 import SeeWhosEatingFullscreen from "./SeeWhosEatingFullscreen.jsx";
 
 const DEFAULT_MARKET = { city: "Los Angeles", state: "CA" };
@@ -70,10 +77,40 @@ export default function SeeWhosEatingSurface({
   useEffect(() => {
     const el = videoRef.current;
     if (!el || !preview?.video_url) return undefined;
-    const p = el.play();
-    if (p && typeof p.catch === "function") p.catch(() => {});
-    return undefined;
-  }, [preview?.id, preview?.video_url]);
+
+    function onPauseLive() {
+      try {
+        el.pause();
+      } catch {
+        /* ignore */
+      }
+    }
+    function onResumeLive() {
+      if (fullscreenOpen) return;
+      if (getMealVideoPlayDepth() > 0) return;
+      const p = el.play();
+      if (p && typeof p.catch === "function") p.catch(() => {});
+    }
+
+    window.addEventListener(MENUPY_PAUSE_LIVE_FEED, onPauseLive);
+    window.addEventListener(MENUPY_RESUME_LIVE_FEED, onResumeLive);
+    if (!fullscreenOpen && getMealVideoPlayDepth() === 0) {
+      const p = el.play();
+      if (p && typeof p.catch === "function") p.catch(() => {});
+    }
+    return () => {
+      window.removeEventListener(MENUPY_PAUSE_LIVE_FEED, onPauseLive);
+      window.removeEventListener(MENUPY_RESUME_LIVE_FEED, onResumeLive);
+    };
+  }, [preview?.id, preview?.video_url, fullscreenOpen]);
+
+  useEffect(() => {
+    function onCloseFs() {
+      setFullscreenOpen(false);
+    }
+    window.addEventListener(MENUPY_CLOSE_LIVE_FEED_FULLSCREEN, onCloseFs);
+    return () => window.removeEventListener(MENUPY_CLOSE_LIVE_FEED_FULLSCREEN, onCloseFs);
+  }, []);
 
   function openAt(index) {
     setStartIndex(index);
@@ -112,13 +149,14 @@ export default function SeeWhosEatingSurface({
           {preview?.video_url ? (
             <video
               ref={videoRef}
-              src={`${preview.video_url}#t=0.001`}
+              src={stripMediaUrlFragment(preview.video_url)}
               style={styles.video}
               muted
               playsInline
               loop
               autoPlay
               controls={false}
+              preload="auto"
             />
           ) : (
             <div style={styles.empty}>
