@@ -5,7 +5,7 @@ import InviteToEatButton from "../../../components/InviteToEatButton.jsx";
 import { restaurantPathFromRow } from "../../../lib/canonicalUrl.js";
 import EatingSocialActions from "./EatingSocialActions.jsx";
 import { resolveConsumerMediaUrl } from "../../../lib/consumerApi.js";
-import { resolveEatingDishVisual } from "./eatingDishVisual.js";
+import { resolveEatingDishVisual, resolveEatingPlanVisual } from "./eatingDishVisual.js";
 import { useLongPressReveal } from "./mediaLongPressReveal.js";
 import {
   compareMealPeriod,
@@ -578,6 +578,40 @@ export function ConnectionFoodCard({ item }) {
   );
 }
 
+export function EatingPlanRestaurantMark({ plan, name, size = "row" }) {
+  const visual = resolveEatingPlanVisual(plan);
+  if (!visual) return null;
+
+  if (visual.source === "logo") {
+    return (
+      <div
+        style={size === "detail" ? s.planCardMarkDetail : s.planCardMark}
+        data-testid="eating-plan-logo"
+        aria-hidden
+      >
+        <img src={visual.url} alt="" style={s.planCardMarkLogo} />
+      </div>
+    );
+  }
+
+  if (visual.source === "billboard") {
+    return (
+      <div
+        style={size === "detail" ? s.planCardMarkDetail : s.planCardMark}
+        data-testid="eating-plan-billboard"
+        aria-hidden
+      >
+        <img src={visual.url} alt="" style={s.planCardMarkBillboard} />
+        <div style={s.planCardMarkBillboardScrim}>
+          <span style={s.planCardMarkBillboardName}>{name}</span>
+        </div>
+      </div>
+    );
+  }
+
+  return null;
+}
+
 export function FuturePlanRow({
   plan,
   open,
@@ -589,6 +623,8 @@ export function FuturePlanRow({
 }) {
   const when = formatPlanBracketDate(plan?.plan_date);
   const name = futurePlanRestaurantName(plan);
+  const visual = resolveEatingPlanVisual(plan);
+  const showNameText = !visual;
   const { meal, notes } = futurePlanDetailParts(plan);
   const canDelete = typeof onDelete === "function";
   const {
@@ -633,10 +669,15 @@ export function FuturePlanRow({
         }}
         aria-expanded={open}
       >
-        {when ? <div style={s.planCardDate}>{when}</div> : null}
-        <div style={s.planCardTitle}>{name}</div>
-        <div style={s.planCardMeta}>
-          {[meal, plan.joinable ? "Join Me open" : "Just me", notes].filter(Boolean).join(" · ")}
+        <div style={s.planCardHead}>
+          <EatingPlanRestaurantMark plan={plan} name={name} />
+          <div style={s.planCardCopy}>
+            {when ? <div style={s.planCardDate}>{when}</div> : null}
+            {showNameText ? <div style={s.planCardTitle}>{name}</div> : null}
+            <div style={s.planCardMeta}>
+              {[meal, plan.joinable ? "Join Me open" : "Just me", notes].filter(Boolean).join(" · ")}
+            </div>
+          </div>
         </div>
       </button>
       {open ? (
@@ -651,6 +692,8 @@ export function FuturePlanRow({
 export function EatingPlanCard({ plan, onAddDetails }) {
   const when = formatPlanWhen(plan.plan_date);
   const { restaurant, meal, notes } = futurePlanDetailParts(plan);
+  const visual = resolveEatingPlanVisual(plan);
+  const showNameText = !visual;
   const place =
     plan.restaurant_id || (plan.place_label && plan.place_label !== plan.title) ? restaurant : "";
   const restHref = restaurantHref({
@@ -665,7 +708,14 @@ export function EatingPlanCard({ plan, onAddDetails }) {
     <div style={s.card} data-testid="eating-plan-card">
       {when ? <div style={{ fontWeight: 800 }}>{when}</div> : null}
       {meal ? <div style={s.muted}>{meal}</div> : null}
-      <div style={place ? { fontWeight: 700, marginTop: 4 } : s.muted}>{place || "Add restaurant, dish, and details"}</div>
+      {place ? (
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 4 }}>
+          <EatingPlanRestaurantMark plan={plan} name={restaurant} size="detail" />
+          {showNameText ? <div style={{ fontWeight: 700 }}>{restaurant}</div> : null}
+        </div>
+      ) : (
+        <div style={s.muted}>Add restaurant, dish, and details</div>
+      )}
       {notes ? <div style={{ ...s.muted, marginTop: 4 }}>{notes}</div> : null}
       <div style={s.muted}>
         {plan.joinable ? `${plan.joiner_count || 0}/${plan.join_capacity || 0} joined` : "Just me"}

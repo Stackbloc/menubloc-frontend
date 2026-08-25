@@ -977,7 +977,9 @@ export default function MyMenuplyPage() {
       }
       await load();
     } catch (err) {
-      setError(err.message || "Unable to create event");
+      const message = err.message || "Unable to create event";
+      setError(message);
+      throw err instanceof Error ? err : new Error(message);
     } finally {
       setPostBusy("");
     }

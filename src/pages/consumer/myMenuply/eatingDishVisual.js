@@ -58,3 +58,16 @@ export function resolveEatingDishVisual(item) {
   }
   return null;
 }
+
+export function planHasSpecificRestaurant(plan) {
+  return Boolean(plan?.restaurant_id);
+}
+
+/** Logo → billboard → null (caller shows restaurant name text). Restaurant-bound plans only. */
+export function resolveEatingPlanVisual(plan) {
+  if (!planHasSpecificRestaurant(plan)) return null;
+  return resolveEatingDishVisual({
+    restaurant_logo_url: plan?.restaurant_logo_url,
+    restaurant_billboard_image_url: plan?.restaurant_billboard_image_url,
+  });
+}

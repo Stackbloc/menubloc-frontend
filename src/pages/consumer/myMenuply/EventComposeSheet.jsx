@@ -20,6 +20,7 @@ export default function EventComposeSheet({
   const [description, setDescription] = useState("");
   const [joinMeOpen, setJoinMeOpen] = useState(false);
   const [file, setFile] = useState(null);
+  const [localError, setLocalError] = useState("");
 
   if (!open) return null;
 
@@ -27,22 +28,27 @@ export default function EventComposeSheet({
     e.preventDefault();
     const nextTitle = String(title || "").trim();
     if (!nextTitle || !eventDate) return;
-    await onSubmit?.({
-      title: nextTitle,
-      eventDate,
-      startTime: String(startTime || "").trim() || null,
-      locationLabel: String(locationLabel || "").trim() || null,
-      description: String(description || "").trim() || null,
-      joinMeOpen,
-      file,
-    });
-    setTitle("");
-    setStartTime("");
-    setLocationLabel("");
-    setDescription("");
-    setJoinMeOpen(false);
-    setFile(null);
-    onClose?.();
+    setLocalError("");
+    try {
+      await onSubmit?.({
+        title: nextTitle,
+        eventDate,
+        startTime: String(startTime || "").trim() || null,
+        locationLabel: String(locationLabel || "").trim() || null,
+        description: String(description || "").trim() || null,
+        joinMeOpen,
+        file,
+      });
+      setTitle("");
+      setStartTime("");
+      setLocationLabel("");
+      setDescription("");
+      setJoinMeOpen(false);
+      setFile(null);
+      onClose?.();
+    } catch (err) {
+      setLocalError(err?.message || "Unable to create event");
+    }
   }
 
   return (
@@ -157,6 +163,11 @@ export default function EventComposeSheet({
               <strong>Open Join Me</strong> — anyone with the link can accept
             </span>
           </label>
+          {localError ? (
+            <p style={styles.error} data-testid="event-compose-error" role="alert">
+              {localError}
+            </p>
+          ) : null}
           <button
             type="submit"
             disabled={busy || !String(title).trim() || !eventDate}
@@ -252,5 +263,12 @@ const styles = {
     color: "#334155",
     lineHeight: 1.45,
     cursor: "pointer",
+  },
+  error: {
+    margin: 0,
+    fontSize: 13,
+    fontWeight: 700,
+    color: "#B42318",
+    lineHeight: 1.4,
   },
 };

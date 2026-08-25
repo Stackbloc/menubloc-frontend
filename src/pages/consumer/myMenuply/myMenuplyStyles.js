@@ -1327,6 +1327,82 @@ export const planCardBold = {
   display: "block",
 };
 
+export const planCardHead = {
+  display: "flex",
+  alignItems: "flex-start",
+  gap: 12,
+};
+
+export const planCardMark = {
+  position: "relative",
+  width: 48,
+  height: 48,
+  borderRadius: 12,
+  overflow: "hidden",
+  flexShrink: 0,
+  background: "#f8fafc",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  border: `1px solid ${BORDER}`,
+};
+
+export const planCardMarkLogo = {
+  width: "100%",
+  height: "100%",
+  objectFit: "contain",
+  padding: 4,
+  display: "block",
+};
+
+export const planCardMarkBillboard = {
+  width: "100%",
+  height: "100%",
+  objectFit: "cover",
+  display: "block",
+};
+
+export const planCardMarkBillboardScrim = {
+  position: "absolute",
+  inset: 0,
+  display: "flex",
+  alignItems: "flex-end",
+  padding: "4px 6px",
+  background: "linear-gradient(180deg, transparent 35%, rgba(15, 23, 42, 0.82) 100%)",
+};
+
+export const planCardMarkBillboardName = {
+  fontSize: 9,
+  fontWeight: 800,
+  color: "#fff",
+  lineHeight: 1.15,
+  letterSpacing: "-0.01em",
+  textShadow: "0 1px 2px rgba(0, 0, 0, 0.45)",
+  overflow: "hidden",
+  display: "-webkit-box",
+  WebkitLineClamp: 2,
+  WebkitBoxOrient: "vertical",
+};
+
+export const planCardCopy = {
+  flex: 1,
+  minWidth: 0,
+};
+
+export const planCardMarkDetail = {
+  position: "relative",
+  width: 56,
+  height: 56,
+  borderRadius: 12,
+  overflow: "hidden",
+  flexShrink: 0,
+  background: "#f8fafc",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  border: `1px solid ${BORDER}`,
+};
+
 export const planCardBoldOpen = {
   boxShadow: "0 12px 28px rgba(20, 83, 45, 0.14)",
   borderColor: BORDER_INPUT,
