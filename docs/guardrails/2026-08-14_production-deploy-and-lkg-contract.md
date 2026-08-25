@@ -36,36 +36,63 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` @ clean `main` |
-| Git commit | `f6f663e` — includes owner diner capability reports (`e25acc5`) |
-| Vercel deployment | `menubloc-frontend-bhsmmn3j5-menuply.vercel.app` |
-| Live bundle | `index-COswfWJg.js` |
+| Git commit | `9fe5181` — Menuply ad branding in all cluster ad crops (includes `5d6e26a` Android video + `56e0e7d` ads) |
+| Vercel deployment | `menubloc-frontend-99h0x2fbh-menuply.vercel.app` |
+| Live bundle | `index-5cwRXhcD.js` |
 | Aliases | `menuply.com`, `www.menuply.com`, `crm.menuply.com`, `venues.menuply.com` |
 | Tip-gate | **PASS** (apex + www) verified 2026-08-25 |
-| Feature | Owner diner capability metrics + My Menuply dialog (on tip with later main) |
+| Feature | Ad crop branding fix; Android video soft-accept + X Upload media; Eating-is-Social sample ads |
 
 ### Backend (Railway)
 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-backend-main` @ clean `main` |
-| Git on origin | `dadb5bf9` |
-| Live health SHA | `dadb5bf9` |
+| Git on origin | `b08b53c8` |
+| Live health SHA | `b08b53c8` |
 | Health URL | `https://menubloc-backend-production.up.railway.app/health` |
-| `commit_hash` | `dadb5bf9ccc8edd223780ee6e666f9bca6c97636` |
-| DB | migrations through `0286` |
-| Smoke | tip-gate PASS `bhsmmn3j5` / `index-COswfWJg.js`; BE includes diner stats `c368ab73`; railway=59 localhost=9 |
+| `commit_hash` | `b08b53c8…` |
+| DB | migrations through `0286`; 16 sample ads → Menuply social creatives |
+| Smoke | tip-gate PASS `99h0x2fbh` / `index-5cwRXhcD.js`; `Upload video` + `Upload media` in bundle; railway=59 localhost=9 |
 
 ### Restore current tip (if tip-gate fails mid-change)
 
 ```bash
 cd /Users/andrebarber/Desktop/menubloc/menubloc-frontend-main
-npx vercel alias set menubloc-frontend-bhsmmn3j5-menuply.vercel.app menuply.com
-npx vercel alias set menubloc-frontend-bhsmmn3j5-menuply.vercel.app www.menuply.com
-npx vercel alias set menubloc-frontend-bhsmmn3j5-menuply.vercel.app crm.menuply.com
-npx vercel alias set menubloc-frontend-bhsmmn3j5-menuply.vercel.app venues.menuply.com
+npx vercel alias set menubloc-frontend-99h0x2fbh-menuply.vercel.app menuply.com
+npx vercel alias set menubloc-frontend-99h0x2fbh-menuply.vercel.app www.menuply.com
+npx vercel alias set menubloc-frontend-99h0x2fbh-menuply.vercel.app crm.menuply.com
+npx vercel alias set menubloc-frontend-99h0x2fbh-menuply.vercel.app venues.menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 ```
+
+### Prior tip — Android video soft-accept (rollback target)
+
+| Field | Value |
+|-------|-------|
+| Deployment | `menubloc-frontend-azxhntx1m-menuply.vercel.app` |
+| Live bundle | `index-DTFzIdfb.js` |
+| FE commit | `5d6e26a` |
+| BE health | `e36d2489` |
+
+### Prior tip — Menuply Eating-is-Social ads-only (rollback target)
+
+| Field | Value |
+|-------|-------|
+| Deployment | `menubloc-frontend-m67fxdy8z-menuply.vercel.app` |
+| Live bundle | `index-ClE3rSAk.js` |
+| FE commit | `56e0e7d` |
+| BE health | `e36d2489` |
+
+### Prior tip — owner diner capability wrap-up (rollback target)
+
+| Field | Value |
+|-------|-------|
+| Deployment | `menubloc-frontend-bhsmmn3j5-menuply.vercel.app` |
+| Live bundle | `index-COswfWJg.js` |
+| FE commit | `f6f663e` |
+| BE health | `dadb5bf9` |
 
 ### Prior tip — plan windows + events chrono (rollback target)
 
