@@ -36,36 +36,46 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` @ clean `main` |
-| Git commit | `b6d894d` — sticky high-tech See Who’s Eating; drop My Menuply lead |
-| Vercel deployment | `menubloc-frontend-80fy979wl-menuply.vercel.app` |
-| Live bundle | `index-BfPQn7JE.js` |
+| Git commit | `a53280c` — Video\|Photo default; label→capture Record video; E2E completion contract |
+| Vercel deployment | `menubloc-frontend-p15q2zbam-menuply.vercel.app` |
+| Live bundle | `index-BvGoNScn.js` |
 | Aliases | `menuply.com`, `www.menuply.com`, `crm.menuply.com`, `venues.menuply.com` |
 | Tip-gate | **PASS** (apex + www) verified 2026-08-25 |
-| Feature | See Who’s Eating sticky HUD reel; Invite Me Out on/off; no hero “social food profile” lead |
+| Feature | Video-first camera sheet; OS camera via label+capture (not file-picker click) |
 
 ### Backend (Railway)
 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-backend-main` @ clean `main` |
-| Git on origin | `bacd8051` |
-| Live health SHA | `bacd8051` |
+| Git on origin | `d3449e93` |
+| Live health SHA | `d3449e93` |
 | Health URL | `https://menubloc-backend-production.up.railway.app/health` |
-| `commit_hash` | `bacd8051…` |
+| `commit_hash` | `d3449e939a0a…` |
 | DB | migrations through `0288` |
-| Smoke | tip-gate PASS `80fy979wl` / `index-BfPQn7JE.js`; railway=59 localhost=9 |
+| Smoke | tip-gate PASS `p15q2zbam` / `index-BvGoNScn.js`; railway=59 localhost=9; video upload→DB→HEAD **PASS** |
 
 ### Restore current tip (if tip-gate fails mid-change)
 
 ```bash
 cd /Users/andrebarber/Desktop/menubloc/menubloc-frontend-main
-npx vercel alias set menubloc-frontend-80fy979wl-menuply.vercel.app menuply.com
-npx vercel alias set menubloc-frontend-80fy979wl-menuply.vercel.app www.menuply.com
-npx vercel alias set menubloc-frontend-80fy979wl-menuply.vercel.app crm.menuply.com
-npx vercel alias set menubloc-frontend-80fy979wl-menuply.vercel.app venues.menuply.com
+npx vercel alias set menubloc-frontend-p15q2zbam-menuply.vercel.app menuply.com
+npx vercel alias set menubloc-frontend-p15q2zbam-menuply.vercel.app www.menuply.com
+npx vercel alias set menubloc-frontend-p15q2zbam-menuply.vercel.app crm.menuply.com
+npx vercel alias set menubloc-frontend-p15q2zbam-menuply.vercel.app venues.menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 ```
+
+### Prior tip — See Who’s Eating sticky HUD (rollback target)
+
+| Field | Value |
+|-------|-------|
+| Deployment | `menubloc-frontend-80fy979wl-menuply.vercel.app` |
+| Live bundle | `index-BfPQn7JE.js` |
+| FE commit | `b6d894d` |
+| BE health | `bacd8051` |
+| Notes | Sticky HUD; Photo-first camera; pre–Video-first / diner-media fix |
 
 ### Prior tip — camera idle verbiage removed (rollback target)
 
