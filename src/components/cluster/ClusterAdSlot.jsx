@@ -135,25 +135,43 @@ function sizeForPlacement(pageRegion, type) {
   return "standard";
 }
 
-/** Keep frame sizes; cover-crop creatives so portrait/wide/slim assets fill without stretch. */
+/** Keep frame sizes; composed wide/slim/small assets fill slots without clipping branding. */
 function resolveMediaStyle(size) {
   const base = {
     width: "100%",
     display: "block",
     verticalAlign: "top",
-    objectFit: "cover",
-    objectPosition: "center",
   };
   if (size === "slim") {
-    return { ...base, height: 220, maxHeight: 220 };
+    return {
+      ...base,
+      height: 220,
+      maxHeight: 220,
+      objectFit: "cover",
+      objectPosition: "left center",
+    };
   }
   if (size === "small") {
-    return { ...base, height: 148, maxHeight: 148 };
+    return {
+      ...base,
+      height: 148,
+      maxHeight: 148,
+      objectFit: "cover",
+      objectPosition: "top center",
+    };
   }
   if (size === "hero") {
-    return { ...base, height: "auto", aspectRatio: "16 / 9", maxHeight: 420 };
+    return {
+      ...base,
+      height: "auto",
+      aspectRatio: "16 / 9",
+      maxHeight: 420,
+      objectFit: "contain",
+      objectPosition: "center top",
+      background: "#ffffff",
+    };
   }
-  return { ...base, height: "auto" };
+  return { ...base, height: "auto", objectFit: "contain", objectPosition: "center top" };
 }
 
 function resolveFrameStyle(type, size, style = {}) {
@@ -198,7 +216,7 @@ function resolveFrameStyle(type, size, style = {}) {
     ...style,
   };
 
-  if (size === "hero") return base;
+  if (size === "hero") return { ...base, background: "#ffffff" };
 
   switch (type) {
     case "Sponsored Card":

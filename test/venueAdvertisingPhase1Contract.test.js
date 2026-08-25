@@ -49,17 +49,18 @@ describe("venue advertising Phase 1 contracts", () => {
     assert.match(slot, /inventoryKey/);
     assert.match(slot, /data-ad-size/);
     assert.match(slot, /small/);
-    assert.match(slot, /objectFit:\s*"cover"/);
+    assert.match(slot, /objectFit:\s*"(cover|contain)"/);
     assert.match(slot, /resolveMediaStyle/);
     assert.doesNotMatch(slot, /LALIVE_/);
     assert.doesNotMatch(slot, /LA Live/);
   });
 
-  it("Menuply social sample-ad assets exist for portrait wide and slim", () => {
+  it("Menuply social sample-ad assets exist for portrait wide slim and small", () => {
     for (const name of [
       "ad-menuply-eating-is-social.jpg",
       "ad-menuply-eating-is-social-wide.jpg",
       "ad-menuply-eating-is-social-slim.jpg",
+      "ad-menuply-eating-is-social-small.jpg",
     ]) {
       assert.equal(existsSync(join(root, "public/sample-ads", name)), true, name);
     }
