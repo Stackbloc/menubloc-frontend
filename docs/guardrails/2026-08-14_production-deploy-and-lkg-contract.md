@@ -36,9 +36,9 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` @ clean `main` |
-| Git commit | `0546f98` — feed center X video create + plan video attach — video-first parallel `/feed` shell (FEED\|EATING\|EVENTS\|ME); HomeNext remains `/` |
-| Vercel deployment | `menubloc-frontend-dy1boxufn-menuply.vercel.app` |
-| Live bundle | `index-Wxgt5_-3.js` |
+| Git commit | `ded1f71` — feed video-only hybrid ConsumerCameraSheet recorder — feed center X video create + plan video attach — video-first parallel `/feed` shell (FEED\|EATING\|EVENTS\|ME); HomeNext remains `/` |
+| Vercel deployment | `menubloc-frontend-3dbymospp-menuply.vercel.app` |
+| Live bundle | `index-DRXhbBkl.js` |
 | Aliases | `menuply.com`, `www.menuply.com`, `crm.menuply.com`, `venues.menuply.com` |
 | Tip-gate | **PASS** (apex + www) verified 2026-08-26 |
 | Feature | Parallel video-first Feed at `/feed`; drawer “Feed (preview)”; `VITE_FEED_AS_HOME` cutover off |
@@ -59,10 +59,10 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway
 
 ```bash
 cd /Users/andrebarber/Desktop/menubloc/menubloc-frontend-main
-npx vercel alias set menubloc-frontend-dy1boxufn-menuply.vercel.app menuply.com
-npx vercel alias set menubloc-frontend-dy1boxufn-menuply.vercel.app www.menuply.com
-npx vercel alias set menubloc-frontend-dy1boxufn-menuply.vercel.app crm.menuply.com
-npx vercel alias set menubloc-frontend-dy1boxufn-menuply.vercel.app venues.menuply.com
+npx vercel alias set menubloc-frontend-3dbymospp-menuply.vercel.app menuply.com
+npx vercel alias set menubloc-frontend-3dbymospp-menuply.vercel.app www.menuply.com
+npx vercel alias set menubloc-frontend-3dbymospp-menuply.vercel.app crm.menuply.com
+npx vercel alias set menubloc-frontend-3dbymospp-menuply.vercel.app venues.menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 ```
@@ -71,8 +71,8 @@ bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 
 | Field | Value |
 |-------|-------|
-| Deployment | `menubloc-frontend-6uj8rufl4-menuply.vercel.app` |
-| Live bundle | `index-COekEjGi.js` |
+| Deployment | `menubloc-frontend-dy1boxufn-menuply.vercel.app` |
+| Live bundle | `index-Wxgt5_-3.js` |
 | FE commit | `4810f03` / tip-lock docs `89a336e` |
 | BE health | `14a98b5c` |
 | Notes | Pre–video-first `/feed` shell; also tagged `menuply-pre-video-first-consumer-2026-08-26` |
