@@ -37,20 +37,26 @@ test("See Who's Eating reel: guest watch, CK dish, existing camera, Connect noti
   assert.match(fullscreen, /requestConnection/);
   assert.match(fullscreen, /see_whos_eating/);
   assert.match(fullscreen, /see-whos-eating-screen-name/);
-  assert.match(fullscreen, /liveFeedCategoryLabel/);
+  assert.match(fullscreen, /liveFeedFullCategoryLabel\(item\.kind\)/);
+  assert.match(fullscreen, /resolveLiveFeedContentLink/);
+  assert.match(fullscreen, /see-whos-eating-fullscreen-caption-meta/);
+  assert.match(fullscreen, /see-whos-eating-fullscreen-content-link/);
+  assert.match(fullscreen, /see-whos-eating-fullscreen-restaurant-link/);
+  assert.match(fullscreen, /categoryChip/);
   assert.match(fullscreen, /dinerPeerProfilePath/);
   assert.match(fullscreen, /venueLiveFeedPath/);
   assert.match(fullscreen, /isLiveFeedVenueItem/);
   assert.match(fullscreen, /see-whos-eating-video-tap/);
-  // Category sits below @screen name and uses a smaller type size.
+  // Category sits below @screen name in caption meta row.
   {
     const nameIdx = fullscreen.indexOf("see-whos-eating-screen-name");
     const catIdx = fullscreen.indexOf("see-whos-eating-fullscreen-category");
     assert.ok(nameIdx > 0 && catIdx > nameIdx, "category markup after screen name");
     assert.match(fullscreen, /fontSize:\s*17/);
-    assert.match(fullscreen, /fontSize:\s*11/);
+    assert.match(fullscreen, /categoryChip/);
   }
-  assert.match(fullscreen, /menu_item_href|menu-items\//);
+  assert.match(fullscreen, /resolveLiveFeedContentLink/);
+  assert.match(read("src/lib/liveFeedCategory.js"), /menu_item_href|menu-items\//);
   assert.match(fullscreen, /createPortal/);
   assert.match(fullscreen, /100dvh|100vh/);
   assert.match(fullscreen, /objectFit:\s*"cover"/);
@@ -93,6 +99,10 @@ test("See Who's Eating reel: guest watch, CK dish, existing camera, Connect noti
 
   const cats = read("src/lib/liveFeedCategory.js");
   assert.match(cats, /resolveLiveFeedContentLink/);
+  assert.match(cats, /liveFeedFullCategoryLabel/);
+  assert.match(cats, /What I Wanna Eat/);
+  assert.match(cats, /My Eating Plans/);
+  assert.match(cats, /What I'm Eating/);
   assert.match(cats, /CHANNEL_LABEL_BY_KIND/);
   assert.doesNotMatch(cats, /LIVE_FEED_CATEGORY_LABELS/);
   assert.match(cats, /Events/);
@@ -102,7 +112,7 @@ test("See Who's Eating reel: guest watch, CK dish, existing camera, Connect noti
   assert.match(cats, /Eating Plans/);
   assert.doesNotMatch(cats, /short:\s*"ALL"/);
   assert.doesNotMatch(cats, /label:\s*"What I Wanna Eat"/);
-  assert.doesNotMatch(cats, /What I'm Eating/);
+  assert.match(cats, /LIVE_FEED_FULL_CATEGORY_LABELS/);
   assert.match(cats, /LIVE_FEED_CHANNELS/);
   assert.match(cats, /venueLiveFeedPath/);
 

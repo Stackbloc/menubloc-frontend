@@ -16,11 +16,26 @@ const CHANNEL_LABEL_BY_KIND = Object.fromEntries(
   LIVE_FEED_CHANNELS.filter((ch) => ch.id !== "all").map((ch) => [ch.id, ch.label])
 );
 
+/** Full captions in fullscreen reel (hub section titles). */
+export const LIVE_FEED_FULL_CATEGORY_LABELS = {
+  ate: "What I'm Eating",
+  want: "What I Wanna Eat",
+  plan: "My Eating Plans",
+  event: "Events",
+};
+
 export function liveFeedCategoryLabel(kind) {
   const key = String(kind || "")
     .trim()
     .toLowerCase();
   return CHANNEL_LABEL_BY_KIND[key] || CHANNEL_LABEL_BY_KIND.ate;
+}
+
+export function liveFeedFullCategoryLabel(kind) {
+  const key = String(kind || "")
+    .trim()
+    .toLowerCase();
+  return LIVE_FEED_FULL_CATEGORY_LABELS[key] || LIVE_FEED_FULL_CATEGORY_LABELS.ate;
 }
 
 export function dinerPeerProfilePath(dinerId) {

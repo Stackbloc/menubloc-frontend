@@ -14,10 +14,11 @@ import {
 } from "../../../lib/menuplyLiveFeedControl.js";
 import {
   dinerPeerProfilePath,
-  liveFeedCategoryLabel,
+  liveFeedFullCategoryLabel,
   liveFeedPosterLabel,
   venueLiveFeedPath,
   isLiveFeedVenueItem,
+  resolveLiveFeedContentLink,
 } from "../../../lib/liveFeedCategory.js";
 
 const SWIPE_MIN_PX = 56;
@@ -208,12 +209,15 @@ export default function SeeWhosEatingFullscreen({
 
   if (!item || typeof document === "undefined") return null;
 
-  const dishHref =
-    item.menu_item_href ||
-    (item.menu_item_id ? `/menu-items/${item.menu_item_id}` : null);
+  const contentLink = resolveLiveFeedContentLink(item);
   const restaurantHref = item.restaurant_slug
     ? `/r/${encodeURIComponent(item.restaurant_slug)}`
     : null;
+  const showRestaurantSecondary =
+    contentLink?.kind === "dish" &&
+    restaurantHref &&
+    String(item.restaurant_name || "").trim();
+  const foodLabel = String(item.item_name || item.food_name || "").trim();
   const isVenue = isLiveFeedVenueItem(item);
   const screenName = liveFeedPosterLabel(item);
   const atEnd = index >= items.length - 1;
@@ -273,26 +277,36 @@ export default function SeeWhosEatingFullscreen({
         >
           {isVenue ? screenName : `@${screenName}`}
         </button>
-        <p style={styles.category} data-testid="see-whos-eating-fullscreen-category">
-          {liveFeedCategoryLabel(item.kind)}
-        </p>
+        <div style={styles.captionMetaRow} data-testid="see-whos-eating-fullscreen-caption-meta">
+          <span style={styles.categoryChip} data-testid="see-whos-eating-fullscreen-category">
+            {liveFeedFullCategoryLabel(item.kind)}
+          </span>
+          {contentLink ? (
+            <Link
+              to={contentLink.href}
+              style={styles.contentLink}
+              data-testid="see-whos-eating-fullscreen-content-link"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {contentLink.label}
+            </Link>
+          ) : foodLabel ? (
+            <span style={styles.foodPlain}>{foodLabel}</span>
+          ) : null}
+        </div>
+        {showRestaurantSecondary ? (
+          <Link
+            to={restaurantHref}
+            style={styles.secondaryLink}
+            data-testid="see-whos-eating-fullscreen-restaurant-link"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {item.restaurant_name}
+          </Link>
+        ) : null}
         {connectNotice ? <p style={styles.notice}>{connectNotice}</p> : null}
         {connectError ? <p style={styles.error}>{connectError}</p> : null}
         {item.is_recommend ? <p style={styles.recommend}>Recommend</p> : null}
-        {restaurantHref ? (
-          <Link to={restaurantHref} style={styles.link} onClick={(e) => e.stopPropagation()}>
-            {item.restaurant_name || "Restaurant"}
-          </Link>
-        ) : item.restaurant_name ? (
-          <p style={styles.place}>{item.restaurant_name}</p>
-        ) : null}
-        {dishHref ? (
-          <Link to={dishHref} style={styles.dish} onClick={(e) => e.stopPropagation()}>
-            {item.item_name || item.food_name || "Dish"}
-          </Link>
-        ) : (
-          <p style={styles.place}>{item.item_name || item.food_name || ""}</p>
-        )}
         <p style={styles.hint}>
           {index + 1} / {items.length}
           {atEnd
@@ -373,13 +387,53 @@ const styles = {
     pointerEvents: "auto",
     zIndex: 2,
   },
-  category: {
+  captionMetaRow: {
+    display: "flex",
+    flexWrap: "wrap",
+    alignItems: "center",
+    gap: "8px 10px",
     margin: "0 0 8px",
+    maxWidth: "100%",
+  },
+  categoryChip: {
     fontSize: 11,
     fontWeight: 700,
-    letterSpacing: "0.06em",
-    textTransform: "uppercase",
-    color: "rgba(255,255,255,0.88)",
+    letterSpacing: "0.02em",
+    color: "#5eead4",
+    background: "rgba(0,0,0,0.45)",
+    border: "1px solid rgba(94, 234, 212, 0.45)",
+    borderRadius: 6,
+    padding: "4px 10px",
+    flexShrink: 0,
+    maxWidth: "100%",
+    lineHeight: 1.25,
+    whiteSpace: "normal",
+  },
+  contentLink: {
+    fontSize: 15,
+    fontWeight: 700,
+    color: "#fff",
+    textDecoration: "underline",
+    textUnderlineOffset: 3,
+    minHeight: 32,
+    display: "inline-flex",
+    alignItems: "center",
+    touchAction: "manipulation",
+  },
+  foodPlain: {
+    fontSize: 15,
+    fontWeight: 600,
+    color: "rgba(255,255,255,0.92)",
+  },
+  secondaryLink: {
+    display: "block",
+    color: "rgba(255,255,255,0.9)",
+    fontWeight: 600,
+    fontSize: 14,
+    margin: "0 0 8px",
+    textDecoration: "underline",
+    textUnderlineOffset: 2,
+    touchAction: "manipulation",
   },
   screenNameBtn: {
     display: "inline-block",
@@ -404,21 +458,6 @@ const styles = {
     textTransform: "uppercase",
     color: "#bbf7d0",
   },
-  link: {
-    display: "block",
-    color: "#fff",
-    fontWeight: 700,
-    marginBottom: 4,
-    textDecoration: "underline",
-  },
-  dish: {
-    display: "block",
-    color: "#ecfdf5",
-    fontWeight: 600,
-    marginBottom: 6,
-    textDecoration: "underline",
-  },
-  place: { margin: "0 0 4px", fontSize: 14, fontWeight: 600 },
   hint: { margin: 0, fontSize: 12, opacity: 0.8 },
   swipeCue: {
     position: "absolute",
