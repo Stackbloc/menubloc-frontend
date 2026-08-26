@@ -1,5 +1,6 @@
 /**
- * Menuply social media picker — photo via getUserMedia sheet; video via OS native capture.
+ * Menuply social media picker — photo via getUserMedia sheet;
+ * video: desktop MediaRecorder, phone OS native capture.
  */
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -13,7 +14,7 @@ function read(rel) {
   return fs.readFileSync(path.join(root, rel), "utf8");
 }
 
-test("MenuplyMediaPicker uses photo sheet + native video (not MediaRecorder sheet)", () => {
+test("MenuplyMediaPicker uses photo sheet + camera sheet (recorder lives in sheet)", () => {
   const picker = read("src/components/social/MenuplyMediaPicker.jsx");
   assert.match(picker, /ConsumerCameraSheet/);
   assert.match(picker, /allowVideo=\{allowVideo\}/);
@@ -27,29 +28,31 @@ test("MenuplyMediaPicker uses photo sheet + native video (not MediaRecorder shee
   assert.doesNotMatch(picker, /Choose Photo/);
 });
 
-test("ConsumerCameraSheet photo snap + Video mode launches OS native capture", () => {
+test("ConsumerCameraSheet hybrid: desktop MediaRecorder + phone native capture", () => {
   const sheet = read("src/components/consumer/ConsumerCameraSheet.jsx");
   assert.match(sheet, /consumer-camera-switch/);
   assert.match(sheet, /openCameraStreamWithFallback/);
+  assert.match(sheet, /preferDesktopInlineVideoRecord/);
+  assert.match(sheet, /preferNativeOsVideoCapture/);
+  assert.match(sheet, /createCameraMediaRecorder/);
+  assert.match(sheet, /validateRecordedVideoBlob/);
   assert.match(sheet, /consumer-camera-live/);
   assert.match(sheet, /consumer-camera-mode-video/);
   assert.match(sheet, /consumer-camera-mode-photo/);
   assert.match(sheet, /consumer-camera-record-native/);
+  assert.match(sheet, /consumer-camera-record/);
+  assert.match(sheet, /consumer-camera-stop/);
   assert.match(sheet, /normalizeNativeVideoFile/);
   assert.match(sheet, /accept="video\/\*"/);
   assert.match(sheet, /initialMode = "video"/);
   assert.match(sheet, /htmlFor=\{busy \? undefined : nativeVideoInputId\}/);
   assert.match(sheet, /\n\s+Record video\n/);
-  // Video chip must appear before Photo chip (Video | Photo)
   const videoChip = sheet.indexOf('data-testid="consumer-camera-mode-video"');
   const photoChip = sheet.indexOf('data-testid="consumer-camera-mode-photo"');
   assert.ok(videoChip >= 0 && photoChip > videoChip, "Video chip must precede Photo chip");
   assert.doesNotMatch(sheet, />\s*Upload video\s*</);
   assert.doesNotMatch(sheet, /Record video \(up to/);
-  assert.doesNotMatch(sheet, /createCameraMediaRecorder/);
-  assert.doesNotMatch(sheet, /validateRecordedVideoBlob/);
-  assert.doesNotMatch(sheet, /consumer-camera-record(?!-native)/);
-  // Quarantined: button→input.click() opens file picker instead of camera
+  // Quarantined: button→input.click() opens file picker instead of camera on phones
   assert.doesNotMatch(sheet, /nativeVideoInputRef\.current\?\.click/);
   assert.doesNotMatch(sheet, /inputRef\.current\?\.click\(\)/);
 });

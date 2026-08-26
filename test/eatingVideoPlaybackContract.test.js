@@ -53,6 +53,19 @@ test("VideoStillPreview play path strips fragment; seek only for poster", () => 
   assert.match(preview, /notifyMealVideoPlaying/);
   assert.match(preview, /loadeddata|canplay/);
   assert.doesNotMatch(preview, /Open \/ download|Can't preview this format|Can&apos;t preview this format/);
+  assert.match(preview, /controls=\{false\}/);
+});
+
+test("diner video surfaces never mount native controls (Chrome download / file prompt)", () => {
+  const picker = read("src/components/social/MenuplyMediaPicker.jsx");
+  assert.match(picker, /controls=\{false\}/);
+  // Forbid boolean `controls` / `controls={true}` on compose preview (Chrome Download).
+  assert.doesNotMatch(picker, /\n\s*controls\s*\n/);
+  assert.doesNotMatch(picker, /controls=\{true\}/);
+  const surface = read("src/pages/consumer/myMenuply/SeeWhosEatingSurface.jsx");
+  const fullscreen = read("src/pages/consumer/myMenuply/SeeWhosEatingFullscreen.jsx");
+  assert.match(surface, /controls=\{false\}/);
+  assert.match(fullscreen, /controls=\{false\}/);
 });
 
 test("eating dish video includes poster fallback (item / logo / billboard)", () => {

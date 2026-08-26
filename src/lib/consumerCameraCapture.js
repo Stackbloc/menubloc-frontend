@@ -30,6 +30,33 @@ export function videoRecorderSupported() {
   );
 }
 
+/**
+ * True when Video mode should use <input capture> (phone/tablet OS camera).
+ * False on desktop (MacBook / Windows Chrome) so the sheet uses MediaRecorder.
+ */
+export function preferNativeOsVideoCapture() {
+  if (typeof navigator === "undefined") return true;
+  const ua = String(navigator.userAgent || "");
+  if (/Android|webOS|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua)) {
+    return true;
+  }
+  if (/iPad/i.test(ua)) return true;
+  // iPadOS 13+ often reports as Macintosh with touch.
+  if (
+    navigator.platform === "MacIntel" &&
+    typeof navigator.maxTouchPoints === "number" &&
+    navigator.maxTouchPoints > 1
+  ) {
+    return true;
+  }
+  return false;
+}
+
+/** Desktop Mac/Chrome: in-sheet MediaRecorder. Phones keep OS-native capture. */
+export function preferDesktopInlineVideoRecord() {
+  return !preferNativeOsVideoCapture() && videoRecorderSupported();
+}
+
 function normalizeFacing(facingMode = "environment") {
   return facingMode === "user" ? "user" : "environment";
 }

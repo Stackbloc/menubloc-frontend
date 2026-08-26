@@ -290,7 +290,7 @@ export default function EatingCompose({
   /*
    * Camera behavior (hybrid sheet):
    * Photo → ConsumerCameraSheet getUserMedia snap.
-   * Video → same sheet → OS phone camera (<input capture>), not MediaRecorder.
+   * Video → desktop MediaRecorder; phone OS camera (<input capture>).
    * Library mode uses the native file picker for both.
    */
 

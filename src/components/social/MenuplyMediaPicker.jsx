@@ -161,11 +161,12 @@ export default function MenuplyMediaPicker({
                 data-testid={`${testId}-video-poster`}
               />
             ) : (
+              /* Never use native controls — Chrome’s control bar includes Download (file prompt). */
               <video
                 key={previewUrl}
                 src={previewUrl}
                 style={previewStyles.media}
-                controls
+                controls={false}
                 playsInline
                 muted
                 preload="metadata"

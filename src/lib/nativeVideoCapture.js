@@ -1,6 +1,7 @@
 /**
  * Native OS video capture — phone camera / file picker produces the clip.
- * Replaces in-app MediaRecorder (unreliable across Safari/Chrome).
+ * Used on phones/tablets. Desktop Mac/Chrome uses in-sheet MediaRecorder instead
+ * (see preferNativeOsVideoCapture + ConsumerCameraSheet).
  *
  * Decode probe is soft: many phone cameras produce HEVC/MOV that desktop Chrome
  * cannot decode in a hidden <video>, but the file is still a valid upload.
@@ -26,6 +27,8 @@ const VIDEO_NAME_RE = /\.(mp4|mov|m4v|webm|mkv)$/i;
 export function captureAttrForFacing(facingMode = "environment") {
   return facingMode === "user" ? "user" : "environment";
 }
+
+export { preferNativeOsVideoCapture } from "./consumerCameraCapture.js";
 
 function baseMime(file) {
   return String(file?.type || "")

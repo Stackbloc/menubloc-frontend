@@ -54,18 +54,29 @@ test("MenuplyMediaPicker opens ConsumerCameraSheet with optional native video mo
   assert.doesNotMatch(picker, /createCameraMediaRecorder/);
 });
 
-test("ConsumerCameraSheet Video mode uses OS native capture (no MediaRecorder)", () => {
+test("ConsumerCameraSheet: desktop MediaRecorder + phone OS native capture", () => {
   const sheet = read("src/components/consumer/ConsumerCameraSheet.jsx");
-  assert.match(sheet, /photo snap via getUserMedia|Photo → live getUserMedia/);
-  assert.match(sheet, /normalizeNativeVideoFile/);
-  assert.match(sheet, /consumer-camera-mode-video/);
+  assert.match(sheet, /Photo → live getUserMedia/);
+  assert.match(sheet, /preferDesktopInlineVideoRecord/);
+  assert.match(sheet, /preferNativeOsVideoCapture/);
+  assert.match(sheet, /createCameraMediaRecorder/);
+  assert.match(sheet, /validateRecordedVideoBlob/);
+  assert.match(sheet, /consumer-camera-record/);
   assert.match(sheet, /consumer-camera-record-native/);
+  assert.match(sheet, /normalizeNativeVideoFile/);
   assert.match(sheet, /htmlFor=\{busy \? undefined : nativeVideoInputId\}/);
   assert.match(sheet, /initialMode = "video"/);
-  assert.doesNotMatch(sheet, /createCameraMediaRecorder/);
-  assert.doesNotMatch(sheet, /validateRecordedVideoBlob/);
+  assert.match(sheet, /consumer-camera-mode-video/);
+  // Quarantined: button→input.click() opens file picker instead of camera on phones
   assert.doesNotMatch(sheet, /inputRef\.current\?\.click/);
   assert.doesNotMatch(sheet, /nativeVideoInputRef\.current\?\.click/);
+});
+
+test("preferNativeOsVideoCapture / preferDesktopInlineVideoRecord helpers exist", () => {
+  const cap = read("src/lib/consumerCameraCapture.js");
+  assert.match(cap, /export function preferNativeOsVideoCapture/);
+  assert.match(cap, /export function preferDesktopInlineVideoRecord/);
+  assert.match(cap, /iPhone|Android/);
 });
 
 test("native video normalize soft-probes decode (does not hard-block Post)", () => {
