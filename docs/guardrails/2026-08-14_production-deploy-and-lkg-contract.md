@@ -36,9 +36,9 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` @ clean `main` |
-| Git commit | `da6e15d` — Live Feed category below @name (smaller type; same color) |
-| Vercel deployment | `menubloc-frontend-m9mch4bp1-menuply.vercel.app` |
-| Live bundle | `index-Ckn_kipT.js` |
+| Git commit | `5e88397` — CRT Live Feed dials + clickable My Events + finger targets — Live Feed category below @name (smaller type; same color) |
+| Vercel deployment | `menubloc-frontend-cn4khcxk3-menuply.vercel.app` |
+| Live bundle | `index-CSVYHrXa.js` |
 | Aliases | `menuply.com`, `www.menuply.com`, `crm.menuply.com`, `venues.menuply.com` |
 | Tip-gate | **PASS** (apex + www) verified 2026-08-25 |
 | Feature | Live Feed category caption under username at smaller type |
@@ -59,10 +59,10 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway
 
 ```bash
 cd /Users/andrebarber/Desktop/menubloc/menubloc-frontend-main
-npx vercel alias set menubloc-frontend-m9mch4bp1-menuply.vercel.app menuply.com
-npx vercel alias set menubloc-frontend-m9mch4bp1-menuply.vercel.app www.menuply.com
-npx vercel alias set menubloc-frontend-m9mch4bp1-menuply.vercel.app crm.menuply.com
-npx vercel alias set menubloc-frontend-m9mch4bp1-menuply.vercel.app venues.menuply.com
+npx vercel alias set menubloc-frontend-cn4khcxk3-menuply.vercel.app menuply.com
+npx vercel alias set menubloc-frontend-cn4khcxk3-menuply.vercel.app www.menuply.com
+npx vercel alias set menubloc-frontend-cn4khcxk3-menuply.vercel.app crm.menuply.com
+npx vercel alias set menubloc-frontend-cn4khcxk3-menuply.vercel.app venues.menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 ```
@@ -71,8 +71,8 @@ bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 
 | Field | Value |
 |-------|-------|
-| Deployment | `menubloc-frontend-59blc4cw6-menuply.vercel.app` |
-| Live bundle | `index-oQ4ty48S.js` |
+| Deployment | `menubloc-frontend-m9mch4bp1-menuply.vercel.app` |
+| Live bundle | `index-Ckn_kipT.js` |
 | FE commit | `5e61477` |
 | BE health | `a93a1fdc` |
 | Notes | Pre–Live Feed category-below-@name layout |
