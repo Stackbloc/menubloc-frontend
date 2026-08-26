@@ -552,6 +552,7 @@ When Andre says **cpd**, agents must:
 
 | Tag | Repo | SHA (at tag) | Meaning |
 |-----|------|--------------|---------|
+| `menuply-pre-video-first-consumer-2026-08-26` | FE + BE authorized mains | FE `89a336e` · BE `14a98b5c` | **Pre–video-first consumer shell** (`/feed`); tip `j2n2mx1ka` / `index-67tDDIer.js`; tags local until Andre push |
 | `menuply-last-known-good-2026-08-18` | FE + BE authorized mains | FE `0450a53` · BE `fb54f0b4` | **Pre–My Menuply IA** (dining-hall human copy tip live; tags pushed) |
 | `menuply-last-known-good-2026-08-14` | FE + BE authorized mains | FE `5c06c787` · BE `856d70dd` | Pre–Social Engine code checkpoint |
 | `menuply-social-engine-known-good-2026-08-14` | FE + BE | FE `a89e0d6` · BE `b001e41e` | Pre–Social Onboarding |

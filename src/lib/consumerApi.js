@@ -170,6 +170,34 @@ export const listConnectionsEating = (limit = 30, peerId = null) => {
 };
 
 /** Market See Who's Eating video reel (CK menu_item_id on items). */
+/**
+ * Hide a diner clip from the Public Feed (market discoverability).
+ * ate/want/plan: market_discoverable=false (keeps diary / want / plan rows).
+ */
+export async function hidePublicFeedItem(item) {
+  const kind = String(item?.kind || "")
+    .trim()
+    .toLowerCase();
+  const sourceId = item?.source_id != null ? Number(item.source_id) : null;
+  if (!Number.isFinite(sourceId) || sourceId <= 0) {
+    const err = new Error("Invalid Public Feed item");
+    err.code = "invalid_feed_item";
+    throw err;
+  }
+  if (kind === "ate") {
+    return updateWhatIAteToday(sourceId, { market_discoverable: false });
+  }
+  if (kind === "want") {
+    return updateWantToEat(sourceId, { market_discoverable: false });
+  }
+  if (kind === "plan") {
+    return updateWhatWeDoingSession(sourceId, { market_discoverable: false });
+  }
+  const err = new Error("This clip cannot be removed from Public Feed here");
+  err.code = "feed_hide_unsupported";
+  throw err;
+}
+
 export const listSeeWhosEating = ({ city, state, limit = 20, cursor, kind, channel } = {}) => {
   const q = new URLSearchParams();
   if (city) q.set("city", String(city));

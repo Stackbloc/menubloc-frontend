@@ -54,6 +54,7 @@ import {
   whatIAteTodayLocalDate,
 } from "../../lib/consumerApi.js";
 import { eatingMediaFromUpload } from "../../lib/eatingMediaUtils.js";
+import { pruneMenuplyLiveFeedItem } from "../../lib/menuplyLiveFeedControl.js";
 import { defaultWhatIAteMealPeriod } from "../../lib/whatIAteTodayMealPeriod.js";
 import {
   buildDiningCrewInviteShareData,
@@ -691,6 +692,7 @@ export default function MyMenuplyPage() {
       setError("");
       try {
         await deleteWhatIAteToday(entryId);
+        pruneMenuplyLiveFeedItem(`ate:${entryId}`);
         setEating((prev) =>
           (prev || []).filter((row) => {
             if (Number(row.entry_id) === entryId) return false;
@@ -742,6 +744,7 @@ export default function MyMenuplyPage() {
     setWantListError("");
     try {
       await deleteWantToEat(want.id);
+      pruneMenuplyLiveFeedItem(`want:${want.id}`);
       setWants((prev) => (prev || []).filter((row) => Number(row.id) !== Number(want.id)));
       setLastPost((prev) =>
         prev?.kind === "want" && Number(prev.id) === Number(want.id) ? null : prev
@@ -817,6 +820,7 @@ export default function MyMenuplyPage() {
     setError("");
     try {
       await deleteWhatWeDoingSession(key);
+      if (plan?.id != null) pruneMenuplyLiveFeedItem(`plan:${plan.id}`);
       setPlans((prev) =>
         (prev || []).filter((row) => String(row.token || row.id) !== String(key))
       );
@@ -936,6 +940,7 @@ export default function MyMenuplyPage() {
         food_name: name,
         photo_url,
         video_url,
+        market_discoverable: Boolean(video_url),
         restaurant_id: restaurantId,
         menu_item_id: menuItemId,
         intent_kind: intent || undefined,

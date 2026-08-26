@@ -128,3 +128,40 @@ export function resolveLiveFeedContentLink(item, { abbreviateRestaurant = false 
 
   return null;
 }
+
+/**
+ * Dual caption bridge: dish → menu-item page, restaurant → restaurant page (existing routes only).
+ * Prefer this for Feed / fullscreen caption chips.
+ */
+export function resolveLiveFeedCaptionLinks(item, { abbreviateRestaurant = false } = {}) {
+  if (!item) return { dish: null, restaurant: null, venue: null };
+
+  const dishHref = liveFeedDishHref(item);
+  const dishName = liveFeedDishName(item);
+  const dish =
+    dishHref && dishName
+      ? { href: dishHref, label: dishName, kind: "dish" }
+      : null;
+
+  const restaurantSlug = String(item.restaurant_slug || "").trim();
+  const restaurantName = liveFeedRestaurantName(item);
+  const restaurant =
+    restaurantSlug && restaurantName
+      ? {
+          href: `/r/${encodeURIComponent(restaurantSlug)}`,
+          label: abbreviateRestaurant
+            ? abbreviateLiveFeedRestaurantName(restaurantName)
+            : restaurantName,
+          kind: "restaurant",
+        }
+      : null;
+
+  let venue = null;
+  if (isLiveFeedVenueItem(item)) {
+    const href = venueLiveFeedPath(item.venue);
+    const label = String(item.venue?.name || liveFeedPosterLabel(item) || "").trim();
+    if (href && label) venue = { href, label, kind: "venue" };
+  }
+
+  return { dish, restaurant, venue };
+}

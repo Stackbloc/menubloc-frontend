@@ -7,7 +7,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link, useNavigate } from "react-router-dom";
-import { requestConnection } from "../../../lib/consumerApi.js";
+import { hidePublicFeedItem, requestConnection } from "../../../lib/consumerApi.js";
 import {
   MENUPY_CLOSE_LIVE_FEED_FULLSCREEN,
   stripMediaUrlFragment,
@@ -18,23 +18,34 @@ import {
   liveFeedPosterLabel,
   venueLiveFeedPath,
   isLiveFeedVenueItem,
-  resolveLiveFeedContentLink,
+  resolveLiveFeedCaptionLinks,
 } from "../../../lib/liveFeedCategory.js";
 
 const SWIPE_MIN_PX = 56;
 
+/**
+ * @param {"modal"|"feedHome"} variant
+ *   modal — My Menuply overlay (exit closes).
+ *   feedHome — primary Feed shell (no exit; swipe down on first stays; bottom padding for shell nav).
+ */
 export default function SeeWhosEatingFullscreen({
   items = [],
   startIndex = 0,
   isAuthenticated = false,
   viewerUserId = null,
   onClose,
+  onRemovedFromFeed,
+  variant = "modal",
+  bottomInset = 0,
+  headerSlot = null,
 }) {
   const navigate = useNavigate();
   const [index, setIndex] = useState(startIndex);
   const [connectBusy, setConnectBusy] = useState(false);
   const [connectNotice, setConnectNotice] = useState("");
   const [connectError, setConnectError] = useState("");
+  const [removeBusy, setRemoveBusy] = useState(false);
+  const [removeError, setRemoveError] = useState("");
   const videoRef = useRef(null);
   const touchStartY = useRef(null);
   const item = items[index] || null;
@@ -46,7 +57,18 @@ export default function SeeWhosEatingFullscreen({
   useEffect(() => {
     setConnectNotice("");
     setConnectError("");
+    setRemoveError("");
   }, [index, item?.id]);
+
+  useEffect(() => {
+    if (!item && items.length === 0) {
+      if (variant === "modal") onClose?.();
+      return;
+    }
+    if (!item && items.length > 0) {
+      setIndex((i) => Math.min(i, items.length - 1));
+    }
+  }, [item, items.length, onClose, variant]);
 
   useEffect(() => {
     function onForcedClose() {
@@ -91,7 +113,7 @@ export default function SeeWhosEatingFullscreen({
     function onKey(e) {
       if (e.key === "Escape") {
         e.preventDefault();
-        onClose?.();
+        if (variant === "modal") onClose?.();
         return;
       }
       if (e.key === "ArrowDown" || e.key === "ArrowRight" || e.key === "j") {
@@ -106,7 +128,7 @@ export default function SeeWhosEatingFullscreen({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- goNext/goPrev close over latest index
-  }, [items.length, index, onClose]);
+  }, [items.length, index, onClose, variant]);
 
   function goNext() {
     setIndex((i) => (i + 1 < items.length ? i + 1 : i));
@@ -114,7 +136,7 @@ export default function SeeWhosEatingFullscreen({
 
   function goPrevOrClose() {
     if (index <= 0) {
-      onClose?.();
+      if (variant === "modal") onClose?.();
       return;
     }
     setIndex((i) => i - 1);
@@ -207,43 +229,124 @@ export default function SeeWhosEatingFullscreen({
     }
   }
 
-  if (!item || typeof document === "undefined") return null;
+  async function onRemoveFromPublicFeed(e) {
+    e?.preventDefault?.();
+    e?.stopPropagation?.();
+    if (!item || removeBusy) return;
+    const peerId = item?.diner?.id != null ? Number(item.diner.id) : null;
+    const kind = String(item.kind || "")
+      .trim()
+      .toLowerCase();
+    if (isLiveFeedVenueItem(item) || !["ate", "want", "plan"].includes(kind)) return;
+    if (viewerUserId == null || peerId == null || Number(viewerUserId) !== peerId) return;
 
-  const contentLink = resolveLiveFeedContentLink(item);
-  const foodLabel = String(item.item_name || item.food_name || "").trim();
+    const ok =
+      typeof window === "undefined" ||
+      window.confirm(
+        "Remove this video from Public Feed? It stays in your Eating list."
+      );
+    if (!ok) return;
+
+    setRemoveBusy(true);
+    setRemoveError("");
+    try {
+      await hidePublicFeedItem(item);
+      const removedId = item.id;
+      const nextLen = Math.max(0, items.length - 1);
+      onRemovedFromFeed?.(removedId);
+      if (nextLen === 0) {
+        if (variant === "modal") onClose?.();
+      } else {
+        setIndex((i) => Math.min(i, nextLen - 1));
+      }
+    } catch (err) {
+      setRemoveError(err?.message || "Unable to remove from Public Feed");
+    } finally {
+      setRemoveBusy(false);
+    }
+  }
+
+  if ((!item && variant === "modal") || typeof document === "undefined") return null;
+
+  const captionLinks = resolveLiveFeedCaptionLinks(item);
+  const foodLabel = String(item?.item_name || item?.food_name || "").trim();
   const isVenue = isLiveFeedVenueItem(item);
-  const screenName = liveFeedPosterLabel(item);
+  const screenName = item ? liveFeedPosterLabel(item) : "";
   const atEnd = index >= items.length - 1;
   const atStart = index <= 0;
+  const peerId = item?.diner?.id != null ? Number(item.diner.id) : null;
+  const isOwnDinerClip =
+    item &&
+    !isVenue &&
+    viewerUserId != null &&
+    peerId != null &&
+    Number(viewerUserId) === peerId &&
+    ["ate", "want", "plan"].includes(
+      String(item.kind || "")
+        .trim()
+        .toLowerCase()
+    );
+  const isFeedHome = variant === "feedHome";
+  const overlayStyle = {
+    ...styles.overlay,
+    ...(isFeedHome
+      ? {
+          zIndex: 40,
+          paddingBottom: Math.max(0, Number(bottomInset) || 0),
+        }
+      : null),
+  };
+
+  if (!item && isFeedHome) {
+    const empty = (
+      <div
+        style={overlayStyle}
+        data-testid="see-whos-eating-fullscreen"
+        data-variant="feedHome"
+        role="region"
+        aria-label="Feed"
+      >
+        {headerSlot}
+        <p style={styles.emptyFeed}>No public food videos yet. Be the first — tap Create.</p>
+      </div>
+    );
+    return createPortal(empty, document.body);
+  }
 
   const ui = (
     <div
-      style={styles.overlay}
+      style={overlayStyle}
       data-testid="see-whos-eating-fullscreen"
-      role="dialog"
-      aria-modal="true"
-      aria-label="See who's eating"
+      data-variant={variant}
+      role={isFeedHome ? "region" : "dialog"}
+      aria-modal={isFeedHome ? undefined : "true"}
+      aria-label={isFeedHome ? "Feed" : "See who's eating"}
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
     >
-      <button
-        type="button"
-        style={styles.close}
-        onClick={onClose}
-        aria-label="Close fullscreen"
-        data-testid="see-whos-eating-fullscreen-close"
-      >
-        ×
-      </button>
+      {headerSlot}
+      {!isFeedHome ? (
+        <>
+          <button
+            type="button"
+            style={styles.close}
+            onClick={onClose}
+            aria-label="Close fullscreen"
+            data-testid="see-whos-eating-fullscreen-close"
+          >
+            ×
+          </button>
 
-      <button
-        type="button"
-        style={styles.exitChip}
-        onClick={onClose}
-        data-testid="see-whos-eating-fullscreen-exit"
-      >
-        Exit
-      </button>
+          <button
+            type="button"
+            style={styles.exitChip}
+            onClick={onClose}
+            data-testid="see-whos-eating-fullscreen-exit"
+          >
+            Exit
+          </button>
+        </>
+      ) : null}
 
       <video
         key={item.id}
@@ -260,7 +363,14 @@ export default function SeeWhosEatingFullscreen({
         onClick={openPosterProfile}
       />
 
-      <div style={styles.meta}>
+      <div
+        style={{
+          ...styles.meta,
+          ...(isFeedHome && bottomInset
+            ? { bottom: `calc(${Number(bottomInset)}px + max(12px, env(safe-area-inset-bottom)))` }
+            : null),
+        }}
+      >
         <button
           type="button"
           style={styles.screenNameBtn}
@@ -274,28 +384,68 @@ export default function SeeWhosEatingFullscreen({
           <span style={styles.categoryChip} data-testid="see-whos-eating-fullscreen-category">
             {liveFeedFullCategoryLabel(item.kind)}
           </span>
-          {contentLink ? (
+          {captionLinks.dish ? (
             <Link
-              to={contentLink.href}
+              to={captionLinks.dish.href}
+              style={styles.contentLink}
+              data-testid="see-whos-eating-fullscreen-dish-link"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {captionLinks.dish.label}
+            </Link>
+          ) : null}
+          {captionLinks.dish && captionLinks.restaurant ? (
+            <span style={styles.captionSep} aria-hidden="true">
+              ·
+            </span>
+          ) : null}
+          {captionLinks.restaurant ? (
+            <Link
+              to={captionLinks.restaurant.href}
+              style={styles.contentLink}
+              data-testid="see-whos-eating-fullscreen-restaurant-link"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {captionLinks.restaurant.label}
+            </Link>
+          ) : null}
+          {!captionLinks.dish && !captionLinks.restaurant && captionLinks.venue ? (
+            <Link
+              to={captionLinks.venue.href}
               style={styles.contentLink}
               data-testid="see-whos-eating-fullscreen-content-link"
               onClick={(e) => e.stopPropagation()}
             >
-              {contentLink.label}
+              {captionLinks.venue.label}
             </Link>
-          ) : foodLabel ? (
+          ) : null}
+          {!captionLinks.dish && !captionLinks.restaurant && !captionLinks.venue && foodLabel ? (
             <span style={styles.foodPlain}>{foodLabel}</span>
           ) : null}
         </div>
         {connectNotice ? <p style={styles.notice}>{connectNotice}</p> : null}
         {connectError ? <p style={styles.error}>{connectError}</p> : null}
+        {removeError ? <p style={styles.error}>{removeError}</p> : null}
+        {isOwnDinerClip ? (
+          <button
+            type="button"
+            style={styles.removeBtn}
+            disabled={removeBusy}
+            onClick={onRemoveFromPublicFeed}
+            data-testid="see-whos-eating-remove-public-feed"
+          >
+            {removeBusy ? "Removing…" : "Remove from Public Feed"}
+          </button>
+        ) : null}
         {item.is_recommend ? <p style={styles.recommend}>Recommend</p> : null}
         <p style={styles.hint}>
           {index + 1} / {items.length}
           {atEnd
-            ? " · swipe down for previous · Exit to leave"
+            ? " · swipe down for previous"
             : atStart
-              ? " · swipe up for next · swipe down or Exit to leave"
+              ? isFeedHome
+                ? " · swipe up for next"
+                : " · swipe up for next · swipe down or Exit to leave"
               : " · swipe up next · swipe down previous"}
         </p>
       </div>
@@ -408,6 +558,23 @@ const styles = {
     fontWeight: 600,
     color: "rgba(255,255,255,0.92)",
   },
+  captionSep: {
+    fontSize: 14,
+    fontWeight: 600,
+    color: "rgba(255,255,255,0.7)",
+  },
+  emptyFeed: {
+    position: "absolute",
+    left: 24,
+    right: 24,
+    top: "40%",
+    textAlign: "center",
+    color: "rgba(255,255,255,0.85)",
+    fontSize: 16,
+    fontWeight: 600,
+    lineHeight: 1.45,
+    zIndex: 2,
+  },
   secondaryLink: {
     display: "block",
     color: "rgba(255,255,255,0.9)",
@@ -433,6 +600,20 @@ const styles = {
   },
   notice: { margin: "0 0 6px", fontSize: 13, color: "#bbf7d0", fontWeight: 600 },
   error: { margin: "0 0 6px", fontSize: 13, color: "#fecaca", fontWeight: 600 },
+  removeBtn: {
+    display: "inline-block",
+    margin: "0 0 10px",
+    padding: "8px 12px",
+    minHeight: 40,
+    border: "1px solid rgba(254, 202, 202, 0.55)",
+    borderRadius: 8,
+    background: "rgba(0,0,0,0.5)",
+    color: "#fecaca",
+    fontSize: 13,
+    fontWeight: 700,
+    cursor: "pointer",
+    touchAction: "manipulation",
+  },
   recommend: {
     margin: "0 0 6px",
     fontSize: 12,

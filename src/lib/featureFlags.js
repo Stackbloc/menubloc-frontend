@@ -25,3 +25,12 @@ export function isLegacyHomepageEnabled() {
 export function isNewHomepageEnabled() {
   return !isLegacyHomepageEnabled();
 }
+
+/**
+ * Video-first Feed as `/` cutover (Andre-authorized only).
+ * When VITE_FEED_AS_HOME=1, HomeRoot mounts Feed shell instead of HomeNext.
+ * HomeNext remains at `/home-next` for rollback. Parallel `/feed` always available.
+ */
+export function isFeedAsHomeEnabled() {
+  return isTruthy(import.meta.env.VITE_FEED_AS_HOME);
+}

@@ -1,18 +1,20 @@
 /**
- * Pause / resume the sticky See Who's Eating live feed when a diner meal video plays.
- * CustomEvents so meal cards and live feed stay decoupled.
+ * Pause / resume the sticky See Who's Eating Public Feed when a diner meal video plays.
+ * CustomEvents so meal cards and Public Feed stay decoupled.
  *
  * Product rules (2026-08-25):
- * - Sticky live feed stays at top (do not reorder).
- * - Meal video play → pause live (stop decode), close fullscreen reel if open.
+ * - Sticky Public Feed stays at top (do not reorder).
+ * - Meal video play → pause Public Feed (stop decode), close fullscreen reel if open.
  * - Resume same item from currentTime when no meal video is playing.
  * - Meal A → B: refcount so no resume flicker between clips.
- * - Scrolling the live feed while a meal plays does not stop the meal.
+ * - Scrolling the Public Feed while a meal plays does not stop the meal.
  */
 
 export const MENUPY_PAUSE_LIVE_FEED = "menuply:pause-live-feed";
 export const MENUPY_RESUME_LIVE_FEED = "menuply:resume-live-feed";
 export const MENUPY_CLOSE_LIVE_FEED_FULLSCREEN = "menuply:close-live-feed-fullscreen";
+/** Detail: { id: "ate:123" | "want:…" | "plan:…" } — drop a clip from CRT without refetch. */
+export const MENUPY_PRUNE_LIVE_FEED_ITEM = "menuply:prune-live-feed-item";
 
 let mealPlayDepth = 0;
 
@@ -41,6 +43,14 @@ export function resumeMenuplyLiveFeed() {
 export function closeMenuplyLiveFeedFullscreen() {
   if (typeof window === "undefined") return;
   window.dispatchEvent(new CustomEvent(MENUPY_CLOSE_LIVE_FEED_FULLSCREEN));
+}
+
+/** Remove one Public Feed item from the CRT list (e.g. after diary delete or owner hide). */
+export function pruneMenuplyLiveFeedItem(itemId) {
+  if (typeof window === "undefined") return;
+  const id = String(itemId || "").trim();
+  if (!id) return;
+  window.dispatchEvent(new CustomEvent(MENUPY_PRUNE_LIVE_FEED_ITEM, { detail: { id } }));
 }
 
 /** Call when a meal / highlight video starts playing (refcount-safe). */

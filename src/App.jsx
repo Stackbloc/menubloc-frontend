@@ -184,6 +184,11 @@ import OperatorBrandSettings from "./pages/operator/OperatorBrandSettings.jsx";
 import OperatorCartNegotiationSettings from "./pages/operator/OperatorCartNegotiationSettings.jsx";
 
 import HomeRoot from "./pages/HomeRoot.jsx";
+import FeedShellPage from "./pages/consumer/feed/FeedShellPage.jsx";
+import FeedHomePage from "./pages/consumer/feed/FeedHomePage.jsx";
+import FeedEatingPage from "./pages/consumer/feed/FeedEatingPage.jsx";
+import FeedEventsPage from "./pages/consumer/feed/FeedEventsPage.jsx";
+import FeedMePage from "./pages/consumer/feed/FeedMePage.jsx";
 import HomeNext from "./pages/HomeNext.jsx";
 import LegacyDiscoveryHome from "./pages/LegacyDiscoveryHome.jsx";
 import GrubbidHomeV1 from "./components/GrubbidHomeV1.jsx";
@@ -773,6 +778,16 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
         />
         <Route path="/home-legacy" element={crmHost ? <HostRouteRedirect to="/crm" /> : <LegacyDiscoveryHome />} />
         <Route path="/home-next" element={crmHost ? <HostRouteRedirect to="/crm" /> : venuesHost ? <VenuesHostRoot /> : <HomeNext />} />
+
+        <Route
+          path="/feed"
+          element={crmHost ? <HostRouteRedirect to="/crm" /> : <FeedShellPage />}
+        >
+          <Route index element={<FeedHomePage />} />
+          <Route path="eating" element={<FeedEatingPage />} />
+          <Route path="events" element={<FeedEventsPage />} />
+          <Route path="me" element={<FeedMePage />} />
+        </Route>
 
         <Route path="/clusters" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ClustersDirectoryPage />} />
         <Route path="/clusters/community/new" element={crmHost ? <HostRouteRedirect to="/crm" /> : <CommunityClusterCreatePage />} />

@@ -211,6 +211,10 @@ export default function DiscoveryDrawer({
         <div style={{ padding: "0 20px 48px", flex: 1 }}>
 
           <Section label={t("drawer.go", "Go")} />
+          <Link to="/feed" onClick={onClose} style={{
+            display: "block", padding: "12px 0",
+            fontSize: 15, fontWeight: 700, color: "#1F4E3D", textDecoration: "none",
+          }}>Feed (preview)</Link>
           <Link to="/my-menuply" onClick={onClose} style={{
             display: "block", padding: "12px 0",
             fontSize: 15, fontWeight: 700, color: "#1F4E3D", textDecoration: "none",

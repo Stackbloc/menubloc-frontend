@@ -11,6 +11,7 @@ import { readDetectedLocation } from "../../../lib/discoveryLocationPersistence.
 import {
   MENUPY_CLOSE_LIVE_FEED_FULLSCREEN,
   MENUPY_PAUSE_LIVE_FEED,
+  MENUPY_PRUNE_LIVE_FEED_ITEM,
   MENUPY_RESUME_LIVE_FEED,
   getMealVideoPlayDepth,
   stripMediaUrlFragment,
@@ -131,9 +132,33 @@ export default function SeeWhosEatingSurface({
     return () => window.removeEventListener(MENUPY_CLOSE_LIVE_FEED_FULLSCREEN, onCloseFs);
   }, []);
 
+  useEffect(() => {
+    function onPrune(e) {
+      const id = String(e?.detail?.id || "").trim();
+      if (!id) return;
+      setItems((prev) => {
+        const next = (prev || []).filter((row) => String(row?.id) !== id);
+        if (next.length === 0) setFullscreenOpen(false);
+        return next;
+      });
+    }
+    window.addEventListener(MENUPY_PRUNE_LIVE_FEED_ITEM, onPrune);
+    return () => window.removeEventListener(MENUPY_PRUNE_LIVE_FEED_ITEM, onPrune);
+  }, []);
+
   function openAt(index) {
     setStartIndex(index);
     setFullscreenOpen(true);
+  }
+
+  function onRemovedFromFeed(itemId) {
+    const id = String(itemId || "").trim();
+    if (!id) return;
+    setItems((prev) => {
+      const next = (prev || []).filter((row) => String(row?.id) !== id);
+      if (next.length === 0) setFullscreenOpen(false);
+      return next;
+    });
   }
 
   return (
@@ -146,7 +171,7 @@ export default function SeeWhosEatingSurface({
         <div style={styles.hudRow}>
           <div style={styles.hudLeft}>
             <span style={styles.liveDot} aria-hidden="true" />
-            <span style={styles.liveLabel}>LIVE FEED</span>
+            <span style={styles.liveLabel}>PUBLIC FEED</span>
             <span style={styles.divider}>/</span>
             <span style={styles.kicker}>See who&apos;s eating</span>
           </div>
@@ -248,7 +273,7 @@ export default function SeeWhosEatingSurface({
           <div
             style={styles.channelStrip}
             role="radiogroup"
-            aria-label="Live Feed channels"
+            aria-label="Public Feed channels"
             data-testid="live-feed-channel-dials"
           >
             {LIVE_FEED_CHANNELS.map((ch) => {
@@ -304,6 +329,7 @@ export default function SeeWhosEatingSurface({
           isAuthenticated={isAuthenticated}
           viewerUserId={viewerUserId}
           onClose={() => setFullscreenOpen(false)}
+          onRemovedFromFeed={onRemovedFromFeed}
         />
       ) : null}
     </div>

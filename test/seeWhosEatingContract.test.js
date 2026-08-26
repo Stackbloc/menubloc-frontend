@@ -20,10 +20,14 @@ test("See Who's Eating reel: guest watch, CK dish, existing camera, Connect noti
   assert.match(surface, /sticky\s*=\s*true/);
   assert.match(surface, /position:\s*"sticky"/);
   assert.match(surface, /--sph-h/);
-  assert.match(surface, /LIVE FEED/);
+  assert.match(surface, /PUBLIC FEED/);
+  assert.doesNotMatch(surface, /LIVE FEED/);
   assert.match(surface, /see-whos-eating-surface/);
   assert.match(surface, /live-feed-channel-dials/);
   assert.match(surface, /LIVE_FEED_CHANNELS/);
+  assert.match(surface, /MENUPY_PRUNE_LIVE_FEED_ITEM/);
+  assert.match(surface, /onRemovedFromFeed/);
+  assert.match(surface, /Public Feed channels/);
   assert.match(surface, /minHeight:\s*40/);
   assert.match(surface, /channelLabel/);
   assert.match(surface, /resolveLiveFeedContentLink/);
@@ -36,12 +40,18 @@ test("See Who's Eating reel: guest watch, CK dish, existing camera, Connect noti
 
   const fullscreen = read("src/pages/consumer/myMenuply/SeeWhosEatingFullscreen.jsx");
   assert.match(fullscreen, /requestConnection/);
+  assert.match(fullscreen, /hidePublicFeedItem/);
+  assert.match(fullscreen, /Remove from Public Feed/);
+  assert.match(fullscreen, /see-whos-eating-remove-public-feed/);
+  assert.match(fullscreen, /onRemovedFromFeed/);
   assert.match(fullscreen, /see_whos_eating/);
   assert.match(fullscreen, /see-whos-eating-screen-name/);
   assert.match(fullscreen, /liveFeedFullCategoryLabel\(item\.kind\)/);
-  assert.match(fullscreen, /resolveLiveFeedContentLink\(item\)/);
+  assert.match(fullscreen, /resolveLiveFeedCaptionLinks\(item\)/);
+  assert.match(fullscreen, /see-whos-eating-fullscreen-dish-link/);
+  assert.match(fullscreen, /see-whos-eating-fullscreen-restaurant-link/);
+  assert.match(fullscreen, /variant === "feedHome"|variant = "modal"/);
   assert.doesNotMatch(fullscreen, /showRestaurantSecondary/);
-  assert.doesNotMatch(fullscreen, /fullscreen-restaurant-link/);
   assert.match(fullscreen, /categoryChip/);
   assert.match(fullscreen, /dinerPeerProfilePath/);
   assert.match(fullscreen, /venueLiveFeedPath/);
@@ -55,8 +65,9 @@ test("See Who's Eating reel: guest watch, CK dish, existing camera, Connect noti
     assert.match(fullscreen, /fontSize:\s*17/);
     assert.match(fullscreen, /categoryChip/);
   }
-  assert.match(fullscreen, /resolveLiveFeedContentLink/);
+  assert.match(fullscreen, /resolveLiveFeedCaptionLinks/);
   assert.match(read("src/lib/liveFeedCategory.js"), /menu_item_href|menu-items\//);
+  assert.match(read("src/lib/liveFeedCategory.js"), /resolveLiveFeedCaptionLinks/);
   assert.match(fullscreen, /createPortal/);
   assert.match(fullscreen, /100dvh|100vh/);
   assert.match(fullscreen, /objectFit:\s*"cover"/);
@@ -67,19 +78,21 @@ test("See Who's Eating reel: guest watch, CK dish, existing camera, Connect noti
 
   const page = read("src/pages/consumer/MyMenuplyPage.jsx");
   assert.match(page, /SeeWhosEatingSurface/);
+  assert.match(page, /pruneMenuplyLiveFeedItem/);
+  assert.match(page, /ate:\$\{entryId\}/);
   assert.match(page, /is_recommend/);
   assert.doesNotMatch(page, /connections-eating/);
   assert.match(page, /my-menuply-sticky-head/);
   assert.match(page, /sticky=\{false\}/);
   assert.match(page, /uploadEatingPlanMedia/);
   assert.match(page, /market_discoverable/);
-  // Green title above live feed; cluster sticky above EatingHub
+  // Green title above Public Feed; cluster sticky above EatingHub
   const heroIdx = page.indexOf("pageHeroBand");
   const seeIdx = page.indexOf("<SeeWhosEatingSurface");
   const eatingIdx = page.indexOf("<EatingHubSection");
   assert.ok(
     heroIdx > 0 && seeIdx > heroIdx && eatingIdx > seeIdx,
-    "green My Menuply title above live feed; sticky cluster above What I'm Eating"
+    "green My Menuply title above Public Feed; sticky cluster above What I'm Eating"
   );
 
   const compose = read("src/pages/consumer/myMenuply/EatingCompose.jsx");
@@ -93,9 +106,16 @@ test("See Who's Eating reel: guest watch, CK dish, existing camera, Connect noti
 
   const api = read("src/lib/consumerApi.js");
   assert.match(api, /listSeeWhosEating/);
+  assert.match(api, /hidePublicFeedItem/);
+  assert.match(api, /market_discoverable:\s*false/);
   assert.match(api, /\/api\/consumer\/see-whos-eating/);
   assert.match(api, /uploadEatingPlanMedia/);
   assert.match(api, /\/api\/consumer\/what-we-doing\/photo/);
+
+  const feedCtl = read("src/lib/menuplyLiveFeedControl.js");
+  assert.match(feedCtl, /MENUPY_PRUNE_LIVE_FEED_ITEM/);
+  assert.match(feedCtl, /pruneMenuplyLiveFeedItem/);
+  assert.match(feedCtl, /Public Feed/);
 
   const cats = read("src/lib/liveFeedCategory.js");
   assert.match(cats, /resolveLiveFeedContentLink/);
