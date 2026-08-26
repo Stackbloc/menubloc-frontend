@@ -36,8 +36,8 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` @ clean `main` |
-| Git commit | `7555de4` — desktop MediaRecorder restore; phones keep OS capture |
-| Vercel deployment | `menubloc-frontend-5mf3wcui9-menuply.vercel.app` |
+| Git commit | `9680331` — CSP media-src for diner videos — desktop MediaRecorder restore; phones keep OS capture |
+| Vercel deployment | `menubloc-frontend-7sggmug2z-menuply.vercel.app` |
 | Live bundle | `index-Cy0j2zg7.js` |
 | Aliases | `menuply.com`, `www.menuply.com`, `crm.menuply.com`, `venues.menuply.com` |
 | Tip-gate | **PASS** (apex + www) verified 2026-08-25 |
@@ -59,10 +59,10 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway
 
 ```bash
 cd /Users/andrebarber/Desktop/menubloc/menubloc-frontend-main
-npx vercel alias set menubloc-frontend-5mf3wcui9-menuply.vercel.app menuply.com
-npx vercel alias set menubloc-frontend-5mf3wcui9-menuply.vercel.app www.menuply.com
-npx vercel alias set menubloc-frontend-5mf3wcui9-menuply.vercel.app crm.menuply.com
-npx vercel alias set menubloc-frontend-5mf3wcui9-menuply.vercel.app venues.menuply.com
+npx vercel alias set menubloc-frontend-7sggmug2z-menuply.vercel.app menuply.com
+npx vercel alias set menubloc-frontend-7sggmug2z-menuply.vercel.app www.menuply.com
+npx vercel alias set menubloc-frontend-7sggmug2z-menuply.vercel.app crm.menuply.com
+npx vercel alias set menubloc-frontend-7sggmug2z-menuply.vercel.app venues.menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 ```
@@ -71,8 +71,8 @@ bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 
 | Field | Value |
 |-------|-------|
-| Deployment | `menubloc-frontend-l1u8ibp3k-menuply.vercel.app` |
-| Live bundle | `index-D3_g8ZsE.js` |
+| Deployment | `menubloc-frontend-5mf3wcui9-menuply.vercel.app` |
+| Live bundle | `index-Cy0j2zg7.js` |
 | FE commit | `52c4af0` |
 | BE health | `bbba2655` |
 | Notes | Pre–desktop MediaRecorder restore |
