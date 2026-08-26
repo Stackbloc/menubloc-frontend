@@ -717,8 +717,9 @@ export const socialActions = {
 export const chipBtn = {
   display: "inline-flex",
   alignItems: "center",
-  minHeight: 36,
-  padding: "0 12px",
+  /* Finger-friendly — invite / join chips on hub cards */
+  minHeight: 44,
+  padding: "0 14px",
   borderRadius: 999,
   border: `1.5px solid ${BORDER_INPUT}`,
   background: "#ffffff",
@@ -726,6 +727,7 @@ export const chipBtn = {
   fontSize: 13,
   fontWeight: 700,
   textDecoration: "none",
+  touchAction: "manipulation",
 };
 
 export const primaryBtn = {

@@ -15,6 +15,9 @@ import {
 import {
   dinerPeerProfilePath,
   liveFeedCategoryLabel,
+  liveFeedPosterLabel,
+  venueLiveFeedPath,
+  isLiveFeedVenueItem,
 } from "../../../lib/liveFeedCategory.js";
 
 const SWIPE_MIN_PX = 56;
@@ -137,6 +140,13 @@ export default function SeeWhosEatingFullscreen({
   function openPosterProfile(e) {
     e?.preventDefault?.();
     e?.stopPropagation?.();
+    if (isLiveFeedVenueItem(item)) {
+      const path = venueLiveFeedPath(item?.venue);
+      if (!path) return;
+      onClose?.();
+      navigate(path);
+      return;
+    }
     const path = dinerPeerProfilePath(item?.diner?.id);
     if (!path) return;
     if (!isAuthenticated) {
@@ -150,6 +160,10 @@ export default function SeeWhosEatingFullscreen({
   async function onScreenNameClick(e) {
     e.preventDefault();
     e.stopPropagation();
+    if (isLiveFeedVenueItem(item)) {
+      openPosterProfile(e);
+      return;
+    }
     const peerId = item?.diner?.id != null ? Number(item.diner.id) : null;
     if (!peerId) return;
 
@@ -200,7 +214,8 @@ export default function SeeWhosEatingFullscreen({
   const restaurantHref = item.restaurant_slug
     ? `/r/${encodeURIComponent(item.restaurant_slug)}`
     : null;
-  const screenName = item.diner?.display_name || "A diner";
+  const isVenue = isLiveFeedVenueItem(item);
+  const screenName = liveFeedPosterLabel(item);
   const atEnd = index >= items.length - 1;
   const atStart = index <= 0;
 
@@ -253,10 +268,10 @@ export default function SeeWhosEatingFullscreen({
           type="button"
           style={styles.screenNameBtn}
           data-testid="see-whos-eating-screen-name"
-          disabled={connectBusy}
+          disabled={connectBusy && !isVenue}
           onClick={onScreenNameClick}
         >
-          @{screenName}
+          {isVenue ? screenName : `@${screenName}`}
         </button>
         <p style={styles.category} data-testid="see-whos-eating-fullscreen-category">
           {liveFeedCategoryLabel(item.kind)}

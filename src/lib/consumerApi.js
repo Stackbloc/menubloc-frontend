@@ -170,12 +170,14 @@ export const listConnectionsEating = (limit = 30, peerId = null) => {
 };
 
 /** Market See Who's Eating video reel (CK menu_item_id on items). */
-export const listSeeWhosEating = ({ city, state, limit = 20, cursor } = {}) => {
+export const listSeeWhosEating = ({ city, state, limit = 20, cursor, kind, channel } = {}) => {
   const q = new URLSearchParams();
   if (city) q.set("city", String(city));
   if (state) q.set("state", String(state));
   if (limit) q.set("limit", String(limit));
   if (cursor) q.set("cursor", String(cursor));
+  const feedKind = kind || channel;
+  if (feedKind && String(feedKind) !== "all") q.set("kind", String(feedKind));
   const qs = q.toString();
   return get(`/api/consumer/see-whos-eating${qs ? `?${qs}` : ""}`);
 };
@@ -578,6 +580,8 @@ export const listMyVenueEventGroups = () => get("/api/consumer/my/event-groups")
 
 /** Diner-created social events (My Menuply My Events — not venue_events). */
 export const listDinerSocialEvents = () => get("/api/consumer/social-events");
+export const getDinerSocialEvent = (eventId) =>
+  get(`/api/consumer/social-events/${encodeURIComponent(String(eventId))}`);
 export const createDinerSocialEvent = (body) => post("/api/consumer/social-events", body);
 export const deleteDinerSocialEvent = (eventId) =>
   del(`/api/consumer/social-events/${encodeURIComponent(String(eventId))}`);

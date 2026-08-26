@@ -22,6 +22,11 @@ test("See Who's Eating reel: guest watch, CK dish, existing camera, Connect noti
   assert.match(surface, /--sph-h/);
   assert.match(surface, /LIVE FEED/);
   assert.match(surface, /see-whos-eating-surface/);
+  assert.match(surface, /live-feed-channel-dials/);
+  assert.match(surface, /LIVE_FEED_CHANNELS/);
+  assert.match(surface, /minHeight:\s*44/);
+  assert.match(surface, /minWidth:\s*44/);
+  assert.match(surface, /touchAction:\s*"manipulation"/);
 
   const fullscreen = read("src/pages/consumer/myMenuply/SeeWhosEatingFullscreen.jsx");
   assert.match(fullscreen, /requestConnection/);
@@ -29,6 +34,8 @@ test("See Who's Eating reel: guest watch, CK dish, existing camera, Connect noti
   assert.match(fullscreen, /see-whos-eating-screen-name/);
   assert.match(fullscreen, /liveFeedCategoryLabel/);
   assert.match(fullscreen, /dinerPeerProfilePath/);
+  assert.match(fullscreen, /venueLiveFeedPath/);
+  assert.match(fullscreen, /isLiveFeedVenueItem/);
   assert.match(fullscreen, /see-whos-eating-video-tap/);
   // Category sits below @screen name and uses a smaller type size.
   {
@@ -83,6 +90,9 @@ test("See Who's Eating reel: guest watch, CK dish, existing camera, Connect noti
   assert.match(cats, /What I Wanna Eat/);
   assert.match(cats, /My Eating Plans/);
   assert.match(cats, /What I'm Eating/);
+  assert.match(cats, /Events/);
+  assert.match(cats, /LIVE_FEED_CHANNELS/);
+  assert.match(cats, /venueLiveFeedPath/);
 
   const app = read("src/App.jsx");
   assert.match(app, /connections-eating/);

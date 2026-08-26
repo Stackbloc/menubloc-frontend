@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import MenuplyMediaPicker from "../../../components/social/MenuplyMediaPicker.jsx";
 import InviteToEatButton from "../../../components/InviteToEatButton.jsx";
@@ -342,6 +342,7 @@ export function DiningCrewHubCard({
   onDelete,
   deleteBusy = false,
 }) {
+  const navigate = useNavigate();
   const title = String(crew?.name || "").trim() || "Untitled";
   const purpose = crewPurposeText(crew);
   const canDelete = typeof onDelete === "function";
@@ -355,18 +356,39 @@ export function DiningCrewHubCard({
     onDelete?.(crew);
   }
 
+  function handleCardActivate(e) {
+    if (consumeArmedClick() || open) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (open && !e.target?.closest?.('[data-testid="hub-card-delete"]')) dismiss();
+      return;
+    }
+    if (e.target?.closest?.("button, a")) return;
+    if (href) navigate(href);
+  }
+
   return (
     <div
-      style={{ ...s.card, ...s.hubCardShell }}
-      data-testid="dining-crew-hub-card"
-      {...bind}
-      onClick={(e) => {
-        if (consumeArmedClick() || open) {
-          e.preventDefault();
-          e.stopPropagation();
-          if (open && !e.target?.closest?.('[data-testid="hub-card-delete"]')) dismiss();
-        }
+      style={{
+        ...s.card,
+        ...s.hubCardShell,
+        ...(href ? { cursor: "pointer", WebkitTapHighlightColor: "transparent" } : null),
       }}
+      data-testid="dining-crew-hub-card"
+      role={href ? "link" : undefined}
+      tabIndex={href ? 0 : undefined}
+      onKeyDown={
+        href
+          ? (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                navigate(href);
+              }
+            }
+          : undefined
+      }
+      {...bind}
+      onClick={handleCardActivate}
     >
       {open ? (
         <button
@@ -380,22 +402,9 @@ export function DiningCrewHubCard({
           Delete
         </button>
       ) : null}
-      {href ? (
-        <Link
-          to={href}
-          style={s.cardTitleLink}
-          onClick={(e) => {
-            if (consumeArmedClick() || open) {
-              e.preventDefault();
-              dismiss();
-            }
-          }}
-        >
-          {title}
-        </Link>
-      ) : (
-        <div style={{ fontWeight: 700, fontSize: 15, color: "#0f172a" }}>{title}</div>
-      )}
+      <div style={href ? s.cardTitleLink : { fontWeight: 700, fontSize: 15, color: "#0f172a" }}>
+        {title}
+      </div>
       {purpose ? (
         <div style={s.crewPurpose} data-testid="crew-purpose">
           <span style={s.crewPurposeLabel}>Purpose</span>
@@ -408,7 +417,10 @@ export function DiningCrewHubCard({
           <button
             type="button"
             style={{ ...s.chipBtn, appearance: "none", cursor: "pointer", font: "inherit" }}
-            onClick={onInvite}
+            onClick={(e) => {
+              e.stopPropagation();
+              onInvite(e);
+            }}
           >
             {inviteLabel}
           </button>
@@ -416,9 +428,17 @@ export function DiningCrewHubCard({
         {onRequestJoin ? (
           <button
             type="button"
-            style={{ ...s.primaryBtn, appearance: "none", cursor: requestDisabled ? "default" : "pointer", font: "inherit" }}
+            style={{
+              ...s.primaryBtn,
+              appearance: "none",
+              cursor: requestDisabled ? "default" : "pointer",
+              font: "inherit",
+            }}
             disabled={requestDisabled}
-            onClick={onRequestJoin}
+            onClick={(e) => {
+              e.stopPropagation();
+              onRequestJoin(e);
+            }}
           >
             {requestLabel}
           </button>
@@ -442,6 +462,7 @@ export function NamedShareCard({
   deleteBusy = false,
   deleteLabel,
 }) {
+  const navigate = useNavigate();
   const title = String(name || "").trim() || "Untitled";
   const canDelete = typeof onDelete === "function";
   const { open, dismiss, consumeArmedClick, bind } = useLongPressReveal(canDelete);
@@ -454,18 +475,39 @@ export function NamedShareCard({
     onDelete?.();
   }
 
+  function handleCardActivate(e) {
+    if (consumeArmedClick() || open) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (open && !e.target?.closest?.('[data-testid="hub-card-delete"]')) dismiss();
+      return;
+    }
+    if (e.target?.closest?.("button, a")) return;
+    if (href) navigate(href);
+  }
+
   return (
     <div
-      style={{ ...s.card, ...s.hubCardShell }}
-      data-testid="named-share-card"
-      {...bind}
-      onClick={(e) => {
-        if (consumeArmedClick() || open) {
-          e.preventDefault();
-          e.stopPropagation();
-          if (open && !e.target?.closest?.('[data-testid="hub-card-delete"]')) dismiss();
-        }
+      style={{
+        ...s.card,
+        ...s.hubCardShell,
+        ...(href ? { cursor: "pointer", WebkitTapHighlightColor: "transparent" } : null),
       }}
+      data-testid="named-share-card"
+      role={href ? "link" : undefined}
+      tabIndex={href ? 0 : undefined}
+      onKeyDown={
+        href
+          ? (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                navigate(href);
+              }
+            }
+          : undefined
+      }
+      {...bind}
+      onClick={handleCardActivate}
     >
       {open ? (
         <button
@@ -479,22 +521,9 @@ export function NamedShareCard({
           Delete
         </button>
       ) : null}
-      {href ? (
-        <Link
-          to={href}
-          style={s.cardTitleLink}
-          onClick={(e) => {
-            if (consumeArmedClick() || open) {
-              e.preventDefault();
-              dismiss();
-            }
-          }}
-        >
-          {title}
-        </Link>
-      ) : (
-        <div style={{ fontWeight: 700, fontSize: 15, color: "#0f172a" }}>{title}</div>
-      )}
+      <div style={href ? s.cardTitleLink : { fontWeight: 700, fontSize: 15, color: "#0f172a" }}>
+        {title}
+      </div>
       {meta ? <div style={s.muted}>{meta}</div> : null}
       {description ? <div style={{ ...s.muted, marginTop: 4 }}>{description}</div> : null}
       <div style={s.actions}>
@@ -502,7 +531,10 @@ export function NamedShareCard({
           <button
             type="button"
             style={{ ...s.chipBtn, appearance: "none", cursor: "pointer", font: "inherit" }}
-            onClick={onInvite}
+            onClick={(e) => {
+              e.stopPropagation();
+              onInvite(e);
+            }}
           >
             {inviteLabel}
           </button>
@@ -510,9 +542,17 @@ export function NamedShareCard({
         {onRequestJoin ? (
           <button
             type="button"
-            style={{ ...s.primaryBtn, appearance: "none", cursor: requestDisabled ? "default" : "pointer", font: "inherit" }}
+            style={{
+              ...s.primaryBtn,
+              appearance: "none",
+              cursor: requestDisabled ? "default" : "pointer",
+              font: "inherit",
+            }}
             disabled={requestDisabled}
-            onClick={onRequestJoin}
+            onClick={(e) => {
+              e.stopPropagation();
+              onRequestJoin(e);
+            }}
           >
             {requestLabel}
           </button>

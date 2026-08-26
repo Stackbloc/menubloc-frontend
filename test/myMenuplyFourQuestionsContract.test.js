@@ -128,10 +128,18 @@ test("My Menuply is the diner's personal home", () => {
   assert.match(bits, /NamedShareCard/);
   assert.match(bits, /cardTitleLink/);
   assert.match(bits, /DiningCrewHubCard/);
+  assert.match(bits, /useNavigate/);
+  assert.match(bits, /handleCardActivate/);
   assert.match(bits, /crew-purpose/);
   assert.match(bits, /crewPurposeText/);
   assert.match(bits, /Invite people to join/);
+  const styles = read("src/pages/consumer/myMenuply/myMenuplyStyles.js");
+  assert.match(styles, /minHeight:\s*44/);
+  assert.match(page, /\/account\/social-events\//);
+  assert.match(read("src/App.jsx"), /DinerSocialEventDetailPage/);
+  assert.match(read("src/pages/consumer/DinerSocialEventDetailPage.jsx"), /getDinerSocialEvent/);
   const api = read("src/lib/consumerApi.js");
+  assert.match(api, /getDinerSocialEvent/);
   assert.match(api, /joinWhatWeDoingSession/);
   assert.match(api, /listPendingEatInvitePeople/);
   assert.match(api, /\/api\/consumer\/want-to-eat/);

@@ -15,7 +15,12 @@ import {
   stripMediaUrlFragment,
 } from "../../../lib/menuplyLiveFeedControl.js";
 import SeeWhosEatingFullscreen from "./SeeWhosEatingFullscreen.jsx";
-import { liveFeedCategoryLabel } from "../../../lib/liveFeedCategory.js";
+import {
+  LIVE_FEED_CHANNELS,
+  liveFeedCategoryLabel,
+  liveFeedPosterLabel,
+  isLiveFeedVenueItem,
+} from "../../../lib/liveFeedCategory.js";
 
 const DEFAULT_MARKET = { city: "Los Angeles", state: "CA" };
 
@@ -47,6 +52,7 @@ export default function SeeWhosEatingSurface({
   const [emptyReason, setEmptyReason] = useState(null);
   const [fullscreenOpen, setFullscreenOpen] = useState(false);
   const [startIndex, setStartIndex] = useState(0);
+  const [channel, setChannel] = useState("all");
   const videoRef = useRef(null);
   const market = resolveMarket({ city, state });
 
@@ -54,7 +60,12 @@ export default function SeeWhosEatingSurface({
     let cancelled = false;
     setLoading(true);
     setError("");
-    listSeeWhosEating({ city: market.city, state: market.state, limit: 20 })
+    listSeeWhosEating({
+      city: market.city,
+      state: market.state,
+      limit: 20,
+      kind: channel,
+    })
       .then((data) => {
         if (cancelled) return;
         const rows = Array.isArray(data?.items) ? data.items : [];
@@ -72,7 +83,7 @@ export default function SeeWhosEatingSurface({
     return () => {
       cancelled = true;
     };
-  }, [market.city, market.state]);
+  }, [market.city, market.state, channel]);
 
   const preview = items[0] || null;
   const marketLabel = `${market.city}, ${market.state}`.toUpperCase();
@@ -139,84 +150,128 @@ export default function SeeWhosEatingSurface({
           </span>
         </div>
 
-        <button
-          type="button"
-          style={styles.reelBtn}
-          data-testid="see-whos-eating-preview"
-          onClick={() => openAt(0)}
-          disabled={!preview}
-          aria-label={preview ? "Open See who's eating reel" : "No market videos yet"}
-        >
-          <span style={styles.cornerTL} aria-hidden="true" />
-          <span style={styles.cornerTR} aria-hidden="true" />
-          <span style={styles.cornerBL} aria-hidden="true" />
-          <span style={styles.cornerBR} aria-hidden="true" />
-          <span style={styles.scanOverlay} aria-hidden="true" />
+        <div style={styles.tvRow}>
+          <button
+            type="button"
+            style={styles.reelBtn}
+            data-testid="see-whos-eating-preview"
+            onClick={() => openAt(0)}
+            disabled={!preview}
+            aria-label={preview ? "Open See who's eating reel" : "No market videos yet"}
+          >
+            <span style={styles.cornerTL} aria-hidden="true" />
+            <span style={styles.cornerTR} aria-hidden="true" />
+            <span style={styles.cornerBL} aria-hidden="true" />
+            <span style={styles.cornerBR} aria-hidden="true" />
+            <span style={styles.scanOverlay} aria-hidden="true" />
 
-          {preview?.video_url ? (
-            <video
-              ref={videoRef}
-              key={preview.id || preview.video_url}
-              src={stripMediaUrlFragment(preview.video_url)}
-              style={styles.video}
-              muted
-              playsInline
-              loop
-              autoPlay
-              controls={false}
-              preload="auto"
-              onCanPlay={(e) => {
-                if (fullscreenOpen || getMealVideoPlayDepth() > 0) return;
-                const p = e.currentTarget.play();
-                if (p && typeof p.catch === "function") p.catch(() => {});
-              }}
-              onLoadedData={(e) => {
-                if (fullscreenOpen || getMealVideoPlayDepth() > 0) return;
-                const p = e.currentTarget.play();
-                if (p && typeof p.catch === "function") p.catch(() => {});
-              }}
-            />
-          ) : (
-            <div style={styles.empty}>
-              {loading ? (
-                <span style={styles.emptyCode}>SYNCING MARKET…</span>
-              ) : error ? (
-                <span>{error}</span>
-              ) : (
-                <span style={styles.emptyCode}>
-                  {emptyReason === "no_market" || emptyReason === "guest_market_required"
-                    ? "NO GEO LOCK — ADD LOCATION"
-                    : "NO SIGNAL IN THIS MARKET"}
-                </span>
-              )}
-            </div>
-          )}
-
-          {preview ? (
-            <div style={styles.caption}>
-              <div style={styles.captionCol}>
-                <span style={styles.screenName}>
-                  @{preview.diner?.display_name || "diner"}
-                </span>
-                <span style={styles.categoryChip} data-testid="see-whos-eating-category">
-                  {liveFeedCategoryLabel(preview.kind)}
-                </span>
+            {preview?.video_url ? (
+              <video
+                ref={videoRef}
+                key={preview.id || preview.video_url}
+                src={stripMediaUrlFragment(preview.video_url)}
+                style={styles.video}
+                muted
+                playsInline
+                loop
+                autoPlay
+                controls={false}
+                preload="auto"
+                onCanPlay={(e) => {
+                  if (fullscreenOpen || getMealVideoPlayDepth() > 0) return;
+                  const p = e.currentTarget.play();
+                  if (p && typeof p.catch === "function") p.catch(() => {});
+                }}
+                onLoadedData={(e) => {
+                  if (fullscreenOpen || getMealVideoPlayDepth() > 0) return;
+                  const p = e.currentTarget.play();
+                  if (p && typeof p.catch === "function") p.catch(() => {});
+                }}
+              />
+            ) : (
+              <div style={styles.empty}>
+                {loading ? (
+                  <span style={styles.emptyCode}>SYNCING MARKET…</span>
+                ) : error ? (
+                  <span>{error}</span>
+                ) : (
+                  <span style={styles.emptyCode}>
+                    {emptyReason === "no_market" || emptyReason === "guest_market_required"
+                      ? "NO GEO LOCK — ADD LOCATION"
+                      : channel === "event"
+                        ? "NO SIGNAL ON EVENTS"
+                        : "NO SIGNAL IN THIS MARKET"}
+                  </span>
+                )}
               </div>
-              {preview.is_recommend ? <span style={styles.badge}>REC</span> : null}
-              <span style={styles.tapHint}>TAP · FULL SCREEN</span>
-            </div>
-          ) : null}
-        </button>
+            )}
+
+            {preview ? (
+              <div style={styles.caption}>
+                <div style={styles.captionCol}>
+                  <span style={styles.screenName}>
+                    {isLiveFeedVenueItem(preview)
+                      ? liveFeedPosterLabel(preview)
+                      : `@${liveFeedPosterLabel(preview)}`}
+                  </span>
+                  <span style={styles.categoryChip} data-testid="see-whos-eating-category">
+                    {liveFeedCategoryLabel(preview.kind)}
+                  </span>
+                </div>
+                {preview.is_recommend ? <span style={styles.badge}>REC</span> : null}
+                <span style={styles.tapHint}>TAP · FULL SCREEN</span>
+              </div>
+            ) : null}
+          </button>
+
+          <div
+            style={styles.channelStrip}
+            role="radiogroup"
+            aria-label="Live Feed channels"
+            data-testid="live-feed-channel-dials"
+          >
+            {LIVE_FEED_CHANNELS.map((ch) => {
+              const selected = channel === ch.id;
+              return (
+                <button
+                  key={ch.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={selected}
+                  aria-label={ch.label}
+                  title={ch.label}
+                  data-testid={`live-feed-channel-${ch.id}`}
+                  style={styles.channelBtn}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setChannel(ch.id);
+                  }}
+                >
+                  <span
+                    style={{
+                      ...styles.channelDial,
+                      ...(selected ? styles.channelDialSelected : null),
+                    }}
+                    aria-hidden="true"
+                  />
+                  <span style={styles.channelShort}>{ch.short}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
         {!isAuthenticated ? (
           <p style={styles.guestHint}>
-            Watch freely. Tap a diner to open their profile (sign in when asked).
+            Watch freely. Tap a diner or venue name for their page (sign in when asked).
           </p>
         ) : (
           <p style={styles.guestHint}>
             {items.length
               ? `${items.length} signal${items.length === 1 ? "" : "s"} in range · tap to expand`
-              : "Waiting for nearby diner video"}
+              : channel === "event"
+                ? "No Events signal in this market yet"
+                : "Waiting for nearby video"}
           </p>
         )}
       </div>
@@ -263,6 +318,66 @@ const styles = {
   panel: {
     maxWidth: 420,
     margin: "0 auto",
+  },
+  tvRow: {
+    display: "flex",
+    alignItems: "stretch",
+    gap: 10,
+  },
+  channelStrip: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 2,
+    flexShrink: 0,
+    /* Wide enough for 44px finger targets without crowding the CRT */
+    width: 52,
+    padding: "2px 0",
+  },
+  channelBtn: {
+    appearance: "none",
+    border: "none",
+    background: "transparent",
+    /* ≥44×44 touch target (Apple HIG / WCAG) — visual dial stays smaller */
+    minWidth: 44,
+    minHeight: 44,
+    padding: "4px 2px",
+    margin: 0,
+    cursor: "pointer",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 3,
+    WebkitTapHighlightColor: "transparent",
+    touchAction: "manipulation",
+  },
+  channelDial: {
+    width: 22,
+    height: 22,
+    borderRadius: "50%",
+    border: "2.5px solid rgba(255,255,255,0.95)",
+    background: "transparent",
+    boxSizing: "border-box",
+    flexShrink: 0,
+  },
+  channelDialSelected: {
+    border: "2.5px solid #ef4444",
+    background: "#ef4444",
+    boxShadow: "0 0 10px rgba(239, 68, 68, 0.65)",
+  },
+  channelShort: {
+    fontSize: 9,
+    fontWeight: 800,
+    letterSpacing: "0.02em",
+    color: "rgba(255,255,255,0.82)",
+    lineHeight: 1,
+    maxWidth: 48,
+    textAlign: "center",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
   },
   hudRow: {
     display: "flex",
@@ -320,7 +435,9 @@ const styles = {
   },
   reelBtn: {
     display: "block",
-    width: "100%",
+    flex: 1,
+    minWidth: 0,
+    width: "auto",
     padding: 0,
     border: `1px solid rgba(94, 234, 212, 0.45)`,
     borderRadius: 10,
@@ -330,7 +447,7 @@ const styles = {
     position: "relative",
     aspectRatio: "9 / 16",
     maxHeight: 240,
-    margin: "0 auto",
+    margin: 0,
     boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.06), 0 0 24px rgba(52, 211, 153, 0.12)",
   },
   cornerTL: {

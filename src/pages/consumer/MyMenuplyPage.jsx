@@ -1472,6 +1472,7 @@ export default function MyMenuplyPage() {
                     <NamedShareCard
                       key={`social-${ev.id}`}
                       name={ev.title}
+                      href={`/account/social-events/${ev.id}`}
                       meta={[
                         "Yours",
                         formatEventWhen(ev),
@@ -1481,6 +1482,8 @@ export default function MyMenuplyPage() {
                         .filter(Boolean)
                         .join(" · ")}
                       description={ev.description || null}
+                      onInvite={() => shareDinerSocialEventInvite(ev)}
+                      inviteLabel="Invite people to join"
                       onDelete={() => onSocialEventDelete(ev)}
                       deleteBusy={postBusy === `social-event-delete-${ev.id}`}
                       deleteLabel={`Delete event ${ev.title || ""}`.trim()}

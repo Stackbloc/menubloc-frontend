@@ -99,4 +99,30 @@ export const assignVenueClusters = (id, clusterIds) =>
   });
 export const inviteVenueOperator = (id, body) => post(`/api/owner/venues/${id}/memberships`, body);
 
+export const listDestinationVenueLiveFeedVideos = (destinationVenueId) =>
+  get(`/api/owner/destination-venues/${encodeURIComponent(String(destinationVenueId))}/live-feed-videos`);
+
+export async function uploadDestinationVenueLiveFeedMedia(destinationVenueId, file) {
+  const formData = new FormData();
+  formData.append("photo", file);
+  const res = await fetch(
+    `${API}/api/owner/destination-venues/${encodeURIComponent(String(destinationVenueId))}/live-feed-videos/photo`,
+    { credentials: "include", method: "POST", body: formData }
+  );
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const error = new Error(json.error || `Upload failed (${res.status})`);
+    error.status = res.status;
+    error.payload = json;
+    throw error;
+  }
+  return json;
+}
+
+export const createDestinationVenueLiveFeedVideo = (destinationVenueId, body) =>
+  post(
+    `/api/owner/destination-venues/${encodeURIComponent(String(destinationVenueId))}/live-feed-videos`,
+    body
+  );
+
 export { API as VENUE_API_BASE };
