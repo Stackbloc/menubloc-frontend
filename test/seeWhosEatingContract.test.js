@@ -26,7 +26,12 @@ test("See Who's Eating reel: guest watch, CK dish, existing camera, Connect noti
   assert.match(surface, /LIVE_FEED_CHANNELS/);
   assert.match(surface, /minHeight:\s*40/);
   assert.match(surface, /channelLabel/);
-  assert.match(surface, /touchAction:\s*"manipulation"/);
+  assert.match(surface, /resolveLiveFeedContentLink/);
+  assert.match(surface, /see-whos-eating-content-link/);
+  assert.match(surface, /see-whos-eating-expand-hint/);
+  assert.match(surface, /Tap to expand/);
+  assert.doesNotMatch(surface, /TAP · FULL SCREEN/);
+  assert.match(surface, /captionMetaRow/);
 
   const fullscreen = read("src/pages/consumer/myMenuply/SeeWhosEatingFullscreen.jsx");
   assert.match(fullscreen, /requestConnection/);
@@ -87,9 +92,9 @@ test("See Who's Eating reel: guest watch, CK dish, existing camera, Connect noti
   assert.match(api, /\/api\/consumer\/what-we-doing\/photo/);
 
   const cats = read("src/lib/liveFeedCategory.js");
-  assert.match(cats, /What I Wanna Eat/);
-  assert.match(cats, /My Eating Plans/);
-  assert.match(cats, /What I'm Eating/);
+  assert.match(cats, /resolveLiveFeedContentLink/);
+  assert.match(cats, /CHANNEL_LABEL_BY_KIND/);
+  assert.doesNotMatch(cats, /LIVE_FEED_CATEGORY_LABELS/);
   assert.match(cats, /Events/);
   assert.match(cats, /All Content/);
   assert.match(cats, /I'm Eating/);
@@ -97,6 +102,7 @@ test("See Who's Eating reel: guest watch, CK dish, existing camera, Connect noti
   assert.match(cats, /Eating Plans/);
   assert.doesNotMatch(cats, /short:\s*"ALL"/);
   assert.doesNotMatch(cats, /label:\s*"What I Wanna Eat"/);
+  assert.doesNotMatch(cats, /What I'm Eating/);
   assert.match(cats, /LIVE_FEED_CHANNELS/);
   assert.match(cats, /venueLiveFeedPath/);
 

@@ -1,13 +1,7 @@
 /**
  * Live Feed category captions + channel dials (See Who's Eating CRT).
+ * Caption labels match dial short names (not legacy hub section titles).
  */
-
-export const LIVE_FEED_CATEGORY_LABELS = {
-  ate: "What I'm Eating",
-  want: "What I Wanna Eat",
-  plan: "My Eating Plans",
-  event: "Events",
-};
 
 /** Radio stations on the green CRT (vertical dial strip). Labels are title case — not ALL CAPS. */
 export const LIVE_FEED_CHANNELS = [
@@ -18,11 +12,15 @@ export const LIVE_FEED_CHANNELS = [
   { id: "event", label: "Events" },
 ];
 
+const CHANNEL_LABEL_BY_KIND = Object.fromEntries(
+  LIVE_FEED_CHANNELS.filter((ch) => ch.id !== "all").map((ch) => [ch.id, ch.label])
+);
+
 export function liveFeedCategoryLabel(kind) {
   const key = String(kind || "")
     .trim()
     .toLowerCase();
-  return LIVE_FEED_CATEGORY_LABELS[key] || LIVE_FEED_CATEGORY_LABELS.ate;
+  return CHANNEL_LABEL_BY_KIND[key] || CHANNEL_LABEL_BY_KIND.ate;
 }
 
 export function dinerPeerProfilePath(dinerId) {
@@ -50,4 +48,38 @@ export function isLiveFeedVenueItem(item) {
   return (
     String(item?.kind || "").toLowerCase() === "event" || item?.poster_type === "venue"
   );
+}
+
+/** Dish → restaurant → venue; null when nothing linkable. */
+export function resolveLiveFeedContentLink(item) {
+  if (!item) return null;
+
+  const menuItemId = item.menu_item_id != null ? Number(item.menu_item_id) : null;
+  const dishHref =
+    item.menu_item_href ||
+    (Number.isFinite(menuItemId) && menuItemId > 0 ? `/menu-items/${menuItemId}` : null);
+  const dishName = String(item.item_name || item.food_name || "").trim();
+  if (dishHref && dishName) {
+    return { href: dishHref, label: dishName, kind: "dish" };
+  }
+
+  const restaurantSlug = String(item.restaurant_slug || "").trim();
+  if (restaurantSlug) {
+    const name = String(item.restaurant_name || "").trim() || "Restaurant";
+    return {
+      href: `/r/${encodeURIComponent(restaurantSlug)}`,
+      label: name,
+      kind: "restaurant",
+    };
+  }
+
+  if (isLiveFeedVenueItem(item)) {
+    const href = venueLiveFeedPath(item.venue);
+    const label = String(item.venue?.name || liveFeedPosterLabel(item) || "").trim();
+    if (href && label) {
+      return { href, label, kind: "venue" };
+    }
+  }
+
+  return null;
 }

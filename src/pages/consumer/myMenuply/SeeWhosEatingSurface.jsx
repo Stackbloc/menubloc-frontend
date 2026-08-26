@@ -4,6 +4,7 @@
  * Dish identity is CK menu_item_id only.
  */
 
+import { Link } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import { listSeeWhosEating } from "../../../lib/consumerApi.js";
 import { readDetectedLocation } from "../../../lib/discoveryLocationPersistence.js";
@@ -20,6 +21,7 @@ import {
   liveFeedCategoryLabel,
   liveFeedPosterLabel,
   isLiveFeedVenueItem,
+  resolveLiveFeedContentLink,
 } from "../../../lib/liveFeedCategory.js";
 
 const DEFAULT_MARKET = { city: "Los Angeles", state: "CA" };
@@ -86,6 +88,7 @@ export default function SeeWhosEatingSurface({
   }, [market.city, market.state, channel]);
 
   const preview = items[0] || null;
+  const previewContentLink = preview ? resolveLiveFeedContentLink(preview) : null;
   const marketLabel = `${market.city}, ${market.state}`.toUpperCase();
 
   useEffect(() => {
@@ -151,60 +154,61 @@ export default function SeeWhosEatingSurface({
         </div>
 
         <div style={styles.tvRow}>
-          <button
-            type="button"
-            style={styles.reelBtn}
-            data-testid="see-whos-eating-preview"
-            onClick={() => openAt(0)}
-            disabled={!preview}
-            aria-label={preview ? "Open See who's eating reel" : "No market videos yet"}
-          >
+          <div style={styles.reelShell} data-testid="see-whos-eating-preview">
             <span style={styles.cornerTL} aria-hidden="true" />
             <span style={styles.cornerTR} aria-hidden="true" />
             <span style={styles.cornerBL} aria-hidden="true" />
             <span style={styles.cornerBR} aria-hidden="true" />
             <span style={styles.scanOverlay} aria-hidden="true" />
 
-            {preview?.video_url ? (
-              <video
-                ref={videoRef}
-                key={preview.id || preview.video_url}
-                src={stripMediaUrlFragment(preview.video_url)}
-                style={styles.video}
-                muted
-                playsInline
-                loop
-                autoPlay
-                controls={false}
-                preload="auto"
-                onCanPlay={(e) => {
-                  if (fullscreenOpen || getMealVideoPlayDepth() > 0) return;
-                  const p = e.currentTarget.play();
-                  if (p && typeof p.catch === "function") p.catch(() => {});
-                }}
-                onLoadedData={(e) => {
-                  if (fullscreenOpen || getMealVideoPlayDepth() > 0) return;
-                  const p = e.currentTarget.play();
-                  if (p && typeof p.catch === "function") p.catch(() => {});
-                }}
-              />
-            ) : (
-              <div style={styles.empty}>
-                {loading ? (
-                  <span style={styles.emptyCode}>SYNCING MARKET…</span>
-                ) : error ? (
-                  <span>{error}</span>
-                ) : (
-                  <span style={styles.emptyCode}>
-                    {emptyReason === "no_market" || emptyReason === "guest_market_required"
-                      ? "NO GEO LOCK — ADD LOCATION"
-                      : channel === "event"
-                        ? "NO SIGNAL ON EVENTS"
-                        : "NO SIGNAL IN THIS MARKET"}
-                  </span>
-                )}
-              </div>
-            )}
+            <button
+              type="button"
+              style={styles.reelTap}
+              onClick={() => openAt(0)}
+              disabled={!preview}
+              aria-label={preview ? "Open See who's eating reel" : "No market videos yet"}
+            >
+              {preview?.video_url ? (
+                <video
+                  ref={videoRef}
+                  key={preview.id || preview.video_url}
+                  src={stripMediaUrlFragment(preview.video_url)}
+                  style={styles.video}
+                  muted
+                  playsInline
+                  loop
+                  autoPlay
+                  controls={false}
+                  preload="auto"
+                  onCanPlay={(e) => {
+                    if (fullscreenOpen || getMealVideoPlayDepth() > 0) return;
+                    const p = e.currentTarget.play();
+                    if (p && typeof p.catch === "function") p.catch(() => {});
+                  }}
+                  onLoadedData={(e) => {
+                    if (fullscreenOpen || getMealVideoPlayDepth() > 0) return;
+                    const p = e.currentTarget.play();
+                    if (p && typeof p.catch === "function") p.catch(() => {});
+                  }}
+                />
+              ) : (
+                <div style={styles.empty}>
+                  {loading ? (
+                    <span style={styles.emptyCode}>SYNCING MARKET…</span>
+                  ) : error ? (
+                    <span>{error}</span>
+                  ) : (
+                    <span style={styles.emptyCode}>
+                      {emptyReason === "no_market" || emptyReason === "guest_market_required"
+                        ? "NO GEO LOCK — ADD LOCATION"
+                        : channel === "event"
+                          ? "NO SIGNAL ON EVENTS"
+                          : "NO SIGNAL IN THIS MARKET"}
+                    </span>
+                  )}
+                </div>
+              )}
+            </button>
 
             {preview ? (
               <div style={styles.caption}>
@@ -214,15 +218,30 @@ export default function SeeWhosEatingSurface({
                       ? liveFeedPosterLabel(preview)
                       : `@${liveFeedPosterLabel(preview)}`}
                   </span>
-                  <span style={styles.categoryChip} data-testid="see-whos-eating-category">
-                    {liveFeedCategoryLabel(preview.kind)}
-                  </span>
+                  <div style={styles.captionMetaRow}>
+                    <span style={styles.categoryChip} data-testid="see-whos-eating-category">
+                      {liveFeedCategoryLabel(preview.kind)}
+                    </span>
+                    {previewContentLink ? (
+                      <Link
+                        to={previewContentLink.href}
+                        style={styles.contentLink}
+                        data-testid="see-whos-eating-content-link"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {previewContentLink.label}
+                      </Link>
+                    ) : (
+                      <span style={styles.tapHint} data-testid="see-whos-eating-expand-hint">
+                        Tap to expand
+                      </span>
+                    )}
+                  </div>
                 </div>
                 {preview.is_recommend ? <span style={styles.badge}>REC</span> : null}
-                <span style={styles.tapHint}>TAP · FULL SCREEN</span>
               </div>
             ) : null}
-          </button>
+          </div>
 
           <div
             style={styles.channelStrip}
@@ -430,7 +449,7 @@ const styles = {
     overflow: "hidden",
     textOverflow: "ellipsis",
   },
-  reelBtn: {
+  reelShell: {
     display: "block",
     flex: 1,
     minWidth: 0,
@@ -440,12 +459,24 @@ const styles = {
     borderRadius: 10,
     overflow: "hidden",
     background: "rgba(0,0,0,0.55)",
-    cursor: "pointer",
     position: "relative",
     aspectRatio: "9 / 16",
     maxHeight: 240,
     margin: 0,
     boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.06), 0 0 24px rgba(52, 211, 153, 0.12)",
+  },
+  reelTap: {
+    appearance: "none",
+    display: "block",
+    width: "100%",
+    height: "100%",
+    padding: 0,
+    margin: 0,
+    border: "none",
+    background: "transparent",
+    cursor: "pointer",
+    position: "relative",
+    zIndex: 0,
   },
   cornerTL: {
     position: "absolute",
@@ -542,11 +573,18 @@ const styles = {
     minWidth: 0,
     flex: 1,
   },
+  captionMetaRow: {
+    display: "flex",
+    flexWrap: "wrap",
+    alignItems: "center",
+    gap: "6px 8px",
+    minWidth: 0,
+    maxWidth: "100%",
+  },
   categoryChip: {
     fontSize: 10,
-    fontWeight: 800,
-    letterSpacing: "0.06em",
-    textTransform: "uppercase",
+    fontWeight: 700,
+    letterSpacing: "0.02em",
     color: ACCENT,
     background: "rgba(0,0,0,0.45)",
     border: `1px solid rgba(94, 234, 212, 0.4)`,
@@ -556,6 +594,22 @@ const styles = {
     overflow: "hidden",
     textOverflow: "ellipsis",
     whiteSpace: "nowrap",
+    flexShrink: 0,
+  },
+  contentLink: {
+    fontSize: 11,
+    fontWeight: 700,
+    color: "#fff",
+    textDecoration: "underline",
+    textUnderlineOffset: 2,
+    maxWidth: "100%",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+    minHeight: 28,
+    display: "inline-flex",
+    alignItems: "center",
+    touchAction: "manipulation",
   },
   screenName: {
     fontWeight: 800,
@@ -572,12 +626,11 @@ const styles = {
     padding: "2px 5px",
   },
   tapHint: {
-    marginLeft: "auto",
-    fontSize: 9,
-    fontWeight: 700,
-    letterSpacing: "0.1em",
-    color: "rgba(255,255,255,0.65)",
-    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+    fontSize: 10,
+    fontWeight: 600,
+    letterSpacing: "0.02em",
+    color: "rgba(255,255,255,0.72)",
+    whiteSpace: "nowrap",
   },
   guestHint: {
     margin: "8px 0 0",
