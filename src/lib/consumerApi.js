@@ -673,4 +673,8 @@ export async function uploadWhatIAteTodayPhoto(file) {
   return postDinerMediaMultipart("/api/consumer/what-i-ate-today/photo", file);
 }
 
+export async function uploadEatingPlanMedia(file) {
+  return postDinerMediaMultipart("/api/consumer/what-we-doing/photo", file);
+}
+
 export { localDateYmd as whatIAteTodayLocalDate };

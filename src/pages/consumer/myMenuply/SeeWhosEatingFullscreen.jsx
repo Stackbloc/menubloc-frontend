@@ -12,6 +12,10 @@ import {
   MENUPY_CLOSE_LIVE_FEED_FULLSCREEN,
   stripMediaUrlFragment,
 } from "../../../lib/menuplyLiveFeedControl.js";
+import {
+  dinerPeerProfilePath,
+  liveFeedCategoryLabel,
+} from "../../../lib/liveFeedCategory.js";
 
 const SWIPE_MIN_PX = 56;
 
@@ -130,6 +134,19 @@ export default function SeeWhosEatingFullscreen({
     else goPrevOrClose();
   }
 
+  function openPosterProfile(e) {
+    e?.preventDefault?.();
+    e?.stopPropagation?.();
+    const path = dinerPeerProfilePath(item?.diner?.id);
+    if (!path) return;
+    if (!isAuthenticated) {
+      navigate(`/account/login?next=${encodeURIComponent(path)}`);
+      return;
+    }
+    onClose?.();
+    navigate(path);
+  }
+
   async function onScreenNameClick(e) {
     e.preventDefault();
     e.stopPropagation();
@@ -153,7 +170,7 @@ export default function SeeWhosEatingFullscreen({
       const data = await requestConnection({
         recipient_user_id: peerId,
         source: "see_whos_eating",
-        source_ref: item?.id != null ? `what_i_ate:${item.id}` : null,
+        source_ref: item?.id != null ? String(item.id) : null,
       });
       const status = data?.connection?.status;
       if (status === "accepted") {
@@ -227,16 +244,14 @@ export default function SeeWhosEatingFullscreen({
         autoPlay
         controls={false}
         preload="auto"
-        onClick={(e) => {
-          // Tap right half → next; left half → prev/close (common short-form pattern).
-          const rect = e.currentTarget.getBoundingClientRect();
-          const x = e.clientX - rect.left;
-          if (x > rect.width * 0.55) goNext();
-          else goPrevOrClose();
-        }}
+        data-testid="see-whos-eating-video-tap"
+        onClick={openPosterProfile}
       />
 
       <div style={styles.meta}>
+        <p style={styles.category} data-testid="see-whos-eating-fullscreen-category">
+          {liveFeedCategoryLabel(item.kind)}
+        </p>
         <button
           type="button"
           style={styles.screenNameBtn}
@@ -342,6 +357,14 @@ const styles = {
     textShadow: "0 1px 4px rgba(0,0,0,0.65)",
     pointerEvents: "auto",
     zIndex: 2,
+  },
+  category: {
+    margin: "0 0 6px",
+    fontSize: 12,
+    fontWeight: 700,
+    letterSpacing: "0.06em",
+    textTransform: "uppercase",
+    color: "rgba(255,255,255,0.88)",
   },
   screenNameBtn: {
     display: "inline-block",

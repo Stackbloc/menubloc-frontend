@@ -27,6 +27,9 @@ test("See Who's Eating reel: guest watch, CK dish, existing camera, Connect noti
   assert.match(fullscreen, /requestConnection/);
   assert.match(fullscreen, /see_whos_eating/);
   assert.match(fullscreen, /see-whos-eating-screen-name/);
+  assert.match(fullscreen, /liveFeedCategoryLabel/);
+  assert.match(fullscreen, /dinerPeerProfilePath/);
+  assert.match(fullscreen, /see-whos-eating-video-tap/);
   assert.match(fullscreen, /menu_item_href|menu-items\//);
   assert.match(fullscreen, /createPortal/);
   assert.match(fullscreen, /100dvh|100vh/);
@@ -42,6 +45,8 @@ test("See Who's Eating reel: guest watch, CK dish, existing camera, Connect noti
   assert.doesNotMatch(page, /connections-eating/);
   assert.match(page, /my-menuply-sticky-head/);
   assert.match(page, /sticky=\{false\}/);
+  assert.match(page, /uploadEatingPlanMedia/);
+  assert.match(page, /market_discoverable/);
   // Green title above live feed; cluster sticky above EatingHub
   const heroIdx = page.indexOf("pageHeroBand");
   const seeIdx = page.indexOf("<SeeWhosEatingSurface");
@@ -55,12 +60,21 @@ test("See Who's Eating reel: guest watch, CK dish, existing camera, Connect noti
   assert.match(compose, /MenuplyMediaPicker/);
   assert.match(compose, /isRecommend/);
   assert.match(compose, /isVideoFile/);
+  assert.match(compose, /category === "plan"/);
+  assert.match(compose, /acceptMedia/);
   assert.equal((compose.match(/MenuplyMediaPicker/g) || []).length >= 1, true);
   assert.doesNotMatch(compose, /SeeWhosEating.*Camera|new.*video.*capture/i);
 
   const api = read("src/lib/consumerApi.js");
   assert.match(api, /listSeeWhosEating/);
   assert.match(api, /\/api\/consumer\/see-whos-eating/);
+  assert.match(api, /uploadEatingPlanMedia/);
+  assert.match(api, /\/api\/consumer\/what-we-doing\/photo/);
+
+  const cats = read("src/lib/liveFeedCategory.js");
+  assert.match(cats, /What I Wanna Eat/);
+  assert.match(cats, /My Eating Plans/);
+  assert.match(cats, /What I'm Eating/);
 
   const app = read("src/App.jsx");
   assert.match(app, /connections-eating/);

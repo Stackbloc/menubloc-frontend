@@ -115,15 +115,15 @@ export const EATING_COMPOSE_CATEGORIES = [
   },
   {
     id: "want",
-    label: "Want to Eat",
+    label: "What I Wanna Eat",
     placeholder: "What do you want?",
     description: "Cuisine, restaurant, menu item, or a general food craving.",
   },
   {
     id: "plan",
-    label: "Eating Plan",
+    label: "My Eating Plans",
     placeholder: "Where are you going?",
-    description: "Schedule a future meal — Join Me stays on the plan form.",
+    description: "Photo or video, then schedule — Join Me stays on the plan form.",
   },
 ];
 

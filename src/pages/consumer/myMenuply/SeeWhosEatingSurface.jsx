@@ -15,6 +15,7 @@ import {
   stripMediaUrlFragment,
 } from "../../../lib/menuplyLiveFeedControl.js";
 import SeeWhosEatingFullscreen from "./SeeWhosEatingFullscreen.jsx";
+import { liveFeedCategoryLabel } from "../../../lib/liveFeedCategory.js";
 
 const DEFAULT_MARKET = { city: "Los Angeles", state: "CA" };
 
@@ -193,9 +194,14 @@ export default function SeeWhosEatingSurface({
 
           {preview ? (
             <div style={styles.caption}>
-              <span style={styles.screenName}>
-                @{preview.diner?.display_name || "diner"}
-              </span>
+              <div style={styles.captionCol}>
+                <span style={styles.categoryChip} data-testid="see-whos-eating-category">
+                  {liveFeedCategoryLabel(preview.kind)}
+                </span>
+                <span style={styles.screenName}>
+                  @{preview.diner?.display_name || "diner"}
+                </span>
+              </div>
               {preview.is_recommend ? <span style={styles.badge}>REC</span> : null}
               <span style={styles.tapHint}>TAP · FULL SCREEN</span>
             </div>
@@ -204,7 +210,7 @@ export default function SeeWhosEatingSurface({
 
         {!isAuthenticated ? (
           <p style={styles.guestHint}>
-            Watch freely. Sign in to Connect when you tap a screen name.
+            Watch freely. Tap a diner to open their profile (sign in when asked).
           </p>
         ) : (
           <p style={styles.guestHint}>
@@ -409,10 +415,33 @@ const styles = {
     bottom: 12,
     zIndex: 3,
     display: "flex",
-    alignItems: "center",
+    alignItems: "flex-end",
     gap: 8,
     color: "#fff",
     textShadow: "0 1px 3px rgba(0,0,0,0.75)",
+  },
+  captionCol: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start",
+    gap: 4,
+    minWidth: 0,
+    flex: 1,
+  },
+  categoryChip: {
+    fontSize: 10,
+    fontWeight: 800,
+    letterSpacing: "0.06em",
+    textTransform: "uppercase",
+    color: ACCENT,
+    background: "rgba(0,0,0,0.45)",
+    border: `1px solid rgba(94, 234, 212, 0.4)`,
+    borderRadius: 6,
+    padding: "3px 8px",
+    maxWidth: "100%",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
   },
   screenName: {
     fontWeight: 800,

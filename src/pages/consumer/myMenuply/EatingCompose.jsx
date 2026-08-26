@@ -73,7 +73,8 @@ export default function EatingCompose({
     EATING_COMPOSE_CATEGORIES.find((c) => c.id === category) ||
     EATING_COMPOSE_CATEGORIES[0];
 
-  const acceptMedia = category === "ate" || category === "want";
+  const acceptMedia =
+    category === "ate" || category === "want" || category === "plan";
 
   const wantMeta =
     WANT_INTENT_KINDS.find((k) => k.id === wantKind) ||
@@ -175,6 +176,7 @@ export default function EatingCompose({
         homemade,
         restaurant,
         dish,
+        file,
       });
       return;
     }
@@ -362,10 +364,7 @@ export default function EatingCompose({
                   ))
               }
               allowPhoto
-              allowVideo={
-                category === "ate" ||
-                category === "want"
-              }
+              allowVideo={acceptMedia}
               testId="eating-compose-media"
               ariaLabel={
                 mediaSource === "library"

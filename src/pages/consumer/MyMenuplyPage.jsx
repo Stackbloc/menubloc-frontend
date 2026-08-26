@@ -49,6 +49,7 @@ import {
   uploadConsumerProfileMedia,
   deleteConsumerProfileMedia,
   uploadWhatIAteTodayPhoto,
+  uploadEatingPlanMedia,
   updateWhatIAteToday,
   whatIAteTodayLocalDate,
 } from "../../lib/consumerApi.js";
@@ -615,6 +616,13 @@ export default function MyMenuplyPage() {
     setPostBusy("eating");
     setError("");
     try {
+      let photo_url = null;
+      let video_url = null;
+      const file = planPrefill?.file || payload?.file || null;
+      if (file) {
+        const up = await uploadEatingPlanMedia(file);
+        ({ photo_url, video_url } = eatingMediaFromUpload(up));
+      }
       const data = await createWhatWeDoingSession({
         plan_date: payload.planDate,
         restaurant_id: payload.homemade ? null : payload.restaurantId,
@@ -623,6 +631,9 @@ export default function MyMenuplyPage() {
         join_capacity: payload.joinCapacity,
         join_audience: payload.joinAudience,
         join_allowed_user_ids: payload.joinAllowedUserIds,
+        photo_url,
+        video_url,
+        market_discoverable: Boolean(video_url),
       });
       if (!payload.homemade && payload.restaurantId) {
         await maybeFollowRestaurant(payload.restaurantId);
@@ -1177,6 +1188,7 @@ export default function MyMenuplyPage() {
       homemade: Boolean(payload.homemade),
       restaurant: payload.restaurant || null,
       dish: payload.dish || null,
+      file: payload.file || null,
     });
     setSchedulingPlans(true);
     setCalendarOpen(true);
