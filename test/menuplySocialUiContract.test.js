@@ -149,16 +149,19 @@ test("What I Ate meal board is presentation-only (no empty cameras)", () => {
   assert.doesNotMatch(board, /autoPlay\s*\n\s*loop/);
 });
 
-test("Top highlights do not use video_url as img src", () => {
+test("Top highlights are stills-only (no recycled diary videos)", () => {
   const presentation = read("src/pages/consumer/myMenuply/myMenuplyPresentation.js");
-  assert.match(presentation, /videoUrl: video/);
+  assert.match(presentation, /stills-only/);
+  assert.match(presentation, /photo_url \|\| row\.item_photo_url/);
+  assert.doesNotMatch(presentation, /videoUrl:\s*video/);
   assert.doesNotMatch(
     presentation,
     /mediaUrl\(row\.photo_url \|\| row\.item_photo_url \|\| row\.video_url\)/
   );
   const rails = read("src/pages/consumer/myMenuply/MyMenuplyPresentationRails.jsx");
-  assert.match(rails, /card\.videoUrl/);
-  assert.match(rails, /VideoStillPreview/);
+  assert.doesNotMatch(rails, /VideoStillPreview/);
+  assert.doesNotMatch(rails, /card\.videoUrl/);
+  assert.doesNotMatch(rails, /top-highlight-video/);
 });
 
 test("eating surfaces use MenuplyMediaPicker", () => {

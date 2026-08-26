@@ -34,10 +34,54 @@ test("buildTopHighlights prefers user diary then liked then follows", () => {
   assert.equal(cards[0].badge, "Your meal");
   assert.equal(cards[0].deleteKind, "diary");
   assert.ok(cards[0].deleteItem);
+  assert.ok(cards[0].image);
+  assert.equal(cards[0].videoUrl, undefined);
   assert.match(cards[1].badge, /Saved dish/i);
   assert.equal(cards[1].deleteKind, "like");
   assert.match(cards[2].badge, /places you follow/i);
   assert.equal(cards[2].deleteKind, "follow");
+});
+
+test("buildTopHighlights skips video-only diary rows (no recycled videos)", () => {
+  const eating = [
+    {
+      id: 10,
+      entry_id: 10,
+      food_name: "Starbucks",
+      video_url: "https://example.com/clip.mp4",
+      restaurant_name: "Starbucks",
+    },
+    {
+      id: 11,
+      entry_id: 11,
+      food_name: "Photo meal",
+      photo_url: "/uploads/meal.jpg",
+      restaurant_name: "Cafe",
+    },
+  ];
+  const liked = [{ menu_item_id: 9, item_name: "Burger", restaurant_name: "Shake Shack" }];
+  const followed = [
+    {
+      restaurant_id: 3,
+      restaurant_name: "KazuNori",
+      city: "LA",
+      state: "CA",
+      billboard_preview: [{ title: "Hand Roll", image_url: "/uploads/b.jpg" }],
+    },
+  ];
+
+  const cards = buildTopHighlights({ eating, liked, followed });
+  assert.equal(cards.length, 3);
+  assert.equal(cards[0].badge, "Your meal");
+  assert.equal(cards[0].label, "Photo meal");
+  assert.ok(cards[0].image);
+  assert.equal(cards[0].videoUrl, undefined);
+  assert.equal(
+    cards.some((c) => /Starbucks/i.test(c.label)),
+    false
+  );
+  assert.match(cards[1].badge, /Saved dish/i);
+  assert.match(cards[2].badge, /places you follow/i);
 });
 
 test("buildFollowedRestaurantRails maps restaurant visit cards", () => {

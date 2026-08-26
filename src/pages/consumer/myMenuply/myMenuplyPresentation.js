@@ -15,17 +15,11 @@ function mediaUrl(raw) {
 }
 
 function eatingCard(row) {
+  // Top Highlights is stills-only: never recycle diary videos here
+  // (videos stay on the meal board + See Who's Eating live feed).
   const label = row.food_name || row.item_name || "Food";
-  const video = mediaUrl(row.video_url);
-  const image = video
-    ? null
-    : mediaUrl(row.photo_url || row.item_photo_url);
-  if (!image && !video) return null;
-  const videoPoster =
-    video &&
-    (mediaUrl(row.item_photo_url) ||
-      mediaUrl(row.restaurant_logo_url || row.logo_url) ||
-      mediaUrl(row.restaurant_billboard_image_url || row.billboard_image_url));
+  const image = mediaUrl(row.photo_url || row.item_photo_url);
+  if (!image) return null;
   return {
     key: `diary-${row.entry_id || row.id}`,
     kind: "diary",
@@ -35,11 +29,6 @@ function eatingCard(row) {
     sublabel: row.restaurant_name || row.place_label || "",
     badge: "Your meal",
     image,
-    videoUrl: video,
-    videoPosterUrl: videoPoster || null,
-    videoPosterFit: videoPoster && mediaUrl(row.restaurant_logo_url || row.logo_url) === videoPoster
-      ? "contain"
-      : "cover",
     href: row.menu_item_id ? `/menu-items/${encodeURIComponent(String(row.menu_item_id))}` : null,
     source: "user",
   };

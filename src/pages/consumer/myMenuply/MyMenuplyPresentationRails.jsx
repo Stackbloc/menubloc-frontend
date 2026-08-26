@@ -4,8 +4,6 @@
  */
 
 import { Link } from "react-router-dom";
-import { useState } from "react";
-import VideoStillPreview from "../../../components/consumer/VideoStillPreview.jsx";
 import DinerStatsBar from "./DinerStatsBar.jsx";
 import MyMenuplyHubFocus from "./MyMenuplyHubFocus.jsx";
 import { WantToEatList } from "./myMenuplyBits.jsx";
@@ -50,22 +48,12 @@ function ConnectionAvatarStrip({ connections = [], viewerUserId = null }) {
 function HighlightCard({ card, large = false, readOnly = false, onDelete, deleteBusy = false }) {
   const canDelete = !readOnly && card?.deleteKind && typeof onDelete === "function";
   const { open, dismiss, consumeArmedClick, bind } = useLongPressReveal(canDelete);
-  const [videoPlaying, setVideoPlaying] = useState(false);
 
+  // Stills only — diary videos are not recycled into Top Highlights.
   const body = (
     <>
       <div style={{ ...railStyles.highlightMedia, ...(large ? railStyles.highlightMediaLarge : null) }}>
-        {card.videoUrl ? (
-          <VideoStillPreview
-            src={card.videoUrl}
-            style={railStyles.highlightImg}
-            playing={videoPlaying}
-            onRequestPlay={() => setVideoPlaying(true)}
-            fallbackPoster={card.videoPosterUrl || ""}
-            fallbackPosterFit={card.videoPosterFit || "cover"}
-            testId="top-highlight-video"
-          />
-        ) : card.image ? (
+        {card.image ? (
           <img src={card.image} alt="" style={railStyles.highlightImg} loading="lazy" />
         ) : (
           <div style={railStyles.highlightPlaceholder}>🍽</div>
