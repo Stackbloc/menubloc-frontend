@@ -51,6 +51,7 @@ test("MenuplyMediaPicker opens ConsumerCameraSheet with optional native video mo
   const picker = read("src/components/social/MenuplyMediaPicker.jsx");
   assert.match(picker, /ConsumerCameraSheet/);
   assert.match(picker, /allowVideo=\{allowVideo\}/);
+  assert.match(picker, /allowPhoto=\{allowPhoto\}/);
   assert.doesNotMatch(picker, /createCameraMediaRecorder/);
 });
 

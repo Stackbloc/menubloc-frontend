@@ -50,6 +50,11 @@ test("Feed shell: FEED|EATING|X|EVENTS|ME routes + video-first home", () => {
   assert.match(eatingCompose, /allowPhoto=\{!feedMode\}/);
   assert.match(eatingCompose, /data-feed-mode/);
 
+  const picker = read("src/components/social/MenuplyMediaPicker.jsx");
+  assert.match(picker, /allowPhoto \|\| allowVideo/);
+  assert.match(picker, /allowPhoto=\{allowPhoto\}/);
+  assert.match(picker, /ConsumerCameraSheet/);
+
   const home = read("src/pages/consumer/feed/FeedHomePage.jsx");
   assert.match(home, /listSeeWhosEating/);
   assert.match(home, /variant="feedHome"/);

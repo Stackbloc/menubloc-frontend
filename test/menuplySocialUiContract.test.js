@@ -38,7 +38,8 @@ test("ConsumerCameraSheet hybrid: desktop MediaRecorder + phone native capture",
   assert.match(sheet, /validateRecordedVideoBlob/);
   assert.match(sheet, /consumer-camera-live/);
   assert.match(sheet, /consumer-camera-mode-video/);
-  assert.match(sheet, /consumer-camera-mode-photo/);
+  assert.match(sheet, /allowPhoto = true/);
+  assert.match(sheet, /allowPhoto && \(!allowVideo \|\| mode === "photo"\)/);
   assert.match(sheet, /consumer-camera-record-native/);
   assert.match(sheet, /consumer-camera-record/);
   assert.match(sheet, /consumer-camera-stop/);

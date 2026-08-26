@@ -33,6 +33,7 @@ export default function ConsumerCameraSheet({
   onClose,
   facingMode = "environment",
   onCapture,
+  allowPhoto = true,
   allowVideo = false,
   /** Default video when allowVideo so Video|Photo opens on Video. */
   initialMode = "video",
@@ -58,12 +59,18 @@ export default function ConsumerCameraSheet({
   const [reviewUrl, setReviewUrl] = useState("");
   const [reviewPoster, setReviewPoster] = useState("");
   const [mode, setMode] = useState(() =>
-    allowVideo ? (initialMode === "photo" ? "photo" : "video") : "photo"
+    !allowPhoto && allowVideo
+      ? "video"
+      : allowVideo
+        ? initialMode === "photo"
+          ? "photo"
+          : "video"
+        : "photo"
   );
   const [desktopInlineVideo] = useState(() => preferDesktopInlineVideoRecord());
   const [phoneNativeVideo] = useState(() => preferNativeOsVideoCapture());
 
-  const photoMode = !allowVideo || mode === "photo";
+  const photoMode = allowPhoto && (!allowVideo || mode === "photo");
   const inlineVideoMode = allowVideo && !photoMode && desktopInlineVideo && !phoneNativeVideo;
   const nativeVideoMode = allowVideo && !photoMode && !inlineVideoMode;
   const needsLivePreview = photoMode || inlineVideoMode;
@@ -124,11 +131,19 @@ export default function ConsumerCameraSheet({
   useEffect(() => {
     if (!open) return;
     setCurrentFacingMode(facingMode);
-    setMode(allowVideo ? (initialMode === "photo" ? "photo" : "video") : "photo");
+    setMode(
+      !allowPhoto && allowVideo
+        ? "video"
+        : allowVideo
+          ? initialMode === "photo"
+            ? "photo"
+            : "video"
+          : "photo"
+    );
     setError("");
     setRecording(false);
     clearReview();
-  }, [open, facingMode, allowVideo, initialMode]);
+  }, [open, facingMode, allowPhoto, allowVideo, initialMode]);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -416,6 +431,7 @@ export default function ConsumerCameraSheet({
 
   function selectMode(next) {
     if (!allowVideo || busy || recording || reviewing) return;
+    if (next === "photo" && !allowPhoto) return;
     setError("");
     clearReview();
     setMode(next);
@@ -500,7 +516,7 @@ export default function ConsumerCameraSheet({
             </button>
           ) : null}
 
-          {allowVideo && !reviewing ? (
+          {allowVideo && allowPhoto && !reviewing ? (
             <div style={styles.modeRow} role="tablist" aria-label="Camera mode">
               <button
                 type="button"

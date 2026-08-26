@@ -52,7 +52,10 @@ export default function MenuplyMediaPicker({
   const inputRef = useRef(null);
   const useLibrary = source === "library";
   const canInlineSheet =
-    !useLibrary && allowPhoto && inlineCameraSupported() && preferInlineCamera();
+    !useLibrary &&
+    (allowPhoto || allowVideo) &&
+    inlineCameraSupported() &&
+    preferInlineCamera();
 
   const accept = useMemo(
     () => buildAccept({ allowPhoto, allowVideo }),
@@ -86,11 +89,15 @@ export default function MenuplyMediaPicker({
 
   useEffect(() => {
     if (openOnMount && !disabled && !file) {
-      if (canInlineSheet && allowPhoto) openCameraSheet(defaultCameraMode);
-      else if (allowVideo && !useLibrary && !allowPhoto) {
-        /* video-only surfaces use NativeVideoCapture trigger */
-      } else if (allowPhoto) openCameraSheet("photo");
-      else openLibraryFallback();
+      if (canInlineSheet) {
+        openCameraSheet(allowPhoto ? defaultCameraMode : "video");
+      } else if (allowVideo && !useLibrary && !allowPhoto) {
+        /* no getUserMedia — NativeVideoCapture label is shown; OS camera cannot auto-open */
+      } else if (allowPhoto) {
+        openCameraSheet("photo");
+      } else {
+        openLibraryFallback();
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- open once on mount when requested
   }, [openOnMount, disabled, file]);
@@ -146,7 +153,8 @@ export default function MenuplyMediaPicker({
 
   /** One camera control opens the sheet (Photo | Video inside). No separate Record video row. */
   const showUnifiedCamera = canInlineSheet;
-  const showVideoOnlyNative = !useLibrary && allowVideo && !allowPhoto;
+  const showVideoOnlyNative =
+    !useLibrary && allowVideo && !allowPhoto && !canInlineSheet;
 
   return (
     <div data-testid={testId} style={{ display: "inline-flex", flexDirection: "column", gap: 8 }}>
@@ -291,6 +299,7 @@ export default function MenuplyMediaPicker({
           open={sheetOpen}
           onClose={() => setSheetOpen(false)}
           facingMode={facingMode}
+          allowPhoto={allowPhoto}
           allowVideo={allowVideo}
           initialMode={sheetInitialMode}
           onCapture={(captured) => {
