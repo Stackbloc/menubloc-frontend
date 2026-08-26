@@ -93,10 +93,10 @@ test("See Who's Eating reel: guest watch, CK dish, existing camera, Connect noti
   assert.match(cats, /Events/);
   assert.match(cats, /All Content/);
   assert.match(cats, /I'm Eating/);
-  assert.match(cats, /What I Wanna Eat/);
+  assert.match(cats, /label:\s*"Wanna Eat"/);
   assert.match(cats, /Eating Plans/);
   assert.doesNotMatch(cats, /short:\s*"ALL"/);
-  assert.doesNotMatch(cats, /label:\s*"Wanna Eat"/);
+  assert.doesNotMatch(cats, /label:\s*"What I Wanna Eat"/);
   assert.match(cats, /LIVE_FEED_CHANNELS/);
   assert.match(cats, /venueLiveFeedPath/);
 

@@ -13,7 +13,7 @@ export const LIVE_FEED_CATEGORY_LABELS = {
 export const LIVE_FEED_CHANNELS = [
   { id: "all", label: "All Content" },
   { id: "ate", label: "I'm Eating" },
-  { id: "want", label: "What I Wanna Eat" },
+  { id: "want", label: "Wanna Eat" },
   { id: "plan", label: "Eating Plans" },
   { id: "event", label: "Events" },
 ];
