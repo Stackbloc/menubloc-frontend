@@ -18,11 +18,11 @@
 | 2. Branch | `main` |
 | 3. Working tree | **Clean** (`git status --porcelain` empty) |
 | 4. Align remote | `git fetch origin` then `HEAD` matches `origin/main` (or document ahead-by-N after push) |
-| 5. Deploy | From that directory: `npx vercel --prod --yes` |
-| 6. Alias | `npx vercel alias set <deployment-url> menuply.com` **and** `www.menuply.com` |
-| 7. Tip gate | `bash scripts/assert-menuply-production-tip.sh https://menuply.com` (and www) → both `RESULT=PASS` |
+| 5. Deploy path | **Preferred one door:** `bash /Users/andrebarber/Desktop/menubloc/scripts/cpd-fe.sh "note"` (deploy → alias → lock → tip-gate PASS). Manual `vercel --prod` + alias is a bypass that leaves `CPD=INCOMPLETE` until lock+PASS |
+| 6. Alias | If not using `cpd-fe.sh`: `vercel alias set <deployment-url> menuply.com` **and** www/crm/venues |
+| 7. Tip gate | `bash scripts/assert-menuply-production-tip.sh` apex + www → both `RESULT=PASS` (`STALE_LOCK` ≠ auto-restore; `UNHEALTHY` is separate) |
 | 8. Certify | End response with **FE DEPLOY PATH CERTIFICATION** (below) |
-| 9. CPD | Record **Deploy path** table in the CPD |
+| 9. CPD | Record **Deploy path** table; do not claim complete until tip-gate PASS |
 
 Anything else is **not** the correct route unless Andre’s **current-turn** message names an exception path + branch.
 

@@ -1,9 +1,10 @@
 # CPD Agent Playbook (keep it simple)
 
 **Established:** 2026-08-20  
+**Updated:** 2026-08-25 — one-door hardening (`cpd-fe.sh`); STALE_LOCK vs UNHEALTHY  
 **Audience:** agents when Andre says `cpd`  
 **Purpose:** one short procedure so deploy does not turn into a 20-step archaeology session  
-**🔴 TIP LOCK (read first after every FE alias):** [2026-08-24_production-tip-lock-atomic-contract.md](./2026-08-24_production-tip-lock-atomic-contract.md) — `bundle != locked tip` is usually stale locks, **not** a reason to restore  
+**🔴 TIP LOCK (read first after every FE alias):** [2026-08-24_production-tip-lock-atomic-contract.md](./2026-08-24_production-tip-lock-atomic-contract.md) — `STALE_LOCK` is usually stale locks, **not** a reason to restore  
 **Authority for live tip / BE SHA:** [2026-08-14_production-deploy-and-lkg-contract.md](./2026-08-14_production-deploy-and-lkg-contract.md)  
 **Full path rules:** [FE](./2026-07-24_frontend-production-deploy-path-contract.md) · [BE](./2026-07-28_backend-production-deploy-path-contract.md)
 
@@ -11,9 +12,18 @@
 
 ## What `cpd` means
 
-**Commit → Push → Deploy → alias → lock tip-gate script → tip-gate PASS → sync LKG mirrors → write one CPD note.**
+**Commit → Push → Deploy → alias → verify live → lock tip-gate (+ sync existing LKG) → tip-gate PASS → write one CPD note.**
 
 Do only the layers that changed. FE-only ships do **not** push Railway. BE-only ships do **not** `vercel --prod`.
+
+### CPD complete vs incomplete
+
+| Outcome | When |
+|---------|------|
+| **CPD complete** | Deploy/alias succeeded **and** intended tip verified live **and** tip locked **and** existing LKG records synced **and** tip-gate `RESULT=PASS` on apex + www |
+| **CPD=INCOMPLETE** | Production may have moved, but lock / LKG / tip-gate PASS did not finish — **do not** narrate as done |
+
+`vercel --prod` success alone is **never** CPD complete.
 
 ---
 
@@ -30,9 +40,32 @@ Workspace root `menubloc/` is **not** a git remote for production code. Feature 
 
 ---
 
-## FE CPD (copy this block)
+## FE CPD — ONE DOOR (preferred)
 
-Run from `menubloc-frontend-main` with **full shell permissions** (see traps below).
+```bash
+cd /Users/andrebarber/Desktop/menubloc/menubloc-frontend-main
+# commit + push first if needed (clean tree required before deploy)
+
+bash /Users/andrebarber/Desktop/menubloc/scripts/cpd-fe.sh "short feature note"
+# Must print RESULT=PASS. If RESULT=INCOMPLETE or UNHEALTHY → stop; do not declare done.
+
+# Docs-only commit of tip-gate + LKG (no second vercel --prod)
+```
+
+`cpd-fe.sh` runs the existing sequence only: path/branch/tree gate → `vercel --prod` → alias menuply hosts → curl live bundle → `lock-menuply-production-tip.sh` → tip-gate apex+www. It does **not** create a second tip authority.
+
+Lock-only after a mid-flight interrupt (production already moved):
+
+```bash
+INTENDED_DEPLOY=menubloc-frontend-<id>-menuply.vercel.app \
+  bash /Users/andrebarber/Desktop/menubloc/scripts/cpd-fe.sh --lock-only "finish incomplete cpd"
+```
+
+---
+
+## FE CPD (manual equivalent — same end state required)
+
+Run from `menubloc-frontend-main` with **full shell permissions** (see traps below). Prefer `cpd-fe.sh` so steps cannot be skipped.
 
 ```bash
 # 0) Prove path
@@ -47,8 +80,9 @@ git push origin main
 # 2) Deploy
 vercel --prod --yes
 # Note the Production URL: menubloc-frontend-<id>-menuply.vercel.app
+# WARNING: this may already move production aliases — you are now in CPD=INCOMPLETE until lock+PASS
 
-# 3) Alias menuply hosts (vercel --prod does NOT move menuply.com)
+# 3) Alias menuply hosts (always; do not assume --prod moved apex)
 DEPLOY="menubloc-frontend-<id>-menuply.vercel.app"
 vercel alias set "$DEPLOY" menuply.com
 vercel alias set "$DEPLOY" www.menuply.com
@@ -56,35 +90,23 @@ vercel alias set "$DEPLOY" crm.menuply.com
 vercel alias set "$DEPLOY" venues.menuply.com
 
 # 4) Read live bundle
-curl -s "https://menuply.com/" | grep -oE 'index-[A-Za-z0-9_-]+\.js' | head -1
+BUNDLE=$(curl -s "https://menuply.com/" | grep -oE 'index-[A-Za-z0-9_-]+\.js' | head -1)
 
-# 5) Lock tip-gate script FIRST, then tip-gate (atomic tip lock — see tip-lock contract)
+# 5) Lock tip-gate + sync existing LKG records, then tip-gate
 bash /Users/andrebarber/Desktop/menubloc/scripts/lock-menuply-production-tip.sh \
   "$DEPLOY" "$BUNDLE" \
   --fe-commit "$(git rev-parse --short HEAD)" \
   --note "cpd"
 bash /Users/andrebarber/Desktop/menubloc/scripts/assert-menuply-production-tip.sh https://menuply.com
 bash /Users/andrebarber/Desktop/menubloc/scripts/assert-menuply-production-tip.sh https://www.menuply.com
-# Both must print RESULT=PASS
-# Do NOT restore prior tip on `bundle != locked tip` alone — that means locks were stale.
+# Both must print RESULT=PASS — else CPD=INCOMPLETE
+# Do NOT restore on RESULT=STALE_LOCK alone
 
 # 6) Smoke
-BUNDLE=$(curl -s "https://menuply.com/" | grep -oE 'index-[A-Za-z0-9_-]+\.js' | head -1)
 curl -s "https://menuply.com/assets/$BUNDLE" | grep -o 'localhost:3001\|menubloc-backend-production' | sort | uniq -c
-# railway count must be >> localhost (localhost ≤ ~9 dead DEV strings is OK)
 curl -s "https://menubloc-backend-production.up.railway.app/health"
-# record commit_hash as live BE (even if FE-only ship)
 
-# 7) Lock LKG in these places (same tip values everywhere)
-# - scripts/assert-menuply-production-tip.sh
-# - .cursor/rules/production-deploy-and-lkg-contract.mdc
-# - .cursor/rules/frontend-production-deploy-path-guardrail.mdc
-# - docs/guardrails/2026-08-14_production-deploy-and-lkg-contract.md
-# - docs/guardrails/2026-07-24_frontend-production-deploy-path-contract.md
-# - copy LKG contract → menubloc-frontend-main/docs/guardrails/… and menubloc-backend-main/docs/guardrails/…
-# - write docs/deployments/YYYY-MM-DD_<slug>-cpd.md (+ FE/BE mirrors)
-
-# 8) Commit docs lock (usually FE repo + BE mirror commit). Do not redeploy for docs-only.
+# 7) Commit docs lock (FE repo + BE mirror). Do not redeploy for docs-only.
 ```
 
 ---
@@ -103,24 +125,32 @@ curl -s "https://menubloc-backend-production.up.railway.app/health"
 
 ---
 
+## Bypasses (detect / prohibit as normal path)
+
+| Bypass | Risk | Rule |
+|--------|------|------|
+| Raw `vercel --prod` outside `cpd-fe.sh` | Moves production before lock | Not the normal door; if used, finish with lock + tip-gate PASS or leave `CPD=INCOMPLETE` |
+| Bare `vercel alias set … menuply.com` outside CPD | Same | Same — lock immediately or incomplete |
+| Declaring done after deploy URL prints | Stale lock / wrong LKG | Forbidden |
+
+Vercel project settings may auto-attach production domains on `--prod`. Treat any production move as requiring the lock+PASS tail.
+
+---
+
 ## Traps (read once — avoid forever)
 
 | Trap | What goes wrong | Do this instead |
 |------|-----------------|-----------------|
-| **Sandbox / no `all` perms** | `vercel alias` fails (`auth.json` / fetch failed); tip-gate curl 403 | Re-run deploy/alias/tip-gate **outside sandbox** (`required_permissions: ["all"]`) |
-| **`npx vercel` upgrades mid-flight** | Random CLI 59.x, auth/alias errors | Use the logged-in local `vercel` on PATH (today: CLI 54.x under nvm). Do not `npx vercel@latest` during CPD |
-| **`vercel --prod` ≠ menuply.com** | New deployment URL is live but apex still old tip | Always alias `menuply.com` + `www` + `crm` + `venues` |
-| **Aliased only grubbid.com** | CLI may auto-alias grubbid; menuply untouched | Explicit menuply aliases every time |
-| **Tip-gate before lock update** | Fresh tip is live; gate prints `FAIL: bundle != locked tip` | Alias → note new bundle/deploy → **update lock script** → then tip-gate |
-| **Tip-gate FAIL mid-CPD** | Panic-restore to wrong tip | If aliases already point at the new good deploy, update locks. Only restore prior tip if the new deploy is bad |
+| **Sandbox / no `all` perms** | `vercel alias` fails; tip-gate curl 403 | Re-run deploy/alias/tip-gate **outside sandbox** |
+| **`npx vercel` upgrades mid-flight** | Random CLI / auth errors | Use logged-in local `vercel` on PATH |
+| **`vercel --prod` may move apex** | Tip live before lock | Always lock + tip-gate PASS; prefer `cpd-fe.sh` |
+| **Aliased only grubbid.com** | menuply untouched | Explicit menuply aliases every time |
+| **Tip-gate before lock** | `RESULT=STALE_LOCK` | Lock live tip → re-run tip-gate. **Do not restore** |
+| **Panic-restore on STALE_LOCK** | Undo good ship | Update locks only |
 | **Deploy from dirty / wrong tree** | Ship quarantine work | Only `*-main` @ clean `main` |
-| **Stale FE/BE LKG mirrors** | Next agent restores wrong tip from mirror | Copy root `docs/guardrails/2026-08-14_…lkg…md` into **both** `menubloc-frontend-main` and `menubloc-backend-main` mirrors |
-| **Treating tip-gate FAIL as “deploy failed”** | Re-deploys / rolls back a good ship | Read the message: `bundle != locked tip` usually means locks not updated yet |
-| **BE health vs old LKG note** | Docs say old SHA; live `/health` moved | Always `curl` live health at certify time; write that SHA |
-| **Docs-only commit → another `vercel --prod`** | Waste + tip thrash | Docs/LKG commits do not need a new FE deploy |
-| **FE/BE confusion** | Pushing BE from FE tree or vice versa | Separate repos, separate gates |
-| **Missing `VITE_API_BASE_URL`** | Bundle full of `localhost:3001`; login “Failed to fetch” | Abort CPD; fix env; redeploy; re-check railway ≫ localhost |
-| **Long prior-tip archaeology** | Token burn rewriting history tables | Update CURRENT LKG + add one Prior tip row for the tip you just replaced. Do not rewrite the whole restore list |
+| **Treating STALE_LOCK as deploy failed** | Re-deploys / rolls back a good ship | Lock + PASS |
+| **Docs-only → another `vercel --prod`** | Waste + tip thrash | Docs/LKG commits do not need a new FE deploy |
+| **Narrating incomplete CPD as done** | Next agent trusts stale LKG | Print `CPD=INCOMPLETE` until PASS |
 
 ---
 
@@ -152,27 +182,25 @@ One sentence.
 Prior tip `<id>` / `index-….js`
 ```
 
-Copy the same file into FE/BE `docs/deployments/` mirrors when those repos track deployment notes.
-
 ---
 
 ## Agent response after CPD
 
-Keep the user reply short:
-
 1. Tip URL + bundle + FE commit  
-2. Tip-gate PASS (apex + www)  
+2. Tip-gate PASS (apex + www) — or explicit `CPD=INCOMPLETE`  
 3. BE health SHA (even if unchanged)  
 4. One verify URL/action  
-5. Mandatory certifications (FE/BE deploy path, etc.)
+5. Mandatory certifications  
 
-Do **not** narrate every alias attempt, sandbox failure, or tip-gate FAIL that was only “lock not updated yet.”
+Do **not** narrate every alias attempt or a mid-CPD `STALE_LOCK` that was only “lock not updated yet.”
 
 ---
 
 ## Related files
 
+- One door: `scripts/cpd-fe.sh`  
 - Tip gate: `scripts/assert-menuply-production-tip.sh`  
+- Tip lock: `scripts/lock-menuply-production-tip.sh`  
 - BE path gate: `scripts/assert-backend-deploy-path.sh`  
 - Cursor entry: `.cursor/rules/production-deploy-and-lkg-contract.mdc`  
 - This playbook: `docs/guardrails/2026-08-20_cpd-agent-playbook.md`
