@@ -55,6 +55,7 @@ script-src 'self' 'unsafe-inline' https://js.stripe.com https://www.googletagman
 style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
 font-src 'self' https://fonts.gstatic.com;
 img-src 'self' data: blob: https:;
+media-src 'self' blob: https:;
 connect-src 'self' https://menubloc-backend-production.up.railway.app https://api.stripe.com https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com https://app.posthog.com https://vitals.vercel-insights.com https://va.vercel-scripts.com wss:;
 frame-src https://js.stripe.com https://hooks.stripe.com;
 worker-src 'self' blob:;
@@ -66,6 +67,8 @@ form-action 'self'
 **Why `unsafe-inline` for scripts:** The app uses Vite with inline runtime chunks and the GA/GTM snippets inject inline scripts. Removing `unsafe-inline` would require nonce-based CSP (needs server-side rendering or middleware injection) — deferred to a future phase.
 
 **`img-src https:`** — menu item images come from varied external domains (restaurant CDNs, Google Places photos, etc.). Restricting to specific hostnames would break menu image rendering.
+
+**`media-src https:`** — diner eating videos are served from durable HTTPS object storage (Supabase `diner-media`). Without an explicit `media-src`, browsers fall back to `default-src 'self'` and **block** cross-origin `<video>` (black Live Feed / Journal). Images still worked because `img-src` already allowed `https:`.
 
 ### X-Robots-Tag (preview/staging only)
 ```
