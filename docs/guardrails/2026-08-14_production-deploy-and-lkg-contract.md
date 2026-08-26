@@ -36,46 +36,46 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` @ clean `main` |
-| Git commit | `5e61477` — eating plan video H.264 parity + Live Feed captions/tap-to-profile |
-| Vercel deployment | `menubloc-frontend-59blc4cw6-menuply.vercel.app` |
-| Live bundle | `index-oQ4ty48S.js` |
+| Git commit | `da6e15d` — Live Feed category below @name (smaller type; same color) |
+| Vercel deployment | `menubloc-frontend-m9mch4bp1-menuply.vercel.app` |
+| Live bundle | `index-Ckn_kipT.js` |
 | Aliases | `menuply.com`, `www.menuply.com`, `crm.menuply.com`, `venues.menuply.com` |
 | Tip-gate | **PASS** (apex + www) verified 2026-08-25 |
-| Feature | X ate/want/plan share H.264 normalize; Live Feed category captions; tap video → poster profile |
+| Feature | Live Feed category caption under username at smaller type |
 
 ### Backend (Railway)
 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-backend-main` @ clean `main` |
-| Git on origin | `a93a1fdc` |
-| Live health SHA | `a93a1fdc` |
+| Git on origin | `79d96782` |
+| Live health SHA | `79d96782` |
 | Health URL | `https://menubloc-backend-production.up.railway.app/health` |
-| `commit_hash` | `a93a1fdc…` |
+| `commit_hash` | `79d96782…` |
 | DB | migrations through `0289` |
-| Smoke | tip-gate PASS `59blc4cw6` / `index-oQ4ty48S.js`; railway=59 localhost=9 |
+| Smoke | tip-gate PASS `m9mch4bp1` / `index-Ckn_kipT.js`; railway=59 localhost=9 |
 
 ### Restore current tip (if tip-gate fails mid-change)
 
 ```bash
 cd /Users/andrebarber/Desktop/menubloc/menubloc-frontend-main
-npx vercel alias set menubloc-frontend-59blc4cw6-menuply.vercel.app menuply.com
-npx vercel alias set menubloc-frontend-59blc4cw6-menuply.vercel.app www.menuply.com
-npx vercel alias set menubloc-frontend-59blc4cw6-menuply.vercel.app crm.menuply.com
-npx vercel alias set menubloc-frontend-59blc4cw6-menuply.vercel.app venues.menuply.com
+npx vercel alias set menubloc-frontend-m9mch4bp1-menuply.vercel.app menuply.com
+npx vercel alias set menubloc-frontend-m9mch4bp1-menuply.vercel.app www.menuply.com
+npx vercel alias set menubloc-frontend-m9mch4bp1-menuply.vercel.app crm.menuply.com
+npx vercel alias set menubloc-frontend-m9mch4bp1-menuply.vercel.app venues.menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 ```
 
-### Prior tip — Top Highlights stills-only (rollback target)
+### Prior tip — eating-plan video parity (rollback target)
 
 | Field | Value |
 |-------|-------|
-| Deployment | `menubloc-frontend-7sggmug2z-menuply.vercel.app` |
-| Live bundle | `index-Cy0j2zg7.js` |
-| FE commit | `52c4af0` |
-| BE health | `bbba2655` |
-| Notes | Pre–desktop MediaRecorder restore |
+| Deployment | `menubloc-frontend-59blc4cw6-menuply.vercel.app` |
+| Live bundle | `index-oQ4ty48S.js` |
+| FE commit | `5e61477` |
+| BE health | `a93a1fdc` |
+| Notes | Pre–Live Feed category-below-@name layout |
 
 ### Prior tip — sticky title+feed / TikTok / posters (rollback target)
 
