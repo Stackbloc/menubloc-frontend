@@ -195,11 +195,11 @@ export default function SeeWhosEatingSurface({
           {preview ? (
             <div style={styles.caption}>
               <div style={styles.captionCol}>
-                <span style={styles.categoryChip} data-testid="see-whos-eating-category">
-                  {liveFeedCategoryLabel(preview.kind)}
-                </span>
                 <span style={styles.screenName}>
                   @{preview.diner?.display_name || "diner"}
+                </span>
+                <span style={styles.categoryChip} data-testid="see-whos-eating-category">
+                  {liveFeedCategoryLabel(preview.kind)}
                 </span>
               </div>
               {preview.is_recommend ? <span style={styles.badge}>REC</span> : null}

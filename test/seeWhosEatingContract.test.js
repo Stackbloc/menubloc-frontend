@@ -30,6 +30,14 @@ test("See Who's Eating reel: guest watch, CK dish, existing camera, Connect noti
   assert.match(fullscreen, /liveFeedCategoryLabel/);
   assert.match(fullscreen, /dinerPeerProfilePath/);
   assert.match(fullscreen, /see-whos-eating-video-tap/);
+  // Category sits below @screen name and uses a smaller type size.
+  {
+    const nameIdx = fullscreen.indexOf("see-whos-eating-screen-name");
+    const catIdx = fullscreen.indexOf("see-whos-eating-fullscreen-category");
+    assert.ok(nameIdx > 0 && catIdx > nameIdx, "category markup after screen name");
+    assert.match(fullscreen, /fontSize:\s*17/);
+    assert.match(fullscreen, /fontSize:\s*11/);
+  }
   assert.match(fullscreen, /menu_item_href|menu-items\//);
   assert.match(fullscreen, /createPortal/);
   assert.match(fullscreen, /100dvh|100vh/);

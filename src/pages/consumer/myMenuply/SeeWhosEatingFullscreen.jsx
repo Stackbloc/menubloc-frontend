@@ -249,9 +249,6 @@ export default function SeeWhosEatingFullscreen({
       />
 
       <div style={styles.meta}>
-        <p style={styles.category} data-testid="see-whos-eating-fullscreen-category">
-          {liveFeedCategoryLabel(item.kind)}
-        </p>
         <button
           type="button"
           style={styles.screenNameBtn}
@@ -261,6 +258,9 @@ export default function SeeWhosEatingFullscreen({
         >
           @{screenName}
         </button>
+        <p style={styles.category} data-testid="see-whos-eating-fullscreen-category">
+          {liveFeedCategoryLabel(item.kind)}
+        </p>
         {connectNotice ? <p style={styles.notice}>{connectNotice}</p> : null}
         {connectError ? <p style={styles.error}>{connectError}</p> : null}
         {item.is_recommend ? <p style={styles.recommend}>Recommend</p> : null}
@@ -359,8 +359,8 @@ const styles = {
     zIndex: 2,
   },
   category: {
-    margin: "0 0 6px",
-    fontSize: 12,
+    margin: "0 0 8px",
+    fontSize: 11,
     fontWeight: 700,
     letterSpacing: "0.06em",
     textTransform: "uppercase",
@@ -368,7 +368,7 @@ const styles = {
   },
   screenNameBtn: {
     display: "inline-block",
-    margin: "0 0 4px",
+    margin: "0 0 2px",
     padding: 0,
     border: "none",
     background: "transparent",
