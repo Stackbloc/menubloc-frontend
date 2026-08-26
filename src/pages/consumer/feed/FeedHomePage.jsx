@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { listSeeWhosEating } from "../../../lib/consumerApi.js";
 import { readDetectedLocation } from "../../../lib/discoveryLocationPersistence.js";
+import { FEED_VIDEO_POSTED_EVENT } from "../../../lib/feedVideoCompose.js";
 import { useConsumer } from "../../../context/ConsumerContext.jsx";
 import SeeWhosEatingFullscreen from "../myMenuply/SeeWhosEatingFullscreen.jsx";
 import { FEED_PRIMARY_NAV_HEIGHT } from "../../../components/consumer/feed/FeedPrimaryNav.jsx";
@@ -31,28 +32,36 @@ export default function FeedHomePage() {
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
-    setError("");
-    listSeeWhosEating({
-      city: market.city,
-      state: market.state,
-      limit: 20,
-      kind: "all",
-    })
-      .then((data) => {
-        if (cancelled) return;
-        setItems(Array.isArray(data?.items) ? data.items : []);
+    function loadFeed() {
+      setLoading(true);
+      setError("");
+      listSeeWhosEating({
+        city: market.city,
+        state: market.state,
+        limit: 20,
+        kind: "all",
       })
-      .catch((err) => {
-        if (cancelled) return;
-        setItems([]);
-        setError(err?.message || "Unable to load Feed");
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
+        .then((data) => {
+          if (cancelled) return;
+          setItems(Array.isArray(data?.items) ? data.items : []);
+        })
+        .catch((err) => {
+          if (cancelled) return;
+          setItems([]);
+          setError(err?.message || "Unable to load Feed");
+        })
+        .finally(() => {
+          if (!cancelled) setLoading(false);
+        });
+    }
+    loadFeed();
+    function onPosted() {
+      loadFeed();
+    }
+    window.addEventListener(FEED_VIDEO_POSTED_EVENT, onPosted);
     return () => {
       cancelled = true;
+      window.removeEventListener(FEED_VIDEO_POSTED_EVENT, onPosted);
     };
   }, [market.city, market.state]);
 
@@ -66,14 +75,6 @@ export default function FeedHomePage() {
     <div style={styles.chrome} data-testid="feed-home-chrome">
       <Link to="/search" style={styles.chromeBtn} data-testid="feed-search">
         Search
-      </Link>
-      <Link
-        to="/my-menuply?compose=ate"
-        style={styles.chromeCamera}
-        data-testid="feed-create"
-        title="Create video"
-      >
-        ＋
       </Link>
     </div>
   );
@@ -134,22 +135,7 @@ const styles = {
     fontWeight: 700,
     textDecoration: "none",
     border: "1px solid rgba(255,255,255,0.2)",
-  },
-  chromeCamera: {
-    pointerEvents: "auto",
-    width: 44,
-    height: 44,
-    borderRadius: "50%",
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    background: "rgba(30, 120, 90, 0.92)",
-    color: "#fff",
-    fontSize: 26,
-    fontWeight: 500,
-    textDecoration: "none",
-    border: "2px solid rgba(255,255,255,0.35)",
-    boxShadow: "0 2px 12px rgba(0,0,0,0.35)",
+    marginLeft: "auto",
   },
   loading: {
     minHeight: "100dvh",

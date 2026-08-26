@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "65d3f2424bd7ccf73a78226185420ef72203e29f",
-  "gitShortSha": "65d3f24",
+  "gitSha": "11fef439d3ecc5426e6c0d6614ed3bb934227ec7",
+  "gitShortSha": "11fef43",
   "branch": "main",
-  "buildTime": "2026-08-25T02:13:12.146Z",
+  "buildTime": "2026-08-26T22:00:43.974Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "docs: lock LKG tip for Invite Me Out CPD"
+  "commitMessage": "docs(deploy): lock tip after video-first /feed shell CPD"
 }

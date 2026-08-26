@@ -307,7 +307,7 @@ export default function SeeWhosEatingFullscreen({
         aria-label="Feed"
       >
         {headerSlot}
-        <p style={styles.emptyFeed}>No public food videos yet. Be the first — tap Create.</p>
+        <p style={styles.emptyFeed}>No public food videos yet. Be the first — tap X below.</p>
       </div>
     );
     return createPortal(empty, document.body);

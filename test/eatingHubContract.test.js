@@ -139,7 +139,11 @@ test("My Menuply and peer hub use five-section presentation hub", () => {
   assert.match(compose, /EATING_COMPOSE_CATEGORIES/);
   assert.match(compose, /EatingPlaceFields/);
   assert.match(compose, /homemade/);
-  assert.match(compose, /allowVideo=\{\s*category === "ate" \|\|\s*category === "want"\s*\}/);
+  assert.match(compose, /allowPhoto=\{!feedMode\}/);
+  assert.match(compose, /allowVideo=\{acceptMedia\}/);
+  assert.match(compose, /feedMode/);
+  assert.match(bits, /plan-add-video/);
+  assert.match(section, /onPlanAddVideo/);
   assert.match(section, /planPrefill/);
   assert.match(mine, /maybeFollowRestaurant/);
   assert.match(mine, /followRestaurant/);

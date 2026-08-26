@@ -79,6 +79,7 @@ export default function EatingHubSection({
   onWantDelete,
   wantDeleteBusy = false,
   onPlanAddDetails,
+  onPlanAddVideo,
   onPlanDelete,
   planDeleteBusy = false,
   onPostTagged,
@@ -416,6 +417,7 @@ export default function EatingHubSection({
                   }
                   onOpenCalendar={openPlanOnCalendar}
                   onAddDetails={readOnly ? undefined : onPlanAddDetails}
+                  onAddPlanVideo={readOnly ? undefined : onPlanAddVideo}
                   onDelete={
                     readOnly || !onPlanDelete || plan?.is_creator !== true
                       ? undefined

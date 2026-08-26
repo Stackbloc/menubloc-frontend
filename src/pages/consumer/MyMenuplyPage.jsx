@@ -64,6 +64,7 @@ import {
 import EatingHubSection, { PlansCalendarGlyph } from "./myMenuply/EatingHubSection.jsx";
 import CrewQuickCompose from "./myMenuply/CrewQuickCompose.jsx";
 import EventComposeSheet from "./myMenuply/EventComposeSheet.jsx";
+import PlanVideoAttachSheet from "./myMenuply/PlanVideoAttachSheet.jsx";
 import InvitePickerSheet from "./myMenuply/InvitePickerSheet.jsx";
 import SectionEmptyState from "./myMenuply/SectionEmptyState.jsx";
 import { buildJoinMeCandidates } from "./myMenuply/joinMeCandidates.js";
@@ -180,6 +181,7 @@ export default function MyMenuplyPage() {
   const [inviteEventPickerOpen, setInviteEventPickerOpen] = useState(false);
   const [hubFocus, setHubFocus] = useState("");
   const [planPrefill, setPlanPrefill] = useState(null);
+  const [planVideoPlan, setPlanVideoPlan] = useState(null);
   const locationCity = profile?.primary_location?.city_name || null;
   const locationState = profile?.primary_location?.state_code || null;
 
@@ -1419,6 +1421,7 @@ export default function MyMenuplyPage() {
                   place_label: next.place_label,
                 });
               }}
+              onPlanAddVideo={(next) => setPlanVideoPlan(next)}
               onPostTagged={handlePostTagged}
               onSkipDetails={() => setLastPost(null)}
               foodHref={foodHref}
@@ -1534,6 +1537,15 @@ export default function MyMenuplyPage() {
               onClose={() => setEventComposeOpen(false)}
               busy={postBusy === "events"}
               onSubmit={postSocialEvent}
+            />
+
+            <PlanVideoAttachSheet
+              open={Boolean(planVideoPlan)}
+              plan={planVideoPlan}
+              onClose={() => setPlanVideoPlan(null)}
+              onAttached={() => {
+                void load();
+              }}
             />
 
             {crewComposeOpen ? (

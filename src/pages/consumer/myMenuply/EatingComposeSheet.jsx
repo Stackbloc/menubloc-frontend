@@ -13,6 +13,7 @@ export default function EatingComposeSheet({
   mediaSource = "camera",
   openLibraryOnMount = false,
   busy = false,
+  feedMode = false,
   onSubmit,
   onPlanSchedule,
   followed = [],
@@ -51,31 +52,38 @@ export default function EatingComposeSheet({
       >
         <div style={styles.header}>
           <p style={styles.title}>
-            {defaultCategory === "want"
-              ? "What I Want to Eat"
-              : defaultCategory === "plan"
-                ? "Eating Plan"
-                : "What I'm Eating"}
+            {feedMode
+              ? defaultCategory === "want"
+                ? "Wanna Eat"
+                : "I'm Eating"
+              : defaultCategory === "want"
+                ? "What I Want to Eat"
+                : defaultCategory === "plan"
+                  ? "Eating Plan"
+                  : "What I'm Eating"}
           </p>
           <button type="button" style={styles.close} onClick={() => onClose?.()} aria-label="Close">
             ✕
           </button>
         </div>
         <p style={styles.lead}>
-          {defaultCategory === "want"
-            ? "Cuisine, restaurant, menu item, or a general food craving — no restaurant required."
-            : defaultCategory === "plan"
-              ? "Pick a place, then set the date and Join Me on the next step."
-              : "Photo or video, restaurant or homemade, meal time, then an optional comment."}
+          {feedMode
+            ? "Record a video for Feed. Tag restaurant or dish after if you like — optional caption below."
+            : defaultCategory === "want"
+              ? "Cuisine, restaurant, menu item, or a general food craving — no restaurant required."
+              : defaultCategory === "plan"
+                ? "Pick a place, then set the date and Join Me on the next step."
+                : "Photo or video, restaurant or homemade, meal time, then an optional comment."}
         </p>
         <EatingCompose
-          key={`${defaultCategory}-${defaultMealPeriod || "auto"}-${mediaSource}-${initialFile?.name || (initialFile ? "blob" : "none")}`}
+          key={`${defaultCategory}-${defaultMealPeriod || "auto"}-${mediaSource}-${feedMode ? "feed" : "hub"}-${initialFile?.name || (initialFile ? "blob" : "none")}`}
           busy={busy}
           defaultCategory={defaultCategory}
           defaultMealPeriod={defaultMealPeriod}
           initialFile={initialFile}
           mediaSource={mediaSource}
           openLibraryOnMount={openLibraryOnMount}
+          feedMode={feedMode}
           onSubmit={handleSubmit}
           onPlanSchedule={handlePlanSchedule}
           followed={followed}

@@ -658,6 +658,7 @@ export function FuturePlanRow({
   onToggle,
   onOpenCalendar,
   onAddDetails,
+  onAddPlanVideo,
   onDelete,
   deleteBusy = false,
 }) {
@@ -722,18 +723,25 @@ export function FuturePlanRow({
       </button>
       {open ? (
         <div data-testid="future-plan-detail">
-          <EatingPlanCard plan={plan} onAddDetails={onAddDetails} />
+          <EatingPlanCard
+            plan={plan}
+            onAddDetails={onAddDetails}
+            onAddPlanVideo={onAddPlanVideo}
+          />
         </div>
       ) : null}
     </div>
   );
 }
 
-export function EatingPlanCard({ plan, onAddDetails }) {
+export function EatingPlanCard({ plan, onAddDetails, onAddPlanVideo }) {
   const when = formatPlanWhen(plan.plan_date);
   const { restaurant, meal, notes } = futurePlanDetailParts(plan);
   const visual = resolveEatingPlanVisual(plan);
   const showNameText = !visual;
+  const hasPlanVideo = Boolean(String(plan.video_url || "").trim());
+  const showAddPlanVideo =
+    typeof onAddPlanVideo === "function" && plan.is_creator !== false && !hasPlanVideo;
   const place =
     plan.restaurant_id || (plan.place_label && plan.place_label !== plan.title) ? restaurant : "";
   const restHref = restaurantHref({
@@ -761,6 +769,16 @@ export function EatingPlanCard({ plan, onAddDetails }) {
         {plan.joinable ? `${plan.joiner_count || 0}/${plan.join_capacity || 0} joined` : "Just me"}
       </div>
       <div style={s.actions}>
+        {showAddPlanVideo ? (
+          <button
+            type="button"
+            style={{ ...s.chipBtn, appearance: "none", cursor: "pointer", font: "inherit" }}
+            data-testid="plan-add-video"
+            onClick={() => onAddPlanVideo(plan)}
+          >
+            Add plan video
+          </button>
+        ) : null}
         {onAddDetails ? (
           <button type="button" style={{ ...s.chipBtn, appearance: "none", cursor: "pointer", font: "inherit" }} onClick={() => onAddDetails(plan)}>
             Add details
