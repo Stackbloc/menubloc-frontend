@@ -247,6 +247,7 @@ export default function SeeWhosEatingSurface({
                     setChannel(ch.id);
                   }}
                 >
+                  <span style={styles.channelLabel}>{ch.label}</span>
                   <span
                     style={{
                       ...styles.channelDial,
@@ -254,7 +255,6 @@ export default function SeeWhosEatingSurface({
                     }}
                     aria-hidden="true"
                   />
-                  <span style={styles.channelShort}>{ch.short}</span>
                 </button>
               );
             })}
@@ -327,57 +327,54 @@ const styles = {
   channelStrip: {
     display: "flex",
     flexDirection: "column",
-    alignItems: "center",
+    alignItems: "stretch",
     justifyContent: "space-between",
     gap: 2,
     flexShrink: 0,
-    /* Wide enough for 44px finger targets without crowding the CRT */
-    width: 52,
+    width: 138,
     padding: "2px 0",
   },
   channelBtn: {
     appearance: "none",
     border: "none",
     background: "transparent",
-    /* ≥44×44 touch target (Apple HIG / WCAG) — visual dial stays smaller */
-    minWidth: 44,
-    minHeight: 44,
-    padding: "4px 2px",
+    /* Tall enough for fingers; dial itself stays small */
+    minHeight: 40,
+    width: "100%",
+    padding: "4px 0",
     margin: 0,
     cursor: "pointer",
     display: "flex",
-    flexDirection: "column",
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    gap: 3,
+    justifyContent: "flex-end",
+    gap: 8,
     WebkitTapHighlightColor: "transparent",
     touchAction: "manipulation",
   },
   channelDial: {
-    width: 22,
-    height: 22,
+    width: 12,
+    height: 12,
     borderRadius: "50%",
-    border: "2.5px solid rgba(255,255,255,0.95)",
+    border: "2px solid rgba(255,255,255,0.92)",
     background: "transparent",
     boxSizing: "border-box",
     flexShrink: 0,
   },
   channelDialSelected: {
-    border: "2.5px solid #ef4444",
+    border: "2px solid #ef4444",
     background: "#ef4444",
-    boxShadow: "0 0 10px rgba(239, 68, 68, 0.65)",
+    boxShadow: "0 0 8px rgba(239, 68, 68, 0.55)",
   },
-  channelShort: {
-    fontSize: 9,
-    fontWeight: 800,
-    letterSpacing: "0.02em",
-    color: "rgba(255,255,255,0.82)",
-    lineHeight: 1,
-    maxWidth: 48,
-    textAlign: "center",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    whiteSpace: "nowrap",
+  channelLabel: {
+    fontSize: 11,
+    fontWeight: 600,
+    letterSpacing: "0.01em",
+    color: "rgba(255,255,255,0.88)",
+    lineHeight: 1.15,
+    textAlign: "right",
+    flex: 1,
+    minWidth: 0,
   },
   hudRow: {
     display: "flex",

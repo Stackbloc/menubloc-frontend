@@ -9,13 +9,13 @@ export const LIVE_FEED_CATEGORY_LABELS = {
   event: "Events",
 };
 
-/** Radio stations on the green CRT (vertical dial strip). */
+/** Radio stations on the green CRT (vertical dial strip). Labels are title case — not ALL CAPS. */
 export const LIVE_FEED_CHANNELS = [
-  { id: "all", label: "ALL", short: "ALL" },
-  { id: "ate", label: "What I'm Eating", short: "EAT" },
-  { id: "want", label: "What I Wanna Eat", short: "WANT" },
-  { id: "plan", label: "My Eating Plans", short: "PLAN" },
-  { id: "event", label: "Events", short: "EVENT" },
+  { id: "all", label: "All Content" },
+  { id: "ate", label: "I'm Eating" },
+  { id: "want", label: "What I Wanna Eat" },
+  { id: "plan", label: "Eating Plans" },
+  { id: "event", label: "Events" },
 ];
 
 export function liveFeedCategoryLabel(kind) {
