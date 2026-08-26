@@ -36,36 +36,46 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` @ clean `main` |
-| Git commit | `fa18a61` — centered My Menuply in sticky green band (sticky+TikTok+poster stack) |
-| Vercel deployment | `menubloc-frontend-131htahdl-menuply.vercel.app` |
-| Live bundle | `index-DSw0msiq.js` |
+| Git commit | `52c4af0` — Top Highlights stills-only (no recycled diary videos) |
+| Vercel deployment | `menubloc-frontend-l1u8ibp3k-menuply.vercel.app` |
+| Live bundle | `index-D3_g8ZsE.js` |
 | Aliases | `menuply.com`, `www.menuply.com`, `crm.menuply.com`, `venues.menuply.com` |
 | Tip-gate | **PASS** (apex + www) verified 2026-08-25 |
-| Feature | Centered sticky title over live feed; TikTok fullscreen; video poster fallbacks |
+| Feature | Top Highlights image/follow/like only; diary videos stay on meal board + live feed |
 
 ### Backend (Railway)
 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-backend-main` @ clean `main` |
-| Git on origin | `bbba2655` (docs mirror; diner-media code still live from `d3449e93`) |
+| Git on origin | `0fe0e8ef` (docs; runtime still `bbba2655` / diner-media from `d3449e93`) |
 | Live health SHA | `bbba2655` |
 | Health URL | `https://menubloc-backend-production.up.railway.app/health` |
 | `commit_hash` | `bbba2655ecb2…` |
 | DB | migrations through `0288` |
-| Smoke | tip-gate PASS `131htahdl` / `index-DSw0msiq.js`; railway=59 localhost=9 |
+| Smoke | tip-gate PASS `l1u8ibp3k` / `index-D3_g8ZsE.js`; railway=59 localhost=9 |
 
 ### Restore current tip (if tip-gate fails mid-change)
 
 ```bash
 cd /Users/andrebarber/Desktop/menubloc/menubloc-frontend-main
-npx vercel alias set menubloc-frontend-131htahdl-menuply.vercel.app menuply.com
-npx vercel alias set menubloc-frontend-131htahdl-menuply.vercel.app www.menuply.com
-npx vercel alias set menubloc-frontend-131htahdl-menuply.vercel.app crm.menuply.com
-npx vercel alias set menubloc-frontend-131htahdl-menuply.vercel.app venues.menuply.com
+npx vercel alias set menubloc-frontend-l1u8ibp3k-menuply.vercel.app menuply.com
+npx vercel alias set menubloc-frontend-l1u8ibp3k-menuply.vercel.app www.menuply.com
+npx vercel alias set menubloc-frontend-l1u8ibp3k-menuply.vercel.app crm.menuply.com
+npx vercel alias set menubloc-frontend-l1u8ibp3k-menuply.vercel.app venues.menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 ```
+
+### Prior tip — centered sticky title (rollback target)
+
+| Field | Value |
+|-------|-------|
+| Deployment | `menubloc-frontend-131htahdl-menuply.vercel.app` |
+| Live bundle | `index-DSw0msiq.js` |
+| FE commit | `fa18a61` |
+| BE health | `bbba2655` |
+| Notes | Pre–Top Highlights stills-only |
 
 ### Prior tip — sticky title+feed / TikTok / posters (rollback target)
 
