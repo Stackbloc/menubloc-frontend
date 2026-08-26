@@ -36,9 +36,9 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` @ clean `main` |
-| Git commit | `85d6820` — Live Feed dial labels left + What I Wanna Eat — CRT Live Feed dials + clickable My Events + finger targets — Live Feed category below @name (smaller type; same color) |
-| Vercel deployment | `menubloc-frontend-3oyy9f75b-menuply.vercel.app` |
-| Live bundle | `index-BZDxB_ML.js` |
+| Git commit | `99da88f` — Live Feed dial Wanna Eat label — Live Feed dial labels left + What I Wanna Eat — CRT Live Feed dials + clickable My Events + finger targets — Live Feed category below @name (smaller type; same color) |
+| Vercel deployment | `menubloc-frontend-j4woy9ljw-menuply.vercel.app` |
+| Live bundle | `index-DUgAbVce.js` |
 | Aliases | `menuply.com`, `www.menuply.com`, `crm.menuply.com`, `venues.menuply.com` |
 | Tip-gate | **PASS** (apex + www) verified 2026-08-25 |
 | Feature | Live Feed category caption under username at smaller type |
@@ -59,10 +59,10 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway
 
 ```bash
 cd /Users/andrebarber/Desktop/menubloc/menubloc-frontend-main
-npx vercel alias set menubloc-frontend-3oyy9f75b-menuply.vercel.app menuply.com
-npx vercel alias set menubloc-frontend-3oyy9f75b-menuply.vercel.app www.menuply.com
-npx vercel alias set menubloc-frontend-3oyy9f75b-menuply.vercel.app crm.menuply.com
-npx vercel alias set menubloc-frontend-3oyy9f75b-menuply.vercel.app venues.menuply.com
+npx vercel alias set menubloc-frontend-j4woy9ljw-menuply.vercel.app menuply.com
+npx vercel alias set menubloc-frontend-j4woy9ljw-menuply.vercel.app www.menuply.com
+npx vercel alias set menubloc-frontend-j4woy9ljw-menuply.vercel.app crm.menuply.com
+npx vercel alias set menubloc-frontend-j4woy9ljw-menuply.vercel.app venues.menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 ```
@@ -71,8 +71,8 @@ bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 
 | Field | Value |
 |-------|-------|
-| Deployment | `menubloc-frontend-cn4khcxk3-menuply.vercel.app` |
-| Live bundle | `index-CSVYHrXa.js` |
+| Deployment | `menubloc-frontend-3oyy9f75b-menuply.vercel.app` |
+| Live bundle | `index-BZDxB_ML.js` |
 | FE commit | `5e61477` |
 | BE health | `a93a1fdc` |
 | Notes | Pre–Live Feed category-below-@name layout |
