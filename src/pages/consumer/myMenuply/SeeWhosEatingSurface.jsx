@@ -88,7 +88,9 @@ export default function SeeWhosEatingSurface({
   }, [market.city, market.state, channel]);
 
   const preview = items[0] || null;
-  const previewContentLink = preview ? resolveLiveFeedContentLink(preview) : null;
+  const previewContentLink = preview
+    ? resolveLiveFeedContentLink(preview, { abbreviateRestaurant: true })
+    : null;
   const marketLabel = `${market.city}, ${market.state}`.toUpperCase();
 
   useEffect(() => {

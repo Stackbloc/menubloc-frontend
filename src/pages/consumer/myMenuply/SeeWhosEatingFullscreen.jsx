@@ -210,13 +210,6 @@ export default function SeeWhosEatingFullscreen({
   if (!item || typeof document === "undefined") return null;
 
   const contentLink = resolveLiveFeedContentLink(item);
-  const restaurantHref = item.restaurant_slug
-    ? `/r/${encodeURIComponent(item.restaurant_slug)}`
-    : null;
-  const showRestaurantSecondary =
-    contentLink?.kind === "dish" &&
-    restaurantHref &&
-    String(item.restaurant_name || "").trim();
   const foodLabel = String(item.item_name || item.food_name || "").trim();
   const isVenue = isLiveFeedVenueItem(item);
   const screenName = liveFeedPosterLabel(item);
@@ -294,16 +287,6 @@ export default function SeeWhosEatingFullscreen({
             <span style={styles.foodPlain}>{foodLabel}</span>
           ) : null}
         </div>
-        {showRestaurantSecondary ? (
-          <Link
-            to={restaurantHref}
-            style={styles.secondaryLink}
-            data-testid="see-whos-eating-fullscreen-restaurant-link"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {item.restaurant_name}
-          </Link>
-        ) : null}
         {connectNotice ? <p style={styles.notice}>{connectNotice}</p> : null}
         {connectError ? <p style={styles.error}>{connectError}</p> : null}
         {item.is_recommend ? <p style={styles.recommend}>Recommend</p> : null}

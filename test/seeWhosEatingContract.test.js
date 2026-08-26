@@ -27,6 +27,7 @@ test("See Who's Eating reel: guest watch, CK dish, existing camera, Connect noti
   assert.match(surface, /minHeight:\s*40/);
   assert.match(surface, /channelLabel/);
   assert.match(surface, /resolveLiveFeedContentLink/);
+  assert.match(surface, /abbreviateRestaurant:\s*true/);
   assert.match(surface, /see-whos-eating-content-link/);
   assert.match(surface, /see-whos-eating-expand-hint/);
   assert.match(surface, /Tap to expand/);
@@ -38,10 +39,9 @@ test("See Who's Eating reel: guest watch, CK dish, existing camera, Connect noti
   assert.match(fullscreen, /see_whos_eating/);
   assert.match(fullscreen, /see-whos-eating-screen-name/);
   assert.match(fullscreen, /liveFeedFullCategoryLabel\(item\.kind\)/);
-  assert.match(fullscreen, /resolveLiveFeedContentLink/);
-  assert.match(fullscreen, /see-whos-eating-fullscreen-caption-meta/);
-  assert.match(fullscreen, /see-whos-eating-fullscreen-content-link/);
-  assert.match(fullscreen, /see-whos-eating-fullscreen-restaurant-link/);
+  assert.match(fullscreen, /resolveLiveFeedContentLink\(item\)/);
+  assert.doesNotMatch(fullscreen, /showRestaurantSecondary/);
+  assert.doesNotMatch(fullscreen, /fullscreen-restaurant-link/);
   assert.match(fullscreen, /categoryChip/);
   assert.match(fullscreen, /dinerPeerProfilePath/);
   assert.match(fullscreen, /venueLiveFeedPath/);
@@ -99,6 +99,8 @@ test("See Who's Eating reel: guest watch, CK dish, existing camera, Connect noti
 
   const cats = read("src/lib/liveFeedCategory.js");
   assert.match(cats, /resolveLiveFeedContentLink/);
+  assert.match(cats, /abbreviateLiveFeedRestaurantName/);
+  assert.match(cats, /\$\{place\}\/\$\{dishName\}/);
   assert.match(cats, /liveFeedFullCategoryLabel/);
   assert.match(cats, /What I Wanna Eat/);
   assert.match(cats, /My Eating Plans/);

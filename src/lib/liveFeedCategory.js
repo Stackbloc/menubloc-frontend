@@ -65,22 +65,52 @@ export function isLiveFeedVenueItem(item) {
   );
 }
 
-/** Dish → restaurant → venue; null when nothing linkable. */
-export function resolveLiveFeedContentLink(item) {
+/** Compact CRT: shorten long restaurant names in Restaurant/Dish labels. */
+export function abbreviateLiveFeedRestaurantName(name, max = 16) {
+  const s = String(name || "").trim();
+  if (!s || s.length <= max) return s;
+  const first = s.split(/\s+/)[0] || "";
+  if (first.length >= 4 && first.length <= max) return first;
+  return `${s.slice(0, Math.max(4, max - 1)).trimEnd()}…`;
+}
+
+function liveFeedDishHref(item) {
+  const menuItemId = item.menu_item_id != null ? Number(item.menu_item_id) : null;
+  return (
+    item.menu_item_href ||
+    (Number.isFinite(menuItemId) && menuItemId > 0 ? `/menu-items/${menuItemId}` : null)
+  );
+}
+
+function liveFeedDishName(item) {
+  return String(item.item_name || item.food_name || "").trim();
+}
+
+function liveFeedRestaurantName(item) {
+  return String(item.restaurant_name || "").trim();
+}
+
+/** Dish → restaurant → venue. Dish label: Restaurant/Dish (tap → menu item). */
+export function resolveLiveFeedContentLink(item, { abbreviateRestaurant = false } = {}) {
   if (!item) return null;
 
-  const menuItemId = item.menu_item_id != null ? Number(item.menu_item_id) : null;
-  const dishHref =
-    item.menu_item_href ||
-    (Number.isFinite(menuItemId) && menuItemId > 0 ? `/menu-items/${menuItemId}` : null);
-  const dishName = String(item.item_name || item.food_name || "").trim();
+  const dishHref = liveFeedDishHref(item);
+  const dishName = liveFeedDishName(item);
   if (dishHref && dishName) {
-    return { href: dishHref, label: dishName, kind: "dish" };
+    const restaurantName = liveFeedRestaurantName(item);
+    let label = dishName;
+    if (restaurantName) {
+      const place = abbreviateRestaurant
+        ? abbreviateLiveFeedRestaurantName(restaurantName)
+        : restaurantName;
+      label = `${place}/${dishName}`;
+    }
+    return { href: dishHref, label, kind: "dish" };
   }
 
   const restaurantSlug = String(item.restaurant_slug || "").trim();
   if (restaurantSlug) {
-    const name = String(item.restaurant_name || "").trim() || "Restaurant";
+    const name = liveFeedRestaurantName(item) || "Restaurant";
     return {
       href: `/r/${encodeURIComponent(restaurantSlug)}`,
       label: name,
