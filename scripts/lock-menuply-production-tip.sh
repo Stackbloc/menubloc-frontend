@@ -185,79 +185,68 @@ mirrors = [
     os.path.join(root, "menubloc-backend-main/docs/guardrails/2026-08-14_production-deploy-and-lkg-contract.md"),
 ]
 
-def sub_first(text, pattern, repl, flags=0):
-    return re.sub(pattern, repl, text, count=1, flags=flags)
+def repl_groups(template):
+    def _fn(m):
+        parts = []
+        for item in template:
+            if isinstance(item, int):
+                parts.append(m.group(item) or "")
+            else:
+                parts.append(str(item))
+        return "".join(parts)
+    return _fn
+
+def sub_first(text, pattern, template, flags=0):
+    return re.sub(pattern, repl_groups(template), text, count=1, flags=flags)
 
 def sync_lkg_body(text):
-    # CURRENT FE tip fields (first occurrences = CURRENT section)
-    text = sub_first(text, r"(\| Vercel deployment \| `)[^`]+(`)", rf"\1{deploy}\2")
-    text = sub_first(text, r"(\| Live bundle \| `)[^`]+(`)", rf"\1{bundle}\2")
+    text = sub_first(text, r"(\| Vercel deployment \| `)[^`]+(`)", (1, deploy, 2))
+    text = sub_first(text, r"(\| Live bundle \| `)[^`]+(`)", (1, bundle, 2))
     if fe:
         text = sub_first(
             text,
             r"(\| Git commit \| `)[^`]+(`)",
-            rf"\1{fe}\2 — {note}" if note else rf"\1{fe}\2",
+            (1, fe, 2, f" — {note}") if note else (1, fe, 2),
         )
-    # Restore-current-tip alias block: first four menubloc-frontend-* hosts
     def alias_repl(m):
         return m.group(1) + deploy + m.group(2)
     text = re.sub(
         r"(npx vercel alias set )menubloc-frontend-[a-z0-9]+-menuply\.vercel\.app( menuply\.com)",
-        alias_repl,
-        text,
-        count=1,
+        alias_repl, text, count=1,
     )
     text = re.sub(
         r"(npx vercel alias set )menubloc-frontend-[a-z0-9]+-menuply\.vercel\.app( www\.menuply\.com)",
-        alias_repl,
-        text,
-        count=1,
+        alias_repl, text, count=1,
     )
     text = re.sub(
         r"(npx vercel alias set )menubloc-frontend-[a-z0-9]+-menuply\.vercel\.app( crm\.menuply\.com)",
-        alias_repl,
-        text,
-        count=1,
+        alias_repl, text, count=1,
     )
     text = re.sub(
         r"(npx vercel alias set )menubloc-frontend-[a-z0-9]+-menuply\.vercel\.app( venues\.menuply\.com)",
-        alias_repl,
-        text,
-        count=1,
+        alias_repl, text, count=1,
     )
-    # First Prior tip table = previous locked tip when tip moved
     if prev_d and prev_b and (prev_d != deploy or prev_b != bundle):
         m = re.search(r"### Prior tip —[^\n]*\n\n\| Field \| Value \|\n\|[-| ]+\|\n(?:\|[^\n]+\n)+", text)
         if m:
             block = m.group(0)
-            block2 = re.sub(
-                r"(\| Deployment \| `)[^`]+(`)",
-                rf"\1{prev_d}\2",
-                block,
-                count=1,
-            )
-            block2 = re.sub(
-                r"(\| Live bundle \| `)[^`]+(`)",
-                rf"\1{prev_b}\2",
-                block2,
-                count=1,
-            )
+            block2 = sub_first(block, r"(\| Deployment \| `)[^`]+(`)", (1, prev_d, 2))
+            block2 = sub_first(block2, r"(\| Live bundle \| `)[^`]+(`)", (1, prev_b, 2))
             text = text[: m.start()] + block2 + text[m.end() :]
-    # Heading date
     text = sub_first(
         text,
         r"(## CURRENT LAST KNOWN GOOD \(live production — )[^)]+(\))",
-        rf"\g<1>{date}\2",
+        (1, date, 2),
     )
     return text
 
 def sync_fe_path_contract(text):
-    text = sub_first(text, r"(\| Deployment \| `)[^`]+(`)", rf"\1{deploy}\2")
-    text = sub_first(text, r"(\| Live bundle \| `)[^`]+(`)", rf"\1{bundle}\2")
+    text = sub_first(text, r"(\| Deployment \| `)[^`]+(`)", (1, deploy, 2))
+    text = sub_first(text, r"(\| Live bundle \| `)[^`]+(`)", (1, bundle, 2))
     for host_suf in ("menuply.com", "www.menuply.com", "crm.menuply.com", "venues.menuply.com"):
         text = re.sub(
             rf"(npx vercel alias set )menubloc-frontend-[a-z0-9]+-menuply\.vercel\.app( {re.escape(host_suf)})",
-            rf"\g<1>{deploy}\2",
+            lambda m, d=deploy: m.group(1) + d + m.group(2),
             text,
             count=1,
         )
@@ -266,25 +255,26 @@ def sync_fe_path_contract(text):
 def sync_rule_lkg(text):
     text = sub_first(
         text,
-        r"(\| FE tip \| `)[^`]+(/ `)[^`]+(`)",
-        rf"\1{deploy}\2{bundle}\3",
+        r"(\| FE tip \| `)[^`]+(` / `)[^`]+(`)",
+        (1, deploy, 2, bundle, 3),
     )
     if fe:
         text = sub_first(
             text,
             r"(\| FE commit \| `)[^`]+(`[^\n]*)",
-            rf"\1{fe}\2",
+            (1, fe, 2),
         )
     if be:
         text = sub_first(
             text,
             r"(\| BE commit / health \| `)[^`]+(`)",
-            rf"\1{be}\2",
+            (1, be, 2),
         )
+    heading_tail = f"{date} — {note}" if note else date
     text = sub_first(
         text,
         r"(## CURRENT LKG \()[^)]+(\))",
-        rf"\g<1>{date}" + (f" — {note}" if note else "") + r"\2",
+        (1, heading_tail, 2),
     )
     return text
 

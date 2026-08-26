@@ -26,7 +26,7 @@ Do **not** deploy from memory or from quarantined checkouts.
 
 ---
 
-## CURRENT LAST KNOWN GOOD (live production — 2026-08-25)
+## CURRENT LAST KNOWN GOOD (live production — 2026-08-26)
 
 Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway `/health` is recorded separately; it may lag `origin/main`.  
 **Tip lock procedure:** [2026-08-24_production-tip-lock-atomic-contract.md](./2026-08-24_production-tip-lock-atomic-contract.md)
@@ -36,46 +36,46 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` @ clean `main` |
-| Git commit | `52c4af0` — Top Highlights stills-only (no recycled diary videos) |
-| Vercel deployment | `menubloc-frontend-l1u8ibp3k-menuply.vercel.app` |
-| Live bundle | `index-D3_g8ZsE.js` |
+| Git commit | `7555de4` — desktop MediaRecorder restore; phones keep OS capture |
+| Vercel deployment | `menubloc-frontend-5mf3wcui9-menuply.vercel.app` |
+| Live bundle | `index-Cy0j2zg7.js` |
 | Aliases | `menuply.com`, `www.menuply.com`, `crm.menuply.com`, `venues.menuply.com` |
 | Tip-gate | **PASS** (apex + www) verified 2026-08-25 |
-| Feature | Top Highlights image/follow/like only; diary videos stay on meal board + live feed |
+| Feature | Desktop Mac webcam Record via MediaRecorder; phones keep OS camera capture |
 
 ### Backend (Railway)
 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-backend-main` @ clean `main` |
-| Git on origin | `0fe0e8ef` (docs; runtime still `bbba2655` / diner-media from `d3449e93`) |
-| Live health SHA | `bbba2655` |
+| Git on origin | `8ccf1071` (docs; runtime may lag) |
+| Live health SHA | `8ccf1071` |
 | Health URL | `https://menubloc-backend-production.up.railway.app/health` |
-| `commit_hash` | `bbba2655ecb2…` |
+| `commit_hash` | `8ccf1071…` |
 | DB | migrations through `0288` |
-| Smoke | tip-gate PASS `l1u8ibp3k` / `index-D3_g8ZsE.js`; railway=59 localhost=9 |
+| Smoke | tip-gate PASS `5mf3wcui9` / `index-Cy0j2zg7.js`; railway=59 localhost=9 |
 
 ### Restore current tip (if tip-gate fails mid-change)
 
 ```bash
 cd /Users/andrebarber/Desktop/menubloc/menubloc-frontend-main
-npx vercel alias set menubloc-frontend-l1u8ibp3k-menuply.vercel.app menuply.com
-npx vercel alias set menubloc-frontend-l1u8ibp3k-menuply.vercel.app www.menuply.com
-npx vercel alias set menubloc-frontend-l1u8ibp3k-menuply.vercel.app crm.menuply.com
-npx vercel alias set menubloc-frontend-l1u8ibp3k-menuply.vercel.app venues.menuply.com
+npx vercel alias set menubloc-frontend-5mf3wcui9-menuply.vercel.app menuply.com
+npx vercel alias set menubloc-frontend-5mf3wcui9-menuply.vercel.app www.menuply.com
+npx vercel alias set menubloc-frontend-5mf3wcui9-menuply.vercel.app crm.menuply.com
+npx vercel alias set menubloc-frontend-5mf3wcui9-menuply.vercel.app venues.menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 ```
 
-### Prior tip — centered sticky title (rollback target)
+### Prior tip — Top Highlights stills-only (rollback target)
 
 | Field | Value |
 |-------|-------|
-| Deployment | `menubloc-frontend-131htahdl-menuply.vercel.app` |
-| Live bundle | `index-DSw0msiq.js` |
-| FE commit | `fa18a61` |
+| Deployment | `menubloc-frontend-l1u8ibp3k-menuply.vercel.app` |
+| Live bundle | `index-D3_g8ZsE.js` |
+| FE commit | `52c4af0` |
 | BE health | `bbba2655` |
-| Notes | Pre–Top Highlights stills-only |
+| Notes | Pre–desktop MediaRecorder restore |
 
 ### Prior tip — sticky title+feed / TikTok / posters (rollback target)
 
@@ -358,7 +358,7 @@ bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 
 | Field | Value |
 |-------|-------|
-| Git commit | `990fc76` |
+| Git commit | `7555de4` — desktop MediaRecorder restore; phones keep OS capture |
 | Vercel deployment | `menubloc-frontend-l7pg7dpir-menuply.vercel.app` |
 | Live bundle | `index-C18CZMc2.js` |
 
