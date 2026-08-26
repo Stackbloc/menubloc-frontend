@@ -36,33 +36,33 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` @ clean `main` |
-| Git commit | `9680331` — CSP media-src for diner videos — desktop MediaRecorder restore; phones keep OS capture |
-| Vercel deployment | `menubloc-frontend-7sggmug2z-menuply.vercel.app` |
-| Live bundle | `index-Cy0j2zg7.js` |
+| Git commit | `5e61477` — eating plan video H.264 parity + Live Feed captions/tap-to-profile |
+| Vercel deployment | `menubloc-frontend-59blc4cw6-menuply.vercel.app` |
+| Live bundle | `index-oQ4ty48S.js` |
 | Aliases | `menuply.com`, `www.menuply.com`, `crm.menuply.com`, `venues.menuply.com` |
 | Tip-gate | **PASS** (apex + www) verified 2026-08-25 |
-| Feature | Desktop Mac webcam Record via MediaRecorder; phones keep OS camera capture |
+| Feature | X ate/want/plan share H.264 normalize; Live Feed category captions; tap video → poster profile |
 
 ### Backend (Railway)
 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-backend-main` @ clean `main` |
-| Git on origin | `8ccf1071` (docs; runtime may lag) |
-| Live health SHA | `8ccf1071` |
+| Git on origin | `a93a1fdc` |
+| Live health SHA | `a93a1fdc` |
 | Health URL | `https://menubloc-backend-production.up.railway.app/health` |
-| `commit_hash` | `8ccf1071…` |
-| DB | migrations through `0288` |
-| Smoke | tip-gate PASS `5mf3wcui9` / `index-Cy0j2zg7.js`; railway=59 localhost=9 |
+| `commit_hash` | `a93a1fdc…` |
+| DB | migrations through `0289` |
+| Smoke | tip-gate PASS `59blc4cw6` / `index-oQ4ty48S.js`; railway=59 localhost=9 |
 
 ### Restore current tip (if tip-gate fails mid-change)
 
 ```bash
 cd /Users/andrebarber/Desktop/menubloc/menubloc-frontend-main
-npx vercel alias set menubloc-frontend-7sggmug2z-menuply.vercel.app menuply.com
-npx vercel alias set menubloc-frontend-7sggmug2z-menuply.vercel.app www.menuply.com
-npx vercel alias set menubloc-frontend-7sggmug2z-menuply.vercel.app crm.menuply.com
-npx vercel alias set menubloc-frontend-7sggmug2z-menuply.vercel.app venues.menuply.com
+npx vercel alias set menubloc-frontend-59blc4cw6-menuply.vercel.app menuply.com
+npx vercel alias set menubloc-frontend-59blc4cw6-menuply.vercel.app www.menuply.com
+npx vercel alias set menubloc-frontend-59blc4cw6-menuply.vercel.app crm.menuply.com
+npx vercel alias set menubloc-frontend-59blc4cw6-menuply.vercel.app venues.menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 ```
@@ -71,7 +71,7 @@ bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 
 | Field | Value |
 |-------|-------|
-| Deployment | `menubloc-frontend-5mf3wcui9-menuply.vercel.app` |
+| Deployment | `menubloc-frontend-7sggmug2z-menuply.vercel.app` |
 | Live bundle | `index-Cy0j2zg7.js` |
 | FE commit | `52c4af0` |
 | BE health | `bbba2655` |
