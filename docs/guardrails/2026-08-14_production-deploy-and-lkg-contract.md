@@ -36,36 +36,46 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` @ clean `main` |
-| Git commit | `4810f03` — Restaurant/Dish live feed content labels — Live Feed fullscreen full category + content taps — Live Feed content taps + dial category labels — Live Feed dial Wanna Eat label — Live Feed dial labels left + What I Wanna Eat — CRT Live Feed dials + clickable My Events + finger targets — Live Feed category below @name (smaller type; same color) |
-| Vercel deployment | `menubloc-frontend-j2n2mx1ka-menuply.vercel.app` |
-| Live bundle | `index-67tDDIer.js` |
+| Git commit | `2028140` — video-first parallel `/feed` shell (FEED\|EATING\|EVENTS\|ME); HomeNext remains `/` |
+| Vercel deployment | `menubloc-frontend-6uj8rufl4-menuply.vercel.app` |
+| Live bundle | `index-COekEjGi.js` |
 | Aliases | `menuply.com`, `www.menuply.com`, `crm.menuply.com`, `venues.menuply.com` |
-| Tip-gate | **PASS** (apex + www) verified 2026-08-25 |
-| Feature | Live Feed category caption under username at smaller type |
+| Tip-gate | **PASS** (apex + www) verified 2026-08-26 |
+| Feature | Parallel video-first Feed at `/feed`; drawer “Feed (preview)”; `VITE_FEED_AS_HOME` cutover off |
 
 ### Backend (Railway)
 
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-backend-main` @ clean `main` |
-| Git on origin | `79d96782` |
-| Live health SHA | `79d96782` |
+| Git on origin | `8f533369` |
+| Live health SHA | `8f533369` |
 | Health URL | `https://menubloc-backend-production.up.railway.app/health` |
-| `commit_hash` | `79d96782…` |
-| DB | migrations through `0289` |
-| Smoke | tip-gate PASS `m9mch4bp1` / `index-Ckn_kipT.js`; railway=59 localhost=9 |
+| `commit_hash` | `8f533369…` |
+| DB | migrations through `0291` (want `market_discoverable`) |
+| Smoke | tip-gate PASS `6uj8rufl4` / `index-COekEjGi.js`; guest `/api/consumer/see-whos-eating` ok; railway=59 localhost=9 |
 
 ### Restore current tip (if tip-gate fails mid-change)
 
 ```bash
 cd /Users/andrebarber/Desktop/menubloc/menubloc-frontend-main
-npx vercel alias set menubloc-frontend-j2n2mx1ka-menuply.vercel.app menuply.com
-npx vercel alias set menubloc-frontend-j2n2mx1ka-menuply.vercel.app www.menuply.com
-npx vercel alias set menubloc-frontend-j2n2mx1ka-menuply.vercel.app crm.menuply.com
-npx vercel alias set menubloc-frontend-j2n2mx1ka-menuply.vercel.app venues.menuply.com
+npx vercel alias set menubloc-frontend-6uj8rufl4-menuply.vercel.app menuply.com
+npx vercel alias set menubloc-frontend-6uj8rufl4-menuply.vercel.app www.menuply.com
+npx vercel alias set menubloc-frontend-6uj8rufl4-menuply.vercel.app crm.menuply.com
+npx vercel alias set menubloc-frontend-6uj8rufl4-menuply.vercel.app venues.menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 ```
+
+### Prior tip — Restaurant/Dish live feed content labels (rollback target)
+
+| Field | Value |
+|-------|-------|
+| Deployment | `menubloc-frontend-j2n2mx1ka-menuply.vercel.app` |
+| Live bundle | `index-67tDDIer.js` |
+| FE commit | `4810f03` / tip-lock docs `89a336e` |
+| BE health | `14a98b5c` |
+| Notes | Pre–video-first `/feed` shell; also tagged `menuply-pre-video-first-consumer-2026-08-26` |
 
 ### Prior tip — eating-plan video parity (rollback target)
 
