@@ -1,6 +1,6 @@
 /**
  * Video-first consumer shell primary nav: FEED | EATING | [X] | EVENTS | ME.
- * Center X opens Feed video create (I'm Eating / Wanna Eat only).
+ * Center X opens categorized Feed actions (post video, My Menuply, share & account).
  */
 
 import { NavLink } from "react-router-dom";
@@ -50,7 +50,7 @@ export default function FeedPrimaryNav({ onCreateClick, createActive = false }) 
       <button
         type="button"
         data-testid="feed-nav-create-x"
-        aria-label="Post video to Feed"
+        aria-label="Open Menuply menu"
         aria-haspopup="dialog"
         aria-expanded={createActive}
         onClick={() => onCreateClick?.()}

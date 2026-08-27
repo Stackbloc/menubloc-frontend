@@ -35,9 +35,23 @@ test("Feed shell: FEED|EATING|X|EVENTS|ME routes + video-first home", () => {
   assert.match(shell, /FeedVideoComposeOverlay/);
 
   const createSheet = read("src/components/consumer/feed/FeedVideoCreateSheet.jsx");
-  assert.match(createSheet, /feed-video-create-\$\{row\.id\}/);
-  assert.match(createSheet, /\["ate", "want"\]/);
+  assert.match(createSheet, /FEED_VIDEO_CATEGORY_IDS\s*=\s*\["ate", "want"\]/);
+  assert.match(createSheet, /feed-x-section-\$\{section\.id\}/);
+  assert.match(createSheet, /id: "post-feed"/);
+  assert.match(createSheet, /id: "my-menuply"/);
+  assert.match(createSheet, /id: "share-account"/);
+  assert.match(createSheet, /testId: `feed-video-create-\$\{ch\.id\}`/);
+  assert.match(createSheet, /feed-x-my-menuply/);
+  assert.match(createSheet, /feed-x-share-my-menuply/);
+  assert.match(createSheet, /feed-x-create-account/);
+  assert.match(createSheet, /feed-x-sign-in/);
+  assert.match(createSheet, /feed-x-account/);
   assert.doesNotMatch(createSheet, /feed-video-create-plan/);
+
+  const shellShare = read("src/pages/consumer/feed/FeedShellPage.jsx");
+  assert.match(shellShare, /ShareModal/);
+  assert.match(shellShare, /buildDinerQrShareData/);
+  assert.match(shellShare, /onShareMyMenuply/);
 
   const composeLib = read("src/lib/feedVideoCompose.js");
   assert.match(composeLib, /postFeedAteVideo/);
@@ -99,6 +113,8 @@ test("Feed shell: FEED|EATING|X|EVENTS|ME routes + video-first home", () => {
   assert.match(me, /to: "\/clusters"/);
   assert.match(me, /feed-me-menu-upload/);
   assert.match(me, /to: "\/menu-capture"/);
+  assert.match(me, /feed-me-create-account/);
+  assert.match(me, /feed-me-sign-in/);
   assert.doesNotMatch(me, /to: "\/deals"/);
 
   assert.doesNotMatch(nav, /\/deals/);

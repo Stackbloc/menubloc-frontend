@@ -4,8 +4,9 @@
 
 import { Link } from "react-router-dom";
 import { FEED_PRIMARY_NAV_HEIGHT } from "../../../components/consumer/feed/FeedPrimaryNav.jsx";
+import { useConsumer } from "../../../context/ConsumerContext.jsx";
 
-const LINKS = [
+const CORE_LINKS = [
   {
     to: "/my-menuply",
     title: "My Menuply",
@@ -36,8 +37,17 @@ const LINKS = [
     blurb: "Discover people through food",
     testId: "feed-me-find-diners",
   },
+];
+
+const GUEST_AUTH_LINKS = [
   {
-    to: "/account/login",
+    to: "/account/signup?next=%2Ffeed%2Fme",
+    title: "Create account",
+    blurb: "Free — claim videos, connect with friends, and post plans",
+    testId: "feed-me-create-account",
+  },
+  {
+    to: "/account/login?next=%2Ffeed%2Fme",
     title: "Sign in",
     blurb: "Accounts unlock identity and social features",
     testId: "feed-me-sign-in",
@@ -45,12 +55,15 @@ const LINKS = [
 ];
 
 export default function FeedMePage() {
+  const { isAuthenticated } = useConsumer();
+  const links = isAuthenticated ? CORE_LINKS : [...CORE_LINKS, ...GUEST_AUTH_LINKS];
+
   return (
     <div style={styles.page} data-testid="feed-me">
       <h1 style={styles.h1}>Me</h1>
       <p style={styles.lead}>Your identity and account — Connections and Dining Crew stay nested here.</p>
       <ul style={styles.list}>
-        {LINKS.map((row) => (
+        {links.map((row) => (
           <li key={row.to} style={styles.item}>
             <Link to={row.to} style={styles.link} data-testid={row.testId}>
               <span style={styles.title}>{row.title}</span>
