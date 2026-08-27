@@ -102,4 +102,17 @@ test("Feed shell: FEED|EATING|X|EVENTS|ME routes + video-first home", () => {
   assert.match(drawer, /to="\/feed"/);
 
   assert.doesNotMatch(read("src/pages/consumer/feed/FeedHomePage.jsx"), /FoodInterestsPage/);
+
+  const eatingTab = read("src/pages/consumer/feed/FeedEatingPage.jsx");
+  assert.match(eatingTab, /feed-eating-ate/);
+  assert.match(eatingTab, /feed-eating-want/);
+  assert.match(eatingTab, /feed-eating-plan/);
+  assert.match(eatingTab, /EatingComposeSheet/);
+  assert.match(eatingTab, /EatingPlanDayForm/);
+  assert.match(eatingTab, /\/account\/what-i-ate/);
+  assert.match(eatingTab, /\/account\/im-eating/);
+  assert.match(eatingTab, /feed-eating-hub/);
+  assert.doesNotMatch(eatingTab, /\/my-menuply\?compose=ate/);
+  assert.doesNotMatch(eatingTab, /\/my-menuply\?compose=want/);
+  assert.doesNotMatch(eatingTab, /\/my-menuply\?compose=plan/);
 });
