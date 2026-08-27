@@ -4,6 +4,7 @@
  */
 
 import { restaurantPath } from "./canonicalUrlCore.js";
+import { formatDealMealPeriodLabels, formatMealTimeDealCaption, normalizeDealMealPeriodList } from "./dealMealPeriods.js";
 
 export function formatDealDiscountLabel(deal) {
   if (!deal) return "";
@@ -28,17 +29,28 @@ export function mapDealRowToFeedVideoItem(deal) {
   const slug = deal.restaurant_slug || null;
   const city = deal.city || deal.restaurant_city || null;
   const state = deal.state || deal.restaurant_state || null;
+  const mealPeriods = normalizeDealMealPeriodList(deal.meal_periods);
+  const showMealTimeCaption = deal.show_meal_time_caption === true;
+  const mealTimeCaption =
+    showMealTimeCaption && mealPeriods.length
+      ? formatMealTimeDealCaption(mealPeriods)
+      : null;
+  const title = String(deal.title || "").trim() || "Deal";
   return {
     id: String(dealId),
     deal_id: dealId,
     video_url: videoUrl,
-    title: String(deal.title || "").trim() || "Deal",
+    title,
+    meal_time_caption: mealTimeCaption,
+    headline: mealTimeCaption || title,
     description: String(deal.description || "").trim(),
     restaurant_name: String(deal.restaurant_name || "").trim() || "Restaurant",
     restaurant_id: deal.restaurant_id || null,
     restaurant_slug: slug,
     city,
     state,
+    meal_periods: mealPeriods,
+    meal_period_labels: formatDealMealPeriodLabels(mealPeriods),
     menu_item_name: String(deal.menu_item_name || "").trim(),
     discount_label: formatDealDiscountLabel(deal),
     feed_promoted: deal.feed_promoted === true,

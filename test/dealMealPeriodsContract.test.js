@@ -8,6 +8,10 @@ import {
   defaultDealMealPeriod,
   normalizeDealMealPeriod,
   dealHasMedia,
+  formatDealMealPeriodLabels,
+  dealMealPeriodSummary,
+  formatMealTimeDealCaption,
+  normalizeDealMealPeriodList,
 } from "../src/lib/dealMealPeriods.js";
 
 test("dealMealPeriods: four meal chips only", () => {
@@ -30,4 +34,17 @@ test("dealMealPeriods: has media helper", () => {
   assert.equal(dealHasMedia({}), false);
   assert.equal(dealHasMedia({ photo_url: "https://x" }), true);
   assert.equal(dealHasMedia({ video_url: " https://v " }), true);
+});
+
+test("dealMealPeriods: labels and multi-select summary", () => {
+  assert.deepEqual(formatDealMealPeriodLabels([]), ["All day"]);
+  assert.deepEqual(formatDealMealPeriodLabels(["dinner", "breakfast"]), ["Breakfast", "Dinner"]);
+  assert.equal(dealMealPeriodSummary(["lunch", "late_night"]), "Lunch · Late Night");
+  assert.deepEqual(normalizeDealMealPeriodList(["late_night", "lunch", "lunch"]), [
+    "lunch",
+    "late_night",
+  ]);
+  assert.equal(formatMealTimeDealCaption(["lunch"]), "Lunch Deal");
+  assert.equal(formatMealTimeDealCaption(["breakfast", "lunch"]), "Breakfast & Lunch Deal");
+  assert.equal(formatMealTimeDealCaption([]), null);
 });

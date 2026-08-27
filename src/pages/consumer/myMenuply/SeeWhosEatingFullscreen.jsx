@@ -13,10 +13,11 @@ import {
   stripMediaUrlFragment,
 } from "../../../lib/menuplyLiveFeedControl.js";
 import {
-  dinerPeerProfilePath,
   liveFeedFullCategoryLabel,
-  liveFeedPosterLabel,
-  venueLiveFeedPath,
+  liveFeedPosterDisplayName,
+  liveFeedCreatorProfilePath,
+  isLiveFeedRestaurantCreator,
+  isLiveFeedGuestCreator,
   isLiveFeedVenueItem,
   resolveLiveFeedCaptionLinks,
 } from "../../../lib/liveFeedCategory.js";
@@ -163,15 +164,13 @@ export default function SeeWhosEatingFullscreen({
   function openPosterProfile(e) {
     e?.preventDefault?.();
     e?.stopPropagation?.();
-    if (isLiveFeedVenueItem(item)) {
-      const path = venueLiveFeedPath(item?.venue);
-      if (!path) return;
+    const path = liveFeedCreatorProfilePath(item);
+    if (!path) return;
+    if (isLiveFeedVenueItem(item) || isLiveFeedRestaurantCreator(item)) {
       onClose?.();
       navigate(path);
       return;
     }
-    const path = dinerPeerProfilePath(item?.diner?.id);
-    if (!path) return;
     if (!isAuthenticated) {
       navigate(`/account/login?next=${encodeURIComponent(path)}`);
       return;
@@ -183,8 +182,11 @@ export default function SeeWhosEatingFullscreen({
   async function onScreenNameClick(e) {
     e.preventDefault();
     e.stopPropagation();
-    if (isLiveFeedVenueItem(item)) {
+    if (isLiveFeedVenueItem(item) || isLiveFeedRestaurantCreator(item)) {
       openPosterProfile(e);
+      return;
+    }
+    if (isLiveFeedGuestCreator(item)) {
       return;
     }
     const peerId = item?.diner?.id != null ? Number(item.diner.id) : null;
@@ -271,7 +273,8 @@ export default function SeeWhosEatingFullscreen({
   const captionLinks = resolveLiveFeedCaptionLinks(item);
   const foodLabel = String(item?.item_name || item?.food_name || "").trim();
   const isVenue = isLiveFeedVenueItem(item);
-  const screenName = item ? liveFeedPosterLabel(item) : "";
+  const screenName = item ? liveFeedPosterDisplayName(item) : "";
+  const showRestaurantBadge = item ? isLiveFeedRestaurantCreator(item) : false;
   const atEnd = index >= items.length - 1;
   const atStart = index <= 0;
   const peerId = item?.diner?.id != null ? Number(item.diner.id) : null;
@@ -375,11 +378,16 @@ export default function SeeWhosEatingFullscreen({
           type="button"
           style={styles.screenNameBtn}
           data-testid="see-whos-eating-screen-name"
-          disabled={connectBusy && !isVenue}
+          disabled={(connectBusy && !isVenue && !showRestaurantBadge) || isLiveFeedGuestCreator(item)}
           onClick={onScreenNameClick}
         >
-          {isVenue ? screenName : `@${screenName}`}
+          {screenName}
         </button>
+        {showRestaurantBadge ? (
+          <span style={styles.restaurantBadge} data-testid="see-whos-eating-restaurant-badge">
+            Restaurant
+          </span>
+        ) : null}
         <div style={styles.captionMetaRow} data-testid="see-whos-eating-fullscreen-caption-meta">
           <span style={styles.categoryChip} data-testid="see-whos-eating-fullscreen-category">
             {liveFeedFullCategoryLabel(item.kind)}
@@ -597,6 +605,19 @@ const styles = {
     cursor: "pointer",
     textDecoration: "underline",
     textUnderlineOffset: 3,
+  },
+  restaurantBadge: {
+    display: "inline-block",
+    margin: "0 0 8px",
+    fontSize: 11,
+    fontWeight: 700,
+    letterSpacing: "0.04em",
+    textTransform: "uppercase",
+    color: "#fde68a",
+    background: "rgba(0,0,0,0.45)",
+    border: "1px solid rgba(253, 230, 138, 0.45)",
+    borderRadius: 6,
+    padding: "3px 8px",
   },
   notice: { margin: "0 0 6px", fontSize: 13, color: "#bbf7d0", fontWeight: 600 },
   error: { margin: "0 0 6px", fontSize: 13, color: "#fecaca", fontWeight: 600 },

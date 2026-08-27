@@ -44,6 +44,33 @@ export function dinerPeerProfilePath(dinerId) {
   return `/account/connections/${encodeURIComponent(String(id))}`;
 }
 
+export function liveFeedCreatorProfilePath(item) {
+  if (!item) return null;
+  if (isLiveFeedVenueItem(item)) return venueLiveFeedPath(item.venue);
+  if (item?.creator_type === "restaurant" || item?.poster_type === "restaurant") {
+    const href = String(item?.creator?.href || "").trim();
+    if (href) return href;
+    const slug = String(item?.creator?.slug || "").trim();
+    if (slug) return `/r/${encodeURIComponent(slug)}`;
+    return null;
+  }
+  return dinerPeerProfilePath(item?.diner?.id);
+}
+
+export function isLiveFeedRestaurantCreator(item) {
+  return item?.creator_type === "restaurant" || item?.poster_type === "restaurant";
+}
+
+export function isLiveFeedGuestCreator(item) {
+  return (
+    item?.creator_type === "guest" ||
+    (!isLiveFeedVenueItem(item) &&
+      !isLiveFeedRestaurantCreator(item) &&
+      item?.diner?.id == null &&
+      String(item?.diner?.display_name || "").trim() === "Guest Diner")
+  );
+}
+
 export function venueLiveFeedPath(venue) {
   const href = String(venue?.href || "").trim();
   if (href) return href;
@@ -56,7 +83,19 @@ export function liveFeedPosterLabel(item) {
   if (String(item?.kind || "").toLowerCase() === "event" || item?.poster_type === "venue") {
     return item?.venue?.name || "Venue";
   }
+  if (isLiveFeedRestaurantCreator(item)) {
+    return item?.creator?.name || item?.restaurant_name || "Restaurant";
+  }
+  if (isLiveFeedGuestCreator(item)) {
+    return "Guest Diner";
+  }
   return item?.diner?.display_name || "diner";
+}
+
+export function liveFeedPosterDisplayName(item) {
+  const label = liveFeedPosterLabel(item);
+  if (isLiveFeedVenueItem(item) || isLiveFeedGuestCreator(item)) return label;
+  return `@${label}`;
 }
 
 export function isLiveFeedVenueItem(item) {
@@ -143,12 +182,16 @@ export function resolveLiveFeedCaptionLinks(item, { abbreviateRestaurant = false
       ? { href: dishHref, label: dishName, kind: "dish" }
       : null;
 
-  const restaurantSlug = String(item.restaurant_slug || "").trim();
-  const restaurantName = liveFeedRestaurantName(item);
+  const restaurantSlug = String(
+    item.referenced_restaurant?.slug || item.restaurant_slug || ""
+  ).trim();
+  const restaurantName = String(
+    item.referenced_restaurant?.name || item.restaurant_name || ""
+  ).trim();
   const restaurant =
     restaurantSlug && restaurantName
       ? {
-          href: `/r/${encodeURIComponent(restaurantSlug)}`,
+          href: item.referenced_restaurant?.href || `/r/${encodeURIComponent(restaurantSlug)}`,
           label: abbreviateRestaurant
             ? abbreviateLiveFeedRestaurantName(restaurantName)
             : restaurantName,

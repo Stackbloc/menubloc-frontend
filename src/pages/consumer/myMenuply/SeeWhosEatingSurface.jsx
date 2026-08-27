@@ -20,7 +20,9 @@ import SeeWhosEatingFullscreen from "./SeeWhosEatingFullscreen.jsx";
 import {
   LIVE_FEED_CHANNELS,
   liveFeedCategoryLabel,
+  liveFeedPosterDisplayName,
   liveFeedPosterLabel,
+  isLiveFeedRestaurantCreator,
   isLiveFeedVenueItem,
   resolveLiveFeedContentLink,
 } from "../../../lib/liveFeedCategory.js";
@@ -241,10 +243,13 @@ export default function SeeWhosEatingSurface({
               <div style={styles.caption}>
                 <div style={styles.captionCol}>
                   <span style={styles.screenName}>
-                    {isLiveFeedVenueItem(preview)
-                      ? liveFeedPosterLabel(preview)
-                      : `@${liveFeedPosterLabel(preview)}`}
+                    {liveFeedPosterDisplayName(preview)}
                   </span>
+                  {isLiveFeedRestaurantCreator(preview) ? (
+                    <span style={styles.restaurantBadge} data-testid="see-whos-eating-restaurant-badge">
+                      Restaurant
+                    </span>
+                  ) : null}
                   <div style={styles.captionMetaRow}>
                     <span style={styles.categoryChip} data-testid="see-whos-eating-category">
                       {liveFeedCategoryLabel(preview.kind)}
@@ -643,6 +648,18 @@ const styles = {
     fontWeight: 800,
     fontSize: 13,
     letterSpacing: "0.02em",
+  },
+  restaurantBadge: {
+    display: "inline-block",
+    marginTop: 4,
+    fontSize: 9,
+    fontWeight: 800,
+    letterSpacing: "0.12em",
+    textTransform: "uppercase",
+    color: "#fde68a",
+    border: "1px solid rgba(253, 230, 138, 0.45)",
+    borderRadius: 4,
+    padding: "2px 6px",
   },
   badge: {
     fontSize: 9,

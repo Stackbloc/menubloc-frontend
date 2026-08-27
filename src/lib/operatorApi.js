@@ -398,6 +398,32 @@ export const uploadDealMediaPhoto = (rid, did, file) => {
     body: fd,
   }).then(r => r.json());
 };
+export const uploadDealMediaVideo = (rid, did, file) => {
+  const fd = new FormData();
+  fd.append("photo", file);
+  return fetch(`${API}/operator/restaurants/${rid}/deals/${did}/media/video`, {
+    method: "POST",
+    credentials: "include",
+    body: fd,
+  }).then(async (r) => {
+    const data = await r.json();
+    if (!r.ok) {
+      const err = new Error(data?.error || "Deal video upload failed");
+      err.payload = data;
+      throw err;
+    }
+    return data;
+  });
+};
+
+// ── Restaurant: public Feed video (creator = restaurant profile) ───────────
+export const uploadRestaurantFeedVideoMedia = (rid, file) => {
+  const fd = new FormData();
+  fd.append("photo", file);
+  return reqForm(`/operator/restaurants/${rid}/feed-video/photo`, fd);
+};
+export const postRestaurantFeedVideo = (rid, body) =>
+  post(`/operator/restaurants/${rid}/feed-video`, body);
 
 // ── Restaurant: QR Kit Orders ─────────────────────────────────────────────
 export const getQrKitPreviewUrl = (rid, params = {}) => {

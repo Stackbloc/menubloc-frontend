@@ -19,6 +19,12 @@ import OperatorLayout from "./OperatorLayout.jsx";
 import { useOperator } from "../../context/OperatorContext.jsx";
 import * as api from "../../lib/operatorApi.js";
 import { useOperatorLabels } from "../../i18n/useOperatorLabels.js";
+import {
+  DEAL_MEAL_PERIODS,
+  dealMealPeriodSummary,
+  formatMealTimeDealCaption,
+  normalizeDealMealPeriodList,
+} from "../../lib/dealMealPeriods.js";
 
 // ── Shared styles ─────────────────────────────────────────────────────────
 const INPUT = {
@@ -149,7 +155,7 @@ function ComboItemPicker({ label, selectedId, selectedName, allItems, onSelect, 
   );
 }
 
-function DealForm({ allItems, initial = {}, initialBillboard = null, onSave, onCancel, busy }) {
+function DealForm({ allItems, restaurantId, initial = {}, initialBillboard = null, onSave, onCancel, busy }) {
   const [form, setForm] = useState({
     title: initial.title || "",
     description: initial.description || "",
@@ -167,6 +173,12 @@ function DealForm({ allItems, initial = {}, initialBillboard = null, onSave, onC
     display_on_menu_browser: initial.is_promoted === true,
     video_url: initial.video_url || "",
   });
+  const [mealPeriods, setMealPeriods] = useState(() =>
+    normalizeDealMealPeriodList(initial.meal_periods)
+  );
+  const [showMealTimeCaption, setShowMealTimeCaption] = useState(
+    initial.show_meal_time_caption === true
+  );
   const [itemSearch, setItemSearch] = useState(initial.item_name || "");
 
   // Combo additional items: up to 3 slots, each {id, name}
@@ -193,12 +205,32 @@ function DealForm({ allItems, initial = {}, initialBillboard = null, onSave, onC
   });
 
   const photoInputRef = useRef(null);
+  const videoInputRef = useRef(null);
   const [bbPhotoFile, setBbPhotoFile] = useState(null);
   const [bbPhotoPreview, setBbPhotoPreview] = useState(null);
   const [bbPhotoError, setBbPhotoError] = useState("");
+  const [dealVideoFile, setDealVideoFile] = useState(null);
+  const [dealVideoUploadBusy, setDealVideoUploadBusy] = useState(false);
+  const [dealVideoError, setDealVideoError] = useState("");
 
   const f    = (k) => (e) => setForm(p => ({ ...p, [k]: e.target.value }));
   const bb_f = (k) => (e) => setBb(p => ({ ...p, [k]: e.target.value }));
+
+  function toggleMealPeriod(id) {
+    setMealPeriods((prev) => {
+      const set = new Set(prev);
+      if (set.has(id)) set.delete(id);
+      else set.add(id);
+      const next = DEAL_MEAL_PERIODS.map((p) => p.id).filter((pid) => set.has(pid));
+      if (!next.length) setShowMealTimeCaption(false);
+      return next;
+    });
+  }
+
+  const mealTimeCaptionPreview =
+    showMealTimeCaption && mealPeriods.length
+      ? formatMealTimeDealCaption(mealPeriods)
+      : null;
 
   const filteredItems = allItems.filter(i =>
     !itemSearch.trim() ||
@@ -216,6 +248,8 @@ function DealForm({ allItems, initial = {}, initialBillboard = null, onSave, onC
       menu_item_id: form.menu_item_id || undefined,
       display_on_menu_browser: form.display_on_menu_browser === true,
       video_url: form.video_url.trim() || null,
+      meal_periods: mealPeriods,
+      show_meal_time_caption: showMealTimeCaption && mealPeriods.length > 0,
     };
     // Backend buildDealFields reads `body.value`:
     // percent_off → value is the percent integer (e.g. 20)
@@ -241,6 +275,34 @@ function DealForm({ allItems, initial = {}, initialBillboard = null, onSave, onC
       cta_url:                    bb.cta_url.trim() || null,
       is_primary_search_billboard: bb.is_primary_search_billboard,
     };
+  }
+
+  async function uploadDealVideoNow(file) {
+    if (!restaurantId || !initial.id || !file) return;
+    setDealVideoUploadBusy(true);
+    setDealVideoError("");
+    try {
+      const uploaded = await api.uploadDealMediaVideo(restaurantId, initial.id, file);
+      if (uploaded?.video_url) {
+        setForm((p) => ({ ...p, video_url: uploaded.video_url }));
+        setDealVideoFile(null);
+      } else {
+        throw new Error(uploaded?.error || "Video upload failed");
+      }
+    } catch (err) {
+      setDealVideoError(err.message || "Unable to upload deal video");
+    } finally {
+      setDealVideoUploadBusy(false);
+    }
+  }
+
+  async function onDealVideoSelected(file) {
+    if (!file) return;
+    setDealVideoError("");
+    setDealVideoFile(file);
+    if (initial.id) {
+      await uploadDealVideoNow(file);
+    }
   }
 
   const valid = form.title && form.description && form.expires_at && form.menu_item_id;
@@ -399,17 +461,159 @@ function DealForm({ allItems, initial = {}, initialBillboard = null, onSave, onC
         </div>
 
         <div style={{ gridColumn: "1 / -1" }}>
-          <label style={LABEL}>Deal video (Feed swipe)</label>
-          <div style={{ fontSize: 12, color: "#8a9ab0", marginBottom: 8 }}>
-            Durable video URL for this deal. Appears in Feed → Deals swipe when set.
-            Restaurant video upload will wire here — paste URL for now.
+          <label style={LABEL}>Meal time (offer applies)</label>
+          <div style={{ fontSize: 12, color: "#8a9ab0", marginBottom: 8, lineHeight: 1.5 }}>
+            Select when this offer applies. Choose one or more — e.g. breakfast and lunch for a
+            brunch deal. Leave all unchecked for all-day.
+          </div>
+          <div
+            style={{ display: "flex", flexWrap: "wrap", gap: 8 }}
+            data-testid="deal-form-meal-periods"
+            role="group"
+            aria-label="Meal times for this offer"
+          >
+            {DEAL_MEAL_PERIODS.map((period) => {
+              const selected = mealPeriods.includes(period.id);
+              return (
+                <button
+                  key={period.id}
+                  type="button"
+                  aria-pressed={selected}
+                  data-testid={`deal-meal-period-${period.id}`}
+                  onClick={() => toggleMealPeriod(period.id)}
+                  style={{
+                    padding: "6px 12px",
+                    borderRadius: 999,
+                    border: "1.5px solid",
+                    borderColor: selected ? "#1F4E3D" : "#e4e9f0",
+                    background: selected ? "#ecfdf5" : "#fff",
+                    color: selected ? "#1F4E3D" : "#5b6675",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    fontFamily: "inherit",
+                  }}
+                >
+                  {period.label}
+                </button>
+              );
+            })}
+          </div>
+          <div style={{ fontSize: 12, color: "#1F4E3D", fontWeight: 600, marginTop: 8 }}>
+            {dealMealPeriodSummary(mealPeriods)}
+          </div>
+          <label
+            style={{
+              display: "flex",
+              alignItems: "flex-start",
+              gap: 10,
+              marginTop: 12,
+              cursor: mealPeriods.length ? "pointer" : "not-allowed",
+              opacity: mealPeriods.length ? 1 : 0.55,
+            }}
+            data-testid="deal-form-meal-time-caption"
+          >
+            <input
+              type="checkbox"
+              checked={showMealTimeCaption && mealPeriods.length > 0}
+              disabled={!mealPeriods.length}
+              onChange={(e) => setShowMealTimeCaption(e.target.checked)}
+              style={{ marginTop: 2 }}
+            />
+            <span style={{ fontSize: 13, color: "#334155", lineHeight: 1.45 }}>
+              Show meal time caption on Feed video
+              <span style={{ display: "block", fontSize: 12, color: "#8a9ab0", fontWeight: 400 }}>
+                Uses your meal selections — e.g. &quot;Lunch Deal&quot;. Select at least one meal
+                time above.
+              </span>
+              {mealTimeCaptionPreview ? (
+                <span
+                  style={{
+                    display: "block",
+                    marginTop: 6,
+                    fontSize: 12,
+                    fontWeight: 700,
+                    color: "#1F4E3D",
+                  }}
+                  data-testid="deal-form-meal-time-caption-preview"
+                >
+                  Preview: {mealTimeCaptionPreview}
+                </span>
+              ) : null}
+            </span>
+          </label>
+        </div>
+
+        <div style={{ gridColumn: "1 / -1" }}>
+          <label style={LABEL}>Deal video (Feed → Deals)</label>
+          <div style={{ fontSize: 12, color: "#8a9ab0", marginBottom: 8, lineHeight: 1.5 }}>
+            Upload a short video for this offer. When the deal is <strong>active</strong> and has a
+            video, it appears in Feed → Deals swipe. MP4 (H.264+AAC) preferred.
           </div>
           <input
-            style={{ ...INPUT, width: "100%" }}
-            value={form.video_url}
-            onChange={f("video_url")}
-            placeholder="https://… (mp4, H.264+AAC preferred)"
+            ref={videoInputRef}
+            type="file"
+            accept="video/mp4,video/webm,video/*"
+            style={{ display: "none" }}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) onDealVideoSelected(file);
+              e.target.value = "";
+            }}
           />
+          {form.video_url ? (
+            <div style={{ marginBottom: 10 }}>
+              <video
+                src={form.video_url}
+                controls
+                playsInline
+                style={{
+                  width: "100%",
+                  maxWidth: 320,
+                  maxHeight: 180,
+                  borderRadius: 8,
+                  background: "#0f1720",
+                }}
+                data-testid="deal-form-video-preview"
+              />
+            </div>
+          ) : null}
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
+            <button
+              type="button"
+              style={BTN("ghost", { fontSize: 12, padding: "6px 12px" })}
+              disabled={busy || dealVideoUploadBusy}
+              onClick={() => videoInputRef.current?.click()}
+            >
+              {dealVideoUploadBusy
+                ? "Uploading…"
+                : form.video_url
+                  ? "Replace video"
+                  : "Upload deal video"}
+            </button>
+            {dealVideoFile && !initial.id ? (
+              <span style={{ fontSize: 12, color: "#1F4E3D", fontWeight: 600 }}>
+                ✓ {dealVideoFile.name} — uploads when you save
+              </span>
+            ) : null}
+          </div>
+          {dealVideoError ? (
+            <p role="alert" style={{ fontSize: 12, color: "#b91c1c", marginTop: 8 }}>
+              {dealVideoError}
+            </p>
+          ) : null}
+          <details style={{ marginTop: 10 }}>
+            <summary style={{ fontSize: 12, color: "#5b6675", cursor: "pointer" }}>
+              Or paste durable video URL
+            </summary>
+            <input
+              style={{ ...INPUT, width: "100%", marginTop: 8 }}
+              value={form.video_url}
+              onChange={f("video_url")}
+              placeholder="https://… (mp4, H.264+AAC preferred)"
+              disabled={Boolean(dealVideoFile) || dealVideoUploadBusy}
+            />
+          </details>
         </div>
       </div>
 
@@ -603,7 +807,7 @@ function DealForm({ allItems, initial = {}, initialBillboard = null, onSave, onC
         <button
           style={{ ...BTN("primary"), opacity: (busy || !valid) ? 0.6 : 1 }}
           disabled={busy || !valid}
-          onClick={() => onSave(buildPayload(), buildBillboardPayload(), bbPhotoFile)}
+          onClick={() => onSave(buildPayload(), buildBillboardPayload(), bbPhotoFile, dealVideoFile)}
           type="button"
         >
           {busy ? "Saving…" : initial.id ? "Save changes" : "Create deal"}
@@ -662,6 +866,36 @@ function DealRow({ deal, onEdit, onPublish, onPause, onDelete, busy, labels }) {
               Menu Browser Ad
             </span>
           )}
+          {deal.video_url ? (
+            <span
+              style={{
+                background: "#dbeafe",
+                color: "#1e40af",
+                borderRadius: 999,
+                padding: "2px 8px",
+                fontSize: 10,
+                fontWeight: 700,
+                letterSpacing: 0.2,
+              }}
+              data-testid="deal-row-feed-video-badge"
+            >
+              Feed video
+            </span>
+          ) : null}
+          <span
+            style={{
+              background: "#f1f5f9",
+              color: "#475569",
+              borderRadius: 999,
+              padding: "2px 8px",
+              fontSize: 10,
+              fontWeight: 700,
+              letterSpacing: 0.2,
+            }}
+            data-testid="deal-row-meal-periods"
+          >
+            {dealMealPeriodSummary(deal.meal_periods)}
+          </span>
         </div>
       </div>
 
@@ -749,11 +983,19 @@ export default function OperatorDealsEditor() {
     }).catch(() => {});
   }, [rid]);
 
-  async function handleCreate(payload, billboardPayload, pendingPhotoFile) {
+  async function handleCreate(payload, billboardPayload, pendingPhotoFile, pendingVideoFile) {
     setBusy(true);
     try {
       const result = await api.createDeal(rid, payload);
-      if (billboardPayload?.enabled && result.deal?.id) {
+      const dealId = result.deal?.id;
+      if (pendingVideoFile && dealId) {
+        try {
+          await api.uploadDealMediaVideo(rid, dealId, pendingVideoFile);
+        } catch (videoErr) {
+          setError(`Deal created but Feed video could not be uploaded: ${videoErr.message}`);
+        }
+      }
+      if (billboardPayload?.enabled && dealId) {
         let finalBbPayload = { ...billboardPayload };
         if (pendingPhotoFile) {
           try {
@@ -793,10 +1035,18 @@ export default function OperatorDealsEditor() {
     }
   }
 
-  async function handleEditSave(payload, billboardPayload, pendingPhotoFile) {
+  async function handleEditSave(payload, billboardPayload, pendingPhotoFile, pendingVideoFile) {
     setBusy(true);
     try {
       await api.updateDeal(rid, editingDeal.id, payload);
+
+      if (pendingVideoFile) {
+        try {
+          await api.uploadDealMediaVideo(rid, editingDeal.id, pendingVideoFile);
+        } catch (videoErr) {
+          setError(`Deal saved but Feed video could not be uploaded: ${videoErr.message}`);
+        }
+      }
 
       if (billboardPayload?.enabled) {
         let finalBbPayload = { ...billboardPayload };
@@ -933,6 +1183,7 @@ export default function OperatorDealsEditor() {
       {showForm && (
         <DealForm
           allItems={allItems}
+          restaurantId={rid}
           onSave={handleCreate}
           onCancel={() => setShowForm(false)}
           busy={busy}
@@ -943,6 +1194,7 @@ export default function OperatorDealsEditor() {
       {editingDeal && (
         <DealForm
           allItems={allItems}
+          restaurantId={rid}
           initial={editingDeal}
           initialBillboard={editingBillboard}
           onSave={handleEditSave}

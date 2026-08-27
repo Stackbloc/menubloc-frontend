@@ -35,6 +35,43 @@ export function dealMealPeriodLabel(id) {
   return DEAL_MEAL_PERIODS.find((p) => p.id === id)?.label || String(id || "");
 }
 
+/** Unique valid ids in canonical order; empty input → []. */
+export function normalizeDealMealPeriodList(raw) {
+  if (!Array.isArray(raw)) return [];
+  const out = [];
+  const seen = new Set();
+  for (const item of raw) {
+    const id = normalizeDealMealPeriod(item);
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+    out.push(id);
+  }
+  return ORDER.filter((id) => seen.has(id));
+}
+
+/** Human labels for overlay / list; empty selection on deal = all-day. */
+export function formatDealMealPeriodLabels(mealPeriods) {
+  const ids = normalizeDealMealPeriodList(mealPeriods);
+  if (!ids.length) return ["All day"];
+  return ids.map(dealMealPeriodLabel);
+}
+
+export function dealMealPeriodSummary(mealPeriods) {
+  return formatDealMealPeriodLabels(mealPeriods).join(" · ");
+}
+
+/** Feed swipe headline when operator enables meal-time caption, e.g. "Lunch Deal". */
+export function formatMealTimeDealCaption(mealPeriods) {
+  const ids = normalizeDealMealPeriodList(mealPeriods);
+  if (!ids.length) return null;
+  const labels = ids.map(dealMealPeriodLabel);
+  if (labels.length === 1) return `${labels[0]} Deal`;
+  if (labels.length === 2) return `${labels[0]} & ${labels[1]} Deal`;
+  const last = labels[labels.length - 1];
+  const rest = labels.slice(0, -1);
+  return `${rest.join(", ")} & ${last} Deal`;
+}
+
 export function dealHasMedia(deal) {
   return Boolean(
     String(deal?.video_url || "").trim() ||

@@ -97,8 +97,8 @@ test("Feed shell: FEED|EATING|X|EVENTS|ME routes + video-first home", () => {
   assert.match(feedDeals, /DealVideoSwipe/);
   assert.match(feedDeals, /feed-deals-search/);
   assert.match(feedDeals, /\/deals\?city=/);
-  assert.doesNotMatch(feedDeals, /DEAL_MEAL_PERIODS/);
-  assert.doesNotMatch(feedDeals, /meal_period/);
+  assert.match(feedDeals, /feed-deals-meal-filters/);
+  assert.match(feedDeals, /meal_period/);
   assert.doesNotMatch(feedDeals, /\/waiter/);
 
   const me = read("src/pages/consumer/feed/FeedMePage.jsx");

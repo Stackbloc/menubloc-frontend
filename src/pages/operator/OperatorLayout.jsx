@@ -387,6 +387,11 @@ export default function OperatorLayout({ title, children }) {
             icon: "⊞",
           },
           {
+            to: "/operator/feed-video",
+            label: t("operator.nav.feedVideo", "Feed Video"),
+            icon: "▶",
+          },
+          {
             to: "/operator/deals",
             label: t("operator.nav.deals", "Deals"),
             icon: "⊹",

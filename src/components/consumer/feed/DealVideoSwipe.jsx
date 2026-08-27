@@ -170,12 +170,28 @@ export default function DealVideoSwipe({
           <span style={styles.restaurantPlain}>{item.restaurant_name}</span>
         )}
         <Link to={item.deal_href} style={styles.titleLink} data-testid="feed-deals-title">
-          {item.title}
+          {item.headline || item.title}
         </Link>
+        {item.meal_time_caption &&
+        item.title &&
+        item.title !== item.meal_time_caption ? (
+          <span style={styles.dealTitleSub} data-testid="feed-deals-deal-title">
+            {item.title}
+          </span>
+        ) : null}
         {item.discount_label ? (
           <span style={styles.discount} data-testid="feed-deals-discount">
             {item.discount_label}
           </span>
+        ) : null}
+        {Array.isArray(item.meal_period_labels) && item.meal_period_labels.length ? (
+          <div style={styles.mealRow} data-testid="feed-deals-meal-labels">
+            {item.meal_period_labels.map((label) => (
+              <span key={label} style={styles.mealBadge}>
+                {label}
+              </span>
+            ))}
+          </div>
         ) : null}
         {item.menu_item_name ? (
           <span style={styles.menuItem}>{item.menu_item_name}</span>
@@ -265,12 +281,39 @@ const styles = {
     pointerEvents: "auto",
     marginBottom: 6,
   },
+  dealTitleSub: {
+    display: "block",
+    fontSize: 14,
+    fontWeight: 600,
+    color: "rgba(255,255,255,0.88)",
+    marginBottom: 6,
+    lineHeight: 1.3,
+  },
   discount: {
     display: "inline-block",
     fontSize: 14,
     fontWeight: 700,
     color: "#fff",
     marginBottom: 4,
+  },
+  mealRow: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: 6,
+    marginBottom: 6,
+    pointerEvents: "none",
+  },
+  mealBadge: {
+    display: "inline-block",
+    padding: "3px 8px",
+    borderRadius: 999,
+    background: "rgba(255,255,255,0.14)",
+    border: "1px solid rgba(255,255,255,0.28)",
+    color: "#fff",
+    fontSize: 10,
+    fontWeight: 700,
+    letterSpacing: 0.3,
+    textTransform: "uppercase",
   },
   menuItem: {
     display: "block",
