@@ -49,6 +49,8 @@ test("Feed shell: FEED|EATING|X|EVENTS|ME routes + video-first home", () => {
   assert.match(eatingCompose, /feedMode/);
   assert.match(eatingCompose, /allowPhoto=\{!feedMode\}/);
   assert.match(eatingCompose, /data-feed-mode/);
+  assert.match(eatingCompose, /Restaurant & menu item \(optional\)/);
+  assert.match(eatingCompose, /allowDishSearch/);
 
   const picker = read("src/components/social/MenuplyMediaPicker.jsx");
   assert.match(picker, /allowPhoto \|\| allowVideo/);

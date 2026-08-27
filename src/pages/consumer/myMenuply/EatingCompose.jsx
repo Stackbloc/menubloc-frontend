@@ -440,7 +440,7 @@ export default function EatingCompose({
         {category === "ate" ? (
           <>
             <p style={styles.stepLabel}>
-              {feedMode ? "Tag (optional)" : "What is this?"}
+              {feedMode ? "Restaurant & menu item (optional)" : "What is this?"}
             </p>
 
             <EatingPlaceFields
@@ -454,13 +454,8 @@ export default function EatingCompose({
               disabled={busy}
               locationCity={locationCity}
               locationState={locationState}
+              allowDishSearch
             />
-
-            {dish?.item_name ? (
-              <p style={styles.dishSelected} data-testid="eating-compose-dish-name">
-                Menu item: <strong>{dish.item_name}</strong>
-              </p>
-            ) : null}
 
             {isVideoFile(file) ? (
               <label style={styles.recommendRow} data-testid="eating-compose-recommend">
@@ -538,7 +533,7 @@ export default function EatingCompose({
         {category === "want" ? (
           feedMode ? (
             <>
-              <p style={styles.stepLabel}>Tag (optional)</p>
+              <p style={styles.stepLabel}>Restaurant & menu item (optional)</p>
               <EatingPlaceFields
                 homemade={homemade}
                 onHomemadeChange={setHomemade}
@@ -550,6 +545,7 @@ export default function EatingCompose({
                 disabled={busy}
                 locationCity={locationCity}
                 locationState={locationState}
+                allowDishSearch
               />
               <input
                 type="text"
@@ -644,9 +640,7 @@ export default function EatingCompose({
                 onDishChange={setDish}
                 followed={followed}
                 disabled={busy}
-                allowDishSearch={
-                  wantKind === "menu_item"
-                }
+                allowDishSearch
                 allowHomemade={false}
                 locationCity={locationCity}
                 locationState={locationState}

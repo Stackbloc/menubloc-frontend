@@ -27,7 +27,7 @@ export default function EatingPlaceFields({
   allowHomemade = true,
   locationCity = null,
   locationState = null,
-  dishSearchPlaceholder = "Filter this restaurant's menu",
+  dishSearchPlaceholder = "Menu item (optional)",
 }) {
   const [query, setQuery] = useState("");
   const [dishQuery, setDishQuery] = useState("");
@@ -177,126 +177,152 @@ export default function EatingPlaceFields({
         <p style={s.muted} data-testid="eating-place-homemade-note">
           Homemade — no restaurant or menu item.
         </p>
-      ) : restaurant ? (
+      ) : (
         <>
-          <div style={styles.selected} data-testid="eating-place-restaurant-selected">
-            <div>
-              <div style={styles.selectedName}>{restaurantLabel(restaurant) || "Restaurant"}</div>
-              {restaurant.city ? (
-                <div style={s.muted}>
-                  {[restaurant.city, restaurant.state].filter(Boolean).join(", ")}
-                </div>
-              ) : null}
-            </div>
-            <button
-              type="button"
-              style={styles.change}
-              disabled={disabled}
-              onClick={() => {
-                onRestaurantChange?.(null);
-                onDishChange?.(null);
-              }}
-            >
-              Change
-            </button>
-          </div>
-          {allowDishSearch && dish ? (
-            <div style={styles.selected} data-testid="eating-place-dish-selected">
-              <div style={styles.dishRow}>
-                {dishPhotoUrl(dish) ? (
-                  <img src={dishPhotoUrl(dish)} alt="" style={styles.dishThumb} />
+          <p style={styles.fieldLabel} id="eating-place-restaurant-label">
+            Restaurant
+          </p>
+          {restaurant ? (
+            <div style={styles.selected} data-testid="eating-place-restaurant-selected">
+              <div>
+                <div style={styles.selectedName}>{restaurantLabel(restaurant) || "Restaurant"}</div>
+                {restaurant.city ? (
+                  <div style={s.muted}>
+                    {[restaurant.city, restaurant.state].filter(Boolean).join(", ")}
+                  </div>
                 ) : null}
-                <div>
-                  <div style={styles.kind}>Menu item</div>
-                  <div style={{ fontWeight: 800 }}>{dishLabel(dish)}</div>
-                  {dishPhotoUrl(dish) ? (
-                    <div style={{ ...s.muted, fontSize: 12 }}>Restaurant photo — take your own anytime</div>
-                  ) : null}
-                </div>
               </div>
-              <button type="button" style={styles.change} disabled={disabled} onClick={() => onDishChange?.(null)}>
+              <button
+                type="button"
+                style={styles.change}
+                disabled={disabled}
+                onClick={() => {
+                  onRestaurantChange?.(null);
+                  onDishChange?.(null);
+                }}
+              >
                 Change
               </button>
             </div>
-          ) : allowDishSearch ? (
+          ) : (
             <>
               <input
                 type="search"
-                value={dishQuery}
-                onChange={(e) => setDishQuery(e.target.value.slice(0, 120))}
-                placeholder={dishSearchPlaceholder}
+                value={query}
+                onChange={(e) => {
+                  onHomemadeChange?.(false);
+                  setQuery(e.target.value.slice(0, 120));
+                }}
+                placeholder="Search restaurant"
                 disabled={disabled}
                 autoComplete="off"
                 style={styles.place}
-                aria-label="Select menu item"
-                data-testid="eating-place-dish-search"
+                aria-labelledby="eating-place-restaurant-label"
+                data-testid="eating-place-restaurant-search"
               />
-              {loadingDishes ? <p style={s.muted}>Loading menu…</p> : null}
-              {dishHits.length > 0 ? (
-                <ul style={styles.hits} data-testid="eating-place-dish-hits">
-                  {dishHits.map((hit) => (
-                    <li key={hit.menu_item_id}>
-                      <button type="button" style={styles.hitBtn} onClick={() => pickDish(hit)}>
-                        <span style={styles.dishRow}>
-                          {dishPhotoUrl(hit) ? (
-                            <img src={dishPhotoUrl(hit)} alt="" style={styles.dishThumb} />
-                          ) : null}
-                          <span>{dishLabel(hit)}</span>
-                        </span>
+              {searching ? <p style={s.muted}>Searching…</p> : null}
+              {hits.length > 0 ? (
+                <ul style={styles.hits} data-testid="eating-place-restaurant-hits">
+                  {hits.map((hit) => (
+                    <li key={hit.restaurant_id}>
+                      <button type="button" style={styles.hitBtn} onClick={() => pickRestaurant(hit)}>
+                        {restaurantLabel(hit)}
+                        {hit.city ? ` · ${hit.city}` : ""}
+                        {hit.state && !String(hit.city || "").includes(hit.state) ? `, ${hit.state}` : ""}
                       </button>
                     </li>
                   ))}
                 </ul>
-              ) : !loadingDishes ? (
-                <p style={s.muted}>No menu items yet for this location — you can still post the restaurant.</p>
+              ) : null}
+              {followedPicks.length > 0 ? (
+                <div style={styles.followed}>
+                  {followedPicks.map((row) => (
+                    <button
+                      key={row.restaurant_id}
+                      type="button"
+                      style={s.chipBtn}
+                      disabled={disabled}
+                      onClick={() => pickRestaurant(row)}
+                    >
+                      {row.restaurant_name}
+                    </button>
+                  ))}
+                </div>
               ) : null}
             </>
-          ) : null}
-        </>
-      ) : (
-        <>
-          <input
-            type="search"
-            value={query}
-            onChange={(e) => {
-              onHomemadeChange?.(false);
-              setQuery(e.target.value.slice(0, 120));
-            }}
-            placeholder="Restaurant (optional)"
-            disabled={disabled}
-            autoComplete="off"
-            style={styles.place}
-            aria-label="Link restaurant"
-            data-testid="eating-place-restaurant-search"
-          />
-          {searching ? <p style={s.muted}>Searching…</p> : null}
-          {hits.length > 0 ? (
-            <ul style={styles.hits} data-testid="eating-place-restaurant-hits">
-              {hits.map((hit) => (
-                <li key={hit.restaurant_id}>
-                  <button type="button" style={styles.hitBtn} onClick={() => pickRestaurant(hit)}>
-                    {restaurantLabel(hit)}
-                    {hit.city ? ` · ${hit.city}` : ""}
-                    {hit.state && !String(hit.city || "").includes(hit.state) ? `, ${hit.state}` : ""}
+          )}
+
+          {allowDishSearch ? (
+            <>
+              <p style={styles.fieldLabel} id="eating-place-menu-item-label">
+                Menu item
+              </p>
+              {dish ? (
+                <div style={styles.selected} data-testid="eating-place-dish-selected">
+                  <div style={styles.dishRow}>
+                    {dishPhotoUrl(dish) ? (
+                      <img src={dishPhotoUrl(dish)} alt="" style={styles.dishThumb} />
+                    ) : null}
+                    <div>
+                      <div style={styles.kind}>Menu item</div>
+                      <div style={{ fontWeight: 800 }}>{dishLabel(dish)}</div>
+                      {dishPhotoUrl(dish) ? (
+                        <div style={{ ...s.muted, fontSize: 12 }}>
+                          Restaurant photo — take your own anytime
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    style={styles.change}
+                    disabled={disabled}
+                    onClick={() => onDishChange?.(null)}
+                  >
+                    Change
                   </button>
-                </li>
-              ))}
-            </ul>
-          ) : null}
-          {followedPicks.length > 0 ? (
-            <div style={styles.followed}>
-              {followedPicks.map((row) => (
-                <button
-                  key={row.restaurant_id}
-                  type="button"
-                  style={s.chipBtn}
-                  disabled={disabled}
-                  onClick={() => pickRestaurant(row)}
-                >
-                  {row.restaurant_name}
-                </button>
-              ))}
-            </div>
+                </div>
+              ) : restaurant ? (
+                <>
+                  <input
+                    type="search"
+                    value={dishQuery}
+                    onChange={(e) => setDishQuery(e.target.value.slice(0, 120))}
+                    placeholder={dishSearchPlaceholder}
+                    disabled={disabled}
+                    autoComplete="off"
+                    style={styles.place}
+                    aria-labelledby="eating-place-menu-item-label"
+                    data-testid="eating-place-dish-search"
+                  />
+                  {loadingDishes ? <p style={s.muted}>Loading menu…</p> : null}
+                  {dishHits.length > 0 ? (
+                    <ul style={styles.hits} data-testid="eating-place-dish-hits">
+                      {dishHits.map((hit) => (
+                        <li key={hit.menu_item_id}>
+                          <button type="button" style={styles.hitBtn} onClick={() => pickDish(hit)}>
+                            <span style={styles.dishRow}>
+                              {dishPhotoUrl(hit) ? (
+                                <img src={dishPhotoUrl(hit)} alt="" style={styles.dishThumb} />
+                              ) : null}
+                              <span>{dishLabel(hit)}</span>
+                            </span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : !loadingDishes ? (
+                    <p style={s.muted} data-testid="eating-place-dish-empty">
+                      No menu items yet for this location — you can still post the restaurant.
+                    </p>
+                  ) : null}
+                </>
+              ) : (
+                <p style={s.muted} data-testid="eating-place-dish-needs-restaurant">
+                  Pick a restaurant first, then choose a menu item.
+                </p>
+              )}
+            </>
           ) : null}
         </>
       )}
@@ -306,6 +332,12 @@ export default function EatingPlaceFields({
 
 const styles = {
   wrap: { display: "flex", flexDirection: "column", gap: 8 },
+  fieldLabel: {
+    margin: "4px 0 0",
+    fontSize: 13,
+    fontWeight: 800,
+    color: "#0f172a",
+  },
   originRow: { display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" },
   origin: {
     appearance: "none",
@@ -317,99 +349,96 @@ const styles = {
     fontSize: 13,
     fontWeight: 700,
     cursor: "pointer",
-    fontFamily: "inherit",
   },
   originOn: {
     appearance: "none",
-    border: "1px solid #86efac",
-    background: "#ecfdf5",
-    color: "#166534",
+    border: "1px solid #0f172a",
+    background: "#0f172a",
+    color: "#fff",
     borderRadius: 999,
     padding: "8px 14px",
     fontSize: 13,
     fontWeight: 700,
     cursor: "pointer",
-    fontFamily: "inherit",
   },
   clear: {
     appearance: "none",
     border: "none",
     background: "transparent",
     color: "#64748b",
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: 700,
     cursor: "pointer",
-    fontFamily: "inherit",
+    textDecoration: "underline",
+    padding: "8px 4px",
   },
   place: {
     width: "100%",
-    minHeight: 44,
-    border: "1.5px solid #d1d5db",
+    boxSizing: "border-box",
+    border: "1px solid #e5e7eb",
     borderRadius: 12,
-    padding: "10px 12px",
+    padding: "12px 14px",
     fontSize: 15,
     fontFamily: "inherit",
-    color: "#0B0F0C",
-    background: "#fff",
-    boxSizing: "border-box",
   },
   selected: {
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
-    gap: 8,
+    gap: 12,
     padding: "10px 12px",
-    border: "1.5px solid #d1d5db",
-    borderRadius: 10,
+    borderRadius: 12,
     background: "#f8fafc",
+    border: "1px solid #e2e8f0",
   },
-  selectedName: { fontWeight: 700, fontSize: 15, lineHeight: 1.25, color: "#0f172a" },
-  kind: {
-    fontSize: 11,
-    textTransform: "uppercase",
-    letterSpacing: "0.04em",
-    color: "#64748b",
-  },
+  selectedName: { fontWeight: 800, fontSize: 15, color: "#0f172a" },
   change: {
     appearance: "none",
     border: "none",
     background: "transparent",
-    color: "#15803d",
+    color: "#0ea5e9",
     fontWeight: 700,
     fontSize: 13,
     cursor: "pointer",
-    fontFamily: "inherit",
+    flexShrink: 0,
+  },
+  kind: {
+    fontSize: 11,
+    fontWeight: 700,
+    color: "#64748b",
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
   },
   hits: {
     listStyle: "none",
     margin: 0,
     padding: 0,
-    border: "1px solid #e4e7ec",
+    border: "1px solid #e5e7eb",
     borderRadius: 12,
     overflow: "hidden",
-    background: "#fff",
-    maxHeight: 240,
+    maxHeight: 220,
     overflowY: "auto",
   },
   hitBtn: {
     appearance: "none",
     width: "100%",
     textAlign: "left",
-    padding: "10px 12px",
     border: "none",
-    borderBottom: "1px solid #f2f4f7",
+    borderBottom: "1px solid #f1f5f9",
     background: "#fff",
-    font: "inherit",
+    padding: "12px 14px",
+    fontSize: 14,
     cursor: "pointer",
+    fontFamily: "inherit",
   },
   followed: { display: "flex", flexWrap: "wrap", gap: 8 },
-  dishRow: { display: "flex", alignItems: "center", gap: 10 },
+  dishRow: { display: "inline-flex", alignItems: "center", gap: 10 },
   dishThumb: {
-    width: 40,
-    height: 40,
+    width: 36,
+    height: 36,
     borderRadius: 8,
     objectFit: "cover",
-    background: "#e5e7eb",
-    flex: "0 0 auto",
+    background: "#e2e8f0",
+    flexShrink: 0,
   },
 };

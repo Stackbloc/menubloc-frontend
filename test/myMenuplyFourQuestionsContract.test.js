@@ -115,6 +115,10 @@ test("My Menuply is the diner's personal home", () => {
   assert.match(placeFields, /asRestaurantPlace/);
   assert.match(placeFields, /eating-place-homemade/);
   assert.match(placeFields, /eating-place-restaurant/);
+  assert.match(placeFields, /eating-place-dish-search/);
+  assert.match(placeFields, /eating-place-menu-item-label/);
+  assert.match(placeFields, /Menu item/);
+  assert.match(placeFields, /Pick a restaurant first/);
   assert.ok(placeFields.indexOf("eating-place-restaurant") < placeFields.indexOf("eating-place-homemade"));
   assert.match(placeFields, /searchReportPlaces/);
   assert.match(placeFields, /Homemade/);
