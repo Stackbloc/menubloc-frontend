@@ -10,21 +10,37 @@ const LINKS = [
     to: "/my-menuply",
     title: "My Menuply",
     blurb: "Profile, videos, photos, connections, Dining Crew",
+    testId: "feed-me-my-menuply",
+  },
+  {
+    to: "/clusters",
+    title: "Clusters",
+    blurb: "Stadiums, campuses, venues, and food places",
+    testId: "feed-me-clusters",
+  },
+  {
+    to: "/menu-capture",
+    title: "Upload menu photos",
+    blurb: "Photograph a menu and contribute media only",
+    testId: "feed-me-menu-upload",
   },
   {
     to: "/account",
     title: "Account & settings",
     blurb: "Security, preferences, profile details",
+    testId: "feed-me-account",
   },
   {
     to: "/account/find-diners",
     title: "Find diners",
     blurb: "Discover people through food",
+    testId: "feed-me-find-diners",
   },
   {
     to: "/account/login",
     title: "Sign in",
     blurb: "Accounts unlock identity and social features",
+    testId: "feed-me-sign-in",
   },
 ];
 
@@ -36,7 +52,7 @@ export default function FeedMePage() {
       <ul style={styles.list}>
         {LINKS.map((row) => (
           <li key={row.to} style={styles.item}>
-            <Link to={row.to} style={styles.link}>
+            <Link to={row.to} style={styles.link} data-testid={row.testId}>
               <span style={styles.title}>{row.title}</span>
               <span style={styles.blurb}>{row.blurb}</span>
             </Link>

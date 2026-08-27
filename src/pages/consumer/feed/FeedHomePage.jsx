@@ -71,8 +71,13 @@ export default function FeedHomePage() {
     setItems((prev) => (prev || []).filter((row) => String(row?.id) !== id));
   }
 
+  const dealsHref = `/deals?city=${encodeURIComponent(market.city)}&state=${encodeURIComponent(market.state)}`;
+
   const headerSlot = (
     <div style={styles.chrome} data-testid="feed-home-chrome">
+      <Link to={dealsHref} style={styles.chromeBtn} data-testid="feed-deals">
+        Deals
+      </Link>
       <Link to="/search" style={styles.chromeBtn} data-testid="feed-search">
         Search
       </Link>
@@ -135,7 +140,6 @@ const styles = {
     fontWeight: 700,
     textDecoration: "none",
     border: "1px solid rgba(255,255,255,0.2)",
-    marginLeft: "auto",
   },
   loading: {
     minHeight: "100dvh",

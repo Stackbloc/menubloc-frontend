@@ -60,10 +60,27 @@ test("Feed shell: FEED|EATING|X|EVENTS|ME routes + video-first home", () => {
   assert.match(home, /variant="feedHome"/);
   assert.match(home, /feed-search/);
   assert.match(home, /\/search/);
+  assert.match(home, /feed-deals/);
+  assert.match(home, /\/deals\?city=/);
+  assert.match(home, /encodeURIComponent\(market\.city\)/);
+  assert.match(home, /encodeURIComponent\(market\.state\)/);
   assert.match(home, /FEED_VIDEO_POSTED_EVENT/);
   assert.doesNotMatch(home, /feed-create/);
   assert.doesNotMatch(home, /compose=ate/);
   assert.doesNotMatch(home, /photo_url/);
+  assert.doesNotMatch(home, /\/clusters/);
+  assert.doesNotMatch(home, /\/menu-capture/);
+
+  const me = read("src/pages/consumer/feed/FeedMePage.jsx");
+  assert.match(me, /feed-me-clusters/);
+  assert.match(me, /to: "\/clusters"/);
+  assert.match(me, /feed-me-menu-upload/);
+  assert.match(me, /to: "\/menu-capture"/);
+  assert.doesNotMatch(me, /to: "\/deals"/);
+
+  assert.doesNotMatch(nav, /\/deals/);
+  assert.doesNotMatch(nav, /\/clusters/);
+  assert.doesNotMatch(nav, /\/menu-capture/);
 
   const planAttach = read("src/pages/consumer/myMenuply/PlanVideoAttachSheet.jsx");
   assert.match(planAttach, /plan-video-attach-sheet/);
