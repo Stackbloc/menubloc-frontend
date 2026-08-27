@@ -23,10 +23,11 @@ export const OWNER_COLORS = {
   page: ADMIN_CONSOLE.page,
 };
 
-export function PageCard({ children, style = {}, id }) {
+export function PageCard({ children, style = {}, id, className }) {
   return (
     <section
       id={id}
+      className={className}
       style={{
         background: OWNER_COLORS.panel,
         border: `1px solid ${OWNER_COLORS.line}`,
@@ -83,6 +84,7 @@ const NAV_SECTIONS_STATIC = [
       { to: "/owner/subscription-designer", label: "Subscription Designer" },
       { to: "/owner/market-expansion", label: "Market Expansion" },
       { to: "/owner/qr-stickers", label: "QR Stickers" },
+      { to: "/owner/feed-invite-qr", label: "Feed Invite QR" },
     ],
   },
   {

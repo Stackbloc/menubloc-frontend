@@ -453,6 +453,20 @@ export const replaceOwnerQrSticker = (restaurantId, qrCode) =>
 export const searchOwnerRestaurantsForQr = (q) =>
   get(`/api/owner/qr-stickers/restaurant-search?q=${encodeURIComponent(q)}`);
 
+// Feed invite QR (platform growth poster — editable copy)
+export const getOwnerFeedInviteQr = () => get("/api/owner/feed-invite-qr");
+export const saveOwnerFeedInviteQrCopy = (copy) =>
+  put("/api/owner/feed-invite-qr", { copy });
+export const resetOwnerFeedInviteQrCopy = () =>
+  put("/api/owner/feed-invite-qr", { reset: true });
+export const ownerFeedInviteQrImageUrl = (cacheBust) => {
+  const base = `${API}/api/owner/feed-invite-qr/image.png`;
+  if (cacheBust == null || cacheBust === "") return base;
+  return `${base}?v=${encodeURIComponent(String(cacheBust))}`;
+};
+export const ownerFeedInviteQrCodeUrl = () =>
+  `${API}/api/owner/feed-invite-qr/qr.png`;
+
 // PHMS Dashboard
 export const getOwnerPhmsHealth = () => get("/api/owner/phms/health");
 export const getOwnerPhmsHomeFeedCache = () => get("/api/owner/phms/home-feed-cache");
