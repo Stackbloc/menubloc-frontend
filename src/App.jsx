@@ -187,6 +187,7 @@ import HomeRoot from "./pages/HomeRoot.jsx";
 import FeedShellPage from "./pages/consumer/feed/FeedShellPage.jsx";
 import FeedHomePage from "./pages/consumer/feed/FeedHomePage.jsx";
 import FeedEatingPage from "./pages/consumer/feed/FeedEatingPage.jsx";
+import FeedDealsPage from "./pages/consumer/feed/FeedDealsPage.jsx";
 import FeedEventsPage from "./pages/consumer/feed/FeedEventsPage.jsx";
 import FeedMePage from "./pages/consumer/feed/FeedMePage.jsx";
 import HomeNext from "./pages/HomeNext.jsx";
@@ -785,6 +786,7 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
         >
           <Route index element={<FeedHomePage />} />
           <Route path="eating" element={<FeedEatingPage />} />
+          <Route path="deals" element={<FeedDealsPage />} />
           <Route path="events" element={<FeedEventsPage />} />
           <Route path="me" element={<FeedMePage />} />
         </Route>

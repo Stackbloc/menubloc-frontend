@@ -63,7 +63,7 @@ test("Feed shell: FEED|EATING|X|EVENTS|ME routes + video-first home", () => {
   assert.match(home, /feed-search/);
   assert.match(home, /\/search/);
   assert.match(home, /feed-deals/);
-  assert.match(home, /\/deals\?city=/);
+  assert.match(home, /\/feed\/deals\?city=/);
   assert.match(home, /encodeURIComponent\(market\.city\)/);
   assert.match(home, /encodeURIComponent\(market\.state\)/);
   assert.match(home, /FEED_VIDEO_POSTED_EVENT/);
@@ -72,6 +72,27 @@ test("Feed shell: FEED|EATING|X|EVENTS|ME routes + video-first home", () => {
   assert.doesNotMatch(home, /photo_url/);
   assert.doesNotMatch(home, /\/clusters/);
   assert.doesNotMatch(home, /\/menu-capture/);
+
+  const appRoutes = read("src/App.jsx");
+  assert.match(appRoutes, /FeedDealsPage/);
+  assert.match(appRoutes, /path="deals"/);
+
+  const feedDeals = read("src/pages/consumer/feed/FeedDealsPage.jsx");
+  assert.match(feedDeals, /feed-deals-page/);
+  assert.match(feedDeals, /meal_period/);
+  assert.match(feedDeals, /prefer_media/);
+  assert.match(feedDeals, /feed-deals-text-list/);
+  assert.match(feedDeals, /\/deals\?city=/);
+  assert.match(feedDeals, /DEAL_MEAL_PERIODS/);
+  assert.doesNotMatch(feedDeals, /\/waiter/);
+
+  const dealMealLib = read("src/lib/dealMealPeriods.js");
+  assert.match(dealMealLib, /breakfast/);
+  assert.match(dealMealLib, /late_night/);
+  assert.match(dealMealLib, /defaultDealMealPeriod/);
+  assert.match(dealMealLib, /whatIAteTodayMealPeriod/);
+  assert.doesNotMatch(dealMealLib, /from ["'].*waiter/i);
+  assert.doesNotMatch(dealMealLib, /FoodInterestsPage|waiterApi|waiterMealPeriod/);
 
   const me = read("src/pages/consumer/feed/FeedMePage.jsx");
   assert.match(me, /feed-me-clusters/);

@@ -389,6 +389,15 @@ export const uploadBillboardPhoto = (rid, did, file) => {
     body: fd,
   }).then(r => r.json());
 };
+export const uploadDealMediaPhoto = (rid, did, file) => {
+  const fd = new FormData();
+  fd.append("photo", file);
+  return fetch(`${API}/operator/restaurants/${rid}/deals/${did}/media/photo`, {
+    method: "POST",
+    credentials: "include",
+    body: fd,
+  }).then(r => r.json());
+};
 
 // ── Restaurant: QR Kit Orders ─────────────────────────────────────────────
 export const getQrKitPreviewUrl = (rid, params = {}) => {
