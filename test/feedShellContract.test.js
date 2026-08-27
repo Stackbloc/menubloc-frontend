@@ -93,20 +93,13 @@ test("Feed shell: FEED|EATING|X|EVENTS|ME routes + video-first home", () => {
 
   const feedDeals = read("src/pages/consumer/feed/FeedDealsPage.jsx");
   assert.match(feedDeals, /feed-deals-page/);
-  assert.match(feedDeals, /meal_period/);
-  assert.match(feedDeals, /prefer_media/);
-  assert.match(feedDeals, /feed-deals-text-list/);
+  assert.match(feedDeals, /has_video/);
+  assert.match(feedDeals, /DealVideoSwipe/);
+  assert.match(feedDeals, /feed-deals-search/);
   assert.match(feedDeals, /\/deals\?city=/);
-  assert.match(feedDeals, /DEAL_MEAL_PERIODS/);
+  assert.doesNotMatch(feedDeals, /DEAL_MEAL_PERIODS/);
+  assert.doesNotMatch(feedDeals, /meal_period/);
   assert.doesNotMatch(feedDeals, /\/waiter/);
-
-  const dealMealLib = read("src/lib/dealMealPeriods.js");
-  assert.match(dealMealLib, /breakfast/);
-  assert.match(dealMealLib, /late_night/);
-  assert.match(dealMealLib, /defaultDealMealPeriod/);
-  assert.match(dealMealLib, /whatIAteTodayMealPeriod/);
-  assert.doesNotMatch(dealMealLib, /from ["'].*waiter/i);
-  assert.doesNotMatch(dealMealLib, /FoodInterestsPage|waiterApi|waiterMealPeriod/);
 
   const me = read("src/pages/consumer/feed/FeedMePage.jsx");
   assert.match(me, /feed-me-clusters/);

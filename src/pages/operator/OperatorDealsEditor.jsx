@@ -19,7 +19,6 @@ import OperatorLayout from "./OperatorLayout.jsx";
 import { useOperator } from "../../context/OperatorContext.jsx";
 import * as api from "../../lib/operatorApi.js";
 import { useOperatorLabels } from "../../i18n/useOperatorLabels.js";
-import { DEAL_MEAL_PERIODS } from "../../lib/dealMealPeriods.js";
 
 // ── Shared styles ─────────────────────────────────────────────────────────
 const INPUT = {
@@ -166,10 +165,7 @@ function DealForm({ allItems, initial = {}, initialBillboard = null, onSave, onC
     starts_at: initial.starts_at ? initial.starts_at.slice(0, 10) : new Date().toISOString().slice(0, 10),
     expires_at: initial.expires_at ? initial.expires_at.slice(0, 10) : "",
     display_on_menu_browser: initial.is_promoted === true,
-    meal_periods: Array.isArray(initial.meal_periods) ? [...initial.meal_periods] : [],
-    photo_url: initial.photo_url || "",
     video_url: initial.video_url || "",
-    audio_url: initial.audio_url || "",
   });
   const [itemSearch, setItemSearch] = useState(initial.item_name || "");
 
@@ -200,9 +196,6 @@ function DealForm({ allItems, initial = {}, initialBillboard = null, onSave, onC
   const [bbPhotoFile, setBbPhotoFile] = useState(null);
   const [bbPhotoPreview, setBbPhotoPreview] = useState(null);
   const [bbPhotoError, setBbPhotoError] = useState("");
-  const dealPhotoInputRef = useRef(null);
-  const [dealPhotoFile, setDealPhotoFile] = useState(null);
-  const [dealPhotoPreview, setDealPhotoPreview] = useState(null);
 
   const f    = (k) => (e) => setForm(p => ({ ...p, [k]: e.target.value }));
   const bb_f = (k) => (e) => setBb(p => ({ ...p, [k]: e.target.value }));
@@ -222,10 +215,7 @@ function DealForm({ allItems, initial = {}, initialBillboard = null, onSave, onC
       expires_at: form.expires_at,
       menu_item_id: form.menu_item_id || undefined,
       display_on_menu_browser: form.display_on_menu_browser === true,
-      meal_periods: Array.isArray(form.meal_periods) ? form.meal_periods : [],
-      photo_url: form.photo_url.trim() || null,
       video_url: form.video_url.trim() || null,
-      audio_url: form.audio_url.trim() || null,
     };
     // Backend buildDealFields reads `body.value`:
     // percent_off → value is the percent integer (e.g. 20)
@@ -409,124 +399,17 @@ function DealForm({ allItems, initial = {}, initialBillboard = null, onSave, onC
         </div>
 
         <div style={{ gridColumn: "1 / -1" }}>
-          <label style={LABEL}>Meal times</label>
+          <label style={LABEL}>Deal video (Feed swipe)</label>
           <div style={{ fontSize: 12, color: "#8a9ab0", marginBottom: 8 }}>
-            Leave all unchecked for all-day. Checked periods appear in Feed Deals for that meal.
+            Durable video URL for this deal. Appears in Feed → Deals swipe when set.
+            Restaurant video upload will wire here — paste URL for now.
           </div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-            {DEAL_MEAL_PERIODS.map((period) => {
-              const checked = form.meal_periods.includes(period.id);
-              return (
-                <label
-                  key={period.id}
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 6,
-                    padding: "6px 10px",
-                    borderRadius: 999,
-                    border: checked ? "1.5px solid #1F4E3D" : "1.5px solid #e4e9f0",
-                    background: checked ? "#f0f8f4" : "#fff",
-                    fontSize: 12,
-                    fontWeight: 600,
-                    color: "#0f1720",
-                    cursor: "pointer",
-                  }}
-                >
-                  <input
-                    type="checkbox"
-                    checked={checked}
-                    onChange={() => {
-                      setForm((p) => {
-                        const next = new Set(p.meal_periods || []);
-                        if (next.has(period.id)) next.delete(period.id);
-                        else next.add(period.id);
-                        return { ...p, meal_periods: DEAL_MEAL_PERIODS.map((x) => x.id).filter((id) => next.has(id)) };
-                      });
-                    }}
-                    style={{ width: 14, height: 14, accentColor: "#1F4E3D" }}
-                  />
-                  {period.label}
-                </label>
-              );
-            })}
-          </div>
-        </div>
-
-        <div style={{ gridColumn: "1 / -1" }}>
-          <label style={LABEL}>Deal media (Feed / meal-time)</label>
-          <div style={{ fontSize: 12, color: "#8a9ab0", marginBottom: 8 }}>
-            Optional photo, video URL, or audio URL. Separate from billboard splash art.
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <div>
-              <label style={LABEL}>Photo</label>
-              <input
-                ref={dealPhotoInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                style={{ display: "none" }}
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (!file) return;
-                  setDealPhotoFile(file);
-                  setDealPhotoPreview(URL.createObjectURL(file));
-                }}
-              />
-              <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-                <button
-                  type="button"
-                  style={BTN("ghost")}
-                  onClick={() => dealPhotoInputRef.current?.click()}
-                >
-                  {dealPhotoFile || form.photo_url ? "Replace photo" : "Upload photo"}
-                </button>
-                {(dealPhotoPreview || form.photo_url) && (
-                  <span style={{ fontSize: 12, color: "#1F4E3D", fontWeight: 600 }}>
-                    {dealPhotoFile ? "Photo ready to upload" : "Photo set"}
-                  </span>
-                )}
-              </div>
-              {(dealPhotoPreview || form.photo_url) && (
-                <div
-                  style={{
-                    marginTop: 8,
-                    width: 120,
-                    height: 80,
-                    borderRadius: 8,
-                    border: "1px solid #e4e9f0",
-                    background: `url(${encodeURI(dealPhotoPreview || form.photo_url)}) center/cover no-repeat`,
-                  }}
-                />
-              )}
-              {!dealPhotoFile && (
-                <input
-                  style={{ ...INPUT, width: "100%", marginTop: 8 }}
-                  value={form.photo_url}
-                  onChange={f("photo_url")}
-                  placeholder="Or paste https:// photo URL"
-                />
-              )}
-            </div>
-            <div>
-              <label style={LABEL}>Video URL</label>
-              <input
-                style={{ ...INPUT, width: "100%" }}
-                value={form.video_url}
-                onChange={f("video_url")}
-                placeholder="https://… (mp4 preferred)"
-              />
-            </div>
-            <div>
-              <label style={LABEL}>Audio URL</label>
-              <input
-                style={{ ...INPUT, width: "100%" }}
-                value={form.audio_url}
-                onChange={f("audio_url")}
-                placeholder="https://… (optional)"
-              />
-            </div>
-          </div>
+          <input
+            style={{ ...INPUT, width: "100%" }}
+            value={form.video_url}
+            onChange={f("video_url")}
+            placeholder="https://… (mp4, H.264+AAC preferred)"
+          />
         </div>
       </div>
 
@@ -720,7 +603,7 @@ function DealForm({ allItems, initial = {}, initialBillboard = null, onSave, onC
         <button
           style={{ ...BTN("primary"), opacity: (busy || !valid) ? 0.6 : 1 }}
           disabled={busy || !valid}
-          onClick={() => onSave(buildPayload(), buildBillboardPayload(), bbPhotoFile, dealPhotoFile)}
+          onClick={() => onSave(buildPayload(), buildBillboardPayload(), bbPhotoFile)}
           type="button"
         >
           {busy ? "Saving…" : initial.id ? "Save changes" : "Create deal"}
@@ -866,17 +749,10 @@ export default function OperatorDealsEditor() {
     }).catch(() => {});
   }, [rid]);
 
-  async function handleCreate(payload, billboardPayload, pendingPhotoFile, dealMediaPhotoFile) {
+  async function handleCreate(payload, billboardPayload, pendingPhotoFile) {
     setBusy(true);
     try {
       const result = await api.createDeal(rid, payload);
-      if (result.deal?.id && dealMediaPhotoFile) {
-        try {
-          await api.uploadDealMediaPhoto(rid, result.deal.id, dealMediaPhotoFile);
-        } catch {
-          // Non-fatal — deal exists without uploaded photo
-        }
-      }
       if (billboardPayload?.enabled && result.deal?.id) {
         let finalBbPayload = { ...billboardPayload };
         if (pendingPhotoFile) {
@@ -917,17 +793,10 @@ export default function OperatorDealsEditor() {
     }
   }
 
-  async function handleEditSave(payload, billboardPayload, pendingPhotoFile, dealMediaPhotoFile) {
+  async function handleEditSave(payload, billboardPayload, pendingPhotoFile) {
     setBusy(true);
     try {
       await api.updateDeal(rid, editingDeal.id, payload);
-      if (dealMediaPhotoFile) {
-        try {
-          await api.uploadDealMediaPhoto(rid, editingDeal.id, dealMediaPhotoFile);
-        } catch {
-          // Non-fatal
-        }
-      }
 
       if (billboardPayload?.enabled) {
         let finalBbPayload = { ...billboardPayload };
