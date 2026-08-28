@@ -2016,7 +2016,7 @@ function FilterToggle({ label, active, onClick, isMobile }) {
   );
 }
 
-export default function GrubbidSearchResults() {
+export default function GrubbidSearchResults({ embedInFeedShell = false } = {}) {
   const { t, language } = useLanguage();
   const location = useLocation();
   const params = useQueryParams();
@@ -3015,7 +3015,17 @@ export default function GrubbidSearchResults() {
       : hasDishMatches;
 
   return (
-    <div style={{ position: "relative", minHeight: "100vh", background: "var(--gb-color-page)" }}>
+    <div
+      style={{
+        position: "relative",
+        minHeight: "100vh",
+        background: "var(--gb-color-page)",
+        paddingBottom: embedInFeedShell
+          ? "calc(var(--feed-primary-nav-h, 56px) + env(safe-area-inset-bottom, 0px) + 16px)"
+          : undefined,
+      }}
+      data-testid={embedInFeedShell ? "feed-search-results-embed" : undefined}
+    >
       {/* ── STICKY HEADER ── */}
       <div style={{
         position: "sticky", top: 0, zIndex: 100,
@@ -3026,7 +3036,13 @@ export default function GrubbidSearchResults() {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px 10px" }}>
           <button
             type="button"
-            onClick={() => navigate(-1)}
+            onClick={() => {
+              if (embedInFeedShell) {
+                navigate("/feed/search");
+                return;
+              }
+              navigate(-1);
+            }}
             aria-label="Go back"
             style={{ border: "none", background: "transparent", fontSize: 22, color: "#6B7280", cursor: "pointer", padding: 4, lineHeight: 1, flexShrink: 0 }}
           >
@@ -3319,7 +3335,7 @@ export default function GrubbidSearchResults() {
       )}
 
       </div>
-      <BottomNav />
+      {!embedInFeedShell ? <BottomNav /> : null}
     </div>
   );
 }

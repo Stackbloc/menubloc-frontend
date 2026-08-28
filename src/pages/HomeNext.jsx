@@ -16,6 +16,7 @@ import {
   getExpandedSectionMenus,
 } from "../lib/homeNextSections.js";
 import { buildHomeSearchUrl } from "../lib/homeNextNavigation.js";
+import { rewriteSearchPathForFeedShell } from "../lib/feedShellNavigation.js";
 import HomeNextFoodGrid from "../components/homeNext/HomeNextFoodGrid.jsx";
 import HomeNextHealthGoals from "../components/homeNext/HomeNextHealthGoals.jsx";
 import HomeNextDiscoverySection from "../components/homeNext/HomeNextDiscoverySection.jsx";
@@ -47,7 +48,7 @@ export default function HomeNext({ embedInFeedShell = false } = {}) {
     setAppliedLocation,
     shouldUseGeoBrowse,
     locating,
-  } = useHomeBrowseFeed();
+  } = useHomeBrowseFeed({ loadMenus: !embedInFeedShell });
 
   const sections = useMemo(
     () =>
@@ -96,11 +97,12 @@ export default function HomeNext({ embedInFeedShell = false } = {}) {
       autoLocation,
       shouldUseGeoBrowse,
     });
+    const destination = embedInFeedShell ? rewriteSearchPathForFeedShell(target) : target;
 
     setInlineError("");
 
     if (!qTerm) {
-      navigate(target);
+      navigate(destination);
       return;
     }
 
@@ -122,10 +124,10 @@ export default function HomeNext({ embedInFeedShell = false } = {}) {
         const nearText = loc ? ` near ${loc}` : "";
         setInlineError(t("discovery.noResultsFoundFor", `No results found for "${qTerm}"${nearText}`, { query: qTerm, nearText }));
       } else {
-        navigate(target);
+        navigate(destination);
       }
     } catch {
-      navigate(target);
+      navigate(destination);
     } finally {
       setSearching(false);
     }
@@ -237,7 +239,6 @@ export default function HomeNext({ embedInFeedShell = false } = {}) {
             ? "calc(var(--feed-primary-nav-h, 56px) + env(safe-area-inset-bottom, 0px) + 16px)"
             : "calc(var(--bottom-nav-h, 72px) + 16px)",
         }}
-        data-testid={embedInFeedShell ? "feed-search-page" : undefined}
       >
         {/* Sticky header + search */}
         <header
@@ -410,14 +411,17 @@ export default function HomeNext({ embedInFeedShell = false } = {}) {
             autoLocation={autoLocation}
             appliedLocation={appliedLocation}
             shouldUseGeoBrowse={shouldUseGeoBrowse}
+            embedInFeedShell={embedInFeedShell}
           />
 
           <HomeNextHealthGoals
             autoLocation={autoLocation}
             appliedLocation={appliedLocation}
             shouldUseGeoBrowse={shouldUseGeoBrowse}
+            embedInFeedShell={embedInFeedShell}
           />
 
+          {!embedInFeedShell ? (
           <section ref={helpSectionRef} style={{ marginBottom: 8 }}>
             <div style={{ padding: "0 16px", marginBottom: 12 }}>
               <h2 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: "#111827" }}>
@@ -505,6 +509,7 @@ export default function HomeNext({ embedInFeedShell = false } = {}) {
               ))
             )}
           </section>
+          ) : null}
         </main>
       </div>
 

@@ -2,20 +2,25 @@ import { useNavigate } from "react-router-dom";
 import ChipRail from "../chips/ChipRail.jsx";
 import { HEALTH_GOAL_ENTRY_POINTS } from "../../lib/homeNextEntryPoints.js";
 import { buildHomeSearchUrl } from "../../lib/homeNextNavigation.js";
+import { rewriteSearchPathForFeedShell } from "../../lib/feedShellNavigation.js";
 
-export default function HomeNextHealthGoals({ autoLocation, appliedLocation, shouldUseGeoBrowse }) {
+export default function HomeNextHealthGoals({
+  autoLocation,
+  appliedLocation,
+  shouldUseGeoBrowse,
+  embedInFeedShell = false,
+}) {
   const navigate = useNavigate();
 
   function handleClick(entry) {
-    navigate(
-      buildHomeSearchUrl({
-        query: entry.query,
-        filterKey: entry.filterKey || null,
-        appliedLocation,
-        autoLocation,
-        shouldUseGeoBrowse,
-      })
-    );
+    const target = buildHomeSearchUrl({
+      query: entry.query,
+      filterKey: entry.filterKey || null,
+      appliedLocation,
+      autoLocation,
+      shouldUseGeoBrowse,
+    });
+    navigate(embedInFeedShell ? rewriteSearchPathForFeedShell(target) : target);
   }
 
   return (

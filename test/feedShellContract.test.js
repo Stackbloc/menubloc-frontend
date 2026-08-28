@@ -62,6 +62,17 @@ test("Feed shell: Home|Connects|Menus|X|Deals|Search|Profile + slim X sheet", ()
 
   const searchPage = read("src/pages/consumer/feed/FeedSearchPage.jsx");
   assert.match(searchPage, /embedInFeedShell/);
+  assert.match(searchPage, /isFeedShellSearchResultsView/);
+  assert.match(searchPage, /GrubbidSearchResults embedInFeedShell/);
+
+  const homeNext = read("src/pages/HomeNext.jsx");
+  assert.match(homeNext, /loadMenus: !embedInFeedShell/);
+  assert.match(homeNext, /!embedInFeedShell[\s\S]*Help me decide/);
+  assert.match(homeNext, /rewriteSearchPathForFeedShell/);
+
+  const feedNavLib = read("src/lib/feedShellNavigation.js");
+  assert.match(feedNavLib, /rewriteSearchPathForFeedShell/);
+  assert.match(feedNavLib, /isFeedShellSearchResultsView/);
 
   const profilePage = read("src/pages/consumer/feed/FeedProfilePage.jsx");
   assert.match(profilePage, /embedInFeedShell/);

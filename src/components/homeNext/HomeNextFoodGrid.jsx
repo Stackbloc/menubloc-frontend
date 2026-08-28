@@ -7,6 +7,7 @@ import {
   splitFoodEntryPointRows,
 } from "../../lib/homeNextEntryPoints.js";
 import { buildHomeChipUrl } from "../../lib/homeNextNavigation.js";
+import { rewriteSearchPathForFeedShell } from "../../lib/feedShellNavigation.js";
 import {
   buildHomeContextChipSearchUrl,
   fetchHomeContextChip,
@@ -33,12 +34,24 @@ function FoodChipRow({ entries, onChipClick }) {
   );
 }
 
-export default function HomeNextFoodGrid({ autoLocation, appliedLocation, shouldUseGeoBrowse }) {
+export default function HomeNextFoodGrid({
+  autoLocation,
+  appliedLocation,
+  shouldUseGeoBrowse,
+  embedInFeedShell = false,
+}) {
   const navigate = useNavigate();
   const [rowOne, rowTwo] = useMemo(() => splitFoodEntryPointRows(getFoodEntryPoints()), []);
   const [contextLoading, setContextLoading] = useState(false);
 
   const locationContext = { appliedLocation, autoLocation, shouldUseGeoBrowse };
+
+  function goSearch(target, options) {
+    navigate(
+      embedInFeedShell ? rewriteSearchPathForFeedShell(target) : target,
+      options
+    );
+  }
 
   async function handleClick(entry) {
     if (entry?.contextAware) {
@@ -51,15 +64,15 @@ export default function HomeNextFoodGrid({ autoLocation, appliedLocation, should
           mealPeriod: entry.mealPeriod,
         });
         const target = buildHomeContextChipSearchUrl(entry, payload, locationContext);
-        navigate(target, { state: { homeContextChip: payload } });
+        goSearch(target, { state: { homeContextChip: payload } });
       } catch {
-        navigate(buildHomeChipUrl(entry, locationContext));
+        goSearch(buildHomeChipUrl(entry, locationContext));
       } finally {
         setContextLoading(false);
       }
       return;
     }
-    navigate(buildHomeChipUrl(entry, locationContext));
+    goSearch(buildHomeChipUrl(entry, locationContext));
   }
 
   return (

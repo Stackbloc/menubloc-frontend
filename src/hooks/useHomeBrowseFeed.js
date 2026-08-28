@@ -107,7 +107,7 @@ function useDiscoveryAutoLocation() {
  * Location-scoped homepage feed for HomeNext.
  * Consumes GET /api/home/feed — lightweight path only (not /menus/browse).
  */
-export function useHomeBrowseFeed() {
+export function useHomeBrowseFeed({ loadMenus = true } = {}) {
   const autoLocation = useDiscoveryAutoLocation();
   const [appliedLocation, setAppliedLocation] = useState(() => {
     if (typeof window === "undefined") return "";
@@ -156,6 +156,13 @@ export function useHomeBrowseFeed() {
   }, [menus]);
 
   useEffect(() => {
+    if (!loadMenus) {
+      setMenus([]);
+      setHomepageSectionTitles(null);
+      setLoading(false);
+      return undefined;
+    }
+
     const params = new URLSearchParams();
     params.set("limit", String(HOME_FEED_LIMIT));
 
@@ -233,6 +240,7 @@ export function useHomeBrowseFeed() {
     autoLocation.lng,
     appliedLocation,
     feedScopeKey,
+    loadMenus,
   ]);
 
   return {
