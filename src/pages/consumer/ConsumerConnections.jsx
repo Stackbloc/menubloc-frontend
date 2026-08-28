@@ -32,7 +32,7 @@ function PeerLine({ peer }) {
   );
 }
 
-export default function ConsumerConnections() {
+export default function ConsumerConnections({ embedInFeedShell = false }) {
   const navigate = useNavigate();
   const { isAuthenticated, loading: authLoading } = useConsumer();
   const [loading, setLoading] = useState(true);
@@ -101,8 +101,16 @@ export default function ConsumerConnections() {
 
   return (
     <>
-      <StickyPageHeader title="Connections" />
-      <div style={styles.page}>
+      {!embedInFeedShell ? <StickyPageHeader title="Connections" /> : null}
+      <div
+        style={{
+          ...styles.page,
+          padding: embedInFeedShell
+            ? `16px 16px calc(var(--feed-primary-nav-h, 56px) + env(safe-area-inset-bottom, 0px) + 16px)`
+            : styles.page.padding,
+        }}
+        data-testid={embedInFeedShell ? "feed-connects-page" : undefined}
+      >
         <p style={styles.lead}>
           Connections are people you interact with through Menuply food activity —
           invitations, meals, and conversations. This is not a Friend list or stranger
@@ -226,13 +234,15 @@ export default function ConsumerConnections() {
           </>
         )}
 
-        <p style={{ marginTop: 24 }}>
-          <Link to="/account" style={styles.link}>
-            Back to account
-          </Link>
-        </p>
+        {!embedInFeedShell ? (
+          <p style={{ marginTop: 24 }}>
+            <Link to="/account" style={styles.link}>
+              Back to account
+            </Link>
+          </p>
+        ) : null}
       </div>
-      <BottomNav />
+      {!embedInFeedShell ? <BottomNav /> : null}
     </>
   );
 }

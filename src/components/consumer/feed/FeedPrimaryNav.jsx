@@ -1,22 +1,23 @@
 /**
- * Video-first consumer shell primary nav: FEED | MENUS | [X] | EVENTS | ME.
- * Center X opens categorized Feed actions (post video, diary, My Menuply, share & account).
+ * TikTok-style feed shell nav: Home · Connects · Menus | [X] | Deals · Search · Profile.
  */
 
 import { NavLink } from "react-router-dom";
 import MenuplyXMark from "../../MenuplyXMark.jsx";
 
 const LEFT_TABS = [
-  { to: "/feed", end: true, label: "Feed", testId: "feed-nav-feed" },
+  { to: "/feed", end: true, label: "Home", testId: "feed-nav-home" },
+  { to: "/feed/connects", end: false, label: "Connects", testId: "feed-nav-connects" },
   { to: "/feed/menus", end: false, label: "Menus", testId: "feed-nav-menus" },
 ];
 
 const RIGHT_TABS = [
-  { to: "/feed/events", end: false, label: "Events", testId: "feed-nav-events" },
-  { to: "/feed/me", end: false, label: "Me", testId: "feed-nav-me" },
+  { to: "/feed/deals", end: false, label: "Deals", testId: "feed-nav-deals" },
+  { to: "/feed/search", end: false, label: "Search", testId: "feed-nav-search" },
+  { to: "/feed/profile", end: false, label: "Profile", testId: "feed-nav-profile" },
 ];
 
-export const FEED_PRIMARY_NAV_HEIGHT = 64;
+export const FEED_PRIMARY_NAV_HEIGHT = 56;
 
 function TabLink({ tab }) {
   return (
@@ -50,13 +51,13 @@ export default function FeedPrimaryNav({ onCreateClick, createActive = false }) 
       <button
         type="button"
         data-testid="feed-nav-create-x"
-        aria-label="Open Menuply menu"
+        aria-label="Open post menu"
         aria-haspopup="dialog"
         aria-expanded={createActive}
         onClick={() => onCreateClick?.()}
         style={styles.createBtn}
       >
-        <MenuplyXMark size={28} active={createActive} />
+        <MenuplyXMark size={26} active={createActive} />
       </button>
       <div style={styles.side}>
         {RIGHT_TABS.map((tab) => (
@@ -79,10 +80,10 @@ const styles = {
     display: "flex",
     alignItems: "stretch",
     justifyContent: "space-between",
-    gap: 4,
-    paddingLeft: 4,
-    paddingRight: 4,
-    background: "rgba(8, 12, 10, 0.92)",
+    gap: 2,
+    paddingLeft: 2,
+    paddingRight: 2,
+    background: "rgba(8, 12, 10, 0.94)",
     borderTop: "1px solid rgba(255,255,255,0.12)",
     backdropFilter: "blur(10px)",
   },
@@ -98,20 +99,22 @@ const styles = {
     alignItems: "center",
     justifyContent: "center",
     textDecoration: "none",
-    fontSize: 12,
-    letterSpacing: "0.04em",
+    fontSize: 10,
+    letterSpacing: "0.02em",
     textTransform: "uppercase",
     minHeight: FEED_PRIMARY_NAV_HEIGHT,
     touchAction: "manipulation",
     textAlign: "center",
+    lineHeight: 1.1,
+    padding: "0 2px",
   },
   createBtn: {
     flex: "0 0 auto",
     alignSelf: "center",
-    width: 52,
-    height: 52,
-    marginTop: -10,
-    borderRadius: 16,
+    width: 48,
+    height: 48,
+    marginTop: -8,
+    borderRadius: 14,
     border: "2px solid rgba(94, 234, 212, 0.45)",
     background: "rgba(16, 40, 32, 0.95)",
     boxShadow: "0 4px 16px rgba(0,0,0,0.35)",

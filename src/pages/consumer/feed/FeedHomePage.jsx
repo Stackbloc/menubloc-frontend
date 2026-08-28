@@ -4,7 +4,6 @@
  */
 
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { listSeeWhosEating } from "../../../lib/consumerApi.js";
 import { readDetectedLocation } from "../../../lib/discoveryLocationPersistence.js";
 import { FEED_VIDEO_POSTED_EVENT } from "../../../lib/feedVideoCompose.js";
@@ -90,23 +89,9 @@ export default function FeedHomePage() {
     setItems((prev) => (prev || []).filter((row) => String(row?.id) !== id));
   }
 
-  const dealsHref = `/feed/deals?city=${encodeURIComponent(market.city)}&state=${encodeURIComponent(market.state)}`;
-
-  const headerSlot = (
-    <div style={styles.chrome} data-testid="feed-home-chrome">
-      <Link to={dealsHref} style={styles.chromeBtn} data-testid="feed-deals">
-        Deals
-      </Link>
-      <Link to="/search" style={styles.chromeBtn} data-testid="feed-search">
-        Search
-      </Link>
-    </div>
-  );
-
   if (loading && items.length === 0) {
     return (
       <div style={styles.loading} data-testid="feed-home-loading">
-        {headerSlot}
         <p style={styles.loadingText}>Loading Feed…</p>
       </div>
     );
@@ -115,7 +100,6 @@ export default function FeedHomePage() {
   if (error && items.length === 0) {
     return (
       <div style={styles.loading} data-testid="feed-home-error">
-        {headerSlot}
         <p style={styles.loadingText}>{error}</p>
       </div>
     );
@@ -131,7 +115,6 @@ export default function FeedHomePage() {
         viewerUserId={consumer?.id || null}
         onRemovedFromFeed={onRemovedFromFeed}
         bottomInset={FEED_PRIMARY_NAV_HEIGHT + 8}
-        headerSlot={headerSlot}
         showEmptyFirstVisitPrompt={showEmptyFirstVisitPrompt}
       />
     </div>

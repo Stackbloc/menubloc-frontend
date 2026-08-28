@@ -26,7 +26,7 @@ import { appendSearchAnalyticsParams } from "../lib/analyticsPageVisitSend.js";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 
-export default function HomeNext() {
+export default function HomeNext({ embedInFeedShell = false } = {}) {
   const { t, language } = useLanguage();
   const { isAuthenticated: consumerLoggedIn, loading: consumerLoading } = useConsumer();
   const navigate = useNavigate();
@@ -233,8 +233,11 @@ export default function HomeNext() {
         style={{
           maxWidth: 576,
           margin: "0 auto",
-          paddingBottom: "calc(var(--bottom-nav-h, 72px) + 16px)",
+          paddingBottom: embedInFeedShell
+            ? "calc(var(--feed-primary-nav-h, 56px) + env(safe-area-inset-bottom, 0px) + 16px)"
+            : "calc(var(--bottom-nav-h, 72px) + 16px)",
         }}
+        data-testid={embedInFeedShell ? "feed-search-page" : undefined}
       >
         {/* Sticky header + search */}
         <header
@@ -505,7 +508,7 @@ export default function HomeNext() {
         </main>
       </div>
 
-      <BottomNav />
+      {!embedInFeedShell ? <BottomNav /> : null}
     </div>
   );
 }

@@ -190,8 +190,9 @@ import FeedShellPage from "./pages/consumer/feed/FeedShellPage.jsx";
 import FeedHomePage from "./pages/consumer/feed/FeedHomePage.jsx";
 import FeedMenusPage from "./pages/consumer/feed/FeedMenusPage.jsx";
 import FeedDealsPage from "./pages/consumer/feed/FeedDealsPage.jsx";
-import FeedEventsPage from "./pages/consumer/feed/FeedEventsPage.jsx";
-import FeedMePage from "./pages/consumer/feed/FeedMePage.jsx";
+import FeedConnectsPage from "./pages/consumer/feed/FeedConnectsPage.jsx";
+import FeedSearchPage from "./pages/consumer/feed/FeedSearchPage.jsx";
+import FeedProfilePage from "./pages/consumer/feed/FeedProfilePage.jsx";
 import HomeNext from "./pages/HomeNext.jsx";
 import LegacyDiscoveryHome from "./pages/LegacyDiscoveryHome.jsx";
 import GrubbidHomeV1 from "./components/GrubbidHomeV1.jsx";
@@ -790,8 +791,11 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
           <Route path="menus" element={<FeedMenusPage />} />
           <Route path="eating" element={<Navigate to="/feed/menus" replace />} />
           <Route path="deals" element={<FeedDealsPage />} />
-          <Route path="events" element={<FeedEventsPage />} />
-          <Route path="me" element={<FeedMePage />} />
+          <Route path="connects" element={<FeedConnectsPage />} />
+          <Route path="search" element={<FeedSearchPage />} />
+          <Route path="profile" element={<FeedProfilePage />} />
+          <Route path="me" element={<Navigate to="/feed/profile" replace />} />
+          <Route path="events" element={<Navigate to="/events" replace />} />
         </Route>
 
         <Route path="/clusters" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ClustersDirectoryPage />} />

@@ -127,7 +127,7 @@ const COMPOSE_LOGIN_ACTIONS = new Set([
   "invite-event",
 ]);
 
-export default function MyMenuplyPage() {
+export default function MyMenuplyPage({ embedInFeedShell = false }) {
   const { isAuthenticated, loading: authLoading, consumer } = useConsumer();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -1214,8 +1214,19 @@ export default function MyMenuplyPage() {
 
   return (
     <>
-      <StickyPageHeader />
-      <div style={s.page} data-testid="my-menuply-page">
+      {!embedInFeedShell ? <StickyPageHeader /> : null}
+      <div
+        style={{
+          ...s.page,
+          ...(embedInFeedShell
+            ? {
+                paddingBottom:
+                  "calc(var(--feed-primary-nav-h, 56px) + env(safe-area-inset-bottom, 0px) + 16px)",
+              }
+            : null),
+        }}
+        data-testid="my-menuply-page"
+      >
         <div style={s.stickyTitleAndFeed} data-testid="my-menuply-sticky-head">
           <div style={s.pageHeroBand}>
             <div style={s.stickyHeroTitleRow}>
