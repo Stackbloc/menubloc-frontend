@@ -30,6 +30,34 @@ export const FEED_X_SECTIONS = [
     items: VIDEO_ITEMS,
   },
   {
+    id: "diary",
+    title: "Diary (photos & plans)",
+    defaultOpen: true,
+    items: [
+      {
+        id: "ate",
+        kind: "diary",
+        title: "I'm Eating",
+        description: "Photo or video of what you're eating now",
+        testId: "feed-x-diary-ate",
+      },
+      {
+        id: "want",
+        kind: "diary",
+        title: "Wanna Eat",
+        description: "Save a craving — restaurant and menu item optional",
+        testId: "feed-x-diary-want",
+      },
+      {
+        id: "plan",
+        kind: "diary",
+        title: "Eating Plan",
+        description: "Schedule a future meal and Join Me",
+        testId: "feed-x-diary-plan",
+      },
+    ],
+  },
+  {
     id: "my-menuply",
     title: "My Menuply",
     defaultOpen: true,
@@ -94,7 +122,7 @@ export const FEED_X_SECTIONS = [
   },
 ];
 
-function SectionBlock({ section, open, onToggle, isAuthenticated, onVideo, onNavigate, onShare }) {
+function SectionBlock({ section, open, onToggle, isAuthenticated, onVideo, onDiary, onNavigate, onShare }) {
   const items = section.items.filter((item) => {
     if (item.guestOnly && isAuthenticated) return false;
     if (item.authOnly && !isAuthenticated) return false;
@@ -129,6 +157,10 @@ function SectionBlock({ section, open, onToggle, isAuthenticated, onVideo, onNav
                     onVideo?.(item.id);
                     return;
                   }
+                  if (item.kind === "diary") {
+                    onDiary?.(item.id);
+                    return;
+                  }
                   if (item.kind === "share") {
                     onShare?.(item);
                     return;
@@ -157,6 +189,7 @@ export default function FeedVideoCreateSheet({
   open,
   onClose,
   onPickCategory,
+  onPickDiary,
   onNavigate,
   onShareMyMenuply,
   isAuthenticated = false,
@@ -202,6 +235,11 @@ export default function FeedVideoCreateSheet({
     onPickCategory?.(category);
   }
 
+  function handleDiary(category) {
+    onClose?.();
+    onPickDiary?.(category);
+  }
+
   return createPortal(
     <div
       role="presentation"
@@ -238,6 +276,7 @@ export default function FeedVideoCreateSheet({
               setSectionOpen((prev) => ({ ...prev, [section.id]: !prev[section.id] }))
             }
             onVideo={handleVideo}
+            onDiary={handleDiary}
             onNavigate={handleNavigate}
             onShare={handleShare}
           />

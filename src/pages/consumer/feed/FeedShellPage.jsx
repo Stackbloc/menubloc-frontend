@@ -1,5 +1,5 @@
 /**
- * Feed shell layout — FEED | EATING | [X] | EVENTS | ME.
+ * Feed shell layout — FEED | MENUS | [X] | EVENTS | ME.
  * Parallel consumer entry; does not replace `/` until VITE_FEED_AS_HOME cutover.
  */
 
@@ -12,6 +12,7 @@ import ShareModal from "../../../components/share/ShareModal.jsx";
 import { useConsumer } from "../../../context/ConsumerContext.jsx";
 import { getMyDinerQr } from "../../../lib/consumerApi.js";
 import { buildDinerQrShareData } from "../../../lib/dinerQrShare.js";
+import FeedDiaryComposeHost from "./FeedDiaryComposeHost.jsx";
 
 export { FEED_PRIMARY_NAV_HEIGHT };
 
@@ -20,6 +21,8 @@ export default function FeedShellPage({ children = null }) {
   const { isAuthenticated } = useConsumer();
   const [createSheetOpen, setCreateSheetOpen] = useState(false);
   const [composeCategory, setComposeCategory] = useState("");
+  const [diaryCategory, setDiaryCategory] = useState("");
+  const [diaryPlanOpen, setDiaryPlanOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [shareData, setShareData] = useState(null);
   const [shareError, setShareError] = useState("");
@@ -54,6 +57,29 @@ export default function FeedShellPage({ children = null }) {
 
   function closeCompose() {
     setComposeCategory("");
+  }
+
+  function handlePickDiary(id) {
+    closeCreateSheet();
+    if (!isAuthenticated) {
+      navigate(`/account/login?next=${encodeURIComponent("/feed")}`);
+      return;
+    }
+    if (id === "plan") {
+      setDiaryCategory("");
+      setDiaryPlanOpen(true);
+      return;
+    }
+    setDiaryPlanOpen(false);
+    setDiaryCategory(id);
+  }
+
+  function closeDiaryCompose() {
+    setDiaryCategory("");
+  }
+
+  function closeDiaryPlan() {
+    setDiaryPlanOpen(false);
   }
 
   function handleSheetNavigate(item) {
@@ -91,7 +117,8 @@ export default function FeedShellPage({ children = null }) {
     }
   }
 
-  const createActive = createSheetOpen || Boolean(composeCategory);
+  const createActive =
+    createSheetOpen || Boolean(composeCategory) || Boolean(diaryCategory) || diaryPlanOpen;
 
   return (
     <div style={styles.shell} data-testid="feed-shell">
@@ -106,9 +133,16 @@ export default function FeedShellPage({ children = null }) {
         open={createSheetOpen}
         onClose={closeCreateSheet}
         onPickCategory={handlePickCategory}
+        onPickDiary={handlePickDiary}
         onNavigate={handleSheetNavigate}
         onShareMyMenuply={handleShareMyMenuply}
         isAuthenticated={isAuthenticated}
+      />
+      <FeedDiaryComposeHost
+        composeCategory={diaryCategory}
+        planOpen={diaryPlanOpen}
+        onCloseCompose={closeDiaryCompose}
+        onClosePlan={closeDiaryPlan}
       />
       <FeedVideoComposeOverlay
         open={Boolean(composeCategory)}

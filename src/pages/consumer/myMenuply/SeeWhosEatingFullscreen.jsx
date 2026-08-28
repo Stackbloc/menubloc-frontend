@@ -22,6 +22,13 @@ import {
   resolveLiveFeedCaptionLinks,
 } from "../../../lib/liveFeedCategory.js";
 import { FEED_EMPTY_FIRST_VISIT_PROMPT_COPY } from "../../../lib/feedEmptyFirstVisitPrompt.js";
+import {
+  FEED_MENU_LIBRARY_CHANGED,
+  isFeedMenuBookmarked,
+  recordFeedMenuOpen,
+  restaurantRefFromFeedItem,
+  toggleFeedMenuBookmark,
+} from "../../../lib/feedMenuLibrary.js";
 
 const SWIPE_MIN_PX = 56;
 
@@ -49,6 +56,8 @@ export default function SeeWhosEatingFullscreen({
   const [connectError, setConnectError] = useState("");
   const [removeBusy, setRemoveBusy] = useState(false);
   const [removeError, setRemoveError] = useState("");
+  const [menuBookmarked, setMenuBookmarked] = useState(false);
+  const [menuBookmarkToast, setMenuBookmarkToast] = useState("");
   const videoRef = useRef(null);
   const touchStartY = useRef(null);
   const item = items[index] || null;
@@ -61,7 +70,29 @@ export default function SeeWhosEatingFullscreen({
     setConnectNotice("");
     setConnectError("");
     setRemoveError("");
+    setMenuBookmarkToast("");
   }, [index, item?.id]);
+
+  const restaurantRef = restaurantRefFromFeedItem(item);
+
+  useEffect(() => {
+    if (!restaurantRef?.restaurant_id) {
+      setMenuBookmarked(false);
+      return undefined;
+    }
+    function syncBookmark() {
+      setMenuBookmarked(isFeedMenuBookmarked(restaurantRef.restaurant_id));
+    }
+    syncBookmark();
+    window.addEventListener(FEED_MENU_LIBRARY_CHANGED, syncBookmark);
+    return () => window.removeEventListener(FEED_MENU_LIBRARY_CHANGED, syncBookmark);
+  }, [restaurantRef?.restaurant_id]);
+
+  useEffect(() => {
+    if (!menuBookmarkToast) return undefined;
+    const t = window.setTimeout(() => setMenuBookmarkToast(""), 2200);
+    return () => window.clearTimeout(t);
+  }, [menuBookmarkToast]);
 
   useEffect(() => {
     if (!item && items.length === 0) {
@@ -233,6 +264,20 @@ export default function SeeWhosEatingFullscreen({
     }
   }
 
+  function onFeedMenuLinkClick() {
+    const ref = restaurantRefFromFeedItem(item);
+    if (ref) recordFeedMenuOpen(ref);
+  }
+
+  function onToggleMenuBookmark(event) {
+    event?.stopPropagation?.();
+    const ref = restaurantRefFromFeedItem(item);
+    if (!ref) return;
+    const saved = toggleFeedMenuBookmark(ref);
+    setMenuBookmarked(saved);
+    setMenuBookmarkToast(saved ? "Saved to Menus" : "Removed from saved");
+  }
+
   async function onRemoveFromPublicFeed(e) {
     e?.preventDefault?.();
     e?.stopPropagation?.();
@@ -357,6 +402,25 @@ export default function SeeWhosEatingFullscreen({
         </>
       ) : null}
 
+      {restaurantRef && isFeedHome ? (
+        <button
+          type="button"
+          style={styles.bookmarkBtn}
+          aria-label={menuBookmarked ? "Remove menu bookmark" : "Save restaurant menu"}
+          aria-pressed={menuBookmarked}
+          data-testid="see-whos-eating-menu-bookmark"
+          onClick={onToggleMenuBookmark}
+        >
+          {menuBookmarked ? "★ Saved" : "☆ Save menu"}
+        </button>
+      ) : null}
+
+      {menuBookmarkToast && isFeedHome ? (
+        <p style={styles.bookmarkToast} role="status" data-testid="see-whos-eating-menu-bookmark-toast">
+          {menuBookmarkToast}
+        </p>
+      ) : null}
+
       <video
         key={item.id}
         ref={videoRef}
@@ -403,7 +467,10 @@ export default function SeeWhosEatingFullscreen({
               to={captionLinks.dish.href}
               style={styles.contentLink}
               data-testid="see-whos-eating-fullscreen-dish-link"
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                onFeedMenuLinkClick();
+              }}
             >
               {captionLinks.dish.label}
             </Link>
@@ -418,7 +485,10 @@ export default function SeeWhosEatingFullscreen({
               to={captionLinks.restaurant.href}
               style={styles.contentLink}
               data-testid="see-whos-eating-fullscreen-restaurant-link"
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                onFeedMenuLinkClick();
+              }}
             >
               {captionLinks.restaurant.label}
             </Link>
@@ -515,6 +585,33 @@ const styles = {
     fontWeight: 700,
     letterSpacing: "0.02em",
     cursor: "pointer",
+  },
+  bookmarkBtn: {
+    position: "absolute",
+    top: "max(16px, env(safe-area-inset-top))",
+    right: "max(12px, env(safe-area-inset-right))",
+    zIndex: 3,
+    border: "1px solid rgba(255,255,255,0.35)",
+    borderRadius: 999,
+    padding: "8px 12px",
+    background: "rgba(0,0,0,0.55)",
+    color: "#fde68a",
+    fontSize: 12,
+    fontWeight: 800,
+    cursor: "pointer",
+  },
+  bookmarkToast: {
+    position: "absolute",
+    top: "calc(max(16px, env(safe-area-inset-top)) + 44px)",
+    right: "max(12px, env(safe-area-inset-right))",
+    zIndex: 4,
+    margin: 0,
+    padding: "6px 10px",
+    borderRadius: 999,
+    background: "rgba(16, 40, 32, 0.92)",
+    color: "#5eead4",
+    fontSize: 12,
+    fontWeight: 700,
   },
   video: {
     position: "absolute",

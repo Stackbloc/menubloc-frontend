@@ -1,11 +1,9 @@
 /**
- * EATING tab — real eating actions in the Feed shell (not a My Menuply link farm).
- * Photos stay here; Feed home stays video-only.
+ * Diary compose (photo ate/want + eating plan) — hosted from Feed shell X menu.
  */
 
 import { useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { FEED_PRIMARY_NAV_HEIGHT } from "../../../components/consumer/feed/FeedPrimaryNav.jsx";
+import { useNavigate } from "react-router-dom";
 import { useConsumer } from "../../../context/ConsumerContext.jsx";
 import { readDetectedLocation } from "../../../lib/discoveryLocationPersistence.js";
 import {
@@ -40,75 +38,18 @@ function tomorrowYmd() {
   return `${y}-${m}-${day}`;
 }
 
-const ACTIONS = [
-  {
-    id: "ate",
-    title: "I'm Eating",
-    blurb: "Photo or video of what you're eating now",
-    testId: "feed-eating-ate",
-  },
-  {
-    id: "want",
-    title: "Wanna Eat",
-    blurb: "Save a craving — restaurant and menu item optional",
-    testId: "feed-eating-want",
-  },
-  {
-    id: "plan",
-    title: "Eating Plan",
-    blurb: "Schedule a future meal and Join Me",
-    testId: "feed-eating-plan",
-  },
-];
-
-const DESTINATIONS = [
-  {
-    to: "/account/what-i-ate",
-    title: "What I Ate diary",
-    blurb: "Browse your past meals by day",
-    testId: "feed-eating-diary",
-  },
-  {
-    to: "/account/im-eating",
-    title: "I'm Eating At",
-    blurb: "Report where you're dining right now",
-    testId: "feed-eating-at",
-  },
-  {
-    to: "/my-menuply",
-    title: "Full My Menuply hub",
-    blurb: "Photos, meal board, calendar, and connections",
-    testId: "feed-eating-hub",
-  },
-];
-
-export default function FeedEatingPage() {
+export default function FeedDiaryComposeHost({
+  composeCategory = "",
+  planOpen = false,
+  onCloseCompose,
+  onClosePlan,
+}) {
   const navigate = useNavigate();
   const { isAuthenticated } = useConsumer();
-  const [composeCategory, setComposeCategory] = useState("");
-  const [planOpen, setPlanOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const market = resolveMarket();
+  const market = useMemo(() => resolveMarket(), []);
   const planDate = useMemo(() => tomorrowYmd(), []);
-
-  function requireAuth(nextPath = "/feed/eating") {
-    if (isAuthenticated) return true;
-    navigate(`/account/login?next=${encodeURIComponent(nextPath)}`);
-    return false;
-  }
-
-  function openAction(id) {
-    if (!requireAuth()) return;
-    setError("");
-    if (id === "plan") {
-      setComposeCategory("");
-      setPlanOpen(true);
-      return;
-    }
-    setPlanOpen(false);
-    setComposeCategory(id);
-  }
 
   async function handleComposeSubmit(payload) {
     setBusy(true);
@@ -147,9 +88,7 @@ export default function FeedEatingPage() {
             : payload.restaurant?.restaurant_id || payload.dish?.restaurant_id || undefined,
           menu_item_id: payload.homemade ? null : payload.dish?.menu_item_id || undefined,
           intent_kind:
-            payload.restaurant?.restaurant_id || payload.dish?.menu_item_id
-              ? undefined
-              : "food_item",
+            payload.restaurant?.restaurant_id || payload.dish?.menu_item_id ? undefined : "food_item",
           comment: payload.homemade ? joinHomemadeComment(true, payload.text) : undefined,
         });
       } else {
@@ -179,7 +118,7 @@ export default function FeedEatingPage() {
           market_discoverable: Boolean(video_url),
         });
       }
-      setComposeCategory("");
+      onCloseCompose?.();
     } catch (err) {
       setError(err?.message || "Unable to save");
       throw err;
@@ -202,7 +141,7 @@ export default function FeedEatingPage() {
         join_allowed_user_ids: payload.joinAllowedUserIds,
         market_discoverable: false,
       });
-      setPlanOpen(false);
+      onClosePlan?.();
     } catch (err) {
       setError(err?.message || "Unable to create plan");
       throw err;
@@ -211,51 +150,21 @@ export default function FeedEatingPage() {
     }
   }
 
+  if (!isAuthenticated && (composeCategory || planOpen)) {
+    navigate(`/account/login?next=${encodeURIComponent("/feed")}`);
+    return null;
+  }
+
   return (
-    <div style={styles.page} data-testid="feed-eating">
-      <h1 style={styles.h1}>Eating</h1>
-      <p style={styles.lead}>
-        Log meals, cravings, and plans here. Feed stays video-only — photos live in Eating.
-      </p>
-
-      <p style={styles.sectionLabel}>Create</p>
-      <ul style={styles.list}>
-        {ACTIONS.map((row) => (
-          <li key={row.id} style={styles.item}>
-            <button
-              type="button"
-              data-testid={row.testId}
-              style={styles.actionBtn}
-              onClick={() => openAction(row.id)}
-            >
-              <span style={styles.title}>{row.title}</span>
-              <span style={styles.blurb}>{row.blurb}</span>
-            </button>
-          </li>
-        ))}
-      </ul>
-
-      <p style={styles.sectionLabel}>Open</p>
-      <ul style={styles.list}>
-        {DESTINATIONS.map((row) => (
-          <li key={row.to} style={styles.item}>
-            <Link to={row.to} style={styles.link} data-testid={row.testId}>
-              <span style={styles.title}>{row.title}</span>
-              <span style={styles.blurb}>{row.blurb}</span>
-            </Link>
-          </li>
-        ))}
-      </ul>
-
+    <>
       {error ? (
-        <p role="alert" style={styles.error} data-testid="feed-eating-error">
+        <div style={styles.error} role="alert" data-testid="feed-diary-error">
           {error}
-        </p>
+        </div>
       ) : null}
-
       <EatingComposeSheet
         open={Boolean(composeCategory)}
-        onClose={() => !busy && setComposeCategory("")}
+        onClose={() => !busy && onCloseCompose?.()}
         defaultCategory={composeCategory || "ate"}
         mediaSource="camera"
         busy={busy}
@@ -264,13 +173,12 @@ export default function FeedEatingPage() {
         locationCity={market.city}
         locationState={market.state}
       />
-
       {planOpen ? (
         <div
           role="presentation"
           style={styles.planBackdrop}
-          data-testid="feed-eating-plan-sheet"
-          onClick={() => !busy && setPlanOpen(false)}
+          data-testid="feed-diary-plan-sheet"
+          onClick={() => !busy && onClosePlan?.()}
         >
           <div
             role="dialog"
@@ -284,7 +192,7 @@ export default function FeedEatingPage() {
               <button
                 type="button"
                 style={styles.planClose}
-                onClick={() => !busy && setPlanOpen(false)}
+                onClick={() => !busy && onClosePlan?.()}
                 aria-label="Close"
               >
                 ✕
@@ -300,64 +208,23 @@ export default function FeedEatingPage() {
           </div>
         </div>
       ) : null}
-    </div>
+    </>
   );
 }
 
 const styles = {
-  page: {
-    minHeight: "100dvh",
-    padding: `20px 20px calc(${FEED_PRIMARY_NAV_HEIGHT + 28}px + env(safe-area-inset-bottom))`,
-    background: "#0b1210",
-    color: "#e8f0ec",
-  },
-  h1: { margin: "8px 0 6px", fontSize: 28, fontWeight: 800 },
-  lead: { margin: "0 0 20px", color: "rgba(232,240,236,0.72)", fontSize: 15, lineHeight: 1.45 },
-  sectionLabel: {
-    margin: "8px 0 10px",
-    fontSize: 12,
-    fontWeight: 800,
-    letterSpacing: "0.06em",
-    textTransform: "uppercase",
-    color: "rgba(232,240,236,0.45)",
-  },
-  list: { listStyle: "none", margin: "0 0 18px", padding: 0, display: "flex", flexDirection: "column", gap: 10 },
-  item: { margin: 0 },
-  actionBtn: {
-    width: "100%",
-    display: "flex",
-    flexDirection: "column",
-    gap: 4,
-    padding: "14px 16px",
-    borderRadius: 12,
-    background: "rgba(94, 234, 212, 0.08)",
-    border: "1px solid rgba(94, 234, 212, 0.28)",
-    textAlign: "left",
-    cursor: "pointer",
-    color: "inherit",
-    font: "inherit",
-  },
-  link: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 4,
-    padding: "14px 16px",
-    borderRadius: 12,
-    background: "rgba(255,255,255,0.04)",
-    border: "1px solid rgba(255,255,255,0.1)",
-    textDecoration: "none",
-    color: "inherit",
-  },
-  title: { fontSize: 16, fontWeight: 750, color: "#5eead4" },
-  blurb: { fontSize: 13, color: "rgba(232,240,236,0.65)", lineHeight: 1.4 },
   error: {
-    margin: "0 0 12px",
+    position: "fixed",
+    left: 12,
+    right: 12,
+    bottom: "calc(var(--feed-primary-nav-h, 72px) + env(safe-area-inset-bottom, 0px) + 56px)",
+    zIndex: 360,
     padding: "10px 12px",
     borderRadius: 10,
-    background: "rgba(127,29,29,0.85)",
-    color: "#fff",
+    background: "rgba(127,29,29,0.92)",
+    color: "#fecaca",
     fontSize: 13,
-    fontWeight: 600,
+    textAlign: "center",
   },
   planBackdrop: {
     position: "fixed",

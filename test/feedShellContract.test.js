@@ -1,5 +1,5 @@
 /**
- * Feed shell contract — center X, video-only create, plan video attach.
+ * Feed shell contract — center X, video-only create, Menus tab, diary on X.
  */
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -10,34 +10,42 @@ import { fileURLToPath } from "node:url";
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = (rel) => fs.readFileSync(path.join(root, rel), "utf8");
 
-test("Feed shell: FEED|EATING|X|EVENTS|ME routes + video-first home", () => {
+test("Feed shell: FEED|MENUS|X|EVENTS|ME routes + video-first home", () => {
   const app = read("src/App.jsx");
   assert.match(app, /path="\/feed"/);
   assert.match(app, /FeedShellPage/);
   assert.match(app, /FeedHomePage/);
-  assert.match(app, /FeedEatingPage/);
+  assert.match(app, /FeedMenusPage/);
   assert.match(app, /FeedEventsPage/);
   assert.match(app, /FeedMePage/);
+  assert.match(app, /Navigate to="\/feed\/menus"/);
 
   const nav = read("src/components/consumer/feed/FeedPrimaryNav.jsx");
   assert.match(nav, /feed-primary-nav/);
   assert.match(nav, /feed-nav-create-x/);
   assert.match(nav, /MenuplyXMark/);
   assert.match(nav, /\/feed/);
-  assert.match(nav, /\/feed\/eating/);
+  assert.match(nav, /\/feed\/menus/);
+  assert.match(nav, /feed-nav-menus/);
   assert.match(nav, /\/feed\/events/);
   assert.match(nav, /\/feed\/me/);
+  assert.doesNotMatch(nav, /\/feed\/eating/);
   assert.doesNotMatch(nav, /\/waiter/);
   assert.doesNotMatch(nav, /Discover|For You/i);
 
   const shell = read("src/pages/consumer/feed/FeedShellPage.jsx");
   assert.match(shell, /FeedVideoCreateSheet/);
   assert.match(shell, /FeedVideoComposeOverlay/);
+  assert.match(shell, /FeedDiaryComposeHost/);
 
   const createSheet = read("src/components/consumer/feed/FeedVideoCreateSheet.jsx");
   assert.match(createSheet, /FEED_VIDEO_CATEGORY_IDS\s*=\s*\["ate", "want"\]/);
   assert.match(createSheet, /feed-x-section-\$\{section\.id\}/);
   assert.match(createSheet, /id: "post-feed"/);
+  assert.match(createSheet, /id: "diary"/);
+  assert.match(createSheet, /feed-x-diary-ate/);
+  assert.match(createSheet, /feed-x-diary-want/);
+  assert.match(createSheet, /feed-x-diary-plan/);
   assert.match(createSheet, /id: "my-menuply"/);
   assert.match(createSheet, /id: "share-account"/);
   assert.match(createSheet, /testId: `feed-video-create-\$\{ch\.id\}`/);
@@ -133,16 +141,20 @@ test("Feed shell: FEED|EATING|X|EVENTS|ME routes + video-first home", () => {
 
   assert.doesNotMatch(read("src/pages/consumer/feed/FeedHomePage.jsx"), /FoodInterestsPage/);
 
-  const eatingTab = read("src/pages/consumer/feed/FeedEatingPage.jsx");
-  assert.match(eatingTab, /feed-eating-ate/);
-  assert.match(eatingTab, /feed-eating-want/);
-  assert.match(eatingTab, /feed-eating-plan/);
-  assert.match(eatingTab, /EatingComposeSheet/);
-  assert.match(eatingTab, /EatingPlanDayForm/);
-  assert.match(eatingTab, /\/account\/what-i-ate/);
-  assert.match(eatingTab, /\/account\/im-eating/);
-  assert.match(eatingTab, /feed-eating-hub/);
-  assert.doesNotMatch(eatingTab, /\/my-menuply\?compose=ate/);
-  assert.doesNotMatch(eatingTab, /\/my-menuply\?compose=want/);
-  assert.doesNotMatch(eatingTab, /\/my-menuply\?compose=plan/);
+  const menusPage = read("src/pages/consumer/feed/FeedMenusPage.jsx");
+  assert.match(menusPage, /feed-menus-empty/);
+  assert.match(menusPage, /Build your menu stack from Feed/);
+  assert.match(menusPage, /feed-menus-browse-feed/);
+  assert.match(menusPage, /48 hours/);
+  assert.match(menusPage, /feed-menus-bookmark/);
+  assert.match(menusPage, /feedMenuLibrary/);
+
+  const diaryHost = read("src/pages/consumer/feed/FeedDiaryComposeHost.jsx");
+  assert.match(diaryHost, /EatingComposeSheet/);
+  assert.match(diaryHost, /EatingPlanDayForm/);
+  assert.match(diaryHost, /feed-diary-plan-sheet/);
+
+  const reel = read("src/pages/consumer/myMenuply/SeeWhosEatingFullscreen.jsx");
+  assert.match(reel, /see-whos-eating-menu-bookmark/);
+  assert.match(reel, /recordFeedMenuOpen/);
 });

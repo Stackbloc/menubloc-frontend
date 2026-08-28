@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import { stripMediaUrlFragment } from "../../../lib/menuplyLiveFeedControl.js";
+import { recordFeedMenuOpen, restaurantRefFromDealItem } from "../../../lib/feedMenuLibrary.js";
 
 const SWIPE_MIN_PX = 56;
 
@@ -163,6 +164,10 @@ export default function DealVideoSwipe({
             to={item.restaurant_href}
             style={styles.restaurantLink}
             data-testid="feed-deals-restaurant"
+            onClick={() => {
+              const ref = restaurantRefFromDealItem(item);
+              if (ref) recordFeedMenuOpen(ref);
+            }}
           >
             {item.restaurant_name}
           </Link>

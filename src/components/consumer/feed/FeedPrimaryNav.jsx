@@ -1,6 +1,6 @@
 /**
- * Video-first consumer shell primary nav: FEED | EATING | [X] | EVENTS | ME.
- * Center X opens categorized Feed actions (post video, My Menuply, share & account).
+ * Video-first consumer shell primary nav: FEED | MENUS | [X] | EVENTS | ME.
+ * Center X opens categorized Feed actions (post video, diary, My Menuply, share & account).
  */
 
 import { NavLink } from "react-router-dom";
@@ -8,7 +8,7 @@ import MenuplyXMark from "../../MenuplyXMark.jsx";
 
 const LEFT_TABS = [
   { to: "/feed", end: true, label: "Feed", testId: "feed-nav-feed" },
-  { to: "/feed/eating", end: false, label: "Eating", testId: "feed-nav-eating" },
+  { to: "/feed/menus", end: false, label: "Menus", testId: "feed-nav-menus" },
 ];
 
 const RIGHT_TABS = [
