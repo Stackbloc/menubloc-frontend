@@ -298,7 +298,12 @@ export default function HomeNext({ embedInFeedShell = false } = {}) {
             </div>
           </div>
 
-          <div style={{ padding: "28px 16px 0" }}>
+          <div
+            style={{
+              padding: embedInFeedShell ? "56px 16px 0" : "28px 16px 0",
+            }}
+            data-testid={embedInFeedShell ? "feed-search-hero" : undefined}
+          >
             <p style={{ margin: "0 0 10px", fontSize: 22, fontWeight: 800, color: "#111827", lineHeight: 1.2 }}>
               {t("homeNext.headline", "What sounds good?")}
             </p>
@@ -406,7 +411,11 @@ export default function HomeNext({ embedInFeedShell = false } = {}) {
           </div>
         </header>
 
-        <main style={{ paddingTop: 16 }}>
+        <main
+          style={{
+            paddingTop: embedInFeedShell ? 24 : 16,
+          }}
+        >
           <HomeNextFoodGrid
             autoLocation={autoLocation}
             appliedLocation={appliedLocation}

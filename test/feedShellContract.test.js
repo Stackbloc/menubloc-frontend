@@ -71,6 +71,7 @@ test("Feed shell: Home|Connects|Menus|X|Deals|Search|Profile + slim X sheet", ()
   assert.match(homeNext, /loadMenus: !embedInFeedShell/);
   assert.match(homeNext, /!embedInFeedShell[\s\S]*Help me decide/);
   assert.match(homeNext, /rewriteSearchPathForFeedShell/);
+  assert.match(homeNext, /feed-search-hero/);
 
   const feedNavLib = read("src/lib/feedShellNavigation.js");
   assert.match(feedNavLib, /rewriteSearchPathForFeedShell/);
