@@ -71,6 +71,8 @@ test("Feed shell: Home|Connects|Menus|X|Deals|Search|Profile + slim X sheet", ()
 
   const myMenuply = read("src/pages/consumer/MyMenuplyPage.jsx");
   assert.match(myMenuply, /my-menuply-account-settings/);
+  assert.match(myMenuply, /feed-profile-settings-row/);
+  assert.match(myMenuply, /!embedInFeedShell[\s\S]*my-menuply-sticky-head/);
 
   const menusPage = read("src/pages/consumer/feed/FeedMenusPage.jsx");
   assert.match(menusPage, /Build your menu stack from Feed/);

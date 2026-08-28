@@ -127,6 +127,33 @@ const COMPOSE_LOGIN_ACTIONS = new Set([
   "invite-event",
 ]);
 
+function MyMenuplyAccountSettingsLink({ style }) {
+  return (
+    <Link
+      to="/account"
+      data-testid="my-menuply-account-settings"
+      aria-label="Account settings"
+      title="Settings"
+      style={style}
+    >
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path
+          d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"
+          stroke="currentColor"
+          strokeWidth="1.75"
+        />
+        <path
+          d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.604.852 1.01 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"
+          stroke="currentColor"
+          strokeWidth="1.75"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </Link>
+  );
+}
+
 export default function MyMenuplyPage({ embedInFeedShell = false }) {
   const { isAuthenticated, loading: authLoading, consumer } = useConsumer();
   const navigate = useNavigate();
@@ -1220,6 +1247,7 @@ export default function MyMenuplyPage({ embedInFeedShell = false }) {
           ...s.page,
           ...(embedInFeedShell
             ? {
+                paddingTop: 12,
                 paddingBottom:
                   "calc(var(--feed-primary-nav-h, 56px) + env(safe-area-inset-bottom, 0px) + 16px)",
               }
@@ -1227,44 +1255,39 @@ export default function MyMenuplyPage({ embedInFeedShell = false }) {
         }}
         data-testid="my-menuply-page"
       >
-        <div style={s.stickyTitleAndFeed} data-testid="my-menuply-sticky-head">
-          <div style={s.pageHeroBand}>
-            <div style={s.stickyHeroTitleRow}>
-              <h1 style={s.stickyHeroTitle}>My Menuply</h1>
-              {isAuthenticated ? (
-                <Link
-                  to="/account"
-                  data-testid="my-menuply-account-settings"
-                  aria-label="Account settings"
-                  title="Settings"
-                  style={{ ...s.settingsIconLinkOnGreen, ...s.stickyHeroSettings }}
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <path
-                      d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"
-                      stroke="currentColor"
-                      strokeWidth="1.75"
-                    />
-                    <path
-                      d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.604.852 1.01 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"
-                      stroke="currentColor"
-                      strokeWidth="1.75"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </Link>
-              ) : null}
-            </div>
+        {embedInFeedShell && isAuthenticated ? (
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              marginBottom: 8,
+            }}
+            data-testid="feed-profile-settings-row"
+          >
+            <MyMenuplyAccountSettingsLink style={s.settingsIconLink} />
           </div>
-          <SeeWhosEatingSurface
-            sticky={false}
-            city={locationCity}
-            state={locationState}
-            isAuthenticated={Boolean(isAuthenticated)}
-            viewerUserId={consumer?.id || null}
-          />
-        </div>
+        ) : null}
+        {!embedInFeedShell ? (
+          <div style={s.stickyTitleAndFeed} data-testid="my-menuply-sticky-head">
+            <div style={s.pageHeroBand}>
+              <div style={s.stickyHeroTitleRow}>
+                <h1 style={s.stickyHeroTitle}>My Menuply</h1>
+                {isAuthenticated ? (
+                  <MyMenuplyAccountSettingsLink
+                    style={{ ...s.settingsIconLinkOnGreen, ...s.stickyHeroSettings }}
+                  />
+                ) : null}
+              </div>
+            </div>
+            <SeeWhosEatingSurface
+              sticky={false}
+              city={locationCity}
+              state={locationState}
+              isAuthenticated={Boolean(isAuthenticated)}
+              viewerUserId={consumer?.id || null}
+            />
+          </div>
+        ) : null}
         {error ? <p style={{ ...s.error, marginTop: 16 }}>{error}</p> : null}
 
         {!authLoading && !isAuthenticated ? (
