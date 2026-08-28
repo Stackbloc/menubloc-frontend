@@ -28,7 +28,7 @@ export const FEED_X_ITEMS = [
     id: "share-my-menuply",
     kind: "share",
     title: "Share My Menuply",
-    description: "Text friends your link to connect on Menuply",
+    description: "Show your personal QR code — scan to connect on Menuply",
     testId: "feed-x-share-my-menuply",
     guestOk: false,
     guestDescription: "Create a free account to get your personal Menuply link",

@@ -158,6 +158,9 @@ export default function DinerQrPage() {
 
   const displayName = payload?.card?.display_name || "Diner";
   const showEdu = payload?.card?.edu_verified && payload?.privacy?.show_edu;
+  const nextPath = String(searchParams.get("next") || "").trim();
+  const backPath = nextPath.startsWith("/") ? nextPath : "/account";
+  const backLabel = nextPath === "/feed" ? "← Back to Feed" : "← Account Settings";
 
   return (
     <>
@@ -275,8 +278,8 @@ export default function DinerQrPage() {
             </section>
 
             <p style={styles.back}>
-              <Link to="/account" style={styles.link}>
-                ← Account Settings
+              <Link to={backPath} style={styles.link}>
+                {backLabel}
               </Link>
             </p>
           </>

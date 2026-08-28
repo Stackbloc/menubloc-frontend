@@ -41,6 +41,8 @@ test("Feed shell: Home|Connects|Menus|X|Deals|Search|Profile + slim X sheet", ()
   const shell = read("src/pages/consumer/feed/FeedShellPage.jsx");
   assert.match(shell, /FeedVideoCreateSheet/);
   assert.match(shell, /FeedVideoComposeOverlay/);
+  assert.match(shell, /\/account\/diner-qr\?next=/);
+  assert.doesNotMatch(shell, /ShareModal/);
   assert.doesNotMatch(shell, /FeedDiaryComposeHost/);
 
   const createSheet = read("src/components/consumer/feed/FeedVideoCreateSheet.jsx");
