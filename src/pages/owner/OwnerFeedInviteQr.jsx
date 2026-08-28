@@ -59,6 +59,10 @@ export default function OwnerFeedInviteQr() {
   const [saved, setSaved] = useState(EMPTY_COPY);
   const [updatedAt, setUpdatedAt] = useState(null);
   const [imageBust, setImageBust] = useState("");
+  const [qrBlobUrl, setQrBlobUrl] = useState("");
+  const [posterBlobUrl, setPosterBlobUrl] = useState("");
+  const [qrImageError, setQrImageError] = useState("");
+  const [posterImageError, setPosterImageError] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -83,6 +87,61 @@ export default function OwnerFeedInviteQr() {
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    if (loading) return undefined;
+    let objectUrl = null;
+    let cancelled = false;
+    setQrImageError("");
+    fetch(ownerFeedInviteQrCodeUrl(), { credentials: "include" })
+      .then((res) => {
+        if (!res.ok) throw new Error(`QR preview failed (${res.status})`);
+        return res.blob();
+      })
+      .then((blob) => {
+        if (cancelled) return;
+        objectUrl = URL.createObjectURL(blob);
+        setQrBlobUrl(objectUrl);
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setQrBlobUrl("");
+          setQrImageError(err?.message || "Could not load QR code image");
+        }
+      });
+    return () => {
+      cancelled = true;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [loading]);
+
+  useEffect(() => {
+    if (loading) return undefined;
+    let objectUrl = null;
+    let cancelled = false;
+    setPosterImageError("");
+    const url = ownerFeedInviteQrImageUrl(imageBust || "preview");
+    fetch(url, { credentials: "include" })
+      .then((res) => {
+        if (!res.ok) throw new Error(`Poster preview failed (${res.status})`);
+        return res.blob();
+      })
+      .then((blob) => {
+        if (cancelled) return;
+        objectUrl = URL.createObjectURL(blob);
+        setPosterBlobUrl(objectUrl);
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setPosterBlobUrl("");
+          setPosterImageError(err?.message || "Could not load poster image");
+        }
+      });
+    return () => {
+      cancelled = true;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [loading, imageBust]);
 
   const dirty = useMemo(
     () =>
@@ -167,9 +226,6 @@ export default function OwnerFeedInviteQr() {
     window.print();
   }
 
-  const qrCodeSrc = ownerFeedInviteQrCodeUrl();
-  const posterImageSrc = ownerFeedInviteQrImageUrl(imageBust || "preview");
-
   return (
     <OwnerLayout
       title="Feed Invite QR"
@@ -231,13 +287,19 @@ export default function OwnerFeedInviteQr() {
                 <p style={styles.body}>{draft.body || "Body"}</p>
                 <p style={styles.tip}>{draft.tip || "Tip"}</p>
                 <div style={styles.qrFrame}>
-                  <img
-                    src={qrCodeSrc}
-                    alt="QR code for menuply.com/feed"
-                    style={styles.qrImage}
-                    width={220}
-                    height={220}
-                  />
+                  {qrBlobUrl ? (
+                    <img
+                      src={qrBlobUrl}
+                      alt="QR code for menuply.com/feed"
+                      style={styles.qrImage}
+                      width={220}
+                      height={220}
+                    />
+                  ) : (
+                    <div style={styles.qrPlaceholder}>
+                      {qrImageError || "Loading QR code…"}
+                    </div>
+                  )}
                 </div>
                 <div style={styles.ctaPill}>
                   <span>{draft.cta || "CTA"}</span>
@@ -247,11 +309,17 @@ export default function OwnerFeedInviteQr() {
             </div>
             <div style={styles.posterBlock}>
               <div style={styles.posterLabel}>Saved downloadable poster</div>
-              <img
-                src={posterImageSrc}
-                alt="Saved Feed invite QR poster"
-                style={styles.posterThumb}
-              />
+              {posterBlobUrl ? (
+                <img
+                  src={posterBlobUrl}
+                  alt="Saved Feed invite QR poster"
+                  style={styles.posterThumb}
+                />
+              ) : (
+                <div style={styles.posterPlaceholder}>
+                  {posterImageError || "Loading poster…"}
+                </div>
+              )}
             </div>
             <p style={styles.previewNote}>
               Card chrome above follows your draft. Download PNG uses the last{" "}
@@ -442,6 +510,18 @@ const styles = {
     width: 220,
     height: 220,
   },
+  qrPlaceholder: {
+    width: 220,
+    height: 220,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 12,
+    boxSizing: "border-box",
+    fontSize: 12,
+    color: OWNER_COLORS.muted,
+    textAlign: "center",
+  },
   posterBlock: {
     marginTop: 16,
     borderTop: `1px solid ${OWNER_COLORS.line}`,
@@ -460,6 +540,21 @@ const styles = {
     height: "auto",
     borderRadius: 12,
     border: `1px solid ${OWNER_COLORS.line}`,
+  },
+  posterPlaceholder: {
+    width: "100%",
+    maxWidth: 280,
+    minHeight: 120,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 16,
+    boxSizing: "border-box",
+    borderRadius: 12,
+    border: `1px dashed ${OWNER_COLORS.line}`,
+    fontSize: 12,
+    color: OWNER_COLORS.muted,
+    textAlign: "center",
   },
   ctaPill: {
     display: "inline-flex",
