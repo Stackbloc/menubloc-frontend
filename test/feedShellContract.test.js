@@ -94,3 +94,28 @@ test("Feed shell: Home|Connects|Menus|X|Deals|Search|Profile + slim X sheet", ()
   const reel = read("src/pages/consumer/myMenuply/SeeWhosEatingFullscreen.jsx");
   assert.match(reel, /see-whos-eating-menu-bookmark/);
 });
+
+test("Feed as home: / uses Feed shell; FeedPrimaryNav paths unchanged", () => {
+  const flags = read("src/lib/featureFlags.js");
+  assert.match(flags, /export function isFeedAsHomeEnabled/);
+  assert.match(flags, /isExplicitlyFalse\(import\.meta\.env\.VITE_FEED_AS_HOME\)/);
+
+  const homeRoot = read("src/pages/HomeRoot.jsx");
+  assert.match(homeRoot, /isFeedAsHomeEnabled\(\)/);
+  assert.match(homeRoot, /FeedShellPage/);
+  assert.match(homeRoot, /FeedHomePage/);
+  assert.doesNotMatch(homeRoot, /BottomNav/);
+
+  const nav = read("src/components/consumer/feed/FeedPrimaryNav.jsx");
+  assert.match(nav, /to: "\/feed"/);
+  assert.match(nav, /to: "\/feed\/connects"/);
+  assert.match(nav, /to: "\/feed\/menus"/);
+  assert.match(nav, /to: "\/feed\/deals"/);
+  assert.match(nav, /to: "\/feed\/search"/);
+  assert.match(nav, /to: "\/feed\/profile"/);
+  assert.doesNotMatch(nav, /to: "\/"/);
+
+  const app = read("src/App.jsx");
+  assert.match(app, /path="\/home-next"/);
+  assert.match(app, /HomeNext/);
+});

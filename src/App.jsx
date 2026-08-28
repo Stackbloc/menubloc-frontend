@@ -8,7 +8,7 @@
  *     - easymenuupload.com -> EasyMenuLanding on "/"
  *     - crm.menuply.com (primary) / crm.grubbid.com (legacy) -> internal CRM shell
  *     - venues.menuply.com -> venue destination demo (Coachella 2027 Place)
- *     - grubbid.com (and everything else) -> HomeRoot on "/" (HomeNext live; legacy via flag or /home-legacy)
+ *     - grubbid.com (and everything else) -> HomeRoot on "/" (Feed default; HomeNext at /home-next; legacy via flag)
  *
  *   Public route support:
  *   - Canonical restaurant public page: /restaurants/:slugOrId

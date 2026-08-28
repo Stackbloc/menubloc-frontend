@@ -6,10 +6,10 @@ import FeedHomePage from "./consumer/feed/FeedHomePage.jsx";
 
 /**
  * Live "/" selector.
- * Default: HomeNext (authoritative HPP home).
+ * Default: Feed shell (FeedPrimaryNav + FeedHomePage; nav links stay `/feed/*`).
+ * VITE_FEED_AS_HOME=0 → HomeNext at `/` (HPP rollback).
  * VITE_USE_LEGACY_HOME / VITE_ENABLE_NEW_HOMEPAGE=0 → LegacyDiscoveryHome.
- * VITE_FEED_AS_HOME=1 → video-first Feed (Andre cutover only; HomeNext stays at /home-next).
- * Parallel `/feed` routes always available regardless of this flag.
+ * HomeNext always at `/home-next`. Parallel `/feed` routes unchanged.
  * See: src/pages/HOME_PAGE_AUTHORITY.md
  */
 export default function HomeRoot() {

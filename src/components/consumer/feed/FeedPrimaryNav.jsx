@@ -2,7 +2,7 @@
  * TikTok-style feed shell nav: Home · Connects · Menus | [X] | Deals · Search · Profile.
  */
 
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import MenuplyXMark from "../../MenuplyXMark.jsx";
 
 const LEFT_TABS = [
@@ -20,16 +20,22 @@ const RIGHT_TABS = [
 export const FEED_PRIMARY_NAV_HEIGHT = 56;
 
 function TabLink({ tab }) {
+  const location = useLocation();
+  const alsoActive = tab.alsoActiveOn?.includes(location.pathname);
+
   return (
     <NavLink
       to={tab.to}
       end={tab.end}
       data-testid={tab.testId}
-      style={({ isActive }) => ({
-        ...styles.tab,
-        color: isActive ? "#5eead4" : "rgba(255,255,255,0.72)",
-        fontWeight: isActive ? 800 : 600,
-      })}
+      style={({ isActive }) => {
+        const active = isActive || alsoActive;
+        return {
+          ...styles.tab,
+          color: active ? "#5eead4" : "rgba(255,255,255,0.72)",
+          fontWeight: active ? 800 : 600,
+        };
+      }}
     >
       {tab.label}
     </NavLink>

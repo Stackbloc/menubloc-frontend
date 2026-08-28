@@ -27,10 +27,13 @@ export function isNewHomepageEnabled() {
 }
 
 /**
- * Video-first Feed as `/` cutover (Andre-authorized only).
- * When VITE_FEED_AS_HOME=1, HomeRoot mounts Feed shell instead of HomeNext.
- * HomeNext remains at `/home-next` for rollback. Parallel `/feed` always available.
+ * Video-first Feed as `/` (default live home).
+ * HomeRoot mounts Feed shell + FeedPrimaryNav; nav targets stay `/feed/*`.
+ * Roll back with VITE_FEED_AS_HOME=0 (HomeNext at `/`) or VITE_USE_LEGACY_HOME=1.
+ * HomeNext preserved at `/home-next`. Parallel `/feed` routes always available.
  */
 export function isFeedAsHomeEnabled() {
-  return isTruthy(import.meta.env.VITE_FEED_AS_HOME);
+  if (isExplicitlyFalse(import.meta.env.VITE_FEED_AS_HOME)) return false;
+  if (isLegacyHomepageEnabled()) return false;
+  return true;
 }
