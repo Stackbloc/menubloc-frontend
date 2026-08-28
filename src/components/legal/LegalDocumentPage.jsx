@@ -69,7 +69,7 @@ export default function LegalDocumentPage({ document, eyebrow, titleKey }) {
       <PageHero
         eyebrow={eyebrow}
         title={localizedTitle}
-        description={`${document.description} ${t("legal.effectiveDate", "Effective Date:")} ${LEGAL_EFFECTIVE_DATE}.`}
+        description={`${document.description} ${t("legal.effectiveDate", "Effective Date:")} ${document.effectiveDate || LEGAL_EFFECTIVE_DATE}.`}
       />
 
       <div style={{ maxWidth: 760 }}>
@@ -90,6 +90,11 @@ export default function LegalDocumentPage({ document, eyebrow, titleKey }) {
                 ))}
               </ul>
             )}
+            {(section.trailingParagraphs || []).map((paragraph, index) => (
+              <p key={`${section.heading}-trail-${index}`} style={paragraphStyle}>
+                {renderParagraphWithMailto(paragraph)}
+              </p>
+            ))}
           </section>
         ))}
 
