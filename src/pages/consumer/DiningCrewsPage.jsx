@@ -36,6 +36,7 @@ import {
 import DiningCrewFoodEntityPicker from "../../components/diningCrews/DiningCrewFoodEntityPicker.jsx";
 import MenuplyMediaPicker from "../../components/social/MenuplyMediaPicker.jsx";
 import { buildDiningCrewInviteShareData } from "../../lib/diningCrewInviteShare.js";
+import { formatDinerPeerLabel } from "../../lib/dinerPublicIdentity.js";
 
 function resolveMediaUrl(url) {
   if (!url) return null;
@@ -566,7 +567,7 @@ export function DiningCrewDetailPage() {
                 {shownMembers.map((m) => (
                   <li key={m.user_id} style={styles.card}>
                     <div>
-                      <strong>{m.display_name || `Member #${m.user_id}`}</strong>
+                      <strong>{formatDinerPeerLabel(m)}</strong>
                       <span style={styles.muted}> · {m.role}</span>
                       {m.edu_verified ? (
                         <div style={styles.edu}>{m.edu_verification_badge}</div>
@@ -740,7 +741,7 @@ export function DiningCrewDetailPage() {
                     {messages.map((msg) => (
                       <div key={msg.id} style={styles.message}>
                         <div style={styles.msgMeta}>
-                          <strong>{msg.author_display_name || `Member #${msg.author_user_id}`}</strong>
+                          <strong>{formatDinerPeerLabel({ display_name: msg.author_display_name })}</strong>
                         </div>
                         {msg.message_type === "photo" && msg.photo_url ? (
                           <img

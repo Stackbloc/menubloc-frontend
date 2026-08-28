@@ -9,6 +9,7 @@ import BottomNav from "../../components/BottomNav.jsx";
 import WhatIAteTodaySection from "../../components/consumer/WhatIAteTodaySection.jsx";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
 import { listConnections } from "../../lib/consumerApi.js";
+import { formatDinerPeerLabel } from "../../lib/dinerPublicIdentity.js";
 
 export default function ConnectionPeerWhatIAtePage() {
   const navigate = useNavigate();
@@ -41,9 +42,7 @@ export default function ConnectionPeerWhatIAtePage() {
     if (!authLoading && isAuthenticated) load();
   }, [authLoading, isAuthenticated, navigate, load, peerIdParam]);
 
-  const name =
-    connection?.peer?.display_name ||
-    (connection?.peer?.id ? `Member #${connection.peer.id}` : "Connection");
+  const name = formatDinerPeerLabel(connection?.peer) || "Connection";
 
   return (
     <>

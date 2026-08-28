@@ -14,18 +14,17 @@ import {
 } from "../../../lib/consumerApi.js";
 import { buildDiningCrewInviteShareData } from "../../../lib/diningCrewInviteShare.js";
 import { formatWhatWeDoingTitle } from "../../../lib/whatWeDoingTitle.js";
+import { formatDinerPeerLabel } from "../../../lib/dinerPublicIdentity.js";
 import AccountActionLink from "./AccountActionLink.jsx";
 import { accountStyles as styles } from "./accountDashboardStyles.js";
 
 function memberNames(crew) {
   const members = crew?.members_preview || crew?.members || [];
-  return members
-    .map((m) => m.display_name || (m.user_id ? `Member #${m.user_id}` : ""))
-    .filter(Boolean);
+  return members.map((m) => formatDinerPeerLabel(m)).filter(Boolean);
 }
 
 function connectionName(c) {
-  return c?.peer?.display_name || (c?.peer?.id ? `Member #${c.peer.id}` : "Connection");
+  return formatDinerPeerLabel(c?.peer) || "Connection";
 }
 
 function formatEventWhen(ev) {

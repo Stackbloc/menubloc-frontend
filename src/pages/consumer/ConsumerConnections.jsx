@@ -15,13 +15,14 @@ import {
   removeConnection,
   requestConnection,
 } from "../../lib/consumerApi.js";
+import { formatDinerPeerLabel } from "../../lib/dinerPublicIdentity.js";
 
 function PeerLine({ peer }) {
   if (!peer) return null;
   return (
     <div>
       <div style={{ fontWeight: 700, color: "#0f172a" }}>
-        {peer.display_name || `Member #${peer.id}`}
+        {formatDinerPeerLabel(peer)}
       </div>
       {peer.edu_verified ? (
         <div style={{ fontSize: 12, color: "#14532d", marginTop: 2, fontWeight: 600 }}>

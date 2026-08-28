@@ -39,6 +39,7 @@ import {
   resolveConsumerMediaUrl,
   whatIAteTodayLocalDate,
 } from "../../lib/consumerApi.js";
+import { formatDinerPeerLabel } from "../../lib/dinerPublicIdentity.js";
 
 function tokenFromHref(href) {
   const match = String(href || "").match(/what-we-doing\/([^/?#]+)/);
@@ -157,7 +158,7 @@ export default function ConsumerConnectionPeerPage() {
   }, [authLoading, isAuthenticated, navigate, load, peerIdParam]);
 
   const peer = connection?.peer;
-  const name = peer?.display_name || (peer?.id ? `Member #${peer.id}` : "Connection");
+  const name = formatDinerPeerLabel(peer) || "Connection";
   const inviteHref = peer?.id
     ? `/account/what-we-doing?with=${encodeURIComponent(String(peer.id))}`
     : "/account/what-we-doing";

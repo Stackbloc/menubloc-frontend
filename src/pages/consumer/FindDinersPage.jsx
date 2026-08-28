@@ -14,6 +14,7 @@ import {
   requestConnection,
   searchDiners,
 } from "../../lib/consumerApi.js";
+import { formatDinerPeerLabel } from "../../lib/dinerPublicIdentity.js";
 
 function ContextChips({ diner }) {
   const chips = [];
@@ -190,7 +191,7 @@ export default function FindDinersPage() {
                   </div>
                 )}
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={styles.name}>{diner.display_name || `Member #${diner.id}`}</div>
+                  <div style={styles.name}>{formatDinerPeerLabel(diner)}</div>
                   {diner.location_label ? (
                     <div style={styles.location}>📍 {diner.location_label}</div>
                   ) : null}
