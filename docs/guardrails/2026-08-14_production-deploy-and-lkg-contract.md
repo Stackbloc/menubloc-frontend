@@ -36,9 +36,9 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` @ clean `main` |
-| Git commit | `0a3b4aa` — Counsel-approved Terms+Privacy UGC Aug 27 2026 — Owner Feed Invite QR image credentialed fetch fix — Feed deal video swipe: meal-time filters + Lunch Deal caption + restaurant feed compose — Feed deal video swipe reel; text search on /deals — Feed X categorized menu: My Menuply, Share, Account — Owner Feed Invite QR editable poster copy — Feed Deals Live meal periods + media — feed eating tab real compose actions — eating restaurant + menu item fields for ate/want — feed deals chrome + me clusters/menu upload — feed video-only hybrid ConsumerCameraSheet recorder — feed center X video create + plan video attach — video-first parallel `/feed` shell (FEED\|EATING\|EVENTS\|ME); HomeNext remains `/` |
-| Vercel deployment | `menubloc-frontend-mid3s4dgu-menuply.vercel.app` |
-| Live bundle | `index-LApV8X8S.js` |
+| Git commit | `c3a83b5` — Feed first-visit empty coach + counsel Terms/Privacy tip lock — Counsel-approved Terms+Privacy UGC Aug 27 2026 — Owner Feed Invite QR image credentialed fetch fix — Feed deal video swipe: meal-time filters + Lunch Deal caption + restaurant feed compose — Feed deal video swipe reel; text search on /deals — Feed X categorized menu: My Menuply, Share, Account — Owner Feed Invite QR editable poster copy — Feed Deals Live meal periods + media — feed eating tab real compose actions — eating restaurant + menu item fields for ate/want — feed deals chrome + me clusters/menu upload — feed video-only hybrid ConsumerCameraSheet recorder — feed center X video create + plan video attach — video-first parallel `/feed` shell (FEED\|EATING\|EVENTS\|ME); HomeNext remains `/` |
+| Vercel deployment | `menubloc-frontend-n8js942ry-menuply.vercel.app` |
+| Live bundle | `index-BzF6H1tP.js` |
 | Aliases | `menuply.com`, `www.menuply.com`, `crm.menuply.com`, `venues.menuply.com` |
 | Tip-gate | **PASS** (apex + www) verified 2026-08-26 |
 | Feature | Parallel video-first Feed at `/feed`; drawer “Feed (preview)”; `VITE_FEED_AS_HOME` cutover off |
@@ -59,10 +59,10 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway
 
 ```bash
 cd /Users/andrebarber/Desktop/menubloc/menubloc-frontend-main
-npx vercel alias set menubloc-frontend-mid3s4dgu-menuply.vercel.app menuply.com
-npx vercel alias set menubloc-frontend-mid3s4dgu-menuply.vercel.app www.menuply.com
-npx vercel alias set menubloc-frontend-mid3s4dgu-menuply.vercel.app crm.menuply.com
-npx vercel alias set menubloc-frontend-mid3s4dgu-menuply.vercel.app venues.menuply.com
+npx vercel alias set menubloc-frontend-n8js942ry-menuply.vercel.app menuply.com
+npx vercel alias set menubloc-frontend-n8js942ry-menuply.vercel.app www.menuply.com
+npx vercel alias set menubloc-frontend-n8js942ry-menuply.vercel.app crm.menuply.com
+npx vercel alias set menubloc-frontend-n8js942ry-menuply.vercel.app venues.menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 ```
@@ -71,8 +71,8 @@ bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 
 | Field | Value |
 |-------|-------|
-| Deployment | `menubloc-frontend-e34hng7c9-menuply.vercel.app` |
-| Live bundle | `index-ywcqoKH5.js` |
+| Deployment | `menubloc-frontend-mid3s4dgu-menuply.vercel.app` |
+| Live bundle | `index-LApV8X8S.js` |
 | FE commit | `4810f03` / tip-lock docs `89a336e` |
 | BE health | `14a98b5c` |
 | Notes | Pre–video-first `/feed` shell; also tagged `menuply-pre-video-first-consumer-2026-08-26` |
