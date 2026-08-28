@@ -21,6 +21,7 @@ import {
   isLiveFeedVenueItem,
   resolveLiveFeedCaptionLinks,
 } from "../../../lib/liveFeedCategory.js";
+import { FEED_EMPTY_FIRST_VISIT_PROMPT_COPY } from "../../../lib/feedEmptyFirstVisitPrompt.js";
 
 const SWIPE_MIN_PX = 56;
 
@@ -39,6 +40,7 @@ export default function SeeWhosEatingFullscreen({
   variant = "modal",
   bottomInset = 0,
   headerSlot = null,
+  showEmptyFirstVisitPrompt = false,
 }) {
   const navigate = useNavigate();
   const [index, setIndex] = useState(startIndex);
@@ -310,7 +312,11 @@ export default function SeeWhosEatingFullscreen({
         aria-label="Feed"
       >
         {headerSlot}
-        <p style={styles.emptyFeed}>No public food videos yet. Be the first — tap X below.</p>
+        {showEmptyFirstVisitPrompt ? (
+          <p style={styles.emptyFeed} data-testid="feed-empty-first-visit-prompt">
+            {FEED_EMPTY_FIRST_VISIT_PROMPT_COPY}
+          </p>
+        ) : null}
       </div>
     );
     return createPortal(empty, document.body);

@@ -8,6 +8,11 @@ import { Link } from "react-router-dom";
 import { listSeeWhosEating } from "../../../lib/consumerApi.js";
 import { readDetectedLocation } from "../../../lib/discoveryLocationPersistence.js";
 import { FEED_VIDEO_POSTED_EVENT } from "../../../lib/feedVideoCompose.js";
+import {
+  hasSeenFeedBefore,
+  markFeedFirstVisitSeen,
+  shouldShowFeedEmptyFirstVisitPrompt,
+} from "../../../lib/feedEmptyFirstVisitPrompt.js";
 import { useConsumer } from "../../../context/ConsumerContext.jsx";
 import SeeWhosEatingFullscreen from "../myMenuply/SeeWhosEatingFullscreen.jsx";
 import { FEED_PRIMARY_NAV_HEIGHT } from "../../../components/consumer/feed/FeedPrimaryNav.jsx";
@@ -28,6 +33,7 @@ export default function FeedHomePage() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [showEmptyFirstVisitPrompt, setShowEmptyFirstVisitPrompt] = useState(false);
   const market = resolveMarket();
 
   useEffect(() => {
@@ -43,7 +49,20 @@ export default function FeedHomePage() {
       })
         .then((data) => {
           if (cancelled) return;
-          setItems(Array.isArray(data?.items) ? data.items : []);
+          const rows = Array.isArray(data?.items) ? data.items : [];
+          const publicVideoCount = Number(data?.public_video_count) || 0;
+          const storage =
+            typeof window !== "undefined" ? window.localStorage : null;
+          const showPrompt = shouldShowFeedEmptyFirstVisitPrompt({
+            publicVideoCount,
+            hasItems: rows.length > 0,
+            storage,
+          });
+          if (storage && !hasSeenFeedBefore(storage)) {
+            markFeedFirstVisitSeen(storage);
+          }
+          setShowEmptyFirstVisitPrompt(showPrompt);
+          setItems(rows);
         })
         .catch((err) => {
           if (cancelled) return;
@@ -113,6 +132,7 @@ export default function FeedHomePage() {
         onRemovedFromFeed={onRemovedFromFeed}
         bottomInset={FEED_PRIMARY_NAV_HEIGHT + 8}
         headerSlot={headerSlot}
+        showEmptyFirstVisitPrompt={showEmptyFirstVisitPrompt}
       />
     </div>
   );
