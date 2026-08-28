@@ -24,6 +24,8 @@ export default function ConsumerSignup() {
   const redirectTo = useMemo(() => resolveConsumerAuthNext(location, "/"), [location]);
 
   const [email, setEmail] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [password, setPassword] = useState("");
   const [legalConsent, setLegalConsent] = useState(false);
   const [formError, setFormError] = useState("");
@@ -47,6 +49,8 @@ export default function ConsumerSignup() {
 
     if (!email.trim()) { setFormError(t("auth.emailRequired", "Email is required.")); return; }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { setFormError(t("auth.validEmailRequired", "Enter a valid email address.")); return; }
+    if (!firstName.trim()) { setFormError("First name is required."); return; }
+    if (!lastName.trim()) { setFormError("Last name is required."); return; }
     if (!password) { setFormError(t("auth.passwordRequired", "Password is required.")); return; }
     if (password.length < 8) { setFormError("Password must be at least 8 characters."); return; }
     if (!legalConsent) {
@@ -58,6 +62,8 @@ export default function ConsumerSignup() {
     try {
       const result = await signup({
         email: email.trim(),
+        first_name: firstName.trim(),
+        last_name: lastName.trim(),
         password,
         confirm_password: password,
         ...buildLegalConsentPayload(),
@@ -117,6 +123,34 @@ export default function ConsumerSignup() {
         )}
       >
         <form onSubmit={handleSubmit} noValidate style={styles.form}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div style={styles.fieldGroup}>
+              <label htmlFor="signup-first-name" style={styles.label}>First name</label>
+              <input
+                id="signup-first-name"
+                type="text"
+                autoComplete="given-name"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                style={styles.input}
+                placeholder="First name"
+                required
+              />
+            </div>
+            <div style={styles.fieldGroup}>
+              <label htmlFor="signup-last-name" style={styles.label}>Last name</label>
+              <input
+                id="signup-last-name"
+                type="text"
+                autoComplete="family-name"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                style={styles.input}
+                placeholder="Last name"
+                required
+              />
+            </div>
+          </div>
           <div style={styles.fieldGroup}>
             <label htmlFor="signup-email" style={styles.label}>Email</label>
             <input

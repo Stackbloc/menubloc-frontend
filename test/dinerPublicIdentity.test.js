@@ -21,6 +21,16 @@ test("formatDinerPeerLabel formats first name and last initial from profile fiel
   );
 });
 
+test("formatDinerPeerLabel parses legacy display_name when columns empty", () => {
+  assert.equal(
+    formatDinerPeerLabel({
+      id: 124,
+      display_name: "Andre Barber",
+    }),
+    "Andre B."
+  );
+});
+
 test("formatDinerPublicName keeps chosen screen names", () => {
   assert.equal(
     formatDinerPublicName({

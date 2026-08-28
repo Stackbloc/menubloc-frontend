@@ -105,6 +105,7 @@ const styles = {
     marginTop: 4,
   },
   fieldGroup: { marginBottom: 14 },
+  nameRow: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 14 },
   label: { display: "block", fontSize: 13, fontWeight: 700, marginBottom: 6, color: "#374151" },
   input: {
     width: "100%",
@@ -146,6 +147,8 @@ export default function DinerSignup() {
   const redirectTo = useMemo(() => "/", []);
 
   const [email, setEmail] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [password, setPassword] = useState("");
   const [legalConsent, setLegalConsent] = useState(false);
   const [formError, setFormError] = useState("");
@@ -159,6 +162,8 @@ export default function DinerSignup() {
 
     if (!email.trim()) { setFormError("Email is required."); return; }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { setFormError("Enter a valid email address."); return; }
+    if (!firstName.trim()) { setFormError("First name is required."); return; }
+    if (!lastName.trim()) { setFormError("Last name is required."); return; }
     if (!password) { setFormError("Password is required."); return; }
     if (password.length < 8) { setFormError("Password must be at least 8 characters."); return; }
     if (!legalConsent) {
@@ -170,6 +175,8 @@ export default function DinerSignup() {
     try {
       const result = await signup({
         email: email.trim(),
+        first_name: firstName.trim(),
+        last_name: lastName.trim(),
         password,
         confirm_password: password,
         ...buildLegalConsentPayload(),
@@ -277,8 +284,36 @@ export default function DinerSignup() {
 
         <section style={styles.signupBlock}>
           <div style={styles.sectionTitle}>Create your account</div>
-          <p style={styles.signupIntro}>Enter your email and password. We&apos;ll verify your phone once before you can order.</p>
+          <p style={styles.signupIntro}>Enter your name, email, and password. We&apos;ll verify your phone once before you can order.</p>
           <form onSubmit={handleSubmit} noValidate>
+            <div style={styles.nameRow}>
+              <div style={styles.fieldGroup}>
+                <label htmlFor="diner-signup-first-name" style={styles.label}>First name</label>
+                <input
+                  id="diner-signup-first-name"
+                  type="text"
+                  autoComplete="given-name"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  style={styles.input}
+                  placeholder="First name"
+                  required
+                />
+              </div>
+              <div style={styles.fieldGroup}>
+                <label htmlFor="diner-signup-last-name" style={styles.label}>Last name</label>
+                <input
+                  id="diner-signup-last-name"
+                  type="text"
+                  autoComplete="family-name"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  style={styles.input}
+                  placeholder="Last name"
+                  required
+                />
+              </div>
+            </div>
             <div style={styles.fieldGroup}>
               <label htmlFor="diner-signup-email" style={styles.label}>Email</label>
               <input
