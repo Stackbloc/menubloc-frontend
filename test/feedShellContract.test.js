@@ -98,9 +98,9 @@ test("Feed shell: Home|Connects|Menus|X|Deals|Shop|Profile + slim X sheet", () =
   assert.doesNotMatch(homeNext, /FeedShopBasketButton/);
   assert.match(homeNext, /feed-shop-hero/);
   assert.match(homeNext, /FEED_MOBILE_HEADER_OFFSET/);
+  assert.match(homeNext, /Help me decide/);
   assert.match(homeNext, /!embedInFeedShell \?/);
-  assert.match(homeNext, /loadMenus: !embedInFeedShell/);
-  assert.match(homeNext, /!embedInFeedShell[\s\S]*Help me decide/);
+  assert.doesNotMatch(homeNext, /loadMenus: !embedInFeedShell/);
   assert.match(homeNext, /rewriteSearchPathForFeedShell/);
 
   const feedNavLib = read("src/lib/feedShellNavigation.js");

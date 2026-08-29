@@ -3055,20 +3055,15 @@ export default function GrubbidSearchResults({ embedInFeedShell = false } = {}) 
             ←
           </button>
           {embedInFeedShell ? (
-            <div style={{ flex: 1, minWidth: 0, padding: "0 8px" }}>
-              <span style={{ display: "block", fontSize: 17, fontWeight: 900, color: "#0B0F0C", letterSpacing: "-0.02em" }}>
-                🔍 {displayQuery ? `"${displayQuery}"` : "Shop"}
-              </span>
-            </div>
+            <div style={{ flex: 1, minWidth: 0 }} aria-hidden="true" />
           ) : (
             <BrandLogo height={48} radius={14} />
           )}
           <div style={{ width: 30, flexShrink: 0 }} />
         </div>
-        {!embedInFeedShell ? (
         <div style={{ maxWidth: 576, margin: "0 auto", padding: "0 14px", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
           <span style={{ fontSize: 17, fontWeight: 900, color: "#0B0F0C", letterSpacing: "-0.02em" }}>
-            🔍 {displayQuery ? `"${displayQuery}"` : "Search"}
+            🔍 {displayQuery ? `"${displayQuery}"` : embedInFeedShell ? "Shop" : "Search"}
           </span>
           {locationLabel ? (
             <span style={{
@@ -3080,17 +3075,6 @@ export default function GrubbidSearchResults({ embedInFeedShell = false } = {}) 
             </span>
           ) : null}
         </div>
-        ) : locationLabel ? (
-        <div style={{ maxWidth: 576, margin: "0 auto", padding: "0 14px 4px" }}>
-          <span style={{
-            fontSize: 12, fontWeight: 600, color: "#22C55E",
-            background: "rgba(34,197,94,0.08)", borderRadius: 999,
-            padding: "2px 10px", border: "1px solid rgba(34,197,94,0.2)",
-          }}>
-            Near {locationLabel}
-          </span>
-        </div>
-        ) : null}
         {showWaiterBar && (
           <div style={{ maxWidth: 576, margin: "0 auto", padding: "4px 14px 2px" }}>
             <WaiterRefinementPrompt

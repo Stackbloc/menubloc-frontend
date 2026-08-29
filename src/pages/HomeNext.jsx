@@ -51,7 +51,7 @@ export default function HomeNext({ embedInFeedShell = false } = {}) {
     setAppliedLocation,
     shouldUseGeoBrowse,
     locating,
-  } = useHomeBrowseFeed({ loadMenus: !embedInFeedShell });
+  } = useHomeBrowseFeed();
 
   const sections = useMemo(
     () =>
@@ -436,7 +436,6 @@ export default function HomeNext({ embedInFeedShell = false } = {}) {
             embedInFeedShell={embedInFeedShell}
           />
 
-          {!embedInFeedShell ? (
           <section ref={helpSectionRef} style={{ marginBottom: 8 }}>
             <div style={{ padding: "0 16px", marginBottom: 12 }}>
               <h2 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: "#111827" }}>
@@ -524,7 +523,6 @@ export default function HomeNext({ embedInFeedShell = false } = {}) {
               ))
             )}
           </section>
-          ) : null}
         </main>
       </div>
 
