@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { formatDinerPeerLabel, formatDinerPublicName } from "../src/lib/dinerPublicIdentity.js";
+import { formatDinerPeerLabel, formatDinerPublicName, formatPresumedPublicNameFromLegal } from "../src/lib/dinerPublicIdentity.js";
 
 test("formatDinerPeerLabel never falls back to member numbers", () => {
   const label = formatDinerPeerLabel({ id: 124, display_name: null });
@@ -29,6 +29,11 @@ test("formatDinerPeerLabel parses legacy display_name when columns empty", () =>
     }),
     "Andre B."
   );
+});
+
+test("formatPresumedPublicNameFromLegal previews signup default", () => {
+  assert.equal(formatPresumedPublicNameFromLegal("Andre", "Barber"), "Andre B.");
+  assert.equal(formatPresumedPublicNameFromLegal("Andre", ""), "Andre");
 });
 
 test("formatDinerPublicName keeps chosen screen names", () => {

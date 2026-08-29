@@ -12,6 +12,7 @@ import {
   AuthPageFrame,
   FormError,
   PasswordField,
+  SignupScreenNameField,
   SocialAuthSection,
   styles,
 } from "../../components/consumer/ConsumerAuthShared.jsx";
@@ -26,6 +27,7 @@ export default function ConsumerSignup() {
   const [email, setEmail] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [screenName, setScreenName] = useState("");
   const [password, setPassword] = useState("");
   const [legalConsent, setLegalConsent] = useState(false);
   const [formError, setFormError] = useState("");
@@ -60,10 +62,12 @@ export default function ConsumerSignup() {
 
     setLoading(true);
     try {
+      const trimmedScreenName = screenName.trim();
       const result = await signup({
         email: email.trim(),
         first_name: firstName.trim(),
         last_name: lastName.trim(),
+        ...(trimmedScreenName ? { display_name: trimmedScreenName.slice(0, 40) } : {}),
         password,
         confirm_password: password,
         ...buildLegalConsentPayload(),
@@ -114,7 +118,7 @@ export default function ConsumerSignup() {
       <AuthPageFrame
         showLogo
         title="Join Menuply"
-        subtitle="Create your account, then verify your phone once."
+        subtitle="Add your name and email. Your default screen name is your first name and last initial unless you choose one below."
         footer={(
           <p style={styles.footer}>
             Already have an account?{" "}
@@ -151,6 +155,13 @@ export default function ConsumerSignup() {
               />
             </div>
           </div>
+          <SignupScreenNameField
+            id="signup-screen-name"
+            screenName={screenName}
+            onScreenNameChange={(e) => setScreenName(e.target.value)}
+            firstName={firstName}
+            lastName={lastName}
+          />
           <div style={styles.fieldGroup}>
             <label htmlFor="signup-email" style={styles.label}>Email</label>
             <input

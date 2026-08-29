@@ -217,6 +217,12 @@ export const accountStyles = {
     color: "#94a3b8",
     fontSize: 12,
   },
+  fieldHint: {
+    fontSize: 12,
+    color: "#64748b",
+    lineHeight: 1.45,
+    margin: "6px 0 0",
+  },
   readOnly: {
     fontSize: 15,
     color: "#0f172a",

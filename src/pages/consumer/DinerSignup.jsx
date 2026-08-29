@@ -6,7 +6,7 @@ import SiteFooter from "../../components/SiteFooter.jsx";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
 import { buildLegalConsentPayload } from "../../lib/legalConsent.js";
 import { buildDinerSignupAttribution } from "../../lib/dinerSignupAttribution.js";
-import { FormError, PasswordField } from "../../components/consumer/ConsumerAuthShared.jsx";
+import { FormError, PasswordField, SignupScreenNameField } from "../../components/consumer/ConsumerAuthShared.jsx";
 
 const styles = {
   pageWrap: {
@@ -149,6 +149,7 @@ export default function DinerSignup() {
   const [email, setEmail] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [screenName, setScreenName] = useState("");
   const [password, setPassword] = useState("");
   const [legalConsent, setLegalConsent] = useState(false);
   const [formError, setFormError] = useState("");
@@ -173,10 +174,12 @@ export default function DinerSignup() {
 
     setLoading(true);
     try {
+      const trimmedScreenName = screenName.trim();
       const result = await signup({
         email: email.trim(),
         first_name: firstName.trim(),
         last_name: lastName.trim(),
+        ...(trimmedScreenName ? { display_name: trimmedScreenName.slice(0, 40) } : {}),
         password,
         confirm_password: password,
         ...buildLegalConsentPayload(),
@@ -284,7 +287,9 @@ export default function DinerSignup() {
 
         <section style={styles.signupBlock}>
           <div style={styles.sectionTitle}>Create your account</div>
-          <p style={styles.signupIntro}>Enter your name, email, and password. We&apos;ll verify your phone once before you can order.</p>
+          <p style={styles.signupIntro}>
+            Enter your first and last name, email, and password. Your default screen name is your first name and last initial unless you choose one below. We&apos;ll verify your phone once before you can order.
+          </p>
           <form onSubmit={handleSubmit} noValidate>
             <div style={styles.nameRow}>
               <div style={styles.fieldGroup}>
@@ -314,6 +319,14 @@ export default function DinerSignup() {
                 />
               </div>
             </div>
+            <SignupScreenNameField
+              id="diner-signup-screen-name"
+              variant="light"
+              screenName={screenName}
+              onScreenNameChange={(e) => setScreenName(e.target.value)}
+              firstName={firstName}
+              lastName={lastName}
+            />
             <div style={styles.fieldGroup}>
               <label htmlFor="diner-signup-email" style={styles.label}>Email</label>
               <input

@@ -149,15 +149,18 @@ export default function ProfileTab({
         </div>
         <div style={styles.field}>
           <label style={styles.fieldLabel}>
-            Display name <span style={styles.optText}>(optional)</span>
+            Screen name <span style={styles.optText}>(optional)</span>
           </label>
           <input
             type="text"
             value={displayName}
             onChange={(e) => onDisplayNameChange(e.target.value)}
             style={styles.input}
-            placeholder="How you want to be known"
+            placeholder="Choose a screen name"
           />
+          <p style={styles.fieldHint}>
+            If blank, friends see your first name and last initial (for example, Andre B.).
+          </p>
         </div>
         <button
           type="button"

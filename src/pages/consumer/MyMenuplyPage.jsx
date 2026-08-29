@@ -7,6 +7,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import StickyPageHeader from "../../components/StickyPageHeader.jsx";
 import BottomNav from "../../components/BottomNav.jsx";
+import FeedGuestProfileLanding from "../../components/consumer/feed/FeedGuestProfileLanding.jsx";
 import ShareModal from "../../components/share/ShareModal.jsx";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
 import {
@@ -1239,6 +1240,10 @@ export default function MyMenuplyPage({ embedInFeedShell = false }) {
     await load();
   }
 
+  if (embedInFeedShell && !authLoading && !isAuthenticated) {
+    return <FeedGuestProfileLanding />;
+  }
+
   return (
     <>
       {!embedInFeedShell ? <StickyPageHeader /> : null}
@@ -1621,7 +1626,7 @@ export default function MyMenuplyPage({ embedInFeedShell = false }) {
           </>
         ) : null}
       </div>
-      <BottomNav />
+      {!embedInFeedShell ? <BottomNav /> : null}
       <InvitePickerSheet
         open={inviteCrewPickerOpen}
         kind="crew"

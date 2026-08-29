@@ -1,7 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useLanguage } from "../../context/LanguageContext.jsx";
+import { formatPresumedPublicNameFromLegal } from "../../lib/dinerPublicIdentity.js";
 import { BrandLogo } from "../BrandLogo.jsx";
+
+const SCREEN_NAME_MAX_LENGTH = 40;
 
 const GOOGLE_SCRIPT = "https://accounts.google.com/gsi/client";
 const APPLE_SCRIPT = "https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js";
@@ -126,6 +129,50 @@ export function PasswordField({
       </div>
       {hint && !error ? <div style={styles.fieldHint}>{hint}</div> : null}
       {error ? <div id={`${id}-error`} style={styles.fieldError}>{error}</div> : null}
+    </div>
+  );
+}
+
+export function SignupScreenNameField({
+  id = "signup-screen-name",
+  screenName,
+  onScreenNameChange,
+  firstName,
+  lastName,
+  variant = "dark",
+}) {
+  const theme = variant === "light" ? lightFieldStyles : styles;
+  const trimmedScreen = String(screenName || "").trim();
+  const presumed = formatPresumedPublicNameFromLegal(firstName, lastName);
+  const hint = trimmedScreen
+    ? "Friends will see this screen name on Connect, comments, and your profile."
+    : presumed
+      ? `If you leave this blank, your default screen name will be ${presumed}.`
+      : "Optional. If you leave this blank, your default screen name will be your first name and last initial.";
+
+  return (
+    <div style={theme.fieldGroup}>
+      <label htmlFor={id} style={theme.label}>
+        Screen name <span style={styles.optional}>(optional)</span>
+      </label>
+      <input
+        id={id}
+        type="text"
+        autoComplete="nickname"
+        value={screenName}
+        onChange={onScreenNameChange}
+        style={theme.input}
+        placeholder="Choose a screen name"
+        maxLength={SCREEN_NAME_MAX_LENGTH}
+      />
+      <div
+        style={{
+          ...styles.fieldHint,
+          ...(variant === "light" ? { color: "#6B7280" } : null),
+        }}
+      >
+        {hint}
+      </div>
     </div>
   );
 }

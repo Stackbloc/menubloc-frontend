@@ -30,7 +30,19 @@ test("Diner signup pitch uses new proposition; form/SMS preserved", () => {
   assert.match(page, /Discover\. Plan\. Eat\./);
   assert.match(page, /that sell through\s+Menuply and those that don/);
   assert.doesNotMatch(page, /small fortune|pass those savings/);
+  assert.match(page, /SignupScreenNameField/);
+  assert.match(page, /first name and last initial/);
+  assert.match(page, /display_name/);
   assert.match(page, /type="email"/);
   assert.match(page, /SmsAuthModal/);
   assert.match(page, /requires_phone_verification/);
+});
+
+test("Consumer signup collects names and optional screen name", () => {
+  const page = read("src/pages/consumer/ConsumerSignup.jsx");
+  assert.match(page, /SignupScreenNameField/);
+  assert.match(page, /first_name:/);
+  assert.match(page, /last_name:/);
+  assert.match(page, /display_name/);
+  assert.match(page, /first name and last initial/);
 });

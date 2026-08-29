@@ -27,16 +27,20 @@ test("Feed shell: Home|Connects|Menus|X|Deals|Search|Profile + slim X sheet", ()
   const nav = read("src/components/consumer/feed/FeedPrimaryNav.jsx");
   assert.match(nav, /feed-primary-nav/);
   assert.match(nav, /feed-nav-create-x/);
-  assert.match(nav, /feed-nav-home/);
-  assert.match(nav, /feed-nav-connects/);
-  assert.match(nav, /feed-nav-menus/);
-  assert.match(nav, /feed-nav-deals/);
-  assert.match(nav, /feed-nav-search/);
-  assert.match(nav, /feed-nav-profile/);
+  assert.match(nav, /FEED_LEFT_TABS/);
+  assert.match(nav, /FEED_RIGHT_TABS/);
   assert.doesNotMatch(nav, /feed-nav-me"/);
   assert.doesNotMatch(nav, /feed-nav-events/);
   assert.doesNotMatch(nav, /feed-nav-feed/);
   assert.doesNotMatch(nav, /\/feed\/eating/);
+
+  const feedTabLinks = read("src/lib/feedShellLinks.js");
+  assert.match(feedTabLinks, /feed-nav-home/);
+  assert.match(feedTabLinks, /feed-nav-connects/);
+  assert.match(feedTabLinks, /feed-nav-menus/);
+  assert.match(feedTabLinks, /feed-nav-deals/);
+  assert.match(feedTabLinks, /feed-nav-search/);
+  assert.match(feedTabLinks, /feed-nav-profile/);
 
   const shell = read("src/pages/consumer/feed/FeedShellPage.jsx");
   assert.match(shell, /FeedVideoCreateSheet/);
@@ -77,16 +81,38 @@ test("Feed shell: Home|Connects|Menus|X|Deals|Search|Profile + slim X sheet", ()
   assert.match(feedNavLib, /rewriteSearchPathForFeedShell/);
   assert.match(feedNavLib, /isFeedShellSearchResultsView/);
 
-  const profilePage = read("src/pages/consumer/feed/FeedProfilePage.jsx");
-  assert.match(profilePage, /embedInFeedShell/);
+  const feedLinks = read("src/lib/feedShellLinks.js");
+  assert.match(feedLinks, /FEED_PRIMARY_TABS/);
+  assert.match(feedLinks, /FEED_MORE_SECTIONS/);
+  assert.match(feedLinks, /\/waiter/);
+  assert.match(feedLinks, /\/clusters/);
+  assert.match(feedLinks, /restaurant\/onboarding/);
+  assert.match(feedLinks, /feed-nav-home/);
 
-  const connectsPage = read("src/pages/consumer/feed/FeedConnectsPage.jsx");
-  assert.match(connectsPage, /embedInFeedShell/);
+  const shellPage = read("src/pages/consumer/feed/FeedShellPage.jsx");
+  assert.match(shellPage, /FeedDesktopRail/);
+  assert.match(shellPage, /FeedMobileHeader/);
+  assert.match(shellPage, /FeedMorePanel/);
+  assert.match(shellPage, /useFeedShellDesktop/);
+
+  const desktopRail = read("src/components/consumer/feed/FeedDesktopRail.jsx");
+  assert.match(desktopRail, /feed-desktop-rail/);
+  assert.match(desktopRail, /feed-desktop-login/);
+  assert.match(desktopRail, /feed-more-open-desktop/);
+
+  const mobileHeader = read("src/components/consumer/feed/FeedMobileHeader.jsx");
+  assert.match(mobileHeader, /feed-more-open-mobile/);
+  assert.match(mobileHeader, /feed-mobile-login/);
+
+  const guestLanding = read("src/components/consumer/feed/FeedGuestProfileLanding.jsx");
+  assert.match(guestLanding, /FEED_GUEST_PROFILE_CARDS/);
+  assert.match(guestLanding, /feed-guest-profile-landing/);
+  assert.match(feedLinks, /feed-guest-join-card/);
+  assert.match(feedLinks, /feed-guest-waiter-card/);
 
   const myMenuply = read("src/pages/consumer/MyMenuplyPage.jsx");
-  assert.match(myMenuply, /my-menuply-account-settings/);
-  assert.match(myMenuply, /feed-profile-settings-row/);
-  assert.match(myMenuply, /!embedInFeedShell[\s\S]*my-menuply-sticky-head/);
+  assert.match(myMenuply, /FeedGuestProfileLanding/);
+  assert.match(myMenuply, /!embedInFeedShell \? <BottomNav \/>/);
 
   const menusPage = read("src/pages/consumer/feed/FeedMenusPage.jsx");
   assert.match(menusPage, /Build your menu stack from Feed/);
@@ -107,13 +133,17 @@ test("Feed as home: / uses Feed shell; FeedPrimaryNav paths unchanged", () => {
   assert.doesNotMatch(homeRoot, /BottomNav/);
 
   const nav = read("src/components/consumer/feed/FeedPrimaryNav.jsx");
-  assert.match(nav, /to: "\/feed"/);
-  assert.match(nav, /to: "\/feed\/connects"/);
-  assert.match(nav, /to: "\/feed\/menus"/);
-  assert.match(nav, /to: "\/feed\/deals"/);
-  assert.match(nav, /to: "\/feed\/search"/);
-  assert.match(nav, /to: "\/feed\/profile"/);
-  assert.doesNotMatch(nav, /to: "\/"/);
+  assert.match(nav, /FEED_LEFT_TABS/);
+  assert.match(nav, /FEED_RIGHT_TABS/);
+
+  const feedLinks = read("src/lib/feedShellLinks.js");
+  assert.match(feedLinks, /to: "\/feed"/);
+  assert.match(feedLinks, /to: "\/feed\/connects"/);
+  assert.match(feedLinks, /to: "\/feed\/menus"/);
+  assert.match(feedLinks, /to: "\/feed\/deals"/);
+  assert.match(feedLinks, /to: "\/feed\/search"/);
+  assert.match(feedLinks, /to: "\/feed\/profile"/);
+  assert.doesNotMatch(feedLinks, /to: "\/"/);
 
   const app = read("src/App.jsx");
   assert.match(app, /path="\/home-next"/);

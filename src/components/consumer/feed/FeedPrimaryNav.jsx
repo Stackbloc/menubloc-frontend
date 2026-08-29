@@ -1,21 +1,11 @@
 /**
  * TikTok-style feed shell nav: Home · Connects · Menus | [X] | Deals · Search · Profile.
+ * Mobile bottom bar only — desktop uses FeedDesktopRail from the same tab config.
  */
 
 import { NavLink, useLocation } from "react-router-dom";
 import MenuplyXMark from "../../MenuplyXMark.jsx";
-
-const LEFT_TABS = [
-  { to: "/feed", end: true, label: "Home", testId: "feed-nav-home" },
-  { to: "/feed/connects", end: false, label: "Connects", testId: "feed-nav-connects" },
-  { to: "/feed/menus", end: false, label: "Menus", testId: "feed-nav-menus" },
-];
-
-const RIGHT_TABS = [
-  { to: "/feed/deals", end: false, label: "Deals", testId: "feed-nav-deals" },
-  { to: "/feed/search", end: false, label: "Search", testId: "feed-nav-search" },
-  { to: "/feed/profile", end: false, label: "Profile", testId: "feed-nav-profile" },
-];
+import { FEED_LEFT_TABS, FEED_RIGHT_TABS } from "../../../lib/feedShellLinks.js";
 
 export const FEED_PRIMARY_NAV_HEIGHT = 56;
 
@@ -48,9 +38,10 @@ export default function FeedPrimaryNav({ onCreateClick, createActive = false }) 
       style={styles.nav}
       data-testid="feed-primary-nav"
       aria-label="Primary"
+      className="feed-primary-nav-mobile"
     >
       <div style={styles.side}>
-        {LEFT_TABS.map((tab) => (
+        {FEED_LEFT_TABS.map((tab) => (
           <TabLink key={tab.to} tab={tab} />
         ))}
       </div>
@@ -66,7 +57,7 @@ export default function FeedPrimaryNav({ onCreateClick, createActive = false }) 
         <MenuplyXMark size={26} active={createActive} />
       </button>
       <div style={styles.side}>
-        {RIGHT_TABS.map((tab) => (
+        {FEED_RIGHT_TABS.map((tab) => (
           <TabLink key={tab.to} tab={tab} />
         ))}
       </div>

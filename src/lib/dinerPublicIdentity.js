@@ -24,6 +24,11 @@ function formatFirstLastInitial(firstName, lastName) {
   return "";
 }
 
+/** Default public label from legal first + last when no custom screen name is set. */
+export function formatPresumedPublicNameFromLegal(firstName, lastName) {
+  return formatFirstLastInitial(firstName, lastName);
+}
+
 function formatNamePartsFromDisplay(displayName) {
   const parts = trimName(displayName).split(/\s+/).filter(Boolean);
   if (parts.length === 0) return "";
