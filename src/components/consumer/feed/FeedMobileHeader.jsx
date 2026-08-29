@@ -4,9 +4,14 @@
 
 import { Link } from "react-router-dom";
 import { BrandLogo } from "../../BrandLogo.jsx";
+import FeedShopBasketButton from "./FeedShopBasketButton.jsx";
 import { FEED_SHELL_LOGIN_PATH } from "../../../lib/feedShellLinks.js";
 
-export default function FeedMobileHeader({ onMoreClick, isAuthenticated = false }) {
+export default function FeedMobileHeader({
+  onMoreClick,
+  isAuthenticated = false,
+  showShopBasket = false,
+}) {
   return (
     <header style={styles.header} data-testid="feed-mobile-header">
       <div style={styles.logoWrap}>
@@ -21,6 +26,7 @@ export default function FeedMobileHeader({ onMoreClick, isAuthenticated = false 
         />
       </div>
       <div style={styles.actions}>
+        {showShopBasket ? <FeedShopBasketButton variant="feedDark" /> : null}
         {!isAuthenticated ? (
           <Link to={FEED_SHELL_LOGIN_PATH} style={styles.loginChip} data-testid="feed-mobile-login">
             Log in

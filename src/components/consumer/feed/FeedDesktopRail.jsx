@@ -5,6 +5,7 @@
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { BrandLogo } from "../../BrandLogo.jsx";
 import MenuplyXMark from "../../MenuplyXMark.jsx";
+import FeedShopBasketButton from "./FeedShopBasketButton.jsx";
 import {
   FEED_DESKTOP_RAIL_WIDTH,
   FEED_PRIMARY_TABS,
@@ -85,6 +86,12 @@ export default function FeedDesktopRail({
       ) : null}
 
       <div style={styles.footer}>
+        {showShopBasket ? (
+          <div style={styles.shopBasketWrap} data-testid="feed-desktop-shop-basket">
+            <FeedShopBasketButton variant="feedDark" />
+            <span style={styles.shopBasketLabel}>Basket</span>
+          </div>
+        ) : null}
         <button
           type="button"
           style={styles.moreBtn}
@@ -194,6 +201,20 @@ const styles = {
   footer: {
     marginTop: "auto",
     paddingTop: 8,
+    display: "flex",
+    flexDirection: "column",
+    gap: 8,
+  },
+  shopBasketWrap: {
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+    padding: "4px 8px",
+  },
+  shopBasketLabel: {
+    fontSize: 14,
+    fontWeight: 700,
+    color: "rgba(255,255,255,0.85)",
   },
   moreBtn: {
     width: "100%",

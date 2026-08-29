@@ -5,10 +5,11 @@
 import { useOrderCart } from "../../../context/OrderCartContext.jsx";
 import { useLanguage } from "../../../context/LanguageContext.jsx";
 
-export default function FeedShopBasketButton() {
+export default function FeedShopBasketButton({ variant = "light" } = {}) {
   const { t } = useLanguage();
   const { itemCount, openCart } = useOrderCart();
   const badge = itemCount > 9 ? "9+" : String(itemCount);
+  const isFeedDark = variant === "feedDark";
 
   return (
     <button
@@ -20,7 +21,10 @@ export default function FeedShopBasketButton() {
           : t("nav.basket", "Basket")
       }
       onClick={openCart}
-      style={styles.btn}
+      style={{
+        ...styles.btn,
+        ...(isFeedDark ? styles.btnFeedDark : null),
+      }}
     >
       <span aria-hidden="true" style={styles.icon}>
         🛒
@@ -49,6 +53,10 @@ const styles = {
     flexShrink: 0,
     padding: 0,
     fontFamily: "inherit",
+  },
+  btnFeedDark: {
+    border: "1px solid rgba(255,255,255,0.18)",
+    background: "rgba(8, 12, 10, 0.82)",
   },
   icon: {
     fontSize: 20,

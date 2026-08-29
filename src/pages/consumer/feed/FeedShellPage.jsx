@@ -4,7 +4,8 @@
  */
 
 import { useEffect, useState } from "react";
-import { Outlet, useNavigate } from "react-router-dom";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { isFeedShopRoute } from "../../../lib/feedShellNavigation.js";
 import FeedPrimaryNav, { FEED_PRIMARY_NAV_HEIGHT } from "../../../components/consumer/feed/FeedPrimaryNav.jsx";
 import FeedDesktopRail, { FEED_DESKTOP_RAIL_WIDTH } from "../../../components/consumer/feed/FeedDesktopRail.jsx";
 import FeedMobileHeader from "../../../components/consumer/feed/FeedMobileHeader.jsx";
@@ -18,8 +19,10 @@ export { FEED_PRIMARY_NAV_HEIGHT };
 
 export default function FeedShellPage({ children = null }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { isAuthenticated } = useConsumer();
   const isDesktop = useFeedShellDesktop();
+  const showShopBasket = isFeedShopRoute(location.pathname);
   const [createSheetOpen, setCreateSheetOpen] = useState(false);
   const [composeCategory, setComposeCategory] = useState("");
   const [moreOpen, setMoreOpen] = useState(false);
@@ -79,11 +82,13 @@ export default function FeedShellPage({ children = null }) {
           createActive={createActive}
           onMoreClick={() => setMoreOpen(true)}
           isAuthenticated={isAuthenticated}
+          showShopBasket={showShopBasket}
         />
       ) : (
         <FeedMobileHeader
           onMoreClick={() => setMoreOpen(true)}
           isAuthenticated={isAuthenticated}
+          showShopBasket={showShopBasket}
         />
       )}
 

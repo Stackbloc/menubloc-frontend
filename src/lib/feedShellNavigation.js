@@ -3,6 +3,15 @@ import { isFeedAsHomeEnabled } from "./featureFlags.js";
 /** Feed shell search route — same query params as `/search`, no menu-window discovery. */
 export const FEED_SHELL_SEARCH_PATH = "/feed/search";
 
+/** Clearance below fixed Feed mobile header (logo + actions). */
+export const FEED_MOBILE_HEADER_OFFSET =
+  "calc(max(8px, env(safe-area-inset-top)) + 44px)";
+
+/** True on Shop tab routes (`/feed/search` with or without query). */
+export function isFeedShopRoute(pathname = "") {
+  return String(pathname || "") === FEED_SHELL_SEARCH_PATH;
+}
+
 /** Discovery home path for Feed shell Search tab (avoids loop when Feed is `/`). */
 export function resolveFeedSearchHomePath() {
   return isFeedAsHomeEnabled() ? "/home-next" : "/";

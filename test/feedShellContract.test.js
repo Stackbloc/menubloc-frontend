@@ -68,26 +68,44 @@ test("Feed shell: Home|Connects|Menus|X|Deals|Shop|Profile + slim X sheet", () =
   assert.doesNotMatch(home, /feed-deals/);
 
   const searchPage = read("src/pages/consumer/feed/FeedSearchPage.jsx");
+  assert.match(searchPage, /HomeNext embedInFeedShell/);
   assert.match(searchPage, /GrubbidSearchResults embedInFeedShell/);
+  assert.match(searchPage, /isFeedShellSearchResultsView/);
   assert.match(searchPage, /feed-shop-page/);
-  assert.doesNotMatch(searchPage, /HomeNext embedInFeedShell/);
 
   const searchResults = read("src/pages/GrubbidSearchResults.jsx");
-  assert.match(searchResults, /FeedShopBasketButton/);
-  assert.match(searchResults, /feed-shop-search-entry/);
+  assert.doesNotMatch(searchResults, /FeedShopBasketButton/);
+  assert.match(searchResults, /FEED_MOBILE_HEADER_OFFSET/);
 
   const shopBasket = read("src/components/consumer/feed/FeedShopBasketButton.jsx");
   assert.match(shopBasket, /feed-shop-basket/);
 
+  const desktopRail = read("src/components/consumer/feed/FeedDesktopRail.jsx");
+  assert.match(desktopRail, /feed-desktop-rail/);
+  assert.match(desktopRail, /feed-desktop-login/);
+  assert.match(desktopRail, /feed-more-open-desktop/);
+  assert.match(desktopRail, /showShopBasket/);
+  assert.match(desktopRail, /feed-desktop-shop-basket/);
+
+  const mobileHeader = read("src/components/consumer/feed/FeedMobileHeader.jsx");
+  assert.match(mobileHeader, /feed-more-open-mobile/);
+  assert.match(mobileHeader, /4caf50/);
+  assert.match(mobileHeader, /showShopBasket/);
+  assert.match(mobileHeader, /FeedShopBasketButton/);
+
   const homeNext = read("src/pages/HomeNext.jsx");
+  assert.doesNotMatch(homeNext, /FeedShopBasketButton/);
+  assert.match(homeNext, /feed-shop-hero/);
+  assert.match(homeNext, /FEED_MOBILE_HEADER_OFFSET/);
+  assert.match(homeNext, /!embedInFeedShell \?/);
   assert.match(homeNext, /loadMenus: !embedInFeedShell/);
   assert.match(homeNext, /!embedInFeedShell[\s\S]*Help me decide/);
   assert.match(homeNext, /rewriteSearchPathForFeedShell/);
-  assert.match(homeNext, /feed-search-hero/);
 
   const feedNavLib = read("src/lib/feedShellNavigation.js");
   assert.match(feedNavLib, /rewriteSearchPathForFeedShell/);
   assert.match(feedNavLib, /isFeedShellSearchResultsView/);
+  assert.match(feedNavLib, /isFeedShopRoute/);
 
   const feedLinks = read("src/lib/feedShellLinks.js");
   assert.match(feedLinks, /FEED_PRIMARY_TABS/);
@@ -101,19 +119,12 @@ test("Feed shell: Home|Connects|Menus|X|Deals|Shop|Profile + slim X sheet", () =
   assert.match(feedLinks, /feed-nav-home/);
 
   const shellPage = read("src/pages/consumer/feed/FeedShellPage.jsx");
+  assert.match(shellPage, /isFeedShopRoute/);
+  assert.match(shellPage, /showShopBasket/);
   assert.match(shellPage, /FeedDesktopRail/);
   assert.match(shellPage, /FeedMobileHeader/);
   assert.match(shellPage, /FeedMorePanel/);
   assert.match(shellPage, /useFeedShellDesktop/);
-
-  const desktopRail = read("src/components/consumer/feed/FeedDesktopRail.jsx");
-  assert.match(desktopRail, /feed-desktop-rail/);
-  assert.match(desktopRail, /feed-desktop-login/);
-  assert.match(desktopRail, /feed-more-open-desktop/);
-
-  const mobileHeader = read("src/components/consumer/feed/FeedMobileHeader.jsx");
-  assert.match(mobileHeader, /feed-more-open-mobile/);
-  assert.match(mobileHeader, /4caf50/);
 
   const guestLanding = read("src/components/consumer/feed/FeedGuestProfileLanding.jsx");
   assert.match(guestLanding, /FEED_GUEST_PROFILE_CARDS/);

@@ -22,6 +22,8 @@ import HomeNextHealthGoals from "../components/homeNext/HomeNextHealthGoals.jsx"
 import HomeNextDiscoverySection from "../components/homeNext/HomeNextDiscoverySection.jsx";
 import HomeNextSectionExpanded from "../components/homeNext/HomeNextSectionExpanded.jsx";
 import HomeNextLocationSelector from "../components/homeNext/HomeNextLocationSelector.jsx";
+import { useFeedShellDesktop } from "../lib/useFeedShellDesktop.js";
+import { FEED_MOBILE_HEADER_OFFSET } from "../lib/feedShellNavigation.js";
 import { captureEvent } from "../services/posthog.js";
 import { appendSearchAnalyticsParams } from "../lib/analyticsPageVisitSend.js";
 
@@ -30,6 +32,7 @@ const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").repla
 export default function HomeNext({ embedInFeedShell = false } = {}) {
   const { t, language } = useLanguage();
   const { isAuthenticated: consumerLoggedIn, loading: consumerLoading } = useConsumer();
+  const isFeedDesktop = useFeedShellDesktop();
   const navigate = useNavigate();
   const inputRef = useRef(null);
   const helpSectionRef = useRef(null);
@@ -244,13 +247,15 @@ export default function HomeNext({ embedInFeedShell = false } = {}) {
         <header
           style={{
             position: "sticky",
-            top: 0,
+            top: embedInFeedShell && !isFeedDesktop ? FEED_MOBILE_HEADER_OFFSET : 0,
             zIndex: 100,
             background: "var(--gb-color-page)",
             borderBottom: "1px solid var(--gb-color-border)",
             paddingBottom: 14,
+            marginTop: embedInFeedShell && !isFeedDesktop ? FEED_MOBILE_HEADER_OFFSET : 0,
           }}
         >
+          {!embedInFeedShell ? (
           <div
             style={{
               display: "flex",
@@ -297,12 +302,13 @@ export default function HomeNext({ embedInFeedShell = false } = {}) {
                 ))}
             </div>
           </div>
+          ) : null}
 
           <div
             style={{
-              padding: embedInFeedShell ? "56px 16px 0" : "28px 16px 0",
+              padding: embedInFeedShell ? "16px 16px 0" : "28px 16px 0",
             }}
-            data-testid={embedInFeedShell ? "feed-search-hero" : undefined}
+            data-testid={embedInFeedShell ? "feed-shop-hero" : undefined}
           >
             <p style={{ margin: "0 0 10px", fontSize: 22, fontWeight: 800, color: "#111827", lineHeight: 1.2 }}>
               {t("homeNext.headline", "What sounds good?")}
