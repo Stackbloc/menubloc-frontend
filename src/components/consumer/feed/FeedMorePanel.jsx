@@ -49,20 +49,42 @@ export default function FeedMorePanel({ open, onClose, isAuthenticated = false, 
               <h3 id={`feed-more-${section.id}`} style={styles.sectionTitle}>
                 {section.title}
               </h3>
-              <ul style={styles.list}>
-                {section.links.map((link) => (
-                  <li key={link.to} style={styles.item}>
-                    <Link
-                      to={link.to}
-                      style={styles.link}
-                      data-testid={link.testId}
-                      onClick={onClose}
-                    >
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
+              {Array.isArray(section.groups) && section.groups.length > 0
+                ? section.groups.map((group) => (
+                    <div key={group.title} style={styles.group}>
+                      <h4 style={styles.groupTitle}>{group.title}</h4>
+                      <ul style={styles.list}>
+                        {group.links.map((link) => (
+                          <li key={link.to} style={styles.item}>
+                            <Link
+                              to={link.to}
+                              style={styles.link}
+                              data-testid={link.testId}
+                              onClick={onClose}
+                            >
+                              {link.label}
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))
+                : (
+                    <ul style={styles.list}>
+                      {(section.links || []).map((link) => (
+                        <li key={link.to} style={styles.item}>
+                          <Link
+                            to={link.to}
+                            style={styles.link}
+                            data-testid={link.testId}
+                            onClick={onClose}
+                          >
+                            {link.label}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
             </section>
           ))}
         </div>
@@ -144,6 +166,16 @@ const styles = {
     letterSpacing: "0.08em",
     textTransform: "uppercase",
     color: "rgba(232,240,236,0.55)",
+  },
+  group: {
+    marginBottom: 4,
+  },
+  groupTitle: {
+    margin: "0 0 4px",
+    padding: "0 10px",
+    fontSize: 13,
+    fontWeight: 700,
+    color: "rgba(232,240,236,0.82)",
   },
   list: {
     listStyle: "none",

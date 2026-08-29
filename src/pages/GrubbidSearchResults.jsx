@@ -27,6 +27,7 @@ import ActiveFilterChips from "../components/discovery/ActiveFilterChips.jsx";
 import { BrandLogo } from "../components/BrandLogo.jsx";
 import ShareIcon from "../components/share/ShareIcon.jsx";
 import BottomNav from "../components/BottomNav.jsx";
+import FeedShopBasketButton from "../components/consumer/feed/FeedShopBasketButton.jsx";
 import WaiterRefinementPrompt from "../components/search/WaiterRefinementPrompt.jsx";
 import FoodNavigationLadder from "../components/search/FoodNavigationLadder.jsx";
 import { useFoodNavigation, FOOD_NAV_SLICE_ENABLED } from "../hooks/useFoodNavigation.js";
@@ -50,6 +51,11 @@ import {
   countUniqueRestaurants,
   shouldShowSearchResultModeSelector,
 } from "../lib/searchResultViewMode.js";
+import { buildHomeSearchUrl } from "../lib/homeNextNavigation.js";
+import {
+  isFeedShellSearchResultsView,
+  rewriteSearchPathForFeedShell,
+} from "../lib/feedShellNavigation.js";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 const SESSION_LOCATION_KEY = "grubbid.discovery.location";
@@ -161,6 +167,68 @@ function SearchResultsShareControl({ copied, onShare }) {
       <ShareIcon size={15} />
       {copied ? "Copied!" : "Share results"}
     </button>
+  );
+}
+
+function FeedShellShopSearchEntry({ onSearch, locationLabel }) {
+  const { t } = useLanguage();
+  const [draft, setDraft] = useState("");
+
+  function handleSubmit(event) {
+    event.preventDefault();
+    const trimmed = String(draft || "").trim();
+    if (!trimmed) return;
+    onSearch(trimmed);
+  }
+
+  return (
+    <div data-testid="feed-shop-search-entry" style={{ marginBottom: 20 }}>
+      <p style={{ margin: "0 0 10px", fontSize: 14, color: "#4B5563", lineHeight: 1.45 }}>
+        {t(
+          "feedShop.blurb",
+          "Find dishes and restaurants outside the video feed.",
+        )}
+        {locationLabel ? ` Near ${locationLabel}.` : ""}
+      </p>
+      <form onSubmit={handleSubmit} role="search" style={{ display: "flex", gap: 8, alignItems: "stretch" }}>
+        <input
+          type="search"
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          placeholder={t(
+            "homeNext.searchPlaceholder",
+            "Search dishes, restaurants, or ingredients",
+          )}
+          enterKeyHint="search"
+          style={{
+            flex: 1,
+            minWidth: 0,
+            borderRadius: 12,
+            border: "1px solid #D1D5DB",
+            padding: "12px 14px",
+            fontSize: 16,
+            fontFamily: "inherit",
+          }}
+        />
+        <button
+          type="submit"
+          style={{
+            border: "none",
+            borderRadius: 12,
+            padding: "0 16px",
+            background: "linear-gradient(135deg, #4caf50 0%, #2e7d32 100%)",
+            color: "#fff",
+            fontWeight: 800,
+            fontSize: 14,
+            cursor: "pointer",
+            fontFamily: "inherit",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {t("feedShop.searchAction", "Search")}
+        </button>
+      </form>
+    </div>
   );
 }
 
@@ -2957,6 +3025,24 @@ export default function GrubbidSearchResults({ embedInFeedShell = false } = {}) 
     return applyWaiterDisplayCorrections(q, queryMeta);
   }, [queryMeta, q]);
 
+  const showShopEntry = embedInFeedShell && !isFeedShellSearchResultsView(params);
+
+  const runShopSearch = useCallback(
+    (queryValue) => {
+      const trimmed = String(queryValue || "").trim();
+      if (!trimmed) return;
+      const target = buildHomeSearchUrl({
+        query: trimmed,
+        appliedLocation: explicitLocationLabel || sessionLocation,
+        autoLocation:
+          geo.lat != null && geo.lng != null ? { lat: geo.lat, lng: geo.lng } : null,
+        shouldUseGeoBrowse: geo.lat != null && geo.lng != null,
+      });
+      navigate(rewriteSearchPathForFeedShell(target));
+    },
+    [explicitLocationLabel, sessionLocation, geo.lat, geo.lng, navigate],
+  );
+
   const styles = {
     grid: {
       display: "grid",
@@ -3034,26 +3120,30 @@ export default function GrubbidSearchResults({ embedInFeedShell = false } = {}) 
         paddingBottom: 12,
       }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px 10px" }}>
-          <button
-            type="button"
-            onClick={() => {
-              if (embedInFeedShell) {
-                navigate("/feed/search");
-                return;
-              }
-              navigate(-1);
-            }}
-            aria-label="Go back"
-            style={{ border: "none", background: "transparent", fontSize: 22, color: "#6B7280", cursor: "pointer", padding: 4, lineHeight: 1, flexShrink: 0 }}
-          >
-            ←
-          </button>
+          {!(embedInFeedShell && showShopEntry) ? (
+            <button
+              type="button"
+              onClick={() => {
+                if (embedInFeedShell) {
+                  navigate("/feed/search");
+                  return;
+                }
+                navigate(-1);
+              }}
+              aria-label="Go back"
+              style={{ border: "none", background: "transparent", fontSize: 22, color: "#6B7280", cursor: "pointer", padding: 4, lineHeight: 1, flexShrink: 0 }}
+            >
+              ←
+            </button>
+          ) : (
+            <div style={{ width: 30, flexShrink: 0 }} />
+          )}
           <BrandLogo height={48} radius={14} />
-          <div style={{ width: 30, flexShrink: 0 }} />
+          {embedInFeedShell ? <FeedShopBasketButton /> : <div style={{ width: 30, flexShrink: 0 }} />}
         </div>
         <div style={{ maxWidth: 576, margin: "0 auto", padding: "0 14px", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
           <span style={{ fontSize: 17, fontWeight: 900, color: "#0B0F0C", letterSpacing: "-0.02em" }}>
-            🔍 {displayQuery ? `"${displayQuery}"` : "Search"}
+            🔍 {displayQuery ? `"${displayQuery}"` : embedInFeedShell ? "Shop" : "Search"}
           </span>
           {locationLabel && (
             <span style={{
@@ -3079,11 +3169,23 @@ export default function GrubbidSearchResults({ embedInFeedShell = false } = {}) 
         )}
       </div>
       {/* ── SCROLLABLE FEED ── */}
-      <div style={{ maxWidth: 576, margin: "0 auto", padding: "10px 14px calc(var(--bottom-nav-h, 72px) + 8px)" }}>
+      <div
+        style={{
+          maxWidth: 576,
+          margin: "0 auto",
+          padding: embedInFeedShell
+            ? "10px 14px calc(var(--feed-primary-nav-h, 56px) + 16px)"
+            : "10px 14px calc(var(--bottom-nav-h, 72px) + 8px)",
+        }}
+      >
 
-      {!preferRestaurantView && (
+      {showShopEntry ? (
+        <FeedShellShopSearchEntry onSearch={runShopSearch} locationLabel={locationLabel} />
+      ) : null}
+
+      {!preferRestaurantView && !showShopEntry ? (
         <ActiveFilterChips filters={activeFilters} onToggle={toggleSearchFilter} />
-      )}
+      ) : null}
 
       {geoFallbackUsed && (
         <StatusMessage tone="warning">

@@ -47,19 +47,22 @@ test("Feed deals: video swipe reel, no meal chips", () => {
   const feedDeals = read("src/pages/consumer/feed/FeedDealsPage.jsx");
   assert.match(feedDeals, /has_video/);
   assert.match(feedDeals, /DealVideoSwipe/);
-  assert.match(feedDeals, /feed-deals-search/);
-  assert.match(feedDeals, /Search deals/);
+  assert.match(feedDeals, /containInShell/);
+  assert.doesNotMatch(feedDeals, /feed-deals-search/);
+  assert.doesNotMatch(feedDeals, /Search deals/);
   assert.match(feedDeals, /feed-deals-meal-filters/);
   assert.match(feedDeals, /meal_period/);
   assert.doesNotMatch(feedDeals, /prefer_media/);
 
   const swipe = read("src/components/consumer/feed/DealVideoSwipe.jsx");
   assert.match(swipe, /feed-deals-video-swipe/);
+  assert.match(swipe, /containInShell/);
+  assert.match(swipe, /overlayContained/);
   assert.match(swipe, /meal_time_caption|headline/);
   assert.match(swipe, /Swipe up/);
 
   const home = read("src/pages/consumer/feed/FeedHomePage.jsx");
-  assert.match(home, /\/feed\/deals\?city=/);
+  assert.doesNotMatch(home, /\/feed\/deals\?city=/);
 
   const dealsEditor = read("src/pages/operator/OperatorDealsEditor.jsx");
   assert.match(dealsEditor, /uploadDealMediaVideo/);

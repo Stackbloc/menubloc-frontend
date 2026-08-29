@@ -4,7 +4,6 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
 import DealVideoSwipe from "../../../components/consumer/feed/DealVideoSwipe.jsx";
 import { FEED_PRIMARY_NAV_HEIGHT } from "../../../components/consumer/feed/FeedPrimaryNav.jsx";
 import { apiGet } from "../../../lib/api.js";
@@ -14,6 +13,7 @@ import {
   defaultDealMealPeriod,
 } from "../../../lib/dealMealPeriods.js";
 import { readDetectedLocation } from "../../../lib/discoveryLocationPersistence.js";
+import { useFeedShellDesktop } from "../../../lib/useFeedShellDesktop.js";
 
 const DEFAULT_MARKET = { city: "Los Angeles", state: "CA" };
 const MEAL_FILTERS = [{ id: "all", label: "All" }, ...DEAL_MEAL_PERIODS];
@@ -28,6 +28,7 @@ function resolveMarket() {
 }
 
 export default function FeedDealsPage() {
+  const isDesktop = useFeedShellDesktop();
   const market = useMemo(() => resolveMarket(), []);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -65,18 +66,8 @@ export default function FeedDealsPage() {
     };
   }, [market.city, market.state, mealFilter]);
 
-  const searchHref = `/deals?city=${encodeURIComponent(market.city)}&state=${encodeURIComponent(market.state)}`;
-
   const headerSlot = (
     <div style={styles.chromeWrap} data-testid="feed-deals-chrome">
-      <div style={styles.chrome}>
-        <Link to="/feed" style={styles.chromeBtn} data-testid="feed-deals-back">
-          Feed
-        </Link>
-        <Link to={searchHref} style={styles.chromeBtn} data-testid="feed-deals-search">
-          Search deals
-        </Link>
-      </div>
       <div
         style={styles.mealStrip}
         role="tablist"
@@ -120,33 +111,29 @@ export default function FeedDealsPage() {
       <div style={styles.loading} data-testid="feed-deals-error">
         {headerSlot}
         <p style={styles.loadingText}>{error}</p>
-        <Link to={searchHref} style={styles.searchLink}>
-          Search text deals
-        </Link>
       </div>
     );
   }
 
   return (
-    <div data-testid="feed-deals-page">
+    <div style={styles.page} data-testid="feed-deals-page">
       <DealVideoSwipe
         items={items}
         startIndex={0}
-        bottomInset={FEED_PRIMARY_NAV_HEIGHT + 8}
+        bottomInset={isDesktop ? 8 : FEED_PRIMARY_NAV_HEIGHT + 8}
         headerSlot={headerSlot}
+        containInShell
       />
-      {items.length === 0 ? (
-        <div style={styles.emptyActions} data-testid="feed-deals-empty">
-          <Link to={searchHref} style={styles.searchLink}>
-            Search all deals
-          </Link>
-        </div>
-      ) : null}
     </div>
   );
 }
 
 const styles = {
+  page: {
+    position: "relative",
+    minHeight: "100dvh",
+    background: "#050705",
+  },
   loading: {
     minHeight: "100dvh",
     background: "#050705",
@@ -162,12 +149,6 @@ const styles = {
     color: "#9aab9e",
     fontSize: 14,
     margin: 0,
-  },
-  chrome: {
-    display: "flex",
-    justifyContent: "space-between",
-    padding: "0 12px",
-    pointerEvents: "none",
   },
   chromeWrap: {
     position: "fixed",
@@ -202,32 +183,5 @@ const styles = {
     background: "rgba(143,212,168,0.25)",
     borderColor: "#8fd4a8",
     color: "#fff",
-  },
-  chromeBtn: {
-    pointerEvents: "auto",
-    padding: "8px 14px",
-    borderRadius: 999,
-    background: "rgba(0,0,0,0.55)",
-    border: "1px solid rgba(255,255,255,0.25)",
-    color: "#fff",
-    fontSize: 13,
-    fontWeight: 700,
-    textDecoration: "none",
-  },
-  searchLink: {
-    color: "#8fd4a8",
-    fontSize: 14,
-    fontWeight: 600,
-    textDecoration: "none",
-  },
-  emptyActions: {
-    position: "fixed",
-    bottom: "calc(var(--feed-primary-nav-h, 72px) + 24px)",
-    left: 0,
-    right: 0,
-    display: "flex",
-    justifyContent: "center",
-    zIndex: 45,
-    pointerEvents: "none",
   },
 };

@@ -66,11 +66,12 @@ const styles = {
   loginChip: {
     padding: "6px 12px",
     borderRadius: 999,
-    background: "#ef4444",
+    background: "linear-gradient(135deg, #4caf50 0%, #2e7d32 100%)",
     color: "#fff",
     fontWeight: 800,
     fontSize: 13,
     textDecoration: "none",
+    boxShadow: "0 2px 8px rgba(46, 125, 50, 0.35)",
   },
   moreBtn: {
     width: 40,

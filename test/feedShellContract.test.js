@@ -10,7 +10,7 @@ import { fileURLToPath } from "node:url";
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = (rel) => fs.readFileSync(path.join(root, rel), "utf8");
 
-test("Feed shell: Home|Connects|Menus|X|Deals|Search|Profile + slim X sheet", () => {
+test("Feed shell: Home|Connects|Menus|X|Deals|Shop|Profile + slim X sheet", () => {
   const app = read("src/App.jsx");
   assert.match(app, /path="\/feed"/);
   assert.match(app, /FeedShellPage/);
@@ -39,7 +39,8 @@ test("Feed shell: Home|Connects|Menus|X|Deals|Search|Profile + slim X sheet", ()
   assert.match(feedTabLinks, /feed-nav-connects/);
   assert.match(feedTabLinks, /feed-nav-menus/);
   assert.match(feedTabLinks, /feed-nav-deals/);
-  assert.match(feedTabLinks, /feed-nav-search/);
+  assert.match(feedTabLinks, /feed-nav-shop/);
+  assert.doesNotMatch(feedTabLinks, /label: "Search"/);
   assert.match(feedTabLinks, /feed-nav-profile/);
 
   const shell = read("src/pages/consumer/feed/FeedShellPage.jsx");
@@ -67,9 +68,16 @@ test("Feed shell: Home|Connects|Menus|X|Deals|Search|Profile + slim X sheet", ()
   assert.doesNotMatch(home, /feed-deals/);
 
   const searchPage = read("src/pages/consumer/feed/FeedSearchPage.jsx");
-  assert.match(searchPage, /embedInFeedShell/);
-  assert.match(searchPage, /isFeedShellSearchResultsView/);
   assert.match(searchPage, /GrubbidSearchResults embedInFeedShell/);
+  assert.match(searchPage, /feed-shop-page/);
+  assert.doesNotMatch(searchPage, /HomeNext embedInFeedShell/);
+
+  const searchResults = read("src/pages/GrubbidSearchResults.jsx");
+  assert.match(searchResults, /FeedShopBasketButton/);
+  assert.match(searchResults, /feed-shop-search-entry/);
+
+  const shopBasket = read("src/components/consumer/feed/FeedShopBasketButton.jsx");
+  assert.match(shopBasket, /feed-shop-basket/);
 
   const homeNext = read("src/pages/HomeNext.jsx");
   assert.match(homeNext, /loadMenus: !embedInFeedShell/);
@@ -84,7 +92,10 @@ test("Feed shell: Home|Connects|Menus|X|Deals|Search|Profile + slim X sheet", ()
   const feedLinks = read("src/lib/feedShellLinks.js");
   assert.match(feedLinks, /FEED_PRIMARY_TABS/);
   assert.match(feedLinks, /FEED_MORE_SECTIONS/);
-  assert.match(feedLinks, /\/waiter/);
+  assert.match(feedLinks, /For Diners/);
+  assert.match(feedLinks, /feed-more-signup/);
+  assert.doesNotMatch(feedLinks, /Discover food/);
+  assert.doesNotMatch(feedLinks, /feed-more-login/);
   assert.match(feedLinks, /\/clusters/);
   assert.match(feedLinks, /restaurant\/onboarding/);
   assert.match(feedLinks, /feed-nav-home/);
@@ -102,7 +113,7 @@ test("Feed shell: Home|Connects|Menus|X|Deals|Search|Profile + slim X sheet", ()
 
   const mobileHeader = read("src/components/consumer/feed/FeedMobileHeader.jsx");
   assert.match(mobileHeader, /feed-more-open-mobile/);
-  assert.match(mobileHeader, /feed-mobile-login/);
+  assert.match(mobileHeader, /4caf50/);
 
   const guestLanding = read("src/components/consumer/feed/FeedGuestProfileLanding.jsx");
   assert.match(guestLanding, /FEED_GUEST_PROFILE_CARDS/);

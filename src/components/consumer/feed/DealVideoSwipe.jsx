@@ -15,6 +15,7 @@ export default function DealVideoSwipe({
   startIndex = 0,
   bottomInset = 0,
   headerSlot = null,
+  containInShell = false,
 }) {
   const [index, setIndex] = useState(startIndex);
   const videoRef = useRef(null);
@@ -100,6 +101,7 @@ export default function DealVideoSwipe({
 
   const overlayStyle = {
     ...styles.overlay,
+    ...(containInShell ? styles.overlayContained : null),
     paddingBottom: Math.max(0, Number(bottomInset) || 0),
   };
 
@@ -116,7 +118,7 @@ export default function DealVideoSwipe({
         <p style={styles.empty}>No deal videos yet. Restaurants can post videos here soon.</p>
       </div>
     );
-    return createPortal(empty, document.body);
+    return containInShell ? empty : createPortal(empty, document.body);
   }
 
   const atEnd = index >= items.length - 1;
@@ -216,7 +218,7 @@ export default function DealVideoSwipe({
     </div>
   );
 
-  return createPortal(ui, document.body);
+  return containInShell ? ui : createPortal(ui, document.body);
 }
 
 const styles = {
@@ -229,6 +231,13 @@ const styles = {
     background: "#000",
     overflow: "hidden",
     overscrollBehavior: "none",
+  },
+  overlayContained: {
+    position: "absolute",
+    inset: 0,
+    width: "100%",
+    height: "100%",
+    minHeight: "100dvh",
   },
   video: {
     position: "absolute",

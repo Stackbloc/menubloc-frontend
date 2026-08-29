@@ -18,7 +18,7 @@ export const FEED_LEFT_TABS = [
 
 export const FEED_RIGHT_TABS = [
   { to: "/feed/deals", end: false, label: "Deals", testId: "feed-nav-deals" },
-  { to: "/feed/search", end: false, label: "Search", testId: "feed-nav-search" },
+  { to: "/feed/search", end: false, label: "Shop", testId: "feed-nav-shop" },
   { to: "/feed/profile", end: false, label: "Profile", testId: "feed-nav-profile" },
 ];
 
@@ -52,19 +52,13 @@ export const FEED_MORE_SECTIONS = [
     id: "join",
     title: "Join Menuply",
     guestOnly: true,
-    links: [
-      { to: FEED_SHELL_SIGNUP_PATH, label: "Create account", testId: "feed-more-signup" },
-      { to: FEED_SHELL_LOGIN_PATH, label: "Sign in", testId: "feed-more-login" },
-    ],
-  },
-  {
-    id: "discover",
-    title: "Discover food",
-    links: [
-      { to: "/waiter", label: "Waiter", testId: "feed-more-waiter" },
-      { to: "/clusters", label: "Clusters", testId: "feed-more-clusters" },
-      { to: "/feed/search", label: "Search", testId: "feed-more-search" },
-      { to: "/feed/menus", label: "Menus", testId: "feed-more-menus" },
+    groups: [
+      {
+        title: "For Diners",
+        links: [
+          { to: FEED_SHELL_SIGNUP_PATH, label: "Create account", testId: "feed-more-signup" },
+        ],
+      },
     ],
   },
   {
