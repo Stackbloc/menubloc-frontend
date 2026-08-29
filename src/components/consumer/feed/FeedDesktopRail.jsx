@@ -231,7 +231,7 @@ const styles = {
     textAlign: "center",
     padding: "11px 14px",
     borderRadius: 999,
-    background: "#ef4444",
+    background: "linear-gradient(180deg, #22C55E 0%, #16A34A 100%)",
     color: "#fff",
     fontWeight: 800,
     fontSize: 15,
