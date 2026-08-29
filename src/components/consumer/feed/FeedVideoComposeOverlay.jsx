@@ -9,6 +9,7 @@ import { readDetectedLocation } from "../../../lib/discoveryLocationPersistence.
 import {
   notifyFeedVideoPosted,
   postFeedAteVideo,
+  postFeedReviewVideo,
   postFeedWantVideo,
 } from "../../../lib/feedVideoCompose.js";
 import EatingComposeSheet from "../../../pages/consumer/myMenuply/EatingComposeSheet.jsx";
@@ -41,6 +42,8 @@ export default function FeedVideoComposeOverlay({ open, category = "ate", onClos
     try {
       if (payload.category === "want") {
         await postFeedWantVideo(payload);
+      } else if (payload.category === "reviews") {
+        await postFeedReviewVideo(payload);
       } else {
         await postFeedAteVideo(payload);
       }

@@ -15,6 +15,7 @@ import {
   EATING_COMPOSE_CATEGORIES,
   WANT_INTENT_KINDS,
 } from "./eatingHubUtils.js";
+import { isAteLikeFeedCategory } from "../../../lib/feedContentKinds.js";
 import EatingPlaceFields from "./EatingPlaceFields.jsx";
 import InviteMeOutAudiencePicker from "./InviteMeOutAudiencePicker.jsx";
 import {
@@ -70,12 +71,18 @@ export default function EatingCompose({
     if (!isVideoFile(file)) setIsRecommend(false);
   }, [file]);
 
+  useEffect(() => {
+    if (category === "reviews") {
+      setHomemade(false);
+    }
+  }, [category]);
+
   const meta =
     EATING_COMPOSE_CATEGORIES.find((c) => c.id === category) ||
     EATING_COMPOSE_CATEGORIES[0];
 
   const acceptMedia =
-    category === "ate" || category === "want" || category === "plan";
+    isAteLikeFeedCategory(category) || category === "want" || category === "plan";
 
   const wantMeta =
     WANT_INTENT_KINDS.find((k) => k.id === wantKind) ||
@@ -270,10 +277,10 @@ export default function EatingCompose({
       text: value,
       file,
       mealPeriod:
-        category === "ate"
+        isAteLikeFeedCategory(category)
           ? mealPeriod
           : undefined,
-      homemade,
+      homemade: category === "reviews" ? false : homemade,
       restaurant,
       dish,
       isRecommend:
@@ -289,8 +296,9 @@ export default function EatingCompose({
   }
 
   const canSubmit =
-    feedMode && (category === "ate" || category === "want")
-      ? isVideoFile(file)
+    feedMode && (isAteLikeFeedCategory(category) || category === "want")
+      ? isVideoFile(file) &&
+        (category !== "reviews" || Boolean(dish?.menu_item_id))
       : category === "plan"
         ? true
         : category === "want"
@@ -437,15 +445,19 @@ export default function EatingCompose({
           </div>
         ) : null}
 
-        {category === "ate" ? (
+        {isAteLikeFeedCategory(category) ? (
           <>
             <p style={styles.stepLabel}>
-              {feedMode ? "Restaurant & menu item (optional)" : "What is this?"}
+              {category === "reviews"
+                ? "Which menu item are you reviewing?"
+                : feedMode
+                  ? "Restaurant & menu item (optional)"
+                  : "What is this?"}
             </p>
 
             <EatingPlaceFields
-              homemade={homemade}
-              onHomemadeChange={setHomemade}
+              homemade={category === "reviews" ? false : homemade}
+              onHomemadeChange={category === "reviews" ? () => {} : setHomemade}
               restaurant={restaurant}
               onRestaurantChange={setRestaurant}
               dish={dish}
@@ -457,7 +469,7 @@ export default function EatingCompose({
               allowDishSearch
             />
 
-            {isVideoFile(file) ? (
+            {category === "ate" && isVideoFile(file) ? (
               <label style={styles.recommendRow} data-testid="eating-compose-recommend">
                 <input
                   type="checkbox"

@@ -23,6 +23,7 @@ export async function postFeedAteVideo({
   restaurant = null,
   dish = null,
   isRecommend = false,
+  feedPresentationKind = "ate",
 }) {
   if (!file || !isVideoFile(file)) {
     throw new Error("Feed posts need a video");
@@ -52,9 +53,26 @@ export async function postFeedAteVideo({
     is_recommend: Boolean(isRecommend && (restaurantId || menuItemId)),
     comment: homemade ? joinHomemadeComment(true, note) : note || undefined,
     market_discoverable: true,
+    feed_presentation_kind:
+      feedPresentationKind === "review" || feedPresentationKind === "reviews"
+        ? "review"
+        : "ate",
   });
 
   return data?.entry || data;
+}
+
+export async function postFeedReviewVideo(payload) {
+  const menuItemId = payload?.dish?.menu_item_id;
+  if (!menuItemId) {
+    throw new Error("Reviews require a menu item");
+  }
+  return postFeedAteVideo({
+    ...payload,
+    homemade: false,
+    feedPresentationKind: "review",
+    isRecommend: false,
+  });
 }
 
 export async function postFeedWantVideo({

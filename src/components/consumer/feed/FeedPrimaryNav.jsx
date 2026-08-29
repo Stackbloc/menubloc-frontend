@@ -3,7 +3,7 @@
  * Mobile bottom bar only — desktop uses FeedDesktopRail from the same tab config.
  */
 
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import MenuplyXMark from "../../MenuplyXMark.jsx";
 import { FEED_LEFT_TABS, FEED_RIGHT_TABS } from "../../../lib/feedShellLinks.js";
 
@@ -11,7 +11,32 @@ export const FEED_PRIMARY_NAV_HEIGHT = 56;
 
 function TabLink({ tab }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const alsoActive = tab.alsoActiveOn?.includes(location.pathname);
+
+  if (tab.resetSearch) {
+    return (
+      <NavLink
+        to={tab.to}
+        end={tab.end}
+        data-testid={tab.testId}
+        onClick={(event) => {
+          event.preventDefault();
+          navigate(tab.to, { replace: true });
+        }}
+        style={({ isActive }) => {
+          const active = isActive || alsoActive;
+          return {
+            ...styles.tab,
+            color: active ? "#5eead4" : "rgba(255,255,255,0.72)",
+            fontWeight: active ? 800 : 600,
+          };
+        }}
+      >
+        {tab.label}
+      </NavLink>
+    );
+  }
 
   return (
     <NavLink

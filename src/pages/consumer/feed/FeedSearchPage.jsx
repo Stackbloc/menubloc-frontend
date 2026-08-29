@@ -12,7 +12,10 @@ export default function FeedSearchPage() {
   const showResults = isFeedShellSearchResultsView(searchParams);
 
   return (
-    <div data-testid={showResults ? "feed-shop-results-page" : "feed-shop-page"}>
+    <div
+      style={{ minHeight: "100dvh", background: "var(--gb-color-page)" }}
+      data-testid={showResults ? "feed-shop-results-page" : "feed-shop-page"}
+    >
       {showResults ? (
         <GrubbidSearchResults embedInFeedShell />
       ) : (

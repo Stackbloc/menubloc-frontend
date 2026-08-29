@@ -125,6 +125,12 @@ export const EATING_COMPOSE_CATEGORIES = [
     placeholder: "Where are you going?",
     description: "Photo or video, then schedule — Join Me stays on the plan form.",
   },
+  {
+    id: "reviews",
+    label: "Reviews",
+    placeholder: "Anything to say about this dish? (optional)",
+    description: "Record a video review of a specific menu item.",
+  },
 ];
 
 /** What I Want to Eat intent levels (not forced to restaurant). */

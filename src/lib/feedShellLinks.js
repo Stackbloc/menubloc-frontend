@@ -18,7 +18,7 @@ export const FEED_LEFT_TABS = [
 
 export const FEED_RIGHT_TABS = [
   { to: "/feed/deals", end: false, label: "Deals", testId: "feed-nav-deals" },
-  { to: "/feed/search", end: false, label: "Shop", testId: "feed-nav-shop" },
+  { to: "/feed/search", end: true, label: "Shop", testId: "feed-nav-shop", resetSearch: true },
   { to: "/feed/profile", end: false, label: "Profile", testId: "feed-nav-profile" },
 ];
 

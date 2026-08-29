@@ -2,7 +2,7 @@
  * TikTok desktop-style left rail — same Feed primary tabs + guest auth + More.
  */
 
-import { Link, NavLink, useLocation } from "react-router-dom";
+import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { BrandLogo } from "../../BrandLogo.jsx";
 import MenuplyXMark from "../../MenuplyXMark.jsx";
 import FeedShopBasketButton from "./FeedShopBasketButton.jsx";
@@ -15,7 +15,28 @@ import {
 
 function RailTab({ tab }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const alsoActive = tab.alsoActiveOn?.includes(location.pathname);
+
+  if (tab.resetSearch) {
+    return (
+      <NavLink
+        to={tab.to}
+        end={tab.end}
+        data-testid={`${tab.testId}-desktop`}
+        onClick={(event) => {
+          event.preventDefault();
+          navigate(tab.to, { replace: true });
+        }}
+        style={({ isActive }) => ({
+          ...styles.tab,
+          ...(isActive || alsoActive ? styles.tabActive : null),
+        })}
+      >
+        {tab.label}
+      </NavLink>
+    );
+  }
 
   return (
     <NavLink
@@ -36,6 +57,7 @@ export default function FeedDesktopRail({
   onCreateClick,
   createActive = false,
   onMoreClick,
+  onShareMyMenuply,
   isAuthenticated = false,
   showShopBasket = false,
 }) {
@@ -52,6 +74,15 @@ export default function FeedDesktopRail({
           ariaLabel="Menuply Feed home"
         />
       </div>
+
+      <button
+        type="button"
+        style={styles.shareBtn}
+        data-testid="feed-desktop-share-my-menuply"
+        onClick={() => onShareMyMenuply?.()}
+      >
+        Share My Menuply
+      </button>
 
       <nav style={styles.tabs} aria-label="Primary">
         {FEED_PRIMARY_TABS.map((tab) => (
@@ -125,6 +156,21 @@ const styles = {
   },
   logoWrap: {
     padding: "4px 8px 16px",
+  },
+  shareBtn: {
+    display: "block",
+    width: "100%",
+    margin: "0 0 12px",
+    padding: "10px 12px",
+    borderRadius: 10,
+    border: "1px solid rgba(94, 234, 212, 0.35)",
+    background: "rgba(16, 40, 32, 0.85)",
+    color: "#e8f0ec",
+    fontWeight: 800,
+    fontSize: 14,
+    textAlign: "left",
+    cursor: "pointer",
+    fontFamily: "inherit",
   },
   tabs: {
     display: "flex",

@@ -1,5 +1,5 @@
 /**
- * Feed shell contract — TikTok-style nav, slim X (2 video items + share).
+ * Feed shell contract — TikTok-style nav, X (ate/want/Food Review + share).
  */
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -53,6 +53,10 @@ test("Feed shell: Home|Connects|Menus|X|Deals|Shop|Profile + slim X sheet", () =
   const createSheet = read("src/components/consumer/feed/FeedVideoCreateSheet.jsx");
   assert.match(createSheet, /FEED_X_ITEMS/);
   assert.match(createSheet, /feed-video-create-\$\{ch\.id\}/);
+  assert.match(createSheet, /FEED_VIDEO_CATEGORY_IDS/);
+  assert.match(createSheet, /FEED_CONTENT_KINDS\.REVIEWS/);
+  assert.match(createSheet, /Food Review/);
+  assert.doesNotMatch(createSheet, /Post Food Review/);
   assert.match(createSheet, /feed-x-share-my-menuply/);
   assert.doesNotMatch(createSheet, /feed-x-diary/);
   assert.doesNotMatch(createSheet, /feed-x-my-menuply/);
@@ -72,6 +76,10 @@ test("Feed shell: Home|Connects|Menus|X|Deals|Shop|Profile + slim X sheet", () =
   assert.match(searchPage, /GrubbidSearchResults embedInFeedShell/);
   assert.match(searchPage, /isFeedShellSearchResultsView/);
   assert.match(searchPage, /feed-shop-page/);
+  assert.match(searchPage, /minHeight: "100dvh"/);
+
+  const siteFooter = read("src/components/SiteFooter.jsx");
+  assert.match(siteFooter, /isFeedExperiencePath/);
 
   const searchResults = read("src/pages/GrubbidSearchResults.jsx");
   assert.doesNotMatch(searchResults, /FeedShopBasketButton/);
@@ -84,9 +92,12 @@ test("Feed shell: Home|Connects|Menus|X|Deals|Shop|Profile + slim X sheet", () =
   assert.match(desktopRail, /feed-desktop-rail/);
   assert.match(desktopRail, /feed-desktop-login/);
   assert.match(desktopRail, /feed-more-open-desktop/);
+  assert.match(desktopRail, /feed-desktop-share-my-menuply/);
+  assert.match(desktopRail, /Share My Menuply/);
   assert.match(desktopRail, /showShopBasket/);
   assert.match(desktopRail, /showShopBasket\s*=\s*false/);
   assert.match(desktopRail, /feed-desktop-shop-basket/);
+  assert.match(desktopRail, /resetSearch/);
 
   const mobileHeader = read("src/components/consumer/feed/FeedMobileHeader.jsx");
   assert.match(mobileHeader, /feed-more-open-mobile/);
@@ -109,6 +120,7 @@ test("Feed shell: Home|Connects|Menus|X|Deals|Shop|Profile + slim X sheet", () =
   assert.match(feedNavLib, /isFeedShopRoute/);
 
   const feedLinks = read("src/lib/feedShellLinks.js");
+  assert.match(feedLinks, /resetSearch: true/);
   assert.match(feedLinks, /FEED_PRIMARY_TABS/);
   assert.match(feedLinks, /FEED_MORE_SECTIONS/);
   assert.match(feedLinks, /For Diners/);
@@ -142,6 +154,14 @@ test("Feed shell: Home|Connects|Menus|X|Deals|Shop|Profile + slim X sheet", () =
 
   const reel = read("src/pages/consumer/myMenuply/SeeWhosEatingFullscreen.jsx");
   assert.match(reel, /see-whos-eating-menu-bookmark/);
+  assert.match(reel, /"reviews"/);
+
+  const eatingHub = read("src/pages/consumer/myMenuply/eatingHubUtils.js");
+  assert.match(eatingHub, /id: "reviews"/);
+  assert.match(eatingHub, /label: "Reviews"/);
+
+  const compose = read("src/lib/feedVideoCompose.js");
+  assert.match(compose, /postFeedReviewVideo/);
 });
 
 test("Feed as home: / uses Feed shell; FeedPrimaryNav paths unchanged", () => {

@@ -1,23 +1,36 @@
 /**
- * Feed center X — two video post actions + Share My Menuply.
+ * Feed center X — video post actions + Share My Menuply.
  */
 
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
 import { LIVE_FEED_CHANNELS, LIVE_FEED_FULL_CATEGORY_LABELS } from "../../../lib/liveFeedCategory.js";
+import { FEED_CONTENT_KINDS } from "../../../lib/feedContentKinds.js";
 
-export const FEED_VIDEO_CATEGORY_IDS = ["ate", "want"];
+export const FEED_VIDEO_CATEGORY_IDS = [
+  FEED_CONTENT_KINDS.ATE,
+  FEED_CONTENT_KINDS.WANT,
+  FEED_CONTENT_KINDS.REVIEWS,
+];
+
+const X_CATEGORY_TITLES = {
+  [FEED_CONTENT_KINDS.ATE]: LIVE_FEED_FULL_CATEGORY_LABELS.ate,
+  [FEED_CONTENT_KINDS.WANT]: LIVE_FEED_FULL_CATEGORY_LABELS.want,
+  [FEED_CONTENT_KINDS.REVIEWS]: "Food Review",
+};
 
 const VIDEO_ITEMS = LIVE_FEED_CHANNELS.filter((ch) =>
   FEED_VIDEO_CATEGORY_IDS.includes(ch.id)
 ).map((ch) => ({
   id: ch.id,
   kind: "video",
-  title: LIVE_FEED_FULL_CATEGORY_LABELS[ch.id] || ch.label,
+  title: X_CATEGORY_TITLES[ch.id] || LIVE_FEED_FULL_CATEGORY_LABELS[ch.id] || ch.label,
   description:
-    ch.id === "ate"
+    ch.id === FEED_CONTENT_KINDS.ATE
       ? "Record a short video of what you're eating now"
-      : "Record a short video of a dish or craving you want",
+      : ch.id === FEED_CONTENT_KINDS.REVIEWS
+        ? "Record a video review of a specific menu item"
+        : "Record a short video of a dish or craving you want",
   testId: `feed-video-create-${ch.id}`,
 }));
 

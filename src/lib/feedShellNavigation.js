@@ -7,6 +7,11 @@ export const FEED_SHELL_SEARCH_PATH = "/feed/search";
 export const FEED_MOBILE_HEADER_OFFSET =
   "calc(max(8px, env(safe-area-inset-top)) + 44px)";
 
+/** True on Feed shell routes (including Feed-as-home `/`). */
+export function isFeedExperiencePath(pathname = "") {
+  const path = String(pathname || "");
+  return path === "/" || path === "/feed" || path.startsWith("/feed/");
+}
 /** True on Shop tab routes (`/feed/search` with or without query). */
 export function isFeedShopRoute(pathname = "") {
   return String(pathname || "") === FEED_SHELL_SEARCH_PATH;

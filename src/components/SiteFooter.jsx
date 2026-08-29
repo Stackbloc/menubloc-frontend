@@ -7,6 +7,7 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext.jsx";
+import { isFeedExperiencePath } from "../lib/feedShellNavigation.js";
 
 const FOOTER_LINK_PATH_PREFIXES = ["/operator", "/owner"];
 const FOOTER_HIDDEN_PATHS = new Set(["/checkout"]);
@@ -40,19 +41,23 @@ export default function SiteFooter() {
   if (!isPublicPath(location.pathname)) return null;
   if (FOOTER_HIDDEN_PATHS.has(location.pathname)) return null;
 
+  const feedExperience = isFeedExperiencePath(location.pathname);
+
   return (
     <footer
       style={{
         borderTop: "1px solid var(--gb-color-border)",
         background: "var(--gb-color-page)",
-        marginTop: 40,
+        marginTop: feedExperience ? 24 : 40,
       }}
     >
       <div
         style={{
           maxWidth: 1450,
           margin: "0 auto",
-          padding: "22px 20px calc(var(--bottom-nav-h, 72px) + 8px)",
+          padding: feedExperience
+            ? "22px calc(20px + var(--feed-desktop-rail-w, 0px)) calc(var(--feed-primary-nav-h, 0px) + 16px)"
+            : "22px 20px calc(var(--bottom-nav-h, 72px) + 8px)",
           display: "flex",
           alignItems: "flex-start",
           justifyContent: "space-between",

@@ -81,6 +81,11 @@ export default function FeedShellPage({ children = null }) {
           onCreateClick={openCreateSheet}
           createActive={createActive}
           onMoreClick={() => setMoreOpen(true)}
+          onShareMyMenuply={() =>
+            handleShareMyMenuply({
+              guestTo: "/account/signup?next=%2Ffeed",
+            })
+          }
           isAuthenticated={isAuthenticated}
           showShopBasket={showShopBasket}
         />
