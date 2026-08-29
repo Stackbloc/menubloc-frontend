@@ -37,6 +37,7 @@ export default function FeedDesktopRail({
   createActive = false,
   onMoreClick,
   isAuthenticated = false,
+  showShopBasket = false,
 }) {
   return (
     <aside style={styles.rail} data-testid="feed-desktop-rail" aria-label="Feed navigation">

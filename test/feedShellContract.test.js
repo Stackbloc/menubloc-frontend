@@ -85,6 +85,7 @@ test("Feed shell: Home|Connects|Menus|X|Deals|Shop|Profile + slim X sheet", () =
   assert.match(desktopRail, /feed-desktop-login/);
   assert.match(desktopRail, /feed-more-open-desktop/);
   assert.match(desktopRail, /showShopBasket/);
+  assert.match(desktopRail, /showShopBasket\s*=\s*false/);
   assert.match(desktopRail, /feed-desktop-shop-basket/);
 
   const mobileHeader = read("src/components/consumer/feed/FeedMobileHeader.jsx");
