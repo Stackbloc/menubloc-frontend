@@ -36,9 +36,9 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` @ clean `main` |
-| Git commit | `f60cd3e` — Feed Shop HomeNext + shell basket alignment — Feed Shop tab, deals desktop fix, More menu, green login — Feed discovery rail, More menu, signup screen name — Feed default home at /; existing FeedPrimaryNav unchanged — Connect presumed name: First L. coalesce + signup names — Connect display names: First L. instead of Member # — Feed Search hero vertical spacing — Feed Share My Menuply → Diner QR page — Feed Search no menu windows + in-shell results — Feed Profile: profile-only, no hero/TV — Feed TikTok nav + slim X sheet — Feed Menus replaces Eating + mobile-first empty coach — Feed first-visit empty coach + counsel Terms/Privacy tip lock — Counsel-approved Terms+Privacy UGC Aug 27 2026 — Owner Feed Invite QR image credentialed fetch fix — Feed deal video swipe: meal-time filters + Lunch Deal caption + restaurant feed compose — Feed deal video swipe reel; text search on /deals — Feed X categorized menu: My Menuply, Share, Account — Owner Feed Invite QR editable poster copy — Feed Deals Live meal periods + media — feed eating tab real compose actions — eating restaurant + menu item fields for ate/want — feed deals chrome + me clusters/menu upload — feed video-only hybrid ConsumerCameraSheet recorder — feed center X video create + plan video attach — video-first parallel `/feed` shell (FEED\|EATING\|EVENTS\|ME); HomeNext remains `/` |
-| Vercel deployment | `menubloc-frontend-ip7uy6p4w-menuply.vercel.app` |
-| Live bundle | `index-D9ZPp6VT.js` |
+| Git commit | `ff55e3f` — Feed desktop blank hotfix + full HomeNext Shop tab restore — Feed Shop HomeNext + shell basket alignment — Feed Shop tab, deals desktop fix, More menu, green login — Feed discovery rail, More menu, signup screen name — Feed default home at /; existing FeedPrimaryNav unchanged — Connect presumed name: First L. coalesce + signup names — Connect display names: First L. instead of Member # — Feed Search hero vertical spacing — Feed Share My Menuply → Diner QR page — Feed Search no menu windows + in-shell results — Feed Profile: profile-only, no hero/TV — Feed TikTok nav + slim X sheet — Feed Menus replaces Eating + mobile-first empty coach — Feed first-visit empty coach + counsel Terms/Privacy tip lock — Counsel-approved Terms+Privacy UGC Aug 27 2026 — Owner Feed Invite QR image credentialed fetch fix — Feed deal video swipe: meal-time filters + Lunch Deal caption + restaurant feed compose — Feed deal video swipe reel; text search on /deals — Feed X categorized menu: My Menuply, Share, Account — Owner Feed Invite QR editable poster copy — Feed Deals Live meal periods + media — feed eating tab real compose actions — eating restaurant + menu item fields for ate/want — feed deals chrome + me clusters/menu upload — feed video-only hybrid ConsumerCameraSheet recorder — feed center X video create + plan video attach — video-first parallel `/feed` shell (FEED\|EATING\|EVENTS\|ME); HomeNext remains `/` |
+| Vercel deployment | `menubloc-frontend-cq6xknumj-menuply.vercel.app` |
+| Live bundle | `index-D4ty2Egv.js` |
 | Aliases | `menuply.com`, `www.menuply.com`, `crm.menuply.com`, `venues.menuply.com` |
 | Tip-gate | **PASS** (apex + www) verified 2026-08-26 |
 | Feature | Parallel video-first Feed at `/feed`; drawer “Feed (preview)”; `VITE_FEED_AS_HOME` cutover off |
@@ -59,10 +59,10 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway
 
 ```bash
 cd /Users/andrebarber/Desktop/menubloc/menubloc-frontend-main
-npx vercel alias set menubloc-frontend-ip7uy6p4w-menuply.vercel.app menuply.com
-npx vercel alias set menubloc-frontend-ip7uy6p4w-menuply.vercel.app www.menuply.com
-npx vercel alias set menubloc-frontend-ip7uy6p4w-menuply.vercel.app crm.menuply.com
-npx vercel alias set menubloc-frontend-ip7uy6p4w-menuply.vercel.app venues.menuply.com
+npx vercel alias set menubloc-frontend-cq6xknumj-menuply.vercel.app menuply.com
+npx vercel alias set menubloc-frontend-cq6xknumj-menuply.vercel.app www.menuply.com
+npx vercel alias set menubloc-frontend-cq6xknumj-menuply.vercel.app crm.menuply.com
+npx vercel alias set menubloc-frontend-cq6xknumj-menuply.vercel.app venues.menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 ```
@@ -71,8 +71,8 @@ bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 
 | Field | Value |
 |-------|-------|
-| Deployment | `menubloc-frontend-asg6brkat-menuply.vercel.app` |
-| Live bundle | `index-iuLfbtgO.js` |
+| Deployment | `menubloc-frontend-ip7uy6p4w-menuply.vercel.app` |
+| Live bundle | `index-D9ZPp6VT.js` |
 | FE commit | `4810f03` / tip-lock docs `89a336e` |
 | BE health | `14a98b5c` |
 | Notes | Pre–video-first `/feed` shell; also tagged `menuply-pre-video-first-consumer-2026-08-26` |
