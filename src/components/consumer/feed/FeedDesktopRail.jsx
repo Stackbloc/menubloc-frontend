@@ -5,10 +5,13 @@
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { BrandLogo } from "../../BrandLogo.jsx";
 import MenuplyXMark from "../../MenuplyXMark.jsx";
+import FeedMenuCaptureCameraIcon from "./FeedMenuCaptureCameraIcon.jsx";
 import FeedShopBasketButton from "./FeedShopBasketButton.jsx";
 import {
   FEED_DESKTOP_RAIL_WIDTH,
   FEED_HOME_TAB,
+  FEED_MENU_CAPTURE_HINT,
+  FEED_MENU_CAPTURE_PATH,
   FEED_RAIL_TABS_AFTER_HOME,
   FEED_SHELL_LOGIN_PATH,
   FEED_SHELL_SIGNUP_PATH,
@@ -88,6 +91,17 @@ export default function FeedDesktopRail({
           Share My Menuply
         </button>
 
+        <Link
+          to={FEED_MENU_CAPTURE_PATH}
+          style={styles.menuCaptureLink}
+          data-testid="feed-desktop-add-menu"
+          title={FEED_MENU_CAPTURE_HINT}
+          aria-label={FEED_MENU_CAPTURE_HINT}
+        >
+          <FeedMenuCaptureCameraIcon size={18} color="#5eead4" />
+          <span>Add menu</span>
+        </Link>
+
         {FEED_RAIL_TABS_AFTER_HOME.map((tab) => (
           <RailTab key={tab.to} tab={tab} />
         ))}
@@ -163,7 +177,7 @@ const styles = {
   shareBtn: {
     display: "block",
     width: "100%",
-    margin: "0 0 12px",
+    margin: "0 0 8px",
     padding: "10px 12px",
     borderRadius: 10,
     border: "1px solid rgba(94, 234, 212, 0.35)",
@@ -174,6 +188,20 @@ const styles = {
     textAlign: "left",
     cursor: "pointer",
     fontFamily: "inherit",
+  },
+  menuCaptureLink: {
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+    width: "100%",
+    margin: "0 0 12px",
+    padding: "8px 12px",
+    borderRadius: 10,
+    textDecoration: "none",
+    color: "rgba(255,255,255,0.82)",
+    fontSize: 14,
+    fontWeight: 700,
+    boxSizing: "border-box",
   },
   tabs: {
     display: "flex",

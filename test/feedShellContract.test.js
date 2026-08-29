@@ -100,6 +100,8 @@ test("Feed shell: Home|Connects|Menus|X|Deals|Shop|Profile + slim X sheet", () =
   assert.match(desktopRail, /FEED_HOME_TAB/);
   assert.match(desktopRail, /FEED_RAIL_TABS_AFTER_HOME/);
   assert.match(desktopRail, /feed-desktop-share-my-menuply/);
+  assert.match(desktopRail, /feed-desktop-add-menu/);
+  assert.match(desktopRail, /FEED_MENU_CAPTURE_HINT/);
   assert.match(desktopRail, /Share My Menuply/);
   assert.match(desktopRail, /showShopBasket/);
   assert.match(desktopRail, /showShopBasket\s*=\s*false/);
@@ -113,6 +115,7 @@ test("Feed shell: Home|Connects|Menus|X|Deals|Shop|Profile + slim X sheet", () =
   assert.match(mobileHeader, /FeedShopBasketButton/);
 
   const homeNext = read("src/pages/HomeNext.jsx");
+  assert.match(homeNext, /FEED_MENU_CAPTURE_HINT/);
   assert.doesNotMatch(homeNext, /FeedShopBasketButton/);
   assert.match(homeNext, /feed-shop-hero/);
   assert.match(homeNext, /FEED_MOBILE_HEADER_OFFSET/);
@@ -195,6 +198,8 @@ test("Feed as home: / uses Feed shell; FeedPrimaryNav paths unchanged", () => {
   assert.match(feedLinks, /to: "\/feed\/deals"/);
   assert.match(feedLinks, /to: "\/feed\/search"/);
   assert.match(feedLinks, /to: "\/feed\/profile"/);
+  assert.match(feedLinks, /FEED_MENU_CAPTURE_PATH/);
+  assert.match(feedLinks, /FEED_MENU_CAPTURE_HINT/);
   assert.doesNotMatch(feedLinks, /to: "\/"/);
 
   const app = read("src/App.jsx");

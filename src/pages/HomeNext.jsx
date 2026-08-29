@@ -24,6 +24,7 @@ import HomeNextSectionExpanded from "../components/homeNext/HomeNextSectionExpan
 import HomeNextLocationSelector from "../components/homeNext/HomeNextLocationSelector.jsx";
 import { useFeedShellDesktop } from "../lib/useFeedShellDesktop.js";
 import { FEED_MOBILE_HEADER_OFFSET } from "../lib/feedShellNavigation.js";
+import { FEED_MENU_CAPTURE_HINT, FEED_MENU_CAPTURE_PATH } from "../lib/feedShellLinks.js";
 import { captureEvent } from "../services/posthog.js";
 import { appendSearchAnalyticsParams } from "../lib/analyticsPageVisitSend.js";
 
@@ -375,8 +376,11 @@ export default function HomeNext({ embedInFeedShell = false } = {}) {
                 </button>
                 <button
                   type="button"
-                  aria-label="Add photo of menu text"
-                  onClick={() => navigate("/menu-capture")}
+                  aria-label={FEED_MENU_CAPTURE_HINT}
+                  title={FEED_MENU_CAPTURE_HINT}
+                  onClick={() =>
+                    navigate(embedInFeedShell ? FEED_MENU_CAPTURE_PATH : "/menu-capture")
+                  }
                   style={{
                     position: "absolute",
                     right: 14,

@@ -42,6 +42,7 @@ export const FEED_PRIMARY_TABS = [...FEED_LEFT_TABS, ...FEED_RIGHT_TABS];
 export const FEED_RAIL_TABS_AFTER_HOME = [...FEED_LEFT_TABS.slice(1), ...FEED_RIGHT_TABS];
 
 export const FEED_MENU_CAPTURE_PATH = `/menu-capture?next=${encodeURIComponent("/feed/menus")}`;
+export const FEED_MENU_CAPTURE_HINT = "Upload restaurant menus to Menuply";
 
 export const FEED_GUEST_PROFILE_CARDS = [
   {

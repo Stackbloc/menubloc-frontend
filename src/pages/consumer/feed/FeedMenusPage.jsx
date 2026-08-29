@@ -8,7 +8,8 @@ import CatalogMenuRenderer, {
   prefetchCatalogMenu,
 } from "../../../components/menuCatalog/CatalogMenuRenderer.jsx";
 import { FEED_PRIMARY_NAV_HEIGHT } from "../../../components/consumer/feed/FeedPrimaryNav.jsx";
-import { FEED_MENU_CAPTURE_PATH } from "../../../lib/feedShellLinks.js";
+import FeedMenuCaptureCameraIcon from "../../../components/consumer/feed/FeedMenuCaptureCameraIcon.jsx";
+import { FEED_MENU_CAPTURE_HINT, FEED_MENU_CAPTURE_PATH } from "../../../lib/feedShellLinks.js";
 import { readDetectedLocation } from "../../../lib/discoveryLocationPersistence.js";
 import {
   FEED_MENU_LIBRARY_CHANGED,
@@ -197,7 +198,13 @@ export default function FeedMenusPage() {
           <Link to="/browse-menus" style={styles.discoverLink} data-testid="feed-menus-discover">
             Discover restaurants
           </Link>
-          <Link to={FEED_MENU_CAPTURE_PATH} style={styles.discoverLink} data-testid="feed-menus-add-menu">
+          <Link
+            to={FEED_MENU_CAPTURE_PATH}
+            style={styles.discoverLinkWithIcon}
+            data-testid="feed-menus-add-menu"
+            aria-label={FEED_MENU_CAPTURE_HINT}
+          >
+            <FeedMenuCaptureCameraIcon size={18} color="#5eead4" />
             Add a menu
           </Link>
         </div>
@@ -224,7 +231,9 @@ export default function FeedMenusPage() {
             to={FEED_MENU_CAPTURE_PATH}
             style={styles.addMenuLink}
             data-testid="feed-menus-add-menu-header"
+            aria-label={FEED_MENU_CAPTURE_HINT}
           >
+            <FeedMenuCaptureCameraIcon size={16} color="#5eead4" />
             Add menu
           </Link>
           <button
@@ -387,6 +396,9 @@ const styles = {
     cursor: "pointer",
   },
   addMenuLink: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 6,
     border: "1px solid rgba(94, 234, 212, 0.35)",
     background: "rgba(94, 234, 212, 0.1)",
     color: "#5eead4",
@@ -436,6 +448,14 @@ const styles = {
   },
   discoverLink: {
     display: "inline-block",
+    color: "#5eead4",
+    fontWeight: 700,
+    textDecoration: "none",
+  },
+  discoverLinkWithIcon: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 8,
     color: "#5eead4",
     fontWeight: 700,
     textDecoration: "none",
