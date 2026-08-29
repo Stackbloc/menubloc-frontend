@@ -19,8 +19,11 @@ function read(rel) {
 function testFooterMarketplaceLinks() {
   const src = read("src/components/SiteFooter.jsx");
   assert.match(src, /<Link to="\/diner\/signup"/);
-  assert.match(src, /<Link to="\/restaurant\/onboarding"/);
-  assert.match(src, /<Link to="\/clusters"/);
+  assert.match(src, />Sign Up</);
+  assert.match(src, /<Link to="\/clusters"[^>]*>Clusters<\/Link>/);
+  const diners = src.slice(src.indexOf(">Diners</"), src.indexOf("For Businesses"));
+  assert.ok(diners.includes('<Link to="/diner/signup"'), "expected Sign Up under Diners");
+  assert.ok(diners.includes('<Link to="/clusters"'), "expected Clusters under Diners");
   assert.doesNotMatch(src, />Discover</);
   assert.doesNotMatch(src, /<Link to="\/waiter"/);
   assert.doesNotMatch(src, /<Link to="\/browse-menus"/);
@@ -30,12 +33,12 @@ function testFooterMarketplaceLinks() {
   assert.match(src, />Diners</);
   assert.match(src, />For Businesses</);
   assert.match(src, />Menuply</);
-  assert.match(src, /<Link to="\/my-menuply"/);
-  assert.match(src, /<Link to="\/activity"/);
-  assert.match(src, /<Link to="\/account\/dining-crews"/);
-  assert.match(src, /<Link to="\/account\/what-we-doing"/);
-  assert.match(src, /What People Are Eating/);
-  assert.match(src, /<Link to="\/creative-pros"/);
+  assert.doesNotMatch(src, /<Link to="\/my-menuply"/);
+  assert.doesNotMatch(src, /<Link to="\/activity"/);
+  assert.doesNotMatch(src, /<Link to="\/account\/dining-crews"/);
+  assert.doesNotMatch(src, /<Link to="\/account\/what-we-doing"/);
+  assert.doesNotMatch(src, /What People Are Eating/);
+  assert.match(src, /restaurant\/onboarding"/);
   assert.match(src, /discovery\.footer\.creators/);
   assert.match(src, /<Link to="\/distributors"/);
   assert.match(src, /discovery\.footer\.foodDistributors/);

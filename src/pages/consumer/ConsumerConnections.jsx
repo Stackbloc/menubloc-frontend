@@ -115,7 +115,11 @@ export default function ConsumerConnections({ embedInFeedShell = false }) {
         <p style={styles.lead}>
           Connections are people you interact with through Menuply food activity —
           invitations, meals, and conversations. This is not a Friend list or stranger
-          directory.
+          directory.{" "}
+          <Link to="/account/find-diners" style={styles.inlineLink}>
+            Find diners
+          </Link>{" "}
+          to send a connection request.
         </p>
 
         {error ? <p style={styles.error}>{error}</p> : null}
@@ -258,6 +262,7 @@ const styles = {
     margin: "0 auto",
   },
   lead: { fontSize: 14, color: "#334155", lineHeight: 1.5, margin: "0 0 16px" },
+  inlineLink: { color: "#15803d", fontWeight: 700, textDecoration: "underline" },
   muted: { fontSize: 13, color: "#64748b", margin: "0 0 8px" },
   error: { color: "#b91c1c", fontWeight: 700, fontSize: 13 },
   notice: { color: "#14532d", fontWeight: 700, fontSize: 13 },

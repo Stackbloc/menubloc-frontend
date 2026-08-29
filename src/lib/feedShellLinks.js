@@ -10,10 +10,23 @@ export const FEED_SHELL_LOGIN_NEXT = "/feed";
 export const FEED_SHELL_SIGNUP_PATH = `/diner/signup?next=${encodeURIComponent(FEED_SHELL_LOGIN_NEXT)}`;
 export const FEED_SHELL_LOGIN_PATH = `/account/login?next=${encodeURIComponent(FEED_SHELL_LOGIN_NEXT)}`;
 
+export const FEED_HOME_TAB = {
+  to: "/feed",
+  end: true,
+  label: "Home",
+  testId: "feed-nav-home",
+  alsoActiveOn: ["/"],
+};
+
 export const FEED_LEFT_TABS = [
-  { to: "/feed", end: true, label: "Home", testId: "feed-nav-home", alsoActiveOn: ["/"] },
+  FEED_HOME_TAB,
   { to: "/feed/connects", end: false, label: "Connects", testId: "feed-nav-connects" },
-  { to: "/feed/menus", end: false, label: "Menus", testId: "feed-nav-menus" },
+  {
+    to: "/feed/menus",
+    end: false,
+    label: "My Menu Stack",
+    testId: "feed-nav-menus",
+  },
 ];
 
 export const FEED_RIGHT_TABS = [
@@ -24,6 +37,11 @@ export const FEED_RIGHT_TABS = [
 
 /** All primary tabs in display order (desktop rail). */
 export const FEED_PRIMARY_TABS = [...FEED_LEFT_TABS, ...FEED_RIGHT_TABS];
+
+/** Desktop rail: Home first, then Share, then remaining tabs. */
+export const FEED_RAIL_TABS_AFTER_HOME = [...FEED_LEFT_TABS.slice(1), ...FEED_RIGHT_TABS];
+
+export const FEED_MENU_CAPTURE_PATH = `/menu-capture?next=${encodeURIComponent("/feed/menus")}`;
 
 export const FEED_GUEST_PROFILE_CARDS = [
   {
@@ -71,6 +89,7 @@ export const FEED_MORE_SECTIONS = [
       { to: "/account/dining-crews", label: "Dining Crews", testId: "feed-more-dining-crews" },
       { to: "/account/what-we-doing", label: "Eating Plans", testId: "feed-more-eating-plans" },
       { to: "/activity", label: "Activity", testId: "feed-more-activity" },
+      { to: FEED_MENU_CAPTURE_PATH, label: "Add a menu", testId: "feed-more-add-menu" },
     ],
   },
   {

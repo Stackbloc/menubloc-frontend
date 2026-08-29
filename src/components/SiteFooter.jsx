@@ -78,12 +78,8 @@ export default function SiteFooter() {
         >
           <div>
             <div style={groupTitleStyle}>Diners</div>
-            <Link to="/diner/signup" style={footerLinkStyle}>Diners</Link><br />
-            <Link to="/my-menuply" style={footerLinkStyle}>My Menuply</Link><br />
-            <Link to="/activity" style={footerLinkStyle}>Activity</Link><br />
-            <Link to="/account/dining-crews" style={footerLinkStyle}>Dining Crews</Link><br />
-            <Link to="/account/what-we-doing" style={footerLinkStyle}>Eating Plans</Link><br />
-            <Link to="/clusters" style={footerLinkStyle}>What People Are Eating</Link>
+            <Link to="/diner/signup" style={footerLinkStyle}>Sign Up</Link><br />
+            <Link to="/clusters" style={footerLinkStyle}>Clusters</Link>
           </div>
 
           <div>

@@ -8,6 +8,7 @@ import CatalogMenuRenderer, {
   prefetchCatalogMenu,
 } from "../../../components/menuCatalog/CatalogMenuRenderer.jsx";
 import { FEED_PRIMARY_NAV_HEIGHT } from "../../../components/consumer/feed/FeedPrimaryNav.jsx";
+import { FEED_MENU_CAPTURE_PATH } from "../../../lib/feedShellLinks.js";
 import { readDetectedLocation } from "../../../lib/discoveryLocationPersistence.js";
 import {
   FEED_MENU_LIBRARY_CHANGED,
@@ -183,7 +184,7 @@ export default function FeedMenusPage() {
   if (deck.length === 0) {
     return (
       <div style={styles.emptyPage} data-testid="feed-menus-empty">
-        <h1 style={styles.h1}>Build your menu stack from Feed</h1>
+        <h1 style={styles.h1}>My Menu Stack</h1>
         <p style={styles.emptyCopy}>
           Tap <strong style={styles.emptyStrong}>Save</strong> (☆) or the{" "}
           <strong style={styles.emptyStrong}>restaurant name</strong> on a video. Menus you open stay
@@ -196,6 +197,9 @@ export default function FeedMenusPage() {
           <Link to="/browse-menus" style={styles.discoverLink} data-testid="feed-menus-discover">
             Discover restaurants
           </Link>
+          <Link to={FEED_MENU_CAPTURE_PATH} style={styles.discoverLink} data-testid="feed-menus-add-menu">
+            Add a menu
+          </Link>
         </div>
       </div>
     );
@@ -205,7 +209,7 @@ export default function FeedMenusPage() {
     <div style={styles.page} data-testid="feed-menus">
       <header style={styles.header}>
         <div style={styles.headerMain}>
-          <h1 style={styles.h1Compact}>Menus</h1>
+          <h1 style={styles.h1Compact}>My Menu Stack</h1>
           <span style={styles.counter} data-testid="feed-menus-counter">
             {index + 1} / {deck.length}
           </span>
@@ -216,6 +220,13 @@ export default function FeedMenusPage() {
           ) : null}
         </div>
         <div style={styles.headerActions}>
+          <Link
+            to={FEED_MENU_CAPTURE_PATH}
+            style={styles.addMenuLink}
+            data-testid="feed-menus-add-menu-header"
+          >
+            Add menu
+          </Link>
           <button
             type="button"
             style={styles.iconBtn}
@@ -374,6 +385,16 @@ const styles = {
     fontSize: 12,
     fontWeight: 700,
     cursor: "pointer",
+  },
+  addMenuLink: {
+    border: "1px solid rgba(94, 234, 212, 0.35)",
+    background: "rgba(94, 234, 212, 0.1)",
+    color: "#5eead4",
+    borderRadius: 8,
+    padding: "6px 10px",
+    fontSize: 12,
+    fontWeight: 800,
+    textDecoration: "none",
   },
   toast: {
     position: "fixed",

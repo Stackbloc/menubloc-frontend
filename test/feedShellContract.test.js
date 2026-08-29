@@ -38,6 +38,8 @@ test("Feed shell: Home|Connects|Menus|X|Deals|Shop|Profile + slim X sheet", () =
   assert.match(feedTabLinks, /feed-nav-home/);
   assert.match(feedTabLinks, /feed-nav-connects/);
   assert.match(feedTabLinks, /feed-nav-menus/);
+  assert.match(feedTabLinks, /My Menu Stack/);
+  assert.doesNotMatch(feedTabLinks, /label: "Menus"/);
   assert.match(feedTabLinks, /feed-nav-deals/);
   assert.match(feedTabLinks, /feed-nav-shop/);
   assert.doesNotMatch(feedTabLinks, /label: "Search"/);
@@ -67,6 +69,9 @@ test("Feed shell: Home|Connects|Menus|X|Deals|Shop|Profile + slim X sheet", () =
   const home = read("src/pages/consumer/feed/FeedHomePage.jsx");
   assert.match(home, /listSeeWhosEating/);
   assert.match(home, /variant="feedHome"/);
+  assert.match(home, /feed-home-x-coach/);
+  assert.match(home, /FEED_HOME_X_COACH_COPY/);
+  assert.match(home, /FEED_HOME_X_COACH_DURATION_MS/);
   assert.doesNotMatch(home, /feed-home-chrome/);
   assert.doesNotMatch(home, /feed-search/);
   assert.doesNotMatch(home, /feed-deals/);
@@ -92,6 +97,8 @@ test("Feed shell: Home|Connects|Menus|X|Deals|Shop|Profile + slim X sheet", () =
   assert.match(desktopRail, /feed-desktop-rail/);
   assert.match(desktopRail, /feed-desktop-login/);
   assert.match(desktopRail, /feed-more-open-desktop/);
+  assert.match(desktopRail, /FEED_HOME_TAB/);
+  assert.match(desktopRail, /FEED_RAIL_TABS_AFTER_HOME/);
   assert.match(desktopRail, /feed-desktop-share-my-menuply/);
   assert.match(desktopRail, /Share My Menuply/);
   assert.match(desktopRail, /showShopBasket/);
@@ -143,14 +150,16 @@ test("Feed shell: Home|Connects|Menus|X|Deals|Shop|Profile + slim X sheet", () =
   assert.match(guestLanding, /FEED_GUEST_PROFILE_CARDS/);
   assert.match(guestLanding, /feed-guest-profile-landing/);
   assert.match(feedLinks, /feed-guest-join-card/);
-  assert.match(feedLinks, /feed-guest-waiter-card/);
+  assert.match(feedLinks, /feed-more-add-menu/);
 
   const myMenuply = read("src/pages/consumer/MyMenuplyPage.jsx");
   assert.match(myMenuply, /FeedGuestProfileLanding/);
   assert.match(myMenuply, /!embedInFeedShell \? <BottomNav \/>/);
 
   const menusPage = read("src/pages/consumer/feed/FeedMenusPage.jsx");
-  assert.match(menusPage, /Build your menu stack from Feed/);
+  assert.match(menusPage, /My Menu Stack/);
+  assert.match(menusPage, /feed-menus-add-menu/);
+  assert.match(menusPage, /FEED_MENU_CAPTURE_PATH/);
 
   const reel = read("src/pages/consumer/myMenuply/SeeWhosEatingFullscreen.jsx");
   assert.match(reel, /see-whos-eating-menu-bookmark/);

@@ -8,7 +8,8 @@ import MenuplyXMark from "../../MenuplyXMark.jsx";
 import FeedShopBasketButton from "./FeedShopBasketButton.jsx";
 import {
   FEED_DESKTOP_RAIL_WIDTH,
-  FEED_PRIMARY_TABS,
+  FEED_HOME_TAB,
+  FEED_RAIL_TABS_AFTER_HOME,
   FEED_SHELL_LOGIN_PATH,
   FEED_SHELL_SIGNUP_PATH,
 } from "../../../lib/feedShellLinks.js";
@@ -75,17 +76,19 @@ export default function FeedDesktopRail({
         />
       </div>
 
-      <button
-        type="button"
-        style={styles.shareBtn}
-        data-testid="feed-desktop-share-my-menuply"
-        onClick={() => onShareMyMenuply?.()}
-      >
-        Share My Menuply
-      </button>
-
       <nav style={styles.tabs} aria-label="Primary">
-        {FEED_PRIMARY_TABS.map((tab) => (
+        <RailTab tab={FEED_HOME_TAB} />
+
+        <button
+          type="button"
+          style={styles.shareBtn}
+          data-testid="feed-desktop-share-my-menuply"
+          onClick={() => onShareMyMenuply?.()}
+        >
+          Share My Menuply
+        </button>
+
+        {FEED_RAIL_TABS_AFTER_HOME.map((tab) => (
           <RailTab key={tab.to} tab={tab} />
         ))}
       </nav>
