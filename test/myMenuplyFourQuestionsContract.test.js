@@ -63,8 +63,11 @@ test("My Menuply is the diner's personal home", () => {
   assert.match(page, /compose === "event"/);
   assert.match(page, /createDinerSocialEvent/);
   assert.match(page, /description: purpose/);
-  assert.match(page, /Invite people to join/);
   assert.match(page, /inviteToDiningCrew/);
+  assert.match(page, /CrewInvitePeopleSheet/);
+  assert.match(page, /compose === "invite-crew"/);
+  assert.doesNotMatch(page, /inviteLabel=/);
+  assert.doesNotMatch(page, /onInvite=\{\(\) => share/);
   assert.match(page, /inviteToVenueEventGroup/);
   assert.match(page, /ShareModal/);
   assert.match(page, /buildDiningCrewInviteShareData/);
@@ -136,7 +139,7 @@ test("My Menuply is the diner's personal home", () => {
   assert.match(bits, /handleCardActivate/);
   assert.match(bits, /crew-purpose/);
   assert.match(bits, /crewPurposeText/);
-  assert.match(bits, /Invite people to join/);
+  assert.match(bits, /Request to join/);
   const styles = read("src/pages/consumer/myMenuply/myMenuplyStyles.js");
   assert.match(styles, /minHeight:\s*44/);
   assert.match(page, /\/account\/social-events\//);

@@ -1,7 +1,5 @@
 /**
- * What I'm Eating day board — presentation only.
- * Compact 168px holders; meal category badge on each card.
- * No meal-row labels — photos group in sequence by meal period.
+ * What I'm Eating day board — hero card for lead media + horizontal rail for the rest.
  * Owner: long-press (hard press) / right-click to reveal Delete — not hover.
  */
 
@@ -209,6 +207,159 @@ function MealMediaCard({ item, readOnly, onSelect, onDelete, deleteBusy }) {
   );
 }
 
+function MealHeroCard({ item, readOnly, onSelect, onDelete, deleteBusy }) {
+  const label = item.food_name || item.item_name || item.itemName || "Food";
+  const place = item.restaurant_name || item.place_label || "";
+  const media = resolveEatingDishVisual(item);
+  const restHref = restaurantHref(item);
+  const mealId = normalizeWhatIAteMealPeriod(item.meal_period) || "other";
+  const mealBadge = mealPeriodLabel(mealId);
+  const canDelete =
+    !readOnly &&
+    typeof onDelete === "function" &&
+    ((item?.kind === "what_i_ate" && item?.entry_id != null) ||
+      ((item?.kind === "im_eating" || item?.kind === "what_i_ate") &&
+        (item?.source_id != null ||
+          item?.activity_id != null ||
+          /^fa[-:]?\d+$/i.test(String(item?.id || "")))));
+  const { open, dismiss, consumeArmedClick, bind } = useLongPressReveal(canDelete);
+  const isVideo = media?.kind === "video";
+  const useLogoFit = media?.source === "logo";
+  const [playing, setPlaying] = useState(false);
+  const [videoMuted, setVideoMuted] = useState(true);
+
+  useEffect(() => {
+    setPlaying(false);
+  }, [item?.id, item?.entry_id, item?.video_url]);
+
+  if (!media) return null;
+
+  function handleDelete(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (deleteBusy) return;
+    dismiss();
+    onDelete?.(item);
+  }
+
+  function handleSelect() {
+    if (consumeArmedClick()) return;
+    if (open) {
+      dismiss();
+      return;
+    }
+    if (isVideo && !playing) {
+      setPlaying(true);
+      return;
+    }
+    onSelect?.(item);
+  }
+
+  return (
+    <article
+      style={s.mealHeroCard}
+      data-testid="what-i-ate-meal-hero"
+      data-meal={mealId}
+      data-media={isVideo ? "video" : media.source}
+      {...bind}
+    >
+      <button
+        type="button"
+        style={s.mealHeroMediaBtn}
+        data-testid="what-i-ate-meal-media"
+        onClick={handleSelect}
+        disabled={!onSelect && !isVideo}
+        aria-label={
+          isVideo && !playing
+            ? `${mealBadge}. ${label}. Video preview — tap to play.`
+            : `${mealBadge}. ${label}. Tap for details. Long-press to delete.`
+        }
+      >
+        {isVideo ? (
+          <VideoStillPreview
+            src={media.url}
+            style={s.mealHeroMedia}
+            playing={playing}
+            muted={videoMuted}
+            fallbackPoster={media.posterFallbackUrl || ""}
+            fallbackPosterFit={media.posterFallbackFit || "cover"}
+            testId="what-i-ate-meal-video"
+          />
+        ) : (
+          <img
+            src={media.url}
+            alt=""
+            style={useLogoFit ? s.mealHeroLogo : s.mealHeroMedia}
+          />
+        )}
+        <div style={s.mealHeroOverlayTop}>
+          {isVideo && playing ? (
+            <span style={s.heroBadge}>
+              <span
+                style={{
+                  display: "inline-block",
+                  width: 6,
+                  height: 6,
+                  borderRadius: "50%",
+                  background: "#ef4444",
+                  marginRight: 6,
+                }}
+              />
+              Playing
+            </span>
+          ) : (
+            <span style={s.heroBadge}>{mealBadge}</span>
+          )}
+        </div>
+        {isVideo && playing ? (
+          <span
+            style={s.socialVideoMuteBadge}
+            onClick={(e) => {
+              e.stopPropagation();
+              setVideoMuted((prev) => !prev);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.stopPropagation();
+                setVideoMuted((prev) => !prev);
+              }
+            }}
+            role="button"
+            tabIndex={0}
+          >
+            {videoMuted ? "Tap sound" : "On"}
+          </span>
+        ) : null}
+        <div style={s.mealHeroScrim}>
+          <div style={s.mealHeroTitle}>{label}</div>
+          {place ? (
+            restHref ? (
+              <Link to={restHref} style={s.mealHeroMeta} onClick={(e) => e.stopPropagation()}>
+                {place}
+              </Link>
+            ) : (
+              <div style={s.mealHeroMeta}>{place}</div>
+            )
+          ) : null}
+        </div>
+      </button>
+      {open ? (
+        <button
+          type="button"
+          style={s.mealHolderDelete}
+          data-testid="what-i-ate-meal-delete"
+          aria-label={`Delete ${label}`}
+          disabled={deleteBusy}
+          onClick={handleDelete}
+        >
+          Delete
+        </button>
+      ) : null}
+    </article>
+  );
+}
+
+
 /** Flatten meal buckets into one sequence: breakfast… then dinner… etc. */
 function orderedMealEntries(items) {
   const { buckets, other } = groupEntriesByMealPeriod(items);
@@ -220,6 +371,16 @@ function orderedMealEntries(items) {
   }
   for (const item of other) ordered.push(item);
   return ordered;
+}
+
+function pickHeroEntry(items) {
+  const ordered = orderedMealEntries(items);
+  const heroIndex = ordered.findIndex((item) => resolveEatingDishVisual(item));
+  if (heroIndex < 0) return { hero: null, rail: ordered };
+  return {
+    hero: ordered[heroIndex],
+    rail: ordered.filter((_, index) => index !== heroIndex),
+  };
 }
 
 export default function WhatIAteMealBoard({
@@ -239,7 +400,7 @@ export default function WhatIAteMealBoard({
   void now;
   const hasAny = (items || []).length > 0;
   const isPastDay = Boolean(hubDate && todayYmd && hubDate < todayYmd);
-  const ordered = hasAny ? orderedMealEntries(items) : [];
+  const { hero, rail } = hasAny ? pickHeroEntry(items) : { hero: null, rail: [] };
   // No empty camera holders — presentation only (owner + peer parity).
   const showEmptyHolders = false;
   const allowEmptyCapture = false;
@@ -256,18 +417,29 @@ export default function WhatIAteMealBoard({
 
   return (
     <div data-testid="what-i-ate-meal-board" style={s.mealBoard}>
-      <div style={s.mealBoardTrack} data-testid="what-i-ate-meal-sequence">
-        {ordered.map((item, index) => (
-          <MealMediaCard
-            key={item.id || item.entry_id || `${index}-${item.food_name}`}
-            item={item}
-            readOnly={readOnly}
-            onSelect={onSelect}
-            onDelete={onDelete}
-            deleteBusy={deleteBusy}
-          />
-        ))}
-      </div>
+      {hero ? (
+        <MealHeroCard
+          item={hero}
+          readOnly={readOnly}
+          onSelect={onSelect}
+          onDelete={onDelete}
+          deleteBusy={deleteBusy}
+        />
+      ) : null}
+      {rail.length ? (
+        <div style={s.mealBoardTrack} data-testid="what-i-ate-meal-sequence">
+          {rail.map((item, index) => (
+            <MealMediaCard
+              key={item.id || item.entry_id || `${index}-${item.food_name}`}
+              item={item}
+              readOnly={readOnly}
+              onSelect={onSelect}
+              onDelete={onDelete}
+              deleteBusy={deleteBusy}
+            />
+          ))}
+        </div>
+      ) : null}
       {/* Keep contract markers for removed empty-slot path */}
       {showEmptyHolders && allowEmptyCapture ? null : null}
     </div>

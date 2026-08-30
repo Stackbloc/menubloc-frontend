@@ -1438,7 +1438,12 @@ export default function MyMenuplyPage() {
             />
 
             <section style={s.section} data-testid="dining-crews">
-              <SectionHead title="My Crews" to="/account/dining-crews" />
+              <SectionHead
+                kicker="Your people"
+                title="My Crews"
+                to="/account/dining-crews"
+                subtitle="The people you eat, hang out, and make plans with"
+              />
               {crews.length === 0 ? (
                 <SectionEmptyState testId="crews-empty">
                   The people you eat, hang out, and make plans with.
@@ -1454,14 +1459,12 @@ export default function MyMenuplyPage() {
                       `${crew.member_count || 0} ${crew.member_count === 1 ? "member" : "members"}`,
                       crew.visibility === "public"
                         ? "Others can request to join"
-                        : "Invite people to join",
+                        : "Private · members only",
                     ]
                       .filter(Boolean)
                       .join(" · ")}
                     onDelete={crew.viewer_role === "owner" ? onCrewDelete : undefined}
                     deleteBusy={postBusy === `crew-delete-${crew.id}`}
-                    onInvite={() => shareCrewInvite(crew)}
-                    inviteLabel="Invite people to join"
                   />
                 ))
               )}
@@ -1469,7 +1472,9 @@ export default function MyMenuplyPage() {
 
             <section style={s.section} data-testid="my-events">
               <SectionHead
+                kicker="On the calendar"
                 title="My Events"
+                subtitle="Events you're creating or joining"
                 aside={
                   <button
                     type="button"
@@ -1502,8 +1507,6 @@ export default function MyMenuplyPage() {
                         .filter(Boolean)
                         .join(" · ")}
                       description={ev.description || null}
-                      onInvite={() => shareDinerSocialEventInvite(ev)}
-                      inviteLabel="Invite people to join"
                       onDelete={() => onSocialEventDelete(ev)}
                       deleteBusy={postBusy === `social-event-delete-${ev.id}`}
                       deleteLabel={`Delete event ${ev.title || ""}`.trim()}
@@ -1520,8 +1523,6 @@ export default function MyMenuplyPage() {
                       ]
                         .filter(Boolean)
                         .join(" · ")}
-                      onInvite={() => shareEventInvite(ev)}
-                      inviteLabel="Invite people to join"
                     />
                   ))}
                   {eventGroups.slice(0, 4).map((g) => (
@@ -1536,8 +1537,6 @@ export default function MyMenuplyPage() {
                       ]
                         .filter(Boolean)
                         .join(" · ")}
-                      onInvite={() => shareEventGroupInvite(g)}
-                      inviteLabel="Invite people to join"
                     />
                   ))}
                 </>

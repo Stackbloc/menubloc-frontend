@@ -106,8 +106,185 @@ export const identitySection = {
 
 export const section = {
   margin: "0 0 0",
-  padding: "22px 0",
+  padding: "22px 16px",
+  marginLeft: -16,
+  marginRight: -16,
   borderBottom: `1px solid ${BORDER}`,
+  background: "#fff",
+};
+
+export const sectionHeadBlock = {
+  marginBottom: 12,
+};
+
+export const sectionKicker = {
+  margin: "0 0 4px",
+  fontSize: 11,
+  fontWeight: 800,
+  letterSpacing: "0.08em",
+  textTransform: "uppercase",
+  color: MUTED,
+};
+
+export const sectionTitleQuiet = {
+  margin: 0,
+  fontSize: 20,
+  fontWeight: 800,
+  color: GREEN,
+  letterSpacing: "-0.03em",
+  fontFamily: 'Georgia, "Times New Roman", serif',
+  lineHeight: 1.2,
+};
+
+export const sectionSubtitle = {
+  margin: "4px 0 0",
+  fontSize: 13,
+  color: MUTED,
+  lineHeight: 1.4,
+};
+
+export const sectionAccentRule = {
+  marginTop: 8,
+  width: 48,
+  height: 3,
+  borderRadius: 999,
+  background: `linear-gradient(90deg, ${GREEN_BRIGHT} 0%, rgba(21, 128, 61, 0) 100%)`,
+};
+
+export const sectionHeadAside = {
+  display: "flex",
+  alignItems: "center",
+  gap: 8,
+  flexShrink: 0,
+};
+
+export const inlineDayNav = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 6,
+  fontSize: 12,
+  fontWeight: 700,
+  color: GREEN,
+};
+
+export const inlineDayNavBtn = {
+  appearance: "none",
+  border: `1px solid ${BORDER_INPUT}`,
+  background: "#fff",
+  color: GREEN,
+  borderRadius: "50%",
+  width: 28,
+  height: 28,
+  fontSize: 16,
+  lineHeight: 1,
+  cursor: "pointer",
+  display: "grid",
+  placeItems: "center",
+  fontFamily: "inherit",
+  padding: 0,
+};
+
+export const inlineDayNavBtnDisabled = {
+  opacity: 0.35,
+  cursor: "default",
+};
+
+export const inlineDayNavLabel = {
+  fontSize: 12,
+  fontWeight: 700,
+  color: "#334155",
+  whiteSpace: "nowrap",
+};
+
+export const inlineDayNavJournal = {
+  position: "absolute",
+  width: 1,
+  height: 1,
+  padding: 0,
+  margin: -1,
+  overflow: "hidden",
+  clip: "rect(0,0,0,0)",
+  whiteSpace: "nowrap",
+  border: 0,
+};
+
+export const planRowCompact = {
+  appearance: "none",
+  width: "100%",
+  textAlign: "left",
+  border: `1px solid ${BORDER}`,
+  background: "#fff",
+  borderRadius: 14,
+  padding: "12px 14px",
+  font: "inherit",
+  cursor: "pointer",
+  marginBottom: 10,
+  boxShadow: "0 6px 18px rgba(20, 83, 45, 0.06)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: 12,
+};
+
+export const planRowCompactOpen = {
+  borderColor: BORDER_INPUT,
+  boxShadow: "0 10px 24px rgba(20, 83, 45, 0.1)",
+};
+
+export const planRowCopy = {
+  flex: 1,
+  minWidth: 0,
+};
+
+export const planRowJoinBtn = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  minHeight: 36,
+  padding: "0 14px",
+  borderRadius: 10,
+  background: GREEN_BRIGHT,
+  color: "#fff",
+  fontSize: 12,
+  fontWeight: 800,
+  textDecoration: "none",
+  border: "none",
+  cursor: "pointer",
+  fontFamily: "inherit",
+  flexShrink: 0,
+};
+
+export const crewMemberStack = {
+  display: "flex",
+  alignItems: "center",
+  marginTop: 10,
+};
+
+export const crewMemberInit = {
+  width: 28,
+  height: 28,
+  borderRadius: "50%",
+  background: "#ecfdf5",
+  color: GREEN,
+  fontSize: 11,
+  fontWeight: 800,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  border: "2px solid #fff",
+  marginLeft: -8,
+  flexShrink: 0,
+};
+
+export const crewMemberInitFirst = {
+  marginLeft: 0,
+};
+
+export const wantRailBleed = {
+  marginLeft: -16,
+  marginRight: -16,
+  paddingLeft: 16,
+  paddingRight: 16,
 };
 
 export const presentationBlock = {

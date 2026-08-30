@@ -128,7 +128,7 @@ function TopHighlightsGrid({ cards = [], readOnly = false, onDelete, deleteBusy 
   const [hero, ...rest] = cards;
   return (
     <div style={s.presentationBlock} data-testid="top-highlights">
-      <h3 style={s.displaySectionTitle}>Top highlights</h3>
+      <h3 style={s.sectionTitleQuiet}>Top highlights</h3>
       <div style={railStyles.highlightGrid}>
         <HighlightCard
           card={hero}
@@ -157,7 +157,7 @@ function FollowedRestaurantsRail({ restaurants = [] }) {
   if (!restaurants.length) return null;
   return (
     <div style={s.presentationBlock} data-testid="followed-restaurants-rail">
-      <h3 style={s.displaySectionTitle}>Restaurants you follow</h3>
+      <h3 style={s.sectionTitleQuiet}>Restaurants you follow</h3>
       <div style={railStyles.scrollRow}>
         {restaurants.map((row) => (
           <Link key={row.key} to={row.href || "#"} style={railStyles.visitCard}>

@@ -36,19 +36,26 @@ export function foodHref(item) {
   return restaurantHref(item) || "/account/what-i-ate";
 }
 
-export function SectionHead({ title, to, testId, aside = null }) {
+export function SectionHead({ title, to, testId, aside = null, kicker = null, subtitle = null }) {
   return (
-    <div style={s.row} data-testid={testId}>
-      <h2 style={s.sectionTitle}>
-        {to ? (
-          <Link to={to} style={s.sectionTitleLink}>
-            {title}
-          </Link>
-        ) : (
-          title
-        )}
-      </h2>
-      {aside}
+    <div style={s.sectionHeadBlock} data-testid={testId}>
+      {kicker ? <p style={s.sectionKicker}>{kicker}</p> : null}
+      <div style={s.row}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <h2 style={s.sectionTitleQuiet}>
+            {to ? (
+              <Link to={to} style={s.sectionTitleLink}>
+                {title}
+              </Link>
+            ) : (
+              title
+            )}
+          </h2>
+          {subtitle ? <p style={s.sectionSubtitle}>{subtitle}</p> : null}
+          <div style={s.sectionAccentRule} aria-hidden="true" />
+        </div>
+        {aside ? <div style={s.sectionHeadAside}>{aside}</div> : null}
+      </div>
     </div>
   );
 }
@@ -330,6 +337,44 @@ export function crewPurposeText(crew) {
   return String(crew?.description || crew?.purpose || "").trim() || null;
 }
 
+function crewMemberInitials(crew) {
+  const preview = crew?.members_preview || crew?.members || [];
+  if (preview.length) {
+    return preview.slice(0, 4).map((member) => {
+      const name = member.display_name || member.name || "?";
+      return String(name).trim().slice(0, 1).toUpperCase() || "?";
+    });
+  }
+  const count = Math.max(1, Math.min(Number(crew?.member_count) || 1, 4));
+  const seed = String(crew?.name || "C").trim().slice(0, 1).toUpperCase() || "C";
+  if (count === 1) return [seed];
+  const initials = [seed];
+  for (let i = 1; i < count; i += 1) {
+    initials.push(i === count - 1 && count > 3 ? `+${count - 3}` : String.fromCharCode(65 + i));
+  }
+  return initials.slice(0, 4);
+}
+
+function CrewMemberStack({ crew }) {
+  const initials = crewMemberInitials(crew);
+  if (!initials.length) return null;
+  return (
+    <div style={s.crewMemberStack} data-testid="crew-member-stack" aria-hidden="true">
+      {initials.map((label, index) => (
+        <span
+          key={`${label}-${index}`}
+          style={{
+            ...s.crewMemberInit,
+            ...(index === 0 ? s.crewMemberInitFirst : null),
+          }}
+        >
+          {label}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 export function DiningCrewHubCard({
   crew,
   href,
@@ -412,6 +457,7 @@ export function DiningCrewHubCard({
         </div>
       ) : null}
       {meta ? <div style={{ ...s.muted, marginTop: purpose ? 6 : 4 }}>{meta}</div> : null}
+      <CrewMemberStack crew={crew} />
       <div style={s.actions}>
         {onInvite ? (
           <button
@@ -664,9 +710,8 @@ export function FuturePlanRow({
 }) {
   const when = formatPlanBracketDate(plan?.plan_date);
   const name = futurePlanRestaurantName(plan);
-  const visual = resolveEatingPlanVisual(plan);
-  const showNameText = !visual;
   const { meal, notes } = futurePlanDetailParts(plan);
+  const joinHref = planJoinHref(plan);
   const canDelete = typeof onDelete === "function";
   const {
     open: deleteOpen,
@@ -699,7 +744,10 @@ export function FuturePlanRow({
       ) : null}
       <button
         type="button"
-        style={{ ...s.planCardBold, ...(open ? s.planCardBoldOpen : null) }}
+        style={{
+          ...s.planRowCompact,
+          ...(open ? s.planRowCompactOpen : null),
+        }}
         onClick={() => {
           if (consumeArmedClick() || deleteOpen) {
             dismiss();
@@ -710,16 +758,23 @@ export function FuturePlanRow({
         }}
         aria-expanded={open}
       >
-        <div style={s.planCardHead}>
-          <EatingPlanRestaurantMark plan={plan} name={name} />
-          <div style={s.planCardCopy}>
-            {when ? <div style={s.planCardDate}>{when}</div> : null}
-            {showNameText ? <div style={s.planCardTitle}>{name}</div> : null}
-            <div style={s.planCardMeta}>
-              {[meal, plan.joinable ? "Join Me open" : "Just me", notes].filter(Boolean).join(" · ")}
-            </div>
+        <div style={s.planRowCopy}>
+          {when ? <div style={s.planCardDate}>{when}</div> : null}
+          <div style={s.planCardTitle}>{name}</div>
+          <div style={s.planCardMeta}>
+            {[meal, plan.joinable ? "Join Me open" : "Just me", notes].filter(Boolean).join(" · ")}
           </div>
         </div>
+        {joinHref ? (
+          <Link
+            to={joinHref}
+            style={s.planRowJoinBtn}
+            data-testid="plan-row-join-me"
+            onClick={(e) => e.stopPropagation()}
+          >
+            Join Me
+          </Link>
+        ) : null}
       </button>
       {open ? (
         <div data-testid="future-plan-detail">
@@ -1080,9 +1135,12 @@ const wantStyles = {
     gap: 12,
     overflowX: "auto",
     paddingBottom: 4,
-    margin: "0 -4px",
+    margin: "0 -16px",
+    paddingLeft: 16,
+    paddingRight: 16,
     scrollSnapType: "x mandatory",
     WebkitOverflowScrolling: "touch",
+    scrollbarWidth: "none",
   },
   card: {
     display: "block",
@@ -1101,8 +1159,8 @@ const wantStyles = {
   },
   scrollCard: {
     display: "block",
-    flex: "0 0 168px",
-    width: 168,
+    flex: "0 0 148px",
+    width: 148,
     scrollSnapAlign: "start",
     textAlign: "left",
     textDecoration: "none",

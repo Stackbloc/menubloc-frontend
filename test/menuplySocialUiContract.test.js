@@ -145,7 +145,8 @@ test("What I Ate meal board is presentation-only (no empty cameras)", () => {
   assert.match(board, /No entries/);
   assert.match(board, /im_eating/);
   assert.match(board, /what-i-ate-meal-delete/);
-  assert.doesNotMatch(board, /mealHeroCard/);
+  assert.match(board, /mealHeroCard/);
+  assert.match(board, /what-i-ate-meal-hero/);
   assert.doesNotMatch(board, /meal-holder-add-media/);
   assert.doesNotMatch(board, /what-i-ate-meal-camera-/);
   assert.doesNotMatch(board, /onLogMeal/);

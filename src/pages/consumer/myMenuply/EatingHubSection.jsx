@@ -30,6 +30,51 @@ import { defaultWhatIAteMealPeriod } from "../../../lib/whatIAteTodayMealPeriod.
 import InviteMeOutAudiencePicker from "./InviteMeOutAudiencePicker.jsx";
 import * as s from "./myMenuplyStyles.js";
 
+function formatInlineDayLabel(hubDate, today) {
+  if (hubDate === today) return "Today";
+  return formatPlanBracketDate(hubDate);
+}
+
+function EatingDayNavInline({
+  hubDate,
+  today,
+  canGoBack,
+  canGoForward,
+  onPrev,
+  onNext,
+  onJumpToday,
+}) {
+  return (
+    <div style={s.inlineDayNav} data-testid="eating-day-nav">
+      <span style={s.inlineDayNavJournal}>Journal day</span>
+      <button
+        type="button"
+        style={{ ...s.inlineDayNavBtn, ...(!canGoBack ? s.inlineDayNavBtnDisabled : null) }}
+        disabled={!canGoBack}
+        onClick={onPrev}
+        aria-label="Previous day"
+      >
+        ‹
+      </button>
+      <span style={s.inlineDayNavLabel}>{formatInlineDayLabel(hubDate, today)}</span>
+      <button
+        type="button"
+        style={{ ...s.inlineDayNavBtn, ...(!canGoForward ? s.inlineDayNavBtnDisabled : null) }}
+        disabled={!canGoForward}
+        onClick={onNext}
+        aria-label="Next day"
+      >
+        ›
+      </button>
+      {hubDate !== today ? (
+        <button type="button" style={s.dayNavToday} onClick={onJumpToday}>
+          Today
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
 export function PlansCalendarGlyph() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden fill="none">
@@ -232,42 +277,25 @@ export default function EatingHubSection({
     <div data-testid="eating" ref={sectionRef}>
       <section style={s.section} data-testid="what-im-eating">
         <SectionHead
+          kicker="Today"
           title="What I'm Eating"
           to={readOnly ? diaryHref : "/account/what-i-ate"}
-          aside={<DinerCalendarTrigger selectedDate={hubDate} onOpen={openEatingCalendar} />}
+          subtitle="The food you're sharing with the world"
+          aside={
+            <>
+              <EatingDayNavInline
+                hubDate={hubDate}
+                today={today}
+                canGoBack={canGoBack}
+                canGoForward={canGoForward}
+                onPrev={() => goDay(-1)}
+                onNext={() => goDay(1)}
+                onJumpToday={() => handleCalendarDate(today)}
+              />
+              <DinerCalendarTrigger selectedDate={hubDate} onOpen={openEatingCalendar} />
+            </>
+          }
         />
-
-        <div style={s.dayNavShell} data-testid="eating-day-nav">
-          <button
-            type="button"
-            style={{ ...s.dayNavBtn, ...(!canGoBack ? s.dayNavBtnDisabled : null) }}
-            disabled={!canGoBack}
-            onClick={() => goDay(-1)}
-            aria-label="Previous day"
-          >
-            ‹
-          </button>
-          <div style={{ textAlign: "center" }}>
-            <span style={s.dayNavSub}>Journal day</span>
-            <span style={s.dayNavLabel}>
-              {hubDate === today ? "Today" : formatPlanBracketDate(hubDate)}
-            </span>
-            {hubDate !== today ? (
-              <button type="button" style={s.dayNavToday} onClick={() => handleCalendarDate(today)}>
-                Jump to today
-              </button>
-            ) : null}
-          </div>
-          <button
-            type="button"
-            style={s.dayNavBtn}
-            disabled={!canGoForward}
-            onClick={() => goDay(1)}
-            aria-label="Next day"
-          >
-            ›
-          </button>
-        </div>
 
         <div data-testid="eating-ate-panel">
           {lastPost?.kind === "diary" && !readOnly ? (
@@ -302,7 +330,11 @@ export default function EatingHubSection({
 
       <section style={s.section} data-testid="want-to-eat">
         <div data-testid="eating-want-panel" style={s.presentationBlock}>
-          <SectionHead title="What I Want to Eat" />
+          <SectionHead
+            kicker="Cravings"
+            title="What I Want to Eat"
+            subtitle="Dishes and places on your mind"
+          />
           {wantListError ? <p style={s.error}>{wantListError}</p> : null}
           {lastPost?.kind === "want" &&
           !readOnly &&
@@ -381,7 +413,9 @@ export default function EatingHubSection({
       <section style={s.section} data-testid="eating-plans">
         <div data-testid="eating-plans-panel" style={{ ...s.presentationBlock, ...s.plansPanel }}>
           <SectionHead
+            kicker="Coming up"
             title="My Eating Plans"
+            subtitle="Meals and outings you've planned"
             aside={
               <button
                 type="button"

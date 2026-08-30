@@ -30,6 +30,8 @@ test("Connection diner page uses the same hub layout as My Menuply", () => {
       page.lastIndexOf('data-testid="dining-crews"') < page.lastIndexOf('data-testid="my-events"')
     );
     assert.doesNotMatch(page, /People you interact with through Menuply meals/);
+    assert.doesNotMatch(page, /inviteLabel=/);
+    assert.doesNotMatch(page, /onInvite=\{\(\) => share/);
   }
 
   assert.match(section, /data-testid="eating"/);
