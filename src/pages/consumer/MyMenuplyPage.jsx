@@ -65,6 +65,7 @@ import CrewQuickCompose from "./myMenuply/CrewQuickCompose.jsx";
 import EventComposeSheet from "./myMenuply/EventComposeSheet.jsx";
 import PlanVideoAttachSheet from "./myMenuply/PlanVideoAttachSheet.jsx";
 import InvitePickerSheet from "./myMenuply/InvitePickerSheet.jsx";
+import CrewInvitePeopleSheet from "./myMenuply/CrewInvitePeopleSheet.jsx";
 import SectionEmptyState from "./myMenuply/SectionEmptyState.jsx";
 import { buildJoinMeCandidates } from "./myMenuply/joinMeCandidates.js";
 import {
@@ -208,6 +209,8 @@ export default function MyMenuplyPage() {
   const [eventComposeOpen, setEventComposeOpen] = useState(false);
   const [inviteCrewPickerOpen, setInviteCrewPickerOpen] = useState(false);
   const [inviteEventPickerOpen, setInviteEventPickerOpen] = useState(false);
+  const [crewInvitePeopleOpen, setCrewInvitePeopleOpen] = useState(false);
+  const [crewInviteTarget, setCrewInviteTarget] = useState(null);
   const [hubFocus, setHubFocus] = useState("");
   const [planPrefill, setPlanPrefill] = useState(null);
   const [planVideoPlan, setPlanVideoPlan] = useState(null);
@@ -1083,14 +1086,23 @@ export default function MyMenuplyPage() {
   }
 
   async function shareCrewInvite(crew) {
+    setCrewInviteTarget(crew || null);
+    setCrewInvitePeopleOpen(true);
+  }
+
+  async function createCrewInviteShareFromSheet({ inviteeUserId = null } = {}) {
+    const crew = crewInviteTarget;
+    if (!crew?.id) return;
     setPostBusy("invite");
     setError("");
     try {
-      const data = await inviteToDiningCrew(crew.id, {});
+      const body = inviteeUserId ? { invitee_user_id: inviteeUserId } : {};
+      const data = await inviteToDiningCrew(crew.id, body);
       openShare(buildDiningCrewInviteShareData(data.invitation?.url || ""), {
         modalTitle: "Share crew invite",
         analyticsContext: { pageType: "dining_crew_invite", crewId: Number(crew.id) || null },
       });
+      setCrewInvitePeopleOpen(false);
     } catch (err) {
       setError(err.message || "Invite failed");
     } finally {
@@ -1448,6 +1460,8 @@ export default function MyMenuplyPage() {
                       .join(" · ")}
                     onDelete={crew.viewer_role === "owner" ? onCrewDelete : undefined}
                     deleteBusy={postBusy === `crew-delete-${crew.id}`}
+                    onInvite={() => shareCrewInvite(crew)}
+                    inviteLabel="Invite people to join"
                   />
                 ))
               )}
@@ -1595,6 +1609,21 @@ export default function MyMenuplyPage() {
           setInviteCrewPickerOpen(false);
           shareCrewInvite(crew);
         }}
+      />
+      <CrewInvitePeopleSheet
+        open={crewInvitePeopleOpen}
+        crewName={crewInviteTarget?.name || ""}
+        connections={connections}
+        memberUserIds={(crewInviteTarget?.members || crewInviteTarget?.members_preview || []).map(
+          (m) => m.user_id
+        )}
+        busy={postBusy === "invite"}
+        onClose={() => {
+          setCrewInvitePeopleOpen(false);
+          setCrewInviteTarget(null);
+        }}
+        onShareLink={() => createCrewInviteShareFromSheet()}
+        onInviteConnection={(peerId) => createCrewInviteShareFromSheet({ inviteeUserId: peerId })}
       />
       <InvitePickerSheet
         open={inviteEventPickerOpen}

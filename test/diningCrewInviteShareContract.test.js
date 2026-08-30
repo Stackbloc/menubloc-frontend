@@ -52,7 +52,9 @@ test("Dining Crew detail uses ShareModal invite share — not prototype code dum
   const page = read("src/pages/consumer/DiningCrewsPage.jsx");
   assert.match(page, /ShareModal/);
   assert.match(page, /buildDiningCrewInviteShareData/);
-  assert.match(page, /Share invite/);
+  assert.match(page, /Invite people to join/);
+  assert.match(page, /CrewInvitePeopleSheet/);
+  assert.match(page, /listConnections/);
   assert.match(page, /dining-crew-share-invite/);
   assert.doesNotMatch(page, /Share link:\s*<code/);
   assert.doesNotMatch(page, /Member id \(optional\)/);

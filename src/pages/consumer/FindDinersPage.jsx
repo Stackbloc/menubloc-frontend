@@ -176,7 +176,11 @@ export default function FindDinersPage() {
         {error ? <p style={styles.error}>{error}</p> : null}
 
         {searched && !loading && results.length === 0 ? (
-          <p style={styles.empty}>No diners matched. Try a name, phone, email, city, or member ID.</p>
+          <p style={styles.empty}>
+            No diners matched. They may have <strong>Who can find me?</strong> set to Nobody in Account →
+            Profile. Ask them to choose Menuply members or People in my area, then try their exact email,
+            phone, or name again.
+          </p>
         ) : null}
 
         <ul style={styles.list}>

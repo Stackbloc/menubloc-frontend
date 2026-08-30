@@ -18,6 +18,7 @@ import {
   updateDiningCrew,
   getDiningCrew,
   inviteToDiningCrew,
+  listConnections,
   requestJoinDiningCrew,
   listDiningCrewJoinRequests,
   resolveDiningCrewJoinRequest,
@@ -37,6 +38,7 @@ import DiningCrewFoodEntityPicker from "../../components/diningCrews/DiningCrewF
 import MenuplyMediaPicker from "../../components/social/MenuplyMediaPicker.jsx";
 import { buildDiningCrewInviteShareData } from "../../lib/diningCrewInviteShare.js";
 import { formatDinerPeerLabel } from "../../lib/dinerPublicIdentity.js";
+import CrewInvitePeopleSheet from "./myMenuply/CrewInvitePeopleSheet.jsx";
 
 function resolveMediaUrl(url) {
   if (!url) return null;
@@ -268,6 +270,8 @@ export function DiningCrewDetailPage() {
   const [text, setText] = useState("");
   const [inviteShareData, setInviteShareData] = useState(null);
   const [inviteShareOpen, setInviteShareOpen] = useState(false);
+  const [invitePeopleOpen, setInvitePeopleOpen] = useState(false);
+  const [connections, setConnections] = useState([]);
   const [entityType, setEntityType] = useState("text");
   const [selectedEntity, setSelectedEntity] = useState(null);
   const [error, setError] = useState("");
@@ -326,6 +330,9 @@ export function DiningCrewDetailPage() {
     }
     if (!authLoading && isAuthenticated) {
       loadCrew().catch((err) => setError(err.message || "Unable to load crew"));
+      listConnections()
+        .then((data) => setConnections(data.accepted || []))
+        .catch(() => setConnections([]));
     }
   }, [authLoading, isAuthenticated, navigate, loadCrew]);
 
@@ -335,15 +342,22 @@ export function DiningCrewDetailPage() {
     }
   }, [activeConvoId, loadMessages]);
 
-  async function handleShareInvite() {
+  function openInvitePeople() {
+    if (crew?.is_full) return;
+    setInvitePeopleOpen(true);
+  }
+
+  async function createCrewInviteShare({ inviteeUserId = null, closePeopleSheet = false } = {}) {
     setBusy(true);
     setError("");
     try {
-      const data = await inviteToDiningCrew(crewId, {});
+      const body = inviteeUserId ? { invitee_user_id: inviteeUserId } : {};
+      const data = await inviteToDiningCrew(crewId, body);
       const shareData = buildDiningCrewInviteShareData(data.invitation?.url || "");
       if (!shareData?.url) throw new Error("Unable to create invite link");
       setInviteShareData(shareData);
       setInviteShareOpen(true);
+      if (closePeopleSheet) setInvitePeopleOpen(false);
     } catch (err) {
       setError(err.message || "Invite failed");
     } finally {
@@ -672,10 +686,10 @@ export function DiningCrewDetailPage() {
                 type="button"
                 style={styles.primaryBtn}
                 disabled={busy || crew.is_full}
-                onClick={handleShareInvite}
+                onClick={openInvitePeople}
                 data-testid="dining-crew-share-invite"
               >
-                Share invite
+                Invite people to join
               </button>
               {crew.is_full ? (
                 <p style={styles.muted}>This crew is full. Increase the max in settings to invite more.</p>
@@ -833,6 +847,18 @@ export function DiningCrewDetailPage() {
           diningCrewId={Number(crewId)}
         />
       ) : null}
+      <CrewInvitePeopleSheet
+        open={invitePeopleOpen}
+        crewName={crew?.name || ""}
+        connections={connections}
+        memberUserIds={(crew?.members || []).map((m) => m.user_id)}
+        busy={busy}
+        onClose={() => setInvitePeopleOpen(false)}
+        onShareLink={() => createCrewInviteShare({ closePeopleSheet: true })}
+        onInviteConnection={(peerId) =>
+          createCrewInviteShare({ inviteeUserId: peerId, closePeopleSheet: true })
+        }
+      />
       {inviteShareData ? (
         <ShareModal
           open={inviteShareOpen}
