@@ -80,6 +80,7 @@ import { useOrderCart } from "../context/OrderCartContext.jsx";
 import { sendPageVisit } from "../lib/analyticsPageVisitSend.js";
 import { getNormalizedMenuItemId, isValidMenuItemRouteId, parseMenuItemRouteId } from "../lib/menuItemIdentity.js";
 import ShowMeHowToMakeIt from "../components/homemade/ShowMeHowToMakeIt.jsx";
+import {
   isAlcoholicBeverageItem,
   resolveAlcoholicBeverageContent,
   RESPONSIBLE_DRINKING_BULLETS,
