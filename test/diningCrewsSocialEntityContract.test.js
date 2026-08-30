@@ -17,6 +17,10 @@ test("Dining Crews Phase 3 social entity UI + API client", () => {
   assert.match(page, /View all \$\{crew\.member_count\} members/);
   assert.match(page, /Discover public crews/);
   assert.match(page, /Invite to Eat \(crew outing\)/);
+  assert.match(page, /data-testid="dining-crew-reader-view"/);
+  assert.match(page, /data-testid="dining-crew-member-view"/);
+  assert.match(page, /data-testid="dining-crew-request-join"/);
+  assert.match(page, /Request to join/);
   assert.match(page, /diningCrewId=\{Number\(crewId\)\}/);
   assert.match(page, /dining-crew-food-photo/);
   assert.match(page, /MenuplyMediaPicker/);
@@ -24,7 +28,14 @@ test("Dining Crews Phase 3 social entity UI + API client", () => {
   assert.doesNotMatch(page, /dining-crew-food-photo-input/);
   assert.match(page, /postDiningCrewPhoto/);
   assert.match(page, /ShareModal/);
-  assert.match(page, /Share invite/);
+  assert.match(page, /Share Dining Crew invite/);
+  {
+    const readerStart = page.indexOf('data-testid="dining-crew-reader-view"');
+    const memberStart = page.indexOf('data-testid="dining-crew-member-view"');
+    const readerBlock = page.slice(readerStart, memberStart);
+    assert.doesNotMatch(readerBlock, /Invite people to join/);
+    assert.doesNotMatch(readerBlock, /Invite members/);
+  }
   assert.doesNotMatch(page, /crew_deal|createCrewDeal|CrewDealModal/);
   assert.doesNotMatch(page, /Share link:\s*<code/);
   assert.doesNotMatch(page, /Member id \(optional\)/);

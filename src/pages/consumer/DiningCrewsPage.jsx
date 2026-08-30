@@ -505,9 +505,63 @@ export function DiningCrewDetailPage() {
 
   const canManageSettings = crew?.viewer_role === "owner" || crew?.viewer_role === "admin";
   const isOwner = crew?.viewer_role === "owner";
+  const isMember = Boolean(crew?.viewer_role);
   const members = crew?.members || [];
   const preview = crew?.members_preview || members.slice(0, 5);
   const shownMembers = rosterExpanded ? members : preview;
+  const canRequestJoin =
+    !isMember &&
+    crew?.visibility === "public" &&
+    (crew.viewer_can_request_join ??
+      (!crew.is_full && !crew.join_request_pending));
+
+  function renderMemberRoster({ readOnly = false } = {}) {
+    if (!members.length) {
+      return <p style={styles.muted}>No members listed yet.</p>;
+    }
+    return (
+      <>
+        <ul style={styles.list}>
+          {shownMembers.map((m) => (
+            <li key={m.user_id} style={styles.card}>
+              <div>
+                <strong>{formatDinerPeerLabel(m)}</strong>
+                {readOnly ? null : (
+                  <span style={styles.muted}> · {m.role}</span>
+                )}
+                {m.edu_verified ? (
+                  <div style={styles.edu}>{m.edu_verification_badge}</div>
+                ) : null}
+              </div>
+              {!readOnly && isOwner && m.role !== "owner" ? (
+                <button
+                  type="button"
+                  style={styles.secondaryBtn}
+                  disabled={busy}
+                  onClick={() =>
+                    handleSetRole(m.user_id, m.role === "admin" ? "member" : "admin")
+                  }
+                >
+                  {m.role === "admin" ? "Make member" : "Make admin"}
+                </button>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+        {members.length > 5 ? (
+          <button
+            type="button"
+            style={{ ...styles.linkBtn, marginTop: 8 }}
+            onClick={() => setRosterExpanded((v) => !v)}
+          >
+            {rosterExpanded
+              ? "Show fewer members"
+              : `View all ${crew.member_count} members`}
+          </button>
+        ) : null}
+      </>
+    );
+  }
 
   return (
     <>
@@ -521,7 +575,41 @@ export function DiningCrewDetailPage() {
         {error ? <p style={styles.error}>{error}</p> : null}
 
         {crew ? (
-          <>
+          !isMember ? (
+            <div style={styles.readerPanel} data-testid="dining-crew-reader-view">
+              <p style={styles.muted}>
+                {crew.member_count} {crew.member_count === 1 ? "member" : "members"}
+                {crew.is_full ? " · Full" : " · Open to new members"}
+              </p>
+              {crew.description ? (
+                <p style={styles.lead}>{crew.description}</p>
+              ) : (
+                <p style={styles.muted}>A dining crew on Menuply.</p>
+              )}
+              <section style={styles.section}>
+                <h2 style={styles.h2}>Members</h2>
+                {renderMemberRoster({ readOnly: true })}
+              </section>
+              {canRequestJoin ? (
+                <button
+                  type="button"
+                  style={styles.primaryBtn}
+                  disabled={busy}
+                  onClick={handleRequestJoinFromDetail}
+                  data-testid="dining-crew-request-join"
+                >
+                  Request to join
+                </button>
+              ) : crew.join_request_pending ? (
+                <p style={styles.notice} data-testid="dining-crew-join-pending">
+                  Request sent — the crew will review your request.
+                </p>
+              ) : crew.is_full ? (
+                <p style={styles.muted}>This crew is full and not accepting new members.</p>
+              ) : null}
+            </div>
+          ) : (
+          <div data-testid="dining-crew-member-view">
             <section style={styles.section}>
               <p style={styles.muted}>
                 {crew.visibility === "public" ? "Public" : "Private"}
@@ -532,16 +620,6 @@ export function DiningCrewDetailPage() {
                 {crew.is_full ? " · Full" : null}
               </p>
               {crew.description ? <p style={styles.lead}>{crew.description}</p> : null}
-              {!crew.viewer_role && crew.visibility === "public" ? (
-                <button
-                  type="button"
-                  style={styles.primaryBtn}
-                  disabled={busy || crew.is_full || crew.join_request_pending}
-                  onClick={handleRequestJoinFromDetail}
-                >
-                  {crew.join_request_pending ? "Request sent" : "Request to join"}
-                </button>
-              ) : null}
               {canManageSettings ? (
                 <button
                   type="button"
@@ -571,48 +649,11 @@ export function DiningCrewDetailPage() {
               ) : null}
             </section>
 
-            {crew.viewer_role ? (
-            <>
             <section style={styles.section}>
               <h2 style={styles.h2}>
                 Diner Crew — {crew.member_count} member{crew.member_count === 1 ? "" : "s"}
               </h2>
-              <ul style={styles.list}>
-                {shownMembers.map((m) => (
-                  <li key={m.user_id} style={styles.card}>
-                    <div>
-                      <strong>{formatDinerPeerLabel(m)}</strong>
-                      <span style={styles.muted}> · {m.role}</span>
-                      {m.edu_verified ? (
-                        <div style={styles.edu}>{m.edu_verification_badge}</div>
-                      ) : null}
-                    </div>
-                    {isOwner && m.role !== "owner" ? (
-                      <button
-                        type="button"
-                        style={styles.secondaryBtn}
-                        disabled={busy}
-                        onClick={() =>
-                          handleSetRole(m.user_id, m.role === "admin" ? "member" : "admin")
-                        }
-                      >
-                        {m.role === "admin" ? "Make member" : "Make admin"}
-                      </button>
-                    ) : null}
-                  </li>
-                ))}
-              </ul>
-              {members.length > 5 ? (
-                <button
-                  type="button"
-                  style={{ ...styles.linkBtn, marginTop: 8 }}
-                  onClick={() => setRosterExpanded((v) => !v)}
-                >
-                  {rosterExpanded
-                    ? "Show fewer members"
-                    : `View all ${crew.member_count} members`}
-                </button>
-              ) : null}
+              {renderMemberRoster()}
             </section>
 
             {joinRequests.length > 0 ? (
@@ -830,9 +871,8 @@ export function DiningCrewDetailPage() {
                 </>
               ) : null}
             </section>
-            </>
-            ) : null}
-          </>
+          </div>
+          )
         ) : (
           <p style={styles.muted}>Loading…</p>
         )}
@@ -1074,6 +1114,13 @@ const styles = {
     padding: "16px 16px calc(var(--bottom-nav-h, 72px) + 16px)",
     maxWidth: 720,
     margin: "0 auto",
+  },
+  readerPanel: {
+    marginTop: 8,
+    padding: "16px 14px",
+    background: "#fff",
+    border: "1px solid #e2e8f0",
+    borderRadius: 14,
   },
   lead: { fontSize: 14, color: "#334155", lineHeight: 1.5 },
   muted: { fontSize: 13, color: "#64748b" },
