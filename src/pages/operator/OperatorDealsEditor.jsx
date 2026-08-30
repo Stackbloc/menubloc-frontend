@@ -25,6 +25,7 @@ import {
   formatMealTimeDealCaption,
   normalizeDealMealPeriodList,
 } from "../../lib/dealMealPeriods.js";
+import { resolveBillboardMediaUrl } from "../../lib/billboardMediaUrl.js";
 
 // ── Shared styles ─────────────────────────────────────────────────────────
 const INPUT = {
@@ -276,6 +277,8 @@ function DealForm({ allItems, restaurantId, initial = {}, initialBillboard = nul
       is_primary_search_billboard: bb.is_primary_search_billboard,
     };
   }
+
+  const savedBillboardImageUrl = resolveBillboardMediaUrl(bb.image_url) || "";
 
   async function uploadDealVideoNow(file) {
     if (!restaurantId || !initial.id || !file) return;
@@ -676,14 +679,14 @@ function DealForm({ allItems, restaurantId, initial = {}, initialBillboard = nul
                     e.target.value = "";
                   }}
                 />
-                {bbPhotoPreview || bb.image_url ? (
+                {bbPhotoPreview || savedBillboardImageUrl ? (
                   <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
                     <div style={{
                       width: 80, height: 80, borderRadius: 8, overflow: "hidden",
                       border: "1.5px solid #e4e9f0", flexShrink: 0,
                     }}>
                       <img
-                        src={bbPhotoPreview || bb.image_url}
+                        src={bbPhotoPreview || savedBillboardImageUrl}
                         alt="Billboard"
                         style={{ width: "100%", height: "100%", objectFit: "cover" }}
                         onError={() => setBbPhotoError("Could not load image")}
@@ -762,14 +765,14 @@ function DealForm({ allItems, restaurantId, initial = {}, initialBillboard = nul
             </label>
 
             {/* Billboard preview */}
-            {(bbPhotoPreview || bb.image_url || bb.headline_override || form.title) && (
+            {(bbPhotoPreview || savedBillboardImageUrl || bb.headline_override || form.title) && (
               <div>
                 <div style={{ fontSize: 11, fontWeight: 600, color: "#5b6675", marginBottom: 6 }}>Preview</div>
                 <div style={{
                   width: 200, height: 200, borderRadius: 12, overflow: "hidden",
                   position: "relative", border: "1.5px solid #e4e9f0", flexShrink: 0,
-                  background: bbPhotoPreview || bb.image_url
-                    ? `url(${encodeURI(bbPhotoPreview || bb.image_url)}) center/cover no-repeat`
+                  background: bbPhotoPreview || savedBillboardImageUrl
+                    ? `url(${encodeURI(bbPhotoPreview || savedBillboardImageUrl)}) center/cover no-repeat`
                     : "linear-gradient(135deg, #1F4E3D 0%, #3b7a68 100%)",
                 }}>
                   <div style={{

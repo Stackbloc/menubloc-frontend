@@ -32,6 +32,10 @@ test("resolveBillboardMediaUrl prefixes relative upload paths with API base", ()
   assert.match(splash, /resolveBillboardMediaUrl/);
   const panel = read("src/pages/owner/OwnerProfileBillboardsPanel.jsx");
   assert.match(panel, /resolveBillboardMediaUrl/);
+  const operatorBillboards = read("src/pages/operator/OperatorBillboardsPage.jsx");
+  assert.match(operatorBillboards, /resolveBillboardMediaUrl/);
+  const operatorDeals = read("src/pages/operator/OperatorDealsEditor.jsx");
+  assert.match(operatorDeals, /resolveBillboardMediaUrl/);
 });
 
 test("In-N-Out building crops keep the neon logo in frame", () => {

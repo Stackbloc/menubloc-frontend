@@ -8,6 +8,7 @@ import { Link } from "react-router-dom";
 import OperatorLayout from "./OperatorLayout.jsx";
 import { useOperator } from "../../context/OperatorContext.jsx";
 import * as api from "../../lib/operatorApi.js";
+import { resolveBillboardMediaUrl } from "../../lib/billboardMediaUrl.js";
 
 const INPUT = {
   border: "1.5px solid #e4e9f0",
@@ -201,7 +202,7 @@ function BillboardEditor({
 
   const previewUrl = pendingPhoto
     ? URL.createObjectURL(pendingPhoto)
-    : imageUrl || null;
+    : resolveBillboardMediaUrl(imageUrl) || null;
 
   async function handleSave(event) {
     event.preventDefault();
