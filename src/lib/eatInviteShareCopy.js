@@ -3,6 +3,11 @@
  * Draft options (LDL/LDD/LHC/MMH + light emoji) are selectable copy, not a glossary feature.
  */
 
+import {
+  appendMenuplyAccountInviteToShareText,
+  invitePathFromShareUrl,
+} from "./menuplyAccountInvite.js";
+
 export const INVITE_MESSAGE_SEED_CODES = ["LDL", "LDD", "LHC", "MMH"];
 
 export const INVITE_COPY_SEEDS = {
@@ -11,6 +16,15 @@ export const INVITE_COPY_SEEDS = {
   LDD: { code: "LDD", emoji: "🍽️", verbPhrase: "Let's do dinner", meal: "dinner" },
   MMH: { code: "MMH", emoji: "📍", verbPhrase: "Meet me here", meal: "meet" },
 };
+
+/** Default compose time when a quick-invite seed is chosen from the Feed X sheet. */
+export function defaultScheduledTimeForInviteSeed(seedCode) {
+  const code = String(seedCode || "").trim().toUpperCase();
+  if (code === "LHC") return "09:00";
+  if (code === "LDL") return "12:30";
+  if (code === "LDD") return "19:00";
+  return "19:00";
+}
 
 export function formatInviteDateLabel(isoDate) {
   if (!isoDate) return "";
@@ -171,5 +185,8 @@ export function buildEatInviteShareText({
     });
   const link = String(url || "").trim();
   if (!link) return draft;
-  return `${draft}\n${link}`.trim();
+  const body = `${draft}\n${link}`.trim();
+  return appendMenuplyAccountInviteToShareText(body, {
+    nextPath: invitePathFromShareUrl(link),
+  });
 }

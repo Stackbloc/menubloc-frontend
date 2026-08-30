@@ -8,6 +8,7 @@ import { createPortal } from "react-dom";
 import { Link, Navigate, useParams } from "react-router-dom";
 import { useConsumer } from "../context/ConsumerContext.jsx";
 import ShareModal from "../components/share/ShareModal.jsx";
+import MenuplyAccountInviteCard from "../components/consumer/MenuplyAccountInviteCard.jsx";
 import {
   fetchPublicEatInvitation,
   respondToEatInvitation,
@@ -26,6 +27,7 @@ import {
   formatInviteDateLabel,
   formatInviteTimeLabel,
 } from "../lib/eatInviteShareCopy.js";
+import { invitePathFromShareUrl } from "../lib/menuplyAccountInvite.js";
 import { restaurantPath } from "../lib/canonicalUrlCore.js";
 import { clusterPath } from "../lib/clusterUrl.js";
 import {
@@ -1114,6 +1116,14 @@ export default function EatInvitationPage() {
                       : ""}
                   </div>
                 ) : null}
+                {!isAuthenticated && !responded ? (
+                  <p
+                    data-testid="invite-guest-no-account"
+                    style={{ margin: 0, fontSize: 13, color: "#57534e", lineHeight: 1.45 }}
+                  >
+                    No Menuply account needed — enter your name and tap your response.
+                  </p>
+                ) : null}
                 {!isAuthenticated && !skipGuestNameField ? (
                   <label
                     style={{ display: "grid", gap: 4, fontSize: 12, fontWeight: 700 }}
@@ -1239,6 +1249,13 @@ export default function EatInvitationPage() {
                 ) : null}
               </div>
             )}
+
+            {!isAuthenticated && !invitation.is_organizer ? (
+              <MenuplyAccountInviteCard
+                nextPath={invitePathFromShareUrl(shareData?.url || `/invite/${token}`)}
+                testId="invite-account-invite"
+              />
+            ) : null}
 
             <div
               style={{

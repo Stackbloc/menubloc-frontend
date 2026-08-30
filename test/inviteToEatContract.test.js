@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import {
   buildEatInviteMessageDraft,
   buildEatInviteShareText,
+  defaultScheduledTimeForInviteSeed,
   listInviteMessageOptions,
   pickInviteCopySeed,
 } from "../src/lib/eatInviteShareCopy.js";
@@ -51,7 +52,16 @@ test("InviteToEatButton tooltip and Invitation Ready confirmation", () => {
   assert.match(modal, /recipient_chooses/);
   assert.match(modal, /restaurant_negotiable|restaurantNegotiable/);
   assert.match(modal, /schedule_negotiable|scheduleNegotiable/);
-  assert.match(modal, /invite-restaurant-negotiable/);
+  assert.match(modal, /initialSeedCode/);
+  assert.match(modal, /autoOpenShareOnReady/);
+  assert.match(modal, /defaultScheduledTimeForInviteSeed/);
+  assert.match(modal, /RSVP without a Menuply account/);
+
+  const startPage = read("src/pages/consumer/InviteToEatStartPage.jsx");
+  assert.match(startPage, /seed_code/);
+  assert.match(startPage, /quick_invite/);
+  assert.match(startPage, /autoOpenShareOnReady/);
+  assert.match(startPage, /initialSeedCode/);
   assert.match(modal, /Allow restaurant changes|fixed-location/);
   assert.match(modal, /type=["']radio["']/);
   assert.match(modal, /gridTemplateColumns:\s*["']16px minmax\(0, 1fr\)["']/);
@@ -84,6 +94,9 @@ test("InviteToEatButton tooltip and Invitation Ready confirmation", () => {
 });
 
 test("Share copy options include LDL/LDD/LHC/MMH with light emoji", () => {
+  assert.equal(defaultScheduledTimeForInviteSeed("LHC"), "09:00");
+  assert.equal(defaultScheduledTimeForInviteSeed("LDL"), "12:30");
+  assert.equal(defaultScheduledTimeForInviteSeed("LDD"), "19:00");
   assert.equal(pickInviteCopySeed({ scheduledTime: "12:30" }).code, "LDL");
   assert.equal(pickInviteCopySeed({ scheduledTime: "19:00" }).code, "LDD");
   assert.equal(pickInviteCopySeed({ scheduledTime: "10:00" }).code, "LHC");
@@ -115,6 +128,8 @@ test("Share copy options include LDL/LDD/LHC/MMH with light emoji", () => {
   assert.match(lunch, /LDL/);
   assert.match(lunch, /Let's do lunch at Fixins/);
   assert.match(lunch, /menuply\.com\/invite\/abc/);
+  assert.match(lunch, /Open a free Menuply account/);
+  assert.match(lunch, /menuply\.com\/diner\/signup/);
 
   const custom = buildEatInviteShareText({
     inviteKind: "group",
@@ -158,6 +173,10 @@ test("Eat invitation public page uses live About Us; named private invitee; gues
   assert.match(page, /respondToEatInvitation/);
   assert.match(page, /View Menu/);
   assert.match(page, /invite-guest-name/);
+  assert.match(page, /invite-guest-no-account/);
+  assert.match(page, /invite-account-invite/);
+  assert.match(page, /MenuplyAccountInviteCard/);
+  assert.match(page, /No Menuply account needed/);
   assert.match(page, /skipGuestNameField/);
   assert.match(page, /invite-named-invitee/);
   assert.match(page, /invitee_display_name/);

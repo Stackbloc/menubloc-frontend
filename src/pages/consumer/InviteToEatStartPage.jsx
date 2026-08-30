@@ -12,6 +12,8 @@ import { resolveEatingPrefill } from "../../lib/foodActivityApi.js";
 
 export default function InviteToEatStartPage() {
   const [searchParams] = useSearchParams();
+  const seedCode = String(searchParams.get("seed_code") || "").trim().toUpperCase();
+  const quickInvite = searchParams.get("quick_invite") === "1";
   const [messageType, setMessageType] = useState("restaurant");
   const [selected, setSelected] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -64,7 +66,11 @@ export default function InviteToEatStartPage() {
     <>
       <StickyPageHeader title="Invite to Eat" />
       <main style={styles.main} data-testid="invite-to-eat-start">
-        <p style={styles.lead}>Pick a restaurant, set a time, then share your invitation.</p>
+        <p style={styles.lead}>
+          {quickInvite
+            ? "Pick a restaurant, set the details, then share the link by text or Copy Link. Your friend can RSVP without a Menuply account."
+            : "Pick a restaurant, set a time, then share your invitation."}
+        </p>
         {loadingPrefill ? <p style={styles.muted}>Loading restaurant…</p> : null}
         <DiningCrewFoodEntityPicker
           messageType={messageType}
@@ -90,6 +96,8 @@ export default function InviteToEatStartPage() {
         restaurantName={resolved.restaurantName}
         menuItemId={resolved.menuItemId}
         menuItemName={resolved.menuItemName}
+        initialSeedCode={seedCode || null}
+        autoOpenShareOnReady={quickInvite}
       />
       <BottomNav />
     </>

@@ -28,8 +28,9 @@ test("diner QR share locks menuply.com connect invite URL", () => {
   });
   assert.ok(data);
   assert.equal(data.url, `https://menuply.com/connect/d/${token}`);
-  assert.match(data.text, /Create a free diner account/i);
-  assert.match(data.text, /link with Alex/i);
+  assert.match(data.text, /Alex invited you to connect on Menuply/);
+  assert.match(data.text, /Open a free Menuply account/);
+  assert.match(data.text, /menuply\.com\/diner\/signup/);
   assert.equal(buildDinerQrShareData({}), null);
 });
 

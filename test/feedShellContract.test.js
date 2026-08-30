@@ -50,8 +50,9 @@ test("Feed shell: Home|Connects|Menus|X|Deals|Shop|Profile + slim X sheet", () =
   assert.match(shell, /FeedVideoComposeOverlay/);
   assert.match(shell, /onPickUploadCategory/);
   assert.match(shell, /composeOpenLibrary/);
-  assert.match(shell, /\/account\/diner-qr\?next=/);
-  assert.doesNotMatch(shell, /ShareModal/);
+  assert.match(shell, /getMyDinerQr/);
+  assert.match(shell, /buildDinerQrShareData/);
+  assert.match(shell, /ShareModal/);
   assert.doesNotMatch(shell, /FeedDiaryComposeHost/);
 
   const createSheet = read("src/components/consumer/feed/FeedVideoCreateSheet.jsx");
@@ -64,6 +65,18 @@ test("Feed shell: Home|Connects|Menus|X|Deals|Shop|Profile + slim X sheet", () =
   assert.match(createSheet, /FEED_UPLOAD_MEDIA_ITEM/);
   assert.match(createSheet, /feed-x-upload-media/);
   assert.match(createSheet, /feed-upload-media-\$\{item\.id\}/);
+  assert.match(createSheet, /FEED_QUICK_INVITE_ITEMS/);
+  assert.match(createSheet, /feed-x-section-post-to-feed/);
+  assert.match(createSheet, /feed-x-section-quick-invites/);
+  assert.match(createSheet, /Post to Feed/);
+  assert.match(createSheet, /Quick Invites/);
+  assert.match(createSheet, /feed-quick-invite-\$\{code\.toLowerCase\(\)\}/);
+  assert.match(createSheet, /onPickQuickInvite/);
+  assert.match(shell, /onPickQuickInvite/);
+  assert.match(shell, /seed_code/);
+  assert.match(shell, /quick_invite/);
+  assert.match(shell, /\/account\/invite-to-eat/);
+  assert.match(createSheet, /RSVP without a Menuply account/);
   assert.doesNotMatch(createSheet, /feed-x-share-my-menuply/);
   assert.doesNotMatch(createSheet, /feed-x-diary/);
   assert.doesNotMatch(createSheet, /feed-x-my-menuply/);

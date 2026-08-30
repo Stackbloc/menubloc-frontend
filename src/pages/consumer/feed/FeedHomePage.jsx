@@ -3,7 +3,8 @@
  * Reuses SeeWhosEatingFullscreen; photos never enter this pool.
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { listSeeWhosEating } from "../../../lib/consumerApi.js";
 import { readDetectedLocation } from "../../../lib/discoveryLocationPersistence.js";
 import { FEED_VIDEO_POSTED_EVENT } from "../../../lib/feedVideoCompose.js";
@@ -20,6 +21,7 @@ import { useFeedShellDesktop } from "../../../lib/useFeedShellDesktop.js";
 import { useConsumer } from "../../../context/ConsumerContext.jsx";
 import SeeWhosEatingFullscreen from "../myMenuply/SeeWhosEatingFullscreen.jsx";
 import { FEED_PRIMARY_NAV_HEIGHT } from "../../../components/consumer/feed/FeedPrimaryNav.jsx";
+import { feedClipQueryParam, resolveFeedClipStartIndex } from "../../../lib/feedShare.js";
 
 const DEFAULT_MARKET = { city: "Los Angeles", state: "CA" };
 
@@ -34,8 +36,14 @@ function resolveMarket() {
 
 export default function FeedHomePage() {
   const { isAuthenticated, consumer } = useConsumer();
+  const [searchParams] = useSearchParams();
+  const sharedClipId = useMemo(
+    () => feedClipQueryParam(searchParams.get("clip")),
+    [searchParams]
+  );
   const isDesktop = useFeedShellDesktop();
   const [items, setItems] = useState([]);
+  const [startIndex, setStartIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showEmptyFirstVisitPrompt, setShowEmptyFirstVisitPrompt] = useState(false);
@@ -100,6 +108,10 @@ export default function FeedHomePage() {
     };
   }, [market.city, market.state]);
 
+  useEffect(() => {
+    setStartIndex(resolveFeedClipStartIndex(items, sharedClipId));
+  }, [items, sharedClipId]);
+
   function onRemovedFromFeed(itemId) {
     const id = String(itemId || "").trim();
     if (!id) return;
@@ -137,12 +149,14 @@ export default function FeedHomePage() {
       <SeeWhosEatingFullscreen
         variant="feedHome"
         items={items}
-        startIndex={0}
+        startIndex={startIndex}
         isAuthenticated={Boolean(isAuthenticated)}
         viewerUserId={consumer?.id || null}
         onRemovedFromFeed={onRemovedFromFeed}
         bottomInset={FEED_PRIMARY_NAV_HEIGHT + 8}
         showEmptyFirstVisitPrompt={showEmptyFirstVisitPrompt}
+        sharedClipId={sharedClipId}
+        showSharedAccountInvite={Boolean(sharedClipId && !isAuthenticated)}
       />
     </div>
   );

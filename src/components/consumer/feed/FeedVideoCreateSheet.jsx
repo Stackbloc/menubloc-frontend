@@ -1,11 +1,12 @@
 /**
- * Feed center X — record video by category, or upload library media by category.
+ * Feed center X — record video by category, upload library media, or quick invites (LDL/LDD/LHC/MMH).
  */
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { LIVE_FEED_CHANNELS, LIVE_FEED_FULL_CATEGORY_LABELS } from "../../../lib/liveFeedCategory.js";
 import { FEED_CONTENT_KINDS } from "../../../lib/feedContentKinds.js";
+import { INVITE_COPY_SEEDS, INVITE_MESSAGE_SEED_CODES } from "../../../lib/eatInviteShareCopy.js";
 
 export const FEED_VIDEO_CATEGORY_IDS = [
   FEED_CONTENT_KINDS.ATE,
@@ -46,6 +47,24 @@ const UPLOAD_CATEGORY_ITEMS = VIDEO_ITEMS.map((item) => ({
   testId: `feed-upload-media-${item.id}`,
 }));
 
+export const FEED_QUICK_INVITE_ITEMS = INVITE_MESSAGE_SEED_CODES.map((code) => {
+  const seed = INVITE_COPY_SEEDS[code];
+  return {
+    id: `quick-invite-${code.toLowerCase()}`,
+    kind: "quick-invite",
+    seedCode: code,
+    title: `${seed.emoji} ${code} — ${seed.verbPhrase}`,
+    description:
+      code === "MMH"
+        ? "Share a meet-up link — they can RSVP without a Menuply account"
+        : `Share a ${seed.meal} invite — they can RSVP without a Menuply account`,
+    testId: `feed-quick-invite-${code.toLowerCase()}`,
+    guestOk: false,
+    guestDescription: "Sign in to send quick invites",
+    guestTo: "/account/login?next=%2Ffeed",
+  };
+});
+
 export const FEED_UPLOAD_MEDIA_ITEM = {
   id: "upload-media",
   kind: "upload",
@@ -58,13 +77,52 @@ export const FEED_UPLOAD_MEDIA_ITEM = {
 };
 
 /** Flat X menu — exported for contract tests. */
-export const FEED_X_ITEMS = [...VIDEO_ITEMS, FEED_UPLOAD_MEDIA_ITEM];
+export const FEED_X_ITEMS = [...VIDEO_ITEMS, ...FEED_QUICK_INVITE_ITEMS, FEED_UPLOAD_MEDIA_ITEM];
+
+function SectionTitle({ children }) {
+  return <h3 style={styles.sectionTitle}>{children}</h3>;
+}
+
+function ActionButton({ item, isAuthenticated, onVideo, onUploadStart, onUploadCategory, onQuickInvite }) {
+  return (
+    <li key={item.id}>
+      <button
+        type="button"
+        data-testid={item.testId}
+        style={styles.action}
+        onClick={() => {
+          if (item.kind === "video") {
+            onVideo(item.id);
+            return;
+          }
+          if (item.kind === "upload") {
+            onUploadStart(item);
+            return;
+          }
+          if (item.kind === "upload-category") {
+            onUploadCategory(item.id);
+            return;
+          }
+          if (item.kind === "quick-invite") {
+            onQuickInvite(item);
+          }
+        }}
+      >
+        <span style={styles.actionTitle}>{item.title}</span>
+        <span style={styles.actionDesc}>
+          {!isAuthenticated && item.guestDescription ? item.guestDescription : item.description}
+        </span>
+      </button>
+    </li>
+  );
+}
 
 export default function FeedVideoCreateSheet({
   open,
   onClose,
   onPickCategory,
   onPickUploadCategory,
+  onPickQuickInvite,
   isAuthenticated = false,
 }) {
   const [uploadStep, setUploadStep] = useState(false);
@@ -114,11 +172,17 @@ export default function FeedVideoCreateSheet({
     onPickUploadCategory?.(category);
   }
 
-  const items = uploadStep ? UPLOAD_CATEGORY_ITEMS : FEED_X_ITEMS;
-  const title = uploadStep ? "Upload media" : "Post to Feed";
-  const lead = uploadStep
-    ? "What is this video for?"
-    : null;
+  function handleQuickInvite(item) {
+    onClose?.();
+    if (!isAuthenticated) {
+      onPickQuickInvite?.(null, { guestTo: item.guestTo });
+      return;
+    }
+    onPickQuickInvite?.(item.seedCode);
+  }
+
+  const title = uploadStep ? "Upload media" : "Create";
+  const lead = uploadStep ? "What is this video for?" : null;
 
   return createPortal(
     <div
@@ -157,37 +221,69 @@ export default function FeedVideoCreateSheet({
           </button>
         </div>
         {lead ? <p style={styles.lead}>{lead}</p> : null}
-        <ul style={styles.list}>
-          {items.map((item) => (
-            <li key={item.id}>
-              <button
-                type="button"
-                data-testid={item.testId}
-                style={styles.action}
-                onClick={() => {
-                  if (item.kind === "video") {
-                    handleVideo(item.id);
-                    return;
-                  }
-                  if (item.kind === "upload") {
-                    handleUploadStart(item);
-                    return;
-                  }
-                  if (item.kind === "upload-category") {
-                    handleUploadCategory(item.id);
-                  }
-                }}
-              >
-                <span style={styles.actionTitle}>{item.title}</span>
-                <span style={styles.actionDesc}>
-                  {!isAuthenticated && item.guestDescription
-                    ? item.guestDescription
-                    : item.description}
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
+        {uploadStep ? (
+          <ul style={styles.list}>
+            {UPLOAD_CATEGORY_ITEMS.map((item) => (
+              <ActionButton
+                key={item.id}
+                item={item}
+                isAuthenticated={isAuthenticated}
+                onVideo={handleVideo}
+                onUploadStart={handleUploadStart}
+                onUploadCategory={handleUploadCategory}
+                onQuickInvite={handleQuickInvite}
+              />
+            ))}
+          </ul>
+        ) : (
+          <>
+            <section data-testid="feed-x-section-post-to-feed" style={styles.section}>
+              <SectionTitle>Post to Feed</SectionTitle>
+              <ul style={styles.list}>
+                {VIDEO_ITEMS.map((item) => (
+                  <ActionButton
+                    key={item.id}
+                    item={item}
+                    isAuthenticated={isAuthenticated}
+                    onVideo={handleVideo}
+                    onUploadStart={handleUploadStart}
+                    onUploadCategory={handleUploadCategory}
+                    onQuickInvite={handleQuickInvite}
+                  />
+                ))}
+              </ul>
+            </section>
+            <section data-testid="feed-x-section-quick-invites" style={styles.section}>
+              <SectionTitle>Quick Invites</SectionTitle>
+              <p style={styles.sectionLead}>
+                Share by text or Copy Link. Friends not on Menuply can still open the link and RSVP.
+              </p>
+              <ul style={styles.list}>
+                {FEED_QUICK_INVITE_ITEMS.map((item) => (
+                  <ActionButton
+                    key={item.id}
+                    item={item}
+                    isAuthenticated={isAuthenticated}
+                    onVideo={handleVideo}
+                    onUploadStart={handleUploadStart}
+                    onUploadCategory={handleUploadCategory}
+                    onQuickInvite={handleQuickInvite}
+                  />
+                ))}
+              </ul>
+            </section>
+            <ul style={styles.list} aria-label="Post to Feed">
+              <ActionButton
+                item={FEED_UPLOAD_MEDIA_ITEM}
+                isAuthenticated={isAuthenticated}
+                onVideo={handleVideo}
+                onUploadStart={handleUploadStart}
+                onUploadCategory={handleUploadCategory}
+                onQuickInvite={handleQuickInvite}
+              />
+            </ul>
+          </>
+        )}
       </div>
     </div>,
     document.body
@@ -214,6 +310,8 @@ const styles = {
     boxShadow: "0 18px 50px rgba(0,0,0,0.45)",
     padding: "16px 16px 10px",
     fontFamily: "Inter, Arial, sans-serif",
+    maxHeight: "min(82vh, 640px)",
+    overflowY: "auto",
   },
   head: {
     display: "grid",
@@ -246,6 +344,21 @@ const styles = {
     fontSize: 13,
     color: "rgba(255,255,255,0.62)",
     textAlign: "center",
+  },
+  section: { marginTop: 4 },
+  sectionTitle: {
+    margin: "8px 0 0",
+    fontSize: 11,
+    fontWeight: 800,
+    letterSpacing: "0.06em",
+    textTransform: "uppercase",
+    color: "rgba(94, 234, 212, 0.85)",
+  },
+  sectionLead: {
+    margin: "4px 0 0",
+    fontSize: 12,
+    lineHeight: 1.4,
+    color: "rgba(255,255,255,0.55)",
   },
   list: { listStyle: "none", margin: 0, padding: 0 },
   action: {

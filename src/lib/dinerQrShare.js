@@ -3,6 +3,10 @@
  */
 
 import { normalizeConsumerShareUrl } from "../components/share/shareUtils.js";
+import {
+  appendMenuplyAccountInviteToShareText,
+  MENUPLY_ACCOUNT_INVITE_BODY,
+} from "./menuplyAccountInvite.js";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -70,11 +74,15 @@ export function buildDinerQrShareData({ scan_url, token, display_name } = {}) {
   const url = menuplyDinerConnectUrl(scan_url || token);
   if (!url) return null;
   const inviteName = formatDinerInviteName(display_name) || String(display_name || "").trim();
+  const connectPath = `/connect/d/${extractDinerQrToken(scan_url || token)}`;
+  const baseText = inviteName
+    ? `${inviteName} invited you to connect on Menuply. ${MENUPLY_ACCOUNT_INVITE_BODY}`
+    : `You've been invited to connect on Menuply. ${MENUPLY_ACCOUNT_INVITE_BODY}`;
   return {
     title: inviteName ? `Connect with ${inviteName} on Menuply` : "Connect on Menuply",
-    text: inviteName
-      ? `${inviteName} invited you to connect on Menuply. Create a free diner account to link with ${inviteName} and discover food together.`
-      : "You've been invited to connect on Menuply. Create a free diner account to link with the person who sent this link.",
+    text: appendMenuplyAccountInviteToShareText(`${baseText}\n${url}`.trim(), {
+      nextPath: connectPath,
+    }),
     url,
   };
 }

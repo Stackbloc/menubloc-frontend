@@ -5,6 +5,9 @@
 
 import { useEffect, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import ShareModal from "../../../components/share/ShareModal.jsx";
+import { getMyDinerQr } from "../../../lib/consumerApi.js";
+import { buildDinerQrShareData } from "../../../lib/dinerQrShare.js";
 import { isFeedShopRoute } from "../../../lib/feedShellNavigation.js";
 import FeedPrimaryNav, { FEED_PRIMARY_NAV_HEIGHT } from "../../../components/consumer/feed/FeedPrimaryNav.jsx";
 import FeedDesktopRail, { FEED_DESKTOP_RAIL_WIDTH } from "../../../components/consumer/feed/FeedDesktopRail.jsx";
@@ -28,6 +31,9 @@ export default function FeedShellPage({ children = null }) {
   const [composeMediaSource, setComposeMediaSource] = useState("camera");
   const [composeOpenLibrary, setComposeOpenLibrary] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
+  const [profileShareOpen, setProfileShareOpen] = useState(false);
+  const [profileShareData, setProfileShareData] = useState(null);
+  const [profileShareError, setProfileShareError] = useState("");
 
   useEffect(() => {
     document.documentElement.style.setProperty(
@@ -79,19 +85,48 @@ export default function FeedShellPage({ children = null }) {
     setComposeCategory(category);
   }
 
+  function handlePickQuickInvite(seedCode, options = {}) {
+    closeCreateSheet();
+    if (!seedCode) {
+      const guestPath = decodeURIComponent(String(options?.guestTo || "/account/login?next=%2Ffeed"));
+      navigate(guestPath.startsWith("/") ? guestPath : `/${guestPath}`);
+      return;
+    }
+    if (!isAuthenticated) {
+      navigate(`/account/login?next=${encodeURIComponent("/feed")}`);
+      return;
+    }
+    const params = new URLSearchParams({ seed_code: String(seedCode), quick_invite: "1" });
+    navigate(`/account/invite-to-eat?${params.toString()}`);
+  }
+
   function closeCompose() {
     setComposeCategory("");
     setComposeMediaSource("camera");
     setComposeOpenLibrary(false);
   }
 
-  function handleShareMyMenuply(item) {
+  async function handleShareMyMenuply(item) {
     if (!isAuthenticated) {
       const guestPath = decodeURIComponent(String(item?.guestTo || "/account/signup?next=%2Ffeed"));
       navigate(guestPath.startsWith("/") ? guestPath : `/${guestPath}`);
       return;
     }
-    navigate(`/account/diner-qr?next=${encodeURIComponent("/feed")}`);
+    setProfileShareError("");
+    try {
+      const data = await getMyDinerQr();
+      const shareData = buildDinerQrShareData({
+        scan_url: data?.qr?.scan_url,
+        token: data?.qr?.token,
+        display_name: data?.card?.display_name,
+      });
+      if (!shareData?.url) throw new Error("Unable to create profile share link");
+      setProfileShareData(shareData);
+      setProfileShareOpen(true);
+    } catch (err) {
+      setProfileShareError(err?.message || "Unable to share profile");
+      navigate(`/account/diner-qr?next=${encodeURIComponent("/feed")}`);
+    }
   }
 
   const createActive = createSheetOpen || Boolean(composeCategory);
@@ -144,6 +179,7 @@ export default function FeedShellPage({ children = null }) {
         onClose={closeCreateSheet}
         onPickCategory={handlePickCategory}
         onPickUploadCategory={handlePickUploadCategory}
+        onPickQuickInvite={handlePickQuickInvite}
         isAuthenticated={isAuthenticated}
       />
       <FeedVideoComposeOverlay
@@ -153,6 +189,20 @@ export default function FeedShellPage({ children = null }) {
         openLibraryOnMount={composeOpenLibrary}
         onClose={closeCompose}
       />
+      {profileShareData ? (
+        <ShareModal
+          open={profileShareOpen}
+          onClose={() => setProfileShareOpen(false)}
+          modalTitle="Share My Menuply"
+          shareData={profileShareData}
+          analyticsContext={{ surface: "feed_shell_profile_share" }}
+        />
+      ) : null}
+      {profileShareError ? (
+        <p style={styles.shareError} role="status" data-testid="feed-profile-share-error">
+          {profileShareError}
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -166,5 +216,20 @@ const styles = {
   body: {
     minHeight: "100dvh",
     transition: "margin-left 0.15s ease",
+  },
+  shareError: {
+    position: "fixed",
+    left: 16,
+    right: 16,
+    bottom: 96,
+    zIndex: 80,
+    margin: 0,
+    padding: "10px 12px",
+    borderRadius: 10,
+    background: "rgba(127,29,29,0.92)",
+    color: "#fecaca",
+    fontSize: 13,
+    fontWeight: 700,
+    textAlign: "center",
   },
 };

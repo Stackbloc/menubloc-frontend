@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import ShareModal from "./share/ShareModal.jsx";
 import { useConsumer } from "../context/ConsumerContext.jsx";
@@ -12,8 +12,10 @@ import {
 import {
   buildEatInviteMessageDraft,
   buildEatInviteShareText,
+  defaultScheduledTimeForInviteSeed,
   formatInviteDateLabel,
   formatInviteTimeLabel,
+  INVITE_MESSAGE_SEED_CODES,
   listInviteMessageOptions,
   pickInviteCopySeed,
 } from "../lib/eatInviteShareCopy.js";
@@ -43,9 +45,12 @@ export default function InviteToEatModal({
   initialInviteKind = null,
   initialInviteeName = "",
   lockInviteKind = false,
+  initialSeedCode = null,
+  autoOpenShareOnReady = false,
   flowTitle = "Invite to Eat",
 }) {
   const { isAuthenticated } = useConsumer();
+  const autoShareOpenedRef = useRef(false);
   const [inviteKind, setInviteKind] = useState(null);
   const [guestName, setGuestName] = useState("");
   const [inviteeName, setInviteeName] = useState("");
@@ -68,17 +73,33 @@ export default function InviteToEatModal({
     setInviteeName(String(initialInviteeName || "").trim());
     setScheduleMode("organizer");
     setDate(tomorrowIsoDate());
-    setTime("19:00");
+    const seedCode = String(initialSeedCode || "")
+      .trim()
+      .toUpperCase();
+    const resolvedSeedCode = INVITE_MESSAGE_SEED_CODES.includes(seedCode) ? seedCode : null;
+    const defaultTime = resolvedSeedCode
+      ? defaultScheduledTimeForInviteSeed(resolvedSeedCode)
+      : "19:00";
+    setTime(defaultTime);
     setRestaurantNegotiable(true);
     setScheduleNegotiable(true);
-    const seed = pickInviteCopySeed({ scheduledTime: "19:00" });
+    const seed = resolvedSeedCode
+      ? { code: resolvedSeedCode }
+      : pickInviteCopySeed({ scheduledTime: defaultTime });
     setMessageMode(seed.code);
     setMessage("");
     setBusy(false);
     setError("");
     setCreated(null);
     setShareOpen(false);
-  }, [open, diningCrewId, initialInviteKind, initialInviteeName]);
+    autoShareOpenedRef.current = false;
+  }, [open, diningCrewId, initialInviteKind, initialInviteeName, initialSeedCode]);
+
+  useEffect(() => {
+    if (!created?.url || !autoOpenShareOnReady || autoShareOpenedRef.current) return;
+    autoShareOpenedRef.current = true;
+    setShareOpen(true);
+  }, [created?.url, autoOpenShareOnReady]);
 
   const resolvedKind =
     created?.invite_kind === "private" || inviteKind === "private" ? "private" : "group";
@@ -743,8 +764,8 @@ export default function InviteToEatModal({
               Share / Send
             </button>
             <div style={{ fontSize: 12, color: "#78716c", lineHeight: 1.4 }}>
-              Opens Menuply share options (Copy Link, Messages, and more). Menuply does not send SMS
-              for you.
+              Opens Menuply share options (Copy Link, Messages, and more). Anyone with the link can
+              RSVP without a Menuply account. Menuply does not send SMS for you.
             </div>
             <button
               type="button"

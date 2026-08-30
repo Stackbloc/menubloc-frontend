@@ -4,9 +4,10 @@
  * Screen name → Connect request when signed in; guests → login.
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link, useNavigate } from "react-router-dom";
+import ShareButton from "../../../components/share/ShareButton.jsx";
 import { hidePublicFeedItem, requestConnection } from "../../../lib/consumerApi.js";
 import {
   MENUPY_CLOSE_LIVE_FEED_FULLSCREEN,
@@ -29,6 +30,8 @@ import {
   restaurantRefFromFeedItem,
   toggleFeedMenuBookmark,
 } from "../../../lib/feedMenuLibrary.js";
+import { buildFeedVideoShareData, feedClipSharePath } from "../../../lib/feedShare.js";
+import MenuplyAccountInviteCard from "../../../components/consumer/MenuplyAccountInviteCard.jsx";
 
 const SWIPE_MIN_PX = 56;
 
@@ -48,6 +51,8 @@ export default function SeeWhosEatingFullscreen({
   bottomInset = 0,
   headerSlot = null,
   showEmptyFirstVisitPrompt = false,
+  sharedClipId = "",
+  showSharedAccountInvite = false,
 }) {
   const navigate = useNavigate();
   const [index, setIndex] = useState(startIndex);
@@ -61,6 +66,8 @@ export default function SeeWhosEatingFullscreen({
   const videoRef = useRef(null);
   const touchStartY = useRef(null);
   const item = items[index] || null;
+  const feedShareData = useMemo(() => (item ? buildFeedVideoShareData(item) : null), [item]);
+  const sharedClipNextPath = feedClipSharePath(sharedClipId) || "/feed";
 
   useEffect(() => {
     setIndex(Math.min(Math.max(0, startIndex), Math.max(0, items.length - 1)));
@@ -415,6 +422,40 @@ export default function SeeWhosEatingFullscreen({
         </button>
       ) : null}
 
+      {item && isFeedHome && feedShareData ? (
+        <div
+          style={{
+            ...styles.shareBtnWrap,
+            top: restaurantRef
+              ? "calc(max(16px, env(safe-area-inset-top)) + 48px)"
+              : "max(16px, env(safe-area-inset-top))",
+          }}
+          data-testid="see-whos-eating-share-wrap"
+        >
+          <ShareButton
+            shareData={feedShareData}
+            variant="menu"
+            label="Share"
+            modalTitle="Share video"
+            iconOnly
+            tone="ghost"
+            size="compact"
+            stopPropagation
+            analyticsContext={{ surface: "feed_home_video", clip_id: item.id }}
+          />
+        </div>
+      ) : null}
+
+      {showSharedAccountInvite && isFeedHome && !isAuthenticated ? (
+        <div style={styles.sharedInviteWrap}>
+          <MenuplyAccountInviteCard
+            variant="dark"
+            nextPath={sharedClipNextPath}
+            testId="feed-shared-clip-account-invite"
+          />
+        </div>
+      ) : null}
+
       {menuBookmarkToast && isFeedHome ? (
         <p style={styles.bookmarkToast} role="status" data-testid="see-whos-eating-menu-bookmark-toast">
           {menuBookmarkToast}
@@ -599,6 +640,19 @@ const styles = {
     fontSize: 12,
     fontWeight: 800,
     cursor: "pointer",
+  },
+  shareBtnWrap: {
+    position: "absolute",
+    right: "max(8px, env(safe-area-inset-right))",
+    zIndex: 3,
+  },
+  sharedInviteWrap: {
+    position: "absolute",
+    left: "max(12px, env(safe-area-inset-left))",
+    right: "max(12px, env(safe-area-inset-right))",
+    top: "max(12px, env(safe-area-inset-top))",
+    zIndex: 4,
+    pointerEvents: "auto",
   },
   bookmarkToast: {
     position: "absolute",
