@@ -100,6 +100,7 @@ import {
 import { futurePlanKey, futurePlanRestaurantName, futurePlanDetailParts } from "./myMenuply/dinerHubFormat.js";
 import { dishPhotoUrl, eatingFoodName, joinHomemadeComment } from "./myMenuply/eatingPlaceLink.js";
 import { mergeEatingFeedForHub, mapDiaryEntriesForHub, mapFoodActivityForHub, eatingFeedKey } from "../../lib/eatingFeedMerge.js";
+import { fetchUserHomemadeDishes } from "../../lib/homemadeDishApi.js";
 
 async function maybeFollowRestaurant(restaurantId) {
   const id = Number(restaurantId);
@@ -183,6 +184,7 @@ export default function MyMenuplyPage() {
   const [events, setEvents] = useState([]);
   const [eventGroups, setEventGroups] = useState([]);
   const [socialEvents, setSocialEvents] = useState([]);
+  const [homeDishes, setHomeDishes] = useState([]);
   const [hubDate, setHubDate] = useState(() => whatIAteTodayLocalDate());
   const [hubMonth, setHubMonth] = useState(() => {
     const t = new Date();
@@ -236,6 +238,7 @@ export default function MyMenuplyPage() {
         groupRes,
         socialEventRes,
         mediaRes,
+        homeRes,
       ] = await Promise.all([
         getConsumerProfile().catch(() => null),
         listMyFoodActivity(20).catch(() => ({ activities: [] })),
@@ -257,6 +260,9 @@ export default function MyMenuplyPage() {
         listMyVenueEventGroups().catch(() => ({ groups: [] })),
         listDinerSocialEvents().catch(() => ({ events: [] })),
         listConsumerProfileMedia().catch(() => ({ items: [] })),
+        consumer?.id
+          ? fetchUserHomemadeDishes(consumer.id).catch(() => ({ dishes: [] }))
+          : Promise.resolve({ dishes: [] }),
       ]);
       const nextProfile = profileRes?.profile || null;
       setProfile(nextProfile);
@@ -290,12 +296,13 @@ export default function MyMenuplyPage() {
       setEvents(eventRes.events || []);
       setEventGroups(groupRes.groups || []);
       setSocialEvents(socialEventRes.events || []);
+      setHomeDishes(homeRes?.dishes || []);
     } catch (err) {
       setError(err.message || "Unable to load My Menuply");
     } finally {
       setLoading(false);
     }
-  }, [hubDate]);
+  }, [hubDate, consumer?.id]);
 
   useEffect(() => {
     if (!authLoading && isAuthenticated) load();
@@ -399,7 +406,7 @@ export default function MyMenuplyPage() {
       }, 120);
       return () => window.clearTimeout(timer);
     }
-    if (["connects", "restaurants", "dishes", "events"].includes(focus)) {
+    if (["connects", "restaurants", "dishes", "home", "events"].includes(focus)) {
       setHubFocus(focus);
     }
     if (focus === "want") {
@@ -484,11 +491,12 @@ export default function MyMenuplyPage() {
         followed,
         liked,
         eating,
+        homeDishes,
         events,
         eventGroups,
         socialEvents,
       }),
-    [connections, followed, liked, eating, events, eventGroups, socialEvents]
+    [connections, followed, liked, eating, homeDishes, events, eventGroups, socialEvents]
   );
   const topHighlights = useMemo(
     () => buildTopHighlights({ eating, liked, followed }),
@@ -1305,7 +1313,6 @@ export default function MyMenuplyPage() {
               onProfileMediaAdd={onProfileMediaAdd}
               onProfileMediaRemove={onProfileMediaRemove}
               monthInFoodHref={MY_MENUPLY_MONTH_IN_FOOD_PATH}
-              homemadeDishesMade={Number(profile?.homemade_dishes_made) || 0}
             />
             <ProfileGalleryComposeSheet
               open={profileGalleryPickerOpen}
@@ -1330,6 +1337,7 @@ export default function MyMenuplyPage() {
               followed={followed}
               liked={liked}
               eating={eating}
+              homeDishes={homeDishes}
               events={events}
               eventGroups={eventGroups}
               viewerUserId={consumer?.id}

@@ -199,6 +199,7 @@ export default function MyMenuplyPresentationRails({
   followed = [],
   liked = [],
   eating = [],
+  homeDishes = [],
   events = [],
   eventGroups = [],
   viewerUserId = null,
@@ -218,6 +219,7 @@ export default function MyMenuplyPresentationRails({
         followed={followed}
         liked={liked}
         eating={eating}
+        homeDishes={homeDishes}
         events={events}
         eventGroups={eventGroups}
         viewerUserId={viewerUserId}

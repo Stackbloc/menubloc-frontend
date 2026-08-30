@@ -130,6 +130,7 @@ export function buildDinerStats({
   followed = [],
   liked = [],
   eating = [],
+  homeDishes = [],
   events = [],
   eventGroups = [],
   socialEvents = [],
@@ -141,6 +142,7 @@ export function buildDinerStats({
     { id: "connects", label: "Connects", value: connections.length },
     { id: "restaurants", label: "Restaurants", value: followed.length },
     { id: "dishes", label: "Dishes", value: dishCount },
+    { id: "home", label: "Home", value: homeDishes.length },
     { id: "events", label: "Events", value: eventCount },
   ];
 }

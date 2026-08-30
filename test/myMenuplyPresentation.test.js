@@ -107,13 +107,14 @@ test("buildWantSuggestions and stats helpers", () => {
     followed: [{ restaurant_id: 1 }, { restaurant_id: 2 }],
     liked: [{ menu_item_id: 1 }],
     eating: [],
+    homeDishes: [{ id: 9, name: "Tacos" }],
     events: [{ id: 1 }],
     eventGroups: [],
   });
   assert.deepEqual(
     stats.map((row) => row.label),
-    ["Connects", "Restaurants", "Dishes", "Events"]
+    ["Connects", "Restaurants", "Dishes", "Home", "Events"]
   );
-  assert.deepEqual(stats.map((row) => row.id), ["connects", "restaurants", "dishes", "events"]);
-  assert.deepEqual(stats.map((row) => row.value), [1, 2, 1, 1]);
+  assert.deepEqual(stats.map((row) => row.id), ["connects", "restaurants", "dishes", "home", "events"]);
+  assert.deepEqual(stats.map((row) => row.value), [1, 2, 1, 1, 1]);
 });

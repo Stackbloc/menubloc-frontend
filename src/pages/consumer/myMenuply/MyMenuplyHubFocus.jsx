@@ -1,9 +1,10 @@
 /**
- * Selected My Menuply library: Connects, Restaurants, Dishes, or Events.
+ * Selected My Menuply library: Connects, Restaurants, Dishes, Home, or Events.
  */
 
 import { Link } from "react-router-dom";
 import { MY_MENUPLY_PROFILE_PATH } from "../../../lib/myMenuplyRoutes.js";
+import { homemadeDishPath } from "../../../lib/homemadeDishApi.js";
 import { restaurantHref, foodHref } from "./myMenuplyBits.jsx";
 import * as s from "./myMenuplyStyles.js";
 
@@ -21,6 +22,7 @@ export default function MyMenuplyHubFocus({
   followed = [],
   liked = [],
   eating = [],
+  homeDishes = [],
   events = [],
   eventGroups = [],
   viewerUserId = null,
@@ -34,6 +36,7 @@ export default function MyMenuplyHubFocus({
       ) : null}
       {focusId === "restaurants" ? <RestaurantsList followed={followed} /> : null}
       {focusId === "dishes" ? <DishesList liked={liked} eating={eating} /> : null}
+      {focusId === "home" ? <HomeList homeDishes={homeDishes} /> : null}
       {focusId === "events" ? <EventsList events={events} eventGroups={eventGroups} /> : null}
     </div>
   );
@@ -159,6 +162,53 @@ function DishesList({ liked, eating }) {
             )}
           </li>
         ))}
+      </ul>
+    </>
+  );
+}
+
+function HomeList({ homeDishes }) {
+  const rows = homeDishes || [];
+  if (!rows.length) {
+    return (
+      <>
+        <h3 style={s.displaySectionTitle}>Home</h3>
+        <p style={s.muted}>
+          Home-cooked dishes you create or tag when you eat or plan will show here.
+        </p>
+      </>
+    );
+  }
+  return (
+    <>
+      <h3 style={s.displaySectionTitle}>Home</h3>
+      <ul style={styles.list}>
+        {rows.map((dish) => {
+          const id = dish?.id || dish?.homemade_dish_id;
+          const name = dish?.name || "Home dish";
+          const meta =
+            dish?.servings != null && Number(dish.servings) > 0
+              ? `${dish.servings} servings`
+              : "Open";
+          if (!id) {
+            return (
+              <li key={name}>
+                <div style={styles.row}>
+                  <span style={styles.name}>{name}</span>
+                  <span style={styles.meta}>{meta}</span>
+                </div>
+              </li>
+            );
+          }
+          return (
+            <li key={id}>
+              <Link to={homemadeDishPath(id)} style={styles.row}>
+                <span style={styles.name}>{name}</span>
+                <span style={styles.meta}>{meta}</span>
+              </Link>
+            </li>
+          );
+        })}
       </ul>
     </>
   );

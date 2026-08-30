@@ -1,4 +1,4 @@
-/** Selectable summary stats for My Menuply — Connects, Restaurants, Dishes, Events. */
+/** Selectable summary stats for My Menuply — Connects, Restaurants, Dishes, Home, Events. */
 
 import * as s from "./myMenuplyStyles.js";
 
