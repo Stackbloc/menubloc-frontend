@@ -9,6 +9,7 @@ import OwnerRestaurantContextBar from "./OwnerRestaurantContextBar.jsx";
 import RestaurantStyleSelector from "../../components/operator/RestaurantStyleSelector.jsx";
 import MenuAppearanceSelector from "../../components/operator/MenuAppearanceSelector.jsx";
 import MenuWallpaperSelector from "../../components/operator/MenuWallpaperSelector.jsx";
+import OwnerProfileBillboardsPanel from "./OwnerProfileBillboardsPanel.jsx";
 import { inputStyle } from "./ownerMenuEditorComponents.jsx";
 import {
   OWNER_API_BASE,
@@ -952,8 +953,9 @@ export default function OwnerProfileManager() {
                   below): About Us, Founded, Favorite Menu Items, and contact fields.{" "}
                   <strong style={{ color: OWNER_COLORS.ink }}>Profile Updates</strong> are separate news posts — they
                   use their own <strong style={{ color: OWNER_COLORS.ink }}>Add update</strong> button and need a
-                  title. Photos come from the banner/logo plus operator billboards. Deals and billboards are edited
-                  in the operator console (<code>/operator/billboards</code>, <code>/operator/deals</code>).
+                  title. Banner and logo photos use the fields above. Entrance splash billboards and Windows panel
+                  photos are managed in the <strong style={{ color: OWNER_COLORS.ink }}>Billboards &amp; Windows</strong>{" "}
+                  section below (deal-linked billboards can still be edited in the operator console).
                 </div>
                 {dirty ? (
                   <div
@@ -1392,6 +1394,8 @@ export default function OwnerProfileManager() {
                   Now Hiring (shows on public profile)
                 </label>
               </PageCard>
+
+              <OwnerProfileBillboardsPanel restaurantId={selected?.id} />
 
               <PageCard style={{ padding: 22, marginBottom: 18 }} data-testid="owner-profile-manager-hours">
                 <div

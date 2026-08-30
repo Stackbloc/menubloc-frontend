@@ -419,6 +419,47 @@ export const searchMenuConsoleItems = (restaurantId, params = {}) => {
 export const bulkMenuConsoleItems = (restaurantId, body) =>
   post(`/api/owner/menu-console/restaurants/${restaurantId}/items/bulk`, body);
 
+// ─── Profile billboards (entrance splash + Windows panel) ─────────────────────
+
+const menuConsoleRestaurantPath = (restaurantId) =>
+  `/api/owner/menu-console/restaurants/${encodeURIComponent(restaurantId)}`;
+
+export const listOwnerRestaurantBillboards = (restaurantId, params = {}) => {
+  const qs = new URLSearchParams(params).toString();
+  return get(`${menuConsoleRestaurantPath(restaurantId)}/billboards${qs ? `?${qs}` : ""}`);
+};
+export const createOwnerRestaurantBillboard = (restaurantId, body) =>
+  post(`${menuConsoleRestaurantPath(restaurantId)}/billboards`, body);
+export const updateOwnerRestaurantBillboard = (restaurantId, postId, body) =>
+  put(`${menuConsoleRestaurantPath(restaurantId)}/billboards/${encodeURIComponent(postId)}`, body);
+export const pauseOwnerRestaurantBillboard = (restaurantId, postId) =>
+  del(`${menuConsoleRestaurantPath(restaurantId)}/billboards/${encodeURIComponent(postId)}`);
+export const uploadOwnerRestaurantBillboardPhoto = (restaurantId, file, { postId = null } = {}) => {
+  const formData = new FormData();
+  formData.append("photo", file);
+  const path = postId
+    ? `${menuConsoleRestaurantPath(restaurantId)}/billboards/${encodeURIComponent(postId)}/photo`
+    : `${menuConsoleRestaurantPath(restaurantId)}/billboards/photo`;
+  return postFormData(path, formData);
+};
+
+export const listOwnerRestaurantWindows = (restaurantId) =>
+  get(`${menuConsoleRestaurantPath(restaurantId)}/windows`);
+export const createOwnerRestaurantWindow = (restaurantId, body) =>
+  post(`${menuConsoleRestaurantPath(restaurantId)}/windows`, body);
+export const updateOwnerRestaurantWindow = (restaurantId, postId, body) =>
+  put(`${menuConsoleRestaurantPath(restaurantId)}/windows/${encodeURIComponent(postId)}`, body);
+export const pauseOwnerRestaurantWindow = (restaurantId, postId) =>
+  del(`${menuConsoleRestaurantPath(restaurantId)}/windows/${encodeURIComponent(postId)}`);
+export const uploadOwnerRestaurantWindowPhoto = (restaurantId, file, { postId = null } = {}) => {
+  const formData = new FormData();
+  formData.append("photo", file);
+  const path = postId
+    ? `${menuConsoleRestaurantPath(restaurantId)}/windows/${encodeURIComponent(postId)}/photo`
+    : `${menuConsoleRestaurantPath(restaurantId)}/windows/photo`;
+  return postFormData(path, formData);
+};
+
 export const getOwnerMarketExpansion = () => get("/api/owner/market-expansion/summary");
 export const getOwnerMarketExpansionByZip = (params = {}) => {
   const qs = new URLSearchParams(params).toString();
