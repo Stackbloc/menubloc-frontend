@@ -5,10 +5,11 @@
 import { Link } from "react-router-dom";
 import { FEED_PRIMARY_NAV_HEIGHT } from "../../../components/consumer/feed/FeedPrimaryNav.jsx";
 import { useConsumer } from "../../../context/ConsumerContext.jsx";
+import { MY_MENUPLY_PROFILE_PATH } from "../../../lib/myMenuplyRoutes.js";
 
 const CORE_LINKS = [
   {
-    to: "/my-menuply",
+    to: MY_MENUPLY_PROFILE_PATH,
     title: "My Menuply",
     blurb: "Profile, videos, photos, connections, Dining Crew",
     testId: "feed-me-my-menuply",

@@ -6,6 +6,7 @@ import { useConsumer } from "../../context/ConsumerContext.jsx";
 import { listConnectionsEating } from "../../lib/consumerApi.js";
 import * as s from "./myMenuply/myMenuplyStyles.js";
 import { ConnectionFoodCard } from "./myMenuply/myMenuplyBits.jsx";
+import { MY_MENUPLY_PROFILE_PATH } from "../../lib/myMenuplyRoutes.js";
 
 export default function ConnectionsEatingPage() {
   const { isAuthenticated, loading: authLoading } = useConsumer();
@@ -37,7 +38,7 @@ export default function ConnectionsEatingPage() {
         {error ? <p style={s.error}>{error}</p> : null}
         {!isAuthenticated && !authLoading ? (
           <p style={s.muted}>
-            <Link to="/account/login?next=/my-menuply/connections-eating" style={s.link}>
+            <Link to={`/account/login?next=${encodeURIComponent("/feed/profile")}`} style={s.link}>
               Sign in
             </Link>{" "}
             to see what your connections are eating.
@@ -51,7 +52,7 @@ export default function ConnectionsEatingPage() {
           <ConnectionFoodCard key={item.id} item={item} />
         ))}
         <p style={{ marginTop: 16 }}>
-          <Link to="/my-menuply" style={s.link}>
+          <Link to={MY_MENUPLY_PROFILE_PATH} style={s.link}>
             Back to My Menuply
           </Link>
         </p>

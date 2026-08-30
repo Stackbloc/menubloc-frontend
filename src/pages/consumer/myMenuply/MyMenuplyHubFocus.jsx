@@ -3,6 +3,7 @@
  */
 
 import { Link } from "react-router-dom";
+import { MY_MENUPLY_PROFILE_PATH } from "../../../lib/myMenuplyRoutes.js";
 import { restaurantHref, foodHref } from "./myMenuplyBits.jsx";
 import * as s from "./myMenuplyStyles.js";
 
@@ -62,7 +63,7 @@ function ConnectsList({ connections, viewerUserId }) {
           return (
             <li key={c.id || peerId}>
               <Link
-                to={isSelf ? "/my-menuply" : `/account/connections/${encodeURIComponent(String(peerId))}`}
+                to={isSelf ? MY_MENUPLY_PROFILE_PATH : `/account/connections/${encodeURIComponent(String(peerId))}`}
                 style={styles.row}
               >
                 <span style={styles.name}>{name}</span>

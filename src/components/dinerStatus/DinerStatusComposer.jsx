@@ -53,6 +53,8 @@ export default function DinerStatusComposer({
   compact = false,
   experienceMode = false,
   venueMode = false,
+  /** When the parent feed already shows "What's happening now", skip duplicate heading. */
+  suppressHeading = false,
 }) {
   const { isAuthenticated } = useConsumer();
   const expressionOptions = experienceMode
@@ -116,13 +118,15 @@ export default function DinerStatusComposer({
         borderTop: "1px solid #e7e5e4",
       }}
     >
-      <div style={styles.title}>
-        {experienceMode
-          ? "Post what's good today."
-          : venueMode
-            ? "What's happening here?"
-            : "What's happening now"}
-      </div>
+      {suppressHeading ? null : (
+        <div style={styles.title}>
+          {experienceMode
+            ? "Post what's good today."
+            : venueMode
+              ? "What's happening here?"
+              : "What's happening now"}
+        </div>
+      )}
       {experienceMode ? null : (
         <p style={styles.hint}>
           {venueMode

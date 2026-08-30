@@ -16,6 +16,7 @@ import { buildDiningCrewInviteShareData } from "../../../lib/diningCrewInviteSha
 import { formatWhatWeDoingTitle } from "../../../lib/whatWeDoingTitle.js";
 import { formatDinerPeerLabel } from "../../../lib/dinerPublicIdentity.js";
 import AccountActionLink from "./AccountActionLink.jsx";
+import { MY_MENUPLY_PROFILE_PATH } from "../../../lib/myMenuplyRoutes.js";
 import { accountStyles as styles } from "./accountDashboardStyles.js";
 
 function memberNames(crew) {
@@ -168,7 +169,7 @@ export default function SocialCrewTab() {
       </section>
       <section style={styles.section}>
         <AccountActionLink
-          to="/my-menuply"
+          to={MY_MENUPLY_PROFILE_PATH}
           title="Open My Menuply"
           description="What you ate, your plans, and what your connections are eating."
           actionLabel="Open"

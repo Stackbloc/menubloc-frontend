@@ -24,7 +24,7 @@ test("About Me uses Month in Food icon with hover title", () => {
 test("self and peer hubs wire Month in Food hrefs", () => {
   const mine = read("src/pages/consumer/MyMenuplyPage.jsx");
   const peer = read("src/pages/consumer/ConsumerConnectionPeerPage.jsx");
-  assert.match(mine, /monthInFoodHref="\/my-menuply\/month-in-food"/);
+  assert.match(mine, /monthInFoodHref=\{MY_MENUPLY_MONTH_IN_FOOD_PATH\}/);
   assert.match(peer, /\/account\/connections\/\$\{encodeURIComponent\(String\(peerId\)\)\}\/month-in-food/);
 });
 
@@ -73,12 +73,12 @@ test("My Menuply surfaces Account settings without drawer-only path", () => {
   const header = read("src/components/StickyPageHeader.jsx");
   assert.match(mine, /data-testid="my-menuply-account-settings"/);
   assert.match(mine, /to="\/account"/);
-  assert.match(mine, /stickyTitleAndFeed|my-menuply-sticky-head/);
-  assert.match(mine, /stickyHeroTitleRow|stickyHeroTitle/);
-  assert.doesNotMatch(mine, /StickyPageHeader\s*\n\s*title="My Menuply"/);
+  assert.match(mine, /feed-profile-settings-row/);
+  assert.doesNotMatch(mine, /stickyTitleAndFeed|my-menuply-sticky-head/);
+  assert.doesNotMatch(mine, /SeeWhosEatingSurface/);
   assert.match(header, /titleAccessory/);
   assert.match(header, /sticky-header-account-settings/);
-  assert.match(header, /startsWith\("\/my-menuply"\)/);
+  assert.match(header, /MY_MENUPLY_PROFILE_PATH/);
 });
 
 test("shiftYm walks calendar months", () => {

@@ -5,6 +5,7 @@ import { useConsumer } from "../context/ConsumerContext.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import DiscoveryDrawer from "./grubbid/DiscoveryDrawer.jsx";
 import { loadDietPrefs, saveDietPrefs } from "../hooks/useDietPreferences.js";
+import { MY_MENUPLY_PROFILE_PATH } from "../lib/myMenuplyRoutes.js";
 
 const ALLERGEN_KEY = "grubbid.allergen.exclusions";
 const ALLERGEN_NONE_ID = "none";
@@ -41,8 +42,9 @@ export default function StickyPageHeader({
   const { t } = useLanguage();
   const location = useLocation();
   // On My Menuply, 👤 goes to Settings (/account) — same icon otherwise opens the hub.
-  const onMyMenuply = String(location.pathname || "").startsWith("/my-menuply");
-  const accountHref = onMyMenuply ? "/account" : "/my-menuply";
+  const path = String(location.pathname || "");
+  const onMyMenuply = path === MY_MENUPLY_PROFILE_PATH || path.startsWith("/my-menuply");
+  const accountHref = onMyMenuply ? "/account" : MY_MENUPLY_PROFILE_PATH;
   const accountAria = onMyMenuply
     ? t("nav.settings", "Settings")
     : t("nav.myMenuply", "My Menuply");

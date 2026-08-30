@@ -6,6 +6,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useConsumer } from "../context/ConsumerContext.jsx";
+import { MY_MENUPLY_PROFILE_PATH } from "../lib/myMenuplyRoutes.js";
 import {
   fetchClusterReportFeed,
   listConsumerNotifications,
@@ -47,7 +48,7 @@ export default function WaiterPublicActivity() {
       </h2>
       <p style={styles.lead}>
         Broader public and nearby food activity. This is not what your connections are eating — that lives on{" "}
-        <Link to="/my-menuply" style={styles.link}>
+        <Link to={MY_MENUPLY_PROFILE_PATH} style={styles.link}>
           My Menuply
         </Link>
         .

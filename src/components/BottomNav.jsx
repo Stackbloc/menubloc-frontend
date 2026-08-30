@@ -7,6 +7,7 @@ import BrowseMenusIcon from "./icons/BrowseMenusIcon.jsx";
 import MenuplyXMark from "./MenuplyXMark.jsx";
 import MenuplyActionSheet from "./MenuplyActionSheet.jsx";
 import { resolveBrowseMenusHref } from "../lib/menuBrowserVenueContext.js";
+import { MY_MENUPLY_PROFILE_PATH } from "../lib/myMenuplyRoutes.js";
 
 const POST_LABEL = "Post";
 
@@ -44,7 +45,7 @@ export default function BottomNav() {
         id: "my-menuply",
         label: t("nav.myMenuply", "My Menuply"),
         icon: "👤",
-        to: "/my-menuply",
+        to: MY_MENUPLY_PROFILE_PATH,
       },
     ],
     [t, browseMenusHref]

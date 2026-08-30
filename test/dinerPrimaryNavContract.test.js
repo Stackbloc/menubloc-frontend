@@ -28,7 +28,7 @@ test("BottomNav is Home Waiter Menu Browser X Basket My Menuply", () => {
   assert.match(nav, /iconWrapStyle/);
   assert.match(nav, /visibility: "hidden"/);
   assert.match(nav, /to: "\/checkout"/);
-  assert.match(nav, /to: "\/my-menuply"/);
+  assert.match(nav, /MY_MENUPLY_PROFILE_PATH/);
   assert.match(nav, /<span>Menu<\/span>/);
   assert.match(nav, /<span>Browser<\/span>/);
   assert.match(nav, /MenuplyXMark size=\{24\}/);
@@ -52,16 +52,16 @@ test("X sheet creates My Menuply content; Diner QR first; no I'm Eating At / My 
   assert.match(sheet, /title: "My Eating Plans"/);
   assert.match(sheet, /title: "My Crews"/);
   assert.match(sheet, /title: "My Events"/);
-  assert.match(sheet, /compose=ate/);
-  assert.match(sheet, /compose=want/);
-  assert.match(sheet, /compose=plan/);
+  assert.match(sheet, /myMenuplyProfileHref\(\{ compose: "ate" \}\)/);
+  assert.match(sheet, /myMenuplyProfileHref\(\{ compose: "want" \}\)/);
+  assert.match(sheet, /myMenuplyProfileHref\(\{ compose: "plan" \}\)/);
   assert.match(sheet, /Invite to Eat/);
   assert.match(sheet, /Find venue events/);
   assert.match(sheet, /title: "Search profiles"/);
   assert.match(sheet, /\/account\/find-diners/);
   assert.match(sheet, /id: "profile-gallery"/);
   assert.match(sheet, /title: "Profile gallery"/);
-  assert.match(sheet, /compose=profile-gallery/);
+  assert.match(sheet, /myMenuplyProfileHref\(\{ compose: "profile-gallery" \}\)/);
   assert.match(sheet, /id: "my-account"/);
   assert.match(sheet, /title: "My Account"/);
   assert.match(sheet, /to: "\/account"/);
@@ -72,7 +72,9 @@ test("X sheet creates My Menuply content; Diner QR first; no I'm Eating At / My 
   assert.match(sheet, /POST_ABOUT_SECTIONS/);
   assert.match(sheet, /id: "account"/);
   assert.match(sheet, /id: "upload-media"/);
-  assert.match(sheet, /compose=ate&media=library/);
+  assert.match(sheet, /myMenuplyProfileHref/);
+  assert.match(sheet, /compose: "ate"/);
+  assert.match(sheet, /media: "library"/);
   assert.doesNotMatch(sheet, /id: "im-eating"/);
   assert.doesNotMatch(sheet, /I'm Eating At/);
   assert.doesNotMatch(sheet, /id: "connects"/);
@@ -86,7 +88,7 @@ test("X sheet creates My Menuply content; Diner QR first; no I'm Eating At / My 
 test("StickyPageHeader person goes to My Menuply (Settings when already on hub); basket lives in BottomNav", () => {
   const header = read("src/components/StickyPageHeader.jsx");
   assert.match(header, /accountHref/);
-  assert.match(header, /\/my-menuply/);
+  assert.match(header, /MY_MENUPLY_PROFILE_PATH/);
   assert.match(header, /to=\{accountHref\}/);
   assert.match(header, /sticky-header-my-menuply|sticky-header-account-settings/);
   assert.match(header, /backTo/);
@@ -99,13 +101,14 @@ test("Hamburger keeps Settings, Activity, and My Menuply", () => {
   const drawer = read("src/components/grubbid/DiscoveryDrawer.jsx");
   assert.match(drawer, /to="\/waiter"/);
   assert.match(drawer, /to="\/account"/);
-  assert.match(drawer, /to="\/my-menuply"/);
+  assert.match(drawer, /MY_MENUPLY_PROFILE_PATH/);
   assert.match(drawer, /to="\/activity"/);
 });
 
 test("App routes My Menuply and Activity without replacing Home", () => {
   const app = read("src/App.jsx");
   assert.match(app, /path="\/my-menuply"/);
+  assert.match(app, /MyMenuplyProfileRedirect/);
   assert.match(app, /path="\/activity"/);
   assert.match(app, /<HomeNext \/>/);
   assert.match(app, /path="\/account"/);

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
 import { useLanguage } from "../../context/LanguageContext.jsx";
+import { MY_MENUPLY_PROFILE_PATH } from "../../lib/myMenuplyRoutes.js";
 
 function Toggle({ label, active, onToggle, testId = null }) {
   return (
@@ -215,7 +216,7 @@ export default function DiscoveryDrawer({
             display: "block", padding: "12px 0",
             fontSize: 15, fontWeight: 700, color: "#1F4E3D", textDecoration: "none",
           }}>Feed (preview)</Link>
-          <Link to="/my-menuply" onClick={onClose} style={{
+          <Link to={MY_MENUPLY_PROFILE_PATH} onClick={onClose} style={{
             display: "block", padding: "12px 0",
             fontSize: 15, fontWeight: 700, color: "#1F4E3D", textDecoration: "none",
           }}>{t("nav.myMenuply", "My Menuply")}</Link>

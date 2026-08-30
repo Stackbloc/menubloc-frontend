@@ -420,6 +420,11 @@ function HostRouteRedirect({ to }) {
   return <Navigate to={to} replace />;
 }
 
+function MyMenuplyProfileRedirect() {
+  const { search } = useLocation();
+  return <Navigate to={`/feed/profile${search}`} replace />;
+}
+
 function RestaurantSingularRedirect() {
   const { slugOrId } = useParams();
   return <Navigate to={slugOrId ? `/restaurants/${slugOrId}` : "/restaurants"} replace />;
@@ -948,9 +953,9 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
         <Route path="/account/reset-password" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <ConsumerResetPassword />} />
         <Route path="/account/edu-verify" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <ConsumerEduVerify />} />
         <Route path="/account" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ConsumerProfile />} />
-        <Route path="/my-menuply" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MyMenuplyPage />} />
+        <Route path="/my-menuply" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MyMenuplyProfileRedirect />} />
         <Route path="/my-menuply/month-in-food" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MonthInFoodPage />} />
-        <Route path="/my-menuply/connections-eating" element={crmHost ? <HostRouteRedirect to="/crm" /> : <Navigate to="/my-menuply" replace />} />
+        <Route path="/my-menuply/connections-eating" element={crmHost ? <HostRouteRedirect to="/crm" /> : <Navigate to="/feed/profile" replace />} />
         <Route path="/my-menuply/connections-planning" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ConnectionsPlanningPage />} />
         <Route path="/activity" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ActivityPage />} />
         <Route path="/account/welcome" element={crmHost ? <HostRouteRedirect to="/crm" /> : <AccountWelcome />} />

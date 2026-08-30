@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useConsumer } from "../context/ConsumerContext.jsx";
+import { myMenuplyProfileHref } from "../lib/myMenuplyRoutes.js";
 
 function inviteToEatPath(pathname) {
   const parts = String(pathname || "").split("/").filter(Boolean);
@@ -45,63 +46,63 @@ const ACTION_DEFS = {
     id: "ate",
     title: "What I'm Eating",
     description: "Camera — photo or video of what you're eating now.",
-    to: "/my-menuply?compose=ate",
+    to: myMenuplyProfileHref({ compose: "ate" }),
     guestOk: false,
   },
   "upload-media": {
     id: "upload-media",
     title: "Upload media",
     description: "Choose a photo or video from your phone library, then post.",
-    to: "/my-menuply?compose=ate&media=library",
+    to: myMenuplyProfileHref({ compose: "ate", media: "library" }),
     guestOk: false,
   },
   want: {
     id: "want",
     title: "What I Want to Eat",
     description: "Cuisine, restaurant, menu item, or a food craving.",
-    to: "/my-menuply?compose=want",
+    to: myMenuplyProfileHref({ compose: "want" }),
     guestOk: false,
   },
   "profile-gallery": {
     id: "profile-gallery",
     title: "Profile gallery",
     description: "Add a photo or video with your camera.",
-    to: "/my-menuply?compose=profile-gallery",
+    to: myMenuplyProfileHref({ compose: "profile-gallery" }),
     guestOk: false,
   },
   plan: {
     id: "plan",
     title: "My Eating Plans",
     description: "Schedule a future meal. Join Me stays on the plan.",
-    to: "/my-menuply?compose=plan",
+    to: myMenuplyProfileHref({ compose: "plan" }),
     guestOk: false,
   },
   crew: {
     id: "crew",
     title: "My Crews",
     description: "Create a crew — people you eat and hang out with.",
-    to: "/my-menuply?compose=crew",
+    to: myMenuplyProfileHref({ compose: "crew" }),
     guestOk: false,
   },
   event: {
     id: "event",
     title: "My Events",
     description: "Create a social event — dinner, concert, game, birthday.",
-    to: "/my-menuply?compose=event",
+    to: myMenuplyProfileHref({ compose: "event" }),
     guestOk: false,
   },
   "invite-crew": {
     id: "invite-crew",
     title: "Invite to crew",
     description: "Pick a crew and share its join link.",
-    to: "/my-menuply?compose=invite-crew",
+    to: myMenuplyProfileHref({ compose: "invite-crew" }),
     guestOk: false,
   },
   "invite-event": {
     id: "invite-event",
     title: "Invite to event",
     description: "Pick an event and share Join Me with anyone.",
-    to: "/my-menuply?compose=invite-event",
+    to: myMenuplyProfileHref({ compose: "invite-event" }),
     guestOk: false,
   },
   invite: {

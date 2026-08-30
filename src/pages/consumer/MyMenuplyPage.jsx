@@ -5,8 +5,6 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import StickyPageHeader from "../../components/StickyPageHeader.jsx";
-import BottomNav from "../../components/BottomNav.jsx";
 import FeedGuestProfileLanding from "../../components/consumer/feed/FeedGuestProfileLanding.jsx";
 import ShareModal from "../../components/share/ShareModal.jsx";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
@@ -81,7 +79,6 @@ import ProfileCompletionBanner from "../../components/consumer/ProfileCompletion
 import DinerIdentityHero from "./myMenuply/DinerIdentityHero.jsx";
 import MyMenuplyPresentationRails from "./myMenuply/MyMenuplyPresentationRails.jsx";
 import ProfileGalleryComposeSheet from "./myMenuply/ProfileGalleryComposeSheet.jsx";
-import SeeWhosEatingSurface from "./myMenuply/SeeWhosEatingSurface.jsx";
 import {
   buildDinerStats,
   buildFollowedRestaurantRails,
@@ -95,6 +92,10 @@ import {
   foodHref,
   isScheduledEatingPlan,
 } from "./myMenuply/myMenuplyBits.jsx";
+import {
+  MY_MENUPLY_MONTH_IN_FOOD_PATH,
+  MY_MENUPLY_PROFILE_PATH,
+} from "../../lib/myMenuplyRoutes.js";
 import { futurePlanKey, futurePlanRestaurantName, futurePlanDetailParts } from "./myMenuply/dinerHubFormat.js";
 import { dishPhotoUrl, eatingFoodName, joinHomemadeComment } from "./myMenuply/eatingPlaceLink.js";
 import { mergeEatingFeedForHub, mapDiaryEntriesForHub, mapFoodActivityForHub, eatingFeedKey } from "../../lib/eatingFeedMerge.js";
@@ -155,7 +156,7 @@ function MyMenuplyAccountSettingsLink({ style }) {
   );
 }
 
-export default function MyMenuplyPage({ embedInFeedShell = false }) {
+export default function MyMenuplyPage() {
   const { isAuthenticated, loading: authLoading, consumer } = useConsumer();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -307,7 +308,7 @@ export default function MyMenuplyPage({ embedInFeedShell = false }) {
     const next = new URLSearchParams();
     next.set("compose", compose);
     if (media) next.set("media", media);
-    navigate(`/account/login?next=${encodeURIComponent(`/my-menuply?${next.toString()}`)}`, {
+    navigate(`/account/login?next=${encodeURIComponent(`${MY_MENUPLY_PROFILE_PATH}?${next.toString()}`)}`, {
       replace: true,
     });
   }, [authLoading, isAuthenticated, searchParams, navigate]);
@@ -1240,27 +1241,22 @@ export default function MyMenuplyPage({ embedInFeedShell = false }) {
     await load();
   }
 
-  if (embedInFeedShell && !authLoading && !isAuthenticated) {
+  if (!authLoading && !isAuthenticated) {
     return <FeedGuestProfileLanding />;
   }
 
   return (
     <>
-      {!embedInFeedShell ? <StickyPageHeader /> : null}
       <div
         style={{
           ...s.page,
-          ...(embedInFeedShell
-            ? {
-                paddingTop: 12,
-                paddingBottom:
-                  "calc(var(--feed-primary-nav-h, 56px) + env(safe-area-inset-bottom, 0px) + 16px)",
-              }
-            : null),
+          paddingTop: 12,
+          paddingBottom:
+            "calc(var(--feed-primary-nav-h, 56px) + env(safe-area-inset-bottom, 0px) + 16px)",
         }}
         data-testid="my-menuply-page"
       >
-        {embedInFeedShell && isAuthenticated ? (
+        {isAuthenticated ? (
           <div
             style={{
               display: "flex",
@@ -1272,44 +1268,7 @@ export default function MyMenuplyPage({ embedInFeedShell = false }) {
             <MyMenuplyAccountSettingsLink style={s.settingsIconLink} />
           </div>
         ) : null}
-        {!embedInFeedShell ? (
-          <div style={s.stickyTitleAndFeed} data-testid="my-menuply-sticky-head">
-            <div style={s.pageHeroBand}>
-              <div style={s.stickyHeroTitleRow}>
-                <h1 style={s.stickyHeroTitle}>My Menuply</h1>
-                {isAuthenticated ? (
-                  <MyMenuplyAccountSettingsLink
-                    style={{ ...s.settingsIconLinkOnGreen, ...s.stickyHeroSettings }}
-                  />
-                ) : null}
-              </div>
-            </div>
-            <SeeWhosEatingSurface
-              sticky={false}
-              city={locationCity}
-              state={locationState}
-              isAuthenticated={Boolean(isAuthenticated)}
-              viewerUserId={consumer?.id || null}
-            />
-          </div>
-        ) : null}
         {error ? <p style={{ ...s.error, marginTop: 16 }}>{error}</p> : null}
-
-        {!authLoading && !isAuthenticated ? (
-          <div style={s.signInBox}>
-            <p style={{ margin: "0 0 12px", color: "#475467" }}>
-              Sign in for your My Menuply profile, posts, and Connects.
-            </p>
-            <Link to="/account/login?next=/my-menuply" style={s.primaryBtn}>
-              Sign in
-            </Link>
-            <div style={{ marginTop: 10 }}>
-              <Link to="/diner/signup" style={s.link}>
-                Create account
-              </Link>
-            </div>
-          </div>
-        ) : null}
 
         {authLoading || (isAuthenticated && loading) ? <p style={s.muted}>Loading…</p> : null}
 
@@ -1333,7 +1292,7 @@ export default function MyMenuplyPage({ embedInFeedShell = false }) {
               profileMedia={profileMedia}
               onProfileMediaAdd={onProfileMediaAdd}
               onProfileMediaRemove={onProfileMediaRemove}
-              monthInFoodHref="/my-menuply/month-in-food"
+              monthInFoodHref={MY_MENUPLY_MONTH_IN_FOOD_PATH}
             />
             <ProfileGalleryComposeSheet
               open={profileGalleryPickerOpen}
@@ -1626,7 +1585,6 @@ export default function MyMenuplyPage({ embedInFeedShell = false }) {
           </>
         ) : null}
       </div>
-      {!embedInFeedShell ? <BottomNav /> : null}
       <InvitePickerSheet
         open={inviteCrewPickerOpen}
         kind="crew"

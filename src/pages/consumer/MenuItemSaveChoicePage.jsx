@@ -13,6 +13,7 @@ import {
   whatIAteTodayLocalDate,
 } from "../../lib/consumerApi.js";
 import { defaultWhatIAteMealPeriod } from "../../lib/whatIAteTodayMealPeriod.js";
+import { MY_MENUPLY_PROFILE_PATH } from "../../lib/myMenuplyRoutes.js";
 
 export default function MenuItemSaveChoicePage() {
   const navigate = useNavigate();
@@ -32,7 +33,7 @@ export default function MenuItemSaveChoicePage() {
 
   const backHref = useMemo(() => {
     if (returnTo && returnTo.startsWith("/")) return returnTo;
-    return "/my-menuply";
+    return MY_MENUPLY_PROFILE_PATH;
   }, [returnTo]);
 
   useEffect(() => {
@@ -113,7 +114,7 @@ export default function MenuItemSaveChoicePage() {
             {error ? <p style={styles.err}>{error}</p> : null}
 
             <p style={styles.links}>
-              <Link to="/my-menuply" style={styles.link}>
+              <Link to={MY_MENUPLY_PROFILE_PATH} style={styles.link}>
                 Open My Menuply
               </Link>
               {" · "}

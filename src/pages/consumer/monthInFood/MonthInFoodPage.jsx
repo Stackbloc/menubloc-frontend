@@ -23,6 +23,11 @@ import {
   MonthInFoodWants,
 } from "./MonthInFoodSections.jsx";
 import MonthInFoodFooter from "./MonthInFoodFooter.jsx";
+import {
+  MY_MENUPLY_MONTH_IN_FOOD_PATH,
+  MY_MENUPLY_PROFILE_PATH,
+  myMenuplyProfileHref,
+} from "../../../lib/myMenuplyRoutes.js";
 import * as s from "./monthInFoodStyles.js";
 
 function currentYmLa() {
@@ -51,7 +56,7 @@ export default function MonthInFoodPage() {
 
   const backHref = isPeer
     ? `/account/connections/${encodeURIComponent(String(peerId))}`
-    : "/my-menuply";
+    : MY_MENUPLY_PROFILE_PATH;
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -74,7 +79,7 @@ export default function MonthInFoodPage() {
         `/account/login?next=${encodeURIComponent(
           isPeer
             ? `/account/connections/${peerIdParam}/month-in-food?ym=${ym}`
-            : `/my-menuply/month-in-food?ym=${ym}`
+            : `${MY_MENUPLY_MONTH_IN_FOOD_PATH}?ym=${ym}`
         )}`,
         { replace: true }
       );
@@ -93,7 +98,7 @@ export default function MonthInFoodPage() {
 
   const sharePath = isPeer
     ? `/account/connections/${encodeURIComponent(String(peerId))}/month-in-food?ym=${encodeURIComponent(ym)}`
-    : `/my-menuply/month-in-food?ym=${encodeURIComponent(ym)}`;
+    : `${MY_MENUPLY_MONTH_IN_FOOD_PATH}?ym=${encodeURIComponent(ym)}`;
 
   // Share icon stays next to the page H1 (hero title row) — not sticky-header relocated.
   const shareData = useMemo(
@@ -158,7 +163,7 @@ export default function MonthInFoodPage() {
               <p style={{ ...s.muted, marginTop: 8 }}>
                 No meals logged this month yet.{" "}
                 {!isPeer ? (
-                  <Link to="/my-menuply?compose=ate" style={s.viewAll}>
+                  <Link to={myMenuplyProfileHref({ compose: "ate" })} style={s.viewAll}>
                     Log what you ate
                   </Link>
                 ) : null}

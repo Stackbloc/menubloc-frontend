@@ -4,6 +4,7 @@
  */
 
 import { Link } from "react-router-dom";
+import { MY_MENUPLY_PROFILE_PATH } from "../../../lib/myMenuplyRoutes.js";
 import DinerStatsBar from "./DinerStatsBar.jsx";
 import MyMenuplyHubFocus from "./MyMenuplyHubFocus.jsx";
 import { WantToEatList } from "./myMenuplyBits.jsx";
@@ -29,7 +30,7 @@ function ConnectionAvatarStrip({ connections = [], viewerUserId = null }) {
           return (
             <Link
               key={c.id || peerId}
-              to={isSelf ? "/my-menuply" : `/account/connections/${encodeURIComponent(String(peerId))}`}
+              to={isSelf ? MY_MENUPLY_PROFILE_PATH : `/account/connections/${encodeURIComponent(String(peerId))}`}
               style={railStyles.avatarLink}
               title={name}
             >

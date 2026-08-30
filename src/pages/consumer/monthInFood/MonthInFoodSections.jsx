@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import ShareButton from "../../../components/share/ShareButton.jsx";
+import { myMenuplyProfileHref } from "../../../lib/myMenuplyRoutes.js";
 import * as s from "./monthInFoodStyles.js";
 
 const ICONS = {
@@ -357,7 +358,7 @@ export function MonthInFoodWants({ wants = [] }) {
     <section style={s.card} data-testid="month-in-food-wants">
       <div style={s.sectionHead}>
         <h2 style={s.sectionTitle}>What I Want To Eat</h2>
-        <Link to="/my-menuply?compose=want" style={s.viewAll}>
+        <Link to={myMenuplyProfileHref({ compose: "want" })} style={s.viewAll}>
           View all
         </Link>
       </div>

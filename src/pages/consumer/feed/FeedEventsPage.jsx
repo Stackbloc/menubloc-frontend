@@ -4,6 +4,7 @@
 
 import { Link } from "react-router-dom";
 import { FEED_PRIMARY_NAV_HEIGHT } from "../../../components/consumer/feed/FeedPrimaryNav.jsx";
+import { MY_MENUPLY_PROFILE_PATH, myMenuplyProfileHref } from "../../../lib/myMenuplyRoutes.js";
 
 const LINKS = [
   {
@@ -12,12 +13,12 @@ const LINKS = [
     blurb: "Venue and public events",
   },
   {
-    to: "/my-menuply?compose=event",
+    to: myMenuplyProfileHref({ compose: "event" }),
     title: "Create a social event",
     blurb: "Host Join Me / dining plans as events",
   },
   {
-    to: "/my-menuply",
+    to: MY_MENUPLY_PROFILE_PATH,
     title: "My events on My Menuply",
     blurb: "Calendar and invitations on your hub",
   },

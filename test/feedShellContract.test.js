@@ -175,7 +175,11 @@ test("Feed shell: Home|Connects|Menus|X|Deals|Shop|Profile + slim X sheet", () =
 
   const myMenuply = read("src/pages/consumer/MyMenuplyPage.jsx");
   assert.match(myMenuply, /FeedGuestProfileLanding/);
-  assert.match(myMenuply, /!embedInFeedShell \? <BottomNav \/>/);
+  assert.doesNotMatch(myMenuply, /SeeWhosEatingSurface/);
+  assert.doesNotMatch(myMenuply, /my-menuply-sticky-head/);
+  assert.doesNotMatch(myMenuply, /<BottomNav/);
+  assert.match(read("src/lib/myMenuplyRoutes.js"), /MY_MENUPLY_PROFILE_PATH = "\/feed\/profile"/);
+  assert.match(app, /MyMenuplyProfileRedirect/);
 
   const menusPage = read("src/pages/consumer/feed/FeedMenusPage.jsx");
   assert.match(menusPage, /My Menu Stack/);

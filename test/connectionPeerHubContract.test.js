@@ -62,7 +62,7 @@ test("Connection diner page uses the same hub layout as My Menuply", () => {
   assert.match(peer, /DiningCrewHubCard/);
   assert.doesNotMatch(peer, /NamedShareCard/);
   assert.match(peer, /peerConnections/);
-  assert.match(peer, /backTo="\/my-menuply"/);
+  assert.match(peer, /backTo=\{MY_MENUPLY_PROFILE_PATH\}/);
   assert.match(peer, /backLabel="My Menuply"/);
   assert.doesNotMatch(peer, /<h1 style=\{s\.h1\}/);
   assert.doesNotMatch(peer, /s\.kicker/);

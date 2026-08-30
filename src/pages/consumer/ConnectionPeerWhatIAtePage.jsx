@@ -10,6 +10,7 @@ import WhatIAteTodaySection from "../../components/consumer/WhatIAteTodaySection
 import { useConsumer } from "../../context/ConsumerContext.jsx";
 import { listConnections } from "../../lib/consumerApi.js";
 import { formatDinerPeerLabel } from "../../lib/dinerPublicIdentity.js";
+import { MY_MENUPLY_PROFILE_PATH } from "../../lib/myMenuplyRoutes.js";
 
 export default function ConnectionPeerWhatIAtePage() {
   const navigate = useNavigate();
@@ -48,7 +49,7 @@ export default function ConnectionPeerWhatIAtePage() {
     <>
       <StickyPageHeader
         title={`${name} — What I Ate Today`}
-        backTo="/my-menuply"
+        backTo={MY_MENUPLY_PROFILE_PATH}
         backLabel="My Menuply"
       />
       <div style={styles.page} data-testid="what-i-ate-today-peer-page">

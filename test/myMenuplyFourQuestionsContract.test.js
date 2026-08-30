@@ -212,7 +212,7 @@ test("Activity is broader happening and does not replace connections eating", ()
   const redirect = read("src/pages/ActivityPage.jsx");
   const waiter = read("src/pages/FoodInterestsPage.jsx");
   assert.match(activity, /not what your connections are eating/i);
-  assert.match(activity, /\/my-menuply/);
+  assert.match(activity, /MY_MENUPLY_PROFILE_PATH/);
   assert.match(activity, /What People Are Eating/);
   assert.doesNotMatch(activity, /What My Connections Are Eating/);
   assert.match(redirect, /\/waiter#activity/);
@@ -223,7 +223,7 @@ test("Settings dashboard stays at /account and points to My Menuply", () => {
   const profile = read("src/pages/consumer/ConsumerProfile.jsx");
   const social = read("src/pages/consumer/accountDashboard/SocialCrewTab.jsx");
   assert.match(profile, /Settings/);
-  assert.match(social, /\/my-menuply/);
+  assert.match(social, /MY_MENUPLY_PROFILE_PATH/);
   assert.match(social, /Open My Menuply/);
 });
 

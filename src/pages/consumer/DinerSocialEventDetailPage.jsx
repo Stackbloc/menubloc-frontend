@@ -14,6 +14,7 @@ import {
   getDinerSocialEvent,
 } from "../../lib/consumerApi.js";
 import { buildSocialEventJoinShareData } from "../../lib/diningCrewInviteShare.js";
+import { MY_MENUPLY_PROFILE_PATH } from "../../lib/myMenuplyRoutes.js";
 
 function formatWhen(ev) {
   const d = String(ev?.event_date || "").trim();
@@ -101,7 +102,7 @@ export default function DinerSocialEventDetailPage() {
     <>
       <StickyPageHeader />
       <div style={styles.page} data-testid="diner-social-event-detail">
-        <Link to="/my-menuply" style={styles.back}>
+        <Link to={MY_MENUPLY_PROFILE_PATH} style={styles.back}>
           ← My Menuply
         </Link>
 

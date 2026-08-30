@@ -19,10 +19,16 @@ test("restaurant profile mounts People who want to go section", () => {
   assert.match(section, /People who want to go/);
   assert.match(section, /I want to go/);
   assert.match(section, /fetchRestaurantDiningIntent/);
-  assert.match(section, /requestConnection/);
   assert.match(section, /dining_intent_viewed/);
-  assert.match(section, /Invite to Eat/);
-  assert.doesNotMatch(section, /homemade|grocery|recipe/i);
+  assert.match(section, /See people who want to go/);
+  assert.match(section, /restaurant-dining-intent-avatars/);
+  assert.doesNotMatch(section, /requestConnection/);
+  assert.doesNotMatch(section, /homemade|grocery|recipe|Send Offer/i);
+
+  const peopleSheet = read("src/components/restaurant/DiningIntentPeopleSheet.jsx");
+  assert.match(peopleSheet, /requestConnection/);
+  assert.match(peopleSheet, /Invite to Eat/);
+  assert.match(peopleSheet, /restaurant-dining-intent-list/);
 
   const sheet = read("src/components/restaurant/DiningIntentSheet.jsx");
   assert.match(sheet, /want_to_go/);

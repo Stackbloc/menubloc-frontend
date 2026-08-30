@@ -4,6 +4,7 @@ import ProfileMediaGallery from "./ProfileMediaGallery.jsx";
 import AvatarComposeSheet from "./AvatarComposeSheet.jsx";
 import * as s from "./myMenuplyStyles.js";
 import { GREEN_BRIGHT } from "./myMenuplyStyles.js";
+import { MY_MENUPLY_MONTH_IN_FOOD_PATH } from "../../../lib/myMenuplyRoutes.js";
 
 const ABOUT_MAX = 280;
 const ABOUT_PLACEHOLDER =
@@ -70,7 +71,7 @@ export default function DinerIdentityHero({
     String(displayName || "You").trim().slice(0, 1).toUpperCase() || "Y";
 
   const scoreboardHref =
-    monthInFoodHref || (readOnly ? null : "/my-menuply/month-in-food");
+    monthInFoodHref || (readOnly ? null : MY_MENUPLY_MONTH_IN_FOOD_PATH);
 
   return (
     <section style={s.identitySection} data-testid="about-me">

@@ -235,7 +235,7 @@ export default function OwnerDinerHubDialog({ dinerId, interval, onClose }) {
               }}
             >
               Read-only owner view of this diner&apos;s hub content for {intervalLabel}. Consumer hub lives at{" "}
-              <code>/my-menuply</code> (session-owned).
+              <code>/feed/profile</code> (session-owned).
             </div>
 
             {identity?.diner_about ? (

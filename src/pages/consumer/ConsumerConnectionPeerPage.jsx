@@ -9,6 +9,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import StickyPageHeader from "../../components/StickyPageHeader.jsx";
 import BottomNav from "../../components/BottomNav.jsx";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
+import { MY_MENUPLY_PROFILE_PATH } from "../../lib/myMenuplyRoutes.js";
 import EatingHubSection from "./myMenuply/EatingHubSection.jsx";
 import InviteMeOutFlow from "./myMenuply/InviteMeOutFlow.jsx";
 import {
@@ -202,7 +203,7 @@ export default function ConsumerConnectionPeerPage() {
 
   return (
     <>
-      <StickyPageHeader title={name} backTo="/my-menuply" backLabel="My Menuply" />
+      <StickyPageHeader title={name} backTo={MY_MENUPLY_PROFILE_PATH} backLabel="My Menuply" />
       <div style={s.page} data-testid="connection-peer-hub">
         {error ? <p style={s.error}>{error}</p> : null}
         {loading ? <p style={s.muted}>Loading…</p> : null}
@@ -298,7 +299,7 @@ export default function ConsumerConnectionPeerPage() {
         ) : null}
 
         <p style={{ marginTop: 24 }}>
-          <Link to="/my-menuply" style={s.link}>
+          <Link to={MY_MENUPLY_PROFILE_PATH} style={s.link}>
             Back to My Menuply
           </Link>
         </p>

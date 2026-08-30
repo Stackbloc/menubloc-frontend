@@ -169,46 +169,55 @@ export default function WhatDinersAreSaying({
           title={experienceMode ? "Campus updates" : "What's happening now"}
         />
 
-        {experienceMode ? null : loading ? <p style={styles.muted}>Loading activity…</p> : null}
-        {experienceMode ? null : error ? (
-          <p style={styles.error} role="alert">
-            {error}
-          </p>
-        ) : null}
+        {experienceMode ? null : (
+          <div style={styles.recentPostsBlock} data-testid="recent-posts-section">
+            <div style={styles.subsectionTitle}>Recent Posts</div>
+            <p style={styles.subsectionHint}>
+              Diner-created food activity at this restaurant — not official restaurant statements.
+            </p>
 
-        {experienceMode ? null : !loading && activities.length === 0 ? (
-          <p style={styles.muted} data-testid="diners-saying-empty">
-            No one has shared what they&apos;re eating here yet.
-          </p>
-        ) : null}
+            {loading ? <p style={styles.muted}>Loading activity…</p> : null}
+            {error ? (
+              <p style={styles.error} role="alert">
+                {error}
+              </p>
+            ) : null}
 
-        {experienceMode ? null : !loading && activities.length > 0 ? (
-          <div style={styles.list} data-testid="diners-saying-list">
-            {activities.map((a) => (
-              <ActivityCard key={a.id} activity={a} />
-            ))}
+            {!loading && activities.length === 0 ? (
+              <p style={styles.muted} data-testid="diners-saying-empty">
+                No one has shared what they&apos;re eating here yet.
+              </p>
+            ) : null}
+
+            {!loading && activities.length > 0 ? (
+              <div style={styles.list} data-testid="diners-saying-list">
+                {activities.map((a) => (
+                  <ActivityCard key={a.id} activity={a} />
+                ))}
+              </div>
+            ) : null}
+
+            <WhatIAteTodayAtRestaurant restaurantId={restaurantId} />
+
+            {restaurantId ? (
+              <ImEatingAtPanel
+                compact
+                lockRestaurant
+                skipMenuItem={experienceMode}
+                initialRestaurant={{
+                  restaurant_id: restaurantId,
+                  restaurant_name: restaurantName,
+                  restaurant_type: experienceMode ? "dining_hall" : undefined,
+                }}
+                onPosted={() => {
+                  listPublicRestaurantFoodActivity(restaurantId, { limit: 20 })
+                    .then((data) => setActivities(data.activities || []))
+                    .catch(() => {});
+                }}
+              />
+            ) : null}
           </div>
-        ) : null}
-
-        {experienceMode ? null : <WhatIAteTodayAtRestaurant restaurantId={restaurantId} />}
-
-        {restaurantId ? (
-          <ImEatingAtPanel
-            compact
-            lockRestaurant
-            skipMenuItem={experienceMode}
-            initialRestaurant={{
-              restaurant_id: restaurantId,
-              restaurant_name: restaurantName,
-              restaurant_type: experienceMode ? "dining_hall" : undefined,
-            }}
-            onPosted={() => {
-              listPublicRestaurantFoodActivity(restaurantId, { limit: 20 })
-                .then((data) => setActivities(data.activities || []))
-                .catch(() => {});
-            }}
-          />
-        ) : null}
+        )}
 
         {experienceMode ? null : <JoinMeNowStrip restaurantId={restaurantId} />}
 
@@ -250,6 +259,24 @@ const styles = {
     fontSize: 14,
     fontWeight: 700,
     color: "#1c1917",
+    lineHeight: 1.4,
+  },
+  recentPostsBlock: {
+    marginTop: 16,
+    paddingTop: 14,
+    borderTop: "1px solid #e7e5e4",
+  },
+  subsectionTitle: {
+    fontSize: 13,
+    fontWeight: 800,
+    letterSpacing: 0.4,
+    color: "#1c1917",
+    marginBottom: 4,
+  },
+  subsectionHint: {
+    margin: "0 0 12px",
+    fontSize: 12,
+    color: "#78716c",
     lineHeight: 1.4,
   },
   muted: { fontSize: 13, color: "#78716c", margin: "0 0 12px" },

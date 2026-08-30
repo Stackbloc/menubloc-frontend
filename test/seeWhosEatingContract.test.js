@@ -77,23 +77,9 @@ test("See Who's Eating reel: guest watch, CK dish, existing camera, Connect noti
   assert.match(fullscreen, /SWIPE_MIN_PX|onTouchEnd/);
 
   const page = read("src/pages/consumer/MyMenuplyPage.jsx");
-  assert.match(page, /SeeWhosEatingSurface/);
+  assert.doesNotMatch(page, /SeeWhosEatingSurface/);
+  assert.doesNotMatch(page, /my-menuply-sticky-head/);
   assert.match(page, /pruneMenuplyLiveFeedItem/);
-  assert.match(page, /ate:\$\{entryId\}/);
-  assert.match(page, /is_recommend/);
-  assert.doesNotMatch(page, /connections-eating/);
-  assert.match(page, /my-menuply-sticky-head/);
-  assert.match(page, /sticky=\{false\}/);
-  assert.match(page, /uploadEatingPlanMedia/);
-  assert.match(page, /market_discoverable/);
-  // Green title above Public Feed; cluster sticky above EatingHub
-  const heroIdx = page.indexOf("pageHeroBand");
-  const seeIdx = page.indexOf("<SeeWhosEatingSurface");
-  const eatingIdx = page.indexOf("<EatingHubSection");
-  assert.ok(
-    heroIdx > 0 && seeIdx > heroIdx && eatingIdx > seeIdx,
-    "green My Menuply title above Public Feed; sticky cluster above What I'm Eating"
-  );
 
   const compose = read("src/pages/consumer/myMenuply/EatingCompose.jsx");
   assert.match(compose, /MenuplyMediaPicker/);
@@ -140,7 +126,7 @@ test("See Who's Eating reel: guest watch, CK dish, existing camera, Connect noti
 
   const app = read("src/App.jsx");
   assert.match(app, /connections-eating/);
-  assert.match(app, /Navigate to="\/my-menuply"/);
+  assert.match(app, /Navigate to="\/feed\/profile"/);
 
   const rails = read("src/pages/consumer/myMenuply/MyMenuplyPresentationRails.jsx");
   assert.doesNotMatch(rails, /See who.?s eating/);

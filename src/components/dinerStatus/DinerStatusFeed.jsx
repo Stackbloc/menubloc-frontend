@@ -123,6 +123,7 @@ export default function DinerStatusFeed({
           compact={compact}
           experienceMode={experienceMode}
           venueMode={venueMode}
+          suppressHeading={Boolean(title)}
           onPosted={() => load()}
         />
       ) : null}

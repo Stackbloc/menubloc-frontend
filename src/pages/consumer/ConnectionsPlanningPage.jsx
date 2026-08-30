@@ -6,6 +6,10 @@ import { useConsumer } from "../../context/ConsumerContext.jsx";
 import { listConnectionsPlanning } from "../../lib/consumerApi.js";
 import * as s from "./myMenuply/myMenuplyStyles.js";
 import { PlanCard } from "./myMenuply/myMenuplyBits.jsx";
+import {
+  MY_MENUPLY_CONNECTIONS_PLANNING_PATH,
+  MY_MENUPLY_PROFILE_PATH,
+} from "../../lib/myMenuplyRoutes.js";
 
 export default function ConnectionsPlanningPage() {
   const { isAuthenticated, loading: authLoading } = useConsumer();
@@ -37,7 +41,7 @@ export default function ConnectionsPlanningPage() {
         {error ? <p style={s.error}>{error}</p> : null}
         {!isAuthenticated && !authLoading ? (
           <p style={s.muted}>
-            <Link to="/account/login?next=/my-menuply/connections-planning" style={s.link}>
+            <Link to={`/account/login?next=${encodeURIComponent(MY_MENUPLY_CONNECTIONS_PLANNING_PATH)}`} style={s.link}>
               Sign in
             </Link>{" "}
             to see what your connections are planning.
@@ -51,7 +55,7 @@ export default function ConnectionsPlanningPage() {
           <PlanCard key={item.id} item={item} />
         ))}
         <p style={{ marginTop: 16 }}>
-          <Link to="/my-menuply" style={s.link}>
+          <Link to={MY_MENUPLY_PROFILE_PATH} style={s.link}>
             Back to My Menuply
           </Link>
         </p>

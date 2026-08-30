@@ -13,6 +13,7 @@ import {
   MENUPY_CLOSE_LIVE_FEED_FULLSCREEN,
   stripMediaUrlFragment,
 } from "../../../lib/menuplyLiveFeedControl.js";
+import { MY_MENUPLY_PROFILE_PATH } from "../../../lib/myMenuplyRoutes.js";
 import {
   liveFeedFullCategoryLabel,
   liveFeedPosterDisplayName,
@@ -233,7 +234,7 @@ export default function SeeWhosEatingFullscreen({
     if (!peerId) return;
 
     if (!isAuthenticated) {
-      navigate(`/account/login?next=${encodeURIComponent("/my-menuply")}`);
+      navigate(`/account/login?next=${encodeURIComponent(MY_MENUPLY_PROFILE_PATH)}`);
       return;
     }
 
