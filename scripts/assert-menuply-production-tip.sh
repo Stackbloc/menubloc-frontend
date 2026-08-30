@@ -10,7 +10,7 @@
 set -euo pipefail
 
 HOST="${1:-https://menuply.com}"
-# Locked tip 2026-08-30: menubloc-frontend-3ugf2v8tc-menuply.vercel.app / index-qWHETNcw.js (FE 295bb2f;BE 4d0ad867;restaurant People who want to go dining intent)
+# Locked tip 2026-08-30: menubloc-frontend-3ugf2v8tc-menuply.vercel.app / index-qWHETNcw.js (FE b857186;BE eab0c83f;restaurant dining intent CPD finish)
 LOCKED_BUNDLE="index-qWHETNcw.js"
 LOCKED_DEPLOY="menubloc-frontend-3ugf2v8tc-menuply.vercel.app"
 
