@@ -24,20 +24,24 @@ export default function OcrEditSplitLayout({
   railTitle = "Source menu",
   defaultOpen = true,
   defaultRailMode = "ocr",
+  /** Menu Manager Edit dishes: keep Tom's-style OCR source rail even before pages load. */
+  preferOcrRail = false,
 }) {
   const hasPages = Array.isArray(pages) && pages.length > 0;
   const normalizedLive = normalizeLiveMenuItems(liveItems);
   const hasLive = normalizedLive.length > 0;
-  const hasRail = hasPages || hasLive;
+  const hasRail = hasPages || hasLive || preferOcrRail;
 
   const initialMode =
-    defaultRailMode === "live" && hasLive
-      ? "live"
-      : hasPages
-        ? "ocr"
-        : hasLive
-          ? "live"
-          : "ocr";
+    preferOcrRail || defaultRailMode === "ocr"
+      ? "ocr"
+      : defaultRailMode === "live" && hasLive
+        ? "live"
+        : hasPages
+          ? "ocr"
+          : hasLive
+            ? "live"
+            : "ocr";
 
   const [railOpen, setRailOpen] = useState(defaultOpen);
   const [railMode, setRailMode] = useState(initialMode);
@@ -62,14 +66,16 @@ export default function OcrEditSplitLayout({
   }, [hasRail, defaultOpen]);
 
   useEffect(() => {
+    if (preferOcrRail || defaultRailMode === "ocr" || hasPages) {
+      setRailMode("ocr");
+      return;
+    }
     if (defaultRailMode === "live" && hasLive) {
       setRailMode("live");
-    } else if (hasPages) {
-      setRailMode("ocr");
     } else if (hasLive) {
       setRailMode("live");
     }
-  }, [defaultRailMode, hasLive, hasPages]);
+  }, [defaultRailMode, hasLive, hasPages, preferOcrRail]);
 
   // Desktop: pin rail to viewport by measuring a full-height grid spacer.
   // position:sticky cannot work here — admin-console uses overflow-x:clip.
@@ -129,7 +135,7 @@ export default function OcrEditSplitLayout({
   }
 
   const showingLive = railMode === "live" && hasLive;
-  const showingOcr = !showingLive && hasPages;
+  const showingOcr = !showingLive && (hasPages || preferOcrRail);
   const canToggleModes = hasPages && hasLive;
   const useFixedRail = railOpen && !isDrawer;
 

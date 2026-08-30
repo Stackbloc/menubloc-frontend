@@ -951,7 +951,7 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
 
     // OCR companion rail: prefer pending upload pages, else most recent upload with pages
     let pagesForRail = [];
-    const preferredId = pendingUploadId || pending[0]?.id;
+    const preferredId = pending[0]?.id || latestUploadId;
     const preferredSession = sessions.find((s) => s.id === preferredId);
     if (preferredSession?.pages?.length) {
       pagesForRail = preferredSession.pages;
@@ -1845,7 +1845,8 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
                 : null
             }
             railTitle="Source menu"
-            defaultRailMode={sourcePages.length > 0 ? "ocr" : "live"}
+            defaultRailMode="ocr"
+            preferOcrRail
           >
             <PageCard style={{ padding: 20, marginBottom: 16 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap", marginBottom: 12 }}>

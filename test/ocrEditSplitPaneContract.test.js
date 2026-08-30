@@ -22,6 +22,8 @@ describe("OCR edit split pane contract", () => {
     expect(src).toMatch(/ocr-source-evidence/);
     expect(src).toMatch(/OCR Text \(supporting evidence\)/);
     expect(src).toMatch(/ocr-source-evidence__thumbs/);
+    expect(src).toMatch(/ocr-source-evidence__empty/);
+    expect(src).toMatch(/No OCR source for this menu yet/);
   });
 
   it("source photo includes a toggleable magnifier lens", () => {
@@ -64,7 +66,7 @@ describe("OCR edit split pane contract", () => {
     );
     expect(layout).toMatch(/OcrSourceEvidencePanel/);
     expect(layout).toMatch(/LiveMenuReferencePanel/);
-    expect(layout).toMatch(/defaultRailMode/);
+    expect(layout).toMatch(/preferOcrRail/);
     expect(layout).toMatch(/liveItems/);
     expect(layout).toMatch(/ocrHref/);
     expect(layout).toMatch(/setRailMode\("ocr"\)/);
@@ -104,17 +106,19 @@ describe("OCR edit split pane contract", () => {
     expect(src).not.toMatch(/Source Pages \(/);
   });
 
-  it("Edit dishes defaults to OCR rail when source pages exist", () => {
+  it("Edit dishes keeps Tom's-style OCR source rail on Menu Manager workspace", () => {
     const src = read("OwnerMenuCreateWorkspace.jsx");
     expect(src).toMatch(/OcrEditSplitLayout/);
-    expect(src).toMatch(/liveItems=\{menuDetail\.sections/);
+    expect(src).toMatch(/liveItems=\{liveItemsWithPhotos\}/);
     expect(src).toMatch(/sourcePages/);
     expect(src).toMatch(/latestUploadId/);
-    expect(src).toMatch(/defaultRailMode=\{sourcePages\.length > 0 \? "ocr" : "live"\}/);
+    expect(src).toMatch(/defaultRailMode="ocr"/);
+    expect(src).toMatch(/preferOcrRail/);
     expect(src).toMatch(/ocrHref=/);
     expect(src).toMatch(/review-items/);
     expect(src).toMatch(/Edit dishes/);
     expect(src).toMatch(/View live menu/);
+    expect(src).not.toMatch(/defaultRailMode=\{sourcePages\.length > 0 \? "ocr" : "live"\}/);
     expect(src).not.toMatch(/liveMenuHref=/);
   });
 

@@ -225,6 +225,13 @@
   max-width: 100%;
 }
 
+.ocr-source-evidence__empty {
+  padding: 16px;
+  border-radius: 10px;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+}
+
 .live-menu-reference.ocr-source-evidence,
 .live-menu-reference {
   /* Same card chrome; body scrolls inside sticky rail */

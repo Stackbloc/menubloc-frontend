@@ -203,7 +203,27 @@ export default function OcrSourceEvidencePanel({
     });
   }, [pages]);
 
-  if (!pages.length) return null;
+  if (!pages.length) {
+    return (
+      <div className="ocr-source-evidence">
+        <div className="ocr-source-evidence__header">
+          <span className="ocr-source-evidence__title">{title}</span>
+          {onClose ? (
+            <button type="button" className="ocr-source-evidence__close" onClick={onClose} aria-label="Close source menu">
+              Close ✕
+            </button>
+          ) : null}
+        </div>
+        <div className="ocr-source-evidence__empty">
+          <p style={{ margin: "0 0 8px", fontWeight: 700, color: "#101828" }}>No OCR source for this menu yet</p>
+          <p style={{ margin: 0, fontSize: 13, lineHeight: 1.5, color: "#667085" }}>
+            Upload a PDF or menu photos above, or use <strong>Update OCR</strong> on a prior capture.
+            Source photos and OCR text will appear here beside Edit dishes — like Tom&apos;s Watch Bar.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const activePage = pages.find((p) => p.page_number === activePageNumber) || pages[0];
   const imageUrl = activePage?.image_url ? buildOcrImageUrl(activePage.image_url) : null;
