@@ -21,6 +21,7 @@ import {
   resolveSplashDurationMs,
 } from "../../lib/claimedRestaurantBillboardSplash.js";
 import { resolveBillboardDisplayImageUrl, resolveBillboardImageObjectPosition } from "../../lib/billboardImageObjectPosition.js";
+import { resolveBillboardMediaUrl } from "../../lib/billboardMediaUrl.js";
 
 export {
   CLAIMED_BILLBOARD_SPLASH_MS,
@@ -90,7 +91,9 @@ export default function ClaimedRestaurantBillboardSplash({
   const [index, setIndex] = useState(0);
   const current = slideList[Math.min(index, Math.max(0, slideList.length - 1))] || null;
   const rawImageUrl = String(current?.image_url || current?.photo_url || "").trim();
-  const imageUrl = resolveBillboardDisplayImageUrl(rawImageUrl || current, { narrow: isNarrow });
+  const imageUrl = resolveBillboardMediaUrl(
+    resolveBillboardDisplayImageUrl(rawImageUrl || current, { narrow: isNarrow })
+  );
   const headline = String(current?.headline_override || current?.title || "").trim();
   const sub = String(current?.subheadline_override || "").trim();
   const alt = String(current?.image_alt_text || headline || displayName).trim();

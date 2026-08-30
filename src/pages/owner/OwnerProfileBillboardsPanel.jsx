@@ -16,6 +16,7 @@ import {
   uploadOwnerRestaurantBillboardPhoto,
   uploadOwnerRestaurantWindowPhoto,
 } from "../../lib/ownerApi.js";
+import { resolveBillboardMediaUrl } from "../../lib/billboardMediaUrl.js";
 
 const IMAGE_FITS = ["cover", "contain", "fill"];
 const MAX_SPLASH = 6;
@@ -69,7 +70,9 @@ function SplashBillboardEditor({ restaurantId, initial, onCancel, onSaved }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
-  const previewUrl = pendingPhoto ? URL.createObjectURL(pendingPhoto) : imageUrl || null;
+  const previewUrl = pendingPhoto
+    ? URL.createObjectURL(pendingPhoto)
+    : resolveBillboardMediaUrl(imageUrl) || null;
 
   async function handleSave(event) {
     event.preventDefault();
@@ -308,7 +311,9 @@ function WindowPhotoEditor({ restaurantId, initial, onCancel, onSaved }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
-  const previewUrl = pendingPhoto ? URL.createObjectURL(pendingPhoto) : imageUrl || null;
+  const previewUrl = pendingPhoto
+    ? URL.createObjectURL(pendingPhoto)
+    : resolveBillboardMediaUrl(imageUrl) || null;
 
   async function handleSave(event) {
     event.preventDefault();
@@ -595,7 +600,7 @@ export default function OwnerProfileBillboardsPanel({ restaurantId }) {
                   >
                     {post.image_url ? (
                       <img
-                        src={post.image_url}
+                        src={resolveBillboardMediaUrl(post.image_url)}
                         alt=""
                         style={{
                           width: 56,
@@ -724,7 +729,7 @@ export default function OwnerProfileBillboardsPanel({ restaurantId }) {
                   >
                     {post.image_url ? (
                       <img
-                        src={post.image_url}
+                        src={resolveBillboardMediaUrl(post.image_url)}
                         alt=""
                         style={{
                           width: 48,

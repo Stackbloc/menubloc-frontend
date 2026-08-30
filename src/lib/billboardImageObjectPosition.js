@@ -7,6 +7,8 @@
  * (`in-n-out-building-splash.jpg`) on narrow viewports so the logo stays centered.
  */
 
+export { resolveBillboardMediaUrl } from "./billboardMediaUrl.js";
+
 export const IN_N_OUT_BUILDING_LANDSCAPE_MARKER = "in-n-out-building.jpg";
 export const IN_N_OUT_BUILDING_SPLASH_MARKER = "in-n-out-building-splash.jpg";
 

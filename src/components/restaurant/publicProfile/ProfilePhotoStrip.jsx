@@ -8,6 +8,7 @@ import {
   normalizeWindowsPhotoOrientation,
   windowsPhotoStripTileSize,
 } from "../../../lib/windowsPhotoOrientation.js";
+import { resolveBillboardMediaUrl } from "../../../lib/billboardMediaUrl.js";
 
 function collectPhotoUrls({ bannerPhotoUrl, billboardPreview, excludeHeroUrl }) {
   const urls = [];
@@ -16,7 +17,7 @@ function collectPhotoUrls({ bannerPhotoUrl, billboardPreview, excludeHeroUrl }) 
   if (exclude) seen.add(exclude);
 
   const push = (raw, kind) => {
-    const url = String(raw || "").trim();
+    const url = resolveBillboardMediaUrl(raw);
     if (!url || seen.has(url)) return;
     seen.add(url);
     urls.push({ url, kind });

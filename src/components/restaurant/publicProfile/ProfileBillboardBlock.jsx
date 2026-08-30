@@ -12,6 +12,7 @@ import {
   resolveBillboardDisplayImageUrl,
   resolveBillboardImageObjectPosition,
 } from "../../../lib/billboardImageObjectPosition.js";
+import { resolveBillboardMediaUrl } from "../../../lib/billboardMediaUrl.js";
 import {
   normalizeWindowsPhotoOrientation,
   windowsFrameAspectRatio,
@@ -20,7 +21,9 @@ import { PROFILE_INK, profileCardBorderVar, profileReadableSurfaceStyle } from "
 
 function postImage(post, { narrow = false } = {}) {
   const raw = String(post?.image_url || post?.photo_url || "").trim();
-  return resolveBillboardDisplayImageUrl(raw || post, { narrow });
+  return resolveBillboardMediaUrl(
+    resolveBillboardDisplayImageUrl(raw || post, { narrow })
+  );
 }
 
 export default function ProfileBillboardBlock({

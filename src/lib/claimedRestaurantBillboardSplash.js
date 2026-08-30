@@ -2,6 +2,8 @@
  * Claimed restaurant billboard splash — timing + post selection (no React).
  */
 
+import { resolveBillboardMediaUrl } from "./billboardMediaUrl.js";
+
 /** Default hold after a slide is visible when post has no duration. */
 export const CLAIMED_BILLBOARD_SPLASH_MS = 3500;
 export const CLAIMED_BILLBOARD_SPLASH_REDUCED_MS = 600;
@@ -71,7 +73,7 @@ export function pickClaimedBillboardSplashPost(posts) {
 function firstSplashImageUrl(posts) {
   const list = pickClaimedBillboardSplashPosts(posts);
   for (const post of list) {
-    const url = String(post?.image_url || post?.photo_url || "").trim();
+    const url = resolveBillboardMediaUrl(post);
     if (url) return url;
   }
   return "";

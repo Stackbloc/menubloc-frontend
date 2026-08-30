@@ -7,6 +7,7 @@ import {
   resolveBillboardDisplayImageUrl,
   resolveBillboardImageObjectPosition,
 } from "../src/lib/billboardImageObjectPosition.js";
+import { resolveBillboardMediaUrl } from "../src/lib/billboardMediaUrl.js";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -16,6 +17,22 @@ function read(rel) {
 
 const LANDSCAPE = "https://menuply.com/billboards/in-n-out-building.jpg";
 const SPLASH = "https://menuply.com/billboards/in-n-out-building-splash.jpg";
+
+test("resolveBillboardMediaUrl prefixes relative upload paths with API base", () => {
+  assert.equal(
+    resolveBillboardMediaUrl("/uploads/billboard-photos/x.jpg"),
+    "https://menubloc-backend-production.up.railway.app/uploads/billboard-photos/x.jpg"
+  );
+  assert.equal(
+    resolveBillboardMediaUrl("https://cdn.example.com/a.jpg"),
+    "https://cdn.example.com/a.jpg"
+  );
+
+  const splash = read("src/components/restaurant/ClaimedRestaurantBillboardSplash.jsx");
+  assert.match(splash, /resolveBillboardMediaUrl/);
+  const panel = read("src/pages/owner/OwnerProfileBillboardsPanel.jsx");
+  assert.match(panel, /resolveBillboardMediaUrl/);
+});
 
 test("In-N-Out building crops keep the neon logo in frame", () => {
   assert.equal(

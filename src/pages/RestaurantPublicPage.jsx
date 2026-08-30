@@ -45,6 +45,7 @@ import ClaimedRestaurantBillboardSplash, {
   waitForBillboardSplashImage,
 } from "../components/restaurant/ClaimedRestaurantBillboardSplash.jsx";
 import { isActiveBillboardSplashPost } from "../lib/claimedRestaurantBillboardSplash.js";
+import { resolveBillboardMediaUrl } from "../lib/billboardMediaUrl.js";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { useOperator } from "../context/OperatorContext.jsx";
 import { fetchRestaurantMenuPreview, toConsumerErrorMessage } from "../lib/api.js";
@@ -531,7 +532,7 @@ export default function RestaurantPublicPage() {
   // Active billboard image is the fallback when no dedicated hero is configured.
   const firstActiveBillboard = billboardPreview.find((p) => isActiveBillboardSplashPost(p));
   const firstBillboardImage =
-    String(firstActiveBillboard?.image_url || firstActiveBillboard?.photo_url || "").trim() || null;
+    resolveBillboardMediaUrl(firstActiveBillboard) || null;
   const bannerPhotoUrl =
     data?.hero_image_url ||
     firstBillboardImage ||
