@@ -18,6 +18,7 @@ import {
   removeFeedMenuSaved,
   toggleFeedMenuBookmark,
 } from "../../../lib/feedMenuLibrary.js";
+import { buildFeedMenuSampleDeck } from "../../../lib/feedMenuSampleStack.js";
 
 function resolveLocationParams() {
   if (typeof window === "undefined") return {};
@@ -47,7 +48,12 @@ function deckToBrowseEntry(row) {
 }
 
 export default function FeedMenusPage() {
-  const [deck, setDeck] = useState(() => buildFeedMenuDeck(readFeedMenuLibrary()));
+  const [personalDeck, setPersonalDeck] = useState(() => buildFeedMenuDeck(readFeedMenuLibrary()));
+  const isSampleMode = personalDeck.length === 0;
+  const deck = useMemo(
+    () => (isSampleMode ? buildFeedMenuSampleDeck() : personalDeck),
+    [isSampleMode, personalDeck]
+  );
   const [index, setIndex] = useState(0);
   const [menuStatus, setMenuStatus] = useState("idle");
   const [toast, setToast] = useState("");
@@ -56,7 +62,7 @@ export default function FeedMenusPage() {
   const locationParams = useMemo(() => resolveLocationParams(), []);
 
   const reloadDeck = useCallback(() => {
-    setDeck(buildFeedMenuDeck(readFeedMenuLibrary()));
+    setPersonalDeck(buildFeedMenuDeck(readFeedMenuLibrary()));
   }, []);
 
   useEffect(() => {
@@ -81,11 +87,11 @@ export default function FeedMenusPage() {
   const bookmarked = current ? isFeedMenuBookmarked(current.restaurant_id) : false;
 
   useEffect(() => {
-    if (!current) return;
+    if (!current || isSampleMode) return;
     recordFeedMenuOpen(current);
     const next = deck[index + 1];
     if (next?.restaurant_id) prefetchCatalogMenu(next.restaurant_id, locationParams);
-  }, [current?.restaurant_id, deck, index, locationParams]);
+  }, [current?.restaurant_id, deck, index, locationParams, isSampleMode]);
 
   useEffect(() => {
     if (!toast) return undefined;
@@ -180,27 +186,6 @@ export default function FeedMenusPage() {
 
   const navBottom = `calc(${FEED_PRIMARY_NAV_HEIGHT}px + env(safe-area-inset-bottom, 0px))`;
 
-  if (deck.length === 0) {
-    return (
-      <div style={styles.emptyPage} data-testid="feed-menus-empty">
-        <h1 style={styles.h1}>My Menu Stack</h1>
-        <p style={styles.emptyCopy}>
-          Tap <strong style={styles.emptyStrong}>Save</strong> (☆) or the{" "}
-          <strong style={styles.emptyStrong}>restaurant name</strong> on a video. Menus you open stay
-          for 48 hours; saves stay until you remove them.
-        </p>
-        <div style={styles.emptyActions}>
-          <Link to="/feed" style={styles.primaryLink} data-testid="feed-menus-browse-feed">
-            Browse Feed
-          </Link>
-          <Link to="/browse-menus" style={styles.discoverLink} data-testid="feed-menus-discover">
-            Discover restaurants
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div style={styles.page} data-testid="feed-menus">
       <header style={styles.header}>
@@ -209,7 +194,11 @@ export default function FeedMenusPage() {
           <span style={styles.counter} data-testid="feed-menus-counter">
             {index + 1} / {deck.length}
           </span>
-          {current?.tier === "recent" ? (
+          {isSampleMode ? (
+            <span style={styles.tierBadge} data-testid="feed-menus-tier-sample">
+              Sample
+            </span>
+          ) : current?.tier === "recent" ? (
             <span style={styles.tierBadge} data-testid="feed-menus-tier-recent">
               Recent
             </span>
@@ -263,6 +252,24 @@ export default function FeedMenusPage() {
         </p>
       ) : null}
 
+      {isSampleMode ? (
+        <div style={styles.sampleHint} data-testid="feed-menus-sample-hint">
+          <p style={styles.sampleHintCopy}>
+            Tap <strong style={styles.sampleHintStrong}>Save</strong> (☆) or the{" "}
+            <strong style={styles.sampleHintStrong}>restaurant name</strong> on a video. Menus you open
+            stay for 48 hours; saves stay until you remove them.
+          </p>
+          <div style={styles.sampleHintActions}>
+            <Link to="/feed" style={styles.sampleHintLink} data-testid="feed-menus-browse-feed">
+              Browse Feed
+            </Link>
+            <Link to="/browse-menus" style={styles.sampleHintLinkMuted} data-testid="feed-menus-discover">
+              Discover restaurants
+            </Link>
+          </div>
+        </div>
+      ) : null}
+
       <div ref={areaRef} style={{ ...styles.menuArea, paddingBottom: navBottom }}>
         {currentEntry ? (
           <CatalogMenuRenderer
@@ -297,37 +304,37 @@ const styles = {
     background: "var(--gb-color-page, #fff8e6)",
     color: "#0f172a",
   },
-  emptyPage: {
-    minHeight: "100dvh",
-    padding: `24px 20px calc(${FEED_PRIMARY_NAV_HEIGHT + 28}px + env(safe-area-inset-bottom))`,
-    background: "#0b1210",
-    color: "#e8f0ec",
-  },
-  h1: { margin: "8px 0 12px", fontSize: 28, fontWeight: 800 },
   h1Compact: { margin: 0, fontSize: 18, fontWeight: 800, color: "#e8f0ec" },
-  emptyCopy: {
-    margin: "0 0 20px",
-    color: "rgba(232,240,236,0.72)",
-    fontSize: 15,
+  sampleHint: {
+    margin: "0 12px 8px",
+    padding: "12px 14px",
+    borderRadius: 14,
+    background: "rgba(94, 234, 212, 0.08)",
+    border: "1px solid rgba(94, 234, 212, 0.22)",
+  },
+  sampleHintCopy: {
+    margin: "0 0 10px",
+    color: "rgba(232,240,236,0.78)",
+    fontSize: 13,
     lineHeight: 1.45,
-    maxWidth: 420,
   },
-  emptyStrong: { color: "#e8f0ec", fontWeight: 750 },
-  emptyActions: {
+  sampleHintStrong: { color: "#e8f0ec", fontWeight: 750 },
+  sampleHintActions: {
     display: "flex",
-    flexDirection: "column",
+    flexWrap: "wrap",
     gap: 12,
-    alignItems: "flex-start",
+    alignItems: "center",
   },
-  primaryLink: {
-    display: "inline-block",
-    padding: "12px 16px",
-    borderRadius: 12,
-    background: "rgba(94, 234, 212, 0.14)",
-    border: "1px solid rgba(94, 234, 212, 0.35)",
+  sampleHintLink: {
     color: "#5eead4",
     fontWeight: 800,
-    fontSize: 15,
+    fontSize: 13,
+    textDecoration: "none",
+  },
+  sampleHintLinkMuted: {
+    color: "rgba(232,240,236,0.72)",
+    fontWeight: 700,
+    fontSize: 13,
     textDecoration: "none",
   },
   header: {
@@ -412,12 +419,6 @@ const styles = {
     padding: "8px 12px",
     background: "rgba(255,255,255,0.92)",
     borderTop: "1px solid rgba(0,0,0,0.06)",
-  },
-  discoverLink: {
-    display: "inline-block",
-    color: "#5eead4",
-    fontWeight: 700,
-    textDecoration: "none",
   },
   discoverInline: {
     color: "#0f766e",

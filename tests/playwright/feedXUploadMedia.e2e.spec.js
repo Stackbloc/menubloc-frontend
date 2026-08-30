@@ -57,12 +57,12 @@ async function openFeedXSheet(page) {
 }
 
 test.describe("Feed X upload media E2E", () => {
-  test("desktop X sheet shows Upload media, not Share My Menuply", async ({ page }) => {
+  test("X sheet shows Share My Menuply and Upload media", async ({ page }) => {
     await mockConsumerApis(page);
     await openFeedXSheet(page);
 
+    await expect(page.getByTestId("feed-x-share-my-menuply")).toBeVisible();
     await expect(page.getByTestId("feed-x-upload-media")).toBeVisible();
-    await expect(page.getByTestId("feed-x-share-my-menuply")).toHaveCount(0);
     await expect(page.getByTestId("feed-video-create-ate")).toBeVisible();
     await expect(page.getByTestId("feed-video-create-want")).toBeVisible();
     await expect(page.getByTestId("feed-video-create-reviews")).toBeVisible();
@@ -95,7 +95,9 @@ test.describe("Feed X upload media E2E", () => {
   test("My Menu Stack has no Add menu entry", async ({ page }) => {
     await mockConsumerApis(page);
     await page.goto("/feed/menus");
-    await expect(page.getByTestId("feed-menus-empty")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId("feed-menus")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId("feed-menus-sample-hint")).toBeVisible();
+    await expect(page.getByTestId("feed-menus-tier-sample")).toBeVisible();
     await expect(page.getByTestId("feed-menus-add-menu")).toHaveCount(0);
     await expect(page.getByTestId("feed-menus-add-menu-header")).toHaveCount(0);
   });

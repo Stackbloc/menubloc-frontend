@@ -76,14 +76,30 @@ export const FEED_UPLOAD_MEDIA_ITEM = {
   guestTo: "/account/signup?next=%2Ffeed",
 };
 
+export const FEED_SHARE_MY_MENUPLY_ITEM = {
+  id: "share-my-menuply",
+  kind: "share-menuply",
+  title: "Share My Menuply",
+  description: "Show your QR in person or share your connect link",
+  testId: "feed-x-share-my-menuply",
+  guestOk: false,
+  guestDescription: "Create a free account to share your Menuply",
+  guestTo: "/account/signup?next=%2Ffeed",
+};
+
 /** Flat X menu — exported for contract tests. */
-export const FEED_X_ITEMS = [...VIDEO_ITEMS, ...FEED_QUICK_INVITE_ITEMS, FEED_UPLOAD_MEDIA_ITEM];
+export const FEED_X_ITEMS = [
+  ...VIDEO_ITEMS,
+  ...FEED_QUICK_INVITE_ITEMS,
+  FEED_SHARE_MY_MENUPLY_ITEM,
+  FEED_UPLOAD_MEDIA_ITEM,
+];
 
 function SectionTitle({ children }) {
   return <h3 style={styles.sectionTitle}>{children}</h3>;
 }
 
-function ActionButton({ item, isAuthenticated, onVideo, onUploadStart, onUploadCategory, onQuickInvite }) {
+function ActionButton({ item, isAuthenticated, onVideo, onUploadStart, onUploadCategory, onQuickInvite, onShareMyMenuply }) {
   return (
     <li key={item.id}>
       <button
@@ -105,6 +121,10 @@ function ActionButton({ item, isAuthenticated, onVideo, onUploadStart, onUploadC
           }
           if (item.kind === "quick-invite") {
             onQuickInvite(item);
+            return;
+          }
+          if (item.kind === "share-menuply") {
+            onShareMyMenuply(item);
           }
         }}
       >
@@ -123,6 +143,7 @@ export default function FeedVideoCreateSheet({
   onPickCategory,
   onPickUploadCategory,
   onPickQuickInvite,
+  onShareMyMenuply,
   isAuthenticated = false,
 }) {
   const [uploadStep, setUploadStep] = useState(false);
@@ -181,6 +202,15 @@ export default function FeedVideoCreateSheet({
     onPickQuickInvite?.(item.seedCode);
   }
 
+  function handleShareMyMenuply(item) {
+    onClose?.();
+    if (!isAuthenticated) {
+      onShareMyMenuply?.(null, { guestTo: item.guestTo });
+      return;
+    }
+    onShareMyMenuply?.();
+  }
+
   const title = uploadStep ? "Upload media" : "Create";
   const lead = uploadStep ? "What is this video for?" : null;
 
@@ -232,6 +262,7 @@ export default function FeedVideoCreateSheet({
                 onUploadStart={handleUploadStart}
                 onUploadCategory={handleUploadCategory}
                 onQuickInvite={handleQuickInvite}
+                onShareMyMenuply={handleShareMyMenuply}
               />
             ))}
           </ul>
@@ -249,8 +280,23 @@ export default function FeedVideoCreateSheet({
                     onUploadStart={handleUploadStart}
                     onUploadCategory={handleUploadCategory}
                     onQuickInvite={handleQuickInvite}
+                    onShareMyMenuply={handleShareMyMenuply}
                   />
                 ))}
+              </ul>
+            </section>
+            <section data-testid="feed-x-section-share-menuply" style={styles.section}>
+              <SectionTitle>My Menuply</SectionTitle>
+              <ul style={styles.list}>
+                <ActionButton
+                  item={FEED_SHARE_MY_MENUPLY_ITEM}
+                  isAuthenticated={isAuthenticated}
+                  onVideo={handleVideo}
+                  onUploadStart={handleUploadStart}
+                  onUploadCategory={handleUploadCategory}
+                  onQuickInvite={handleQuickInvite}
+                  onShareMyMenuply={handleShareMyMenuply}
+                />
               </ul>
             </section>
             <section data-testid="feed-x-section-quick-invites" style={styles.section}>
@@ -268,6 +314,7 @@ export default function FeedVideoCreateSheet({
                     onUploadStart={handleUploadStart}
                     onUploadCategory={handleUploadCategory}
                     onQuickInvite={handleQuickInvite}
+                    onShareMyMenuply={handleShareMyMenuply}
                   />
                 ))}
               </ul>
@@ -280,6 +327,7 @@ export default function FeedVideoCreateSheet({
                 onUploadStart={handleUploadStart}
                 onUploadCategory={handleUploadCategory}
                 onQuickInvite={handleQuickInvite}
+                onShareMyMenuply={handleShareMyMenuply}
               />
             </ul>
           </>

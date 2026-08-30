@@ -16,6 +16,10 @@ import {
   purgeExpiredRecent,
   restaurantRefFromFeedItem,
 } from "../src/lib/feedMenuLibrary.js";
+import {
+  buildFeedMenuSampleDeck,
+  FEED_MENU_SAMPLE_STACK,
+} from "../src/lib/feedMenuSampleStack.js";
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = (rel) => fs.readFileSync(path.join(root, rel), "utf8");
@@ -115,12 +119,19 @@ test("applyRemoveSaved removes only saved tier row", () => {
   assert.equal(lib.recent.length, 1);
 });
 
+test("sample stack provides real starter menus when library is empty", () => {
+  const deck = buildFeedMenuSampleDeck();
+  assert.ok(deck.length >= 3);
+  assert.equal(deck.length, FEED_MENU_SAMPLE_STACK.length);
+  assert.ok(deck.every((row) => row.tier === "sample" && row.restaurant_id && row.slug));
+});
+
 test("Feed Menus page + nav contract strings", () => {
-  const nav = read("src/components/consumer/feed/FeedPrimaryNav.jsx");
-  assert.match(nav, /\/feed\/menus/);
-  assert.match(nav, /feed-nav-menus/);
-  assert.match(nav, /Menus/);
-  assert.doesNotMatch(nav, /feed-nav-eating/);
+  const navLinks = read("src/lib/feedShellLinks.js");
+  assert.match(navLinks, /\/feed\/menus/);
+  assert.match(navLinks, /feed-nav-menus/);
+  assert.match(navLinks, /My Menu Stack/);
+  assert.doesNotMatch(navLinks, /feed-nav-eating/);
 
   const app = read("src/App.jsx");
   assert.match(app, /FeedMenusPage/);
@@ -131,6 +142,8 @@ test("Feed Menus page + nav contract strings", () => {
   assert.match(page, /feed-menus/);
   assert.match(page, /CatalogMenuRenderer/);
   assert.match(page, /feed-menus-bookmark/);
+  assert.match(page, /feed-menus-sample-hint/);
+  assert.match(page, /buildFeedMenuSampleDeck/);
 
   const reel = read("src/pages/consumer/myMenuply/SeeWhosEatingFullscreen.jsx");
   assert.match(reel, /see-whos-eating-menu-bookmark/);

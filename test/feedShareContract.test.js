@@ -54,10 +54,16 @@ test("feed home + fullscreen wire clip deep link and share affordance", () => {
   assert.match(reel, /feed-shared-clip-account-invite/);
 });
 
-test("feed shell profile share opens ShareModal with diner QR payload", () => {
+test("feed shell profile share shows QR first then optional Share link", () => {
   const shell = read("src/pages/consumer/feed/FeedShellPage.jsx");
-  assert.match(shell, /getMyDinerQr/);
-  assert.match(shell, /buildDinerQrShareData/);
-  assert.match(shell, /ShareModal/);
-  assert.match(shell, /Share My Menuply/);
+  assert.match(shell, /FeedShareMyMenuplySheet/);
+  assert.match(shell, /handleShareMyMenuply/);
+
+  const shareSheet = read("src/components/consumer/feed/FeedShareMyMenuplySheet.jsx");
+  assert.match(shareSheet, /getMyDinerQr/);
+  assert.match(shareSheet, /buildDinerQrShareData/);
+  assert.match(shareSheet, /ShareModal/);
+  assert.match(shareSheet, /feed-share-my-menuply-qr/);
+  assert.match(shareSheet, /feed-share-my-menuply-link/);
+  assert.match(shareSheet, /Share link/);
 });

@@ -238,7 +238,7 @@ export default function DinerQrPage() {
                 disabled={!shareData}
                 onClick={() => setShareOpen(true)}
               >
-                Share My Menuply
+                Share link
               </button>
               <label style={styles.secondaryBtn}>
                 {busy ? "Working…" : "Add or change selfie"}

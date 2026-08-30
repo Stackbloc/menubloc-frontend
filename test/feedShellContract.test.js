@@ -47,12 +47,11 @@ test("Feed shell: Home|Connects|Menus|X|Deals|Shop|Profile + slim X sheet", () =
 
   const shell = read("src/pages/consumer/feed/FeedShellPage.jsx");
   assert.match(shell, /FeedVideoCreateSheet/);
+  assert.match(shell, /FeedShareMyMenuplySheet/);
   assert.match(shell, /FeedVideoComposeOverlay/);
   assert.match(shell, /onPickUploadCategory/);
+  assert.match(shell, /onShareMyMenuply/);
   assert.match(shell, /composeOpenLibrary/);
-  assert.match(shell, /getMyDinerQr/);
-  assert.match(shell, /buildDinerQrShareData/);
-  assert.match(shell, /ShareModal/);
   assert.doesNotMatch(shell, /FeedDiaryComposeHost/);
 
   const createSheet = read("src/components/consumer/feed/FeedVideoCreateSheet.jsx");
@@ -77,7 +76,9 @@ test("Feed shell: Home|Connects|Menus|X|Deals|Shop|Profile + slim X sheet", () =
   assert.match(shell, /quick_invite/);
   assert.match(shell, /\/account\/invite-to-eat/);
   assert.match(createSheet, /RSVP without a Menuply account/);
-  assert.doesNotMatch(createSheet, /feed-x-share-my-menuply/);
+  assert.match(createSheet, /feed-x-share-my-menuply/);
+  assert.match(createSheet, /feed-x-section-share-menuply/);
+  assert.match(createSheet, /Share My Menuply/);
   assert.doesNotMatch(createSheet, /feed-x-diary/);
   assert.doesNotMatch(createSheet, /feed-x-my-menuply/);
   assert.doesNotMatch(createSheet, /feed-x-create-account/);
@@ -183,6 +184,8 @@ test("Feed shell: Home|Connects|Menus|X|Deals|Shop|Profile + slim X sheet", () =
 
   const menusPage = read("src/pages/consumer/feed/FeedMenusPage.jsx");
   assert.match(menusPage, /My Menu Stack/);
+  assert.match(menusPage, /feed-menus-sample-hint/);
+  assert.match(menusPage, /buildFeedMenuSampleDeck/);
   assert.doesNotMatch(menusPage, /feed-menus-add-menu/);
   assert.doesNotMatch(menusPage, /FEED_MENU_CAPTURE_PATH/);
 

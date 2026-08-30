@@ -5,15 +5,13 @@
 
 import { useEffect, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import ShareModal from "../../../components/share/ShareModal.jsx";
-import { getMyDinerQr } from "../../../lib/consumerApi.js";
-import { buildDinerQrShareData } from "../../../lib/dinerQrShare.js";
 import { isFeedShopRoute } from "../../../lib/feedShellNavigation.js";
 import FeedPrimaryNav, { FEED_PRIMARY_NAV_HEIGHT } from "../../../components/consumer/feed/FeedPrimaryNav.jsx";
 import FeedDesktopRail, { FEED_DESKTOP_RAIL_WIDTH } from "../../../components/consumer/feed/FeedDesktopRail.jsx";
 import FeedMobileHeader from "../../../components/consumer/feed/FeedMobileHeader.jsx";
 import FeedMorePanel from "../../../components/consumer/feed/FeedMorePanel.jsx";
 import FeedVideoCreateSheet from "../../../components/consumer/feed/FeedVideoCreateSheet.jsx";
+import FeedShareMyMenuplySheet from "../../../components/consumer/feed/FeedShareMyMenuplySheet.jsx";
 import FeedVideoComposeOverlay from "../../../components/consumer/feed/FeedVideoComposeOverlay.jsx";
 import { useConsumer } from "../../../context/ConsumerContext.jsx";
 import { useFeedShellDesktop } from "../../../lib/useFeedShellDesktop.js";
@@ -31,9 +29,7 @@ export default function FeedShellPage({ children = null }) {
   const [composeMediaSource, setComposeMediaSource] = useState("camera");
   const [composeOpenLibrary, setComposeOpenLibrary] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
-  const [profileShareOpen, setProfileShareOpen] = useState(false);
-  const [profileShareData, setProfileShareData] = useState(null);
-  const [profileShareError, setProfileShareError] = useState("");
+  const [shareMenuplyOpen, setShareMenuplyOpen] = useState(false);
 
   useEffect(() => {
     document.documentElement.style.setProperty(
@@ -106,30 +102,16 @@ export default function FeedShellPage({ children = null }) {
     setComposeOpenLibrary(false);
   }
 
-  async function handleShareMyMenuply(item) {
+  function handleShareMyMenuply(options = {}) {
     if (!isAuthenticated) {
-      const guestPath = decodeURIComponent(String(item?.guestTo || "/account/signup?next=%2Ffeed"));
+      const guestPath = decodeURIComponent(String(options?.guestTo || "/account/signup?next=%2Ffeed"));
       navigate(guestPath.startsWith("/") ? guestPath : `/${guestPath}`);
       return;
     }
-    setProfileShareError("");
-    try {
-      const data = await getMyDinerQr();
-      const shareData = buildDinerQrShareData({
-        scan_url: data?.qr?.scan_url,
-        token: data?.qr?.token,
-        display_name: data?.card?.display_name,
-      });
-      if (!shareData?.url) throw new Error("Unable to create profile share link");
-      setProfileShareData(shareData);
-      setProfileShareOpen(true);
-    } catch (err) {
-      setProfileShareError(err?.message || "Unable to share profile");
-      navigate(`/account/diner-qr?next=${encodeURIComponent("/feed")}`);
-    }
+    setShareMenuplyOpen(true);
   }
 
-  const createActive = createSheetOpen || Boolean(composeCategory);
+  const createActive = createSheetOpen || Boolean(composeCategory) || shareMenuplyOpen;
 
   return (
     <div style={styles.shell} data-testid="feed-shell">
@@ -180,8 +162,10 @@ export default function FeedShellPage({ children = null }) {
         onPickCategory={handlePickCategory}
         onPickUploadCategory={handlePickUploadCategory}
         onPickQuickInvite={handlePickQuickInvite}
+        onShareMyMenuply={handleShareMyMenuply}
         isAuthenticated={isAuthenticated}
       />
+      <FeedShareMyMenuplySheet open={shareMenuplyOpen} onClose={() => setShareMenuplyOpen(false)} />
       <FeedVideoComposeOverlay
         open={Boolean(composeCategory)}
         category={composeCategory}
@@ -189,20 +173,6 @@ export default function FeedShellPage({ children = null }) {
         openLibraryOnMount={composeOpenLibrary}
         onClose={closeCompose}
       />
-      {profileShareData ? (
-        <ShareModal
-          open={profileShareOpen}
-          onClose={() => setProfileShareOpen(false)}
-          modalTitle="Share My Menuply"
-          shareData={profileShareData}
-          analyticsContext={{ surface: "feed_shell_profile_share" }}
-        />
-      ) : null}
-      {profileShareError ? (
-        <p style={styles.shareError} role="status" data-testid="feed-profile-share-error">
-          {profileShareError}
-        </p>
-      ) : null}
     </div>
   );
 }
@@ -216,20 +186,5 @@ const styles = {
   body: {
     minHeight: "100dvh",
     transition: "margin-left 0.15s ease",
-  },
-  shareError: {
-    position: "fixed",
-    left: 16,
-    right: 16,
-    bottom: 96,
-    zIndex: 80,
-    margin: 0,
-    padding: "10px 12px",
-    borderRadius: 10,
-    background: "rgba(127,29,29,0.92)",
-    color: "#fecaca",
-    fontSize: 13,
-    fontWeight: 700,
-    textAlign: "center",
   },
 };
