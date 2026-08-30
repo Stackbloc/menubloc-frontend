@@ -709,4 +709,18 @@ export async function uploadEatingPlanMedia(file) {
   return postDinerMediaMultipart("/api/consumer/what-we-doing/photo", file);
 }
 
+/** Restaurant dining intent — explicit I want to go (not Food I Want to Eat). */
+export const fetchRestaurantDiningIntent = (restaurantId) =>
+  get(`/api/public/restaurants/${encodeURIComponent(String(restaurantId))}/dining-intent`);
+
+export const fetchMyRestaurantDiningIntent = (restaurantId) =>
+  get(
+    `/api/consumer/dining-intent/mine?restaurant_id=${encodeURIComponent(String(restaurantId))}`
+  );
+
+export const createRestaurantDiningIntent = (body) => post("/api/consumer/dining-intent", body);
+
+export const removeRestaurantDiningIntent = (intentId) =>
+  del(`/api/consumer/dining-intent/${encodeURIComponent(String(intentId))}`);
+
 export { localDateYmd as whatIAteTodayLocalDate };

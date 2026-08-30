@@ -18,6 +18,7 @@ import FoodTruckUpcomingStops from "./FoodTruckUpcomingStops.jsx";
 import ProfileUpcomingEvents from "./ProfileUpcomingEvents.jsx";
 import WhatDinersAreSaying from "../WhatDinersAreSaying.jsx";
 import ConnectionSocialProof from "../../social/ConnectionSocialProof.jsx";
+import RestaurantDiningIntentSection from "../RestaurantDiningIntentSection.jsx";
 import { pickWindowsPosts } from "../../../lib/profileWindows.js";
 import { restaurantFromAddMenuContext } from "../../../lib/addMenuContribution.js";
 import { formatAddressQuery } from "../../../lib/displayAddress.js";
@@ -360,6 +361,13 @@ export default function PublicProfileShell({
 
         {isDiningHall ? null : (
           <ProfileUpdates updates={updates} isMobile={isMobile} showClaimInvites={allowClaimInvites} />
+        )}
+
+        {isDiningHall ? null : (
+          <RestaurantDiningIntentSection
+            restaurantId={restaurantId}
+            restaurantName={name || ""}
+          />
         )}
 
         {restaurantId ? (
