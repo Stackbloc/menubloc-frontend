@@ -6,7 +6,7 @@ Stats bar order: Connects, Restaurants, Dishes, **Home**, Events. Home tab lists
 ## Deploy path
 | Layer | Path | Branch | Commit | Gate |
 |-------|------|--------|--------|------|
-| FE | menubloc-frontend-main | main | bd0e6c3 | tip-gate PASS (pending) |
+| FE commit | `bd0e6c3` (+ tip lock `25d429b`) | tip-gate PASS |
 | BE | menubloc-backend-main | main | 5fa1b866 | no BE change this ship |
 
 ## Verify
