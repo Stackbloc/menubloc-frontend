@@ -1305,6 +1305,7 @@ export default function MyMenuplyPage() {
               onProfileMediaAdd={onProfileMediaAdd}
               onProfileMediaRemove={onProfileMediaRemove}
               monthInFoodHref={MY_MENUPLY_MONTH_IN_FOOD_PATH}
+              homemadeDishesMade={Number(profile?.homemade_dishes_made) || 0}
             />
             <ProfileGalleryComposeSheet
               open={profileGalleryPickerOpen}

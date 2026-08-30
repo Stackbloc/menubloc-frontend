@@ -79,8 +79,7 @@ import {
 import { useOrderCart } from "../context/OrderCartContext.jsx";
 import { sendPageVisit } from "../lib/analyticsPageVisitSend.js";
 import { getNormalizedMenuItemId, isValidMenuItemRouteId, parseMenuItemRouteId } from "../lib/menuItemIdentity.js";
-import {
-  hasAlcoholicBeverageContent,
+import ShowMeHowToMakeIt from "../components/homemade/ShowMeHowToMakeIt.jsx";
   isAlcoholicBeverageItem,
   resolveAlcoholicBeverageContent,
   RESPONSIBLE_DRINKING_BULLETS,
@@ -1850,6 +1849,13 @@ export default function MenuItemDetailPage() {
       ) : (
         <MissingNutritionState />
       )}
+
+      {item?.menu_item_id && Number.isFinite(Number(item.menu_item_id)) ? (
+        <ShowMeHowToMakeIt
+          menuItemId={Number(item.menu_item_id)}
+          menuItemName={displayItemName}
+        />
+      ) : null}
 
       <ConnectionSocialProof
         menuItemId={

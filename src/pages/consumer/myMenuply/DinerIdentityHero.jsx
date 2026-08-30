@@ -27,6 +27,7 @@ export default function DinerIdentityHero({
   onProfileMediaRemove,
   readOnly = false,
   monthInFoodHref = null,
+  homemadeDishesMade = 0,
 }) {
   const [draft, setDraft] = useState(about || "");
   const [saving, setSaving] = useState(false);
@@ -228,6 +229,19 @@ export default function DinerIdentityHero({
           }}
         >
           {notice}
+        </p>
+      ) : null}
+
+      {typeof homemadeDishesMade === "number" && homemadeDishesMade > 0 ? (
+        <p style={{ margin: "8px 0 0", fontSize: 13, color: "#334155" }} data-testid="homemade-dishes-made-count">
+          <strong>Homemade Dishes Made:</strong> {homemadeDishesMade}
+        </p>
+      ) : null}
+      {!readOnly ? (
+        <p style={{ margin: "10px 0 0", fontSize: 13 }}>
+          <Link to="/my-menuply/homemade/create" style={{ color: GREEN_BRIGHT, fontWeight: 700 }}>
+            Share a homemade dish →
+          </Link>
         </p>
       ) : null}
 

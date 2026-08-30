@@ -116,11 +116,20 @@ export function buildMonthInFoodModel(payload = {}) {
   const momentsShared = Number(payload.food_activity_count) || 0;
   const likesInMonth = Number(payload.likes_in_month) || 0;
   const newRestaurants = Number(payload.new_restaurants_count) || 0;
+  const homemadeDishesCount = Number(payload.homemade_dishes_count) || 0;
+  const restaurantDishesCount = Number(payload.restaurant_dishes_count);
 
   const stats = [];
   if (diaryVisible) {
     stats.push({ id: "meals", label: "Meals Logged", value: mealsLogged, icon: "fork" });
-    stats.push({ id: "restaurants", label: "Restaurants", value: restaurantIds.size, icon: "store" });
+    if (homemadeDishesCount > 0) {
+      stats.push({ id: "homemade", label: "Homemade Made", value: homemadeDishesCount, icon: "flame" });
+    }
+    if (Number.isFinite(restaurantDishesCount) && restaurantDishesCount > 0) {
+      stats.push({ id: "restaurant_ate", label: "Restaurant Dishes", value: restaurantDishesCount, icon: "store" });
+    } else {
+      stats.push({ id: "restaurants", label: "Restaurants", value: restaurantIds.size, icon: "store" });
+    }
     stats.push({ id: "media", label: "Photos & Videos", value: mediaMealCount, icon: "camera" });
     if (momentsShared > 0) {
       stats.push({ id: "moments", label: "Moments Shared", value: momentsShared, icon: "people" });
@@ -213,6 +222,8 @@ export function buildMonthInFoodModel(payload = {}) {
     mood,
     cuisineSlices,
     totalMeals: mealsLogged,
+    homemadeDishesCount,
+    restaurantDishesCount: Number.isFinite(restaurantDishesCount) ? restaurantDishesCount : null,
     miniStats,
     wants: wantCards,
     plans: plans.slice(0, 3),

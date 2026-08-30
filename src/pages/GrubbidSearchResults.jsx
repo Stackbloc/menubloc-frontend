@@ -38,6 +38,8 @@ import {
 } from "../lib/homeContextChipApi.js";
 
 import { SectionTitle, StatusMessage } from "../components/grubbid/GrubbidPrimitives.jsx";
+import HomemadeDishSearchCard from "../components/homemade/HomemadeDishSearchCard.jsx";
+import { captureEvent } from "../services/posthog.js";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { buildDietaryQueryParams } from "../lib/dietaryParams.js";
 import { buildRestaurantFilterQueryParams } from "../lib/restaurantFilterParams.js";
@@ -2044,6 +2046,7 @@ export default function GrubbidSearchResults({ embedInFeedShell = false } = {}) 
   const vegan = params.get("vegan") === "1";
   const gluten_free = params.get("gluten_free") === "1";
   const deals_only = params.get("deals_only") === "1";
+  const include_homemade = params.get("include_homemade") === "1";
   const routeZip = String(params.get("zip") || "").trim();
   const routeCity = String(params.get("city") || "").trim();
   const routeState = String(params.get("state") || "").trim();
@@ -2131,6 +2134,7 @@ export default function GrubbidSearchResults({ embedInFeedShell = false } = {}) 
   const [searchHasMore, setSearchHasMore] = useState(false);
   const [searchTotalCount, setSearchTotalCount] = useState(0);
   const [searchViewMode, setSearchViewMode] = useState("dishes");
+  const [homemadeDishes, setHomemadeDishes] = useState([]);
   const [restaurantVisibleLimits, setRestaurantVisibleLimits] = useState({});
   const SEARCH_LIMIT = 24;
   const [shareCopied, setShareCopied] = useState(false);
@@ -2284,6 +2288,7 @@ export default function GrubbidSearchResults({ embedInFeedShell = false } = {}) 
       if (value) u.searchParams.set(key, value);
     }
     if (deals_only) u.searchParams.set("deals_only", "1");
+    if (include_homemade) u.searchParams.set("include_homemade", "1");
     if (routePriceMax) u.searchParams.set("price_max", routePriceMax);
     if (hasExplicitLocation) {
       if (requestZip) u.searchParams.set("zip", requestZip);
@@ -2325,6 +2330,7 @@ export default function GrubbidSearchResults({ embedInFeedShell = false } = {}) 
     vegan,
     gluten_free,
     deals_only,
+    include_homemade,
     vegetarian,
     keto,
     low_fat,
@@ -2433,6 +2439,7 @@ export default function GrubbidSearchResults({ embedInFeedShell = false } = {}) 
           vegetarian,
           gluten_free,
           deals_only,
+    include_homemade,
         },
         sortMode,
         resultCount: normalizeRows(resultJson).length,
@@ -2607,6 +2614,7 @@ export default function GrubbidSearchResults({ embedInFeedShell = false } = {}) 
           }
         }
         setRows(resultRows);
+        setHomemadeDishes(Array.isArray(json?.homemade_dishes) ? json.homemade_dishes : []);
         setRestaurantMetaMap(rMeta);
         setQueryMeta(json?.query || null);
         setSearchMeta(json?.search_meta || null);
@@ -2679,6 +2687,7 @@ export default function GrubbidSearchResults({ embedInFeedShell = false } = {}) 
     vegetarian,
     gluten_free,
     deals_only,
+    include_homemade,
     keto,
     low_fat,
     low_sodium,
@@ -2877,6 +2886,16 @@ export default function GrubbidSearchResults({ embedInFeedShell = false } = {}) 
     if (row?.has_similar_items === true || row?.has_similar_items === false) return false;
     if (row?.similar_availability === "available" || row?.similar_availability === "none") return false;
     return true;
+  }
+
+  function toggleIncludeHomemade() {
+    const next = new URLSearchParams(params);
+    if (include_homemade) next.delete("include_homemade");
+    else next.set("include_homemade", "1");
+    navigate({ search: `?${next.toString()}` }, { replace: true });
+    captureEvent(include_homemade ? "homemade_search_disabled" : "homemade_search_included", {
+      query: q || null,
+    });
   }
 
   function toggleSearchFilter(key) {
@@ -3103,6 +3122,28 @@ export default function GrubbidSearchResults({ embedInFeedShell = false } = {}) 
         <ActiveFilterChips filters={activeFilters} onToggle={toggleSearchFilter} />
       )}
 
+      {q ? (
+        <label
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 8,
+            marginBottom: 12,
+            fontSize: 14,
+            color: "#334155",
+            cursor: "pointer",
+          }}
+          data-testid="include-homemade-toggle"
+        >
+          <input
+            type="checkbox"
+            checked={include_homemade}
+            onChange={toggleIncludeHomemade}
+          />
+          Include Homemade
+        </label>
+      ) : null}
+
       {geoFallbackUsed && (
         <StatusMessage tone="warning">
           {t("search.geoFallback", "No results found near your location — showing all matching results instead.")}
@@ -3302,6 +3343,22 @@ export default function GrubbidSearchResults({ embedInFeedShell = false } = {}) 
           </div>
         </>
       )}
+
+      {!loading && !err && include_homemade && homemadeDishes.length > 0 ? (
+        <>
+          <SectionTitle style={{ color: "#0B0F0C", marginTop: 16 }}>Homemade</SectionTitle>
+          <div>
+            {homemadeDishes.map((row) => (
+              <HomemadeDishSearchCard key={`hd-${row.id || row.homemade_dish_id}`} row={row} />
+            ))}
+          </div>
+        </>
+      ) : null}
+
+      {!loading && !err && include_homemade && homemadeDishes.length === 0 && q ? (
+        <StatusMessage tone="muted">No homemade dishes match this search yet.</StatusMessage>
+      ) : null}
+
       {/* Load More — search pagination */}
       {!loading && !err && searchHasMore && (
         <div style={{ display: "flex", justifyContent: "center", marginTop: 24 }}>
