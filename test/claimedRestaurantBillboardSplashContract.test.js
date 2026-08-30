@@ -17,6 +17,9 @@ import {
   pickClaimedBillboardSplashPost,
   pickClaimedBillboardSplashPosts,
   resolveSplashDurationMs,
+  resolveBillboardSplashHeadline,
+  shouldShowBillboardSplashVenueEyebrow,
+  isDuplicateRestaurantBillboardHeadline,
 } from "../src/lib/claimedRestaurantBillboardSplash.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -48,6 +51,43 @@ assert.doesNotMatch(splash, /opacity:\s*0\.12/);
 assert.doesNotMatch(splash, /#0b0b0f/);
 // Dark scrim must not mount before the image has painted (reload black-flash regression).
 assert.match(splash, /\{imagePainted \? \(/);
+
+assert.match(splash, /resolveBillboardSplashHeadline/);
+assert.match(splash, /shouldShowBillboardSplashVenueEyebrow/);
+assert.doesNotMatch(splash, /\{displayName\}\s*\n\s*<\/div>\s*\{headline \?/);
+
+assert.equal(
+  isDuplicateRestaurantBillboardHeadline("Tom's Watch Bar", "Tom's Watch Bar"),
+  true
+);
+assert.equal(
+  resolveBillboardSplashHeadline(
+    { title: "Tom's Watch Bar", image_url: "https://example.com/x.jpg" },
+    "Tom's Watch Bar"
+  ),
+  "Tom's Watch Bar"
+);
+assert.equal(
+  shouldShowBillboardSplashVenueEyebrow(
+    { title: "Tom's Watch Bar", image_url: "https://example.com/x.jpg" },
+    "Tom's Watch Bar"
+  ),
+  false
+);
+assert.equal(
+  resolveBillboardSplashHeadline(
+    { title: "Game day specials", image_url: "https://example.com/x.jpg" },
+    "Tom's Watch Bar"
+  ),
+  "Game day specials"
+);
+assert.equal(
+  shouldShowBillboardSplashVenueEyebrow(
+    { title: "Game day specials", image_url: "https://example.com/x.jpg" },
+    "Tom's Watch Bar"
+  ),
+  true
+);
 
 assert.equal(CLAIMED_BILLBOARD_SPLASH_MS, 3500);
 assert.equal(CLAIMED_BILLBOARD_SPLASH_REDUCED_MS, 600);

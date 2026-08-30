@@ -53,9 +53,14 @@ function isActivePost(post) {
 
 function SplashBillboardEditor({ restaurantId, initial, onCancel, onSaved }) {
   const photoRef = useRef(null);
-  const [title, setTitle] = useState(initial?.title || "");
+  const [promoHeadline, setPromoHeadline] = useState(() => {
+    const override = String(initial?.headline_override || "").trim();
+    if (override) return override;
+    const title = String(initial?.title || "").trim();
+    if (!title || title === "Entrance billboard") return "";
+    return title;
+  });
   const [body, setBody] = useState(initial?.body || "");
-  const [headline, setHeadline] = useState(initial?.headline_override || "");
   const [imageUrl, setImageUrl] = useState(initial?.image_url || "");
   const [pendingPhoto, setPendingPhoto] = useState(null);
   const [imageFit, setImageFit] = useState(() => {
@@ -79,12 +84,12 @@ function SplashBillboardEditor({ restaurantId, initial, onCancel, onSaved }) {
     if (!restaurantId) return;
     setError("");
 
-    if (!title.trim()) {
-      setError("Headline / title is required.");
-      return;
-    }
     if (!initial?.id && !pendingPhoto && !imageUrl) {
       setError("Upload a billboard graphic (PNG, JPG, or WEBP, max 10 MB).");
+      return;
+    }
+    if (!promoHeadline.trim() && !pendingPhoto && !imageUrl) {
+      setError("Upload a graphic or enter a promo headline.");
       return;
     }
 
@@ -99,10 +104,11 @@ function SplashBillboardEditor({ restaurantId, initial, onCancel, onSaved }) {
         finalImageUrl = uploaded.photo_url;
       }
 
+      const promo = promoHeadline.trim();
       const payload = {
-        title: title.trim(),
+        title: promo || "Entrance billboard",
         body: body.trim(),
-        headline_override: headline.trim() || title.trim(),
+        headline_override: promo || null,
         image_url: finalImageUrl,
         image_fit: imageFit,
         display_order: Math.max(0, Math.min(MAX_SPLASH - 1, Number(slideOrder) - 1)),
@@ -197,23 +203,18 @@ function SplashBillboardEditor({ restaurantId, initial, onCancel, onSaved }) {
         </button>
       </div>
       <div>
-        <FieldLabel>Headline (required)</FieldLabel>
+        <FieldLabel>Promo headline (optional)</FieldLabel>
         <input
           style={inputStyle}
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="e.g. Summer specials"
+          value={promoHeadline}
+          onChange={(e) => setPromoHeadline(e.target.value)}
+          placeholder="e.g. Happy hour · game day specials"
           data-testid="owner-profile-billboard-title"
         />
-      </div>
-      <div>
-        <FieldLabel>Splash headline override (optional)</FieldLabel>
-        <input
-          style={inputStyle}
-          value={headline}
-          onChange={(e) => setHeadline(e.target.value)}
-          placeholder="Defaults to headline above"
-        />
+        <div style={{ marginTop: 6, fontSize: 11, color: OWNER_COLORS.muted, lineHeight: 1.45 }}>
+          Your restaurant name already appears on the profile hero. Leave blank for graphic-only
+          entrance billboards.
+        </div>
       </div>
       <div>
         <FieldLabel>Terms / description (optional)</FieldLabel>

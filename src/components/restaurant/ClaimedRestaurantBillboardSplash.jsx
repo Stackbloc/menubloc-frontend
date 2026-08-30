@@ -19,6 +19,8 @@ import {
   prefetchBillboardSplashImages,
   waitForBillboardSplashImage,
   resolveSplashDurationMs,
+  resolveBillboardSplashHeadline,
+  shouldShowBillboardSplashVenueEyebrow,
 } from "../../lib/claimedRestaurantBillboardSplash.js";
 import { resolveBillboardDisplayImageUrl, resolveBillboardImageObjectPosition } from "../../lib/billboardImageObjectPosition.js";
 import { resolveBillboardMediaUrl } from "../../lib/billboardMediaUrl.js";
@@ -94,7 +96,8 @@ export default function ClaimedRestaurantBillboardSplash({
   const imageUrl = resolveBillboardMediaUrl(
     resolveBillboardDisplayImageUrl(rawImageUrl || current, { narrow: isNarrow })
   );
-  const headline = String(current?.headline_override || current?.title || "").trim();
+  const headline = resolveBillboardSplashHeadline(current, displayName);
+  const showVenueEyebrow = shouldShowBillboardSplashVenueEyebrow(current, displayName);
   const sub = String(current?.subheadline_override || "").trim();
   const alt = String(current?.image_alt_text || headline || displayName).trim();
   const ctaLabel = String(current?.cta_label || "").trim();
@@ -294,18 +297,20 @@ export default function ClaimedRestaurantBillboardSplash({
           </div>
         ) : null}
 
-        <div
-          style={{
-            fontSize: 12,
-            fontWeight: 800,
-            letterSpacing: "0.1em",
-            textTransform: "uppercase",
-            color: "rgba(250,250,249,0.78)",
-            marginBottom: 10,
-          }}
-        >
-          {displayName}
-        </div>
+        {showVenueEyebrow ? (
+          <div
+            style={{
+              fontSize: 12,
+              fontWeight: 800,
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+              color: "rgba(250,250,249,0.78)",
+              marginBottom: 10,
+            }}
+          >
+            {displayName}
+          </div>
+        ) : null}
         {headline ? (
           <h1
             style={{

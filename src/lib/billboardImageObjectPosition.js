@@ -13,6 +13,8 @@ export const IN_N_OUT_BUILDING_LANDSCAPE_MARKER = "in-n-out-building.jpg";
 export const IN_N_OUT_BUILDING_SPLASH_MARKER = "in-n-out-building-splash.jpg";
 /** Portrait designed banner — keep logo/face in frame on narrow hero + splash crops. */
 export const KLAUDETTES_KITCHEN_BANNER_MARKER = "klaudettes-kitchen-banner.jpg";
+/** Owner-uploaded Tom's Watch Bar billboards — blue logo sits high in the art. */
+export const TOMS_WATCH_BAR_BILLBOARD_MARKER = "restaurant-3684";
 
 function asUrl(postOrUrl) {
   return String(
@@ -66,6 +68,10 @@ export function resolveBillboardImageObjectPosition(postOrUrl, opts = {}) {
   if (url.includes(KLAUDETTES_KITCHEN_BANNER_MARKER)) {
     // Portrait marketing banner — mobile hero/splash are wide + short; anchor top so branding stays visible.
     return narrow ? "center top" : "center center";
+  }
+  if (url.includes(TOMS_WATCH_BAR_BILLBOARD_MARKER)) {
+    // Tom's entrance art — blue logo is above center; default cover crop hides it.
+    return "center top";
   }
   if (url.includes(IN_N_OUT_BUILDING_LANDSCAPE_MARKER.replace(".jpg", ""))) {
     // Landscape storefront — keep neon logo in frame on wide crops.

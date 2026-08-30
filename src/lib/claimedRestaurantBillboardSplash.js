@@ -182,3 +182,50 @@ export function resolveSplashDurationMs(post, { reducedMotion = false } = {}) {
   }
   return CLAIMED_BILLBOARD_SPLASH_MS;
 }
+
+/** Normalize venue/promo labels for duplicate detection. */
+export function normalizeBillboardLabel(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/\s+/g, " ");
+}
+
+/** True when owner-entered headline repeats the restaurant name on the splash. */
+export function isDuplicateRestaurantBillboardHeadline(restaurantName, headline) {
+  const venue = normalizeBillboardLabel(restaurantName);
+  const promo = normalizeBillboardLabel(headline);
+  return Boolean(venue && promo && venue === promo);
+}
+
+/**
+ * Raw owner-entered splash copy (before venue dedupe).
+ * @param {object|null|undefined} post
+ * @returns {string}
+ */
+export function resolveBillboardSplashRawHeadline(post) {
+  return String(post?.headline_override ?? post?.title ?? "").trim();
+}
+
+/**
+ * Large headline on entrance splash — venue name once (large), never small eyebrow + large duplicate.
+ * @param {object|null|undefined} post
+ * @param {string} [restaurantName]
+ * @returns {string}
+ */
+export function resolveBillboardSplashHeadline(post, restaurantName = "") {
+  const raw = resolveBillboardSplashRawHeadline(post);
+  if (!raw) return "";
+  if (isDuplicateRestaurantBillboardHeadline(restaurantName, raw)) {
+    return String(restaurantName || raw).trim();
+  }
+  return raw;
+}
+
+/** Small-caps venue eyebrow — only when a distinct promo headline follows in large type. */
+export function shouldShowBillboardSplashVenueEyebrow(post, restaurantName = "") {
+  const raw = resolveBillboardSplashRawHeadline(post);
+  if (!raw) return false;
+  return !isDuplicateRestaurantBillboardHeadline(restaurantName, raw);
+}
