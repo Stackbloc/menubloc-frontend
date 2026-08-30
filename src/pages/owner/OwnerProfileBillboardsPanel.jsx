@@ -81,7 +81,7 @@ function SplashBillboardEditor({ restaurantId, initial, onCancel, onSaved }) {
       return;
     }
     if (!initial?.id && !pendingPhoto && !imageUrl) {
-      setError("Upload a billboard graphic (PNG or JPG, max 5 MB).");
+      setError("Upload a billboard graphic (PNG, JPG, or WEBP, max 10 MB).");
       return;
     }
 
