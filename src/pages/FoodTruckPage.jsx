@@ -28,6 +28,7 @@ import ClaimedRestaurantBillboardSplash, {
   waitForBillboardSplashImage,
 } from "../components/restaurant/ClaimedRestaurantBillboardSplash.jsx";
 import { isActiveBillboardSplashPost } from "../lib/claimedRestaurantBillboardSplash.js";
+import { resolveBillboardMediaUrl } from "../lib/billboardMediaUrl.js";
 import { toConsumerErrorMessage, fetchRestaurantMenuPreview } from "../lib/api.js";
 import BottomNav from "../components/BottomNav.jsx";
 import { getDisplayMenuItemName } from "../utils/getDisplayMenuItemName.js";
@@ -1430,10 +1431,10 @@ export default function FoodTruckPage() {
   // Phase 1.5: active billboard image first, then cover/hero, then Menuply gradient (never fake food).
   const firstActiveBillboard = billboardPreview.find((p) => isActiveBillboardSplashPost(p));
   const firstBillboardImage =
-    String(firstActiveBillboard?.image_url || firstActiveBillboard?.photo_url || "").trim() || null;
+    resolveBillboardMediaUrl(firstActiveBillboard) || null;
   const bannerPhotoUrl =
     firstBillboardImage ||
-    profile?.hero_image_url ||
+    resolveBillboardMediaUrl(profile?.hero_image_url) ||
     profile?.cover_image_url ||
     profile?.banner_url ||
     null;

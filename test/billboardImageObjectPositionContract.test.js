@@ -51,7 +51,16 @@ test("In-N-Out building crops keep the neon logo in frame", () => {
     resolveBillboardImageObjectPosition({
       image_url: "https://menuply.com/billboards/klaudettes-kitchen-banner.jpg",
     }),
-    "center"
+    "center center"
+  );
+  assert.equal(
+    resolveBillboardImageObjectPosition(
+      {
+        image_url: "https://menuply.com/billboards/klaudettes-kitchen-banner.jpg",
+      },
+      { narrow: true }
+    ),
+    "center top"
   );
   assert.equal(
     resolveBillboardImageObjectPosition({
