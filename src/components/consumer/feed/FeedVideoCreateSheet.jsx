@@ -1,8 +1,8 @@
 /**
- * Feed center X — video post actions + Share My Menuply.
+ * Feed center X — record video by category, or upload library media by category.
  */
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { LIVE_FEED_CHANNELS, LIVE_FEED_FULL_CATEGORY_LABELS } from "../../../lib/liveFeedCategory.js";
 import { FEED_CONTENT_KINDS } from "../../../lib/feedContentKinds.js";
@@ -34,32 +34,54 @@ const VIDEO_ITEMS = LIVE_FEED_CHANNELS.filter((ch) =>
   testId: `feed-video-create-${ch.id}`,
 }));
 
+const UPLOAD_CATEGORY_ITEMS = VIDEO_ITEMS.map((item) => ({
+  ...item,
+  kind: "upload-category",
+  description:
+    item.id === FEED_CONTENT_KINDS.ATE
+      ? "Upload a video of what you're eating now"
+      : item.id === FEED_CONTENT_KINDS.REVIEWS
+        ? "Upload a video review of a specific menu item"
+        : "Upload a video of a dish or craving you want",
+  testId: `feed-upload-media-${item.id}`,
+}));
+
+export const FEED_UPLOAD_MEDIA_ITEM = {
+  id: "upload-media",
+  kind: "upload",
+  title: "Upload media",
+  description: "Choose a video from your library, then pick what it's for",
+  testId: "feed-x-upload-media",
+  guestOk: false,
+  guestDescription: "Create a free account to upload food videos",
+  guestTo: "/account/signup?next=%2Ffeed",
+};
+
 /** Flat X menu — exported for contract tests. */
-export const FEED_X_ITEMS = [
-  ...VIDEO_ITEMS,
-  {
-    id: "share-my-menuply",
-    kind: "share",
-    title: "Share My Menuply",
-    description: "Show your personal QR code — scan to connect on Menuply",
-    testId: "feed-x-share-my-menuply",
-    guestOk: false,
-    guestDescription: "Create a free account to get your personal Menuply link",
-    guestTo: "/account/signup?next=%2Ffeed",
-  },
-];
+export const FEED_X_ITEMS = [...VIDEO_ITEMS, FEED_UPLOAD_MEDIA_ITEM];
 
 export default function FeedVideoCreateSheet({
   open,
   onClose,
   onPickCategory,
-  onShareMyMenuply,
+  onPickUploadCategory,
   isAuthenticated = false,
 }) {
+  const [uploadStep, setUploadStep] = useState(false);
+
   useEffect(() => {
-    if (!open) return undefined;
+    if (!open) {
+      setUploadStep(false);
+      return undefined;
+    }
     function onKey(event) {
-      if (event.key === "Escape") onClose?.();
+      if (event.key === "Escape") {
+        if (uploadStep) {
+          setUploadStep(false);
+          return;
+        }
+        onClose?.();
+      }
     }
     window.addEventListener("keydown", onKey);
     const prev = document.body.style.overflow;
@@ -68,19 +90,35 @@ export default function FeedVideoCreateSheet({
       window.removeEventListener("keydown", onKey);
       document.body.style.overflow = prev;
     };
-  }, [open, onClose]);
+  }, [open, onClose, uploadStep]);
 
   if (!open || typeof document === "undefined") return null;
-
-  function handleShare(item) {
-    onClose?.();
-    onShareMyMenuply?.(item);
-  }
 
   function handleVideo(category) {
     onClose?.();
     onPickCategory?.(category);
   }
+
+  function handleUploadStart(item) {
+    if (!isAuthenticated) {
+      onClose?.();
+      onPickUploadCategory?.(null, { guestTo: item.guestTo });
+      return;
+    }
+    setUploadStep(true);
+  }
+
+  function handleUploadCategory(category) {
+    onClose?.();
+    setUploadStep(false);
+    onPickUploadCategory?.(category);
+  }
+
+  const items = uploadStep ? UPLOAD_CATEGORY_ITEMS : FEED_X_ITEMS;
+  const title = uploadStep ? "Upload media" : "Post to Feed";
+  const lead = uploadStep
+    ? "What is this video for?"
+    : null;
 
   return createPortal(
     <div
@@ -96,17 +134,31 @@ export default function FeedVideoCreateSheet({
         aria-modal="true"
         aria-labelledby="feed-video-create-title"
         style={styles.sheet}
+        data-upload-step={uploadStep ? "category" : "main"}
       >
         <div style={styles.head}>
+          {uploadStep ? (
+            <button
+              type="button"
+              onClick={() => setUploadStep(false)}
+              style={styles.back}
+              data-testid="feed-upload-media-back"
+            >
+              Back
+            </button>
+          ) : (
+            <span style={styles.headSpacer} aria-hidden />
+          )}
           <h2 id="feed-video-create-title" style={styles.title}>
-            Post to Feed
+            {title}
           </h2>
           <button type="button" onClick={() => onClose?.()} aria-label="Close" style={styles.close}>
             Close
           </button>
         </div>
+        {lead ? <p style={styles.lead}>{lead}</p> : null}
         <ul style={styles.list}>
-          {FEED_X_ITEMS.map((item) => (
+          {items.map((item) => (
             <li key={item.id}>
               <button
                 type="button"
@@ -117,8 +169,12 @@ export default function FeedVideoCreateSheet({
                     handleVideo(item.id);
                     return;
                   }
-                  if (item.kind === "share") {
-                    handleShare(item);
+                  if (item.kind === "upload") {
+                    handleUploadStart(item);
+                    return;
+                  }
+                  if (item.kind === "upload-category") {
+                    handleUploadCategory(item.id);
                   }
                 }}
               >
@@ -160,13 +216,23 @@ const styles = {
     fontFamily: "Inter, Arial, sans-serif",
   },
   head: {
-    display: "flex",
+    display: "grid",
+    gridTemplateColumns: "auto 1fr auto",
     alignItems: "center",
-    justifyContent: "space-between",
     gap: 12,
     marginBottom: 8,
   },
-  title: { margin: 0, fontSize: 18, fontWeight: 900, color: "#fff" },
+  headSpacer: { width: 44 },
+  title: { margin: 0, fontSize: 18, fontWeight: 900, color: "#fff", textAlign: "center" },
+  back: {
+    border: 0,
+    background: "transparent",
+    color: "#5eead4",
+    fontWeight: 700,
+    cursor: "pointer",
+    fontSize: 13,
+    padding: 0,
+  },
   close: {
     border: 0,
     background: "transparent",
@@ -174,6 +240,12 @@ const styles = {
     fontWeight: 700,
     cursor: "pointer",
     fontSize: 13,
+  },
+  lead: {
+    margin: "0 0 8px",
+    fontSize: 13,
+    color: "rgba(255,255,255,0.62)",
+    textAlign: "center",
   },
   list: { listStyle: "none", margin: 0, padding: 0 },
   action: {

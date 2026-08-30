@@ -48,6 +48,8 @@ test("Feed shell: Home|Connects|Menus|X|Deals|Shop|Profile + slim X sheet", () =
   const shell = read("src/pages/consumer/feed/FeedShellPage.jsx");
   assert.match(shell, /FeedVideoCreateSheet/);
   assert.match(shell, /FeedVideoComposeOverlay/);
+  assert.match(shell, /onPickUploadCategory/);
+  assert.match(shell, /composeOpenLibrary/);
   assert.match(shell, /\/account\/diner-qr\?next=/);
   assert.doesNotMatch(shell, /ShareModal/);
   assert.doesNotMatch(shell, /FeedDiaryComposeHost/);
@@ -59,7 +61,10 @@ test("Feed shell: Home|Connects|Menus|X|Deals|Shop|Profile + slim X sheet", () =
   assert.match(createSheet, /FEED_CONTENT_KINDS\.REVIEWS/);
   assert.match(createSheet, /Food Review/);
   assert.doesNotMatch(createSheet, /Post Food Review/);
-  assert.match(createSheet, /feed-x-share-my-menuply/);
+  assert.match(createSheet, /FEED_UPLOAD_MEDIA_ITEM/);
+  assert.match(createSheet, /feed-x-upload-media/);
+  assert.match(createSheet, /feed-upload-media-\$\{item\.id\}/);
+  assert.doesNotMatch(createSheet, /feed-x-share-my-menuply/);
   assert.doesNotMatch(createSheet, /feed-x-diary/);
   assert.doesNotMatch(createSheet, /feed-x-my-menuply/);
   assert.doesNotMatch(createSheet, /feed-x-create-account/);
@@ -161,8 +166,12 @@ test("Feed shell: Home|Connects|Menus|X|Deals|Shop|Profile + slim X sheet", () =
 
   const menusPage = read("src/pages/consumer/feed/FeedMenusPage.jsx");
   assert.match(menusPage, /My Menu Stack/);
-  assert.match(menusPage, /feed-menus-add-menu/);
-  assert.match(menusPage, /FEED_MENU_CAPTURE_PATH/);
+  assert.doesNotMatch(menusPage, /feed-menus-add-menu/);
+  assert.doesNotMatch(menusPage, /FEED_MENU_CAPTURE_PATH/);
+
+  const morePanel = read("src/components/consumer/feed/FeedMorePanel.jsx");
+  assert.match(morePanel, /feed-more-add-menu/);
+  assert.match(morePanel, /FeedMenuCaptureCameraIcon/);
 
   const reel = read("src/pages/consumer/myMenuply/SeeWhosEatingFullscreen.jsx");
   assert.match(reel, /see-whos-eating-menu-bookmark/);

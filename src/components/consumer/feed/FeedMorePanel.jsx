@@ -4,7 +4,25 @@
 
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
-import { FEED_DESKTOP_RAIL_WIDTH, resolveFeedMoreSections } from "../../../lib/feedShellLinks.js";
+import FeedMenuCaptureCameraIcon from "./FeedMenuCaptureCameraIcon.jsx";
+import { FEED_DESKTOP_RAIL_WIDTH, FEED_MENU_CAPTURE_HINT, resolveFeedMoreSections } from "../../../lib/feedShellLinks.js";
+
+function FeedMoreLink({ link, onClose }) {
+  const showMenuCaptureIcon = link.testId === "feed-more-add-menu";
+  return (
+    <Link
+      to={link.to}
+      style={showMenuCaptureIcon ? styles.linkWithIcon : styles.link}
+      data-testid={link.testId}
+      title={showMenuCaptureIcon ? FEED_MENU_CAPTURE_HINT : undefined}
+      aria-label={showMenuCaptureIcon ? FEED_MENU_CAPTURE_HINT : undefined}
+      onClick={onClose}
+    >
+      {showMenuCaptureIcon ? <FeedMenuCaptureCameraIcon size={18} color="#5eead4" /> : null}
+      {link.label}
+    </Link>
+  );
+}
 
 export default function FeedMorePanel({ open, onClose, isAuthenticated = false, isDesktop = false }) {
   const sections = resolveFeedMoreSections({ isAuthenticated });
@@ -56,14 +74,7 @@ export default function FeedMorePanel({ open, onClose, isAuthenticated = false, 
                       <ul style={styles.list}>
                         {group.links.map((link) => (
                           <li key={link.to} style={styles.item}>
-                            <Link
-                              to={link.to}
-                              style={styles.link}
-                              data-testid={link.testId}
-                              onClick={onClose}
-                            >
-                              {link.label}
-                            </Link>
+                            <FeedMoreLink link={link} onClose={onClose} />
                           </li>
                         ))}
                       </ul>
@@ -73,14 +84,7 @@ export default function FeedMorePanel({ open, onClose, isAuthenticated = false, 
                     <ul style={styles.list}>
                       {(section.links || []).map((link) => (
                         <li key={link.to} style={styles.item}>
-                          <Link
-                            to={link.to}
-                            style={styles.link}
-                            data-testid={link.testId}
-                            onClick={onClose}
-                          >
-                            {link.label}
-                          </Link>
+                          <FeedMoreLink link={link} onClose={onClose} />
                         </li>
                       ))}
                     </ul>
@@ -187,6 +191,17 @@ const styles = {
   },
   link: {
     display: "block",
+    padding: "12px 10px",
+    borderRadius: 10,
+    textDecoration: "none",
+    color: "#e8f0ec",
+    fontSize: 15,
+    fontWeight: 650,
+  },
+  linkWithIcon: {
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
     padding: "12px 10px",
     borderRadius: 10,
     textDecoration: "none",

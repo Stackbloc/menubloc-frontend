@@ -23,7 +23,13 @@ function resolveMarket() {
   return { city: "Los Angeles", state: "CA" };
 }
 
-export default function FeedVideoComposeOverlay({ open, category = "ate", onClose }) {
+export default function FeedVideoComposeOverlay({
+  open,
+  category = "ate",
+  mediaSource = "camera",
+  openLibraryOnMount = false,
+  onClose,
+}) {
   const navigate = useNavigate();
   const { isAuthenticated } = useConsumer();
   const [busy, setBusy] = useState(false);
@@ -65,8 +71,8 @@ export default function FeedVideoComposeOverlay({ open, category = "ate", onClos
           if (!busy) onClose?.();
         }}
         defaultCategory={category}
-        mediaSource="camera"
-        openLibraryOnMount={false}
+        mediaSource={mediaSource}
+        openLibraryOnMount={openLibraryOnMount}
         busy={busy}
         feedMode
         onSubmit={handleSubmit}

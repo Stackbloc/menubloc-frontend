@@ -25,6 +25,8 @@ export default function FeedShellPage({ children = null }) {
   const showShopBasket = isFeedShopRoute(location.pathname);
   const [createSheetOpen, setCreateSheetOpen] = useState(false);
   const [composeCategory, setComposeCategory] = useState("");
+  const [composeMediaSource, setComposeMediaSource] = useState("camera");
+  const [composeOpenLibrary, setComposeOpenLibrary] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
 
   useEffect(() => {
@@ -56,11 +58,31 @@ export default function FeedShellPage({ children = null }) {
       navigate(`/account/login?next=${encodeURIComponent("/feed")}`);
       return;
     }
+    setComposeMediaSource("camera");
+    setComposeOpenLibrary(false);
+    setComposeCategory(category);
+  }
+
+  function handlePickUploadCategory(category, options = {}) {
+    closeCreateSheet();
+    if (!category) {
+      const guestPath = decodeURIComponent(String(options?.guestTo || "/account/signup?next=%2Ffeed"));
+      navigate(guestPath.startsWith("/") ? guestPath : `/${guestPath}`);
+      return;
+    }
+    if (!isAuthenticated) {
+      navigate(`/account/login?next=${encodeURIComponent("/feed")}`);
+      return;
+    }
+    setComposeMediaSource("library");
+    setComposeOpenLibrary(true);
     setComposeCategory(category);
   }
 
   function closeCompose() {
     setComposeCategory("");
+    setComposeMediaSource("camera");
+    setComposeOpenLibrary(false);
   }
 
   function handleShareMyMenuply(item) {
@@ -121,12 +143,14 @@ export default function FeedShellPage({ children = null }) {
         open={createSheetOpen}
         onClose={closeCreateSheet}
         onPickCategory={handlePickCategory}
-        onShareMyMenuply={handleShareMyMenuply}
+        onPickUploadCategory={handlePickUploadCategory}
         isAuthenticated={isAuthenticated}
       />
       <FeedVideoComposeOverlay
         open={Boolean(composeCategory)}
         category={composeCategory}
+        mediaSource={composeMediaSource}
+        openLibraryOnMount={composeOpenLibrary}
         onClose={closeCompose}
       />
     </div>
