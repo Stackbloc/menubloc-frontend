@@ -7,7 +7,12 @@ export default function DinerStatsBar({ stats = [], selectedId = "", onSelect })
   if (!rows.length) return null;
 
   return (
-    <div style={s.statsBar} data-testid="diner-stats-bar" role="tablist" aria-label="My Menuply libraries">
+    <div
+      style={{ ...s.statsBar, gridTemplateColumns: `repeat(${rows.length}, minmax(0, 1fr))` }}
+      data-testid="diner-stats-bar"
+      role="tablist"
+      aria-label="My Menuply libraries"
+    >
       {rows.map((row, index) => {
         const id = row.id || String(row.label || "").toLowerCase();
         const selected = selectedId === id;

@@ -3140,7 +3140,7 @@ export default function GrubbidSearchResults({ embedInFeedShell = false } = {}) 
             checked={include_homemade}
             onChange={toggleIncludeHomemade}
           />
-          Include Homemade
+          Include DIY recipes
         </label>
       ) : null}
 
@@ -3356,7 +3356,7 @@ export default function GrubbidSearchResults({ embedInFeedShell = false } = {}) 
       ) : null}
 
       {!loading && !err && include_homemade && homemadeDishes.length === 0 && q ? (
-        <StatusMessage tone="muted">No homemade dishes match this search yet.</StatusMessage>
+        <StatusMessage tone="muted">No DIY recipes match this search yet.</StatusMessage>
       ) : null}
 
       {/* Load More — search pagination */}

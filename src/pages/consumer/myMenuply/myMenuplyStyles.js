@@ -293,14 +293,16 @@ export const presentationBlock = {
 
 export const statsBar = {
   display: "grid",
-  gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+  gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
   gap: 0,
   margin: "16px 0 0",
-  padding: "14px 8px",
+  padding: "12px 4px",
   borderRadius: 16,
   background: "linear-gradient(180deg, #ffffff 0%, #f0fdf4 100%)",
   border: `1px solid ${BORDER}`,
   boxShadow: "0 4px 16px rgba(20, 83, 45, 0.08)",
+  width: "100%",
+  boxSizing: "border-box",
 };
 
 export const statsCell = {
@@ -309,7 +311,8 @@ export const statsCell = {
   alignItems: "center",
   gap: 2,
   textAlign: "center",
-  padding: "0 4px",
+  padding: "0 2px",
+  minWidth: 0,
 };
 
 export const statsCellDivider = {
@@ -330,7 +333,7 @@ export const statsCellSelected = {
 };
 
 export const statsValue = {
-  fontSize: 20,
+  fontSize: "clamp(16px, 4.2vw, 20px)",
   fontWeight: 800,
   letterSpacing: "-0.03em",
   color: "#14532d",
@@ -338,12 +341,16 @@ export const statsValue = {
 };
 
 export const statsLabel = {
-  fontSize: 10,
+  fontSize: "clamp(8px, 2.1vw, 10px)",
   fontWeight: 700,
-  letterSpacing: "0.04em",
+  letterSpacing: "0.02em",
   textTransform: "uppercase",
   color: MUTED,
-  lineHeight: 1.2,
+  lineHeight: 1.15,
+  whiteSpace: "nowrap",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  maxWidth: "100%",
 };
 
 export const displaySectionTitle = {

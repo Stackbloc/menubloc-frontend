@@ -5,6 +5,7 @@ import * as s from "./monthInFoodStyles.js";
 
 const ICONS = {
   fork: "🍽️",
+  home: "🏠",
   store: "🏪",
   camera: "📷",
   people: "👥",

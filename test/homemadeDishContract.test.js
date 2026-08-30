@@ -13,11 +13,20 @@ test("homemade dish routes exist in App", () => {
   assert.match(app, /\/homemade-dishes\/:id/);
 });
 
-test("search UI has Include Homemade toggle", () => {
+test("search UI has Include DIY recipes toggle", () => {
   const search = fs.readFileSync(path.join(root, "src/pages/GrubbidSearchResults.jsx"), "utf8");
   assert.match(search, /include_homemade/);
-  assert.match(search, /Include Homemade/);
+  assert.match(search, /Include DIY recipes/);
   assert.match(search, /HomemadeDishSearchCard/);
+});
+
+test("month in food model includes Home stat from homemade_dishes_count", () => {
+  const model = fs.readFileSync(
+    path.join(root, "src/pages/consumer/monthInFood/buildMonthInFoodModel.js"),
+    "utf8"
+  );
+  assert.match(model, /homemade_dishes_count/);
+  assert.match(model, /label: "Home"/);
 });
 
 test("menu item detail wires Show Me How to Make It", () => {
@@ -29,12 +38,4 @@ test("homemade API helpers use consumer routes", () => {
   const api = fs.readFileSync(path.join(root, "src/lib/homemadeDishApi.js"), "utf8");
   assert.match(api, /\/api\/consumer\/homemade-dishes/);
   assert.match(api, /menuply\.com/);
-});
-
-test("month in food model reads homemade_dishes_count", () => {
-  const model = fs.readFileSync(
-    path.join(root, "src/pages/consumer/monthInFood/buildMonthInFoodModel.js"),
-    "utf8"
-  );
-  assert.match(model, /homemade_dishes_count/);
 });

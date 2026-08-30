@@ -122,9 +122,7 @@ export function buildMonthInFoodModel(payload = {}) {
   const stats = [];
   if (diaryVisible) {
     stats.push({ id: "meals", label: "Meals Logged", value: mealsLogged, icon: "fork" });
-    if (homemadeDishesCount > 0) {
-      stats.push({ id: "homemade", label: "Homemade Made", value: homemadeDishesCount, icon: "flame" });
-    }
+    stats.push({ id: "home", label: "Home", value: homemadeDishesCount, icon: "home" });
     if (Number.isFinite(restaurantDishesCount) && restaurantDishesCount > 0) {
       stats.push({ id: "restaurant_ate", label: "Restaurant Dishes", value: restaurantDishesCount, icon: "store" });
     } else {
