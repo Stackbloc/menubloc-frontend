@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import StickyPageHeader from "../../components/StickyPageHeader.jsx";
-import BottomNav from "../../components/BottomNav.jsx";
-import ShareButton from "../../components/share/ShareButton.jsx";
+import StickyPageHeader from "../components/StickyPageHeader.jsx";
+import BottomNav from "../components/BottomNav.jsx";
+import ShareButton from "../components/share/ShareButton.jsx";
 import {
   fetchHomemadeDish,
   likeHomemadeDish,
@@ -12,10 +12,10 @@ import {
   listHomemadeDishComments,
   postHomemadeDishComment,
   buildHomemadeDishShareData,
-} from "../../lib/homemadeDishApi.js";
-import { useConsumer } from "../../context/ConsumerContext.jsx";
-import { captureEvent } from "../../services/posthog.js";
-import { API_BASE } from "../../lib/api.js";
+} from "../lib/homemadeDishApi.js";
+import { useConsumer } from "../context/ConsumerContext.jsx";
+import { captureEvent } from "../services/posthog.js";
+import { API_BASE } from "../lib/api.js";
 
 const BACKEND_BASE = String(API_BASE || "").replace(/\/$/, "");
 
