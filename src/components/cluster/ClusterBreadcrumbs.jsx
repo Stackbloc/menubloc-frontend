@@ -8,6 +8,8 @@ import {
   toCitySlug,
   toStateSlug,
 } from "../../lib/clusterUrl.js";
+import { resolveClusterSlug } from "../../lib/clusterSlugAliases.js";
+import { resolveClusterDisplayName } from "../../lib/clusterSeoContent.js";
 
 function CrumbList({ crumbs }) {
   return (
@@ -58,7 +60,7 @@ export default function ClusterBreadcrumbs({ cluster }) {
   const stateSlug = toStateSlug(cluster.state);
   const citySlug = toCitySlug(cluster.city);
   const stateLabel = stateDisplayName(cluster.state);
-  const clusterLabel = cluster.area_name || cluster.name;
+  const clusterLabel = resolveClusterDisplayName(cluster);
   const cityPath = clusterCityPath({ state: cluster.state, city: cluster.city });
 
   const crumbs = [
@@ -95,7 +97,7 @@ export function clusterBreadcrumbHref(cluster) {
     clusterPath({
       state: cluster.state,
       city: cluster.city,
-      slug: cluster.slug,
+      slug: resolveClusterSlug(cluster.slug),
     }) || null
   );
 }

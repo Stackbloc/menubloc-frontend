@@ -6,6 +6,8 @@ import {
   clusterPath,
   clusterVerificationBadge,
 } from "../../lib/clusterUrl.js";
+import { resolveClusterSlug } from "../../lib/clusterSlugAliases.js";
+import { resolveClusterDisplayName } from "../../lib/clusterSeoContent.js";
 
 export default function RestaurantClusterLinks({ clusters, linkColor = "#1d4ed8" }) {
   if (!Array.isArray(clusters) || clusters.length === 0) return null;
@@ -16,11 +18,11 @@ export default function RestaurantClusterLinks({ clusters, linkColor = "#1d4ed8"
         const href = clusterPath({
           state: cluster.state,
           city: cluster.city,
-          slug: cluster.slug,
+          slug: resolveClusterSlug(cluster.slug),
         });
         if (!href) return null;
 
-        const label = cluster.area_name || cluster.name;
+        const label = resolveClusterDisplayName(cluster);
         const heading = clusterMembershipHeading(cluster.type);
 
         return (

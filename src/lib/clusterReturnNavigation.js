@@ -1,5 +1,7 @@
 import { clusterPath } from "./clusterUrl.js";
 import { clusterCityPath } from "./clusterUrl.js";
+import { resolveClusterSlug } from "./clusterSlugAliases.js";
+import { resolveClusterDisplayName } from "./clusterSeoContent.js";
 
 export const CLUSTER_FROM = "cluster";
 export const CLUSTER_CITY_FROM = "cluster_city";
@@ -10,7 +12,7 @@ export function buildClusterReturnPath(cluster = {}, { view = "menu" } = {}) {
   const path = clusterPath({
     state: cluster.state,
     city: cluster.city,
-    slug: cluster.slug,
+    slug: resolveClusterSlug(cluster.slug),
   });
   if (!path) return "/clusters";
   const normalizedView = String(view || "").trim().toLowerCase();
@@ -39,7 +41,7 @@ export function isSinglePlaceReturn(returnNavigation) {
 }
 
 export function clusterReturnLabel(cluster = {}) {
-  return cluster.area_name || cluster.name || "destination";
+  return resolveClusterDisplayName(cluster) || "destination";
 }
 
 export function appendClusterReturnQuery(path, returnTo, label, { from = CLUSTER_FROM } = {}) {

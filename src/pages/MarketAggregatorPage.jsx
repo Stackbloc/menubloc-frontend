@@ -5,6 +5,8 @@ import { parseCityStateSlug } from "../lib/cityStateSlug";
 import { restaurantMenuPathFromRow, restaurantPathFromRow } from "../lib/canonicalUrl.js";
 import { fetchClustersDirectory } from "../lib/clusterApi.js";
 import { clusterPath } from "../lib/clusterUrl.js";
+import { resolveClusterSlug } from "../lib/clusterSlugAliases.js";
+import { resolveClusterDisplayName } from "../lib/clusterSeoContent.js";
 import { resolveMarketIntro } from "../lib/marketIntroContent.js";
 
 const CANONICAL_BASE = "https://menuply.com";
@@ -190,15 +192,16 @@ export default function MarketAggregatorPage() {
           </h2>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
             {clusters.map((cluster) => {
+              const canonicalSlug = resolveClusterSlug(cluster.slug);
               const href = clusterPath({
                 state: cluster.state,
                 city: cluster.city,
-                slug: cluster.slug,
+                slug: canonicalSlug,
               });
               if (!href) return null;
               return (
                 <Link
-                  key={cluster.slug}
+                  key={canonicalSlug || cluster.id}
                   to={href}
                   style={{
                     border: "1px solid #d1d5db",
@@ -211,7 +214,7 @@ export default function MarketAggregatorPage() {
                     background: "#fff",
                   }}
                 >
-                  {cluster.area_name || cluster.name}
+                  {resolveClusterDisplayName(cluster)}
                 </Link>
               );
             })}

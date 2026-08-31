@@ -8,6 +8,7 @@ import {
   resolveClusterSearchPlaceholder,
   resolveClusterDocumentMeta,
   resolveClusterCardDescription,
+  resolveClusterDisplayName,
   assertPublicClusterSeoCoverage,
 } from "../src/lib/clusterSeoContent.js";
 import { CLUSTER_ARRIVAL_TAGLINE } from "../src/lib/clusterUrl.js";
@@ -105,6 +106,20 @@ test("card description prefers SEO cardDescription", () => {
     short_description: "Old short description",
   });
   assert.equal(card, CLUSTER_SEO_CONTENT.usc.cardDescription);
+});
+
+test("resolveClusterDisplayName and SEO lookup honor legacy slug aliases", () => {
+  const legacy = {
+    slug: "coachella-2027",
+    name: "Coachella 2027",
+    area_name: "Coachella Valley Music and Arts Festival",
+  };
+  assert.equal(resolveClusterDisplayName(legacy), "Indio Festival Grounds");
+  assert.equal(getClusterSeoContent("coachella-2027")?.displayName, "Indio Festival Grounds");
+  assert.equal(
+    resolveClusterCardDescription(legacy),
+    CLUSTER_SEO_CONTENT["indio-festival-grounds"].cardDescription,
+  );
 });
 
 test("assertPublicClusterSeoCoverage fails when a required slug is missing", () => {

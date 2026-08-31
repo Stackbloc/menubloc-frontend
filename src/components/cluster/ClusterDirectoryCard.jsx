@@ -2,7 +2,11 @@ import React from "react";
 import { Link } from "react-router-dom";
 import ClusterCityStarterChecklist from "./ClusterCityStarterChecklist.jsx";
 import { clusterPath, clusterTypeLabel, clusterVerificationBadge } from "../../lib/clusterUrl.js";
-import { resolveClusterCardDescription } from "../../lib/clusterSeoContent.js";
+import { resolveClusterSlug } from "../../lib/clusterSlugAliases.js";
+import {
+  resolveClusterCardDescription,
+  resolveClusterDisplayName,
+} from "../../lib/clusterSeoContent.js";
 
 export const CLUSTER_DIRECTORY_GRID_STYLE = {
   display: "grid",
@@ -54,10 +58,10 @@ export default function ClusterDirectoryCard({
   const href = clusterPath({
     state: cluster.state,
     city: cluster.city,
-    slug: cluster.slug,
+    slug: resolveClusterSlug(cluster.slug),
   });
 
-  const title = cluster.area_name || cluster.name;
+  const title = resolveClusterDisplayName(cluster);
   const typeLabel = clusterTypeLabel(cluster.type);
   const resolvedAccent = accent || DEFAULT_ACCENT;
   const verification = statusLabel || clusterVerificationBadge(cluster.verification_level);

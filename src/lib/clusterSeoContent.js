@@ -8,6 +8,8 @@
  * so copy can ship without production data updates.
  */
 
+import { resolveClusterSlug } from "./clusterSlugAliases.js";
+
 /** @typedef {"airport"|"university"|"stadium"|"entertainment_complex"|"convention_district"|"downtown"|"other"} ClusterSeoType */
 
 /**
@@ -189,9 +191,21 @@ function asSlug(value) {
  * @returns {ClusterSeoEntry|null}
  */
 export function getClusterSeoContent(slug) {
-  const key = asSlug(slug);
+  const key = asSlug(resolveClusterSlug(slug));
   if (!key) return null;
   return CLUSTER_SEO_CONTENT[key] || null;
+}
+
+/**
+ * Consumer-facing cluster title: SEO displayName → area_name → name.
+ * @param {object|null|undefined} cluster
+ * @returns {string}
+ */
+export function resolveClusterDisplayName(cluster) {
+  if (!cluster) return "";
+  const seo = getClusterSeoContent(cluster.slug);
+  if (seo?.displayName) return seo.displayName;
+  return String(cluster.area_name || cluster.name || "").trim();
 }
 
 /**
