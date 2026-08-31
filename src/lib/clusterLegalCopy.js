@@ -4,7 +4,7 @@
  * Document title/description prefer clusterSeoContent when the slug is configured.
  */
 
-import { resolveClusterDocumentMeta } from "./clusterSeoContent.js";
+import { getClusterSeoContent, resolveClusterDocumentMeta } from "./clusterSeoContent.js";
 
 const DEFAULT_DISCLAIMER =
   "Menuply is an independent menu discovery platform and is not affiliated with, endorsed by, or sponsored by any venue, university, property owner, restaurant, or organization shown unless expressly stated.";
@@ -37,11 +37,14 @@ export function getClusterDisclaimer(cluster = {}) {
 }
 
 export function getClusterPageHeading(cluster = {}) {
-  return asText(cluster.page_heading) || pickAreaName(cluster);
+  const seo = getClusterSeoContent(cluster?.slug);
+  if (seo?.displayName) return `${seo.displayName} area dining options`;
+  return asText(cluster.page_heading) || `${pickAreaName(cluster)} area dining options`;
 }
 
 export function getClusterProductTitle(cluster = {}) {
-  const area = asText(cluster.area_name) || pickAreaName(cluster);
+  const seo = getClusterSeoContent(cluster?.slug);
+  const area = seo?.displayName || asText(cluster.area_name) || pickAreaName(cluster);
   if (!area || area === "this area") return "Cluster";
   return `${area} Cluster`;
 }
