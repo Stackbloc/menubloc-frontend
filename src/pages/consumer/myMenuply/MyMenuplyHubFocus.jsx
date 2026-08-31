@@ -1,5 +1,5 @@
 /**
- * Selected My Menuply library: Connects, Restaurants, Dishes, Home, or Events.
+ * Selected My Menuply library: Connects, Restaurants, Dishes, or Events.
  */
 
 import { Link } from "react-router-dom";
@@ -35,8 +35,9 @@ export default function MyMenuplyHubFocus({
         <ConnectsList connections={connections} viewerUserId={viewerUserId} />
       ) : null}
       {focusId === "restaurants" ? <RestaurantsList followed={followed} /> : null}
-      {focusId === "dishes" ? <DishesList liked={liked} eating={eating} /> : null}
-      {focusId === "home" ? <HomeList homeDishes={homeDishes} /> : null}
+      {focusId === "dishes" ? (
+        <DishesList liked={liked} eating={eating} homeDishes={homeDishes} />
+      ) : null}
       {focusId === "events" ? <EventsList events={events} eventGroups={eventGroups} /> : null}
     </div>
   );
@@ -112,7 +113,7 @@ function RestaurantsList({ followed }) {
   );
 }
 
-function DishesList({ liked, eating }) {
+function DishesList({ liked, eating, homeDishes = [] }) {
   const fromLikes = (liked || []).map((row) => ({
     key: `like-${row.menu_item_id}`,
     label: row.item_name || "Dish",
@@ -125,11 +126,20 @@ function DishesList({ liked, eating }) {
     .map((row) => ({
       key: `eat-${row.entry_id || row.id}`,
       label: row.food_name || row.item_name || "Food",
-      sub: row.restaurant_name || (String(row.comment || "").startsWith("Homemade") ? "Homemade" : ""),
+      sub: row.restaurant_name || (String(row.comment || "").startsWith("Homemade") ? "Home" : ""),
       href: foodHref(row),
     }));
+  const fromHome = (homeDishes || []).map((dish) => {
+    const id = dish?.id || dish?.homemade_dish_id;
+    return {
+      key: `home-${id || dish?.name}`,
+      label: dish?.name || "Home dish",
+      sub: "Home",
+      href: id ? homemadeDishPath(id) : null,
+    };
+  });
   const seen = new Set();
-  const rows = [...fromLikes, ...fromDiary].filter((row) => {
+  const rows = [...fromLikes, ...fromDiary, ...fromHome].filter((row) => {
     const k = `${row.label}|${row.sub}`;
     if (seen.has(k)) return false;
     seen.add(k);
@@ -139,7 +149,7 @@ function DishesList({ liked, eating }) {
     return (
       <>
         <h3 style={s.displaySectionTitle}>Dishes</h3>
-        <p style={s.muted}>Saved and logged dishes will show here.</p>
+        <p style={s.muted}>Restaurant and home-cooked dishes you save or log will show here.</p>
       </>
     );
   }
@@ -162,53 +172,6 @@ function DishesList({ liked, eating }) {
             )}
           </li>
         ))}
-      </ul>
-    </>
-  );
-}
-
-function HomeList({ homeDishes }) {
-  const rows = homeDishes || [];
-  if (!rows.length) {
-    return (
-      <>
-        <h3 style={s.displaySectionTitle}>Home</h3>
-        <p style={s.muted}>
-          Home-cooked dishes you create or tag when you eat or plan will show here.
-        </p>
-      </>
-    );
-  }
-  return (
-    <>
-      <h3 style={s.displaySectionTitle}>Home</h3>
-      <ul style={styles.list}>
-        {rows.map((dish) => {
-          const id = dish?.id || dish?.homemade_dish_id;
-          const name = dish?.name || "Home dish";
-          const meta =
-            dish?.servings != null && Number(dish.servings) > 0
-              ? `${dish.servings} servings`
-              : "Open";
-          if (!id) {
-            return (
-              <li key={name}>
-                <div style={styles.row}>
-                  <span style={styles.name}>{name}</span>
-                  <span style={styles.meta}>{meta}</span>
-                </div>
-              </li>
-            );
-          }
-          return (
-            <li key={id}>
-              <Link to={homemadeDishPath(id)} style={styles.row}>
-                <span style={styles.name}>{name}</span>
-                <span style={styles.meta}>{meta}</span>
-              </Link>
-            </li>
-          );
-        })}
       </ul>
     </>
   );

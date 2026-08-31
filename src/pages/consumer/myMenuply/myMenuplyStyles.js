@@ -293,7 +293,7 @@ export const presentationBlock = {
 
 export const statsBar = {
   display: "grid",
-  gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
+  gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
   gap: 0,
   margin: "16px 0 0",
   padding: "12px 4px",

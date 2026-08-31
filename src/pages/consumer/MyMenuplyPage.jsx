@@ -406,7 +406,9 @@ export default function MyMenuplyPage() {
       }, 120);
       return () => window.clearTimeout(timer);
     }
-    if (["connects", "restaurants", "dishes", "home", "events"].includes(focus)) {
+    if (focus === "home") {
+      setHubFocus("dishes");
+    } else if (["connects", "restaurants", "dishes", "events"].includes(focus)) {
       setHubFocus(focus);
     }
     if (focus === "want") {

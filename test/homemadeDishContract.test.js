@@ -20,13 +20,14 @@ test("search UI has Include DIY recipes toggle", () => {
   assert.match(search, /HomemadeDishSearchCard/);
 });
 
-test("month in food model includes Home stat from homemade_dishes_count", () => {
+test("month in food model merges homemade into Dishes stat", () => {
   const model = fs.readFileSync(
     path.join(root, "src/pages/consumer/monthInFood/buildMonthInFoodModel.js"),
     "utf8"
   );
   assert.match(model, /homemade_dishes_count/);
-  assert.match(model, /label: "Home"/);
+  assert.match(model, /label: "Dishes"/);
+  assert.doesNotMatch(model, /label: "Home"/);
 });
 
 test("menu item detail wires Show Me How to Make It", () => {

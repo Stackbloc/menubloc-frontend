@@ -107,7 +107,8 @@ test("buildMonthInFoodModel empty month hides cuisine and mood", () => {
   assert.deepEqual(model.cuisineSlices, []);
   assert.equal(model.showEmptyHint, true);
   assert.ok(model.stats.some((s) => s.id === "meals" && s.value === 0));
-  assert.ok(model.stats.some((s) => s.id === "home" && s.value === 0));
+  assert.ok(model.stats.some((s) => s.id === "dishes" && s.value === 0));
+  assert.ok(!model.stats.some((s) => s.id === "home"));
 });
 
 test("buildMonthInFoodModel hides cuisine chart with single cuisine", () => {

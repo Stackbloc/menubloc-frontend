@@ -125,6 +125,27 @@ export function buildWantSuggestions(liked = [], limit = 8) {
   }));
 }
 
+/** Count unique restaurant + home-cooked dishes on the profile. */
+export function countProfileDishes({ liked = [], eating = [], homeDishes = [] }) {
+  const keys = new Set();
+  for (const row of liked || []) {
+    if (row.menu_item_id) keys.add(`mi-${row.menu_item_id}`);
+    else if (row.item_name) keys.add(`like-${String(row.item_name).toLowerCase()}`);
+  }
+  for (const row of eating || []) {
+    if (row.menu_item_id) keys.add(`mi-${row.menu_item_id}`);
+    else {
+      const name = row.food_name || row.item_name;
+      if (name) keys.add(`eat-${String(name).toLowerCase()}`);
+    }
+  }
+  for (const dish of homeDishes || []) {
+    const id = dish?.id || dish?.homemade_dish_id;
+    keys.add(id ? `hd-${id}` : `hd-${String(dish?.name || "").toLowerCase()}`);
+  }
+  return keys.size;
+}
+
 export function buildDinerStats({
   connections = [],
   followed = [],
@@ -137,12 +158,11 @@ export function buildDinerStats({
 }) {
   const eventCount =
     (events?.length || 0) + (eventGroups?.length || 0) + (socialEvents?.length || 0);
-  const dishCount = Math.max((liked?.length || 0), (eating?.length || 0));
+  const dishCount = countProfileDishes({ liked, eating, homeDishes });
   return [
     { id: "connects", label: "Connects", value: connections.length },
     { id: "restaurants", label: "Restaurants", value: followed.length },
     { id: "dishes", label: "Dishes", value: dishCount },
-    { id: "home", label: "Home", value: homeDishes.length },
     { id: "events", label: "Events", value: eventCount },
   ];
 }

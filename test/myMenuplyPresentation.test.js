@@ -113,8 +113,8 @@ test("buildWantSuggestions and stats helpers", () => {
   });
   assert.deepEqual(
     stats.map((row) => row.label),
-    ["Connects", "Restaurants", "Dishes", "Home", "Events"]
+    ["Connects", "Restaurants", "Dishes", "Events"]
   );
-  assert.deepEqual(stats.map((row) => row.id), ["connects", "restaurants", "dishes", "home", "events"]);
-  assert.deepEqual(stats.map((row) => row.value), [1, 2, 1, 1, 1]);
+  assert.deepEqual(stats.map((row) => row.id), ["connects", "restaurants", "dishes", "events"]);
+  assert.deepEqual(stats.map((row) => row.value), [1, 2, 2, 1]);
 });

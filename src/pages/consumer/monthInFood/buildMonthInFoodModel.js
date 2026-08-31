@@ -121,13 +121,11 @@ export function buildMonthInFoodModel(payload = {}) {
 
   const stats = [];
   if (diaryVisible) {
+    const restaurantDishMeals = Number.isFinite(restaurantDishesCount) ? restaurantDishesCount : 0;
+    const dishesCount = restaurantDishMeals + homemadeDishesCount;
     stats.push({ id: "meals", label: "Meals Logged", value: mealsLogged, icon: "fork" });
-    stats.push({ id: "home", label: "Home", value: homemadeDishesCount, icon: "home" });
-    if (Number.isFinite(restaurantDishesCount) && restaurantDishesCount > 0) {
-      stats.push({ id: "restaurant_ate", label: "Restaurant Dishes", value: restaurantDishesCount, icon: "store" });
-    } else {
-      stats.push({ id: "restaurants", label: "Restaurants", value: restaurantIds.size, icon: "store" });
-    }
+    stats.push({ id: "dishes", label: "Dishes", value: dishesCount, icon: "dishes" });
+    stats.push({ id: "restaurants", label: "Restaurants", value: restaurantIds.size, icon: "store" });
     stats.push({ id: "media", label: "Photos & Videos", value: mediaMealCount, icon: "camera" });
     if (momentsShared > 0) {
       stats.push({ id: "moments", label: "Moments Shared", value: momentsShared, icon: "people" });
