@@ -15,12 +15,6 @@ export const IN_N_OUT_BUILDING_SPLASH_MARKER = "in-n-out-building-splash.jpg";
 export const KLAUDETTES_KITCHEN_BANNER_MARKER = "klaudettes-kitchen-banner.jpg";
 /** Owner-uploaded Tom's Watch Bar billboards — blue logo sits high in the art. */
 export const TOMS_WATCH_BAR_BILLBOARD_MARKER = "restaurant-3684";
-/** Durable Tom's LA Live brand banner on menuply.com. */
-export const TOMS_WATCH_BAR_BANNER_MARKER = "toms-watch-bar-banner";
-/** Fixins LA Live brand banner (wide logo art). */
-export const FIXINS_SOUL_KITCHEN_BANNER_MARKER = "fixins-soul-kitchen-banner";
-/** Emmy Squared LA Live brand banner. */
-export const EMMY_SQUARED_BANNER_MARKER = "emmy-squared-pizza-banner";
 
 function asUrl(postOrUrl) {
   return String(
@@ -75,15 +69,9 @@ export function resolveBillboardImageObjectPosition(postOrUrl, opts = {}) {
     // Portrait marketing banner — mobile hero/splash are wide + short; anchor top so branding stays visible.
     return narrow ? "center top" : "center center";
   }
-  if (url.includes(TOMS_WATCH_BAR_BILLBOARD_MARKER) || url.includes(TOMS_WATCH_BAR_BANNER_MARKER)) {
+  if (url.includes(TOMS_WATCH_BAR_BILLBOARD_MARKER)) {
     // Tom's entrance art — blue logo is above center; default cover crop hides it.
     return "center top";
-  }
-  if (url.includes(FIXINS_SOUL_KITCHEN_BANNER_MARKER)) {
-    return "center top";
-  }
-  if (url.includes(EMMY_SQUARED_BANNER_MARKER)) {
-    return "center center";
   }
   if (url.includes(IN_N_OUT_BUILDING_LANDSCAPE_MARKER.replace(".jpg", ""))) {
     // Landscape storefront — keep neon logo in frame on wide crops.
