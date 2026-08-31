@@ -68,7 +68,7 @@ test("In-N-Out building crops keep the neon logo in frame", () => {
   );
   assert.equal(
     resolveBillboardImageObjectPosition({
-      image_url: "https://menubloc-backend-production.up.railway.app/uploads/billboard-photos/restaurant-3684__deal-986__x.jpg",
+      image_url: "https://menuply.com/billboards/fixins-soul-kitchen-banner.jpg",
     }),
     "center top"
   );
