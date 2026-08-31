@@ -110,7 +110,7 @@ export default function MenuCatalogModePage({ onSelect, venueSlug = null }) {
                 color: cover.accent,
               }}
             >
-              {cover.brandLine} · {cover.poweredBy}
+              {cover.poweredBy ? `${cover.brandLine} · ${cover.poweredBy}` : cover.brandLine}
             </p>
             <p
               style={{

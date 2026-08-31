@@ -39,7 +39,7 @@ import {
   getClusterDiningByZoneHeading,
   getClusterZoneNoun,
 } from "../lib/clusterZoneBrowse.js";
-import "../styles/clusterCoachellaTheme.css";
+import "../styles/clusterIndioFestivalTheme.css";
 import "../styles/clusterLaLiveTheme.css";
 import "../styles/clusterUscTheme.css";
 import "../styles/clusterUclaTheme.css";
@@ -57,6 +57,7 @@ import {
   visibleClusterDrinkSubcategoryChips,
 } from "../lib/clusterDrinkSubcategories.js";
 import { rememberMenuBrowserVenueSession } from "../lib/menuBrowserVenueContext.js";
+import { INDIO_FESTIVAL_GROUNDS_SLUG } from "../lib/clusterSlugAliases.js";
 import { clusterShowsDishExcerpt } from "../lib/clusterDishExcerpt.js";
 import ChipRail from "../components/chips/ChipRail.jsx";
 import CampusDiningSection from "../components/cluster/CampusDiningSection.jsx";
@@ -1222,12 +1223,12 @@ export default function ClusterPage() {
   );
 
   const themeSlug = String(cluster.slug || "").toLowerCase();
-  const isCoachella2027 = themeSlug === "coachella-2027";
+  const isIndioFestivalGrounds = themeSlug === INDIO_FESTIVAL_GROUNDS_SLUG;
   const isLaLive = themeSlug === "la-live";
   const isUsc = themeSlug === "usc";
   const isUcla = themeSlug === "ucla";
-  const themeClass = isCoachella2027
-    ? "cluster-theme-coachella-2027"
+  const themeClass = isIndioFestivalGrounds
+    ? "cluster-theme-indio-festival-grounds"
     : isLaLive
       ? "cluster-theme-la-live"
       : isUsc
@@ -1244,14 +1245,14 @@ export default function ClusterPage() {
     >
       <header style={{ marginBottom: "0.85rem", minWidth: 0, display: "grid", gap: "0.75rem" }}>
         <ClusterBackButton fallbackTo={clusterCityBack} label={cityBackLabel} />
-        {isCoachella2027 ? (
-          <div className="cluster-coachella-hero" data-testid="cluster-coachella-hero">
-            <p className="cluster-coachella-powered" data-testid="cluster-coachella-powered">
-              Coachella 2027 powered by Menuply
+        {isIndioFestivalGrounds ? (
+          <div className="cluster-indio-festival-hero" data-testid="cluster-indio-festival-hero">
+            <p className="cluster-indio-festival-eyebrow" data-testid="cluster-indio-festival-eyebrow">
+              Menuply Place · Indio, California
             </p>
-            <p className="cluster-coachella-kicker">Food &amp; Drink at the Empire Polo Club</p>
-            <p className="cluster-coachella-sub">
-              Search festival menus, browse vendors by area, and explore destination advertising —
+            <p className="cluster-indio-festival-kicker">Food &amp; drink in Indio&apos;s festival grounds</p>
+            <p className="cluster-indio-festival-sub">
+              Search vendor menus, browse food by area, and explore destination advertising —
               the same Menuply Place platform used for L.A. LIVE.
             </p>
           </div>

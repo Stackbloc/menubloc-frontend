@@ -9,6 +9,7 @@ import {
   resolveMenuBrowserMembershipSlug,
   resolveMenuBrowserVenueSlug,
 } from "../src/lib/menuBrowserVenueCover.js";
+import { INDIO_FESTIVAL_GROUNDS_SLUG } from "../src/lib/clusterSlugAliases.js";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const browseSrc = readFileSync(join(root, "src/pages/BrowseMenus.jsx"), "utf8");
@@ -16,14 +17,14 @@ const modeSrc = readFileSync(join(root, "src/components/menuCatalog/MenuCatalogM
 
 test("resolveMenuBrowserVenueSlug defaults and hosts", () => {
   assert.equal(resolveMenuBrowserVenueSlug(null), "la-live");
-  assert.equal(resolveMenuBrowserVenueSlug("coachella-2027"), "coachella-2027");
+  assert.equal(resolveMenuBrowserVenueSlug("coachella-2027"), INDIO_FESTIVAL_GROUNDS_SLUG);
   assert.equal(
     resolveMenuBrowserVenueSlug(null, { hostname: "venues.menuply.com" }),
-    "coachella-2027"
+    INDIO_FESTIVAL_GROUNDS_SLUG
   );
   assert.equal(
     resolveMenuBrowserVenueSlug(null, { sessionSlug: "coachella-2027" }),
-    "coachella-2027"
+    INDIO_FESTIVAL_GROUNDS_SLUG
   );
 });
 
@@ -34,11 +35,13 @@ test("resolveMenuBrowserMembershipSlug has no la-live default", () => {
 
 test("venue covers keep Food/Drinks prompt", () => {
   const la = getMenuBrowserVenueCover("la-live");
-  const co = getMenuBrowserVenueCover("coachella-2027");
+  const co = getMenuBrowserVenueCover(INDIO_FESTIVAL_GROUNDS_SLUG);
   assert.match(la.prompt, /browse/i);
   assert.match(co.prompt, /browse/i);
   assert.equal(la.foodLabel, "Food");
   assert.equal(co.drinksLabel, "Drinks");
+  assert.equal(co.brandLine, "Indio Festival Grounds");
+  assert.equal(co.poweredBy, null);
 });
 
 test("buildMenuBrowserPages inserts a few sponsored pages", () => {

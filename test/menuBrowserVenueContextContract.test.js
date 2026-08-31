@@ -7,6 +7,7 @@ import {
   clusterSlugFromPathname,
   resolveBrowseMenusHref,
 } from "../src/lib/menuBrowserVenueContext.js";
+import { INDIO_FESTIVAL_GROUNDS_SLUG } from "../src/lib/clusterSlugAliases.js";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const browseSrc = readFileSync(join(root, "src/pages/BrowseMenus.jsx"), "utf8");
@@ -15,7 +16,11 @@ const browseSrc = readFileSync(join(root, "src/pages/BrowseMenus.jsx"), "utf8");
 test("clusterSlugFromPathname extracts Place slug", () => {
   assert.equal(
     clusterSlugFromPathname("/clusters/california/indio/coachella-2027"),
-    "coachella-2027"
+    INDIO_FESTIVAL_GROUNDS_SLUG
+  );
+  assert.equal(
+    clusterSlugFromPathname("/clusters/california/indio/indio-festival-grounds"),
+    INDIO_FESTIVAL_GROUNDS_SLUG
   );
   assert.equal(
     clusterSlugFromPathname("/clusters/california/los-angeles/la-live?view=restaurants"),
@@ -24,13 +29,13 @@ test("clusterSlugFromPathname extracts Place slug", () => {
   assert.equal(clusterSlugFromPathname("/browse-menus"), null);
 });
 
-test("resolveBrowseMenusHref prefers Coachella path over bare browse", () => {
+test("resolveBrowseMenusHref prefers Indio festival path over bare browse", () => {
   assert.equal(
     resolveBrowseMenusHref({
-      pathname: "/clusters/california/indio/coachella-2027",
+      pathname: "/clusters/california/indio/indio-festival-grounds",
       search: "",
     }),
-    "/browse-menus?cluster=coachella-2027"
+    `/browse-menus?cluster=${INDIO_FESTIVAL_GROUNDS_SLUG}`
   );
   assert.equal(resolveBrowseMenusHref({ pathname: "/", search: "" }), "/browse-menus");
 });

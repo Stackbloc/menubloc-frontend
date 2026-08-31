@@ -17,7 +17,7 @@ const beExplorerSrc = readFileSync(
 );
 
 test("dish excerpts enabled for all Place cluster slugs", () => {
-  assert.equal(clusterShowsDishExcerpt("coachella-2027"), true);
+  assert.equal(clusterShowsDishExcerpt("indio-festival-grounds"), true);
   assert.equal(clusterShowsDishExcerpt("la-live"), true);
   assert.equal(clusterShowsDishExcerpt("lacc"), true);
   assert.equal(clusterShowsDishExcerpt(""), false);

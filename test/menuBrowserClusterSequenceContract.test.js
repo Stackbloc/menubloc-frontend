@@ -16,7 +16,7 @@ const hookSrc = readFileSync(join(root, "src/hooks/useMenuCatalogSequence.js"), 
 
 test("isMenuBrowserClusterScope accepts venue cover slugs only", () => {
   assert.equal(isMenuBrowserClusterScope("la-live"), true);
-  assert.equal(isMenuBrowserClusterScope("coachella-2027"), true);
+  assert.equal(isMenuBrowserClusterScope("indio-festival-grounds"), true);
   assert.equal(isMenuBrowserClusterScope("lacc"), false);
   assert.equal(isMenuBrowserClusterScope(""), false);
 });

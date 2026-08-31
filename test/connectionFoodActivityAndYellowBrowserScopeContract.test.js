@@ -15,6 +15,7 @@ import {
   resolveMenuBrowserMembershipSlug,
   resolveMenuBrowserVenueSlug,
 } from "../src/lib/menuBrowserVenueCover.js";
+import { INDIO_FESTIVAL_GROUNDS_SLUG } from "../src/lib/clusterSlugAliases.js";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const browseSrc = readFileSync(join(root, "src/pages/BrowseMenus.jsx"), "utf8");
@@ -38,11 +39,11 @@ test("membership slug does not default to la-live", () => {
   assert.equal(resolveMenuBrowserMembershipSlug("la-live"), "la-live");
   assert.equal(
     resolveMenuBrowserMembershipSlug(null, { sessionSlug: "coachella-2027" }),
-    "coachella-2027"
+    INDIO_FESTIVAL_GROUNDS_SLUG
   );
   assert.equal(
     resolveMenuBrowserMembershipSlug(null, { hostname: "venues.menuply.com" }),
-    "coachella-2027"
+    INDIO_FESTIVAL_GROUNDS_SLUG
   );
   // Cover helper may still default for assets
   assert.equal(resolveMenuBrowserVenueSlug(null), "la-live");

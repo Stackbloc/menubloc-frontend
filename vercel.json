@@ -3,6 +3,11 @@
   "installCommand": "npm ci",
   "redirects": [
     {
+      "source": "/clusters/california/indio/coachella-2027",
+      "destination": "/clusters/california/indio/indio-festival-grounds",
+      "permanent": true
+    },
+    {
       "source": "/(.*)",
       "destination": "https://menuply.com/$1",
       "permanent": true,

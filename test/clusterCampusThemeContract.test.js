@@ -80,9 +80,9 @@ test("Cluster feed exposes class hooks for campus theme typography", () => {
   assert.match(uclaSrc, /\.cluster-feed-heading/);
 });
 
-test("Coachella and L.A. LIVE themes remain independently wired", () => {
-  assert.match(pageSrc, /clusterCoachellaTheme\.css/);
+test("Indio Festival Grounds and L.A. LIVE themes remain independently wired", () => {
+  assert.match(pageSrc, /clusterIndioFestivalTheme\.css/);
   assert.match(pageSrc, /clusterLaLiveTheme\.css/);
-  assert.match(pageSrc, /cluster-theme-coachella-2027/);
+  assert.match(pageSrc, /cluster-theme-indio-festival-grounds/);
   assert.match(pageSrc, /cluster-theme-la-live/);
 });

@@ -1,9 +1,14 @@
 /**
- * Yellow Browser venue cover ads — Coachella + L.A. LIVE for now.
+ * Yellow Browser venue cover ads — Indio Festival Grounds + L.A. LIVE for now.
  * Complements Cluster Place themes without proprietary logos/assets.
  */
 
-export const MENU_BROWSER_VENUE_SLUGS = Object.freeze(["la-live", "coachella-2027"]);
+import {
+  INDIO_FESTIVAL_GROUNDS_SLUG,
+  resolveClusterSlug,
+} from "./clusterSlugAliases.js";
+
+export const MENU_BROWSER_VENUE_SLUGS = Object.freeze(["la-live", INDIO_FESTIVAL_GROUNDS_SLUG]);
 
 export const MENU_BROWSER_VENUE_AD_REGIONS = Object.freeze([
   "cluster_landing_hero",
@@ -37,16 +42,16 @@ const VENUE_COVERS = Object.freeze({
     buttonBorder: "#e8c56a",
     secondaryButtonBg: "rgba(244,241,234,0.08)",
   }),
-  "coachella-2027": Object.freeze({
-    slug: "coachella-2027",
-    brandLine: "Coachella 2027",
-    poweredBy: "powered by Menuply",
+  [INDIO_FESTIVAL_GROUNDS_SLUG]: Object.freeze({
+    slug: INDIO_FESTIVAL_GROUNDS_SLUG,
+    brandLine: "Indio Festival Grounds",
+    poweredBy: null,
     headline: "Festival food & drink, page by page",
     subhead: "Browse Indio Central Market, Street Food Alley, Terrace & Camping menus.",
     prompt: "What do you want to browse?",
     foodLabel: "Food",
     drinksLabel: "Drinks",
-    theme: "coachella",
+    theme: "indio-festival",
     ink: "#010100",
     muted: "#4b3a32",
     accent: "#e4572e",
@@ -67,13 +72,13 @@ const VENUE_COVERS = Object.freeze({
  * Does NOT default to la-live — bare /browse-menus is city.
  */
 export function resolveMenuBrowserMembershipSlug(raw, { hostname = null, sessionSlug = null } = {}) {
-  const slug = String(raw || "").trim().toLowerCase();
+  const slug = resolveClusterSlug(raw);
   if (MENU_BROWSER_VENUE_SLUGS.includes(slug)) return slug;
   const host = String(hostname || "").trim().toLowerCase();
   if (host === "venues.menuply.com" || host === "www.venues.menuply.com") {
-    return "coachella-2027";
+    return INDIO_FESTIVAL_GROUNDS_SLUG;
   }
-  const session = String(sessionSlug || "").trim().toLowerCase();
+  const session = resolveClusterSlug(sessionSlug);
   if (MENU_BROWSER_VENUE_SLUGS.includes(session)) return session;
   return null;
 }
@@ -102,7 +107,7 @@ export function getMenuBrowserVenueCover(slug) {
  */
 export function buildMenuBrowserPages(entries, venueSlug) {
   const list = Array.isArray(entries) ? entries : [];
-  const venue = String(venueSlug || "").trim().toLowerCase();
+  const venue = resolveClusterSlug(venueSlug);
   if (!venue || !MENU_BROWSER_VENUE_SLUGS.includes(venue) || list.length === 0) {
     return list.map((entry, entryIndex) => ({
       kind: "menu",

@@ -7,7 +7,7 @@
  *   Domain-aware routing:
  *     - easymenuupload.com -> EasyMenuLanding on "/"
  *     - crm.menuply.com (primary) / crm.grubbid.com (legacy) -> internal CRM shell
- *     - venues.menuply.com -> venue destination demo (Coachella 2027 Place)
+ *     - venues.menuply.com -> venue destination demo (Indio Festival Grounds Place)
  *     - grubbid.com (and everything else) -> HomeRoot on "/" (Feed default; HomeNext at /home-next; legacy via flag)
  *
  *   Public route support:
@@ -235,6 +235,10 @@ import MarketAggregatorPage from "./pages/MarketAggregatorPage.jsx";
 import ClusterPage from "./pages/ClusterPage.jsx";
 import ClustersDirectoryPage from "./pages/ClustersDirectoryPage.jsx";
 import ClusterCityDirectoryPage from "./pages/ClusterCityDirectoryPage.jsx";
+import {
+  INDIO_FESTIVAL_GROUNDS_CLUSTER_PATH,
+  LEGACY_COACHELLA_CLUSTER_PATH,
+} from "./lib/clusterSlugAliases.js";
 import CommunityClusterCreatePage from "./pages/CommunityClusterCreatePage.jsx";
 import DestinationVenueFoodPage from "./pages/DestinationVenueFoodPage.jsx";
 import DestinationVenuePage from "./pages/DestinationVenuePage.jsx";
@@ -405,10 +409,8 @@ function isVenuesHost() {
   return host === "venues.menuply.com" || host === "www.venues.menuply.com";
 }
 
-const VENUES_DEMO_CLUSTER_PATH = "/clusters/california/indio/coachella-2027";
-
 function VenuesHostRoot() {
-  return <Navigate to={VENUES_DEMO_CLUSTER_PATH} replace />;
+  return <Navigate to={INDIO_FESTIVAL_GROUNDS_CLUSTER_PATH} replace />;
 }
 
 function CrmHostRoot() {
@@ -816,6 +818,16 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
         <Route
           path="/nfl/stadiums"
           element={crmHost ? <HostRouteRedirect to="/crm" /> : <Navigate to="/clusters/stadiums/nfl" replace />}
+        />
+        <Route
+          path={LEGACY_COACHELLA_CLUSTER_PATH}
+          element={
+            crmHost ? (
+              <HostRouteRedirect to="/crm" />
+            ) : (
+              <Navigate to={INDIO_FESTIVAL_GROUNDS_CLUSTER_PATH} replace />
+            )
+          }
         />
         <Route path="/clusters/:stateSlug/:citySlug/:clusterSlug" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ClusterPage />} />
         <Route path="/clusters/:stateSlug/:citySlug" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ClusterCityDirectoryPage />} />

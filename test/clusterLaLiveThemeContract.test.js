@@ -46,7 +46,9 @@ test("L.A. LIVE theme forces readable selected Food/Restaurants toggle", () => {
   assert.match(themeSrc, /selection looked inverted/);
 });
 
-test("Coachella theme remains independently wired", () => {
-  assert.match(pageSrc, /clusterCoachellaTheme\.css/);
-  assert.match(pageSrc, /cluster-theme-coachella-2027/);
+test("Indio Festival Grounds theme remains independently wired", () => {
+  assert.match(pageSrc, /clusterIndioFestivalTheme\.css/);
+  assert.match(pageSrc, /cluster-theme-indio-festival-grounds/);
+  assert.match(pageSrc, /data-testid="cluster-indio-festival-hero"/);
+  assert.doesNotMatch(pageSrc, /Coachella 2027 powered by Menuply/);
 });
