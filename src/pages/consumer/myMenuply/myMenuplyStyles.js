@@ -1103,6 +1103,31 @@ export const personalContextLine = {
   fontStyle: "italic",
 };
 
+export const personalContextToggle = {
+  margin: "4px 0 0",
+  padding: 0,
+  border: "none",
+  background: "none",
+  font: "inherit",
+  fontSize: 13,
+  fontWeight: 600,
+  color: GREEN_BRIGHT,
+  cursor: "pointer",
+  textAlign: "left",
+};
+
+export const personalContextDoneBtn = {
+  margin: 0,
+  padding: 0,
+  border: "none",
+  background: "none",
+  font: "inherit",
+  fontSize: 13,
+  fontWeight: 700,
+  color: GREEN_BRIGHT,
+  cursor: "pointer",
+};
+
 export const profileDetailLinks = {
   margin: "6px 0 0",
   fontSize: 13,
@@ -1111,28 +1136,26 @@ export const profileDetailLinks = {
 };
 
 export const personalContextPanel = {
-  marginTop: 14,
-  padding: "14px 14px 12px",
-  borderRadius: 12,
+  marginTop: 8,
+  padding: "12px 12px 10px",
+  borderRadius: 10,
   border: `1px solid ${BORDER}`,
-  background: "#ffffff",
-  boxShadow: "0 2px 10px rgba(20, 83, 45, 0.05)",
+  background: "#f8fffb",
 };
 
 export const personalContextPanelHead = {
   display: "flex",
-  alignItems: "flex-start",
+  alignItems: "center",
   justifyContent: "space-between",
   gap: 12,
-  marginBottom: 10,
+  marginBottom: 8,
 };
 
 export const personalContextPanelTitle = {
   margin: 0,
-  fontSize: 14,
-  fontWeight: 800,
+  fontSize: 13,
+  fontWeight: 700,
   color: GREEN,
-  letterSpacing: "-0.01em",
 };
 
 export const personalContextPanelDesc = {

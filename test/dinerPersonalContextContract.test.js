@@ -56,6 +56,9 @@ test("DinerIdentityHero renders personal context beneath name without empty plac
   assert.match(hero, /buildDinerPersonalContextLines/);
   assert.match(hero, /personalContextLines\.map/);
   assert.match(editor, /diner-personal-context-editor/);
+  assert.match(editor, /diner-personal-context-toggle/);
+  assert.match(editor, /Add class, job & hometown/);
+  assert.match(editor, /diner-personal-context-done/);
   assert.match(editor, /diner-occupation-input/);
   assert.match(editor, /diner-hometown-input/);
   assert.doesNotMatch(hero, /About Me essay|follower|following count/i);

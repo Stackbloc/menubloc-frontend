@@ -191,6 +191,14 @@ export default function DinerIdentityHero({
             </div>
           ) : null}
 
+          {!readOnly && onPersonalContextSave ? (
+            <DinerPersonalContextEditor
+              value={personalContext}
+              busy={busy || saving}
+              onSave={onPersonalContextSave}
+            />
+          ) : null}
+
           {locationLabel ? (
             <p
               style={{
@@ -232,14 +240,6 @@ export default function DinerIdentityHero({
           )}
         </div>
       </div>
-
-      {!readOnly && onPersonalContextSave ? (
-        <DinerPersonalContextEditor
-          value={personalContext}
-          busy={busy || saving}
-          onSave={onPersonalContextSave}
-        />
-      ) : null}
 
       {error ? <p style={s.error}>{error}</p> : null}
 

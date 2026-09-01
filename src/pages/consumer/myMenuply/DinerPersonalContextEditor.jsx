@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { FIELD_MAX, normalizePersonalContextInput } from "../../../lib/dinerPersonalContext.js";
+import {
+  buildDinerPersonalContextLines,
+  FIELD_MAX,
+  normalizePersonalContextInput,
+} from "../../../lib/dinerPersonalContext.js";
 import * as s from "./myMenuplyStyles.js";
 
 function emptyContext() {
@@ -17,18 +20,23 @@ export default function DinerPersonalContextEditor({
   busy = false,
   onSave,
 }) {
+  const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(() => ({
     ...emptyContext(),
     ...normalizePersonalContextInput(value || {}),
   }));
   const [saving, setSaving] = useState(false);
 
+  const hasContext = buildDinerPersonalContextLines(value || {}).length > 0;
+
   useEffect(() => {
+    if (editing) return;
     setDraft({
       ...emptyContext(),
       ...normalizePersonalContextInput(value || {}),
     });
   }, [
+    editing,
     value?.diner_education_status,
     value?.diner_field_of_study,
     value?.diner_occupation,
@@ -49,25 +57,45 @@ export default function DinerPersonalContextEditor({
     }
   }
 
+  async function handleDone() {
+    await saveIfChanged();
+    setEditing(false);
+  }
+
   const occupationSet = Boolean(String(draft.diner_occupation || "").trim());
+
+  if (!editing) {
+    return (
+      <button
+        type="button"
+        data-testid="diner-personal-context-toggle"
+        style={s.personalContextToggle}
+        disabled={busy || saving}
+        onClick={() => setEditing(true)}
+      >
+        {hasContext ? "Edit class, job & hometown" : "Add class, job & hometown"}
+      </button>
+    );
+  }
 
   return (
     <div style={s.personalContextPanel} data-testid="diner-personal-context-editor">
       <div style={s.personalContextPanelHead}>
-        <div>
-          <p style={s.personalContextPanelTitle}>Personal context</p>
-          <p style={s.personalContextPanelDesc}>
-            Optional — shown under your name (class year, job, hometown).
-          </p>
-        </div>
-        <Link to="/account?tab=profile#profile-information" style={s.link}>
-          Screen name
-        </Link>
+        <p style={s.personalContextPanelTitle}>Class, job & hometown</p>
+        <button
+          type="button"
+          data-testid="diner-personal-context-done"
+          style={s.personalContextDoneBtn}
+          disabled={busy || saving}
+          onClick={handleDone}
+        >
+          {saving ? "Saving…" : "Done"}
+        </button>
       </div>
 
       <div style={s.personalContextGrid}>
         <label style={s.personalContextField}>
-          <span style={s.personalContextLabel}>Occupation or profession</span>
+          <span style={s.personalContextLabel}>Occupation</span>
           <input
             type="text"
             data-testid="diner-occupation-input"
@@ -87,7 +115,7 @@ export default function DinerPersonalContextEditor({
         </label>
 
         <label style={s.personalContextField}>
-          <span style={s.personalContextLabel}>Class year or status</span>
+          <span style={s.personalContextLabel}>Class year</span>
           <input
             type="text"
             data-testid="diner-education-status-input"
@@ -107,7 +135,7 @@ export default function DinerPersonalContextEditor({
         </label>
 
         <label style={s.personalContextField}>
-          <span style={s.personalContextLabel}>Major or field</span>
+          <span style={s.personalContextLabel}>Major</span>
           <input
             type="text"
             data-testid="diner-field-of-study-input"
