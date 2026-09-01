@@ -599,3 +599,29 @@ export const runDeploymentWatchdog = () => post("/api/owner/deployment-operation
 export const freezeDeployments = (reason) => post("/api/owner/deployment-operations/freeze", { reason });
 export const resumeDeployments = (reason) => post("/api/owner/deployment-operations/resume", { reason });
 
+// ─── Platform video catalog (all Feed video sources) ─────────────────────────
+
+export const listOwnerVideos = (params = {}) => {
+  const qs = new URLSearchParams();
+  if (params.kind) qs.set("kind", params.kind);
+  if (params.untagged_only) qs.set("untagged_only", "1");
+  if (params.q) qs.set("q", params.q);
+  if (params.cursor) qs.set("cursor", params.cursor);
+  if (params.limit != null) qs.set("limit", String(params.limit));
+  const serialized = qs.toString();
+  return get(`/api/owner/videos${serialized ? `?${serialized}` : ""}`);
+};
+
+export const getOwnerVideo = (kind, sourceId) =>
+  get(`/api/owner/videos/${encodeURIComponent(kind)}/${encodeURIComponent(String(sourceId))}`);
+
+export const lookupOwnerVideo = ({ videoId, assetNumber } = {}) => {
+  const qs = new URLSearchParams();
+  if (videoId) qs.set("video_id", videoId);
+  if (assetNumber != null) qs.set("asset_number", String(assetNumber));
+  return get(`/api/owner/videos/lookup?${qs.toString()}`);
+};
+
+export const patchOwnerVideoMetadata = (kind, sourceId, body) =>
+  patch(`/api/owner/videos/${encodeURIComponent(kind)}/${encodeURIComponent(String(sourceId))}`, body);
+
