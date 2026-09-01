@@ -1110,6 +1110,78 @@ export const profileDetailLinks = {
   color: "#64748b",
 };
 
+export const personalContextPanel = {
+  marginTop: 14,
+  padding: "14px 14px 12px",
+  borderRadius: 12,
+  border: `1px solid ${BORDER}`,
+  background: "#ffffff",
+  boxShadow: "0 2px 10px rgba(20, 83, 45, 0.05)",
+};
+
+export const personalContextPanelHead = {
+  display: "flex",
+  alignItems: "flex-start",
+  justifyContent: "space-between",
+  gap: 12,
+  marginBottom: 10,
+};
+
+export const personalContextPanelTitle = {
+  margin: 0,
+  fontSize: 14,
+  fontWeight: 800,
+  color: GREEN,
+  letterSpacing: "-0.01em",
+};
+
+export const personalContextPanelDesc = {
+  margin: "4px 0 0",
+  fontSize: 12,
+  lineHeight: 1.45,
+  color: MUTED,
+};
+
+export const personalContextGrid = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+  gap: 10,
+};
+
+export const personalContextField = {
+  display: "flex",
+  flexDirection: "column",
+  gap: 4,
+  minWidth: 0,
+};
+
+export const personalContextLabel = {
+  fontSize: 11,
+  fontWeight: 700,
+  color: "#475467",
+  letterSpacing: "0.02em",
+};
+
+export const personalContextInput = {
+  width: "100%",
+  border: `1.5px solid ${BORDER_INPUT}`,
+  borderRadius: 8,
+  padding: "8px 10px",
+  fontSize: 14,
+  lineHeight: 1.35,
+  fontFamily: "inherit",
+  color: INK,
+  background: "#fff",
+  boxSizing: "border-box",
+};
+
+export const personalContextHint = {
+  margin: "8px 0 0",
+  fontSize: 11,
+  color: MUTED,
+  lineHeight: 1.4,
+};
+
 export const aboutArea = {
   width: "100%",
   minHeight: 72,

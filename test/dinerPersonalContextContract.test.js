@@ -50,18 +50,21 @@ test("occupation takes precedence over education fields", () => {
 
 test("DinerIdentityHero renders personal context beneath name without empty placeholders", () => {
   const hero = read("src/pages/consumer/myMenuply/DinerIdentityHero.jsx");
+  const editor = read("src/pages/consumer/myMenuply/DinerPersonalContextEditor.jsx");
   assert.match(hero, /diner-personal-context/);
+  assert.match(hero, /DinerPersonalContextEditor/);
   assert.match(hero, /buildDinerPersonalContextLines/);
   assert.match(hero, /personalContextLines\.map/);
+  assert.match(editor, /diner-personal-context-editor/);
+  assert.match(editor, /diner-occupation-input/);
+  assert.match(editor, /diner-hometown-input/);
   assert.doesNotMatch(hero, /About Me essay|follower|following count/i);
 });
 
 test("Profile tab exposes optional personal context fields", () => {
   const tab = read("src/pages/consumer/accountDashboard/ProfileTab.jsx");
   const profile = read("src/pages/consumer/ConsumerProfile.jsx");
-  const hero = read("src/pages/consumer/myMenuply/DinerIdentityHero.jsx");
-  assert.match(hero, /profile-detail-links/);
-  assert.match(hero, /personal-context/);
+  const page = read("src/pages/consumer/MyMenuplyPage.jsx");
   assert.match(tab, /Personal context/);
   assert.match(tab, /id="personal-context"/);
   assert.match(tab, /dinerOccupation/);
@@ -70,12 +73,23 @@ test("Profile tab exposes optional personal context fields", () => {
   assert.match(tab, /dinerHometown/);
   assert.match(profile, /handleSavePersonalContext/);
   assert.match(profile, /diner_education_status/);
+  assert.match(page, /onPersonalContextSave/);
 });
 
 test("Connection peer hub passes personal context to identity hero", () => {
   const peer = read("src/pages/consumer/ConsumerConnectionPeerPage.jsx");
   assert.match(peer, /personalContext=\{\{/);
   assert.match(peer, /diner_hometown/);
+  assert.match(peer, /readOnly/);
+  assert.doesNotMatch(peer, /onPersonalContextSave/);
+});
+
+test("DinerIdentityHero only mounts personal context editor for profile owner", () => {
+  const hero = read("src/pages/consumer/myMenuply/DinerIdentityHero.jsx");
+  const page = read("src/pages/consumer/MyMenuplyPage.jsx");
+  assert.match(hero, /!readOnly && onPersonalContextSave/);
+  assert.match(page, /onPersonalContextSave=\{onPersonalContextSave\}/);
+  assert.doesNotMatch(page, /readOnly/);
 });
 
 test("summarizePersonalContext returns None added when empty", () => {

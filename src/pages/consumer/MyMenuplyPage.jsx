@@ -573,6 +573,30 @@ export default function MyMenuplyPage() {
     }
   }
 
+  async function onPersonalContextSave(next) {
+    setIdentityError("");
+    setIdentityNotice("");
+    try {
+      const data = await updateConsumerProfile({
+        diner_education_status: next.diner_education_status || null,
+        diner_field_of_study: next.diner_field_of_study || null,
+        diner_occupation: next.diner_occupation || null,
+        diner_hometown: next.diner_hometown || null,
+      });
+      const saved = data?.profile || {};
+      setProfile((prev) => ({
+        ...(prev || {}),
+        diner_education_status: saved.diner_education_status ?? next.diner_education_status ?? null,
+        diner_field_of_study: saved.diner_field_of_study ?? next.diner_field_of_study ?? null,
+        diner_occupation: saved.diner_occupation ?? next.diner_occupation ?? null,
+        diner_hometown: saved.diner_hometown ?? next.diner_hometown ?? null,
+      }));
+      setIdentityNotice("Personal context saved.");
+    } catch (err) {
+      setIdentityError(err.message || "Unable to save personal context");
+    }
+  }
+
   async function onProfileMediaAdd(file) {
     setProfileGalleryPickerOpen(false);
     setProfileGalleryMediaSource(null);
@@ -1358,6 +1382,7 @@ export default function MyMenuplyPage() {
               error={identityError}
               onAvatarFile={onAvatarFile}
               onAboutSave={onAboutSave}
+              onPersonalContextSave={onPersonalContextSave}
               profileMedia={profileMedia}
               onProfileMediaAdd={onProfileMediaAdd}
               onProfileMediaRemove={onProfileMediaRemove}

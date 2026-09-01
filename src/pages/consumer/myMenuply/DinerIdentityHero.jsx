@@ -6,6 +6,7 @@ import * as s from "./myMenuplyStyles.js";
 import { GREEN_BRIGHT } from "./myMenuplyStyles.js";
 import { MY_MENUPLY_MONTH_IN_FOOD_PATH } from "../../../lib/myMenuplyRoutes.js";
 import { buildDinerPersonalContextLines } from "../../../lib/dinerPersonalContext.js";
+import DinerPersonalContextEditor from "./DinerPersonalContextEditor.jsx";
 
 const ABOUT_MAX = 280;
 const ABOUT_PLACEHOLDER =
@@ -24,6 +25,7 @@ export default function DinerIdentityHero({
   error,
   onAvatarFile,
   onAboutSave,
+  onPersonalContextSave,
   profileMedia = [],
   onProfileMediaAdd,
   onProfileMediaRemove,
@@ -189,18 +191,6 @@ export default function DinerIdentityHero({
             </div>
           ) : null}
 
-          {readOnly ? null : (
-            <p style={s.profileDetailLinks} data-testid="profile-detail-links">
-              <Link to="/account?tab=profile#profile-information" style={s.link}>
-                Screen name
-              </Link>
-              <span aria-hidden="true"> · </span>
-              <Link to="/account?tab=profile#personal-context" style={s.link}>
-                Class, job &amp; hometown
-              </Link>
-            </p>
-          )}
-
           {locationLabel ? (
             <p
               style={{
@@ -242,6 +232,14 @@ export default function DinerIdentityHero({
           )}
         </div>
       </div>
+
+      {!readOnly && onPersonalContextSave ? (
+        <DinerPersonalContextEditor
+          value={personalContext}
+          busy={busy || saving}
+          onSave={onPersonalContextSave}
+        />
+      ) : null}
 
       {error ? <p style={s.error}>{error}</p> : null}
 
