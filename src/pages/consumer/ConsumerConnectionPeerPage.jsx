@@ -218,6 +218,12 @@ export default function ConsumerConnectionPeerPage() {
               displayName={name}
               avatarUrl={resolveConsumerMediaUrl(peer?.avatar_url || "")}
               about={peer?.diner_about || ""}
+              personalContext={{
+                diner_education_status: peer?.diner_education_status,
+                diner_field_of_study: peer?.diner_field_of_study,
+                diner_occupation: peer?.diner_occupation,
+                diner_hometown: peer?.diner_hometown,
+              }}
               connections={peerConnections}
               viewerUserId={consumer?.id}
               profileMedia={peerProfileMedia}

@@ -1094,6 +1094,15 @@ export const identityName = {
   fontFamily: 'Georgia, "Times New Roman", serif',
 };
 
+export const personalContextLine = {
+  margin: "2px 0 0",
+  fontSize: 14,
+  lineHeight: 1.35,
+  color: "#475467",
+  fontWeight: 500,
+  fontStyle: "italic",
+};
+
 export const aboutArea = {
   width: "100%",
   minHeight: 72,

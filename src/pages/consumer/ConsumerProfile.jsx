@@ -110,6 +110,13 @@ export default function ConsumerProfile() {
   const [connectionFoodActivitySaving, setConnectionFoodActivitySaving] = useState(false);
   const [connectionFoodActivityStatus, setConnectionFoodActivityStatus] = useState("");
   const [connectionFoodActivityError, setConnectionFoodActivityError] = useState("");
+  const [dinerEducationStatus, setDinerEducationStatus] = useState("");
+  const [dinerFieldOfStudy, setDinerFieldOfStudy] = useState("");
+  const [dinerOccupation, setDinerOccupation] = useState("");
+  const [dinerHometown, setDinerHometown] = useState("");
+  const [personalContextSaving, setPersonalContextSaving] = useState(false);
+  const [personalContextStatus, setPersonalContextStatus] = useState("");
+  const [personalContextError, setPersonalContextError] = useState("");
   const [dietStatus, setDietStatus] = useState("");
   const [dietError, setDietError] = useState("");
   const [allergenStatus, setAllergenStatus] = useState("");
@@ -158,6 +165,10 @@ export default function ConsumerProfile() {
       setPrimaryPostalCode("");
       setDiscoverability(profile.discoverability || "nobody");
       setShowConnectionFoodActivity(profile.show_connection_food_activity !== false);
+      setDinerEducationStatus(profile.diner_education_status || "");
+      setDinerFieldOfStudy(profile.diner_field_of_study || "");
+      setDinerOccupation(profile.diner_occupation || "");
+      setDinerHometown(profile.diner_hometown || "");
       setEduStatus(getEduVerificationFromConsumer(profileConsumer || {}));
       setEduNotice("");
       setEduError("");
@@ -236,6 +247,27 @@ export default function ConsumerProfile() {
       return false;
     } finally {
       setIdentitySaving(false);
+    }
+  }
+
+  async function handleSavePersonalContext() {
+    setPersonalContextSaving(true);
+    setPersonalContextStatus("");
+    setPersonalContextError("");
+    try {
+      await updateConsumerProfile({
+        diner_education_status: dinerEducationStatus.trim() || null,
+        diner_field_of_study: dinerFieldOfStudy.trim() || null,
+        diner_occupation: dinerOccupation.trim() || null,
+        diner_hometown: dinerHometown.trim() || null,
+      });
+      setPersonalContextStatus("Saved");
+      return true;
+    } catch (err) {
+      setPersonalContextError(err.message || "Could not save personal context.");
+      return false;
+    } finally {
+      setPersonalContextSaving(false);
     }
   }
 
@@ -570,6 +602,18 @@ export default function ConsumerProfile() {
               connectionFoodActivitySaving={connectionFoodActivitySaving}
               connectionFoodActivityStatus={connectionFoodActivityStatus}
               connectionFoodActivityError={connectionFoodActivityError}
+              dinerEducationStatus={dinerEducationStatus}
+              onDinerEducationStatusChange={setDinerEducationStatus}
+              dinerFieldOfStudy={dinerFieldOfStudy}
+              onDinerFieldOfStudyChange={setDinerFieldOfStudy}
+              dinerOccupation={dinerOccupation}
+              onDinerOccupationChange={setDinerOccupation}
+              dinerHometown={dinerHometown}
+              onDinerHometownChange={setDinerHometown}
+              onSavePersonalContext={handleSavePersonalContext}
+              personalContextSaving={personalContextSaving}
+              personalContextStatus={personalContextStatus}
+              personalContextError={personalContextError}
             />
           ) : null}
 

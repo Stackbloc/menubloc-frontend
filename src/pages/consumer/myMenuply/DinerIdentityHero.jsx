@@ -5,6 +5,7 @@ import AvatarComposeSheet from "./AvatarComposeSheet.jsx";
 import * as s from "./myMenuplyStyles.js";
 import { GREEN_BRIGHT } from "./myMenuplyStyles.js";
 import { MY_MENUPLY_MONTH_IN_FOOD_PATH } from "../../../lib/myMenuplyRoutes.js";
+import { buildDinerPersonalContextLines } from "../../../lib/dinerPersonalContext.js";
 
 const ABOUT_MAX = 280;
 const ABOUT_PLACEHOLDER =
@@ -14,6 +15,7 @@ export default function DinerIdentityHero({
   displayName,
   avatarUrl,
   about,
+  personalContext = null,
   locationLabel = null,
   connections = [],
   viewerUserId = null,
@@ -72,6 +74,8 @@ export default function DinerIdentityHero({
 
   const scoreboardHref =
     monthInFoodHref || (readOnly ? null : MY_MENUPLY_MONTH_IN_FOOD_PATH);
+
+  const personalContextLines = buildDinerPersonalContextLines(personalContext || {});
 
   return (
     <section style={s.identitySection} data-testid="about-me">
@@ -174,6 +178,16 @@ export default function DinerIdentityHero({
 
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={s.identityName}>{displayName}</div>
+
+          {personalContextLines.length ? (
+            <div data-testid="diner-personal-context">
+              {personalContextLines.map((line) => (
+                <p key={line} style={s.personalContextLine}>
+                  {line}
+                </p>
+              ))}
+            </div>
+          ) : null}
 
           {locationLabel ? (
             <p

@@ -1344,6 +1344,12 @@ export default function MyMenuplyPage() {
               displayName={displayName}
               avatarUrl={avatarUrl}
               about={profile?.diner_about || ""}
+              personalContext={{
+                diner_education_status: profile?.diner_education_status,
+                diner_field_of_study: profile?.diner_field_of_study,
+                diner_occupation: profile?.diner_occupation,
+                diner_hometown: profile?.diner_hometown,
+              }}
               locationLabel={profile?.primary_location?.public_label || null}
               connections={connections}
               viewerUserId={consumer?.id}

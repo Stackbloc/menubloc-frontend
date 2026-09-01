@@ -13,6 +13,7 @@ import { accountStyles as styles } from "./accountDashboardStyles.js";
 import AccountActionLink from "./AccountActionLink.jsx";
 import PreferenceChips from "./PreferenceChips.jsx";
 import SummaryEditSection from "./SummaryEditSection.jsx";
+import { summarizePersonalContext, FIELD_MAX } from "../../../lib/dinerPersonalContext.js";
 
 function SaveStatus({ status, isError }) {
   if (!status) return null;
@@ -83,6 +84,18 @@ export default function ProfileTab({
   connectionFoodActivitySaving,
   connectionFoodActivityStatus,
   connectionFoodActivityError,
+  dinerEducationStatus,
+  onDinerEducationStatusChange,
+  dinerFieldOfStudy,
+  onDinerFieldOfStudyChange,
+  dinerOccupation,
+  onDinerOccupationChange,
+  dinerHometown,
+  onDinerHometownChange,
+  onSavePersonalContext,
+  personalContextSaving,
+  personalContextStatus,
+  personalContextError,
 }) {
   const [editingIdentity, setEditingIdentity] = useState(false);
   const [editingZip, setEditingZip] = useState(false);
@@ -93,6 +106,7 @@ export default function ProfileTab({
   const [editingPrimaryLocation, setEditingPrimaryLocation] = useState(false);
   const [editingDiscoverability, setEditingDiscoverability] = useState(false);
   const [editingConnectionFoodActivity, setEditingConnectionFoodActivity] = useState(false);
+  const [editingPersonalContext, setEditingPersonalContext] = useState(false);
 
   const discoverabilityLabels = {
     nobody: "Nobody — not searchable",
@@ -110,6 +124,12 @@ export default function ProfileTab({
     ? "None"
     : formatSummaryList(selectedLabels(allergenPrefs, ALLERGEN_OPTIONS));
   const avoidSummary = formatSummaryList(selectedLabels(foodsToAvoid, FOODS_TO_AVOID_OPTIONS));
+  const personalContextSummary = summarizePersonalContext({
+    diner_education_status: dinerEducationStatus,
+    diner_field_of_study: dinerFieldOfStudy,
+    diner_occupation: dinerOccupation,
+    diner_hometown: dinerHometown,
+  });
 
   return (
     <div>
@@ -169,6 +189,89 @@ export default function ProfileTab({
           disabled={identitySaving}
         >
           {identitySaving ? "Saving…" : "Save name"}
+        </button>
+      </SummaryEditSection>
+
+      <SummaryEditSection
+        title="Personal context"
+        summary={personalContextSummary}
+        description="Optional short lines on your diner profile — class year, field, job, or hometown. Shown beneath your name; not a full bio."
+        editing={editingPersonalContext}
+        onEdit={() => setEditingPersonalContext(true)}
+        onDone={async () => {
+          const ok = await onSavePersonalContext();
+          if (ok !== false) setEditingPersonalContext(false);
+        }}
+        editLabel={personalContextSummary === "None added" ? "Add" : "Edit"}
+        status={personalContextError || personalContextStatus}
+        statusError={Boolean(personalContextError)}
+      >
+        <div style={styles.field}>
+          <label style={styles.fieldLabel}>
+            Occupation or profession <span style={styles.optText}>(optional)</span>
+          </label>
+          <input
+            type="text"
+            value={dinerOccupation}
+            onChange={(e) => onDinerOccupationChange(e.target.value.slice(0, FIELD_MAX))}
+            style={styles.input}
+            placeholder="Software designer"
+            maxLength={FIELD_MAX}
+          />
+          <p style={styles.fieldHint}>
+            When set, this shows instead of school/class details below.
+          </p>
+        </div>
+        <div style={styles.row}>
+          <div style={styles.field}>
+            <label style={styles.fieldLabel}>
+              Class year or status <span style={styles.optText}>(optional)</span>
+            </label>
+            <input
+              type="text"
+              value={dinerEducationStatus}
+              onChange={(e) => onDinerEducationStatusChange(e.target.value.slice(0, FIELD_MAX))}
+              style={styles.input}
+              placeholder="Freshman"
+              maxLength={FIELD_MAX}
+              disabled={Boolean(String(dinerOccupation || "").trim())}
+            />
+          </div>
+          <div style={styles.field}>
+            <label style={styles.fieldLabel}>
+              Major or field <span style={styles.optText}>(optional)</span>
+            </label>
+            <input
+              type="text"
+              value={dinerFieldOfStudy}
+              onChange={(e) => onDinerFieldOfStudyChange(e.target.value.slice(0, FIELD_MAX))}
+              style={styles.input}
+              placeholder="Biology"
+              maxLength={FIELD_MAX}
+              disabled={Boolean(String(dinerOccupation || "").trim())}
+            />
+          </div>
+        </div>
+        <div style={styles.field}>
+          <label style={styles.fieldLabel}>
+            Hometown <span style={styles.optText}>(optional)</span>
+          </label>
+          <input
+            type="text"
+            value={dinerHometown}
+            onChange={(e) => onDinerHometownChange(e.target.value.slice(0, FIELD_MAX))}
+            style={styles.input}
+            placeholder="Houston, TX"
+            maxLength={FIELD_MAX}
+          />
+        </div>
+        <button
+          type="button"
+          onClick={onSavePersonalContext}
+          style={styles.primaryBtn}
+          disabled={personalContextSaving}
+        >
+          {personalContextSaving ? "Saving…" : "Save personal context"}
         </button>
       </SummaryEditSection>
 

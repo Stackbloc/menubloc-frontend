@@ -15,6 +15,7 @@ import {
   searchDiners,
 } from "../../lib/consumerApi.js";
 import { formatDinerPeerLabel } from "../../lib/dinerPublicIdentity.js";
+import { buildDinerPersonalContextLines } from "../../lib/dinerPersonalContext.js";
 
 function ContextChips({ diner }) {
   const chips = [];
@@ -184,7 +185,9 @@ export default function FindDinersPage() {
         ) : null}
 
         <ul style={styles.list}>
-          {results.map((diner) => (
+          {results.map((diner) => {
+            const personalContextLines = buildDinerPersonalContextLines(diner);
+            return (
             <li key={diner.id} style={styles.card}>
               <div style={styles.cardTop}>
                 {diner.avatar_url ? (
@@ -196,6 +199,11 @@ export default function FindDinersPage() {
                 )}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={styles.name}>{formatDinerPeerLabel(diner)}</div>
+                  {personalContextLines.map((line) => (
+                    <div key={line} style={styles.personalContext}>
+                      {line}
+                    </div>
+                  ))}
                   {diner.location_label ? (
                     <div style={styles.location}>📍 {diner.location_label}</div>
                   ) : null}
@@ -211,7 +219,8 @@ export default function FindDinersPage() {
                 onAction={(action) => handleAction(diner, action)}
               />
             </li>
-          ))}
+          );
+          })}
         </ul>
       </main>
       <BottomNav />
@@ -280,5 +289,6 @@ const styles = {
   },
   name: { fontWeight: 800, color: "#0f172a", fontSize: 16 },
   location: { fontSize: 13, color: "#475569", marginTop: 2 },
+  personalContext: { fontSize: 13, color: "#475569", marginTop: 2, fontStyle: "italic" },
   about: { fontSize: 13, color: "#64748b", marginTop: 6, lineHeight: 1.45 },
 };

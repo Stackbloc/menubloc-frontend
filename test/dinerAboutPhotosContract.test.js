@@ -59,7 +59,8 @@ test("My Menuply identity hero is prominent with photo upload and short bio", ()
   assert.doesNotMatch(hero, /Add a dining photo/);
   assert.doesNotMatch(gallery, /Add a dining photo/);
   assert.doesNotMatch(hero, /vegetarian|gluten_free|allergen/i);
-  assert.doesNotMatch(hero, /questionnaire|favorite cuisine|hometown/i);
+  assert.doesNotMatch(hero, /questionnaire|favorite cuisine/i);
+  assert.match(hero, /diner-personal-context/);
 });
 
 test("Connection peer hub shows read-only profile media gallery", () => {
