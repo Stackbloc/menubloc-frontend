@@ -135,6 +135,7 @@ export default function ProfileTab({
     <div>
       <SummaryEditSection
         title="Profile information"
+        id="profile-information"
         summary={identitySummary}
         editing={editingIdentity}
         onEdit={() => setEditingIdentity(true)}
@@ -194,6 +195,7 @@ export default function ProfileTab({
 
       <SummaryEditSection
         title="Personal context"
+        id="personal-context"
         summary={personalContextSummary}
         description="Optional short lines on your diner profile — class year, field, job, or hometown. Shown beneath your name; not a full bio."
         editing={editingPersonalContext}

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 import ProfileMediaGallery from "./ProfileMediaGallery.jsx";
 import AvatarComposeSheet from "./AvatarComposeSheet.jsx";
 import * as s from "./myMenuplyStyles.js";
@@ -188,6 +189,18 @@ export default function DinerIdentityHero({
               ))}
             </div>
           ) : null}
+
+          {readOnly ? null : (
+            <p style={s.profileDetailLinks} data-testid="profile-detail-links">
+              <Link to="/account?tab=profile#profile-information" style={s.link}>
+                Screen name
+              </Link>
+              <span aria-hidden="true"> · </span>
+              <Link to="/account?tab=profile#personal-context" style={s.link}>
+                Class, job &amp; hometown
+              </Link>
+            </p>
+          )}
 
           {locationLabel ? (
             <p

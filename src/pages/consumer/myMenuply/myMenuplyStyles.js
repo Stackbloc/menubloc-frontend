@@ -1103,6 +1103,13 @@ export const personalContextLine = {
   fontStyle: "italic",
 };
 
+export const profileDetailLinks = {
+  margin: "6px 0 0",
+  fontSize: 13,
+  lineHeight: 1.4,
+  color: "#64748b",
+};
+
 export const aboutArea = {
   width: "100%",
   minHeight: 72,

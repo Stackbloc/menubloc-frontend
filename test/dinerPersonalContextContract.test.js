@@ -59,7 +59,11 @@ test("DinerIdentityHero renders personal context beneath name without empty plac
 test("Profile tab exposes optional personal context fields", () => {
   const tab = read("src/pages/consumer/accountDashboard/ProfileTab.jsx");
   const profile = read("src/pages/consumer/ConsumerProfile.jsx");
+  const hero = read("src/pages/consumer/myMenuply/DinerIdentityHero.jsx");
+  assert.match(hero, /profile-detail-links/);
+  assert.match(hero, /personal-context/);
   assert.match(tab, /Personal context/);
+  assert.match(tab, /id="personal-context"/);
   assert.match(tab, /dinerOccupation/);
   assert.match(tab, /dinerEducationStatus/);
   assert.match(tab, /dinerFieldOfStudy/);
