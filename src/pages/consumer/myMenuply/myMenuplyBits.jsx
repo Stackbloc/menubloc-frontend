@@ -909,6 +909,8 @@ function WantToEatCard({
   onSelectItem,
   onDelete,
   deleteBusy,
+  onRequestMmt,
+  onViewMmt,
 }) {
   const href = want.menu_item_id
     ? `/menu-items/${encodeURIComponent(String(want.menu_item_id))}`
@@ -1067,6 +1069,34 @@ function WantToEatCard({
   return (
     <div style={shellStyle} data-testid="want-to-eat-item" {...bind}>
       {main}
+      {!readOnly && (onRequestMmt || onViewMmt) ? (
+        <div style={wantStyles.mmtRow} data-testid="want-mmt-actions">
+          {want?.mmt_request?.id ? (
+            <button
+              type="button"
+              style={wantStyles.mmtBtn}
+              data-testid="want-mmt-view"
+              onClick={() => onViewMmt?.(want.mmt_request)}
+            >
+              Make Me This · {Number(want.mmt_request.response_count) || 0} response
+              {(Number(want.mmt_request.response_count) || 0) === 1 ? "" : "s"}
+            </button>
+          ) : (
+            <button
+              type="button"
+              style={wantStyles.mmtBtn}
+              data-testid="want-mmt-request"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onRequestMmt?.(want);
+              }}
+            >
+              Request Make Me This
+            </button>
+          )}
+        </div>
+      ) : null}
       {open ? (
         <button
           type="button"
@@ -1095,6 +1125,8 @@ export function WantToEatList({
   onSelectItem,
   onDelete,
   deleteBusy = false,
+  onRequestMmt,
+  onViewMmt,
   emptyMessage = null,
   limit = 12,
   layout = "stack",
@@ -1122,6 +1154,8 @@ export function WantToEatList({
           onSelectItem={onSelectItem}
           onDelete={onDelete}
           deleteBusy={deleteBusy}
+          onRequestMmt={onRequestMmt}
+          onViewMmt={onViewMmt}
         />
       ))}
     </div>
@@ -1277,4 +1311,15 @@ const wantStyles = {
   copy: { padding: "12px 14px", flex: 1, minWidth: 0 },
   title: { fontWeight: 800, fontSize: 15, color: "#0f172a", marginBottom: 4, lineHeight: 1.25 },
   hint: { fontSize: 12, color: "#64748b", marginTop: 6 },
+  mmtRow: { marginTop: 6, display: "flex", justifyContent: "flex-start", paddingLeft: 2 },
+  mmtBtn: {
+    border: "none",
+    background: "transparent",
+    color: "#2563eb",
+    fontSize: 12,
+    fontWeight: 700,
+    padding: "2px 0",
+    cursor: "pointer",
+    textAlign: "left",
+  },
 };

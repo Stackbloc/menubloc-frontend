@@ -68,6 +68,9 @@ import InvitePickerSheet from "./myMenuply/InvitePickerSheet.jsx";
 import CrewInvitePeopleSheet from "./myMenuply/CrewInvitePeopleSheet.jsx";
 import SectionEmptyState from "./myMenuply/SectionEmptyState.jsx";
 import { buildJoinMeCandidates } from "./myMenuply/joinMeCandidates.js";
+import RequestMmtSheet from "./myMenuply/RequestMmtSheet.jsx";
+import MmtDetailSheet from "./myMenuply/MmtDetailSheet.jsx";
+import { listMakeMeThisInbox } from "../../lib/makeMeThisApi.js";
 import {
   buildEatingDayMarkersFromCalendar,
   compareYmd,
@@ -198,6 +201,10 @@ export default function MyMenuplyPage() {
   const [schedulingPlans, setSchedulingPlans] = useState(false);
   const [selectedPlanKey, setSelectedPlanKey] = useState("");
   const [joinCandidates, setJoinCandidates] = useState([]);
+  const [mmtInbox, setMmtInbox] = useState([]);
+  const [mmtInboxLoading, setMmtInboxLoading] = useState(false);
+  const [requestMmtWant, setRequestMmtWant] = useState(null);
+  const [mmtDetailId, setMmtDetailId] = useState(null);
   const [inviteMeOutOpen, setInviteMeOutOpen] = useState(false);
   const [inviteMeOutAudience, setInviteMeOutAudience] = useState("connections");
   const [inviteMeOutSelectedIds, setInviteMeOutSelectedIds] = useState([]);
@@ -233,6 +240,7 @@ export default function MyMenuplyPage() {
         followRes,
         likeRes,
         wantRes,
+        mmtInboxRes,
         crewRes,
         eventRes,
         groupRes,
@@ -255,6 +263,7 @@ export default function MyMenuplyPage() {
           setWantListError(err?.message || "Unable to load want list");
           return { items: [] };
         }),
+        listMakeMeThisInbox().catch(() => ({ items: [] })),
         listDiningCrews().catch(() => ({ crews: [] })),
         listMyVenueEvents().catch(() => ({ events: [] })),
         listMyVenueEventGroups().catch(() => ({ groups: [] })),
@@ -292,6 +301,7 @@ export default function MyMenuplyPage() {
       setLiked(likeRes.likes || []);
       setWants(wantRes.items || []);
       if ((wantRes.items || []).length > 0) setWantListError("");
+      setMmtInbox(mmtInboxRes?.items || []);
       setCrews(crewRes.crews || crewRes.items || []);
       setEvents(eventRes.events || []);
       setEventGroups(groupRes.groups || []);
@@ -415,6 +425,23 @@ export default function MyMenuplyPage() {
       setComposeDefaultCategory("want");
       setComposeMediaSource("camera");
       setComposeOpen(true);
+      const timer = window.setTimeout(() => {
+        eatingSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 120);
+      return () => window.clearTimeout(timer);
+    }
+    const mmt = String(searchParams.get("mmt") || "").trim();
+    if (mmt && /^\d+$/.test(mmt)) {
+      setMmtDetailId(Number(mmt));
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          if (!next.has("mmt")) return prev;
+          next.delete("mmt");
+          return next;
+        },
+        { replace: true }
+      );
       const timer = window.setTimeout(() => {
         eatingSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       }, 120);
@@ -876,6 +903,20 @@ export default function MyMenuplyPage() {
       setError(err.message || "Unable to delete eating plan");
     } finally {
       setPostBusy("");
+    }
+  }
+
+  async function refreshMmtData() {
+    setMmtInboxLoading(true);
+    try {
+      const [wantRes, inboxRes] = await Promise.all([
+        listWantToEat().catch(() => ({ items: [] })),
+        listMakeMeThisInbox().catch(() => ({ items: [] })),
+      ]);
+      setWants(wantRes.items || []);
+      setMmtInbox(inboxRes.items || []);
+    } finally {
+      setMmtInboxLoading(false);
     }
   }
 
@@ -1389,6 +1430,11 @@ export default function MyMenuplyPage() {
               inviteMeOutCandidates={joinCandidates}
               onInviteMeOutSave={saveInviteMeOutSettings}
               inviteMeOutToggleBusy={inviteMeOutToggleBusy}
+              mmtInbox={mmtInbox}
+              mmtInboxLoading={mmtInboxLoading}
+              onRequestMmt={(want) => setRequestMmtWant(want)}
+              onViewMmt={(mmt) => setMmtDetailId(Number(mmt?.id) || null)}
+              onOpenMmtInboxItem={(row) => setMmtDetailId(Number(row?.id) || null)}
               planPrefill={planPrefill}
               locationCity={locationCity}
               locationState={locationState}
@@ -1655,6 +1701,23 @@ export default function MyMenuplyPage() {
           analyticsContext={sharePayload.analyticsContext}
         />
       ) : null}
+      <RequestMmtSheet
+        open={Boolean(requestMmtWant)}
+        want={requestMmtWant}
+        candidates={joinCandidates}
+        onClose={() => setRequestMmtWant(null)}
+        onCreated={async () => {
+          setRequestMmtWant(null);
+          await refreshMmtData();
+        }}
+      />
+      <MmtDetailSheet
+        open={Boolean(mmtDetailId)}
+        requestId={mmtDetailId}
+        viewerUserId={consumer?.id}
+        onClose={() => setMmtDetailId(null)}
+        onUpdated={refreshMmtData}
+      />
     </>
   );
 }

@@ -17,6 +17,7 @@ import {
   FuturePlanRow,
   WantToEatList,
 } from "./myMenuplyBits.jsx";
+import MakeMeThisInboxPanel from "./MakeMeThisInboxPanel.jsx";
 import {
   clampEatingLookbackDate,
   compareYmd,
@@ -147,6 +148,11 @@ export default function EatingHubSection({
   inviteMeOutCandidates = [],
   onInviteMeOutSave,
   inviteMeOutToggleBusy = false,
+  mmtInbox = [],
+  mmtInboxLoading = false,
+  onRequestMmt,
+  onViewMmt,
+  onOpenMmtInboxItem,
 }) {
   void liked;
   void foodHref;
@@ -369,8 +375,17 @@ export default function EatingHubSection({
             onSelectItem={readOnly ? undefined : onWantSelect}
             onDelete={readOnly ? undefined : onWantDelete}
             deleteBusy={wantDeleteBusy}
+            onRequestMmt={readOnly ? undefined : onRequestMmt}
+            onViewMmt={readOnly ? undefined : onViewMmt}
             emptyMessage={null}
           />
+          {!readOnly ? (
+            <MakeMeThisInboxPanel
+              items={mmtInbox}
+              loading={mmtInboxLoading}
+              onOpen={onOpenMmtInboxItem}
+            />
+          ) : null}
           {/* Own hub only: Invite Me Out on/off — opens eligibility dialog (peers never see this). */}
           {!readOnly ? (
             <p
