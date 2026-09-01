@@ -41,6 +41,7 @@ export default function InviteToEatModal({
   restaurantName = "",
   menuItemId = null,
   menuItemName = null,
+  attachedMenuId = null,
   diningCrewId = null,
   initialInviteKind = null,
   initialInviteeName = "",
@@ -173,6 +174,7 @@ export default function InviteToEatModal({
       const body = {
         restaurant_id: restaurantId,
         menu_item_id: menuItemId || undefined,
+        attached_menu_id: attachedMenuId || undefined,
         schedule_mode: scheduleMode,
         message: resolvedMessage || undefined,
         invite_kind: inviteKind,

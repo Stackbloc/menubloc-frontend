@@ -1,6 +1,6 @@
 /**
  * Invite to Eat share / compose copy helpers.
- * Draft options (LDL/LDD/LHC/MMH + light emoji) are selectable copy, not a glossary feature.
+ * Draft options (LDL/LDD/LHC/LGD/MMH + light emoji) are selectable copy, not a glossary feature.
  */
 
 import {
@@ -8,12 +8,13 @@ import {
   invitePathFromShareUrl,
 } from "./menuplyAccountInvite.js";
 
-export const INVITE_MESSAGE_SEED_CODES = ["LDL", "LDD", "LHC", "MMH"];
+export const INVITE_MESSAGE_SEED_CODES = ["LDL", "LDD", "LHC", "LGD", "MMH"];
 
 export const INVITE_COPY_SEEDS = {
   LHC: { code: "LHC", emoji: "☕", verbPhrase: "Let's have coffee", meal: "coffee" },
   LDL: { code: "LDL", emoji: "🥗", verbPhrase: "Let's do lunch", meal: "lunch" },
   LDD: { code: "LDD", emoji: "🍽️", verbPhrase: "Let's do dinner", meal: "dinner" },
+  LGD: { code: "LGD", emoji: "🍸", verbPhrase: "Let's get drinks", meal: "drinks" },
   MMH: { code: "MMH", emoji: "📍", verbPhrase: "Meet me here", meal: "meet" },
 };
 
@@ -22,8 +23,17 @@ export function defaultScheduledTimeForInviteSeed(seedCode) {
   const code = String(seedCode || "").trim().toUpperCase();
   if (code === "LHC") return "09:00";
   if (code === "LDL") return "12:30";
+  if (code === "LGD") return "18:00";
   if (code === "LDD") return "19:00";
   return "19:00";
+}
+
+/** LGD quick-invite compose title — place name fills the blank when known. */
+export function buildLgdQuickInviteFormTitle(restaurantName = "") {
+  const place = String(restaurantName || "").trim();
+  return place
+    ? `LGD — Let's Get Drinks at ${place}`
+    : "LGD — Let's Get Drinks at ___________";
 }
 
 export function formatInviteDateLabel(isoDate) {

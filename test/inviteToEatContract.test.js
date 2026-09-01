@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import {
   buildEatInviteMessageDraft,
   buildEatInviteShareText,
+  buildLgdQuickInviteFormTitle,
   defaultScheduledTimeForInviteSeed,
   listInviteMessageOptions,
   pickInviteCopySeed,
@@ -57,11 +58,18 @@ test("InviteToEatButton tooltip and Invitation Ready confirmation", () => {
   assert.match(modal, /defaultScheduledTimeForInviteSeed/);
   assert.match(modal, /RSVP without a Menuply account/);
 
+  assert.match(modal, /attached_menu_id|attachedMenuId/);
+
   const startPage = read("src/pages/consumer/InviteToEatStartPage.jsx");
   assert.match(startPage, /seed_code/);
   assert.match(startPage, /quick_invite/);
   assert.match(startPage, /autoOpenShareOnReady/);
   assert.match(startPage, /initialSeedCode/);
+  assert.match(startPage, /buildLgdQuickInviteFormTitle/);
+  assert.match(startPage, /lgd-quick-invite-title/);
+  assert.match(startPage, /lgd-attached-menu-fieldset/);
+  assert.match(startPage, /fetchRestaurantMenuCatalog/);
+  assert.match(startPage, /Attach a menu \(optional\)/);
   assert.match(modal, /Allow restaurant changes|fixed-location/);
   assert.match(modal, /type=["']radio["']/);
   assert.match(modal, /gridTemplateColumns:\s*["']16px minmax\(0, 1fr\)["']/);
@@ -83,6 +91,7 @@ test("InviteToEatButton tooltip and Invitation Ready confirmation", () => {
 
   const api = read("src/lib/eatInvitationsApi.js");
   assert.match(api, /\/public\/eat-invitations/);
+  assert.match(read("src/lib/api.js"), /fetchRestaurantMenuCatalog/);
   assert.match(api, /createEatInvitationCounterProposal/);
   assert.match(api, /resolveEatInvitationProposal/);
   assert.match(api, /\/proposals/);
@@ -93,14 +102,21 @@ test("InviteToEatButton tooltip and Invitation Ready confirmation", () => {
   assert.match(guestId, /setEatInviteGuestDisplayName/);
 });
 
-test("Share copy options include LDL/LDD/LHC/MMH with light emoji", () => {
+test("Share copy options include LDL/LDD/LHC/LGD/MMH with light emoji", () => {
   assert.equal(defaultScheduledTimeForInviteSeed("LHC"), "09:00");
   assert.equal(defaultScheduledTimeForInviteSeed("LDL"), "12:30");
+  assert.equal(defaultScheduledTimeForInviteSeed("LGD"), "18:00");
   assert.equal(defaultScheduledTimeForInviteSeed("LDD"), "19:00");
   assert.equal(pickInviteCopySeed({ scheduledTime: "12:30" }).code, "LDL");
   assert.equal(pickInviteCopySeed({ scheduledTime: "19:00" }).code, "LDD");
   assert.equal(pickInviteCopySeed({ scheduledTime: "10:00" }).code, "LHC");
   assert.equal(pickInviteCopySeed({ scheduledTime: "23:00" }).code, "MMH");
+
+  assert.equal(
+    buildLgdQuickInviteFormTitle("Bestia"),
+    "LGD — Let's Get Drinks at Bestia"
+  );
+  assert.match(buildLgdQuickInviteFormTitle(""), /LGD — Let's Get Drinks at ___________/);
 
   const options = listInviteMessageOptions({
     inviteKind: "private",
@@ -109,12 +125,13 @@ test("Share copy options include LDL/LDD/LHC/MMH with light emoji", () => {
     timeLabel: "12:30 PM",
     scheduledTime: "12:30",
   });
-  assert.equal(options.length, 4);
+  assert.equal(options.length, 5);
   assert.deepEqual(
     options.map((o) => o.code),
-    ["LDL", "LDD", "LHC", "MMH"]
+    ["LDL", "LDD", "LHC", "LGD", "MMH"]
   );
   assert.match(options[0].text, /LDL/);
+  assert.match(options.find((o) => o.code === "LGD").text, /Let's get drinks at Fixins/);
 
   const lunch = buildEatInviteShareText({
     inviteKind: "private",
@@ -138,7 +155,7 @@ test("Share copy options include LDL/LDD/LHC/MMH with light emoji", () => {
     url: "https://menuply.com/invite/xyz",
   });
   assert.match(custom, /Join us for tacos/);
-  assert.doesNotMatch(custom, /LDL|LDD|LHC|MMH/);
+  assert.doesNotMatch(custom, /LDL|LDD|LHC|LGD|MMH/);
 
   const coffee = buildEatInviteMessageDraft({
     inviteKind: "private",
@@ -172,6 +189,8 @@ test("Eat invitation public page uses live About Us; named private invitee; gues
   assert.match(page, /Can&apos;t Make It|Can't Make It/);
   assert.match(page, /respondToEatInvitation/);
   assert.match(page, /View Menu/);
+  assert.match(page, /attached_menu_id|attachedMenuLabel/);
+  assert.match(page, /\?menu=/);
   assert.match(page, /invite-guest-name/);
   assert.match(page, /invite-guest-no-account/);
   assert.match(page, /invite-account-invite/);

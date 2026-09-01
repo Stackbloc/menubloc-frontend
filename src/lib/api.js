@@ -140,6 +140,13 @@ export async function getRestaurantMenu(restaurantId) {
   return apiGet(`/public/restaurants/${encodeURIComponent(String(restaurantId))}/menu`);
 }
 
+/** Published menu tabs for a restaurant (Invite to Eat / LGD menu attachment). */
+export async function fetchRestaurantMenuCatalog(restaurantId, options = {}) {
+  const id = encodeURIComponent(String(restaurantId || "").trim());
+  if (!id) throw new Error("restaurantId required");
+  return apiGet(`/public/restaurants/${id}/menus`, options);
+}
+
 /**
  * Highlight / partial menu for public restaurant profiles.
  * Read-only — no basket, Waiter, or full-menu enrichment.

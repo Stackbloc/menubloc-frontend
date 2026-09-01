@@ -243,8 +243,20 @@ export default function EatInvitationPage() {
 
   const menuHref = useMemo(() => {
     if (!restaurantHref) return null;
+    const attachedMenuId = invitation?.attached_menu_id;
+    if (attachedMenuId) {
+      return `${restaurantHref}/menu?menu=${encodeURIComponent(String(attachedMenuId))}`;
+    }
     return `${restaurantHref}/menu`;
-  }, [restaurantHref]);
+  }, [restaurantHref, invitation?.attached_menu_id]);
+
+  const attachedMenuLabel = useMemo(() => {
+    const name = String(invitation?.attached_menu_name || "").trim();
+    if (name) return name;
+    if (invitation?.attached_menu_type === "drinks") return "Drinks menu";
+    if (invitation?.attached_menu_id) return "Attached menu";
+    return "Menu";
+  }, [invitation]);
 
   const dishHref = useMemo(() => {
     if (!invitation?.menu_item_id) return null;
@@ -1272,7 +1284,7 @@ export default function EatInvitationPage() {
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                 {menuHref ? (
                   <Link to={menuHref} style={linkBtn} data-testid="invite-view-menu">
-                    View Menu
+                    {invitation?.attached_menu_id ? `View ${attachedMenuLabel}` : "View Menu"}
                   </Link>
                 ) : null}
                 {restaurantHref ? (

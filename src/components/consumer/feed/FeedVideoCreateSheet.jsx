@@ -1,5 +1,5 @@
 /**
- * Feed center X — record video by category, upload library media, or quick invites (LDL/LDD/LHC/MMH).
+ * Feed center X — record video by category, upload library media, or quick invites (LDL/LDD/LHC/LGD/MMH).
  */
 
 import { useEffect, useState } from "react";
@@ -57,7 +57,9 @@ export const FEED_QUICK_INVITE_ITEMS = INVITE_MESSAGE_SEED_CODES.map((code) => {
     description:
       code === "MMH"
         ? "Share a meet-up link — they can RSVP without a Menuply account"
-        : `Share a ${seed.meal} invite — they can RSVP without a Menuply account`,
+        : code === "LGD"
+          ? "Share a drinks invite — pick a place and optional menu"
+          : `Share a ${seed.meal} invite — they can RSVP without a Menuply account`,
     testId: `feed-quick-invite-${code.toLowerCase()}`,
     guestOk: false,
     guestDescription: "Sign in to send quick invites",
