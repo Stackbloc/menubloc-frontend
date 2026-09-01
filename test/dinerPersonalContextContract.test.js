@@ -37,6 +37,16 @@ test("buildDinerPersonalContextLines supports student, professional, and hometow
   assert.deepEqual(buildDinerPersonalContextLines({}), []);
 });
 
+test("hobbies appear as their own line after hometown", () => {
+  assert.deepEqual(
+    buildDinerPersonalContextLines({
+      diner_occupation: "Software designer",
+      diner_hobbies: "Hiking, live music",
+    }),
+    ["Software designer", "Hiking, live music"]
+  );
+});
+
 test("occupation takes precedence over education fields", () => {
   assert.deepEqual(
     buildDinerPersonalContextLines({
@@ -57,10 +67,11 @@ test("DinerIdentityHero renders personal context beneath name without empty plac
   assert.match(hero, /personalContextLines\.map/);
   assert.match(editor, /diner-personal-context-editor/);
   assert.match(editor, /diner-personal-context-toggle/);
-  assert.match(editor, /Add class, job & hometown/);
+  assert.match(editor, /Add personal details/);
   assert.match(editor, /diner-personal-context-done/);
   assert.match(editor, /diner-occupation-input/);
   assert.match(editor, /diner-hometown-input/);
+  assert.match(editor, /diner-hobbies-input/);
   assert.doesNotMatch(hero, /About Me essay|follower|following count/i);
 });
 
@@ -74,6 +85,7 @@ test("Profile tab exposes optional personal context fields", () => {
   assert.match(tab, /dinerEducationStatus/);
   assert.match(tab, /dinerFieldOfStudy/);
   assert.match(tab, /dinerHometown/);
+  assert.match(tab, /dinerHobbies/);
   assert.match(profile, /handleSavePersonalContext/);
   assert.match(profile, /diner_education_status/);
   assert.match(page, /onPersonalContextSave/);
@@ -83,6 +95,7 @@ test("Connection peer hub passes personal context to identity hero", () => {
   const peer = read("src/pages/consumer/ConsumerConnectionPeerPage.jsx");
   assert.match(peer, /personalContext=\{\{/);
   assert.match(peer, /diner_hometown/);
+  assert.match(peer, /diner_hobbies/);
   assert.match(peer, /readOnly/);
   assert.doesNotMatch(peer, /onPersonalContextSave/);
 });

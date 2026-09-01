@@ -223,6 +223,7 @@ export default function ConsumerConnectionPeerPage() {
                 diner_field_of_study: peer?.diner_field_of_study,
                 diner_occupation: peer?.diner_occupation,
                 diner_hometown: peer?.diner_hometown,
+                diner_hobbies: peer?.diner_hobbies,
               }}
               connections={peerConnections}
               viewerUserId={consumer?.id}

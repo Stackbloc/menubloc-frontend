@@ -13,7 +13,7 @@ import { accountStyles as styles } from "./accountDashboardStyles.js";
 import AccountActionLink from "./AccountActionLink.jsx";
 import PreferenceChips from "./PreferenceChips.jsx";
 import SummaryEditSection from "./SummaryEditSection.jsx";
-import { summarizePersonalContext, FIELD_MAX } from "../../../lib/dinerPersonalContext.js";
+import { summarizePersonalContext, FIELD_MAX, HOBBIES_MAX } from "../../../lib/dinerPersonalContext.js";
 
 function SaveStatus({ status, isError }) {
   if (!status) return null;
@@ -92,6 +92,8 @@ export default function ProfileTab({
   onDinerOccupationChange,
   dinerHometown,
   onDinerHometownChange,
+  dinerHobbies,
+  onDinerHobbiesChange,
   onSavePersonalContext,
   personalContextSaving,
   personalContextStatus,
@@ -129,6 +131,7 @@ export default function ProfileTab({
     diner_field_of_study: dinerFieldOfStudy,
     diner_occupation: dinerOccupation,
     diner_hometown: dinerHometown,
+    diner_hobbies: dinerHobbies,
   });
 
   return (
@@ -197,7 +200,7 @@ export default function ProfileTab({
         title="Personal context"
         id="personal-context"
         summary={personalContextSummary}
-        description="Optional short lines on your diner profile — class year, field, job, or hometown. Shown beneath your name; not a full bio."
+        description="Optional short lines on your diner profile — class year, field, job, hometown, or hobbies. Shown beneath your name; not a full bio."
         editing={editingPersonalContext}
         onEdit={() => setEditingPersonalContext(true)}
         onDone={async () => {
@@ -265,6 +268,19 @@ export default function ProfileTab({
             style={styles.input}
             placeholder="Houston, TX"
             maxLength={FIELD_MAX}
+          />
+        </div>
+        <div style={styles.field}>
+          <label style={styles.fieldLabel}>
+            Hobbies <span style={styles.optText}>(optional)</span>
+          </label>
+          <input
+            type="text"
+            value={dinerHobbies}
+            onChange={(e) => onDinerHobbiesChange(e.target.value.slice(0, HOBBIES_MAX))}
+            style={styles.input}
+            placeholder="Hiking, live music, cooking"
+            maxLength={HOBBIES_MAX}
           />
         </div>
         <button

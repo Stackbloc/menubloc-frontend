@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import {
   buildDinerPersonalContextLines,
   FIELD_MAX,
+  HOBBIES_MAX,
   normalizePersonalContextInput,
 } from "../../../lib/dinerPersonalContext.js";
 import * as s from "./myMenuplyStyles.js";
@@ -12,6 +13,7 @@ function emptyContext() {
     diner_field_of_study: "",
     diner_occupation: "",
     diner_hometown: "",
+    diner_hobbies: "",
   };
 }
 
@@ -41,6 +43,7 @@ export default function DinerPersonalContextEditor({
     value?.diner_field_of_study,
     value?.diner_occupation,
     value?.diner_hometown,
+    value?.diner_hobbies,
   ]);
 
   async function saveIfChanged() {
@@ -73,7 +76,7 @@ export default function DinerPersonalContextEditor({
         disabled={busy || saving}
         onClick={() => setEditing(true)}
       >
-        {hasContext ? "Edit class, job & hometown" : "Add class, job & hometown"}
+        {hasContext ? "Edit personal details" : "Add personal details"}
       </button>
     );
   }
@@ -81,7 +84,7 @@ export default function DinerPersonalContextEditor({
   return (
     <div style={s.personalContextPanel} data-testid="diner-personal-context-editor">
       <div style={s.personalContextPanelHead}>
-        <p style={s.personalContextPanelTitle}>Class, job & hometown</p>
+        <p style={s.personalContextPanelTitle}>Personal details</p>
         <button
           type="button"
           data-testid="diner-personal-context-done"
@@ -168,6 +171,26 @@ export default function DinerPersonalContextEditor({
               setDraft((prev) => ({
                 ...prev,
                 diner_hometown: e.target.value.slice(0, FIELD_MAX),
+              }))
+            }
+            onBlur={saveIfChanged}
+          />
+        </label>
+
+        <label style={{ ...s.personalContextField, gridColumn: "1 / -1" }}>
+          <span style={s.personalContextLabel}>Hobbies</span>
+          <input
+            type="text"
+            data-testid="diner-hobbies-input"
+            style={s.personalContextInput}
+            value={draft.diner_hobbies}
+            maxLength={HOBBIES_MAX}
+            placeholder="Hiking, live music, cooking"
+            disabled={busy || saving}
+            onChange={(e) =>
+              setDraft((prev) => ({
+                ...prev,
+                diner_hobbies: e.target.value.slice(0, HOBBIES_MAX),
               }))
             }
             onBlur={saveIfChanged}

@@ -582,6 +582,7 @@ export default function MyMenuplyPage() {
         diner_field_of_study: next.diner_field_of_study || null,
         diner_occupation: next.diner_occupation || null,
         diner_hometown: next.diner_hometown || null,
+        diner_hobbies: next.diner_hobbies || null,
       });
       const saved = data?.profile || {};
       setProfile((prev) => ({
@@ -590,6 +591,7 @@ export default function MyMenuplyPage() {
         diner_field_of_study: saved.diner_field_of_study ?? next.diner_field_of_study ?? null,
         diner_occupation: saved.diner_occupation ?? next.diner_occupation ?? null,
         diner_hometown: saved.diner_hometown ?? next.diner_hometown ?? null,
+        diner_hobbies: saved.diner_hobbies ?? next.diner_hobbies ?? null,
       }));
       setIdentityNotice("Personal context saved.");
     } catch (err) {
@@ -1373,6 +1375,7 @@ export default function MyMenuplyPage() {
                 diner_field_of_study: profile?.diner_field_of_study,
                 diner_occupation: profile?.diner_occupation,
                 diner_hometown: profile?.diner_hometown,
+                diner_hobbies: profile?.diner_hobbies,
               }}
               locationLabel={profile?.primary_location?.public_label || null}
               connections={connections}

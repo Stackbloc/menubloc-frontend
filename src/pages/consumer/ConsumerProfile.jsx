@@ -114,6 +114,7 @@ export default function ConsumerProfile() {
   const [dinerFieldOfStudy, setDinerFieldOfStudy] = useState("");
   const [dinerOccupation, setDinerOccupation] = useState("");
   const [dinerHometown, setDinerHometown] = useState("");
+  const [dinerHobbies, setDinerHobbies] = useState("");
   const [personalContextSaving, setPersonalContextSaving] = useState(false);
   const [personalContextStatus, setPersonalContextStatus] = useState("");
   const [personalContextError, setPersonalContextError] = useState("");
@@ -169,6 +170,7 @@ export default function ConsumerProfile() {
       setDinerFieldOfStudy(profile.diner_field_of_study || "");
       setDinerOccupation(profile.diner_occupation || "");
       setDinerHometown(profile.diner_hometown || "");
+      setDinerHobbies(profile.diner_hobbies || "");
       setEduStatus(getEduVerificationFromConsumer(profileConsumer || {}));
       setEduNotice("");
       setEduError("");
@@ -260,6 +262,7 @@ export default function ConsumerProfile() {
         diner_field_of_study: dinerFieldOfStudy.trim() || null,
         diner_occupation: dinerOccupation.trim() || null,
         diner_hometown: dinerHometown.trim() || null,
+        diner_hobbies: dinerHobbies.trim() || null,
       });
       setPersonalContextStatus("Saved");
       return true;
@@ -610,6 +613,8 @@ export default function ConsumerProfile() {
               onDinerOccupationChange={setDinerOccupation}
               dinerHometown={dinerHometown}
               onDinerHometownChange={setDinerHometown}
+              dinerHobbies={dinerHobbies}
+              onDinerHobbiesChange={setDinerHobbies}
               onSavePersonalContext={handleSavePersonalContext}
               personalContextSaving={personalContextSaving}
               personalContextStatus={personalContextStatus}
