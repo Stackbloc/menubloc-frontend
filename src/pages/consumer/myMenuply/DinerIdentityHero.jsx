@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Link } from "react-router-dom";
 import ProfileMediaGallery from "./ProfileMediaGallery.jsx";
 import AvatarComposeSheet from "./AvatarComposeSheet.jsx";
 import * as s from "./myMenuplyStyles.js";
