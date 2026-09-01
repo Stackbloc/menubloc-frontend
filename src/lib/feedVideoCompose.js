@@ -11,9 +11,11 @@ import {
   updateWhatWeDoingSession,
   whatIAteTodayLocalDate,
 } from "./consumerApi.js";
+import { createGuestFeedVideo, uploadGuestFeedVideoPhoto } from "./guestFeedVideoApi.js";
 import { eatingMediaFromUpload, isVideoFile } from "./eatingMediaUtils.js";
 import { defaultWhatIAteMealPeriod } from "./whatIAteTodayMealPeriod.js";
 import { eatingFoodName, joinHomemadeComment } from "../pages/consumer/myMenuply/eatingPlaceLink.js";
+import { buildGuestPublicationLegalPayload } from "./legalConsent.js";
 
 export async function postFeedAteVideo({
   file,
@@ -108,6 +110,93 @@ export async function postFeedWantVideo({
   });
 
   return data?.item || data;
+}
+
+async function uploadGuestFeedMedia(file) {
+  const up = await uploadGuestFeedVideoPhoto(file);
+  return eatingMediaFromUpload(up);
+}
+
+export async function postGuestFeedAteVideo(payload, { legalConsent } = {}) {
+  if (!payload?.file || !isVideoFile(payload.file)) {
+    throw new Error("Feed posts need a video");
+  }
+  const { photo_url, video_url } = await uploadGuestFeedMedia(payload.file);
+  if (!video_url) throw new Error("Could not upload video");
+
+  const homemade = Boolean(payload.homemade);
+  const restaurantId = homemade ? null : payload.restaurant?.restaurant_id || payload.dish?.restaurant_id;
+  const menuItemId = homemade ? null : payload.dish?.menu_item_id;
+  const note = String(payload.text || "").trim();
+  const foodName = homemade
+    ? note || "Homemade"
+    : String(payload.dish?.item_name || "").trim() ||
+      String(payload.restaurant?.restaurant_name || "").trim() ||
+      note ||
+      "Food";
+
+  return createGuestFeedVideo({
+    kind: "ate",
+    ...buildGuestPublicationLegalPayload(),
+    ...(legalConsent || {}),
+    food_name: foodName,
+    photo_url,
+    video_url,
+    eaten_on: whatIAteTodayLocalDate(),
+    meal_period: payload.mealPeriod || defaultWhatIAteMealPeriod(),
+    restaurant_id: restaurantId || undefined,
+    menu_item_id: menuItemId || undefined,
+    comment: homemade ? joinHomemadeComment(true, note) : note || undefined,
+    is_recommend: Boolean(payload.isRecommend && (restaurantId || menuItemId)),
+  });
+}
+
+export async function postGuestFeedReviewVideo(payload, options = {}) {
+  const menuItemId = payload?.dish?.menu_item_id;
+  if (!menuItemId) {
+    throw new Error("Reviews require a menu item");
+  }
+  return postGuestFeedAteVideo(
+    {
+      ...payload,
+      homemade: false,
+      isRecommend: false,
+    },
+    options
+  );
+}
+
+export async function postGuestFeedWantVideo(payload, { legalConsent } = {}) {
+  if (!payload?.file || !isVideoFile(payload.file)) {
+    throw new Error("Feed posts need a video");
+  }
+  const { photo_url, video_url } = await uploadGuestFeedMedia(payload.file);
+  if (!video_url) throw new Error("Could not upload video");
+
+  const homemade = Boolean(payload.homemade);
+  const restaurantId = homemade ? null : payload.restaurant?.restaurant_id || payload.dish?.restaurant_id;
+  const menuItemId = homemade ? null : payload.dish?.menu_item_id;
+  const name =
+    eatingFoodName({
+      text: payload.text,
+      dish: payload.dish,
+      restaurant: payload.restaurant,
+      homemade,
+    }) ||
+    String(payload.text || "").trim() ||
+    "Wanna eat";
+
+  return createGuestFeedVideo({
+    kind: "want",
+    ...buildGuestPublicationLegalPayload(),
+    ...(legalConsent || {}),
+    food_name: name,
+    photo_url,
+    video_url,
+    restaurant_id: restaurantId || undefined,
+    menu_item_id: menuItemId || undefined,
+    comment: homemade ? joinHomemadeComment(true, payload.text) : undefined,
+  });
 }
 
 export const FEED_VIDEO_POSTED_EVENT = "menuply:feed-video-posted";

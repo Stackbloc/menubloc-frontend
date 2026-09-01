@@ -8,6 +8,7 @@
  */
 
 import { appendLanguageParam, readStoredLanguage, withLanguageHeaders } from "./languageApi.js";
+import { appendGuestFeedClaimToAuthBody } from "./guestFeedClaimSession.js";
 import {
   formatBytes,
   MAX_UPLOAD_VIDEO_BYTES,
@@ -117,8 +118,8 @@ const del  = (path)        => req(path, { method: "DELETE" });
 
 // ── Auth ──────────────────────────────────────────────────────────────────
 export const getConsumerSession    = ()                    => get("/api/consumer-auth/me");
-export const signupConsumer        = (body)                => post("/api/consumer-auth/signup", body);
-export const loginConsumer         = (email, password)     => post("/api/consumer-auth/login", { email, password });
+export const signupConsumer        = (body)                => post("/api/consumer-auth/signup", appendGuestFeedClaimToAuthBody(body));
+export const loginConsumer         = (email, password)     => post("/api/consumer-auth/login", appendGuestFeedClaimToAuthBody({ email, password }));
 export const loginConsumerWithGoogle = (credential, consent = {}) => post("/api/consumer-auth/google", { credential, ...consent });
 export const loginConsumerWithApple  = (body)              => post("/api/consumer-auth/apple", body);
 export const logoutConsumer        = ()                    => post("/api/consumer-auth/logout", {});
@@ -132,12 +133,12 @@ export const sendSmsCode           = (phone_number, phone_verification_token = n
     ...(phone_verification_token ? { phone_verification_token } : {}),
   });
 export const verifySmsCode         = (phone_number, code, verification_sid = null, phone_verification_token = null)  =>
-  post("/api/consumer-auth/sms/verify", {
+  post("/api/consumer-auth/sms/verify", appendGuestFeedClaimToAuthBody({
     phone_number,
     code,
     verification_sid,
     ...(phone_verification_token ? { phone_verification_token } : {}),
-  });
+  }));
 export const sendPhoneChangeCode   = (phone_number)        => post("/api/consumer-auth/phone/send", { phone_number });
 export const verifyPhoneChangeCode = (phone_number, code, verification_sid = null) =>
   post("/api/consumer-auth/phone/verify", { phone_number, code, verification_sid });
