@@ -1,16 +1,16 @@
 /**
- * Feed video framing — preserve full portrait subject (face + dish), not center-crop.
- * Desktop shell leaves a fixed left rail; the player must match that viewport.
+ * Feed video framing.
+ * Desktop: left rail + full-viewport portal caused cover to crop faces — use contain + rail inset.
+ * Mobile: full-bleed cover already looks correct; do not change mobile object-fit.
  */
 
-/** Show the full uploaded frame (letterbox if needed) — avoids cropping faces. */
-export const FEED_VIDEO_OBJECT_FIT = "contain";
-
+export const FEED_VIDEO_OBJECT_FIT_DESKTOP = "contain";
+export const FEED_VIDEO_OBJECT_FIT_MOBILE = "cover";
 export const FEED_VIDEO_OBJECT_POSITION = "center center";
 
 /**
- * Feed home portals to body; inset overlay so cover/contain aligns with visible pane
- * (not the full viewport under the desktop rail).
+ * Feed home portals to body; inset overlay on desktop so framing aligns with visible pane
+ * (not the full viewport under the left rail). Mobile rail width is 0 — no inset effect.
  * @param {boolean} isFeedHome
  */
 export function resolveFeedVideoOverlayStyle(isFeedHome) {
@@ -22,9 +22,13 @@ export function resolveFeedVideoOverlayStyle(isFeedHome) {
   };
 }
 
-export function feedVideoElementStyle() {
+/**
+ * @param {{ desktopFeedShell?: boolean }} [opts]
+ */
+export function feedVideoElementStyle(opts = {}) {
+  const desktopFeedShell = Boolean(opts.desktopFeedShell);
   return {
-    objectFit: FEED_VIDEO_OBJECT_FIT,
+    objectFit: desktopFeedShell ? FEED_VIDEO_OBJECT_FIT_DESKTOP : FEED_VIDEO_OBJECT_FIT_MOBILE,
     objectPosition: FEED_VIDEO_OBJECT_POSITION,
   };
 }

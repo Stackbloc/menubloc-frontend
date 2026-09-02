@@ -1,6 +1,6 @@
 /**
  * TikTok-style See Who's Eating fullscreen reel.
- * Full-frame contain video (face + dish visible) · swipe up for next · tap for sound.
+ * Desktop feed: contain + rail-aligned overlay (face visible). Mobile: cover. Tap for sound.
  * Screen name → Connect request when signed in; guests → login.
  */
 
@@ -15,15 +15,13 @@ import {
 } from "../../../lib/menuplyLiveFeedControl.js";
 import { MY_MENUPLY_PROFILE_PATH } from "../../../lib/myMenuplyRoutes.js";
 import {
-  liveFeedFullCategoryLabel,
   liveFeedPosterDisplayName,
   liveFeedCreatorProfilePath,
   isLiveFeedRestaurantCreator,
   isLiveFeedGuestCreator,
   isLiveFeedVenueItem,
-  resolveLiveFeedCaptionLinks,
-  resolveFeedPlaceCaption,
 } from "../../../lib/liveFeedCategory.js";
+import FeedPlaceCaption from "../../../components/consumer/feed/FeedPlaceCaption.jsx";
 import { FEED_EMPTY_FIRST_VISIT_PROMPT_COPY } from "../../../lib/feedEmptyFirstVisitPrompt.js";
 import {
   FEED_MENU_LIBRARY_CHANGED,
@@ -55,6 +53,7 @@ export default function SeeWhosEatingFullscreen({
   onRemovedFromFeed,
   variant = "modal",
   bottomInset = 0,
+  desktopFeedShell = false,
   headerSlot = null,
   showEmptyFirstVisitPrompt = false,
   sharedClipId = "",
@@ -159,6 +158,17 @@ export default function SeeWhosEatingFullscreen({
   }, [index, item?.id]);
 
   useEffect(() => {
+    const el = videoRef.current;
+    if (!el) return;
+    el.muted = videoMuted;
+    el.volume = videoMuted ? 0 : 1;
+    if (!videoMuted) {
+      const p = el.play();
+      if (p && typeof p.catch === "function") p.catch(() => {});
+    }
+  }, [videoMuted, item?.id]);
+
+  useEffect(() => {
     function onKey(e) {
       if (e.key === "Escape") {
         e.preventDefault();
@@ -207,6 +217,12 @@ export default function SeeWhosEatingFullscreen({
     // Finger moves up → content flips up → next video (TikTok).
     if (dy < 0) goNext();
     else goPrevOrClose();
+  }
+
+  function onToggleVideoSound(e) {
+    e?.preventDefault?.();
+    e?.stopPropagation?.();
+    setVideoMuted((prev) => !prev);
   }
 
   function openPosterProfile(e) {
@@ -332,9 +348,6 @@ export default function SeeWhosEatingFullscreen({
 
   if ((!item && variant === "modal") || typeof document === "undefined") return null;
 
-  const captionLinks = resolveLiveFeedCaptionLinks(item);
-  const placeCaption = resolveFeedPlaceCaption(item);
-  const foodLabel = String(item?.item_name || item?.food_name || "").trim();
   const isVenue = isLiveFeedVenueItem(item);
   const screenName = item ? liveFeedPosterDisplayName(item) : "";
   const showRestaurantBadge = item ? isLiveFeedRestaurantCreator(item) : false;
@@ -480,7 +493,10 @@ export default function SeeWhosEatingFullscreen({
         key={item.id}
         ref={videoRef}
         src={stripMediaUrlFragment(item.video_url)}
-        style={styles.video}
+        style={{
+          ...styles.video,
+          ...feedVideoElementStyle({ desktopFeedShell: isFeedHome && desktopFeedShell }),
+        }}
         playsInline
         muted={videoMuted}
         loop
@@ -488,7 +504,10 @@ export default function SeeWhosEatingFullscreen({
         controls={false}
         preload="auto"
         data-testid="see-whos-eating-video-tap"
-        onClick={openPosterProfile}
+        onClick={onToggleVideoSound}
+        onPointerUp={(e) => {
+          if (e.pointerType === "touch") onToggleVideoSound(e);
+        }}
       />
 
       <button
@@ -496,7 +515,10 @@ export default function SeeWhosEatingFullscreen({
         style={{
           ...styles.soundToggle,
           ...(isFeedHome
-            ? null
+            ? {
+                top: "max(16px, env(safe-area-inset-top))",
+                left: "max(16px, env(safe-area-inset-left))",
+              }
             : {
                 left: "auto",
                 right: "max(12px, env(safe-area-inset-right))",
@@ -505,15 +527,12 @@ export default function SeeWhosEatingFullscreen({
         }}
         aria-label={videoMuted ? "Tap for sound" : "Mute video"}
         data-testid="see-whos-eating-sound-toggle"
-        onClick={(e) => {
-          e.stopPropagation();
-          setVideoMuted((prev) => !prev);
-        }}
+        onClick={onToggleVideoSound}
       >
         {videoMuted ? "Tap for sound" : "Sound on"}
       </button>
 
-      <div style={isFeedHome ? styles.metaFeedHome : styles.meta}>
+      <div style={styles.metaDock}>
         <button
           type="button"
           style={styles.screenNameBtn}
@@ -528,101 +547,7 @@ export default function SeeWhosEatingFullscreen({
             Restaurant
           </span>
         ) : null}
-        {isFeedHome ? (
-          <div style={styles.placeCaptionRow} data-testid="feed-video-place-caption">
-            {placeCaption.restaurant ? (
-              placeCaption.restaurant.href ? (
-                <Link
-                  to={placeCaption.restaurant.href}
-                  style={styles.restaurantCaptionLink}
-                  data-testid="feed-video-restaurant-caption"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onFeedMenuLinkClick();
-                  }}
-                >
-                  {placeCaption.restaurant.label}
-                </Link>
-              ) : (
-                <span style={styles.restaurantCaption} data-testid="feed-video-restaurant-caption">
-                  {placeCaption.restaurant.label}
-                </span>
-              )
-            ) : null}
-            {placeCaption.menuItem ? (
-              placeCaption.menuItem.href ? (
-                <Link
-                  to={placeCaption.menuItem.href}
-                  style={styles.menuItemCaptionLink}
-                  data-testid="feed-video-menu-item-caption"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onFeedMenuLinkClick();
-                  }}
-                >
-                  {placeCaption.menuItem.label}
-                </Link>
-              ) : (
-                <span style={styles.menuItemCaption} data-testid="feed-video-menu-item-caption">
-                  {placeCaption.menuItem.label}
-                </span>
-              )
-            ) : null}
-            {!placeCaption.restaurant && !placeCaption.menuItem && foodLabel ? (
-              <span style={styles.foodPlain}>{foodLabel}</span>
-            ) : null}
-          </div>
-        ) : (
-          <div style={styles.captionMetaRow} data-testid="see-whos-eating-fullscreen-caption-meta">
-            <span style={styles.categoryChip} data-testid="see-whos-eating-fullscreen-category">
-              {liveFeedFullCategoryLabel(item.kind)}
-            </span>
-            {captionLinks.dish ? (
-              <Link
-                to={captionLinks.dish.href}
-                style={styles.contentLink}
-                data-testid="see-whos-eating-fullscreen-dish-link"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onFeedMenuLinkClick();
-                }}
-              >
-                {captionLinks.dish.label}
-              </Link>
-            ) : null}
-            {captionLinks.dish && captionLinks.restaurant ? (
-              <span style={styles.captionSep} aria-hidden="true">
-                ·
-              </span>
-            ) : null}
-            {captionLinks.restaurant ? (
-              <Link
-                to={captionLinks.restaurant.href}
-                style={styles.contentLink}
-                data-testid="see-whos-eating-fullscreen-restaurant-link"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onFeedMenuLinkClick();
-                }}
-              >
-                {captionLinks.restaurant.label}
-              </Link>
-            ) : null}
-            {!captionLinks.dish && !captionLinks.restaurant && captionLinks.venue ? (
-              <Link
-                to={captionLinks.venue.href}
-                style={styles.contentLink}
-                data-testid="see-whos-eating-fullscreen-content-link"
-                onClick={(e) => e.stopPropagation()}
-              >
-                {captionLinks.venue.label}
-              </Link>
-            ) : null}
-            {!captionLinks.dish && !captionLinks.restaurant && !captionLinks.venue && foodLabel ? (
-              <span style={styles.foodPlain}>{foodLabel}</span>
-            ) : null}
-          </div>
-        )}
+        <FeedPlaceCaption item={item} onMenuLinkClick={onFeedMenuLinkClick} />
         {connectNotice ? <p style={styles.notice}>{connectNotice}</p> : null}
         {connectError ? <p style={styles.error}>{connectError}</p> : null}
         {removeError ? <p style={styles.error}>{removeError}</p> : null}
@@ -748,14 +673,12 @@ const styles = {
     inset: 0,
     width: "100%",
     height: "100%",
-    ...feedVideoElementStyle(),
     background: "#000",
+    cursor: "pointer",
   },
   soundToggle: {
     position: "absolute",
-    top: "max(16px, env(safe-area-inset-top))",
-    left: "max(16px, env(safe-area-inset-left))",
-    zIndex: 3,
+    zIndex: 4,
     border: "1px solid rgba(255,255,255,0.35)",
     borderRadius: 999,
     padding: "8px 12px",
@@ -766,17 +689,7 @@ const styles = {
     cursor: "pointer",
     pointerEvents: "auto",
   },
-  meta: {
-    position: "absolute",
-    left: "max(16px, env(safe-area-inset-left))",
-    right: "max(16px, env(safe-area-inset-right))",
-    bottom: "max(28px, env(safe-area-inset-bottom))",
-    color: "#fff",
-    textShadow: "0 1px 4px rgba(0,0,0,0.65)",
-    pointerEvents: "auto",
-    zIndex: 2,
-  },
-  metaFeedHome: {
+  metaDock: {
     position: "absolute",
     left: 0,
     right: 0,
@@ -787,42 +700,6 @@ const styles = {
     pointerEvents: "auto",
     zIndex: 3,
     background: "linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.55) 32%, rgba(0,0,0,0.88) 100%)",
-  },
-  placeCaptionRow: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "flex-start",
-    gap: 4,
-    marginTop: 8,
-    maxWidth: "100%",
-  },
-  restaurantCaption: {
-    fontSize: 16,
-    fontWeight: 700,
-    color: "#fff",
-    lineHeight: 1.3,
-  },
-  restaurantCaptionLink: {
-    fontSize: 16,
-    fontWeight: 700,
-    color: "#fff",
-    lineHeight: 1.3,
-    textDecoration: "underline",
-    textUnderlineOffset: 3,
-  },
-  menuItemCaption: {
-    fontSize: 17,
-    fontWeight: 800,
-    color: "#5eead4",
-    lineHeight: 1.3,
-  },
-  menuItemCaptionLink: {
-    fontSize: 17,
-    fontWeight: 800,
-    color: "#5eead4",
-    lineHeight: 1.3,
-    textDecoration: "underline",
-    textUnderlineOffset: 3,
   },
   captionMetaRow: {
     display: "flex",

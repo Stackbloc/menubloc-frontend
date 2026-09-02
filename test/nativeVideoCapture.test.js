@@ -57,10 +57,13 @@ test("MenuplyMediaPicker opens ConsumerCameraSheet with optional native video mo
 
 test("ConsumerCameraSheet: desktop MediaRecorder + phone OS native capture", () => {
   const sheet = read("src/components/consumer/ConsumerCameraSheet.jsx");
+  const capture = read("src/lib/consumerCameraCapture.js");
   assert.match(sheet, /Photo → live getUserMedia/);
   assert.match(sheet, /preferDesktopInlineVideoRecord/);
   assert.match(sheet, /preferNativeOsVideoCapture/);
   assert.match(sheet, /createCameraMediaRecorder/);
+  assert.match(capture, /openVideoCaptureStreamWithFallback[\s\S]*withAudio:\s*true/);
+  assert.match(capture, /hasMicAudio/);
   assert.match(sheet, /validateRecordedVideoBlob/);
   assert.match(sheet, /consumer-camera-record/);
   assert.match(sheet, /consumer-camera-record-native/);

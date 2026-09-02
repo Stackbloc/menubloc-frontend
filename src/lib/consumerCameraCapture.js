@@ -269,8 +269,8 @@ export function withSilentAudioForRecording(videoOnlyStream) {
 
 /**
  * Build a MediaRecorder.
- * - Chromium: WebM video-only (most reliable preview + upload)
- * - Safari/iOS mp4: silent audio track so the container is playable
+ * - Chromium WebM: record live stream including mic when available.
+ * - Safari/iOS mp4: use mic when present; silent audio track only as container fallback.
  */
 export function createCameraMediaRecorder(stream) {
   const mimeType = pickRecorderMimeType();
@@ -280,16 +280,17 @@ export function createCameraMediaRecorder(stream) {
     );
   }
   const videoTracks = stream?.getVideoTracks?.() || [];
+  const audioTracks = stream?.getAudioTracks?.() || [];
   if (!videoTracks.length) {
     throw new Error("No camera video track available to record.");
   }
 
   const wantsMp4 = mimeType.startsWith("video/mp4");
-  // WebM (Chromium): record the live preview stream — matches the pre-review working path.
-  // Safari mp4: clone video + silent audio so the container is playable.
-  const { stream: recordStream, cleanup } = wantsMp4
-    ? withSilentAudioForRecording(new MediaStream(videoTracks))
-    : { stream, cleanup: () => {} };
+  const hasMicAudio = audioTracks.some((t) => t.readyState === "live" || t.readyState === "ended");
+  const { stream: recordStream, cleanup } =
+    wantsMp4 && !hasMicAudio
+      ? withSilentAudioForRecording(new MediaStream(videoTracks))
+      : { stream, cleanup: () => {} };
 
   const options = { mimeType, videoBitsPerSecond: 900_000 };
   try {
@@ -502,14 +503,14 @@ export async function openCameraStreamWithFallback(facingMode = "environment", p
   });
 }
 
-/** Prefer this for Video mode — smaller frames for upload reliability. */
+/** Prefer this for Video mode — portrait frames + microphone for Feed audio. */
 export async function openVideoCaptureStreamWithFallback(
   facingMode = "environment",
   previousStream = null
 ) {
   return openMediaStreamForFacing({
     facingMode,
-    withAudio: false,
+    withAudio: true,
     forVideoCapture: true,
     previousStream,
   });

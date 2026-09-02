@@ -154,6 +154,7 @@ export default function FeedHomePage() {
         viewerUserId={consumer?.id || null}
         onRemovedFromFeed={onRemovedFromFeed}
         bottomInset={isDesktop ? 0 : FEED_PRIMARY_NAV_HEIGHT + 8}
+        desktopFeedShell={isDesktop}
         showEmptyFirstVisitPrompt={showEmptyFirstVisitPrompt}
         sharedClipId={sharedClipId}
         showSharedAccountInvite={Boolean(sharedClipId && !isAuthenticated)}

@@ -31,12 +31,11 @@ test("See Who's Eating reel: guest watch, CK dish, existing camera, Connect noti
   assert.match(surface, /minHeight:\s*40/);
   assert.match(surface, /channelLabel/);
   assert.match(surface, /resolveLiveFeedContentLink/);
-  assert.match(surface, /abbreviateRestaurant:\s*true/);
-  assert.match(surface, /see-whos-eating-content-link/);
+  assert.match(surface, /FeedPlaceCaption/);
+  assert.match(surface, /see-whos-eating-preview-place-caption/);
   assert.match(surface, /see-whos-eating-expand-hint/);
   assert.match(surface, /Tap to expand/);
   assert.doesNotMatch(surface, /TAP · FULL SCREEN/);
-  assert.match(surface, /captionMetaRow/);
 
   const fullscreen = read("src/pages/consumer/myMenuply/SeeWhosEatingFullscreen.jsx");
   assert.match(fullscreen, /requestConnection/);
@@ -46,37 +45,30 @@ test("See Who's Eating reel: guest watch, CK dish, existing camera, Connect noti
   assert.match(fullscreen, /onRemovedFromFeed/);
   assert.match(fullscreen, /see_whos_eating/);
   assert.match(fullscreen, /see-whos-eating-screen-name/);
-  assert.match(fullscreen, /liveFeedFullCategoryLabel\(item\.kind\)/);
-  assert.match(fullscreen, /resolveLiveFeedCaptionLinks\(item\)/);
-  assert.match(fullscreen, /see-whos-eating-fullscreen-dish-link/);
-  assert.match(fullscreen, /see-whos-eating-fullscreen-restaurant-link/);
+  assert.match(fullscreen, /FeedPlaceCaption/);
   assert.match(fullscreen, /variant === "feedHome"|variant = "modal"/);
   assert.doesNotMatch(fullscreen, /showRestaurantSecondary/);
-  assert.match(fullscreen, /categoryChip/);
   assert.match(fullscreen, /liveFeedCreatorProfilePath/);
   assert.match(fullscreen, /isLiveFeedVenueItem/);
   assert.match(fullscreen, /see-whos-eating-video-tap/);
-  // Category sits below @screen name in caption meta row.
-  {
-    const nameIdx = fullscreen.indexOf("see-whos-eating-screen-name");
-    const catIdx = fullscreen.indexOf("see-whos-eating-fullscreen-category");
-    assert.ok(nameIdx > 0 && catIdx > nameIdx, "category markup after screen name");
-    assert.match(fullscreen, /fontSize:\s*17/);
-    assert.match(fullscreen, /categoryChip/);
-  }
-  assert.match(fullscreen, /resolveLiveFeedCaptionLinks/);
+  assert.match(read("src/components/consumer/feed/FeedPlaceCaption.jsx"), /resolveFeedPlaceCaption/);
+  assert.match(read("src/components/consumer/feed/FeedPlaceCaption.jsx"), /#5eead4/);
   assert.match(read("src/lib/liveFeedCategory.js"), /menu_item_href|menu-items\//);
   assert.match(read("src/lib/liveFeedCategory.js"), /resolveLiveFeedCaptionLinks/);
   assert.match(fullscreen, /createPortal/);
   assert.match(fullscreen, /100dvh|100vh/);
-  assert.match(fullscreen, /feedVideoElementStyle|objectFit:\s*"contain"/);
+  assert.match(fullscreen, /feedVideoElementStyle/);
+  assert.match(read("src/lib/feedVideoPresentation.js"), /FEED_VIDEO_OBJECT_FIT_DESKTOP.*contain/s);
+  assert.match(read("src/lib/feedVideoPresentation.js"), /FEED_VIDEO_OBJECT_FIT_MOBILE.*cover/s);
+  assert.match(fullscreen, /desktopFeedShell/);
+  assert.match(read("src/pages/consumer/feed/FeedHomePage.jsx"), /desktopFeedShell=\{isDesktop\}/);
   assert.match(fullscreen, /resolveFeedVideoOverlayStyle|feed-desktop-rail-w/);
   assert.match(fullscreen, /see-whos-eating-sound-toggle/);
   assert.match(fullscreen, /Tap for sound/);
-  assert.match(fullscreen, /feed-video-place-caption/);
-  assert.match(fullscreen, /feed-video-menu-item-caption/);
-  assert.match(fullscreen, /menuItemCaption/);
-  assert.match(fullscreen, /#5eead4/);
+  assert.match(fullscreen, /onPointerUp/);
+  assert.match(fullscreen, /el\.muted = videoMuted/);
+  assert.match(read("src/components/consumer/feed/FeedPlaceCaption.jsx"), /feed-video-restaurant-caption/);
+  assert.match(read("src/components/consumer/feed/FeedPlaceCaption.jsx"), /feed-video-menu-item-caption/);
   assert.match(read("src/lib/liveFeedCategory.js"), /resolveFeedPlaceCaption/);
   assert.match(read("src/pages/consumer/feed/FeedHomePage.jsx"), /isDesktop \? 0 : FEED_PRIMARY_NAV_HEIGHT/);
   assert.match(fullscreen, /see-whos-eating-fullscreen-close/);

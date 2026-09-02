@@ -224,22 +224,34 @@ export function resolveFeedPlaceCaption(item) {
     links.dish?.label ||
     String(item.item_name || "").trim() ||
     null;
+  const foodName = String(item.food_name || "").trim();
+  const resolvedMenuItem =
+    menuItemLabel ||
+    (foodName && foodName !== restaurantLabel ? foodName : null);
+
+  let resolvedRestaurant = restaurantLabel;
+  let resolvedRestaurantHref =
+    links.restaurant?.href ||
+    item.referenced_restaurant?.href ||
+    (item.restaurant_slug
+      ? `/r/${encodeURIComponent(String(item.restaurant_slug).trim())}`
+      : null);
+
+  if (!resolvedRestaurant && links.venue?.label) {
+    resolvedRestaurant = links.venue.label;
+    resolvedRestaurantHref = links.venue.href || null;
+  }
 
   return {
-    restaurant: restaurantLabel
+    restaurant: resolvedRestaurant
       ? {
-          label: restaurantLabel,
-          href:
-            links.restaurant?.href ||
-            item.referenced_restaurant?.href ||
-            (item.restaurant_slug
-              ? `/r/${encodeURIComponent(String(item.restaurant_slug).trim())}`
-              : null),
+          label: resolvedRestaurant,
+          href: resolvedRestaurantHref,
         }
       : null,
-    menuItem: menuItemLabel
+    menuItem: resolvedMenuItem
       ? {
-          label: menuItemLabel,
+          label: resolvedMenuItem,
           href: links.dish?.href || item.menu_item_href || null,
         }
       : null,

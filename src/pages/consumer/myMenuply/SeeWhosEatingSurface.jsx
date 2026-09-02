@@ -17,6 +17,7 @@ import {
   stripMediaUrlFragment,
 } from "../../../lib/menuplyLiveFeedControl.js";
 import SeeWhosEatingFullscreen from "./SeeWhosEatingFullscreen.jsx";
+import FeedPlaceCaption from "../../../components/consumer/feed/FeedPlaceCaption.jsx";
 import { feedVideoElementStyle } from "../../../lib/feedVideoPresentation.js";
 import {
   LIVE_FEED_CHANNELS,
@@ -251,25 +252,12 @@ export default function SeeWhosEatingSurface({
                       Restaurant
                     </span>
                   ) : null}
-                  <div style={styles.captionMetaRow}>
-                    <span style={styles.categoryChip} data-testid="see-whos-eating-category">
-                      {liveFeedCategoryLabel(preview.kind)}
+                  <FeedPlaceCaption item={preview} compact testId="see-whos-eating-preview-place-caption" />
+                  {!resolveLiveFeedContentLink(preview) ? (
+                    <span style={styles.tapHint} data-testid="see-whos-eating-expand-hint">
+                      Tap to expand
                     </span>
-                    {previewContentLink ? (
-                      <Link
-                        to={previewContentLink.href}
-                        style={styles.contentLink}
-                        data-testid="see-whos-eating-content-link"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        {previewContentLink.label}
-                      </Link>
-                    ) : (
-                      <span style={styles.tapHint} data-testid="see-whos-eating-expand-hint">
-                        Tap to expand
-                      </span>
-                    )}
-                  </div>
+                  ) : null}
                 </div>
                 {preview.is_recommend ? <span style={styles.badge}>REC</span> : null}
               </div>
