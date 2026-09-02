@@ -78,9 +78,13 @@ test("See Who's Eating reel: guest watch, CK dish, existing camera, Connect noti
   assert.match(read("src/components/consumer/feed/FeedPlaceCaption.jsx"), /feed-video-menu-item-caption/);
   assert.match(read("src/lib/liveFeedCategory.js"), /resolveFeedPlaceCaption/);
   assert.match(read("src/pages/consumer/feed/FeedHomePage.jsx"), /isDesktop \? 0 : FEED_PRIMARY_NAV_HEIGHT/);
+  assert.match(read("src/pages/consumer/feed/FeedHomePage.jsx"), /feed-home-desktop-nav-coach/);
+  assert.match(read("src/lib/feedVerticalReelNavigationCopy.js"), /arrow keys/);
   assert.match(fullscreen, /see-whos-eating-fullscreen-close/);
   assert.match(fullscreen, /see-whos-eating-fullscreen-exit/);
-  assert.match(fullscreen, /Swipe up|swipe up/);
+  assert.match(fullscreen, /feedVerticalReelNavigationCopy/);
+  assert.match(fullscreen, /formatVerticalReelNavHint/);
+  assert.match(read("src/lib/feedVerticalReelNavigationCopy.js"), /Swipe up|swipe up|arrow key/);
   assert.match(fullscreen, /SWIPE_MIN_PX|onTouchEnd/);
 
   const page = read("src/pages/consumer/MyMenuplyPage.jsx");

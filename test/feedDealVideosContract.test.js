@@ -59,7 +59,8 @@ test("Feed deals: video swipe reel, no meal chips", () => {
   assert.match(swipe, /containInShell/);
   assert.match(swipe, /overlayContained/);
   assert.match(swipe, /meal_time_caption|headline/);
-  assert.match(swipe, /Swipe up/);
+  assert.match(swipe, /feedVerticalReelNavigationCopy/);
+  assert.match(read("src/lib/feedVerticalReelNavigationCopy.js"), /Swipe up|Arrow key/);
 
   const home = read("src/pages/consumer/feed/FeedHomePage.jsx");
   assert.doesNotMatch(home, /\/feed\/deals\?city=/);

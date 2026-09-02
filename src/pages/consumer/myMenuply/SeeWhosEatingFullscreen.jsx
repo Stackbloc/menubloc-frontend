@@ -38,6 +38,10 @@ import {
   resolveFeedVideoOverlayStyle,
 } from "../../../lib/feedVideoPresentation.js";
 import { useFeedShellDesktop } from "../../../lib/useFeedShellDesktop.js";
+import {
+  formatVerticalReelCue,
+  formatVerticalReelNavHint,
+} from "../../../lib/feedVerticalReelNavigationCopy.js";
 import MenuplyAccountInviteCard from "../../../components/consumer/MenuplyAccountInviteCard.jsx";
 
 const SWIPE_MIN_PX = 56;
@@ -615,21 +619,23 @@ export default function SeeWhosEatingFullscreen({
           </button>
         ) : null}
         {item.is_recommend ? <p style={styles.recommend}>Recommend</p> : null}
-        {!isFeedHome ? (
+        {(variant !== "feedHome" || isDesktopViewport) ? (
           <p style={styles.hint}>
-            {index + 1} / {items.length}
-            {atEnd
-              ? " · swipe down for previous"
-              : atStart
-                ? " · swipe up for next · swipe down or Exit to leave"
-                : " · swipe up next · swipe down previous"}
+            {formatVerticalReelNavHint({
+              index,
+              total: items.length,
+              atStart,
+              atEnd,
+              isDesktopViewport,
+              modalWithExit: variant === "modal",
+            })}
           </p>
         ) : null}
       </div>
 
       {!atEnd ? (
         <div style={styles.swipeCue} aria-hidden="true">
-          ↑ Swipe up
+          {formatVerticalReelCue({ isDesktopViewport })}
         </div>
       ) : null}
     </div>

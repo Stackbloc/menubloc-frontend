@@ -7,6 +7,11 @@ import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import { stripMediaUrlFragment } from "../../../lib/menuplyLiveFeedControl.js";
 import { recordFeedMenuOpen, restaurantRefFromDealItem } from "../../../lib/feedMenuLibrary.js";
+import { useFeedShellDesktop } from "../../../lib/useFeedShellDesktop.js";
+import {
+  formatVerticalReelCue,
+  formatVerticalReelNavHint,
+} from "../../../lib/feedVerticalReelNavigationCopy.js";
 
 const SWIPE_MIN_PX = 56;
 
@@ -18,6 +23,7 @@ export default function DealVideoSwipe({
   containInShell = false,
 }) {
   const [index, setIndex] = useState(startIndex);
+  const isDesktopViewport = useFeedShellDesktop();
   const videoRef = useRef(null);
   const touchStartY = useRef(null);
   const item = items[index] || null;
@@ -205,14 +211,19 @@ export default function DealVideoSwipe({
         ) : null}
         {item.description ? <p style={styles.description}>{item.description}</p> : null}
         <p style={styles.hint}>
-          {index + 1} / {items.length}
-          {atEnd ? " · swipe down for previous" : atStart ? " · swipe up for next" : " · swipe up · swipe down"}
+          {formatVerticalReelNavHint({
+            index,
+            total: items.length,
+            atStart,
+            atEnd,
+            isDesktopViewport,
+          })}
         </p>
       </div>
 
       {!atEnd ? (
         <div style={styles.swipeCue} aria-hidden="true">
-          ↑ Swipe up
+          {formatVerticalReelCue({ isDesktopViewport })}
         </div>
       ) : null}
     </div>

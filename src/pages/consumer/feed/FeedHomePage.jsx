@@ -17,6 +17,10 @@ import {
   FEED_HOME_X_COACH_COPY,
   FEED_HOME_X_COACH_DURATION_MS,
 } from "../../../lib/feedHomeXCoach.js";
+import {
+  FEED_HOME_DESKTOP_NAV_COACH_COPY,
+  FEED_HOME_DESKTOP_NAV_COACH_DURATION_MS,
+} from "../../../lib/feedVerticalReelNavigationCopy.js";
 import { useFeedShellDesktop } from "../../../lib/useFeedShellDesktop.js";
 import { useConsumer } from "../../../context/ConsumerContext.jsx";
 import SeeWhosEatingFullscreen from "../myMenuply/SeeWhosEatingFullscreen.jsx";
@@ -48,7 +52,21 @@ export default function FeedHomePage() {
   const [error, setError] = useState("");
   const [showEmptyFirstVisitPrompt, setShowEmptyFirstVisitPrompt] = useState(false);
   const [showXCoach, setShowXCoach] = useState(() => !isDesktop);
+  const [showDesktopNavCoach, setShowDesktopNavCoach] = useState(false);
   const market = resolveMarket();
+
+  useEffect(() => {
+    if (!isDesktop || items.length === 0) {
+      setShowDesktopNavCoach(false);
+      return undefined;
+    }
+    setShowDesktopNavCoach(true);
+    const timer = window.setTimeout(
+      () => setShowDesktopNavCoach(false),
+      FEED_HOME_DESKTOP_NAV_COACH_DURATION_MS
+    );
+    return () => window.clearTimeout(timer);
+  }, [isDesktop, items.length]);
 
   useEffect(() => {
     if (isDesktop) {
@@ -125,10 +143,18 @@ export default function FeedHomePage() {
       </p>
     ) : null;
 
+  const desktopNavCoachBanner =
+    showDesktopNavCoach ? (
+      <p style={styles.desktopNavCoach} data-testid="feed-home-desktop-nav-coach" role="status">
+        {FEED_HOME_DESKTOP_NAV_COACH_COPY}
+      </p>
+    ) : null;
+
   if (loading && items.length === 0) {
     return (
       <div style={styles.loading} data-testid="feed-home-loading">
         {xCoachBanner}
+        {desktopNavCoachBanner}
         <p style={styles.loadingText}>Loading Feed…</p>
       </div>
     );
@@ -138,6 +164,7 @@ export default function FeedHomePage() {
     return (
       <div style={styles.loading} data-testid="feed-home-error">
         {xCoachBanner}
+        {desktopNavCoachBanner}
         <p style={styles.loadingText}>{error}</p>
       </div>
     );
@@ -146,6 +173,7 @@ export default function FeedHomePage() {
   return (
     <div data-testid="feed-home">
       {xCoachBanner}
+      {desktopNavCoachBanner}
       <SeeWhosEatingFullscreen
         variant="feedHome"
         items={items}
@@ -206,6 +234,25 @@ const styles = {
     left: 16,
     right: 16,
     bottom: `calc(${FEED_PRIMARY_NAV_HEIGHT}px + env(safe-area-inset-bottom, 0px) + 12px)`,
+    zIndex: 45,
+    margin: 0,
+    padding: "12px 14px",
+    borderRadius: 12,
+    background: "rgba(16, 40, 32, 0.94)",
+    border: "1px solid rgba(94, 234, 212, 0.35)",
+    color: "#e8f0ec",
+    fontSize: 14,
+    lineHeight: 1.45,
+    fontWeight: 650,
+    textAlign: "center",
+    pointerEvents: "none",
+    boxShadow: "0 8px 24px rgba(0,0,0,0.35)",
+  },
+  desktopNavCoach: {
+    position: "fixed",
+    left: 16,
+    right: 16,
+    top: "max(12px, env(safe-area-inset-top))",
     zIndex: 45,
     margin: 0,
     padding: "12px 14px",
