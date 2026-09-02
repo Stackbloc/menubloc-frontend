@@ -317,7 +317,7 @@ export default function FeedMenusPage() {
         <div style={styles.stackHint} data-testid="feed-menus-stack-hint">
           <p style={styles.stackHintCopy}>{MENU_STACK_INSTRUCTION}</p>
         </div>
-      ) : null}
+      )}
 
       <div ref={areaRef} style={{ ...styles.menuArea, paddingBottom: navBottom }}>
         {currentEntry ? (
