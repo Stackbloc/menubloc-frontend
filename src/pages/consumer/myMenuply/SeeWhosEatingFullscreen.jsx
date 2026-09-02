@@ -35,6 +35,7 @@ import {
   feedVideoElementStyle,
   resolveFeedVideoOverlayStyle,
 } from "../../../lib/feedVideoPresentation.js";
+import { useFeedShellDesktop } from "../../../lib/useFeedShellDesktop.js";
 import MenuplyAccountInviteCard from "../../../components/consumer/MenuplyAccountInviteCard.jsx";
 
 const SWIPE_MIN_PX = 56;
@@ -60,6 +61,7 @@ export default function SeeWhosEatingFullscreen({
   showSharedAccountInvite = false,
 }) {
   const navigate = useNavigate();
+  const isDesktopViewport = useFeedShellDesktop();
   const [index, setIndex] = useState(startIndex);
   const [connectBusy, setConnectBusy] = useState(false);
   const [connectNotice, setConnectNotice] = useState("");
@@ -71,6 +73,7 @@ export default function SeeWhosEatingFullscreen({
   const [videoMuted, setVideoMuted] = useState(true);
   const videoRef = useRef(null);
   const touchStartY = useRef(null);
+  const ignoreVideoClickRef = useRef(false);
   const item = items[index] || null;
   const feedShareData = useMemo(() => (item ? buildFeedVideoShareData(item) : null), [item]);
   const sharedClipNextPath = feedClipSharePath(sharedClipId) || "/feed";
@@ -161,8 +164,8 @@ export default function SeeWhosEatingFullscreen({
     const el = videoRef.current;
     if (!el) return;
     el.muted = videoMuted;
-    el.volume = videoMuted ? 0 : 1;
     if (!videoMuted) {
+      el.volume = 1;
       const p = el.play();
       if (p && typeof p.catch === "function") p.catch(() => {});
     }
@@ -219,10 +222,40 @@ export default function SeeWhosEatingFullscreen({
     else goPrevOrClose();
   }
 
+  function applyVideoSoundState(nextMuted) {
+    const el = videoRef.current;
+    if (!el) return;
+    el.muted = nextMuted;
+    el.defaultMuted = nextMuted;
+    if (!nextMuted) {
+      el.volume = 1;
+      const p = el.play();
+      if (p && typeof p.catch === "function") p.catch(() => {});
+    }
+  }
+
   function onToggleVideoSound(e) {
     e?.preventDefault?.();
     e?.stopPropagation?.();
-    setVideoMuted((prev) => !prev);
+    setVideoMuted((prev) => {
+      const next = !prev;
+      applyVideoSoundState(next);
+      return next;
+    });
+  }
+
+  function onVideoPointerUp(e) {
+    if (e.pointerType !== "touch") return;
+    ignoreVideoClickRef.current = true;
+    onToggleVideoSound(e);
+  }
+
+  function onVideoClick(e) {
+    if (ignoreVideoClickRef.current) {
+      ignoreVideoClickRef.current = false;
+      return;
+    }
+    onToggleVideoSound(e);
   }
 
   function openPosterProfile(e) {
@@ -366,6 +399,8 @@ export default function SeeWhosEatingFullscreen({
         .toLowerCase()
     );
   const isFeedHome = variant === "feedHome";
+  const soundToggleLabel = isDesktopViewport ? "Click for sound" : "Tap for sound";
+  const showDesktopSoundLayer = Boolean(isDesktopViewport && item?.video_url);
   const navInset = isFeedHome ? Math.max(0, Number(bottomInset) || 0) : 0;
   const overlayStyle = {
     ...styles.overlay,
@@ -504,11 +539,19 @@ export default function SeeWhosEatingFullscreen({
         controls={false}
         preload="auto"
         data-testid="see-whos-eating-video-tap"
-        onClick={onToggleVideoSound}
-        onPointerUp={(e) => {
-          if (e.pointerType === "touch") onToggleVideoSound(e);
-        }}
+        onClick={onVideoClick}
+        onPointerUp={onVideoPointerUp}
       />
+
+      {showDesktopSoundLayer ? (
+        <button
+          type="button"
+          style={styles.videoTapLayer}
+          aria-label={videoMuted ? soundToggleLabel : "Mute video"}
+          data-testid="see-whos-eating-video-sound-layer"
+          onClick={onToggleVideoSound}
+        />
+      ) : null}
 
       <button
         type="button"
@@ -525,11 +568,11 @@ export default function SeeWhosEatingFullscreen({
                 top: "calc(max(16px, env(safe-area-inset-top)) + 52px)",
               }),
         }}
-        aria-label={videoMuted ? "Tap for sound" : "Mute video"}
+        aria-label={videoMuted ? soundToggleLabel : "Mute video"}
         data-testid="see-whos-eating-sound-toggle"
         onClick={onToggleVideoSound}
       >
-        {videoMuted ? "Tap for sound" : "Sound on"}
+        {videoMuted ? soundToggleLabel : "Sound on"}
       </button>
 
       <div style={styles.metaDock}>
@@ -675,6 +718,18 @@ const styles = {
     height: "100%",
     background: "#000",
     cursor: "pointer",
+    zIndex: 1,
+  },
+  videoTapLayer: {
+    position: "absolute",
+    inset: 0,
+    zIndex: 2,
+    border: "none",
+    padding: 0,
+    margin: 0,
+    background: "transparent",
+    cursor: "pointer",
+    pointerEvents: "auto",
   },
   soundToggle: {
     position: "absolute",

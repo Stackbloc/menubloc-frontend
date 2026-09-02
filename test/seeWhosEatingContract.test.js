@@ -64,9 +64,11 @@ test("See Who's Eating reel: guest watch, CK dish, existing camera, Connect noti
   assert.match(read("src/pages/consumer/feed/FeedHomePage.jsx"), /desktopFeedShell=\{isDesktop\}/);
   assert.match(fullscreen, /resolveFeedVideoOverlayStyle|feed-desktop-rail-w/);
   assert.match(fullscreen, /see-whos-eating-sound-toggle/);
-  assert.match(fullscreen, /Tap for sound/);
-  assert.match(fullscreen, /onPointerUp/);
-  assert.match(fullscreen, /el\.muted = videoMuted/);
+  assert.match(fullscreen, /useFeedShellDesktop/);
+  assert.match(fullscreen, /showDesktopSoundLayer/);
+  assert.match(fullscreen, /Click for sound/);
+  assert.match(fullscreen, /applyVideoSoundState/);
+  assert.match(fullscreen, /see-whos-eating-video-sound-layer/);
   assert.match(read("src/components/consumer/feed/FeedPlaceCaption.jsx"), /feed-video-restaurant-caption/);
   assert.match(read("src/components/consumer/feed/FeedPlaceCaption.jsx"), /feed-video-menu-item-caption/);
   assert.match(read("src/lib/liveFeedCategory.js"), /resolveFeedPlaceCaption/);
