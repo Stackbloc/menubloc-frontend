@@ -5,9 +5,11 @@ import {
   listOwnerVideos,
   lookupOwnerVideo,
   patchOwnerVideoMetadata,
-  searchMenuConsoleRestaurants,
-  searchMenuConsoleItems,
 } from "../../lib/ownerApi.js";
+import CkRestaurantMenuPicker, {
+  useCkPlaceFromVideoIds,
+} from "../../components/ck/CkRestaurantMenuPicker.jsx";
+import { dishLabel } from "../../lib/foodActivityApi.js";
 
 const KIND_OPTIONS = [
   ["all", "All kinds"],
@@ -42,12 +44,17 @@ function formatWhen(value) {
 function VideoEditor({ video, onSaved, onClose }) {
   const [title, setTitle] = useState(video.title || "");
   const [comment, setComment] = useState(video.comment || "");
-  const [restaurantQuery, setRestaurantQuery] = useState(video.restaurant_name || "");
-  const [restaurantId, setRestaurantId] = useState(video.restaurant_id || null);
-  const [restaurantHits, setRestaurantHits] = useState([]);
-  const [menuItemQuery, setMenuItemQuery] = useState(video.menu_item_name || "");
-  const [menuItemId, setMenuItemId] = useState(video.menu_item_id || null);
-  const [menuItemHits, setMenuItemHits] = useState([]);
+  const {
+    restaurant,
+    setRestaurant,
+    dish,
+    setDish,
+    loading: placeLoading,
+  } = useCkPlaceFromVideoIds({
+    restaurantId: video.restaurant_id,
+    menuItemId: video.menu_item_id,
+    videoKey: video.video_id,
+  });
   const [marketDiscoverable, setMarketDiscoverable] = useState(video.market_discoverable !== false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -60,37 +67,12 @@ function VideoEditor({ video, onSaved, onClose }) {
     video.video_kind === "plan" ||
     video.video_kind === "deal";
 
-  useEffect(() => {
-    const q = restaurantQuery.trim();
-    if (q.length < 2 || (video.restaurant_name && q === video.restaurant_name)) {
-      setRestaurantHits([]);
-      return;
+  function handleDishChange(next) {
+    setDish(next);
+    if (next && !title.trim()) {
+      setTitle(dishLabel(next) || title);
     }
-    const timer = setTimeout(() => {
-      searchMenuConsoleRestaurants({ q })
-        .then((res) => setRestaurantHits(res?.restaurants || res?.items || []))
-        .catch(() => setRestaurantHits([]));
-    }, 250);
-    return () => clearTimeout(timer);
-  }, [restaurantQuery, video.restaurant_name]);
-
-  useEffect(() => {
-    if (!supportsMenuItem || !restaurantId) {
-      setMenuItemHits([]);
-      return;
-    }
-    const q = menuItemQuery.trim();
-    if (q.length < 2) {
-      setMenuItemHits([]);
-      return;
-    }
-    const timer = setTimeout(() => {
-      searchMenuConsoleItems(restaurantId, { q, limit: 12 })
-        .then((res) => setMenuItemHits(res?.items || []))
-        .catch(() => setMenuItemHits([]));
-    }, 250);
-    return () => clearTimeout(timer);
-  }, [menuItemQuery, restaurantId, supportsMenuItem]);
+  }
 
   async function handleSave(e) {
     e.preventDefault();
@@ -104,10 +86,10 @@ function VideoEditor({ video, onSaved, onClose }) {
         market_discoverable: marketDiscoverable,
       };
       if (supportsRestaurant) {
-        body.restaurant_id = restaurantId;
+        body.restaurant_id = restaurant?.restaurant_id ?? null;
       }
       if (supportsMenuItem) {
-        body.menu_item_id = menuItemId;
+        body.menu_item_id = dish?.menu_item_id ?? null;
       }
       const result = await patchOwnerVideoMetadata(
         video.video_kind,
@@ -155,98 +137,20 @@ function VideoEditor({ video, onSaved, onClose }) {
           <textarea value={comment || ""} onChange={(e) => setComment(e.target.value)} rows={3} style={inputStyle} />
         </label>
 
-        {supportsRestaurant ? (
-          <label style={{ display: "grid", gap: 6 }}>
-            <span style={{ fontWeight: 700, fontSize: 13 }}>Restaurant</span>
-            <input
-              value={restaurantQuery}
-              onChange={(e) => {
-                setRestaurantQuery(e.target.value);
-                setRestaurantId(null);
-              }}
-              placeholder="Search restaurant name"
-              style={inputStyle}
+        {supportsRestaurant || supportsMenuItem ? (
+          placeLoading ? (
+            <p style={{ fontSize: 13, color: OWNER_COLORS.muted, margin: 0 }}>Loading CK place data…</p>
+          ) : (
+            <CkRestaurantMenuPicker
+              restaurant={restaurant}
+              onRestaurantChange={setRestaurant}
+              dish={dish}
+              onDishChange={handleDishChange}
+              allowMenuItem={supportsMenuItem}
+              disabled={busy}
+              testIdPrefix="owner-video"
             />
-            {restaurantHits.length ? (
-              <div style={{ border: `1px solid ${OWNER_COLORS.line}`, borderRadius: 8, overflow: "hidden" }}>
-                {restaurantHits.map((hit) => (
-                  <button
-                    key={hit.id}
-                    type="button"
-                    onClick={() => {
-                      setRestaurantId(hit.id);
-                      setRestaurantQuery(hit.name || hit.restaurant_name || "");
-                      setRestaurantHits([]);
-                      setMenuItemId(null);
-                      setMenuItemQuery("");
-                    }}
-                    style={{
-                      display: "block",
-                      width: "100%",
-                      textAlign: "left",
-                      padding: "8px 10px",
-                      border: "none",
-                      borderBottom: `1px solid ${OWNER_COLORS.line}`,
-                      background: "#fff",
-                      cursor: "pointer",
-                    }}
-                  >
-                    {hit.name || hit.restaurant_name}
-                    {hit.city ? ` · ${hit.city}, ${hit.state || ""}` : ""}
-                  </button>
-                ))}
-              </div>
-            ) : null}
-            {restaurantId ? (
-              <div style={{ fontSize: 12, color: OWNER_COLORS.muted }}>Linked restaurant id: {restaurantId}</div>
-            ) : null}
-          </label>
-        ) : null}
-
-        {supportsMenuItem ? (
-          <label style={{ display: "grid", gap: 6 }}>
-            <span style={{ fontWeight: 700, fontSize: 13 }}>Menu item (CK)</span>
-            <input
-              value={menuItemQuery}
-              onChange={(e) => {
-                setMenuItemQuery(e.target.value);
-                setMenuItemId(null);
-              }}
-              placeholder={restaurantId ? "Search menu item" : "Pick a restaurant first"}
-              disabled={!restaurantId}
-              style={inputStyle}
-            />
-            {menuItemHits.length ? (
-              <div style={{ border: `1px solid ${OWNER_COLORS.line}`, borderRadius: 8, overflow: "hidden" }}>
-                {menuItemHits.map((hit) => (
-                  <button
-                    key={hit.id}
-                    type="button"
-                    onClick={() => {
-                      setMenuItemId(hit.id);
-                      setMenuItemQuery(hit.item_name || hit.name || "");
-                      setMenuItemHits([]);
-                    }}
-                    style={{
-                      display: "block",
-                      width: "100%",
-                      textAlign: "left",
-                      padding: "8px 10px",
-                      border: "none",
-                      borderBottom: `1px solid ${OWNER_COLORS.line}`,
-                      background: "#fff",
-                      cursor: "pointer",
-                    }}
-                  >
-                    {hit.item_name || hit.name}
-                  </button>
-                ))}
-              </div>
-            ) : null}
-            {menuItemId ? (
-              <div style={{ fontSize: 12, color: OWNER_COLORS.muted }}>Linked menu item id: {menuItemId}</div>
-            ) : null}
-          </label>
+          )
         ) : null}
 
         {video.video_kind !== "deal" ? (
