@@ -5,9 +5,11 @@
 
 ## Principle
 
-When a UI collects **restaurant** or **menu item** metadata that exists in Common Knowledge, users must **pick from CK search results** — not type names or IDs by hand.
+When a UI collects **restaurant** or **menu item** metadata that exists in Common Knowledge, users must **search by name (or dish name), pick a CK search result** — never type or paste numeric IDs by hand.
 
-Search inputs are for **finding** CK rows. After selection, display is **read-only** with Change/Clear. Persist only `restaurant_id` and `menu_item_id` from picked CK rows.
+**Owner Video Catalog:** operator searches restaurant name → selects row → `restaurant_id` is captured from the pick and PATCHed with the video. Same for menu items.
+
+Search inputs are for **finding** CK rows by name. After selection, display is **read-only** with Change/Clear. Persist only `restaurant_id` and `menu_item_id` from picked CK rows — never from a free-text ID field.
 
 Free text remains appropriate for **user-authored** fields (captions, comments, titles when not auto-filled from a picked dish).
 

@@ -81,6 +81,8 @@ export default function CkRestaurantMenuPicker({
   disabled = false,
   restaurantRequired = false,
   testIdPrefix = "ck-place",
+  /** When false, hide internal CK ids — owner picks by name only. */
+  showLinkedIds = false,
 }) {
   const [restaurantQuery, setRestaurantQuery] = useState("");
   const [restaurantHits, setRestaurantHits] = useState([]);
@@ -168,7 +170,8 @@ export default function CkRestaurantMenuPicker({
   return (
     <div style={styles.wrap} data-testid={`${testIdPrefix}-picker`}>
       <p style={styles.hint}>
-        Pick from Common Knowledge search results — do not type restaurant or menu item names manually.
+        Search by restaurant name, pick a result — the Common Knowledge restaurant ID is linked to this
+        video automatically. You never type an ID.
       </p>
 
       <div>
@@ -180,7 +183,9 @@ export default function CkRestaurantMenuPicker({
             <div>
               <div style={styles.selectedName}>{restaurantLabel(restaurant)}</div>
               <div style={styles.selectedMeta}>
-                CK restaurant #{restaurant.restaurant_id}
+                {showLinkedIds
+                  ? `Linked · CK restaurant #${restaurant.restaurant_id}`
+                  : "Linked to Common Knowledge"}
                 {restaurant.city
                   ? ` · ${[restaurant.city, restaurant.state].filter(Boolean).join(", ")}`
                   : ""}
@@ -204,7 +209,7 @@ export default function CkRestaurantMenuPicker({
               type="search"
               value={restaurantQuery}
               onChange={(e) => setRestaurantQuery(e.target.value.slice(0, 120))}
-              placeholder="Search CK restaurants…"
+              placeholder="Search restaurant name…"
               disabled={disabled}
               autoComplete="off"
               style={styles.search}
@@ -237,7 +242,11 @@ export default function CkRestaurantMenuPicker({
             <div style={styles.selected} data-testid={`${testIdPrefix}-dish-selected`}>
               <div>
                 <div style={styles.selectedName}>{dishLabel(dish)}</div>
-                <div style={styles.selectedMeta}>CK menu item #{String(dish.menu_item_id)}</div>
+                <div style={styles.selectedMeta}>
+                  {showLinkedIds
+                    ? `Linked · CK menu item #${String(dish.menu_item_id)}`
+                    : "Linked to Common Knowledge menu item"}
+                </div>
               </div>
               <button
                 type="button"
@@ -254,7 +263,7 @@ export default function CkRestaurantMenuPicker({
                 type="search"
                 value={dishQuery}
                 onChange={(e) => setDishQuery(e.target.value.slice(0, 120))}
-                placeholder="Search CK menu items at this restaurant…"
+                placeholder="Search menu item name…"
                 disabled={disabled}
                 autoComplete="off"
                 style={styles.search}

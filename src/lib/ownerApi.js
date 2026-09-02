@@ -606,6 +606,9 @@ export const listOwnerVideos = (params = {}) => {
   if (params.kind) qs.set("kind", params.kind);
   if (params.untagged_only) qs.set("untagged_only", "1");
   if (params.q) qs.set("q", params.q);
+  if (params.date) qs.set("date", params.date);
+  if (params.date_from) qs.set("date_from", params.date_from);
+  if (params.date_to) qs.set("date_to", params.date_to);
   if (params.cursor) qs.set("cursor", params.cursor);
   if (params.limit != null) qs.set("limit", String(params.limit));
   const serialized = qs.toString();

@@ -13,22 +13,39 @@ function read(relPath) {
   return fs.readFileSync(path.join(ROOT, relPath), "utf8");
 }
 
-test("CkRestaurantMenuPicker uses CK place search — no menu-console free text IDs", () => {
+test("CkRestaurantMenuPicker uses CK place search — name lookup, no manual ID entry", () => {
   const picker = read("src/components/ck/CkRestaurantMenuPicker.jsx");
   assert.match(picker, /searchReportPlaces/);
   assert.match(picker, /type: "restaurant"/);
   assert.match(picker, /type: "menu_item"/);
   assert.match(picker, /asRestaurantPlace/);
   assert.match(picker, /asDishPlace/);
-  assert.match(picker, /do not type restaurant or menu item names manually/i);
+  assert.match(picker, /Search restaurant name/i);
+  assert.match(picker, /You never type an ID/i);
   assert.doesNotMatch(picker, /searchMenuConsoleRestaurants/);
   assert.doesNotMatch(picker, /searchMenuConsoleItems/);
+  assert.doesNotMatch(picker, /type="number".*restaurant_id|restaurant_id.*type="number"/);
 });
 
-test("Owner Video Catalog wires CK picker for metadata", () => {
+test("Owner Video Catalog wires CK picker — no restaurant_id text/number inputs", () => {
   const page = read("src/pages/owner/OwnerVideoCuration.jsx");
   assert.match(page, /CkRestaurantMenuPicker/);
   assert.match(page, /useCkPlaceFromVideoIds/);
+  assert.match(page, /restaurant\?\.restaurant_id/);
   assert.doesNotMatch(page, /searchMenuConsoleRestaurants/);
   assert.doesNotMatch(page, /searchMenuConsoleItems/);
+  assert.doesNotMatch(page, /setRestaurantId|restaurantId.*useState/);
+  assert.doesNotMatch(page, /placeholder=.*restaurant id/i);
+});
+
+test("Owner Video Catalog supports filter by created date", () => {
+  const page = read("src/pages/owner/OwnerVideoCuration.jsx");
+  const api = read("src/lib/ownerApi.js");
+  assert.match(page, /type="date"/);
+  assert.match(page, /dateFromFilter/);
+  assert.match(page, /dateToFilter/);
+  assert.match(page, /date_from: dateFromFilter/);
+  assert.match(page, /date_to: dateToFilter/);
+  assert.match(api, /date_from/);
+  assert.match(api, /date_to/);
 });

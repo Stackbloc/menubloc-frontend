@@ -197,6 +197,8 @@ export default function OwnerVideoCuration() {
   const [kind, setKind] = useState("all");
   const [untaggedOnly, setUntaggedOnly] = useState(false);
   const [query, setQuery] = useState("");
+  const [dateFromFilter, setDateFromFilter] = useState("");
+  const [dateToFilter, setDateToFilter] = useState("");
   const [lookupValue, setLookupValue] = useState("");
   const [selected, setSelected] = useState(null);
 
@@ -210,6 +212,8 @@ export default function OwnerVideoCuration() {
           kind: kind === "all" ? undefined : kind,
           untagged_only: untaggedOnly,
           q: query.trim() || undefined,
+          date_from: dateFromFilter || undefined,
+          date_to: dateToFilter || undefined,
           cursor: cursor || undefined,
           limit: 40,
         });
@@ -223,7 +227,7 @@ export default function OwnerVideoCuration() {
         setLoadingMore(false);
       }
     },
-    [kind, untaggedOnly, query]
+    [kind, untaggedOnly, query, dateFromFilter, dateToFilter]
   );
 
   useEffect(() => {
@@ -262,7 +266,7 @@ export default function OwnerVideoCuration() {
       <PageCard style={{ padding: 18, marginBottom: 16 }}>
         <SectionTitle
           title="Platform video catalog"
-          subtitle="Every Feed video gets an asset number (#) and a composite video id (kind:row_id). Browse, look up, and attach restaurant or menu item metadata."
+          subtitle="Browse Feed videos, look up by asset #, and link restaurant or menu item by name search (Common Knowledge IDs are saved automatically)."
         />
 
         <form
@@ -294,6 +298,40 @@ export default function OwnerVideoCuration() {
             placeholder="Search title, restaurant, URL…"
             style={{ ...inputStyle, flex: "1 1 220px", maxWidth: 320 }}
           />
+          <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 12, fontWeight: 700 }}>
+            <span style={{ color: OWNER_COLORS.muted }}>Created from (PT)</span>
+            <input
+              type="date"
+              value={dateFromFilter}
+              max={dateToFilter || undefined}
+              onChange={(e) => setDateFromFilter(e.target.value)}
+              style={{ ...inputStyle, width: "auto", minWidth: 148 }}
+              aria-label="Filter videos created on or after this date"
+            />
+          </label>
+          <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 12, fontWeight: 700 }}>
+            <span style={{ color: OWNER_COLORS.muted }}>Created to (PT)</span>
+            <input
+              type="date"
+              value={dateToFilter}
+              min={dateFromFilter || undefined}
+              onChange={(e) => setDateToFilter(e.target.value)}
+              style={{ ...inputStyle, width: "auto", minWidth: 148 }}
+              aria-label="Filter videos created on or before this date"
+            />
+          </label>
+          {dateFromFilter || dateToFilter ? (
+            <button
+              type="button"
+              onClick={() => {
+                setDateFromFilter("");
+                setDateToFilter("");
+              }}
+              style={{ padding: "8px 14px", borderRadius: 8, border: `1px solid ${OWNER_COLORS.line}` }}
+            >
+              Clear dates
+            </button>
+          ) : null}
           <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14 }}>
             <input
               type="checkbox"
