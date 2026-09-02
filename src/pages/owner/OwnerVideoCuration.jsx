@@ -3,6 +3,7 @@ import OwnerLayout, { OWNER_COLORS, PageCard, SectionTitle } from "./OwnerLayout
 import { SimpleTable } from "./intelligence/intelligenceShared.jsx";
 import {
   listOwnerVideos,
+  listOwnerVideoClusters,
   lookupOwnerVideo,
   patchOwnerVideoMetadata,
   uploadOwnerVideo,
@@ -43,12 +44,76 @@ function formatWhen(value) {
   });
 }
 
-function VideoUploadPanel({ onUploaded }) {
+function useOwnerClusterOptions() {
+  const [clusters, setClusters] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      try {
+        const result = await listOwnerVideoClusters({ limit: 500 });
+        if (!cancelled) setClusters(result.clusters || []);
+      } catch {
+        if (!cancelled) setClusters([]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return { clusters, loading };
+}
+
+function OwnerClusterSelect({
+  value,
+  onChange,
+  clusters,
+  loading,
+  disabled,
+  testId = "owner-video-cluster",
+}) {
+  return (
+    <label style={{ display: "grid", gap: 6 }}>
+      <span style={{ fontWeight: 700, fontSize: 13 }}>Cluster</span>
+      <select
+        value={value ?? ""}
+        onChange={(e) => {
+          const next = e.target.value;
+          onChange(next ? Number(next) : null);
+        }}
+        disabled={disabled || loading}
+        style={inputStyle}
+        data-testid={testId}
+      >
+        <option value="">No cluster</option>
+        {clusters.map((cluster) => (
+          <option key={cluster.id} value={cluster.id}>
+            {cluster.name}
+            {cluster.city
+              ? ` · ${cluster.city}${cluster.state ? `, ${cluster.state}` : ""}`
+              : ""}
+          </option>
+        ))}
+      </select>
+      {loading ? (
+        <span style={{ fontSize: 12, color: OWNER_COLORS.muted }}>Loading clusters…</span>
+      ) : null}
+    </label>
+  );
+}
+
+function VideoUploadPanel({ onUploaded, clusters, clustersLoading }) {
   const [file, setFile] = useState(null);
   const [title, setTitle] = useState("");
   const [comment, setComment] = useState("");
   const [restaurant, setRestaurant] = useState(null);
   const [dish, setDish] = useState(null);
+  const [clusterId, setClusterId] = useState(null);
   const [marketDiscoverable, setMarketDiscoverable] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -81,6 +146,9 @@ function VideoUploadPanel({ onUploaded }) {
       if (dish?.menu_item_id != null) {
         form.append("menu_item_id", String(dish.menu_item_id));
       }
+      if (clusterId != null) {
+        form.append("cluster_id", String(clusterId));
+      }
       form.append("market_discoverable", marketDiscoverable ? "1" : "0");
 
       const result = await uploadOwnerVideo(form);
@@ -94,6 +162,7 @@ function VideoUploadPanel({ onUploaded }) {
       setComment("");
       setRestaurant(null);
       setDish(null);
+      setClusterId(null);
       setMarketDiscoverable(true);
       onUploaded?.(result.video);
     } catch (err) {
@@ -146,6 +215,15 @@ function VideoUploadPanel({ onUploaded }) {
           testIdPrefix="owner-video-upload"
         />
 
+        <OwnerClusterSelect
+          value={clusterId}
+          onChange={setClusterId}
+          clusters={clusters}
+          loading={clustersLoading}
+          disabled={busy}
+          testId="owner-video-upload-cluster"
+        />
+
         <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 14 }}>
           <input
             type="checkbox"
@@ -180,9 +258,12 @@ function VideoUploadPanel({ onUploaded }) {
   );
 }
 
-function VideoEditor({ video, onSaved, onClose }) {
+function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
   const [title, setTitle] = useState(video.title || "");
   const [comment, setComment] = useState(video.comment || "");
+  const [clusterId, setClusterId] = useState(
+    video.cluster_id != null ? Number(video.cluster_id) : null
+  );
   const {
     restaurant,
     setRestaurant,
@@ -234,6 +315,9 @@ function VideoEditor({ video, onSaved, onClose }) {
       }
       if (supportsMenuItem) {
         body.menu_item_id = dish?.menu_item_id ?? null;
+      }
+      if (video.video_kind === "managed") {
+        body.cluster_id = clusterId;
       }
       const result = await patchOwnerVideoMetadata(
         video.video_kind,
@@ -297,6 +381,17 @@ function VideoEditor({ video, onSaved, onClose }) {
           )
         ) : null}
 
+        {video.video_kind === "managed" ? (
+          <OwnerClusterSelect
+            value={clusterId}
+            onChange={setClusterId}
+            clusters={clusters}
+            loading={clustersLoading}
+            disabled={busy}
+            testId="owner-video-edit-cluster"
+          />
+        ) : null}
+
         {video.video_kind !== "deal" ? (
           <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 14 }}>
             <input
@@ -333,6 +428,7 @@ function VideoEditor({ video, onSaved, onClose }) {
 }
 
 export default function OwnerVideoCuration() {
+  const { clusters, loading: clustersLoading } = useOwnerClusterOptions();
   const [videos, setVideos] = useState([]);
   const [nextCursor, setNextCursor] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -408,6 +504,8 @@ export default function OwnerVideoCuration() {
   return (
     <OwnerLayout title="Video Manager">
       <VideoUploadPanel
+        clusters={clusters}
+        clustersLoading={clustersLoading}
         onUploaded={(video) => {
           setSelected(video);
           setVideos((prev) => {
@@ -517,6 +615,7 @@ export default function OwnerVideoCuration() {
               ["Title", "title", (row) => row.title || "—"],
               ["Restaurant", "restaurant_name", (row) => row.restaurant_name || "—"],
               ["Menu item", "menu_item_name", (row) => row.menu_item_name || "—"],
+              ["Cluster", "cluster_name", (row) => row.cluster_name || "—"],
               [
                 "Creator",
                 "creator",
@@ -545,6 +644,8 @@ export default function OwnerVideoCuration() {
       {selected ? (
         <VideoEditor
           video={selected}
+          clusters={clusters}
+          clustersLoading={clustersLoading}
           onClose={() => setSelected(null)}
           onSaved={(updated) => {
             setSelected(updated);

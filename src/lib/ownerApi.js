@@ -630,3 +630,11 @@ export const lookupOwnerVideo = ({ videoId, assetNumber } = {}) => {
 export const patchOwnerVideoMetadata = (kind, sourceId, body) =>
   patch(`/api/owner/videos/${encodeURIComponent(kind)}/${encodeURIComponent(String(sourceId))}`, body);
 
+export const listOwnerVideoClusters = (params = {}) => {
+  const qs = new URLSearchParams();
+  if (params.q) qs.set("q", params.q);
+  if (params.limit != null) qs.set("limit", String(params.limit));
+  const serialized = qs.toString();
+  return get(`/api/owner/videos/clusters${serialized ? `?${serialized}` : ""}`);
+};
+

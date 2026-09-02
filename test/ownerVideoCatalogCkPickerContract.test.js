@@ -57,3 +57,14 @@ test("Owner Video Manager supports upload panel and date filters", () => {
   const layout = read("src/pages/owner/OwnerLayout.jsx");
   assert.match(layout, /Video Manager/);
 });
+
+test("Owner Video Manager includes cluster dropdown for platform uploads", () => {
+  const page = read("src/pages/owner/OwnerVideoCuration.jsx");
+  const api = read("src/lib/ownerApi.js");
+  assert.match(page, /OwnerClusterSelect/);
+  assert.match(page, /listOwnerVideoClusters/);
+  assert.match(page, /cluster_id/);
+  assert.match(page, /owner-video-upload-cluster/);
+  assert.match(api, /listOwnerVideoClusters/);
+  assert.match(api, /\/api\/owner\/videos\/clusters/);
+});
