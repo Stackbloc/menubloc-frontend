@@ -30,7 +30,8 @@ describe("owner diner accounts panel", () => {
     assert.match(page, /OwnerDinerHubDialog/);
     assert.match(page, /diner-capability-metrics/);
     assert.match(page, /diner-stats-interval-\$\{key\}/);
-    assert.match(page, /\["7d", "Week"\]/);
+    assert.match(page, /\["today", "Today"\]/);
+    assert.match(page, /useState\("today"\)/);
     assert.match(page, /\["30d", "Month"\]/);
     assert.match(page, /\["365d", "Year"\]/);
     assert.match(page, /onRowClick/);

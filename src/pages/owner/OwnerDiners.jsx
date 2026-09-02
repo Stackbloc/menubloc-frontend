@@ -67,7 +67,7 @@ export default function OwnerDiners() {
   const [error, setError] = useState("");
   const [statsError, setStatsError] = useState("");
   const [query, setQuery] = useState("");
-  const [interval, setInterval] = useState("7d");
+  const [interval, setInterval] = useState("today");
   const [selectedDinerId, setSelectedDinerId] = useState(null);
 
   useEffect(() => {

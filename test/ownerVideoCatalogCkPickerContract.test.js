@@ -1,5 +1,5 @@
 /**
- * Owner Video Catalog — CK-backed restaurant/menu pickers (no manual CK text).
+ * Owner Video Manager — CK-backed pickers, upload, date filters.
  */
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -27,7 +27,7 @@ test("CkRestaurantMenuPicker uses CK place search — name lookup, no manual ID 
   assert.doesNotMatch(picker, /type="number".*restaurant_id|restaurant_id.*type="number"/);
 });
 
-test("Owner Video Catalog wires CK picker — no restaurant_id text/number inputs", () => {
+test("Owner Video Manager wires CK picker — no restaurant_id text/number inputs", () => {
   const page = read("src/pages/owner/OwnerVideoCuration.jsx");
   assert.match(page, /CkRestaurantMenuPicker/);
   assert.match(page, /useCkPlaceFromVideoIds/);
@@ -38,9 +38,15 @@ test("Owner Video Catalog wires CK picker — no restaurant_id text/number input
   assert.doesNotMatch(page, /placeholder=.*restaurant id/i);
 });
 
-test("Owner Video Catalog supports filter by created date", () => {
+test("Owner Video Manager supports upload panel and date filters", () => {
   const page = read("src/pages/owner/OwnerVideoCuration.jsx");
   const api = read("src/lib/ownerApi.js");
+  assert.match(page, /Video Manager/);
+  assert.match(page, /VideoUploadPanel/);
+  assert.match(page, /uploadOwnerVideo/);
+  assert.match(page, /owner-video-upload-panel/);
+  assert.match(api, /uploadOwnerVideo/);
+  assert.match(api, /\/api\/owner\/videos\/upload/);
   assert.match(page, /type="date"/);
   assert.match(page, /dateFromFilter/);
   assert.match(page, /dateToFilter/);
@@ -48,4 +54,6 @@ test("Owner Video Catalog supports filter by created date", () => {
   assert.match(page, /date_to: dateToFilter/);
   assert.match(api, /date_from/);
   assert.match(api, /date_to/);
+  const layout = read("src/pages/owner/OwnerLayout.jsx");
+  assert.match(layout, /Video Manager/);
 });

@@ -599,7 +599,9 @@ export const runDeploymentWatchdog = () => post("/api/owner/deployment-operation
 export const freezeDeployments = (reason) => post("/api/owner/deployment-operations/freeze", { reason });
 export const resumeDeployments = (reason) => post("/api/owner/deployment-operations/resume", { reason });
 
-// ─── Platform video catalog (all Feed video sources) ─────────────────────────
+// ─── Platform video manager (all Feed video sources) ─────────────────────────
+
+export const uploadOwnerVideo = (formData) => postFormData("/api/owner/videos/upload", formData);
 
 export const listOwnerVideos = (params = {}) => {
   const qs = new URLSearchParams();

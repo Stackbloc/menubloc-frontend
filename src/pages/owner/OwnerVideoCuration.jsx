@@ -5,6 +5,7 @@ import {
   listOwnerVideos,
   lookupOwnerVideo,
   patchOwnerVideoMetadata,
+  uploadOwnerVideo,
 } from "../../lib/ownerApi.js";
 import CkRestaurantMenuPicker, {
   useCkPlaceFromVideoIds,
@@ -18,6 +19,7 @@ const KIND_OPTIONS = [
   ["plan", "Plan"],
   ["event", "Event"],
   ["deal", "Deal"],
+  ["managed", "Platform upload"],
 ];
 
 const inputStyle = {
@@ -41,6 +43,143 @@ function formatWhen(value) {
   });
 }
 
+function VideoUploadPanel({ onUploaded }) {
+  const [file, setFile] = useState(null);
+  const [title, setTitle] = useState("");
+  const [comment, setComment] = useState("");
+  const [restaurant, setRestaurant] = useState(null);
+  const [dish, setDish] = useState(null);
+  const [marketDiscoverable, setMarketDiscoverable] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  function handleDishChange(next) {
+    setDish(next);
+    if (next && !title.trim()) {
+      setTitle(dishLabel(next) || title);
+    }
+  }
+
+  async function handleUpload(e) {
+    e.preventDefault();
+    if (!file) {
+      setError("Choose a video file to upload.");
+      return;
+    }
+    setBusy(true);
+    setError("");
+    setSuccess("");
+    try {
+      const form = new FormData();
+      form.append("video", file);
+      if (title.trim()) form.append("title", title.trim());
+      if (comment.trim()) form.append("comment", comment.trim());
+      if (restaurant?.restaurant_id != null) {
+        form.append("restaurant_id", String(restaurant.restaurant_id));
+      }
+      if (dish?.menu_item_id != null) {
+        form.append("menu_item_id", String(dish.menu_item_id));
+      }
+      form.append("market_discoverable", marketDiscoverable ? "1" : "0");
+
+      const result = await uploadOwnerVideo(form);
+      setSuccess(
+        result?.video?.asset_number != null
+          ? `Uploaded — asset #${result.video.asset_number}`
+          : "Uploaded"
+      );
+      setFile(null);
+      setTitle("");
+      setComment("");
+      setRestaurant(null);
+      setDish(null);
+      setMarketDiscoverable(true);
+      onUploaded?.(result.video);
+    } catch (err) {
+      setError(err.message || "Upload failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <PageCard style={{ padding: 18, marginBottom: 16 }} data-testid="owner-video-upload-panel">
+      <SectionTitle
+        title="Upload video"
+        subtitle="Upload MP4, WebM, or MOV — Menuply normalizes to Chrome-safe H.264 MP4 automatically (same path as diner Feed uploads)."
+      />
+      <form onSubmit={handleUpload} style={{ display: "grid", gap: 12, maxWidth: 520 }}>
+        <label style={{ display: "grid", gap: 6 }}>
+          <span style={{ fontWeight: 700, fontSize: 13 }}>Video file *</span>
+          <input
+            type="file"
+            accept="video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov"
+            disabled={busy}
+            onChange={(e) => setFile(e.target.files?.[0] || null)}
+            data-testid="owner-video-upload-file"
+          />
+          {file ? (
+            <span style={{ fontSize: 12, color: OWNER_COLORS.muted }}>
+              {file.name} ({Math.round(file.size / (1024 * 1024))} MB)
+            </span>
+          ) : null}
+        </label>
+
+        <label style={{ display: "grid", gap: 6 }}>
+          <span style={{ fontWeight: 700, fontSize: 13 }}>Title</span>
+          <input value={title} onChange={(e) => setTitle(e.target.value)} style={inputStyle} />
+        </label>
+
+        <label style={{ display: "grid", gap: 6 }}>
+          <span style={{ fontWeight: 700, fontSize: 13 }}>Caption / description</span>
+          <textarea value={comment} onChange={(e) => setComment(e.target.value)} rows={2} style={inputStyle} />
+        </label>
+
+        <CkRestaurantMenuPicker
+          restaurant={restaurant}
+          onRestaurantChange={setRestaurant}
+          dish={dish}
+          onDishChange={handleDishChange}
+          allowMenuItem
+          disabled={busy}
+          testIdPrefix="owner-video-upload"
+        />
+
+        <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 14 }}>
+          <input
+            type="checkbox"
+            checked={marketDiscoverable}
+            onChange={(e) => setMarketDiscoverable(e.target.checked)}
+          />
+          Show on public Feed when saved
+        </label>
+
+        {error ? <div style={{ color: "#b91c1c", fontSize: 13 }}>{error}</div> : null}
+        {success ? <div style={{ color: "#15803d", fontSize: 13 }}>{success}</div> : null}
+
+        <button
+          type="submit"
+          disabled={busy || !file}
+          style={{
+            justifySelf: "start",
+            padding: "10px 16px",
+            borderRadius: 10,
+            border: "none",
+            background: OWNER_COLORS.accent,
+            color: "#fff",
+            fontWeight: 700,
+            cursor: busy || !file ? "wait" : "pointer",
+          }}
+          data-testid="owner-video-upload-submit"
+        >
+          {busy ? "Uploading & converting…" : "Upload video"}
+        </button>
+      </form>
+    </PageCard>
+  );
+}
+
 function VideoEditor({ video, onSaved, onClose }) {
   const [title, setTitle] = useState(video.title || "");
   const [comment, setComment] = useState(video.comment || "");
@@ -60,12 +199,17 @@ function VideoEditor({ video, onSaved, onClose }) {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  const supportsMenuItem = video.video_kind === "ate" || video.video_kind === "want" || video.video_kind === "deal";
+  const supportsMenuItem =
+    video.video_kind === "ate" ||
+    video.video_kind === "want" ||
+    video.video_kind === "deal" ||
+    video.video_kind === "managed";
   const supportsRestaurant =
     video.video_kind === "ate" ||
     video.video_kind === "want" ||
     video.video_kind === "plan" ||
-    video.video_kind === "deal";
+    video.video_kind === "deal" ||
+    video.video_kind === "managed";
 
   function handleDishChange(next) {
     setDish(next);
@@ -262,11 +406,22 @@ export default function OwnerVideoCuration() {
   }
 
   return (
-    <OwnerLayout title="Video Catalog">
+    <OwnerLayout title="Video Manager">
+      <VideoUploadPanel
+        onUploaded={(video) => {
+          setSelected(video);
+          setVideos((prev) => {
+            if (prev.some((v) => v.video_id === video.video_id)) return prev;
+            return [video, ...prev];
+          });
+          loadVideos();
+        }}
+      />
+
       <PageCard style={{ padding: 18, marginBottom: 16 }}>
         <SectionTitle
-          title="Platform video catalog"
-          subtitle="Browse Feed videos, look up by asset #, and link restaurant or menu item by name search (Common Knowledge IDs are saved automatically)."
+          title="Browse videos"
+          subtitle="Every Feed video has an asset number (#) and composite id (kind:row_id). Search, filter, and attach restaurant or menu metadata by name."
         />
 
         <form
