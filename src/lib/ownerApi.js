@@ -638,3 +638,53 @@ export const listOwnerVideoClusters = (params = {}) => {
   return get(`/api/owner/videos/clusters${serialized ? `?${serialized}` : ""}`);
 };
 
+// ─── Knowledge Bot (restaurant / franchise ingestion) ───────────────────────
+
+export const listKnowledgeBotJobs = (params = {}) => {
+  const qs = new URLSearchParams();
+  if (params.limit != null) qs.set("limit", String(params.limit));
+  if (params.offset != null) qs.set("offset", String(params.offset));
+  const serialized = qs.toString();
+  return get(`/api/owner/knowledge-bot/jobs${serialized ? `?${serialized}` : ""}`);
+};
+
+export const createKnowledgeBotJob = (body) => post("/api/owner/knowledge-bot/jobs", body);
+
+export const getKnowledgeBotJob = (jobId) =>
+  get(`/api/owner/knowledge-bot/jobs/${encodeURIComponent(String(jobId))}`);
+
+export const updateKnowledgeBotJob = (jobId, body) =>
+  patch(`/api/owner/knowledge-bot/jobs/${encodeURIComponent(String(jobId))}`, body);
+
+export const uploadKnowledgeBotEvidence = (jobId, formData) =>
+  postFormData(`/api/owner/knowledge-bot/jobs/${encodeURIComponent(String(jobId))}/evidence`, formData);
+
+export const runKnowledgeBotResearch = (jobId) =>
+  post(`/api/owner/knowledge-bot/jobs/${encodeURIComponent(String(jobId))}/research`, {});
+
+export const runKnowledgeBotPreview = (jobId) =>
+  post(`/api/owner/knowledge-bot/jobs/${encodeURIComponent(String(jobId))}/preview`, {});
+
+export const applyKnowledgeBotJob = (jobId, body = {}) =>
+  post(`/api/owner/knowledge-bot/jobs/${encodeURIComponent(String(jobId))}/apply`, body);
+
+export const retryKnowledgeBotFailed = (jobId) =>
+  post(`/api/owner/knowledge-bot/jobs/${encodeURIComponent(String(jobId))}/retry-failed`, {});
+
+export const lookupKnowledgeBotRestaurant = (params = {}) => {
+  const qs = new URLSearchParams();
+  if (params.id) qs.set("id", String(params.id));
+  if (params.name) qs.set("name", params.name);
+  if (params.city) qs.set("city", params.city);
+  if (params.state) qs.set("state", params.state);
+  if (params.chain_id) qs.set("chain_id", String(params.chain_id));
+  return get(`/api/owner/knowledge-bot/lookup/restaurant?${qs.toString()}`);
+};
+
+export const lookupKnowledgeBotChain = (params = {}) => {
+  const qs = new URLSearchParams();
+  if (params.id) qs.set("id", String(params.id));
+  if (params.name) qs.set("name", params.name);
+  return get(`/api/owner/knowledge-bot/lookup/chain?${qs.toString()}`);
+};
+

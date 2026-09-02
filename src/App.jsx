@@ -181,6 +181,8 @@ import SubscriptionDesignerFeatures from "./pages/owner/subscriptionDesigner/Sub
 import SubscriptionDesignerPreview from "./pages/owner/subscriptionDesigner/SubscriptionDesignerPreview.jsx";
 import SubscriptionDesignerAudit from "./pages/owner/subscriptionDesigner/SubscriptionDesignerAudit.jsx";
 import OwnerHelpCenter from "./pages/owner/OwnerHelpCenter.jsx";
+import OwnerKnowledgeBot from "./pages/owner/OwnerKnowledgeBot.jsx";
+import OwnerKnowledgeBotHistory from "./pages/owner/OwnerKnowledgeBotHistory.jsx";
 import OperatorQrStickers from "./pages/operator/OperatorQrStickers.jsx";
 import OperatorMenuStudio from "./pages/operator/OperatorMenuStudio.jsx";
 import OperatorBrandSettings from "./pages/operator/OperatorBrandSettings.jsx";
@@ -1091,6 +1093,8 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
         <Route path="/owner/support" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerSupportTickets /></OwnerRoute>} />
         <Route path="/owner/support/:ticketId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerTicketDetail /></OwnerRoute>} />
         <Route path="/owner/help" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerHelpCenter /></OwnerRoute>} />
+        <Route path="/owner/knowledge-bot/history" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerKnowledgeBotHistory /></OwnerRoute>} />
+        <Route path="/owner/knowledge-bot" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerKnowledgeBot /></OwnerRoute>} />
         <Route path="/owner/profile-manager" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerProfileManager /></OwnerRoute>} />
         <Route path="/owner/menu-manager" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerMenuUploads /></OwnerRoute>} />
         <Route path="/owner/restaurants/:restaurantId/menus/:menuId/edit" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerMenuEditorPage /></OwnerRoute>} />

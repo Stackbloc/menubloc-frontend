@@ -137,6 +137,7 @@ export default function OwnerLayout({ title, children, actions = null }) {
           },
           { to: "/owner/profile-manager", label: "Profile Manager" },
           { to: "/owner/menu-manager", label: "Menu Manager" },
+          { to: "/owner/knowledge-bot", label: "Knowledge Bot" },
         ],
       },
       NAV_SECTIONS_STATIC[1],
