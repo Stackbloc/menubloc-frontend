@@ -1,5 +1,5 @@
 /**
- * MENUS tab — Feed-scoped Yellow Browser deck (saved + 48h recents).
+ * MENUS tab — Feed-scoped Yellow Browser deck (saved + followed + 48h recents).
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -8,8 +8,11 @@ import CatalogMenuRenderer, {
   prefetchCatalogMenu,
 } from "../../../components/menuCatalog/CatalogMenuRenderer.jsx";
 import { FEED_PRIMARY_NAV_HEIGHT } from "../../../components/consumer/feed/FeedPrimaryNav.jsx";
+import { useConsumer } from "../../../context/ConsumerContext.jsx";
+import { getFollowedRestaurants } from "../../../lib/consumerApi.js";
 import { readDetectedLocation } from "../../../lib/discoveryLocationPersistence.js";
 import {
+  FEED_MENU_FOLLOWS_CHANGED,
   FEED_MENU_LIBRARY_CHANGED,
   buildFeedMenuDeck,
   isFeedMenuBookmarked,
@@ -19,6 +22,9 @@ import {
   toggleFeedMenuBookmark,
 } from "../../../lib/feedMenuLibrary.js";
 import { buildFeedMenuSampleDeck } from "../../../lib/feedMenuSampleStack.js";
+
+const MENU_STACK_INSTRUCTION =
+  "Liked restaurants stay here until you unlike them. Tap Save (☆) to pin any menu. Menus you open from Feed stay for 48 hours; saved pins stay until you remove them.";
 
 function resolveLocationParams() {
   if (typeof window === "undefined") return {};
@@ -48,7 +54,13 @@ function deckToBrowseEntry(row) {
 }
 
 export default function FeedMenusPage() {
-  const [personalDeck, setPersonalDeck] = useState(() => buildFeedMenuDeck(readFeedMenuLibrary()));
+  const { isAuthenticated } = useConsumer();
+  const [followedRestaurants, setFollowedRestaurants] = useState([]);
+  const [libraryTick, setLibraryTick] = useState(0);
+  const personalDeck = useMemo(
+    () => buildFeedMenuDeck(readFeedMenuLibrary(), Date.now(), followedRestaurants),
+    [followedRestaurants, libraryTick]
+  );
   const isSampleMode = personalDeck.length === 0;
   const deck = useMemo(
     () => (isSampleMode ? buildFeedMenuSampleDeck() : personalDeck),
@@ -61,22 +73,55 @@ export default function FeedMenusPage() {
   const areaRef = useRef(null);
   const locationParams = useMemo(() => resolveLocationParams(), []);
 
-  const reloadDeck = useCallback(() => {
-    setPersonalDeck(buildFeedMenuDeck(readFeedMenuLibrary()));
+  const reloadLibrary = useCallback(() => {
+    setLibraryTick((tick) => tick + 1);
   }, []);
 
-  useEffect(() => {
-    reloadDeck();
-    function onChange() {
-      reloadDeck();
+  const loadFollowedRestaurants = useCallback(() => {
+    if (!isAuthenticated) {
+      setFollowedRestaurants([]);
+      return undefined;
     }
-    window.addEventListener(FEED_MENU_LIBRARY_CHANGED, onChange);
-    window.addEventListener("storage", onChange);
+    let alive = true;
+    getFollowedRestaurants()
+      .then((result) => {
+        if (!alive) return;
+        setFollowedRestaurants(result?.restaurants || []);
+      })
+      .catch(() => {
+        if (alive) setFollowedRestaurants([]);
+      });
     return () => {
-      window.removeEventListener(FEED_MENU_LIBRARY_CHANGED, onChange);
-      window.removeEventListener("storage", onChange);
+      alive = false;
     };
-  }, [reloadDeck]);
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    return loadFollowedRestaurants();
+  }, [loadFollowedRestaurants]);
+
+  useEffect(() => {
+    reloadLibrary();
+    function onLibraryChange() {
+      reloadLibrary();
+    }
+    window.addEventListener(FEED_MENU_LIBRARY_CHANGED, onLibraryChange);
+    window.addEventListener("storage", onLibraryChange);
+    return () => {
+      window.removeEventListener(FEED_MENU_LIBRARY_CHANGED, onLibraryChange);
+      window.removeEventListener("storage", onLibraryChange);
+    };
+  }, [reloadLibrary]);
+
+  useEffect(() => {
+    function onFollowsChange() {
+      loadFollowedRestaurants();
+    }
+    window.addEventListener(FEED_MENU_FOLLOWS_CHANGED, onFollowsChange);
+    return () => {
+      window.removeEventListener(FEED_MENU_FOLLOWS_CHANGED, onFollowsChange);
+    };
+  }, [loadFollowedRestaurants]);
 
   useEffect(() => {
     setIndex((i) => Math.min(i, Math.max(0, deck.length - 1)));
@@ -175,13 +220,13 @@ export default function FeedMenusPage() {
     if (!current) return;
     const saved = toggleFeedMenuBookmark(current);
     setToast(saved ? "Saved to Menus" : "Removed from saved");
-    reloadDeck();
+    reloadLibrary();
   }
 
   function onRemoveSaved() {
     if (!current || current.tier !== "saved") return;
     removeFeedMenuSaved(current.restaurant_id);
-    reloadDeck();
+    reloadLibrary();
   }
 
   const navBottom = `calc(${FEED_PRIMARY_NAV_HEIGHT}px + env(safe-area-inset-bottom, 0px))`;
@@ -197,6 +242,10 @@ export default function FeedMenusPage() {
           {isSampleMode ? (
             <span style={styles.tierBadge} data-testid="feed-menus-tier-sample">
               Sample
+            </span>
+          ) : current?.tier === "followed" ? (
+            <span style={styles.tierBadge} data-testid="feed-menus-tier-followed">
+              Liked
             </span>
           ) : current?.tier === "recent" ? (
             <span style={styles.tierBadge} data-testid="feed-menus-tier-recent">
@@ -254,11 +303,7 @@ export default function FeedMenusPage() {
 
       {isSampleMode ? (
         <div style={styles.sampleHint} data-testid="feed-menus-sample-hint">
-          <p style={styles.sampleHintCopy}>
-            Tap <strong style={styles.sampleHintStrong}>Save</strong> (☆) or the{" "}
-            <strong style={styles.sampleHintStrong}>restaurant name</strong> on a video. Menus you open
-            stay for 48 hours; saves stay until you remove them.
-          </p>
+          <p style={styles.sampleHintCopy}>{MENU_STACK_INSTRUCTION}</p>
           <div style={styles.sampleHintActions}>
             <Link to="/feed" style={styles.sampleHintLink} data-testid="feed-menus-browse-feed">
               Browse Feed
@@ -267,6 +312,10 @@ export default function FeedMenusPage() {
               Discover restaurants
             </Link>
           </div>
+        </div>
+      ) : (
+        <div style={styles.stackHint} data-testid="feed-menus-stack-hint">
+          <p style={styles.stackHintCopy}>{MENU_STACK_INSTRUCTION}</p>
         </div>
       ) : null}
 
@@ -319,6 +368,19 @@ const styles = {
     lineHeight: 1.45,
   },
   sampleHintStrong: { color: "#e8f0ec", fontWeight: 750 },
+  stackHint: {
+    margin: "0 12px 8px",
+    padding: "10px 14px",
+    borderRadius: 12,
+    background: "rgba(94, 234, 212, 0.06)",
+    border: "1px solid rgba(94, 234, 212, 0.18)",
+  },
+  stackHintCopy: {
+    margin: 0,
+    color: "rgba(232,240,236,0.72)",
+    fontSize: 12,
+    lineHeight: 1.45,
+  },
   sampleHintActions: {
     display: "flex",
     flexWrap: "wrap",

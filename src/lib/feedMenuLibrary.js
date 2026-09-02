@@ -1,10 +1,11 @@
 /**
- * Feed Menus — personal Yellow Browser deck (saved bookmarks + 48h recents).
- * v1: device localStorage; guest + signed-in.
+ * Feed Menus — personal Yellow Browser deck (saved + followed + 48h recents).
+ * Saved/recents: device localStorage. Followed: server follow list when signed in.
  */
 
 export const FEED_MENU_LIBRARY_KEY = "menuply.feedMenuLibrary.v1";
 export const FEED_MENU_LIBRARY_CHANGED = "menuply:feed-menu-library-changed";
+export const FEED_MENU_FOLLOWS_CHANGED = "menuply:feed-menu-follows-changed";
 export const RECENT_TTL_MS = 48 * 60 * 60 * 1000;
 
 export function restaurantRefFromFeedItem(item) {
@@ -34,6 +35,23 @@ export function restaurantRefFromDealItem(item) {
   };
 }
 
+/** Map a followed-restaurants API row into a normalized menu-stack ref. */
+export function restaurantRefFromFollowedRestaurant(restaurant) {
+  const ref = normalizeRestaurantRef({
+    restaurant_id: restaurant?.restaurant_id,
+    restaurant_name: restaurant?.restaurant_name,
+    slug: restaurant?.slug,
+    city: restaurant?.city,
+    state: restaurant?.state,
+  });
+  if (!ref) return null;
+  const followedMs = Date.parse(restaurant?.followed_at || "");
+  return {
+    ...ref,
+    followed_at: Number.isFinite(followedMs) ? followedMs : undefined,
+  };
+}
+
 export function createEmptyLibrary() {
   return { version: 1, saved: [], recent: [] };
 }
@@ -55,6 +73,11 @@ function entryTimestamp(entry) {
   return Number.isFinite(n) ? n : 0;
 }
 
+function followedAtTimestamp(entry) {
+  const n = Number(entry?.followed_at);
+  return Number.isFinite(n) ? n : 0;
+}
+
 export function purgeExpiredRecent(lib, now = Date.now()) {
   const base = lib && typeof lib === "object" ? lib : createEmptyLibrary();
   const recent = (Array.isArray(base.recent) ? base.recent : []).filter((row) => {
@@ -64,7 +87,7 @@ export function purgeExpiredRecent(lib, now = Date.now()) {
   return { ...base, saved: Array.isArray(base.saved) ? base.saved : [], recent };
 }
 
-export function buildFeedMenuDeck(lib, now = Date.now()) {
+export function buildFeedMenuDeck(lib, now = Date.now(), followedRestaurants = []) {
   const cleaned = purgeExpiredRecent(lib, now);
   const savedIds = new Set(
     cleaned.saved.map((row) => String(row.restaurant_id)).filter(Boolean)
@@ -77,15 +100,29 @@ export function buildFeedMenuDeck(lib, now = Date.now()) {
       tier: "saved",
     }));
 
+  const followed = (Array.isArray(followedRestaurants) ? followedRestaurants : [])
+    .map((row) => restaurantRefFromFollowedRestaurant(row))
+    .filter((row) => row && !savedIds.has(String(row.restaurant_id)))
+    .sort((a, b) => followedAtTimestamp(b) - followedAtTimestamp(a))
+    .map((row) => ({
+      ...row,
+      tier: "followed",
+    }));
+
+  const pinnedIds = new Set([
+    ...savedIds,
+    ...followed.map((row) => String(row.restaurant_id)).filter(Boolean),
+  ]);
+
   const recent = cleaned.recent
-    .filter((row) => row?.restaurant_id && !savedIds.has(String(row.restaurant_id)))
+    .filter((row) => row?.restaurant_id && !pinnedIds.has(String(row.restaurant_id)))
     .sort((a, b) => entryTimestamp(b) - entryTimestamp(a))
     .map((row) => ({
       ...row,
       tier: "recent",
     }));
 
-  return [...saved, ...recent];
+  return [...saved, ...followed, ...recent];
 }
 
 function upsertSaved(lib, ref, now) {
@@ -196,6 +233,11 @@ function writeStorage(storage, lib) {
 function notifyChange() {
   if (typeof window === "undefined") return;
   window.dispatchEvent(new CustomEvent(FEED_MENU_LIBRARY_CHANGED));
+}
+
+export function notifyFeedMenuFollowsChanged() {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent(FEED_MENU_FOLLOWS_CHANGED));
 }
 
 export function readFeedMenuLibrary(storage = typeof window !== "undefined" ? window.localStorage : null) {

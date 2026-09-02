@@ -13,6 +13,7 @@ import {
   formatBytes,
   MAX_UPLOAD_VIDEO_BYTES,
 } from "./consumerCameraCapture.js";
+import { notifyFeedMenuFollowsChanged } from "./feedMenuLibrary.js";
 
 const VITE_ENV = import.meta.env || {};
 const DEFAULT_PROD_API_BASE = "https://menubloc-backend-production.up.railway.app";
@@ -572,10 +573,16 @@ export const updateFoodsToAvoid  = (keys) => put("/api/consumer/foods-to-avoid",
 // ── Restaurant Follows ─────────────────────────────────────────────────────
 export const getRestaurantFollowStatus = (restaurantId) =>
   get(`/api/restaurants/${encodeURIComponent(String(restaurantId))}/follow-status`);
-export const followRestaurant = (restaurantId) =>
-  post(`/api/restaurants/${encodeURIComponent(String(restaurantId))}/follow`, {});
-export const unfollowRestaurant = (restaurantId) =>
-  del(`/api/restaurants/${encodeURIComponent(String(restaurantId))}/follow`);
+export const followRestaurant = async (restaurantId) => {
+  const result = await post(`/api/restaurants/${encodeURIComponent(String(restaurantId))}/follow`, {});
+  notifyFeedMenuFollowsChanged();
+  return result;
+};
+export const unfollowRestaurant = async (restaurantId) => {
+  const result = await del(`/api/restaurants/${encodeURIComponent(String(restaurantId))}/follow`);
+  notifyFeedMenuFollowsChanged();
+  return result;
+};
 
 // ── Menu Item Likes ────────────────────────────────────────────────────────────
 export const getLikedMenuItems = () =>

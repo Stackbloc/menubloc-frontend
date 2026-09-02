@@ -15,6 +15,7 @@ import {
   createEmptyLibrary,
   purgeExpiredRecent,
   restaurantRefFromFeedItem,
+  restaurantRefFromFollowedRestaurant,
 } from "../src/lib/feedMenuLibrary.js";
 import {
   buildFeedMenuSampleDeck,
@@ -95,6 +96,61 @@ test("buildFeedMenuDeck orders saved before recent and dedupes", () => {
   assert.equal(deck[1].tier, "recent");
 });
 
+test("buildFeedMenuDeck inserts followed tier between saved and recent", () => {
+  const now = 1_700_000_000_000;
+  let lib = applyBookmarkToggle(createEmptyLibrary(), REF_A, now).library;
+  lib = applyRecordOpen(lib, REF_B, now);
+  const followed = [
+    {
+      restaurant_id: 303,
+      restaurant_name: "In-N-Out",
+      slug: "in-n-out",
+      city: "Los Angeles",
+      state: "CA",
+      followed_at: "2026-01-02T12:00:00.000Z",
+    },
+  ];
+  const deck = buildFeedMenuDeck(lib, now, followed);
+  assert.equal(deck.length, 3);
+  assert.equal(deck[0].tier, "saved");
+  assert.equal(deck[1].tier, "followed");
+  assert.equal(deck[1].restaurant_id, "303");
+  assert.equal(deck[2].tier, "recent");
+  assert.equal(deck[2].restaurant_id, "202");
+});
+
+test("buildFeedMenuDeck skips followed row when already saved", () => {
+  const now = 1_700_000_000_000;
+  const lib = applyBookmarkToggle(createEmptyLibrary(), REF_A, now).library;
+  const followed = [
+    {
+      restaurant_id: Number(REF_A.restaurant_id),
+      restaurant_name: REF_A.restaurant_name,
+      slug: REF_A.slug,
+      city: REF_A.city,
+      state: REF_A.state,
+      followed_at: "2026-01-02T12:00:00.000Z",
+    },
+  ];
+  const deck = buildFeedMenuDeck(lib, now, followed);
+  assert.equal(deck.length, 1);
+  assert.equal(deck[0].tier, "saved");
+});
+
+test("restaurantRefFromFollowedRestaurant maps API row", () => {
+  const ref = restaurantRefFromFollowedRestaurant({
+    restaurant_id: 55,
+    restaurant_name: "Fixins",
+    slug: "fixins",
+    city: "Los Angeles",
+    state: "CA",
+    followed_at: "2026-01-02T12:00:00.000Z",
+  });
+  assert.equal(ref.restaurant_id, "55");
+  assert.equal(ref.restaurant_name, "Fixins");
+  assert.ok(Number.isFinite(ref.followed_at));
+});
+
 test("purgeExpiredRecent drops stale recent rows", () => {
   const now = 1_700_000_000_000;
   const lib = {
@@ -143,6 +199,10 @@ test("Feed Menus page + nav contract strings", () => {
   assert.match(page, /CatalogMenuRenderer/);
   assert.match(page, /feed-menus-bookmark/);
   assert.match(page, /feed-menus-sample-hint/);
+  assert.match(page, /feed-menus-stack-hint/);
+  assert.match(page, /Liked restaurants stay here until you unlike them/);
+  assert.match(page, /48 hours/);
+  assert.match(page, /getFollowedRestaurants/);
   assert.match(page, /buildFeedMenuSampleDeck/);
 
   const reel = read("src/pages/consumer/myMenuply/SeeWhosEatingFullscreen.jsx");
