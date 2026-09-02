@@ -38,6 +38,17 @@ test("Owner Video Manager wires CK picker — no restaurant_id text/number input
   assert.doesNotMatch(page, /placeholder=.*restaurant id/i);
 });
 
+test("Owner Video Manager supports deal video upload panel", () => {
+  const page = read("src/pages/owner/OwnerVideoCuration.jsx");
+  const api = read("src/lib/ownerApi.js");
+  assert.match(page, /DealVideoUploadPanel/);
+  assert.match(page, /owner-deal-video-upload-panel/);
+  assert.match(page, /uploadOwnerDealMediaVideo/);
+  assert.match(api, /createOwnerDeal/);
+  assert.match(api, /uploadOwnerDealMediaVideo/);
+  assert.match(api, /\/api\/owner\/restaurants\/\$\{restaurantId\}\/deals/);
+});
+
 test("Owner Video Manager supports upload panel and date filters", () => {
   const page = read("src/pages/owner/OwnerVideoCuration.jsx");
   const api = read("src/lib/ownerApi.js");

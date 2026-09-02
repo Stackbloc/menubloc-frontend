@@ -638,6 +638,28 @@ export const listOwnerVideoClusters = (params = {}) => {
   return get(`/api/owner/videos/clusters${serialized ? `?${serialized}` : ""}`);
 };
 
+// ─── Owner deal videos (Feed → Deals category) ───────────────────────────────
+
+export const listOwnerDeals = (restaurantId, params = {}) => {
+  const qs = new URLSearchParams(params).toString();
+  return get(`/api/owner/restaurants/${restaurantId}/deals${qs ? `?${qs}` : ""}`);
+};
+
+export const createOwnerDeal = (restaurantId, body) =>
+  post(`/api/owner/restaurants/${restaurantId}/deals`, body);
+
+export const updateOwnerDeal = (restaurantId, dealId, body) =>
+  patch(`/api/owner/restaurants/${restaurantId}/deals/${dealId}`, body);
+
+export const publishOwnerDeal = (restaurantId, dealId) =>
+  post(`/api/owner/restaurants/${restaurantId}/deals/${dealId}/publish`, {});
+
+export const uploadOwnerDealMediaVideo = (restaurantId, dealId, file) => {
+  const form = new FormData();
+  form.append("video", file);
+  return postFormData(`/api/owner/restaurants/${restaurantId}/deals/${dealId}/media/video`, form);
+};
+
 // ─── Knowledge Bot (restaurant / franchise ingestion) ───────────────────────
 
 export const listKnowledgeBotJobs = (params = {}) => {

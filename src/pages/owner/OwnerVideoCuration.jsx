@@ -8,11 +8,18 @@ import {
   lookupOwnerVideo,
   patchOwnerVideoMetadata,
   uploadOwnerVideo,
+  createOwnerDeal,
+  uploadOwnerDealMediaVideo,
+  publishOwnerDeal,
 } from "../../lib/ownerApi.js";
 import CkRestaurantMenuPicker, {
   useCkPlaceFromVideoIds,
 } from "../../components/ck/CkRestaurantMenuPicker.jsx";
 import { dishLabel } from "../../lib/foodActivityApi.js";
+import {
+  DEAL_MEAL_PERIODS,
+  formatMealTimeDealCaption,
+} from "../../lib/dealMealPeriods.js";
 
 const KIND_OPTIONS = [
   ["all", "All kinds"],
@@ -253,6 +260,272 @@ function VideoUploadPanel({ onUploaded, clusters, clustersLoading }) {
           data-testid="owner-video-upload-submit"
         >
           {busy ? "Uploading & converting…" : "Upload video"}
+        </button>
+      </form>
+    </PageCard>
+  );
+}
+
+function defaultDealEndDate() {
+  const end = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+  return end.toISOString().slice(0, 10);
+}
+
+function DealVideoUploadPanel({ onUploaded }) {
+  const [file, setFile] = useState(null);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [restaurant, setRestaurant] = useState(null);
+  const [mealPeriods, setMealPeriods] = useState([]);
+  const [showMealTimeCaption, setShowMealTimeCaption] = useState(true);
+  const [startDate, setStartDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [endDate, setEndDate] = useState(defaultDealEndDate);
+  const [publishNow, setPublishNow] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  const mealTimeCaptionPreview =
+    showMealTimeCaption && mealPeriods.length
+      ? formatMealTimeDealCaption(mealPeriods)
+      : null;
+
+  function toggleMealPeriod(id) {
+    setMealPeriods((prev) => {
+      const set = new Set(prev);
+      if (set.has(id)) set.delete(id);
+      else set.add(id);
+      const next = DEAL_MEAL_PERIODS.map((p) => p.id).filter((pid) => set.has(pid));
+      if (!next.length) setShowMealTimeCaption(false);
+      return next;
+    });
+  }
+
+  async function handleUpload(e) {
+    e.preventDefault();
+    if (!restaurant?.restaurant_id) {
+      setError("Choose a restaurant for this deal video.");
+      return;
+    }
+    if (!file) {
+      setError("Choose a video file to upload.");
+      return;
+    }
+    if (!title.trim()) {
+      setError("Deal title is required.");
+      return;
+    }
+    if (!startDate || !endDate) {
+      setError("Start and end dates are required.");
+      return;
+    }
+
+    setBusy(true);
+    setError("");
+    setSuccess("");
+    try {
+      const rid = restaurant.restaurant_id;
+      const created = await createOwnerDeal(rid, {
+        title: title.trim(),
+        description: description.trim() || undefined,
+        deal_type: "other",
+        allow_null_menu_item: true,
+        start_date: startDate,
+        end_date: endDate,
+        meal_periods: mealPeriods,
+        show_meal_time_caption: showMealTimeCaption && mealPeriods.length > 0,
+        publish: false,
+      });
+      const dealId = created.deal?.id;
+      if (!dealId) throw new Error("Deal was not created");
+
+      await uploadOwnerDealMediaVideo(rid, dealId, file);
+
+      if (publishNow) {
+        await publishOwnerDeal(rid, dealId);
+      }
+
+      setSuccess(
+        publishNow
+          ? `Deal video published to Feed → Deals for ${restaurant.restaurant_name || "restaurant"}`
+          : `Deal video saved as draft for ${restaurant.restaurant_name || "restaurant"}`
+      );
+      setFile(null);
+      setTitle("");
+      setDescription("");
+      setMealPeriods([]);
+      setShowMealTimeCaption(true);
+      onUploaded?.();
+    } catch (err) {
+      setError(err.message || "Deal video upload failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <PageCard style={{ padding: 18, marginBottom: 16 }} data-testid="owner-deal-video-upload-panel">
+      <SectionTitle
+        title="Upload deal video"
+        subtitle="Feed → Deals category only. Pick meal time (breakfast, lunch, etc.), attach video, and publish. Subscribing restaurants upload via Operator → Deals; owner can post for any restaurant here."
+      />
+      <form onSubmit={handleUpload} style={{ display: "grid", gap: 12, maxWidth: 560 }}>
+        <CkRestaurantMenuPicker
+          restaurant={restaurant}
+          onRestaurantChange={setRestaurant}
+          dish={null}
+          onDishChange={() => {}}
+          allowMenuItem={false}
+          restaurantRequired
+          disabled={busy}
+          testIdPrefix="owner-deal"
+        />
+
+        <label style={{ display: "grid", gap: 6 }}>
+          <span style={{ fontWeight: 700, fontSize: 13 }}>Deal title *</span>
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="e.g. Taco Tuesday special"
+            style={inputStyle}
+            disabled={busy}
+            data-testid="owner-deal-video-title"
+          />
+        </label>
+
+        <label style={{ display: "grid", gap: 6 }}>
+          <span style={{ fontWeight: 700, fontSize: 13 }}>Description</span>
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={2}
+            style={{ ...inputStyle, resize: "vertical" }}
+            disabled={busy}
+          />
+        </label>
+
+        <div style={{ display: "grid", gap: 8 }}>
+          <span style={{ fontWeight: 700, fontSize: 13 }}>Meal time</span>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }} data-testid="owner-deal-meal-periods">
+            {DEAL_MEAL_PERIODS.map((period) => {
+              const active = mealPeriods.includes(period.id);
+              return (
+                <button
+                  key={period.id}
+                  type="button"
+                  disabled={busy}
+                  onClick={() => toggleMealPeriod(period.id)}
+                  style={{
+                    padding: "6px 12px",
+                    borderRadius: 999,
+                    border: `1.5px solid ${active ? OWNER_COLORS.accent : OWNER_COLORS.line}`,
+                    background: active ? OWNER_COLORS.accentSoft : "#fff",
+                    fontWeight: 600,
+                    fontSize: 13,
+                    cursor: "pointer",
+                  }}
+                >
+                  {period.label}
+                </button>
+              );
+            })}
+          </div>
+          <span style={{ fontSize: 12, color: OWNER_COLORS.muted }}>
+            Leave none selected for all-day. Consumers filter Feed → Deals by meal time.
+          </span>
+        </div>
+
+        <label style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+          <input
+            type="checkbox"
+            checked={showMealTimeCaption && mealPeriods.length > 0}
+            disabled={!mealPeriods.length || busy}
+            onChange={(e) => setShowMealTimeCaption(e.target.checked)}
+            style={{ marginTop: 2 }}
+          />
+          <span style={{ fontSize: 13, lineHeight: 1.45 }}>
+            Show meal time caption on Feed video
+            {mealTimeCaptionPreview ? (
+              <span
+                style={{ display: "block", marginTop: 4, fontWeight: 700, color: OWNER_COLORS.accent }}
+                data-testid="owner-deal-meal-time-caption-preview"
+              >
+                Preview: {mealTimeCaptionPreview}
+              </span>
+            ) : null}
+          </span>
+        </label>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          <label style={{ display: "grid", gap: 6 }}>
+            <span style={{ fontWeight: 700, fontSize: 13 }}>Starts *</span>
+            <input
+              type="date"
+              value={startDate}
+              max={endDate || undefined}
+              onChange={(e) => setStartDate(e.target.value)}
+              style={inputStyle}
+              disabled={busy}
+            />
+          </label>
+          <label style={{ display: "grid", gap: 6 }}>
+            <span style={{ fontWeight: 700, fontSize: 13 }}>Ends *</span>
+            <input
+              type="date"
+              value={endDate}
+              min={startDate || undefined}
+              onChange={(e) => setEndDate(e.target.value)}
+              style={inputStyle}
+              disabled={busy}
+            />
+          </label>
+        </div>
+
+        <label style={{ display: "grid", gap: 6 }}>
+          <span style={{ fontWeight: 700, fontSize: 13 }}>Deal video *</span>
+          <input
+            type="file"
+            accept="video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov"
+            disabled={busy}
+            onChange={(e) => setFile(e.target.files?.[0] || null)}
+            data-testid="owner-deal-video-upload-file"
+          />
+          {file ? (
+            <span style={{ fontSize: 12, color: OWNER_COLORS.muted }}>
+              {file.name} ({Math.round(file.size / (1024 * 1024))} MB)
+            </span>
+          ) : null}
+        </label>
+
+        <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <input
+            type="checkbox"
+            checked={publishNow}
+            onChange={(e) => setPublishNow(e.target.checked)}
+            disabled={busy}
+          />
+          <span style={{ fontSize: 13 }}>Publish to Feed → Deals immediately</span>
+        </label>
+
+        {error ? <div style={{ color: "#b91c1c", fontSize: 13 }}>{error}</div> : null}
+        {success ? <div style={{ color: "#166534", fontSize: 13, fontWeight: 600 }}>{success}</div> : null}
+
+        <button
+          type="submit"
+          disabled={busy || !file || !restaurant?.restaurant_id}
+          style={{
+            justifySelf: "start",
+            padding: "10px 18px",
+            borderRadius: 8,
+            border: "none",
+            background: OWNER_COLORS.accent,
+            color: "#fff",
+            fontWeight: 700,
+            cursor: busy ? "wait" : "pointer",
+          }}
+          data-testid="owner-deal-video-upload-submit"
+        >
+          {busy ? "Uploading deal video…" : "Upload deal video"}
         </button>
       </form>
     </PageCard>
@@ -575,6 +848,8 @@ export default function OwnerVideoCuration() {
 
   return (
     <OwnerLayout title="Video Manager">
+      <DealVideoUploadPanel onUploaded={() => loadVideos({ kind: "deal" })} />
+
       <VideoUploadPanel
         clusters={clusters}
         clustersLoading={clustersLoading}
