@@ -32,3 +32,43 @@ export function feedVideoElementStyle(opts = {}) {
     objectPosition: FEED_VIDEO_OBJECT_POSITION,
   };
 }
+
+/** Feed home plays with sound by default; modal / preview reels stay muted. */
+export function defaultFeedVideoMuted(variant = "modal") {
+  return variant !== "feedHome";
+}
+
+/**
+ * Autoplay Feed video; try unmuted first when preferSound, fall back to muted if blocked.
+ * @param {HTMLVideoElement|null|undefined} el
+ * @param {{ preferSound?: boolean }} [opts]
+ * @returns {Promise<{ muted: boolean }>}
+ */
+export async function attemptFeedVideoAutoplay(el, { preferSound = false } = {}) {
+  if (!el) return { muted: true };
+
+  const playMuted = async () => {
+    el.muted = true;
+    el.defaultMuted = true;
+    try {
+      await el.play();
+    } catch {
+      /* browser may still block until visible */
+    }
+    return { muted: true };
+  };
+
+  if (!preferSound) {
+    return playMuted();
+  }
+
+  el.muted = false;
+  el.defaultMuted = false;
+  el.volume = 1;
+  try {
+    await el.play();
+    return { muted: false };
+  } catch {
+    return playMuted();
+  }
+}

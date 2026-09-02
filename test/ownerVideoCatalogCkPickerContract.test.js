@@ -68,3 +68,15 @@ test("Owner Video Manager includes cluster dropdown for platform uploads", () =>
   assert.match(api, /listOwnerVideoClusters/);
   assert.match(api, /\/api\/owner\/videos\/clusters/);
 });
+
+test("Owner Video Manager supports post-upload metadata edit", () => {
+  const page = read("src/pages/owner/OwnerVideoCuration.jsx");
+  assert.match(page, /VideoEditor/);
+  assert.match(page, /Edit video metadata/);
+  assert.match(page, /patchOwnerVideoMetadata/);
+  assert.match(page, /owner-video-editor/);
+  assert.match(page, /resolveVideoEditorTitle/);
+  assert.match(page, /add or change them anytime after upload/i);
+  assert.match(page, /owner-video-edit-/);
+  assert.match(page, /key=\{selected\.video_id\}/);
+});

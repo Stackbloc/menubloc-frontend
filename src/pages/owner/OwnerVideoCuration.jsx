@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import OwnerLayout, { OWNER_COLORS, PageCard, SectionTitle } from "./OwnerLayout.jsx";
 import { SimpleTable } from "./intelligence/intelligenceShared.jsx";
 import {
@@ -176,7 +176,7 @@ function VideoUploadPanel({ onUploaded, clusters, clustersLoading }) {
     <PageCard style={{ padding: 18, marginBottom: 16 }} data-testid="owner-video-upload-panel">
       <SectionTitle
         title="Upload video"
-        subtitle="Upload MP4, WebM, or MOV — Menuply normalizes to Chrome-safe H.264 MP4 automatically (same path as diner Feed uploads)."
+        subtitle="Upload MP4, WebM, or MOV — Menuply normalizes to Chrome-safe H.264 MP4 automatically (same path as diner Feed uploads). Restaurant and menu item are optional now; add or change them anytime after upload."
       />
       <form onSubmit={handleUpload} style={{ display: "grid", gap: 12, maxWidth: 520 }}>
         <label style={{ display: "grid", gap: 6 }}>
@@ -258,7 +258,18 @@ function VideoUploadPanel({ onUploaded, clusters, clustersLoading }) {
   );
 }
 
+function resolveVideoEditorTitle({ title, dish, video }) {
+  const trimmed = String(title || "").trim();
+  if (trimmed) return trimmed;
+  const fromDish = dish ? dishLabel(dish) : "";
+  if (fromDish) return fromDish;
+  const fromVideo = String(video?.title || "").trim();
+  if (fromVideo) return fromVideo;
+  return video?.video_kind === "managed" ? "Platform video" : "";
+}
+
 function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
+  const editorRef = useRef(null);
   const [title, setTitle] = useState(video.title || "");
   const [comment, setComment] = useState(video.comment || "");
   const [clusterId, setClusterId] = useState(
@@ -279,6 +290,16 @@ function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  useEffect(() => {
+    setTitle(video.title || "");
+    setComment(video.comment || "");
+    setClusterId(video.cluster_id != null ? Number(video.cluster_id) : null);
+    setMarketDiscoverable(video.market_discoverable !== false);
+    setError("");
+    setSuccess("");
+    editorRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, [video.video_id, video.title, video.comment, video.cluster_id, video.market_discoverable]);
 
   const supportsMenuItem =
     video.video_kind === "ate" ||
@@ -305,8 +326,9 @@ function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
     setError("");
     setSuccess("");
     try {
+      const resolvedTitle = resolveVideoEditorTitle({ title, dish, video });
       const body = {
-        title: title.trim() || undefined,
+        title: resolvedTitle || undefined,
         comment: comment.trim() || null,
         market_discoverable: marketDiscoverable,
       };
@@ -334,10 +356,11 @@ function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
   }
 
   return (
-    <PageCard style={{ padding: 18, marginTop: 16 }}>
+    <div ref={editorRef}>
+    <PageCard style={{ padding: 18, marginTop: 16, marginBottom: 16 }} data-testid="owner-video-editor">
       <SectionTitle
         title="Edit video metadata"
-        subtitle={`Asset #${video.asset_number ?? "—"} · ${video.video_id}`}
+        subtitle={`Asset #${video.asset_number ?? "—"} · ${video.video_id}. Attach or update restaurant and menu item here anytime after upload.`}
         action={
           <button type="button" onClick={onClose} style={{ border: "none", background: "transparent", cursor: "pointer" }}>
             Close
@@ -424,6 +447,7 @@ function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
         </button>
       </form>
     </PageCard>
+    </div>
   );
 }
 
@@ -516,10 +540,24 @@ export default function OwnerVideoCuration() {
         }}
       />
 
+      {selected ? (
+        <VideoEditor
+          key={selected.video_id}
+          video={selected}
+          clusters={clusters}
+          clustersLoading={clustersLoading}
+          onClose={() => setSelected(null)}
+          onSaved={(updated) => {
+            setSelected(updated);
+            setVideos((prev) => prev.map((v) => (v.video_id === updated.video_id ? updated : v)));
+          }}
+        />
+      ) : null}
+
       <PageCard style={{ padding: 18, marginBottom: 16 }}>
         <SectionTitle
           title="Browse videos"
-          subtitle="Every Feed video has an asset number (#) and composite id (kind:row_id). Search, filter, and attach restaurant or menu metadata by name."
+          subtitle="Every Feed video has an asset number (#) and composite id (kind:row_id). Click a row or Edit to attach restaurant or menu metadata later."
         />
 
         <form
@@ -623,6 +661,31 @@ export default function OwnerVideoCuration() {
               ],
               ["Metadata", "tagged", (row) => (row.is_tagged ? "Tagged" : "Needs metadata")],
               ["Created", "created_at", (row) => formatWhen(row.created_at)],
+              [
+                "",
+                "edit",
+                (row) => (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelected(row);
+                    }}
+                    style={{
+                      padding: "4px 10px",
+                      borderRadius: 8,
+                      border: `1px solid ${OWNER_COLORS.line}`,
+                      background: selected?.video_id === row.video_id ? OWNER_COLORS.accentSoft : "#fff",
+                      cursor: "pointer",
+                      fontSize: 13,
+                      fontWeight: 600,
+                    }}
+                    data-testid={`owner-video-edit-${row.video_id}`}
+                  >
+                    {selected?.video_id === row.video_id ? "Editing" : "Edit"}
+                  </button>
+                ),
+              ],
             ]}
             emptyLabel="No videos match these filters."
             onRowClick={(row) => setSelected(row)}
@@ -640,19 +703,6 @@ export default function OwnerVideoCuration() {
           </button>
         ) : null}
       </PageCard>
-
-      {selected ? (
-        <VideoEditor
-          video={selected}
-          clusters={clusters}
-          clustersLoading={clustersLoading}
-          onClose={() => setSelected(null)}
-          onSaved={(updated) => {
-            setSelected(updated);
-            setVideos((prev) => prev.map((v) => (v.video_id === updated.video_id ? updated : v)));
-          }}
-        />
-      ) : null}
     </OwnerLayout>
   );
 }

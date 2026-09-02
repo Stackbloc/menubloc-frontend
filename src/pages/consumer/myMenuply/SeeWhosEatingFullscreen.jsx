@@ -1,6 +1,6 @@
 /**
  * TikTok-style See Who's Eating fullscreen reel.
- * Desktop feed: contain + rail-aligned overlay (face visible). Mobile: cover. Tap for sound.
+ * Feed home: sound on by default (muted fallback if autoplay blocked). Tap/click toggles mute.
  * Screen name → Connect request when signed in; guests → login.
  */
 
@@ -32,6 +32,8 @@ import {
 } from "../../../lib/feedMenuLibrary.js";
 import { buildFeedVideoShareData, feedClipSharePath } from "../../../lib/feedShare.js";
 import {
+  attemptFeedVideoAutoplay,
+  defaultFeedVideoMuted,
   feedVideoElementStyle,
   resolveFeedVideoOverlayStyle,
 } from "../../../lib/feedVideoPresentation.js";
@@ -70,7 +72,7 @@ export default function SeeWhosEatingFullscreen({
   const [removeError, setRemoveError] = useState("");
   const [menuBookmarked, setMenuBookmarked] = useState(false);
   const [menuBookmarkToast, setMenuBookmarkToast] = useState("");
-  const [videoMuted, setVideoMuted] = useState(true);
+  const [videoMuted, setVideoMuted] = useState(() => defaultFeedVideoMuted(variant));
   const videoRef = useRef(null);
   const touchStartY = useRef(null);
   const ignoreVideoClickRef = useRef(false);
@@ -87,8 +89,8 @@ export default function SeeWhosEatingFullscreen({
     setConnectError("");
     setRemoveError("");
     setMenuBookmarkToast("");
-    setVideoMuted(true);
-  }, [index, item?.id]);
+    setVideoMuted(defaultFeedVideoMuted(variant));
+  }, [index, item?.id, variant]);
 
   const restaurantRef = restaurantRefFromFeedItem(item);
 
@@ -145,20 +147,26 @@ export default function SeeWhosEatingFullscreen({
     const el = videoRef.current;
     if (!el) return undefined;
     el.currentTime = 0;
+    let cancelled = false;
+
     const onReady = () => {
-      const p = el.play();
-      if (p && typeof p.catch === "function") p.catch(() => {});
+      if (cancelled) return;
+      attemptFeedVideoAutoplay(el, { preferSound: variant === "feedHome" }).then(({ muted }) => {
+        if (!cancelled) setVideoMuted(muted);
+      });
     };
+
     if (el.readyState >= 2) onReady();
     else {
       el.addEventListener("loadeddata", onReady);
       el.addEventListener("canplay", onReady);
     }
     return () => {
+      cancelled = true;
       el.removeEventListener("loadeddata", onReady);
       el.removeEventListener("canplay", onReady);
     };
-  }, [index, item?.id]);
+  }, [index, item?.id, variant]);
 
   useEffect(() => {
     const el = videoRef.current;
@@ -399,8 +407,9 @@ export default function SeeWhosEatingFullscreen({
         .toLowerCase()
     );
   const isFeedHome = variant === "feedHome";
-  const soundToggleLabel = isDesktopViewport ? "Click for sound" : "Tap for sound";
-  const showDesktopSoundLayer = Boolean(isDesktopViewport && item?.video_url);
+  const soundPromptLabel = isDesktopViewport ? "Click for sound" : "Tap for sound";
+  const soundToggleLabel = videoMuted ? soundPromptLabel : "Mute";
+  const showDesktopSoundLayer = Boolean(isDesktopViewport && item?.video_url && videoMuted);
   const navInset = isFeedHome ? Math.max(0, Number(bottomInset) || 0) : 0;
   const overlayStyle = {
     ...styles.overlay,
@@ -568,11 +577,11 @@ export default function SeeWhosEatingFullscreen({
                 top: "calc(max(16px, env(safe-area-inset-top)) + 52px)",
               }),
         }}
-        aria-label={videoMuted ? soundToggleLabel : "Mute video"}
+        aria-label={videoMuted ? soundPromptLabel : "Mute video"}
         data-testid="see-whos-eating-sound-toggle"
         onClick={onToggleVideoSound}
       >
-        {videoMuted ? soundToggleLabel : "Sound on"}
+        {soundToggleLabel}
       </button>
 
       <div style={styles.metaDock}>
