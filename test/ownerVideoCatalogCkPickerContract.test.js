@@ -76,7 +76,10 @@ test("Owner Video Manager supports post-upload metadata edit", () => {
   assert.match(page, /patchOwnerVideoMetadata/);
   assert.match(page, /owner-video-editor/);
   assert.match(page, /resolveVideoEditorTitle/);
-  assert.match(page, /add or change them anytime after upload/i);
-  assert.match(page, /owner-video-edit-/);
+  assert.match(page, /createPortal/);
+  assert.match(page, /aria-modal="true"/);
+  assert.match(page, /owner-video-editor-close/);
+  assert.match(page, /Edit metadata/);
+  assert.match(page, /onRowClick=\{\(row\) => setSelected\(row\)\}/);
   assert.match(page, /key=\{selected\.video_id\}/);
 });

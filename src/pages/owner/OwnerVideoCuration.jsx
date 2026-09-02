@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import OwnerLayout, { OWNER_COLORS, PageCard, SectionTitle } from "./OwnerLayout.jsx";
 import { SimpleTable } from "./intelligence/intelligenceShared.jsx";
 import {
@@ -269,7 +270,6 @@ function resolveVideoEditorTitle({ title, dish, video }) {
 }
 
 function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
-  const editorRef = useRef(null);
   const [title, setTitle] = useState(video.title || "");
   const [comment, setComment] = useState(video.comment || "");
   const [clusterId, setClusterId] = useState(
@@ -298,8 +298,15 @@ function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
     setMarketDiscoverable(video.market_discoverable !== false);
     setError("");
     setSuccess("");
-    editorRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }, [video.video_id, video.title, video.comment, video.cluster_id, video.market_discoverable]);
+
+  useEffect(() => {
+    function onKeyDown(event) {
+      if (event.key === "Escape") onClose?.();
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [onClose]);
 
   const supportsMenuItem =
     video.video_kind === "ate" ||
@@ -355,29 +362,69 @@ function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
     }
   }
 
-  return (
-    <div ref={editorRef}>
-    <PageCard style={{ padding: 18, marginTop: 16, marginBottom: 16 }} data-testid="owner-video-editor">
-      <SectionTitle
-        title="Edit video metadata"
-        subtitle={`Asset #${video.asset_number ?? "—"} · ${video.video_id}. Attach or update restaurant and menu item here anytime after upload.`}
-        action={
-          <button type="button" onClick={onClose} style={{ border: "none", background: "transparent", cursor: "pointer" }}>
-            Close
-          </button>
-        }
-      />
-
-      {video.video_url ? (
-        <video
-          src={video.video_url}
-          controls
-          playsInline
-          style={{ width: "100%", maxWidth: 360, borderRadius: 12, background: "#000", marginBottom: 16 }}
+  return createPortal(
+    <div
+      data-testid="owner-video-editor"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Edit video metadata"
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 1200,
+        background: "rgba(20, 16, 14, 0.45)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 16,
+      }}
+      onClick={onClose}
+    >
+      <div
+        style={{
+          width: "min(640px, 100%)",
+          maxHeight: "min(92vh, 900px)",
+          overflow: "auto",
+          background: "#fff",
+          borderRadius: 16,
+          border: `1px solid ${OWNER_COLORS.line}`,
+          boxShadow: "0 24px 60px rgba(0, 0, 0, 0.18)",
+          padding: "20px 22px",
+        }}
+        onClick={(event) => event.stopPropagation()}
+      >
+        <SectionTitle
+          title="Edit video metadata"
+          subtitle={`Asset #${video.asset_number ?? "—"} · ${video.video_id}. Search by restaurant name, then pick a CK menu item.`}
+          action={
+            <button
+              type="button"
+              onClick={onClose}
+              style={{
+                border: `1px solid ${OWNER_COLORS.line}`,
+                background: "#fff",
+                borderRadius: 8,
+                padding: "6px 12px",
+                cursor: "pointer",
+                fontWeight: 600,
+              }}
+              data-testid="owner-video-editor-close"
+            >
+              Close
+            </button>
+          }
         />
-      ) : null}
 
-      <form onSubmit={handleSave} style={{ display: "grid", gap: 12, maxWidth: 520 }}>
+        {video.video_url ? (
+          <video
+            src={video.video_url}
+            controls
+            playsInline
+            style={{ width: "100%", maxWidth: 360, borderRadius: 12, background: "#000", marginBottom: 16 }}
+          />
+        ) : null}
+
+        <form onSubmit={handleSave} style={{ display: "grid", gap: 12 }}>
         <label style={{ display: "grid", gap: 6 }}>
           <span style={{ fontWeight: 700, fontSize: 13 }}>Title</span>
           <input value={title} onChange={(e) => setTitle(e.target.value)} style={inputStyle} />
@@ -446,8 +493,9 @@ function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
           {busy ? "Saving…" : "Save metadata"}
         </button>
       </form>
-    </PageCard>
-    </div>
+      </div>
+    </div>,
+    document.body
   );
 }
 
@@ -540,24 +588,10 @@ export default function OwnerVideoCuration() {
         }}
       />
 
-      {selected ? (
-        <VideoEditor
-          key={selected.video_id}
-          video={selected}
-          clusters={clusters}
-          clustersLoading={clustersLoading}
-          onClose={() => setSelected(null)}
-          onSaved={(updated) => {
-            setSelected(updated);
-            setVideos((prev) => prev.map((v) => (v.video_id === updated.video_id ? updated : v)));
-          }}
-        />
-      ) : null}
-
       <PageCard style={{ padding: 18, marginBottom: 16 }}>
         <SectionTitle
           title="Browse videos"
-          subtitle="Every Feed video has an asset number (#) and composite id (kind:row_id). Click a row or Edit to attach restaurant or menu metadata later."
+          subtitle="Select any video to open the metadata editor — add or change restaurant, menu item, title, and caption anytime after upload."
         />
 
         <form
@@ -662,7 +696,7 @@ export default function OwnerVideoCuration() {
               ["Metadata", "tagged", (row) => (row.is_tagged ? "Tagged" : "Needs metadata")],
               ["Created", "created_at", (row) => formatWhen(row.created_at)],
               [
-                "",
+                "Edit",
                 "edit",
                 (row) => (
                   <button
@@ -682,7 +716,7 @@ export default function OwnerVideoCuration() {
                     }}
                     data-testid={`owner-video-edit-${row.video_id}`}
                   >
-                    {selected?.video_id === row.video_id ? "Editing" : "Edit"}
+                    {selected?.video_id === row.video_id ? "Open" : "Edit metadata"}
                   </button>
                 ),
               ],
@@ -703,6 +737,20 @@ export default function OwnerVideoCuration() {
           </button>
         ) : null}
       </PageCard>
+
+      {selected ? (
+        <VideoEditor
+          key={selected.video_id}
+          video={selected}
+          clusters={clusters}
+          clustersLoading={clustersLoading}
+          onClose={() => setSelected(null)}
+          onSaved={(updated) => {
+            setSelected(updated);
+            setVideos((prev) => prev.map((v) => (v.video_id === updated.video_id ? updated : v)));
+          }}
+        />
+      ) : null}
     </OwnerLayout>
   );
 }
