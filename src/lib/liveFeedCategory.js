@@ -210,3 +210,38 @@ export function resolveLiveFeedCaptionLinks(item, { abbreviateRestaurant = false
 
   return { dish, restaurant, venue };
 }
+
+/** Restaurant + menu item labels for Feed video caption (links when routes exist). */
+export function resolveFeedPlaceCaption(item) {
+  if (!item) return { restaurant: null, menuItem: null };
+
+  const links = resolveLiveFeedCaptionLinks(item);
+  const restaurantLabel =
+    links.restaurant?.label ||
+    String(item.referenced_restaurant?.name || item.restaurant_name || "").trim() ||
+    null;
+  const menuItemLabel =
+    links.dish?.label ||
+    String(item.item_name || "").trim() ||
+    null;
+
+  return {
+    restaurant: restaurantLabel
+      ? {
+          label: restaurantLabel,
+          href:
+            links.restaurant?.href ||
+            item.referenced_restaurant?.href ||
+            (item.restaurant_slug
+              ? `/r/${encodeURIComponent(String(item.restaurant_slug).trim())}`
+              : null),
+        }
+      : null,
+    menuItem: menuItemLabel
+      ? {
+          label: menuItemLabel,
+          href: links.dish?.href || item.menu_item_href || null,
+        }
+      : null,
+  };
+}
