@@ -53,8 +53,7 @@ test("See Who's Eating reel: guest watch, CK dish, existing camera, Connect noti
   assert.match(fullscreen, /variant === "feedHome"|variant = "modal"/);
   assert.doesNotMatch(fullscreen, /showRestaurantSecondary/);
   assert.match(fullscreen, /categoryChip/);
-  assert.match(fullscreen, /dinerPeerProfilePath/);
-  assert.match(fullscreen, /venueLiveFeedPath/);
+  assert.match(fullscreen, /liveFeedCreatorProfilePath/);
   assert.match(fullscreen, /isLiveFeedVenueItem/);
   assert.match(fullscreen, /see-whos-eating-video-tap/);
   // Category sits below @screen name in caption meta row.
@@ -70,7 +69,10 @@ test("See Who's Eating reel: guest watch, CK dish, existing camera, Connect noti
   assert.match(read("src/lib/liveFeedCategory.js"), /resolveLiveFeedCaptionLinks/);
   assert.match(fullscreen, /createPortal/);
   assert.match(fullscreen, /100dvh|100vh/);
-  assert.match(fullscreen, /objectFit:\s*"cover"/);
+  assert.match(fullscreen, /feedVideoElementStyle|objectFit:\s*"contain"/);
+  assert.match(fullscreen, /resolveFeedVideoOverlayStyle|feed-desktop-rail-w/);
+  assert.match(fullscreen, /see-whos-eating-sound-toggle/);
+  assert.match(fullscreen, /Tap for sound/);
   assert.match(fullscreen, /see-whos-eating-fullscreen-close/);
   assert.match(fullscreen, /see-whos-eating-fullscreen-exit/);
   assert.match(fullscreen, /Swipe up|swipe up/);

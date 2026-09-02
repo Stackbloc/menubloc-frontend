@@ -1,6 +1,6 @@
 /**
  * TikTok-style See Who's Eating fullscreen reel.
- * Edge-to-edge cover video · swipe/flip up for next · clear exit (× / Escape / swipe down on first).
+ * Full-frame contain video (face + dish visible) · swipe up for next · tap for sound.
  * Screen name → Connect request when signed in; guests → login.
  */
 
@@ -32,6 +32,10 @@ import {
   toggleFeedMenuBookmark,
 } from "../../../lib/feedMenuLibrary.js";
 import { buildFeedVideoShareData, feedClipSharePath } from "../../../lib/feedShare.js";
+import {
+  feedVideoElementStyle,
+  resolveFeedVideoOverlayStyle,
+} from "../../../lib/feedVideoPresentation.js";
 import MenuplyAccountInviteCard from "../../../components/consumer/MenuplyAccountInviteCard.jsx";
 
 const SWIPE_MIN_PX = 56;
@@ -64,6 +68,7 @@ export default function SeeWhosEatingFullscreen({
   const [removeError, setRemoveError] = useState("");
   const [menuBookmarked, setMenuBookmarked] = useState(false);
   const [menuBookmarkToast, setMenuBookmarkToast] = useState("");
+  const [videoMuted, setVideoMuted] = useState(true);
   const videoRef = useRef(null);
   const touchStartY = useRef(null);
   const item = items[index] || null;
@@ -79,6 +84,7 @@ export default function SeeWhosEatingFullscreen({
     setConnectError("");
     setRemoveError("");
     setMenuBookmarkToast("");
+    setVideoMuted(true);
   }, [index, item?.id]);
 
   const restaurantRef = restaurantRefFromFeedItem(item);
@@ -347,6 +353,7 @@ export default function SeeWhosEatingFullscreen({
   const isFeedHome = variant === "feedHome";
   const overlayStyle = {
     ...styles.overlay,
+    ...resolveFeedVideoOverlayStyle(isFeedHome),
     ...(isFeedHome
       ? {
           zIndex: 40,
@@ -469,7 +476,7 @@ export default function SeeWhosEatingFullscreen({
         src={stripMediaUrlFragment(item.video_url)}
         style={styles.video}
         playsInline
-        muted
+        muted={videoMuted}
         loop
         autoPlay
         controls={false}
@@ -477,6 +484,28 @@ export default function SeeWhosEatingFullscreen({
         data-testid="see-whos-eating-video-tap"
         onClick={openPosterProfile}
       />
+
+      <button
+        type="button"
+        style={{
+          ...styles.soundToggle,
+          ...(isFeedHome
+            ? null
+            : {
+                left: "auto",
+                right: "max(12px, env(safe-area-inset-right))",
+                top: "calc(max(16px, env(safe-area-inset-top)) + 52px)",
+              }),
+        }}
+        aria-label={videoMuted ? "Tap for sound" : "Mute video"}
+        data-testid="see-whos-eating-sound-toggle"
+        onClick={(e) => {
+          e.stopPropagation();
+          setVideoMuted((prev) => !prev);
+        }}
+      >
+        {videoMuted ? "Tap for sound" : "Sound on"}
+      </button>
 
       <div
         style={{
@@ -673,8 +702,23 @@ const styles = {
     inset: 0,
     width: "100%",
     height: "100%",
-    objectFit: "cover",
+    ...feedVideoElementStyle(),
     background: "#000",
+  },
+  soundToggle: {
+    position: "absolute",
+    top: "max(16px, env(safe-area-inset-top))",
+    left: "max(16px, env(safe-area-inset-left))",
+    zIndex: 3,
+    border: "1px solid rgba(255,255,255,0.35)",
+    borderRadius: 999,
+    padding: "8px 12px",
+    background: "rgba(0,0,0,0.55)",
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: 700,
+    cursor: "pointer",
+    pointerEvents: "auto",
   },
   meta: {
     position: "absolute",

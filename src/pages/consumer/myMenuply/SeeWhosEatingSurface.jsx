@@ -17,6 +17,7 @@ import {
   stripMediaUrlFragment,
 } from "../../../lib/menuplyLiveFeedControl.js";
 import SeeWhosEatingFullscreen from "./SeeWhosEatingFullscreen.jsx";
+import { feedVideoElementStyle } from "../../../lib/feedVideoPresentation.js";
 import {
   LIVE_FEED_CHANNELS,
   liveFeedCategoryLabel,
@@ -566,7 +567,7 @@ const styles = {
   video: {
     width: "100%",
     height: "100%",
-    objectFit: "cover",
+    ...feedVideoElementStyle(),
     display: "block",
     background: "#020b07",
   },
