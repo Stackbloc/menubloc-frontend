@@ -12,6 +12,7 @@ import { useConsumer } from "../../context/ConsumerContext.jsx";
 import { MY_MENUPLY_PROFILE_PATH } from "../../lib/myMenuplyRoutes.js";
 import EatingHubSection from "./myMenuply/EatingHubSection.jsx";
 import InviteMeOutFlow from "./myMenuply/InviteMeOutFlow.jsx";
+import MmtDetailSheet from "./myMenuply/MmtDetailSheet.jsx";
 import {
   buildEatingDayMarkersFromCalendar,
   compareYmd,
@@ -90,6 +91,7 @@ export default function ConsumerConnectionPeerPage() {
   const [peerWants, setPeerWants] = useState([]);
   const [viewerMayInviteMeOut, setViewerMayInviteMeOut] = useState(false);
   const [inviteMeOutOpen, setInviteMeOutOpen] = useState(false);
+  const [mmtDetailId, setMmtDetailId] = useState(null);
 
   const load = useCallback(async () => {
     setError("");
@@ -253,6 +255,15 @@ export default function ConsumerConnectionPeerPage() {
               wants={peerWants}
               viewerMayInviteMeOut={viewerMayInviteMeOut}
               onInviteMeOut={() => setInviteMeOutOpen(true)}
+              onViewMmt={(mmt) => setMmtDetailId(Number(mmt?.id) || null)}
+            />
+
+            <MmtDetailSheet
+              open={Boolean(mmtDetailId)}
+              requestId={mmtDetailId}
+              viewerUserId={consumer?.id}
+              onClose={() => setMmtDetailId(null)}
+              onUpdated={load}
             />
 
             <InviteMeOutFlow

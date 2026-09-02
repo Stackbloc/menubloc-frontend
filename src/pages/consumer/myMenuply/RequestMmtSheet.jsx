@@ -38,7 +38,7 @@ export default function RequestMmtSheet({
       onCreated?.(data?.request || data);
       onClose?.();
     } catch (err) {
-      setError(err?.message || "Unable to send request");
+      setError(err?.message || "Unable to add Make Me This");
     } finally {
       setBusy(false);
     }
@@ -54,10 +54,12 @@ export default function RequestMmtSheet({
       }}
     >
       <div role="dialog" aria-modal="true" style={styles.sheet}>
-        <h2 style={styles.title}>Request Make Me This</h2>
+        <h2 style={styles.title}>Make Me This on your profile</h2>
         <p style={styles.lead}>
-          Ask someone who can cook to show you how to make <strong>{foodLabel}</strong>
-          {place ? ` from ${place}` : ""}. This stays private — not on the public Feed.
+          Show on your profile that you want someone to teach you how to make{" "}
+          <strong>{foodLabel}</strong>
+          {place ? ` from ${place}` : ""}. Eligible Connections will see it next to this item on
+          your profile — not on the public Feed.
         </p>
         <MmtAudiencePicker
           audience={audience}
@@ -77,7 +79,7 @@ export default function RequestMmtSheet({
             Cancel
           </button>
           <button type="button" style={s.primaryBtn} disabled={busy} onClick={handleSubmit}>
-            {busy ? "Sending…" : "Send request"}
+            {busy ? "Adding…" : "Add to profile"}
           </button>
         </div>
       </div>

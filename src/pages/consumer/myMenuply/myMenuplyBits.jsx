@@ -1078,7 +1078,7 @@ function WantToEatCard({
               data-testid="want-mmt-view"
               onClick={() => onViewMmt?.(want.mmt_request)}
             >
-              Make Me This · {Number(want.mmt_request.response_count) || 0} response
+              Make Me This on profile · {Number(want.mmt_request.response_count) || 0} response
               {(Number(want.mmt_request.response_count) || 0) === 1 ? "" : "s"}
             </button>
           ) : (
@@ -1092,9 +1092,23 @@ function WantToEatCard({
                 onRequestMmt?.(want);
               }}
             >
-              Request Make Me This
+              Add Make Me This to profile
             </button>
           )}
+        </div>
+      ) : null}
+      {readOnly && want?.mmt_request?.id && onViewMmt ? (
+        <div style={wantStyles.mmtRow} data-testid="want-mmt-peer">
+          <button
+            type="button"
+            style={wantStyles.mmtBtn}
+            data-testid="want-mmt-respond"
+            onClick={() => onViewMmt?.(want.mmt_request)}
+          >
+            {want.mmt_request.viewer_has_responded
+              ? "View Make Me This"
+              : "Make Me This — share how to cook this"}
+          </button>
         </div>
       ) : null}
       {open ? (

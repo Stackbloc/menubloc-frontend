@@ -25,7 +25,7 @@ export default function MmtAudiencePicker({
 
   return (
     <div data-testid="mmt-audience-picker">
-      <p style={styles.prompt}>Who can see this Make Me This request?</p>
+      <p style={styles.prompt}>Who can see this on your profile?</p>
       <div style={s.actions}>
         <button
           type="button"
