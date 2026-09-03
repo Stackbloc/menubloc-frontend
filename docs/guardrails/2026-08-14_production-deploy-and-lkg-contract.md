@@ -48,10 +48,10 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-backend-main` @ clean `main` |
-| Git on origin | `01c92a64` — Bacari West Adams hours + USC cluster CPD note |
-| Live health SHA | `01c92a646379fe3f759eb5549e3bc99a2c6b880f` |
+| Git on origin | `19c99581` — finalize Bacari West Adams hours CPD note |
+| Live health SHA | `19c9958126e5a07eb8f7b97e10f5935cfef32588` |
 | Health URL | `https://menubloc-backend-production.up.railway.app/health` |
-| `commit_hash` | `01c92a64…` |
+| `commit_hash` | `19c99581…` |
 | DB | migrations through `0300` (diner_restaurant_dining_intent) |
 | Smoke | BE CPD PASS 2026-09-03; FE tip unchanged `cuqdj1vig` / `index-DmBd8EAo.js` |
 
