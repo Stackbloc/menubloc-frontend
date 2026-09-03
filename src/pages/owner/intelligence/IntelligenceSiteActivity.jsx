@@ -89,10 +89,41 @@ export default function IntelligenceSiteActivity() {
       ? `${data.avg_session_length.avg_page_views ?? "—"} pages / session · ${data.avg_session_length.session_count ?? 0} sessions`
       : null;
   const scopeNote = cityScopeSuffix(selectedCity);
+  const uniqueVisitors = Number(data.unique_visitors) || 0;
+  const unattributedVisitors = Number(data.unattributed_visitors) || 0;
+  const showUnattributedCard = !selectedCity && unattributedVisitors > 0;
 
   return (
     <div style={{ display: "grid", gap: 18 }}>
       <AnalyticsScopeNote note={data.analytics_scope} />
+
+      <div
+        className="owner-responsive-grid-2"
+        style={{
+          display: "grid",
+          gridTemplateColumns: showUnattributedCard
+            ? "minmax(0, 1fr) minmax(0, 1fr)"
+            : "minmax(0, 1fr)",
+          gap: 14,
+        }}
+      >
+        <MetricCard
+          label={selectedCity ? `Unique visitors · ${selectedCity}` : "Unique visitors"}
+          value={uniqueVisitors}
+          subtitle={
+            selectedCity
+              ? "People with at least one visit attributed to this market."
+              : "Each person once in this range (user / visitor_id / session)."
+          }
+        />
+        {showUnattributedCard ? (
+          <MetricCard
+            label="Unattributed"
+            value={unattributedVisitors}
+            subtitle="No market or restaurant city on the visit — not IP geo. Included in Unique visitors."
+          />
+        ) : null}
+      </div>
 
       {selectedCity ? (
         <PageCard
@@ -113,7 +144,7 @@ export default function IntelligenceSiteActivity() {
             </div>
             <div style={{ marginTop: 4, fontSize: 12, color: OWNER_COLORS.muted, lineHeight: 1.45 }}>
               {data.city_scope_note ||
-                "All metrics below use market-attributed visits for this city (not IP). Visitors by City stays platform-wide so you can switch."}
+                "All metrics below use market-attributed visits for this city (not IP). Visitors by City stays platform-wide so you can switch. Click a city for pages, referrals, and search terms."}
             </div>
           </div>
           <button
@@ -151,7 +182,11 @@ export default function IntelligenceSiteActivity() {
 
       <IntelligenceSection
         title="Visitors by City"
-        subtitle="Unique visitors by market (city/state). Click a city to scope the whole page to that market."
+        subtitle={
+          selectedCity
+            ? "Platform-wide city list (switch markets here). A person who visits two cities appears in both — national city sum may exceed Unique visitors."
+            : "Market or restaurant city/state — not IP. Unattributed = home/account/feed with no city. Click a row for pages, referrals, and search terms for that cohort."
+        }
       >
         <SimpleTable
           rows={data.visitors_by_city}
@@ -190,7 +225,7 @@ export default function IntelligenceSiteActivity() {
       >
         <IntelligenceSection
           title="Top Pages"
-          subtitle={`Each person is counted once per path in this range — not repeat views the same day. Browse carousel steps (&i=N) are rolled up.${scopeNote}`}
+          subtitle={`Unique people per path — does not sum to Unique visitors (one person can open many paths). Browse &i=N rolled up.${scopeNote}`}
         >
           <SimpleTable
             rows={data.top_pages}
@@ -203,7 +238,7 @@ export default function IntelligenceSiteActivity() {
         </IntelligenceSection>
         <IntelligenceSection
           title="Referral Sources"
-          subtitle={`First landing source, counted once per visitor in this range.${scopeNote}`}
+          subtitle={`First landing source, counted once per visitor (Other = remainder so rows sum to Unique visitors).${scopeNote}`}
         >
           <SimpleTable
             rows={data.referral_sources}
@@ -217,7 +252,7 @@ export default function IntelligenceSiteActivity() {
       </div>
 
       <div className="owner-responsive-grid-2" style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: 18, minWidth: 0, alignItems: "start" }}>
-        <IntelligenceSection title="Top Entry Pages" subtitle={`First path for each unique visitor in this range.${scopeNote}`}>
+        <IntelligenceSection title="Top Entry Pages" subtitle={`First path for each unique visitor (Other closes the sum to Unique visitors).${scopeNote}`}>
           <SimpleTable
             rows={data.top_entry_pages}
             columns={[
@@ -228,7 +263,7 @@ export default function IntelligenceSiteActivity() {
             maxHeight={360}
           />
         </IntelligenceSection>
-        <IntelligenceSection title="Top Exit Pages" subtitle={`Last path for each unique visitor in this range.${scopeNote}`}>
+        <IntelligenceSection title="Top Exit Pages" subtitle={`Last path for each unique visitor (Other closes the sum to Unique visitors).${scopeNote}`}>
           <SimpleTable
             rows={data.top_exit_pages}
             columns={[

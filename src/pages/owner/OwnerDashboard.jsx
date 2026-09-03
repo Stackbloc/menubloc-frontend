@@ -120,7 +120,7 @@ export default function OwnerDashboard() {
         <section style={{ marginBottom: 28 }}>
           <SectionTitle
             title="Today's markets"
-            subtitle="Top cities for visitors and searches — full breakdown in Geo Intelligence."
+            subtitle="Top cities for visitors and searches (market/restaurant city — not IP). Unattributed means no city on the visit. Full breakdown in Geo / Site Activity."
           />
           <div className="owner-responsive-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
             <PageCard style={{ padding: 22 }}>
@@ -133,6 +133,14 @@ export default function OwnerDashboard() {
                 ]}
                 emptyLabel="No visitor geo data for today yet."
               />
+              {data.market_snapshot.unique_visitors != null ? (
+                <div style={{ marginTop: 10, fontSize: 12, color: OWNER_COLORS.muted, lineHeight: 1.45 }}>
+                  Unique visitors today: {Number(data.market_snapshot.unique_visitors) || 0}
+                  {data.market_snapshot.unattributed_visitors != null
+                    ? ` · Unattributed: ${Number(data.market_snapshot.unattributed_visitors) || 0}`
+                    : ""}
+                </div>
+              ) : null}
             </PageCard>
             <PageCard style={{ padding: 22 }}>
               <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 12, color: OWNER_COLORS.ink }}>Searches by city</div>
