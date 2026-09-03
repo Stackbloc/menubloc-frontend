@@ -151,6 +151,28 @@ export default function OwnerKnowledgeBotHistory() {
               ) : null
             }
           />
+          {(detail.job?.restaurant_id || detail.job?.apply_result?.restaurant_id) ? (
+            <div style={{ marginBottom: 12, fontSize: 14 }}>
+              Public restaurant id:{" "}
+              <strong>{detail.job?.restaurant_id || detail.job?.apply_result?.restaurant_id}</strong>
+              {" · "}
+              <a
+                href={`/restaurants/${detail.job?.restaurant_id || detail.job?.apply_result?.restaurant_id}`}
+                style={{ color: OWNER_COLORS.accent, fontWeight: 600 }}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Open public profile
+              </a>
+              {" · "}
+              <Link
+                to={`/owner/knowledge-bot?job=${detail.job?.id}`}
+                style={{ color: OWNER_COLORS.accent, fontWeight: 600, textDecoration: "none" }}
+              >
+                Resume job
+              </Link>
+            </div>
+          ) : null}
           <pre
             style={{
               margin: 0,

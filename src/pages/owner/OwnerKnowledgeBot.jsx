@@ -104,7 +104,7 @@ export default function OwnerKnowledgeBot() {
   const [confirmLarge, setConfirmLarge] = useState(false);
 
   const [form, setForm] = useState({
-    target_type: "franchise",
+    target_type: "restaurant",
     target_name: "",
     target_location: "",
     restaurant_id: "",
@@ -276,7 +276,7 @@ export default function OwnerKnowledgeBot() {
       <PageCard style={{ padding: "22px 24px" }}>
         <SectionTitle
           title="Restaurant & franchise ingestion"
-          subtitle="Define a target, attach evidence, instruct the bot, review proposed changes, then apply through controlled Menuply ingestion services."
+          subtitle="Behaves like an agent install: OCR screenshots for address, hours, phone, and menu items; writes public restaurants + Common Knowledge. Choose Standalone, MLE, or Franchise."
         />
         <StepNav current={step} jobId={jobId} />
 
@@ -295,6 +295,7 @@ export default function OwnerKnowledgeBot() {
                 style={inputStyle}
               >
                 <option value="restaurant">Standalone restaurant</option>
+                <option value="mle">MLE (multi-location brand)</option>
                 <option value="franchise">Franchise / chain</option>
                 <option value="location">Specific franchise location</option>
               </select>
@@ -353,6 +354,9 @@ export default function OwnerKnowledgeBot() {
             </Field>
             <Field label="Screenshots, images, PDFs, menu documents">
               <input type="file" multiple accept="image/*,.pdf,.txt,.md" onChange={(e) => setFiles(Array.from(e.target.files || []))} />
+              <div style={{ marginTop: 8, fontSize: 12, color: OWNER_COLORS.muted, lineHeight: 1.45 }}>
+                Screenshots are OCR’d (Adobe image→PDF). Include address, phone, hours, and menu items when possible — missing prices still keep dishes.
+              </div>
             </Field>
             <Field label="Administrator notes">
               <textarea
@@ -413,6 +417,28 @@ export default function OwnerKnowledgeBot() {
             <div style={{ padding: 14, borderRadius: 12, background: "#e8f5e9", marginBottom: 16, fontSize: 14 }}>
               Apply completed. Review the audit summary below.
             </div>
+            {(applyResult?.restaurant_id || job?.job?.restaurant_id) ? (
+              <div style={{ marginBottom: 12, fontSize: 14 }}>
+                Public restaurant id:{" "}
+                <strong>{applyResult?.restaurant_id || job?.job?.restaurant_id}</strong>
+                {" · "}
+                <Link
+                  to={`/owner/menu-console/restaurants/${applyResult?.restaurant_id || job?.job?.restaurant_id}`}
+                  style={{ color: OWNER_COLORS.accent, fontWeight: 600 }}
+                >
+                  Owner menu console
+                </Link>
+                {" · "}
+                <a
+                  href={`/restaurants/${applyResult?.restaurant_id || job?.job?.restaurant_id}`}
+                  style={{ color: OWNER_COLORS.accent, fontWeight: 600 }}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Public profile
+                </a>
+              </div>
+            ) : null}
             <JsonBlock value={applyResult || job?.job || {}} />
             <button
               type="button"
