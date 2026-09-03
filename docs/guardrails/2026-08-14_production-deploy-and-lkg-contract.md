@@ -48,12 +48,12 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-backend-main` @ clean `main` |
-| Git on origin | `eab0c83f` |
-| Live health SHA | `eab0c83f` |
+| Git on origin | `eb0f89bf` — remove hard 30-day deal max (owners set run windows) |
+| Live health SHA | `eb0f89bfdb202b92f5a8178fa8372161ea62ccf7` |
 | Health URL | `https://menubloc-backend-production.up.railway.app/health` |
-| `commit_hash` | `eab0c83f…` |
+| `commit_hash` | `eb0f89bf…` |
 | DB | migrations through `0300` (diner_restaurant_dining_intent) |
-| Smoke | tip-gate PASS `6uj8rufl4` / `index-COekEjGi.js`; guest `/api/consumer/see-whos-eating` ok; railway=59 localhost=9 |
+| Smoke | BE CPD PASS 2026-09-03; FE tip unchanged `cuqdj1vig` / `index-DmBd8EAo.js` |
 
 ### Restore current tip (if tip-gate fails mid-change)
 
