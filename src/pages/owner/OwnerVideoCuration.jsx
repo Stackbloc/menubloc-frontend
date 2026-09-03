@@ -274,6 +274,7 @@ function VideoUploadPanel({ onUploaded, clusters, clustersLoading }) {
   );
 }
 
+/** Convenience default end date for the form — not a platform maximum. */
 function defaultDealEndDate() {
   const end = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
   return end.toISOString().slice(0, 10);
