@@ -136,7 +136,7 @@ export default function HomeAtHomeSection({
 
       {!readOnly ? (
         <div style={grid.addRow} data-testid="home-at-home-add">
-          <span title="Take photo or upload">
+          <span title="Take photo — or choose media upload under X">
             <MenuplyMediaPicker
               onFile={(file) => onPhotoFile?.(file)}
               disabled={busy}
@@ -146,7 +146,7 @@ export default function HomeAtHomeSection({
               allowVideo={false}
               showPreview={false}
               testId="home-at-home-picker"
-              ariaLabel="Take photo or upload"
+              ariaLabel="Take photo — or choose media upload under X"
             />
           </span>
         </div>
