@@ -80,6 +80,16 @@ test("Owner Video Manager includes cluster dropdown for platform uploads", () =>
   assert.match(api, /\/api\/owner\/videos\/clusters/);
 });
 
+test("Owner Video Manager labels owner uploads Platform video and guest uploads Guest video", () => {
+  const page = read("src/pages/owner/OwnerVideoCuration.jsx");
+  const labels = read("src/lib/ownerVideoCatalogLabels.js");
+  assert.match(page, /formatOwnerVideoCreatorLabel/);
+  assert.match(labels, /Platform video/);
+  assert.match(labels, /Guest video/);
+  assert.match(labels, /kind === "managed"/);
+  assert.match(labels, /row\.is_guest/);
+});
+
 test("Owner Video Manager supports post-upload metadata edit", () => {
   const page = read("src/pages/owner/OwnerVideoCuration.jsx");
   assert.match(page, /VideoEditor/);

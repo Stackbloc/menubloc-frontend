@@ -48,6 +48,7 @@ export function dinerPeerProfilePath(dinerId) {
 
 export function liveFeedCreatorProfilePath(item) {
   if (!item) return null;
+  if (isLiveFeedPlatformCreator(item)) return null;
   if (isLiveFeedVenueItem(item)) return venueLiveFeedPath(item.venue);
   if (item?.creator_type === "restaurant" || item?.poster_type === "restaurant") {
     const href = String(item?.creator?.href || "").trim();
@@ -63,7 +64,15 @@ export function isLiveFeedRestaurantCreator(item) {
   return item?.creator_type === "restaurant" || item?.poster_type === "restaurant";
 }
 
+export function isLiveFeedPlatformCreator(item) {
+  const kind = String(item?.kind || "")
+    .trim()
+    .toLowerCase();
+  return kind === "managed" || item?.creator_type === "platform" || item?.poster_type === "platform";
+}
+
 export function isLiveFeedGuestCreator(item) {
+  if (isLiveFeedPlatformCreator(item)) return false;
   return (
     item?.creator_type === "guest" ||
     (!isLiveFeedVenueItem(item) &&
@@ -85,6 +94,9 @@ export function liveFeedPosterLabel(item) {
   if (String(item?.kind || "").toLowerCase() === "event" || item?.poster_type === "venue") {
     return item?.venue?.name || "Venue";
   }
+  if (isLiveFeedPlatformCreator(item)) {
+    return item?.diner?.display_name || "Platform video";
+  }
   if (isLiveFeedRestaurantCreator(item)) {
     return item?.creator?.name || item?.restaurant_name || "Restaurant";
   }
@@ -96,7 +108,9 @@ export function liveFeedPosterLabel(item) {
 
 export function liveFeedPosterDisplayName(item) {
   const label = liveFeedPosterLabel(item);
-  if (isLiveFeedVenueItem(item) || isLiveFeedGuestCreator(item)) return label;
+  if (isLiveFeedVenueItem(item) || isLiveFeedGuestCreator(item) || isLiveFeedPlatformCreator(item)) {
+    return label;
+  }
   return `@${label}`;
 }
 

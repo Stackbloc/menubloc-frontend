@@ -20,6 +20,7 @@ import {
   DEAL_MEAL_PERIODS,
   formatMealTimeDealCaption,
 } from "../../lib/dealMealPeriods.js";
+import { formatOwnerVideoCreatorLabel } from "../../lib/ownerVideoCatalogLabels.js";
 
 const KIND_OPTIONS = [
   ["all", "All kinds"],
@@ -855,11 +856,7 @@ export default function OwnerVideoCuration() {
         clustersLoading={clustersLoading}
         onUploaded={(video) => {
           setSelected(video);
-          setVideos((prev) => {
-            if (prev.some((v) => v.video_id === video.video_id)) return prev;
-            return [video, ...prev];
-          });
-          loadVideos();
+          setVideos((prev) => [video, ...prev.filter((v) => v.video_id !== video.video_id)]);
         }}
       />
 
@@ -966,7 +963,7 @@ export default function OwnerVideoCuration() {
               [
                 "Creator",
                 "creator",
-                (row) => (row.is_guest ? "Guest" : row.creator_type || "—"),
+                (row) => formatOwnerVideoCreatorLabel(row),
               ],
               ["Metadata", "tagged", (row) => (row.is_tagged ? "Tagged" : "Needs metadata")],
               ["Created", "created_at", (row) => formatWhen(row.created_at)],
