@@ -21,6 +21,7 @@ import {
   formatMealTimeDealCaption,
 } from "../../lib/dealMealPeriods.js";
 import { formatOwnerVideoCreatorLabel } from "../../lib/ownerVideoCatalogLabels.js";
+import { formatBytes, MAX_UPLOAD_VIDEO_BYTES } from "../../lib/consumerCameraCapture.js";
 
 const KIND_OPTIONS = [
   ["all", "All kinds"],
@@ -141,6 +142,12 @@ function VideoUploadPanel({ onUploaded, clusters, clustersLoading }) {
       setError("Choose a video file to upload.");
       return;
     }
+    if (Number(file.size || 0) > MAX_UPLOAD_VIDEO_BYTES) {
+      setError(
+        `Video is too large (${formatBytes(file.size)}). Max is ${formatBytes(MAX_UPLOAD_VIDEO_BYTES)}. Use a shorter/smaller clip.`
+      );
+      return;
+    }
     setBusy(true);
     setError("");
     setSuccess("");
@@ -185,7 +192,7 @@ function VideoUploadPanel({ onUploaded, clusters, clustersLoading }) {
     <PageCard style={{ padding: 18, marginBottom: 16 }} data-testid="owner-video-upload-panel">
       <SectionTitle
         title="Upload video"
-        subtitle="Upload MP4, WebM, or MOV — Menuply normalizes to Chrome-safe H.264 MP4 automatically (same path as diner Feed uploads). Restaurant and menu item are optional now; add or change them anytime after upload."
+        subtitle="Upload MP4, WebM, or MOV — Menuply normalizes to Chrome-safe H.264 MP4 automatically (same path as diner Feed uploads). Stay on this page until upload finishes. Max ~287 MB. Restaurant and menu item are optional now; add or change them anytime after upload."
       />
       <form onSubmit={handleUpload} style={{ display: "grid", gap: 12, maxWidth: 520 }}>
         <label style={{ display: "grid", gap: 6 }}>
@@ -310,6 +317,12 @@ function DealVideoUploadPanel({ onUploaded }) {
     }
     if (!file) {
       setError("Choose a video file to upload.");
+      return;
+    }
+    if (Number(file.size || 0) > MAX_UPLOAD_VIDEO_BYTES) {
+      setError(
+        `Video is too large (${formatBytes(file.size)}). Max is ${formatBytes(MAX_UPLOAD_VIDEO_BYTES)}. Use a shorter/smaller clip.`
+      );
       return;
     }
     if (!title.trim()) {

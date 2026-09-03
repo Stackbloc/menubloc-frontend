@@ -31,21 +31,53 @@ const put = (path, body) => req(path, { method: "PUT", body: JSON.stringify(body
 const patch = (path, body) => req(path, { method: "PATCH", body: JSON.stringify(body) });
 const del = (path) => req(path, { method: "DELETE" });
 
-async function postFormData(path, formData) {
-  const res = await fetch(`${API}${path}`, {
-    credentials: "include",
-    method: "POST",
-    body: formData,
-    // No Content-Type header — browser sets multipart/form-data with boundary automatically
-  });
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    const error = new Error(json.error || `Request failed (${res.status})`);
-    error.status = res.status;
-    error.payload = json;
-    throw error;
+/** Owner video uploads can be large; Railway + H.264 normalize often needs minutes. */
+const OWNER_VIDEO_UPLOAD_TIMEOUT_MS = 5 * 60 * 1000;
+
+function mapOwnerUploadNetworkError(err) {
+  const name = String(err?.name || "");
+  const msg = String(err?.message || "");
+  if (name === "AbortError" || /aborted|timeout/i.test(msg)) {
+    return new Error(
+      "Video upload timed out. Try a shorter clip or a smaller file (under ~100 MB), then retry."
+    );
   }
-  return json;
+  if (/failed to fetch|networkerror|load failed|network request failed/i.test(msg)) {
+    return new Error(
+      "Video upload failed (connection dropped). Try a shorter/smaller clip, stay on this tab until it finishes, then retry."
+    );
+  }
+  return err instanceof Error ? err : new Error(msg || "Upload failed");
+}
+
+async function postFormData(path, formData, opts = {}) {
+  const timeoutMs = Number(opts.timeoutMs) > 0 ? Number(opts.timeoutMs) : 0;
+  const controller = timeoutMs ? new AbortController() : null;
+  const timeoutId = controller
+    ? setTimeout(() => controller.abort(), timeoutMs)
+    : null;
+  try {
+    const res = await fetch(`${API}${path}`, {
+      credentials: "include",
+      method: "POST",
+      body: formData,
+      signal: controller?.signal,
+      // No Content-Type header — browser sets multipart/form-data with boundary automatically
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const error = new Error(json.error || `Request failed (${res.status})`);
+      error.status = res.status;
+      error.payload = json;
+      throw error;
+    }
+    return json;
+  } catch (err) {
+    if (opts.mapNetworkError) throw mapOwnerUploadNetworkError(err);
+    throw err;
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
 }
 
 export const getOwnerSession = () => get("/api/owner/auth/me");
@@ -602,7 +634,11 @@ export const resumeDeployments = (reason) => post("/api/owner/deployment-operati
 
 // ─── Platform video manager (all Feed video sources) ─────────────────────────
 
-export const uploadOwnerVideo = (formData) => postFormData("/api/owner/videos/upload", formData);
+export const uploadOwnerVideo = (formData) =>
+  postFormData("/api/owner/videos/upload", formData, {
+    timeoutMs: OWNER_VIDEO_UPLOAD_TIMEOUT_MS,
+    mapNetworkError: true,
+  });
 
 export const listOwnerVideos = (params = {}) => {
   const qs = new URLSearchParams();
@@ -658,7 +694,10 @@ export const publishOwnerDeal = (restaurantId, dealId) =>
 export const uploadOwnerDealMediaVideo = (restaurantId, dealId, file) => {
   const form = new FormData();
   form.append("video", file);
-  return postFormData(`/api/owner/restaurants/${restaurantId}/deals/${dealId}/media/video`, form);
+  return postFormData(`/api/owner/restaurants/${restaurantId}/deals/${dealId}/media/video`, form, {
+    timeoutMs: OWNER_VIDEO_UPLOAD_TIMEOUT_MS,
+    mapNetworkError: true,
+  });
 };
 
 // ─── Knowledge Bot (restaurant / franchise ingestion) ───────────────────────
