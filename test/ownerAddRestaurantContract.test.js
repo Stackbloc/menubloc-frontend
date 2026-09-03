@@ -112,13 +112,15 @@ describe("owner Add Restaurant restore", () => {
   it("upload-first workspace accepts multiple PDF/photo files", () => {
     const workspace = read("src/pages/owner/OwnerMenuCreateWorkspace.jsx");
     assert.match(workspace, /title=\{selectedMenuNeedsContent \? "Upload menu" : "Update OCR"\}/);
-    assert.match(workspace, /data-testid="owner-menu-upload-input"/);
+    assert.match(workspace, /data-testid="owner-menu-upload-photos-input"/);
+    assert.match(workspace, /data-testid="owner-menu-upload-pdf-input"/);
+    assert.match(workspace, /accept="image\/\*"/);
+    assert.match(workspace, /accept="\.pdf,application\/pdf"/);
     assert.match(workspace, /data-testid="owner-menu-upload-size-hint"/);
     assert.match(workspace, /max 20 MB each/);
     assert.match(workspace, /MAX_MENU_UPLOAD_BYTES = 20 \* 1024 \* 1024/);
     assert.match(workspace, /ownerUploadTooLargeMessage/);
     assert.match(workspace, /is too large/);
-    assert.match(workspace, /multiple\n\s*accept=/);
     assert.match(workspace, /const \[files, setFiles\] = useState\(\[\]\)/);
     assert.match(workspace, /for \(let i = 0; i < files\.length; i \+= 1\)/);
     assert.match(workspace, /submitOwnerMenuFilePdf\(rid, nextFile, \{ menuId: activeMenuId \}\)/);

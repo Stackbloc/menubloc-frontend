@@ -128,6 +128,31 @@ function mergeOwnerUploadFiles(existing, incoming) {
   return next;
 }
 
+function clearOwnerUploadInputRefs(...refs) {
+  for (const ref of refs) {
+    if (ref?.current) ref.current.value = "";
+  }
+}
+
+/** Append picked files under the 20 MB cap; reset the input so another pick can open. */
+function applyOwnerUploadPick(event, { setFiles, setUploadMsg }) {
+  const picked = Array.from(event.target.files || []);
+  const tooBig = picked.filter((file) => Number(file.size) > MAX_MENU_UPLOAD_BYTES);
+  const ok = picked.filter((file) => Number(file.size) <= MAX_MENU_UPLOAD_BYTES);
+  if (ok.length) {
+    setFiles((prev) => mergeOwnerUploadFiles(prev, ok));
+  }
+  if (tooBig.length) {
+    setUploadMsg({
+      ok: false,
+      parseStatus: "upload_failed",
+      message: tooBig.map(ownerUploadTooLargeMessage).join(" "),
+    });
+  }
+  // Reset so the same path can be chosen again and another phone pick can open.
+  event.target.value = "";
+}
+
 const EMPTY_PROFILE = {
   restaurant_name: "",
   restaurant_type: "",
@@ -336,7 +361,8 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
   const [uploadMsg, setUploadMsg] = useState(null);
   const [pendingUploadId, setPendingUploadId] = useState(null);
   const [importingParsed, setImportingParsed] = useState(false);
-  const fileRef = useRef(null);
+  const photoFileRef = useRef(null);
+  const pdfFileRef = useRef(null);
   const addFormRef = useRef(null);
   const nameInputRef = useRef(null);
 
@@ -606,7 +632,7 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
       setMenuName(draft.display_name);
       setMenuType(draft.menu_type);
       setFiles([]);
-      if (fileRef.current) fileRef.current.value = "";
+      clearOwnerUploadInputRefs(photoFileRef, pdfFileRef);
       setActionMsg(
         `Added “${draft.display_name}” as a new tab. Upload that menu’s PDF or photos above — it does not replace other menus.`
       );
@@ -1132,7 +1158,7 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
         });
       }
       setFiles([]);
-      if (fileRef.current) fileRef.current.value = "";
+      clearOwnerUploadInputRefs(photoFileRef, pdfFileRef);
       await loadMenuState();
       await loadReviewItems();
     } catch (err) {
@@ -1402,38 +1428,44 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
         <SelectField label="Menu type" value={menuType} onChange={setMenuType} options={schema?.menu_types} required />
       </div>
       <div style={{ marginTop: 12 }}>
-        <label style={fieldLabel}>PDF (usually one) and/or photos</label>
+        <label style={fieldLabel}>Menu files</label>
         <div style={{ fontSize: 12, color: OWNER_COLORS.muted, marginBottom: 6, lineHeight: 1.45 }}>
-          Desktop: select many at once. Phone: add one photo at a time — each pick is added to the list below.
+          Photos open your phone library so you can select many pages at once. PDF is a separate picker (Files app). Extra picks still append to the list below.
         </div>
-        <div data-testid="owner-menu-upload-size-hint" style={{ fontSize: 12, color: OWNER_COLORS.muted, marginBottom: 6 }}>
+        <div data-testid="owner-menu-upload-size-hint" style={{ fontSize: 12, color: OWNER_COLORS.muted, marginBottom: 8 }}>
           PDF, JPEG, PNG, or WebP — max 20 MB each.
         </div>
-        <input
-          ref={fileRef}
-          type="file"
-          multiple
-          accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp"
-          onChange={(e) => {
-            const picked = Array.from(e.target.files || []);
-            const tooBig = picked.filter((file) => Number(file.size) > MAX_MENU_UPLOAD_BYTES);
-            const ok = picked.filter((file) => Number(file.size) <= MAX_MENU_UPLOAD_BYTES);
-            if (ok.length) {
-              setFiles((prev) => mergeOwnerUploadFiles(prev, ok));
-            }
-            if (tooBig.length) {
-              setUploadMsg({
-                ok: false,
-                parseStatus: "upload_failed",
-                message: tooBig.map(ownerUploadTooLargeMessage).join(" "),
-              });
-            }
-            // Reset so the same path can be chosen again and another phone pick can open.
-            e.target.value = "";
-          }}
-          style={{ ...inputStyle, padding: "10px 12px" }}
-          data-testid="owner-menu-upload-input"
-        />
+        <div style={{ display: "grid", gap: 10 }}>
+          <div>
+            <label style={{ ...fieldLabel, marginBottom: 6 }} htmlFor="owner-menu-upload-photos">
+              Photos (multi-select)
+            </label>
+            <input
+              id="owner-menu-upload-photos"
+              ref={photoFileRef}
+              type="file"
+              multiple
+              accept="image/*"
+              onChange={(e) => applyOwnerUploadPick(e, { setFiles, setUploadMsg })}
+              style={{ ...inputStyle, padding: "10px 12px" }}
+              data-testid="owner-menu-upload-photos-input"
+            />
+          </div>
+          <div>
+            <label style={{ ...fieldLabel, marginBottom: 6 }} htmlFor="owner-menu-upload-pdf">
+              PDF
+            </label>
+            <input
+              id="owner-menu-upload-pdf"
+              ref={pdfFileRef}
+              type="file"
+              accept=".pdf,application/pdf"
+              onChange={(e) => applyOwnerUploadPick(e, { setFiles, setUploadMsg })}
+              style={{ ...inputStyle, padding: "10px 12px" }}
+              data-testid="owner-menu-upload-pdf-input"
+            />
+          </div>
+        </div>
         {files.length > 0 ? (
           <div style={{ marginTop: 8 }} data-testid="owner-menu-upload-file-list">
             <div
@@ -1452,7 +1484,7 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
                 type="button"
                 onClick={() => {
                   setFiles([]);
-                  if (fileRef.current) fileRef.current.value = "";
+                  clearOwnerUploadInputRefs(photoFileRef, pdfFileRef);
                 }}
                 style={{
                   border: "none",
@@ -1513,7 +1545,7 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
               ))}
             </ul>
             <div style={{ marginTop: 8, fontSize: 12, color: OWNER_COLORS.muted }}>
-              Need another page? Choose a file again to add it, then{" "}
+              Need more pages? Use Photos again to append, or add a PDF, then{" "}
               {selectedMenuNeedsContent ? "Upload & Parse" : "Update OCR"}.
             </div>
           </div>
