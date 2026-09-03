@@ -61,7 +61,16 @@ function EntryCard({ entry }) {
       ) : null}
       <p style={styles.shared}>{entry.activity_label || "logged in their food diary"}</p>
       {entry.comment ? <p style={styles.quote}>&ldquo;{entry.comment}&rdquo;</p> : null}
-      {entry.photo_url ? (
+      {entry.video_url ? (
+        <video
+          src={resolveConsumerMediaUrl(entry.video_url)}
+          style={styles.video}
+          controls
+          playsInline
+          preload="metadata"
+          data-testid="what-i-ate-restaurant-video"
+        />
+      ) : entry.photo_url ? (
         <img
           src={resolveConsumerMediaUrl(entry.photo_url)}
           alt=""
@@ -162,5 +171,13 @@ const styles = {
     maxHeight: 180,
     borderRadius: 8,
     objectFit: "cover",
+  },
+  video: {
+    marginTop: 8,
+    width: "100%",
+    maxHeight: 220,
+    borderRadius: 8,
+    background: "#0f172a",
+    objectFit: "contain",
   },
 };

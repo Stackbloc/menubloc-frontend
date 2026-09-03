@@ -6,6 +6,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import OperatorLayout from "./OperatorLayout.jsx";
+import OperatorProfileVideosPanel from "./OperatorProfileVideosPanel.jsx";
 import { useOperator } from "../../context/OperatorContext.jsx";
 import {
   postRestaurantFeedVideo,
@@ -187,6 +188,8 @@ export default function OperatorFeedVideoPage() {
           </button>
         </form>
       )}
+
+      {rid ? <OperatorProfileVideosPanel restaurantId={rid} /> : null}
     </OperatorLayout>
   );
 }

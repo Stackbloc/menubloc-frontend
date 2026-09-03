@@ -14,6 +14,7 @@ import ProfileAboutFounded from "./ProfileAboutFounded.jsx";
 import ProfileFavoriteMenuItems from "./ProfileFavoriteMenuItems.jsx";
 import ProfileUpdates from "./ProfileUpdates.jsx";
 import ProfileDealsSection from "./ProfileDealsSection.jsx";
+import ProfileVideosSection from "./ProfileVideosSection.jsx";
 import FoodTruckUpcomingStops from "./FoodTruckUpcomingStops.jsx";
 import ProfileUpcomingEvents from "./ProfileUpcomingEvents.jsx";
 import WhatDinersAreSaying from "../WhatDinersAreSaying.jsx";
@@ -357,6 +358,10 @@ export default function PublicProfileShell({
             isMobile={isMobile}
             showClaimInvites={allowClaimInvites}
           />
+        )}
+
+        {isDiningHall || !restaurantId ? null : (
+          <ProfileVideosSection restaurantId={restaurantId} isMobile={isMobile} />
         )}
 
         {isDiningHall ? null : (

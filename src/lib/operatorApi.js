@@ -425,6 +425,18 @@ export const uploadRestaurantFeedVideoMedia = (rid, file) => {
 export const postRestaurantFeedVideo = (rid, body) =>
   post(`/operator/restaurants/${rid}/feed-video`, body);
 
+export const listOperatorProfileVideos = (rid, params = {}) => {
+  const qs = new URLSearchParams();
+  if (params.limit != null) qs.set("limit", String(params.limit));
+  const serialized = qs.toString();
+  return get(
+    `/operator/restaurants/${rid}/profile-videos${serialized ? `?${serialized}` : ""}`
+  );
+};
+
+export const removeOperatorProfileVideo = (rid, kind, videoId) =>
+  del(`/operator/restaurants/${rid}/profile-videos/${encodeURIComponent(kind)}/${encodeURIComponent(videoId)}`);
+
 // ── Restaurant: QR Kit Orders ─────────────────────────────────────────────
 export const getQrKitPreviewUrl = (rid, params = {}) => {
   const qs = new URLSearchParams(
