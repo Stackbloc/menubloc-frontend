@@ -32,8 +32,18 @@ export function hasUsableActiveMenu(row) {
   if (Array.isArray(preview) && preview.length > 0) return true;
   const publicCount = Number(row.public_menu_item_count);
   if (Number.isFinite(publicCount) && publicCount > 0) return true;
+  // Public restaurant profiles set menu_item_count from payload menu_items but often
+  // omit has_menu / menu_ready. Treat a positive count as a usable menu so View Menu
+  // is not replaced by Add Menu (camera) for newly published unclaimed restaurants.
   const itemCount = Number(row.menu_item_count);
-  if (row.has_menu === true && Number.isFinite(itemCount) && itemCount > 0) return true;
+  if (Number.isFinite(itemCount) && itemCount > 0) return true;
+  const menus = row.menus;
+  if (Array.isArray(menus)) {
+    for (const menu of menus) {
+      const menuItems = Number(menu?.item_count);
+      if (Number.isFinite(menuItems) && menuItems > 0) return true;
+    }
+  }
   return false;
 }
 
@@ -88,9 +98,11 @@ export function restaurantFromAddMenuContext({
   state = "",
   address = "",
   menuPreviewItems = [],
+  menuItemCount = null,
 } = {}) {
   const preview = Array.isArray(menuPreviewItems) ? menuPreviewItems : [];
-  return {
+  const countFromArg = Number(menuItemCount);
+  const base = {
     ...(profile && typeof profile === "object" ? profile : {}),
     id: restaurantId || profile?.id || null,
     restaurant_id: restaurantId || profile?.id || profile?.restaurant_id || null,
@@ -99,6 +111,13 @@ export function restaurantFromAddMenuContext({
     state: state || profile?.state || profile?.region || "",
     address_line1: address || profile?.address_line1 || "",
     preview_items: preview,
-    menu_ready: preview.length > 0 ? true : profile?.menu_ready,
+  };
+  if (Number.isFinite(countFromArg) && countFromArg > 0) {
+    base.menu_item_count = countFromArg;
+  }
+  return {
+    ...base,
+    // Prefer explicit preview, then profile counts (do not wait on async preview).
+    menu_ready: preview.length > 0 ? true : hasUsableActiveMenu(base) ? true : profile?.menu_ready,
   };
 }

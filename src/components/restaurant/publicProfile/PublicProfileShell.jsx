@@ -88,7 +88,6 @@ export default function PublicProfileShell({
   windowsPhotoOrientation = null,
 }) {
   void landmarks;
-  void menuItemCount;
   void menuCount;
   void statusEventPresentations;
   void statusBanners;
@@ -214,6 +213,7 @@ export default function PublicProfileShell({
     state: restaurantState,
     address: streetAddr,
     menuPreviewItems,
+    menuItemCount,
   });
 
   return (
