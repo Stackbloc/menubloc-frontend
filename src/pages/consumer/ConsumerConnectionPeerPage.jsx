@@ -41,7 +41,8 @@ import {
   resolveConsumerMediaUrl,
   whatIAteTodayLocalDate,
 } from "../../lib/consumerApi.js";
-import { formatDinerPeerLabel } from "../../lib/dinerPublicIdentity.js";
+import { fetchUserHomemadeDishes } from "../../lib/homemadeDishApi.js";
+import HomeAtHomeSection from "./myMenuply/HomeAtHomeSection.jsx";
 
 function tokenFromHref(href) {
   const match = String(href || "").match(/what-we-doing\/([^/?#]+)/);
@@ -88,6 +89,7 @@ export default function ConsumerConnectionPeerPage() {
   const [crews, setCrews] = useState([]);
   const [crewJoinBusy, setCrewJoinBusy] = useState("");
   const [peerProfileMedia, setPeerProfileMedia] = useState([]);
+  const [homeDishes, setHomeDishes] = useState([]);
   const [peerWants, setPeerWants] = useState([]);
   const [viewerMayInviteMeOut, setViewerMayInviteMeOut] = useState(false);
   const [inviteMeOutOpen, setInviteMeOutOpen] = useState(false);
@@ -96,7 +98,7 @@ export default function ConsumerConnectionPeerPage() {
   const load = useCallback(async () => {
     setError("");
     try {
-      const [connData, peerConnData, eatData, planData, diaryData, calendarData, crewData, mediaData, wantData] =
+      const [connData, peerConnData, eatData, planData, diaryData, calendarData, crewData, mediaData, wantData, homeData] =
         await Promise.all([
         listConnections("accepted"),
         listConnections("accepted", peerId).catch(() => ({ accepted: [] })),
@@ -109,6 +111,7 @@ export default function ConsumerConnectionPeerPage() {
         listDinerDiningCrews(peerId).catch(() => ({ crews: [] })),
         listPeerProfileMedia(peerId).catch(() => ({ items: [] })),
         listPeerWantToEat(peerId).catch(() => ({ items: [] })),
+        fetchUserHomemadeDishes(peerId).catch(() => ({ dishes: [] })),
       ]);
       const match = (connData.accepted || []).find((c) => Number(c.peer?.id) === peerId);
       setConnection(match || null);
@@ -138,6 +141,7 @@ export default function ConsumerConnectionPeerPage() {
       setPlans(planItems.filter((item) => item.kind !== "join_me" && item.href).map(asPlan));
       setCrews(crewData.crews || crewData.items || []);
       setPeerProfileMedia(mediaData?.items || []);
+      setHomeDishes(homeData?.dishes || []);
       setPeerWants(wantData?.items || []);
       setViewerMayInviteMeOut(Boolean(wantData?.invite_me_out?.viewer_may_invite));
       const join = planItems.find((item) => item.join_me_href)?.join_me_href || "";
@@ -234,6 +238,8 @@ export default function ConsumerConnectionPeerPage() {
                 peerId ? `/account/connections/${encodeURIComponent(String(peerId))}/month-in-food` : null
               }
             />
+
+            <HomeAtHomeSection readOnly dishes={homeDishes} />
 
             <EatingHubSection
               readOnly

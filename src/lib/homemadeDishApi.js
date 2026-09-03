@@ -46,6 +46,14 @@ export async function uploadHomemadeDishPhoto(file) {
   return parseJson(res);
 }
 
+export async function deleteHomemadeDish(id) {
+  const res = await fetch(`${BASE}/homemade-dishes/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+  return parseJson(res);
+}
+
 export async function likeHomemadeDish(id) {
   const res = await fetch(`${BASE}/homemade-dishes/${encodeURIComponent(id)}/like`, {
     method: "POST",

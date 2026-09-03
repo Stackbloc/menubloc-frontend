@@ -102,7 +102,13 @@ import {
 import { futurePlanKey, futurePlanRestaurantName, futurePlanDetailParts } from "./myMenuply/dinerHubFormat.js";
 import { dishPhotoUrl, eatingFoodName, joinHomemadeComment } from "./myMenuply/eatingPlaceLink.js";
 import { mergeEatingFeedForHub, mapDiaryEntriesForHub, mapFoodActivityForHub, eatingFeedKey } from "../../lib/eatingFeedMerge.js";
-import { fetchUserHomemadeDishes } from "../../lib/homemadeDishApi.js";
+import {
+  createHomemadeDish,
+  deleteHomemadeDish,
+  fetchUserHomemadeDishes,
+  uploadHomemadeDishPhoto,
+} from "../../lib/homemadeDishApi.js";
+import HomeAtHomeSection from "./myMenuply/HomeAtHomeSection.jsx";
 
 async function maybeFollowRestaurant(restaurantId) {
   const id = Number(restaurantId);
@@ -187,6 +193,8 @@ export default function MyMenuplyPage() {
   const [eventGroups, setEventGroups] = useState([]);
   const [socialEvents, setSocialEvents] = useState([]);
   const [homeDishes, setHomeDishes] = useState([]);
+  const [homeDishBusy, setHomeDishBusy] = useState(false);
+  const [homeDishError, setHomeDishError] = useState("");
   const [hubDate, setHubDate] = useState(() => whatIAteTodayLocalDate());
   const [hubMonth, setHubMonth] = useState(() => {
     const t = new Date();
@@ -625,6 +633,47 @@ export default function MyMenuplyPage() {
       setIdentityError(err.message || "Unable to remove profile media");
     } finally {
       setIdentityBusy(false);
+    }
+  }
+
+  async function onHomeAtHomePhoto(file) {
+    if (!file) return;
+    setHomeDishBusy(true);
+    setHomeDishError("");
+    try {
+      const up = await uploadHomemadeDishPhoto(file);
+      const photo_url = up?.photo_url || up?.url;
+      if (!photo_url) throw new Error("Photo upload did not return a URL");
+      const created = await createHomemadeDish({
+        name: "Home-cooked meal",
+        photo_url,
+        visibility: "public",
+      });
+      const row = created?.dish || created;
+      if (row?.id || row?.homemade_dish_id) {
+        setHomeDishes((prev) => [row, ...(prev || [])]);
+      }
+    } catch (err) {
+      setHomeDishError(err.message || "Unable to add @home photo");
+    } finally {
+      setHomeDishBusy(false);
+    }
+  }
+
+  async function onHomeAtHomeDelete(dish) {
+    const id = dish?.id || dish?.homemade_dish_id;
+    if (!id) return;
+    setHomeDishBusy(true);
+    setHomeDishError("");
+    try {
+      await deleteHomemadeDish(id);
+      setHomeDishes((prev) =>
+        (prev || []).filter((row) => Number(row.id || row.homemade_dish_id) !== Number(id))
+      );
+    } catch (err) {
+      setHomeDishError(err.message || "Unable to delete @home photo");
+    } finally {
+      setHomeDishBusy(false);
     }
   }
 
@@ -1415,6 +1464,14 @@ export default function MyMenuplyPage() {
               }}
               onHighlightDelete={onHighlightDelete}
               highlightDeleteBusy={Boolean(postBusy)}
+            />
+
+            <HomeAtHomeSection
+              dishes={homeDishes}
+              busy={homeDishBusy}
+              error={homeDishError}
+              onPhotoFile={onHomeAtHomePhoto}
+              onDelete={onHomeAtHomeDelete}
             />
 
             <EatingHubSection

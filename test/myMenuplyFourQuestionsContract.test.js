@@ -21,6 +21,7 @@ test("My Menuply is the diner's personal home", () => {
   const hero = read("src/pages/consumer/myMenuply/DinerIdentityHero.jsx");
   const eatingPage = read("src/pages/consumer/ConnectionsEatingPage.jsx");
   assert.match(page, /DinerIdentityHero/);
+  assert.match(page, /HomeAtHomeSection/);
   assert.match(page, /EatingHubSection/);
   assert.match(section, /data-testid="eating"/);
   assert.match(section, /data-testid="what-im-eating"/);

@@ -24,7 +24,9 @@ test("Connection diner page uses the same hub layout as My Menuply", () => {
     assert.match(page, /data-testid="my-events"/);
     assert.match(page, /My Crews/);
     assert.match(page, /My Events/);
-    assert.ok(page.indexOf("<DinerIdentityHero") < page.indexOf("<EatingHubSection"));
+    assert.match(page, /HomeAtHomeSection/);
+    assert.ok(page.indexOf("<DinerIdentityHero") < page.indexOf("<HomeAtHomeSection"));
+    assert.ok(page.indexOf("<HomeAtHomeSection") < page.indexOf("<EatingHubSection"));
     assert.ok(page.indexOf("<EatingHubSection") < page.lastIndexOf('data-testid="dining-crews"'));
     assert.ok(
       page.lastIndexOf('data-testid="dining-crews"') < page.lastIndexOf('data-testid="my-events"')
