@@ -10,7 +10,10 @@ import {
   buildFeedVideoShareData,
   feedClipSharePath,
   feedClipShareUrl,
+  feedDealSharePath,
+  feedDealShareUrl,
   resolveFeedClipStartIndex,
+  resolveFeedDealStartIndex,
 } from "../src/lib/feedShare.js";
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -52,6 +55,34 @@ test("feed home + fullscreen wire clip deep link and share affordance", () => {
   assert.match(reel, /buildFeedVideoShareData/);
   assert.match(reel, /see-whos-eating-share-wrap/);
   assert.match(reel, /feed-shared-clip-account-invite/);
+  assert.match(reel, /feed-video-share-invite/);
+  assert.match(reel, /Share & Invite/);
+  assert.match(reel, /InviteToEatModal/);
+  assert.match(reel, /videoShareUrl/);
+  assert.match(reel, /Let's try this out!/);
+});
+
+test("feed deals deep link helpers use menuply.com and deal query param", () => {
+  assert.equal(feedDealSharePath("deal-9"), "/feed/deals?deal=deal-9");
+  assert.equal(feedDealShareUrl("deal-9"), "https://menuply.com/feed/deals?deal=deal-9");
+  const items = [{ id: "a", deal_id: "a" }, { id: "b", deal_id: "b" }];
+  assert.equal(resolveFeedDealStartIndex(items, "b"), 1);
+  assert.equal(resolveFeedDealStartIndex(items, "missing"), 0);
+});
+
+test("feed deals page + swipe wire Share & Invite with video link", () => {
+  const page = read("src/pages/consumer/feed/FeedDealsPage.jsx");
+  assert.match(page, /useSearchParams/);
+  assert.match(page, /sharedDealId/);
+  assert.match(page, /resolveFeedDealStartIndex/);
+  assert.match(page, /startIndex=\{startIndex\}/);
+
+  const swipe = read("src/components/consumer/feed/DealVideoSwipe.jsx");
+  assert.match(swipe, /feed-deals-share-invite/);
+  assert.match(swipe, /Share & Invite/);
+  assert.match(swipe, /InviteToEatModal/);
+  assert.match(swipe, /feedDealShareUrl/);
+  assert.match(swipe, /Let's try this out!/);
 });
 
 test("feed shell profile share shows QR first then optional Share link", () => {

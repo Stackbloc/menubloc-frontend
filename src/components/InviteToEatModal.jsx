@@ -49,6 +49,10 @@ export default function InviteToEatModal({
   initialSeedCode = null,
   autoOpenShareOnReady = false,
   flowTitle = "Invite to Eat",
+  /** Optional menuply.com video deep link appended to invite share text (Feed / Deals). */
+  videoShareUrl = null,
+  /** Optional lead line for feed/deals Share & Invite share text. */
+  shareMessageLead = null,
 }) {
   const { isAuthenticated } = useConsumer();
   const autoShareOpenedRef = useRef(false);
@@ -153,13 +157,26 @@ export default function InviteToEatModal({
       scheduledTime: chooses ? null : created.scheduled_time || time,
       message: created.message || selectedDraft || message,
       url: created.url,
+      videoUrl: videoShareUrl,
+      messageLead: shareMessageLead,
     });
     return {
       title: `Invite to Eat — ${place}`,
       text,
       url: created.url,
     };
-  }, [created, date, time, restaurantName, resolvedKind, selectedDraft, message, scheduleMode]);
+  }, [
+    created,
+    date,
+    time,
+    restaurantName,
+    resolvedKind,
+    selectedDraft,
+    message,
+    scheduleMode,
+    videoShareUrl,
+    shareMessageLead,
+  ]);
 
   if (!open) return null;
 
@@ -169,8 +186,18 @@ export default function InviteToEatModal({
     setBusy(true);
     setError("");
     try {
-      const resolvedMessage =
+      let resolvedMessage =
         messageMode === "custom" ? String(message || "").trim() : String(selectedDraft || "").trim();
+      const lead = String(shareMessageLead || "").trim();
+      if (
+        lead &&
+        resolvedMessage &&
+        !resolvedMessage.toLowerCase().startsWith(lead.toLowerCase())
+      ) {
+        resolvedMessage = `${lead} ${resolvedMessage}`;
+      } else if (lead && !resolvedMessage) {
+        resolvedMessage = lead;
+      }
       const body = {
         restaurant_id: restaurantId,
         menu_item_id: menuItemId || undefined,
@@ -247,6 +274,7 @@ export default function InviteToEatModal({
           menuItemId,
           shareTarget: "eat_invitation",
           inviteKind: resolvedKind,
+          videoShareUrl: videoShareUrl || undefined,
         }}
       />,
       document.body

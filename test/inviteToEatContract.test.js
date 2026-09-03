@@ -18,6 +18,14 @@ function read(rel) {
   return readFileSync(join(root, rel), "utf8");
 }
 
+test("InviteToEatModal accepts videoShareUrl and shareMessageLead for Feed Share & Invite", () => {
+  const modal = read("src/components/InviteToEatModal.jsx");
+  assert.match(modal, /videoShareUrl/);
+  assert.match(modal, /shareMessageLead/);
+  assert.match(modal, /videoUrl:\s*videoShareUrl/);
+  assert.match(modal, /messageLead:\s*shareMessageLead/);
+});
+
 test("InviteToEatButton tooltip and Invitation Ready confirmation", () => {
   const btn = read("src/components/InviteToEatButton.jsx");
   assert.match(btn, /Invite to Eat/);
@@ -156,6 +164,19 @@ test("Share copy options include LDL/LDD/LHC/LGD/MMH with light emoji", () => {
   });
   assert.match(custom, /Join us for tacos/);
   assert.doesNotMatch(custom, /LDL|LDD|LHC|LGD|MMH/);
+
+  const withVideo = buildEatInviteShareText({
+    inviteKind: "group",
+    restaurantName: "Fixins",
+    message: "LDD — Let's do dinner at Fixins Friday at 7:00 PM. Who wants to join me?",
+    url: "https://menuply.com/invite/vid",
+    videoUrl: "https://menuply.com/feed?clip=ate%3A1",
+    messageLead: "Let's try this out!",
+  });
+  assert.match(withVideo, /^Let's try this out!/);
+  assert.match(withVideo, /menuply\.com\/invite\/vid/);
+  assert.match(withVideo, /Watch the video: https:\/\/menuply\.com\/feed\?clip=ate%3A1/);
+  assert.doesNotMatch(withVideo, /Watch the video:.*Watch the video:/);
 
   const coffee = buildEatInviteMessageDraft({
     inviteKind: "private",

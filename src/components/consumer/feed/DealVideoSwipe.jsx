@@ -2,13 +2,16 @@
  * TikTok-style swipe reel for restaurant deal videos (Feed Deals).
  * Sound on by default (same as Feed home); muted fallback if autoplay blocked. Tap/click toggles mute.
  * Meta dock: desktop shell lifts captions so meal-time badges do not clip; mobile caption layout unchanged.
+ * Opposite-side Share & Invite opens Invite to Eat with video deep link in share text.
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
+import InviteToEatModal from "../../InviteToEatModal.jsx";
 import { stripMediaUrlFragment } from "../../../lib/menuplyLiveFeedControl.js";
 import { recordFeedMenuOpen, restaurantRefFromDealItem } from "../../../lib/feedMenuLibrary.js";
+import { feedDealShareUrl } from "../../../lib/feedShare.js";
 import { useFeedShellDesktop } from "../../../lib/useFeedShellDesktop.js";
 import {
   attemptFeedVideoAutoplay,
@@ -31,11 +34,23 @@ export default function DealVideoSwipe({
 }) {
   const [index, setIndex] = useState(startIndex);
   const [videoMuted, setVideoMuted] = useState(() => defaultFeedVideoMuted("feedHome"));
+  const [inviteOpen, setInviteOpen] = useState(false);
   const isDesktopViewport = useFeedShellDesktop();
   const videoRef = useRef(null);
   const touchStartY = useRef(null);
   const ignoreVideoClickRef = useRef(false);
   const item = items[index] || null;
+  const restaurantRef = restaurantRefFromDealItem(item);
+  const inviteVideoShareUrl = useMemo(
+    () => feedDealShareUrl(item?.deal_id || item?.id),
+    [item?.deal_id, item?.id]
+  );
+  const showInviteShare = Boolean(restaurantRef?.restaurant_id);
+  const inviteMenuItemId =
+    item?.menu_item_id != null && String(item.menu_item_id).trim() !== ""
+      ? item.menu_item_id
+      : null;
+  const inviteMenuItemName = String(item?.menu_item_name || "").trim() || null;
 
   useEffect(() => {
     setIndex(Math.min(Math.max(0, startIndex), Math.max(0, items.length - 1)));
@@ -43,6 +58,7 @@ export default function DealVideoSwipe({
 
   useEffect(() => {
     setVideoMuted(defaultFeedVideoMuted("feedHome"));
+    setInviteOpen(false);
   }, [index, item?.id]);
 
   useEffect(() => {
@@ -329,6 +345,25 @@ export default function DealVideoSwipe({
         </p>
       </div>
 
+      {showInviteShare ? (
+        <button
+          type="button"
+          style={{
+            ...styles.inviteShareBtn,
+            bottom: metaBottomPad,
+          }}
+          data-testid="feed-deals-share-invite"
+          aria-label="Share & Invite"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setInviteOpen(true);
+          }}
+        >
+          Share & Invite
+        </button>
+      ) : null}
+
       {!atEnd ? (
         <div
           style={{
@@ -343,7 +378,34 @@ export default function DealVideoSwipe({
     </div>
   );
 
-  return containInShell ? ui : createPortal(ui, document.body);
+  const inviteModal = showInviteShare ? (
+    <InviteToEatModal
+      open={inviteOpen}
+      onClose={() => setInviteOpen(false)}
+      restaurantId={restaurantRef.restaurant_id}
+      restaurantName={restaurantRef.restaurant_name}
+      menuItemId={inviteMenuItemId}
+      menuItemName={inviteMenuItemName}
+      videoShareUrl={inviteVideoShareUrl || null}
+      shareMessageLead="Let's try this out!"
+      flowTitle="Share & Invite"
+    />
+  ) : null;
+
+  if (containInShell) {
+    return (
+      <>
+        {ui}
+        {inviteModal}
+      </>
+    );
+  }
+  return (
+    <>
+      {createPortal(ui, document.body)}
+      {inviteModal}
+    </>
+  );
 }
 
 const styles = {
@@ -396,6 +458,23 @@ const styles = {
     fontWeight: 700,
     cursor: "pointer",
     pointerEvents: "auto",
+  },
+  inviteShareBtn: {
+    position: "absolute",
+    right: "max(12px, env(safe-area-inset-right))",
+    zIndex: 5,
+    border: "1px solid rgba(255,255,255,0.4)",
+    borderRadius: 999,
+    padding: "10px 14px",
+    background: "rgba(0,0,0,0.55)",
+    color: "#fff",
+    fontSize: 13,
+    fontWeight: 800,
+    letterSpacing: "0.01em",
+    cursor: "pointer",
+    textShadow: "0 1px 3px rgba(0,0,0,0.75)",
+    pointerEvents: "auto",
+    fontFamily: "inherit",
   },
   // Mobile meta matches prior working caption layout (no maxHeight clamp).
   meta: {

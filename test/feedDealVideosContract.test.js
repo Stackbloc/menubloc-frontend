@@ -52,6 +52,9 @@ test("Feed deals: video swipe reel, no meal chips", () => {
   assert.doesNotMatch(feedDeals, /Search deals/);
   assert.match(feedDeals, /feed-deals-meal-filters/);
   assert.match(feedDeals, /meal_period/);
+  // Desktop: no top meal filter strip (bottom caption already has meal badges).
+  assert.match(feedDeals, /headerSlot = isDesktop \? null/);
+  assert.match(feedDeals, /effectiveMealFilter = isDesktop \? "all"/);
   assert.doesNotMatch(feedDeals, /prefer_media/);
 
   const swipe = read("src/components/consumer/feed/DealVideoSwipe.jsx");

@@ -8,6 +8,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link, useNavigate } from "react-router-dom";
 import ShareButton from "../../../components/share/ShareButton.jsx";
+import InviteToEatModal from "../../../components/InviteToEatModal.jsx";
 import { hidePublicFeedItem, requestConnection } from "../../../lib/consumerApi.js";
 import {
   MENUPY_CLOSE_LIVE_FEED_FULLSCREEN,
@@ -30,7 +31,7 @@ import {
   restaurantRefFromFeedItem,
   toggleFeedMenuBookmark,
 } from "../../../lib/feedMenuLibrary.js";
-import { buildFeedVideoShareData, feedClipSharePath } from "../../../lib/feedShare.js";
+import { buildFeedVideoShareData, feedClipSharePath, feedClipShareUrl } from "../../../lib/feedShare.js";
 import {
   attemptFeedVideoAutoplay,
   defaultFeedVideoMuted,
@@ -77,11 +78,16 @@ export default function SeeWhosEatingFullscreen({
   const [menuBookmarked, setMenuBookmarked] = useState(false);
   const [menuBookmarkToast, setMenuBookmarkToast] = useState("");
   const [videoMuted, setVideoMuted] = useState(() => defaultFeedVideoMuted(variant));
+  const [inviteOpen, setInviteOpen] = useState(false);
   const videoRef = useRef(null);
   const touchStartY = useRef(null);
   const ignoreVideoClickRef = useRef(false);
   const item = items[index] || null;
   const feedShareData = useMemo(() => (item ? buildFeedVideoShareData(item) : null), [item]);
+  const inviteVideoShareUrl = useMemo(
+    () => (item?.id ? feedClipShareUrl(item.id) : ""),
+    [item?.id]
+  );
   const sharedClipNextPath = feedClipSharePath(sharedClipId) || "/feed";
 
   useEffect(() => {
@@ -94,9 +100,15 @@ export default function SeeWhosEatingFullscreen({
     setRemoveError("");
     setMenuBookmarkToast("");
     setVideoMuted(defaultFeedVideoMuted(variant));
+    setInviteOpen(false);
   }, [index, item?.id, variant]);
 
   const restaurantRef = restaurantRefFromFeedItem(item);
+  const inviteMenuItemId =
+    item?.menu_item_id != null && String(item.menu_item_id).trim() !== ""
+      ? item.menu_item_id
+      : null;
+  const inviteMenuItemName = String(item?.item_name || item?.food_name || "").trim() || null;
 
   useEffect(() => {
     if (!restaurantRef?.restaurant_id) {
@@ -411,6 +423,7 @@ export default function SeeWhosEatingFullscreen({
         .toLowerCase()
     );
   const isFeedHome = variant === "feedHome";
+  const showInviteShare = Boolean(isFeedHome && restaurantRef?.restaurant_id);
   const soundPromptLabel = isDesktopViewport ? "Click for sound" : "Tap for sound";
   const soundToggleLabel = videoMuted ? soundPromptLabel : "Mute";
   const showDesktopSoundLayer = Boolean(isDesktopViewport && item?.video_url && videoMuted);
@@ -633,6 +646,25 @@ export default function SeeWhosEatingFullscreen({
         ) : null}
       </div>
 
+      {showInviteShare ? (
+        <button
+          type="button"
+          style={{
+            ...styles.inviteShareBtn,
+            bottom: `calc(${navInset}px + max(28px, env(safe-area-inset-bottom)) + 12px)`,
+          }}
+          data-testid="feed-video-share-invite"
+          aria-label="Share & Invite"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setInviteOpen(true);
+          }}
+        >
+          Share & Invite
+        </button>
+      ) : null}
+
       {!atEnd ? (
         <div style={styles.swipeCue} aria-hidden="true">
           {formatVerticalReelCue({ isDesktopViewport })}
@@ -641,7 +673,24 @@ export default function SeeWhosEatingFullscreen({
     </div>
   );
 
-  return createPortal(ui, document.body);
+  return (
+    <>
+      {createPortal(ui, document.body)}
+      {showInviteShare ? (
+        <InviteToEatModal
+          open={inviteOpen}
+          onClose={() => setInviteOpen(false)}
+          restaurantId={restaurantRef.restaurant_id}
+          restaurantName={restaurantRef.restaurant_name}
+          menuItemId={inviteMenuItemId}
+          menuItemName={inviteMenuItemName}
+          videoShareUrl={inviteVideoShareUrl || null}
+          shareMessageLead="Let's try this out!"
+          flowTitle="Share & Invite"
+        />
+      ) : null}
+    </>
+  );
 }
 
 const styles = {
@@ -704,6 +753,23 @@ const styles = {
     position: "absolute",
     right: "max(8px, env(safe-area-inset-right))",
     zIndex: 3,
+  },
+  inviteShareBtn: {
+    position: "absolute",
+    right: "max(12px, env(safe-area-inset-right))",
+    zIndex: 5,
+    border: "1px solid rgba(255,255,255,0.4)",
+    borderRadius: 999,
+    padding: "10px 14px",
+    background: "rgba(0,0,0,0.55)",
+    color: "#fff",
+    fontSize: 13,
+    fontWeight: 800,
+    letterSpacing: "0.01em",
+    cursor: "pointer",
+    textShadow: "0 1px 3px rgba(0,0,0,0.75)",
+    pointerEvents: "auto",
+    fontFamily: "inherit",
   },
   sharedInviteWrap: {
     position: "absolute",

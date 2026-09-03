@@ -57,3 +57,29 @@ export function resolveFeedClipStartIndex(items, clipId) {
   const idx = items.findIndex((row) => feedClipQueryParam(row?.id) === target);
   return idx >= 0 ? idx : 0;
 }
+
+/** Feed Deals swipe deep link — /feed/deals?deal={dealId} */
+export function feedDealQueryParam(dealId) {
+  return String(dealId || "").trim();
+}
+
+export function feedDealSharePath(dealId) {
+  const id = feedDealQueryParam(dealId);
+  if (!id) return "";
+  return `/feed/deals?deal=${encodeURIComponent(id)}`;
+}
+
+export function feedDealShareUrl(dealId) {
+  const path = feedDealSharePath(dealId);
+  if (!path) return "";
+  return normalizeConsumerShareUrl(path) || "";
+}
+
+export function resolveFeedDealStartIndex(items, dealId) {
+  const target = feedDealQueryParam(dealId);
+  if (!target || !Array.isArray(items) || items.length === 0) return 0;
+  const idx = items.findIndex(
+    (row) => feedDealQueryParam(row?.deal_id || row?.id) === target
+  );
+  return idx >= 0 ? idx : 0;
+}

@@ -52,6 +52,7 @@ export function mapDealRowToFeedVideoItem(deal) {
     meal_periods: mealPeriods,
     meal_period_labels: formatDealMealPeriodLabels(mealPeriods),
     menu_item_name: String(deal.menu_item_name || "").trim(),
+    menu_item_id: deal.menu_item_id != null ? deal.menu_item_id : null,
     discount_label: formatDealDiscountLabel(deal),
     feed_promoted: deal.feed_promoted === true,
     restaurant_href:

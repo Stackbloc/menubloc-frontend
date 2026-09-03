@@ -4,6 +4,7 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import DealVideoSwipe from "../../../components/consumer/feed/DealVideoSwipe.jsx";
 import { FEED_PRIMARY_NAV_HEIGHT } from "../../../components/consumer/feed/FeedPrimaryNav.jsx";
 import { apiGet } from "../../../lib/api.js";
@@ -13,6 +14,7 @@ import {
   defaultDealMealPeriod,
 } from "../../../lib/dealMealPeriods.js";
 import { readDetectedLocation } from "../../../lib/discoveryLocationPersistence.js";
+import { resolveFeedDealStartIndex } from "../../../lib/feedShare.js";
 import { useFeedShellDesktop } from "../../../lib/useFeedShellDesktop.js";
 
 const DEFAULT_MARKET = { city: "Los Angeles", state: "CA" };
@@ -29,11 +31,22 @@ function resolveMarket() {
 
 export default function FeedDealsPage() {
   const isDesktop = useFeedShellDesktop();
+  const [searchParams] = useSearchParams();
   const market = useMemo(() => resolveMarket(), []);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [mealFilter, setMealFilter] = useState(() => defaultDealMealPeriod());
+  // Desktop: no top meal chips (bottom caption already shows meal times). Show all deal videos.
+  const effectiveMealFilter = isDesktop ? "all" : mealFilter;
+  const sharedDealId = useMemo(
+    () => String(searchParams.get("deal") || "").trim(),
+    [searchParams]
+  );
+  const startIndex = useMemo(
+    () => resolveFeedDealStartIndex(items, sharedDealId),
+    [items, sharedDealId]
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -46,8 +59,8 @@ export default function FeedDealsPage() {
           state: market.state,
           has_video: "1",
         });
-        if (mealFilter && mealFilter !== "all") {
-          params.set("meal_period", mealFilter);
+        if (effectiveMealFilter && effectiveMealFilter !== "all") {
+          params.set("meal_period", effectiveMealFilter);
         }
         const data = await apiGet(`/deals?${params.toString()}`);
         if (cancelled) return;
@@ -64,9 +77,9 @@ export default function FeedDealsPage() {
     return () => {
       cancelled = true;
     };
-  }, [market.city, market.state, mealFilter]);
+  }, [market.city, market.state, effectiveMealFilter]);
 
-  const headerSlot = (
+  const headerSlot = isDesktop ? null : (
     <div style={styles.chromeWrap} data-testid="feed-deals-chrome">
       <div
         style={styles.mealStrip}
@@ -119,7 +132,7 @@ export default function FeedDealsPage() {
     <div style={styles.page} data-testid="feed-deals-page">
       <DealVideoSwipe
         items={items}
-        startIndex={0}
+        startIndex={startIndex}
         bottomInset={isDesktop ? 8 : FEED_PRIMARY_NAV_HEIGHT + 8}
         headerSlot={headerSlot}
         containInShell

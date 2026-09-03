@@ -3,6 +3,7 @@
  * Draft options (LDL/LDD/LHC/LGD/MMH + light emoji) are selectable copy, not a glossary feature.
  */
 
+import { normalizeConsumerShareUrl } from "../components/share/shareUtils.js";
 import {
   appendMenuplyAccountInviteToShareText,
   invitePathFromShareUrl,
@@ -171,6 +172,8 @@ export function listInviteMessageOptions({
 
 /**
  * ShareModal body. Prefer an explicit message (selected radio / write-your-own).
+ * Optional videoUrl (feed/deals clip) is appended after the invite link — menuply.com only.
+ * Optional messageLead is prepended (e.g. Feed "Share & Invite": "Let's try this out!").
  */
 export function buildEatInviteShareText({
   inviteKind = "group",
@@ -181,6 +184,8 @@ export function buildEatInviteShareText({
   seedCode = null,
   message = null,
   url,
+  videoUrl = null,
+  messageLead = null,
 }) {
   const custom = String(message || "").trim();
   const draft =
@@ -193,9 +198,18 @@ export function buildEatInviteShareText({
       scheduledTime,
       seedCode,
     });
+  const lead = String(messageLead || "").trim();
+  const ledDraft =
+    lead && draft && !draft.toLowerCase().startsWith(lead.toLowerCase())
+      ? `${lead} ${draft}`
+      : lead && !draft
+        ? lead
+        : draft;
   const link = String(url || "").trim();
-  if (!link) return draft;
-  const body = `${draft}\n${link}`.trim();
+  if (!link) return ledDraft;
+  const safeVideo = normalizeConsumerShareUrl(String(videoUrl || "").trim());
+  const videoLine = safeVideo ? `Watch the video: ${safeVideo}` : "";
+  const body = [ledDraft, link, videoLine].filter(Boolean).join("\n").trim();
   return appendMenuplyAccountInviteToShareText(body, {
     nextPath: invitePathFromShareUrl(link),
   });
