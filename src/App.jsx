@@ -49,6 +49,7 @@ import { ConsumerProvider } from "./context/ConsumerContext.jsx";
 import ConsumerSessionToast from "./components/ConsumerSessionToast.jsx";
 import ConsumerSignup from "./pages/consumer/ConsumerSignup.jsx";
 import DinerSignup from "./pages/consumer/DinerSignup.jsx";
+import DinerProfilePage from "./pages/consumer/DinerProfilePage.jsx";
 import ConsumerLogin from "./pages/consumer/ConsumerLogin.jsx";
 import AppleAuthCallback from "./pages/consumer/AppleAuthCallback.jsx";
 import ConsumerForgotPassword from "./pages/consumer/ConsumerForgotPassword.jsx";
@@ -963,6 +964,7 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
         <Route path="/reset-password" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <ConsumerLegacyRedirect nextPath="/account/reset-password" />} />
         <Route path="/account/signup" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <ConsumerSignup />} />
         <Route path="/diner/signup" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <DinerSignup />} />
+        <Route path="/diners/:userId" element={<DinerProfilePage />} />
         <Route path="/account/login" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <ConsumerLogin />} />
         <Route path="/auth/apple/callback" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <AppleAuthCallback />} />
         <Route path="/account/forgot-password" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <ConsumerForgotPassword />} />

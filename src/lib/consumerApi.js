@@ -732,3 +732,70 @@ export const removeRestaurantDiningIntent = (intentId) =>
   del(`/api/consumer/dining-intent/${encodeURIComponent(String(intentId))}`);
 
 export { localDateYmd as whatIAteTodayLocalDate };
+
+// ── @home — Homemade Dish photos ─────────────────────────────────────────
+// Public listing for a user's @home profile section.
+export const getHomeDishesForUser = (userId) =>
+  get(`/api/consumer/homemade-dishes/users/${encodeURIComponent(String(userId))}`);
+
+// Upload a photo to a homemade dish entry (returns photo_url).
+export async function uploadHomeDishPhoto(file) {
+  const language = readStoredLanguage();
+  const form = new FormData();
+  form.append("photo", file);
+  const localizedPath = appendLanguageParam("/api/consumer/homemade-dishes/photo", language);
+  const res = await fetch(`${API}${localizedPath}`, {
+    method: "POST",
+    credentials: "include",
+    headers: withLanguageHeaders({}, language),
+    body: form,
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const error = new Error(json.error || `Upload failed (${res.status})`);
+    error.status = res.status;
+    error.payload = json;
+    throw error;
+  }
+  return json; // { ok, photo_url }
+}
+
+// Create a homemade dish entry (used for @home photo posts).
+export const createHomeDish = (body) => post("/api/consumer/homemade-dishes", body);
+
+// Soft-delete own homemade dish (ownership enforced server-side).
+export const deleteHomeDish = (dishId) =>
+  del(`/api/consumer/homemade-dishes/${encodeURIComponent(String(dishId))}`);
+
+// ── Profile Media / Flash Video ───────────────────────────────────────────
+// Public Flash Videos for any diner (no connection required).
+export const getPublicFlashVideos = (userId) =>
+  get(`/api/consumer/profile/users/${encodeURIComponent(String(userId))}/flash-videos`);
+
+// Upload a Flash Video (or any profile media).
+// Pass media_subtype="flash_video" for Flash Videos.
+export async function uploadProfileMedia(file, { media_subtype = null } = {}) {
+  const language = readStoredLanguage();
+  const form = new FormData();
+  form.append("media", file);
+  if (media_subtype) form.append("media_subtype", media_subtype);
+  const localizedPath = appendLanguageParam("/api/consumer/profile/media", language);
+  const res = await fetch(`${API}${localizedPath}`, {
+    method: "POST",
+    credentials: "include",
+    headers: withLanguageHeaders({}, language),
+    body: form,
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const error = new Error(json.error || `Upload failed (${res.status})`);
+    error.status = res.status;
+    error.payload = json;
+    throw error;
+  }
+  return json; // { ok, item }
+}
+
+// Delete a profile media item (owner only).
+export const deleteProfileMedia = (mediaId) =>
+  del(`/api/consumer/profile/media/${encodeURIComponent(String(mediaId))}`);
