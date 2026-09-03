@@ -33,18 +33,25 @@ const del = (path) => req(path, { method: "DELETE" });
 
 /** Owner video uploads can be large; Railway + H.264 normalize often needs minutes. */
 const OWNER_VIDEO_UPLOAD_TIMEOUT_MS = 5 * 60 * 1000;
+/** Menu PDF/photo OCR can take several minutes per page on Railway. */
+const OWNER_MENU_UPLOAD_TIMEOUT_MS = 4 * 60 * 1000;
 
-function mapOwnerUploadNetworkError(err) {
+function mapOwnerUploadNetworkError(err, kind = "upload") {
   const name = String(err?.name || "");
   const msg = String(err?.message || "");
+  const isMenu = kind === "menu";
   if (name === "AbortError" || /aborted|timeout/i.test(msg)) {
     return new Error(
-      "Video upload timed out. Try a shorter clip or a smaller file (under ~100 MB), then retry."
+      isMenu
+        ? "Menu upload timed out while reading the page. Try one smaller JPEG/PNG at a time, stay on this tab, then retry."
+        : "Video upload timed out. Try a shorter clip or a smaller file (under ~100 MB), then retry."
     );
   }
   if (/failed to fetch|networkerror|load failed|network request failed/i.test(msg)) {
     return new Error(
-      "Video upload failed (connection dropped). Try a shorter/smaller clip, stay on this tab until it finishes, then retry."
+      isMenu
+        ? "Menu upload failed (connection dropped). Try fewer/smaller photos (JPEG/PNG under 20 MB), stay on this tab until each page finishes, then retry."
+        : "Video upload failed (connection dropped). Try a shorter/smaller clip, stay on this tab until it finishes, then retry."
     );
   }
   return err instanceof Error ? err : new Error(msg || "Upload failed");
@@ -73,7 +80,10 @@ async function postFormData(path, formData, opts = {}) {
     }
     return json;
   } catch (err) {
-    if (opts.mapNetworkError) throw mapOwnerUploadNetworkError(err);
+    if (opts.mapNetworkError) {
+      const kind = opts.networkErrorKind || "upload";
+      throw mapOwnerUploadNetworkError(err, kind);
+    }
     throw err;
   } finally {
     if (timeoutId) clearTimeout(timeoutId);
@@ -325,7 +335,11 @@ export const submitOwnerMenuFilePdf = (restaurantId, file, opts = {}) => {
   if (Number.isFinite(menuId) && menuId > 0) {
     form.append("menu_id", String(menuId));
   }
-  return postFormData("/menu-upload/pdf", form);
+  return postFormData("/menu-upload/pdf", form, {
+    timeoutMs: OWNER_MENU_UPLOAD_TIMEOUT_MS,
+    mapNetworkError: true,
+    networkErrorKind: "menu",
+  });
 };
 export const markOwnerMenuUploadReview = (uploadId) =>
   post(`/api/owner/menu-uploads/${uploadId}/mark-review`, {});

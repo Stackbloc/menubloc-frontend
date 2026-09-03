@@ -42,7 +42,8 @@ assert.match(src, /pdfFileRef/);
 const photosBlock = inputBlockAroundTestId("owner-menu-upload-photos-input");
 assert.match(photosBlock, /type="file"/);
 assert.match(photosBlock, /\bmultiple\b/);
-assert.match(photosBlock, /accept="image\/\*"/);
+assert.match(photosBlock, /accept="image\/jpeg,image\/png,image\/webp,\.jpg,\.jpeg,\.png,\.webp"/);
+assert.doesNotMatch(photosBlock, /accept="image\/\*"/);
 assert.doesNotMatch(photosBlock, /\bcapture=/);
 assert.doesNotMatch(photosBlock, /application\/pdf|\.pdf/i);
 
@@ -60,5 +61,12 @@ assert.doesNotMatch(src, mixedAcceptRe);
 // Copy must not instruct one-at-a-time as the primary phone path.
 assert.doesNotMatch(src, /add one photo at a time/i);
 assert.match(src, /select many pages at once/i);
+
+// Network drop / timeout must not surface raw "Failed to fetch"
+const api = fs.readFileSync(path.join(ROOT, "src/lib/ownerApi.js"), "utf8");
+assert.match(api, /OWNER_MENU_UPLOAD_TIMEOUT_MS/);
+assert.match(api, /networkErrorKind: "menu"/);
+assert.match(api, /Menu upload failed \(connection dropped\)/);
+assert.match(api, /Menu upload timed out/);
 
 console.log("ownerMenuUploadAccumulateFilesContract: ok");

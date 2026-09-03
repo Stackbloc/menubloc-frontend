@@ -1430,7 +1430,7 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
       <div style={{ marginTop: 12 }}>
         <label style={fieldLabel}>Menu files</label>
         <div style={{ fontSize: 12, color: OWNER_COLORS.muted, marginBottom: 6, lineHeight: 1.45 }}>
-          Photos open your phone library so you can select many pages at once. PDF is a separate picker (Files app). Extra picks still append to the list below.
+          Photos open your phone library so you can select many pages at once (JPEG/PNG/WebP — not HEIC). PDF is a separate picker. Extra picks still append. Stay on this tab while each page is read — large pages can take a few minutes.
         </div>
         <div data-testid="owner-menu-upload-size-hint" style={{ fontSize: 12, color: OWNER_COLORS.muted, marginBottom: 8 }}>
           PDF, JPEG, PNG, or WebP — max 20 MB each.
@@ -1445,7 +1445,7 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
               ref={photoFileRef}
               type="file"
               multiple
-              accept="image/*"
+              accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
               onChange={(e) => applyOwnerUploadPick(e, { setFiles, setUploadMsg })}
               style={{ ...inputStyle, padding: "10px 12px" }}
               data-testid="owner-menu-upload-photos-input"

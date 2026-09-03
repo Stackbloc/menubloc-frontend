@@ -114,7 +114,7 @@ describe("owner Add Restaurant restore", () => {
     assert.match(workspace, /title=\{selectedMenuNeedsContent \? "Upload menu" : "Update OCR"\}/);
     assert.match(workspace, /data-testid="owner-menu-upload-photos-input"/);
     assert.match(workspace, /data-testid="owner-menu-upload-pdf-input"/);
-    assert.match(workspace, /accept="image\/\*"/);
+    assert.match(workspace, /accept="image\/jpeg,image\/png,image\/webp,\.jpg,\.jpeg,\.png,\.webp"/);
     assert.match(workspace, /accept="\.pdf,application\/pdf"/);
     assert.match(workspace, /data-testid="owner-menu-upload-size-hint"/);
     assert.match(workspace, /max 20 MB each/);
