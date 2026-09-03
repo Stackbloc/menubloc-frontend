@@ -36,9 +36,9 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-frontend-main` @ clean `main` |
-| Git commit | `651ba65a` — @home camera hover: take photo or media under X — Flash Video on My Menuply About Me + @home camera icon — What I'm Cooking Feed X last Post to Feed — @home meal photo grid on My Menuply profile — @home dish grid + Flash Video on /diners/:userId — Share & Invite on feed and deals videos — deal video audio + desktop caption dock — Owner video upload Failed-to-fetch hardening — Knowledge Bot URL parse + form hydrate (re-certify) — Knowledge Bot URL menu parse + form hydrate — growth details LA TZ — Knowledge Bot agent-install OCR/MLE UI — visitor analytics Unattributed reconcile — feed restaurant name tap opens profile page — Platform video Feed poster labels + owner Video Manager creator column — owner deal video upload panel + platform video creator label — Feed desktop arrow-key navigation copy — My Menu Stack liked-restaurant tier + diner instructions — Owner Knowledge Bot in Control Center — Feed default audio on; Video Manager modal metadata editor — Desktop Feed click-for-sound unmute — Feed video desktop framing, tap-for-sound, mic capture, place caption — Owner video catalog CK pickers + date filters (Easy Street BE seed already live) — Owner video catalog CK name search + created date range — Diner search + Make Me This profile display — owner video catalog CK pickers — diner hobbies collapsed personal details — collapse personal context editor behind toggle — inline personal context editor on profile — profile settings links discoverability — diner personal context profile header lines — owner Video Catalog console + asset numbers for all Feed videos — LGD Let's Get Drinks quick invite with optional menu attachment — Make Me This private I Wanna Eat requests — guest Post to Feed video Terms gate + signup invite — Billboard unauthorized asset removal — tip lock sync — Remove unauthorized scraped billboard assets — Billboard durable assets Tom's Emmy + systemic repair — Merge Home into Dishes on profile + Month in Food — Fixins billboard asset + tip sync — Indio Festival Grounds directory card name fix — Indio H1 SEO overlay pre-migration 0303 — Indio Festival Grounds tradename de-risk; BE 69b70d3b — Indio Festival Grounds tradename de-risk Option C — Indio Festival Grounds tradename de-risk Option C — Stats bar 5-col one line; Month in Food Home; Include DIY recipes search — billboard Tom's crop splash dedupe optional promo headline — operator billboard preview URL resolution — Menu Manager OCR source rail restore — My Menuply Home tab; remove profile homemade share CTA — Homemade Dishes: compose, detail, search Include Homemade, Show Me How — dining-crew reader vs member detail page split — My Menuply hybrid section polish + join-only profile cards — crew invite Connections picker + Find Diners UX — billboard FK media URLs + Klaudette mobile crop — sample menu stack + QR-first Share My Menuply — restaurant profile refinement + My Menuply /feed/profile hub — restaurant dining intent CPD finish — restaurant People who want to go dining intent — feed shareable videos+profiles; account invite on receive; quick invites — billboard 10 MB upload limit copy — owner Profile Manager billboard Windows photo upload — Feed X Upload media category picker E2E — Feed menu upload camera rail tooltip mobile icon — desktop Feed Log in Menuply green — Feed footer trim, My Menu Stack, X coach, desktop Home order — Feed Reviews + Food Review X + Share My Menuply rail + Shop footer polish — Feed desktop blank hotfix + full HomeNext Shop tab restore — Feed Shop HomeNext + shell basket alignment — Feed Shop tab, deals desktop fix, More menu, green login — Feed discovery rail, More menu, signup screen name — Feed default home at /; existing FeedPrimaryNav unchanged — Connect presumed name: First L. coalesce + signup names — Connect display names: First L. instead of Member # — Feed Search hero vertical spacing — Feed Share My Menuply → Diner QR page — Feed Search no menu windows + in-shell results — Feed Profile: profile-only, no hero/TV — Feed TikTok nav + slim X sheet — Feed Menus replaces Eating + mobile-first empty coach — Feed first-visit empty coach + counsel Terms/Privacy tip lock — Counsel-approved Terms+Privacy UGC Aug 27 2026 — Owner Feed Invite QR image credentialed fetch fix — Feed deal video swipe: meal-time filters + Lunch Deal caption + restaurant feed compose — Feed deal video swipe reel; text search on /deals — Feed X categorized menu: My Menuply, Share, Account — Owner Feed Invite QR editable poster copy — Feed Deals Live meal periods + media — feed eating tab real compose actions — eating restaurant + menu item fields for ate/want — feed deals chrome + me clusters/menu upload — feed video-only hybrid ConsumerCameraSheet recorder — feed center X video create + plan video attach — video-first parallel `/feed` shell (FEED\|EATING\|EVENTS\|ME); HomeNext remains `/` |
-| Vercel deployment | `menubloc-frontend-pfzzto529-menuply.vercel.app` |
-| Live bundle | `index-B0yNpfqt.js` |
+| Git commit | `3bd44a37` — View Menu for unclaimed restaurants with published items (Bacari West Adams) — @home camera hover: take photo or media under X — Flash Video on My Menuply About Me + @home camera icon — What I'm Cooking Feed X last Post to Feed — @home meal photo grid on My Menuply profile — @home dish grid + Flash Video on /diners/:userId — Share & Invite on feed and deals videos — deal video audio + desktop caption dock — Owner video upload Failed-to-fetch hardening — Knowledge Bot URL parse + form hydrate (re-certify) — Knowledge Bot URL menu parse + form hydrate — growth details LA TZ — Knowledge Bot agent-install OCR/MLE UI — visitor analytics Unattributed reconcile — feed restaurant name tap opens profile page — Platform video Feed poster labels + owner Video Manager creator column — owner deal video upload panel + platform video creator label — Feed desktop arrow-key navigation copy — My Menu Stack liked-restaurant tier + diner instructions — Owner Knowledge Bot in Control Center — Feed default audio on; Video Manager modal metadata editor — Desktop Feed click-for-sound unmute — Feed video desktop framing, tap-for-sound, mic capture, place caption — Owner video catalog CK pickers + date filters (Easy Street BE seed already live) — Owner video catalog CK name search + created date range — Diner search + Make Me This profile display — owner video catalog CK pickers — diner hobbies collapsed personal details — collapse personal context editor behind toggle — inline personal context editor on profile — profile settings links discoverability — diner personal context profile header lines — owner Video Catalog console + asset numbers for all Feed videos — LGD Let's Get Drinks quick invite with optional menu attachment — Make Me This private I Wanna Eat requests — guest Post to Feed video Terms gate + signup invite — Billboard unauthorized asset removal — tip lock sync — Remove unauthorized scraped billboard assets — Billboard durable assets Tom's Emmy + systemic repair — Merge Home into Dishes on profile + Month in Food — Fixins billboard asset + tip sync — Indio Festival Grounds directory card name fix — Indio H1 SEO overlay pre-migration 0303 — Indio Festival Grounds tradename de-risk; BE 69b70d3b — Indio Festival Grounds tradename de-risk Option C — Indio Festival Grounds tradename de-risk Option C — Stats bar 5-col one line; Month in Food Home; Include DIY recipes search — billboard Tom's crop splash dedupe optional promo headline — operator billboard preview URL resolution — Menu Manager OCR source rail restore — My Menuply Home tab; remove profile homemade share CTA — Homemade Dishes: compose, detail, search Include Homemade, Show Me How — dining-crew reader vs member detail page split — My Menuply hybrid section polish + join-only profile cards — crew invite Connections picker + Find Diners UX — billboard FK media URLs + Klaudette mobile crop — sample menu stack + QR-first Share My Menuply — restaurant profile refinement + My Menuply /feed/profile hub — restaurant dining intent CPD finish — restaurant People who want to go dining intent — feed shareable videos+profiles; account invite on receive; quick invites — billboard 10 MB upload limit copy — owner Profile Manager billboard Windows photo upload — Feed X Upload media category picker E2E — Feed menu upload camera rail tooltip mobile icon — desktop Feed Log in Menuply green — Feed footer trim, My Menu Stack, X coach, desktop Home order — Feed Reviews + Food Review X + Share My Menuply rail + Shop footer polish — Feed desktop blank hotfix + full HomeNext Shop tab restore — Feed Shop HomeNext + shell basket alignment — Feed Shop tab, deals desktop fix, More menu, green login — Feed discovery rail, More menu, signup screen name — Feed default home at /; existing FeedPrimaryNav unchanged — Connect presumed name: First L. coalesce + signup names — Connect display names: First L. instead of Member # — Feed Search hero vertical spacing — Feed Share My Menuply → Diner QR page — Feed Search no menu windows + in-shell results — Feed Profile: profile-only, no hero/TV — Feed TikTok nav + slim X sheet — Feed Menus replaces Eating + mobile-first empty coach — Feed first-visit empty coach + counsel Terms/Privacy tip lock — Counsel-approved Terms+Privacy UGC Aug 27 2026 — Owner Feed Invite QR image credentialed fetch fix — Feed deal video swipe: meal-time filters + Lunch Deal caption + restaurant feed compose — Feed deal video swipe reel; text search on /deals — Feed X categorized menu: My Menuply, Share, Account — Owner Feed Invite QR editable poster copy — Feed Deals Live meal periods + media — feed eating tab real compose actions — eating restaurant + menu item fields for ate/want — feed deals chrome + me clusters/menu upload — feed video-only hybrid ConsumerCameraSheet recorder — feed center X video create + plan video attach — video-first parallel `/feed` shell (FEED\|EATING\|EVENTS\|ME); HomeNext remains `/` |
+| Vercel deployment | `menubloc-frontend-90sk43a1c-menuply.vercel.app` |
+| Live bundle | `index-DJGcYa2Q.js` |
 | Aliases | `menuply.com`, `www.menuply.com`, `crm.menuply.com`, `venues.menuply.com` |
 | Tip-gate | **PASS** (apex + www) verified 2026-08-26 |
 | Feature | Parallel video-first Feed at `/feed`; drawer “Feed (preview)”; `VITE_FEED_AS_HOME` cutover off |
@@ -48,21 +48,21 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-backend-main` @ clean `main` |
-| Git on origin | `19c99581` — finalize Bacari West Adams hours CPD note |
-| Live health SHA | `19c9958126e5a07eb8f7b97e10f5935cfef32588` |
+| Git on origin | `12dfbf71` — Domino's screenshot menu seed CPD |
+| Live health SHA | `12dfbf71562b86f3283c58f4be242f9e977e4eec` |
 | Health URL | `https://menubloc-backend-production.up.railway.app/health` |
-| `commit_hash` | `19c99581…` |
-| DB | migrations through `0300` (diner_restaurant_dining_intent) |
-| Smoke | BE CPD PASS 2026-09-03; FE tip unchanged `cuqdj1vig` / `index-DmBd8EAo.js` |
+| `commit_hash` | `12dfbf71…` |
+| DB | migrations through `0312`+; **0305** `eat_invitations.attached_menu_id` applied 2026-09-03 |
+| Smoke | BE Domino's menu seed CPD 2026-09-03 (health `12dfbf71`); FE tip unchanged |
 
 ### Restore current tip (if tip-gate fails mid-change)
 
 ```bash
 cd /Users/andrebarber/Desktop/menubloc/menubloc-frontend-main
-npx vercel alias set menubloc-frontend-pfzzto529-menuply.vercel.app menuply.com
-npx vercel alias set menubloc-frontend-pfzzto529-menuply.vercel.app www.menuply.com
-npx vercel alias set menubloc-frontend-pfzzto529-menuply.vercel.app crm.menuply.com
-npx vercel alias set menubloc-frontend-pfzzto529-menuply.vercel.app venues.menuply.com
+npx vercel alias set menubloc-frontend-90sk43a1c-menuply.vercel.app menuply.com
+npx vercel alias set menubloc-frontend-90sk43a1c-menuply.vercel.app www.menuply.com
+npx vercel alias set menubloc-frontend-90sk43a1c-menuply.vercel.app crm.menuply.com
+npx vercel alias set menubloc-frontend-90sk43a1c-menuply.vercel.app venues.menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://menuply.com
 bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 ```
@@ -71,8 +71,8 @@ bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 
 | Field | Value |
 |-------|-------|
-| Deployment | `menubloc-frontend-hawiq3j7u-menuply.vercel.app` |
-| Live bundle | `index-CY3vBzk4.js` |
+| Deployment | `menubloc-frontend-pfzzto529-menuply.vercel.app` |
+| Live bundle | `index-B0yNpfqt.js` |
 | FE commit | `4810f03` / tip-lock docs `89a336e` |
 | BE health | `14a98b5c` |
 | Notes | Pre–video-first `/feed` shell; also tagged `menuply-pre-video-first-consumer-2026-08-26` |
@@ -469,7 +469,7 @@ bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 | Field | Value |
 |-------|-------|
 | Git on origin | `492dd058` |
-| Live health SHA | `492dd0581c93258e3e82e9cea353ac7216c0bc75` |
+| Live health SHA | `12dfbf71562b86f3283c58f4be242f9e977e4eec` |
 
 ### Prior tip — Future plans calendar events (rollback target)
 
@@ -501,9 +501,9 @@ bash ../../scripts/assert-menuply-production-tip.sh https://www.menuply.com
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-backend-main` @ clean `main` |
 | Git on origin | `06b8ff3f` — diner visible crews + Future Plans collapse LKG lock (`GET /dining-crews/for-diner/:dinerId`) |
-| Live health SHA | `06b8ff3f6addd93762d98fe7d773239ffe0aabd3` |
+| Live health SHA | `12dfbf71562b86f3283c58f4be242f9e977e4eec` |
 | Health URL | `https://menubloc-backend-production.up.railway.app/health` |
-| `commit_hash` | `06b8ff3f6addd93762d98fe7d773239ffe0aabd3` |
+| `commit_hash` | `12dfbf71…` |
 | Migrations | `0250`–`0272` applied; `0273` is in git (Join Me allow-list, since `a1b751c3`) — apply status not independently verified this CPD |
 | Smoke | Health `06b8ff3f`; tip-gate PASS `4iy54g5qc` / `index-6H0iynJH.js` |
 
