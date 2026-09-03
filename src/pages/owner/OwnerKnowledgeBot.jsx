@@ -115,46 +115,80 @@ export default function OwnerKnowledgeBot() {
     instructions: "",
   });
   const [files, setFiles] = useState([]);
+  const [formHydrated, setFormHydrated] = useState(!resumeJobId);
 
-  const refreshJob = useCallback(async (id) => {
+  function urlsFromTextarea(value) {
+    return String(value || "")
+      .split("\n")
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+
+  function hydrateFormFromJob(jobRow) {
+    if (!jobRow) return;
+    setForm({
+      target_type: jobRow.target_type || "restaurant",
+      target_name: jobRow.target_name || "",
+      target_location: jobRow.target_location || "",
+      restaurant_id: jobRow.restaurant_id != null ? String(jobRow.restaurant_id) : "",
+      chain_id: jobRow.chain_id != null ? String(jobRow.chain_id) : "",
+      reference_urls: Array.isArray(jobRow.reference_urls) ? jobRow.reference_urls.join("\n") : "",
+      additional_urls: Array.isArray(jobRow.additional_urls) ? jobRow.additional_urls.join("\n") : "",
+      admin_notes: jobRow.admin_notes || "",
+      instructions: jobRow.instructions || "",
+    });
+    setFormHydrated(true);
+  }
+
+  const refreshJob = useCallback(async (id, { hydrateForm = false } = {}) => {
     const data = await getKnowledgeBotJob(id);
     setJob(data);
+    if (hydrateForm && data?.job) hydrateFormFromJob(data.job);
     return data;
   }, []);
 
   useEffect(() => {
     if (!resumeJobId) return;
-    refreshJob(resumeJobId).catch(() => setError("Could not load job."));
+    refreshJob(resumeJobId, { hydrateForm: true }).catch(() => setError("Could not load job."));
   }, [resumeJobId, refreshJob]);
 
+  function buildJobPayload(existingJob = null) {
+    const existing = existingJob || job?.job || null;
+    const refUrls = urlsFromTextarea(form.reference_urls);
+    const addUrls = urlsFromTextarea(form.additional_urls);
+    // Never wipe previously saved URLs/name with an unhydrated empty form (resume bug).
+    return {
+      target_type: form.target_type || existing?.target_type || "restaurant",
+      target_name: String(form.target_name || "").trim() || existing?.target_name || "",
+      target_location: String(form.target_location || "").trim() || existing?.target_location || "",
+      restaurant_id: form.restaurant_id
+        ? Number(form.restaurant_id)
+        : existing?.restaurant_id || null,
+      chain_id: form.chain_id ? Number(form.chain_id) : existing?.chain_id || null,
+      admin_notes: form.admin_notes || existing?.admin_notes || "",
+      instructions: form.instructions || existing?.instructions || "",
+      reference_urls: refUrls.length ? refUrls : existing?.reference_urls || [],
+      additional_urls: addUrls.length ? addUrls : existing?.additional_urls || [],
+    };
+  }
+
   async function ensureJob() {
+    if (!formHydrated && jobId) {
+      await refreshJob(jobId, { hydrateForm: true });
+    }
+    const payload = buildJobPayload();
     if (jobId) {
-      await updateKnowledgeBotJob(jobId, {
-        target_type: form.target_type,
-        target_name: form.target_name,
-        target_location: form.target_location,
-        restaurant_id: form.restaurant_id ? Number(form.restaurant_id) : null,
-        chain_id: form.chain_id ? Number(form.chain_id) : null,
-        admin_notes: form.admin_notes,
-        instructions: form.instructions,
-        reference_urls: form.reference_urls.split("\n").map((s) => s.trim()).filter(Boolean),
-        additional_urls: form.additional_urls.split("\n").map((s) => s.trim()).filter(Boolean),
-      });
+      const updated = await updateKnowledgeBotJob(jobId, payload);
+      if (updated?.job) {
+        setJob(updated);
+        hydrateFormFromJob(updated.job);
+      }
       return jobId;
     }
-    const created = await createKnowledgeBotJob({
-      target_type: form.target_type,
-      target_name: form.target_name,
-      target_location: form.target_location,
-      restaurant_id: form.restaurant_id ? Number(form.restaurant_id) : null,
-      chain_id: form.chain_id ? Number(form.chain_id) : null,
-      admin_notes: form.admin_notes,
-      instructions: form.instructions,
-      reference_urls: form.reference_urls.split("\n").map((s) => s.trim()).filter(Boolean),
-      additional_urls: form.additional_urls.split("\n").map((s) => s.trim()).filter(Boolean),
-    });
+    const created = await createKnowledgeBotJob(payload);
     setJobId(created.job.id);
     setJob(created);
+    hydrateFormFromJob(created.job);
     return created.job.id;
   }
 
@@ -162,6 +196,9 @@ export default function OwnerKnowledgeBot() {
     setBusy(true);
     setError("");
     try {
+      if (!String(form.target_name || "").trim()) {
+        throw new Error("Enter the restaurant or franchise name before continuing.");
+      }
       await ensureJob();
       setStep("evidence");
     } catch (err) {
@@ -175,6 +212,14 @@ export default function OwnerKnowledgeBot() {
     setBusy(true);
     setError("");
     try {
+      const hasUrls =
+        urlsFromTextarea(form.reference_urls).length > 0 ||
+        urlsFromTextarea(form.additional_urls).length > 0;
+      const existingUrls =
+        (job?.job?.reference_urls || []).length + (job?.job?.additional_urls || []).length;
+      if (!files.length && !hasUrls && !existingUrls && !(job?.evidence || []).length) {
+        throw new Error("Add at least one menu URL or upload screenshots/PDFs before continuing.");
+      }
       const id = await ensureJob();
       if (files.length) {
         const fd = new FormData();
@@ -182,7 +227,7 @@ export default function OwnerKnowledgeBot() {
         if (form.admin_notes) fd.append("note", form.admin_notes);
         await uploadKnowledgeBotEvidence(id, fd);
       }
-      await refreshJob(id);
+      await refreshJob(id, { hydrateForm: true });
       setStep("instructions");
     } catch (err) {
       setError(err.message || "Evidence upload failed.");
@@ -195,9 +240,12 @@ export default function OwnerKnowledgeBot() {
     setBusy(true);
     setError("");
     try {
+      if (!String(form.target_name || "").trim() && !job?.job?.target_name) {
+        throw new Error("Target name is required before research.");
+      }
       const id = await ensureJob();
       await runKnowledgeBotResearch(id);
-      await refreshJob(id);
+      await refreshJob(id, { hydrateForm: true });
       setStep("research");
     } catch (err) {
       setError(err.message || "Research failed.");
@@ -212,7 +260,7 @@ export default function OwnerKnowledgeBot() {
     try {
       const id = await ensureJob();
       await runKnowledgeBotPreview(id);
-      const data = await refreshJob(id);
+      const data = await refreshJob(id, { hydrateForm: true });
       setJob(data);
       setStep("preview");
     } catch (err) {
@@ -228,7 +276,7 @@ export default function OwnerKnowledgeBot() {
     try {
       const id = await ensureJob();
       await applyKnowledgeBotJob(id, { confirm_large: confirmLarge });
-      const data = await refreshJob(id);
+      const data = await refreshJob(id, { hydrateForm: true });
       setJob(data);
       setStep("apply");
     } catch (err) {
@@ -352,10 +400,10 @@ export default function OwnerKnowledgeBot() {
                 onChange={(e) => setForm((f) => ({ ...f, additional_urls: e.target.value }))}
               />
             </Field>
-            <Field label="Screenshots, images, PDFs, menu documents">
+            <Field label="Screenshots, images, PDFs, menu documents (optional if you pasted menu URLs above)">
               <input type="file" multiple accept="image/*,.pdf,.txt,.md" onChange={(e) => setFiles(Array.from(e.target.files || []))} />
               <div style={{ marginTop: 8, fontSize: 12, color: OWNER_COLORS.muted, lineHeight: 1.45 }}>
-                Screenshots are OCR’d (Adobe image→PDF). Include address, phone, hours, and menu items when possible — missing prices still keep dishes.
+                Menu URLs are fetched and parsed for dishes. Screenshots are OCR’d (Adobe image→PDF). For a franchise, set Target type to Franchise on step 1 and name the brand (e.g. Panera Bread).
               </div>
             </Field>
             <Field label="Administrator notes">
