@@ -77,6 +77,8 @@ test("See Who's Eating reel: guest watch, CK dish, existing camera, Connect noti
   assert.match(read("src/components/consumer/feed/FeedPlaceCaption.jsx"), /feed-video-restaurant-caption/);
   assert.match(read("src/components/consumer/feed/FeedPlaceCaption.jsx"), /feed-video-menu-item-caption/);
   assert.match(read("src/lib/liveFeedCategory.js"), /resolveFeedPlaceCaption/);
+  assert.match(read("src/lib/liveFeedCategory.js"), /liveFeedRestaurantProfilePath/);
+  assert.doesNotMatch(read("src/lib/liveFeedCategory.js"), /`\/r\/\$\{/);
   assert.match(read("src/pages/consumer/feed/FeedHomePage.jsx"), /isDesktop \? 0 : FEED_PRIMARY_NAV_HEIGHT/);
   assert.match(read("src/pages/consumer/feed/FeedHomePage.jsx"), /feed-home-desktop-nav-coach/);
   assert.match(read("src/lib/feedVerticalReelNavigationCopy.js"), /arrow keys/);

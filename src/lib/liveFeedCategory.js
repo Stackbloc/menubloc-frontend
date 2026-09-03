@@ -1,7 +1,4 @@
-/**
- * Live Feed category captions + channel dials (See Who's Eating CRT).
- * Caption labels match dial short names (not legacy hub section titles).
- */
+import { restaurantPath } from "./canonicalUrlCore.js";
 
 /** Radio stations on the green CRT (vertical dial strip). Labels are title case — not ALL CAPS. */
 export const LIVE_FEED_CHANNELS = [
@@ -46,16 +43,30 @@ export function dinerPeerProfilePath(dinerId) {
   return `/account/connections/${encodeURIComponent(String(id))}`;
 }
 
+/** Consumer restaurant profile — canonical /restaurants/…, not /r/ QR links. */
+export function liveFeedRestaurantProfilePath(item = {}) {
+  const slug = String(
+    item?.referenced_restaurant?.slug || item?.restaurant_slug || item?.creator?.slug || ""
+  ).trim();
+  const city = item?.restaurant_city || item?.referenced_restaurant?.city || item?.creator?.city || null;
+  const state = item?.restaurant_state || item?.referenced_restaurant?.state || item?.creator?.state || null;
+  const id =
+    item?.restaurant_id ??
+    item?.referenced_restaurant?.id ??
+    item?.creator?.id ??
+    null;
+  return (
+    restaurantPath({ slug, city, state }) ||
+    (id != null ? `/restaurants/${encodeURIComponent(String(id))}` : null)
+  );
+}
+
 export function liveFeedCreatorProfilePath(item) {
   if (!item) return null;
   if (isLiveFeedPlatformCreator(item)) return null;
   if (isLiveFeedVenueItem(item)) return venueLiveFeedPath(item.venue);
   if (item?.creator_type === "restaurant" || item?.poster_type === "restaurant") {
-    const href = String(item?.creator?.href || "").trim();
-    if (href) return href;
-    const slug = String(item?.creator?.slug || "").trim();
-    if (slug) return `/r/${encodeURIComponent(slug)}`;
-    return null;
+    return liveFeedRestaurantProfilePath(item);
   }
   return dinerPeerProfilePath(item?.diner?.id);
 }
@@ -164,13 +175,16 @@ export function resolveLiveFeedContentLink(item, { abbreviateRestaurant = false 
   }
 
   const restaurantSlug = String(item.restaurant_slug || "").trim();
-  if (restaurantSlug) {
+  if (restaurantSlug || item.restaurant_id) {
     const name = liveFeedRestaurantName(item) || "Restaurant";
-    return {
-      href: `/r/${encodeURIComponent(restaurantSlug)}`,
-      label: name,
-      kind: "restaurant",
-    };
+    const href = liveFeedRestaurantProfilePath(item);
+    if (href) {
+      return {
+        href,
+        label: name,
+        kind: "restaurant",
+      };
+    }
   }
 
   if (isLiveFeedVenueItem(item)) {
@@ -204,10 +218,11 @@ export function resolveLiveFeedCaptionLinks(item, { abbreviateRestaurant = false
   const restaurantName = String(
     item.referenced_restaurant?.name || item.restaurant_name || ""
   ).trim();
+  const restaurantHref = liveFeedRestaurantProfilePath(item);
   const restaurant =
-    restaurantSlug && restaurantName
+    restaurantName && restaurantHref
       ? {
-          href: item.referenced_restaurant?.href || `/r/${encodeURIComponent(restaurantSlug)}`,
+          href: restaurantHref,
           label: abbreviateRestaurant
             ? abbreviateLiveFeedRestaurantName(restaurantName)
             : restaurantName,
@@ -244,12 +259,7 @@ export function resolveFeedPlaceCaption(item) {
     (foodName && foodName !== restaurantLabel ? foodName : null);
 
   let resolvedRestaurant = restaurantLabel;
-  let resolvedRestaurantHref =
-    links.restaurant?.href ||
-    item.referenced_restaurant?.href ||
-    (item.restaurant_slug
-      ? `/r/${encodeURIComponent(String(item.restaurant_slug).trim())}`
-      : null);
+  let resolvedRestaurantHref = liveFeedRestaurantProfilePath(item);
 
   if (!resolvedRestaurant && links.venue?.label) {
     resolvedRestaurant = links.venue.label;
