@@ -60,6 +60,14 @@ test("Feed deals: video swipe reel, no meal chips", () => {
   assert.match(swipe, /overlayContained/);
   assert.match(swipe, /meal_time_caption|headline/);
   assert.match(swipe, /feedVerticalReelNavigationCopy/);
+  // Same audio contract as Feed home regular videos
+  assert.match(swipe, /attemptFeedVideoAutoplay/);
+  assert.match(swipe, /preferSound:\s*true/);
+  assert.match(swipe, /muted=\{videoMuted\}/);
+  assert.match(swipe, /feed-deals-sound-toggle/);
+  assert.match(swipe, /feed-deals-meta-dock/);
+  assert.match(swipe, /metaDesktop/);
+  assert.doesNotMatch(swipe, /^\s*muted\s*$/m);
   assert.match(read("src/lib/feedVerticalReelNavigationCopy.js"), /Swipe up|Arrow key/);
 
   const home = read("src/pages/consumer/feed/FeedHomePage.jsx");

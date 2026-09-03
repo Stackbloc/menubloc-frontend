@@ -1,5 +1,7 @@
 /**
  * TikTok-style swipe reel for restaurant deal videos (Feed Deals).
+ * Sound on by default (same as Feed home); muted fallback if autoplay blocked. Tap/click toggles mute.
+ * Meta dock: desktop shell lifts captions so meal-time badges do not clip; mobile caption layout unchanged.
  */
 
 import { useEffect, useRef, useState } from "react";
@@ -8,6 +10,11 @@ import { Link } from "react-router-dom";
 import { stripMediaUrlFragment } from "../../../lib/menuplyLiveFeedControl.js";
 import { recordFeedMenuOpen, restaurantRefFromDealItem } from "../../../lib/feedMenuLibrary.js";
 import { useFeedShellDesktop } from "../../../lib/useFeedShellDesktop.js";
+import {
+  attemptFeedVideoAutoplay,
+  defaultFeedVideoMuted,
+  feedVideoElementStyle,
+} from "../../../lib/feedVideoPresentation.js";
 import {
   formatVerticalReelCue,
   formatVerticalReelNavHint,
@@ -23,14 +30,20 @@ export default function DealVideoSwipe({
   containInShell = false,
 }) {
   const [index, setIndex] = useState(startIndex);
+  const [videoMuted, setVideoMuted] = useState(() => defaultFeedVideoMuted("feedHome"));
   const isDesktopViewport = useFeedShellDesktop();
   const videoRef = useRef(null);
   const touchStartY = useRef(null);
+  const ignoreVideoClickRef = useRef(false);
   const item = items[index] || null;
 
   useEffect(() => {
     setIndex(Math.min(Math.max(0, startIndex), Math.max(0, items.length - 1)));
   }, [startIndex, items.length]);
+
+  useEffect(() => {
+    setVideoMuted(defaultFeedVideoMuted("feedHome"));
+  }, [index, item?.id]);
 
   useEffect(() => {
     const prevOverflow = document.body.style.overflow;
@@ -47,20 +60,37 @@ export default function DealVideoSwipe({
     const el = videoRef.current;
     if (!el) return undefined;
     el.currentTime = 0;
+    let cancelled = false;
+
     const onReady = () => {
-      const p = el.play();
-      if (p && typeof p.catch === "function") p.catch(() => {});
+      if (cancelled) return;
+      attemptFeedVideoAutoplay(el, { preferSound: true }).then(({ muted }) => {
+        if (!cancelled) setVideoMuted(muted);
+      });
     };
+
     if (el.readyState >= 2) onReady();
     else {
       el.addEventListener("loadeddata", onReady);
       el.addEventListener("canplay", onReady);
     }
     return () => {
+      cancelled = true;
       el.removeEventListener("loadeddata", onReady);
       el.removeEventListener("canplay", onReady);
     };
   }, [index, item?.id]);
+
+  useEffect(() => {
+    const el = videoRef.current;
+    if (!el) return;
+    el.muted = videoMuted;
+    if (!videoMuted) {
+      el.volume = 1;
+      const p = el.play();
+      if (p && typeof p.catch === "function") p.catch(() => {});
+    }
+  }, [videoMuted, item?.id]);
 
   useEffect(() => {
     function onKey(e) {
@@ -103,12 +133,54 @@ export default function DealVideoSwipe({
     else goPrev();
   }
 
+  function applyVideoSoundState(nextMuted) {
+    const el = videoRef.current;
+    if (!el) return;
+    el.muted = nextMuted;
+    el.defaultMuted = nextMuted;
+    if (!nextMuted) {
+      el.volume = 1;
+      const p = el.play();
+      if (p && typeof p.catch === "function") p.catch(() => {});
+    }
+  }
+
+  function onToggleVideoSound(e) {
+    e?.preventDefault?.();
+    e?.stopPropagation?.();
+    setVideoMuted((prev) => {
+      const next = !prev;
+      applyVideoSoundState(next);
+      return next;
+    });
+  }
+
+  function onVideoPointerUp(e) {
+    if (e.pointerType !== "touch") return;
+    ignoreVideoClickRef.current = true;
+    onToggleVideoSound(e);
+  }
+
+  function onVideoClick(e) {
+    if (ignoreVideoClickRef.current) {
+      ignoreVideoClickRef.current = false;
+      return;
+    }
+    onToggleVideoSound(e);
+  }
+
   if (typeof document === "undefined") return null;
+
+  const safeBottomInset = Math.max(0, Number(bottomInset) || 0);
+  // Mobile captions unchanged. Desktop shell (incl. laptop widths): lift meta so meal badges do not clip.
+  const metaBottomPad = isDesktopViewport
+    ? `calc(${safeBottomInset}px + max(28px, env(safe-area-inset-bottom)) + 12px)`
+    : `calc(${safeBottomInset}px + max(12px, env(safe-area-inset-bottom)))`;
 
   const overlayStyle = {
     ...styles.overlay,
     ...(containInShell ? styles.overlayContained : null),
-    paddingBottom: Math.max(0, Number(bottomInset) || 0),
+    paddingBottom: safeBottomInset,
   };
 
   if (!item) {
@@ -129,6 +201,9 @@ export default function DealVideoSwipe({
 
   const atEnd = index >= items.length - 1;
   const atStart = index <= 0;
+  const soundPromptLabel = isDesktopViewport ? "Click for sound" : "Tap for sound";
+  const soundToggleLabel = videoMuted ? soundPromptLabel : "Mute";
+  const showDesktopSoundLayer = Boolean(isDesktopViewport && item?.video_url && videoMuted);
 
   const ui = (
     <div
@@ -146,21 +221,54 @@ export default function DealVideoSwipe({
         key={item.id}
         ref={videoRef}
         src={stripMediaUrlFragment(item.video_url)}
-        style={styles.video}
+        style={{
+          ...styles.video,
+          ...feedVideoElementStyle({ desktopFeedShell: containInShell && isDesktopViewport }),
+        }}
         playsInline
-        muted
+        muted={videoMuted}
         loop
         autoPlay
         controls={false}
         preload="auto"
         data-testid="feed-deals-video"
+        onClick={onVideoClick}
+        onPointerUp={onVideoPointerUp}
       />
+
+      {showDesktopSoundLayer ? (
+        <button
+          type="button"
+          style={styles.videoTapLayer}
+          aria-label={videoMuted ? soundToggleLabel : "Mute video"}
+          data-testid="feed-deals-video-sound-layer"
+          onClick={onToggleVideoSound}
+        />
+      ) : null}
+
+      <button
+        type="button"
+        style={{
+          ...styles.soundToggle,
+          // Meal filter chips sit top-left (z50); keep sound control clear of them.
+          top: "max(16px, env(safe-area-inset-top))",
+          left: "auto",
+          right: "max(12px, env(safe-area-inset-right))",
+        }}
+        aria-label={videoMuted ? soundPromptLabel : "Mute video"}
+        data-testid="feed-deals-sound-toggle"
+        onClick={onToggleVideoSound}
+      >
+        {soundToggleLabel}
+      </button>
 
       <div
         style={{
           ...styles.meta,
-          bottom: `calc(${Math.max(0, Number(bottomInset) || 0)}px + max(12px, env(safe-area-inset-bottom)))`,
+          ...(isDesktopViewport ? styles.metaDesktop : null),
+          bottom: metaBottomPad,
         }}
+        data-testid="feed-deals-meta-dock"
       >
         {item.feed_promoted ? (
           <span style={styles.sponsored} data-testid="feed-deals-sponsored">
@@ -222,7 +330,13 @@ export default function DealVideoSwipe({
       </div>
 
       {!atEnd ? (
-        <div style={styles.swipeCue} aria-hidden="true">
+        <div
+          style={{
+            ...styles.swipeCue,
+            ...(isDesktopViewport ? styles.swipeCueDesktop : null),
+          }}
+          aria-hidden="true"
+        >
           {formatVerticalReelCue({ isDesktopViewport })}
         </div>
       ) : null}
@@ -255,18 +369,53 @@ const styles = {
     inset: 0,
     width: "100%",
     height: "100%",
-    objectFit: "cover",
     background: "#000",
+    cursor: "pointer",
+    zIndex: 1,
   },
+  videoTapLayer: {
+    position: "absolute",
+    inset: 0,
+    zIndex: 2,
+    border: "none",
+    padding: 0,
+    margin: 0,
+    background: "transparent",
+    cursor: "pointer",
+    pointerEvents: "auto",
+  },
+  soundToggle: {
+    position: "absolute",
+    zIndex: 55,
+    border: "1px solid rgba(255,255,255,0.35)",
+    borderRadius: 999,
+    padding: "8px 12px",
+    background: "rgba(0,0,0,0.55)",
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: 700,
+    cursor: "pointer",
+    pointerEvents: "auto",
+  },
+  // Mobile meta matches prior working caption layout (no maxHeight clamp).
   meta: {
     position: "absolute",
     left: 0,
     right: 0,
-    zIndex: 2,
+    zIndex: 3,
     padding: "0 16px 8px",
     background: "linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 100%)",
     color: "#fff",
     pointerEvents: "none",
+  },
+  metaDesktop: {
+    maxHeight: "38%",
+    overflowY: "auto",
+    paddingLeft: "max(20px, env(safe-area-inset-left))",
+    paddingRight: "max(20px, env(safe-area-inset-right))",
+    paddingBottom: 16,
+    background:
+      "linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.55) 28%, rgba(0,0,0,0.9) 100%)",
   },
   sponsored: {
     display: "inline-block",
@@ -371,6 +520,9 @@ const styles = {
     fontSize: 12,
     fontWeight: 600,
     pointerEvents: "none",
+  },
+  swipeCueDesktop: {
+    bottom: "calc(36% + env(safe-area-inset-bottom))",
   },
   empty: {
     position: "absolute",
