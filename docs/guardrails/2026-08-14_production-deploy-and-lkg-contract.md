@@ -48,12 +48,12 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-backend-main` @ clean `main` |
-| Git on origin | `12dfbf71` — Domino's screenshot menu seed CPD |
-| Live health SHA | `12dfbf71562b86f3283c58f4be242f9e977e4eec` |
+| Git on origin | `3f24f0b0` — Domino's screenshot menu seed CPD finalize |
+| Live health SHA | `3f24f0b0bb2511fed04e399b9b3c7833453214d0` |
 | Health URL | `https://menubloc-backend-production.up.railway.app/health` |
-| `commit_hash` | `12dfbf71…` |
+| `commit_hash` | `3f24f0b0…` |
 | DB | migrations through `0312`+; **0305** `eat_invitations.attached_menu_id` applied 2026-09-03 |
-| Smoke | BE Domino's menu seed CPD 2026-09-03 (health `12dfbf71`); FE tip unchanged |
+| Smoke | BE Domino's menu seed CPD 2026-09-03 (health `3f24f0b0`); FE tip unchanged |
 
 ### Restore current tip (if tip-gate fails mid-change)
 
