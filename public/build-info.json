@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "f41adb5a94335cdf4b966539f88a72edc0524589",
-  "gitShortSha": "f41adb5",
+  "gitSha": "31348996da51154e1325d152c31a4d0ecb9f560d",
+  "gitShortSha": "31348996",
   "branch": "main",
-  "buildTime": "2026-08-26T22:26:13.950Z",
+  "buildTime": "2026-09-03T15:12:15.611Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "docs(deploy): lock tip after feed center X video create CPD"
+  "commitMessage": "docs: lock production tip after Share & Invite CPD"
 }
