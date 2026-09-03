@@ -60,6 +60,7 @@ export const getOwnerGrowthDetails = (params = {}) => {
   if (params.interval) qs.set("interval", params.interval);
   if (params.plan_code) qs.set("plan_code", params.plan_code);
   if (params.limit != null) qs.set("limit", String(params.limit));
+  qs.set("timezone", params.timezone || "America/Los_Angeles");
   const serialized = qs.toString();
   return get(`/api/owner/dashboard/growth/details${serialized ? `?${serialized}` : ""}`);
 };

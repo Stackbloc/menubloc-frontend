@@ -238,7 +238,11 @@ function GrowthMetricsPanel({ growth }) {
                 <td style={TD_STYLE}>
                   <button
                     type="button"
-                    onClick={() => toggleSelection({ metric: row.id, interval: "today" })}
+                    onClick={() => {
+                      const preferred =
+                        intervals.find((key) => Number(row.values?.[key]) > 0) || "today";
+                      toggleSelection({ metric: row.id, interval: preferred });
+                    }}
                     data-testid={`growth-metric-${row.id}`}
                     style={{
                       border: "none",
@@ -448,6 +452,28 @@ function GrowthCountButton({ value, onClick, active, large = false, testId }) {
   );
 }
 
+function formatGrowthDetailCell(key, value) {
+  if (value == null || value === "") return "—";
+  if (
+    key === "logged_in_at" ||
+    key === "signed_up_at" ||
+    key === "abandoned_at" ||
+    key === "created_at"
+  ) {
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return String(value);
+    return d.toLocaleString("en-US", {
+      timeZone: "America/Los_Angeles",
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  }
+  return value;
+}
+
 function GrowthDetailPanel({ selection, onClose }) {
   const [payload, setPayload] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -462,12 +488,15 @@ function GrowthDetailPanel({ selection, onClose }) {
       metric: selection.metric,
       interval: selection.interval,
       plan_code: selection.plan_code || undefined,
+      timezone: "America/Los_Angeles",
     })
       .then((data) => {
         if (!cancelled) setPayload(data);
       })
-      .catch(() => {
-        if (!cancelled) setError("Could not load growth details.");
+      .catch((err) => {
+        if (!cancelled) {
+          setError(err?.message || "Could not load growth details.");
+        }
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -479,7 +508,11 @@ function GrowthDetailPanel({ selection, onClose }) {
 
   const title = GROWTH_METRIC_LABELS[selection.metric] || selection.metric;
   const intervalLabel = INTERVAL_LABELS[selection.interval] || selection.interval;
-  const columns = (payload?.columns || []).map((col) => [col.label, col.key]);
+  const columns = (payload?.columns || []).map((col) => [
+    col.label,
+    col.key,
+    (row) => formatGrowthDetailCell(col.key, row[col.key]),
+  ]);
   const rows = payload?.rows || [];
 
   return (
@@ -502,7 +535,13 @@ function GrowthDetailPanel({ selection, onClose }) {
           <div style={{ marginTop: 4, fontSize: 12, color: OWNER_COLORS.muted }}>
             {loading
               ? "Loading details…"
-              : `${formatCount(payload?.total)} total${rows.length && payload?.total > rows.length ? ` (showing ${rows.length})` : ""}`}
+              : `${formatCount(payload?.total)} total${
+                  rows.length && payload?.total > rows.length ? ` (showing ${rows.length})` : ""
+                }${
+                  payload?.from && payload?.to
+                    ? ` · ${payload.from} → ${payload.to} (${payload.timezone || "America/Los_Angeles"})`
+                    : ""
+                }`}
           </div>
         </div>
         <button
@@ -530,7 +569,7 @@ function GrowthDetailPanel({ selection, onClose }) {
           <SimpleTable
             rows={rows}
             columns={columns.length ? columns : [["Detail", "id"]]}
-            emptyLabel="No events in this window."
+            emptyLabel="No events in this window for this metric."
           />
         </div>
       ) : null}

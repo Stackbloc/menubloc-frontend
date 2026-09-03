@@ -32,5 +32,13 @@ describe("owner growth detail drilldowns", () => {
     assert.match(dash, /market area/i);
     assert.match(dash, /data-testid=\{`growth-metric-\$\{row\.id\}`\}/);
     assert.match(dash, /View details →/);
+    assert.match(dash, /America\/Los_Angeles/);
+    assert.match(dash, /formatGrowthDetailCell/);
+    assert.match(dash, /intervals\.find\(\(key\) => Number\(row\.values/);
+  });
+
+  it("ownerApi growth details always send America/Los_Angeles timezone", () => {
+    const api = read("src/lib/ownerApi.js");
+    assert.match(api, /timezone.*America\/Los_Angeles|America\/Los_Angeles.*timezone/);
   });
 });
