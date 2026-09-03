@@ -312,7 +312,7 @@ export function CityVisitorInsightPanel({ locationLabel, range, onClose }) {
         <div>
           <SectionTitle
             title={`Visitors in ${locationLabel}`}
-            subtitle="How these market-attributed visitor sessions arrived and what they searched or viewed."
+            subtitle="Only activity attributed to this city (market or restaurant city/state) — not other markets from the same browser."
           />
         </div>
         <button
