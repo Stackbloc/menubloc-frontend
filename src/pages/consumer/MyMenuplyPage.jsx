@@ -47,6 +47,9 @@ import {
   uploadDinerAvatar,
   uploadConsumerProfileMedia,
   deleteConsumerProfileMedia,
+  getPublicFlashVideos,
+  uploadProfileMedia,
+  deleteProfileMedia,
   uploadWhatIAteTodayPhoto,
   uploadEatingPlanMedia,
   updateWhatIAteToday,
@@ -179,6 +182,9 @@ export default function MyMenuplyPage() {
   const [identityNotice, setIdentityNotice] = useState("");
   const [identityError, setIdentityError] = useState("");
   const [profileMedia, setProfileMedia] = useState([]);
+  const [flashVideos, setFlashVideos] = useState([]);
+  const [flashBusy, setFlashBusy] = useState(false);
+  const [flashError, setFlashError] = useState("");
   const [postBusy, setPostBusy] = useState("");
   const [eating, setEating] = useState([]);
   const [eatingCalendarDays, setEatingCalendarDays] = useState([]);
@@ -251,6 +257,7 @@ export default function MyMenuplyPage() {
         socialEventRes,
         mediaRes,
         homeRes,
+        flashRes,
       ] = await Promise.all([
         getConsumerProfile().catch(() => null),
         listMyFoodActivity(20).catch(() => ({ activities: [] })),
@@ -275,6 +282,9 @@ export default function MyMenuplyPage() {
         consumer?.id
           ? fetchUserHomemadeDishes(consumer.id).catch(() => ({ dishes: [] }))
           : Promise.resolve({ dishes: [] }),
+        consumer?.id
+          ? getPublicFlashVideos(consumer.id).catch(() => ({ items: [] }))
+          : Promise.resolve({ items: [] }),
       ]);
       const nextProfile = profileRes?.profile || null;
       setProfile(nextProfile);
@@ -287,7 +297,10 @@ export default function MyMenuplyPage() {
           : []
       );
       setAvatarUrl(resolveConsumerMediaUrl(nextProfile?.avatar_url || ""));
-      setProfileMedia(mediaRes?.items || []);
+      setProfileMedia(
+        (mediaRes?.items || []).filter((row) => String(row?.media_subtype || "") !== "flash_video")
+      );
+      setFlashVideos(flashRes?.items || []);
       const activityItems = mapFoodActivityForHub(activityRes.activities || []);
       const diaryItems = mapDiaryEntriesForHub(ateRes.entries || []);
       setEating(mergeEatingFeedForHub(diaryItems, activityItems).slice(0, 12));
@@ -633,6 +646,39 @@ export default function MyMenuplyPage() {
       setIdentityError(err.message || "Unable to remove profile media");
     } finally {
       setIdentityBusy(false);
+    }
+  }
+
+  async function onFlashVideoAdd(file) {
+    if (!file) return;
+    setFlashBusy(true);
+    setFlashError("");
+    setIdentityNotice("");
+    try {
+      const data = await uploadProfileMedia(file, { media_subtype: "flash_video" });
+      const item = data?.item;
+      if (item) setFlashVideos((prev) => [...prev, item]);
+      setIdentityNotice("Flash Video added.");
+    } catch (err) {
+      setFlashError(err.message || "Unable to upload Flash Video");
+    } finally {
+      setFlashBusy(false);
+    }
+  }
+
+  async function onFlashVideoRemove(item) {
+    if (!item?.id) return;
+    setFlashBusy(true);
+    setFlashError("");
+    setIdentityNotice("");
+    try {
+      await deleteProfileMedia(item.id);
+      setFlashVideos((prev) => prev.filter((row) => Number(row.id) !== Number(item.id)));
+      setIdentityNotice("Flash Video removed.");
+    } catch (err) {
+      setFlashError(err.message || "Unable to remove Flash Video");
+    } finally {
+      setFlashBusy(false);
     }
   }
 
@@ -1434,6 +1480,11 @@ export default function MyMenuplyPage() {
               onAvatarFile={onAvatarFile}
               onAboutSave={onAboutSave}
               onPersonalContextSave={onPersonalContextSave}
+              flashVideos={flashVideos}
+              flashBusy={flashBusy}
+              flashError={flashError}
+              onFlashVideoAdd={onFlashVideoAdd}
+              onFlashVideoRemove={onFlashVideoRemove}
               profileMedia={profileMedia}
               onProfileMediaAdd={onProfileMediaAdd}
               onProfileMediaRemove={onProfileMediaRemove}

@@ -5,6 +5,7 @@ import {
   HOBBIES_MAX,
   normalizePersonalContextInput,
 } from "../../../lib/dinerPersonalContext.js";
+import { FlashVideosEditorField } from "./FlashVideosBlock.jsx";
 import * as s from "./myMenuplyStyles.js";
 
 function emptyContext() {
@@ -21,6 +22,11 @@ export default function DinerPersonalContextEditor({
   value = null,
   busy = false,
   onSave,
+  flashVideos = [],
+  flashBusy = false,
+  flashError = "",
+  onFlashVideoAdd,
+  onFlashVideoRemove,
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(() => ({
@@ -196,6 +202,16 @@ export default function DinerPersonalContextEditor({
             onBlur={saveIfChanged}
           />
         </label>
+
+        {typeof onFlashVideoAdd === "function" ? (
+          <FlashVideosEditorField
+            items={flashVideos}
+            busy={busy || saving || flashBusy}
+            error={flashError}
+            onAddFile={onFlashVideoAdd}
+            onRemove={onFlashVideoRemove}
+          />
+        ) : null}
       </div>
 
       {occupationSet ? (

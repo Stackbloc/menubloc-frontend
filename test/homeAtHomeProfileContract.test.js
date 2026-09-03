@@ -22,7 +22,11 @@ test("@home photographs home-cooked meals on the diner profile", () => {
   assert.match(section, /allowVideo=\{false\}/);
   assert.match(section, /facingMode="environment"/);
   assert.match(section, /Add your first home-cooked dish/);
-  assert.match(section, /Photograph a meal/);
+  assert.match(section, /Take photo or upload/);
+  assert.match(section, /MenuplyMediaPicker/);
+  assert.match(section, /data-testid="home-at-home-add"/);
+  assert.doesNotMatch(section, /Photograph a meal/);
+  assert.doesNotMatch(section, /onOpenLibrary/);
   assert.match(section, /video_url/);
   assert.doesNotMatch(section, /createWhatIAteToday/);
   assert.doesNotMatch(section, /FEED_CONTENT_KINDS/);

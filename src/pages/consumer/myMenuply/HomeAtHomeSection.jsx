@@ -106,23 +106,6 @@ function HomeDishCell({ dish, readOnly, onDelete, deleteBusy }) {
   );
 }
 
-function AddHomePhotoCell({ busy, onOpenCamera, onOpenLibrary }) {
-  return (
-    <div style={grid.addCell} data-testid="home-at-home-add">
-      <span style={grid.addPlus}>+</span>
-      <span style={grid.addLabel}>Photograph a meal</span>
-      <div style={grid.addActions}>
-        <button type="button" style={grid.addBtn} disabled={busy} onClick={onOpenCamera}>
-          Camera
-        </button>
-        <button type="button" style={grid.addBtn} disabled={busy} onClick={onOpenLibrary}>
-          Library
-        </button>
-      </div>
-    </div>
-  );
-}
-
 export default function HomeAtHomeSection({
   dishes = [],
   readOnly = false,
@@ -131,7 +114,6 @@ export default function HomeAtHomeSection({
   onPhotoFile,
   onDelete,
 }) {
-  const [pickerSource, setPickerSource] = useState(null);
   const rows = Array.isArray(dishes)
     ? dishes.filter((d) => d && (d.photo_url || d.video_url || d.id))
     : [];
@@ -152,43 +134,35 @@ export default function HomeAtHomeSection({
         </p>
       ) : null}
 
-      <div style={grid.grid}>
-        {rows.map((dish) => (
-          <HomeDishCell
-            key={dish.id || dish.homemade_dish_id || dish.photo_url}
-            dish={dish}
-            readOnly={readOnly}
-            onDelete={onDelete}
-            deleteBusy={busy}
-          />
-        ))}
-        {!readOnly ? (
-          <AddHomePhotoCell
-            busy={busy}
-            onOpenCamera={() => setPickerSource("camera")}
-            onOpenLibrary={() => setPickerSource("library")}
-          />
-        ) : null}
-      </div>
+      {!readOnly ? (
+        <div style={grid.addRow} data-testid="home-at-home-add">
+          <span title="Take photo or upload">
+            <MenuplyMediaPicker
+              onFile={(file) => onPhotoFile?.(file)}
+              disabled={busy}
+              facingMode="environment"
+              source="camera"
+              allowPhoto
+              allowVideo={false}
+              showPreview={false}
+              testId="home-at-home-picker"
+              ariaLabel="Take photo or upload"
+            />
+          </span>
+        </div>
+      ) : null}
 
-      {!readOnly && pickerSource ? (
-        <div style={grid.pickerDock} data-testid="home-at-home-picker-dock">
-          <MenuplyMediaPicker
-            key={`home-at-home-${pickerSource}`}
-            onFile={(file) => {
-              setPickerSource(null);
-              onPhotoFile?.(file);
-            }}
-            disabled={busy}
-            facingMode="environment"
-            source={pickerSource === "library" ? "library" : "camera"}
-            allowPhoto
-            allowVideo={false}
-            showPreview={false}
-            openOnMount
-            testId="home-at-home-picker"
-            ariaLabel="Photograph a home-cooked meal"
-          />
+      {rows.length ? (
+        <div style={grid.grid}>
+          {rows.map((dish) => (
+            <HomeDishCell
+              key={dish.id || dish.homemade_dish_id || dish.photo_url}
+              dish={dish}
+              readOnly={readOnly}
+              onDelete={onDelete}
+              deleteBusy={busy}
+            />
+          ))}
         </div>
       ) : null}
     </section>
@@ -196,6 +170,11 @@ export default function HomeAtHomeSection({
 }
 
 const grid = {
+  addRow: {
+    marginTop: 10,
+    display: "flex",
+    alignItems: "center",
+  },
   grid: {
     display: "grid",
     gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
@@ -262,33 +241,6 @@ const grid = {
     alignItems: "center",
     justifyContent: "center",
   },
-  addCell: {
-    aspectRatio: "1 / 1",
-    borderRadius: 8,
-    border: "1.5px dashed #86efac",
-    background: "#f0fdf4",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    padding: 8,
-    boxSizing: "border-box",
-  },
-  addPlus: { fontSize: 26, lineHeight: 1, color: "#166534" },
-  addLabel: { fontSize: 11, fontWeight: 700, color: "#14532d", textAlign: "center" },
-  addActions: { display: "flex", gap: 6 },
-  addBtn: {
-    fontSize: 11,
-    fontWeight: 700,
-    padding: "4px 8px",
-    borderRadius: 999,
-    border: "1px solid #86efac",
-    background: "#fff",
-    color: "#14532d",
-    cursor: "pointer",
-  },
-  pickerDock: { marginTop: 10 },
   lightbox: {
     position: "fixed",
     inset: 0,

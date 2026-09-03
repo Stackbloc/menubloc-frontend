@@ -7,6 +7,7 @@ import { GREEN_BRIGHT } from "./myMenuplyStyles.js";
 import { MY_MENUPLY_MONTH_IN_FOOD_PATH } from "../../../lib/myMenuplyRoutes.js";
 import { buildDinerPersonalContextLines } from "../../../lib/dinerPersonalContext.js";
 import DinerPersonalContextEditor from "./DinerPersonalContextEditor.jsx";
+import { FlashVideosDisplay } from "./FlashVideosBlock.jsx";
 
 const ABOUT_MAX = 280;
 const ABOUT_PLACEHOLDER =
@@ -26,6 +27,11 @@ export default function DinerIdentityHero({
   onAvatarFile,
   onAboutSave,
   onPersonalContextSave,
+  flashVideos = [],
+  flashBusy = false,
+  flashError = "",
+  onFlashVideoAdd,
+  onFlashVideoRemove,
   profileMedia = [],
   onProfileMediaAdd,
   onProfileMediaRemove,
@@ -191,11 +197,23 @@ export default function DinerIdentityHero({
             </div>
           ) : null}
 
+          <FlashVideosDisplay
+            items={flashVideos}
+            readOnly={readOnly}
+            busy={busy || flashBusy}
+            onRemove={readOnly ? undefined : onFlashVideoRemove}
+          />
+
           {!readOnly && onPersonalContextSave ? (
             <DinerPersonalContextEditor
               value={personalContext}
               busy={busy || saving}
               onSave={onPersonalContextSave}
+              flashVideos={flashVideos}
+              flashBusy={flashBusy}
+              flashError={flashError}
+              onFlashVideoAdd={onFlashVideoAdd}
+              onFlashVideoRemove={onFlashVideoRemove}
             />
           ) : null}
 

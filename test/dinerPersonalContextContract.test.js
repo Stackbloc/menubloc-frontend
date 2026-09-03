@@ -72,6 +72,9 @@ test("DinerIdentityHero renders personal context beneath name without empty plac
   assert.match(editor, /diner-occupation-input/);
   assert.match(editor, /diner-hometown-input/);
   assert.match(editor, /diner-hobbies-input/);
+  assert.match(editor, /FlashVideosEditorField/);
+  assert.match(hero, /FlashVideosDisplay/);
+  assert.match(hero, /flashVideos/);
   assert.doesNotMatch(hero, /About Me essay|follower|following count/i);
 });
 
@@ -96,6 +99,8 @@ test("Connection peer hub passes personal context to identity hero", () => {
   assert.match(peer, /personalContext=\{\{/);
   assert.match(peer, /diner_hometown/);
   assert.match(peer, /diner_hobbies/);
+  assert.match(peer, /flashVideos=\{flashVideos\}/);
+  assert.match(peer, /getPublicFlashVideos/);
   assert.match(peer, /readOnly/);
   assert.doesNotMatch(peer, /onPersonalContextSave/);
 });

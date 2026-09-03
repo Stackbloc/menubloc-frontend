@@ -40,6 +40,7 @@ import {
   requestJoinDiningCrew,
   resolveConsumerMediaUrl,
   whatIAteTodayLocalDate,
+  getPublicFlashVideos,
 } from "../../lib/consumerApi.js";
 import { fetchUserHomemadeDishes } from "../../lib/homemadeDishApi.js";
 import HomeAtHomeSection from "./myMenuply/HomeAtHomeSection.jsx";
@@ -89,6 +90,7 @@ export default function ConsumerConnectionPeerPage() {
   const [crews, setCrews] = useState([]);
   const [crewJoinBusy, setCrewJoinBusy] = useState("");
   const [peerProfileMedia, setPeerProfileMedia] = useState([]);
+  const [flashVideos, setFlashVideos] = useState([]);
   const [homeDishes, setHomeDishes] = useState([]);
   const [peerWants, setPeerWants] = useState([]);
   const [viewerMayInviteMeOut, setViewerMayInviteMeOut] = useState(false);
@@ -98,7 +100,7 @@ export default function ConsumerConnectionPeerPage() {
   const load = useCallback(async () => {
     setError("");
     try {
-      const [connData, peerConnData, eatData, planData, diaryData, calendarData, crewData, mediaData, wantData, homeData] =
+      const [connData, peerConnData, eatData, planData, diaryData, calendarData, crewData, mediaData, wantData, homeData, flashData] =
         await Promise.all([
         listConnections("accepted"),
         listConnections("accepted", peerId).catch(() => ({ accepted: [] })),
@@ -112,6 +114,7 @@ export default function ConsumerConnectionPeerPage() {
         listPeerProfileMedia(peerId).catch(() => ({ items: [] })),
         listPeerWantToEat(peerId).catch(() => ({ items: [] })),
         fetchUserHomemadeDishes(peerId).catch(() => ({ dishes: [] })),
+        getPublicFlashVideos(peerId).catch(() => ({ items: [] })),
       ]);
       const match = (connData.accepted || []).find((c) => Number(c.peer?.id) === peerId);
       setConnection(match || null);
@@ -140,7 +143,10 @@ export default function ConsumerConnectionPeerPage() {
       setEatingCalendarDays(calendarData?.days || []);
       setPlans(planItems.filter((item) => item.kind !== "join_me" && item.href).map(asPlan));
       setCrews(crewData.crews || crewData.items || []);
-      setPeerProfileMedia(mediaData?.items || []);
+      setPeerProfileMedia(
+        (mediaData?.items || []).filter((row) => String(row?.media_subtype || "") !== "flash_video")
+      );
+      setFlashVideos(flashData?.items || []);
       setHomeDishes(homeData?.dishes || []);
       setPeerWants(wantData?.items || []);
       setViewerMayInviteMeOut(Boolean(wantData?.invite_me_out?.viewer_may_invite));
@@ -233,6 +239,7 @@ export default function ConsumerConnectionPeerPage() {
               }}
               connections={peerConnections}
               viewerUserId={consumer?.id}
+              flashVideos={flashVideos}
               profileMedia={peerProfileMedia}
               monthInFoodHref={
                 peerId ? `/account/connections/${encodeURIComponent(String(peerId))}/month-in-food` : null
