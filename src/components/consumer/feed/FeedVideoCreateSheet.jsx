@@ -12,12 +12,14 @@ export const FEED_VIDEO_CATEGORY_IDS = [
   FEED_CONTENT_KINDS.ATE,
   FEED_CONTENT_KINDS.WANT,
   FEED_CONTENT_KINDS.REVIEWS,
+  FEED_CONTENT_KINDS.COOKING,
 ];
 
 const X_CATEGORY_TITLES = {
   [FEED_CONTENT_KINDS.ATE]: LIVE_FEED_FULL_CATEGORY_LABELS.ate,
   [FEED_CONTENT_KINDS.WANT]: LIVE_FEED_FULL_CATEGORY_LABELS.want,
   [FEED_CONTENT_KINDS.REVIEWS]: "Food Review",
+  [FEED_CONTENT_KINDS.COOKING]: LIVE_FEED_FULL_CATEGORY_LABELS.cooking,
 };
 
 const VIDEO_ITEMS = LIVE_FEED_CHANNELS.filter((ch) =>
@@ -31,7 +33,9 @@ const VIDEO_ITEMS = LIVE_FEED_CHANNELS.filter((ch) =>
       ? "Record a short video of what you're eating now"
       : ch.id === FEED_CONTENT_KINDS.REVIEWS
         ? "Record a video review of a specific menu item"
-        : "Record a short video of a dish or craving you want",
+        : ch.id === FEED_CONTENT_KINDS.COOKING
+          ? "Record a short video of what you're cooking at home"
+          : "Record a short video of a dish or craving you want",
   testId: `feed-video-create-${ch.id}`,
 }));
 
@@ -43,7 +47,9 @@ const UPLOAD_CATEGORY_ITEMS = VIDEO_ITEMS.map((item) => ({
       ? "Upload a video of what you're eating now"
       : item.id === FEED_CONTENT_KINDS.REVIEWS
         ? "Upload a video review of a specific menu item"
-        : "Upload a video of a dish or craving you want",
+        : item.id === FEED_CONTENT_KINDS.COOKING
+          ? "Upload a video of what you're cooking at home"
+          : "Upload a video of a dish or craving you want",
   testId: `feed-upload-media-${item.id}`,
 }));
 

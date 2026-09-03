@@ -14,7 +14,7 @@ import {
 import { createGuestFeedVideo, uploadGuestFeedVideoPhoto } from "./guestFeedVideoApi.js";
 import { eatingMediaFromUpload, isVideoFile } from "./eatingMediaUtils.js";
 import { defaultWhatIAteMealPeriod } from "./whatIAteTodayMealPeriod.js";
-import { eatingFoodName, joinHomemadeComment } from "../pages/consumer/myMenuply/eatingPlaceLink.js";
+import { createHomemadeDish } from "./homemadeDishApi.js";
 import { buildGuestPublicationLegalPayload } from "./legalConsent.js";
 
 export async function postFeedAteVideo({
@@ -110,6 +110,26 @@ export async function postFeedWantVideo({
   });
 
   return data?.item || data;
+}
+
+export async function postFeedCookingVideo({ file, text = "" }) {
+  if (!file || !isVideoFile(file)) {
+    throw new Error("Feed posts need a video");
+  }
+  const up = await uploadWhatIAteTodayPhoto(file);
+  const { photo_url, video_url } = eatingMediaFromUpload(up);
+  if (!video_url) throw new Error("Could not upload video");
+
+  const name = String(text || "").trim() || "What I'm Cooking";
+  const created = await createHomemadeDish({
+    name,
+    description: String(text || "").trim() || null,
+    photo_url: photo_url || null,
+    video_url,
+    visibility: "public",
+    market_discoverable: true,
+  });
+  return created?.dish || created;
 }
 
 async function uploadGuestFeedMedia(file) {

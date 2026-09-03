@@ -15,7 +15,7 @@ import {
   EATING_COMPOSE_CATEGORIES,
   WANT_INTENT_KINDS,
 } from "./eatingHubUtils.js";
-import { isAteLikeFeedCategory } from "../../../lib/feedContentKinds.js";
+import { isAteLikeFeedCategory, isCookingFeedCategory } from "../../../lib/feedContentKinds.js";
 import EatingPlaceFields from "./EatingPlaceFields.jsx";
 import InviteMeOutAudiencePicker from "./InviteMeOutAudiencePicker.jsx";
 import {
@@ -75,6 +75,9 @@ export default function EatingCompose({
     if (category === "reviews") {
       setHomemade(false);
     }
+    if (isCookingFeedCategory(category)) {
+      setHomemade(true);
+    }
   }, [category]);
 
   const meta =
@@ -82,7 +85,10 @@ export default function EatingCompose({
     EATING_COMPOSE_CATEGORIES[0];
 
   const acceptMedia =
-    isAteLikeFeedCategory(category) || category === "want" || category === "plan";
+    isAteLikeFeedCategory(category) ||
+    isCookingFeedCategory(category) ||
+    category === "want" ||
+    category === "plan";
 
   const wantMeta =
     WANT_INTENT_KINDS.find((k) => k.id === wantKind) ||
@@ -280,7 +286,11 @@ export default function EatingCompose({
         isAteLikeFeedCategory(category)
           ? mealPeriod
           : undefined,
-      homemade: category === "reviews" ? false : homemade,
+      homemade: isCookingFeedCategory(category)
+        ? true
+        : category === "reviews"
+          ? false
+          : homemade,
       restaurant,
       dish,
       isRecommend:
@@ -296,7 +306,10 @@ export default function EatingCompose({
   }
 
   const canSubmit =
-    feedMode && (isAteLikeFeedCategory(category) || category === "want")
+    feedMode &&
+    (isAteLikeFeedCategory(category) ||
+      isCookingFeedCategory(category) ||
+      category === "want")
       ? isVideoFile(file) &&
         (category !== "reviews" || Boolean(dish?.menu_item_id))
       : category === "plan"
@@ -410,6 +423,23 @@ export default function EatingCompose({
               }
             />
           </div>
+        ) : null}
+
+        {isCookingFeedCategory(category) ? (
+          <>
+            <p style={styles.stepLabel}>{feedMode ? "Caption (optional)" : "Dish name (optional)"}</p>
+            <input
+              type="text"
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder={meta.placeholder}
+              disabled={busy}
+              maxLength={160}
+              autoComplete="off"
+              style={styles.input}
+              data-testid="eating-compose-cooking-input"
+            />
+          </>
         ) : null}
 
         {category === "want" && !feedMode ? (

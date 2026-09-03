@@ -54,6 +54,19 @@ export async function deleteHomemadeDish(id) {
   return parseJson(res);
 }
 
+export async function setHomemadeDishMarketDiscoverable(id, marketDiscoverable) {
+  const res = await fetch(
+    `${BASE}/homemade-dishes/${encodeURIComponent(id)}/market-discoverable`,
+    {
+      method: "PATCH",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ market_discoverable: Boolean(marketDiscoverable) }),
+    }
+  );
+  return parseJson(res);
+}
+
 export async function likeHomemadeDish(id) {
   const res = await fetch(`${BASE}/homemade-dishes/${encodeURIComponent(id)}/like`, {
     method: "POST",

@@ -234,7 +234,9 @@ export default function SeeWhosEatingSurface({
                         ? "NO GEO LOCK — ADD LOCATION"
                         : channel === "event"
                           ? "NO SIGNAL ON EVENTS"
-                          : "NO SIGNAL IN THIS MARKET"}
+                          : channel === "cooking"
+                            ? "NO WHAT I'M COOKING YET"
+                            : "NO SIGNAL IN THIS MARKET"}
                     </span>
                   )}
                 </div>

@@ -1,5 +1,6 @@
 /**
  * @home on My Menuply is a photo grid of home-cooked meals — not a Feed channel.
+ * What I'm Cooking videos also appear here after posting from Feed X.
  */
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -22,6 +23,7 @@ test("@home photographs home-cooked meals on the diner profile", () => {
   assert.match(section, /facingMode="environment"/);
   assert.match(section, /Add your first home-cooked dish/);
   assert.match(section, /Photograph a meal/);
+  assert.match(section, /video_url/);
   assert.doesNotMatch(section, /createWhatIAteToday/);
   assert.doesNotMatch(section, /FEED_CONTENT_KINDS/);
 
@@ -36,5 +38,9 @@ test("@home photographs home-cooked meals on the diner profile", () => {
   assert.match(peer, /fetchUserHomemadeDishes\(peerId\)/);
 
   assert.doesNotMatch(feedX, /home-at-home/);
-  assert.doesNotMatch(feedX, /What I'm Cooking/);
+  assert.match(feedX, /FEED_CONTENT_KINDS\.COOKING/);
+  assert.match(feedX, /LIVE_FEED_FULL_CATEGORY_LABELS\.cooking/);
+
+  const labels = read("src/lib/liveFeedCategory.js");
+  assert.match(labels, /cooking:\s*"What I'm Cooking"/);
 });

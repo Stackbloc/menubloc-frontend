@@ -195,6 +195,10 @@ export async function hidePublicFeedItem(item) {
   if (kind === "plan") {
     return updateWhatWeDoingSession(sourceId, { market_discoverable: false });
   }
+  if (kind === "cooking") {
+    const { setHomemadeDishMarketDiscoverable } = await import("./homemadeDishApi.js");
+    return setHomemadeDishMarketDiscoverable(sourceId, false);
+  }
   const err = new Error("This clip cannot be removed from Public Feed here");
   err.code = "feed_hide_unsupported";
   throw err;

@@ -56,6 +56,10 @@ export default function FeedShellPage({ children = null }) {
 
   function handlePickCategory(category) {
     closeCreateSheet();
+    if (String(category) === "cooking" && !isAuthenticated) {
+      navigate(`/account/login?next=${encodeURIComponent("/feed")}`);
+      return;
+    }
     setComposeMediaSource("camera");
     setComposeOpenLibrary(false);
     setComposeCategory(category);

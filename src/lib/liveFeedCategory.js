@@ -7,6 +7,7 @@ export const LIVE_FEED_CHANNELS = [
   { id: "want", label: "Wanna Eat" },
   { id: "plan", label: "Eating Plans" },
   { id: "reviews", label: "Reviews" },
+  { id: "cooking", label: "I'm Cooking" },
   { id: "event", label: "Events" },
 ];
 
@@ -20,6 +21,7 @@ export const LIVE_FEED_FULL_CATEGORY_LABELS = {
   want: "What I Wanna Eat",
   plan: "My Eating Plans",
   reviews: "Reviews",
+  cooking: "What I'm Cooking",
   event: "Events",
 };
 

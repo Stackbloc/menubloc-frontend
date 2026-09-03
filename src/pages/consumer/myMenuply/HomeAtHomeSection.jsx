@@ -1,6 +1,6 @@
 /**
- * @home — photograph home-cooked meals on the diner profile.
- * Photos only. Does not post to Feed. Owner can add/delete; peers are read-only.
+ * @home — home-cooked meal photos plus What I'm Cooking videos on the diner profile.
+ * @home still photos do not post to Feed. Cooking videos from Feed X also appear here.
  */
 
 import { Link } from "react-router-dom";
@@ -16,11 +16,16 @@ function dishPhoto(dish) {
   return resolveConsumerMediaUrl(dish?.photo_url || "");
 }
 
+function dishVideo(dish) {
+  return resolveConsumerMediaUrl(dish?.video_url || "");
+}
+
 function HomeDishCell({ dish, readOnly, onDelete, deleteBusy }) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const canDelete = !readOnly && typeof onDelete === "function";
   const { open, dismiss, consumeArmedClick, bind } = useLongPressReveal(canDelete);
   const photo = dishPhoto(dish);
+  const video = dishVideo(dish);
   const name = dish?.name || "Home-cooked meal";
   const href = dish?.id || dish?.homemade_dish_id ? homemadeDishPath(dish.id || dish.homemade_dish_id) : null;
 
@@ -35,15 +40,20 @@ function HomeDishCell({ dish, readOnly, onDelete, deleteBusy }) {
             dismiss();
             return;
           }
-          if (photo) setLightboxOpen(true);
+          if (photo || video) setLightboxOpen(true);
         }}
       >
-        {photo ? (
+        {video ? (
+          <video src={video} muted playsInline preload="metadata" style={grid.img} />
+        ) : photo ? (
           <img src={photo} alt="" style={grid.img} loading="lazy" />
         ) : (
           <div style={grid.placeholder}>🍽</div>
         )}
-        {name && name !== "Home-cooked meal" ? <span style={grid.caption}>{name}</span> : null}
+        {video ? <span style={grid.playBadge}>▶</span> : null}
+        {name && name !== "Home-cooked meal" && name !== "What I'm Cooking" ? (
+          <span style={grid.caption}>{name}</span>
+        ) : null}
       </button>
       {open ? (
         <button
@@ -63,14 +73,25 @@ function HomeDishCell({ dish, readOnly, onDelete, deleteBusy }) {
           Delete
         </button>
       ) : null}
-      {lightboxOpen && photo ? (
+      {lightboxOpen && (photo || video) ? (
         <div
           role="presentation"
           style={grid.lightbox}
           onClick={() => setLightboxOpen(false)}
           data-testid="home-at-home-lightbox"
         >
-          <img src={photo} alt={name} style={grid.lightboxImg} onClick={(e) => e.stopPropagation()} />
+          {video ? (
+            <video
+              src={video}
+              controls
+              playsInline
+              autoPlay
+              style={grid.lightboxImg}
+              onClick={(e) => e.stopPropagation()}
+            />
+          ) : (
+            <img src={photo} alt={name} style={grid.lightboxImg} onClick={(e) => e.stopPropagation()} />
+          )}
           {href ? (
             <Link to={href} style={grid.lightboxLink} onClick={(e) => e.stopPropagation()}>
               View dish
@@ -111,7 +132,9 @@ export default function HomeAtHomeSection({
   onDelete,
 }) {
   const [pickerSource, setPickerSource] = useState(null);
-  const rows = Array.isArray(dishes) ? dishes.filter((d) => d && (d.photo_url || d.id)) : [];
+  const rows = Array.isArray(dishes)
+    ? dishes.filter((d) => d && (d.photo_url || d.video_url || d.id))
+    : [];
 
   if (readOnly && !rows.length) return null;
 
@@ -120,7 +143,7 @@ export default function HomeAtHomeSection({
       <SectionHead
         title="@home"
         testId="home-at-home-head"
-        subtitle="Home-cooked meals you’ve photographed."
+        subtitle="Home-cooked meals you've photographed — plus What I'm Cooking videos."
       />
       {error ? <p style={s.error}>{error}</p> : null}
       {!rows.length && !readOnly ? (
@@ -224,6 +247,20 @@ const grid = {
     overflow: "hidden",
     textOverflow: "ellipsis",
     whiteSpace: "nowrap",
+  },
+  playBadge: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+    width: 28,
+    height: 28,
+    borderRadius: 999,
+    background: "rgba(0,0,0,0.55)",
+    color: "#fff",
+    fontSize: 12,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
   },
   addCell: {
     aspectRatio: "1 / 1",

@@ -58,8 +58,15 @@ test("Feed shell: Home|Connects|Menus|X|Deals|Shop|Profile + slim X sheet", () =
   assert.match(createSheet, /FEED_X_ITEMS/);
   assert.match(createSheet, /feed-video-create-\$\{ch\.id\}/);
   assert.match(createSheet, /FEED_VIDEO_CATEGORY_IDS/);
+  assert.match(createSheet, /FEED_CONTENT_KINDS\.COOKING/);
+  assert.match(createSheet, /LIVE_FEED_FULL_CATEGORY_LABELS\.cooking/);
   assert.match(createSheet, /FEED_CONTENT_KINDS\.REVIEWS/);
   assert.match(createSheet, /Food Review/);
+  const cookingIdx = createSheet.indexOf("FEED_CONTENT_KINDS.COOKING");
+  const reviewsIdx = createSheet.indexOf("FEED_CONTENT_KINDS.REVIEWS");
+  assert.ok(reviewsIdx > 0 && cookingIdx > reviewsIdx);
+  const labels = read("src/lib/liveFeedCategory.js");
+  assert.match(labels, /cooking:\s*"What I'm Cooking"/);
   assert.doesNotMatch(createSheet, /Post Food Review/);
   assert.match(createSheet, /FEED_UPLOAD_MEDIA_ITEM/);
   assert.match(createSheet, /feed-x-upload-media/);

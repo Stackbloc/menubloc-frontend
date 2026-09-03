@@ -9,6 +9,7 @@ import { readDetectedLocation } from "../../../lib/discoveryLocationPersistence.
 import {
   notifyFeedVideoPosted,
   postFeedAteVideo,
+  postFeedCookingVideo,
   postFeedReviewVideo,
   postFeedWantVideo,
   postGuestFeedAteVideo,
@@ -53,6 +54,8 @@ export default function FeedVideoComposeOverlay({
       await postFeedWantVideo(payload);
     } else if (payload.category === "reviews") {
       await postFeedReviewVideo(payload);
+    } else if (payload.category === "cooking") {
+      await postFeedCookingVideo(payload);
     } else {
       await postFeedAteVideo(payload);
     }
@@ -61,6 +64,11 @@ export default function FeedVideoComposeOverlay({
   }
 
   async function publishGuest(payload) {
+    if (payload.category === "cooking") {
+      const err = new Error("Sign in to post What I'm Cooking");
+      err.code = "auth_required";
+      throw err;
+    }
     let result;
     if (payload.category === "want") {
       result = await postGuestFeedWantVideo(payload);

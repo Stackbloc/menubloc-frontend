@@ -131,6 +131,12 @@ export const EATING_COMPOSE_CATEGORIES = [
     placeholder: "Anything to say about this dish? (optional)",
     description: "Record a video review of a specific menu item.",
   },
+  {
+    id: "cooking",
+    label: "What I'm Cooking",
+    placeholder: "What are you cooking? (optional)",
+    description: "Video of a home-cooked meal — posts to Feed and your profile @home.",
+  },
 ];
 
 /** What I Want to Eat intent levels (not forced to restaurant). */

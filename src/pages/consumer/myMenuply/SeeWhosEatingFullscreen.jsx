@@ -374,7 +374,7 @@ export default function SeeWhosEatingFullscreen({
     const kind = String(item.kind || "")
       .trim()
       .toLowerCase();
-    if (isLiveFeedVenueItem(item) || !["ate", "want", "plan", "reviews"].includes(kind)) return;
+    if (isLiveFeedVenueItem(item) || !["ate", "want", "plan", "reviews", "cooking"].includes(kind)) return;
     if (viewerUserId == null || peerId == null || Number(viewerUserId) !== peerId) return;
 
     const ok =
@@ -417,7 +417,7 @@ export default function SeeWhosEatingFullscreen({
     viewerUserId != null &&
     peerId != null &&
     Number(viewerUserId) === peerId &&
-    ["ate", "want", "plan", "reviews"].includes(
+    ["ate", "want", "plan", "reviews", "cooking"].includes(
       String(item.kind || "")
         .trim()
         .toLowerCase()

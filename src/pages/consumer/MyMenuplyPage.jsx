@@ -1316,6 +1316,16 @@ export default function MyMenuplyPage() {
     inviteMeOutAudience: wantInviteAudience,
     inviteMeOutSelectedIds: wantInviteIds,
   }) {
+    if (category === "cooking") {
+      const { postFeedCookingVideo } = await import("../../lib/feedVideoCompose.js");
+      await postFeedCookingVideo({ text, file });
+      setComposeDefaultCategory("cooking");
+      if (consumer?.id) {
+        const homeRes = await fetchUserHomemadeDishes(consumer.id).catch(() => ({ dishes: [] }));
+        setHomeDishes(homeRes?.dishes || []);
+      }
+      return;
+    }
     if (category === "want") {
       await postWant({
         text,
