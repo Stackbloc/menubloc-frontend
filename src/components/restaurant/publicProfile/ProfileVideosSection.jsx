@@ -116,11 +116,12 @@ const styles = {
     border: "1px solid #e7e5e4",
     background: "#fff",
     overflow: "hidden",
+    maxWidth: 280,
   },
   video: {
     display: "block",
     width: "100%",
-    maxHeight: 320,
+    maxHeight: 160,
     background: "#0f172a",
     objectFit: "contain",
   },
