@@ -1370,7 +1370,10 @@ export default function PublicMenuPage() {
     city: data?.city,
     state: data?.state,
     address: data?.address_line1 || data?.address,
+    // Never force empty preview — public menu payloads often keep menus[].item_count=0
+    // while sections already contain the full menu (Northern Cafe class).
     menuPreviewItems: [],
+    menuItemCount: totalMenuItemCount,
   });
   const shareData = buildMenuShareMetadata({
     restaurantName,
@@ -1571,7 +1574,10 @@ export default function PublicMenuPage() {
           logoPlacement: menuThemeSettings.logo_placement || "top-left",
           shareData,
           shareAnalyticsContext,
-          menuHeaderLeadingAction: canShowAddMenu(addMenuRestaurant) ? (
+          menuHeaderLeadingAction:
+            totalMenuItemCount > 0
+              ? null
+              : canShowAddMenu(addMenuRestaurant) ? (
             <AddMenuAction restaurant={addMenuRestaurant} testId="add-menu-menu-header" />
           ) : null,
           franchiseSlot,

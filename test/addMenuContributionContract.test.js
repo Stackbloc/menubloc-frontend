@@ -128,6 +128,30 @@ assert.equal(
   false,
   "Bacari West Adams-shaped profile must not open menu-capture"
 );
+// Northern Cafe class: public menu payload keeps menus[].item_count=0 while sections have items.
+assert.equal(
+  hasUsableActiveMenu({
+    id: 1024,
+    claim_status: "unclaimed",
+    menus: [{ id: 642, status: "published", item_count: 0 }],
+    sections: [
+      { name: "Appetizers", items: [{ name: "Egg Roll" }, { name: "Wings" }] },
+    ],
+  }),
+  true,
+  "sections with items beat stale menus[].item_count=0"
+);
+assert.equal(
+  canShowAddMenu({
+    ...baseRow,
+    id: 1024,
+    restaurant_name: "Northern Cafe",
+    menus: [{ id: 642, status: "published", item_count: 0 }],
+    sections: [{ items: [{ name: "Egg Roll" }] }],
+  }),
+  false,
+  "Northern Cafe full menu page must not invite upload"
+);
 
 const addPath = buildAddMenuPath(baseRow);
 assert.ok(addPath.startsWith("/menu-capture?"), "Add Menu path uses menu-capture");

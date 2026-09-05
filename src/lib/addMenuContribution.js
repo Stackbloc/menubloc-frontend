@@ -29,10 +29,11 @@ export function isRestaurantAddMenuEntity(row) {
  *
  * Product rule:
  * - Placeholder menu record (menu row exists, 0 items) → false → Upload/Add Menu icon
- * - Menu with item data → true → View Menu icon (never ask to upload)
+ * - At least one menu item → true → View Menu / no upload invitation
  *
  * `menu_ready` from browse/availability means item count > 0. Profile payloads often
- * omit it and only set `menu_item_count` / `menus[].item_count` — item counts win.
+ * omit it; public menu payloads may keep stale menus[].item_count=0 while sections
+ * already contain items — count live item arrays too.
  */
 export function hasUsableActiveMenu(row) {
   if (!row) return false;
@@ -46,11 +47,22 @@ export function hasUsableActiveMenu(row) {
   const itemCount = Number(row.menu_item_count);
   if (Number.isFinite(itemCount) && itemCount > 0) return true;
 
+  if (Array.isArray(row.menu_items) && row.menu_items.length > 0) return true;
+
   const menus = row.menus;
   if (Array.isArray(menus)) {
     for (const menu of menus) {
       const menuItems = Number(menu?.item_count);
       if (Number.isFinite(menuItems) && menuItems > 0) return true;
+    }
+  }
+
+  // Public menu page payload: sections[] with items even when menus[].item_count is stale 0.
+  const sections = row.sections || row.menu_sections;
+  if (Array.isArray(sections)) {
+    for (const section of sections) {
+      const items = section?.items || section?.menu_items;
+      if (Array.isArray(items) && items.length > 0) return true;
     }
   }
 
