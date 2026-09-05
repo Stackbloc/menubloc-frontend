@@ -17,6 +17,9 @@ test("Connection diner page uses the same hub layout as My Menuply", () => {
   const hero = read("src/pages/consumer/myMenuply/DinerIdentityHero.jsx");
   const section = read("src/pages/consumer/myMenuply/EatingHubSection.jsx");
 
+  assert.match(peer, /formatDinerPeerLabel/);
+  assert.match(peer, /dinerPublicIdentity/);
+
   for (const page of [mine, peer]) {
     assert.match(page, /DinerIdentityHero/);
     assert.match(page, /EatingHubSection/);
@@ -42,7 +45,9 @@ test("Connection diner page uses the same hub layout as My Menuply", () => {
   assert.match(section, /eating-calendar/);
   assert.match(section, /DinerCalendarTrigger/);
   assert.match(section, /Invite Me Out/);
-  assert.doesNotMatch(section, /InviteMeOutAudiencePicker/);
+  // Audience picker lives on the owner hub (Invite Me Out settings), not peer.
+  assert.match(section, /InviteMeOutAudiencePicker/);
+  assert.doesNotMatch(peer, /InviteMeOutAudiencePicker/);
   assert.match(section, /future-plans-summary/);
   assert.match(section, /FuturePlanRow/);
   assert.match(section, /SectionEmptyState/);

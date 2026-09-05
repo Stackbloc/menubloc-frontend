@@ -38,7 +38,10 @@ test("My Menuply identity hero is prominent with photo upload and short bio", ()
   assert.match(hero, /maxLength=\{ABOUT_MAX\}/);
   assert.match(hero, /LA food explorer/);
   assert.match(read("src/pages/consumer/myMenuply/MyMenuplyPresentationRails.jsx"), /Connects/);
-  assert.match(read("src/pages/consumer/myMenuply/MyMenuplyPresentationRails.jsx"), /\/my-menuply\/connections-eating/);
+  assert.match(
+    read("src/pages/consumer/myMenuply/MyMenuplyPresentationRails.jsx"),
+    /\/account\/connections\//
+  );
   assert.match(gallery, /about-me-profile-media/);
   assert.match(gallery, /profile-media-delete/);
   assert.match(gallery, /useLongPressReveal|mediaLongPressReveal/);
@@ -61,6 +64,10 @@ test("My Menuply identity hero is prominent with photo upload and short bio", ()
   assert.doesNotMatch(hero, /vegetarian|gluten_free|allergen/i);
   assert.doesNotMatch(hero, /questionnaire|favorite cuisine/i);
   assert.match(hero, /diner-personal-context/);
+  assert.match(hero, /diner-profile-basics/);
+  assert.match(hero, /diner-dob-input/);
+  assert.match(hero, /diner-favorite-foods/);
+  assert.match(page, /onSaveProfileBasics/);
 });
 
 test("Connection peer hub shows read-only profile media gallery", () => {

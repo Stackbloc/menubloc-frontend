@@ -25,6 +25,7 @@ test("@home photographs home-cooked meals on the diner profile", () => {
   assert.match(section, /Take photo — or choose media upload under X/);
   assert.match(section, /MenuplyMediaPicker/);
   assert.match(section, /data-testid="home-at-home-add"/);
+  assert.match(section, /titleLeading/);
   assert.doesNotMatch(section, /Photograph a meal/);
   assert.doesNotMatch(section, /onOpenLibrary/);
   assert.match(section, /video_url/);

@@ -589,6 +589,26 @@ export default function MyMenuplyPage() {
     }
   }
 
+  async function onSaveProfileBasics({ date_of_birth, favorite_foods }) {
+    setIdentityError("");
+    setIdentityNotice("");
+    const data = await updateConsumerProfile({
+      date_of_birth: date_of_birth || null,
+      favorite_foods: Array.isArray(favorite_foods) ? favorite_foods : [],
+    });
+    const next = data?.profile || {};
+    setProfile((prev) => ({
+      ...(prev || {}),
+      date_of_birth: next.date_of_birth
+        ? String(next.date_of_birth).slice(0, 10)
+        : date_of_birth || null,
+      favorite_foods: Array.isArray(next.favorite_foods)
+        ? next.favorite_foods
+        : favorite_foods,
+    }));
+    setIdentityNotice("Birthday & favorites saved.");
+  }
+
   async function onPersonalContextSave(next) {
     setIdentityError("");
     setIdentityNotice("");
@@ -1538,6 +1558,13 @@ export default function MyMenuplyPage() {
               onProfileMediaAdd={onProfileMediaAdd}
               onProfileMediaRemove={onProfileMediaRemove}
               monthInFoodHref={MY_MENUPLY_MONTH_IN_FOOD_PATH}
+              dateOfBirth={
+                profile?.date_of_birth ? String(profile.date_of_birth).slice(0, 10) : ""
+              }
+              favoriteFoods={
+                Array.isArray(profile?.favorite_foods) ? profile.favorite_foods : []
+              }
+              onSaveProfileBasics={onSaveProfileBasics}
             />
             <ProfileGalleryComposeSheet
               open={profileGalleryPickerOpen}

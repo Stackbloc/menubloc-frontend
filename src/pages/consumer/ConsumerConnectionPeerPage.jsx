@@ -44,6 +44,7 @@ import {
 } from "../../lib/consumerApi.js";
 import { fetchUserHomemadeDishes } from "../../lib/homemadeDishApi.js";
 import HomeAtHomeSection from "./myMenuply/HomeAtHomeSection.jsx";
+import { formatDinerPeerLabel } from "../../lib/dinerPublicIdentity.js";
 
 function tokenFromHref(href) {
   const match = String(href || "").match(/what-we-doing\/([^/?#]+)/);
@@ -243,6 +244,9 @@ export default function ConsumerConnectionPeerPage() {
               profileMedia={peerProfileMedia}
               monthInFoodHref={
                 peerId ? `/account/connections/${encodeURIComponent(String(peerId))}/month-in-food` : null
+              }
+              favoriteFoods={
+                Array.isArray(peer?.favorite_foods) ? peer.favorite_foods : []
               }
             />
 

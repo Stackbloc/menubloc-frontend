@@ -126,30 +126,33 @@ export default function HomeAtHomeSection({
         title="@home"
         testId="home-at-home-head"
         subtitle="Home-cooked meals you've photographed — plus What I'm Cooking videos."
+        titleLeading={
+          !readOnly && typeof onPhotoFile === "function" ? (
+            <span
+              data-testid="home-at-home-add"
+              title="Take photo — or choose media upload under X"
+              style={{ display: "inline-flex", alignItems: "center", lineHeight: 0 }}
+            >
+              <MenuplyMediaPicker
+                onFile={(file) => onPhotoFile?.(file)}
+                disabled={busy}
+                facingMode="environment"
+                source="camera"
+                allowPhoto
+                allowVideo={false}
+                showPreview={false}
+                testId="home-at-home-picker"
+                ariaLabel="Take photo — or choose media upload under X"
+              />
+            </span>
+          ) : null
+        }
       />
       {error ? <p style={s.error}>{error}</p> : null}
       {!rows.length && !readOnly ? (
         <p style={s.muted} data-testid="home-at-home-empty">
           Add your first home-cooked dish.
         </p>
-      ) : null}
-
-      {!readOnly ? (
-        <div style={grid.addRow} data-testid="home-at-home-add">
-          <span title="Take photo — or choose media upload under X">
-            <MenuplyMediaPicker
-              onFile={(file) => onPhotoFile?.(file)}
-              disabled={busy}
-              facingMode="environment"
-              source="camera"
-              allowPhoto
-              allowVideo={false}
-              showPreview={false}
-              testId="home-at-home-picker"
-              ariaLabel="Take photo — or choose media upload under X"
-            />
-          </span>
-        </div>
       ) : null}
 
       {rows.length ? (

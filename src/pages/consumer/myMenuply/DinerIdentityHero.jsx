@@ -8,10 +8,204 @@ import { MY_MENUPLY_MONTH_IN_FOOD_PATH } from "../../../lib/myMenuplyRoutes.js";
 import { buildDinerPersonalContextLines } from "../../../lib/dinerPersonalContext.js";
 import DinerPersonalContextEditor from "./DinerPersonalContextEditor.jsx";
 import { FlashVideosDisplay } from "./FlashVideosBlock.jsx";
+import {
+  ALL_FAVORITE_FOOD_OPTIONS,
+  MAX_FAVORITES,
+  normalizeFavoriteFoods,
+  summarizeFavoriteFoods,
+} from "../../../lib/dinerFavoriteFoods.js";
+import { labelWithFoodIcon } from "../../../lib/foodInterestIcons.js";
 
 const ABOUT_MAX = 280;
 const ABOUT_PLACEHOLDER =
   "LA food explorer. Always looking for great tacos and late-night spots.";
+
+function DinerProfileBasics({
+  readOnly,
+  dateOfBirth,
+  favoriteFoods,
+  busy,
+  onSaveBasics,
+}) {
+  const [dob, setDob] = useState(dateOfBirth || "");
+  const [favorites, setFavorites] = useState(() => normalizeFavoriteFoods(favoriteFoods));
+  const [saving, setSaving] = useState(false);
+  const [status, setStatus] = useState("");
+  const [err, setErr] = useState("");
+
+  useEffect(() => {
+    setDob(dateOfBirth || "");
+  }, [dateOfBirth]);
+
+  useEffect(() => {
+    setFavorites(normalizeFavoriteFoods(favoriteFoods));
+  }, [favoriteFoods]);
+
+  const summary = summarizeFavoriteFoods(favorites);
+
+  function toggleFavorite(opt) {
+    setFavorites((prev) => {
+      const list = [...prev];
+      const idx = list.findIndex((f) => f.key === opt.key);
+      if (idx >= 0) {
+        list.splice(idx, 1);
+        return list;
+      }
+      if (list.length >= MAX_FAVORITES) return list;
+      return [...list, { key: opt.key, label: opt.label, kind: opt.kind }];
+    });
+  }
+
+  async function save() {
+    if (typeof onSaveBasics !== "function") return;
+    setSaving(true);
+    setErr("");
+    setStatus("");
+    try {
+      await onSaveBasics({
+        date_of_birth: dob || null,
+        favorite_foods: favorites,
+      });
+      setStatus("Saved");
+    } catch (e) {
+      setErr(e?.message || "Could not save");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (readOnly) {
+    if (!summary || summary === "None selected") return null;
+    return (
+      <div style={basics.wrap} data-testid="diner-profile-basics-readonly">
+        <p style={basics.label}>Favorite foods</p>
+        <p style={basics.summary}>{summary}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div style={basics.wrap} data-testid="diner-profile-basics">
+      <p style={basics.label}>Date of birth</p>
+      <p style={basics.hint}>
+        Optional. Unlocks birthday moments later — full date stays private on your account.
+      </p>
+      <input
+        type="date"
+        data-testid="diner-dob-input"
+        value={dob || ""}
+        disabled={busy || saving}
+        onChange={(e) => setDob(e.target.value)}
+        style={basics.input}
+      />
+
+      <p style={{ ...basics.label, marginTop: 14 }}>Favorite foods</p>
+      <p style={basics.hint}>
+        Tap foods you love — better nearby discovery, not a preference database for its own sake.
+      </p>
+      <div style={basics.chipRow} data-testid="diner-favorite-foods">
+        {ALL_FAVORITE_FOOD_OPTIONS.map((opt) => {
+          const on = favorites.some((f) => f.key === opt.key);
+          return (
+            <button
+              key={opt.key}
+              type="button"
+              data-testid={`diner-fav-${opt.key}`}
+              disabled={busy || saving}
+              aria-pressed={on}
+              onClick={() => toggleFavorite(opt)}
+              style={{
+                ...basics.chip,
+                ...(on ? basics.chipOn : null),
+              }}
+            >
+              {labelWithFoodIcon(opt.label, opt.key)}
+            </button>
+          );
+        })}
+      </div>
+      <button
+        type="button"
+        data-testid="diner-profile-basics-save"
+        style={basics.save}
+        disabled={busy || saving}
+        onClick={save}
+      >
+        {saving ? "Saving…" : "Save birthday & favorites"}
+      </button>
+      {err ? <p style={s.error}>{err}</p> : null}
+      {status ? <p style={{ ...s.muted, color: "#027A48" }}>{status}</p> : null}
+    </div>
+  );
+}
+
+const basics = {
+  wrap: {
+    marginTop: 16,
+    paddingTop: 14,
+    borderTop: "1px solid #e4e7ec",
+  },
+  label: {
+    margin: "0 0 4px",
+    fontSize: 13,
+    fontWeight: 800,
+    color: "#0f172a",
+  },
+  hint: {
+    margin: "0 0 8px",
+    fontSize: 12,
+    lineHeight: 1.4,
+    color: "#667085",
+  },
+  summary: {
+    margin: 0,
+    fontSize: 14,
+    color: "#344054",
+    fontWeight: 600,
+  },
+  input: {
+    width: "100%",
+    maxWidth: 220,
+    boxSizing: "border-box",
+    borderRadius: 10,
+    border: "1px solid #d0d5dd",
+    padding: "8px 10px",
+    fontSize: 14,
+  },
+  chipRow: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: 8,
+    marginBottom: 10,
+  },
+  chip: {
+    appearance: "none",
+    border: "1px solid #d0d5dd",
+    background: "#fff",
+    borderRadius: 999,
+    padding: "6px 10px",
+    fontSize: 13,
+    fontWeight: 600,
+    color: "#344054",
+    cursor: "pointer",
+  },
+  chipOn: {
+    borderColor: "#16a34a",
+    background: "#ecfdf3",
+    color: "#166534",
+  },
+  save: {
+    appearance: "none",
+    border: "none",
+    borderRadius: 10,
+    background: "#16a34a",
+    color: "#fff",
+    fontWeight: 700,
+    fontSize: 13,
+    padding: "8px 12px",
+    cursor: "pointer",
+  },
+};
 
 export default function DinerIdentityHero({
   displayName,
@@ -37,6 +231,9 @@ export default function DinerIdentityHero({
   onProfileMediaRemove,
   readOnly = false,
   monthInFoodHref = null,
+  dateOfBirth = "",
+  favoriteFoods = [],
+  onSaveProfileBasics,
 }) {
   const [draft, setDraft] = useState(about || "");
   const [saving, setSaving] = useState(false);
@@ -271,6 +468,16 @@ export default function DinerIdentityHero({
         >
           {notice}
         </p>
+      ) : null}
+
+      {!readOnly || normalizeFavoriteFoods(favoriteFoods).length ? (
+        <DinerProfileBasics
+          readOnly={readOnly}
+          dateOfBirth={dateOfBirth}
+          favoriteFoods={favoriteFoods}
+          busy={busy}
+          onSaveBasics={onSaveProfileBasics}
+        />
       ) : null}
 
       <ProfileMediaGallery
