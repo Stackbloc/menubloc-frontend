@@ -145,7 +145,20 @@ const addMenuAction = read("src/components/AddMenuAction.jsx");
 assert.ok(addMenuAction.includes("ADD_MENU_HOVER_LABEL"), "uses shared hover copy");
 assert.ok(addMenuAction.includes("AddMenuIcon"), "uses camera-menu icon");
 assert.ok(addMenuAction.includes("buildAddMenuLoginPath"), "signed-out users go to login");
+assert.ok(addMenuAction.includes("isAuthenticated"), "upload click checks consumer auth");
 assert.doesNotMatch(addMenuAction, /prominent/);
+
+const viewMenuLink = read("src/components/restaurant/publicProfile/profilePrimitives.jsx");
+assert.match(
+  viewMenuLink,
+  /export function ViewMenuLink[\s\S]*?<Link[\s\S]*?to=\{href\}/,
+  "View Menu is a plain public Link"
+);
+assert.doesNotMatch(
+  viewMenuLink.slice(viewMenuLink.indexOf("export function ViewMenuLink"), viewMenuLink.indexOf("export function ViewMenuLink") + 800),
+  /isAuthenticated|buildAddMenuLoginPath|useConsumer/,
+  "View Menu must not require sign-in (guests can open menus)"
+);
 
 const publicMenuPage = read("src/pages/PublicMenuPage.jsx");
 assert.ok(publicMenuPage.includes("menuHeaderLeadingAction"), "empty menu uses header rail Add Menu");
@@ -158,6 +171,10 @@ const menuCapture = read("src/pages/MenuCapturePage.jsx");
 assert.ok(menuCapture.includes("restaurantLocked"), "capture skips identity when restaurant known");
 assert.ok(menuCapture.includes("apiPost"), "capture uses api.js helpers");
 assert.ok(!menuCapture.includes('import.meta.env.VITE_API_BASE_URL'), "no inline API base");
+assert.ok(
+  menuCapture.includes("Sign in to add a menu") || menuCapture.includes("buildAddMenuLoginPath"),
+  "menu capture requires signed-in diner"
+);
 
 const profileHero = read("src/components/restaurant/publicProfile/ProfileHero.jsx");
 assert.ok(profileHero.includes("AddMenuAction"), "profile hero wires Add Menu");

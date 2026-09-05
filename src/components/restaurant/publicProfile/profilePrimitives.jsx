@@ -151,6 +151,7 @@ export function ghostIconStyle(dark) {
 }
 
 export function ViewMenuLink({ href, dark, testId = "restaurant-profile-view-menu" }) {
+  // Guests may view menus — no auth gate. Upload/Add Menu is separate and requires sign-in.
   if (!href) return null;
   return (
     <IconHoverLabel label="View menu">
