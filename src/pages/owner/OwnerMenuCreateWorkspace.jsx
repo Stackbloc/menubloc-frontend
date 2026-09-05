@@ -44,11 +44,6 @@ const STEPS = [
 
 const MAX_MENU_UPLOAD_BYTES = 20 * 1024 * 1024;
 
-/** Stable-ish key so re-picking the same phone photo does not duplicate the queue. */
-function ownerUploadFileKey(file) {
-  return `${file.name}::${file.size}::${file.lastModified}`;
-}
-
 function formatOwnerUploadBytes(bytes) {
   const n = Number(bytes) || 0;
   if (n < 1024 * 1024) return `${Math.max(1, Math.round(n / 1024))} KB`;
@@ -114,43 +109,6 @@ function sortMenusByDisplayPriority(menus) {
     if (!a.is_primary && b.is_primary) return 1;
     return Number(a.id || 0) - Number(b.id || 0);
   });
-}
-
-function mergeOwnerUploadFiles(existing, incoming) {
-  const seen = new Set(existing.map(ownerUploadFileKey));
-  const next = [...existing];
-  for (const file of incoming) {
-    const key = ownerUploadFileKey(file);
-    if (seen.has(key)) continue;
-    seen.add(key);
-    next.push(file);
-  }
-  return next;
-}
-
-function clearOwnerUploadInputRefs(...refs) {
-  for (const ref of refs) {
-    if (ref?.current) ref.current.value = "";
-  }
-}
-
-/** Append picked files under the 20 MB cap; reset the input so another pick can open. */
-function applyOwnerUploadPick(event, { setFiles, setUploadMsg }) {
-  const picked = Array.from(event.target.files || []);
-  const tooBig = picked.filter((file) => Number(file.size) > MAX_MENU_UPLOAD_BYTES);
-  const ok = picked.filter((file) => Number(file.size) <= MAX_MENU_UPLOAD_BYTES);
-  if (ok.length) {
-    setFiles((prev) => mergeOwnerUploadFiles(prev, ok));
-  }
-  if (tooBig.length) {
-    setUploadMsg({
-      ok: false,
-      parseStatus: "upload_failed",
-      message: tooBig.map(ownerUploadTooLargeMessage).join(" "),
-    });
-  }
-  // Reset so the same path can be chosen again and another phone pick can open.
-  event.target.value = "";
 }
 
 const EMPTY_PROFILE = {
@@ -361,8 +319,7 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
   const [uploadMsg, setUploadMsg] = useState(null);
   const [pendingUploadId, setPendingUploadId] = useState(null);
   const [importingParsed, setImportingParsed] = useState(false);
-  const photoFileRef = useRef(null);
-  const pdfFileRef = useRef(null);
+  const fileRef = useRef(null);
   const addFormRef = useRef(null);
   const nameInputRef = useRef(null);
 
@@ -632,7 +589,7 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
       setMenuName(draft.display_name);
       setMenuType(draft.menu_type);
       setFiles([]);
-      clearOwnerUploadInputRefs(photoFileRef, pdfFileRef);
+      if (fileRef.current) fileRef.current.value = "";
       setActionMsg(
         `Added “${draft.display_name}” as a new tab. Upload that menu’s PDF or photos above — it does not replace other menus.`
       );
@@ -1158,7 +1115,7 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
         });
       }
       setFiles([]);
-      clearOwnerUploadInputRefs(photoFileRef, pdfFileRef);
+      if (fileRef.current) fileRef.current.value = "";
       await loadMenuState();
       await loadReviewItems();
     } catch (err) {
@@ -1428,126 +1385,35 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
         <SelectField label="Menu type" value={menuType} onChange={setMenuType} options={schema?.menu_types} required />
       </div>
       <div style={{ marginTop: 12 }}>
-        <label style={fieldLabel}>Menu files</label>
-        <div style={{ fontSize: 12, color: OWNER_COLORS.muted, marginBottom: 6, lineHeight: 1.45 }}>
-          Photos open your phone library so you can select many pages at once (JPEG/PNG/WebP — not HEIC). PDF is a separate picker. Extra picks still append. Stay on this tab while each page is read — large pages can take a few minutes.
-        </div>
-        <div data-testid="owner-menu-upload-size-hint" style={{ fontSize: 12, color: OWNER_COLORS.muted, marginBottom: 8 }}>
+        <label style={fieldLabel}>PDF (usually one) and/or photos (select many)</label>
+        <div data-testid="owner-menu-upload-size-hint" style={{ fontSize: 12, color: OWNER_COLORS.muted, marginBottom: 6 }}>
           PDF, JPEG, PNG, or WebP — max 20 MB each.
         </div>
-        <div style={{ display: "grid", gap: 10 }}>
-          <div>
-            <label style={{ ...fieldLabel, marginBottom: 6 }} htmlFor="owner-menu-upload-photos">
-              Photos (multi-select)
-            </label>
-            <input
-              id="owner-menu-upload-photos"
-              ref={photoFileRef}
-              type="file"
-              multiple
-              accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
-              onChange={(e) => applyOwnerUploadPick(e, { setFiles, setUploadMsg })}
-              style={{ ...inputStyle, padding: "10px 12px" }}
-              data-testid="owner-menu-upload-photos-input"
-            />
-          </div>
-          <div>
-            <label style={{ ...fieldLabel, marginBottom: 6 }} htmlFor="owner-menu-upload-pdf">
-              PDF
-            </label>
-            <input
-              id="owner-menu-upload-pdf"
-              ref={pdfFileRef}
-              type="file"
-              accept=".pdf,application/pdf"
-              onChange={(e) => applyOwnerUploadPick(e, { setFiles, setUploadMsg })}
-              style={{ ...inputStyle, padding: "10px 12px" }}
-              data-testid="owner-menu-upload-pdf-input"
-            />
-          </div>
-        </div>
+        <input
+          ref={fileRef}
+          type="file"
+          multiple
+          accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp"
+          onChange={(e) => {
+            const picked = Array.from(e.target.files || []);
+            const tooBig = picked.filter((file) => Number(file.size) > MAX_MENU_UPLOAD_BYTES);
+            const ok = picked.filter((file) => Number(file.size) <= MAX_MENU_UPLOAD_BYTES);
+            setFiles(ok);
+            if (tooBig.length) {
+              setUploadMsg({
+                ok: false,
+                parseStatus: "upload_failed",
+                message: tooBig.map(ownerUploadTooLargeMessage).join(" "),
+              });
+            }
+          }}
+          style={{ ...inputStyle, padding: "10px 12px" }}
+          data-testid="owner-menu-upload-input"
+        />
         {files.length > 0 ? (
-          <div style={{ marginTop: 8 }} data-testid="owner-menu-upload-file-list">
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                gap: 8,
-                marginBottom: 6,
-              }}
-            >
-              <div style={{ fontSize: 12, color: OWNER_COLORS.muted, fontWeight: 650 }}>
-                {files.length} file{files.length === 1 ? "" : "s"} ready
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setFiles([]);
-                  clearOwnerUploadInputRefs(photoFileRef, pdfFileRef);
-                }}
-                style={{
-                  border: "none",
-                  background: "transparent",
-                  color: OWNER_COLORS.muted,
-                  fontSize: 12,
-                  fontWeight: 650,
-                  cursor: "pointer",
-                  padding: 0,
-                  fontFamily: "inherit",
-                }}
-                data-testid="owner-menu-upload-clear-files"
-              >
-                Clear all
-              </button>
-            </div>
-            <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gap: 6 }}>
-              {files.map((f, idx) => (
-                <li
-                  key={`${ownerUploadFileKey(f)}-${idx}`}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    gap: 10,
-                    padding: "8px 10px",
-                    borderRadius: 9,
-                    border: `1px solid ${OWNER_COLORS.line}`,
-                    background: "#fff",
-                    fontSize: 12,
-                  }}
-                >
-                  <span style={{ color: OWNER_COLORS.ink, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis" }}>
-                    {f.name}
-                    <span style={{ color: OWNER_COLORS.muted, fontWeight: 500 }}> · {formatOwnerUploadBytes(f.size)}</span>
-                  </span>
-                  <button
-                    type="button"
-                    aria-label={`Remove ${f.name}`}
-                    onClick={() => setFiles((prev) => prev.filter((_, i) => i !== idx))}
-                    style={{
-                      flexShrink: 0,
-                      border: `1px solid ${OWNER_COLORS.line}`,
-                      background: "#fff",
-                      color: OWNER_COLORS.muted,
-                      borderRadius: 8,
-                      padding: "4px 8px",
-                      fontSize: 11,
-                      fontWeight: 700,
-                      cursor: "pointer",
-                      fontFamily: "inherit",
-                    }}
-                    data-testid="owner-menu-upload-remove-file"
-                  >
-                    Remove
-                  </button>
-                </li>
-              ))}
-            </ul>
-            <div style={{ marginTop: 8, fontSize: 12, color: OWNER_COLORS.muted }}>
-              Need more pages? Use Photos again to append, or add a PDF, then{" "}
-              {selectedMenuNeedsContent ? "Upload & Parse" : "Update OCR"}.
-            </div>
+          <div style={{ marginTop: 6, fontSize: 12, color: OWNER_COLORS.muted }}>
+            {files.length} file{files.length === 1 ? "" : "s"}:{" "}
+            <strong>{files.map((f) => f.name).join(", ")}</strong>
           </div>
         ) : null}
       </div>
