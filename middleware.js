@@ -13,6 +13,13 @@ import {
 import { clusterPath } from "./src/lib/clusterUrl.js";
 import { getClusterSeoContent } from "./src/lib/clusterSeoContent.js";
 import { INDEXABLE_STATIC_PAGES } from "./src/lib/sitemapConfig.js";
+import {
+  destinationVenuePageJsonLd,
+  menuItemPageJsonLd,
+  restaurantPageJsonLd,
+  toJsonLdScriptTag,
+  videoWatchPageJsonLd,
+} from "./src/lib/seo/jsonLdBuilders.js";
 
 const BACKEND = "https://menubloc-backend-production.up.railway.app";
 const ORIGIN = "https://menuply.com";
@@ -34,6 +41,8 @@ const LEGACY_NUMERIC_RE = /^\/public\/restaurants\/(\d+)\/menu\/?$/;
 const MENU_ITEM_RE = /^\/menu-items\/(\d+)\/?$/;
 const CLUSTER_RE = /^\/clusters\/([^/]+)\/([^/]+)\/([^/]+)\/?$/;
 const CLUSTER_CITY_RE = /^\/clusters\/([^/]+)\/([^/]+)\/?$/;
+const VIDEO_WATCH_RE = /^\/videos\/([a-z]+)\/(\d+)\/?$/;
+const DESTINATION_VENUE_RE = /^\/destination-venues\/([^/]+)\/?$/;
 const SITEMAP_CHUNK_RE = /^\/sitemaps\/sitemap-(\d+)\.xml$/;
 const SITEMAP_LIMIT = 45000;
 
@@ -68,6 +77,23 @@ function injectMeta(html, title, description, canonical, image) {
   }
 
   return next;
+}
+
+function injectRobots(html, content) {
+  const robots = escapeHtml(content);
+  if (/<meta\s+name="robots"/i.test(html)) {
+    return html.replace(
+      /<meta\s+name="robots"\s+content="[^"]*"[^>]*>/i,
+      `<meta name="robots" content="${robots}">`
+    );
+  }
+  return html.replace("</head>", `<meta name="robots" content="${robots}">\n</head>`);
+}
+
+function injectJsonLd(html, graph) {
+  const tag = toJsonLdScriptTag(graph);
+  if (!tag) return html;
+  return html.replace("</head>", `${tag}\n</head>`);
 }
 
 function injectNoScriptLinks(html, links, label) {
@@ -179,6 +205,30 @@ async function buildSitemapEntries() {
       });
     }
   }
+  for (const venue of inventory.destination_venues || []) {
+    const path = venue.path || (venue.slug ? `/destination-venues/${encodeURIComponent(venue.slug)}` : null);
+    if (path) {
+      entries.push({
+        url: absoluteCanonicalUrl(path),
+        lastmod: venue.updated_at,
+        changefreq: "weekly",
+        priority: 0.7,
+        category: "destination_venue",
+      });
+    }
+  }
+  for (const video of inventory.videos || []) {
+    const path = video.path || null;
+    if (path) {
+      entries.push({
+        url: absoluteCanonicalUrl(path),
+        lastmod: video.updated_at,
+        changefreq: "weekly",
+        priority: 0.6,
+        category: "video",
+      });
+    }
+  }
 
   const seen = new Set();
   return entries.filter((entry) => entry.url && !seen.has(entry.url) && seen.add(entry.url));
@@ -281,7 +331,20 @@ export default async function middleware(request) {
     ]);
     if (!shell || !meta || !meta.ok) return;
     const { title, description, canonical } = buildMenuItemMeta(meta.data, itemId);
-    return injectedResponse(injectMeta(shell, title, description, canonical));
+    const restaurant = meta.data.restaurant_id
+      ? {
+          id: meta.data.restaurant_id,
+          name: meta.data.restaurant_name,
+          slug: meta.data.restaurant_slug,
+          city: meta.data.city,
+          state: meta.data.state,
+        }
+      : null;
+    const html = injectJsonLd(
+      injectMeta(shell, title, description, canonical),
+      menuItemPageJsonLd({ id: itemId, name: meta.data.name, description: meta.data.description }, restaurant)
+    );
+    return injectedResponse(html);
   }
 
   // --- Canonical 3-segment: /restaurants/:state/:city/:slug/menu ---
@@ -299,9 +362,10 @@ export default async function middleware(request) {
       return Response.redirect(canonical, 301);
     }
     const cityUrl = absoluteCanonicalUrl(cityPath(meta.data));
-    const html = injectNoScriptLinks(injectMeta(shell, title, description, canonical), [
+    let html = injectNoScriptLinks(injectMeta(shell, title, description, canonical), [
       { href: cityUrl, text: `Restaurants in ${meta.data.city}, ${meta.data.state}` },
     ], "Related city");
+    html = injectJsonLd(html, restaurantPageJsonLd(meta.data));
     return injectedResponse(html);
   }
 
@@ -322,9 +386,10 @@ export default async function middleware(request) {
       return Response.redirect(canonical, 301);
     }
     const cityUrl = absoluteCanonicalUrl(cityPath(meta.data));
-    const html = injectNoScriptLinks(injectMeta(shell, title, description, canonical), [
+    let html = injectNoScriptLinks(injectMeta(shell, title, description, canonical), [
       { href: cityUrl, text: `Restaurants in ${meta.data.city}, ${meta.data.state}` },
     ], "Related city");
+    html = injectJsonLd(html, restaurantPageJsonLd(meta.data));
     return injectedResponse(html);
   }
 
@@ -343,7 +408,9 @@ export default async function middleware(request) {
     const shell = await fetchShell(request.url);
     if (!shell) return;
     const { title, description } = buildRestaurantMenuMeta(meta.data);
-    return injectedResponse(injectMeta(shell, title, description, canonical));
+    return injectedResponse(
+      injectJsonLd(injectMeta(shell, title, description, canonical), restaurantPageJsonLd(meta.data))
+    );
   }
 
   // --- Legacy 1-segment: /restaurants/:slug (profile) → redirect to canonical ---
@@ -382,7 +449,9 @@ export default async function middleware(request) {
     const shell = await fetchShell(request.url);
     if (!shell) return;
     const { title, description } = buildRestaurantProfileMeta(meta.data);
-    return injectedResponse(injectMeta(shell, title, description, canonical));
+    return injectedResponse(
+      injectJsonLd(injectMeta(shell, title, description, canonical), restaurantPageJsonLd(meta.data))
+    );
   }
 
   // --- /public/restaurants/:id/menu (legacy numeric) → redirect to canonical ---
@@ -450,7 +519,96 @@ export default async function middleware(request) {
     ]);
     if (!shell || !meta || !meta.ok) return;
     const { title, description, canonical } = buildMenuItemMeta(meta.data, id);
-    return injectedResponse(injectMeta(shell, title, description, canonical));
+    const restaurant = meta.data.restaurant_id
+      ? {
+          id: meta.data.restaurant_id,
+          name: meta.data.restaurant_name,
+          slug: meta.data.restaurant_slug,
+          city: meta.data.city,
+          state: meta.data.state,
+        }
+      : null;
+    const html = injectJsonLd(
+      injectMeta(shell, title, description, canonical),
+      menuItemPageJsonLd({ id, name: meta.data.name, description: meta.data.description }, restaurant)
+    );
+    return injectedResponse(html);
+  }
+
+  // --- /videos/:kind/:id ---
+  m = VIDEO_WATCH_RE.exec(pathname);
+  if (m) {
+    const kind = m[1];
+    const id = m[2];
+    const [shell, meta] = await Promise.all([
+      fetchShell(request.url),
+      fetchMeta(`/public/meta/videos/${encodeURIComponent(kind)}/${encodeURIComponent(id)}`),
+    ]);
+    if (!shell || !meta?.ok || !meta.data) return;
+    const data = meta.data;
+    const canonical = `${ORIGIN}${data.path || `/videos/${kind}/${id}`}`;
+    const titleBase = data.title || "Menuply video";
+    const title = `${escapeHtml(titleBase)} | Menuply`;
+    const description = escapeHtml(
+      data.description ||
+        (data.restaurant?.name
+          ? `Watch ${titleBase} from ${data.restaurant.name} on Menuply.`
+          : `Watch ${titleBase} on Menuply.`)
+    );
+    let html = injectMeta(shell, title, description, canonical, data.photo_url || null);
+    if (!data.indexable) {
+      html = injectRobots(html, "noindex, follow");
+    }
+    html = injectJsonLd(html, videoWatchPageJsonLd(data));
+    const links = [];
+    if (data.restaurant?.slug) {
+      const rPath = restaurantPath(data.restaurant);
+      if (rPath) links.push({ href: absoluteCanonicalUrl(rPath), text: data.restaurant.name || "Restaurant" });
+    }
+    if (data.menu_item?.id) {
+      links.push({
+        href: `${ORIGIN}/menu-items/${data.menu_item.id}`,
+        text: data.menu_item.name || "Menu item",
+      });
+    }
+    if (data.destination_venue?.slug) {
+      links.push({
+        href: `${ORIGIN}/destination-venues/${encodeURIComponent(data.destination_venue.slug)}`,
+        text: data.destination_venue.name || "Venue",
+      });
+    }
+    if (data.cluster?.path) {
+      links.push({
+        href: absoluteCanonicalUrl(data.cluster.path),
+        text: data.cluster.name || "Area",
+      });
+    }
+    if (links.length) html = injectNoScriptLinks(html, links, "Related");
+    return injectedResponse(html);
+  }
+
+  // --- /destination-venues/:slug (base page only; not /food or /order) ---
+  m = DESTINATION_VENUE_RE.exec(pathname);
+  if (m) {
+    const slug = decodeURIComponent(m[1]);
+    const [shell, meta] = await Promise.all([
+      fetchShell(request.url),
+      fetchMeta(`/public/meta/destination-venues/${encodeURIComponent(slug)}`),
+    ]);
+    if (!shell || !meta?.ok || !meta.data) return;
+    const data = meta.data;
+    const name = data.official_name || data.name || slug;
+    const hasLocation = data.city && data.state;
+    const title = `${escapeHtml(name)} | Menuply`;
+    const description = hasLocation
+      ? `Explore food and venue details for ${escapeHtml(name)} in ${escapeHtml(data.city)}, ${escapeHtml(data.state)} on Menuply.`
+      : `Explore food and venue details for ${escapeHtml(name)} on Menuply.`;
+    const canonical = `${ORIGIN}/destination-venues/${encodeURIComponent(data.slug || slug)}`;
+    const html = injectJsonLd(
+      injectMeta(shell, title, description, canonical),
+      destinationVenuePageJsonLd(data)
+    );
+    return injectedResponse(html);
   }
 
   // Not a matched path — pass through to normal Vercel routing
@@ -465,5 +623,7 @@ export const config = {
     "/restaurants/:path*",
     "/public/restaurants/:path*",
     "/menu-items/:path*",
+    "/videos/:path*",
+    "/destination-venues/:slug",
   ],
 };

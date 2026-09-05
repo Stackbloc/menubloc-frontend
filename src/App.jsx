@@ -231,6 +231,7 @@ import RestaurantsLandingPage from "./pages/RestaurantsLandingPage.jsx";
 
 import MenuPage from "./pages/MenuPage.jsx";
 import MenuItemDetailPage from "./pages/MenuItemDetailPage.jsx";
+import VideoWatchPage from "./pages/VideoWatchPage.jsx";
 import ComparePage from "./pages/ComparePage.jsx";
 import MenuItemInfoPage from "./pages/MenuItemInfoPage.jsx";
 import PublicMenuPage from "./pages/PublicMenuPage.jsx";
@@ -949,6 +950,7 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
         <Route path="/orders/:orderId/confirmation" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OrderConfirmationPage />} />
         <Route path="/restaurants/:restaurantSlug/menu-items/:id" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MenuItemDetailPage />} />
         <Route path="/menu-items/:id" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MenuItemDetailPage />} />
+        <Route path="/videos/:kind/:id" element={crmHost ? <HostRouteRedirect to="/crm" /> : <VideoWatchPage />} />
         <Route path="/restaurants/:restaurantSlug/menu-item-info/:id" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MenuItemInfoPage />} />
         <Route path="/menu-item-info/:id" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MenuItemInfoPage />} />
 
