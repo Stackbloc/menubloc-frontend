@@ -37,6 +37,38 @@ const baseRow = {
 
 assert.equal(canShowAddMenu(baseRow), true, "unclaimed restaurant without menu shows Add Menu");
 assert.equal(
+  canShowAddMenu({
+    ...baseRow,
+    menus: [{ id: 1, status: "published", item_count: 0, is_active: true }],
+  }),
+  true,
+  "placeholder menu shell (0 items) shows Upload/Add Menu"
+);
+assert.equal(
+  hasUsableActiveMenu({
+    menus: [{ id: 1, status: "published", item_count: 0 }],
+    menu_ready: false,
+  }),
+  false,
+  "placeholder shell is not usable menu data"
+);
+// Transition: once items are added to the placeholder, icon flips to View Menu.
+assert.equal(
+  canShowAddMenu({
+    ...baseRow,
+    menus: [{ id: 1, status: "published", item_count: 12, is_active: true }],
+  }),
+  false,
+  "after items are added to placeholder → View Menu (no upload)"
+);
+assert.equal(
+  hasUsableActiveMenu({
+    menus: [{ id: 1, status: "published", item_count: 12 }],
+  }),
+  true,
+  "item data on former placeholder is usable"
+);
+assert.equal(
   canShowAddMenu({ ...baseRow, menu_ready: true }),
   false,
   "menu_ready hides Add Menu"
@@ -68,7 +100,16 @@ assert.equal(
 assert.equal(
   canShowAddMenu({ ...baseRow, menu_item_count: 20 }),
   false,
-  "unclaimed + published item count must show View Menu not Add Menu camera"
+  "unclaimed + item data must show View Menu not Upload Menu"
+);
+assert.equal(
+  canShowAddMenu({
+    ...baseRow,
+    menu_ready: false,
+    menu_item_count: 20,
+  }),
+  false,
+  "item counts win over stale menu_ready=false — View Menu, not upload"
 );
 assert.equal(
   hasUsableActiveMenu({

@@ -24,19 +24,28 @@ export function isRestaurantAddMenuEntity(row) {
   return true;
 }
 
+/**
+ * True when the restaurant has real menu item data (not a placeholder shell).
+ *
+ * Product rule:
+ * - Placeholder menu record (menu row exists, 0 items) → false → Upload/Add Menu icon
+ * - Menu with item data → true → View Menu icon (never ask to upload)
+ *
+ * `menu_ready` from browse/availability means item count > 0. Profile payloads often
+ * omit it and only set `menu_item_count` / `menus[].item_count` — item counts win.
+ */
 export function hasUsableActiveMenu(row) {
   if (!row) return false;
-  if (row.menu_ready === true) return true;
-  if (row.menu_ready === false) return false;
+
   const preview = row.preview_items || row.preview_menu_items || row.menuPreviewItems;
   if (Array.isArray(preview) && preview.length > 0) return true;
+
   const publicCount = Number(row.public_menu_item_count);
   if (Number.isFinite(publicCount) && publicCount > 0) return true;
-  // Public restaurant profiles set menu_item_count from payload menu_items but often
-  // omit has_menu / menu_ready. Treat a positive count as a usable menu so View Menu
-  // is not replaced by Add Menu (camera) for newly published unclaimed restaurants.
+
   const itemCount = Number(row.menu_item_count);
   if (Number.isFinite(itemCount) && itemCount > 0) return true;
+
   const menus = row.menus;
   if (Array.isArray(menus)) {
     for (const menu of menus) {
@@ -44,6 +53,9 @@ export function hasUsableActiveMenu(row) {
       if (Number.isFinite(menuItems) && menuItems > 0) return true;
     }
   }
+
+  // Availability flag is derived from item count elsewhere; use only when no counts present.
+  if (row.menu_ready === true) return true;
   return false;
 }
 
@@ -55,6 +67,10 @@ export function isUnclaimedForAddMenu(row) {
   return true;
 }
 
+/**
+ * Upload/Add Menu (camera) — only for unclaimed restaurants with no item data
+ * (missing menu or placeholder shell). Restaurants with items get View Menu instead.
+ */
 export function canShowAddMenu(row) {
   if (!row) return false;
   const id = Number(row.restaurant_id || row.id);
