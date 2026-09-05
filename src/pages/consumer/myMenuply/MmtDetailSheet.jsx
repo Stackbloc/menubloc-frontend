@@ -106,22 +106,47 @@ export default function MmtDetailSheet({ open, requestId, viewerUserId, onClose,
             {isOwner ? (
               <>
                 <p style={s.muted}>
-                  {Number(request.response_count) || 0} response
+                  {Number(request.response_count) || 0} offer
                   {(Number(request.response_count) || 0) === 1 ? "" : "s"}
                   {request.status !== "open" ? " · Closed" : ""}
                 </p>
                 {(request.responses || []).length === 0 ? (
-                  <p style={s.muted}>Waiting for someone to share how to make this.</p>
+                  <p style={s.muted}>Waiting for someone to offer to make this.</p>
                 ) : (
                   <ul style={styles.responses}>
-                    {(request.responses || []).map((row) => (
-                      <li key={row.id} style={styles.responseItem}>
-                        <div style={styles.responder}>
-                          {row.responder?.display_name || "Diner"}
-                        </div>
-                        <div style={styles.body}>{row.body}</div>
-                      </li>
-                    ))}
+                    {(request.responses || []).map((row) => {
+                      const who = row.responder?.display_name || "Diner";
+                      return (
+                        <li key={row.id} style={styles.responseItem} data-testid="mmt-owner-offer">
+                          <p style={styles.offerPrompt}>
+                            {who} has offered to make you {food}. Accept?
+                          </p>
+                          {row.body ? <div style={styles.body}>{row.body}</div> : null}
+                          <div style={styles.offerActions}>
+                            <button
+                              type="button"
+                              style={s.primaryBtn}
+                              disabled={busy}
+                              data-testid="mmt-offer-accept"
+                              onClick={() => {
+                                window.alert(`Accepted — ${who} will make you ${food}.`);
+                              }}
+                            >
+                              Accept
+                            </button>
+                            <button
+                              type="button"
+                              style={s.chipBtn}
+                              disabled={busy}
+                              data-testid="mmt-offer-dismiss"
+                              onClick={() => {}}
+                            >
+                              Not now
+                            </button>
+                          </div>
+                        </li>
+                      );
+                    })}
                   </ul>
                 )}
                 {request.status === "open" ? (
@@ -139,11 +164,12 @@ export default function MmtDetailSheet({ open, requestId, viewerUserId, onClose,
             ) : (
               <>
                 <p style={styles.lead}>
-                  {request.requester?.display_name || "Someone"} asked how to make this. Share
-                  your recipe or steps — only they can see it.
+                  {request.requester?.display_name || "Someone"} wants someone to make{" "}
+                  <strong>{food}</strong>
+                  {place ? ` from ${place}` : ""}. Offer to make it — only they see your reply.
                 </p>
                 <label style={styles.label}>
-                  How to make it
+                  How you&apos;ll make it (optional note)
                   <textarea
                     value={draft}
                     onChange={(e) => setDraft(e.target.value)}
@@ -163,7 +189,7 @@ export default function MmtDetailSheet({ open, requestId, viewerUserId, onClose,
                     onClick={handleRespond}
                     data-testid="mmt-response-submit"
                   >
-                    {busy ? "Sending…" : "Send response"}
+                    {busy ? "Sending…" : "Offer to make this"}
                   </button>
                 )}
               </>
@@ -227,6 +253,14 @@ const styles = {
     background: "#f8fafc",
     border: "1px solid #e2e8f0",
   },
+  offerPrompt: {
+    margin: "0 0 8px",
+    fontWeight: 800,
+    fontSize: 14,
+    color: "#0f172a",
+    lineHeight: 1.35,
+  },
+  offerActions: { display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" },
   responder: { fontWeight: 800, fontSize: 13, marginBottom: 4, color: "#0f172a" },
   body: { fontSize: 14, lineHeight: 1.45, color: "#334155", whiteSpace: "pre-wrap" },
   error: { margin: "10px 0 0", color: "#b91c1c", fontSize: 13, fontWeight: 600 },

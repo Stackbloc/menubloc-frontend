@@ -215,7 +215,7 @@ export default function MyMenuplyPage() {
   const [schedulingPlans, setSchedulingPlans] = useState(false);
   const [selectedPlanKey, setSelectedPlanKey] = useState("");
   const [joinCandidates, setJoinCandidates] = useState([]);
-  const [requestMmtWant, setRequestMmtWant] = useState(null);
+  const [requestMmtOpen, setRequestMmtOpen] = useState(false);
   const [mmtDetailId, setMmtDetailId] = useState(null);
   const [inviteMeOutOpen, setInviteMeOutOpen] = useState(false);
   const [inviteMeOutAudience, setInviteMeOutAudience] = useState("connections");
@@ -1622,8 +1622,13 @@ export default function MyMenuplyPage() {
               inviteMeOutCandidates={joinCandidates}
               onInviteMeOutSave={saveInviteMeOutSettings}
               inviteMeOutToggleBusy={inviteMeOutToggleBusy}
-              onRequestMmt={(want) => setRequestMmtWant(want)}
+              onRequestMmt={() => setRequestMmtOpen(true)}
               onViewMmt={(mmt) => setMmtDetailId(Number(mmt?.id) || null)}
+              onOpenAteCamera={() => {
+                setComposeDefaultCategory("ate");
+                setComposeMediaSource("camera");
+                setComposeOpen(true);
+              }}
               planPrefill={planPrefill}
               locationCity={locationCity}
               locationState={locationState}
@@ -1894,12 +1899,12 @@ export default function MyMenuplyPage() {
         />
       ) : null}
       <RequestMmtSheet
-        open={Boolean(requestMmtWant)}
-        want={requestMmtWant}
+        open={requestMmtOpen}
+        wants={wants}
         candidates={joinCandidates}
-        onClose={() => setRequestMmtWant(null)}
+        onClose={() => setRequestMmtOpen(false)}
         onCreated={async () => {
-          setRequestMmtWant(null);
+          setRequestMmtOpen(false);
           await refreshMmtData();
         }}
       />

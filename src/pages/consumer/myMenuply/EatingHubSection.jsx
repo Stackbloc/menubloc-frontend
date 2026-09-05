@@ -30,9 +30,20 @@ import { defaultWhatIAteMealPeriod } from "../../../lib/whatIAteTodayMealPeriod.
 import InviteMeOutAudiencePicker from "./InviteMeOutAudiencePicker.jsx";
 import WantDiscoveryPanel from "./WantDiscoveryPanel.jsx";
 import NearbyEatingSection from "./NearbyEatingSection.jsx";
-import SocialFoodInfoSection from "./SocialFoodInfoSection.jsx";
-import MealIntelSection from "./MealIntelSection.jsx";
 import * as s from "./myMenuplyStyles.js";
+
+function EatingCameraGlyph() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden fill="none">
+      <path
+        d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.2l1.1-1.6A1.5 1.5 0 0 1 10 3.5h4a1.5 1.5 0 0 1 1.2.9L16.3 6h1.2A2.5 2.5 0 0 1 20 8.5v8A2.5 2.5 0 0 1 17.5 19h-11A2.5 2.5 0 0 1 4 16.5v-8Z"
+        stroke="currentColor"
+        strokeWidth="1.7"
+      />
+      <circle cx="12" cy="12.5" r="3.2" stroke="currentColor" strokeWidth="1.7" />
+    </svg>
+  );
+}
 
 function formatInlineDayLabel(hubDate, today) {
   if (hubDate === today) return "Today";
@@ -156,6 +167,7 @@ export default function EatingHubSection({
   inviteMeOutToggleBusy = false,
   onRequestMmt,
   onViewMmt,
+  onOpenAteCamera,
 }) {
   void liked;
   void foodHref;
@@ -297,6 +309,28 @@ export default function EatingHubSection({
           title="What I'm Eating"
           to={readOnly ? diaryHref : "/account/what-i-ate"}
           subtitle="The food you're sharing with the world"
+          titleLeading={
+            !readOnly && typeof onOpenAteCamera === "function" ? (
+              <button
+                type="button"
+                style={s.sectionTitleIconBtn || {
+                  appearance: "none",
+                  border: "none",
+                  background: "transparent",
+                  color: "#0f766e",
+                  padding: 0,
+                  display: "inline-flex",
+                  cursor: "pointer",
+                  lineHeight: 0,
+                }}
+                aria-label="Record or photograph what I'm eating"
+                data-testid="what-im-eating-camera"
+                onClick={onOpenAteCamera}
+              >
+                <EatingCameraGlyph />
+              </button>
+            ) : null
+          }
           aside={
             <>
               <EatingDayNavInline
@@ -344,19 +378,13 @@ export default function EatingHubSection({
         </div>
       </section>
 
-      {/* Phase 3: discovery entry must precede What I Wanna Eat */}
+      {/* Who's Eating: text links to registered diners (max 5); videos on their profile / Feed */}
       <NearbyEatingSection
         hidden={readOnly}
         locationCity={locationCity}
         locationState={locationState}
         favoriteFoods={favoriteFoods}
       />
-
-      {/* Phase 5: connects’ food signals — informational, not matching */}
-      <SocialFoodInfoSection hidden={readOnly} />
-
-      {/* Phase 7: Meal Intel from intent — not public Deals; Waiter briefing not modified */}
-      <MealIntelSection hidden={readOnly} />
 
       <section style={s.section} data-testid="want-to-eat">
         {wantDiscovery && lastPost?.kind !== "diary" ? (
@@ -406,10 +434,23 @@ export default function EatingHubSection({
             onSelectItem={readOnly ? undefined : onWantSelect}
             onDelete={readOnly ? undefined : onWantDelete}
             deleteBusy={wantDeleteBusy}
-            onRequestMmt={readOnly ? undefined : onRequestMmt}
             onViewMmt={onViewMmt}
             emptyMessage={null}
           />
+          {!readOnly && typeof onRequestMmt === "function" ? (
+            <p style={{ ...s.muted, fontSize: 13, marginTop: 10 }} data-testid="want-mmt-section">
+              <button
+                type="button"
+                onClick={() => onRequestMmt()}
+                style={inviteMeOutButtonStyle}
+                data-testid="want-mmt-open-picker"
+              >
+                Make Me This
+              </button>
+              {" — "}
+              choose which wanna-eat items show Make Me This on your profile.
+            </p>
+          ) : null}
           {/* Own hub only: Invite Me Out on/off — opens eligibility dialog (peers never see this). */}
           {!readOnly ? (
             <p

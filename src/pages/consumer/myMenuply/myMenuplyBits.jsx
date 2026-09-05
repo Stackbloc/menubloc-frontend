@@ -36,14 +36,33 @@ export function foodHref(item) {
   return restaurantHref(item) || "/account/what-i-ate";
 }
 
-export function SectionHead({ title, to, testId, aside = null, kicker = null, subtitle = null }) {
+export function SectionHead({
+  title,
+  to,
+  testId,
+  aside = null,
+  kicker = null,
+  subtitle = null,
+  titleLeading = null,
+}) {
   return (
     <div style={s.sectionHeadBlock} data-testid={testId}>
       {kicker ? <p style={s.sectionKicker}>{kicker}</p> : null}
       <div style={s.row}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <h2 style={s.sectionTitleQuiet}>
-            {to ? (
+            {titleLeading ? (
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                {titleLeading}
+                {to ? (
+                  <Link to={to} style={s.sectionTitleLink}>
+                    {title}
+                  </Link>
+                ) : (
+                  title
+                )}
+              </span>
+            ) : to ? (
               <Link to={to} style={s.sectionTitleLink}>
                 {title}
               </Link>
@@ -916,10 +935,23 @@ function WantToEatCard({
     ? `/menu-items/${encodeURIComponent(String(want.menu_item_id))}`
     : null;
   const visual = resolveEatingDishVisual(want);
-  const hasDishMedia = visual?.source === "dish";
-  const showLogo = visual?.source === "logo";
-  const showBillboard = visual?.source === "billboard";
-  const showHeroVisual = hasDishMedia || showBillboard;
+  // Peer hubs: graphic-first (poster/still) — videos play on owner profile or Feed.
+  const graphicOnly = Boolean(readOnly);
+  const playVideo = !graphicOnly && visual?.kind === "video";
+  const stillUrl =
+    visual?.kind === "video"
+      ? visual.posterFallbackUrl || ""
+      : visual?.url || "";
+  const stillSource =
+    visual?.kind === "video"
+      ? visual.posterFallbackSource || ""
+      : visual?.source;
+  const hasDishMedia = playVideo
+    ? visual?.source === "dish"
+    : stillSource === "dish" && Boolean(stillUrl);
+  const showLogo = !playVideo && stillSource === "logo" && Boolean(stillUrl);
+  const showBillboard = !playVideo && stillSource === "billboard" && Boolean(stillUrl);
+  const showHeroVisual = playVideo || hasDishMedia || showBillboard;
   const place = String(want.restaurant_name || "").trim();
   const foodName = String(want.food_name || "").trim() || "Want";
   const canDelete = !readOnly && typeof onDelete === "function" && want?.id != null;
@@ -949,7 +981,7 @@ function WantToEatCard({
           showBillboard ? "want-to-eat-billboard-media" : "want-to-eat-dish-media"
         }
       >
-        {visual.kind === "video" ? (
+        {playVideo ? (
           <video
             src={visual.url}
             style={isScroll ? wantStyles.scrollPhoto : wantStyles.stackPhoto}
@@ -958,13 +990,23 @@ function WantToEatCard({
             autoPlay
             loop
             preload="auto"
+            data-testid="want-to-eat-owner-video"
           />
-        ) : (
+        ) : stillUrl ? (
           <img
-            src={visual.url}
+            src={stillUrl}
             alt=""
             style={isScroll ? wantStyles.scrollPhoto : wantStyles.stackPhoto}
+            data-testid={graphicOnly ? "want-to-eat-peer-graphic" : "want-to-eat-still"}
           />
+        ) : (
+          <div
+            style={isScroll ? wantStyles.scrollThumbPlaceholder : wantStyles.thumbPlaceholder}
+            aria-hidden
+            data-testid="want-to-eat-peer-graphic"
+          >
+            🍽
+          </div>
         )}
         {isScroll ? (
           <div style={wantStyles.scrollPhotoScrim}>
@@ -1069,32 +1111,21 @@ function WantToEatCard({
   return (
     <div style={shellStyle} data-testid="want-to-eat-item" {...bind}>
       {main}
-      {!readOnly && (onRequestMmt || onViewMmt) ? (
+      {!readOnly && want?.mmt_request?.id && onViewMmt ? (
         <div style={wantStyles.mmtRow} data-testid="want-mmt-actions">
-          {want?.mmt_request?.id ? (
-            <button
-              type="button"
-              style={wantStyles.mmtBtn}
-              data-testid="want-mmt-view"
-              onClick={() => onViewMmt?.(want.mmt_request)}
-            >
-              Make Me This on profile · {Number(want.mmt_request.response_count) || 0} response
-              {(Number(want.mmt_request.response_count) || 0) === 1 ? "" : "s"}
-            </button>
-          ) : (
-            <button
-              type="button"
-              style={wantStyles.mmtBtn}
-              data-testid="want-mmt-request"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onRequestMmt?.(want);
-              }}
-            >
-              Add Make Me This to profile
-            </button>
-          )}
+          <button
+            type="button"
+            style={wantStyles.mmtBtn}
+            data-testid="want-mmt-view"
+            onClick={() => onViewMmt?.(want.mmt_request)}
+          >
+            Make Me This
+            {Number(want.mmt_request.response_count) > 0
+              ? ` · ${Number(want.mmt_request.response_count)} offer${
+                  Number(want.mmt_request.response_count) === 1 ? "" : "s"
+                }`
+              : ""}
+          </button>
         </div>
       ) : null}
       {readOnly && want?.mmt_request?.id && onViewMmt ? (
@@ -1107,7 +1138,7 @@ function WantToEatCard({
           >
             {want.mmt_request.viewer_has_responded
               ? "View Make Me This"
-              : "Make Me This — share how to cook this"}
+              : "Make Me This"}
           </button>
         </div>
       ) : null}

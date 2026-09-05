@@ -1,6 +1,6 @@
 /**
- * See What Others Nearby Are Eating — discovery entry before What I Wanna Eat.
- * Reuses Feed (see-who's-eating) + optional want-discovery connects; food icons for scan.
+ * Who's Eating — up to 5 registered-diner text links (not a video list).
+ * Videos play on that diner's profile or in Feed — not embedded here.
  */
 
 import { useEffect, useState } from "react";
@@ -9,18 +9,15 @@ import {
   fetchWantDiscovery,
   listSeeWhosEating,
 } from "../../../lib/consumerApi.js";
-import { iconForFoodText } from "../../../lib/foodInterestIcons.js";
 import {
   dinerPeerProfilePath,
-  liveFeedCategoryLabel,
   liveFeedCreatorProfilePath,
-  liveFeedFullCategoryLabel,
-  liveFeedRestaurantProfilePath,
-  resolveLiveFeedContentLink,
 } from "../../../lib/liveFeedCategory.js";
 import { SectionHead } from "./myMenuplyBits.jsx";
 import SectionEmptyState from "./SectionEmptyState.jsx";
 import * as s from "./myMenuplyStyles.js";
+
+const MAX_LINES = 5;
 
 function feedFoodLabel(item) {
   return (
@@ -29,8 +26,7 @@ function feedFoodLabel(item) {
     item?.item_name ||
     item?.caption ||
     item?.title ||
-    liveFeedFullCategoryLabel(item?.kind) ||
-    "Food"
+    "food"
   );
 }
 
@@ -40,8 +36,67 @@ function feedPersonLabel(item) {
     item?.display_name ||
     item?.creator?.display_name ||
     item?.poster_name ||
-    "A diner"
+    ""
   );
+}
+
+function registeredDinerId(row) {
+  const id =
+    row?.consumer_user_id ??
+    row?.diner?.id ??
+    row?.diner?.consumer_user_id ??
+    row?.creator?.id ??
+    row?.creator_user_id ??
+    row?.user_id;
+  const n = Number(id);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+function buildWhosEatingLines({ feedItems, connectLines }) {
+  const out = [];
+  const seen = new Set();
+
+  function push({ dinerId, displayName, food, href }) {
+    if (!dinerId || seen.has(dinerId) || out.length >= MAX_LINES) return;
+    const name = String(displayName || "").trim();
+    const dish = String(food || "").trim() || "food";
+    if (!name || !href) return;
+    seen.add(dinerId);
+    out.push({
+      key: `who-${dinerId}`,
+      dinerId,
+      href,
+      label: `${name} is eating ${dish}`,
+    });
+  }
+
+  for (const row of connectLines || []) {
+    const dinerId = registeredDinerId(row);
+    if (!dinerId) continue;
+    push({
+      dinerId,
+      displayName: row.display_name || row.name,
+      food: row.food_name || row.food,
+      href: dinerPeerProfilePath(dinerId),
+    });
+  }
+
+  for (const item of feedItems || []) {
+    const dinerId = registeredDinerId(item);
+    if (!dinerId) continue;
+    const href =
+      dinerPeerProfilePath(dinerId) ||
+      liveFeedCreatorProfilePath(item) ||
+      null;
+    push({
+      dinerId,
+      displayName: feedPersonLabel(item),
+      food: feedFoodLabel(item),
+      href,
+    });
+  }
+
+  return out;
 }
 
 export default function NearbyEatingSection({
@@ -50,8 +105,7 @@ export default function NearbyEatingSection({
   favoriteFoods = [],
   hidden = false,
 }) {
-  const [feedItems, setFeedItems] = useState([]);
-  const [connectLines, setConnectLines] = useState([]);
+  const [lines, setLines] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -79,30 +133,31 @@ export default function NearbyEatingSection({
         city: locationCity || undefined,
         state: locationState || undefined,
         limit: 12,
-        kind: "all",
+        kind: "ate",
       }).catch((err) => ({ __error: err })),
       discoveryPromise,
     ]).then(([feed, discovery]) => {
       if (cancelled) return;
+      let feedItems = [];
       if (feed?.__error) {
-        setError(feed.__error.message || "Unable to load nearby eating");
-        setFeedItems([]);
+        setError(feed.__error.message || "Unable to load who's eating");
       } else {
-        setFeedItems(Array.isArray(feed?.items) ? feed.items : []);
+        feedItems = Array.isArray(feed?.items) ? feed.items : [];
       }
       const connects = Array.isArray(discovery?.connects_related)
         ? discovery.connects_related
         : [];
       const nearby = Array.isArray(discovery?.nearby) ? discovery.nearby : [];
-      setConnectLines([...connects, ...nearby.filter((n) => n.message)].slice(0, 6));
+      const connectLines = [...connects, ...nearby].filter(Boolean);
+      setLines(buildWhosEatingLines({ feedItems, connectLines }));
       setLoading(false);
     });
 
     return () => {
       cancelled = true;
     };
-    // favKey captures favorite food signal without unstable array identity
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- favKey stands in for favoriteFoods[0]
+    // favKey stands in for favoriteFoods[0]
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- favKey
   }, [hidden, locationCity, locationState, favKey]);
 
   if (hidden) return null;
@@ -112,103 +167,36 @@ export default function NearbyEatingSection({
       <div style={s.presentationBlock}>
         <SectionHead
           kicker="Nearby"
-          title="See What Others Nearby Are Eating"
-          to="/feed"
-          subtitle="Discover what’s happening around you — then say what you wanna eat"
+          title="Who's Eating"
+          subtitle="Registered diners nearby — open their profile to watch video if they posted one"
         />
 
         {error ? <p style={s.error}>{error}</p> : null}
 
         {loading ? (
           <p style={{ ...s.muted, fontSize: 13 }} data-testid="nearby-eating-loading">
-            Loading nearby food activity…
+            Loading who&apos;s eating…
           </p>
         ) : null}
 
-        {!loading && connectLines.length > 0 ? (
-          <ul style={styles.list} data-testid="nearby-connect-lines">
-            {connectLines.slice(0, 4).map((row) => (
-              <li key={`c-${row.kind}-${row.id}`} style={styles.row}>
-                <span style={styles.icon} aria-hidden="true">
-                  {row.icon || iconForFoodText(row.food_name)}
-                </span>
-                <Link
-                  to={
-                    dinerPeerProfilePath(row.consumer_user_id) ||
-                    "/feed"
-                  }
-                  style={styles.link}
-                >
-                  {row.message ||
-                    `${row.display_name} · ${row.food_name}`}
+        {!loading && lines.length > 0 ? (
+          <ul style={styles.list} data-testid="whos-eating-links">
+            {lines.map((row) => (
+              <li key={row.key} style={styles.row} data-testid="whos-eating-row">
+                <Link to={row.href} style={styles.link}>
+                  {row.label}
                 </Link>
               </li>
             ))}
           </ul>
         ) : null}
 
-        {!loading && feedItems.length > 0 ? (
-          <ul style={styles.list} data-testid="nearby-feed-items">
-            {feedItems.slice(0, 8).map((item) => {
-              const food = feedFoodLabel(item);
-              const person = feedPersonLabel(item);
-              const icon = iconForFoodText(food);
-              const contentHref = resolveLiveFeedContentLink(item) || "/feed";
-              const personHref =
-                liveFeedCreatorProfilePath(item) ||
-                liveFeedRestaurantProfilePath(item) ||
-                "/feed";
-              return (
-                <li
-                  key={`${item.kind || "feed"}-${item.id}`}
-                  style={styles.row}
-                  data-testid="nearby-feed-row"
-                >
-                  <span style={styles.icon} aria-hidden="true">
-                    {icon}
-                  </span>
-                  <div style={styles.body}>
-                    <Link to={personHref} style={styles.person}>
-                      {person}
-                    </Link>
-                    <span style={styles.meta}>
-                      {" "}
-                      · {liveFeedCategoryLabel(item.kind)} ·{" "}
-                    </span>
-                    <Link to={contentHref} style={styles.link}>
-                      {food}
-                    </Link>
-                    {item.restaurant_name || item?.referenced_restaurant?.name ? (
-                      <span style={styles.meta}>
-                        {" "}
-                        @ {item.restaurant_name || item.referenced_restaurant.name}
-                      </span>
-                    ) : null}
-                    {item.video_url ? (
-                      <span style={styles.videoBadge} title="Has video">
-                        {" "}
-                        🎥
-                      </span>
-                    ) : null}
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        ) : null}
-
-        {!loading && feedItems.length === 0 && connectLines.length === 0 ? (
+        {!loading && lines.length === 0 ? (
           <SectionEmptyState testId="nearby-eating-empty">
-            No nearby posts yet — open Feed as diners share what they’re eating. You can still say
-            what you wanna eat below.
+            No registered diners nearby yet. When someone posts what they&apos;re eating, you&apos;ll
+            see a short link here — videos play on their profile or in Feed.
           </SectionEmptyState>
         ) : null}
-
-        <div style={styles.actions}>
-          <Link to="/feed" style={styles.primary} data-testid="nearby-open-feed">
-            Open Feed
-          </Link>
-        </div>
       </div>
     </section>
   );
@@ -223,32 +211,13 @@ const styles = {
     gap: 10,
   },
   row: {
-    display: "flex",
-    gap: 10,
-    alignItems: "flex-start",
-    fontSize: 14,
-    lineHeight: 1.35,
+    fontSize: 15,
+    lineHeight: 1.4,
     color: "#0f172a",
   },
-  icon: { fontSize: 20, lineHeight: 1, flexShrink: 0 },
-  body: { minWidth: 0 },
-  person: {
-    fontWeight: 700,
+  link: {
     color: "#166534",
     textDecoration: "none",
-  },
-  link: { color: "#166534", textDecoration: "none", fontWeight: 600 },
-  meta: { color: "#64748b", fontSize: 13 },
-  videoBadge: { fontSize: 13 },
-  actions: { marginTop: 12 },
-  primary: {
-    display: "inline-flex",
-    padding: "10px 14px",
-    borderRadius: 10,
-    background: "#16a34a",
-    color: "#fff",
     fontWeight: 700,
-    textDecoration: "none",
-    fontSize: 14,
   },
 };

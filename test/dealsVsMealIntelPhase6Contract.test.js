@@ -34,8 +34,8 @@ test("Deals catalog and Feed Deals frame public offers", () => {
 test("Eating hub does not mount Deals as Meal Intel", () => {
   const hub = read("src/pages/consumer/myMenuply/EatingHubSection.jsx");
   assert.doesNotMatch(hub, /DealsPage|FeedDealsPage|\/deals/);
-  // Phase 7 mounts Meal Intel on hub (non-Waiter surface) — still must not use Deals.
-  assert.match(hub, /MealIntelSection/);
+  // Separate Meal Intel Intent block removed from hub — still must not use Deals.
+  assert.doesNotMatch(hub, /MealIntelSection/);
 });
 
 test("Intent-Based Offers operator surface remains separate from public Deals", () => {
@@ -43,5 +43,7 @@ test("Intent-Based Offers operator surface remains separate from public Deals", 
   assert.match(offers, /Intent-Based Offers/);
   assert.match(offers, /not<\/strong> public Deals/);
   assert.doesNotMatch(offers, /Bid-Free Bidding/);
-  assert.doesNotMatch(offers, /Meal Intel|public\.deals|FeedDealsPage/);
+  // Phase 8 hosts restaurant Meal Intel publish on this page — still not public Deals.
+  assert.match(offers, /Meal Intel|operator-meal-intel/);
+  assert.doesNotMatch(offers, /public\.deals|FeedDealsPage/);
 });
