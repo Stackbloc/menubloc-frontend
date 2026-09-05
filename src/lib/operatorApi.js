@@ -574,11 +574,23 @@ export const getExceptions = (rid) => get(`/operator/restaurants/${rid}/hours/ex
 export const upsertException = (rid, body) => post(`/operator/restaurants/${rid}/hours/exceptions`, body);
 export const deleteException = (rid, eid) => del(`/operator/restaurants/${rid}/hours/exceptions/${eid}`);
 
-// ── Restaurant: Bid-Free Bidding™ ─────────────────────────────────────────
+// ── Restaurant: Intent-Based Offers ─────────────────────────────────────────
 export const getCartNegotiationSettings = (rid) =>
   get(`/operator/restaurants/${rid}/cart-negotiation`);
 export const updateCartNegotiationSettings = (rid, body) =>
   patch(`/operator/restaurants/${rid}/cart-negotiation`, body);
+
+// ── Restaurant: Meal Intel (Phase 8) ─────────────────────────────────────────
+export const listRestaurantMealIntel = (rid) =>
+  get(`/operator/restaurants/${rid}/meal-intel`);
+export const createRestaurantMealIntel = (rid, body) =>
+  post(`/operator/restaurants/${rid}/meal-intel`, body);
+export const updateRestaurantMealIntel = (rid, mealIntelId, body) =>
+  patch(`/operator/restaurants/${rid}/meal-intel/${mealIntelId}`, body);
+export const publishRestaurantMealIntel = (rid, mealIntelId) =>
+  post(`/operator/restaurants/${rid}/meal-intel/${mealIntelId}/publish`, {});
+export const archiveRestaurantMealIntel = (rid, mealIntelId) =>
+  post(`/operator/restaurants/${rid}/meal-intel/${mealIntelId}/archive`, {});
 
 export const getUnlockSavingsSettings = (rid) =>
   get(`/operator/restaurants/${rid}/unlock-savings`);

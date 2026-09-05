@@ -14,7 +14,10 @@ import { isVideoFile } from "../../../lib/eatingMediaUtils.js";
 import {
   EATING_COMPOSE_CATEGORIES,
   WANT_INTENT_KINDS,
+  ATE_SIGNAL_KINDS,
 } from "./eatingHubUtils.js";
+import { FAVORITE_FOOD_TYPE_OPTIONS } from "../../../lib/dinerFavoriteFoods.js";
+import { labelWithFoodIcon } from "../../../lib/foodInterestIcons.js";
 import { isAteLikeFeedCategory, isCookingFeedCategory } from "../../../lib/feedContentKinds.js";
 import EatingPlaceFields from "./EatingPlaceFields.jsx";
 import InviteMeOutAudiencePicker from "./InviteMeOutAudiencePicker.jsx";
@@ -54,6 +57,8 @@ export default function EatingCompose({
   const [restaurant, setRestaurant] = useState(null);
   const [dish, setDish] = useState(null);
   const [wantKind, setWantKind] = useState("food_item");
+  const [ateKind, setAteKind] = useState("food_item");
+  const [foodInterestKey, setFoodInterestKey] = useState("");
   const [cuisineSlug, setCuisineSlug] = useState("");
   const [cuisineOptions, setCuisineOptions] = useState([]);
   const [cuisinesLoading, setCuisinesLoading] = useState(false);
@@ -92,12 +97,20 @@ export default function EatingCompose({
 
   const wantMeta =
     WANT_INTENT_KINDS.find((k) => k.id === wantKind) ||
-    WANT_INTENT_KINDS[3];
+    WANT_INTENT_KINDS[1];
+
+  const ateMeta =
+    ATE_SIGNAL_KINDS.find((k) => k.id === ateKind) ||
+    ATE_SIGNAL_KINDS[1];
+
+  const needsCuisineCatalog =
+    (category === "want" && wantKind === "cuisine") ||
+    (category === "ate" && !feedMode && ateKind === "cuisine");
 
   useEffect(() => {
     let cancelled = false;
 
-    if (category !== "want" || wantKind !== "cuisine") {
+    if (!needsCuisineCatalog) {
       return undefined;
     }
 
@@ -148,7 +161,7 @@ export default function EatingCompose({
     return () => {
       cancelled = true;
     };
-  }, [category, wantKind, cuisineOptions.length]);
+  }, [needsCuisineCatalog, cuisineOptions.length]);
 
   function resetPlace() {
     setHomemade(false);
@@ -160,6 +173,7 @@ export default function EatingCompose({
     setWantKind(next);
     resetPlace();
     setCuisineSlug("");
+    setFoodInterestKey("");
 
     if (next === "cuisine") {
       setText("");
@@ -167,6 +181,23 @@ export default function EatingCompose({
     } else if (next === "food_item") {
       setHomemade(true);
     }
+  }
+
+  function selectAteKind(next) {
+    setAteKind(next);
+    resetPlace();
+    setCuisineSlug("");
+    setFoodInterestKey("");
+
+    if (next === "cuisine" || next === "food_item") {
+      setHomemade(true);
+      if (next === "cuisine") setText("");
+    }
+  }
+
+  function selectFoodTypeChip(opt) {
+    setFoodInterestKey(opt.key);
+    setText(opt.label);
   }
 
   function selectCuisine(slug) {
@@ -241,6 +272,12 @@ export default function EatingCompose({
           : value,
         file,
         wantKind,
+        foodInterestKey:
+          wantKind === "food_item"
+            ? foodInterestKey || null
+            : wantKind === "cuisine"
+              ? cuisineSlug || null
+              : null,
         cuisineSlug: needsCuisine
           ? cuisineSlug
           : null,
@@ -259,11 +296,60 @@ export default function EatingCompose({
       setText("");
       setFile(null);
       setCuisineSlug("");
+      setFoodInterestKey("");
       resetPlace();
       return;
     }
 
     if (feedMode && !isVideoFile(file)) {
+      return;
+    }
+
+    if (category === "ate" && !feedMode) {
+      const needsRestaurant =
+        ateKind === "restaurant" || ateKind === "menu_item";
+      const needsDish = ateKind === "menu_item";
+      const needsCuisine = ateKind === "cuisine";
+      if (needsCuisine && !cuisineSlug) return;
+      if (ateKind === "food_item" && !value) return;
+      if (needsRestaurant && !restaurant) return;
+      if (needsDish && !(restaurant && dish)) return;
+
+      await onSubmit({
+        category,
+        text:
+          ateKind === "restaurant"
+            ? restaurant?.restaurant_name || value
+            : ateKind === "menu_item"
+              ? dish?.item_name || value
+              : value,
+        file,
+        mealPeriod,
+        ateKind,
+        foodInterestKey:
+          ateKind === "food_item"
+            ? foodInterestKey || null
+            : ateKind === "cuisine"
+              ? cuisineSlug || null
+              : null,
+        cuisineSlug: needsCuisine ? cuisineSlug : null,
+        homemade:
+          ateKind === "cuisine" || ateKind === "food_item",
+        restaurant: needsRestaurant ? restaurant : null,
+        dish: needsDish ? dish : null,
+        isRecommend:
+          isVideoFile(file) &&
+          (ateKind === "restaurant" || ateKind === "menu_item")
+            ? isRecommend
+            : false,
+      });
+
+      setText("");
+      setFile(null);
+      setCuisineSlug("");
+      setFoodInterestKey("");
+      setIsRecommend(false);
+      resetPlace();
       return;
     }
 
@@ -327,13 +413,21 @@ export default function EatingCompose({
               inviteMeOutAudience === "selected" &&
               inviteMeOutSelectedIds.length === 0
             )
-          : Boolean(
-              String(text).trim() ||
-                file ||
-                homemade ||
-                restaurant ||
-                dish
-            );
+          : category === "ate"
+            ? ateKind === "cuisine"
+              ? Boolean(cuisineSlug)
+              : ateKind === "food_item"
+                ? Boolean(String(text).trim())
+                : ateKind === "restaurant"
+                  ? Boolean(restaurant)
+                  : Boolean(restaurant && dish)
+            : Boolean(
+                String(text).trim() ||
+                  file ||
+                  homemade ||
+                  restaurant ||
+                  dish
+              );
 
   /*
    * Camera behavior (hybrid sheet):
@@ -389,7 +483,11 @@ export default function EatingCompose({
         {acceptMedia ? (
           <div style={styles.mediaBlock}>
             <p style={styles.stepLabel}>
-              {feedMode ? "Record video" : "Photo or video"}
+              {feedMode
+                ? "Record video"
+                : category === "ate"
+                  ? "Video (core) or photo"
+                  : "Photo or video"}
             </p>
 
             <MenuplyMediaPicker
@@ -468,6 +566,7 @@ export default function EatingCompose({
                     selectWantKind(kind.id)
                   }
                 >
+                  {kind.icon ? `${kind.icon} ` : ""}
                   {kind.label}
                 </button>
               );
@@ -475,7 +574,184 @@ export default function EatingCompose({
           </div>
         ) : null}
 
-        {isAteLikeFeedCategory(category) ? (
+        {category === "ate" && !feedMode ? (
+          <>
+            <div
+              style={styles.chips}
+              role="group"
+              aria-label="Eating signal type"
+            >
+              {ATE_SIGNAL_KINDS.map((kind) => {
+                const active = ateKind === kind.id;
+                return (
+                  <button
+                    key={kind.id}
+                    type="button"
+                    data-testid={`ate-signal-${kind.id}`}
+                    disabled={busy}
+                    style={{
+                      ...styles.chip,
+                      ...(active ? styles.chipActive : null),
+                    }}
+                    onClick={() => selectAteKind(kind.id)}
+                  >
+                    {kind.icon ? `${kind.icon} ` : ""}
+                    {kind.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {ateKind === "cuisine" ? (
+              <div style={styles.cuisineBlock}>
+                <label htmlFor="ate-cuisine-select" style={styles.stepLabel}>
+                  Cuisine
+                </label>
+                <select
+                  id="ate-cuisine-select"
+                  value={cuisineSlug}
+                  onChange={(e) => selectCuisine(e.target.value)}
+                  disabled={busy || cuisinesLoading}
+                  style={styles.input}
+                  data-testid="ate-cuisine-select"
+                >
+                  <option value="">
+                    {cuisinesLoading ? "Loading…" : "Select cuisine"}
+                  </option>
+                  {cuisineOptions.map((row) => (
+                    <option key={row.value} value={row.value}>
+                      {row.label}
+                    </option>
+                  ))}
+                </select>
+                {cuisinesError ? <p style={styles.hint}>{cuisinesError}</p> : null}
+                <p style={styles.hint}>
+                  Homemade / @ home cuisine signal — e.g. 🍣 Sushi @ Home when you add video.
+                </p>
+              </div>
+            ) : null}
+
+            {ateKind === "food_item" ? (
+              <div>
+                <p style={styles.stepLabel}>Food type</p>
+                <div style={styles.chips} role="group" aria-label="Food types">
+                  {FAVORITE_FOOD_TYPE_OPTIONS.map((opt) => {
+                    const active = foodInterestKey === opt.key;
+                    return (
+                      <button
+                        key={opt.key}
+                        type="button"
+                        data-testid={`ate-food-type-${opt.key}`}
+                        disabled={busy}
+                        style={{
+                          ...styles.chip,
+                          ...(active ? styles.chipActive : null),
+                        }}
+                        onClick={() => selectFoodTypeChip(opt)}
+                      >
+                        {labelWithFoodIcon(opt.key, opt.label)}
+                      </button>
+                    );
+                  })}
+                </div>
+                <input
+                  type="text"
+                  value={text}
+                  onChange={(e) => {
+                    setText(e.target.value);
+                    setFoodInterestKey("");
+                  }}
+                  placeholder="Or type what you're eating"
+                  disabled={busy}
+                  maxLength={160}
+                  autoComplete="off"
+                  style={{ ...styles.input, marginTop: 8 }}
+                  data-testid="eating-compose-input"
+                />
+                <p style={styles.hint}>
+                  Video turns this into Feed discovery — not just a diary note.
+                </p>
+              </div>
+            ) : null}
+
+            {ateKind === "restaurant" || ateKind === "menu_item" ? (
+              <EatingPlaceFields
+                homemade={false}
+                onHomemadeChange={() => {}}
+                restaurant={restaurant}
+                onRestaurantChange={setRestaurant}
+                dish={dish}
+                onDishChange={setDish}
+                followed={followed}
+                disabled={busy}
+                allowDishSearch
+                allowHomemade={false}
+                locationCity={locationCity}
+                locationState={locationState}
+              />
+            ) : null}
+
+            {ateKind === "restaurant" || ateKind === "menu_item"
+              ? isVideoFile(file) ? (
+                  <label style={styles.recommendRow} data-testid="eating-compose-recommend">
+                    <input
+                      type="checkbox"
+                      checked={isRecommend}
+                      disabled={busy || (!restaurant && !dish)}
+                      onChange={(e) => setIsRecommend(e.target.checked)}
+                    />
+                    <span>
+                      Recommend this (needs a restaurant or Common Knowledge dish tag)
+                    </span>
+                  </label>
+                ) : null
+              : null}
+
+            <p style={styles.stepLabel}>Meal time</p>
+            <div style={styles.mealRow} role="group" aria-label="Meal time">
+              {WHAT_I_ATE_MEAL_PERIODS.map((slot) => {
+                const active = mealPeriod === slot.id;
+                return (
+                  <button
+                    key={slot.id}
+                    type="button"
+                    data-testid={`eating-meal-${slot.id}`}
+                    disabled={busy}
+                    style={{
+                      ...styles.mealChip,
+                      ...(active ? styles.mealChipActive : null),
+                    }}
+                    onClick={() => setMealPeriod(slot.id)}
+                  >
+                    {slot.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {ateKind === "restaurant" || ateKind === "menu_item" ? (
+              <>
+                <p style={styles.stepLabel}>Anything to say?</p>
+                <input
+                  type="text"
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                  placeholder={meta.placeholder}
+                  disabled={busy}
+                  maxLength={160}
+                  autoComplete="off"
+                  style={styles.input}
+                  data-testid="eating-compose-comment"
+                />
+              </>
+            ) : null}
+            <p style={styles.hint} data-testid="ate-signal-hint">
+              {ateMeta.label}: actual eating now — separate from What I Wanna Eat (desire).
+            </p>
+          </>
+        ) : null}
+
+        {category === "reviews" || (category === "ate" && feedMode) ? (
           <>
             <p style={styles.stepLabel}>
               {category === "reviews"
@@ -654,19 +930,46 @@ export default function EatingCompose({
             ) : null}
 
             {wantKind === "food_item" ? (
-              <input
-                type="text"
-                value={text}
-                onChange={(e) =>
-                  setText(e.target.value)
-                }
-                placeholder={wantMeta.placeholder}
-                disabled={busy}
-                maxLength={160}
-                autoComplete="off"
-                style={styles.input}
-                data-testid="eating-compose-input"
-              />
+              <div data-testid="want-food-type-chips">
+                <p style={styles.stepLabel}>Tap a food type — then save</p>
+                <div style={styles.chips} role="group" aria-label="Food type">
+                  {FAVORITE_FOOD_TYPE_OPTIONS.map((opt) => {
+                    const active = foodInterestKey === opt.key;
+                    return (
+                      <button
+                        key={opt.key}
+                        type="button"
+                        data-testid={`want-food-type-${opt.key}`}
+                        disabled={busy}
+                        style={{
+                          ...styles.chip,
+                          ...(active ? styles.chipActive : null),
+                        }}
+                        onClick={() => selectFoodTypeChip(opt)}
+                      >
+                        {labelWithFoodIcon(opt.key, opt.label)}
+                      </button>
+                    );
+                  })}
+                </div>
+                <input
+                  type="text"
+                  value={text}
+                  onChange={(e) => {
+                    setText(e.target.value);
+                    setFoodInterestKey("");
+                  }}
+                  placeholder="Or type what you want"
+                  disabled={busy}
+                  maxLength={160}
+                  autoComplete="off"
+                  style={{ ...styles.input, marginTop: 8 }}
+                  data-testid="eating-compose-input"
+                />
+                <p style={styles.hint}>
+                  Optional: add a short video so others can discover your craving on Feed.
+                </p>
+              </div>
             ) : null}
 
             {wantKind === "restaurant" ||
@@ -775,7 +1078,9 @@ export default function EatingCompose({
               ? "…"
               : category === "plan"
                 ? "Continue"
-                : "Post"}
+                : category === "want"
+                  ? "Save"
+                  : "Post"}
           </button>
         </div>
       </form>
@@ -786,6 +1091,13 @@ export default function EatingCompose({
 const styles = {
   wrap: {
     margin: "0 0 12px",
+  },
+
+  hint: {
+    margin: "8px 0 0",
+    fontSize: 12,
+    color: "#64748b",
+    lineHeight: 1.35,
   },
 
   chips: {

@@ -14,6 +14,24 @@ import AccountActionLink from "./AccountActionLink.jsx";
 import PreferenceChips from "./PreferenceChips.jsx";
 import SummaryEditSection from "./SummaryEditSection.jsx";
 import { summarizePersonalContext, FIELD_MAX, HOBBIES_MAX } from "../../../lib/dinerPersonalContext.js";
+import {
+  DISCOVERABILITY_UI_OPTIONS,
+  discoverabilityLabel,
+  discoverabilityForEditor,
+  canonicalizeDiscoverability,
+} from "../../../lib/dinerProfileDiscoverability.js";
+import {
+  ALL_FAVORITE_FOOD_OPTIONS,
+  MAX_FAVORITES,
+  summarizeFavoriteFoods,
+  normalizeFavoriteFoods,
+} from "../../../lib/dinerFavoriteFoods.js";
+import { labelWithFoodIcon } from "../../../lib/foodInterestIcons.js";
+import {
+  DINER_SEX_OPTIONS,
+  dinerSexLabel,
+  summarizeDob,
+} from "../../../lib/dinerDateOfBirth.js";
 
 function SaveStatus({ status, isError }) {
   if (!status) return null;
@@ -98,6 +116,20 @@ export default function ProfileTab({
   personalContextSaving,
   personalContextStatus,
   personalContextError,
+  dinerSex,
+  onDinerSexChange,
+  dateOfBirth,
+  onDateOfBirthChange,
+  onSaveBasicProfile,
+  basicProfileSaving,
+  basicProfileStatus,
+  basicProfileError,
+  favoriteFoods,
+  onToggleFavoriteFood,
+  onSaveFavoriteFoods,
+  favoriteFoodsSaving,
+  favoriteFoodsStatus,
+  favoriteFoodsError,
 }) {
   const [editingIdentity, setEditingIdentity] = useState(false);
   const [editingZip, setEditingZip] = useState(false);
@@ -109,12 +141,10 @@ export default function ProfileTab({
   const [editingDiscoverability, setEditingDiscoverability] = useState(false);
   const [editingConnectionFoodActivity, setEditingConnectionFoodActivity] = useState(false);
   const [editingPersonalContext, setEditingPersonalContext] = useState(false);
+  const [editingBasicProfile, setEditingBasicProfile] = useState(false);
+  const [editingFavoriteFoods, setEditingFavoriteFoods] = useState(false);
 
-  const discoverabilityLabels = {
-    nobody: "Nobody — not searchable",
-    area: "People in my area",
-    members: "Menuply members",
-  };
+  const discoverabilityEditorValue = discoverabilityForEditor(discoverability);
 
   const fullName = [firstName, lastName].filter(Boolean).join(" ");
   const identitySummary = [displayName || fullName || "Add your name", fullName && displayName ? fullName : ""]
@@ -133,6 +163,15 @@ export default function ProfileTab({
     diner_hometown: dinerHometown,
     diner_hobbies: dinerHobbies,
   });
+  const basicProfileSummary = [
+    dinerSexLabel(dinerSex) || null,
+    summarizeDob(dateOfBirth) !== "Not set" ? summarizeDob(dateOfBirth) : null,
+  ]
+    .filter(Boolean)
+    .join(" · ") || "Optional — unlocks birthday social later";
+  const favoriteFoodsSummary = summarizeFavoriteFoods(favoriteFoods);
+  const normalizedFavorites = normalizeFavoriteFoods(favoriteFoods);
+  const favoriteKeySet = new Set(normalizedFavorites.map((f) => f.key));
 
   return (
     <div>
@@ -193,6 +232,115 @@ export default function ProfileTab({
           disabled={identitySaving}
         >
           {identitySaving ? "Saving…" : "Save name"}
+        </button>
+      </SummaryEditSection>
+
+      <SummaryEditSection
+        title="Sex & birthday"
+        id="basic-profile"
+        summary={basicProfileSummary}
+        description="Optional. Birthday unlocks birthday-related social moments later — we store your date of birth and derive age (no separate age field)."
+        editing={editingBasicProfile}
+        onEdit={() => setEditingBasicProfile(true)}
+        onDone={async () => {
+          const ok = await onSaveBasicProfile();
+          if (ok !== false) setEditingBasicProfile(false);
+        }}
+        editLabel={basicProfileSummary.startsWith("Optional") ? "Add" : "Edit"}
+        status={basicProfileError || basicProfileStatus}
+        statusError={Boolean(basicProfileError)}
+      >
+        <div style={styles.field}>
+          <label style={styles.fieldLabel}>
+            Sex <span style={styles.optText}>(optional)</span>
+          </label>
+          <select
+            data-testid="diner-sex-select"
+            value={dinerSex || ""}
+            onChange={(e) => onDinerSexChange(e.target.value || "")}
+            style={styles.input}
+          >
+            <option value="">Prefer not to set</option>
+            {DINER_SEX_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div style={styles.field}>
+          <label style={styles.fieldLabel}>
+            Date of birth <span style={styles.optText}>(optional)</span>
+          </label>
+          <input
+            type="date"
+            data-testid="diner-dob-input"
+            value={dateOfBirth || ""}
+            onChange={(e) => onDateOfBirthChange(e.target.value)}
+            style={styles.input}
+          />
+          <p style={styles.fieldHint}>
+            Used only to derive age and birthday moments. Full date stays private on your account.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onSaveBasicProfile}
+          style={styles.primaryBtn}
+          disabled={basicProfileSaving}
+        >
+          {basicProfileSaving ? "Saving…" : "Save"}
+        </button>
+      </SummaryEditSection>
+
+      <SummaryEditSection
+        title="Favorite foods"
+        id="favorite-foods"
+        summary={favoriteFoodsSummary}
+        description="Tap foods you love. Menuply uses these to surface better nearby food activity and discovery — not to build a preference database for its own sake."
+        editing={editingFavoriteFoods}
+        onEdit={() => setEditingFavoriteFoods(true)}
+        onDone={async () => {
+          const ok = await onSaveFavoriteFoods();
+          if (ok !== false) setEditingFavoriteFoods(false);
+        }}
+        editLabel={normalizedFavorites.length ? "Edit" : "Add"}
+        status={favoriteFoodsError || favoriteFoodsStatus}
+        statusError={Boolean(favoriteFoodsError)}
+      >
+        <p style={{ ...styles.muted, fontSize: 13, margin: "0 0 10px" }}>
+          Select up to {MAX_FAVORITES}. Icons are visual only — we save structured food keys.
+        </p>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+          {ALL_FAVORITE_FOOD_OPTIONS.map((opt) => {
+            const on = favoriteKeySet.has(opt.key);
+            return (
+              <button
+                key={opt.key}
+                type="button"
+                data-testid={`favorite-food-${opt.key}`}
+                onClick={() => onToggleFavoriteFood(opt)}
+                style={{
+                  ...styles.chip,
+                  ...(on ? styles.chipSelected : null),
+                }}
+              >
+                {labelWithFoodIcon(opt.key, opt.label)}
+              </button>
+            );
+          })}
+        </div>
+        <p style={{ ...styles.fieldHint, marginTop: 10 }}>
+          Saving favorites personalizes what Menuply shows you next. Saying what you wanna eat will
+          immediately open nearby discovery (Phase 2).
+        </p>
+        <button
+          type="button"
+          onClick={onSaveFavoriteFoods}
+          style={styles.primaryBtn}
+          disabled={favoriteFoodsSaving}
+        >
+          {favoriteFoodsSaving ? "Saving…" : "Save favorites"}
         </button>
       </SummaryEditSection>
 
@@ -331,9 +479,9 @@ export default function ProfileTab({
       </SummaryEditSection>
 
       <SummaryEditSection
-        title="Who can find me?"
-        summary={discoverabilityLabels[discoverability] || discoverabilityLabels.nobody}
-        description="Control whether other diners can find you by name, phone number, or email. Nobody is the default and safest option."
+        title="Make my profile discoverable by"
+        summary={discoverabilityLabel(discoverability)}
+        description="Who can find you in Find Diners. There is no “Nobody” option — pick an audience. (A future .edu-only audience may be added later without redesigning this setting.)"
         editing={editingDiscoverability}
         onEdit={() => setEditingDiscoverability(true)}
         onDone={async () => {
@@ -343,23 +491,24 @@ export default function ProfileTab({
         status={discoverabilityError || discoverabilityStatus}
         statusError={Boolean(discoverabilityError)}
       >
+        {canonicalizeDiscoverability(discoverability) === "nobody" ? (
+          <p style={{ ...styles.statusErr, marginBottom: 8 }} role="status">
+            Your profile is currently hidden from search. Choose who can find you.
+          </p>
+        ) : null}
         <div style={{ display: "grid", gap: 8 }}>
-          {[
-            ["members", "Menuply members", "Any signed-in diner can find you by name, phone, or email."],
-            ["area", "People in my area", "Diners near your primary location can find you by name, phone, or email."],
-            ["nobody", "Nobody", "Not searchable — safest default."],
-          ].map(([value, label, hint]) => (
-            <label key={value} style={styles.choiceRow}>
+          {DISCOVERABILITY_UI_OPTIONS.map((opt) => (
+            <label key={opt.value} style={styles.choiceRow}>
               <input
                 type="radio"
                 name="discoverability"
-                value={value}
-                checked={discoverability === value}
-                onChange={() => onDiscoverabilityChange(value)}
+                value={opt.value}
+                checked={discoverabilityEditorValue === opt.value}
+                onChange={() => onDiscoverabilityChange(opt.value)}
               />
               <span>
-                <span style={{ display: "block" }}>{label}</span>
-                <span style={{ ...styles.muted, fontSize: 12 }}>{hint}</span>
+                <span style={{ display: "block" }}>{opt.label}</span>
+                <span style={{ ...styles.muted, fontSize: 12 }}>{opt.hint}</span>
               </span>
             </label>
           ))}
@@ -368,7 +517,7 @@ export default function ProfileTab({
           type="button"
           onClick={onSaveDiscoverability}
           style={styles.primaryBtn}
-          disabled={discoverabilitySaving}
+          disabled={discoverabilitySaving || !discoverabilityEditorValue}
         >
           {discoverabilitySaving ? "Saving…" : "Save privacy setting"}
         </button>

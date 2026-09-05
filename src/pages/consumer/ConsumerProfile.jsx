@@ -69,7 +69,7 @@ export default function ConsumerProfile() {
   const [primaryLocation, setPrimaryLocation] = useState(null);
   const [primaryNeighborhood, setPrimaryNeighborhood] = useState("");
   const [primaryPostalCode, setPrimaryPostalCode] = useState("");
-  const [discoverability, setDiscoverability] = useState("nobody");
+  const [discoverability, setDiscoverability] = useState("area");
   const [showConnectionFoodActivity, setShowConnectionFoodActivity] = useState(true);
   const [changePhoneOpen, setChangePhoneOpen] = useState(false);
   const [phoneChangeNotice, setPhoneChangeNotice] = useState("");
@@ -115,9 +115,18 @@ export default function ConsumerProfile() {
   const [dinerOccupation, setDinerOccupation] = useState("");
   const [dinerHometown, setDinerHometown] = useState("");
   const [dinerHobbies, setDinerHobbies] = useState("");
+  const [dinerSex, setDinerSex] = useState("");
+  const [dateOfBirth, setDateOfBirth] = useState("");
+  const [favoriteFoods, setFavoriteFoods] = useState([]);
   const [personalContextSaving, setPersonalContextSaving] = useState(false);
   const [personalContextStatus, setPersonalContextStatus] = useState("");
   const [personalContextError, setPersonalContextError] = useState("");
+  const [basicProfileSaving, setBasicProfileSaving] = useState(false);
+  const [basicProfileStatus, setBasicProfileStatus] = useState("");
+  const [basicProfileError, setBasicProfileError] = useState("");
+  const [favoriteFoodsSaving, setFavoriteFoodsSaving] = useState(false);
+  const [favoriteFoodsStatus, setFavoriteFoodsStatus] = useState("");
+  const [favoriteFoodsError, setFavoriteFoodsError] = useState("");
   const [dietStatus, setDietStatus] = useState("");
   const [dietError, setDietError] = useState("");
   const [allergenStatus, setAllergenStatus] = useState("");
@@ -164,13 +173,18 @@ export default function ConsumerProfile() {
       setPrimaryLocation(profile.primary_location || null);
       setPrimaryNeighborhood(profile.primary_location?.neighborhood || "");
       setPrimaryPostalCode("");
-      setDiscoverability(profile.discoverability || "nobody");
+      setDiscoverability(profile.discoverability || "area");
       setShowConnectionFoodActivity(profile.show_connection_food_activity !== false);
       setDinerEducationStatus(profile.diner_education_status || "");
       setDinerFieldOfStudy(profile.diner_field_of_study || "");
       setDinerOccupation(profile.diner_occupation || "");
       setDinerHometown(profile.diner_hometown || "");
       setDinerHobbies(profile.diner_hobbies || "");
+      setDinerSex(profile.diner_sex || "");
+      setDateOfBirth(
+        profile.date_of_birth ? String(profile.date_of_birth).slice(0, 10) : ""
+      );
+      setFavoriteFoods(Array.isArray(profile.favorite_foods) ? profile.favorite_foods : []);
       setEduStatus(getEduVerificationFromConsumer(profileConsumer || {}));
       setEduNotice("");
       setEduError("");
@@ -271,6 +285,65 @@ export default function ConsumerProfile() {
       return false;
     } finally {
       setPersonalContextSaving(false);
+    }
+  }
+
+  async function handleSaveBasicProfile() {
+    setBasicProfileSaving(true);
+    setBasicProfileStatus("");
+    setBasicProfileError("");
+    try {
+      const data = await updateConsumerProfile({
+        diner_sex: dinerSex || null,
+        date_of_birth: dateOfBirth || null,
+      });
+      const next = data?.profile || {};
+      setDinerSex(next.diner_sex || "");
+      setDateOfBirth(next.date_of_birth ? String(next.date_of_birth).slice(0, 10) : "");
+      setBasicProfileStatus("Saved");
+      return true;
+    } catch (err) {
+      setBasicProfileError(err.message || "Could not save sex / birthday.");
+      return false;
+    } finally {
+      setBasicProfileSaving(false);
+    }
+  }
+
+  function handleToggleFavoriteFood(opt) {
+    setFavoriteFoods((prev) => {
+      const list = Array.isArray(prev) ? [...prev] : [];
+      const idx = list.findIndex((f) => (f.key || f) === opt.key);
+      if (idx >= 0) {
+        list.splice(idx, 1);
+        return list;
+      }
+      if (list.length >= 12) return list;
+      return [...list, { kind: opt.kind, key: opt.key }];
+    });
+  }
+
+  async function handleSaveFavoriteFoods() {
+    setFavoriteFoodsSaving(true);
+    setFavoriteFoodsStatus("");
+    setFavoriteFoodsError("");
+    try {
+      const data = await updateConsumerProfile({
+        favorite_foods: favoriteFoods.map((f) => ({
+          kind: f.kind,
+          key: f.key || f,
+        })),
+      });
+      setFavoriteFoods(
+        Array.isArray(data?.profile?.favorite_foods) ? data.profile.favorite_foods : favoriteFoods
+      );
+      setFavoriteFoodsStatus("Saved — Menuply will use these for better food discovery");
+      return true;
+    } catch (err) {
+      setFavoriteFoodsError(err.message || "Could not save favorite foods.");
+      return false;
+    } finally {
+      setFavoriteFoodsSaving(false);
     }
   }
 
@@ -619,6 +692,20 @@ export default function ConsumerProfile() {
               personalContextSaving={personalContextSaving}
               personalContextStatus={personalContextStatus}
               personalContextError={personalContextError}
+              dinerSex={dinerSex}
+              onDinerSexChange={setDinerSex}
+              dateOfBirth={dateOfBirth}
+              onDateOfBirthChange={setDateOfBirth}
+              onSaveBasicProfile={handleSaveBasicProfile}
+              basicProfileSaving={basicProfileSaving}
+              basicProfileStatus={basicProfileStatus}
+              basicProfileError={basicProfileError}
+              favoriteFoods={favoriteFoods}
+              onToggleFavoriteFood={handleToggleFavoriteFood}
+              onSaveFavoriteFoods={handleSaveFavoriteFoods}
+              favoriteFoodsSaving={favoriteFoodsSaving}
+              favoriteFoodsStatus={favoriteFoodsStatus}
+              favoriteFoodsError={favoriteFoodsError}
             />
           ) : null}
 

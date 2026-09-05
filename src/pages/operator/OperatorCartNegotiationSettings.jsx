@@ -4,7 +4,7 @@
  * File: OperatorCartNegotiationSettings.jsx
  * Date: 2026-04-06
  * Purpose:
- *   Restaurant settings page for Menuply Bid-Free Bidding™.
+ *   Restaurant settings page for Menuply Intent-Based Offers.
  * ============================================================
  */
 
@@ -13,6 +13,7 @@ import { useLanguage } from "../../context/LanguageContext.jsx";
 import OperatorLayout from "./OperatorLayout.jsx";
 import { useOperator } from "../../context/OperatorContext.jsx";
 import * as api from "../../lib/operatorApi.js";
+import { ALL_FAVORITE_FOOD_OPTIONS } from "../../lib/dinerFavoriteFoods.js";
 
 const CARD = {
   background: "#fff",
@@ -144,6 +145,14 @@ export default function OperatorCartNegotiationSettings() {
   const [unlockLoading, setUnlockLoading] = useState(true);
   const [unlockSaving, setUnlockSaving] = useState(false);
   const [unlockSaved, setUnlockSaved] = useState(false);
+  const [mealIntelItems, setMealIntelItems] = useState([]);
+  const [mealIntelLoading, setMealIntelLoading] = useState(false);
+  const [mealIntelBusy, setMealIntelBusy] = useState(false);
+  const [mealIntelDraft, setMealIntelDraft] = useState({
+    food_interest_key: "burger",
+    title: "",
+    detail: "",
+  });
 
   const scheduleMode = useMemo(
     () => scheduleModeForValue(settings.negotiation_allowed_hours),
@@ -156,10 +165,12 @@ export default function OperatorCartNegotiationSettings() {
       return;
     }
     setLoading(true);
+    setMealIntelLoading(true);
     try {
-      const [negotiationResponse, unlockResponse] = await Promise.all([
+      const [negotiationResponse, unlockResponse, mealIntelResponse] = await Promise.all([
         api.getCartNegotiationSettings(rid),
         api.getUnlockSavingsSettings(rid),
+        api.listRestaurantMealIntel(rid).catch(() => ({ ok: false, items: [] })),
       ]);
       if (negotiationResponse.ok) {
         setSettings((current) => ({ ...current, ...(negotiationResponse.settings || {}) }));
@@ -169,11 +180,15 @@ export default function OperatorCartNegotiationSettings() {
         setUnlockSettings(unlock);
         setUnlockThresholdInput((unlock.unlock_savings_thresholds || [30, 35, 40, 50]).join(","));
       }
+      if (mealIntelResponse?.ok) {
+        setMealIntelItems(Array.isArray(mealIntelResponse.items) ? mealIntelResponse.items : []);
+      }
     } catch (error) {
-      window.alert(error.message || "Failed to load Bid-Free Bidding™ settings.");
+      window.alert(error.message || "Failed to load Intent-Based Offers settings.");
     } finally {
       setLoading(false);
       setUnlockLoading(false);
+      setMealIntelLoading(false);
     }
   }, [rid]);
 
@@ -191,7 +206,7 @@ export default function OperatorCartNegotiationSettings() {
       setSaved(true);
       window.setTimeout(() => setSaved(false), 2500);
     } catch (error) {
-      window.alert(error.message || "Failed to save Bid-Free Bidding™ settings.");
+      window.alert(error.message || "Failed to save Intent-Based Offers settings.");
     } finally {
       setSaving(false);
     }
@@ -223,32 +238,87 @@ export default function OperatorCartNegotiationSettings() {
     }
   }
 
+  async function handleCreateMealIntel() {
+    if (!rid) return;
+    const title = String(mealIntelDraft.title || "").trim();
+    if (!title) {
+      window.alert("Add a Meal Intel title.");
+      return;
+    }
+    setMealIntelBusy(true);
+    try {
+      const response = await api.createRestaurantMealIntel(rid, {
+        ...mealIntelDraft,
+        status: "draft",
+      });
+      if (response?.item) {
+        setMealIntelItems((current) => [response.item, ...current]);
+        setMealIntelDraft((d) => ({ ...d, title: "", detail: "" }));
+      }
+    } catch (error) {
+      window.alert(error.message || "Failed to create Meal Intel.");
+    } finally {
+      setMealIntelBusy(false);
+    }
+  }
+
+  async function handlePublishMealIntel(id) {
+    if (!rid) return;
+    setMealIntelBusy(true);
+    try {
+      const response = await api.publishRestaurantMealIntel(rid, id);
+      if (response?.item) {
+        setMealIntelItems((current) =>
+          current.map((row) => (row.id === id ? response.item : row))
+        );
+      }
+    } catch (error) {
+      window.alert(error.message || "Failed to publish Meal Intel.");
+    } finally {
+      setMealIntelBusy(false);
+    }
+  }
+
+  async function handleArchiveMealIntel(id) {
+    if (!rid) return;
+    setMealIntelBusy(true);
+    try {
+      await api.archiveRestaurantMealIntel(rid, id);
+      setMealIntelItems((current) => current.filter((row) => row.id !== id));
+    } catch (error) {
+      window.alert(error.message || "Failed to archive Meal Intel.");
+    } finally {
+      setMealIntelBusy(false);
+    }
+  }
+
   if (!rid) {
     return (
-      <OperatorLayout title="Bid-Free Bidding™">
+      <OperatorLayout title="Intent-Based Offers">
         <p style={{ color: "#667085" }}>Select a restaurant first.</p>
       </OperatorLayout>
     );
   }
 
   return (
-    <OperatorLayout title="Bid-Free Bidding™">
+    <OperatorLayout title="Intent-Based Offers">
       <div style={{ maxWidth: 760 }}>
         <div style={CARD}>
-          <div style={{ fontSize: 28, fontWeight: 900, color: "#0f1720", marginBottom: 8 }}>Bid-Free Bidding™</div>
+          <div style={{ fontSize: 28, fontWeight: 900, color: "#0f1720", marginBottom: 8 }}>Intent-Based Offers</div>
           <div style={{ fontSize: 15, color: "#344054", lineHeight: 1.6, marginBottom: 10 }}>
-            Bid-Free Bidding™ lets Menuply apply occasional, controlled savings to qualifying orders—within the limits you set.
+            Intent-Based Offers are controlled savings for qualifying orders—within caps, hours, and
+            margin limits you set. They are <strong>not</strong> public Deals (those stay on Deals for everyone).
           </div>
           <div style={{ fontSize: 14, color: "#667085", lineHeight: 1.6, marginBottom: 16 }}>
-            It never applies to items already on deal and always stays within your pricing protections.
+            They never apply to items already on a public Deal and always stay within your pricing protections.
           </div>
           <div style={{ background: "#f8fafc", borderRadius: 14, padding: "16px 18px", border: "1px solid #e4e9f0", marginBottom: 16 }}>
-            <div style={{ fontWeight: 800, color: "#0f1720", marginBottom: 6 }}>Bid-Free Bidding™</div>
+            <div style={{ fontWeight: 800, color: "#0f1720", marginBottom: 6 }}>Intent-Based Offers</div>
             <div style={{ fontSize: 14, color: "#344054", lineHeight: 1.6 }}>
-              Let Menuply apply occasional, controlled savings to qualifying orders—within the limits you set.
+              Let Menuply apply occasional, controlled savings when diner intent and your settings align.
             </div>
             <div style={{ fontSize: 14, color: "#344054", lineHeight: 1.6 }}>
-              Increase order opportunities while protecting your margins.
+              Use this for intent-scoped savings; use Deals for offers anyone can see.
             </div>
           </div>
           <div style={{ display: "grid", gap: 6, fontSize: 13, color: "#475467" }}>
@@ -263,7 +333,7 @@ export default function OperatorCartNegotiationSettings() {
         <div style={CARD}>
         <div className="operator-responsive-row" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, marginBottom: 10 }}>
             <div>
-              <div style={{ fontSize: 18, fontWeight: 800, color: "#0f1720", marginBottom: 4 }}>Bid-Free Bidding™</div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: "#0f1720", marginBottom: 4 }}>Intent-Based Offers</div>
               <div style={{ fontSize: 14, color: "#475467", lineHeight: 1.6 }}>
                 Apply occasional, controlled savings to qualifying orders—within the limits you set.
               </div>
@@ -277,7 +347,7 @@ export default function OperatorCartNegotiationSettings() {
             />
           </div>
           <div style={{ fontSize: 13, color: "#667085" }}>
-            Enable Bid-Free Bidding™
+            Enable Intent-Based Offers
           </div>
           <div style={{ fontSize: 12, color: "#98a2b3", marginTop: 4 }}>
             Allow Menuply to occasionally apply controlled savings to qualifying orders.
@@ -556,13 +626,145 @@ export default function OperatorCartNegotiationSettings() {
           )}
         </div>
 
+        <div style={CARD} data-testid="operator-meal-intel">
+          <div style={{ fontSize: 18, fontWeight: 800, color: "#0f1720", marginBottom: 6 }}>Meal Intel</div>
+          <div style={{ fontSize: 14, color: "#475467", lineHeight: 1.6, marginBottom: 14 }}>
+            Publish intent-scoped information for diners who want or are eating a food type.
+            This is <strong>not</strong> a public Deal — it reaches matching intent via Meal Intel / Waiter.
+          </div>
+
+          <Field label="Food intent">
+            <select
+              value={mealIntelDraft.food_interest_key}
+              onChange={(event) =>
+                setMealIntelDraft((current) => ({
+                  ...current,
+                  food_interest_key: event.target.value,
+                }))
+              }
+              style={INPUT}
+            >
+              {ALL_FAVORITE_FOOD_OPTIONS.map((opt) => (
+                <option key={opt.key} value={opt.key}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Title">
+            <input
+              value={mealIntelDraft.title}
+              onChange={(event) =>
+                setMealIntelDraft((current) => ({ ...current, title: event.target.value }))
+              }
+              placeholder="e.g. Lunch burger specials for diners who want burgers"
+              style={INPUT}
+            />
+          </Field>
+          <Field label="Detail (optional)">
+            <input
+              value={mealIntelDraft.detail}
+              onChange={(event) =>
+                setMealIntelDraft((current) => ({ ...current, detail: event.target.value }))
+              }
+              placeholder="Short note for diners"
+              style={INPUT}
+            />
+          </Field>
+          <button
+            type="button"
+            onClick={handleCreateMealIntel}
+            disabled={mealIntelBusy}
+            style={{
+              border: "none",
+              borderRadius: 12,
+              background: mealIntelBusy ? "#98a2b3" : "#124734",
+              color: "#fff",
+              padding: "12px 18px",
+              fontSize: 14,
+              fontWeight: 800,
+              cursor: mealIntelBusy ? "wait" : "pointer",
+              marginBottom: 16,
+            }}
+          >
+            {mealIntelBusy ? "Saving…" : "Create Meal Intel draft"}
+          </button>
+
+          {mealIntelLoading ? (
+            <div style={{ color: "#667085", fontSize: 13 }}>Loading Meal Intel…</div>
+          ) : null}
+
+          {!mealIntelLoading && mealIntelItems.length === 0 ? (
+            <div style={{ color: "#667085", fontSize: 13 }}>No Meal Intel yet — create a draft above.</div>
+          ) : null}
+
+          <ul style={{ listStyle: "none", margin: 0, padding: 0, display: 10 }}>
+            {mealIntelItems.map((item) => (
+              <li
+                key={item.id}
+                style={{
+                  border: "1px solid #e4e9f0",
+                  borderRadius: 12,
+                  padding: "12px 14px",
+                  background: "#f8fafc",
+                }}
+              >
+                <div style={{ fontWeight: 800, color: "#0f1720" }}>
+                  {item.icon ? `${item.icon} ` : null}
+                  {item.title}
+                </div>
+                <div style={{ fontSize: 12, color: "#667085", marginTop: 4 }}>
+                  {item.food_interest_key} · {item.status}
+                </div>
+                <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                  {item.status !== "published" ? (
+                    <button
+                      type="button"
+                      onClick={() => handlePublishMealIntel(item.id)}
+                      disabled={mealIntelBusy}
+                      style={{
+                        border: "1px solid #124734",
+                        borderRadius: 8,
+                        background: "#fff",
+                        color: "#124734",
+                        padding: "6px 10px",
+                        fontWeight: 700,
+                        cursor: "pointer",
+                      }}
+                    >
+                      Publish
+                    </button>
+                  ) : null}
+                  <button
+                    type="button"
+                    onClick={() => handleArchiveMealIntel(item.id)}
+                    disabled={mealIntelBusy}
+                    style={{
+                      border: "1px solid #d6dde7",
+                      borderRadius: 8,
+                      background: "#fff",
+                      color: "#667085",
+                      padding: "6px 10px",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                    }}
+                  >
+                    Archive
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+
         <div style={CARD}>
           <div style={{ fontSize: 17, fontWeight: 800, color: "#0f1720", marginBottom: 14 }}>Restaurant FAQ</div>
           <div style={{ display: "grid", gap: 14 }}>
             <div>
-              <div style={{ fontWeight: 800, color: "#0f1720", marginBottom: 4 }}>What is Bid-Free Bidding™?</div>
+              <div style={{ fontWeight: 800, color: "#0f1720", marginBottom: 4 }}>What are Intent-Based Offers?</div>
               <div style={{ fontSize: 14, color: "#475467", lineHeight: 1.6 }}>
-                Bid-Free Bidding™ lets Menuply apply occasional, controlled savings to qualifying orders—within the limits you set.
+                Controlled savings when diner intent and your caps, hours, and margin limits align.
+                Public Deals remain separate offers available to everyone.
               </div>
             </div>
             <div>

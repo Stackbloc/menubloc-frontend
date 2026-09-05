@@ -1,5 +1,6 @@
 /**
  * Feed Deals — full-screen swipe reel of restaurant deal videos.
+ * Public offers for everyone (Phase 6) — not Meal Intel / Waiter.
  * Text search / filters live at /deals (classic DealsPage).
  */
 
@@ -80,7 +81,10 @@ export default function FeedDealsPage() {
   }, [market.city, market.state, effectiveMealFilter]);
 
   const headerSlot = isDesktop ? null : (
-    <div style={styles.chromeWrap} data-testid="feed-deals-chrome">
+    <div style={styles.chromeWrap} data-testid="feed-deals-chrome" data-deals-channel="public-offers">
+      <p style={styles.publicNote} data-testid="feed-deals-public-note">
+        Public deal videos — offers for everyone
+      </p>
       <div
         style={styles.mealStrip}
         role="tablist"
@@ -172,6 +176,17 @@ const styles = {
     display: "flex",
     flexDirection: "column",
     gap: 10,
+    pointerEvents: "none",
+  },
+  publicNote: {
+    margin: "0 12px",
+    padding: "6px 10px",
+    borderRadius: 10,
+    background: "rgba(0,0,0,0.5)",
+    color: "rgba(255,255,255,0.88)",
+    fontSize: 11,
+    fontWeight: 600,
+    textAlign: "center",
     pointerEvents: "none",
   },
   mealStrip: {

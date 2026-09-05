@@ -21,8 +21,18 @@ test("My Menuply and peer hub use five-section presentation hub", () => {
     assert.match(page, /EatingHubSection/);
   }
   assert.match(section, /data-testid="what-im-eating"/);
+  assert.match(section, /NearbyEatingSection/);
+  assert.match(section, /SocialFoodInfoSection/);
   assert.match(section, /data-testid="want-to-eat"/);
   assert.match(section, /data-testid="eating-plans"/);
+  assert.ok(
+    section.indexOf("<NearbyEatingSection") < section.indexOf("<SocialFoodInfoSection"),
+    "Nearby before Social Food Info"
+  );
+  assert.ok(
+    section.indexOf("<SocialFoodInfoSection") < section.indexOf('data-testid="want-to-eat"'),
+    "Social Food Info must precede What I Wanna Eat"
+  );
 
   assert.match(section, /data-testid="eating"/);
   assert.match(section, /EatingComposeSheet/);

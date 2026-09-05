@@ -16,6 +16,7 @@ import { readDetectedLocation } from "../lib/discoveryLocationPersistence.js";
 // 2026-08-15 Phase 6 (user-authorized): cluster subscription report is additive to core Waiter.
 // 2026-08-15: core meal/location Waiter always runs with city+state; clusters never replace it.
 // 2026-08-18 (user-authorized): public Activity ("What's happening") is additive on Waiter.
+// 2026-09-05 Phase 7b (remaining-phase finish): Meal Intel additive from getMealIntel — not Deals.
 // Do not replace recommendation cards. Do not add MarketFallback, CommunityGrowthCard, or greetings.
 
 const SESSION_LOCATION_KEY = "grubbid.discovery.location";
@@ -48,6 +49,7 @@ const WAITER_GROUP_ORDER = [
   "what_people_are_eating",
   "liked_signal",
   "want_to_eat",
+  "meal_intel",
   "new_item",
   "trending_dish",
   "meal_recommendation",

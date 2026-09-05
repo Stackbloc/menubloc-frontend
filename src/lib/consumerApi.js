@@ -215,6 +215,36 @@ export const listSeeWhosEating = ({ city, state, limit = 20, cursor, kind, chann
   const qs = q.toString();
   return get(`/api/consumer/see-whos-eating${qs ? `?${qs}` : ""}`);
 };
+
+/** Post–Wanna Eat / Nearby discovery return (value-extraction). */
+export const fetchWantDiscovery = ({
+  foodName,
+  foodInterestKey,
+  limit = 12,
+} = {}) => {
+  const q = new URLSearchParams();
+  if (foodName) q.set("food_name", String(foodName));
+  if (foodInterestKey) q.set("food_interest_key", String(foodInterestKey));
+  if (limit) q.set("limit", String(limit));
+  const qs = q.toString();
+  return get(`/api/consumer/want-to-eat/discovery${qs ? `?${qs}` : ""}`);
+};
+
+/** Phase 5 — connects’ food signals (informational; not matching). */
+export const listSocialFoodInfo = ({ limit = 12 } = {}) => {
+  const q = new URLSearchParams();
+  if (limit) q.set("limit", String(limit));
+  const qs = q.toString();
+  return get(`/api/consumer/connections/social-food-info${qs ? `?${qs}` : ""}`);
+};
+
+/** Phase 7 — Meal Intel from diner food intent (not public Deals). */
+export const listMealIntel = ({ limit = 8 } = {}) => {
+  const q = new URLSearchParams();
+  if (limit) q.set("limit", String(limit));
+  const qs = q.toString();
+  return get(`/api/consumer/meal-intel${qs ? `?${qs}` : ""}`);
+};
 export const listConnectionsPlanning = (limit = 30, peerId = null) => {
   const q = new URLSearchParams({ limit: String(limit) });
   if (peerId) q.set("peer_id", String(peerId));

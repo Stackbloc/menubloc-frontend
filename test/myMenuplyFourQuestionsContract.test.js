@@ -31,7 +31,7 @@ test("My Menuply is the diner's personal home", () => {
   assert.match(page, /data-testid="my-events"/);
   assert.match(section, /title="My Eating Plans"/);
   assert.match(section, /title="What I'm Eating"/);
-  assert.match(section, /title="What I Want to Eat"/);
+  assert.match(section, /title="What I Wanna Eat"/);
   assert.match(section, /eating-calendar/);
   assert.match(section, /DinerCalendarTrigger/);
   assert.match(section, /PostAfterActions/);

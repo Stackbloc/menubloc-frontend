@@ -45,11 +45,11 @@ function testLayoutSectionAndItemOrder() {
   const hours = opsBlock.indexOf("/operator/hours");
   assert.ok(pe >= 0 && brand > pe && hours > brand, "Operations item order");
 
-  // Marketing order: Billboards, Deals, Bid-Free
+  // Marketing order: Billboards, Deals, Intent-Based Offers
   const mktBlock = layout.slice(mktIdx, menuIdx);
   const bb = mktBlock.indexOf("/operator/billboards");
   const deals = mktBlock.indexOf("/operator/deals");
-  const bid = mktBlock.indexOf("/operator/bid-free-bidding");
+  const bid = mktBlock.indexOf("/operator/intent-based-offers");
   assert.ok(bb >= 0 && deals > bb && bid > deals, "Marketing item order");
 
   // Menu order: Worksheet, View Menu, Menu Lab, Adobe (defined in menuItems array)

@@ -1043,7 +1043,9 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
         <Route path="/operator/events" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorVenuePackagePage /></OperatorRoute>} />
         <Route path="/operator/events/manage" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorEventsEditor /></OperatorRoute>} />
         <Route path="/operator/hours" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorHoursEditor /></OperatorRoute>} />
-        <Route path="/operator/bid-free-bidding" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorCartNegotiationSettings /></OperatorRoute>} />
+        <Route path="/operator/intent-based-offers" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorCartNegotiationSettings /></OperatorRoute>} />
+        <Route path="/operator/limited-audience-offers" element={<Navigate to="/operator/intent-based-offers" replace />} />
+        <Route path="/operator/bid-free-bidding" element={<Navigate to="/operator/intent-based-offers" replace />} />
         <Route path="/operator/marketplace" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorQrKitOrder /></OperatorRoute>} />
         <Route path="/operator/qr-kits/order" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorMarketplaceLegacyRedirect />} />
         <Route path="/operator/qr-stickers" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorQrStickers /></OperatorRoute>} />

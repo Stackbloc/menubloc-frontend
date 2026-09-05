@@ -28,6 +28,10 @@ import { formatPlanBracketDate, futurePlanKey } from "./dinerHubFormat.js";
 import { whatIAteTodayLocalDate } from "../../../lib/consumerApi.js";
 import { defaultWhatIAteMealPeriod } from "../../../lib/whatIAteTodayMealPeriod.js";
 import InviteMeOutAudiencePicker from "./InviteMeOutAudiencePicker.jsx";
+import WantDiscoveryPanel from "./WantDiscoveryPanel.jsx";
+import NearbyEatingSection from "./NearbyEatingSection.jsx";
+import SocialFoodInfoSection from "./SocialFoodInfoSection.jsx";
+import MealIntelSection from "./MealIntelSection.jsx";
 import * as s from "./myMenuplyStyles.js";
 
 function formatInlineDayLabel(hubDate, today) {
@@ -108,6 +112,8 @@ export default function EatingHubSection({
   onSchedulingPlansChange,
   wants = [],
   wantListError = "",
+  wantDiscovery = null,
+  onDismissWantDiscovery,
   liked = [],
   lastPost = null,
   postBusy = "",
@@ -139,6 +145,7 @@ export default function EatingHubSection({
   planPrefill = null,
   locationCity = null,
   locationState = null,
+  favoriteFoods = [],
   onInviteMeOut,
   viewerMayInviteMeOut = false,
   inviteMeOutOpen = false,
@@ -278,6 +285,13 @@ export default function EatingHubSection({
   return (
     <div data-testid="eating" ref={sectionRef}>
       <section style={s.section} data-testid="what-im-eating">
+        {wantDiscovery && lastPost?.kind === "diary" ? (
+          <WantDiscoveryPanel
+            discovery={wantDiscovery}
+            mode="ate"
+            onClose={onDismissWantDiscovery}
+          />
+        ) : null}
         <SectionHead
           kicker="Today"
           title="What I'm Eating"
@@ -330,11 +344,32 @@ export default function EatingHubSection({
         </div>
       </section>
 
+      {/* Phase 3: discovery entry must precede What I Wanna Eat */}
+      <NearbyEatingSection
+        hidden={readOnly}
+        locationCity={locationCity}
+        locationState={locationState}
+        favoriteFoods={favoriteFoods}
+      />
+
+      {/* Phase 5: connects’ food signals — informational, not matching */}
+      <SocialFoodInfoSection hidden={readOnly} />
+
+      {/* Phase 7: Meal Intel from intent — not public Deals; Waiter briefing not modified */}
+      <MealIntelSection hidden={readOnly} />
+
       <section style={s.section} data-testid="want-to-eat">
+        {wantDiscovery && lastPost?.kind !== "diary" ? (
+          <WantDiscoveryPanel
+            discovery={wantDiscovery}
+            mode="want"
+            onClose={onDismissWantDiscovery}
+          />
+        ) : null}
         <div data-testid="eating-want-panel" style={s.presentationBlock}>
           <SectionHead
             kicker="Cravings"
-            title="What I Want to Eat"
+            title="What I Wanna Eat"
             subtitle="Dishes and places on your mind"
           />
           {wantListError ? <p style={s.error}>{wantListError}</p> : null}

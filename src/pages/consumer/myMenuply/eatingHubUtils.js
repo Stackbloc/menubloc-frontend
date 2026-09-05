@@ -111,7 +111,8 @@ export const EATING_COMPOSE_CATEGORIES = [
     id: "ate",
     label: "What I'm Eating",
     placeholder: "Anything to say? (optional)",
-    description: "Photo or video, restaurant or homemade, meal time, then post.",
+    description:
+      "Current eating signal — cuisine, food type, restaurant, or dish. Video is core for Feed discovery.",
   },
   {
     id: "want",
@@ -139,10 +140,13 @@ export const EATING_COMPOSE_CATEGORIES = [
   },
 ];
 
-/** What I Want to Eat intent levels (not forced to restaurant). */
+/** What I Want to Eat intent levels — order is product Selection Structure. */
 export const WANT_INTENT_KINDS = [
-  { id: "cuisine", label: "Cuisine", placeholder: "Select a cuisine" },
-  { id: "restaurant", label: "Restaurant", placeholder: "Search restaurant" },
-  { id: "menu_item", label: "Menu item", placeholder: "Restaurant → dish" },
-  { id: "food_item", label: "Food item", placeholder: "e.g. Sushi" },
+  { id: "cuisine", label: "Cuisine", placeholder: "Select a cuisine", icon: "🌍" },
+  { id: "food_item", label: "Food Type", placeholder: "e.g. Burgers", icon: "🍔" },
+  { id: "restaurant", label: "Restaurant", placeholder: "Search restaurant", icon: "🏪" },
+  { id: "menu_item", label: "Menu item", placeholder: "Restaurant → dish", icon: "🍽️" },
 ];
+
+/** What I'm Eating signal levels — same taxonomy as Wanna Eat (behavior ≠ desire). */
+export const ATE_SIGNAL_KINDS = WANT_INTENT_KINDS;

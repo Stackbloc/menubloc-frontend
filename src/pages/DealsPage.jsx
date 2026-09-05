@@ -374,7 +374,10 @@ export default function DealsPage() {
             />
           </div>
 
-          <div style={{ maxWidth: 520, margin: "0 auto", padding: "10px 16px 0", textAlign: "center" }}>
+          <div
+            style={{ maxWidth: 520, margin: "0 auto", padding: "10px 16px 0", textAlign: "center" }}
+            data-testid="deals-public-offers"
+          >
             <h2
               style={{
                 margin: 0,
@@ -390,6 +393,21 @@ export default function DealsPage() {
                 locationLabel || t("discovery.you", "you"),
               )}
             </h2>
+            <p
+              style={{
+                margin: "6px 0 0",
+                fontSize: 12,
+                fontWeight: 600,
+                color: "#4b5563",
+                lineHeight: 1.4,
+              }}
+              data-testid="deals-public-offers-note"
+            >
+              {t(
+                "deals.publicOffersNote",
+                "Public offers for everyone — not personalized Meal Intel.",
+              )}
+            </p>
           </div>
         </div>
       </div>
