@@ -1,5 +1,6 @@
 /**
- * Flash Video — short personality clips on About Me (human element, not Feed).
+ * Flash Video — short personality clips on About Me (display only).
+ * Record/upload lives on bottom-nav X / Feed — not duplicate cameras on profile.
  */
 
 import { useState } from "react";

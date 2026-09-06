@@ -8,6 +8,19 @@ export function formatEduVerificationBadge({ institutionShort, institutionName }
   return `✓ Verified .edu address — ${label}`;
 }
 
+/** Short school line for diner profiles (affiliation, not enrollment proof). */
+export function formatEduSchoolAffiliation({
+  institutionShort,
+  institutionName,
+  edu_verified: eduVerified,
+} = {}) {
+  if (eduVerified === false) return null;
+  const label = String(institutionShort || institutionName || "").trim();
+  if (!label && eduVerified !== true) return null;
+  if (!label) return ".edu school";
+  return label;
+}
+
 export function getEduVerificationFromConsumer(consumer) {
   if (!consumer || consumer.edu_verified !== true) {
     return {
@@ -16,6 +29,7 @@ export function getEduVerificationFromConsumer(consumer) {
       institution_name: null,
       institution_short: null,
       email_domain: null,
+      school_affiliation: null,
     };
   }
 
@@ -29,5 +43,10 @@ export function getEduVerificationFromConsumer(consumer) {
     institution_name: institutionName,
     institution_short: institutionShort,
     email_domain: consumer.edu_email_domain || null,
+    school_affiliation: formatEduSchoolAffiliation({
+      institutionShort,
+      institutionName,
+      edu_verified: true,
+    }),
   };
 }

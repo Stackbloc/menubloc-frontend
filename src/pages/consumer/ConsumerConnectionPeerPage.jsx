@@ -41,6 +41,9 @@ import {
   resolveConsumerMediaUrl,
   whatIAteTodayLocalDate,
   getPublicFlashVideos,
+  removeConnection,
+  blockDiner,
+  reportDinerAbuse,
 } from "../../lib/consumerApi.js";
 import { fetchUserHomemadeDishes } from "../../lib/homemadeDishApi.js";
 import HomeAtHomeSection from "./myMenuply/HomeAtHomeSection.jsx";
@@ -97,6 +100,11 @@ export default function ConsumerConnectionPeerPage() {
   const [viewerMayInviteMeOut, setViewerMayInviteMeOut] = useState(false);
   const [inviteMeOutOpen, setInviteMeOutOpen] = useState(false);
   const [mmtDetailId, setMmtDetailId] = useState(null);
+  const [safetyBusy, setSafetyBusy] = useState(false);
+  const [safetyNotice, setSafetyNotice] = useState("");
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportReason, setReportReason] = useState("harassment");
+  const [reportDetails, setReportDetails] = useState("");
 
   const load = useCallback(async () => {
     setError("");
@@ -214,6 +222,60 @@ export default function ConsumerConnectionPeerPage() {
     }
   }
 
+  async function endConnection() {
+    if (!connection?.id) return;
+    const ok = window.confirm("End this connection? You can still find each other in Find Diners.");
+    if (!ok) return;
+    setSafetyBusy(true);
+    setError("");
+    try {
+      await removeConnection(connection.id);
+      navigate("/account?tab=social", { replace: true });
+    } catch (err) {
+      setError(err.message || "Unable to end connection");
+    } finally {
+      setSafetyBusy(false);
+    }
+  }
+
+  async function hardBlock() {
+    if (!peerId) return;
+    const ok = window.confirm(
+      "Block this diner? Hard block hides both of you in Find Diners and rejects Connect both ways."
+    );
+    if (!ok) return;
+    setSafetyBusy(true);
+    setError("");
+    try {
+      await blockDiner(peerId);
+      navigate("/account?tab=social", { replace: true });
+    } catch (err) {
+      setError(err.message || "Unable to block");
+    } finally {
+      setSafetyBusy(false);
+    }
+  }
+
+  async function submitAbuseReport(e) {
+    e.preventDefault();
+    if (!peerId) return;
+    setSafetyBusy(true);
+    setError("");
+    try {
+      await reportDinerAbuse(peerId, {
+        reason: reportReason,
+        details: reportDetails.trim() || undefined,
+      });
+      setReportOpen(false);
+      setReportDetails("");
+      setSafetyNotice("Report submitted to Menuply.");
+    } catch (err) {
+      setError(err.message || "Unable to submit report");
+    } finally {
+      setSafetyBusy(false);
+    }
+  }
+
   return (
     <>
       <StickyPageHeader title={name} backTo={MY_MENUPLY_PROFILE_PATH} backLabel="My Menuply" />
@@ -248,6 +310,7 @@ export default function ConsumerConnectionPeerPage() {
               favoriteFoods={
                 Array.isArray(peer?.favorite_foods) ? peer.favorite_foods : []
               }
+              eduConsumer={peer}
             />
 
             <HomeAtHomeSection readOnly dishes={homeDishes} />
@@ -329,6 +392,84 @@ export default function ConsumerConnectionPeerPage() {
             <section style={s.section} data-testid="my-events">
               <SectionHead title="My Events" />
               <p style={s.muted}>Nothing yet.</p>
+            </section>
+
+            <section style={s.section} data-testid="connection-safety">
+              <SectionHead title="Connection safety" />
+              {safetyNotice ? <p style={{ ...s.muted, color: "#166534" }}>{safetyNotice}</p> : null}
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                <button
+                  type="button"
+                  style={{
+                    padding: "10px 14px",
+                    borderRadius: 10,
+                    border: "1px solid #cbd5e1",
+                    background: "#fff",
+                    fontWeight: 700,
+                    cursor: "pointer",
+                  }}
+                  disabled={safetyBusy}
+                  onClick={endConnection}
+                >
+                  End connection
+                </button>
+                <button
+                  type="button"
+                  style={{
+                    padding: "10px 14px",
+                    borderRadius: 10,
+                    border: "1px solid #fecaca",
+                    background: "#fff",
+                    color: "#b91c1c",
+                    fontWeight: 700,
+                    cursor: "pointer",
+                  }}
+                  disabled={safetyBusy}
+                  onClick={hardBlock}
+                >
+                  Block
+                </button>
+                <button
+                  type="button"
+                  style={{
+                    padding: "10px 14px",
+                    borderRadius: 10,
+                    border: "1px solid #cbd5e1",
+                    background: "#fff",
+                    fontWeight: 700,
+                    cursor: "pointer",
+                  }}
+                  disabled={safetyBusy}
+                  onClick={() => setReportOpen((v) => !v)}
+                >
+                  Report abuse
+                </button>
+              </div>
+              {reportOpen ? (
+                <form onSubmit={submitAbuseReport} style={{ marginTop: 12, display: "grid", gap: 8 }}>
+                  <select
+                    value={reportReason}
+                    onChange={(e) => setReportReason(e.target.value)}
+                    style={{ padding: 10, borderRadius: 8 }}
+                  >
+                    <option value="harassment">Harassment</option>
+                    <option value="spam">Spam</option>
+                    <option value="impersonation">Impersonation</option>
+                    <option value="inappropriate">Inappropriate</option>
+                    <option value="other">Other</option>
+                  </select>
+                  <textarea
+                    value={reportDetails}
+                    onChange={(e) => setReportDetails(e.target.value.slice(0, 2000))}
+                    rows={3}
+                    placeholder="Optional details"
+                    style={{ padding: 10, borderRadius: 8 }}
+                  />
+                  <button type="submit" disabled={safetyBusy}>
+                    Submit report
+                  </button>
+                </form>
+              ) : null}
             </section>
           </>
         ) : null}

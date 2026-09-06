@@ -1,6 +1,6 @@
 /**
- * @home on My Menuply is a photo grid of home-cooked meals — not a Feed channel.
- * What I'm Cooking videos also appear here after posting from Feed X.
+ * @home on My Menuply is a photo/video grid of home-cooked meals — display only.
+ * Capture/upload is bottom-nav X / Feed; cooking videos from Feed appear here.
  */
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -11,7 +11,7 @@ import { fileURLToPath } from "url";
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = (rel) => fs.readFileSync(path.join(root, rel), "utf8");
 
-test("@home photographs home-cooked meals on the diner profile", () => {
+test("@home displays home-cooked meals; no section camera upload", () => {
   const section = read("src/pages/consumer/myMenuply/HomeAtHomeSection.jsx");
   const page = read("src/pages/consumer/MyMenuplyPage.jsx");
   const peer = read("src/pages/consumer/ConsumerConnectionPeerPage.jsx");
@@ -19,24 +19,20 @@ test("@home photographs home-cooked meals on the diner profile", () => {
 
   assert.match(section, /data-testid="home-at-home"/);
   assert.match(section, /@home/);
-  assert.match(section, /allowVideo=\{false\}/);
-  assert.match(section, /facingMode="environment"/);
-  assert.match(section, /Add your first home-cooked dish/);
-  assert.match(section, /Take photo — or choose media upload under X/);
-  assert.match(section, /MenuplyMediaPicker/);
-  assert.match(section, /data-testid="home-at-home-add"/);
-  assert.match(section, /titleLeading/);
+  assert.match(section, /home-at-home-feed-link/);
+  assert.match(section, /Feed \(X\)/);
+  assert.doesNotMatch(section, /MenuplyMediaPicker/);
+  assert.doesNotMatch(section, /home-at-home-picker/);
+  assert.doesNotMatch(section, /home-at-home-add/);
+  assert.doesNotMatch(section, /titleLeading/);
   assert.doesNotMatch(section, /Photograph a meal/);
-  assert.doesNotMatch(section, /onOpenLibrary/);
   assert.match(section, /video_url/);
   assert.doesNotMatch(section, /createWhatIAteToday/);
   assert.doesNotMatch(section, /FEED_CONTENT_KINDS/);
 
   assert.match(page, /HomeAtHomeSection/);
-  assert.match(page, /onHomeAtHomePhoto/);
-  assert.match(page, /createHomemadeDish/);
-  assert.match(page, /uploadHomemadeDishPhoto/);
   assert.match(page, /deleteHomemadeDish/);
+  assert.doesNotMatch(page, /onPhotoFile=\{onHomeAtHomePhoto\}/);
   assert.doesNotMatch(page, /market_discoverable:\s*true/);
 
   assert.match(peer, /HomeAtHomeSection readOnly/);

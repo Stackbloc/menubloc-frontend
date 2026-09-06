@@ -32,19 +32,6 @@ import WantDiscoveryPanel from "./WantDiscoveryPanel.jsx";
 import NearbyEatingSection from "./NearbyEatingSection.jsx";
 import * as s from "./myMenuplyStyles.js";
 
-function EatingCameraGlyph() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden fill="none">
-      <path
-        d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.2l1.1-1.6A1.5 1.5 0 0 1 10 3.5h4a1.5 1.5 0 0 1 1.2.9L16.3 6h1.2A2.5 2.5 0 0 1 20 8.5v8A2.5 2.5 0 0 1 17.5 19h-11A2.5 2.5 0 0 1 4 16.5v-8Z"
-        stroke="currentColor"
-        strokeWidth="1.7"
-      />
-      <circle cx="12" cy="12.5" r="3.2" stroke="currentColor" strokeWidth="1.7" />
-    </svg>
-  );
-}
-
 function formatInlineDayLabel(hubDate, today) {
   if (hubDate === today) return "Today";
   return formatPlanBracketDate(hubDate);
@@ -167,7 +154,6 @@ export default function EatingHubSection({
   inviteMeOutToggleBusy = false,
   onRequestMmt,
   onViewMmt,
-  onOpenAteCamera,
 }) {
   void liked;
   void foodHref;
@@ -308,28 +294,10 @@ export default function EatingHubSection({
           kicker="Today"
           title="What I'm Eating"
           to={readOnly ? diaryHref : "/account/what-i-ate"}
-          subtitle="The food you're sharing with the world"
-          titleLeading={
-            !readOnly && typeof onOpenAteCamera === "function" ? (
-              <button
-                type="button"
-                style={s.sectionTitleIconBtn || {
-                  appearance: "none",
-                  border: "none",
-                  background: "transparent",
-                  color: "#0f766e",
-                  padding: 0,
-                  display: "inline-flex",
-                  cursor: "pointer",
-                  lineHeight: 0,
-                }}
-                aria-label="Record or photograph what I'm eating"
-                data-testid="what-im-eating-camera"
-                onClick={onOpenAteCamera}
-              >
-                <EatingCameraGlyph />
-              </button>
-            ) : null
+          subtitle={
+            readOnly
+              ? "The food they're sharing with the world"
+              : "Shared from Feed (X) — this hub shows what you've posted"
           }
           aside={
             <>

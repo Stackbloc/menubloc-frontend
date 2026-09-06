@@ -40,7 +40,7 @@ export function buildDinerPersonalContextLines(input = {}) {
   }
 
   if (hometown) lines.push(`From ${hometown}`);
-  if (hobbies) lines.push(hobbies);
+  if (hobbies) lines.push(`Hobbies · ${hobbies}`);
 
   return lines;
 }

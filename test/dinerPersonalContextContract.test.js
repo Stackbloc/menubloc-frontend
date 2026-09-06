@@ -37,13 +37,13 @@ test("buildDinerPersonalContextLines supports student, professional, and hometow
   assert.deepEqual(buildDinerPersonalContextLines({}), []);
 });
 
-test("hobbies appear as their own line after hometown", () => {
+test("hobbies appear as a labeled line after hometown", () => {
   assert.deepEqual(
     buildDinerPersonalContextLines({
       diner_occupation: "Software designer",
       diner_hobbies: "Hiking, live music",
     }),
-    ["Software designer", "Hiking, live music"]
+    ["Software designer", "Hobbies · Hiking, live music"]
   );
 });
 
@@ -58,24 +58,27 @@ test("occupation takes precedence over education fields", () => {
   );
 });
 
-test("DinerIdentityHero renders personal context beneath name without empty placeholders", () => {
+test("DinerIdentityHero renders personal context and unified profile settings", () => {
   const hero = read("src/pages/consumer/myMenuply/DinerIdentityHero.jsx");
   const editor = read("src/pages/consumer/myMenuply/DinerPersonalContextEditor.jsx");
   assert.match(hero, /diner-personal-context/);
   assert.match(hero, /DinerPersonalContextEditor/);
   assert.match(hero, /buildDinerPersonalContextLines/);
   assert.match(hero, /personalContextLines\.map/);
+  assert.match(hero, /onSaveProfileSettings/);
+  assert.match(hero, /diner-school-affiliation/);
   assert.match(editor, /diner-personal-context-editor/);
   assert.match(editor, /diner-personal-context-toggle/);
-  assert.match(editor, /Add personal details/);
-  assert.match(editor, /diner-personal-context-done/);
-  assert.match(editor, /diner-occupation-input/);
-  assert.match(editor, /diner-hometown-input/);
+  assert.match(editor, /Edit profile details|Add profile details/);
+  assert.match(editor, /diner-profile-settings-save/);
   assert.match(editor, /diner-hobbies-input/);
-  assert.match(editor, /FlashVideosEditorField/);
+  assert.match(editor, /diner-dob-input/);
+  assert.match(editor, /diner-favorite-foods/);
+  assert.doesNotMatch(editor, /Save birthday & favorites/);
+  assert.doesNotMatch(editor, /FlashVideosEditorField/);
   assert.match(hero, /FlashVideosDisplay/);
-  assert.match(hero, /flashVideos/);
   assert.doesNotMatch(hero, /About Me essay|follower|following count/i);
+  assert.doesNotMatch(hero, /onSaveProfileBasics|Save birthday/);
 });
 
 test("Profile tab exposes optional personal context fields", () => {
@@ -85,13 +88,11 @@ test("Profile tab exposes optional personal context fields", () => {
   assert.match(tab, /Personal context/);
   assert.match(tab, /id="personal-context"/);
   assert.match(tab, /dinerOccupation/);
-  assert.match(tab, /dinerEducationStatus/);
-  assert.match(tab, /dinerFieldOfStudy/);
-  assert.match(tab, /dinerHometown/);
   assert.match(tab, /dinerHobbies/);
   assert.match(profile, /handleSavePersonalContext/);
-  assert.match(profile, /diner_education_status/);
-  assert.match(page, /onPersonalContextSave/);
+  assert.match(page, /onSaveProfileSettings/);
+  assert.doesNotMatch(page, /onSaveProfileBasics/);
+  assert.doesNotMatch(page, /onPersonalContextSave/);
 });
 
 test("Connection peer hub passes personal context to identity hero", () => {
@@ -99,18 +100,17 @@ test("Connection peer hub passes personal context to identity hero", () => {
   assert.match(peer, /personalContext=\{\{/);
   assert.match(peer, /diner_hometown/);
   assert.match(peer, /diner_hobbies/);
+  assert.match(peer, /eduConsumer=\{peer\}/);
   assert.match(peer, /flashVideos=\{flashVideos\}/);
-  assert.match(peer, /getPublicFlashVideos/);
   assert.match(peer, /readOnly/);
-  assert.doesNotMatch(peer, /onPersonalContextSave/);
+  assert.doesNotMatch(peer, /onSaveProfileSettings/);
 });
 
-test("DinerIdentityHero only mounts personal context editor for profile owner", () => {
+test("DinerIdentityHero only mounts profile settings editor for profile owner", () => {
   const hero = read("src/pages/consumer/myMenuply/DinerIdentityHero.jsx");
   const page = read("src/pages/consumer/MyMenuplyPage.jsx");
-  assert.match(hero, /!readOnly && onPersonalContextSave/);
-  assert.match(page, /onPersonalContextSave=\{onPersonalContextSave\}/);
-  assert.doesNotMatch(page, /readOnly/);
+  assert.match(hero, /!readOnly && onSaveProfileSettings/);
+  assert.match(page, /onSaveProfileSettings=\{onSaveProfileSettings\}/);
 });
 
 test("summarizePersonalContext returns None added when empty", () => {

@@ -177,6 +177,7 @@ export default function MyMenuplyPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [profile, setProfile] = useState(null);
+  const [eduConsumer, setEduConsumer] = useState(null);
   const [avatarUrl, setAvatarUrl] = useState("");
   const [identityBusy, setIdentityBusy] = useState(false);
   const [identityNotice, setIdentityNotice] = useState("");
@@ -289,6 +290,7 @@ export default function MyMenuplyPage() {
       ]);
       const nextProfile = profileRes?.profile || null;
       setProfile(nextProfile);
+      setEduConsumer(profileRes?.consumer || null);
       const inviteAudience = String(nextProfile?.invite_me_out_audience || "none").toLowerCase();
       setInviteMeOutOpen(inviteAudience !== "none");
       setInviteMeOutAudience(inviteAudience === "selected" ? "selected" : "connections");
@@ -589,27 +591,7 @@ export default function MyMenuplyPage() {
     }
   }
 
-  async function onSaveProfileBasics({ date_of_birth, favorite_foods }) {
-    setIdentityError("");
-    setIdentityNotice("");
-    const data = await updateConsumerProfile({
-      date_of_birth: date_of_birth || null,
-      favorite_foods: Array.isArray(favorite_foods) ? favorite_foods : [],
-    });
-    const next = data?.profile || {};
-    setProfile((prev) => ({
-      ...(prev || {}),
-      date_of_birth: next.date_of_birth
-        ? String(next.date_of_birth).slice(0, 10)
-        : date_of_birth || null,
-      favorite_foods: Array.isArray(next.favorite_foods)
-        ? next.favorite_foods
-        : favorite_foods,
-    }));
-    setIdentityNotice("Birthday & favorites saved.");
-  }
-
-  async function onPersonalContextSave(next) {
+  async function onSaveProfileSettings(next) {
     setIdentityError("");
     setIdentityNotice("");
     try {
@@ -619,6 +601,8 @@ export default function MyMenuplyPage() {
         diner_occupation: next.diner_occupation || null,
         diner_hometown: next.diner_hometown || null,
         diner_hobbies: next.diner_hobbies || null,
+        date_of_birth: next.date_of_birth || null,
+        favorite_foods: Array.isArray(next.favorite_foods) ? next.favorite_foods : [],
       });
       const saved = data?.profile || {};
       setProfile((prev) => ({
@@ -628,10 +612,18 @@ export default function MyMenuplyPage() {
         diner_occupation: saved.diner_occupation ?? next.diner_occupation ?? null,
         diner_hometown: saved.diner_hometown ?? next.diner_hometown ?? null,
         diner_hobbies: saved.diner_hobbies ?? next.diner_hobbies ?? null,
+        date_of_birth: saved.date_of_birth
+          ? String(saved.date_of_birth).slice(0, 10)
+          : next.date_of_birth || null,
+        favorite_foods: Array.isArray(saved.favorite_foods)
+          ? saved.favorite_foods
+          : next.favorite_foods,
       }));
-      setIdentityNotice("Personal context saved.");
+      if (data?.consumer) setEduConsumer(data.consumer);
+      setIdentityNotice("Profile details saved.");
     } catch (err) {
-      setIdentityError(err.message || "Unable to save personal context");
+      setIdentityError(err.message || "Unable to save profile details");
+      throw err;
     }
   }
 
@@ -1548,11 +1540,9 @@ export default function MyMenuplyPage() {
               error={identityError}
               onAvatarFile={onAvatarFile}
               onAboutSave={onAboutSave}
-              onPersonalContextSave={onPersonalContextSave}
+              onSaveProfileSettings={onSaveProfileSettings}
               flashVideos={flashVideos}
               flashBusy={flashBusy}
-              flashError={flashError}
-              onFlashVideoAdd={onFlashVideoAdd}
               onFlashVideoRemove={onFlashVideoRemove}
               profileMedia={profileMedia}
               onProfileMediaAdd={onProfileMediaAdd}
@@ -1564,7 +1554,7 @@ export default function MyMenuplyPage() {
               favoriteFoods={
                 Array.isArray(profile?.favorite_foods) ? profile.favorite_foods : []
               }
-              onSaveProfileBasics={onSaveProfileBasics}
+              eduConsumer={eduConsumer}
             />
             <ProfileGalleryComposeSheet
               open={profileGalleryPickerOpen}
@@ -1607,7 +1597,6 @@ export default function MyMenuplyPage() {
               dishes={homeDishes}
               busy={homeDishBusy}
               error={homeDishError}
-              onPhotoFile={onHomeAtHomePhoto}
               onDelete={onHomeAtHomeDelete}
             />
 
@@ -1651,11 +1640,6 @@ export default function MyMenuplyPage() {
               inviteMeOutToggleBusy={inviteMeOutToggleBusy}
               onRequestMmt={() => setRequestMmtOpen(true)}
               onViewMmt={(mmt) => setMmtDetailId(Number(mmt?.id) || null)}
-              onOpenAteCamera={() => {
-                setComposeDefaultCategory("ate");
-                setComposeMediaSource("camera");
-                setComposeOpen(true);
-              }}
               planPrefill={planPrefill}
               locationCity={locationCity}
               locationState={locationState}

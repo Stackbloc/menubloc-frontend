@@ -26,12 +26,13 @@ test("Make Me This API + single picker + profile badges", () => {
   assert.doesNotMatch(hub, /MakeMeThisInboxPanel/);
   assert.match(hub, /want-mmt-open-picker/);
   assert.match(hub, /onViewMmt=\{onViewMmt\}/);
-  assert.match(hub, /what-im-eating-camera/);
+  assert.doesNotMatch(hub, /what-im-eating-camera/);
+  assert.doesNotMatch(hub, /onOpenAteCamera/);
 
   const page = read("src/pages/consumer/MyMenuplyPage.jsx");
   assert.match(page, /RequestMmtSheet/);
   assert.match(page, /MmtDetailSheet/);
-  assert.match(page, /onOpenAteCamera/);
+  assert.doesNotMatch(page, /onOpenAteCamera/);
   assert.doesNotMatch(page, /listMakeMeThisInbox/);
 
   const peer = read("src/pages/consumer/ConsumerConnectionPeerPage.jsx");

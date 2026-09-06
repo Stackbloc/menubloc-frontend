@@ -1,11 +1,11 @@
 /**
  * @home — home-cooked meal photos plus What I'm Cooking videos on the diner profile.
  * @home still photos do not post to Feed. Cooking videos from Feed X also appear here.
+ * Section cameras removed — capture/upload is bottom-nav X; this hub is display (+ delete).
  */
 
 import { Link } from "react-router-dom";
 import { useState } from "react";
-import MenuplyMediaPicker from "../../../components/social/MenuplyMediaPicker.jsx";
 import { resolveConsumerMediaUrl } from "../../../lib/consumerApi.js";
 import { homemadeDishPath } from "../../../lib/homemadeDishApi.js";
 import { useLongPressReveal } from "./mediaLongPressReveal.js";
@@ -114,6 +114,7 @@ export default function HomeAtHomeSection({
   onPhotoFile,
   onDelete,
 }) {
+  void onPhotoFile;
   const rows = Array.isArray(dishes)
     ? dishes.filter((d) => d && (d.photo_url || d.video_url || d.id))
     : [];
@@ -125,33 +126,16 @@ export default function HomeAtHomeSection({
       <SectionHead
         title="@home"
         testId="home-at-home-head"
-        subtitle="Home-cooked meals you've photographed — plus What I'm Cooking videos."
-        titleLeading={
-          !readOnly && typeof onPhotoFile === "function" ? (
-            <span
-              data-testid="home-at-home-add"
-              title="Take photo — or choose media upload under X"
-              style={{ display: "inline-flex", alignItems: "center", lineHeight: 0 }}
-            >
-              <MenuplyMediaPicker
-                onFile={(file) => onPhotoFile?.(file)}
-                disabled={busy}
-                facingMode="environment"
-                source="camera"
-                allowPhoto
-                allowVideo={false}
-                showPreview={false}
-                testId="home-at-home-picker"
-                ariaLabel="Take photo — or choose media upload under X"
-              />
-            </span>
-          ) : null
-        }
+        subtitle="Home-cooked meals and cooking videos shared from Feed (X)."
       />
       {error ? <p style={s.error}>{error}</p> : null}
       {!rows.length && !readOnly ? (
         <p style={s.muted} data-testid="home-at-home-empty">
-          Add your first home-cooked dish.
+          Share a home-cooked meal from{" "}
+          <Link to="/feed" data-testid="home-at-home-feed-link" style={{ color: "#0f766e", fontWeight: 700 }}>
+            Feed (X)
+          </Link>
+          . It shows up here.
         </p>
       ) : null}
 
