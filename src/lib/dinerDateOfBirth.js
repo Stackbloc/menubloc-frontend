@@ -32,7 +32,22 @@ export const DINER_SEX_OPTIONS = Object.freeze([
   { value: "prefer_not_to_say", label: "Prefer not to say" },
 ]);
 
+const DINER_SEX_SHORT = Object.freeze({
+  female: "F",
+  male: "M",
+  non_binary: "NB",
+});
+
 export function dinerSexLabel(value) {
   const opt = DINER_SEX_OPTIONS.find((o) => o.value === value);
   return opt ? opt.label : "";
+}
+
+/** Compact F / M / NB for discovery rows — omit prefer_not_to_say. */
+export function dinerSexShort(value) {
+  const key = String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[ -]+/g, "_");
+  return DINER_SEX_SHORT[key] || null;
 }

@@ -10,6 +10,7 @@ import {
   MAX_FAVORITES,
   normalizeFavoriteFoods,
 } from "../../../lib/dinerFavoriteFoods.js";
+import { DINER_SEX_OPTIONS, dinerSexLabel } from "../../../lib/dinerDateOfBirth.js";
 import { labelWithFoodIcon } from "../../../lib/foodInterestIcons.js";
 import * as s from "./myMenuplyStyles.js";
 
@@ -43,12 +44,13 @@ const chipOn = {
 
 /**
  * One profile-settings panel: occupation / school / hometown / hobbies /
- * birthday / favorite foods — single Save, then collapse.
+ * gender / birthday / favorite foods — single Save, then collapse.
  * Hobbies are not optional UI — they stay in this section.
  */
 export default function DinerPersonalContextEditor({
   value = null,
   dateOfBirth = "",
+  dinerSex = "",
   favoriteFoods = [],
   busy = false,
   onSave,
@@ -56,7 +58,10 @@ export default function DinerPersonalContextEditor({
   const normalizedFavorites = normalizeFavoriteFoods(favoriteFoods);
   const hasContext = buildDinerPersonalContextLines(value || {}).length > 0;
   const hasProfileBits =
-    hasContext || normalizedFavorites.length > 0 || Boolean(String(dateOfBirth || "").trim());
+    hasContext ||
+    normalizedFavorites.length > 0 ||
+    Boolean(String(dateOfBirth || "").trim()) ||
+    Boolean(String(dinerSex || "").trim());
 
   const [editing, setEditing] = useState(!hasProfileBits);
   const [draft, setDraft] = useState(() => ({
@@ -64,6 +69,7 @@ export default function DinerPersonalContextEditor({
     ...normalizePersonalContextInput(value || {}),
   }));
   const [dob, setDob] = useState(dateOfBirth || "");
+  const [sex, setSex] = useState(dinerSex || "");
   const [favorites, setFavorites] = useState(() => normalizedFavorites);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
@@ -75,6 +81,7 @@ export default function DinerPersonalContextEditor({
       ...normalizePersonalContextInput(value || {}),
     });
     setDob(dateOfBirth || "");
+    setSex(dinerSex || "");
     setFavorites(normalizeFavoriteFoods(favoriteFoods));
   }, [
     editing,
@@ -84,6 +91,7 @@ export default function DinerPersonalContextEditor({
     value?.diner_hometown,
     value?.diner_hobbies,
     dateOfBirth,
+    dinerSex,
     favoriteFoods,
   ]);
 
@@ -107,6 +115,7 @@ export default function DinerPersonalContextEditor({
     try {
       await onSave({
         ...normalizePersonalContextInput(draft),
+        diner_sex: sex || null,
         date_of_birth: dob || null,
         favorite_foods: favorites,
       });
@@ -119,10 +128,19 @@ export default function DinerPersonalContextEditor({
   }
 
   const occupationSet = Boolean(String(draft.diner_occupation || "").trim());
+  const sexLabel = dinerSexLabel(dinerSex);
 
   if (!editing) {
     return (
       <div data-testid="diner-profile-settings-collapsed">
+        {sexLabel ? (
+          <p
+            style={{ margin: "8px 0 0", fontSize: 14, fontWeight: 650, color: "#344054" }}
+            data-testid="diner-sex-display"
+          >
+            {sexLabel}
+          </p>
+        ) : null}
         {normalizedFavorites.length ? (
           <div style={{ marginTop: 10 }} data-testid="diner-favorite-foods-display">
             <p
@@ -178,8 +196,8 @@ export default function DinerPersonalContextEditor({
         </button>
       </div>
       <p style={s.personalContextPanelDesc}>
-        One save for hobbies, favorites, birthday, and the rest — birthday stays private after
-        save.
+        One save for hobbies, favorites, gender, birthday, and the rest — full birthday stays
+        private after save; age may appear in discovery when set.
       </p>
 
       <div style={s.personalContextGrid}>
@@ -278,6 +296,27 @@ export default function DinerPersonalContextEditor({
           />
         </label>
 
+        <label style={s.personalContextField}>
+          <span style={s.personalContextLabel}>Gender</span>
+          <select
+            data-testid="diner-sex-input"
+            style={s.personalContextInput}
+            value={sex || ""}
+            disabled={busy || saving}
+            onChange={(e) => setSex(e.target.value)}
+          >
+            <option value="">Prefer not to say yet</option>
+            {DINER_SEX_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+          <span style={s.personalContextHint}>
+            Shown as F / M / NB on discovery so others can tell profiles apart.
+          </span>
+        </label>
+
         <label style={{ ...s.personalContextField, gridColumn: "1 / -1" }}>
           <span style={s.personalContextLabel}>Date of birth</span>
           <input
@@ -289,7 +328,8 @@ export default function DinerPersonalContextEditor({
             onChange={(e) => setDob(e.target.value)}
           />
           <span style={s.personalContextHint}>
-            Optional. Not shown on your profile after save — stays private.
+            Optional. Full birthday stays private; age may appear in Who&apos;s Eating / Find
+            Diners when set.
           </span>
         </label>
 
@@ -352,6 +392,7 @@ export default function DinerPersonalContextEditor({
                 ...normalizePersonalContextInput(value || {}),
               });
               setDob(dateOfBirth || "");
+              setSex(dinerSex || "");
               setFavorites(normalizeFavoriteFoods(favoriteFoods));
               setErr("");
               setEditing(false);

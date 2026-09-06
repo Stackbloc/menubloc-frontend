@@ -81,6 +81,7 @@ export default function DinerIdentityHero({
   readOnly = false,
   monthInFoodHref = null,
   dateOfBirth = "",
+  dinerSex = "",
   favoriteFoods = [],
   eduConsumer = null,
 }) {
@@ -258,6 +259,7 @@ export default function DinerIdentityHero({
             <DinerPersonalContextEditor
               value={personalContext}
               dateOfBirth={dateOfBirth}
+              dinerSex={dinerSex}
               favoriteFoods={favoriteFoods}
               busy={busy || saving}
               onSave={onSaveProfileSettings}

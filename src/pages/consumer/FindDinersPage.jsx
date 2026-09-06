@@ -16,6 +16,12 @@ import {
 } from "../../lib/consumerApi.js";
 import { formatDinerPeerLabel } from "../../lib/dinerPublicIdentity.js";
 import { buildDinerPersonalContextLines } from "../../lib/dinerPersonalContext.js";
+import {
+  formatDinerDiscoverySummary,
+  formatDinerIdentityBits,
+} from "../../lib/dinerDiscoverySummary.js";
+import { iconForFoodInterest } from "../../lib/foodInterestIcons.js";
+import { dinerPeerProfilePath } from "../../lib/liveFeedCategory.js";
 
 function ContextChips({ diner }) {
   const chips = [];
@@ -187,8 +193,20 @@ export default function FindDinersPage() {
         <ul style={styles.list}>
           {results.map((diner) => {
             const personalContextLines = buildDinerPersonalContextLines(diner);
+            const identityBits = formatDinerIdentityBits(diner);
+            const topFav = Array.isArray(diner.favorite_foods) ? diner.favorite_foods[0] : null;
+            const wantSummary =
+              topFav &&
+              formatDinerDiscoverySummary({
+                ...diner,
+                kind: "want",
+                food_interest_key: topFav.key,
+                icon: topFav.icon || iconForFoodInterest(topFav.key),
+                food_name: topFav.label,
+              });
+            const profileHref = dinerPeerProfilePath(diner.id);
             return (
-            <li key={diner.id} style={styles.card}>
+            <li key={diner.id} style={styles.card} data-testid="find-diners-result">
               <div style={styles.cardTop}>
                 {diner.avatar_url ? (
                   <img src={diner.avatar_url} alt="" style={styles.avatar} />
@@ -198,7 +216,13 @@ export default function FindDinersPage() {
                   </div>
                 )}
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={styles.name}>{formatDinerPeerLabel(diner)}</div>
+                  {profileHref ? (
+                    <Link to={profileHref} style={styles.nameLink} data-testid="find-diners-name-link">
+                      {wantSummary || identityBits || formatDinerPeerLabel(diner)}
+                    </Link>
+                  ) : (
+                    <div style={styles.name}>{formatDinerPeerLabel(diner)}</div>
+                  )}
                   {personalContextLines.map((line) => (
                     <div key={line} style={styles.personalContext}>
                       {line}
@@ -288,6 +312,13 @@ const styles = {
     fontSize: 20,
   },
   name: { fontWeight: 800, color: "#0f172a", fontSize: 16 },
+  nameLink: {
+    fontWeight: 800,
+    color: "#166534",
+    fontSize: 16,
+    textDecoration: "none",
+    display: "block",
+  },
   location: { fontSize: 13, color: "#475569", marginTop: 2 },
   personalContext: { fontSize: 13, color: "#475569", marginTop: 2, fontStyle: "italic" },
   about: { fontSize: 13, color: "#64748b", marginTop: 6, lineHeight: 1.45 },

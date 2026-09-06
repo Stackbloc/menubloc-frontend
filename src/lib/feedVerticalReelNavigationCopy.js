@@ -53,8 +53,3 @@ export function formatVerticalReelCue({ isDesktopViewport }) {
   }
   return "↑ Swipe up";
 }
-
-export const FEED_HOME_DESKTOP_NAV_COACH_COPY =
-  "On desktop, use ↓ and ↑ arrow keys to move between videos — the same as swipe up and down on your phone.";
-
-export const FEED_HOME_DESKTOP_NAV_COACH_DURATION_MS = 12_000;

@@ -601,6 +601,7 @@ export default function MyMenuplyPage() {
         diner_occupation: next.diner_occupation || null,
         diner_hometown: next.diner_hometown || null,
         diner_hobbies: next.diner_hobbies || null,
+        diner_sex: next.diner_sex || null,
         date_of_birth: next.date_of_birth || null,
         favorite_foods: Array.isArray(next.favorite_foods) ? next.favorite_foods : [],
       });
@@ -612,6 +613,7 @@ export default function MyMenuplyPage() {
         diner_occupation: saved.diner_occupation ?? next.diner_occupation ?? null,
         diner_hometown: saved.diner_hometown ?? next.diner_hometown ?? null,
         diner_hobbies: saved.diner_hobbies ?? next.diner_hobbies ?? null,
+        diner_sex: saved.diner_sex ?? next.diner_sex ?? null,
         date_of_birth: saved.date_of_birth
           ? String(saved.date_of_birth).slice(0, 10)
           : next.date_of_birth || null,
@@ -1551,6 +1553,7 @@ export default function MyMenuplyPage() {
               dateOfBirth={
                 profile?.date_of_birth ? String(profile.date_of_birth).slice(0, 10) : ""
               }
+              dinerSex={profile?.diner_sex || ""}
               favoriteFoods={
                 Array.isArray(profile?.favorite_foods) ? profile.favorite_foods : []
               }

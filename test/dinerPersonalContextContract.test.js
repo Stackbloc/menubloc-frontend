@@ -72,11 +72,14 @@ test("DinerIdentityHero renders personal context and unified profile settings", 
   assert.match(editor, /Edit profile details|Add profile details/);
   assert.match(editor, /diner-profile-settings-save/);
   assert.match(editor, /diner-hobbies-input/);
+  assert.match(editor, /diner-sex-input/);
   assert.match(editor, /diner-dob-input/);
   assert.match(editor, /diner-favorite-foods/);
+  assert.match(editor, /diner_sex/);
   assert.doesNotMatch(editor, /Save birthday & favorites/);
   assert.doesNotMatch(editor, /FlashVideosEditorField/);
   assert.match(hero, /FlashVideosDisplay/);
+  assert.match(hero, /dinerSex=/);
   assert.doesNotMatch(hero, /About Me essay|follower|following count/i);
   assert.doesNotMatch(hero, /onSaveProfileBasics|Save birthday/);
 });
@@ -91,6 +94,7 @@ test("Profile tab exposes optional personal context fields", () => {
   assert.match(tab, /dinerHobbies/);
   assert.match(profile, /handleSavePersonalContext/);
   assert.match(page, /onSaveProfileSettings/);
+  assert.match(page, /diner_sex:/);
   assert.doesNotMatch(page, /onSaveProfileBasics/);
   assert.doesNotMatch(page, /onPersonalContextSave/);
 });
