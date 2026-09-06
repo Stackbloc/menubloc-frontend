@@ -68,15 +68,17 @@ test("MenuItemDetailPage view-full-menu link includes highlightItem", () => {
   assert.match(source, /highlightMenuLinkExtrasFromSearch\(searchParams\)/);
 });
 
-test("menu highlight uses 7s green border without smooth scroll", () => {
+test("menu highlight uses 7s green border; initial scroll is auto; expiry scrolls to top", () => {
   const hookSource = fs.readFileSync(
     new URL("../src/hooks/useMenuItemHighlight.js", import.meta.url),
     "utf8",
   );
   const cssSource = fs.readFileSync(new URL("../src/index.css", import.meta.url), "utf8");
   assert.match(hookSource, /HIGHLIGHT_MS = 7000/);
-  assert.match(hookSource, /behavior: "auto"/);
-  assert.doesNotMatch(hookSource, /behavior: "smooth"/);
+  assert.match(hookSource, /scrollMenuItemIntoView[\s\S]*behavior: "auto"/);
+  assert.match(hookSource, /scrollMenuToRestaurantTop/);
+  assert.match(hookSource, /menu-catalog-scroll/);
+  assert.match(hookSource, /scrollToTop:\s*true/);
   assert.match(hookSource, /scheduleScrollUntilVisible/);
   assert.match(hookSource, /isElementVisiblyInViewport/);
   assert.match(cssSource, /\.menuply-menu-item-highlight[\s\S]*border: 2px solid #22c55e/);

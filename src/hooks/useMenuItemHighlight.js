@@ -28,6 +28,36 @@ function scrollMenuItemIntoView(el) {
   el.scrollIntoView({ block: "center", behavior: "auto" });
 }
 
+/** After highlight expires, return to menu top so the restaurant name is visible. */
+function scrollMenuToRestaurantTop(fromEl) {
+  if (typeof window === "undefined") return;
+
+  const catalog =
+    fromEl && typeof fromEl.closest === "function"
+      ? fromEl.closest(".menu-catalog-scroll")
+      : null;
+  if (catalog) {
+    catalog.scrollTo({ top: 0, behavior: "smooth" });
+    return;
+  }
+
+  let node = fromEl?.parentElement || null;
+  while (node && node !== document.body && node !== document.documentElement) {
+    const style = window.getComputedStyle(node);
+    const overflowY = style.overflowY;
+    if (
+      (overflowY === "auto" || overflowY === "scroll") &&
+      node.scrollHeight > node.clientHeight + 8
+    ) {
+      node.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+    node = node.parentElement;
+  }
+
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
 function scheduleScrollUntilVisible(el) {
   const timers = [];
 
@@ -65,13 +95,15 @@ function applyHighlightElement(el) {
   el.classList.add(HIGHLIGHT_CLASS);
 }
 
-function finishSession(sessionRef) {
+function finishSession(sessionRef, { scrollToTop = false } = {}) {
   const session = sessionRef.current;
   if (!session) return;
   if (session.timerId) window.clearTimeout(session.timerId);
   if (session.scrollCleanup) session.scrollCleanup();
-  clearHighlightElement(session.element);
+  const el = session.element;
+  clearHighlightElement(el);
   sessionRef.current = null;
+  if (scrollToTop) scrollMenuToRestaurantTop(el);
 }
 
 function scheduleSessionEnd(sessionRef) {
@@ -80,17 +112,20 @@ function scheduleSessionEnd(sessionRef) {
   if (session.timerId) window.clearTimeout(session.timerId);
   const remaining = session.endsAt - Date.now();
   if (remaining <= 0) {
-    finishSession(sessionRef);
+    finishSession(sessionRef, { scrollToTop: true });
     return;
   }
-  session.timerId = window.setTimeout(() => finishSession(sessionRef), remaining);
+  session.timerId = window.setTimeout(
+    () => finishSession(sessionRef, { scrollToTop: true }),
+    remaining
+  );
 }
 
 function reapplyActiveHighlight(sessionRef) {
   const session = sessionRef.current;
   if (!session) return false;
   if (Date.now() >= session.endsAt) {
-    finishSession(sessionRef);
+    finishSession(sessionRef, { scrollToTop: true });
     return false;
   }
 
@@ -131,6 +166,8 @@ function beginHighlight(sessionRef, targetId, el) {
 /**
  * When arriving from menu item detail (?highlightItem=), scroll the menu row
  * into view once (no smooth-scroll hijack) and show a green border for 7s.
+ * When the highlight window ends, scroll the menu back to the top so the
+ * restaurant name is visible (Menu Browser catalog pane or window).
  */
 export default function useMenuItemHighlight({
   highlightMenuItemId,
