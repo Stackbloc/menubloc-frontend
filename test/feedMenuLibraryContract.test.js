@@ -200,12 +200,14 @@ test("sample stack provides real starter menus when library is empty", () => {
   assert.ok(deck.every((row) => row.tier === "sample" && row.restaurant_id && row.slug));
 });
 
-test("Feed Menus page + nav contract strings", () => {
+test("Feed nav Menu Browser opens Yellow Browse; legacy /feed/menus kept for deep links", () => {
   const navLinks = read("src/lib/feedShellLinks.js");
-  assert.match(navLinks, /\/feed\/menus/);
   assert.match(navLinks, /feed-nav-menus/);
-  assert.match(navLinks, /My Menu Stack/);
+  assert.match(navLinks, /label: "Menu Browser"/);
+  assert.match(navLinks, /to: "\/browse-menus"/);
+  assert.doesNotMatch(navLinks, /My Menu Stack/);
   assert.doesNotMatch(navLinks, /feed-nav-eating/);
+  assert.match(navLinks, /\/browse-menus/);
 
   const app = read("src/App.jsx");
   assert.match(app, /FeedMenusPage/);

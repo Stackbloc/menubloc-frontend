@@ -1,5 +1,5 @@
 /**
- * Feed shell layout — Home · Connects · Menus | [X] | Deals · Search · Profile.
+ * Feed shell layout — Home · Connects · Menu Browser | [X] | Deals · Search · Profile.
  * Mobile: bottom nav + top More header. Desktop: left rail + More panel.
  */
 

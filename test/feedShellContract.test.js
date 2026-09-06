@@ -10,7 +10,7 @@ import { fileURLToPath } from "node:url";
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = (rel) => fs.readFileSync(path.join(root, rel), "utf8");
 
-test("Feed shell: Home|Connects|Menus|X|Deals|Shop|Profile + slim X sheet", () => {
+test("Feed shell: Home|Connects|Menu Browser|X|Deals|Shop|Profile + slim X sheet", () => {
   const app = read("src/App.jsx");
   assert.match(app, /path="\/feed"/);
   assert.match(app, /FeedShellPage/);
@@ -38,12 +38,14 @@ test("Feed shell: Home|Connects|Menus|X|Deals|Shop|Profile + slim X sheet", () =
   assert.match(feedTabLinks, /feed-nav-home/);
   assert.match(feedTabLinks, /feed-nav-connects/);
   assert.match(feedTabLinks, /feed-nav-menus/);
-  assert.match(feedTabLinks, /My Menu Stack/);
-  assert.doesNotMatch(feedTabLinks, /label: "Menus"/);
+  assert.match(feedTabLinks, /label: "Menu Browser"/);
+  assert.match(feedTabLinks, /to: "\/browse-menus"/);
+  assert.doesNotMatch(feedTabLinks, /My Menu Stack/);
   assert.match(feedTabLinks, /feed-nav-deals/);
   assert.match(feedTabLinks, /feed-nav-shop/);
   assert.doesNotMatch(feedTabLinks, /label: "Search"/);
   assert.match(feedTabLinks, /feed-nav-profile/);
+  assert.match(feedTabLinks, /\/browse-menus/);
 
   const shell = read("src/pages/consumer/feed/FeedShellPage.jsx");
   assert.match(shell, /FeedVideoCreateSheet/);
@@ -230,12 +232,15 @@ test("Feed as home: / uses Feed shell; FeedPrimaryNav paths unchanged", () => {
   const feedLinks = read("src/lib/feedShellLinks.js");
   assert.match(feedLinks, /to: "\/feed"/);
   assert.match(feedLinks, /to: "\/feed\/connects"/);
-  assert.match(feedLinks, /to: "\/feed\/menus"/);
+  assert.doesNotMatch(feedLinks, /to: "\/feed\/menus"/);
+  assert.match(feedLinks, /to: "\/browse-menus"/);
+  assert.match(feedLinks, /label: "Menu Browser"/);
   assert.match(feedLinks, /to: "\/feed\/deals"/);
   assert.match(feedLinks, /to: "\/feed\/search"/);
   assert.match(feedLinks, /to: "\/feed\/profile"/);
   assert.match(feedLinks, /FEED_MENU_CAPTURE_PATH/);
   assert.match(feedLinks, /FEED_MENU_CAPTURE_HINT/);
+  assert.match(feedLinks, /\/browse-menus/);
   assert.doesNotMatch(feedLinks, /to: "\/"/);
 
   const app = read("src/App.jsx");

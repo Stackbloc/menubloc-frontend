@@ -1,5 +1,6 @@
 /**
- * TikTok-style feed shell nav: Home · Connects · Menus | [X] | Deals · Search · Profile.
+ * TikTok-style feed shell nav: Home · Connects · Menu Browser | [X] | Deals · Search · Profile.
+ * Menu Browser opens Yellow Browse (`/browse-menus`).
  * Mobile bottom bar only — desktop uses FeedDesktopRail from the same tab config.
  */
 

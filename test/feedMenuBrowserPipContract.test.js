@@ -1,5 +1,5 @@
 /**
- * Feed Menu Browser PiP — frozen browse trail + independent mini-player + Full Feed.
+ * Feed Menu Browser PiP — trail + side-arrow video advance + menu sync (no Full Feed banner).
  */
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -38,34 +38,59 @@ test("clampBrowseTrailIndex and normalizeBrowseTrailRef", () => {
   assert.equal(normalizeBrowseTrailRef({ restaurant_id: "9" }).restaurant_id, "9");
 });
 
-test("Menu Browser overlay supports trail swipe + Full Feed", () => {
+test("Menu Browser overlay: trail swipe, close to Feed, highlight wiring — no Full Feed banner", () => {
   const overlay = read("src/components/consumer/feed/FeedMenuBrowserPipOverlay.jsx");
   assert.match(overlay, /feed-menu-browser-pip/);
-  assert.match(overlay, /Full Feed/);
+  assert.match(overlay, /Return to Feed/);
   assert.match(overlay, /onTrailPrev/);
   assert.match(overlay, /onTrailNext/);
   assert.match(overlay, /feed-menu-browser-trail-next/);
-  assert.match(overlay, /Swipe menus/);
-  assert.match(overlay, /feed-menu-browser-switch/);
+  assert.match(overlay, /highlightMenuItemId/);
+  assert.doesNotMatch(overlay, /Full Feed/);
+  assert.doesNotMatch(overlay, /feed-menu-browser-switch/);
+  assert.doesNotMatch(overlay, /Browse this menu/);
 });
 
-test("Feed reel wires browseSession trail + PiP video advance", () => {
+test("Feed reel: browseSession trail + PiP side arrows + mute + menu sync on advance", () => {
   const reel = read("src/pages/consumer/myMenuply/SeeWhosEatingFullscreen.jsx");
   assert.match(reel, /browseSession/);
   assert.match(reel, /buildBrowseMenuTrail/);
   assert.match(reel, /onBrowseTrailNext/);
   assert.match(reel, /feed-menu-browser-pip-next-video/);
-  assert.match(reel, /feed-menu-browser-pip-full-feed/);
+  assert.match(reel, /pipSideArrows/);
+  assert.match(reel, /pipMuteBtn/);
+  assert.match(reel, /see-whos-eating-pip-sound-toggle/);
+  assert.match(reel, /highlightMenuItemId/);
+  assert.match(reel, /menu syncs to playing restaurant/);
+  assert.doesNotMatch(reel, /feed-menu-browser-pip-full-feed/);
+  assert.doesNotMatch(reel, /Full Feed/);
   assert.match(reel, /Keep browseSession locked|Do not clear browseSession/);
   assert.doesNotMatch(reel, /navigate\(menuPath\)/);
 });
 
-test("Deal reel mirrors trail + PiP video advance", () => {
+test("CatalogMenuRenderer wires useMenuItemHighlight for Feed PiP dish frame", () => {
+  const catalog = read("src/components/menuCatalog/CatalogMenuRenderer.jsx");
+  assert.match(catalog, /useMenuItemHighlight/);
+  assert.match(catalog, /highlightMenuItemId/);
+});
+
+test("Feed nav Menu Browser tab opens Yellow Browse", () => {
+  const links = read("src/lib/feedShellLinks.js");
+  assert.match(links, /label: "Menu Browser"/);
+  assert.match(links, /to: "\/browse-menus"/);
+  assert.doesNotMatch(links, /My Menu Stack/);
+});
+
+test("Deal reel mirrors PiP side arrows + mute + menu sync", () => {
   const swipe = read("src/components/consumer/feed/DealVideoSwipe.jsx");
   assert.match(swipe, /browseSession/);
   assert.match(swipe, /buildBrowseMenuTrail/);
   assert.match(swipe, /feed-deals-pip-next-video/);
-  assert.match(swipe, /feed-deals-pip-full-feed/);
+  assert.match(swipe, /pipSideArrows/);
+  assert.match(swipe, /pipMuteBtn/);
+  assert.match(swipe, /highlightMenuItemId/);
+  assert.doesNotMatch(swipe, /feed-deals-pip-full-feed/);
+  assert.doesNotMatch(swipe, /Full Feed/);
   assert.match(swipe, /Keep browseSession locked/);
   assert.doesNotMatch(swipe, /navigate\(menuPath\)/);
 });

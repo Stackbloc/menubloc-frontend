@@ -95,6 +95,28 @@ export default function DealVideoSwipe({
     setBrowseSession((prev) => (prev ? { ...prev, trailIndex: clamped } : null));
   }, [browseSession, browseTrail.length]);
 
+  // Video advance while Menu Browser is open → menu follows the playing restaurant.
+  useEffect(() => {
+    if (!browseSession) return;
+    const ref = restaurantRefFromDealItem(item);
+    if (!ref?.restaurant_id) return;
+    recordFeedMenuOpen(ref);
+    setBrowseSession((prev) => {
+      if (!prev) return null;
+      const trail = buildBrowseMenuTrail(
+        items,
+        prev.openIndex,
+        index,
+        restaurantRefFromDealItem
+      );
+      const playingId = String(ref.restaurant_id);
+      let trailIdx = trail.findIndex((row) => String(row.restaurant_id) === playingId);
+      if (trailIdx < 0) trailIdx = Math.max(0, trail.length - 1);
+      if (trailIdx === prev.trailIndex) return prev;
+      return { ...prev, trailIndex: trailIdx };
+    });
+  }, [browseSession, index, item?.id, items]);
+
   useEffect(() => {
     const prevOverflow = document.body.style.overflow;
     const prevTouch = document.body.style.touchAction;
@@ -252,25 +274,6 @@ export default function DealVideoSwipe({
     });
   }
 
-  function switchBrowseToPlaying() {
-    const ref = restaurantRefFromDealItem(item);
-    if (!ref?.restaurant_id) return;
-    recordFeedMenuOpen(ref);
-    setBrowseSession((prev) => {
-      if (!prev) return null;
-      const trail = buildBrowseMenuTrail(
-        items,
-        prev.openIndex,
-        index,
-        restaurantRefFromDealItem
-      );
-      const playingId = String(ref.restaurant_id);
-      let trailIdx = trail.findIndex((row) => String(row.restaurant_id) === playingId);
-      if (trailIdx < 0) trailIdx = Math.max(0, trail.length - 1);
-      return { ...prev, trailIndex: trailIdx };
-    });
-  }
-
   function applyVideoSoundState(nextMuted) {
     const el = videoRef.current;
     if (!el) return;
@@ -369,14 +372,19 @@ export default function DealVideoSwipe({
       {menuBrowserOpen && browseRestaurantRef ? (
         <FeedMenuBrowserPipOverlay
           restaurantRef={browseRestaurantRef}
-          playingRestaurantRef={restaurantRef}
           trail={browseTrail}
           trailIndex={browseTrailIndex}
+          highlightMenuItemId={
+            restaurantRef?.restaurant_id &&
+            browseRestaurantRef?.restaurant_id &&
+            String(restaurantRef.restaurant_id) === String(browseRestaurantRef.restaurant_id)
+              ? inviteMenuItemId
+              : null
+          }
           bottomInset={safeBottomInset}
           onClose={closeMenuBrowser}
           onTrailPrev={onBrowseTrailPrev}
           onTrailNext={onBrowseTrailNext}
-          onSwitchBrowseToPlaying={switchBrowseToPlaying}
         />
       ) : null}
 
@@ -405,7 +413,7 @@ export default function DealVideoSwipe({
         controls={false}
         preload="auto"
         data-testid="feed-deals-video"
-        aria-label={menuBrowserOpen ? "Expand to Full Feed" : undefined}
+        aria-label={menuBrowserOpen ? "Return to Feed" : undefined}
         onClick={onVideoClick}
         onPointerUp={onVideoPointerUp}
         onTouchStart={onPipTouchStart}
@@ -415,19 +423,19 @@ export default function DealVideoSwipe({
       {menuBrowserOpen ? (
         <div
           style={{
-            ...styles.pipVideoNav,
-            bottom: `calc(${safeBottomInset}px + max(16px, env(safe-area-inset-bottom)) + ${
-              isDesktopViewport ? 372 : 264
-            }px)`,
+            ...styles.pipSideArrows,
+            bottom: `calc(${safeBottomInset}px + max(16px, env(safe-area-inset-bottom)) + 12px)`,
             right: "max(12px, env(safe-area-inset-right))",
             width: isDesktopViewport ? 200 : 140,
+            height: isDesktopViewport ? 356 : 248,
           }}
           data-testid="feed-menu-browser-pip-video-nav"
         >
           <button
             type="button"
             style={{
-              ...styles.pipVideoNavBtn,
+              ...styles.pipSideArrowBtn,
+              ...styles.pipSideArrowLeft,
               ...(index <= 0 ? styles.pipVideoNavBtnDisabled : null),
             }}
             disabled={index <= 0}
@@ -439,12 +447,13 @@ export default function DealVideoSwipe({
               goPrev();
             }}
           >
-            ▲ Prev video
+            ‹
           </button>
           <button
             type="button"
             style={{
-              ...styles.pipVideoNavBtn,
+              ...styles.pipSideArrowBtn,
+              ...styles.pipSideArrowRight,
               ...(index >= items.length - 1 ? styles.pipVideoNavBtnDisabled : null),
             }}
             disabled={index >= items.length - 1}
@@ -456,20 +465,20 @@ export default function DealVideoSwipe({
               goNext();
             }}
           >
-            ▼ Next video
+            ›
           </button>
           <button
             type="button"
-            style={styles.pipFullFeedBtn}
-            data-testid="feed-deals-pip-full-feed"
-            aria-label="Full Feed"
+            style={styles.pipMuteBtn}
+            data-testid="feed-deals-pip-sound-toggle"
+            aria-label={videoMuted ? "Unmute video" : "Mute video"}
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              closeMenuBrowser();
+              onToggleVideoSound(e);
             }}
           >
-            Full Feed
+            {videoMuted ? "🔇" : "🔊"}
           </button>
         </div>
       ) : null}
@@ -499,23 +508,7 @@ export default function DealVideoSwipe({
         >
           {soundToggleLabel}
         </button>
-      ) : (
-        <button
-          type="button"
-          style={{
-            ...styles.soundToggle,
-            ...styles.pipSoundToggle,
-            bottom: `calc(${safeBottomInset}px + max(16px, env(safe-area-inset-bottom)) + ${
-              isDesktopViewport ? 420 : 312
-            }px)`,
-          }}
-          aria-label={videoMuted ? soundPromptLabel : "Mute video"}
-          data-testid="feed-deals-pip-sound-toggle"
-          onClick={onToggleVideoSound}
-        >
-          {soundToggleLabel}
-        </button>
-      )}
+      ) : null}
 
       {!menuBrowserOpen ? (
       <div
@@ -708,41 +701,63 @@ const styles = {
     right: "max(12px, env(safe-area-inset-right))",
     zIndex: 31,
   },
-  pipVideoNav: {
+  pipSideArrows: {
     position: "absolute",
     zIndex: 32,
-    display: "flex",
-    flexDirection: "column",
-    gap: 6,
-    pointerEvents: "auto",
+    pointerEvents: "none",
   },
-  pipVideoNavBtn: {
-    border: "1px solid rgba(255,255,255,0.4)",
-    borderRadius: 10,
-    padding: "7px 8px",
-    background: "rgba(0,0,0,0.72)",
+  pipSideArrowBtn: {
+    position: "absolute",
+    top: "50%",
+    transform: "translateY(-50%)",
+    pointerEvents: "auto",
+    border: "1px solid rgba(255,255,255,0.45)",
+    borderRadius: 999,
+    width: 32,
+    height: 48,
+    padding: 0,
+    background: "rgba(0,0,0,0.55)",
     color: "#fff",
-    fontSize: 11,
-    fontWeight: 800,
+    fontSize: 28,
+    fontWeight: 700,
+    lineHeight: 1,
     cursor: "pointer",
     fontFamily: "inherit",
-    textAlign: "center",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  pipSideArrowLeft: {
+    left: 4,
+  },
+  pipSideArrowRight: {
+    right: 4,
+  },
+  pipMuteBtn: {
+    position: "absolute",
+    left: "50%",
+    bottom: 8,
+    transform: "translateX(-50%)",
+    pointerEvents: "auto",
+    border: "1px solid rgba(255,255,255,0.45)",
+    borderRadius: 999,
+    width: 36,
+    height: 36,
+    padding: 0,
+    background: "rgba(0,0,0,0.62)",
+    color: "#fff",
+    fontSize: 16,
+    lineHeight: 1,
+    cursor: "pointer",
+    fontFamily: "inherit",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 33,
   },
   pipVideoNavBtnDisabled: {
     opacity: 0.35,
     cursor: "default",
-  },
-  pipFullFeedBtn: {
-    border: "1px solid rgba(250, 204, 21, 0.65)",
-    borderRadius: 10,
-    padding: "7px 8px",
-    background: "rgba(234, 179, 8, 0.92)",
-    color: "#1a1a1a",
-    fontSize: 11,
-    fontWeight: 900,
-    cursor: "pointer",
-    fontFamily: "inherit",
-    textAlign: "center",
   },
   videoTapLayer: {
     position: "absolute",

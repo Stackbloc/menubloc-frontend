@@ -136,10 +136,20 @@ export default function useMenuItemHighlight({
   highlightMenuItemId,
   ready,
   displaySections,
-  setSearchParams,
+  setSearchParams = null,
 }) {
   const sessionRef = useRef(null);
   const clearedParamForRef = useRef(null);
+
+  function clearHighlightQueryParam(targetId) {
+    if (typeof setSearchParams !== "function") return;
+    clearedParamForRef.current = targetId;
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.delete(MENU_ITEM_HIGHLIGHT_QUERY_KEY);
+      return next;
+    }, { replace: true });
+  }
 
   useEffect(() => () => finishSession(sessionRef), []);
 
@@ -155,12 +165,7 @@ export default function useMenuItemHighlight({
     const targetId = String(highlightMenuItemId);
     if (sessionRef.current?.itemId === targetId) {
       if (clearedParamForRef.current !== targetId) {
-        clearedParamForRef.current = targetId;
-        setSearchParams((prev) => {
-          const next = new URLSearchParams(prev);
-          next.delete(MENU_ITEM_HIGHLIGHT_QUERY_KEY);
-          return next;
-        }, { replace: true });
+        clearHighlightQueryParam(targetId);
       }
       return undefined;
     }
@@ -176,12 +181,7 @@ export default function useMenuItemHighlight({
       if (!el || cancelled) return !!el;
 
       beginHighlight(sessionRef, targetId, el);
-      clearedParamForRef.current = targetId;
-      setSearchParams((prev) => {
-        const next = new URLSearchParams(prev);
-        next.delete(MENU_ITEM_HIGHLIGHT_QUERY_KEY);
-        return next;
-      }, { replace: true });
+      clearHighlightQueryParam(targetId);
 
       return true;
     };

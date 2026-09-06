@@ -1,7 +1,7 @@
 /**
  * Menu Browser — menu-primary panel; parent owns Feed PiP video.
  * Horizontal swipe walks restaurants discussed from open clip → current playing clip.
- * Full Feed exits Browse and restores the reel.
+ * Close / tap PiP returns to live Feed (parent).
  */
 
 import { useMemo, useRef } from "react";
@@ -31,26 +31,24 @@ export function resolveFeedMenuBrowserLocationParams() {
 /**
  * @param {{
  *   restaurantRef: { restaurant_id: string, restaurant_name?: string, slug?: string, city?: string, state?: string },
- *   playingRestaurantRef?: { restaurant_id: string, restaurant_name?: string } | null,
  *   trail?: object[],
  *   trailIndex?: number,
+ *   highlightMenuItemId?: string | number | null,
  *   bottomInset?: number,
  *   onClose: () => void,
  *   onTrailPrev?: () => void,
  *   onTrailNext?: () => void,
- *   onSwitchBrowseToPlaying?: () => void,
  * }} props
  */
 export default function FeedMenuBrowserPipOverlay({
   restaurantRef,
-  playingRestaurantRef = null,
   trail = null,
   trailIndex = 0,
+  highlightMenuItemId = null,
   bottomInset = 0,
   onClose,
   onTrailPrev,
   onTrailNext,
-  onSwitchBrowseToPlaying,
 }) {
   const locationParams = useMemo(() => resolveFeedMenuBrowserLocationParams(), []);
   const swipeRef = useRef({ startX: 0, startY: 0, active: false, axis: null });
@@ -72,15 +70,7 @@ export default function FeedMenuBrowserPipOverlay({
     };
   }, [activeRef]);
 
-  const playingId = playingRestaurantRef?.restaurant_id
-    ? String(playingRestaurantRef.restaurant_id)
-    : "";
   const browseId = entry?.restaurant_id ? String(entry.restaurant_id) : "";
-  const canSwitchBrowse =
-    Boolean(playingId) &&
-    Boolean(browseId) &&
-    playingId !== browseId &&
-    typeof onSwitchBrowseToPlaying === "function";
 
   const trailCount = trailList?.length || 0;
   const canTrailPrev = trailCount > 1 && activeIndex > 0 && typeof onTrailPrev === "function";
@@ -129,7 +119,6 @@ export default function FeedMenuBrowserPipOverlay({
     resetSwipe();
     if (!wasHorizontal) return;
     if (Math.abs(dx) < SWIPE_MIN_PX || Math.abs(dx) < Math.abs(dy) * 1.15) return;
-    // Finger left → next menu toward current discussion; finger right → previous.
     if (dx < 0) onTrailNext?.();
     else onTrailPrev?.();
   }
@@ -159,15 +148,15 @@ export default function FeedMenuBrowserPipOverlay({
           type="button"
           style={styles.backBtn}
           data-testid="feed-menu-browser-close"
-          aria-label="Full Feed"
-          title="Full Feed"
+          aria-label="Return to Feed"
+          title="Return to Feed"
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
             onClose?.();
           }}
         >
-          Full Feed
+          ✕
         </button>
         <span style={styles.title} data-testid="feed-menu-browser-title">
           {entry.restaurant_name || "Menu"}
@@ -198,9 +187,9 @@ export default function FeedMenuBrowserPipOverlay({
               onTrailPrev?.();
             }}
           >
-            ← Prev menu
+            ←
           </button>
-          <span style={styles.trailHint}>Swipe menus · discussed in Feed</span>
+          <span style={styles.trailHint}>Swipe menus</span>
           <button
             type="button"
             style={{
@@ -216,28 +205,7 @@ export default function FeedMenuBrowserPipOverlay({
               onTrailNext?.();
             }}
           >
-            Next menu →
-          </button>
-        </div>
-      ) : null}
-
-      {canSwitchBrowse ? (
-        <div style={styles.switchBar} data-testid="feed-menu-browser-switch-bar">
-          <p style={styles.switchCopy}>
-            Now playing{" "}
-            <strong>{playingRestaurantRef.restaurant_name || "another restaurant"}</strong>
-          </p>
-          <button
-            type="button"
-            style={styles.switchBtn}
-            data-testid="feed-menu-browser-switch"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onSwitchBrowseToPlaying();
-            }}
-          >
-            Browse this menu
+            →
           </button>
         </div>
       ) : null}
@@ -251,10 +219,11 @@ export default function FeedMenuBrowserPipOverlay({
         onTouchCancel={resetSwipe}
       >
         <CatalogMenuRenderer
-          key={entry.restaurant_id}
+          key={`${entry.restaurant_id}-${highlightMenuItemId || "none"}`}
           entry={entry}
           locationParams={locationParams}
           isMobile
+          highlightMenuItemId={highlightMenuItemId}
         />
       </div>
     </div>
@@ -287,14 +256,17 @@ const styles = {
   backBtn: {
     border: "1px solid rgba(255,255,255,0.35)",
     borderRadius: 999,
-    padding: "8px 12px",
+    width: 36,
+    height: 36,
+    padding: 0,
     background: "rgba(0,0,0,0.35)",
     color: "#fff",
-    fontSize: 13,
+    fontSize: 16,
     fontWeight: 800,
     cursor: "pointer",
     fontFamily: "inherit",
     flexShrink: 0,
+    lineHeight: 1,
   },
   title: {
     flex: 1,
@@ -306,7 +278,7 @@ const styles = {
     whiteSpace: "nowrap",
   },
   headerSpacer: {
-    width: 88,
+    width: 36,
     flexShrink: 0,
   },
   trailCounter: {
@@ -330,10 +302,10 @@ const styles = {
   trailBtn: {
     border: "1px solid rgba(250, 204, 21, 0.55)",
     borderRadius: 999,
-    padding: "6px 10px",
+    padding: "6px 12px",
     background: "rgba(250, 204, 21, 0.16)",
     color: "#fde68a",
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: 800,
     cursor: "pointer",
     fontFamily: "inherit",
@@ -349,38 +321,6 @@ const styles = {
     fontSize: 11,
     fontWeight: 600,
     color: "rgba(232,240,236,0.65)",
-  },
-  switchBar: {
-    flexShrink: 0,
-    display: "flex",
-    alignItems: "center",
-    gap: 10,
-    flexWrap: "wrap",
-    padding: "8px 12px",
-    background: "rgba(250, 204, 21, 0.18)",
-    borderBottom: "1px solid rgba(234, 179, 8, 0.45)",
-    zIndex: 2,
-  },
-  switchCopy: {
-    margin: 0,
-    flex: 1,
-    minWidth: 140,
-    fontSize: 13,
-    fontWeight: 600,
-    color: "#0f172a",
-    lineHeight: 1.35,
-  },
-  switchBtn: {
-    border: "none",
-    borderRadius: 999,
-    padding: "8px 12px",
-    background: "#EAB308",
-    color: "#1a1a1a",
-    fontSize: 13,
-    fontWeight: 800,
-    cursor: "pointer",
-    fontFamily: "inherit",
-    flexShrink: 0,
   },
   menuArea: {
     flex: 1,

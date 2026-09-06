@@ -22,9 +22,9 @@ export const FEED_LEFT_TABS = [
   FEED_HOME_TAB,
   { to: "/feed/connects", end: false, label: "Connects", testId: "feed-nav-connects" },
   {
-    to: "/feed/menus",
+    to: "/browse-menus",
     end: false,
-    label: "My Menu Stack",
+    label: "Menu Browser",
     testId: "feed-nav-menus",
   },
 ];
@@ -41,7 +41,8 @@ export const FEED_PRIMARY_TABS = [...FEED_LEFT_TABS, ...FEED_RIGHT_TABS];
 /** Desktop rail: Home first, then Share, then remaining tabs. */
 export const FEED_RAIL_TABS_AFTER_HOME = [...FEED_LEFT_TABS.slice(1), ...FEED_RIGHT_TABS];
 
-export const FEED_MENU_CAPTURE_PATH = `/menu-capture?next=${encodeURIComponent("/feed/menus")}`;
+/** Menu capture return — Yellow Browse owns bookmarked/recent menus. */
+export const FEED_MENU_CAPTURE_PATH = `/menu-capture?next=${encodeURIComponent("/browse-menus")}`;
 export const FEED_MENU_CAPTURE_HINT = "Upload restaurant menus to Menuply";
 
 export const FEED_GUEST_PROFILE_CARDS = [

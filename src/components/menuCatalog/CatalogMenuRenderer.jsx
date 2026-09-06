@@ -33,6 +33,7 @@ import OrderingUnavailableBanner from "../menu/OrderingUnavailableBanner.jsx";
 import useSavedMenuPreferences from "../../hooks/useSavedMenuPreferences.js";
 import useCatalogDietaryPreferencesSession from "../../hooks/useCatalogDietaryPreferencesSession.js";
 import useMenuPreferenceBannerSession from "../../hooks/useMenuPreferenceBannerSession.js";
+import useMenuItemHighlight from "../../hooks/useMenuItemHighlight.js";
 import {
   buildAllergenPreferenceLabels,
   buildDietPreferenceLabels,
@@ -161,6 +162,7 @@ export default function CatalogMenuRenderer({
   locationParams = {},
   isMobile = false,
   browseSection = "",
+  highlightMenuItemId = null,
   onLoadStateChange,
 }) {
   const { language, t } = useLanguage();
@@ -393,6 +395,16 @@ export default function CatalogMenuRenderer({
       }),
     [sections, dietaryFilterActive, dietPrefs, enabledAllergenKeys]
   );
+
+  useMenuItemHighlight({
+    highlightMenuItemId:
+      highlightMenuItemId != null && String(highlightMenuItemId).trim() !== ""
+        ? highlightMenuItemId
+        : null,
+    ready: pageState.status === "ok" && Boolean(data),
+    displaySections,
+  });
+
   const totalMenuItemCount = useMemo(() => countMenuDisplayItems(sections), [sections]);
   const displayableItemCount = displaySections.reduce(
     (count, sec) => count + (Array.isArray(sec?.items) ? sec.items.length : 0),
