@@ -15,7 +15,7 @@ import { markOnboardingStage } from "../lib/operatorApi.js";
 import MenuUploadCompletionNextSteps from "../components/menuUpload/MenuUploadCompletionNextSteps.jsx";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
-const MAX_FILE_BYTES = 20 * 1024 * 1024;
+const MAX_FILE_BYTES = 100 * 1024 * 1024;
 const FONT = "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial";
 
 /** OCR from menu-page images — page capture is fast; menu reading happens once on Finish. */
@@ -804,7 +804,7 @@ export default function PdfUploadPage() {
       return { ok: false };
     }
     if (chosen.size > MAX_FILE_BYTES) {
-      const message = `File is too large (${formatBytes(chosen.size)}). Maximum is 20 MB.`;
+      const message = `File is too large (${formatBytes(chosen.size)}). Maximum is 100 MB.`;
       setFileError(message);
       return { ok: false };
     }
@@ -1492,7 +1492,7 @@ export default function PdfUploadPage() {
               : "Select a PDF from your device or drag it into this box. Multi-page PDFs are supported."}
           </div>
           <div style={s.dropHint}>
-            {isOcrFlow ? "Accepted: menu page photos (PNG/JPG/WEBP)" : "Accepted format: PDF only · Max file size: 20 MB"}
+            {isOcrFlow ? "Accepted: menu page photos (PNG/JPG/WEBP)" : "Accepted format: PDF only · Max file size: 100 MB"}
           </div>
           <input
             ref={fileInputRef}

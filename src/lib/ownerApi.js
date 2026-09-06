@@ -34,7 +34,7 @@ const del = (path) => req(path, { method: "DELETE" });
 /** Owner video uploads can be large; Railway + H.264 normalize often needs minutes. */
 const OWNER_VIDEO_UPLOAD_TIMEOUT_MS = 5 * 60 * 1000;
 /** Menu PDF/photo OCR can take several minutes per page on Railway. */
-const OWNER_MENU_UPLOAD_TIMEOUT_MS = 4 * 60 * 1000;
+const OWNER_MENU_UPLOAD_TIMEOUT_MS = 5 * 60 * 1000;
 
 function mapOwnerUploadNetworkError(err, kind = "upload") {
   const name = String(err?.name || "");
@@ -50,7 +50,7 @@ function mapOwnerUploadNetworkError(err, kind = "upload") {
   if (/failed to fetch|networkerror|load failed|network request failed/i.test(msg)) {
     return new Error(
       isMenu
-        ? "Menu upload failed (connection dropped). Try fewer/smaller photos (JPEG/PNG under 20 MB), stay on this tab until each page finishes, then retry."
+        ? "Menu upload failed (connection dropped). Try fewer/smaller photos (JPEG/PNG under 100 MB), stay on this tab until each page finishes, then retry."
         : "Video upload failed (connection dropped). Try a shorter/smaller clip, stay on this tab until it finishes, then retry."
     );
   }

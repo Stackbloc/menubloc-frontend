@@ -119,8 +119,8 @@ describe("owner Add Restaurant restore", () => {
     assert.doesNotMatch(workspace, /data-testid="owner-menu-upload-input"/);
     assert.doesNotMatch(workspace, /PDF \(usually one\) and\/or photos \(select many\)/);
     assert.match(workspace, /data-testid="owner-menu-upload-size-hint"/);
-    assert.match(workspace, /max 20 MB each/);
-    assert.match(workspace, /MAX_MENU_UPLOAD_BYTES = 20 \* 1024 \* 1024/);
+    assert.match(workspace, /max 100 MB each/);
+    assert.match(workspace, /MAX_MENU_UPLOAD_BYTES = 100 \* 1024 \* 1024/);
     assert.match(workspace, /ownerUploadTooLargeMessage/);
     assert.match(workspace, /is too large/);
     assert.match(workspace, /const \[files, setFiles\] = useState\(\[\]\)/);

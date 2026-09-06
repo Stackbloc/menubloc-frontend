@@ -184,7 +184,7 @@ function MenuUploadPanel({ restaurantId, onUploaded, defaultOpen = false }) {
           </div>
           {mode === "file" ? (
             <div style={{ marginBottom: 14 }}>
-              <div style={{ fontSize: 12, color: OWNER_COLORS.muted, marginBottom: 6 }}>PDF, JPEG, PNG, or WebP — max 20 MB.</div>
+              <div style={{ fontSize: 12, color: OWNER_COLORS.muted, marginBottom: 6 }}>PDF, JPEG, PNG, or WebP — max 100 MB.</div>
               <input
                 ref={fileRef}
                 type="file"

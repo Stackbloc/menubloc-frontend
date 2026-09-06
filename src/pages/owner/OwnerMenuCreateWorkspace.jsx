@@ -42,7 +42,7 @@ const STEPS = [
   { key: "review", label: "3. Review & Edit" },
 ];
 
-const MAX_MENU_UPLOAD_BYTES = 20 * 1024 * 1024;
+const MAX_MENU_UPLOAD_BYTES = 100 * 1024 * 1024;
 
 /** Stable-ish key so re-picking the same phone photo does not duplicate the queue. */
 function ownerUploadFileKey(file) {
@@ -56,7 +56,7 @@ function formatOwnerUploadBytes(bytes) {
 }
 
 function ownerUploadTooLargeMessage(file) {
-  return `${file.name} is too large (${formatOwnerUploadBytes(file.size)}). Maximum is 20 MB. Compress the PDF or upload page photos instead.`;
+  return `${file.name} is too large (${formatOwnerUploadBytes(file.size)}). Maximum is 100 MB. Compress the PDF or upload page photos instead.`;
 }
 
 /** iOS Photos often offers HEIC; OCR stack expects JPEG/PNG/WebP. */
@@ -150,7 +150,7 @@ function clearOwnerUploadInputRefs(...refs) {
   }
 }
 
-/** Append picked files under the 20 MB cap; reject HEIC; reset input for another pick. */
+/** Append picked files under the 100 MB cap; reject HEIC; reset input for another pick. */
 function applyOwnerUploadPick(event, { setFiles, setUploadMsg }) {
   const picked = Array.from(event.target.files || []);
   const heic = picked.filter(isOwnerUploadHeic);
@@ -1455,7 +1455,7 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
           Photos open your phone library so you can select many pages at once (JPEG/PNG/WebP — not HEIC). PDF is a separate picker. Extra picks still append. Stay on this tab while each page is read — large pages can take a few minutes.
         </div>
         <div data-testid="owner-menu-upload-size-hint" style={{ fontSize: 12, color: OWNER_COLORS.muted, marginBottom: 8 }}>
-          PDF, JPEG, PNG, or WebP — max 20 MB each.
+          PDF, JPEG, PNG, or WebP — max 100 MB each.
         </div>
         <div style={{ display: "grid", gap: 10 }}>
           <div>
