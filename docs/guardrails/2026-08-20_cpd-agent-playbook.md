@@ -2,6 +2,8 @@
 
 **Established:** 2026-08-20  
 **Updated:** 2026-08-25 — one-door hardening (`cpd-fe.sh`); STALE_LOCK vs UNHEALTHY  
+**Updated:** 2026-09-03 — BE CPD complete requires pasted `cpd-be.sh` `RESULT=PASS` + matching `health_commit` ([health proof that counts](./2026-09-03_backend-health-proof-counts-contract.md))  
+**Updated:** 2026-09-05 — tip-gate PASS does not waive E2E for FE mutation UI; “FE-only” Completeness banned  
 **Audience:** agents when Andre says `cpd`  
 **Purpose:** one short procedure so deploy does not turn into a 20-step archaeology session  
 **🔴 TIP LOCK (read first after every FE alias):** [2026-08-24_production-tip-lock-atomic-contract.md](./2026-08-24_production-tip-lock-atomic-contract.md) — `STALE_LOCK` is usually stale locks, **not** a reason to restore  
@@ -12,18 +14,21 @@
 
 ## What `cpd` means
 
-**Commit → Push → Deploy → alias → verify live → lock tip-gate (+ sync existing LKG) → tip-gate PASS → write one CPD note.**
+**Commit → Push → Deploy → alias → verify live → lock tip-gate (+ sync existing LKG) → tip-gate PASS → (mutation E2E if needed) → write one CPD note.**
 
-Do only the layers that changed. FE-only ships do **not** push Railway. BE-only ships do **not** `vercel --prod`.
+Deploy only the layers whose **code** changed: FE-only trees do **not** push Railway; BE-only ships do **not** `vercel --prod`. That is deploy scope — **not** an E2E waiver for Save/mutation UI.
 
 ### CPD complete vs incomplete
 
 | Outcome | When |
 |---------|------|
-| **CPD complete** | Deploy/alias succeeded **and** intended tip verified live **and** tip locked **and** existing LKG records synced **and** tip-gate `RESULT=PASS` on apex + www |
-| **CPD=INCOMPLETE** | Production may have moved, but lock / LKG / tip-gate PASS did not finish — **do not** narrate as done |
+| **CPD complete (FE)** | Deploy/alias succeeded **and** intended tip verified live **and** tip locked **and** existing LKG records synced **and** tip-gate `RESULT=PASS` on apex + www **and** (if the ship adds/changes any API mutation UI) authenticated E2E hops PASS for that path — see [E2E](./2026-08-25_end-to-end-verification-completion-contract.md) |
+| **CPD complete (BE)** | `cpd-be.sh` printed **`RESULT=PASS`** and **`health_commit=`** matching shipped `HEAD` (paste in chat + CPD note). SHA-in-table alone is **invalid**. See [Health proof that counts](./2026-09-03_backend-health-proof-counts-contract.md). |
+| **CPD=INCOMPLETE** | Production may have moved, but lock / LKG / tip-gate PASS (FE) or `cpd-be.sh` PASS + matching health (BE) did not finish — **or** tip-gate PASS but mutation E2E not run / failed — **do not** narrate as done |
 
-`vercel --prod` success alone is **never** CPD complete.
+`vercel --prod` success alone is **never** CPD complete.  
+`git push` + “Railway should have the SHA” is **never** BE CPD complete.  
+**Tip-gate PASS + “FE-only” is never CPD complete** for a Save/upload/mutation feature. That excuse was used 2026-09-05 and produced a live Server error.
 
 ---
 
@@ -115,13 +120,26 @@ curl -s "https://menubloc-backend-production.up.railway.app/health"
 
 ```bash
 cd /Users/andrebarber/Desktop/menubloc/menubloc-backend-main
-bash /Users/andrebarber/Desktop/menubloc/scripts/assert-backend-deploy-path.sh "$(pwd)"
-# RESULT=PASS required
-git push origin main   # Railway deploys from this path only
-# Wait, then:
-curl -s "https://menubloc-backend-production.up.railway.app/health"
-# commit_hash must match the SHA you pushed (or document lag explicitly)
+# commit first; clean tree required for path gate
+
+bash /Users/andrebarber/Desktop/menubloc/scripts/cpd-be.sh "short feature note"
+# Must print RESULT=PASS (path gate + health SHA + production smoke + franchise seed auto-apply when manifest touched).
+# If RESULT=INCOMPLETE or FAIL → stop; do not declare done.
+
+# Verify-only after a push that already happened:
+bash /Users/andrebarber/Desktop/menubloc/scripts/cpd-be.sh --no-push "verify"
 ```
+
+Manual equivalent:
+
+```bash
+bash /Users/andrebarber/Desktop/menubloc/scripts/assert-backend-deploy-path.sh "$(pwd)"
+git push origin main
+# wait until /health commit_hash matches HEAD
+bash /Users/andrebarber/Desktop/menubloc/scripts/assert-backend-production-smoke.sh
+```
+
+**Smoke authority:** `menubloc-backend-main/src/deploymentOps/backendProductionSmokeProbes.js` — probed routes must not return 5xx. See [server runtime check contract](./2026-08-29_server-runtime-check-completion-contract.md).
 
 ---
 
@@ -132,6 +150,10 @@ curl -s "https://menubloc-backend-production.up.railway.app/health"
 | Raw `vercel --prod` outside `cpd-fe.sh` | Moves production before lock | Not the normal door; if used, finish with lock + tip-gate PASS or leave `CPD=INCOMPLETE` |
 | Bare `vercel alias set … menuply.com` outside CPD | Same | Same — lock immediately or incomplete |
 | Declaring done after deploy URL prints | Stale lock / wrong LKG | Forbidden |
+| BE SHA only in CPD table / “Railway should have…” | Fake health proof | Forbidden — paste `cpd-be.sh` `RESULT=PASS` + matching `health_commit` ([contract](./2026-09-03_backend-health-proof-counts-contract.md)) |
+| Code live + migration still pending | Production 500 (Quick Invite class) | Forbidden — apply migration then `cpd-be.sh`; else `CPD=INCOMPLETE` |
+| Tip-gate PASS + cert `not run — FE-only` for Save/mutation UI | Live Server error (DOB/favorites 2026-09-05) | Forbidden — E2E hops required; `CPD=INCOMPLETE` until PASS |
+| Unauthenticated 401 as “route proven” | Not authenticated success | Forbidden |
 
 Vercel project settings may auto-attach production domains on `--prod`. Treat any production move as requiring the lock+PASS tail.
 
@@ -176,7 +198,9 @@ One sentence.
 - Tip-gate: PASS apex + www
 
 ## Verify
-1. …
+1. Tip-gate PASS (apex + www)
+2. If ship includes mutation UI: authenticated E2E hops (trigger → accept → persist → read-back) — **required**; else `CPD=INCOMPLETE`
+3. Do **not** write “FE-only — E2E/smoke n/a” for Saves
 
 ## Rollback
 Prior tip `<id>` / `index-….js`

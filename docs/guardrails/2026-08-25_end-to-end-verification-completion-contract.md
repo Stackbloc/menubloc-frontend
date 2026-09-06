@@ -1,10 +1,12 @@
 # End-to-End Verification Completion Contract
 
 **Established:** 2026-08-25  
+**Updated:** 2026-09-05 — ban FE-only / tip-gate / “not run — reason” completion waivers (DOB/favorites “Server error” after FE CPD)  
 **Incident:** Eating video Post was certified “wired end-to-end” from code review and unit/contract tests while production Supabase bucket `menu-item-photos` rejected `video/mp4` (`mime type video/mp4 is not supported`). Upload returned 503; no durable `video_url` could be saved. Prior audit marked hops PASS on code alone.  
+**Incident (2026-09-05):** Connect-peer FE CPD shipped DOB + favorites Save; tip-gate PASS; certifications used `not run — FE-only`; live Save showed **Server error**. BE was not re-proven; authenticated PUT never run.  
 **Type:** Hard process guardrail — completion / “done” claims  
 **Priority:** Overrides “code looks correct,” unit tests alone, and speculative Fixed/Working/Complete language  
-**Related:** CLAUDE.md NO-GUESS + End-to-End Verification; Production Working Features Only; Ingestion Fix Verification; Franchise Search Completion Gate
+**Related:** CLAUDE.md NO-GUESS + End-to-End Verification; [Server runtime](./2026-08-29_server-runtime-check-completion-contract.md); [Health proof that counts](./2026-09-03_backend-health-proof-counts-contract.md); Production Working Features Only; CPD playbook
 
 ---
 
@@ -15,6 +17,27 @@
 Code review, static contract tests, dry-run output, “should work,” and “wired in code” are **not** completion.
 
 Silence, prior audits for a different hop list, or a different environment ≠ current-task certification.
+
+**FE tip / `cpd-fe.sh` PASS does not waive this.** If the ship adds or changes UI that calls an API or persists data, E2E hops are required even when zero backend files changed this turn.
+
+---
+
+## Banned completion excuses (invalid — do not use)
+
+Agents invent a new excuse every ship. These are **always invalid** for Complete / CPD done / Fixed / Verified when the path touches an API, DB, media, or auth mutation:
+
+| Excuse | Why invalid |
+|--------|-------------|
+| “FE-only” / “Scope: FE only” / “not run — FE-only” | UI that saves or loads server state is a **runtime path**, not a static page |
+| Tip-gate / `cpd-fe.sh` `RESULT=PASS` alone | Proves tip identity, not feature success |
+| Unauthenticated `401` / “route exists” | Auth gate ≠ authenticated success |
+| Generic smoke PASS without this mutation | Smoke list may not include the route; still need E2E for the ship |
+| “BE unchanged this turn” | Existing BE can still 500 on new payload/columns |
+| “User will verify on phone later” | Agent-runnable hops are agent’s job |
+| Filling certification with `not run — <story>` while claiming Complete | Checkbox + waiver = **INVALID** completion |
+| Unit / static contract PASS only | Already banned; restated |
+
+If a hop cannot be run → mark **NOT COMPLETE** / `CPD=INCOMPLETE`. Do **not** invent a reason that converts “not run” into “done.”
 
 ---
 
@@ -70,6 +93,7 @@ When a hop cannot be run (no auth, no phone, no DB access), state that explicitl
 - Historical rows that no longer exist (“photos worked last week”)
 - Empty production tables + “user must prove on phone” as a substitute for agent-runnable hops (upload → insert → HEAD → soft-delete is agent-runnable)
 - Tip/bundle string presence without exercising the failing subsystem (storage, MIME, env)
+- Any row in **Banned completion excuses** above
 
 ---
 
@@ -77,7 +101,7 @@ When a hop cannot be run (no auth, no phone, no DB access), state that explicitl
 
 If asked to mark done without E2E:
 
-> Per the End-to-End Verification Completion Contract, I have not marked this complete. Required hops are still [list]. Code/unit evidence alone is insufficient.
+> Per the End-to-End Verification Completion Contract, I have not marked this complete. Required hops are still [list]. Code/unit evidence alone is insufficient. FE-only / tip-gate PASS is not an exemption.
 
 If a prior audit is reused:
 
@@ -100,12 +124,18 @@ Index audits in `docs/audits/README.md` when creating a new audit file.
 
 End the response with:
 
-> ☐ E2E VERIFICATION CERTIFICATION: Claim [complete | not complete]; hops run [list or n/a]; DB/media proof [yes: … | n/a | blocked: …]; prior doc reuse [none | path]; environment [local | production | …].
+> ☐ E2E VERIFICATION CERTIFICATION: Claim [complete | not complete | n/a — docs/guardrail-only no runtime claim]; hops run [list — required if claim=complete and path touches API/DB/media]; DB/media proof [yes: … | n/a | blocked → claim must be not complete]; prior doc reuse [none | path]; environment [local | production | …].
 
-If the task was docs-only / guardrail-only / no runtime claim: `Claim [n/a — no runtime completion claim]; hops run [n/a]`.
+**Certification rules (2026-09-05):**
+
+- `Claim [complete]` requires hops run listed with evidence — not `n/a`, not `not run — FE-only`.
+- `blocked: …` forces `Claim [not complete]` (or `CPD=INCOMPLETE`). Never pair blocked with Complete.
+- Docs/guardrail-only: `Claim [n/a — docs/guardrail-only no runtime claim]` only when **no** feature/CPD runtime claim was made.
 
 ---
 
-## Motivating counterexample (do not repeat)
+## Motivating counterexamples (do not repeat)
 
 **2026-08-25 eating video:** FE Post → `uploadWhatIAteTodayPhoto` → `video_url` → `createWhatIAteToday` looked complete in code. Live `buildPhotoRecordFromUpload` failed: durable upload to `menu-item-photos` rejected `video/mp4`. Until upload+insert+HEAD pass in production, “videos can post and be saved” is **NOT COMPLETE**.
+
+**2026-09-05 diner profile DOB/favorites:** FE CPD tip-gate PASS; certifications waived with FE-only; live Save → **Server error**. Tip identity ≠ mutation success.
