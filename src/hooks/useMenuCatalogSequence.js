@@ -3,11 +3,19 @@ import { getBrowseMenus, toConsumerErrorMessage } from "../lib/api.js";
 import { fetchClusterRestaurants } from "../lib/clusterApi.js";
 import { dedupeDiscoveryMenus } from "../lib/discoveryFeedGuardrails.js";
 import {
+  FEED_MENU_LIBRARY_CHANGED,
+  purgeExpiredRecent,
+  readFeedMenuLibrary,
+} from "../lib/feedMenuLibrary.js";
+import {
   buildMenuCatalogBrowseParams,
   menuCatalogLocationLabel,
   readMenuCatalogAppliedLocation,
 } from "../lib/menuCatalogBrowseLocation.js";
-import { MENU_CATALOG_BROWSE_PAGE_SIZE } from "../lib/menuCatalogCategories.js";
+import {
+  MENU_CATALOG_BROWSE_PAGE_SIZE,
+  isMenuCatalogPersonalSection,
+} from "../lib/menuCatalogCategories.js";
 import {
   filterClusterRestaurantsForMenuBrowser,
   isMenuBrowserClusterScope,
@@ -31,6 +39,40 @@ function readErrorMessage(error) {
   );
 }
 
+function libraryRowsToBrowseEntries(rows) {
+  return (Array.isArray(rows) ? rows : [])
+    .filter((row) => row?.restaurant_id != null && String(row.restaurant_id).trim() !== "")
+    .map((row) => ({
+      restaurant_id: String(row.restaurant_id),
+      restaurant_name: String(row.restaurant_name || "").trim() || "Restaurant",
+      slug: String(row.slug || "").trim(),
+      city: String(row.city || "").trim(),
+      state: String(row.state || "").trim(),
+    }));
+}
+
+function readPersonalLibraryEntries(section) {
+  const lib = purgeExpiredRecent(readFeedMenuLibrary());
+  if (section === "bookmarked") {
+    return libraryRowsToBrowseEntries(
+      [...(lib.saved || [])].sort(
+        (a, b) =>
+          Number(b?.last_opened_at || b?.bookmarked_at || 0) -
+          Number(a?.last_opened_at || a?.bookmarked_at || 0)
+      )
+    );
+  }
+  if (section === "recent_viewed") {
+    const savedIds = new Set((lib.saved || []).map((row) => String(row.restaurant_id)));
+    return libraryRowsToBrowseEntries(
+      [...(lib.recent || [])]
+        .filter((row) => row?.restaurant_id && !savedIds.has(String(row.restaurant_id)))
+        .sort((a, b) => Number(b?.last_opened_at || 0) - Number(a?.last_opened_at || 0))
+    );
+  }
+  return [];
+}
+
 export default function useMenuCatalogSequence({
   section,
   drinksMode = false,
@@ -47,20 +89,38 @@ export default function useMenuCatalogSequence({
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState("");
+  const [libraryTick, setLibraryTick] = useState(0);
   const requestRef = useRef(0);
 
-  const scopedClusterSlug = isMenuBrowserClusterScope(clusterSlug)
-    ? String(clusterSlug).trim().toLowerCase()
-    : null;
+  const isPersonalSection = isMenuCatalogPersonalSection(section);
+  const scopedClusterSlug =
+    !isPersonalSection && isMenuBrowserClusterScope(clusterSlug)
+      ? String(clusterSlug).trim().toLowerCase()
+      : null;
 
   const appliedLocation = useMemo(
     () => readMenuCatalogAppliedLocation(),
     [section, urlCity, urlState, scopedClusterSlug]
   );
 
+  useEffect(() => {
+    if (!isPersonalSection) return undefined;
+    function onLibraryChange() {
+      setLibraryTick((tick) => tick + 1);
+    }
+    window.addEventListener(FEED_MENU_LIBRARY_CHANGED, onLibraryChange);
+    window.addEventListener("storage", onLibraryChange);
+    return () => {
+      window.removeEventListener(FEED_MENU_LIBRARY_CHANGED, onLibraryChange);
+      window.removeEventListener("storage", onLibraryChange);
+    };
+  }, [isPersonalSection]);
+
   const scopeKey = useMemo(() => {
+    if (isPersonalSection) {
+      return ["personal", section, libraryTick].join("::");
+    }
     if (scopedClusterSlug) {
-      // Membership fetch is one deck per Place; food chips filter client-side after load.
       return ["cluster", scopedClusterSlug, drinksMode ? "drinks" : "food"].join("::");
     }
     return [
@@ -80,6 +140,8 @@ export default function useMenuCatalogSequence({
     autoLocation.state,
     autoLocation.status,
     drinksMode,
+    isPersonalSection,
+    libraryTick,
     scopedClusterSlug,
     section,
     urlCity,
@@ -100,7 +162,7 @@ export default function useMenuCatalogSequence({
 
   const buildApiParams = useCallback(
     (loadMoreOffset = 0) => {
-      if (scopedClusterSlug) return null;
+      if (scopedClusterSlug || isPersonalSection) return null;
       return buildMenuCatalogBrowseParams({
         urlCity,
         urlState,
@@ -111,7 +173,16 @@ export default function useMenuCatalogSequence({
         drinksMode,
       });
     },
-    [appliedLocation, autoLocation, drinksMode, scopedClusterSlug, section, urlCity, urlState]
+    [
+      appliedLocation,
+      autoLocation,
+      drinksMode,
+      isPersonalSection,
+      scopedClusterSlug,
+      section,
+      urlCity,
+      urlState,
+    ]
   );
 
   useEffect(() => {
@@ -190,6 +261,19 @@ export default function useMenuCatalogSequence({
     }
 
     if (!section) return undefined;
+
+    if (isPersonalSection) {
+      setLoading(true);
+      setError("");
+      const personal = readPersonalLibraryEntries(section);
+      setEntries(personal);
+      setBrowseOffset(personal.length);
+      setTotalCount(personal.length);
+      setHasMore(false);
+      setLoading(false);
+      return undefined;
+    }
+
     if (scopedClusterSlug) runCluster();
     else runCity();
 
@@ -197,9 +281,10 @@ export default function useMenuCatalogSequence({
       cancelled = true;
       controller.abort();
     };
-  }, [buildApiParams, scopeKey, section, scopedClusterSlug]);
+  }, [buildApiParams, isPersonalSection, scopeKey, section, scopedClusterSlug]);
 
   const loadMore = useCallback(async () => {
+    if (isPersonalSection) return false;
     if (!section || loading || loadingMore || !hasMore) return false;
     setLoadingMore(true);
     const requestId = requestRef.current;
@@ -257,6 +342,7 @@ export default function useMenuCatalogSequence({
     browseOffset,
     buildApiParams,
     hasMore,
+    isPersonalSection,
     loading,
     loadingMore,
     scopedClusterSlug,
@@ -265,9 +351,9 @@ export default function useMenuCatalogSequence({
 
   const activeIndex = Math.max(0, index);
   const displayEntries = useMemo(() => {
-    if (!scopedClusterSlug || drinksMode) return entries;
+    if (isPersonalSection || !scopedClusterSlug || drinksMode) return entries;
     return filterClusterEntriesByFoodSection(entries, section);
-  }, [drinksMode, entries, scopedClusterSlug, section]);
+  }, [drinksMode, entries, isPersonalSection, scopedClusterSlug, section]);
   const currentEntry = activeIndex < displayEntries.length ? displayEntries[activeIndex] : null;
   const waitingForPage =
     displayEntries.length > 0 && activeIndex >= displayEntries.length && (hasMore || loadingMore);
@@ -284,9 +370,8 @@ export default function useMenuCatalogSequence({
     loadMore();
   }, [loadMore, loadingMore, waitingForPage]);
 
-  const displayTotal = scopedClusterSlug && !drinksMode
-    ? displayEntries.length
-    : totalCount || displayEntries.length;
+  const displayTotal =
+    scopedClusterSlug && !drinksMode ? displayEntries.length : totalCount || displayEntries.length;
   const hasNext = displayEntries.length > 0 && (activeIndex < displayEntries.length - 1 || hasMore);
   const hasPrev = activeIndex > 0;
   const clampToIndex =
@@ -309,8 +394,10 @@ export default function useMenuCatalogSequence({
     waitingForPage,
     clampToIndex,
     isEmpty: !loading && displayEntries.length === 0,
-    locationPending: scopedClusterSlug
-      ? false
-      : autoLocation.status === "locating" && !buildApiParams(0),
+    isPersonalSection,
+    locationPending:
+      isPersonalSection || scopedClusterSlug
+        ? false
+        : autoLocation.status === "locating" && !buildApiParams(0),
   };
 }

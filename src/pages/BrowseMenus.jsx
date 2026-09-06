@@ -9,6 +9,7 @@ import BottomNav from "../components/BottomNav.jsx";
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import CatalogMenuRenderer, { prefetchCatalogMenu } from "../components/menuCatalog/CatalogMenuRenderer.jsx";
 import CatalogDrinksMenuRenderer, { prefetchCatalogDrinksMenu } from "../components/menuCatalog/CatalogDrinksMenuRenderer.jsx";
+import MenuCatalogBrowseSearch from "../components/menuCatalog/MenuCatalogBrowseSearch.jsx";
 import MenuCatalogCategoryTabs from "../components/menuCatalog/MenuCatalogCategoryTabs.jsx";
 import MenuCatalogDrinkCategoryTabs from "../components/menuCatalog/MenuCatalogDrinkCategoryTabs.jsx";
 import MenuCatalogModePage from "../components/menuCatalog/MenuCatalogModePage.jsx";
@@ -21,10 +22,13 @@ import {
   MENU_CATALOG_DEFAULT_SECTION,
   MENU_BROWSER_COVER_MS,
   MENU_BROWSER_INTRO_MIN_MS,
+  isMenuCatalogPersonalSection,
 } from "../lib/menuCatalogCategories.js";
 import { MENU_CATALOG_DRINKS_DEFAULT_SECTION, isDrinksCatalogSection } from "../lib/menuCatalogDrinkCategories.js";
 import { computeMenuBrowserLoadTarget, useSmoothedProgress } from "../lib/menuCatalogIntroProgress.js";
 import { asFiniteNumber } from "../lib/catalogMenuUtils.js";
+import { recordFeedMenuOpen } from "../lib/feedMenuLibrary.js";
+import { buildSearchLocationParams } from "../lib/locationUtils.js";
 import {
   buildMenuBrowserPages,
   getMenuBrowserVenueCover,
@@ -154,6 +158,7 @@ export default function BrowseMenus() {
     clusterSlug: isClusterScoped ? venueSlug : null,
   });
 
+  const personalSection = isMenuCatalogPersonalSection(activeSection);
   const pages = useMemo(() => buildMenuBrowserPages(entries, venueSlug), [entries, venueSlug]);
   const pageIndex = pages.length === 0 ? 0 : Math.min(Math.max(0, urlIndex), pages.length - 1);
   const currentPage = pages[pageIndex] || null;
@@ -255,6 +260,20 @@ export default function BrowseMenus() {
 
   function selectSection(sectionId) {
     updateUrl(sectionId, 0);
+  }
+
+  function navigateBrowseSearch(q) {
+    const params = buildSearchLocationParams({
+      query: q,
+      autoLocation: {
+        lat: locationParams?.lat,
+        lng: locationParams?.lng,
+        city: locationParams?.city || urlCity || undefined,
+        state: locationParams?.state || urlState || undefined,
+      },
+    });
+    const qs = params.toString();
+    navigate(qs ? `/search?${qs}` : `/search?q=${encodeURIComponent(q)}`);
   }
 
   function toggleBrowseMode() {
@@ -365,13 +384,20 @@ export default function BrowseMenus() {
   // After the first browse boot, never show the yellow loading splash for category tab changes.
   useEffect(() => {
     if (!isModeChosen || browseBootComplete) return;
-    if (introMinElapsed && (menuLoadStatus === "ok") && (currentEntry || isVenueAdPage)) {
+    if (!introMinElapsed) return;
+    if (isEmpty || error) {
+      setBrowseBootComplete(true);
+      return;
+    }
+    if ((menuLoadStatus === "ok") && (currentEntry || isVenueAdPage)) {
       setBrowseBootComplete(true);
     }
   }, [
     browseBootComplete,
     currentEntry,
+    error,
     introMinElapsed,
+    isEmpty,
     isModeChosen,
     menuLoadStatus,
     isVenueAdPage,
@@ -391,6 +417,25 @@ export default function BrowseMenus() {
   const introProgress = useSmoothedProgress(loadTarget, showLoadingSplash);
   const currentMenuNumber = pages.length ? activeIndex + 1 : 0;
   const totalMenuCount = Math.max(pages.length || 0, entries.length || 0, totalCount || 0);
+
+  useEffect(() => {
+    if (!currentEntry?.restaurant_id || isDrinksMode || showBookOverlay) return;
+    recordFeedMenuOpen({
+      restaurant_id: currentEntry.restaurant_id,
+      restaurant_name: currentEntry.restaurant_name,
+      slug: currentEntry.slug,
+      city: currentEntry.city,
+      state: currentEntry.state,
+    });
+  }, [
+    currentEntry?.restaurant_id,
+    currentEntry?.restaurant_name,
+    currentEntry?.slug,
+    currentEntry?.city,
+    currentEntry?.state,
+    isDrinksMode,
+    showBookOverlay,
+  ]);
 
   const trySwipeNavigation = useCallback((dx, dy) => {
     if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy) * 1.2) return false;
@@ -538,6 +583,14 @@ export default function BrowseMenus() {
       ) : null}
 
       <div style={browseShellStyle}>
+        {showCategoryTabs && !isDrinksMode ? (
+          <MenuCatalogBrowseSearch
+            onSelectSection={selectSection}
+            onNavigateSearch={navigateBrowseSearch}
+            showExploreChips={personalSection || activeSection === "nearby" || isEmpty}
+          />
+        ) : null}
+
         {showCategoryTabs ? (
           isDrinksMode ? (
             <MenuCatalogDrinkCategoryTabs
@@ -672,13 +725,44 @@ export default function BrowseMenus() {
         ) : null}
 
         {isEmpty && !loading && !showBookOverlay ? (
-          <div style={{ padding: 24 }}>
-            <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 8 }}>
-              {t("menuBrowser.emptyTitle", "No menus in this category yet")}
-            </div>
-            <div style={{ color: "#667085", fontSize: 14 }}>
-              {t("menuBrowser.emptyBody", "Try another category or check back as we add more menus.")}
-            </div>
+          <div style={{ padding: 24 }} data-testid="menu-browser-empty">
+            {personalSection && activeSection === "bookmarked" ? (
+              <>
+                <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 8 }}>
+                  {t("menuBrowser.bookmarkedEmptyTitle", "No bookmarked menus yet")}
+                </div>
+                <div style={{ color: "#667085", fontSize: 14, lineHeight: 1.5 }}>
+                  {t(
+                    "menuBrowser.bookmarkedEmptyBody",
+                    "Menus you save from Feed with ☆ Save menu appear here. Search above anytime to discover restaurants — you do not need a bookmark to invite."
+                  )}
+                </div>
+              </>
+            ) : personalSection && activeSection === "recent_viewed" ? (
+              <>
+                <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 8 }}>
+                  {t("menuBrowser.recentEmptyTitle", "No recently viewed menus")}
+                </div>
+                <div style={{ color: "#667085", fontSize: 14, lineHeight: 1.5 }}>
+                  {t(
+                    "menuBrowser.recentEmptyBody",
+                    "Menus you open while browsing or from Feed stay here for 48 hours. Search or pick a cuisine to explore."
+                  )}
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 8 }}>
+                  {t("menuBrowser.emptyTitle", "No menus in this category yet")}
+                </div>
+                <div style={{ color: "#667085", fontSize: 14 }}>
+                  {t(
+                    "menuBrowser.emptyBody",
+                    "Try another category, search above, or check back as we add more menus."
+                  )}
+                </div>
+              </>
+            )}
           </div>
         ) : null}
 
