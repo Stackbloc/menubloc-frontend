@@ -280,6 +280,27 @@ export const crewMemberInitFirst = {
   marginLeft: 0,
 };
 
+export const crewMemberAvatarWrap = {
+  padding: 0,
+  overflow: "hidden",
+  background: "#dcfce7",
+};
+
+export const crewMemberAvatarImg = {
+  width: "100%",
+  height: "100%",
+  objectFit: "cover",
+  display: "block",
+  borderRadius: "50%",
+};
+
+export const crewMemberName = {
+  marginLeft: 8,
+  fontSize: 13,
+  fontWeight: 700,
+  color: "#0f172a",
+};
+
 export const wantRailBleed = {
   marginLeft: -16,
   marginRight: -16,

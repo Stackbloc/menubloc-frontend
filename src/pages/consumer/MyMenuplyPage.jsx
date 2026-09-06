@@ -1605,7 +1605,6 @@ export default function MyMenuplyPage() {
 
             <EatingHubSection
               sectionRef={eatingSectionRef}
-              joinMeHref="/account/im-eating"
               composeOpen={composeOpen}
               onComposeOpenChange={setComposeOpen}
               composeDefaultCategory={composeDefaultCategory}

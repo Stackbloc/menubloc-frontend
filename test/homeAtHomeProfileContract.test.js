@@ -1,6 +1,6 @@
 /**
- * @home on My Menuply is a photo/video grid of home-cooked meals — display only.
- * Capture/upload is bottom-nav X / Feed; cooking videos from Feed appear here.
+ * @home on My Menuply — cooking videos the diner makes can go to Feed;
+ * photos stay on the profile. Section is display-only (compose via Feed X).
  */
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -21,6 +21,11 @@ test("@home displays home-cooked meals; no section camera upload", () => {
   assert.match(section, /@home/);
   assert.match(section, /home-at-home-feed-link/);
   assert.match(section, /Feed \(X\)/);
+  assert.match(section, /Cooking videos you make can also go to Feed/);
+  assert.match(section, /Photos stay on your profile/);
+  assert.match(section, /Photos stay here on your profile/);
+  assert.doesNotMatch(section, /shared from Feed/i);
+  assert.doesNotMatch(section, /Share a home-cooked meal from/i);
   assert.doesNotMatch(section, /MenuplyMediaPicker/);
   assert.doesNotMatch(section, /home-at-home-picker/);
   assert.doesNotMatch(section, /home-at-home-add/);

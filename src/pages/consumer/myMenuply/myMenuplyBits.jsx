@@ -356,40 +356,72 @@ export function crewPurposeText(crew) {
   return String(crew?.description || crew?.purpose || "").trim() || null;
 }
 
-function crewMemberInitials(crew) {
+function crewMemberPreviewList(crew) {
   const preview = crew?.members_preview || crew?.members || [];
-  if (preview.length) {
-    return preview.slice(0, 4).map((member) => {
-      const name = member.display_name || member.name || "?";
-      return String(name).trim().slice(0, 1).toUpperCase() || "?";
-    });
-  }
-  const count = Math.max(1, Math.min(Number(crew?.member_count) || 1, 4));
-  const seed = String(crew?.name || "C").trim().slice(0, 1).toUpperCase() || "C";
-  if (count === 1) return [seed];
-  const initials = [seed];
-  for (let i = 1; i < count; i += 1) {
-    initials.push(i === count - 1 && count > 3 ? `+${count - 3}` : String.fromCharCode(65 + i));
-  }
-  return initials.slice(0, 4);
+  return Array.isArray(preview) ? preview.filter(Boolean) : [];
 }
 
+function memberDisplayName(member) {
+  return String(member?.display_name || member?.name || "").trim() || "Member";
+}
+
+function memberFirstName(member) {
+  const full = memberDisplayName(member);
+  return full.split(/\s+/)[0] || full;
+}
+
+function memberInitial(member) {
+  return memberDisplayName(member).slice(0, 1).toUpperCase() || "?";
+}
+
+/** Real members only — no invented A/B/C alphabet chips. */
 function CrewMemberStack({ crew }) {
-  const initials = crewMemberInitials(crew);
-  if (!initials.length) return null;
+  const preview = crewMemberPreviewList(crew);
+  if (!preview.length) return null;
+
+  const total = Math.max(preview.length, Number(crew?.member_count) || preview.length);
+  const shown = preview.slice(0, 4);
+  const overflow = total > shown.length ? total - shown.length : 0;
+  const single = shown.length === 1 && overflow === 0;
+
   return (
-    <div style={s.crewMemberStack} data-testid="crew-member-stack" aria-hidden="true">
-      {initials.map((label, index) => (
+    <div style={s.crewMemberStack} data-testid="crew-member-stack">
+      {shown.map((member, index) => {
+        const name = memberDisplayName(member);
+        const avatar = resolveConsumerMediaUrl(member.avatar_url || member.photo_url || "");
+        return (
+          <span
+            key={member.id || member.consumer_user_id || `${name}-${index}`}
+            style={{
+              ...s.crewMemberInit,
+              ...(index === 0 ? s.crewMemberInitFirst : null),
+              ...(avatar ? s.crewMemberAvatarWrap : null),
+            }}
+            title={name}
+            aria-label={name}
+          >
+            {avatar ? (
+              <img src={avatar} alt="" style={s.crewMemberAvatarImg} />
+            ) : (
+              memberInitial(member)
+            )}
+          </span>
+        );
+      })}
+      {overflow > 0 ? (
         <span
-          key={`${label}-${index}`}
-          style={{
-            ...s.crewMemberInit,
-            ...(index === 0 ? s.crewMemberInitFirst : null),
-          }}
+          style={{ ...s.crewMemberInit }}
+          title={`${overflow} more members`}
+          aria-label={`${overflow} more members`}
         >
-          {label}
+          +{overflow}
         </span>
-      ))}
+      ) : null}
+      {single ? (
+        <span style={s.crewMemberName} data-testid="crew-member-name">
+          {memberFirstName(shown[0])}
+        </span>
+      ) : null}
     </div>
   );
 }

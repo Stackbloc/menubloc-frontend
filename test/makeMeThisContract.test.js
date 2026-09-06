@@ -25,6 +25,8 @@ test("Make Me This API + single picker + profile badges", () => {
   const hub = read("src/pages/consumer/myMenuply/EatingHubSection.jsx");
   assert.doesNotMatch(hub, /MakeMeThisInboxPanel/);
   assert.match(hub, /want-mmt-open-picker/);
+  assert.match(hub, /allow specific Connects to make you a dish on your Wanna Eat list/);
+  assert.doesNotMatch(hub, /choose which wanna-eat items show Make Me This/);
   assert.match(hub, /onViewMmt=\{onViewMmt\}/);
   assert.doesNotMatch(hub, /what-im-eating-camera/);
   assert.doesNotMatch(hub, /onOpenAteCamera/);
@@ -48,6 +50,9 @@ test("Make Me This API + single picker + profile badges", () => {
 
   const requestSheet = read("src/pages/consumer/myMenuply/RequestMmtSheet.jsx");
   assert.match(requestSheet, /not on the public Feed/);
+  assert.match(requestSheet, /Allow specific/);
+  assert.match(requestSheet, /Connects/);
+  assert.match(requestSheet, /Wanna Eat/);
   assert.match(requestSheet, /mmt-want-checklist/);
   assert.match(requestSheet, /mmt-request-submit/);
 

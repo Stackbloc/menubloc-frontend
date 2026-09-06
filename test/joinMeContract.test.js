@@ -37,3 +37,15 @@ test("Join Me is identity-gated and distinct from Invite to Eat", () => {
 
   assert.doesNotMatch(read("src/pages/FoodInterestsPage.jsx"), /JoinMeLandingPage/);
 });
+
+test("Join Me joiner CTA never routes to I'm Eating At composer", () => {
+  const page = read("src/pages/consumer/MyMenuplyPage.jsx");
+  assert.doesNotMatch(page, /joinMeHref=["']\/account\/im-eating["']/);
+
+  const hub = read("src/pages/consumer/myMenuply/EatingHubSection.jsx");
+  assert.match(hub, /isJoinMeGuestHref/);
+  assert.match(hub, /readOnly && isJoinMeGuestHref\(joinMeHref\)/);
+  assert.match(hub, /\/join-me\//);
+  assert.match(hub, /\/account\/what-we-doing\//);
+  assert.doesNotMatch(hub, /joinMeHref=["']\/account\/im-eating["']/);
+});

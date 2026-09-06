@@ -92,8 +92,8 @@ export default function RequestMmtSheet({
       <div role="dialog" aria-modal="true" style={styles.sheet}>
         <h2 style={styles.title}>Make Me This</h2>
         <p style={styles.lead}>
-          Check which <strong>What I Wanna Eat</strong> items should show Make Me This on your
-          profile. Eligible Connections can offer to make them — not on the public Feed.
+          Allow specific <strong>Connects</strong> to make you a dish from your{" "}
+          <strong>Wanna Eat</strong> list. Pick which items are open — not on the public Feed.
         </p>
         {wants.length === 0 ? (
           <p style={s.muted} data-testid="mmt-picker-empty">

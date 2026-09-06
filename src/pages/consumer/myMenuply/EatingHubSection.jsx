@@ -37,6 +37,13 @@ function formatInlineDayLabel(hubDate, today) {
   return formatPlanBracketDate(hubDate);
 }
 
+/** Guest Join Me destinations only — never the I'm Eating At composer. */
+function isJoinMeGuestHref(href) {
+  const path = String(href || "").trim();
+  if (!path || path.startsWith("/account/im-eating")) return false;
+  return path.startsWith("/join-me/") || path.startsWith("/account/what-we-doing/");
+}
+
 function EatingDayNavInline({
   hubDate,
   today,
@@ -416,7 +423,7 @@ export default function EatingHubSection({
                 Make Me This
               </button>
               {" — "}
-              choose which wanna-eat items show Make Me This on your profile.
+              allow specific Connects to make you a dish on your Wanna Eat list.
             </p>
           ) : null}
           {/* Own hub only: Invite Me Out on/off — opens eligibility dialog (peers never see this). */}
@@ -523,8 +530,8 @@ export default function EatingHubSection({
             />
           ) : null}
 
-          {/* Join Me = join this planned meal. */}
-          {joinMeHref ? (
+          {/* Join Me = join this planned meal (peer hub only; never I'm Eating At composer). */}
+          {readOnly && isJoinMeGuestHref(joinMeHref) ? (
             <p style={{ ...s.muted, fontSize: 13, marginTop: 10 }} data-testid="plans-join-me">
               <Link to={joinMeHref} style={s.plansEmptyLink}>
                 Join Me
