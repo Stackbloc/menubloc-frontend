@@ -34,7 +34,7 @@ const del = (path) => req(path, { method: "DELETE" });
 /** Owner video uploads can be large; Railway + H.264 normalize often needs minutes. */
 const OWNER_VIDEO_UPLOAD_TIMEOUT_MS = 5 * 60 * 1000;
 /** Menu PDF/photo OCR can take several minutes per page on Railway. */
-const OWNER_MENU_UPLOAD_TIMEOUT_MS = 5 * 60 * 1000;
+const OWNER_MENU_UPLOAD_TIMEOUT_MS = 15 * 60 * 1000;
 
 function mapOwnerUploadNetworkError(err, kind = "upload") {
   const name = String(err?.name || "");
@@ -43,18 +43,49 @@ function mapOwnerUploadNetworkError(err, kind = "upload") {
   if (name === "AbortError" || /aborted|timeout/i.test(msg)) {
     return new Error(
       isMenu
-        ? "Menu upload timed out while reading the page. Try one smaller JPEG/PNG at a time, stay on this tab, then retry."
+        ? "Menu upload timed out while reading the page. Stay on this tab and retry one file at a time (clear photos parse faster than huge multi-page PDFs)."
         : "Video upload timed out. Try a shorter clip or a smaller file (under ~100 MB), then retry."
     );
   }
   if (/failed to fetch|networkerror|load failed|network request failed/i.test(msg)) {
     return new Error(
       isMenu
-        ? "Menu upload failed (connection dropped). Try fewer/smaller photos (JPEG/PNG under 100 MB), stay on this tab until each page finishes, then retry."
+        ? "Menu upload lost its connection while OCR was still running. Stay on this tab and retry one file at a time — this is not a 100 MB size limit."
         : "Video upload failed (connection dropped). Try a shorter/smaller clip, stay on this tab until it finishes, then retry."
     );
   }
   return err instanceof Error ? err : new Error(msg || "Upload failed");
+}
+
+/** Parse legacy JSON or NDJSON heartbeat streams from POST /menu-upload/pdf. */
+function parseOwnerUploadResponseBody(text) {
+  const trimmed = String(text || "").trim();
+  if (!trimmed) return {};
+  if (!trimmed.includes("\n")) {
+    return JSON.parse(trimmed);
+  }
+  const lines = trimmed
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+  let last = null;
+  for (const line of lines) {
+    last = JSON.parse(line);
+  }
+  if (!last || typeof last !== "object") return {};
+  if (last.type === "result") {
+    const { type: _type, ...payload } = last;
+    return payload;
+  }
+  if (last.type === "error") {
+    const status = Number(last.http_status) || 500;
+    const error = new Error(last.error || `Request failed (${status})`);
+    error.status = status;
+    error.payload = last;
+    throw error;
+  }
+  // Last line was a ping only (unexpected) — fall back to last object.
+  return last;
 }
 
 async function postFormData(path, formData, opts = {}) {
@@ -71,7 +102,19 @@ async function postFormData(path, formData, opts = {}) {
       signal: controller?.signal,
       // No Content-Type header — browser sets multipart/form-data with boundary automatically
     });
-    const json = await res.json().catch(() => ({}));
+    const rawText = await res.text();
+    let json = {};
+    try {
+      json = parseOwnerUploadResponseBody(rawText);
+    } catch (parseErr) {
+      if (parseErr?.status) throw parseErr;
+      if (!res.ok) {
+        const error = new Error(`Request failed (${res.status})`);
+        error.status = res.status;
+        throw error;
+      }
+      throw parseErr;
+    }
     if (!res.ok) {
       const error = new Error(json.error || `Request failed (${res.status})`);
       error.status = res.status;
