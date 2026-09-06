@@ -247,6 +247,7 @@ export function resolveFeedPlaceCaption(item) {
   if (!item) return { restaurant: null, menuItem: null };
 
   const links = resolveLiveFeedCaptionLinks(item);
+  const posterLabel = liveFeedPosterLabel(item);
   const restaurantLabel =
     links.restaurant?.label ||
     String(item.referenced_restaurant?.name || item.restaurant_name || "").trim() ||
@@ -256,9 +257,15 @@ export function resolveFeedPlaceCaption(item) {
     String(item.item_name || "").trim() ||
     null;
   const foodName = String(item.food_name || "").trim();
+  // Avoid "Platform video" / "Guest Diner" repeating under the poster name when
+  // food_name was left as the same creator label (common for managed uploads).
+  const foodNameIsPosterEcho =
+    Boolean(foodName) &&
+    Boolean(posterLabel) &&
+    foodName.toLowerCase() === String(posterLabel).toLowerCase();
   const resolvedMenuItem =
     menuItemLabel ||
-    (foodName && foodName !== restaurantLabel ? foodName : null);
+    (foodName && foodName !== restaurantLabel && !foodNameIsPosterEcho ? foodName : null);
 
   let resolvedRestaurant = restaurantLabel;
   let resolvedRestaurantHref = liveFeedRestaurantProfilePath(item);

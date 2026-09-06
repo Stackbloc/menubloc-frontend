@@ -5,6 +5,7 @@ import {
   isLiveFeedPlatformCreator,
   liveFeedPosterDisplayName,
   liveFeedPosterLabel,
+  resolveFeedPlaceCaption,
 } from "../src/lib/liveFeedCategory.js";
 
 test("managed platform feed item is not a guest creator", () => {
@@ -29,4 +30,33 @@ test("guest ate feed item remains Guest Diner", () => {
   assert.equal(isLiveFeedPlatformCreator(item), false);
   assert.equal(isLiveFeedGuestCreator(item), true);
   assert.equal(liveFeedPosterLabel(item), "Guest Diner");
+});
+
+test("platform video food_name matching poster is not repeated in place caption", () => {
+  const item = {
+    kind: "managed",
+    creator_type: "platform",
+    poster_type: "platform",
+    diner: { id: null, display_name: "Platform video" },
+    food_name: "Platform video",
+    item_name: null,
+    restaurant_name: null,
+  };
+  const caption = resolveFeedPlaceCaption(item);
+  assert.equal(caption.restaurant, null);
+  assert.equal(caption.menuItem, null);
+});
+
+test("platform video still shows real dish title under poster", () => {
+  const item = {
+    kind: "managed",
+    creator_type: "platform",
+    poster_type: "platform",
+    diner: { id: null, display_name: "Platform video" },
+    food_name: "Stewed oxtail",
+    item_name: null,
+    restaurant_name: null,
+  };
+  const caption = resolveFeedPlaceCaption(item);
+  assert.equal(caption.menuItem?.label, "Stewed oxtail");
 });

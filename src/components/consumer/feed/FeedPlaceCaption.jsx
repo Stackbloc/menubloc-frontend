@@ -70,8 +70,15 @@ export default function FeedPlaceCaption({
 }) {
   const placeCaption = resolveFeedPlaceCaption(item);
   const foodLabel = String(item?.item_name || item?.food_name || "").trim();
+  const posterLabel = String(
+    item?.diner?.display_name || item?.creator?.name || item?.venue?.name || ""
+  ).trim();
+  const foodIsPosterEcho =
+    foodLabel && posterLabel && foodLabel.toLowerCase() === posterLabel.toLowerCase();
+  const showFoodFallback =
+    !placeCaption.restaurant && !placeCaption.menuItem && foodLabel && !foodIsPosterEcho;
 
-  if (!placeCaption.restaurant && !placeCaption.menuItem && !foodLabel) {
+  if (!placeCaption.restaurant && !placeCaption.menuItem && !showFoodFallback) {
     return null;
   }
 
@@ -115,7 +122,7 @@ export default function FeedPlaceCaption({
           </span>
         )
       ) : null}
-      {!placeCaption.restaurant && !placeCaption.menuItem && foodLabel ? (
+      {showFoodFallback ? (
         <span style={styles.fallback}>{foodLabel}</span>
       ) : null}
     </div>
