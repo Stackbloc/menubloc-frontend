@@ -58,7 +58,9 @@ test("feed home + fullscreen wire clip deep link and share affordance", () => {
   assert.match(reel, /feed-video-share-invite/);
   assert.match(reel, /feed-video-yellow-browser/);
   assert.match(reel, /BrowseMenusIcon/);
-  assert.match(reel, /menuPathFromRestaurantRef/);
+  assert.match(reel, /FeedMenuBrowserPipOverlay/);
+  assert.match(reel, /browseRestaurantRef/);
+  assert.match(reel, /aria-label="Menu Browser"/);
   assert.match(reel, /Share & Invite/);
   assert.match(reel, /InviteToEatModal/);
   assert.match(reel, /videoShareUrl/);
@@ -84,7 +86,9 @@ test("feed deals page + swipe wire Share & Invite with video link", () => {
   assert.match(swipe, /feed-deals-share-invite/);
   assert.match(swipe, /feed-deals-yellow-browser/);
   assert.match(swipe, /BrowseMenusIcon/);
-  assert.match(swipe, /menuPathFromRestaurantRef/);
+  assert.match(swipe, /FeedMenuBrowserPipOverlay/);
+  assert.match(swipe, /browseRestaurantRef/);
+  assert.match(swipe, /aria-label="Menu Browser"/);
   assert.match(swipe, /Share & Invite/);
   assert.match(swipe, /InviteToEatModal/);
   assert.match(swipe, /feedDealShareUrl/);

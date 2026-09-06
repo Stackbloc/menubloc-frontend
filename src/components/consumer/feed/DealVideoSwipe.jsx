@@ -7,12 +7,12 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import InviteToEatModal from "../../InviteToEatModal.jsx";
 import BrowseMenusIcon from "../../icons/BrowseMenusIcon.jsx";
+import FeedMenuBrowserPipOverlay from "./FeedMenuBrowserPipOverlay.jsx";
 import { stripMediaUrlFragment } from "../../../lib/menuplyLiveFeedControl.js";
 import {
-  menuPathFromRestaurantRef,
   recordFeedMenuOpen,
   restaurantRefFromDealItem,
 } from "../../../lib/feedMenuLibrary.js";
@@ -37,16 +37,18 @@ export default function DealVideoSwipe({
   headerSlot = null,
   containInShell = false,
 }) {
-  const navigate = useNavigate();
   const [index, setIndex] = useState(startIndex);
   const [videoMuted, setVideoMuted] = useState(() => defaultFeedVideoMuted("feedHome"));
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [browseRestaurantRef, setBrowseRestaurantRef] = useState(null);
   const isDesktopViewport = useFeedShellDesktop();
   const videoRef = useRef(null);
   const touchStartY = useRef(null);
+  const pipSwipeStartY = useRef(null);
   const ignoreVideoClickRef = useRef(false);
   const item = items[index] || null;
   const restaurantRef = restaurantRefFromDealItem(item);
+  const menuBrowserOpen = Boolean(browseRestaurantRef?.restaurant_id);
   const inviteVideoShareUrl = useMemo(
     () => feedDealShareUrl(item?.deal_id || item?.id),
     [item?.deal_id, item?.id]
@@ -65,6 +67,7 @@ export default function DealVideoSwipe({
   useEffect(() => {
     setVideoMuted(defaultFeedVideoMuted("feedHome"));
     setInviteOpen(false);
+    // Keep browseRestaurantRef locked across Feed index changes.
   }, [index, item?.id]);
 
   useEffect(() => {
@@ -116,6 +119,11 @@ export default function DealVideoSwipe({
 
   useEffect(() => {
     function onKey(e) {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        if (menuBrowserOpen) setBrowseRestaurantRef(null);
+        return;
+      }
       if (e.key === "ArrowDown" || e.key === "ArrowRight" || e.key === "j") {
         e.preventDefault();
         goNext();
@@ -128,7 +136,7 @@ export default function DealVideoSwipe({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [items.length, index]);
+  }, [items.length, index, menuBrowserOpen]);
 
   function goNext() {
     setIndex((i) => (i + 1 < items.length ? i + 1 : i));
@@ -139,12 +147,14 @@ export default function DealVideoSwipe({
   }
 
   function onTouchStart(e) {
+    if (menuBrowserOpen) return;
     const t = e.changedTouches?.[0];
     if (!t) return;
     touchStartY.current = t.clientY;
   }
 
   function onTouchEnd(e) {
+    if (menuBrowserOpen) return;
     const start = touchStartY.current;
     touchStartY.current = null;
     const t = e.changedTouches?.[0];
@@ -153,6 +163,54 @@ export default function DealVideoSwipe({
     if (Math.abs(dy) < SWIPE_MIN_PX) return;
     if (dy < 0) goNext();
     else goPrev();
+  }
+
+  function onPipTouchStart(e) {
+    if (!menuBrowserOpen) return;
+    const t = e.changedTouches?.[0];
+    if (!t) return;
+    pipSwipeStartY.current = t.clientY;
+  }
+
+  function onPipTouchEnd(e) {
+    if (!menuBrowserOpen) return;
+    const start = pipSwipeStartY.current;
+    pipSwipeStartY.current = null;
+    const t = e.changedTouches?.[0];
+    if (start == null || !t) return;
+    const dy = t.clientY - start;
+    if (Math.abs(dy) < SWIPE_MIN_PX) return;
+    ignoreVideoClickRef.current = true;
+    if (dy < 0) goNext();
+    else goPrev();
+  }
+
+  function openMenuBrowser(e) {
+    e?.preventDefault?.();
+    e?.stopPropagation?.();
+    const ref = restaurantRefFromDealItem(item);
+    if (!ref?.restaurant_id) return;
+    recordFeedMenuOpen(ref);
+    setBrowseRestaurantRef({ ...ref });
+    const el = videoRef.current;
+    if (el) {
+      attemptFeedVideoAutoplay(el, { preferSound: true }).then(({ muted }) => {
+        setVideoMuted(muted);
+      });
+    } else {
+      setVideoMuted(false);
+    }
+  }
+
+  function closeMenuBrowser() {
+    setBrowseRestaurantRef(null);
+  }
+
+  function switchBrowseToPlaying() {
+    const ref = restaurantRefFromDealItem(item);
+    if (!ref?.restaurant_id) return;
+    recordFeedMenuOpen(ref);
+    setBrowseRestaurantRef({ ...ref });
   }
 
   function applyVideoSoundState(nextMuted) {
@@ -178,12 +236,23 @@ export default function DealVideoSwipe({
   }
 
   function onVideoPointerUp(e) {
+    if (menuBrowserOpen) {
+      ignoreVideoClickRef.current = true;
+      closeMenuBrowser();
+      return;
+    }
     if (e.pointerType !== "touch") return;
     ignoreVideoClickRef.current = true;
     onToggleVideoSound(e);
   }
 
   function onVideoClick(e) {
+    if (menuBrowserOpen) {
+      e?.preventDefault?.();
+      e?.stopPropagation?.();
+      closeMenuBrowser();
+      return;
+    }
     if (ignoreVideoClickRef.current) {
       ignoreVideoClickRef.current = false;
       return;
@@ -239,13 +308,33 @@ export default function DealVideoSwipe({
     >
       {headerSlot}
 
+      {menuBrowserOpen && browseRestaurantRef ? (
+        <FeedMenuBrowserPipOverlay
+          restaurantRef={browseRestaurantRef}
+          playingRestaurantRef={restaurantRef}
+          bottomInset={safeBottomInset}
+          onClose={closeMenuBrowser}
+          onSwitchBrowseToPlaying={switchBrowseToPlaying}
+        />
+      ) : null}
+
       <video
         key={item.id}
         ref={videoRef}
         src={stripMediaUrlFragment(item.video_url)}
         style={{
           ...styles.video,
-          ...feedVideoElementStyle({ desktopFeedShell: containInShell && isDesktopViewport }),
+          ...feedVideoElementStyle({
+            desktopFeedShell: containInShell && isDesktopViewport && !menuBrowserOpen,
+          }),
+          ...(menuBrowserOpen
+            ? {
+                ...styles.videoPip,
+                bottom: `calc(${safeBottomInset}px + max(16px, env(safe-area-inset-bottom)) + 12px)`,
+                width: isDesktopViewport ? 200 : 140,
+                height: isDesktopViewport ? 356 : 248,
+              }
+            : null),
         }}
         playsInline
         muted={videoMuted}
@@ -254,11 +343,14 @@ export default function DealVideoSwipe({
         controls={false}
         preload="auto"
         data-testid="feed-deals-video"
+        aria-label={menuBrowserOpen ? "Expand video — back to Feed" : undefined}
         onClick={onVideoClick}
         onPointerUp={onVideoPointerUp}
+        onTouchStart={onPipTouchStart}
+        onTouchEnd={onPipTouchEnd}
       />
 
-      {showDesktopSoundLayer ? (
+      {showDesktopSoundLayer && !menuBrowserOpen ? (
         <button
           type="button"
           style={styles.videoTapLayer}
@@ -268,22 +360,40 @@ export default function DealVideoSwipe({
         />
       ) : null}
 
-      <button
-        type="button"
-        style={{
-          ...styles.soundToggle,
-          // Meal filter chips sit top-left (z50); keep sound control clear of them.
-          top: "max(16px, env(safe-area-inset-top))",
-          left: "auto",
-          right: "max(12px, env(safe-area-inset-right))",
-        }}
-        aria-label={videoMuted ? soundPromptLabel : "Mute video"}
-        data-testid="feed-deals-sound-toggle"
-        onClick={onToggleVideoSound}
-      >
-        {soundToggleLabel}
-      </button>
+      {!menuBrowserOpen ? (
+        <button
+          type="button"
+          style={{
+            ...styles.soundToggle,
+            top: "max(16px, env(safe-area-inset-top))",
+            left: "auto",
+            right: "max(12px, env(safe-area-inset-right))",
+          }}
+          aria-label={videoMuted ? soundPromptLabel : "Mute video"}
+          data-testid="feed-deals-sound-toggle"
+          onClick={onToggleVideoSound}
+        >
+          {soundToggleLabel}
+        </button>
+      ) : (
+        <button
+          type="button"
+          style={{
+            ...styles.soundToggle,
+            ...styles.pipSoundToggle,
+            bottom: `calc(${safeBottomInset}px + max(16px, env(safe-area-inset-bottom)) + ${
+              isDesktopViewport ? 372 : 264
+            }px)`,
+          }}
+          aria-label={videoMuted ? soundPromptLabel : "Mute video"}
+          data-testid="feed-deals-pip-sound-toggle"
+          onClick={onToggleVideoSound}
+        >
+          {soundToggleLabel}
+        </button>
+      )}
 
+      {!menuBrowserOpen ? (
       <div
         style={{
           ...styles.meta,
@@ -350,8 +460,9 @@ export default function DealVideoSwipe({
           })}
         </p>
       </div>
+      ) : null}
 
-      {showInviteShare ? (
+      {showInviteShare && !menuBrowserOpen ? (
         <div
           style={{
             ...styles.feedActionDock,
@@ -362,18 +473,11 @@ export default function DealVideoSwipe({
             type="button"
             style={styles.yellowBrowserBtn}
             data-testid="feed-deals-yellow-browser"
-            aria-label="Yellow Browser — open restaurant menu"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              const ref = restaurantRefFromDealItem(item);
-              if (!ref) return;
-              recordFeedMenuOpen(ref);
-              const menuPath = menuPathFromRestaurantRef(ref);
-              if (menuPath) navigate(menuPath);
-            }}
+            aria-label="Menu Browser"
+            title="Menu Browser"
+            onClick={openMenuBrowser}
           >
-            <BrowseMenusIcon size={28} title="Yellow Browser" />
+            <BrowseMenusIcon size={28} title="Menu Browser" />
           </button>
           <button
             type="button"
@@ -391,7 +495,7 @@ export default function DealVideoSwipe({
         </div>
       ) : null}
 
-      {!atEnd ? (
+      {!atEnd && !menuBrowserOpen ? (
         <div
           style={{
             ...styles.swipeCue,
@@ -461,6 +565,24 @@ const styles = {
     background: "#000",
     cursor: "pointer",
     zIndex: 1,
+  },
+  videoPip: {
+    inset: "auto",
+    top: "auto",
+    left: "auto",
+    right: "max(12px, env(safe-area-inset-right))",
+    borderRadius: 14,
+    zIndex: 30,
+    boxShadow: "0 10px 32px rgba(0,0,0,0.55)",
+    border: "2px solid rgba(255,255,255,0.4)",
+    objectFit: "cover",
+    background: "#000",
+  },
+  pipSoundToggle: {
+    top: "auto",
+    left: "auto",
+    right: "max(12px, env(safe-area-inset-right))",
+    zIndex: 31,
   },
   videoTapLayer: {
     position: "absolute",
