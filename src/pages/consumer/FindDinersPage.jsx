@@ -21,7 +21,6 @@ import {
   formatDinerIdentityBits,
 } from "../../lib/dinerDiscoverySummary.js";
 import { iconForFoodInterest } from "../../lib/foodInterestIcons.js";
-import { dinerPeerProfilePath } from "../../lib/liveFeedCategory.js";
 
 function ContextChips({ diner }) {
   const chips = [];
@@ -68,7 +67,13 @@ function ConnectionAction({ diner, busy, onAction }) {
   }
   if (status === "pending" && diner.connection_direction === "incoming") {
     return (
-      <div style={{ display: "flex", gap: 8 }}>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <Link
+          to={`/account/diners/${encodeURIComponent(String(diner.id))}?from=incoming`}
+          style={styles.secondaryBtn}
+        >
+          Review profile
+        </Link>
         <button type="button" style={styles.primaryBtn} disabled={busy} onClick={() => onAction("accept")}>
           Accept
         </button>
@@ -204,39 +209,37 @@ export default function FindDinersPage() {
                 icon: topFav.icon || iconForFoodInterest(topFav.key),
                 food_name: topFav.label,
               });
-            const profileHref = dinerPeerProfilePath(diner.id);
+            const profileHref = `/account/diners/${encodeURIComponent(String(diner.id))}?from=find-diners`;
             return (
             <li key={diner.id} style={styles.card} data-testid="find-diners-result">
-              <div style={styles.cardTop}>
-                {diner.avatar_url ? (
-                  <img src={diner.avatar_url} alt="" style={styles.avatar} />
-                ) : (
-                  <div style={styles.avatarFallback}>
-                    {(diner.display_name || "?").slice(0, 1).toUpperCase()}
-                  </div>
-                )}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  {profileHref ? (
-                    <Link to={profileHref} style={styles.nameLink} data-testid="find-diners-name-link">
-                      {wantSummary || identityBits || formatDinerPeerLabel(diner)}
-                    </Link>
+              <Link to={profileHref} style={styles.cardLink} data-testid="find-diners-name-link">
+                <div style={styles.cardTop}>
+                  {diner.avatar_url ? (
+                    <img src={diner.avatar_url} alt="" style={styles.avatar} />
                   ) : (
-                    <div style={styles.name}>{formatDinerPeerLabel(diner)}</div>
-                  )}
-                  {personalContextLines.map((line) => (
-                    <div key={line} style={styles.personalContext}>
-                      {line}
+                    <div style={styles.avatarFallback}>
+                      {(diner.display_name || "?").slice(0, 1).toUpperCase()}
                     </div>
-                  ))}
-                  {diner.location_label ? (
-                    <div style={styles.location}>📍 {diner.location_label}</div>
-                  ) : null}
-                  {diner.diner_about ? (
-                    <div style={styles.about}>{diner.diner_about}</div>
-                  ) : null}
-                  <ContextChips diner={diner} />
+                  )}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={styles.nameLink}>
+                      {wantSummary || identityBits || formatDinerPeerLabel(diner)}
+                    </div>
+                    {personalContextLines.map((line) => (
+                      <div key={line} style={styles.personalContext}>
+                        {line}
+                      </div>
+                    ))}
+                    {diner.location_label ? (
+                      <div style={styles.location}>📍 {diner.location_label}</div>
+                    ) : null}
+                    {diner.diner_about ? (
+                      <div style={styles.about}>{diner.diner_about}</div>
+                    ) : null}
+                    <ContextChips diner={diner} />
+                  </div>
                 </div>
-              </div>
+              </Link>
               <ConnectionAction
                 diner={diner}
                 busy={busyId === diner.id}
@@ -298,6 +301,7 @@ const styles = {
     display: "grid",
     gap: 12,
   },
+  cardLink: { textDecoration: "none", color: "inherit", display: "block" },
   cardTop: { display: "flex", gap: 12, alignItems: "flex-start" },
   avatar: { width: 52, height: 52, borderRadius: "50%", objectFit: "cover" },
   avatarFallback: {

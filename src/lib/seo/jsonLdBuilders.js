@@ -40,7 +40,7 @@ export function destinationVenueCanonicalPath(slug) {
 const VIDEO_KINDS = new Set([
   "ate",
   "want",
-  "plan",
+  // plan / Join Me / Ask Me Out = coordination logistics — not SEO content
   "event",
   "deal",
   "managed",

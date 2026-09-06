@@ -196,10 +196,29 @@ export default function SocialCrewTab() {
           ? pendingIncoming.map((c) => (
               <div key={c.id} style={styles.actionRow}>
                 <div style={styles.actionCopy}>
-                  <p style={styles.actionTitle}>{connectionName(c)}</p>
-                  <p style={styles.muted}>Wants to connect</p>
+                  <p style={styles.actionTitle}>
+                    {c.peer?.id ? (
+                      <Link
+                        to={`/account/diners/${encodeURIComponent(String(c.peer.id))}?from=incoming`}
+                        style={styles.textBtn}
+                      >
+                        {connectionName(c)}
+                      </Link>
+                    ) : (
+                      connectionName(c)
+                    )}
+                  </p>
+                  <p style={styles.muted}>Wants to connect — review their profile before accepting.</p>
                 </div>
                 <div style={styles.actions}>
+                  {c.peer?.id ? (
+                    <Link
+                      to={`/account/diners/${encodeURIComponent(String(c.peer.id))}?from=incoming`}
+                      style={styles.secondaryBtn}
+                    >
+                      Review
+                    </Link>
+                  ) : null}
                   <button
                     type="button"
                     style={styles.primaryBtn}

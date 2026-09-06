@@ -165,6 +165,18 @@ export const declineConnection = (id) =>
   post(`/api/consumer/connections/${encodeURIComponent(String(id))}/decline`, {});
 export const removeConnection = (id) =>
   del(`/api/consumer/connections/${encodeURIComponent(String(id))}`);
+
+/** Discoverable diner profile (Find Diners / incoming Connect review). */
+export const getDiscoverableDiner = (userId) =>
+  get(`/api/consumer/diners/${encodeURIComponent(String(userId))}`);
+export const blockDiner = (userId) =>
+  post(`/api/consumer/diners/${encodeURIComponent(String(userId))}/block`, {});
+export const unblockDiner = (userId) =>
+  del(`/api/consumer/diners/${encodeURIComponent(String(userId))}/block`);
+export const reportDinerAbuse = (userId, body) =>
+  post(`/api/consumer/diners/${encodeURIComponent(String(userId))}/report`, body || {});
+export const listDinerAbuseReasons = () => get("/api/consumer/diners/abuse-reasons");
+
 export const listConnectionsEating = (limit = 30, peerId = null) => {
   const q = new URLSearchParams({ limit: String(limit) });
   if (peerId) q.set("peer_id", String(peerId));

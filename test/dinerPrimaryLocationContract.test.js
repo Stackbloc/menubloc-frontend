@@ -32,9 +32,31 @@ test("Find Diners page integrates search + connections", () => {
   assert.match(findPage, /email/i);
   assert.match(findPage, /hometown/i);
   assert.match(findPage, /Connect/);
+  assert.match(findPage, /\/account\/diners\//);
+  assert.match(findPage, /Review profile/);
   assert.doesNotMatch(findPage, /member ID|#member/i);
   assert.doesNotMatch(findPage, /Who can find me/);
   assert.doesNotMatch(findPage, /navigator\.share/);
+});
+
+test("Discoverable diner profile wires Connect End Block Report", () => {
+  const page = read("src/pages/consumer/DiscoverableDinerProfilePage.jsx");
+  assert.match(page, /getDiscoverableDiner/);
+  assert.match(page, /blockDiner/);
+  assert.match(page, /reportDinerAbuse/);
+  assert.match(page, /End connection|end_connection/);
+  assert.match(page, /Block/);
+  assert.match(page, /Report abuse/);
+  const app = read("src/App.jsx");
+  assert.match(app, /DiscoverableDinerProfilePage/);
+  assert.match(app, /\/account\/diners\/:userId/);
+});
+
+test("Social & Crew pending incoming can review profile", () => {
+  const social = read("src/pages/consumer/accountDashboard/SocialCrewTab.jsx");
+  assert.match(social, /\/account\/diners\//);
+  assert.match(social, /from=incoming/);
+  assert.match(social, /review their profile/i);
 });
 
 test("Profile tab exposes location + discoverability", () => {
@@ -62,6 +84,9 @@ test("Routes and API client wired", () => {
   const api = read("src/lib/consumerApi.js");
   assert.match(api, /updatePrimaryLocation/);
   assert.match(api, /searchDiners/);
+  assert.match(api, /getDiscoverableDiner/);
+  assert.match(api, /blockDiner/);
+  assert.match(api, /reportDinerAbuse/);
   const app = read("src/App.jsx");
   assert.match(app, /FindDinersPage/);
   assert.match(app, /\/account\/find-diners/);
