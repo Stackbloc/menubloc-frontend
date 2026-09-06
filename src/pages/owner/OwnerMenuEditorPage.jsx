@@ -126,11 +126,21 @@ function MenuUploadPanel({ restaurantId, onUploaded, defaultOpen = false }) {
         if (!file) throw new Error("Please choose a PDF or image file.");
         const json = await submitOwnerMenuFilePdf(restaurantId, file);
         const inserted = (json.inserted_items || json.inserted || 0) + (json.updated_items || json.updated || 0);
-        const reviewCount = json.review_count || 0;
-        setResult({
-          ok: true,
-          message: `Processed file — ${inserted} item${inserted !== 1 ? "s" : ""} added${reviewCount ? `, ${reviewCount} need review below` : ""}.`,
-        });
+        const reviewCount = Number(json.review_count || json.human_review_items || 0);
+        if (inserted === 0) {
+          setResult({
+            ok: false,
+            message:
+              reviewCount > 0
+                ? `Upload finished but no dishes were added. OCR could not read this file clearly (${reviewCount} held for review). Try a sharper upright photo or PDF.`
+                : `Upload finished but no dishes were added. Try a sharper upright photo or PDF of the full menu.`,
+          });
+        } else {
+          setResult({
+            ok: true,
+            message: `Processed file — ${inserted} item${inserted !== 1 ? "s" : ""} added${reviewCount ? `, ${reviewCount} need review below` : ""}.`,
+          });
+        }
         setFile(null);
         if (fileRef.current) fileRef.current.value = "";
       }

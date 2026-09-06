@@ -1121,7 +1121,7 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
         const nextFile = files[i];
         const json = await submitOwnerMenuFilePdf(rid, nextFile, { menuId: activeMenuId });
         const inserted = (json.inserted_items || json.inserted || 0) + (json.updated_items || json.updated || 0);
-        const reviewCount = Number(json.review_count || 0);
+        const reviewCount = Number(json.review_count || json.human_review_items || 0);
         const superseded = Number(json.superseded_count || 0);
         const uploadId = json.upload_id || null;
         const publicMenuId = Number(json.public_menu_id) || null;
@@ -1143,7 +1143,20 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
         await reloadMenus(activeMenuId);
       }
 
-      if (totalReview === 0 && lastUploadId && totalInserted > 0) {
+      if (totalInserted === 0 && (totalReview > 0 || files.length > 0)) {
+        setUploadMsg({
+          ok: false,
+          restaurantId: rid,
+          menuId: activeMenuId || mid,
+          uploadId: lastUploadId,
+          supersededCount: totalSuperseded,
+          parseStatus: "needs_clearer_photo",
+          message:
+            totalReview > 0
+              ? `Upload finished but no dishes were added to the menu. OCR could not read ${files.length > 1 ? "these photos" : "this photo"} clearly (${totalReview} held for review). Try a sharper upright photo or PDF, or open the review queue.`
+              : `Upload finished but no dishes were added. Try a sharper upright photo or PDF of the full menu.`,
+        });
+      } else if (totalReview === 0 && lastUploadId && totalInserted > 0) {
         const saved = await importParsedToMenuDraft(lastUploadId, { publicMenuId: activeMenuId });
         const supersedeNote =
           totalSuperseded > 0
