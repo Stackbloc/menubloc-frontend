@@ -224,6 +224,7 @@ export default function FeedMenuBrowserPipOverlay({
           locationParams={locationParams}
           isMobile
           highlightMenuItemId={highlightMenuItemId}
+          enableRestaurantContextualVideo={false}
         />
       </div>
     </div>

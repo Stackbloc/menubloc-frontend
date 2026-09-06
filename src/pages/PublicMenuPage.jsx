@@ -62,6 +62,7 @@ import {
 import MenuPreferencesAppliedBanner from "../components/menu/MenuPreferencesAppliedBanner.jsx";
 import MenuPurchaseWaiterHint from "../components/menu/MenuPurchaseWaiterHint.jsx";
 import OrderingUnavailableBanner from "../components/menu/OrderingUnavailableBanner.jsx";
+import MenuRestaurantContextualVideo from "../components/menu/MenuRestaurantContextualVideo.jsx";
 import PublicMenuMainContent from "../components/menu-templates/PublicMenuMainContent.jsx";
 import AddMenuAction from "../components/AddMenuAction.jsx";
 import { restaurantFromAddMenuContext, canShowAddMenu } from "../lib/addMenuContribution.js";
@@ -1870,6 +1871,13 @@ export default function PublicMenuPage() {
       ) : null}
 
       <BottomNav />
+      {!isIntakePreview && routeState.status === "ok" && routeState.restaurantId ? (
+        <MenuRestaurantContextualVideo
+          restaurantId={data?.restaurant_id || routeState.restaurantId}
+          preferredMenuItemId={searchParams.get("highlightItem")}
+          bottomInset={hasBasketItems ? 72 : 56}
+        />
+      ) : null}
       <DesignEditUndoToast toast={designPhotoEdit.toast} onClose={designPhotoEdit.clearToast} />
     </div>
     </MenuDesignPhotoEditProvider>

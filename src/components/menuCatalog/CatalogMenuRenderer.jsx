@@ -30,6 +30,7 @@ import CatalogItemDetailSheet from "./CatalogItemDetailSheet.jsx";
 import MenuPreferencesAppliedBanner from "../menu/MenuPreferencesAppliedBanner.jsx";
 import MenuPurchaseWaiterHint from "../menu/MenuPurchaseWaiterHint.jsx";
 import OrderingUnavailableBanner from "../menu/OrderingUnavailableBanner.jsx";
+import MenuRestaurantContextualVideo from "../menu/MenuRestaurantContextualVideo.jsx";
 import useSavedMenuPreferences from "../../hooks/useSavedMenuPreferences.js";
 import useCatalogDietaryPreferencesSession from "../../hooks/useCatalogDietaryPreferencesSession.js";
 import useMenuPreferenceBannerSession from "../../hooks/useMenuPreferenceBannerSession.js";
@@ -163,6 +164,8 @@ export default function CatalogMenuRenderer({
   isMobile = false,
   browseSection = "",
   highlightMenuItemId = null,
+  /** When false, Feed PiP owns video — do not mount restaurant contextual player. */
+  enableRestaurantContextualVideo = true,
   onLoadStateChange,
 }) {
   const { language, t } = useLanguage();
@@ -809,6 +812,14 @@ export default function CatalogMenuRenderer({
           onRemove={handleRemoveAdded}
           setConfirmation={setAddedConfirmation}
           brand={menuBrand}
+        />
+      ) : null}
+
+      {enableRestaurantContextualVideo && restaurantId ? (
+        <MenuRestaurantContextualVideo
+          restaurantId={restaurantId}
+          preferredMenuItemId={highlightMenuItemId}
+          bottomInset={itemCount > 0 ? 72 : 56}
         />
       ) : null}
     </div>
