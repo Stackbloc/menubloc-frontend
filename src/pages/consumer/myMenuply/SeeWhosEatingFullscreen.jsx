@@ -9,6 +9,7 @@ import { createPortal } from "react-dom";
 import { Link, useNavigate } from "react-router-dom";
 import ShareButton from "../../../components/share/ShareButton.jsx";
 import InviteToEatModal from "../../../components/InviteToEatModal.jsx";
+import BrowseMenusIcon from "../../../components/icons/BrowseMenusIcon.jsx";
 import { hidePublicFeedItem, requestConnection } from "../../../lib/consumerApi.js";
 import {
   MENUPY_CLOSE_LIVE_FEED_FULLSCREEN,
@@ -27,6 +28,7 @@ import { FEED_EMPTY_FIRST_VISIT_PROMPT_COPY } from "../../../lib/feedEmptyFirstV
 import {
   FEED_MENU_LIBRARY_CHANGED,
   isFeedMenuBookmarked,
+  menuPathFromRestaurantRef,
   recordFeedMenuOpen,
   restaurantRefFromFeedItem,
   toggleFeedMenuBookmark,
@@ -647,22 +649,43 @@ export default function SeeWhosEatingFullscreen({
       </div>
 
       {showInviteShare ? (
-        <button
-          type="button"
+        <div
           style={{
-            ...styles.inviteShareBtn,
+            ...styles.feedActionDock,
             bottom: `calc(${navInset}px + max(28px, env(safe-area-inset-bottom)) + 12px)`,
           }}
-          data-testid="feed-video-share-invite"
-          aria-label="Share & Invite"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            setInviteOpen(true);
-          }}
         >
-          Share & Invite
-        </button>
+          <button
+            type="button"
+            style={styles.yellowBrowserBtn}
+            data-testid="feed-video-yellow-browser"
+            aria-label="Yellow Browser — open restaurant menu"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              const ref = restaurantRefFromFeedItem(item);
+              if (!ref) return;
+              recordFeedMenuOpen(ref);
+              const menuPath = menuPathFromRestaurantRef(ref);
+              if (menuPath) navigate(menuPath);
+            }}
+          >
+            <BrowseMenusIcon size={28} title="Yellow Browser" />
+          </button>
+          <button
+            type="button"
+            style={styles.inviteShareBtn}
+            data-testid="feed-video-share-invite"
+            aria-label="Share & Invite"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setInviteOpen(true);
+            }}
+          >
+            Share & Invite
+          </button>
+        </div>
       ) : null}
 
       {!atEnd ? (
@@ -754,10 +777,29 @@ const styles = {
     right: "max(8px, env(safe-area-inset-right))",
     zIndex: 3,
   },
-  inviteShareBtn: {
+  feedActionDock: {
     position: "absolute",
     right: "max(12px, env(safe-area-inset-right))",
     zIndex: 5,
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    pointerEvents: "auto",
+  },
+  yellowBrowserBtn: {
+    border: "none",
+    padding: 6,
+    borderRadius: 12,
+    background: "rgba(0,0,0,0.45)",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    lineHeight: 0,
+    fontFamily: "inherit",
+  },
+  inviteShareBtn: {
     border: "1px solid rgba(255,255,255,0.4)",
     borderRadius: 999,
     padding: "10px 14px",
@@ -768,7 +810,6 @@ const styles = {
     letterSpacing: "0.01em",
     cursor: "pointer",
     textShadow: "0 1px 3px rgba(0,0,0,0.75)",
-    pointerEvents: "auto",
     fontFamily: "inherit",
   },
   sharedInviteWrap: {

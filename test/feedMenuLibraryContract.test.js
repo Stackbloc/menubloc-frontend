@@ -13,6 +13,7 @@ import {
   applyRemoveSaved,
   buildFeedMenuDeck,
   createEmptyLibrary,
+  menuPathFromRestaurantRef,
   purgeExpiredRecent,
   restaurantRefFromFeedItem,
   restaurantRefFromFollowedRestaurant,
@@ -54,6 +55,23 @@ test("restaurantRefFromFeedItem prefers referenced_restaurant", () => {
   assert.equal(ref.restaurant_id, "55");
   assert.equal(ref.restaurant_name, "In-N-Out");
   assert.equal(ref.slug, "in-n-out-burger");
+});
+
+test("menuPathFromRestaurantRef opens public menu for current video restaurant", () => {
+  assert.equal(
+    menuPathFromRestaurantRef({
+      restaurant_id: "42",
+      slug: "dominos",
+      city: "Los Angeles",
+      state: "CA",
+    }),
+    "/restaurants/california/los-angeles/dominos/menu"
+  );
+  assert.equal(
+    menuPathFromRestaurantRef({ restaurant_id: "42" }),
+    "/public/restaurants/42/menu"
+  );
+  assert.equal(menuPathFromRestaurantRef(null), null);
 });
 
 test("bookmark toggle adds then removes saved tier", () => {
@@ -208,4 +226,6 @@ test("Feed Menus page + nav contract strings", () => {
   const reel = read("src/pages/consumer/myMenuply/SeeWhosEatingFullscreen.jsx");
   assert.match(reel, /see-whos-eating-menu-bookmark/);
   assert.match(reel, /recordFeedMenuOpen/);
+  assert.match(reel, /feed-video-yellow-browser/);
+  assert.match(reel, /menuPathFromRestaurantRef/);
 });

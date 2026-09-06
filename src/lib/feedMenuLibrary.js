@@ -3,6 +3,8 @@
  * Saved/recents: device localStorage. Followed: server follow list when signed in.
  */
 
+import { restaurantMenuPath } from "./canonicalUrlCore.js";
+
 export const FEED_MENU_LIBRARY_KEY = "menuply.feedMenuLibrary.v1";
 export const FEED_MENU_LIBRARY_CHANGED = "menuply:feed-menu-library-changed";
 export const FEED_MENU_FOLLOWS_CHANGED = "menuply:feed-menu-follows-changed";
@@ -33,6 +35,17 @@ export function restaurantRefFromDealItem(item) {
     city: String(item.city || "").trim(),
     state: String(item.state || "").trim(),
   };
+}
+
+/** Public menu URL for a feed/deal restaurant ref (Yellow Browser from current video). */
+export function menuPathFromRestaurantRef(ref) {
+  if (!ref?.restaurant_id) return null;
+  return restaurantMenuPath({
+    slug: ref.slug || "",
+    city: ref.city || null,
+    state: ref.state || null,
+    id: ref.restaurant_id,
+  });
 }
 
 /** Map a followed-restaurants API row into a normalized menu-stack ref. */
