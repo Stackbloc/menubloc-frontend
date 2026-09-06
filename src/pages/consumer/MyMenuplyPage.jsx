@@ -38,6 +38,8 @@ import {
   ensureDinerSocialEventShareLink,
   listPendingEatInvitePeople,
   listWantToEat,
+  listMyDiningIntents,
+  removeRestaurantDiningIntent,
   listWhatIAteToday,
   listWhatIAteTodayCalendar,
   listWhatWeDoingSessions,
@@ -194,6 +196,7 @@ export default function MyMenuplyPage() {
   const [followed, setFollowed] = useState([]);
   const [liked, setLiked] = useState([]);
   const [wants, setWants] = useState([]);
+  const [diningIntents, setDiningIntents] = useState([]);
   const [wantListError, setWantListError] = useState("");
   const [crews, setCrews] = useState([]);
   const [events, setEvents] = useState([]);
@@ -253,6 +256,7 @@ export default function MyMenuplyPage() {
         followRes,
         likeRes,
         wantRes,
+        diningIntentRes,
         crewRes,
         eventRes,
         groupRes,
@@ -276,6 +280,7 @@ export default function MyMenuplyPage() {
           setWantListError(err?.message || "Unable to load want list");
           return { items: [] };
         }),
+        listMyDiningIntents().catch(() => ({ items: [] })),
         listDiningCrews().catch(() => ({ crews: [] })),
         listMyVenueEvents().catch(() => ({ events: [] })),
         listMyVenueEventGroups().catch(() => ({ groups: [] })),
@@ -319,6 +324,7 @@ export default function MyMenuplyPage() {
       setFollowed(followRes.restaurants || followRes.items || []);
       setLiked(likeRes.likes || []);
       setWants(wantRes.items || []);
+      setDiningIntents(diningIntentRes.items || []);
       if ((wantRes.items || []).length > 0) setWantListError("");
       setCrews(crewRes.crews || crewRes.items || []);
       setEvents(eventRes.events || []);
@@ -996,6 +1002,22 @@ export default function MyMenuplyPage() {
     }
   }
 
+  async function onDiningIntentDelete(intent) {
+    if (intent?.id == null) return;
+    setPostBusy("dining-intent-delete");
+    setError("");
+    try {
+      await removeRestaurantDiningIntent(intent.id);
+      setDiningIntents((prev) =>
+        (prev || []).filter((row) => Number(row.id) !== Number(intent.id))
+      );
+    } catch (err) {
+      setError(err.message || "Unable to remove");
+    } finally {
+      setPostBusy("");
+    }
+  }
+
   async function onHighlightDelete(card) {
     if (!card?.deleteKind) return;
     if (card.deleteKind === "diary" && card.deleteItem) {
@@ -1626,6 +1648,7 @@ export default function MyMenuplyPage() {
               schedulingPlans={schedulingPlans}
               onSchedulingPlansChange={setSchedulingPlans}
               wants={wants}
+              diningIntents={diningIntents}
               wantListError={wantListError}
               wantDiscovery={wantDiscovery}
               onDismissWantDiscovery={() => setWantDiscovery(null)}
@@ -1683,6 +1706,8 @@ export default function MyMenuplyPage() {
               diaryDeleteBusy={postBusy === "eating-delete"}
               onWantDelete={onWantDelete}
               wantDeleteBusy={postBusy === "want-delete"}
+              onDiningIntentDelete={onDiningIntentDelete}
+              diningIntentDeleteBusy={postBusy === "dining-intent-delete"}
               onPlanDelete={onPlanDelete}
               planDeleteBusy={String(postBusy).startsWith("plan-delete-")}
               onPlanAddDetails={(next) => {

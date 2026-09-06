@@ -2,6 +2,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import MenuplyMediaPicker from "../../../components/social/MenuplyMediaPicker.jsx";
 import InviteToEatButton from "../../../components/InviteToEatButton.jsx";
+import InviteToEatModal from "../../../components/InviteToEatModal.jsx";
 import { restaurantPathFromRow } from "../../../lib/canonicalUrl.js";
 import EatingSocialActions from "./EatingSocialActions.jsx";
 import { resolveConsumerMediaUrl } from "../../../lib/consumerApi.js";
@@ -22,6 +23,11 @@ import {
 import * as s from "./myMenuplyStyles.js";
 import { socialType } from "../../../lib/socialDesignTokens.js";
 
+const DINING_INTENT_LABELS = {
+  want_to_go: "Wanna go",
+  planning_to_go: "Planning to go",
+  looking_for_company: "Looking for company",
+};
 export function restaurantHref(row) {
   return restaurantPathFromRow(row) || (row?.restaurant_id ? `/restaurants/${row.restaurant_id}` : null);
 }
@@ -1239,6 +1245,219 @@ export function WantToEatList({
   );
 }
 
+/**
+ * Restaurant dining intent card — same What I Wanna Eat section as menu-item wants.
+ * Internally kind=dining_intent (not diner_want_to_eat). Wanna Go? → Invite to Eat outing.
+ */
+function WannaGoRestaurantCard({
+  intent,
+  readOnly,
+  isScroll,
+  onDelete,
+  deleteBusy,
+}) {
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const place = String(intent.restaurant_name || "").trim() || "Restaurant";
+  const href = restaurantHref({
+    restaurant_id: intent.restaurant_id,
+    restaurant_slug: intent.restaurant_slug,
+    slug: intent.restaurant_slug,
+    city: intent.city,
+    state: intent.state,
+  });
+  const logo = String(intent.restaurant_logo_url || "").trim();
+  const billboard = String(intent.restaurant_billboard_image_url || "").trim();
+  const thumb = billboard || logo;
+  const intentLabel =
+    DINING_INTENT_LABELS[intent.intent_type] || DINING_INTENT_LABELS.want_to_go;
+  const canDelete = !readOnly && typeof onDelete === "function" && intent?.id != null;
+  const { open, dismiss, consumeArmedClick, bind } = useLongPressReveal(canDelete);
+
+  const cardStyle = isScroll
+    ? thumb
+      ? wantStyles.scrollCardPhoto
+      : wantStyles.scrollCard
+    : wantStyles.card;
+  const shellStyle = isScroll
+    ? {
+        position: "relative",
+        flex: cardStyle.flex,
+        width: cardStyle.width || undefined,
+        scrollSnapAlign: "start",
+        flexShrink: 0,
+      }
+    : { position: "relative", width: "100%" };
+
+  const mediaBlock = thumb ? (
+    <div
+      style={isScroll ? wantStyles.scrollPhotoWrap : wantStyles.stackPhotoWrap}
+      data-testid="wanna-go-media"
+    >
+      <img
+        src={thumb}
+        alt=""
+        style={isScroll ? wantStyles.scrollPhoto : wantStyles.stackPhoto}
+      />
+      {isScroll ? (
+        <div style={wantStyles.scrollPhotoScrim}>
+          <div style={wantStyles.scrollPhotoTitle}>{place}</div>
+          <div style={wantStyles.scrollPhotoMeta}>{intentLabel}</div>
+        </div>
+      ) : null}
+    </div>
+  ) : (
+    <div
+      style={isScroll ? wantStyles.scrollThumbPlaceholder : wantStyles.thumbPlaceholder}
+      aria-hidden
+      data-testid="wanna-go-placeholder"
+    >
+      📍
+    </div>
+  );
+
+  const showTextBelow = !(isScroll && thumb);
+  const copyBlock = showTextBelow ? (
+    <div style={wantStyles.copy}>
+      <div style={wantStyles.title}>{place}</div>
+      <div style={socialType.meta}>{intentLabel}</div>
+    </div>
+  ) : null;
+
+  const body = (
+    <div
+      style={
+        isScroll
+          ? wantStyles.scrollRow
+          : thumb
+            ? wantStyles.stackPhotoRow
+            : wantStyles.row
+      }
+    >
+      {mediaBlock}
+      {copyBlock}
+    </div>
+  );
+
+  const main = href ? (
+    <Link
+      to={href}
+      style={cardStyle}
+      data-testid="wanna-go-item-link"
+      onClick={(e) => {
+        if (consumeArmedClick() || open) {
+          e.preventDefault();
+          dismiss();
+        }
+      }}
+    >
+      {body}
+    </Link>
+  ) : (
+    <div style={cardStyle} data-testid="wanna-go-item-body">
+      {body}
+    </div>
+  );
+
+  return (
+    <div style={shellStyle} data-testid="wanna-go-item" {...bind}>
+      {main}
+      {!readOnly ? (
+        <div style={wantStyles.mmtRow} data-testid="wanna-go-invite-row">
+          <button
+            type="button"
+            style={wantStyles.wannaGoInvite}
+            data-testid="wanna-go-invite"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setInviteOpen(true);
+            }}
+          >
+            Wanna Go?
+          </button>
+          <span style={wantStyles.wannaGoInviteHint}> — invite someone to join</span>
+        </div>
+      ) : null}
+      {open ? (
+        <button
+          type="button"
+          style={s.mealHolderDelete}
+          data-testid="wanna-go-delete"
+          aria-label={`Remove ${place}`}
+          disabled={deleteBusy}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (deleteBusy) return;
+            dismiss();
+            onDelete?.(intent);
+          }}
+        >
+          Delete
+        </button>
+      ) : null}
+      <InviteToEatModal
+        open={inviteOpen}
+        onClose={() => setInviteOpen(false)}
+        restaurantId={intent.restaurant_id}
+        restaurantName={place}
+      />
+    </div>
+  );
+}
+
+/**
+ * One What I Wanna Eat rail: restaurant dining intents + menu-item wants.
+ * Separate stores; unified diner UI.
+ */
+export function WantToEatUnifiedList({
+  wants = [],
+  diningIntents = [],
+  readOnly = false,
+  onSelectItem,
+  onDeleteWant,
+  onDeleteDiningIntent,
+  deleteBusy = false,
+  onViewMmt,
+  limit = 16,
+  layout = "scroll",
+}) {
+  const intentRows = (diningIntents || []).slice(0, limit);
+  const wantBudget = Math.max(0, limit - intentRows.length);
+  const wantRows = (wants || []).slice(0, wantBudget);
+  if (!intentRows.length && !wantRows.length) return null;
+
+  const isScroll = layout === "scroll";
+  const listStyle = isScroll ? wantStyles.scrollList : wantStyles.list;
+
+  return (
+    <div style={listStyle} data-testid="want-to-eat-list">
+      {intentRows.map((intent) => (
+        <WannaGoRestaurantCard
+          key={`di-${intent.id}`}
+          intent={intent}
+          readOnly={readOnly}
+          isScroll={isScroll}
+          onDelete={onDeleteDiningIntent}
+          deleteBusy={deleteBusy}
+        />
+      ))}
+      {wantRows.map((want) => (
+        <WantToEatCard
+          key={`w-${want.id}`}
+          want={want}
+          readOnly={readOnly}
+          isScroll={isScroll}
+          onSelectItem={onSelectItem}
+          onDelete={onDeleteWant}
+          deleteBusy={deleteBusy}
+          onViewMmt={onViewMmt}
+        />
+      ))}
+    </div>
+  );
+}
+
 const wantStyles = {
   list: { display: "grid", gap: 10 },
   scrollList: {
@@ -1398,5 +1617,22 @@ const wantStyles = {
     padding: "2px 0",
     cursor: "pointer",
     textAlign: "left",
+  },
+  wannaGoInvite: {
+    border: "none",
+    background: "transparent",
+    color: "#1F4E3D",
+    fontSize: 13,
+    fontWeight: 800,
+    padding: "2px 0",
+    cursor: "pointer",
+    textAlign: "left",
+    textDecoration: "underline",
+    textUnderlineOffset: 2,
+  },
+  wannaGoInviteHint: {
+    fontSize: 12,
+    fontWeight: 500,
+    color: "#78716c",
   },
 };

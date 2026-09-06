@@ -52,7 +52,9 @@ test("My Menuply and peer hub use five-section presentation hub", () => {
   assert.match(peer, /EatingHubSection/);
   assert.match(peer, /readOnly/);
   assert.match(section, /WhatIAteMealBoard/);
-  assert.match(section, /WantToEatList/);
+  assert.match(section, /WantToEatUnifiedList/);
+  assert.match(section, /diningIntents/);
+  assert.match(section, /Dishes you want and places you wanna go/);
   assert.match(section, /SectionEmptyState/);
   assert.doesNotMatch(section, /future-plans-calendar/);
   assert.doesNotMatch(section, /eating-plans-calendar/);
@@ -76,6 +78,14 @@ test("My Menuply and peer hub use five-section presentation hub", () => {
   assert.match(mine, /futurePlanRestaurantName\(plan\)/);
   assert.match(mine, /timeLabel: meal/);
   assert.match(mine, /futurePlanDetailParts/);
+  assert.match(mine, /listMyDiningIntents/);
+  assert.match(mine, /diningIntents/);
+  assert.match(mine, /onDiningIntentDelete/);
+  assert.match(mine, /removeRestaurantDiningIntent/);
+
+  const api = read("src/lib/consumerApi.js");
+  assert.match(api, /listMyDiningIntents/);
+  assert.match(api, /\/api\/consumer\/dining-intent\/mine/);
 
   const mealBoard = read("src/pages/consumer/myMenuply/WhatIAteMealBoard.jsx");
   const dishVisual = read("src/pages/consumer/myMenuply/eatingDishVisual.js");
@@ -90,6 +100,7 @@ test("My Menuply and peer hub use five-section presentation hub", () => {
   assert.match(mealBoard, /onDelete/);
   assert.match(section, /onDiaryDelete/);
   assert.match(section, /onWantDelete/);
+  assert.match(section, /onDiningIntentDelete/);
   assert.match(mealBoard, /resolveEatingDishVisual/);
   assert.match(dishVisual, /video_url/);
   assert.match(dishVisual, /photo_url/);
@@ -134,6 +145,10 @@ test("My Menuply and peer hub use five-section presentation hub", () => {
   assert.match(mealLib, /empty days show copy, not camera slots/);
 
   const bits = read("src/pages/consumer/myMenuply/myMenuplyBits.jsx");
+  assert.match(bits, /WantToEatUnifiedList/);
+  assert.match(bits, /wanna-go-invite/);
+  assert.match(bits, /InviteToEatModal/);
+  assert.match(bits, /wanna-go-item/);
   assert.match(bits, /want-to-eat-delete/);
   assert.match(bits, /useLongPressReveal|mediaLongPressReveal/);
   assert.match(bits, /planRowCompact/);

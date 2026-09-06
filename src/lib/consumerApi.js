@@ -772,6 +772,9 @@ export const fetchMyRestaurantDiningIntent = (restaurantId) =>
     `/api/consumer/dining-intent/mine?restaurant_id=${encodeURIComponent(String(restaurantId))}`
   );
 
+/** Owner hub — all active Wanna Go restaurant intents (union UI with Wanna Eat). */
+export const listMyDiningIntents = () => get("/api/consumer/dining-intent/mine");
+
 export const createRestaurantDiningIntent = (body) => post("/api/consumer/dining-intent", body);
 
 export const removeRestaurantDiningIntent = (intentId) =>

@@ -15,7 +15,7 @@ import SectionEmptyState from "./SectionEmptyState.jsx";
 import {
   SectionHead,
   FuturePlanRow,
-  WantToEatList,
+  WantToEatUnifiedList,
 } from "./myMenuplyBits.jsx";
 import {
   clampEatingLookbackDate,
@@ -116,6 +116,7 @@ export default function EatingHubSection({
   schedulingPlans = false,
   onSchedulingPlansChange,
   wants = [],
+  diningIntents = [],
   wantListError = "",
   wantDiscovery = null,
   onDismissWantDiscovery,
@@ -133,7 +134,9 @@ export default function EatingHubSection({
   onDiaryDelete,
   diaryDeleteBusy = false,
   onWantDelete,
+  onDiningIntentDelete,
   wantDeleteBusy = false,
+  diningIntentDeleteBusy = false,
   onPlanAddDetails,
   onPlanAddVideo,
   onPlanDelete,
@@ -373,7 +376,7 @@ export default function EatingHubSection({
           <SectionHead
             kicker="Cravings"
             title="What I Wanna Eat"
-            subtitle="Dishes and places on your mind"
+            subtitle="Dishes you want and places you wanna go"
           />
           {wantListError ? <p style={s.error}>{wantListError}</p> : null}
           {lastPost?.kind === "want" &&
@@ -397,20 +400,23 @@ export default function EatingHubSection({
               onTagged={onPostTagged}
             />
           ) : null}
-          {wants.length === 0 && lastPost?.kind !== "want" ? (
+          {wants.length === 0 &&
+          diningIntents.length === 0 &&
+          lastPost?.kind !== "want" ? (
             <SectionEmptyState testId="want-to-eat-empty">
-              Your cravings, saved dishes, and places you want to try.
+              Dishes you want and restaurants you wanna go to.
             </SectionEmptyState>
           ) : null}
-          <WantToEatList
-            items={wants}
+          <WantToEatUnifiedList
+            wants={wants}
+            diningIntents={diningIntents}
             readOnly={readOnly}
             layout="scroll"
             onSelectItem={readOnly ? undefined : onWantSelect}
-            onDelete={readOnly ? undefined : onWantDelete}
-            deleteBusy={wantDeleteBusy}
+            onDeleteWant={readOnly ? undefined : onWantDelete}
+            onDeleteDiningIntent={readOnly ? undefined : onDiningIntentDelete}
+            deleteBusy={wantDeleteBusy || diningIntentDeleteBusy}
             onViewMmt={onViewMmt}
-            emptyMessage={null}
           />
           {!readOnly && typeof onRequestMmt === "function" ? (
             <p style={{ ...s.muted, fontSize: 13, marginTop: 10 }} data-testid="want-mmt-section">
