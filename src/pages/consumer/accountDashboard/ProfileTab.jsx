@@ -481,7 +481,7 @@ export default function ProfileTab({
       <SummaryEditSection
         title="Make my profile discoverable by"
         summary={discoverabilityLabel(discoverability)}
-        description="Who can find you in Find Diners. There is no “Nobody” option — pick an audience. (A future .edu-only audience may be added later without redesigning this setting.)"
+        description="Audience preference for activity surfaces (for example dining intent). Find Diners already lets signed-in members search by name, phone, email, hometown, or city. (A future .edu-only audience may be added later.)"
         editing={editingDiscoverability}
         onEdit={() => setEditingDiscoverability(true)}
         onDone={async () => {
@@ -493,7 +493,7 @@ export default function ProfileTab({
       >
         {canonicalizeDiscoverability(discoverability) === "nobody" ? (
           <p style={{ ...styles.statusErr, marginBottom: 8 }} role="status">
-            Your profile is currently hidden from search. Choose who can find you.
+            Your profile still has a legacy hidden setting. Choose an audience below to update it.
           </p>
         ) : null}
         <div style={{ display: "grid", gap: 8 }}>

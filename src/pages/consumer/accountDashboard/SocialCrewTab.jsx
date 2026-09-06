@@ -162,7 +162,7 @@ export default function SocialCrewTab() {
         <AccountActionLink
           to="/account/find-diners"
           title="Find Diners"
-          description="Search by name, phone, email, member ID, city, or school — then Connect. Privacy respected."
+          description="Search by name, phone, email, hometown, or city — then Connect."
           actionLabel="Search"
           last
         />

@@ -7,17 +7,17 @@ export const DISCOVERABILITY_UI_OPTIONS = Object.freeze([
   {
     value: "anyone",
     label: "Anyone",
-    hint: "Any signed-in diner can find you by name, phone, or email.",
+    hint: "Broadest audience for activity surfaces. Find Diners already lets signed-in members search by name, phone, email, hometown, or city.",
   },
   {
     value: "area",
     label: "People in my area",
-    hint: "Diners who share your primary city can find you.",
+    hint: "Prefer diners who share your primary city for activity surfaces.",
   },
   {
     value: "connections",
     label: "My connections",
-    hint: "Only your accepted Menuply connections can find you in search.",
+    hint: "Prefer accepted Menuply connections for activity surfaces.",
   },
 ]);
 
@@ -28,12 +28,12 @@ export function canonicalizeDiscoverability(value) {
   if (key === "members") return "anyone";
   if (key === "anyone" || key === "area" || key === "connections") return key;
   if (key === "nobody" || key === "edu") return key;
-  return "area";
+  return "anyone";
 }
 
 export function discoverabilityLabel(value) {
   const canonical = canonicalizeDiscoverability(value);
-  if (canonical === "nobody") return "Hidden — choose who can find you";
+  if (canonical === "nobody") return "Legacy hidden — choose an audience";
   if (canonical === "edu") return ".edu users only (coming later)";
   const opt = DISCOVERABILITY_UI_OPTIONS.find((o) => o.value === canonical);
   return opt ? opt.label : canonical;

@@ -30,15 +30,18 @@ test("Find Diners page integrates search + connections", () => {
   assert.match(findPage, /location_label/);
   assert.match(findPage, /phone/i);
   assert.match(findPage, /email/i);
+  assert.match(findPage, /hometown/i);
   assert.match(findPage, /Connect/);
+  assert.doesNotMatch(findPage, /member ID|#member/i);
+  assert.doesNotMatch(findPage, /Who can find me/);
   assert.doesNotMatch(findPage, /navigator\.share/);
 });
 
 test("Profile tab exposes location + discoverability", () => {
   const profileTab = read("src/pages/consumer/accountDashboard/ProfileTab.jsx");
   const styles = read("src/pages/consumer/accountDashboard/accountDashboardStyles.js");
-  assert.match(profileTab, /Who can find me/);
-  assert.match(profileTab, /name, phone number, or email/);
+  assert.match(profileTab, /Make my profile discoverable by/);
+  assert.match(profileTab, /name, phone, email, hometown, or city/);
   assert.match(profileTab, /PrimaryLocationPicker/);
   assert.match(profileTab, /styles\.choiceRow/);
   assert.match(styles, /choiceRow:[\s\S]*color: "#0f172a"/);
@@ -50,7 +53,9 @@ test("Social & Crew Find Diners entry mentions contact search + Connect", () => 
   assert.match(social, /find-diners/);
   assert.match(social, /phone/);
   assert.match(social, /email/);
+  assert.match(social, /hometown/);
   assert.match(social, /Connect/);
+  assert.doesNotMatch(social, /member ID/i);
 });
 
 test("Routes and API client wired", () => {

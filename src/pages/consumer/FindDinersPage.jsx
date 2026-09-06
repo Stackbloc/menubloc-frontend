@@ -1,5 +1,5 @@
 /**
- * Find Diners — food-social people search with privacy + connection actions.
+ * Find Diners — food-social people search with connection actions.
  */
 
 import React, { useCallback, useEffect, useState } from "react";
@@ -150,8 +150,9 @@ export default function FindDinersPage() {
       <StickyPageHeader title="Find Diners" backTo="/account?tab=social" />
       <main style={styles.main}>
         <p style={styles.lead}>
-          Search by name, phone, email, member ID, city, neighborhood, or school. Results respect each diner&apos;s
-          privacy settings — only diners who chose to be searchable appear. Use Connect to send a connection request.
+          Search by name, phone, email, hometown, or current city (neighborhood and school also work).
+          Every active Menuply member is discoverable to signed-in diners. Use Connect to send a connection
+          request.
         </p>
 
         <form
@@ -165,7 +166,7 @@ export default function FindDinersPage() {
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Name, phone, email, or #member id"
+            placeholder="Name, phone, email, hometown, or city"
             style={styles.searchInput}
             aria-label="Search diners"
           />
@@ -178,9 +179,8 @@ export default function FindDinersPage() {
 
         {searched && !loading && results.length === 0 ? (
           <p style={styles.empty}>
-            No diners matched. They may have <strong>Who can find me?</strong> set to Nobody in Account →
-            Profile. Ask them to choose Menuply members or People in my area, then try their exact email,
-            phone, or name again.
+            No diners matched. Try their exact email or phone, or a name / hometown / city spelling they
+            use on Menuply.
           </p>
         ) : null}
 
