@@ -227,6 +227,6 @@ test("Feed Menus page + nav contract strings", () => {
   assert.match(reel, /see-whos-eating-menu-bookmark/);
   assert.match(reel, /recordFeedMenuOpen/);
   assert.match(reel, /feed-video-yellow-browser/);
-  assert.match(reel, /browseRestaurantRef/);
+  assert.match(reel, /browseSession/);
   assert.match(reel, /FeedMenuBrowserPipOverlay/);
 });

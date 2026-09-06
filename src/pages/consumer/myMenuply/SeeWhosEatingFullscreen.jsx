@@ -33,6 +33,10 @@ import {
   restaurantRefFromFeedItem,
   toggleFeedMenuBookmark,
 } from "../../../lib/feedMenuLibrary.js";
+import {
+  buildBrowseMenuTrail,
+  clampBrowseTrailIndex,
+} from "../../../lib/feedMenuBrowserTrail.js";
 import { buildFeedVideoShareData, feedClipSharePath, feedClipShareUrl } from "../../../lib/feedShare.js";
 import {
   attemptFeedVideoAutoplay,
@@ -81,8 +85,8 @@ export default function SeeWhosEatingFullscreen({
   const [menuBookmarkToast, setMenuBookmarkToast] = useState("");
   const [videoMuted, setVideoMuted] = useState(() => defaultFeedVideoMuted(variant));
   const [inviteOpen, setInviteOpen] = useState(false);
-  /** Frozen Browse restaurant — independent of current Feed index while Menu Browser is open. */
-  const [browseRestaurantRef, setBrowseRestaurantRef] = useState(null);
+  /** Menu Browser session: open Feed index + which discussed-menu trail slot is showing. */
+  const [browseSession, setBrowseSession] = useState(null);
   const videoRef = useRef(null);
   const touchStartY = useRef(null);
   const pipSwipeStartY = useRef(null);
@@ -106,11 +110,33 @@ export default function SeeWhosEatingFullscreen({
     setMenuBookmarkToast("");
     setVideoMuted(defaultFeedVideoMuted(variant));
     setInviteOpen(false);
-    // Do not clear browseRestaurantRef — Browse context stays locked across Feed navigation.
+    // Do not clear browseSession — Browse trail stays independent of Feed navigation.
   }, [index, item?.id, variant]);
 
   const restaurantRef = restaurantRefFromFeedItem(item);
-  const menuBrowserOpen = Boolean(browseRestaurantRef?.restaurant_id);
+  const menuBrowserOpen = Boolean(browseSession);
+  const browseTrail = useMemo(() => {
+    if (!browseSession) return [];
+    return buildBrowseMenuTrail(
+      items,
+      browseSession.openIndex,
+      index,
+      restaurantRefFromFeedItem
+    );
+  }, [browseSession, items, index]);
+  const browseTrailIndex = clampBrowseTrailIndex(
+    browseSession?.trailIndex ?? 0,
+    browseTrail.length
+  );
+  const browseRestaurantRef = browseTrail[browseTrailIndex] || null;
+
+  useEffect(() => {
+    if (!browseSession) return;
+    const clamped = clampBrowseTrailIndex(browseSession.trailIndex, browseTrail.length);
+    if (clamped === browseSession.trailIndex) return;
+    setBrowseSession((prev) => (prev ? { ...prev, trailIndex: clamped } : null));
+  }, [browseSession, browseTrail.length]);
+
   const inviteMenuItemId =
     item?.menu_item_id != null && String(item.menu_item_id).trim() !== ""
       ? item.menu_item_id
@@ -207,7 +233,7 @@ export default function SeeWhosEatingFullscreen({
       if (e.key === "Escape") {
         e.preventDefault();
         if (menuBrowserOpen) {
-          setBrowseRestaurantRef(null);
+          setBrowseSession(null);
           return;
         }
         if (variant === "modal") onClose?.();
@@ -287,7 +313,7 @@ export default function SeeWhosEatingFullscreen({
     const ref = restaurantRefFromFeedItem(item);
     if (!ref?.restaurant_id) return;
     recordFeedMenuOpen(ref);
-    setBrowseRestaurantRef({ ...ref });
+    setBrowseSession({ openIndex: index, trailIndex: 0 });
     const el = videoRef.current;
     if (el) {
       attemptFeedVideoAutoplay(el, { preferSound: true }).then(({ muted }) => {
@@ -299,14 +325,47 @@ export default function SeeWhosEatingFullscreen({
   }
 
   function closeMenuBrowser() {
-    setBrowseRestaurantRef(null);
+    setBrowseSession(null);
+  }
+
+  function onBrowseTrailPrev() {
+    setBrowseSession((prev) => {
+      if (!prev) return null;
+      return { ...prev, trailIndex: Math.max(0, (prev.trailIndex || 0) - 1) };
+    });
+  }
+
+  function onBrowseTrailNext() {
+    setBrowseSession((prev) => {
+      if (!prev) return null;
+      const trail = buildBrowseMenuTrail(
+        items,
+        prev.openIndex,
+        index,
+        restaurantRefFromFeedItem
+      );
+      const next = Math.min(Math.max(0, trail.length - 1), (prev.trailIndex || 0) + 1);
+      return { ...prev, trailIndex: next };
+    });
   }
 
   function switchBrowseToPlaying() {
     const ref = restaurantRefFromFeedItem(item);
     if (!ref?.restaurant_id) return;
     recordFeedMenuOpen(ref);
-    setBrowseRestaurantRef({ ...ref });
+    setBrowseSession((prev) => {
+      if (!prev) return null;
+      const trail = buildBrowseMenuTrail(
+        items,
+        prev.openIndex,
+        index,
+        restaurantRefFromFeedItem
+      );
+      const playingId = String(ref.restaurant_id);
+      let trailIdx = trail.findIndex((row) => String(row.restaurant_id) === playingId);
+      if (trailIdx < 0) trailIdx = Math.max(0, trail.length - 1);
+      return { ...prev, trailIndex: trailIdx };
+    });
   }
 
   function applyVideoSoundState(nextMuted) {
@@ -628,8 +687,12 @@ export default function SeeWhosEatingFullscreen({
         <FeedMenuBrowserPipOverlay
           restaurantRef={browseRestaurantRef}
           playingRestaurantRef={restaurantRef}
+          trail={browseTrail}
+          trailIndex={browseTrailIndex}
           bottomInset={navInset}
           onClose={closeMenuBrowser}
+          onTrailPrev={onBrowseTrailPrev}
+          onTrailNext={onBrowseTrailNext}
           onSwitchBrowseToPlaying={switchBrowseToPlaying}
         />
       ) : null}
@@ -657,12 +720,74 @@ export default function SeeWhosEatingFullscreen({
         controls={false}
         preload="auto"
         data-testid="see-whos-eating-video-tap"
-        aria-label={menuBrowserOpen ? "Expand video — back to Feed" : undefined}
+        aria-label={menuBrowserOpen ? "Expand to Full Feed" : undefined}
         onClick={onVideoClick}
         onPointerUp={onVideoPointerUp}
         onTouchStart={onPipTouchStart}
         onTouchEnd={onPipTouchEnd}
       />
+
+      {menuBrowserOpen ? (
+        <div
+          style={{
+            ...styles.pipVideoNav,
+            bottom: `calc(${navInset}px + max(16px, env(safe-area-inset-bottom)) + ${
+              isDesktopViewport ? 372 : 264
+            }px)`,
+            right: "max(12px, env(safe-area-inset-right))",
+            width: isDesktopViewport ? 200 : 140,
+          }}
+          data-testid="feed-menu-browser-pip-video-nav"
+        >
+          <button
+            type="button"
+            style={{
+              ...styles.pipVideoNavBtn,
+              ...(index <= 0 ? styles.pipVideoNavBtnDisabled : null),
+            }}
+            disabled={index <= 0}
+            data-testid="feed-menu-browser-pip-prev-video"
+            aria-label="Previous Feed video"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              goPrevOrClose();
+            }}
+          >
+            ▲ Prev video
+          </button>
+          <button
+            type="button"
+            style={{
+              ...styles.pipVideoNavBtn,
+              ...(index >= items.length - 1 ? styles.pipVideoNavBtnDisabled : null),
+            }}
+            disabled={index >= items.length - 1}
+            data-testid="feed-menu-browser-pip-next-video"
+            aria-label="Next Feed video"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              goNext();
+            }}
+          >
+            ▼ Next video
+          </button>
+          <button
+            type="button"
+            style={styles.pipFullFeedBtn}
+            data-testid="feed-menu-browser-pip-full-feed"
+            aria-label="Full Feed"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              closeMenuBrowser();
+            }}
+          >
+            Full Feed
+          </button>
+        </div>
+      ) : null}
 
       {showDesktopSoundLayer && !menuBrowserOpen ? (
         <button
@@ -703,7 +828,7 @@ export default function SeeWhosEatingFullscreen({
             ...styles.soundToggle,
             ...styles.pipSoundToggle,
             bottom: `calc(${navInset}px + max(16px, env(safe-area-inset-bottom)) + ${
-              isDesktopViewport ? 372 : 264
+              isDesktopViewport ? 420 : 312
             }px)`,
           }}
           aria-label={videoMuted ? soundPromptLabel : "Mute video"}
@@ -965,6 +1090,42 @@ const styles = {
     left: "auto",
     right: "max(12px, env(safe-area-inset-right))",
     zIndex: 31,
+  },
+  pipVideoNav: {
+    position: "absolute",
+    zIndex: 32,
+    display: "flex",
+    flexDirection: "column",
+    gap: 6,
+    pointerEvents: "auto",
+  },
+  pipVideoNavBtn: {
+    border: "1px solid rgba(255,255,255,0.4)",
+    borderRadius: 10,
+    padding: "7px 8px",
+    background: "rgba(0,0,0,0.72)",
+    color: "#fff",
+    fontSize: 11,
+    fontWeight: 800,
+    cursor: "pointer",
+    fontFamily: "inherit",
+    textAlign: "center",
+  },
+  pipVideoNavBtnDisabled: {
+    opacity: 0.35,
+    cursor: "default",
+  },
+  pipFullFeedBtn: {
+    border: "1px solid rgba(250, 204, 21, 0.65)",
+    borderRadius: 10,
+    padding: "7px 8px",
+    background: "rgba(234, 179, 8, 0.92)",
+    color: "#1a1a1a",
+    fontSize: 11,
+    fontWeight: 900,
+    cursor: "pointer",
+    fontFamily: "inherit",
+    textAlign: "center",
   },
   videoTapLayer: {
     position: "absolute",

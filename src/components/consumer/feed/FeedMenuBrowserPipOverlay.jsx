@@ -1,11 +1,15 @@
 /**
- * Menu Browser — menu-primary panel with Feed video kept as PiP (parent owns the <video>).
- * Browse context is frozen to the restaurant selected at open; Feed may advance independently.
+ * Menu Browser — menu-primary panel; parent owns Feed PiP video.
+ * Horizontal swipe walks restaurants discussed from open clip → current playing clip.
+ * Full Feed exits Browse and restores the reel.
  */
 
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 import CatalogMenuRenderer from "../../menuCatalog/CatalogMenuRenderer.jsx";
 import { readDetectedLocation } from "../../../lib/discoveryLocationPersistence.js";
+import { clampBrowseTrailIndex } from "../../../lib/feedMenuBrowserTrail.js";
+
+const SWIPE_MIN_PX = 48;
 
 export function resolveFeedMenuBrowserLocationParams() {
   if (typeof window === "undefined") return {};
@@ -28,29 +32,45 @@ export function resolveFeedMenuBrowserLocationParams() {
  * @param {{
  *   restaurantRef: { restaurant_id: string, restaurant_name?: string, slug?: string, city?: string, state?: string },
  *   playingRestaurantRef?: { restaurant_id: string, restaurant_name?: string } | null,
+ *   trail?: object[],
+ *   trailIndex?: number,
  *   bottomInset?: number,
  *   onClose: () => void,
+ *   onTrailPrev?: () => void,
+ *   onTrailNext?: () => void,
  *   onSwitchBrowseToPlaying?: () => void,
  * }} props
  */
 export default function FeedMenuBrowserPipOverlay({
   restaurantRef,
   playingRestaurantRef = null,
+  trail = null,
+  trailIndex = 0,
   bottomInset = 0,
   onClose,
+  onTrailPrev,
+  onTrailNext,
   onSwitchBrowseToPlaying,
 }) {
   const locationParams = useMemo(() => resolveFeedMenuBrowserLocationParams(), []);
+  const swipeRef = useRef({ startX: 0, startY: 0, active: false, axis: null });
+
+  const trailList = Array.isArray(trail) && trail.length > 0 ? trail : null;
+  const activeIndex = trailList
+    ? clampBrowseTrailIndex(trailIndex, trailList.length)
+    : 0;
+  const activeRef = trailList ? trailList[activeIndex] : restaurantRef;
+
   const entry = useMemo(() => {
-    if (!restaurantRef?.restaurant_id) return null;
+    if (!activeRef?.restaurant_id) return null;
     return {
-      restaurant_id: restaurantRef.restaurant_id,
-      restaurant_name: restaurantRef.restaurant_name,
-      slug: restaurantRef.slug,
-      city: restaurantRef.city,
-      state: restaurantRef.state,
+      restaurant_id: activeRef.restaurant_id,
+      restaurant_name: activeRef.restaurant_name,
+      slug: activeRef.slug,
+      city: activeRef.city,
+      state: activeRef.state,
     };
-  }, [restaurantRef]);
+  }, [activeRef]);
 
   const playingId = playingRestaurantRef?.restaurant_id
     ? String(playingRestaurantRef.restaurant_id)
@@ -61,6 +81,58 @@ export default function FeedMenuBrowserPipOverlay({
     Boolean(browseId) &&
     playingId !== browseId &&
     typeof onSwitchBrowseToPlaying === "function";
+
+  const trailCount = trailList?.length || 0;
+  const canTrailPrev = trailCount > 1 && activeIndex > 0 && typeof onTrailPrev === "function";
+  const canTrailNext =
+    trailCount > 1 && activeIndex < trailCount - 1 && typeof onTrailNext === "function";
+
+  function resetSwipe() {
+    swipeRef.current = { startX: 0, startY: 0, active: false, axis: null };
+  }
+
+  function onAreaTouchStart(e) {
+    e.stopPropagation();
+    const touch = e.touches?.[0];
+    if (!touch) return;
+    swipeRef.current = {
+      startX: touch.clientX,
+      startY: touch.clientY,
+      active: true,
+      axis: null,
+    };
+  }
+
+  function onAreaTouchMove(e) {
+    e.stopPropagation();
+    const touch = e.touches?.[0];
+    if (!touch || !swipeRef.current.active) return;
+    const dx = touch.clientX - swipeRef.current.startX;
+    const dy = touch.clientY - swipeRef.current.startY;
+    if (!swipeRef.current.axis) {
+      if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+      swipeRef.current.axis = Math.abs(dx) >= Math.abs(dy) ? "x" : "y";
+    }
+    if (swipeRef.current.axis === "x") e.preventDefault();
+  }
+
+  function onAreaTouchEnd(e) {
+    e.stopPropagation();
+    const touch = e.changedTouches?.[0];
+    if (!touch || !swipeRef.current.active) {
+      resetSwipe();
+      return;
+    }
+    const dx = touch.clientX - swipeRef.current.startX;
+    const dy = touch.clientY - swipeRef.current.startY;
+    const wasHorizontal = swipeRef.current.axis === "x";
+    resetSwipe();
+    if (!wasHorizontal) return;
+    if (Math.abs(dx) < SWIPE_MIN_PX || Math.abs(dx) < Math.abs(dy) * 1.15) return;
+    // Finger left → next menu toward current discussion; finger right → previous.
+    if (dx < 0) onTrailNext?.();
+    else onTrailPrev?.();
+  }
 
   if (!entry) return null;
 
@@ -74,6 +146,8 @@ export default function FeedMenuBrowserPipOverlay({
       }}
       data-testid="feed-menu-browser-pip"
       data-browse-restaurant-id={browseId}
+      data-trail-index={String(activeIndex)}
+      data-trail-count={String(trailCount || 1)}
       role="dialog"
       aria-modal="true"
       aria-label="Menu Browser"
@@ -85,20 +159,67 @@ export default function FeedMenuBrowserPipOverlay({
           type="button"
           style={styles.backBtn}
           data-testid="feed-menu-browser-close"
-          aria-label="Back to Feed"
+          aria-label="Full Feed"
+          title="Full Feed"
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
             onClose?.();
           }}
         >
-          ← Feed
+          Full Feed
         </button>
         <span style={styles.title} data-testid="feed-menu-browser-title">
           {entry.restaurant_name || "Menu"}
         </span>
-        <span style={styles.headerSpacer} aria-hidden="true" />
+        {trailCount > 1 ? (
+          <span style={styles.trailCounter} data-testid="feed-menu-browser-trail-counter">
+            {activeIndex + 1} / {trailCount}
+          </span>
+        ) : (
+          <span style={styles.headerSpacer} aria-hidden="true" />
+        )}
       </header>
+
+      {trailCount > 1 ? (
+        <div style={styles.trailNav} data-testid="feed-menu-browser-trail-nav">
+          <button
+            type="button"
+            style={{
+              ...styles.trailBtn,
+              ...(canTrailPrev ? null : styles.trailBtnDisabled),
+            }}
+            disabled={!canTrailPrev}
+            data-testid="feed-menu-browser-trail-prev"
+            aria-label="Previous discussed menu"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onTrailPrev?.();
+            }}
+          >
+            ← Prev menu
+          </button>
+          <span style={styles.trailHint}>Swipe menus · discussed in Feed</span>
+          <button
+            type="button"
+            style={{
+              ...styles.trailBtn,
+              ...(canTrailNext ? null : styles.trailBtnDisabled),
+            }}
+            disabled={!canTrailNext}
+            data-testid="feed-menu-browser-trail-next"
+            aria-label="Next discussed menu"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onTrailNext?.();
+            }}
+          >
+            Next menu →
+          </button>
+        </div>
+      ) : null}
 
       {canSwitchBrowse ? (
         <div style={styles.switchBar} data-testid="feed-menu-browser-switch-bar">
@@ -121,7 +242,14 @@ export default function FeedMenuBrowserPipOverlay({
         </div>
       ) : null}
 
-      <div style={styles.menuArea} data-testid="feed-menu-browser-menu">
+      <div
+        style={styles.menuArea}
+        data-testid="feed-menu-browser-menu"
+        onTouchStart={onAreaTouchStart}
+        onTouchMove={onAreaTouchMove}
+        onTouchEnd={onAreaTouchEnd}
+        onTouchCancel={resetSwipe}
+      >
         <CatalogMenuRenderer
           key={entry.restaurant_id}
           entry={entry}
@@ -178,8 +306,49 @@ const styles = {
     whiteSpace: "nowrap",
   },
   headerSpacer: {
-    width: 72,
+    width: 88,
     flexShrink: 0,
+  },
+  trailCounter: {
+    flexShrink: 0,
+    minWidth: 52,
+    textAlign: "right",
+    fontSize: 12,
+    fontWeight: 700,
+    color: "rgba(232,240,236,0.85)",
+  },
+  trailNav: {
+    flexShrink: 0,
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    padding: "8px 12px",
+    background: "rgba(15, 23, 42, 0.82)",
+    borderBottom: "1px solid rgba(255,255,255,0.1)",
+    zIndex: 2,
+  },
+  trailBtn: {
+    border: "1px solid rgba(250, 204, 21, 0.55)",
+    borderRadius: 999,
+    padding: "6px 10px",
+    background: "rgba(250, 204, 21, 0.16)",
+    color: "#fde68a",
+    fontSize: 12,
+    fontWeight: 800,
+    cursor: "pointer",
+    fontFamily: "inherit",
+    flexShrink: 0,
+  },
+  trailBtnDisabled: {
+    opacity: 0.35,
+    cursor: "default",
+  },
+  trailHint: {
+    flex: 1,
+    textAlign: "center",
+    fontSize: 11,
+    fontWeight: 600,
+    color: "rgba(232,240,236,0.65)",
   },
   switchBar: {
     flexShrink: 0,
@@ -218,7 +387,7 @@ const styles = {
     minHeight: 0,
     overflow: "auto",
     WebkitOverflowScrolling: "touch",
-    // Leave room so PiP video (parent) is not covered by scrolled content hit-targets at the corner.
     paddingBottom: "calc(max(28px, env(safe-area-inset-bottom)) + 220px)",
+    touchAction: "pan-y",
   },
 };

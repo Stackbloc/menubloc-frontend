@@ -16,6 +16,10 @@ import {
   recordFeedMenuOpen,
   restaurantRefFromDealItem,
 } from "../../../lib/feedMenuLibrary.js";
+import {
+  buildBrowseMenuTrail,
+  clampBrowseTrailIndex,
+} from "../../../lib/feedMenuBrowserTrail.js";
 import { feedDealShareUrl } from "../../../lib/feedShare.js";
 import { useFeedShellDesktop } from "../../../lib/useFeedShellDesktop.js";
 import {
@@ -40,7 +44,7 @@ export default function DealVideoSwipe({
   const [index, setIndex] = useState(startIndex);
   const [videoMuted, setVideoMuted] = useState(() => defaultFeedVideoMuted("feedHome"));
   const [inviteOpen, setInviteOpen] = useState(false);
-  const [browseRestaurantRef, setBrowseRestaurantRef] = useState(null);
+  const [browseSession, setBrowseSession] = useState(null);
   const isDesktopViewport = useFeedShellDesktop();
   const videoRef = useRef(null);
   const touchStartY = useRef(null);
@@ -48,7 +52,21 @@ export default function DealVideoSwipe({
   const ignoreVideoClickRef = useRef(false);
   const item = items[index] || null;
   const restaurantRef = restaurantRefFromDealItem(item);
-  const menuBrowserOpen = Boolean(browseRestaurantRef?.restaurant_id);
+  const menuBrowserOpen = Boolean(browseSession);
+  const browseTrail = useMemo(() => {
+    if (!browseSession) return [];
+    return buildBrowseMenuTrail(
+      items,
+      browseSession.openIndex,
+      index,
+      restaurantRefFromDealItem
+    );
+  }, [browseSession, items, index]);
+  const browseTrailIndex = clampBrowseTrailIndex(
+    browseSession?.trailIndex ?? 0,
+    browseTrail.length
+  );
+  const browseRestaurantRef = browseTrail[browseTrailIndex] || null;
   const inviteVideoShareUrl = useMemo(
     () => feedDealShareUrl(item?.deal_id || item?.id),
     [item?.deal_id, item?.id]
@@ -67,8 +85,15 @@ export default function DealVideoSwipe({
   useEffect(() => {
     setVideoMuted(defaultFeedVideoMuted("feedHome"));
     setInviteOpen(false);
-    // Keep browseRestaurantRef locked across Feed index changes.
+    // Keep browseSession locked across Feed index changes.
   }, [index, item?.id]);
+
+  useEffect(() => {
+    if (!browseSession) return;
+    const clamped = clampBrowseTrailIndex(browseSession.trailIndex, browseTrail.length);
+    if (clamped === browseSession.trailIndex) return;
+    setBrowseSession((prev) => (prev ? { ...prev, trailIndex: clamped } : null));
+  }, [browseSession, browseTrail.length]);
 
   useEffect(() => {
     const prevOverflow = document.body.style.overflow;
@@ -121,7 +146,7 @@ export default function DealVideoSwipe({
     function onKey(e) {
       if (e.key === "Escape") {
         e.preventDefault();
-        if (menuBrowserOpen) setBrowseRestaurantRef(null);
+        if (menuBrowserOpen) setBrowseSession(null);
         return;
       }
       if (e.key === "ArrowDown" || e.key === "ArrowRight" || e.key === "j") {
@@ -191,7 +216,7 @@ export default function DealVideoSwipe({
     const ref = restaurantRefFromDealItem(item);
     if (!ref?.restaurant_id) return;
     recordFeedMenuOpen(ref);
-    setBrowseRestaurantRef({ ...ref });
+    setBrowseSession({ openIndex: index, trailIndex: 0 });
     const el = videoRef.current;
     if (el) {
       attemptFeedVideoAutoplay(el, { preferSound: true }).then(({ muted }) => {
@@ -203,14 +228,47 @@ export default function DealVideoSwipe({
   }
 
   function closeMenuBrowser() {
-    setBrowseRestaurantRef(null);
+    setBrowseSession(null);
+  }
+
+  function onBrowseTrailPrev() {
+    setBrowseSession((prev) => {
+      if (!prev) return null;
+      return { ...prev, trailIndex: Math.max(0, (prev.trailIndex || 0) - 1) };
+    });
+  }
+
+  function onBrowseTrailNext() {
+    setBrowseSession((prev) => {
+      if (!prev) return null;
+      const trail = buildBrowseMenuTrail(
+        items,
+        prev.openIndex,
+        index,
+        restaurantRefFromDealItem
+      );
+      const next = Math.min(Math.max(0, trail.length - 1), (prev.trailIndex || 0) + 1);
+      return { ...prev, trailIndex: next };
+    });
   }
 
   function switchBrowseToPlaying() {
     const ref = restaurantRefFromDealItem(item);
     if (!ref?.restaurant_id) return;
     recordFeedMenuOpen(ref);
-    setBrowseRestaurantRef({ ...ref });
+    setBrowseSession((prev) => {
+      if (!prev) return null;
+      const trail = buildBrowseMenuTrail(
+        items,
+        prev.openIndex,
+        index,
+        restaurantRefFromDealItem
+      );
+      const playingId = String(ref.restaurant_id);
+      let trailIdx = trail.findIndex((row) => String(row.restaurant_id) === playingId);
+      if (trailIdx < 0) trailIdx = Math.max(0, trail.length - 1);
+      return { ...prev, trailIndex: trailIdx };
+    });
   }
 
   function applyVideoSoundState(nextMuted) {
@@ -312,8 +370,12 @@ export default function DealVideoSwipe({
         <FeedMenuBrowserPipOverlay
           restaurantRef={browseRestaurantRef}
           playingRestaurantRef={restaurantRef}
+          trail={browseTrail}
+          trailIndex={browseTrailIndex}
           bottomInset={safeBottomInset}
           onClose={closeMenuBrowser}
+          onTrailPrev={onBrowseTrailPrev}
+          onTrailNext={onBrowseTrailNext}
           onSwitchBrowseToPlaying={switchBrowseToPlaying}
         />
       ) : null}
@@ -343,12 +405,74 @@ export default function DealVideoSwipe({
         controls={false}
         preload="auto"
         data-testid="feed-deals-video"
-        aria-label={menuBrowserOpen ? "Expand video — back to Feed" : undefined}
+        aria-label={menuBrowserOpen ? "Expand to Full Feed" : undefined}
         onClick={onVideoClick}
         onPointerUp={onVideoPointerUp}
         onTouchStart={onPipTouchStart}
         onTouchEnd={onPipTouchEnd}
       />
+
+      {menuBrowserOpen ? (
+        <div
+          style={{
+            ...styles.pipVideoNav,
+            bottom: `calc(${safeBottomInset}px + max(16px, env(safe-area-inset-bottom)) + ${
+              isDesktopViewport ? 372 : 264
+            }px)`,
+            right: "max(12px, env(safe-area-inset-right))",
+            width: isDesktopViewport ? 200 : 140,
+          }}
+          data-testid="feed-menu-browser-pip-video-nav"
+        >
+          <button
+            type="button"
+            style={{
+              ...styles.pipVideoNavBtn,
+              ...(index <= 0 ? styles.pipVideoNavBtnDisabled : null),
+            }}
+            disabled={index <= 0}
+            data-testid="feed-deals-pip-prev-video"
+            aria-label="Previous Feed video"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              goPrev();
+            }}
+          >
+            ▲ Prev video
+          </button>
+          <button
+            type="button"
+            style={{
+              ...styles.pipVideoNavBtn,
+              ...(index >= items.length - 1 ? styles.pipVideoNavBtnDisabled : null),
+            }}
+            disabled={index >= items.length - 1}
+            data-testid="feed-deals-pip-next-video"
+            aria-label="Next Feed video"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              goNext();
+            }}
+          >
+            ▼ Next video
+          </button>
+          <button
+            type="button"
+            style={styles.pipFullFeedBtn}
+            data-testid="feed-deals-pip-full-feed"
+            aria-label="Full Feed"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              closeMenuBrowser();
+            }}
+          >
+            Full Feed
+          </button>
+        </div>
+      ) : null}
 
       {showDesktopSoundLayer && !menuBrowserOpen ? (
         <button
@@ -382,7 +506,7 @@ export default function DealVideoSwipe({
             ...styles.soundToggle,
             ...styles.pipSoundToggle,
             bottom: `calc(${safeBottomInset}px + max(16px, env(safe-area-inset-bottom)) + ${
-              isDesktopViewport ? 372 : 264
+              isDesktopViewport ? 420 : 312
             }px)`,
           }}
           aria-label={videoMuted ? soundPromptLabel : "Mute video"}
@@ -583,6 +707,42 @@ const styles = {
     left: "auto",
     right: "max(12px, env(safe-area-inset-right))",
     zIndex: 31,
+  },
+  pipVideoNav: {
+    position: "absolute",
+    zIndex: 32,
+    display: "flex",
+    flexDirection: "column",
+    gap: 6,
+    pointerEvents: "auto",
+  },
+  pipVideoNavBtn: {
+    border: "1px solid rgba(255,255,255,0.4)",
+    borderRadius: 10,
+    padding: "7px 8px",
+    background: "rgba(0,0,0,0.72)",
+    color: "#fff",
+    fontSize: 11,
+    fontWeight: 800,
+    cursor: "pointer",
+    fontFamily: "inherit",
+    textAlign: "center",
+  },
+  pipVideoNavBtnDisabled: {
+    opacity: 0.35,
+    cursor: "default",
+  },
+  pipFullFeedBtn: {
+    border: "1px solid rgba(250, 204, 21, 0.65)",
+    borderRadius: 10,
+    padding: "7px 8px",
+    background: "rgba(234, 179, 8, 0.92)",
+    color: "#1a1a1a",
+    fontSize: 11,
+    fontWeight: 900,
+    cursor: "pointer",
+    fontFamily: "inherit",
+    textAlign: "center",
   },
   videoTapLayer: {
     position: "absolute",
