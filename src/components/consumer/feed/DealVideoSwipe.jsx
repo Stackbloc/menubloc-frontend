@@ -12,6 +12,7 @@ import InviteToEatModal from "../../InviteToEatModal.jsx";
 import BrowseMenusIcon from "../../icons/BrowseMenusIcon.jsx";
 import FeedMenuBrowserPipOverlay from "./FeedMenuBrowserPipOverlay.jsx";
 import { stripMediaUrlFragment } from "../../../lib/menuplyLiveFeedControl.js";
+import { OPEN_FEED_MENU_BROWSER_EVENT } from "../../../lib/feedMenuBrowserNav.js";
 import {
   recordFeedMenuOpen,
   restaurantRefFromDealItem,
@@ -248,6 +249,15 @@ export default function DealVideoSwipe({
       setVideoMuted(false);
     }
   }
+
+  useEffect(() => {
+    function onRequestOpen() {
+      openMenuBrowser();
+    }
+    window.addEventListener(OPEN_FEED_MENU_BROWSER_EVENT, onRequestOpen);
+    return () => window.removeEventListener(OPEN_FEED_MENU_BROWSER_EVENT, onRequestOpen);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- open against current clip
+  }, [index, item?.id, items.length]);
 
   function closeMenuBrowser() {
     setBrowseSession(null);

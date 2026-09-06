@@ -22,10 +22,12 @@ export const FEED_LEFT_TABS = [
   FEED_HOME_TAB,
   { to: "/feed/connects", end: false, label: "Connects", testId: "feed-nav-connects" },
   {
-    to: "/browse-menus",
-    end: false,
+    to: "/feed",
+    end: true,
     label: "Menu Browser",
     testId: "feed-nav-menus",
+    /** Open Feed PiP Menu Browser (same as yellow video icon) — not /browse-menus. */
+    openFeedMenuBrowser: true,
   },
 ];
 

@@ -16,11 +16,38 @@ import {
   FEED_SHELL_LOGIN_PATH,
   FEED_SHELL_SIGNUP_PATH,
 } from "../../../lib/feedShellLinks.js";
+import {
+  isFeedMenuBrowserVideoRoute,
+  requestOpenFeedMenuBrowser,
+} from "../../../lib/feedMenuBrowserNav.js";
 
 function RailTab({ tab }) {
   const location = useLocation();
   const navigate = useNavigate();
   const alsoActive = tab.alsoActiveOn?.includes(location.pathname);
+
+  if (tab.openFeedMenuBrowser) {
+    return (
+      <button
+        type="button"
+        data-testid={`${tab.testId}-desktop`}
+        aria-label="Menu Browser"
+        onClick={() => {
+          if (isFeedMenuBrowserVideoRoute(location.pathname)) {
+            requestOpenFeedMenuBrowser();
+            return;
+          }
+          navigate("/feed", { state: { openMenuBrowser: true } });
+        }}
+        style={{
+          ...styles.tab,
+          ...styles.tabButton,
+        }}
+      >
+        {tab.label}
+      </button>
+    );
+  }
 
   if (tab.resetSearch) {
     return (
@@ -218,6 +245,16 @@ const styles = {
     color: "rgba(255,255,255,0.78)",
     fontSize: 15,
     fontWeight: 650,
+  },
+  tabButton: {
+    border: "none",
+    background: "transparent",
+    cursor: "pointer",
+    appearance: "none",
+    WebkitAppearance: "none",
+    width: "100%",
+    textAlign: "left",
+    fontFamily: "inherit",
   },
   tabActive: {
     color: "#5eead4",

@@ -1,5 +1,6 @@
 /**
  * Feed shell layout — Home · Connects · Menu Browser | [X] | Deals · Search · Profile.
+ * Menu Browser opens Feed PiP (same as yellow video icon).
  * Mobile: bottom nav + top More header. Desktop: left rail + More panel.
  */
 

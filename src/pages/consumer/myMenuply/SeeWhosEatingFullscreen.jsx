@@ -6,7 +6,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import ShareButton from "../../../components/share/ShareButton.jsx";
 import InviteToEatModal from "../../../components/InviteToEatModal.jsx";
 import BrowseMenusIcon from "../../../components/icons/BrowseMenusIcon.jsx";
@@ -16,6 +16,7 @@ import {
   MENUPY_CLOSE_LIVE_FEED_FULLSCREEN,
   stripMediaUrlFragment,
 } from "../../../lib/menuplyLiveFeedControl.js";
+import { OPEN_FEED_MENU_BROWSER_EVENT } from "../../../lib/feedMenuBrowserNav.js";
 import { MY_MENUPLY_PROFILE_PATH } from "../../../lib/myMenuplyRoutes.js";
 import {
   liveFeedPosterDisplayName,
@@ -74,6 +75,7 @@ export default function SeeWhosEatingFullscreen({
   showSharedAccountInvite = false,
 }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const isDesktopViewport = useFeedShellDesktop();
   const [index, setIndex] = useState(startIndex);
   const [connectBusy, setConnectBusy] = useState(false);
@@ -345,6 +347,26 @@ export default function SeeWhosEatingFullscreen({
       setVideoMuted(false);
     }
   }
+
+  useEffect(() => {
+    if (variant !== "feedHome") return undefined;
+    function onRequestOpen() {
+      openMenuBrowser();
+    }
+    window.addEventListener(OPEN_FEED_MENU_BROWSER_EVENT, onRequestOpen);
+    return () => window.removeEventListener(OPEN_FEED_MENU_BROWSER_EVENT, onRequestOpen);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- open against current clip
+  }, [variant, index, item?.id, items.length]);
+
+  useEffect(() => {
+    if (variant !== "feedHome") return;
+    if (!location.state?.openMenuBrowser) return;
+    const ref = restaurantRefFromFeedItem(item);
+    if (!ref?.restaurant_id) return;
+    openMenuBrowser();
+    navigate(`${location.pathname}${location.search || ""}`, { replace: true, state: {} });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [variant, location.state?.openMenuBrowser, item?.id, index]);
 
   function closeMenuBrowser() {
     setBrowseSession(null);

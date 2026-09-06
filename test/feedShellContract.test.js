@@ -29,6 +29,7 @@ test("Feed shell: Home|Connects|Menu Browser|X|Deals|Shop|Profile + slim X sheet
   assert.match(nav, /feed-nav-create-x/);
   assert.match(nav, /FEED_LEFT_TABS/);
   assert.match(nav, /FEED_RIGHT_TABS/);
+  assert.match(nav, /openFeedMenuBrowser|requestOpenFeedMenuBrowser/);
   assert.doesNotMatch(nav, /feed-nav-me"/);
   assert.doesNotMatch(nav, /feed-nav-events/);
   assert.doesNotMatch(nav, /feed-nav-feed/);
@@ -39,13 +40,27 @@ test("Feed shell: Home|Connects|Menu Browser|X|Deals|Shop|Profile + slim X sheet
   assert.match(feedTabLinks, /feed-nav-connects/);
   assert.match(feedTabLinks, /feed-nav-menus/);
   assert.match(feedTabLinks, /label: "Menu Browser"/);
-  assert.match(feedTabLinks, /to: "\/browse-menus"/);
+  assert.match(feedTabLinks, /openFeedMenuBrowser:\s*true/);
   assert.doesNotMatch(feedTabLinks, /My Menu Stack/);
   assert.match(feedTabLinks, /feed-nav-deals/);
   assert.match(feedTabLinks, /feed-nav-shop/);
   assert.doesNotMatch(feedTabLinks, /label: "Search"/);
   assert.match(feedTabLinks, /feed-nav-profile/);
   assert.match(feedTabLinks, /\/browse-menus/);
+
+  const menuBrowserNav = read("src/lib/feedMenuBrowserNav.js");
+  assert.match(menuBrowserNav, /OPEN_FEED_MENU_BROWSER_EVENT/);
+  assert.match(menuBrowserNav, /requestOpenFeedMenuBrowser/);
+  assert.match(menuBrowserNav, /isFeedMenuBrowserVideoRoute/);
+
+  const homeReel = read("src/pages/consumer/myMenuply/SeeWhosEatingFullscreen.jsx");
+  assert.match(homeReel, /OPEN_FEED_MENU_BROWSER_EVENT/);
+  assert.match(homeReel, /openMenuBrowser/);
+  assert.match(homeReel, /openMenuBrowser:\s*true|state\?\.openMenuBrowser/);
+
+  const rail = read("src/components/consumer/feed/FeedDesktopRail.jsx");
+  assert.match(rail, /requestOpenFeedMenuBrowser/);
+  assert.match(rail, /openFeedMenuBrowser/);
 
   const shell = read("src/pages/consumer/feed/FeedShellPage.jsx");
   assert.match(shell, /FeedVideoCreateSheet/);
@@ -233,7 +248,7 @@ test("Feed as home: / uses Feed shell; FeedPrimaryNav paths unchanged", () => {
   assert.match(feedLinks, /to: "\/feed"/);
   assert.match(feedLinks, /to: "\/feed\/connects"/);
   assert.doesNotMatch(feedLinks, /to: "\/feed\/menus"/);
-  assert.match(feedLinks, /to: "\/browse-menus"/);
+  assert.match(feedLinks, /openFeedMenuBrowser:\s*true/);
   assert.match(feedLinks, /label: "Menu Browser"/);
   assert.match(feedLinks, /to: "\/feed\/deals"/);
   assert.match(feedLinks, /to: "\/feed\/search"/);

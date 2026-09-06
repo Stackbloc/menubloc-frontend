@@ -74,11 +74,23 @@ test("CatalogMenuRenderer wires useMenuItemHighlight for Feed PiP dish frame", (
   assert.match(catalog, /highlightMenuItemId/);
 });
 
-test("Feed nav Menu Browser tab opens Yellow Browse", () => {
+test("Feed nav Menu Browser tab uses openFeedMenuBrowser flag", () => {
   const links = read("src/lib/feedShellLinks.js");
   assert.match(links, /label: "Menu Browser"/);
-  assert.match(links, /to: "\/browse-menus"/);
+  assert.match(links, /openFeedMenuBrowser:\s*true/);
   assert.doesNotMatch(links, /My Menu Stack/);
+});
+
+test("Feed nav Menu Browser dispatches same PiP open as yellow video icon", () => {
+  const navHelper = read("src/lib/feedMenuBrowserNav.js");
+  assert.match(navHelper, /OPEN_FEED_MENU_BROWSER_EVENT/);
+  assert.match(navHelper, /requestOpenFeedMenuBrowser/);
+  const primary = read("src/components/consumer/feed/FeedPrimaryNav.jsx");
+  assert.match(primary, /requestOpenFeedMenuBrowser/);
+  const reel = read("src/pages/consumer/myMenuply/SeeWhosEatingFullscreen.jsx");
+  assert.match(reel, /OPEN_FEED_MENU_BROWSER_EVENT/);
+  const deals = read("src/components/consumer/feed/DealVideoSwipe.jsx");
+  assert.match(deals, /OPEN_FEED_MENU_BROWSER_EVENT/);
 });
 
 test("Deal reel mirrors PiP side arrows + mute + menu sync", () => {

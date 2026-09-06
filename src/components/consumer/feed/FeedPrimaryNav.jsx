@@ -1,12 +1,16 @@
 /**
  * TikTok-style feed shell nav: Home · Connects · Menu Browser | [X] | Deals · Search · Profile.
- * Menu Browser opens Yellow Browse (`/browse-menus`).
+ * Menu Browser opens Feed PiP (same as yellow video icon), not /browse-menus.
  * Mobile bottom bar only — desktop uses FeedDesktopRail from the same tab config.
  */
 
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import MenuplyXMark from "../../MenuplyXMark.jsx";
 import { FEED_LEFT_TABS, FEED_RIGHT_TABS } from "../../../lib/feedShellLinks.js";
+import {
+  isFeedMenuBrowserVideoRoute,
+  requestOpenFeedMenuBrowser,
+} from "../../../lib/feedMenuBrowserNav.js";
 
 export const FEED_PRIMARY_NAV_HEIGHT = 56;
 
@@ -14,6 +18,31 @@ function TabLink({ tab }) {
   const location = useLocation();
   const navigate = useNavigate();
   const alsoActive = tab.alsoActiveOn?.includes(location.pathname);
+
+  if (tab.openFeedMenuBrowser) {
+    return (
+      <button
+        type="button"
+        data-testid={tab.testId}
+        aria-label="Menu Browser"
+        onClick={() => {
+          if (isFeedMenuBrowserVideoRoute(location.pathname)) {
+            requestOpenFeedMenuBrowser();
+            return;
+          }
+          navigate("/feed", { state: { openMenuBrowser: true } });
+        }}
+        style={{
+          ...styles.tab,
+          ...styles.tabButton,
+          color: "rgba(255,255,255,0.72)",
+          fontWeight: 600,
+        }}
+      >
+        {tab.label}
+      </button>
+    );
+  }
 
   if (tab.resetSearch) {
     return (
@@ -130,6 +159,16 @@ const styles = {
     textAlign: "center",
     lineHeight: 1.1,
     padding: "0 2px",
+  },
+  tabButton: {
+    border: "none",
+    background: "transparent",
+    cursor: "pointer",
+    appearance: "none",
+    WebkitAppearance: "none",
+    color: "inherit",
+    fontFamily: "inherit",
+    width: "100%",
   },
   createBtn: {
     flex: "0 0 auto",
