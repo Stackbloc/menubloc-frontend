@@ -10,7 +10,7 @@
 set -euo pipefail
 
 HOST="${1:-https://menuply.com}"
-# Locked tip 2026-09-07: menubloc-frontend-akxwus4wb-menuply.vercel.app / index-BNNaOgba.js (FE 1a720d20;BE 4a1610b6;Multiplier rename + persistent top menu highlight)
+# Locked tip 2026-09-07: menubloc-frontend-akxwus4wb-menuply.vercel.app / index-BNNaOgba.js (FE 1a720d20;BE 4a1610b6;lock live tip after STALE_LOCK; includes owner upload clearer-photo UX)
 LOCKED_BUNDLE="index-BNNaOgba.js"
 LOCKED_DEPLOY="menubloc-frontend-akxwus4wb-menuply.vercel.app"
 
