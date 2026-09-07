@@ -21,10 +21,13 @@ test("RestaurantSignupEntry is invitation + Sign Up using FREE_PLAN_CODE", () =>
   assert.match(src, /FREE_PLAN_CODE/);
   assert.match(src, /proceedWithPlanCode\(FREE_PLAN_CODE\)/);
   assert.match(src, /Your Menu\. More Ways to Be Discovered\./);
-  assert.match(src, /12% commission\. No subscription fee\./);
+  assert.match(src, /Create and manage your free account\. No subscription fee\./);
   assert.match(src, /Put your menu where the conversation about food is happening\./);
   assert.match(src, /Claim your free profile\. Upload and manage your menu\. Join the community\./);
   assert.match(src, /"Sign Up"/);
+  assert.match(src, /to="\/terms"/);
+  assert.match(src, /Terms of Use/);
+  assert.doesNotMatch(src, /12%\s*commission/i);
   assert.doesNotMatch(src, /PlanComparisonTable/);
   assert.doesNotMatch(src, /SIGNUP_PLAN_OPTIONS/);
   assert.doesNotMatch(src, /Select Standard/);
@@ -62,5 +65,10 @@ test("English i18n free-plan customer labels say Menuply not Standard", () => {
   assert.match(src, /"signup\.account\.plan\.standard":\s*"Menuply"/);
   assert.match(src, /"signup\.account\.plan\.published_free":\s*"Menuply"/);
   assert.match(src, /"signup\.entry\.invite\.cta":\s*"Sign Up"/);
-  assert.match(src, /"signup\.entry\.invite\.economics":\s*"12% commission\. No subscription fee\."/);
+  assert.match(
+    src,
+    /"signup\.entry\.invite\.economics":\s*"Create and manage your free account\. No subscription fee\."/
+  );
+  assert.match(src, /"signup\.entry\.invite\.termsLink":\s*"Terms of Use"/);
+  assert.doesNotMatch(src, /"signup\.entry\.invite\.economics":\s*"12% commission/);
 });

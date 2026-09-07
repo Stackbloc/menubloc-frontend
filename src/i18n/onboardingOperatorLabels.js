@@ -164,7 +164,8 @@ export const ONBOARDING_OPERATOR_LABELS = {
     "signup.entry.alreadyAccount": "Already have a Menuply account?",
     "signup.entry.signIn": "Restaurant sign in",
     "signup.entry.invite.headline": "Your Menu. More Ways to Be Discovered.",
-    "signup.entry.invite.economics": "12% commission. No subscription fee.",
+    "signup.entry.invite.economics":
+      "Create and manage your free account. No subscription fee.",
     "signup.entry.invite.body":
       "Menuply connects your restaurant menu to a social food experience where people discover what to eat, see what others are eating, make plans, discover events, and find restaurants.",
     "signup.entry.invite.differentiator":
@@ -172,6 +173,8 @@ export const ONBOARDING_OPERATOR_LABELS = {
     "signup.entry.invite.steps":
       "Claim your free profile. Upload and manage your menu. Join the community.",
     "signup.entry.invite.cta": "Sign Up",
+    "signup.entry.invite.termsPrefix": "By continuing, you agree to the",
+    "signup.entry.invite.termsLink": "Terms of Use",
     "signup.entry.plan.published.name": "Menuply",
     "signup.entry.plan.published.price": "Free",
     "signup.entry.plan.published.description":
@@ -499,7 +502,8 @@ export const ONBOARDING_OPERATOR_LABELS = {
     "signup.entry.alreadyAccount": "¿Ya tienes cuenta en Menuply?",
     "signup.entry.signIn": "Inicio de sesión para restaurantes",
     "signup.entry.invite.headline": "Tu menú. Más formas de ser descubierto.",
-    "signup.entry.invite.economics": "12% de comisión. Sin cuota de suscripción.",
+    "signup.entry.invite.economics":
+      "Crea y gestiona tu cuenta gratis. Sin cuota de suscripción.",
     "signup.entry.invite.body":
       "Menuply conecta el menú de tu restaurante con una experiencia social de comida donde la gente descubre qué comer, ve lo que otros están comiendo, hace planes, descubre eventos y encuentra restaurantes.",
     "signup.entry.invite.differentiator":
@@ -507,6 +511,8 @@ export const ONBOARDING_OPERATOR_LABELS = {
     "signup.entry.invite.steps":
       "Reclama tu perfil gratis. Sube y gestiona tu menú. Únete a la comunidad.",
     "signup.entry.invite.cta": "Registrarse",
+    "signup.entry.invite.termsPrefix": "Al continuar, aceptas los",
+    "signup.entry.invite.termsLink": "Términos de uso",
     "signup.entry.plan.verified.name": "Menuply",
     "signup.entry.plan.verified.price": "Gratis",
     "signup.entry.plan.published.name": "Menuply",
@@ -825,12 +831,14 @@ export const ONBOARDING_OPERATOR_LABELS = {
     "signup.entry.alreadyAccount": "已有 Menuply 账户？",
     "signup.entry.signIn": "餐厅登录",
     "signup.entry.invite.headline": "你的菜单。更多被发现的方式。",
-    "signup.entry.invite.economics": "12% 佣金。无订阅费。",
+    "signup.entry.invite.economics": "创建并管理免费账户。无订阅费。",
     "signup.entry.invite.body":
       "Menuply 将餐厅菜单连接到社交美食体验，人们在这里发现吃什么、看到他人在吃什么、制定计划、发现活动并找到餐厅。",
     "signup.entry.invite.differentiator": "把你的菜单放在美食对话正在发生的地方。",
     "signup.entry.invite.steps": "领取免费资料。上传并管理菜单。加入社区。",
     "signup.entry.invite.cta": "注册",
+    "signup.entry.invite.termsPrefix": "继续即表示你同意",
+    "signup.entry.invite.termsLink": "使用条款",
     "signup.entry.plan.verified.name": "Menuply",
     "signup.entry.plan.verified.price": "免费",
     "signup.entry.plan.published.name": "Menuply",

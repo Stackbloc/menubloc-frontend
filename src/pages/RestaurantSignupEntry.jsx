@@ -4,9 +4,12 @@
  * File: RestaurantSignupEntry.jsx
  * Date: 2026-09-07
  * Purpose:
- *   Restaurant signup invitation — product opportunity + economics
- *   + Sign Up. Internal plan code remains FREE_PLAN_CODE (published_free);
- *   never show "Standard" as customer-facing copy.
+ *   Restaurant signup invitation — product opportunity + free account
+ *   messaging + Sign Up. Internal plan code remains FREE_PLAN_CODE
+ *   (published_free); never show "Standard" as customer-facing copy.
+ *   Free account + no subscription fee only — marketplace commission applies
+ *   later when the restaurant enables a merchant account / online ordering,
+ *   so do not list commission rates on this invitation surface.
  * ============================================================
  */
 
@@ -100,7 +103,7 @@ const styles = {
     fontWeight: 700,
     lineHeight: 1.55,
     color: "#1F4E3D",
-    margin: "0 0 28px",
+    margin: "0 0 20px",
   },
   signUpButton: {
     display: "inline-flex",
@@ -120,6 +123,17 @@ const styles = {
     cursor: "pointer",
     fontFamily: "inherit",
     boxShadow: "0 12px 28px rgba(31, 78, 61, 0.28)",
+  },
+  termsRow: {
+    marginTop: 16,
+    fontSize: 13,
+    lineHeight: 1.5,
+    color: "#667085",
+  },
+  termsLink: {
+    color: "#1F4E3D",
+    fontWeight: 700,
+    textDecoration: "underline",
   },
   cadenceShell: {
     maxWidth: 560,
@@ -454,7 +468,7 @@ export default function RestaurantSignupEntry() {
           <p style={styles.economics}>
             {t(
               "signup.entry.invite.economics",
-              "12% commission. No subscription fee."
+              "Create and manage your free account. No subscription fee."
             )}
           </p>
           <p style={styles.body}>
@@ -478,6 +492,13 @@ export default function RestaurantSignupEntry() {
           <button type="button" style={styles.signUpButton} onClick={handleSignUp}>
             {t("signup.entry.invite.cta", "Sign Up")}
           </button>
+          <p style={styles.termsRow}>
+            {t("signup.entry.invite.termsPrefix", "By continuing, you agree to the")}{" "}
+            <Link to="/terms" target="_blank" rel="noreferrer" style={styles.termsLink}>
+              {t("signup.entry.invite.termsLink", "Terms of Use")}
+            </Link>
+            .
+          </p>
         </section>
       </div>
     </div>
