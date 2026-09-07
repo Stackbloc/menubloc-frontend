@@ -24,10 +24,10 @@ export const FEED_LEFT_TABS = [
   {
     to: "/feed",
     end: true,
-    label: "Menu Browser",
-    testId: "feed-nav-menus",
-    /** Open Feed PiP Menu Browser (same as yellow video icon) — not /browse-menus. */
-    openFeedMenuBrowser: true,
+    label: "Share QR",
+    testId: "feed-nav-share-qr",
+    /** Opens diner QR share sheet (FeedShareMyMenuplySheet). */
+    openShareQr: true,
   },
 ];
 

@@ -1,37 +1,27 @@
 /**
- * TikTok-style feed shell nav: Home · Waiter · Menu Browser | [X] | Deals · Search · Profile.
- * Menu Browser opens Feed PiP (same as yellow video icon), not /browse-menus.
+ * TikTok-style feed shell nav: Home · Waiter · Share QR | [X] | Deals · Search · Profile.
+ * Share QR opens the diner QR share sheet. Menu Browser lives on the video rail/dock.
  * Mobile bottom bar only — desktop uses FeedDesktopRail from the same tab config.
  */
 
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import MenuplyXMark from "../../MenuplyXMark.jsx";
 import { FEED_LEFT_TABS, FEED_RIGHT_TABS } from "../../../lib/feedShellLinks.js";
-import {
-  isFeedMenuBrowserVideoRoute,
-  requestOpenFeedMenuBrowser,
-} from "../../../lib/feedMenuBrowserNav.js";
 
 export const FEED_PRIMARY_NAV_HEIGHT = 56;
 
-function TabLink({ tab }) {
+function TabLink({ tab, onShareQr }) {
   const location = useLocation();
   const navigate = useNavigate();
   const alsoActive = tab.alsoActiveOn?.includes(location.pathname);
 
-  if (tab.openFeedMenuBrowser) {
+  if (tab.openShareQr) {
     return (
       <button
         type="button"
         data-testid={tab.testId}
-        aria-label="Menu Browser"
-        onClick={() => {
-          if (isFeedMenuBrowserVideoRoute(location.pathname)) {
-            requestOpenFeedMenuBrowser();
-            return;
-          }
-          navigate("/feed", { state: { openMenuBrowser: true } });
-        }}
+        aria-label="Share QR"
+        onClick={() => onShareQr?.()}
         style={{
           ...styles.tab,
           ...styles.tabButton,
@@ -87,7 +77,11 @@ function TabLink({ tab }) {
   );
 }
 
-export default function FeedPrimaryNav({ onCreateClick, createActive = false }) {
+export default function FeedPrimaryNav({
+  onCreateClick,
+  createActive = false,
+  onShareQr,
+}) {
   return (
     <nav
       style={styles.nav}
@@ -97,7 +91,7 @@ export default function FeedPrimaryNav({ onCreateClick, createActive = false }) 
     >
       <div style={styles.side}>
         {FEED_LEFT_TABS.map((tab) => (
-          <TabLink key={tab.to} tab={tab} />
+          <TabLink key={tab.testId} tab={tab} onShareQr={onShareQr} />
         ))}
       </div>
       <button
@@ -113,7 +107,7 @@ export default function FeedPrimaryNav({ onCreateClick, createActive = false }) 
       </button>
       <div style={styles.side}>
         {FEED_RIGHT_TABS.map((tab) => (
-          <TabLink key={tab.to} tab={tab} />
+          <TabLink key={tab.testId} tab={tab} onShareQr={onShareQr} />
         ))}
       </div>
     </nav>

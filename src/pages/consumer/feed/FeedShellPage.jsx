@@ -1,6 +1,6 @@
 /**
- * Feed shell layout — Home · Connects · Menu Browser | [X] | Deals · Search · Profile.
- * Menu Browser opens Feed PiP (same as yellow video icon).
+ * Feed shell layout — Home · Waiter · Share QR | [X] | Deals · Search · Profile.
+ * Share QR opens diner QR sheet. Menu Browser is on the video rail/dock.
  * Mobile: bottom nav + top More header. Desktop: left rail + More panel.
  */
 
@@ -147,7 +147,15 @@ export default function FeedShellPage({ children = null }) {
       </div>
 
       {!isDesktop ? (
-        <FeedPrimaryNav onCreateClick={openCreateSheet} createActive={createActive} />
+        <FeedPrimaryNav
+          onCreateClick={openCreateSheet}
+          createActive={createActive}
+          onShareQr={() =>
+            handleShareMyMenuply({
+              guestTo: "/account/signup?next=%2Ffeed",
+            })
+          }
+        />
       ) : null}
 
       <FeedMorePanel

@@ -29,11 +29,8 @@ import {
 import FeedPlaceCaption from "../../../components/consumer/feed/FeedPlaceCaption.jsx";
 import { FEED_EMPTY_FIRST_VISIT_PROMPT_COPY } from "../../../lib/feedEmptyFirstVisitPrompt.js";
 import {
-  FEED_MENU_LIBRARY_CHANGED,
-  isFeedMenuBookmarked,
   recordFeedMenuOpen,
   restaurantRefFromFeedItem,
-  toggleFeedMenuBookmark,
 } from "../../../lib/feedMenuLibrary.js";
 import {
   buildBrowseMenuTrail,
@@ -84,8 +81,6 @@ export default function SeeWhosEatingFullscreen({
   const [connectError, setConnectError] = useState("");
   const [removeBusy, setRemoveBusy] = useState(false);
   const [removeError, setRemoveError] = useState("");
-  const [menuBookmarked, setMenuBookmarked] = useState(false);
-  const [menuBookmarkToast, setMenuBookmarkToast] = useState("");
   const [videoMuted, setVideoMuted] = useState(() => defaultFeedVideoMuted(variant));
   const [inviteOpen, setInviteOpen] = useState(false);
   /** Menu Browser session: open Feed index + which discussed-menu trail slot is showing. */
@@ -110,7 +105,6 @@ export default function SeeWhosEatingFullscreen({
     setConnectNotice("");
     setConnectError("");
     setRemoveError("");
-    setMenuBookmarkToast("");
     setVideoMuted(defaultFeedVideoMuted(variant));
     setInviteOpen(false);
     // Do not clear browseSession — Browse trail stays independent of Feed navigation.
@@ -167,25 +161,6 @@ export default function SeeWhosEatingFullscreen({
       ? item.menu_item_id
       : null;
   const inviteMenuItemName = String(item?.item_name || item?.food_name || "").trim() || null;
-
-  useEffect(() => {
-    if (!restaurantRef?.restaurant_id) {
-      setMenuBookmarked(false);
-      return undefined;
-    }
-    function syncBookmark() {
-      setMenuBookmarked(isFeedMenuBookmarked(restaurantRef.restaurant_id));
-    }
-    syncBookmark();
-    window.addEventListener(FEED_MENU_LIBRARY_CHANGED, syncBookmark);
-    return () => window.removeEventListener(FEED_MENU_LIBRARY_CHANGED, syncBookmark);
-  }, [restaurantRef?.restaurant_id]);
-
-  useEffect(() => {
-    if (!menuBookmarkToast) return undefined;
-    const t = window.setTimeout(() => setMenuBookmarkToast(""), 2200);
-    return () => window.clearTimeout(t);
-  }, [menuBookmarkToast]);
 
   useEffect(() => {
     if (!item && items.length === 0) {
@@ -516,15 +491,6 @@ export default function SeeWhosEatingFullscreen({
     if (ref) recordFeedMenuOpen(ref);
   }
 
-  function onToggleMenuBookmark(event) {
-    event?.stopPropagation?.();
-    const ref = restaurantRefFromFeedItem(item);
-    if (!ref) return;
-    const saved = toggleFeedMenuBookmark(ref);
-    setMenuBookmarked(saved);
-    setMenuBookmarkToast(saved ? "Saved to Menus" : "Removed from saved");
-  }
-
   async function onRemoveFromPublicFeed(e) {
     e?.preventDefault?.();
     e?.stopPropagation?.();
@@ -667,26 +633,11 @@ export default function SeeWhosEatingFullscreen({
         </>
       ) : null}
 
-      {restaurantRef && isFeedHome && !menuBrowserOpen ? (
-        <button
-          type="button"
-          style={styles.bookmarkBtn}
-          aria-label={menuBookmarked ? "Remove menu bookmark" : "Save restaurant menu"}
-          aria-pressed={menuBookmarked}
-          data-testid="see-whos-eating-menu-bookmark"
-          onClick={onToggleMenuBookmark}
-        >
-          {menuBookmarked ? "★ Saved" : "☆ Save menu"}
-        </button>
-      ) : null}
-
       {item && isFeedHome && !useMobileActionRail && feedShareData && !menuBrowserOpen ? (
         <div
           style={{
             ...styles.shareBtnWrap,
-            top: restaurantRef
-              ? "calc(max(16px, env(safe-area-inset-top)) + 48px)"
-              : "max(16px, env(safe-area-inset-top))",
+            top: "max(16px, env(safe-area-inset-top))",
           }}
           data-testid="see-whos-eating-share-wrap"
         >
@@ -712,12 +663,6 @@ export default function SeeWhosEatingFullscreen({
             testId="feed-shared-clip-account-invite"
           />
         </div>
-      ) : null}
-
-      {menuBookmarkToast && isFeedHome && !menuBrowserOpen ? (
-        <p style={styles.bookmarkToast} role="status" data-testid="see-whos-eating-menu-bookmark-toast">
-          {menuBookmarkToast}
-        </p>
       ) : null}
 
       {menuBrowserOpen && browseRestaurantRef ? (
@@ -1033,20 +978,6 @@ const styles = {
     letterSpacing: "0.02em",
     cursor: "pointer",
   },
-  bookmarkBtn: {
-    position: "absolute",
-    top: "max(16px, env(safe-area-inset-top))",
-    right: "max(12px, env(safe-area-inset-right))",
-    zIndex: 3,
-    border: "1px solid rgba(255,255,255,0.35)",
-    borderRadius: 999,
-    padding: "8px 12px",
-    background: "rgba(0,0,0,0.55)",
-    color: "#fde68a",
-    fontSize: 12,
-    fontWeight: 800,
-    cursor: "pointer",
-  },
   shareBtnWrap: {
     position: "absolute",
     right: "max(8px, env(safe-area-inset-right))",
@@ -1094,19 +1025,6 @@ const styles = {
     top: "max(12px, env(safe-area-inset-top))",
     zIndex: 4,
     pointerEvents: "auto",
-  },
-  bookmarkToast: {
-    position: "absolute",
-    top: "calc(max(16px, env(safe-area-inset-top)) + 44px)",
-    right: "max(12px, env(safe-area-inset-right))",
-    zIndex: 4,
-    margin: 0,
-    padding: "6px 10px",
-    borderRadius: 999,
-    background: "rgba(16, 40, 32, 0.92)",
-    color: "#5eead4",
-    fontSize: 12,
-    fontWeight: 700,
   },
   video: {
     position: "absolute",

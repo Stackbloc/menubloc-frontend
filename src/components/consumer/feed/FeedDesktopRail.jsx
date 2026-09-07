@@ -16,29 +16,19 @@ import {
   FEED_SHELL_LOGIN_PATH,
   FEED_SHELL_SIGNUP_PATH,
 } from "../../../lib/feedShellLinks.js";
-import {
-  isFeedMenuBrowserVideoRoute,
-  requestOpenFeedMenuBrowser,
-} from "../../../lib/feedMenuBrowserNav.js";
 
-function RailTab({ tab }) {
+function RailTab({ tab, onShareQr }) {
   const location = useLocation();
   const navigate = useNavigate();
   const alsoActive = tab.alsoActiveOn?.includes(location.pathname);
 
-  if (tab.openFeedMenuBrowser) {
+  if (tab.openShareQr) {
     return (
       <button
         type="button"
         data-testid={`${tab.testId}-desktop`}
-        aria-label="Menu Browser"
-        onClick={() => {
-          if (isFeedMenuBrowserVideoRoute(location.pathname)) {
-            requestOpenFeedMenuBrowser();
-            return;
-          }
-          navigate("/feed", { state: { openMenuBrowser: true } });
-        }}
+        aria-label="Share QR"
+        onClick={() => onShareQr?.()}
         style={{
           ...styles.tab,
           ...styles.tabButton,
@@ -107,16 +97,7 @@ export default function FeedDesktopRail({
       </div>
 
       <nav style={styles.tabs} aria-label="Primary">
-        <RailTab tab={FEED_HOME_TAB} />
-
-        <button
-          type="button"
-          style={styles.shareBtn}
-          data-testid="feed-desktop-share-my-menuply"
-          onClick={() => onShareMyMenuply?.()}
-        >
-          Share My Menuply
-        </button>
+        <RailTab tab={FEED_HOME_TAB} onShareQr={onShareMyMenuply} />
 
         <Link
           to={FEED_MENU_CAPTURE_PATH}
@@ -130,7 +111,7 @@ export default function FeedDesktopRail({
         </Link>
 
         {FEED_RAIL_TABS_AFTER_HOME.map((tab) => (
-          <RailTab key={tab.to} tab={tab} />
+          <RailTab key={tab.testId} tab={tab} onShareQr={onShareMyMenuply} />
         ))}
       </nav>
 

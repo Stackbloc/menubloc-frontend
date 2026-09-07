@@ -74,19 +74,21 @@ test("CatalogMenuRenderer wires useMenuItemHighlight for Feed PiP dish frame", (
   assert.match(catalog, /highlightMenuItemId/);
 });
 
-test("Feed nav Menu Browser tab uses openFeedMenuBrowser flag", () => {
+test("Menu Browser lives on video rail/dock — not primary Feed nav tab", () => {
   const links = read("src/lib/feedShellLinks.js");
-  assert.match(links, /label: "Menu Browser"/);
-  assert.match(links, /openFeedMenuBrowser:\s*true/);
-  assert.doesNotMatch(links, /My Menu Stack/);
+  assert.doesNotMatch(links, /label: "Menu Browser"/);
+  assert.doesNotMatch(links, /openFeedMenuBrowser/);
+  assert.match(links, /label: "Share QR"/);
+  assert.match(links, /openShareQr:\s*true/);
+  const rail = read("src/components/consumer/feed/FeedVideoActionRail.jsx");
+  assert.match(rail, /label="Menu Browser"/);
+  assert.doesNotMatch(rail, /My Menu Stack/);
 });
 
-test("Feed nav Menu Browser dispatches same PiP open as yellow video icon", () => {
+test("Feed Menu Browser open helper still used by reel + deals PiP", () => {
   const navHelper = read("src/lib/feedMenuBrowserNav.js");
   assert.match(navHelper, /OPEN_FEED_MENU_BROWSER_EVENT/);
   assert.match(navHelper, /requestOpenFeedMenuBrowser/);
-  const primary = read("src/components/consumer/feed/FeedPrimaryNav.jsx");
-  assert.match(primary, /requestOpenFeedMenuBrowser/);
   const reel = read("src/pages/consumer/myMenuply/SeeWhosEatingFullscreen.jsx");
   assert.match(reel, /OPEN_FEED_MENU_BROWSER_EVENT/);
   const deals = read("src/components/consumer/feed/DealVideoSwipe.jsx");

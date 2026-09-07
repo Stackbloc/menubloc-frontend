@@ -94,9 +94,12 @@ test("BrowseMenus wires search, personal sections, and Save Menu library", () =>
   assert.match(classic, /restaurantId=\{currentRestaurantId\}/);
 });
 
-test("Feed Save menu still uses feedMenuLibrary (no duplicate store)", () => {
+test("Feed Menus bookmark still uses feedMenuLibrary (no duplicate store)", () => {
+  const page = read("src/pages/consumer/feed/FeedMenusPage.jsx");
   const reel = read("src/pages/consumer/myMenuply/SeeWhosEatingFullscreen.jsx");
-  assert.match(reel, /toggleFeedMenuBookmark/);
-  assert.match(reel, /Save menu/);
-  assert.doesNotMatch(reel, /saved_menus/);
+  assert.match(page, /toggleFeedMenuBookmark/);
+  assert.match(page, /Save menu/);
+  assert.doesNotMatch(reel, /see-whos-eating-menu-bookmark/);
+  assert.doesNotMatch(reel, /toggleFeedMenuBookmark/);
+  assert.doesNotMatch(page, /saved_menus/);
 });

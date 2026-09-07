@@ -1,5 +1,5 @@
 /**
- * Live Feed mobile right action rail — Connect · Wanna go · Share · Invite · Like · Menu.
+ * Live Feed mobile right action rail — Connect · Wanna Go · Share · Invite · Like · Menu Browser.
  * Desktop Feed keeps the prior Share & Invite + Menu Browser dock (not this rail).
  * Hide (do not gray-out) actions that do not apply.
  */
@@ -57,16 +57,21 @@ function ConnectGlyph({ size = 22 }) {
   );
 }
 
+/** Plate + utensils — same food affordance as My Menuply Wanna Eat (not a map pin). */
 function WannaGoGlyph({ size = 22 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="12" cy="13" r="6.5" stroke="#fff" strokeWidth="2" />
+      <circle cx="12" cy="13" r="2.2" stroke="#fff" strokeWidth="1.6" />
+      <path d="M4.5 4.5v7.5" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
+      <path d="M4.5 6.2h2.2M4.5 8.4h2.2" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" />
+      <path d="M19.5 4.5v8.2" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
       <path
-        d="M12 21s-6.5-5.2-6.5-10.2A6.5 6.5 0 0 1 12 4.3a6.5 6.5 0 0 1 6.5 6.5C18.5 15.8 12 21 12 21z"
+        d="M19.5 4.5c1.4 0 2.2 1.1 2.2 2.4S20.9 9.3 19.5 9.3"
         stroke="#fff"
-        strokeWidth="2"
-        strokeLinejoin="round"
+        strokeWidth="1.6"
+        strokeLinecap="round"
       />
-      <circle cx="12" cy="10.8" r="2.2" stroke="#fff" strokeWidth="2" />
     </svg>
   );
 }
@@ -186,8 +191,8 @@ export default function FeedVideoActionRail({
         {showWannaGo ? (
           <RailButton
             testId="feed-rail-wanna-go"
-            label={wannaDone ? "Saved" : "Wanna go"}
-            ariaLabel="Add restaurant to Wanna go"
+            label={wannaDone ? "Saved" : "Wanna Go"}
+            ariaLabel="Add restaurant to Wanna Go"
             disabled={wannaBusy || wannaDone}
             onClick={onWannaGoClick}
           >
@@ -237,7 +242,7 @@ export default function FeedVideoActionRail({
         {showMenu ? (
           <RailButton
             testId="feed-rail-menu"
-            label="Menu"
+            label="Menu Browser"
             ariaLabel="Menu Browser"
             onClick={onMenu}
           >

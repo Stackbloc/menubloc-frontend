@@ -200,14 +200,20 @@ test("sample stack provides real starter menus when library is empty", () => {
   assert.ok(deck.every((row) => row.tier === "sample" && row.restaurant_id && row.slug));
 });
 
-test("Feed nav Menu Browser opens Feed PiP; legacy /feed/menus kept for deep links", () => {
+test("Feed nav Share QR; Menu Browser on video rail; legacy /feed/menus kept for deep links", () => {
   const navLinks = read("src/lib/feedShellLinks.js");
-  assert.match(navLinks, /feed-nav-menus/);
-  assert.match(navLinks, /label: "Menu Browser"/);
-  assert.match(navLinks, /openFeedMenuBrowser:\s*true/);
+  assert.match(navLinks, /feed-nav-share-qr/);
+  assert.match(navLinks, /label: "Share QR"/);
+  assert.match(navLinks, /openShareQr:\s*true/);
+  assert.doesNotMatch(navLinks, /feed-nav-menus/);
+  assert.doesNotMatch(navLinks, /openFeedMenuBrowser/);
   assert.doesNotMatch(navLinks, /My Menu Stack/);
   assert.doesNotMatch(navLinks, /feed-nav-eating/);
   assert.match(navLinks, /\/browse-menus/);
+
+  const rail = read("src/components/consumer/feed/FeedVideoActionRail.jsx");
+  assert.match(rail, /label="Menu Browser"/);
+  assert.match(rail, /feed-rail-menu/);
 
   const app = read("src/App.jsx");
   assert.match(app, /FeedMenusPage/);
@@ -226,7 +232,7 @@ test("Feed nav Menu Browser opens Feed PiP; legacy /feed/menus kept for deep lin
   assert.match(page, /buildFeedMenuSampleDeck/);
 
   const reel = read("src/pages/consumer/myMenuply/SeeWhosEatingFullscreen.jsx");
-  assert.match(reel, /see-whos-eating-menu-bookmark/);
+  assert.doesNotMatch(reel, /see-whos-eating-menu-bookmark/);
   assert.match(reel, /recordFeedMenuOpen/);
   assert.match(reel, /FeedVideoActionRail/);
   assert.match(reel, /browseSession/);
