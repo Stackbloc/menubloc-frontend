@@ -58,7 +58,7 @@ export function routeForFoodTruckOnboardingStage(stage) {
     case "email_verified":
       return "/operator/verify-email";
     case "basic_information_complete":
-      return "/foodtruck/signup";
+      return "/restaurant/signup?kind=food_truck";
     case "menu_uploaded":
       return "/restaurant/pdf-upload?food_truck_onboarding=1";
     case "subscription_active":

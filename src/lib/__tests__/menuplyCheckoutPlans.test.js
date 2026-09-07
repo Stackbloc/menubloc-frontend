@@ -243,14 +243,11 @@ describe("source contracts for active selectors", () => {
     expect(file).not.toMatch(/Plan confirmed/);
   });
 
-  it("FoodTruckSignup wires SD food_truck chart and remembers food_truck_annual", async () => {
-    const file = await readSource("../../pages/FoodTruckSignup.jsx");
+  it("Food truck annual plan is remembered from unified RestaurantSignup path", async () => {
+    const file = await readSource("../../pages/RestaurantSignup.jsx");
     expect(file).toMatch(/rememberIntendedCheckoutPlanCode\(FOOD_TRUCK_ANNUAL_PLAN_CODE\)/);
-    expect(file).toMatch(/PlanComparisonTable/);
-    expect(file).toMatch(/audience=["']food_truck["']/);
-    expect(file).toMatch(/subscription-comparison\?audience=food_truck/);
-    expect(file).toMatch(/API_BASE/);
-    expect(file).not.toMatch(/PLAN_FEATURES/);
+    expect(file).toMatch(/payload\.category\s*=\s*"food_truck"/);
+    expect(file).toMatch(/FOOD_TRUCK_ANNUAL_PLAN_CODE/);
     expect(file).not.toMatch(/\$39\/year/);
   });
 });

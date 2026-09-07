@@ -169,11 +169,11 @@ export default function FoodTrucksPage() {
               Own a food truck?
             </div>
             <div style={{ color: "var(--gb-color-ink-muted)", fontSize: 14, lineHeight: 1.6 }}>
-              Sign up for $89/year. Professional profile, full menu, Window QR Code included, online ordering, social sharing, and Lowest marketplace commission.
+              Create your free Menuply account, publish your menu, and get discovered with the same business signup as restaurants.
             </div>
             <div>
               <Link
-                to="/foodtruck/signup"
+                to="/restaurant/signup?kind=food_truck"
                 style={{
                   display: "inline-flex",
                   alignItems: "center",

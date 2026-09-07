@@ -12,6 +12,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { Link } from "react-router-dom";
 import { BrandLogo } from "../components/BrandLogo.jsx";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
@@ -72,6 +73,19 @@ const styles = {
     maxWidth: 500,
     margin: "12px auto 0",
     lineHeight: 1.6,
+  },
+  heroCta: {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 22,
+    padding: "14px 22px",
+    borderRadius: 12,
+    background: "#6EE7B7",
+    color: "#0B0F0C",
+    fontWeight: 800,
+    fontSize: 15,
+    textDecoration: "none",
   },
   shell: {
     maxWidth: 1040,
@@ -684,6 +698,9 @@ export default function FranchisesPage() {
         <p style={styles.heroNote}>
           Franchise location and pricing information is handled by market and shown to diners only when relevant to their selected location.
         </p>
+        <Link to="/restaurant/signup?kind=franchise" style={styles.heroCta}>
+          Create account / request franchise review
+        </Link>
       </div>
 
       <div style={styles.shell}>

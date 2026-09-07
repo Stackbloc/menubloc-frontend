@@ -4,24 +4,38 @@
  * File: RestaurantSignupEntry.jsx
  * Date: 2026-09-07
  * Purpose:
- *   Restaurant signup invitation — product opportunity + free account
- *   messaging + Sign Up. Internal plan code remains FREE_PLAN_CODE
- *   (published_free); never show "Standard" as customer-facing copy.
- *   Free account + no subscription fee only — marketplace commission applies
- *   later when the restaurant enables a merchant account / online ordering,
- *   so do not list commission rates on this invitation surface.
+ *   Unified business signup invitation — choose Restaurant / Food truck /
+ *   Franchise, then continue to one account form. Free-account messaging for
+ *   restaurants; food truck keeps internal food_truck_annual plan stamp;
+ *   franchise creates operator + Menuply review (no restaurant row).
  * ============================================================
  */
 
-import { useState } from "react";
-import { useNavigate, useLocation, Link } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useLocation, Link, useSearchParams } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { BrandLogo } from "../components/BrandLogo.jsx";
-import { FREE_PLAN_CODE } from "../lib/menuplyCheckoutPlans.js";
+import {
+  FREE_PLAN_CODE,
+  FOOD_TRUCK_ANNUAL_PLAN_CODE,
+} from "../lib/menuplyCheckoutPlans.js";
 
 const ACCOUNT_ROUTE = "/restaurant/signup/account";
-const FRANCHISE_ROUTE = "/franchises";
-const FOOD_TRUCK_SIGNUP_ROUTE = "/foodtruck/signup";
+
+/** @typedef {"restaurant" | "food_truck" | "franchise"} BusinessKind */
+
+function normalizeBusinessKind(raw) {
+  const value = String(raw || "")
+    .trim()
+    .toLowerCase()
+    .replace(/-/g, "_");
+  if (value === "foodtruck" || value === "food_truck") return "food_truck";
+  if (value === "restaurant" || value === "single") return "restaurant";
+  if (value === "franchise" || value === "multi" || value === "multi_location") {
+    return "franchise";
+  }
+  return null;
+}
 
 const styles = {
   page: {
@@ -205,94 +219,84 @@ const styles = {
     lineHeight: 1.5,
     color: "#374151",
   },
-  foodTruckRow: {
-    display: "flex",
-    flexWrap: "wrap",
-    alignItems: "center",
-    gap: 10,
-    marginTop: 14,
-    marginBottom: 4,
-  },
-  foodTruckPrompt: {
-    fontSize: 14,
-    fontWeight: 700,
-    color: "#374151",
-    lineHeight: 1.4,
-  },
-  foodTruckLink: {
+  changeTypeLink: {
     display: "inline",
-    color: "#6EE7B7",
+    color: "#1F4E3D",
     fontSize: 13,
     fontWeight: 800,
-    textDecoration: "none",
+    textDecoration: "underline",
     whiteSpace: "nowrap",
     padding: 0,
     border: "none",
     background: "transparent",
-  },
-  foodTruckIcon: {
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    flexShrink: 0,
-    color: "#6EE7B7",
+    cursor: "pointer",
+    fontFamily: "inherit",
   },
 };
 
-function FoodTruckIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path
-        d="M3 8H14V16H3V8Z"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M14 10H18L21 13V16H14V10Z"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinejoin="round"
-      />
-      <circle cx="6.5" cy="17.5" r="1.5" stroke="currentColor" strokeWidth="1.6" />
-      <circle cx="17.5" cy="17.5" r="1.5" stroke="currentColor" strokeWidth="1.6" />
-      <path d="M14 8V6H3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-    </svg>
-  );
+function collectClaimIdentity(claim = {}) {
+  const claimIdentity = {};
+  for (const key of [
+    "restaurant_id",
+    "restaurant_name",
+    "city",
+    "state",
+    "address_line1",
+    "postal_code",
+    "phone",
+    "website_url",
+    "claim_source",
+    "public_restaurant_slug_or_id",
+  ]) {
+    if (claim[key] != null && claim[key] !== "") {
+      claimIdentity[key] = claim[key];
+    }
+  }
+  return claimIdentity;
 }
 
 export default function RestaurantSignupEntry() {
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const { t } = useLanguage();
   const fromOperatorClaim = Boolean(
     location.state?.from === "operator_claim" || location.state?.create_listing
   );
-  // Claim → new listing: choose single vs multi before invitation / details entry.
-  const [listingScope, setListingScope] = useState(fromOperatorClaim ? null : "single");
 
-  function proceedWithPlanCode(selectedPlan) {
-    const claim = location.state || {};
-    const claimIdentity = {};
-    for (const key of [
-      "restaurant_id",
-      "restaurant_name",
-      "city",
-      "state",
-      "address_line1",
-      "postal_code",
-      "phone",
-      "website_url",
-      "claim_source",
-      "public_restaurant_slug_or_id",
-    ]) {
-      if (claim[key] != null && claim[key] !== "") {
-        claimIdentity[key] = claim[key];
-      }
-    }
+  const kindFromUrl = useMemo(
+    () => normalizeBusinessKind(searchParams.get("kind")),
+    [searchParams]
+  );
+  const kindFromState = useMemo(
+    () => normalizeBusinessKind(location.state?.business_kind),
+    [location.state?.business_kind]
+  );
+
+  // Restaurant invitation only after choosing restaurant (or ?kind=restaurant).
+  // Food truck / franchise deep links skip invitation and open the account form.
+  const [businessKind, setBusinessKind] = useState(
+    /** @type {BusinessKind | null} */ (
+      kindFromUrl === "restaurant" || kindFromState === "restaurant"
+        ? "restaurant"
+        : null
+    )
+  );
+
+  function proceedToAccount(kind) {
+    /** @type {BusinessKind} */
+    const resolved = kind;
+    const claimIdentity = collectClaimIdentity(location.state || {});
+    const selectedPlan =
+      resolved === "food_truck"
+        ? FOOD_TRUCK_ANNUAL_PLAN_CODE
+        : resolved === "franchise"
+          ? "franchise_review"
+          : FREE_PLAN_CODE;
 
     navigate(ACCOUNT_ROUTE, {
       state: {
+        business_kind: resolved,
         selected_plan: selectedPlan,
         ...claimIdentity,
         ...(fromOperatorClaim
@@ -302,12 +306,53 @@ export default function RestaurantSignupEntry() {
     });
   }
 
-  function handleSignUp() {
-    // Internal entitlement: free/Standard plan code — never shown as "Standard" in UI.
-    proceedWithPlanCode(FREE_PLAN_CODE);
+  useEffect(() => {
+    if (kindFromUrl === "food_truck" || kindFromUrl === "franchise") {
+      proceedToAccount(kindFromUrl);
+    }
+    // Deep-link auto-continue once on mount / kind change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional one-shot navigate
+  }, [kindFromUrl]);
+
+  function handleChooseKind(kind) {
+    if (kind === "restaurant") {
+      setBusinessKind("restaurant");
+      return;
+    }
+    // Food truck + franchise go straight to the shared account form.
+    proceedToAccount(kind);
   }
 
-  if (fromOperatorClaim && listingScope == null) {
+  function handleSignUp() {
+    proceedToAccount(businessKind || "restaurant");
+  }
+
+  function handleChangeType() {
+    setBusinessKind(null);
+    if (kindFromUrl) {
+      navigate("/restaurant/signup", {
+        replace: true,
+        state: fromOperatorClaim
+          ? { from: "operator_claim", create_listing: true }
+          : undefined,
+      });
+    }
+  }
+
+  if (kindFromUrl === "food_truck" || kindFromUrl === "franchise") {
+    return (
+      <div style={styles.page}>
+        <div style={styles.shell}>
+          <BrandLogo height={48} radius={14} matchPageBackground={false} />
+          <p style={{ ...styles.cadenceSubtitle, marginTop: 24 }}>
+            {t("signup.entry.unified.continuing", "Continuing to account setup…")}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (businessKind == null) {
     return (
       <div style={styles.page}>
         <div style={styles.shell}>
@@ -315,30 +360,42 @@ export default function RestaurantSignupEntry() {
             <div style={styles.heroContent}>
               <BrandLogo height={48} radius={14} matchPageBackground={false} linkStyle={{ marginBottom: 8 }} />
               <div style={styles.eyebrow}>
-                {t("signup.entry.createListing.eyebrow", "Create a new listing")}
+                {fromOperatorClaim
+                  ? t("signup.entry.createListing.eyebrow", "Create a new listing")
+                  : t("signup.entry.unified.eyebrow", "Business Signup")}
               </div>
             </div>
           </header>
 
           <div style={styles.cadenceShell}>
             <h1 style={styles.cadenceTitle}>
-              {t(
-                "signup.entry.createListing.title",
-                "Is this one restaurant, or more than one?"
-              )}
+              {fromOperatorClaim
+                ? t(
+                    "signup.entry.createListing.title",
+                    "Is this one restaurant, or more than one?"
+                  )
+                : t(
+                    "signup.entry.unified.title",
+                    "What kind of business are you signing up?"
+                  )}
             </h1>
             <p style={styles.cadenceSubtitle}>
-              {t(
-                "signup.entry.createListing.subtitle",
-                "Choose how you operate, then enter your restaurant details on the next screens."
-              )}
+              {fromOperatorClaim
+                ? t(
+                    "signup.entry.createListing.subtitle",
+                    "Choose how you operate, then enter your restaurant details on the next screens."
+                  )
+                : t(
+                    "signup.entry.unified.subtitle",
+                    "Restaurant, food truck, and franchise all start here. Franchise requests are reviewed by Menuply after you create an account."
+                  )}
             </p>
 
-            <div style={styles.cadenceOptions}>
+            <div style={styles.cadenceOptions} data-testid="unified-signup-kind-chooser">
               <button
                 type="button"
                 style={styles.pathOption}
-                onClick={() => setListingScope("single")}
+                onClick={() => handleChooseKind("restaurant")}
               >
                 <span style={styles.pathOptionTitle}>
                   {t("signup.entry.createListing.singleTitle", "Single restaurant")}
@@ -354,7 +411,23 @@ export default function RestaurantSignupEntry() {
               <button
                 type="button"
                 style={styles.pathOption}
-                onClick={() => navigate(FRANCHISE_ROUTE)}
+                onClick={() => handleChooseKind("food_truck")}
+              >
+                <span style={styles.pathOptionTitle}>
+                  {t("signup.entry.createListing.foodTruckTitle", "Food truck")}
+                </span>
+                <span style={styles.pathOptionBody}>
+                  {t(
+                    "signup.entry.unified.foodTruckBody",
+                    "Mobile operators — create your account on the next screen."
+                  )}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                style={styles.pathOption}
+                onClick={() => handleChooseKind("franchise")}
               >
                 <span style={styles.pathOptionTitle}>
                   {t(
@@ -364,44 +437,31 @@ export default function RestaurantSignupEntry() {
                 </span>
                 <span style={styles.pathOptionBody}>
                   {t(
-                    "signup.entry.createListing.multiBody",
-                    "Contact Menuply about a brand or multi-location group."
-                  )}
-                </span>
-              </button>
-
-              <button
-                type="button"
-                style={styles.pathOption}
-                onClick={() => navigate(FOOD_TRUCK_SIGNUP_ROUTE)}
-              >
-                <span style={styles.pathOptionTitle}>
-                  {t("signup.entry.createListing.foodTruckTitle", "Food truck")}
-                </span>
-                <span style={styles.pathOptionBody}>
-                  {t(
-                    "signup.entry.createListing.foodTruckBody",
-                    "Use the food truck signup path for mobile operators."
+                    "signup.entry.unified.franchiseBody",
+                    "Create your operator account, then Menuply reviews your franchise request."
                   )}
                 </span>
               </button>
             </div>
 
-            <div style={styles.cadenceActions}>
-              <button
-                type="button"
-                style={styles.cadenceBack}
-                onClick={() => navigate("/operator/claim")}
-              >
-                {t("signup.entry.createListing.back", "Back to claim search")}
-              </button>
-            </div>
+            {fromOperatorClaim ? (
+              <div style={styles.cadenceActions}>
+                <button
+                  type="button"
+                  style={styles.cadenceBack}
+                  onClick={() => navigate("/operator/claim")}
+                >
+                  {t("signup.entry.createListing.back", "Back to claim search")}
+                </button>
+              </div>
+            ) : null}
           </div>
         </div>
       </div>
     );
   }
 
+  // Restaurant invitation (food truck / franchise skip this and go to account).
   return (
     <div style={styles.page}>
       <div style={styles.shell}>
@@ -409,52 +469,34 @@ export default function RestaurantSignupEntry() {
           <div style={styles.heroContent}>
             <BrandLogo height={48} radius={14} matchPageBackground={false} linkStyle={{ marginBottom: 8 }} />
             <div style={styles.eyebrow}>{t("signup.entry.eyebrow", "Restaurant Signup")}</div>
-            {fromOperatorClaim ? (
-              <div
-                style={{
-                  marginTop: 10,
-                  marginBottom: 4,
-                  padding: "12px 14px",
-                  borderRadius: 12,
-                  background: "rgba(31, 78, 61, 0.08)",
-                  border: "1px solid rgba(31, 78, 61, 0.22)",
-                  fontSize: 14,
-                  fontWeight: 600,
-                  color: "#1F4E3D",
-                  lineHeight: 1.5,
-                  maxWidth: 660,
-                }}
-              >
-                {t(
-                  "signup.entry.createListing.banner",
-                  "Creating a new listing for your operator account. Join Menuply, then enter restaurant details on the next screen."
-                )}{" "}
-                <button
-                  type="button"
-                  onClick={() => setListingScope(null)}
-                  style={{
-                    ...styles.foodTruckLink,
-                    color: "#1F4E3D",
-                    textDecoration: "underline",
-                    cursor: "pointer",
-                  }}
-                >
-                  {t("signup.entry.createListing.changeType", "Change listing type")}
-                </button>
-              </div>
-            ) : (
-              <div style={styles.foodTruckRow}>
-                <span style={styles.foodTruckIcon} aria-hidden>
-                  <FoodTruckIcon />
-                </span>
-                <span style={styles.foodTruckPrompt}>
-                  {t("signup.entry.foodTruckOwner", "Food Truck Owner?")}
-                </span>
-                <Link to="/foodtruck/signup" style={styles.foodTruckLink}>
-                  {t("signup.entry.foodTruckSignup", "Sign up")}
-                </Link>
-              </div>
-            )}
+            <div
+              style={{
+                marginTop: 10,
+                marginBottom: 4,
+                padding: "12px 14px",
+                borderRadius: 12,
+                background: "rgba(31, 78, 61, 0.08)",
+                border: "1px solid rgba(31, 78, 61, 0.22)",
+                fontSize: 14,
+                fontWeight: 600,
+                color: "#1F4E3D",
+                lineHeight: 1.5,
+                maxWidth: 660,
+              }}
+            >
+              {fromOperatorClaim
+                ? t(
+                    "signup.entry.createListing.banner",
+                    "Creating a new listing for your operator account. Join Menuply, then enter restaurant details on the next screen."
+                  )
+                : t(
+                    "signup.entry.unified.restaurantBanner",
+                    "Signing up as a single restaurant. Food truck and franchise use the same signup path — change type if needed."
+                  )}{" "}
+              <button type="button" onClick={handleChangeType} style={styles.changeTypeLink}>
+                {t("signup.entry.createListing.changeType", "Change listing type")}
+              </button>
+            </div>
           </div>
         </header>
 

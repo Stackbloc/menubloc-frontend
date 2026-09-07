@@ -19,7 +19,7 @@ function read(rel) {
 test("RestaurantSignupEntry is invitation + Sign Up using FREE_PLAN_CODE", () => {
   const src = read("src/pages/RestaurantSignupEntry.jsx");
   assert.match(src, /FREE_PLAN_CODE/);
-  assert.match(src, /proceedWithPlanCode\(FREE_PLAN_CODE\)/);
+  assert.match(src, /proceedToAccount\(businessKind \|\| "restaurant"\)|proceedToAccount\("restaurant"\)/);
   assert.match(src, /Your Menu\. More Ways to Be Discovered\./);
   assert.match(src, /Create and manage your free account\. No subscription fee\./);
   assert.match(src, /Put your menu where the conversation about food is happening\./);
@@ -27,6 +27,10 @@ test("RestaurantSignupEntry is invitation + Sign Up using FREE_PLAN_CODE", () =>
   assert.match(src, /"Sign Up"/);
   assert.match(src, /to="\/terms"/);
   assert.match(src, /Terms of Use/);
+  assert.match(src, /unified-signup-kind-chooser/);
+  assert.match(src, /handleChooseKind\("restaurant"\)/);
+  assert.match(src, /handleChooseKind\("food_truck"\)/);
+  assert.match(src, /handleChooseKind\("franchise"\)/);
   assert.doesNotMatch(src, /12%\s*commission/i);
   assert.doesNotMatch(src, /PlanComparisonTable/);
   assert.doesNotMatch(src, /SIGNUP_PLAN_OPTIONS/);

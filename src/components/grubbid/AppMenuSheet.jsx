@@ -8,8 +8,8 @@ const NAV_ITEMS = [
 ];
 
 const META_ITEMS = [
-  { label: "Restaurant Sign Up",  href: "/restaurant/onboarding", icon: "🍴" },
-  { label: "Food Truck Sign Up",  href: "/foodtruck/signup",  icon: "🛻" },
+  { label: "Restaurant Sign Up",  href: "/restaurant/signup", icon: "🍴" },
+  { label: "Food Truck Sign Up",  href: "/restaurant/signup?kind=food_truck",  icon: "🛻" },
   { label: "Terms of Use",        href: "/terms",             icon: "📄" },
   { label: "Privacy Policy",      href: "/privacy",           icon: "🔒" },
   { label: "About Menuply",       href: "/about",             icon: "ℹ️" },

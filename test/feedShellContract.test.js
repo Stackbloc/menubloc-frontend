@@ -199,8 +199,19 @@ test("Feed shell: Home|Waiter|Share My QR|X|Deals|Shop|Profile + slim X sheet", 
   assert.doesNotMatch(feedLinks, /Discover food/);
   assert.doesNotMatch(feedLinks, /feed-more-login/);
   assert.match(feedLinks, /\/clusters/);
+  assert.match(feedLinks, /feed-more-clusters/);
   assert.match(feedLinks, /restaurant\/onboarding/);
   assert.match(feedLinks, /feed-nav-home/);
+  assert.match(feedLinks, /feed-more-account/);
+  assert.match(feedLinks, /feed-more-add-menu/);
+  assert.doesNotMatch(feedLinks, /feed-more-my-menuply/);
+  assert.doesNotMatch(feedLinks, /feed-more-dining-crews/);
+  assert.doesNotMatch(feedLinks, /feed-more-eating-plans/);
+  assert.doesNotMatch(feedLinks, /feed-more-activity/);
+  assert.doesNotMatch(feedLinks, /label: "My Menuply"/);
+  assert.doesNotMatch(feedLinks, /label: "Dining Crews"/);
+  assert.doesNotMatch(feedLinks, /label: "Eating Plans"/);
+  assert.doesNotMatch(feedLinks, /label: "Activity"/);
 
   const shellPage = read("src/pages/consumer/feed/FeedShellPage.jsx");
   assert.match(shellPage, /isFeedShopRoute/);

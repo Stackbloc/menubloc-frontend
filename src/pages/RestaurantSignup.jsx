@@ -2,9 +2,12 @@
  * ============================================================
  * Path: menubloc-frontend/src/pages/RestaurantSignup.jsx
  * File: RestaurantSignup.jsx
- * Date: 2026-05-06
+ * Date: 2026-09-07
  * Purpose:
- *   Restaurant account creation step after a plan is selected.
+ *   Unified business account creation after type + invitation.
+ *   restaurant / food_truck → POST /owner/profile;
+ *   franchise → POST /operator/auth/register then POST /franchises/claim
+ *   (Menuply review; no restaurant row).
  * ============================================================
  */
 
@@ -15,6 +18,11 @@ import { useOperator } from "../context/OperatorContext.jsx";
 import { BrandLogo } from "../components/BrandLogo.jsx";
 import SiteFooter from "../components/SiteFooter.jsx";
 import { buildLegalConsentPayload } from "../lib/legalConsent.js";
+import { registerOperator } from "../lib/operatorApi.js";
+import {
+  FOOD_TRUCK_ANNUAL_PLAN_CODE,
+  rememberIntendedCheckoutPlanCode,
+} from "../lib/menuplyCheckoutPlans.js";
 import {
   persistRestaurantOnboardingState,
   syncRestaurantOnboardingProgress,
@@ -24,8 +32,29 @@ const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").repla
 const PLAN_ENTRY_ROUTE = "/restaurant/signup";
 const ORGANIZATION_ROUTE = "/restaurant/onboarding/organization";
 
+const FRANCHISE_RELATIONSHIPS = [
+  { value: "franchisor_corporate", label: "Franchisor / corporate representative" },
+  { value: "master_franchisee", label: "Master franchisee" },
+  { value: "area_developer", label: "Area developer" },
+  { value: "other", label: "Other" },
+];
+
+function normalizeBusinessKind(raw) {
+  const value = String(raw || "")
+    .trim()
+    .toLowerCase()
+    .replace(/-/g, "_");
+  if (value === "foodtruck" || value === "food_truck") return "food_truck";
+  if (value === "franchise" || value === "multi") return "franchise";
+  if (value === "restaurant" || value === "single") return "restaurant";
+  return "restaurant";
+}
+
 function planLabel(t, planCode) {
   if (!planCode) return "";
+  if (planCode === "franchise_review") {
+    return t("signup.account.plan.franchise", "Franchise");
+  }
   if (["standard", "standard_free", "published", "published_free", "verified", "starter"].includes(planCode)) {
     // Internal plan may be Standard; customer-facing label is Menuply only.
     return t("signup.account.plan.standard", "Menuply");
@@ -296,10 +325,19 @@ export default function RestaurantSignup() {
   const location = useLocation();
   const { t } = useLanguage();
   const { operator, isAuthenticated: isOperatorAuthenticated, loading: operatorLoading } = useOperator();
-  const selectedPlan = location.state?.selected_plan || "";
+  const businessKind = normalizeBusinessKind(location.state?.business_kind);
+  const isFoodTruck = businessKind === "food_truck";
+  const isFranchise = businessKind === "franchise";
+  const selectedPlan =
+    location.state?.selected_plan ||
+    (isFoodTruck
+      ? FOOD_TRUCK_ANNUAL_PLAN_CODE
+      : isFranchise
+        ? "franchise_review"
+        : "");
   const selectedPlanLabel = planLabel(t, selectedPlan);
   const claimRestaurantId = Number(location.state?.restaurant_id) || 0;
-  const isClaimIdentityLocked = claimRestaurantId > 0;
+  const isClaimIdentityLocked = claimRestaurantId > 0 && !isFranchise;
   const CLAIM_LOCKED_FIELDS = new Set(["restaurant_name", "city", "state"]);
 
   const [form, setForm] = useState({
@@ -310,8 +348,16 @@ export default function RestaurantSignup() {
     city: String(location.state?.city || "").trim(),
     state: String(location.state?.state || "").trim(),
     phone: String(location.state?.phone || "").trim(),
+    owner_name: "",
+    claimant_title: "",
+    company_website: "",
+    relationship_to_brand: "",
+    notes: "",
   });
-  const [agreements, setAgreements] = useState({ legalConsent: false });
+  const [agreements, setAgreements] = useState({
+    legalConsent: false,
+    authorizationConfirmed: false,
+  });
 
   // Sync email from operator once the async session resolves.
   // useState initializer runs before the session loads, so form.email
@@ -396,14 +442,181 @@ export default function RestaurantSignup() {
       if (!form.confirmPassword) errors.confirmPassword = "Confirm your password.";
       else if (form.password !== form.confirmPassword) errors.confirmPassword = t("signup.error.passwordsDoNotMatch");
     }
-    if (!form.restaurant_name.trim()) errors.restaurant_name = t("signup.error.restaurantNameRequired");
-    if (!form.city.trim()) errors.city = "City is required.";
-    if (!form.state.trim()) errors.state = "State is required.";
+
+    if (isFranchise) {
+      if (!form.restaurant_name.trim()) errors.restaurant_name = "Brand name is required.";
+      if (!form.owner_name.trim()) errors.owner_name = "Your full name is required.";
+      if (!form.claimant_title.trim()) errors.claimant_title = "Your corporate title is required.";
+      if (!form.relationship_to_brand) {
+        errors.relationship_to_brand = "Please select your relationship to the brand.";
+      }
+      if (!agreements.authorizationConfirmed) {
+        errors.authorizationConfirmed =
+          "You must confirm authorization to contact Menuply on behalf of this brand.";
+      }
+    } else {
+      if (!form.restaurant_name.trim()) {
+        errors.restaurant_name = isFoodTruck
+          ? "Truck name is required."
+          : t("signup.error.restaurantNameRequired");
+      }
+      if (!form.city.trim()) errors.city = "City is required.";
+      if (!form.state.trim()) errors.state = "State is required.";
+      if (isFoodTruck) {
+        if (!form.owner_name.trim()) errors.owner_name = "Owner name is required.";
+        if (!form.phone.trim()) errors.phone = "Phone number is required.";
+      }
+    }
+
     if (!agreements.legalConsent) {
-      errors.legalConsent = "You must agree to the Terms of Use and Privacy Policy and consent to electronic communications.";
+      errors.legalConsent =
+        "You must agree to the Terms of Use and Privacy Policy and consent to electronic communications.";
     }
 
     return errors;
+  }
+
+  async function submitFranchiseSignup() {
+    const consent = buildLegalConsentPayload();
+    const fullName = form.owner_name.trim();
+    const email = form.email.trim();
+
+    if (!isOperatorAuthenticated) {
+      await registerOperator(email, form.password, fullName, consent);
+    }
+
+    const res = await fetch(`${API}/franchises/claim`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        brand_name: form.restaurant_name.trim(),
+        claimant_name: fullName,
+        claimant_title: form.claimant_title.trim(),
+        claimant_email: email,
+        claimant_phone: form.phone.trim() || null,
+        company_website: form.company_website.trim() || null,
+        relationship_to_brand: form.relationship_to_brand,
+        notes: form.notes.trim() || null,
+        authorization_confirmed: true,
+      }),
+    });
+    const data = await res.json().catch(() => null);
+    if (!res.ok || !data?.ok) {
+      const signupError = new Error(data?.error || `Franchise request failed (${res.status})`);
+      signupError.status = res.status;
+      throw signupError;
+    }
+
+    nav("/operator/verify-email", {
+      replace: true,
+      state: {
+        autoSend: true,
+        franchise_pending_review: true,
+        email,
+        nextPath: "/operator",
+      },
+    });
+  }
+
+  async function submitOwnerProfileSignup() {
+    const payload = {
+      email: form.email.trim(),
+      restaurant_name: form.restaurant_name.trim(),
+      city: form.city.trim(),
+      state: form.state.trim().toUpperCase(),
+      phone: form.phone.trim() || null,
+      ...buildLegalConsentPayload(),
+    };
+    if (isClaimIdentityLocked) {
+      payload.restaurant_id = claimRestaurantId;
+    }
+    if (!isOperatorAuthenticated) {
+      payload.password = form.password;
+    }
+    if (isFoodTruck) {
+      payload.category = "food_truck";
+      payload.manager_name = form.owner_name.trim();
+      payload.full_name = form.owner_name.trim();
+      payload.signup_source = "food_truck_signup";
+      payload.selected_plan = FOOD_TRUCK_ANNUAL_PLAN_CODE;
+    }
+
+    const res = await fetch(`${API}/owner/profile`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await res.json().catch(() => null);
+    if (!res.ok || !data?.ok) {
+      const signupError = new Error(data?.error || `Signup failed (${res.status})`);
+      signupError.status = res.status;
+      throw signupError;
+    }
+
+    if (isFoodTruck) {
+      rememberIntendedCheckoutPlanCode(FOOD_TRUCK_ANNUAL_PLAN_CODE);
+    }
+
+    const { restaurant, owner_token, primary_qr } = data;
+    const baseState = persistRestaurantOnboardingState({
+      restaurant_id: restaurant.id,
+      restaurant_name: form.restaurant_name.trim(),
+      email: form.email.trim(),
+      owner_token,
+      city: form.city.trim(),
+      state: form.state.trim().toUpperCase(),
+      address_line1: String(location.state?.address_line1 || "").trim(),
+      claim_source: String(location.state?.claim_source || "").trim(),
+      phone: form.phone.trim(),
+      ingestion_method: "later",
+      selected_plan: selectedPlan,
+    });
+    const draftState = await syncRestaurantOnboardingProgress(baseState, {
+      current_step_key:
+        selectedPlan === "verified" ||
+        selectedPlan === "published_free" ||
+        selectedPlan === "published" ||
+        isFoodTruck
+          ? "basic_public_profile"
+          : "choose_plan",
+      completed_step_keys: ["create_operator_account", "public_restaurant_information"],
+      intake_path: isFoodTruck ? "food_truck_signup" : "independent_single_location",
+      requested_location_count: 1,
+      selected_plan_code: selectedPlan || null,
+      manual_review_required: false,
+      draft_payload: {
+        temporary_selections: {
+          selected_plan_code: selectedPlan || null,
+          menu_upload_mode: "upload_later",
+        },
+        optional_modules: {
+          qr_starter_kit: { status: "not_started" },
+          equipment_readiness: { status: "not_started" },
+        },
+      },
+    });
+
+    const navTarget = {
+      path: "/operator/verify-email",
+      opts: {
+        replace: true,
+        state: {
+          ...draftState,
+          nextPath: isFoodTruck ? "/operator" : ORGANIZATION_ROUTE,
+          autoSend: true,
+          plan: selectedPlan,
+          post_locations_path: "/restaurant/menu-upload-choice",
+        },
+      },
+    };
+
+    if (primary_qr?.token) {
+      setQrReveal(primary_qr);
+      setPostSignupNav(navTarget);
+    } else {
+      nav(navTarget.path, navTarget.opts);
+    }
   }
 
   async function handleSubmit(event) {
@@ -420,92 +633,10 @@ export default function RestaurantSignup() {
     setSubmitting(true);
 
     try {
-      const payload = {
-        email: form.email.trim(),
-        restaurant_name: form.restaurant_name.trim(),
-        city: form.city.trim(),
-        state: form.state.trim().toUpperCase(),
-        phone: form.phone.trim() || null,
-        ...buildLegalConsentPayload(),
-      };
-      if (isClaimIdentityLocked) {
-        payload.restaurant_id = claimRestaurantId;
-      }
-      if (!isOperatorAuthenticated) {
-        payload.password = form.password;
-      }
-
-      const res = await fetch(`${API}/owner/profile`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await res.json().catch(() => null);
-      if (!res.ok || !data?.ok) {
-        const signupError = new Error(data?.error || `Signup failed (${res.status})`);
-        signupError.status = res.status;
-        throw signupError;
-      }
-
-      const { restaurant, owner_token, primary_qr } = data;
-      const baseState = persistRestaurantOnboardingState({
-        restaurant_id: restaurant.id,
-        restaurant_name: form.restaurant_name.trim(),
-        email: form.email.trim(),
-        owner_token,
-        city: form.city.trim(),
-        state: form.state.trim().toUpperCase(),
-        address_line1: String(location.state?.address_line1 || "").trim(),
-        claim_source: String(location.state?.claim_source || "").trim(),
-        phone: form.phone.trim(),
-        ingestion_method: "later",
-        selected_plan: selectedPlan,
-      });
-      const draftState = await syncRestaurantOnboardingProgress(baseState, {
-        current_step_key:
-          selectedPlan === "verified" || selectedPlan === "published_free" || selectedPlan === "published"
-            ? "basic_public_profile"
-            : "choose_plan",
-        completed_step_keys: ["create_operator_account", "public_restaurant_information"],
-        intake_path: "independent_single_location",
-        requested_location_count: 1,
-        selected_plan_code: selectedPlan || null,
-        manual_review_required: false,
-        draft_payload: {
-          temporary_selections: {
-            selected_plan_code: selectedPlan || null,
-            menu_upload_mode: "upload_later",
-          },
-          optional_modules: {
-            qr_starter_kit: { status: "not_started" },
-            equipment_readiness: { status: "not_started" },
-          },
-        },
-      });
-
-      // Capture nav state for after QR reveal step — Restaurant Information follows verify email
-      const navTarget = {
-        path: "/operator/verify-email",
-        opts: {
-          replace: true,
-          state: {
-            ...draftState,
-            nextPath: ORGANIZATION_ROUTE,
-            autoSend: true,
-            plan: selectedPlan,
-            // Locations never reopen plan chooser — payment is earlier in the flow.
-            post_locations_path: "/restaurant/menu-upload-choice",
-          },
-        },
-      };
-
-      // If a QR was auto-created, show the reveal step first
-      if (primary_qr?.token) {
-        setQrReveal(primary_qr);
-        setPostSignupNav(navTarget);
+      if (isFranchise) {
+        await submitFranchiseSignup();
       } else {
-        nav(navTarget.path, navTarget.opts);
+        await submitOwnerProfileSignup();
       }
     } catch (error) {
       const failure = describeSignupFailure(error);
@@ -628,12 +759,28 @@ export default function RestaurantSignup() {
       <main style={styles.pageMain}>
       <div style={styles.header}>
         <BrandLogo height={48} radius={14} matchPageBackground={false} />
-        <div style={styles.pageTitle}>{t("signup.account.pageTitle", "Create your Menuply account")}</div>
+        <div style={styles.pageTitle}>
+          {isFranchise
+            ? t("signup.account.franchisePageTitle", "Create your franchise account")
+            : isFoodTruck
+              ? t("signup.account.foodTruckPageTitle", "Create your food truck account")
+              : t("signup.account.pageTitle", "Create your Menuply account")}
+        </div>
         <div style={styles.pageSubtitle}>
-          {t(
-            "signup.account.pageSubtitleDetails",
-            "Get your restaurant on Menuply and start building your presence in the community."
-          )}
+          {isFranchise
+            ? t(
+                "signup.account.franchiseSubtitle",
+                "Create your operator account. Menuply will review your franchise request before brand locations are activated."
+              )
+            : isFoodTruck
+              ? t(
+                  "signup.account.foodTruckSubtitle",
+                  "Get your food truck on Menuply and start building your presence in the community."
+                )
+              : t(
+                  "signup.account.pageSubtitleDetails",
+                  "Get your restaurant on Menuply and start building your presence in the community."
+                )}
         </div>
         {selectedPlanLabel ? (
           <div style={styles.planSummary}>
@@ -732,12 +879,21 @@ export default function RestaurantSignup() {
 
         <div style={styles.section}>
           <div style={styles.sectionTitle}>
-            {t("signup.account.sectionRestaurantBasics", "Restaurant basics")}
+            {isFranchise
+              ? t("signup.account.sectionFranchiseBasics", "Franchise request")
+              : isFoodTruck
+                ? t("signup.account.sectionFoodTruckBasics", "Food truck basics")
+                : t("signup.account.sectionRestaurantBasics", "Restaurant basics")}
           </div>
 
           <div style={styles.fieldGroup}>
             <label htmlFor="restaurant_name" style={styles.label}>
-              {t("signup.restaurantName")}<span style={styles.required}>*</span>
+              {isFranchise
+                ? "Brand name"
+                : isFoodTruck
+                  ? "Truck name"
+                  : t("signup.restaurantName")}
+              <span style={styles.required}>*</span>
             </label>
             <input
               id="restaurant_name"
@@ -767,60 +923,155 @@ export default function RestaurantSignup() {
             ) : null}
           </div>
 
-          <div style={styles.row2}>
-            <div style={styles.halfField}>
-              <label htmlFor="city" style={styles.label}>
-                {t("signup.city")}<span style={styles.required}>*</span>
+          {(isFoodTruck || isFranchise) ? (
+            <div style={styles.fieldGroup}>
+              <label htmlFor="owner_name" style={styles.label}>
+                {isFranchise ? "Your full name" : "Owner name"}
+                <span style={styles.required}>*</span>
               </label>
               <input
-                id="city"
-                name="city"
+                id="owner_name"
+                name="owner_name"
                 type="text"
-                autoComplete="address-level2"
-                value={form.city}
+                autoComplete="name"
+                value={form.owner_name}
                 onChange={handleChange}
-                readOnly={isClaimIdentityLocked}
-                aria-readonly={isClaimIdentityLocked ? "true" : undefined}
-                style={
-                  fieldErrors.city
-                    ? styles.inputError
-                    : isClaimIdentityLocked
-                      ? styles.inputLocked
-                      : styles.input
-                }
+                style={fieldErrors.owner_name ? styles.inputError : styles.input}
               />
-              {fieldErrors.city ? <div style={styles.fieldError}>{fieldErrors.city}</div> : null}
+              {fieldErrors.owner_name ? <div style={styles.fieldError}>{fieldErrors.owner_name}</div> : null}
             </div>
+          ) : null}
 
-            <div style={styles.halfField}>
-              <label htmlFor="state" style={styles.label}>
-                {t("signup.state")}<span style={styles.required}>*</span>
-              </label>
-              <input
-                id="state"
-                name="state"
-                type="text"
-                autoComplete="address-level1"
-                maxLength={2}
-                value={form.state}
-                onChange={handleChange}
-                readOnly={isClaimIdentityLocked}
-                aria-readonly={isClaimIdentityLocked ? "true" : undefined}
-                style={
-                  fieldErrors.state
-                    ? styles.inputError
-                    : isClaimIdentityLocked
-                      ? styles.inputLocked
-                      : styles.input
-                }
-              />
-              {fieldErrors.state ? <div style={styles.fieldError}>{fieldErrors.state}</div> : null}
+          {isFranchise ? (
+            <>
+              <div style={styles.fieldGroup}>
+                <label htmlFor="claimant_title" style={styles.label}>
+                  Corporate title<span style={styles.required}>*</span>
+                </label>
+                <input
+                  id="claimant_title"
+                  name="claimant_title"
+                  type="text"
+                  value={form.claimant_title}
+                  onChange={handleChange}
+                  style={fieldErrors.claimant_title ? styles.inputError : styles.input}
+                />
+                {fieldErrors.claimant_title ? (
+                  <div style={styles.fieldError}>{fieldErrors.claimant_title}</div>
+                ) : null}
+              </div>
+
+              <div style={styles.fieldGroup}>
+                <label htmlFor="relationship_to_brand" style={styles.label}>
+                  Relationship to brand<span style={styles.required}>*</span>
+                </label>
+                <select
+                  id="relationship_to_brand"
+                  name="relationship_to_brand"
+                  value={form.relationship_to_brand}
+                  onChange={handleChange}
+                  style={fieldErrors.relationship_to_brand ? styles.inputError : styles.input}
+                >
+                  <option value="">Select…</option>
+                  {FRANCHISE_RELATIONSHIPS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                {fieldErrors.relationship_to_brand ? (
+                  <div style={styles.fieldError}>{fieldErrors.relationship_to_brand}</div>
+                ) : null}
+              </div>
+
+              <div style={styles.fieldGroup}>
+                <label htmlFor="company_website" style={styles.label}>
+                  Company website
+                </label>
+                <input
+                  id="company_website"
+                  name="company_website"
+                  type="url"
+                  value={form.company_website}
+                  onChange={handleChange}
+                  style={styles.input}
+                  placeholder="https://"
+                />
+              </div>
+
+              <div style={styles.fieldGroup}>
+                <label htmlFor="notes" style={styles.label}>
+                  Notes
+                </label>
+                <textarea
+                  id="notes"
+                  name="notes"
+                  value={form.notes}
+                  onChange={handleChange}
+                  rows={3}
+                  style={{ ...styles.input, height: "auto", padding: "10px 12px" }}
+                />
+              </div>
+            </>
+          ) : null}
+
+          {!isFranchise ? (
+            <div style={styles.row2}>
+              <div style={styles.halfField}>
+                <label htmlFor="city" style={styles.label}>
+                  {t("signup.city")}<span style={styles.required}>*</span>
+                </label>
+                <input
+                  id="city"
+                  name="city"
+                  type="text"
+                  autoComplete="address-level2"
+                  value={form.city}
+                  onChange={handleChange}
+                  readOnly={isClaimIdentityLocked}
+                  aria-readonly={isClaimIdentityLocked ? "true" : undefined}
+                  style={
+                    fieldErrors.city
+                      ? styles.inputError
+                      : isClaimIdentityLocked
+                        ? styles.inputLocked
+                        : styles.input
+                  }
+                />
+                {fieldErrors.city ? <div style={styles.fieldError}>{fieldErrors.city}</div> : null}
+              </div>
+
+              <div style={styles.halfField}>
+                <label htmlFor="state" style={styles.label}>
+                  {t("signup.state")}<span style={styles.required}>*</span>
+                </label>
+                <input
+                  id="state"
+                  name="state"
+                  type="text"
+                  autoComplete="address-level1"
+                  maxLength={2}
+                  value={form.state}
+                  onChange={handleChange}
+                  readOnly={isClaimIdentityLocked}
+                  aria-readonly={isClaimIdentityLocked ? "true" : undefined}
+                  style={
+                    fieldErrors.state
+                      ? styles.inputError
+                      : isClaimIdentityLocked
+                        ? styles.inputLocked
+                        : styles.input
+                  }
+                />
+                {fieldErrors.state ? <div style={styles.fieldError}>{fieldErrors.state}</div> : null}
+              </div>
             </div>
-          </div>
+          ) : null}
 
           <div style={styles.fieldGroup}>
             <label htmlFor="phone" style={styles.label}>
               {t("signup.phone")}
+              {isFoodTruck ? <span style={styles.required}>*</span> : null}
             </label>
             <input
               id="phone"
@@ -829,13 +1080,32 @@ export default function RestaurantSignup() {
               autoComplete="tel"
               value={form.phone}
               onChange={handleChange}
-              style={styles.input}
+              style={fieldErrors.phone ? styles.inputError : styles.input}
             />
+            {fieldErrors.phone ? <div style={styles.fieldError}>{fieldErrors.phone}</div> : null}
           </div>
         </div>
 
         <div style={styles.section}>
           <div style={styles.sectionTitle}>{t("signup.account.sectionLegal", "Legal")}</div>
+
+          {isFranchise ? (
+            <label style={styles.checkboxRow}>
+              <input
+                type="checkbox"
+                name="authorizationConfirmed"
+                checked={agreements.authorizationConfirmed}
+                onChange={handleAgreementChange}
+                style={styles.checkbox}
+              />
+              <span style={styles.checkboxLabel}>
+                I confirm I am authorized to contact Menuply on behalf of this brand.
+              </span>
+            </label>
+          ) : null}
+          {fieldErrors.authorizationConfirmed ? (
+            <div style={styles.fieldError}>{fieldErrors.authorizationConfirmed}</div>
+          ) : null}
 
           <label style={styles.checkboxRow}>
             <input

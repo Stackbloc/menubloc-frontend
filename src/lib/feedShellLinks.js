@@ -94,10 +94,7 @@ export const FEED_MORE_SECTIONS = [
     authOnly: true,
     links: [
       { to: "/account", label: "Account & settings", testId: "feed-more-account" },
-      { to: "/feed/profile", label: "My Menuply", testId: "feed-more-my-menuply" },
-      { to: "/account/dining-crews", label: "Dining Crews", testId: "feed-more-dining-crews" },
-      { to: "/account/what-we-doing", label: "Eating Plans", testId: "feed-more-eating-plans" },
-      { to: "/activity", label: "Activity", testId: "feed-more-activity" },
+      { to: "/clusters", label: "Clusters", testId: "feed-more-clusters" },
       { to: FEED_MENU_CAPTURE_PATH, label: "Add a menu", testId: "feed-more-add-menu" },
     ],
   },

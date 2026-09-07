@@ -28,7 +28,7 @@ test("RestaurantPhilosophy redirects to invitation signup with state", () => {
 
 test("RestaurantSignupEntry forwards claim identity keys with selected_plan", () => {
   const src = read("src/pages/RestaurantSignupEntry.jsx");
-  assert.match(src, /proceedWithPlanCode/);
+  assert.match(src, /proceedToAccount/);
   assert.match(src, /FREE_PLAN_CODE/);
   for (const key of [
     "restaurant_id",

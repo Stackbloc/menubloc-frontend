@@ -1,8 +1,6 @@
 /**
- * Contract: FoodTruckSignup is a Menuply invitation, not a plan-comparison pitch.
- * Internal FOOD_TRUCK_ANNUAL_PLAN_CODE / food_truck category preserved on POST.
- * Customer-facing "Standard" and PlanComparisonTable must not appear.
- * Optional Paid Upgrades pitch removed — free create only on this page.
+ * Contract: Food truck signup bookmarks redirect into unified business signup.
+ * Account create stays on RestaurantSignup → POST /owner/profile with food_truck.
  */
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -17,25 +15,33 @@ function read(rel) {
   return fs.readFileSync(path.join(root, rel), "utf8");
 }
 
-test("FoodTruckSignup is invitation messaging with free-join economics", () => {
+test("FoodTruckSignup redirects to unified signup kind=food_truck", () => {
   const src = read("src/pages/FoodTruckSignup.jsx");
-  assert.match(src, /Your Menu\. More Ways to Be Discovered\./);
-  assert.match(src, /12% commission\. No subscription fee\./);
-  assert.match(src, /Claim your free profile\. Upload and manage your menu\. Join the community\./);
-  assert.match(src, /Create your account/);
+  assert.match(src, /Navigate/);
+  assert.match(src, /\/restaurant\/signup\?kind=food_truck/);
+  assert.doesNotMatch(src, /fetch\(/);
   assert.doesNotMatch(src, /Optional paid upgrades/i);
-  assert.doesNotMatch(src, /Show optional paid options/i);
-  assert.doesNotMatch(src, /Compare Food Truck Standard/);
-  assert.doesNotMatch(src, /PlanComparisonTable/);
-  assert.doesNotMatch(src, /Food Truck Standard/);
-  assert.doesNotMatch(src, /Compare food truck plans/);
 });
 
-test("FoodTruckSignup preserves food_truck signup POST and plan code", () => {
-  const src = read("src/pages/FoodTruckSignup.jsx");
-  assert.match(src, /FOOD_TRUCK_ANNUAL_PLAN_CODE/);
-  assert.match(src, /category:\s*"food_truck"/);
-  assert.match(src, /selected_plan:\s*FOOD_TRUCK_ANNUAL_PLAN_CODE/);
-  assert.match(src, /rememberIntendedCheckoutPlanCode\(FOOD_TRUCK_ANNUAL_PLAN_CODE\)/);
-  assert.match(src, /\/owner\/profile/);
+test("App route redirects /foodtruck/signup into unified entry", () => {
+  const app = read("src/App.jsx");
+  assert.match(app, /path="\/foodtruck\/signup"/);
+  assert.match(app, /\/restaurant\/signup\?kind=food_truck/);
+});
+
+test("Food truck CTAs and onboarding stage use unified entry", () => {
+  const trucks = read("src/pages/FoodTrucksPage.jsx");
+  const sheet = read("src/components/grubbid/AppMenuSheet.jsx");
+  const onboarding = read("src/lib/foodTruckOnboarding.js");
+  assert.match(trucks, /\/restaurant\/signup\?kind=food_truck/);
+  assert.match(sheet, /\/restaurant\/signup\?kind=food_truck/);
+  assert.match(onboarding, /\/restaurant\/signup\?kind=food_truck/);
+});
+
+test("Shared account form still posts food_truck owner/profile payload", () => {
+  const account = read("src/pages/RestaurantSignup.jsx");
+  assert.match(account, /payload\.category\s*=\s*"food_truck"/);
+  assert.match(account, /signup_source\s*=\s*"food_truck_signup"/);
+  assert.match(account, /FOOD_TRUCK_ANNUAL_PLAN_CODE/);
+  assert.match(account, /\/owner\/profile/);
 });
