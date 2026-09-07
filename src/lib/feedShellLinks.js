@@ -20,7 +20,7 @@ export const FEED_HOME_TAB = {
 
 export const FEED_LEFT_TABS = [
   FEED_HOME_TAB,
-  { to: "/feed/connects", end: false, label: "Connects", testId: "feed-nav-connects" },
+  { to: "/waiter", end: false, label: "Waiter", testId: "feed-nav-waiter" },
   {
     to: "/feed",
     end: true,

@@ -1,5 +1,5 @@
 /**
- * TikTok-style feed shell nav: Home · Connects · Menu Browser | [X] | Deals · Search · Profile.
+ * TikTok-style feed shell nav: Home · Waiter · Menu Browser | [X] | Deals · Search · Profile.
  * Menu Browser opens Feed PiP (same as yellow video icon), not /browse-menus.
  * Mobile bottom bar only — desktop uses FeedDesktopRail from the same tab config.
  */

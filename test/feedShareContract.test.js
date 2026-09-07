@@ -54,17 +54,17 @@ test("feed home + fullscreen wire clip deep link and share affordance", () => {
   const reel = read("src/pages/consumer/myMenuply/SeeWhosEatingFullscreen.jsx");
   assert.match(reel, /buildFeedVideoShareData/);
   assert.match(reel, /FeedVideoActionRail/);
+  assert.match(reel, /useMobileActionRail/);
+  assert.match(reel, /see-whos-eating-share-wrap/);
   assert.match(reel, /feed-shared-clip-account-invite/);
+  assert.match(reel, /feed-video-share-invite/);
+  assert.match(reel, /feed-video-yellow-browser/);
   assert.match(reel, /FeedMenuBrowserPipOverlay/);
   assert.match(reel, /browseSession/);
   assert.match(reel, /InviteToEatModal/);
   assert.match(reel, /videoShareUrl/);
   assert.match(reel, /Let's try this out!/);
-  assert.match(reel, /flowTitle="Invite to Eat"/);
-  assert.doesNotMatch(reel, /Share & Invite/);
-  assert.doesNotMatch(reel, /see-whos-eating-share-wrap/);
-  assert.doesNotMatch(reel, /feed-video-share-invite/);
-  assert.doesNotMatch(reel, /feed-video-yellow-browser/);
+  assert.match(reel, /Share & Invite/);
 });
 
 test("feed deals deep link helpers use menuply.com and deal query param", () => {
@@ -75,7 +75,7 @@ test("feed deals deep link helpers use menuply.com and deal query param", () => 
   assert.equal(resolveFeedDealStartIndex(items, "missing"), 0);
 });
 
-test("feed deals page + swipe wire Invite + share via action rail", () => {
+test("feed deals page + swipe wire Invite + share (mobile rail / desktop dock)", () => {
   const page = read("src/pages/consumer/feed/FeedDealsPage.jsx");
   assert.match(page, /useSearchParams/);
   assert.match(page, /sharedDealId/);
@@ -84,16 +84,16 @@ test("feed deals page + swipe wire Invite + share via action rail", () => {
 
   const swipe = read("src/components/consumer/feed/DealVideoSwipe.jsx");
   assert.match(swipe, /FeedVideoActionRail/);
+  assert.match(swipe, /useMobileActionRail/);
   assert.match(swipe, /FeedMenuBrowserPipOverlay/);
   assert.match(swipe, /browseSession/);
   assert.match(swipe, /InviteToEatModal/);
   assert.match(swipe, /feedDealShareUrl/);
   assert.match(swipe, /buildFeedDealShareData/);
   assert.match(swipe, /Let's try this out!/);
-  assert.match(swipe, /flowTitle="Invite to Eat"/);
-  assert.doesNotMatch(swipe, /Share & Invite/);
-  assert.doesNotMatch(swipe, /feed-deals-share-invite/);
-  assert.doesNotMatch(swipe, /feed-deals-yellow-browser/);
+  assert.match(swipe, /feed-deals-share-invite/);
+  assert.match(swipe, /feed-deals-yellow-browser/);
+  assert.match(swipe, /Share & Invite/);
 });
 
 test("feed shell profile share shows QR first then optional Share link", () => {

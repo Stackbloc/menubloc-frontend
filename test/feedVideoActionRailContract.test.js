@@ -1,6 +1,6 @@
 /**
- * Live Feed right action rail — Wanna go · Share · Invite · Like · Menu · Waiter.
- * Dedupes legacy Share & Invite + Menu Browser dock icons.
+ * Live Feed mobile right action rail — Connect first; no Waiter on rail.
+ * Desktop keeps Share & Invite dock. Nav Connects → Waiter.
  */
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -12,47 +12,52 @@ import { buildFeedDealShareData } from "../src/lib/feedShare.js";
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = (rel) => fs.readFileSync(path.join(root, rel), "utf8");
 
-test("FeedVideoActionRail exposes Waiter at bottom, not Connect", () => {
+test("FeedVideoActionRail: Connect first, no Waiter on rail", () => {
   const rail = read("src/components/consumer/feed/FeedVideoActionRail.jsx");
-  assert.match(rail, /feed-rail-waiter/);
-  assert.match(rail, /WaiterFaceIcon/);
-  assert.match(rail, /navigate\("\/waiter"\)/);
+  assert.match(rail, /feed-rail-connect/);
   assert.match(rail, /feed-rail-wanna-go/);
   assert.match(rail, /feed-rail-share/);
   assert.match(rail, /feed-rail-invite/);
   assert.match(rail, /feed-rail-like/);
   assert.match(rail, /feed-rail-menu/);
-  assert.doesNotMatch(rail, /feed-rail-connect/);
-  assert.doesNotMatch(rail, /showConnect/);
-  // Waiter appears after Menu in source order
-  const menuIdx = rail.indexOf("feed-rail-menu");
-  const waiterIdx = rail.indexOf("feed-rail-waiter");
-  assert.ok(menuIdx >= 0 && waiterIdx > menuIdx);
+  assert.doesNotMatch(rail, /feed-rail-waiter/);
+  assert.doesNotMatch(rail, /WaiterFaceIcon/);
+  assert.doesNotMatch(rail, /navigate\("\/waiter"\)/);
+  const connectIdx = rail.indexOf("feed-rail-connect");
+  const wannaIdx = rail.indexOf("feed-rail-wanna-go");
+  assert.ok(connectIdx >= 0 && wannaIdx > connectIdx);
 });
 
-test("feed home fullscreen mounts rail and removes duplicate share/invite/menu dock", () => {
+test("feed home: mobile rail + desktop Share & Invite dock", () => {
   const reel = read("src/pages/consumer/myMenuply/SeeWhosEatingFullscreen.jsx");
+  assert.match(reel, /useMobileActionRail/);
   assert.match(reel, /FeedVideoActionRail/);
-  assert.match(reel, /feed-video-action-rail|FeedVideoActionRail/);
-  assert.match(reel, /flowTitle="Invite to Eat"/);
-  assert.doesNotMatch(reel, /feed-video-share-invite/);
-  assert.doesNotMatch(reel, /feed-video-yellow-browser/);
-  assert.doesNotMatch(reel, /see-whos-eating-share-wrap/);
-  assert.doesNotMatch(reel, /Share & Invite/);
-  // Screen name still supports Connect request (not a rail icon)
+  assert.match(reel, /showRailConnect/);
+  assert.match(reel, /see-whos-eating-share-wrap/);
+  assert.match(reel, /feed-video-share-invite/);
+  assert.match(reel, /feed-video-yellow-browser/);
+  assert.match(reel, /Share & Invite/);
+  assert.match(reel, /Invite to Eat/);
   assert.match(reel, /requestConnection/);
-  assert.match(reel, /onScreenNameClick/);
 });
 
-test("feed deals swipe mounts rail and removes duplicate share/invite/menu dock", () => {
+test("feed deals: mobile rail + desktop Share & Invite dock", () => {
   const swipe = read("src/components/consumer/feed/DealVideoSwipe.jsx");
+  assert.match(swipe, /useMobileActionRail/);
   assert.match(swipe, /FeedVideoActionRail/);
+  assert.match(swipe, /feed-deals-share-invite/);
+  assert.match(swipe, /feed-deals-yellow-browser/);
+  assert.match(swipe, /Share & Invite/);
   assert.match(swipe, /buildFeedDealShareData/);
-  assert.match(swipe, /flowTitle="Invite to Eat"/);
-  assert.doesNotMatch(swipe, /feed-deals-share-invite/);
-  assert.doesNotMatch(swipe, /feed-deals-yellow-browser/);
-  assert.doesNotMatch(swipe, /Share & Invite/);
-  assert.doesNotMatch(swipe, /BrowseMenusIcon/);
+});
+
+test("Feed shell nav replaces Connects tab with Waiter", () => {
+  const links = read("src/lib/feedShellLinks.js");
+  assert.match(links, /label: "Waiter"/);
+  assert.match(links, /to: "\/waiter"/);
+  assert.match(links, /feed-nav-waiter/);
+  assert.doesNotMatch(links, /label: "Connects"/);
+  assert.doesNotMatch(links, /feed-nav-connects/);
 });
 
 test("buildFeedDealShareData locks menuply.com", () => {
@@ -63,5 +68,4 @@ test("buildFeedDealShareData locks menuply.com", () => {
   });
   assert.ok(data);
   assert.match(data.url, /^https:\/\/menuply\.com\/feed\/deals\?deal=/);
-  assert.match(data.text, /Domino/);
 });

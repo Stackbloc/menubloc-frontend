@@ -2,13 +2,14 @@
  * TikTok-style swipe reel for restaurant deal videos (Feed Deals).
  * Sound on by default (same as Feed home); muted fallback if autoplay blocked. Tap/click toggles mute.
  * Meta dock: desktop shell lifts captions so meal-time badges do not clip; mobile caption layout unchanged.
- * Right rail: Wanna go · Share · Invite · Like · Menu · Waiter.
+ * Mobile right rail: Wanna go · Share · Invite · Like · Menu. Desktop: Share & Invite + Menu Browser dock.
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import InviteToEatModal from "../../InviteToEatModal.jsx";
+import BrowseMenusIcon from "../../icons/BrowseMenusIcon.jsx";
 import FeedMenuBrowserPipOverlay from "./FeedMenuBrowserPipOverlay.jsx";
 import FeedVideoActionRail from "./FeedVideoActionRail.jsx";
 import { stripMediaUrlFragment } from "../../../lib/menuplyLiveFeedControl.js";
@@ -364,6 +365,7 @@ export default function DealVideoSwipe({
 
   const atEnd = index >= items.length - 1;
   const atStart = index <= 0;
+  const useMobileActionRail = !isDesktopViewport;
   const soundPromptLabel = isDesktopViewport ? "Click for sound" : "Tap for sound";
   const soundToggleLabel = videoMuted ? soundPromptLabel : "Mute";
   const showDesktopSoundLayer = Boolean(isDesktopViewport && item?.video_url && videoMuted);
@@ -526,7 +528,7 @@ export default function DealVideoSwipe({
         style={{
           ...styles.meta,
           ...(isDesktopViewport ? styles.metaDesktop : null),
-          ...styles.metaWithRail,
+          ...(useMobileActionRail ? styles.metaWithRail : null),
           bottom: metaBottomPad,
         }}
         data-testid="feed-deals-meta-dock"
@@ -591,9 +593,10 @@ export default function DealVideoSwipe({
       </div>
       ) : null}
 
-      {item && !menuBrowserOpen ? (
+      {useMobileActionRail && item && !menuBrowserOpen ? (
         <FeedVideoActionRail
           bottomInset={Number(bottomInset) || 0}
+          showConnect={false}
           restaurantRef={restaurantRef}
           shareData={dealShareData}
           shareAnalyticsContext={{
@@ -606,6 +609,39 @@ export default function DealVideoSwipe({
           onMenu={openMenuBrowser}
           followSource="feed_deals_video"
         />
+      ) : null}
+
+      {showInvite && !useMobileActionRail && !menuBrowserOpen ? (
+        <div
+          style={{
+            ...styles.feedActionDock,
+            bottom: metaBottomPad,
+          }}
+        >
+          <button
+            type="button"
+            style={styles.yellowBrowserBtn}
+            data-testid="feed-deals-yellow-browser"
+            aria-label="Menu Browser"
+            title="Menu Browser"
+            onClick={openMenuBrowser}
+          >
+            <BrowseMenusIcon size={28} title="Menu Browser" />
+          </button>
+          <button
+            type="button"
+            style={styles.inviteShareBtn}
+            data-testid="feed-deals-share-invite"
+            aria-label="Share & Invite"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setInviteOpen(true);
+            }}
+          >
+            Share & Invite
+          </button>
+        </div>
       ) : null}
 
       {!atEnd && !menuBrowserOpen ? (
@@ -632,7 +668,7 @@ export default function DealVideoSwipe({
       menuItemName={inviteMenuItemName}
       videoShareUrl={inviteVideoShareUrl || null}
       shareMessageLead="Let's try this out!"
-      flowTitle="Invite to Eat"
+      flowTitle={useMobileActionRail ? "Invite to Eat" : "Share & Invite"}
     />
   ) : null;
 
@@ -781,6 +817,41 @@ const styles = {
   },
   metaWithRail: {
     paddingRight: "max(84px, calc(env(safe-area-inset-right) + 72px))",
+  },
+  feedActionDock: {
+    position: "absolute",
+    right: "max(12px, env(safe-area-inset-right))",
+    zIndex: 5,
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    pointerEvents: "auto",
+  },
+  yellowBrowserBtn: {
+    border: "none",
+    padding: 6,
+    borderRadius: 12,
+    background: "rgba(0,0,0,0.45)",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    lineHeight: 0,
+    fontFamily: "inherit",
+  },
+  inviteShareBtn: {
+    border: "1px solid rgba(255,255,255,0.4)",
+    borderRadius: 999,
+    padding: "10px 14px",
+    background: "rgba(0,0,0,0.55)",
+    color: "#fff",
+    fontSize: 13,
+    fontWeight: 800,
+    letterSpacing: "0.01em",
+    cursor: "pointer",
+    textShadow: "0 1px 3px rgba(0,0,0,0.75)",
+    fontFamily: "inherit",
   },
   // Mobile meta matches prior working caption layout (no maxHeight clamp).
   meta: {

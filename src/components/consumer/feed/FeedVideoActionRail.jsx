@@ -1,7 +1,7 @@
 /**
- * Live Feed right action rail — Wanna go · Share · Invite · Like · Menu · Waiter.
- * Waiter opens existing /waiter (connects-activity briefing comes later).
- * Hide (do not gray-out) actions that do not apply. Replaces legacy Share & Invite + Menu Browser dock.
+ * Live Feed mobile right action rail — Connect · Wanna go · Share · Invite · Like · Menu.
+ * Desktop Feed keeps the prior Share & Invite + Menu Browser dock (not this rail).
+ * Hide (do not gray-out) actions that do not apply.
  */
 
 import { useEffect, useState } from "react";
@@ -12,7 +12,6 @@ import { trackShareEvent } from "../../share/shareUtils.js";
 import InviteToEatIcon from "../../icons/InviteToEatIcon.jsx";
 import BrowseMenusIcon from "../../icons/BrowseMenusIcon.jsx";
 import ThumbsUpIcon from "../../icons/ThumbsUpIcon.jsx";
-import WaiterFaceIcon from "../../icons/WaiterFaceIcon.jsx";
 import { LIKE_ACCENT } from "../../../lib/likeButtonStyles.js";
 import useRestaurantFollow from "../../../hooks/useRestaurantFollow.js";
 import { useConsumer } from "../../../context/ConsumerContext.jsx";
@@ -43,6 +42,21 @@ function RailButton({ testId, label, ariaLabel, disabled, onClick, children, pre
   );
 }
 
+function ConnectGlyph({ size = 22 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="12" cy="8" r="3.5" stroke="#fff" strokeWidth="2" />
+      <path
+        d="M5 19.5c1.2-3.2 3.4-4.8 7-4.8s5.8 1.6 7 4.8"
+        stroke="#fff"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+      <path d="M18 7v4M16 9h4" stroke="#5eead4" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 function WannaGoGlyph({ size = 22 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -60,8 +74,9 @@ function WannaGoGlyph({ size = 22 }) {
 /**
  * @param {object} props
  * @param {number} [props.bottomInset]
- * @param {boolean} [props.showWaiter]
- * @param {() => void} [props.onWaiter]
+ * @param {boolean} [props.showConnect]
+ * @param {boolean} [props.connectBusy]
+ * @param {() => void} [props.onConnect]
  * @param {{ restaurant_id: string|number, restaurant_name?: string } | null} [props.restaurantRef]
  * @param {object | null} [props.shareData]
  * @param {object} [props.shareAnalyticsContext]
@@ -73,8 +88,9 @@ function WannaGoGlyph({ size = 22 }) {
  */
 export default function FeedVideoActionRail({
   bottomInset = 0,
-  showWaiter = true,
-  onWaiter,
+  showConnect = false,
+  connectBusy = false,
+  onConnect,
   restaurantRef = null,
   shareData = null,
   shareAnalyticsContext = null,
@@ -110,7 +126,7 @@ export default function FeedVideoActionRail({
   const showLike = hasRestaurant;
   const showShare = Boolean(shareData?.url);
   const anyVisible =
-    showWaiter || showWannaGo || showShare || showInvite || showLike || showMenu;
+    showConnect || showWannaGo || showShare || showInvite || showLike || showMenu;
   if (!anyVisible) return null;
 
   async function onWannaGoClick() {
@@ -144,14 +160,6 @@ export default function FeedVideoActionRail({
     setShareOpen(true);
   }
 
-  function onWaiterClick() {
-    if (typeof onWaiter === "function") {
-      onWaiter();
-      return;
-    }
-    navigate("/waiter");
-  }
-
   const inset = Math.max(0, Number(bottomInset) || 0);
 
   return (
@@ -163,6 +171,18 @@ export default function FeedVideoActionRail({
           bottom: `calc(${inset}px + max(88px, env(safe-area-inset-bottom) + 72px))`,
         }}
       >
+        {showConnect ? (
+          <RailButton
+            testId="feed-rail-connect"
+            label="Connect"
+            ariaLabel="Connect with person in video"
+            disabled={connectBusy}
+            onClick={onConnect}
+          >
+            <ConnectGlyph />
+          </RailButton>
+        ) : null}
+
         {showWannaGo ? (
           <RailButton
             testId="feed-rail-wanna-go"
@@ -222,17 +242,6 @@ export default function FeedVideoActionRail({
             onClick={onMenu}
           >
             <BrowseMenusIcon size={22} title="" />
-          </RailButton>
-        ) : null}
-
-        {showWaiter ? (
-          <RailButton
-            testId="feed-rail-waiter"
-            label="Waiter"
-            ariaLabel="Open Waiter"
-            onClick={onWaiterClick}
-          >
-            <WaiterFaceIcon size={28} title="" />
           </RailButton>
         ) : null}
 

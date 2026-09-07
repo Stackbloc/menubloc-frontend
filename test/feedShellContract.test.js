@@ -10,7 +10,7 @@ import { fileURLToPath } from "node:url";
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = (rel) => fs.readFileSync(path.join(root, rel), "utf8");
 
-test("Feed shell: Home|Connects|Menu Browser|X|Deals|Shop|Profile + slim X sheet", () => {
+test("Feed shell: Home|Waiter|Menu Browser|X|Deals|Shop|Profile + slim X sheet", () => {
   const app = read("src/App.jsx");
   assert.match(app, /path="\/feed"/);
   assert.match(app, /FeedShellPage/);
@@ -39,7 +39,11 @@ test("Feed shell: Home|Connects|Menu Browser|X|Deals|Shop|Profile + slim X sheet
 
   const feedTabLinks = read("src/lib/feedShellLinks.js");
   assert.match(feedTabLinks, /feed-nav-home/);
-  assert.match(feedTabLinks, /feed-nav-connects/);
+  assert.match(feedTabLinks, /feed-nav-waiter/);
+  assert.match(feedTabLinks, /label: "Waiter"/);
+  assert.match(feedTabLinks, /to: "\/waiter"/);
+  assert.doesNotMatch(feedTabLinks, /feed-nav-connects/);
+  assert.doesNotMatch(feedTabLinks, /label: "Connects"/);
   assert.match(feedTabLinks, /feed-nav-menus/);
   assert.match(feedTabLinks, /label: "Menu Browser"/);
   assert.match(feedTabLinks, /openFeedMenuBrowser:\s*true/);
@@ -256,7 +260,8 @@ test("Feed as home: / uses Feed shell; FeedPrimaryNav paths unchanged", () => {
 
   const feedLinks = read("src/lib/feedShellLinks.js");
   assert.match(feedLinks, /to: "\/feed"/);
-  assert.match(feedLinks, /to: "\/feed\/connects"/);
+  assert.match(feedLinks, /to: "\/waiter"/);
+  assert.match(feedLinks, /label: "Waiter"/);
   assert.doesNotMatch(feedLinks, /to: "\/feed\/menus"/);
   assert.match(feedLinks, /openFeedMenuBrowser:\s*true/);
   assert.match(feedLinks, /label: "Menu Browser"/);
