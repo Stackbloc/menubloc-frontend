@@ -20,6 +20,9 @@ test("FeedVideoActionRail: Connect first, no Waiter on rail", () => {
   assert.match(rail, /feed-rail-invite/);
   assert.match(rail, /feed-rail-like/);
   assert.match(rail, /feed-rail-menu/);
+  assert.match(rail, /WannaGoPlateIcon/);
+  assert.match(rail, /"Added"/);
+  assert.doesNotMatch(rail, /"Saved"/);
   assert.doesNotMatch(rail, /feed-rail-waiter/);
   assert.doesNotMatch(rail, /WaiterFaceIcon/);
   assert.doesNotMatch(rail, /navigate\("\/waiter"\)/);

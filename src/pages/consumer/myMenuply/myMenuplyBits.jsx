@@ -22,6 +22,7 @@ import {
 } from "./dinerHubFormat.js";
 import * as s from "./myMenuplyStyles.js";
 import { socialType } from "../../../lib/socialDesignTokens.js";
+import WannaGoPlateIcon from "../../../components/icons/WannaGoPlateIcon.jsx";
 
 const DINING_INTENT_LABELS = {
   want_to_go: "Wanna go",
@@ -1043,7 +1044,7 @@ function WantToEatCard({
             aria-hidden
             data-testid="want-to-eat-peer-graphic"
           >
-            🍽
+            <WannaGoPlateIcon size={isScroll ? 44 : 40} color="#94a3b8" />
           </div>
         )}
         {isScroll ? (
@@ -1070,7 +1071,7 @@ function WantToEatCard({
         aria-hidden
         data-testid="want-to-eat-placeholder"
       >
-        🍽
+        <WannaGoPlateIcon size={isScroll ? 44 : 40} color="#94a3b8" />
       </div>
     );
   }
@@ -1311,7 +1312,7 @@ function WannaGoRestaurantCard({
       aria-hidden
       data-testid="wanna-go-placeholder"
     >
-      📍
+      <WannaGoPlateIcon size={isScroll ? 44 : 40} color="#94a3b8" />
     </div>
   );
 

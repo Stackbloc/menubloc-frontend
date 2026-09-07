@@ -3,7 +3,10 @@
  */
 
 import { Link } from "react-router-dom";
-import { FEED_GUEST_PROFILE_CARDS, FEED_SHELL_LOGIN_PATH } from "../../../lib/feedShellLinks.js";
+import {
+  FEED_GUEST_PROFILE_CARDS,
+  FEED_SHELL_PROFILE_LOGIN_PATH,
+} from "../../../lib/feedShellLinks.js";
 import { FEED_PRIMARY_NAV_HEIGHT } from "./FeedPrimaryNav.jsx";
 
 export default function FeedGuestProfileLanding() {
@@ -32,7 +35,11 @@ export default function FeedGuestProfileLanding() {
       </div>
       <p style={styles.signInLine}>
         Already have an account?{" "}
-        <Link to={FEED_SHELL_LOGIN_PATH} style={styles.signInLink} data-testid="feed-guest-sign-in-link">
+        <Link
+          to={FEED_SHELL_PROFILE_LOGIN_PATH}
+          style={styles.signInLink}
+          data-testid="feed-guest-sign-in-link"
+        >
           Sign in
         </Link>
       </p>

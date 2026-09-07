@@ -16,6 +16,7 @@ import { LIKE_ACCENT } from "../../../lib/likeButtonStyles.js";
 import useRestaurantFollow from "../../../hooks/useRestaurantFollow.js";
 import { useConsumer } from "../../../context/ConsumerContext.jsx";
 import { createWantToEat } from "../../../lib/consumerApi.js";
+import WannaGoPlateIcon from "../../icons/WannaGoPlateIcon.jsx";
 
 function RailButton({ testId, label, ariaLabel, disabled, onClick, children, pressed }) {
   return (
@@ -53,25 +54,6 @@ function ConnectGlyph({ size = 22 }) {
         strokeLinecap="round"
       />
       <path d="M18 7v4M16 9h4" stroke="#5eead4" strokeWidth="2" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-/** Plate + utensils — same food affordance as My Menuply Wanna Eat (not a map pin). */
-function WannaGoGlyph({ size = 22 }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <circle cx="12" cy="13" r="6.5" stroke="#fff" strokeWidth="2" />
-      <circle cx="12" cy="13" r="2.2" stroke="#fff" strokeWidth="1.6" />
-      <path d="M4.5 4.5v7.5" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
-      <path d="M4.5 6.2h2.2M4.5 8.4h2.2" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" />
-      <path d="M19.5 4.5v8.2" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
-      <path
-        d="M19.5 4.5c1.4 0 2.2 1.1 2.2 2.4S20.9 9.3 19.5 9.3"
-        stroke="#fff"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-      />
     </svg>
   );
 }
@@ -191,12 +173,12 @@ export default function FeedVideoActionRail({
         {showWannaGo ? (
           <RailButton
             testId="feed-rail-wanna-go"
-            label={wannaDone ? "Saved" : "Wanna Go"}
+            label={wannaDone ? "Added" : "Wanna Go"}
             ariaLabel="Add restaurant to Wanna Go"
             disabled={wannaBusy || wannaDone}
             onClick={onWannaGoClick}
           >
-            <WannaGoGlyph />
+            <WannaGoPlateIcon size={22} color="#fff" />
           </RailButton>
         ) : null}
 

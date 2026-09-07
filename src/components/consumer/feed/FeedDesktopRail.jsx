@@ -27,7 +27,7 @@ function RailTab({ tab, onShareQr }) {
       <button
         type="button"
         data-testid={`${tab.testId}-desktop`}
-        aria-label="Share QR"
+        aria-label="Share My QR"
         onClick={() => onShareQr?.()}
         style={{
           ...styles.tab,

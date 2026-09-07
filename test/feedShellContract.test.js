@@ -10,7 +10,7 @@ import { fileURLToPath } from "node:url";
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = (rel) => fs.readFileSync(path.join(root, rel), "utf8");
 
-test("Feed shell: Home|Waiter|Share QR|X|Deals|Shop|Profile + slim X sheet", () => {
+test("Feed shell: Home|Waiter|Share My QR|X|Deals|Shop|Profile + slim X sheet", () => {
   const app = read("src/App.jsx");
   assert.match(app, /path="\/feed"/);
   assert.match(app, /FeedShellPage/);
@@ -46,7 +46,7 @@ test("Feed shell: Home|Waiter|Share QR|X|Deals|Shop|Profile + slim X sheet", () 
   assert.doesNotMatch(feedTabLinks, /feed-nav-connects/);
   assert.doesNotMatch(feedTabLinks, /label: "Connects"/);
   assert.match(feedTabLinks, /feed-nav-share-qr/);
-  assert.match(feedTabLinks, /label: "Share QR"/);
+  assert.match(feedTabLinks, /label: "Share My QR"/);
   assert.match(feedTabLinks, /openShareQr:\s*true/);
   assert.doesNotMatch(feedTabLinks, /feed-nav-menus/);
   assert.doesNotMatch(feedTabLinks, /openFeedMenuBrowser/);
@@ -162,7 +162,7 @@ test("Feed shell: Home|Waiter|Share QR|X|Deals|Shop|Profile + slim X sheet", () 
   assert.match(desktopRail, /feed-nav-share-qr-desktop|openShareQr/);
   assert.match(desktopRail, /feed-desktop-add-menu/);
   assert.match(desktopRail, /FEED_MENU_CAPTURE_HINT/);
-  assert.match(desktopRail, /Share QR/);
+  assert.match(desktopRail, /Share My QR/);
   assert.doesNotMatch(desktopRail, /feed-desktop-share-my-menuply/);
   assert.match(desktopRail, /showShopBasket/);
   assert.match(desktopRail, /showShopBasket\s*=\s*false/);
@@ -213,6 +213,11 @@ test("Feed shell: Home|Waiter|Share QR|X|Deals|Shop|Profile + slim X sheet", () 
   const guestLanding = read("src/components/consumer/feed/FeedGuestProfileLanding.jsx");
   assert.match(guestLanding, /FEED_GUEST_PROFILE_CARDS/);
   assert.match(guestLanding, /feed-guest-profile-landing/);
+  assert.match(guestLanding, /FEED_SHELL_PROFILE_LOGIN_PATH/);
+  assert.doesNotMatch(guestLanding, /FEED_SHELL_LOGIN_PATH/);
+  assert.match(feedLinks, /FEED_SHELL_PROFILE_LOGIN_PATH/);
+  assert.match(feedLinks, /FEED_SHELL_PROFILE_NEXT = "\/feed\/profile"/);
+  assert.match(feedLinks, /FEED_SHELL_PROFILE_SIGNUP_PATH/);
   assert.match(feedLinks, /feed-guest-join-card/);
   assert.match(feedLinks, /feed-more-add-menu/);
 
@@ -266,7 +271,7 @@ test("Feed as home: / uses Feed shell; FeedPrimaryNav paths unchanged", () => {
   assert.match(feedLinks, /to: "\/feed"/);
   assert.match(feedLinks, /to: "\/waiter"/);
   assert.match(feedLinks, /label: "Waiter"/);
-  assert.match(feedLinks, /label: "Share QR"/);
+  assert.match(feedLinks, /label: "Share My QR"/);
   assert.match(feedLinks, /openShareQr:\s*true/);
   assert.doesNotMatch(feedLinks, /to: "\/feed\/menus"/);
   assert.doesNotMatch(feedLinks, /openFeedMenuBrowser/);

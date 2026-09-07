@@ -78,7 +78,7 @@ test("Menu Browser lives on video rail/dock — not primary Feed nav tab", () =>
   const links = read("src/lib/feedShellLinks.js");
   assert.doesNotMatch(links, /label: "Menu Browser"/);
   assert.doesNotMatch(links, /openFeedMenuBrowser/);
-  assert.match(links, /label: "Share QR"/);
+  assert.match(links, /label: "Share My QR"/);
   assert.match(links, /openShareQr:\s*true/);
   const rail = read("src/components/consumer/feed/FeedVideoActionRail.jsx");
   assert.match(rail, /label="Menu Browser"/);

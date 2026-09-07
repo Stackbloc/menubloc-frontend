@@ -200,10 +200,10 @@ test("sample stack provides real starter menus when library is empty", () => {
   assert.ok(deck.every((row) => row.tier === "sample" && row.restaurant_id && row.slug));
 });
 
-test("Feed nav Share QR; Menu Browser on video rail; legacy /feed/menus kept for deep links", () => {
+test("Feed nav Share My QR; Menu Browser on video rail; legacy /feed/menus kept for deep links", () => {
   const navLinks = read("src/lib/feedShellLinks.js");
   assert.match(navLinks, /feed-nav-share-qr/);
-  assert.match(navLinks, /label: "Share QR"/);
+  assert.match(navLinks, /label: "Share My QR"/);
   assert.match(navLinks, /openShareQr:\s*true/);
   assert.doesNotMatch(navLinks, /feed-nav-menus/);
   assert.doesNotMatch(navLinks, /openFeedMenuBrowser/);

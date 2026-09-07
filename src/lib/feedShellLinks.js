@@ -10,6 +10,11 @@ export const FEED_SHELL_LOGIN_NEXT = "/feed";
 export const FEED_SHELL_SIGNUP_PATH = `/diner/signup?next=${encodeURIComponent(FEED_SHELL_LOGIN_NEXT)}`;
 export const FEED_SHELL_LOGIN_PATH = `/account/login?next=${encodeURIComponent(FEED_SHELL_LOGIN_NEXT)}`;
 
+/** Guest Profile tab — return to profile after auth (feed is browsable without sign-in). */
+export const FEED_SHELL_PROFILE_NEXT = "/feed/profile";
+export const FEED_SHELL_PROFILE_SIGNUP_PATH = `/diner/signup?next=${encodeURIComponent(FEED_SHELL_PROFILE_NEXT)}`;
+export const FEED_SHELL_PROFILE_LOGIN_PATH = `/account/login?next=${encodeURIComponent(FEED_SHELL_PROFILE_NEXT)}`;
+
 export const FEED_HOME_TAB = {
   to: "/feed",
   end: true,
@@ -24,7 +29,7 @@ export const FEED_LEFT_TABS = [
   {
     to: "/feed",
     end: true,
-    label: "Share QR",
+    label: "Share My QR",
     testId: "feed-nav-share-qr",
     /** Opens diner QR share sheet (FeedShareMyMenuplySheet). */
     openShareQr: true,
@@ -49,7 +54,7 @@ export const FEED_MENU_CAPTURE_HINT = "Upload restaurant menus to Menuply";
 
 export const FEED_GUEST_PROFILE_CARDS = [
   {
-    to: FEED_SHELL_SIGNUP_PATH,
+    to: FEED_SHELL_PROFILE_SIGNUP_PATH,
     title: "Join Menuply",
     blurb: "Create a free account to connect, post videos, and plan with friends.",
     testId: "feed-guest-join-card",

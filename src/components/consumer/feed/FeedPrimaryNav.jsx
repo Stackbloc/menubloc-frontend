@@ -1,6 +1,6 @@
 /**
- * TikTok-style feed shell nav: Home · Waiter · Share QR | [X] | Deals · Search · Profile.
- * Share QR opens the diner QR share sheet. Menu Browser lives on the video rail/dock.
+ * TikTok-style feed shell nav: Home · Waiter · Share My QR | [X] | Deals · Search · Profile.
+ * Share My QR opens the diner QR share sheet. Menu Browser lives on the video rail/dock.
  * Mobile bottom bar only — desktop uses FeedDesktopRail from the same tab config.
  */
 
@@ -20,7 +20,7 @@ function TabLink({ tab, onShareQr }) {
       <button
         type="button"
         data-testid={tab.testId}
-        aria-label="Share QR"
+        aria-label="Share My QR"
         onClick={() => onShareQr?.()}
         style={{
           ...styles.tab,
