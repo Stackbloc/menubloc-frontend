@@ -84,7 +84,7 @@ export default function SiteFooter() {
 
           <div>
             <div style={groupTitleStyle}>For Businesses</div>
-            <Link to="/restaurant/onboarding" style={footerLinkStyle}>
+            <Link to="/restaurant/signup" style={footerLinkStyle}>
               {t("discovery.footer.restaurants", "Restaurants")}
             </Link><br />
             <Link to="/join" style={footerLinkStyle}>Venues</Link><br />

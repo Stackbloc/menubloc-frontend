@@ -75,7 +75,10 @@ function getPlanTier(planCode) {
 }
 
 function getPlanDisplayName(planCode) {
-  if (!planCode || planCode === "verified" || planCode === "published_free") return "Standard";
+  // Internal free entitlement may be Standard — customer-facing name is Menuply only.
+  if (!planCode || planCode === "verified" || planCode === "published_free" || planCode === "standard" || planCode === "standard_free") {
+    return "Menuply";
+  }
   if (planCode === "starter_monthly") return "Pro — Monthly";
   if (planCode === "starter_annual") return "Pro — Annual";
   if (planCode === "pro_monthly") return "Pro Partner — Monthly";
@@ -658,8 +661,8 @@ export default function OperatorMyAccount() {
                   {cancelConfirm ? (
                     <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid #f0f4f8" }}>
                       <p style={{ margin: "0 0 12px", fontSize: 13, color: "#374151", lineHeight: 1.5 }}>
-                        Your plan stays active until <strong>{nextBillingDate}</strong>, then switches to
-                        Standard (free).
+                        Your Menuply access stays active until <strong>{nextBillingDate}</strong>, then
+                        continues with no subscription fee.
                       </p>
                       <div style={{ display: "flex", gap: 10 }}>
                         <button

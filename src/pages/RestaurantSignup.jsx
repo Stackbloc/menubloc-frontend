@@ -27,7 +27,8 @@ const ORGANIZATION_ROUTE = "/restaurant/onboarding/organization";
 function planLabel(t, planCode) {
   if (!planCode) return "";
   if (["standard", "standard_free", "published", "published_free", "verified", "starter"].includes(planCode)) {
-    return t("signup.account.plan.standard", "Standard");
+    // Internal plan may be Standard; customer-facing label is Menuply only.
+    return t("signup.account.plan.standard", "Menuply");
   }
   if (["starter_monthly", "starter_annual", "pro_monthly", "pro_annual", "pro_partner"].includes(planCode)) {
     return t("signup.account.plan.pro", "Pro");
@@ -627,43 +628,26 @@ export default function RestaurantSignup() {
       <main style={styles.pageMain}>
       <div style={styles.header}>
         <BrandLogo height={48} radius={14} matchPageBackground={false} />
-        <div style={styles.pageTitle}>{t("signup.account.pageTitle", "Create your restaurant account")}</div>
+        <div style={styles.pageTitle}>{t("signup.account.pageTitle", "Create your Menuply account")}</div>
         <div style={styles.pageSubtitle}>
           {t(
             "signup.account.pageSubtitleDetails",
-            "Enter your restaurant details to continue with your selected plan."
+            "Get your restaurant on Menuply and start building your presence in the community."
           )}
         </div>
         {selectedPlanLabel ? (
           <div style={styles.planSummary}>
             <div>
               <div style={styles.planSummaryLabel}>
-                {t("signup.account.selectedPlan", "Selected plan")}
+                {t("signup.account.selectedPlan", "Joining")}
               </div>
               <div style={styles.planSummaryValue}>{selectedPlanLabel}</div>
             </div>
             <Link to={PLAN_ENTRY_ROUTE} style={styles.planSummaryLink}>
-              {t("signup.account.changePlan", "Change plan")}
+              {t("signup.account.changePlan", "Back")}
             </Link>
           </div>
         ) : null}
-        <div style={styles.expectationCard}>
-          <div style={styles.expectationTitle}>
-            {t("signup.account.partnerExpectationTitle", "Menuply Partner Expectation")}
-          </div>
-          <div style={styles.expectationBody}>
-            {t(
-              "signup.account.partnerExpectationBody",
-              "Restaurants always control their own pricing. Menuply is built for partners aligned with real diner value through better pricing, meaningful deals, richer menu information, and more direct engagement."
-            )}
-          </div>
-        </div>
-        <div style={{ ...styles.helperText, marginTop: 10 }}>
-          {t(
-            "signup.account.optionalModulesNote",
-            "Optional setup modules such as QR starter kit, equipment readiness, and launch deals stay optional later in onboarding."
-          )}
-        </div>
       </div>
 
       {serverError ? (
@@ -674,8 +658,8 @@ export default function RestaurantSignup() {
       ) : null}
       {!selectedPlanLabel ? (
         <div style={styles.errorBanner}>
-          {t("signup.account.choosePlanFirst", "Choose a plan first to start restaurant signup.")}{" "}
-          <Link to={PLAN_ENTRY_ROUTE}>{t("signup.account.goToPricing", "Go to pricing")}</Link>
+          {t("signup.account.choosePlanFirst", "Start restaurant signup to continue.")}{" "}
+          <Link to={PLAN_ENTRY_ROUTE}>{t("signup.account.goToPricing", "Sign Up")}</Link>
         </div>
       ) : null}
 

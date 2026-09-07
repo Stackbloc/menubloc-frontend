@@ -26,8 +26,11 @@ export function getQrProductCode(packageTypeOrSku) {
 
 export function getSubscriptionPlanLabel(planCode) {
   // menu_manager_monthly / pro_* retained for legacy historical rows only.
+  // Free entitlement may be stored as Standard internally — never show "Standard" to restaurants.
   if (planCode === "menu_manager_monthly") return "Menu Manager";
-  if (planCode === "published_free" || planCode === "verified" || planCode === "standard") return "Standard";
+  if (planCode === "published_free" || planCode === "verified" || planCode === "standard" || planCode === "standard_free") {
+    return "Menuply";
+  }
   if (planCode === "starter_monthly") return "Pro Monthly";
   if (planCode === "starter_annual") return "Pro Annual";
   if (planCode === "founders_monthly") return "Founder's Monthly";
@@ -37,7 +40,7 @@ export function getSubscriptionPlanLabel(planCode) {
   }
   if (planCode === "pro_annual") return "Pro Annual";
   if (planCode === "pro_monthly") return "Pro Monthly";
-  return "No active subscription";
+  return "Menuply";
 }
 
 export function getSubscriptionStatusLabel(status) {

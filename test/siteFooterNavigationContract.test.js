@@ -38,15 +38,15 @@ function testFooterMarketplaceLinks() {
   assert.doesNotMatch(src, /<Link to="\/account\/dining-crews"/);
   assert.doesNotMatch(src, /<Link to="\/account\/what-we-doing"/);
   assert.doesNotMatch(src, /What People Are Eating/);
-  assert.match(src, /restaurant\/onboarding"/);
+  assert.match(src, /restaurant\/signup"/);
   assert.match(src, /discovery\.footer\.creators/);
   assert.match(src, /<Link to="\/distributors"/);
   assert.match(src, /discovery\.footer\.foodDistributors/);
   assert.doesNotMatch(src, /Owner tools/);
   const businesses = src.slice(src.indexOf("For Businesses"), src.indexOf(">Menuply<"));
   assert.ok(
-    businesses.includes('<Link to="/restaurant/onboarding"'),
-    "expected For Businesses Restaurants (onboarding) to remain"
+    businesses.includes('<Link to="/restaurant/signup"'),
+    "expected For Businesses Restaurants to open invitation signup"
   );
   assert.ok(
     businesses.lastIndexOf('<Link to="/distributors"') > businesses.lastIndexOf('<Link to="/creative-pros"'),

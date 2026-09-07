@@ -15,7 +15,7 @@ test("guest feed video legal consent UI and API wiring", () => {
   assert.match(legal, /buildGuestPublicationLegalPayload/);
   assert.match(legal, /GUEST_PUBLICATION_CONSENT_LABEL/);
   assert.match(legal, /GUEST_PUBLICATION_NOTICE/);
-  assert.match(read("src/content/legal.js"), /terms_of_use_v2026_08_27/);
+  assert.match(read("src/content/legal.js"), /terms_of_use_v2026_09_07/);
 
   const gate = read("src/components/consumer/feed/GuestFeedVideoConsentGate.jsx");
   assert.match(gate, /guest-feed-video-consent-gate/);

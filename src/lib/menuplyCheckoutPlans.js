@@ -61,7 +61,7 @@ export const FALLBACK_COMMISSION_LOCK_MONTHS = Object.freeze({
 export const FALLBACK_CHECKOUT_PLANS = Object.freeze([
   {
     code: FREE_PLAN_CODE,
-    checkout_label: "Standard",
+    checkout_label: "Menuply",
     amount_cents: 0,
     billing_interval: null,
     commission_rate_bps: FALLBACK_COMMISSION_RATE_BPS[FREE_PLAN_CODE],

@@ -5,7 +5,7 @@ import { PageHero, PageShell } from "../components/grubbid/GrubbidPrimitives.jsx
 import { BrandLogo } from "../components/BrandLogo.jsx";
 import BottomNav from "../components/BottomNav.jsx";
 
-const CREATE_ACCOUNT_ROUTE = "/restaurant/onboarding";
+const CREATE_ACCOUNT_ROUTE = "/restaurant/signup";
 const SIGN_IN_ROUTE = "/operator/login";
 
 const actionLinkStyle = {

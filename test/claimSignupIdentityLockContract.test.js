@@ -19,15 +19,17 @@ function read(rel) {
   return fs.readFileSync(path.join(root, rel), "utf8");
 }
 
-test("RestaurantPhilosophy forwards location.state to plan entry", () => {
+test("RestaurantPhilosophy redirects to invitation signup with state", () => {
   const src = read("src/pages/RestaurantPhilosophy.jsx");
-  assert.match(src, /useLocation/);
-  assert.match(src, /navigate\(PLAN_ROUTE,\s*\{\s*state:\s*location\.state\s*\}\)/);
+  assert.match(src, /Navigate/);
+  assert.match(src, /\/restaurant\/signup/);
+  assert.match(src, /state=\{location\.state\}/);
 });
 
 test("RestaurantSignupEntry forwards claim identity keys with selected_plan", () => {
   const src = read("src/pages/RestaurantSignupEntry.jsx");
   assert.match(src, /proceedWithPlanCode/);
+  assert.match(src, /FREE_PLAN_CODE/);
   for (const key of [
     "restaurant_id",
     "restaurant_name",

@@ -262,11 +262,11 @@ export default function OperatorSubscription() {
     }
     try {
       await api.cancelPlatformSubscription({ restaurantId: selectedRestaurant.id, atPeriodEnd: true });
-      setMessage("Standard selected. Your menu and data are preserved.");
+      setMessage("Menuply selected. Your menu and data are preserved.");
       await refreshSubscription();
       setTimeout(() => navigate("/operator/menulab"), 1500);
     } catch (err) {
-      setError(err.message || "Unable to switch to Standard.");
+      setError(err.message || "Unable to switch to Menuply.");
     }
   }
 
@@ -276,7 +276,7 @@ export default function OperatorSubscription() {
       return;
     }
     if (!canManageBilling) {
-      setError("No Stripe billing account yet. Subscribe to a paid plan first.");
+      setError("No Stripe billing account yet. Start a paid option first.");
       return;
     }
     setIsOpeningPortal(true);
@@ -367,20 +367,20 @@ export default function OperatorSubscription() {
 
         <div style={{ marginBottom: 28 }}>
           <h2 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: "#0f1720", letterSpacing: "-0.03em" }}>
-            {showPlanSelection ? "Choose Plan" : "My Account"}
+            {showPlanSelection ? "Account options" : "My Account"}
           </h2>
           <p style={{ margin: "6px 0 0", fontSize: 14, color: "#6b7280" }}>
             {showPlanSelection
-              ? "Choose a plan and complete your restaurant setup."
-              : "Review your current subscription and billing details before changing plans."}
+              ? "Review Menuply access and optional paid upgrades."
+              : "Review your current Menuply access and billing details."}
           </p>
         </div>
 
         {!showPlanSelection && shouldShowAccountManagement && (
           <div style={{ maxWidth: 520, background: "#fff", border: "1px solid #eaecf0", borderRadius: 16, padding: 22, marginBottom: 32 }}>
-            <h3 style={{ margin: "0 0 14px", fontSize: 16, fontWeight: 800, color: "#0f1720" }}>Subscription status</h3>
+            <h3 style={{ margin: "0 0 14px", fontSize: 16, fontWeight: 800, color: "#0f1720" }}>Account status</h3>
             <div style={{ display: "grid", gap: 2 }}>
-              <StatusRow label="Current plan" value={getSubscriptionPlanLabel(currentPlanCode)} />
+              <StatusRow label="Current access" value={getSubscriptionPlanLabel(currentPlanCode)} />
               <StatusRow label="Billing interval" value={getBillingIntervalLabel(currentPlanCode)} />
               <StatusRow label="Subscription status" value={loading ? "Loading…" : getSubscriptionStatusLabel(subscription?.status)} />
               <StatusRow label="Next billing / renewal" value={loading ? "Loading…" : currentPeriodEnd} />
@@ -444,7 +444,7 @@ export default function OperatorSubscription() {
                 style={{ ...planCard("#f8faf9", "#d1e7dd", selectedPlanCode === FREE_PLAN_CODE), cursor: "pointer" }}
               >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                  <span style={{ fontSize: 16, fontWeight: 800, color: GREEN }}>Standard</span>
+                  <span style={{ fontSize: 16, fontWeight: 800, color: GREEN }}>Menuply</span>
                   {hasPublishedAccess && <span style={currentBadge(GREEN)}>Current access</span>}
                 </div>
                 <div
@@ -483,10 +483,10 @@ export default function OperatorSubscription() {
                   ))}
                 </ul>
                 <button type="button" style={hasPublishedAccess ? planBtn("primary", GREEN) : planBtn("muted", GREEN)} onClick={handleSelectPublished} disabled={isCheckingOut}>
-                  Select Standard
+                  Select Menuply
                 </button>
                 <p style={{ margin: 0, fontSize: 11, color: "#8a9ab0", textAlign: "center" }}>
-                  Standard activates without Stripe checkout.
+                  Menuply activates without Stripe checkout.
                 </p>
               </div>
 
