@@ -75,6 +75,25 @@ export function feedDealShareUrl(dealId) {
   return normalizeConsumerShareUrl(path) || "";
 }
 
+/**
+ * @param {{ deal_id?: string, id?: string, title?: string, restaurant_name?: string }} item
+ */
+export function buildFeedDealShareData(item) {
+  const dealId = feedDealQueryParam(item?.deal_id || item?.id);
+  const url = feedDealShareUrl(dealId);
+  if (!url) return null;
+  const restaurant = String(item?.restaurant_name || "").trim();
+  const title = String(item?.headline || item?.title || "Deal").trim() || "Deal";
+  const headline = restaurant ? `${restaurant} — ${title}` : title;
+  const body = restaurant
+    ? `Check out this deal from ${restaurant} on Menuply: ${title}.`
+    : `Check out this deal on Menuply: ${title}.`;
+  const text = appendMenuplyAccountInviteToShareText(`${body}\n${url}`.trim(), {
+    nextPath: invitePathFromShareUrl(url),
+  });
+  return { title: headline, text, url };
+}
+
 export function resolveFeedDealStartIndex(items, dealId) {
   const target = feedDealQueryParam(dealId);
   if (!target || !Array.isArray(items) || items.length === 0) return 0;

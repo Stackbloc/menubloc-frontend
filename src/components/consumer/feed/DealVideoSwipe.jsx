@@ -2,15 +2,15 @@
  * TikTok-style swipe reel for restaurant deal videos (Feed Deals).
  * Sound on by default (same as Feed home); muted fallback if autoplay blocked. Tap/click toggles mute.
  * Meta dock: desktop shell lifts captions so meal-time badges do not clip; mobile caption layout unchanged.
- * Opposite-side Share & Invite opens Invite to Eat with video deep link in share text.
+ * Right rail: Wanna go · Share · Invite · Like · Menu · Waiter.
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import InviteToEatModal from "../../InviteToEatModal.jsx";
-import BrowseMenusIcon from "../../icons/BrowseMenusIcon.jsx";
 import FeedMenuBrowserPipOverlay from "./FeedMenuBrowserPipOverlay.jsx";
+import FeedVideoActionRail from "./FeedVideoActionRail.jsx";
 import { stripMediaUrlFragment } from "../../../lib/menuplyLiveFeedControl.js";
 import { OPEN_FEED_MENU_BROWSER_EVENT } from "../../../lib/feedMenuBrowserNav.js";
 import {
@@ -21,7 +21,7 @@ import {
   buildBrowseMenuTrail,
   clampBrowseTrailIndex,
 } from "../../../lib/feedMenuBrowserTrail.js";
-import { feedDealShareUrl } from "../../../lib/feedShare.js";
+import { buildFeedDealShareData, feedDealShareUrl } from "../../../lib/feedShare.js";
 import { useFeedShellDesktop } from "../../../lib/useFeedShellDesktop.js";
 import {
   attemptFeedVideoAutoplay,
@@ -72,7 +72,8 @@ export default function DealVideoSwipe({
     () => feedDealShareUrl(item?.deal_id || item?.id),
     [item?.deal_id, item?.id]
   );
-  const showInviteShare = Boolean(restaurantRef?.restaurant_id);
+  const dealShareData = useMemo(() => (item ? buildFeedDealShareData(item) : null), [item]);
+  const showInvite = Boolean(restaurantRef?.restaurant_id);
   const inviteMenuItemId =
     item?.menu_item_id != null && String(item.menu_item_id).trim() !== ""
       ? item.menu_item_id
@@ -525,6 +526,7 @@ export default function DealVideoSwipe({
         style={{
           ...styles.meta,
           ...(isDesktopViewport ? styles.metaDesktop : null),
+          ...styles.metaWithRail,
           bottom: metaBottomPad,
         }}
         data-testid="feed-deals-meta-dock"
@@ -589,37 +591,21 @@ export default function DealVideoSwipe({
       </div>
       ) : null}
 
-      {showInviteShare && !menuBrowserOpen ? (
-        <div
-          style={{
-            ...styles.feedActionDock,
-            bottom: metaBottomPad,
+      {item && !menuBrowserOpen ? (
+        <FeedVideoActionRail
+          bottomInset={Number(bottomInset) || 0}
+          restaurantRef={restaurantRef}
+          shareData={dealShareData}
+          shareAnalyticsContext={{
+            surface: "feed_deals_video",
+            deal_id: item.deal_id || item.id,
           }}
-        >
-          <button
-            type="button"
-            style={styles.yellowBrowserBtn}
-            data-testid="feed-deals-yellow-browser"
-            aria-label="Menu Browser"
-            title="Menu Browser"
-            onClick={openMenuBrowser}
-          >
-            <BrowseMenusIcon size={28} title="Menu Browser" />
-          </button>
-          <button
-            type="button"
-            style={styles.inviteShareBtn}
-            data-testid="feed-deals-share-invite"
-            aria-label="Share & Invite"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setInviteOpen(true);
-            }}
-          >
-            Share & Invite
-          </button>
-        </div>
+          showInvite={showInvite}
+          onInvite={() => setInviteOpen(true)}
+          showMenu={showInvite}
+          onMenu={openMenuBrowser}
+          followSource="feed_deals_video"
+        />
       ) : null}
 
       {!atEnd && !menuBrowserOpen ? (
@@ -636,7 +622,7 @@ export default function DealVideoSwipe({
     </div>
   );
 
-  const inviteModal = showInviteShare ? (
+  const inviteModal = showInvite ? (
     <InviteToEatModal
       open={inviteOpen}
       onClose={() => setInviteOpen(false)}
@@ -646,7 +632,7 @@ export default function DealVideoSwipe({
       menuItemName={inviteMenuItemName}
       videoShareUrl={inviteVideoShareUrl || null}
       shareMessageLead="Let's try this out!"
-      flowTitle="Share & Invite"
+      flowTitle="Invite to Eat"
     />
   ) : null;
 
@@ -793,40 +779,8 @@ const styles = {
     cursor: "pointer",
     pointerEvents: "auto",
   },
-  feedActionDock: {
-    position: "absolute",
-    right: "max(12px, env(safe-area-inset-right))",
-    zIndex: 5,
-    display: "flex",
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    pointerEvents: "auto",
-  },
-  yellowBrowserBtn: {
-    border: "none",
-    padding: 6,
-    borderRadius: 12,
-    background: "rgba(0,0,0,0.45)",
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    lineHeight: 0,
-    fontFamily: "inherit",
-  },
-  inviteShareBtn: {
-    border: "1px solid rgba(255,255,255,0.4)",
-    borderRadius: 999,
-    padding: "10px 14px",
-    background: "rgba(0,0,0,0.55)",
-    color: "#fff",
-    fontSize: 13,
-    fontWeight: 800,
-    letterSpacing: "0.01em",
-    cursor: "pointer",
-    textShadow: "0 1px 3px rgba(0,0,0,0.75)",
-    fontFamily: "inherit",
+  metaWithRail: {
+    paddingRight: "max(84px, calc(env(safe-area-inset-right) + 72px))",
   },
   // Mobile meta matches prior working caption layout (no maxHeight clamp).
   meta: {

@@ -7,10 +7,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import ShareButton from "../../../components/share/ShareButton.jsx";
 import InviteToEatModal from "../../../components/InviteToEatModal.jsx";
-import BrowseMenusIcon from "../../../components/icons/BrowseMenusIcon.jsx";
 import FeedMenuBrowserPipOverlay from "../../../components/consumer/feed/FeedMenuBrowserPipOverlay.jsx";
+import FeedVideoActionRail from "../../../components/consumer/feed/FeedVideoActionRail.jsx";
 import { hidePublicFeedItem, requestConnection } from "../../../lib/consumerApi.js";
 import {
   MENUPY_CLOSE_LIVE_FEED_FULLSCREEN,
@@ -581,7 +580,7 @@ export default function SeeWhosEatingFullscreen({
         .toLowerCase()
     );
   const isFeedHome = variant === "feedHome";
-  const showInviteShare = Boolean(isFeedHome && restaurantRef?.restaurant_id);
+  const showInvite = Boolean(isFeedHome && restaurantRef?.restaurant_id);
   const soundPromptLabel = isDesktopViewport ? "Click for sound" : "Tap for sound";
   const soundToggleLabel = videoMuted ? soundPromptLabel : "Mute";
   const showDesktopSoundLayer = Boolean(isDesktopViewport && item?.video_url && videoMuted);
@@ -666,30 +665,6 @@ export default function SeeWhosEatingFullscreen({
         >
           {menuBookmarked ? "★ Saved" : "☆ Save menu"}
         </button>
-      ) : null}
-
-      {item && isFeedHome && feedShareData && !menuBrowserOpen ? (
-        <div
-          style={{
-            ...styles.shareBtnWrap,
-            top: restaurantRef
-              ? "calc(max(16px, env(safe-area-inset-top)) + 48px)"
-              : "max(16px, env(safe-area-inset-top))",
-          }}
-          data-testid="see-whos-eating-share-wrap"
-        >
-          <ShareButton
-            shareData={feedShareData}
-            variant="menu"
-            label="Share"
-            modalTitle="Share video"
-            iconOnly
-            tone="ghost"
-            size="compact"
-            stopPropagation
-            analyticsContext={{ surface: "feed_home_video", clip_id: item.id }}
-          />
-        </div>
       ) : null}
 
       {showSharedAccountInvite && isFeedHome && !isAuthenticated && !menuBrowserOpen ? (
@@ -855,7 +830,7 @@ export default function SeeWhosEatingFullscreen({
       ) : null}
 
       {!menuBrowserOpen ? (
-      <div style={styles.metaDock}>
+      <div style={{ ...styles.metaDock, ...(isFeedHome ? styles.metaDockWithRail : null) }}>
         <button
           type="button"
           style={styles.screenNameBtn}
@@ -901,37 +876,18 @@ export default function SeeWhosEatingFullscreen({
       </div>
       ) : null}
 
-      {showInviteShare && !menuBrowserOpen ? (
-        <div
-          style={{
-            ...styles.feedActionDock,
-            bottom: `calc(${navInset}px + max(28px, env(safe-area-inset-bottom)) + 12px)`,
-          }}
-        >
-          <button
-            type="button"
-            style={styles.yellowBrowserBtn}
-            data-testid="feed-video-yellow-browser"
-            aria-label="Menu Browser"
-            title="Menu Browser"
-            onClick={openMenuBrowser}
-          >
-            <BrowseMenusIcon size={28} title="Menu Browser" />
-          </button>
-          <button
-            type="button"
-            style={styles.inviteShareBtn}
-            data-testid="feed-video-share-invite"
-            aria-label="Share & Invite"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setInviteOpen(true);
-            }}
-          >
-            Share & Invite
-          </button>
-        </div>
+      {isFeedHome && item && !menuBrowserOpen ? (
+        <FeedVideoActionRail
+          bottomInset={navInset}
+          restaurantRef={restaurantRef}
+          shareData={feedShareData}
+          shareAnalyticsContext={{ surface: "feed_home_video", clip_id: item.id }}
+          showInvite={showInvite}
+          onInvite={() => setInviteOpen(true)}
+          showMenu={showInvite}
+          onMenu={openMenuBrowser}
+          followSource="feed_home_video"
+        />
       ) : null}
 
       {!atEnd && !menuBrowserOpen ? (
@@ -945,7 +901,7 @@ export default function SeeWhosEatingFullscreen({
   return (
     <>
       {createPortal(ui, document.body)}
-      {showInviteShare ? (
+      {showInvite ? (
         <InviteToEatModal
           open={inviteOpen}
           onClose={() => setInviteOpen(false)}
@@ -955,7 +911,7 @@ export default function SeeWhosEatingFullscreen({
           menuItemName={inviteMenuItemName}
           videoShareUrl={inviteVideoShareUrl || null}
           shareMessageLead="Let's try this out!"
-          flowTitle="Share & Invite"
+          flowTitle="Invite to Eat"
         />
       ) : null}
     </>
@@ -1017,46 +973,6 @@ const styles = {
     fontSize: 12,
     fontWeight: 800,
     cursor: "pointer",
-  },
-  shareBtnWrap: {
-    position: "absolute",
-    right: "max(8px, env(safe-area-inset-right))",
-    zIndex: 3,
-  },
-  feedActionDock: {
-    position: "absolute",
-    right: "max(12px, env(safe-area-inset-right))",
-    zIndex: 5,
-    display: "flex",
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    pointerEvents: "auto",
-  },
-  yellowBrowserBtn: {
-    border: "none",
-    padding: 6,
-    borderRadius: 12,
-    background: "rgba(0,0,0,0.45)",
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    lineHeight: 0,
-    fontFamily: "inherit",
-  },
-  inviteShareBtn: {
-    border: "1px solid rgba(255,255,255,0.4)",
-    borderRadius: 999,
-    padding: "10px 14px",
-    background: "rgba(0,0,0,0.55)",
-    color: "#fff",
-    fontSize: 13,
-    fontWeight: 800,
-    letterSpacing: "0.01em",
-    cursor: "pointer",
-    textShadow: "0 1px 3px rgba(0,0,0,0.75)",
-    fontFamily: "inherit",
   },
   sharedInviteWrap: {
     position: "absolute",
@@ -1199,6 +1115,9 @@ const styles = {
     pointerEvents: "auto",
     zIndex: 3,
     background: "linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.55) 32%, rgba(0,0,0,0.88) 100%)",
+  },
+  metaDockWithRail: {
+    paddingRight: "max(84px, calc(env(safe-area-inset-right) + 72px))",
   },
   captionMetaRow: {
     display: "flex",

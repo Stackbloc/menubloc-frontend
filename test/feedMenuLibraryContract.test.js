@@ -228,7 +228,7 @@ test("Feed nav Menu Browser opens Feed PiP; legacy /feed/menus kept for deep lin
   const reel = read("src/pages/consumer/myMenuply/SeeWhosEatingFullscreen.jsx");
   assert.match(reel, /see-whos-eating-menu-bookmark/);
   assert.match(reel, /recordFeedMenuOpen/);
-  assert.match(reel, /feed-video-yellow-browser/);
+  assert.match(reel, /FeedVideoActionRail/);
   assert.match(reel, /browseSession/);
   assert.match(reel, /FeedMenuBrowserPipOverlay/);
 });
