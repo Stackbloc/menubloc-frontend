@@ -30,8 +30,9 @@ test("Waiter briefing sections + cluster follow; no forbidden UI", () => {
   assert.doesNotMatch(page, /import\s+.*MarketFallback|<[Mm]arketFallback|CommunityGrowthCard\s*[({]/);
   assert.doesNotMatch(page, /\bbriefing\.cards\b/);
   assert.doesNotMatch(page, /Good morning|Good afternoon|Good evening/);
-  // Legacy one-card-per-category path retired with briefing rebuild
   assert.doesNotMatch(page, /\bgroupByType\b/);
+  // Light-page ink: do not inherit near-white --gb-color-ink for greeting copy
+  assert.match(page, /color:\s*["']#111827["']/);
 
   const api = read("src/lib/waiterApi.js");
   assert.match(api, /fetchWaiterBriefing/);

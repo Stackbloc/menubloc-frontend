@@ -396,12 +396,14 @@ export default function FoodInterestsPage() {
       briefing?.mealOptions
   );
 
+  // Global --gb-color-ink is near-white (dark-surface default). Waiter briefing is a
+  // light page — set ink explicitly or greeting/section copy goes invisible.
   return (
     <div
       style={{
         minHeight: "100vh",
-        background: "var(--gb-color-page)",
-        color: "var(--gb-color-ink)",
+        background: "#ffffff",
+        color: "#111827",
         paddingBottom: "calc(var(--bottom-nav-h, 72px) + 28px)",
       }}
     >
@@ -410,7 +412,7 @@ export default function FoodInterestsPage() {
 
         {!isAuthenticated ? (
           <div style={styles.signInStrip}>
-            <div style={{ fontSize: 13, color: "#DCFCE7", lineHeight: 1.45 }}>
+            <div style={{ fontSize: 13, color: "#14532D", lineHeight: 1.45 }}>
               Sign in to see connect requests, Join Me invites, and private offers.
             </div>
             <button
@@ -425,7 +427,7 @@ export default function FoodInterestsPage() {
           <div style={{ marginTop: 8, fontSize: 12 }}>
             <Link
               to="/account/cluster-subscriptions"
-              style={{ color: "#86EFAC", fontWeight: 700, textDecoration: "none" }}
+              style={{ color: "#15803D", fontWeight: 700, textDecoration: "none" }}
             >
               Manage followed places
             </Link>
@@ -434,11 +436,11 @@ export default function FoodInterestsPage() {
 
         <div aria-live="polite" style={{ marginTop: 8 }}>
           {briefingLoading ? (
-            <div style={{ fontSize: 14, color: "#9CA3AF", padding: "12px 0" }}>
+            <div style={{ fontSize: 14, color: "#4B5563", padding: "12px 0" }}>
               Loading your briefing…
             </div>
           ) : !canFetchBriefing ? (
-            <div style={{ fontSize: 13, color: "#6B7280", lineHeight: 1.55, padding: "12px 0" }}>
+            <div style={{ fontSize: 13, color: "#4B5563", lineHeight: 1.55, padding: "12px 0" }}>
               Set your location on the home screen or sign in for personalized updates.
             </div>
           ) : (
@@ -452,7 +454,7 @@ export default function FoodInterestsPage() {
                 onSelectMealPeriod={selectMealPeriod}
               />
               {!hasAnySection ? (
-                <div style={{ fontSize: 13, color: "#9CA3AF", lineHeight: 1.55, padding: "12px 0" }}>
+                <div style={{ fontSize: 13, color: "#4B5563", lineHeight: 1.55, padding: "12px 0" }}>
                   Nothing new in your briefing right now. Check back soon.
                 </div>
               ) : null}
@@ -475,7 +477,7 @@ const styles = {
     gap: 5,
     fontSize: 13,
     fontWeight: 800,
-    color: "#86EFAC",
+    color: "#15803D",
     letterSpacing: "0.08em",
     textTransform: "uppercase",
   },
@@ -485,9 +487,10 @@ const styles = {
     lineHeight: 1.1,
     letterSpacing: "-0.03em",
     fontWeight: 800,
+    color: "#111827",
   },
-  when: { margin: "6px 0 0", fontSize: 14, color: "#94A3B8" },
-  heres: { margin: "10px 0 0", fontSize: 15, color: "#CBD5E1" },
+  when: { margin: "6px 0 0", fontSize: 14, color: "#4B5563" },
+  heres: { margin: "10px 0 0", fontSize: 15, color: "#374151" },
   section: { marginTop: 22 },
   sectionLabel: {
     fontSize: 11,
@@ -497,7 +500,7 @@ const styles = {
     color: "#6B7280",
     marginBottom: 8,
   },
-  sectionLead: { margin: "0 0 10px", fontSize: 14, color: "#E5E7EB", fontWeight: 600 },
+  sectionLead: { margin: "0 0 10px", fontSize: 14, color: "#111827", fontWeight: 600 },
   stack: { display: "grid", gap: 8 },
   listCard: {
     display: "flex",
@@ -505,10 +508,10 @@ const styles = {
     gap: 12,
     borderRadius: 14,
     padding: "12px 14px",
-    border: "1px solid rgba(134,239,172,0.14)",
-    background: "linear-gradient(180deg, rgba(17,24,20,0.92), rgba(11,15,12,0.92))",
+    border: "1px solid rgba(17,24,39,0.12)",
+    background: "linear-gradient(180deg, #111827, #0B0F0C)",
     textDecoration: "none",
-    color: "inherit",
+    color: "#F9FAFB",
   },
   avatar: {
     width: 40,
@@ -523,14 +526,14 @@ const styles = {
     overflow: "hidden",
   },
   avatarImg: { width: "100%", height: "100%", objectFit: "cover" },
-  rowTitle: { fontSize: 14, fontWeight: 700, color: "#E5E7EB", lineHeight: 1.35 },
-  rowMeta: { fontSize: 12, color: "#94A3B8", marginTop: 3, lineHeight: 1.4 },
+  rowTitle: { fontSize: 14, fontWeight: 700, color: "#F9FAFB", lineHeight: 1.35 },
+  rowMeta: { fontSize: 12, color: "#D1D5DB", marginTop: 3, lineHeight: 1.4 },
   footerLink: {
     display: "inline-block",
     marginTop: 10,
     fontSize: 13,
     fontWeight: 700,
-    color: "#86EFAC",
+    color: "#15803D",
     textDecoration: "none",
   },
   offerCard: {
@@ -540,7 +543,7 @@ const styles = {
     border: "1px solid rgba(251,191,36,0.45)",
     background: "linear-gradient(135deg, rgba(69,42,10,0.95), rgba(30,24,12,0.96))",
     textDecoration: "none",
-    color: "inherit",
+    color: "#FEF3C7",
   },
   offerKicker: {
     fontSize: 12,
@@ -557,21 +560,21 @@ const styles = {
     padding: "7px 14px",
     fontSize: 13,
     fontWeight: 700,
-    border: "1px solid rgba(134,239,172,0.2)",
-    background: "transparent",
-    color: "#9CA3AF",
+    border: "1px solid #D1D5DB",
+    background: "#ffffff",
+    color: "#4B5563",
     cursor: "pointer",
   },
   tabSelected: {
-    border: "1px solid #22C55E",
-    background: "rgba(34,197,94,0.15)",
-    color: "#22C55E",
+    border: "1px solid #16A34A",
+    background: "rgba(22,163,74,0.12)",
+    color: "#15803D",
   },
   signInStrip: {
     marginTop: 14,
     borderRadius: 16,
-    border: "1px solid rgba(34,197,94,0.18)",
-    background: "rgba(34,197,94,0.08)",
+    border: "1px solid rgba(22,163,74,0.28)",
+    background: "rgba(22,163,74,0.08)",
     padding: "12px 14px",
     display: "flex",
     alignItems: "center",
@@ -581,8 +584,8 @@ const styles = {
   signInBtn: {
     border: "none",
     borderRadius: 999,
-    background: "#22C55E",
-    color: "#0B0F0C",
+    background: "#16A34A",
+    color: "#ffffff",
     fontSize: 12,
     fontWeight: 800,
     padding: "10px 12px",
