@@ -2,17 +2,18 @@
  * ============================================================
  * File: FoodTruckSignup.jsx
  * Path: menubloc-frontend/src/pages/FoodTruckSignup.jsx
- * Date: 2026-05-26
+ * Date: 2026-09-07
  * Purpose:
- *   Food truck owner signup — create the account first, then
- *   collect operational details later from the operator dashboard.
+ *   Food truck owner signup — Menuply invitation messaging + account
+ *   creation. Create the account first, then collect operational
+ *   details later from the operator dashboard.
  *
  *   On submit: calls POST /owner/profile with category='food_truck'
- *   Returns { restaurant, owner_token }.
- *   Subscription checkout occurs later in the operator flow.
+ *   and internal selected_plan FOOD_TRUCK_ANNUAL_PLAN_CODE (or free
+ *   join codes elsewhere). Never show customer-facing "Standard".
  *
- *   Plan cards + comparison chart are driven by Subscription Designer
- *   public chart API (audience=food_truck).
+ *   Optional paid upgrade cards (SD chart) are gated; comparison
+ *   table is not mounted on this invitation page.
  *
  * Route: /foodtruck/signup
  * ============================================================
@@ -21,7 +22,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { BrandLogo } from "../components/BrandLogo.jsx";
-import PlanComparisonTable from "../components/PlanComparisonTable.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { API_BASE } from "../lib/api.js";
 import { buildLegalConsentPayload } from "../lib/legalConsent.js";
@@ -303,14 +303,87 @@ const styles = {
     fontWeight: 700,
     textDecoration: "underline",
   },
-  chartSectionTitle: {
-    fontSize: 18,
+  inviteCard: {
+    borderRadius: 28,
+    border: "1px solid #eaecf0",
+    background: "#ffffff",
+    boxShadow: "0 18px 48px rgba(15, 23, 32, 0.08)",
+    padding: "32px 28px 28px",
+    marginBottom: 24,
+  },
+  inviteHeadline: {
+    fontSize: "clamp(1.75rem, 4vw, 2.45rem)",
     fontWeight: 900,
+    letterSpacing: "-0.03em",
+    lineHeight: 1.15,
+    color: "#0B0F0C",
+    margin: "0 0 16px",
+  },
+  economics: {
+    fontSize: "clamp(1.15rem, 2.5vw, 1.35rem)",
+    fontWeight: 800,
     letterSpacing: "-0.02em",
+    lineHeight: 1.35,
+    color: "#1F4E3D",
+    margin: "0 0 18px",
+  },
+  inviteBody: {
+    fontSize: 16,
+    lineHeight: 1.65,
+    color: "#374151",
     margin: "0 0 14px",
-    color: "#101828",
+  },
+  inviteSteps: {
+    fontSize: 15,
+    fontWeight: 700,
+    lineHeight: 1.55,
+    color: "#1F4E3D",
+    margin: 0,
+  },
+  optionalSection: {
+    marginBottom: 24,
+  },
+  optionalHeading: {
+    fontSize: 14,
+    fontWeight: 800,
+    letterSpacing: "0.04em",
+    textTransform: "uppercase",
+    color: "#667085",
+    marginBottom: 6,
+  },
+  optionalSubheading: {
+    fontSize: 13,
+    lineHeight: 1.5,
+    color: "#667085",
+    marginBottom: 12,
+  },
+  optionalToggle: {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: "10px 16px",
+    borderRadius: 12,
+    border: "1px solid #d0d5dd",
+    background: "#fff",
+    color: "#344054",
+    fontSize: 13,
+    fontWeight: 700,
+    cursor: "pointer",
+    fontFamily: "inherit",
   },
 };
+
+/** Customer-facing plan names: never expose "Standard". */
+function customerFacingPlanName(name) {
+  const raw = String(name || "").trim();
+  if (!raw) return "Food Truck";
+  const cleaned = raw
+    .replace(/\bFood\s*Truck\s*Standard\b/gi, "Food Truck")
+    .replace(/\bStandard\b/gi, "Menuply")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+  return cleaned || "Food Truck";
+}
 
 function submitBtnStyle(disabled) {
   return {
@@ -396,6 +469,7 @@ export default function FoodTruckSignup() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreements, setAgreements] = useState({ legalConsent: false });
   const [sdChart, setSdChart] = useState(null);
+  const [showOptionalPaid, setShowOptionalPaid] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -421,11 +495,13 @@ export default function FoodTruckSignup() {
     const plans = Array.isArray(sdChart?.plans) ? sdChart.plans : [];
     return plans.map((plan) => ({
       key: plan.key,
-      name: plan.name,
+      name: customerFacingPlanName(plan.name),
       commission: plan.commission || "",
       prices: Array.isArray(plan.prices) ? plan.prices : [],
       highlight: Boolean(plan.highlight),
-      badge: plan.badge_text || null,
+      badge: plan.badge_text
+        ? customerFacingPlanName(plan.badge_text)
+        : null,
       features: featureLabelsForPlan(plan.key, sdChart?.features),
     }));
   }, [sdChart]);
@@ -545,49 +621,76 @@ export default function FoodTruckSignup() {
       <div style={styles.shell}>
         <header style={styles.hero}>
           <div style={styles.heroContent}>
-            {/* Keep the food-truck signup entry aligned with the restaurant shell. */}
             <BrandLogo height={48} radius={14} matchPageBackground={false} />
             <div style={styles.eyebrow}>{t("foodTruck.signup.title", "Food truck sign up")}</div>
-            <h1 style={styles.heading}>{t("foodTruck.signup.subtitle", "List your truck and share your live menu with diners.")}</h1>
-            <div style={styles.subheading}>
-              Compare Food Truck Standard and Food Truck Founders, create your account, verify email, upload your menu, and finish your public profile before entering the Operator Panel.
-            </div>
           </div>
         </header>
+
+        <section style={styles.inviteCard} aria-labelledby="food-truck-signup-invite-headline">
+          <h1 id="food-truck-signup-invite-headline" style={styles.inviteHeadline}>
+            Your Menu. More Ways to Be Discovered.
+          </h1>
+          <p style={styles.economics}>12% commission. No subscription fee.</p>
+          <p style={styles.inviteBody}>
+            Menuply connects your food truck menu to a social food experience where people discover
+            what to eat, see what others are eating, make plans, and find trucks nearby.
+          </p>
+          <p style={styles.inviteSteps}>
+            Claim your free profile. Upload and manage your menu. Join the community.
+          </p>
+        </section>
 
         {serverError ? <div style={styles.errorBanner}>{serverError}</div> : null}
 
         {planCards.length ? (
-          <section style={styles.cardsGrid} aria-label="Food truck plans">
-            {planCards.map((plan) => (
-              <article key={plan.key} style={styles.pricingCard(plan.highlight)}>
-                {plan.badge ? <div style={styles.planBadge(plan.highlight)}>{plan.badge}</div> : null}
-                <div style={styles.planName}>{plan.name}</div>
-                {plan.commission ? (
-                  <div style={styles.commissionDisclosure(plan.highlight)}>{plan.commission}</div>
-                ) : null}
-                <div style={styles.planPrice}>
-                  {(plan.prices.length ? plan.prices : ["—"]).map((line) => (
-                    <span key={line} style={styles.planPriceLine}>
-                      {line}
-                    </span>
-                  ))}
-                </div>
-                {plan.features.length ? (
-                  <ul style={styles.featureList}>
-                    {plan.features.map((feature) => (
-                      <li key={feature} style={styles.featureItem(plan.highlight)}>
-                        <span style={styles.featureMark(plan.highlight)}>&#10003;</span>
-                        <span>{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
-                <div style={styles.planFootnote(plan.highlight)}>
-                  Create your account below. Checkout for Food Truck Founders happens later in the Operator Panel.
-                </div>
-              </article>
-            ))}
+          <section style={styles.optionalSection} aria-label="Optional paid upgrades">
+            <div style={styles.optionalHeading}>Optional paid upgrades</div>
+            <div style={styles.optionalSubheading}>
+              Not required to join. Paid Food Truck options stay available if you already intended
+              one — checkout happens later in the Operator Panel.
+            </div>
+            {!showOptionalPaid ? (
+              <button
+                type="button"
+                style={styles.optionalToggle}
+                onClick={() => setShowOptionalPaid(true)}
+              >
+                Show optional paid options
+              </button>
+            ) : (
+              <section style={styles.cardsGrid} aria-label="Food truck paid options">
+                {planCards.map((plan) => (
+                  <article key={plan.key} style={styles.pricingCard(plan.highlight)}>
+                    {plan.badge ? <div style={styles.planBadge(plan.highlight)}>{plan.badge}</div> : null}
+                    <div style={styles.planName}>{plan.name}</div>
+                    {plan.commission ? (
+                      <div style={styles.commissionDisclosure(plan.highlight)}>{plan.commission}</div>
+                    ) : null}
+                    <div style={styles.planPrice}>
+                      {(plan.prices.length ? plan.prices : ["—"]).map((line) => (
+                        <span key={line} style={styles.planPriceLine}>
+                          {line}
+                        </span>
+                      ))}
+                    </div>
+                    {plan.features.length ? (
+                      <ul style={styles.featureList}>
+                        {plan.features.map((feature) => (
+                          <li key={feature} style={styles.featureItem(plan.highlight)}>
+                            <span style={styles.featureMark(plan.highlight)}>&#10003;</span>
+                            <span>{feature}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : null}
+                    <div style={styles.planFootnote(plan.highlight)}>
+                      Create your account below. Optional paid checkout happens later in the Operator
+                      Panel.
+                    </div>
+                  </article>
+                ))}
+              </section>
+            )}
           </section>
         ) : null}
 
@@ -595,7 +698,8 @@ export default function FoodTruckSignup() {
           <div style={styles.formCardHeader}>
             <h2 style={styles.formCardTitle}>Create your account</h2>
             <div style={{ ...styles.helperText, marginTop: 8 }}>
-              These basics create your food-truck account and listing. Menu upload, Food Truck Founders checkout, and public profile details come next.
+              These basics create your food-truck account and Menuply listing. Menu upload and public
+              profile details come next.
             </div>
           </div>
 
@@ -759,9 +863,6 @@ export default function FoodTruckSignup() {
             </button>
           </form>
         </div>
-
-        <h2 style={styles.chartSectionTitle}>Compare food truck plans</h2>
-        <PlanComparisonTable audience="food_truck" />
       </div>
     </div>
   );

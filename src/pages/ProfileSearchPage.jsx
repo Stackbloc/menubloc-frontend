@@ -25,6 +25,7 @@ import { useEffect, useRef, useState } from "react";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { useLocation, useNavigate } from "react-router-dom";
 import { BrandLogo } from "../components/BrandLogo.jsx";
+import { FREE_PLAN_CODE } from "../lib/menuplyCheckoutPlans.js";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 
@@ -389,7 +390,7 @@ export default function ProfileSearchPage() {
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Navigate forward to subscription (business setup step goes here when built)
+  // Mid-onboarding: subscription page is invitation + Continue with Menuply (FREE_PLAN_CODE), not a Standard pitch.
   function proceedToSubscription({ restaurant_id, email: forwardEmail, owner_token }) {
     nav("/restaurant/subscription", {
       state: {
@@ -398,6 +399,8 @@ export default function ProfileSearchPage() {
         email:           forwardEmail,
         owner_token,
         ingestion_method,
+        selected_plan: FREE_PLAN_CODE,
+        selected_plan_code: FREE_PLAN_CODE,
       },
     });
   }

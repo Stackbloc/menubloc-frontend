@@ -9,7 +9,7 @@
  *   1. Operator types restaurant name (+ optional city)
  *   2. Results show claim status: unclaimed / already yours / taken
  *   3. Click "Claim" → POST /operator/claim/:id
- *   4. On success → reload restaurants in context → go to dashboard
+ *   4. On success → reload restaurants in context → Add your menu (Menu Lab)
  *
  * UI: AuthPageFrame (same chrome as operator login / signup / verify-email).
  */
@@ -123,29 +123,45 @@ export default function OperatorClaimSearch() {
   if (success) {
     return (
       <AuthPageFrame
-        title={t("operator.claim.successTitle", "You're in!")}
+        title={t("operator.claim.successTitle", "You're on Menuply.")}
         subtitle={t(
           "operator.claim.successBody",
-          "{name} is now linked to your account. You can start editing your menu and creating deals.",
+          "{name} is linked. Next, add or review your menu so diners can discover what you serve.",
         ).replace("{name}", success)}
       >
         <button
           type="button"
-          onClick={() => navigate("/operator", { replace: true })}
+          onClick={() => navigate("/operator/menulab", { replace: true })}
           style={styles.submitButton}
         >
-          {t("operator.claim.goDashboard", "Go to Dashboard →")}
+          {t("operator.claim.addMenu", "Add your menu")}
         </button>
+        <p style={{ ...styles.footer, marginTop: 16, textAlign: "center" }}>
+          <button
+            type="button"
+            onClick={() => navigate("/operator")}
+            style={{
+              ...styles.link,
+              background: "none",
+              border: "none",
+              padding: 0,
+              cursor: "pointer",
+              font: "inherit",
+            }}
+          >
+            {t("operator.claim.goDashboard", "Explore dashboard")}
+          </button>
+        </p>
       </AuthPageFrame>
     );
   }
 
   return (
     <AuthPageFrame
-      title={t("operator.claim.title", "Find your restaurant")}
+      title={t("operator.claim.title", "Claim your restaurant")}
       subtitle={t(
         "operator.claim.subtitle",
-        "Search for your listing. We'll link your account so you can start managing your menu.",
+        "Claim your restaurant profile to manage your information, menu, and presence on Menuply.",
       )}
       footer={(
         <>
@@ -355,7 +371,7 @@ export default function OperatorClaimSearch() {
                   >
                     {claiming === r.id
                       ? t("operator.claim.claiming", "Claiming…")
-                      : t("operator.claim.claimButton", "Claim this listing")}
+                      : t("operator.claim.claimButton", "Claim Profile")}
                   </button>
                 )}
               </div>

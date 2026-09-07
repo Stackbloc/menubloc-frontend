@@ -125,6 +125,7 @@ export default function OperatorDashboard() {
   const [loading, setLoading] = useState(false);
   const [finishSetupSteps, setFinishSetupSteps] = useState([]);
   const [coreComplete, setCoreComplete] = useState(false);
+  const [hasPublishedMenu, setHasPublishedMenu] = useState(false);
 
   // Pause / close UI
   const [pauseBusy, setPauseBusy] = useState(false);
@@ -163,9 +164,11 @@ export default function OperatorDashboard() {
       };
       setCoreComplete(isCoreOnboardingComplete(restaurantShape));
       setFinishSetupSteps(getIncompleteFinishSetupSteps(restaurantShape));
+      setHasPublishedMenu(Boolean(payload.has_published_menu));
     } else {
       setCoreComplete(false);
       setFinishSetupSteps([]);
+      setHasPublishedMenu(false);
     }
     setLoading(false);
   }, []);
@@ -334,6 +337,45 @@ export default function OperatorDashboard() {
   const locationLine = [selectedRestaurant?.city, selectedRestaurant?.state].filter(Boolean).join(", ");
   const noRestaurant = restaurants.length === 0;
 
+  const gettingStartedTasks = [
+    {
+      id: "claim",
+      label: "Claim your profile",
+      done: Boolean(rid),
+      href: null,
+    },
+    {
+      id: "menu",
+      label: "Add or review your menu",
+      done: hasPublishedMenu,
+      href: "/operator/menulab",
+    },
+    {
+      id: "info",
+      label: "Complete restaurant information",
+      done: false,
+      href: "/operator/profile-editor",
+    },
+    {
+      id: "photos",
+      label: "Add photos",
+      done: false,
+      href: "/operator/profile-editor",
+    },
+    {
+      id: "community",
+      label: "Explore the Menuply community",
+      done: false,
+      href: "/feed",
+    },
+    {
+      id: "post",
+      label: "Create your first post or promotion",
+      done: false,
+      href: "/operator/deals",
+    },
+  ];
+
   if (noRestaurant) {
     return (
       <OperatorLayout title="Home">
@@ -367,6 +409,108 @@ export default function OperatorDashboard() {
               {now.toLocaleDateString([], { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
             </div>
           </div>
+        </div>
+
+        {/* ── Welcome / Getting started ───────────────────────── */}
+        <div
+          style={{
+            background: "#fff",
+            border: `1px solid ${BORDER}`,
+            borderRadius: 14,
+            padding: "16px 18px 18px",
+            marginBottom: 20,
+          }}
+        >
+          <div
+            style={{
+              fontSize: 11,
+              fontWeight: 800,
+              textTransform: "uppercase",
+              letterSpacing: "0.06em",
+              color: "#8a9ab0",
+              marginBottom: 6,
+            }}
+          >
+            Welcome to Menuply
+          </div>
+          <div style={{ fontSize: 16, fontWeight: 800, color: "#0f1720", marginBottom: 6 }}>
+            Getting started
+          </div>
+          <div style={{ fontSize: 13, color: "#5b6675", marginBottom: 14, lineHeight: 1.5 }}>
+            A short checklist to get your restaurant live in the community.
+          </div>
+          <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gap: 8 }}>
+            {gettingStartedTasks.map((task) => {
+              const rowStyle = {
+                display: "flex",
+                alignItems: "flex-start",
+                gap: 10,
+                padding: "10px 12px",
+                borderRadius: 10,
+                border: `1px solid ${BORDER}`,
+                background: task.done ? "#f0fdf4" : "#f8fafc",
+                textAlign: "left",
+                width: "100%",
+                fontFamily: "inherit",
+                cursor: task.done || !task.href ? "default" : "pointer",
+                opacity: task.done ? 0.85 : 1,
+              };
+              const mark = (
+                <span
+                  aria-hidden
+                  style={{
+                    flexShrink: 0,
+                    width: 22,
+                    height: 22,
+                    borderRadius: "50%",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 12,
+                    fontWeight: 900,
+                    background: task.done ? GREEN : "#e4e9f0",
+                    color: task.done ? "#fff" : "#8a9ab0",
+                    marginTop: 1,
+                  }}
+                >
+                  {task.done ? "✓" : ""}
+                </span>
+              );
+              const label = (
+                <span
+                  style={{
+                    fontSize: 14,
+                    fontWeight: 700,
+                    color: task.done ? "#166534" : "#0f1720",
+                    lineHeight: 1.4,
+                    textDecoration: task.done ? "line-through" : "none",
+                  }}
+                >
+                  {task.label}
+                </span>
+              );
+              if (task.done || !task.href) {
+                return (
+                  <li key={task.id} style={rowStyle}>
+                    {mark}
+                    {label}
+                  </li>
+                );
+              }
+              return (
+                <li key={task.id} style={{ margin: 0, padding: 0 }}>
+                  <button
+                    type="button"
+                    onClick={() => navigate(task.href)}
+                    style={{ ...rowStyle, border: `1px solid ${BORDER}` }}
+                  >
+                    {mark}
+                    {label}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
         </div>
 
         {coreComplete && finishSetupSteps.length > 0 ? (

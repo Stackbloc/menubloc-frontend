@@ -917,7 +917,8 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
         <Route path="/restaurant/signup/account" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantSignup />} />
         <Route path="/restaurant/signup/free-profile" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantFreeProfileSignup />} />
         <Route path="/signup" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantSignupEntry />} />
-        <Route path="/pricing" element={crmHost ? <HostRouteRedirect to="/crm" /> : <SubscriptionSelect />} />
+        {/* Cold pricing URL → invitation signup (FREE_PLAN_CODE selected there). Paid mid-onboarding stays on /restaurant/subscription. */}
+        <Route path="/pricing" element={crmHost ? <HostRouteRedirect to="/crm" /> : <Navigate to="/restaurant/signup" replace />} />
         <Route path="/profilesearch" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ProfileSearchPage />} />
         <Route path="/restaurant/subscription" element={crmHost ? <HostRouteRedirect to="/crm" /> : <SubscriptionSelect />} />
         <Route path="/restaurant/qr-upsell" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantQrUpsell />} />

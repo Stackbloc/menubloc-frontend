@@ -2,11 +2,14 @@
  * ============================================================
  * File:    SubscriptionSelect.jsx
  * Path:    menubloc-frontend/src/pages/SubscriptionSelect.jsx
- * Date:    2026-05-06
+ * Date:    2026-09-07
  * Purpose:
- *   Onboarding step 2 — choose a restaurant plan after account
- *   creation. Standard stays free, Pro uses Stripe
- *   checkout, and the Founders plan uses annual Stripe checkout.
+ *   Mid-onboarding join surface for restaurants that still land on
+ *   `/restaurant/subscription` (checkout return, paid preset, checkpoints).
+ *   Primary message matches invitation economics: Menuply free path
+ *   (FREE_PLAN_CODE / published_free) — never "Standard" as customer copy.
+ *   Pro / Founder's remain optional paid upgrades via existing Stripe checkout.
+ *   Cold `/pricing` redirects to `/restaurant/signup` (see App.jsx).
  * ============================================================
  */
 
@@ -44,11 +47,12 @@ const API = (
 
 /** After Menuply plan payment (or free skip): Information. QR merchandise reserved until Stripe catalog. */
 const POST_PLAN_PAYMENT_ROUTE = "/restaurant/onboarding/information";
+const INVITATION_SIGNUP_ROUTE = "/restaurant/signup";
 
 const PLAN_LABELS = {
-  [FREE_PLAN_CODE]: "Standard",
-  verified: "Standard",
-  published_free: "Standard",
+  [FREE_PLAN_CODE]: "Menuply",
+  verified: "Menuply",
+  published_free: "Menuply",
   founders_monthly: "Founder's",
   founders_annual: "Founder's",
   starter_monthly: "Pro",
@@ -64,46 +68,13 @@ const FOUNDERS_PLAN = {
   priceLabel: CHECKOUT_PRICE_LABELS.founders_annual,
 };
 
-const OPTIONAL_ONBOARDING_MODULES = [
-  {
-    title: "QR starter kit",
-    body:
-      "QR codes are direct ordering infrastructure and customer access infrastructure. Free downloadable QR materials are prepared during onboarding, and printed kits stay optional.",
-  },
-  {
-    title: "Equipment readiness",
-    body:
-      "Review tablet placement, power, alerts, printer or pickup workflow, and internet reliability. This is about operational readiness, not forced hardware.",
-  },
-  {
-    title: "Launch deal",
-    body:
-      "Deals are simple launch offers that can help first-time customers try your restaurant. You can skip this now and decide later. Would you like to create a launch deal?",
-  },
-];
-
-const PLAN_CARDS = {
-  [FREE_PLAN_CODE]: {
-    title: "Standard",
-    price: CHECKOUT_PRICE_LABELS[FREE_PLAN_CODE],
-    description: "A simple published restaurant presence with public menu access on Menuply.",
-    commissionPlanCode: FREE_PLAN_CODE,
-    features: [
-      "100% Free Profile with Fully Searchable, Verified Menu",
-      "Basic restaurant profile",
-      "1 editable menu listing",
-      "QR menu access for customers",
-      "Menu visibility on Menuply",
-    ],
-  },
+const OPTIONAL_PAID_CARDS = {
   starter_annual: {
     title: "Pro",
-    price: `${CHECKOUT_PRICE_LABELS.starter_monthly} or ${CHECKOUT_PRICE_LABELS.starter_annual}`,
     description:
-      "Professional Menuply tools for growing restaurants — profiles, menus, QR Code, and online ordering.",
-    commissionPlanCode: "starter_annual",
+      "Optional paid tools for growing restaurants — profiles, menus, QR, and online ordering.",
     features: [
-      "All Standard benefits, plus logo and product photos",
+      "Logo and product photos",
       "Unlimited menus and menu items",
       "QR Code and social sharing",
       "Online ordering",
@@ -112,12 +83,10 @@ const PLAN_CARDS = {
   },
   founders_annual: {
     title: "Founder's",
-    price: `${CHECKOUT_PRICE_LABELS.founders_monthly} or ${CHECKOUT_PRICE_LABELS.founders_annual}`,
     description:
-      "Founders are early adopters who want to take back their restaurant's independence. Lock in early-bird Founder's pricing while availability remains open.",
-    commissionPlanCode: "founders_annual",
+      "Optional early-adopter membership with locked Founder's pricing while availability remains open.",
     features: [
-      "All Pro benefits, plus much more",
+      "All Pro benefits, plus more",
       "Premium menu management tools",
       "Create deals and promotions free of charge",
     ],
@@ -133,7 +102,7 @@ const s = {
     fontFamily: '"Instrument Sans", "Avenir Next", system-ui, sans-serif',
   },
   shell: {
-    maxWidth: 1180,
+    maxWidth: 720,
     margin: "0 auto",
   },
   topLink: {
@@ -145,27 +114,42 @@ const s = {
     fontWeight: 700,
     textDecoration: "none",
   },
-  hero: {
-    border: "1px solid #d9e0ea",
-    borderRadius: 32,
+  inviteCard: {
+    borderRadius: 28,
+    border: "1px solid #eaecf0",
     background: "#ffffff",
-    boxShadow: "0 18px 40px rgba(15, 23, 32, 0.06)",
-    padding: "28px 24px 24px",
+    boxShadow: "0 18px 48px rgba(15, 23, 32, 0.08)",
+    padding: "36px 32px 32px",
     marginBottom: 22,
   },
   heading: {
-    fontSize: "clamp(2.2rem, 5vw, 4.25rem)",
-    lineHeight: 0.95,
+    fontSize: "clamp(1.75rem, 4vw, 2.45rem)",
     fontWeight: 900,
-    letterSpacing: "-0.04em",
-    marginBottom: 12,
-    maxWidth: 640,
+    letterSpacing: "-0.03em",
+    lineHeight: 1.15,
+    color: "#0B0F0C",
+    margin: "0 0 16px",
   },
-  subheading: {
+  economics: {
+    fontSize: "clamp(1.15rem, 2.5vw, 1.35rem)",
+    fontWeight: 800,
+    letterSpacing: "-0.02em",
+    lineHeight: 1.35,
+    color: "#1F4E3D",
+    margin: "0 0 20px",
+  },
+  body: {
     fontSize: 17,
-    lineHeight: 1.6,
-    color: "#667085",
-    maxWidth: 660,
+    lineHeight: 1.65,
+    color: "#374151",
+    margin: "0 0 18px",
+  },
+  steps: {
+    fontSize: 16,
+    fontWeight: 700,
+    lineHeight: 1.55,
+    color: "#1F4E3D",
+    margin: "0 0 28px",
   },
   banner: (tone) => ({
     marginBottom: 18,
@@ -192,68 +176,90 @@ const s = {
     fontSize: 13,
     fontWeight: 700,
   }),
+  primaryButton: (disabled) => ({
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: "100%",
+    maxWidth: 360,
+    minHeight: 54,
+    padding: "16px 28px",
+    borderRadius: 14,
+    border: "none",
+    background: disabled ? "#98a2b3" : "#1F4E3D",
+    color: "#ffffff",
+    fontSize: 17,
+    fontWeight: 800,
+    cursor: disabled ? "not-allowed" : "pointer",
+    fontFamily: "inherit",
+    boxShadow: disabled ? "none" : "0 12px 24px rgba(31, 78, 61, 0.18)",
+  }),
+  optionalSection: {
+    marginTop: 8,
+    padding: "22px",
+    borderRadius: 24,
+    border: "1px solid #d9e0ea",
+    background: "#ffffff",
+    boxShadow: "0 12px 30px rgba(15, 23, 32, 0.04)",
+  },
+  optionalHeading: {
+    fontSize: 18,
+    fontWeight: 900,
+    letterSpacing: "-0.02em",
+    marginBottom: 8,
+  },
+  optionalSubheading: {
+    fontSize: 14,
+    lineHeight: 1.6,
+    color: "#667085",
+    marginBottom: 14,
+  },
+  optionalToggle: {
+    width: "100%",
+    minHeight: 44,
+    borderRadius: 12,
+    border: "1px solid #d0d5dd",
+    background: "#f8faf9",
+    color: "#101828",
+    fontSize: 14,
+    fontWeight: 800,
+    cursor: "pointer",
+    fontFamily: "inherit",
+    marginBottom: 16,
+  },
   cardsGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-    gap: 18,
-  },
-  foundersNotice: {
-    marginBottom: 18,
-    padding: "14px 16px",
-    borderRadius: 16,
-    border: "1px solid #fcd34d",
-    background: "#fffbeb",
-    color: "#92400e",
-    fontSize: 14,
-    lineHeight: 1.55,
-    fontWeight: 600,
+    gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+    gap: 16,
   },
   planCard: (highlighted) => ({
-    borderRadius: 28,
-    padding: "24px 22px 22px",
+    borderRadius: 22,
+    padding: "20px 18px 18px",
     border: highlighted ? "2px solid #1F4E3D" : "1px solid #eaecf0",
     background: highlighted
       ? "linear-gradient(135deg, #0f1720 0%, #1f4e3d 48%, #eef6f1 100%)"
-      : "#ffffff",
+      : "#f8faf9",
     color: highlighted ? "#ffffff" : "#101828",
-    boxShadow: highlighted
-      ? "0 24px 60px rgba(15, 23, 32, 0.16)"
-      : "0 12px 30px rgba(15, 23, 32, 0.04)",
     display: "flex",
     flexDirection: "column",
-    minHeight: 420,
+    minHeight: 360,
   }),
   planCardPro: {
-    borderRadius: 28,
-    padding: "24px 22px 22px",
+    borderRadius: 22,
+    padding: "20px 18px 18px",
     border: "2px solid #86b89a",
     background: "linear-gradient(160deg, #eef6f1 0%, #f7fbf9 55%, #ffffff 100%)",
     color: "#101828",
-    boxShadow: "0 12px 30px rgba(31, 78, 61, 0.08)",
     display: "flex",
     flexDirection: "column",
-    minHeight: 420,
-  },
-  planBadge: {
-    display: "inline-flex",
-    alignItems: "center",
-    alignSelf: "flex-start",
-    marginBottom: 16,
-    padding: "7px 12px",
-    borderRadius: 999,
-    background: "#eef6f1",
-    color: "#1F4E3D",
-    fontSize: 11,
-    fontWeight: 900,
-    letterSpacing: "0.08em",
-    textTransform: "uppercase",
+    minHeight: 360,
   },
   limitedBadge: {
     display: "inline-flex",
     alignItems: "center",
     alignSelf: "flex-start",
-    marginBottom: 16,
-    padding: "7px 12px",
+    marginBottom: 12,
+    padding: "6px 10px",
     borderRadius: 999,
     background: "#eef6f1",
     color: "#1F4E3D",
@@ -271,91 +277,70 @@ const s = {
     opacity: 0.78,
   },
   planName: {
-    fontSize: 34,
+    fontSize: 28,
     fontWeight: 900,
     letterSpacing: "-0.04em",
     lineHeight: 0.95,
     marginBottom: 10,
   },
   planDesc: {
-    fontSize: 15,
-    lineHeight: 1.6,
-    marginBottom: 18,
+    fontSize: 14,
+    lineHeight: 1.55,
+    marginBottom: 14,
     opacity: 0.92,
   },
-  intervalToggle: {
-    display: "inline-flex",
-    padding: 6,
-    background: "rgba(255,255,255,0.12)",
-    border: "1px solid rgba(255,255,255,0.22)",
-    borderRadius: 999,
-    gap: 6,
-    marginBottom: 12,
-    marginTop: 4,
-  },
-  intervalButton: (active) => ({
-    border: 0,
-    borderRadius: 999,
-    padding: "10px 14px",
-    background: active ? "#ffffff" : "transparent",
-    color: active ? "#101828" : "#ffffff",
-    fontSize: 13,
-    fontWeight: 800,
-    cursor: "pointer",
-    fontFamily: "inherit",
-  }),
   priceValue: {
-    fontSize: 36,
+    fontSize: 28,
     fontWeight: 900,
     letterSpacing: "-0.04em",
     lineHeight: 0.95,
-    marginBottom: 16,
+    marginBottom: 14,
   },
   commissionDisclosure: {
-    margin: "0 0 14px",
+    margin: "0 0 12px",
     padding: "10px 12px",
     borderRadius: 12,
     background: "#eef6f1",
     border: "1px solid #cfe0d8",
     color: "#1F4E3D",
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: 800,
     lineHeight: 1.4,
   },
   commissionDisclosureFounders: {
-    margin: "0 0 14px",
+    margin: "0 0 12px",
     padding: "10px 12px",
     borderRadius: 12,
     background: "#fffbeb",
     border: "1px solid #fde68a",
     color: "#92400e",
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: 800,
     lineHeight: 1.4,
   },
   featureList: {
     listStyle: "none",
     padding: 0,
-    margin: "0 0 18px",
+    margin: "0 0 16px",
     display: "grid",
-    gap: 10,
+    gap: 8,
   },
   featureItem: {
     display: "flex",
     gap: 10,
     alignItems: "flex-start",
-    fontSize: 14,
+    fontSize: 13,
     lineHeight: 1.5,
   },
   featureMark: (highlighted) => ({
     flexShrink: 0,
-    width: 22,
-    height: 22,
+    width: 20,
+    height: 20,
     borderRadius: "50%",
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: 900,
     background: highlighted ? "#ffffff" : "#1F4E3D",
     color: highlighted ? "#1F4E3D" : "#ffffff",
@@ -363,25 +348,17 @@ const s = {
   }),
   button: (primary, disabled) => ({
     width: "100%",
-    minHeight: 50,
-    borderRadius: 16,
+    minHeight: 48,
+    borderRadius: 14,
     border: primary ? "1px solid #1F4E3D" : "1px solid #d0d5dd",
     background: disabled ? "#98a2b3" : primary ? "#1F4E3D" : "#ffffff",
     color: primary ? "#ffffff" : "#101828",
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: 900,
     cursor: disabled ? "not-allowed" : "pointer",
     fontFamily: "inherit",
     marginTop: "auto",
-    boxShadow: primary ? "0 12px 24px rgba(31, 78, 61, 0.18)" : "none",
   }),
-  footnote: {
-    marginTop: "auto",
-    marginBottom: 14,
-    fontSize: 12,
-    lineHeight: 1.55,
-    color: "#475467",
-  },
   legalNotice: {
     marginTop: 18,
     fontSize: 13,
@@ -392,104 +369,6 @@ const s = {
     color: "#1F4E3D",
     fontWeight: 800,
     textDecoration: "none",
-  },
-  noteCard: {
-    marginTop: 18,
-    borderRadius: 18,
-    border: "1px solid #d9e0ea",
-    background: "#f8faf9",
-    padding: "16px 18px",
-    color: "#475467",
-    fontSize: 14,
-    lineHeight: 1.65,
-    maxWidth: 760,
-  },
-  noteKicker: {
-    fontSize: 11,
-    fontWeight: 900,
-    letterSpacing: "0.08em",
-    textTransform: "uppercase",
-    color: "#1F4E3D",
-    marginBottom: 8,
-  },
-  noteSectionTitle: {
-    fontSize: 13,
-    fontWeight: 800,
-    color: "#101828",
-    marginBottom: 6,
-  },
-  noteParagraph: {
-    marginBottom: 12,
-  },
-  noteCallout: {
-    borderRadius: 14,
-    border: "1px solid #cfe0d8",
-    background: "#eef6f1",
-    padding: "12px 14px",
-    color: "#1F4E3D",
-    marginBottom: 12,
-  },
-  annualNote: {
-    marginTop: 10,
-    marginBottom: 18,
-    fontSize: 12,
-    lineHeight: 1.7,
-    color: "rgba(255,255,255,0.78)",
-    padding: "10px 12px",
-    borderRadius: 10,
-    background: "rgba(255,255,255,0.07)",
-    border: "1px solid rgba(255,255,255,0.12)",
-  },
-  optionalSection: {
-    marginTop: 26,
-    padding: "22px",
-    borderRadius: 24,
-    border: "1px solid #d9e0ea",
-    background: "#ffffff",
-    boxShadow: "0 12px 30px rgba(15, 23, 32, 0.04)",
-  },
-  optionalHeading: {
-    fontSize: 20,
-    fontWeight: 900,
-    letterSpacing: "-0.02em",
-    marginBottom: 8,
-  },
-  optionalSubheading: {
-    fontSize: 14,
-    lineHeight: 1.6,
-    color: "#667085",
-    marginBottom: 16,
-    maxWidth: 760,
-  },
-  optionalGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-    gap: 14,
-  },
-  optionalCard: {
-    borderRadius: 18,
-    border: "1px solid #eaecf0",
-    background: "#f8faf9",
-    padding: "16px 16px 15px",
-  },
-  optionalKicker: {
-    fontSize: 11,
-    fontWeight: 900,
-    letterSpacing: "0.08em",
-    textTransform: "uppercase",
-    color: "#1F4E3D",
-    marginBottom: 8,
-  },
-  optionalTitle: {
-    fontSize: 16,
-    fontWeight: 800,
-    color: "#101828",
-    marginBottom: 6,
-  },
-  optionalBody: {
-    fontSize: 13,
-    lineHeight: 1.6,
-    color: "#475467",
   },
 };
 
@@ -511,6 +390,7 @@ export default function SubscriptionSelect() {
   const [plansByCode, setPlansByCode] = useState(() => indexPlansByCode());
   const [autoCheckoutStarted, setAutoCheckoutStarted] = useState(false);
   const autoCheckoutRef = useRef(false);
+  const [showOptionalPaid, setShowOptionalPaid] = useState(false);
   const [proInterval, setProInterval] = useState(
     recovered.state?.selected_plan === "starter_monthly" ? "monthly" : "annual"
   );
@@ -668,7 +548,7 @@ export default function SubscriptionSelect() {
 
   function choosePublished() {
     if (!hasOnboardingContext) {
-      nav("/restaurant/signup/account");
+      nav(INVITATION_SIGNUP_ROUTE);
       return;
     }
     syncRestaurantOnboardingProgress(onboardingState, {
@@ -710,7 +590,7 @@ export default function SubscriptionSelect() {
         rememberPlanAndRedirectToAccount(intended);
         return;
       }
-      nav("/restaurant/signup/account");
+      nav(INVITATION_SIGNUP_ROUTE);
       return;
     }
 
@@ -859,6 +739,7 @@ export default function SubscriptionSelect() {
 
     autoCheckoutRef.current = true;
     setAutoCheckoutStarted(true);
+    setShowOptionalPaid(true);
     submitRestaurantPlan(presetPlan);
     return undefined;
     // Intentionally once when preset paid plan + context are ready.
@@ -916,57 +797,55 @@ export default function SubscriptionSelect() {
     );
   }
 
-  const publishedCard = PLAN_CARDS[FREE_PLAN_CODE];
-  const proCard = PLAN_CARDS.starter_annual;
-  const isPublishedSelected =
-    selected_plan === FREE_PLAN_CODE || selected_plan === "verified" || selected_plan === "published";
+  const proCard = OPTIONAL_PAID_CARDS.starter_annual;
   const isProSelected =
     selected_plan === "starter_monthly" || selected_plan === "starter_annual";
   const isFoundersSelected =
     selected_plan === "founders_monthly" || selected_plan === "founders_annual";
+  const shouldExpandOptionalPaid =
+    showOptionalPaid || isProSelected || isFoundersSelected || checkoutCancelled;
 
   return (
     <div style={s.page}>
       <div style={s.shell}>
-        <Link to="/restaurant/signup" style={s.topLink}>
+        <Link to={INVITATION_SIGNUP_ROUTE} style={s.topLink}>
           &larr; Back to restaurant signup
         </Link>
 
-        <section style={s.hero}>
+        <section style={s.inviteCard} aria-labelledby="subscription-invite-headline">
           <BrandLogo height={48} radius={14} matchPageBackground={false} linkStyle={{ marginBottom: 18 }} />
 
-          <div style={s.heading}>Built for Better Value</div>
-          <div style={s.subheading}>
-            Choose the plan that fits how you want to launch on a lean platform designed to create better outcomes for restaurants and diners.
-          </div>
-          <div style={s.noteCard}>
-            <div style={s.noteKicker}>Menuply Partner Expectation</div>
-            <div style={s.noteSectionTitle}>Why Menuply Exists</div>
-            <div style={s.noteParagraph}>
-              Many restaurants on higher-cost third-party platforms have had to raise menu prices simply to absorb platform fees. Menuply was built to help break that cycle with a fully self-service operating model and significantly lower platform costs.
-            </div>
-            <div style={s.noteSectionTitle}>Our Partner Expectation</div>
-            <div style={s.noteParagraph}>
-              Restaurants always control their own pricing. Menuply is designed for partners who choose to turn lower platform costs into better everyday pricing, meaningful deals, richer menu information, and more direct engagement for diners.
-            </div>
-            <div style={s.noteCallout}>
-              <strong>Multipliers</strong> are restaurants aligned with that approach. They are central to the Menuply ecosystem, and restaurants that more closely reflect those principles may receive increased visibility opportunities within the platform.
-            </div>
-            <div>
-              Paid plan checkout keeps Menuply&apos;s existing Stripe-powered restaurant banking flow in place. Restaurant deposits stay tied to that restaurant banking setup when enabled.
-            </div>
-          </div>
+          <h1 id="subscription-invite-headline" style={s.heading}>
+            Your Menu. More Ways to Be Discovered.
+          </h1>
+          <p style={s.economics}>12% commission. No subscription fee.</p>
+          <p style={s.body}>
+            Join Menuply with a free restaurant profile. Put your menu where the conversation about
+            food is happening — then claim, upload, and manage your menu in the community.
+          </p>
+          <p style={s.steps}>
+            Continue with Menuply — claim your free profile, upload your menu, join the community.
+          </p>
+
+          <button
+            type="button"
+            style={s.primaryButton(false)}
+            onClick={choosePublished}
+          >
+            Continue with Menuply
+          </button>
         </section>
 
         {checkoutCancelled ? (
           <div style={s.banner("warning")}>
-            Checkout was cancelled. You can choose a different plan or try again.
+            Checkout was cancelled. You can continue with Menuply free, or open optional paid upgrades
+            below.
           </div>
         ) : null}
 
-        {selected_plan ? (
+        {selected_plan && !isFreePlanCode(selected_plan) ? (
           <div style={s.banner("success")}>
-            Selected during signup: {PLAN_LABELS[selected_plan] || "Founder's"}.
+            Selected during signup: {PLAN_LABELS[selected_plan] || selected_plan}.
           </div>
         ) : null}
 
@@ -974,185 +853,160 @@ export default function SubscriptionSelect() {
           <div style={s.banner("error")}>{planError}</div>
         ) : null}
 
-        <div style={s.foundersNotice}>
-          Founder&apos;s Membership is available for a limited time to early restaurant partners.
-        </div>
-
-        <section style={s.cardsGrid}>
-          <article style={s.planCard(false)}>
-            <div style={s.planEyebrow}>Standard</div>
-            <div style={s.planName}>Standard</div>
-            <div style={s.planDesc}>
-              {publishedCard.description}
-            </div>
-            <div style={s.commissionDisclosure}>
-              {getMarketplaceCommissionDisclosure(FREE_PLAN_CODE, { plansByCode })}
-            </div>
-            <div style={s.priceValue}>{publishedCard.price}</div>
-
-            <ul style={s.featureList}>
-              {publishedCard.features.map((feature) => (
-                <li key={feature} style={s.featureItem}>
-                  <span style={s.featureMark(false)}>&#10003;</span>
-                  <span>{feature}</span>
-                </li>
-              ))}
-            </ul>
-
-            <button type="button" style={s.button(false, false)} onClick={choosePublished}>
-              {isPublishedSelected ? "Continue with Standard" : "Choose Standard"}
-            </button>
-          </article>
-
-          <article style={s.planCardPro}>
-            <div style={s.planEyebrow}>Pro</div>
-            <div style={s.planName}>Pro</div>
-            <div style={s.planDesc}>{proCard.description}</div>
-            <div style={s.commissionDisclosure}>
-              {getMarketplaceCommissionDisclosure(proCheckoutCode, { plansByCode })}
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 8 }}>
-              {[
-                { key: "monthly", label: "Monthly", price: CHECKOUT_PRICE_LABELS.starter_monthly },
-                { key: "annual", label: "Annual", price: CHECKOUT_PRICE_LABELS.starter_annual },
-              ].map(({ key, label, price }) => (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => setProInterval(key)}
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    padding: "10px 12px",
-                    borderRadius: 10,
-                    border: proInterval === key ? "1.5px solid #1F4E3D" : "1.5px solid #d0d5dd",
-                    background: proInterval === key ? "#ffffff" : "rgba(255,255,255,0.7)",
-                    cursor: "pointer",
-                    fontFamily: "inherit",
-                    width: "100%",
-                  }}
-                >
-                  <span style={{ fontSize: 13, fontWeight: 700, color: "#101828" }}>{label}</span>
-                  <span style={{ fontSize: 13, fontWeight: 800, color: "#1F4E3D" }}>{price}</span>
-                </button>
-              ))}
-            </div>
-            <div style={{ ...s.priceValue, color: "#1F4E3D" }}>
-              {CHECKOUT_PRICE_LABELS[proCheckoutCode]}
-            </div>
-
-            <ul style={s.featureList}>
-              {proCard.features.map((feature) => (
-                <li key={feature} style={s.featureItem}>
-                  <span style={s.featureMark(false)}>&#10003;</span>
-                  <span>{feature}</span>
-                </li>
-              ))}
-            </ul>
-
-            <button
-              type="button"
-              disabled={isSubmittingPlan}
-              style={s.button(true, isSubmittingPlan)}
-              onClick={handlePro}
-            >
-              {isSubmittingPlan
-                ? "Preparing checkout..."
-                : isProSelected
-                  ? "Continue with Pro"
-                  : "Choose Pro"}
-            </button>
-          </article>
-
-          <article style={s.planCard(true)}>
-            <div style={s.limitedBadge}>Limited Availability</div>
-            <div style={s.planEyebrow}>Founder&apos;s</div>
-            <div style={s.planName}>Founder&apos;s</div>
-            <div style={s.planDesc}>
-              {PLAN_CARDS.founders_annual.description}
-            </div>
-            <div style={s.commissionDisclosureFounders}>
-              {getMarketplaceCommissionDisclosure(foundersCheckoutCode, { plansByCode })}
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 8 }}>
-              {[
-                { key: "monthly", label: "Monthly", price: CHECKOUT_PRICE_LABELS.founders_monthly },
-                { key: "annual", label: "Annual", price: CHECKOUT_PRICE_LABELS.founders_annual },
-              ].map(({ key, label, price }) => (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => setFoundersInterval(key)}
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    padding: "10px 12px",
-                    borderRadius: 10,
-                    border: foundersInterval === key ? "1.5px solid #92400e" : "1.5px solid #e4e9f0",
-                    background: foundersInterval === key ? "#fffbeb" : "#fff",
-                    cursor: "pointer",
-                    fontFamily: "inherit",
-                    width: "100%",
-                  }}
-                >
-                  <span style={{ fontSize: 13, fontWeight: 700, color: "#101828" }}>{label}</span>
-                  <span style={{ fontSize: 13, fontWeight: 800, color: "#92400e" }}>{price}</span>
-                </button>
-              ))}
-            </div>
-            <div style={s.priceValue}>
-              {CHECKOUT_PRICE_LABELS[foundersCheckoutCode]}
-            </div>
-
-            <ul style={s.featureList}>
-              {PLAN_CARDS.founders_annual.features.map((feature) => (
-                <li key={feature} style={s.featureItem}>
-                  <span style={s.featureMark(true)}>&#10003;</span>
-                  <span>{feature}</span>
-                </li>
-              ))}
-            </ul>
-
-            <button
-              type="button"
-              disabled={isSubmittingPlan}
-              style={s.button(true, isSubmittingPlan)}
-              onClick={handleFounder}
-            >
-              {isSubmittingPlan
-                ? "Preparing checkout..."
-                : isFoundersSelected
-                  ? "Continue with Founder's"
-                  : "Choose Founder's"}
-            </button>
-          </article>
-        </section>
-
-        <section style={s.optionalSection}>
-          <div style={s.optionalHeading}>Optional onboarding modules</div>
+        <section style={s.optionalSection} aria-label="Optional paid upgrades">
+          <div style={s.optionalHeading}>Optional paid upgrades</div>
           <div style={s.optionalSubheading}>
-            These are guidance cards only. They do not add required steps, new schema, or new backend behavior.
+            Not required to join. Pro and Founder&apos;s keep Menuply&apos;s existing Stripe checkout
+            if you already intended a paid plan.
           </div>
-          <div style={s.optionalGrid}>
-            {OPTIONAL_ONBOARDING_MODULES.map((module) => (
-              <article key={module.title} style={s.optionalCard}>
-                <div style={s.optionalKicker}>Optional</div>
-                <div style={s.optionalTitle}>{module.title}</div>
-                <div style={s.optionalBody}>{module.body}</div>
+
+          {!shouldExpandOptionalPaid ? (
+            <button
+              type="button"
+              style={s.optionalToggle}
+              onClick={() => setShowOptionalPaid(true)}
+            >
+              Show Pro and Founder&apos;s options
+            </button>
+          ) : (
+            <section style={s.cardsGrid}>
+              <article style={s.planCardPro}>
+                <div style={s.planEyebrow}>Optional</div>
+                <div style={s.planName}>Pro</div>
+                <div style={s.planDesc}>{proCard.description}</div>
+                <div style={s.commissionDisclosure}>
+                  {getMarketplaceCommissionDisclosure(proCheckoutCode, { plansByCode })}
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 8 }}>
+                  {[
+                    { key: "monthly", label: "Monthly", price: CHECKOUT_PRICE_LABELS.starter_monthly },
+                    { key: "annual", label: "Annual", price: CHECKOUT_PRICE_LABELS.starter_annual },
+                  ].map(({ key, label, price }) => (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => setProInterval(key)}
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        padding: "10px 12px",
+                        borderRadius: 10,
+                        border: proInterval === key ? "1.5px solid #1F4E3D" : "1.5px solid #d0d5dd",
+                        background: proInterval === key ? "#ffffff" : "rgba(255,255,255,0.7)",
+                        cursor: "pointer",
+                        fontFamily: "inherit",
+                        width: "100%",
+                      }}
+                    >
+                      <span style={{ fontSize: 13, fontWeight: 700, color: "#101828" }}>{label}</span>
+                      <span style={{ fontSize: 13, fontWeight: 800, color: "#1F4E3D" }}>{price}</span>
+                    </button>
+                  ))}
+                </div>
+                <div style={{ ...s.priceValue, color: "#1F4E3D" }}>
+                  {CHECKOUT_PRICE_LABELS[proCheckoutCode]}
+                </div>
+
+                <ul style={s.featureList}>
+                  {proCard.features.map((feature) => (
+                    <li key={feature} style={s.featureItem}>
+                      <span style={s.featureMark(false)}>&#10003;</span>
+                      <span>{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                <button
+                  type="button"
+                  disabled={isSubmittingPlan}
+                  style={s.button(true, isSubmittingPlan)}
+                  onClick={handlePro}
+                >
+                  {isSubmittingPlan
+                    ? "Preparing checkout..."
+                    : isProSelected
+                      ? "Continue with Pro"
+                      : "Choose Pro"}
+                </button>
               </article>
-            ))}
-          </div>
+
+              <article style={s.planCard(true)}>
+                <div style={s.limitedBadge}>Limited Availability</div>
+                <div style={s.planEyebrow}>Optional</div>
+                <div style={s.planName}>Founder&apos;s</div>
+                <div style={s.planDesc}>
+                  {OPTIONAL_PAID_CARDS.founders_annual.description}
+                </div>
+                <div style={s.commissionDisclosureFounders}>
+                  {getMarketplaceCommissionDisclosure(foundersCheckoutCode, { plansByCode })}
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 8 }}>
+                  {[
+                    { key: "monthly", label: "Monthly", price: CHECKOUT_PRICE_LABELS.founders_monthly },
+                    { key: "annual", label: "Annual", price: CHECKOUT_PRICE_LABELS.founders_annual },
+                  ].map(({ key, label, price }) => (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => setFoundersInterval(key)}
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        padding: "10px 12px",
+                        borderRadius: 10,
+                        border: foundersInterval === key ? "1.5px solid #92400e" : "1.5px solid #e4e9f0",
+                        background: foundersInterval === key ? "#fffbeb" : "#fff",
+                        cursor: "pointer",
+                        fontFamily: "inherit",
+                        width: "100%",
+                      }}
+                    >
+                      <span style={{ fontSize: 13, fontWeight: 700, color: "#101828" }}>{label}</span>
+                      <span style={{ fontSize: 13, fontWeight: 800, color: "#92400e" }}>{price}</span>
+                    </button>
+                  ))}
+                </div>
+                <div style={s.priceValue}>
+                  {CHECKOUT_PRICE_LABELS[foundersCheckoutCode]}
+                </div>
+
+                <ul style={s.featureList}>
+                  {OPTIONAL_PAID_CARDS.founders_annual.features.map((feature) => (
+                    <li key={feature} style={s.featureItem}>
+                      <span style={s.featureMark(true)}>&#10003;</span>
+                      <span>{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                <button
+                  type="button"
+                  disabled={isSubmittingPlan}
+                  style={s.button(true, isSubmittingPlan)}
+                  onClick={handleFounder}
+                >
+                  {isSubmittingPlan
+                    ? "Preparing checkout..."
+                    : isFoundersSelected
+                      ? "Continue with Founder's"
+                      : "Choose Founder's"}
+                </button>
+              </article>
+            </section>
+          )}
         </section>
 
-        <div style={s.legalNotice}>
-          By continuing with a paid or performance-based plan, you agree to the{" "}
-          <Link to="/restaurant/subscription-terms" target="_blank" rel="noreferrer" style={s.legalLink}>
-            Restaurant Plan Terms
-          </Link>
-          .
-        </div>
+        {shouldExpandOptionalPaid ? (
+          <div style={s.legalNotice}>
+            By continuing with a paid plan, you agree to the{" "}
+            <Link to="/restaurant/subscription-terms" target="_blank" rel="noreferrer" style={s.legalLink}>
+              Restaurant Plan Terms
+            </Link>
+            .
+          </div>
+        ) : null}
       </div>
     </div>
   );
