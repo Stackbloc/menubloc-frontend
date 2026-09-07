@@ -54,7 +54,12 @@ test("My Menuply and peer hub use five-section presentation hub", () => {
   assert.match(section, /WhatIAteMealBoard/);
   assert.match(section, /WantToEatUnifiedList/);
   assert.match(section, /diningIntents/);
-  assert.match(section, /Dishes you want and places you wanna go/);
+  assert.match(section, /Dishes you want and places you Wanna Go/);
+  assert.match(section, /want-cravings-invite-open/);
+  assert.match(section, /Invite & Make Me This/);
+  assert.doesNotMatch(section, /want-mmt-open-picker/);
+  assert.doesNotMatch(section, /want-invite-me-out-toggle/);
+  assert.doesNotMatch(section, /invite-me-out-settings-sheet/);
   assert.match(section, /SectionEmptyState/);
   assert.doesNotMatch(section, /future-plans-calendar/);
   assert.doesNotMatch(section, /eating-plans-calendar/);
@@ -78,6 +83,7 @@ test("My Menuply and peer hub use five-section presentation hub", () => {
   assert.match(mine, /futurePlanRestaurantName\(plan\)/);
   assert.match(mine, /timeLabel: meal/);
   assert.match(mine, /futurePlanDetailParts/);
+  assert.match(mine, /CravingsInviteSheet/);
   assert.match(mine, /listMyDiningIntents/);
   assert.match(mine, /diningIntents/);
   assert.match(mine, /onDiningIntentDelete/);
@@ -146,8 +152,9 @@ test("My Menuply and peer hub use five-section presentation hub", () => {
 
   const bits = read("src/pages/consumer/myMenuply/myMenuplyBits.jsx");
   assert.match(bits, /WantToEatUnifiedList/);
-  assert.match(bits, /wanna-go-invite/);
-  assert.match(bits, /InviteToEatModal/);
+  assert.doesNotMatch(bits, /wanna-go-invite/);
+  assert.doesNotMatch(bits, /Wanna Go\?/);
+  assert.match(bits, /want_to_go: "Wanna Go"/);
   assert.match(bits, /wanna-go-item/);
   assert.match(bits, /want-to-eat-delete/);
   assert.match(bits, /useLongPressReveal|mediaLongPressReveal/);

@@ -2,7 +2,6 @@ import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import MenuplyMediaPicker from "../../../components/social/MenuplyMediaPicker.jsx";
 import InviteToEatButton from "../../../components/InviteToEatButton.jsx";
-import InviteToEatModal from "../../../components/InviteToEatModal.jsx";
 import { restaurantPathFromRow } from "../../../lib/canonicalUrl.js";
 import EatingSocialActions from "./EatingSocialActions.jsx";
 import { resolveConsumerMediaUrl } from "../../../lib/consumerApi.js";
@@ -25,7 +24,7 @@ import { socialType } from "../../../lib/socialDesignTokens.js";
 import WannaGoPlateIcon from "../../../components/icons/WannaGoPlateIcon.jsx";
 
 const DINING_INTENT_LABELS = {
-  want_to_go: "Wanna go",
+  want_to_go: "Wanna Go",
   planning_to_go: "Planning to go",
   looking_for_company: "Looking for company",
 };
@@ -1248,7 +1247,7 @@ export function WantToEatList({
 
 /**
  * Restaurant dining intent card — same What I Wanna Eat section as menu-item wants.
- * Internally kind=dining_intent (not diner_want_to_eat). Wanna Go? → Invite to Eat outing.
+ * Internally kind=dining_intent (not diner_want_to_eat). Invite someone lives in CravingsInviteSheet.
  */
 function WannaGoRestaurantCard({
   intent,
@@ -1257,7 +1256,6 @@ function WannaGoRestaurantCard({
   onDelete,
   deleteBusy,
 }) {
-  const [inviteOpen, setInviteOpen] = useState(false);
   const place = String(intent.restaurant_name || "").trim() || "Restaurant";
   const href = restaurantHref({
     restaurant_id: intent.restaurant_id,
@@ -1362,23 +1360,6 @@ function WannaGoRestaurantCard({
   return (
     <div style={shellStyle} data-testid="wanna-go-item" {...bind}>
       {main}
-      {!readOnly ? (
-        <div style={wantStyles.mmtRow} data-testid="wanna-go-invite-row">
-          <button
-            type="button"
-            style={wantStyles.wannaGoInvite}
-            data-testid="wanna-go-invite"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setInviteOpen(true);
-            }}
-          >
-            Wanna Go?
-          </button>
-          <span style={wantStyles.wannaGoInviteHint}> — invite someone to join</span>
-        </div>
-      ) : null}
       {open ? (
         <button
           type="button"
@@ -1397,12 +1378,6 @@ function WannaGoRestaurantCard({
           Delete
         </button>
       ) : null}
-      <InviteToEatModal
-        open={inviteOpen}
-        onClose={() => setInviteOpen(false)}
-        restaurantId={intent.restaurant_id}
-        restaurantName={place}
-      />
     </div>
   );
 }
@@ -1618,22 +1593,5 @@ const wantStyles = {
     padding: "2px 0",
     cursor: "pointer",
     textAlign: "left",
-  },
-  wannaGoInvite: {
-    border: "none",
-    background: "transparent",
-    color: "#1F4E3D",
-    fontSize: 13,
-    fontWeight: 800,
-    padding: "2px 0",
-    cursor: "pointer",
-    textAlign: "left",
-    textDecoration: "underline",
-    textUnderlineOffset: 2,
-  },
-  wannaGoInviteHint: {
-    fontSize: 12,
-    fontWeight: 500,
-    color: "#78716c",
   },
 };

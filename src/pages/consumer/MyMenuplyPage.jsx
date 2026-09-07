@@ -73,7 +73,7 @@ import InvitePickerSheet from "./myMenuply/InvitePickerSheet.jsx";
 import CrewInvitePeopleSheet from "./myMenuply/CrewInvitePeopleSheet.jsx";
 import SectionEmptyState from "./myMenuply/SectionEmptyState.jsx";
 import { buildJoinMeCandidates } from "./myMenuply/joinMeCandidates.js";
-import RequestMmtSheet from "./myMenuply/RequestMmtSheet.jsx";
+import CravingsInviteSheet from "./myMenuply/CravingsInviteSheet.jsx";
 import MmtDetailSheet from "./myMenuply/MmtDetailSheet.jsx";
 import {
   buildEatingDayMarkersFromCalendar,
@@ -1936,12 +1936,19 @@ export default function MyMenuplyPage() {
           analyticsContext={sharePayload.analyticsContext}
         />
       ) : null}
-      <RequestMmtSheet
+      <CravingsInviteSheet
         open={requestMmtOpen}
         wants={wants}
-        candidates={joinCandidates}
+        diningIntents={diningIntents}
+        mmtCandidates={joinCandidates}
+        inviteMeOutOpen={inviteMeOutOpen}
+        inviteMeOutAudience={inviteMeOutAudience}
+        inviteMeOutSelectedIds={inviteMeOutSelectedIds}
+        inviteMeOutCandidates={joinCandidates}
+        onInviteMeOutSave={saveInviteMeOutSettings}
+        inviteMeOutToggleBusy={inviteMeOutToggleBusy}
         onClose={() => setRequestMmtOpen(false)}
-        onCreated={async () => {
+        onMmtSaved={async () => {
           setRequestMmtOpen(false);
           await refreshMmtData();
         }}
