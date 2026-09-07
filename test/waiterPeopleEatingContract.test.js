@@ -24,8 +24,8 @@ describe("Waiter What People Are Eating", () => {
     expect(page).toMatch(/clusterSlug/);
     expect(page).toMatch(/fetchWaiterBriefing\(/);
     expect(page).toMatch(/clusterId:/);
-    expect(page).toMatch(/groupByType/);
-    expect(page).toMatch(/briefing\?\.recommendations/);
+    expect(page).toMatch(/briefing\?\.mealOptions|MealOptionsSection/);
     expect(page).not.toMatch(/<[Mm]arketFallback|<CommunityGrowthCard/);
+    expect(page).not.toMatch(/Good morning|Good afternoon|Good evening/);
   });
 });

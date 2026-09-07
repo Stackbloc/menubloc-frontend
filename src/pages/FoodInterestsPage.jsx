@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import BottomNav from "../components/BottomNav.jsx";
 import WaiterPublicActivity from "../components/WaiterPublicActivity.jsx";
@@ -9,18 +9,16 @@ import { getTimezoneForUsState } from "../lib/timeZoneUtils.js";
 import { readMenuBrowserVenueSession } from "../lib/menuBrowserVenueContext.js";
 import { readDetectedLocation } from "../lib/discoveryLocationPersistence.js";
 
-// ⚠️ WAITER PROTECTION GUARDRAIL (2026-07-02)
-// This file is FROZEN. Do NOT add MarketFallback, CommunityGrowthCard, or
-// remove the meal period selector without explicit user instruction.
-// One card per recommendation category. See CLAUDE.md Waiter guardrail.
-// 2026-08-15 Phase 6 (user-authorized): cluster subscription report is additive to core Waiter.
-// 2026-08-15: core meal/location Waiter always runs with city+state; clusters never replace it.
-// 2026-08-18 (user-authorized): public Activity ("What's happening") is additive on Waiter.
-// 2026-09-05 Phase 7b (remaining-phase finish): Meal Intel additive from getMealIntel — not Deals.
-// Do not replace recommendation cards. Do not add MarketFallback, CommunityGrowthCard, or greetings.
+// ⚠️ WAITER PROTECTION GUARDRAIL
+// 2026-09-07 (user-authorized): briefing rebuilt to fixed sections —
+// greeting → connect → joinMe → privateOffer → mealOptions (skip-if-null).
+// Do not add MarketFallback, CommunityGrowthCard, or time-of-day greetings.
+// WaiterPublicActivity remains additive. BottomNav required.
 
 const SESSION_LOCATION_KEY = "grubbid.discovery.location";
 const SESSION_AUTO_LABEL_KEY = "grubbid.discovery.auto_label";
+const CONNECTIONS_PATH = "/account/connections";
+const PLANNING_PATH = "/my-menuply/connections-planning";
 
 function parseSessionLocation(raw) {
   const str = String(raw || "").trim();
@@ -43,116 +41,263 @@ function resolveWaiterMarketLabel() {
   return "";
 }
 
-// Meal-period picks first; cluster updates additive at the end (matches backend merge order).
-// 2026-08-19 (user-authorized): want-to-eat list is additive personal signal for Waiter advice.
-const WAITER_GROUP_ORDER = [
-  "what_people_are_eating",
-  "liked_signal",
-  "want_to_eat",
-  "meal_intel",
-  "new_item",
-  "trending_dish",
-  "meal_recommendation",
-  "active_deal",
-  "new_restaurant",
-  "cluster_report",
-  "dining_hall_update",
-  "dining_conditions",
-];
-
-function sortWaiterGroups(groups) {
-  const rank = (type) => {
-    const idx = WAITER_GROUP_ORDER.indexOf(type);
-    return idx === -1 ? WAITER_GROUP_ORDER.length : idx;
-  };
-  return [...groups].sort((a, b) => rank(a.type) - rank(b.type));
-}
-
-// ONE group per type — enforces the one-card-per-category rule.
-// Deduplicates items by title within each group (prevents duplicate franchise entries).
-function groupByType(recommendations) {
-  const order = [];
-  const map = new Map();
-  for (const rec of (recommendations || [])) {
-    const key = rec.type || "other";
-    if (!map.has(key)) {
-      map.set(key, { type: key, label: rec.label, items: [] });
-      order.push(key);
-    }
-    map.get(key).items.push(rec);
+function formatBriefingDatetime(iso, timeZone) {
+  const d = iso ? new Date(iso) : new Date();
+  if (Number.isNaN(d.getTime())) return "";
+  try {
+    const weekday = new Intl.DateTimeFormat("en-US", { weekday: "long", timeZone }).format(d);
+    const monthDay = new Intl.DateTimeFormat("en-US", {
+      month: "long",
+      day: "numeric",
+      timeZone,
+    }).format(d);
+    const time = new Intl.DateTimeFormat("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      timeZone,
+    }).format(d);
+    return `${weekday}, ${monthDay} · ${time}`;
+  } catch {
+    return d.toLocaleString();
   }
-  return order.map((key) => {
-    const group = map.get(key);
-    const seen = new Set();
-    group.items = group.items.filter((item) => {
-      const normalized = String(item.title || "").toLowerCase().trim();
-      if (!normalized || seen.has(normalized)) return false;
-      seen.add(normalized);
-      return true;
-    });
-    return group;
-  }).filter((group) => group.items.length > 0);
 }
 
-const CARD_STYLE = {
-  borderRadius: 16,
-  padding: "14px 15px",
-  border: "1px solid rgba(134,239,172,0.14)",
-  background: "linear-gradient(180deg, rgba(17,24,20,0.92), rgba(11,15,12,0.92))",
-};
-
-const LABEL_STYLE = {
-  fontSize: 15,
-  fontWeight: 800,
-  color: "#86EFAC",
-  letterSpacing: "-0.01em",
-  marginBottom: 10,
-};
-
-const ITEM_LINK_STYLE = {
-  color: "#CBD5E1",
-  textDecoration: "none",
-  fontSize: 13,
-  lineHeight: 1.45,
-};
-
-function capitalizeHeading(value) {
-  const text = String(value || "").trim();
-  if (!text) return text;
-  return text.charAt(0).toUpperCase() + text.slice(1);
+function formatInviteDate(ymd) {
+  if (!ymd) return null;
+  const d = new Date(`${String(ymd).slice(0, 10)}T12:00:00`);
+  if (Number.isNaN(d.getTime())) return null;
+  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(d);
 }
 
-function itemDetailLine(item) {
-  // Backend cluster report already embeds cluster_name in detail when present.
-  return String(item.detail || "").trim();
+function joinMeLine(invite) {
+  const host = String(invite?.hostName || "A diner").trim() || "A diner";
+  const restaurant = String(invite?.restaurant || "").trim();
+  const dateLabel = formatInviteDate(invite?.eventDate);
+  if (invite?.type === "open_invite" && restaurant) {
+    return `${host} is going to ${restaurant} and has an open invite.`;
+  }
+  if (restaurant && dateLabel) {
+    return `${host} invited you to lunch at ${restaurant} on ${dateLabel}. Respond?`;
+  }
+  if (restaurant) {
+    return `${host} invited you to ${restaurant}. Respond?`;
+  }
+  return `${host} invited you. Respond?`;
 }
 
-// Renders one card for an entire category (e.g. all "New for Dinner" items).
-// Each item title is directly clickable — no separate "View dish →" link.
-function CategoryCard({ group }) {
+function SectionLabel({ children }) {
+  return <div style={styles.sectionLabel}>{children}</div>;
+}
+
+function GreetingBlock({ greeting, timeZone }) {
+  const firstName = String(greeting?.firstName || "there").trim() || "there";
+  const when = formatBriefingDatetime(greeting?.localDatetime, timeZone);
   return (
-    <div style={CARD_STYLE}>
-      {group.label ? <div style={LABEL_STYLE}>{capitalizeHeading(group.label)}</div> : null}
-      <div style={{ display: "grid", gap: 10 }}>
-        {group.items.map((item, index) => {
-          const detail = itemDetailLine(item);
-          return (
-            <div key={item.link || item.title || index}>
-              {item.link ? (
-                <Link to={item.link} style={{ ...ITEM_LINK_STYLE, display: "block", fontWeight: 600, color: "#E5E7EB" }}>
-                  {item.title}
-                </Link>
+    <header style={styles.greeting} data-testid="waiter-greeting">
+      <div style={styles.waiterEyebrow}>
+        <span>Waiter</span>
+        <svg width="16" height="11" viewBox="6.5 12.5 11 7.5" fill="currentColor" aria-hidden="true">
+          <path d="M11.58 16.34 7.4 13.68v5.32l4.18-2.66Z" />
+          <path d="M12.42 16.34 16.6 13.68v5.32l-4.18-2.66Z" />
+          <circle cx="12" cy="16.34" r="1" />
+        </svg>
+      </div>
+      <p style={styles.hello}>Hello {firstName}.</p>
+      {when ? <p style={styles.when}>{when}</p> : null}
+      <p style={styles.heres}>Here&apos;s what&apos;s going on:</p>
+    </header>
+  );
+}
+
+function ConnectSection({ connect }) {
+  if (!connect) return null;
+  const count = Number(connect.count || 0);
+  const previews = Array.isArray(connect.previews) ? connect.previews : [];
+  if (count <= 0) return null;
+  const overflow = count > 3 ? count - 3 : 0;
+
+  return (
+    <section style={styles.section} data-testid="waiter-connect">
+      <SectionLabel>Connect</SectionLabel>
+      <p style={styles.sectionLead}>
+        You have {count} connect invitation{count === 1 ? "" : "s"}
+      </p>
+      <div style={styles.stack}>
+        {previews.slice(0, 3).map((row, idx) => (
+          <Link
+            key={row.connectionId || row.peerId || idx}
+            to={CONNECTIONS_PATH}
+            style={styles.listCard}
+            data-testid="waiter-connect-preview"
+          >
+            <div style={styles.avatar}>
+              {row.avatarUrl ? (
+                <img src={row.avatarUrl} alt="" style={styles.avatarImg} />
               ) : (
-                <span style={{ ...ITEM_LINK_STYLE, fontWeight: 600, color: "#E5E7EB" }}>{item.title}</span>
+                <span aria-hidden>{String(row.name || "?").slice(0, 1).toUpperCase()}</span>
               )}
-              {detail ? (
-                <div style={{ fontSize: 11, color: "#6B7280", lineHeight: 1.4, marginTop: 2 }}>{detail}</div>
-              ) : null}
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <div style={styles.rowTitle}>{row.name || "Diner"}</div>
+              {row.context ? <div style={styles.rowMeta}>{row.context}</div> : null}
+            </div>
+          </Link>
+        ))}
+      </div>
+      {overflow > 0 ? (
+        <Link to={CONNECTIONS_PATH} style={styles.footerLink} data-testid="waiter-connect-more">
+          +{overflow} more · see connections
+        </Link>
+      ) : null}
+    </section>
+  );
+}
+
+function JoinMeSection({ joinMe }) {
+  if (!joinMe) return null;
+  const count = Number(joinMe.count || 0);
+  const invites = Array.isArray(joinMe.topInvites) ? joinMe.topInvites : [];
+  if (count <= 0) return null;
+
+  return (
+    <section style={styles.section} data-testid="waiter-join-me">
+      <SectionLabel>Join Me</SectionLabel>
+      <div style={styles.stack}>
+        {invites.slice(0, 3).map((invite, idx) => {
+          const href = invite.href || PLANNING_PATH;
+          const line = joinMeLine(invite);
+          return (
+            <Link
+              key={`${invite.hostName}-${invite.restaurant}-${idx}`}
+              to={href}
+              style={styles.listCard}
+              data-testid="waiter-join-me-invite"
+            >
+              <div style={styles.rowTitle}>{line}</div>
+            </Link>
+          );
+        })}
+      </div>
+      <Link to={PLANNING_PATH} style={styles.footerLink} data-testid="waiter-join-me-footer">
+        See your connections for full updates
+      </Link>
+    </section>
+  );
+}
+
+function PrivateOfferSection({ privateOffer }) {
+  if (!privateOffer) return null;
+  const tag = String(privateOffer.preferenceTag || "").trim();
+  const restaurant = String(privateOffer.restaurant || "").trim();
+  const dishName = String(privateOffer.dishName || "").trim();
+  if (!tag || !restaurant || !dishName) return null;
+
+  const discount = String(privateOffer.discountLabel || "").trim();
+  const redeemBy = privateOffer.redeemByDate
+    ? formatInviteDate(privateOffer.redeemByDate)
+    : null;
+  const body = [
+    `${restaurant} sent you an exclusive invite: ${dishName}`,
+    discount || null,
+    redeemBy ? `anytime before ${redeemBy}` : null,
+  ]
+    .filter(Boolean)
+    .join(", ");
+
+  const inner = (
+    <>
+      <div style={styles.offerKicker}>Because you love {tag}</div>
+      <p style={styles.offerBody}>{body}.</p>
+      <div style={styles.offerCta}>Redeem when you&apos;re ready →</div>
+    </>
+  );
+
+  if (privateOffer.link) {
+    return (
+      <section style={styles.section} data-testid="waiter-private-offer">
+        <Link to={privateOffer.link} style={styles.offerCard}>
+          {inner}
+        </Link>
+      </section>
+    );
+  }
+
+  return (
+    <section style={styles.section} data-testid="waiter-private-offer">
+      <div style={styles.offerCard}>{inner}</div>
+    </section>
+  );
+}
+
+function MealOptionsSection({ mealOptions, mealPeriod, onSelectMealPeriod }) {
+  if (!mealOptions) return null;
+  const buckets = mealOptions.buckets || {};
+  const active = normalizeMealPeriodId(mealPeriod) || mealOptions.currentBucket || "lunch";
+  const cards = Array.isArray(buckets[active]) ? buckets[active] : [];
+  if (cards.length === 0) return null;
+
+  const periodLabel =
+    WAITER_MEAL_PERIODS.find((p) => p.id === active)?.label || "Meal";
+
+  return (
+    <section style={styles.section} data-testid="waiter-meal-options">
+      <div style={styles.tabs} role="tablist" aria-label="Meal period">
+        {WAITER_MEAL_PERIODS.map((period) => {
+          const selected = active === period.id;
+          return (
+            <button
+              key={period.id}
+              type="button"
+              role="tab"
+              aria-selected={selected}
+              onClick={() => onSelectMealPeriod(period.id)}
+              style={{
+                ...styles.tab,
+                ...(selected ? styles.tabSelected : null),
+              }}
+            >
+              {period.label}
+            </button>
+          );
+        })}
+      </div>
+      <SectionLabel>{periodLabel} options</SectionLabel>
+      <div style={styles.stack}>
+        {cards.map((card) => {
+          const items = (card.items || []).slice(0, 2);
+          const href = card.restaurant_slug
+            ? `/restaurants/${card.restaurant_slug}`
+            : card.restaurant_id
+              ? `/restaurants/${card.restaurant_id}`
+              : null;
+          const detail = items.join(" · ");
+          const content = (
+            <>
+              <div style={styles.rowTitle}>{card.restaurant}</div>
+              {detail ? <div style={styles.rowMeta}>{detail}</div> : null}
+            </>
+          );
+          return href ? (
+            <Link
+              key={`${card.restaurant}-${card.restaurant_id || ""}`}
+              to={href}
+              style={styles.listCard}
+              data-testid="waiter-meal-card"
+            >
+              {content}
+            </Link>
+          ) : (
+            <div
+              key={`${card.restaurant}-${card.restaurant_id || ""}`}
+              style={styles.listCard}
+              data-testid="waiter-meal-card"
+            >
+              {content}
             </div>
           );
         })}
       </div>
-    </div>
+    </section>
   );
 }
 
@@ -162,10 +307,9 @@ export default function FoodInterestsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [locationLabel] = useState(resolveWaiterMarketLabel);
-
   const location = parseSessionLocation(locationLabel);
+  const timeZone = getTimezoneForUsState(location.state);
 
-  // Prefer current Place/cluster when known (query param, then Yellow Browser session).
   const clusterSlug =
     String(searchParams.get("cluster") || searchParams.get("cluster_slug") || "").trim() ||
     readMenuBrowserVenueSession() ||
@@ -175,14 +319,14 @@ export default function FoodInterestsPage() {
   const [mealPeriod, setMealPeriod] = useState(() => {
     const fromUrl = normalizeMealPeriodId(searchParams.get("meal_period"));
     if (fromUrl) return fromUrl;
-    return getDefaultMealPeriod(new Date(), getTimezoneForUsState(location.state));
+    return getDefaultMealPeriod(new Date(), timeZone);
   });
 
   const canFetchBriefing = Boolean((location.city && location.state) || isAuthenticated);
-
   const [briefing, setBriefing] = useState(null);
   const [briefingLoading, setBriefingLoading] = useState(canFetchBriefing);
 
+  // Fetch once per market/auth/cluster — meal tabs switch client-side from mealOptions.buckets.
   useEffect(() => {
     if (!canFetchBriefing) {
       setBriefing(null);
@@ -191,15 +335,34 @@ export default function FoodInterestsPage() {
     }
     let cancelled = false;
     setBriefingLoading(true);
-    fetchWaiterBriefing(location.city, location.state, mealPeriod, {
+    const period = getDefaultMealPeriod(new Date(), timeZone);
+    fetchWaiterBriefing(location.city, location.state, period, {
       clusterId: clusterId || undefined,
       clusterSlug: clusterSlug || undefined,
     })
-      .then((data) => { if (!cancelled) setBriefing(data?.ok ? data : null); })
-      .catch(() => { if (!cancelled) setBriefing(null); })
-      .finally(() => { if (!cancelled) setBriefingLoading(false); });
-    return () => { cancelled = true; };
-  }, [canFetchBriefing, location.city, location.state, mealPeriod, clusterId, clusterSlug]);
+      .then((data) => {
+        if (cancelled) return;
+        if (!data?.ok) {
+          setBriefing(null);
+          return;
+        }
+        setBriefing(data);
+        const fromUrl = normalizeMealPeriodId(searchParams.get("meal_period"));
+        const bucket =
+          fromUrl || normalizeMealPeriodId(data.mealOptions?.currentBucket);
+        if (bucket) setMealPeriod(bucket);
+      })
+      .catch(() => {
+        if (!cancelled) setBriefing(null);
+      })
+      .finally(() => {
+        if (!cancelled) setBriefingLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- meal_period is client-only; do not refetch on tab change
+  }, [canFetchBriefing, location.city, location.state, clusterId, clusterSlug, timeZone]);
 
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
@@ -210,123 +373,92 @@ export default function FoodInterestsPage() {
   }, [briefingLoading]);
 
   function selectMealPeriod(id) {
-    setMealPeriod(id);
+    const nextId = normalizeMealPeriodId(id) || id;
+    setMealPeriod(nextId);
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
-      next.set("meal_period", id);
+      next.set("meal_period", nextId);
       return next;
     });
   }
 
-  const subscriptionCount = Number(briefing?.cluster_report?.followed_total || 0);
-  const clusterNames = (briefing?.cluster_report?.subscriptions || [])
-    .map((c) => c?.name)
-    .filter(Boolean)
-    .slice(0, 3);
-  const hasLocation = Boolean(location.city && location.state);
-  const subheading = (() => {
-    if (hasLocation && subscriptionCount > 0 && clusterNames.length) {
-      const more = subscriptionCount > clusterNames.length ? ` +${subscriptionCount - clusterNames.length}` : "";
-      return `Food picks for ${locationLabel}, plus updates from ${clusterNames.join(", ")}${more}.`;
-    }
-    if (hasLocation || locationLabel) return `Food picks for ${locationLabel || `${location.city}, ${location.state}`}.`;
-    if (subscriptionCount > 0 && clusterNames.length) {
-      const more = subscriptionCount > clusterNames.length ? ` +${subscriptionCount - clusterNames.length}` : "";
-      return `Food updates from ${clusterNames.join(", ")}${more}.`;
-    }
-    return "Your local food market intelligence.";
-  })();
+  const greeting = useMemo(() => {
+    if (briefing?.greeting) return briefing.greeting;
+    const first =
+      String(briefing?.account?.first_name || "").trim() || (isAuthenticated ? "there" : "there");
+    return { firstName: first, localDatetime: new Date().toISOString() };
+  }, [briefing, isAuthenticated]);
 
-  // Use recommendations from the briefing payload (never the legacy cards field).
-  const groups = sortWaiterGroups(groupByType(briefing?.recommendations));
-  const clusterNotice = briefing?.cluster_report?.notice || null;
-  const emptyMessage = hasLocation
-    ? "No recommendations available for your area right now. Check back soon."
-    : clusterNotice ||
-      "Set your location on the home screen or sign in to follow places for personalized updates.";
+  const hasAnySection = Boolean(
+    briefing?.connect ||
+      briefing?.joinMe ||
+      briefing?.privateOffer ||
+      briefing?.mealOptions
+  );
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--gb-color-page)", color: "var(--gb-color-ink)", paddingBottom: "calc(var(--bottom-nav-h, 72px) + 28px)" }}>
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "var(--gb-color-page)",
+        color: "var(--gb-color-ink)",
+        paddingBottom: "calc(var(--bottom-nav-h, 72px) + 28px)",
+      }}
+    >
       <div style={{ maxWidth: 720, margin: "0 auto", padding: "18px 16px 0" }}>
+        <GreetingBlock greeting={greeting} timeZone={timeZone} />
 
-        {/* Header */}
-        <div style={{ borderRadius: 24, padding: "18px 18px 20px", background: "linear-gradient(135deg, rgba(20,31,22,0.98), rgba(13,19,16,0.94))", border: "1px solid rgba(34,197,94,0.16)", boxShadow: "0 24px 54px rgba(0,0,0,0.3)" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 13, fontWeight: 800, color: "#86EFAC", letterSpacing: "0.08em", textTransform: "uppercase" }}>
-            <span>Waiter</span>
-            <svg width="16" height="11" viewBox="6.5 12.5 11 7.5" fill="currentColor" aria-hidden="true" style={{ flexShrink: 0 }}>
-              <path d="M11.58 16.34 7.4 13.68v5.32l4.18-2.66Z" />
-              <path d="M12.42 16.34 16.6 13.68v5.32l-4.18-2.66Z" />
-              <circle cx="12" cy="16.34" r="1" />
-            </svg>
-          </div>
-          <h1 style={{ margin: "10px 0 0", fontSize: 28, lineHeight: 1.05, letterSpacing: "-0.03em" }}>
-            Today&apos;s food highlights
-          </h1>
-          <p style={{ margin: "8px 0 0", fontSize: 14, color: "#CBD5E1", lineHeight: 1.55 }}>{subheading}</p>
-          {!isAuthenticated ? (
-            <div style={{ marginTop: 16, borderRadius: 16, border: "1px solid rgba(34,197,94,0.18)", background: "rgba(34,197,94,0.08)", padding: "12px 14px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-              <div style={{ fontSize: 13, color: "#DCFCE7", lineHeight: 1.45 }}>Sign in to follow places and personalize your food updates.</div>
-              <button type="button" onClick={() => navigate("/account/login")} style={{ border: "none", borderRadius: 999, background: "#22C55E", color: "#0B0F0C", fontSize: 12, fontWeight: 800, padding: "10px 12px", cursor: "pointer", whiteSpace: "nowrap" }}>Sign In</button>
+        {!isAuthenticated ? (
+          <div style={styles.signInStrip}>
+            <div style={{ fontSize: 13, color: "#DCFCE7", lineHeight: 1.45 }}>
+              Sign in to see connect requests, Join Me invites, and private offers.
             </div>
-          ) : (
-            <div style={{ marginTop: 12, fontSize: 12 }}>
-              <Link to="/account/cluster-subscriptions" style={{ color: "#86EFAC", fontWeight: 700, textDecoration: "none" }}>
-                Manage followed places
-              </Link>
-            </div>
-          )}
-        </div>
-
-        {/* Meal period selector */}
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 14 }}>
-          {WAITER_MEAL_PERIODS.map((period) => (
             <button
-              key={period.id}
               type="button"
-              onClick={() => selectMealPeriod(period.id)}
-              style={{
-                borderRadius: 999,
-                padding: "7px 14px",
-                fontSize: 13,
-                fontWeight: 700,
-                border: mealPeriod === period.id ? "1px solid #22C55E" : "1px solid rgba(134,239,172,0.2)",
-                background: mealPeriod === period.id ? "rgba(34,197,94,0.15)" : "transparent",
-                color: mealPeriod === period.id ? "#22C55E" : "#9CA3AF",
-                cursor: "pointer",
-              }}
+              onClick={() => navigate("/account/login?next=%2Fwaiter")}
+              style={styles.signInBtn}
             >
-              {period.label}
+              Sign In
             </button>
-          ))}
-        </div>
+          </div>
+        ) : (
+          <div style={{ marginTop: 8, fontSize: 12 }}>
+            <Link
+              to="/account/cluster-subscriptions"
+              style={{ color: "#86EFAC", fontWeight: 700, textDecoration: "none" }}
+            >
+              Manage followed places
+            </Link>
+          </div>
+        )}
 
-        {/* Recommendations */}
-        <section style={{ marginTop: 14 }} aria-live="polite">
+        <div aria-live="polite" style={{ marginTop: 8 }}>
           {briefingLoading ? (
-            <div style={{ fontSize: 14, color: "#9CA3AF", padding: "12px 0" }}>Loading recommendations…</div>
+            <div style={{ fontSize: 14, color: "#9CA3AF", padding: "12px 0" }}>
+              Loading your briefing…
+            </div>
           ) : !canFetchBriefing ? (
             <div style={{ fontSize: 13, color: "#6B7280", lineHeight: 1.55, padding: "12px 0" }}>
-              Set your location on the home screen or sign in to follow places for personalized updates.
-            </div>
-          ) : groups.length ? (
-            <div style={{ display: "grid", gap: 12 }}>
-              {groups.map((group) => (
-                <CategoryCard key={group.type} group={group} />
-              ))}
+              Set your location on the home screen or sign in for personalized updates.
             </div>
           ) : (
-            <div style={{ fontSize: 13, color: "#9CA3AF", lineHeight: 1.55, padding: "12px 0" }}>
-              {emptyMessage}
-              {isAuthenticated && !hasLocation && subscriptionCount === 0 ? (
-                <div style={{ marginTop: 8 }}>
-                  <Link to="/clusters" style={{ color: "#86EFAC", fontWeight: 700, textDecoration: "none" }}>
-                    Browse clusters to follow
-                  </Link>
+            <>
+              <ConnectSection connect={briefing?.connect ?? null} />
+              <JoinMeSection joinMe={briefing?.joinMe ?? null} />
+              <PrivateOfferSection privateOffer={briefing?.privateOffer ?? null} />
+              <MealOptionsSection
+                mealOptions={briefing?.mealOptions ?? null}
+                mealPeriod={mealPeriod}
+                onSelectMealPeriod={selectMealPeriod}
+              />
+              {!hasAnySection ? (
+                <div style={{ fontSize: 13, color: "#9CA3AF", lineHeight: 1.55, padding: "12px 0" }}>
+                  Nothing new in your briefing right now. Check back soon.
                 </div>
               ) : null}
-            </div>
+            </>
           )}
-        </section>
+        </div>
 
         <WaiterPublicActivity />
       </div>
@@ -334,3 +466,127 @@ export default function FoodInterestsPage() {
     </div>
   );
 }
+
+const styles = {
+  greeting: { marginBottom: 8 },
+  waiterEyebrow: {
+    display: "flex",
+    alignItems: "center",
+    gap: 5,
+    fontSize: 13,
+    fontWeight: 800,
+    color: "#86EFAC",
+    letterSpacing: "0.08em",
+    textTransform: "uppercase",
+  },
+  hello: {
+    margin: "12px 0 0",
+    fontSize: 28,
+    lineHeight: 1.1,
+    letterSpacing: "-0.03em",
+    fontWeight: 800,
+  },
+  when: { margin: "6px 0 0", fontSize: 14, color: "#94A3B8" },
+  heres: { margin: "10px 0 0", fontSize: 15, color: "#CBD5E1" },
+  section: { marginTop: 22 },
+  sectionLabel: {
+    fontSize: 11,
+    fontWeight: 800,
+    letterSpacing: "0.1em",
+    textTransform: "uppercase",
+    color: "#6B7280",
+    marginBottom: 8,
+  },
+  sectionLead: { margin: "0 0 10px", fontSize: 14, color: "#E5E7EB", fontWeight: 600 },
+  stack: { display: "grid", gap: 8 },
+  listCard: {
+    display: "flex",
+    alignItems: "center",
+    gap: 12,
+    borderRadius: 14,
+    padding: "12px 14px",
+    border: "1px solid rgba(134,239,172,0.14)",
+    background: "linear-gradient(180deg, rgba(17,24,20,0.92), rgba(11,15,12,0.92))",
+    textDecoration: "none",
+    color: "inherit",
+  },
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 999,
+    background: "rgba(34,197,94,0.18)",
+    color: "#86EFAC",
+    display: "grid",
+    placeItems: "center",
+    fontWeight: 800,
+    flexShrink: 0,
+    overflow: "hidden",
+  },
+  avatarImg: { width: "100%", height: "100%", objectFit: "cover" },
+  rowTitle: { fontSize: 14, fontWeight: 700, color: "#E5E7EB", lineHeight: 1.35 },
+  rowMeta: { fontSize: 12, color: "#94A3B8", marginTop: 3, lineHeight: 1.4 },
+  footerLink: {
+    display: "inline-block",
+    marginTop: 10,
+    fontSize: 13,
+    fontWeight: 700,
+    color: "#86EFAC",
+    textDecoration: "none",
+  },
+  offerCard: {
+    display: "block",
+    borderRadius: 16,
+    padding: "16px 16px 14px",
+    border: "1px solid rgba(251,191,36,0.45)",
+    background: "linear-gradient(135deg, rgba(69,42,10,0.95), rgba(30,24,12,0.96))",
+    textDecoration: "none",
+    color: "inherit",
+  },
+  offerKicker: {
+    fontSize: 12,
+    fontWeight: 800,
+    letterSpacing: "0.06em",
+    textTransform: "uppercase",
+    color: "#FBBF24",
+  },
+  offerBody: { margin: "10px 0 0", fontSize: 15, lineHeight: 1.45, color: "#FEF3C7" },
+  offerCta: { marginTop: 12, fontSize: 13, fontWeight: 800, color: "#FDE68A" },
+  tabs: { display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 },
+  tab: {
+    borderRadius: 999,
+    padding: "7px 14px",
+    fontSize: 13,
+    fontWeight: 700,
+    border: "1px solid rgba(134,239,172,0.2)",
+    background: "transparent",
+    color: "#9CA3AF",
+    cursor: "pointer",
+  },
+  tabSelected: {
+    border: "1px solid #22C55E",
+    background: "rgba(34,197,94,0.15)",
+    color: "#22C55E",
+  },
+  signInStrip: {
+    marginTop: 14,
+    borderRadius: 16,
+    border: "1px solid rgba(34,197,94,0.18)",
+    background: "rgba(34,197,94,0.08)",
+    padding: "12px 14px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  signInBtn: {
+    border: "none",
+    borderRadius: 999,
+    background: "#22C55E",
+    color: "#0B0F0C",
+    fontSize: 12,
+    fontWeight: 800,
+    padding: "10px 12px",
+    cursor: "pointer",
+    whiteSpace: "nowrap",
+  },
+};

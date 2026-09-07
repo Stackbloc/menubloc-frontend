@@ -10,28 +10,31 @@ function read(rel) {
   return readFileSync(join(root, rel), "utf8");
 }
 
-test("Waiter surfaces subscribed-cluster report without forbidden UI", () => {
+test("Waiter briefing sections + cluster follow; no forbidden UI", () => {
   const page = read("src/pages/FoodInterestsPage.jsx");
-  assert.match(page, /groupByType/);
+  // Spec sections (fixed order, skip-if-null)
+  assert.match(page, /Hello \{firstName\}/);
+  assert.match(page, /Here&apos;s what&apos;s going on/);
+  assert.match(page, /waiter-connect|ConnectSection/);
+  assert.match(page, /waiter-join-me|JoinMeSection/);
+  assert.match(page, /waiter-private-offer|PrivateOfferSection/);
+  assert.match(page, /waiter-meal-options|MealOptionsSection/);
+  assert.match(page, /briefing\?\.connect/);
+  assert.match(page, /briefing\?\.joinMe/);
+  assert.match(page, /briefing\?\.privateOffer/);
+  assert.match(page, /briefing\?\.mealOptions/);
   assert.match(page, /WAITER_MEAL_PERIODS/);
-  assert.match(page, /briefing\?\.recommendations/);
-  assert.match(page, /cluster_report/);
-  assert.match(page, /want_to_eat/);
   assert.match(page, /\/account\/cluster-subscriptions/);
-  assert.match(page, /Today&apos;s food highlights|Today's food highlights/);
-  assert.match(page, /plus updates from/);
-  assert.match(page, /Food picks for/);
-  assert.match(page, /sortWaiterGroups/);
   assert.match(page, /readDetectedLocation/);
-  assert.match(page, /emptyMessage/);
+  assert.match(page, /WaiterPublicActivity/);
   assert.doesNotMatch(page, /import\s+.*MarketFallback|<[Mm]arketFallback|CommunityGrowthCard\s*[({]/);
   assert.doesNotMatch(page, /\bbriefing\.cards\b/);
-  assert.match(page, /briefing\?\.recommendations/);
-  assert.match(page, /WaiterPublicActivity/);
+  assert.doesNotMatch(page, /Good morning|Good afternoon|Good evening/);
+  // Legacy one-card-per-category path retired with briefing rebuild
+  assert.doesNotMatch(page, /\bgroupByType\b/);
 
   const api = read("src/lib/waiterApi.js");
   assert.match(api, /fetchWaiterBriefing/);
   assert.match(api, /\/api\/waiter\/briefing/);
-  // Briefing may be fetched without city when signed-in for cluster report
   assert.doesNotMatch(api, /if \(!city \|\| !state\) return \{ ok: true/);
 });

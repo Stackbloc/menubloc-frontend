@@ -34,10 +34,10 @@ test("Cluster subscriptions UI + report feed (Waiter wired)", () => {
   assert.match(app, /\/account\/cluster-subscriptions/);
   assert.match(app, /ClusterSubscriptionsPage/);
 
-  // Waiter Phase 6 authorized wiring
+  // Waiter Phase 6 authorized wiring (briefing rebuild keeps cluster follow entry)
   const waiterPage = read("src/pages/FoodInterestsPage.jsx");
-  assert.match(waiterPage, /cluster-subscriptions|cluster_report/);
-  assert.match(waiterPage, /groupByType/);
+  assert.match(waiterPage, /cluster-subscriptions/);
+  assert.match(waiterPage, /MealOptionsSection|briefing\?\.mealOptions/);
   assert.doesNotMatch(waiterPage, /import\s+.*MarketFallback|<[Mm]arketFallback|CommunityGrowthCard\s*[({]/);
 
   const waiterApi = read("src/lib/waiterApi.js");

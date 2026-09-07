@@ -41,7 +41,7 @@ describe("Social Engine loop wiring (Phases 1–8)", () => {
     const waiterPage = read("src/pages/FoodInterestsPage.jsx");
     expect(waiterPage).toMatch(/clusterSlug/);
     expect(waiterPage).toMatch(/fetchWaiterBriefing/);
-    expect(waiterPage).toMatch(/groupByType/);
+    expect(waiterPage).toMatch(/mealOptions|MealOptionsSection/);
 
     const api = read("src/lib/waiterApi.js");
     expect(api).toMatch(/fetchWaiterPeopleEating|cluster_slug/);

@@ -55,8 +55,9 @@ test("subscribe button does not say Waiter", () => {
 
 test("Waiter page keeps invariants; cluster follow copy avoids Waiter jargon", () => {
   const waiter = read("src/pages/FoodInterestsPage.jsx");
-  assert.match(waiter, /groupByType/);
+  assert.match(waiter, /MealOptionsSection|briefing\?\.mealOptions/);
   assert.match(waiter, /Manage followed places|cluster-subscriptions/);
   assert.doesNotMatch(waiter, /Manage Waiter clusters|Waiter report from/);
   assert.doesNotMatch(waiter, /import\s+.*MarketFallback|<[Mm]arketFallback|CommunityGrowthCard\s*[({]/);
+  assert.doesNotMatch(waiter, /Good morning|Good afternoon|Good evening/);
 });
