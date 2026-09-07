@@ -1,19 +1,24 @@
 import React from "react";
-import { getOrderingAvailabilityMessage } from "../../lib/restaurantStatusLight.js";
+import {
+  getOrderingAvailabilityMessage,
+  isOnlineOrderingAvailable,
+} from "../../lib/restaurantStatusLight.js";
 
 /**
- * Compact fit-to-text status chip when online ordering is paused, closed, or outside hours.
- * Not a full-width yellow bar — short copy must not leave a long amber strip.
+ * Compact fit-to-text chip when online ordering is available.
+ * Green bordered rectangle — shown only when ordering is applicable.
+ * Hidden when ordering is unavailable (no yellow unavailable callout).
  * Does not replace MenuPurchaseWaiterHint sticky wiring.
  */
 export default function OrderingUnavailableBanner({ data, style }) {
+  if (!isOnlineOrderingAvailable(data)) return null;
   const message = getOrderingAvailabilityMessage(data);
   if (!message) return null;
 
   return (
     <div
       role="status"
-      data-testid="ordering-unavailable-banner"
+      data-testid="ordering-available-banner"
       style={{
         display: "inline-flex",
         alignItems: "center",
@@ -23,9 +28,9 @@ export default function OrderingUnavailableBanner({ data, style }) {
         margin: 0,
         padding: "3px 8px",
         borderRadius: 6,
-        border: "1px solid #fde68a",
-        background: "#fffbeb",
-        color: "#92400e",
+        border: "1px solid #86efac",
+        background: "#f0fdf4",
+        color: "#166534",
         fontSize: 12,
         fontWeight: 600,
         lineHeight: 1.25,

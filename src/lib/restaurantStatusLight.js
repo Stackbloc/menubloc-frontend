@@ -71,49 +71,12 @@ export function formatOrderingResumeLabel(iso, timeZone) {
 }
 
 /**
- * Customer-facing ordering availability copy from public menu / restaurant payload.
+ * Customer-facing ordering chip copy from public menu / restaurant payload.
+ * Shows only when online ordering is applicable; otherwise null (chip hidden).
  */
 export function getOrderingAvailabilityMessage(data) {
-  const availability = data?.ordering_availability || data?.restaurant?.ordering_availability || null;
-  if (availability?.available === true) return null;
-  if (availability?.message) return availability.message;
-
-  const status = String(
-    availability?.availability_status ||
-      data?.order_acceptance_status ||
-      data?.restaurant?.order_acceptance_status ||
-      ""
-  )
-    .trim()
-    .toLowerCase();
-  const resumeAt =
-    availability?.resume_at ||
-    data?.order_pause_expires_at ||
-    data?.order_closed_expires_at ||
-    data?.restaurant?.order_pause_expires_at ||
-    data?.restaurant?.order_closed_expires_at ||
-    null;
-  const when = formatOrderingResumeLabel(resumeAt, data?.timezone || data?.restaurant?.timezone);
-
-  if (status === "paused") {
-    return when
-      ? `Online ordering is currently paused. Orders resume at ${when}.`
-      : "Online ordering is currently paused.";
-  }
-  if (status === "closed" || status === "temporarily_closed") {
-    return when
-      ? `This restaurant is temporarily closed until ${when}.`
-      : "This restaurant is temporarily closed.";
-  }
-  if (status === "outside_hours" || availability?.reason_code === "outside_store_hours") {
-    return when
-      ? `Online ordering is closed. Ordering opens ${when}.`
-      : "Online ordering is closed for today.";
-  }
-  if (availability?.available === false) {
-    return "Online ordering is currently unavailable.";
-  }
-  return null;
+  if (!isOnlineOrderingAvailable(data)) return null;
+  return "Online Ordering Available";
 }
 
 export function isOnlineOrderingAvailable(data) {
