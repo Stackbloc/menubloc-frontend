@@ -1,5 +1,6 @@
 /**
- * Feed center X — record video by category, upload library media, or quick invites (LDL/LDD/LHC/LGD/MMH).
+ * Feed center X — Multiplier sheet: record/upload by category, or quick invites (LDL/LDD/LHC/LGD/MMH).
+ * Multiplier multiplies the utility of the menu (videos, invites, share).
  */
 
 import { useEffect, useState } from "react";
@@ -18,7 +19,7 @@ export const FEED_VIDEO_CATEGORY_IDS = [
 const X_CATEGORY_TITLES = {
   [FEED_CONTENT_KINDS.ATE]: LIVE_FEED_FULL_CATEGORY_LABELS.ate,
   [FEED_CONTENT_KINDS.WANT]: LIVE_FEED_FULL_CATEGORY_LABELS.want,
-  [FEED_CONTENT_KINDS.REVIEWS]: "Food Review",
+  [FEED_CONTENT_KINDS.REVIEWS]: "Recommend/Review a Dish",
   [FEED_CONTENT_KINDS.COOKING]: LIVE_FEED_FULL_CATEGORY_LABELS.cooking,
 };
 
@@ -32,7 +33,7 @@ const VIDEO_ITEMS = LIVE_FEED_CHANNELS.filter((ch) =>
     ch.id === FEED_CONTENT_KINDS.ATE
       ? "Record a short video of what you're eating now"
       : ch.id === FEED_CONTENT_KINDS.REVIEWS
-        ? "Record a video review of a specific menu item"
+        ? "Record a video recommendation or review of a specific menu item"
         : ch.id === FEED_CONTENT_KINDS.COOKING
           ? "Record a short video of what you're cooking at home"
           : "Record a short video of a dish or craving you want",
@@ -46,7 +47,7 @@ const UPLOAD_CATEGORY_ITEMS = VIDEO_ITEMS.map((item) => ({
     item.id === FEED_CONTENT_KINDS.ATE
       ? "Upload a video of what you're eating now"
       : item.id === FEED_CONTENT_KINDS.REVIEWS
-        ? "Upload a video review of a specific menu item"
+        ? "Upload a video recommendation or review of a specific menu item"
         : item.id === FEED_CONTENT_KINDS.COOKING
           ? "Upload a video of what you're cooking at home"
           : "Upload a video of a dish or craving you want",
@@ -219,7 +220,7 @@ export default function FeedVideoCreateSheet({
     onShareMyMenuply?.();
   }
 
-  const title = uploadStep ? "Upload media" : "Create";
+  const title = uploadStep ? "Upload media" : "Multiplier";
   const lead = uploadStep ? "What is this video for?" : null;
 
   return createPortal(

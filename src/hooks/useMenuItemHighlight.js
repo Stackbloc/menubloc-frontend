@@ -2,33 +2,12 @@ import { useEffect, useRef } from "react";
 import { MENU_ITEM_HIGHLIGHT_QUERY_KEY, menuItemDomId } from "../components/share/shareUtils.js";
 
 const HIGHLIGHT_CLASS = "menuply-menu-item-highlight";
-const HIGHLIGHT_MS = 7000;
 const RETRY_MS = 200;
 const RETRY_MAX_MS = 3500;
-const SCROLL_RETRY_DELAYS_MS = [0, 50, 150, 350, 700, 1200];
 
-function getStickyHeaderOffsetPx() {
-  if (typeof document === "undefined") return 64;
-  const raw = getComputedStyle(document.documentElement).getPropertyValue("--sph-h");
-  const parsed = Number.parseFloat(raw);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : 64;
-}
-
-function isElementVisiblyInViewport(el) {
-  if (!el || !document.contains(el)) return false;
-  const rect = el.getBoundingClientRect();
-  if (rect.height < 8 || rect.width < 8) return false;
-  const topBound = getStickyHeaderOffsetPx() + 12;
-  const bottomBound = window.innerHeight - 12;
-  return rect.top >= topBound && rect.bottom <= bottomBound;
-}
-
-function scrollMenuItemIntoView(el) {
-  if (!el || !document.contains(el)) return;
-  el.scrollIntoView({ block: "center", behavior: "auto" });
-}
-
-/** After highlight expires, return to menu top so the restaurant name is visible. */
+/**
+ * Keep the menu at the restaurant header (top). Do not jump to the highlighted row.
+ */
 function scrollMenuToRestaurantTop(fromEl) {
   if (typeof window === "undefined") return;
 
@@ -37,7 +16,7 @@ function scrollMenuToRestaurantTop(fromEl) {
       ? fromEl.closest(".menu-catalog-scroll")
       : null;
   if (catalog) {
-    catalog.scrollTo({ top: 0, behavior: "smooth" });
+    catalog.scrollTo({ top: 0, behavior: "auto" });
     return;
   }
 
@@ -49,40 +28,13 @@ function scrollMenuToRestaurantTop(fromEl) {
       (overflowY === "auto" || overflowY === "scroll") &&
       node.scrollHeight > node.clientHeight + 8
     ) {
-      node.scrollTo({ top: 0, behavior: "smooth" });
+      node.scrollTo({ top: 0, behavior: "auto" });
       return;
     }
     node = node.parentElement;
   }
 
-  window.scrollTo({ top: 0, behavior: "smooth" });
-}
-
-function scheduleScrollUntilVisible(el) {
-  const timers = [];
-
-  const cleanup = () => {
-    timers.forEach((id) => window.clearTimeout(id));
-    timers.length = 0;
-  };
-
-  for (const delay of SCROLL_RETRY_DELAYS_MS) {
-    timers.push(
-      window.setTimeout(() => {
-        if (!document.contains(el)) {
-          cleanup();
-          return;
-        }
-        if (isElementVisiblyInViewport(el)) {
-          cleanup();
-          return;
-        }
-        scrollMenuItemIntoView(el);
-      }, delay),
-    );
-  }
-
-  return cleanup;
+  window.scrollTo({ top: 0, behavior: "auto" });
 }
 
 function clearHighlightElement(el) {
@@ -95,39 +47,16 @@ function applyHighlightElement(el) {
   el.classList.add(HIGHLIGHT_CLASS);
 }
 
-function finishSession(sessionRef, { scrollToTop = false } = {}) {
+function finishSession(sessionRef) {
   const session = sessionRef.current;
   if (!session) return;
-  if (session.timerId) window.clearTimeout(session.timerId);
-  if (session.scrollCleanup) session.scrollCleanup();
-  const el = session.element;
-  clearHighlightElement(el);
+  clearHighlightElement(session.element);
   sessionRef.current = null;
-  if (scrollToTop) scrollMenuToRestaurantTop(el);
-}
-
-function scheduleSessionEnd(sessionRef) {
-  const session = sessionRef.current;
-  if (!session) return;
-  if (session.timerId) window.clearTimeout(session.timerId);
-  const remaining = session.endsAt - Date.now();
-  if (remaining <= 0) {
-    finishSession(sessionRef, { scrollToTop: true });
-    return;
-  }
-  session.timerId = window.setTimeout(
-    () => finishSession(sessionRef, { scrollToTop: true }),
-    remaining
-  );
 }
 
 function reapplyActiveHighlight(sessionRef) {
   const session = sessionRef.current;
   if (!session) return false;
-  if (Date.now() >= session.endsAt) {
-    finishSession(sessionRef, { scrollToTop: true });
-    return false;
-  }
 
   const el = document.getElementById(menuItemDomId(session.itemId) || "");
   if (!el) return false;
@@ -138,36 +67,27 @@ function reapplyActiveHighlight(sessionRef) {
 
   session.element = el;
   applyHighlightElement(el);
-  if (session.scrollCleanup) session.scrollCleanup();
-  session.scrollCleanup = scheduleScrollUntilVisible(el);
-  scheduleSessionEnd(sessionRef);
   return true;
 }
 
-function beginHighlight(sessionRef, targetId, el) {
+function beginHighlight(sessionRef, targetId, el, { pinToTop = true } = {}) {
   const prev = sessionRef.current;
-  if (prev?.timerId) window.clearTimeout(prev.timerId);
-  if (prev?.scrollCleanup) prev.scrollCleanup();
   if (prev?.element) clearHighlightElement(prev.element);
 
   sessionRef.current = {
     itemId: targetId,
     element: el,
-    endsAt: Date.now() + HIGHLIGHT_MS,
-    timerId: null,
-    scrollCleanup: null,
   };
 
   applyHighlightElement(el);
-  sessionRef.current.scrollCleanup = scheduleScrollUntilVisible(el);
-  scheduleSessionEnd(sessionRef);
+  if (pinToTop) scrollMenuToRestaurantTop(el);
 }
 
 /**
- * When arriving from menu item detail (?highlightItem=), scroll the menu row
- * into view once (no smooth-scroll hijack) and show a green border for 7s.
- * When the highlight window ends, scroll the menu back to the top so the
- * restaurant name is visible (Menu Browser catalog pane or window).
+ * When a menu opens with a specific dish context (?highlightItem= / Feed menu_item_id):
+ * keep the menu scrolled to the restaurant name (top) and show the existing green
+ * border on that row for the whole menu session (until unmount or a new highlight id).
+ * Does not scroll the highlighted row into view.
  */
 export default function useMenuItemHighlight({
   highlightMenuItemId,
@@ -190,13 +110,14 @@ export default function useMenuItemHighlight({
 
   useEffect(() => () => finishSession(sessionRef), []);
 
-  // Re-apply after menu rows re-render (DOM node swap) while the 7s window is active.
+  // Re-apply after menu rows re-render (DOM node swap) while the session is active.
   useEffect(() => {
     if (!ready) return;
     reapplyActiveHighlight(sessionRef);
   }, [ready, displaySections]);
 
   useEffect(() => {
+    // Clearing highlightItem from the URL must not drop an active session.
     if (!highlightMenuItemId || !ready) return undefined;
 
     const targetId = String(highlightMenuItemId);
@@ -204,6 +125,7 @@ export default function useMenuItemHighlight({
       if (clearedParamForRef.current !== targetId) {
         clearHighlightQueryParam(targetId);
       }
+      reapplyActiveHighlight(sessionRef);
       return undefined;
     }
 
@@ -217,7 +139,7 @@ export default function useMenuItemHighlight({
       const el = document.getElementById(domId);
       if (!el || cancelled) return !!el;
 
-      beginHighlight(sessionRef, targetId, el);
+      beginHighlight(sessionRef, targetId, el, { pinToTop: true });
       clearHighlightQueryParam(targetId);
 
       return true;

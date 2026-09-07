@@ -1,5 +1,5 @@
 /**
- * Feed shell contract — TikTok-style nav, X (ate/want/Food Review + share).
+ * Feed shell contract — TikTok-style nav, X Multiplier (ate/want/Recommend/Review a Dish + share).
  */
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -78,13 +78,17 @@ test("Feed shell: Home|Connects|Menu Browser|X|Deals|Shop|Profile + slim X sheet
   assert.match(createSheet, /FEED_CONTENT_KINDS\.COOKING/);
   assert.match(createSheet, /LIVE_FEED_FULL_CATEGORY_LABELS\.cooking/);
   assert.match(createSheet, /FEED_CONTENT_KINDS\.REVIEWS/);
-  assert.match(createSheet, /Food Review/);
+  assert.match(createSheet, /Recommend\/Review a Dish/);
+  assert.match(createSheet, /"Multiplier"/);
+  assert.doesNotMatch(createSheet, /title = uploadStep \? "Upload media" : "Create"/);
+  assert.doesNotMatch(createSheet, /"Food Review"/);
   const cookingIdx = createSheet.indexOf("FEED_CONTENT_KINDS.COOKING");
   const reviewsIdx = createSheet.indexOf("FEED_CONTENT_KINDS.REVIEWS");
   assert.ok(reviewsIdx > 0 && cookingIdx > reviewsIdx);
   const labels = read("src/lib/liveFeedCategory.js");
   assert.match(labels, /cooking:\s*"What I'm Cooking"/);
   assert.doesNotMatch(createSheet, /Post Food Review/);
+  assert.doesNotMatch(createSheet, /Food Review/);
   assert.match(createSheet, /FEED_UPLOAD_MEDIA_ITEM/);
   assert.match(createSheet, /feed-x-upload-media/);
   assert.match(createSheet, /feed-upload-media-\$\{item\.id\}/);
