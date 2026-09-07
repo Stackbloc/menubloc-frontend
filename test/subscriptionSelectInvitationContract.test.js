@@ -1,6 +1,7 @@
 /**
  * Contract: SubscriptionSelect /restaurant/subscription is invitation economics,
  * not a Standard/Pro/Founder's onboarding pitch. FREE_PLAN_CODE preserved.
+ * Optional Paid Upgrades UI removed; Stripe checkout wiring kept for intended paid plans.
  * Cold /pricing redirects to invitation signup in App.jsx.
  */
 import assert from "node:assert/strict";
@@ -22,8 +23,9 @@ test("SubscriptionSelect free path is Menuply invitation, not Standard pitch", (
   assert.match(src, /choosePublished/);
   assert.match(src, /12% commission\. No subscription fee\./);
   assert.match(src, /Continue with Menuply/);
-  assert.match(src, /Optional paid upgrades/);
   assert.match(src, /\[FREE_PLAN_CODE\]:\s*"Menuply"/);
+  assert.doesNotMatch(src, /Optional paid upgrades/i);
+  assert.doesNotMatch(src, /Show Pro and Founder/);
   assert.doesNotMatch(src, /Choose Standard/);
   assert.doesNotMatch(src, /Select Standard/);
   assert.doesNotMatch(src, /Continue with Standard/);

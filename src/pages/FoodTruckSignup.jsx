@@ -11,15 +11,13 @@
  *   On submit: calls POST /owner/profile with category='food_truck'
  *   and internal selected_plan FOOD_TRUCK_ANNUAL_PLAN_CODE (or free
  *   join codes elsewhere). Never show customer-facing "Standard".
- *
- *   Optional paid upgrade cards (SD chart) are gated; comparison
- *   table is not mounted on this invitation page.
+ *   Paid checkout (if any) lives in the Operator Panel — not on this page.
  *
  * Route: /foodtruck/signup
  * ============================================================
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { BrandLogo } from "../components/BrandLogo.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
@@ -80,99 +78,6 @@ const styles = {
     color: "#667085",
     maxWidth: 660,
   },
-  cardsGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-    gap: 20,
-    marginBottom: 24,
-  },
-  pricingCard: (highlight) => ({
-    borderRadius: 28,
-    padding: "24px 22px 22px",
-    border: highlight ? "2px solid #1F4E3D" : "1px solid #eaecf0",
-    background: highlight
-      ? "linear-gradient(135deg, #0f1720 0%, #1f4e3d 48%, #eef6f1 100%)"
-      : "#ffffff",
-    color: highlight ? "#ffffff" : "#101828",
-    boxShadow: highlight
-      ? "0 24px 60px rgba(15, 23, 32, 0.16)"
-      : "0 12px 30px rgba(15, 23, 32, 0.04)",
-  }),
-  planBadge: (highlight) => ({
-    display: "inline-flex",
-    alignItems: "center",
-    alignSelf: "flex-start",
-    marginBottom: 16,
-    padding: "7px 12px",
-    borderRadius: 999,
-    background: highlight ? "rgba(255,255,255,0.16)" : "#eef6f1",
-    color: highlight ? "#ffffff" : "#1F4E3D",
-    fontSize: 11,
-    fontWeight: 900,
-    letterSpacing: "0.08em",
-    textTransform: "uppercase",
-  }),
-  planName: {
-    fontSize: 28,
-    fontWeight: 900,
-    letterSpacing: "-0.04em",
-    lineHeight: 1.05,
-    marginBottom: 10,
-  },
-  commissionDisclosure: (highlight) => ({
-    margin: "0 0 12px",
-    padding: "10px 12px",
-    borderRadius: 12,
-    background: highlight ? "rgba(255,255,255,0.12)" : "#eef6f1",
-    border: highlight ? "1px solid rgba(255,255,255,0.22)" : "1px solid #cfe0d8",
-    color: highlight ? "#ffffff" : "#1F4E3D",
-    fontSize: 14,
-    fontWeight: 800,
-    lineHeight: 1.4,
-  }),
-  planPrice: {
-    fontSize: 24,
-    fontWeight: 900,
-    letterSpacing: "-0.03em",
-    marginBottom: 10,
-  },
-  planPriceLine: {
-    display: "block",
-  },
-  featureList: {
-    listStyle: "none",
-    padding: 0,
-    margin: "0 0 12px",
-    display: "grid",
-    gap: 10,
-  },
-  featureItem: (highlight) => ({
-    display: "flex",
-    gap: 10,
-    alignItems: "flex-start",
-    fontSize: 14,
-    lineHeight: 1.5,
-    color: highlight ? "rgba(255,255,255,0.92)" : "#344054",
-  }),
-  featureMark: (highlight) => ({
-    flexShrink: 0,
-    width: 22,
-    height: 22,
-    borderRadius: "50%",
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: 12,
-    fontWeight: 900,
-    background: highlight ? "rgba(255,255,255,0.2)" : "#1F4E3D",
-    color: "#ffffff",
-    marginTop: 1,
-  }),
-  planFootnote: (highlight) => ({
-    fontSize: 12,
-    lineHeight: 1.5,
-    color: highlight ? "rgba(255,255,255,0.78)" : "#667085",
-  }),
   formCard: {
     background: "#ffffff",
     border: "1px solid #d9e0ea",
@@ -340,50 +245,7 @@ const styles = {
     color: "#1F4E3D",
     margin: 0,
   },
-  optionalSection: {
-    marginBottom: 24,
-  },
-  optionalHeading: {
-    fontSize: 14,
-    fontWeight: 800,
-    letterSpacing: "0.04em",
-    textTransform: "uppercase",
-    color: "#667085",
-    marginBottom: 6,
-  },
-  optionalSubheading: {
-    fontSize: 13,
-    lineHeight: 1.5,
-    color: "#667085",
-    marginBottom: 12,
-  },
-  optionalToggle: {
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: "10px 16px",
-    borderRadius: 12,
-    border: "1px solid #d0d5dd",
-    background: "#fff",
-    color: "#344054",
-    fontSize: 13,
-    fontWeight: 700,
-    cursor: "pointer",
-    fontFamily: "inherit",
-  },
 };
-
-/** Customer-facing plan names: never expose "Standard". */
-function customerFacingPlanName(name) {
-  const raw = String(name || "").trim();
-  if (!raw) return "Food Truck";
-  const cleaned = raw
-    .replace(/\bFood\s*Truck\s*Standard\b/gi, "Food Truck")
-    .replace(/\bStandard\b/gi, "Menuply")
-    .replace(/\s{2,}/g, " ")
-    .trim();
-  return cleaned || "Food Truck";
-}
 
 function submitBtnStyle(disabled) {
   return {
@@ -438,14 +300,6 @@ function PasswordInput({
   );
 }
 
-function featureLabelsForPlan(planKey, features) {
-  if (!planKey || !Array.isArray(features)) return [];
-  return features
-    .filter((row) => row?.[planKey] === true)
-    .map((row) => row.label)
-    .filter(Boolean);
-}
-
 export default function FoodTruckSignup() {
   const { t } = useLanguage();
   const [searchParams] = useSearchParams();
@@ -468,43 +322,6 @@ export default function FoodTruckSignup() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreements, setAgreements] = useState({ legalConsent: false });
-  const [sdChart, setSdChart] = useState(null);
-  const [showOptionalPaid, setShowOptionalPaid] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch(
-          `${API_BASE}/api/public/subscription-comparison?audience=food_truck`
-        );
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const json = await res.json();
-        if (!json?.ok || !Array.isArray(json.plans)) return;
-        if (!cancelled) setSdChart(json);
-      } catch {
-        if (!cancelled) setSdChart(null);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const planCards = useMemo(() => {
-    const plans = Array.isArray(sdChart?.plans) ? sdChart.plans : [];
-    return plans.map((plan) => ({
-      key: plan.key,
-      name: customerFacingPlanName(plan.name),
-      commission: plan.commission || "",
-      prices: Array.isArray(plan.prices) ? plan.prices : [],
-      highlight: Boolean(plan.highlight),
-      badge: plan.badge_text
-        ? customerFacingPlanName(plan.badge_text)
-        : null,
-      features: featureLabelsForPlan(plan.key, sdChart?.features),
-    }));
-  }, [sdChart]);
 
   function handleChange(event) {
     const { name, value } = event.target;
@@ -641,58 +458,6 @@ export default function FoodTruckSignup() {
         </section>
 
         {serverError ? <div style={styles.errorBanner}>{serverError}</div> : null}
-
-        {planCards.length ? (
-          <section style={styles.optionalSection} aria-label="Optional paid upgrades">
-            <div style={styles.optionalHeading}>Optional paid upgrades</div>
-            <div style={styles.optionalSubheading}>
-              Not required to join. Paid Food Truck options stay available if you already intended
-              one — checkout happens later in the Operator Panel.
-            </div>
-            {!showOptionalPaid ? (
-              <button
-                type="button"
-                style={styles.optionalToggle}
-                onClick={() => setShowOptionalPaid(true)}
-              >
-                Show optional paid options
-              </button>
-            ) : (
-              <section style={styles.cardsGrid} aria-label="Food truck paid options">
-                {planCards.map((plan) => (
-                  <article key={plan.key} style={styles.pricingCard(plan.highlight)}>
-                    {plan.badge ? <div style={styles.planBadge(plan.highlight)}>{plan.badge}</div> : null}
-                    <div style={styles.planName}>{plan.name}</div>
-                    {plan.commission ? (
-                      <div style={styles.commissionDisclosure(plan.highlight)}>{plan.commission}</div>
-                    ) : null}
-                    <div style={styles.planPrice}>
-                      {(plan.prices.length ? plan.prices : ["—"]).map((line) => (
-                        <span key={line} style={styles.planPriceLine}>
-                          {line}
-                        </span>
-                      ))}
-                    </div>
-                    {plan.features.length ? (
-                      <ul style={styles.featureList}>
-                        {plan.features.map((feature) => (
-                          <li key={feature} style={styles.featureItem(plan.highlight)}>
-                            <span style={styles.featureMark(plan.highlight)}>&#10003;</span>
-                            <span>{feature}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : null}
-                    <div style={styles.planFootnote(plan.highlight)}>
-                      Create your account below. Optional paid checkout happens later in the Operator
-                      Panel.
-                    </div>
-                  </article>
-                ))}
-              </section>
-            )}
-          </section>
-        ) : null}
 
         <div style={styles.formCard}>
           <div style={styles.formCardHeader}>

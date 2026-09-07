@@ -2,6 +2,7 @@
  * Contract: FoodTruckSignup is a Menuply invitation, not a plan-comparison pitch.
  * Internal FOOD_TRUCK_ANNUAL_PLAN_CODE / food_truck category preserved on POST.
  * Customer-facing "Standard" and PlanComparisonTable must not appear.
+ * Optional Paid Upgrades pitch removed — free create only on this page.
  */
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -21,8 +22,9 @@ test("FoodTruckSignup is invitation messaging with free-join economics", () => {
   assert.match(src, /Your Menu\. More Ways to Be Discovered\./);
   assert.match(src, /12% commission\. No subscription fee\./);
   assert.match(src, /Claim your free profile\. Upload and manage your menu\. Join the community\./);
-  assert.match(src, /Optional paid upgrades/);
   assert.match(src, /Create your account/);
+  assert.doesNotMatch(src, /Optional paid upgrades/i);
+  assert.doesNotMatch(src, /Show optional paid options/i);
   assert.doesNotMatch(src, /Compare Food Truck Standard/);
   assert.doesNotMatch(src, /PlanComparisonTable/);
   assert.doesNotMatch(src, /Food Truck Standard/);
@@ -36,5 +38,4 @@ test("FoodTruckSignup preserves food_truck signup POST and plan code", () => {
   assert.match(src, /selected_plan:\s*FOOD_TRUCK_ANNUAL_PLAN_CODE/);
   assert.match(src, /rememberIntendedCheckoutPlanCode\(FOOD_TRUCK_ANNUAL_PLAN_CODE\)/);
   assert.match(src, /\/owner\/profile/);
-  assert.match(src, /customerFacingPlanName/);
 });

@@ -8,7 +8,9 @@
  *   `/restaurant/subscription` (checkout return, paid preset, checkpoints).
  *   Primary message matches invitation economics: Menuply free path
  *   (FREE_PLAN_CODE / published_free) — never "Standard" as customer copy.
- *   Pro / Founder's remain optional paid upgrades via existing Stripe checkout.
+ *   Intended paid plans still auto-route to Stripe checkout; Operator Panel
+ *   remains the place for paid plan changes. No paid-upsell pitch on this
+ *   invitation surface.
  *   Cold `/pricing` redirects to `/restaurant/signup` (see App.jsx).
  * ============================================================
  */
@@ -29,9 +31,6 @@ import {
   FREE_PLAN_CODE,
   buildOwnerStripeCheckoutBody,
   clearIntendedCheckoutPlanCode,
-  fetchCheckoutPlanOptionsForDisplay,
-  getMarketplaceCommissionDisclosure,
-  indexPlansByCode,
   isFreePlanCode,
   isSelectablePaidPlanCode,
   readIntendedCheckoutPlanCode,
@@ -66,31 +65,6 @@ const PLAN_LABELS = {
 const FOUNDERS_PLAN = {
   planCode: "founders_annual",
   priceLabel: CHECKOUT_PRICE_LABELS.founders_annual,
-};
-
-const OPTIONAL_PAID_CARDS = {
-  starter_annual: {
-    title: "Pro",
-    description:
-      "Optional paid tools for growing restaurants — profiles, menus, QR, and online ordering.",
-    features: [
-      "Logo and product photos",
-      "Unlimited menus and menu items",
-      "QR Code and social sharing",
-      "Online ordering",
-      "Customers can follow your restaurant",
-    ],
-  },
-  founders_annual: {
-    title: "Founder's",
-    description:
-      "Optional early-adopter membership with locked Founder's pricing while availability remains open.",
-    features: [
-      "All Pro benefits, plus more",
-      "Premium menu management tools",
-      "Create deals and promotions free of charge",
-    ],
-  },
 };
 
 const s = {
@@ -194,182 +168,6 @@ const s = {
     fontFamily: "inherit",
     boxShadow: disabled ? "none" : "0 12px 24px rgba(31, 78, 61, 0.18)",
   }),
-  optionalSection: {
-    marginTop: 8,
-    padding: "22px",
-    borderRadius: 24,
-    border: "1px solid #d9e0ea",
-    background: "#ffffff",
-    boxShadow: "0 12px 30px rgba(15, 23, 32, 0.04)",
-  },
-  optionalHeading: {
-    fontSize: 18,
-    fontWeight: 900,
-    letterSpacing: "-0.02em",
-    marginBottom: 8,
-  },
-  optionalSubheading: {
-    fontSize: 14,
-    lineHeight: 1.6,
-    color: "#667085",
-    marginBottom: 14,
-  },
-  optionalToggle: {
-    width: "100%",
-    minHeight: 44,
-    borderRadius: 12,
-    border: "1px solid #d0d5dd",
-    background: "#f8faf9",
-    color: "#101828",
-    fontSize: 14,
-    fontWeight: 800,
-    cursor: "pointer",
-    fontFamily: "inherit",
-    marginBottom: 16,
-  },
-  cardsGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-    gap: 16,
-  },
-  planCard: (highlighted) => ({
-    borderRadius: 22,
-    padding: "20px 18px 18px",
-    border: highlighted ? "2px solid #1F4E3D" : "1px solid #eaecf0",
-    background: highlighted
-      ? "linear-gradient(135deg, #0f1720 0%, #1f4e3d 48%, #eef6f1 100%)"
-      : "#f8faf9",
-    color: highlighted ? "#ffffff" : "#101828",
-    display: "flex",
-    flexDirection: "column",
-    minHeight: 360,
-  }),
-  planCardPro: {
-    borderRadius: 22,
-    padding: "20px 18px 18px",
-    border: "2px solid #86b89a",
-    background: "linear-gradient(160deg, #eef6f1 0%, #f7fbf9 55%, #ffffff 100%)",
-    color: "#101828",
-    display: "flex",
-    flexDirection: "column",
-    minHeight: 360,
-  },
-  limitedBadge: {
-    display: "inline-flex",
-    alignItems: "center",
-    alignSelf: "flex-start",
-    marginBottom: 12,
-    padding: "6px 10px",
-    borderRadius: 999,
-    background: "#eef6f1",
-    color: "#1F4E3D",
-    fontSize: 11,
-    fontWeight: 900,
-    letterSpacing: "0.08em",
-    textTransform: "uppercase",
-  },
-  planEyebrow: {
-    fontSize: 12,
-    fontWeight: 900,
-    letterSpacing: "0.08em",
-    textTransform: "uppercase",
-    marginBottom: 8,
-    opacity: 0.78,
-  },
-  planName: {
-    fontSize: 28,
-    fontWeight: 900,
-    letterSpacing: "-0.04em",
-    lineHeight: 0.95,
-    marginBottom: 10,
-  },
-  planDesc: {
-    fontSize: 14,
-    lineHeight: 1.55,
-    marginBottom: 14,
-    opacity: 0.92,
-  },
-  priceValue: {
-    fontSize: 28,
-    fontWeight: 900,
-    letterSpacing: "-0.04em",
-    lineHeight: 0.95,
-    marginBottom: 14,
-  },
-  commissionDisclosure: {
-    margin: "0 0 12px",
-    padding: "10px 12px",
-    borderRadius: 12,
-    background: "#eef6f1",
-    border: "1px solid #cfe0d8",
-    color: "#1F4E3D",
-    fontSize: 13,
-    fontWeight: 800,
-    lineHeight: 1.4,
-  },
-  commissionDisclosureFounders: {
-    margin: "0 0 12px",
-    padding: "10px 12px",
-    borderRadius: 12,
-    background: "#fffbeb",
-    border: "1px solid #fde68a",
-    color: "#92400e",
-    fontSize: 13,
-    fontWeight: 800,
-    lineHeight: 1.4,
-  },
-  featureList: {
-    listStyle: "none",
-    padding: 0,
-    margin: "0 0 16px",
-    display: "grid",
-    gap: 8,
-  },
-  featureItem: {
-    display: "flex",
-    gap: 10,
-    alignItems: "flex-start",
-    fontSize: 13,
-    lineHeight: 1.5,
-  },
-  featureMark: (highlighted) => ({
-    flexShrink: 0,
-    width: 20,
-    height: 20,
-    borderRadius: "50%",
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: 11,
-    fontWeight: 900,
-    background: highlighted ? "#ffffff" : "#1F4E3D",
-    color: highlighted ? "#1F4E3D" : "#ffffff",
-    marginTop: 1,
-  }),
-  button: (primary, disabled) => ({
-    width: "100%",
-    minHeight: 48,
-    borderRadius: 14,
-    border: primary ? "1px solid #1F4E3D" : "1px solid #d0d5dd",
-    background: disabled ? "#98a2b3" : primary ? "#1F4E3D" : "#ffffff",
-    color: primary ? "#ffffff" : "#101828",
-    fontSize: 14,
-    fontWeight: 900,
-    cursor: disabled ? "not-allowed" : "pointer",
-    fontFamily: "inherit",
-    marginTop: "auto",
-  }),
-  legalNotice: {
-    marginTop: 18,
-    fontSize: 13,
-    lineHeight: 1.6,
-    color: "#667085",
-  },
-  legalLink: {
-    color: "#1F4E3D",
-    fontWeight: 800,
-    textDecoration: "none",
-  },
 };
 
 export default function SubscriptionSelect() {
@@ -387,16 +185,8 @@ export default function SubscriptionSelect() {
 
   const [isSubmittingPlan, setIsSubmittingPlan] = useState(false);
   const [planError, setPlanError] = useState("");
-  const [plansByCode, setPlansByCode] = useState(() => indexPlansByCode());
   const [autoCheckoutStarted, setAutoCheckoutStarted] = useState(false);
   const autoCheckoutRef = useRef(false);
-  const [showOptionalPaid, setShowOptionalPaid] = useState(false);
-  const [proInterval, setProInterval] = useState(
-    recovered.state?.selected_plan === "starter_monthly" ? "monthly" : "annual"
-  );
-  const [foundersInterval, setFoundersInterval] = useState(
-    recovered.state?.selected_plan === "founders_monthly" ? "monthly" : "annual"
-  );
   const {
     restaurant_id,
     restaurant_name,
@@ -413,10 +203,6 @@ export default function SubscriptionSelect() {
   } = onboardingState || {};
 
   const hasOnboardingContext = Boolean(restaurant_id && owner_token);
-  const proCheckoutCode =
-    proInterval === "monthly" ? "starter_monthly" : "starter_annual";
-  const foundersCheckoutCode =
-    foundersInterval === "monthly" ? "founders_monthly" : "founders_annual";
 
   useEffect(() => {
     const next = resolveRestaurantOnboardingState({
@@ -425,17 +211,6 @@ export default function SubscriptionSelect() {
     });
     setOnboardingState(next.state || null);
   }, [location.state, location.search]);
-
-  useEffect(() => {
-    let cancelled = false;
-    fetchCheckoutPlanOptionsForDisplay().then((result) => {
-      if (cancelled) return;
-      setPlansByCode(indexPlansByCode(result.plans));
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -739,7 +514,6 @@ export default function SubscriptionSelect() {
 
     autoCheckoutRef.current = true;
     setAutoCheckoutStarted(true);
-    setShowOptionalPaid(true);
     submitRestaurantPlan(presetPlan);
     return undefined;
     // Intentionally once when preset paid plan + context are ready.
@@ -754,11 +528,11 @@ export default function SubscriptionSelect() {
   ]);
 
   async function handlePro() {
-    await submitRestaurantPlan(proCheckoutCode);
+    await submitRestaurantPlan("starter_annual");
   }
 
   async function handleFounder() {
-    await submitRestaurantPlan(foundersCheckoutCode);
+    await submitRestaurantPlan("founders_annual");
   }
 
   if (checkoutSuccess) {
@@ -797,14 +571,6 @@ export default function SubscriptionSelect() {
     );
   }
 
-  const proCard = OPTIONAL_PAID_CARDS.starter_annual;
-  const isProSelected =
-    selected_plan === "starter_monthly" || selected_plan === "starter_annual";
-  const isFoundersSelected =
-    selected_plan === "founders_monthly" || selected_plan === "founders_annual";
-  const shouldExpandOptionalPaid =
-    showOptionalPaid || isProSelected || isFoundersSelected || checkoutCancelled;
-
   return (
     <div style={s.page}>
       <div style={s.shell}>
@@ -838,8 +604,8 @@ export default function SubscriptionSelect() {
 
         {checkoutCancelled ? (
           <div style={s.banner("warning")}>
-            Checkout was cancelled. You can continue with Menuply free, or open optional paid upgrades
-            below.
+            Checkout was cancelled. You can continue with Menuply free below. Paid plans remain
+            available later in the Operator Panel.
           </div>
         ) : null}
 
@@ -851,161 +617,6 @@ export default function SubscriptionSelect() {
 
         {planError ? (
           <div style={s.banner("error")}>{planError}</div>
-        ) : null}
-
-        <section style={s.optionalSection} aria-label="Optional paid upgrades">
-          <div style={s.optionalHeading}>Optional paid upgrades</div>
-          <div style={s.optionalSubheading}>
-            Not required to join. Pro and Founder&apos;s keep Menuply&apos;s existing Stripe checkout
-            if you already intended a paid plan.
-          </div>
-
-          {!shouldExpandOptionalPaid ? (
-            <button
-              type="button"
-              style={s.optionalToggle}
-              onClick={() => setShowOptionalPaid(true)}
-            >
-              Show Pro and Founder&apos;s options
-            </button>
-          ) : (
-            <section style={s.cardsGrid}>
-              <article style={s.planCardPro}>
-                <div style={s.planEyebrow}>Optional</div>
-                <div style={s.planName}>Pro</div>
-                <div style={s.planDesc}>{proCard.description}</div>
-                <div style={s.commissionDisclosure}>
-                  {getMarketplaceCommissionDisclosure(proCheckoutCode, { plansByCode })}
-                </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 8 }}>
-                  {[
-                    { key: "monthly", label: "Monthly", price: CHECKOUT_PRICE_LABELS.starter_monthly },
-                    { key: "annual", label: "Annual", price: CHECKOUT_PRICE_LABELS.starter_annual },
-                  ].map(({ key, label, price }) => (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => setProInterval(key)}
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        padding: "10px 12px",
-                        borderRadius: 10,
-                        border: proInterval === key ? "1.5px solid #1F4E3D" : "1.5px solid #d0d5dd",
-                        background: proInterval === key ? "#ffffff" : "rgba(255,255,255,0.7)",
-                        cursor: "pointer",
-                        fontFamily: "inherit",
-                        width: "100%",
-                      }}
-                    >
-                      <span style={{ fontSize: 13, fontWeight: 700, color: "#101828" }}>{label}</span>
-                      <span style={{ fontSize: 13, fontWeight: 800, color: "#1F4E3D" }}>{price}</span>
-                    </button>
-                  ))}
-                </div>
-                <div style={{ ...s.priceValue, color: "#1F4E3D" }}>
-                  {CHECKOUT_PRICE_LABELS[proCheckoutCode]}
-                </div>
-
-                <ul style={s.featureList}>
-                  {proCard.features.map((feature) => (
-                    <li key={feature} style={s.featureItem}>
-                      <span style={s.featureMark(false)}>&#10003;</span>
-                      <span>{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                <button
-                  type="button"
-                  disabled={isSubmittingPlan}
-                  style={s.button(true, isSubmittingPlan)}
-                  onClick={handlePro}
-                >
-                  {isSubmittingPlan
-                    ? "Preparing checkout..."
-                    : isProSelected
-                      ? "Continue with Pro"
-                      : "Choose Pro"}
-                </button>
-              </article>
-
-              <article style={s.planCard(true)}>
-                <div style={s.limitedBadge}>Limited Availability</div>
-                <div style={s.planEyebrow}>Optional</div>
-                <div style={s.planName}>Founder&apos;s</div>
-                <div style={s.planDesc}>
-                  {OPTIONAL_PAID_CARDS.founders_annual.description}
-                </div>
-                <div style={s.commissionDisclosureFounders}>
-                  {getMarketplaceCommissionDisclosure(foundersCheckoutCode, { plansByCode })}
-                </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 8 }}>
-                  {[
-                    { key: "monthly", label: "Monthly", price: CHECKOUT_PRICE_LABELS.founders_monthly },
-                    { key: "annual", label: "Annual", price: CHECKOUT_PRICE_LABELS.founders_annual },
-                  ].map(({ key, label, price }) => (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => setFoundersInterval(key)}
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        padding: "10px 12px",
-                        borderRadius: 10,
-                        border: foundersInterval === key ? "1.5px solid #92400e" : "1.5px solid #e4e9f0",
-                        background: foundersInterval === key ? "#fffbeb" : "#fff",
-                        cursor: "pointer",
-                        fontFamily: "inherit",
-                        width: "100%",
-                      }}
-                    >
-                      <span style={{ fontSize: 13, fontWeight: 700, color: "#101828" }}>{label}</span>
-                      <span style={{ fontSize: 13, fontWeight: 800, color: "#92400e" }}>{price}</span>
-                    </button>
-                  ))}
-                </div>
-                <div style={s.priceValue}>
-                  {CHECKOUT_PRICE_LABELS[foundersCheckoutCode]}
-                </div>
-
-                <ul style={s.featureList}>
-                  {OPTIONAL_PAID_CARDS.founders_annual.features.map((feature) => (
-                    <li key={feature} style={s.featureItem}>
-                      <span style={s.featureMark(true)}>&#10003;</span>
-                      <span>{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                <button
-                  type="button"
-                  disabled={isSubmittingPlan}
-                  style={s.button(true, isSubmittingPlan)}
-                  onClick={handleFounder}
-                >
-                  {isSubmittingPlan
-                    ? "Preparing checkout..."
-                    : isFoundersSelected
-                      ? "Continue with Founder's"
-                      : "Choose Founder's"}
-                </button>
-              </article>
-            </section>
-          )}
-        </section>
-
-        {shouldExpandOptionalPaid ? (
-          <div style={s.legalNotice}>
-            By continuing with a paid plan, you agree to the{" "}
-            <Link to="/restaurant/subscription-terms" target="_blank" rel="noreferrer" style={s.legalLink}>
-              Restaurant Plan Terms
-            </Link>
-            .
-          </div>
         ) : null}
       </div>
     </div>
