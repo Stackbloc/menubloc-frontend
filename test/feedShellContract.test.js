@@ -27,6 +27,7 @@ test("Feed shell: Home|Connects|Menu Browser|X|Deals|Shop|Profile + slim X sheet
   const nav = read("src/components/consumer/feed/FeedPrimaryNav.jsx");
   assert.match(nav, /feed-primary-nav/);
   assert.match(nav, /feed-nav-create-x/);
+  assert.match(nav, /Open Multiplier\/Post menu/);
   assert.match(nav, /FEED_LEFT_TABS/);
   assert.match(nav, /FEED_RIGHT_TABS/);
   assert.match(nav, /openFeedMenuBrowser|requestOpenFeedMenuBrowser/);
@@ -34,6 +35,7 @@ test("Feed shell: Home|Connects|Menu Browser|X|Deals|Shop|Profile + slim X sheet
   assert.doesNotMatch(nav, /feed-nav-events/);
   assert.doesNotMatch(nav, /feed-nav-feed/);
   assert.doesNotMatch(nav, /\/feed\/eating/);
+  assert.doesNotMatch(nav, /Open post menu/);
 
   const feedTabLinks = read("src/lib/feedShellLinks.js");
   assert.match(feedTabLinks, /feed-nav-home/);
@@ -61,6 +63,9 @@ test("Feed shell: Home|Connects|Menu Browser|X|Deals|Shop|Profile + slim X sheet
   const rail = read("src/components/consumer/feed/FeedDesktopRail.jsx");
   assert.match(rail, /requestOpenFeedMenuBrowser/);
   assert.match(rail, /openFeedMenuBrowser/);
+  assert.match(rail, /Multiplier\/Post/);
+  assert.match(rail, /Open Multiplier\/Post menu/);
+  assert.doesNotMatch(rail, />Post</);
 
   const shell = read("src/pages/consumer/feed/FeedShellPage.jsx");
   assert.match(shell, /FeedVideoCreateSheet/);
@@ -79,8 +84,9 @@ test("Feed shell: Home|Connects|Menu Browser|X|Deals|Shop|Profile + slim X sheet
   assert.match(createSheet, /LIVE_FEED_FULL_CATEGORY_LABELS\.cooking/);
   assert.match(createSheet, /FEED_CONTENT_KINDS\.REVIEWS/);
   assert.match(createSheet, /Recommend\/Review a Dish/);
-  assert.match(createSheet, /"Multiplier"/);
+  assert.match(createSheet, /"Multiplier\/Post"/);
   assert.doesNotMatch(createSheet, /title = uploadStep \? "Upload media" : "Create"/);
+  assert.doesNotMatch(createSheet, /title = uploadStep \? "Upload media" : "Multiplier"/);
   assert.doesNotMatch(createSheet, /"Food Review"/);
   const cookingIdx = createSheet.indexOf("FEED_CONTENT_KINDS.COOKING");
   const reviewsIdx = createSheet.indexOf("FEED_CONTENT_KINDS.REVIEWS");

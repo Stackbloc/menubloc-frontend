@@ -220,7 +220,7 @@ export default function FeedVideoCreateSheet({
     onShareMyMenuply?.();
   }
 
-  const title = uploadStep ? "Upload media" : "Multiplier";
+  const title = uploadStep ? "Upload media" : "Multiplier/Post";
   const lead = uploadStep ? "What is this video for?" : null;
 
   return createPortal(

@@ -137,7 +137,7 @@ export default function FeedDesktopRail({
       <button
         type="button"
         data-testid="feed-nav-create-x-desktop"
-        aria-label="Open post menu"
+        aria-label="Open Multiplier/Post menu"
         aria-haspopup="dialog"
         aria-expanded={createActive}
         onClick={() => onCreateClick?.()}
@@ -147,7 +147,7 @@ export default function FeedDesktopRail({
         }}
       >
         <MenuplyXMark size={24} active={createActive} />
-        <span style={styles.createLabel}>Post</span>
+        <span style={styles.createLabel}>Multiplier/Post</span>
       </button>
 
       {!isAuthenticated ? (

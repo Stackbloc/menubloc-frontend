@@ -103,7 +103,7 @@ export default function FeedPrimaryNav({ onCreateClick, createActive = false }) 
       <button
         type="button"
         data-testid="feed-nav-create-x"
-        aria-label="Open post menu"
+        aria-label="Open Multiplier/Post menu"
         aria-haspopup="dialog"
         aria-expanded={createActive}
         onClick={() => onCreateClick?.()}
