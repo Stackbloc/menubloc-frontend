@@ -220,8 +220,8 @@ export default function DiscoverableDinerProfilePage() {
             />
 
             <p style={styles.lead}>
-              Connect to see full eating plans, diary, and Join Me when they open them. Discoverable
-              wants above already respect market privacy.
+              You can see public eating signals and request a connection. Planned activities and the
+              full My Menuply hub stay private until you connect.
             </p>
 
             <div style={styles.actions} data-testid="discoverable-actions">

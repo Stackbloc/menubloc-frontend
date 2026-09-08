@@ -56,6 +56,7 @@ export function iconForFoodText(text) {
   if (/\bchicken|wings/.test(raw)) return "🍗";
   if (/\bsteak|ribeye/.test(raw)) return "🥩";
   if (/\bshrimp|seafood|fish|salmon/.test(raw)) return "🍤";
+  if (/\btea|chai|coffee|latte|espresso/.test(raw)) return "☕";
   return "🍽️";
 }
 

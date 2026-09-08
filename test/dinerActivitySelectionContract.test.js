@@ -22,7 +22,7 @@ test("Who's Eating / peer path uses canonical /account/diners/:id", () => {
   assert.equal(dinerCanonicalProfilePath(42), "/account/diners/42");
   const nearby = read("src/pages/consumer/myMenuply/NearbyEatingSection.jsx");
   assert.match(nearby, /dinerPeerProfilePath/);
-  assert.match(nearby, /choose an activity/);
+  assert.match(nearby, /planned activities stay private|choose an activity/);
 });
 
 test("activity headline helpers + scan row on peer layer", () => {

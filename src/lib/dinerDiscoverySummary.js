@@ -26,10 +26,17 @@ export function resolveDinerAffiliation(diner = {}) {
 /**
  * Activity-first identity: "Name, Age, Affiliation" (no sex; affiliation ≠ location).
  */
-export function formatDinerScanIdentity(diner = {}) {
+export function formatDinerScanIdentity(diner = {}, { includeSex = false } = {}) {
   const name = String(diner.display_name || "").trim();
   if (!name) return "";
   const bits = [name];
+  if (includeSex) {
+    const sex =
+      diner.diner_sex_short ||
+      dinerSexShort(diner.diner_sex) ||
+      null;
+    if (sex) bits.push(sex);
+  }
   const age = Number(diner.age_years);
   if (Number.isFinite(age) && age > 0) bits.push(String(Math.trunc(age)));
   const affiliation = resolveDinerAffiliation(diner);
@@ -73,6 +80,75 @@ export function formatDinerActivityLine(row = {}) {
  *   edu_verified?: boolean,
  * }} diner
  */
+
+/**
+ * Own hub emoji activity: "Breakfast. Starbucks - Chai Tea"
+ */
+export function formatOwnEatingActivityLine(row = {}) {
+  const meal = mealPeriodLabelSafe(row.meal_period);
+  const restaurant = String(row.restaurant_name || "").trim();
+  const food = String(row.food_name || row.item_name || "").trim() || "food";
+  const icon =
+    row.icon ||
+    (row.food_interest_key ? iconForFoodInterest(row.food_interest_key) : null) ||
+    iconForFoodText(`${restaurant} ${food}`);
+  if (restaurant) return `${icon} ${meal}. ${restaurant} - ${food}`;
+  return `${icon} ${meal}. ${food}`;
+}
+
+function mealPeriodLabelSafe(id) {
+  const key = String(id || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[ -]+/g, "_");
+  const map = {
+    breakfast: "Breakfast",
+    brunch: "Brunch",
+    lunch: "Lunch",
+    dinner: "Dinner",
+    snack: "Snack",
+    dessert: "Dessert",
+    late_night: "Late Night",
+    other: "Other",
+  };
+  return map[key] || "Meal";
+}
+
+/**
+ * Connect peer: "Becky is having Starbucks Chai Tea for breakfast"
+ */
+export function formatConnectEatingLine(row = {}) {
+  const name = String(row.display_name || "").trim() || "Diner";
+  const restaurant = String(row.restaurant_name || "").trim();
+  const food = String(row.food_name || row.item_name || "").trim() || "food";
+  const meal = mealPeriodLabelSafe(row.meal_period).toLowerCase();
+  const subject = restaurant ? `${restaurant} ${food}` : food;
+  return `${name} is having ${subject} for ${meal}`;
+}
+
+/**
+ * Non-connect Who's Eating:
+ * "Becky, F, 21, USC is having Starbucks Chai Tea at Starbucks"
+ */
+export function formatWhosEatingDiscoveryLine(row = {}) {
+  const bits = [];
+  const name = String(row.display_name || "").trim();
+  if (!name) return "";
+  bits.push(name);
+  const sex = row.diner_sex_short || dinerSexShort(row.diner_sex) || null;
+  if (sex) bits.push(sex);
+  const age = Number(row.age_years);
+  if (Number.isFinite(age) && age > 0) bits.push(String(Math.trunc(age)));
+  const affiliation = resolveDinerAffiliation(row);
+  if (affiliation) bits.push(affiliation);
+  const identity = bits.join(", ");
+  const restaurant = String(row.restaurant_name || "").trim();
+  const food = String(row.food_name || row.item_name || "").trim() || "food";
+  const dishPhrase = restaurant ? `${restaurant} ${food}` : food;
+  if (restaurant) return `${identity} is having ${dishPhrase} at ${restaurant}`;
+  return `${identity} is having ${food}`;
+}
+
 export function formatDinerIdentityBits(diner = {}) {
   const name = String(diner.display_name || "").trim();
   if (!name) return "";

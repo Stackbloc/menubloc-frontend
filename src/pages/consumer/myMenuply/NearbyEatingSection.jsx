@@ -10,6 +10,7 @@ import {
 } from "../../../lib/consumerApi.js";
 import {
   formatDinerScanIdentity,
+  formatWhosEatingDiscoveryLine,
   resolveDinerAffiliation,
 } from "../../../lib/dinerDiscoverySummary.js";
 import { iconForFoodText } from "../../../lib/foodInterestIcons.js";
@@ -80,6 +81,11 @@ function pushRow(out, seen, row) {
     row.diner?.video_url ||
     null;
   seen.add(dinerId);
+  const restaurantName =
+    row.restaurant_name ||
+    row.diner?.restaurant_name ||
+    row.referenced_restaurant?.restaurant_name ||
+    null;
   out.push({
     key: `who-${dinerId}`,
     dinerId,
@@ -88,11 +94,24 @@ function pushRow(out, seen, row) {
     avatarUrl: row.avatar_url || row.diner?.avatar_url || null,
     ageYears: identitySource.age_years,
     affiliation: identitySource.school_affiliation,
+    dinerSex: row.diner_sex || row.diner_sex_short || row.diner?.diner_sex || null,
+    dinerSexShort: row.diner_sex_short || row.diner?.diner_sex_short || null,
     kind: row.kind || row.signal_kind || "ate",
     foodName,
+    restaurantName,
+    mealPeriod: row.meal_period || null,
     foodInterestKey: row.food_interest_key || null,
     icon: row.icon || iconForFoodText(foodName),
     videoUrl: videoUrl ? String(videoUrl).trim() : null,
+    discoveryLine: formatWhosEatingDiscoveryLine({
+      display_name: displayName,
+      diner_sex: row.diner_sex || row.diner?.diner_sex,
+      diner_sex_short: row.diner_sex_short || row.diner?.diner_sex_short,
+      age_years: identitySource.age_years,
+      school_affiliation: identitySource.school_affiliation,
+      food_name: foodName,
+      restaurant_name: restaurantName,
+    }),
   });
 }
 
@@ -183,7 +202,7 @@ export default function NearbyEatingSection({
         <SectionHead
           kicker="Nearby"
           title="Who's Eating"
-          subtitle="Short diner summaries — open their profile to choose an activity"
+          subtitle="See what nearby diners are eating — open profile to connect; planned activities stay private"
         />
 
         {error ? <p style={s.error}>{error}</p> : null}
@@ -204,12 +223,20 @@ export default function NearbyEatingSection({
                     avatarUrl={row.avatarUrl}
                     ageYears={row.ageYears}
                     affiliation={row.affiliation}
+                    includeSex
+                    dinerSex={row.dinerSex}
+                    dinerSexShort={row.dinerSexShort}
                     kind={row.kind}
                     foodName={row.foodName}
                     foodInterestKey={row.foodInterestKey}
                     icon={row.icon}
                     videoUrl={row.videoUrl}
                     profileHref={row.href}
+                    activityLineOverride={
+                      row.restaurantName
+                        ? `is having ${row.restaurantName} ${row.foodName} at ${row.restaurantName}`
+                        : `is having ${row.foodName}`
+                    }
                   />
                 </li>
               ))}

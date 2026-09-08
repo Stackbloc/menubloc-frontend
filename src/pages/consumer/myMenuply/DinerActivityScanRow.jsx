@@ -23,10 +23,14 @@ export default function DinerActivityScanRow({
   avatarUrl = null,
   ageYears = null,
   affiliation = null,
+  includeSex = false,
+  dinerSex = null,
+  dinerSexShort = null,
   kind = "ate",
   foodName = null,
   foodInterestKey = null,
   icon = null,
+  activityLineOverride = null,
   videoUrl = null,
   profileHref = null,
   testId = "diner-activity-scan-row",
@@ -35,17 +39,24 @@ export default function DinerActivityScanRow({
   selected = false,
 }) {
   const [expanded, setExpanded] = useState(false);
-  const identity = formatDinerScanIdentity({
-    display_name: displayName,
-    age_years: ageYears,
-    school_affiliation: affiliation,
-  });
-  const activityLine = formatDinerActivityLine({
-    kind,
-    food_name: foodName,
-    food_interest_key: foodInterestKey,
-    icon,
-  });
+  const identity = formatDinerScanIdentity(
+    {
+      display_name: displayName,
+      age_years: ageYears,
+      school_affiliation: affiliation,
+      diner_sex: dinerSex,
+      diner_sex_short: dinerSexShort,
+    },
+    { includeSex }
+  );
+  const activityLine =
+    (activityLineOverride && String(activityLineOverride).trim()) ||
+    formatDinerActivityLine({
+      kind,
+      food_name: foodName,
+      food_interest_key: foodInterestKey,
+      icon,
+    });
   const hasVideo = Boolean(String(videoUrl || "").trim());
   const resolvedAvatar = avatarUrl
     ? resolveConsumerMediaUrl(avatarUrl) || avatarUrl

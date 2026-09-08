@@ -11,6 +11,12 @@ import EatingComposeSheet from "./EatingComposeSheet.jsx";
 import EatingPlanDayForm from "./EatingPlanDayForm.jsx";
 import PostAfterActions from "./PostAfterActions.jsx";
 import WhatIAteMealBoard from "./WhatIAteMealBoard.jsx";
+import EatingActivityCompose from "./EatingActivityCompose.jsx";
+import DinerActivityScanRow from "./DinerActivityScanRow.jsx";
+import {
+  formatConnectEatingLine,
+  formatOwnEatingActivityLine,
+} from "../../../lib/dinerDiscoverySummary.js";
 import SectionEmptyState from "./SectionEmptyState.jsx";
 import {
   SectionHead,
@@ -125,6 +131,8 @@ export default function EatingHubSection({
   followed = [],
   joinCandidates = [],
   onComposeSubmit,
+  activityDisplayName = null,
+  activityAvatarUrl = null,
   onPlanSchedule,
   onPostPlan,
   onEatingPhotoPick,
@@ -285,7 +293,7 @@ export default function EatingHubSection({
           subtitle={
             readOnly
               ? "The food they're sharing with the world"
-              : "Shared from Feed (X) — this hub shows what you've posted"
+              : "Emoji activity from this page, or Feed video via Multiplier/Post — tap ▶ when a video is attached"
           }
           aside={
             <>
@@ -304,6 +312,57 @@ export default function EatingHubSection({
         />
 
         <div data-testid="eating-ate-panel">
+          {!readOnly ? (
+            <EatingActivityCompose
+              busy={postBusy === "eating"}
+              followed={followed}
+              locationCity={locationCity}
+              locationState={locationState}
+              onSubmit={async (payload) => {
+                await onComposeSubmit?.({
+                  category: "ate",
+                  ...payload,
+                });
+              }}
+            />
+          ) : null}
+          {eatingForDay.length > 0 ? (
+            <ul
+              style={{ listStyle: "none", margin: "0 0 12px", padding: 0 }}
+              data-testid="eating-activity-rows"
+            >
+              {eatingForDay.map((item) => {
+                const food = item.food_name || item.item_name;
+                const line = readOnly
+                  ? formatConnectEatingLine({
+                      display_name: activityDisplayName || "Diner",
+                      restaurant_name: item.restaurant_name,
+                      food_name: food,
+                      meal_period: item.meal_period,
+                    }).replace(/^.*? is having /, "is having ")
+                  : formatOwnEatingActivityLine({
+                      meal_period: item.meal_period,
+                      restaurant_name: item.restaurant_name,
+                      food_name: food,
+                      food_interest_key: item.food_interest_key,
+                    });
+                return (
+                  <li key={`act-${item.entry_id || item.id}`}>
+                    <DinerActivityScanRow
+                      displayName={readOnly ? activityDisplayName || "Diner" : "You"}
+                      avatarUrl={readOnly ? activityAvatarUrl || null : null}
+                      kind="ate"
+                      foodName={food}
+                      foodInterestKey={item.food_interest_key}
+                      videoUrl={item.video_url || null}
+                      activityLineOverride={line}
+                      onSelect={!readOnly && onDiarySelect ? () => onDiarySelect(item) : null}
+                    />
+                  </li>
+                );
+              })}
+            </ul>
+          ) : null}
           {lastPost?.kind === "diary" && !readOnly ? (
             <PostAfterActions
               kind="diary"
@@ -328,7 +387,7 @@ export default function EatingHubSection({
           />
           {eatingForDay.length === 0 && lastPost?.kind !== "diary" ? (
             <SectionEmptyState testId="eating-ate-empty-day">
-              The food you&apos;re sharing with the world.
+              Pick a meal time, restaurant, and menu item above — or post a video with Multiplier/Post.
             </SectionEmptyState>
           ) : null}
         </div>

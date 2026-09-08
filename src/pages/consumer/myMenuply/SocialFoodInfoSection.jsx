@@ -6,7 +6,10 @@
 
 import { useEffect, useState } from "react";
 import { listSocialFoodInfo } from "../../../lib/consumerApi.js";
-import { resolveDinerAffiliation } from "../../../lib/dinerDiscoverySummary.js";
+import {
+  formatConnectEatingLine,
+  resolveDinerAffiliation,
+} from "../../../lib/dinerDiscoverySummary.js";
 import { dinerPeerProfilePath } from "../../../lib/liveFeedCategory.js";
 import DinerActivityScanRow from "./DinerActivityScanRow.jsx";
 import { SectionHead } from "./myMenuplyBits.jsx";
@@ -105,6 +108,16 @@ export default function SocialFoodInfoSection({ hidden = false }) {
                     icon={row.icon || null}
                     videoUrl={row.video_url || null}
                     profileHref={peerHref}
+                    activityLineOverride={
+                      row.kind === "ate" || row.signal_kind === "ate"
+                        ? formatConnectEatingLine({
+                            display_name: row.display_name,
+                            restaurant_name: row.restaurant_name,
+                            food_name: row.food_name,
+                            meal_period: row.meal_period,
+                          }).replace(/^.*? is having /, "is having ")
+                        : null
+                    }
                   />
                 </li>
               );

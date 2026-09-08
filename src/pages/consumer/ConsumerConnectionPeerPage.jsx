@@ -345,6 +345,8 @@ export default function ConsumerConnectionPeerPage() {
 
             <EatingHubSection
               readOnly
+              activityDisplayName={name}
+              activityAvatarUrl={peer?.avatar_url || null}
               diaryHref={diaryHref}
               joinMeHref={joinMeHref}
               hubDate={hubDate}
