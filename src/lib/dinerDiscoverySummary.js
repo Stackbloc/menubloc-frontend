@@ -1,10 +1,65 @@
 /**
  * Compact diner discovery lines for Who's Eating / Find Diners.
- * Example: "SusyQ · F · 25 · USC wants 🍔"
+ * Legacy: "SusyQ · F · 25 · USC wants 🍔"
+ * Scan model: Avatar + "Name, Age, Affiliation" + "🍔 Wanna Eat · Burgers" (+ ▶ if video)
  */
 
 import { dinerSexShort } from "./dinerDateOfBirth.js";
 import { iconForFoodInterest, iconForFoodText } from "./foodInterestIcons.js";
+import { liveFeedCategoryLabel } from "./liveFeedCategory.js";
+
+/**
+ * School / campus affiliation only — never a geographic location label.
+ */
+export function resolveDinerAffiliation(diner = {}) {
+  return (
+    String(
+      diner.school_affiliation ||
+        diner.edu_institution_short ||
+        (diner.edu_verified === true ? diner.edu_institution_name : "") ||
+        diner.affiliation ||
+        ""
+    ).trim() || null
+  );
+}
+
+/**
+ * Activity-first identity: "Name, Age, Affiliation" (no sex; affiliation ≠ location).
+ */
+export function formatDinerScanIdentity(diner = {}) {
+  const name = String(diner.display_name || "").trim();
+  if (!name) return "";
+  const bits = [name];
+  const age = Number(diner.age_years);
+  if (Number.isFinite(age) && age > 0) bits.push(String(Math.trunc(age)));
+  const affiliation = resolveDinerAffiliation(diner);
+  if (affiliation) bits.push(affiliation);
+  return bits.join(", ");
+}
+
+/**
+ * Human-readable activity line: "🍔 Wanna Eat · Burgers"
+ */
+export function formatDinerActivityLine(row = {}) {
+  const kind = String(row.kind || row.signal_kind || "ate")
+    .trim()
+    .toLowerCase();
+  const subject =
+    String(row.food_name || row.item_name || row.menu_item_name || "").trim() || "food";
+  const fromKey = row.food_interest_key
+    ? iconForFoodInterest(row.food_interest_key)
+    : null;
+  const icon = row.icon || fromKey || iconForFoodText(subject);
+  const labelByKind = {
+    want: "Wanna Eat",
+    ate: "Ate",
+    reviews: "Reviews",
+    cooking: "I'm Cooking",
+    plan: "Plan",
+  };
+  const label = labelByKind[kind] || liveFeedCategoryLabel(kind) || "Ate";
+  return `${icon} ${label} · ${subject}`;
+}
 
 /**
  * @param {{
@@ -29,13 +84,7 @@ export function formatDinerIdentityBits(diner = {}) {
   if (sex) bits.push(sex);
   const age = Number(diner.age_years);
   if (Number.isFinite(age) && age > 0) bits.push(String(Math.trunc(age)));
-  const school =
-    String(
-      diner.school_affiliation ||
-        diner.edu_institution_short ||
-        (diner.edu_verified === true ? diner.edu_institution_name : "") ||
-        ""
-    ).trim() || null;
+  const school = resolveDinerAffiliation(diner);
   if (school) bits.push(school);
   return bits.join(" · ");
 }

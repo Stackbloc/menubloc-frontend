@@ -1,6 +1,7 @@
 /**
  * Profile activity-selection layer — structured signals BEFORE media/Feed.
  * Viewer chooses a signal, then explores food / people / connect.
+ * Want signals use the shared activity-first scan row (optional ▶ expand).
  */
 
 import { useState } from "react";
@@ -10,15 +11,17 @@ import {
   dinerCanonicalProfilePath,
   foodExploreLabel,
   formatPlanActivityHeadline,
-  formatWantActivityHeadline,
   wantContextLine,
   wantActivityIcon,
 } from "../../../lib/dinerActivityExplore.js";
 import { fetchWantDiscovery, createWantToEat } from "../../../lib/consumerApi.js";
-import { labelWithFoodIcon } from "../../../lib/foodInterestIcons.js";
+import { resolveDinerAffiliation } from "../../../lib/dinerDiscoverySummary.js";
+import DinerActivityScanRow from "./DinerActivityScanRow.jsx";
 
 export default function DinerActivitySelectionLayer({
   displayName = "Diner",
+  avatarUrl = null,
+  ageYears = null,
   locationLabel = null,
   schoolAffiliation = null,
   wants = [],
@@ -113,22 +116,26 @@ export default function DinerActivitySelectionLayer({
             const context = wantContextLine({
               want,
               locationLabel,
-              schoolAffiliation,
             });
             return (
-              <li key={`want-${want.id}`}>
-                <button
-                  type="button"
-                  style={{ ...styles.signalBtn, ...(active ? styles.signalBtnActive : null) }}
-                  data-testid="diner-activity-want-signal"
-                  aria-pressed={active}
-                  onClick={() => setSelectedWantId(want.id)}
-                >
-                  <span style={styles.signalHeadline}>
-                    {formatWantActivityHeadline({ displayName, want })}
-                  </span>
-                  {context ? <span style={styles.signalMeta}>{context}</span> : null}
-                </button>
+              <li key={`want-${want.id}`} data-testid="diner-activity-want-signal">
+                <DinerActivityScanRow
+                  displayName={displayName}
+                  avatarUrl={avatarUrl || want.avatar_url || null}
+                  ageYears={ageYears ?? want.age_years ?? null}
+                  affiliation={
+                    schoolAffiliation ||
+                    resolveDinerAffiliation(want) ||
+                    null
+                  }
+                  kind="want"
+                  foodName={want.food_name || "food"}
+                  foodInterestKey={want.food_interest_key || null}
+                  videoUrl={want.video_url || null}
+                  selected={active}
+                  onSelect={() => setSelectedWantId(want.id)}
+                />
+                {context ? <p style={styles.signalMeta}>{context}</p> : null}
               </li>
             );
           })}
@@ -255,23 +262,22 @@ export default function DinerActivitySelectionLayer({
                   (row.consumer_user_id
                     ? `/account/diners/${encodeURIComponent(String(row.consumer_user_id))}`
                     : null);
-                const label =
-                  row.message ||
-                  `${row.display_name || "Diner"} ${
-                    row.kind === "want" || row.signal_kind === "want" ? "wants" : "is eating"
-                  } ${labelWithFoodIcon(
-                    row.food_interest_key || selectedWant?.food_interest_key,
-                    row.food_name || "food"
-                  )}`;
                 return (
                   <li key={`${row.kind || row.signal_kind}-${row.id}`} style={styles.peopleItem}>
-                    {href ? (
-                      <Link to={href} style={styles.peopleLink}>
-                        {label}
-                      </Link>
-                    ) : (
-                      <span>{label}</span>
-                    )}
+                    <DinerActivityScanRow
+                      displayName={row.display_name || "Diner"}
+                      avatarUrl={row.avatar_url || null}
+                      ageYears={row.age_years ?? null}
+                      affiliation={resolveDinerAffiliation(row)}
+                      kind={row.kind || row.signal_kind || "want"}
+                      foodName={row.food_name || selectedWant?.food_name || "food"}
+                      foodInterestKey={
+                        row.food_interest_key || selectedWant?.food_interest_key || null
+                      }
+                      icon={row.icon || null}
+                      videoUrl={row.video_url || null}
+                      profileHref={href}
+                    />
                   </li>
                 );
               })}
@@ -341,7 +347,7 @@ const styles = {
     color: "#0f172a",
     lineHeight: 1.35,
   },
-  signalMeta: { fontSize: 12, color: "#64748b" },
+  signalMeta: { fontSize: 12, color: "#64748b", margin: "0 0 4px 46px" },
   planRow: {
     display: "grid",
     gap: 6,

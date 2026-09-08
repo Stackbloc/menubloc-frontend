@@ -334,7 +334,7 @@ export default function EatingHubSection({
         </div>
       </section>
 
-      {/* Who's Eating: compact emoji summaries (8 + show more); videos on profile / Feed */}
+      {/* Who's Eating: activity-first scan rows (8 + show more); ▶ expands video */}
       <NearbyEatingSection
         hidden={readOnly}
         locationCity={locationCity}

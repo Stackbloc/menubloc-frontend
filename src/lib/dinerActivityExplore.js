@@ -120,7 +120,7 @@ function formatRelativePlanWhen(planDate) {
   }
 }
 
-export function wantContextLine({ want, locationLabel, schoolAffiliation } = {}) {
+export function wantContextLine({ want, locationLabel } = {}) {
   const bits = [];
   const when = formatRelativeWantWhen(want?.created_at);
   if (when) bits.push(when);
@@ -129,6 +129,6 @@ export function wantContextLine({ want, locationLabel, schoolAffiliation } = {})
   if (place && st) bits.push(`${place}, ${st}`);
   else if (place) bits.push(place);
   else if (locationLabel) bits.push(String(locationLabel).trim());
-  else if (schoolAffiliation) bits.push(String(schoolAffiliation).trim());
+  // School/affiliation belongs on the identity line — never as a location bit.
   return bits.filter(Boolean).join(" · ") || null;
 }

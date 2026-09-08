@@ -25,7 +25,7 @@ test("Who's Eating / peer path uses canonical /account/diners/:id", () => {
   assert.match(nearby, /choose an activity/);
 });
 
-test("activity headline uses human want language + emoji", () => {
+test("activity headline helpers + scan row on peer layer", () => {
   const line = formatWantActivityHeadline({
     displayName: "BeckyG",
     want: { food_name: "burger", food_interest_key: "burger" },
@@ -40,6 +40,9 @@ test("activity headline uses human want language + emoji", () => {
     buildFoodExploreSearchUrl({ foodName: "burger", city: "Los Angeles", state: "CA" }),
     /city=Los\+Angeles/
   );
+  const layer = read("src/pages/consumer/myMenuply/DinerActivitySelectionLayer.jsx");
+  assert.match(layer, /DinerActivityScanRow/);
+  assert.doesNotMatch(layer, /MenuplyMediaPicker|getUserMedia/);
 });
 
 test("Discoverable profile mounts activity-selection layer", () => {

@@ -1,20 +1,23 @@
 /**
- * Who's Eating — up to 8 compact diner summary rows (+ Show more).
- * Example: "SusyQ · F · 25 · USC wants 🍔" → peer profile (videos there / Feed).
+ * Who's Eating — activity-first scan rows (max 8 + Show more).
+ * Avatar + Name, Age, Affiliation · emoji activity line · ▶ when video exists.
  */
 
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
 import {
   fetchWantDiscovery,
   listSeeWhosEating,
 } from "../../../lib/consumerApi.js";
-import { formatDinerDiscoverySummary } from "../../../lib/dinerDiscoverySummary.js";
+import {
+  formatDinerScanIdentity,
+  resolveDinerAffiliation,
+} from "../../../lib/dinerDiscoverySummary.js";
 import { iconForFoodText } from "../../../lib/foodInterestIcons.js";
 import {
   dinerPeerProfilePath,
   liveFeedCreatorProfilePath,
 } from "../../../lib/liveFeedCategory.js";
+import DinerActivityScanRow from "./DinerActivityScanRow.jsx";
 import { SectionHead } from "./myMenuplyBits.jsx";
 import SectionEmptyState from "./SectionEmptyState.jsx";
 import * as s from "./myMenuplyStyles.js";
@@ -65,20 +68,31 @@ function pushRow(out, seen, row) {
   const displayName =
     row.display_name || feedPersonLabel(row) || row.name || "";
   const foodName = row.food_name || row.food || feedFoodLabel(row);
-  const label = formatDinerDiscoverySummary({
-    ...row,
+  const identitySource = {
     display_name: displayName,
-    food_name: foodName,
-    kind: row.kind || row.signal_kind || "ate",
-    icon: row.icon || iconForFoodText(foodName),
-  });
-  if (!label || !href) return;
+    age_years: row.age_years ?? row.diner?.age_years ?? null,
+    school_affiliation:
+      resolveDinerAffiliation(row) || resolveDinerAffiliation(row.diner || {}),
+  };
+  if (!formatDinerScanIdentity(identitySource) || !href) return;
+  const videoUrl =
+    row.video_url ||
+    row.diner?.video_url ||
+    null;
   seen.add(dinerId);
   out.push({
     key: `who-${dinerId}`,
     dinerId,
     href,
-    label,
+    displayName,
+    avatarUrl: row.avatar_url || row.diner?.avatar_url || null,
+    ageYears: identitySource.age_years,
+    affiliation: identitySource.school_affiliation,
+    kind: row.kind || row.signal_kind || "ate",
+    foodName,
+    foodInterestKey: row.food_interest_key || null,
+    icon: row.icon || iconForFoodText(foodName),
+    videoUrl: videoUrl ? String(videoUrl).trim() : null,
   });
 }
 
@@ -185,9 +199,18 @@ export default function NearbyEatingSection({
             <ul style={styles.list} data-testid="whos-eating-links">
               {visibleLines.map((row) => (
                 <li key={row.key} style={styles.row} data-testid="whos-eating-row">
-                  <Link to={row.href} style={styles.link}>
-                    {row.label}
-                  </Link>
+                  <DinerActivityScanRow
+                    displayName={row.displayName}
+                    avatarUrl={row.avatarUrl}
+                    ageYears={row.ageYears}
+                    affiliation={row.affiliation}
+                    kind={row.kind}
+                    foodName={row.foodName}
+                    foodInterestKey={row.foodInterestKey}
+                    icon={row.icon}
+                    videoUrl={row.videoUrl}
+                    profileHref={row.href}
+                  />
                 </li>
               ))}
             </ul>
@@ -217,7 +240,7 @@ export default function NearbyEatingSection({
         {!loading && lines.length === 0 ? (
           <SectionEmptyState testId="nearby-eating-empty">
             No registered diners nearby yet. When someone posts what they&apos;re eating, you&apos;ll
-            see a short summary here — videos play on their profile or in Feed.
+            see a short summary here — tap ▶ when a video is attached, or open their profile.
           </SectionEmptyState>
         ) : null}
       </div>
@@ -231,17 +254,12 @@ const styles = {
     margin: "10px 0 0",
     padding: 0,
     display: "grid",
-    gap: 10,
+    gap: 0,
   },
   row: {
     fontSize: 15,
     lineHeight: 1.4,
     color: "#0f172a",
-  },
-  link: {
-    color: "#166534",
-    textDecoration: "none",
-    fontWeight: 700,
   },
   showMore: {
     appearance: "none",

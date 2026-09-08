@@ -88,6 +88,7 @@ import DinerIdentityHero from "./myMenuply/DinerIdentityHero.jsx";
 import MyMenuplyPresentationRails from "./myMenuply/MyMenuplyPresentationRails.jsx";
 import ProfileGalleryComposeSheet from "./myMenuply/ProfileGalleryComposeSheet.jsx";
 import SocialFoodInfoSection from "./myMenuply/SocialFoodInfoSection.jsx";
+import ActivityTextComposer from "./myMenuply/ActivityTextComposer.jsx";
 import {
   buildDinerStats,
   buildFollowedRestaurantRails,
@@ -1510,6 +1511,47 @@ export default function MyMenuplyPage() {
     await load();
   }
 
+  /** Sticky text+emoji activity — no media; Multiplier/Post is the video path. */
+  async function postScanActivityText({ text }) {
+    const name = String(text || "").trim();
+    if (!name) return;
+    setError("");
+    setPostBusy("scan-activity");
+    try {
+      const data = await createWantToEat({
+        food_name: name,
+        market_discoverable: true,
+        include_discovery: true,
+        intent_kind: "food_item",
+      });
+      const item = data?.item;
+      if (!item?.id) {
+        throw new Error("Saved but response was incomplete — refresh and try again");
+      }
+      setWants((prev) => [item, ...prev.filter((row) => Number(row.id) !== Number(item.id))]);
+      if (data?.discovery) setWantDiscovery(data.discovery);
+      setLastPost({
+        kind: "want",
+        id: item.id,
+        food_name: item.food_name,
+        comment: item.comment,
+        meal_period: item.meal_period,
+        restaurant_id: item.restaurant_id,
+        restaurant_name: item.restaurant_name,
+        menu_item_id: item.menu_item_id,
+        item_name: item.item_name || item.food_name,
+      });
+      window.setTimeout(() => {
+        eatingSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }, 80);
+    } catch (err) {
+      setError(err.message || "Unable to post activity");
+      throw err;
+    } finally {
+      setPostBusy(false);
+    }
+  }
+
   if (!authLoading && !isAuthenticated) {
     return <FeedGuestProfileLanding />;
   }
@@ -1521,7 +1563,7 @@ export default function MyMenuplyPage() {
           ...s.page,
           paddingTop: 12,
           paddingBottom:
-            "calc(var(--feed-primary-nav-h, 56px) + env(safe-area-inset-bottom, 0px) + 16px)",
+            "calc(var(--feed-primary-nav-h, 56px) + env(safe-area-inset-bottom, 0px) + 88px)",
         }}
         data-testid="my-menuply-page"
       >
@@ -1890,6 +1932,11 @@ export default function MyMenuplyPage() {
                 </div>
               </div>
             ) : null}
+
+            <ActivityTextComposer
+              busy={postBusy === "scan-activity"}
+              onSubmit={postScanActivityText}
+            />
           </>
         ) : null}
       </div>

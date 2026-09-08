@@ -1,6 +1,6 @@
 /**
- * Who's Eating — compact emoji discovery rows (max 8 + Show more).
- * Not a video list; click → peer profile.
+ * Who's Eating — activity-first scan rows (max 8 + Show more).
+ * Avatar + Name, Age, Affiliation · emoji activity · ▶ when video.
  */
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -10,6 +10,9 @@ import { fileURLToPath } from "node:url";
 import {
   formatDinerDiscoverySummary,
   formatDinerIdentityBits,
+  formatDinerScanIdentity,
+  formatDinerActivityLine,
+  resolveDinerAffiliation,
 } from "../src/lib/dinerDiscoverySummary.js";
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -27,12 +30,12 @@ test("Who's Eating mounts before Wanna Eat on eating hub", () => {
   assert.match(nearby, /listSeeWhosEating/);
   assert.match(nearby, /fetchWantDiscovery/);
   assert.match(nearby, /whos-eating-links/);
-  assert.match(nearby, /formatDinerDiscoverySummary/);
+  assert.match(nearby, /DinerActivityScanRow/);
   assert.match(nearby, /INITIAL_VISIBLE = 8/);
   assert.match(nearby, /whos-eating-show-more/);
   assert.doesNotMatch(nearby, /Open Feed/);
   assert.doesNotMatch(nearby, /nearby-feed-items/);
-  assert.doesNotMatch(nearby, /videoBadge|🎥/);
+  assert.doesNotMatch(nearby, /🎥/);
 
   const ate = section.indexOf('data-testid="what-im-eating"');
   const nearbyMount = section.indexOf("<NearbyEatingSection");
@@ -68,5 +71,33 @@ test("formatDinerDiscoverySummary: SusyQ · F · 25 · USC wants burger emoji", 
       school_affiliation: "USC",
     }),
     "SusyQ · F · 25 · USC"
+  );
+});
+
+test("scan identity is Name, Age, Affiliation without sex or location pin", () => {
+  assert.equal(
+    formatDinerScanIdentity({
+      display_name: "BrandyS",
+      age_years: 22,
+      school_affiliation: "USC",
+      diner_sex_short: "F",
+    }),
+    "BrandyS, 22, USC"
+  );
+  assert.equal(resolveDinerAffiliation({ school_affiliation: "UCLA" }), "UCLA");
+  assert.equal(
+    formatDinerActivityLine({
+      kind: "want",
+      food_name: "Burgers",
+      food_interest_key: "burger",
+    }),
+    "🍔 Wanna Eat · Burgers"
+  );
+  assert.equal(
+    formatDinerActivityLine({
+      kind: "ate",
+      food_name: "Korean BBQ",
+    }),
+    "🍖 Ate · Korean BBQ"
   );
 });

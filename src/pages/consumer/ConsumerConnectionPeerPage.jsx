@@ -48,6 +48,7 @@ import {
 import { fetchUserHomemadeDishes } from "../../lib/homemadeDishApi.js";
 import HomeAtHomeSection from "./myMenuply/HomeAtHomeSection.jsx";
 import { formatDinerPeerLabel } from "../../lib/dinerPublicIdentity.js";
+import { ageFromDob } from "../../lib/dinerDateOfBirth.js";
 import DinerActivitySelectionLayer from "./myMenuply/DinerActivitySelectionLayer.jsx";
 import ProfileMediaGallery from "./myMenuply/ProfileMediaGallery.jsx";
 import { FlashVideosDisplay } from "./myMenuply/FlashVideosBlock.jsx";
@@ -319,8 +320,15 @@ export default function ConsumerConnectionPeerPage() {
 
             <DinerActivitySelectionLayer
               displayName={name}
+              avatarUrl={peer?.avatar_url || null}
+              ageYears={peer?.age_years ?? ageFromDob(peer?.date_of_birth) ?? null}
               locationLabel={peer?.primary_location?.public_label || null}
-              schoolAffiliation={null}
+              schoolAffiliation={
+                peer?.school_affiliation ||
+                peer?.edu_institution_short ||
+                (peer?.edu_verified ? peer?.edu_institution_name : null) ||
+                null
+              }
               wants={peerWants}
               plans={shownPlans}
               joinMeHref={joinMeHref}

@@ -1,13 +1,14 @@
 /**
  * Phase 5 — Social food information from connects (informational only).
- * Example: "Your connect, Lori also wants to get 🍔 burgers."
+ * Activity-first scan rows — same grammar as Who's Eating.
  * Information sharing only — not a match engine.
  */
 
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { listSocialFoodInfo } from "../../../lib/consumerApi.js";
+import { resolveDinerAffiliation } from "../../../lib/dinerDiscoverySummary.js";
 import { dinerPeerProfilePath } from "../../../lib/liveFeedCategory.js";
+import DinerActivityScanRow from "./DinerActivityScanRow.jsx";
 import { SectionHead } from "./myMenuplyBits.jsx";
 import SectionEmptyState from "./SectionEmptyState.jsx";
 import * as s from "./myMenuplyStyles.js";
@@ -87,36 +88,24 @@ export default function SocialFoodInfoSection({ hidden = false }) {
             {items.map((row) => {
               const peerHref =
                 dinerPeerProfilePath(row.consumer_user_id) || "/account/connections";
-              const foodHref = row.menu_item_id
-                ? `/menu-items/${encodeURIComponent(String(row.menu_item_id))}`
-                : row.restaurant_id
-                  ? `/restaurants/${encodeURIComponent(String(row.restaurant_id))}`
-                  : peerHref;
               return (
                 <li
                   key={`${row.kind}-${row.id}`}
                   style={styles.row}
                   data-testid="social-food-info-row"
                 >
-                  <span style={styles.icon} aria-hidden="true">
-                    {row.icon || "🍽️"}
-                  </span>
-                  <div style={styles.body}>
-                    <Link to={peerHref} style={styles.link}>
-                      {row.message ||
-                        `Your connect, ${row.display_name} · ${row.food_name}`}
-                    </Link>
-                    {row.restaurant_name ? (
-                      <div style={styles.meta}>
-                        <Link to={foodHref} style={styles.metaLink}>
-                          @ {row.restaurant_name}
-                        </Link>
-                        {row.video_url ? " · 🎥" : ""}
-                      </div>
-                    ) : row.video_url ? (
-                      <div style={styles.meta}>🎥 video</div>
-                    ) : null}
-                  </div>
+                  <DinerActivityScanRow
+                    displayName={row.display_name || "Connect"}
+                    avatarUrl={row.avatar_url || null}
+                    ageYears={row.age_years ?? null}
+                    affiliation={resolveDinerAffiliation(row)}
+                    kind={row.kind || row.signal_kind || "want"}
+                    foodName={row.food_name || "food"}
+                    foodInterestKey={row.food_interest_key || null}
+                    icon={row.icon || null}
+                    videoUrl={row.video_url || null}
+                    profileHref={peerHref}
+                  />
                 </li>
               );
             })}
@@ -133,23 +122,11 @@ const styles = {
     margin: "10px 0 0",
     padding: 0,
     display: "grid",
-    gap: 10,
+    gap: 0,
   },
   row: {
-    display: "flex",
-    gap: 10,
-    alignItems: "flex-start",
     fontSize: 14,
     lineHeight: 1.35,
     color: "#0f172a",
   },
-  icon: { fontSize: 20, lineHeight: 1, flexShrink: 0 },
-  body: { minWidth: 0 },
-  link: {
-    color: "#0f172a",
-    textDecoration: "none",
-    fontWeight: 600,
-  },
-  meta: { color: "#64748b", fontSize: 13, marginTop: 2 },
-  metaLink: { color: "#166534", textDecoration: "none" },
 };

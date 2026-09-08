@@ -20,6 +20,7 @@ import {
   resolveConsumerMediaUrl,
 } from "../../lib/consumerApi.js";
 import { formatDinerPeerLabel } from "../../lib/dinerPublicIdentity.js";
+import { ageFromDob } from "../../lib/dinerDateOfBirth.js";
 import { labelWithFoodIcon } from "../../lib/foodInterestIcons.js";
 import { normalizeFavoriteFoods } from "../../lib/dinerFavoriteFoods.js";
 import DinerActivitySelectionLayer from "./myMenuply/DinerActivitySelectionLayer.jsx";
@@ -162,6 +163,8 @@ export default function DiscoverableDinerProfilePage() {
     diner?.edu_verification_badge ||
     diner?.edu_institution_short ||
     null;
+  const ageYears =
+    diner?.age_years ?? ageFromDob(diner?.date_of_birth) ?? null;
 
   return (
     <div style={styles.page} data-testid="discoverable-diner-profile">
@@ -206,6 +209,8 @@ export default function DiscoverableDinerProfilePage() {
 
             <DinerActivitySelectionLayer
               displayName={name}
+              avatarUrl={diner.avatar_url || null}
+              ageYears={ageYears}
               locationLabel={diner.location_label}
               schoolAffiliation={school}
               wants={activityWants}

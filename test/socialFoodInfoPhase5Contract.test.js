@@ -21,6 +21,7 @@ test("Eating hub does not mount From your connects; My Menuply does", () => {
   assert.match(page, /SocialFoodInfoSection/);
   assert.match(social, /From your connects/);
   assert.match(social, /listSocialFoodInfo/);
+  assert.match(social, /DinerActivityScanRow/);
   assert.match(api, /listSocialFoodInfo/);
   assert.match(api, /connections\/social-food-info/);
 });
