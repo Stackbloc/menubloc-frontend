@@ -53,7 +53,7 @@ test("Who's Eating is owner-hub discovery (hidden when readOnly)", () => {
   assert.match(section, /hidden=\{readOnly\}/);
 });
 
-test("formatDinerDiscoverySummary: SusyQ · F · 25 · USC wants burger emoji", () => {
+test("formatDinerDiscoverySummary: SusyQ, F, 25, USC wants Burgers (prose)", () => {
   const line = formatDinerDiscoverySummary({
     display_name: "SusyQ",
     diner_sex_short: "F",
@@ -62,7 +62,8 @@ test("formatDinerDiscoverySummary: SusyQ · F · 25 · USC wants burger emoji", 
     kind: "want",
     food_interest_key: "burger",
   });
-  assert.match(line, /SusyQ · F · 25 · USC wants 🍔/);
+  assert.match(line, /SusyQ, F, 25, USC wants Burger/);
+  assert.doesNotMatch(line, /🍔/);
   assert.equal(
     formatDinerIdentityBits({
       display_name: "SusyQ",
@@ -82,7 +83,7 @@ test("scan identity is Name, Age, Affiliation without sex or location pin", () =
       school_affiliation: "USC",
       diner_sex_short: "F",
     }),
-    "BrandyS, 22, USC"
+    "BrandyS · 22 · USC"
   );
   assert.equal(resolveDinerAffiliation({ school_affiliation: "UCLA" }), "UCLA");
   assert.equal(
@@ -91,13 +92,13 @@ test("scan identity is Name, Age, Affiliation without sex or location pin", () =
       food_name: "Burgers",
       food_interest_key: "burger",
     }),
-    "🍔 Wanna Eat · Burgers"
+    "wants Burgers"
   );
   assert.equal(
     formatDinerActivityLine({
       kind: "ate",
       food_name: "Korean BBQ",
     }),
-    "🍖 Ate · Korean BBQ"
+    "is eating Korean BBQ"
   );
 });

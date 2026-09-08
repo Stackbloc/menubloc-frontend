@@ -8,6 +8,7 @@
 import { dinerSexShort } from "./dinerDateOfBirth.js";
 import {
   formatActivityScanParts,
+  formatActivityProseClause,
   resolveFoodSubject,
 } from "./dinerSocialEmojiLanguage.js";
 import { iconForFoodInterest, iconForFoodText } from "./foodInterestIcons.js";
@@ -50,57 +51,51 @@ export function formatDinerScanIdentity(diner = {}, { includeSex = false } = {})
 }
 
 /**
- * Single-line activity: "🍔 Wanna Eat · Burgers"
- * Prefer formatActivityScanParts for two-line scan UI.
+ * Full peer/profile sentence:
+ * "BeckG, F, 22, USC is eating Double-Double at In-N-Out."
  */
-export function formatDinerActivityLine(row = {}) {
-  const parts = formatActivityScanParts(row);
-  if (parts.detailLine) return `${parts.actionLine} · ${parts.detailLine.split(" · ")[0]}`;
-  return parts.actionLine;
+export function formatActivityProseSentence(diner = {}, activity = {}, opts = {}) {
+  const identity = formatDinerScanIdentity(diner, {
+    includeSex: opts.includeSex !== false,
+  }).replace(/ · /g, ", ");
+  const clause = formatActivityProseClause(activity);
+  if (!identity) return `${clause.charAt(0).toUpperCase()}${clause.slice(1)}.`;
+  return `${identity} ${clause}.`;
 }
 
 /**
- * Own hub: "🍽️ Ate" + detail "Chai Tea · @ Starbucks · Breakfast"
- * Returned as single override string with newline for scan row.
+ * Single-line activity prose clause.
+ */
+export function formatDinerActivityLine(row = {}) {
+  return formatActivityProseClause(row);
+}
+
+/**
+ * Own hub activity override — prose clause only (identity rendered by scan row).
  */
 export function formatOwnEatingActivityLine(row = {}, opts = {}) {
-  const parts = formatActivityScanParts(
-    { ...row, kind: row.kind || "ate" },
-    opts
-  );
-  return parts.detailLine
-    ? `${parts.actionLine}\n${parts.detailLine}`
-    : parts.actionLine;
+  return formatActivityProseClause({ ...row, kind: row.kind || "ate" }, opts);
 }
 
 /**
  * Connect peer activity (no identity prefix — row already has name).
  */
 export function formatConnectEatingLine(row = {}, opts = {}) {
-  const parts = formatActivityScanParts(
+  return formatActivityProseClause(
     { ...row, kind: row.kind || row.signal_kind || "ate" },
     opts
   );
-  return parts.detailLine
-    ? `${parts.actionLine}\n${parts.detailLine}`
-    : parts.actionLine;
 }
 
 /**
- * Who's Eating discovery — identity already on scan row; activity override only.
- * Kept for callers that still want one prose string.
+ * Who's Eating discovery — full prose sentence when identity present.
  */
 export function formatWhosEatingDiscoveryLine(row = {}, opts = {}) {
-  const identity = formatDinerScanIdentity(row, { includeSex: true });
-  const parts = formatActivityScanParts(
+  return formatActivityProseSentence(
+    row,
     { ...row, kind: row.kind || row.signal_kind || "ate" },
-    opts
+    { includeSex: true, ...opts }
   );
-  const activity = parts.detailLine
-    ? `${parts.actionLine} · ${parts.detailLine}`
-    : parts.actionLine;
-  if (!identity) return activity;
-  return `${identity}\n${activity}`;
 }
 
 export function formatDinerIdentityBits(diner = {}) {
@@ -108,12 +103,13 @@ export function formatDinerIdentityBits(diner = {}) {
 }
 
 export function formatDinerDiscoverySummary(row = {}) {
-  const identity = formatDinerIdentityBits(row);
-  if (!identity) return "";
-  const parts = formatActivityScanParts(row);
-  return `${identity} · ${parts.actionLine}`;
+  return formatActivityProseSentence(row, row, { includeSex: true });
 }
 
 // Re-exports used by older call sites
-export { resolveFoodSubject, formatActivityScanParts };
+export {
+  resolveFoodSubject,
+  formatActivityScanParts,
+  formatActivityProseClause,
+};
 export { iconForFoodInterest, iconForFoodText, liveFeedCategoryLabel };

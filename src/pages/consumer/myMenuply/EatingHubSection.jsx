@@ -11,10 +11,9 @@ import EatingComposeSheet from "./EatingComposeSheet.jsx";
 import EatingPlanDayForm from "./EatingPlanDayForm.jsx";
 import PostAfterActions from "./PostAfterActions.jsx";
 import WhatIAteMealBoard from "./WhatIAteMealBoard.jsx";
-import FoodStatusQuickCompose from "./FoodStatusQuickCompose.jsx";
+import ActivityStatusLineCompose from "./ActivityStatusLineCompose.jsx";
 import DinerActivityScanRow from "./DinerActivityScanRow.jsx";
 import {
-  formatConnectEatingLine,
   formatOwnEatingActivityLine,
 } from "../../../lib/dinerDiscoverySummary.js";
 import SectionEmptyState from "./SectionEmptyState.jsx";
@@ -293,7 +292,7 @@ export default function EatingHubSection({
           subtitle={
             readOnly
               ? "The food they're sharing with the world"
-              : "Tap Ate or Wanna Eat, pick a food — Multiplier/Post adds video behind the same line"
+              : "Eating at a place — or Cooking @ home. Multiplier/Post adds video."
           }
           aside={
             <>
@@ -313,8 +312,11 @@ export default function EatingHubSection({
 
         <div data-testid="eating-ate-panel">
           {!readOnly ? (
-            <FoodStatusQuickCompose
-              busy={postBusy === "eating" || postBusy === "want"}
+            <ActivityStatusLineCompose
+              category="ate"
+              busy={postBusy === "eating"}
+              locationCity={locationCity}
+              locationState={locationState}
               onSubmit={async (payload) => {
                 await onComposeSubmit?.(payload);
               }}
@@ -327,34 +329,30 @@ export default function EatingHubSection({
             >
               {eatingForDay.map((item) => {
                 const food = item.food_name || item.item_name;
-                const line = readOnly
-                  ? formatConnectEatingLine({
-                      kind: "ate",
-                      restaurant_name: item.restaurant_name,
-                      food_name: food,
-                      meal_period: item.meal_period,
-                      food_interest_key: item.food_interest_key,
-                      eaten_on: item.eaten_on,
-                    })
-                  : formatOwnEatingActivityLine({
-                      kind: "ate",
-                      meal_period: item.meal_period,
-                      restaurant_name: item.restaurant_name,
-                      food_name: food,
-                      food_interest_key: item.food_interest_key,
-                      eaten_on: item.eaten_on,
-                    });
+                const homemade = Boolean(item.homemade);
+                const line = formatOwnEatingActivityLine({
+                  kind: "ate",
+                  meal_period: item.meal_period,
+                  restaurant_name: item.restaurant_name,
+                  food_name: food,
+                  food_interest_key: item.food_interest_key,
+                  eaten_on: item.eaten_on,
+                  homemade,
+                  cooking: homemade,
+                });
                 return (
                   <li key={`act-${item.entry_id || item.id}`}>
                     <DinerActivityScanRow
                       displayName={readOnly ? activityDisplayName || "Diner" : "You"}
                       avatarUrl={readOnly ? activityAvatarUrl || null : null}
+                      includeSex={Boolean(readOnly)}
                       kind="ate"
                       foodName={food}
                       foodInterestKey={item.food_interest_key}
                       restaurantName={item.restaurant_name}
                       mealPeriod={item.meal_period}
                       eatenOn={item.eaten_on}
+                      homemade={homemade}
                       videoUrl={item.video_url || null}
                       activityLineOverride={line}
                       onSelect={!readOnly && onDiarySelect ? () => onDiarySelect(item) : null}
@@ -388,7 +386,7 @@ export default function EatingHubSection({
           />
           {eatingForDay.length === 0 && lastPost?.kind !== "diary" ? (
             <SectionEmptyState testId="eating-ate-empty-day">
-              Pick a meal time, restaurant, and menu item above — or post a video with Multiplier/Post.
+              Add what you’re eating above — or post a video with Multiplier/Post.
             </SectionEmptyState>
           ) : null}
         </div>
@@ -414,8 +412,19 @@ export default function EatingHubSection({
           <SectionHead
             kicker="Cravings"
             title="What I Wanna Eat"
-            subtitle="Dishes you want and places you Wanna Go!"
+            subtitle="Cuisine alone is enough — add a place or dish only if you want."
           />
+          {!readOnly ? (
+            <ActivityStatusLineCompose
+              category="want"
+              busy={postBusy === "want"}
+              locationCity={locationCity}
+              locationState={locationState}
+              onSubmit={async (payload) => {
+                await onComposeSubmit?.(payload);
+              }}
+            />
+          ) : null}
           {wantListError ? <p style={s.error}>{wantListError}</p> : null}
           {lastPost?.kind === "want" &&
           !readOnly &&

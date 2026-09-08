@@ -1,32 +1,18 @@
 /**
- * Activity-first scan row — identity + derived food/status lines.
- * Multiplier video is optional: the status line is the doorway (▶ expands).
- * No cameras / mortgage forms on this card.
+ * Activity prose row — identity + "is eating … at …"
+ * Video: whole activity line is tappable (no ▶ glyph).
  */
 
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { resolveConsumerMediaUrl } from "../../../lib/consumerApi.js";
 import { formatDinerScanIdentity } from "../../../lib/dinerDiscoverySummary.js";
-import { formatActivityScanParts } from "../../../lib/dinerSocialEmojiLanguage.js";
+import { formatActivityProseClause } from "../../../lib/dinerSocialEmojiLanguage.js";
 import { GREEN_MID } from "./myMenuplyStyles.js";
 
 function initialLetter(name) {
   const ch = String(name || "?").trim().charAt(0);
   return ch ? ch.toUpperCase() : "?";
-}
-
-function splitOverride(override) {
-  const raw = String(override || "").trim();
-  if (!raw) return null;
-  const nl = raw.indexOf("\n");
-  if (nl >= 0) {
-    return {
-      actionLine: raw.slice(0, nl).trim(),
-      detailLine: raw.slice(nl + 1).trim(),
-    };
-  }
-  return { actionLine: raw, detailLine: "" };
 }
 
 export default function DinerActivityScanRow({
@@ -43,13 +29,16 @@ export default function DinerActivityScanRow({
   restaurantName = null,
   mealPeriod = null,
   eatenOn = null,
+  homemade = false,
   icon = null,
   activityLineOverride = null,
   videoUrl = null,
   profileHref = null,
+  restaurantHref = null,
   testId = "diner-activity-scan-row",
   onSelect = null,
   selected = false,
+  combineProse = true,
 }) {
   const [expanded, setExpanded] = useState(false);
   const identity = formatDinerScanIdentity(
@@ -62,18 +51,22 @@ export default function DinerActivityScanRow({
     },
     { includeSex }
   );
-  const fromOverride = splitOverride(activityLineOverride);
-  const parts =
-    fromOverride ||
-    formatActivityScanParts({
+  const clause =
+    String(activityLineOverride || "").trim() ||
+    formatActivityProseClause({
       kind,
       food_name: foodName,
       food_interest_key: foodInterestKey,
       restaurant_name: restaurantName,
       meal_period: mealPeriod,
       eaten_on: eatenOn,
+      homemade,
       icon,
     });
+  const identityCommas = (identity || displayName || "Diner").replace(/ · /g, ", ");
+  const proseSentence = combineProse
+    ? `${identityCommas} ${clause}.`
+    : null;
   const hasVideo = Boolean(String(videoUrl || "").trim());
   const resolvedAvatar = avatarUrl
     ? resolveConsumerMediaUrl(avatarUrl) || avatarUrl
@@ -98,9 +91,11 @@ export default function DinerActivityScanRow({
           {initialLetter(displayName)}
         </div>
       )}
-      <span style={styles.identityText} data-testid="diner-activity-scan-identity">
-        {identity || displayName || "Diner"}
-      </span>
+      {!combineProse ? (
+        <span style={styles.identityText} data-testid="diner-activity-scan-identity">
+          {identity || displayName || "Diner"}
+        </span>
+      ) : null}
     </div>
   );
 
@@ -113,38 +108,52 @@ export default function DinerActivityScanRow({
       data-testid={testId}
       data-has-video={hasVideo ? "true" : "false"}
     >
-      {profileHref ? (
-        <Link to={profileHref} style={styles.identityLink} data-testid="diner-activity-scan-profile">
-          {identityBlock}
-        </Link>
-      ) : (
-        identityBlock
-      )}
+      <div style={styles.topRow}>
+        {profileHref ? (
+          <Link
+            to={profileHref}
+            style={styles.identityLink}
+            data-testid="diner-activity-scan-profile"
+          >
+            {identityBlock}
+          </Link>
+        ) : (
+          identityBlock
+        )}
 
-      <button
-        type="button"
-        style={{
-          ...styles.activityBtn,
-          ...(hasVideo ? styles.activityBtnExpandable : null),
-          ...(!hasVideo && !onSelect ? styles.activityBtnStatic : null),
-        }}
-        data-testid="diner-activity-scan-line"
-        aria-expanded={hasVideo ? expanded : undefined}
-        disabled={!hasVideo && typeof onSelect !== "function"}
-        onClick={handleActivityActivate}
-      >
-        <span style={styles.activityStack}>
-          <span style={styles.actionLine}>{parts.actionLine}</span>
-          {parts.detailLine ? (
-            <span style={styles.detailLine}>{parts.detailLine}</span>
-          ) : null}
-        </span>
-        {hasVideo ? (
-          <span style={styles.play} aria-hidden="true" data-testid="diner-activity-scan-play">
-            ▶
+        <button
+          type="button"
+          style={{
+            ...styles.activityBtn,
+            ...(hasVideo || typeof onSelect === "function"
+              ? styles.activityBtnClickable
+              : styles.activityBtnStatic),
+            ...(hasVideo ? styles.activityBtnVideo : null),
+          }}
+          data-testid="diner-activity-scan-line"
+          aria-expanded={hasVideo ? expanded : undefined}
+          disabled={!hasVideo && typeof onSelect !== "function"}
+          onClick={handleActivityActivate}
+        >
+          <span
+            style={styles.proseLine}
+            data-testid="diner-activity-scan-identity"
+          >
+            {proseSentence || clause}
           </span>
+        </button>
+
+        {restaurantHref && restaurantName ? (
+          <Link
+            to={restaurantHref}
+            style={styles.placeLink}
+            data-testid="diner-activity-scan-place"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {String(restaurantName).slice(0, 2).toUpperCase()}
+          </Link>
         ) : null}
-      </button>
+      </div>
 
       {hasVideo && expanded ? (
         <div style={styles.videoWrap} data-testid="diner-activity-scan-video">
@@ -174,10 +183,17 @@ const styles = {
     borderRadius: 10,
     borderBottom: "1px solid transparent",
   },
+  topRow: {
+    display: "flex",
+    alignItems: "flex-start",
+    gap: 10,
+    minWidth: 0,
+  },
   identityLink: {
     textDecoration: "none",
     color: "inherit",
     display: "block",
+    flexShrink: 0,
   },
   identityRow: {
     display: "flex",
@@ -219,46 +235,45 @@ const styles = {
     appearance: "none",
     border: "none",
     background: "transparent",
-    padding: "2px 0 0 46px",
+    padding: "4px 0 0",
     margin: 0,
-    display: "flex",
-    alignItems: "center",
-    gap: 8,
+    display: "block",
     textAlign: "left",
-    cursor: "pointer",
-    color: GREEN_MID,
     font: "inherit",
-    width: "100%",
+    flex: 1,
+    minWidth: 0,
   },
-  activityBtnExpandable: {
+  activityBtnClickable: {
     cursor: "pointer",
   },
   activityBtnStatic: {
     cursor: "default",
   },
-  activityStack: {
-    display: "grid",
-    gap: 2,
-    minWidth: 0,
-    flex: 1,
+  activityBtnVideo: {
+    textDecoration: "underline",
+    textUnderlineOffset: 3,
+    textDecorationColor: "#86efac",
   },
-  actionLine: {
+  proseLine: {
     fontSize: 15,
-    fontWeight: 800,
-    lineHeight: 1.3,
+    fontWeight: 650,
+    lineHeight: 1.4,
     color: "#0f172a",
   },
-  detailLine: {
-    fontSize: 13,
-    fontWeight: 600,
-    lineHeight: 1.3,
-    color: GREEN_MID,
-  },
-  play: {
-    fontSize: 12,
-    lineHeight: 1,
-    color: GREEN_MID,
+  placeLink: {
     flexShrink: 0,
+    width: 36,
+    height: 28,
+    borderRadius: 8,
+    border: "1px solid #e2e8f0",
+    display: "grid",
+    placeItems: "center",
+    fontSize: 10,
+    fontWeight: 800,
+    color: "#0f172a",
+    textDecoration: "none",
+    background: "#f8fafc",
+    marginTop: 4,
   },
   videoWrap: {
     margin: "4px 0 0 46px",

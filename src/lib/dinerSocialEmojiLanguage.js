@@ -102,9 +102,45 @@ export function formatActivityWhen(row = {}, { todayYmd = null } = {}) {
 }
 
 /**
- * Scan activity parts:
- *   actionLine: "🍔 Wanna Eat"  (food emoji + action label)
- *   detailLine: "Burgers · Tonight"
+ * Prose activity clause — no decorative emoji.
+ * "is eating Double-Double at In-N-Out"
+ * "is cooking burgers at home"
+ * "wants Chinese" / "wants Zaou Chicken at NBC Seafood"
+ */
+export function formatActivityProseClause(row = {}) {
+  const kind = String(row.kind || row.signal_kind || "ate")
+    .trim()
+    .toLowerCase();
+  const isWant = kind === "want" || kind === "wanna_eat" || kind === "want_to_eat";
+  const food = String(
+    row.food_name || row.item_name || row.menu_item_name || ""
+  ).trim() || (row.food_interest_key ? resolveFoodSubject(row) : "");
+  if (food === "Food") {
+    // resolveFoodSubject fallback — treat as empty for prose
+  }
+  const foodLabel = food && food !== "Food" ? food : "";
+  const restaurant = String(row.restaurant_name || "").trim();
+  const homemade = row.homemade === true || row.cooking === true;
+
+  if (isWant) {
+    if (foodLabel && restaurant) return `wants ${foodLabel} at ${restaurant}`;
+    if (restaurant && !foodLabel) return `wants to eat at ${restaurant}`;
+    if (foodLabel) return `wants ${foodLabel}`;
+    return "wants something to eat";
+  }
+  if (homemade) {
+    const what = foodLabel || "food";
+    return `is cooking ${what} at home`;
+  }
+  if (foodLabel && restaurant) return `is eating ${foodLabel} at ${restaurant}`;
+  if (restaurant) return `is eating at ${restaurant}`;
+  if (foodLabel) return `is eating ${foodLabel}`;
+  return "is eating";
+}
+
+/**
+ * Scan activity parts (legacy + prose):
+ * Prefer proseClause for display; actionLine kept for older callers.
  */
 export function formatActivityScanParts(row = {}, opts = {}) {
   const action = resolveActionEmote(row.kind || row.signal_kind || "ate");
@@ -112,10 +148,11 @@ export function formatActivityScanParts(row = {}, opts = {}) {
   const subject = resolveFoodSubject(row);
   const restaurant = String(row.restaurant_name || "").trim();
   const when = formatActivityWhen(row, opts);
+  const proseClause = formatActivityProseClause(row);
   const detailBits = [];
   if (restaurant && subject && !subject.toLowerCase().includes(restaurant.toLowerCase())) {
     detailBits.push(subject);
-    detailBits.push(`@ ${restaurant}`);
+    detailBits.push(`at ${restaurant}`);
   } else if (restaurant && (!subject || subject === "Food")) {
     detailBits.push(restaurant);
   } else {
@@ -126,7 +163,9 @@ export function formatActivityScanParts(row = {}, opts = {}) {
     foodEmoji,
     actionEmoji: action.emoji,
     actionLabel: action.label,
-    actionLine: `${foodEmoji} ${action.label}`,
-    detailLine: detailBits.filter(Boolean).join(" · "),
+    /** @deprecated decorative — prefer proseClause */
+    actionLine: proseClause,
+    detailLine: "",
+    proseClause,
   };
 }
