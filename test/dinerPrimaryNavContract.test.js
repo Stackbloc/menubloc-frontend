@@ -125,7 +125,9 @@ test("Waiter incorporates public Activity; /activity redirects there", () => {
   assert.doesNotMatch(waiter, /import\s+.*MarketFallback|<[Mm]arketFallback|CommunityGrowthCard\s*[({]/);
   assert.doesNotMatch(waiter, /Good morning|Good afternoon|Good evening/);
   assert.match(activity, /Navigate to="\/waiter#activity"/);
-  assert.match(panel, /not what your connections are eating/i);
-  assert.match(panel, /What People Are Eating/);
+  assert.match(panel, /not what your connections are eating|What your connections are eating lives on/i);
+  assert.doesNotMatch(panel, /What People Are Eating|Clusters ·|Diner Status|I&apos;m Eating At|I'm Eating At/);
+  assert.doesNotMatch(panel, /Follow a cluster|clusterDirectoryPath\(/);
+  assert.doesNotMatch(panel, /\/account\/diner-status|\/account\/im-eating/);
   assert.doesNotMatch(panel, /What My Connections Are Eating/);
 });

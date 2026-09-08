@@ -1,6 +1,7 @@
 /**
- * Additive Waiter section: public/nearby food activity (former /activity tab).
- * Does not replace Waiter recommendation cards or connections eating on My Menuply.
+ * Additive Waiter section: nearby food activity (info only).
+ * Waiter provides information — it does not ask diners to post status,
+ * report cluster conditions, or send them on weak cluster-directory errands.
  */
 
 import { useCallback, useEffect, useState } from "react";
@@ -11,7 +12,17 @@ import {
   fetchClusterReportFeed,
   listConsumerNotifications,
 } from "../lib/consumerApi.js";
-import { clusterDirectoryPath } from "../lib/clusterUrl.js";
+
+function isUsefulInfoLink(item) {
+  const href = String(item?.link || "").trim();
+  if (!href) return false;
+  // Restaurant / dish detail is useful. Venue directory / contribution CTAs are not.
+  if (/\/clusters(\/|$)/i.test(href)) return false;
+  if (/\/account\/cluster-subscriptions/i.test(href)) return false;
+  if (/\/account\/diner[-_]status/i.test(href)) return false;
+  if (/\/account\/im-eating/i.test(href)) return false;
+  return true;
+}
 
 export default function WaiterPublicActivity() {
   const { isAuthenticated, loading: authLoading } = useConsumer();
@@ -47,26 +58,13 @@ export default function WaiterPublicActivity() {
         What&apos;s happening
       </h2>
       <p style={styles.lead}>
-        Broader public and nearby food activity. This is not what your connections are eating — that lives on{" "}
+        Nearby food activity. What your connections are eating lives on{" "}
         <Link to={MY_MENUPLY_PROFILE_PATH} style={styles.link}>
           My Menuply
         </Link>
         .
       </p>
       {error ? <p style={styles.error}>{error}</p> : null}
-
-      <p style={styles.muted}>Cluster feeds, diner status, and nearby I&apos;m Eating At.</p>
-      <div style={styles.actions}>
-        <Link to={clusterDirectoryPath()} style={styles.chip}>
-          Clusters · What People Are Eating
-        </Link>
-        <Link to="/account/diner-status" style={styles.chip}>
-          Diner Status
-        </Link>
-        <Link to="/account/im-eating" style={styles.chip}>
-          I&apos;m Eating At
-        </Link>
-      </div>
 
       {isAuthenticated ? (
         <>
@@ -88,14 +86,9 @@ export default function WaiterPublicActivity() {
             ))
           )}
 
-          <div style={styles.row}>
-            <h3 style={styles.h3}>Nearby cluster food</h3>
-            <Link to="/account/cluster-subscriptions" style={styles.link}>
-              Manage
-            </Link>
-          </div>
+          <h3 style={styles.h3}>Nearby food</h3>
           {!feed?.recommendations?.length ? (
-            <p style={styles.muted}>No recent cluster food signals. Follow a cluster to personalize this.</p>
+            <p style={styles.muted}>No recent nearby food signals.</p>
           ) : (
             feed.recommendations.slice(0, 6).map((item, idx) => (
               <div key={`${item.type}-${item.cluster_id}-${idx}`} style={styles.card}>
@@ -109,9 +102,11 @@ export default function WaiterPublicActivity() {
                 !String(item.title || "").includes(String(item.expense_level)) ? (
                   <div style={styles.muted}>{item.expense_level}</div>
                 ) : null}
-                {item.link ? (
+                {isUsefulInfoLink(item) ? (
                   <Link to={item.link} style={styles.link}>
-                    {item.link_label || "Open"}
+                    {item.link_label && !/cluster/i.test(String(item.link_label))
+                      ? item.link_label
+                      : "View restaurant →"}
                   </Link>
                 ) : null}
               </div>
@@ -123,7 +118,7 @@ export default function WaiterPublicActivity() {
           <Link to="/account/login?next=/waiter#activity" style={styles.link}>
             Sign in
           </Link>{" "}
-          for notifications. Anyone can still browse clusters and I&apos;m Eating At.
+          to see notifications and nearby food updates.
         </p>
       )}
     </section>
@@ -151,19 +146,6 @@ const styles = {
   error: { color: "#FCA5A5", fontSize: 13 },
   link: { color: "#86EFAC", fontWeight: 700, textDecoration: "none", fontSize: 13 },
   row: { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 },
-  actions: { display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 8 },
-  chip: {
-    display: "inline-flex",
-    alignItems: "center",
-    minHeight: 30,
-    padding: "0 12px",
-    borderRadius: 999,
-    border: "1px solid rgba(134,239,172,0.22)",
-    color: "#DCFCE7",
-    fontWeight: 800,
-    fontSize: 12,
-    textDecoration: "none",
-  },
   card: {
     display: "block",
     textDecoration: "none",

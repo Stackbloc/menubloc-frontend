@@ -24,7 +24,8 @@ test("Waiter briefing sections + cluster follow; no forbidden UI", () => {
   assert.match(page, /briefing\?\.privateOffer/);
   assert.match(page, /briefing\?\.mealOptions/);
   assert.match(page, /WAITER_MEAL_PERIODS/);
-  assert.match(page, /\/account\/cluster-subscriptions/);
+  assert.doesNotMatch(page, /\/account\/cluster-subscriptions/);
+  assert.doesNotMatch(page, /Manage followed places/);
   assert.match(page, /readDetectedLocation/);
   assert.match(page, /WaiterPublicActivity/);
   assert.doesNotMatch(page, /import\s+.*MarketFallback|<[Mm]arketFallback|CommunityGrowthCard\s*[({]/);

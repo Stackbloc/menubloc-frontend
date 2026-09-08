@@ -423,16 +423,7 @@ export default function FoodInterestsPage() {
               Sign In
             </button>
           </div>
-        ) : (
-          <div style={{ marginTop: 8, fontSize: 12 }}>
-            <Link
-              to="/account/cluster-subscriptions"
-              style={{ color: "#15803D", fontWeight: 700, textDecoration: "none" }}
-            >
-              Manage followed places
-            </Link>
-          </div>
-        )}
+        ) : null}
 
         <div aria-live="polite" style={{ marginTop: 8 }}>
           {briefingLoading ? (

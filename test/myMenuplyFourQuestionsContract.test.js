@@ -215,9 +215,11 @@ test("Activity is broader happening and does not replace connections eating", ()
   const activity = read("src/components/WaiterPublicActivity.jsx");
   const redirect = read("src/pages/ActivityPage.jsx");
   const waiter = read("src/pages/FoodInterestsPage.jsx");
-  assert.match(activity, /not what your connections are eating/i);
+  assert.match(activity, /connections are eating/i);
   assert.match(activity, /MY_MENUPLY_PROFILE_PATH/);
-  assert.match(activity, /What People Are Eating/);
+  assert.doesNotMatch(activity, /What People Are Eating|Clusters ·|Diner Status/);
+  assert.doesNotMatch(activity, /Follow a cluster|clusterDirectoryPath\(/);
+  assert.doesNotMatch(activity, /\/account\/diner-status|\/account\/im-eating/);
   assert.doesNotMatch(activity, /What My Connections Are Eating/);
   assert.match(redirect, /\/waiter#activity/);
   assert.match(waiter, /WaiterPublicActivity/);
