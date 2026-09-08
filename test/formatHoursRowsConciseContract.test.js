@@ -152,7 +152,8 @@ function testFoodTruckTodayHeadingFormat() {
     "America/Los_Angeles",
     new Date("2026-06-01T18:00:00Z")
   );
-  assert.equal(heading, "Today, Monday, June 1");
+  assert.equal(heading, "Monday, June 1");
+  assert.ok(!heading.startsWith("Today"));
 }
 
 function testEmptyAndTodayDow() {

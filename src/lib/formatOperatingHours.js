@@ -57,7 +57,7 @@ export function getTodayDayOfWeek(timezone = null, now = new Date()) {
 }
 
 /**
- * Public-profile hours hero heading: "Today, Friday, June 1"
+ * Public-profile hours hero heading: "Monday, June 1" (no "Today" prefix).
  * Uses restaurant timezone when provided. Shared by restaurants and food trucks.
  */
 export function formatFoodTruckHoursTodayHeading(timezone = null, now = new Date()) {
@@ -74,21 +74,19 @@ export function formatFoodTruckHoursTodayHeading(timezone = null, now = new Date
     const month = parts.find((p) => p.type === "month")?.value || "";
     const day = parts.find((p) => p.type === "day")?.value || "";
     if (weekday && month && day) {
-      return `Today, ${weekday}, ${month} ${day}`;
+      return `${weekday}, ${month} ${day}`;
     }
   } catch {
     /* fall through */
   }
   try {
-    const fallback = new Intl.DateTimeFormat("en-US", {
+    return new Intl.DateTimeFormat("en-US", {
       weekday: "long",
       month: "long",
       day: "numeric",
     }).format(now);
-    // "Friday, June 1" → "Today, Friday, June 1"
-    return `Today, ${fallback}`;
   } catch {
-    return "Today";
+    return "Hours";
   }
 }
 
@@ -117,7 +115,7 @@ function isNextCalendarDay(prevDow, nextDow) {
  * @param {object[]} rows
  * @param {{ timezone?: string|null, now?: Date, includeTodayLine?: boolean }} [opts]
  *   includeTodayLine — default true (legacy). Public profile heroes set false and
- *   label the heading with the dated Today line instead.
+ *   label the heading with the dated weekday line instead (no "Today" prefix).
  */
 export function formatHoursRows(
   rows,
