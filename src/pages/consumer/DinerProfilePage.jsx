@@ -17,7 +17,7 @@
  */
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
 import StickyPageHeader from "../../components/StickyPageHeader.jsx";
 import BottomNav from "../../components/BottomNav.jsx";
@@ -308,8 +308,22 @@ function AddFlashVideoCell({ onAdd, uploading }) {
 
 export default function DinerProfilePage() {
   const { userId } = useParams();
-  const { consumer, isAuthenticated } = useConsumer();
+  const navigate = useNavigate();
+  const { consumer, isAuthenticated, loading: authLoading } = useConsumer();
   const isSelf = isAuthenticated && String(consumer?.id) === String(userId);
+
+  // Canonical peer profile is /account/diners/:id (activity-selection layer).
+  useEffect(() => {
+    if (authLoading) return;
+    if (!userId) return;
+    if (isSelf) {
+      navigate("/feed/profile", { replace: true });
+      return;
+    }
+    if (isAuthenticated) {
+      navigate(`/account/diners/${encodeURIComponent(String(userId))}`, { replace: true });
+    }
+  }, [authLoading, isAuthenticated, isSelf, navigate, userId]);
 
   // Profile identity (inferred from first homemade dish or flash video)
   const [profileName, setProfileName] = useState(null);

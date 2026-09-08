@@ -1,7 +1,7 @@
 /**
- * Discoverable diner profile — basic public identity for non-connections.
- * Connect / End (soft) / Block (hard) / Report. No plans, events, or Join Me.
+ * Canonical peer diner profile — activity-selection layer before media/Feed.
  * Route: /account/diners/:userId
+ * Accepted connections redirect to /account/connections/:id (full hub + same activity layer).
  */
 
 import React, { useCallback, useEffect, useState } from "react";
@@ -20,6 +20,9 @@ import {
   resolveConsumerMediaUrl,
 } from "../../lib/consumerApi.js";
 import { formatDinerPeerLabel } from "../../lib/dinerPublicIdentity.js";
+import { labelWithFoodIcon } from "../../lib/foodInterestIcons.js";
+import { normalizeFavoriteFoods } from "../../lib/dinerFavoriteFoods.js";
+import DinerActivitySelectionLayer from "./myMenuply/DinerActivitySelectionLayer.jsx";
 
 const ABUSE_REASONS = [
   { value: "harassment", label: "Harassment" },
@@ -150,8 +153,15 @@ export default function DiscoverableDinerProfilePage() {
 
   const diner = payload?.diner;
   const actions = payload?.allowed_actions;
+  const activityWants = Array.isArray(payload?.activity?.wants) ? payload.activity.wants : [];
   const name = formatDinerPeerLabel(diner) || "Diner";
   const backTo = backTarget(from);
+  const favorites = normalizeFavoriteFoods(diner?.favorite_foods);
+  const school =
+    diner?.school_affiliation ||
+    diner?.edu_verification_badge ||
+    diner?.edu_institution_short ||
+    null;
 
   return (
     <div style={styles.page} data-testid="discoverable-diner-profile">
@@ -175,20 +185,38 @@ export default function DiscoverableDinerProfilePage() {
               )}
               <div style={{ flex: 1, minWidth: 0 }}>
                 <h1 style={styles.name}>{name}</h1>
+                {school ? <p style={styles.meta}>{school}</p> : null}
                 {diner.location_label ? (
                   <p style={styles.meta}>📍 {diner.location_label}</p>
-                ) : null}
-                {diner.edu_verification_badge ? (
-                  <p style={styles.meta}>{diner.edu_verification_badge}</p>
                 ) : null}
               </div>
             </div>
 
             {diner.diner_about ? <p style={styles.about}>{diner.diner_about}</p> : null}
 
+            {favorites.length ? (
+              <div style={styles.favRow} data-testid="discoverable-favorite-foods">
+                {favorites.map((f) => (
+                  <span key={f.key} style={styles.favChip}>
+                    {labelWithFoodIcon(f.key, f.label)}
+                  </span>
+                ))}
+              </div>
+            ) : null}
+
+            <DinerActivitySelectionLayer
+              displayName={name}
+              locationLabel={diner.location_label}
+              schoolAffiliation={school}
+              wants={activityWants}
+              showConnect={Boolean(actions?.connect)}
+              onConnect={() => runAction("connect")}
+              connectBusy={busy}
+            />
+
             <p style={styles.lead}>
-              Basic profile only until you Connect. Use Connect to request, or Block / Report if
-              needed.
+              Connect to see full eating plans, diary, and Join Me when they open them. Discoverable
+              wants above already respect market privacy.
             </p>
 
             <div style={styles.actions} data-testid="discoverable-actions">
@@ -302,6 +330,17 @@ const styles = {
   name: { margin: 0, fontSize: 22, fontWeight: 800, color: "#0f172a" },
   meta: { margin: "4px 0 0", fontSize: 14, color: "#475569" },
   about: { margin: "0 0 12px", fontSize: 15, color: "#334155", lineHeight: 1.5 },
+  favRow: { display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 },
+  favChip: {
+    display: "inline-flex",
+    borderRadius: 999,
+    padding: "5px 10px",
+    fontSize: 13,
+    fontWeight: 600,
+    color: "#166534",
+    background: "#ecfdf3",
+    border: "1px solid #bbf7d0",
+  },
   lead: { margin: "0 0 14px", fontSize: 14, color: "#64748b", lineHeight: 1.5 },
   actions: { display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 },
   primaryBtn: {

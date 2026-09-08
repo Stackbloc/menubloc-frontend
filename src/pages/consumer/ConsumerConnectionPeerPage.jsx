@@ -48,6 +48,9 @@ import {
 import { fetchUserHomemadeDishes } from "../../lib/homemadeDishApi.js";
 import HomeAtHomeSection from "./myMenuply/HomeAtHomeSection.jsx";
 import { formatDinerPeerLabel } from "../../lib/dinerPublicIdentity.js";
+import DinerActivitySelectionLayer from "./myMenuply/DinerActivitySelectionLayer.jsx";
+import ProfileMediaGallery from "./myMenuply/ProfileMediaGallery.jsx";
+import { FlashVideosDisplay } from "./myMenuply/FlashVideosBlock.jsx";
 
 function tokenFromHref(href) {
   const match = String(href || "").match(/what-we-doing\/([^/?#]+)/);
@@ -290,6 +293,7 @@ export default function ConsumerConnectionPeerPage() {
           <>
             <DinerIdentityHero
               readOnly
+              showRichMedia={false}
               displayName={name}
               avatarUrl={resolveConsumerMediaUrl(peer?.avatar_url || "")}
               about={peer?.diner_about || ""}
@@ -312,6 +316,22 @@ export default function ConsumerConnectionPeerPage() {
               }
               eduConsumer={peer}
             />
+
+            <DinerActivitySelectionLayer
+              displayName={name}
+              locationLabel={peer?.primary_location?.public_label || null}
+              schoolAffiliation={null}
+              wants={peerWants}
+              plans={shownPlans}
+              joinMeHref={joinMeHref}
+              viewerMayInviteMeOut={viewerMayInviteMeOut}
+              onInviteMeOut={() => setInviteMeOutOpen(true)}
+            />
+
+            <section style={s.section} data-testid="peer-supporting-media">
+              <FlashVideosDisplay items={flashVideos} readOnly />
+              <ProfileMediaGallery items={peerProfileMedia} readOnly />
+            </section>
 
             <HomeAtHomeSection readOnly dishes={homeDishes} />
 

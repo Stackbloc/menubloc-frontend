@@ -84,6 +84,8 @@ export default function DinerIdentityHero({
   dinerSex = "",
   favoriteFoods = [],
   eduConsumer = null,
+  /** When false, defer Flash Video + gallery below activity signals. */
+  showRichMedia = true,
 }) {
   const [draft, setDraft] = useState(about || "");
   const [saving, setSaving] = useState(false);
@@ -249,10 +251,10 @@ export default function DinerIdentityHero({
           ) : null}
 
           <FlashVideosDisplay
-            items={flashVideos}
+            items={showRichMedia ? flashVideos : []}
             readOnly={readOnly}
             busy={busy || flashBusy}
-            onRemove={readOnly ? undefined : onFlashVideoRemove}
+            onRemove={readOnly || !showRichMedia ? undefined : onFlashVideoRemove}
           />
 
           {!readOnly && onSaveProfileSettings ? (
@@ -313,13 +315,15 @@ export default function DinerIdentityHero({
         <p style={{ ...s.muted, color: "#027A48", marginBottom: 10 }}>{notice}</p>
       ) : null}
 
-      <ProfileMediaGallery
-        items={profileMedia}
-        readOnly={readOnly}
-        busy={busy}
-        onAddFile={onProfileMediaAdd}
-        onRemove={onProfileMediaRemove}
-      />
+      {showRichMedia ? (
+        <ProfileMediaGallery
+          items={profileMedia}
+          readOnly={readOnly}
+          busy={busy}
+          onAddFile={onProfileMediaAdd}
+          onRemove={onProfileMediaRemove}
+        />
+      ) : null}
     </section>
   );
 }

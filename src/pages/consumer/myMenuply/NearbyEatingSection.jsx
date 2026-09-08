@@ -169,7 +169,7 @@ export default function NearbyEatingSection({
         <SectionHead
           kicker="Nearby"
           title="Who's Eating"
-          subtitle="Short diner summaries — open a profile to explore their videos"
+          subtitle="Short diner summaries — open their profile to choose an activity"
         />
 
         {error ? <p style={s.error}>{error}</p> : null}

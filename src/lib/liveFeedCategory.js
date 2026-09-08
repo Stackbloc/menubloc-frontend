@@ -42,7 +42,8 @@ export function liveFeedFullCategoryLabel(kind) {
 export function dinerPeerProfilePath(dinerId) {
   const id = Number(dinerId);
   if (!Number.isFinite(id) || id <= 0) return null;
-  return `/account/connections/${encodeURIComponent(String(id))}`;
+  // Canonical peer profile: activity-selection layer (not connection-gated dead end).
+  return `/account/diners/${encodeURIComponent(String(id))}`;
 }
 
 /** Consumer restaurant profile — canonical /restaurants/…, not /r/ QR links. */
