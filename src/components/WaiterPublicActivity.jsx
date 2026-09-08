@@ -105,6 +105,10 @@ export default function WaiterPublicActivity() {
                 {item.cuisine && !String(item.title || "").includes(String(item.cuisine)) ? (
                   <div style={styles.muted}>{item.cuisine}</div>
                 ) : null}
+                {item.expense_level &&
+                !String(item.title || "").includes(String(item.expense_level)) ? (
+                  <div style={styles.muted}>{item.expense_level}</div>
+                ) : null}
                 {item.link ? (
                   <Link to={item.link} style={styles.link}>
                     {item.link_label || "Open"}
