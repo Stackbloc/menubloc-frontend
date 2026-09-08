@@ -1,6 +1,6 @@
 /**
- * Optional restaurant + menu item, or homemade (no restaurant/dish).
- * Restaurant first, then that restaurant's menu items. Homemade is last.
+ * Optional restaurant + dish, or homemade (no restaurant/dish).
+ * Restaurant first, then that restaurant's dishes. Homemade is last.
  */
 
 import { useEffect, useState } from "react";
@@ -27,7 +27,7 @@ export default function EatingPlaceFields({
   allowHomemade = true,
   locationCity = null,
   locationState = null,
-  dishSearchPlaceholder = "Menu item (optional)",
+  dishSearchPlaceholder = "Dish (optional)",
 }) {
   const [query, setQuery] = useState("");
   const [dishQuery, setDishQuery] = useState("");
@@ -175,7 +175,7 @@ export default function EatingPlaceFields({
 
       {homemade ? (
         <p style={s.muted} data-testid="eating-place-homemade-note">
-          Homemade — no restaurant or menu item.
+          Homemade — no restaurant or dish.
         </p>
       ) : (
         <>
@@ -255,7 +255,7 @@ export default function EatingPlaceFields({
           {allowDishSearch ? (
             <>
               <p style={styles.fieldLabel} id="eating-place-menu-item-label">
-                Menu item
+                Dish
               </p>
               {dish ? (
                 <div style={styles.selected} data-testid="eating-place-dish-selected">
@@ -264,7 +264,7 @@ export default function EatingPlaceFields({
                       <img src={dishPhotoUrl(dish)} alt="" style={styles.dishThumb} />
                     ) : null}
                     <div>
-                      <div style={styles.kind}>Menu item</div>
+                      <div style={styles.kind}>Dish</div>
                       <div style={{ fontWeight: 800 }}>{dishLabel(dish)}</div>
                       {dishPhotoUrl(dish) ? (
                         <div style={{ ...s.muted, fontSize: 12 }}>
@@ -313,13 +313,13 @@ export default function EatingPlaceFields({
                     </ul>
                   ) : !loadingDishes ? (
                     <p style={s.muted} data-testid="eating-place-dish-empty">
-                      No menu items yet for this location — you can still post the restaurant.
+                      No dishes yet for this location — you can still post the restaurant.
                     </p>
                   ) : null}
                 </>
               ) : (
                 <p style={s.muted} data-testid="eating-place-dish-needs-restaurant">
-                  Pick a restaurant first, then choose a menu item.
+                  Pick a restaurant first, then choose a dish.
                 </p>
               )}
             </>

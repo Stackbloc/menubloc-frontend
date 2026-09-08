@@ -315,6 +315,7 @@ export default function EatingHubSection({
             <ActivityStatusLineCompose
               category="ate"
               busy={postBusy === "eating"}
+              followed={followed}
               locationCity={locationCity}
               locationState={locationState}
               onSubmit={async (payload) => {
@@ -339,6 +340,7 @@ export default function EatingHubSection({
                   eaten_on: item.eaten_on,
                   homemade,
                   cooking: homemade,
+                  second_person: !readOnly,
                 });
                 return (
                   <li key={`act-${item.entry_id || item.id}`}>
@@ -350,11 +352,19 @@ export default function EatingHubSection({
                       foodName={food}
                       foodInterestKey={item.food_interest_key}
                       restaurantName={item.restaurant_name}
+                      restaurantId={item.restaurant_id || null}
+                      restaurantSlug={item.restaurant_slug || null}
+                      restaurantCity={item.restaurant_city || item.city || null}
+                      restaurantState={item.restaurant_state || item.state || null}
+                      restaurantLogoUrl={item.restaurant_logo_url || null}
+                      restaurantBillboardUrl={item.restaurant_billboard_image_url || null}
+                      menuItemId={item.menu_item_id || null}
                       mealPeriod={item.meal_period}
                       eatenOn={item.eaten_on}
                       homemade={homemade}
                       videoUrl={item.video_url || null}
                       activityLineOverride={line}
+                      secondPerson={!readOnly}
                       onSelect={!readOnly && onDiarySelect ? () => onDiarySelect(item) : null}
                     />
                   </li>
@@ -362,7 +372,10 @@ export default function EatingHubSection({
               })}
             </ul>
           ) : null}
-          {lastPost?.kind === "diary" && !readOnly ? (
+          {lastPost?.kind === "diary" &&
+          !readOnly &&
+          !lastPost.restaurant_id &&
+          !lastPost.homemade ? (
             <PostAfterActions
               kind="diary"
               record={lastPost}
@@ -418,6 +431,7 @@ export default function EatingHubSection({
             <ActivityStatusLineCompose
               category="want"
               busy={postBusy === "want"}
+              followed={followed}
               locationCity={locationCity}
               locationState={locationState}
               onSubmit={async (payload) => {
@@ -428,15 +442,16 @@ export default function EatingHubSection({
           {wantListError ? <p style={s.error}>{wantListError}</p> : null}
           {lastPost?.kind === "want" &&
           !readOnly &&
+          !lastPost.restaurant_id &&
           !wants.some((row) => Number(row.id) === Number(lastPost.id)) ? (
             <div style={s.card} data-testid="want-to-eat-just-posted">
               <div style={{ fontWeight: 800 }}>{lastPost.food_name}</div>
               <div style={{ ...s.muted, fontSize: 12, marginTop: 4 }}>
-                Saved — link a restaurant and menu item below
+                Saved — add a restaurant or dish below if you want
               </div>
             </div>
           ) : null}
-          {lastPost?.kind === "want" && !readOnly ? (
+          {lastPost?.kind === "want" && !readOnly && !lastPost.restaurant_id ? (
             <PostAfterActions
               kind="want"
               record={lastPost}

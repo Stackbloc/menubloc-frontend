@@ -37,7 +37,7 @@ test("DinerActivityScanRow: prose + video without play glyph", () => {
   assert.doesNotMatch(row, /diner-activity-scan-play/);
   assert.match(row, /diner-activity-scan-video/);
   assert.match(row, /activityLineOverride/);
-  assert.match(row, /proseSentence|formatActivityProseClause/);
+  assert.match(row, /formatActivityProseClause/);
   assert.doesNotMatch(row, /MenuplyMediaPicker|getUserMedia|facingMode/);
 });
 
@@ -46,9 +46,11 @@ test("What I'm Eating / Wanna Eat use ActivityStatusLineCompose — category-sco
   const hub = read("src/pages/consumer/myMenuply/EatingHubSection.jsx");
   const page = read("src/pages/consumer/MyMenuplyPage.jsx");
   assert.match(compose, /eating-status-line-compose|wanna-status-line-compose/);
-  assert.match(compose, /Eating at/);
-  assert.match(compose, /Cooking/);
-  assert.match(compose, /Wanna eat/);
+  assert.match(compose, /Restaurant/);
+  assert.match(compose, /@home/);
+  assert.match(compose, /I'?m eating @|I&apos;m eating @/);
+  assert.match(compose, /I wanna eat/);
+  assert.match(compose, /EatingPlaceFields/);
   assert.match(compose, /socialBtn\.primary/);
   assert.doesNotMatch(compose, /socialBtn\s*\(/);
   assert.doesNotMatch(compose, /QUICK_STATUS_ACTIONS|Ate.*Wanna Eat/);
@@ -58,6 +60,9 @@ test("What I'm Eating / Wanna Eat use ActivityStatusLineCompose — category-sco
   assert.match(hub, /category="want"/);
   assert.doesNotMatch(hub, /FoodStatusQuickCompose|EatingActivityCompose/);
   assert.match(hub, /eating-activity-rows/);
+  assert.match(hub, /secondPerson=\{!readOnly\}/);
+  assert.match(hub, /restaurantLogoUrl/);
+  assert.match(hub, /diner-activity-scan-place|restaurantLogoUrl/);
   assert.doesNotMatch(page, /ActivityTextComposer|postScanActivityText/);
   assert.equal(
     fs.existsSync(path.join(root, "src/pages/consumer/myMenuply/FoodStatusQuickCompose.jsx")),
@@ -67,6 +72,16 @@ test("What I'm Eating / Wanna Eat use ActivityStatusLineCompose — category-sco
     fs.existsSync(path.join(root, "src/pages/consumer/myMenuply/EatingActivityCompose.jsx")),
     false
   );
+});
+
+test("DinerActivityScanRow: logo/billboard place + clickable dish", () => {
+  const row = read("src/pages/consumer/myMenuply/DinerActivityScanRow.jsx");
+  assert.match(row, /diner-activity-scan-place/);
+  assert.match(row, /diner-activity-scan-dish/);
+  assert.match(row, /restaurantHref/);
+  assert.match(row, /\/menu-items\//);
+  assert.match(row, /secondPerson/);
+  assert.doesNotMatch(row, /You is eating/);
 });
 
 test("prose activity: BeckG is eating Double-Double at In-N-Out — no decorative emoji", () => {
@@ -113,10 +128,12 @@ test("prose activity: BeckG is eating Double-Double at In-N-Out — no decorativ
   );
   assert.equal(
     formatActivityProseClause({
-      kind: "want",
-      food_name: "Chinese",
+      kind: "ate",
+      food_name: "Double-Double",
+      restaurant_name: "In-N-Out",
+      second_person: true,
     }),
-    "wants Chinese"
+    "are eating Double-Double at In-N-Out"
   );
   assert.equal(
     formatActivityProseClause({

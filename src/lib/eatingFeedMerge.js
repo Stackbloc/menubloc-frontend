@@ -2,6 +2,18 @@
  * Dedupe My Menuply eating feed when food_activity is mirrored to what_i_ate_today.
  */
 
+const HOMEMADE_PREFIX = "Homemade";
+
+function isHomemadeComment(comment) {
+  const raw = String(comment || "").trim();
+  if (!raw) return false;
+  return (
+    raw === HOMEMADE_PREFIX ||
+    raw.startsWith(`${HOMEMADE_PREFIX}. `) ||
+    raw.startsWith(`${HOMEMADE_PREFIX} `)
+  );
+}
+
 export function eatingFeedKey(row) {
   const restaurantId = row?.restaurant_id != null ? String(row.restaurant_id) : "";
   const menuItemId = row?.menu_item_id != null ? String(row.menu_item_id) : "";
@@ -20,6 +32,7 @@ export function mapDiaryEntriesForHub(entries = []) {
     entry_id: row.id,
     food_name: row.item_name || row.food_name || "Food",
     kind: "what_i_ate",
+    homemade: row.homemade === true || isHomemadeComment(row.comment),
   }));
 }
 

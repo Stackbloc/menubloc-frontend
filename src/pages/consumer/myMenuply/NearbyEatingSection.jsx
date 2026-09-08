@@ -99,6 +99,26 @@ function pushRow(out, seen, row) {
     kind: row.kind || row.signal_kind || "ate",
     foodName,
     restaurantName,
+    restaurantId:
+      row.restaurant_id ||
+      row.referenced_restaurant?.id ||
+      row.diner?.restaurant_id ||
+      null,
+    restaurantSlug:
+      row.restaurant_slug ||
+      row.referenced_restaurant?.slug ||
+      null,
+    restaurantCity: row.restaurant_city || row.city || null,
+    restaurantState: row.restaurant_state || row.state || null,
+    restaurantLogoUrl:
+      row.restaurant_logo_url ||
+      row.referenced_restaurant?.logo_url ||
+      null,
+    restaurantBillboardUrl:
+      row.restaurant_billboard_image_url ||
+      row.referenced_restaurant?.billboard_image_url ||
+      null,
+    menuItemId: row.menu_item_id || null,
     mealPeriod: row.meal_period || null,
     foodInterestKey: row.food_interest_key || null,
     icon: row.icon || iconForFoodText(foodName),
@@ -229,14 +249,17 @@ export default function NearbyEatingSection({
                     kind={row.kind}
                     foodName={row.foodName}
                     foodInterestKey={row.foodInterestKey}
+                    restaurantName={row.restaurantName}
+                    restaurantId={row.restaurantId}
+                    restaurantSlug={row.restaurantSlug}
+                    restaurantCity={row.restaurantCity}
+                    restaurantState={row.restaurantState}
+                    restaurantLogoUrl={row.restaurantLogoUrl}
+                    restaurantBillboardUrl={row.restaurantBillboardUrl}
+                    menuItemId={row.menuItemId}
                     icon={row.icon}
                     videoUrl={row.videoUrl}
                     profileHref={row.href}
-                    activityLineOverride={
-                      row.restaurantName
-                        ? `is having ${row.restaurantName} ${row.foodName} at ${row.restaurantName}`
-                        : `is having ${row.foodName}`
-                    }
                   />
                 </li>
               ))}

@@ -121,21 +121,31 @@ export function formatActivityProseClause(row = {}) {
   const foodLabel = food && food !== "Food" ? food : "";
   const restaurant = String(row.restaurant_name || "").trim();
   const homemade = row.homemade === true || row.cooking === true;
+  const second = row.second_person === true;
 
   if (isWant) {
-    if (foodLabel && restaurant) return `wants ${foodLabel} at ${restaurant}`;
-    if (restaurant && !foodLabel) return `wants to eat at ${restaurant}`;
-    if (foodLabel) return `wants ${foodLabel}`;
-    return "wants something to eat";
+    const wantVerb = second ? "want" : "wants";
+    if (foodLabel && restaurant) return `${wantVerb} ${foodLabel} at ${restaurant}`;
+    if (restaurant && !foodLabel) return `${wantVerb} to eat at ${restaurant}`;
+    if (foodLabel) return `${wantVerb} ${foodLabel}`;
+    return second ? "want something to eat" : "wants something to eat";
   }
   if (homemade) {
     const what = foodLabel || "food";
-    return `is cooking ${what} at home`;
+    return second ? `are cooking ${what} at home` : `is cooking ${what} at home`;
   }
-  if (foodLabel && restaurant) return `is eating ${foodLabel} at ${restaurant}`;
-  if (restaurant) return `is eating at ${restaurant}`;
-  if (foodLabel) return `is eating ${foodLabel}`;
-  return "is eating";
+  if (foodLabel && restaurant) {
+    return second
+      ? `are eating ${foodLabel} at ${restaurant}`
+      : `is eating ${foodLabel} at ${restaurant}`;
+  }
+  if (restaurant) {
+    return second ? `are eating at ${restaurant}` : `is eating at ${restaurant}`;
+  }
+  if (foodLabel) {
+    return second ? `are eating ${foodLabel}` : `is eating ${foodLabel}`;
+  }
+  return second ? "are eating" : "is eating";
 }
 
 /**

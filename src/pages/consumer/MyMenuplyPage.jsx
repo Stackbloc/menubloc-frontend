@@ -848,6 +848,17 @@ export default function MyMenuplyPage() {
         video_url: hubItem.video_url,
         food_interest_key: entry.food_interest_key || foodInterestKey || null,
         signal_kind: entry.signal_kind || signal || null,
+        restaurant_id: entry.restaurant_id || restaurantId || null,
+        restaurant_name:
+          entry.restaurant_name || restaurant?.restaurant_name || null,
+        restaurant_slug:
+          entry.restaurant_slug || restaurant?.restaurant_slug || null,
+        restaurant_logo_url: entry.restaurant_logo_url || null,
+        restaurant_billboard_image_url:
+          entry.restaurant_billboard_image_url || null,
+        menu_item_id: entry.menu_item_id || menuItemId || null,
+        item_name: entry.item_name || dish?.item_name || null,
+        homemade: Boolean(homemade) || Boolean(hubItem.homemade),
       });
       window.setTimeout(() => {
         eatingSectionRef.current

@@ -6,10 +6,7 @@
 
 import { useEffect, useState } from "react";
 import { listSocialFoodInfo } from "../../../lib/consumerApi.js";
-import {
-  formatConnectEatingLine,
-  resolveDinerAffiliation,
-} from "../../../lib/dinerDiscoverySummary.js";
+import { resolveDinerAffiliation } from "../../../lib/dinerDiscoverySummary.js";
 import { dinerPeerProfilePath } from "../../../lib/liveFeedCategory.js";
 import DinerActivityScanRow from "./DinerActivityScanRow.jsx";
 import { SectionHead } from "./myMenuplyBits.jsx";
@@ -109,16 +106,15 @@ export default function SocialFoodInfoSection({ hidden = false }) {
                     videoUrl={row.video_url || null}
                     profileHref={peerHref}
                     restaurantName={row.restaurant_name || null}
+                    restaurantId={row.restaurant_id || null}
+                    restaurantSlug={row.restaurant_slug || null}
+                    restaurantCity={row.restaurant_city || null}
+                    restaurantState={row.restaurant_state || null}
+                    restaurantLogoUrl={row.restaurant_logo_url || null}
+                    restaurantBillboardUrl={row.restaurant_billboard_image_url || null}
+                    menuItemId={row.menu_item_id || null}
                     mealPeriod={row.meal_period || null}
-                    activityLineOverride={
-                      formatConnectEatingLine({
-                        kind: row.kind || row.signal_kind || "want",
-                        restaurant_name: row.restaurant_name,
-                        food_name: row.food_name,
-                        meal_period: row.meal_period,
-                        food_interest_key: row.food_interest_key,
-                      })
-                    }
+                    homemade={Boolean(row.homemade)}
                   />
                 </li>
               );
