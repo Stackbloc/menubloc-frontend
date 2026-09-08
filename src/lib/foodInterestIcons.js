@@ -8,20 +8,24 @@ export const FOOD_INTEREST_ICONS = Object.freeze({
   pizza: "🍕",
   sushi: "🍣",
   noodles: "🍜",
+  ramen: "🍜",
   chicken: "🍗",
   steak: "🥩",
   seafood: "🍤",
   salad: "🥗",
+  pasta: "🍝",
+  burrito: "🌯",
   sandwich: "🥪",
-  bbq: "🍖",
-  dessert: "🍰",
+  bbq: "🥩",
+  ice_cream: "🍦",
+  dessert: "🍦",
   coffee: "☕",
   breakfast: "🥞",
   mexican: "🌮",
   italian: "🍝",
   chinese: "🥡",
   japanese: "🍣",
-  korean: "🍲",
+  korean: "🥩",
   thai: "🍛",
   vietnamese: "🍜",
   indian: "🍛",
@@ -54,7 +58,11 @@ export function iconForFoodText(text) {
   if (/\bsushi|sashimi/.test(raw)) return "🍣";
   if (/\bnoodle|ramen|pho|udon/.test(raw)) return "🍜";
   if (/\bchicken|wings/.test(raw)) return "🍗";
+  if (/\bkorean\s*bbq|kalbi|bulgogi|bbq|barbecue/.test(raw)) return "🥩";
   if (/\bsteak|ribeye/.test(raw)) return "🥩";
+  if (/\bpasta|spaghetti|lasagna/.test(raw)) return "🍝";
+  if (/\bburrito/.test(raw)) return "🌯";
+  if (/\bice\s*cream|gelato/.test(raw)) return "🍦";
   if (/\bshrimp|seafood|fish|salmon/.test(raw)) return "🍤";
   if (/\btea|chai|coffee|latte|espresso/.test(raw)) return "☕";
   return "🍽️";

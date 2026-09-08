@@ -1156,6 +1156,7 @@ export default function MyMenuplyPage() {
     inviteMeOutOpen: wantInviteOpen,
     inviteMeOutAudience: wantInviteAudience,
     inviteMeOutSelectedIds: wantInviteIds,
+    marketDiscoverable,
   }) {
     setPostBusy("want");
     setError("");
@@ -1219,7 +1220,12 @@ export default function MyMenuplyPage() {
         food_name: name,
         photo_url,
         video_url,
-        market_discoverable: Boolean(video_url),
+        market_discoverable:
+          marketDiscoverable === true
+            ? true
+            : marketDiscoverable === false
+              ? false
+              : Boolean(video_url),
         restaurant_id: restaurantId,
         menu_item_id: menuItemId,
         intent_kind: intent || undefined,
@@ -1475,6 +1481,7 @@ export default function MyMenuplyPage() {
         inviteMeOutOpen: wantInviteOpen,
         inviteMeOutAudience: wantInviteAudience,
         inviteMeOutSelectedIds: wantInviteIds,
+        marketDiscoverable,
       });
       setComposeDefaultCategory("want");
       return;

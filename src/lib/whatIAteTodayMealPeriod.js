@@ -1,21 +1,22 @@
 /** Meal slots for What I'm Eating / What I Ate Today — not Waiter, not nutrition. */
 
-/** Compose + board chips (user-facing). Brunch remains valid for existing diary rows. */
+/** User-facing meal periods only. */
 export const WHAT_I_ATE_MEAL_PERIODS = [
   { id: "breakfast", label: "Breakfast" },
   { id: "lunch", label: "Lunch" },
   { id: "dinner", label: "Dinner" },
-  { id: "snack", label: "Snack" },
-  { id: "dessert", label: "Dessert" },
   { id: "late_night", label: "Late Night" },
-  { id: "other", label: "Other" },
 ];
 
-/** Legacy brunch still normalizes and displays when present on older entries. */
-const LEGACY_PERIODS = [{ id: "brunch", label: "Brunch" }];
+/** Old diary values → canonical four. */
+const LEGACY_ALIASES = {
+  brunch: "lunch",
+  snack: "lunch",
+  dessert: "dinner",
+  other: "lunch",
+};
 
-const ALL_PERIODS = [...WHAT_I_ATE_MEAL_PERIODS, ...LEGACY_PERIODS];
-const ORDER = ALL_PERIODS.map((p) => p.id);
+const ORDER = WHAT_I_ATE_MEAL_PERIODS.map((p) => p.id);
 
 /**
  * Local hour when an empty meal row becomes available on today's board.
@@ -24,11 +25,8 @@ const ORDER = ALL_PERIODS.map((p) => p.id);
 export const WHAT_I_ATE_MEAL_PERIOD_START_HOUR = {
   breakfast: 5,
   lunch: 11,
-  snack: 14,
   dinner: 17,
-  dessert: 19,
   late_night: 22,
-  other: 0,
 };
 
 export function normalizeWhatIAteMealPeriod(value) {
@@ -36,16 +34,18 @@ export function normalizeWhatIAteMealPeriod(value) {
     .trim()
     .toLowerCase()
     .replace(/[ -]+/g, "_");
-  return ORDER.includes(key) ? key : null;
+  if (ORDER.includes(key)) return key;
+  return LEGACY_ALIASES[key] || null;
 }
 
 export function mealPeriodLabel(id) {
-  return ALL_PERIODS.find((p) => p.id === id)?.label || "Other";
+  const canonical = normalizeWhatIAteMealPeriod(id) || id;
+  return WHAT_I_ATE_MEAL_PERIODS.find((p) => p.id === canonical)?.label || "Meal";
 }
 
 export function compareMealPeriod(a, b) {
-  const ai = ORDER.indexOf(a);
-  const bi = ORDER.indexOf(b);
+  const ai = ORDER.indexOf(normalizeWhatIAteMealPeriod(a) || a);
+  const bi = ORDER.indexOf(normalizeWhatIAteMealPeriod(b) || b);
   if (ai === -1 && bi === -1) return 0;
   if (ai === -1) return 1;
   if (bi === -1) return -1;
@@ -56,8 +56,7 @@ export function compareMealPeriod(a, b) {
 export function defaultWhatIAteMealPeriod(date = new Date()) {
   const hour = date.getHours();
   if (hour >= 5 && hour < 11) return "breakfast";
-  if (hour >= 11 && hour < 15) return "lunch";
-  if (hour >= 15 && hour < 17) return "snack";
+  if (hour >= 11 && hour < 17) return "lunch";
   if (hour >= 17 && hour < 22) return "dinner";
   return "late_night";
 }
@@ -73,7 +72,7 @@ export function visibleWhatIAteMealPeriods({
   const filled = new Set(
     (filledPeriodIds || []).map(normalizeWhatIAteMealPeriod).filter(Boolean)
   );
-  return ALL_PERIODS.filter((p) => filled.has(p.id));
+  return WHAT_I_ATE_MEAL_PERIODS.filter((p) => filled.has(p.id));
 }
 
 export function groupEntriesByMealPeriod(entries) {

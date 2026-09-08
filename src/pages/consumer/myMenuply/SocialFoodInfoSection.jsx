@@ -108,15 +108,16 @@ export default function SocialFoodInfoSection({ hidden = false }) {
                     icon={row.icon || null}
                     videoUrl={row.video_url || null}
                     profileHref={peerHref}
+                    restaurantName={row.restaurant_name || null}
+                    mealPeriod={row.meal_period || null}
                     activityLineOverride={
-                      row.kind === "ate" || row.signal_kind === "ate"
-                        ? formatConnectEatingLine({
-                            display_name: row.display_name,
-                            restaurant_name: row.restaurant_name,
-                            food_name: row.food_name,
-                            meal_period: row.meal_period,
-                          }).replace(/^.*? is having /, "is having ")
-                        : null
+                      formatConnectEatingLine({
+                        kind: row.kind || row.signal_kind || "want",
+                        restaurant_name: row.restaurant_name,
+                        food_name: row.food_name,
+                        meal_period: row.meal_period,
+                        food_interest_key: row.food_interest_key,
+                      })
                     }
                   />
                 </li>

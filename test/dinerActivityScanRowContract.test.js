@@ -1,5 +1,5 @@
 /**
- * Activity-first eating: CK compose + shared emoji rows for video and non-video.
+ * Quick status + derived food emoji scan language (no mortgage forms).
  */
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -8,10 +8,25 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   formatConnectEatingLine,
+  formatDinerScanIdentity,
   formatOwnEatingActivityLine,
   formatWhosEatingDiscoveryLine,
   resolveDinerAffiliation,
 } from "../src/lib/dinerDiscoverySummary.js";
+import {
+  deriveFoodEmoji,
+  formatActivityScanParts,
+} from "../src/lib/dinerSocialEmojiLanguage.js";
+import {
+  WHAT_I_ATE_MEAL_PERIODS,
+  normalizeWhatIAteMealPeriod,
+  defaultWhatIAteMealPeriod,
+} from "../src/lib/whatIAteTodayMealPeriod.js";
+import {
+  WAITER_MEAL_PERIODS,
+  normalizeMealPeriodId,
+  getDefaultMealPeriod,
+} from "../src/lib/waiterMealPeriod.js";
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = (rel) => fs.readFileSync(path.join(root, rel), "utf8");
@@ -21,57 +36,102 @@ test("DinerActivityScanRow: play only when video; no camera on identity card", (
   assert.match(row, /diner-activity-scan-play/);
   assert.match(row, /diner-activity-scan-video/);
   assert.match(row, /activityLineOverride/);
+  assert.match(row, /actionLine/);
+  assert.match(row, /detailLine/);
   assert.doesNotMatch(row, /MenuplyMediaPicker|getUserMedia|facingMode/);
 });
 
-test("What I'm Eating in-section compose requires CK restaurant + menu item + meal period", () => {
-  const compose = read("src/pages/consumer/myMenuply/EatingActivityCompose.jsx");
+test("What I'm Eating uses tiny FoodStatusQuickCompose — no EatingPlaceFields wall", () => {
+  const compose = read("src/pages/consumer/myMenuply/FoodStatusQuickCompose.jsx");
   const hub = read("src/pages/consumer/myMenuply/EatingHubSection.jsx");
   const page = read("src/pages/consumer/MyMenuplyPage.jsx");
-  assert.match(compose, /eating-activity-compose/);
-  assert.match(compose, /EatingPlaceFields/);
-  assert.match(compose, /allowHomemade=\{false\}/);
-  assert.match(compose, /menu_item_id/);
-  assert.match(compose, /mealPeriod/);
-  assert.match(compose, /marketDiscoverable: true/);
+  assert.match(compose, /food-status-quick-compose/);
+  assert.match(compose, /QUICK_STATUS_ACTIONS/);
+  assert.match(compose, /food-status-food-chips/);
+  assert.doesNotMatch(compose, /EatingPlaceFields|Search restaurant/);
+  assert.doesNotMatch(compose, /WHAT_I_ATE_MEAL_PERIODS/);
   assert.doesNotMatch(compose, /MenuplyMediaPicker|getUserMedia|facingMode/);
-  assert.match(hub, /EatingActivityCompose/);
+  assert.match(hub, /FoodStatusQuickCompose/);
+  assert.doesNotMatch(hub, /EatingActivityCompose/);
   assert.match(hub, /eating-activity-rows/);
-  assert.match(hub, /formatOwnEatingActivityLine/);
   assert.doesNotMatch(page, /ActivityTextComposer|postScanActivityText/);
-  assert.doesNotMatch(hub, /Shared from Feed/);
+  assert.equal(fs.existsSync(path.join(root, "src/pages/consumer/myMenuply/EatingActivityCompose.jsx")), false);
 });
 
-test("own / connect / Who's Eating activity phrasing", () => {
+test("scan identity and activity parts match BrandyS · 22 · USC / 🍔 Wanna Eat / Burgers · Tonight", () => {
+  assert.equal(
+    formatDinerScanIdentity({
+      display_name: "BrandyS",
+      age_years: 22,
+      school_affiliation: "USC",
+    }),
+    "BrandyS · 22 · USC"
+  );
+  const want = formatActivityScanParts({
+    kind: "want",
+    food_interest_key: "burger",
+    food_name: "Burgers",
+    meal_period: "dinner",
+    eaten_on: "2026-09-08",
+  }, { todayYmd: "2026-09-08" });
+  assert.equal(want.actionLine, "🍔 Wanna Eat");
+  assert.match(want.detailLine, /Burgers/);
+  assert.match(want.detailLine, /Tonight/);
+
+  const ate = formatActivityScanParts({
+    kind: "ate",
+    food_interest_key: "sushi",
+    food_name: "Sushi",
+    meal_period: "lunch",
+    eaten_on: "2026-09-07",
+  }, { todayYmd: "2026-09-08" });
+  assert.equal(ate.actionLine, "🍣 Ate");
+  assert.match(ate.detailLine, /Sushi/);
+  assert.match(ate.detailLine, /Yesterday/);
+
+  assert.equal(deriveFoodEmoji({ food_name: "Korean BBQ" }), "🥩");
+  assert.match(formatOwnEatingActivityLine({
+    kind: "ate",
+    food_name: "Meatball sub",
+    restaurant_name: "Subway",
+    meal_period: "lunch",
+  }), /🍽️ Ate/);
+  assert.match(formatConnectEatingLine({
+    kind: "want",
+    food_interest_key: "burger",
+    food_name: "Burgers",
+  }), /Wanna Eat/);
   assert.match(
-    formatOwnEatingActivityLine({
-      meal_period: "breakfast",
-      restaurant_name: "Starbucks",
-      food_name: "Chai Tea",
-    }),
-    /Breakfast\. Starbucks - Chai Tea/
-  );
-  assert.equal(
-    formatConnectEatingLine({
-      display_name: "Becky",
-      restaurant_name: "Starbucks",
-      food_name: "Chai Tea",
-      meal_period: "breakfast",
-    }),
-    "Becky is having Starbucks Chai Tea for breakfast"
-  );
-  assert.equal(
     formatWhosEatingDiscoveryLine({
       display_name: "Becky",
       diner_sex_short: "F",
       age_years: 21,
       school_affiliation: "USC",
-      restaurant_name: "Starbucks",
+      kind: "ate",
       food_name: "Chai Tea",
+      restaurant_name: "Starbucks",
     }),
-    "Becky, F, 21, USC is having Starbucks Chai Tea at Starbucks"
+    /Becky · F · 21 · USC/
   );
   assert.equal(resolveDinerAffiliation({ school_affiliation: "USC" }), "USC");
+});
+
+test("meal periods are only breakfast lunch dinner late_night (no brunch/snack/dessert)", () => {
+  assert.deepEqual(
+    WHAT_I_ATE_MEAL_PERIODS.map((p) => p.id),
+    ["breakfast", "lunch", "dinner", "late_night"]
+  );
+  assert.equal(normalizeWhatIAteMealPeriod("brunch"), "lunch");
+  assert.equal(normalizeWhatIAteMealPeriod("snack"), "lunch");
+  assert.equal(normalizeWhatIAteMealPeriod("dessert"), "dinner");
+  assert.equal(defaultWhatIAteMealPeriod(new Date(2026, 8, 8, 15, 0, 0)), "lunch");
+  assert.deepEqual(
+    WAITER_MEAL_PERIODS.map((p) => p.id),
+    ["breakfast", "lunch", "dinner", "late_night"]
+  );
+  assert.equal(normalizeMealPeriodId("brunch"), "lunch");
+  assert.equal(getDefaultMealPeriod(new Date(2026, 8, 8, 15, 0, 0), "America/Los_Angeles"), "lunch");
+  assert.doesNotMatch(read("src/lib/waiterMealPeriod.js"), /id: "brunch"/);
 });
 
 test("Multiplier/Feed video compose writes same diary fields used by emoji rows", () => {
@@ -90,4 +150,5 @@ test("scan surfaces mount DinerActivityScanRow", () => {
   assert.match(nearby, /DinerActivityScanRow/);
   assert.match(nearby, /includeSex/);
   assert.match(social, /DinerActivityScanRow/);
+  assert.match(social, /formatConnectEatingLine/);
 });

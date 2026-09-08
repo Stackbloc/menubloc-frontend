@@ -11,7 +11,7 @@ import EatingComposeSheet from "./EatingComposeSheet.jsx";
 import EatingPlanDayForm from "./EatingPlanDayForm.jsx";
 import PostAfterActions from "./PostAfterActions.jsx";
 import WhatIAteMealBoard from "./WhatIAteMealBoard.jsx";
-import EatingActivityCompose from "./EatingActivityCompose.jsx";
+import FoodStatusQuickCompose from "./FoodStatusQuickCompose.jsx";
 import DinerActivityScanRow from "./DinerActivityScanRow.jsx";
 import {
   formatConnectEatingLine,
@@ -293,7 +293,7 @@ export default function EatingHubSection({
           subtitle={
             readOnly
               ? "The food they're sharing with the world"
-              : "Emoji activity from this page, or Feed video via Multiplier/Post — tap ▶ when a video is attached"
+              : "Tap Ate or Wanna Eat, pick a food — Multiplier/Post adds video behind the same line"
           }
           aside={
             <>
@@ -313,16 +313,10 @@ export default function EatingHubSection({
 
         <div data-testid="eating-ate-panel">
           {!readOnly ? (
-            <EatingActivityCompose
-              busy={postBusy === "eating"}
-              followed={followed}
-              locationCity={locationCity}
-              locationState={locationState}
+            <FoodStatusQuickCompose
+              busy={postBusy === "eating" || postBusy === "want"}
               onSubmit={async (payload) => {
-                await onComposeSubmit?.({
-                  category: "ate",
-                  ...payload,
-                });
+                await onComposeSubmit?.(payload);
               }}
             />
           ) : null}
@@ -335,16 +329,20 @@ export default function EatingHubSection({
                 const food = item.food_name || item.item_name;
                 const line = readOnly
                   ? formatConnectEatingLine({
-                      display_name: activityDisplayName || "Diner",
+                      kind: "ate",
                       restaurant_name: item.restaurant_name,
                       food_name: food,
                       meal_period: item.meal_period,
-                    }).replace(/^.*? is having /, "is having ")
+                      food_interest_key: item.food_interest_key,
+                      eaten_on: item.eaten_on,
+                    })
                   : formatOwnEatingActivityLine({
+                      kind: "ate",
                       meal_period: item.meal_period,
                       restaurant_name: item.restaurant_name,
                       food_name: food,
                       food_interest_key: item.food_interest_key,
+                      eaten_on: item.eaten_on,
                     });
                 return (
                   <li key={`act-${item.entry_id || item.id}`}>
@@ -354,6 +352,9 @@ export default function EatingHubSection({
                       kind="ate"
                       foodName={food}
                       foodInterestKey={item.food_interest_key}
+                      restaurantName={item.restaurant_name}
+                      mealPeriod={item.meal_period}
+                      eatenOn={item.eaten_on}
                       videoUrl={item.video_url || null}
                       activityLineOverride={line}
                       onSelect={!readOnly && onDiarySelect ? () => onDiarySelect(item) : null}

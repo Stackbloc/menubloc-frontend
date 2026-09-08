@@ -1,21 +1,32 @@
 /**
- * Activity-first scan row — compact identity + emoji activity line.
- * Video is optional media behind the activity line (▶ + inline expand).
- * No camera / record controls on this card.
+ * Activity-first scan row — identity + derived food/status lines.
+ * Multiplier video is optional: the status line is the doorway (▶ expands).
+ * No cameras / mortgage forms on this card.
  */
 
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { resolveConsumerMediaUrl } from "../../../lib/consumerApi.js";
-import {
-  formatDinerActivityLine,
-  formatDinerScanIdentity,
-} from "../../../lib/dinerDiscoverySummary.js";
+import { formatDinerScanIdentity } from "../../../lib/dinerDiscoverySummary.js";
+import { formatActivityScanParts } from "../../../lib/dinerSocialEmojiLanguage.js";
 import { GREEN_MID } from "./myMenuplyStyles.js";
 
 function initialLetter(name) {
   const ch = String(name || "?").trim().charAt(0);
   return ch ? ch.toUpperCase() : "?";
+}
+
+function splitOverride(override) {
+  const raw = String(override || "").trim();
+  if (!raw) return null;
+  const nl = raw.indexOf("\n");
+  if (nl >= 0) {
+    return {
+      actionLine: raw.slice(0, nl).trim(),
+      detailLine: raw.slice(nl + 1).trim(),
+    };
+  }
+  return { actionLine: raw, detailLine: "" };
 }
 
 export default function DinerActivityScanRow({
@@ -29,12 +40,14 @@ export default function DinerActivityScanRow({
   kind = "ate",
   foodName = null,
   foodInterestKey = null,
+  restaurantName = null,
+  mealPeriod = null,
+  eatenOn = null,
   icon = null,
   activityLineOverride = null,
   videoUrl = null,
   profileHref = null,
   testId = "diner-activity-scan-row",
-  /** When set, selecting the want/ate signal (without video) can still notify parent. */
   onSelect = null,
   selected = false,
 }) {
@@ -49,12 +62,16 @@ export default function DinerActivityScanRow({
     },
     { includeSex }
   );
-  const activityLine =
-    (activityLineOverride && String(activityLineOverride).trim()) ||
-    formatDinerActivityLine({
+  const fromOverride = splitOverride(activityLineOverride);
+  const parts =
+    fromOverride ||
+    formatActivityScanParts({
       kind,
       food_name: foodName,
       food_interest_key: foodInterestKey,
+      restaurant_name: restaurantName,
+      meal_period: mealPeriod,
+      eaten_on: eatenOn,
       icon,
     });
   const hasVideo = Boolean(String(videoUrl || "").trim());
@@ -116,7 +133,12 @@ export default function DinerActivityScanRow({
         disabled={!hasVideo && typeof onSelect !== "function"}
         onClick={handleActivityActivate}
       >
-        <span style={styles.activityText}>{activityLine}</span>
+        <span style={styles.activityStack}>
+          <span style={styles.actionLine}>{parts.actionLine}</span>
+          {parts.detailLine ? (
+            <span style={styles.detailLine}>{parts.detailLine}</span>
+          ) : null}
+        </span>
         {hasVideo ? (
           <span style={styles.play} aria-hidden="true" data-testid="diner-activity-scan-play">
             ▶
@@ -206,6 +228,7 @@ const styles = {
     cursor: "pointer",
     color: GREEN_MID,
     font: "inherit",
+    width: "100%",
   },
   activityBtnExpandable: {
     cursor: "pointer",
@@ -213,13 +236,26 @@ const styles = {
   activityBtnStatic: {
     cursor: "default",
   },
-  activityText: {
-    fontSize: 14,
-    fontWeight: 700,
-    lineHeight: 1.35,
+  activityStack: {
+    display: "grid",
+    gap: 2,
+    minWidth: 0,
+    flex: 1,
+  },
+  actionLine: {
+    fontSize: 15,
+    fontWeight: 800,
+    lineHeight: 1.3,
+    color: "#0f172a",
+  },
+  detailLine: {
+    fontSize: 13,
+    fontWeight: 600,
+    lineHeight: 1.3,
+    color: GREEN_MID,
   },
   play: {
-    fontSize: 11,
+    fontSize: 12,
     lineHeight: 1,
     color: GREEN_MID,
     flexShrink: 0,
