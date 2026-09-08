@@ -1,5 +1,5 @@
 /**
- * Own-hub Cravings sheet: Invite Me Out who + Wanna Go Invite + Make Me This dishes.
+ * Own-hub Cravings sheet: Invite Me Out who + Wanna Go! Invite + Make Me This dishes.
  */
 
 import { useEffect, useState } from "react";
@@ -134,7 +134,7 @@ export default function CravingsInviteSheet({
       >
         <h2 style={styles.title}>Invite & Make Me This</h2>
         <p style={styles.lead}>
-          Choose who can invite you out, invite someone to a Wanna Go place, or open dishes for
+          Choose who can invite you out, invite someone to a Wanna Go! place, or open dishes for
           Make Me This.
         </p>
 
@@ -153,10 +153,10 @@ export default function CravingsInviteSheet({
         </section>
 
         <section style={styles.block} data-testid="cravings-wanna-go-places">
-          <h3 style={styles.sectionTitle}>Wanna Go places</h3>
+          <h3 style={styles.sectionTitle}>Wanna Go! places</h3>
           {places.length === 0 ? (
             <p style={s.muted} data-testid="cravings-wanna-go-empty">
-              No Wanna Go places yet. Save a restaurant from Feed or a profile.
+              No Wanna Go! places yet. Save a restaurant from Feed or a profile.
             </p>
           ) : (
             <ul style={styles.placeList}>

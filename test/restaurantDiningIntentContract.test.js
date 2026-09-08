@@ -1,5 +1,5 @@
 /**
- * Restaurant dining intent — explicit I want to go on public profiles.
+ * Restaurant dining intent — explicit Wanna Go! on public profiles.
  */
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -17,7 +17,7 @@ test("restaurant profile mounts People who want to go section", () => {
 
   const section = read("src/components/restaurant/RestaurantDiningIntentSection.jsx");
   assert.match(section, /People who want to go/);
-  assert.match(section, /I want to go/);
+  assert.match(section, /Wanna Go!/);
   assert.match(section, /fetchRestaurantDiningIntent/);
   assert.match(section, /dining_intent_viewed/);
   assert.match(section, /See people who want to go/);
@@ -31,6 +31,7 @@ test("restaurant profile mounts People who want to go section", () => {
   assert.match(peopleSheet, /restaurant-dining-intent-list/);
 
   const sheet = read("src/components/restaurant/DiningIntentSheet.jsx");
+  assert.match(sheet, /Wanna Go!/);
   assert.match(sheet, /want_to_go/);
   assert.match(sheet, /planning_to_go/);
   assert.match(sheet, /looking_for_company/);

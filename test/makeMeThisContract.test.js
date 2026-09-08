@@ -54,7 +54,7 @@ test("Make Me This API + single picker + profile badges", () => {
 
   const requestSheet = read("src/pages/consumer/myMenuply/CravingsInviteSheet.jsx");
   assert.match(requestSheet, /Invite & Make Me This/);
-  assert.match(requestSheet, /Wanna Go places/);
+  assert.match(requestSheet, /Wanna Go! places/);
   assert.match(requestSheet, /Make Me This dishes/);
   assert.match(requestSheet, /InviteMeOutAudiencePicker/);
   assert.match(requestSheet, /InviteToEatModal/);

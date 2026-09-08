@@ -24,7 +24,7 @@ import { socialType } from "../../../lib/socialDesignTokens.js";
 import WannaGoPlateIcon from "../../../components/icons/WannaGoPlateIcon.jsx";
 
 const DINING_INTENT_LABELS = {
-  want_to_go: "Wanna Go",
+  want_to_go: "Wanna Go!",
   planning_to_go: "Planning to go",
   looking_for_company: "Looking for company",
 };

@@ -54,7 +54,7 @@ test("My Menuply and peer hub use five-section presentation hub", () => {
   assert.match(section, /WhatIAteMealBoard/);
   assert.match(section, /WantToEatUnifiedList/);
   assert.match(section, /diningIntents/);
-  assert.match(section, /Dishes you want and places you Wanna Go/);
+  assert.match(section, /Dishes you want and places you Wanna Go!/);
   assert.match(section, /want-cravings-invite-open/);
   assert.match(section, /Invite & Make Me This/);
   assert.doesNotMatch(section, /want-mmt-open-picker/);
@@ -154,7 +154,7 @@ test("My Menuply and peer hub use five-section presentation hub", () => {
   assert.match(bits, /WantToEatUnifiedList/);
   assert.doesNotMatch(bits, /wanna-go-invite/);
   assert.doesNotMatch(bits, /Wanna Go\?/);
-  assert.match(bits, /want_to_go: "Wanna Go"/);
+  assert.match(bits, /want_to_go: "Wanna Go!"/);
   assert.match(bits, /wanna-go-item/);
   assert.match(bits, /want-to-eat-delete/);
   assert.match(bits, /useLongPressReveal|mediaLongPressReveal/);

@@ -354,7 +354,7 @@ export default function EatingHubSection({
           <SectionHead
             kicker="Cravings"
             title="What I Wanna Eat"
-            subtitle="Dishes you want and places you Wanna Go"
+            subtitle="Dishes you want and places you Wanna Go!"
           />
           {wantListError ? <p style={s.error}>{wantListError}</p> : null}
           {lastPost?.kind === "want" &&
@@ -382,7 +382,7 @@ export default function EatingHubSection({
           diningIntents.length === 0 &&
           lastPost?.kind !== "want" ? (
             <SectionEmptyState testId="want-to-eat-empty">
-              Dishes you want and places you Wanna Go.
+              Dishes you want and places you Wanna Go!.
             </SectionEmptyState>
           ) : null}
           <WantToEatUnifiedList

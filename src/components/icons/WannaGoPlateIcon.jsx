@@ -1,5 +1,5 @@
 /**
- * Plate + fork + knife — Wanna Go / What I Wanna Eat placeholder when no logo or billboard.
+ * Plate + fork + knife — Wanna Go! / What I Wanna Eat placeholder when no logo or billboard.
  * Matches the Domino's-style empty card on My Menuply Cravings.
  */
 export default function WannaGoPlateIcon({ size = 40, color = "#94a3b8", title }) {

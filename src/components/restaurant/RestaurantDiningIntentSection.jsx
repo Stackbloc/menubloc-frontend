@@ -181,7 +181,7 @@ export default function RestaurantDiningIntentSection({ restaurantId, restaurant
           onClick={openIntentSheet}
           data-testid="restaurant-dining-intent-cta"
         >
-          {mine ? "Update my plan" : "I want to go"}
+          {mine ? "Update my plan" : "Wanna Go!"}
         </button>
         {mine ? (
           <span style={styles.mineBadge} data-testid="restaurant-dining-intent-mine-badge">

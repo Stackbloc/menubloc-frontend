@@ -1,5 +1,5 @@
 /**
- * Live Feed mobile right action rail — Connect · Wanna Go · Share · Invite · Like · Menu Browser.
+ * Live Feed mobile right action rail — Connect · Wanna Go! · Share · Invite · Like · Menu Browser.
  * Desktop Feed keeps the prior Share & Invite + Menu Browser dock (not this rail).
  * Hide (do not gray-out) actions that do not apply.
  */
@@ -135,7 +135,7 @@ export default function FeedVideoActionRail({
       });
       setWannaDone(true);
     } catch (err) {
-      setWannaError(err?.message || "Could not save Wanna go");
+      setWannaError(err?.message || "Could not save Wanna Go!");
     } finally {
       setWannaBusy(false);
     }
@@ -173,8 +173,8 @@ export default function FeedVideoActionRail({
         {showWannaGo ? (
           <RailButton
             testId="feed-rail-wanna-go"
-            label={wannaDone ? "Added" : "Wanna Go"}
-            ariaLabel="Add restaurant to Wanna Go"
+            label={wannaDone ? "Added" : "Wanna Go!"}
+            ariaLabel="Add restaurant to Wanna Go!"
             disabled={wannaBusy || wannaDone}
             onClick={onWannaGoClick}
           >
