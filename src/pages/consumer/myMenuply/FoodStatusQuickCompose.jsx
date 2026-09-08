@@ -113,7 +113,7 @@ export default function FoodStatusQuickCompose({ busy = false, onSubmit }) {
         type="submit"
         disabled={!canPost}
         style={{
-          ...socialBtn("primary"),
+          ...socialBtn.primary,
           ...styles.post,
           opacity: canPost ? 1 : 0.45,
         }}

@@ -48,6 +48,8 @@ test("What I'm Eating uses tiny FoodStatusQuickCompose — no EatingPlaceFields 
   assert.match(compose, /food-status-quick-compose/);
   assert.match(compose, /QUICK_STATUS_ACTIONS/);
   assert.match(compose, /food-status-food-chips/);
+  assert.match(compose, /socialBtn\.primary/);
+  assert.doesNotMatch(compose, /socialBtn\s*\(/);
   assert.doesNotMatch(compose, /EatingPlaceFields|Search restaurant/);
   assert.doesNotMatch(compose, /WHAT_I_ATE_MEAL_PERIODS/);
   assert.doesNotMatch(compose, /MenuplyMediaPicker|getUserMedia|facingMode/);
