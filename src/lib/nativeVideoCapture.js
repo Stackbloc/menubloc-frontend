@@ -13,11 +13,13 @@ import {
 } from "./consumerCameraCapture.js";
 import {
   SOCIAL_VIDEO_MAX_RECORD_SECONDS,
+  SOCIAL_VIDEO_MAX_UPLOAD_SECONDS,
   formatVideoMaxDurationLabel,
 } from "./eatingMediaUtils.js";
 
 export {
   SOCIAL_VIDEO_MAX_RECORD_SECONDS,
+  SOCIAL_VIDEO_MAX_UPLOAD_SECONDS,
   MAX_UPLOAD_VIDEO_BYTES,
   formatVideoMaxDurationLabel,
 };
@@ -54,15 +56,32 @@ export function validateNativeVideoFile(file) {
   }
   if (file.size > MAX_UPLOAD_VIDEO_BYTES) {
     throw new Error(
-      `Video is too large (${formatBytes(file.size)}). Keep it under ${formatBytes(MAX_UPLOAD_VIDEO_BYTES)} (about ${formatVideoMaxDurationLabel()}).`
+      `Video is too large (${formatBytes(file.size)}). Keep it under ${formatBytes(MAX_UPLOAD_VIDEO_BYTES)} (TikTok-class mobile ceiling; about ${formatVideoMaxDurationLabel(SOCIAL_VIDEO_MAX_UPLOAD_SECONDS)} at typical quality).`
     );
   }
   return file;
 }
 
 /**
+ * Browser <video>.duration is often wrong for short phone camera / library clips
+ * (bogus huge values, timescale mistakes). Only trust durations that could be real.
+ * Trust ceiling follows TikTok upload max (60 minutes), not in-app record (10 minutes).
+ */
+export function isTrustedVideoDurationSeconds(durationSec, fileSizeBytes = 0) {
+  const dur = Number(durationSec);
+  if (!Number.isFinite(dur) || dur <= 0) return false;
+  // Untrustworthy: far beyond TikTok upload max (phone metadata lies — do not hard-reject).
+  if (dur > SOCIAL_VIDEO_MAX_UPLOAD_SECONDS * 2) return false;
+  const size = Number(fileSizeBytes) || 0;
+  // Untrustworthy: claimed length needs far more bytes than the file has (~200 kbps floor).
+  if (size > 0 && size < dur * 25_000) return false;
+  return true;
+}
+
+/**
  * Best-effort metadata probe. Prefer dimensions; duration may be Infinity/NaN.
- * Rejects only when duration is known and over the TikTok-class cap.
+ * Rejects only when duration is trusted and over the TikTok upload cap (60 minutes).
+ * In-app MediaRecorder still auto-stops at SOCIAL_VIDEO_MAX_RECORD_SECONDS (10 minutes).
  */
 export function probeNativeVideoFile(file) {
   validateNativeVideoFile(file);
@@ -100,11 +119,14 @@ export function probeNativeVideoFile(file) {
 
     const tryAccept = () => {
       const dur = Number(video.duration);
-      if (Number.isFinite(dur) && dur > SOCIAL_VIDEO_MAX_RECORD_SECONDS + 1.5) {
+      if (
+        isTrustedVideoDurationSeconds(dur, file.size) &&
+        dur > SOCIAL_VIDEO_MAX_UPLOAD_SECONDS + 1.5
+      ) {
         finish(
           reject,
           new Error(
-            `Video is too long (${Math.round(dur)}s). Record ${formatVideoMaxDurationLabel()} or less.`
+            `Video is too long (${Math.round(dur)}s). Upload ${formatVideoMaxDurationLabel(SOCIAL_VIDEO_MAX_UPLOAD_SECONDS)} or less (TikTok upload limit).`
           )
         );
         return;

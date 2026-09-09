@@ -56,11 +56,11 @@ test("My Menuply and peer hub use five-section presentation hub", () => {
   assert.match(section, /WantToEatUnifiedList/);
   assert.match(section, /diningIntents/);
   assert.match(section, /Add a craving anytime|No cravings shared yet/);
-  assert.match(section, /want-cravings-action-open/);
-  assert.match(section, /want-cravings-action-box/);
-  assert.match(section, /Join Me \/ Take Me Out/);
-  assert.match(section, /want-cravings-mode-join-me/);
-  assert.match(section, /want-cravings-mode-take-me-out/);
+  assert.doesNotMatch(section, /want-cravings-action-open/);
+  assert.doesNotMatch(section, /want-cravings-action-box/);
+  assert.doesNotMatch(section, /Join Me \/ Take Me Out/);
+  assert.doesNotMatch(section, /want-cravings-mode-join-me/);
+  assert.doesNotMatch(section, /want-cravings-mode-take-me-out/);
   assert.match(section, /onJoinMeFromCraving/);
   assert.match(section, /onTakeMeOutFromCraving/);
   assert.doesNotMatch(section, />\s*Actions\s*</);

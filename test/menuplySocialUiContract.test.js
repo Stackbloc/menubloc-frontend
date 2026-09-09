@@ -93,10 +93,12 @@ test("ConsumerCameraSheet keeps unified 3:4 photo preview", () => {
   assert.match(sheet, /aspectRatio: "3 \/ 4"/);
 });
 
-test("eating media utils define TikTok-like video duration (10 minutes)", () => {
+test("eating media utils define TikTok-aligned video duration (record 10m / upload 60m)", () => {
   const utils = read("src/lib/eatingMediaUtils.js");
   assert.match(utils, /SOCIAL_VIDEO_IDEAL_WIDTH/);
   assert.match(utils, /SOCIAL_VIDEO_MAX_RECORD_SECONDS = 600/);
+  assert.match(utils, /SOCIAL_VIDEO_MAX_UPLOAD_SECONDS = 3600/);
+  assert.match(utils, /SOCIAL_VIDEO_MIN_SECONDS = 1/);
   assert.match(utils, /formatVideoMaxDurationLabel/);
   const styles = read("src/pages/consumer/myMenuply/myMenuplyStyles.js");
   assert.doesNotMatch(styles, /mealHolderVideo/);

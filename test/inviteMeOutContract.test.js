@@ -33,13 +33,12 @@ test("Diner chooses Invite Me Out audience in X → What I Want to Eat compose",
   assert.doesNotMatch(section, /invite-me-out-save/);
   assert.doesNotMatch(section, /want-invite-me-out-settings/);
   assert.match(section, /viewerMayInviteMeOut/);
-  assert.match(section, /want-invite-me-out/);
-  assert.match(section, /want-invite-me-out-toggle/);
-  assert.match(section, /Invite Me Out is on/);
-  assert.match(section, /Invite Me Out is off/);
-  assert.match(section, /invite-me-out-settings-sheet/);
-  assert.match(section, /InviteMeOutAudiencePicker/);
-  assert.match(section, /onInviteMeOutSave/);
+  assert.match(section, /want-invite-me-out-open/);
+  assert.match(section, /Invite Me Out/);
+  assert.doesNotMatch(section, /want-invite-me-out-toggle/);
+  assert.doesNotMatch(section, /Invite Me Out is on/);
+  assert.doesNotMatch(section, /invite-me-out-settings-sheet/);
+  assert.doesNotMatch(section, /InviteMeOutAudiencePicker/);
   assert.doesNotMatch(section, />Invite Me</);
 
   const compose = read("src/pages/consumer/myMenuply/EatingCompose.jsx");
@@ -48,6 +47,7 @@ test("Diner chooses Invite Me Out audience in X → What I Want to Eat compose",
   assert.match(compose, /inviteMeOutOpen/);
   assert.match(compose, /inviteMeOutAudience/);
   assert.match(compose, /inviteMeOutSelectedIds/);
+  assert.match(compose, /Invite Me Out/);
 
   const picker = read("src/pages/consumer/myMenuply/InviteMeOutAudiencePicker.jsx");
   assert.match(picker, /Open to Invite Me Out/);

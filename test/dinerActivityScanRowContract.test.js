@@ -46,6 +46,9 @@ test("DinerActivityScanRow: compact thumb + working video play", () => {
   assert.match(row, /dailyMealNumber/);
   assert.match(row, /diner-activity-scan-meal-num/);
   assert.match(row, /shouldPreferRestaurantMark/);
+  // No alphabet letter fallbacks for restaurant/food (text-only when no photo/emoji)
+  assert.doesNotMatch(row, /thumbFallback/);
+  assert.doesNotMatch(row, /initialLetter\(food \|\| place/);
   assert.doesNotMatch(row, /MenuplyMediaPicker|getUserMedia|facingMode/);
 });
 
@@ -73,7 +76,8 @@ test("What I'm Eating / Wanna Eat use compact Add + sheet compose", () => {
   assert.match(hub, /dailyMealNumber=\{index \+ 1\}/);
   assert.match(hub, /showThumb/);
   assert.match(hub, /activityAvatarUrl/);
-  assert.match(hub, /want-cravings-action-box/);
+  assert.doesNotMatch(hub, /want-cravings-action-box/);
+  assert.doesNotMatch(hub, /Join Me \/ Take Me Out/);
   assert.doesNotMatch(hub, /nameInProse=\{isConnectPreview\}/);
   assert.doesNotMatch(hub, /WhatIAteMealBoard/);
   assert.doesNotMatch(hub, /Multiplier\/Post/);
@@ -205,6 +209,16 @@ test("scan surfaces mount DinerActivityScanRow", () => {
   const nearby = read("src/pages/consumer/myMenuply/NearbyEatingSection.jsx");
   assert.match(hub, /DinerActivityScanRow/);
   assert.match(nearby, /DinerActivityScanRow/);
+});
+
+test("Restaurants you follow rail has no Join Me pill", () => {
+  const rails = read("src/pages/consumer/myMenuply/MyMenuplyPresentationRails.jsx");
+  const followBlock = rails.slice(
+    rails.indexOf("function FollowedRestaurantsRail"),
+    rails.indexOf("function FoodStoryCta")
+  );
+  assert.match(followBlock, /followed-restaurants-rail/);
+  assert.doesNotMatch(followBlock, /Join Me/);
 });
 
 test("profile keeps four distinct category sections", () => {

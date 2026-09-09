@@ -45,15 +45,16 @@ test("Connection diner page uses the same hub layout as My Menuply", () => {
   assert.match(section, /eating-calendar/);
   assert.match(section, /DinerCalendarTrigger/);
   assert.match(section, /Invite Me Out/);
-  // Audience picker lives on the owner hub (Invite Me Out settings), not peer.
-  assert.match(section, /InviteMeOutAudiencePicker/);
+  // Peer Invite Me Out CTA on hub; audience settings live in X → Want compose.
+  assert.match(section, /want-invite-me-out-open/);
+  assert.doesNotMatch(section, /InviteMeOutAudiencePicker/);
   assert.doesNotMatch(peer, /InviteMeOutAudiencePicker/);
   assert.match(section, /future-plans-summary/);
   assert.match(section, /FuturePlanRow/);
   assert.match(section, /SectionEmptyState/);
 
   assert.match(section, /eating-want-panel/);
-  assert.match(section, /WantToEatList/);
+  assert.match(section, /WantToEatUnifiedList/);
 
   assert.match(peer, /InviteMeOutFlow/);
   assert.match(peer, /viewerMayInviteMeOut/);

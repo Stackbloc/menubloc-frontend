@@ -4,11 +4,16 @@
 export const SOCIAL_VIDEO_ASPECT_RATIO = "9 / 16";
 export const SOCIAL_VIDEO_IDEAL_WIDTH = 720;
 export const SOCIAL_VIDEO_IDEAL_HEIGHT = 1280;
+
 /**
- * TikTok-like length cap (10 minutes). Native OS camera records; Menuply only validates.
- * Pair with MAX_UPLOAD_VIDEO_BYTES (~287 MB TikTok-class upload ceiling).
+ * TikTok-aligned length policy (Help / industry 2025–2026):
+ * - In-app / live record: up to 10 minutes
+ * - Upload finished clip from device: up to 60 minutes
+ * Pair with MAX_UPLOAD_VIDEO_BYTES (~287 MB — TikTok iOS mobile ceiling).
  */
+export const SOCIAL_VIDEO_MIN_SECONDS = 1;
 export const SOCIAL_VIDEO_MAX_RECORD_SECONDS = 600;
+export const SOCIAL_VIDEO_MAX_UPLOAD_SECONDS = 3600;
 
 /** Human label for duration gates and camera hints. */
 export function formatVideoMaxDurationLabel(seconds = SOCIAL_VIDEO_MAX_RECORD_SECONDS) {

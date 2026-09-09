@@ -4,7 +4,7 @@
  * Owner + peer share this module (peer: readOnly).
  */
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import DinerCalendarSheet, { DinerCalendarTrigger } from "./DinerCalendarSheet.jsx";
 import EatingComposeSheet from "./EatingComposeSheet.jsx";
@@ -44,317 +44,6 @@ function isJoinMeGuestHref(href) {
   if (!path || path.startsWith("/account/im-eating")) return false;
   return path.startsWith("/join-me/") || path.startsWith("/account/what-we-doing/");
 }
-
-/**
- * Own-hub: schedule Join Me or Take Me Out from a craving.
- * Peer-hub: Invite Me Out when eligible.
- */
-function WantCravingsActionBox({
-  wants = [],
-  diningIntents = [],
-  canEdit = false,
-  canInviteMeOut = false,
-  onJoinMeFromCraving,
-  onTakeMeOutFromCraving,
-  onInviteMeOut,
-}) {
-  const [open, setOpen] = useState(false);
-  const [selectedKey, setSelectedKey] = useState("");
-  const [mode, setMode] = useState("join_me");
-  const [error, setError] = useState("");
-
-  const options = useMemo(() => {
-    const rows = [];
-    for (const intent of diningIntents || []) {
-      const place = String(intent.restaurant_name || "").trim() || "Restaurant";
-      rows.push({
-        key: `di-${intent.id}`,
-        kind: "dining_intent",
-        label: place,
-        intent,
-        restaurantId: intent.restaurant_id ?? null,
-      });
-    }
-    for (const want of wants || []) {
-      const food = String(want.food_name || "").trim() || "Dish";
-      const place = String(want.restaurant_name || "").trim();
-      rows.push({
-        key: `w-${want.id}`,
-        kind: "want",
-        label: place ? `${food} · ${place}` : food,
-        want,
-        restaurantId: want.restaurant_id ?? null,
-      });
-    }
-    return rows;
-  }, [wants, diningIntents]);
-
-  if (!options.length) return null;
-
-  const showOwnerFlow = canEdit && typeof onJoinMeFromCraving === "function";
-  const showPeerInvite =
-    !canEdit && canInviteMeOut && typeof onInviteMeOut === "function";
-  if (!showOwnerFlow && !showPeerInvite) return null;
-
-  const selected = options.find((o) => o.key === selectedKey) || options[0];
-
-  function handleContinue() {
-    setError("");
-    if (!selected) return;
-    if (mode === "take_me_out") {
-      if (selected.restaurantId == null || String(selected.restaurantId).trim() === "") {
-        setError("Pick a craving with a restaurant for Take Me Out.");
-        return;
-      }
-      if (typeof onTakeMeOutFromCraving !== "function") {
-        setError("Take Me Out is unavailable right now.");
-        return;
-      }
-      onTakeMeOutFromCraving(selected);
-      setOpen(false);
-      return;
-    }
-    onJoinMeFromCraving(selected);
-    setOpen(false);
-  }
-
-  return (
-    <div style={wantActStyles.wrap} data-testid="want-cravings-action-box">
-      {!open ? (
-        <div style={wantActStyles.triggerRow}>
-          <button
-            type="button"
-            style={showOwnerFlow ? wantActStyles.triggerPrimary : wantActStyles.trigger}
-            data-testid="want-cravings-action-open"
-            onClick={() => {
-              setSelectedKey(options[0]?.key || "");
-              setMode("join_me");
-              setError("");
-              setOpen(true);
-            }}
-          >
-            {showOwnerFlow ? "Join Me / Take Me Out" : "Invite Me Out"}
-          </button>
-        </div>
-      ) : showPeerInvite ? (
-        <div style={wantActStyles.sheet} data-testid="want-cravings-action-sheet">
-          <div style={wantActStyles.sheetHead}>
-            <span style={wantActStyles.sheetTitle}>Invite Me Out</span>
-            <button
-              type="button"
-              style={wantActStyles.close}
-              onClick={() => setOpen(false)}
-              aria-label="Close"
-            >
-              ✕
-            </button>
-          </div>
-          <button
-            type="button"
-            style={wantActStyles.actionBtn}
-            data-testid="want-cravings-action-invite"
-            onClick={() => {
-              onInviteMeOut();
-              setOpen(false);
-            }}
-          >
-            Invite Me Out
-          </button>
-        </div>
-      ) : (
-        <div style={wantActStyles.sheet} data-testid="want-cravings-action-sheet">
-          <div style={wantActStyles.sheetHead}>
-            <span style={wantActStyles.sheetTitle}>Join Me / Take Me Out</span>
-            <button
-              type="button"
-              style={wantActStyles.close}
-              onClick={() => setOpen(false)}
-              aria-label="Close"
-            >
-              ✕
-            </button>
-          </div>
-          <label style={wantActStyles.fieldLabel} htmlFor="want-craving-pick">
-            Craving
-          </label>
-          <select
-            id="want-craving-pick"
-            style={wantActStyles.select}
-            value={selected?.key || ""}
-            onChange={(e) => setSelectedKey(e.target.value)}
-            data-testid="want-cravings-action-item"
-          >
-            {options.map((opt) => (
-              <option key={opt.key} value={opt.key}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-          <fieldset style={wantActStyles.modeFieldset} data-testid="want-cravings-mode">
-            <legend style={wantActStyles.fieldLabel}>How should this work?</legend>
-            <label style={wantActStyles.modeOption}>
-              <input
-                type="radio"
-                name="craving-outing-mode"
-                value="join_me"
-                checked={mode === "join_me"}
-                onChange={() => setMode("join_me")}
-                data-testid="want-cravings-mode-join-me"
-              />
-              <span>
-                <strong>Join Me</strong>
-                <span style={wantActStyles.modeHint}>
-                  You’re hosting — open a plan and let people join you.
-                </span>
-              </span>
-            </label>
-            <label style={wantActStyles.modeOption}>
-              <input
-                type="radio"
-                name="craving-outing-mode"
-                value="take_me_out"
-                checked={mode === "take_me_out"}
-                onChange={() => setMode("take_me_out")}
-                data-testid="want-cravings-mode-take-me-out"
-              />
-              <span>
-                <strong>Take Me Out</strong>
-                <span style={wantActStyles.modeHint}>
-                  Ask someone to take you out for this craving.
-                </span>
-              </span>
-            </label>
-          </fieldset>
-          {error ? (
-            <p style={wantActStyles.error} data-testid="want-cravings-action-error">
-              {error}
-            </p>
-          ) : null}
-          <button
-            type="button"
-            style={wantActStyles.continueBtn}
-            data-testid="want-cravings-action-continue"
-            onClick={handleContinue}
-          >
-            {mode === "take_me_out" ? "Continue to invite" : "Pick a date"}
-          </button>
-        </div>
-      )}
-    </div>
-  );
-}
-
-const wantActStyles = {
-  wrap: { marginTop: 8 },
-  triggerRow: {
-    display: "flex",
-    flexWrap: "wrap",
-    alignItems: "center",
-    gap: 10,
-  },
-  trigger: {
-    appearance: "none",
-    border: "1px solid #e2e8f0",
-    background: "#fff",
-    color: "#334155",
-    borderRadius: 999,
-    padding: "6px 12px",
-    fontSize: 12,
-    fontWeight: 700,
-    cursor: "pointer",
-  },
-  triggerPrimary: {
-    appearance: "none",
-    border: "none",
-    background: GREEN_MID,
-    color: "#fff",
-    borderRadius: 999,
-    padding: "8px 14px",
-    fontSize: 13,
-    fontWeight: 750,
-    cursor: "pointer",
-  },
-  sheet: {
-    border: "1px solid #e2e8f0",
-    borderRadius: 12,
-    padding: 10,
-    background: "#f8fafc",
-    display: "grid",
-    gap: 8,
-  },
-  sheetHead: { display: "flex", alignItems: "center", justifyContent: "space-between" },
-  sheetTitle: { fontSize: 12, fontWeight: 750, color: "#0f172a" },
-  close: {
-    appearance: "none",
-    border: "none",
-    background: "transparent",
-    cursor: "pointer",
-    color: "#64748b",
-    fontSize: 14,
-    padding: 4,
-  },
-  fieldLabel: {
-    fontSize: 11,
-    fontWeight: 700,
-    color: "#64748b",
-    textTransform: "uppercase",
-    letterSpacing: "0.04em",
-  },
-  select: {
-    width: "100%",
-    borderRadius: 8,
-    border: "1px solid #cbd5e1",
-    padding: "8px 10px",
-    fontSize: 13,
-    background: "#fff",
-  },
-  modeFieldset: {
-    margin: 0,
-    padding: 0,
-    border: "none",
-    display: "grid",
-    gap: 8,
-  },
-  modeOption: {
-    display: "flex",
-    gap: 8,
-    alignItems: "flex-start",
-    fontSize: 13,
-    color: "#0f172a",
-    cursor: "pointer",
-  },
-  modeHint: {
-    display: "block",
-    marginTop: 2,
-    fontSize: 12,
-    fontWeight: 500,
-    color: "#64748b",
-    lineHeight: 1.35,
-  },
-  error: { margin: 0, fontSize: 12, color: "#b91c1c", fontWeight: 600 },
-  continueBtn: {
-    appearance: "none",
-    border: "none",
-    background: GREEN_MID,
-    color: "#fff",
-    borderRadius: 10,
-    padding: "10px 12px",
-    fontSize: 13,
-    fontWeight: 750,
-    cursor: "pointer",
-  },
-  actionBtn: {
-    appearance: "none",
-    border: "1px solid #bbf7d0",
-    background: "#fff",
-    color: GREEN_MID,
-    borderRadius: 8,
-    padding: "6px 10px",
-    fontSize: 12,
-    fontWeight: 700,
-    cursor: "pointer",
-  },
-};
 
 function EatingDayNavInline({
   hubDate,
@@ -490,6 +179,8 @@ export default function EatingHubSection({
   void inviteMeOutAudience;
   void inviteMeOutSelectedIds;
   void inviteMeOutCandidates;
+  void onJoinMeFromCraving;
+  void onTakeMeOutFromCraving;
 
   const navigate = useNavigate();
   const canEdit = !readOnly && editMode !== false;
@@ -792,15 +483,18 @@ export default function EatingHubSection({
             deleteBusy={wantDeleteBusy || diningIntentDeleteBusy}
             onViewMmt={onViewMmt}
           />
-          <WantCravingsActionBox
-            wants={wants}
-            diningIntents={diningIntents}
-            canEdit={canEdit}
-            canInviteMeOut={canInviteMeOut}
-            onJoinMeFromCraving={onJoinMeFromCraving}
-            onTakeMeOutFromCraving={onTakeMeOutFromCraving}
-            onInviteMeOut={onInviteMeOut}
-          />
+          {canInviteMeOut ? (
+            <div style={{ marginTop: 8 }} data-testid="want-invite-me-out-box">
+              <button
+                type="button"
+                style={styles.inviteMeOutBtn}
+                data-testid="want-invite-me-out-open"
+                onClick={() => onInviteMeOut()}
+              >
+                Invite Me Out
+              </button>
+            </div>
+          ) : null}
         </div>
       </section>
 
@@ -1019,6 +713,17 @@ const styles = {
     fontSize: 13,
     fontWeight: 750,
     color: "#166534",
+  },
+  inviteMeOutBtn: {
+    appearance: "none",
+    border: "1px solid #e2e8f0",
+    background: "#fff",
+    color: "#334155",
+    borderRadius: 999,
+    padding: "6px 12px",
+    fontSize: 12,
+    fontWeight: 700,
+    cursor: "pointer",
   },
   planSheetBackdrop: {
     position: "fixed",

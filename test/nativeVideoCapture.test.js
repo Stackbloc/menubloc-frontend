@@ -7,8 +7,13 @@ import { fileURLToPath } from "node:url";
 import {
   captureAttrForFacing,
   validateNativeVideoFile,
+  isTrustedVideoDurationSeconds,
   SOCIAL_VIDEO_MAX_RECORD_SECONDS,
+  SOCIAL_VIDEO_MAX_UPLOAD_SECONDS,
 } from "../src/lib/nativeVideoCapture.js";
+import {
+  SOCIAL_VIDEO_MIN_SECONDS,
+} from "../src/lib/eatingMediaUtils.js";
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -31,6 +36,20 @@ test("validateNativeVideoFile accepts video mime", () => {
 test("validateNativeVideoFile accepts empty mime with video extension", () => {
   const file = new File([new Uint8Array(9000)], "clip.mov", { type: "" });
   assert.equal(validateNativeVideoFile(file), file);
+});
+
+test("isTrustedVideoDurationSeconds rejects bogus huge / undersized metadata", () => {
+  assert.equal(isTrustedVideoDurationSeconds(12, 2_000_000), true);
+  assert.equal(isTrustedVideoDurationSeconds(700, 50_000_000), true);
+  // Within TikTok upload window (60m)
+  assert.equal(isTrustedVideoDurationSeconds(3500, 100_000_000), true);
+  // Far beyond 60-minute TikTok upload max — phone metadata lie
+  assert.equal(isTrustedVideoDurationSeconds(20_000, 2_000_000), false);
+  assert.equal(isTrustedVideoDurationSeconds(Number.MAX_VALUE, 9000), false);
+  // Claimed 11 minutes but only a few KB — impossible bitrate
+  assert.equal(isTrustedVideoDurationSeconds(660, 8_000), false);
+  assert.equal(isTrustedVideoDurationSeconds(NaN, 9000), false);
+  assert.equal(isTrustedVideoDurationSeconds(Infinity, 9000), false);
 });
 
 test("normalizeNativeVideoFile soft-accepts when probe cannot decode", async () => {
@@ -88,8 +107,21 @@ test("native video normalize soft-probes decode (does not hard-block Post)", () 
   assert.match(lib, /Soft-probes decode|soft-accept|Soft:/i);
   assert.match(lib, /looksLikeVideoFile/);
   assert.match(lib, /too long/i);
+  assert.match(lib, /isTrustedVideoDurationSeconds/);
+  assert.match(lib, /SOCIAL_VIDEO_MAX_UPLOAD_SECONDS/);
 });
 
-test("native video max record seconds is TikTok-like (10 minutes)", () => {
+test("TikTok-aligned video length: record 10 minutes, upload 60 minutes", () => {
+  assert.equal(SOCIAL_VIDEO_MIN_SECONDS, 1);
   assert.equal(SOCIAL_VIDEO_MAX_RECORD_SECONDS, 600);
+  assert.equal(SOCIAL_VIDEO_MAX_UPLOAD_SECONDS, 3600);
+});
+
+test("consumerApi video upload errors do not blame 15-second story cap", () => {
+  const api = read("src/lib/consumerApi.js");
+  assert.doesNotMatch(api, /under 15 seconds/);
+  assert.doesNotMatch(api, /Record under 15 seconds/);
+  assert.match(api, /formatVideoMaxDurationLabel/);
+  assert.match(api, /SOCIAL_VIDEO_MAX_UPLOAD_SECONDS/);
+  assert.match(api, /Check your connection and try again/);
 });

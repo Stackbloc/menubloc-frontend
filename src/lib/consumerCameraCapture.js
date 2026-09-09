@@ -6,7 +6,7 @@ import {
   SOCIAL_VIDEO_MAX_RECORD_SECONDS,
 } from "./eatingMediaUtils.js";
 
-export { SOCIAL_VIDEO_ASPECT_RATIO, SOCIAL_VIDEO_MAX_RECORD_SECONDS } from "./eatingMediaUtils.js";
+export { SOCIAL_VIDEO_ASPECT_RATIO, SOCIAL_VIDEO_MAX_RECORD_SECONDS, SOCIAL_VIDEO_MAX_UPLOAD_SECONDS } from "./eatingMediaUtils.js";
 
 export function inlineCameraSupported() {
   return (
@@ -410,7 +410,7 @@ export function validateRecordedVideoBlob(blob, existingObjectUrl = "") {
 
 /** Minimum size for a non-empty short clip (headers alone are smaller). */
 export const MIN_RECORDED_VIDEO_BYTES = 8 * 1024;
-/** TikTok-class client upload ceiling (~287 MB) — must match BE diner-media MAX_VIDEO_BYTES. */
+/** TikTok iOS-class client upload ceiling (~287 MB) — must match BE diner-media MAX_VIDEO_BYTES. */
 export const MAX_UPLOAD_VIDEO_BYTES = 287 * 1024 * 1024;
 /** Duration gate for native OS clips (not in-app MediaRecorder). */
 export const MAX_RECORD_SECONDS = SOCIAL_VIDEO_MAX_RECORD_SECONDS;

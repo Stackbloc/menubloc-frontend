@@ -13,6 +13,7 @@ import {
   formatBytes,
   MAX_UPLOAD_VIDEO_BYTES,
 } from "./consumerCameraCapture.js";
+import { formatVideoMaxDurationLabel, SOCIAL_VIDEO_MAX_UPLOAD_SECONDS } from "./eatingMediaUtils.js";
 import { notifyFeedMenuFollowsChanged } from "./feedMenuLibrary.js";
 
 const VITE_ENV = import.meta.env || {};
@@ -36,14 +37,14 @@ function mapDinerMediaUploadNetworkError(err, file) {
   if (name === "AbortError" || /aborted|timeout/i.test(msg)) {
     return new Error(
       isLikelyVideoUpload(file)
-        ? "Video upload timed out. Try a shorter clip (under 15 seconds)."
+        ? "Video upload timed out. Check your connection and try again."
         : "Upload timed out. Check your connection and try again."
     );
   }
   if (/failed to fetch|networkerror|load failed|network request failed/i.test(msg)) {
     return new Error(
       isLikelyVideoUpload(file)
-        ? "Video upload failed (connection dropped). Try a shorter clip (under 15 seconds)."
+        ? "Video upload failed (connection dropped). Check your connection and try again."
         : "Upload failed — check your connection and try again."
     );
   }
@@ -54,7 +55,7 @@ async function postDinerMediaMultipart(path, file) {
   if (!file) throw new Error("No file selected");
   if (isLikelyVideoUpload(file) && Number(file.size || 0) > MAX_UPLOAD_VIDEO_BYTES) {
     throw new Error(
-      `Video is too large (${formatBytes(file.size)}). Record under 15 seconds and try again.`
+      `Video is too large (${formatBytes(file.size)}). Keep it under ${formatBytes(MAX_UPLOAD_VIDEO_BYTES)} (TikTok-class mobile ceiling; about ${formatVideoMaxDurationLabel(SOCIAL_VIDEO_MAX_UPLOAD_SECONDS)} at typical quality).`
     );
   }
 

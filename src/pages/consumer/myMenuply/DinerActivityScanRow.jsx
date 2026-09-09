@@ -369,17 +369,13 @@ export default function DinerActivityScanRow({
         aria-expanded={hasVideo ? expanded : undefined}
         onClick={openVideo}
       >
-        {showThumb ? (
+        {showThumb && (thumbUrl || foodEmoji) ? (
           <span style={styles.thumb} data-testid="diner-activity-scan-thumb">
             {thumbUrl ? (
               <img src={thumbUrl} alt="" style={styles.thumbImg} />
-            ) : foodEmoji ? (
+            ) : (
               <span style={styles.thumbEmoji} aria-hidden="true">
                 {foodEmoji}
-              </span>
-            ) : (
-              <span style={styles.thumbFallback} aria-hidden="true">
-                {homemade ? "⌂" : initialLetter(food || place || "F")}
               </span>
             )}
           </span>
@@ -498,11 +494,6 @@ const styles = {
     display: "block",
   },
   thumbEmoji: { fontSize: 18, lineHeight: 1 },
-  thumbFallback: {
-    fontSize: 13,
-    fontWeight: 800,
-    color: "#64748b",
-  },
   body: { flex: 1, minWidth: 0 },
   prose: {
     fontSize: 14,
