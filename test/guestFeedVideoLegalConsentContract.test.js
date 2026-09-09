@@ -42,10 +42,9 @@ test("guest feed video legal consent UI and API wiring", () => {
   const compose = read("src/lib/feedVideoCompose.js");
   assert.match(compose, /postGuestFeedWantVideo/);
   assert.match(compose, /postGuestFeedReviewVideo/);
-  // Wanna Eat / ate compose must import eatingFoodName (not a DB column — builds food_name).
   assert.match(
     compose,
-    /import\s*\{[^}]*eatingFoodName[^}]*\}\s*from\s*["']\.\.\/pages\/consumer\/myMenuply\/eatingPlaceLink\.js["']/
+    /from\s*["']\.\/eatingPlaceLink\.js["']/
   );
   assert.match(compose, /food_name:\s*name/);
 

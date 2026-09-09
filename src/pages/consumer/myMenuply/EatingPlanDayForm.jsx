@@ -5,7 +5,7 @@
 import { useState } from "react";
 import { dishLabel, restaurantLabel } from "../../../lib/foodActivityApi.js";
 import EatingPlaceFields from "./EatingPlaceFields.jsx";
-import { joinHomemadeComment } from "./eatingPlaceLink.js";
+import { joinHomemadeComment } from "../../../lib/eatingPlaceLink.js";
 import JoinMeAudiencePicker from "./JoinMeAudiencePicker.jsx";
 import * as s from "./myMenuplyStyles.js";
 

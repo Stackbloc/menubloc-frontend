@@ -5,7 +5,7 @@ import {
   eatingFoodName,
   joinHomemadeComment,
   splitHomemadeComment,
-} from "../src/pages/consumer/myMenuply/eatingPlaceLink.js";
+} from "../src/lib/eatingPlaceLink.js";
 
 test("homemade comment round-trips and food name stays optional", () => {
   assert.deepEqual(splitHomemadeComment("Homemade"), { homemade: true, recipe: "" });

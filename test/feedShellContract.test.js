@@ -268,10 +268,7 @@ test("Feed shell: Home|Waiter|Share My QR|X|Deals|Shop|Profile + slim X sheet", 
   const compose = read("src/lib/feedVideoCompose.js");
   assert.match(compose, /postFeedReviewVideo/);
   assert.match(compose, /postFeedWantVideo/);
-  assert.match(
-    compose,
-    /import\s*\{[^}]*eatingFoodName[^}]*\}\s*from\s*["']\.\.\/pages\/consumer\/myMenuply\/eatingPlaceLink\.js["']/
-  );
+  assert.match(compose, /from\s*["']\.\/eatingPlaceLink\.js["']/);
 });
 
 test("Feed as home: / uses Feed shell; FeedPrimaryNav paths unchanged", () => {

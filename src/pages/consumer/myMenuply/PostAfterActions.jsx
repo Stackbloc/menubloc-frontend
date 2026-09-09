@@ -8,7 +8,7 @@ import { asDishPlace, asRestaurantPlace, dishLabel, restaurantLabel } from "../.
 import { followRestaurant, updateWhatIAteToday, updateWhatWeDoingSession, updateWantToEat } from "../../../lib/consumerApi.js";
 import { WHAT_I_ATE_MEAL_PERIODS } from "../../../lib/whatIAteTodayMealPeriod.js";
 import EatingPlaceFields from "./EatingPlaceFields.jsx";
-import { joinHomemadeComment, splitHomemadeComment } from "./eatingPlaceLink.js";
+import { joinHomemadeComment, splitHomemadeComment } from "../../../lib/eatingPlaceLink.js";
 import * as s from "./myMenuplyStyles.js";
 
 export default function PostAfterActions({

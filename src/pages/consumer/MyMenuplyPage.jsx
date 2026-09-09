@@ -112,7 +112,7 @@ import {
   MY_MENUPLY_PROFILE_PATH,
 } from "../../lib/myMenuplyRoutes.js";
 import { futurePlanKey, futurePlanRestaurantName, futurePlanDetailParts } from "./myMenuply/dinerHubFormat.js";
-import { dishPhotoUrl, eatingFoodName, joinHomemadeComment } from "./myMenuply/eatingPlaceLink.js";
+import { dishPhotoUrl, eatingFoodName, joinHomemadeComment } from "../../lib/eatingPlaceLink.js";
 import { mergeEatingFeedForHub, mapDiaryEntriesForHub, mapFoodActivityForHub, eatingFeedKey } from "../../lib/eatingFeedMerge.js";
 import {
   createHomemadeDish,
