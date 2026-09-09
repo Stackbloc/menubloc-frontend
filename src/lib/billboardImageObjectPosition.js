@@ -1,5 +1,13 @@
 /**
- * CSS object-position / asset pick for billboard/splash/Windows frames.
+ * CSS object-position / asset pick for billboard/splash/Windows/menu-hero frames.
+ *
+ * Product rule (systemic — do not per-brand patch):
+ * Venue / storefront / entrance / profile-banner photos must keep the TOP of the
+ * image in frame under `object-fit: cover`. Restaurant names and signs almost
+ * always sit high in the art. Default is `center top`. Explicit
+ * `image_position` / `object_position` on a post still wins.
+ *
+ * Out of scope: dish thumbs, avatars, feed video — those stay centered.
  *
  * Landscape In-N-Out storefront (`in-n-out-building.jpg`) puts the neon logo
  * left-of-center — fine on wide desktop crops with `left center`, but on tall
@@ -8,6 +16,9 @@
  */
 
 export { resolveBillboardMediaUrl } from "./billboardMediaUrl.js";
+
+/** Default for venue/storefront cover crops when no brand/post override applies. */
+export const DEFAULT_VENUE_PHOTO_OBJECT_POSITION = "center top";
 
 export const IN_N_OUT_BUILDING_LANDSCAPE_MARKER = "in-n-out-building.jpg";
 export const IN_N_OUT_BUILDING_SPLASH_MARKER = "in-n-out-building-splash.jpg";
@@ -77,5 +88,5 @@ export function resolveBillboardImageObjectPosition(postOrUrl, opts = {}) {
     // Landscape storefront — keep neon logo in frame on wide crops.
     return narrow ? "center center" : "left center";
   }
-  return "center";
+  return DEFAULT_VENUE_PHOTO_OBJECT_POSITION;
 }

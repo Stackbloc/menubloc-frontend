@@ -17,10 +17,19 @@ import {
   uploadOwnerRestaurantWindowPhoto,
 } from "../../lib/ownerApi.js";
 import { resolveBillboardMediaUrl } from "../../lib/billboardMediaUrl.js";
+import { isPlaceholderBillboardTitle } from "../../lib/claimedRestaurantBillboardSplash.js";
 
 const IMAGE_FITS = ["cover", "contain", "fill"];
 const MAX_SPLASH = 6;
 const MAX_WINDOWS = 4;
+
+function splashListLabel(post) {
+  const override = String(post?.headline_override || "").trim();
+  if (override && !isPlaceholderBillboardTitle(override)) return override;
+  const title = String(post?.title || "").trim();
+  if (title && !isPlaceholderBillboardTitle(title)) return title;
+  return "Graphic";
+}
 
 function FieldLabel({ children }) {
   return (
@@ -55,9 +64,9 @@ function SplashBillboardEditor({ restaurantId, initial, onCancel, onSaved }) {
   const photoRef = useRef(null);
   const [promoHeadline, setPromoHeadline] = useState(() => {
     const override = String(initial?.headline_override || "").trim();
-    if (override) return override;
+    if (override && !isPlaceholderBillboardTitle(override)) return override;
     const title = String(initial?.title || "").trim();
-    if (!title || title === "Entrance billboard") return "";
+    if (!title || isPlaceholderBillboardTitle(title)) return "";
     return title;
   });
   const [body, setBody] = useState(initial?.body || "");
@@ -106,7 +115,9 @@ function SplashBillboardEditor({ restaurantId, initial, onCancel, onSaved }) {
 
       const promo = promoHeadline.trim();
       const payload = {
-        title: promo || "Entrance billboard",
+        // Backend may still store an internal "Billboard" label when promo is blank;
+        // public splash never shows placeholder titles.
+        title: promo || "Billboard",
         body: body.trim(),
         headline_override: promo || null,
         image_url: finalImageUrl,
@@ -143,7 +154,7 @@ function SplashBillboardEditor({ restaurantId, initial, onCancel, onSaved }) {
       }}
     >
       <div style={{ fontSize: 13, fontWeight: 800, color: OWNER_COLORS.ink }}>
-        {initial?.id ? "Edit entrance billboard" : "Add entrance billboard"}
+        {initial?.id ? "Edit billboard" : "Add billboard"}
       </div>
       <div>
         <FieldLabel>Graphic</FieldLabel>
@@ -212,8 +223,8 @@ function SplashBillboardEditor({ restaurantId, initial, onCancel, onSaved }) {
           data-testid="owner-profile-billboard-title"
         />
         <div style={{ marginTop: 6, fontSize: 11, color: OWNER_COLORS.muted, lineHeight: 1.45 }}>
-          Your restaurant name already appears on the profile hero. Leave blank for graphic-only
-          entrance billboards.
+          Optional promo line on the splash. Leave blank for a graphic-only entrance (no headline
+          overlay). Photos are framed from the top so storefront signs stay visible.
         </div>
       </div>
       <div>
@@ -557,7 +568,7 @@ export default function OwnerProfileBillboardsPanel({ restaurantId }) {
 
       <div style={{ marginBottom: 20 }}>
         <div style={{ fontSize: 13, fontWeight: 800, color: OWNER_COLORS.ink, marginBottom: 8 }}>
-          Entrance splash billboards
+          Profile splash billboards
         </div>
         {splashEditor === "new" ? (
           <SplashBillboardEditor
@@ -614,7 +625,7 @@ export default function OwnerProfileBillboardsPanel({ restaurantId }) {
                     ) : null}
                     <div style={{ flex: 1, minWidth: 140 }}>
                       <div style={{ fontSize: 13, fontWeight: 700, color: OWNER_COLORS.ink }}>
-                        {post.title || "Billboard"}
+                        {splashListLabel(post)}
                       </div>
                       <div style={{ fontSize: 11, color: OWNER_COLORS.muted }}>
                         {statusLabel(post)} · slide {(Number(post.display_order) || 0) + 1}
@@ -678,7 +689,7 @@ export default function OwnerProfileBillboardsPanel({ restaurantId }) {
                 fontFamily: "inherit",
               }}
             >
-              Add entrance billboard
+              Add billboard
             </button>
           </>
         )}

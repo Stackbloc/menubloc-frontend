@@ -17,6 +17,11 @@
 import React, { useEffect, useState } from "react";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { Link } from "react-router-dom";
+import {
+  resolveBillboardDisplayImageUrl,
+  resolveBillboardImageObjectPosition,
+} from "../lib/billboardImageObjectPosition.js";
+import { resolveBillboardMediaUrl } from "../lib/billboardMediaUrl.js";
 
 function nameOf(r) {
   return String(
@@ -73,6 +78,12 @@ export default function MenuHeader({ restaurant }) {
   const slug = slugOf(r);
   const restaurantId = String(r?.id || r?.restaurant_id || r?.restaurantId || "").trim();
   const hero = heroOf(r);
+  const heroUrl = resolveBillboardMediaUrl(
+    resolveBillboardDisplayImageUrl(hero, { narrow: isMobile })
+  );
+  const heroObjectPosition = resolveBillboardImageObjectPosition(hero, {
+    narrow: isMobile,
+  });
   const title = nameOf(r);
   const sub = subOf(r);
   const profileHref = restaurantId
@@ -83,13 +94,13 @@ export default function MenuHeader({ restaurant }) {
 
   return (
     <div style={{ width: "100%", background: "transparent", overflowX: "hidden" }}>
-      {hero ? (
+      {heroUrl ? (
         <div
           style={{
             height: isMobile ? 132 : 180,
-            backgroundImage: `url(${hero})`,
+            backgroundImage: `url(${heroUrl})`,
             backgroundSize: "cover",
-            backgroundPosition: "center",
+            backgroundPosition: heroObjectPosition,
             filter: "brightness(0.65)",
           }}
         />

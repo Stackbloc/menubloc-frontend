@@ -20,6 +20,7 @@ import {
   resolveBillboardSplashHeadline,
   shouldShowBillboardSplashVenueEyebrow,
   isDuplicateRestaurantBillboardHeadline,
+  isPlaceholderBillboardTitle,
 } from "../src/lib/claimedRestaurantBillboardSplash.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -87,6 +88,24 @@ assert.equal(
     "Tom's Watch Bar"
   ),
   true
+);
+
+assert.equal(isPlaceholderBillboardTitle("Entrance billboard"), true);
+assert.equal(isPlaceholderBillboardTitle("Billboard"), true);
+assert.equal(isPlaceholderBillboardTitle("Happy hour"), false);
+assert.equal(
+  resolveBillboardSplashHeadline(
+    { title: "Entrance billboard", image_url: "https://example.com/x.jpg" },
+    "Vistango"
+  ),
+  ""
+);
+assert.equal(
+  shouldShowBillboardSplashVenueEyebrow(
+    { title: "Entrance billboard", image_url: "https://example.com/x.jpg" },
+    "Vistango"
+  ),
+  false
 );
 
 assert.equal(CLAIMED_BILLBOARD_SPLASH_MS, 3500);

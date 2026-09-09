@@ -7,6 +7,7 @@ import {
   removeBrandHero,
   updateBrandProfile,
 } from "../../lib/operatorApi.js";
+import { resolveBillboardImageObjectPosition } from "../../lib/billboardImageObjectPosition.js";
 
 const MenuDesignPhotoEditContext = createContext(null);
 
@@ -511,6 +512,7 @@ export function MenuDesignHeroSlot({ heroImageUrl, isStock = false, style, imgSt
   const stockHidden = enabled && designEdit.isStockHidden?.("hero");
   const visibleUrl = stockHidden ? "" : heroImageUrl;
   const objectFit = enabled ? designEdit.getSlotFit?.("hero") || "cover" : "cover";
+  const objectPosition = resolveBillboardImageObjectPosition(heroImageUrl || visibleUrl);
 
   if (!enabled) {
     if (!heroImageUrl) return children || null;
@@ -525,6 +527,7 @@ export function MenuDesignHeroSlot({ heroImageUrl, isStock = false, style, imgSt
             maxWidth: "100%",
             maxHeight: "100%",
             objectFit: "cover",
+            objectPosition,
             display: "block",
             ...imgStyle,
           }}
@@ -562,6 +565,7 @@ export function MenuDesignHeroSlot({ heroImageUrl, isStock = false, style, imgSt
             maxWidth: "100%",
             maxHeight: "100%",
             objectFit,
+            objectPosition,
             display: "block",
             ...imgStyle,
           }}

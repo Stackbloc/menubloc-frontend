@@ -26,7 +26,7 @@ export function isActiveBillboardSplashPost(post) {
   const billboardStatus = String(post.billboard_status || "").trim().toLowerCase();
   if (billboardStatus && billboardStatus !== "active") return false;
   const imageUrl = String(post.image_url || post.photo_url || "").trim();
-  const headline = String(post.headline_override || post.title || "").trim();
+  const headline = resolveBillboardSplashRawHeadline(post);
   return Boolean(imageUrl || headline);
 }
 
@@ -192,6 +192,15 @@ export function normalizeBillboardLabel(value) {
     .replace(/\s+/g, " ");
 }
 
+/**
+ * Internal DB/default titles that must never appear on the public splash.
+ * Graphic-only creatives used to save title "Entrance billboard" and it leaked as the big headline.
+ */
+export function isPlaceholderBillboardTitle(value) {
+  const label = normalizeBillboardLabel(value);
+  return !label || label === "entrance billboard" || label === "billboard";
+}
+
 /** True when owner-entered headline repeats the restaurant name on the splash. */
 export function isDuplicateRestaurantBillboardHeadline(restaurantName, headline) {
   const venue = normalizeBillboardLabel(restaurantName);
@@ -201,11 +210,16 @@ export function isDuplicateRestaurantBillboardHeadline(restaurantName, headline)
 
 /**
  * Raw owner-entered splash copy (before venue dedupe).
+ * Placeholder titles (e.g. "Entrance billboard") are treated as empty.
  * @param {object|null|undefined} post
  * @returns {string}
  */
 export function resolveBillboardSplashRawHeadline(post) {
-  return String(post?.headline_override ?? post?.title ?? "").trim();
+  const override = String(post?.headline_override ?? "").trim();
+  if (override && !isPlaceholderBillboardTitle(override)) return override;
+  const title = String(post?.title ?? "").trim();
+  if (title && !isPlaceholderBillboardTitle(title)) return title;
+  return "";
 }
 
 /**

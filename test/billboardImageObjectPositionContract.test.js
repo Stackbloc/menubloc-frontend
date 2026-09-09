@@ -97,6 +97,19 @@ test("In-N-Out building crops keep the neon logo in frame", () => {
   assert.match(hero, /resolveBillboardDisplayImageUrl/);
   assert.match(hero, /backgroundPosition: bannerObjectPosition/);
 
+  const menuHeader = read("src/components/MenuHeader.jsx");
+  assert.match(menuHeader, /resolveBillboardImageObjectPosition/);
+  assert.match(menuHeader, /backgroundPosition: heroObjectPosition/);
+
+  const photoStrip = read("src/components/restaurant/publicProfile/ProfilePhotoStrip.jsx");
+  assert.match(photoStrip, /resolveBillboardImageObjectPosition/);
+  assert.match(photoStrip, /objectPosition:/);
+
+  const menuHero = read("src/components/menu-templates/MenuDesignPhotoEditOverlay.jsx");
+  assert.match(menuHero, /resolveBillboardImageObjectPosition/);
+  assert.match(menuHero, /MenuDesignHeroSlot/);
+  assert.match(menuHero, /objectPosition/);
+
   const page = read("src/pages/RestaurantPublicPage.jsx");
   assert.match(page, /data\?\.hero_image_url[\s\S]*firstBillboardImage/);
 });

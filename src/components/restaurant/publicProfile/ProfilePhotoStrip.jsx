@@ -9,6 +9,7 @@ import {
   windowsPhotoStripTileSize,
 } from "../../../lib/windowsPhotoOrientation.js";
 import { resolveBillboardMediaUrl } from "../../../lib/billboardMediaUrl.js";
+import { resolveBillboardImageObjectPosition } from "../../../lib/billboardImageObjectPosition.js";
 
 function collectPhotoUrls({ bannerPhotoUrl, billboardPreview, excludeHeroUrl }) {
   const urls = [];
@@ -96,6 +97,9 @@ export default function ProfilePhotoStrip({
             width: tileW,
             height: tileH,
             objectFit: "cover",
+            objectPosition: resolveBillboardImageObjectPosition(photo.url, {
+              narrow: isMobile,
+            }),
             borderRadius: embedded ? 12 : 16,
             flexShrink: 0,
             scrollSnapAlign: "start",
