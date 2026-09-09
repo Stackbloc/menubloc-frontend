@@ -260,7 +260,8 @@ function BillboardEditor({
       if (splashOn) {
         await api.upsertDealBillboard(rid, dealId, {
           enabled: true,
-          headline_override: headline.trim() || title.trim(),
+          // Blank → public splash shows restaurant name (FE default).
+          headline_override: headline.trim() || null,
           image_url: finalImageUrl,
           cta_label: isOffer ? "View item" : null,
           cta_url: isOffer && menuItemId ? menuItemDetailPath(menuItemId) : null,
@@ -274,7 +275,7 @@ function BillboardEditor({
         if (finalImageUrl || headline || imageUrl) {
           await api.upsertDealBillboard(rid, dealId, {
             enabled: true,
-            headline_override: headline.trim() || title.trim(),
+            headline_override: headline.trim() || null,
             image_url: finalImageUrl,
             cta_label: isOffer ? "View item" : null,
             cta_url: isOffer && menuItemId ? menuItemDetailPath(menuItemId) : null,
@@ -427,8 +428,11 @@ function BillboardEditor({
       </div>
 
       <div>
-        <label style={LABEL}>Headline on graphic <span style={{ fontWeight: 400, textTransform: "none", color: "#94a3b8" }}>(optional)</span></label>
-        <input style={{ ...INPUT, width: "100%" }} value={headline} onChange={(e) => setHeadline(e.target.value)} placeholder="Defaults to title" />
+        <label style={LABEL}>Splash text <span style={{ fontWeight: 400, textTransform: "none", color: "#94a3b8" }}>(optional)</span></label>
+        <input style={{ ...INPUT, width: "100%" }} value={headline} onChange={(e) => setHeadline(e.target.value)} placeholder="Defaults to restaurant name" />
+        <div style={{ fontSize: 11, color: "#64748b", marginTop: 4, lineHeight: 1.4 }}>
+          Leave blank to show the restaurant name on the entrance splash. Custom text replaces that line.
+        </div>
       </div>
 
       <label style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 700, fontSize: 13 }}>

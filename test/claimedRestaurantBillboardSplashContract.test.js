@@ -98,7 +98,7 @@ assert.equal(
     { title: "Entrance billboard", image_url: "https://example.com/x.jpg" },
     "Vistango"
   ),
-  ""
+  "Vistango"
 );
 assert.equal(
   shouldShowBillboardSplashVenueEyebrow(
@@ -106,6 +106,13 @@ assert.equal(
     "Vistango"
   ),
   false
+);
+assert.equal(
+  resolveBillboardSplashHeadline(
+    { image_url: "https://example.com/x.jpg" },
+    "Vistango"
+  ),
+  "Vistango"
 );
 
 assert.equal(CLAIMED_BILLBOARD_SPLASH_MS, 3500);

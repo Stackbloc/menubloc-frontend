@@ -209,37 +209,46 @@ export function isDuplicateRestaurantBillboardHeadline(restaurantName, headline)
 }
 
 /**
- * Raw owner-entered splash copy (before venue dedupe).
+ * Raw owner-entered splash copy (before venue default / dedupe).
  * Placeholder titles (e.g. "Entrance billboard") are treated as empty.
+ * Deal titles do not auto-fill splash — blank means restaurant name.
  * @param {object|null|undefined} post
  * @returns {string}
  */
 export function resolveBillboardSplashRawHeadline(post) {
   const override = String(post?.headline_override ?? "").trim();
   if (override && !isPlaceholderBillboardTitle(override)) return override;
+  const contentType = String(post?.content_type || "").trim().toLowerCase();
+  // Operator deal billboards: blank splash text → restaurant name (not deal title).
+  if (contentType === "deal") return "";
   const title = String(post?.title ?? "").trim();
   if (title && !isPlaceholderBillboardTitle(title)) return title;
   return "";
 }
 
 /**
- * Large headline on entrance splash — venue name once (large), never small eyebrow + large duplicate.
+ * Large headline on entrance splash.
+ * Default: restaurant name at the bottom of the splash.
+ * Owner/operator promo (`headline_override` / non-placeholder title) customizes that line.
+ * Never small eyebrow + large duplicate of the same venue name.
  * @param {object|null|undefined} post
  * @param {string} [restaurantName]
  * @returns {string}
  */
 export function resolveBillboardSplashHeadline(post, restaurantName = "") {
+  const venue = String(restaurantName || "").trim();
   const raw = resolveBillboardSplashRawHeadline(post);
-  if (!raw) return "";
+  if (!raw) return venue;
   if (isDuplicateRestaurantBillboardHeadline(restaurantName, raw)) {
-    return String(restaurantName || raw).trim();
+    return venue || raw;
   }
   return raw;
 }
 
-/** Small-caps venue eyebrow — only when a distinct promo headline follows in large type. */
+/** Small-caps venue eyebrow — only when a distinct custom promo headline follows in large type. */
 export function shouldShowBillboardSplashVenueEyebrow(post, restaurantName = "") {
   const raw = resolveBillboardSplashRawHeadline(post);
+  // Default restaurant-name headline: one large line, no eyebrow.
   if (!raw) return false;
   return !isDuplicateRestaurantBillboardHeadline(restaurantName, raw);
 }

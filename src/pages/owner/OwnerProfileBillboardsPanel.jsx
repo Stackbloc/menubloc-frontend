@@ -214,17 +214,18 @@ function SplashBillboardEditor({ restaurantId, initial, onCancel, onSaved }) {
         </button>
       </div>
       <div>
-        <FieldLabel>Promo headline (optional)</FieldLabel>
+        <FieldLabel>Splash text (optional)</FieldLabel>
         <input
           style={inputStyle}
           value={promoHeadline}
           onChange={(e) => setPromoHeadline(e.target.value)}
-          placeholder="e.g. Happy hour · game day specials"
+          placeholder="Defaults to restaurant name"
           data-testid="owner-profile-billboard-title"
         />
         <div style={{ marginTop: 6, fontSize: 11, color: OWNER_COLORS.muted, lineHeight: 1.45 }}>
-          Optional promo line on the splash. Leave blank for a graphic-only entrance (no headline
-          overlay). Photos are framed from the top so storefront signs stay visible.
+          Shown at the bottom of the entrance splash. Leave blank to use the restaurant name.
+          Enter custom text (e.g. Happy hour) to replace that line — restaurant name then appears
+          as a small label above it.
         </div>
       </div>
       <div>
