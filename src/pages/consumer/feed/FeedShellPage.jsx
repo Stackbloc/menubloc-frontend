@@ -152,7 +152,6 @@ export default function FeedShellPage({ children = null }) {
           }
           isAuthenticated={isAuthenticated}
           showShopBasket={showShopBasket}
-          profileViewToggle={profileViewToggle}
         />
       ) : (
         <FeedMobileHeader

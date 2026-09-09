@@ -16,7 +16,6 @@ import {
   FEED_SHELL_LOGIN_PATH,
   FEED_SHELL_SIGNUP_PATH,
 } from "../../../lib/feedShellLinks.js";
-import ProfileViewModeToggle from "./ProfileViewModeToggle.jsx";
 
 function RailTab({ tab, onShareQr }) {
   const location = useLocation();
@@ -82,7 +81,6 @@ export default function FeedDesktopRail({
   onShareMyMenuply,
   isAuthenticated = false,
   showShopBasket = false,
-  profileViewToggle = null,
 }) {
   return (
     <aside style={styles.rail} data-testid="feed-desktop-rail" aria-label="Feed navigation">
@@ -149,18 +147,6 @@ export default function FeedDesktopRail({
           <div style={styles.shopBasketWrap} data-testid="feed-desktop-shop-basket">
             <FeedShopBasketButton variant="feedDark" />
             <span style={styles.shopBasketLabel}>Basket</span>
-          </div>
-        ) : null}
-        {profileViewToggle ? (
-          <div style={styles.profileViewWrap}>
-            <ProfileViewModeToggle
-              previewAsConnect={profileViewToggle.previewAsConnect}
-              onToggle={profileViewToggle.onToggle}
-              variant="feedDark"
-            />
-            <span style={styles.profileViewLabel}>
-              {profileViewToggle.previewAsConnect ? "Connect view" : "Your view"}
-            </span>
           </div>
         ) : null}
         <button
@@ -325,17 +311,6 @@ const styles = {
     fontSize: 14,
     fontWeight: 700,
     color: "rgba(255,255,255,0.85)",
-  },
-  profileViewWrap: {
-    display: "flex",
-    alignItems: "center",
-    gap: 10,
-    padding: "4px 8px",
-  },
-  profileViewLabel: {
-    fontSize: 13,
-    fontWeight: 700,
-    color: "rgba(255,255,255,0.75)",
   },
   moreBtn: {
     width: "100%",

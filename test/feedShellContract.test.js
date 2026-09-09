@@ -222,7 +222,7 @@ test("Feed shell: Home|Waiter|Share My QR|X|Deals|Shop|Profile + slim X sheet", 
   assert.match(shellPage, /useFeedShellDesktop/);
   assert.match(shellPage, /profileViewToggle/);
   assert.match(mobileHeader, /ProfileViewModeToggle/);
-  assert.match(desktopRail, /ProfileViewModeToggle/);
+  assert.doesNotMatch(desktopRail, /ProfileViewModeToggle/);
   assert.match(read("src/components/consumer/feed/ProfileViewModeToggle.jsx"), /profile-view-mode-toggle/);
 
   const guestLanding = read("src/components/consumer/feed/FeedGuestProfileLanding.jsx");
@@ -237,6 +237,8 @@ test("Feed shell: Home|Waiter|Share My QR|X|Deals|Shop|Profile + slim X sheet", 
   assert.match(feedLinks, /feed-more-add-menu/);
 
   const myMenuply = read("src/pages/consumer/MyMenuplyPage.jsx");
+  assert.match(myMenuply, /isDesktopFeed \?[\s\S]*ProfileViewModeToggle/);
+  assert.match(myMenuply, /toggleProfileViewMode/);
   assert.match(myMenuply, /FeedGuestProfileLanding/);
   assert.doesNotMatch(myMenuply, /SeeWhosEatingSurface/);
   assert.doesNotMatch(myMenuply, /my-menuply-sticky-head/);
