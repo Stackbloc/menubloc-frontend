@@ -16,7 +16,7 @@ test("Dining Crews Phase 3 social entity UI + API client", () => {
   assert.match(page, /membership_approval/);
   assert.match(page, /View all \$\{crew\.member_count\} members/);
   assert.match(page, /Discover public crews/);
-  assert.match(page, /Invite to Eat \(crew outing\)/);
+  assert.match(page, /Invite to Eat \(crew outing\)|Plan a crew outing/);
   assert.match(page, /data-testid="dining-crew-reader-view"/);
   assert.match(page, /data-testid="dining-crew-member-view"/);
   assert.match(page, /data-testid="dining-crew-request-join"/);
@@ -36,6 +36,15 @@ test("Dining Crews Phase 3 social entity UI + API client", () => {
     assert.doesNotMatch(readerBlock, /Invite people to join/);
     assert.doesNotMatch(readerBlock, /Invite members/);
   }
+  assert.match(page, /dining-crew-organizer/);
+  assert.match(page, /Organized by/);
+  assert.match(page, /dinerPeerProfilePath/);
+  assert.match(page, /data-testid="dining-crew-description"/);
+  assert.match(page, /dining-crew-description-input/);
+  assert.match(page, /What is this crew about\? \(required\)/);
+  assert.match(page, /dining-crew-basics/);
+  assert.match(page, /memberAvatar/);
+  assert.doesNotMatch(page, /Purpose \(optional\)/);
   assert.doesNotMatch(page, /crew_deal|createCrewDeal|CrewDealModal/);
   assert.doesNotMatch(page, /Share link:\s*<code/);
   assert.doesNotMatch(page, /Member id \(optional\)/);

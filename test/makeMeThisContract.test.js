@@ -24,8 +24,10 @@ test("Make Me This API + single picker + profile badges", () => {
 
   const hub = read("src/pages/consumer/myMenuply/EatingHubSection.jsx");
   assert.doesNotMatch(hub, /MakeMeThisInboxPanel/);
-  assert.match(hub, /want-cravings-invite-open/);
-  assert.match(hub, /Invite & Make Me This/);
+  assert.match(hub, /want-cravings-action-open/);
+  assert.match(hub, /want-cravings-action-mmt/);
+  assert.doesNotMatch(hub, /want-cravings-invite-open/);
+  assert.doesNotMatch(hub, /Invite & Make Me This/);
   assert.doesNotMatch(hub, /want-mmt-open-picker/);
   assert.doesNotMatch(hub, /allow specific Connects to make you a dish on your Wanna Eat list/);
   assert.doesNotMatch(hub, /choose which wanna-eat items show Make Me This/);

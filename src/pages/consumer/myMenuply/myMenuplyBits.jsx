@@ -380,7 +380,7 @@ function memberInitial(member) {
   return memberDisplayName(member).slice(0, 1).toUpperCase() || "?";
 }
 
-/** Real members only — no invented A/B/C alphabet chips. */
+/** Real members only — initial is avatar fallback when no photo; name always shown. */
 function CrewMemberStack({ crew }) {
   const preview = crewMemberPreviewList(crew);
   if (!preview.length) return null;
@@ -388,44 +388,49 @@ function CrewMemberStack({ crew }) {
   const total = Math.max(preview.length, Number(crew?.member_count) || preview.length);
   const shown = preview.slice(0, 4);
   const overflow = total > shown.length ? total - shown.length : 0;
-  const single = shown.length === 1 && overflow === 0;
 
   return (
     <div style={s.crewMemberStack} data-testid="crew-member-stack">
       {shown.map((member, index) => {
         const name = memberDisplayName(member);
         const avatar = resolveConsumerMediaUrl(member.avatar_url || member.photo_url || "");
+        const role = String(member.role || "").trim();
         return (
           <span
             key={member.id || member.consumer_user_id || `${name}-${index}`}
-            style={{
-              ...s.crewMemberInit,
-              ...(index === 0 ? s.crewMemberInitFirst : null),
-              ...(avatar ? s.crewMemberAvatarWrap : null),
-            }}
-            title={name}
-            aria-label={name}
+            style={s.crewMemberChip}
+            title={role ? `${name} · ${role}` : name}
+            aria-label={role ? `${name}, ${role}` : name}
+            data-testid="crew-member-chip"
           >
-            {avatar ? (
-              <img src={avatar} alt="" style={s.crewMemberAvatarImg} />
-            ) : (
-              memberInitial(member)
-            )}
+            <span
+              style={{
+                ...s.crewMemberInit,
+                ...(avatar ? s.crewMemberAvatarWrap : null),
+                marginLeft: 0,
+              }}
+              aria-hidden="true"
+            >
+              {avatar ? (
+                <img src={avatar} alt="" style={s.crewMemberAvatarImg} />
+              ) : (
+                memberInitial(member)
+              )}
+            </span>
+            <span style={s.crewMemberName} data-testid="crew-member-name">
+              {memberFirstName(member)}
+              {role === "owner" ? " · owner" : null}
+            </span>
           </span>
         );
       })}
       {overflow > 0 ? (
         <span
-          style={{ ...s.crewMemberInit }}
+          style={s.crewMemberOverflow}
           title={`${overflow} more members`}
           aria-label={`${overflow} more members`}
         >
-          +{overflow}
-        </span>
-      ) : null}
-      {single ? (
-        <span style={s.crewMemberName} data-testid="crew-member-name">
-          {memberFirstName(shown[0])}
+          +{overflow} more
         </span>
       ) : null}
     </div>
@@ -509,12 +514,16 @@ export function DiningCrewHubCard({
       </div>
       {purpose ? (
         <div style={s.crewPurpose} data-testid="crew-purpose">
-          <span style={s.crewPurposeLabel}>Purpose</span>
+          <span style={s.crewPurposeLabel}>About</span>
           <span>{purpose}</span>
         </div>
-      ) : null}
+      ) : (
+        <div style={{ ...s.muted, marginTop: 6 }} data-testid="crew-purpose-missing">
+          No description yet
+        </div>
+      )}
       {meta ? <div style={{ ...s.muted, marginTop: purpose ? 6 : 4 }}>{meta}</div> : null}
-      <CrewMemberStack crew={crew} />
+      {/* Profile hub: affiliation only — no member avatars (reader is already on that diner). */}
       <div style={s.actions}>
         {onInvite ? (
           <button
@@ -1046,12 +1055,6 @@ function WantToEatCard({
             <WannaGoPlateIcon size={isScroll ? 44 : 40} color="#94a3b8" />
           </div>
         )}
-        {isScroll ? (
-          <div style={wantStyles.scrollPhotoScrim}>
-            <div style={wantStyles.scrollPhotoTitle}>{foodName}</div>
-            {place ? <div style={wantStyles.scrollPhotoMeta}>{place}</div> : null}
-          </div>
-        ) : null}
       </div>
     );
   } else if (showLogo) {
@@ -1075,9 +1078,11 @@ function WantToEatCard({
     );
   }
 
-  const showTextBelow = !(isScroll && showHeroVisual);
-  const copyBlock = showTextBelow ? (
-    <div style={wantStyles.copy}>
+  const copyBlock = (
+    <div
+      style={isScroll ? wantStyles.scrollCopy : wantStyles.copy}
+      data-testid="want-to-eat-copy"
+    >
       <div style={wantStyles.title}>{foodName}</div>
       {place ? <div style={socialType.meta}>{place}</div> : null}
       {readOnly || isScroll ? null : want.menu_item_id ? (
@@ -1086,7 +1091,7 @@ function WantToEatCard({
         <div style={wantStyles.hint}>Tap to link restaurant and menu item</div>
       )}
     </div>
-  ) : null;
+  );
 
   const body = (
     <div
@@ -1297,12 +1302,6 @@ function WannaGoRestaurantCard({
         alt=""
         style={isScroll ? wantStyles.scrollPhoto : wantStyles.stackPhoto}
       />
-      {isScroll ? (
-        <div style={wantStyles.scrollPhotoScrim}>
-          <div style={wantStyles.scrollPhotoTitle}>{place}</div>
-          <div style={wantStyles.scrollPhotoMeta}>{intentLabel}</div>
-        </div>
-      ) : null}
     </div>
   ) : (
     <div
@@ -1314,13 +1313,15 @@ function WannaGoRestaurantCard({
     </div>
   );
 
-  const showTextBelow = !(isScroll && thumb);
-  const copyBlock = showTextBelow ? (
-    <div style={wantStyles.copy}>
+  const copyBlock = (
+    <div
+      style={isScroll ? wantStyles.scrollCopy : wantStyles.copy}
+      data-testid="wanna-go-copy"
+    >
       <div style={wantStyles.title}>{place}</div>
       <div style={socialType.meta}>{intentLabel}</div>
     </div>
-  ) : null;
+  );
 
   const body = (
     <div
@@ -1586,6 +1587,7 @@ const wantStyles = {
     fontSize: 28,
   },
   copy: { padding: "12px 14px", flex: 1, minWidth: 0 },
+  scrollCopy: { flex: 1, minWidth: 0, padding: "0 2px" },
   title: { fontWeight: 800, fontSize: 15, color: "#0f172a", marginBottom: 4, lineHeight: 1.25 },
   hint: { fontSize: 12, color: "#64748b", marginTop: 6 },
   mmtRow: { marginTop: 6, display: "flex", justifyContent: "flex-start", paddingLeft: 2 },

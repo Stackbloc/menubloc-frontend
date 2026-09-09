@@ -38,6 +38,7 @@ import DiningCrewFoodEntityPicker from "../../components/diningCrews/DiningCrewF
 import MenuplyMediaPicker from "../../components/social/MenuplyMediaPicker.jsx";
 import { buildDiningCrewInviteShareData } from "../../lib/diningCrewInviteShare.js";
 import { formatDinerPeerLabel } from "../../lib/dinerPublicIdentity.js";
+import { dinerPeerProfilePath } from "../../lib/liveFeedCategory.js";
 import CrewInvitePeopleSheet from "./myMenuply/CrewInvitePeopleSheet.jsx";
 
 function resolveMediaUrl(url) {
@@ -45,6 +46,46 @@ function resolveMediaUrl(url) {
   if (/^https?:\/\//i.test(url)) return url;
   const base = String(CONSUMER_API_BASE || "").replace(/\/$/, "");
   return `${base}${url.startsWith("/") ? url : `/${url}`}`;
+}
+
+function crewOrganizer(crew) {
+  if (crew?.organizer?.user_id) return crew.organizer;
+  const members = crew?.members || crew?.members_preview || [];
+  return (
+    members.find((m) => m.role === "owner") ||
+    members.find((m) => Number(m.user_id) === Number(crew?.created_by_user_id)) ||
+    null
+  );
+}
+
+/** Crew info page: organizer identity (avatar + name → diner profile). */
+function CrewOrganizerRow({ crew }) {
+  const organizer = crewOrganizer(crew);
+  if (!organizer?.user_id) return null;
+  const label = formatDinerPeerLabel(organizer);
+  const initial = String(label || "?").trim().charAt(0).toUpperCase() || "?";
+  const avatar = resolveMediaUrl(organizer.avatar_url || organizer.photo_url || "");
+  const href = dinerPeerProfilePath(organizer.user_id);
+  return (
+    <Link
+      to={href}
+      style={styles.organizerRow}
+      data-testid="dining-crew-organizer"
+      onClick={(e) => e.stopPropagation()}
+    >
+      {avatar ? (
+        <img src={avatar} alt="" style={styles.organizerAvatarImg} />
+      ) : (
+        <span style={styles.memberAvatar} aria-hidden="true">
+          {initial}
+        </span>
+      )}
+      <span style={styles.organizerCopy}>
+        <span style={styles.organizerLabel}>Organized by</span>
+        <span style={styles.organizerName}>{label}</span>
+      </span>
+    </Link>
+  );
 }
 
 const MAX_MEMBER_OPTIONS = [
@@ -133,10 +174,12 @@ function CrewSettingsFields({
         style={styles.textarea}
         value={description}
         onChange={(e) => setDescription(e.target.value)}
-        placeholder="What is this crew about? (optional)"
+        placeholder="What is this crew about? (required)"
         maxLength={1000}
         rows={3}
         disabled={disabled}
+        required
+        data-testid="dining-crew-description-input"
       />
       <div style={styles.fieldRow}>
         <label style={styles.label}>
@@ -367,11 +410,15 @@ export function DiningCrewDetailPage() {
 
   async function handleSaveSettings(e) {
     e.preventDefault();
+    if (!String(desc || "").trim()) {
+      setError("Add a short description so people know what this crew is about.");
+      return;
+    }
     setBusy(true);
     setError("");
     try {
       const data = await updateDiningCrew(crewId, {
-        description: desc,
+        description: desc.trim(),
         visibility,
         max_members: maxMembers === "unlimited" ? "unlimited" : Number(maxMembers),
         membership_approval: membershipApproval,
@@ -522,16 +569,33 @@ export function DiningCrewDetailPage() {
     return (
       <>
         <ul style={styles.list}>
-          {shownMembers.map((m) => (
+          {shownMembers.map((m) => {
+            const label = formatDinerPeerLabel(m);
+            const initial = String(label || "?").trim().charAt(0).toUpperCase() || "?";
+            const avatar = resolveMediaUrl(m.avatar_url || m.photo_url || "");
+            return (
             <li key={m.user_id} style={styles.card}>
-              <div>
-                <strong>{formatDinerPeerLabel(m)}</strong>
-                {readOnly ? null : (
-                  <span style={styles.muted}> · {m.role}</span>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+                {avatar ? (
+                  <img src={avatar} alt="" style={styles.organizerAvatarImg} />
+                ) : (
+                  <span
+                    style={styles.memberAvatar}
+                    aria-hidden="true"
+                    title="Member photo or name initial"
+                  >
+                    {initial}
+                  </span>
                 )}
-                {m.edu_verified ? (
-                  <div style={styles.edu}>{m.edu_verification_badge}</div>
-                ) : null}
+                <div style={{ minWidth: 0 }}>
+                  <strong>{label}</strong>
+                  {readOnly ? null : (
+                    <span style={styles.muted}> · {m.role}</span>
+                  )}
+                  {m.edu_verified ? (
+                    <div style={styles.edu}>{m.edu_verification_badge}</div>
+                  ) : null}
+                </div>
               </div>
               {!readOnly && isOwner && m.role !== "owner" ? (
                 <button
@@ -546,7 +610,8 @@ export function DiningCrewDetailPage() {
                 </button>
               ) : null}
             </li>
-          ))}
+            );
+          })}
         </ul>
         {members.length > 5 ? (
           <button
@@ -577,15 +642,22 @@ export function DiningCrewDetailPage() {
         {crew ? (
           !isMember ? (
             <div style={styles.readerPanel} data-testid="dining-crew-reader-view">
+              <CrewOrganizerRow crew={crew} />
+              {crew.description ? (
+                <p style={styles.aboutLead} data-testid="dining-crew-description">
+                  {crew.description}
+                </p>
+              ) : (
+                <p style={styles.muted} data-testid="dining-crew-description-missing">
+                  No description yet.
+                </p>
+              )}
               <p style={styles.muted}>
                 {crew.member_count} {crew.member_count === 1 ? "member" : "members"}
                 {crew.is_full ? " · Full" : " · Open to new members"}
+                {" · "}
+                {crew.visibility === "public" ? "Public" : "Private"}
               </p>
-              {crew.description ? (
-                <p style={styles.lead}>{crew.description}</p>
-              ) : (
-                <p style={styles.muted}>A dining crew on Menuply.</p>
-              )}
               <section style={styles.section}>
                 <h2 style={styles.h2}>Members</h2>
                 {renderMemberRoster({ readOnly: true })}
@@ -610,8 +682,24 @@ export function DiningCrewDetailPage() {
             </div>
           ) : (
           <div data-testid="dining-crew-member-view">
-            <section style={styles.section}>
-              <p style={styles.muted}>
+            <section style={styles.section} data-testid="dining-crew-about">
+              <CrewOrganizerRow crew={crew} />
+              {crew.description ? (
+                <p style={styles.aboutLead} data-testid="dining-crew-description">
+                  {crew.description}
+                </p>
+              ) : canManageSettings ? (
+                <p style={styles.notice} data-testid="dining-crew-description-missing">
+                  Add a description in Crew settings so members and visitors know what this crew is about.
+                </p>
+              ) : (
+                <p style={styles.muted} data-testid="dining-crew-description-missing">
+                  No description yet.
+                </p>
+              )}
+              <p style={styles.muted} data-testid="dining-crew-basics">
+                {crew.member_count} {crew.member_count === 1 ? "member" : "members"}
+                {" · "}
                 {crew.visibility === "public" ? "Public" : "Private"}
                 {" · "}
                 Max {crew.max_members_label}
@@ -619,7 +707,6 @@ export function DiningCrewDetailPage() {
                 Approval: {crew.membership_approval}
                 {crew.is_full ? " · Full" : null}
               </p>
-              {crew.description ? <p style={styles.lead}>{crew.description}</p> : null}
               {canManageSettings ? (
                 <button
                   type="button"
@@ -651,7 +738,7 @@ export function DiningCrewDetailPage() {
 
             <section style={styles.section}>
               <h2 style={styles.h2}>
-                Diner Crew — {crew.member_count} member{crew.member_count === 1 ? "" : "s"}
+                Members · {crew.member_count}
               </h2>
               {renderMemberRoster()}
             </section>
@@ -720,8 +807,7 @@ export function DiningCrewDetailPage() {
             <section style={styles.section}>
               <h2 style={styles.h2}>Invite members</h2>
               <p style={styles.muted}>
-                Share an invite link so friends can join your Dining Crew. Copy Link or send by text —
-                no phone contacts required.
+                Share a link so friends can join. Copy Link or text — no phone contacts required.
               </p>
               <button
                 type="button"
@@ -730,7 +816,7 @@ export function DiningCrewDetailPage() {
                 onClick={openInvitePeople}
                 data-testid="dining-crew-share-invite"
               >
-                Invite people to join
+                Invite people
               </button>
               {crew.is_full ? (
                 <p style={styles.muted}>This crew is full. Increase the max in settings to invite more.</p>
@@ -738,10 +824,9 @@ export function DiningCrewDetailPage() {
             </section>
 
             <section style={styles.section}>
-              <h2 style={styles.h2}>Invite to Eat (crew outing)</h2>
+              <h2 style={styles.h2}>Plan a crew outing</h2>
               <p style={styles.muted}>
-                Pick a restaurant, then create a group Invite to Eat linked to this crew
-                (organizer or recipient date/time).
+                Pick a restaurant, then create a group Invite to Eat for this crew.
               </p>
               <DiningCrewFoodEntityPicker
                 messageType="restaurant"
@@ -757,24 +842,24 @@ export function DiningCrewDetailPage() {
               <div style={{ marginTop: 8 }}>
                 <button
                   type="button"
-                  style={styles.primaryBtn}
+                  style={styles.secondaryBtn}
                   disabled={busy || !inviteRestaurant?.restaurant_id}
                   onClick={() => setInviteModalOpen(true)}
                 >
-                  Create crew Invite to Eat
+                  Create Invite to Eat
                 </button>
               </div>
             </section>
 
             <section style={styles.section}>
-              <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
-                <h2 style={styles.h2}>Meal conversation</h2>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center" }}>
+                <h2 style={styles.h2}>Chat</h2>
                 <button type="button" style={styles.secondaryBtn} disabled={busy} onClick={handleStartConvo}>
-                  Start conversation
+                  Start chat
                 </button>
               </div>
               {conversations.length === 0 ? (
-                <p style={styles.muted}>No conversations yet. Start one to decide where to eat.</p>
+                <p style={styles.muted}>No chats yet. Start one to decide where to eat.</p>
               ) : (
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
                   {conversations.map((c) => (
@@ -952,12 +1037,16 @@ export default function DiningCrewsPage() {
 
   async function handleCreate(e) {
     e.preventDefault();
+    if (!String(description || "").trim()) {
+      setError("Add a short description so people know what this crew is about.");
+      return;
+    }
     setBusy(true);
     setError("");
     try {
       const data = await createDiningCrew({
         name: name.trim(),
-        description: description.trim() || null,
+        description: description.trim(),
       });
       setName("");
       setDescription("");
@@ -1007,11 +1096,17 @@ export default function DiningCrewsPage() {
               style={styles.input}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Purpose (optional)"
+              placeholder="What is this crew about? (required)"
               maxLength={160}
+              required
+              data-testid="dining-crew-create-description"
             />
-            <button type="submit" style={styles.primaryBtn} disabled={busy || !name.trim()}>
-              {busy ? "…" : "Post"}
+            <button
+              type="submit"
+              style={styles.primaryBtn}
+              disabled={busy || !name.trim() || !description.trim()}
+            >
+              {busy ? "…" : "Create crew"}
             </button>
           </form>
         </section>
@@ -1123,7 +1218,60 @@ const styles = {
     borderRadius: 14,
   },
   lead: { fontSize: 14, color: "#334155", lineHeight: 1.5 },
+  aboutLead: {
+    fontSize: 16,
+    fontWeight: 650,
+    color: "#0f172a",
+    lineHeight: 1.45,
+    margin: "0 0 8px",
+  },
+  organizerRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+    marginBottom: 12,
+    textDecoration: "none",
+    color: "inherit",
+    maxWidth: "100%",
+  },
+  organizerAvatarImg: {
+    width: 40,
+    height: 40,
+    borderRadius: "50%",
+    objectFit: "cover",
+    flexShrink: 0,
+    background: "#e2e8f0",
+  },
+  organizerCopy: {
+    display: "grid",
+    gap: 2,
+    minWidth: 0,
+  },
+  organizerLabel: {
+    fontSize: 11,
+    fontWeight: 650,
+    color: "#64748b",
+    textTransform: "uppercase",
+    letterSpacing: "0.04em",
+  },
+  organizerName: {
+    fontSize: 15,
+    fontWeight: 750,
+    color: "#166534",
+  },
   muted: { fontSize: 13, color: "#64748b" },
+  memberAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: "50%",
+    background: "#16a34a",
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: 800,
+    display: "grid",
+    placeItems: "center",
+    flexShrink: 0,
+  },
   error: { color: "#b91c1c", fontWeight: 700, fontSize: 13 },
   notice: { color: "#14532d", fontWeight: 600, fontSize: 13, marginTop: 8 },
   edu: { fontSize: 12, color: "#14532d", fontWeight: 600, marginTop: 2 },

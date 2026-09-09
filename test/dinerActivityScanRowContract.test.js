@@ -40,6 +40,9 @@ test("DinerActivityScanRow: compact thumb + working video play", () => {
   assert.match(row, /diner-activity-scan-play/);
   assert.match(row, /controls/);
   assert.match(row, /ownerCompact/);
+  assert.match(row, /showThumb/);
+  assert.match(row, /nameInProse/);
+  assert.match(row, /placeAsText/);
   assert.match(row, /shouldPreferRestaurantMark/);
   assert.doesNotMatch(row, /MenuplyMediaPicker|getUserMedia|facingMode/);
 });
@@ -63,10 +66,15 @@ test("What I'm Eating / Wanna Eat use compact Add + sheet compose", () => {
   assert.match(hub, /category="want"/);
   assert.match(hub, /editMode/);
   assert.match(hub, /ownerCompact/);
+  assert.match(hub, /isConnectPreview/);
+  assert.match(hub, /nameInProse/);
+  assert.match(hub, /showThumb/);
   assert.match(hub, /activityAvatarUrl/);
+  assert.match(hub, /want-cravings-action-box/);
   assert.doesNotMatch(hub, /WhatIAteMealBoard/);
   assert.doesNotMatch(hub, /Multiplier\/Post/);
   assert.doesNotMatch(hub, /FoodStatusQuickCompose|EatingActivityCompose/);
+  assert.doesNotMatch(hub, /Invite & Make Me This/);
   assert.match(hub, /eating-activity-rows/);
   assert.match(page, /profile-view-mode-toggle/);
   assert.match(page, /previewAsConnect/);

@@ -256,8 +256,23 @@ export const planRowJoinBtn = {
 
 export const crewMemberStack = {
   display: "flex",
+  flexWrap: "wrap",
   alignItems: "center",
+  gap: 8,
   marginTop: 10,
+};
+
+export const crewMemberChip = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 6,
+  maxWidth: "100%",
+};
+
+export const crewMemberOverflow = {
+  fontSize: 12,
+  fontWeight: 650,
+  color: "#64748b",
 };
 
 export const crewMemberInit = {
@@ -295,10 +310,10 @@ export const crewMemberAvatarImg = {
 };
 
 export const crewMemberName = {
-  marginLeft: 8,
   fontSize: 13,
   fontWeight: 700,
   color: "#0f172a",
+  lineHeight: 1.2,
 };
 
 export const wantRailBleed = {

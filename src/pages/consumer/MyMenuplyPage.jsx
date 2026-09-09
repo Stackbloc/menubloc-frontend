@@ -87,7 +87,6 @@ import ProfileCompletionBanner from "../../components/consumer/ProfileCompletion
 import DinerIdentityHero from "./myMenuply/DinerIdentityHero.jsx";
 import MyMenuplyPresentationRails from "./myMenuply/MyMenuplyPresentationRails.jsx";
 import ProfileGalleryComposeSheet from "./myMenuply/ProfileGalleryComposeSheet.jsx";
-import SocialFoodInfoSection from "./myMenuply/SocialFoodInfoSection.jsx";
 import {
   buildDinerStats,
   buildFollowedRestaurantRails,
@@ -1710,8 +1709,6 @@ export default function MyMenuplyPage() {
               error={homeDishError}
               onDelete={onHomeAtHomeDelete}
             />
-
-            <SocialFoodInfoSection hidden={previewAsConnect} />
 
             <EatingHubSection
               sectionRef={eatingSectionRef}

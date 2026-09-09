@@ -11,14 +11,14 @@ import { fileURLToPath } from "node:url";
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = (rel) => fs.readFileSync(path.join(root, rel), "utf8");
 
-test("Eating hub does not mount From your connects; My Menuply does", () => {
+test("Eating hub does not mount From your connects; Connects live in stats/rails only", () => {
   const section = read("src/pages/consumer/myMenuply/EatingHubSection.jsx");
   const page = read("src/pages/consumer/MyMenuplyPage.jsx");
   const social = read("src/pages/consumer/myMenuply/SocialFoodInfoSection.jsx");
   const api = read("src/lib/consumerApi.js");
 
   assert.doesNotMatch(section, /SocialFoodInfoSection/);
-  assert.match(page, /SocialFoodInfoSection/);
+  assert.doesNotMatch(page, /SocialFoodInfoSection/);
   assert.match(social, /From your connects/);
   assert.match(social, /listSocialFoodInfo/);
   assert.match(social, /DinerActivityScanRow/);

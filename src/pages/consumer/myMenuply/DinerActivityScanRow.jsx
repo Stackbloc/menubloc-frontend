@@ -107,6 +107,12 @@ export default function DinerActivityScanRow({
   selected = false,
   ownerCompact = false,
   showIdentity = true,
+  /** When false, omit 40px dish/place thumb (Connect profile preview). */
+  showThumb = true,
+  /** Fold display name into prose: "Andre B is eating …" (no avatar row). */
+  nameInProse = false,
+  /** Always render restaurant as text link (never inline logo mark). */
+  placeAsText = false,
 }) {
   const [expanded, setExpanded] = useState(false);
   const hasVideo = Boolean(String(videoUrl || "").trim());
@@ -134,6 +140,7 @@ export default function DinerActivityScanRow({
   const food = String(foodName || "").trim() || null;
   const place = String(restaurantName || "").trim() || null;
   const isWant = kind === "want" || kind === "wanna_eat" || kind === "want_to_eat";
+  const proseName = String(displayName || "").trim() || "Diner";
 
   const specificNamed = Boolean(food && (place || homemade));
   const cuisineOnly = Boolean(food) && !place && !homemade && !menuItemId;
@@ -143,6 +150,7 @@ export default function DinerActivityScanRow({
       : null;
 
   const preferMark =
+    !placeAsText &&
     !homemade &&
     shouldPreferRestaurantMark({
       chain_id: restaurantChainId,
@@ -165,6 +173,7 @@ export default function DinerActivityScanRow({
     : null;
 
   const thumbUrl = dishVisual || (!preferMark ? null : placeMarkUrl) || null;
+  const inlinePlaceMark = preferMark ? placeMarkUrl : null;
 
   const resolvedAvatar = avatarUrl
     ? resolveConsumerMediaUrl(avatarUrl) || avatarUrl
@@ -198,6 +207,9 @@ export default function DinerActivityScanRow({
     ) : null;
 
   function renderClause() {
+    const nameLead =
+      nameInProse && !ownerCompact ? <span data-testid="diner-activity-scan-prose-name">{proseName} </span> : null;
+
     if (ownerCompact) {
       return (
         <>
@@ -213,7 +225,7 @@ export default function DinerActivityScanRow({
               {food && place ? <span> at </span> : null}
               {!food && place ? <span>at </span> : null}
               {place ? (
-                <PlaceLink href={placeHref} markUrl={preferMark ? placeMarkUrl : null}>
+                <PlaceLink href={placeHref} markUrl={inlinePlaceMark}>
                   {place}
                 </PlaceLink>
               ) : null}
@@ -225,7 +237,7 @@ export default function DinerActivityScanRow({
               {food && place ? <span> at </span> : null}
               {!food && place ? <span>at </span> : null}
               {place ? (
-                <PlaceLink href={placeHref} markUrl={preferMark ? placeMarkUrl : null}>
+                <PlaceLink href={placeHref} markUrl={inlinePlaceMark}>
                   {place}
                 </PlaceLink>
               ) : null}
@@ -239,6 +251,7 @@ export default function DinerActivityScanRow({
     if (homemade) {
       return (
         <>
+          {nameLead}
           <span>is cooking </span>
           {food ? <DishLink href={itemHref}>{food}</DishLink> : <span>food</span>}
           <span> @home</span>
@@ -248,12 +261,13 @@ export default function DinerActivityScanRow({
     if (isWant) {
       return (
         <>
+          {nameLead}
           <span>wants </span>
           {food ? <DishLink href={itemHref}>{food}</DishLink> : null}
           {food && place ? <span> at </span> : null}
           {!food && place ? <span>to eat at </span> : null}
           {place ? (
-            <PlaceLink href={placeHref} markUrl={preferMark ? placeMarkUrl : null}>
+            <PlaceLink href={placeHref} markUrl={inlinePlaceMark}>
               {place}
             </PlaceLink>
           ) : null}
@@ -263,12 +277,13 @@ export default function DinerActivityScanRow({
     }
     return (
       <>
+        {nameLead}
         <span>is eating </span>
         {food ? <DishLink href={itemHref}>{food}</DishLink> : null}
         {food && place ? <span> at </span> : null}
         {!food && place ? <span>at </span> : null}
         {place ? (
-          <PlaceLink href={placeHref} markUrl={preferMark ? placeMarkUrl : null}>
+          <PlaceLink href={placeHref} markUrl={inlinePlaceMark}>
             {place}
           </PlaceLink>
         ) : null}
@@ -301,19 +316,21 @@ export default function DinerActivityScanRow({
         aria-expanded={hasVideo ? expanded : undefined}
         onClick={openVideo}
       >
-        <span style={styles.thumb} data-testid="diner-activity-scan-thumb">
-          {thumbUrl ? (
-            <img src={thumbUrl} alt="" style={styles.thumbImg} />
-          ) : foodEmoji ? (
-            <span style={styles.thumbEmoji} aria-hidden="true">
-              {foodEmoji}
-            </span>
-          ) : (
-            <span style={styles.thumbFallback} aria-hidden="true">
-              {homemade ? "⌂" : initialLetter(food || place || "F")}
-            </span>
-          )}
-        </span>
+        {showThumb ? (
+          <span style={styles.thumb} data-testid="diner-activity-scan-thumb">
+            {thumbUrl ? (
+              <img src={thumbUrl} alt="" style={styles.thumbImg} />
+            ) : foodEmoji ? (
+              <span style={styles.thumbEmoji} aria-hidden="true">
+                {foodEmoji}
+              </span>
+            ) : (
+              <span style={styles.thumbFallback} aria-hidden="true">
+                {homemade ? "⌂" : initialLetter(food || place || "F")}
+              </span>
+            )}
+          </span>
+        ) : null}
 
         <span style={styles.body}>
           <span style={styles.prose}>{renderClause()}</span>
@@ -481,7 +498,7 @@ const styles = {
   },
   videoWrap: {
     marginTop: 6,
-    marginLeft: THUMB + 10,
+    marginLeft: 0,
     borderRadius: 12,
     overflow: "hidden",
     background: "#0f172a",

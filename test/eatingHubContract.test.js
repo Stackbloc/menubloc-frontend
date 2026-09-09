@@ -56,8 +56,10 @@ test("My Menuply and peer hub use five-section presentation hub", () => {
   assert.match(section, /WantToEatUnifiedList/);
   assert.match(section, /diningIntents/);
   assert.match(section, /Add a craving anytime|No cravings shared yet/);
-  assert.match(section, /want-cravings-invite-open/);
-  assert.match(section, /Invite & Make Me This/);
+  assert.match(section, /want-cravings-action-open/);
+  assert.match(section, /want-cravings-action-box/);
+  assert.doesNotMatch(section, /Invite & Make Me This/);
+  assert.doesNotMatch(section, /want-cravings-invite-open/);
   assert.doesNotMatch(section, /want-mmt-open-picker/);
   assert.doesNotMatch(section, /want-invite-me-out-toggle/);
   assert.doesNotMatch(section, /invite-me-out-settings-sheet/);
@@ -166,6 +168,10 @@ test("My Menuply and peer hub use five-section presentation hub", () => {
   assert.match(bits, /plan-row-join-me/);
   assert.match(bits, /crew-member-stack/);
   assert.match(bits, /crew-member-name/);
+  assert.match(bits, /crew-member-chip/);
+  assert.doesNotMatch(bits, /crew-members-label/);
+  assert.match(bits, /affiliation only/);
+  assert.match(bits, /want-to-eat-copy/);
   assert.match(bits, /avatar_url/);
   assert.doesNotMatch(bits, /String\.fromCharCode\(65/);
   assert.doesNotMatch(bits, /crewMemberInitials/);

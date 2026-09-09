@@ -63,9 +63,9 @@ test("Connection peer hub puts activity selection above rich media", () => {
   assert.ok(activityIdx < homeIdx, "activity before @home");
 });
 
-test("SocialFoodInfoSection is mounted on My Menuply", () => {
+test("SocialFoodInfoSection is not mounted on My Menuply (Connects via stats)", () => {
   const page = read("src/pages/consumer/MyMenuplyPage.jsx");
-  assert.match(page, /SocialFoodInfoSection/);
+  assert.doesNotMatch(page, /SocialFoodInfoSection/);
 });
 
 test("legacy /diners/:id redirects authenticated peers to canonical profile", () => {
