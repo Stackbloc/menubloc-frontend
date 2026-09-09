@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import {
   resolveBillboardDisplayImageUrl,
   resolveBillboardImageObjectPosition,
+  normalizeBillboardImageFit,
 } from "../src/lib/billboardImageObjectPosition.js";
 import { resolveBillboardMediaUrl } from "../src/lib/billboardMediaUrl.js";
 
@@ -96,6 +97,12 @@ test("In-N-Out building crops keep the neon logo in frame", () => {
   const hero = read("src/components/restaurant/publicProfile/ProfileHero.jsx");
   assert.match(hero, /resolveBillboardDisplayImageUrl/);
   assert.match(hero, /backgroundPosition: bannerObjectPosition/);
+  assert.match(hero, /bannerBackgroundSize/);
+  assert.match(hero, /normalizeBillboardImageFit/);
+
+  assert.equal(normalizeBillboardImageFit("contain"), "contain");
+  assert.equal(normalizeBillboardImageFit("COVER"), "cover");
+  assert.equal(normalizeBillboardImageFit(""), "cover");
 
   const menuHeader = read("src/components/MenuHeader.jsx");
   assert.match(menuHeader, /resolveBillboardImageObjectPosition/);

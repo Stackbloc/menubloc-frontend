@@ -29,6 +29,7 @@ import ClaimedRestaurantBillboardSplash, {
 } from "../components/restaurant/ClaimedRestaurantBillboardSplash.jsx";
 import { isActiveBillboardSplashPost } from "../lib/claimedRestaurantBillboardSplash.js";
 import { resolveBillboardMediaUrl } from "../lib/billboardMediaUrl.js";
+import { normalizeBillboardImageFit } from "../lib/billboardImageObjectPosition.js";
 import { toConsumerErrorMessage, fetchRestaurantMenuPreview } from "../lib/api.js";
 import BottomNav from "../components/BottomNav.jsx";
 import { getDisplayMenuItemName } from "../utils/getDisplayMenuItemName.js";
@@ -1438,6 +1439,10 @@ export default function FoodTruckPage() {
     profile?.cover_image_url ||
     profile?.banner_url ||
     null;
+  const bannerImageFit =
+    firstBillboardImage && firstActiveBillboard
+      ? normalizeBillboardImageFit(firstActiveBillboard.image_fit)
+      : "cover";
 
   const menuHref =
     restaurantMenuPathFromRow({
@@ -1496,6 +1501,7 @@ export default function FoodTruckPage() {
           operatingHours={operatingHours}
           logoUrl={profile?.logo_url || ""}
           bannerPhotoUrl={bannerPhotoUrl}
+          bannerImageFit={bannerImageFit}
           statusLightProps={buildRestaurantStatusLightProps(profile)}
           restaurantId={profile?.id || null}
           shareData={

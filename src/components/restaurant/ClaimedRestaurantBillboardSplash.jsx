@@ -22,7 +22,11 @@ import {
   resolveBillboardSplashHeadline,
   shouldShowBillboardSplashVenueEyebrow,
 } from "../../lib/claimedRestaurantBillboardSplash.js";
-import { resolveBillboardDisplayImageUrl, resolveBillboardImageObjectPosition } from "../../lib/billboardImageObjectPosition.js";
+import {
+  normalizeBillboardImageFit,
+  resolveBillboardDisplayImageUrl,
+  resolveBillboardImageObjectPosition,
+} from "../../lib/billboardImageObjectPosition.js";
 import { resolveBillboardMediaUrl } from "../../lib/billboardMediaUrl.js";
 
 export {
@@ -103,11 +107,12 @@ export default function ClaimedRestaurantBillboardSplash({
   const ctaLabel = String(current?.cta_label || "").trim();
   const ctaUrl = String(current?.cta_url || "").trim();
   const imageFitRaw = String(current?.image_fit || "").trim().toLowerCase();
-  // Prefer cover on entrance so letterboxed bars never dominate the viewport.
-  const imageFit = ["cover", "contain", "fill"].includes(imageFitRaw)
-    ? (imageFitRaw === "contain" ? "cover" : imageFitRaw)
-    : "cover";
-  const imageObjectPosition = resolveBillboardImageObjectPosition(current, { narrow: isNarrow });
+  // Honor owner/operator Image Fit — contain shows the whole building; do not force cover.
+  const imageFit = normalizeBillboardImageFit(imageFitRaw);
+  const imageObjectPosition =
+    imageFit === "contain"
+      ? "center center"
+      : resolveBillboardImageObjectPosition(current, { narrow: isNarrow });
   const ariaLabel = [displayName, headline].filter(Boolean).join(". ");
   const dismissedRef = useRef(false);
   const imageRef = useRef(null);

@@ -20,6 +20,7 @@ export default function RestaurantPublicEditorial({
   landmarks,
   logoUrl,
   bannerPhotoUrl,
+  bannerImageFit = "cover",
   statusLightProps,
   restaurantId,
   menuHref,
@@ -63,6 +64,7 @@ export default function RestaurantPublicEditorial({
       landmarks={landmarks}
       logoUrl={logoUrl}
       bannerPhotoUrl={bannerPhotoUrl}
+      bannerImageFit={bannerImageFit}
       statusLightProps={statusLightProps}
       restaurantId={restaurantId}
       menuHref={menuHref}

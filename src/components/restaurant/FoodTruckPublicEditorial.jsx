@@ -23,6 +23,7 @@ export default function FoodTruckPublicEditorial({
   operatingHours = [],
   logoUrl,
   bannerPhotoUrl,
+  bannerImageFit = "cover",
   statusLightProps,
   restaurantId,
   shareData,
@@ -62,6 +63,7 @@ export default function FoodTruckPublicEditorial({
       operatingHours={operatingHours}
       logoUrl={logoUrl}
       bannerPhotoUrl={bannerPhotoUrl}
+      bannerImageFit={bannerImageFit}
       statusLightProps={statusLightProps}
       restaurantId={restaurantId}
       shareData={shareData}

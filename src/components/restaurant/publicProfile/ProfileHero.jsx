@@ -27,6 +27,7 @@ import { canShowAddMenu } from "../../../lib/addMenuContribution.js";
 import IconHoverLabel from "../../IconHoverLabel.jsx";
 import { formatWebsiteHostLabel } from "../../../lib/formatWebsiteHostLabel.js";
 import {
+  normalizeBillboardImageFit,
   resolveBillboardDisplayImageUrl,
   resolveBillboardImageObjectPosition,
 } from "../../../lib/billboardImageObjectPosition.js";
@@ -100,6 +101,7 @@ export default function ProfileHero({
   directionsUrl,
   logoUrl,
   bannerPhotoUrl,
+  bannerImageFit = "cover",
   statusLightProps,
   restaurantId,
   menuHref,
@@ -134,9 +136,19 @@ export default function ProfileHero({
     narrow: isMobile,
   });
   const hasPhoto = Boolean(resolvedBannerUrl);
-  const bannerObjectPosition = resolveBillboardImageObjectPosition(bannerPhotoUrl, {
-    narrow: isMobile,
-  });
+  const resolvedBannerFit = normalizeBillboardImageFit(bannerImageFit);
+  const bannerObjectPosition =
+    resolvedBannerFit === "contain"
+      ? "center center"
+      : resolveBillboardImageObjectPosition(bannerPhotoUrl, {
+          narrow: isMobile,
+        });
+  const bannerBackgroundSize =
+    resolvedBannerFit === "contain"
+      ? "contain"
+      : resolvedBannerFit === "fill"
+        ? "100% 100%"
+        : "cover";
   const onPhoto = true;
   const ink = "#fafaf9";
   const muted = "rgba(250,250,249,0.88)";
@@ -683,8 +695,9 @@ export default function ProfileHero({
         backgroundImage: `linear-gradient(to top, rgba(28,25,23,0.78) 0%, rgba(28,25,23,0.28) 48%, transparent 72%), url(${JSON.stringify(
           String(resolvedBannerUrl)
         )})`,
-        backgroundSize: "cover",
+        backgroundSize: bannerBackgroundSize,
         backgroundPosition: bannerObjectPosition,
+        backgroundRepeat: "no-repeat",
       }
     : {
         position: "relative",

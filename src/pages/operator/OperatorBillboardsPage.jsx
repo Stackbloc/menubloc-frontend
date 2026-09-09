@@ -405,7 +405,7 @@ function BillboardEditor({
             onChange={(e) => setImageFit(e.target.value)}
             data-testid="billboard-image-fit"
           >
-            <option value="contain">Contain (recommended mobile)</option>
+            <option value="contain">Contain (show whole photo)</option>
             <option value="cover">Cover</option>
             <option value="fill">Fill</option>
           </select>

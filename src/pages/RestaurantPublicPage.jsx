@@ -46,6 +46,7 @@ import ClaimedRestaurantBillboardSplash, {
 } from "../components/restaurant/ClaimedRestaurantBillboardSplash.jsx";
 import { isActiveBillboardSplashPost } from "../lib/claimedRestaurantBillboardSplash.js";
 import { resolveBillboardMediaUrl } from "../lib/billboardMediaUrl.js";
+import { normalizeBillboardImageFit } from "../lib/billboardImageObjectPosition.js";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { useOperator } from "../context/OperatorContext.jsx";
 import { fetchRestaurantMenuPreview, toConsumerErrorMessage } from "../lib/api.js";
@@ -539,6 +540,11 @@ export default function RestaurantPublicPage() {
     data?.cover_image_url ||
     data?.banner_url ||
     null;
+  // When the profile banner is the active billboard graphic, honor owner Image Fit (e.g. contain = whole building).
+  const bannerImageFit =
+    !data?.hero_image_url && firstBillboardImage && firstActiveBillboard
+      ? normalizeBillboardImageFit(firstActiveBillboard.image_fit)
+      : "cover";
 
   const pageBg = isDark ? "#0b0b0f" : "#ffffff";
   const operatingHours = Array.isArray(data?.operating_hours) ? data.operating_hours : [];
@@ -620,6 +626,7 @@ export default function RestaurantPublicPage() {
           landmarks={landmarks}
           logoUrl={logoUrl}
           bannerPhotoUrl={bannerPhotoUrl}
+          bannerImageFit={bannerImageFit}
           tierLabel={isPro ? "Pro" : isVerified ? "Verified" : ""}
           statusLightProps={restaurantStatusLightProps}
           restaurantId={data?.id || null}

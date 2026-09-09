@@ -39,6 +39,8 @@ assert.match(helper, /CLAIMED_BILLBOARD_SPLASH_SHELL_BG/);
 const splash = read("src/components/restaurant/ClaimedRestaurantBillboardSplash.jsx");
 assert.match(splash, /pickClaimedBillboardSplashPosts/);
 assert.match(splash, /objectFit:\s*imageFit/);
+assert.match(splash, /normalizeBillboardImageFit/);
+assert.doesNotMatch(splash, /imageFitRaw === "contain" \? "cover"/);
 assert.match(splash, /cta_url/);
 assert.match(splash, /Tap to continue/);
 assert.match(splash, /position:\s*"fixed"/);
@@ -181,6 +183,6 @@ assert.match(op, /display_duration_ms/);
 assert.match(op, /display_order/);
 assert.match(op, /image_fit/);
 assert.match(op, /billboard-slide-order/);
-assert.match(op, /Contain \(recommended mobile\)/);
+assert.match(op, /Contain \(show whole photo\)/);
 
 console.log("claimedRestaurantBillboardSplashContract: ok");

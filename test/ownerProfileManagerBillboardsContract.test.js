@@ -33,6 +33,7 @@ test("Profile Manager mounts billboards panel with upload testids", () => {
   assert.match(panel, /Splash text \(optional\)/);
   assert.match(panel, /Defaults to restaurant name/);
   assert.match(panel, /Leave blank to use the restaurant name/);
+  assert.match(panel, /contain.*show the whole photo/i);
   assert.doesNotMatch(panel, /Entrance billboard/);
   assert.doesNotMatch(panel, /Add entrance billboard/);
   assert.match(panel, /owner-profile-window-add/);

@@ -65,6 +65,7 @@ export default function PublicProfileShell({
   landmarks = "",
   logoUrl = "",
   bannerPhotoUrl = null,
+  bannerImageFit = "cover",
   statusLightProps = null,
   restaurantId = null,
   menuHref = null,
@@ -248,6 +249,7 @@ export default function PublicProfileShell({
         directionsUrl={isFoodTruck ? homeDirectionsUrl : directionsUrl}
         logoUrl={logoUrl}
         bannerPhotoUrl={bannerPhotoUrl}
+        bannerImageFit={bannerImageFit}
         statusLightProps={statusLightProps}
         restaurantId={restaurantId}
         menuHref={isDiningHall ? null : menuHref}

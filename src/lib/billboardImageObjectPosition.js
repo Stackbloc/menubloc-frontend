@@ -20,6 +20,16 @@ export { resolveBillboardMediaUrl } from "./billboardMediaUrl.js";
 /** Default for venue/storefront cover crops when no brand/post override applies. */
 export const DEFAULT_VENUE_PHOTO_OBJECT_POSITION = "center top";
 
+/**
+ * Normalize owner/operator Image Fit for splash + hero.
+ * @param {unknown} value
+ * @returns {"cover"|"contain"|"fill"}
+ */
+export function normalizeBillboardImageFit(value) {
+  const fit = String(value || "").trim().toLowerCase();
+  return ["cover", "contain", "fill"].includes(fit) ? fit : "cover";
+}
+
 export const IN_N_OUT_BUILDING_LANDSCAPE_MARKER = "in-n-out-building.jpg";
 export const IN_N_OUT_BUILDING_SPLASH_MARKER = "in-n-out-building-splash.jpg";
 /** Portrait designed banner — keep logo/face in frame on narrow hero + splash crops. */

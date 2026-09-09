@@ -258,6 +258,10 @@ function SplashBillboardEditor({ restaurantId, initial, onCancel, onSaved }) {
               </option>
             ))}
           </select>
+          <div style={{ marginTop: 6, fontSize: 11, color: OWNER_COLORS.muted, lineHeight: 1.4 }}>
+            <strong>contain</strong> = show the whole photo (building). <strong>cover</strong> = fill
+            the frame (may crop).
+          </div>
         </div>
       </div>
       <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, fontWeight: 600 }}>
