@@ -153,7 +153,7 @@ test("My Menuply is the diner's personal home", () => {
   assert.match(api, /\/api\/consumer\/want-to-eat/);
   assert.match(api, /\/api\/consumer\/social-events/);
   assert.match(hero, /About Me/);
-  assert.match(read("src/pages/consumer/myMenuply/MyMenuplyPresentationRails.jsx"), /Connects/);
+  assert.match(read("src/pages/consumer/myMenuply/MyMenuplyPresentationRails.jsx"), /DinerStatsBar/);
   assert.match(hero, /viewerUserId/);
   assert.match(page, /MyMenuplyPresentationRails/);
   assert.match(page, /buildTopHighlights/);
@@ -162,7 +162,8 @@ test("My Menuply is the diner's personal home", () => {
   assert.match(rails, /useLongPressReveal/);
   assert.match(rails, /onHighlightDelete/);
   assert.match(page, /onHighlightDelete/);
-  assert.match(read("src/pages/consumer/myMenuply/MyMenuplyPresentationRails.jsx"), /connections-avatar-strip/);
+  assert.doesNotMatch(rails, /connections-avatar-strip/);
+  assert.doesNotMatch(rails, /ConnectionAvatarStrip/);
   assert.doesNotMatch(read("src/pages/consumer/myMenuply/MyMenuplyPresentationRails.jsx"), /\/my-menuply\/connections-eating/);
   assert.match(eatingPage, /StickyPageHeader title="My Connections"/);
   const eatingCompose = read("src/pages/consumer/myMenuply/EatingCompose.jsx");

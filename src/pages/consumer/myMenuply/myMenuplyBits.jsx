@@ -1004,11 +1004,9 @@ function WantToEatCard({
   const canDelete = !readOnly && typeof onDelete === "function" && want?.id != null;
   const { open, dismiss, consumeArmedClick, bind } = useLongPressReveal(canDelete);
 
-  const cardStyle = isScroll
-    ? showHeroVisual
-      ? wantStyles.scrollCardPhoto
-      : wantStyles.scrollCard
-    : wantStyles.card;
+  // Scroll rail is always compact horizontal (thumb + copy). Tall plate-only
+  // cards (148px) left dish/place names clipped under overflow:hidden.
+  const cardStyle = isScroll ? wantStyles.scrollCardPhoto : wantStyles.card;
   const shellStyle = isScroll
     ? {
         position: "relative",
@@ -1048,11 +1046,11 @@ function WantToEatCard({
           />
         ) : (
           <div
-            style={isScroll ? wantStyles.scrollThumbPlaceholder : wantStyles.thumbPlaceholder}
+            style={isScroll ? wantStyles.scrollThumbMini : wantStyles.scrollThumbPlaceholder}
             aria-hidden
             data-testid="want-to-eat-peer-graphic"
           >
-            <WannaGoPlateIcon size={isScroll ? 44 : 40} color="#94a3b8" />
+            <WannaGoPlateIcon size={isScroll ? 22 : 40} color="#94a3b8" />
           </div>
         )}
       </div>
@@ -1060,20 +1058,24 @@ function WantToEatCard({
   } else if (showLogo) {
     mediaBlock = (
       <div
-        style={isScroll ? wantStyles.scrollThumbPlaceholder : wantStyles.thumbPlaceholder}
+        style={isScroll ? wantStyles.scrollPhotoWrap : wantStyles.thumbPlaceholder}
         data-testid="want-to-eat-logo"
       >
-        <img src={visual.url} alt="" style={wantStyles.logoThumb} />
+        <img
+          src={visual.url}
+          alt=""
+          style={isScroll ? wantStyles.scrollPhoto : wantStyles.logoThumb}
+        />
       </div>
     );
   } else {
     mediaBlock = (
       <div
-        style={isScroll ? wantStyles.scrollThumbPlaceholder : wantStyles.thumbPlaceholder}
+        style={isScroll ? wantStyles.scrollThumbMini : wantStyles.thumbPlaceholder}
         aria-hidden
         data-testid="want-to-eat-placeholder"
       >
-        <WannaGoPlateIcon size={isScroll ? 44 : 40} color="#94a3b8" />
+        <WannaGoPlateIcon size={isScroll ? 22 : 40} color="#94a3b8" />
       </div>
     );
   }
@@ -1083,8 +1085,10 @@ function WantToEatCard({
       style={isScroll ? wantStyles.scrollCopy : wantStyles.copy}
       data-testid="want-to-eat-copy"
     >
-      <div style={wantStyles.title}>{foodName}</div>
-      {place ? <div style={socialType.meta}>{place}</div> : null}
+      <div style={isScroll ? wantStyles.scrollTitle : wantStyles.title}>{foodName}</div>
+      {place ? (
+        <div style={isScroll ? wantStyles.scrollMeta : socialType.meta}>{place}</div>
+      ) : null}
       {readOnly || isScroll ? null : want.menu_item_id ? (
         <div style={wantStyles.hint}>Menu item linked</div>
       ) : (
@@ -1277,11 +1281,7 @@ function WannaGoRestaurantCard({
   const canDelete = !readOnly && typeof onDelete === "function" && intent?.id != null;
   const { open, dismiss, consumeArmedClick, bind } = useLongPressReveal(canDelete);
 
-  const cardStyle = isScroll
-    ? thumb
-      ? wantStyles.scrollCardPhoto
-      : wantStyles.scrollCard
-    : wantStyles.card;
+  const cardStyle = isScroll ? wantStyles.scrollCardPhoto : wantStyles.card;
   const shellStyle = isScroll
     ? {
         position: "relative",
@@ -1305,11 +1305,11 @@ function WannaGoRestaurantCard({
     </div>
   ) : (
     <div
-      style={isScroll ? wantStyles.scrollThumbPlaceholder : wantStyles.thumbPlaceholder}
+      style={isScroll ? wantStyles.scrollThumbMini : wantStyles.thumbPlaceholder}
       aria-hidden
       data-testid="wanna-go-placeholder"
     >
-      <WannaGoPlateIcon size={isScroll ? 44 : 40} color="#94a3b8" />
+      <WannaGoPlateIcon size={isScroll ? 22 : 40} color="#94a3b8" />
     </div>
   );
 
@@ -1318,8 +1318,8 @@ function WannaGoRestaurantCard({
       style={isScroll ? wantStyles.scrollCopy : wantStyles.copy}
       data-testid="wanna-go-copy"
     >
-      <div style={wantStyles.title}>{place}</div>
-      <div style={socialType.meta}>{intentLabel}</div>
+      <div style={isScroll ? wantStyles.scrollTitle : wantStyles.title}>{place}</div>
+      <div style={isScroll ? wantStyles.scrollMeta : socialType.meta}>{intentLabel}</div>
     </div>
   );
 
@@ -1531,12 +1531,26 @@ const wantStyles = {
     borderRadius: 10,
     overflow: "hidden",
     background: "#0f172a",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
   },
   scrollPhoto: {
     width: "100%",
     height: "100%",
     objectFit: "cover",
     display: "block",
+  },
+  scrollThumbMini: {
+    width: 40,
+    height: 40,
+    flexShrink: 0,
+    borderRadius: 10,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    background: "#f1f5f9",
+    border: "1px solid #e2e8f0",
   },
   scrollPhotoScrim: {
     position: "absolute",
@@ -1587,8 +1601,35 @@ const wantStyles = {
     fontSize: 28,
   },
   copy: { padding: "12px 14px", flex: 1, minWidth: 0 },
-  scrollCopy: { flex: 1, minWidth: 0, padding: "0 2px" },
+  scrollCopy: {
+    flex: 1,
+    minWidth: 0,
+    padding: "0 2px",
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "center",
+    gap: 2,
+  },
   title: { fontWeight: 800, fontSize: 15, color: "#0f172a", marginBottom: 4, lineHeight: 1.25 },
+  scrollTitle: {
+    fontWeight: 800,
+    fontSize: 14,
+    color: "#0f172a",
+    lineHeight: 1.25,
+    letterSpacing: "-0.01em",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  },
+  scrollMeta: {
+    fontSize: 12,
+    fontWeight: 600,
+    color: "#64748b",
+    lineHeight: 1.2,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  },
   hint: { fontSize: 12, color: "#64748b", marginTop: 6 },
   mmtRow: { marginTop: 6, display: "flex", justifyContent: "flex-start", paddingLeft: 2 },
   mmtBtn: {

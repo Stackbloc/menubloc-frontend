@@ -65,7 +65,10 @@ test("Connection peer hub puts activity selection above rich media", () => {
 
 test("SocialFoodInfoSection is not mounted on My Menuply (Connects via stats)", () => {
   const page = read("src/pages/consumer/MyMenuplyPage.jsx");
+  const rails = read("src/pages/consumer/myMenuply/MyMenuplyPresentationRails.jsx");
   assert.doesNotMatch(page, /SocialFoodInfoSection/);
+  assert.doesNotMatch(rails, /connections-avatar-strip/);
+  assert.doesNotMatch(rails, /ConnectionAvatarStrip/);
 });
 
 test("legacy /diners/:id redirects authenticated peers to canonical profile", () => {

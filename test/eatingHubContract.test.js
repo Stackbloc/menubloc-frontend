@@ -172,6 +172,9 @@ test("My Menuply and peer hub use five-section presentation hub", () => {
   assert.doesNotMatch(bits, /crew-members-label/);
   assert.match(bits, /affiliation only/);
   assert.match(bits, /want-to-eat-copy/);
+  assert.match(bits, /scrollCardPhoto/);
+  assert.match(bits, /scrollThumbMini/);
+  assert.match(bits, /scrollTitle/);
   assert.match(bits, /avatar_url/);
   assert.doesNotMatch(bits, /String\.fromCharCode\(65/);
   assert.doesNotMatch(bits, /crewMemberInitials/);

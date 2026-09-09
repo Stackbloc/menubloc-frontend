@@ -1,50 +1,15 @@
 /**
- * Exhibit-style presentation rails — stats, highlights, follows, connections.
+ * Exhibit-style presentation rails — stats, highlights, follows.
  * Input-free; restaurant data fills sparse user diaries honestly.
+ * Connects live in the stats chip → hub focus (no duplicate avatar strip).
  */
 
 import { Link } from "react-router-dom";
-import { MY_MENUPLY_PROFILE_PATH } from "../../../lib/myMenuplyRoutes.js";
 import DinerStatsBar from "./DinerStatsBar.jsx";
 import MyMenuplyHubFocus from "./MyMenuplyHubFocus.jsx";
 import { WantToEatList } from "./myMenuplyBits.jsx";
 import { useLongPressReveal } from "./mediaLongPressReveal.js";
 import * as s from "./myMenuplyStyles.js";
-
-function ConnectionAvatarStrip({ connections = [], viewerUserId = null }) {
-  const rows = (connections || []).slice(0, 8);
-  if (!rows.length) return null;
-
-  return (
-    <div style={railStyles.connectionsWrap} data-testid="connections-avatar-strip">
-      <div style={railStyles.connectionsHead}>
-        <span style={railStyles.connectionsTitle}>Connects</span>
-      </div>
-      <div style={railStyles.avatarRow}>
-        {rows.map((c) => {
-          const peerId = c.peer?.id;
-          const name = c.peer?.display_name || "Friend";
-          if (!peerId) return null;
-          const isSelf = viewerUserId != null && Number(peerId) === Number(viewerUserId);
-          const initial = String(name).trim().slice(0, 1).toUpperCase() || "?";
-          return (
-            <Link
-              key={c.id || peerId}
-              to={isSelf ? MY_MENUPLY_PROFILE_PATH : `/account/connections/${encodeURIComponent(String(peerId))}`}
-              style={railStyles.avatarLink}
-              title={name}
-            >
-              <span style={railStyles.avatarRing}>
-                <span style={railStyles.avatarCircle}>{initial}</span>
-              </span>
-              <span style={railStyles.avatarName}>{name.split(" ")[0]}</span>
-            </Link>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
 
 function HighlightCard({ card, large = false, readOnly = false, onDelete, deleteBusy = false }) {
   const canDelete = !readOnly && card?.deleteKind && typeof onDelete === "function";
@@ -224,9 +189,6 @@ export default function MyMenuplyPresentationRails({
         eventGroups={eventGroups}
         viewerUserId={viewerUserId}
       />
-      {hubFocus !== "connects" ? (
-        <ConnectionAvatarStrip connections={connections} viewerUserId={viewerUserId} />
-      ) : null}
       <TopHighlightsGrid
         cards={highlights}
         readOnly={readOnly}
@@ -251,75 +213,6 @@ export default function MyMenuplyPresentationRails({
 }
 
 const railStyles = {
-  connectionsWrap: {
-    marginTop: 18,
-    padding: "14px 14px 12px",
-    borderRadius: 16,
-    background: "linear-gradient(135deg, #ecfdf5 0%, #ffffff 72%)",
-    border: "1px solid #bbf7d0",
-    boxShadow: "0 4px 18px rgba(20, 83, 45, 0.08)",
-  },
-  connectionsHead: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 10,
-    marginBottom: 12,
-  },
-  connectionsTitle: {
-    fontSize: 14,
-    fontWeight: 800,
-    color: "#14532d",
-    letterSpacing: "-0.02em",
-  },
-  connectionsLink: {
-    fontSize: 13,
-    fontWeight: 700,
-    color: "#15803d",
-    textDecoration: "none",
-  },
-  avatarRow: {
-    display: "flex",
-    gap: 12,
-    overflowX: "auto",
-    paddingBottom: 4,
-  },
-  avatarLink: {
-    flex: "0 0 auto",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    gap: 6,
-    textDecoration: "none",
-    color: "inherit",
-    minWidth: 56,
-  },
-  avatarRing: {
-    padding: 3,
-    borderRadius: "50%",
-    background: "linear-gradient(135deg, #22c55e, #15803d)",
-  },
-  avatarCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: "50%",
-    background: "#fff",
-    color: "#14532d",
-    display: "grid",
-    placeItems: "center",
-    fontWeight: 800,
-    fontSize: 18,
-  },
-  avatarName: {
-    fontSize: 11,
-    fontWeight: 700,
-    color: "#334155",
-    maxWidth: 64,
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    whiteSpace: "nowrap",
-    textAlign: "center",
-  },
   highlightGrid: {
     display: "grid",
     gridTemplateColumns: "1.15fr 0.85fr",
