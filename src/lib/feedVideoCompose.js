@@ -16,6 +16,7 @@ import { eatingMediaFromUpload, isVideoFile } from "./eatingMediaUtils.js";
 import { defaultWhatIAteMealPeriod } from "./whatIAteTodayMealPeriod.js";
 import { createHomemadeDish } from "./homemadeDishApi.js";
 import { buildGuestPublicationLegalPayload } from "./legalConsent.js";
+import { eatingFoodName, joinHomemadeComment } from "../pages/consumer/myMenuply/eatingPlaceLink.js";
 
 export async function postFeedAteVideo({
   file,
