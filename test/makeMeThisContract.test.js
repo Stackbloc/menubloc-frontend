@@ -26,9 +26,9 @@ test("Make Me This API + single picker + profile badges", () => {
 
   const hub = read("src/pages/consumer/myMenuply/EatingHubSection.jsx");
   assert.doesNotMatch(hub, /MakeMeThisInboxPanel/);
-  assert.doesNotMatch(hub, /want-cravings-action-open/);
+  assert.match(hub, /want-cravings-action-open/);
   assert.doesNotMatch(hub, /want-cravings-action-mmt/);
-  assert.doesNotMatch(hub, /Join Me \/ Take Me Out/);
+  assert.match(hub, /Join Me \/ Take Me Out/);
   assert.doesNotMatch(hub, /want-cravings-invite-open/);
   assert.doesNotMatch(hub, /Invite & Make Me This/);
   assert.doesNotMatch(hub, /Invite &amp; Make Me This/);

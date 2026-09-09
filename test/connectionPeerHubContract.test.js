@@ -45,8 +45,10 @@ test("Connection diner page uses the same hub layout as My Menuply", () => {
   assert.match(section, /eating-calendar/);
   assert.match(section, /DinerCalendarTrigger/);
   assert.match(section, /Invite Me Out/);
-  // Peer Invite Me Out CTA on hub; audience settings live in X → Want compose.
-  assert.match(section, /want-invite-me-out-open/);
+  // Peer Invite Me Out via craving Actions box; audience settings live in X → Want compose.
+  assert.match(section, /want-cravings-action-box/);
+  assert.match(section, /Invite Me Out/);
+  assert.doesNotMatch(section, /want-invite-me-out-open/);
   assert.doesNotMatch(section, /InviteMeOutAudiencePicker/);
   assert.doesNotMatch(peer, /InviteMeOutAudiencePicker/);
   assert.match(section, /future-plans-summary/);

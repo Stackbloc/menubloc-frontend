@@ -46,6 +46,9 @@ test("DinerActivityScanRow: compact thumb + working video play", () => {
   assert.match(row, /dailyMealNumber/);
   assert.match(row, /diner-activity-scan-meal-num/);
   assert.match(row, /shouldPreferRestaurantMark/);
+  // Owner deletes video/meal via long-press on the row (not feed CTA)
+  assert.match(row, /useLongPressReveal/);
+  assert.match(row, /diner-activity-scan-delete/);
   // No alphabet letter fallbacks for restaurant/food (text-only when no photo/emoji)
   assert.doesNotMatch(row, /thumbFallback/);
   assert.doesNotMatch(row, /initialLetter\(food \|\| place/);
@@ -76,8 +79,8 @@ test("What I'm Eating / Wanna Eat use compact Add + sheet compose", () => {
   assert.match(hub, /dailyMealNumber=\{index \+ 1\}/);
   assert.match(hub, /showThumb/);
   assert.match(hub, /activityAvatarUrl/);
-  assert.doesNotMatch(hub, /want-cravings-action-box/);
-  assert.doesNotMatch(hub, /Join Me \/ Take Me Out/);
+  assert.match(hub, /want-cravings-action-box/);
+  assert.match(hub, /Join Me \/ Take Me Out/);
   assert.doesNotMatch(hub, /nameInProse=\{isConnectPreview\}/);
   assert.doesNotMatch(hub, /WhatIAteMealBoard/);
   assert.doesNotMatch(hub, /Multiplier\/Post/);

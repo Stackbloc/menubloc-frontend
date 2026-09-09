@@ -33,8 +33,10 @@ test("Diner chooses Invite Me Out audience in X → What I Want to Eat compose",
   assert.doesNotMatch(section, /invite-me-out-save/);
   assert.doesNotMatch(section, /want-invite-me-out-settings/);
   assert.match(section, /viewerMayInviteMeOut/);
-  assert.match(section, /want-invite-me-out-open/);
+  assert.match(section, /want-cravings-action-box/);
+  assert.match(section, /want-cravings-action-open/);
   assert.match(section, /Invite Me Out/);
+  assert.doesNotMatch(section, /want-invite-me-out-open/);
   assert.doesNotMatch(section, /want-invite-me-out-toggle/);
   assert.doesNotMatch(section, /Invite Me Out is on/);
   assert.doesNotMatch(section, /invite-me-out-settings-sheet/);
