@@ -37,12 +37,18 @@ test("See Who's Eating reel: guest watch, CK dish, existing camera, Connect noti
   assert.match(surface, /Tap to expand/);
   assert.doesNotMatch(surface, /TAP · FULL SCREEN/);
 
+  // Delete is owner profile long-press only — not a feed "Remove from Public Feed" beg.
+  const scanRow = read("src/pages/consumer/myMenuply/DinerActivityScanRow.jsx");
+  assert.match(scanRow, /useLongPressReveal/);
+  assert.match(scanRow, /diner-activity-scan-delete/);
+  assert.match(scanRow, /Owner profile: long-press/);
+
   const fullscreen = read("src/pages/consumer/myMenuply/SeeWhosEatingFullscreen.jsx");
   assert.match(fullscreen, /requestConnection/);
-  assert.match(fullscreen, /hidePublicFeedItem/);
-  assert.match(fullscreen, /Remove from Public Feed/);
-  assert.match(fullscreen, /see-whos-eating-remove-public-feed/);
-  assert.match(fullscreen, /onRemovedFromFeed/);
+  assert.doesNotMatch(fullscreen, /hidePublicFeedItem/);
+  assert.doesNotMatch(fullscreen, /Remove from Public Feed/);
+  assert.doesNotMatch(fullscreen, /see-whos-eating-remove-public-feed/);
+  assert.doesNotMatch(fullscreen, /Remove this video from Public Feed/);
   assert.match(fullscreen, /see_whos_eating/);
   assert.match(fullscreen, /see-whos-eating-screen-name/);
   assert.match(fullscreen, /FeedPlaceCaption/);

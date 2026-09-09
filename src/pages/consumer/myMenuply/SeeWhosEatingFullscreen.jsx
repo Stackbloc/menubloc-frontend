@@ -12,7 +12,7 @@ import InviteToEatModal from "../../../components/InviteToEatModal.jsx";
 import BrowseMenusIcon from "../../../components/icons/BrowseMenusIcon.jsx";
 import FeedMenuBrowserPipOverlay from "../../../components/consumer/feed/FeedMenuBrowserPipOverlay.jsx";
 import FeedVideoActionRail from "../../../components/consumer/feed/FeedVideoActionRail.jsx";
-import { hidePublicFeedItem, requestConnection } from "../../../lib/consumerApi.js";
+import { requestConnection } from "../../../lib/consumerApi.js";
 import {
   MENUPY_CLOSE_LIVE_FEED_FULLSCREEN,
   stripMediaUrlFragment,
@@ -63,7 +63,8 @@ export default function SeeWhosEatingFullscreen({
   isAuthenticated = false,
   viewerUserId = null,
   onClose,
-  onRemovedFromFeed,
+  // Kept for call-site compatibility; delete lives on profile long-press, not feed.
+  onRemovedFromFeed: _onRemovedFromFeed,
   variant = "modal",
   bottomInset = 0,
   desktopFeedShell = false,
@@ -79,8 +80,6 @@ export default function SeeWhosEatingFullscreen({
   const [connectBusy, setConnectBusy] = useState(false);
   const [connectNotice, setConnectNotice] = useState("");
   const [connectError, setConnectError] = useState("");
-  const [removeBusy, setRemoveBusy] = useState(false);
-  const [removeError, setRemoveError] = useState("");
   const [videoMuted, setVideoMuted] = useState(() => defaultFeedVideoMuted(variant));
   const [inviteOpen, setInviteOpen] = useState(false);
   /** Menu Browser session: open Feed index + which discussed-menu trail slot is showing. */
@@ -104,7 +103,6 @@ export default function SeeWhosEatingFullscreen({
   useEffect(() => {
     setConnectNotice("");
     setConnectError("");
-    setRemoveError("");
     setVideoMuted(defaultFeedVideoMuted(variant));
     setInviteOpen(false);
     // Do not clear browseSession — Browse trail stays independent of Feed navigation.
@@ -491,43 +489,6 @@ export default function SeeWhosEatingFullscreen({
     if (ref) recordFeedMenuOpen(ref);
   }
 
-  async function onRemoveFromPublicFeed(e) {
-    e?.preventDefault?.();
-    e?.stopPropagation?.();
-    if (!item || removeBusy) return;
-    const peerId = item?.diner?.id != null ? Number(item.diner.id) : null;
-    const kind = String(item.kind || "")
-      .trim()
-      .toLowerCase();
-    if (isLiveFeedVenueItem(item) || !["ate", "want", "plan", "reviews", "cooking"].includes(kind)) return;
-    if (viewerUserId == null || peerId == null || Number(viewerUserId) !== peerId) return;
-
-    const ok =
-      typeof window === "undefined" ||
-      window.confirm(
-        "Remove this video from Public Feed? It stays in your Eating list."
-      );
-    if (!ok) return;
-
-    setRemoveBusy(true);
-    setRemoveError("");
-    try {
-      await hidePublicFeedItem(item);
-      const removedId = item.id;
-      const nextLen = Math.max(0, items.length - 1);
-      onRemovedFromFeed?.(removedId);
-      if (nextLen === 0) {
-        if (variant === "modal") onClose?.();
-      } else {
-        setIndex((i) => Math.min(i, nextLen - 1));
-      }
-    } catch (err) {
-      setRemoveError(err?.message || "Unable to remove from Public Feed");
-    } finally {
-      setRemoveBusy(false);
-    }
-  }
-
   if ((!item && variant === "modal") || typeof document === "undefined") return null;
 
   const isVenue = isLiveFeedVenueItem(item);
@@ -536,17 +497,6 @@ export default function SeeWhosEatingFullscreen({
   const atEnd = index >= items.length - 1;
   const atStart = index <= 0;
   const peerId = item?.diner?.id != null ? Number(item.diner.id) : null;
-  const isOwnDinerClip =
-    item &&
-    !isVenue &&
-    viewerUserId != null &&
-    peerId != null &&
-    Number(viewerUserId) === peerId &&
-    ["ate", "want", "plan", "reviews", "cooking"].includes(
-      String(item.kind || "")
-        .trim()
-        .toLowerCase()
-    );
   const isFeedHome = variant === "feedHome";
   const showInvite = Boolean(isFeedHome && restaurantRef?.restaurant_id);
   /** Mobile-only TikTok-style icon rail; desktop keeps Share & Invite dock. */
@@ -830,18 +780,6 @@ export default function SeeWhosEatingFullscreen({
         <FeedPlaceCaption item={item} onMenuLinkClick={onFeedMenuLinkClick} />
         {connectNotice ? <p style={styles.notice}>{connectNotice}</p> : null}
         {connectError ? <p style={styles.error}>{connectError}</p> : null}
-        {removeError ? <p style={styles.error}>{removeError}</p> : null}
-        {isOwnDinerClip ? (
-          <button
-            type="button"
-            style={styles.removeBtn}
-            disabled={removeBusy}
-            onClick={onRemoveFromPublicFeed}
-            data-testid="see-whos-eating-remove-public-feed"
-          >
-            {removeBusy ? "Removing…" : "Remove from Public Feed"}
-          </button>
-        ) : null}
         {item.is_recommend ? <p style={styles.recommend}>Recommend</p> : null}
         {(variant !== "feedHome" || isDesktopViewport) ? (
           <p style={styles.hint}>
@@ -1243,20 +1181,6 @@ const styles = {
   },
   notice: { margin: "0 0 6px", fontSize: 13, color: "#bbf7d0", fontWeight: 600 },
   error: { margin: "0 0 6px", fontSize: 13, color: "#fecaca", fontWeight: 600 },
-  removeBtn: {
-    display: "inline-block",
-    margin: "0 0 10px",
-    padding: "8px 12px",
-    minHeight: 40,
-    border: "1px solid rgba(254, 202, 202, 0.55)",
-    borderRadius: 8,
-    background: "rgba(0,0,0,0.5)",
-    color: "#fecaca",
-    fontSize: 13,
-    fontWeight: 700,
-    cursor: "pointer",
-    touchAction: "manipulation",
-  },
   recommend: {
     margin: "0 0 6px",
     fontSize: 12,
