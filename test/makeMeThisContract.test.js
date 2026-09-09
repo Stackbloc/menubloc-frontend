@@ -40,6 +40,8 @@ test("Make Me This API + single picker + profile badges", () => {
 
   const page = read("src/pages/consumer/MyMenuplyPage.jsx");
   assert.match(page, /MakeMeThisOptInSheet/);
+  assert.match(page, /MakeMeThisInboxPanel/);
+  assert.match(page, /listMakeMeThisInbox/);
   assert.match(page, /pendingMmtWant/);
   assert.match(page, /menu_item_id/);
   assert.match(page, /CravingsInviteSheet/);
@@ -65,12 +67,13 @@ test("Make Me This API + single picker + profile badges", () => {
   assert.match(optIn, /MmtAudiencePicker/);
 
   const detail = read("src/pages/consumer/myMenuply/MmtDetailSheet.jsx");
-  assert.match(detail, /offered to make/);
-  assert.match(detail, /Specify a time and place/);
+  assert.match(detail, /offered to make|Booked with/);
+  assert.match(detail, /Specify a time and place|Confirm booking/);
   assert.match(detail, /mmt-offer-schedule/);
   assert.match(detail, /mmt-schedule-when/);
   assert.match(detail, /mmt-schedule-place/);
   assert.match(detail, /Make this for \$\{ownerName\}\?/);
+  assert.match(detail, /no longer available/);
   assert.doesNotMatch(detail, /mmt-offer-accept/);
   assert.doesNotMatch(detail, /Accept\?/);
 });

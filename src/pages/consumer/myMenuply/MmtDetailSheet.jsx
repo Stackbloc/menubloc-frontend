@@ -49,7 +49,17 @@ export default function MmtDetailSheet({ open, requestId, viewerUserId, onClose,
         if (cancelled) return;
         setRequest(data?.request || null);
       } catch (err) {
-        if (!cancelled) setError(err?.message || "Unable to load request");
+        if (!cancelled) {
+          const msg = String(err?.message || "");
+          const code = String(err?.code || err?.error_code || "");
+          if (/not found/i.test(msg) || code === "mmt_not_found") {
+            setError(
+              "This Make Me This is no longer available — it may have been closed or removed."
+            );
+          } else {
+            setError(msg || "Unable to load request");
+          }
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -149,7 +159,7 @@ export default function MmtDetailSheet({ open, requestId, viewerUserId, onClose,
                 <p style={s.muted}>
                   {Number(request.response_count) || 0} offer
                   {(Number(request.response_count) || 0) === 1 ? "" : "s"}
-                  {request.status !== "open" ? " · Closed" : ""}
+                  {request.status !== "open" ? " · Confirmed / closed" : ""}
                 </p>
                 {(request.responses || []).length === 0 ? (
                   <p style={s.muted}>Waiting for someone to offer to make this.</p>
@@ -162,11 +172,14 @@ export default function MmtDetailSheet({ open, requestId, viewerUserId, onClose,
                       return (
                         <li key={row.id} style={styles.responseItem} data-testid="mmt-owner-offer">
                           <p style={styles.offerPrompt}>
-                            {who} offered to make {food} for you. Specify a time and place.
+                            {scheduled
+                              ? `Booked with ${who} for ${food}.`
+                              : `${who} offered to make ${food} for you. Specify a time and place.`}
                           </p>
                           {scheduled && !editing ? (
                             <p style={styles.body} data-testid="mmt-owner-schedule-summary">
-                              {new Date(row.meetup_at).toLocaleString()} · {row.meetup_place_text}
+                              Confirmed · {new Date(row.meetup_at).toLocaleString()} ·{" "}
+                              {row.meetup_place_text}
                             </p>
                           ) : null}
                           {editing ? (
@@ -202,7 +215,7 @@ export default function MmtDetailSheet({ open, requestId, viewerUserId, onClose,
                                   data-testid="mmt-schedule-save"
                                   onClick={handleSaveSchedule}
                                 >
-                                  {busy ? "Saving…" : "Save time & place"}
+                                  {busy ? "Saving…" : "Confirm booking"}
                                 </button>
                                 <button
                                   type="button"
@@ -214,7 +227,7 @@ export default function MmtDetailSheet({ open, requestId, viewerUserId, onClose,
                                 </button>
                               </div>
                             </div>
-                          ) : (
+                          ) : request.status === "open" ? (
                             <div style={styles.offerActions}>
                               <button
                                 type="button"
@@ -226,7 +239,7 @@ export default function MmtDetailSheet({ open, requestId, viewerUserId, onClose,
                                 {scheduled ? "Edit time & place" : "Specify time & place"}
                               </button>
                             </div>
-                          )}
+                          ) : null}
                         </li>
                       );
                     })}
@@ -252,7 +265,9 @@ export default function MmtDetailSheet({ open, requestId, viewerUserId, onClose,
                 </p>
                 {viewerAlreadyOffered ? (
                   <p style={s.muted} data-testid="mmt-peer-offered">
-                    You offered to make this. They’ll send a time and place.
+                    {(request.responses || []).some((r) => r.meetup_at && r.meetup_place_text)
+                      ? "Booking confirmed — see time and place below."
+                      : "You offered to make this. They’ll send a time and place."}
                   </p>
                 ) : request.status !== "open" ? (
                   <p style={s.muted}>This request is closed.</p>
@@ -270,7 +285,7 @@ export default function MmtDetailSheet({ open, requestId, viewerUserId, onClose,
                 {(request.responses || []).map((row) =>
                   row.meetup_at && row.meetup_place_text ? (
                     <p key={row.id} style={styles.body} data-testid="mmt-peer-schedule">
-                      Time & place: {new Date(row.meetup_at).toLocaleString()} ·{" "}
+                      Confirmed · {new Date(row.meetup_at).toLocaleString()} ·{" "}
                       {row.meetup_place_text}
                     </p>
                   ) : null

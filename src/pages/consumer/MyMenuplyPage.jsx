@@ -77,7 +77,9 @@ import SectionEmptyState from "./myMenuply/SectionEmptyState.jsx";
 import { buildJoinMeCandidates } from "./myMenuply/joinMeCandidates.js";
 import CravingsInviteSheet from "./myMenuply/CravingsInviteSheet.jsx";
 import MakeMeThisOptInSheet from "./myMenuply/MakeMeThisOptInSheet.jsx";
+import MakeMeThisInboxPanel from "./myMenuply/MakeMeThisInboxPanel.jsx";
 import MmtDetailSheet from "./myMenuply/MmtDetailSheet.jsx";
+import { listMakeMeThisInbox } from "../../lib/makeMeThisApi.js";
 import {
   buildEatingDayMarkersFromCalendar,
   compareYmd,
@@ -228,6 +230,7 @@ export default function MyMenuplyPage() {
   const [pendingMmtWant, setPendingMmtWant] = useState(null);
   const [takeMeOutInvite, setTakeMeOutInvite] = useState(null);
   const [mmtDetailId, setMmtDetailId] = useState(null);
+  const [mmtInbox, setMmtInbox] = useState([]);
   const [inviteMeOutOpen, setInviteMeOutOpen] = useState(false);
   const [inviteMeOutAudience, setInviteMeOutAudience] = useState("connections");
   const [inviteMeOutSelectedIds, setInviteMeOutSelectedIds] = useState([]);
@@ -271,6 +274,7 @@ export default function MyMenuplyPage() {
         mediaRes,
         homeRes,
         flashRes,
+        mmtInboxRes,
       ] = await Promise.all([
         getConsumerProfile().catch(() => null),
         listMyFoodActivity(20).catch(() => ({ activities: [] })),
@@ -299,6 +303,7 @@ export default function MyMenuplyPage() {
         consumer?.id
           ? getPublicFlashVideos(consumer.id).catch(() => ({ items: [] }))
           : Promise.resolve({ items: [] }),
+        listMakeMeThisInbox().catch(() => ({ items: [] })),
       ]);
       const nextProfile = profileRes?.profile || null;
       setProfile(nextProfile);
@@ -338,6 +343,7 @@ export default function MyMenuplyPage() {
       setEventGroups(groupRes.groups || []);
       setSocialEvents(socialEventRes.events || []);
       setHomeDishes(homeRes?.dishes || []);
+      setMmtInbox(mmtInboxRes?.items || []);
     } catch (err) {
       setError(err.message || "Unable to load My Menuply");
     } finally {
@@ -1217,8 +1223,12 @@ export default function MyMenuplyPage() {
 
   async function refreshMmtData() {
     try {
-      const wantRes = await listWantToEat().catch(() => ({ items: [] }));
+      const [wantRes, inboxRes] = await Promise.all([
+        listWantToEat().catch(() => ({ items: [] })),
+        listMakeMeThisInbox().catch(() => ({ items: [] })),
+      ]);
       setWants(wantRes.items || []);
+      setMmtInbox(inboxRes.items || []);
     } catch {
       /* keep existing wants */
     }
@@ -1817,6 +1827,11 @@ export default function MyMenuplyPage() {
               readOnly={previewAsConnect}
               onPhotoFile={previewAsConnect ? undefined : onHomeAtHomePhoto}
               onDelete={previewAsConnect ? undefined : onHomeAtHomeDelete}
+            />
+
+            <MakeMeThisInboxPanel
+              items={mmtInbox}
+              onOpen={(row) => setMmtDetailId(Number(row?.id) || null)}
             />
 
             <EatingHubSection
