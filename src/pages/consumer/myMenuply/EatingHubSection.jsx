@@ -46,22 +46,23 @@ function isJoinMeGuestHref(href) {
 }
 
 /**
- * One lightweight control for Wanna Eat social actions — pick item, then action.
+ * Own-hub: schedule Join Me or Take Me Out from a craving.
+ * Peer-hub: Invite Me Out when eligible.
  */
 function WantCravingsActionBox({
   wants = [],
   diningIntents = [],
   canEdit = false,
   canInviteMeOut = false,
-  onRequestMmt,
-  onViewMmt,
+  onJoinMeFromCraving,
+  onTakeMeOutFromCraving,
   onInviteMeOut,
-  onDeleteWant,
-  onDeleteDiningIntent,
-  deleteBusy = false,
+  onRequestMmt,
 }) {
   const [open, setOpen] = useState(false);
   const [selectedKey, setSelectedKey] = useState("");
+  const [mode, setMode] = useState("join_me");
+  const [error, setError] = useState("");
 
   const options = useMemo(() => {
     const rows = [];
@@ -72,6 +73,7 @@ function WantCravingsActionBox({
         kind: "dining_intent",
         label: place,
         intent,
+        restaurantId: intent.restaurant_id ?? null,
       });
     }
     for (const want of wants || []) {
@@ -82,48 +84,112 @@ function WantCravingsActionBox({
         kind: "want",
         label: place ? `${food} · ${place}` : food,
         want,
+        restaurantId: want.restaurant_id ?? null,
       });
     }
     return rows;
   }, [wants, diningIntents]);
 
   if (!options.length) return null;
-  const hasActions =
-    canEdit ||
-    canInviteMeOut ||
-    (typeof onViewMmt === "function" && options.some((o) => o.want?.mmt_request?.id));
-  if (!hasActions) return null;
+
+  const showOwnerFlow = canEdit && typeof onJoinMeFromCraving === "function";
+  const showPeerInvite =
+    !canEdit && canInviteMeOut && typeof onInviteMeOut === "function";
+  if (!showOwnerFlow && !showPeerInvite) return null;
 
   const selected = options.find((o) => o.key === selectedKey) || options[0];
+
+  function handleContinue() {
+    setError("");
+    if (!selected) return;
+    if (mode === "take_me_out") {
+      if (selected.restaurantId == null || String(selected.restaurantId).trim() === "") {
+        setError("Pick a craving with a restaurant for Take Me Out.");
+        return;
+      }
+      if (typeof onTakeMeOutFromCraving !== "function") {
+        setError("Take Me Out is unavailable right now.");
+        return;
+      }
+      onTakeMeOutFromCraving(selected);
+      setOpen(false);
+      return;
+    }
+    onJoinMeFromCraving(selected);
+    setOpen(false);
+  }
 
   return (
     <div style={wantActStyles.wrap} data-testid="want-cravings-action-box">
       {!open ? (
-        <button
-          type="button"
-          style={wantActStyles.trigger}
-          data-testid="want-cravings-action-open"
-          onClick={() => {
-            setSelectedKey(options[0]?.key || "");
-            setOpen(true);
-          }}
-        >
-          Actions
-        </button>
-      ) : (
+        <div style={wantActStyles.triggerRow}>
+          <button
+            type="button"
+            style={showOwnerFlow ? wantActStyles.triggerPrimary : wantActStyles.trigger}
+            data-testid="want-cravings-action-open"
+            onClick={() => {
+              setSelectedKey(options[0]?.key || "");
+              setMode("join_me");
+              setError("");
+              setOpen(true);
+            }}
+          >
+            {showOwnerFlow ? "Join Me / Take Me Out" : "Invite Me Out"}
+          </button>
+          {showOwnerFlow && typeof onRequestMmt === "function" ? (
+            <button
+              type="button"
+              style={wantActStyles.settingsLink}
+              data-testid="want-cravings-action-mmt"
+              onClick={() => onRequestMmt()}
+            >
+              Invite &amp; Make Me This
+            </button>
+          ) : null}
+        </div>
+      ) : showPeerInvite ? (
         <div style={wantActStyles.sheet} data-testid="want-cravings-action-sheet">
           <div style={wantActStyles.sheetHead}>
-            <span style={wantActStyles.sheetTitle}>Choose a craving</span>
+            <span style={wantActStyles.sheetTitle}>Invite Me Out</span>
             <button
               type="button"
               style={wantActStyles.close}
               onClick={() => setOpen(false)}
-              aria-label="Close actions"
+              aria-label="Close"
             >
               ✕
             </button>
           </div>
+          <button
+            type="button"
+            style={wantActStyles.actionBtn}
+            data-testid="want-cravings-action-invite"
+            onClick={() => {
+              onInviteMeOut();
+              setOpen(false);
+            }}
+          >
+            Invite Me Out
+          </button>
+        </div>
+      ) : (
+        <div style={wantActStyles.sheet} data-testid="want-cravings-action-sheet">
+          <div style={wantActStyles.sheetHead}>
+            <span style={wantActStyles.sheetTitle}>Join Me / Take Me Out</span>
+            <button
+              type="button"
+              style={wantActStyles.close}
+              onClick={() => setOpen(false)}
+              aria-label="Close"
+            >
+              ✕
+            </button>
+          </div>
+          <label style={wantActStyles.fieldLabel} htmlFor="want-craving-pick">
+            Craving
+          </label>
           <select
+            id="want-craving-pick"
             style={wantActStyles.select}
             value={selected?.key || ""}
             onChange={(e) => setSelectedKey(e.target.value)}
@@ -135,77 +201,54 @@ function WantCravingsActionBox({
               </option>
             ))}
           </select>
-          <div style={wantActStyles.actions}>
-            {canEdit && typeof onRequestMmt === "function" && selected?.kind === "want" ? (
-              <button
-                type="button"
-                style={wantActStyles.actionBtn}
-                data-testid="want-cravings-action-mmt"
-                onClick={() => {
-                  onRequestMmt(selected.want);
-                  setOpen(false);
-                }}
-              >
-                Make Me This
-              </button>
-            ) : null}
-            {selected?.want?.mmt_request?.id && typeof onViewMmt === "function" ? (
-              <button
-                type="button"
-                style={wantActStyles.actionBtn}
-                data-testid="want-cravings-action-view-mmt"
-                onClick={() => {
-                  onViewMmt(selected.want.mmt_request);
-                  setOpen(false);
-                }}
-              >
-                View Make Me This
-              </button>
-            ) : null}
-            {canInviteMeOut && typeof onInviteMeOut === "function" ? (
-              <button
-                type="button"
-                style={wantActStyles.actionBtn}
-                data-testid="want-cravings-action-invite"
-                onClick={() => {
-                  onInviteMeOut();
-                  setOpen(false);
-                }}
-              >
-                Invite Me Out
-              </button>
-            ) : null}
-            {canEdit && selected?.kind === "want" && typeof onDeleteWant === "function" ? (
-              <button
-                type="button"
-                style={wantActStyles.dangerBtn}
-                data-testid="want-cravings-action-delete"
-                disabled={deleteBusy}
-                onClick={() => {
-                  onDeleteWant(selected.want);
-                  setOpen(false);
-                }}
-              >
-                Remove
-              </button>
-            ) : null}
-            {canEdit &&
-            selected?.kind === "dining_intent" &&
-            typeof onDeleteDiningIntent === "function" ? (
-              <button
-                type="button"
-                style={wantActStyles.dangerBtn}
-                data-testid="want-cravings-action-delete-intent"
-                disabled={deleteBusy}
-                onClick={() => {
-                  onDeleteDiningIntent(selected.intent);
-                  setOpen(false);
-                }}
-              >
-                Remove
-              </button>
-            ) : null}
-          </div>
+          <fieldset style={wantActStyles.modeFieldset} data-testid="want-cravings-mode">
+            <legend style={wantActStyles.fieldLabel}>How should this work?</legend>
+            <label style={wantActStyles.modeOption}>
+              <input
+                type="radio"
+                name="craving-outing-mode"
+                value="join_me"
+                checked={mode === "join_me"}
+                onChange={() => setMode("join_me")}
+                data-testid="want-cravings-mode-join-me"
+              />
+              <span>
+                <strong>Join Me</strong>
+                <span style={wantActStyles.modeHint}>
+                  You’re hosting — open a plan and let people join you.
+                </span>
+              </span>
+            </label>
+            <label style={wantActStyles.modeOption}>
+              <input
+                type="radio"
+                name="craving-outing-mode"
+                value="take_me_out"
+                checked={mode === "take_me_out"}
+                onChange={() => setMode("take_me_out")}
+                data-testid="want-cravings-mode-take-me-out"
+              />
+              <span>
+                <strong>Take Me Out</strong>
+                <span style={wantActStyles.modeHint}>
+                  Ask someone to take you out for this craving.
+                </span>
+              </span>
+            </label>
+          </fieldset>
+          {error ? (
+            <p style={wantActStyles.error} data-testid="want-cravings-action-error">
+              {error}
+            </p>
+          ) : null}
+          <button
+            type="button"
+            style={wantActStyles.continueBtn}
+            data-testid="want-cravings-action-continue"
+            onClick={handleContinue}
+          >
+            {mode === "take_me_out" ? "Continue to invite" : "Pick a date"}
+          </button>
         </div>
       )}
     </div>
@@ -214,6 +257,12 @@ function WantCravingsActionBox({
 
 const wantActStyles = {
   wrap: { marginTop: 8 },
+  triggerRow: {
+    display: "flex",
+    flexWrap: "wrap",
+    alignItems: "center",
+    gap: 10,
+  },
   trigger: {
     appearance: "none",
     border: "1px solid #e2e8f0",
@@ -224,6 +273,28 @@ const wantActStyles = {
     fontSize: 12,
     fontWeight: 700,
     cursor: "pointer",
+  },
+  triggerPrimary: {
+    appearance: "none",
+    border: "none",
+    background: GREEN_MID,
+    color: "#fff",
+    borderRadius: 999,
+    padding: "8px 14px",
+    fontSize: 13,
+    fontWeight: 750,
+    cursor: "pointer",
+  },
+  settingsLink: {
+    appearance: "none",
+    border: "none",
+    background: "transparent",
+    color: "#64748b",
+    fontSize: 12,
+    fontWeight: 650,
+    textDecoration: "underline",
+    cursor: "pointer",
+    padding: 0,
   },
   sheet: {
     border: "1px solid #e2e8f0",
@@ -244,6 +315,13 @@ const wantActStyles = {
     fontSize: 14,
     padding: 4,
   },
+  fieldLabel: {
+    fontSize: 11,
+    fontWeight: 700,
+    color: "#64748b",
+    textTransform: "uppercase",
+    letterSpacing: "0.04em",
+  },
   select: {
     width: "100%",
     borderRadius: 8,
@@ -252,23 +330,46 @@ const wantActStyles = {
     fontSize: 13,
     background: "#fff",
   },
-  actions: { display: "flex", flexWrap: "wrap", gap: 6 },
+  modeFieldset: {
+    margin: 0,
+    padding: 0,
+    border: "none",
+    display: "grid",
+    gap: 8,
+  },
+  modeOption: {
+    display: "flex",
+    gap: 8,
+    alignItems: "flex-start",
+    fontSize: 13,
+    color: "#0f172a",
+    cursor: "pointer",
+  },
+  modeHint: {
+    display: "block",
+    marginTop: 2,
+    fontSize: 12,
+    fontWeight: 500,
+    color: "#64748b",
+    lineHeight: 1.35,
+  },
+  error: { margin: 0, fontSize: 12, color: "#b91c1c", fontWeight: 600 },
+  continueBtn: {
+    appearance: "none",
+    border: "none",
+    background: GREEN_MID,
+    color: "#fff",
+    borderRadius: 10,
+    padding: "10px 12px",
+    fontSize: 13,
+    fontWeight: 750,
+    cursor: "pointer",
+  },
   actionBtn: {
     appearance: "none",
     border: "1px solid #bbf7d0",
     background: "#fff",
     color: GREEN_MID,
-    borderRadius: 8,
-    padding: "6px 10px",
-    fontSize: 12,
-    fontWeight: 700,
-    cursor: "pointer",
-  },
-  dangerBtn: {
-    appearance: "none",
-    border: "1px solid #fecaca",
-    background: "#fff",
-    color: "#b91c1c",
     borderRadius: 8,
     padding: "6px 10px",
     fontSize: 12,
@@ -401,11 +502,17 @@ export default function EatingHubSection({
   inviteMeOutToggleBusy = false,
   onRequestMmt,
   onViewMmt,
+  onJoinMeFromCraving,
+  onTakeMeOutFromCraving,
 }) {
   void liked;
   void foodHref;
   void onInviteMeOutSave;
   void inviteMeOutToggleBusy;
+  void inviteMeOutOpen;
+  void inviteMeOutAudience;
+  void inviteMeOutSelectedIds;
+  void inviteMeOutCandidates;
 
   const navigate = useNavigate();
   const canEdit = !readOnly && editMode !== false;
@@ -604,6 +711,13 @@ export default function EatingHubSection({
                       placeAsText={isConnectPreview || readOnly}
                       dailyMealNumber={index + 1}
                       onSelect={canEdit && onDiarySelect ? () => onDiarySelect(item) : null}
+                      onDelete={
+                        canEdit && typeof onDiaryDelete === "function"
+                          ? () => onDiaryDelete(item)
+                          : null
+                      }
+                      deleteBusy={diaryDeleteBusy}
+                      deleteLabel={`Delete ${food || "meal"}`}
                     />
                   </li>
                 );
@@ -706,12 +820,10 @@ export default function EatingHubSection({
             diningIntents={diningIntents}
             canEdit={canEdit}
             canInviteMeOut={canInviteMeOut}
-            onRequestMmt={onRequestMmt}
-            onViewMmt={onViewMmt}
+            onJoinMeFromCraving={onJoinMeFromCraving}
+            onTakeMeOutFromCraving={onTakeMeOutFromCraving}
             onInviteMeOut={onInviteMeOut}
-            onDeleteWant={onWantDelete}
-            onDeleteDiningIntent={onDiningIntentDelete}
-            deleteBusy={wantDeleteBusy || diningIntentDeleteBusy}
+            onRequestMmt={onRequestMmt}
           />
         </div>
       </section>
@@ -873,6 +985,12 @@ export default function EatingHubSection({
               </button>
             </div>
             <EatingPlanDayForm
+              key={[
+                dateCmp > 0 ? hubDate : today,
+                planPrefill?.restaurant?.restaurant_id || "",
+                planPrefill?.dish?.menu_item_id || planPrefill?.dish?.item_name || "",
+                planPrefill?.joinable ? "join" : "solo",
+              ].join("|")}
               planDate={dateCmp > 0 ? hubDate : today}
               busy={postBusy === "eating"}
               followed={followed}
@@ -881,6 +999,7 @@ export default function EatingHubSection({
               initialRestaurant={planPrefill?.restaurant || null}
               initialDish={planPrefill?.dish || null}
               initialNote={planPrefill?.text || ""}
+              initialJoinable={Boolean(planPrefill?.joinable)}
               locationCity={locationCity}
               locationState={locationState}
               onSubmit={onPostPlan}

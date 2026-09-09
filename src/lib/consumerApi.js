@@ -364,10 +364,11 @@ export async function uploadDinerAvatar(file) {
   return json;
 }
 
-export async function uploadConsumerProfileMedia(file) {
+export async function uploadConsumerProfileMedia(file, { is_highlight = false } = {}) {
   const language = readStoredLanguage();
   const form = new FormData();
   form.append("media", file);
+  if (is_highlight) form.append("is_highlight", "true");
   const localizedPath = appendLanguageParam("/api/consumer/profile/media", language);
   const res = await fetch(`${API}${localizedPath}`, {
     method: "POST",
@@ -390,6 +391,10 @@ export const listPeerProfileMedia = (userId) =>
   get(`/api/consumer/profile/users/${encodeURIComponent(String(userId))}/media`);
 export const deleteConsumerProfileMedia = (id) =>
   del(`/api/consumer/profile/media/${encodeURIComponent(String(id))}`);
+export const setConsumerProfileMediaHighlight = (id, isHighlight) =>
+  patch(`/api/consumer/profile/media/${encodeURIComponent(String(id))}`, {
+    is_highlight: Boolean(isHighlight),
+  });
 
 /** Absolute URL for diner avatar or QR image paths served by the API. */
 export function resolveConsumerMediaUrl(pathOrUrl) {

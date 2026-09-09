@@ -65,20 +65,50 @@ function followHighlight(restaurant, preview, index) {
   };
 }
 
-/** Top highlight grid: user meals first, then restaurant-backed filler. */
-export function buildTopHighlights({ eating = [], liked = [], followed = [] }) {
-  const fromDiary = (eating || [])
-    .map(eatingCard)
+/** Top highlight grid: pinned profile photos first, then diary / likes / follows filler. */
+export function buildTopHighlights({
+  eating = [],
+  liked = [],
+  followed = [],
+  profileHighlightPhotos = [],
+} = {}) {
+  const pinned = (profileHighlightPhotos || [])
+    .filter((row) => row?.media_kind === "photo" || !row?.media_kind)
+    .map((row) => {
+      const image = mediaUrl(row.media_url || row.photo_url || row.image);
+      if (!image) return null;
+      return {
+        key: `profile-media-${row.id}`,
+        kind: "profile_media",
+        deleteKind: "profile_media",
+        media_id: row.id,
+        label: "Profile photo",
+        sublabel: "From your gallery",
+        badge: "Highlight",
+        image,
+        href: null,
+        source: "user",
+      };
+    })
     .filter(Boolean)
     .slice(0, 3);
 
-  if (fromDiary.length >= 3) return fromDiary.slice(0, 3);
+  if (pinned.length >= 3) return pinned;
 
-  const cards = [...fromDiary];
-  const likedRows = (liked || []).slice(0, 3 - cards.length);
-  for (const row of likedRows) {
-    cards.push(likedCard(row));
+  const cards = [...pinned];
+  const usedImages = new Set(cards.map((c) => c.image).filter(Boolean));
+
+  for (const row of eating || []) {
     if (cards.length >= 3) break;
+    const card = eatingCard(row);
+    if (!card || (card.image && usedImages.has(card.image))) continue;
+    cards.push(card);
+    if (card.image) usedImages.add(card.image);
+  }
+
+  for (const row of liked || []) {
+    if (cards.length >= 3) break;
+    cards.push(likedCard(row));
   }
 
   for (const restaurant of followed || []) {

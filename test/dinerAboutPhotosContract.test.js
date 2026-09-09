@@ -25,6 +25,17 @@ test("My Menuply identity hero is prominent with photo upload and short bio", ()
   assert.match(page, /uploadDinerAvatar/);
   assert.match(page, /listConsumerProfileMedia/);
   assert.match(page, /uploadConsumerProfileMedia/);
+  assert.match(page, /is_highlight/);
+  assert.match(page, /setConsumerProfileMediaHighlight/);
+  assert.match(page, /profileHighlightPhotos/);
+  assert.match(
+    read("src/pages/consumer/myMenuply/ProfileGalleryComposeSheet.jsx"),
+    /profile-gallery-add-to-highlights/
+  );
+  assert.match(
+    read("src/pages/consumer/myMenuply/ProfileGalleryComposeSheet.jsx"),
+    /Add to Top Highlights/
+  );
   assert.match(page, /diner_about/);
   assert.ok(page.indexOf("<DinerIdentityHero") < page.indexOf("<MyMenuplyPresentationRails"));
   assert.ok(page.indexOf("<MyMenuplyPresentationRails") < page.indexOf("<EatingHubSection"));

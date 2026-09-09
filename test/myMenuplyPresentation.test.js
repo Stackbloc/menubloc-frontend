@@ -7,6 +7,49 @@ import {
   buildWantSuggestions,
 } from "../src/pages/consumer/myMenuply/myMenuplyPresentation.js";
 
+test("buildTopHighlights prefers pinned profile photos then diary filler", () => {
+  const eating = [
+    {
+      id: 1,
+      entry_id: 1,
+      food_name: "Ramen",
+      photo_url: "/uploads/a.jpg",
+      restaurant_name: "Daikoku",
+    },
+  ];
+  const liked = [{ menu_item_id: 9, item_name: "Burger", restaurant_name: "Shake Shack" }];
+  const followed = [
+    {
+      restaurant_id: 3,
+      restaurant_name: "KazuNori",
+      city: "LA",
+      state: "CA",
+      billboard_preview: [{ title: "Hand Roll", image_url: "/uploads/b.jpg" }],
+    },
+  ];
+  const pinned = [
+    { id: 101, media_kind: "photo", media_url: "/uploads/pin1.jpg", is_highlight: true },
+  ];
+
+  const cards = buildTopHighlights({
+    eating,
+    liked,
+    followed,
+    profileHighlightPhotos: pinned,
+  });
+  assert.equal(cards.length, 3);
+  assert.equal(cards[0].deleteKind, "profile_media");
+  assert.equal(cards[0].badge, "Highlight");
+  assert.equal(cards[1].source, "user");
+  assert.equal(cards[1].badge, "Your meal");
+  assert.equal(cards[1].deleteKind, "diary");
+  assert.ok(cards[1].deleteItem);
+  assert.ok(cards[0].image);
+  assert.equal(cards[0].videoUrl, undefined);
+  assert.match(cards[2].badge, /Saved dish/i);
+  assert.equal(cards[2].deleteKind, "like");
+});
+
 test("buildTopHighlights prefers user diary then liked then follows", () => {
   const eating = [
     {

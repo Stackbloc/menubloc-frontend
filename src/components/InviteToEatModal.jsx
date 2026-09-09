@@ -361,8 +361,8 @@ export default function InviteToEatModal({
               : !inviteKind
                 ? flowTitle
                 : inviteKind === "private"
-                  ? flowTitle === "Invite Me Out"
-                    ? "Invite Me Out"
+                  ? flowTitle === "Invite Me Out" || flowTitle === "Take Me Out"
+                    ? flowTitle
                     : "Invite one person"
                   : "Invite a group"}
           </div>

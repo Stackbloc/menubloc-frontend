@@ -37,9 +37,12 @@ test("My Menuply is the diner's personal home", () => {
   assert.match(section, /PostAfterActions/);
   assert.match(section, /Invite Me Out/);
   assert.doesNotMatch(section, /want-invite-me-out-settings/);
-  assert.match(section, /InviteMeOutAudiencePicker/);
-  assert.match(section, /invite-me-out-settings-sheet/);
-  assert.match(section, /want-invite-me-out-toggle/);
+  assert.doesNotMatch(section, /InviteMeOutAudiencePicker/);
+  assert.doesNotMatch(section, /invite-me-out-settings-sheet/);
+  assert.doesNotMatch(section, /want-invite-me-out-toggle/);
+  assert.match(section, /Join Me \/ Take Me Out/);
+  assert.match(section, /want-cravings-mode-join-me/);
+  assert.match(section, /want-cravings-mode-take-me-out/);
   const compose = read("src/pages/consumer/myMenuply/EatingCompose.jsx");
   assert.match(compose, /want-invite-me-out-settings/);
   assert.match(compose, /InviteMeOutAudiencePicker/);
@@ -47,13 +50,25 @@ test("My Menuply is the diner's personal home", () => {
   assert.match(section, /EatingPlanDayForm/);
   assert.match(page, /joinCandidates/);
   assert.match(page, /listPendingEatInvitePeople/);
+  assert.match(page, /flowTitle="Take Me Out"/);
+  assert.match(page, /handleJoinMeFromCraving/);
   assert.match(section, /future-plans-summary/);
-  assert.match(section, /None scheduled/);
+  assert.doesNotMatch(section, /None scheduled/);
   assert.doesNotMatch(section, /Schedule a plan/);
   assert.doesNotMatch(section, /eating-log-trigger/);
   assert.doesNotMatch(section, /^\s*Plans Scheduled\s*$/m);
   assert.match(page, /isScheduledEatingPlan/);
   assert.match(section, /FuturePlanRow/);
+  assert.match(section, /onDiaryDelete/);
+  assert.match(section, /\(\) => onDiaryDelete\(item\)/);
+  assert.match(
+    read("src/pages/consumer/myMenuply/DinerActivityScanRow.jsx"),
+    /diner-activity-scan-delete/
+  );
+  assert.match(
+    read("src/pages/consumer/myMenuply/DinerActivityScanRow.jsx"),
+    /useLongPressReveal/
+  );
   assert.doesNotMatch(section, /empty="Nothing yet."/);
   assert.match(page, /My Crews/);
   assert.match(page, /My Events/);
@@ -121,8 +136,8 @@ test("My Menuply is the diner's personal home", () => {
   assert.match(placeFields, /eating-place-restaurant/);
   assert.match(placeFields, /eating-place-dish-search/);
   assert.match(placeFields, /eating-place-menu-item-label/);
-  assert.match(placeFields, /Menu item/);
-  assert.match(placeFields, /Pick a restaurant first/);
+  assert.match(placeFields, />\s*Dish\s*</);
+  assert.doesNotMatch(placeFields, />\s*Menu item\s*</);
   assert.ok(placeFields.indexOf("eating-place-restaurant") < placeFields.indexOf("eating-place-homemade"));
   assert.match(placeFields, /searchReportPlaces/);
   assert.match(placeFields, /Homemade/);
@@ -154,7 +169,7 @@ test("My Menuply is the diner's personal home", () => {
   assert.match(api, /\/api\/consumer\/social-events/);
   assert.match(hero, /About Me/);
   assert.match(read("src/pages/consumer/myMenuply/MyMenuplyPresentationRails.jsx"), /DinerStatsBar/);
-  assert.match(hero, /viewerUserId/);
+  assert.match(page, /viewerUserId/);
   assert.match(page, /MyMenuplyPresentationRails/);
   assert.match(page, /buildTopHighlights/);
   const rails = read("src/pages/consumer/myMenuply/MyMenuplyPresentationRails.jsx");
@@ -169,7 +184,7 @@ test("My Menuply is the diner's personal home", () => {
   const eatingCompose = read("src/pages/consumer/myMenuply/EatingCompose.jsx");
   assert.match(eatingCompose, /MenuplyMediaPicker/);
   assert.match(eatingCompose, /eating-compose-media/);
-  assert.match(section, /WantToEatList/);
+  assert.match(section, /WantToEatUnifiedList/);
   assert.match(section, /SectionEmptyState/);
   const calendar = read("src/pages/consumer/myMenuply/DinerCalendarSheet.jsx");
   assert.match(calendar, /diner-calendar-open/);
@@ -191,7 +206,7 @@ test("My Menuply is the diner's personal home", () => {
   assert.doesNotMatch(page, /dietary_preferences/);
   assert.doesNotMatch(bits, /actionLabel/);
   assert.doesNotMatch(hero, /Share My Menuply/);
-  assert.doesNotMatch(hero, /Settings/);
+  assert.doesNotMatch(hero, />\s*Settings\s*</);
   assert.doesNotMatch(hero, /\/account\/diner-qr/);
 });
 

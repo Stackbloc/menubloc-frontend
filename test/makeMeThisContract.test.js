@@ -26,12 +26,15 @@ test("Make Me This API + single picker + profile badges", () => {
   assert.doesNotMatch(hub, /MakeMeThisInboxPanel/);
   assert.match(hub, /want-cravings-action-open/);
   assert.match(hub, /want-cravings-action-mmt/);
+  assert.match(hub, /Join Me \/ Take Me Out/);
   assert.doesNotMatch(hub, /want-cravings-invite-open/);
   assert.doesNotMatch(hub, /Invite & Make Me This/);
   assert.doesNotMatch(hub, /want-mmt-open-picker/);
   assert.doesNotMatch(hub, /allow specific Connects to make you a dish on your Wanna Eat list/);
   assert.doesNotMatch(hub, /choose which wanna-eat items show Make Me This/);
   assert.match(hub, /onViewMmt=\{onViewMmt\}/);
+  assert.match(hub, /onJoinMeFromCraving/);
+  assert.match(hub, /onTakeMeOutFromCraving/);
   assert.doesNotMatch(hub, /what-im-eating-camera/);
   assert.doesNotMatch(hub, /onOpenAteCamera/);
 

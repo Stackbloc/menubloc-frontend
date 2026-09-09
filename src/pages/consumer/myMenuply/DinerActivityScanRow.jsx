@@ -12,7 +12,9 @@ import { WHAT_I_ATE_MEAL_PERIODS } from "../../../lib/whatIAteTodayMealPeriod.js
 import { shouldPreferRestaurantMark } from "../../../lib/restaurantMarkPreference.js";
 import { restaurantHref } from "./myMenuplyBits.jsx";
 import { resolveEatingDishVisual } from "./eatingDishVisual.js";
+import { useLongPressReveal } from "./mediaLongPressReveal.js";
 import { GREEN_MID } from "./myMenuplyStyles.js";
+import * as s from "./myMenuplyStyles.js";
 
 const THUMB = 40;
 
@@ -115,8 +117,14 @@ export default function DinerActivityScanRow({
   placeAsText = false,
   /** 1-based meal order for this journal day (profile What I'm Eating). */
   dailyMealNumber = null,
+  /** Owner profile: long-press / right-click to delete this entry. */
+  onDelete = null,
+  deleteBusy = false,
+  deleteLabel = "Delete",
 }) {
   const [expanded, setExpanded] = useState(false);
+  const canDelete = typeof onDelete === "function";
+  const { open: deleteOpen, dismiss, consumeArmedClick, bind } = useLongPressReveal(canDelete);
   const hasVideo = Boolean(String(videoUrl || "").trim());
   const videoSrc = hasVideo ? String(videoUrl).trim() : "";
 
@@ -185,11 +193,23 @@ export default function DinerActivityScanRow({
   function openVideo(e) {
     e?.preventDefault?.();
     e?.stopPropagation?.();
+    if (consumeArmedClick() || deleteOpen) {
+      dismiss();
+      return;
+    }
     if (!hasVideo) {
       onSelect?.();
       return;
     }
     setExpanded((v) => !v);
+  }
+
+  function handleDelete(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (deleteBusy) return;
+    dismiss();
+    onDelete?.();
   }
 
   const identityBlock =
@@ -316,10 +336,24 @@ export default function DinerActivityScanRow({
       style={{
         ...styles.wrap,
         ...(selected ? styles.wrapSelected : null),
+        ...(canDelete ? s.hubCardShell : null),
       }}
       data-testid={testId}
       data-has-video={hasVideo ? "true" : "false"}
+      {...bind}
     >
+      {deleteOpen ? (
+        <button
+          type="button"
+          style={s.hubCardDelete}
+          data-testid="diner-activity-scan-delete"
+          aria-label={deleteLabel}
+          disabled={deleteBusy}
+          onClick={handleDelete}
+        >
+          Delete
+        </button>
+      ) : null}
       {profileHref && identityBlock ? (
         <Link to={profileHref} style={styles.identityLink} data-testid="diner-activity-scan-profile">
           {identityBlock}

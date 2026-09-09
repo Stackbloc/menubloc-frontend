@@ -58,6 +58,12 @@ test("My Menuply and peer hub use five-section presentation hub", () => {
   assert.match(section, /Add a craving anytime|No cravings shared yet/);
   assert.match(section, /want-cravings-action-open/);
   assert.match(section, /want-cravings-action-box/);
+  assert.match(section, /Join Me \/ Take Me Out/);
+  assert.match(section, /want-cravings-mode-join-me/);
+  assert.match(section, /want-cravings-mode-take-me-out/);
+  assert.match(section, /onJoinMeFromCraving/);
+  assert.match(section, /onTakeMeOutFromCraving/);
+  assert.doesNotMatch(section, />\s*Actions\s*</);
   assert.doesNotMatch(section, /Invite & Make Me This/);
   assert.doesNotMatch(section, /want-cravings-invite-open/);
   assert.doesNotMatch(section, /want-mmt-open-picker/);
@@ -70,6 +76,10 @@ test("My Menuply and peer hub use five-section presentation hub", () => {
   assert.doesNotMatch(section, /Multiplier\/Post/);
   assert.match(section, /editMode/);
   assert.match(mine, /profile-view-mode-toggle/);
+  assert.match(mine, /handleJoinMeFromCraving/);
+  assert.match(mine, /handleTakeMeOutFromCraving/);
+  assert.match(mine, /flowTitle="Take Me Out"/);
+  assert.match(mine, /InviteToEatModal/);
 
   const sheet = read("src/pages/consumer/myMenuply/DinerCalendarSheet.jsx");
   assert.match(sheet, /Keep the sheet open so the selected day stays highlighted until Done/);
@@ -113,6 +123,15 @@ test("My Menuply and peer hub use five-section presentation hub", () => {
   assert.match(section, /onDiaryDelete/);
   assert.match(section, /onWantDelete/);
   assert.match(section, /onDiningIntentDelete/);
+  assert.match(section, /\(\) => onDiaryDelete\(item\)/);
+  assert.match(
+    read("src/pages/consumer/myMenuply/DinerActivityScanRow.jsx"),
+    /useLongPressReveal|mediaLongPressReveal/
+  );
+  assert.match(
+    read("src/pages/consumer/myMenuply/DinerActivityScanRow.jsx"),
+    /diner-activity-scan-delete/
+  );
   assert.match(mealBoard, /resolveEatingDishVisual/);
   assert.match(dishVisual, /video_url/);
   assert.match(dishVisual, /photo_url/);

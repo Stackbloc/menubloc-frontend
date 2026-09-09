@@ -49,6 +49,7 @@ import {
   uploadDinerAvatar,
   uploadConsumerProfileMedia,
   deleteConsumerProfileMedia,
+  setConsumerProfileMediaHighlight,
   getPublicFlashVideos,
   uploadProfileMedia,
   deleteProfileMedia,
@@ -57,6 +58,7 @@ import {
   updateWhatIAteToday,
   whatIAteTodayLocalDate,
 } from "../../lib/consumerApi.js";
+import InviteToEatModal from "../../components/InviteToEatModal.jsx";
 import { eatingMediaFromUpload } from "../../lib/eatingMediaUtils.js";
 import { pruneMenuplyLiveFeedItem } from "../../lib/menuplyLiveFeedControl.js";
 import { defaultWhatIAteMealPeriod } from "../../lib/whatIAteTodayMealPeriod.js";
@@ -222,6 +224,7 @@ export default function MyMenuplyPage() {
   const [selectedPlanKey, setSelectedPlanKey] = useState("");
   const [joinCandidates, setJoinCandidates] = useState([]);
   const [requestMmtOpen, setRequestMmtOpen] = useState(false);
+  const [takeMeOutInvite, setTakeMeOutInvite] = useState(null);
   const [mmtDetailId, setMmtDetailId] = useState(null);
   const [inviteMeOutOpen, setInviteMeOutOpen] = useState(false);
   const [inviteMeOutAudience, setInviteMeOutAudience] = useState("connections");
@@ -553,9 +556,24 @@ export default function MyMenuplyPage() {
       }),
     [connections, followed, liked, eating, homeDishes, events, eventGroups, socialEvents]
   );
-  const topHighlights = useMemo(
-    () => buildTopHighlights({ eating, liked, followed }),
-    [eating, liked, followed]
+  const topHighlights = useMemo(() => {
+    const pinned = (profileMedia || []).filter(
+      (row) => row?.is_highlight && row?.media_kind === "photo"
+    );
+    return buildTopHighlights({
+      eating,
+      liked,
+      followed,
+      profileHighlightPhotos: pinned,
+    });
+  }, [eating, liked, followed, profileMedia]);
+
+  const profileHighlightCount = useMemo(
+    () =>
+      (profileMedia || []).filter(
+        (row) => row?.is_highlight && row?.media_kind === "photo"
+      ).length,
+    [profileMedia]
   );
   const followedRestaurantRails = useMemo(
     () => buildFollowedRestaurantRails(followed),
@@ -637,7 +655,7 @@ export default function MyMenuplyPage() {
     }
   }
 
-  async function onProfileMediaAdd(file) {
+  async function onProfileMediaAdd(file, opts = {}) {
     setProfileGalleryPickerOpen(false);
     setProfileGalleryMediaSource(null);
     if (!file) return;
@@ -645,10 +663,16 @@ export default function MyMenuplyPage() {
     setIdentityError("");
     setIdentityNotice("");
     try {
-      const data = await uploadConsumerProfileMedia(file);
+      const data = await uploadConsumerProfileMedia(file, {
+        is_highlight: Boolean(opts.is_highlight),
+      });
       const item = data?.item;
       if (item) setProfileMedia((prev) => [...prev, item]);
-      setIdentityNotice("Profile media added.");
+      setIdentityNotice(
+        item?.is_highlight
+          ? "Profile photo added to Top Highlights."
+          : "Profile media added."
+      );
     } catch (err) {
       setIdentityError(err.message || "Unable to upload profile media");
     } finally {
@@ -1047,7 +1071,16 @@ export default function MyMenuplyPage() {
     setPostBusy("highlight-delete");
     setError("");
     try {
-      if (card.deleteKind === "like" && card.menu_item_id != null) {
+      if (card.deleteKind === "profile_media" && card.media_id != null) {
+        await setConsumerProfileMediaHighlight(card.media_id, false);
+        setProfileMedia((prev) =>
+          (prev || []).map((row) =>
+            Number(row.id) === Number(card.media_id)
+              ? { ...row, is_highlight: false }
+              : row
+          )
+        );
+      } else if (card.deleteKind === "like" && card.menu_item_id != null) {
         await unlikeMenuItem(card.menu_item_id);
         setLiked((prev) =>
           (prev || []).filter((row) => Number(row.menu_item_id) !== Number(card.menu_item_id))
@@ -1063,6 +1096,70 @@ export default function MyMenuplyPage() {
     } finally {
       setPostBusy("");
     }
+  }
+
+  function cravingToPlanPrefill(selected) {
+    if (!selected) return null;
+    if (selected.kind === "dining_intent") {
+      const intent = selected.intent || {};
+      return {
+        text: "",
+        homemade: false,
+        restaurant: intent.restaurant_id
+          ? {
+              restaurant_id: intent.restaurant_id,
+              restaurant_name: intent.restaurant_name,
+              restaurant_slug: intent.restaurant_slug,
+            }
+          : null,
+        dish: null,
+        joinable: true,
+      };
+    }
+    const want = selected.want || {};
+    return {
+      text: want.comment || "",
+      homemade: Boolean(want.homemade),
+      restaurant: want.restaurant_id
+        ? {
+            restaurant_id: want.restaurant_id,
+            restaurant_name: want.restaurant_name,
+            restaurant_slug: want.restaurant_slug,
+          }
+        : null,
+      dish: want.menu_item_id
+        ? {
+            menu_item_id: want.menu_item_id,
+            item_name: want.item_name || want.food_name,
+          }
+        : want.food_name
+          ? { item_name: want.food_name }
+          : null,
+      joinable: true,
+    };
+  }
+
+  function handleJoinMeFromCraving(selected) {
+    const prefill = cravingToPlanPrefill(selected);
+    if (!prefill) return;
+    setPlanPrefill(prefill);
+    setSchedulingPlans(true);
+    setCalendarOpen(true);
+    setCalendarTitle("My Eating Plans");
+  }
+
+  function handleTakeMeOutFromCraving(selected) {
+    const restaurantId = selected?.restaurantId ?? selected?.want?.restaurant_id ?? selected?.intent?.restaurant_id;
+    if (restaurantId == null || String(restaurantId).trim() === "") return;
+    const want = selected?.want || null;
+    const intent = selected?.intent || null;
+    setTakeMeOutInvite({
+      restaurantId,
+      restaurantName:
+        want?.restaurant_name || intent?.restaurant_name || selected?.label || "",
+      menuItemId: want?.menu_item_id || null,
+      menuItemName: want?.food_name || want?.item_name || null,
+    });
   }
 
   async function onCrewDelete(crew) {
@@ -1677,6 +1774,8 @@ export default function MyMenuplyPage() {
               onMediaSourceChange={setProfileGalleryMediaSource}
               busy={identityBusy}
               onFile={onProfileMediaAdd}
+              highlightCount={profileHighlightCount}
+              maxHighlights={3}
             />
 
             <MyMenuplyPresentationRails
@@ -1757,6 +1856,8 @@ export default function MyMenuplyPage() {
               inviteMeOutToggleBusy={inviteMeOutToggleBusy}
               onRequestMmt={() => setRequestMmtOpen(true)}
               onViewMmt={(mmt) => setMmtDetailId(Number(mmt?.id) || null)}
+              onJoinMeFromCraving={handleJoinMeFromCraving}
+              onTakeMeOutFromCraving={handleTakeMeOutFromCraving}
               planPrefill={planPrefill}
               locationCity={locationCity}
               locationState={locationState}
@@ -2064,6 +2165,19 @@ export default function MyMenuplyPage() {
         onClose={() => setMmtDetailId(null)}
         onUpdated={refreshMmtData}
       />
+      {takeMeOutInvite ? (
+        <InviteToEatModal
+          open
+          onClose={() => setTakeMeOutInvite(null)}
+          restaurantId={takeMeOutInvite.restaurantId}
+          restaurantName={takeMeOutInvite.restaurantName || ""}
+          menuItemId={takeMeOutInvite.menuItemId || null}
+          menuItemName={takeMeOutInvite.menuItemName || null}
+          initialInviteKind="private"
+          lockInviteKind
+          flowTitle="Take Me Out"
+        />
+      ) : null}
     </>
   );
 }

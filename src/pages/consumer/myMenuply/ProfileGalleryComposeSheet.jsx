@@ -1,11 +1,20 @@
 /**
  * X → Profile gallery: choose native camera or library upload,
  * then capture into the About profile gallery.
+ * Photos may optionally be pinned to Top Highlights (max 3).
  */
 
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import MenuplyMediaPicker from "../../../components/social/MenuplyMediaPicker.jsx";
+
+function isPhotoFile(file) {
+  const type = String(file?.type || "").toLowerCase();
+  if (type.startsWith("image/")) return true;
+  if (type.startsWith("video/")) return false;
+  const name = String(file?.name || "").toLowerCase();
+  return /\.(jpe?g|png|gif|webp|heic|heif)$/i.test(name);
+}
 
 export default function ProfileGalleryComposeSheet({
   open,
@@ -14,7 +23,30 @@ export default function ProfileGalleryComposeSheet({
   onMediaSourceChange,
   busy = false,
   onFile,
+  highlightCount = 0,
+  maxHighlights = 3,
 }) {
+  const [pendingFile, setPendingFile] = useState(null);
+  const [addToHighlights, setAddToHighlights] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState("");
+
+  const pendingIsPhoto = useMemo(
+    () => (pendingFile ? isPhotoFile(pendingFile) : false),
+    [pendingFile]
+  );
+  const highlightsFull = Number(highlightCount) >= Number(maxHighlights);
+
+  useEffect(() => {
+    if (!open) {
+      setPendingFile(null);
+      setAddToHighlights(false);
+      setPreviewUrl((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return "";
+      });
+    }
+  }, [open]);
+
   useEffect(() => {
     if (!open) return undefined;
     function onKey(event) {
@@ -29,9 +61,41 @@ export default function ProfileGalleryComposeSheet({
     };
   }, [open, onClose]);
 
+  useEffect(() => {
+    if (!pendingFile) {
+      setPreviewUrl((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return "";
+      });
+      return undefined;
+    }
+    const url = URL.createObjectURL(pendingFile);
+    setPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [pendingFile]);
+
   if (!open || typeof document === "undefined") return null;
 
   const picking = mediaSource === "camera" || mediaSource === "library";
+
+  function handlePickedFile(file) {
+    if (!file) return;
+    if (isPhotoFile(file)) {
+      setPendingFile(file);
+      setAddToHighlights(false);
+      return;
+    }
+    // Videos go straight to gallery — highlights are photos only.
+    onFile?.(file, { is_highlight: false });
+  }
+
+  function confirmPending() {
+    if (!pendingFile) return;
+    const pin = pendingIsPhoto && addToHighlights && !highlightsFull;
+    onFile?.(pendingFile, { is_highlight: pin });
+    setPendingFile(null);
+    setAddToHighlights(false);
+  }
 
   return createPortal(
     <div
@@ -57,13 +121,56 @@ export default function ProfileGalleryComposeSheet({
         </div>
         <p style={styles.lead}>Add a photo or short video about you — not your eating diary.</p>
 
-        {picking ? (
+        {pendingFile ? (
+          <div style={styles.confirm} data-testid="profile-gallery-highlight-confirm">
+            {previewUrl && pendingIsPhoto ? (
+              <img src={previewUrl} alt="" style={styles.preview} />
+            ) : null}
+            <label style={styles.checkRow}>
+              <input
+                type="checkbox"
+                checked={addToHighlights}
+                disabled={!pendingIsPhoto || highlightsFull || busy}
+                onChange={(e) => setAddToHighlights(e.target.checked)}
+                data-testid="profile-gallery-add-to-highlights"
+              />
+              <span>
+                Add to Top Highlights
+                <span style={styles.checkHint}>
+                  {highlightsFull
+                    ? ` · ${maxHighlights} highlights already set`
+                    : ` · photos only · up to ${maxHighlights}`}
+                </span>
+              </span>
+            </label>
+            <div style={styles.confirmActions}>
+              <button
+                type="button"
+                style={styles.secondary}
+                disabled={busy}
+                onClick={() => {
+                  setPendingFile(null);
+                  setAddToHighlights(false);
+                }}
+              >
+                Back
+              </button>
+              <button
+                type="button"
+                style={styles.primary}
+                disabled={busy}
+                data-testid="profile-gallery-confirm-upload"
+                onClick={confirmPending}
+              >
+                {busy ? "Uploading…" : "Upload"}
+              </button>
+            </div>
+          </div>
+        ) : picking ? (
           <div style={styles.pickerWrap}>
             <MenuplyMediaPicker
               key={mediaSource}
-              onFile={(file) => {
-                onFile?.(file);
-              }}
+              onFile={handlePickedFile}
               disabled={busy}
               facingMode="user"
               source={mediaSource === "library" ? "library" : "camera"}
@@ -180,5 +287,52 @@ const styles = {
     padding: 0,
     font: "inherit",
     textAlign: "left",
+  },
+  confirm: { display: "grid", gap: 12 },
+  preview: {
+    width: "100%",
+    maxHeight: 220,
+    objectFit: "cover",
+    borderRadius: 12,
+    background: "#f1f5f9",
+  },
+  checkRow: {
+    display: "flex",
+    gap: 8,
+    alignItems: "flex-start",
+    fontSize: 14,
+    fontWeight: 650,
+    color: "#0f172a",
+    cursor: "pointer",
+  },
+  checkHint: {
+    display: "block",
+    marginTop: 2,
+    fontSize: 12,
+    fontWeight: 500,
+    color: "#64748b",
+  },
+  confirmActions: { display: "flex", gap: 8, justifyContent: "flex-end" },
+  secondary: {
+    appearance: "none",
+    border: "1px solid #e2e8f0",
+    background: "#fff",
+    borderRadius: 10,
+    padding: "10px 14px",
+    fontSize: 13,
+    fontWeight: 700,
+    color: "#475569",
+    cursor: "pointer",
+  },
+  primary: {
+    appearance: "none",
+    border: "none",
+    background: "#1F4E3D",
+    color: "#fff",
+    borderRadius: 10,
+    padding: "10px 14px",
+    fontSize: 13,
+    fontWeight: 750,
+    cursor: "pointer",
   },
 };

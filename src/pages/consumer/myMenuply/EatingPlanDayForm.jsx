@@ -19,6 +19,7 @@ export default function EatingPlanDayForm({
   initialRestaurant = null,
   initialDish = null,
   initialNote = "",
+  initialJoinable = false,
   locationCity = null,
   locationState = null,
 }) {
@@ -26,7 +27,7 @@ export default function EatingPlanDayForm({
   const [dish, setDish] = useState(initialDish);
   const [homemade, setHomemade] = useState(initialHomemade);
   const [note, setNote] = useState(initialNote);
-  const [joinable, setJoinable] = useState(false);
+  const [joinable, setJoinable] = useState(Boolean(initialJoinable));
   const [joinAudience, setJoinAudience] = useState("connections");
   const [selectedIds, setSelectedIds] = useState([]);
   const [joinCapacity, setJoinCapacity] = useState("4");
