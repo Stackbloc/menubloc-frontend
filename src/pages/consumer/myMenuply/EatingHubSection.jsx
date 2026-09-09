@@ -411,7 +411,6 @@ export default function EatingHubSection({
   const canEdit = !readOnly && editMode !== false;
   /** Own profile Connect preview — same prose as peer, but no redundant owner avatar/thumb. */
   const isConnectPreview = !readOnly && editMode === false;
-  const ownerCompact = canEdit;
   const rowDisplayName = activityDisplayName || (readOnly ? "Diner" : "You");
   const rowAvatarUrl = activityAvatarUrl || null;
   const [composeOpenLocal, setComposeOpenLocal] = useState(false);
@@ -574,7 +573,7 @@ export default function EatingHubSection({
               style={{ listStyle: "none", margin: "0 0 12px", padding: 0 }}
               data-testid="eating-activity-rows"
             >
-              {eatingForDay.map((item) => {
+              {eatingForDay.map((item, index) => {
                 const food = item.food_name || item.item_name;
                 const homemade = Boolean(item.homemade);
                 return (
@@ -598,11 +597,12 @@ export default function EatingHubSection({
                       mealPeriod={item.meal_period}
                       homemade={homemade}
                       videoUrl={item.video_url || null}
-                      ownerCompact={ownerCompact}
-                      showIdentity={!ownerCompact && !isConnectPreview}
+                      ownerCompact
+                      showIdentity={false}
                       showThumb={!isConnectPreview}
-                      nameInProse={isConnectPreview}
-                      placeAsText={isConnectPreview}
+                      nameInProse={false}
+                      placeAsText={isConnectPreview || readOnly}
+                      dailyMealNumber={index + 1}
                       onSelect={canEdit && onDiarySelect ? () => onDiarySelect(item) : null}
                     />
                   </li>

@@ -43,6 +43,8 @@ test("DinerActivityScanRow: compact thumb + working video play", () => {
   assert.match(row, /showThumb/);
   assert.match(row, /nameInProse/);
   assert.match(row, /placeAsText/);
+  assert.match(row, /dailyMealNumber/);
+  assert.match(row, /diner-activity-scan-meal-num/);
   assert.match(row, /shouldPreferRestaurantMark/);
   assert.doesNotMatch(row, /MenuplyMediaPicker|getUserMedia|facingMode/);
 });
@@ -67,10 +69,12 @@ test("What I'm Eating / Wanna Eat use compact Add + sheet compose", () => {
   assert.match(hub, /editMode/);
   assert.match(hub, /ownerCompact/);
   assert.match(hub, /isConnectPreview/);
-  assert.match(hub, /nameInProse/);
+  assert.match(hub, /nameInProse=\{false\}/);
+  assert.match(hub, /dailyMealNumber=\{index \+ 1\}/);
   assert.match(hub, /showThumb/);
   assert.match(hub, /activityAvatarUrl/);
   assert.match(hub, /want-cravings-action-box/);
+  assert.doesNotMatch(hub, /nameInProse=\{isConnectPreview\}/);
   assert.doesNotMatch(hub, /WhatIAteMealBoard/);
   assert.doesNotMatch(hub, /Multiplier\/Post/);
   assert.doesNotMatch(hub, /FoodStatusQuickCompose|EatingActivityCompose/);
