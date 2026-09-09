@@ -11,7 +11,7 @@ import {
   restaurantLabel,
   searchReportPlaces,
 } from "../../../lib/foodActivityApi.js";
-import { dishPhotoUrl } from "./eatingPlaceLink.js";
+import { dishPhotoUrl } from "../../../lib/eatingPlaceLink.js";
 import * as s from "./myMenuplyStyles.js";
 
 export default function EatingPlaceFields({
