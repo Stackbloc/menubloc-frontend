@@ -67,6 +67,13 @@ test("DinerIdentityHero renders personal context and unified profile settings", 
   assert.match(hero, /personalContextLines\.map/);
   assert.match(hero, /onSaveProfileSettings/);
   assert.match(hero, /diner-school-affiliation/);
+  assert.ok(
+    hero.lastIndexOf('data-testid="diner-about-input"') <
+      hero.lastIndexOf("<DinerPersonalContextEditor"),
+    "Edit profile details comes after About"
+  );
+  assert.doesNotMatch(hero, /No about yet/);
+  assert.match(hero, /diner-about-readonly/);
   assert.match(editor, /diner-personal-context-editor/);
   assert.match(editor, /diner-personal-context-toggle/);
   assert.match(editor, /Edit profile details|Add profile details/);

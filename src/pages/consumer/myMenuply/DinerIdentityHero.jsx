@@ -257,17 +257,6 @@ export default function DinerIdentityHero({
             onRemove={readOnly || !showRichMedia ? undefined : onFlashVideoRemove}
           />
 
-          {!readOnly && onSaveProfileSettings ? (
-            <DinerPersonalContextEditor
-              value={personalContext}
-              dateOfBirth={dateOfBirth}
-              dinerSex={dinerSex}
-              favoriteFoods={favoriteFoods}
-              busy={busy || saving}
-              onSave={onSaveProfileSettings}
-            />
-          ) : null}
-
           {readOnly ? <FavoriteFoodsReadonly favoriteFoods={favoriteFoods} /> : null}
 
           {locationLabel ? (
@@ -284,9 +273,11 @@ export default function DinerIdentityHero({
           ) : null}
 
           {readOnly ? (
-            <p style={{ ...s.aboutArea, minHeight: 0 }}>
-              {String(about || "").trim() || "No about yet."}
-            </p>
+            String(about || "").trim() ? (
+              <p style={{ ...s.aboutArea, minHeight: 0 }} data-testid="diner-about-readonly">
+                {String(about).trim()}
+              </p>
+            ) : null
           ) : (
             <>
               <textarea
@@ -306,6 +297,18 @@ export default function DinerIdentityHero({
               </p>
             </>
           )}
+
+          {/* Last control in About Me — after identity lines, location, and about. */}
+          {!readOnly && onSaveProfileSettings ? (
+            <DinerPersonalContextEditor
+              value={personalContext}
+              dateOfBirth={dateOfBirth}
+              dinerSex={dinerSex}
+              favoriteFoods={favoriteFoods}
+              busy={busy || saving}
+              onSave={onSaveProfileSettings}
+            />
+          ) : null}
         </div>
       </div>
 

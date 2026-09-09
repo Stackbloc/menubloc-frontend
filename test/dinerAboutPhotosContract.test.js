@@ -37,10 +37,23 @@ test("My Menuply identity hero is prominent with photo upload and short bio", ()
   assert.match(hero, /diner-about-input/);
   assert.match(hero, /maxLength=\{ABOUT_MAX\}/);
   assert.match(hero, /LA food explorer/);
-  assert.match(read("src/pages/consumer/myMenuply/MyMenuplyPresentationRails.jsx"), /Connects/);
+  assert.doesNotMatch(hero, /No about yet/);
+  assert.ok(
+    hero.lastIndexOf('data-testid="diner-about-input"') <
+      hero.lastIndexOf("<DinerPersonalContextEditor"),
+    "Edit profile details is last in About Me block"
+  );
   assert.match(
     read("src/pages/consumer/myMenuply/MyMenuplyPresentationRails.jsx"),
-    /\/account\/connections\//
+    /top-highlights/
+  );
+  assert.match(
+    read("src/pages/consumer/myMenuply/MyMenuplyPresentationRails.jsx"),
+    /height: 148/
+  );
+  assert.doesNotMatch(
+    read("src/pages/consumer/myMenuply/MyMenuplyPresentationRails.jsx"),
+    /height: 252/
   );
   assert.match(gallery, /about-me-profile-media/);
   assert.match(gallery, /profile-media-delete/);
@@ -58,16 +71,14 @@ test("My Menuply identity hero is prominent with photo upload and short bio", ()
   assert.match(page, /EatingHubSection/);
   assert.match(compose, /MenuplyMediaPicker/);
   assert.doesNotMatch(hero, /Share My Menuply/);
-  assert.doesNotMatch(hero, /Settings/);
   assert.doesNotMatch(hero, /Add a dining photo/);
   assert.doesNotMatch(gallery, /Add a dining photo/);
   assert.doesNotMatch(hero, /vegetarian|gluten_free|allergen/i);
   assert.doesNotMatch(hero, /questionnaire|favorite cuisine/i);
   assert.match(hero, /diner-personal-context/);
-  assert.match(hero, /diner-profile-basics/);
-  assert.match(hero, /diner-dob-input/);
-  assert.match(hero, /diner-favorite-foods/);
-  assert.match(page, /onSaveProfileBasics/);
+  assert.match(hero, /onSaveProfileSettings/);
+  assert.match(hero, /DinerPersonalContextEditor/);
+  assert.match(page, /onSaveProfileSettings/);
 });
 
 test("Connection peer hub shows read-only profile media gallery", () => {

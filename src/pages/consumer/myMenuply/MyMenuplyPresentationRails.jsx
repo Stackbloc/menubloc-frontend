@@ -215,9 +215,9 @@ export default function MyMenuplyPresentationRails({
 const railStyles = {
   highlightGrid: {
     display: "grid",
-    gridTemplateColumns: "1.15fr 0.85fr",
+    gridTemplateColumns: "1fr 1fr",
     gap: 10,
-    alignItems: "stretch",
+    alignItems: "start",
   },
   highlightStack: {
     display: "grid",
@@ -234,7 +234,7 @@ const railStyles = {
     boxShadow: "0 8px 22px rgba(20, 83, 45, 0.1)",
   },
   highlightCardLarge: {
-    minHeight: "100%",
+    minHeight: 0,
   },
   highlightMedia: {
     position: "relative",
@@ -242,7 +242,7 @@ const railStyles = {
     background: "#ecfdf5",
   },
   highlightMediaLarge: {
-    height: 252,
+    height: 148,
   },
   highlightImg: {
     width: "100%",
