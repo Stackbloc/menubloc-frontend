@@ -32,8 +32,18 @@ export async function createMakeMeThisRequest({
 
 export async function respondToMakeMeThisRequest(id, body) {
   return apiPost(`/api/consumer/make-me-this/${encodeURIComponent(String(id))}/respond`, {
-    body,
+    body: body == null ? "" : String(body),
   });
+}
+
+export async function scheduleMakeMeThisMeetup(requestId, responseId, { meetupAt, meetupPlaceText }) {
+  return apiPost(
+    `/api/consumer/make-me-this/${encodeURIComponent(String(requestId))}/responses/${encodeURIComponent(String(responseId))}/schedule`,
+    {
+      meetup_at: meetupAt,
+      meetup_place_text: meetupPlaceText,
+    }
+  );
 }
 
 export async function closeMakeMeThisRequest(id) {

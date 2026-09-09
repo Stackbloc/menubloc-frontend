@@ -65,6 +65,9 @@ test("My Menuply and peer hub use five-section presentation hub", () => {
   assert.match(section, /onTakeMeOutFromCraving/);
   assert.doesNotMatch(section, />\s*Actions\s*</);
   assert.doesNotMatch(section, /Invite & Make Me This/);
+  assert.doesNotMatch(section, /Invite &amp; Make Me This/);
+  assert.doesNotMatch(section, /want-cravings-action-mmt/);
+  assert.doesNotMatch(section, /onRequestMmt/);
   assert.doesNotMatch(section, /want-cravings-invite-open/);
   assert.doesNotMatch(section, /want-mmt-open-picker/);
   assert.doesNotMatch(section, /want-invite-me-out-toggle/);

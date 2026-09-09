@@ -1,5 +1,7 @@
 /**
  * View / respond to a Make Me This request (owner or eligible responder).
+ * Peer: one-tap "Make this for {name}?" — no Accept step for owner.
+ * Owner: after an offer, specify time + place.
  */
 
 import { useEffect, useState } from "react";
@@ -8,21 +10,34 @@ import {
   closeMakeMeThisRequest,
   getMakeMeThisRequest,
   respondToMakeMeThisRequest,
+  scheduleMakeMeThisMeetup,
 } from "../../../lib/makeMeThisApi.js";
 import * as s from "./myMenuplyStyles.js";
+
+function toDatetimeLocalValue(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
 
 export default function MmtDetailSheet({ open, requestId, viewerUserId, onClose, onUpdated }) {
   const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [request, setRequest] = useState(null);
-  const [draft, setDraft] = useState("");
+  const [scheduleForId, setScheduleForId] = useState(null);
+  const [meetupAt, setMeetupAt] = useState("");
+  const [meetupPlace, setMeetupPlace] = useState("");
 
   useEffect(() => {
     if (!open || !requestId) {
       setRequest(null);
-      setDraft("");
       setError("");
+      setScheduleForId(null);
+      setMeetupAt("");
+      setMeetupPlace("");
       return undefined;
     }
     let cancelled = false;
@@ -32,12 +47,7 @@ export default function MmtDetailSheet({ open, requestId, viewerUserId, onClose,
       try {
         const data = await getMakeMeThisRequest(requestId);
         if (cancelled) return;
-        const req = data?.request || null;
-        setRequest(req);
-        const mine = (req?.responses || []).find(
-          (row) => !row.responder || Number(row.responder?.id) === Number(viewerUserId)
-        );
-        setDraft(mine?.body || "");
+        setRequest(data?.request || null);
       } catch (err) {
         if (!cancelled) setError(err?.message || "Unable to load request");
       } finally {
@@ -54,17 +64,23 @@ export default function MmtDetailSheet({ open, requestId, viewerUserId, onClose,
   const isOwner = Number(request?.requester_user_id) === Number(viewerUserId);
   const food = String(request?.food_name || request?.item_name || "This dish").trim();
   const place = String(request?.restaurant_name || "").trim();
+  const ownerName = String(request?.requester?.display_name || "them").trim() || "them";
+  const viewerAlreadyOffered = Boolean(request?.viewer_has_responded);
 
-  async function handleRespond() {
+  async function reload() {
+    const data = await getMakeMeThisRequest(requestId);
+    setRequest(data?.request || null);
+    onUpdated?.();
+  }
+
+  async function handleOffer() {
     setBusy(true);
     setError("");
     try {
-      await respondToMakeMeThisRequest(requestId, draft);
-      const data = await getMakeMeThisRequest(requestId);
-      setRequest(data?.request || null);
-      onUpdated?.();
+      await respondToMakeMeThisRequest(requestId, "");
+      await reload();
     } catch (err) {
-      setError(err?.message || "Unable to send response");
+      setError(err?.message || "Unable to send offer");
     } finally {
       setBusy(false);
     }
@@ -79,6 +95,31 @@ export default function MmtDetailSheet({ open, requestId, viewerUserId, onClose,
       onClose?.();
     } catch (err) {
       setError(err?.message || "Unable to close request");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function openSchedule(row) {
+    setScheduleForId(Number(row.id));
+    setMeetupAt(toDatetimeLocalValue(row.meetup_at) || "");
+    setMeetupPlace(String(row.meetup_place_text || "").trim());
+    setError("");
+  }
+
+  async function handleSaveSchedule() {
+    if (!scheduleForId) return;
+    setBusy(true);
+    setError("");
+    try {
+      await scheduleMakeMeThisMeetup(requestId, scheduleForId, {
+        meetupAt: meetupAt ? new Date(meetupAt).toISOString() : "",
+        meetupPlaceText: meetupPlace,
+      });
+      setScheduleForId(null);
+      await reload();
+    } catch (err) {
+      setError(err?.message || "Unable to save time and place");
     } finally {
       setBusy(false);
     }
@@ -116,34 +157,76 @@ export default function MmtDetailSheet({ open, requestId, viewerUserId, onClose,
                   <ul style={styles.responses}>
                     {(request.responses || []).map((row) => {
                       const who = row.responder?.display_name || "Diner";
+                      const scheduled = Boolean(row.meetup_at && row.meetup_place_text);
+                      const editing = Number(scheduleForId) === Number(row.id);
                       return (
                         <li key={row.id} style={styles.responseItem} data-testid="mmt-owner-offer">
                           <p style={styles.offerPrompt}>
-                            {who} has offered to make you {food}. Accept?
+                            {who} offered to make {food} for you. Specify a time and place.
                           </p>
-                          {row.body ? <div style={styles.body}>{row.body}</div> : null}
-                          <div style={styles.offerActions}>
-                            <button
-                              type="button"
-                              style={s.primaryBtn}
-                              disabled={busy}
-                              data-testid="mmt-offer-accept"
-                              onClick={() => {
-                                window.alert(`Accepted — ${who} will make you ${food}.`);
-                              }}
-                            >
-                              Accept
-                            </button>
-                            <button
-                              type="button"
-                              style={s.chipBtn}
-                              disabled={busy}
-                              data-testid="mmt-offer-dismiss"
-                              onClick={() => {}}
-                            >
-                              Not now
-                            </button>
-                          </div>
+                          {scheduled && !editing ? (
+                            <p style={styles.body} data-testid="mmt-owner-schedule-summary">
+                              {new Date(row.meetup_at).toLocaleString()} · {row.meetup_place_text}
+                            </p>
+                          ) : null}
+                          {editing ? (
+                            <div style={styles.scheduleForm} data-testid="mmt-owner-schedule-form">
+                              <label style={styles.label}>
+                                When
+                                <input
+                                  type="datetime-local"
+                                  value={meetupAt}
+                                  onChange={(e) => setMeetupAt(e.target.value)}
+                                  disabled={busy}
+                                  data-testid="mmt-schedule-when"
+                                  style={styles.input}
+                                />
+                              </label>
+                              <label style={styles.label}>
+                                Place
+                                <input
+                                  type="text"
+                                  value={meetupPlace}
+                                  onChange={(e) => setMeetupPlace(e.target.value)}
+                                  placeholder="Home, restaurant, address…"
+                                  disabled={busy}
+                                  data-testid="mmt-schedule-place"
+                                  style={styles.input}
+                                />
+                              </label>
+                              <div style={styles.offerActions}>
+                                <button
+                                  type="button"
+                                  style={s.primaryBtn}
+                                  disabled={busy || !meetupAt || !meetupPlace.trim()}
+                                  data-testid="mmt-schedule-save"
+                                  onClick={handleSaveSchedule}
+                                >
+                                  {busy ? "Saving…" : "Save time & place"}
+                                </button>
+                                <button
+                                  type="button"
+                                  style={s.chipBtn}
+                                  disabled={busy}
+                                  onClick={() => setScheduleForId(null)}
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div style={styles.offerActions}>
+                              <button
+                                type="button"
+                                style={s.primaryBtn}
+                                disabled={busy}
+                                data-testid="mmt-offer-schedule"
+                                onClick={() => openSchedule(row)}
+                              >
+                                {scheduled ? "Edit time & place" : "Specify time & place"}
+                              </button>
+                            </div>
+                          )}
                         </li>
                       );
                     })}
@@ -164,33 +247,33 @@ export default function MmtDetailSheet({ open, requestId, viewerUserId, onClose,
             ) : (
               <>
                 <p style={styles.lead}>
-                  {request.requester?.display_name || "Someone"} wants someone to make{" "}
-                  <strong>{food}</strong>
-                  {place ? ` from ${place}` : ""}. Offer to make it — only they see your reply.
+                  {ownerName} opened <strong>{food}</strong>
+                  {place ? ` from ${place}` : ""} for Make Me This.
                 </p>
-                <label style={styles.label}>
-                  How you&apos;ll make it (optional note)
-                  <textarea
-                    value={draft}
-                    onChange={(e) => setDraft(e.target.value)}
-                    rows={6}
-                    style={styles.textarea}
-                    disabled={busy || request.status !== "open"}
-                    data-testid="mmt-response-input"
-                  />
-                </label>
-                {request.status !== "open" ? (
+                {viewerAlreadyOffered ? (
+                  <p style={s.muted} data-testid="mmt-peer-offered">
+                    You offered to make this. They’ll send a time and place.
+                  </p>
+                ) : request.status !== "open" ? (
                   <p style={s.muted}>This request is closed.</p>
                 ) : (
                   <button
                     type="button"
                     style={s.primaryBtn}
-                    disabled={busy || !draft.trim()}
-                    onClick={handleRespond}
+                    disabled={busy}
+                    onClick={handleOffer}
                     data-testid="mmt-response-submit"
                   >
-                    {busy ? "Sending…" : "Offer to make this"}
+                    {busy ? "Sending…" : `Make this for ${ownerName}?`}
                   </button>
+                )}
+                {(request.responses || []).map((row) =>
+                  row.meetup_at && row.meetup_place_text ? (
+                    <p key={row.id} style={styles.body} data-testid="mmt-peer-schedule">
+                      Time & place: {new Date(row.meetup_at).toLocaleString()} ·{" "}
+                      {row.meetup_place_text}
+                    </p>
+                  ) : null
                 )}
               </>
             )}
@@ -236,7 +319,7 @@ const styles = {
   title: { margin: "0 0 8px", fontSize: 18, fontWeight: 900, color: "#0f172a" },
   lead: { margin: "0 0 12px", fontSize: 14, lineHeight: 1.45, color: "#475569" },
   label: { display: "grid", gap: 6, fontSize: 13, fontWeight: 700, color: "#0f172a" },
-  textarea: {
+  input: {
     width: "100%",
     boxSizing: "border-box",
     borderRadius: 10,
@@ -244,8 +327,8 @@ const styles = {
     padding: 10,
     fontSize: 14,
     fontFamily: "inherit",
-    resize: "vertical",
   },
+  scheduleForm: { display: "grid", gap: 10, marginTop: 8 },
   responses: { listStyle: "none", margin: "0 0 12px", padding: 0, display: "grid", gap: 10 },
   responseItem: {
     padding: 10,
@@ -261,7 +344,6 @@ const styles = {
     lineHeight: 1.35,
   },
   offerActions: { display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" },
-  responder: { fontWeight: 800, fontSize: 13, marginBottom: 4, color: "#0f172a" },
   body: { fontSize: 14, lineHeight: 1.45, color: "#334155", whiteSpace: "pre-wrap" },
   error: { margin: "10px 0 0", color: "#b91c1c", fontSize: 13, fontWeight: 600 },
 };

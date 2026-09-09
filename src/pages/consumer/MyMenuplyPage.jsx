@@ -76,6 +76,7 @@ import CrewInvitePeopleSheet from "./myMenuply/CrewInvitePeopleSheet.jsx";
 import SectionEmptyState from "./myMenuply/SectionEmptyState.jsx";
 import { buildJoinMeCandidates } from "./myMenuply/joinMeCandidates.js";
 import CravingsInviteSheet from "./myMenuply/CravingsInviteSheet.jsx";
+import MakeMeThisOptInSheet from "./myMenuply/MakeMeThisOptInSheet.jsx";
 import MmtDetailSheet from "./myMenuply/MmtDetailSheet.jsx";
 import {
   buildEatingDayMarkersFromCalendar,
@@ -224,6 +225,7 @@ export default function MyMenuplyPage() {
   const [selectedPlanKey, setSelectedPlanKey] = useState("");
   const [joinCandidates, setJoinCandidates] = useState([]);
   const [requestMmtOpen, setRequestMmtOpen] = useState(false);
+  const [pendingMmtWant, setPendingMmtWant] = useState(null);
   const [takeMeOutInvite, setTakeMeOutInvite] = useState(null);
   const [mmtDetailId, setMmtDetailId] = useState(null);
   const [inviteMeOutOpen, setInviteMeOutOpen] = useState(false);
@@ -1361,6 +1363,10 @@ export default function MyMenuplyPage() {
         menu_item_id: item.menu_item_id,
         item_name: item.item_name || item.food_name,
       });
+      // Menu-item cravings: ask Make Me This? (separate from Join Me / Take Me Out).
+      if (item.menu_item_id != null && String(item.menu_item_id).trim() !== "") {
+        setPendingMmtWant(item);
+      }
       window.setTimeout(() => {
         eatingSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
       }, 80);
@@ -1854,7 +1860,6 @@ export default function MyMenuplyPage() {
               inviteMeOutCandidates={joinCandidates}
               onInviteMeOutSave={saveInviteMeOutSettings}
               inviteMeOutToggleBusy={inviteMeOutToggleBusy}
-              onRequestMmt={() => setRequestMmtOpen(true)}
               onViewMmt={(mmt) => setMmtDetailId(Number(mmt?.id) || null)}
               onJoinMeFromCraving={handleJoinMeFromCraving}
               onTakeMeOutFromCraving={handleTakeMeOutFromCraving}
@@ -2141,6 +2146,8 @@ export default function MyMenuplyPage() {
           analyticsContext={sharePayload.analyticsContext}
         />
       ) : null}
+      {/* CravingsInviteSheet kept for Make Me This redesign (per-item opt-in);
+          Cravings row no longer opens it via "Invite & Make Me This". */}
       <CravingsInviteSheet
         open={requestMmtOpen}
         wants={wants}
@@ -2155,6 +2162,16 @@ export default function MyMenuplyPage() {
         onClose={() => setRequestMmtOpen(false)}
         onMmtSaved={async () => {
           setRequestMmtOpen(false);
+          await refreshMmtData();
+        }}
+      />
+      <MakeMeThisOptInSheet
+        open={Boolean(pendingMmtWant?.id)}
+        want={pendingMmtWant}
+        candidates={joinCandidates}
+        onClose={() => setPendingMmtWant(null)}
+        onSaved={async () => {
+          setPendingMmtWant(null);
           await refreshMmtData();
         }}
       />

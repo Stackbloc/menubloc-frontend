@@ -57,7 +57,6 @@ function WantCravingsActionBox({
   onJoinMeFromCraving,
   onTakeMeOutFromCraving,
   onInviteMeOut,
-  onRequestMmt,
 }) {
   const [open, setOpen] = useState(false);
   const [selectedKey, setSelectedKey] = useState("");
@@ -136,16 +135,6 @@ function WantCravingsActionBox({
           >
             {showOwnerFlow ? "Join Me / Take Me Out" : "Invite Me Out"}
           </button>
-          {showOwnerFlow && typeof onRequestMmt === "function" ? (
-            <button
-              type="button"
-              style={wantActStyles.settingsLink}
-              data-testid="want-cravings-action-mmt"
-              onClick={() => onRequestMmt()}
-            >
-              Invite &amp; Make Me This
-            </button>
-          ) : null}
         </div>
       ) : showPeerInvite ? (
         <div style={wantActStyles.sheet} data-testid="want-cravings-action-sheet">
@@ -284,17 +273,6 @@ const wantActStyles = {
     fontSize: 13,
     fontWeight: 750,
     cursor: "pointer",
-  },
-  settingsLink: {
-    appearance: "none",
-    border: "none",
-    background: "transparent",
-    color: "#64748b",
-    fontSize: 12,
-    fontWeight: 650,
-    textDecoration: "underline",
-    cursor: "pointer",
-    padding: 0,
   },
   sheet: {
     border: "1px solid #e2e8f0",
@@ -500,7 +478,6 @@ export default function EatingHubSection({
   inviteMeOutCandidates = [],
   onInviteMeOutSave,
   inviteMeOutToggleBusy = false,
-  onRequestMmt,
   onViewMmt,
   onJoinMeFromCraving,
   onTakeMeOutFromCraving,
@@ -823,7 +800,6 @@ export default function EatingHubSection({
             onJoinMeFromCraving={onJoinMeFromCraving}
             onTakeMeOutFromCraving={onTakeMeOutFromCraving}
             onInviteMeOut={onInviteMeOut}
-            onRequestMmt={onRequestMmt}
           />
         </div>
       </section>

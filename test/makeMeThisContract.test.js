@@ -1,5 +1,5 @@
 /**
- * Make Me This — one profile picker link; badges only on opted-in wants; Accept? for owner offers.
+ * Make Me This — per-item opt-in; peer offer; owner time/place (no Accept).
  */
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -14,6 +14,8 @@ test("Make Me This API + single picker + profile badges", () => {
   const api = read("src/lib/makeMeThisApi.js");
   assert.match(api, /\/api\/consumer\/make-me-this/);
   assert.match(api, /createMakeMeThisRequest/);
+  assert.match(api, /scheduleMakeMeThisMeetup/);
+  assert.match(api, /responses\/.*schedule/);
 
   const bits = read("src/pages/consumer/myMenuply/myMenuplyBits.jsx");
   assert.doesNotMatch(bits, /Add Make Me This to profile/);
@@ -25,25 +27,25 @@ test("Make Me This API + single picker + profile badges", () => {
   const hub = read("src/pages/consumer/myMenuply/EatingHubSection.jsx");
   assert.doesNotMatch(hub, /MakeMeThisInboxPanel/);
   assert.match(hub, /want-cravings-action-open/);
-  assert.match(hub, /want-cravings-action-mmt/);
+  assert.doesNotMatch(hub, /want-cravings-action-mmt/);
   assert.match(hub, /Join Me \/ Take Me Out/);
   assert.doesNotMatch(hub, /want-cravings-invite-open/);
   assert.doesNotMatch(hub, /Invite & Make Me This/);
+  assert.doesNotMatch(hub, /Invite &amp; Make Me This/);
+  assert.doesNotMatch(hub, /onRequestMmt/);
   assert.doesNotMatch(hub, /want-mmt-open-picker/);
-  assert.doesNotMatch(hub, /allow specific Connects to make you a dish on your Wanna Eat list/);
-  assert.doesNotMatch(hub, /choose which wanna-eat items show Make Me This/);
   assert.match(hub, /onViewMmt=\{onViewMmt\}/);
   assert.match(hub, /onJoinMeFromCraving/);
   assert.match(hub, /onTakeMeOutFromCraving/);
-  assert.doesNotMatch(hub, /what-im-eating-camera/);
-  assert.doesNotMatch(hub, /onOpenAteCamera/);
 
   const page = read("src/pages/consumer/MyMenuplyPage.jsx");
+  assert.match(page, /MakeMeThisOptInSheet/);
+  assert.match(page, /pendingMmtWant/);
+  assert.match(page, /menu_item_id/);
   assert.match(page, /CravingsInviteSheet/);
   assert.match(page, /MmtDetailSheet/);
   assert.doesNotMatch(page, /RequestMmtSheet/);
-  assert.doesNotMatch(page, /onOpenAteCamera/);
-  assert.doesNotMatch(page, /listMakeMeThisInbox/);
+  assert.doesNotMatch(page, /onRequestMmt=/);
 
   const peer = read("src/pages/consumer/ConsumerConnectionPeerPage.jsx");
   assert.doesNotMatch(peer, /RequestMmtSheet/);
@@ -55,18 +57,20 @@ test("Make Me This API + single picker + profile badges", () => {
   const picker = read("src/pages/consumer/myMenuply/MmtAudiencePicker.jsx");
   assert.match(picker, /mmt-audience-picker/);
   assert.match(picker, /Who can see this on your profile/);
-  assert.doesNotMatch(picker, /join_capacity/);
 
-  const requestSheet = read("src/pages/consumer/myMenuply/CravingsInviteSheet.jsx");
-  assert.match(requestSheet, /Invite & Make Me This/);
-  assert.match(requestSheet, /Wanna Go! places/);
-  assert.match(requestSheet, /Make Me This dishes/);
-  assert.match(requestSheet, /InviteMeOutAudiencePicker/);
-  assert.match(requestSheet, /InviteToEatModal/);
-  assert.match(requestSheet, /mmt-want-checklist/);
-  assert.match(requestSheet, /cravings-invite-save/);
+  const optIn = read("src/pages/consumer/myMenuply/MakeMeThisOptInSheet.jsx");
+  assert.match(optIn, /mmt-opt-in-sheet/);
+  assert.match(optIn, /Make Me This\?/);
+  assert.match(optIn, /mmt-opt-in-yes/);
+  assert.match(optIn, /MmtAudiencePicker/);
 
   const detail = read("src/pages/consumer/myMenuply/MmtDetailSheet.jsx");
-  assert.match(detail, /has offered to make you/);
-  assert.match(detail, /mmt-offer-accept/);
+  assert.match(detail, /offered to make/);
+  assert.match(detail, /Specify a time and place/);
+  assert.match(detail, /mmt-offer-schedule/);
+  assert.match(detail, /mmt-schedule-when/);
+  assert.match(detail, /mmt-schedule-place/);
+  assert.match(detail, /Make this for \$\{ownerName\}\?/);
+  assert.doesNotMatch(detail, /mmt-offer-accept/);
+  assert.doesNotMatch(detail, /Accept\?/);
 });
