@@ -358,32 +358,73 @@ export function MonthInFoodWants({ wants = [] }) {
   return (
     <section style={s.card} data-testid="month-in-food-wants">
       <div style={s.sectionHead}>
-        <h2 style={s.sectionTitle}>What I Want To Eat</h2>
+        <div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: s.MUTED, letterSpacing: "0.04em", textTransform: "uppercase" }}>
+            Cravings
+          </div>
+          <h2 style={{ ...s.sectionTitle, margin: 0 }}>What I Wanna Eat</h2>
+        </div>
         <Link to={myMenuplyProfileHref({ compose: "want" })} style={s.viewAll}>
           View all
         </Link>
       </div>
       <div style={{ display: "flex", gap: 10, overflowX: "auto" }}>
-        {wants.map((w) => (
-          <div key={w.key} style={{ width: 110, flex: "0 0 auto" }}>
-            <div
-              style={{
-                width: 110,
-                height: 88,
-                borderRadius: 12,
-                overflow: "hidden",
-                background: "#e7e5e4",
-                marginBottom: 6,
-              }}
-            >
-              {w.photo_url ? (
-                <img src={w.photo_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-              ) : null}
+        {wants.map((w) => {
+          const body = (
+            <>
+              <div
+                style={{
+                  position: "relative",
+                  width: 110,
+                  height: 88,
+                  borderRadius: 12,
+                  overflow: "hidden",
+                  background: "#e7e5e4",
+                  marginBottom: 6,
+                }}
+              >
+                {w.photo_url ? (
+                  <img src={w.photo_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                ) : null}
+                {w.badge ? (
+                  <span
+                    style={{
+                      position: "absolute",
+                      left: 6,
+                      top: 6,
+                      background: s.FOREST,
+                      color: "#fff",
+                      fontSize: 10,
+                      fontWeight: 800,
+                      borderRadius: 999,
+                      padding: "2px 6px",
+                    }}
+                  >
+                    {w.badge}
+                  </span>
+                ) : null}
+              </div>
+              <div style={{ fontSize: 12, fontWeight: 700 }}>{w.food_name}</div>
+              {w.restaurant_name ? <div style={{ fontSize: 11, color: s.MUTED }}>{w.restaurant_name}</div> : null}
+            </>
+          );
+          if (w.href) {
+            return (
+              <Link
+                key={w.key}
+                to={w.href}
+                style={{ width: 110, flex: "0 0 auto", textDecoration: "none", color: "inherit" }}
+              >
+                {body}
+              </Link>
+            );
+          }
+          return (
+            <div key={w.key} style={{ width: 110, flex: "0 0 auto" }}>
+              {body}
             </div>
-            <div style={{ fontSize: 12, fontWeight: 700 }}>{w.food_name}</div>
-            {w.restaurant_name ? <div style={{ fontSize: 11, color: s.MUTED }}>{w.restaurant_name}</div> : null}
-          </div>
-        ))}
+          );
+        })}
       </div>
     </section>
   );
@@ -395,11 +436,11 @@ export function MonthInFoodPlansEvents({ plans = [], events = [] }) {
   return (
     <section style={s.card} data-testid="month-in-food-plans-events">
       <div style={s.sectionHead}>
-        <h2 style={s.sectionTitle}>Connections & Events</h2>
+        <h2 style={s.sectionTitle}>Plans &amp; Events</h2>
       </div>
       {plan ? (
         <div style={{ marginBottom: 14 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: s.MUTED, marginBottom: 6 }}>Upcoming Plans</div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: s.MUTED, marginBottom: 6 }}>My Eating Plans</div>
           <div
             style={{
               display: "flex",
@@ -413,9 +454,13 @@ export function MonthInFoodPlansEvents({ plans = [], events = [] }) {
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontWeight: 800 }}>{plan.title || plan.restaurant_name || "Plan"}</div>
               <div style={{ fontSize: 12, color: s.MUTED }}>{plan.plan_date}</div>
-              {plan.participant_count > 1 ? (
-                <div style={{ fontSize: 12, marginTop: 4 }}>{plan.participant_count} going</div>
-              ) : null}
+              <div style={{ fontSize: 12, marginTop: 4 }}>
+                {plan.joinable
+                  ? "Join Me open"
+                  : plan.participant_count > 1
+                    ? `${plan.participant_count} going`
+                    : "Just me"}
+              </div>
               {plan.href ? (
                 <Link to={plan.href} style={{ ...s.viewAll, display: "inline-block", marginTop: 8 }}>
                   Open plan
@@ -434,11 +479,11 @@ export function MonthInFoodPlansEvents({ plans = [], events = [] }) {
       ) : null}
       {events.length ? (
         <div>
-          <div style={{ fontSize: 12, fontWeight: 700, color: s.MUTED, marginBottom: 6 }}>Events I&apos;m Excited For</div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: s.MUTED, marginBottom: 6 }}>My Events</div>
           <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
             {events.map((ev) => (
               <li
-                key={ev.id}
+                key={`${ev.kind || "event"}-${ev.id}`}
                 style={{
                   display: "flex",
                   gap: 10,
@@ -463,6 +508,9 @@ export function MonthInFoodPlansEvents({ plans = [], events = [] }) {
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 700, fontSize: 14 }}>{ev.title}</div>
+                  {ev.kind === "diner_social" && ev.join_me_open ? (
+                    <div style={{ fontSize: 11, color: s.MUTED }}>Join Me open</div>
+                  ) : null}
                 </div>
                 {ev.href ? (
                   <Link to={ev.href} style={s.viewAll}>

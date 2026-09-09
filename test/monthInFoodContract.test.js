@@ -177,3 +177,64 @@ test("hidden diary yields no meal stats for peer", () => {
   assert.deepEqual(model.stats, []);
   assert.equal(model.wants.length, 1);
 });
+
+test("profile vocabulary: Wanna Eat label + Plans & Events sections", () => {
+  const sections = read("src/pages/consumer/monthInFood/MonthInFoodSections.jsx");
+  assert.match(sections, /What I Wanna Eat/);
+  assert.match(sections, /Cravings/);
+  assert.doesNotMatch(sections, /What I Want To Eat/);
+  assert.match(sections, /Plans &amp; Events|Plans & Events/);
+  assert.match(sections, /My Eating Plans/);
+  assert.match(sections, /My Events/);
+  assert.match(sections, /Join Me open/);
+  assert.doesNotMatch(sections, /Connections & Events/);
+  assert.doesNotMatch(sections, /Events I&apos;m Excited For/);
+});
+
+test("buildMonthInFoodModel prefers pinned highlights and Wanna Go intents", () => {
+  const model = buildMonthInFoodModel({
+    ym: "2025-05",
+    month_label: "May 2025",
+    diary_visible: true,
+    is_self: true,
+    diary: [
+      {
+        id: 1,
+        food_name: "Burger",
+        restaurant_name: "Fixins",
+        photo_url: "https://example.com/diary.jpg",
+      },
+    ],
+    wants: [{ id: 2, food_name: "Tacos", restaurant_name: "Place" }],
+    dining_intents: [
+      {
+        id: 7,
+        kind: "dining_intent",
+        food_name: "In-N-Out",
+        restaurant_name: "In-N-Out",
+        restaurant_slug: "in-n-out-la",
+        city: "Los Angeles",
+        state: "CA",
+        photo_url: "https://example.com/ino.jpg",
+        badge: "Wanna Go!",
+      },
+    ],
+    plans: [{ id: 3, title: "Lunch", plan_date: "2025-05-20", joinable: true }],
+    events: [{ id: 4, kind: "diner_social", title: "Brunch", event_date: "2025-05-22", join_me_open: true }],
+    profile_media: [
+      {
+        id: 99,
+        media_kind: "photo",
+        media_url: "https://example.com/pin.jpg",
+        is_highlight: true,
+      },
+    ],
+  });
+  assert.equal(model.highlights[0].source, "profile_highlight");
+  assert.equal(model.highlights[0].image, "https://example.com/pin.jpg");
+  assert.equal(model.wants[0].kind, "dining_intent");
+  assert.equal(model.wants[0].badge, "Wanna Go!");
+  assert.equal(model.wants[1].kind, "want");
+  assert.equal(model.plans[0].joinable, true);
+  assert.equal(model.heroImage, "https://example.com/pin.jpg");
+});

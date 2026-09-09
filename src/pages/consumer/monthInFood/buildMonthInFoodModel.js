@@ -1,6 +1,9 @@
 /**
  * Shape Month in Food API payload into a view model. Never invent stats.
+ * Keeps vocabulary + rails in sync with My Menuply profile (Wanna Eat, pinned highlights, Join Me).
  */
+
+import { restaurantPathFromRow } from "../../../lib/canonicalUrl.js";
 
 const DEFAULT_MEDIA_BASE = "https://menubloc-backend-production.up.railway.app";
 
@@ -48,6 +51,62 @@ function shiftYm(ym, delta) {
   return `${year}-${String(month).padStart(2, "0")}`;
 }
 
+function restaurantHref(row) {
+  return restaurantPathFromRow(row) || (row?.restaurant_id ? `/restaurants/${row.restaurant_id}` : null);
+}
+
+/** Pinned profile photos first (profile Top Highlights contract), then diary stills. */
+function buildHighlights({ diary = [], profileMedia = [] }) {
+  const cards = [];
+  const usedImages = new Set();
+
+  for (const m of profileMedia) {
+    if (cards.length >= 3) break;
+    if (m.is_highlight !== true) continue;
+    if (m.media_kind && m.media_kind !== "photo") continue;
+    const image = mediaUrl(m.media_url);
+    if (!image || usedImages.has(image)) continue;
+    cards.push({
+      key: `ph-${m.id}`,
+      label: "Profile photo",
+      sublabel: "From your gallery",
+      image,
+      href: null,
+      source: "profile_highlight",
+    });
+    usedImages.add(image);
+  }
+
+  const withMedia = diary
+    .map((row) => ({
+      key: `h-${row.id}`,
+      label: row.food_name || row.item_name || "Meal",
+      sublabel: row.restaurant_name || "",
+      image: mediaUrl(row.photo_url),
+      href: row.href || (row.menu_item_id ? `/menu-items/${row.menu_item_id}` : null),
+      source: "diary",
+    }))
+    .filter((c) => c.image);
+
+  for (const card of withMedia) {
+    if (cards.length >= 3) break;
+    if (card.image && usedImages.has(card.image)) continue;
+    cards.push(card);
+    if (card.image) usedImages.add(card.image);
+  }
+
+  if (cards.length) return cards.slice(0, 3);
+
+  return diary.slice(0, 3).map((row) => ({
+    key: `h-${row.id}`,
+    label: row.food_name || row.item_name || "Meal",
+    sublabel: row.restaurant_name || "",
+    image: mediaUrl(row.photo_url),
+    href: row.href || null,
+    source: "diary",
+  }));
+}
+
 /**
  * @param {object} payload - API response from getMonthInFood
  */
@@ -55,6 +114,7 @@ export function buildMonthInFoodModel(payload = {}) {
   const diaryVisible = payload.diary_visible !== false;
   const diary = diaryVisible ? payload.diary || [] : [];
   const wants = payload.wants || [];
+  const diningIntents = payload.dining_intents || [];
   const plans = payload.plans || [];
   const events = payload.events || [];
   const profileMedia = payload.profile_media || [];
@@ -135,22 +195,7 @@ export function buildMonthInFoodModel(payload = {}) {
     }
   }
 
-  const withMedia = diary
-    .map((row) => ({
-      key: `h-${row.id}`,
-      label: row.food_name || row.item_name || "Meal",
-      sublabel: row.restaurant_name || "",
-      image: mediaUrl(row.photo_url),
-      href: row.href || (row.menu_item_id ? `/menu-items/${row.menu_item_id}` : null),
-    }))
-    .filter((c) => c.image);
-  const highlights = (withMedia.length ? withMedia : diary.slice(0, 3).map((row) => ({
-    key: `h-${row.id}`,
-    label: row.food_name || row.item_name || "Meal",
-    sublabel: row.restaurant_name || "",
-    image: mediaUrl(row.photo_url),
-    href: row.href || null,
-  }))).slice(0, 3);
+  const highlights = diaryVisible ? buildHighlights({ diary, profileMedia }) : [];
 
   const visited = [...restaurantMap.values()].slice(0, 12);
 
@@ -187,17 +232,38 @@ export function buildMonthInFoodModel(payload = {}) {
   if (coffeeCups > 0) miniStats.push({ id: "coffee", label: "Cups", value: coffeeCups, hint: "coffee" });
   if (newRestaurants > 0) miniStats.push({ id: "new_r", label: "New Restaurants", value: newRestaurants });
 
+  const pinnedHero = profileMedia.find((m) => m.is_highlight && m.media_url);
   const heroImage =
+    mediaUrl(pinnedHero?.media_url) ||
     mediaUrl(diary.find((d) => d.photo_url)?.photo_url) ||
     mediaUrl(profileMedia.find((m) => m.media_url)?.media_url) ||
     null;
 
-  const wantCards = wants.slice(0, 8).map((w) => ({
+  // Profile order: Wanna Go! intents first, then food wants (WantToEatUnifiedList).
+  const intentCards = diningIntents.slice(0, 8).map((w) => ({
+    key: `di-${w.id}`,
+    kind: "dining_intent",
+    food_name: w.food_name || w.restaurant_name || "Wanna Go!",
+    restaurant_name: [w.city, w.state].filter(Boolean).join(", ") || null,
+    photo_url: mediaUrl(w.photo_url),
+    badge: w.badge || "Wanna Go!",
+    href: restaurantHref(w),
+  }));
+  const wantBudget = Math.max(0, 8 - intentCards.length);
+  const wantCards = wants.slice(0, wantBudget).map((w) => ({
     key: `w-${w.id}`,
+    kind: "want",
     food_name: w.food_name,
     restaurant_name: w.restaurant_name,
     photo_url: mediaUrl(w.photo_url),
+    badge: null,
     href: w.menu_item_id ? `/menu-items/${w.menu_item_id}` : null,
+  }));
+  const cravingCards = [...intentCards, ...wantCards];
+
+  const planCards = plans.slice(0, 3).map((p) => ({
+    ...p,
+    joinable: p.joinable === true,
   }));
 
   return {
@@ -221,10 +287,11 @@ export function buildMonthInFoodModel(payload = {}) {
     homemadeDishesCount,
     restaurantDishesCount: Number.isFinite(restaurantDishesCount) ? restaurantDishesCount : null,
     miniStats,
-    wants: wantCards,
-    plans: plans.slice(0, 3),
+    wants: cravingCards,
+    plans: planCards,
     events: events.slice(0, 3),
-    showEmptyHint: diaryVisible && mealsLogged === 0 && wants.length === 0,
+    showEmptyHint:
+      diaryVisible && mealsLogged === 0 && wants.length === 0 && diningIntents.length === 0,
   };
 }
 
