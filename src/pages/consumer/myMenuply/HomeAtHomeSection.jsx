@@ -1,6 +1,7 @@
 /**
  * @home — home-cooked meal photos plus What I'm Cooking videos on the diner profile.
  * Photos stay on the profile. Cooking videos the diner makes can also be shared to Feed.
+ * Owner copy is first person (matches What I'm Eating / My Eating Plans).
  * Section cameras removed — capture/upload is bottom-nav X; this hub is display (+ delete).
  */
 
@@ -126,16 +127,20 @@ export default function HomeAtHomeSection({
       <SectionHead
         title="@home"
         testId="home-at-home-head"
-        subtitle="Cooking videos you make can also go to Feed. Photos stay on your profile."
+        subtitle={
+          readOnly
+            ? "Cooking videos can also appear on Feed. Photos stay on this profile."
+            : "Cooking videos I make can also go to Feed. Photos stay on my profile."
+        }
       />
       {error ? <p style={s.error}>{error}</p> : null}
       {!rows.length && !readOnly ? (
         <p style={s.muted} data-testid="home-at-home-empty">
-          Make a cooking video about what you&apos;re preparing — you can share it on{" "}
+          Make a cooking video about what I&apos;m preparing — I can share it on{" "}
           <Link to="/feed" data-testid="home-at-home-feed-link" style={{ color: "#0f766e", fontWeight: 700 }}>
             Feed (X)
           </Link>
-          . Photos stay here on your profile.
+          . Photos stay here on my profile.
         </p>
       ) : null}
 
