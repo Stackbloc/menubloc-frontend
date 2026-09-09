@@ -120,7 +120,7 @@ export async function postFeedCookingVideo({ file, text = "" }) {
   const { photo_url, video_url } = eatingMediaFromUpload(up);
   if (!video_url) throw new Error("Could not upload video");
 
-  const name = String(text || "").trim() || "What I'm Cooking";
+  const name = String(text || "").trim() || "What's Cooking @home";
   const created = await createHomemadeDish({
     name,
     description: String(text || "").trim() || null,

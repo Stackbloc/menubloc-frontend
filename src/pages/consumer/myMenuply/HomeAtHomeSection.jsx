@@ -1,17 +1,20 @@
 /**
- * @home — home-cooked meal photos plus What I'm Cooking videos on the diner profile.
- * Photos stay on the profile. Cooking videos the diner makes can also be shared to Feed.
- * Owner copy is first person (matches What I'm Eating / My Eating Plans).
- * Section cameras removed — capture/upload is bottom-nav X; this hub is display (+ delete).
+ * @home — home-cooked meal **photos** on the diner profile.
+ * Videos use Multiplier category "What's Cooking @home" (Feed + may land here).
+ *
+ * Your view: short photo prompt + compact + Add → library media loader (no camera).
+ * Connect / peer (readOnly): content only — never how-to or Add.
  */
 
-import { Link } from "react-router-dom";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { resolveConsumerMediaUrl } from "../../../lib/consumerApi.js";
 import { homemadeDishPath } from "../../../lib/homemadeDishApi.js";
+import MenuplyMediaPicker from "../../../components/social/MenuplyMediaPicker.jsx";
 import { useLongPressReveal } from "./mediaLongPressReveal.js";
 import { SectionHead } from "./myMenuplyBits.jsx";
 import * as s from "./myMenuplyStyles.js";
+import { GREEN_MID } from "./myMenuplyStyles.js";
 
 function dishPhoto(dish) {
   return resolveConsumerMediaUrl(dish?.photo_url || "");
@@ -29,6 +32,11 @@ function HomeDishCell({ dish, readOnly, onDelete, deleteBusy }) {
   const video = dishVideo(dish);
   const name = dish?.name || "Home-cooked meal";
   const href = dish?.id || dish?.homemade_dish_id ? homemadeDishPath(dish.id || dish.homemade_dish_id) : null;
+  const skipCaption =
+    !name ||
+    name === "Home-cooked meal" ||
+    name === "What I'm Cooking" ||
+    name === "What's Cooking @home";
 
   return (
     <div style={grid.cellWrap} data-testid="home-at-home-cell" {...bind}>
@@ -52,9 +60,7 @@ function HomeDishCell({ dish, readOnly, onDelete, deleteBusy }) {
           <div style={grid.placeholder}>🍽</div>
         )}
         {video ? <span style={grid.playBadge}>▶</span> : null}
-        {name && name !== "Home-cooked meal" && name !== "What I'm Cooking" ? (
-          <span style={grid.caption}>{name}</span>
-        ) : null}
+        {!skipCaption ? <span style={grid.caption}>{name}</span> : null}
       </button>
       {open ? (
         <button
@@ -115,10 +121,11 @@ export default function HomeAtHomeSection({
   onPhotoFile,
   onDelete,
 }) {
-  void onPhotoFile;
+  const [pickerOpen, setPickerOpen] = useState(false);
   const rows = Array.isArray(dishes)
     ? dishes.filter((d) => d && (d.photo_url || d.video_url || d.id))
     : [];
+  const canAdd = !readOnly && typeof onPhotoFile === "function";
 
   if (readOnly && !rows.length) return null;
 
@@ -127,21 +134,50 @@ export default function HomeAtHomeSection({
       <SectionHead
         title="@home"
         testId="home-at-home-head"
-        subtitle={
-          readOnly
-            ? "Cooking videos can also appear on Feed. Photos stay on this profile."
-            : "Cooking videos I make can also go to Feed. Photos stay on my profile."
+        subtitle={readOnly ? undefined : "Add photos of your home cooked meals."}
+        aside={
+          canAdd ? (
+            pickerOpen ? null : (
+              <button
+                type="button"
+                style={styles.compactAdd}
+                data-testid="home-at-home-add"
+                disabled={busy}
+                onClick={() => setPickerOpen(true)}
+              >
+                <span aria-hidden="true">+</span> Add
+              </button>
+            )
+          ) : null
         }
       />
       {error ? <p style={s.error}>{error}</p> : null}
-      {!rows.length && !readOnly ? (
-        <p style={s.muted} data-testid="home-at-home-empty">
-          Make a cooking video about what I&apos;m preparing — I can share it on{" "}
-          <Link to="/feed" data-testid="home-at-home-feed-link" style={{ color: "#0f766e", fontWeight: 700 }}>
-            Feed (X)
-          </Link>
-          . Photos stay here on my profile.
-        </p>
+      {canAdd && pickerOpen ? (
+        <div style={styles.pickerWrap} data-testid="home-at-home-picker">
+          <MenuplyMediaPicker
+            key="home-at-home-photo-picker"
+            onFile={(file) => {
+              setPickerOpen(false);
+              onPhotoFile?.(file);
+            }}
+            disabled={busy}
+            source="library"
+            allowPhoto
+            allowVideo={false}
+            showPreview={false}
+            openOnMount
+            testId="home-at-home-media-picker"
+            ariaLabel="Add home-cooked meal photo"
+          />
+          <button
+            type="button"
+            style={styles.cancelPicker}
+            data-testid="home-at-home-picker-cancel"
+            onClick={() => setPickerOpen(false)}
+          >
+            Cancel
+          </button>
+        </div>
       ) : null}
 
       {rows.length ? (
@@ -161,12 +197,41 @@ export default function HomeAtHomeSection({
   );
 }
 
-const grid = {
-  addRow: {
+const styles = {
+  compactAdd: {
+    appearance: "none",
+    border: "1px dashed #cbd5e1",
+    background: "#fff",
+    borderRadius: 999,
+    padding: "6px 12px",
+    font: "inherit",
+    fontSize: 13,
+    fontWeight: 700,
+    color: GREEN_MID,
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 4,
+    cursor: "pointer",
+  },
+  pickerWrap: {
     marginTop: 10,
     display: "flex",
     alignItems: "center",
+    gap: 10,
   },
+  cancelPicker: {
+    appearance: "none",
+    border: "none",
+    background: "transparent",
+    color: "#64748b",
+    fontSize: 13,
+    fontWeight: 600,
+    cursor: "pointer",
+    padding: 4,
+  },
+};
+
+const grid = {
   grid: {
     display: "grid",
     gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
@@ -183,9 +248,9 @@ const grid = {
     height: "100%",
     padding: 0,
     border: "none",
-    background: "#ecfdf5",
     borderRadius: 8,
     overflow: "hidden",
+    background: "#f1f5f9",
     cursor: "pointer",
     position: "relative",
   },
@@ -198,77 +263,72 @@ const grid = {
   placeholder: {
     width: "100%",
     height: "100%",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
+    display: "grid",
+    placeItems: "center",
     fontSize: 28,
-    background: "#dcfce7",
+    background: "#f8fafc",
+  },
+  playBadge: {
+    position: "absolute",
+    right: 6,
+    bottom: 6,
+    width: 22,
+    height: 22,
+    borderRadius: "50%",
+    background: "rgba(15,23,42,0.72)",
+    color: "#fff",
+    fontSize: 10,
+    display: "grid",
+    placeItems: "center",
   },
   caption: {
     position: "absolute",
     left: 0,
     right: 0,
     bottom: 0,
-    padding: "6px 6px 5px",
+    padding: "18px 6px 6px",
+    background: "linear-gradient(180deg, transparent, rgba(15,23,42,0.75))",
+    color: "#fff",
     fontSize: 11,
     fontWeight: 700,
-    color: "#fff",
-    background: "linear-gradient(transparent, rgba(0,0,0,0.62))",
     textAlign: "left",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    whiteSpace: "nowrap",
-  },
-  playBadge: {
-    position: "absolute",
-    top: 8,
-    right: 8,
-    width: 28,
-    height: 28,
-    borderRadius: 999,
-    background: "rgba(0,0,0,0.55)",
-    color: "#fff",
-    fontSize: 12,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
   },
   lightbox: {
     position: "fixed",
     inset: 0,
-    zIndex: 400,
-    background: "rgba(0,0,0,0.88)",
+    zIndex: 80,
+    background: "rgba(15,23,42,0.88)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     padding: 16,
   },
   lightboxImg: {
-    maxWidth: "100%",
-    maxHeight: "86vh",
+    maxWidth: "min(920px, 100%)",
+    maxHeight: "min(86vh, 100%)",
     objectFit: "contain",
     borderRadius: 8,
+  },
+  lightboxLink: {
+    position: "absolute",
+    left: 16,
+    bottom: 16,
+    color: "#fff",
+    fontWeight: 700,
+    textDecoration: "underline",
   },
   lightboxClose: {
     position: "absolute",
     top: 16,
     right: 16,
-    background: "rgba(255,255,255,0.16)",
-    color: "#fff",
+    appearance: "none",
     border: "none",
-    borderRadius: 999,
+    background: "rgba(255,255,255,0.15)",
+    color: "#fff",
     width: 36,
     height: 36,
-    fontSize: 16,
+    borderRadius: "50%",
     cursor: "pointer",
-  },
-  lightboxLink: {
-    position: "absolute",
-    bottom: 20,
-    left: "50%",
-    transform: "translateX(-50%)",
-    color: "#fff",
-    fontWeight: 700,
-    fontSize: 14,
+    fontSize: 16,
   },
 };

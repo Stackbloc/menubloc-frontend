@@ -181,6 +181,7 @@ export default function MyMenuplyPage() {
   const [profile, setProfile] = useState(null);
   const [eduConsumer, setEduConsumer] = useState(null);
   const [avatarUrl, setAvatarUrl] = useState("");
+  /** Connect view: content about this diner only — never Menuply how-to / compose coaching. */
   const [previewAsConnect, setPreviewAsConnect] = useState(false);
   const [identityBusy, setIdentityBusy] = useState(false);
   const [identityNotice, setIdentityNotice] = useState("");
@@ -1626,7 +1627,7 @@ export default function MyMenuplyPage() {
 
         {isAuthenticated && !loading ? (
           <>
-            {profile?.profile_completion?.needs_primary_location ? (
+            {profile?.profile_completion?.needs_primary_location && !previewAsConnect ? (
               <ProfileCompletionBanner message="Add your primary location so friends and nearby diners can find you when you choose." />
             ) : null}
             <DinerIdentityHero
@@ -1694,6 +1695,7 @@ export default function MyMenuplyPage() {
               eventGroups={eventGroups}
               viewerUserId={consumer?.id}
               showFoodStoryCta={showFoodStoryCta}
+              readOnly={previewAsConnect}
               onLogFood={() => {
                 setComposeDefaultCategory("ate");
                 setComposeMediaSource("camera");
@@ -1707,7 +1709,9 @@ export default function MyMenuplyPage() {
               dishes={homeDishes}
               busy={homeDishBusy}
               error={homeDishError}
-              onDelete={onHomeAtHomeDelete}
+              readOnly={previewAsConnect}
+              onPhotoFile={previewAsConnect ? undefined : onHomeAtHomePhoto}
+              onDelete={previewAsConnect ? undefined : onHomeAtHomeDelete}
             />
 
             <EatingHubSection
@@ -1819,14 +1823,20 @@ export default function MyMenuplyPage() {
 
             <section style={s.section} data-testid="dining-crews">
               <SectionHead
-                kicker="Your people"
+                kicker={previewAsConnect ? undefined : "Your people"}
                 title="My Crews"
-                to="/account/dining-crews"
-                subtitle="The people you eat, hang out, and make plans with"
+                to={previewAsConnect ? undefined : "/account/dining-crews"}
+                subtitle={
+                  previewAsConnect
+                    ? undefined
+                    : "The people you eat, hang out, and make plans with"
+                }
               />
               {crews.length === 0 ? (
                 <SectionEmptyState testId="crews-empty">
-                  The people you eat, hang out, and make plans with.
+                  {previewAsConnect
+                    ? "No crews to show."
+                    : "The people you eat, hang out, and make plans with."}
                 </SectionEmptyState>
               ) : (
                 crews.slice(0, 4).map((crew) => (
@@ -1843,7 +1853,11 @@ export default function MyMenuplyPage() {
                     ]
                       .filter(Boolean)
                       .join(" · ")}
-                    onDelete={crew.viewer_role === "owner" ? onCrewDelete : undefined}
+                    onDelete={
+                      previewAsConnect || crew.viewer_role !== "owner"
+                        ? undefined
+                        : onCrewDelete
+                    }
                     deleteBusy={postBusy === `crew-delete-${crew.id}`}
                   />
                 ))
@@ -1852,23 +1866,25 @@ export default function MyMenuplyPage() {
 
             <section style={s.section} data-testid="my-events">
               <SectionHead
-                kicker="On the calendar"
+                kicker={previewAsConnect ? undefined : "On the calendar"}
                 title="My Events"
                 aside={
-                  <button
-                    type="button"
-                    style={s.plansCalendarBtn}
-                    data-testid="my-events-calendar-open"
-                    aria-label="Open month calendar for my events"
-                    onClick={openEventsCalendar}
-                  >
-                    <PlansCalendarGlyph />
-                  </button>
+                  previewAsConnect ? null : (
+                    <button
+                      type="button"
+                      style={s.plansCalendarBtn}
+                      data-testid="my-events-calendar-open"
+                      aria-label="Open month calendar for my events"
+                      onClick={openEventsCalendar}
+                    >
+                      <PlansCalendarGlyph />
+                    </button>
+                  )
                 }
               />
               {events.length === 0 && eventGroups.length === 0 && socialEvents.length === 0 ? (
                 <SectionEmptyState testId="events-empty">
-                  No events yet.
+                  {previewAsConnect ? "Nothing yet." : "No events yet."}
                 </SectionEmptyState>
               ) : (
                 <>

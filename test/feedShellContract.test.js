@@ -99,7 +99,7 @@ test("Feed shell: Home|Waiter|Share My QR|X|Deals|Shop|Profile + slim X sheet", 
   const reviewsIdx = createSheet.indexOf("FEED_CONTENT_KINDS.REVIEWS");
   assert.ok(reviewsIdx > 0 && cookingIdx > reviewsIdx);
   const labels = read("src/lib/liveFeedCategory.js");
-  assert.match(labels, /cooking:\s*"What I'm Cooking"/);
+  assert.match(labels, /cooking:\s*"What's Cooking @home"/);
   assert.doesNotMatch(createSheet, /Post Food Review/);
   assert.doesNotMatch(createSheet, /Food Review/);
   assert.match(createSheet, /FEED_UPLOAD_MEDIA_ITEM/);

@@ -235,7 +235,7 @@ export default function SeeWhosEatingSurface({
                         : channel === "event"
                           ? "NO SIGNAL ON EVENTS"
                           : channel === "cooking"
-                            ? "NO WHAT I'M COOKING YET"
+                            ? "NO WHAT'S COOKING @HOME YET"
                             : "NO SIGNAL IN THIS MARKET"}
                     </span>
                   )}

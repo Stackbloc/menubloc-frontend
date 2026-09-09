@@ -1,5 +1,5 @@
 /**
- * What I'm Cooking — last Post to Feed video category; also lands on profile @home.
+ * What's Cooking @home — Multiplier video category; profile @home is photos via +.
  */
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -10,7 +10,7 @@ import { fileURLToPath } from "url";
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = (rel) => fs.readFileSync(path.join(root, rel), "utf8");
 
-test("What I'm Cooking is last Post to Feed video and posts to Feed + @home", () => {
+test("What's Cooking @home is Multiplier category; @home photos use + Add", () => {
   const kinds = read("src/lib/feedContentKinds.js");
   const channels = read("src/lib/liveFeedCategory.js");
   const createSheet = read("src/components/consumer/feed/FeedVideoCreateSheet.jsx");
@@ -21,7 +21,9 @@ test("What I'm Cooking is last Post to Feed video and posts to Feed + @home", ()
 
   assert.match(kinds, /COOKING:\s*"cooking"/);
   assert.match(channels, /id: "cooking"/);
-  assert.match(channels, /What I'm Cooking/);
+  assert.match(channels, /What's Cooking @home/);
+  assert.match(channels, /cooking:\s*"What's Cooking @home"/);
+  assert.doesNotMatch(channels, /What I'm Cooking/);
 
   assert.match(createSheet, /FEED_CONTENT_KINDS\.COOKING/);
   const idsBlock = createSheet.slice(
@@ -32,9 +34,14 @@ test("What I'm Cooking is last Post to Feed video and posts to Feed + @home", ()
 
   assert.match(compose, /postFeedCookingVideo/);
   assert.match(compose, /createHomemadeDish/);
+  assert.match(compose, /What's Cooking @home/);
   assert.match(compose, /market_discoverable:\s*true/);
   assert.match(overlay, /postFeedCookingVideo/);
+  assert.match(overlay, /What's Cooking @home/);
   assert.match(eating, /id: "cooking"/);
+  assert.match(eating, /What's Cooking @home/);
   assert.match(home, /video_url/);
-  assert.match(home, /What I'm Cooking/);
+  assert.match(home, /What's Cooking @home/);
+  assert.match(home, /home-at-home-add/);
+  assert.match(home, /source="library"/);
 });

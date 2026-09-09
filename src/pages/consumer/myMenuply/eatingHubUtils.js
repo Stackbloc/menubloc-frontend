@@ -134,9 +134,9 @@ export const EATING_COMPOSE_CATEGORIES = [
   },
   {
     id: "cooking",
-    label: "What I'm Cooking",
+    label: "What's Cooking @home",
     placeholder: "What are you cooking? (optional)",
-    description: "Video of a home-cooked meal — posts to Feed and your profile @home.",
+    description: "Video of a home-cooked meal — posts to Feed; photos on profile @home use + Add.",
   },
 ];
 

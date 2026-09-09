@@ -65,7 +65,7 @@ export default function FeedVideoComposeOverlay({
 
   async function publishGuest(payload) {
     if (payload.category === "cooking") {
-      const err = new Error("Sign in to post What I'm Cooking");
+      const err = new Error("Sign in to post What's Cooking @home");
       err.code = "auth_required";
       throw err;
     }

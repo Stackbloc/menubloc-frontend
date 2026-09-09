@@ -199,7 +199,7 @@ export default function MyMenuplyPresentationRails({
         <FollowedRestaurantsRail restaurants={followedRestaurants} />
       ) : null}
       {showFoodStoryCta && !readOnly ? <FoodStoryCta /> : null}
-      {wantSuggestions.length > 0 && hubFocus !== "dishes" ? (
+      {wantSuggestions.length > 0 && hubFocus !== "dishes" && !readOnly ? (
         <div style={s.presentationBlock} data-testid="want-suggestions-rail">
           <h3 style={s.displaySectionTitle}>Dishes you saved</h3>
           <p style={{ ...s.muted, margin: "0 0 10px", fontSize: 13 }}>
