@@ -220,6 +220,10 @@ test("Feed shell: Home|Waiter|Share My QR|X|Deals|Shop|Profile + slim X sheet", 
   assert.match(shellPage, /FeedMobileHeader/);
   assert.match(shellPage, /FeedMorePanel/);
   assert.match(shellPage, /useFeedShellDesktop/);
+  assert.match(shellPage, /profileViewToggle/);
+  assert.match(mobileHeader, /ProfileViewModeToggle/);
+  assert.match(desktopRail, /ProfileViewModeToggle/);
+  assert.match(read("src/components/consumer/feed/ProfileViewModeToggle.jsx"), /profile-view-mode-toggle/);
 
   const guestLanding = read("src/components/consumer/feed/FeedGuestProfileLanding.jsx");
   assert.match(guestLanding, /FEED_GUEST_PROFILE_CARDS/);

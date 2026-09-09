@@ -87,8 +87,10 @@ test("What I'm Eating / Wanna Eat use compact Add + sheet compose", () => {
   assert.doesNotMatch(hub, /FoodStatusQuickCompose|EatingActivityCompose/);
   assert.doesNotMatch(hub, /Invite & Make Me This/);
   assert.match(hub, /eating-activity-rows/);
-  assert.match(page, /profile-view-mode-toggle/);
+  assert.match(page, /searchParams\.get\("view"\) === "connect"/);
   assert.match(page, /previewAsConnect/);
+  assert.match(read("src/components/consumer/feed/ProfileViewModeToggle.jsx"), /profile-view-mode-toggle/);
+  assert.match(hub, /isConnectPreview=\{isConnectPreview\}/);
   assert.doesNotMatch(page, /ActivityTextComposer|postScanActivityText/);
   assert.equal(
     fs.existsSync(path.join(root, "src/pages/consumer/myMenuply/FoodStatusQuickCompose.jsx")),

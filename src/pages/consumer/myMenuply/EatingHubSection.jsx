@@ -53,6 +53,8 @@ function WantCravingsActionBox({
   wants = [],
   diningIntents = [],
   canEdit = false,
+  /** Own-hub Connect preview still shows owner Join Me / Take Me Out. */
+  isConnectPreview = false,
   canInviteMeOut = false,
   onJoinMeFromCraving,
   onTakeMeOutFromCraving,
@@ -91,9 +93,10 @@ function WantCravingsActionBox({
 
   if (!options.length) return null;
 
-  const showOwnerFlow = canEdit && typeof onJoinMeFromCraving === "function";
+  const showOwnerFlow =
+    (canEdit || isConnectPreview) && typeof onJoinMeFromCraving === "function";
   const showPeerInvite =
-    !canEdit && canInviteMeOut && typeof onInviteMeOut === "function";
+    !canEdit && !isConnectPreview && canInviteMeOut && typeof onInviteMeOut === "function";
   if (!showOwnerFlow && !showPeerInvite) return null;
 
   const selected = options.find((o) => o.key === selectedKey) || options[0];
@@ -796,6 +799,7 @@ export default function EatingHubSection({
             wants={wants}
             diningIntents={diningIntents}
             canEdit={canEdit}
+            isConnectPreview={isConnectPreview}
             canInviteMeOut={canInviteMeOut}
             onJoinMeFromCraving={onJoinMeFromCraving}
             onTakeMeOutFromCraving={onTakeMeOutFromCraving}

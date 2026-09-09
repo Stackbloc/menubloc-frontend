@@ -5,7 +5,7 @@
  */
 
 import { useEffect, useState } from "react";
-import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Outlet, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { isFeedShopRoute } from "../../../lib/feedShellNavigation.js";
 import FeedPrimaryNav, { FEED_PRIMARY_NAV_HEIGHT } from "../../../components/consumer/feed/FeedPrimaryNav.jsx";
 import FeedDesktopRail, { FEED_DESKTOP_RAIL_WIDTH } from "../../../components/consumer/feed/FeedDesktopRail.jsx";
@@ -19,9 +19,14 @@ import { useFeedShellDesktop } from "../../../lib/useFeedShellDesktop.js";
 
 export { FEED_PRIMARY_NAV_HEIGHT };
 
+function isOwnFeedProfilePath(pathname) {
+  return /^\/feed\/profile\/?$/.test(String(pathname || ""));
+}
+
 export default function FeedShellPage({ children = null }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { isAuthenticated } = useConsumer();
   const isDesktop = useFeedShellDesktop();
   const showShopBasket = isFeedShopRoute(location.pathname);
@@ -31,6 +36,25 @@ export default function FeedShellPage({ children = null }) {
   const [composeOpenLibrary, setComposeOpenLibrary] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [shareMenuplyOpen, setShareMenuplyOpen] = useState(false);
+
+  const previewAsConnect = searchParams.get("view") === "connect";
+  const showProfileViewToggle = isAuthenticated && isOwnFeedProfilePath(location.pathname);
+
+  function toggleProfileView() {
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (next.get("view") === "connect") next.delete("view");
+        else next.set("view", "connect");
+        return next;
+      },
+      { replace: true }
+    );
+  }
+
+  const profileViewToggle = showProfileViewToggle
+    ? { previewAsConnect, onToggle: toggleProfileView }
+    : null;
 
   useEffect(() => {
     document.documentElement.style.setProperty(
@@ -128,12 +152,14 @@ export default function FeedShellPage({ children = null }) {
           }
           isAuthenticated={isAuthenticated}
           showShopBasket={showShopBasket}
+          profileViewToggle={profileViewToggle}
         />
       ) : (
         <FeedMobileHeader
           onMoreClick={() => setMoreOpen(true)}
           isAuthenticated={isAuthenticated}
           showShopBasket={showShopBasket}
+          profileViewToggle={profileViewToggle}
         />
       )}
 

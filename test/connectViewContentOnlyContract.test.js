@@ -19,6 +19,7 @@ test("Connect view is content-only — no how-to instructions", () => {
 
   assert.match(page, /Connect view: content about this diner only/);
   assert.match(page, /previewAsConnect/);
+  assert.match(page, /searchParams\.get\("view"\) === "connect"/);
   assert.match(page, /readOnly=\{previewAsConnect\}/);
   assert.match(page, /editMode=\{!previewAsConnect\}/);
   assert.match(page, /needs_primary_location && !previewAsConnect/);
@@ -35,10 +36,17 @@ test("Connect view is content-only — no how-to instructions", () => {
   assert.doesNotMatch(home, /Cooking videos can also appear on Feed/);
 
   assert.match(hub, /isConnectPreview/);
+  assert.match(hub, /canEdit \|\| isConnectPreview/);
+  assert.match(hub, /isConnectPreview=\{isConnectPreview\}/);
   assert.match(hub, /canEdit \?[\s\S]*ActivityStatusLineCompose/);
   assert.match(hub, /No cravings shared yet/);
   assert.match(hub, /Nothing shared for this day/);
 
   assert.match(rails, /wantSuggestions\.length > 0 && hubFocus !== "dishes" && !readOnly/);
   assert.match(rails, /showFoodStoryCta && !readOnly/);
+
+  const viewToggle = read("src/components/consumer/feed/ProfileViewModeToggle.jsx");
+  assert.match(viewToggle, /profile-view-mode-toggle/);
+  assert.match(read("src/pages/consumer/feed/FeedShellPage.jsx"), /profileViewToggle/);
+  assert.match(read("src/components/consumer/feed/FeedMobileHeader.jsx"), /ProfileViewModeToggle/);
 });

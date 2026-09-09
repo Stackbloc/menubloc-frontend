@@ -5,12 +5,14 @@
 import { Link } from "react-router-dom";
 import { BrandLogo } from "../../BrandLogo.jsx";
 import FeedShopBasketButton from "./FeedShopBasketButton.jsx";
+import ProfileViewModeToggle from "./ProfileViewModeToggle.jsx";
 import { FEED_SHELL_LOGIN_PATH } from "../../../lib/feedShellLinks.js";
 
 export default function FeedMobileHeader({
   onMoreClick,
   isAuthenticated = false,
   showShopBasket = false,
+  profileViewToggle = null,
 }) {
   return (
     <header style={styles.header} data-testid="feed-mobile-header">
@@ -31,6 +33,13 @@ export default function FeedMobileHeader({
           <Link to={FEED_SHELL_LOGIN_PATH} style={styles.loginChip} data-testid="feed-mobile-login">
             Log in
           </Link>
+        ) : null}
+        {profileViewToggle ? (
+          <ProfileViewModeToggle
+            previewAsConnect={profileViewToggle.previewAsConnect}
+            onToggle={profileViewToggle.onToggle}
+            variant="feedDark"
+          />
         ) : null}
         <button
           type="button"

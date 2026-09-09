@@ -8,6 +8,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import FeedGuestProfileLanding from "../../components/consumer/feed/FeedGuestProfileLanding.jsx";
 import ShareModal from "../../components/share/ShareModal.jsx";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
+import { useFeedShellDesktop } from "../../lib/useFeedShellDesktop.js";
 import {
   createDiningCrew,
   deleteDiningCrew,
@@ -180,6 +181,7 @@ export default function MyMenuplyPage() {
   const { isAuthenticated, loading: authLoading, consumer } = useConsumer();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const isDesktopFeed = useFeedShellDesktop();
   const eatingSectionRef = useRef(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -187,7 +189,7 @@ export default function MyMenuplyPage() {
   const [eduConsumer, setEduConsumer] = useState(null);
   const [avatarUrl, setAvatarUrl] = useState("");
   /** Connect view: content about this diner only — never Menuply how-to / compose coaching. */
-  const [previewAsConnect, setPreviewAsConnect] = useState(false);
+  const previewAsConnect = searchParams.get("view") === "connect";
   const [identityBusy, setIdentityBusy] = useState(false);
   const [identityNotice, setIdentityNotice] = useState("");
   const [identityError, setIdentityError] = useState("");
@@ -1671,66 +1673,17 @@ export default function MyMenuplyPage() {
             <div
               style={{
                 display: "flex",
-                justifyContent: "space-between",
+                justifyContent: "flex-end",
                 alignItems: "center",
                 marginBottom: 8,
                 gap: 8,
+                /* Clear fixed Feed mobile header (logo + glasses toggle + More). */
+                paddingTop: isDesktopFeed
+                  ? 0
+                  : "max(44px, calc(env(safe-area-inset-top, 0px) + 40px))",
               }}
               data-testid="feed-profile-settings-row"
             >
-              <div
-                style={{
-                  display: "inline-flex",
-                  border: "1px solid #e2e8f0",
-                  borderRadius: 999,
-                  padding: 2,
-                  background: "#f8fafc",
-                }}
-                data-testid="profile-view-mode-toggle"
-                role="group"
-                aria-label="Profile view mode"
-              >
-                <button
-                  type="button"
-                  data-testid="profile-view-owner"
-                  onClick={() => setPreviewAsConnect(false)}
-                  style={{
-                    appearance: "none",
-                    border: "none",
-                    borderRadius: 999,
-                    padding: "6px 12px",
-                    font: "inherit",
-                    fontSize: 12,
-                    fontWeight: 750,
-                    cursor: "pointer",
-                    background: !previewAsConnect ? "#fff" : "transparent",
-                    color: !previewAsConnect ? "#0f172a" : "#64748b",
-                    boxShadow: !previewAsConnect ? "0 1px 2px rgba(15,23,42,0.08)" : "none",
-                  }}
-                >
-                  Your view
-                </button>
-                <button
-                  type="button"
-                  data-testid="profile-view-connect"
-                  onClick={() => setPreviewAsConnect(true)}
-                  style={{
-                    appearance: "none",
-                    border: "none",
-                    borderRadius: 999,
-                    padding: "6px 12px",
-                    font: "inherit",
-                    fontSize: 12,
-                    fontWeight: 750,
-                    cursor: "pointer",
-                    background: previewAsConnect ? "#fff" : "transparent",
-                    color: previewAsConnect ? "#0f172a" : "#64748b",
-                    boxShadow: previewAsConnect ? "0 1px 2px rgba(15,23,42,0.08)" : "none",
-                  }}
-                >
-                  Connect view
-                </button>
-              </div>
               <MyMenuplyAccountSettingsLink style={s.settingsIconLink} />
             </div>
         ) : null}

@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "31348996da51154e1325d152c31a4d0ecb9f560d",
-  "gitShortSha": "31348996",
+  "gitSha": "723b9b11c810ea857a0b16cec48a5585ee2638c9",
+  "gitShortSha": "723b9b11",
   "branch": "main",
-  "buildTime": "2026-09-03T15:12:15.611Z",
+  "buildTime": "2026-09-09T22:04:28.779Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "docs: lock production tip after Share & Invite CPD"
+  "commitMessage": "docs: lock FE tip after Make Me This booking fix CPD"
 }
