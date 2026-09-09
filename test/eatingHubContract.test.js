@@ -43,7 +43,7 @@ test("My Menuply and peer hub use five-section presentation hub", () => {
   assert.match(section, /eating-want-panel/);
   assert.match(section, /eating-plans-panel/);
   assert.match(section, /future-plans-summary/);
-  assert.match(section, /None scheduled/);
+  assert.doesNotMatch(section, /None scheduled/);
   assert.doesNotMatch(section, /want-invite-me-out-settings/);
   assert.match(compose, /want-invite-me-out-settings/);
   assert.match(section, /plans-join-me/);
@@ -51,10 +51,11 @@ test("My Menuply and peer hub use five-section presentation hub", () => {
   assert.match(section, /upcoming-plans-calendar-open/);
   assert.match(peer, /EatingHubSection/);
   assert.match(peer, /readOnly/);
-  assert.match(section, /WhatIAteMealBoard/);
+  assert.doesNotMatch(section, /WhatIAteMealBoard/);
+  assert.match(section, /DinerActivityScanRow/);
   assert.match(section, /WantToEatUnifiedList/);
   assert.match(section, /diningIntents/);
-  assert.match(section, /Dishes you want and places you Wanna Go!/);
+  assert.match(section, /Add a craving anytime|No cravings shared yet/);
   assert.match(section, /want-cravings-invite-open/);
   assert.match(section, /Invite & Make Me This/);
   assert.doesNotMatch(section, /want-mmt-open-picker/);
@@ -64,6 +65,9 @@ test("My Menuply and peer hub use five-section presentation hub", () => {
   assert.doesNotMatch(section, /future-plans-calendar/);
   assert.doesNotMatch(section, /eating-plans-calendar/);
   assert.doesNotMatch(section, /PhotoGrid/);
+  assert.doesNotMatch(section, /Multiplier\/Post/);
+  assert.match(section, /editMode/);
+  assert.match(mine, /profile-view-mode-toggle/);
 
   const sheet = read("src/pages/consumer/myMenuply/DinerCalendarSheet.jsx");
   assert.match(sheet, /Keep the sheet open so the selected day stays highlighted until Done/);
@@ -132,7 +136,7 @@ test("My Menuply and peer hub use five-section presentation hub", () => {
   assert.doesNotMatch(mealBoard, /Nothing here/);
   assert.doesNotMatch(section, /handleSlotCapture/);
   assert.match(section, /composeMediaSource/);
-  assert.match(section, /hubDate=\{hubDate\}/);
+  assert.match(section, /hubDate/);
   assert.match(section, /kind === "venue_event"/);
   assert.match(mine, /media=library|get\("media"\)/);
   assert.match(mine, /my-events-calendar-open/);

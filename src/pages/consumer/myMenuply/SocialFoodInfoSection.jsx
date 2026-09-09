@@ -54,7 +54,7 @@ export default function SocialFoodInfoSection({ hidden = false }) {
           kicker="Connects"
           title="From your connects"
           to="/account/connections"
-          subtitle="What people you know want and are eating — information, not matching"
+          subtitle="What people you know want and are eating"
         />
 
         {loading ? (
@@ -72,8 +72,7 @@ export default function SocialFoodInfoSection({ hidden = false }) {
 
         {!loading && enabled && !hasConnects ? (
           <SectionEmptyState testId="social-food-info-no-connects">
-            {note ||
-              "Connect with diners to see what they’re into. This is information sharing — not matching."}
+            {note || "Connect with diners to see what they’re into."}
           </SectionEmptyState>
         ) : null}
 

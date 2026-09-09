@@ -182,6 +182,7 @@ export default function MyMenuplyPage() {
   const [profile, setProfile] = useState(null);
   const [eduConsumer, setEduConsumer] = useState(null);
   const [avatarUrl, setAvatarUrl] = useState("");
+  const [previewAsConnect, setPreviewAsConnect] = useState(false);
   const [identityBusy, setIdentityBusy] = useState(false);
   const [identityNotice, setIdentityNotice] = useState("");
   const [identityError, setIdentityError] = useState("");
@@ -1554,16 +1555,71 @@ export default function MyMenuplyPage() {
         data-testid="my-menuply-page"
       >
         {isAuthenticated ? (
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "flex-end",
-              marginBottom: 8,
-            }}
-            data-testid="feed-profile-settings-row"
-          >
-            <MyMenuplyAccountSettingsLink style={s.settingsIconLink} />
-          </div>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 8,
+                gap: 8,
+              }}
+              data-testid="feed-profile-settings-row"
+            >
+              <div
+                style={{
+                  display: "inline-flex",
+                  border: "1px solid #e2e8f0",
+                  borderRadius: 999,
+                  padding: 2,
+                  background: "#f8fafc",
+                }}
+                data-testid="profile-view-mode-toggle"
+                role="group"
+                aria-label="Profile view mode"
+              >
+                <button
+                  type="button"
+                  data-testid="profile-view-owner"
+                  onClick={() => setPreviewAsConnect(false)}
+                  style={{
+                    appearance: "none",
+                    border: "none",
+                    borderRadius: 999,
+                    padding: "6px 12px",
+                    font: "inherit",
+                    fontSize: 12,
+                    fontWeight: 750,
+                    cursor: "pointer",
+                    background: !previewAsConnect ? "#fff" : "transparent",
+                    color: !previewAsConnect ? "#0f172a" : "#64748b",
+                    boxShadow: !previewAsConnect ? "0 1px 2px rgba(15,23,42,0.08)" : "none",
+                  }}
+                >
+                  Your view
+                </button>
+                <button
+                  type="button"
+                  data-testid="profile-view-connect"
+                  onClick={() => setPreviewAsConnect(true)}
+                  style={{
+                    appearance: "none",
+                    border: "none",
+                    borderRadius: 999,
+                    padding: "6px 12px",
+                    font: "inherit",
+                    fontSize: 12,
+                    fontWeight: 750,
+                    cursor: "pointer",
+                    background: previewAsConnect ? "#fff" : "transparent",
+                    color: previewAsConnect ? "#0f172a" : "#64748b",
+                    boxShadow: previewAsConnect ? "0 1px 2px rgba(15,23,42,0.08)" : "none",
+                  }}
+                >
+                  Connect view
+                </button>
+              </div>
+              <MyMenuplyAccountSettingsLink style={s.settingsIconLink} />
+            </div>
         ) : null}
         {error ? <p style={{ ...s.error, marginTop: 16 }}>{error}</p> : null}
 
@@ -1609,6 +1665,7 @@ export default function MyMenuplyPage() {
                 Array.isArray(profile?.favorite_foods) ? profile.favorite_foods : []
               }
               eduConsumer={eduConsumer}
+              readOnly={previewAsConnect}
             />
             <ProfileGalleryComposeSheet
               open={profileGalleryPickerOpen}
@@ -1654,10 +1711,13 @@ export default function MyMenuplyPage() {
               onDelete={onHomeAtHomeDelete}
             />
 
-            <SocialFoodInfoSection />
+            <SocialFoodInfoSection hidden={previewAsConnect} />
 
             <EatingHubSection
               sectionRef={eatingSectionRef}
+              editMode={!previewAsConnect}
+              activityDisplayName={displayName}
+              activityAvatarUrl={avatarUrl || null}
               composeOpen={composeOpen}
               onComposeOpenChange={setComposeOpen}
               composeDefaultCategory={composeDefaultCategory}
@@ -1797,7 +1857,6 @@ export default function MyMenuplyPage() {
               <SectionHead
                 kicker="On the calendar"
                 title="My Events"
-                subtitle="Events you're creating or joining"
                 aside={
                   <button
                     type="button"
@@ -1812,7 +1871,7 @@ export default function MyMenuplyPage() {
               />
               {events.length === 0 && eventGroups.length === 0 && socialEvents.length === 0 ? (
                 <SectionEmptyState testId="events-empty">
-                  Events you&apos;re creating or joining.
+                  No events yet.
                 </SectionEmptyState>
               ) : (
                 <>
@@ -1867,7 +1926,7 @@ export default function MyMenuplyPage() {
             </section>
 
             <EventComposeSheet
-              open={eventComposeOpen}
+              open={eventComposeOpen && !previewAsConnect}
               onClose={() => setEventComposeOpen(false)}
               busy={postBusy === "events"}
               onSubmit={postSocialEvent}

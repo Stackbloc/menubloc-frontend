@@ -1,32 +1,80 @@
 /**
- * Activity prose row — identity + activity.
- * Restaurant shown as logo/billboard (tap → profile). Dish text taps → menu-item detail.
- * Video: activity line tappable (no ▶ glyph).
+ * Compact category activity row for profile sections.
+ * [thumb 40] [text] [meal tag] [▶ if video] — uniform size; real video play inline.
  */
 
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { resolveConsumerMediaUrl } from "../../../lib/consumerApi.js";
 import { formatDinerScanIdentity } from "../../../lib/dinerDiscoverySummary.js";
-import { formatActivityProseClause } from "../../../lib/dinerSocialEmojiLanguage.js";
 import { iconForFoodText } from "../../../lib/foodInterestIcons.js";
+import { WHAT_I_ATE_MEAL_PERIODS } from "../../../lib/whatIAteTodayMealPeriod.js";
+import { shouldPreferRestaurantMark } from "../../../lib/restaurantMarkPreference.js";
 import { restaurantHref } from "./myMenuplyBits.jsx";
 import { resolveEatingDishVisual } from "./eatingDishVisual.js";
 import { GREEN_MID } from "./myMenuplyStyles.js";
+
+const THUMB = 40;
 
 function initialLetter(name) {
   const ch = String(name || "?").trim().charAt(0);
   return ch ? ch.toUpperCase() : "?";
 }
 
-function dishHref(item = {}) {
-  const id = item.menu_item_id || item.ck_menu_item_id || item.dish_id;
-  if (id == null || id === "") return null;
-  const n = Number(id);
+function dishHref(menuItemId) {
+  if (menuItemId == null || menuItemId === "") return null;
+  const n = Number(menuItemId);
   if (Number.isFinite(n) && n > 0) return `/menu-items/${n}`;
-  const s = String(id);
-  if (s.startsWith("cmi:")) return `/menu-items/${encodeURIComponent(s)}`;
-  return `/menu-items/${encodeURIComponent(s)}`;
+  return `/menu-items/${encodeURIComponent(String(menuItemId))}`;
+}
+
+function mealTag(mealPeriod) {
+  const id = String(mealPeriod || "").trim();
+  if (!id) return null;
+  return WHAT_I_ATE_MEAL_PERIODS.find((p) => p.id === id)?.label || null;
+}
+
+function DishLink({ href, children }) {
+  if (!href) return <span data-testid="diner-activity-scan-dish-text">{children}</span>;
+  return (
+    <Link
+      to={href}
+      style={styles.inlineLink}
+      data-testid="diner-activity-scan-dish"
+      onClick={(e) => e.stopPropagation()}
+    >
+      {children}
+    </Link>
+  );
+}
+
+function PlaceLink({ href, children, markUrl = null }) {
+  if (markUrl && href) {
+    return (
+      <Link
+        to={href}
+        style={styles.inlineMark}
+        data-testid="diner-activity-scan-place"
+        title={typeof children === "string" ? children : "Restaurant"}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <img src={markUrl} alt="" style={styles.inlineMarkImg} />
+      </Link>
+    );
+  }
+  if (href) {
+    return (
+      <Link
+        to={href}
+        style={styles.inlineLink}
+        data-testid="diner-activity-scan-place"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {children}
+      </Link>
+    );
+  }
+  return <span data-testid="diner-activity-scan-place-text">{children}</span>;
 }
 
 export default function DinerActivityScanRow({
@@ -39,7 +87,6 @@ export default function DinerActivityScanRow({
   dinerSexShort = null,
   kind = "ate",
   foodName = null,
-  foodInterestKey = null,
   restaurantName = null,
   restaurantId = null,
   restaurantSlug = null,
@@ -47,20 +94,24 @@ export default function DinerActivityScanRow({
   restaurantState = null,
   restaurantLogoUrl = null,
   restaurantBillboardUrl = null,
+  restaurantChainId = null,
   menuItemId = null,
+  dishPhotoUrl = null,
   mealPeriod = null,
-  eatenOn = null,
   homemade = false,
   icon = null,
-  activityLineOverride = null,
   videoUrl = null,
   profileHref = null,
   testId = "diner-activity-scan-row",
   onSelect = null,
   selected = false,
-  secondPerson = false,
+  ownerCompact = false,
+  showIdentity = true,
 }) {
   const [expanded, setExpanded] = useState(false);
+  const hasVideo = Boolean(String(videoUrl || "").trim());
+  const videoSrc = hasVideo ? String(videoUrl).trim() : "";
+
   const identity = formatDinerScanIdentity(
     {
       display_name: displayName,
@@ -71,19 +122,6 @@ export default function DinerActivityScanRow({
     },
     { includeSex }
   );
-  const clause =
-    String(activityLineOverride || "").trim() ||
-    formatActivityProseClause({
-      kind,
-      food_name: foodName,
-      food_interest_key: foodInterestKey,
-      restaurant_name: restaurantName,
-      meal_period: mealPeriod,
-      eaten_on: eatenOn,
-      homemade,
-      cooking: homemade,
-      second_person: secondPerson,
-    });
 
   const placeHref = restaurantHref({
     restaurant_id: restaurantId,
@@ -92,66 +130,152 @@ export default function DinerActivityScanRow({
     city: restaurantCity,
     state: restaurantState,
   });
-  const itemHref = dishHref({ menu_item_id: menuItemId });
-  const placeVisual = resolveEatingDishVisual({
-    restaurant_logo_url: restaurantLogoUrl,
-    restaurant_billboard_image_url: restaurantBillboardUrl,
-  });
-  const placeImg =
+  const itemHref = dishHref(menuItemId);
+  const food = String(foodName || "").trim() || null;
+  const place = String(restaurantName || "").trim() || null;
+  const isWant = kind === "want" || kind === "wanna_eat" || kind === "want_to_eat";
+
+  const specificNamed = Boolean(food && (place || homemade));
+  const cuisineOnly = Boolean(food) && !place && !homemade && !menuItemId;
+  const foodEmoji =
+    !specificNamed && (cuisineOnly || homemade)
+      ? iconForFoodText(food) || icon || null
+      : null;
+
+  const preferMark =
+    !homemade &&
+    shouldPreferRestaurantMark({
+      chain_id: restaurantChainId,
+      restaurant_name: place,
+    });
+
+  const placeVisual = preferMark
+    ? resolveEatingDishVisual({
+        restaurant_logo_url: restaurantLogoUrl,
+        restaurant_billboard_image_url: restaurantBillboardUrl,
+      })
+    : null;
+  const placeMarkUrl =
     placeVisual?.source === "logo" || placeVisual?.source === "billboard"
       ? placeVisual.url
-      : resolveConsumerMediaUrl(restaurantLogoUrl || restaurantBillboardUrl) || null;
+      : null;
 
-  const homeEmoji =
-    homemade && foodName ? iconForFoodText(foodName) || icon || null : null;
+  const dishVisual = dishPhotoUrl
+    ? resolveConsumerMediaUrl(dishPhotoUrl) || dishPhotoUrl
+    : null;
 
-  const hasVideo = Boolean(String(videoUrl || "").trim());
+  const thumbUrl = dishVisual || (!preferMark ? null : placeMarkUrl) || null;
+
   const resolvedAvatar = avatarUrl
     ? resolveConsumerMediaUrl(avatarUrl) || avatarUrl
     : null;
+  const meal = mealTag(mealPeriod);
 
-  function handleVideoToggle(e) {
-    e.preventDefault();
-    e.stopPropagation();
+  function openVideo(e) {
+    e?.preventDefault?.();
+    e?.stopPropagation?.();
+    if (!hasVideo) {
+      onSelect?.();
+      return;
+    }
     setExpanded((v) => !v);
   }
 
-  function handleSelect(e) {
-    if (typeof onSelect !== "function") return;
-    e.preventDefault();
-    e.stopPropagation();
-    onSelect();
+  const identityBlock =
+    showIdentity && !ownerCompact ? (
+      <div style={styles.identityRow}>
+        {resolvedAvatar ? (
+          <img src={resolvedAvatar} alt="" style={styles.avatar} />
+        ) : (
+          <div style={styles.avatarFallback} aria-hidden="true">
+            {initialLetter(displayName)}
+          </div>
+        )}
+        <span style={styles.identityText} data-testid="diner-activity-scan-identity">
+          {(identity || displayName || "Diner").replace(/ · /g, ", ")}
+        </span>
+      </div>
+    ) : null;
+
+  function renderClause() {
+    if (ownerCompact) {
+      return (
+        <>
+          {meal ? <span style={styles.mealInline}>{meal} · </span> : null}
+          {homemade ? (
+            <>
+              {food ? <DishLink href={itemHref}>{food}</DishLink> : <span>food</span>}
+              <span> @home</span>
+            </>
+          ) : isWant ? (
+            <>
+              {food ? <DishLink href={itemHref}>{food}</DishLink> : null}
+              {food && place ? <span> at </span> : null}
+              {!food && place ? <span>at </span> : null}
+              {place ? (
+                <PlaceLink href={placeHref} markUrl={preferMark ? placeMarkUrl : null}>
+                  {place}
+                </PlaceLink>
+              ) : null}
+              {!food && !place ? <span>Wanna eat</span> : null}
+            </>
+          ) : (
+            <>
+              {food ? <DishLink href={itemHref}>{food}</DishLink> : null}
+              {food && place ? <span> at </span> : null}
+              {!food && place ? <span>at </span> : null}
+              {place ? (
+                <PlaceLink href={placeHref} markUrl={preferMark ? placeMarkUrl : null}>
+                  {place}
+                </PlaceLink>
+              ) : null}
+              {!food && !place ? <span>eating</span> : null}
+            </>
+          )}
+        </>
+      );
+    }
+
+    if (homemade) {
+      return (
+        <>
+          <span>is cooking </span>
+          {food ? <DishLink href={itemHref}>{food}</DishLink> : <span>food</span>}
+          <span> @home</span>
+        </>
+      );
+    }
+    if (isWant) {
+      return (
+        <>
+          <span>wants </span>
+          {food ? <DishLink href={itemHref}>{food}</DishLink> : null}
+          {food && place ? <span> at </span> : null}
+          {!food && place ? <span>to eat at </span> : null}
+          {place ? (
+            <PlaceLink href={placeHref} markUrl={preferMark ? placeMarkUrl : null}>
+              {place}
+            </PlaceLink>
+          ) : null}
+          {!food && !place ? <span>something to eat</span> : null}
+        </>
+      );
+    }
+    return (
+      <>
+        <span>is eating </span>
+        {food ? <DishLink href={itemHref}>{food}</DishLink> : null}
+        {food && place ? <span> at </span> : null}
+        {!food && place ? <span>at </span> : null}
+        {place ? (
+          <PlaceLink href={placeHref} markUrl={preferMark ? placeMarkUrl : null}>
+            {place}
+          </PlaceLink>
+        ) : null}
+        {!food && !place ? <span>…</span> : null}
+      </>
+    );
   }
-
-  const identityBlock = (
-    <div style={styles.identityRow}>
-      {resolvedAvatar ? (
-        <img src={resolvedAvatar} alt="" style={styles.avatar} />
-      ) : (
-        <div style={styles.avatarFallback} aria-hidden="true">
-          {initialLetter(displayName)}
-        </div>
-      )}
-      <span style={styles.identityText} data-testid="diner-activity-scan-identity">
-        {(identity || displayName || "Diner").replace(/ · /g, ", ")}
-      </span>
-    </div>
-  );
-
-  // Own hub: "You" + "eating …" (never third-person "is" after You). Peers: "is eating".
-  const verb = secondPerson
-    ? homemade
-      ? "cooking"
-      : kind === "want"
-        ? "want"
-        : "eating"
-    : homemade
-      ? "is cooking"
-      : kind === "want"
-        ? "wants"
-        : "is eating";
-
-  const showPlaceMark = !homemade && Boolean(placeHref || restaurantName);
 
   return (
     <div
@@ -162,7 +286,7 @@ export default function DinerActivityScanRow({
       data-testid={testId}
       data-has-video={hasVideo ? "true" : "false"}
     >
-      {profileHref ? (
+      {profileHref && identityBlock ? (
         <Link to={profileHref} style={styles.identityLink} data-testid="diner-activity-scan-profile">
           {identityBlock}
         </Link>
@@ -170,88 +294,52 @@ export default function DinerActivityScanRow({
         identityBlock
       )}
 
-      <div style={styles.activityRow} data-testid="diner-activity-scan-line">
-        <span style={styles.proseLine}>
-          {homeEmoji ? <span aria-hidden="true">{homeEmoji} </span> : null}
-          <span>{verb}</span>
-          {foodName ? (
-            <>
-              {" "}
-              {itemHref ? (
-                <Link
-                  to={itemHref}
-                  style={styles.inlineLink}
-                  data-testid="diner-activity-scan-dish"
-                >
-                  {foodName}
-                </Link>
-              ) : (
-                <span data-testid="diner-activity-scan-dish-text">{foodName}</span>
-              )}
-            </>
-          ) : null}
-          {homemade ? <span> @home</span> : null}
-          {!homemade && showPlaceMark ? <span> at </span> : null}
+      <button
+        type="button"
+        style={styles.rowBtn}
+        data-testid="diner-activity-scan-line"
+        aria-expanded={hasVideo ? expanded : undefined}
+        onClick={openVideo}
+      >
+        <span style={styles.thumb} data-testid="diner-activity-scan-thumb">
+          {thumbUrl ? (
+            <img src={thumbUrl} alt="" style={styles.thumbImg} />
+          ) : foodEmoji ? (
+            <span style={styles.thumbEmoji} aria-hidden="true">
+              {foodEmoji}
+            </span>
+          ) : (
+            <span style={styles.thumbFallback} aria-hidden="true">
+              {homemade ? "⌂" : initialLetter(food || place || "F")}
+            </span>
+          )}
         </span>
 
-        {!homemade && placeHref && placeImg ? (
-          <Link
-            to={placeHref}
-            style={styles.placeMark}
-            data-testid="diner-activity-scan-place"
-            title={restaurantName || "Restaurant"}
-          >
-            <img
-              src={placeImg}
-              alt={restaurantName || "Restaurant"}
-              style={styles.placeImg}
-            />
-          </Link>
-        ) : !homemade && placeHref ? (
-          <Link
-            to={placeHref}
-            style={styles.placeFallback}
-            data-testid="diner-activity-scan-place"
-            title={restaurantName || "Restaurant"}
-          >
-            {(restaurantName || "R").slice(0, 2).toUpperCase()}
-          </Link>
-        ) : !homemade && restaurantName ? (
-          <span style={styles.placeFallback} data-testid="diner-activity-scan-place-text">
-            {restaurantName}
+        <span style={styles.body}>
+          <span style={styles.prose}>{renderClause()}</span>
+        </span>
+
+        {!ownerCompact && meal ? (
+          <span style={styles.mealTag} data-testid="diner-activity-scan-meal">
+            {meal}
           </span>
         ) : null}
 
         {hasVideo ? (
-          <button
-            type="button"
-            style={styles.videoHit}
-            data-testid="diner-activity-scan-video-toggle"
-            aria-expanded={expanded}
-            aria-label={expanded ? "Hide video" : "Show video"}
-            onClick={handleVideoToggle}
-          />
-        ) : typeof onSelect === "function" ? (
-          <button
-            type="button"
-            style={styles.videoHit}
-            data-testid="diner-activity-scan-select"
-            aria-label="Select activity"
-            onClick={handleSelect}
-          />
+          <span style={styles.playGlyph} aria-hidden="true" data-testid="diner-activity-scan-play">
+            ▶
+          </span>
         ) : null}
-      </div>
-
-      <span style={{ display: "none" }} data-testid="diner-activity-scan-clause">
-        {clause}
-      </span>
+      </button>
 
       {hasVideo && expanded ? (
         <div style={styles.videoWrap} data-testid="diner-activity-scan-video">
           <video
-            src={String(videoUrl).trim()}
+            src={videoSrc}
             controls
             playsInline
+            autoPlay
+            poster={thumbUrl || undefined}
             style={styles.video}
           />
         </div>
@@ -264,14 +352,13 @@ const styles = {
   wrap: {
     display: "grid",
     gap: 6,
-    padding: "10px 0",
-    borderBottom: "1px solid #e2e8f0",
-    position: "relative",
+    padding: "8px 0",
+    borderBottom: "1px solid #eef2f7",
   },
   wrapSelected: {
     background: "rgba(22, 163, 74, 0.06)",
     margin: "0 -8px",
-    padding: "10px 8px",
+    padding: "8px 8px",
     borderRadius: 10,
     borderBottom: "1px solid transparent",
   },
@@ -279,119 +366,131 @@ const styles = {
   identityRow: {
     display: "flex",
     alignItems: "center",
-    gap: 10,
+    gap: 8,
     minWidth: 0,
+    marginBottom: 2,
   },
   avatar: {
-    width: 36,
-    height: 36,
+    width: 28,
+    height: 28,
     borderRadius: "50%",
     objectFit: "cover",
     flexShrink: 0,
     background: "#e2e8f0",
   },
   avatarFallback: {
-    width: 36,
-    height: 36,
+    width: 28,
+    height: 28,
     borderRadius: "50%",
     flexShrink: 0,
     display: "grid",
     placeItems: "center",
     background: GREEN_MID,
     color: "#fff",
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: 800,
   },
   identityText: {
-    fontSize: 15,
-    fontWeight: 800,
+    fontSize: 13,
+    fontWeight: 750,
     color: "#0f172a",
-    lineHeight: 1.25,
+    lineHeight: 1.2,
   },
-  activityRow: {
+  rowBtn: {
+    appearance: "none",
+    border: "none",
+    background: "transparent",
+    padding: 0,
+    margin: 0,
+    width: "100%",
     display: "flex",
     alignItems: "center",
     gap: 10,
-    paddingLeft: 46,
-    minWidth: 0,
-    position: "relative",
+    textAlign: "left",
+    cursor: "pointer",
+    font: "inherit",
   },
-  proseLine: {
-    fontSize: 15,
-    fontWeight: 650,
-    lineHeight: 1.4,
+  thumb: {
+    width: THUMB,
+    height: THUMB,
+    borderRadius: 10,
+    flexShrink: 0,
+    overflow: "hidden",
+    background: "#f1f5f9",
+    border: "1px solid #e2e8f0",
+    display: "grid",
+    placeItems: "center",
+  },
+  thumbImg: {
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
+    display: "block",
+  },
+  thumbEmoji: { fontSize: 18, lineHeight: 1 },
+  thumbFallback: {
+    fontSize: 13,
+    fontWeight: 800,
+    color: "#64748b",
+  },
+  body: { flex: 1, minWidth: 0 },
+  prose: {
+    fontSize: 14,
+    fontWeight: 600,
+    lineHeight: 1.35,
     color: "#0f172a",
-    minWidth: 0,
-    position: "relative",
-    zIndex: 1,
   },
+  mealInline: { color: "#64748b", fontWeight: 650 },
   inlineLink: {
     color: GREEN_MID,
     fontWeight: 750,
     textDecoration: "none",
-    position: "relative",
-    zIndex: 1,
   },
-  placeMark: {
-    flexShrink: 0,
-    width: 44,
-    height: 44,
-    borderRadius: 10,
-    border: "1px solid #e2e8f0",
+  inlineMark: {
+    display: "inline-block",
+    width: 22,
+    height: 22,
+    borderRadius: 6,
     overflow: "hidden",
+    verticalAlign: "middle",
+    marginLeft: 2,
+    border: "1px solid #e2e8f0",
     background: "#fff",
-    display: "grid",
-    placeItems: "center",
-    position: "relative",
-    zIndex: 1,
   },
-  placeImg: {
+  inlineMarkImg: {
     width: "100%",
     height: "100%",
     objectFit: "contain",
     display: "block",
   },
-  placeFallback: {
+  mealTag: {
     flexShrink: 0,
-    maxWidth: 120,
-    minWidth: 44,
-    height: 44,
-    padding: "0 8px",
-    borderRadius: 10,
-    border: "1px solid #e2e8f0",
-    display: "grid",
-    placeItems: "center",
     fontSize: 11,
-    fontWeight: 800,
-    color: "#0f172a",
-    textDecoration: "none",
+    fontWeight: 700,
+    color: "#64748b",
     background: "#f8fafc",
-    textAlign: "center",
-    lineHeight: 1.2,
-    position: "relative",
-    zIndex: 1,
-    overflow: "hidden",
+    border: "1px solid #e2e8f0",
+    borderRadius: 999,
+    padding: "3px 8px",
   },
-  videoHit: {
-    appearance: "none",
-    border: "none",
-    background: "transparent",
-    position: "absolute",
-    inset: 0,
-    cursor: "pointer",
-    zIndex: 0,
+  playGlyph: {
+    flexShrink: 0,
+    fontSize: 11,
+    color: "#16a34a",
+    fontWeight: 800,
   },
   videoWrap: {
-    margin: "4px 0 0 46px",
+    marginTop: 6,
+    marginLeft: THUMB + 10,
     borderRadius: 12,
     overflow: "hidden",
     background: "#0f172a",
-    maxWidth: 320,
+    maxWidth: 360,
   },
   video: {
     display: "block",
     width: "100%",
-    maxHeight: 360,
+    maxHeight: 420,
     background: "#0f172a",
   },
 };

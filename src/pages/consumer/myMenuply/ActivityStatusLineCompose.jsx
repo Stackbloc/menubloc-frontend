@@ -1,11 +1,9 @@
 /**
- * What I'm Eating — simple consumer compose.
- * Restaurant → "I'm eating @" opens restaurant + optional dish + meal time form.
- * @home → free-typed dish (not CK); emoji derived when we can.
- * What I Wanna Eat → same restaurant form or cuisine free-text stop-anytime.
+ * Compact category compose — Add trigger opens a small sheet with CK pickers.
+ * Reuses EatingPlaceFields. No fill-in-the-blank sentence prompts.
  */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   WHAT_I_ATE_MEAL_PERIODS,
   defaultWhatIAteMealPeriod,
@@ -24,18 +22,25 @@ export default function ActivityStatusLineCompose({
   onSubmit,
 }) {
   const isWant = category === "want";
+  const [open, setOpen] = useState(false);
   const [mode, setMode] = useState("restaurant"); // restaurant | athome
-  const [formOpen, setFormOpen] = useState(false);
   const [restaurant, setRestaurant] = useState(null);
   const [dish, setDish] = useState(null);
-  const [homemade, setHomemade] = useState(false);
   const [mealPeriod, setMealPeriod] = useState(defaultWhatIAteMealPeriod());
   const [homeText, setHomeText] = useState("");
   const [wantText, setWantText] = useState("");
   const [error, setError] = useState("");
 
-  const homeEmoji = homeText.trim() ? iconForFoodText(homeText) : "";
+  useEffect(() => {
+    if (!open) return undefined;
+    function onKey(e) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
 
+  const homeEmoji = homeText.trim() ? iconForFoodText(homeText) : "";
   const canPostRestaurant = Boolean(restaurant);
   const canPostHome = Boolean(homeText.trim());
   const canPostWant = Boolean(wantText.trim() || restaurant);
@@ -48,12 +53,16 @@ export default function ActivityStatusLineCompose({
   function reset() {
     setRestaurant(null);
     setDish(null);
-    setHomemade(false);
     setHomeText("");
     setWantText("");
-    setFormOpen(false);
+    setMode("restaurant");
     setMealPeriod(defaultWhatIAteMealPeriod());
     setError("");
+  }
+
+  function close() {
+    setOpen(false);
+    reset();
   }
 
   async function handlePost(e) {
@@ -99,201 +108,253 @@ export default function ActivityStatusLineCompose({
           marketDiscoverable: true,
         });
       }
-      reset();
+      close();
     } catch (err) {
       setError(err?.message || "Unable to post");
     }
   }
 
-  if (isWant) {
-    return (
-      <form
-        onSubmit={handlePost}
-        style={styles.wrap}
-        data-testid="wanna-status-line-compose"
-      >
-        <p style={styles.lead}>I wanna eat</p>
-        <input
-          type="text"
-          value={wantText}
-          onChange={(ev) => setWantText(ev.target.value.slice(0, 120))}
-          placeholder="Chinese, sushi, burgers…"
-          style={styles.textInput}
-          disabled={busy}
-          data-testid="wanna-free-text"
-        />
-        <button
-          type="button"
-          style={styles.linkOpen}
-          onClick={() => setFormOpen((v) => !v)}
-          disabled={busy}
-        >
-          {formOpen ? "Hide place" : "Add restaurant / dish (optional)"}
-        </button>
-        {formOpen ? (
-          <EatingPlaceFields
-            homemade={false}
-            onHomemadeChange={() => {}}
-            restaurant={restaurant}
-            onRestaurantChange={setRestaurant}
-            dish={dish}
-            onDishChange={setDish}
-            followed={followed}
-            disabled={busy}
-            allowDishSearch
-            allowHomemade={false}
-            locationCity={locationCity}
-            locationState={locationState}
-            dishSearchPlaceholder="Dish (optional)"
-          />
-        ) : null}
-        <MealRow mealPeriod={mealPeriod} setMealPeriod={setMealPeriod} busy={busy} />
-        {error ? <p style={styles.error}>{error}</p> : null}
-        <button
-          type="submit"
-          disabled={!canPost || busy}
-          style={{ ...socialBtn.primary, ...styles.post, opacity: canPost && !busy ? 1 : 0.45 }}
-          data-testid="status-line-post"
-        >
-          Post
-        </button>
-      </form>
-    );
-  }
+  const triggerLabel = isWant ? "Add" : "Add";
 
   return (
-    <form
-      onSubmit={handlePost}
+    <div
       style={styles.wrap}
-      data-testid="eating-status-line-compose"
+      data-testid={isWant ? "wanna-status-line-compose" : "eating-status-line-compose"}
     >
-      <div style={styles.modeRow} data-testid="eating-status-mode">
-        <button
-          type="button"
-          style={{ ...styles.modeBtn, ...(mode === "restaurant" ? styles.modeBtnOn : null) }}
-          onClick={() => {
-            setMode("restaurant");
-            setHomeText("");
-            setFormOpen(false);
-          }}
-          disabled={busy}
-        >
-          Restaurant
-        </button>
-        <button
-          type="button"
-          style={{ ...styles.modeBtn, ...(mode === "athome" ? styles.modeBtnOn : null) }}
-          onClick={() => {
-            setMode("athome");
-            setRestaurant(null);
-            setDish(null);
-            setFormOpen(false);
-          }}
-          disabled={busy}
-        >
-          @home
-        </button>
-      </div>
-
-      {mode === "restaurant" ? (
-        <>
-          <button
-            type="button"
-            style={styles.imEatingAt}
-            data-testid="im-eating-at-open"
-            onClick={() => setFormOpen(true)}
-            disabled={busy}
-          >
-            I&apos;m eating @
-            {restaurant?.restaurant_name ? (
-              <span style={styles.filledPlace}> {restaurant.restaurant_name}</span>
-            ) : (
-              <span style={styles.placeholder}> restaurant</span>
-            )}
-            {dish?.item_name ? (
-              <span style={styles.filledDish}> — {dish.item_name}</span>
-            ) : null}
-          </button>
-          {formOpen ? (
-            <div style={styles.formPanel} data-testid="im-eating-at-form">
-              <EatingPlaceFields
-                homemade={homemade}
-                onHomemadeChange={setHomemade}
-                restaurant={restaurant}
-                onRestaurantChange={setRestaurant}
-                dish={dish}
-                onDishChange={setDish}
-                followed={followed}
-                disabled={busy}
-                allowDishSearch
-                allowHomemade={false}
-                locationCity={locationCity}
-                locationState={locationState}
-                dishSearchPlaceholder="Dish (optional)"
-              />
-              <MealRow mealPeriod={mealPeriod} setMealPeriod={setMealPeriod} busy={busy} />
-            </div>
-          ) : null}
-        </>
-      ) : (
-        <div style={styles.homeBlock} data-testid="eating-athome-compose">
-          <label style={styles.homeLabel}>
-            {homeEmoji ? <span aria-hidden="true">{homeEmoji} </span> : null}
-            @home
-          </label>
-          <input
-            type="text"
-            value={homeText}
-            onChange={(ev) => setHomeText(ev.target.value.slice(0, 160))}
-            placeholder="What did you cook?"
-            style={styles.textInput}
-            disabled={busy}
-            data-testid="athome-free-text"
-          />
-          <MealRow mealPeriod={mealPeriod} setMealPeriod={setMealPeriod} busy={busy} />
-        </div>
-      )}
-
-      {error ? <p style={styles.error}>{error}</p> : null}
       <button
-        type="submit"
-        disabled={!canPost || busy}
-        style={{ ...socialBtn.primary, ...styles.post, opacity: canPost && !busy ? 1 : 0.45 }}
-        data-testid="status-line-post"
+        type="button"
+        style={styles.trigger}
+        data-testid="status-compose-open"
+        disabled={busy}
+        onClick={() => setOpen(true)}
       >
-        Post
+        <span style={styles.triggerPlus} aria-hidden="true">
+          +
+        </span>
+        {triggerLabel}
       </button>
-    </form>
-  );
-}
 
-function MealRow({ mealPeriod, setMealPeriod, busy }) {
-  return (
-    <div style={styles.mealRow} data-testid="status-meal-period">
-      {WHAT_I_ATE_MEAL_PERIODS.map((slot) => {
-        const on = mealPeriod === slot.id;
-        return (
-          <button
-            key={slot.id}
-            type="button"
-            disabled={busy}
-            style={{ ...styles.mealChip, ...(on ? styles.mealChipOn : null) }}
-            onClick={() => setMealPeriod(slot.id)}
+      {open ? (
+        <div
+          role="presentation"
+          style={styles.backdrop}
+          data-testid="status-compose-sheet"
+          onClick={close}
+        >
+          <form
+            role="dialog"
+            aria-modal="true"
+            aria-label={isWant ? "Wanna Eat" : "What I'm Eating"}
+            style={styles.sheet}
+            onClick={(e) => e.stopPropagation()}
+            onSubmit={handlePost}
           >
-            {slot.label}
-          </button>
-        );
-      })}
+            <div style={styles.sheetHead}>
+              <p style={styles.sheetTitle}>{isWant ? "Wanna Eat" : "What I'm Eating"}</p>
+              <button type="button" style={styles.close} onClick={close} aria-label="Close">
+                ✕
+              </button>
+            </div>
+
+            {isWant ? (
+              <>
+                <input
+                  type="text"
+                  value={wantText}
+                  onChange={(ev) => setWantText(ev.target.value.slice(0, 120))}
+                  placeholder="Cuisine or dish (optional)"
+                  style={styles.textInput}
+                  disabled={busy}
+                  data-testid="wanna-free-text"
+                />
+                <EatingPlaceFields
+                  homemade={false}
+                  onHomemadeChange={() => {}}
+                  restaurant={restaurant}
+                  onRestaurantChange={setRestaurant}
+                  dish={dish}
+                  onDishChange={setDish}
+                  followed={followed}
+                  disabled={busy}
+                  allowDishSearch
+                  allowHomemade={false}
+                  locationCity={locationCity}
+                  locationState={locationState}
+                  dishSearchPlaceholder="Dish (optional)"
+                />
+              </>
+            ) : (
+              <>
+                <div style={styles.modeRow} data-testid="eating-status-mode">
+                  <button
+                    type="button"
+                    style={{
+                      ...styles.modeBtn,
+                      ...(mode === "restaurant" ? styles.modeBtnOn : null),
+                    }}
+                    onClick={() => {
+                      setMode("restaurant");
+                      setHomeText("");
+                    }}
+                    disabled={busy}
+                  >
+                    Restaurant
+                  </button>
+                  <button
+                    type="button"
+                    style={{
+                      ...styles.modeBtn,
+                      ...(mode === "athome" ? styles.modeBtnOn : null),
+                    }}
+                    onClick={() => {
+                      setMode("athome");
+                      setRestaurant(null);
+                      setDish(null);
+                    }}
+                    disabled={busy}
+                  >
+                    @home
+                  </button>
+                </div>
+
+                {mode === "restaurant" ? (
+                  <EatingPlaceFields
+                    homemade={false}
+                    onHomemadeChange={() => {}}
+                    restaurant={restaurant}
+                    onRestaurantChange={setRestaurant}
+                    dish={dish}
+                    onDishChange={setDish}
+                    followed={followed}
+                    disabled={busy}
+                    allowDishSearch
+                    allowHomemade={false}
+                    locationCity={locationCity}
+                    locationState={locationState}
+                    dishSearchPlaceholder="Dish (optional)"
+                  />
+                ) : (
+                  <div data-testid="eating-athome-compose">
+                    <label style={styles.homeLabel}>
+                      {homeEmoji ? <span aria-hidden="true">{homeEmoji} </span> : null}
+                      What did you cook?
+                    </label>
+                    <input
+                      type="text"
+                      value={homeText}
+                      onChange={(ev) => setHomeText(ev.target.value.slice(0, 160))}
+                      placeholder="e.g. pasta, eggs…"
+                      style={styles.textInput}
+                      disabled={busy}
+                      data-testid="athome-free-text"
+                    />
+                  </div>
+                )}
+              </>
+            )}
+
+            <div style={styles.mealRow} data-testid="status-meal-period">
+              {WHAT_I_ATE_MEAL_PERIODS.map((slot) => {
+                const on = mealPeriod === slot.id;
+                return (
+                  <button
+                    key={slot.id}
+                    type="button"
+                    disabled={busy}
+                    style={{ ...styles.mealChip, ...(on ? styles.mealChipOn : null) }}
+                    onClick={() => setMealPeriod(slot.id)}
+                  >
+                    {slot.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {error ? <p style={styles.error}>{error}</p> : null}
+
+            <button
+              type="submit"
+              disabled={!canPost || busy}
+              style={{
+                ...socialBtn.primary,
+                ...styles.post,
+                opacity: canPost && !busy ? 1 : 0.45,
+              }}
+              data-testid="status-line-post"
+            >
+              Post
+            </button>
+          </form>
+        </div>
+      ) : null}
     </div>
   );
 }
 
 const styles = {
-  wrap: {
+  wrap: { margin: "0 0 8px" },
+  trigger: {
+    appearance: "none",
+    border: "1px dashed #cbd5e1",
+    background: "#fff",
+    borderRadius: 999,
+    padding: "7px 14px",
+    font: "inherit",
+    fontSize: 13,
+    fontWeight: 700,
+    color: GREEN_MID,
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 6,
+    cursor: "pointer",
+  },
+  triggerPlus: {
+    fontSize: 16,
+    fontWeight: 800,
+    lineHeight: 1,
+  },
+  backdrop: {
+    position: "fixed",
+    inset: 0,
+    background: "rgba(15, 23, 42, 0.45)",
+    zIndex: 80,
+    display: "flex",
+    alignItems: "flex-end",
+    justifyContent: "center",
+    padding: 12,
+  },
+  sheet: {
+    width: "100%",
+    maxWidth: 440,
+    maxHeight: "88vh",
+    overflow: "auto",
+    background: "#fff",
+    borderRadius: 16,
+    padding: "14px 16px 18px",
     display: "grid",
     gap: 12,
-    marginBottom: 12,
-    padding: "8px 0 12px",
+    boxShadow: "0 18px 50px rgba(15,23,42,0.25)",
+  },
+  sheetHead: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
+  },
+  sheetTitle: {
+    margin: 0,
+    fontSize: 16,
+    fontWeight: 800,
+    color: "#0f172a",
+  },
+  close: {
+    appearance: "none",
+    border: "none",
+    background: "transparent",
+    fontSize: 18,
+    cursor: "pointer",
+    color: "#64748b",
+    padding: 4,
   },
   modeRow: { display: "flex", gap: 8 },
   modeBtn: {
@@ -301,84 +362,56 @@ const styles = {
     border: "1px solid #e2e8f0",
     background: "#fff",
     borderRadius: 999,
-    padding: "8px 14px",
+    padding: "7px 12px",
     font: "inherit",
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: 650,
-    color: "#64748b",
+    color: "#334155",
     cursor: "pointer",
   },
   modeBtnOn: {
     borderColor: GREEN_MID,
-    color: GREEN_MID,
     background: "rgba(22, 163, 74, 0.08)",
+    color: "#166534",
   },
-  imEatingAt: {
-    appearance: "none",
-    border: "1px solid #e2e8f0",
-    background: "#f8fafc",
-    borderRadius: 14,
-    padding: "14px 16px",
-    font: "inherit",
-    fontSize: 17,
-    fontWeight: 700,
-    color: "#0f172a",
-    textAlign: "left",
-    cursor: "pointer",
-  },
-  placeholder: { color: "#94a3b8", fontWeight: 500 },
-  filledPlace: { color: GREEN_MID },
-  filledDish: { color: "#0f172a", fontWeight: 650 },
-  formPanel: {
-    display: "grid",
-    gap: 10,
-    padding: 12,
-    borderRadius: 14,
-    border: "1px solid #e2e8f0",
-    background: "#fff",
-  },
-  homeBlock: { display: "grid", gap: 8 },
-  homeLabel: { fontSize: 15, fontWeight: 700, color: "#0f172a" },
   textInput: {
     width: "100%",
     boxSizing: "border-box",
     border: "1px solid #e2e8f0",
-    borderRadius: 12,
-    padding: "12px 14px",
+    borderRadius: 10,
+    padding: "10px 12px",
     font: "inherit",
-    fontSize: 16,
+    fontSize: 15,
   },
-  lead: { margin: 0, fontSize: 15, fontWeight: 700, color: "#0f172a" },
-  linkOpen: {
-    appearance: "none",
-    border: "none",
-    background: "transparent",
-    padding: 0,
-    font: "inherit",
+  homeLabel: {
+    display: "block",
     fontSize: 13,
-    fontWeight: 650,
-    color: GREEN_MID,
-    cursor: "pointer",
-    textAlign: "left",
+    fontWeight: 700,
+    color: "#0f172a",
+    marginBottom: 6,
   },
-  mealRow: { display: "flex", flexWrap: "wrap", gap: 8 },
+  mealRow: { display: "flex", flexWrap: "wrap", gap: 6 },
   mealChip: {
     appearance: "none",
     border: "1px solid #e2e8f0",
     background: "#fff",
     borderRadius: 999,
-    padding: "6px 12px",
+    padding: "6px 10px",
     font: "inherit",
-    fontSize: 13,
-    fontWeight: 600,
-    color: "#64748b",
+    fontSize: 12,
+    fontWeight: 650,
+    color: "#475569",
     cursor: "pointer",
   },
   mealChipOn: {
     borderColor: GREEN_MID,
-    color: GREEN_MID,
-    background: "rgba(22, 163, 74, 0.08)",
+    background: "rgba(22, 163, 74, 0.1)",
+    color: "#166534",
   },
-  post: { justifySelf: "start", minWidth: 88 },
-  error: { margin: 0, fontSize: 13, color: "#b91c1c" },
+  post: {
+    width: "100%",
+    justifyContent: "center",
+    marginTop: 4,
+  },
+  error: { margin: 0, color: "#b91c1c", fontSize: 13, fontWeight: 650 },
 };

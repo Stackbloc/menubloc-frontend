@@ -10,12 +10,8 @@ import DinerCalendarSheet, { DinerCalendarTrigger } from "./DinerCalendarSheet.j
 import EatingComposeSheet from "./EatingComposeSheet.jsx";
 import EatingPlanDayForm from "./EatingPlanDayForm.jsx";
 import PostAfterActions from "./PostAfterActions.jsx";
-import WhatIAteMealBoard from "./WhatIAteMealBoard.jsx";
 import ActivityStatusLineCompose from "./ActivityStatusLineCompose.jsx";
 import DinerActivityScanRow from "./DinerActivityScanRow.jsx";
-import {
-  formatOwnEatingActivityLine,
-} from "../../../lib/dinerDiscoverySummary.js";
 import SectionEmptyState from "./SectionEmptyState.jsx";
 import {
   SectionHead,
@@ -35,6 +31,7 @@ import { defaultWhatIAteMealPeriod } from "../../../lib/whatIAteTodayMealPeriod.
 import WantDiscoveryPanel from "./WantDiscoveryPanel.jsx";
 import NearbyEatingSection from "./NearbyEatingSection.jsx";
 import * as s from "./myMenuplyStyles.js";
+import { GREEN_MID } from "./myMenuplyStyles.js";
 
 function formatInlineDayLabel(hubDate, today) {
   if (hubDate === today) return "Today";
@@ -99,6 +96,8 @@ export function PlansCalendarGlyph() {
 
 export default function EatingHubSection({
   readOnly = false,
+  /** Owner page: false when previewing Connect view. Peer pages stay readOnly. */
+  editMode = true,
   diaryHref = "/account/what-i-ate",
   inviteHref = "/account/what-we-doing",
   joinMeHref = "",
@@ -177,6 +176,10 @@ export default function EatingHubSection({
   void inviteMeOutToggleBusy;
 
   const navigate = useNavigate();
+  const canEdit = !readOnly && editMode !== false;
+  const ownerCompact = canEdit;
+  const rowDisplayName = activityDisplayName || (readOnly ? "Diner" : "You");
+  const rowAvatarUrl = activityAvatarUrl || null;
   const [composeOpenLocal, setComposeOpenLocal] = useState(false);
   const composeOpen = composeOpenProp ?? composeOpenLocal;
   const setComposeOpen = onComposeOpenChange ?? setComposeOpenLocal;
@@ -277,6 +280,20 @@ export default function EatingHubSection({
 
   return (
     <div data-testid="eating" ref={sectionRef}>
+      {!canEdit && !readOnly ? (
+        <div style={styles.connectActions} data-testid="profile-connect-preview-actions">
+          {isJoinMeGuestHref(joinMeHref) ? (
+            <Link to={joinMeHref} style={styles.connectActionBtn}>
+              Join Me
+            </Link>
+          ) : (
+            <span style={styles.connectActionBtn} aria-disabled="true">
+              Join Me
+            </span>
+          )}
+        </div>
+      ) : null}
+
       <section style={s.section} data-testid="what-im-eating">
         {wantDiscovery && lastPost?.kind === "diary" ? (
           <WantDiscoveryPanel
@@ -289,11 +306,6 @@ export default function EatingHubSection({
           kicker="Today"
           title="What I'm Eating"
           to={readOnly ? diaryHref : "/account/what-i-ate"}
-          subtitle={
-            readOnly
-              ? "The food they're sharing with the world"
-              : "Eating at a place — or Cooking @ home. Multiplier/Post adds video."
-          }
           aside={
             <>
               <EatingDayNavInline
@@ -311,7 +323,7 @@ export default function EatingHubSection({
         />
 
         <div data-testid="eating-ate-panel">
-          {!readOnly ? (
+          {canEdit ? (
             <ActivityStatusLineCompose
               category="ate"
               busy={postBusy === "eating"}
@@ -331,26 +343,14 @@ export default function EatingHubSection({
               {eatingForDay.map((item) => {
                 const food = item.food_name || item.item_name;
                 const homemade = Boolean(item.homemade);
-                const line = formatOwnEatingActivityLine({
-                  kind: "ate",
-                  meal_period: item.meal_period,
-                  restaurant_name: item.restaurant_name,
-                  food_name: food,
-                  food_interest_key: item.food_interest_key,
-                  eaten_on: item.eaten_on,
-                  homemade,
-                  cooking: homemade,
-                  second_person: !readOnly,
-                });
                 return (
                   <li key={`act-${item.entry_id || item.id}`}>
                     <DinerActivityScanRow
-                      displayName={readOnly ? activityDisplayName || "Diner" : "You"}
-                      avatarUrl={readOnly ? activityAvatarUrl || null : null}
+                      displayName={rowDisplayName}
+                      avatarUrl={rowAvatarUrl}
                       includeSex={Boolean(readOnly)}
                       kind="ate"
                       foodName={food}
-                      foodInterestKey={item.food_interest_key}
                       restaurantName={item.restaurant_name}
                       restaurantId={item.restaurant_id || null}
                       restaurantSlug={item.restaurant_slug || null}
@@ -358,14 +358,15 @@ export default function EatingHubSection({
                       restaurantState={item.restaurant_state || item.state || null}
                       restaurantLogoUrl={item.restaurant_logo_url || null}
                       restaurantBillboardUrl={item.restaurant_billboard_image_url || null}
+                      restaurantChainId={item.chain_id || item.restaurant_chain_id || null}
                       menuItemId={item.menu_item_id || null}
+                      dishPhotoUrl={item.photo_url || item.item_photo_url || null}
                       mealPeriod={item.meal_period}
-                      eatenOn={item.eaten_on}
                       homemade={homemade}
                       videoUrl={item.video_url || null}
-                      activityLineOverride={line}
-                      secondPerson={!readOnly}
-                      onSelect={!readOnly && onDiarySelect ? () => onDiarySelect(item) : null}
+                      ownerCompact={ownerCompact}
+                      showIdentity={!ownerCompact}
+                      onSelect={canEdit && onDiarySelect ? () => onDiarySelect(item) : null}
                     />
                   </li>
                 );
@@ -373,7 +374,7 @@ export default function EatingHubSection({
             </ul>
           ) : null}
           {lastPost?.kind === "diary" &&
-          !readOnly &&
+          canEdit &&
           !lastPost.restaurant_id &&
           !lastPost.homemade ? (
             <PostAfterActions
@@ -387,27 +388,17 @@ export default function EatingHubSection({
               onSkip={onSkipDetails}
             />
           ) : null}
-          <WhatIAteMealBoard
-            items={eatingForDay}
-            readOnly={readOnly}
-            hubDate={hubDate}
-            todayYmd={today}
-            onSelect={readOnly ? undefined : onDiarySelect}
-            onDelete={readOnly ? undefined : onDiaryDelete}
-            deleteBusy={diaryDeleteBusy}
-            onPhotoPick={readOnly ? undefined : onEatingPhotoPick}
-          />
           {eatingForDay.length === 0 && lastPost?.kind !== "diary" ? (
             <SectionEmptyState testId="eating-ate-empty-day">
-              Add what you’re eating above — or post a video with Multiplier/Post.
+              {canEdit ? "Nothing logged for this day yet." : "Nothing shared for this day."}
             </SectionEmptyState>
           ) : null}
         </div>
       </section>
 
-      {/* Who's Eating: activity-first scan rows (8 + show more); ▶ expands video */}
+      {/* Who's Eating — discovery; not polished this pass */}
       <NearbyEatingSection
-        hidden={readOnly}
+        hidden={readOnly || !canEdit}
         locationCity={locationCity}
         locationState={locationState}
         favoriteFoods={favoriteFoods}
@@ -422,12 +413,8 @@ export default function EatingHubSection({
           />
         ) : null}
         <div data-testid="eating-want-panel" style={s.presentationBlock}>
-          <SectionHead
-            kicker="Cravings"
-            title="What I Wanna Eat"
-            subtitle="Cuisine alone is enough — add a place or dish only if you want."
-          />
-          {!readOnly ? (
+          <SectionHead kicker="Cravings" title="What I Wanna Eat" />
+          {canEdit ? (
             <ActivityStatusLineCompose
               category="want"
               busy={postBusy === "want"}
@@ -441,17 +428,14 @@ export default function EatingHubSection({
           ) : null}
           {wantListError ? <p style={s.error}>{wantListError}</p> : null}
           {lastPost?.kind === "want" &&
-          !readOnly &&
+          canEdit &&
           !lastPost.restaurant_id &&
           !wants.some((row) => Number(row.id) === Number(lastPost.id)) ? (
             <div style={s.card} data-testid="want-to-eat-just-posted">
               <div style={{ fontWeight: 800 }}>{lastPost.food_name}</div>
-              <div style={{ ...s.muted, fontSize: 12, marginTop: 4 }}>
-                Saved — add a restaurant or dish below if you want
-              </div>
             </div>
           ) : null}
-          {lastPost?.kind === "want" && !readOnly && !lastPost.restaurant_id ? (
+          {lastPost?.kind === "want" && canEdit && !lastPost.restaurant_id ? (
             <PostAfterActions
               kind="want"
               record={lastPost}
@@ -466,21 +450,21 @@ export default function EatingHubSection({
           diningIntents.length === 0 &&
           lastPost?.kind !== "want" ? (
             <SectionEmptyState testId="want-to-eat-empty">
-              Dishes you want and places you Wanna Go!.
+              {canEdit ? "Add a craving anytime." : "No cravings shared yet."}
             </SectionEmptyState>
           ) : null}
           <WantToEatUnifiedList
             wants={wants}
             diningIntents={diningIntents}
-            readOnly={readOnly}
+            readOnly={!canEdit}
             layout="scroll"
-            onSelectItem={readOnly ? undefined : onWantSelect}
-            onDeleteWant={readOnly ? undefined : onWantDelete}
-            onDeleteDiningIntent={readOnly ? undefined : onDiningIntentDelete}
+            onSelectItem={canEdit ? onWantSelect : undefined}
+            onDeleteWant={canEdit ? onWantDelete : undefined}
+            onDeleteDiningIntent={canEdit ? onDiningIntentDelete : undefined}
             deleteBusy={wantDeleteBusy || diningIntentDeleteBusy}
             onViewMmt={onViewMmt}
           />
-          {!readOnly && typeof onRequestMmt === "function" ? (
+          {canEdit && typeof onRequestMmt === "function" ? (
             <p style={{ ...s.muted, fontSize: 13, marginTop: 10 }} data-testid="want-cravings-invite">
               <button
                 type="button"
@@ -514,28 +498,39 @@ export default function EatingHubSection({
           <SectionHead
             kicker="Coming up"
             title="My Eating Plans"
-            subtitle="Meals and outings you've planned"
             aside={
-              <button
-                type="button"
-                style={s.plansCalendarBtn}
-                data-testid="upcoming-plans-calendar-open"
-                aria-label="Open month calendar for eating plans"
-                onClick={openPlansCalendar}
-              >
-                <PlansCalendarGlyph />
-              </button>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                {canEdit ? (
+                  <button
+                    type="button"
+                    style={styles.compactAdd}
+                    data-testid="plans-compose-open"
+                    onClick={() => {
+                      onSchedulingPlansChange?.(true);
+                      openPlansCalendar();
+                    }}
+                  >
+                    <span aria-hidden="true">+</span> Add
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  style={s.plansCalendarBtn}
+                  data-testid="upcoming-plans-calendar-open"
+                  aria-label="Open month calendar for eating plans"
+                  onClick={openPlansCalendar}
+                >
+                  <PlansCalendarGlyph />
+                </button>
+              </div>
             }
           />
 
           {shownPlans.length === 0 ? (
             <div data-testid="future-plans-summary">
               <SectionEmptyState testId="eating-plans-empty">
-                Meals and outings you&apos;ve planned.
+                {canEdit ? "No plans yet." : "No upcoming plans."}
               </SectionEmptyState>
-              <p style={{ ...s.muted, fontSize: 13, marginTop: 8 }} data-testid="plans-none-scheduled">
-                None scheduled
-              </p>
             </div>
           ) : (
             shownPlans.map((plan) => {
@@ -549,10 +544,10 @@ export default function EatingHubSection({
                     onSelectedPlanKeyChange?.(selectedPlanKey === key ? "" : key)
                   }
                   onOpenCalendar={openPlanOnCalendar}
-                  onAddDetails={readOnly ? undefined : onPlanAddDetails}
-                  onAddPlanVideo={readOnly ? undefined : onPlanAddVideo}
+                  onAddDetails={canEdit ? onPlanAddDetails : undefined}
+                  onAddPlanVideo={canEdit ? onPlanAddVideo : undefined}
                   onDelete={
-                    readOnly || !onPlanDelete || plan?.is_creator !== true
+                    !canEdit || !onPlanDelete || plan?.is_creator !== true
                       ? undefined
                       : onPlanDelete
                   }
@@ -562,7 +557,7 @@ export default function EatingHubSection({
             })
           )}
 
-          {lastPost?.kind === "plan" && !readOnly ? (
+          {lastPost?.kind === "plan" && canEdit ? (
             <PostAfterActions
               kind="plan"
               record={lastPost}
@@ -574,8 +569,8 @@ export default function EatingHubSection({
             />
           ) : null}
 
-          {/* Join Me = join this planned meal (peer hub only; never I'm Eating At composer). */}
-          {readOnly && isJoinMeGuestHref(joinMeHref) ? (
+          {/* Join Me — peer hub or connect-preview */}
+          {(readOnly || !canEdit) && isJoinMeGuestHref(joinMeHref) ? (
             <p style={{ ...s.muted, fontSize: 13, marginTop: 10 }} data-testid="plans-join-me">
               <Link to={joinMeHref} style={s.plansEmptyLink}>
                 Join Me
@@ -584,7 +579,7 @@ export default function EatingHubSection({
               join me for this meal.
             </p>
           ) : null}
-          {!readOnly ? (
+          {canEdit ? (
             <p style={{ ...s.muted, fontSize: 12, marginTop: 6 }}>
               Only people you open Join Me to can see that future plan.
             </p>
@@ -607,7 +602,7 @@ export default function EatingHubSection({
         events={calendarEvents}
       />
 
-      {!readOnly ? (
+      {canEdit ? (
         <EatingComposeSheet
           open={composeOpen}
           onClose={closeCompose}
@@ -629,7 +624,7 @@ export default function EatingHubSection({
         />
       ) : null}
 
-      {!readOnly && schedulingPlans ? (
+      {canEdit && schedulingPlans ? (
         <div
           role="presentation"
           style={styles.planSheetBackdrop}
@@ -689,6 +684,37 @@ const inviteMeOutButtonStyle = {
 };
 
 const styles = {
+  compactAdd: {
+    appearance: "none",
+    border: "1px dashed #cbd5e1",
+    background: "#fff",
+    borderRadius: 999,
+    padding: "6px 12px",
+    font: "inherit",
+    fontSize: 13,
+    fontWeight: 700,
+    color: GREEN_MID,
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 4,
+    cursor: "pointer",
+  },
+  connectActions: {
+    display: "flex",
+    gap: 8,
+    margin: "0 0 12px",
+  },
+  connectActionBtn: {
+    appearance: "none",
+    textDecoration: "none",
+    border: "1px solid #bbf7d0",
+    background: "rgba(22, 163, 74, 0.08)",
+    borderRadius: 999,
+    padding: "8px 14px",
+    fontSize: 13,
+    fontWeight: 750,
+    color: "#166534",
+  },
   planSheetBackdrop: {
     position: "fixed",
     inset: 0,
