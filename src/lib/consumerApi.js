@@ -16,6 +16,13 @@ import {
 import { formatVideoMaxDurationLabel, SOCIAL_VIDEO_MAX_UPLOAD_SECONDS } from "./eatingMediaUtils.js";
 import { notifyFeedMenuFollowsChanged } from "./feedMenuLibrary.js";
 import { localDateYmd } from "./calendarDayYmd.js";
+import {
+  isLikelyVideoUploadFile,
+  mapMultipartUploadNetworkError,
+  postMultipartWithProgress,
+  videoUploadTimeoutMs,
+  VIDEO_UPLOAD_TIMEOUT_FLOOR_MS,
+} from "./multipartUpload.js";
 
 const VITE_ENV = import.meta.env || {};
 const DEFAULT_PROD_API_BASE = "https://menubloc-backend-production.up.railway.app";
@@ -24,42 +31,13 @@ const API = (
   (VITE_ENV.DEV ? "http://localhost:3001" : DEFAULT_PROD_API_BASE)
 ).replace(/\/$/, "");
 
-/**
- * Diner eating/plan videos hit Railway + optional H.264 normalize.
- * 90s aborts mid-upload on cellular and often surfaces as Failed to fetch
- * ("connection dropped") — not a "clip too long" problem. Align with owner video.
- */
-const UPLOAD_TIMEOUT_MS = 5 * 60 * 1000;
+/** @deprecated Prefer videoUploadTimeoutMs(file.size) — floor kept for contract tests. */
+const UPLOAD_TIMEOUT_MS = VIDEO_UPLOAD_TIMEOUT_FLOOR_MS;
 
-function isLikelyVideoUpload(file) {
-  const type = String(file?.type || "").toLowerCase();
-  const name = String(file?.name || "").toLowerCase();
-  return type.startsWith("video/") || /\.(mp4|webm|mov|m4v)$/.test(name);
-}
-
-function mapDinerMediaUploadNetworkError(err, file) {
-  const name = String(err?.name || "");
-  const msg = String(err?.message || "");
-  if (name === "AbortError" || /aborted|timeout/i.test(msg)) {
-    return new Error(
-      isLikelyVideoUpload(file)
-        ? "Video upload timed out. Stay on this tab, keep a strong connection, and try again. This is not a length limit."
-        : "Upload timed out. Check your connection and try again."
-    );
-  }
-  if (/failed to fetch|networkerror|load failed|network request failed/i.test(msg)) {
-    return new Error(
-      isLikelyVideoUpload(file)
-        ? "Video upload failed (connection dropped). Stay on this tab until it finishes, then retry. This is not a length limit."
-        : "Upload failed — check your connection and try again."
-    );
-  }
-  return err instanceof Error ? err : new Error(msg || "Upload failed");
-}
-
-async function postDinerMediaMultipart(path, file) {
+async function postDinerMediaMultipart(path, file, { onProgress } = {}) {
   if (!file) throw new Error("No file selected");
-  if (isLikelyVideoUpload(file) && Number(file.size || 0) > MAX_UPLOAD_VIDEO_BYTES) {
+  const isVideo = isLikelyVideoUploadFile(file);
+  if (isVideo && Number(file.size || 0) > MAX_UPLOAD_VIDEO_BYTES) {
     throw new Error(
       `Video is too large (${formatBytes(file.size)}). Keep it under ${formatBytes(MAX_UPLOAD_VIDEO_BYTES)} (TikTok-class mobile ceiling; about ${formatVideoMaxDurationLabel(SOCIAL_VIDEO_MAX_UPLOAD_SECONDS)} at typical quality).`
     );
@@ -69,28 +47,22 @@ async function postDinerMediaMultipart(path, file) {
   const form = new FormData();
   form.append("photo", file);
   const localizedPath = appendLanguageParam(path, language);
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), UPLOAD_TIMEOUT_MS);
+  const timeoutMs = isVideo ? videoUploadTimeoutMs(file.size) : UPLOAD_TIMEOUT_MS;
+
   try {
-    const res = await fetch(`${API}${localizedPath}`, {
-      method: "POST",
-      credentials: "include",
+    return await postMultipartWithProgress({
+      url: `${API}${localizedPath}`,
+      formData: form,
       headers: withLanguageHeaders({}, language),
-      body: form,
-      signal: controller.signal,
+      timeoutMs,
+      credentials: "include",
+      onProgress,
     });
-    const json = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      const error = new Error(json.error || `Upload failed (${res.status})`);
-      error.status = res.status;
-      error.payload = json;
-      throw error;
-    }
-    return json;
   } catch (err) {
-    throw mapDinerMediaUploadNetworkError(err, file);
-  } finally {
-    clearTimeout(timeoutId);
+    throw mapMultipartUploadNetworkError(err, {
+      isVideo,
+      timedOutByClient: Boolean(err?.timedOutByClient) || err?.code === "UPLOAD_CLIENT_TIMEOUT",
+    });
   }
 }
 
@@ -756,16 +728,16 @@ export const getPeerMonthInFood = (peerId, ym) =>
     }`
   );
 
-export async function uploadWantToEatPhoto(file) {
-  return postDinerMediaMultipart("/api/consumer/want-to-eat/photo", file);
+export async function uploadWantToEatPhoto(file, opts = {}) {
+  return postDinerMediaMultipart("/api/consumer/want-to-eat/photo", file, opts);
 }
 
-export async function uploadWhatIAteTodayPhoto(file) {
-  return postDinerMediaMultipart("/api/consumer/what-i-ate-today/photo", file);
+export async function uploadWhatIAteTodayPhoto(file, opts = {}) {
+  return postDinerMediaMultipart("/api/consumer/what-i-ate-today/photo", file, opts);
 }
 
-export async function uploadEatingPlanMedia(file) {
-  return postDinerMediaMultipart("/api/consumer/what-we-doing/photo", file);
+export async function uploadEatingPlanMedia(file, opts = {}) {
+  return postDinerMediaMultipart("/api/consumer/what-we-doing/photo", file, opts);
 }
 
 /** Restaurant dining intent — explicit Wanna Go! (not Food I Want to Eat). */

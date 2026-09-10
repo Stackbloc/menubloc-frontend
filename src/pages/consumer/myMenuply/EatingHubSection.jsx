@@ -440,6 +440,7 @@ export default function EatingHubSection({
   liked = [],
   lastPost = null,
   postBusy = "",
+  uploadPercent = null,
   followed = [],
   joinCandidates = [],
   onComposeSubmit,
@@ -920,6 +921,7 @@ export default function EatingHubSection({
           mediaSource={composeMediaSource}
           openLibraryOnMount={composeMediaSource === "library"}
           busy={postBusy === "eating" || postBusy === "want"}
+          uploadPercent={uploadPercent}
           onSubmit={onComposeSubmit}
           onPlanSchedule={onPlanSchedule}
           followed={followed}

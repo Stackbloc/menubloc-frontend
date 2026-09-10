@@ -1,4 +1,11 @@
 import { appendLanguageParam, readStoredLanguage, withLanguageHeaders } from "./languageApi.js";
+import {
+  isLikelyVideoUploadFile,
+  mapMultipartUploadNetworkError,
+  postMultipartWithProgress,
+  videoUploadTimeoutMs,
+  VIDEO_UPLOAD_TIMEOUT_FLOOR_MS,
+} from "./multipartUpload.js";
 
 // ============================================================
 // Path: menubloc-frontend/src/lib/api.js
@@ -94,43 +101,32 @@ export async function apiPost(path, body) {
 
 export async function apiPostForm(path, formData, opts = {}) {
   const url = `${API_BASE}${path.startsWith("/") ? "" : "/"}${path}`;
-  /** Guest feed videos use this path — match diner 5-minute abort (normalize + cellular). */
+  const file =
+    typeof formData?.get === "function"
+      ? formData.get("photo") || formData.get("file") || formData.get("video")
+      : null;
+  const isVideo = isLikelyVideoUploadFile(file);
   const timeoutMs =
-    Number(opts.timeoutMs) > 0 ? Number(opts.timeoutMs) : 5 * 60 * 1000;
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+    Number(opts.timeoutMs) > 0
+      ? Number(opts.timeoutMs)
+      : isVideo
+        ? videoUploadTimeoutMs(file?.size)
+        : VIDEO_UPLOAD_TIMEOUT_FLOOR_MS;
+
   try {
-    const res = await fetch(url, {
-      method: "POST",
+    return await postMultipartWithProgress({
+      url,
+      formData,
+      timeoutMs,
       credentials: "include",
-      body: formData,
-      signal: controller.signal,
+      onProgress: opts.onProgress,
     });
-    const data = await safeJson(res);
-    if (!res.ok) {
-      const msg = (data && (data.error || data.message)) || `POST ${url} failed (${res.status})`;
-      const error = new Error(msg);
-      error.status = res.status;
-      if (data && typeof data === "object") Object.assign(error, data);
-      throw error;
-    }
-    return data;
   } catch (err) {
-    const name = String(err?.name || "");
-    const msg = String(err?.message || "");
-    if (name === "AbortError" || /aborted|timeout/i.test(msg)) {
-      throw new Error(
-        "Video upload timed out. Stay on this tab, keep a strong connection, and try again. This is not a length limit."
-      );
-    }
-    if (/failed to fetch|networkerror|load failed|network request failed/i.test(msg)) {
-      throw new Error(
-        "Video upload failed (connection dropped). Stay on this tab until it finishes, then retry. This is not a length limit."
-      );
-    }
-    throw err;
-  } finally {
-    clearTimeout(timeoutId);
+    if (err && Number(err.status) > 0) throw err;
+    throw mapMultipartUploadNetworkError(err, {
+      isVideo: isVideo || Boolean(opts.assumeVideo),
+      timedOutByClient: Boolean(err?.timedOutByClient) || err?.code === "UPLOAD_CLIENT_TIMEOUT",
+    });
   }
 }
 

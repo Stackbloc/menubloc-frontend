@@ -6,11 +6,11 @@
 import { apiPost, apiPostForm } from "./api.js";
 import { getOrCreateGuestReporterKey } from "./guestReporterSession.js";
 
-export async function uploadGuestFeedVideoPhoto(file) {
+export async function uploadGuestFeedVideoPhoto(file, opts = {}) {
   const form = new FormData();
   form.append("photo", file);
   form.append("guest_key", getOrCreateGuestReporterKey());
-  return apiPostForm("/public/feed-video/photo", form);
+  return apiPostForm("/public/feed-video/photo", form, opts);
 }
 
 export async function createGuestFeedVideo(body = {}) {

@@ -51,7 +51,7 @@ function mapOwnerUploadNetworkError(err, kind = "upload") {
     return new Error(
       isMenu
         ? "Menu upload lost its connection while OCR was still running. Stay on this tab and retry one file at a time — this is not a 100 MB size limit."
-        : "Video upload failed (connection dropped). Stay on this tab until it finishes, then retry. This is not a length limit."
+        : "Connection interrupted during upload (common on weak cellular). Stay on this tab and retry — Wi‑Fi is more reliable. This is not a length limit."
     );
   }
   return err instanceof Error ? err : new Error(msg || "Upload failed");

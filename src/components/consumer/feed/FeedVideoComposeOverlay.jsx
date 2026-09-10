@@ -41,6 +41,7 @@ export default function FeedVideoComposeOverlay({
 }) {
   const { isAuthenticated } = useConsumer();
   const [busy, setBusy] = useState(false);
+  const [uploadPercent, setUploadPercent] = useState(null);
   const [error, setError] = useState("");
   const [pendingPayload, setPendingPayload] = useState(null);
   const [consentOpen, setConsentOpen] = useState(false);
@@ -49,15 +50,21 @@ export default function FeedVideoComposeOverlay({
 
   if (!open || !category) return null;
 
+  function onUploadProgress(p) {
+    const pct = Number(p?.percent);
+    if (Number.isFinite(pct)) setUploadPercent(Math.max(0, Math.min(100, Math.round(pct))));
+  }
+
   async function publishAuthenticated(payload) {
+    const withProgress = { ...payload, onUploadProgress };
     if (payload.category === "want") {
-      await postFeedWantVideo(payload);
+      await postFeedWantVideo(withProgress);
     } else if (payload.category === "reviews") {
-      await postFeedReviewVideo(payload);
+      await postFeedReviewVideo(withProgress);
     } else if (payload.category === "cooking") {
-      await postFeedCookingVideo(payload);
+      await postFeedCookingVideo(withProgress);
     } else {
-      await postFeedAteVideo(payload);
+      await postFeedAteVideo(withProgress);
     }
     notifyFeedVideoPosted();
     onClose?.();
@@ -70,12 +77,13 @@ export default function FeedVideoComposeOverlay({
       throw err;
     }
     let result;
+    const opts = { onUploadProgress };
     if (payload.category === "want") {
-      result = await postGuestFeedWantVideo(payload);
+      result = await postGuestFeedWantVideo(payload, opts);
     } else if (payload.category === "reviews") {
-      result = await postGuestFeedReviewVideo(payload);
+      result = await postGuestFeedReviewVideo(payload, opts);
     } else {
-      result = await postGuestFeedAteVideo(payload);
+      result = await postGuestFeedAteVideo(payload, opts);
     }
 
     markGuestPublicationConsentAccepted(
@@ -103,6 +111,7 @@ export default function FeedVideoComposeOverlay({
       return;
     }
     setBusy(true);
+    setUploadPercent(0);
     setError("");
     try {
       await publishAuthenticated(payload);
@@ -111,12 +120,14 @@ export default function FeedVideoComposeOverlay({
       throw err;
     } finally {
       setBusy(false);
+      setUploadPercent(null);
     }
   }
 
   async function handleGuestConsentConfirm() {
     if (!pendingPayload) return;
     setBusy(true);
+    setUploadPercent(0);
     setError("");
     try {
       await publishGuest(pendingPayload);
@@ -128,6 +139,7 @@ export default function FeedVideoComposeOverlay({
       }
     } finally {
       setBusy(false);
+      setUploadPercent(null);
     }
   }
 
@@ -152,6 +164,7 @@ export default function FeedVideoComposeOverlay({
         mediaSource={mediaSource}
         openLibraryOnMount={openLibraryOnMount}
         busy={busy}
+        uploadPercent={uploadPercent}
         feedMode
         onSubmit={handleSubmit}
         locationCity={market.city}

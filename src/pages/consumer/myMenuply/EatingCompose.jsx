@@ -29,6 +29,7 @@ import { listMetaCuisines } from "../../../lib/consumerApi.js";
 
 export default function EatingCompose({
   busy = false,
+  uploadPercent = null,
   testId = "eating-compose",
   defaultCategory = "ate",
   defaultMealPeriod = null,
@@ -1065,6 +1066,28 @@ export default function EatingCompose({
               : styles.submitBlock
           }
         >
+          {busy ? (
+            <div
+              data-testid="eating-compose-upload-progress"
+              style={styles.uploadProgressWrap}
+              role="status"
+              aria-live="polite"
+            >
+              <p style={styles.uploadProgressHint}>
+                {Number.isFinite(Number(uploadPercent))
+                  ? `Uploading… ${Math.round(Number(uploadPercent))}% — stay on this screen`
+                  : "Uploading… stay on this screen"}
+              </p>
+              <div style={styles.uploadProgressTrack}>
+                <div
+                  style={{
+                    ...styles.uploadProgressBar,
+                    width: `${Math.max(4, Math.min(100, Number(uploadPercent) || 8))}%`,
+                  }}
+                />
+              </div>
+            </div>
+          ) : null}
           <button
             type="submit"
             disabled={busy || !canSubmit}
@@ -1075,7 +1098,9 @@ export default function EatingCompose({
             }
           >
             {busy
-              ? "…"
+              ? Number.isFinite(Number(uploadPercent))
+                ? `${Math.round(Number(uploadPercent))}%`
+                : "…"
               : category === "plan"
                 ? "Continue"
                 : category === "want"
@@ -1221,13 +1246,45 @@ const styles = {
 
   submitRow: {
     display: "flex",
-    justifyContent: "flex-end",
+    flexDirection: "column",
+    alignItems: "stretch",
+    gap: 10,
     marginTop: 4,
   },
 
   submitBlock: {
     display: "flex",
-    justifyContent: "stretch",
+    flexDirection: "column",
+    alignItems: "stretch",
+    gap: 10,
+  },
+
+  uploadProgressWrap: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 6,
+  },
+
+  uploadProgressHint: {
+    margin: 0,
+    fontSize: 12,
+    fontWeight: 600,
+    color: "#475467",
+    lineHeight: 1.35,
+  },
+
+  uploadProgressTrack: {
+    height: 6,
+    borderRadius: 999,
+    background: "rgba(15, 23, 42, 0.08)",
+    overflow: "hidden",
+  },
+
+  uploadProgressBar: {
+    height: "100%",
+    borderRadius: 999,
+    background: "linear-gradient(90deg, #22C55E 0%, #16A34A 100%)",
+    transition: "width 160ms ease-out",
   },
 
   submitBtn: {
@@ -1243,5 +1300,6 @@ const styles = {
     fontSize: 14,
     cursor: "pointer",
     fontFamily: "inherit",
+    alignSelf: "flex-end",
   },
 };

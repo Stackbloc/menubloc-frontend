@@ -119,13 +119,15 @@ test("TikTok-aligned video length: record 10 minutes, upload 60 minutes", () => 
 
 test("consumerApi video upload errors do not blame 15-second story cap", () => {
   const api = read("src/lib/consumerApi.js");
+  const multipart = read("src/lib/multipartUpload.js");
   assert.doesNotMatch(api, /under 15 seconds/);
   assert.doesNotMatch(api, /Record under 15 seconds/);
   assert.doesNotMatch(api, /shorter clip/i);
   assert.match(api, /formatVideoMaxDurationLabel/);
   assert.match(api, /SOCIAL_VIDEO_MAX_UPLOAD_SECONDS/);
-  assert.match(api, /UPLOAD_TIMEOUT_MS = 5 \* 60 \* 1000/);
-  assert.match(api, /This is not a length limit/);
+  assert.match(api, /UPLOAD_TIMEOUT_MS = VIDEO_UPLOAD_TIMEOUT_FLOOR_MS/);
+  assert.match(multipart, /VIDEO_UPLOAD_TIMEOUT_FLOOR_MS = 5 \* 60 \* 1000/);
+  assert.match(multipart, /This is not a length limit/);
 });
 
 test("normalizeNativeVideoFile soft-accepts browser too-long duration", () => {

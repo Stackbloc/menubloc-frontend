@@ -211,6 +211,7 @@ export default function MyMenuplyPage() {
   const [flashBusy, setFlashBusy] = useState(false);
   const [flashError, setFlashError] = useState("");
   const [postBusy, setPostBusy] = useState("");
+  const [uploadPercent, setUploadPercent] = useState(null);
   const [eating, setEating] = useState([]);
   const [eatingCalendarDays, setEatingCalendarDays] = useState([]);
   const [plans, setPlans] = useState([]);
@@ -806,6 +807,7 @@ export default function MyMenuplyPage() {
     marketDiscoverable = undefined,
   }) {
     setPostBusy("eating");
+    setUploadPercent(file ? 0 : null);
     setError("");
     try {
       if (compareYmd(hubDate) > 0) return;
@@ -816,7 +818,12 @@ export default function MyMenuplyPage() {
       let photo_url;
       let video_url;
       if (file) {
-        const up = await uploadWhatIAteTodayPhoto(file);
+        const up = await uploadWhatIAteTodayPhoto(file, {
+          onProgress: (p) => {
+            const pct = Number(p?.percent);
+            if (Number.isFinite(pct)) setUploadPercent(Math.round(pct));
+          },
+        });
         ({ photo_url, video_url } = eatingMediaFromUpload(up));
       }
       const signal = String(ateKind || "").trim() || null;
@@ -929,6 +936,7 @@ export default function MyMenuplyPage() {
       setError(err.message || "Unable to add");
     } finally {
       setPostBusy("");
+      setUploadPercent(null);
     }
   }
 
@@ -1302,6 +1310,7 @@ export default function MyMenuplyPage() {
     marketDiscoverable,
   }) {
     setPostBusy("want");
+    setUploadPercent(file ? 0 : null);
     setError("");
     setWantListError("");
     try {
@@ -1332,7 +1341,12 @@ export default function MyMenuplyPage() {
       let photo_url;
       let video_url;
       if (file) {
-        const up = await uploadWantToEatPhoto(file);
+        const up = await uploadWantToEatPhoto(file, {
+          onProgress: (p) => {
+            const pct = Number(p?.percent);
+            if (Number.isFinite(pct)) setUploadPercent(Math.round(pct));
+          },
+        });
         ({ photo_url, video_url } = eatingMediaFromUpload(up));
       } else {
         const catalogPhoto = dishPhotoUrl(dish);
@@ -1418,6 +1432,7 @@ export default function MyMenuplyPage() {
       throw err;
     } finally {
       setPostBusy("");
+      setUploadPercent(null);
     }
   }
 
@@ -1608,7 +1623,19 @@ export default function MyMenuplyPage() {
   }) {
     if (category === "cooking") {
       const { postFeedCookingVideo } = await import("../../lib/feedVideoCompose.js");
-      await postFeedCookingVideo({ text, file });
+      setUploadPercent(file ? 0 : null);
+      try {
+        await postFeedCookingVideo({
+          text,
+          file,
+          onUploadProgress: (p) => {
+            const pct = Number(p?.percent);
+            if (Number.isFinite(pct)) setUploadPercent(Math.round(pct));
+          },
+        });
+      } finally {
+        setUploadPercent(null);
+      }
       setComposeDefaultCategory("cooking");
       if (consumer?.id) {
         const homeRes = await fetchUserHomemadeDishes(consumer.id).catch(() => ({ dishes: [] }));
@@ -1848,6 +1875,7 @@ export default function MyMenuplyPage() {
               liked={liked}
               lastPost={lastPost}
               postBusy={postBusy}
+              uploadPercent={uploadPercent}
               followed={followed}
               joinCandidates={joinCandidates}
               inviteMeOutOpen={inviteMeOutOpen}

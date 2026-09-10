@@ -110,16 +110,25 @@ test("diner avatar stays photo-only", () => {
   assert.match(avatarSheet, /allowVideo=\{false\}/);
 });
 
-test("diner eating media upload maps Failed to fetch for video", () => {
+test("diner eating media upload maps network failures with diagnostic copy", () => {
   const api = read("src/lib/consumerApi.js");
+  const multipart = read("src/lib/multipartUpload.js");
   assert.match(api, /postDinerMediaMultipart/);
   assert.match(api, /MAX_UPLOAD_VIDEO_BYTES/);
-  assert.match(api, /Video upload failed \(connection dropped\)/);
-  assert.match(api, /This is not a length limit/);
-  assert.match(api, /UPLOAD_TIMEOUT_MS = 5 \* 60 \* 1000/);
+  assert.match(api, /mapMultipartUploadNetworkError/);
+  assert.match(api, /videoUploadTimeoutMs/);
+  assert.match(api, /postMultipartWithProgress/);
+  assert.match(api, /UPLOAD_TIMEOUT_MS = VIDEO_UPLOAD_TIMEOUT_FLOOR_MS/);
+  assert.match(multipart, /VIDEO_UPLOAD_TIMEOUT_FLOOR_MS = 5 \* 60 \* 1000/);
+  assert.match(multipart, /VIDEO_UPLOAD_TIMEOUT_CAP_MS = 15 \* 60 \* 1000/);
+  assert.match(multipart, /This is not a length limit/);
+  assert.match(multipart, /Connection interrupted during upload/);
+  assert.match(multipart, /You appear offline/);
+  assert.match(multipart, /Upload is taking too long/);
+  assert.doesNotMatch(multipart, /Video upload failed \(connection dropped\)/);
+  assert.doesNotMatch(api, /shorter clip/i);
   assert.match(api, /uploadWhatIAteTodayPhoto/);
   assert.match(api, /uploadWantToEatPhoto/);
-  assert.doesNotMatch(api, /shorter clip/i);
 });
 
 test("X ate/want auto-opens camera sheet from compose", () => {

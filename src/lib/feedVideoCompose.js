@@ -27,11 +27,12 @@ export async function postFeedAteVideo({
   dish = null,
   isRecommend = false,
   feedPresentationKind = "ate",
+  onUploadProgress,
 }) {
   if (!file || !isVideoFile(file)) {
     throw new Error("Feed posts need a video");
   }
-  const up = await uploadWhatIAteTodayPhoto(file);
+  const up = await uploadWhatIAteTodayPhoto(file, { onProgress: onUploadProgress });
   const { photo_url, video_url } = eatingMediaFromUpload(up);
   if (!video_url) throw new Error("Could not upload video");
 
@@ -84,11 +85,12 @@ export async function postFeedWantVideo({
   homemade = false,
   restaurant = null,
   dish = null,
+  onUploadProgress,
 }) {
   if (!file || !isVideoFile(file)) {
     throw new Error("Feed posts need a video");
   }
-  const up = await uploadWantToEatPhoto(file);
+  const up = await uploadWantToEatPhoto(file, { onProgress: onUploadProgress });
   const { photo_url, video_url } = eatingMediaFromUpload(up);
   if (!video_url) throw new Error("Could not upload video");
 
@@ -113,11 +115,11 @@ export async function postFeedWantVideo({
   return data?.item || data;
 }
 
-export async function postFeedCookingVideo({ file, text = "" }) {
+export async function postFeedCookingVideo({ file, text = "", onUploadProgress }) {
   if (!file || !isVideoFile(file)) {
     throw new Error("Feed posts need a video");
   }
-  const up = await uploadWhatIAteTodayPhoto(file);
+  const up = await uploadWhatIAteTodayPhoto(file, { onProgress: onUploadProgress });
   const { photo_url, video_url } = eatingMediaFromUpload(up);
   if (!video_url) throw new Error("Could not upload video");
 
@@ -133,16 +135,19 @@ export async function postFeedCookingVideo({ file, text = "" }) {
   return created?.dish || created;
 }
 
-async function uploadGuestFeedMedia(file) {
-  const up = await uploadGuestFeedVideoPhoto(file);
+async function uploadGuestFeedMedia(file, onUploadProgress) {
+  const up = await uploadGuestFeedVideoPhoto(file, { onProgress: onUploadProgress });
   return eatingMediaFromUpload(up);
 }
 
-export async function postGuestFeedAteVideo(payload, { legalConsent } = {}) {
+export async function postGuestFeedAteVideo(payload, { legalConsent, onUploadProgress } = {}) {
   if (!payload?.file || !isVideoFile(payload.file)) {
     throw new Error("Feed posts need a video");
   }
-  const { photo_url, video_url } = await uploadGuestFeedMedia(payload.file);
+  const { photo_url, video_url } = await uploadGuestFeedMedia(
+    payload.file,
+    onUploadProgress || payload.onUploadProgress
+  );
   if (!video_url) throw new Error("Could not upload video");
 
   const homemade = Boolean(payload.homemade);
@@ -187,11 +192,14 @@ export async function postGuestFeedReviewVideo(payload, options = {}) {
   );
 }
 
-export async function postGuestFeedWantVideo(payload, { legalConsent } = {}) {
+export async function postGuestFeedWantVideo(payload, { legalConsent, onUploadProgress } = {}) {
   if (!payload?.file || !isVideoFile(payload.file)) {
     throw new Error("Feed posts need a video");
   }
-  const { photo_url, video_url } = await uploadGuestFeedMedia(payload.file);
+  const { photo_url, video_url } = await uploadGuestFeedMedia(
+    payload.file,
+    onUploadProgress || payload.onUploadProgress
+  );
   if (!video_url) throw new Error("Could not upload video");
 
   const homemade = Boolean(payload.homemade);

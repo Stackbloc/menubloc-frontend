@@ -13,6 +13,7 @@ export default function EatingComposeSheet({
   mediaSource = "camera",
   openLibraryOnMount = false,
   busy = false,
+  uploadPercent = null,
   feedMode = false,
   onSubmit,
   onPlanSchedule,
@@ -41,7 +42,9 @@ export default function EatingComposeSheet({
       role="presentation"
       style={styles.backdrop}
       data-testid="eating-compose-sheet"
-      onClick={() => onClose?.()}
+      onClick={() => {
+        if (!busy) onClose?.();
+      }}
     >
       <div
         role="dialog"
@@ -62,7 +65,15 @@ export default function EatingComposeSheet({
                   ? "Eating Plan"
                   : "What I'm Eating"}
           </p>
-          <button type="button" style={styles.close} onClick={() => onClose?.()} aria-label="Close">
+          <button
+            type="button"
+            style={styles.close}
+            onClick={() => {
+              if (!busy) onClose?.();
+            }}
+            aria-label="Close"
+            disabled={busy}
+          >
             ✕
           </button>
         </div>
@@ -78,6 +89,7 @@ export default function EatingComposeSheet({
         <EatingCompose
           key={`${defaultCategory}-${defaultMealPeriod || "auto"}-${mediaSource}-${feedMode ? "feed" : "hub"}-${initialFile?.name || (initialFile ? "blob" : "none")}`}
           busy={busy}
+          uploadPercent={uploadPercent}
           defaultCategory={defaultCategory}
           defaultMealPeriod={defaultMealPeriod}
           initialFile={initialFile}
