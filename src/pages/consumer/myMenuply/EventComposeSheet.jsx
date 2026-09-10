@@ -1,5 +1,5 @@
 /**
- * Create a diner social event — opened from bottom-nav X.
+ * Create a diner social event — Edit View + Add, or Multiplier compose=event.
  * Food is optional; general social events (concerts, birthdays, campus, etc.).
  */
 

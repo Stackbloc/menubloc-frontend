@@ -47,10 +47,12 @@ test("MenuplyActionSheet opens profile gallery compose from X", () => {
   assert.match(gallerySheet, /profile-gallery-x-picker/);
 });
 
-test("My Menuply opens EventComposeSheet from compose=event", () => {
+test("My Menuply opens EventComposeSheet from compose=event and Edit View Add", () => {
   const page = read("src/pages/consumer/MyMenuplyPage.jsx");
   assert.match(page, /EventComposeSheet/);
   assert.match(page, /compose === "event"/);
+  assert.match(page, /my-events-compose-open/);
+  assert.match(page, /setEventComposeOpen\(true\)/);
   assert.match(page, /createDinerSocialEvent/);
   assert.match(page, /listDinerSocialEvents/);
   assert.match(page, /socialEvents/);
@@ -60,6 +62,7 @@ test("My Menuply opens EventComposeSheet from compose=event", () => {
   assert.match(compose, /My Events/);
   assert.match(compose, /allowVideo/);
   assert.match(compose, /Food is optional/);
+  assert.match(compose, /Edit View \+ Add/);
 });
 
 test("MenuplyActionSheet routes Want to Eat to My Menuply compose", () => {

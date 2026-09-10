@@ -7,7 +7,7 @@ import {
   buildWantSuggestions,
 } from "../src/pages/consumer/myMenuply/myMenuplyPresentation.js";
 
-test("buildTopHighlights prefers pinned profile photos then diary filler", () => {
+test("buildTopHighlights uses only diner-pinned profile photos", () => {
   const eating = [
     {
       id: 1,
@@ -29,6 +29,7 @@ test("buildTopHighlights prefers pinned profile photos then diary filler", () =>
   ];
   const pinned = [
     { id: 101, media_kind: "photo", media_url: "/uploads/pin1.jpg", is_highlight: true },
+    { id: 102, media_kind: "photo", media_url: "/uploads/pin2.jpg", is_highlight: true },
   ];
 
   const cards = buildTopHighlights({
@@ -37,94 +38,52 @@ test("buildTopHighlights prefers pinned profile photos then diary filler", () =>
     followed,
     profileHighlightPhotos: pinned,
   });
-  assert.equal(cards.length, 3);
+  assert.equal(cards.length, 2);
   assert.equal(cards[0].deleteKind, "profile_media");
   assert.equal(cards[0].badge, "Highlight");
-  assert.equal(cards[1].source, "user");
-  assert.equal(cards[1].badge, "Your meal");
-  assert.equal(cards[1].deleteKind, "diary");
-  assert.ok(cards[1].deleteItem);
-  assert.ok(cards[0].image);
-  assert.equal(cards[0].videoUrl, undefined);
-  assert.match(cards[2].badge, /Saved dish/i);
-  assert.equal(cards[2].deleteKind, "like");
-});
-
-test("buildTopHighlights prefers user diary then liked then follows", () => {
-  const eating = [
-    {
-      id: 1,
-      entry_id: 1,
-      food_name: "Ramen",
-      photo_url: "/uploads/a.jpg",
-      restaurant_name: "Daikoku",
-    },
-  ];
-  const liked = [{ menu_item_id: 9, item_name: "Burger", restaurant_name: "Shake Shack" }];
-  const followed = [
-    {
-      restaurant_id: 3,
-      restaurant_name: "KazuNori",
-      city: "LA",
-      state: "CA",
-      billboard_preview: [{ title: "Hand Roll", image_url: "/uploads/b.jpg" }],
-    },
-  ];
-
-  const cards = buildTopHighlights({ eating, liked, followed });
-  assert.equal(cards.length, 3);
-  assert.equal(cards[0].source, "user");
-  assert.equal(cards[0].badge, "Your meal");
-  assert.equal(cards[0].deleteKind, "diary");
-  assert.ok(cards[0].deleteItem);
-  assert.ok(cards[0].image);
-  assert.equal(cards[0].videoUrl, undefined);
-  assert.match(cards[1].badge, /Saved dish/i);
-  assert.equal(cards[1].deleteKind, "like");
-  assert.match(cards[2].badge, /places you follow/i);
-  assert.equal(cards[2].deleteKind, "follow");
-});
-
-test("buildTopHighlights skips video-only diary rows (no recycled videos)", () => {
-  const eating = [
-    {
-      id: 10,
-      entry_id: 10,
-      food_name: "Starbucks",
-      video_url: "https://example.com/clip.mp4",
-      restaurant_name: "Starbucks",
-    },
-    {
-      id: 11,
-      entry_id: 11,
-      food_name: "Photo meal",
-      photo_url: "/uploads/meal.jpg",
-      restaurant_name: "Cafe",
-    },
-  ];
-  const liked = [{ menu_item_id: 9, item_name: "Burger", restaurant_name: "Shake Shack" }];
-  const followed = [
-    {
-      restaurant_id: 3,
-      restaurant_name: "KazuNori",
-      city: "LA",
-      state: "CA",
-      billboard_preview: [{ title: "Hand Roll", image_url: "/uploads/b.jpg" }],
-    },
-  ];
-
-  const cards = buildTopHighlights({ eating, liked, followed });
-  assert.equal(cards.length, 3);
-  assert.equal(cards[0].badge, "Your meal");
-  assert.equal(cards[0].label, "Photo meal");
+  assert.equal(cards[0].label, "My Highlight");
   assert.ok(cards[0].image);
   assert.equal(cards[0].videoUrl, undefined);
   assert.equal(
-    cards.some((c) => /Starbucks/i.test(c.label)),
+    cards.some((c) => /Ramen|Burger|KazuNori/i.test(c.label)),
     false
   );
-  assert.match(cards[1].badge, /Saved dish/i);
-  assert.match(cards[2].badge, /places you follow/i);
+});
+
+test("buildTopHighlights returns empty when diner has no pinned photos", () => {
+  const cards = buildTopHighlights({
+    eating: [
+      {
+        id: 1,
+        food_name: "Ramen",
+        photo_url: "/uploads/a.jpg",
+        restaurant_name: "Daikoku",
+      },
+    ],
+    liked: [{ menu_item_id: 9, item_name: "Burger", restaurant_name: "Shake Shack" }],
+    followed: [
+      {
+        restaurant_id: 3,
+        restaurant_name: "KazuNori",
+        city: "LA",
+        state: "CA",
+        billboard_preview: [{ title: "Hand Roll", image_url: "/uploads/b.jpg" }],
+      },
+    ],
+  });
+  assert.equal(cards.length, 0);
+});
+
+test("buildTopHighlights skips non-photo profile media", () => {
+  const cards = buildTopHighlights({
+    profileHighlightPhotos: [
+      { id: 1, media_kind: "video", media_url: "https://example.com/clip.mp4" },
+      { id: 2, media_kind: "photo", media_url: "/uploads/meal.jpg" },
+    ],
+  });
+  assert.equal(cards.length, 1);
+  assert.equal(cards[0].media_id, 2);
+  assert.equal(cards[0].videoUrl, undefined);
 });
 
 test("buildFollowedRestaurantRails maps restaurant visit cards", () => {

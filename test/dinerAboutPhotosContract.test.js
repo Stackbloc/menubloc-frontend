@@ -34,7 +34,7 @@ test("My Menuply identity hero is prominent with photo upload and short bio", ()
   );
   assert.match(
     read("src/pages/consumer/myMenuply/ProfileGalleryComposeSheet.jsx"),
-    /Add to Top Highlights/
+    /Add to My Highlights/
   );
   assert.match(page, /diner_about/);
   assert.ok(page.indexOf("<DinerIdentityHero") < page.indexOf("<MyMenuplyPresentationRails"));

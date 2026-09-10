@@ -1,11 +1,12 @@
 /**
- * Build presentation cards from user diary + restaurant follow/like data.
- * Restaurant-backed cards are labeled curated — never fake user posts.
+ * Build presentation cards from diner-owned My Highlights + follow rails.
+ * My Highlights = only media the diner pinned (person-first). No restaurant filler.
  */
 
 import { restaurantPathFromRow } from "../../../lib/canonicalUrl.js";
 
 const DEFAULT_MEDIA_BASE = "https://menubloc-backend-production.up.railway.app";
+export const MY_HIGHLIGHTS_MAX = 3;
 
 function mediaUrl(raw) {
   const value = String(raw || "").trim();
@@ -14,65 +15,12 @@ function mediaUrl(raw) {
   return `${DEFAULT_MEDIA_BASE}${value.startsWith("/") ? value : `/${value}`}`;
 }
 
-function eatingCard(row) {
-  // Top Highlights is stills-only: never recycle diary videos here
-  // (videos stay on the meal board + See Who's Eating live feed).
-  const label = row.food_name || row.item_name || "Food";
-  const image = mediaUrl(row.photo_url || row.item_photo_url);
-  if (!image) return null;
-  return {
-    key: `diary-${row.entry_id || row.id}`,
-    kind: "diary",
-    deleteKind: "diary",
-    deleteItem: row,
-    label,
-    sublabel: row.restaurant_name || row.place_label || "",
-    badge: "Your meal",
-    image,
-    href: row.menu_item_id ? `/menu-items/${encodeURIComponent(String(row.menu_item_id))}` : null,
-    source: "user",
-  };
-}
-
-function likedCard(row) {
-  return {
-    key: `like-${row.menu_item_id}`,
-    kind: "like",
-    deleteKind: "like",
-    menu_item_id: row.menu_item_id,
-    label: row.item_name || "Dish",
-    sublabel: row.restaurant_name || "",
-    badge: "Saved dish",
-    image: null,
-    href: row.menu_item_id ? `/menu-items/${encodeURIComponent(String(row.menu_item_id))}` : null,
-    source: "restaurant",
-  };
-}
-
-function followHighlight(restaurant, preview, index) {
-  const image = mediaUrl(preview?.image_url || restaurant.logo_url);
-  return {
-    key: `follow-${restaurant.restaurant_id}-${index}`,
-    kind: "follow",
-    deleteKind: "follow",
-    restaurant_id: restaurant.restaurant_id,
-    label: preview?.headline_override || preview?.title || restaurant.restaurant_name,
-    sublabel: [restaurant.city, restaurant.state].filter(Boolean).join(", ") || restaurant.restaurant_name,
-    badge: "From places you follow",
-    image,
-    href: restaurantPathFromRow(restaurant),
-    source: "restaurant",
-  };
-}
-
-/** Top highlight grid: pinned profile photos first, then diary / likes / follows filler. */
-export function buildTopHighlights({
-  eating = [],
-  liked = [],
-  followed = [],
-  profileHighlightPhotos = [],
-} = {}) {
-  const pinned = (profileHighlightPhotos || [])
+/**
+ * My Highlights — diner-owned pinned profile photos only (max 3).
+ * Stills-only: photos from profileHighlightPhotos; no diary / liked / followed filler.
+ */
+export function buildTopHighlights({ profileHighlightPhotos = [] } = {}) {
+  return (profileHighlightPhotos || [])
     .filter((row) => row?.media_kind === "photo" || !row?.media_kind)
     .map((row) => {
       const image = mediaUrl(row.media_url || row.photo_url || row.image);
@@ -82,8 +30,8 @@ export function buildTopHighlights({
         kind: "profile_media",
         deleteKind: "profile_media",
         media_id: row.id,
-        label: "Profile photo",
-        sublabel: "From your gallery",
+        label: String(row.label || "").trim() || "My Highlight",
+        sublabel: String(row.sublabel || "").trim() || "Experience you shared",
         badge: "Highlight",
         image,
         href: null,
@@ -91,41 +39,7 @@ export function buildTopHighlights({
       };
     })
     .filter(Boolean)
-    .slice(0, 3);
-
-  if (pinned.length >= 3) return pinned;
-
-  const cards = [...pinned];
-  const usedImages = new Set(cards.map((c) => c.image).filter(Boolean));
-
-  for (const row of eating || []) {
-    if (cards.length >= 3) break;
-    const card = eatingCard(row);
-    if (!card || (card.image && usedImages.has(card.image))) continue;
-    cards.push(card);
-    if (card.image) usedImages.add(card.image);
-  }
-
-  for (const row of liked || []) {
-    if (cards.length >= 3) break;
-    cards.push(likedCard(row));
-  }
-
-  for (const restaurant of followed || []) {
-    if (cards.length >= 3) break;
-    const previews = restaurant.billboard_preview || [];
-    if (previews.length) {
-      previews.slice(0, 1).forEach((preview, idx) => {
-        if (cards.length < 3) cards.push(followHighlight(restaurant, preview, idx));
-      });
-      continue;
-    }
-    if (restaurant.logo_url) {
-      cards.push(followHighlight(restaurant, null, 0));
-    }
-  }
-
-  return cards.slice(0, 3);
+    .slice(0, MY_HIGHLIGHTS_MAX);
 }
 
 /** Horizontal restaurant visit cards from follows. */
@@ -147,33 +61,12 @@ export function buildFollowedRestaurantRails(followed = []) {
 /** Wish-list filler from liked dishes when want list is empty. */
 export function buildWantSuggestions(liked = [], limit = 8) {
   return (liked || []).slice(0, limit).map((row) => ({
-    key: `want-suggest-${row.menu_item_id}`,
-    food_name: row.item_name,
-    restaurant_name: row.restaurant_name,
+    id: `suggest-${row.menu_item_id}`,
+    food_name: row.item_name || "Dish",
+    restaurant_name: row.restaurant_name || "",
     menu_item_id: row.menu_item_id,
-    photo_url: null,
+    photo_url: row.photo_url || row.item_photo_url || null,
   }));
-}
-
-/** Count unique restaurant + home-cooked dishes on the profile. */
-export function countProfileDishes({ liked = [], eating = [], homeDishes = [] }) {
-  const keys = new Set();
-  for (const row of liked || []) {
-    if (row.menu_item_id) keys.add(`mi-${row.menu_item_id}`);
-    else if (row.item_name) keys.add(`like-${String(row.item_name).toLowerCase()}`);
-  }
-  for (const row of eating || []) {
-    if (row.menu_item_id) keys.add(`mi-${row.menu_item_id}`);
-    else {
-      const name = row.food_name || row.item_name;
-      if (name) keys.add(`eat-${String(name).toLowerCase()}`);
-    }
-  }
-  for (const dish of homeDishes || []) {
-    const id = dish?.id || dish?.homemade_dish_id;
-    keys.add(id ? `hd-${id}` : `hd-${String(dish?.name || "").toLowerCase()}`);
-  }
-  return keys.size;
 }
 
 export function buildDinerStats({
@@ -185,14 +78,13 @@ export function buildDinerStats({
   events = [],
   eventGroups = [],
   socialEvents = [],
-}) {
+} = {}) {
   const eventCount =
     (events?.length || 0) + (eventGroups?.length || 0) + (socialEvents?.length || 0);
-  const dishCount = countProfileDishes({ liked, eating, homeDishes });
   return [
     { id: "connects", label: "Connects", value: connections.length },
     { id: "restaurants", label: "Restaurants", value: followed.length },
-    { id: "dishes", label: "Dishes", value: dishCount },
+    { id: "dishes", label: "Dishes", value: liked.length + eating.length + homeDishes.length },
     { id: "events", label: "Events", value: eventCount },
   ];
 }

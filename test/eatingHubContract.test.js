@@ -172,6 +172,10 @@ test("My Menuply and peer hub use five-section presentation hub", () => {
   assert.match(section, /kind === "venue_event"/);
   assert.match(mine, /media=library|get\("media"\)/);
   assert.match(mine, /my-events-calendar-open/);
+  assert.match(mine, /my-events-compose-open/);
+  assert.match(mine, /crews-compose-open/);
+  assert.match(mine, /crew-settings-link/);
+  assert.match(mine, /setEventComposeOpen\(true\)/);
   assert.match(mine, /kind: "venue_event"/);
   assert.match(mine, /openEventsCalendar/);
   assert.match(mine, /venueEventYmd/);

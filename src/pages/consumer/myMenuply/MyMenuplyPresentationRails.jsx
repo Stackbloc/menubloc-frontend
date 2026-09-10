@@ -1,6 +1,6 @@
 /**
- * Exhibit-style presentation rails — stats, highlights, follows.
- * Input-free; restaurant data fills sparse user diaries honestly.
+ * Exhibit-style presentation rails — stats, My Highlights, follows.
+ * My Highlights = diner-owned pinned photos only (no restaurant filler).
  * Connects live in the stats chip → hub focus (no duplicate avatar strip).
  */
 
@@ -9,13 +9,14 @@ import DinerStatsBar from "./DinerStatsBar.jsx";
 import MyMenuplyHubFocus from "./MyMenuplyHubFocus.jsx";
 import { WantToEatList } from "./myMenuplyBits.jsx";
 import { useLongPressReveal } from "./mediaLongPressReveal.js";
+import { MY_HIGHLIGHTS_MAX } from "./myMenuplyPresentation.js";
 import * as s from "./myMenuplyStyles.js";
 
 function HighlightCard({ card, large = false, readOnly = false, onDelete, deleteBusy = false }) {
   const canDelete = !readOnly && card?.deleteKind && typeof onDelete === "function";
   const { open, dismiss, consumeArmedClick, bind } = useLongPressReveal(canDelete);
 
-  // Stills only — diary videos are not recycled into Top Highlights.
+  // Stills only — My Highlights are diner-pinned photos (not recycled diary videos).
   const body = (
     <>
       <div style={{ ...railStyles.highlightMedia, ...(large ? railStyles.highlightMediaLarge : null) }}>
@@ -88,32 +89,70 @@ function HighlightCard({ card, large = false, readOnly = false, onDelete, delete
   );
 }
 
-function TopHighlightsGrid({ cards = [], readOnly = false, onDelete, deleteBusy = false }) {
-  if (!cards.length) return null;
+function TopHighlightsGrid({
+  cards = [],
+  readOnly = false,
+  onDelete,
+  deleteBusy = false,
+  onAdd,
+  maxHighlights = MY_HIGHLIGHTS_MAX,
+}) {
+  const empty = !cards.length;
+  // Connect View: omit the whole section when there is nothing to show.
+  if (readOnly && empty) return null;
+
+  const canAdd =
+    !readOnly && typeof onAdd === "function" && cards.length < Number(maxHighlights);
   const [hero, ...rest] = cards;
+
   return (
     <div style={s.presentationBlock} data-testid="top-highlights">
-      <h3 style={s.sectionTitleQuiet}>Top highlights</h3>
-      <div style={railStyles.highlightGrid}>
-        <HighlightCard
-          card={hero}
-          large
-          readOnly={readOnly}
-          onDelete={onDelete}
-          deleteBusy={deleteBusy}
-        />
-        <div style={railStyles.highlightStack}>
-          {rest.map((card) => (
-            <HighlightCard
-              key={card.key}
-              card={card}
-              readOnly={readOnly}
-              onDelete={onDelete}
-              deleteBusy={deleteBusy}
-            />
-          ))}
-        </div>
+      <div style={railStyles.sectionHeadRow}>
+        <h3 style={s.sectionTitleQuiet}>My Highlights</h3>
+        {canAdd ? (
+          <button
+            type="button"
+            style={railStyles.addIconBtn}
+            data-testid="my-highlights-add"
+            aria-label="Add a highlight photo"
+            onClick={() => onAdd?.()}
+          >
+            <span aria-hidden="true">+</span>
+          </button>
+        ) : null}
       </div>
+      {!readOnly ? (
+        <p style={railStyles.purposeCopy} data-testid="my-highlights-purpose">
+          Photos of your food experiences — Thanksgiving, meals you prepared, moments that are
+          about you. Not restaurants you follow. Up to {maxHighlights} photos.
+        </p>
+      ) : null}
+      {empty ? (
+        <p style={railStyles.emptyHint} data-testid="my-highlights-empty">
+          No highlights yet. Tap + to add a photo.
+        </p>
+      ) : (
+        <div style={railStyles.highlightGrid}>
+          <HighlightCard
+            card={hero}
+            large
+            readOnly={readOnly}
+            onDelete={onDelete}
+            deleteBusy={deleteBusy}
+          />
+          <div style={railStyles.highlightStack}>
+            {rest.map((card) => (
+              <HighlightCard
+                key={card.key}
+                card={card}
+                readOnly={readOnly}
+                onDelete={onDelete}
+                deleteBusy={deleteBusy}
+              />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -173,6 +212,7 @@ export default function MyMenuplyPresentationRails({
   readOnly = false,
   onHighlightDelete,
   highlightDeleteBusy = false,
+  onHighlightAdd,
 }) {
   void onLogFood;
   return (
@@ -194,6 +234,7 @@ export default function MyMenuplyPresentationRails({
         readOnly={readOnly}
         onDelete={readOnly ? undefined : onHighlightDelete}
         deleteBusy={highlightDeleteBusy}
+        onAdd={readOnly ? undefined : onHighlightAdd}
       />
       {hubFocus !== "restaurants" ? (
         <FollowedRestaurantsRail restaurants={followedRestaurants} />
@@ -213,6 +254,42 @@ export default function MyMenuplyPresentationRails({
 }
 
 const railStyles = {
+  sectionHeadRow: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 10,
+    marginBottom: 4,
+  },
+  addIconBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    border: "1px solid #a7f3d0",
+    background: "#ecfdf5",
+    color: "#14532d",
+    fontSize: 22,
+    fontWeight: 700,
+    lineHeight: 1,
+    cursor: "pointer",
+    display: "grid",
+    placeItems: "center",
+    flexShrink: 0,
+    padding: 0,
+  },
+  purposeCopy: {
+    margin: "0 0 12px",
+    fontSize: 13,
+    lineHeight: 1.4,
+    color: "#64748b",
+    fontWeight: 500,
+  },
+  emptyHint: {
+    margin: "0 0 4px",
+    fontSize: 13,
+    color: "#94a3b8",
+    fontWeight: 600,
+  },
   highlightGrid: {
     display: "grid",
     gridTemplateColumns: "1fr 1fr",

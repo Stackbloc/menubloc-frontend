@@ -256,6 +256,7 @@ export default function MyMenuplyPage() {
   const [composeMediaSource, setComposeMediaSource] = useState("camera");
   const [profileGalleryPickerOpen, setProfileGalleryPickerOpen] = useState(false);
   const [profileGalleryMediaSource, setProfileGalleryMediaSource] = useState(null);
+  const [profileGalleryPreferHighlight, setProfileGalleryPreferHighlight] = useState(false);
   const [crewComposeOpen, setCrewComposeOpen] = useState(false);
   const [eventComposeOpen, setEventComposeOpen] = useState(false);
   const [inviteCrewPickerOpen, setInviteCrewPickerOpen] = useState(false);
@@ -406,6 +407,7 @@ export default function MyMenuplyPage() {
     }
 
     if (compose === "profile-gallery") {
+      setProfileGalleryPreferHighlight(false);
       setProfileGalleryMediaSource(media === "library" ? "library" : media === "camera" ? "camera" : null);
       setProfileGalleryPickerOpen(true);
       clearComposeParams();
@@ -585,12 +587,9 @@ export default function MyMenuplyPage() {
       (row) => row?.is_highlight && row?.media_kind === "photo"
     );
     return buildTopHighlights({
-      eating,
-      liked,
-      followed,
       profileHighlightPhotos: pinned,
     });
-  }, [eating, liked, followed, profileMedia]);
+  }, [profileMedia]);
 
   const profileHighlightCount = useMemo(
     () =>
@@ -682,6 +681,7 @@ export default function MyMenuplyPage() {
   async function onProfileMediaAdd(file, opts = {}) {
     setProfileGalleryPickerOpen(false);
     setProfileGalleryMediaSource(null);
+    setProfileGalleryPreferHighlight(false);
     if (!file) return;
     setIdentityBusy(true);
     setIdentityError("");
@@ -694,7 +694,7 @@ export default function MyMenuplyPage() {
       if (item) setProfileMedia((prev) => [...prev, item]);
       setIdentityNotice(
         item?.is_highlight
-          ? "Profile photo added to Top Highlights."
+          ? "Photo added to My Highlights."
           : "Profile media added."
       );
     } catch (err) {
@@ -1793,6 +1793,7 @@ export default function MyMenuplyPage() {
               onClose={() => {
                 setProfileGalleryPickerOpen(false);
                 setProfileGalleryMediaSource(null);
+                setProfileGalleryPreferHighlight(false);
               }}
               mediaSource={profileGalleryMediaSource}
               onMediaSourceChange={setProfileGalleryMediaSource}
@@ -1800,6 +1801,7 @@ export default function MyMenuplyPage() {
               onFile={onProfileMediaAdd}
               highlightCount={profileHighlightCount}
               maxHighlights={3}
+              preferHighlight={profileGalleryPreferHighlight}
             />
 
             <MyMenuplyPresentationRails
@@ -1826,6 +1828,15 @@ export default function MyMenuplyPage() {
               }}
               onHighlightDelete={onHighlightDelete}
               highlightDeleteBusy={Boolean(postBusy)}
+              onHighlightAdd={
+                previewAsConnect
+                  ? undefined
+                  : () => {
+                      setProfileGalleryPreferHighlight(true);
+                      setProfileGalleryMediaSource(null);
+                      setProfileGalleryPickerOpen(true);
+                    }
+              }
             />
 
             <HomeAtHomeSection
@@ -1962,12 +1973,33 @@ export default function MyMenuplyPage() {
                     ? undefined
                     : "The people you eat, hang out, and make plans with"
                 }
+                aside={
+                  previewAsConnect ? null : (
+                    <div style={hubEditStyles.asideRow}>
+                      <button
+                        type="button"
+                        style={hubEditStyles.compactAdd}
+                        data-testid="crews-compose-open"
+                        onClick={() => setCrewComposeOpen(true)}
+                      >
+                        <span aria-hidden="true">+</span> Add
+                      </button>
+                      <Link
+                        to="/account/dining-crews"
+                        style={hubEditStyles.settingsLink}
+                        data-testid="crew-settings-link"
+                      >
+                        Crew Settings
+                      </Link>
+                    </div>
+                  )
+                }
               />
               {crews.length === 0 ? (
                 <SectionEmptyState testId="crews-empty">
                   {previewAsConnect
                     ? "No crews to show."
-                    : "The people you eat, hang out, and make plans with."}
+                    : "No crews yet. Tap + Add, or open Crew Settings to manage members."}
                 </SectionEmptyState>
               ) : (
                 crews.slice(0, 4).map((crew) => (
@@ -2001,21 +2033,31 @@ export default function MyMenuplyPage() {
                 title="My Events"
                 aside={
                   previewAsConnect ? null : (
-                    <button
-                      type="button"
-                      style={s.plansCalendarBtn}
-                      data-testid="my-events-calendar-open"
-                      aria-label="Open month calendar for my events"
-                      onClick={openEventsCalendar}
-                    >
-                      <PlansCalendarGlyph />
-                    </button>
+                    <div style={hubEditStyles.asideRow}>
+                      <button
+                        type="button"
+                        style={hubEditStyles.compactAdd}
+                        data-testid="my-events-compose-open"
+                        onClick={() => setEventComposeOpen(true)}
+                      >
+                        <span aria-hidden="true">+</span> Add
+                      </button>
+                      <button
+                        type="button"
+                        style={s.plansCalendarBtn}
+                        data-testid="my-events-calendar-open"
+                        aria-label="Open month calendar for my events"
+                        onClick={openEventsCalendar}
+                      >
+                        <PlansCalendarGlyph />
+                      </button>
+                    </div>
                   )
                 }
               />
               {events.length === 0 && eventGroups.length === 0 && socialEvents.length === 0 ? (
                 <SectionEmptyState testId="events-empty">
-                  {previewAsConnect ? "Nothing yet." : "No events yet."}
+                  {previewAsConnect ? "Nothing yet." : "No events yet. Tap + Add to create one."}
                 </SectionEmptyState>
               ) : (
                 <>
@@ -2223,6 +2265,43 @@ export default function MyMenuplyPage() {
     </>
   );
 }
+
+const hubEditStyles = {
+  asideRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    flexWrap: "wrap",
+    justifyContent: "flex-end",
+  },
+  compactAdd: {
+    appearance: "none",
+    border: "1px dashed #cbd5e1",
+    background: "#fff",
+    borderRadius: 999,
+    padding: "6px 12px",
+    font: "inherit",
+    fontSize: 13,
+    fontWeight: 700,
+    color: "#16a34a",
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 4,
+    cursor: "pointer",
+  },
+  settingsLink: {
+    appearance: "none",
+    textDecoration: "none",
+    border: "1px solid #e2e8f0",
+    background: "#f8fafc",
+    borderRadius: 999,
+    padding: "6px 12px",
+    fontSize: 12,
+    fontWeight: 750,
+    color: "#334155",
+    whiteSpace: "nowrap",
+  },
+};
 
 const crewSheetStyles = {
   backdrop: {

@@ -168,16 +168,20 @@ test("What I Ate meal board is presentation-only (no empty cameras)", () => {
   assert.doesNotMatch(board, /autoPlay\s*\n\s*loop/);
 });
 
-test("Top highlights are stills-only (no recycled diary videos)", () => {
+test("My Highlights are stills-only (diner-pinned photos, no recycled diary videos)", () => {
   const presentation = read("src/pages/consumer/myMenuply/myMenuplyPresentation.js");
-  assert.match(presentation, /stills-only/);
-  assert.match(presentation, /photo_url \|\| row\.item_photo_url/);
+  assert.match(presentation, /[Ss]tills-only/);
+  assert.match(presentation, /profileHighlightPhotos/);
   assert.doesNotMatch(presentation, /videoUrl:\s*video/);
   assert.doesNotMatch(
     presentation,
     /mediaUrl\(row\.photo_url \|\| row\.item_photo_url \|\| row\.video_url\)/
   );
   const rails = read("src/pages/consumer/myMenuply/MyMenuplyPresentationRails.jsx");
+  assert.match(rails, /My Highlights/);
+  assert.match(rails, /my-highlights-add/);
+  assert.match(rails, /my-highlights-purpose/);
+  assert.match(rails, /readOnly && empty/);
   assert.doesNotMatch(rails, /VideoStillPreview/);
   assert.doesNotMatch(rails, /card\.videoUrl/);
   assert.doesNotMatch(rails, /top-highlight-video/);
