@@ -3,6 +3,7 @@ export const MY_MENUPLY_PROFILE_PATH = "/feed/profile";
 
 /** Sub-routes that remain under /my-menuply for deep links and month views. */
 export const MY_MENUPLY_MONTH_IN_FOOD_PATH = "/my-menuply/month-in-food";
+export const MY_MENUPLY_HIGHLIGHTS_PATH = "/my-menuply/highlights";
 export const MY_MENUPLY_CONNECTIONS_PLANNING_PATH = "/my-menuply/connections-planning";
 
 export function myMenuplyProfileHref({ compose, media } = {}) {

@@ -5,52 +5,29 @@ import {
   buildFollowedRestaurantRails,
   buildTopHighlights,
   buildWantSuggestions,
+  MY_HIGHLIGHTS_PREVIEW_COUNT,
 } from "../src/pages/consumer/myMenuply/myMenuplyPresentation.js";
 
-test("buildTopHighlights uses only diner-pinned profile photos", () => {
-  const eating = [
-    {
-      id: 1,
-      entry_id: 1,
-      food_name: "Ramen",
-      photo_url: "/uploads/a.jpg",
-      restaurant_name: "Daikoku",
-    },
-  ];
-  const liked = [{ menu_item_id: 9, item_name: "Burger", restaurant_name: "Shake Shack" }];
-  const followed = [
-    {
-      restaurant_id: 3,
-      restaurant_name: "KazuNori",
-      city: "LA",
-      state: "CA",
-      billboard_preview: [{ title: "Hand Roll", image_url: "/uploads/b.jpg" }],
-    },
-  ];
+test("buildTopHighlights includes diner-pinned photos and videos", () => {
   const pinned = [
     { id: 101, media_kind: "photo", media_url: "/uploads/pin1.jpg", is_highlight: true },
-    { id: 102, media_kind: "photo", media_url: "/uploads/pin2.jpg", is_highlight: true },
+    { id: 102, media_kind: "video", media_url: "https://example.com/clip.mp4", is_highlight: true },
   ];
 
   const cards = buildTopHighlights({
-    eating,
-    liked,
-    followed,
-    profileHighlightPhotos: pinned,
+    profileHighlightMedia: pinned,
   });
   assert.equal(cards.length, 2);
   assert.equal(cards[0].deleteKind, "profile_media");
-  assert.equal(cards[0].badge, "Highlight");
-  assert.equal(cards[0].label, "My Highlight");
+  assert.equal(cards[0].media_kind, "photo");
   assert.ok(cards[0].image);
   assert.equal(cards[0].videoUrl, undefined);
-  assert.equal(
-    cards.some((c) => /Ramen|Burger|KazuNori/i.test(c.label)),
-    false
-  );
+  assert.equal(cards[1].media_kind, "video");
+  assert.equal(cards[1].videoUrl, "https://example.com/clip.mp4");
+  assert.equal(cards[1].image, null);
 });
 
-test("buildTopHighlights returns empty when diner has no pinned photos", () => {
+test("buildTopHighlights returns empty when diner has no pinned media", () => {
   const cards = buildTopHighlights({
     eating: [
       {
@@ -74,16 +51,16 @@ test("buildTopHighlights returns empty when diner has no pinned photos", () => {
   assert.equal(cards.length, 0);
 });
 
-test("buildTopHighlights skips non-photo profile media", () => {
-  const cards = buildTopHighlights({
-    profileHighlightPhotos: [
-      { id: 1, media_kind: "video", media_url: "https://example.com/clip.mp4" },
-      { id: 2, media_kind: "photo", media_url: "/uploads/meal.jpg" },
-    ],
-  });
-  assert.equal(cards.length, 1);
-  assert.equal(cards[0].media_id, 2);
-  assert.equal(cards[0].videoUrl, undefined);
+test("buildTopHighlights has no pin cap (preview count is separate)", () => {
+  assert.equal(MY_HIGHLIGHTS_PREVIEW_COUNT, 9);
+  const pinned = Array.from({ length: 12 }, (_, i) => ({
+    id: i + 1,
+    media_kind: "photo",
+    media_url: `/uploads/p${i}.jpg`,
+    is_highlight: true,
+  }));
+  const cards = buildTopHighlights({ profileHighlightMedia: pinned });
+  assert.equal(cards.length, 12);
 });
 
 test("buildFollowedRestaurantRails maps restaurant visit cards", () => {

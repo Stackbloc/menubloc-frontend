@@ -1,161 +1,15 @@
 /**
  * Exhibit-style presentation rails — stats, My Highlights, follows.
- * My Highlights = diner-owned pinned photos only (no restaurant filler).
+ * My Highlights = diner-owned pinned photos + videos (Instagram-style grid preview).
  * Connects live in the stats chip → hub focus (no duplicate avatar strip).
  */
 
 import { Link } from "react-router-dom";
 import DinerStatsBar from "./DinerStatsBar.jsx";
 import MyMenuplyHubFocus from "./MyMenuplyHubFocus.jsx";
+import MyHighlightsGrid from "./MyHighlightsGrid.jsx";
 import { WantToEatList } from "./myMenuplyBits.jsx";
-import { useLongPressReveal } from "./mediaLongPressReveal.js";
-import { MY_HIGHLIGHTS_MAX } from "./myMenuplyPresentation.js";
 import * as s from "./myMenuplyStyles.js";
-
-function HighlightCard({ card, large = false, readOnly = false, onDelete, deleteBusy = false }) {
-  const canDelete = !readOnly && card?.deleteKind && typeof onDelete === "function";
-  const { open, dismiss, consumeArmedClick, bind } = useLongPressReveal(canDelete);
-
-  // Stills only — My Highlights are diner-pinned photos (not recycled diary videos).
-  const body = (
-    <>
-      <div style={{ ...railStyles.highlightMedia, ...(large ? railStyles.highlightMediaLarge : null) }}>
-        {card.image ? (
-          <img src={card.image} alt="" style={railStyles.highlightImg} loading="lazy" />
-        ) : (
-          <div style={railStyles.highlightPlaceholder}>🍽</div>
-        )}
-        <span style={railStyles.highlightBadge}>{card.badge}</span>
-      </div>
-      <div style={railStyles.highlightCopy}>
-        <div style={railStyles.highlightTitle}>{card.label}</div>
-        {card.sublabel ? <div style={railStyles.highlightMeta}>{card.sublabel}</div> : null}
-      </div>
-    </>
-  );
-
-  const cardStyle = { ...railStyles.highlightCard, ...(large ? railStyles.highlightCardLarge : null) };
-  let main;
-  if (card.href) {
-    main = (
-      <Link
-        to={card.href}
-        style={cardStyle}
-        data-testid="top-highlight-link"
-        onClick={(e) => {
-          if (consumeArmedClick() || open) {
-            e.preventDefault();
-            dismiss();
-          }
-        }}
-      >
-        {body}
-      </Link>
-    );
-  } else {
-    main = (
-      <div style={cardStyle} data-testid="top-highlight-body">
-        {body}
-      </div>
-    );
-  }
-
-  return (
-    <div
-      style={{ position: "relative", ...(large ? { height: "100%" } : null) }}
-      data-testid="top-highlight-item"
-      {...bind}
-    >
-      {main}
-      {open ? (
-        <button
-          type="button"
-          style={s.mealHolderDelete}
-          data-testid="top-highlight-delete"
-          aria-label={`Delete ${card.label}`}
-          disabled={deleteBusy}
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            if (deleteBusy) return;
-            dismiss();
-            onDelete?.(card);
-          }}
-        >
-          Delete
-        </button>
-      ) : null}
-    </div>
-  );
-}
-
-function TopHighlightsGrid({
-  cards = [],
-  readOnly = false,
-  onDelete,
-  deleteBusy = false,
-  onAdd,
-  maxHighlights = MY_HIGHLIGHTS_MAX,
-}) {
-  const empty = !cards.length;
-  // Connect View: omit the whole section when there is nothing to show.
-  if (readOnly && empty) return null;
-
-  const canAdd =
-    !readOnly && typeof onAdd === "function" && cards.length < Number(maxHighlights);
-  const [hero, ...rest] = cards;
-
-  return (
-    <div style={s.presentationBlock} data-testid="top-highlights">
-      <div style={railStyles.sectionHeadRow}>
-        <h3 style={s.sectionTitleQuiet}>My Highlights</h3>
-        {canAdd ? (
-          <button
-            type="button"
-            style={railStyles.addIconBtn}
-            data-testid="my-highlights-add"
-            aria-label="Add a highlight photo"
-            onClick={() => onAdd?.()}
-          >
-            <span aria-hidden="true">+</span>
-          </button>
-        ) : null}
-      </div>
-      {!readOnly ? (
-        <p style={railStyles.purposeCopy} data-testid="my-highlights-purpose">
-          Photos of your food experiences — Thanksgiving, meals you prepared, moments that are
-          about you. Not restaurants you follow. Up to {maxHighlights} photos.
-        </p>
-      ) : null}
-      {empty ? (
-        <p style={railStyles.emptyHint} data-testid="my-highlights-empty">
-          No highlights yet. Tap + to add a photo.
-        </p>
-      ) : (
-        <div style={railStyles.highlightGrid}>
-          <HighlightCard
-            card={hero}
-            large
-            readOnly={readOnly}
-            onDelete={onDelete}
-            deleteBusy={deleteBusy}
-          />
-          <div style={railStyles.highlightStack}>
-            {rest.map((card) => (
-              <HighlightCard
-                key={card.key}
-                card={card}
-                readOnly={readOnly}
-                onDelete={onDelete}
-                deleteBusy={deleteBusy}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
 
 function FollowedRestaurantsRail({ restaurants = [] }) {
   if (!restaurants.length) return null;
@@ -213,6 +67,7 @@ export default function MyMenuplyPresentationRails({
   onHighlightDelete,
   highlightDeleteBusy = false,
   onHighlightAdd,
+  highlightsSeeAllHref,
 }) {
   void onLogFood;
   return (
@@ -229,12 +84,14 @@ export default function MyMenuplyPresentationRails({
         eventGroups={eventGroups}
         viewerUserId={viewerUserId}
       />
-      <TopHighlightsGrid
+      <MyHighlightsGrid
         cards={highlights}
         readOnly={readOnly}
         onDelete={readOnly ? undefined : onHighlightDelete}
         deleteBusy={highlightDeleteBusy}
         onAdd={readOnly ? undefined : onHighlightAdd}
+        preview
+        seeAllHref={highlightsSeeAllHref}
       />
       {hubFocus !== "restaurants" ? (
         <FollowedRestaurantsRail restaurants={followedRestaurants} />
@@ -254,115 +111,6 @@ export default function MyMenuplyPresentationRails({
 }
 
 const railStyles = {
-  sectionHeadRow: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 10,
-    marginBottom: 4,
-  },
-  addIconBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    border: "1px solid #a7f3d0",
-    background: "#ecfdf5",
-    color: "#14532d",
-    fontSize: 22,
-    fontWeight: 700,
-    lineHeight: 1,
-    cursor: "pointer",
-    display: "grid",
-    placeItems: "center",
-    flexShrink: 0,
-    padding: 0,
-  },
-  purposeCopy: {
-    margin: "0 0 12px",
-    fontSize: 13,
-    lineHeight: 1.4,
-    color: "#64748b",
-    fontWeight: 500,
-  },
-  emptyHint: {
-    margin: "0 0 4px",
-    fontSize: 13,
-    color: "#94a3b8",
-    fontWeight: 600,
-  },
-  highlightGrid: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: 10,
-    alignItems: "start",
-  },
-  highlightStack: {
-    display: "grid",
-    gap: 10,
-  },
-  highlightCard: {
-    display: "block",
-    textDecoration: "none",
-    color: "inherit",
-    borderRadius: 16,
-    overflow: "hidden",
-    background: "#fff",
-    border: "1px solid #d1fae5",
-    boxShadow: "0 8px 22px rgba(20, 83, 45, 0.1)",
-  },
-  highlightCardLarge: {
-    minHeight: 0,
-  },
-  highlightMedia: {
-    position: "relative",
-    height: 120,
-    background: "#ecfdf5",
-  },
-  highlightMediaLarge: {
-    height: 148,
-  },
-  highlightImg: {
-    width: "100%",
-    height: "100%",
-    objectFit: "cover",
-    display: "block",
-  },
-  highlightPlaceholder: {
-    width: "100%",
-    height: "100%",
-    display: "grid",
-    placeItems: "center",
-    fontSize: 36,
-    background: "linear-gradient(180deg, #ecfdf5, #d1fae5)",
-  },
-  highlightBadge: {
-    position: "absolute",
-    top: 8,
-    left: 8,
-    padding: "4px 10px",
-    borderRadius: 999,
-    background: "rgba(20, 83, 45, 0.88)",
-    color: "#fff",
-    fontSize: 10,
-    fontWeight: 800,
-    letterSpacing: "0.03em",
-    textTransform: "uppercase",
-  },
-  highlightCopy: {
-    padding: "10px 12px 12px",
-  },
-  highlightTitle: {
-    fontWeight: 800,
-    fontSize: 14,
-    color: "#14532d",
-    lineHeight: 1.25,
-  },
-  highlightMeta: {
-    marginTop: 4,
-    fontSize: 12,
-    color: "#64748b",
-    fontWeight: 600,
-  },
   scrollRow: {
     display: "flex",
     gap: 12,
@@ -374,11 +122,11 @@ const railStyles = {
     width: 140,
     textDecoration: "none",
     color: "inherit",
-    borderRadius: 14,
+    borderRadius: 16,
     overflow: "hidden",
     background: "#fff",
     border: "1px solid #d1fae5",
-    boxShadow: "0 6px 18px rgba(20, 83, 45, 0.08)",
+    boxShadow: "0 8px 22px rgba(20, 83, 45, 0.1)",
   },
   visitImg: {
     width: "100%",
@@ -388,14 +136,15 @@ const railStyles = {
     background: "#ecfdf5",
   },
   visitPlaceholder: {
+    width: "100%",
     height: 100,
     display: "grid",
     placeItems: "center",
     fontSize: 28,
-    background: "linear-gradient(180deg, #ecfdf5, #f0fdf4)",
+    background: "linear-gradient(180deg, #ecfdf5, #d1fae5)",
   },
   visitCopy: {
-    padding: "10px 10px 12px",
+    padding: "8px 10px 10px",
   },
   visitName: {
     fontWeight: 800,
@@ -404,31 +153,29 @@ const railStyles = {
     lineHeight: 1.25,
   },
   visitMeta: {
-    marginTop: 4,
+    marginTop: 2,
     fontSize: 11,
     color: "#64748b",
     fontWeight: 600,
   },
   ctaCard: {
-    marginTop: 24,
-    padding: "18px 16px",
-    borderRadius: 18,
-    background: "linear-gradient(135deg, #14532d 0%, #166534 55%, #15803d 100%)",
-    color: "#fff",
-    boxShadow: "0 10px 28px rgba(20, 83, 45, 0.28)",
+    marginTop: 28,
+    padding: "16px 18px",
+    borderRadius: 16,
+    background: "linear-gradient(180deg, #ffffff 0%, #f0fdf4 100%)",
+    border: "1px solid #d1fae5",
   },
   ctaScript: {
-    margin: "0 0 6px",
+    margin: 0,
     fontFamily: 'Georgia, "Times New Roman", serif',
-    fontSize: 26,
+    fontSize: 18,
     fontWeight: 700,
-    fontStyle: "italic",
-    lineHeight: 1.15,
+    color: "#14532d",
   },
   ctaBody: {
-    margin: "0 0 14px",
-    fontSize: 14,
-    lineHeight: 1.5,
-    color: "rgba(255,255,255,0.9)",
+    margin: "6px 0 0",
+    fontSize: 13,
+    color: "#64748b",
+    lineHeight: 1.4,
   },
 };

@@ -168,23 +168,31 @@ test("What I Ate meal board is presentation-only (no empty cameras)", () => {
   assert.doesNotMatch(board, /autoPlay\s*\n\s*loop/);
 });
 
-test("My Highlights are stills-only (diner-pinned photos, no recycled diary videos)", () => {
+test("My Highlights are diner media grid (photos + videos; preview then See all)", () => {
   const presentation = read("src/pages/consumer/myMenuply/myMenuplyPresentation.js");
-  assert.match(presentation, /[Ss]tills-only/);
-  assert.match(presentation, /profileHighlightPhotos/);
-  assert.doesNotMatch(presentation, /videoUrl:\s*video/);
-  assert.doesNotMatch(
-    presentation,
-    /mediaUrl\(row\.photo_url \|\| row\.item_photo_url \|\| row\.video_url\)/
-  );
+  assert.match(presentation, /MY_HIGHLIGHTS_PREVIEW_COUNT\s*=\s*9/);
+  assert.match(presentation, /profileHighlightMedia/);
+  assert.match(presentation, /videoUrl/);
+  assert.doesNotMatch(presentation, /MY_HIGHLIGHTS_MAX/);
+  const grid = read("src/pages/consumer/myMenuply/MyHighlightsGrid.jsx");
+  assert.match(grid, /My Highlights/);
+  assert.match(grid, /my-highlights-add/);
+  assert.match(grid, /my-highlights-purpose/);
+  assert.match(grid, /my-highlights-see-all/);
+  assert.doesNotMatch(grid, /Not restaurants you follow/);
+  assert.doesNotMatch(grid, /Up to \{/);
+  assert.match(grid, /repeat\(3,/);
+  assert.match(grid, /aspectRatio:\s*"1 \/ 1"/);
+  assert.match(grid, /my-highlight-video/);
   const rails = read("src/pages/consumer/myMenuply/MyMenuplyPresentationRails.jsx");
-  assert.match(rails, /My Highlights/);
-  assert.match(rails, /my-highlights-add/);
-  assert.match(rails, /my-highlights-purpose/);
-  assert.match(rails, /readOnly && empty/);
-  assert.doesNotMatch(rails, /VideoStillPreview/);
-  assert.doesNotMatch(rails, /card\.videoUrl/);
-  assert.doesNotMatch(rails, /top-highlight-video/);
+  assert.match(rails, /MyHighlightsGrid/);
+  assert.match(rails, /preview/);
+  const page = read("src/pages/consumer/myMenuply/MyHighlightsPage.jsx");
+  assert.match(page, /my-highlights-page/);
+  assert.match(page, /preview=\{false\}/);
+  const app = read("src/App.jsx");
+  assert.match(app, /path="\/my-menuply\/highlights"/);
+  assert.match(app, /MyHighlightsPage/);
 });
 
 test("eating surfaces use MenuplyMediaPicker", () => {

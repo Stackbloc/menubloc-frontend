@@ -583,21 +583,11 @@ export default function MyMenuplyPage() {
     [connections, followed, liked, eating, homeDishes, events, eventGroups, socialEvents]
   );
   const topHighlights = useMemo(() => {
-    const pinned = (profileMedia || []).filter(
-      (row) => row?.is_highlight && row?.media_kind === "photo"
-    );
+    const pinned = (profileMedia || []).filter((row) => row?.is_highlight);
     return buildTopHighlights({
-      profileHighlightPhotos: pinned,
+      profileHighlightMedia: pinned,
     });
   }, [profileMedia]);
-
-  const profileHighlightCount = useMemo(
-    () =>
-      (profileMedia || []).filter(
-        (row) => row?.is_highlight && row?.media_kind === "photo"
-      ).length,
-    [profileMedia]
-  );
   const followedRestaurantRails = useMemo(
     () => buildFollowedRestaurantRails(followed),
     [followed]
@@ -694,7 +684,7 @@ export default function MyMenuplyPage() {
       if (item) setProfileMedia((prev) => [...prev, item]);
       setIdentityNotice(
         item?.is_highlight
-          ? "Photo added to My Highlights."
+          ? "Added to My Highlights."
           : "Profile media added."
       );
     } catch (err) {
@@ -1799,8 +1789,6 @@ export default function MyMenuplyPage() {
               onMediaSourceChange={setProfileGalleryMediaSource}
               busy={identityBusy}
               onFile={onProfileMediaAdd}
-              highlightCount={profileHighlightCount}
-              maxHighlights={3}
               preferHighlight={profileGalleryPreferHighlight}
             />
 

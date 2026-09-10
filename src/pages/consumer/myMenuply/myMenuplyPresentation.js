@@ -1,12 +1,14 @@
 /**
  * Build presentation cards from diner-owned My Highlights + follow rails.
- * My Highlights = only media the diner pinned (person-first). No restaurant filler.
+ * My Highlights = diner-pinned photos and videos (person-first). No restaurant filler.
  */
 
 import { restaurantPathFromRow } from "../../../lib/canonicalUrl.js";
 
 const DEFAULT_MEDIA_BASE = "https://menubloc-backend-production.up.railway.app";
-export const MY_HIGHLIGHTS_MAX = 3;
+
+/** Profile preview grid size (Instagram-style 3×3). More → See all page. */
+export const MY_HIGHLIGHTS_PREVIEW_COUNT = 9;
 
 function mediaUrl(raw) {
   const value = String(raw || "").trim();
@@ -16,30 +18,31 @@ function mediaUrl(raw) {
 }
 
 /**
- * My Highlights — diner-owned pinned profile photos only (max 3).
- * Stills-only: photos from profileHighlightPhotos; no diary / liked / followed filler.
+ * My Highlights — diner-owned pinned profile media (photo + video). No pin cap.
  */
-export function buildTopHighlights({ profileHighlightPhotos = [] } = {}) {
-  return (profileHighlightPhotos || [])
-    .filter((row) => row?.media_kind === "photo" || !row?.media_kind)
+export function buildTopHighlights({ profileHighlightMedia = [], profileHighlightPhotos = [] } = {}) {
+  const rows = (profileHighlightMedia?.length ? profileHighlightMedia : profileHighlightPhotos) || [];
+  return rows
     .map((row) => {
-      const image = mediaUrl(row.media_url || row.photo_url || row.image);
-      if (!image) return null;
+      const url = mediaUrl(row.media_url || row.photo_url || row.image);
+      if (!url) return null;
+      const isVideo = String(row.media_kind || "").toLowerCase() === "video";
       return {
         key: `profile-media-${row.id}`,
         kind: "profile_media",
         deleteKind: "profile_media",
         media_id: row.id,
+        media_kind: isVideo ? "video" : "photo",
         label: String(row.label || "").trim() || "My Highlight",
-        sublabel: String(row.sublabel || "").trim() || "Experience you shared",
-        badge: "Highlight",
-        image,
+        sublabel: String(row.sublabel || "").trim() || (isVideo ? "Video you shared" : "Experience you shared"),
+        badge: isVideo ? "Video" : "Photo",
+        image: isVideo ? null : url,
+        videoUrl: isVideo ? url : undefined,
         href: null,
         source: "user",
       };
     })
-    .filter(Boolean)
-    .slice(0, MY_HIGHLIGHTS_MAX);
+    .filter(Boolean);
 }
 
 /** Horizontal restaurant visit cards from follows. */

@@ -27,7 +27,7 @@ test("My Menuply identity hero is prominent with photo upload and short bio", ()
   assert.match(page, /uploadConsumerProfileMedia/);
   assert.match(page, /is_highlight/);
   assert.match(page, /setConsumerProfileMediaHighlight/);
-  assert.match(page, /profileHighlightPhotos/);
+  assert.match(page, /profileHighlightMedia/);
   assert.match(
     read("src/pages/consumer/myMenuply/ProfileGalleryComposeSheet.jsx"),
     /profile-gallery-add-to-highlights/
@@ -55,16 +55,16 @@ test("My Menuply identity hero is prominent with photo upload and short bio", ()
     "Edit profile details is last in About Me block"
   );
   assert.match(
-    read("src/pages/consumer/myMenuply/MyMenuplyPresentationRails.jsx"),
+    read("src/pages/consumer/myMenuply/MyHighlightsGrid.jsx"),
     /top-highlights/
   );
   assert.match(
-    read("src/pages/consumer/myMenuply/MyMenuplyPresentationRails.jsx"),
-    /height: 148/
+    read("src/pages/consumer/myMenuply/MyHighlightsGrid.jsx"),
+    /aspectRatio:\s*"1 \/ 1"/
   );
-  assert.doesNotMatch(
-    read("src/pages/consumer/myMenuply/MyMenuplyPresentationRails.jsx"),
-    /height: 252/
+  assert.match(
+    read("src/pages/consumer/myMenuply/MyHighlightsGrid.jsx"),
+    /repeat\(3,/
   );
   assert.match(gallery, /about-me-profile-media/);
   assert.match(gallery, /profile-media-delete/);

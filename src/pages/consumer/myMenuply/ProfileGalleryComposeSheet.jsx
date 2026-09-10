@@ -1,7 +1,6 @@
 /**
- * X → Profile gallery: choose native camera or library upload,
- * then capture into the About profile gallery.
- * Photos may optionally be pinned to My Highlights (max 3).
+ * X → Profile gallery / My Highlights: camera or library upload.
+ * Photos and videos may be pinned to My Highlights.
  */
 
 import { useEffect, useMemo, useState } from "react";
@@ -23,8 +22,6 @@ export default function ProfileGalleryComposeSheet({
   onMediaSourceChange,
   busy = false,
   onFile,
-  highlightCount = 0,
-  maxHighlights = 3,
   preferHighlight = false,
 }) {
   const [pendingFile, setPendingFile] = useState(null);
@@ -35,7 +32,6 @@ export default function ProfileGalleryComposeSheet({
     () => (pendingFile ? isPhotoFile(pendingFile) : false),
     [pendingFile]
   );
-  const highlightsFull = Number(highlightCount) >= Number(maxHighlights);
 
   useEffect(() => {
     if (!open) {
@@ -81,26 +77,29 @@ export default function ProfileGalleryComposeSheet({
 
   function handlePickedFile(file) {
     if (!file) return;
-    if (isPhotoFile(file)) {
-      setPendingFile(file);
-      setAddToHighlights(Boolean(preferHighlight) && !highlightsFull);
+    if (preferHighlight) {
+      // My Highlights + — pin photo or video immediately.
+      onFile?.(file, { is_highlight: true });
       return;
     }
-    // Videos go straight to gallery — My Highlights are photos only.
+    if (isPhotoFile(file)) {
+      setPendingFile(file);
+      setAddToHighlights(false);
+      return;
+    }
     onFile?.(file, { is_highlight: false });
   }
 
   function confirmPending() {
     if (!pendingFile) return;
-    const pin = pendingIsPhoto && addToHighlights && !highlightsFull;
-    onFile?.(pendingFile, { is_highlight: pin });
+    onFile?.(pendingFile, { is_highlight: Boolean(addToHighlights) });
     setPendingFile(null);
     setAddToHighlights(false);
   }
 
   const sheetTitle = preferHighlight ? "My Highlights" : "Profile gallery";
   const sheetLead = preferHighlight
-    ? "Add a photo of a food experience that is about you — Thanksgiving, a meal you prepared, a moment worth sharing. Up to three photos."
+    ? "Add a photo or short video of a food experience that is about you — Thanksgiving, a meal you prepared, a moment worth sharing."
     : "Add a photo or short video about you — not your eating diary.";
 
   return createPortal(
@@ -131,22 +130,20 @@ export default function ProfileGalleryComposeSheet({
           <div style={styles.confirm} data-testid="profile-gallery-highlight-confirm">
             {previewUrl && pendingIsPhoto ? (
               <img src={previewUrl} alt="" style={styles.preview} />
+            ) : previewUrl && !pendingIsPhoto ? (
+              <video src={previewUrl} style={styles.preview} muted playsInline controls />
             ) : null}
             <label style={styles.checkRow}>
               <input
                 type="checkbox"
                 checked={addToHighlights}
-                disabled={!pendingIsPhoto || highlightsFull || busy}
+                disabled={busy}
                 onChange={(e) => setAddToHighlights(e.target.checked)}
                 data-testid="profile-gallery-add-to-highlights"
               />
               <span>
                 Add to My Highlights
-                <span style={styles.checkHint}>
-                  {highlightsFull
-                    ? ` · ${maxHighlights} highlights already set`
-                    : ` · photos only · up to ${maxHighlights}`}
-                </span>
+                <span style={styles.checkHint}> · photos and videos</span>
               </span>
             </label>
             <div style={styles.confirmActions}>
@@ -181,15 +178,15 @@ export default function ProfileGalleryComposeSheet({
               facingMode="user"
               source={mediaSource === "library" ? "library" : "camera"}
               allowPhoto
-              allowVideo={!preferHighlight}
+              allowVideo
               showPreview={false}
               openOnMount
               testId="profile-gallery-x-picker"
               ariaLabel={
                 preferHighlight
                   ? mediaSource === "library"
-                    ? "Upload a My Highlights photo from library"
-                    : "Take a My Highlights photo with camera"
+                    ? "Upload a My Highlights photo or video from library"
+                    : "Take a My Highlights photo or video with camera"
                   : mediaSource === "library"
                     ? "Upload profile gallery photo or video from library"
                     : "Take profile gallery photo or video with camera"
@@ -213,11 +210,7 @@ export default function ProfileGalleryComposeSheet({
                 onClick={() => onMediaSourceChange?.("camera")}
               >
                 <span style={styles.actionTitle}>Native camera</span>
-                <span style={styles.actionDesc}>
-                  {preferHighlight
-                    ? "Take a highlight photo with your camera."
-                    : "Take a photo or video with your camera."}
-                </span>
+                <span style={styles.actionDesc}>Take a photo or video with your camera.</span>
               </button>
             </li>
             <li>
@@ -229,9 +222,7 @@ export default function ProfileGalleryComposeSheet({
               >
                 <span style={styles.actionTitle}>Upload from library</span>
                 <span style={styles.actionDesc}>
-                  {preferHighlight
-                    ? "Choose an existing photo from your device."
-                    : "Choose an existing photo or video from your device."}
+                  Choose an existing photo or video from your device.
                 </span>
               </button>
             </li>
