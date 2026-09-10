@@ -557,6 +557,15 @@ function resolveVideoEditorTitle({ title, dish, video }) {
   return video?.video_kind === "managed" ? "Platform video" : "";
 }
 
+function ymdFromIso(value) {
+  if (!value) return "";
+  const s = String(value);
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+  const d = new Date(s);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toISOString().slice(0, 10);
+}
+
 function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
   const [title, setTitle] = useState(video.title || "");
   const [comment, setComment] = useState(video.comment || "");
@@ -575,6 +584,10 @@ function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
     videoKey: video.video_id,
   });
   const [marketDiscoverable, setMarketDiscoverable] = useState(video.market_discoverable !== false);
+  const [playMuted, setPlayMuted] = useState(video.play_muted === true);
+  const [managerActive, setManagerActive] = useState(video.manager_active !== false);
+  const [runStartsAt, setRunStartsAt] = useState(() => ymdFromIso(video.run_starts_at));
+  const [runEndsAt, setRunEndsAt] = useState(() => ymdFromIso(video.run_ends_at));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -584,9 +597,23 @@ function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
     setComment(video.comment || "");
     setClusterId(video.cluster_id != null ? Number(video.cluster_id) : null);
     setMarketDiscoverable(video.market_discoverable !== false);
+    setPlayMuted(video.play_muted === true);
+    setManagerActive(video.manager_active !== false);
+    setRunStartsAt(ymdFromIso(video.run_starts_at));
+    setRunEndsAt(ymdFromIso(video.run_ends_at));
     setError("");
     setSuccess("");
-  }, [video.video_id, video.title, video.comment, video.cluster_id, video.market_discoverable]);
+  }, [
+    video.video_id,
+    video.title,
+    video.comment,
+    video.cluster_id,
+    video.market_discoverable,
+    video.play_muted,
+    video.manager_active,
+    video.run_starts_at,
+    video.run_ends_at,
+  ]);
 
   useEffect(() => {
     function onKeyDown(event) {
@@ -626,6 +653,10 @@ function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
         title: resolvedTitle || undefined,
         comment: comment.trim() || null,
         market_discoverable: marketDiscoverable,
+        play_muted: playMuted,
+        manager_active: managerActive,
+        run_starts_at: runStartsAt || null,
+        run_ends_at: runEndsAt || null,
       };
       if (supportsRestaurant) {
         body.restaurant_id = restaurant?.restaurant_id ?? null;
@@ -708,6 +739,7 @@ function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
             src={video.video_url}
             controls
             playsInline
+            muted={playMuted}
             style={{ width: "100%", maxWidth: 360, borderRadius: 12, background: "#000", marginBottom: 16 }}
           />
         ) : null}
@@ -749,6 +781,67 @@ function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
             testId="owner-video-edit-cluster"
           />
         ) : null}
+
+        <fieldset
+          data-testid="owner-video-playback-settings"
+          style={{
+            border: `1px solid ${OWNER_COLORS.line}`,
+            borderRadius: 12,
+            padding: "12px 14px",
+            margin: 0,
+            display: "grid",
+            gap: 10,
+          }}
+        >
+          <legend style={{ fontWeight: 700, fontSize: 13, padding: "0 6px" }}>
+            Playback settings
+          </legend>
+          <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 14 }}>
+            <input
+              type="checkbox"
+              checked={playMuted}
+              onChange={(e) => setPlayMuted(e.target.checked)}
+              data-testid="owner-video-play-muted"
+            />
+            Mute (show “No sound.” — diners cannot unmute)
+          </label>
+          <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 14 }}>
+            <input
+              type="checkbox"
+              checked={managerActive}
+              onChange={(e) => setManagerActive(e.target.checked)}
+              data-testid="owner-video-manager-active"
+            />
+            Active (off hides video across Feed, profiles, and watch pages)
+          </label>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            <label style={{ display: "grid", gap: 6 }}>
+              <span style={{ fontWeight: 600, fontSize: 12 }}>Run start</span>
+              <input
+                type="date"
+                value={runStartsAt}
+                max={runEndsAt || undefined}
+                onChange={(e) => setRunStartsAt(e.target.value)}
+                style={inputStyle}
+                data-testid="owner-video-run-starts"
+              />
+            </label>
+            <label style={{ display: "grid", gap: 6 }}>
+              <span style={{ fontWeight: 600, fontSize: 12 }}>Run end</span>
+              <input
+                type="date"
+                value={runEndsAt}
+                min={runStartsAt || undefined}
+                onChange={(e) => setRunEndsAt(e.target.value)}
+                style={inputStyle}
+                data-testid="owner-video-run-ends"
+              />
+            </label>
+          </div>
+          <p style={{ margin: 0, fontSize: 12, color: OWNER_COLORS.muted }}>
+            Leave run dates blank for always-on. Outside the window the video is hidden everywhere.
+          </p>
+        </fieldset>
 
         {video.video_kind !== "deal" ? (
           <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 14 }}>
@@ -980,6 +1073,17 @@ export default function OwnerVideoCuration() {
                 (row) => formatOwnerVideoCreatorLabel(row),
               ],
               ["Metadata", "tagged", (row) => (row.is_tagged ? "Tagged" : "Needs metadata")],
+              [
+                "Settings",
+                "settings",
+                (row) => {
+                  const bits = [];
+                  if (row.play_muted === true) bits.push("Muted");
+                  if (row.manager_active === false) bits.push("Inactive");
+                  if (row.run_starts_at || row.run_ends_at) bits.push("Scheduled");
+                  return bits.length ? bits.join(" · ") : "—";
+                },
+              ],
               ["Created", "created_at", (row) => formatWhen(row.created_at)],
               [
                 "Edit",

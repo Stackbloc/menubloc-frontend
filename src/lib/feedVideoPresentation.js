@@ -38,6 +38,11 @@ export function defaultFeedVideoMuted(variant = "modal") {
   return variant !== "feedHome";
 }
 
+/** Video Manager mute — forced muted; consumer must not offer unmute. */
+export function isManagerForcedMute(item) {
+  return item?.play_muted === true;
+}
+
 /**
  * Autoplay Feed video; try unmuted first when preferSound, fall back to muted if blocked.
  * @param {HTMLVideoElement|null|undefined} el

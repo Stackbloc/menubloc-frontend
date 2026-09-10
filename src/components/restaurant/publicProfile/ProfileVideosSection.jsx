@@ -31,10 +31,24 @@ function kindLabel(kind) {
 function VideoCard({ video }) {
   const src = video?.video_url ? resolveConsumerMediaUrl(video.video_url) : "";
   if (!src) return null;
+  const forcedMute = video?.play_muted === true;
   return (
     <article data-testid="profile-video-card" data-video-kind={video.kind} style={styles.card}>
       <div style={styles.mediaFrame}>
-        <video src={src} style={styles.video} controls playsInline preload="metadata" />
+        <video
+          src={src}
+          style={styles.video}
+          controls
+          playsInline
+          preload="metadata"
+          muted={forcedMute}
+          data-play-muted={forcedMute ? "1" : "0"}
+        />
+        {forcedMute ? (
+          <div style={styles.noSound} data-testid="profile-video-no-sound">
+            No sound.
+          </div>
+        ) : null}
       </div>
       <div style={styles.body}>
         <div style={styles.metaRow}>
@@ -183,6 +197,17 @@ const styles = {
     aspectRatio: "9 / 16",
     background: "#0f172a",
     overflow: "hidden",
+  },
+  noSound: {
+    position: "absolute",
+    left: 8,
+    bottom: 8,
+    padding: "4px 8px",
+    borderRadius: 8,
+    background: "rgba(0,0,0,0.65)",
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: 700,
   },
   video: {
     display: "block",

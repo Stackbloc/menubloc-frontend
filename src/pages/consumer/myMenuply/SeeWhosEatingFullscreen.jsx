@@ -40,6 +40,7 @@ import { buildFeedVideoShareData, feedClipSharePath, feedClipShareUrl } from "..
 import {
   attemptFeedVideoAutoplay,
   defaultFeedVideoMuted,
+  isManagerForcedMute,
   feedVideoElementStyle,
   resolveFeedVideoOverlayStyle,
 } from "../../../lib/feedVideoPresentation.js";
@@ -103,10 +104,10 @@ export default function SeeWhosEatingFullscreen({
   useEffect(() => {
     setConnectNotice("");
     setConnectError("");
-    setVideoMuted(defaultFeedVideoMuted(variant));
+    setVideoMuted(isManagerForcedMute(item) || defaultFeedVideoMuted(variant));
     setInviteOpen(false);
     // Do not clear browseSession — Browse trail stays independent of Feed navigation.
-  }, [index, item?.id, variant]);
+  }, [index, item?.id, item?.play_muted, variant]);
 
   const restaurantRef = restaurantRefFromFeedItem(item);
   const menuBrowserOpen = Boolean(browseSession);
@@ -198,8 +199,9 @@ export default function SeeWhosEatingFullscreen({
 
     const onReady = () => {
       if (cancelled) return;
-      attemptFeedVideoAutoplay(el, { preferSound: variant === "feedHome" }).then(({ muted }) => {
-        if (!cancelled) setVideoMuted(muted);
+      const preferSound = variant === "feedHome" && !isManagerForcedMute(item);
+      attemptFeedVideoAutoplay(el, { preferSound }).then(({ muted }) => {
+        if (!cancelled) setVideoMuted(isManagerForcedMute(item) ? true : muted);
       });
     };
 
@@ -213,7 +215,7 @@ export default function SeeWhosEatingFullscreen({
       el.removeEventListener("loadeddata", onReady);
       el.removeEventListener("canplay", onReady);
     };
-  }, [index, item?.id, variant]);
+  }, [index, item?.id, item?.play_muted, variant]);
 
   useEffect(() => {
     const el = videoRef.current;
@@ -314,11 +316,12 @@ export default function SeeWhosEatingFullscreen({
     setBrowseSession({ openIndex: index, trailIndex: 0 });
     const el = videoRef.current;
     if (el) {
-      attemptFeedVideoAutoplay(el, { preferSound: true }).then(({ muted }) => {
-        setVideoMuted(muted);
+      const preferSound = !isManagerForcedMute(item);
+      attemptFeedVideoAutoplay(el, { preferSound }).then(({ muted }) => {
+        setVideoMuted(isManagerForcedMute(item) ? true : muted);
       });
     } else {
-      setVideoMuted(false);
+      setVideoMuted(isManagerForcedMute(item) ? true : false);
     }
   }
 
@@ -382,6 +385,11 @@ export default function SeeWhosEatingFullscreen({
   function onToggleVideoSound(e) {
     e?.preventDefault?.();
     e?.stopPropagation?.();
+    if (isManagerForcedMute(item)) {
+      setVideoMuted(true);
+      applyVideoSoundState(true);
+      return;
+    }
     setVideoMuted((prev) => {
       const next = !prev;
       applyVideoSoundState(next);
@@ -511,8 +519,15 @@ export default function SeeWhosEatingFullscreen({
       !(viewerUserId != null && Number(viewerUserId) === peerId)
   );
   const soundPromptLabel = isDesktopViewport ? "Click for sound" : "Tap for sound";
-  const soundToggleLabel = videoMuted ? soundPromptLabel : "Mute";
-  const showDesktopSoundLayer = Boolean(isDesktopViewport && item?.video_url && videoMuted);
+  const managerForcedMute = isManagerForcedMute(item);
+  const soundToggleLabel = managerForcedMute
+    ? "No sound."
+    : videoMuted
+      ? soundPromptLabel
+      : "Mute";
+  const showDesktopSoundLayer = Boolean(
+    isDesktopViewport && item?.video_url && videoMuted && !managerForcedMute
+  );
   const navInset = isFeedHome ? Math.max(0, Number(bottomInset) || 0) : 0;
   const overlayStyle = {
     ...styles.overlay,
@@ -715,14 +730,15 @@ export default function SeeWhosEatingFullscreen({
             type="button"
             style={styles.pipMuteBtn}
             data-testid="see-whos-eating-pip-sound-toggle"
-            aria-label={videoMuted ? "Unmute video" : "Mute video"}
+            aria-label={managerForcedMute ? "No sound." : videoMuted ? "Unmute video" : "Mute video"}
+            disabled={managerForcedMute}
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
               onToggleVideoSound(e);
             }}
           >
-            {videoMuted ? "🔇" : "🔊"}
+            {managerForcedMute ? "No sound." : videoMuted ? "🔇" : "🔊"}
           </button>
         </div>
       ) : null}
@@ -753,8 +769,9 @@ export default function SeeWhosEatingFullscreen({
                   top: "calc(max(16px, env(safe-area-inset-top)) + 52px)",
                 }),
           }}
-          aria-label={videoMuted ? soundPromptLabel : "Mute video"}
+          aria-label={managerForcedMute ? "No sound." : videoMuted ? soundPromptLabel : "Mute video"}
           data-testid="see-whos-eating-sound-toggle"
+          disabled={managerForcedMute}
           onClick={onToggleVideoSound}
         >
           {soundToggleLabel}

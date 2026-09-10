@@ -27,6 +27,7 @@ import { useFeedShellDesktop } from "../../../lib/useFeedShellDesktop.js";
 import {
   attemptFeedVideoAutoplay,
   defaultFeedVideoMuted,
+  isManagerForcedMute,
   feedVideoElementStyle,
 } from "../../../lib/feedVideoPresentation.js";
 import {
@@ -86,10 +87,10 @@ export default function DealVideoSwipe({
   }, [startIndex, items.length]);
 
   useEffect(() => {
-    setVideoMuted(defaultFeedVideoMuted("feedHome"));
+    setVideoMuted(isManagerForcedMute(item) || defaultFeedVideoMuted("feedHome"));
     setInviteOpen(false);
     // Keep browseSession locked across Feed index changes.
-  }, [index, item?.id]);
+  }, [index, item?.id, item?.play_muted]);
 
   useEffect(() => {
     if (!browseSession) return;
@@ -139,8 +140,9 @@ export default function DealVideoSwipe({
 
     const onReady = () => {
       if (cancelled) return;
-      attemptFeedVideoAutoplay(el, { preferSound: true }).then(({ muted }) => {
-        if (!cancelled) setVideoMuted(muted);
+      const preferSound = !isManagerForcedMute(item);
+      attemptFeedVideoAutoplay(el, { preferSound }).then(({ muted }) => {
+        if (!cancelled) setVideoMuted(isManagerForcedMute(item) ? true : muted);
       });
     };
 
@@ -154,7 +156,7 @@ export default function DealVideoSwipe({
       el.removeEventListener("loadeddata", onReady);
       el.removeEventListener("canplay", onReady);
     };
-  }, [index, item?.id]);
+  }, [index, item?.id, item?.play_muted]);
 
   useEffect(() => {
     const el = videoRef.current;
@@ -244,11 +246,12 @@ export default function DealVideoSwipe({
     setBrowseSession({ openIndex: index, trailIndex: 0 });
     const el = videoRef.current;
     if (el) {
-      attemptFeedVideoAutoplay(el, { preferSound: true }).then(({ muted }) => {
-        setVideoMuted(muted);
+      const preferSound = !isManagerForcedMute(item);
+      attemptFeedVideoAutoplay(el, { preferSound }).then(({ muted }) => {
+        setVideoMuted(isManagerForcedMute(item) ? true : muted);
       });
     } else {
-      setVideoMuted(false);
+      setVideoMuted(isManagerForcedMute(item) ? true : false);
     }
   }
 
@@ -301,6 +304,11 @@ export default function DealVideoSwipe({
   function onToggleVideoSound(e) {
     e?.preventDefault?.();
     e?.stopPropagation?.();
+    if (isManagerForcedMute(item)) {
+      setVideoMuted(true);
+      applyVideoSoundState(true);
+      return;
+    }
     setVideoMuted((prev) => {
       const next = !prev;
       applyVideoSoundState(next);
@@ -367,8 +375,15 @@ export default function DealVideoSwipe({
   const atStart = index <= 0;
   const useMobileActionRail = !isDesktopViewport;
   const soundPromptLabel = isDesktopViewport ? "Click for sound" : "Tap for sound";
-  const soundToggleLabel = videoMuted ? soundPromptLabel : "Mute";
-  const showDesktopSoundLayer = Boolean(isDesktopViewport && item?.video_url && videoMuted);
+  const managerForcedMute = isManagerForcedMute(item);
+  const soundToggleLabel = managerForcedMute
+    ? "No sound."
+    : videoMuted
+      ? soundPromptLabel
+      : "Mute";
+  const showDesktopSoundLayer = Boolean(
+    isDesktopViewport && item?.video_url && videoMuted && !managerForcedMute
+  );
 
   const ui = (
     <div
