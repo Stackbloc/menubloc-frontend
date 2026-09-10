@@ -9,10 +9,12 @@ import { listPublicRestaurantWhatIAteToday } from "../../lib/whatIAteTodayApi.js
 import { restaurantPath } from "../../lib/canonicalUrlCore.js";
 import { mealPeriodLabel } from "../../lib/whatIAteTodayMealPeriod.js";
 import { resolveConsumerMediaUrl } from "../../lib/consumerApi.js";
+import { calendarDayYmd } from "../../lib/calendarDayYmd.js";
 
-function formatEatenOn(ymd) {
+function formatEatenOn(value) {
+  const ymd = calendarDayYmd(value);
   if (!ymd) return "";
-  const [y, m, d] = String(ymd).split("-").map(Number);
+  const [y, m, d] = ymd.split("-").map(Number);
   if (!y || !m || !d) return ymd;
   return new Date(y, m - 1, d).toLocaleDateString(undefined, {
     month: "short",

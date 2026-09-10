@@ -1,26 +1,21 @@
-function localDateYmd(d = new Date()) {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
+import {
+  calendarDayYmd,
+  localDateYmd,
+  planYmd,
+} from "../../../lib/calendarDayYmd.js";
+
+export { calendarDayYmd, localDateYmd, planYmd };
 
 /** Past diary browsing window on My Menuply Eating hub. Future plans are not capped. */
 export const EATING_HISTORY_DAYS = 90;
 
-export function planYmd(value) {
-  const raw = String(value || "").trim();
-  if (/^\d{4}-\d{2}-\d{2}/.test(raw)) return raw.slice(0, 10);
-  return "";
-}
-
 /** Calendar day for a venue event RSVP (`event_date` or `starts_at`). */
 export function venueEventYmd(ev) {
-  return planYmd(ev?.event_date) || planYmd(ev?.starts_at);
+  return calendarDayYmd(ev?.event_date) || calendarDayYmd(ev?.starts_at);
 }
 
 export function compareYmd(ymd, today = localDateYmd()) {
-  const day = planYmd(ymd);
+  const day = calendarDayYmd(ymd);
   if (!day) return 0;
   if (day > today) return 1;
   if (day < today) return -1;
@@ -28,7 +23,7 @@ export function compareYmd(ymd, today = localDateYmd()) {
 }
 
 export function shiftYmd(ymd, deltaDays, today = localDateYmd()) {
-  const base = planYmd(ymd) || today;
+  const base = calendarDayYmd(ymd) || today;
   const d = new Date(`${base}T12:00:00`);
   if (Number.isNaN(d.getTime())) return today;
   d.setDate(d.getDate() + (Number(deltaDays) || 0));
@@ -41,7 +36,7 @@ export function eatingHistoryStart(today = localDateYmd()) {
 
 /** Diary look-back only. Do not use this to cap future plan dates. */
 export function clampEatingLookbackDate(ymd, today = localDateYmd()) {
-  const day = planYmd(ymd) || today;
+  const day = calendarDayYmd(ymd) || today;
   const start = eatingHistoryStart(today);
   if (day < start) return start;
   if (day > today) return today;
@@ -49,7 +44,7 @@ export function clampEatingLookbackDate(ymd, today = localDateYmd()) {
 }
 
 export function isLookbackYmd(ymd, today = localDateYmd()) {
-  const day = planYmd(ymd);
+  const day = calendarDayYmd(ymd);
   if (!day) return false;
   return day >= eatingHistoryStart(today) && day <= today;
 }
@@ -64,10 +59,11 @@ export function buildEatingDayMarkers({ eatingRows = [], planRows = [] } = {}) {
     map.set(ymd, row);
   }
   for (const row of eatingRows) {
-    bump(planYmd(row.eaten_on || row.created_at), "past_count");
+    // Prefer explicit journal day; timestamps use local calendar day.
+    bump(calendarDayYmd(row.eaten_on) || calendarDayYmd(row.created_at), "past_count");
   }
   for (const row of planRows) {
-    bump(planYmd(row.plan_date), "future_count");
+    bump(calendarDayYmd(row.plan_date), "future_count");
   }
   return [...map.values()];
 }
@@ -75,7 +71,7 @@ export function buildEatingDayMarkers({ eatingRows = [], planRows = [] } = {}) {
 export function buildEatingDayMarkersFromCalendar(calendarDays = [], planRows = [], venueEvents = []) {
   const map = new Map();
   for (const day of calendarDays) {
-    const ymd = planYmd(day.eaten_on || day.ymd);
+    const ymd = calendarDayYmd(day.eaten_on || day.ymd);
     if (!ymd) continue;
     const row = map.get(ymd) || { ymd, past_count: 0, future_count: 0 };
     const count = Number(day.entry_count || day.past_count);
@@ -83,7 +79,7 @@ export function buildEatingDayMarkersFromCalendar(calendarDays = [], planRows = 
     map.set(ymd, row);
   }
   for (const plan of planRows) {
-    const ymd = planYmd(plan.plan_date);
+    const ymd = calendarDayYmd(plan.plan_date);
     if (!ymd) continue;
     const row = map.get(ymd) || { ymd, past_count: 0, future_count: 0 };
     row.future_count += 1;
@@ -93,6 +89,7 @@ export function buildEatingDayMarkersFromCalendar(calendarDays = [], planRows = 
     const ymd = venueEventYmd(ev);
     if (!ymd) continue;
     const row = map.get(ymd) || { ymd, past_count: 0, future_count: 0 };
+
     row.future_count += 1;
     map.set(ymd, row);
   }

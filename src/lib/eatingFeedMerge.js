@@ -2,6 +2,8 @@
  * Dedupe My Menuply eating feed when food_activity is mirrored to what_i_ate_today.
  */
 
+import { calendarDayYmd } from "./calendarDayYmd.js";
+
 const HOMEMADE_PREFIX = "Homemade";
 
 function isHomemadeComment(comment) {
@@ -30,6 +32,7 @@ export function mapDiaryEntriesForHub(entries = []) {
     ...row,
     id: `wia-${row.id}`,
     entry_id: row.id,
+    eaten_on: calendarDayYmd(row.eaten_on) || row.eaten_on || null,
     food_name: row.item_name || row.food_name || "Food",
     kind: "what_i_ate",
     homemade: row.homemade === true || isHomemadeComment(row.comment),

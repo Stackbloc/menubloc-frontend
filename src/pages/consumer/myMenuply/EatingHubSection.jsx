@@ -19,6 +19,7 @@ import {
   WantToEatUnifiedList,
 } from "./myMenuplyBits.jsx";
 import {
+  calendarDayYmd,
   clampEatingLookbackDate,
   compareYmd,
   eatingHistoryStart,
@@ -527,9 +528,15 @@ export default function EatingHubSection({
 
   /** Selected journal day only — never fall back to other days' media. */
   const eatingForDay = eating.filter((row) => {
-    if (planYmd(row.eaten_on || row.created_at) === hubDate) return true;
+    // Prefer diary eaten_on; timestamps use local calendar day (not UTC date slice).
+    const day =
+      calendarDayYmd(row.eaten_on) ||
+      calendarDayYmd(row.created_at) ||
+      planYmd(row.eaten_on || row.created_at);
+    if (day === hubDate) return true;
     if (lastPost?.kind === "diary" && Number(row.entry_id) === Number(lastPost.id)) {
-      return planYmd(lastPost.eaten_on) === hubDate || !lastPost.eaten_on;
+      const lastDay = calendarDayYmd(lastPost.eaten_on) || planYmd(lastPost.eaten_on);
+      return lastDay === hubDate || !lastPost.eaten_on;
     }
     return false;
   });

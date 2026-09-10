@@ -15,6 +15,7 @@ import {
 } from "./consumerCameraCapture.js";
 import { formatVideoMaxDurationLabel, SOCIAL_VIDEO_MAX_UPLOAD_SECONDS } from "./eatingMediaUtils.js";
 import { notifyFeedMenuFollowsChanged } from "./feedMenuLibrary.js";
+import { localDateYmd } from "./calendarDayYmd.js";
 
 const VITE_ENV = import.meta.env || {};
 const DEFAULT_PROD_API_BASE = "https://menubloc-backend-production.up.railway.app";
@@ -703,13 +704,6 @@ export const getVenueEventGroupInvitation = (token) =>
   get(`/api/consumer/event-groups/invitations/${encodeURIComponent(String(token))}`);
 export const acceptVenueEventGroupInvitation = (token) =>
   post(`/api/consumer/event-groups/invitations/${encodeURIComponent(String(token))}/accept`, {});
-
-function localDateYmd(d = new Date()) {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
 
 export const listWhatIAteToday = (eatenOn = localDateYmd()) =>
   get(`/api/consumer/what-i-ate-today?eaten_on=${encodeURIComponent(eatenOn)}`);

@@ -3,17 +3,14 @@ import {
   normalizeWhatIAteMealPeriod,
   WHAT_I_ATE_MEAL_PERIODS,
 } from "../../../lib/whatIAteTodayMealPeriod.js";
+import { calendarDayYmd, planYmd } from "../../../lib/calendarDayYmd.js";
 
 const MEAL_LABELS = new Set(WHAT_I_ATE_MEAL_PERIODS.map((p) => p.label.toLowerCase()));
 
-export function planYmd(value) {
-  const raw = String(value || "").trim();
-  if (/^\d{4}-\d{2}-\d{2}/.test(raw)) return raw.slice(0, 10);
-  return "";
-}
+export { planYmd, calendarDayYmd };
 
 export function compareYmd(ymd, today) {
-  const day = planYmd(ymd);
+  const day = calendarDayYmd(ymd);
   if (!day) return 0;
   if (day > today) return 1;
   if (day < today) return -1;

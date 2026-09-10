@@ -809,6 +809,10 @@ export default function MyMenuplyPage() {
     setError("");
     try {
       if (compareYmd(hubDate) > 0) return;
+      // Diary posts land on the selected journal day (today by default). Never use
+      // server CURRENT_DATE — Railway UTC can disagree with the diner's local day.
+      const eatenOn =
+        compareYmd(hubDate) < 0 ? hubDate : whatIAteTodayLocalDate();
       let photo_url;
       let video_url;
       if (file) {
@@ -846,7 +850,7 @@ export default function MyMenuplyPage() {
         food_name: foodName,
         photo_url,
         video_url,
-        eaten_on: hubDate,
+        eaten_on: eatenOn,
         meal_period: mealPeriod || defaultWhatIAteMealPeriod(),
         restaurant_id: restaurantId,
         menu_item_id: menuItemId,
@@ -875,12 +879,15 @@ export default function MyMenuplyPage() {
       const hubItem = mapDiaryEntriesForHub([
         {
           ...entry,
-          eaten_on: planYmd(entry.eaten_on) || hubDate,
+          eaten_on: planYmd(entry.eaten_on) || eatenOn,
           food_name: entry.food_name || text || "Food",
           photo_url: entry.photo_url || photo_url || null,
           video_url: entry.video_url || video_url || null,
         },
       ])[0];
+      if (eatenOn !== hubDate) {
+        setHubDate(eatenOn);
+      }
       setEating((prev) => {
         const rest = (prev || []).filter((row) => Number(row.entry_id) !== Number(entry.id));
         return [hubItem, ...rest];
@@ -977,7 +984,7 @@ export default function MyMenuplyPage() {
           food_name: item?.food_name || "Food",
           photo_url,
           video_url,
-          eaten_on: hubDate,
+          eaten_on: compareYmd(hubDate) < 0 ? hubDate : whatIAteTodayLocalDate(),
           meal_period: item?.meal_period || defaultWhatIAteMealPeriod(),
         });
       }

@@ -5,6 +5,7 @@
  */
 
 import { iconForFoodInterest, iconForFoodText } from "./foodInterestIcons.js";
+import { calendarDayYmd, localDateYmd } from "./calendarDayYmd.js";
 
 /** Profile / scan action emotes (communicate without creating content). */
 export const DINER_ACTION_EMOTES = Object.freeze({
@@ -74,8 +75,8 @@ export function resolveFoodSubject(row = {}) {
  * Relative / meal when-label for the detail line ("Tonight", "Yesterday", "Lunch").
  */
 export function formatActivityWhen(row = {}, { todayYmd = null } = {}) {
-  const eaten = String(row.eaten_on || row.want_on || row.activity_on || "").slice(0, 10);
-  const today = String(todayYmd || "").slice(0, 10);
+  const eaten = calendarDayYmd(row.eaten_on || row.want_on || row.activity_on);
+  const today = calendarDayYmd(todayYmd) || localDateYmd();
   if (eaten && today) {
     if (eaten === today) {
       const meal = String(row.meal_period || "")
