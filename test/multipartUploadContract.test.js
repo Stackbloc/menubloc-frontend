@@ -54,3 +54,15 @@ test("compose surfaces stay-on-screen upload progress", () => {
   assert.match(overlay, /onUploadProgress/);
   assert.match(overlay, /uploadPercent/);
 });
+
+test("diner videos use signed direct-to-Supabase path", () => {
+  const multipart = read("src/lib/multipartUpload.js");
+  assert.match(multipart, /putBlobWithProgress/);
+  const api = read("src/lib/consumerApi.js");
+  assert.match(api, /putBlobWithProgress/);
+  assert.match(api, /\$\{path\}\/sign/);
+  assert.match(api, /\$\{path\}\/complete/);
+  assert.match(api, /signed_url/);
+  assert.match(api, /storage_key/);
+});
+

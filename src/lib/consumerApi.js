@@ -20,6 +20,7 @@ import {
   isLikelyVideoUploadFile,
   mapMultipartUploadNetworkError,
   postMultipartWithProgress,
+  putBlobWithProgress,
   videoUploadTimeoutMs,
   VIDEO_UPLOAD_TIMEOUT_FLOOR_MS,
 } from "./multipartUpload.js";
@@ -34,6 +35,10 @@ const API = (
 /** @deprecated Prefer videoUploadTimeoutMs(file.size) — floor kept for contract tests. */
 const UPLOAD_TIMEOUT_MS = VIDEO_UPLOAD_TIMEOUT_FLOOR_MS;
 
+/**
+ * Videos: sign → PUT direct to Supabase → complete (Railway is gateway only).
+ * Photos: multipart through BE (unchanged).
+ */
 async function postDinerMediaMultipart(path, file, { onProgress } = {}) {
   if (!file) throw new Error("No file selected");
   const isVideo = isLikelyVideoUploadFile(file);
@@ -44,10 +49,79 @@ async function postDinerMediaMultipart(path, file, { onProgress } = {}) {
   }
 
   const language = readStoredLanguage();
+  const timeoutMs = isVideo ? videoUploadTimeoutMs(file.size) : UPLOAD_TIMEOUT_MS;
+
+  if (isVideo) {
+    try {
+      const signPath = appendLanguageParam(`${path}/sign`, language);
+      const grantRes = await fetch(`${API}${signPath}`, {
+        method: "POST",
+        credentials: "include",
+        headers: withLanguageHeaders(
+          { "Content-Type": "application/json" },
+          language
+        ),
+        body: JSON.stringify({
+          filename: file.name || "video.mp4",
+          content_type: file.type || "video/mp4",
+          byte_size: Number(file.size) || 0,
+        }),
+      });
+      const grant = await grantRes.json().catch(() => ({}));
+      if (!grantRes.ok) {
+        const error = new Error(grant.error || `Sign failed (${grantRes.status})`);
+        error.status = grantRes.status;
+        error.payload = grant;
+        throw error;
+      }
+      if (!grant.signed_url || !grant.storage_key) {
+        throw new Error("Sign response missing signed_url or storage_key");
+      }
+
+      await putBlobWithProgress({
+        url: grant.signed_url,
+        blob: file,
+        headers: grant.upload_headers || {
+          "Content-Type": grant.content_type || file.type || "video/mp4",
+          "x-upsert": "false",
+        },
+        timeoutMs,
+        onProgress,
+      });
+
+      const completePath = appendLanguageParam(`${path}/complete`, language);
+      const completeRes = await fetch(`${API}${completePath}`, {
+        method: "POST",
+        credentials: "include",
+        headers: withLanguageHeaders(
+          { "Content-Type": "application/json" },
+          language
+        ),
+        body: JSON.stringify({
+          storage_key: grant.storage_key,
+          content_type: grant.content_type || file.type || "video/mp4",
+          byte_size: Number(file.size) || 0,
+        }),
+      });
+      const complete = await completeRes.json().catch(() => ({}));
+      if (!completeRes.ok) {
+        const error = new Error(complete.error || `Complete failed (${completeRes.status})`);
+        error.status = completeRes.status;
+        error.payload = complete;
+        throw error;
+      }
+      return complete;
+    } catch (err) {
+      throw mapMultipartUploadNetworkError(err, {
+        isVideo: true,
+        timedOutByClient: Boolean(err?.timedOutByClient) || err?.code === "UPLOAD_CLIENT_TIMEOUT",
+      });
+    }
+  }
+
   const form = new FormData();
   form.append("photo", file);
   const localizedPath = appendLanguageParam(path, language);
-  const timeoutMs = isVideo ? videoUploadTimeoutMs(file.size) : UPLOAD_TIMEOUT_MS;
 
   try {
     return await postMultipartWithProgress({
@@ -60,7 +134,7 @@ async function postDinerMediaMultipart(path, file, { onProgress } = {}) {
     });
   } catch (err) {
     throw mapMultipartUploadNetworkError(err, {
-      isVideo,
+      isVideo: false,
       timedOutByClient: Boolean(err?.timedOutByClient) || err?.code === "UPLOAD_CLIENT_TIMEOUT",
     });
   }

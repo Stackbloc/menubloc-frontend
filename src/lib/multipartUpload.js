@@ -67,17 +67,120 @@ export function mapMultipartUploadNetworkError(err, { isVideo = false, timedOutB
   return err instanceof Error ? err : new Error(msg || "Upload failed");
 }
 
+function attachUploadProgress(xhr, onProgress) {
+  xhr.upload.onprogress = (event) => {
+    if (typeof onProgress !== "function") return;
+    const total = Number(event.total) || 0;
+    const loaded = Number(event.loaded) || 0;
+    const percent =
+      event.lengthComputable && total > 0
+        ? Math.min(99, Math.max(0, Math.round((loaded / total) * 100)))
+        : loaded > 0
+          ? 50
+          : 0;
+    onProgress({ percent, loaded, total });
+  };
+}
+
+/**
+ * PUT a blob/file to a signed URL (direct-to-Supabase). Progress via XHR.
+ */
+export function putBlobWithProgress({
+  url,
+  blob,
+  headers = {},
+  timeoutMs = VIDEO_UPLOAD_TIMEOUT_FLOOR_MS,
+  onProgress,
+} = {}) {
+  return new Promise((resolve, reject) => {
+    if (typeof navigator !== "undefined" && navigator.onLine === false) {
+      const offline = new Error("offline");
+      offline.code = "UPLOAD_OFFLINE";
+      reject(offline);
+      return;
+    }
+    if (!url || !blob) {
+      reject(new Error("Missing signed upload url or file"));
+      return;
+    }
+
+    const xhr = new XMLHttpRequest();
+    let timedOutByClient = false;
+    let settled = false;
+
+    const fail = (err) => {
+      if (settled) return;
+      settled = true;
+      if (err && typeof err === "object") {
+        err.timedOutByClient = timedOutByClient;
+      }
+      reject(err);
+    };
+
+    const ok = (value) => {
+      if (settled) return;
+      settled = true;
+      resolve(value);
+    };
+
+    xhr.open("PUT", url, true);
+    xhr.timeout = Math.max(1000, Number(timeoutMs) || VIDEO_UPLOAD_TIMEOUT_FLOOR_MS);
+
+    Object.entries(headers || {}).forEach(([key, value]) => {
+      if (value == null) return;
+      xhr.setRequestHeader(key, String(value));
+    });
+
+    attachUploadProgress(xhr, onProgress);
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        if (typeof onProgress === "function") {
+          onProgress({ percent: 100, loaded: 1, total: 1 });
+        }
+        ok({ ok: true, status: xhr.status });
+        return;
+      }
+      const error = new Error(`Direct storage upload failed (${xhr.status})`);
+      error.status = xhr.status;
+      error.code = "DIRECT_UPLOAD_HTTP";
+      fail(error);
+    };
+
+    xhr.onerror = () => {
+      const err = new Error("network");
+      err.code =
+        typeof navigator !== "undefined" && navigator.onLine === false
+          ? "UPLOAD_OFFLINE"
+          : "UPLOAD_NETWORK";
+      fail(err);
+    };
+
+    xhr.ontimeout = () => {
+      timedOutByClient = true;
+      const err = new Error("timeout");
+      err.name = "AbortError";
+      err.code = "UPLOAD_CLIENT_TIMEOUT";
+      fail(err);
+    };
+
+    xhr.onabort = () => {
+      const err = new Error("aborted");
+      err.name = "AbortError";
+      err.code = timedOutByClient ? "UPLOAD_CLIENT_TIMEOUT" : "UPLOAD_ABORTED";
+      fail(err);
+    };
+
+    try {
+      xhr.send(blob);
+    } catch (err) {
+      fail(err);
+    }
+  });
+}
+
 /**
  * POST multipart with upload progress. Prefer XHR — fetch has no upload progress.
- *
- * @param {object} opts
- * @param {string} opts.url
- * @param {FormData} opts.formData
- * @param {Record<string,string>} [opts.headers]
- * @param {number} [opts.timeoutMs]
- * @param {"include"|"same-origin"|"omit"} [opts.credentials]
- * @param {(p: { percent: number, loaded: number, total: number }) => void} [opts.onProgress]
- * @returns {Promise<object>}
  */
 export function postMultipartWithProgress({
   url,
@@ -123,18 +226,7 @@ export function postMultipartWithProgress({
       xhr.setRequestHeader(key, String(value));
     });
 
-    xhr.upload.onprogress = (event) => {
-      if (typeof onProgress !== "function") return;
-      const total = Number(event.total) || 0;
-      const loaded = Number(event.loaded) || 0;
-      const percent =
-        event.lengthComputable && total > 0
-          ? Math.min(99, Math.max(0, Math.round((loaded / total) * 100)))
-          : loaded > 0
-            ? 50
-            : 0;
-      onProgress({ percent, loaded, total });
-    };
+    attachUploadProgress(xhr, onProgress);
 
     xhr.onload = () => {
       let json = {};
@@ -158,7 +250,10 @@ export function postMultipartWithProgress({
 
     xhr.onerror = () => {
       const err = new Error("network");
-      err.code = typeof navigator !== "undefined" && navigator.onLine === false ? "UPLOAD_OFFLINE" : "UPLOAD_NETWORK";
+      err.code =
+        typeof navigator !== "undefined" && navigator.onLine === false
+          ? "UPLOAD_OFFLINE"
+          : "UPLOAD_NETWORK";
       fail(err);
     };
 
