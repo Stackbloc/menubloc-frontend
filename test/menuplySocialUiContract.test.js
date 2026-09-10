@@ -115,8 +115,11 @@ test("diner eating media upload maps Failed to fetch for video", () => {
   assert.match(api, /postDinerMediaMultipart/);
   assert.match(api, /MAX_UPLOAD_VIDEO_BYTES/);
   assert.match(api, /Video upload failed \(connection dropped\)/);
+  assert.match(api, /This is not a length limit/);
+  assert.match(api, /UPLOAD_TIMEOUT_MS = 5 \* 60 \* 1000/);
   assert.match(api, /uploadWhatIAteTodayPhoto/);
   assert.match(api, /uploadWantToEatPhoto/);
+  assert.doesNotMatch(api, /shorter clip/i);
 });
 
 test("X ate/want auto-opens camera sheet from compose", () => {

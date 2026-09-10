@@ -121,7 +121,18 @@ test("consumerApi video upload errors do not blame 15-second story cap", () => {
   const api = read("src/lib/consumerApi.js");
   assert.doesNotMatch(api, /under 15 seconds/);
   assert.doesNotMatch(api, /Record under 15 seconds/);
+  assert.doesNotMatch(api, /shorter clip/i);
   assert.match(api, /formatVideoMaxDurationLabel/);
   assert.match(api, /SOCIAL_VIDEO_MAX_UPLOAD_SECONDS/);
-  assert.match(api, /Check your connection and try again/);
+  assert.match(api, /UPLOAD_TIMEOUT_MS = 5 \* 60 \* 1000/);
+  assert.match(api, /This is not a length limit/);
+});
+
+test("normalizeNativeVideoFile soft-accepts browser too-long duration", () => {
+  const lib = read("src/lib/nativeVideoCapture.js");
+  assert.match(lib, /Browser-reported duration is never a hard block/);
+  assert.doesNotMatch(
+    lib.slice(lib.indexOf("export async function normalizeNativeVideoFile")),
+    /too long\/i\.test/
+  );
 });

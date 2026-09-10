@@ -24,7 +24,12 @@ const API = (
   (VITE_ENV.DEV ? "http://localhost:3001" : DEFAULT_PROD_API_BASE)
 ).replace(/\/$/, "");
 
-const UPLOAD_TIMEOUT_MS = 90_000;
+/**
+ * Diner eating/plan videos hit Railway + optional H.264 normalize.
+ * 90s aborts mid-upload on cellular and often surfaces as Failed to fetch
+ * ("connection dropped") — not a "clip too long" problem. Align with owner video.
+ */
+const UPLOAD_TIMEOUT_MS = 5 * 60 * 1000;
 
 function isLikelyVideoUpload(file) {
   const type = String(file?.type || "").toLowerCase();
@@ -38,14 +43,14 @@ function mapDinerMediaUploadNetworkError(err, file) {
   if (name === "AbortError" || /aborted|timeout/i.test(msg)) {
     return new Error(
       isLikelyVideoUpload(file)
-        ? "Video upload timed out. Check your connection and try again."
+        ? "Video upload timed out. Stay on this tab, keep a strong connection, and try again. This is not a length limit."
         : "Upload timed out. Check your connection and try again."
     );
   }
   if (/failed to fetch|networkerror|load failed|network request failed/i.test(msg)) {
     return new Error(
       isLikelyVideoUpload(file)
-        ? "Video upload failed (connection dropped). Check your connection and try again."
+        ? "Video upload failed (connection dropped). Stay on this tab until it finishes, then retry. This is not a length limit."
         : "Upload failed — check your connection and try again."
     );
   }

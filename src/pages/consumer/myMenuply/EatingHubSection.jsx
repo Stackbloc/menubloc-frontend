@@ -54,7 +54,7 @@ function WantCravingsActionBox({
   wants = [],
   diningIntents = [],
   canEdit = false,
-  /** Own-hub Connect preview still shows owner Join Me / Take Me Out. */
+  /** Own-hub edit mode only — never Connect-view chrome under Restaurants you follow. */
   isConnectPreview = false,
   canInviteMeOut = false,
   onJoinMeFromCraving,
@@ -94,8 +94,7 @@ function WantCravingsActionBox({
 
   if (!options.length) return null;
 
-  const showOwnerFlow =
-    (canEdit || isConnectPreview) && typeof onJoinMeFromCraving === "function";
+  const showOwnerFlow = canEdit && typeof onJoinMeFromCraving === "function";
   const showPeerInvite =
     !canEdit && !isConnectPreview && canInviteMeOut && typeof onInviteMeOut === "function";
   if (!showOwnerFlow && !showPeerInvite) return null;
@@ -607,20 +606,6 @@ export default function EatingHubSection({
 
   return (
     <div data-testid="eating" ref={sectionRef}>
-      {!canEdit && !readOnly ? (
-        <div style={styles.connectActions} data-testid="profile-connect-preview-actions">
-          {isJoinMeGuestHref(joinMeHref) ? (
-            <Link to={joinMeHref} style={styles.connectActionBtn}>
-              Join Me
-            </Link>
-          ) : (
-            <span style={styles.connectActionBtn} aria-disabled="true">
-              Join Me
-            </span>
-          )}
-        </div>
-      ) : null}
-
       <section style={s.section} data-testid="what-im-eating">
         {wantDiscovery && lastPost?.kind === "diary" ? (
           <WantDiscoveryPanel
@@ -890,8 +875,8 @@ export default function EatingHubSection({
             />
           ) : null}
 
-          {/* Join Me — peer hub or connect-preview */}
-          {(readOnly || !canEdit) && isJoinMeGuestHref(joinMeHref) ? (
+          {/* Join Me — peer hub only (never own Connect-view / followed-restaurants chrome) */}
+          {readOnly && isJoinMeGuestHref(joinMeHref) ? (
             <p style={{ ...s.muted, fontSize: 13, marginTop: 10 }} data-testid="plans-join-me">
               <Link to={joinMeHref} style={s.plansEmptyLink}>
                 Join Me

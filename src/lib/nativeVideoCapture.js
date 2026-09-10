@@ -172,6 +172,7 @@ function resolveVideoMimeAndExt(file) {
  * Normalize OS camera / picker file for compose + upload.
  * Soft-probes decode: if the browser cannot preview HEVC/MOV, still accept after
  * size/type gates so the diner can Post (upload path does not require browser decode).
+ * Browser-reported duration is never a hard block — phone metadata lies; size is authoritative.
  */
 export async function normalizeNativeVideoFile(rawFile) {
   validateNativeVideoFile(rawFile);
@@ -180,8 +181,8 @@ export async function normalizeNativeVideoFile(rawFile) {
     await probeNativeVideoFile(rawFile);
   } catch (err) {
     const msg = String(err?.message || "");
-    // Hard gates only — decode/preview failures must not block Post.
-    if (/too long/i.test(msg) || /too large/i.test(msg) || /not a video/i.test(msg) || /No video was selected/i.test(msg)) {
+    // Hard gates only — size/type. "Too long" from <video>.duration is soft-accepted.
+    if (/too large/i.test(msg) || /not a video/i.test(msg) || /No video was selected/i.test(msg)) {
       throw err;
     }
   }

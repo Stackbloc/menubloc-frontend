@@ -224,6 +224,10 @@ test("Restaurants you follow rail has no Join Me pill", () => {
   );
   assert.match(followBlock, /followed-restaurants-rail/);
   assert.doesNotMatch(followBlock, /Join Me/);
+
+  const hub = read("src/pages/consumer/myMenuply/EatingHubSection.jsx");
+  assert.doesNotMatch(hub, /profile-connect-preview-actions/);
+  assert.match(hub, /readOnly && isJoinMeGuestHref/);
 });
 
 test("profile keeps four distinct category sections", () => {

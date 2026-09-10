@@ -44,14 +44,14 @@ function mapOwnerUploadNetworkError(err, kind = "upload") {
     return new Error(
       isMenu
         ? "Menu upload timed out while reading the page. Stay on this tab and retry one file at a time (clear photos parse faster than huge multi-page PDFs)."
-        : "Video upload timed out. Try a shorter clip or a smaller file (under ~100 MB), then retry."
+        : "Video upload timed out. Stay on this tab, keep a strong connection, and retry. If it keeps failing, try a smaller file (under ~100 MB). This is not a length limit."
     );
   }
   if (/failed to fetch|networkerror|load failed|network request failed/i.test(msg)) {
     return new Error(
       isMenu
         ? "Menu upload lost its connection while OCR was still running. Stay on this tab and retry one file at a time — this is not a 100 MB size limit."
-        : "Video upload failed (connection dropped). Try a shorter/smaller clip, stay on this tab until it finishes, then retry."
+        : "Video upload failed (connection dropped). Stay on this tab until it finishes, then retry. This is not a length limit."
     );
   }
   return err instanceof Error ? err : new Error(msg || "Upload failed");
