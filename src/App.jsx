@@ -249,6 +249,7 @@ import {
 import CommunityClusterCreatePage from "./pages/CommunityClusterCreatePage.jsx";
 import DestinationVenueFoodPage from "./pages/DestinationVenueFoodPage.jsx";
 import DestinationVenuePage from "./pages/DestinationVenuePage.jsx";
+import VenueProfilePage from "./pages/VenueProfilePage.jsx";
 import DestinationVenueOrderPage from "./pages/DestinationVenueOrderPage.jsx";
 import NflStadiumsDirectoryPage from "./pages/NflStadiumsDirectoryPage.jsx";
 import MarketMenuItemPage from "./pages/MarketMenuItemPage.jsx";
@@ -837,6 +838,10 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
         />
         <Route path="/clusters/:stateSlug/:citySlug/:clusterSlug" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ClusterPage />} />
         <Route path="/clusters/:stateSlug/:citySlug" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ClusterCityDirectoryPage />} />
+        <Route
+          path="/venues/:slug"
+          element={crmHost ? <HostRouteRedirect to="/crm" /> : <VenueProfilePage />}
+        />
         <Route
           path="/destination-venues/:slug/food"
           element={crmHost ? <HostRouteRedirect to="/crm" /> : <DestinationVenueFoodPage />}
