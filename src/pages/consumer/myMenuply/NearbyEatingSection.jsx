@@ -1,6 +1,7 @@
 /**
- * Who's Eating — activity-first scan rows (max 8 + Show more).
- * Avatar + Name, Age, Affiliation · emoji activity line · ▶ when video exists.
+ * Who's Eating — continuous-line scan rows (max 8 + Show more).
+ * [avatar] ScreenName, Sex, Age is eating [food] at [restaurant|@home]
+ * Liberal market discovery (no favorite-food filter); excludes viewer.
  */
 
 import { useEffect, useMemo, useState } from "react";
@@ -9,8 +10,8 @@ import {
   listSeeWhosEating,
 } from "../../../lib/consumerApi.js";
 import {
-  formatDinerScanIdentity,
   formatWhosEatingDiscoveryLine,
+  formatWhosEatingScanIdentity,
   resolveDinerAffiliation,
 } from "../../../lib/dinerDiscoverySummary.js";
 import { iconForFoodText } from "../../../lib/foodInterestIcons.js";
@@ -59,9 +60,12 @@ function registeredDinerId(row) {
   return Number.isFinite(n) && n > 0 ? n : null;
 }
 
-function pushRow(out, seen, row) {
+function pushRow(out, seen, row, viewerUserId) {
   const dinerId = registeredDinerId(row);
   if (!dinerId || seen.has(dinerId) || out.length >= FETCH_LIMIT) return;
+  const viewerN = Number(viewerUserId);
+  if (Number.isFinite(viewerN) && viewerN > 0 && dinerId === viewerN) return;
+
   const href =
     dinerPeerProfilePath(dinerId) ||
     liveFeedCreatorProfilePath(row) ||
@@ -69,17 +73,34 @@ function pushRow(out, seen, row) {
   const displayName =
     row.display_name || feedPersonLabel(row) || row.name || "";
   const foodName = row.food_name || row.food || feedFoodLabel(row);
+  const ageYears = row.age_years ?? row.diner?.age_years ?? null;
+  const dinerSex = row.diner_sex || row.diner?.diner_sex || null;
+  const dinerSexShort = row.diner_sex_short || row.diner?.diner_sex_short || null;
+  const schoolAffiliation =
+    resolveDinerAffiliation(row) || resolveDinerAffiliation(row.diner || {});
+  const occupation =
+    String(
+      row.diner_occupation ||
+        row.occupation ||
+        row.diner?.diner_occupation ||
+        row.diner?.occupation ||
+        ""
+    ).trim() || null;
   const identitySource = {
     display_name: displayName,
-    age_years: row.age_years ?? row.diner?.age_years ?? null,
-    school_affiliation:
-      resolveDinerAffiliation(row) || resolveDinerAffiliation(row.diner || {}),
+    age_years: ageYears,
+    diner_sex: dinerSex,
+    diner_sex_short: dinerSexShort,
+    school_affiliation: schoolAffiliation,
+    diner_occupation: occupation,
   };
-  if (!formatDinerScanIdentity(identitySource) || !href) return;
-  const videoUrl =
-    row.video_url ||
-    row.diner?.video_url ||
-    null;
+  if (!formatWhosEatingScanIdentity(identitySource) || !href) return;
+
+  const homemade =
+    row.homemade === true ||
+    row.cooking === true ||
+    row.diner?.homemade === true;
+  const videoUrl = row.video_url || row.diner?.video_url || null;
   seen.add(dinerId);
   const restaurantName =
     row.restaurant_name ||
@@ -92,10 +113,11 @@ function pushRow(out, seen, row) {
     href,
     displayName,
     avatarUrl: row.avatar_url || row.diner?.avatar_url || null,
-    ageYears: identitySource.age_years,
-    affiliation: identitySource.school_affiliation,
-    dinerSex: row.diner_sex || row.diner_sex_short || row.diner?.diner_sex || null,
-    dinerSexShort: row.diner_sex_short || row.diner?.diner_sex_short || null,
+    ageYears,
+    dinerSex,
+    dinerSexShort,
+    affiliation: schoolAffiliation,
+    occupation,
     kind: row.kind || row.signal_kind || "ate",
     foodName,
     restaurantName,
@@ -121,29 +143,32 @@ function pushRow(out, seen, row) {
     menuItemId: row.menu_item_id || null,
     mealPeriod: row.meal_period || null,
     foodInterestKey: row.food_interest_key || null,
+    homemade,
     icon: row.icon || iconForFoodText(foodName),
     videoUrl: videoUrl ? String(videoUrl).trim() : null,
     discoveryLine: formatWhosEatingDiscoveryLine({
       display_name: displayName,
-      diner_sex: row.diner_sex || row.diner?.diner_sex,
-      diner_sex_short: row.diner_sex_short || row.diner?.diner_sex_short,
-      age_years: identitySource.age_years,
-      school_affiliation: identitySource.school_affiliation,
+      diner_sex: dinerSex,
+      diner_sex_short: dinerSexShort,
+      age_years: ageYears,
+      school_affiliation: schoolAffiliation,
+      diner_occupation: occupation,
       food_name: foodName,
       restaurant_name: restaurantName,
+      homemade,
     }),
   });
 }
 
-function buildWhosEatingLines({ feedItems, connectLines }) {
+function buildWhosEatingLines({ feedItems, connectLines, viewerUserId }) {
   const out = [];
   const seen = new Set();
 
   for (const row of connectLines || []) {
-    pushRow(out, seen, row);
+    pushRow(out, seen, row, viewerUserId);
   }
   for (const item of feedItems || []) {
-    pushRow(out, seen, item);
+    pushRow(out, seen, item, viewerUserId);
   }
   return out;
 }
@@ -151,18 +176,13 @@ function buildWhosEatingLines({ feedItems, connectLines }) {
 export default function NearbyEatingSection({
   locationCity = null,
   locationState = null,
-  favoriteFoods = [],
+  viewerUserId = null,
   hidden = false,
 }) {
   const [lines, setLines] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [expanded, setExpanded] = useState(false);
-
-  const favSignal = Array.isArray(favoriteFoods) ? favoriteFoods[0] : null;
-  const favKey = favSignal
-    ? `${favSignal.key || ""}:${favSignal.label || ""}`
-    : "";
 
   useEffect(() => {
     if (hidden) return undefined;
@@ -178,11 +198,7 @@ export default function NearbyEatingSection({
         limit: FETCH_LIMIT,
         kind: "ate",
       }).catch((err) => ({ __error: err })),
-      fetchWantDiscovery({
-        foodName: favSignal?.label || favSignal?.key || undefined,
-        foodInterestKey: favSignal?.key || undefined,
-        limit: FETCH_LIMIT,
-      }).catch(() => null),
+      fetchWantDiscovery({ limit: FETCH_LIMIT }).catch(() => null),
     ]).then(([feed, discovery]) => {
       if (cancelled) return;
       let feedItems = [];
@@ -196,16 +212,16 @@ export default function NearbyEatingSection({
         : [];
       const nearby = Array.isArray(discovery?.nearby) ? discovery.nearby : [];
       const connectLines = [...connects, ...nearby].filter(Boolean);
-      setLines(buildWhosEatingLines({ feedItems, connectLines }));
+      setLines(
+        buildWhosEatingLines({ feedItems, connectLines, viewerUserId })
+      );
       setLoading(false);
     });
 
     return () => {
       cancelled = true;
     };
-    // favKey stands in for favoriteFoods[0]
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- favKey
-  }, [hidden, locationCity, locationState, favKey]);
+  }, [hidden, locationCity, locationState, viewerUserId]);
 
   const visibleLines = useMemo(() => {
     if (expanded) return lines;
@@ -243,12 +259,12 @@ export default function NearbyEatingSection({
                     avatarUrl={row.avatarUrl}
                     ageYears={row.ageYears}
                     affiliation={row.affiliation}
+                    occupation={row.occupation}
                     includeSex
                     dinerSex={row.dinerSex}
                     dinerSexShort={row.dinerSexShort}
                     kind={row.kind}
                     foodName={row.foodName}
-                    foodInterestKey={row.foodInterestKey}
                     restaurantName={row.restaurantName}
                     restaurantId={row.restaurantId}
                     restaurantSlug={row.restaurantSlug}
@@ -260,6 +276,10 @@ export default function NearbyEatingSection({
                     icon={row.icon}
                     videoUrl={row.videoUrl}
                     profileHref={row.href}
+                    homemade={row.homemade}
+                    nameInProse
+                    placeAsText
+                    showThumb={false}
                   />
                 </li>
               ))}

@@ -473,6 +473,7 @@ export default function EatingHubSection({
   locationCity = null,
   locationState = null,
   favoriteFoods = [],
+  viewerUserId = null,
   onInviteMeOut,
   viewerMayInviteMeOut = false,
   inviteMeOutOpen = false,
@@ -487,6 +488,7 @@ export default function EatingHubSection({
 }) {
   void liked;
   void foodHref;
+  void favoriteFoods;
   void onInviteMeOutSave;
   void inviteMeOutToggleBusy;
   void inviteMeOutOpen;
@@ -718,12 +720,12 @@ export default function EatingHubSection({
         </div>
       </section>
 
-      {/* Who's Eating — discovery; not polished this pass */}
+      {/* Who's Eating — continuous-line discovery (owner hub) */}
       <NearbyEatingSection
         hidden={readOnly || !canEdit}
         locationCity={locationCity}
         locationState={locationState}
-        favoriteFoods={favoriteFoods}
+        viewerUserId={viewerUserId}
       />
 
       <section style={s.section} data-testid="want-to-eat">

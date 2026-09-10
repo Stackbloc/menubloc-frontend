@@ -1,6 +1,6 @@
 /**
- * Who's Eating — activity-first scan rows (max 8 + Show more).
- * Avatar + Name, Age, Affiliation · emoji activity · ▶ when video.
+ * Who's Eating — continuous scan rows (max 8 + Show more).
+ * [avatar] ScreenName, Sex, Age is eating [food] at [restaurant|@home]
  */
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -12,6 +12,8 @@ import {
   formatDinerIdentityBits,
   formatDinerScanIdentity,
   formatDinerActivityLine,
+  formatWhosEatingDiscoveryLine,
+  formatWhosEatingScanIdentity,
   resolveDinerAffiliation,
 } from "../src/lib/dinerDiscoverySummary.js";
 
@@ -22,6 +24,7 @@ test("Who's Eating mounts before Wanna Eat on eating hub", () => {
   const section = read("src/pages/consumer/myMenuply/EatingHubSection.jsx");
   const nearby = read("src/pages/consumer/myMenuply/NearbyEatingSection.jsx");
   const api = read("src/lib/consumerApi.js");
+  const page = read("src/pages/consumer/MyMenuplyPage.jsx");
 
   assert.match(section, /NearbyEatingSection/);
   assert.match(section, /What I Wanna Eat/);
@@ -31,11 +34,16 @@ test("Who's Eating mounts before Wanna Eat on eating hub", () => {
   assert.match(nearby, /fetchWantDiscovery/);
   assert.match(nearby, /whos-eating-links/);
   assert.match(nearby, /DinerActivityScanRow/);
+  assert.match(nearby, /nameInProse/);
+  assert.match(nearby, /placeAsText/);
+  assert.match(nearby, /viewerUserId/);
   assert.match(nearby, /INITIAL_VISIBLE = 8/);
   assert.match(nearby, /whos-eating-show-more/);
   assert.doesNotMatch(nearby, /Open Feed/);
   assert.doesNotMatch(nearby, /nearby-feed-items/);
   assert.doesNotMatch(nearby, /🎥/);
+  // Liberal: no favorite-food narrow on Who's Eating
+  assert.doesNotMatch(nearby, /favoriteFoods/);
 
   const ate = section.indexOf('data-testid="what-im-eating"');
   const nearbyMount = section.indexOf("<NearbyEatingSection");
@@ -43,6 +51,8 @@ test("Who's Eating mounts before Wanna Eat on eating hub", () => {
   assert.ok(ate >= 0 && nearbyMount >= 0 && want >= 0);
   assert.ok(ate < nearbyMount, "What I'm Eating before Who's Eating");
   assert.ok(nearbyMount < want, "Who's Eating before What I Wanna Eat");
+  assert.match(section, /viewerUserId=\{viewerUserId\}/);
+  assert.match(page, /viewerUserId=\{consumer\?\.id/);
 
   assert.match(api, /fetchWantDiscovery/);
   assert.match(api, /want-to-eat\/discovery/);
@@ -72,6 +82,47 @@ test("formatDinerDiscoverySummary: SusyQ, F, 25, USC wants Burgers (prose)", () 
       school_affiliation: "USC",
     }),
     "SusyQ · F · 25 · USC"
+  );
+});
+
+test("Who's Eating continuous: ScreenName, Sex, Age, Affiliation is eating food at restaurant|@home", () => {
+  assert.equal(
+    formatWhosEatingScanIdentity({
+      display_name: "AndreB",
+      diner_sex_short: "M",
+      age_years: 34,
+      school_affiliation: "USC",
+      diner_occupation: "Software developer",
+    }),
+    "AndreB, M, 34, USC"
+  );
+  assert.equal(
+    formatWhosEatingScanIdentity({
+      display_name: "JordanK",
+      diner_sex_short: "F",
+      age_years: 28,
+      diner_occupation: "Software developer",
+    }),
+    "JordanK, F, 28, Software developer"
+  );
+  assert.equal(
+    formatWhosEatingDiscoveryLine({
+      display_name: "AndreB",
+      diner_sex_short: "M",
+      age_years: 34,
+      school_affiliation: "USC",
+      food_name: "Yoshinoya",
+      restaurant_name: "Yoshinoya",
+    }),
+    "AndreB, M, 34, USC is eating Yoshinoya at Yoshinoya."
+  );
+  assert.equal(
+    formatWhosEatingDiscoveryLine({
+      display_name: "AndreB",
+      food_name: "burgers",
+      homemade: true,
+    }),
+    "AndreB is eating burgers at @home."
   );
 });
 

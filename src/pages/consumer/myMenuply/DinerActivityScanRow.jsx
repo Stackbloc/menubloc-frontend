@@ -6,7 +6,10 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { resolveConsumerMediaUrl } from "../../../lib/consumerApi.js";
-import { formatDinerScanIdentity } from "../../../lib/dinerDiscoverySummary.js";
+import {
+  formatDinerScanIdentity,
+  formatWhosEatingScanIdentity,
+} from "../../../lib/dinerDiscoverySummary.js";
 import { iconForFoodText } from "../../../lib/foodInterestIcons.js";
 import { WHAT_I_ATE_MEAL_PERIODS } from "../../../lib/whatIAteTodayMealPeriod.js";
 import { shouldPreferRestaurantMark } from "../../../lib/restaurantMarkPreference.js";
@@ -84,6 +87,8 @@ export default function DinerActivityScanRow({
   avatarUrl = null,
   ageYears = null,
   affiliation = null,
+  /** Occupation fallback when no college affiliation (Who's Eating). */
+  occupation = null,
   includeSex = false,
   dinerSex = null,
   dinerSexShort = null,
@@ -139,6 +144,15 @@ export default function DinerActivityScanRow({
     { includeSex }
   );
 
+  const whosEatingIdentity = formatWhosEatingScanIdentity({
+    display_name: displayName,
+    age_years: ageYears,
+    diner_sex: dinerSex,
+    diner_sex_short: dinerSexShort,
+    school_affiliation: affiliation,
+    diner_occupation: occupation,
+  });
+
   const placeHref = restaurantHref({
     restaurant_id: restaurantId,
     restaurant_slug: restaurantSlug,
@@ -151,6 +165,10 @@ export default function DinerActivityScanRow({
   const place = String(restaurantName || "").trim() || null;
   const isWant = kind === "want" || kind === "wanna_eat" || kind === "want_to_eat";
   const proseName = String(displayName || "").trim() || "Diner";
+  const identitySuffix =
+    nameInProse && whosEatingIdentity.startsWith(proseName)
+      ? whosEatingIdentity.slice(proseName.length)
+      : "";
 
   const specificNamed = Boolean(food && (place || homemade));
   const cuisineOnly = Boolean(food) && !place && !homemade && !menuItemId;
@@ -213,7 +231,7 @@ export default function DinerActivityScanRow({
   }
 
   const identityBlock =
-    showIdentity && !ownerCompact ? (
+    showIdentity && !ownerCompact && !nameInProse ? (
       <div style={styles.identityRow}>
         {resolvedAvatar ? (
           <img src={resolvedAvatar} alt="" style={styles.avatar} />
@@ -228,9 +246,56 @@ export default function DinerActivityScanRow({
       </div>
     ) : null;
 
+  function renderInlineAvatar() {
+    if (!nameInProse || ownerCompact) return null;
+    const avatarEl = resolvedAvatar ? (
+      <img src={resolvedAvatar} alt="" style={styles.inlineAvatar} />
+    ) : (
+      <span style={styles.inlineAvatarFallback} aria-hidden="true">
+        {initialLetter(displayName)}
+      </span>
+    );
+    if (profileHref) {
+      return (
+        <Link
+          to={profileHref}
+          style={styles.inlineAvatarLink}
+          data-testid="diner-activity-scan-inline-avatar"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {avatarEl}
+        </Link>
+      );
+    }
+    return <span style={styles.inlineAvatarLink}>{avatarEl}</span>;
+  }
+
+  function renderProseNameLead() {
+    if (!nameInProse || ownerCompact) return null;
+    const nameNode = profileHref ? (
+      <Link
+        to={profileHref}
+        style={styles.inlineLink}
+        data-testid="diner-activity-scan-prose-name"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {proseName}
+      </Link>
+    ) : (
+      <span data-testid="diner-activity-scan-prose-name">{proseName}</span>
+    );
+    return (
+      <>
+        {renderInlineAvatar()}
+        {nameNode}
+        {identitySuffix ? <span>{identitySuffix}</span> : null}
+        <span> </span>
+      </>
+    );
+  }
+
   function renderClause() {
-    const nameLead =
-      nameInProse && !ownerCompact ? <span data-testid="diner-activity-scan-prose-name">{proseName} </span> : null;
+    const nameLead = renderProseNameLead();
     const mealNum =
       dailyMealNumber != null && Number(dailyMealNumber) > 0
         ? Math.floor(Number(dailyMealNumber))
@@ -291,9 +356,9 @@ export default function DinerActivityScanRow({
       return (
         <>
           {nameLead}
-          <span>is cooking </span>
+          <span>{nameInProse ? "is eating " : "is cooking "}</span>
           {food ? <DishLink href={itemHref}>{food}</DishLink> : <span>food</span>}
-          <span> @home</span>
+          <span>{nameInProse ? " at @home" : " @home"}</span>
         </>
       );
     }
@@ -382,7 +447,9 @@ export default function DinerActivityScanRow({
         ) : null}
 
         <span style={styles.body}>
-          <span style={styles.prose}>{renderClause()}</span>
+          <span style={nameInProse ? styles.proseContinuous : styles.prose}>
+            {renderClause()}
+          </span>
         </span>
 
         {!ownerCompact && meal ? (
@@ -500,6 +567,39 @@ const styles = {
     fontWeight: 600,
     lineHeight: 1.35,
     color: "#0f172a",
+  },
+  proseContinuous: {
+    fontSize: 14,
+    fontWeight: 600,
+    lineHeight: 1.4,
+    color: "#0f172a",
+    display: "inline",
+  },
+  inlineAvatarLink: {
+    display: "inline-flex",
+    verticalAlign: "middle",
+    marginRight: 6,
+    textDecoration: "none",
+    flexShrink: 0,
+  },
+  inlineAvatar: {
+    width: 28,
+    height: 28,
+    borderRadius: "50%",
+    objectFit: "cover",
+    display: "block",
+    background: "#e2e8f0",
+  },
+  inlineAvatarFallback: {
+    width: 28,
+    height: 28,
+    borderRadius: "50%",
+    display: "grid",
+    placeItems: "center",
+    background: GREEN_MID,
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: 800,
   },
   mealInline: { color: "#64748b", fontWeight: 650 },
   inlineLink: {

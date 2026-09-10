@@ -46,6 +46,12 @@ test("DinerActivityScanRow: compact thumb + working video play", () => {
   assert.match(row, /dailyMealNumber/);
   assert.match(row, /diner-activity-scan-meal-num/);
   assert.match(row, /shouldPreferRestaurantMark/);
+  assert.match(row, /diner-activity-scan-prose-name/);
+  assert.match(row, /formatWhosEatingScanIdentity/);
+  assert.match(row, /at @home/);
+  assert.match(row, /diner-activity-scan-dish/);
+  assert.match(row, /diner-activity-scan-place/);
+  assert.match(row, /profileHref/);
   // Owner deletes video/meal via long-press on the row (not feed CTA)
   assert.match(row, /useLongPressReveal/);
   assert.match(row, /diner-activity-scan-delete/);

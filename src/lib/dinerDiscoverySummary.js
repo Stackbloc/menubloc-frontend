@@ -30,6 +30,17 @@ export function resolveDinerAffiliation(diner = {}) {
 }
 
 /**
+ * Who's Eating affiliation: one label only.
+ * College / school takes precedence over occupation (e.g. USC over "Software developer").
+ */
+export function resolveWhosEatingAffiliation(diner = {}) {
+  const college = resolveDinerAffiliation(diner);
+  if (college) return college;
+  const occupation = String(diner.diner_occupation || diner.occupation || "").trim();
+  return occupation || null;
+}
+
+/**
  * Activity-first identity: "Name · Age · Affiliation" (optional sex).
  */
 export function formatDinerScanIdentity(diner = {}, { includeSex = false } = {}) {
@@ -48,6 +59,26 @@ export function formatDinerScanIdentity(diner = {}, { includeSex = false } = {})
   const affiliation = resolveDinerAffiliation(diner);
   if (affiliation) bits.push(affiliation);
   return bits.join(" · ");
+}
+
+/**
+ * Who's Eating continuous identity: "ScreenName, Sex, Age, Affiliation".
+ * Affiliation = college else occupation. Sex/age/affiliation omitted when unknown.
+ */
+export function formatWhosEatingScanIdentity(diner = {}) {
+  const name = String(diner.display_name || "").trim();
+  if (!name) return "";
+  const bits = [name];
+  const sex =
+    diner.diner_sex_short ||
+    dinerSexShort(diner.diner_sex) ||
+    null;
+  if (sex) bits.push(sex);
+  const age = Number(diner.age_years);
+  if (Number.isFinite(age) && age > 0) bits.push(String(Math.trunc(age)));
+  const affiliation = resolveWhosEatingAffiliation(diner);
+  if (affiliation) bits.push(affiliation);
+  return bits.join(", ");
 }
 
 /**
@@ -88,14 +119,29 @@ export function formatConnectEatingLine(row = {}, opts = {}) {
 }
 
 /**
- * Who's Eating discovery — full prose sentence when identity present.
+ * Who's Eating discovery — continuous:
+ * "ScreenName, Sex, Age, Affiliation is eating Food at Restaurant|@home."
  */
 export function formatWhosEatingDiscoveryLine(row = {}, opts = {}) {
-  return formatActivityProseSentence(
-    row,
-    { ...row, kind: row.kind || row.signal_kind || "ate" },
-    { includeSex: true, ...opts }
-  );
+  void opts;
+  const identity = formatWhosEatingScanIdentity(row);
+  const homemade = row.homemade === true || row.cooking === true;
+  const food =
+    String(row.food_name || row.item_name || row.menu_item_name || "").trim() ||
+    "food";
+  const restaurant = String(row.restaurant_name || "").trim();
+  let clause;
+  if (homemade) {
+    clause = `is eating ${food} at @home`;
+  } else if (food && restaurant) {
+    clause = `is eating ${food} at ${restaurant}`;
+  } else if (restaurant) {
+    clause = `is eating at ${restaurant}`;
+  } else {
+    clause = `is eating ${food}`;
+  }
+  if (!identity) return `${clause.charAt(0).toUpperCase()}${clause.slice(1)}.`;
+  return `${identity} ${clause}.`;
 }
 
 export function formatDinerIdentityBits(diner = {}) {

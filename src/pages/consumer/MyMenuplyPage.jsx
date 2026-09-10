@@ -1862,6 +1862,7 @@ export default function MyMenuplyPage() {
               planPrefill={planPrefill}
               locationCity={locationCity}
               locationState={locationState}
+              viewerUserId={consumer?.id ?? null}
               favoriteFoods={
                 Array.isArray(profile?.favorite_foods) ? profile.favorite_foods : []
               }
