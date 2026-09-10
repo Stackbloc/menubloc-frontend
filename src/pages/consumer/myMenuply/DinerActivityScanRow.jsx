@@ -161,8 +161,11 @@ export default function DinerActivityScanRow({
     state: restaurantState,
   });
   const itemHref = dishHref(menuItemId);
-  const food = String(foodName || "").trim() || null;
   const place = String(restaurantName || "").trim() || null;
+  const foodRaw = String(foodName || "").trim() || null;
+  /** Never treat the restaurant brand as the dish ("eating Yoshinoya at Yoshinoya"). */
+  const food =
+    foodRaw && place && foodRaw.toLowerCase() === place.toLowerCase() ? null : foodRaw;
   const isWant = kind === "want" || kind === "wanna_eat" || kind === "want_to_eat";
   const proseName = String(displayName || "").trim() || "Diner";
   const identitySuffix =

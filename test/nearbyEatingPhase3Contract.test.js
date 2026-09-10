@@ -111,10 +111,19 @@ test("Who's Eating continuous: ScreenName, Sex, Age, Affiliation is eating food 
       diner_sex_short: "M",
       age_years: 34,
       school_affiliation: "USC",
+      item_name: "2 Protein Bowl",
       food_name: "Yoshinoya",
       restaurant_name: "Yoshinoya",
     }),
-    "AndreB, M, 34, USC is eating Yoshinoya at Yoshinoya."
+    "AndreB, M, 34, USC is eating 2 Protein Bowl at Yoshinoya."
+  );
+  assert.equal(
+    formatWhosEatingDiscoveryLine({
+      display_name: "AndreB",
+      food_name: "Yoshinoya",
+      restaurant_name: "Yoshinoya",
+    }),
+    "AndreB is eating at Yoshinoya."
   );
   assert.equal(
     formatWhosEatingDiscoveryLine({

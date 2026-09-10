@@ -13,6 +13,7 @@ import {
   formatWhosEatingDiscoveryLine,
   formatWhosEatingScanIdentity,
   resolveDinerAffiliation,
+  resolveWhosEatingFoodLabel,
 } from "../../../lib/dinerDiscoverySummary.js";
 import { iconForFoodText } from "../../../lib/foodInterestIcons.js";
 import {
@@ -29,12 +30,12 @@ const FETCH_LIMIT = 24;
 
 function feedFoodLabel(item) {
   return (
-    item?.food_name ||
-    item?.menu_item_name ||
     item?.item_name ||
+    item?.menu_item_name ||
+    item?.food_name ||
     item?.caption ||
     item?.title ||
-    "food"
+    null
   );
 }
 
@@ -72,7 +73,18 @@ function pushRow(out, seen, row, viewerUserId) {
     null;
   const displayName =
     row.display_name || feedPersonLabel(row) || row.name || "";
-  const foodName = row.food_name || row.food || feedFoodLabel(row);
+  const restaurantName =
+    row.restaurant_name ||
+    row.diner?.restaurant_name ||
+    row.referenced_restaurant?.restaurant_name ||
+    row.referenced_restaurant?.name ||
+    null;
+  const foodName = resolveWhosEatingFoodLabel({
+    item_name: row.item_name || row.menu_item_name || null,
+    menu_item_name: row.menu_item_name || null,
+    food_name: row.food_name || row.food || feedFoodLabel(row),
+    restaurant_name: restaurantName,
+  });
   const ageYears = row.age_years ?? row.diner?.age_years ?? null;
   const dinerSex = row.diner_sex || row.diner?.diner_sex || null;
   const dinerSexShort = row.diner_sex_short || row.diner?.diner_sex_short || null;
@@ -102,11 +114,6 @@ function pushRow(out, seen, row, viewerUserId) {
     row.diner?.homemade === true;
   const videoUrl = row.video_url || row.diner?.video_url || null;
   seen.add(dinerId);
-  const restaurantName =
-    row.restaurant_name ||
-    row.diner?.restaurant_name ||
-    row.referenced_restaurant?.restaurant_name ||
-    null;
   out.push({
     key: `who-${dinerId}`,
     dinerId,
@@ -153,7 +160,8 @@ function pushRow(out, seen, row, viewerUserId) {
       age_years: ageYears,
       school_affiliation: schoolAffiliation,
       diner_occupation: occupation,
-      food_name: foodName,
+      item_name: row.item_name || row.menu_item_name || null,
+      food_name: row.food_name || null,
       restaurant_name: restaurantName,
       homemade,
     }),

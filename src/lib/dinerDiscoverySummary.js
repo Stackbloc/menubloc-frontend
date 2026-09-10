@@ -119,26 +119,57 @@ export function formatConnectEatingLine(row = {}, opts = {}) {
 }
 
 /**
+ * Who's Eating dish label — menu item only, never the restaurant brand.
+ * Prefer CK/item_name; skip any candidate that matches the restaurant name.
+ */
+export function resolveWhosEatingFoodLabel(row = {}) {
+  const restaurant = String(
+    row.restaurant_name ||
+      row.referenced_restaurant?.restaurant_name ||
+      row.referenced_restaurant?.name ||
+      ""
+  )
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+  const candidates = [
+    row.item_name,
+    row.menu_item_name,
+    row.food_name,
+    row.food,
+  ];
+  for (const raw of candidates) {
+    const food = String(raw || "").trim();
+    if (!food || food === "Food") continue;
+    const norm = food.toLowerCase().replace(/\s+/g, " ");
+    if (restaurant && norm === restaurant) continue;
+    return food;
+  }
+  return null;
+}
+
+/**
  * Who's Eating discovery — continuous:
- * "ScreenName, Sex, Age, Affiliation is eating Food at Restaurant|@home."
+ * "ScreenName, Sex, Age, Affiliation is eating [menu item] at [restaurant|@home]."
+ * Never "is eating Restaurant at Restaurant".
  */
 export function formatWhosEatingDiscoveryLine(row = {}, opts = {}) {
   void opts;
   const identity = formatWhosEatingScanIdentity(row);
   const homemade = row.homemade === true || row.cooking === true;
-  const food =
-    String(row.food_name || row.item_name || row.menu_item_name || "").trim() ||
-    "food";
   const restaurant = String(row.restaurant_name || "").trim();
+  const food = resolveWhosEatingFoodLabel({ ...row, restaurant_name: restaurant });
   let clause;
   if (homemade) {
-    clause = `is eating ${food} at @home`;
+    clause = `is eating ${food || "food"} at @home`;
   } else if (food && restaurant) {
     clause = `is eating ${food} at ${restaurant}`;
   } else if (restaurant) {
     clause = `is eating at ${restaurant}`;
-  } else {
+  } else if (food) {
     clause = `is eating ${food}`;
+  } else {
+    clause = "is eating";
   }
   if (!identity) return `${clause.charAt(0).toUpperCase()}${clause.slice(1)}.`;
   return `${identity} ${clause}.`;
