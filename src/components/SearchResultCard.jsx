@@ -1583,6 +1583,8 @@ function ItemRow({
       const data = await fetchMenuItemIntelligence(mid, {
         lat: geo?.lat ?? null,
         lng: geo?.lng ?? null,
+        city: geo?.city ?? null,
+        state: geo?.state ?? null,
       });
       if (intelligenceRequestRef.current !== requestId) return data;
       searchCardIntelligenceCache.set(intelligenceCacheKey, data);
@@ -1689,6 +1691,8 @@ function ItemRow({
     setCompareOpen(true);
     fetchCompareItems(mid, candidateId, geo?.lat ?? null, geo?.lng ?? null, {
       skipEligibilityCheck: true,
+      city: geo?.city ?? null,
+      state: geo?.state ?? null,
     })
       .then((data) => {
         if (!data?.baseItem && !data?.candidateItem) {

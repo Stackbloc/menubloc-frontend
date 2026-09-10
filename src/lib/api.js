@@ -286,6 +286,8 @@ export async function fetchCompareItems(baseItemId, candidateItemId, lat, lng, o
   });
   if (lat != null) params.set("lat", String(lat));
   if (lng != null) params.set("lng", String(lng));
+  if (options.city) params.set("city", String(options.city));
+  if (options.state) params.set("state", String(options.state));
   return apiGet(`/menu-items/compare?${params.toString()}`);
 }
 
@@ -297,6 +299,8 @@ export async function fetchMenuItemIntelligence(menuItemId, options = {}) {
   const params = new URLSearchParams();
   if (options.lat != null) params.set("lat", String(options.lat));
   if (options.lng != null) params.set("lng", String(options.lng));
+  if (options.city) params.set("city", String(options.city));
+  if (options.state) params.set("state", String(options.state));
   const suffix = params.toString() ? `?${params.toString()}` : "";
   const data = await apiGet(`/menu-items/${encodeURIComponent(String(menuItemId))}${suffix}`);
   const item = data?.item || data?.menu_item || data;

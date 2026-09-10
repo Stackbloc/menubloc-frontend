@@ -958,7 +958,7 @@ function buildSimilarItemsLabel(meta) {
   return null;
 }
 
-function ExploreSimilarDishes({ itemId, geoLat, geoLng, activeSearchParams, t }) {
+function ExploreSimilarDishes({ itemId, geoLat, geoLng, geoCity = null, geoState = null, activeSearchParams, t }) {
   const navigate = useNavigate();
   const { itemCount } = useOrderCart();
   const [similar, setSimilar] = useState(null);
@@ -979,6 +979,8 @@ function ExploreSimilarDishes({ itemId, geoLat, geoLng, activeSearchParams, t })
     let cancelled = false;
     const params = new URLSearchParams();
     if (geoLat && geoLng) { params.set("lat", geoLat); params.set("lng", geoLng); }
+    if (geoCity) params.set("city", geoCity);
+    if (geoState) params.set("state", geoState);
     for (const key of SIMILAR_DIET_FILTER_KEYS) {
       if (activeSearchParams?.get(key) === "1") params.set(key, "1");
     }
@@ -993,7 +995,7 @@ function ExploreSimilarDishes({ itemId, geoLat, geoLng, activeSearchParams, t })
       })
       .catch(() => { if (!cancelled) setFailed(true); });
     return () => { cancelled = true; };
-  }, [activeSearchParams, geoLat, geoLng, itemId]);
+  }, [activeSearchParams, geoLat, geoLng, geoCity, geoState, itemId]);
 
   function handleCompare(similarEntry) {
     if (!isSimilarRowCompareEligible(similarEntry)) return;
@@ -1003,6 +1005,8 @@ function ExploreSimilarDishes({ itemId, geoLat, geoLng, activeSearchParams, t })
     setCompareOpen(true);
     fetchCompareItems(itemId, similarEntry.menu_item_id, geoLat || null, geoLng || null, {
       skipEligibilityCheck: true,
+      city: geoCity,
+      state: geoState,
     })
       .then((data) => { setCompareData(data); setCompareLoading(false); })
       .catch((err) => { setCompareError(String(err?.message || "Compare failed")); setCompareLoading(false); });
@@ -1013,7 +1017,12 @@ function ExploreSimilarDishes({ itemId, geoLat, geoLng, activeSearchParams, t })
     const slug = candidateItem?.restaurant_slug || null;
     const id = candidateItem?.menu_item_id;
     if (!id) return;
-    const geoSuffix = geoLat && geoLng ? `?lat=${geoLat}&lng=${geoLng}` : "";
+    const geoSuffix = buildMenuItemDetailApiQuery({
+      lat: geoLat,
+      lng: geoLng,
+      city: geoCity,
+      state: geoState,
+    });
     navigate(slug ? `/restaurants/${slug}/menu-item-info/${id}${geoSuffix}` : `/menu-item-info/${id}${geoSuffix}`);
   }
 
@@ -1422,6 +1431,8 @@ export default function MenuItemInfoPage() {
         itemId={item.menu_item_id}
         geoLat={geoLat}
         geoLng={geoLng}
+        geoCity={geoCity}
+        geoState={geoState}
         activeSearchParams={searchParams}
         t={t}
         allergenFilter={effectiveAllergenFilter}

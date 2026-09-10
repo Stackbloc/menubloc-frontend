@@ -1212,6 +1212,8 @@ function ExploreSimilarDishes({ itemId, itemName, currentSlug, geoLat, geoLng, a
     setCompareOpen(true);
     fetchCompareItems(itemId, candidateId, geoLat || null, geoLng || null, {
       skipEligibilityCheck: true,
+      city: activeSearchParams?.get("city") || null,
+      state: activeSearchParams?.get("state") || null,
     })
       .then((data) => {
         if (!data?.baseItem && !data?.candidateItem) {
