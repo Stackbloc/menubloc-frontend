@@ -57,7 +57,10 @@ test("Owner Video Manager supports upload panel and date filters", () => {
   assert.match(page, /uploadOwnerVideo/);
   assert.match(page, /owner-video-upload-panel/);
   assert.match(api, /uploadOwnerVideo/);
-  assert.match(api, /\/api\/owner\/videos\/upload/);
+  assert.match(api, /\/api\/owner\/videos\/upload\/sign/);
+  assert.match(api, /\/api\/owner\/videos\/upload\/complete/);
+  assert.match(api, /putBlobWithProgress/);
+  assert.match(api, /videoUploadTimeoutMs/);
   assert.match(page, /type="date"/);
   assert.match(page, /dateFromFilter/);
   assert.match(page, /dateToFilter/);

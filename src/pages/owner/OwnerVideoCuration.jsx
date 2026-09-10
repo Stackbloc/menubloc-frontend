@@ -152,22 +152,15 @@ function VideoUploadPanel({ onUploaded, clusters, clustersLoading }) {
     setError("");
     setSuccess("");
     try {
-      const form = new FormData();
-      form.append("video", file);
-      if (title.trim()) form.append("title", title.trim());
-      if (comment.trim()) form.append("comment", comment.trim());
-      if (restaurant?.restaurant_id != null) {
-        form.append("restaurant_id", String(restaurant.restaurant_id));
-      }
-      if (dish?.menu_item_id != null) {
-        form.append("menu_item_id", String(dish.menu_item_id));
-      }
-      if (clusterId != null) {
-        form.append("cluster_id", String(clusterId));
-      }
-      form.append("market_discoverable", marketDiscoverable ? "1" : "0");
-
-      const result = await uploadOwnerVideo(form);
+      const result = await uploadOwnerVideo({
+        file,
+        title: title.trim() || undefined,
+        comment: comment.trim() || undefined,
+        restaurant_id: restaurant?.restaurant_id ?? undefined,
+        menu_item_id: dish?.menu_item_id ?? undefined,
+        cluster_id: clusterId ?? undefined,
+        market_discoverable: marketDiscoverable,
+      });
       setSuccess(
         result?.video?.asset_number != null
           ? `Uploaded — asset #${result.video.asset_number}`
@@ -192,7 +185,7 @@ function VideoUploadPanel({ onUploaded, clusters, clustersLoading }) {
     <PageCard style={{ padding: 18, marginBottom: 16 }} data-testid="owner-video-upload-panel">
       <SectionTitle
         title="Upload video"
-        subtitle="Upload MP4, WebM, or MOV — Menuply normalizes to Chrome-safe H.264 MP4 automatically (same path as diner Feed uploads). Stay on this page until upload finishes. Max ~287 MB. Restaurant and menu item are optional now; add or change them anytime after upload."
+        subtitle="Upload MP4, WebM, or MOV (up to ~10 minutes / ~287 MB). Bytes go direct to storage; Menuply normalizes to Chrome-safe H.264 in the background. Stay on this page until upload finishes. Restaurant and menu item are optional — add or change them anytime after upload."
       />
       <form onSubmit={handleUpload} style={{ display: "grid", gap: 12, maxWidth: 520 }}>
         <label style={{ display: "grid", gap: 6 }}>

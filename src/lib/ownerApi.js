@@ -1,3 +1,8 @@
+import {
+  putBlobWithProgress,
+  videoUploadTimeoutMs,
+} from "./multipartUpload.js";
+
 const VITE_ENV = import.meta.env || {};
 const DEFAULT_PROD_API_BASE = "https://menubloc-backend-production.up.railway.app";
 const API = (
@@ -39,15 +44,30 @@ const OWNER_MENU_UPLOAD_TIMEOUT_MS = 15 * 60 * 1000;
 function mapOwnerUploadNetworkError(err, kind = "upload") {
   const name = String(err?.name || "");
   const msg = String(err?.message || "");
+  const code = String(err?.code || "");
   const isMenu = kind === "menu";
-  if (name === "AbortError" || /aborted|timeout/i.test(msg)) {
+  if (
+    name === "AbortError" ||
+    code === "UPLOAD_CLIENT_TIMEOUT" ||
+    /aborted|timeout/i.test(msg)
+  ) {
     return new Error(
       isMenu
         ? "Menu upload timed out while reading the page. Stay on this tab and retry one file at a time (clear photos parse faster than huge multi-page PDFs)."
         : "Video upload timed out. Stay on this tab, keep a strong connection, and retry. If it keeps failing, try a smaller file (under ~100 MB). This is not a length limit."
     );
   }
-  if (/failed to fetch|networkerror|load failed|network request failed/i.test(msg)) {
+  if (code === "UPLOAD_OFFLINE" || (typeof navigator !== "undefined" && navigator.onLine === false)) {
+    return new Error(
+      isMenu
+        ? "You appear offline. Reconnect and retry the menu upload."
+        : "You appear offline. Reconnect and stay on this tab while the video uploads. This is not a length limit."
+    );
+  }
+  if (
+    code === "UPLOAD_NETWORK" ||
+    /failed to fetch|networkerror|load failed|network request failed|err_network/i.test(msg)
+  ) {
     return new Error(
       isMenu
         ? "Menu upload lost its connection while OCR was still running. Stay on this tab and retry one file at a time — this is not a 100 MB size limit."
@@ -691,11 +711,68 @@ export const resumeDeployments = (reason) => post("/api/owner/deployment-operati
 
 // ─── Platform video manager (all Feed video sources) ─────────────────────────
 
-export const uploadOwnerVideo = (formData) =>
-  postFormData("/api/owner/videos/upload", formData, {
-    timeoutMs: OWNER_VIDEO_UPLOAD_TIMEOUT_MS,
-    mapNetworkError: true,
-  });
+/**
+ * Video Manager upload — sign → PUT direct to Supabase → complete (Cause 2).
+ * @param {{
+ *   file: File|Blob,
+ *   title?: string,
+ *   comment?: string,
+ *   restaurant_id?: number|string|null,
+ *   menu_item_id?: number|string|null,
+ *   cluster_id?: number|string|null,
+ *   market_discoverable?: boolean,
+ *   onProgress?: (p: { percent: number, loaded: number, total: number }) => void,
+ * }} opts
+ */
+export async function uploadOwnerVideo({
+  file,
+  title,
+  comment,
+  restaurant_id,
+  menu_item_id,
+  cluster_id,
+  market_discoverable = true,
+  onProgress,
+} = {}) {
+  if (!file) throw new Error("No file selected");
+  const timeoutMs = videoUploadTimeoutMs(file.size);
+  try {
+    const grant = await post("/api/owner/videos/upload/sign", {
+      filename: file.name || "video.mp4",
+      content_type: file.type || "video/mp4",
+      byte_size: Number(file.size) || 0,
+    });
+    if (!grant?.signed_url || !grant?.storage_key) {
+      throw new Error("Sign response missing signed_url or storage_key");
+    }
+
+    await putBlobWithProgress({
+      url: grant.signed_url,
+      blob: file,
+      headers: grant.upload_headers || {
+        "Content-Type": grant.content_type || file.type || "video/mp4",
+        "x-upsert": "false",
+      },
+      timeoutMs,
+      onProgress,
+    });
+
+    return post("/api/owner/videos/upload/complete", {
+      storage_key: grant.storage_key,
+      content_type: grant.content_type || file.type || "video/mp4",
+      byte_size: Number(file.size) || 0,
+      title: title || undefined,
+      comment: comment || undefined,
+      restaurant_id: restaurant_id != null && restaurant_id !== "" ? restaurant_id : undefined,
+      menu_item_id: menu_item_id != null && menu_item_id !== "" ? menu_item_id : undefined,
+      cluster_id: cluster_id != null && cluster_id !== "" ? cluster_id : undefined,
+      market_discoverable: market_discoverable ? "1" : "0",
+    });
+  } catch (err) {
+    if (err && typeof err === "object" && Number(err.status) > 0) throw err;
+    throw mapOwnerUploadNetworkError(err, "upload");
+  }
+}
 
 export const listOwnerVideos = (params = {}) => {
   const qs = new URLSearchParams();
