@@ -630,7 +630,6 @@ export default function EatingHubSection({
           />
         ) : null}
         <SectionHead
-          kicker="Today"
           title="What I'm Eating"
           to={readOnly ? diaryHref : "/account/what-i-ate"}
           aside={
