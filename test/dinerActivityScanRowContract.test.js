@@ -222,18 +222,20 @@ test("scan surfaces mount DinerActivityScanRow", () => {
   assert.match(nearby, /DinerActivityScanRow/);
 });
 
-test("Restaurants you follow rail has no Join Me pill", () => {
+test("Restaurants I Follow rail has no Join Me pill", () => {
   const rails = read("src/pages/consumer/myMenuply/MyMenuplyPresentationRails.jsx");
   const followBlock = rails.slice(
     rails.indexOf("function FollowedRestaurantsRail"),
     rails.indexOf("function FoodStoryCta")
   );
   assert.match(followBlock, /followed-restaurants-rail/);
+  assert.match(followBlock, /Restaurants I Follow/);
   assert.doesNotMatch(followBlock, /Join Me/);
 
   const hub = read("src/pages/consumer/myMenuply/EatingHubSection.jsx");
   assert.doesNotMatch(hub, /profile-connect-preview-actions/);
   assert.match(hub, /readOnly && isJoinMeGuestHref/);
+  assert.match(hub, /canEdit \|\| isConnectPreview/);
 });
 
 test("profile keeps four distinct category sections", () => {

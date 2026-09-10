@@ -81,7 +81,10 @@ test("My Menuply and peer hub use five-section presentation hub", () => {
   assert.match(mine, /searchParams\.get\("view"\) === "connect"/);
   const viewToggle = read("src/components/consumer/feed/ProfileViewModeToggle.jsx");
   assert.match(viewToggle, /profile-view-mode-toggle/);
-  assert.match(viewToggle, /Connect view — see your profile the way others do/);
+  assert.match(viewToggle, /Edit View/);
+  assert.match(viewToggle, /Connect View/);
+  assert.match(viewToggle, /Switch to Connect View — see your profile the way others do/);
+  assert.match(viewToggle, /Switch to Edit View — make changes and add data/);
   assert.match(read("src/pages/consumer/feed/FeedShellPage.jsx"), /profileViewToggle/);
   assert.match(section, /isConnectPreview=\{isConnectPreview\}/);
   assert.match(mine, /handleJoinMeFromCraving/);
@@ -202,6 +205,9 @@ test("My Menuply and peer hub use five-section presentation hub", () => {
   assert.match(bits, /scrollCardPhoto/);
   assert.match(bits, /scrollThumbMini/);
   assert.match(bits, /scrollTitle/);
+  assert.match(bits, /flex: "0 0 140px"/);
+  assert.match(bits, /height: 100/);
+  assert.match(bits, /Same window as Restaurants I Follow/);
   assert.match(bits, /avatar_url/);
   assert.doesNotMatch(bits, /String\.fromCharCode\(65/);
   assert.doesNotMatch(bits, /crewMemberInitials/);

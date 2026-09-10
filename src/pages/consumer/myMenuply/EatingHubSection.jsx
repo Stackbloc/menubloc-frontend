@@ -47,14 +47,14 @@ function isJoinMeGuestHref(href) {
 }
 
 /**
- * Own-hub: schedule Join Me or Take Me Out from a craving.
+ * Own-hub: schedule Join Me or Take Me Out from a craving (Your view + Connect preview).
  * Peer-hub: Invite Me Out when eligible.
  */
 function WantCravingsActionBox({
   wants = [],
   diningIntents = [],
   canEdit = false,
-  /** Own-hub edit mode only — never Connect-view chrome under Restaurants you follow. */
+  /** Own-hub Connect preview — still show owner Join Me / Take Me Out. */
   isConnectPreview = false,
   canInviteMeOut = false,
   onJoinMeFromCraving,
@@ -94,7 +94,8 @@ function WantCravingsActionBox({
 
   if (!options.length) return null;
 
-  const showOwnerFlow = canEdit && typeof onJoinMeFromCraving === "function";
+  const showOwnerFlow =
+    (canEdit || isConnectPreview) && typeof onJoinMeFromCraving === "function";
   const showPeerInvite =
     !canEdit && !isConnectPreview && canInviteMeOut && typeof onInviteMeOut === "function";
   if (!showOwnerFlow && !showPeerInvite) return null;

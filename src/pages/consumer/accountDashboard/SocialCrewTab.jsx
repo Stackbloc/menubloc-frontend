@@ -468,7 +468,7 @@ export default function SocialCrewTab() {
         />
         <AccountActionLink
           to="/account/following"
-          title="Restaurants you follow"
+          title="Restaurants I Follow"
           description="Places you already follow — not a people follower list."
           last
         />

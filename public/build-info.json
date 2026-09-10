@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "397a0174557fbd8f5fc03c2f38e4d9cbd9966924",
-  "gitShortSha": "397a0174",
+  "gitSha": "9fcc7752216c097530f7253bb888a66323953601",
+  "gitShortSha": "9fcc7752",
   "branch": "main",
-  "buildTime": "2026-09-09T22:31:45.398Z",
+  "buildTime": "2026-09-10T16:43:20.577Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "docs: lock FE tip after Connect View toggle CPD"
+  "commitMessage": "docs: CPD sandbox verify fallback guardrail for agent CONNECT 403"
 }

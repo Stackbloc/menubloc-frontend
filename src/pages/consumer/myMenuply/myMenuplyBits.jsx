@@ -1004,8 +1004,7 @@ function WantToEatCard({
   const canDelete = !readOnly && typeof onDelete === "function" && want?.id != null;
   const { open, dismiss, consumeArmedClick, bind } = useLongPressReveal(canDelete);
 
-  // Scroll rail is always compact horizontal (thumb + copy). Tall plate-only
-  // cards (148px) left dish/place names clipped under overflow:hidden.
+  // Scroll rail matches Restaurants I Follow visit cards (140×100 media + copy).
   const cardStyle = isScroll ? wantStyles.scrollCardPhoto : wantStyles.card;
   const shellStyle = isScroll
     ? {
@@ -1050,7 +1049,7 @@ function WantToEatCard({
             aria-hidden
             data-testid="want-to-eat-peer-graphic"
           >
-            <WannaGoPlateIcon size={isScroll ? 22 : 40} color="#94a3b8" />
+            <WannaGoPlateIcon size={isScroll ? 28 : 40} color="#94a3b8" />
           </div>
         )}
       </div>
@@ -1075,7 +1074,7 @@ function WantToEatCard({
         aria-hidden
         data-testid="want-to-eat-placeholder"
       >
-        <WannaGoPlateIcon size={isScroll ? 22 : 40} color="#94a3b8" />
+        <WannaGoPlateIcon size={isScroll ? 28 : 40} color="#94a3b8" />
       </div>
     );
   }
@@ -1097,14 +1096,17 @@ function WantToEatCard({
     </div>
   );
 
-  const body = (
+  const body = isScroll ? (
+    <>
+      {mediaBlock}
+      {copyBlock}
+    </>
+  ) : (
     <div
       style={
-        isScroll
-          ? wantStyles.scrollRow
-          : showHeroVisual
-            ? wantStyles.stackPhotoRow
-            : wantStyles.row
+        showHeroVisual
+          ? wantStyles.stackPhotoRow
+          : wantStyles.row
       }
     >
       {mediaBlock}
@@ -1309,7 +1311,7 @@ function WannaGoRestaurantCard({
       aria-hidden
       data-testid="wanna-go-placeholder"
     >
-      <WannaGoPlateIcon size={isScroll ? 22 : 40} color="#94a3b8" />
+      <WannaGoPlateIcon size={isScroll ? 28 : 40} color="#94a3b8" />
     </div>
   );
 
@@ -1323,14 +1325,15 @@ function WannaGoRestaurantCard({
     </div>
   );
 
-  const body = (
+  const body = isScroll ? (
+    <>
+      {mediaBlock}
+      {copyBlock}
+    </>
+  ) : (
     <div
       style={
-        isScroll
-          ? wantStyles.scrollRow
-          : thumb
-            ? wantStyles.stackPhotoRow
-            : wantStyles.row
+        thumb ? wantStyles.stackPhotoRow : wantStyles.row
       }
     >
       {mediaBlock}
@@ -1442,10 +1445,6 @@ const wantStyles = {
     gap: 12,
     overflowX: "auto",
     paddingBottom: 4,
-    margin: "0 -16px",
-    paddingLeft: 16,
-    paddingRight: 16,
-    scrollSnapType: "x mandatory",
     WebkitOverflowScrolling: "touch",
     scrollbarWidth: "none",
   },
@@ -1466,43 +1465,42 @@ const wantStyles = {
   },
   scrollCard: {
     display: "block",
-    flex: "0 0 148px",
-    width: 148,
+    flex: "0 0 140px",
+    width: 140,
     scrollSnapAlign: "start",
     textAlign: "left",
     textDecoration: "none",
     color: "inherit",
     borderRadius: 14,
-    border: "1px solid #e5e7eb",
+    border: "1px solid #d1fae5",
     background: "#fff",
     padding: 0,
     overflow: "hidden",
     cursor: "pointer",
     font: "inherit",
-    boxShadow: "0 6px 18px rgba(15, 23, 42, 0.08)",
+    boxShadow: "0 6px 18px rgba(20, 83, 45, 0.08)",
   },
+  /** Same window as Restaurants I Follow visit cards. */
   scrollCardPhoto: {
-    display: "flex",
-    flex: "0 0 auto",
-    width: "min(280px, 78vw)",
+    display: "block",
+    flex: "0 0 140px",
+    width: 140,
     scrollSnapAlign: "start",
     textAlign: "left",
     textDecoration: "none",
     color: "inherit",
-    borderRadius: 12,
-    border: "1px solid #e5e7eb",
+    borderRadius: 14,
+    border: "1px solid #d1fae5",
     background: "#fff",
-    padding: "8px 10px",
+    padding: 0,
     overflow: "hidden",
     cursor: "pointer",
     font: "inherit",
-    alignItems: "center",
-    gap: 10,
-    boxShadow: "none",
+    boxShadow: "0 6px 18px rgba(20, 83, 45, 0.08)",
   },
   row: { display: "flex", gap: 0, alignItems: "stretch" },
   stackPhotoRow: { display: "flex", flexDirection: "column", alignItems: "stretch" },
-  scrollRow: { display: "flex", flexDirection: "row", alignItems: "center", gap: 10 },
+  scrollRow: { display: "flex", flexDirection: "column", alignItems: "stretch" },
   thumb: {
     width: 112,
     minHeight: 112,
@@ -1525,12 +1523,11 @@ const wantStyles = {
   },
   scrollPhotoWrap: {
     position: "relative",
-    width: 40,
-    height: 40,
+    width: "100%",
+    height: 100,
     flexShrink: 0,
-    borderRadius: 10,
     overflow: "hidden",
-    background: "#0f172a",
+    background: "#ecfdf5",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -1542,15 +1539,13 @@ const wantStyles = {
     display: "block",
   },
   scrollThumbMini: {
-    width: 40,
-    height: 40,
+    width: "100%",
+    height: 100,
     flexShrink: 0,
-    borderRadius: 10,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    background: "#f1f5f9",
-    border: "1px solid #e2e8f0",
+    display: "grid",
+    placeItems: "center",
+    background: "linear-gradient(180deg, #ecfdf5, #f0fdf4)",
+    fontSize: 28,
   },
   scrollPhotoScrim: {
     position: "absolute",
@@ -1593,36 +1588,32 @@ const wantStyles = {
   },
   scrollThumbPlaceholder: {
     width: "100%",
-    height: 120,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    background: "#f8fafc",
+    height: 100,
+    display: "grid",
+    placeItems: "center",
+    background: "linear-gradient(180deg, #ecfdf5, #f0fdf4)",
     fontSize: 28,
   },
   copy: { padding: "12px 14px", flex: 1, minWidth: 0 },
   scrollCopy: {
-    flex: 1,
+    padding: "10px 10px 12px",
     minWidth: 0,
-    padding: "0 2px",
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "center",
-    gap: 2,
   },
   title: { fontWeight: 800, fontSize: 15, color: "#0f172a", marginBottom: 4, lineHeight: 1.25 },
   scrollTitle: {
     fontWeight: 800,
-    fontSize: 14,
-    color: "#0f172a",
+    fontSize: 13,
+    color: "#14532d",
     lineHeight: 1.25,
-    letterSpacing: "-0.01em",
     overflow: "hidden",
     textOverflow: "ellipsis",
-    whiteSpace: "nowrap",
+    display: "-webkit-box",
+    WebkitLineClamp: 2,
+    WebkitBoxOrient: "vertical",
   },
   scrollMeta: {
-    fontSize: 12,
+    marginTop: 4,
+    fontSize: 11,
     fontWeight: 600,
     color: "#64748b",
     lineHeight: 1.2,

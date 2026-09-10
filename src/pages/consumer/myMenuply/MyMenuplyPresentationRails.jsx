@@ -122,7 +122,7 @@ function FollowedRestaurantsRail({ restaurants = [] }) {
   if (!restaurants.length) return null;
   return (
     <div style={s.presentationBlock} data-testid="followed-restaurants-rail">
-      <h3 style={s.sectionTitleQuiet}>Restaurants you follow</h3>
+      <h3 style={s.sectionTitleQuiet}>Restaurants I Follow</h3>
       <div style={railStyles.scrollRow}>
         {restaurants.map((row) => (
           <Link key={row.key} to={row.href || "#"} style={railStyles.visitCard}>

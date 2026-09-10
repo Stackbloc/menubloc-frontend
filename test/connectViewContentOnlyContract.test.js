@@ -36,20 +36,22 @@ test("Connect view is content-only — no how-to instructions", () => {
   assert.doesNotMatch(home, /Cooking videos can also appear on Feed/);
 
   assert.match(hub, /isConnectPreview/);
-  assert.match(hub, /showOwnerFlow = canEdit &&/);
-  assert.doesNotMatch(hub, /canEdit \|\| isConnectPreview/);
-  assert.doesNotMatch(hub, /profile-connect-preview-actions/);
+  assert.match(hub, /canEdit \|\| isConnectPreview/);
   assert.match(hub, /isConnectPreview=\{isConnectPreview\}/);
   assert.match(hub, /canEdit \?[\s\S]*ActivityStatusLineCompose/);
   assert.match(hub, /No cravings shared yet/);
   assert.match(hub, /Nothing shared for this day/);
   assert.match(hub, /Join Me — peer hub only/);
 
+  assert.match(rails, /Restaurants I Follow/);
   assert.match(rails, /wantSuggestions\.length > 0 && hubFocus !== "dishes" && !readOnly/);
   assert.match(rails, /showFoodStoryCta && !readOnly/);
 
   const viewToggle = read("src/components/consumer/feed/ProfileViewModeToggle.jsx");
   assert.match(viewToggle, /profile-view-mode-toggle/);
+  assert.match(viewToggle, /Edit View/);
+  assert.match(viewToggle, /Connect View/);
+  assert.match(viewToggle, /profile-view-mode-label/);
   assert.match(read("src/pages/consumer/feed/FeedShellPage.jsx"), /profileViewToggle/);
   assert.match(read("src/components/consumer/feed/FeedMobileHeader.jsx"), /ProfileViewModeToggle/);
   assert.match(page, /isDesktopFeed \?[\s\S]*ProfileViewModeToggle/);

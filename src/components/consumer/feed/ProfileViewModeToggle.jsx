@@ -1,8 +1,9 @@
 /**
- * Own-profile diner ↔ Connect view toggle — icon next to Feed More menu.
+ * Own-profile Edit View ↔ Connect View toggle.
+ * Edit View = owner can change/input data. Connect View = see profile as others do.
  */
 
-function GlassesIcon({ size = 20 }) {
+function GlassesIcon({ size = 18 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <path
@@ -18,7 +19,7 @@ function GlassesIcon({ size = 20 }) {
   );
 }
 
-function EyesIcon({ size = 20 }) {
+function EyesIcon({ size = 18 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <path
@@ -37,10 +38,12 @@ export default function ProfileViewModeToggle({
   onToggle,
   variant = "feedDark",
 }) {
+  const currentName = previewAsConnect ? "Connect View" : "Edit View";
+  const nextName = previewAsConnect ? "Edit View" : "Connect View";
   const title = previewAsConnect
-    ? "Your view — switch back to edit and manage your Menuply"
-    : "Connect view — see your profile the way others do";
-  const label = previewAsConnect ? "Switch to Your view" : "Switch to Connect view";
+    ? "Switch to Edit View — make changes and add data on your profile"
+    : "Switch to Connect View — see your profile the way others do";
+  const label = `Currently ${currentName}. Switch to ${nextName}.`;
   const isLight = variant === "light";
 
   return (
@@ -58,6 +61,9 @@ export default function ProfileViewModeToggle({
       }}
     >
       {previewAsConnect ? <EyesIcon /> : <GlassesIcon />}
+      <span style={styles.name} data-testid="profile-view-mode-label">
+        {currentName}
+      </span>
     </button>
   );
 }
@@ -65,15 +71,22 @@ export default function ProfileViewModeToggle({
 const styles = {
   btn: {
     appearance: "none",
-    width: 40,
-    height: 40,
+    minHeight: 40,
     borderRadius: 10,
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
+    gap: 6,
     cursor: "pointer",
     flexShrink: 0,
-    padding: 0,
+    padding: "0 10px 0 8px",
+  },
+  name: {
+    fontSize: 12,
+    fontWeight: 750,
+    letterSpacing: "-0.01em",
+    whiteSpace: "nowrap",
+    lineHeight: 1,
   },
   btnDark: {
     border: "1px solid rgba(255,255,255,0.18)",
