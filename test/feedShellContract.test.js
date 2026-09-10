@@ -128,6 +128,7 @@ test("Feed shell: Home|Waiter|Share My QR|X|Deals|Shop|Profile + slim X sheet", 
 
   const home = read("src/pages/consumer/feed/FeedHomePage.jsx");
   assert.match(home, /listSeeWhosEating/);
+  assert.match(home, /shuffleFeedVideos/);
   assert.match(home, /variant="feedHome"/);
   assert.match(home, /feed-home-x-coach/);
   assert.match(home, /FEED_HOME_X_COACH_COPY/);

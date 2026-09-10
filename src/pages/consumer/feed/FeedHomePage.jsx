@@ -22,6 +22,7 @@ import { useConsumer } from "../../../context/ConsumerContext.jsx";
 import SeeWhosEatingFullscreen from "../myMenuply/SeeWhosEatingFullscreen.jsx";
 import { FEED_PRIMARY_NAV_HEIGHT } from "../../../components/consumer/feed/FeedPrimaryNav.jsx";
 import { feedClipQueryParam, resolveFeedClipStartIndex } from "../../../lib/feedShare.js";
+import { shuffleFeedVideos } from "../../../lib/shuffleProfileVideos.js";
 
 const DEFAULT_MARKET = { city: "Los Angeles", state: "CA" };
 
@@ -73,7 +74,7 @@ export default function FeedHomePage() {
       })
         .then((data) => {
           if (cancelled) return;
-          const rows = Array.isArray(data?.items) ? data.items : [];
+          const rows = shuffleFeedVideos(Array.isArray(data?.items) ? data.items : []);
           const publicVideoCount = Number(data?.public_video_count) || 0;
           const storage =
             typeof window !== "undefined" ? window.localStorage : null;

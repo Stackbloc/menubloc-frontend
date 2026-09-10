@@ -1,5 +1,5 @@
 /**
- * Fisher–Yates — fresh order on each profile load so the first N videos rotate.
+ * Fisher–Yates — fresh order on each load (profile Videos + Feed playback).
  */
 export function shuffleProfileVideos(list) {
   const next = Array.isArray(list) ? [...list] : [];
@@ -11,3 +11,6 @@ export function shuffleProfileVideos(list) {
   }
   return next;
 }
+
+/** Alias for Feed / non-profile callers. */
+export const shuffleFeedVideos = shuffleProfileVideos;

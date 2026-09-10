@@ -8,6 +8,7 @@ import { Link } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import { listSeeWhosEating } from "../../../lib/consumerApi.js";
 import { readDetectedLocation } from "../../../lib/discoveryLocationPersistence.js";
+import { shuffleFeedVideos } from "../../../lib/shuffleProfileVideos.js";
 import {
   MENUPY_CLOSE_LIVE_FEED_FULLSCREEN,
   MENUPY_PAUSE_LIVE_FEED,
@@ -75,7 +76,7 @@ export default function SeeWhosEatingSurface({
     })
       .then((data) => {
         if (cancelled) return;
-        const rows = Array.isArray(data?.items) ? data.items : [];
+        const rows = shuffleFeedVideos(Array.isArray(data?.items) ? data.items : []);
         setItems(rows);
         setEmptyReason(data?.empty_reason || (rows.length ? null : "no_videos"));
       })

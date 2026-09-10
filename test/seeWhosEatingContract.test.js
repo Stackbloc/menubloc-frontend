@@ -14,6 +14,7 @@ const read = (rel) => fs.readFileSync(path.join(root, rel), "utf8");
 test("See Who's Eating reel: guest watch, CK dish, existing camera, Connect notify", () => {
   const surface = read("src/pages/consumer/myMenuply/SeeWhosEatingSurface.jsx");
   assert.match(surface, /listSeeWhosEating/);
+  assert.match(surface, /shuffleFeedVideos/);
   assert.match(surface, /SeeWhosEatingFullscreen/);
   assert.match(surface, /Watch freely/);
   assert.match(surface, /embeddedShell/);
