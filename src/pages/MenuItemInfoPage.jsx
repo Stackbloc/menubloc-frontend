@@ -40,6 +40,7 @@ import CompareItemsModal from "../components/menu/CompareItemsModal.jsx";
 import { useOrderCart } from "../context/OrderCartContext.jsx";
 
 import { API_BASE } from "../lib/api.js";
+import { buildMenuItemDetailApiQuery } from "../lib/menuItemDetailGeoQuery.js";
 
 const BACKEND_BASE = String(API_BASE || "").replace(/\/$/, "");
 
@@ -259,9 +260,13 @@ function PageShell({ children, isMobile }) {
   );
 }
 
-const Surface = React.forwardRef(function Surface({ children, style }, ref) {
+const Surface = React.forwardRef(function Surface({ children, style, ...rest }, ref) {
   return (
-    <section ref={ref} style={{ background: "var(--gb-color-surface-strong)", border: "1px solid var(--gb-color-border)", borderRadius: 24, boxShadow: "var(--gb-shadow-card)", ...style }}>
+    <section
+      ref={ref}
+      {...rest}
+      style={{ background: "var(--gb-color-surface-strong)", border: "1px solid var(--gb-color-border)", borderRadius: 24, boxShadow: "var(--gb-shadow-card)", ...style }}
+    >
       {children}
     </section>
   );
@@ -1090,6 +1095,8 @@ export default function MenuItemInfoPage() {
 
   const geoLat = searchParams.get("lat");
   const geoLng = searchParams.get("lng");
+  const geoCity = searchParams.get("city");
+  const geoState = searchParams.get("state");
 
   const [loading,  setLoading]  = useState(true);
   const [err,      setErr]      = useState("");
@@ -1121,7 +1128,12 @@ export default function MenuItemInfoPage() {
       setRawItem(null);
 
       try {
-        const geoSuffix = geoLat && geoLng ? `?lat=${geoLat}&lng=${geoLng}` : "";
+        const geoSuffix = buildMenuItemDetailApiQuery({
+          lat: geoLat,
+          lng: geoLng,
+          city: geoCity,
+          state: geoState,
+        });
         const tryUrls = [`${BACKEND_BASE}/menu-items/${encodeURIComponent(id)}${geoSuffix}`];
 
         let found = null;
@@ -1159,7 +1171,7 @@ export default function MenuItemInfoPage() {
 
     load();
     return () => { cancelled = true; };
-  }, [id, navigate, restaurantSlug, geoLat, geoLng]);
+  }, [id, navigate, restaurantSlug, geoLat, geoLng, geoCity, geoState]);
 
   useEffect(() => {
     if (!shareData) return undefined;

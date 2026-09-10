@@ -11,6 +11,8 @@ test("MenuItemDetailPage sticky hero carries compact verdict (no duplicate rail)
   assert.match(source, /<VerdictBlock[\s\S]*compact/);
   assert.doesNotMatch(source, /<StickyVerdictRail/);
   assert.match(source, /data-testid="menu-item-detail-photo"/);
+  assert.match(source, /data-menu-item-sticky-hero/);
+  assert.match(source, /function Surface\(\{ children, style, \.\.\.rest \}/);
   assert.match(source, /width: isMobile \? 101 : 129/);
   assert.doesNotMatch(source, /showItemPhoto && isMobile/);
   assert.doesNotMatch(source, /minHeight:\s*320/);
@@ -59,5 +61,6 @@ test("canonical menu item URLs with numeric itemSlug route to MenuItemDetailPage
   assert.match(appSource, /restaurants\/:state\/:city\/:restaurantSlug\/menu-items\/:itemSlug[\s\S]*MenuItemCanonicalRoute/);
   assert.match(routeSource, /isValidMenuItemRouteId\(itemSlug\)/);
   assert.match(routeSource, /<MenuItemDetailPage/);
-  assert.match(detailSource, /const id = routeId \?\? itemSlug/);
+  assert.match(detailSource, /const rawRouteId = routeId \?\? itemSlug/);
+  assert.match(detailSource, /parseMenuItemRouteId\(rawRouteId\)/);
 });

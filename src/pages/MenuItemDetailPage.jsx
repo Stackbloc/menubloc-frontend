@@ -88,6 +88,7 @@ import {
 } from "../lib/alcoholicBeverageDetail.js";
 
 import { API_BASE } from "../lib/api.js";
+import { buildMenuItemDetailApiQuery } from "../lib/menuItemDetailGeoQuery.js";
 
 const BACKEND_BASE = String(API_BASE || "").replace(/\/$/, "");
 
@@ -346,9 +347,13 @@ function PageShell({ children, isMobile, stickyTitle }) {
   );
 }
 
-const Surface = React.forwardRef(function Surface({ children, style }, ref) {
+const Surface = React.forwardRef(function Surface({ children, style, ...rest }, ref) {
   return (
-    <section ref={ref} style={{ background: "var(--gb-color-surface-strong)", border: "1px solid var(--gb-color-border)", borderRadius: 24, boxShadow: "var(--gb-shadow-card)", ...style }}>
+    <section
+      ref={ref}
+      {...rest}
+      style={{ background: "var(--gb-color-surface-strong)", border: "1px solid var(--gb-color-border)", borderRadius: 24, boxShadow: "var(--gb-shadow-card)", ...style }}
+    >
       {children}
     </section>
   );
@@ -1355,6 +1360,8 @@ export default function MenuItemDetailPage() {
 
   const geoLat = searchParams.get("lat");
   const geoLng = searchParams.get("lng");
+  const geoCity = searchParams.get("city");
+  const geoState = searchParams.get("state");
   const fromSearch = searchParams.get("from") === "search";
   const fromMenu   = searchParams.get("from") === "menu";
   const fromCluster = hasClusterReturnContext(searchParams);
@@ -1427,7 +1434,12 @@ export default function MenuItemDetailPage() {
       }
 
       try {
-        const geoSuffix = geoLat && geoLng ? `?lat=${geoLat}&lng=${geoLng}` : "";
+        const geoSuffix = buildMenuItemDetailApiQuery({
+          lat: geoLat,
+          lng: geoLng,
+          city: geoCity,
+          state: geoState,
+        });
         const tryUrls = [`${BACKEND_BASE}/menu-items/${encodeURIComponent(id)}${geoSuffix}`];
 
         let found = null;
@@ -1465,7 +1477,7 @@ export default function MenuItemDetailPage() {
 
     load();
     return () => { cancelled = true; };
-  }, [id, navigate, restaurantSlug, fromSearch, fromMenu, fromCluster, geoLat, geoLng]);
+  }, [id, navigate, restaurantSlug, fromSearch, fromMenu, fromCluster, geoLat, geoLng, geoCity, geoState]);
 
   useEffect(() => {
     if (!shareData) return undefined;
