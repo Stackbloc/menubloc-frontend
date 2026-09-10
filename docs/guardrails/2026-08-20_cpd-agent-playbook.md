@@ -3,18 +3,29 @@
 **Established:** 2026-08-20  
 **Updated:** 2026-08-25 — one-door hardening (`cpd-fe.sh`); STALE_LOCK vs UNHEALTHY  
 **Updated:** 2026-09-03 — BE CPD complete requires pasted `cpd-be.sh` `RESULT=PASS` + matching `health_commit` ([health proof that counts](./2026-09-03_backend-health-proof-counts-contract.md))  
+**Updated:** 2026-09-08 — **Pre-CPD gate:** classify + confirm E2E and server checks **before accepting `cpd`** ([contract](./2026-09-08_pre-cpd-e2e-server-gate-contract.md))  
 **Updated:** 2026-09-05 — tip-gate PASS does not waive E2E for FE mutation UI; “FE-only” Completeness banned  
+**Updated:** 2026-09-10 — **Sandbox verify fallback:** CONNECT 403 / Vercel auth.json write denial ≠ outage; use `railway run` tip-gate/smoke ([contract](./2026-09-10_cpd-agent-sandbox-verify-fallback-contract.md))  
 **Audience:** agents when Andre says `cpd`  
 **Purpose:** one short procedure so deploy does not turn into a 20-step archaeology session  
 **🔴 TIP LOCK (read first after every FE alias):** [2026-08-24_production-tip-lock-atomic-contract.md](./2026-08-24_production-tip-lock-atomic-contract.md) — `STALE_LOCK` is usually stale locks, **not** a reason to restore  
 **Authority for live tip / BE SHA:** [2026-08-14_production-deploy-and-lkg-contract.md](./2026-08-14_production-deploy-and-lkg-contract.md)  
-**Full path rules:** [FE](./2026-07-24_frontend-production-deploy-path-contract.md) · [BE](./2026-07-28_backend-production-deploy-path-contract.md)
+**Full path rules:** [FE](./2026-07-24_frontend-production-deploy-path-contract.md) · [BE](./2026-07-28_backend-production-deploy-path-contract.md)  
+**🔴 PRE-CPD GATE (read before starting any door):** [2026-09-08_pre-cpd-e2e-server-gate-contract.md](./2026-09-08_pre-cpd-e2e-server-gate-contract.md) — classify at **task START** and again before `cpd`; confirm PASS results; **refuse `cpd` if required checks NOT RUN/FAIL**  
+**🔴 SANDBOX FALLBACK (when local curl/Vercel CLI dies):** [2026-09-10_cpd-agent-sandbox-verify-fallback-contract.md](./2026-09-10_cpd-agent-sandbox-verify-fallback-contract.md) — re-prove via `railway run`; do not loop CONNECT 403
 
 ---
 
 ## What `cpd` means
 
-**Commit → Push → Deploy → alias → verify live → lock tip-gate (+ sync existing LKG) → tip-gate PASS → (mutation E2E if needed) → write one CPD note.**
+**Gate first → then** Commit → Push → Deploy → alias → verify live → lock tip-gate (+ sync existing LKG) → tip-gate PASS → write one CPD note.
+
+### Before accepting `cpd` (mandatory)
+
+0. **At task START** (already required): E2E required? Server required? — stated before coding.  
+1. Re-state: E2E required? YES/NO — why. Server check required? YES/NO — why.  
+2. If required: paste PASS evidence (E2E hops / `cpd-be.sh` smoke+health).  
+3. If required and NOT RUN or FAIL → **stop**. Do not run `cpd-fe.sh` / `cpd-be.sh`.
 
 Deploy only the layers whose **code** changed: FE-only trees do **not** push Railway; BE-only ships do **not** `vercel --prod`. That is deploy scope — **not** an E2E waiver for Save/mutation UI.
 

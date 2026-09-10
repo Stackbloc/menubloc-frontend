@@ -1,0 +1,47 @@
+---
+description: CPD verify fallback when Cursor sandbox blocks curl/Vercel — not a production outage
+alwaysApply: true
+---
+
+# CPD Agent Sandbox Verify Fallback
+
+**Contract (authoritative):** `docs/guardrails/2026-09-10_cpd-agent-sandbox-verify-fallback-contract.md`  
+**Incident audit:** `docs/audits/2026-09-10_cpd-agent-environment-friction.md`  
+**Playbook:** `docs/guardrails/2026-08-20_cpd-agent-playbook.md`
+
+## Hard rule
+
+**Do not treat Cursor sandbox network/filesystem blocks as Menuply production outages.**
+
+When tip-gate, smoke, `/health`, or menuply.com curl fails with CONNECT **403**, `fetch failed`, or Vercel cannot write `~/Library/.../com.vercel.cli/auth.json`, **stop looping** the sandboxed command. Re-run verify via allowlisted `railway run` (or unrestricted shell). Product CPD gates (tip-gate PASS, health SHA match, E2E) still apply — only the **transport** changes.
+
+## Never without recognizing sandbox
+
+- Declare Railway/Vercel “down” from local CONNECT 403 alone  
+- Hang forever in `cpd-be.sh` health wait after a successful `git push` when curl is 403  
+- Retry `npx vercel` installs as the fix for auth.json write denial  
+- Claim Complete from sandboxed FAIL while ignoring a railway-run PASS  
+- Skip tip-lock / tip-gate PASS / E2E under this contract’s name
+
+## Required fallback
+
+```bash
+cd /Users/andrebarber/Desktop/menubloc/menubloc-backend-main
+railway run --service menubloc-backend --environment production -- node scripts/productionSmokeProbe.js
+railway run --service menubloc-backend --environment production -- \
+  bash /Users/andrebarber/Desktop/menubloc/scripts/assert-menuply-production-tip.sh https://menuply.com
+railway run --service menubloc-backend --environment production -- \
+  bash /Users/andrebarber/Desktop/menubloc/scripts/assert-menuply-production-tip.sh https://www.menuply.com
+```
+
+Prefer PATH `vercel` over bare `npx vercel`. Prefer unrestricted/`all` permissions for `cpd-fe.sh` / `cpd-be.sh` when the environment can grant them.
+
+## Agent stop lines
+
+> Local curl/tip-gate failed with CONNECT 403 (sandbox). I am re-running health/smoke/tip-gate via `railway run`. I have not declared production down.
+
+> Vercel CLI cannot write auth.json under the sandbox. I will use an unrestricted shell or the Vercel API alias path — not loop `npx vercel` installs.
+
+## Mandatory on EVERY CPD / tip-gate / smoke task
+
+> ☐ CPD SANDBOX FALLBACK CERTIFICATION: Local verify [PASS | blocked CONNECT 403 / auth.json | not run]; fallback used [none | railway run health/smoke/tip-gate | Vercel API alias]; tip-gate apex/www [PASS | FAIL | not run]; smoke/health [PASS | FAIL | not run]; treated sandbox as outage [no].
