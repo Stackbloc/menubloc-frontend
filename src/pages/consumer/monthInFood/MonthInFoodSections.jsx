@@ -182,6 +182,76 @@ export function MonthInFoodVisited({ visited = [] }) {
   );
 }
 
+export function MonthInFoodHomeMeals({ homeMeals = [] }) {
+  if (!homeMeals.length) return null;
+  return (
+    <section style={s.card} data-testid="month-in-food-home">
+      <div style={s.sectionHead}>
+        <div>
+          <div
+            style={{
+              fontSize: 11,
+              fontWeight: 700,
+              color: s.MUTED,
+              letterSpacing: "0.04em",
+              textTransform: "uppercase",
+            }}
+          >
+            Where
+          </div>
+          <h2 style={{ ...s.sectionTitle, margin: 0 }}>@Home Meals</h2>
+        </div>
+        <Link to={myMenuplyProfileHref({ compose: "ate" })} style={s.viewAll}>
+          Log meal
+        </Link>
+      </div>
+      <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
+        {homeMeals.map((m) => {
+          const portion =
+            m.portion_amount != null
+              ? `${m.portion_amount}${m.portion_unit ? ` ${m.portion_unit}` : " serving"}`
+              : null;
+          const row = (
+            <div style={{ display: "flex", gap: 10, alignItems: "center", padding: "10px 0", borderTop: `1px solid ${s.BORDER}` }}>
+              <div
+                style={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: 12,
+                  overflow: "hidden",
+                  background: "#e7e5e4",
+                  flex: "0 0 auto",
+                }}
+              >
+                {m.photo_url ? (
+                  <img src={m.photo_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                ) : null}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 800 }}>{m.food_name}</div>
+                <div style={{ fontSize: 12, color: s.MUTED }}>
+                  {[m.meal_period, portion, m.eaten_on].filter(Boolean).join(" · ")}
+                </div>
+              </div>
+            </div>
+          );
+          return (
+            <li key={m.key}>
+              {m.href ? (
+                <Link to={m.href} style={{ color: "inherit", textDecoration: "none" }}>
+                  {row}
+                </Link>
+              ) : (
+                row
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
+
 export function MonthInFoodMoments({ moments = [], overflow = 0 }) {
   if (!moments.length) return null;
   return (
@@ -353,8 +423,8 @@ export function MonthInFoodByTheNumbers({ totalMeals, cuisineSlices = [], miniSt
   );
 }
 
-export function MonthInFoodWants({ wants = [] }) {
-  if (!wants.length) return null;
+export function MonthInFoodWants({ wants = [], takeMeOutOpen = false, isSelf = false }) {
+  if (!wants.length && !isSelf) return null;
   return (
     <section style={s.card} data-testid="month-in-food-wants">
       <div style={s.sectionHead}>
@@ -363,11 +433,21 @@ export function MonthInFoodWants({ wants = [] }) {
             Cravings
           </div>
           <h2 style={{ ...s.sectionTitle, margin: 0 }}>What I Wanna Eat</h2>
+          {isSelf ? (
+            <p
+              style={{ margin: "6px 0 0", fontSize: 12, color: s.MUTED, fontWeight: 600 }}
+              data-testid="month-in-food-take-me-out-status"
+            >
+              Take Me Out is {takeMeOutOpen ? "On" : "Off"}
+              {takeMeOutOpen ? " — connections can invite you out" : " — set in Edit View"}
+            </p>
+          ) : null}
         </div>
         <Link to={myMenuplyProfileHref({ compose: "want" })} style={s.viewAll}>
           View all
         </Link>
       </div>
+      {wants.length ? (
       <div style={{ display: "flex", gap: 10, overflowX: "auto" }}>
         {wants.map((w) => {
           const body = (
@@ -426,18 +506,37 @@ export function MonthInFoodWants({ wants = [] }) {
           );
         })}
       </div>
+      ) : null}
     </section>
   );
 }
 
-export function MonthInFoodPlansEvents({ plans = [], events = [] }) {
-  if (!plans.length && !events.length) return null;
+export function MonthInFoodPlansEvents({
+  plans = [],
+  events = [],
+  plansJoinDefault = false,
+  crewsJoinDefault = false,
+  isSelf = false,
+}) {
+  if (!plans.length && !events.length && !isSelf) return null;
+  if (!plans.length && !events.length && isSelf && !plansJoinDefault && !crewsJoinDefault) {
+    return null;
+  }
   const plan = plans[0];
   return (
     <section style={s.card} data-testid="month-in-food-plans-events">
       <div style={s.sectionHead}>
         <h2 style={s.sectionTitle}>Plans &amp; Events</h2>
       </div>
+      {isSelf ? (
+        <p
+          style={{ margin: "0 0 10px", fontSize: 12, color: s.MUTED, fontWeight: 600 }}
+          data-testid="month-in-food-join-me-defaults"
+        >
+          Join Me defaults — Plans: {plansJoinDefault ? "On" : "Off"} · Crews:{" "}
+          {crewsJoinDefault ? "On" : "Off"}
+        </p>
+      ) : null}
       {plan ? (
         <div style={{ marginBottom: 14 }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: s.MUTED, marginBottom: 6 }}>My Eating Plans</div>

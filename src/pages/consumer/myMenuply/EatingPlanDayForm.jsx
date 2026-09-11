@@ -20,6 +20,9 @@ export default function EatingPlanDayForm({
   initialDish = null,
   initialNote = "",
   initialJoinable = false,
+  initialJoinAudience = "connections",
+  initialJoinAllowedUserIds = [],
+  initialJoinCapacity = "4",
   locationCity = null,
   locationState = null,
 }) {
@@ -28,9 +31,17 @@ export default function EatingPlanDayForm({
   const [homemade, setHomemade] = useState(initialHomemade);
   const [note, setNote] = useState(initialNote);
   const [joinable, setJoinable] = useState(Boolean(initialJoinable));
-  const [joinAudience, setJoinAudience] = useState("connections");
-  const [selectedIds, setSelectedIds] = useState([]);
-  const [joinCapacity, setJoinCapacity] = useState("4");
+  const [joinAudience, setJoinAudience] = useState(
+    initialJoinAudience === "selected" ? "selected" : "connections"
+  );
+  const [selectedIds, setSelectedIds] = useState(
+    Array.isArray(initialJoinAllowedUserIds) ? initialJoinAllowedUserIds : []
+  );
+  const [joinCapacity, setJoinCapacity] = useState(
+    initialJoinCapacity != null && String(initialJoinCapacity).trim() !== ""
+      ? String(initialJoinCapacity)
+      : "4"
+  );
 
   async function handleSubmit(e) {
     e.preventDefault();

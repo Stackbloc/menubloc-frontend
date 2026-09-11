@@ -111,6 +111,81 @@ test("buildMonthInFoodModel empty month hides cuisine and mood", () => {
   assert.ok(!model.stats.some((s) => s.id === "home"));
 });
 
+test("buildMonthInFoodModel counts @home meals and Take Me Out status", () => {
+  const model = buildMonthInFoodModel({
+    ym: "2025-05",
+    month_label: "May 2025",
+    diary_visible: true,
+    is_self: true,
+    take_me_out_open: true,
+    invite_me_out_audience: "connections",
+    diner_social_defaults: {
+      plans_join_me: { open: true, audience: "connections", allowed_user_ids: [] },
+      crews_join_me: { open: false, audience: "none", allowed_user_ids: [] },
+    },
+    diary: [
+      {
+        id: 1,
+        food_name: "Pasta",
+        where_type: "home",
+        homemade_dish_id: 9,
+        portion_amount: 1,
+        portion_unit: "serving",
+        meal_period: "dinner",
+        photo_url: "https://example.com/home.jpg",
+      },
+      {
+        id: 2,
+        food_name: "Burger",
+        restaurant_id: 10,
+        restaurant_name: "Fixins",
+        restaurant_city: "LA",
+        where_type: "restaurant",
+        meal_period: "snack",
+      },
+    ],
+    wants: [],
+    dining_intents: [],
+    plans: [],
+    events: [],
+    profile_media: [],
+    home_meals_count: 1,
+    restaurant_dishes_count: 1,
+    homemade_dishes_count: 0,
+  });
+  assert.equal(model.homeMealsCount, 1);
+  assert.equal(model.homeMeals.length, 1);
+  assert.equal(model.homeMeals[0].food_name, "Pasta");
+  assert.ok(model.stats.some((s) => s.id === "home" && s.value === 1));
+  assert.equal(model.visited.length, 1);
+  assert.equal(model.takeMeOutOpen, true);
+  assert.equal(model.plansJoinDefault, true);
+  assert.equal(model.crewsJoinDefault, false);
+  assert.ok(model.miniStats.some((s) => s.id === "snack_other" && s.value === 1));
+  assert.equal(model.highlights[0].sublabel, "@Home");
+});
+
+test("Month in Food surfaces @Home + Take Me Out + Join Me defaults", () => {
+  const sections = read("src/pages/consumer/monthInFood/MonthInFoodSections.jsx");
+  const page = read("src/pages/consumer/monthInFood/MonthInFoodPage.jsx");
+  assert.match(sections, /MonthInFoodHomeMeals/);
+  assert.match(sections, /@Home Meals/);
+  assert.match(sections, /month-in-food-take-me-out-status/);
+  assert.match(sections, /Take Me Out is/);
+  assert.match(sections, /month-in-food-join-me-defaults/);
+  assert.match(page, /MonthInFoodHomeMeals/);
+  assert.match(page, /takeMeOutOpen/);
+});
+
+test("Eating compose enforces Where before What for ate", () => {
+  const compose = read("src/pages/consumer/myMenuply/EatingCompose.jsx");
+  assert.match(compose, /ate-where-step/);
+  assert.match(compose, /ate-where-restaurant/);
+  assert.match(compose, /ate-where-home/);
+  assert.match(compose, /whereType/);
+  assert.match(compose, /portionAmount/);
+});
+
 test("buildMonthInFoodModel hides cuisine chart with single cuisine", () => {
   const model = buildMonthInFoodModel({
     ym: "2025-05",

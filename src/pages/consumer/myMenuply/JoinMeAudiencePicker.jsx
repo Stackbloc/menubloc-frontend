@@ -15,6 +15,7 @@ export default function JoinMeAudiencePicker({
   candidates = [],
   joinCapacity,
   onJoinCapacityChange,
+  showCapacity = true,
   disabled = false,
 }) {
   const selected = new Set((selectedIds || []).map((id) => Number(id)));
@@ -90,19 +91,21 @@ export default function JoinMeAudiencePicker({
           ) : (
             <p style={s.muted}>Any accepted Connection can see Join Me.</p>
           )}
-          <label style={styles.seats}>
-            How many openings
-            <input
-              type="number"
-              min={1}
-              max={99}
-              value={joinCapacity}
-              disabled={disabled}
-              onChange={(e) => onJoinCapacityChange(e.target.value)}
-              style={styles.num}
-              aria-label="How many openings"
-            />
-          </label>
+          {showCapacity && typeof onJoinCapacityChange === "function" ? (
+            <label style={styles.seats}>
+              How many openings
+              <input
+                type="number"
+                min={1}
+                max={99}
+                value={joinCapacity}
+                disabled={disabled}
+                onChange={(e) => onJoinCapacityChange(e.target.value)}
+                style={styles.num}
+                aria-label="How many openings"
+              />
+            </label>
+          ) : null}
         </div>
       ) : null}
     </div>

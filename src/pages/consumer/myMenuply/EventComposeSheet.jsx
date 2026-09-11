@@ -1,9 +1,10 @@
 /**
  * Create a diner social event — Edit View + Add, or Multiplier compose=event.
  * Food is optional; general social events (concerts, birthdays, campus, etc.).
+ * Join Me open prefills from My Crews social default when provided.
  */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import MenuplyMediaPicker from "../../../components/social/MenuplyMediaPicker.jsx";
 import { whatIAteTodayLocalDate } from "../../../lib/consumerApi.js";
 
@@ -12,15 +13,22 @@ export default function EventComposeSheet({
   onClose,
   busy = false,
   onSubmit,
+  initialJoinMeOpen = false,
 }) {
   const [title, setTitle] = useState("");
   const [eventDate, setEventDate] = useState(() => whatIAteTodayLocalDate());
   const [startTime, setStartTime] = useState("");
   const [locationLabel, setLocationLabel] = useState("");
   const [description, setDescription] = useState("");
-  const [joinMeOpen, setJoinMeOpen] = useState(false);
+  const [joinMeOpen, setJoinMeOpen] = useState(Boolean(initialJoinMeOpen));
   const [file, setFile] = useState(null);
   const [localError, setLocalError] = useState("");
+
+  useEffect(() => {
+    if (!open) return;
+    setJoinMeOpen(Boolean(initialJoinMeOpen));
+    setLocalError("");
+  }, [open, initialJoinMeOpen]);
 
   if (!open) return null;
 
@@ -43,7 +51,7 @@ export default function EventComposeSheet({
       setStartTime("");
       setLocationLabel("");
       setDescription("");
-      setJoinMeOpen(false);
+      setJoinMeOpen(Boolean(initialJoinMeOpen));
       setFile(null);
       onClose?.();
     } catch (err) {

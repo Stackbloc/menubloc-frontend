@@ -15,6 +15,7 @@ import {
   MonthInFoodByTheNumbers,
   MonthInFoodHero,
   MonthInFoodHighlights,
+  MonthInFoodHomeMeals,
   MonthInFoodMood,
   MonthInFoodMoments,
   MonthInFoodPlansEvents,
@@ -145,6 +146,7 @@ export default function MonthInFoodPage() {
                 ) : null}
                 <MonthInFoodHighlights highlights={model.highlights} />
                 <MonthInFoodVisited visited={model.visited} />
+                <MonthInFoodHomeMeals homeMeals={model.homeMeals} />
                 <MonthInFoodMoments moments={model.moments} overflow={model.momentsOverflow} />
                 <MonthInFoodMood mood={model.mood} />
               </div>
@@ -154,8 +156,18 @@ export default function MonthInFoodPage() {
                   cuisineSlices={model.cuisineSlices}
                   miniStats={model.miniStats}
                 />
-                <MonthInFoodWants wants={model.wants} />
-                <MonthInFoodPlansEvents plans={model.plans} events={model.events} />
+                <MonthInFoodWants
+                  wants={model.wants}
+                  takeMeOutOpen={model.takeMeOutOpen}
+                  isSelf={model.isSelf}
+                />
+                <MonthInFoodPlansEvents
+                  plans={model.plans}
+                  events={model.events}
+                  plansJoinDefault={model.plansJoinDefault}
+                  crewsJoinDefault={model.crewsJoinDefault}
+                  isSelf={model.isSelf}
+                />
               </div>
             </div>
 

@@ -70,6 +70,7 @@ import {
   buildSocialEventJoinShareData,
 } from "../../lib/diningCrewInviteShare.js";
 import EatingHubSection, { PlansCalendarGlyph } from "./myMenuply/EatingHubSection.jsx";
+import { parseDinerSocialDefaults } from "./myMenuply/DinerSocialPresetsPanel.jsx";
 import CrewQuickCompose from "./myMenuply/CrewQuickCompose.jsx";
 import EventComposeSheet from "./myMenuply/EventComposeSheet.jsx";
 import PlanVideoAttachSheet from "./myMenuply/PlanVideoAttachSheet.jsx";
@@ -251,6 +252,10 @@ export default function MyMenuplyPage() {
   const [inviteMeOutAudience, setInviteMeOutAudience] = useState("connections");
   const [inviteMeOutSelectedIds, setInviteMeOutSelectedIds] = useState([]);
   const [inviteMeOutToggleBusy, setInviteMeOutToggleBusy] = useState(false);
+  const [dinerSocialDefaults, setDinerSocialDefaults] = useState(() =>
+    parseDinerSocialDefaults(null)
+  );
+  const [socialDefaultsBusy, setSocialDefaultsBusy] = useState(false);
   const [composeOpen, setComposeOpen] = useState(false);
   const [composeDefaultCategory, setComposeDefaultCategory] = useState("ate");
   const [composeMediaSource, setComposeMediaSource] = useState("camera");
@@ -333,6 +338,7 @@ export default function MyMenuplyPage() {
           ? nextProfile.invite_me_out_allowed_user_ids
           : []
       );
+      setDinerSocialDefaults(parseDinerSocialDefaults(nextProfile?.diner_social_defaults));
       setAvatarUrl(resolveConsumerMediaUrl(nextProfile?.avatar_url || ""));
       setProfileMedia(
         (mediaRes?.items || []).filter((row) => String(row?.media_subtype || "") !== "flash_video")
@@ -795,6 +801,11 @@ export default function MyMenuplyPage() {
     ateKind = null,
     foodInterestKey = null,
     marketDiscoverable = undefined,
+    whereType = null,
+    portionAmount = null,
+    portionUnit = null,
+    eatenAt = null,
+    homemadeDishId = null,
   }) {
     setPostBusy("eating");
     setUploadPercent(file ? 0 : null);
@@ -817,12 +828,26 @@ export default function MyMenuplyPage() {
         ({ photo_url, video_url } = eatingMediaFromUpload(up));
       }
       const signal = String(ateKind || "").trim() || null;
+      const resolvedWhere =
+        whereType === "home" || whereType === "restaurant"
+          ? whereType
+          : signal === "cuisine" || signal === "food_item" || homemade
+            ? "home"
+            : restaurant || dish
+              ? "restaurant"
+              : null;
       const restaurantId =
-        signal === "cuisine" || signal === "food_item" || homemade
+        resolvedWhere === "home" ||
+        signal === "cuisine" ||
+        signal === "food_item" ||
+        homemade
           ? null
           : restaurant?.restaurant_id || dish?.restaurant_id || undefined;
       const menuItemId =
-        signal === "cuisine" || signal === "food_item" || homemade
+        resolvedWhere === "home" ||
+        signal === "cuisine" ||
+        signal === "food_item" ||
+        homemade
           ? null
           : dish?.menu_item_id || undefined;
       const note = String(text || "").trim();
@@ -832,7 +857,7 @@ export default function MyMenuplyPage() {
       } else if (signal === "menu_item") {
         foodName = String(dish?.item_name || note || "").trim();
       } else if (!signal) {
-        foodName = homemade
+        foodName = homemade || resolvedWhere === "home"
           ? note || "Homemade"
           : String(dish?.item_name || "").trim() ||
             String(restaurant?.restaurant_name || "").trim() ||
@@ -843,6 +868,7 @@ export default function MyMenuplyPage() {
         setError("Enter what you're eating");
         return;
       }
+      const portionNum = Number(portionAmount);
       const data = await createWhatIAteToday({
         food_name: foodName,
         photo_url,
@@ -851,6 +877,17 @@ export default function MyMenuplyPage() {
         meal_period: mealPeriod || defaultWhatIAteMealPeriod(),
         restaurant_id: restaurantId,
         menu_item_id: menuItemId,
+        where_type: resolvedWhere || undefined,
+        homemade_dish_id: homemadeDishId || undefined,
+        portion_amount:
+          resolvedWhere === "home" && Number.isFinite(portionNum) && portionNum > 0
+            ? portionNum
+            : undefined,
+        portion_unit:
+          resolvedWhere === "home" && Number.isFinite(portionNum) && portionNum > 0
+            ? portionUnit || "serving"
+            : undefined,
+        eaten_at: eatenAt || new Date().toISOString(),
         is_recommend: Boolean(video_url && isRecommend),
         market_discoverable:
           marketDiscoverable === true
@@ -859,7 +896,10 @@ export default function MyMenuplyPage() {
               ? false
               : undefined,
         comment:
-          signal === "cuisine" || signal === "food_item" || homemade
+          signal === "cuisine" ||
+          signal === "food_item" ||
+          homemade ||
+          resolvedWhere === "home"
             ? joinHomemadeComment(true, note)
             : note || undefined,
         signal_kind: signal || undefined,
@@ -1286,6 +1326,26 @@ export default function MyMenuplyPage() {
     }
   }
 
+  async function saveDinerSocialDefaults(patch) {
+    setSocialDefaultsBusy(true);
+    setError("");
+    try {
+      const profileData = await updateConsumerProfile({
+        diner_social_defaults: patch,
+      });
+      const next = profileData?.profile || {};
+      setProfile((prev) => ({ ...(prev || {}), ...next }));
+      setDinerSocialDefaults(
+        parseDinerSocialDefaults(next.diner_social_defaults ?? patch)
+      );
+    } catch (err) {
+      setError(err.message || "Unable to update social defaults");
+      throw err;
+    } finally {
+      setSocialDefaultsBusy(false);
+    }
+  }
+
   async function postWant({
     text,
     file,
@@ -1610,6 +1670,11 @@ export default function MyMenuplyPage() {
     inviteMeOutAudience: wantInviteAudience,
     inviteMeOutSelectedIds: wantInviteIds,
     marketDiscoverable,
+    whereType,
+    portionAmount,
+    portionUnit,
+    eatenAt,
+    homemadeDishId,
   }) {
     if (category === "cooking") {
       const { postFeedCookingVideo } = await import("../../lib/feedVideoCompose.js");
@@ -1662,6 +1727,11 @@ export default function MyMenuplyPage() {
         ateKind,
         foodInterestKey,
         marketDiscoverable,
+        whereType,
+        portionAmount,
+        portionUnit,
+        eatenAt,
+        homemadeDishId,
       });
       setComposeDefaultCategory("ate");
     }
@@ -1883,6 +1953,9 @@ export default function MyMenuplyPage() {
               inviteMeOutCandidates={joinCandidates}
               onInviteMeOutSave={saveInviteMeOutSettings}
               inviteMeOutToggleBusy={inviteMeOutToggleBusy}
+              dinerSocialDefaults={dinerSocialDefaults}
+              onDinerSocialDefaultsSave={saveDinerSocialDefaults}
+              socialDefaultsBusy={socialDefaultsBusy}
               onViewMmt={(mmt) => setMmtDetailId(Number(mmt?.id) || null)}
               onJoinMeFromCraving={handleJoinMeFromCraving}
               onTakeMeOutFromCraving={handleTakeMeOutFromCraving}
@@ -2104,6 +2177,7 @@ export default function MyMenuplyPage() {
               onClose={() => setEventComposeOpen(false)}
               busy={postBusy === "events"}
               onSubmit={postSocialEvent}
+              initialJoinMeOpen={Boolean(dinerSocialDefaults?.crews_join_me?.open)}
             />
 
             <PlanVideoAttachSheet

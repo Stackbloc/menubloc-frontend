@@ -1,19 +1,19 @@
 /** Meal slots for What I'm Eating / What I Ate Today — not Waiter, not nutrition. */
 
-/** User-facing meal periods only. */
+/** User-facing meal periods (unified meal recording — includes snack/other). */
 export const WHAT_I_ATE_MEAL_PERIODS = [
   { id: "breakfast", label: "Breakfast" },
+  { id: "brunch", label: "Brunch" },
   { id: "lunch", label: "Lunch" },
   { id: "dinner", label: "Dinner" },
   { id: "late_night", label: "Late Night" },
+  { id: "snack", label: "Snack" },
+  { id: "other", label: "Other" },
 ];
 
-/** Old diary values → canonical four. */
+/** Old diary values → canonical ids. */
 const LEGACY_ALIASES = {
-  brunch: "lunch",
-  snack: "lunch",
-  dessert: "dinner",
-  other: "lunch",
+  dessert: "other",
 };
 
 const ORDER = WHAT_I_ATE_MEAL_PERIODS.map((p) => p.id);
@@ -24,9 +24,12 @@ const ORDER = WHAT_I_ATE_MEAL_PERIODS.map((p) => p.id);
  */
 export const WHAT_I_ATE_MEAL_PERIOD_START_HOUR = {
   breakfast: 5,
+  brunch: 10,
   lunch: 11,
   dinner: 17,
   late_night: 22,
+  snack: 15,
+  other: 12,
 };
 
 export function normalizeWhatIAteMealPeriod(value) {

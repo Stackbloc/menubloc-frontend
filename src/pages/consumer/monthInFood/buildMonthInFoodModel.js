@@ -1,13 +1,15 @@
 /**
  * Shape Month in Food API payload into a view model. Never invent stats.
- * Keeps vocabulary + rails in sync with My Menuply profile (Wanna Eat, pinned highlights, Join Me).
+ * Keeps vocabulary + rails in sync with My Menuply profile
+ * (Wanna Eat / Take Me Out, Join Me plans, unified meal Where @home vs restaurant).
  */
 
 import { restaurantPathFromRow } from "../../../lib/canonicalUrl.js";
 
 const DEFAULT_MEDIA_BASE = "https://menubloc-backend-production.up.railway.app";
 
-const DRINK_RE = /\b(latte|coffee|espresso|cappuccino|matcha|tea|smoothie|juice|cola|soda|beer|wine|cocktail|coolatta|refresher)\b/i;
+const DRINK_RE =
+  /\b(latte|coffee|espresso|cappuccino|matcha|tea|smoothie|juice|cola|soda|beer|wine|cocktail|coolatta|refresher)\b/i;
 const COFFEE_RE = /\b(latte|coffee|espresso|cappuccino|americano|mocha)\b/i;
 
 export function mediaUrl(raw) {
@@ -55,6 +57,15 @@ function restaurantHref(row) {
   return restaurantPathFromRow(row) || (row?.restaurant_id ? `/restaurants/${row.restaurant_id}` : null);
 }
 
+export function isHomeMeal(row = {}) {
+  if (row.is_home === true) return true;
+  if (String(row.where_type || "").toLowerCase() === "home") return true;
+  if (row.homemade_dish_id != null) return true;
+  if (row.restaurant_id != null) return false;
+  const blob = `${row.food_name || ""} ${row.comment || ""} ${row.homemade_dish_name || ""}`;
+  return /\bhomemade\b|\b@home\b|\bat home\b/i.test(blob);
+}
+
 /** Pinned profile photos first (profile Top Highlights contract), then diary stills. */
 function buildHighlights({ diary = [], profileMedia = [] }) {
   const cards = [];
@@ -80,11 +91,12 @@ function buildHighlights({ diary = [], profileMedia = [] }) {
   const withMedia = diary
     .map((row) => ({
       key: `h-${row.id}`,
-      label: row.food_name || row.item_name || "Meal",
-      sublabel: row.restaurant_name || "",
+      label: row.food_name || row.item_name || row.homemade_dish_name || "Meal",
+      sublabel: isHomeMeal(row) ? "@Home" : row.restaurant_name || "",
       image: mediaUrl(row.photo_url),
       href: row.href || (row.menu_item_id ? `/menu-items/${row.menu_item_id}` : null),
       source: "diary",
+      is_home: isHomeMeal(row),
     }))
     .filter((c) => c.image);
 
@@ -100,10 +112,11 @@ function buildHighlights({ diary = [], profileMedia = [] }) {
   return diary.slice(0, 3).map((row) => ({
     key: `h-${row.id}`,
     label: row.food_name || row.item_name || "Meal",
-    sublabel: row.restaurant_name || "",
+    sublabel: isHomeMeal(row) ? "@Home" : row.restaurant_name || "",
     image: mediaUrl(row.photo_url),
     href: row.href || null,
     source: "diary",
+    is_home: isHomeMeal(row),
   }));
 }
 
@@ -121,24 +134,46 @@ export function buildMonthInFoodModel(payload = {}) {
   const isSelf = payload.is_self === true;
   const ym = payload.ym || "";
   const monthLabel = payload.month_label || ym;
+  const takeMeOutOpen =
+    payload.take_me_out_open === true ||
+    (payload.invite_me_out_audience != null &&
+      String(payload.invite_me_out_audience || "none").toLowerCase() !== "none");
+  const plansJoinDefault = Boolean(payload.diner_social_defaults?.plans_join_me?.open);
+  const crewsJoinDefault = Boolean(payload.diner_social_defaults?.crews_join_me?.open);
 
   const mealsLogged = diary.length;
   const restaurantIds = new Set();
   const restaurantMap = new Map();
+  const homeMeals = [];
   let mediaMealCount = 0;
   const momentUrls = [];
   const foodNames = [];
   const drinkNames = [];
   const cuisineCounts = new Map();
   let coffeeCups = 0;
+  let snackOtherCount = 0;
 
   for (const row of diary) {
-    const name = row.food_name || row.item_name || "";
+    const name = row.food_name || row.item_name || row.homemade_dish_name || "";
     if (name) foodNames.push(name);
     if (DRINK_RE.test(name)) drinkNames.push(name);
     if (COFFEE_RE.test(name)) coffeeCups += 1;
+    const period = String(row.meal_period || "").toLowerCase();
+    if (period === "snack" || period === "other") snackOtherCount += 1;
 
-    if (row.restaurant_id) {
+    const home = isHomeMeal(row);
+    if (home) {
+      homeMeals.push({
+        key: `home-${row.id}`,
+        food_name: name || "Home meal",
+        portion_amount: row.portion_amount ?? null,
+        portion_unit: row.portion_unit || null,
+        meal_period: row.meal_period || null,
+        photo_url: mediaUrl(row.photo_url || row.item_photo_url),
+        href: row.href || null,
+        eaten_on: row.eaten_on || null,
+      });
+    } else if (row.restaurant_id) {
       restaurantIds.add(Number(row.restaurant_id));
       if (!restaurantMap.has(Number(row.restaurant_id))) {
         restaurantMap.set(Number(row.restaurant_id), {
@@ -149,8 +184,6 @@ export function buildMonthInFoodModel(payload = {}) {
           slug: row.restaurant_slug || null,
         });
       }
-    } else if (/homemade/i.test(String(row.comment || "")) || /homemade/i.test(name)) {
-      restaurantIds.add("homemade");
     }
 
     const cuisine = String(row.cuisine || "").trim();
@@ -177,15 +210,22 @@ export function buildMonthInFoodModel(payload = {}) {
   const likesInMonth = Number(payload.likes_in_month) || 0;
   const newRestaurants = Number(payload.new_restaurants_count) || 0;
   const homemadeDishesCount = Number(payload.homemade_dishes_count) || 0;
-  const restaurantDishesCount = Number(payload.restaurant_dishes_count);
+  const homeMealsCount = Number.isFinite(Number(payload.home_meals_count))
+    ? Number(payload.home_meals_count)
+    : homeMeals.length;
+  const restaurantDishesCount = Number.isFinite(Number(payload.restaurant_dishes_count))
+    ? Number(payload.restaurant_dishes_count)
+    : diary.filter((r) => r.restaurant_id != null && !isHomeMeal(r)).length;
 
   const stats = [];
   if (diaryVisible) {
-    const restaurantDishMeals = Number.isFinite(restaurantDishesCount) ? restaurantDishesCount : 0;
-    const dishesCount = restaurantDishMeals + homemadeDishesCount;
+    const dishesCount = restaurantDishesCount + homemadeDishesCount;
     stats.push({ id: "meals", label: "Meals Logged", value: mealsLogged, icon: "fork" });
     stats.push({ id: "dishes", label: "Dishes", value: dishesCount, icon: "dishes" });
     stats.push({ id: "restaurants", label: "Restaurants", value: restaurantIds.size, icon: "store" });
+    if (homeMealsCount > 0) {
+      stats.push({ id: "home", label: "@Home Meals", value: homeMealsCount, icon: "home" });
+    }
     stats.push({ id: "media", label: "Photos & Videos", value: mediaMealCount, icon: "camera" });
     if (momentsShared > 0) {
       stats.push({ id: "moments", label: "Moments Shared", value: momentsShared, icon: "people" });
@@ -196,9 +236,7 @@ export function buildMonthInFoodModel(payload = {}) {
   }
 
   const highlights = diaryVisible ? buildHighlights({ diary, profileMedia }) : [];
-
   const visited = [...restaurantMap.values()].slice(0, 12);
-
   const momentsVisible = momentUrls.slice(0, 6);
   const momentsOverflow = Math.max(0, momentUrls.length - momentsVisible.length);
 
@@ -231,6 +269,10 @@ export function buildMonthInFoodModel(payload = {}) {
   const miniStats = [];
   if (coffeeCups > 0) miniStats.push({ id: "coffee", label: "Cups", value: coffeeCups, hint: "coffee" });
   if (newRestaurants > 0) miniStats.push({ id: "new_r", label: "New Restaurants", value: newRestaurants });
+  if (homeMealsCount > 0) miniStats.push({ id: "home_m", label: "@Home", value: homeMealsCount });
+  if (snackOtherCount > 0) {
+    miniStats.push({ id: "snack_other", label: "Snacks & Other", value: snackOtherCount });
+  }
 
   const pinnedHero = profileMedia.find((m) => m.is_highlight && m.media_url);
   const heroImage =
@@ -239,7 +281,6 @@ export function buildMonthInFoodModel(payload = {}) {
     mediaUrl(profileMedia.find((m) => m.media_url)?.media_url) ||
     null;
 
-  // Profile order: Wanna Go! intents first, then food wants (WantToEatUnifiedList).
   const intentCards = diningIntents.slice(0, 8).map((w) => ({
     key: `di-${w.id}`,
     kind: "dining_intent",
@@ -279,17 +320,22 @@ export function buildMonthInFoodModel(payload = {}) {
     stats,
     highlights,
     visited,
+    homeMeals: homeMeals.slice(0, 8),
     moments: momentsVisible,
     momentsOverflow,
     mood,
     cuisineSlices,
     totalMeals: mealsLogged,
     homemadeDishesCount,
+    homeMealsCount,
     restaurantDishesCount: Number.isFinite(restaurantDishesCount) ? restaurantDishesCount : null,
     miniStats,
     wants: cravingCards,
     plans: planCards,
     events: events.slice(0, 3),
+    takeMeOutOpen: Boolean(takeMeOutOpen),
+    plansJoinDefault,
+    crewsJoinDefault,
     showEmptyHint:
       diaryVisible && mealsLogged === 0 && wants.length === 0 && diningIntents.length === 0,
   };

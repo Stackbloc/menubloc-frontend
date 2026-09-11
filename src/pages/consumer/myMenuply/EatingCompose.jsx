@@ -1,6 +1,7 @@
 /**
  * Unified Eating compose — sheet-only creation (X → My Menuply).
- * Ate: media → restaurant/homemade → meal time → optional comment.
+ * Ate: Where (restaurant | @home) → What → meal type → time → optional video.
+ * Multiplier compose=ate uses the same sheet / same what_i_ate_today row.
  * Want: intent kind → cuisine | restaurant | menu item | food item.
  */
 
@@ -55,6 +56,8 @@ export default function EatingCompose({
     defaultMealPeriod || defaultWhatIAteMealPeriod()
   );
   const [homemade, setHomemade] = useState(false);
+  const [whereType, setWhereType] = useState(null); // restaurant | home
+  const [portionAmount, setPortionAmount] = useState("");
   const [restaurant, setRestaurant] = useState(null);
   const [dish, setDish] = useState(null);
   const [wantKind, setWantKind] = useState("food_item");
@@ -168,6 +171,27 @@ export default function EatingCompose({
     setHomemade(false);
     setRestaurant(null);
     setDish(null);
+    setWhereType(null);
+    setPortionAmount("");
+  }
+
+  function selectWhere(next) {
+    const where = next === "home" ? "home" : "restaurant";
+    setWhereType(where);
+    setRestaurant(null);
+    setDish(null);
+    setPortionAmount("");
+    if (where === "home") {
+      setHomemade(true);
+      if (ateKind === "restaurant" || ateKind === "menu_item") {
+        setAteKind("food_item");
+      }
+    } else {
+      setHomemade(false);
+      if (ateKind === "cuisine" || ateKind === "food_item") {
+        setAteKind("restaurant");
+      }
+    }
   }
 
   function selectWantKind(next) {
@@ -186,13 +210,19 @@ export default function EatingCompose({
 
   function selectAteKind(next) {
     setAteKind(next);
-    resetPlace();
+    setRestaurant(null);
+    setDish(null);
     setCuisineSlug("");
     setFoodInterestKey("");
 
     if (next === "cuisine" || next === "food_item") {
       setHomemade(true);
+      setWhereType("home");
       if (next === "cuisine") setText("");
+    } else {
+      setHomemade(false);
+      setWhereType("restaurant");
+      setPortionAmount("");
     }
   }
 
@@ -311,11 +341,18 @@ export default function EatingCompose({
         ateKind === "restaurant" || ateKind === "menu_item";
       const needsDish = ateKind === "menu_item";
       const needsCuisine = ateKind === "cuisine";
+      const resolvedWhere =
+        whereType ||
+        (needsRestaurant ? "restaurant" : "home");
+      if (!whereType && !needsRestaurant && ateKind !== "cuisine" && ateKind !== "food_item") {
+        return;
+      }
       if (needsCuisine && !cuisineSlug) return;
       if (ateKind === "food_item" && !value) return;
       if (needsRestaurant && !restaurant) return;
       if (needsDish && !(restaurant && dish)) return;
 
+      const portionNum = Number(portionAmount);
       await onSubmit({
         category,
         text:
@@ -334,8 +371,17 @@ export default function EatingCompose({
               ? cuisineSlug || null
               : null,
         cuisineSlug: needsCuisine ? cuisineSlug : null,
+        whereType: resolvedWhere,
+        portionAmount:
+          resolvedWhere === "home" && Number.isFinite(portionNum) && portionNum > 0
+            ? portionNum
+            : null,
+        portionUnit: "serving",
+        eatenAt: new Date().toISOString(),
         homemade:
-          ateKind === "cuisine" || ateKind === "food_item",
+          resolvedWhere === "home" ||
+          ateKind === "cuisine" ||
+          ateKind === "food_item",
         restaurant: needsRestaurant ? restaurant : null,
         dish: needsDish ? dish : null,
         isRecommend:
@@ -365,6 +411,20 @@ export default function EatingCompose({
       return;
     }
 
+    const feedHomemade = isCookingFeedCategory(category)
+      ? true
+      : category === "reviews"
+        ? false
+        : homemade;
+    const feedWhere =
+      category === "ate" || isAteLikeFeedCategory(category)
+        ? feedHomemade
+          ? "home"
+          : restaurant || dish
+            ? "restaurant"
+            : whereType
+        : null;
+    const portionNum = Number(portionAmount);
     await onSubmit({
       category,
       text: value,
@@ -373,11 +433,14 @@ export default function EatingCompose({
         isAteLikeFeedCategory(category)
           ? mealPeriod
           : undefined,
-      homemade: isCookingFeedCategory(category)
-        ? true
-        : category === "reviews"
-          ? false
-          : homemade,
+      whereType: feedWhere,
+      portionAmount:
+        feedWhere === "home" && Number.isFinite(portionNum) && portionNum > 0
+          ? portionNum
+          : null,
+      portionUnit: "serving",
+      eatenAt: new Date().toISOString(),
+      homemade: feedHomemade,
       restaurant,
       dish,
       isRecommend:
@@ -415,13 +478,14 @@ export default function EatingCompose({
               inviteMeOutSelectedIds.length === 0
             )
           : category === "ate"
-            ? ateKind === "cuisine"
-              ? Boolean(cuisineSlug)
-              : ateKind === "food_item"
-                ? Boolean(String(text).trim())
-                : ateKind === "restaurant"
-                  ? Boolean(restaurant)
-                  : Boolean(restaurant && dish)
+            ? Boolean(whereType) &&
+              (ateKind === "cuisine"
+                ? Boolean(cuisineSlug)
+                : ateKind === "food_item"
+                  ? Boolean(String(text).trim())
+                  : ateKind === "restaurant"
+                    ? Boolean(restaurant)
+                    : Boolean(restaurant && dish))
             : Boolean(
                 String(text).trim() ||
                   file ||
@@ -577,12 +641,48 @@ export default function EatingCompose({
 
         {category === "ate" && !feedMode ? (
           <>
+            <div data-testid="ate-where-step">
+              <p style={styles.stepLabel}>Where</p>
+              <div style={styles.chips} role="group" aria-label="Where did you eat">
+                <button
+                  type="button"
+                  data-testid="ate-where-restaurant"
+                  disabled={busy}
+                  style={{
+                    ...styles.chip,
+                    ...(whereType === "restaurant" ? styles.chipActive : null),
+                  }}
+                  onClick={() => selectWhere("restaurant")}
+                >
+                  Restaurant
+                </button>
+                <button
+                  type="button"
+                  data-testid="ate-where-home"
+                  disabled={busy}
+                  style={{
+                    ...styles.chip,
+                    ...(whereType === "home" ? styles.chipActive : null),
+                  }}
+                  onClick={() => selectWhere("home")}
+                >
+                  @Home
+                </button>
+              </div>
+              <p style={styles.hint}>Pick where before what — restaurant menu or home recipe.</p>
+            </div>
+
+            {whereType ? (
             <div
               style={styles.chips}
               role="group"
               aria-label="Eating signal type"
             >
-              {ATE_SIGNAL_KINDS.map((kind) => {
+              {ATE_SIGNAL_KINDS.filter((kind) =>
+                whereType === "home"
+                  ? kind.id === "cuisine" || kind.id === "food_item"
+                  : kind.id === "restaurant" || kind.id === "menu_item"
+              ).map((kind) => {
                 const active = ateKind === kind.id;
                 return (
                   <button
@@ -602,8 +702,33 @@ export default function EatingCompose({
                 );
               })}
             </div>
+            ) : null}
 
-            {ateKind === "cuisine" ? (
+            {whereType === "home" ? (
+              <div style={{ marginTop: 8 }} data-testid="ate-home-portion">
+                <label htmlFor="ate-portion-amount" style={styles.stepLabel}>
+                  Portion eaten (optional)
+                </label>
+                <input
+                  id="ate-portion-amount"
+                  type="number"
+                  min="0.1"
+                  step="0.25"
+                  inputMode="decimal"
+                  value={portionAmount}
+                  onChange={(e) => setPortionAmount(e.target.value)}
+                  placeholder="e.g. 1 serving"
+                  disabled={busy}
+                  style={styles.input}
+                  data-testid="ate-portion-amount"
+                />
+                <p style={styles.hint}>
+                  Optional — recipe nutrition is enrichment only, never required to save.
+                </p>
+              </div>
+            ) : null}
+
+            {ateKind === "cuisine" && whereType === "home" ? (
               <div style={styles.cuisineBlock}>
                 <label htmlFor="ate-cuisine-select" style={styles.stepLabel}>
                   Cuisine
@@ -632,7 +757,7 @@ export default function EatingCompose({
               </div>
             ) : null}
 
-            {ateKind === "food_item" ? (
+            {ateKind === "food_item" && whereType === "home" ? (
               <div>
                 <p style={styles.stepLabel}>Food type</p>
                 <div style={styles.chips} role="group" aria-label="Food types">
@@ -675,7 +800,8 @@ export default function EatingCompose({
               </div>
             ) : null}
 
-            {ateKind === "restaurant" || ateKind === "menu_item" ? (
+            {(ateKind === "restaurant" || ateKind === "menu_item") &&
+            whereType === "restaurant" ? (
               <EatingPlaceFields
                 homemade={false}
                 onHomemadeChange={() => {}}
@@ -692,7 +818,8 @@ export default function EatingCompose({
               />
             ) : null}
 
-            {ateKind === "restaurant" || ateKind === "menu_item"
+            {(ateKind === "restaurant" || ateKind === "menu_item") &&
+            whereType === "restaurant"
               ? isVideoFile(file) ? (
                   <label style={styles.recommendRow} data-testid="eating-compose-recommend">
                     <input

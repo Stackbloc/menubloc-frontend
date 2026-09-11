@@ -12,6 +12,9 @@ import EatingPlanDayForm from "./EatingPlanDayForm.jsx";
 import PostAfterActions from "./PostAfterActions.jsx";
 import ActivityStatusLineCompose from "./ActivityStatusLineCompose.jsx";
 import DinerActivityScanRow from "./DinerActivityScanRow.jsx";
+import DinerSocialPresetsPanel, {
+  parseDinerSocialDefaults,
+} from "./DinerSocialPresetsPanel.jsx";
 import SectionEmptyState from "./SectionEmptyState.jsx";
 import {
   SectionHead,
@@ -484,6 +487,9 @@ export default function EatingHubSection({
   inviteMeOutCandidates = [],
   onInviteMeOutSave,
   inviteMeOutToggleBusy = false,
+  dinerSocialDefaults = null,
+  onDinerSocialDefaultsSave,
+  socialDefaultsBusy = false,
   onViewMmt,
   onJoinMeFromCraving,
   onTakeMeOutFromCraving,
@@ -491,12 +497,6 @@ export default function EatingHubSection({
   void liked;
   void foodHref;
   void favoriteFoods;
-  void onInviteMeOutSave;
-  void inviteMeOutToggleBusy;
-  void inviteMeOutOpen;
-  void inviteMeOutAudience;
-  void inviteMeOutSelectedIds;
-  void inviteMeOutCandidates;
 
   const navigate = useNavigate();
   const canEdit = !readOnly && editMode !== false;
@@ -608,8 +608,43 @@ export default function EatingHubSection({
     typeof onInviteMeOut === "function" &&
     wants.some((row) => row?.restaurant_id != null && String(row.restaurant_id).trim() !== "");
 
+  const plansJoinDefaults = parseDinerSocialDefaults(dinerSocialDefaults).plans_join_me;
+  const planJoinablePrefill =
+    planPrefill?.joinable != null
+      ? Boolean(planPrefill.joinable)
+      : Boolean(plansJoinDefaults.open);
+  const planJoinAudiencePrefill =
+    planPrefill?.joinAudience != null
+      ? planPrefill.joinAudience
+      : plansJoinDefaults.audience === "selected"
+        ? "selected"
+        : "connections";
+  const planJoinIdsPrefill = Array.isArray(planPrefill?.joinAllowedUserIds)
+    ? planPrefill.joinAllowedUserIds
+    : plansJoinDefaults.allowed_user_ids || [];
+  const planJoinCapacityPrefill =
+    planPrefill?.joinCapacity != null
+      ? String(planPrefill.joinCapacity)
+      : String(plansJoinDefaults.join_capacity ?? 4);
+
   return (
     <div data-testid="eating" ref={sectionRef}>
+      {canEdit ? (
+        <DinerSocialPresetsPanel
+          canEdit={canEdit}
+          inviteMeOutOpen={inviteMeOutOpen}
+          inviteMeOutAudience={inviteMeOutAudience}
+          inviteMeOutSelectedIds={inviteMeOutSelectedIds}
+          inviteMeOutCandidates={inviteMeOutCandidates}
+          onInviteMeOutSave={onInviteMeOutSave}
+          inviteMeOutToggleBusy={inviteMeOutToggleBusy}
+          dinerSocialDefaults={dinerSocialDefaults}
+          onDinerSocialDefaultsSave={onDinerSocialDefaultsSave}
+          socialDefaultsBusy={socialDefaultsBusy}
+          joinCandidates={joinCandidates}
+        />
+      ) : null}
+
       <section style={s.section} data-testid="what-im-eating">
         {wantDiscovery && lastPost?.kind === "diary" ? (
           <WantDiscoveryPanel
@@ -965,7 +1000,9 @@ export default function EatingHubSection({
                 dateCmp > 0 ? hubDate : today,
                 planPrefill?.restaurant?.restaurant_id || "",
                 planPrefill?.dish?.menu_item_id || planPrefill?.dish?.item_name || "",
-                planPrefill?.joinable ? "join" : "solo",
+                planJoinablePrefill ? "join" : "solo",
+                planJoinAudiencePrefill,
+                planJoinCapacityPrefill,
               ].join("|")}
               planDate={dateCmp > 0 ? hubDate : today}
               busy={postBusy === "eating"}
@@ -975,7 +1012,10 @@ export default function EatingHubSection({
               initialRestaurant={planPrefill?.restaurant || null}
               initialDish={planPrefill?.dish || null}
               initialNote={planPrefill?.text || ""}
-              initialJoinable={Boolean(planPrefill?.joinable)}
+              initialJoinable={planJoinablePrefill}
+              initialJoinAudience={planJoinAudiencePrefill}
+              initialJoinAllowedUserIds={planJoinIdsPrefill}
+              initialJoinCapacity={planJoinCapacityPrefill}
               locationCity={locationCity}
               locationState={locationState}
               onSubmit={onPostPlan}
