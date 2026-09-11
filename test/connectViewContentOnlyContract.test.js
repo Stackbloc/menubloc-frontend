@@ -13,13 +13,20 @@ const read = (rel) => fs.readFileSync(path.join(root, rel), "utf8");
 
 test("Connect view is content-only — no how-to instructions", () => {
   const page = read("src/pages/consumer/MyMenuplyPage.jsx");
+  const shellPage = read("src/pages/consumer/feed/FeedShellPage.jsx");
   const home = read("src/pages/consumer/myMenuply/HomeAtHomeSection.jsx");
   const hub = read("src/pages/consumer/myMenuply/EatingHubSection.jsx");
   const rails = read("src/pages/consumer/myMenuply/MyMenuplyPresentationRails.jsx");
 
   assert.match(page, /Connect view: content about this diner only/);
   assert.match(page, /previewAsConnect/);
-  assert.match(page, /searchParams\.get\("view"\) === "connect"/);
+  assert.match(shellPage, /location\.search/);
+  assert.match(shellPage, /previewAsConnect/);
+  assert.match(shellPage, /URLSearchParams\(location\.search\)/);
+  assert.doesNotMatch(shellPage, /useSearchParams\s*\(/);
+  assert.doesNotMatch(shellPage, /,\s*useSearchParams\s*[,}]/);
+  assert.match(page, /location\.search/);
+  assert.match(page, /previewAsConnect = new URLSearchParams\(location\.search\)/);
   assert.match(page, /readOnly=\{previewAsConnect\}/);
   assert.match(page, /editMode=\{!previewAsConnect\}/);
   assert.match(page, /needs_primary_location && !previewAsConnect/);

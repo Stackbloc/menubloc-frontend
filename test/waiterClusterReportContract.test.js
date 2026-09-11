@@ -13,7 +13,7 @@ function read(rel) {
 test("Waiter briefing sections + cluster follow; no forbidden UI", () => {
   const page = read("src/pages/FoodInterestsPage.jsx");
   // Spec sections (fixed order, skip-if-null)
-  assert.match(page, /Hello \{firstName\}/);
+  assert.match(page, /Hello, \{firstName\}/);
   assert.match(page, /Here&apos;s what&apos;s going on/);
   assert.match(page, /waiter-connect|ConnectSection/);
   assert.match(page, /waiter-join-me|JoinMeSection/);

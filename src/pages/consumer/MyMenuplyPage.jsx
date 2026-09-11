@@ -4,7 +4,7 @@
  */
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import FeedGuestProfileLanding from "../../components/consumer/feed/FeedGuestProfileLanding.jsx";
 import ProfileViewModeToggle from "../../components/consumer/feed/ProfileViewModeToggle.jsx";
 import ShareModal from "../../components/share/ShareModal.jsx";
@@ -193,6 +193,7 @@ function MyMenuplyAccountSettingsLink({ style }) {
 export default function MyMenuplyPage() {
   const { isAuthenticated, loading: authLoading, consumer } = useConsumer();
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const isDesktopFeed = useFeedShellDesktop();
   const eatingSectionRef = useRef(null);
@@ -202,13 +203,11 @@ export default function MyMenuplyPage() {
   const [eduConsumer, setEduConsumer] = useState(null);
   const [avatarUrl, setAvatarUrl] = useState("");
   /** Connect view: content about this diner only — never Menuply how-to / compose coaching. */
-  const previewAsConnect = searchParams.get("view") === "connect";
+  const previewAsConnect = new URLSearchParams(location.search).get("view") === "connect";
 
   function toggleProfileViewMode() {
     clearStuckMediaChrome();
-    const params = new URLSearchParams(
-      typeof window !== "undefined" ? window.location.search : searchParams.toString()
-    );
+    const params = new URLSearchParams(location.search);
     if (params.get("view") === "connect") params.delete("view");
     else params.set("view", "connect");
     const qs = params.toString();

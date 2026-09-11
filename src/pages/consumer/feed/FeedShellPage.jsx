@@ -5,7 +5,7 @@
  */
 
 import { useEffect, useState } from "react";
-import { Outlet, useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { isFeedShopRoute } from "../../../lib/feedShellNavigation.js";
 import FeedPrimaryNav, { FEED_PRIMARY_NAV_HEIGHT } from "../../../components/consumer/feed/FeedPrimaryNav.jsx";
 import FeedDesktopRail, { FEED_DESKTOP_RAIL_WIDTH } from "../../../components/consumer/feed/FeedDesktopRail.jsx";
@@ -27,7 +27,6 @@ function isOwnFeedProfilePath(pathname) {
 export default function FeedShellPage({ children = null }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const [searchParams] = useSearchParams();
   const { isAuthenticated } = useConsumer();
   const isDesktop = useFeedShellDesktop();
   const showShopBasket = isFeedShopRoute(location.pathname);
@@ -38,14 +37,13 @@ export default function FeedShellPage({ children = null }) {
   const [moreOpen, setMoreOpen] = useState(false);
   const [shareMenuplyOpen, setShareMenuplyOpen] = useState(false);
 
-  const previewAsConnect = searchParams.get("view") === "connect";
+  // Derive from location.search so the label tracks navigate() flips.
+  const previewAsConnect = new URLSearchParams(location.search).get("view") === "connect";
   const showProfileViewToggle = isAuthenticated && isOwnFeedProfilePath(location.pathname);
 
   function toggleProfileView() {
     clearStuckMediaChrome();
-    const params = new URLSearchParams(
-      typeof window !== "undefined" ? window.location.search : searchParams.toString()
-    );
+    const params = new URLSearchParams(location.search);
     if (params.get("view") === "connect") params.delete("view");
     else params.set("view", "connect");
     const qs = params.toString();

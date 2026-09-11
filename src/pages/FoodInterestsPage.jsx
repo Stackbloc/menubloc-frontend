@@ -102,7 +102,7 @@ function GreetingBlock({ greeting, timeZone }) {
           <circle cx="12" cy="16.34" r="1" />
         </svg>
       </div>
-      <p style={styles.hello}>Hello {firstName}.</p>
+      <p style={styles.hello}>Hello, {firstName}.</p>
       {when ? <p style={styles.when}>{when}</p> : null}
       <p style={styles.heres}>Here&apos;s what&apos;s going on:</p>
     </header>

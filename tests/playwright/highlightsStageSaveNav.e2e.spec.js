@@ -156,10 +156,13 @@ test.describe("My Highlights stage + Save does not freeze nav", () => {
     await expect.poll(() => uploadPosts.length).toBe(1);
 
     await expect(page.getByTestId("profile-view-mode-toggle")).toBeVisible();
+    await expect(page.getByTestId("profile-view-mode-label")).toHaveText("Edit View");
     await page.getByTestId("profile-view-mode-toggle").click();
     await expect(page).toHaveURL(/view=connect/);
+    await expect(page.getByTestId("profile-view-mode-label")).toHaveText("Connect View");
     await page.getByTestId("profile-view-mode-toggle").click();
     await expect(page).not.toHaveURL(/view=connect/);
+    await expect(page.getByTestId("profile-view-mode-label")).toHaveText("Edit View");
 
     await page.getByTestId("feed-nav-home").click();
     await expect(page).toHaveURL(/\/feed\/?$/);

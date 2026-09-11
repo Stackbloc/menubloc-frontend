@@ -121,7 +121,7 @@ test("Waiter incorporates public Activity; /activity redirects there", () => {
   const panel = read("src/components/WaiterPublicActivity.jsx");
   assert.match(waiter, /WaiterPublicActivity/);
   assert.match(waiter, /briefing\?\.mealOptions|MealOptionsSection/);
-  assert.match(waiter, /Hello \{firstName\}|Hello \{/);
+  assert.match(waiter, /Hello, \{firstName\}/);
   assert.doesNotMatch(waiter, /import\s+.*MarketFallback|<[Mm]arketFallback|CommunityGrowthCard\s*[({]/);
   assert.doesNotMatch(waiter, /Good morning|Good afternoon|Good evening/);
   assert.match(activity, /Navigate to="\/waiter#activity"/);
