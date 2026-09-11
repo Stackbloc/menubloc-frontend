@@ -39,6 +39,7 @@ export default function FeedShellPage({ children = null }) {
   const [composeCategory, setComposeCategory] = useState("");
   const [composeMediaSource, setComposeMediaSource] = useState("camera");
   const [composeOpenLibrary, setComposeOpenLibrary] = useState(false);
+  const [composeInitialWhere, setComposeInitialWhere] = useState(null);
   const [moreOpen, setMoreOpen] = useState(false);
   const [shareMenuplyOpen, setShareMenuplyOpen] = useState(false);
 
@@ -101,7 +102,7 @@ export default function FeedShellPage({ children = null }) {
     setCreateSheetOpen(false);
   }
 
-  function handlePickCategory(category) {
+  function handlePickCategory(category, options = {}) {
     closeCreateSheet();
     if (String(category) === "cooking" && !isAuthenticated) {
       navigate(`/account/login?next=${encodeURIComponent("/feed")}`);
@@ -109,6 +110,7 @@ export default function FeedShellPage({ children = null }) {
     }
     setComposeMediaSource("camera");
     setComposeOpenLibrary(false);
+    setComposeInitialWhere(options?.initialWhereType || null);
     setComposeCategory(category);
   }
 
@@ -125,6 +127,7 @@ export default function FeedShellPage({ children = null }) {
     }
     setComposeMediaSource("library");
     setComposeOpenLibrary(true);
+    setComposeInitialWhere(options?.initialWhereType || null);
     setComposeCategory(category);
   }
 
@@ -147,6 +150,7 @@ export default function FeedShellPage({ children = null }) {
     setComposeCategory("");
     setComposeMediaSource("camera");
     setComposeOpenLibrary(false);
+    setComposeInitialWhere(null);
   }
 
   function handleShareMyMenuply(options = {}) {
@@ -231,6 +235,7 @@ export default function FeedShellPage({ children = null }) {
         category={composeCategory}
         mediaSource={composeMediaSource}
         openLibraryOnMount={composeOpenLibrary}
+        initialWhereType={composeInitialWhere}
         onClose={closeCompose}
       />
     </div>

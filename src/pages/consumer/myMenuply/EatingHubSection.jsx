@@ -31,6 +31,7 @@ import {
   shiftYmd,
 } from "./eatingHubUtils.js";
 import {
+  formatEatingHubDateHeading,
   formatPlanBracketDate,
   futurePlanKey,
   isoToTimeInputValue,
@@ -521,6 +522,8 @@ export default function EatingHubSection({
   const [composeOpenLocal, setComposeOpenLocal] = useState(false);
   const composeOpen = composeOpenProp ?? composeOpenLocal;
   const setComposeOpen = onComposeOpenChange ?? setComposeOpenLocal;
+  const [ateStatusComposeOpen, setAteStatusComposeOpen] = useState(false);
+  const [wantStatusComposeOpen, setWantStatusComposeOpen] = useState(false);
   const [calendarTitleLocal, setCalendarTitleLocal] = useState("Eating");
   const calendarTitle = calendarTitleProp ?? calendarTitleLocal;
   const setCalendarTitle = onCalendarTitleChange ?? setCalendarTitleLocal;
@@ -659,7 +662,18 @@ export default function EatingHubSection({
           title="What I'm Eating"
           to={readOnly ? diaryHref : "/account/what-i-ate"}
           aside={
-            <>
+            <div style={styles.sectionHeadActions}>
+              {canEdit ? (
+                <button
+                  type="button"
+                  style={styles.compactAdd}
+                  data-testid="status-compose-open"
+                  disabled={postBusy === "eating"}
+                  onClick={() => setAteStatusComposeOpen(true)}
+                >
+                  <span aria-hidden="true">+</span> Add
+                </button>
+              ) : null}
               <EatingDayNavInline
                 hubDate={hubDate}
                 today={today}
@@ -670,14 +684,20 @@ export default function EatingHubSection({
                 onJumpToday={() => handleCalendarDate(today)}
               />
               <DinerCalendarTrigger selectedDate={hubDate} onOpen={openEatingCalendar} />
-            </>
+            </div>
           }
         />
 
         <div data-testid="eating-ate-panel">
+          <p style={styles.hubDateHeading} data-testid="eating-hub-date-heading">
+            {formatEatingHubDateHeading(hubDate)}
+          </p>
           {canEdit ? (
             <ActivityStatusLineCompose
               category="ate"
+              hideTrigger
+              open={ateStatusComposeOpen}
+              onOpenChange={setAteStatusComposeOpen}
               busy={postBusy === "eating"}
               followed={followed}
               locationCity={locationCity}
@@ -827,7 +847,23 @@ export default function EatingHubSection({
           />
         ) : null}
         <div data-testid="eating-want-panel" style={s.presentationBlock}>
-          <SectionHead kicker="Cravings" title="What I Wanna Eat" />
+          <SectionHead
+            kicker="Cravings"
+            title="What I Wanna Eat"
+            aside={
+              canEdit ? (
+                <button
+                  type="button"
+                  style={styles.compactAdd}
+                  data-testid="status-compose-open"
+                  disabled={postBusy === "want"}
+                  onClick={() => setWantStatusComposeOpen(true)}
+                >
+                  <span aria-hidden="true">+</span> Add
+                </button>
+              ) : null
+            }
+          />
           {canEdit ? (
             <DinerSocialPresetsPanel
               canEdit={canEdit}
@@ -847,6 +883,9 @@ export default function EatingHubSection({
           {canEdit ? (
             <ActivityStatusLineCompose
               category="want"
+              hideTrigger
+              open={wantStatusComposeOpen}
+              onOpenChange={setWantStatusComposeOpen}
               busy={postBusy === "want"}
               followed={followed}
               locationCity={locationCity}
@@ -1115,6 +1154,21 @@ export default function EatingHubSection({
 }
 
 const styles = {
+  sectionHeadActions: {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    flexWrap: "wrap",
+    justifyContent: "flex-end",
+  },
+  hubDateHeading: {
+    margin: "0 0 10px",
+    fontSize: 15,
+    fontWeight: 700,
+    letterSpacing: "-0.02em",
+    color: "#1F1E1D",
+    lineHeight: 1.3,
+  },
   compactAdd: {
     appearance: "none",
     border: "1px dashed #cbd5e1",

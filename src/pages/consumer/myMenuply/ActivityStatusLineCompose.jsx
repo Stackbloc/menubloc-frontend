@@ -11,6 +11,7 @@ import {
 import { iconForFoodText } from "../../../lib/foodInterestIcons.js";
 import { socialBtn } from "../../../lib/socialDesignTokens.js";
 import EatingPlaceFields from "./EatingPlaceFields.jsx";
+import { HAPPY_HOUR_INTENTS, happyHourFoodName } from "./eatingHubUtils.js";
 import { GREEN_MID } from "./myMenuplyStyles.js";
 
 export default function ActivityStatusLineCompose({
@@ -20,16 +21,27 @@ export default function ActivityStatusLineCompose({
   locationCity = null,
   locationState = null,
   onSubmit,
+  /** When true, parent owns the Add control (e.g. SectionHead aside). */
+  hideTrigger = false,
+  open: openProp = undefined,
+  onOpenChange = null,
 }) {
   const isWant = category === "want";
-  const [open, setOpen] = useState(false);
-  const [mode, setMode] = useState("restaurant"); // restaurant | athome
+  const [openUncontrolled, setOpenUncontrolled] = useState(false);
+  const controlled = typeof openProp === "boolean";
+  const open = controlled ? openProp : openUncontrolled;
+  function setOpen(next) {
+    if (!controlled) setOpenUncontrolled(next);
+    onOpenChange?.(next);
+  }
+  const [mode, setMode] = useState("restaurant"); // restaurant | happy_hour | athome
   const [restaurant, setRestaurant] = useState(null);
   const [dish, setDish] = useState(null);
   const [mealPeriod, setMealPeriod] = useState(defaultWhatIAteMealPeriod());
   const [homeText, setHomeText] = useState("");
   const [wantText, setWantText] = useState("");
   const [extraItemNames, setExtraItemNames] = useState([]);
+  const [happyHourIntent, setHappyHourIntent] = useState("enjoying");
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -44,12 +56,15 @@ export default function ActivityStatusLineCompose({
   const homeEmoji = homeText.trim() ? iconForFoodText(homeText) : "";
   const canPostRestaurant = Boolean(restaurant);
   const canPostHome = Boolean(homeText.trim());
+  const canPostHappyHour = Boolean(restaurant && happyHourIntent);
   const canPostWant = Boolean(wantText.trim() || restaurant);
   const canPost = isWant
     ? canPostWant
     : mode === "athome"
       ? canPostHome
-      : canPostRestaurant;
+      : mode === "happy_hour"
+        ? canPostHappyHour
+        : canPostRestaurant;
 
   function reset() {
     setRestaurant(null);
@@ -58,6 +73,7 @@ export default function ActivityStatusLineCompose({
     setWantText("");
     setExtraItemNames([]);
     setMode("restaurant");
+    setHappyHourIntent("enjoying");
     setMealPeriod(defaultWhatIAteMealPeriod());
     setError("");
   }
@@ -104,6 +120,26 @@ export default function ActivityStatusLineCompose({
             ...extras.map((food_name) => ({ food_name })),
           ],
         });
+      } else if (mode === "happy_hour") {
+        const foodName = happyHourFoodName(happyHourIntent);
+        await onSubmit?.({
+          category: "ate",
+          text: foodName,
+          homemade: false,
+          restaurant,
+          dish: null,
+          ateKind: "restaurant",
+          mealPeriod: mealPeriod || null,
+          file: null,
+          marketDiscoverable: true,
+          whereType: "restaurant",
+          items: [
+            {
+              food_name: foodName,
+              restaurant_id: restaurant?.restaurant_id || null,
+            },
+          ],
+        });
       } else {
         const extras = extraItemNames.map((name) => String(name || "").trim()).filter(Boolean);
         const primary = dish?.item_name || restaurant?.restaurant_name || "";
@@ -138,21 +174,23 @@ export default function ActivityStatusLineCompose({
 
   return (
     <div
-      style={styles.wrap}
+      style={hideTrigger ? styles.wrapSheetOnly : styles.wrap}
       data-testid={isWant ? "wanna-status-line-compose" : "eating-status-line-compose"}
     >
-      <button
-        type="button"
-        style={styles.trigger}
-        data-testid="status-compose-open"
-        disabled={busy}
-        onClick={() => setOpen(true)}
-      >
-        <span style={styles.triggerPlus} aria-hidden="true">
-          +
-        </span>
-        {triggerLabel}
-      </button>
+      {!hideTrigger ? (
+        <button
+          type="button"
+          style={styles.trigger}
+          data-testid="status-compose-open"
+          disabled={busy}
+          onClick={() => setOpen(true)}
+        >
+          <span style={styles.triggerPlus} aria-hidden="true">
+            +
+          </span>
+          {triggerLabel}
+        </button>
+      ) : null}
 
       {open ? (
         <div
@@ -222,6 +260,23 @@ export default function ActivityStatusLineCompose({
                   </button>
                   <button
                     type="button"
+                    data-testid="ate-where-happy-hour"
+                    style={{
+                      ...styles.modeBtn,
+                      ...(mode === "happy_hour" ? styles.modeBtnOn : null),
+                    }}
+                    onClick={() => {
+                      setMode("happy_hour");
+                      setHomeText("");
+                      setDish(null);
+                      setHappyHourIntent((prev) => prev || "enjoying");
+                    }}
+                    disabled={busy}
+                  >
+                    Happy Hour
+                  </button>
+                  <button
+                    type="button"
                     style={{
                       ...styles.modeBtn,
                       ...(mode === "athome" ? styles.modeBtnOn : null),
@@ -253,6 +308,48 @@ export default function ActivityStatusLineCompose({
                     locationState={locationState}
                     dishSearchPlaceholder="Dish (optional)"
                   />
+                ) : mode === "happy_hour" ? (
+                  <div data-testid="ate-happy-hour-compose">
+                    <div
+                      style={styles.modeRow}
+                      role="group"
+                      aria-label="Happy Hour status"
+                      data-testid="ate-happy-hour-intents"
+                    >
+                      {HAPPY_HOUR_INTENTS.map((intent) => {
+                        const on = happyHourIntent === intent.id;
+                        return (
+                          <button
+                            key={intent.id}
+                            type="button"
+                            data-testid={`ate-happy-hour-${intent.id}`}
+                            disabled={busy}
+                            style={{
+                              ...styles.modeBtn,
+                              ...(on ? styles.modeBtnOn : null),
+                            }}
+                            onClick={() => setHappyHourIntent(intent.id)}
+                          >
+                            {intent.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <EatingPlaceFields
+                      homemade={false}
+                      onHomemadeChange={() => {}}
+                      restaurant={restaurant}
+                      onRestaurantChange={setRestaurant}
+                      dish={dish}
+                      onDishChange={setDish}
+                      followed={followed}
+                      disabled={busy}
+                      allowDishSearch={false}
+                      allowHomemade={false}
+                      locationCity={locationCity}
+                      locationState={locationState}
+                    />
+                  </div>
                 ) : (
                   <div data-testid="eating-athome-compose">
                     <label style={styles.homeLabel}>
@@ -273,7 +370,7 @@ export default function ActivityStatusLineCompose({
               </>
             )}
 
-            {!isWant ? (
+            {!isWant && mode !== "happy_hour" ? (
               <div data-testid="ate-multi-items">
                 <p style={styles.extraLabel}>More items on this meal (optional)</p>
                 {extraItemNames.map((name, index) => (
@@ -319,6 +416,7 @@ export default function ActivityStatusLineCompose({
               </div>
             ) : null}
 
+            {!isWant && mode === "happy_hour" ? null : (
             <div style={styles.mealRow} data-testid="status-meal-period">
               {WHAT_I_ATE_MEAL_PERIODS.map((slot) => {
                 const on = mealPeriod === slot.id;
@@ -335,6 +433,7 @@ export default function ActivityStatusLineCompose({
                 );
               })}
             </div>
+            )}
 
             {error ? <p style={styles.error}>{error}</p> : null}
 
@@ -359,6 +458,7 @@ export default function ActivityStatusLineCompose({
 
 const styles = {
   wrap: { margin: "0 0 8px" },
+  wrapSheetOnly: { margin: 0 },
   trigger: {
     appearance: "none",
     border: "1px dashed #cbd5e1",

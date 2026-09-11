@@ -9,6 +9,7 @@ import { fileURLToPath } from "node:url";
 import {
   formatMealClockTime,
   formatMealPeriodClockLead,
+  formatEatingHubDateHeading,
   mealPeriodAccentColor,
   mealPeriodClockParts,
   splitMealFoodLead,
@@ -30,7 +31,9 @@ test("meal period + clock lead formatting", () => {
   assert.match(formatMealPeriodClockLead("lunch", iso), /LUNCH /);
   assert.equal(formatMealPeriodClockLead("lunch", iso, { omitClock: true }), "LUNCH");
   assert.equal(formatMealClockTime(null), "");
-  assert.equal(mealPeriodAccentColor("late_night"), "#7c3aed");
+  assert.equal(mealPeriodAccentColor("late_night"), "#8B7BB5");
+  assert.equal(mealPeriodAccentColor("lunch"), "#6A9B78");
+  assert.equal(mealPeriodAccentColor("brunch"), "#DA7756");
 });
 
 test("time input round-trip helpers", () => {
@@ -51,19 +54,31 @@ test("splitMealFoodLead keeps primary dish + secondary fold", () => {
   assert.equal(split.secondary, "ham, iced tea");
 });
 
-test("ownerCompact meal row uses timeline color hierarchy", () => {
+test("eating hub date heading is weekday, month day, year", () => {
+  assert.equal(formatEatingHubDateHeading("2026-01-01"), "Thursday, January 1, 2026.");
+  assert.match(formatEatingHubDateHeading("2026-09-11"), /Friday, September 11, 2026\./);
+});
+
+test("ownerCompact meal row uses Claude timeline color hierarchy", () => {
   const row = read("src/pages/consumer/myMenuply/DinerActivityScanRow.jsx");
   const hub = read("src/pages/consumer/myMenuply/EatingHubSection.jsx");
+  const fmt = read("src/pages/consumer/myMenuply/dinerHubFormat.js");
   assert.match(row, /mealPeriodClockParts/);
   assert.match(row, /diner-activity-scan-meal-dot/);
   assert.match(row, /diner-activity-scan-meal-pill/);
   assert.match(row, /diner-activity-scan-meal-clock/);
   assert.match(row, /timelineBody|diner-activity-scan-timeline-body/);
   assert.match(row, /placeLinkTimeline/);
-  assert.match(row, /#2563eb/);
+  assert.match(row, /MEAL_TIMELINE_INK/);
+  assert.match(fmt, /#DA7756/);
+  assert.match(fmt, /#8B7BB5/);
+  assert.match(fmt, /#4A6FA5/);
   assert.match(hub, /splitMealFoodLead/);
   assert.match(hub, /secondaryFoodName/);
   assert.match(hub, /timelineFirst/);
+  assert.match(hub, /formatEatingHubDateHeading/);
+  assert.match(hub, /eating-hub-date-heading/);
+  assert.match(hub, /hideTrigger/);
   assert.match(hub, /eatenAt=\{meal\.eaten_at/);
   assert.match(hub, /omitMealClock/);
   assert.match(hub, /eating-meal-clock-edit/);

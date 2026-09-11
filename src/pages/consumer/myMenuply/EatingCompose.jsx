@@ -1,6 +1,6 @@
 /**
  * Unified Eating compose — sheet-only creation (X → My Menuply).
- * Ate: Where (restaurant | @home) → What → meal type → time → optional video.
+ * Ate: Where (restaurant | Happy Hour | @home) → What → meal type → time → optional video.
  * Multiplier compose=ate uses the same sheet / same what_i_ate_today row.
  * Want: intent kind → cuisine | restaurant | menu item | food item.
  */
@@ -16,6 +16,8 @@ import {
   EATING_COMPOSE_CATEGORIES,
   WANT_INTENT_KINDS,
   ATE_SIGNAL_KINDS,
+  HAPPY_HOUR_INTENTS,
+  happyHourFoodName,
 } from "./eatingHubUtils.js";
 import { FAVORITE_FOOD_TYPE_OPTIONS } from "../../../lib/dinerFavoriteFoods.js";
 import { labelWithFoodIcon } from "../../../lib/foodInterestIcons.js";
@@ -48,6 +50,8 @@ export default function EatingCompose({
   inviteMeOutAudience: inviteMeOutAudienceInitial = "connections",
   inviteMeOutSelectedIds: inviteMeOutSelectedIdsInitial = [],
   inviteMeOutCandidates = [],
+  /** Prefill Where — e.g. Multiplier Happy Hour → happy_hour */
+  initialWhereType = null,
 }) {
   const [category, setCategory] = useState(defaultCategory);
   const [text, setText] = useState("");
@@ -56,7 +60,14 @@ export default function EatingCompose({
     defaultMealPeriod || defaultWhatIAteMealPeriod()
   );
   const [homemade, setHomemade] = useState(false);
-  const [whereType, setWhereType] = useState(null); // restaurant | home
+  const [whereType, setWhereType] = useState(() => {
+    const w = String(initialWhereType || "").trim();
+    if (w === "happy_hour" || w === "home" || w === "restaurant") return w;
+    return null;
+  }); // restaurant | home | happy_hour
+  const [happyHourIntent, setHappyHourIntent] = useState(
+    String(initialWhereType || "").trim() === "happy_hour" ? "enjoying" : null
+  );
   const [portionAmount, setPortionAmount] = useState("");
   const [restaurant, setRestaurant] = useState(null);
   const [dish, setDish] = useState(null);
@@ -174,12 +185,24 @@ export default function EatingCompose({
     setRestaurant(null);
     setDish(null);
     setWhereType(null);
+    setHappyHourIntent(null);
     setPortionAmount("");
   }
 
   function selectWhere(next) {
+    if (next === "happy_hour") {
+      setWhereType("happy_hour");
+      setHomemade(false);
+      setHappyHourIntent((prev) => prev || "enjoying");
+      setRestaurant(null);
+      setDish(null);
+      setPortionAmount("");
+      setAteKind("restaurant");
+      return;
+    }
     const where = next === "home" ? "home" : "restaurant";
     setWhereType(where);
+    setHappyHourIntent(null);
     setRestaurant(null);
     setDish(null);
     setPortionAmount("");
@@ -339,6 +362,42 @@ export default function EatingCompose({
     }
 
     if (category === "ate" && !feedMode) {
+      if (whereType === "happy_hour") {
+        const foodName = happyHourFoodName(happyHourIntent);
+        if (!restaurant || !foodName) return;
+        await onSubmit({
+          category,
+          text: foodName,
+          file,
+          mealPeriod,
+          ateKind: "restaurant",
+          items: [
+            {
+              food_name: foodName,
+              restaurant_id: restaurant.restaurant_id || null,
+            },
+          ],
+          foodInterestKey: null,
+          cuisineSlug: null,
+          whereType: "restaurant",
+          portionAmount: null,
+          portionUnit: "serving",
+          eatenAt: new Date().toISOString(),
+          homemade: false,
+          restaurant,
+          dish: null,
+          isRecommend: false,
+        });
+        setText("");
+        setFile(null);
+        setCuisineSlug("");
+        setFoodInterestKey("");
+        setIsRecommend(false);
+        setExtraItemNames([]);
+        resetPlace();
+        return;
+      }
+
       const needsRestaurant =
         ateKind === "restaurant" || ateKind === "menu_item";
       const needsDish = ateKind === "menu_item";
@@ -417,7 +476,9 @@ export default function EatingCompose({
     }
 
     if (feedMode && isAteLikeFeedCategory(category)) {
-      if (!whereType && !homemade && !(restaurant || dish)) {
+      if (whereType === "happy_hour") {
+        if (!restaurant || !happyHourFoodName(happyHourIntent)) return;
+      } else if (!whereType && !homemade && !(restaurant || dish)) {
         return;
       }
     }
@@ -433,41 +494,50 @@ export default function EatingCompose({
       return;
     }
 
-    const feedHomemade = isCookingFeedCategory(category)
-      ? true
-      : category === "reviews"
-        ? false
-        : homemade || whereType === "home";
+    const isHappyHour = whereType === "happy_hour";
+    const happyHourName = isHappyHour ? happyHourFoodName(happyHourIntent) : "";
+    const feedHomemade = isHappyHour
+      ? false
+      : isCookingFeedCategory(category)
+        ? true
+        : category === "reviews"
+          ? false
+          : homemade || whereType === "home";
     const feedWhere =
       category === "ate" || isAteLikeFeedCategory(category)
-        ? whereType === "home" || whereType === "restaurant"
-          ? whereType
-          : feedHomemade
-            ? "home"
-            : restaurant || dish
-              ? "restaurant"
-              : whereType
+        ? isHappyHour
+          ? "restaurant"
+          : whereType === "home" || whereType === "restaurant"
+            ? whereType
+            : feedHomemade
+              ? "home"
+              : restaurant || dish
+                ? "restaurant"
+                : whereType
         : null;
     const portionNum = Number(portionAmount);
-    const feedPrimary =
-      String(dish?.item_name || "").trim() ||
-      String(restaurant?.restaurant_name || "").trim() ||
-      value ||
-      (feedHomemade ? "Homemade" : "Food");
+    const feedPrimary = isHappyHour
+      ? happyHourName
+      : String(dish?.item_name || "").trim() ||
+        String(restaurant?.restaurant_name || "").trim() ||
+        value ||
+        (feedHomemade ? "Homemade" : "Food");
     const feedItems = [
       {
         food_name: feedPrimary,
-        menu_item_id: dish?.menu_item_id || null,
+        menu_item_id: isHappyHour ? null : dish?.menu_item_id || null,
         restaurant_id: restaurant?.restaurant_id || dish?.restaurant_id || null,
       },
-      ...extraItemNames
-        .map((name) => String(name || "").trim())
-        .filter(Boolean)
-        .map((food_name) => ({ food_name })),
+      ...(isHappyHour
+        ? []
+        : extraItemNames
+            .map((name) => String(name || "").trim())
+            .filter(Boolean)
+            .map((food_name) => ({ food_name }))),
     ];
     await onSubmit({
       category,
-      text: value,
+      text: isHappyHour ? happyHourName : value,
       file,
       mealPeriod:
         isAteLikeFeedCategory(category)
@@ -483,9 +553,9 @@ export default function EatingCompose({
       eatenAt: new Date().toISOString(),
       homemade: feedHomemade,
       restaurant,
-      dish,
+      dish: isHappyHour ? null : dish,
       isRecommend:
-        category === "ate" && isVideoFile(file)
+        category === "ate" && isVideoFile(file) && !isHappyHour
           ? isRecommend
           : false,
     });
@@ -505,7 +575,9 @@ export default function EatingCompose({
       ? isVideoFile(file) &&
         (category !== "reviews" || Boolean(dish?.menu_item_id)) &&
         (category !== "ate" ||
-          Boolean(whereType || homemade || restaurant || dish))
+          (whereType === "happy_hour"
+            ? Boolean(restaurant && happyHourIntent)
+            : Boolean(whereType || homemade || restaurant || dish)))
       : category === "plan"
         ? true
         : category === "want"
@@ -522,14 +594,16 @@ export default function EatingCompose({
               inviteMeOutSelectedIds.length === 0
             )
           : category === "ate"
-            ? Boolean(whereType) &&
-              (ateKind === "cuisine"
-                ? Boolean(cuisineSlug)
-                : ateKind === "food_item"
-                  ? Boolean(String(text).trim())
-                  : ateKind === "restaurant"
-                    ? Boolean(restaurant)
-                    : Boolean(restaurant && dish))
+            ? whereType === "happy_hour"
+              ? Boolean(restaurant && happyHourIntent)
+              : Boolean(whereType) &&
+                (ateKind === "cuisine"
+                  ? Boolean(cuisineSlug)
+                  : ateKind === "food_item"
+                    ? Boolean(String(text).trim())
+                    : ateKind === "restaurant"
+                      ? Boolean(restaurant)
+                      : Boolean(restaurant && dish))
             : Boolean(
                 String(text).trim() ||
                   file ||
@@ -702,6 +776,18 @@ export default function EatingCompose({
                 </button>
                 <button
                   type="button"
+                  data-testid="ate-where-happy-hour"
+                  disabled={busy}
+                  style={{
+                    ...styles.chip,
+                    ...(whereType === "happy_hour" ? styles.chipActive : null),
+                  }}
+                  onClick={() => selectWhere("happy_hour")}
+                >
+                  Happy Hour
+                </button>
+                <button
+                  type="button"
                   data-testid="ate-where-home"
                   disabled={busy}
                   style={{
@@ -713,10 +799,58 @@ export default function EatingCompose({
                   @Home
                 </button>
               </div>
-              <p style={styles.hint}>Pick where before what — restaurant menu or home recipe.</p>
+              <p style={styles.hint}>
+                {whereType === "happy_hour"
+                  ? "Pick a restaurant or venue, then whether you're there or going today."
+                  : "Pick where before what — restaurant menu or home recipe."}
+              </p>
             </div>
 
-            {whereType ? (
+            {whereType === "happy_hour" ? (
+              <>
+                <div
+                  style={styles.chips}
+                  role="group"
+                  aria-label="Happy Hour status"
+                  data-testid="ate-happy-hour-intents"
+                >
+                  {HAPPY_HOUR_INTENTS.map((intent) => {
+                    const active = happyHourIntent === intent.id;
+                    return (
+                      <button
+                        key={intent.id}
+                        type="button"
+                        data-testid={`ate-happy-hour-${intent.id}`}
+                        disabled={busy}
+                        style={{
+                          ...styles.chip,
+                          ...(active ? styles.chipActive : null),
+                        }}
+                        onClick={() => setHappyHourIntent(intent.id)}
+                      >
+                        {intent.label}
+                      </button>
+                    );
+                  })}
+                </div>
+                <EatingPlaceFields
+                  homemade={false}
+                  onHomemadeChange={() => {}}
+                  restaurant={restaurant}
+                  onRestaurantChange={setRestaurant}
+                  dish={dish}
+                  onDishChange={setDish}
+                  followed={followed}
+                  disabled={busy}
+                  locationCity={locationCity}
+                  locationState={locationState}
+                  allowDishSearch={false}
+                  allowHomemade={false}
+                />
+              </>
+            ) : null}
+
+            {whereType && whereType !== "happy_hour" ? (
             <div
               style={styles.chips}
               role="group"
@@ -879,6 +1013,7 @@ export default function EatingCompose({
                 ) : null
               : null}
 
+            {whereType !== "happy_hour" ? (
             <div data-testid="ate-multi-items" style={{ marginTop: 10 }}>
               <p style={styles.stepLabel}>More items on this meal (optional)</p>
               {extraItemNames.map((name, index) => (
@@ -922,7 +1057,10 @@ export default function EatingCompose({
                 </button>
               ) : null}
             </div>
+            ) : null}
 
+            {whereType !== "happy_hour" ? (
+            <>
             <p style={styles.stepLabel}>Meal time</p>
             <div style={styles.mealRow} role="group" aria-label="Meal time">
               {WHAT_I_ATE_MEAL_PERIODS.map((slot) => {
@@ -964,6 +1102,8 @@ export default function EatingCompose({
             <p style={styles.hint} data-testid="ate-signal-hint">
               {ateMeta.label}: actual eating now — separate from What I Wanna Eat (desire).
             </p>
+            </>
+            ) : null}
           </>
         ) : null}
 
@@ -985,10 +1125,28 @@ export default function EatingCompose({
                     }}
                     onClick={() => {
                       setWhereType("restaurant");
+                      setHappyHourIntent(null);
                       setHomemade(false);
                     }}
                   >
                     Restaurant
+                  </button>
+                  <button
+                    type="button"
+                    data-testid="ate-where-happy-hour"
+                    disabled={busy}
+                    style={{
+                      ...styles.chip,
+                      ...(whereType === "happy_hour" ? styles.chipActive : null),
+                    }}
+                    onClick={() => {
+                      setWhereType("happy_hour");
+                      setHappyHourIntent((prev) => prev || "enjoying");
+                      setHomemade(false);
+                      setDish(null);
+                    }}
+                  >
+                    Happy Hour
                   </button>
                   <button
                     type="button"
@@ -1000,6 +1158,7 @@ export default function EatingCompose({
                     }}
                     onClick={() => {
                       setWhereType("home");
+                      setHappyHourIntent(null);
                       setHomemade(true);
                       setRestaurant(null);
                       setDish(null);
@@ -1010,6 +1169,51 @@ export default function EatingCompose({
                 </div>
               </div>
             ) : null}
+            {category === "ate" && feedMode && whereType === "happy_hour" ? (
+              <>
+                <div
+                  style={styles.chips}
+                  role="group"
+                  aria-label="Happy Hour status"
+                  data-testid="ate-happy-hour-intents"
+                >
+                  {HAPPY_HOUR_INTENTS.map((intent) => {
+                    const active = happyHourIntent === intent.id;
+                    return (
+                      <button
+                        key={intent.id}
+                        type="button"
+                        data-testid={`ate-happy-hour-${intent.id}`}
+                        disabled={busy}
+                        style={{
+                          ...styles.chip,
+                          ...(active ? styles.chipActive : null),
+                        }}
+                        onClick={() => setHappyHourIntent(intent.id)}
+                      >
+                        {intent.label}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p style={styles.stepLabel}>Restaurant or venue</p>
+                <EatingPlaceFields
+                  homemade={false}
+                  onHomemadeChange={() => {}}
+                  restaurant={restaurant}
+                  onRestaurantChange={setRestaurant}
+                  dish={dish}
+                  onDishChange={setDish}
+                  followed={followed}
+                  disabled={busy}
+                  locationCity={locationCity}
+                  locationState={locationState}
+                  allowDishSearch={false}
+                  allowHomemade={false}
+                />
+              </>
+            ) : (
+              <>
             <p style={styles.stepLabel}>
               {category === "reviews"
                 ? "Which menu item are you reviewing?"
@@ -1031,8 +1235,10 @@ export default function EatingCompose({
               locationState={locationState}
               allowDishSearch
             />
+              </>
+            )}
 
-            {category === "ate" && isVideoFile(file) ? (
+            {category === "ate" && isVideoFile(file) && whereType !== "happy_hour" ? (
               <label style={styles.recommendRow} data-testid="eating-compose-recommend">
                 <input
                   type="checkbox"
@@ -1046,7 +1252,7 @@ export default function EatingCompose({
               </label>
             ) : null}
 
-            {category === "ate" && feedMode ? (
+            {category === "ate" && feedMode && whereType !== "happy_hour" ? (
               <div data-testid="ate-multi-items" style={{ marginTop: 10 }}>
                 <p style={styles.stepLabel}>More items on this meal (optional)</p>
                 {extraItemNames.map((name, index) => (

@@ -24,6 +24,7 @@ export default function EatingComposeSheet({
   inviteMeOutAudience = "connections",
   inviteMeOutSelectedIds = [],
   inviteMeOutCandidates = [],
+  initialWhereType = null,
 }) {
   if (!open) return null;
 
@@ -87,7 +88,7 @@ export default function EatingComposeSheet({
                 : "Photo or video, restaurant or homemade, meal time, then an optional comment."}
         </p>
         <EatingCompose
-          key={`${defaultCategory}-${defaultMealPeriod || "auto"}-${mediaSource}-${feedMode ? "feed" : "hub"}-${initialFile?.name || (initialFile ? "blob" : "none")}`}
+          key={`${defaultCategory}-${defaultMealPeriod || "auto"}-${mediaSource}-${feedMode ? "feed" : "hub"}-${initialWhereType || "where"}-${initialFile?.name || (initialFile ? "blob" : "none")}`}
           busy={busy}
           uploadPercent={uploadPercent}
           defaultCategory={defaultCategory}
@@ -105,6 +106,7 @@ export default function EatingComposeSheet({
           inviteMeOutAudience={inviteMeOutAudience}
           inviteMeOutSelectedIds={inviteMeOutSelectedIds}
           inviteMeOutCandidates={inviteMeOutCandidates}
+          initialWhereType={initialWhereType}
           inSheet
         />
       </div>

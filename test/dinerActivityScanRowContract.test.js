@@ -67,7 +67,7 @@ test("What I'm Eating / Wanna Eat use compact Add + sheet compose", () => {
   const hub = read("src/pages/consumer/myMenuply/EatingHubSection.jsx");
   const page = read("src/pages/consumer/MyMenuplyPage.jsx");
   assert.match(compose, /eating-status-line-compose|wanna-status-line-compose/);
-  assert.match(compose, /status-compose-open/);
+  assert.match(compose, /status-compose-open|hideTrigger/);
   assert.match(compose, /status-compose-sheet/);
   assert.match(compose, /ate-add-item/);
   assert.match(compose, /More items on this meal/);
@@ -79,6 +79,8 @@ test("What I'm Eating / Wanna Eat use compact Add + sheet compose", () => {
   assert.doesNotMatch(compose, /I'?m eating @/);
   assert.doesNotMatch(compose, /MenuplyMediaPicker|getUserMedia|facingMode/);
   assert.match(hub, /ActivityStatusLineCompose/);
+  assert.match(hub, /hideTrigger/);
+  assert.match(hub, /status-compose-open/);
   assert.match(hub, /category="ate"/);
   assert.match(hub, /category="want"/);
   assert.match(hub, /editMode/);

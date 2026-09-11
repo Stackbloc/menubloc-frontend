@@ -37,6 +37,7 @@ export default function FeedVideoComposeOverlay({
   category = "ate",
   mediaSource = "camera",
   openLibraryOnMount = false,
+  initialWhereType = null,
   onClose,
 }) {
   const { isAuthenticated } = useConsumer();
@@ -163,6 +164,7 @@ export default function FeedVideoComposeOverlay({
         defaultCategory={category}
         mediaSource={mediaSource}
         openLibraryOnMount={openLibraryOnMount}
+        initialWhereType={initialWhereType}
         busy={busy}
         uploadPercent={uploadPercent}
         feedMode

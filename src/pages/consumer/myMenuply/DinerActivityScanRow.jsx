@@ -22,6 +22,7 @@ import * as s from "./myMenuplyStyles.js";
 import {
   formatMealPeriodClockLead,
   mealPeriodClockParts,
+  MEAL_TIMELINE_INK,
 } from "./dinerHubFormat.js";
 import { mealPeriodProseWord } from "../../../lib/dinerSocialEmojiLanguage.js";
 
@@ -707,7 +708,7 @@ const styles = {
     left: "50%",
     width: 2,
     marginLeft: -1,
-    background: "#e2e8f0",
+    background: MEAL_TIMELINE_INK.rail,
   },
   timelineLineFirst: {
     top: 8,
@@ -722,7 +723,7 @@ const styles = {
     height: 10,
     marginTop: 4,
     borderRadius: "50%",
-    boxShadow: "0 0 0 3px #fff",
+    boxShadow: `0 0 0 3px #faf8f5`,
     flexShrink: 0,
   },
   timelineBody: {
@@ -746,7 +747,7 @@ const styles = {
     whiteSpace: "nowrap",
   },
   metaClock: {
-    color: "#94a3b8",
+    color: MEAL_TIMELINE_INK.clock,
     fontSize: 12,
     fontWeight: 500,
     fontVariantNumeric: "tabular-nums",
@@ -760,27 +761,27 @@ const styles = {
   dishEmphasis: {
     fontSize: 16,
     fontWeight: 780,
-    color: "#0f172a",
+    color: MEAL_TIMELINE_INK.dish,
     letterSpacing: "-0.02em",
   },
   placeLine: {
     fontSize: 13,
     lineHeight: 1.35,
-    color: "#64748b",
+    color: MEAL_TIMELINE_INK.secondary,
     fontWeight: 500,
     minWidth: 0,
   },
   atMuted: {
-    color: "#94a3b8",
+    color: MEAL_TIMELINE_INK.at,
     fontWeight: 500,
   },
   placeLinkTimeline: {
-    color: "#2563eb",
+    color: MEAL_TIMELINE_INK.place,
     fontWeight: 650,
     textDecoration: "none",
   },
   secondaryFood: {
-    color: "#94a3b8",
+    color: MEAL_TIMELINE_INK.secondary,
     fontWeight: 500,
   },
   inlineLink: {

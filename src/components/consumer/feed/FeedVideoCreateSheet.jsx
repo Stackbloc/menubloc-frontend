@@ -23,7 +23,7 @@ const X_CATEGORY_TITLES = {
   [FEED_CONTENT_KINDS.COOKING]: LIVE_FEED_FULL_CATEGORY_LABELS.cooking,
 };
 
-const VIDEO_ITEMS = LIVE_FEED_CHANNELS.filter((ch) =>
+const VIDEO_ITEMS_BASE = LIVE_FEED_CHANNELS.filter((ch) =>
   FEED_VIDEO_CATEGORY_IDS.includes(ch.id)
 ).map((ch) => ({
   id: ch.id,
@@ -40,18 +40,43 @@ const VIDEO_ITEMS = LIVE_FEED_CHANNELS.filter((ch) =>
   testId: `feed-video-create-${ch.id}`,
 }));
 
+/** Happy Hour sits immediately before @home (cooking) in Multiplier. */
+export const FEED_HAPPY_HOUR_ITEM = {
+  id: "happy_hour",
+  kind: "video",
+  title: "Happy Hour",
+  description: "Record a short Happy Hour video at a restaurant or venue",
+  testId: "feed-video-create-happy-hour",
+};
+
+const VIDEO_ITEMS = (() => {
+  const items = [];
+  for (const item of VIDEO_ITEMS_BASE) {
+    if (item.id === FEED_CONTENT_KINDS.COOKING) {
+      items.push(FEED_HAPPY_HOUR_ITEM);
+    }
+    items.push(item);
+  }
+  return items;
+})();
+
 const UPLOAD_CATEGORY_ITEMS = VIDEO_ITEMS.map((item) => ({
   ...item,
   kind: "upload-category",
   description:
-    item.id === FEED_CONTENT_KINDS.ATE
-      ? "Upload a video of what you're eating now"
-      : item.id === FEED_CONTENT_KINDS.REVIEWS
-        ? "Upload a video recommendation or review of a specific menu item"
-        : item.id === FEED_CONTENT_KINDS.COOKING
-          ? "Upload a video of what you're cooking at home"
-          : "Upload a video of a dish or craving you want",
-  testId: `feed-upload-media-${item.id}`,
+    item.id === "happy_hour"
+      ? "Upload a Happy Hour video at a restaurant or venue"
+      : item.id === FEED_CONTENT_KINDS.ATE
+        ? "Upload a video of what you're eating now"
+        : item.id === FEED_CONTENT_KINDS.REVIEWS
+          ? "Upload a video recommendation or review of a specific menu item"
+          : item.id === FEED_CONTENT_KINDS.COOKING
+            ? "Upload a video of what you're cooking at home"
+            : "Upload a video of a dish or craving you want",
+  testId:
+    item.id === "happy_hour"
+      ? "feed-upload-media-happy-hour"
+      : `feed-upload-media-${item.id}`,
 }));
 
 export const FEED_QUICK_INVITE_ITEMS = INVITE_MESSAGE_SEED_CODES.map((code) => {
@@ -184,6 +209,10 @@ export default function FeedVideoCreateSheet({
 
   function handleVideo(category) {
     onClose?.();
+    if (category === "happy_hour") {
+      onPickCategory?.(FEED_CONTENT_KINDS.ATE, { initialWhereType: "happy_hour" });
+      return;
+    }
     onPickCategory?.(category);
   }
 
@@ -199,6 +228,10 @@ export default function FeedVideoCreateSheet({
   function handleUploadCategory(category) {
     onClose?.();
     setUploadStep(false);
+    if (category === "happy_hour") {
+      onPickUploadCategory?.(FEED_CONTENT_KINDS.ATE, { initialWhereType: "happy_hour" });
+      return;
+    }
     onPickUploadCategory?.(category);
   }
 

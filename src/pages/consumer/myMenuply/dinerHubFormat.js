@@ -42,22 +42,47 @@ export function formatEatingCaption(item) {
 }
 
 /**
- * Meal-period accent colors for timeline meta (Claude presentation).
- * Complementary to Menuply forest greens: lunch stays brand-green; late night purple.
+ * Meal-period accent colors — Claude / Anthropic-inspired meal timeline.
+ * Soft terracotta family + sage lunch + violet late night (not Menuply forest green).
  */
 export const MEAL_PERIOD_ACCENT = {
-  breakfast: "#d97706",
-  brunch: "#ea580c",
-  lunch: "#16a34a",
-  dinner: "#0f766e",
-  late_night: "#7c3aed",
-  snack: "#0284c7",
-  other: "#64748b",
+  breakfast: "#C4A35A",
+  brunch: "#DA7756",
+  lunch: "#6A9B78",
+  dinner: "#5B7C8D",
+  late_night: "#8B7BB5",
+  snack: "#A67C6D",
+  other: "#8A8780",
+};
+
+/** Timeline typography tokens (Claude presentation). */
+export const MEAL_TIMELINE_INK = {
+  dish: "#1F1E1D",
+  clock: "#8A8780",
+  at: "#A3A09A",
+  place: "#4A6FA5",
+  secondary: "#8A8780",
+  rail: "#E8E6DC",
 };
 
 export function mealPeriodAccentColor(mealPeriod) {
   const id = normalizeWhatIAteMealPeriod(mealPeriod);
   return MEAL_PERIOD_ACCENT[id] || MEAL_PERIOD_ACCENT.other;
+}
+
+/** "Monday, January 1, 2026." for What I'm Eating date heading. */
+export function formatEatingHubDateHeading(ymd) {
+  const day = planYmd(ymd) || calendarDayYmd(ymd);
+  if (!day) return "";
+  const d = new Date(`${day}T12:00:00`);
+  if (Number.isNaN(d.getTime())) return "";
+  const label = d.toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+  return `${label}.`;
 }
 
 /** Clock for meal rows — timeline meta uses "12:30 PM". */

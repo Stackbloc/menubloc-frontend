@@ -240,6 +240,7 @@ test("Eating compose enforces Where before What for ate", () => {
   const compose = read("src/pages/consumer/myMenuply/EatingCompose.jsx");
   assert.match(compose, /ate-where-step/);
   assert.match(compose, /ate-where-restaurant/);
+  assert.match(compose, /ate-where-happy-hour/);
   assert.match(compose, /ate-where-home/);
   assert.match(compose, /whereType/);
   assert.match(compose, /portionAmount/);

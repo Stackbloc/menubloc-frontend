@@ -95,9 +95,13 @@ test("Feed shell: Home|Waiter|Share My QR|X|Deals|Shop|Profile + slim X sheet", 
   assert.doesNotMatch(createSheet, /title = uploadStep \? "Upload media" : "Create"/);
   assert.doesNotMatch(createSheet, /title = uploadStep \? "Upload media" : "Multiplier"/);
   assert.doesNotMatch(createSheet, /"Food Review"/);
+  assert.match(createSheet, /FEED_HAPPY_HOUR_ITEM/);
+  assert.match(createSheet, /feed-video-create-happy-hour/);
   const cookingIdx = createSheet.indexOf("FEED_CONTENT_KINDS.COOKING");
   const reviewsIdx = createSheet.indexOf("FEED_CONTENT_KINDS.REVIEWS");
+  const happyHourIdx = createSheet.indexOf("FEED_HAPPY_HOUR_ITEM");
   assert.ok(reviewsIdx > 0 && cookingIdx > reviewsIdx);
+  assert.ok(happyHourIdx > 0);
   const labels = read("src/lib/liveFeedCategory.js");
   assert.match(labels, /cooking:\s*"What's Cooking @home"/);
   assert.doesNotMatch(createSheet, /Post Food Review/);
@@ -230,7 +234,9 @@ test("Feed shell: Home|Waiter|Share My QR|X|Deals|Shop|Profile + slim X sheet", 
   assert.match(shellPage, /toggleProfileView/);
   assert.match(shellPage, /navigate\(/);
   assert.doesNotMatch(shellPage, /ProfileViewChrome/);
-  assert.doesNotMatch(shellPage, /setSearchParams/);
+  // Shell-owned Edit/Connect uses setSearchParams (replace) — do not trust location.search alone.
+  assert.match(shellPage, /setSearchParams/);
+  assert.match(shellPage, /buildProfileViewSearchParams/);
   assert.match(mobileHeader, /ProfileViewModeToggle/);
   assert.match(mobileHeader, /zIndex:\s*55/);
   assert.match(read("src/components/consumer/feed/FeedPrimaryNav.jsx"), /zIndex:\s*50/);

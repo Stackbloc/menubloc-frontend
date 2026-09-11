@@ -147,3 +147,14 @@ export const WANT_INTENT_KINDS = [
 
 /** What I'm Eating signal levels — same taxonomy as Wanna Eat (behavior ≠ desire). */
 export const ATE_SIGNAL_KINDS = WANT_INTENT_KINDS;
+
+/** Happy Hour intents — restaurant/venue + state only (no clock / schedule). */
+export const HAPPY_HOUR_INTENTS = [
+  { id: "enjoying", label: "I'm enjoying Happy Hour", foodName: "I'm enjoying Happy Hour" },
+  { id: "going", label: "I'm going to Happy Hour today", foodName: "I'm going to Happy Hour today" },
+];
+
+export function happyHourFoodName(intentId) {
+  const row = HAPPY_HOUR_INTENTS.find((p) => p.id === intentId);
+  return row?.foodName || "";
+}
