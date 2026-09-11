@@ -747,13 +747,47 @@ function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
         />
 
         {video.video_url ? (
-          <video
-            src={video.video_url}
-            controls
-            playsInline
-            muted={playMuted}
-            style={{ width: "100%", maxWidth: 360, borderRadius: 12, background: "#000", marginBottom: 16 }}
-          />
+          <div style={{ marginBottom: 16, display: "grid", gap: 8, maxWidth: 360 }}>
+            <video
+              src={video.video_url}
+              controls
+              playsInline
+              muted={playMuted}
+              data-testid="owner-video-preview"
+              onVolumeChange={(e) => {
+                // Native player mute must update Feed mute state — preview-only mute was a false save.
+                setPlayMuted(Boolean(e.currentTarget.muted));
+              }}
+              style={{ width: "100%", borderRadius: 12, background: "#000" }}
+            />
+            <label
+              style={{
+                display: "flex",
+                gap: 8,
+                alignItems: "center",
+                fontSize: 14,
+                fontWeight: 700,
+                color: playMuted ? "#b91c1c" : OWNER_COLORS.ink,
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={playMuted}
+                onChange={(e) => setPlayMuted(e.target.checked)}
+                data-testid="owner-video-play-muted"
+              />
+              Mute on Feed (diners see “No sound.” and cannot unmute)
+            </label>
+            {playMuted ? (
+              <p style={{ margin: 0, fontSize: 12, color: "#b91c1c", fontWeight: 600 }}>
+                Will save as muted on live Feed. Using the player’s speaker icon alone also sets this.
+              </p>
+            ) : (
+              <p style={{ margin: 0, fontSize: 12, color: OWNER_COLORS.muted }}>
+                Check Mute (or mute the preview player) before Save — otherwise Feed plays with sound.
+              </p>
+            )}
+          </div>
         ) : null}
 
         <form onSubmit={handleSave} style={{ display: "grid", gap: 12 }}>
@@ -808,15 +842,9 @@ function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
           <legend style={{ fontWeight: 700, fontSize: 13, padding: "0 6px" }}>
             Playback settings
           </legend>
-          <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 14 }}>
-            <input
-              type="checkbox"
-              checked={playMuted}
-              onChange={(e) => setPlayMuted(e.target.checked)}
-              data-testid="owner-video-play-muted"
-            />
-            Mute (show “No sound.” — diners cannot unmute)
-          </label>
+          <p style={{ margin: 0, fontSize: 12, color: OWNER_COLORS.muted }}>
+            Feed mute is controlled above the form (next to the preview).
+          </p>
           <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 14 }}>
             <input
               type="checkbox"

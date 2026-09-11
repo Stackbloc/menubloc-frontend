@@ -32,6 +32,14 @@ test("Video Manager editor locks modal ink and exposes Stop showing in Feed", ()
   assert.match(src, /Show in Feed \(uncheck to hide/);
 });
 
+test("Video Manager preview mute syncs to play_muted save state", () => {
+  const src = read("src/pages/owner/OwnerVideoCuration.jsx");
+  assert.match(src, /owner-video-preview/);
+  assert.match(src, /onVolumeChange/);
+  assert.match(src, /setPlayMuted\(Boolean\(e\.currentTarget\.muted\)\)/);
+  assert.match(src, /Mute on Feed/);
+});
+
 test("Feed shows No sound. when manager forces mute", () => {
   const feed = read("src/pages/consumer/myMenuply/SeeWhosEatingFullscreen.jsx");
   assert.match(feed, /isManagerForcedMute/);
