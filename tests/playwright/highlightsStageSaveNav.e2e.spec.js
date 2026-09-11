@@ -157,12 +157,16 @@ test.describe("My Highlights stage + Save does not freeze nav", () => {
 
     await expect(page.getByTestId("profile-view-mode-toggle")).toBeVisible();
     await expect(page.getByTestId("profile-view-mode-label")).toHaveText("Edit View");
-    await page.getByTestId("profile-view-mode-toggle").click();
-    await expect(page).toHaveURL(/view=connect/);
-    await expect(page.getByTestId("profile-view-mode-label")).toHaveText("Connect View");
-    await page.getByTestId("profile-view-mode-toggle").click();
-    await expect(page).not.toHaveURL(/view=connect/);
-    await expect(page.getByTestId("profile-view-mode-label")).toHaveText("Edit View");
+    for (let i = 0; i < 3; i++) {
+      await page.getByTestId("profile-view-mode-toggle").click();
+      await expect(page).toHaveURL(/view=connect/);
+      await expect(page.getByTestId("profile-view-mode-label")).toHaveText("Connect View");
+      await expect(page.getByTestId("my-highlights-add")).toHaveCount(0);
+      await page.getByTestId("profile-view-mode-toggle").click();
+      await expect(page).not.toHaveURL(/view=connect/);
+      await expect(page.getByTestId("profile-view-mode-label")).toHaveText("Edit View");
+      await expect(page.getByTestId("my-highlights-add")).toBeVisible();
+    }
 
     await page.getByTestId("feed-nav-home").click();
     await expect(page).toHaveURL(/\/feed\/?$/);

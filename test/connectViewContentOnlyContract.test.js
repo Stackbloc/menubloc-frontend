@@ -20,13 +20,15 @@ test("Connect view is content-only — no how-to instructions", () => {
 
   assert.match(page, /Connect view: content about this diner only/);
   assert.match(page, /previewAsConnect/);
-  assert.match(shellPage, /location\.search/);
-  assert.match(shellPage, /previewAsConnect/);
-  assert.match(shellPage, /URLSearchParams\(location\.search\)/);
-  assert.doesNotMatch(shellPage, /useSearchParams\s*\(/);
-  assert.doesNotMatch(shellPage, /,\s*useSearchParams\s*[,}]/);
-  assert.match(page, /location\.search/);
-  assert.match(page, /previewAsConnect = new URLSearchParams\(location\.search\)/);
+  assert.match(shellPage, /useSearchParams/);
+  assert.match(shellPage, /buildProfileViewSearchParams/);
+  assert.match(shellPage, /readConnectViewFromWindow/);
+  assert.match(shellPage, /Outlet context=\{profileViewOutlet\}/);
+  assert.match(shellPage, /setPreviewAsConnect/);
+  assert.doesNotMatch(shellPage, /navigate\(\{ pathname: "\/feed\/profile"/);
+  assert.match(page, /useOutletContext/);
+  assert.match(page, /profileView\.previewAsConnect/);
+  assert.match(page, /profileView\.toggleProfileView/);
   assert.match(page, /readOnly=\{previewAsConnect\}/);
   assert.match(page, /editMode=\{!previewAsConnect\}/);
   assert.match(page, /needs_primary_location && !previewAsConnect/);

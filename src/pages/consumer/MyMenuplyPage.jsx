@@ -4,7 +4,7 @@
  */
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useOutletContext, useSearchParams } from "react-router-dom";
 import FeedGuestProfileLanding from "../../components/consumer/feed/FeedGuestProfileLanding.jsx";
 import ProfileViewModeToggle from "../../components/consumer/feed/ProfileViewModeToggle.jsx";
 import ShareModal from "../../components/share/ShareModal.jsx";
@@ -195,6 +195,7 @@ export default function MyMenuplyPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
+  const profileView = useOutletContext() || {};
   const isDesktopFeed = useFeedShellDesktop();
   const eatingSectionRef = useRef(null);
   const [loading, setLoading] = useState(true);
@@ -203,15 +204,26 @@ export default function MyMenuplyPage() {
   const [eduConsumer, setEduConsumer] = useState(null);
   const [avatarUrl, setAvatarUrl] = useState("");
   /** Connect view: content about this diner only — never Menuply how-to / compose coaching. */
-  const previewAsConnect = new URLSearchParams(location.search).get("view") === "connect";
+  // Prefer FeedShell outlet state (survives React Router search lag after toggle).
+  const previewAsConnect = Boolean(
+    profileView.previewAsConnect ??
+      (typeof window !== "undefined" &&
+        new URLSearchParams(window.location.search).get("view") === "connect")
+  );
 
   function toggleProfileViewMode() {
+    if (typeof profileView.toggleProfileView === "function") {
+      profileView.toggleProfileView();
+      return;
+    }
     clearStuckMediaChrome();
-    const params = new URLSearchParams(location.search);
-    if (params.get("view") === "connect") params.delete("view");
-    else params.set("view", "connect");
-    const qs = params.toString();
-    navigate({ pathname: "/feed/profile", search: qs ? `?${qs}` : "" }, { replace: true });
+    const params = new URLSearchParams(
+      typeof window !== "undefined" ? window.location.search : location.search
+    );
+    const next = params.get("view") !== "connect";
+    if (next) params.set("view", "connect");
+    else params.delete("view");
+    setSearchParams(params, { replace: true });
   }
 
   useEffect(() => {
@@ -423,7 +435,10 @@ export default function MyMenuplyPage() {
     function clearComposeParams() {
       setSearchParams(
         (prev) => {
-          const next = new URLSearchParams(prev);
+          // Prefer live window search — React Router prev can lag after view toggles.
+          const next = new URLSearchParams(
+            typeof window !== "undefined" ? window.location.search : prev
+          );
           if (!next.has("compose") && !next.has("media")) return prev;
           next.delete("compose");
           next.delete("media");
@@ -517,7 +532,9 @@ export default function MyMenuplyPage() {
       setMmtDetailId(Number(mmt));
       setSearchParams(
         (prev) => {
-          const next = new URLSearchParams(prev);
+          const next = new URLSearchParams(
+            typeof window !== "undefined" ? window.location.search : prev
+          );
           if (!next.has("mmt")) return prev;
           next.delete("mmt");
           return next;

@@ -4,8 +4,8 @@
  * Mobile: bottom nav + top More header. Desktop: left rail + More panel.
  */
 
-import { useEffect, useState } from "react";
-import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { Outlet, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { isFeedShopRoute } from "../../../lib/feedShellNavigation.js";
 import FeedPrimaryNav, { FEED_PRIMARY_NAV_HEIGHT } from "../../../components/consumer/feed/FeedPrimaryNav.jsx";
 import FeedDesktopRail, { FEED_DESKTOP_RAIL_WIDTH } from "../../../components/consumer/feed/FeedDesktopRail.jsx";
@@ -17,6 +17,10 @@ import FeedVideoComposeOverlay from "../../../components/consumer/feed/FeedVideo
 import { useConsumer } from "../../../context/ConsumerContext.jsx";
 import { useFeedShellDesktop } from "../../../lib/useFeedShellDesktop.js";
 import { clearStuckMediaChrome } from "../myMenuply/pendingHighlightMedia.js";
+import {
+  buildProfileViewSearchParams,
+  readConnectViewFromWindow,
+} from "./profileViewMode.js";
 
 export { FEED_PRIMARY_NAV_HEIGHT };
 
@@ -27,6 +31,7 @@ function isOwnFeedProfilePath(pathname) {
 export default function FeedShellPage({ children = null }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const [, setSearchParams] = useSearchParams();
   const { isAuthenticated } = useConsumer();
   const isDesktop = useFeedShellDesktop();
   const showShopBasket = isFeedShopRoute(location.pathname);
@@ -37,18 +42,35 @@ export default function FeedShellPage({ children = null }) {
   const [moreOpen, setMoreOpen] = useState(false);
   const [shareMenuplyOpen, setShareMenuplyOpen] = useState(false);
 
-  // Derive from location.search so the label tracks navigate() flips.
-  const previewAsConnect = new URLSearchParams(location.search).get("view") === "connect";
+  // Shell-owned UI state — do not trust location.search alone (can lag the address bar).
+  const [previewAsConnect, setPreviewAsConnect] = useState(() => readConnectViewFromWindow());
+  const previewAsConnectRef = useRef(previewAsConnect);
+  previewAsConnectRef.current = previewAsConnect;
   const showProfileViewToggle = isAuthenticated && isOwnFeedProfilePath(location.pathname);
+
+  // Browser back/forward only — never re-derive from stale React Router search after toggle.
+  useEffect(() => {
+    function onPopState() {
+      const next = readConnectViewFromWindow();
+      previewAsConnectRef.current = next;
+      setPreviewAsConnect(next);
+    }
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
 
   function toggleProfileView() {
     clearStuckMediaChrome();
-    const params = new URLSearchParams(location.search);
-    if (params.get("view") === "connect") params.delete("view");
-    else params.set("view", "connect");
-    const qs = params.toString();
-    navigate({ pathname: "/feed/profile", search: qs ? `?${qs}` : "" }, { replace: true });
+    const next = !previewAsConnectRef.current;
+    previewAsConnectRef.current = next;
+    setPreviewAsConnect(next);
+    setSearchParams(buildProfileViewSearchParams(next), { replace: true });
   }
+
+  const profileViewOutlet = {
+    previewAsConnect,
+    toggleProfileView,
+  };
 
   useEffect(() => {
     document.documentElement.style.setProperty(
@@ -172,7 +194,7 @@ export default function FeedShellPage({ children = null }) {
           marginLeft: isDesktop ? FEED_DESKTOP_RAIL_WIDTH : 0,
         }}
       >
-        {children != null ? children : <Outlet />}
+        {children != null ? children : <Outlet context={profileViewOutlet} />}
       </div>
 
       {!isDesktop ? (
