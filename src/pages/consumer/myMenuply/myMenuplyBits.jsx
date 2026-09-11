@@ -86,16 +86,21 @@ export function SectionHead({
 }
 
 export function PhotoGrid({ items, onSelect, onPhotoPick, hideJoinMe = false, presentation = false }) {
-  const ordered = useMemo(
-    () =>
-      [...(items || [])].sort((a, b) =>
-        compareMealPeriod(
-          normalizeWhatIAteMealPeriod(a.meal_period),
-          normalizeWhatIAteMealPeriod(b.meal_period)
-        )
-      ),
-    [items]
-  );
+  const ordered = useMemo(() => {
+    const rows = [...(items || [])];
+    rows.sort((a, b) => {
+      const ta = a?.eaten_at ? new Date(a.eaten_at).getTime() : Number.POSITIVE_INFINITY;
+      const tb = b?.eaten_at ? new Date(b.eaten_at).getTime() : Number.POSITIVE_INFINITY;
+      const da = Number.isFinite(ta) ? ta : Number.POSITIVE_INFINITY;
+      const db = Number.isFinite(tb) ? tb : Number.POSITIVE_INFINITY;
+      if (da !== db) return da - db;
+      return compareMealPeriod(
+        normalizeWhatIAteMealPeriod(a.meal_period),
+        normalizeWhatIAteMealPeriod(b.meal_period)
+      );
+    });
+    return rows;
+  }, [items]);
   const [index, setIndex] = useState(0);
   const [photoHover, setPhotoHover] = useState(false);
   const [replaceMediaOpen, setReplaceMediaOpen] = useState(false);

@@ -25,6 +25,32 @@ test("groupHubAteMeals groups by meal_id and joins item names", () => {
   assert.equal(meals[1].items.length, 1);
 });
 
+test("groupHubAteMeals sorts chronologically by eaten_at (late night before breakfast)", () => {
+  const meals = groupHubAteMeals([
+    {
+      entry_id: 10,
+      meal_id: null,
+      food_name: "Eggs",
+      meal_period: "breakfast",
+      eaten_on: "2026-09-11",
+      eaten_at: "2026-09-11T15:30:00.000Z", // 8:30a PT
+    },
+    {
+      entry_id: 11,
+      meal_id: null,
+      food_name: "Nachos",
+      meal_period: "late_night",
+      eaten_on: "2026-09-11",
+      eaten_at: "2026-09-11T11:20:00.000Z", // 4:20a PT
+    },
+  ]);
+  assert.equal(meals.length, 2);
+  assert.equal(meals[0].food_name, "Nachos");
+  assert.equal(meals[0].meal_period, "late_night");
+  assert.equal(meals[1].food_name, "Eggs");
+  assert.equal(meals[1].meal_period, "breakfast");
+});
+
 test("compose + API expose multi-item meal create", () => {
   const api = read("src/lib/consumerApi.js");
   const compose = read("src/pages/consumer/myMenuply/EatingCompose.jsx");

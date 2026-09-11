@@ -1,6 +1,21 @@
 /**
  * Group hub diary rows into meal occasions (legacy null meal_id = singleton).
+ * Output order is chronological by eaten_at (late night before breakfast when clocks say so).
  */
+
+function eatenAtMs(row) {
+  const raw = row?.eaten_at;
+  if (raw == null || raw === "") return Number.POSITIVE_INFINITY;
+  const ms = new Date(raw).getTime();
+  return Number.isFinite(ms) ? ms : Number.POSITIVE_INFINITY;
+}
+
+export function compareHubMealsByEatenAt(a, b) {
+  const da = eatenAtMs(a);
+  const db = eatenAtMs(b);
+  if (da !== db) return da - db;
+  return 0;
+}
 
 export function groupHubAteMeals(entries = []) {
   const list = Array.isArray(entries) ? entries : [];
@@ -68,12 +83,18 @@ export function groupHubAteMeals(entries = []) {
       food_name: entry.food_name || entry.item_name,
     });
   }
-  return meals.map((meal) => {
+  const shaped = meals.map((meal) => {
     const names = meal.items
       .map((item) => item.food_name || item.item_name)
       .filter(Boolean);
+    // Prefer earliest item clock on a multi-item meal.
+    const earliest = meal.items.reduce((best, item) => {
+      if (!best) return item;
+      return eatenAtMs(item) < eatenAtMs(best) ? item : best;
+    }, null);
     return {
       ...meal,
+      eaten_at: earliest?.eaten_at || meal.eaten_at || null,
       food_name: names.join(" · ") || meal.food_name || "Food",
       menu_item_id:
         meal.items.length === 1
@@ -84,4 +105,11 @@ export function groupHubAteMeals(entries = []) {
       primaryItem: meal.items[0] || null,
     };
   });
+  return shaped
+    .map((meal, index) => ({ meal, index }))
+    .sort((a, b) => {
+      const byTime = compareHubMealsByEatenAt(a.meal, b.meal);
+      return byTime !== 0 ? byTime : a.index - b.index;
+    })
+    .map(({ meal }) => meal);
 }
