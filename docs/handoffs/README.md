@@ -1,5 +1,7 @@
 # Handoff Files Index
 
+- [2026-09-11_unified-multi-item-meals_handoff.md](./2026-09-11_unified-multi-item-meals_handoff.md) — Parent diner_meals + multi-item compose/Multiplier + MiF occasion counts; mig 0328; **LOCAL — CPD pending**
+
 - [2026-08-21_my-menuply-five-section_handoff.md](./2026-08-21_my-menuply-five-section_handoff.md) — Five-section My Menuply + My Events CPD (**COMPLETE** — tip `g8uuar69o` / `index-BpozLIHf.js`; FE `3056680`; BE `6514a605`)
 - [2026-08-20_diner-search-name-phone-email_handoff.md](./2026-08-20_diner-search-name-phone-email_handoff.md) — Find Diners match name/phone/email when searchable; Connect reused (**COMPLETE** — BE `9f997a6a` / FE `9cfd336`)
 - [2026-08-20_connection-food-activity-yellow-browser-scope_handoff.md](./2026-08-20_connection-food-activity-yellow-browser-scope_handoff.md) — Connection food activity pref + YB cluster↔city (**CPD COMPLETE** — tip `hzqhp15u6` / `index-DZq-yI_T.js`; FE `d3eb1d2`; BE `d49d3edd`)

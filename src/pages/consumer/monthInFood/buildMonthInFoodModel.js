@@ -66,6 +66,46 @@ export function isHomeMeal(row = {}) {
   return /\bhomemade\b|\b@home\b|\bat home\b/i.test(blob);
 }
 
+/** Group flat diary items into meal occasions (legacy null meal_id = singleton). */
+export function groupDiaryMealsForModel(diary = []) {
+  const list = Array.isArray(diary) ? diary : [];
+  const byMeal = new Map();
+  const meals = [];
+  for (const entry of list) {
+    const mid = entry?.meal_id != null ? Number(entry.meal_id) : null;
+    if (mid && Number.isFinite(mid)) {
+      if (!byMeal.has(mid)) {
+        const meal = {
+          id: mid,
+          eaten_on: entry.eaten_on,
+          meal_period: entry.meal_period || null,
+          where_type: entry.where_type || null,
+          is_home: isHomeMeal(entry),
+          restaurant_id: entry.restaurant_id || null,
+          items: [],
+        };
+        byMeal.set(mid, meal);
+        meals.push(meal);
+      }
+      const meal = byMeal.get(mid);
+      meal.items.push(entry);
+      if (isHomeMeal(entry)) meal.is_home = true;
+      continue;
+    }
+    meals.push({
+      id: null,
+      singleton_entry_id: entry.id,
+      eaten_on: entry.eaten_on,
+      meal_period: entry.meal_period || null,
+      where_type: entry.where_type || null,
+      is_home: isHomeMeal(entry),
+      restaurant_id: entry.restaurant_id || null,
+      items: [entry],
+    });
+  }
+  return meals;
+}
+
 /** Pinned profile photos first (profile Top Highlights contract), then diary stills. */
 function buildHighlights({ diary = [], profileMedia = [] }) {
   const cards = [];
@@ -126,6 +166,8 @@ function buildHighlights({ diary = [], profileMedia = [] }) {
 export function buildMonthInFoodModel(payload = {}) {
   const diaryVisible = payload.diary_visible !== false;
   const diary = diaryVisible ? payload.diary || [] : [];
+  const mealsFromApi = diaryVisible && Array.isArray(payload.meals) ? payload.meals : null;
+  const mealOccasions = mealsFromApi || groupDiaryMealsForModel(diary);
   const wants = payload.wants || [];
   const diningIntents = payload.dining_intents || [];
   const plans = payload.plans || [];
@@ -142,7 +184,9 @@ export function buildMonthInFoodModel(payload = {}) {
   const eventsJoinDefault = Boolean(payload.diner_social_defaults?.events_join_me?.open);
   const crewsJoinDefault = Boolean(payload.diner_social_defaults?.crews_join_me?.open);
 
-  const mealsLogged = diary.length;
+  const mealsLogged = Number.isFinite(Number(payload.meals_count))
+    ? Number(payload.meals_count)
+    : mealOccasions.length;
   const restaurantIds = new Set();
   const restaurantMap = new Map();
   const homeMeals = [];
@@ -154,49 +198,58 @@ export function buildMonthInFoodModel(payload = {}) {
   let coffeeCups = 0;
   let snackOtherCount = 0;
 
-  for (const row of diary) {
-    const name = row.food_name || row.item_name || row.homemade_dish_name || "";
-    if (name) foodNames.push(name);
-    if (DRINK_RE.test(name)) drinkNames.push(name);
-    if (COFFEE_RE.test(name)) coffeeCups += 1;
-    const period = String(row.meal_period || "").toLowerCase();
+  for (const meal of mealOccasions) {
+    const items = Array.isArray(meal.items) && meal.items.length ? meal.items : [meal];
+    const home = meal.is_home === true || items.some((row) => isHomeMeal(row));
+    const period = String(meal.meal_period || items[0]?.meal_period || "").toLowerCase();
     if (period === "snack" || period === "other") snackOtherCount += 1;
 
-    const home = isHomeMeal(row);
     if (home) {
+      const names = items
+        .map((row) => row.food_name || row.item_name || row.homemade_dish_name || "")
+        .filter(Boolean);
+      const first = items[0] || {};
       homeMeals.push({
-        key: `home-${row.id}`,
-        food_name: name || "Home meal",
-        portion_amount: row.portion_amount ?? null,
-        portion_unit: row.portion_unit || null,
-        meal_period: row.meal_period || null,
-        photo_url: mediaUrl(row.photo_url || row.item_photo_url),
-        href: row.href || null,
-        eaten_on: row.eaten_on || null,
+        key: `home-${meal.id || first.id || names.join("-")}`,
+        food_name: names.join(" · ") || "Home meal",
+        portion_amount: first.portion_amount ?? null,
+        portion_unit: first.portion_unit || null,
+        meal_period: meal.meal_period || first.meal_period || null,
+        photo_url: mediaUrl(
+          items.find((r) => r.photo_url || r.item_photo_url)?.photo_url ||
+            items.find((r) => r.item_photo_url)?.item_photo_url
+        ),
+        href: first.href || null,
+        eaten_on: meal.eaten_on || first.eaten_on || null,
       });
-    } else if (row.restaurant_id) {
-      restaurantIds.add(Number(row.restaurant_id));
-      if (!restaurantMap.has(Number(row.restaurant_id))) {
-        restaurantMap.set(Number(row.restaurant_id), {
-          restaurant_id: Number(row.restaurant_id),
-          name: row.restaurant_name || "Restaurant",
-          place: [row.restaurant_city, row.restaurant_state].filter(Boolean).join(", "),
-          image: mediaUrl(row.restaurant_logo_url || row.photo_url || row.item_photo_url),
-          slug: row.restaurant_slug || null,
+    } else if (meal.restaurant_id || items.some((r) => r.restaurant_id)) {
+      const restRow = items.find((r) => r.restaurant_id) || meal;
+      restaurantIds.add(Number(restRow.restaurant_id));
+      if (!restaurantMap.has(Number(restRow.restaurant_id))) {
+        restaurantMap.set(Number(restRow.restaurant_id), {
+          restaurant_id: Number(restRow.restaurant_id),
+          name: restRow.restaurant_name || "Restaurant",
+          place: [restRow.restaurant_city, restRow.restaurant_state].filter(Boolean).join(", "),
+          image: mediaUrl(restRow.restaurant_logo_url || restRow.photo_url || restRow.item_photo_url),
+          slug: restRow.restaurant_slug || null,
         });
       }
     }
 
-    const cuisine = String(row.cuisine || "").trim();
-    if (cuisine) {
-      cuisineCounts.set(cuisine, (cuisineCounts.get(cuisine) || 0) + 1);
-    }
-
-    // Never use video_url as an <img> src — photo stills only for moment mosaic.
-    const img = mediaUrl(row.photo_url || row.item_photo_url);
-    if (img || row.video_url) {
-      mediaMealCount += 1;
-      if (img) momentUrls.push({ key: `d-${row.id}`, url: img, label: name });
+    for (const row of items) {
+      const name = row.food_name || row.item_name || row.homemade_dish_name || "";
+      if (name) foodNames.push(name);
+      if (DRINK_RE.test(name)) drinkNames.push(name);
+      if (COFFEE_RE.test(name)) coffeeCups += 1;
+      const cuisine = String(row.cuisine || "").trim();
+      if (cuisine) {
+        cuisineCounts.set(cuisine, (cuisineCounts.get(cuisine) || 0) + 1);
+      }
+      const img = mediaUrl(row.photo_url || row.item_photo_url);
+      if (img || row.video_url) {
+        mediaMealCount += 1;
+        if (img) momentUrls.push({ key: `d-${row.id}`, url: img, label: name });
+      }
     }
   }
 
@@ -213,10 +266,15 @@ export function buildMonthInFoodModel(payload = {}) {
   const homemadeDishesCount = Number(payload.homemade_dishes_count) || 0;
   const homeMealsCount = Number.isFinite(Number(payload.home_meals_count))
     ? Number(payload.home_meals_count)
-    : homeMeals.length;
+    : mealOccasions.filter((m) => m.is_home === true || (m.items || []).some((r) => isHomeMeal(r)))
+        .length;
   const restaurantDishesCount = Number.isFinite(Number(payload.restaurant_dishes_count))
     ? Number(payload.restaurant_dishes_count)
-    : diary.filter((r) => r.restaurant_id != null && !isHomeMeal(r)).length;
+    : mealOccasions.filter(
+        (m) =>
+          !(m.is_home === true || (m.items || []).some((r) => isHomeMeal(r))) &&
+          (m.restaurant_id != null || (m.items || []).some((r) => r.restaurant_id != null))
+      ).length;
 
   const stats = [];
   if (diaryVisible) {

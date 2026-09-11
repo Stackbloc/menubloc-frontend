@@ -32,6 +32,7 @@ export function mapDiaryEntriesForHub(entries = []) {
     ...row,
     id: `wia-${row.id}`,
     entry_id: row.id,
+    meal_id: row.meal_id != null ? Number(row.meal_id) : null,
     eaten_on: calendarDayYmd(row.eaten_on) || row.eaten_on || null,
     food_name: row.item_name || row.food_name || "Food",
     kind: "what_i_ate",

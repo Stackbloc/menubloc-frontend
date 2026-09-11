@@ -120,8 +120,6 @@ export default function DinerActivityScanRow({
   nameInProse = false,
   /** Always render restaurant as text link (never inline logo mark). */
   placeAsText = false,
-  /** 1-based meal order for this journal day (profile What I'm Eating). */
-  dailyMealNumber = null,
   /** Owner profile: long-press / right-click to delete this entry. */
   onDelete = null,
   deleteBusy = false,
@@ -299,20 +297,9 @@ export default function DinerActivityScanRow({
 
   function renderClause() {
     const nameLead = renderProseNameLead();
-    const mealNum =
-      dailyMealNumber != null && Number(dailyMealNumber) > 0
-        ? Math.floor(Number(dailyMealNumber))
-        : null;
 
     if (ownerCompact) {
-      const mealLead =
-        mealNum != null ? (
-          <span data-testid="diner-activity-scan-meal-num">
-            Meal {mealNum}
-            {meal ? <span> · {meal}</span> : null}
-            <span>: </span>
-          </span>
-        ) : meal ? (
+      const mealLead = meal ? (
           <span style={styles.mealInline} data-testid="diner-activity-scan-meal-inline">
             {meal}:{" "}
           </span>

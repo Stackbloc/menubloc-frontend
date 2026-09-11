@@ -4,7 +4,7 @@
 
 import {
   createWantToEat,
-  createWhatIAteToday,
+  createWhatIAteMeal,
   uploadWantToEatPhoto,
   uploadWhatIAteTodayPhoto,
   uploadEatingPlanMedia,
@@ -27,8 +27,11 @@ export async function postFeedAteVideo({
   dish = null,
   isRecommend = false,
   feedPresentationKind = "ate",
+  items = null,
+  whereType = null,
   onUploadProgress,
 }) {
+  void feedPresentationKind;
   if (!file || !isVideoFile(file)) {
     throw new Error("Feed posts need a video");
   }
@@ -46,24 +49,55 @@ export async function postFeedAteVideo({
       note ||
       "Food";
 
-  const data = await createWhatIAteToday({
-    food_name: foodName,
+  const resolvedWhere =
+    whereType === "home" || whereType === "restaurant"
+      ? whereType
+      : homemade
+        ? "home"
+        : restaurantId
+          ? "restaurant"
+          : "home";
+
+  const mealItems =
+    Array.isArray(items) && items.length > 0
+      ? items
+          .map((item, index) => ({
+            food_name: String(item.food_name || item.foodName || "").trim(),
+            menu_item_id: item.menu_item_id ?? item.menuItemId ?? (index === 0 ? menuItemId : null),
+            restaurant_id:
+              item.restaurant_id ?? item.restaurantId ?? (index === 0 ? restaurantId : null),
+            is_recommend:
+              index === 0 ? Boolean(isRecommend && (restaurantId || menuItemId)) : false,
+            market_discoverable: true,
+          }))
+          .filter((item) => item.food_name)
+      : [
+          {
+            food_name: foodName,
+            menu_item_id: menuItemId,
+            restaurant_id: restaurantId,
+            is_recommend: Boolean(isRecommend && (restaurantId || menuItemId)),
+            market_discoverable: true,
+          },
+        ];
+
+  if (!mealItems.length) {
+    throw new Error("Add at least one food item");
+  }
+
+  const data = await createWhatIAteMeal({
+    where_type: resolvedWhere,
+    restaurant_id: resolvedWhere === "restaurant" ? restaurantId : null,
+    meal_period: mealPeriod || defaultWhatIAteMealPeriod(),
+    eaten_on: whatIAteTodayLocalDate(),
+    eaten_at: new Date().toISOString(),
     photo_url,
     video_url,
-    eaten_on: whatIAteTodayLocalDate(),
-    meal_period: mealPeriod || defaultWhatIAteMealPeriod(),
-    restaurant_id: restaurantId,
-    menu_item_id: menuItemId,
-    is_recommend: Boolean(isRecommend && (restaurantId || menuItemId)),
-    comment: homemade ? joinHomemadeComment(true, note) : note || undefined,
-    market_discoverable: true,
-    feed_presentation_kind:
-      feedPresentationKind === "review" || feedPresentationKind === "reviews"
-        ? "review"
-        : "ate",
+    comment: homemade || resolvedWhere === "home" ? joinHomemadeComment(true, note) : note || undefined,
+    items: mealItems,
   });
 
-  return data?.entry || data;
+  return data?.entry || data?.items?.[0] || data;
 }
 
 export async function postFeedReviewVideo(payload) {

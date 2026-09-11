@@ -75,6 +75,8 @@ export default function EatingCompose({
     Array.isArray(inviteMeOutSelectedIdsInitial) ? inviteMeOutSelectedIdsInitial : []
   );
   const [isRecommend, setIsRecommend] = useState(false);
+  /** Extra food names on the same meal (primary is `text` / dish). */
+  const [extraItemNames, setExtraItemNames] = useState([]);
 
   useEffect(() => {
     if (!isVideoFile(file)) setIsRecommend(false);
@@ -353,17 +355,30 @@ export default function EatingCompose({
       if (needsDish && !(restaurant && dish)) return;
 
       const portionNum = Number(portionAmount);
+      const primaryName =
+        ateKind === "restaurant"
+          ? restaurant?.restaurant_name || value
+          : ateKind === "menu_item"
+            ? dish?.item_name || value
+            : value;
+      const mealItems = [
+        {
+          food_name: primaryName,
+          menu_item_id: needsDish ? dish?.menu_item_id : null,
+          restaurant_id: needsRestaurant ? restaurant?.restaurant_id : null,
+        },
+        ...extraItemNames
+          .map((name) => String(name || "").trim())
+          .filter(Boolean)
+          .map((food_name) => ({ food_name })),
+      ];
       await onSubmit({
         category,
-        text:
-          ateKind === "restaurant"
-            ? restaurant?.restaurant_name || value
-            : ateKind === "menu_item"
-              ? dish?.item_name || value
-              : value,
+        text: primaryName,
         file,
         mealPeriod,
         ateKind,
+        items: mealItems,
         foodInterestKey:
           ateKind === "food_item"
             ? foodInterestKey || null
@@ -396,8 +411,15 @@ export default function EatingCompose({
       setCuisineSlug("");
       setFoodInterestKey("");
       setIsRecommend(false);
+      setExtraItemNames([]);
       resetPlace();
       return;
+    }
+
+    if (feedMode && isAteLikeFeedCategory(category)) {
+      if (!whereType && !homemade && !(restaurant || dish)) {
+        return;
+      }
     }
 
     if (
@@ -415,16 +437,34 @@ export default function EatingCompose({
       ? true
       : category === "reviews"
         ? false
-        : homemade;
+        : homemade || whereType === "home";
     const feedWhere =
       category === "ate" || isAteLikeFeedCategory(category)
-        ? feedHomemade
-          ? "home"
-          : restaurant || dish
-            ? "restaurant"
-            : whereType
+        ? whereType === "home" || whereType === "restaurant"
+          ? whereType
+          : feedHomemade
+            ? "home"
+            : restaurant || dish
+              ? "restaurant"
+              : whereType
         : null;
     const portionNum = Number(portionAmount);
+    const feedPrimary =
+      String(dish?.item_name || "").trim() ||
+      String(restaurant?.restaurant_name || "").trim() ||
+      value ||
+      (feedHomemade ? "Homemade" : "Food");
+    const feedItems = [
+      {
+        food_name: feedPrimary,
+        menu_item_id: dish?.menu_item_id || null,
+        restaurant_id: restaurant?.restaurant_id || dish?.restaurant_id || null,
+      },
+      ...extraItemNames
+        .map((name) => String(name || "").trim())
+        .filter(Boolean)
+        .map((food_name) => ({ food_name })),
+    ];
     await onSubmit({
       category,
       text: value,
@@ -434,6 +474,7 @@ export default function EatingCompose({
           ? mealPeriod
           : undefined,
       whereType: feedWhere,
+      items: isAteLikeFeedCategory(category) ? feedItems : undefined,
       portionAmount:
         feedWhere === "home" && Number.isFinite(portionNum) && portionNum > 0
           ? portionNum
@@ -452,6 +493,7 @@ export default function EatingCompose({
     setText("");
     setFile(null);
     setIsRecommend(false);
+    setExtraItemNames([]);
     resetPlace();
   }
 
@@ -461,7 +503,9 @@ export default function EatingCompose({
       isCookingFeedCategory(category) ||
       category === "want")
       ? isVideoFile(file) &&
-        (category !== "reviews" || Boolean(dish?.menu_item_id))
+        (category !== "reviews" || Boolean(dish?.menu_item_id)) &&
+        (category !== "ate" ||
+          Boolean(whereType || homemade || restaurant || dish))
       : category === "plan"
         ? true
         : category === "want"
@@ -835,6 +879,50 @@ export default function EatingCompose({
                 ) : null
               : null}
 
+            <div data-testid="ate-multi-items" style={{ marginTop: 10 }}>
+              <p style={styles.stepLabel}>More items on this meal (optional)</p>
+              {extraItemNames.map((name, index) => (
+                <div key={`extra-${index}`} style={{ display: "flex", gap: 8, marginBottom: 6 }}>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => {
+                      const next = [...extraItemNames];
+                      next[index] = e.target.value;
+                      setExtraItemNames(next);
+                    }}
+                    placeholder={`Item ${index + 2}`}
+                    disabled={busy}
+                    maxLength={160}
+                    style={styles.input}
+                    data-testid={`ate-extra-item-${index}`}
+                  />
+                  <button
+                    type="button"
+                    disabled={busy}
+                    data-testid={`ate-extra-item-remove-${index}`}
+                    onClick={() =>
+                      setExtraItemNames((prev) => prev.filter((_, i) => i !== index))
+                    }
+                    style={styles.chip}
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+              {extraItemNames.length < 12 ? (
+                <button
+                  type="button"
+                  data-testid="ate-add-item"
+                  disabled={busy}
+                  onClick={() => setExtraItemNames((prev) => [...prev, ""])}
+                  style={styles.chip}
+                >
+                  + Add another item
+                </button>
+              ) : null}
+            </div>
+
             <p style={styles.stepLabel}>Meal time</p>
             <div style={styles.mealRow} role="group" aria-label="Meal time">
               {WHAT_I_ATE_MEAL_PERIODS.map((slot) => {
@@ -881,6 +969,47 @@ export default function EatingCompose({
 
         {category === "reviews" || (category === "ate" && feedMode) ? (
           <>
+            {category === "ate" && feedMode ? (
+              <div data-testid="ate-where-step">
+                <p style={styles.stepLabel}>Where</p>
+                <div style={styles.chips} role="group" aria-label="Where did you eat">
+                  <button
+                    type="button"
+                    data-testid="ate-where-restaurant"
+                    disabled={busy}
+                    style={{
+                      ...styles.chip,
+                      ...(whereType === "restaurant" || (!whereType && !homemade && (restaurant || dish))
+                        ? styles.chipActive
+                        : null),
+                    }}
+                    onClick={() => {
+                      setWhereType("restaurant");
+                      setHomemade(false);
+                    }}
+                  >
+                    Restaurant
+                  </button>
+                  <button
+                    type="button"
+                    data-testid="ate-where-home"
+                    disabled={busy}
+                    style={{
+                      ...styles.chip,
+                      ...(whereType === "home" || homemade ? styles.chipActive : null),
+                    }}
+                    onClick={() => {
+                      setWhereType("home");
+                      setHomemade(true);
+                      setRestaurant(null);
+                      setDish(null);
+                    }}
+                  >
+                    @Home
+                  </button>
+                </div>
+              </div>
+            ) : null}
             <p style={styles.stepLabel}>
               {category === "reviews"
                 ? "Which menu item are you reviewing?"
@@ -915,6 +1044,52 @@ export default function EatingCompose({
                   Recommend this (needs a restaurant or Common Knowledge dish tag)
                 </span>
               </label>
+            ) : null}
+
+            {category === "ate" && feedMode ? (
+              <div data-testid="ate-multi-items" style={{ marginTop: 10 }}>
+                <p style={styles.stepLabel}>More items on this meal (optional)</p>
+                {extraItemNames.map((name, index) => (
+                  <div key={`feed-extra-${index}`} style={{ display: "flex", gap: 8, marginBottom: 6 }}>
+                    <input
+                      type="text"
+                      value={name}
+                      onChange={(e) => {
+                        const next = [...extraItemNames];
+                        next[index] = e.target.value;
+                        setExtraItemNames(next);
+                      }}
+                      placeholder={`Item ${index + 2}`}
+                      disabled={busy}
+                      maxLength={160}
+                      style={styles.input}
+                      data-testid={`ate-extra-item-${index}`}
+                    />
+                    <button
+                      type="button"
+                      disabled={busy}
+                      data-testid={`ate-extra-item-remove-${index}`}
+                      onClick={() =>
+                        setExtraItemNames((prev) => prev.filter((_, i) => i !== index))
+                      }
+                      style={styles.chip}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+                {extraItemNames.length < 12 ? (
+                  <button
+                    type="button"
+                    data-testid="ate-add-item"
+                    disabled={busy}
+                    onClick={() => setExtraItemNames((prev) => [...prev, ""])}
+                    style={styles.chip}
+                  >
+                    + Add another item
+                  </button>
+                ) : null}
+              </div>
             ) : null}
 
             <p style={styles.stepLabel}>

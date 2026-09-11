@@ -43,8 +43,8 @@ test("DinerActivityScanRow: compact thumb + working video play", () => {
   assert.match(row, /showThumb/);
   assert.match(row, /nameInProse/);
   assert.match(row, /placeAsText/);
-  assert.match(row, /dailyMealNumber/);
-  assert.match(row, /diner-activity-scan-meal-num/);
+  assert.doesNotMatch(row, /Meal \{mealNum\}/);
+  assert.doesNotMatch(row, /diner-activity-scan-meal-num/);
   assert.match(row, /shouldPreferRestaurantMark/);
   assert.match(row, /diner-activity-scan-prose-name/);
   assert.match(row, /formatWhosEatingScanIdentity/);
@@ -82,7 +82,9 @@ test("What I'm Eating / Wanna Eat use compact Add + sheet compose", () => {
   assert.match(hub, /ownerCompact/);
   assert.match(hub, /isConnectPreview/);
   assert.match(hub, /nameInProse=\{false\}/);
-  assert.match(hub, /dailyMealNumber=\{index \+ 1\}/);
+  assert.match(hub, /groupHubAteMeals/);
+  assert.doesNotMatch(hub, /dailyMealNumber=\{index \+ 1\}/);
+  assert.doesNotMatch(hub, /Meal \{/);
   assert.match(hub, /showThumb/);
   assert.match(hub, /activityAvatarUrl/);
   assert.match(hub, /want-cravings-action-box/);
@@ -213,7 +215,7 @@ test("unified meal periods include brunch snack other", () => {
 
 test("Multiplier/Feed video compose writes same diary fields used by prose rows", () => {
   const feed = read("src/lib/feedVideoCompose.js");
-  assert.match(feed, /createWhatIAteToday|what-i-ate/);
+  assert.match(feed, /createWhatIAteMeal|createWhatIAteToday|what-i-ate/);
 });
 
 test("scan surfaces mount DinerActivityScanRow", () => {

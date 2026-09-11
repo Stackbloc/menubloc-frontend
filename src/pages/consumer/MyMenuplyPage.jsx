@@ -15,6 +15,7 @@ import {
   deleteDiningCrew,
   deleteDinerSocialEvent,
   deleteWhatWeDoingSession,
+  createWhatIAteMeal,
   createWhatIAteToday,
   createWhatWeDoingSession,
   createWantToEat,
@@ -808,6 +809,7 @@ export default function MyMenuplyPage() {
     portionUnit = null,
     eatenAt = null,
     homemadeDishId = null,
+    items = null,
   }) {
     setPostBusy("eating");
     setUploadPercent(file ? 0 : null);
@@ -866,37 +868,90 @@ export default function MyMenuplyPage() {
             note ||
             "Food";
       }
-      if (!foodName) {
+      if (!foodName && !(Array.isArray(items) && items.length)) {
         setError("Enter what you're eating");
         return;
       }
       const portionNum = Number(portionAmount);
-      const data = await createWhatIAteToday({
-        food_name: foodName,
+      const mealItems =
+        Array.isArray(items) && items.length > 0
+          ? items
+              .map((item, index) => ({
+                food_name: String(item.food_name || item.foodName || "").trim(),
+                menu_item_id:
+                  item.menu_item_id ?? item.menuItemId ?? (index === 0 ? menuItemId : null),
+                restaurant_id:
+                  item.restaurant_id ??
+                  item.restaurantId ??
+                  (index === 0 ? restaurantId : null),
+                homemade_dish_id:
+                  index === 0 ? homemadeDishId || undefined : undefined,
+                portion_amount:
+                  index === 0 &&
+                  resolvedWhere === "home" &&
+                  Number.isFinite(portionNum) &&
+                  portionNum > 0
+                    ? portionNum
+                    : undefined,
+                portion_unit:
+                  index === 0 &&
+                  resolvedWhere === "home" &&
+                  Number.isFinite(portionNum) &&
+                  portionNum > 0
+                    ? portionUnit || "serving"
+                    : undefined,
+                is_recommend:
+                  index === 0 ? Boolean(video_url && isRecommend) : false,
+                market_discoverable:
+                  index === 0
+                    ? marketDiscoverable === true
+                      ? true
+                      : marketDiscoverable === false
+                        ? false
+                        : undefined
+                    : undefined,
+                signal_kind: index === 0 ? signal || undefined : undefined,
+                food_interest_key:
+                  index === 0 ? foodInterestKey || undefined : undefined,
+              }))
+              .filter((item) => item.food_name)
+          : [
+              {
+                food_name: foodName,
+                menu_item_id: menuItemId,
+                restaurant_id: restaurantId,
+                homemade_dish_id: homemadeDishId || undefined,
+                portion_amount:
+                  resolvedWhere === "home" && Number.isFinite(portionNum) && portionNum > 0
+                    ? portionNum
+                    : undefined,
+                portion_unit:
+                  resolvedWhere === "home" && Number.isFinite(portionNum) && portionNum > 0
+                    ? portionUnit || "serving"
+                    : undefined,
+                is_recommend: Boolean(video_url && isRecommend),
+                market_discoverable:
+                  marketDiscoverable === true
+                    ? true
+                    : marketDiscoverable === false
+                      ? false
+                      : undefined,
+                signal_kind: signal || undefined,
+                food_interest_key: foodInterestKey || undefined,
+              },
+            ];
+      if (!mealItems.length) {
+        setError("Enter what you're eating");
+        return;
+      }
+      const data = await createWhatIAteMeal({
+        where_type: resolvedWhere || undefined,
+        restaurant_id: restaurantId,
+        meal_period: mealPeriod || defaultWhatIAteMealPeriod(),
+        eaten_on: eatenOn,
+        eaten_at: eatenAt || new Date().toISOString(),
         photo_url,
         video_url,
-        eaten_on: eatenOn,
-        meal_period: mealPeriod || defaultWhatIAteMealPeriod(),
-        restaurant_id: restaurantId,
-        menu_item_id: menuItemId,
-        where_type: resolvedWhere || undefined,
-        homemade_dish_id: homemadeDishId || undefined,
-        portion_amount:
-          resolvedWhere === "home" && Number.isFinite(portionNum) && portionNum > 0
-            ? portionNum
-            : undefined,
-        portion_unit:
-          resolvedWhere === "home" && Number.isFinite(portionNum) && portionNum > 0
-            ? portionUnit || "serving"
-            : undefined,
-        eaten_at: eatenAt || new Date().toISOString(),
-        is_recommend: Boolean(video_url && isRecommend),
-        market_discoverable:
-          marketDiscoverable === true
-            ? true
-            : marketDiscoverable === false
-              ? false
-              : undefined,
         comment:
           signal === "cuisine" ||
           signal === "food_item" ||
@@ -904,37 +959,40 @@ export default function MyMenuplyPage() {
           resolvedWhere === "home"
             ? joinHomemadeComment(true, note)
             : note || undefined,
-        signal_kind: signal || undefined,
-        food_interest_key: foodInterestKey || undefined,
+        items: mealItems,
       });
       if (restaurantId) await maybeFollowRestaurant(restaurantId);
-      const entry = data.entry || data;
+      const createdItems = Array.isArray(data.items) ? data.items : [];
+      const entry = data.entry || createdItems[0] || data;
       if (!entry?.id) {
         throw new Error("Saved but response was incomplete — refresh and try again");
       }
       if (data?.discovery) {
         setWantDiscovery(data.discovery);
       }
-      const hubItem = mapDiaryEntriesForHub([
-        {
-          ...entry,
-          eaten_on: planYmd(entry.eaten_on) || eatenOn,
-          food_name: entry.food_name || text || "Food",
-          photo_url: entry.photo_url || photo_url || null,
-          video_url: entry.video_url || video_url || null,
-        },
-      ])[0];
+      const hubItems = mapDiaryEntriesForHub(
+        (createdItems.length ? createdItems : [entry]).map((row) => ({
+          ...row,
+          meal_id: data.meal?.id ?? row.meal_id ?? null,
+          eaten_on: planYmd(row.eaten_on) || eatenOn,
+          food_name: row.food_name || text || "Food",
+          photo_url: row.photo_url || (row.id === entry.id ? photo_url : null) || null,
+          video_url: row.video_url || (row.id === entry.id ? video_url : null) || null,
+        }))
+      );
+      const hubItem = hubItems[0];
       if (eatenOn !== hubDate) {
         setHubDate(eatenOn);
       }
       setEating((prev) => {
-        const rest = (prev || []).filter((row) => Number(row.entry_id) !== Number(entry.id));
-        return [hubItem, ...rest];
+        const createdIds = new Set(hubItems.map((row) => Number(row.entry_id)));
+        const rest = (prev || []).filter((row) => !createdIds.has(Number(row.entry_id)));
+        return [...hubItems, ...rest];
       });
       setLastPost({
         kind: "diary",
         id: entry.id,
-        food_name: hubItem.food_name,
+        food_name: hubItems.map((r) => r.food_name).filter(Boolean).join(" · ") || hubItem.food_name,
         meal_period: hubItem.meal_period,
         comment: hubItem.comment,
         eaten_on: hubItem.eaten_on,
@@ -953,6 +1011,7 @@ export default function MyMenuplyPage() {
         menu_item_id: entry.menu_item_id || menuItemId || null,
         item_name: entry.item_name || dish?.item_name || null,
         homemade: Boolean(homemade) || Boolean(hubItem.homemade),
+        meal_id: data.meal?.id || entry.meal_id || null,
       });
       window.setTimeout(() => {
         eatingSectionRef.current
@@ -961,8 +1020,9 @@ export default function MyMenuplyPage() {
       }, 80);
       await load();
       setEating((prev) => {
-        if ((prev || []).some((row) => Number(row.entry_id) === Number(entry.id))) return prev;
-        return [hubItem, ...(prev || [])];
+        const createdIds = new Set(hubItems.map((row) => Number(row.entry_id)));
+        if ((prev || []).some((row) => createdIds.has(Number(row.entry_id)))) return prev;
+        return [...hubItems, ...(prev || [])];
       });
     } catch (err) {
       setError(err.message || "Unable to add");
@@ -1677,6 +1737,7 @@ export default function MyMenuplyPage() {
     portionUnit,
     eatenAt,
     homemadeDishId,
+    items,
   }) {
     if (category === "cooking") {
       const { postFeedCookingVideo } = await import("../../lib/feedVideoCompose.js");
@@ -1734,6 +1795,7 @@ export default function MyMenuplyPage() {
         portionUnit,
         eatenAt,
         homemadeDishId,
+        items,
       });
       setComposeDefaultCategory("ate");
     }

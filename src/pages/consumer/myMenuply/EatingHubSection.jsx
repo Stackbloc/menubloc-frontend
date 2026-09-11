@@ -16,6 +16,7 @@ import DinerSocialPresetsPanel, {
   parseDinerSocialDefaults,
 } from "./DinerSocialPresetsPanel.jsx";
 import SectionEmptyState from "./SectionEmptyState.jsx";
+import { groupHubAteMeals } from "../../../lib/groupHubAteMeals.js";
 import {
   SectionHead,
   FuturePlanRow,
@@ -532,19 +533,23 @@ export default function EatingHubSection({
   const canGoForward = true;
 
   /** Selected journal day only — never fall back to other days' media. */
-  const eatingForDay = eating.filter((row) => {
-    // Prefer diary eaten_on; timestamps use local calendar day (not UTC date slice).
-    const day =
-      calendarDayYmd(row.eaten_on) ||
-      calendarDayYmd(row.created_at) ||
-      planYmd(row.eaten_on || row.created_at);
-    if (day === hubDate) return true;
-    if (lastPost?.kind === "diary" && Number(row.entry_id) === Number(lastPost.id)) {
-      const lastDay = calendarDayYmd(lastPost.eaten_on) || planYmd(lastPost.eaten_on);
-      return lastDay === hubDate || !lastPost.eaten_on;
-    }
-    return false;
-  });
+  const eatingForDay = useMemo(
+    () =>
+      eating.filter((row) => {
+        const day =
+          calendarDayYmd(row.eaten_on) ||
+          calendarDayYmd(row.created_at) ||
+          planYmd(row.eaten_on || row.created_at);
+        if (day === hubDate) return true;
+        if (lastPost?.kind === "diary" && Number(row.entry_id) === Number(lastPost.id)) {
+          const lastDay = calendarDayYmd(lastPost.eaten_on) || planYmd(lastPost.eaten_on);
+          return lastDay === hubDate || !lastPost.eaten_on;
+        }
+        return false;
+      }),
+    [eating, hubDate, lastPost]
+  );
+  const mealsForDay = useMemo(() => groupHubAteMeals(eatingForDay), [eatingForDay]);
 
   function openEatingCalendar() {
     setCalendarTitle("Eating");
@@ -671,45 +676,49 @@ export default function EatingHubSection({
               }}
             />
           ) : null}
-          {eatingForDay.length > 0 ? (
+          {mealsForDay.length > 0 ? (
             <ul
               style={{ listStyle: "none", margin: "0 0 12px", padding: 0 }}
               data-testid="eating-activity-rows"
             >
-              {eatingForDay.map((item, index) => {
-                const food = item.food_name || item.item_name;
-                const homemade = Boolean(item.homemade);
+              {mealsForDay.map((meal) => {
+                const food = meal.food_name;
+                const homemade = Boolean(meal.homemade);
+                const primary = meal.primaryItem || meal.items?.[0] || meal;
                 return (
-                  <li key={`act-${item.entry_id || item.id}`}>
+                  <li key={`act-${meal.id}`}>
                     <DinerActivityScanRow
                       displayName={rowDisplayName}
                       avatarUrl={rowAvatarUrl}
                       includeSex={Boolean(readOnly)}
                       kind="ate"
                       foodName={food}
-                      restaurantName={item.restaurant_name}
-                      restaurantId={item.restaurant_id || null}
-                      restaurantSlug={item.restaurant_slug || null}
-                      restaurantCity={item.restaurant_city || item.city || null}
-                      restaurantState={item.restaurant_state || item.state || null}
-                      restaurantLogoUrl={item.restaurant_logo_url || null}
-                      restaurantBillboardUrl={item.restaurant_billboard_image_url || null}
-                      restaurantChainId={item.chain_id || item.restaurant_chain_id || null}
-                      menuItemId={item.menu_item_id || null}
-                      dishPhotoUrl={item.photo_url || item.item_photo_url || null}
-                      mealPeriod={item.meal_period}
+                      restaurantName={meal.restaurant_name}
+                      restaurantId={meal.restaurant_id || null}
+                      restaurantSlug={meal.restaurant_slug || null}
+                      restaurantCity={meal.restaurant_city || null}
+                      restaurantState={meal.restaurant_state || null}
+                      restaurantLogoUrl={meal.restaurant_logo_url || null}
+                      restaurantBillboardUrl={meal.restaurant_billboard_image_url || null}
+                      restaurantChainId={meal.chain_id || null}
+                      menuItemId={meal.menu_item_id || null}
+                      dishPhotoUrl={meal.photo_url || null}
+                      mealPeriod={meal.meal_period}
                       homemade={homemade}
-                      videoUrl={item.video_url || null}
+                      videoUrl={meal.video_url || null}
                       ownerCompact
                       showIdentity={false}
                       showThumb={!isConnectPreview}
                       nameInProse={false}
                       placeAsText={isConnectPreview || readOnly}
-                      dailyMealNumber={index + 1}
-                      onSelect={canEdit && onDiarySelect ? () => onDiarySelect(item) : null}
+                      onSelect={
+                        canEdit && onDiarySelect
+                          ? () => onDiarySelect(primary)
+                          : null
+                      }
                       onDelete={
                         canEdit && typeof onDiaryDelete === "function"
-                          ? () => onDiaryDelete(item)
+                          ? () => onDiaryDelete(primary)
                           : null
                       }
                       deleteBusy={diaryDeleteBusy}
@@ -735,7 +744,7 @@ export default function EatingHubSection({
               onSkip={onSkipDetails}
             />
           ) : null}
-          {eatingForDay.length === 0 && lastPost?.kind !== "diary" ? (
+          {mealsForDay.length === 0 && lastPost?.kind !== "diary" ? (
             <SectionEmptyState testId="eating-ate-empty-day">
               {canEdit ? "Nothing logged for this day yet." : "Nothing shared for this day."}
             </SectionEmptyState>

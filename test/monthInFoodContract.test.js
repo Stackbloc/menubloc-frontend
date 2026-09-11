@@ -111,6 +111,62 @@ test("buildMonthInFoodModel empty month hides cuisine and mood", () => {
   assert.ok(!model.stats.some((s) => s.id === "home"));
 });
 
+test("buildMonthInFoodModel counts multi-item meal as one Meals Logged occasion", () => {
+  const model = buildMonthInFoodModel({
+    ym: "2026-09",
+    month_label: "September 2026",
+    diary_visible: true,
+    is_self: true,
+    meals_count: 1,
+    home_meals_count: 1,
+    restaurant_dishes_count: 0,
+    homemade_dishes_count: 0,
+    diary: [
+      {
+        id: 1,
+        meal_id: 42,
+        food_name: "Pasta",
+        where_type: "home",
+        is_home: true,
+        meal_period: "dinner",
+        eaten_on: "2026-09-10",
+      },
+      {
+        id: 2,
+        meal_id: 42,
+        food_name: "Salad",
+        where_type: "home",
+        is_home: true,
+        meal_period: "dinner",
+        eaten_on: "2026-09-10",
+      },
+    ],
+    meals: [
+      {
+        id: 42,
+        is_home: true,
+        meal_period: "dinner",
+        eaten_on: "2026-09-10",
+        items: [
+          { id: 1, food_name: "Pasta", where_type: "home", is_home: true },
+          { id: 2, food_name: "Salad", where_type: "home", is_home: true },
+        ],
+      },
+    ],
+    wants: [],
+    dining_intents: [],
+    plans: [],
+    events: [],
+    profile_media: [],
+  });
+  assert.equal(model.totalMeals, 1);
+  assert.ok(model.stats.some((s) => s.id === "meals" && s.value === 1));
+  assert.equal(model.homeMealsCount, 1);
+  assert.equal(model.homeMeals.length, 1);
+  assert.match(model.homeMeals[0].food_name, /Pasta/);
+  assert.match(model.homeMeals[0].food_name, /Salad/);
+});
+
 test("buildMonthInFoodModel counts @home meals and Take Me Out status", () => {
   const model = buildMonthInFoodModel({
     ym: "2025-05",
@@ -187,6 +243,8 @@ test("Eating compose enforces Where before What for ate", () => {
   assert.match(compose, /ate-where-home/);
   assert.match(compose, /whereType/);
   assert.match(compose, /portionAmount/);
+  assert.match(compose, /ate-add-item/);
+  assert.match(compose, /extraItemNames/);
 });
 
 test("buildMonthInFoodModel hides cuisine chart with single cuisine", () => {

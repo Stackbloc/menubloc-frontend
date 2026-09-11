@@ -778,6 +778,8 @@ export const suggestWhatIAteTodayMenuItems = (q, { signal } = {}) =>
     signal ? { signal } : undefined
   );
 export const createWhatIAteToday = (body) => post("/api/consumer/what-i-ate-today", body);
+/** One meal occasion with one or more food items (video/photo on primary item). */
+export const createWhatIAteMeal = (body) => post("/api/consumer/what-i-ate-today/meals", body);
 export const updateWhatIAteToday = (id, body) =>
   patch(`/api/consumer/what-i-ate-today/${encodeURIComponent(String(id))}`, body);
 export const deleteWhatIAteToday = (id) =>
