@@ -2114,14 +2114,44 @@ export default function MyMenuplyPage() {
                   kind: "diary",
                   id: item.entry_id,
                   meal_period: item.meal_period,
+                  eaten_at: item.eaten_at || null,
+                  eaten_on: item.eaten_on || null,
                   comment: item.comment,
                   food_name: item.food_name,
                   restaurant_id: item.restaurant_id,
                   restaurant_name: item.restaurant_name,
                   menu_item_id: item.menu_item_id,
                   item_name: item.food_name,
+                  homemade: Boolean(item.homemade),
                 });
               }}
+              onDiaryEatenAtChange={async (record, nextIso) => {
+                const id = record?.id;
+                if (!id || !nextIso) return;
+                setPostBusy("eating-clock");
+                try {
+                  const data = await updateWhatIAteToday(id, { eaten_at: nextIso });
+                  const entry = data?.entry;
+                  setLastPost((prev) =>
+                    prev?.kind === "diary" && Number(prev.id) === Number(id)
+                      ? { ...prev, eaten_at: entry?.eaten_at || nextIso }
+                      : prev
+                  );
+                  setEating((prev) =>
+                    (prev || []).map((row) =>
+                      Number(row.entry_id || row.id) === Number(id)
+                        ? { ...row, eaten_at: entry?.eaten_at || nextIso }
+                        : row
+                    )
+                  );
+                } catch (err) {
+                  setError(err.message || "Unable to update meal time");
+                } finally {
+                  setPostBusy("");
+                }
+              }}
+              diaryEatenAtBusy={postBusy === "eating-clock"}
+              omitMealClock={Boolean(profile?.omit_meal_clock_time)}
               onDiaryDelete={onDiaryDelete}
               diaryDeleteBusy={postBusy === "eating-delete"}
               onWantDelete={onWantDelete}

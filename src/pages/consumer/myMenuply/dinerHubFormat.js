@@ -41,6 +41,125 @@ export function formatEatingCaption(item) {
   return [datePart, meal, dish].filter(Boolean).join(". ");
 }
 
+/**
+ * Meal-period accent colors for timeline meta (Claude presentation).
+ * Complementary to Menuply forest greens: lunch stays brand-green; late night purple.
+ */
+export const MEAL_PERIOD_ACCENT = {
+  breakfast: "#d97706",
+  brunch: "#ea580c",
+  lunch: "#16a34a",
+  dinner: "#0f766e",
+  late_night: "#7c3aed",
+  snack: "#0284c7",
+  other: "#64748b",
+};
+
+export function mealPeriodAccentColor(mealPeriod) {
+  const id = normalizeWhatIAteMealPeriod(mealPeriod);
+  return MEAL_PERIOD_ACCENT[id] || MEAL_PERIOD_ACCENT.other;
+}
+
+/** Clock for meal rows — timeline meta uses "12:30 PM". */
+export function formatMealClockTime(eatenAt) {
+  if (eatenAt == null || eatenAt === "") return "";
+  const d = eatenAt instanceof Date ? eatenAt : new Date(String(eatenAt));
+  if (Number.isNaN(d.getTime())) return "";
+  const raw = d.toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+  return String(raw).replace(/\s+/g, " ").trim();
+}
+
+/**
+ * Timeline meta parts: meal label + optional clock.
+ * Presentation lead: "LUNCH 12:30 PM" (or "LUNCH" when omitClock / no stamp).
+ */
+export function mealPeriodClockParts(mealPeriod, eatenAt, { omitClock = false } = {}) {
+  const meal = mealPeriodLabel(normalizeWhatIAteMealPeriod(mealPeriod)) || "";
+  const clock = omitClock ? "" : formatMealClockTime(eatenAt);
+  return {
+    meal,
+    mealUpper: meal ? meal.toUpperCase() : "",
+    clock,
+    accent: mealPeriodAccentColor(mealPeriod),
+  };
+}
+
+export function formatMealPeriodClockLead(mealPeriod, eatenAt, { omitClock = false } = {}) {
+  const { mealUpper, meal, clock } = mealPeriodClockParts(mealPeriod, eatenAt, { omitClock });
+  const label = mealUpper || meal;
+  if (label && clock) return `${label} ${clock}`;
+  return label || clock || "";
+}
+
+/**
+ * Dish leads; secondary items fold under place line.
+ * "Chicken and waffles" + "ham, iced tea"
+ */
+export function splitMealFoodLead(mealOrItems) {
+  const items = Array.isArray(mealOrItems)
+    ? mealOrItems
+    : Array.isArray(mealOrItems?.items)
+      ? mealOrItems.items
+      : [];
+  const names = items
+    .map((item) => String(item?.food_name || item?.item_name || "").trim())
+    .filter(Boolean);
+  if (names.length === 0) {
+    const fallback = String(
+      mealOrItems?.food_name || mealOrItems?.item_name || ""
+    ).trim();
+    if (!fallback) return { primary: "", secondary: "" };
+    const parts = fallback.split(/\s*[·,]\s*/).map((p) => p.trim()).filter(Boolean);
+    return {
+      primary: parts[0] || fallback,
+      secondary: parts.slice(1).join(", "),
+    };
+  }
+  return {
+    primary: names[0],
+    secondary: names.slice(1).join(", "),
+  };
+}
+
+/** HH:MM for <input type="time"> from ISO / Date. */
+export function isoToTimeInputValue(eatenAt) {
+  if (eatenAt == null || eatenAt === "") return "";
+  const d = eatenAt instanceof Date ? eatenAt : new Date(String(eatenAt));
+  if (Number.isNaN(d.getTime())) return "";
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mm = String(d.getMinutes()).padStart(2, "0");
+  return `${hh}:${mm}`;
+}
+
+/** Merge HH:MM into an existing ISO (or today) → ISO string. */
+export function timeInputToIso(hhmm, baseEatenAtOrDay) {
+  const m = String(hhmm || "").trim().match(/^(\d{1,2}):(\d{2})$/);
+  if (!m) return null;
+  const hour = Number(m[1]);
+  const minute = Number(m[2]);
+  if (!Number.isFinite(hour) || hour < 0 || hour > 23) return null;
+  if (!Number.isFinite(minute) || minute < 0 || minute > 59) return null;
+  let d =
+    baseEatenAtOrDay instanceof Date
+      ? new Date(baseEatenAtOrDay.getTime())
+      : baseEatenAtOrDay
+        ? new Date(String(baseEatenAtOrDay))
+        : new Date();
+  if (Number.isNaN(d.getTime())) {
+    // YYYY-MM-DD day only
+    const day = String(baseEatenAtOrDay || "").slice(0, 10);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(day)) d = new Date(`${day}T12:00:00`);
+    else d = new Date();
+  }
+  if (Number.isNaN(d.getTime())) return null;
+  d.setHours(hour, minute, 0, 0);
+  return d.toISOString();
+}
+
 export function ymdInMonth(ymd, viewMonth) {
   const day = planYmd(ymd);
   if (!day || !viewMonth) return false;

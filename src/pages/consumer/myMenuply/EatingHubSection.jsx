@@ -30,7 +30,13 @@ import {
   planYmd,
   shiftYmd,
 } from "./eatingHubUtils.js";
-import { formatPlanBracketDate, futurePlanKey } from "./dinerHubFormat.js";
+import {
+  formatPlanBracketDate,
+  futurePlanKey,
+  isoToTimeInputValue,
+  splitMealFoodLead,
+  timeInputToIso,
+} from "./dinerHubFormat.js";
 import { whatIAteTodayLocalDate } from "../../../lib/consumerApi.js";
 import { defaultWhatIAteMealPeriod } from "../../../lib/whatIAteTodayMealPeriod.js";
 import WantDiscoveryPanel from "./WantDiscoveryPanel.jsx";
@@ -459,6 +465,11 @@ export default function EatingHubSection({
   onWantSelect,
   onDiarySelect,
   onDiaryDelete,
+  /** Edit View: update diary entry eaten_at (ISO). */
+  onDiaryEatenAtChange = null,
+  diaryEatenAtBusy = false,
+  /** Profile setting: hide clock after meal period. */
+  omitMealClock = false,
   diaryDeleteBusy = false,
   onWantDelete,
   onDiningIntentDelete,
@@ -681,8 +692,10 @@ export default function EatingHubSection({
               style={{ listStyle: "none", margin: "0 0 12px", padding: 0 }}
               data-testid="eating-activity-rows"
             >
-              {mealsForDay.map((meal) => {
-                const food = meal.food_name;
+              {mealsForDay.map((meal, index) => {
+                const foodParts = splitMealFoodLead(meal);
+                const food = foodParts.primary || meal.food_name;
+                const secondaryFood = foodParts.secondary || "";
                 const homemade = Boolean(meal.homemade);
                 const primary = meal.primaryItem || meal.items?.[0] || meal;
                 return (
@@ -693,6 +706,7 @@ export default function EatingHubSection({
                       includeSex={Boolean(readOnly)}
                       kind="ate"
                       foodName={food}
+                      secondaryFoodName={secondaryFood}
                       restaurantName={meal.restaurant_name}
                       restaurantId={meal.restaurant_id || null}
                       restaurantSlug={meal.restaurant_slug || null}
@@ -704,13 +718,23 @@ export default function EatingHubSection({
                       menuItemId={meal.menu_item_id || null}
                       dishPhotoUrl={meal.photo_url || null}
                       mealPeriod={meal.meal_period}
+                      eatenAt={meal.eaten_at || null}
+                      omitMealClock={omitMealClock}
                       homemade={homemade}
                       videoUrl={meal.video_url || null}
                       ownerCompact
+                      timelineFirst={index === 0}
+                      timelineLast={index === mealsForDay.length - 1}
                       showIdentity={false}
-                      showThumb={!isConnectPreview}
+                      showThumb={false}
                       nameInProse={false}
                       placeAsText={isConnectPreview || readOnly}
+                      selected={
+                        Boolean(
+                          lastPost?.kind === "diary" &&
+                            Number(lastPost?.id) === Number(primary?.entry_id || primary?.id)
+                        )
+                      }
                       onSelect={
                         canEdit && onDiarySelect
                           ? () => onDiarySelect(primary)
@@ -728,6 +752,40 @@ export default function EatingHubSection({
                 );
               })}
             </ul>
+          ) : null}
+          {lastPost?.kind === "diary" && canEdit && typeof onDiaryEatenAtChange === "function" ? (
+            <div style={clockStyles.wrap} data-testid="eating-meal-clock-edit">
+              <label style={clockStyles.label} htmlFor="eating-meal-clock-input">
+                Meal clock time
+              </label>
+              <input
+                id="eating-meal-clock-input"
+                type="time"
+                data-testid="eating-meal-clock-input"
+                disabled={diaryEatenAtBusy || omitMealClock}
+                value={isoToTimeInputValue(lastPost.eaten_at)}
+                style={{
+                  appearance: "none",
+                  border: "1px solid #cbd5e1",
+                  borderRadius: 8,
+                  padding: "6px 10px",
+                  font: "inherit",
+                  fontSize: 14,
+                  fontWeight: 650,
+                  color: "#0f172a",
+                  background: "#fff",
+                }}
+                onChange={(e) => {
+                  const nextIso = timeInputToIso(e.target.value, lastPost.eaten_at || lastPost.eaten_on);
+                  if (nextIso) onDiaryEatenAtChange(lastPost, nextIso);
+                }}
+              />
+              {omitMealClock ? (
+                <p style={clockStyles.hint}>Hidden on your profile — turn off “Omit meal clock time” in Settings to show it.</p>
+              ) : (
+                <p style={clockStyles.hint}>Auto-filled when you logged the meal. Change anytime.</p>
+              )}
+            </div>
           ) : null}
           {lastPost?.kind === "diary" &&
           canEdit &&
@@ -1130,5 +1188,31 @@ const styles = {
     borderRadius: "50%",
     fontSize: 16,
     cursor: "pointer",
+  },
+};
+
+const clockStyles = {
+  wrap: {
+    display: "flex",
+    flexWrap: "wrap",
+    alignItems: "center",
+    gap: 10,
+    margin: "0 0 12px",
+    padding: "10px 12px",
+    borderRadius: 12,
+    background: "linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)",
+    border: "1px solid #e2e8f0",
+  },
+  label: {
+    fontSize: 12,
+    fontWeight: 700,
+    color: "#334155",
+  },
+  hint: {
+    margin: 0,
+    flex: "1 1 100%",
+    fontSize: 12,
+    lineHeight: 1.35,
+    color: "#64748b",
   },
 };

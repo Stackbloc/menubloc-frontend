@@ -1,6 +1,6 @@
 /**
  * Who's Eating — continuous-line scan rows (max 8 + Show more).
- * [avatar] ScreenName, Sex, Age is eating [food] at [restaurant|@home]
+ * [avatar] ScreenName, Sex, Age is eating [meal] at [restaurant|@home], [food]
  * Liberal market discovery (no favorite-food filter); excludes viewer.
  */
 
@@ -163,6 +163,7 @@ function pushRow(out, seen, row, viewerUserId) {
       item_name: row.item_name || row.menu_item_name || null,
       food_name: row.food_name || null,
       restaurant_name: restaurantName,
+      meal_period: row.meal_period || null,
       homemade,
     }),
   });
@@ -281,6 +282,7 @@ export default function NearbyEatingSection({
                     restaurantLogoUrl={row.restaurantLogoUrl}
                     restaurantBillboardUrl={row.restaurantBillboardUrl}
                     menuItemId={row.menuItemId}
+                    mealPeriod={row.mealPeriod}
                     icon={row.icon}
                     videoUrl={row.videoUrl}
                     profileHref={row.href}

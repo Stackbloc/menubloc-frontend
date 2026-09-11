@@ -102,6 +102,12 @@ export default function ProfileTab({
   connectionFoodActivitySaving,
   connectionFoodActivityStatus,
   connectionFoodActivityError,
+  omitMealClockTime,
+  onOmitMealClockTimeChange,
+  onSaveOmitMealClockTime,
+  omitMealClockSaving,
+  omitMealClockStatus,
+  omitMealClockError,
   dinerEducationStatus,
   onDinerEducationStatusChange,
   dinerFieldOfStudy,
@@ -140,6 +146,7 @@ export default function ProfileTab({
   const [editingPrimaryLocation, setEditingPrimaryLocation] = useState(false);
   const [editingDiscoverability, setEditingDiscoverability] = useState(false);
   const [editingConnectionFoodActivity, setEditingConnectionFoodActivity] = useState(false);
+  const [editingOmitMealClock, setEditingOmitMealClock] = useState(false);
   const [editingPersonalContext, setEditingPersonalContext] = useState(false);
   const [editingBasicProfile, setEditingBasicProfile] = useState(false);
   const [editingFavoriteFoods, setEditingFavoriteFoods] = useState(false);
@@ -556,6 +563,42 @@ export default function ProfileTab({
           disabled={connectionFoodActivitySaving}
         >
           {connectionFoodActivitySaving ? "Saving…" : "Save preference"}
+        </button>
+      </SummaryEditSection>
+
+      <SummaryEditSection
+        title="Omit meal clock time"
+        summary={omitMealClockTime ? "On — hide clock" : "Off — show clock"}
+        description="What I’m Eating rows show meal period with clock time (Lunch, 12:00 p.m.). Turn this on to show only the meal period."
+        editing={editingOmitMealClock}
+        onEdit={() => setEditingOmitMealClock(true)}
+        onDone={async () => {
+          const ok = await onSaveOmitMealClockTime();
+          if (ok !== false) setEditingOmitMealClock(false);
+        }}
+        status={omitMealClockError || omitMealClockStatus}
+        statusError={Boolean(omitMealClockError)}
+      >
+        <label style={styles.choiceRow}>
+          <input
+            type="checkbox"
+            checked={omitMealClockTime === true}
+            onChange={(e) => onOmitMealClockTimeChange(e.target.checked)}
+          />
+          <span>
+            <span style={{ display: "block" }}>Omit meal clock time</span>
+            <span style={{ ...styles.muted, fontSize: 12 }}>
+              Applies on your Edit and Connect views. Clock still auto-stamps when you log a meal.
+            </span>
+          </span>
+        </label>
+        <button
+          type="button"
+          onClick={onSaveOmitMealClockTime}
+          style={styles.primaryBtn}
+          disabled={omitMealClockSaving}
+        >
+          {omitMealClockSaving ? "Saving…" : "Save preference"}
         </button>
       </SummaryEditSection>
 

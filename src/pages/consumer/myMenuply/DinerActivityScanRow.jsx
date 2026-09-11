@@ -1,6 +1,7 @@
 /**
  * Compact category activity row for profile sections.
- * [thumb 40] [text] [meal tag] [▶ if video] — uniform size; real video play inline.
+ * Owner hub (ownerCompact): timeline — meal dot/meta, dish, place.
+ * Discovery / Who's Eating (nameInProse): "BillS is eating lunch at ABC, Chicken Sandwich."
  */
 
 import { useState } from "react";
@@ -18,6 +19,11 @@ import { resolveEatingDishVisual } from "./eatingDishVisual.js";
 import { useLongPressReveal } from "./mediaLongPressReveal.js";
 import { GREEN_MID } from "./myMenuplyStyles.js";
 import * as s from "./myMenuplyStyles.js";
+import {
+  formatMealPeriodClockLead,
+  mealPeriodClockParts,
+} from "./dinerHubFormat.js";
+import { mealPeriodProseWord } from "../../../lib/dinerSocialEmojiLanguage.js";
 
 const THUMB = 40;
 
@@ -53,7 +59,7 @@ function DishLink({ href, children }) {
   );
 }
 
-function PlaceLink({ href, children, markUrl = null }) {
+function PlaceLink({ href, children, markUrl = null, linkStyle = null }) {
   if (markUrl && href) {
     return (
       <Link
@@ -71,7 +77,7 @@ function PlaceLink({ href, children, markUrl = null }) {
     return (
       <Link
         to={href}
-        style={styles.inlineLink}
+        style={linkStyle || styles.inlineLink}
         data-testid="diner-activity-scan-place"
         onClick={(e) => e.stopPropagation()}
       >
@@ -94,6 +100,8 @@ export default function DinerActivityScanRow({
   dinerSexShort = null,
   kind = "ate",
   foodName = null,
+  /** Extra dishes/sides folded on the muted place line (ownerCompact timeline). */
+  secondaryFoodName = null,
   restaurantName = null,
   restaurantId = null,
   restaurantSlug = null,
@@ -105,6 +113,10 @@ export default function DinerActivityScanRow({
   menuItemId = null,
   dishPhotoUrl = null,
   mealPeriod = null,
+  /** ISO eaten_at — shown as clock after meal period on ownerCompact rows. */
+  eatenAt = null,
+  /** Settings: hide clock time globally. */
+  omitMealClock = false,
   homemade = false,
   icon = null,
   videoUrl = null,
@@ -124,6 +136,9 @@ export default function DinerActivityScanRow({
   onDelete = null,
   deleteBusy = false,
   deleteLabel = "Delete",
+  /** Timeline rail ends — soften connector above/below first/last meal. */
+  timelineFirst = false,
+  timelineLast = false,
 }) {
   const [expanded, setExpanded] = useState(false);
   const canDelete = typeof onDelete === "function";
@@ -208,6 +223,14 @@ export default function DinerActivityScanRow({
     ? resolveConsumerMediaUrl(avatarUrl) || avatarUrl
     : null;
   const meal = mealTag(mealPeriod);
+  const mealParts = ownerCompact
+    ? mealPeriodClockParts(mealPeriod, eatenAt, { omitClock: omitMealClock })
+    : { meal: "", mealUpper: "", clock: "", accent: "#64748b" };
+  const mealClockLead = ownerCompact
+    ? formatMealPeriodClockLead(mealPeriod, eatenAt, { omitClock: omitMealClock })
+    : "";
+  const secondaryFood = String(secondaryFoodName || "").trim();
+  const mealAccent = mealParts.accent || "#64748b";
 
   function openVideo(e) {
     e?.preventDefault?.();
@@ -299,59 +322,10 @@ export default function DinerActivityScanRow({
     const nameLead = renderProseNameLead();
 
     if (ownerCompact) {
-      const mealLead = meal ? (
-          <span style={styles.mealInline} data-testid="diner-activity-scan-meal-inline">
-            {meal}:{" "}
-          </span>
-        ) : null;
-
-      return (
-        <>
-          {mealLead}
-          {homemade ? (
-            <>
-              {food ? <DishLink href={itemHref}>{food}</DishLink> : <span>food</span>}
-              <span> @home</span>
-            </>
-          ) : isWant ? (
-            <>
-              {food ? <DishLink href={itemHref}>{food}</DishLink> : null}
-              {food && place ? <span> at </span> : null}
-              {!food && place ? <span>at </span> : null}
-              {place ? (
-                <PlaceLink href={placeHref} markUrl={inlinePlaceMark}>
-                  {place}
-                </PlaceLink>
-              ) : null}
-              {!food && !place ? <span>Wanna eat</span> : null}
-            </>
-          ) : (
-            <>
-              {food ? <DishLink href={itemHref}>{food}</DishLink> : null}
-              {food && place ? <span> at </span> : null}
-              {!food && place ? <span>at </span> : null}
-              {place ? (
-                <PlaceLink href={placeHref} markUrl={inlinePlaceMark}>
-                  {place}
-                </PlaceLink>
-              ) : null}
-              {!food && !place ? <span>eating</span> : null}
-            </>
-          )}
-        </>
-      );
+      // Timeline body renders dish / place / secondary separately.
+      return null;
     }
 
-    if (homemade) {
-      return (
-        <>
-          {nameLead}
-          <span>{nameInProse ? "is eating " : "is cooking "}</span>
-          {food ? <DishLink href={itemHref}>{food}</DishLink> : <span>food</span>}
-          <span>{nameInProse ? " at @home" : " @home"}</span>
-        </>
-      );
-    }
     if (isWant) {
       return (
         <>
@@ -369,20 +343,100 @@ export default function DinerActivityScanRow({
         </>
       );
     }
+
+    // Discovery / Who's Eating reporting:
+    // "BillS is eating lunch at ABC Restaurant, Chicken Sandwich."
+    const mealProse = mealPeriodProseWord(mealPeriod);
+    const placeNode = homemade ? (
+      <span data-testid="diner-activity-scan-place-text">@home</span>
+    ) : place ? (
+      <PlaceLink href={placeHref} markUrl={inlinePlaceMark}>
+        {place}
+      </PlaceLink>
+    ) : null;
+
     return (
       <>
         {nameLead}
         <span>is eating </span>
-        {food ? <DishLink href={itemHref}>{food}</DishLink> : null}
-        {food && place ? <span> at </span> : null}
-        {!food && place ? <span>at </span> : null}
-        {place ? (
-          <PlaceLink href={placeHref} markUrl={inlinePlaceMark}>
-            {place}
-          </PlaceLink>
+        {mealProse ? <span>{mealProse} </span> : null}
+        {placeNode ? (
+          <>
+            <span>at </span>
+            {placeNode}
+          </>
         ) : null}
-        {!food && !place ? <span>…</span> : null}
+        {placeNode && food ? <span>, </span> : null}
+        {!placeNode && mealProse && food ? <span>, </span> : null}
+        {food ? <DishLink href={itemHref}>{food}</DishLink> : null}
+        {!mealProse && !placeNode && !food ? <span>…</span> : null}
       </>
+    );
+  }
+
+  function renderOwnerTimelineBody() {
+    const placeLabel = homemade ? "@home" : place;
+    const placeNode = homemade ? (
+      <span data-testid="diner-activity-scan-place-text">@home</span>
+    ) : place ? (
+      <PlaceLink href={placeHref} markUrl={null} linkStyle={styles.placeLinkTimeline}>
+        {place}
+      </PlaceLink>
+    ) : null;
+    const showPlaceLine = Boolean(placeNode || secondaryFood);
+    const dishLabel =
+      food ||
+      (isWant ? "Wanna eat" : null) ||
+      (placeLabel ? null : "eating") ||
+      null;
+
+    return (
+      <span style={styles.timelineBody} data-testid="diner-activity-scan-timeline-body">
+        {mealParts.mealUpper || mealParts.clock ? (
+          <span
+            style={styles.metaRow}
+            data-testid="diner-activity-scan-meal-inline"
+            aria-label={mealClockLead}
+          >
+            {mealParts.mealUpper ? (
+              <span
+                style={{ ...styles.metaMeal, color: mealAccent }}
+                data-testid="diner-activity-scan-meal-pill"
+              >
+                {mealParts.mealUpper}
+              </span>
+            ) : null}
+            {mealParts.clock ? (
+              <span style={styles.metaClock} data-testid="diner-activity-scan-meal-clock">
+                {mealParts.clock}
+              </span>
+            ) : null}
+          </span>
+        ) : null}
+        {dishLabel ? (
+          <span style={styles.dishLead} data-testid="diner-activity-scan-dish-lead">
+            <DishLink href={itemHref}>
+              <span style={styles.dishEmphasis}>{dishLabel}</span>
+            </DishLink>
+          </span>
+        ) : null}
+        {showPlaceLine ? (
+          <span style={styles.placeLine} data-testid="diner-activity-scan-place-line">
+            {placeNode ? (
+              <>
+                <span style={styles.atMuted}>at </span>
+                {placeNode}
+              </>
+            ) : null}
+            {secondaryFood ? (
+              <span style={styles.secondaryFood}>
+                {placeNode ? " - " : ""}
+                {secondaryFood}
+              </span>
+            ) : null}
+          </span>
+        ) : null}
+      </span>
     );
   }
 
@@ -390,6 +444,7 @@ export default function DinerActivityScanRow({
     <div
       style={{
         ...styles.wrap,
+        ...(ownerCompact ? styles.wrapTimeline : null),
         ...(selected ? styles.wrapSelected : null),
         ...(canDelete ? s.hubCardShell : null),
       }}
@@ -419,34 +474,55 @@ export default function DinerActivityScanRow({
 
       <button
         type="button"
-        style={styles.rowBtn}
+        style={ownerCompact ? styles.timelineRowBtn : styles.rowBtn}
         data-testid="diner-activity-scan-line"
         aria-expanded={hasVideo ? expanded : undefined}
         onClick={openVideo}
       >
-        {showThumb && (thumbUrl || foodEmoji) ? (
-          <span style={styles.thumb} data-testid="diner-activity-scan-thumb">
-            {thumbUrl ? (
-              <img src={thumbUrl} alt="" style={styles.thumbImg} />
-            ) : (
-              <span style={styles.thumbEmoji} aria-hidden="true">
-                {foodEmoji}
+        {ownerCompact ? (
+          <>
+            <span style={styles.timelineRail} aria-hidden="true">
+              <span
+                style={{
+                  ...styles.timelineLine,
+                  ...(timelineFirst ? styles.timelineLineFirst : null),
+                  ...(timelineLast ? styles.timelineLineLast : null),
+                }}
+              />
+              <span
+                style={{ ...styles.timelineDot, background: mealAccent }}
+                data-testid="diner-activity-scan-meal-dot"
+              />
+            </span>
+            {renderOwnerTimelineBody()}
+          </>
+        ) : (
+          <>
+            {showThumb && (thumbUrl || foodEmoji) ? (
+              <span style={styles.thumb} data-testid="diner-activity-scan-thumb">
+                {thumbUrl ? (
+                  <img src={thumbUrl} alt="" style={styles.thumbImg} />
+                ) : (
+                  <span style={styles.thumbEmoji} aria-hidden="true">
+                    {foodEmoji}
+                  </span>
+                )}
               </span>
-            )}
-          </span>
-        ) : null}
+            ) : null}
 
-        <span style={styles.body}>
-          <span style={nameInProse ? styles.proseContinuous : styles.prose}>
-            {renderClause()}
-          </span>
-        </span>
+            <span style={styles.body}>
+              <span style={nameInProse ? styles.proseContinuous : styles.prose}>
+                {renderClause()}
+              </span>
+            </span>
 
-        {!ownerCompact && meal ? (
-          <span style={styles.mealTag} data-testid="diner-activity-scan-meal">
-            {meal}
-          </span>
-        ) : null}
+            {meal ? (
+              <span style={styles.mealTag} data-testid="diner-activity-scan-meal">
+                {meal}
+              </span>
+            ) : null}
+          </>
+        )}
 
         {hasVideo ? (
           <span style={styles.playGlyph} aria-hidden="true" data-testid="diner-activity-scan-play">
@@ -477,6 +553,11 @@ const styles = {
     gap: 6,
     padding: "8px 0",
     borderBottom: "1px solid #eef2f7",
+  },
+  wrapTimeline: {
+    gap: 0,
+    padding: 0,
+    borderBottom: "none",
   },
   wrapSelected: {
     background: "rgba(22, 163, 74, 0.06)",
@@ -591,7 +672,117 @@ const styles = {
     fontSize: 12,
     fontWeight: 800,
   },
-  mealInline: { color: "#64748b", fontWeight: 650 },
+  mealInline: {
+    color: "#64748b",
+    fontWeight: 650,
+    flexShrink: 0,
+    marginRight: 8,
+    whiteSpace: "nowrap",
+  },
+  timelineRowBtn: {
+    appearance: "none",
+    border: "none",
+    background: "transparent",
+    padding: "10px 0",
+    margin: 0,
+    width: "100%",
+    display: "flex",
+    alignItems: "stretch",
+    gap: 12,
+    textAlign: "left",
+    cursor: "pointer",
+    font: "inherit",
+  },
+  timelineRail: {
+    position: "relative",
+    width: 14,
+    flexShrink: 0,
+    display: "flex",
+    justifyContent: "center",
+  },
+  timelineLine: {
+    position: "absolute",
+    top: 0,
+    bottom: 0,
+    left: "50%",
+    width: 2,
+    marginLeft: -1,
+    background: "#e2e8f0",
+  },
+  timelineLineFirst: {
+    top: 8,
+  },
+  timelineLineLast: {
+    bottom: "calc(100% - 14px)",
+  },
+  timelineDot: {
+    position: "relative",
+    zIndex: 1,
+    width: 10,
+    height: 10,
+    marginTop: 4,
+    borderRadius: "50%",
+    boxShadow: "0 0 0 3px #fff",
+    flexShrink: 0,
+  },
+  timelineBody: {
+    flex: 1,
+    minWidth: 0,
+    display: "grid",
+    gap: 3,
+    paddingBottom: 2,
+  },
+  metaRow: {
+    display: "flex",
+    alignItems: "baseline",
+    gap: 8,
+    minWidth: 0,
+  },
+  metaMeal: {
+    fontSize: 11,
+    fontWeight: 800,
+    letterSpacing: "0.06em",
+    lineHeight: 1.2,
+    whiteSpace: "nowrap",
+  },
+  metaClock: {
+    color: "#94a3b8",
+    fontSize: 12,
+    fontWeight: 500,
+    fontVariantNumeric: "tabular-nums",
+    letterSpacing: "-0.01em",
+    whiteSpace: "nowrap",
+  },
+  dishLead: {
+    minWidth: 0,
+    lineHeight: 1.25,
+  },
+  dishEmphasis: {
+    fontSize: 16,
+    fontWeight: 780,
+    color: "#0f172a",
+    letterSpacing: "-0.02em",
+  },
+  placeLine: {
+    fontSize: 13,
+    lineHeight: 1.35,
+    color: "#64748b",
+    fontWeight: 500,
+    minWidth: 0,
+  },
+  atMuted: {
+    color: "#94a3b8",
+    fontWeight: 500,
+  },
+  placeLinkTimeline: {
+    color: "#2563eb",
+    fontWeight: 650,
+    textDecoration: "none",
+  },
+  secondaryFood: {
+    color: "#94a3b8",
+    fontWeight: 500,
+  },
   inlineLink: {
     color: GREEN_MID,
     fontWeight: 750,
@@ -629,6 +820,7 @@ const styles = {
     fontSize: 11,
     color: "#16a34a",
     fontWeight: 800,
+    alignSelf: "center",
   },
   videoWrap: {
     marginTop: 6,

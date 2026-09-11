@@ -1,6 +1,6 @@
 /**
  * Who's Eating — continuous scan rows (max 8 + Show more).
- * [avatar] ScreenName, Sex, Age is eating [food] at [restaurant|@home]
+ * [avatar] ScreenName, Sex, Age is eating [meal] at [restaurant|@home], [food]
  */
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -85,7 +85,7 @@ test("formatDinerDiscoverySummary: SusyQ, F, 25, USC wants Burgers (prose)", () 
   );
 });
 
-test("Who's Eating continuous: ScreenName, Sex, Age, Affiliation is eating food at restaurant|@home", () => {
+test("Who's Eating continuous: ScreenName is eating meal at restaurant, dish", () => {
   assert.equal(
     formatWhosEatingScanIdentity({
       display_name: "AndreB",
@@ -114,8 +114,27 @@ test("Who's Eating continuous: ScreenName, Sex, Age, Affiliation is eating food 
       item_name: "2 Protein Bowl",
       food_name: "Yoshinoya",
       restaurant_name: "Yoshinoya",
+      meal_period: "lunch",
     }),
-    "AndreB, M, 34, USC is eating 2 Protein Bowl at Yoshinoya."
+    "AndreB, M, 34, USC is eating lunch at Yoshinoya, 2 Protein Bowl."
+  );
+  assert.equal(
+    formatWhosEatingDiscoveryLine({
+      display_name: "BillS",
+      food_name: "Chicken Sandwich",
+      restaurant_name: "ABC Restaurant",
+      meal_period: "lunch",
+    }),
+    "BillS is eating lunch at ABC Restaurant, Chicken Sandwich."
+  );
+  assert.equal(
+    formatWhosEatingDiscoveryLine({
+      display_name: "BillS",
+      food_name: "Chicken Sandwich · ham · iced tea",
+      restaurant_name: "ABC Restaurant",
+      meal_period: "lunch",
+    }),
+    "BillS is eating lunch at ABC Restaurant, Chicken Sandwich."
   );
   assert.equal(
     formatWhosEatingDiscoveryLine({
@@ -130,8 +149,9 @@ test("Who's Eating continuous: ScreenName, Sex, Age, Affiliation is eating food 
       display_name: "AndreB",
       food_name: "burgers",
       homemade: true,
+      meal_period: "dinner",
     }),
-    "AndreB is eating burgers at @home."
+    "AndreB is eating dinner at @home, burgers."
   );
 });
 

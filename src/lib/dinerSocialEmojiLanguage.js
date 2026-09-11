@@ -103,26 +103,47 @@ export function formatActivityWhen(row = {}, { todayYmd = null } = {}) {
 }
 
 /**
+ * Lowercase meal word for discovery reporting ("lunch", "late night").
+ */
+export function mealPeriodProseWord(mealPeriod) {
+  const mealRaw = String(mealPeriod || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[ -]+/g, "_");
+  if (mealRaw === "breakfast") return "breakfast";
+  if (mealRaw === "brunch") return "brunch";
+  if (mealRaw === "lunch") return "lunch";
+  if (mealRaw === "dinner") return "dinner";
+  if (mealRaw === "late_night") return "late night";
+  if (mealRaw === "snack") return "snack";
+  if (mealRaw === "other") return "a meal";
+  return "";
+}
+
+/**
  * Prose activity clause — no decorative emoji.
- * "is eating Double-Double at In-N-Out"
- * "is cooking burgers at home"
- * "wants Chinese" / "wants Zaou Chicken at NBC Seafood"
+ * Discovery reporting (Who's Eating / peer feeds):
+ * "is eating lunch at ABC Restaurant, Chicken Sandwich"
+ * Owner hub timeline uses a separate ownerCompact layout — not this clause.
  */
 export function formatActivityProseClause(row = {}) {
   const kind = String(row.kind || row.signal_kind || "ate")
     .trim()
     .toLowerCase();
   const isWant = kind === "want" || kind === "wanna_eat" || kind === "want_to_eat";
-  const food = String(
+  const foodRaw = String(
     row.food_name || row.item_name || row.menu_item_name || ""
   ).trim() || (row.food_interest_key ? resolveFoodSubject(row) : "");
-  if (food === "Food") {
-    // resolveFoodSubject fallback — treat as empty for prose
-  }
-  const foodLabel = food && food !== "Food" ? food : "";
+  // Discovery / prose: one dish only (first of multi-item · joins).
+  const foodPrimary = String(foodRaw || "")
+    .split(/\s*·\s*/)
+    .map((part) => part.trim())
+    .filter(Boolean)[0] || "";
+  const foodLabel = foodPrimary && foodPrimary !== "Food" ? foodPrimary : "";
   const restaurant = String(row.restaurant_name || "").trim();
   const homemade = row.homemade === true || row.cooking === true;
   const second = row.second_person === true;
+  const mealProse = mealPeriodProseWord(row.meal_period || row.mealPeriod);
 
   if (isWant) {
     const wantVerb = second ? "want" : "wants";
@@ -131,22 +152,34 @@ export function formatActivityProseClause(row = {}) {
     if (foodLabel) return `${wantVerb} ${foodLabel}`;
     return second ? "want something to eat" : "wants something to eat";
   }
-  if (homemade) {
-    const what = foodLabel || "food";
-    return second ? `are cooking ${what} at home` : `is cooking ${what} at home`;
+
+  const eatVerb = second ? "are eating" : "is eating";
+  const place = homemade ? "@home" : restaurant;
+
+  // Discovery order: meal → place → dish
+  // "is eating lunch at ABC Restaurant, Chicken Sandwich"
+  if (place && foodLabel && mealProse) {
+    return `${eatVerb} ${mealProse} at ${place}, ${foodLabel}`;
   }
-  if (foodLabel && restaurant) {
-    return second
-      ? `are eating ${foodLabel} at ${restaurant}`
-      : `is eating ${foodLabel} at ${restaurant}`;
+  if (place && foodLabel) {
+    return `${eatVerb} at ${place}, ${foodLabel}`;
   }
-  if (restaurant) {
-    return second ? `are eating at ${restaurant}` : `is eating at ${restaurant}`;
+  if (place && mealProse) {
+    return `${eatVerb} ${mealProse} at ${place}`;
+  }
+  if (place) {
+    return `${eatVerb} at ${place}`;
+  }
+  if (foodLabel && mealProse) {
+    return `${eatVerb} ${mealProse}, ${foodLabel}`;
   }
   if (foodLabel) {
-    return second ? `are eating ${foodLabel}` : `is eating ${foodLabel}`;
+    return `${eatVerb} ${foodLabel}`;
   }
-  return second ? "are eating" : "is eating";
+  if (mealProse) {
+    return `${eatVerb} ${mealProse}`;
+  }
+  return eatVerb;
 }
 
 /**

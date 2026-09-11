@@ -83,7 +83,7 @@ export function formatWhosEatingScanIdentity(diner = {}) {
 
 /**
  * Full peer/profile sentence:
- * "BeckG, F, 22, USC is eating Double-Double at In-N-Out."
+ * "BeckG, F, 22, USC is eating lunch at In-N-Out, Double-Double."
  */
 export function formatActivityProseSentence(diner = {}, activity = {}, opts = {}) {
   const identity = formatDinerScanIdentity(diner, {
@@ -119,8 +119,23 @@ export function formatConnectEatingLine(row = {}, opts = {}) {
 }
 
 /**
+ * Discovery shows one dish only (first when multi-item joined with ·).
+ * System does not know which is the true main course — first entry is the stand-in.
+ */
+export function primaryDishLabel(foodName) {
+  const raw = String(foodName || "").trim();
+  if (!raw || raw === "Food") return "";
+  const byDot = raw
+    .split(/\s*·\s*/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+  return byDot[0] || raw;
+}
+
+/**
  * Who's Eating dish label — menu item only, never the restaurant brand.
  * Prefer CK/item_name; skip any candidate that matches the restaurant name.
+ * Multi-item meals collapse to the primary (first) dish for discovery.
  */
 export function resolveWhosEatingFoodLabel(row = {}) {
   const restaurant = String(
@@ -139,8 +154,8 @@ export function resolveWhosEatingFoodLabel(row = {}) {
     row.food,
   ];
   for (const raw of candidates) {
-    const food = String(raw || "").trim();
-    if (!food || food === "Food") continue;
+    const food = primaryDishLabel(raw);
+    if (!food) continue;
     const norm = food.toLowerCase().replace(/\s+/g, " ");
     if (restaurant && norm === restaurant) continue;
     return food;
@@ -149,8 +164,9 @@ export function resolveWhosEatingFoodLabel(row = {}) {
 }
 
 /**
- * Who's Eating discovery — continuous:
- * "ScreenName, Sex, Age, Affiliation is eating [menu item] at [restaurant|@home]."
+ * Who's Eating discovery — continuous reporting sentence:
+ * "BillS is eating lunch at ABC Restaurant, Chicken Sandwich."
+ * Not the owner timeline (dot / LUNCH / stacked dish) layout.
  * Never "is eating Restaurant at Restaurant".
  */
 export function formatWhosEatingDiscoveryLine(row = {}, opts = {}) {
@@ -159,18 +175,13 @@ export function formatWhosEatingDiscoveryLine(row = {}, opts = {}) {
   const homemade = row.homemade === true || row.cooking === true;
   const restaurant = String(row.restaurant_name || "").trim();
   const food = resolveWhosEatingFoodLabel({ ...row, restaurant_name: restaurant });
-  let clause;
-  if (homemade) {
-    clause = `is eating ${food || "food"} at @home`;
-  } else if (food && restaurant) {
-    clause = `is eating ${food} at ${restaurant}`;
-  } else if (restaurant) {
-    clause = `is eating at ${restaurant}`;
-  } else if (food) {
-    clause = `is eating ${food}`;
-  } else {
-    clause = "is eating";
-  }
+  const clause = formatActivityProseClause({
+    kind: "ate",
+    food_name: food,
+    restaurant_name: restaurant,
+    homemade,
+    meal_period: row.meal_period || row.mealPeriod || null,
+  });
   if (!identity) return `${clause.charAt(0).toUpperCase()}${clause.slice(1)}.`;
   return `${identity} ${clause}.`;
 }

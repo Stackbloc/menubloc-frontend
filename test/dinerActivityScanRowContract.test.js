@@ -48,7 +48,8 @@ test("DinerActivityScanRow: compact thumb + working video play", () => {
   assert.match(row, /shouldPreferRestaurantMark/);
   assert.match(row, /diner-activity-scan-prose-name/);
   assert.match(row, /formatWhosEatingScanIdentity/);
-  assert.match(row, /at @home/);
+  assert.match(row, /mealPeriodProseWord/);
+  assert.match(row, /@home/);
   assert.match(row, /diner-activity-scan-dish/);
   assert.match(row, /diner-activity-scan-place/);
   assert.match(row, /profileHref/);
@@ -97,8 +98,8 @@ test("What I'm Eating / Wanna Eat use compact Add + sheet compose", () => {
   assert.doesNotMatch(hub, /FoodStatusQuickCompose|EatingActivityCompose/);
   assert.doesNotMatch(hub, /Invite & Make Me This/);
   assert.match(hub, /eating-activity-rows/);
-  assert.match(page, /searchParams\.get\("view"\) === "connect"/);
-  assert.match(page, /previewAsConnect/);
+  assert.match(page, /profileView\.previewAsConnect|previewAsConnect/);
+  assert.match(page, /useOutletContext/);
   assert.match(read("src/components/consumer/feed/ProfileViewModeToggle.jsx"), /profile-view-mode-toggle/);
   assert.match(hub, /isConnectPreview=\{isConnectPreview\}/);
   assert.doesNotMatch(page, /ActivityTextComposer|postScanActivityText/);
@@ -119,7 +120,7 @@ test("DinerActivityScanRow: place + dish clickable; chain mark preference", () =
   assert.equal(shouldPreferRestaurantMark({ chain_id: 12, restaurant_name: "Local Spot" }), true);
 });
 
-test("prose activity: BeckG is eating Double-Double at In-N-Out — no decorative emoji", () => {
+test("prose activity: discovery reports meal at place, dish — not timeline layout", () => {
   assert.equal(
     formatDinerScanIdentity({
       display_name: "BeckG",
@@ -131,10 +132,19 @@ test("prose activity: BeckG is eating Double-Double at In-N-Out — no decorativ
   assert.equal(
     formatActivityProseClause({
       kind: "ate",
+      food_name: "Chicken Sandwich",
+      restaurant_name: "ABC Restaurant",
+      meal_period: "lunch",
+    }),
+    "is eating lunch at ABC Restaurant, Chicken Sandwich"
+  );
+  assert.equal(
+    formatActivityProseClause({
+      kind: "ate",
       food_name: "Double-Double",
       restaurant_name: "In-N-Out",
     }),
-    "is eating Double-Double at In-N-Out"
+    "is eating at In-N-Out, Double-Double"
   );
   assert.equal(
     formatActivityProseSentence(
@@ -148,9 +158,10 @@ test("prose activity: BeckG is eating Double-Double at In-N-Out — no decorativ
         kind: "ate",
         food_name: "Double-Double",
         restaurant_name: "In-N-Out",
+        meal_period: "lunch",
       }
     ),
-    "BeckG, F, 22, USC is eating Double-Double at In-N-Out."
+    "BeckG, F, 22, USC is eating lunch at In-N-Out, Double-Double."
   );
   assert.equal(
     formatActivityProseClause({
@@ -158,8 +169,9 @@ test("prose activity: BeckG is eating Double-Double at In-N-Out — no decorativ
       food_name: "burgers",
       homemade: true,
       cooking: true,
+      meal_period: "dinner",
     }),
-    "is cooking burgers at home"
+    "is eating dinner at @home, burgers"
   );
   assert.equal(
     formatActivityProseClause({
@@ -168,7 +180,7 @@ test("prose activity: BeckG is eating Double-Double at In-N-Out — no decorativ
       restaurant_name: "In-N-Out",
       second_person: true,
     }),
-    "are eating Double-Double at In-N-Out"
+    "are eating at In-N-Out, Double-Double"
   );
   assert.equal(
     formatActivityProseClause({
@@ -183,17 +195,27 @@ test("prose activity: BeckG is eating Double-Double at In-N-Out — no decorativ
     food_name: "Double-Double",
     restaurant_name: "In-N-Out",
   });
-  assert.equal(parts.proseClause, "is eating Double-Double at In-N-Out");
+  assert.equal(parts.proseClause, "is eating at In-N-Out, Double-Double");
   assert.doesNotMatch(parts.actionLine, /🍽️|🍔|😋/);
-  assert.match(formatOwnEatingActivityLine({
-    kind: "ate",
-    food_name: "Meatball sub",
-    restaurant_name: "Subway",
-  }), /is eating Meatball sub at Subway/);
-  assert.match(formatConnectEatingLine({
-    kind: "want",
-    food_name: "Burgers",
-  }), /wants Burgers/);
+  assert.match(
+    formatOwnEatingActivityLine({
+      kind: "ate",
+      food_name: "Meatball sub",
+      restaurant_name: "Subway",
+    }),
+    /is eating at Subway, Meatball sub/
+  );
+  assert.match(
+    formatConnectEatingLine({
+      kind: "want",
+      food_name: "Burgers",
+    }),
+    /wants Burgers/
+  );
+  const row = read("src/pages/consumer/myMenuply/DinerActivityScanRow.jsx");
+  assert.match(row, /mealPeriodProseWord/);
+  assert.match(row, /ownerCompact/);
+  assert.match(row, /timelineBody|diner-activity-scan-timeline-body/);
 });
 
 test("affiliation resolver ignores city-only location labels", () => {

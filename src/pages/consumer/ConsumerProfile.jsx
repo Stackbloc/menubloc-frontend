@@ -71,6 +71,7 @@ export default function ConsumerProfile() {
   const [primaryPostalCode, setPrimaryPostalCode] = useState("");
   const [discoverability, setDiscoverability] = useState("area");
   const [showConnectionFoodActivity, setShowConnectionFoodActivity] = useState(true);
+  const [omitMealClockTime, setOmitMealClockTime] = useState(false);
   const [changePhoneOpen, setChangePhoneOpen] = useState(false);
   const [phoneChangeNotice, setPhoneChangeNotice] = useState("");
   const [eduEmailInput, setEduEmailInput] = useState("");
@@ -110,6 +111,9 @@ export default function ConsumerProfile() {
   const [connectionFoodActivitySaving, setConnectionFoodActivitySaving] = useState(false);
   const [connectionFoodActivityStatus, setConnectionFoodActivityStatus] = useState("");
   const [connectionFoodActivityError, setConnectionFoodActivityError] = useState("");
+  const [omitMealClockSaving, setOmitMealClockSaving] = useState(false);
+  const [omitMealClockStatus, setOmitMealClockStatus] = useState("");
+  const [omitMealClockError, setOmitMealClockError] = useState("");
   const [dinerEducationStatus, setDinerEducationStatus] = useState("");
   const [dinerFieldOfStudy, setDinerFieldOfStudy] = useState("");
   const [dinerOccupation, setDinerOccupation] = useState("");
@@ -175,6 +179,7 @@ export default function ConsumerProfile() {
       setPrimaryPostalCode("");
       setDiscoverability(profile.discoverability || "area");
       setShowConnectionFoodActivity(profile.show_connection_food_activity !== false);
+      setOmitMealClockTime(profile.omit_meal_clock_time === true);
       setDinerEducationStatus(profile.diner_education_status || "");
       setDinerFieldOfStudy(profile.diner_field_of_study || "");
       setDinerOccupation(profile.diner_occupation || "");
@@ -433,6 +438,25 @@ export default function ConsumerProfile() {
     }
   }
 
+  async function handleSaveOmitMealClockTime() {
+    setOmitMealClockSaving(true);
+    setOmitMealClockStatus("");
+    setOmitMealClockError("");
+    try {
+      const data = await updateConsumerProfile({
+        omit_meal_clock_time: omitMealClockTime === true,
+      });
+      setOmitMealClockTime(data?.profile?.omit_meal_clock_time === true);
+      setOmitMealClockStatus("Saved");
+      return true;
+    } catch (err) {
+      setOmitMealClockError(err.message || "Could not save preference.");
+      return false;
+    } finally {
+      setOmitMealClockSaving(false);
+    }
+  }
+
   async function handleToggleDiet(key, value) {
     const previous = dietPrefs;
     const next = { ...dietPrefs, [key]: value };
@@ -678,6 +702,12 @@ export default function ConsumerProfile() {
               connectionFoodActivitySaving={connectionFoodActivitySaving}
               connectionFoodActivityStatus={connectionFoodActivityStatus}
               connectionFoodActivityError={connectionFoodActivityError}
+              omitMealClockTime={omitMealClockTime}
+              onOmitMealClockTimeChange={setOmitMealClockTime}
+              onSaveOmitMealClockTime={handleSaveOmitMealClockTime}
+              omitMealClockSaving={omitMealClockSaving}
+              omitMealClockStatus={omitMealClockStatus}
+              omitMealClockError={omitMealClockError}
               dinerEducationStatus={dinerEducationStatus}
               onDinerEducationStatusChange={setDinerEducationStatus}
               dinerFieldOfStudy={dinerFieldOfStudy}
