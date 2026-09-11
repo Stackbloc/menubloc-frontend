@@ -23,6 +23,15 @@ test("Video Manager editor exposes mute active and run window settings", () => {
   assert.match(src, /run_ends_at:/);
 });
 
+test("Video Manager editor locks modal ink and exposes Stop showing in Feed", () => {
+  const src = read("src/pages/owner/OwnerVideoCuration.jsx");
+  assert.match(src, /color:\s*OWNER_COLORS\.ink/);
+  assert.match(src, /owner-video-stop-feed/);
+  assert.match(src, /Stop showing in Feed/);
+  assert.match(src, /managerActiveOverride:\s*false/);
+  assert.match(src, /Show in Feed \(uncheck to hide/);
+});
+
 test("Feed shows No sound. when manager forces mute", () => {
   const feed = read("src/pages/consumer/myMenuply/SeeWhosEatingFullscreen.jsx");
   assert.match(feed, /isManagerForcedMute/);

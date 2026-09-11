@@ -635,11 +635,12 @@ function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
     }
   }
 
-  async function handleSave(e) {
-    e.preventDefault();
+  async function saveMetadata({ managerActiveOverride, successMessage } = {}) {
     setBusy(true);
     setError("");
     setSuccess("");
+    const nextActive =
+      managerActiveOverride !== undefined ? managerActiveOverride : managerActive;
     try {
       const resolvedTitle = resolveVideoEditorTitle({ title, dish, video });
       const body = {
@@ -647,7 +648,7 @@ function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
         comment: comment.trim() || null,
         market_discoverable: marketDiscoverable,
         play_muted: playMuted,
-        manager_active: managerActive,
+        manager_active: nextActive,
         run_starts_at: runStartsAt || null,
         run_ends_at: runEndsAt || null,
       };
@@ -665,13 +666,30 @@ function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
         video.video_source_id,
         body
       );
-      setSuccess("Saved");
+      if (managerActiveOverride !== undefined) {
+        setManagerActive(managerActiveOverride);
+      }
+      setSuccess(successMessage || "Saved");
       onSaved?.(result.video);
+      return result.video;
     } catch (err) {
       setError(err.message || "Unable to save video metadata");
+      return null;
     } finally {
       setBusy(false);
     }
+  }
+
+  async function handleSave(e) {
+    e.preventDefault();
+    await saveMetadata();
+  }
+
+  async function handleStopShowingInFeed() {
+    await saveMetadata({
+      managerActiveOverride: false,
+      successMessage: "Stopped — hidden from Feed, profiles, and watch pages",
+    });
   }
 
   return createPortal(
@@ -698,6 +716,7 @@ function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
           maxHeight: "min(92vh, 900px)",
           overflow: "auto",
           background: "#fff",
+          color: OWNER_COLORS.ink,
           borderRadius: 16,
           border: `1px solid ${OWNER_COLORS.line}`,
           boxShadow: "0 24px 60px rgba(0, 0, 0, 0.18)",
@@ -805,8 +824,36 @@ function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
               onChange={(e) => setManagerActive(e.target.checked)}
               data-testid="owner-video-manager-active"
             />
-            Active (off hides video across Feed, profiles, and watch pages)
+            Show in Feed (uncheck to hide across Feed, profiles, and watch pages)
           </label>
+          {managerActive ? (
+            <button
+              type="button"
+              disabled={busy}
+              onClick={handleStopShowingInFeed}
+              data-testid="owner-video-stop-feed"
+              style={{
+                justifySelf: "start",
+                padding: "8px 12px",
+                borderRadius: 8,
+                border: "1px solid #b91c1c",
+                background: "#fff",
+                color: "#b91c1c",
+                fontWeight: 700,
+                fontSize: 13,
+                cursor: busy ? "wait" : "pointer",
+              }}
+            >
+              Stop showing in Feed
+            </button>
+          ) : (
+            <p
+              style={{ margin: 0, fontSize: 12, color: "#b91c1c", fontWeight: 600 }}
+              data-testid="owner-video-stopped-banner"
+            >
+              Stopped — not showing in Feed until you check Show in Feed and save.
+            </p>
+          )}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
             <label style={{ display: "grid", gap: 6 }}>
               <span style={{ fontWeight: 600, fontSize: 12 }}>Run start</span>
