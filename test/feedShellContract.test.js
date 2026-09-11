@@ -130,6 +130,10 @@ test("Feed shell: Home|Waiter|Share My QR|X|Deals|Shop|Profile + slim X sheet", 
   assert.match(home, /listSeeWhosEating/);
   assert.match(home, /shuffleFeedVideos/);
   assert.match(home, /variant="feedHome"/);
+  const feedFullscreen = read("src/pages/consumer/myMenuply/SeeWhosEatingFullscreen.jsx");
+  assert.match(feedFullscreen, /wrapEndlessFeedNext/);
+  assert.match(feedFullscreen, /onEnded/);
+  assert.match(read("src/lib/shuffleProfileVideos.js"), /wrapEndlessFeedNext/);
   assert.match(home, /feed-home-x-coach/);
   assert.match(home, /FEED_HOME_X_COACH_COPY/);
   assert.match(home, /FEED_HOME_X_COACH_DURATION_MS/);
@@ -260,7 +264,7 @@ test("Feed shell: Home|Waiter|Share My QR|X|Deals|Shop|Profile + slim X sheet", 
 
   const reel = read("src/pages/consumer/myMenuply/SeeWhosEatingFullscreen.jsx");
   assert.doesNotMatch(reel, /see-whos-eating-menu-bookmark/);
-  assert.match(reel, /"reviews"/);
+  assert.match(reel, /wrapEndlessFeedNext/);
 
   const eatingHub = read("src/pages/consumer/myMenuply/eatingHubUtils.js");
   assert.match(eatingHub, /id: "reviews"/);

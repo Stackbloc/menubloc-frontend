@@ -3,6 +3,7 @@
  * Photos and videos may be pinned to My Highlights.
  */
 
+import { restoreDocumentScroll } from "./pendingHighlightMedia.js";
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import MenuplyMediaPicker from "../../../components/social/MenuplyMediaPicker.jsx";
@@ -24,8 +25,8 @@ export default function ProfileGalleryComposeSheet({
   onFile,
   preferHighlight = false,
 }) {
+  void preferHighlight;
   const [pendingFile, setPendingFile] = useState(null);
-  const [addToHighlights, setAddToHighlights] = useState(false);
   const [previewUrl, setPreviewUrl] = useState("");
 
   const pendingIsPhoto = useMemo(
@@ -36,11 +37,11 @@ export default function ProfileGalleryComposeSheet({
   useEffect(() => {
     if (!open) {
       setPendingFile(null);
-      setAddToHighlights(false);
       setPreviewUrl((prev) => {
         if (prev) URL.revokeObjectURL(prev);
         return "";
       });
+      restoreDocumentScroll();
     }
   }, [open]);
 
@@ -54,7 +55,8 @@ export default function ProfileGalleryComposeSheet({
     document.body.style.overflow = "hidden";
     return () => {
       window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prev;
+      document.body.style.overflow = prev || "";
+      restoreDocumentScroll();
     };
   }, [open, onClose]);
 
@@ -77,30 +79,23 @@ export default function ProfileGalleryComposeSheet({
 
   function handlePickedFile(file) {
     if (!file) return;
-    if (preferHighlight) {
-      // My Highlights + — pin photo or video immediately.
-      onFile?.(file, { is_highlight: true });
-      return;
-    }
-    if (isPhotoFile(file)) {
-      setPendingFile(file);
-      setAddToHighlights(false);
-      return;
-    }
-    onFile?.(file, { is_highlight: false });
+    // Always stage a preview first. Immediate upload while the camera overlay is
+    // still mounted freezes Edit/Connect and bottom nav (z-index 13000 leftover).
+    onMediaSourceChange?.(null);
+    setPendingFile(file);
   }
 
   function confirmPending() {
     if (!pendingFile) return;
-    onFile?.(pendingFile, { is_highlight: Boolean(addToHighlights) });
+    const file = pendingFile;
     setPendingFile(null);
-    setAddToHighlights(false);
+    restoreDocumentScroll();
+    onFile?.(file, { is_highlight: true, stageOnly: true });
   }
 
-  const sheetTitle = preferHighlight ? "My Highlights" : "Profile gallery";
-  const sheetLead = preferHighlight
-    ? "Add a photo or short video of a food experience that is about you — Thanksgiving, a meal you prepared, a moment worth sharing."
-    : "Add a photo or short video about you — not your eating diary.";
+  const sheetTitle = "My Highlights";
+  const sheetLead =
+    "Add a photo or short video. It stays on this screen until you tap Save on My Highlights.";
 
   return createPortal(
     <div
@@ -133,19 +128,9 @@ export default function ProfileGalleryComposeSheet({
             ) : previewUrl && !pendingIsPhoto ? (
               <video src={previewUrl} style={styles.preview} muted playsInline controls />
             ) : null}
-            <label style={styles.checkRow}>
-              <input
-                type="checkbox"
-                checked={addToHighlights}
-                disabled={busy}
-                onChange={(e) => setAddToHighlights(e.target.checked)}
-                data-testid="profile-gallery-add-to-highlights"
-              />
-              <span>
-                Add to My Highlights
-                <span style={styles.checkHint}> · photos and videos</span>
-              </span>
-            </label>
+            <p style={styles.stageHint} data-testid="profile-gallery-stage-hint">
+              This is not saved yet. Add it here, then tap Save on My Highlights.
+            </p>
             <div style={styles.confirmActions}>
               <button
                 type="button"
@@ -153,7 +138,6 @@ export default function ProfileGalleryComposeSheet({
                 disabled={busy}
                 onClick={() => {
                   setPendingFile(null);
-                  setAddToHighlights(false);
                 }}
               >
                 Back
@@ -165,7 +149,7 @@ export default function ProfileGalleryComposeSheet({
                 data-testid="profile-gallery-confirm-upload"
                 onClick={confirmPending}
               >
-                {busy ? "Uploading…" : "Upload"}
+                Add
               </button>
             </div>
           </div>
@@ -183,13 +167,9 @@ export default function ProfileGalleryComposeSheet({
               openOnMount
               testId="profile-gallery-x-picker"
               ariaLabel={
-                preferHighlight
-                  ? mediaSource === "library"
-                    ? "Upload a My Highlights photo or video from library"
-                    : "Take a My Highlights photo or video with camera"
-                  : mediaSource === "library"
-                    ? "Upload profile gallery photo or video from library"
-                    : "Take profile gallery photo or video with camera"
+                mediaSource === "library"
+                  ? "Upload a My Highlights photo or video from library"
+                  : "Take a My Highlights photo or video with camera"
               }
             />
             <button
@@ -304,6 +284,13 @@ const styles = {
     objectFit: "cover",
     borderRadius: 12,
     background: "#f1f5f9",
+  },
+  stageHint: {
+    margin: 0,
+    fontSize: 13,
+    lineHeight: 1.4,
+    color: "#b45309",
+    fontWeight: 600,
   },
   checkRow: {
     display: "flex",

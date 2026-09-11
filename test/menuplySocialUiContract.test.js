@@ -178,6 +178,11 @@ test("My Highlights are diner media grid (photos + videos; preview then See all)
   assert.match(grid, /My Highlights/);
   assert.match(grid, /my-highlights-add/);
   assert.match(grid, /my-highlights-purpose/);
+  assert.match(grid, /my-highlights-save/);
+  assert.match(
+    grid,
+    /Photos and short videos about you, your food, or whatever you want to share/
+  );
   assert.match(grid, /my-highlights-see-all/);
   assert.doesNotMatch(grid, /Not restaurants you follow/);
   assert.doesNotMatch(grid, /Up to \{/);

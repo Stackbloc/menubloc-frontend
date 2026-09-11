@@ -67,6 +67,9 @@ export default function MyMenuplyPresentationRails({
   onHighlightDelete,
   highlightDeleteBusy = false,
   onHighlightAdd,
+  onHighlightSave,
+  highlightSaveBusy = false,
+  pendingHighlightCount = 0,
   highlightsSeeAllHref,
 }) {
   void onLogFood;
@@ -90,6 +93,9 @@ export default function MyMenuplyPresentationRails({
         onDelete={readOnly ? undefined : onHighlightDelete}
         deleteBusy={highlightDeleteBusy}
         onAdd={readOnly ? undefined : onHighlightAdd}
+        onSave={readOnly ? undefined : onHighlightSave}
+        saveBusy={highlightSaveBusy}
+        pendingCount={pendingHighlightCount}
         preview
         seeAllHref={highlightsSeeAllHref}
       />

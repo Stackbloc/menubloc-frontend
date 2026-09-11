@@ -29,6 +29,7 @@ export default function ActivityStatusLineCompose({
   const [mealPeriod, setMealPeriod] = useState(defaultWhatIAteMealPeriod());
   const [homeText, setHomeText] = useState("");
   const [wantText, setWantText] = useState("");
+  const [extraItemNames, setExtraItemNames] = useState([]);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -55,6 +56,7 @@ export default function ActivityStatusLineCompose({
     setDish(null);
     setHomeText("");
     setWantText("");
+    setExtraItemNames([]);
     setMode("restaurant");
     setMealPeriod(defaultWhatIAteMealPeriod());
     setError("");
@@ -84,9 +86,11 @@ export default function ActivityStatusLineCompose({
           marketDiscoverable: true,
         });
       } else if (mode === "athome") {
+        const extras = extraItemNames.map((name) => String(name || "").trim()).filter(Boolean);
+        const primary = homeText.trim();
         await onSubmit?.({
           category: "ate",
-          text: homeText.trim(),
+          text: primary,
           homemade: true,
           restaurant: null,
           dish: null,
@@ -94,11 +98,18 @@ export default function ActivityStatusLineCompose({
           mealPeriod: mealPeriod || null,
           file: null,
           marketDiscoverable: true,
+          whereType: "home",
+          items: [
+            { food_name: primary },
+            ...extras.map((food_name) => ({ food_name })),
+          ],
         });
       } else {
+        const extras = extraItemNames.map((name) => String(name || "").trim()).filter(Boolean);
+        const primary = dish?.item_name || restaurant?.restaurant_name || "";
         await onSubmit?.({
           category: "ate",
-          text: dish?.item_name || restaurant?.restaurant_name || "",
+          text: primary,
           homemade: false,
           restaurant,
           dish,
@@ -106,6 +117,15 @@ export default function ActivityStatusLineCompose({
           mealPeriod: mealPeriod || null,
           file: null,
           marketDiscoverable: true,
+          whereType: "restaurant",
+          items: [
+            {
+              food_name: primary,
+              menu_item_id: dish?.menu_item_id || null,
+              restaurant_id: restaurant?.restaurant_id || null,
+            },
+            ...extras.map((food_name) => ({ food_name })),
+          ],
         });
       }
       close();
@@ -253,6 +273,52 @@ export default function ActivityStatusLineCompose({
               </>
             )}
 
+            {!isWant ? (
+              <div data-testid="ate-multi-items">
+                <p style={styles.extraLabel}>More items on this meal (optional)</p>
+                {extraItemNames.map((name, index) => (
+                  <div key={`extra-${index}`} style={styles.extraRow}>
+                    <input
+                      type="text"
+                      value={name}
+                      onChange={(e) => {
+                        const next = [...extraItemNames];
+                        next[index] = e.target.value;
+                        setExtraItemNames(next);
+                      }}
+                      placeholder={`Item ${index + 2}`}
+                      disabled={busy}
+                      maxLength={160}
+                      style={styles.textInput}
+                      data-testid={`ate-extra-item-${index}`}
+                    />
+                    <button
+                      type="button"
+                      disabled={busy}
+                      data-testid={`ate-extra-item-remove-${index}`}
+                      onClick={() =>
+                        setExtraItemNames((prev) => prev.filter((_, i) => i !== index))
+                      }
+                      style={styles.removeExtra}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+                {extraItemNames.length < 12 ? (
+                  <button
+                    type="button"
+                    data-testid="ate-add-item"
+                    disabled={busy}
+                    onClick={() => setExtraItemNames((prev) => [...prev, ""])}
+                    style={styles.addExtra}
+                  >
+                    + Add another item
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
+
             <div style={styles.mealRow} data-testid="status-meal-period">
               {WHAT_I_ATE_MEAL_PERIODS.map((slot) => {
                 const on = mealPeriod === slot.id;
@@ -389,6 +455,42 @@ const styles = {
     fontWeight: 700,
     color: "#0f172a",
     marginBottom: 6,
+  },
+  extraLabel: {
+    margin: "0 0 6px",
+    fontSize: 12,
+    fontWeight: 700,
+    color: "#475569",
+  },
+  extraRow: {
+    display: "flex",
+    gap: 8,
+    marginBottom: 6,
+  },
+  addExtra: {
+    appearance: "none",
+    border: "1px dashed #cbd5e1",
+    background: "#fff",
+    borderRadius: 999,
+    padding: "6px 10px",
+    font: "inherit",
+    fontSize: 12,
+    fontWeight: 700,
+    color: GREEN_MID,
+    cursor: "pointer",
+  },
+  removeExtra: {
+    appearance: "none",
+    border: "1px solid #e2e8f0",
+    background: "#fff",
+    borderRadius: 10,
+    padding: "8px 10px",
+    font: "inherit",
+    fontSize: 12,
+    fontWeight: 650,
+    color: "#64748b",
+    cursor: "pointer",
+    flexShrink: 0,
   },
   mealRow: { display: "flex", flexWrap: "wrap", gap: 6 },
   mealChip: {

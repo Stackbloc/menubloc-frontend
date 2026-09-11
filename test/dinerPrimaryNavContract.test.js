@@ -60,14 +60,14 @@ test("X sheet creates My Menuply content; Diner QR first; no I'm Eating At / My 
   assert.match(sheet, /title: "Search profiles"/);
   assert.match(sheet, /\/account\/find-diners/);
   assert.match(sheet, /id: "profile-gallery"/);
-  assert.match(sheet, /title: "Profile gallery"/);
+  assert.match(sheet, /title: "My Highlights"/);
   assert.match(sheet, /myMenuplyProfileHref\(\{ compose: "profile-gallery" \}\)/);
   assert.match(sheet, /id: "my-account"/);
   assert.match(sheet, /title: "My Account"/);
   assert.match(sheet, /to: "\/account"/);
   assert.ok(
     sheet.indexOf('id: "my-account"') > sheet.indexOf('id: "profile-gallery"'),
-    "My Account is after Profile gallery"
+    "My Account is after My Highlights"
   );
   assert.match(sheet, /POST_ABOUT_SECTIONS/);
   assert.match(sheet, /id: "account"/);

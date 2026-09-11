@@ -50,6 +50,7 @@ import {
   formatVerticalReelNavHint,
 } from "../../../lib/feedVerticalReelNavigationCopy.js";
 import MenuplyAccountInviteCard from "../../../components/consumer/MenuplyAccountInviteCard.jsx";
+import { wrapEndlessFeedNext } from "../../../lib/shuffleProfileVideos.js";
 
 const SWIPE_MIN_PX = 56;
 
@@ -77,6 +78,9 @@ export default function SeeWhosEatingFullscreen({
   const navigate = useNavigate();
   const location = useLocation();
   const isDesktopViewport = useFeedShellDesktop();
+  const isFeedHome = variant === "feedHome";
+  /** Feed home keeps a local playlist so wrap can reshuffle without ending the reel. */
+  const [playlist, setPlaylist] = useState(() => (Array.isArray(items) ? items : []));
   const [index, setIndex] = useState(startIndex);
   const [connectBusy, setConnectBusy] = useState(false);
   const [connectNotice, setConnectNotice] = useState("");
@@ -89,7 +93,8 @@ export default function SeeWhosEatingFullscreen({
   const touchStartY = useRef(null);
   const pipSwipeStartY = useRef(null);
   const ignoreVideoClickRef = useRef(false);
-  const item = items[index] || null;
+  const activeItems = isFeedHome ? playlist : items;
+  const item = activeItems[index] || null;
   const feedShareData = useMemo(() => (item ? buildFeedVideoShareData(item) : null), [item]);
   const inviteVideoShareUrl = useMemo(
     () => (item?.id ? feedClipShareUrl(item.id) : ""),
@@ -98,8 +103,12 @@ export default function SeeWhosEatingFullscreen({
   const sharedClipNextPath = feedClipSharePath(sharedClipId) || "/feed";
 
   useEffect(() => {
-    setIndex(Math.min(Math.max(0, startIndex), Math.max(0, items.length - 1)));
-  }, [startIndex, items.length]);
+    setPlaylist(Array.isArray(items) ? items : []);
+  }, [items]);
+
+  useEffect(() => {
+    setIndex(Math.min(Math.max(0, startIndex), Math.max(0, activeItems.length - 1)));
+  }, [startIndex, activeItems.length]);
 
   useEffect(() => {
     setConnectNotice("");
@@ -114,12 +123,12 @@ export default function SeeWhosEatingFullscreen({
   const browseTrail = useMemo(() => {
     if (!browseSession) return [];
     return buildBrowseMenuTrail(
-      items,
+      activeItems,
       browseSession.openIndex,
       index,
       restaurantRefFromFeedItem
     );
-  }, [browseSession, items, index]);
+  }, [browseSession, activeItems, index]);
   const browseTrailIndex = clampBrowseTrailIndex(
     browseSession?.trailIndex ?? 0,
     browseTrail.length
@@ -142,7 +151,7 @@ export default function SeeWhosEatingFullscreen({
     setBrowseSession((prev) => {
       if (!prev) return null;
       const trail = buildBrowseMenuTrail(
-        items,
+        activeItems,
         prev.openIndex,
         index,
         restaurantRefFromFeedItem
@@ -153,7 +162,7 @@ export default function SeeWhosEatingFullscreen({
       if (trailIdx === prev.trailIndex) return prev;
       return { ...prev, trailIndex: trailIdx };
     });
-  }, [browseSession, index, item?.id, items]);
+  }, [browseSession, index, item?.id, activeItems]);
 
   const inviteMenuItemId =
     item?.menu_item_id != null && String(item.menu_item_id).trim() !== ""
@@ -162,14 +171,14 @@ export default function SeeWhosEatingFullscreen({
   const inviteMenuItemName = String(item?.item_name || item?.food_name || "").trim() || null;
 
   useEffect(() => {
-    if (!item && items.length === 0) {
+    if (!item && activeItems.length === 0) {
       if (variant === "modal") onClose?.();
       return;
     }
-    if (!item && items.length > 0) {
-      setIndex((i) => Math.min(i, items.length - 1));
+    if (!item && activeItems.length > 0) {
+      setIndex((i) => Math.min(i, activeItems.length - 1));
     }
-  }, [item, items.length, onClose, variant]);
+  }, [item, activeItems.length, onClose, variant]);
 
   useEffect(() => {
     function onForcedClose() {
@@ -252,10 +261,16 @@ export default function SeeWhosEatingFullscreen({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- goNext/goPrev close over latest index
-  }, [items.length, index, onClose, variant, menuBrowserOpen]);
+  }, [activeItems.length, index, onClose, variant, menuBrowserOpen]);
 
   function goNext() {
-    setIndex((i) => (i + 1 < items.length ? i + 1 : i));
+    if (isFeedHome) {
+      const { items: nextItems, index: nextIndex } = wrapEndlessFeedNext(playlist, index);
+      setPlaylist(nextItems);
+      setIndex(nextIndex);
+      return;
+    }
+    setIndex((i) => (i + 1 < activeItems.length ? i + 1 : i));
   }
 
   function goPrevOrClose() {
@@ -333,7 +348,7 @@ export default function SeeWhosEatingFullscreen({
     window.addEventListener(OPEN_FEED_MENU_BROWSER_EVENT, onRequestOpen);
     return () => window.removeEventListener(OPEN_FEED_MENU_BROWSER_EVENT, onRequestOpen);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- open against current clip
-  }, [variant, index, item?.id, items.length]);
+  }, [variant, index, item?.id, activeItems.length]);
 
   useEffect(() => {
     if (variant !== "feedHome") return;
@@ -360,7 +375,7 @@ export default function SeeWhosEatingFullscreen({
     setBrowseSession((prev) => {
       if (!prev) return null;
       const trail = buildBrowseMenuTrail(
-        items,
+        activeItems,
         prev.openIndex,
         index,
         restaurantRefFromFeedItem
@@ -502,10 +517,10 @@ export default function SeeWhosEatingFullscreen({
   const isVenue = isLiveFeedVenueItem(item);
   const screenName = item ? liveFeedPosterDisplayName(item) : "";
   const showRestaurantBadge = item ? isLiveFeedRestaurantCreator(item) : false;
-  const atEnd = index >= items.length - 1;
+  /** Feed home never ends — wrap + reshuffle; modal reel still stops at the last clip. */
+  const atEnd = isFeedHome ? false : index >= activeItems.length - 1;
   const atStart = index <= 0;
   const peerId = item?.diner?.id != null ? Number(item.diner.id) : null;
-  const isFeedHome = variant === "feedHome";
   const showInvite = Boolean(isFeedHome && restaurantRef?.restaurant_id);
   /** Mobile-only TikTok-style icon rail; desktop keeps Share & Invite dock. */
   const useMobileActionRail = Boolean(isFeedHome && !isDesktopViewport);
@@ -667,7 +682,7 @@ export default function SeeWhosEatingFullscreen({
         }}
         playsInline
         muted={videoMuted}
-        loop
+        loop={!(isFeedHome && activeItems.length > 1)}
         autoPlay
         controls={false}
         preload="auto"
@@ -677,6 +692,13 @@ export default function SeeWhosEatingFullscreen({
         onPointerUp={onVideoPointerUp}
         onTouchStart={onPipTouchStart}
         onTouchEnd={onPipTouchEnd}
+        onEnded={
+          isFeedHome && activeItems.length > 1
+            ? () => {
+                goNext();
+              }
+            : undefined
+        }
       />
 
       {menuBrowserOpen ? (
@@ -713,9 +735,11 @@ export default function SeeWhosEatingFullscreen({
             style={{
               ...styles.pipSideArrowBtn,
               ...styles.pipSideArrowRight,
-              ...(index >= items.length - 1 ? styles.pipVideoNavBtnDisabled : null),
+              ...(!isFeedHome && index >= activeItems.length - 1
+                ? styles.pipVideoNavBtnDisabled
+                : null),
             }}
-            disabled={index >= items.length - 1}
+            disabled={!isFeedHome && index >= activeItems.length - 1}
             data-testid="feed-menu-browser-pip-next-video"
             aria-label="Next Feed video"
             onClick={(e) => {
@@ -802,7 +826,7 @@ export default function SeeWhosEatingFullscreen({
           <p style={styles.hint}>
             {formatVerticalReelNavHint({
               index,
-              total: items.length,
+              total: activeItems.length,
               atStart,
               atEnd,
               isDesktopViewport,

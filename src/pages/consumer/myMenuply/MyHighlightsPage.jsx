@@ -18,6 +18,13 @@ import {
 import MyHighlightsGrid from "./MyHighlightsGrid.jsx";
 import ProfileGalleryComposeSheet from "./ProfileGalleryComposeSheet.jsx";
 import { buildTopHighlights } from "./myMenuplyPresentation.js";
+import {
+  createPendingHighlight,
+  pendingHighlightsToCards,
+  restoreDocumentScroll,
+  revokePendingHighlight,
+  revokePendingHighlights,
+} from "./pendingHighlightMedia.js";
 import * as s from "./myMenuplyStyles.js";
 
 export default function MyHighlightsPage() {
@@ -30,6 +37,7 @@ export default function MyHighlightsPage() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [mediaSource, setMediaSource] = useState(null);
   const [deleteBusy, setDeleteBusy] = useState(false);
+  const [pendingHighlights, setPendingHighlights] = useState([]);
 
   const load = useCallback(async () => {
     setBusy(true);
@@ -63,29 +71,57 @@ export default function MyHighlightsPage() {
 
   const cards = useMemo(() => {
     const pinned = (profileMedia || []).filter((row) => row?.is_highlight);
-    return buildTopHighlights({ profileHighlightMedia: pinned });
-  }, [profileMedia]);
+    return [
+      ...pendingHighlightsToCards(pendingHighlights),
+      ...buildTopHighlights({ profileHighlightMedia: pinned }),
+    ];
+  }, [profileMedia, pendingHighlights]);
 
-  async function onFile(file, opts = {}) {
+  function closePicker() {
     setPickerOpen(false);
     setMediaSource(null);
+    restoreDocumentScroll();
+  }
+
+  function onFile(file) {
+    closePicker();
     if (!file) return;
+    setError("");
+    setPendingHighlights((prev) => [...prev, createPendingHighlight(file)]);
+  }
+
+  async function onSave() {
+    if (!pendingHighlights.length) return;
     setBusy(true);
     setError("");
+    restoreDocumentScroll();
+    const queued = [...pendingHighlights];
     try {
-      const data = await uploadConsumerProfileMedia(file, {
-        is_highlight: opts.is_highlight !== false,
-      });
-      const item = data?.item;
-      if (item) setProfileMedia((prev) => [...prev, item]);
+      const uploaded = [];
+      for (const item of queued) {
+        const data = await uploadConsumerProfileMedia(item.file, { is_highlight: true });
+        if (data?.item) uploaded.push(data.item);
+      }
+      if (uploaded.length) setProfileMedia((prev) => [...prev, ...uploaded]);
+      revokePendingHighlights(queued);
+      setPendingHighlights([]);
     } catch (err) {
-      setError(err.message || "Unable to upload");
+      setError(err.message || "Unable to save");
     } finally {
       setBusy(false);
+      restoreDocumentScroll();
     }
   }
 
   async function onDelete(card) {
+    if (card?.deleteKind === "pending_highlight") {
+      setPendingHighlights((prev) => {
+        const removed = prev.find((row) => row.key === card.key);
+        revokePendingHighlight(removed);
+        return prev.filter((row) => row.key !== card.key);
+      });
+      return;
+    }
     if (!card?.media_id) return;
     setDeleteBusy(true);
     setError("");
@@ -125,15 +161,15 @@ export default function MyHighlightsPage() {
           setPickerOpen(true);
           setMediaSource(null);
         }}
+        onSave={onSave}
+        saveBusy={busy}
+        pendingCount={pendingHighlights.length}
         onDelete={onDelete}
         deleteBusy={deleteBusy}
       />
       <ProfileGalleryComposeSheet
         open={pickerOpen}
-        onClose={() => {
-          setPickerOpen(false);
-          setMediaSource(null);
-        }}
+        onClose={closePicker}
         mediaSource={mediaSource}
         onMediaSourceChange={setMediaSource}
         busy={busy}

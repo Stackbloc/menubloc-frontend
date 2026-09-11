@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import ProfileMediaGallery from "./ProfileMediaGallery.jsx";
 import AvatarComposeSheet from "./AvatarComposeSheet.jsx";
 import * as s from "./myMenuplyStyles.js";
 import { GREEN_BRIGHT } from "./myMenuplyStyles.js";
@@ -75,9 +74,6 @@ export default function DinerIdentityHero({
   flashVideos = [],
   flashBusy = false,
   onFlashVideoRemove,
-  profileMedia = [],
-  onProfileMediaAdd,
-  onProfileMediaRemove,
   readOnly = false,
   monthInFoodHref = null,
   dateOfBirth = "",
@@ -316,16 +312,6 @@ export default function DinerIdentityHero({
 
       {notice ? (
         <p style={{ ...s.muted, color: "#027A48", marginBottom: 10 }}>{notice}</p>
-      ) : null}
-
-      {showRichMedia ? (
-        <ProfileMediaGallery
-          items={profileMedia}
-          readOnly={readOnly}
-          busy={busy}
-          onAddFile={onProfileMediaAdd}
-          onRemove={onProfileMediaRemove}
-        />
       ) : null}
     </section>
   );

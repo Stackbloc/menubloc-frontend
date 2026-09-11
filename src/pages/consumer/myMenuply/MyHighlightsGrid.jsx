@@ -13,12 +13,17 @@ function HighlightTile({ card, readOnly = false, onDelete, deleteBusy = false })
   const canDelete = !readOnly && card?.deleteKind && typeof onDelete === "function";
   const { open, dismiss, bind } = useLongPressReveal(canDelete);
   const isVideo = Boolean(card.videoUrl) || card.media_kind === "video";
+  const pending = Boolean(card.pending);
 
   return (
     <div
-      style={styles.tile}
-      data-testid="top-highlight-item"
+      style={{
+        ...styles.tile,
+        ...(pending ? styles.tilePending : null),
+      }}
+      data-testid={pending ? "my-highlight-pending" : "top-highlight-item"}
       data-media={isVideo ? "video" : "photo"}
+      data-pending={pending ? "true" : "false"}
       {...bind}
     >
       {isVideo ? (
@@ -38,6 +43,11 @@ function HighlightTile({ card, readOnly = false, onDelete, deleteBusy = false })
       {isVideo ? (
         <span style={styles.videoBadge} aria-hidden="true" data-testid="my-highlight-video-badge">
           ▶
+        </span>
+      ) : null}
+      {pending ? (
+        <span style={styles.pendingBadge} data-testid="my-highlight-pending-badge">
+          Not saved
         </span>
       ) : null}
       {open ? (
@@ -72,6 +82,9 @@ export default function MyHighlightsGrid({
   onDelete,
   deleteBusy = false,
   onAdd,
+  onSave,
+  saveBusy = false,
+  pendingCount = 0,
   preview = true,
   seeAllHref = MY_MENUPLY_HIGHLIGHTS_PATH,
   previewCount = MY_HIGHLIGHTS_PREVIEW_COUNT,
@@ -110,15 +123,32 @@ export default function MyHighlightsGrid({
           ) : null}
         </div>
       </div>
-      {!readOnly && preview ? (
+      {!readOnly ? (
         <p style={styles.purposeCopy} data-testid="my-highlights-purpose">
-          Photos and videos of your food experiences — Thanksgiving, meals you prepared, moments
-          that are about you.
+          Photos and short videos about you, your food, or whatever you want to share.
         </p>
+      ) : null}
+      {pendingCount > 0 && canAdd ? (
+        <div style={styles.saveRow} data-testid="my-highlights-save-row">
+          <p style={styles.pendingHint}>
+            {pendingCount === 1
+              ? "1 item ready — tap Save to add it to your profile."
+              : `${pendingCount} items ready — tap Save to add them to your profile.`}
+          </p>
+          <button
+            type="button"
+            style={styles.saveBtn}
+            data-testid="my-highlights-save"
+            disabled={saveBusy}
+            onClick={() => onSave?.()}
+          >
+            {saveBusy ? "Saving…" : "Save"}
+          </button>
+        </div>
       ) : null}
       {empty ? (
         <p style={styles.emptyHint} data-testid="my-highlights-empty">
-          No highlights yet. Tap + to add a photo or video.
+          No highlights yet. Tap + to add a photo or video, then Save.
         </p>
       ) : (
         <div style={styles.grid} data-testid="my-highlights-grid">
@@ -156,6 +186,32 @@ const styles = {
     fontWeight: 700,
     color: "#14532d",
     textDecoration: "none",
+  },
+  saveRow: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 10,
+    margin: "0 0 12px",
+  },
+  pendingHint: {
+    margin: 0,
+    fontSize: 13,
+    lineHeight: 1.35,
+    color: "#b45309",
+    fontWeight: 600,
+  },
+  saveBtn: {
+    appearance: "none",
+    border: "none",
+    background: "#14532d",
+    color: "#fff",
+    borderRadius: 10,
+    padding: "8px 14px",
+    fontSize: 13,
+    fontWeight: 750,
+    cursor: "pointer",
+    flexShrink: 0,
   },
   addIconBtn: {
     width: 32,
@@ -198,6 +254,10 @@ const styles = {
     overflow: "hidden",
     background: "#ecfdf5",
   },
+  tilePending: {
+    outline: "2px dashed #f59e0b",
+    outlineOffset: -2,
+  },
   media: {
     width: "100%",
     height: "100%",
@@ -225,5 +285,17 @@ const styles = {
     display: "grid",
     placeItems: "center",
     lineHeight: 1,
+  },
+  pendingBadge: {
+    position: "absolute",
+    left: 6,
+    top: 6,
+    borderRadius: 999,
+    background: "rgba(180, 83, 9, 0.92)",
+    color: "#fff",
+    fontSize: 10,
+    fontWeight: 700,
+    padding: "2px 6px",
+    lineHeight: 1.2,
   },
 };

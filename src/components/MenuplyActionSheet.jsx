@@ -65,8 +65,8 @@ const ACTION_DEFS = {
   },
   "profile-gallery": {
     id: "profile-gallery",
-    title: "Profile gallery",
-    description: "Add a photo or video with your camera.",
+    title: "My Highlights",
+    description: "Add a photo or short video to My Highlights.",
     to: myMenuplyProfileHref({ compose: "profile-gallery" }),
     guestOk: false,
   },

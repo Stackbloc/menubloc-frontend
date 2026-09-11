@@ -105,6 +105,13 @@ import {
   buildWantSuggestions,
 } from "./myMenuply/myMenuplyPresentation.js";
 import {
+  createPendingHighlight,
+  pendingHighlightsToCards,
+  restoreDocumentScroll,
+  revokePendingHighlight,
+  revokePendingHighlights,
+} from "./myMenuply/pendingHighlightMedia.js";
+import {
   SectionHead,
   DiningCrewHubCard,
   NamedShareCard,
@@ -264,7 +271,10 @@ export default function MyMenuplyPage() {
   const [composeMediaSource, setComposeMediaSource] = useState("camera");
   const [profileGalleryPickerOpen, setProfileGalleryPickerOpen] = useState(false);
   const [profileGalleryMediaSource, setProfileGalleryMediaSource] = useState(null);
-  const [profileGalleryPreferHighlight, setProfileGalleryPreferHighlight] = useState(false);
+  const [profileGalleryPreferHighlight, setProfileGalleryPreferHighlight] = useState(true);
+  const [pendingHighlights, setPendingHighlights] = useState([]);
+  const pendingHighlightsRef = useRef([]);
+  pendingHighlightsRef.current = pendingHighlights;
   const [crewComposeOpen, setCrewComposeOpen] = useState(false);
   const [eventComposeOpen, setEventComposeOpen] = useState(false);
   const [inviteCrewPickerOpen, setInviteCrewPickerOpen] = useState(false);
@@ -383,6 +393,10 @@ export default function MyMenuplyPage() {
   }, [authLoading, isAuthenticated, load]);
 
   useEffect(() => {
+    return () => revokePendingHighlights(pendingHighlightsRef.current);
+  }, []);
+
+  useEffect(() => {
     if (authLoading) return;
     const compose = String(searchParams.get("compose") || "").trim().toLowerCase();
     if (!compose || !COMPOSE_LOGIN_ACTIONS.has(compose)) return;
@@ -416,7 +430,7 @@ export default function MyMenuplyPage() {
     }
 
     if (compose === "profile-gallery") {
-      setProfileGalleryPreferHighlight(false);
+      setProfileGalleryPreferHighlight(true);
       setProfileGalleryMediaSource(media === "library" ? "library" : media === "camera" ? "camera" : null);
       setProfileGalleryPickerOpen(true);
       clearComposeParams();
@@ -593,10 +607,12 @@ export default function MyMenuplyPage() {
   );
   const topHighlights = useMemo(() => {
     const pinned = (profileMedia || []).filter((row) => row?.is_highlight);
-    return buildTopHighlights({
+    const saved = buildTopHighlights({
       profileHighlightMedia: pinned,
     });
-  }, [profileMedia]);
+    if (previewAsConnect) return saved;
+    return [...pendingHighlightsToCards(pendingHighlights), ...saved];
+  }, [profileMedia, pendingHighlights, previewAsConnect]);
   const followedRestaurantRails = useMemo(
     () => buildFollowedRestaurantRails(followed),
     [followed]
@@ -677,29 +693,48 @@ export default function MyMenuplyPage() {
     }
   }
 
-  async function onProfileMediaAdd(file, opts = {}) {
+  function closeHighlightPicker() {
     setProfileGalleryPickerOpen(false);
     setProfileGalleryMediaSource(null);
-    setProfileGalleryPreferHighlight(false);
+    setProfileGalleryPreferHighlight(true);
+    restoreDocumentScroll();
+  }
+
+  function onProfileMediaAdd(file) {
+    closeHighlightPicker();
     if (!file) return;
+    setIdentityError("");
+    setIdentityNotice("");
+    setPendingHighlights((prev) => [...prev, createPendingHighlight(file)]);
+    setIdentityNotice("Added to My Highlights — tap Save to keep it on your profile.");
+  }
+
+  async function onSavePendingHighlights() {
+    if (!pendingHighlights.length) return;
     setIdentityBusy(true);
     setIdentityError("");
     setIdentityNotice("");
+    restoreDocumentScroll();
+    const queued = [...pendingHighlights];
     try {
-      const data = await uploadConsumerProfileMedia(file, {
-        is_highlight: Boolean(opts.is_highlight),
-      });
-      const item = data?.item;
-      if (item) setProfileMedia((prev) => [...prev, item]);
+      const uploaded = [];
+      for (const item of queued) {
+        const data = await uploadConsumerProfileMedia(item.file, { is_highlight: true });
+        if (data?.item) uploaded.push(data.item);
+      }
+      if (uploaded.length) {
+        setProfileMedia((prev) => [...prev, ...uploaded]);
+      }
+      revokePendingHighlights(queued);
+      setPendingHighlights([]);
       setIdentityNotice(
-        item?.is_highlight
-          ? "Added to My Highlights."
-          : "Profile media added."
+        uploaded.length === 1 ? "Saved to My Highlights." : `Saved ${uploaded.length} highlights.`
       );
     } catch (err) {
-      setIdentityError(err.message || "Unable to upload profile media");
+      setIdentityError(err.message || "Unable to save highlights");
     } finally {
       setIdentityBusy(false);
+      restoreDocumentScroll();
     }
   }
 
@@ -1194,6 +1229,15 @@ export default function MyMenuplyPage() {
 
   async function onHighlightDelete(card) {
     if (!card?.deleteKind) return;
+    if (card.deleteKind === "pending_highlight") {
+      setPendingHighlights((prev) => {
+        const next = prev.filter((row) => row.key !== card.key);
+        const removed = prev.find((row) => row.key === card.key);
+        revokePendingHighlight(removed);
+        return next;
+      });
+      return;
+    }
     if (card.deleteKind === "diary" && card.deleteItem) {
       await onDiaryDelete(card.deleteItem);
       return;
@@ -1898,9 +1942,6 @@ export default function MyMenuplyPage() {
               flashVideos={flashVideos}
               flashBusy={flashBusy}
               onFlashVideoRemove={onFlashVideoRemove}
-              profileMedia={profileMedia}
-              onProfileMediaAdd={onProfileMediaAdd}
-              onProfileMediaRemove={onProfileMediaRemove}
               monthInFoodHref={MY_MENUPLY_MONTH_IN_FOOD_PATH}
               dateOfBirth={
                 profile?.date_of_birth ? String(profile.date_of_birth).slice(0, 10) : ""
@@ -1914,16 +1955,12 @@ export default function MyMenuplyPage() {
             />
             <ProfileGalleryComposeSheet
               open={profileGalleryPickerOpen}
-              onClose={() => {
-                setProfileGalleryPickerOpen(false);
-                setProfileGalleryMediaSource(null);
-                setProfileGalleryPreferHighlight(false);
-              }}
+              onClose={closeHighlightPicker}
               mediaSource={profileGalleryMediaSource}
               onMediaSourceChange={setProfileGalleryMediaSource}
               busy={identityBusy}
               onFile={onProfileMediaAdd}
-              preferHighlight={profileGalleryPreferHighlight}
+              preferHighlight
             />
 
             <MyMenuplyPresentationRails
@@ -1950,6 +1987,9 @@ export default function MyMenuplyPage() {
               }}
               onHighlightDelete={onHighlightDelete}
               highlightDeleteBusy={Boolean(postBusy)}
+              onHighlightSave={previewAsConnect ? undefined : onSavePendingHighlights}
+              highlightSaveBusy={identityBusy}
+              pendingHighlightCount={previewAsConnect ? 0 : pendingHighlights.length}
               onHighlightAdd={
                 previewAsConnect
                   ? undefined

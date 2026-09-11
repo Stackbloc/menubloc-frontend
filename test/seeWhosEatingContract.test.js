@@ -54,6 +54,8 @@ test("See Who's Eating reel: guest watch, CK dish, existing camera, Connect noti
   assert.match(fullscreen, /see-whos-eating-screen-name/);
   assert.match(fullscreen, /FeedPlaceCaption/);
   assert.match(fullscreen, /variant === "feedHome"|variant = "modal"/);
+  assert.match(fullscreen, /wrapEndlessFeedNext/);
+  assert.match(fullscreen, /onEnded/);
   assert.doesNotMatch(fullscreen, /showRestaurantSecondary/);
   assert.match(fullscreen, /liveFeedCreatorProfilePath/);
   assert.match(fullscreen, /isLiveFeedVenueItem/);

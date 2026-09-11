@@ -19,19 +19,20 @@ test("MenuplyActionSheet creates My Events via My Menuply compose", () => {
   assert.match(sheet, /title: "My Events"/);
   assert.match(sheet, /title: "My Eating Plans"/);
   assert.match(sheet, /title: "My Crews"/);
-  assert.match(sheet, /compose=event/);
+  assert.match(sheet, /compose: "event"/);
   assert.match(sheet, /id: "events-browse"/);
   assert.match(sheet, /to: "\/events"/);
   assert.doesNotMatch(sheet, /to: "\/clusters"/);
 });
 
-test("MenuplyActionSheet opens profile gallery compose from X", () => {
+test("MenuplyActionSheet opens My Highlights compose from X", () => {
   const sheet = read("src/components/MenuplyActionSheet.jsx");
   const page = read("src/pages/consumer/MyMenuplyPage.jsx");
   const gallerySheet = read("src/pages/consumer/myMenuply/ProfileGalleryComposeSheet.jsx");
-  assert.match(sheet, /compose=profile-gallery/);
+  assert.match(sheet, /compose: "profile-gallery"/);
   assert.match(sheet, /id: "my-account"/);
-  assert.match(sheet, /Add a photo or video with your camera/);
+  assert.match(sheet, /title: "My Highlights"/);
+  assert.match(sheet, /Add a photo or short video to My Highlights/);
   assert.ok(sheet.indexOf('id: "diner-qr"') < sheet.indexOf('id: "ate"'));
   assert.ok(sheet.indexOf('id: "my-account"') > sheet.indexOf('id: "profile-gallery"'));
   assert.doesNotMatch(sheet, /id: "im-eating"/);
@@ -39,6 +40,7 @@ test("MenuplyActionSheet opens profile gallery compose from X", () => {
   assert.match(page, /compose === "profile-gallery"/);
   assert.match(page, /ProfileGalleryComposeSheet/);
   assert.match(page, /uploadConsumerProfileMedia/);
+  assert.match(page, /onSavePendingHighlights/);
   assert.match(gallerySheet, /profile-gallery-option-camera/);
   assert.match(gallerySheet, /profile-gallery-option-library/);
   assert.match(gallerySheet, /source=\{mediaSource === "library" \? "library" : "camera"\}/);
@@ -67,7 +69,7 @@ test("My Menuply opens EventComposeSheet from compose=event and Edit View Add", 
 
 test("MenuplyActionSheet routes Want to Eat to My Menuply compose", () => {
   const sheet = read("src/components/MenuplyActionSheet.jsx");
-  assert.match(sheet, /compose=want/);
+  assert.match(sheet, /compose: "want"/);
   assert.doesNotMatch(sheet, /id: "want"[\s\S]{0,120}to: "\/search"/);
 });
 

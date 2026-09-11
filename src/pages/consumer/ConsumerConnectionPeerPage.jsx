@@ -4,7 +4,7 @@
  * Route: /account/connections/:peerId
  */
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import StickyPageHeader from "../../components/StickyPageHeader.jsx";
 import BottomNav from "../../components/BottomNav.jsx";
@@ -50,7 +50,8 @@ import HomeAtHomeSection from "./myMenuply/HomeAtHomeSection.jsx";
 import { formatDinerPeerLabel } from "../../lib/dinerPublicIdentity.js";
 import { ageFromDob } from "../../lib/dinerDateOfBirth.js";
 import DinerActivitySelectionLayer from "./myMenuply/DinerActivitySelectionLayer.jsx";
-import ProfileMediaGallery from "./myMenuply/ProfileMediaGallery.jsx";
+import MyHighlightsGrid from "./myMenuply/MyHighlightsGrid.jsx";
+import { buildTopHighlights } from "./myMenuply/myMenuplyPresentation.js";
 import { FlashVideosDisplay } from "./myMenuply/FlashVideosBlock.jsx";
 
 function tokenFromHref(href) {
@@ -208,6 +209,10 @@ export default function ConsumerConnectionPeerPage() {
   });
 
   const dayMarkers = buildEatingDayMarkersFromCalendar(eatingCalendarDays, scheduledPlans);
+  const peerHighlights = useMemo(() => {
+    const pinned = (peerProfileMedia || []).filter((row) => row?.is_highlight);
+    return buildTopHighlights({ profileHighlightMedia: pinned });
+  }, [peerProfileMedia]);
 
   async function requestCrewJoin(crewId) {
     setCrewJoinBusy(String(crewId));
@@ -308,7 +313,6 @@ export default function ConsumerConnectionPeerPage() {
               connections={peerConnections}
               viewerUserId={consumer?.id}
               flashVideos={flashVideos}
-              profileMedia={peerProfileMedia}
               monthInFoodHref={
                 peerId ? `/account/connections/${encodeURIComponent(String(peerId))}/month-in-food` : null
               }
@@ -338,7 +342,7 @@ export default function ConsumerConnectionPeerPage() {
 
             <section style={s.section} data-testid="peer-supporting-media">
               <FlashVideosDisplay items={flashVideos} readOnly />
-              <ProfileMediaGallery items={peerProfileMedia} readOnly />
+              <MyHighlightsGrid cards={peerHighlights} readOnly />
             </section>
 
             <HomeAtHomeSection readOnly dishes={homeDishes} />

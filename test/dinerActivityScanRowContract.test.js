@@ -68,6 +68,8 @@ test("What I'm Eating / Wanna Eat use compact Add + sheet compose", () => {
   assert.match(compose, /eating-status-line-compose|wanna-status-line-compose/);
   assert.match(compose, /status-compose-open/);
   assert.match(compose, /status-compose-sheet/);
+  assert.match(compose, /ate-add-item/);
+  assert.match(compose, /More items on this meal/);
   assert.match(compose, /Restaurant/);
   assert.match(compose, /@home/);
   assert.match(compose, /EatingPlaceFields/);

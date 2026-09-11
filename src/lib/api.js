@@ -150,6 +150,25 @@ export async function apiPatch(path, body) {
   return data;
 }
 
+export async function apiDelete(path) {
+  const url = `${API_BASE}${path.startsWith("/") ? "" : "/"}${path}`;
+  const res = await fetch(url, {
+    method: "DELETE",
+    credentials: "include",
+  });
+  const data = await safeJson(res);
+  if (!res.ok) {
+    const msg = (data && (data.error || data.message)) || `DELETE ${url} failed (${res.status})`;
+    const error = new Error(msg);
+    error.status = res.status;
+    if (data && typeof data === "object") {
+      Object.assign(error, data);
+    }
+    throw error;
+  }
+  return data;
+}
+
 // Common endpoints (optional helpers)
 export async function searchPublicMenu(query) {
   const q = encodeURIComponent(query || "");

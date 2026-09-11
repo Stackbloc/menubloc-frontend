@@ -34,6 +34,10 @@ test("compose + API expose multi-item meal create", () => {
   assert.match(compose, /ate-add-item/);
   assert.match(compose, /extraItemNames/);
   assert.match(compose, /items:/);
+  const status = read("src/pages/consumer/myMenuply/ActivityStatusLineCompose.jsx");
+  assert.match(status, /ate-add-item/);
+  assert.match(status, /extraItemNames/);
+  assert.match(status, /items:/);
   assert.match(feed, /createWhatIAteMeal/);
 });
 

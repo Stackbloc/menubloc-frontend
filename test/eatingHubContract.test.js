@@ -134,7 +134,7 @@ test("My Menuply and peer hub use five-section presentation hub", () => {
   assert.match(section, /onDiaryDelete/);
   assert.match(section, /onWantDelete/);
   assert.match(section, /onDiningIntentDelete/);
-  assert.match(section, /\(\) => onDiaryDelete\(item\)/);
+  assert.match(section, /\(\) => onDiaryDelete\(primary\)/);
   assert.match(
     read("src/pages/consumer/myMenuply/DinerActivityScanRow.jsx"),
     /useLongPressReveal|mediaLongPressReveal/
