@@ -4,7 +4,7 @@ One meal = Where + meal period + time + N items, shared by manual compose and Mu
 
 # Current Status
 
-Schema **0328 applied** on production (`Applied and tracked` 2026-09-11T13:28:55Z). Authenticated E2E **PASS** (2-item @home meal, list grouping, MiF occasion count, probe deleted). CPD in progress.
+**CPD COMPLETE.** Schema 0328 applied. BE `a09498b2` health match + smoke 18/18. FE tip `9r6ukumw1` / `index-DMRlbt9y.js` apex+www PASS. Authenticated E2E PASS.
 
 # Files Changed
 
@@ -47,7 +47,7 @@ Schema **0328 applied** on production (`Applied and tracked` 2026-09-11T13:28:55
 
 # Remaining Work
 
-1. Human: log a 2-item restaurant meal + Multiplier video on primary in production UI after tip-gate PASS.
+1. Human: log a 2-item restaurant meal + Multiplier video on primary in production UI.
 2. Calendar `entry_count` still item-based (not this ship).
 3. Hub delete still targets primary item only.
 
@@ -59,14 +59,12 @@ Schema **0328 applied** on production (`Applied and tracked` 2026-09-11T13:28:55
 
 # Verification Status
 
-Contract tests pass. Production schema verified. Authenticated create/list/MiF/delete E2E **PASS** (`meal_id=1` probe rows 40+41 deleted). CPD follows.
+**CPD COMPLETE.** Contract tests pass. Authenticated create/list/MiF/delete E2E PASS. BE smoke 18/18. Tip-gate apex+www PASS.
 
 # Resume Instructions
 
-1. After `cpd-be.sh` / `cpd-fe.sh`: confirm live `POST /api/consumer/what-i-ate-today/meals` is 401 (not 404) unauthenticated, and tip-gate PASS.
-2. Confirm Video Manager still keys off primary ate id.
-3. Human UI: 2-item restaurant meal + Multiplier video on first item.
+Human UI: 2-item restaurant meal + Multiplier video on first item. Video Manager still keys off primary ate id.
 
 # Git Status
 
-Authorized trees on `main`. Do not deploy from `menubloc-frontend/` or `menubloc-backend/`.
+FE `d7929078` + docs lock. BE `a09498b2` + LKG mirror. Do not deploy from `menubloc-frontend/` or `menubloc-backend/`.
