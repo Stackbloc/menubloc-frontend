@@ -14,8 +14,11 @@ import FeedMorePanel from "../../../components/consumer/feed/FeedMorePanel.jsx";
 import FeedVideoCreateSheet from "../../../components/consumer/feed/FeedVideoCreateSheet.jsx";
 import FeedShareMyMenuplySheet from "../../../components/consumer/feed/FeedShareMyMenuplySheet.jsx";
 import FeedVideoComposeOverlay from "../../../components/consumer/feed/FeedVideoComposeOverlay.jsx";
+import ProfileViewChrome from "../../../components/consumer/feed/ProfileViewChrome.jsx";
 import { useConsumer } from "../../../context/ConsumerContext.jsx";
 import { useFeedShellDesktop } from "../../../lib/useFeedShellDesktop.js";
+import { clearStuckMediaChrome } from "../myMenuply/pendingHighlightMedia.js";
+import { MY_MENUPLY_MONTH_IN_FOOD_PATH } from "../../../lib/myMenuplyRoutes.js";
 
 export { FEED_PRIMARY_NAV_HEIGHT };
 
@@ -26,7 +29,7 @@ function isOwnFeedProfilePath(pathname) {
 export default function FeedShellPage({ children = null }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const { isAuthenticated } = useConsumer();
   const isDesktop = useFeedShellDesktop();
   const showShopBasket = isFeedShopRoute(location.pathname);
@@ -41,20 +44,19 @@ export default function FeedShellPage({ children = null }) {
   const showProfileViewToggle = isAuthenticated && isOwnFeedProfilePath(location.pathname);
 
   function toggleProfileView() {
-    setSearchParams(
-      (prev) => {
-        const next = new URLSearchParams(prev);
-        if (next.get("view") === "connect") next.delete("view");
-        else next.set("view", "connect");
-        return next;
-      },
+    clearStuckMediaChrome();
+    // Read live URL — avoid stale searchParams after rapid taps / overlay races.
+    const next = new URLSearchParams(
+      typeof window !== "undefined" ? window.location.search : searchParams.toString()
+    );
+    if (next.get("view") === "connect") next.delete("view");
+    else next.set("view", "connect");
+    const qs = next.toString();
+    navigate(
+      { pathname: "/feed/profile", search: qs ? `?${qs}` : "" },
       { replace: true }
     );
   }
-
-  const profileViewToggle = showProfileViewToggle
-    ? { previewAsConnect, onToggle: toggleProfileView }
-    : null;
 
   useEffect(() => {
     document.documentElement.style.setProperty(
@@ -140,6 +142,14 @@ export default function FeedShellPage({ children = null }) {
 
   return (
     <div style={styles.shell} data-testid="feed-shell">
+      {showProfileViewToggle ? (
+        <ProfileViewChrome
+          previewAsConnect={previewAsConnect}
+          onToggle={toggleProfileView}
+          monthInFoodHref={MY_MENUPLY_MONTH_IN_FOOD_PATH}
+          variant={isDesktop ? "light" : "feedDark"}
+        />
+      ) : null}
       {isDesktop ? (
         <FeedDesktopRail
           onCreateClick={openCreateSheet}
@@ -158,7 +168,7 @@ export default function FeedShellPage({ children = null }) {
           onMoreClick={() => setMoreOpen(true)}
           isAuthenticated={isAuthenticated}
           showShopBasket={showShopBasket}
-          profileViewToggle={profileViewToggle}
+          profileViewToggle={null}
         />
       )}
 

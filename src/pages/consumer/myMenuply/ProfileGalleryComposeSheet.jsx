@@ -3,7 +3,7 @@
  * Photos and videos may be pinned to My Highlights.
  */
 
-import { restoreDocumentScroll } from "./pendingHighlightMedia.js";
+import { restoreDocumentScroll, CLEAR_STUCK_MEDIA_CHROME_EVENT } from "./pendingHighlightMedia.js";
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import MenuplyMediaPicker from "../../../components/social/MenuplyMediaPicker.jsx";
@@ -50,11 +50,16 @@ export default function ProfileGalleryComposeSheet({
     function onKey(event) {
       if (event.key === "Escape") onClose?.();
     }
+    function onForceClose() {
+      onClose?.();
+    }
     window.addEventListener("keydown", onKey);
+    window.addEventListener(CLEAR_STUCK_MEDIA_CHROME_EVENT, onForceClose);
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
       window.removeEventListener("keydown", onKey);
+      window.removeEventListener(CLEAR_STUCK_MEDIA_CHROME_EVENT, onForceClose);
       document.body.style.overflow = prev || "";
       restoreDocumentScroll();
     };

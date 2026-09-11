@@ -36,7 +36,7 @@ test("Connect view is content-only — no how-to instructions", () => {
   assert.doesNotMatch(home, /Cooking videos can also appear on Feed/);
 
   assert.match(hub, /isConnectPreview/);
-  assert.match(hub, /canEdit \|\| isConnectPreview/);
+  assert.match(hub, /isConnectPreview && typeof onJoinMeFromCraving === "function"/);
   assert.match(hub, /isConnectPreview=\{isConnectPreview\}/);
   assert.match(hub, /canEdit \?[\s\S]*ActivityStatusLineCompose/);
   assert.match(hub, /No cravings shared yet/);
@@ -52,8 +52,8 @@ test("Connect view is content-only — no how-to instructions", () => {
   assert.match(viewToggle, /Edit View/);
   assert.match(viewToggle, /Connect View/);
   assert.match(viewToggle, /profile-view-mode-label/);
-  assert.match(read("src/pages/consumer/feed/FeedShellPage.jsx"), /profileViewToggle/);
-  assert.match(read("src/components/consumer/feed/FeedMobileHeader.jsx"), /ProfileViewModeToggle/);
-  assert.match(page, /isDesktopFeed \?[\s\S]*ProfileViewModeToggle/);
-  assert.match(page, /toggleProfileViewMode/);
+  assert.match(read("src/pages/consumer/feed/FeedShellPage.jsx"), /ProfileViewChrome/);
+  assert.match(read("src/pages/consumer/feed/FeedShellPage.jsx"), /toggleProfileView/);
+  assert.match(read("src/components/consumer/feed/ProfileViewChrome.jsx"), /profile-view-chrome/);
+  assert.doesNotMatch(page, /ProfileViewModeToggle/);
 });

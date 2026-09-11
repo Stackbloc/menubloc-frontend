@@ -19,6 +19,7 @@ import {
   normalizeNativeVideoFile,
   preferNativeOsVideoCapture,
 } from "../../lib/nativeVideoCapture.js";
+import { CLEAR_STUCK_MEDIA_CHROME_EVENT } from "../../pages/consumer/myMenuply/pendingHighlightMedia.js";
 
 /**
  * Full-screen camera sheet.
@@ -148,6 +149,11 @@ export default function ConsumerCameraSheet({
   useEffect(() => {
     if (!open) return undefined;
 
+    const prevBody = document.body.style.overflow;
+    const prevHtml = document.documentElement.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+
     if (!needsLivePreview) {
       stopMediaStream(streamRef.current);
       streamRef.current = null;
@@ -155,7 +161,10 @@ export default function ConsumerCameraSheet({
         videoRef.current.srcObject = null;
         videoRef.current.removeAttribute("src");
       }
-      return undefined;
+      return () => {
+        document.body.style.overflow = prevBody;
+        document.documentElement.style.overflow = prevHtml;
+      };
     }
 
     let alive = true;
@@ -213,6 +222,8 @@ export default function ConsumerCameraSheet({
         videoRef.current.srcObject = null;
         videoRef.current.removeAttribute("src");
       }
+      document.body.style.overflow = prevBody;
+      document.documentElement.style.overflow = prevHtml;
     };
   }, [open, currentFacingMode, needsLivePreview, inlineVideoMode]);
 
@@ -257,6 +268,15 @@ export default function ConsumerCameraSheet({
     if (!reviewUrl || !reviewFile) return;
     showBlobReview(reviewUrl, reviewPoster);
   }, [reviewUrl, reviewFile, reviewPoster]);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    function onForceClose() {
+      onClose?.();
+    }
+    window.addEventListener(CLEAR_STUCK_MEDIA_CHROME_EVENT, onForceClose);
+    return () => window.removeEventListener(CLEAR_STUCK_MEDIA_CHROME_EVENT, onForceClose);
+  }, [open, onClose]);
 
   if (!open) return null;
 

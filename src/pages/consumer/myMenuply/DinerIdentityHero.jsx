@@ -13,6 +13,7 @@ import {
   formatEduSchoolAffiliation,
   getEduVerificationFromConsumer,
 } from "../../../lib/eduVerificationDisplay.js";
+import { clearStuckMediaChrome } from "./pendingHighlightMedia.js";
 
 const ABOUT_MAX = 280;
 const ABOUT_PLACEHOLDER =
@@ -151,6 +152,7 @@ export default function DinerIdentityHero({
             title="My Month in Food"
             aria-label="My Month in Food"
             style={s.monthInFoodIconLink}
+            onClick={() => clearStuckMediaChrome()}
           >
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <rect

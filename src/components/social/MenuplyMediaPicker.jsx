@@ -15,6 +15,7 @@ import {
 } from "../../lib/consumerCameraCapture.js";
 import { isVideoFile } from "../../lib/eatingMediaUtils.js";
 import { socialBtn } from "../../lib/socialDesignTokens.js";
+import { CLEAR_STUCK_MEDIA_CHROME_EVENT } from "../../pages/consumer/myMenuply/pendingHighlightMedia.js";
 
 function buildAccept({ allowPhoto, allowVideo }) {
   if (allowPhoto && allowVideo) return "image/*,video/*";
@@ -101,6 +102,18 @@ export default function MenuplyMediaPicker({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- open once on mount when requested
   }, [openOnMount, disabled, file]);
+
+  useEffect(() => {
+    function onForceClose() {
+      setSheetOpen(false);
+      if (typeof document !== "undefined") {
+        document.body.style.overflow = "";
+        document.documentElement.style.overflow = "";
+      }
+    }
+    window.addEventListener(CLEAR_STUCK_MEDIA_CHROME_EVENT, onForceClose);
+    return () => window.removeEventListener(CLEAR_STUCK_MEDIA_CHROME_EVENT, onForceClose);
+  }, []);
 
   useEffect(() => {
     if (!file) {
@@ -297,14 +310,29 @@ export default function MenuplyMediaPicker({
       {canInlineSheet ? (
         <ConsumerCameraSheet
           open={sheetOpen}
-          onClose={() => setSheetOpen(false)}
+          onClose={() => {
+            setSheetOpen(false);
+            if (typeof document !== "undefined") {
+              document.body.style.overflow = "";
+              document.documentElement.style.overflow = "";
+            }
+          }}
           facingMode={facingMode}
           allowPhoto={allowPhoto}
           allowVideo={allowVideo}
           initialMode={sheetInitialMode}
           onCapture={(captured) => {
-            if (captured) onFile?.(captured);
+            // Close sheet first, then notify parent on next tick so the overlay
+            // unmounts before parent clears mediaSource (leftover z-index 13000 freeze).
             setSheetOpen(false);
+            if (typeof document !== "undefined") {
+              document.body.style.overflow = "";
+              document.documentElement.style.overflow = "";
+            }
+            if (!captured) return;
+            queueMicrotask(() => {
+              onFile?.(captured);
+            });
           }}
         />
       ) : null}

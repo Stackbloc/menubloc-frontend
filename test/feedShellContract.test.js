@@ -225,10 +225,28 @@ test("Feed shell: Home|Waiter|Share My QR|X|Deals|Shop|Profile + slim X sheet", 
   assert.match(shellPage, /FeedMobileHeader/);
   assert.match(shellPage, /FeedMorePanel/);
   assert.match(shellPage, /useFeedShellDesktop/);
-  assert.match(shellPage, /profileViewToggle/);
+  assert.match(shellPage, /ProfileViewChrome/);
+  assert.match(shellPage, /clearStuckMediaChrome/);
+  assert.match(shellPage, /navigate\(/);
+  assert.match(shellPage, /MY_MENUPLY_MONTH_IN_FOOD_PATH/);
   assert.match(mobileHeader, /ProfileViewModeToggle/);
   assert.doesNotMatch(desktopRail, /ProfileViewModeToggle/);
   assert.match(read("src/components/consumer/feed/ProfileViewModeToggle.jsx"), /profile-view-mode-toggle/);
+  assert.match(read("src/components/consumer/feed/ProfileViewChrome.jsx"), /profile-view-chrome/);
+  assert.match(read("src/components/consumer/feed/ProfileViewChrome.jsx"), /profile-chrome-month-in-food/);
+  assert.match(read("src/components/consumer/feed/ProfileViewChrome.jsx"), /zIndex:\s*14000/);
+  assert.match(
+    read("src/pages/consumer/myMenuply/pendingHighlightMedia.js"),
+    /CLEAR_STUCK_MEDIA_CHROME_EVENT/
+  );
+  assert.match(
+    read("src/components/consumer/ConsumerCameraSheet.jsx"),
+    /CLEAR_STUCK_MEDIA_CHROME_EVENT/
+  );
+  assert.match(
+    read("src/components/social/MenuplyMediaPicker.jsx"),
+    /queueMicrotask/
+  );
 
   const guestLanding = read("src/components/consumer/feed/FeedGuestProfileLanding.jsx");
   assert.match(guestLanding, /FEED_GUEST_PROFILE_CARDS/);
@@ -242,8 +260,8 @@ test("Feed shell: Home|Waiter|Share My QR|X|Deals|Shop|Profile + slim X sheet", 
   assert.match(feedLinks, /feed-more-add-menu/);
 
   const myMenuply = read("src/pages/consumer/MyMenuplyPage.jsx");
-  assert.match(myMenuply, /isDesktopFeed \?[\s\S]*ProfileViewModeToggle/);
-  assert.match(myMenuply, /toggleProfileViewMode/);
+  assert.doesNotMatch(myMenuply, /ProfileViewModeToggle/);
+  assert.match(myMenuply, /clearStuckMediaChrome/);
   assert.match(myMenuply, /FeedGuestProfileLanding/);
   assert.doesNotMatch(myMenuply, /SeeWhosEatingSurface/);
   assert.doesNotMatch(myMenuply, /my-menuply-sticky-head/);

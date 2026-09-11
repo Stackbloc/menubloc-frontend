@@ -53,7 +53,11 @@ export default function ProfileViewModeToggle({
       aria-label={label}
       aria-pressed={previewAsConnect}
       title={title}
-      onClick={() => onToggle?.()}
+      onClick={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        onToggle?.();
+      }}
       style={{
         ...styles.btn,
         ...(isLight ? styles.btnLight : styles.btnDark),

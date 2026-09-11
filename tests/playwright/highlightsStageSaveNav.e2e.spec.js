@@ -155,12 +155,17 @@ test.describe("My Highlights stage + Save does not freeze nav", () => {
     await page.getByTestId("my-highlights-save").click();
     await expect.poll(() => uploadPosts.length).toBe(1);
 
+    await expect(page.getByTestId("profile-view-chrome")).toBeVisible();
     await expect(page.getByTestId("profile-view-mode-toggle")).toBeVisible();
     await page.getByTestId("profile-view-mode-toggle").click();
     await expect(page).toHaveURL(/view=connect/);
     await page.getByTestId("profile-view-mode-toggle").click();
     await expect(page).not.toHaveURL(/view=connect/);
 
+    await page.getByTestId("profile-chrome-month-in-food").click();
+    await expect(page).toHaveURL(/\/my-menuply\/month-in-food/);
+
+    await page.goto("/feed/profile");
     await page.getByTestId("feed-nav-home").click();
     await expect(page).toHaveURL(/\/feed\/?$/);
 

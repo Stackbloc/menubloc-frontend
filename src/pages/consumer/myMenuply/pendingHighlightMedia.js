@@ -44,4 +44,22 @@ export function pendingHighlightsToCards(pending = []) {
 export function restoreDocumentScroll() {
   if (typeof document === "undefined") return;
   document.body.style.overflow = "";
+  document.documentElement.style.overflow = "";
+}
+
+/** Sheets listen and force-close when Edit·Connect / MMIF / nav need the UI back. */
+export const CLEAR_STUCK_MEDIA_CHROME_EVENT = "menuply:clear-stuck-media-chrome";
+
+/**
+ * Clear leftover media-sheet scroll locks and force-close camera/compose overlays
+ * that freeze nav / Edit·Connect / MMIF (z-index 13000 leftovers).
+ */
+export function clearStuckMediaChrome() {
+  restoreDocumentScroll();
+  if (typeof window === "undefined") return;
+  try {
+    window.dispatchEvent(new CustomEvent(CLEAR_STUCK_MEDIA_CHROME_EVENT));
+  } catch {
+    /* ignore */
+  }
 }
