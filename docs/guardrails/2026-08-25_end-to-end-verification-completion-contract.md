@@ -1,9 +1,12 @@
 # End-to-End Verification Completion Contract
 
+**Updated:** 2026-09-11 — ban localhost/mocked Playwright as sole proof after FE tip alias (Edit/Connect nav freeze false Complete)  
 **Established:** 2026-08-25  
+**Updated:** 2026-09-08 — cross-link Pre-CPD gate: classify + confirm E2E/server **before** `cpd` ([2026-09-08_pre-cpd-e2e-server-gate-contract.md](./2026-09-08_pre-cpd-e2e-server-gate-contract.md))  
 **Updated:** 2026-09-05 — ban FE-only / tip-gate / “not run — reason” completion waivers (DOB/favorites “Server error” after FE CPD)  
 **Incident:** Eating video Post was certified “wired end-to-end” from code review and unit/contract tests while production Supabase bucket `menu-item-photos` rejected `video/mp4` (`mime type video/mp4 is not supported`). Upload returned 503; no durable `video_url` could be saved. Prior audit marked hops PASS on code alone.  
 **Incident (2026-09-05):** Connect-peer FE CPD shipped DOB + favorites Save; tip-gate PASS; certifications used `not run — FE-only`; live Save showed **Server error**. BE was not re-proven; authenticated PUT never run.  
+**Incident (2026-09-11):** Edit/Connect + Feed chrome CPD tip-gate PASS + local mocked Playwright; live mobile taps dead except Share My QR.  
 **Type:** Hard process guardrail — completion / “done” claims  
 **Priority:** Overrides “code looks correct,” unit tests alone, and speculative Fixed/Working/Complete language  
 **Related:** CLAUDE.md NO-GUESS + End-to-End Verification; [Server runtime](./2026-08-29_server-runtime-check-completion-contract.md); [Health proof that counts](./2026-09-03_backend-health-proof-counts-contract.md); Production Working Features Only; CPD playbook
@@ -36,8 +39,30 @@ Agents invent a new excuse every ship. These are **always invalid** for Complete
 | “User will verify on phone later” | Agent-runnable hops are agent’s job |
 | Filling certification with `not run — <story>` while claiming Complete | Checkbox + waiver = **INVALID** completion |
 | Unit / static contract PASS only | Already banned; restated |
+| **Localhost / Vite E2E alone after FE CPD** (2026-09-11) | Proves lab bundle, not the tip users hit |
+| **Mocked `/api/**` Playwright on `:5173` as production Complete** | Auth/API mocks ≠ live tip interaction |
+| Tip-gate PASS + lab E2E for Feed shell / overlay / nav / Edit·Connect | Tip identity + lab ≠ mobile taps on menuply.com |
 
 If a hop cannot be run → mark **NOT COMPLETE** / `CPD=INCOMPLETE`. Do **not** invent a reason that converts “not run” into “done.”
+
+---
+
+## Production tip hop (FE interactive ships — 2026-09-11)
+
+**Incident:** Edit/Connect + Feed nav certified Complete after local mocked Playwright + tip-gate PASS. Live mobile: buttons dead except Share My QR. Lab E2E never loaded the shipped tip.
+
+### Hard rule
+
+When an FE CPD ship changes **any** of: Feed shell, primary nav, mobile header, profile Edit/Connect, media/camera/compose overlays, or leftover-overlay cleanup — **after** `menuply.com` is aliased to the new tip, Completeness requires:
+
+1. **Base URL = live tip** (`https://menuply.com` or the aliased production deployment URL) — **not** `localhost:5173` alone  
+2. **Hard-refresh** the affected route (at least `/feed/profile` when profile chrome/nav changed)  
+3. **Prove the user-named controls** still work: Edit/Connect flips `?view=connect` (when auth available) **and** at least **Home** plus **one other** primary tab navigate  
+4. Paste that evidence in chat before Claim Complete / CPD done  
+
+Auth may be session-mocked **only if** the browser still loads the **live tip JS**. Local Vite + mocks without a post-alias live-tip hop = **NOT COMPLETE**.
+
+Tip-gate PASS remains required **in addition** — never instead.
 
 ---
 
@@ -139,3 +164,5 @@ End the response with:
 **2026-08-25 eating video:** FE Post → `uploadWhatIAteTodayPhoto` → `video_url` → `createWhatIAteToday` looked complete in code. Live `buildPhotoRecordFromUpload` failed: durable upload to `menu-item-photos` rejected `video/mp4`. Until upload+insert+HEAD pass in production, “videos can post and be saved” is **NOT COMPLETE**.
 
 **2026-09-05 diner profile DOB/favorites:** FE CPD tip-gate PASS; certifications waived with FE-only; live Save → **Server error**. Tip identity ≠ mutation success.
+
+**2026-09-11 Edit/Connect / Feed nav:** Tip-gate PASS + Playwright on `localhost:5173` with mocked APIs. Live mobile: Edit/Connect and most nav dead; Share My QR still worked. Lab E2E ≠ live tip taps.
