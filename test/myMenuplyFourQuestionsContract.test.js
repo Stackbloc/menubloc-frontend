@@ -147,7 +147,7 @@ test("My Menuply is the diner's personal home", () => {
   assert.match(placeFields, /searchReportPlaces/);
   assert.match(placeFields, /Homemade/);
   const picker = read("src/pages/consumer/myMenuply/JoinMeAudiencePicker.jsx");
-  assert.match(picker, /Anyone Connect/);
+  assert.match(picker, /All Connects/);
   assert.match(picker, /Select specific/);
   assert.match(picker, /Pending Invite/);
   const candidates = read("src/pages/consumer/myMenuply/joinMeCandidates.js");

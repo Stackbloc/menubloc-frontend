@@ -53,7 +53,7 @@ test("Diner chooses Invite Me Out audience in X → What I Want to Eat compose",
 
   const picker = read("src/pages/consumer/myMenuply/InviteMeOutAudiencePicker.jsx");
   assert.match(picker, /Open to Invite Me Out/);
-  assert.match(picker, /Anyone Connect/);
+  assert.match(picker, /All Connects/);
   assert.match(picker, /Select specific/);
   assert.match(picker, /invite-me-out-select-list/);
 

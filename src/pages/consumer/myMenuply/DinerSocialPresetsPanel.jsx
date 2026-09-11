@@ -158,6 +158,7 @@ export default function DinerSocialPresetsPanel({
         />
         {draftInviteOpen ? (
           <InviteMeOutAudiencePicker
+            variant="preset"
             open={draftInviteOpen}
             onOpenChange={async (nextOpen) => {
               setDraftInviteOpen(nextOpen);
@@ -213,6 +214,7 @@ export default function DinerSocialPresetsPanel({
         />
         {draftPlans.open ? (
           <JoinMeAudiencePicker
+            variant="preset"
             joinable={Boolean(draftPlans.open)}
             onJoinableChange={async (nextOpen) => {
               await savePlans({
@@ -282,6 +284,7 @@ export default function DinerSocialPresetsPanel({
         />
         {draftCrews.open ? (
           <JoinMeAudiencePicker
+            variant="preset"
             joinable={Boolean(draftCrews.open)}
             onJoinableChange={async (nextOpen) => {
               await saveCrews({

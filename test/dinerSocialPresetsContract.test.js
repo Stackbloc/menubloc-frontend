@@ -27,6 +27,7 @@ test("DinerSocialPresetsPanel exists with separate Join Me and Take Me Out rows"
   assert.match(panel, /plans_join_me/);
   assert.match(panel, /crews_join_me/);
   assert.match(panel, /showCapacity=\{false\}/);
+  assert.equal((panel.match(/variant="preset"/g) || []).length, 3);
   assert.match(panel, /is Off — click to turn On|click to turn On/);
   // Vocabulary must not conflate Join Me picker with Invite Me Out allow-list
   assert.doesNotMatch(panel, /Invite Me OutAudiencePicker|joinMeOut/);
@@ -36,6 +37,17 @@ test("DinerSocialPresetsPanel exists with separate Join Me and Take Me Out rows"
     panel.indexOf("InviteMeOutAudiencePicker"),
     panel.indexOf("JoinMeAudiencePicker")
   );
+});
+
+test("Edit View audience pickers use quiet preset variant (not fat primary pills)", () => {
+  const invite = read("src/pages/consumer/myMenuply/InviteMeOutAudiencePicker.jsx");
+  const join = read("src/pages/consumer/myMenuply/JoinMeAudiencePicker.jsx");
+  assert.match(invite, /variant === "preset"/);
+  assert.match(join, /variant === "preset"/);
+  assert.match(invite, /presetOptOn/);
+  assert.match(join, /presetOptOn/);
+  assert.match(invite, /All Connects/);
+  assert.match(join, /All Connects/);
 });
 
 test("EatingHubSection imports DinerSocialPresetsPanel in edit hub", () => {

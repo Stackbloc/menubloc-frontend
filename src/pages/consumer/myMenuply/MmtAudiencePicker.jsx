@@ -33,7 +33,7 @@ export default function MmtAudiencePicker({
           style={audience === "connections" ? s.primaryBtn : s.chipBtn}
           onClick={() => onAudienceChange("connections")}
         >
-          Anyone Connect
+          All Connects
         </button>
         <button
           type="button"
