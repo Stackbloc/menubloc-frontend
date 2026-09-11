@@ -26,3 +26,23 @@ test("vercel.json CSP includes media-src https for diner videos", () => {
     assert.match(csp, /media-src[^;]*blob:/i);
   }
 });
+
+test("vercel.json CSP connect-src allows Supabase signed PUT uploads", () => {
+  const vercel = JSON.parse(fs.readFileSync(path.join(root, "vercel.json"), "utf8"));
+  const headers = [];
+  for (const route of vercel.headers || []) {
+    for (const h of route.headers || []) {
+      if (String(h.key || "").toLowerCase() === "content-security-policy") {
+        headers.push(String(h.value || ""));
+      }
+    }
+  }
+  assert.ok(headers.length >= 1, "expected CSP header in vercel.json");
+  for (const csp of headers) {
+    assert.match(
+      csp,
+      /connect-src[^;]*https:\/\/\*\.supabase\.co/i,
+      "Cause-2 browser PUTs to signed Supabase URLs require connect-src https://*.supabase.co"
+    );
+  }
+});

@@ -56,7 +56,7 @@ style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
 font-src 'self' https://fonts.gstatic.com;
 img-src 'self' data: blob: https:;
 media-src 'self' blob: https:;
-connect-src 'self' https://menubloc-backend-production.up.railway.app https://api.stripe.com https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com https://app.posthog.com https://vitals.vercel-insights.com https://va.vercel-scripts.com wss:;
+connect-src 'self' https://menubloc-backend-production.up.railway.app https://*.supabase.co https://api.stripe.com https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com https://app.posthog.com https://vitals.vercel-insights.com https://va.vercel-scripts.com wss:;
 frame-src https://js.stripe.com https://hooks.stripe.com;
 worker-src 'self' blob:;
 object-src 'none';
