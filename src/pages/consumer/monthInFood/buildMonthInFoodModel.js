@@ -139,6 +139,7 @@ export function buildMonthInFoodModel(payload = {}) {
     (payload.invite_me_out_audience != null &&
       String(payload.invite_me_out_audience || "none").toLowerCase() !== "none");
   const plansJoinDefault = Boolean(payload.diner_social_defaults?.plans_join_me?.open);
+  const eventsJoinDefault = Boolean(payload.diner_social_defaults?.events_join_me?.open);
   const crewsJoinDefault = Boolean(payload.diner_social_defaults?.crews_join_me?.open);
 
   const mealsLogged = diary.length;
@@ -335,6 +336,7 @@ export function buildMonthInFoodModel(payload = {}) {
     events: events.slice(0, 3),
     takeMeOutOpen: Boolean(takeMeOutOpen),
     plansJoinDefault,
+    eventsJoinDefault,
     crewsJoinDefault,
     showEmptyHint:
       diaryVisible && mealsLogged === 0 && wants.length === 0 && diningIntents.length === 0,

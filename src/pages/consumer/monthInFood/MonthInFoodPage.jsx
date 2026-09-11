@@ -165,6 +165,7 @@ export default function MonthInFoodPage() {
                   plans={model.plans}
                   events={model.events}
                   plansJoinDefault={model.plansJoinDefault}
+                  eventsJoinDefault={model.eventsJoinDefault}
                   crewsJoinDefault={model.crewsJoinDefault}
                   isSelf={model.isSelf}
                 />

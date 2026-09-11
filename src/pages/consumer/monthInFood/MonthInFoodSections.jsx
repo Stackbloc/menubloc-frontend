@@ -515,11 +515,19 @@ export function MonthInFoodPlansEvents({
   plans = [],
   events = [],
   plansJoinDefault = false,
+  eventsJoinDefault = false,
   crewsJoinDefault = false,
   isSelf = false,
 }) {
   if (!plans.length && !events.length && !isSelf) return null;
-  if (!plans.length && !events.length && isSelf && !plansJoinDefault && !crewsJoinDefault) {
+  if (
+    !plans.length &&
+    !events.length &&
+    isSelf &&
+    !plansJoinDefault &&
+    !eventsJoinDefault &&
+    !crewsJoinDefault
+  ) {
     return null;
   }
   const plan = plans[0];
@@ -533,8 +541,8 @@ export function MonthInFoodPlansEvents({
           style={{ margin: "0 0 10px", fontSize: 12, color: s.MUTED, fontWeight: 600 }}
           data-testid="month-in-food-join-me-defaults"
         >
-          Join Me defaults — Plans: {plansJoinDefault ? "On" : "Off"} · Crews:{" "}
-          {crewsJoinDefault ? "On" : "Off"}
+          Defaults — Plans Join Me: {plansJoinDefault ? "On" : "Off"} · Events Join Me:{" "}
+          {eventsJoinDefault ? "On" : "Off"} · Join Crew: {crewsJoinDefault ? "On" : "Off"}
         </p>
       ) : null}
       {plan ? (

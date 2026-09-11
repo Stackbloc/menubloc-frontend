@@ -50,14 +50,15 @@ function isJoinMeGuestHref(href) {
 }
 
 /**
- * Own-hub: schedule Join Me or Take Me Out from a craving (Your view + Connect preview).
+ * Own-hub Connect View: schedule Join Me or Take Me Out from a craving.
+ * Edit View uses Take Me Out On/Off presets instead.
  * Peer-hub: Invite Me Out when eligible.
  */
 function WantCravingsActionBox({
   wants = [],
   diningIntents = [],
   canEdit = false,
-  /** Own-hub Connect preview — still show owner Join Me / Take Me Out. */
+  /** Own-hub Connect preview — show owner Join Me / Take Me Out. */
   isConnectPreview = false,
   canInviteMeOut = false,
   onJoinMeFromCraving,
@@ -97,8 +98,9 @@ function WantCravingsActionBox({
 
   if (!options.length) return null;
 
+  /** Connect View only — Edit View uses Take Me Out On/Off presets instead. */
   const showOwnerFlow =
-    (canEdit || isConnectPreview) && typeof onJoinMeFromCraving === "function";
+    isConnectPreview && typeof onJoinMeFromCraving === "function";
   const showPeerInvite =
     !canEdit && !isConnectPreview && canInviteMeOut && typeof onInviteMeOut === "function";
   if (!showOwnerFlow && !showPeerInvite) return null;
@@ -629,22 +631,6 @@ export default function EatingHubSection({
 
   return (
     <div data-testid="eating" ref={sectionRef}>
-      {canEdit ? (
-        <DinerSocialPresetsPanel
-          canEdit={canEdit}
-          inviteMeOutOpen={inviteMeOutOpen}
-          inviteMeOutAudience={inviteMeOutAudience}
-          inviteMeOutSelectedIds={inviteMeOutSelectedIds}
-          inviteMeOutCandidates={inviteMeOutCandidates}
-          onInviteMeOutSave={onInviteMeOutSave}
-          inviteMeOutToggleBusy={inviteMeOutToggleBusy}
-          dinerSocialDefaults={dinerSocialDefaults}
-          onDinerSocialDefaultsSave={onDinerSocialDefaultsSave}
-          socialDefaultsBusy={socialDefaultsBusy}
-          joinCandidates={joinCandidates}
-        />
-      ) : null}
-
       <section style={s.section} data-testid="what-im-eating">
         {wantDiscovery && lastPost?.kind === "diary" ? (
           <WantDiscoveryPanel
@@ -776,6 +762,22 @@ export default function EatingHubSection({
         <div data-testid="eating-want-panel" style={s.presentationBlock}>
           <SectionHead kicker="Cravings" title="What I Wanna Eat" />
           {canEdit ? (
+            <DinerSocialPresetsPanel
+              canEdit={canEdit}
+              scope="wanna-eat"
+              inviteMeOutOpen={inviteMeOutOpen}
+              inviteMeOutAudience={inviteMeOutAudience}
+              inviteMeOutSelectedIds={inviteMeOutSelectedIds}
+              inviteMeOutCandidates={inviteMeOutCandidates}
+              onInviteMeOutSave={onInviteMeOutSave}
+              inviteMeOutToggleBusy={inviteMeOutToggleBusy}
+              dinerSocialDefaults={dinerSocialDefaults}
+              onDinerSocialDefaultsSave={onDinerSocialDefaultsSave}
+              socialDefaultsBusy={socialDefaultsBusy}
+              joinCandidates={joinCandidates}
+            />
+          ) : null}
+          {canEdit ? (
             <ActivityStatusLineCompose
               category="want"
               busy={postBusy === "want"}
@@ -870,6 +872,23 @@ export default function EatingHubSection({
               </div>
             }
           />
+
+          {canEdit ? (
+            <DinerSocialPresetsPanel
+              canEdit={canEdit}
+              scope="plans"
+              inviteMeOutOpen={inviteMeOutOpen}
+              inviteMeOutAudience={inviteMeOutAudience}
+              inviteMeOutSelectedIds={inviteMeOutSelectedIds}
+              inviteMeOutCandidates={inviteMeOutCandidates}
+              onInviteMeOutSave={onInviteMeOutSave}
+              inviteMeOutToggleBusy={inviteMeOutToggleBusy}
+              dinerSocialDefaults={dinerSocialDefaults}
+              onDinerSocialDefaultsSave={onDinerSocialDefaultsSave}
+              socialDefaultsBusy={socialDefaultsBusy}
+              joinCandidates={joinCandidates}
+            />
+          ) : null}
 
           {shownPlans.length === 0 ? (
             <div data-testid="future-plans-summary">

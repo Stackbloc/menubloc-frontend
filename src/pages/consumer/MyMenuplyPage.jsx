@@ -70,7 +70,9 @@ import {
   buildSocialEventJoinShareData,
 } from "../../lib/diningCrewInviteShare.js";
 import EatingHubSection, { PlansCalendarGlyph } from "./myMenuply/EatingHubSection.jsx";
-import { parseDinerSocialDefaults } from "./myMenuply/DinerSocialPresetsPanel.jsx";
+import DinerSocialPresetsPanel, {
+  parseDinerSocialDefaults,
+} from "./myMenuply/DinerSocialPresetsPanel.jsx";
 import CrewQuickCompose from "./myMenuply/CrewQuickCompose.jsx";
 import EventComposeSheet from "./myMenuply/EventComposeSheet.jsx";
 import PlanVideoAttachSheet from "./myMenuply/PlanVideoAttachSheet.jsx";
@@ -2056,6 +2058,16 @@ export default function MyMenuplyPage() {
                   )
                 }
               />
+              {!previewAsConnect ? (
+                <DinerSocialPresetsPanel
+                  canEdit
+                  scope="crews"
+                  dinerSocialDefaults={dinerSocialDefaults}
+                  onDinerSocialDefaultsSave={saveDinerSocialDefaults}
+                  socialDefaultsBusy={socialDefaultsBusy}
+                  joinCandidates={joinCandidates}
+                />
+              ) : null}
               {crews.length === 0 ? (
                 <SectionEmptyState testId="crews-empty">
                   {previewAsConnect
@@ -2116,6 +2128,16 @@ export default function MyMenuplyPage() {
                   )
                 }
               />
+              {!previewAsConnect ? (
+                <DinerSocialPresetsPanel
+                  canEdit
+                  scope="events"
+                  dinerSocialDefaults={dinerSocialDefaults}
+                  onDinerSocialDefaultsSave={saveDinerSocialDefaults}
+                  socialDefaultsBusy={socialDefaultsBusy}
+                  joinCandidates={joinCandidates}
+                />
+              ) : null}
               {events.length === 0 && eventGroups.length === 0 && socialEvents.length === 0 ? (
                 <SectionEmptyState testId="events-empty">
                   {previewAsConnect ? "Nothing yet." : "No events yet. Tap + Add to create one."}
@@ -2177,7 +2199,7 @@ export default function MyMenuplyPage() {
               onClose={() => setEventComposeOpen(false)}
               busy={postBusy === "events"}
               onSubmit={postSocialEvent}
-              initialJoinMeOpen={Boolean(dinerSocialDefaults?.crews_join_me?.open)}
+              initialJoinMeOpen={Boolean(dinerSocialDefaults?.events_join_me?.open)}
             />
 
             <PlanVideoAttachSheet

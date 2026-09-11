@@ -173,8 +173,11 @@ test("Month in Food surfaces @Home + Take Me Out + Join Me defaults", () => {
   assert.match(sections, /month-in-food-take-me-out-status/);
   assert.match(sections, /Take Me Out is/);
   assert.match(sections, /month-in-food-join-me-defaults/);
+  assert.match(sections, /Join Crew/);
+  assert.match(sections, /eventsJoinDefault/);
   assert.match(page, /MonthInFoodHomeMeals/);
   assert.match(page, /takeMeOutOpen/);
+  assert.match(page, /eventsJoinDefault/);
 });
 
 test("Eating compose enforces Where before What for ate", () => {

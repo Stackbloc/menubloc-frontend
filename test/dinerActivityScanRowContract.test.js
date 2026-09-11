@@ -197,14 +197,15 @@ test("affiliation resolver ignores city-only location labels", () => {
   assert.equal(resolveDinerAffiliation({ location_label: "Los Angeles, CA" }), null);
 });
 
-test("four meal periods only — breakfast lunch dinner late_night (no brunch)", () => {
-  assert.equal(WHAT_I_ATE_MEAL_PERIODS.length, 4);
+test("unified meal periods include brunch snack other", () => {
+  assert.ok(WHAT_I_ATE_MEAL_PERIODS.length >= 6);
   assert.deepEqual(
     WHAT_I_ATE_MEAL_PERIODS.map((p) => p.id),
-    ["breakfast", "lunch", "dinner", "late_night"]
+    ["breakfast", "brunch", "lunch", "dinner", "late_night", "snack", "other"]
   );
-  assert.equal(normalizeWhatIAteMealPeriod("brunch"), "lunch");
+  assert.equal(normalizeWhatIAteMealPeriod("brunch"), "brunch");
   assert.ok(defaultWhatIAteMealPeriod());
+  // Waiter meal periods stay separate (no brunch).
   assert.equal(WAITER_MEAL_PERIODS.some((p) => p.id === "brunch"), false);
   assert.equal(normalizeMealPeriodId("brunch"), "lunch");
   assert.equal(typeof getDefaultMealPeriod, "function");
@@ -235,7 +236,9 @@ test("Restaurants I Follow rail has no Join Me pill", () => {
   const hub = read("src/pages/consumer/myMenuply/EatingHubSection.jsx");
   assert.doesNotMatch(hub, /profile-connect-preview-actions/);
   assert.match(hub, /readOnly && isJoinMeGuestHref/);
-  assert.match(hub, /canEdit \|\| isConnectPreview/);
+  assert.match(hub, /isConnectPreview && typeof onJoinMeFromCraving/);
+  assert.match(hub, /scope="wanna-eat"/);
+  assert.doesNotMatch(hub, /canEdit \|\| isConnectPreview/);
 });
 
 test("profile keeps four distinct category sections", () => {

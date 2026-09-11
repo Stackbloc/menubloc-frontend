@@ -1,5 +1,6 @@
 /**
- * Edit View social presets: Take Me Out (Wanna Eat) vs Join Me (plans / crews).
+ * Edit View social presets — scoped into each hub section.
+ * Wanna Eat: Take Me Out · Plans/Events: Join Me · Crews: Join Crew
  * Vocabulary stays separate — do not merge allow-lists.
  */
 
@@ -7,6 +8,8 @@ import { useEffect, useState } from "react";
 import InviteMeOutAudiencePicker from "./InviteMeOutAudiencePicker.jsx";
 import JoinMeAudiencePicker from "./JoinMeAudiencePicker.jsx";
 import * as s from "./myMenuplyStyles.js";
+
+const SCOPES = new Set(["wanna-eat", "plans", "events", "crews"]);
 
 function normalizeJoinBlock(raw, { withCapacity = false } = {}) {
   const src = raw && typeof raw === "object" ? raw : {};
@@ -34,6 +37,9 @@ export function parseDinerSocialDefaults(raw) {
     plans_join_me: normalizeJoinBlock(obj.plans_join_me || obj.plansJoinMe, {
       withCapacity: true,
     }),
+    events_join_me: normalizeJoinBlock(obj.events_join_me || obj.eventsJoinMe, {
+      withCapacity: false,
+    }),
     crews_join_me: normalizeJoinBlock(obj.crews_join_me || obj.crewsJoinMe, {
       withCapacity: false,
     }),
@@ -56,8 +62,12 @@ function StatusToggle({ testId, featureLabel, open, busy, onToggle }) {
   );
 }
 
+/**
+ * @param {"wanna-eat"|"plans"|"events"|"crews"} scope
+ */
 export default function DinerSocialPresetsPanel({
   canEdit = false,
+  scope = "wanna-eat",
   inviteMeOutOpen = false,
   inviteMeOutAudience = "connections",
   inviteMeOutSelectedIds = [],
@@ -69,6 +79,7 @@ export default function DinerSocialPresetsPanel({
   socialDefaultsBusy = false,
   joinCandidates = [],
 }) {
+  const activeScope = SCOPES.has(scope) ? scope : "wanna-eat";
   const defaults = parseDinerSocialDefaults(dinerSocialDefaults);
   const busy = Boolean(inviteMeOutToggleBusy || socialDefaultsBusy);
 
@@ -84,6 +95,7 @@ export default function DinerSocialPresetsPanel({
   const [draftPlansCapacity, setDraftPlansCapacity] = useState(
     String(defaults.plans_join_me.join_capacity ?? 4)
   );
+  const [draftEvents, setDraftEvents] = useState(defaults.events_join_me);
   const [draftCrews, setDraftCrews] = useState(defaults.crews_join_me);
 
   useEffect(() => {
@@ -96,6 +108,7 @@ export default function DinerSocialPresetsPanel({
     const next = parseDinerSocialDefaults(dinerSocialDefaults);
     setDraftPlans(next.plans_join_me);
     setDraftPlansCapacity(String(next.plans_join_me.join_capacity ?? 4));
+    setDraftEvents(next.events_join_me);
     setDraftCrews(next.crews_join_me);
   }, [dinerSocialDefaults]);
 
@@ -120,6 +133,13 @@ export default function DinerSocialPresetsPanel({
     await onDinerSocialDefaultsSave({ plans_join_me: block });
   }
 
+  async function saveEvents(next) {
+    if (typeof onDinerSocialDefaultsSave !== "function") return;
+    const block = normalizeJoinBlock(next, { withCapacity: false });
+    setDraftEvents(block);
+    await onDinerSocialDefaultsSave({ events_join_me: block });
+  }
+
   async function saveCrews(next) {
     if (typeof onDinerSocialDefaultsSave !== "function") return;
     const block = normalizeJoinBlock(next, { withCapacity: false });
@@ -127,15 +147,11 @@ export default function DinerSocialPresetsPanel({
     await onDinerSocialDefaultsSave({ crews_join_me: block });
   }
 
-  return (
-    <section style={styles.wrap} data-testid="diner-social-presets">
-      <h2 style={styles.title}>Social defaults</h2>
-      <p style={styles.lead}>
-        Set who can Take Me Out on cravings, and your default Join Me for plans and crews.
-      </p>
+  let body = null;
 
+  if (activeScope === "wanna-eat") {
+    body = (
       <div style={styles.row} data-testid="preset-wanna-eat">
-        <p style={styles.rowLabel}>What I Wanna Eat</p>
         <StatusToggle
           testId="preset-wanna-eat-toggle"
           featureLabel="Take Me Out"
@@ -191,9 +207,10 @@ export default function DinerSocialPresetsPanel({
           />
         ) : null}
       </div>
-
+    );
+  } else if (activeScope === "plans") {
+    body = (
       <div style={styles.row} data-testid="preset-plans">
-        <p style={styles.rowLabel}>My Eating Plans</p>
         <StatusToggle
           testId="preset-plans-toggle"
           featureLabel="Join Me"
@@ -262,12 +279,71 @@ export default function DinerSocialPresetsPanel({
           />
         ) : null}
       </div>
-
+    );
+  } else if (activeScope === "events") {
+    body = (
+      <div style={styles.row} data-testid="preset-events">
+        <StatusToggle
+          testId="preset-events-toggle"
+          featureLabel="Join Me"
+          open={Boolean(draftEvents.open)}
+          busy={busy}
+          onToggle={async (nextOpen) => {
+            await saveEvents({
+              open: nextOpen,
+              audience: nextOpen
+                ? draftEvents.audience === "selected"
+                  ? "selected"
+                  : "connections"
+                : "none",
+              allowed_user_ids: nextOpen ? draftEvents.allowed_user_ids : [],
+            });
+          }}
+        />
+        {draftEvents.open ? (
+          <JoinMeAudiencePicker
+            variant="preset"
+            joinable={Boolean(draftEvents.open)}
+            onJoinableChange={async (nextOpen) => {
+              await saveEvents({
+                open: nextOpen,
+                audience: nextOpen
+                  ? draftEvents.audience === "selected"
+                    ? "selected"
+                    : "connections"
+                  : "none",
+                allowed_user_ids: nextOpen ? draftEvents.allowed_user_ids : [],
+              });
+            }}
+            audience={draftEvents.audience === "selected" ? "selected" : "connections"}
+            onAudienceChange={async (nextAudience) => {
+              await saveEvents({
+                open: true,
+                audience: nextAudience,
+                allowed_user_ids: draftEvents.allowed_user_ids,
+              });
+            }}
+            selectedIds={draftEvents.allowed_user_ids || []}
+            onSelectedIdsChange={async (ids) => {
+              await saveEvents({
+                open: true,
+                audience: "selected",
+                allowed_user_ids: ids,
+              });
+            }}
+            candidates={joinCandidates}
+            showCapacity={false}
+            disabled={busy}
+          />
+        ) : null}
+      </div>
+    );
+  } else if (activeScope === "crews") {
+    body = (
       <div style={styles.row} data-testid="preset-crews">
-        <p style={styles.rowLabel}>My Crews</p>
         <StatusToggle
           testId="preset-crews-toggle"
-          featureLabel="Join Me"
+          featureLabel="Join Crew"
           open={Boolean(draftCrews.open)}
           busy={busy}
           onToggle={async (nextOpen) => {
@@ -319,39 +395,25 @@ export default function DinerSocialPresetsPanel({
           />
         ) : null}
       </div>
-    </section>
+    );
+  }
+
+  return (
+    <div style={styles.wrap} data-testid="diner-social-presets" data-scope={activeScope}>
+      {body}
+    </div>
   );
 }
 
 const styles = {
   wrap: {
-    ...s.section,
-    marginBottom: 8,
-  },
-  title: {
-    margin: "0 0 4px",
-    fontSize: 16,
-    fontWeight: 800,
-    color: "#0f172a",
-  },
-  lead: {
-    margin: "0 0 12px",
-    fontSize: 13,
-    color: "#64748b",
-    lineHeight: 1.45,
+    margin: "0 0 10px",
   },
   row: {
     border: "1px solid #e5e7eb",
     borderRadius: 14,
     padding: 12,
-    marginBottom: 10,
     background: "#fff",
-  },
-  rowLabel: {
-    margin: "0 0 6px",
-    fontSize: 13,
-    fontWeight: 800,
-    color: "#0f172a",
   },
   statusBtn: {
     appearance: "none",

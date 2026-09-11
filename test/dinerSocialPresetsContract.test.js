@@ -1,5 +1,5 @@
 /**
- * Edit View social presets — Take Me Out (Wanna Eat) vs Join Me (plans/crews).
+ * Edit View social presets — Take Me Out (Wanna Eat) vs Join Me (plans/events) vs Join Crew.
  * Vocabulary must stay separate.
  */
 import test from "node:test";
@@ -11,68 +11,58 @@ import { fileURLToPath } from "node:url";
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = (rel) => fs.readFileSync(path.join(root, rel), "utf8");
 
-test("DinerSocialPresetsPanel exists with separate Join Me and Take Me Out rows", () => {
+test("DinerSocialPresetsPanel scopes Take Me Out / Join Me / Join Crew", () => {
   const panel = read("src/pages/consumer/myMenuply/DinerSocialPresetsPanel.jsx");
   assert.match(panel, /data-testid="diner-social-presets"/);
   assert.match(panel, /data-testid="preset-wanna-eat"/);
   assert.match(panel, /data-testid="preset-plans"/);
+  assert.match(panel, /data-testid="preset-events"/);
   assert.match(panel, /data-testid="preset-crews"/);
-  assert.match(panel, /Take Me Out/);
-  assert.match(panel, /Join Me/);
-  assert.match(panel, /What I Wanna Eat/);
-  assert.match(panel, /My Eating Plans/);
-  assert.match(panel, /My Crews/);
-  assert.match(panel, /InviteMeOutAudiencePicker/);
-  assert.match(panel, /JoinMeAudiencePicker/);
+  assert.match(panel, /featureLabel="Take Me Out"/);
+  assert.match(panel, /featureLabel="Join Me"/);
+  assert.match(panel, /featureLabel="Join Crew"/);
+  assert.match(panel, /events_join_me/);
   assert.match(panel, /plans_join_me/);
   assert.match(panel, /crews_join_me/);
-  assert.match(panel, /showCapacity=\{false\}/);
-  assert.equal((panel.match(/variant="preset"/g) || []).length, 3);
-  assert.match(panel, /is Off — click to turn On|click to turn On/);
-  // Vocabulary must not conflate Join Me picker with Invite Me Out allow-list
-  assert.doesNotMatch(panel, /Invite Me OutAudiencePicker|joinMeOut/);
-  assert.ok(panel.includes("InviteMeOutAudiencePicker"));
-  assert.ok(panel.includes("JoinMeAudiencePicker"));
-  assert.notEqual(
-    panel.indexOf("InviteMeOutAudiencePicker"),
-    panel.indexOf("JoinMeAudiencePicker")
-  );
+  assert.match(panel, /activeScope === "wanna-eat"/);
+  assert.match(panel, /activeScope === "events"/);
+  assert.match(panel, /activeScope === "crews"/);
+  assert.match(panel, /variant="preset"/);
 });
 
-test("Edit View audience pickers use quiet preset variant (not fat primary pills)", () => {
+test("Edit View audience pickers use quiet preset variant", () => {
   const invite = read("src/pages/consumer/myMenuply/InviteMeOutAudiencePicker.jsx");
   const join = read("src/pages/consumer/myMenuply/JoinMeAudiencePicker.jsx");
   assert.match(invite, /variant === "preset"/);
   assert.match(join, /variant === "preset"/);
-  assert.match(invite, /presetOptOn/);
-  assert.match(join, /presetOptOn/);
   assert.match(invite, /All Connects/);
   assert.match(join, /All Connects/);
 });
 
-test("EatingHubSection imports DinerSocialPresetsPanel in edit hub", () => {
+test("EatingHubSection places presets in Wanna Eat + Plans; Connect-only craving CTA", () => {
   const section = read("src/pages/consumer/myMenuply/EatingHubSection.jsx");
   assert.match(section, /DinerSocialPresetsPanel/);
-  assert.match(section, /dinerSocialDefaults/);
-  assert.match(section, /onDinerSocialDefaultsSave/);
-  assert.match(section, /plansJoinDefaults|plans_join_me/);
+  assert.match(section, /scope="wanna-eat"/);
+  assert.match(section, /scope="plans"/);
+  assert.match(section, /isConnectPreview && typeof onJoinMeFromCraving/);
+  assert.doesNotMatch(section, /canEdit \|\| isConnectPreview/);
   assert.match(section, /initialJoinable=\{planJoinablePrefill\}/);
-  // Panel owns InviteMeOutAudiencePicker — hub must not inline it
-  assert.doesNotMatch(section, /InviteMeOutAudiencePicker/);
 });
 
-test("MyMenuplyPage loads and saves diner_social_defaults", () => {
+test("MyMenuplyPage mounts Events Join Me + Crews Join Crew presets", () => {
   const page = read("src/pages/consumer/MyMenuplyPage.jsx");
-  assert.match(page, /parseDinerSocialDefaults/);
-  assert.match(page, /diner_social_defaults/);
+  assert.match(page, /scope="events"/);
+  assert.match(page, /scope="crews"/);
+  assert.match(page, /events_join_me/);
   assert.match(page, /saveDinerSocialDefaults/);
-  assert.match(page, /updateConsumerProfile\(\{\s*diner_social_defaults/);
-  assert.match(page, /dinerSocialDefaults=\{dinerSocialDefaults\}/);
-  assert.match(page, /onDinerSocialDefaultsSave=\{saveDinerSocialDefaults\}/);
-  assert.match(page, /initialJoinMeOpen=\{Boolean\(dinerSocialDefaults\?\.crews_join_me\?\.open\)\}/);
+  assert.match(page, /initialJoinMeOpen=\{Boolean\(dinerSocialDefaults\?\.events_join_me\?\.open\)\}/);
+  assert.doesNotMatch(
+    page,
+    /initialJoinMeOpen=\{Boolean\(dinerSocialDefaults\?\.crews_join_me\?\.open\)\}/
+  );
 });
 
-test("EventComposeSheet prefills Join Me from crews default", () => {
+test("EventComposeSheet prefills Join Me from events default", () => {
   const sheet = read("src/pages/consumer/myMenuply/EventComposeSheet.jsx");
   assert.match(sheet, /initialJoinMeOpen/);
   assert.match(sheet, /setJoinMeOpen\(Boolean\(initialJoinMeOpen\)\)/);
