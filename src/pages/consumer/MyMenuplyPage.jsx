@@ -6,6 +6,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import FeedGuestProfileLanding from "../../components/consumer/feed/FeedGuestProfileLanding.jsx";
+import ProfileViewModeToggle from "../../components/consumer/feed/ProfileViewModeToggle.jsx";
 import ShareModal from "../../components/share/ShareModal.jsx";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
 import { useFeedShellDesktop } from "../../lib/useFeedShellDesktop.js";
@@ -202,6 +203,17 @@ export default function MyMenuplyPage() {
   const [avatarUrl, setAvatarUrl] = useState("");
   /** Connect view: content about this diner only — never Menuply how-to / compose coaching. */
   const previewAsConnect = searchParams.get("view") === "connect";
+
+  function toggleProfileViewMode() {
+    clearStuckMediaChrome();
+    const params = new URLSearchParams(
+      typeof window !== "undefined" ? window.location.search : searchParams.toString()
+    );
+    if (params.get("view") === "connect") params.delete("view");
+    else params.set("view", "connect");
+    const qs = params.toString();
+    navigate({ pathname: "/feed/profile", search: qs ? `?${qs}` : "" }, { replace: true });
+  }
 
   useEffect(() => {
     clearStuckMediaChrome();
@@ -1892,6 +1904,14 @@ export default function MyMenuplyPage() {
               }}
               data-testid="feed-profile-settings-row"
             >
+              {/* Desktop: glasses toggle lives here (next to settings). Mobile uses FeedMobileHeader. */}
+              {isDesktopFeed ? (
+                <ProfileViewModeToggle
+                  previewAsConnect={previewAsConnect}
+                  onToggle={toggleProfileViewMode}
+                  variant="light"
+                />
+              ) : null}
               <MyMenuplyAccountSettingsLink style={s.settingsIconLink} />
             </div>
         ) : null}

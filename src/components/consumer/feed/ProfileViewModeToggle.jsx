@@ -54,7 +54,6 @@ export default function ProfileViewModeToggle({
       aria-pressed={previewAsConnect}
       title={title}
       onClick={(event) => {
-        event.preventDefault();
         event.stopPropagation();
         onToggle?.();
       }}

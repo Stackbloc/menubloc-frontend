@@ -52,8 +52,9 @@ test("Connect view is content-only — no how-to instructions", () => {
   assert.match(viewToggle, /Edit View/);
   assert.match(viewToggle, /Connect View/);
   assert.match(viewToggle, /profile-view-mode-label/);
-  assert.match(read("src/pages/consumer/feed/FeedShellPage.jsx"), /ProfileViewChrome/);
+  assert.match(read("src/pages/consumer/feed/FeedShellPage.jsx"), /profileViewToggle/);
   assert.match(read("src/pages/consumer/feed/FeedShellPage.jsx"), /toggleProfileView/);
-  assert.match(read("src/components/consumer/feed/ProfileViewChrome.jsx"), /profile-view-chrome/);
-  assert.doesNotMatch(page, /ProfileViewModeToggle/);
+  assert.match(read("src/components/consumer/feed/FeedMobileHeader.jsx"), /ProfileViewModeToggle/);
+  assert.match(page, /isDesktopFeed \?[\s\S]*ProfileViewModeToggle/);
+  assert.match(page, /toggleProfileViewMode/);
 });

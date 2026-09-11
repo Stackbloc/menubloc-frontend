@@ -7,6 +7,7 @@
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import MenuplyXMark from "../../MenuplyXMark.jsx";
 import { FEED_LEFT_TABS, FEED_RIGHT_TABS } from "../../../lib/feedShellLinks.js";
+import { clearStuckMediaChrome } from "../../../pages/consumer/myMenuply/pendingHighlightMedia.js";
 
 export const FEED_PRIMARY_NAV_HEIGHT = 56;
 
@@ -21,7 +22,10 @@ function TabLink({ tab, onShareQr }) {
         type="button"
         data-testid={tab.testId}
         aria-label="Share My QR"
-        onClick={() => onShareQr?.()}
+        onClick={() => {
+          clearStuckMediaChrome();
+          onShareQr?.();
+        }}
         style={{
           ...styles.tab,
           ...styles.tabButton,
@@ -41,6 +45,7 @@ function TabLink({ tab, onShareQr }) {
         end={tab.end}
         data-testid={tab.testId}
         onClick={(event) => {
+          clearStuckMediaChrome();
           event.preventDefault();
           navigate(tab.to, { replace: true });
         }}
@@ -63,6 +68,7 @@ function TabLink({ tab, onShareQr }) {
       to={tab.to}
       end={tab.end}
       data-testid={tab.testId}
+      onClick={() => clearStuckMediaChrome()}
       style={({ isActive }) => {
         const active = isActive || alsoActive;
         return {
@@ -100,7 +106,10 @@ export default function FeedPrimaryNav({
         aria-label="Open Multiplier/Post menu"
         aria-haspopup="dialog"
         aria-expanded={createActive}
-        onClick={() => onCreateClick?.()}
+        onClick={() => {
+          clearStuckMediaChrome();
+          onCreateClick?.();
+        }}
         style={styles.createBtn}
       >
         <MenuplyXMark size={26} active={createActive} />
@@ -120,6 +129,7 @@ const styles = {
     left: 0,
     right: 0,
     bottom: 0,
+    // Above orphaned media overlays (legacy 13000). Intentional camera uses 15000.
     zIndex: 50,
     height: `calc(${FEED_PRIMARY_NAV_HEIGHT}px + env(safe-area-inset-bottom, 0px))`,
     paddingBottom: "env(safe-area-inset-bottom, 0px)",

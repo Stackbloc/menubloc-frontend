@@ -7,6 +7,7 @@ import { BrandLogo } from "../../BrandLogo.jsx";
 import FeedShopBasketButton from "./FeedShopBasketButton.jsx";
 import ProfileViewModeToggle from "./ProfileViewModeToggle.jsx";
 import { FEED_SHELL_LOGIN_PATH } from "../../../lib/feedShellLinks.js";
+import { clearStuckMediaChrome } from "../../../pages/consumer/myMenuply/pendingHighlightMedia.js";
 
 export default function FeedMobileHeader({
   onMoreClick,
@@ -46,7 +47,10 @@ export default function FeedMobileHeader({
           style={styles.moreBtn}
           data-testid="feed-more-open-mobile"
           aria-label="Open More menu"
-          onClick={() => onMoreClick?.()}
+          onClick={() => {
+            clearStuckMediaChrome();
+            onMoreClick?.();
+          }}
         >
           ☰
         </button>
@@ -61,6 +65,7 @@ const styles = {
     top: 0,
     left: 0,
     right: 0,
+    // Default feed chrome. Leftover camera sheets are force-closed via clearStuckMediaChrome.
     zIndex: 55,
     display: "flex",
     alignItems: "center",
