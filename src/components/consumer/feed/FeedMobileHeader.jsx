@@ -17,7 +17,7 @@ export default function FeedMobileHeader({
 }) {
   return (
     <header style={styles.header} data-testid="feed-mobile-header">
-      <div style={styles.logoWrap}>
+      <div style={styles.logoWrap} onClick={() => clearStuckMediaChrome()}>
         <BrandLogo
         to="/feed"
         height={28}
@@ -65,8 +65,9 @@ const styles = {
     top: 0,
     left: 0,
     right: 0,
-    // Default feed chrome. Leftover camera sheets are force-closed via clearStuckMediaChrome.
-    zIndex: 55,
+    // Match primary nav (1300): Edit compose sheets (~1100) and page stacking must
+    // not sit above the logo / Edit·Connect / More controls.
+    zIndex: 1300,
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",

@@ -133,6 +133,23 @@ test.describe("Feed home → Profile bottom nav", () => {
     await expect(page.getByTestId("see-whos-eating-video-tap")).toBeVisible({
       timeout: 15_000,
     });
+    // clearStuck must not strip the live Feed <video> src on route enter.
+    const feedVideo = page.locator(
+      '[data-testid="see-whos-eating-fullscreen"][data-variant="feedHome"] video'
+    );
+    await expect(feedVideo).toBeVisible({ timeout: 15_000 });
+    await expect
+      .poll(async () => feedVideo.evaluate((el) => Boolean(el.currentSrc || el.getAttribute("src"))), {
+        timeout: 15_000,
+      })
+      .toBe(true);
+    await expect
+      .poll(
+        async () =>
+          feedVideo.evaluate((el) => !el.paused || el.readyState >= 2),
+        { timeout: 15_000 }
+      )
+      .toBe(true);
     await page.waitForTimeout(400);
 
     await page.getByTestId("feed-nav-profile").click();

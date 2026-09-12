@@ -243,7 +243,8 @@ test("Feed shell: Home|Waiter|Share My QR|X|Deals|Shop|Profile + slim X sheet", 
   assert.match(shellPage, /setSearchParams/);
   assert.match(shellPage, /buildProfileViewSearchParams/);
   assert.match(mobileHeader, /ProfileViewModeToggle/);
-  assert.match(mobileHeader, /zIndex:\s*55/);
+  assert.match(mobileHeader, /zIndex:\s*1300/);
+  assert.match(mobileHeader, /clearStuckMediaChrome/);
   // Nav above ShareModal (1200) and stuck compose (~350–360); camera (13000) still clears on route change.
   assert.match(read("src/components/consumer/feed/FeedPrimaryNav.jsx"), /zIndex:\s*1300/);
   assert.match(read("src/components/consumer/feed/FeedPrimaryNav.jsx"), /createPortal\(nav,\s*document\.body\)/);
@@ -277,8 +278,13 @@ test("Feed shell: Home|Waiter|Share My QR|X|Deals|Shop|Profile + slim X sheet", 
   assert.match(read("src/pages/consumer/myMenuply/EventComposeSheet.jsx"), /CLEAR_STUCK_MEDIA_CHROME_EVENT/);
   assert.match(
     read("src/pages/consumer/myMenuply/pendingHighlightMedia.js"),
-    /see-whos-eating-fullscreen/
+    /Do NOT tear down Feed\/Deals/
   );
+  assert.doesNotMatch(
+    read("src/pages/consumer/myMenuply/pendingHighlightMedia.js"),
+    /querySelectorAll\([\s\S]*see-whos-eating-fullscreen/
+  );
+  assert.match(read("src/components/consumer/feed/FeedMobileHeader.jsx"), /zIndex:\s*1300/);
   assert.match(
     read("src/pages/consumer/myMenuply/SeeWhosEatingFullscreen.jsx"),
     /useLayoutEffect/
