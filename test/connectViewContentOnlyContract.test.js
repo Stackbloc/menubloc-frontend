@@ -52,7 +52,7 @@ test("Connect view is content-only — no how-to instructions", () => {
   assert.match(hub, /Nothing shared for this day/);
   assert.match(hub, /Join Me — peer hub only/);
 
-  assert.match(rails, /Restaurants I Follow/);
+  assert.match(rails, /PROFILE_SECTION_HEADERS\.favs|My Favs/);
   assert.match(rails, /wantSuggestions\.length > 0 && hubFocus !== "dishes" && !readOnly/);
   assert.match(rails, /showFoodStoryCta && !readOnly/);
 

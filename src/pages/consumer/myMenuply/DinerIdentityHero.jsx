@@ -2,10 +2,10 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import AvatarComposeSheet from "./AvatarComposeSheet.jsx";
 import * as s from "./myMenuplyStyles.js";
-import { GREEN_BRIGHT } from "./myMenuplyStyles.js";
 import { MY_MENUPLY_MONTH_IN_FOOD_PATH } from "../../../lib/myMenuplyRoutes.js";
 import { buildDinerPersonalContextLines } from "../../../lib/dinerPersonalContext.js";
 import DinerPersonalContextEditor from "./DinerPersonalContextEditor.jsx";
+import SectionHeader, { PROFILE_SECTION_HEADERS } from "./SectionHeader.jsx";
 import { FlashVideosDisplay } from "./FlashVideosBlock.jsx";
 import { normalizeFavoriteFoods } from "../../../lib/dinerFavoriteFoods.js";
 import { labelWithFoodIcon } from "../../../lib/foodInterestIcons.js";
@@ -138,48 +138,46 @@ export default function DinerIdentityHero({
 
   return (
     <section style={s.identitySection} data-testid="about-me">
-      <p style={{ ...s.kicker, color: GREEN_BRIGHT, marginBottom: 6 }}>
-        Diner profile
-      </p>
-
-      <div style={s.aboutTitleRow}>
-        <h2 style={{ ...s.sectionTitle, margin: 0 }}>About Me</h2>
-
-        {scoreboardHref ? (
-          <Link
-            to={scoreboardHref}
-            data-testid="month-in-food-link"
-            title="My Month in Food"
-            aria-label="My Month in Food"
-            style={s.monthInFoodIconLink}
-            onClick={() => clearStuckMediaChrome()}
-          >
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <rect
-                x="3"
-                y="5"
-                width="18"
-                height="16"
-                rx="3"
-                stroke="currentColor"
-                strokeWidth="1.75"
-              />
-              <path d="M3 9.5h18" stroke="currentColor" strokeWidth="1.75" />
-              <path
-                d="M8 3.5v3.5M16 3.5v3.5"
-                stroke="currentColor"
-                strokeWidth="1.75"
-                strokeLinecap="round"
-              />
-              <circle cx="9" cy="14" r="1.15" fill="currentColor" />
-              <circle cx="12.5" cy="14" r="1.15" fill="currentColor" />
-              <circle cx="16" cy="14" r="1.15" fill="currentColor" />
-              <circle cx="9" cy="17.5" r="1.15" fill="currentColor" />
-              <circle cx="12.5" cy="17.5" r="1.15" fill="currentColor" />
-            </svg>
-          </Link>
-        ) : null}
-      </div>
+      <SectionHeader
+        {...PROFILE_SECTION_HEADERS.about}
+        testId="about-me-section-header"
+        aside={
+          scoreboardHref ? (
+            <Link
+              to={scoreboardHref}
+              data-testid="month-in-food-link"
+              title="My Month in Food"
+              aria-label="My Month in Food"
+              style={s.monthInFoodIconLink}
+              onClick={() => clearStuckMediaChrome()}
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <rect
+                  x="3"
+                  y="5"
+                  width="18"
+                  height="16"
+                  rx="3"
+                  stroke="currentColor"
+                  strokeWidth="1.75"
+                />
+                <path d="M3 9.5h18" stroke="currentColor" strokeWidth="1.75" />
+                <path
+                  d="M8 3.5v3.5M16 3.5v3.5"
+                  stroke="currentColor"
+                  strokeWidth="1.75"
+                  strokeLinecap="round"
+                />
+                <circle cx="9" cy="14" r="1.15" fill="currentColor" />
+                <circle cx="12.5" cy="14" r="1.15" fill="currentColor" />
+                <circle cx="16" cy="14" r="1.15" fill="currentColor" />
+                <circle cx="9" cy="17.5" r="1.15" fill="currentColor" />
+                <circle cx="12.5" cy="17.5" r="1.15" fill="currentColor" />
+              </svg>
+            </Link>
+          ) : null
+        }
+      />
 
       {readOnly ? null : (
         <p style={s.sectionDesc}>Tell people a little about you.</p>

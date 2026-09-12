@@ -25,8 +25,8 @@ test("Connection diner page uses the same hub layout as My Menuply", () => {
     assert.match(page, /EatingHubSection/);
     assert.match(page, /data-testid="dining-crews"/);
     assert.match(page, /data-testid="my-events"/);
-    assert.match(page, /My Crews/);
-    assert.match(page, /My Events/);
+    assert.match(page, /PROFILE_SECTION_HEADERS\.crews|My crews/);
+    assert.match(page, /PROFILE_SECTION_HEADERS\.events|My events/);
     assert.match(page, /HomeAtHomeSection/);
     assert.ok(page.indexOf("<DinerIdentityHero") < page.indexOf("<HomeAtHomeSection"));
     assert.ok(page.indexOf("<HomeAtHomeSection") < page.indexOf("<EatingHubSection"));
@@ -65,7 +65,7 @@ test("Connection diner page uses the same hub layout as My Menuply", () => {
   assert.doesNotMatch(peer, /EatingCompose/);
   assert.doesNotMatch(peer, /onAvatarFile/);
   assert.match(hero, /readOnly/);
-  assert.match(hero, /About Me/);
+  assert.match(hero, /About me|PROFILE_SECTION_HEADERS\.about/);
   assert.doesNotMatch(peer, /connections=\{\[\]\}/);
   assert.match(peer, /listConnections\("accepted", peerId\)/);
   assert.match(peer, /peerConnections/);

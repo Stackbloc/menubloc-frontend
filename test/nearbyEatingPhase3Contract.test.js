@@ -27,7 +27,7 @@ test("Who's Eating mounts before Wanna Eat on eating hub", () => {
   const page = read("src/pages/consumer/MyMenuplyPage.jsx");
 
   assert.match(section, /NearbyEatingSection/);
-  assert.match(section, /What I Wanna Eat/);
+  assert.match(section, /PROFILE_SECTION_HEADERS\.wannaEat|What I wanna eat|want-to-eat/);
   assert.match(nearby, /data-testid="see-others-nearby-eating"/);
   assert.match(nearby, /Who's Eating/);
   assert.match(nearby, /listSeeWhosEating/);

@@ -29,14 +29,10 @@ test("My Menuply is the diner's personal home", () => {
   assert.match(section, /data-testid="eating-plans"/);
   assert.match(page, /data-testid="dining-crews"/);
   assert.match(page, /data-testid="my-events"/);
-  assert.match(section, /title="My Eating Plans"/);
-  assert.match(section, /title="What I'm Eating"/);
-  assert.doesNotMatch(
-    section,
-    /kicker="Today"[\s\S]*?title="What I'm Eating"|title="What I'm Eating"[\s\S]*?kicker="Today"/
-  );
+  assert.match(section, /PROFILE_SECTION_HEADERS\.plans|What's cookin'/);
+  assert.match(section, /PROFILE_SECTION_HEADERS\.eating|What I'm eating/);
   assert.doesNotMatch(section, /kicker="Today"/);
-  assert.match(section, /title="What I Wanna Eat"/);
+  assert.match(section, /PROFILE_SECTION_HEADERS\.wannaEat|What I wanna eat/);
   assert.match(section, /eating-calendar/);
   assert.match(section, /DinerCalendarTrigger/);
   assert.match(section, /PostAfterActions/);
@@ -75,8 +71,8 @@ test("My Menuply is the diner's personal home", () => {
     /useLongPressReveal/
   );
   assert.doesNotMatch(section, /empty="Nothing yet."/);
-  assert.match(page, /My Crews/);
-  assert.match(page, /My Events/);
+  assert.match(page, /PROFILE_SECTION_HEADERS\.crews|My crews/);
+  assert.match(page, /PROFILE_SECTION_HEADERS\.events|My events/);
   assert.match(page, /DiningCrewHubCard/);
   assert.match(page, /NamedShareCard/);
   assert.match(page, /CrewQuickCompose/);
@@ -172,14 +168,15 @@ test("My Menuply is the diner's personal home", () => {
   assert.match(api, /listPendingEatInvitePeople/);
   assert.match(api, /\/api\/consumer\/want-to-eat/);
   assert.match(api, /\/api\/consumer\/social-events/);
-  assert.match(hero, /About Me/);
+  assert.match(hero, /About me|PROFILE_SECTION_HEADERS\.about/);
   assert.match(read("src/pages/consumer/myMenuply/MyMenuplyPresentationRails.jsx"), /DinerStatsBar/);
   assert.match(page, /viewerUserId/);
   assert.match(page, /MyMenuplyPresentationRails/);
   assert.match(page, /buildTopHighlights/);
   const rails = read("src/pages/consumer/myMenuply/MyMenuplyPresentationRails.jsx");
-  assert.match(rails, /top-highlight-delete/);
-  assert.match(rails, /useLongPressReveal/);
+  const grid = read("src/pages/consumer/myMenuply/MyHighlightsGrid.jsx");
+  assert.match(grid, /top-highlight-delete|onDelete/);
+  assert.match(grid, /useLongPressReveal/);
   assert.match(rails, /onHighlightDelete/);
   assert.match(page, /onHighlightDelete/);
   assert.doesNotMatch(rails, /connections-avatar-strip/);

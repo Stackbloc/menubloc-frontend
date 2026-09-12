@@ -16,9 +16,9 @@ import DinerSocialPresetsPanel, {
   parseDinerSocialDefaults,
 } from "./DinerSocialPresetsPanel.jsx";
 import SectionEmptyState from "./SectionEmptyState.jsx";
+import SectionHeader, { PROFILE_SECTION_HEADERS } from "./SectionHeader.jsx";
 import { groupHubAteMeals } from "../../../lib/groupHubAteMeals.js";
 import {
-  SectionHead,
   FuturePlanRow,
   WantToEatUnifiedList,
 } from "./myMenuplyBits.jsx";
@@ -658,9 +658,10 @@ export default function EatingHubSection({
             onClose={onDismissWantDiscovery}
           />
         ) : null}
-        <SectionHead
-          title="What I'm Eating"
+        <SectionHeader
+          {...PROFILE_SECTION_HEADERS.eating}
           to={readOnly ? diaryHref : "/account/what-i-ate"}
+          testId="what-im-eating-section-header"
           aside={
             <div style={styles.sectionHeadActions}>
               {canEdit ? (
@@ -847,9 +848,9 @@ export default function EatingHubSection({
           />
         ) : null}
         <div data-testid="eating-want-panel" style={s.presentationBlock}>
-          <SectionHead
-            kicker="Cravings"
-            title="What I Wanna Eat"
+          <SectionHeader
+            {...PROFILE_SECTION_HEADERS.wannaEat}
+            testId="wanna-eat-section-header"
             aside={
               canEdit ? (
                 <button
@@ -948,9 +949,9 @@ export default function EatingHubSection({
 
       <section style={s.section} data-testid="eating-plans">
         <div data-testid="eating-plans-panel" style={{ ...s.presentationBlock, ...s.plansPanel }}>
-          <SectionHead
-            kicker="Coming up"
-            title="My Eating Plans"
+          <SectionHeader
+            {...PROFILE_SECTION_HEADERS.plans}
+            testId="eating-plans-section-header"
             aside={
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 {canEdit ? (

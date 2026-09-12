@@ -7,6 +7,7 @@ import { Link } from "react-router-dom";
 import { useLongPressReveal } from "./mediaLongPressReveal.js";
 import { MY_HIGHLIGHTS_PREVIEW_COUNT } from "./myMenuplyPresentation.js";
 import { MY_MENUPLY_HIGHLIGHTS_PATH } from "../../../lib/myMenuplyRoutes.js";
+import SectionHeader, { PROFILE_SECTION_HEADERS } from "./SectionHeader.jsx";
 import * as s from "./myMenuplyStyles.js";
 
 function HighlightTile({ card, readOnly = false, onDelete, deleteBusy = false }) {
@@ -98,31 +99,34 @@ export default function MyHighlightsGrid({
 
   return (
     <div style={s.presentationBlock} data-testid="top-highlights">
-      <div style={styles.sectionHeadRow}>
-        <h3 style={s.sectionTitleQuiet}>My Highlights</h3>
-        <div style={styles.headAside}>
-          {overflow ? (
-            <Link
-              to={seeAllHref}
-              style={styles.seeAll}
-              data-testid="my-highlights-see-all"
-            >
-              See all ({cards.length})
-            </Link>
-          ) : null}
-          {canAdd ? (
-            <button
-              type="button"
-              style={styles.addIconBtn}
-              data-testid="my-highlights-add"
-              aria-label="Add a highlight photo or video"
-              onClick={() => onAdd?.()}
-            >
-              <span aria-hidden="true">+</span>
-            </button>
-          ) : null}
-        </div>
-      </div>
+      <SectionHeader
+        {...PROFILE_SECTION_HEADERS.highlights}
+        testId="my-highlights-section-header"
+        aside={
+          <div style={styles.headAside}>
+            {overflow ? (
+              <Link
+                to={seeAllHref}
+                style={styles.seeAll}
+                data-testid="my-highlights-see-all"
+              >
+                See all ({cards.length})
+              </Link>
+            ) : null}
+            {canAdd ? (
+              <button
+                type="button"
+                style={styles.addIconBtn}
+                data-testid="my-highlights-add"
+                aria-label="Add a highlight photo or video"
+                onClick={() => onAdd?.()}
+              >
+                <span aria-hidden="true">+</span>
+              </button>
+            ) : null}
+          </div>
+        }
+      />
       {!readOnly ? (
         <p style={styles.purposeCopy} data-testid="my-highlights-purpose">
           Photos and short videos about you, your food, or whatever you want to share.
@@ -168,13 +172,6 @@ export default function MyHighlightsGrid({
 }
 
 const styles = {
-  sectionHeadRow: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 10,
-    marginBottom: 4,
-  },
   headAside: {
     display: "flex",
     alignItems: "center",

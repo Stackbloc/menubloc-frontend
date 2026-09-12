@@ -318,6 +318,30 @@ test.describe("Feed home → Profile bottom nav", () => {
     await page.getByTestId("feed-nav-profile").click();
     await expect(page.getByTestId("my-menuply-page")).toBeVisible({ timeout: 15_000 });
   });
+
+  test("Profile Edit View shows eight shared SectionHeader titles", async ({ page }) => {
+    await mockApis(page);
+    await page.goto("/feed/profile", { waitUntil: "domcontentloaded" });
+    await expect(page.getByTestId("my-menuply-page")).toBeVisible({ timeout: 30_000 });
+
+    const headers = [
+      ["about-me-section-header", "About me"],
+      ["my-highlights-section-header", "My reel"],
+      ["my-favs-section-header", "My Favs"],
+      ["what-im-eating-section-header", "What I'm eating"],
+      ["wanna-eat-section-header", "What I wanna eat"],
+      ["eating-plans-section-header", "What's cookin'"],
+      ["crews-section-header", "My crews"],
+      ["events-section-header", "My events"],
+    ];
+
+    for (const [testId, title] of headers) {
+      const header = page.getByTestId(testId);
+      await expect(header).toBeVisible({ timeout: 15_000 });
+      await expect(header.getByRole("heading", { level: 2 })).toHaveText(title);
+      await expect(header.getByTestId("section-header-accent")).toBeVisible();
+    }
+  });
 });
 
 test.describe("Feed home → Profile desktop rail", () => {

@@ -102,7 +102,8 @@ test("Connection peer hub shows read-only My Highlights", () => {
 test("Diner About is not restaurant, dining-hall, or venue about", () => {
   const hero = read("src/pages/consumer/myMenuply/DinerIdentityHero.jsx");
   const page = read("src/pages/consumer/MyMenuplyPage.jsx");
-  assert.match(hero, /Diner profile/);
+  assert.match(hero, /PROFILE_SECTION_HEADERS\.about|About me/);
+  assert.match(hero, /data-testid="about-me"/);
   assert.doesNotMatch(hero, /restaurant about|venue about|dining hall about/i);
   assert.doesNotMatch(page, /restaurant_about/);
 });

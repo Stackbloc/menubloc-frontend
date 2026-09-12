@@ -9,15 +9,21 @@ import DinerStatsBar from "./DinerStatsBar.jsx";
 import MyMenuplyHubFocus from "./MyMenuplyHubFocus.jsx";
 import MyHighlightsGrid from "./MyHighlightsGrid.jsx";
 import { WantToEatList } from "./myMenuplyBits.jsx";
+import SectionHeader, { PROFILE_SECTION_HEADERS } from "./SectionHeader.jsx";
 import * as s from "./myMenuplyStyles.js";
 
 function FollowedRestaurantsRail({ restaurants = [] }) {
-  if (!restaurants.length) return null;
+  const list = Array.isArray(restaurants) ? restaurants : [];
   return (
     <div style={s.presentationBlock} data-testid="followed-restaurants-rail">
-      <h3 style={s.sectionTitleQuiet}>Restaurants I Follow</h3>
+      <SectionHeader
+        {...PROFILE_SECTION_HEADERS.favs}
+        count={list.length}
+        testId="my-favs-section-header"
+      />
+      {list.length === 0 ? null : (
       <div style={railStyles.scrollRow}>
-        {restaurants.map((row) => (
+        {list.map((row) => (
           <Link key={row.key} to={row.href || "#"} style={railStyles.visitCard}>
             {row.image ? (
               <img src={row.image} alt="" style={railStyles.visitImg} loading="lazy" />
@@ -31,6 +37,7 @@ function FollowedRestaurantsRail({ restaurants = [] }) {
           </Link>
         ))}
       </div>
+      )}
     </div>
   );
 }

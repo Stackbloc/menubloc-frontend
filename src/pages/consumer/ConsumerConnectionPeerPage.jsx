@@ -22,6 +22,7 @@ import {
 import * as s from "./myMenuply/myMenuplyStyles.js";
 import DinerIdentityHero from "./myMenuply/DinerIdentityHero.jsx";
 import { DiningCrewHubCard, SectionHead, isScheduledEatingPlan } from "./myMenuply/myMenuplyBits.jsx";
+import SectionHeader, { PROFILE_SECTION_HEADERS } from "./myMenuply/SectionHeader.jsx";
 import { futurePlanKey, futurePlanRestaurantName, futurePlanDetailParts } from "./myMenuply/dinerHubFormat.js";
 import {
   mapConnectionsEatingForHub,
@@ -388,7 +389,11 @@ export default function ConsumerConnectionPeerPage() {
             />
 
             <section style={s.section} data-testid="dining-crews">
-              <SectionHead title="My Crews" />
+              <SectionHeader
+                {...PROFILE_SECTION_HEADERS.crews}
+                count={crews.length}
+                testId="crews-section-header"
+              />
               {crews.length === 0 ? (
                 <p style={s.muted}>No crews to show.</p>
               ) : (
@@ -424,7 +429,11 @@ export default function ConsumerConnectionPeerPage() {
             </section>
 
             <section style={s.section} data-testid="my-events">
-              <SectionHead title="My Events" />
+              <SectionHeader
+                {...PROFILE_SECTION_HEADERS.events}
+                count={0}
+                testId="events-section-header"
+              />
               <p style={s.muted}>Nothing yet.</p>
             </section>
 

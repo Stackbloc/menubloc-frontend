@@ -113,12 +113,12 @@ import {
   revokePendingHighlights,
 } from "./myMenuply/pendingHighlightMedia.js";
 import {
-  SectionHead,
   DiningCrewHubCard,
   NamedShareCard,
   foodHref,
   isScheduledEatingPlan,
 } from "./myMenuply/myMenuplyBits.jsx";
+import SectionHeader, { PROFILE_SECTION_HEADERS } from "./myMenuply/SectionHeader.jsx";
 import {
   MY_MENUPLY_MONTH_IN_FOOD_PATH,
   MY_MENUPLY_PROFILE_PATH,
@@ -2202,15 +2202,11 @@ export default function MyMenuplyPage() {
             />
 
             <section style={s.section} data-testid="dining-crews">
-              <SectionHead
-                kicker={previewAsConnect ? undefined : "Your people"}
-                title="My Crews"
+              <SectionHeader
+                {...PROFILE_SECTION_HEADERS.crews}
+                count={crews.length}
                 to={previewAsConnect ? undefined : "/account/dining-crews"}
-                subtitle={
-                  previewAsConnect
-                    ? undefined
-                    : "The people you eat, hang out, and make plans with"
-                }
+                testId="crews-section-header"
                 aside={
                   previewAsConnect ? null : (
                     <div style={hubEditStyles.asideRow}>
@@ -2276,9 +2272,10 @@ export default function MyMenuplyPage() {
             </section>
 
             <section style={s.section} data-testid="my-events">
-              <SectionHead
-                kicker={previewAsConnect ? undefined : "On the calendar"}
-                title="My Events"
+              <SectionHeader
+                {...PROFILE_SECTION_HEADERS.events}
+                count={events.length + eventGroups.length + socialEvents.length}
+                testId="events-section-header"
                 aside={
                   previewAsConnect ? null : (
                     <div style={hubEditStyles.asideRow}>

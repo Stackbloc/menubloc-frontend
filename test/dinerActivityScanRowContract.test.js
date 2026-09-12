@@ -251,14 +251,14 @@ test("scan surfaces mount DinerActivityScanRow", () => {
   assert.match(nearby, /DinerActivityScanRow/);
 });
 
-test("Restaurants I Follow rail has no Join Me pill", () => {
+test("My Favs (followed restaurants) rail has no Join Me pill", () => {
   const rails = read("src/pages/consumer/myMenuply/MyMenuplyPresentationRails.jsx");
   const followBlock = rails.slice(
     rails.indexOf("function FollowedRestaurantsRail"),
     rails.indexOf("function FoodStoryCta")
   );
   assert.match(followBlock, /followed-restaurants-rail/);
-  assert.match(followBlock, /Restaurants I Follow/);
+  assert.match(followBlock, /PROFILE_SECTION_HEADERS\.favs|My Favs/);
   assert.doesNotMatch(followBlock, /Join Me/);
 
   const hub = read("src/pages/consumer/myMenuply/EatingHubSection.jsx");

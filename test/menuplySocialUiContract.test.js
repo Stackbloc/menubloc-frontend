@@ -175,7 +175,7 @@ test("My Highlights are diner media grid (photos + videos; preview then See all)
   assert.match(presentation, /videoUrl/);
   assert.doesNotMatch(presentation, /MY_HIGHLIGHTS_MAX/);
   const grid = read("src/pages/consumer/myMenuply/MyHighlightsGrid.jsx");
-  assert.match(grid, /My Highlights/);
+  assert.match(grid, /PROFILE_SECTION_HEADERS\.highlights|My reel/);
   assert.match(grid, /my-highlights-add/);
   assert.match(grid, /my-highlights-purpose/);
   assert.match(grid, /my-highlights-save/);
