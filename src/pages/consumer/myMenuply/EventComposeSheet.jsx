@@ -1,12 +1,13 @@
 /**
  * Create a diner social event — Edit View + Add, or Multiplier compose=event.
  * Food is optional; general social events (concerts, birthdays, campus, etc.).
- * Join Me open prefills from My Crews social default when provided.
+ * Join Me eligibility is per event instance (not a section-wide default).
  */
 
 import { useEffect, useState } from "react";
 import MenuplyMediaPicker from "../../../components/social/MenuplyMediaPicker.jsx";
 import { whatIAteTodayLocalDate } from "../../../lib/consumerApi.js";
+import JoinMeAudiencePicker from "./JoinMeAudiencePicker.jsx";
 import {
   CLEAR_STUCK_MEDIA_CHROME_EVENT,
   restoreDocumentScroll,
@@ -17,22 +18,26 @@ export default function EventComposeSheet({
   onClose,
   busy = false,
   onSubmit,
-  initialJoinMeOpen = false,
+  joinCandidates = [],
 }) {
   const [title, setTitle] = useState("");
   const [eventDate, setEventDate] = useState(() => whatIAteTodayLocalDate());
   const [startTime, setStartTime] = useState("");
   const [locationLabel, setLocationLabel] = useState("");
   const [description, setDescription] = useState("");
-  const [joinMeOpen, setJoinMeOpen] = useState(Boolean(initialJoinMeOpen));
+  const [joinMeOpen, setJoinMeOpen] = useState(false);
+  const [joinAudience, setJoinAudience] = useState("connections");
+  const [joinAllowedUserIds, setJoinAllowedUserIds] = useState([]);
   const [file, setFile] = useState(null);
   const [localError, setLocalError] = useState("");
 
   useEffect(() => {
     if (!open) return;
-    setJoinMeOpen(Boolean(initialJoinMeOpen));
+    setJoinMeOpen(false);
+    setJoinAudience("connections");
+    setJoinAllowedUserIds([]);
     setLocalError("");
-  }, [open, initialJoinMeOpen]);
+  }, [open]);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -49,10 +54,17 @@ export default function EventComposeSheet({
 
   if (!open) return null;
 
+  const joinSelectedBlocked =
+    joinMeOpen && joinAudience === "selected" && joinAllowedUserIds.length === 0;
+
   async function handleSubmit(e) {
     e.preventDefault();
     const nextTitle = String(title || "").trim();
     if (!nextTitle || !eventDate) return;
+    if (joinSelectedBlocked) {
+      setLocalError("Select at least one person for Join Me");
+      return;
+    }
     setLocalError("");
     try {
       await onSubmit?.({
@@ -62,13 +74,18 @@ export default function EventComposeSheet({
         locationLabel: String(locationLabel || "").trim() || null,
         description: String(description || "").trim() || null,
         joinMeOpen,
+        joinAudience: joinMeOpen ? joinAudience : "none",
+        joinAllowedUserIds:
+          joinMeOpen && joinAudience === "selected" ? joinAllowedUserIds : [],
         file,
       });
       setTitle("");
       setStartTime("");
       setLocationLabel("");
       setDescription("");
-      setJoinMeOpen(Boolean(initialJoinMeOpen));
+      setJoinMeOpen(false);
+      setJoinAudience("connections");
+      setJoinAllowedUserIds([]);
       setFile(null);
       onClose?.();
     } catch (err) {
@@ -81,7 +98,9 @@ export default function EventComposeSheet({
       role="presentation"
       style={styles.backdrop}
       data-testid="event-compose-sheet"
-      onClick={() => onClose?.()}
+      onClick={() => {
+        if (!busy) onClose?.();
+      }}
     >
       <div
         role="dialog"
@@ -92,12 +111,18 @@ export default function EventComposeSheet({
       >
         <div style={styles.head}>
           <p style={styles.title}>My Events</p>
-          <button type="button" style={styles.close} onClick={() => onClose?.()} aria-label="Close">
+          <button
+            type="button"
+            style={styles.close}
+            aria-label="Close"
+            disabled={busy}
+            onClick={() => onClose?.()}
+          >
             ✕
           </button>
         </div>
         <p style={styles.lead}>
-          Any social event — dinner, concert, game, birthday, study session. Food is optional.
+          Create an event. Turn on Join Me for this event only — pick who can see and join.
         </p>
         <form onSubmit={handleSubmit} style={styles.form} data-testid="event-compose-form">
           <MenuplyMediaPicker
@@ -115,10 +140,9 @@ export default function EventComposeSheet({
           <label style={styles.label}>
             Title
             <input
-              type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. USC football, Beach day, Birthday dinner"
+              placeholder="Event name"
               disabled={busy}
               maxLength={160}
               required
@@ -140,7 +164,7 @@ export default function EventComposeSheet({
               />
             </label>
             <label style={styles.label}>
-              Time
+              Time (optional)
               <input
                 type="time"
                 value={startTime}
@@ -152,9 +176,8 @@ export default function EventComposeSheet({
             </label>
           </div>
           <label style={styles.label}>
-            Location
+            Location (optional)
             <input
-              type="text"
               value={locationLabel}
               onChange={(e) => setLocationLabel(e.target.value)}
               placeholder="Place or address (optional)"
@@ -177,17 +200,28 @@ export default function EventComposeSheet({
               data-testid="event-compose-description"
             />
           </label>
-          <label style={styles.checkRow} data-testid="event-compose-join-me">
-            <input
-              type="checkbox"
-              checked={joinMeOpen}
-              onChange={(e) => setJoinMeOpen(e.target.checked)}
+          <div data-testid="event-compose-join-me">
+            <JoinMeAudiencePicker
+              joinable={joinMeOpen}
+              onJoinableChange={(next) => {
+                setJoinMeOpen(next);
+                if (!next) {
+                  setJoinAudience("connections");
+                  setJoinAllowedUserIds([]);
+                }
+              }}
+              audience={joinAudience === "selected" ? "selected" : "connections"}
+              onAudienceChange={(next) => setJoinAudience(next)}
+              selectedIds={joinAllowedUserIds}
+              onSelectedIdsChange={(ids) => {
+                setJoinAudience("selected");
+                setJoinAllowedUserIds(ids);
+              }}
+              candidates={joinCandidates}
+              showCapacity={false}
               disabled={busy}
             />
-            <span>
-              <strong>Open Join Me</strong> — anyone with the link can accept
-            </span>
-          </label>
+          </div>
           {localError ? (
             <p style={styles.error} data-testid="event-compose-error" role="alert">
               {localError}
@@ -195,7 +229,7 @@ export default function EventComposeSheet({
           ) : null}
           <button
             type="submit"
-            disabled={busy || !String(title).trim() || !eventDate}
+            disabled={busy || !String(title).trim() || !eventDate || joinSelectedBlocked}
             style={styles.submit}
             data-testid="event-compose-submit"
           >
@@ -257,43 +291,25 @@ const styles = {
     color: "#475467",
   },
   input: {
-    minHeight: 44,
-    padding: "10px 12px",
+    border: "1px solid #e2e8f0",
     borderRadius: 12,
-    border: "1px solid #e5e7eb",
+    padding: "10px 12px",
+    font: "inherit",
     fontSize: 15,
-    fontFamily: "inherit",
     color: "#0f172a",
-    background: "#fff",
-    boxSizing: "border-box",
-    fontWeight: 500,
   },
+  error: { margin: 0, fontSize: 13, color: "#b91c1c", fontWeight: 600 },
   submit: {
     appearance: "none",
-    minHeight: 44,
     border: "none",
-    borderRadius: 999,
-    background: "linear-gradient(180deg, #22C55E 0%, #16A34A 100%)",
-    color: "#0B0F0C",
+    borderRadius: 12,
+    padding: "12px 16px",
+    background: "linear-gradient(135deg, #0f766e, #115e59)",
+    color: "#fff",
+    font: "inherit",
     fontWeight: 800,
     fontSize: 15,
     cursor: "pointer",
-    fontFamily: "inherit",
-  },
-  checkRow: {
-    display: "flex",
-    alignItems: "flex-start",
-    gap: 10,
-    fontSize: 13,
-    color: "#334155",
-    lineHeight: 1.45,
-    cursor: "pointer",
-  },
-  error: {
-    margin: 0,
-    fontSize: 13,
-    fontWeight: 700,
-    color: "#B42318",
-    lineHeight: 1.4,
+    minHeight: 48,
   },
 };

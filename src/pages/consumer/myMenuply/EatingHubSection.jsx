@@ -12,9 +12,7 @@ import EatingPlanDayForm from "./EatingPlanDayForm.jsx";
 import PostAfterActions from "./PostAfterActions.jsx";
 import ActivityStatusLineCompose from "./ActivityStatusLineCompose.jsx";
 import DinerActivityScanRow from "./DinerActivityScanRow.jsx";
-import DinerSocialPresetsPanel, {
-  parseDinerSocialDefaults,
-} from "./DinerSocialPresetsPanel.jsx";
+import DinerSocialPresetsPanel from "./DinerSocialPresetsPanel.jsx";
 import SectionEmptyState from "./SectionEmptyState.jsx";
 import SectionHeader, { PROFILE_SECTION_HEADERS } from "./SectionHeader.jsx";
 import { groupHubAteMeals } from "../../../lib/groupHubAteMeals.js";
@@ -629,24 +627,18 @@ export default function EatingHubSection({
     typeof onInviteMeOut === "function" &&
     wants.some((row) => row?.restaurant_id != null && String(row.restaurant_id).trim() !== "");
 
-  const plansJoinDefaults = parseDinerSocialDefaults(dinerSocialDefaults).plans_join_me;
+  // Join Me is per plan instance — never prefill from section-wide diner_social_defaults.
   const planJoinablePrefill =
-    planPrefill?.joinable != null
-      ? Boolean(planPrefill.joinable)
-      : Boolean(plansJoinDefaults.open);
+    planPrefill?.joinable != null ? Boolean(planPrefill.joinable) : false;
   const planJoinAudiencePrefill =
     planPrefill?.joinAudience != null
       ? planPrefill.joinAudience
-      : plansJoinDefaults.audience === "selected"
-        ? "selected"
-        : "connections";
+      : "connections";
   const planJoinIdsPrefill = Array.isArray(planPrefill?.joinAllowedUserIds)
     ? planPrefill.joinAllowedUserIds
-    : plansJoinDefaults.allowed_user_ids || [];
+    : [];
   const planJoinCapacityPrefill =
-    planPrefill?.joinCapacity != null
-      ? String(planPrefill.joinCapacity)
-      : String(plansJoinDefaults.join_capacity ?? 4);
+    planPrefill?.joinCapacity != null ? String(planPrefill.joinCapacity) : "4";
 
   return (
     <div data-testid="eating" ref={sectionRef}>
@@ -979,23 +971,6 @@ export default function EatingHubSection({
               </div>
             }
           />
-
-          {canEdit ? (
-            <DinerSocialPresetsPanel
-              canEdit={canEdit}
-              scope="plans"
-              inviteMeOutOpen={inviteMeOutOpen}
-              inviteMeOutAudience={inviteMeOutAudience}
-              inviteMeOutSelectedIds={inviteMeOutSelectedIds}
-              inviteMeOutCandidates={inviteMeOutCandidates}
-              onInviteMeOutSave={onInviteMeOutSave}
-              inviteMeOutToggleBusy={inviteMeOutToggleBusy}
-              dinerSocialDefaults={dinerSocialDefaults}
-              onDinerSocialDefaultsSave={onDinerSocialDefaultsSave}
-              socialDefaultsBusy={socialDefaultsBusy}
-              joinCandidates={joinCandidates}
-            />
-          ) : null}
 
           {shownPlans.length === 0 ? (
             <div data-testid="future-plans-summary">

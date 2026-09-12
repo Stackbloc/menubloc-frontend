@@ -1,15 +1,15 @@
 /**
- * Edit View social presets — scoped into each hub section.
- * Wanna Eat: Take Me Out · Plans/Events: Join Me · Crews: Join Crew
- * Vocabulary stays separate — do not merge allow-lists.
+ * Edit View social presets — scoped into hub sections.
+ * Wanna Eat: Take Me Out · Crews: Join Crew
+ * Join Me for plans/events is per instance (EatingPlanDayForm / EventComposeSheet) —
+ * not a section-wide preset (vocabulary contract).
  */
 
 import { useEffect, useState } from "react";
 import InviteMeOutAudiencePicker from "./InviteMeOutAudiencePicker.jsx";
 import JoinMeAudiencePicker from "./JoinMeAudiencePicker.jsx";
-import * as s from "./myMenuplyStyles.js";
 
-const SCOPES = new Set(["wanna-eat", "plans", "events", "crews"]);
+const SCOPES = new Set(["wanna-eat", "crews"]);
 
 /** Stable empties — default `= []` is a new array every render and infinite-loops sync effects. */
 const EMPTY_ID_LIST = Object.freeze([]);
@@ -35,6 +35,7 @@ function normalizeJoinBlock(raw, { withCapacity = false } = {}) {
   return block;
 }
 
+/** Kept for back-compat reads of stored JSON; plans/events keys are unused by UI. */
 export function parseDinerSocialDefaults(raw) {
   const obj = raw && typeof raw === "object" && !Array.isArray(raw) ? raw : {};
   return {
@@ -67,7 +68,7 @@ function StatusToggle({ testId, featureLabel, open, busy, onToggle }) {
 }
 
 /**
- * @param {"wanna-eat"|"plans"|"events"|"crews"} scope
+ * @param {"wanna-eat"|"crews"} scope
  */
 export default function DinerSocialPresetsPanel({
   canEdit = false,
@@ -89,7 +90,6 @@ export default function DinerSocialPresetsPanel({
   const selectedIds = Array.isArray(inviteMeOutSelectedIds)
     ? inviteMeOutSelectedIds
     : EMPTY_ID_LIST;
-  // Primitive dep so omitted/empty props do not re-trigger every render.
   const selectedIdsKey = selectedIds.map((id) => String(id)).join(",");
 
   const [draftInviteOpen, setDraftInviteOpen] = useState(Boolean(inviteMeOutOpen));
@@ -97,12 +97,6 @@ export default function DinerSocialPresetsPanel({
     inviteMeOutAudience === "selected" ? "selected" : "connections"
   );
   const [draftInviteIds, setDraftInviteIds] = useState(() => [...selectedIds]);
-
-  const [draftPlans, setDraftPlans] = useState(defaults.plans_join_me);
-  const [draftPlansCapacity, setDraftPlansCapacity] = useState(
-    String(defaults.plans_join_me.join_capacity ?? 4)
-  );
-  const [draftEvents, setDraftEvents] = useState(defaults.events_join_me);
   const [draftCrews, setDraftCrews] = useState(defaults.crews_join_me);
 
   useEffect(() => {
@@ -113,69 +107,43 @@ export default function DinerSocialPresetsPanel({
 
   useEffect(() => {
     const next = parseDinerSocialDefaults(dinerSocialDefaults);
-    setDraftPlans(next.plans_join_me);
-    setDraftPlansCapacity(String(next.plans_join_me.join_capacity ?? 4));
-    setDraftEvents(next.events_join_me);
     setDraftCrews(next.crews_join_me);
   }, [dinerSocialDefaults]);
 
-  if (!canEdit) return null;
-
-  async function saveInvite({ open, audience, selectedIds }) {
+  async function saveInvite(next) {
     if (typeof onInviteMeOutSave !== "function") return;
-    await onInviteMeOutSave({ open, audience, selectedIds });
+    setDraftInviteOpen(Boolean(next.open));
+    setDraftInviteAudience(next.audience === "selected" ? "selected" : "connections");
+    setDraftInviteIds(Array.isArray(next.selectedIds) ? next.selectedIds : []);
+    await onInviteMeOutSave(next);
   }
 
-  async function savePlans(next) {
+  async function saveCrews(block) {
     if (typeof onDinerSocialDefaultsSave !== "function") return;
-    const block = normalizeJoinBlock(
-      {
-        ...next,
-        join_capacity: next.open ? Number(next.join_capacity ?? draftPlansCapacity) || 4 : null,
-      },
-      { withCapacity: true }
-    );
-    setDraftPlans(block);
-    setDraftPlansCapacity(String(block.join_capacity ?? 4));
-    await onDinerSocialDefaultsSave({ plans_join_me: block });
-  }
-
-  async function saveEvents(next) {
-    if (typeof onDinerSocialDefaultsSave !== "function") return;
-    const block = normalizeJoinBlock(next, { withCapacity: false });
-    setDraftEvents(block);
-    await onDinerSocialDefaultsSave({ events_join_me: block });
-  }
-
-  async function saveCrews(next) {
-    if (typeof onDinerSocialDefaultsSave !== "function") return;
-    const block = normalizeJoinBlock(next, { withCapacity: false });
     setDraftCrews(block);
     await onDinerSocialDefaultsSave({ crews_join_me: block });
   }
 
-  let body = null;
+  if (!canEdit) return null;
 
+  let body = null;
   if (activeScope === "wanna-eat") {
     body = (
       <div style={styles.row} data-testid="preset-wanna-eat">
         <StatusToggle
           testId="preset-wanna-eat-toggle"
           featureLabel="Take Me Out"
-          open={draftInviteOpen}
+          open={Boolean(draftInviteOpen)}
           busy={busy}
           onToggle={async (nextOpen) => {
-            const audience = nextOpen
-              ? draftInviteAudience === "selected"
-                ? "selected"
-                : "connections"
-              : "none";
-            setDraftInviteOpen(nextOpen);
-            if (!nextOpen) setDraftInviteAudience("connections");
             await saveInvite({
               open: nextOpen,
-              audience: nextOpen ? audience : "connections",
-              selectedIds: nextOpen && audience === "selected" ? draftInviteIds : [],
+              audience: nextOpen
+                ? draftInviteAudience === "selected"
+                  ? "selected"
+                  : "connections"
+                : "none",
+              selectedIds: nextOpen ? draftInviteIds : [],
             });
           }}
         />
@@ -210,136 +178,6 @@ export default function DinerSocialPresetsPanel({
               });
             }}
             candidates={inviteMeOutCandidates}
-            disabled={busy}
-          />
-        ) : null}
-      </div>
-    );
-  } else if (activeScope === "plans") {
-    body = (
-      <div style={styles.row} data-testid="preset-plans">
-        <StatusToggle
-          testId="preset-plans-toggle"
-          featureLabel="Join Me"
-          open={Boolean(draftPlans.open)}
-          busy={busy}
-          onToggle={async (nextOpen) => {
-            await savePlans({
-              open: nextOpen,
-              audience: nextOpen
-                ? draftPlans.audience === "selected"
-                  ? "selected"
-                  : "connections"
-                : "none",
-              allowed_user_ids: nextOpen ? draftPlans.allowed_user_ids : [],
-              join_capacity: nextOpen ? Number(draftPlansCapacity) || 4 : null,
-            });
-          }}
-        />
-        {draftPlans.open ? (
-          <JoinMeAudiencePicker
-            variant="preset"
-            joinable={Boolean(draftPlans.open)}
-            onJoinableChange={async (nextOpen) => {
-              await savePlans({
-                open: nextOpen,
-                audience: nextOpen
-                  ? draftPlans.audience === "selected"
-                    ? "selected"
-                    : "connections"
-                  : "none",
-                allowed_user_ids: nextOpen ? draftPlans.allowed_user_ids : [],
-                join_capacity: nextOpen ? Number(draftPlansCapacity) || 4 : null,
-              });
-            }}
-            audience={draftPlans.audience === "selected" ? "selected" : "connections"}
-            onAudienceChange={async (nextAudience) => {
-              await savePlans({
-                open: true,
-                audience: nextAudience,
-                allowed_user_ids: draftPlans.allowed_user_ids,
-                join_capacity: Number(draftPlansCapacity) || 4,
-              });
-            }}
-            selectedIds={draftPlans.allowed_user_ids || []}
-            onSelectedIdsChange={async (ids) => {
-              await savePlans({
-                open: true,
-                audience: "selected",
-                allowed_user_ids: ids,
-                join_capacity: Number(draftPlansCapacity) || 4,
-              });
-            }}
-            candidates={joinCandidates}
-            joinCapacity={draftPlansCapacity}
-            onJoinCapacityChange={async (value) => {
-              setDraftPlansCapacity(value);
-              await savePlans({
-                open: true,
-                audience: draftPlans.audience,
-                allowed_user_ids: draftPlans.allowed_user_ids,
-                join_capacity: Number(value) || 4,
-              });
-            }}
-            showCapacity
-            disabled={busy}
-          />
-        ) : null}
-      </div>
-    );
-  } else if (activeScope === "events") {
-    body = (
-      <div style={styles.row} data-testid="preset-events">
-        <StatusToggle
-          testId="preset-events-toggle"
-          featureLabel="Join Me"
-          open={Boolean(draftEvents.open)}
-          busy={busy}
-          onToggle={async (nextOpen) => {
-            await saveEvents({
-              open: nextOpen,
-              audience: nextOpen
-                ? draftEvents.audience === "selected"
-                  ? "selected"
-                  : "connections"
-                : "none",
-              allowed_user_ids: nextOpen ? draftEvents.allowed_user_ids : [],
-            });
-          }}
-        />
-        {draftEvents.open ? (
-          <JoinMeAudiencePicker
-            variant="preset"
-            joinable={Boolean(draftEvents.open)}
-            onJoinableChange={async (nextOpen) => {
-              await saveEvents({
-                open: nextOpen,
-                audience: nextOpen
-                  ? draftEvents.audience === "selected"
-                    ? "selected"
-                    : "connections"
-                  : "none",
-                allowed_user_ids: nextOpen ? draftEvents.allowed_user_ids : [],
-              });
-            }}
-            audience={draftEvents.audience === "selected" ? "selected" : "connections"}
-            onAudienceChange={async (nextAudience) => {
-              await saveEvents({
-                open: true,
-                audience: nextAudience,
-                allowed_user_ids: draftEvents.allowed_user_ids,
-              });
-            }}
-            selectedIds={draftEvents.allowed_user_ids || []}
-            onSelectedIdsChange={async (ids) => {
-              await saveEvents({
-                open: true,
-                audience: "selected",
-                allowed_user_ids: ids,
-              });
-            }}
-            candidates={joinCandidates}
-            showCapacity={false}
             disabled={busy}
           />
         ) : null}

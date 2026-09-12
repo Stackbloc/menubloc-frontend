@@ -520,14 +520,7 @@ export function MonthInFoodPlansEvents({
   isSelf = false,
 }) {
   if (!plans.length && !events.length && !isSelf) return null;
-  if (
-    !plans.length &&
-    !events.length &&
-    isSelf &&
-    !plansJoinDefault &&
-    !eventsJoinDefault &&
-    !crewsJoinDefault
-  ) {
+  if (!plans.length && !events.length && isSelf && !crewsJoinDefault) {
     return null;
   }
   const plan = plans[0];
@@ -536,13 +529,19 @@ export function MonthInFoodPlansEvents({
       <div style={s.sectionHead}>
         <h2 style={s.sectionTitle}>Plans &amp; Events</h2>
       </div>
-      {isSelf ? (
+      {isSelf && crewsJoinDefault ? (
         <p
           style={{ margin: "0 0 10px", fontSize: 12, color: s.MUTED, fontWeight: 600 }}
           data-testid="month-in-food-join-me-defaults"
         >
-          Defaults — Plans Join Me: {plansJoinDefault ? "On" : "Off"} · Events Join Me:{" "}
-          {eventsJoinDefault ? "On" : "Off"} · Join Crew: {crewsJoinDefault ? "On" : "Off"}
+          Join Crew default: On · Join Me is set on each plan and event
+        </p>
+      ) : isSelf ? (
+        <p
+          style={{ margin: "0 0 10px", fontSize: 12, color: s.MUTED, fontWeight: 600 }}
+          data-testid="month-in-food-join-me-defaults"
+        >
+          Join Me is set on each plan and event
         </p>
       ) : null}
       {plan ? (

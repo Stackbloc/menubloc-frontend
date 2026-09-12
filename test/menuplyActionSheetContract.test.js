@@ -58,13 +58,13 @@ test("My Menuply opens EventComposeSheet from compose=event and Edit View Add", 
   assert.match(page, /createDinerSocialEvent/);
   assert.match(page, /listDinerSocialEvents/);
   assert.match(page, /socialEvents/);
-  assert.match(page, /title="My Events"/);
+  assert.match(page, /setCalendarTitle\("My Events"\)/);
   const compose = read("src/pages/consumer/myMenuply/EventComposeSheet.jsx");
   assert.match(compose, /event-compose-sheet/);
   assert.match(compose, /My Events/);
   assert.match(compose, /allowVideo/);
   assert.match(compose, /Food is optional/);
-  assert.match(compose, /Edit View \+ Add/);
+  assert.match(compose, /per event instance/);
 });
 
 test("MenuplyActionSheet routes Want to Eat to My Menuply compose", () => {

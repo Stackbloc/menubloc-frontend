@@ -720,6 +720,8 @@ export const listMyVenueEventGroups = () => get("/api/consumer/my/event-groups")
 
 /** Diner-created social events (My Menuply My Events — not venue_events). */
 export const listDinerSocialEvents = () => get("/api/consumer/social-events");
+export const listPeerDinerSocialEvents = (peerId) =>
+  get(`/api/consumer/connections/${encodeURIComponent(String(peerId))}/social-events`);
 export const getDinerSocialEvent = (eventId) =>
   get(`/api/consumer/social-events/${encodeURIComponent(String(eventId))}`);
 export const createDinerSocialEvent = (body) => post("/api/consumer/social-events", body);

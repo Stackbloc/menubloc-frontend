@@ -578,11 +578,13 @@ export function NamedShareCard({
   onDelete,
   deleteBusy = false,
   deleteLabel,
+  joinMeHref = null,
 }) {
   const navigate = useNavigate();
   const title = String(name || "").trim() || "Untitled";
   const canDelete = typeof onDelete === "function";
   const { open, dismiss, consumeArmedClick, bind } = useLongPressReveal(canDelete);
+  const joinHref = String(joinMeHref || "").trim() || null;
 
   function handleDelete(e) {
     e.preventDefault();
@@ -644,6 +646,16 @@ export function NamedShareCard({
       {meta ? <div style={s.muted}>{meta}</div> : null}
       {description ? <div style={{ ...s.muted, marginTop: 4 }}>{description}</div> : null}
       <div style={s.actions}>
+        {joinHref ? (
+          <Link
+            to={joinHref}
+            style={s.primaryBtn}
+            data-testid="named-share-join-me"
+            onClick={(e) => e.stopPropagation()}
+          >
+            Join Me
+          </Link>
+        ) : null}
         {onInvite ? (
           <button
             type="button"

@@ -215,7 +215,8 @@ test("buildMonthInFoodModel counts @home meals and Take Me Out status", () => {
   assert.ok(model.stats.some((s) => s.id === "home" && s.value === 1));
   assert.equal(model.visited.length, 1);
   assert.equal(model.takeMeOutOpen, true);
-  assert.equal(model.plansJoinDefault, true);
+  assert.equal(model.plansJoinDefault, false);
+  assert.equal(model.eventsJoinDefault, false);
   assert.equal(model.crewsJoinDefault, false);
   assert.ok(model.miniStats.some((s) => s.id === "snack_other" && s.value === 1));
   assert.equal(model.highlights[0].sublabel, "@Home");
@@ -229,11 +230,11 @@ test("Month in Food surfaces @Home + Take Me Out + Join Me defaults", () => {
   assert.match(sections, /month-in-food-take-me-out-status/);
   assert.match(sections, /Take Me Out is/);
   assert.match(sections, /month-in-food-join-me-defaults/);
+  assert.match(sections, /Join Me is set on each plan and event/);
   assert.match(sections, /Join Crew/);
-  assert.match(sections, /eventsJoinDefault/);
   assert.match(page, /MonthInFoodHomeMeals/);
   assert.match(page, /takeMeOutOpen/);
-  assert.match(page, /eventsJoinDefault/);
+  assert.match(page, /crewsJoinDefault/);
 });
 
 test("Eating compose enforces Where before What for ate", () => {

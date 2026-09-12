@@ -1660,6 +1660,8 @@ export default function MyMenuplyPage() {
     locationLabel,
     description,
     joinMeOpen,
+    joinAudience,
+    joinAllowedUserIds,
     file,
   }) {
     setPostBusy("events");
@@ -1678,6 +1680,13 @@ export default function MyMenuplyPage() {
         location_label: locationLabel,
         description,
         join_me_open: Boolean(joinMeOpen),
+        join_audience: joinMeOpen
+          ? joinAudience === "selected"
+            ? "selected"
+            : "connections"
+          : "none",
+        join_allowed_user_ids:
+          joinMeOpen && joinAudience === "selected" ? joinAllowedUserIds || [] : [],
         photo_url,
         video_url,
       });
@@ -2300,16 +2309,6 @@ export default function MyMenuplyPage() {
                   )
                 }
               />
-              {!previewAsConnect ? (
-                <DinerSocialPresetsPanel
-                  canEdit
-                  scope="events"
-                  dinerSocialDefaults={dinerSocialDefaults}
-                  onDinerSocialDefaultsSave={saveDinerSocialDefaults}
-                  socialDefaultsBusy={socialDefaultsBusy}
-                  joinCandidates={joinCandidates}
-                />
-              ) : null}
               {events.length === 0 && eventGroups.length === 0 && socialEvents.length === 0 ? (
                 <SectionEmptyState testId="events-empty">
                   {previewAsConnect ? "Nothing yet." : "No events yet. Tap + Add to create one."}
@@ -2326,11 +2325,16 @@ export default function MyMenuplyPage() {
                         formatEventWhen(ev),
                         ev.start_time || null,
                         ev.location_label || null,
+                        ev.is_past
+                          ? null
+                          : ev.join_me_open
+                            ? "Join Me open"
+                            : "Just me",
                       ]
                         .filter(Boolean)
                         .join(" · ")}
                       description={ev.description || null}
-                      onDelete={() => onSocialEventDelete(ev)}
+                      onDelete={previewAsConnect ? undefined : () => onSocialEventDelete(ev)}
                       deleteBusy={postBusy === `social-event-delete-${ev.id}`}
                       deleteLabel={`Delete event ${ev.title || ""}`.trim()}
                     />
@@ -2371,7 +2375,7 @@ export default function MyMenuplyPage() {
               onClose={() => setEventComposeOpen(false)}
               busy={postBusy === "events"}
               onSubmit={postSocialEvent}
-              initialJoinMeOpen={Boolean(dinerSocialDefaults?.events_join_me?.open)}
+              joinCandidates={joinCandidates}
             />
 
             <PlanVideoAttachSheet

@@ -21,7 +21,7 @@ import {
 } from "./myMenuply/eatingHubUtils.js";
 import * as s from "./myMenuply/myMenuplyStyles.js";
 import DinerIdentityHero from "./myMenuply/DinerIdentityHero.jsx";
-import { DiningCrewHubCard, SectionHead, isScheduledEatingPlan } from "./myMenuply/myMenuplyBits.jsx";
+import { DiningCrewHubCard, NamedShareCard, SectionHead, isScheduledEatingPlan } from "./myMenuply/myMenuplyBits.jsx";
 import SectionHeader, { PROFILE_SECTION_HEADERS } from "./myMenuply/SectionHeader.jsx";
 import { futurePlanKey, futurePlanRestaurantName, futurePlanDetailParts } from "./myMenuply/dinerHubFormat.js";
 import {
@@ -38,6 +38,7 @@ import {
   listPeerWhatIAteTodayCalendar,
   listPeerProfileMedia,
   listPeerWantToEat,
+  listPeerDinerSocialEvents,
   requestJoinDiningCrew,
   resolveConsumerMediaUrl,
   whatIAteTodayLocalDate,
@@ -98,6 +99,7 @@ export default function ConsumerConnectionPeerPage() {
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [selectedPlanKey, setSelectedPlanKey] = useState("");
   const [crews, setCrews] = useState([]);
+  const [peerSocialEvents, setPeerSocialEvents] = useState([]);
   const [crewJoinBusy, setCrewJoinBusy] = useState("");
   const [peerProfileMedia, setPeerProfileMedia] = useState([]);
   const [flashVideos, setFlashVideos] = useState([]);
@@ -115,7 +117,7 @@ export default function ConsumerConnectionPeerPage() {
   const load = useCallback(async () => {
     setError("");
     try {
-      const [connData, peerConnData, eatData, planData, diaryData, calendarData, crewData, mediaData, wantData, homeData, flashData] =
+      const [connData, peerConnData, eatData, planData, diaryData, calendarData, crewData, mediaData, wantData, homeData, flashData, socialEventData] =
         await Promise.all([
         listConnections("accepted"),
         listConnections("accepted", peerId).catch(() => ({ accepted: [] })),
@@ -130,6 +132,7 @@ export default function ConsumerConnectionPeerPage() {
         listPeerWantToEat(peerId).catch(() => ({ items: [] })),
         fetchUserHomemadeDishes(peerId).catch(() => ({ dishes: [] })),
         getPublicFlashVideos(peerId).catch(() => ({ items: [] })),
+        listPeerDinerSocialEvents(peerId).catch(() => ({ events: [] })),
       ]);
       const match = (connData.accepted || []).find((c) => Number(c.peer?.id) === peerId);
       setConnection(match || null);
@@ -158,6 +161,7 @@ export default function ConsumerConnectionPeerPage() {
       setEatingCalendarDays(calendarData?.days || []);
       setPlans(planItems.filter((item) => item.kind !== "join_me" && item.href).map(asPlan));
       setCrews(crewData.crews || crewData.items || []);
+      setPeerSocialEvents(socialEventData?.events || []);
       setPeerProfileMedia(
         (mediaData?.items || []).filter((row) => String(row?.media_subtype || "") !== "flash_video")
       );
@@ -431,10 +435,38 @@ export default function ConsumerConnectionPeerPage() {
             <section style={s.section} data-testid="my-events">
               <SectionHeader
                 {...PROFILE_SECTION_HEADERS.events}
-                count={0}
+                count={peerSocialEvents.length}
                 testId="events-section-header"
               />
-              <p style={s.muted}>Nothing yet.</p>
+              {peerSocialEvents.length === 0 ? (
+                <p style={s.muted}>Nothing yet.</p>
+              ) : (
+                peerSocialEvents.slice(0, 8).map((ev) => (
+                  <NamedShareCard
+                    key={`peer-social-${ev.id}`}
+                    name={ev.title}
+                    href={
+                      ev.invitation_token
+                        ? `/join-event/${encodeURIComponent(String(ev.invitation_token))}`
+                        : ev.join_me_href || ev.join_url || undefined
+                    }
+                    meta={[
+                      ev.event_date || null,
+                      ev.start_time || null,
+                      ev.location_label || null,
+                      ev.join_me_open ? "Join Me open" : null,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                    description={ev.description || null}
+                    joinMeHref={
+                      ev.invitation_token
+                        ? `/join-event/${encodeURIComponent(String(ev.invitation_token))}`
+                        : ev.join_me_href || ev.join_url || null
+                    }
+                  />
+                ))
+              )}
             </section>
 
             <section style={s.section} data-testid="connection-safety">

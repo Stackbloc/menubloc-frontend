@@ -39,6 +39,11 @@ test("Connection diner page uses the same hub layout as My Menuply", () => {
     assert.doesNotMatch(page, /onInvite=\{\(\) => share/);
   }
 
+  assert.match(peer, /listPeerDinerSocialEvents/);
+  assert.match(peer, /peerSocialEvents/);
+  assert.match(peer, /named-share-join-me|joinMeHref/);
+  assert.match(peer, /Join Me open/);
+
   assert.match(section, /data-testid="eating"/);
   assert.match(section, /data-testid="what-im-eating"/);
   assert.match(section, /data-testid="want-to-eat"/);
@@ -72,7 +77,11 @@ test("Connection diner page uses the same hub layout as My Menuply", () => {
   assert.match(peer, /listDinerDiningCrews/);
   assert.match(peer, /Request to join/);
   assert.match(peer, /DiningCrewHubCard/);
-  assert.doesNotMatch(peer, /NamedShareCard/);
+  assert.match(peer, /NamedShareCard/);
+  assert.match(peer, /listPeerDinerSocialEvents/);
+  assert.match(peer, /peerSocialEvents/);
+  assert.match(peer, /joinMeHref/);
+  assert.match(peer, /Join Me open/);
   assert.match(peer, /peerConnections/);
   assert.match(peer, /backTo=\{MY_MENUPLY_PROFILE_PATH\}/);
   assert.match(peer, /backLabel="My Menuply"/);

@@ -342,6 +342,23 @@ test.describe("Feed home → Profile bottom nav", () => {
       await expect(header.getByTestId("section-header-accent")).toBeVisible();
     }
   });
+
+  test("Profile Edit View has no section Join Me preset; event compose is per-instance", async ({
+    page,
+  }) => {
+    await mockApis(page);
+    await page.goto("/feed/profile", { waitUntil: "domcontentloaded" });
+    await expect(page.getByTestId("my-menuply-page")).toBeVisible({ timeout: 30_000 });
+
+    await expect(page.getByTestId("preset-plans")).toHaveCount(0);
+    await expect(page.getByTestId("preset-events")).toHaveCount(0);
+    await expect(page.getByText("Join Me is On", { exact: false })).toHaveCount(0);
+
+    await page.getByTestId("my-events-compose-open").click();
+    await expect(page.getByTestId("event-compose-sheet")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId("event-compose-join-me")).toBeVisible();
+    await expect(page.getByText("Open to Join Me")).toBeVisible();
+  });
 });
 
 test.describe("Feed home → Profile desktop rail", () => {
