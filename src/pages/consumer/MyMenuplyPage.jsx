@@ -41,6 +41,7 @@ import {
   createDinerSocialEvent,
   updateDinerSocialEvent,
   ensureDinerSocialEventShareLink,
+  updateWhatWeDoingSession,
   listPendingEatInvitePeople,
   listWantToEat,
   listMyDiningIntents,
@@ -1726,13 +1727,67 @@ export default function MyMenuplyPage() {
     setEventComposeTarget(null);
   }
 
-  function socialEventJoinHref(ev) {
-    if (!ev || ev.is_past || !ev.join_me_open) return "";
-    const token = String(ev.invitation_token || "").trim();
-    if (token) return `/join-event/${encodeURIComponent(token)}`;
-    const url = String(ev.join_url || "").trim();
-    if (url.startsWith("/")) return url;
-    return "";
+  async function onSocialEventJoinMeToggle(ev, nextOpen) {
+    if (!ev?.id) return;
+    if (nextOpen) {
+      openSocialEventCompose({ ...ev, join_me_open: true });
+      return;
+    }
+    setPostBusy(`social-event-join-${ev.id}`);
+    setError("");
+    try {
+      const data = await updateDinerSocialEvent(ev.id, {
+        title: ev.title,
+        event_date: ev.event_date,
+        start_time: ev.start_time,
+        location_label: ev.location_label,
+        description: ev.description,
+        join_me_open: false,
+        join_audience: "none",
+        join_allowed_user_ids: [],
+      });
+      const saved = data?.event;
+      if (saved?.id) {
+        setSocialEvents((prev) =>
+          (prev || []).map((row) => (Number(row.id) === Number(saved.id) ? saved : row))
+        );
+      }
+      await load();
+    } catch (err) {
+      setError(err.message || "Unable to update Join Me");
+    } finally {
+      setPostBusy("");
+    }
+  }
+
+  async function onPlanJoinMeToggle(plan, nextOpen) {
+    const key = plan?.token || plan?.id;
+    if (!key) return;
+    if (nextOpen) {
+      // Turn On → expand Add details / PostAfterActions path for audience.
+      setSelectedPlanKey(futurePlanKey(plan));
+      setLastPost({
+        kind: "plan",
+        token: plan.token,
+        id: plan.id,
+        joinable: false,
+        join_capacity: plan.join_capacity,
+        restaurant_id: plan.restaurant_id,
+        restaurant_name: plan.restaurant_name,
+        place_label: plan.place_label,
+      });
+      return;
+    }
+    setPostBusy(`plan-join-${key}`);
+    setError("");
+    try {
+      await updateWhatWeDoingSession(key, { joinable: false });
+      await load();
+    } catch (err) {
+      setError(err.message || "Unable to update Join Me");
+    } finally {
+      setPostBusy("");
+    }
   }
 
   function openShare(shareData, { modalTitle, analyticsContext }) {
@@ -2236,6 +2291,8 @@ export default function MyMenuplyPage() {
                 });
               }}
               onPlanAddVideo={(next) => setPlanVideoPlan(next)}
+              onPlanJoinMeToggle={previewAsConnect ? undefined : onPlanJoinMeToggle}
+              planJoinMeBusy={String(postBusy).startsWith("plan-join-")}
               onPostTagged={handlePostTagged}
               onSkipDetails={() => setLastPost(null)}
               foodHref={foodHref}
@@ -2368,15 +2425,13 @@ export default function MyMenuplyPage() {
                       onDelete={previewAsConnect ? undefined : () => onSocialEventDelete(ev)}
                       deleteBusy={postBusy === `social-event-delete-${ev.id}`}
                       deleteLabel={`Delete event ${ev.title || ""}`.trim()}
-                      joinMeHref={
-                        previewAsConnect ? undefined : socialEventJoinHref(ev) || undefined
-                      }
-                      onEditJoinMe={
+                      joinMeOpen={!ev.is_past && Boolean(ev.join_me_open)}
+                      onJoinMeToggle={
                         previewAsConnect || ev.is_past
                           ? undefined
-                          : () => openSocialEventCompose(ev)
+                          : (next) => onSocialEventJoinMeToggle(ev, next)
                       }
-                      editJoinMeLabel={ev.join_me_open ? "Edit Join Me" : "Turn on Join Me"}
+                      joinMeBusy={postBusy === `social-event-join-${ev.id}`}
                     />
                   ))}
                   {events.slice(0, 4).map((ev) => (
@@ -2409,12 +2464,6 @@ export default function MyMenuplyPage() {
                 </>
               )}
             </section>
-
-            {!previewAsConnect ? (
-              <p style={{ ...s.muted, fontSize: 12, marginTop: -8, marginBottom: 16 }}>
-                Join Me is per event — tap Turn on Join Me on a card (same idea as What’s cookin’).
-              </p>
-            ) : null}
 
             <EventComposeSheet
               open={eventComposeOpen && !previewAsConnect}

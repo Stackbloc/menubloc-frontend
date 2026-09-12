@@ -75,12 +75,16 @@ test("EventComposeSheet sets Join Me per event with audience picker", () => {
   assert.match(sheet, /Save event/);
 });
 
-test("My events cards expose per-event Turn on / Edit Join Me", () => {
+test("My events cards expose quiet Join Me status line (not green pills)", () => {
   const page = read("src/pages/consumer/MyMenuplyPage.jsx");
   const bits = read("src/pages/consumer/myMenuply/myMenuplyBits.jsx");
-  assert.match(page, /onEditJoinMe/);
-  assert.match(page, /Turn on Join Me/);
-  assert.match(page, /updateDinerSocialEvent/);
-  assert.match(bits, /named-share-edit-join-me/);
-  assert.match(bits, /onEditJoinMe/);
+  const line = read("src/pages/consumer/myMenuply/JoinMeStatusLine.jsx");
+  assert.match(page, /onJoinMeToggle/);
+  assert.match(page, /onSocialEventJoinMeToggle/);
+  assert.match(bits, /JoinMeStatusLine/);
+  assert.match(bits, /named-share-join-me-status/);
+  assert.match(line, /Join Me is \{state\}/);
+  assert.match(line, /click to turn/);
+  assert.doesNotMatch(bits, /Turn on Join Me/);
+  assert.doesNotMatch(bits, /editJoinMeLabel/);
 });

@@ -236,24 +236,6 @@ export const planRowCopy = {
   minWidth: 0,
 };
 
-export const planRowJoinBtn = {
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  minHeight: 36,
-  padding: "0 14px",
-  borderRadius: 10,
-  background: GREEN_BRIGHT,
-  color: "#fff",
-  fontSize: 12,
-  fontWeight: 800,
-  textDecoration: "none",
-  border: "none",
-  cursor: "pointer",
-  fontFamily: "inherit",
-  flexShrink: 0,
-};
-
 export const crewMemberStack = {
   display: "flex",
   flexWrap: "wrap",

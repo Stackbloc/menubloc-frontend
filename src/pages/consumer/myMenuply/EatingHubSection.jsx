@@ -478,6 +478,8 @@ export default function EatingHubSection({
   onPlanAddVideo,
   onPlanDelete,
   planDeleteBusy = false,
+  onPlanJoinMeToggle = null,
+  planJoinMeBusy = false,
   onPostTagged,
   onSkipDetails,
   foodHref,
@@ -998,6 +1000,8 @@ export default function EatingHubSection({
                       : onPlanDelete
                   }
                   deleteBusy={planDeleteBusy}
+                  onJoinMeToggle={canEdit ? onPlanJoinMeToggle : undefined}
+                  joinMeBusy={planJoinMeBusy}
                 />
               );
             })

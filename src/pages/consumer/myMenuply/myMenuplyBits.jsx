@@ -20,6 +20,7 @@ import {
   planJoinHref,
 } from "./dinerHubFormat.js";
 import * as s from "./myMenuplyStyles.js";
+import JoinMeStatusLine from "./JoinMeStatusLine.jsx";
 import { socialType } from "../../../lib/socialDesignTokens.js";
 import WannaGoPlateIcon from "../../../components/icons/WannaGoPlateIcon.jsx";
 
@@ -313,7 +314,7 @@ export function PhotoGrid({ items, onSelect, onPhotoPick, hideJoinMe = false, pr
                     </button>
                   ) : null}
                   {joinHref ? (
-                    <Link to={joinHref} style={s.primaryBtn}>
+                    <Link to={joinHref} style={s.plansEmptyLink}>
                       Join Me
                     </Link>
                   ) : null}
@@ -579,16 +580,17 @@ export function NamedShareCard({
   deleteBusy = false,
   deleteLabel,
   joinMeHref = null,
-  /** Owner Edit View — open Join Me settings for this instance (events). */
-  onEditJoinMe = null,
-  editJoinMeLabel = "Join Me",
+  /** Owner Edit View — quiet StatusToggle-style Join Me (never a green pill). */
+  joinMeOpen = false,
+  onJoinMeToggle = null,
+  joinMeBusy = false,
 }) {
   const navigate = useNavigate();
   const title = String(name || "").trim() || "Untitled";
   const canDelete = typeof onDelete === "function";
   const { open, dismiss, consumeArmedClick, bind } = useLongPressReveal(canDelete);
   const joinHref = String(joinMeHref || "").trim() || null;
-  const canEditJoinMe = typeof onEditJoinMe === "function";
+  const canToggleJoinMe = typeof onJoinMeToggle === "function";
 
   function handleDelete(e) {
     e.preventDefault();
@@ -649,34 +651,24 @@ export function NamedShareCard({
       </div>
       {meta ? <div style={s.muted}>{meta}</div> : null}
       {description ? <div style={{ ...s.muted, marginTop: 4 }}>{description}</div> : null}
+      {canToggleJoinMe ? (
+        <JoinMeStatusLine
+          open={Boolean(joinMeOpen)}
+          busy={joinMeBusy}
+          onToggle={onJoinMeToggle}
+          testId="named-share-join-me-status"
+        />
+      ) : null}
       <div style={s.actions}>
         {joinHref ? (
           <Link
             to={joinHref}
-            style={s.primaryBtn}
+            style={s.plansEmptyLink}
             data-testid="named-share-join-me"
             onClick={(e) => e.stopPropagation()}
           >
             Join Me
           </Link>
-        ) : null}
-        {canEditJoinMe ? (
-          <button
-            type="button"
-            style={{
-              ...(joinHref ? s.chipBtn : s.primaryBtn),
-              appearance: "none",
-              cursor: "pointer",
-              font: "inherit",
-            }}
-            data-testid="named-share-edit-join-me"
-            onClick={(e) => {
-              e.stopPropagation();
-              onEditJoinMe();
-            }}
-          >
-            {editJoinMeLabel}
-          </button>
         ) : null}
         {onInvite ? (
           <button
@@ -694,7 +686,7 @@ export function NamedShareCard({
           <button
             type="button"
             style={{
-              ...s.primaryBtn,
+              ...s.chipBtn,
               appearance: "none",
               cursor: requestDisabled ? "default" : "pointer",
               font: "inherit",
@@ -760,7 +752,7 @@ export function ConnectionFoodCard({ item }) {
           </Link>
         )}
         {joinHref ? (
-          <Link to={joinHref} style={s.primaryBtn}>
+          <Link to={joinHref} style={s.plansEmptyLink}>
             Join Me
           </Link>
         ) : null}
@@ -812,12 +804,14 @@ export function FuturePlanRow({
   onAddPlanVideo,
   onDelete,
   deleteBusy = false,
+  onJoinMeToggle = null,
+  joinMeBusy = false,
 }) {
   const when = formatPlanBracketDate(plan?.plan_date);
   const name = futurePlanRestaurantName(plan);
   const { meal, notes } = futurePlanDetailParts(plan);
-  const joinHref = planJoinHref(plan);
   const canDelete = typeof onDelete === "function";
+  const canToggleJoinMe = typeof onJoinMeToggle === "function" && plan?.is_creator !== false;
   const {
     open: deleteOpen,
     dismiss,
@@ -870,17 +864,15 @@ export function FuturePlanRow({
             {[meal, plan.joinable ? "Join Me open" : "Just me", notes].filter(Boolean).join(" · ")}
           </div>
         </div>
-        {joinHref ? (
-          <Link
-            to={joinHref}
-            style={s.planRowJoinBtn}
-            data-testid="plan-row-join-me"
-            onClick={(e) => e.stopPropagation()}
-          >
-            Join Me
-          </Link>
-        ) : null}
       </button>
+      {canToggleJoinMe ? (
+        <JoinMeStatusLine
+          open={Boolean(plan.joinable)}
+          busy={joinMeBusy}
+          onToggle={(next) => onJoinMeToggle(plan, next)}
+          testId="plan-row-join-me-status"
+        />
+      ) : null}
       {open ? (
         <div data-testid="future-plan-detail">
           <EatingPlanCard
@@ -954,7 +946,7 @@ export function EatingPlanCard({ plan, onAddDetails, onAddPlanVideo }) {
           </Link>
         ) : null}
         {joinHref ? (
-          <Link to={joinHref} style={s.primaryBtn}>
+          <Link to={joinHref} style={s.plansEmptyLink}>
             Join Me
           </Link>
         ) : null}
@@ -983,7 +975,7 @@ export function PlanCard({ item }) {
           </Link>
         ) : null}
         {item.join_me_href ? (
-          <Link to={item.join_me_href} style={s.primaryBtn}>
+          <Link to={item.join_me_href} style={s.plansEmptyLink}>
             Join Me
           </Link>
         ) : item.restaurant_id ? (

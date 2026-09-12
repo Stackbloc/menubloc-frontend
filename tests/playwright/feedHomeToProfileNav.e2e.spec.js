@@ -372,7 +372,7 @@ test.describe("Feed home → Profile bottom nav", () => {
     }
   });
 
-  test("Profile Edit View has no section Join Me preset; event Join Me is per card", async ({
+  test("Profile Edit View has no section Join Me preset; event Join Me is quiet status line", async ({
     page,
   }) => {
     await mockApis(page);
@@ -383,17 +383,17 @@ test.describe("Feed home → Profile bottom nav", () => {
     await expect(page.getByTestId("preset-events")).toHaveCount(0);
     await expect(page.getByText("Join Me is On", { exact: false })).toHaveCount(0);
 
-    await expect(page.getByTestId("named-share-edit-join-me").first()).toBeVisible({
+    await expect(page.getByTestId("named-share-join-me-status").first()).toBeVisible({
       timeout: 15_000,
     });
-    await expect(page.getByTestId("named-share-edit-join-me").first()).toHaveText(
-      "Turn on Join Me"
+    await expect(page.getByTestId("named-share-join-me-status").first()).toHaveText(
+      /Join Me is Off — click to turn On/
     );
-    await page.getByTestId("named-share-edit-join-me").first().click();
+    await expect(page.getByTestId("named-share-edit-join-me")).toHaveCount(0);
+    await page.getByTestId("named-share-join-me-status").first().click();
     await expect(page.getByTestId("event-compose-sheet")).toBeVisible({ timeout: 10_000 });
     await expect(page.getByTestId("event-compose-join-me")).toBeVisible();
     await expect(page.getByText("Open to Join Me")).toBeVisible();
-    await expect(page.getByTestId("event-compose-submit")).toHaveText("Save event");
   });
 });
 

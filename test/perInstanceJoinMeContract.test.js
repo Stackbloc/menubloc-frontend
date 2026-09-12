@@ -19,6 +19,16 @@ test("Plans and events do not mount section-wide Join Me presets", () => {
   assert.match(page, /JoinMeAudiencePicker|EventComposeSheet/);
 });
 
+test("Hub Join Me owner controls use quiet status line, not green pills", () => {
+  const bits = read("src/pages/consumer/myMenuply/myMenuplyBits.jsx");
+  const styles = read("src/pages/consumer/myMenuply/myMenuplyStyles.js");
+  assert.match(bits, /JoinMeStatusLine/);
+  assert.match(bits, /plan-row-join-me-status/);
+  assert.doesNotMatch(bits, /planRowJoinBtn/);
+  assert.doesNotMatch(bits, /named-share-edit-join-me/);
+  assert.doesNotMatch(styles, /planRowJoinBtn/);
+});
+
 test("Event create posts per-event join_audience", () => {
   const page = read("src/pages/consumer/MyMenuplyPage.jsx");
   const api = read("src/lib/consumerApi.js");
