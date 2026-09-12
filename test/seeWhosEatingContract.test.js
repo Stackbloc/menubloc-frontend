@@ -67,9 +67,13 @@ test("See Who's Eating reel: guest watch, CK dish, existing camera, Connect noti
   assert.match(fullscreen, /createPortal/);
   assert.match(fullscreen, /100dvh|100vh/);
   assert.match(fullscreen, /feedVideoElementStyle/);
+  assert.match(fullscreen, /tearDownFeedVideoElement/);
+  assert.match(fullscreen, /clearStuckMediaChrome/);
+  assert.match(fullscreen, /useLayoutEffect/);
   assert.match(read("src/lib/feedVideoPresentation.js"), /defaultFeedVideoMuted/);
   assert.match(read("src/lib/feedVideoPresentation.js"), /attemptFeedVideoAutoplay/);
   assert.match(read("src/lib/feedVideoPresentation.js"), /preferSound/);
+  assert.match(read("src/lib/feedVideoPresentation.js"), /tearDownFeedVideoElement/);
   assert.match(fullscreen, /defaultFeedVideoMuted/);
   assert.match(fullscreen, /attemptFeedVideoAutoplay/);
   assert.match(read("src/lib/feedVideoPresentation.js"), /FEED_VIDEO_OBJECT_FIT_DESKTOP.*contain/s);

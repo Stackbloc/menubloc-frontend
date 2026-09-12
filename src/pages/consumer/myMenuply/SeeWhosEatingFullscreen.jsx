@@ -42,6 +42,7 @@ import {
   defaultFeedVideoMuted,
   isManagerForcedMute,
   feedVideoElementStyle,
+  tearDownFeedVideoElement,
 } from "../../../lib/feedVideoPresentation.js";
 import { useFeedShellDesktop } from "../../../lib/useFeedShellDesktop.js";
 import {
@@ -201,25 +202,15 @@ export default function SeeWhosEatingFullscreen({
     };
   }, [isFeedHome]);
 
-  // Playing Feed → Profile: tear down the <video> compositor layer and any body locks
-  // before Profile paints. iOS especially can leave a dead hit-target over the nav.
+  // Playing reel → leave route: tear down <video> + body locks before next paint.
+  // Covers Feed home and modal See Who's Eating (body portal zIndex 200000).
   useLayoutEffect(() => {
-    if (!isFeedHome) return undefined;
     return () => {
-      const el = videoRef.current;
-      if (el) {
-        try {
-          el.pause();
-          el.removeAttribute("src");
-          el.load();
-        } catch {
-          /* ignore */
-        }
-      }
+      tearDownFeedVideoElement(videoRef.current);
       restoreDocumentScroll();
       clearStuckMediaChrome();
     };
-  }, [isFeedHome]);
+  }, []);
 
   useEffect(() => {
     const el = videoRef.current;

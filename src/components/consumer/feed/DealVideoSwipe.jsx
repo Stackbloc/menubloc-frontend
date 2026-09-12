@@ -5,14 +5,17 @@
  * Mobile right rail: Wanna Go! · Share · Invite · Like · Menu. Desktop: Share & Invite + Menu Browser dock.
  */
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import InviteToEatModal from "../../InviteToEatModal.jsx";
 import BrowseMenusIcon from "../../icons/BrowseMenusIcon.jsx";
 import FeedMenuBrowserPipOverlay from "./FeedMenuBrowserPipOverlay.jsx";
 import FeedVideoActionRail from "./FeedVideoActionRail.jsx";
-import { restoreDocumentScroll } from "../../../pages/consumer/myMenuply/pendingHighlightMedia.js";
+import {
+  clearStuckMediaChrome,
+  restoreDocumentScroll,
+} from "../../../pages/consumer/myMenuply/pendingHighlightMedia.js";
 import { stripMediaUrlFragment } from "../../../lib/menuplyLiveFeedControl.js";
 import { OPEN_FEED_MENU_BROWSER_EVENT } from "../../../lib/feedMenuBrowserNav.js";
 import {
@@ -24,13 +27,14 @@ import {
   clampBrowseTrailIndex,
 } from "../../../lib/feedMenuBrowserTrail.js";
 import { buildFeedDealShareData, feedDealShareUrl } from "../../../lib/feedShare.js";
-import { useFeedShellDesktop } from "../../../lib/useFeedShellDesktop.js";
 import {
   attemptFeedVideoAutoplay,
   defaultFeedVideoMuted,
-  isManagerForcedMute,
   feedVideoElementStyle,
+  isManagerForcedMute,
+  tearDownFeedVideoElement,
 } from "../../../lib/feedVideoPresentation.js";
+import { useFeedShellDesktop } from "../../../lib/useFeedShellDesktop.js";
 import {
   formatVerticalReelCue,
   formatVerticalReelNavHint,
@@ -133,6 +137,15 @@ export default function DealVideoSwipe({
       restoreDocumentScroll();
     };
   }, [containInShell]);
+
+  // Playing Deals reel → Profile/Home: same video compositor leftover class as Feed home.
+  useLayoutEffect(() => {
+    return () => {
+      tearDownFeedVideoElement(videoRef.current);
+      restoreDocumentScroll();
+      clearStuckMediaChrome();
+    };
+  }, []);
 
   useEffect(() => {
     const el = videoRef.current;

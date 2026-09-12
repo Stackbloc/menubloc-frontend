@@ -243,6 +243,44 @@ test.describe("Feed home → Profile bottom nav", () => {
     await page.getByTestId("feed-nav-home").click();
     await expect(page).toHaveURL(/\/feed\/?$/);
   });
+
+  test("after Deals reel → Profile, Home/Deals stay clickable", async ({ page }) => {
+    await mockApis(page);
+    await page.route("**/api/deals**", async (route) => {
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          ok: true,
+          deals: [
+            {
+              id: "e2e-deal-1",
+              title: "E2E Deal",
+              video_url: "https://example.com/e2e-deal.mp4",
+              restaurant_id: "11111111-1111-1111-1111-111111111111",
+              restaurant_name: "E2E Cafe",
+              href: "/deals",
+            },
+          ],
+        }),
+      });
+    });
+
+    await page.goto("/feed/deals", { waitUntil: "domcontentloaded" });
+    await expect(page.getByTestId("feed-shell")).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId("feed-primary-nav")).toBeVisible({ timeout: 15_000 });
+    await page.waitForTimeout(500);
+
+    await page.getByTestId("feed-nav-profile").click();
+    await expect(page).toHaveURL(/\/feed\/profile/);
+    await expect(page.getByTestId("my-menuply-page")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId("feed-deals-video-swipe")).toHaveCount(0);
+
+    await page.getByTestId("feed-nav-home").click();
+    await expect(page).toHaveURL(/\/feed\/?$/);
+    await page.getByTestId("feed-nav-deals").click();
+    await expect(page).toHaveURL(/\/feed\/deals/);
+  });
 });
 
 test.describe("Feed home → Profile desktop rail", () => {

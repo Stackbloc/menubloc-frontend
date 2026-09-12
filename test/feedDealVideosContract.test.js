@@ -63,9 +63,12 @@ test("Feed deals: video swipe reel, no meal chips", () => {
   assert.match(swipe, /overlayContained/);
   assert.match(swipe, /meal_time_caption|headline/);
   assert.match(swipe, /feedVerticalReelNavigationCopy/);
-  // Same audio contract as Feed home regular videos
+  // Same audio contract as Feed home regular videos (sound on unless manager forces mute)
   assert.match(swipe, /attemptFeedVideoAutoplay/);
-  assert.match(swipe, /preferSound:\s*true/);
+  assert.match(swipe, /preferSound/);
+  assert.match(swipe, /isManagerForcedMute/);
+  assert.match(swipe, /tearDownFeedVideoElement/);
+  assert.match(swipe, /clearStuckMediaChrome/);
   assert.match(swipe, /muted=\{videoMuted\}/);
   assert.match(swipe, /feed-deals-sound-toggle/);
   assert.match(swipe, /feed-deals-meta-dock/);

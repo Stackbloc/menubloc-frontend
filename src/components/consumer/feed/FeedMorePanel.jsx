@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import FeedMenuCaptureCameraIcon from "./FeedMenuCaptureCameraIcon.jsx";
 import { FEED_DESKTOP_RAIL_WIDTH, FEED_MENU_CAPTURE_HINT, resolveFeedMoreSections } from "../../../lib/feedShellLinks.js";
+import { restoreDocumentScroll } from "../../../pages/consumer/myMenuply/pendingHighlightMedia.js";
 
 function FeedMoreLink({ link, onClose }) {
   const showMenuCaptureIcon = link.testId === "feed-more-add-menu";
@@ -33,11 +34,10 @@ export default function FeedMorePanel({ open, onClose, isAuthenticated = false, 
       if (event.key === "Escape") onClose?.();
     }
     document.addEventListener("keydown", onKeyDown);
-    const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
       document.removeEventListener("keydown", onKeyDown);
-      document.body.style.overflow = prev;
+      restoreDocumentScroll();
     };
   }, [open, onClose]);
 

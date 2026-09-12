@@ -8,6 +8,7 @@ import { createPortal } from "react-dom";
 import { LIVE_FEED_CHANNELS, LIVE_FEED_FULL_CATEGORY_LABELS } from "../../../lib/liveFeedCategory.js";
 import { FEED_CONTENT_KINDS } from "../../../lib/feedContentKinds.js";
 import { INVITE_COPY_SEEDS, INVITE_MESSAGE_SEED_CODES } from "../../../lib/eatInviteShareCopy.js";
+import { restoreDocumentScroll } from "../../../pages/consumer/myMenuply/pendingHighlightMedia.js";
 
 export const FEED_VIDEO_CATEGORY_IDS = [
   FEED_CONTENT_KINDS.ATE,
@@ -197,11 +198,10 @@ export default function FeedVideoCreateSheet({
       }
     }
     window.addEventListener("keydown", onKey);
-    const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
       window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prev;
+      restoreDocumentScroll();
     };
   }, [open, onClose, uploadStep]);
 

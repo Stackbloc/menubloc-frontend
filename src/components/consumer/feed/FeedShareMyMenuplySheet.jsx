@@ -8,6 +8,7 @@ import { Link } from "react-router-dom";
 import ShareModal from "../../share/ShareModal.jsx";
 import { getMyDinerQr, resolveConsumerMediaUrl, CONSUMER_API_BASE } from "../../../lib/consumerApi.js";
 import { buildDinerQrShareData } from "../../../lib/dinerQrShare.js";
+import { restoreDocumentScroll } from "../../../pages/consumer/myMenuply/pendingHighlightMedia.js";
 
 function initialsFromName(name) {
   const parts = String(name || "")
@@ -55,11 +56,10 @@ export default function FeedShareMyMenuplySheet({ open, onClose }) {
       }
     }
     window.addEventListener("keydown", onKey);
-    const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
       window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prev;
+      restoreDocumentScroll();
     };
   }, [open, onClose, load, shareOpen]);
 

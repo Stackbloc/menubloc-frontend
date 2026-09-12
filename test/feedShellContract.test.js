@@ -264,6 +264,8 @@ test("Feed shell: Home|Waiter|Share My QR|X|Deals|Shop|Profile + slim X sheet", 
   assert.match(shellPage, /pageshow/);
   assert.match(read("src/components/consumer/feed/DealVideoSwipe.jsx"), /if \(containInShell\) return undefined/);
   assert.match(read("src/components/consumer/feed/DealVideoSwipe.jsx"), /restoreDocumentScroll/);
+  assert.match(read("src/components/consumer/feed/DealVideoSwipe.jsx"), /tearDownFeedVideoElement/);
+  assert.match(read("src/components/consumer/feed/DealVideoSwipe.jsx"), /useLayoutEffect/);
   assert.match(read("src/components/share/ShareModal.jsx"), /CLEAR_STUCK_MEDIA_CHROME_EVENT/);
   assert.match(read("src/components/InviteToEatModal.jsx"), /CLEAR_STUCK_MEDIA_CHROME_EVENT/);
   assert.match(
@@ -272,7 +274,23 @@ test("Feed shell: Home|Waiter|Share My QR|X|Deals|Shop|Profile + slim X sheet", 
   );
   assert.match(
     read("src/pages/consumer/myMenuply/SeeWhosEatingFullscreen.jsx"),
-    /clearStuckMediaChrome/
+    /tearDownFeedVideoElement/
+  );
+  assert.match(
+    read("src/lib/feedVideoPresentation.js"),
+    /tearDownFeedVideoElement/
+  );
+  assert.match(
+    read("src/components/consumer/feed/FeedShareMyMenuplySheet.jsx"),
+    /restoreDocumentScroll/
+  );
+  assert.match(
+    read("src/components/consumer/feed/FeedVideoCreateSheet.jsx"),
+    /restoreDocumentScroll/
+  );
+  assert.match(
+    read("src/components/consumer/feed/FeedMorePanel.jsx"),
+    /restoreDocumentScroll/
   );
   assert.match(read("src/components/consumer/feed/ProfileViewModeToggle.jsx"), /profile-view-mode-toggle/);
   assert.match(

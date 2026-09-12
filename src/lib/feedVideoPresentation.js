@@ -77,3 +77,19 @@ export async function attemptFeedVideoAutoplay(el, { preferSound = false } = {})
     return playMuted();
   }
 }
+
+/**
+ * Drop a playing Feed/Deals/modal reel before route change paints.
+ * iOS compositor layers can otherwise leave a dead hit-target over primary nav.
+ * @param {HTMLVideoElement|null|undefined} el
+ */
+export function tearDownFeedVideoElement(el) {
+  if (!el) return;
+  try {
+    el.pause();
+    el.removeAttribute("src");
+    el.load();
+  } catch {
+    /* ignore */
+  }
+}
