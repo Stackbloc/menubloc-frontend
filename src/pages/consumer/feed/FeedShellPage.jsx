@@ -73,6 +73,11 @@ export default function FeedShellPage({ children = null }) {
     toggleProfileView,
   };
 
+  // Always clear orphaned camera/compose leftovers when entering a feed route.
+  useEffect(() => {
+    clearStuckMediaChrome();
+  }, [location.pathname]);
+
   useEffect(() => {
     document.documentElement.style.setProperty(
       "--feed-primary-nav-h",
@@ -88,9 +93,16 @@ export default function FeedShellPage({ children = null }) {
     };
   }, [isDesktop]);
 
-  // Always clear orphaned camera/compose leftovers when entering a feed route.
+  // Close Multiplier / compose / More / QR sheets on route change so they cannot
+  // cover Profile (or other tabs) after leaving Feed home.
   useEffect(() => {
-    clearStuckMediaChrome();
+    setCreateSheetOpen(false);
+    setComposeCategory("");
+    setComposeMediaSource("camera");
+    setComposeOpenLibrary(false);
+    setComposeInitialWhere(null);
+    setMoreOpen(false);
+    setShareMenuplyOpen(false);
   }, [location.pathname]);
 
   function openCreateSheet() {
@@ -247,9 +259,11 @@ const styles = {
     minHeight: "100dvh",
     background: "#050705",
     color: "#fff",
+    position: "relative",
   },
   body: {
     minHeight: "100dvh",
+    position: "relative",
     transition: "margin-left 0.15s ease",
   },
 };

@@ -230,6 +230,9 @@ test("Feed shell: Home|Waiter|Share My QR|X|Deals|Shop|Profile + slim X sheet", 
   assert.match(shellPage, /FeedMorePanel/);
   assert.match(shellPage, /useFeedShellDesktop/);
   assert.match(shellPage, /clearStuckMediaChrome/);
+  assert.match(shellPage, /\[location\.pathname\]/);
+  assert.match(shellPage, /setCreateSheetOpen\(false\)/);
+  assert.match(shellPage, /setShareMenuplyOpen\(false\)/);
   assert.match(shellPage, /profileViewToggle/);
   assert.match(shellPage, /toggleProfileView/);
   assert.match(shellPage, /navigate\(/);
@@ -239,7 +242,8 @@ test("Feed shell: Home|Waiter|Share My QR|X|Deals|Shop|Profile + slim X sheet", 
   assert.match(shellPage, /buildProfileViewSearchParams/);
   assert.match(mobileHeader, /ProfileViewModeToggle/);
   assert.match(mobileHeader, /zIndex:\s*55/);
-  assert.match(read("src/components/consumer/feed/FeedPrimaryNav.jsx"), /zIndex:\s*50/);
+  // Nav above stuck compose sheets (~350–360); camera (13000) still clears on route change.
+  assert.match(read("src/components/consumer/feed/FeedPrimaryNav.jsx"), /zIndex:\s*400/);
   assert.match(read("src/components/consumer/feed/FeedPrimaryNav.jsx"), /clearStuckMediaChrome/);
   assert.doesNotMatch(desktopRail, /ProfileViewModeToggle/);
   assert.match(desktopRail, /zIndex:\s*60/);

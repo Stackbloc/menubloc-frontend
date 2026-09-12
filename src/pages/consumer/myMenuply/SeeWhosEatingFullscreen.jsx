@@ -42,7 +42,6 @@ import {
   defaultFeedVideoMuted,
   isManagerForcedMute,
   feedVideoElementStyle,
-  resolveFeedVideoOverlayStyle,
 } from "../../../lib/feedVideoPresentation.js";
 import { useFeedShellDesktop } from "../../../lib/useFeedShellDesktop.js";
 import {
@@ -546,13 +545,17 @@ export default function SeeWhosEatingFullscreen({
   const navInset = isFeedHome ? Math.max(0, Number(bottomInset) || 0) : 0;
   const overlayStyle = {
     ...styles.overlay,
-    ...resolveFeedVideoOverlayStyle(isFeedHome),
+    // Modal reel still portals to body; feed home is positioned inside the shell body.
     ...(isFeedHome
       ? {
-          zIndex: 40,
+          position: "absolute",
+          zIndex: 1,
           top: 0,
+          left: 0,
+          right: 0,
           bottom: navInset,
-          height: navInset > 0 ? `calc(100dvh - ${navInset}px)` : "100dvh",
+          width: "auto",
+          height: "auto",
           paddingBottom: 0,
         }
       : null),
@@ -575,7 +578,8 @@ export default function SeeWhosEatingFullscreen({
         ) : null}
       </div>
     );
-    return createPortal(empty, document.body);
+    // Feed home stays in the shell tree (no body portal) so Profile/Deals unmount it cleanly.
+    return empty;
   }
 
   const ui = (
@@ -897,7 +901,7 @@ export default function SeeWhosEatingFullscreen({
 
   return (
     <>
-      {createPortal(ui, document.body)}
+      {isFeedHome ? ui : createPortal(ui, document.body)}
       {showInvite ? (
         <InviteToEatModal
           open={inviteOpen}

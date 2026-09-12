@@ -129,8 +129,9 @@ const styles = {
     left: 0,
     right: 0,
     bottom: 0,
-    // Above orphaned media overlays (legacy 13000). Intentional camera uses 15000.
-    zIndex: 50,
+    // Above orphaned media overlays and Feed compose sheets (350–360).
+    // Intentional camera sheet uses ~13000–15000 and must close on route change.
+    zIndex: 400,
     height: `calc(${FEED_PRIMARY_NAV_HEIGHT}px + env(safe-area-inset-bottom, 0px))`,
     paddingBottom: "env(safe-area-inset-bottom, 0px)",
     display: "flex",

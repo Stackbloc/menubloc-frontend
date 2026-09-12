@@ -76,7 +76,11 @@ test("See Who's Eating reel: guest watch, CK dish, existing camera, Connect noti
   assert.match(read("src/lib/feedVideoPresentation.js"), /FEED_VIDEO_OBJECT_FIT_MOBILE.*cover/s);
   assert.match(fullscreen, /desktopFeedShell/);
   assert.match(read("src/pages/consumer/feed/FeedHomePage.jsx"), /desktopFeedShell=\{isDesktop\}/);
-  assert.match(fullscreen, /resolveFeedVideoOverlayStyle|feed-desktop-rail-w/);
+  assert.match(fullscreen, /feed-desktop-rail-w|desktopFeedShell/);
+  // Feed home must not portal to document.body (leftover cover kills Profile bottom nav).
+  assert.match(fullscreen, /isFeedHome \? ui : createPortal\(ui, document\.body\)/);
+  assert.match(fullscreen, /position:\s*"absolute"/);
+  assert.doesNotMatch(fullscreen, /resolveFeedVideoOverlayStyle/);
   assert.match(fullscreen, /see-whos-eating-sound-toggle/);
   assert.match(fullscreen, /useFeedShellDesktop/);
   assert.match(fullscreen, /showDesktopSoundLayer/);
