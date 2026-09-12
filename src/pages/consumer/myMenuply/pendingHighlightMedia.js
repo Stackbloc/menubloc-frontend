@@ -59,9 +59,30 @@ export const CLEAR_STUCK_MEDIA_CHROME_EVENT = "menuply:clear-stuck-media-chrome"
 /**
  * Clear leftover media-sheet scroll locks and force-close camera/compose overlays
  * that freeze nav / Edit·Connect (z-index 13000 leftovers).
+ * Also tears down any still-mounted Feed/Deals reel videos so iOS compositor
+ * leftovers cannot sit above primary nav after Feed → Profile Edit.
  */
 export function clearStuckMediaChrome() {
   restoreDocumentScroll();
+  if (typeof document !== "undefined") {
+    try {
+      const nodes = document.querySelectorAll(
+        '[data-testid="see-whos-eating-fullscreen"] video, [data-testid="feed-deals-video-swipe"] video'
+      );
+      nodes.forEach((el) => {
+        try {
+          el.pause();
+          el.removeAttribute("src");
+          el.srcObject = null;
+          el.load();
+        } catch {
+          /* ignore */
+        }
+      });
+    } catch {
+      /* ignore */
+    }
+  }
   if (typeof window === "undefined") return;
   try {
     window.dispatchEvent(new CustomEvent(CLEAR_STUCK_MEDIA_CHROME_EVENT));

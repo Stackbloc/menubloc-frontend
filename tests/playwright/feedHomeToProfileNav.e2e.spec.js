@@ -281,6 +281,26 @@ test.describe("Feed home → Profile bottom nav", () => {
     await page.getByTestId("feed-nav-deals").click();
     await expect(page).toHaveURL(/\/feed\/deals/);
   });
+
+  test("Feed → Profile Edit View (default) keeps Home/Deals clickable", async ({ page }) => {
+    await mockApis(page);
+    await page.goto("/feed", { waitUntil: "domcontentloaded" });
+    await expect(page.getByTestId("feed-shell")).toBeVisible({ timeout: 30_000 });
+    await page.waitForTimeout(400);
+
+    await page.getByTestId("feed-nav-profile").click();
+    await expect(page).toHaveURL(/\/feed\/profile/);
+    await expect(page.getByTestId("my-menuply-page")).toBeVisible({ timeout: 15_000 });
+    // Default signed-in profile is Edit View (no ?view=connect).
+    expect(page.url()).not.toMatch(/view=connect/);
+
+    await page.getByTestId("feed-nav-home").click();
+    await expect(page).toHaveURL(/\/feed\/?$/);
+    await page.getByTestId("feed-nav-deals").click();
+    await expect(page).toHaveURL(/\/feed\/deals/);
+    await page.getByTestId("feed-nav-profile").click();
+    await expect(page.getByTestId("my-menuply-page")).toBeVisible({ timeout: 15_000 });
+  });
 });
 
 test.describe("Feed home → Profile desktop rail", () => {

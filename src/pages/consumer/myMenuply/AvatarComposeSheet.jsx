@@ -5,7 +5,7 @@
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
 import MenuplyMediaPicker from "../../../components/social/MenuplyMediaPicker.jsx";
-import { CLEAR_STUCK_MEDIA_CHROME_EVENT } from "./pendingHighlightMedia.js";
+import { CLEAR_STUCK_MEDIA_CHROME_EVENT, restoreDocumentScroll } from "./pendingHighlightMedia.js";
 
 export default function AvatarComposeSheet({
   open,
@@ -29,8 +29,7 @@ export default function AvatarComposeSheet({
     return () => {
       window.removeEventListener("keydown", onKey);
       window.removeEventListener(CLEAR_STUCK_MEDIA_CHROME_EVENT, onForceClose);
-      document.body.style.overflow = "";
-      document.documentElement.style.overflow = "";
+      restoreDocumentScroll();
     };
   }, [open, onClose]);
 

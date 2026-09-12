@@ -19,7 +19,10 @@ import { createPortal } from "react-dom";
 import { useLanguage } from "../../context/LanguageContext.jsx";
 import { buildShareLinks, copyText, normalizeConsumerShareUrl, trackShareEvent } from "./shareUtils.js";
 import { trackMenuShare } from "../../lib/analytics.js";
-import { CLEAR_STUCK_MEDIA_CHROME_EVENT } from "../../pages/consumer/myMenuply/pendingHighlightMedia.js";
+import {
+  CLEAR_STUCK_MEDIA_CHROME_EVENT,
+  restoreDocumentScroll,
+} from "../../pages/consumer/myMenuply/pendingHighlightMedia.js";
 
 const ACTION_KEYS = [
   { key: "copy", labelKey: "share.copyLink", fallback: "Copy Link" },
@@ -94,7 +97,6 @@ export default function ShareModal({
   useEffect(() => {
     if (!open || typeof document === "undefined") return undefined;
 
-    const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
     function handleKeyDown(event) {
@@ -107,7 +109,9 @@ export default function ShareModal({
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener(CLEAR_STUCK_MEDIA_CHROME_EVENT, onForceClose);
     return () => {
-      document.body.style.overflow = previousOverflow;
+      // Never restore a captured previousOverflow — that re-locks body after
+      // clearStuckMediaChrome and leaves Feed primary nav dead while Share QR still opens.
+      restoreDocumentScroll();
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener(CLEAR_STUCK_MEDIA_CHROME_EVENT, onForceClose);
     };

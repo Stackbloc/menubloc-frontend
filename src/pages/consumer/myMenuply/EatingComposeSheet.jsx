@@ -2,7 +2,12 @@
  * Input surface for Eating compose — kept off the presentation feed.
  */
 
+import { useEffect } from "react";
 import EatingCompose from "./EatingCompose.jsx";
+import {
+  CLEAR_STUCK_MEDIA_CHROME_EVENT,
+  restoreDocumentScroll,
+} from "./pendingHighlightMedia.js";
 
 export default function EatingComposeSheet({
   open,
@@ -26,6 +31,19 @@ export default function EatingComposeSheet({
   inviteMeOutCandidates = [],
   initialWhereType = null,
 }) {
+  useEffect(() => {
+    if (!open) return undefined;
+    function onForceClose() {
+      if (!busy) onClose?.();
+    }
+    window.addEventListener(CLEAR_STUCK_MEDIA_CHROME_EVENT, onForceClose);
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener(CLEAR_STUCK_MEDIA_CHROME_EVENT, onForceClose);
+      restoreDocumentScroll();
+    };
+  }, [open, onClose, busy]);
+
   if (!open) return null;
 
   async function handleSubmit(payload) {

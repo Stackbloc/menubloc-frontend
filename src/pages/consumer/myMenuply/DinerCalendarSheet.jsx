@@ -6,6 +6,10 @@ import { useEffect } from "react";
 import { createPortal } from "react-dom";
 import EatingHubCalendar from "./EatingHubCalendar.jsx";
 import { formatPlanBracketDate, ymdInMonth } from "./dinerHubFormat.js";
+import {
+  CLEAR_STUCK_MEDIA_CHROME_EVENT,
+  restoreDocumentScroll,
+} from "./pendingHighlightMedia.js";
 
 function formatChipDate(ymd) {
   const raw = String(ymd || "").trim();
@@ -59,12 +63,16 @@ export default function DinerCalendarSheet({
     function onKey(event) {
       if (event.key === "Escape") onClose();
     }
+    function onForceClose() {
+      onClose?.();
+    }
     window.addEventListener("keydown", onKey);
-    const prev = document.body.style.overflow;
+    window.addEventListener(CLEAR_STUCK_MEDIA_CHROME_EVENT, onForceClose);
     document.body.style.overflow = "hidden";
     return () => {
       window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prev;
+      window.removeEventListener(CLEAR_STUCK_MEDIA_CHROME_EVENT, onForceClose);
+      restoreDocumentScroll();
     };
   }, [open, onClose]);
 

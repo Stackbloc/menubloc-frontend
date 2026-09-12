@@ -267,7 +267,18 @@ test("Feed shell: Home|Waiter|Share My QR|X|Deals|Shop|Profile + slim X sheet", 
   assert.match(read("src/components/consumer/feed/DealVideoSwipe.jsx"), /tearDownFeedVideoElement/);
   assert.match(read("src/components/consumer/feed/DealVideoSwipe.jsx"), /useLayoutEffect/);
   assert.match(read("src/components/share/ShareModal.jsx"), /CLEAR_STUCK_MEDIA_CHROME_EVENT/);
+  assert.match(read("src/components/share/ShareModal.jsx"), /restoreDocumentScroll/);
+  assert.doesNotMatch(read("src/components/share/ShareModal.jsx"), /const previousOverflow/);
   assert.match(read("src/components/InviteToEatModal.jsx"), /CLEAR_STUCK_MEDIA_CHROME_EVENT/);
+  assert.match(read("src/components/MenuplyActionSheet.jsx"), /restoreDocumentScroll/);
+  assert.match(read("src/components/MenuplyActionSheet.jsx"), /CLEAR_STUCK_MEDIA_CHROME_EVENT/);
+  assert.match(read("src/pages/consumer/myMenuply/DinerCalendarSheet.jsx"), /restoreDocumentScroll/);
+  assert.match(read("src/pages/consumer/myMenuply/EatingComposeSheet.jsx"), /CLEAR_STUCK_MEDIA_CHROME_EVENT/);
+  assert.match(read("src/pages/consumer/myMenuply/EventComposeSheet.jsx"), /CLEAR_STUCK_MEDIA_CHROME_EVENT/);
+  assert.match(
+    read("src/pages/consumer/myMenuply/pendingHighlightMedia.js"),
+    /see-whos-eating-fullscreen/
+  );
   assert.match(
     read("src/pages/consumer/myMenuply/SeeWhosEatingFullscreen.jsx"),
     /useLayoutEffect/

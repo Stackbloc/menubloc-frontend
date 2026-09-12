@@ -8,6 +8,10 @@ import { createPortal } from "react-dom";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useConsumer } from "../context/ConsumerContext.jsx";
 import { myMenuplyProfileHref } from "../lib/myMenuplyRoutes.js";
+import {
+  CLEAR_STUCK_MEDIA_CHROME_EVENT,
+  restoreDocumentScroll,
+} from "../pages/consumer/myMenuply/pendingHighlightMedia.js";
 
 function inviteToEatPath(pathname) {
   const parts = String(pathname || "").split("/").filter(Boolean);
@@ -218,12 +222,16 @@ export default function MenuplyActionSheet({ open, onClose }) {
     function onKey(event) {
       if (event.key === "Escape") onClose();
     }
+    function onForceClose() {
+      onClose?.();
+    }
     window.addEventListener("keydown", onKey);
-    const prev = document.body.style.overflow;
+    window.addEventListener(CLEAR_STUCK_MEDIA_CHROME_EVENT, onForceClose);
     document.body.style.overflow = "hidden";
     return () => {
       window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prev;
+      window.removeEventListener(CLEAR_STUCK_MEDIA_CHROME_EVENT, onForceClose);
+      restoreDocumentScroll();
     };
   }, [open, onClose, initialOpen]);
 

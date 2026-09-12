@@ -10,7 +10,7 @@ import ProfileViewModeToggle from "../../components/consumer/feed/ProfileViewMod
 import ShareModal from "../../components/share/ShareModal.jsx";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
 import { useFeedShellDesktop } from "../../lib/useFeedShellDesktop.js";
-import { clearStuckMediaChrome } from "./myMenuply/pendingHighlightMedia.js";
+import { clearStuckMediaChrome, CLEAR_STUCK_MEDIA_CHROME_EVENT } from "./myMenuply/pendingHighlightMedia.js";
 import {
   createDiningCrew,
   deleteDiningCrew,
@@ -298,6 +298,15 @@ export default function MyMenuplyPage() {
   const [crewInvitePeopleOpen, setCrewInvitePeopleOpen] = useState(false);
   const [crewInviteTarget, setCrewInviteTarget] = useState(null);
   const [hubFocus, setHubFocus] = useState("");
+
+  useEffect(() => {
+    if (!crewComposeOpen) return undefined;
+    function onForceClose() {
+      setCrewComposeOpen(false);
+    }
+    window.addEventListener(CLEAR_STUCK_MEDIA_CHROME_EVENT, onForceClose);
+    return () => window.removeEventListener(CLEAR_STUCK_MEDIA_CHROME_EVENT, onForceClose);
+  }, [crewComposeOpen]);
   const [planPrefill, setPlanPrefill] = useState(null);
   const [planVideoPlan, setPlanVideoPlan] = useState(null);
   const locationCity = profile?.primary_location?.city_name || null;

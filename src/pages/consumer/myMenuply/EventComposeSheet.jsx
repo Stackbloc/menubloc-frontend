@@ -7,6 +7,10 @@
 import { useEffect, useState } from "react";
 import MenuplyMediaPicker from "../../../components/social/MenuplyMediaPicker.jsx";
 import { whatIAteTodayLocalDate } from "../../../lib/consumerApi.js";
+import {
+  CLEAR_STUCK_MEDIA_CHROME_EVENT,
+  restoreDocumentScroll,
+} from "./pendingHighlightMedia.js";
 
 export default function EventComposeSheet({
   open,
@@ -29,6 +33,19 @@ export default function EventComposeSheet({
     setJoinMeOpen(Boolean(initialJoinMeOpen));
     setLocalError("");
   }, [open, initialJoinMeOpen]);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    function onForceClose() {
+      if (!busy) onClose?.();
+    }
+    window.addEventListener(CLEAR_STUCK_MEDIA_CHROME_EVENT, onForceClose);
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener(CLEAR_STUCK_MEDIA_CHROME_EVENT, onForceClose);
+      restoreDocumentScroll();
+    };
+  }, [open, onClose, busy]);
 
   if (!open) return null;
 
