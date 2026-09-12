@@ -1,8 +1,10 @@
 /**
  * E2E — Feed home → My Menuply → bottom nav still clickable.
  *
- * Regression: feedHome See Who's Eating body portal leftover covered Profile;
- * only Share My QR (higher z-index sheet) still worked.
+ * Root cause (feed-as-home): `/` used to mount a second FeedShell via children while
+ * Profile lived under `/feed/*`. Leaving Feed for Profile rebuilt the shell and left
+ * mobile primary tabs dead (Share My QR still opened a sheet).
+ * Fix: HomeRoot redirects `/` → `/feed` (one shell + Outlet).
  *
  * Lab:
  *   npx playwright test tests/playwright/feedHomeToProfileNav.e2e.spec.js \
@@ -98,6 +100,26 @@ async function mockApis(page) {
 test.describe("Feed home → Profile bottom nav", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
+  test("apex / redirects into one Feed shell; Profile then Deals/Home stay clickable", async ({ page }) => {
+    await mockApis(page);
+    // Feed-as-home entry: must not mount a second shell on `/`.
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    await expect(page).toHaveURL(/\/feed\/?$/, { timeout: 30_000 });
+    await expect(page.getByTestId("feed-shell")).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId("feed-primary-nav")).toBeVisible({ timeout: 15_000 });
+
+    await page.getByTestId("feed-nav-profile").click();
+    await expect(page).toHaveURL(/\/feed\/profile/);
+    await expect(page.getByTestId("feed-shell")).toBeVisible();
+
+    await page.getByTestId("feed-nav-deals").click();
+    await expect(page).toHaveURL(/\/feed\/deals/);
+
+    await page.getByTestId("feed-nav-profile").click();
+    await page.getByTestId("feed-nav-home").click();
+    await expect(page).toHaveURL(/\/feed\/?$/);
+  });
+
   test("after Feed→Profile, Home Deals Waiter Search navigate; feed reel unmounts", async ({ page }) => {
     await mockApis(page);
     await page.goto("/feed", { waitUntil: "domcontentloaded" });
@@ -144,5 +166,29 @@ test.describe("Feed home → Profile bottom nav", () => {
     await page.getByTestId("feed-nav-profile").click();
     await expect(page.getByTestId("feed-video-create-sheet")).toHaveCount(0);
     await expect(page).toHaveURL(/\/feed\/profile/);
+  });
+});
+
+test.describe("Feed home → Profile desktop rail", () => {
+  test.use({ viewport: { width: 1280, height: 800 } });
+
+  test("apex / → Profile → Deals/Home via desktop rail (same single shell)", async ({ page }) => {
+    await mockApis(page);
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    await expect(page).toHaveURL(/\/feed\/?$/, { timeout: 30_000 });
+    await expect(page.getByTestId("feed-shell")).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId("feed-desktop-rail")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId("feed-primary-nav")).toHaveCount(0);
+
+    await page.getByTestId("feed-nav-profile-desktop").click();
+    await expect(page).toHaveURL(/\/feed\/profile/);
+    await expect(page.getByTestId("feed-desktop-rail")).toBeVisible();
+
+    await page.getByTestId("feed-nav-deals-desktop").click();
+    await expect(page).toHaveURL(/\/feed\/deals/);
+
+    await page.getByTestId("feed-nav-profile-desktop").click();
+    await page.getByTestId("feed-nav-home-desktop").click();
+    await expect(page).toHaveURL(/\/feed\/?$/);
   });
 });

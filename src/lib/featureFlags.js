@@ -28,7 +28,7 @@ export function isNewHomepageEnabled() {
 
 /**
  * Video-first Feed as `/` (default live home).
- * HomeRoot mounts Feed shell + FeedPrimaryNav; nav targets stay `/feed/*`.
+ * HomeRoot redirects `/` → `/feed` (single FeedShell + Outlet). Nav targets stay `/feed/*`.
  * Roll back with VITE_FEED_AS_HOME=0 (HomeNext at `/`) or VITE_USE_LEGACY_HOME=1.
  * HomeNext preserved at `/home-next`. Parallel `/feed` routes always available.
  */

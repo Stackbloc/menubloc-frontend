@@ -322,20 +322,28 @@ test("Feed shell: Home|Waiter|Share My QR|X|Deals|Shop|Profile + slim X sheet", 
   assert.match(compose, /from\s*["']\.\/eatingPlaceLink\.js["']/);
 });
 
-test("Feed as home: / uses Feed shell; FeedPrimaryNav paths unchanged", () => {
+test("Feed as home: / redirects to /feed; FeedPrimaryNav paths unchanged", () => {
   const flags = read("src/lib/featureFlags.js");
   assert.match(flags, /export function isFeedAsHomeEnabled/);
   assert.match(flags, /isExplicitlyFalse\(import\.meta\.env\.VITE_FEED_AS_HOME\)/);
 
   const homeRoot = read("src/pages/HomeRoot.jsx");
   assert.match(homeRoot, /isFeedAsHomeEnabled\(\)/);
-  assert.match(homeRoot, /FeedShellPage/);
-  assert.match(homeRoot, /FeedHomePage/);
+  // Single shell: do not mount a second FeedShell via children on `/`.
+  assert.match(homeRoot, /Navigate to="\/feed"/);
+  assert.doesNotMatch(homeRoot, /import FeedShellPage/);
+  assert.doesNotMatch(homeRoot, /import FeedHomePage/);
   assert.doesNotMatch(homeRoot, /BottomNav/);
+  // Device-agnostic: no mobile-only branch around the redirect.
+  assert.doesNotMatch(homeRoot, /isDesktop|useFeedShellDesktop|matchMedia/);
 
   const nav = read("src/components/consumer/feed/FeedPrimaryNav.jsx");
   assert.match(nav, /FEED_LEFT_TABS/);
   assert.match(nav, /FEED_RIGHT_TABS/);
+  const desktopRail = read("src/components/consumer/feed/FeedDesktopRail.jsx");
+  assert.match(desktopRail, /feed-desktop-rail/);
+  assert.match(desktopRail, /navigate\(tab\.to/);
+  assert.match(desktopRail, /clearStuckMediaChrome/);
 
   const feedLinks = read("src/lib/feedShellLinks.js");
   assert.match(feedLinks, /to: "\/feed"/);
