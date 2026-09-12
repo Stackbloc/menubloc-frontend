@@ -10,9 +10,9 @@
 set -euo pipefail
 
 HOST="${1:-https://menuply.com}"
-# Locked tip 2026-09-12: menubloc-frontend-owubpaie2-menuply.vercel.app / index-IlGk7Y_L.js (FE 747a2b88;BE b53dd366;Feed-as-home single shell: / redirects to /feed)
-LOCKED_BUNDLE="index-IlGk7Y_L.js"
-LOCKED_DEPLOY="menubloc-frontend-owubpaie2-menuply.vercel.app"
+# Locked tip 2026-09-12: menubloc-frontend-2su74l7ww-menuply.vercel.app / index-BONRqGSP.js (FE 30528a8b;BE 4d3f33f7;mobile Feed playing → Profile nav (body portal + reel teardown))
+LOCKED_BUNDLE="index-BONRqGSP.js"
+LOCKED_DEPLOY="menubloc-frontend-2su74l7ww-menuply.vercel.app"
 
 html=$(curl -sSL -m 25 -H 'Cache-Control: no-cache' "${HOST}/?gate=$(date +%s)")
 bundle=$(printf '%s' "$html" | grep -oE 'index-[A-Za-z0-9_-]+\.js' | head -1)
