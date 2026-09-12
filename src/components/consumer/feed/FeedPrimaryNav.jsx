@@ -2,84 +2,56 @@
  * TikTok-style feed shell nav: Home · Waiter · Share My QR | [X] | Deals · Search · Profile.
  * Share My QR opens the diner QR share sheet. Menu Browser lives on the video rail/dock.
  * Mobile bottom bar only — desktop uses FeedDesktopRail from the same tab config.
+ *
+ * All tabs use the same button/navigate click path (not raw NavLink default). After Feed
+ * home, body touch-action leftovers made <a> NavLinks look dead while Share My QR worked.
  */
 
-import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import MenuplyXMark from "../../MenuplyXMark.jsx";
 import { FEED_LEFT_TABS, FEED_RIGHT_TABS } from "../../../lib/feedShellLinks.js";
 import { clearStuckMediaChrome } from "../../../pages/consumer/myMenuply/pendingHighlightMedia.js";
 
 export const FEED_PRIMARY_NAV_HEIGHT = 56;
 
-function TabLink({ tab, onShareQr }) {
+function tabIsActive(tab, pathname) {
+  if (tab.alsoActiveOn?.includes(pathname)) return true;
+  if (tab.end) {
+    return pathname === tab.to || pathname === `${tab.to}/`;
+  }
+  return pathname === tab.to || pathname.startsWith(`${tab.to}/`);
+}
+
+function TabControl({ tab, onShareQr }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const alsoActive = tab.alsoActiveOn?.includes(location.pathname);
+  const active = tabIsActive(tab, location.pathname);
 
-  if (tab.openShareQr) {
-    return (
-      <button
-        type="button"
-        data-testid={tab.testId}
-        aria-label="Share My QR"
-        onClick={() => {
-          clearStuckMediaChrome();
-          onShareQr?.();
-        }}
-        style={{
-          ...styles.tab,
-          ...styles.tabButton,
-          color: "rgba(255,255,255,0.72)",
-          fontWeight: 600,
-        }}
-      >
-        {tab.label}
-      </button>
-    );
-  }
-
-  if (tab.resetSearch) {
-    return (
-      <NavLink
-        to={tab.to}
-        end={tab.end}
-        data-testid={tab.testId}
-        onClick={(event) => {
-          clearStuckMediaChrome();
-          event.preventDefault();
-          navigate(tab.to, { replace: true });
-        }}
-        style={({ isActive }) => {
-          const active = isActive || alsoActive;
-          return {
-            ...styles.tab,
-            color: active ? "#5eead4" : "rgba(255,255,255,0.72)",
-            fontWeight: active ? 800 : 600,
-          };
-        }}
-      >
-        {tab.label}
-      </NavLink>
-    );
+  function go() {
+    clearStuckMediaChrome();
+    if (tab.openShareQr) {
+      onShareQr?.();
+      return;
+    }
+    navigate(tab.to, { replace: Boolean(tab.resetSearch) });
   }
 
   return (
-    <NavLink
-      to={tab.to}
-      end={tab.end}
+    <button
+      type="button"
       data-testid={tab.testId}
-      onClick={() => clearStuckMediaChrome()}
-      style={({ isActive }) => {
-        const active = isActive || alsoActive;
-        return {
-          ...styles.tab,
-          color: active ? "#5eead4" : "rgba(255,255,255,0.72)",
-          fontWeight: active ? 800 : 600,
-        };
+      aria-label={tab.openShareQr ? "Share My QR" : tab.label}
+      aria-current={active && !tab.openShareQr ? "page" : undefined}
+      onClick={go}
+      style={{
+        ...styles.tab,
+        ...styles.tabButton,
+        color: active && !tab.openShareQr ? "#5eead4" : "rgba(255,255,255,0.72)",
+        fontWeight: active && !tab.openShareQr ? 800 : 600,
       }}
     >
       {tab.label}
-    </NavLink>
+    </button>
   );
 }
 
@@ -97,7 +69,7 @@ export default function FeedPrimaryNav({
     >
       <div style={styles.side}>
         {FEED_LEFT_TABS.map((tab) => (
-          <TabLink key={tab.testId} tab={tab} onShareQr={onShareQr} />
+          <TabControl key={tab.testId} tab={tab} onShareQr={onShareQr} />
         ))}
       </div>
       <button
@@ -116,7 +88,7 @@ export default function FeedPrimaryNav({
       </button>
       <div style={styles.side}>
         {FEED_RIGHT_TABS.map((tab) => (
-          <TabLink key={tab.testId} tab={tab} onShareQr={onShareQr} />
+          <TabControl key={tab.testId} tab={tab} onShareQr={onShareQr} />
         ))}
       </div>
     </nav>

@@ -230,6 +230,8 @@ test("Feed shell: Home|Waiter|Share My QR|X|Deals|Shop|Profile + slim X sheet", 
   assert.match(shellPage, /FeedMorePanel/);
   assert.match(shellPage, /useFeedShellDesktop/);
   assert.match(shellPage, /clearStuckMediaChrome/);
+  assert.match(shellPage, /CLEAR_STUCK_MEDIA_CHROME_EVENT/);
+  assert.match(shellPage, /closeShellOverlays/);
   assert.match(shellPage, /\[location\.pathname\]/);
   assert.match(shellPage, /setCreateSheetOpen\(false\)/);
   assert.match(shellPage, /setShareMenuplyOpen\(false\)/);
@@ -245,6 +247,16 @@ test("Feed shell: Home|Waiter|Share My QR|X|Deals|Shop|Profile + slim X sheet", 
   // Nav above stuck compose sheets (~350–360); camera (13000) still clears on route change.
   assert.match(read("src/components/consumer/feed/FeedPrimaryNav.jsx"), /zIndex:\s*400/);
   assert.match(read("src/components/consumer/feed/FeedPrimaryNav.jsx"), /clearStuckMediaChrome/);
+  // Same click path as Share My QR — navigate via button, not raw <a> NavLink.
+  assert.match(read("src/components/consumer/feed/FeedPrimaryNav.jsx"), /navigate\(tab\.to/);
+  assert.doesNotMatch(
+    read("src/components/consumer/feed/FeedPrimaryNav.jsx"),
+    /import \{[^}]*NavLink/
+  );
+  assert.match(
+    read("src/pages/consumer/myMenuply/pendingHighlightMedia.js"),
+    /touchAction/
+  );
   assert.doesNotMatch(desktopRail, /ProfileViewModeToggle/);
   assert.match(desktopRail, /zIndex:\s*60/);
   assert.match(read("src/components/consumer/feed/ProfileViewModeToggle.jsx"), /profile-view-mode-toggle/);

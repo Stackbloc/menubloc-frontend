@@ -131,4 +131,18 @@ test.describe("Feed home → Profile bottom nav", () => {
     await page.getByTestId("feed-nav-waiter").click();
     await expect(page).toHaveURL(/\/waiter/);
   });
+
+  test("Multiplier closes when tapping a primary tab without route change", async ({ page }) => {
+    await mockApis(page);
+    await page.goto("/feed/profile", { waitUntil: "domcontentloaded" });
+    await expect(page.getByTestId("feed-shell")).toBeVisible({ timeout: 30_000 });
+
+    await page.getByTestId("feed-nav-create-x").click();
+    await expect(page.getByTestId("feed-video-create-sheet")).toBeVisible({ timeout: 10_000 });
+
+    // Same route — pathname effect alone would leave Multiplier open.
+    await page.getByTestId("feed-nav-profile").click();
+    await expect(page.getByTestId("feed-video-create-sheet")).toHaveCount(0);
+    await expect(page).toHaveURL(/\/feed\/profile/);
+  });
 });

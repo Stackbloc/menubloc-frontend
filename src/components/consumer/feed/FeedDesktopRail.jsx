@@ -2,7 +2,7 @@
  * TikTok desktop-style left rail — same Feed primary tabs + guest auth + More.
  */
 
-import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { BrandLogo } from "../../BrandLogo.jsx";
 import MenuplyXMark from "../../MenuplyXMark.jsx";
 import FeedMenuCaptureCameraIcon from "./FeedMenuCaptureCameraIcon.jsx";
@@ -16,61 +16,42 @@ import {
   FEED_SHELL_LOGIN_PATH,
   FEED_SHELL_SIGNUP_PATH,
 } from "../../../lib/feedShellLinks.js";
+import { clearStuckMediaChrome } from "../../../pages/consumer/myMenuply/pendingHighlightMedia.js";
 
 function RailTab({ tab, onShareQr }) {
   const location = useLocation();
   const navigate = useNavigate();
   const alsoActive = tab.alsoActiveOn?.includes(location.pathname);
+  const pathActive =
+    tab.end
+      ? location.pathname === tab.to || location.pathname === `${tab.to}/`
+      : location.pathname === tab.to || location.pathname.startsWith(`${tab.to}/`);
+  const active = Boolean(alsoActive || pathActive);
 
-  if (tab.openShareQr) {
-    return (
-      <button
-        type="button"
-        data-testid={`${tab.testId}-desktop`}
-        aria-label="Share My QR"
-        onClick={() => onShareQr?.()}
-        style={{
-          ...styles.tab,
-          ...styles.tabButton,
-        }}
-      >
-        {tab.label}
-      </button>
-    );
-  }
-
-  if (tab.resetSearch) {
-    return (
-      <NavLink
-        to={tab.to}
-        end={tab.end}
-        data-testid={`${tab.testId}-desktop`}
-        onClick={(event) => {
-          event.preventDefault();
-          navigate(tab.to, { replace: true });
-        }}
-        style={({ isActive }) => ({
-          ...styles.tab,
-          ...(isActive || alsoActive ? styles.tabActive : null),
-        })}
-      >
-        {tab.label}
-      </NavLink>
-    );
+  function go() {
+    clearStuckMediaChrome();
+    if (tab.openShareQr) {
+      onShareQr?.();
+      return;
+    }
+    navigate(tab.to, { replace: Boolean(tab.resetSearch) });
   }
 
   return (
-    <NavLink
-      to={tab.to}
-      end={tab.end}
+    <button
+      type="button"
       data-testid={`${tab.testId}-desktop`}
-      style={({ isActive }) => ({
+      aria-label={tab.openShareQr ? "Share My QR" : tab.label}
+      aria-current={active && !tab.openShareQr ? "page" : undefined}
+      onClick={go}
+      style={{
         ...styles.tab,
-        ...(isActive || alsoActive ? styles.tabActive : null),
-      })}
+        ...styles.tabButton,
+        ...(active && !tab.openShareQr ? styles.tabActive : null),
+      }}
     >
       {tab.label}
-    </NavLink>
+    </button>
   );
 }
 

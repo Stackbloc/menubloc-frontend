@@ -47,6 +47,10 @@ export function restoreDocumentScroll() {
   document.documentElement.style.overflow = "";
   document.body.style.pointerEvents = "";
   document.documentElement.style.pointerEvents = "";
+  // Feed reel (and DealVideoSwipe) set touchAction=none on body; if cleanup races
+  // with route change, NavLinks look dead while <button> Share My QR still works.
+  document.body.style.touchAction = "";
+  document.documentElement.style.touchAction = "";
 }
 
 /** Sheets listen and force-close when Edit·Connect / nav need the UI back. */

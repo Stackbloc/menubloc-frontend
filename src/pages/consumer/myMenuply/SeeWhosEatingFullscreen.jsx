@@ -187,8 +187,11 @@ export default function SeeWhosEatingFullscreen({
     return () => window.removeEventListener(MENUPY_CLOSE_LIVE_FEED_FULLSCREEN, onForcedClose);
   }, [onClose]);
 
-  // Lock page scroll while the reel owns the viewport.
+  // Modal reel portals over the page — lock body scroll/touch.
+  // Feed home is in-shell (absolute); do NOT touch body — leftovers make NavLinks
+  // dead after Feed → Profile while Share My QR (<button>) still works.
   useEffect(() => {
+    if (isFeedHome) return undefined;
     const prevOverflow = document.body.style.overflow;
     const prevTouch = document.body.style.touchAction;
     document.body.style.overflow = "hidden";
@@ -197,7 +200,7 @@ export default function SeeWhosEatingFullscreen({
       document.body.style.overflow = prevOverflow;
       document.body.style.touchAction = prevTouch;
     };
-  }, []);
+  }, [isFeedHome]);
 
   useEffect(() => {
     const el = videoRef.current;
@@ -553,10 +556,16 @@ export default function SeeWhosEatingFullscreen({
           top: 0,
           left: 0,
           right: 0,
-          bottom: navInset,
+          // Match FeedPrimaryNav height (56 + safe-area); plain px under-covers on iPhone.
+          bottom:
+            navInset > 0
+              ? `calc(${navInset}px + env(safe-area-inset-bottom, 0px))`
+              : 0,
           width: "auto",
           height: "auto",
           paddingBottom: 0,
+          // Clicks on the shell nav must never hit this layer.
+          pointerEvents: "auto",
         }
       : null),
   };

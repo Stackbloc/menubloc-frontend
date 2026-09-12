@@ -16,7 +16,7 @@ import FeedShareMyMenuplySheet from "../../../components/consumer/feed/FeedShare
 import FeedVideoComposeOverlay from "../../../components/consumer/feed/FeedVideoComposeOverlay.jsx";
 import { useConsumer } from "../../../context/ConsumerContext.jsx";
 import { useFeedShellDesktop } from "../../../lib/useFeedShellDesktop.js";
-import { clearStuckMediaChrome } from "../myMenuply/pendingHighlightMedia.js";
+import { clearStuckMediaChrome, CLEAR_STUCK_MEDIA_CHROME_EVENT } from "../myMenuply/pendingHighlightMedia.js";
 import {
   buildProfileViewSearchParams,
   readConnectViewFromWindow,
@@ -42,12 +42,24 @@ export default function FeedShellPage({ children = null }) {
   const [composeInitialWhere, setComposeInitialWhere] = useState(null);
   const [moreOpen, setMoreOpen] = useState(false);
   const [shareMenuplyOpen, setShareMenuplyOpen] = useState(false);
+  /** Prevent CLEAR_STUCK listener from immediately undoing openCreate / open QR. */
+  const openingShellOverlayRef = useRef(null);
 
   // Shell-owned UI state — do not trust location.search alone (can lag the address bar).
   const [previewAsConnect, setPreviewAsConnect] = useState(() => readConnectViewFromWindow());
   const previewAsConnectRef = useRef(previewAsConnect);
   previewAsConnectRef.current = previewAsConnect;
   const showProfileViewToggle = isAuthenticated && isOwnFeedProfilePath(location.pathname);
+
+  function closeShellOverlays(except = null) {
+    if (except !== "create") setCreateSheetOpen(false);
+    setComposeCategory("");
+    setComposeMediaSource("camera");
+    setComposeOpenLibrary(false);
+    setComposeInitialWhere(null);
+    setMoreOpen(false);
+    if (except !== "share") setShareMenuplyOpen(false);
+  }
 
   // Browser back/forward only — never re-derive from stale React Router search after toggle.
   useEffect(() => {
@@ -93,21 +105,26 @@ export default function FeedShellPage({ children = null }) {
     };
   }, [isDesktop]);
 
-  // Close Multiplier / compose / More / QR sheets on route change so they cannot
-  // cover Profile (or other tabs) after leaving Feed home.
+  // Close Multiplier / compose / More / QR on route change.
   useEffect(() => {
-    setCreateSheetOpen(false);
-    setComposeCategory("");
-    setComposeMediaSource("camera");
-    setComposeOpenLibrary(false);
-    setComposeInitialWhere(null);
-    setMoreOpen(false);
-    setShareMenuplyOpen(false);
+    closeShellOverlays();
   }, [location.pathname]);
 
+  // Same-route nav taps (e.g. Profile while Multiplier open) do not change pathname —
+  // still close Multiplier/compose when clearStuckMediaChrome fires from the nav.
+  useEffect(() => {
+    function onClearStuck() {
+      closeShellOverlays(openingShellOverlayRef.current);
+    }
+    window.addEventListener(CLEAR_STUCK_MEDIA_CHROME_EVENT, onClearStuck);
+    return () => window.removeEventListener(CLEAR_STUCK_MEDIA_CHROME_EVENT, onClearStuck);
+  }, []);
+
   function openCreateSheet() {
+    openingShellOverlayRef.current = "create";
     clearStuckMediaChrome();
     setCreateSheetOpen(true);
+    openingShellOverlayRef.current = null;
   }
 
   function closeCreateSheet() {
@@ -171,7 +188,10 @@ export default function FeedShellPage({ children = null }) {
       navigate(guestPath.startsWith("/") ? guestPath : `/${guestPath}`);
       return;
     }
+    openingShellOverlayRef.current = "share";
+    clearStuckMediaChrome();
     setShareMenuplyOpen(true);
+    openingShellOverlayRef.current = null;
   }
 
   const createActive = createSheetOpen || Boolean(composeCategory) || shareMenuplyOpen;
