@@ -21,11 +21,15 @@ function formatWhen(ev) {
   const t = String(ev?.start_time || "").trim();
   if (!d) return t || null;
   try {
-    const dt = new Date(`${d}T12:00:00`);
+    // Date-only: format in UTC so LA vs UTC midnight does not flip the weekday.
+    const [y, m, dayNum] = d.split("-").map((p) => Number(p));
+    if (!y || !m || !dayNum) return [d, t].filter(Boolean).join(" · ");
+    const dt = new Date(Date.UTC(y, m - 1, dayNum, 12));
     const day = dt.toLocaleDateString(undefined, {
       weekday: "short",
       month: "short",
       day: "numeric",
+      timeZone: "UTC",
     });
     return t ? `${day} · ${t}` : day;
   } catch {
@@ -97,6 +101,7 @@ export default function DinerSocialEventDetailPage() {
   const when = formatWhen(event);
   const going = members.filter((m) => m.response_status === "going");
   const maybe = members.filter((m) => m.response_status === "maybe");
+  const isPast = event?.is_past === true;
 
   return (
     <>
@@ -111,16 +116,22 @@ export default function DinerSocialEventDetailPage() {
 
         {event ? (
           <>
-            <p style={styles.eyebrow}>My Event</p>
+            <p style={styles.eyebrow}>{isPast ? "Past event" : "My Event"}</p>
             <h1 style={styles.title}>{event.title}</h1>
             {when ? <p style={styles.meta}>{when}</p> : null}
             {event.location_label ? <p style={styles.meta}>{event.location_label}</p> : null}
             {event.description ? <p style={styles.description}>{event.description}</p> : null}
 
             <div style={styles.actions}>
-              <button type="button" style={styles.primary} onClick={onInvite}>
-                Invite people
-              </button>
+              {isPast ? (
+                <p style={styles.muted} data-testid="event-ended-notice">
+                  This event has already ended — invites are closed.
+                </p>
+              ) : (
+                <button type="button" style={styles.primary} onClick={onInvite}>
+                  Invite people
+                </button>
+              )}
             </div>
 
             <section style={styles.section} data-testid="event-members">

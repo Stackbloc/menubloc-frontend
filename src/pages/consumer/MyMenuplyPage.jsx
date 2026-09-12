@@ -147,6 +147,19 @@ async function maybeFollowRestaurant(restaurantId) {
 function formatEventWhen(ev) {
   const raw = ev?.starts_at || ev?.event_date;
   if (!raw) return "";
+  const ymd = String(raw).trim();
+  if (/^\d{4}-\d{2}-\d{2}/.test(ymd)) {
+    const [y, m, d] = ymd.slice(0, 10).split("-").map((p) => Number(p));
+    if (y && m && d) {
+      const dt = new Date(Date.UTC(y, m - 1, d, 12));
+      return dt.toLocaleDateString(undefined, {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+        timeZone: "UTC",
+      });
+    }
+  }
   const d = new Date(raw);
   if (Number.isNaN(d.getTime())) return "";
   return d.toLocaleString(undefined, { weekday: "short", month: "short", day: "numeric" });
@@ -2312,7 +2325,7 @@ export default function MyMenuplyPage() {
                       name={ev.title}
                       href={`/account/social-events/${ev.id}`}
                       meta={[
-                        "Yours",
+                        ev.is_past ? "Ended" : "Yours",
                         formatEventWhen(ev),
                         ev.start_time || null,
                         ev.location_label || null,

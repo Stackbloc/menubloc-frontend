@@ -112,7 +112,8 @@ export default function SocialEventJoinPage() {
   }
 
   const organizer = event.organizer_display_name || "A diner";
-  const joinClosed = !event.join_me_open;
+  const isPast = event.is_past === true;
+  const joinClosed = isPast || !event.join_me_open;
 
   return (
     <div style={styles.page} data-testid="social-event-join-landing">
@@ -129,7 +130,11 @@ export default function SocialEventJoinPage() {
           </p>
         ) : null}
 
-        {joinClosed ? (
+        {isPast ? (
+          <p style={styles.notice} data-testid="social-event-ended">
+            This event has already ended — RSVPs are closed.
+          </p>
+        ) : joinClosed ? (
           <p style={styles.notice}>Join Me is not open for this event. You can still view the details.</p>
         ) : responded ? (
           <p style={styles.success} data-testid="social-event-responded">
