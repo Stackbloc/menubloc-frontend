@@ -19,6 +19,7 @@ import { createPortal } from "react-dom";
 import { useLanguage } from "../../context/LanguageContext.jsx";
 import { buildShareLinks, copyText, normalizeConsumerShareUrl, trackShareEvent } from "./shareUtils.js";
 import { trackMenuShare } from "../../lib/analytics.js";
+import { CLEAR_STUCK_MEDIA_CHROME_EVENT } from "../../pages/consumer/myMenuply/pendingHighlightMedia.js";
 
 const ACTION_KEYS = [
   { key: "copy", labelKey: "share.copyLink", fallback: "Copy Link" },
@@ -99,11 +100,16 @@ export default function ShareModal({
     function handleKeyDown(event) {
       if (event.key === "Escape") onClose?.();
     }
+    function onForceClose() {
+      onClose?.();
+    }
 
     window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener(CLEAR_STUCK_MEDIA_CHROME_EVENT, onForceClose);
     return () => {
       document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener(CLEAR_STUCK_MEDIA_CHROME_EVENT, onForceClose);
     };
   }, [open, onClose]);
 

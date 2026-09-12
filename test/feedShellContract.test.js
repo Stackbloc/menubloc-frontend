@@ -244,8 +244,9 @@ test("Feed shell: Home|Waiter|Share My QR|X|Deals|Shop|Profile + slim X sheet", 
   assert.match(shellPage, /buildProfileViewSearchParams/);
   assert.match(mobileHeader, /ProfileViewModeToggle/);
   assert.match(mobileHeader, /zIndex:\s*55/);
-  // Nav above stuck compose sheets (~350–360); camera (13000) still clears on route change.
-  assert.match(read("src/components/consumer/feed/FeedPrimaryNav.jsx"), /zIndex:\s*400/);
+  // Nav above ShareModal (1200) and stuck compose (~350–360); camera (13000) still clears on route change.
+  assert.match(read("src/components/consumer/feed/FeedPrimaryNav.jsx"), /zIndex:\s*1300/);
+  assert.match(read("src/components/consumer/feed/FeedPrimaryNav.jsx"), /createPortal\(nav,\s*document\.body\)/);
   assert.match(read("src/components/consumer/feed/FeedPrimaryNav.jsx"), /clearStuckMediaChrome/);
   // Same click path as Share My QR — navigate via button, not raw <a> NavLink.
   assert.match(read("src/components/consumer/feed/FeedPrimaryNav.jsx"), /navigate\(tab\.to/);
@@ -258,7 +259,21 @@ test("Feed shell: Home|Waiter|Share My QR|X|Deals|Shop|Profile + slim X sheet", 
     /touchAction/
   );
   assert.doesNotMatch(desktopRail, /ProfileViewModeToggle/);
-  assert.match(desktopRail, /zIndex:\s*60/);
+  assert.match(desktopRail, /zIndex:\s*1300/);
+  assert.match(shellPage, /isAuthenticated/);
+  assert.match(shellPage, /pageshow/);
+  assert.match(read("src/components/consumer/feed/DealVideoSwipe.jsx"), /if \(containInShell\) return undefined/);
+  assert.match(read("src/components/consumer/feed/DealVideoSwipe.jsx"), /restoreDocumentScroll/);
+  assert.match(read("src/components/share/ShareModal.jsx"), /CLEAR_STUCK_MEDIA_CHROME_EVENT/);
+  assert.match(read("src/components/InviteToEatModal.jsx"), /CLEAR_STUCK_MEDIA_CHROME_EVENT/);
+  assert.match(
+    read("src/pages/consumer/myMenuply/SeeWhosEatingFullscreen.jsx"),
+    /useLayoutEffect/
+  );
+  assert.match(
+    read("src/pages/consumer/myMenuply/SeeWhosEatingFullscreen.jsx"),
+    /clearStuckMediaChrome/
+  );
   assert.match(read("src/components/consumer/feed/ProfileViewModeToggle.jsx"), /profile-view-mode-toggle/);
   assert.match(
     read("src/pages/consumer/myMenuply/pendingHighlightMedia.js"),

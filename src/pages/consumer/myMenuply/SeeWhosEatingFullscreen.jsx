@@ -4,7 +4,7 @@
  * Screen name → Connect request when signed in; guests → login.
  */
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import ShareButton from "../../../components/share/ShareButton.jsx";
@@ -50,6 +50,7 @@ import {
 } from "../../../lib/feedVerticalReelNavigationCopy.js";
 import MenuplyAccountInviteCard from "../../../components/consumer/MenuplyAccountInviteCard.jsx";
 import { wrapEndlessFeedNext } from "../../../lib/shuffleProfileVideos.js";
+import { clearStuckMediaChrome, restoreDocumentScroll } from "./pendingHighlightMedia.js";
 
 const SWIPE_MIN_PX = 56;
 
@@ -188,17 +189,35 @@ export default function SeeWhosEatingFullscreen({
   }, [onClose]);
 
   // Modal reel portals over the page — lock body scroll/touch.
-  // Feed home is in-shell (absolute); do NOT touch body — leftovers make NavLinks
-  // dead after Feed → Profile while Share My QR (<button>) still works.
+  // Feed home is in-shell (absolute); do NOT touch body — leftovers make primary
+  // tabs look dead after Feed → Profile while Share My QR still opens a sheet.
+  // Always clear locks on unmount (do not restore a prior touchAction=none).
   useEffect(() => {
     if (isFeedHome) return undefined;
-    const prevOverflow = document.body.style.overflow;
-    const prevTouch = document.body.style.touchAction;
     document.body.style.overflow = "hidden";
     document.body.style.touchAction = "none";
     return () => {
-      document.body.style.overflow = prevOverflow;
-      document.body.style.touchAction = prevTouch;
+      restoreDocumentScroll();
+    };
+  }, [isFeedHome]);
+
+  // Playing Feed → Profile: tear down the <video> compositor layer and any body locks
+  // before Profile paints. iOS especially can leave a dead hit-target over the nav.
+  useLayoutEffect(() => {
+    if (!isFeedHome) return undefined;
+    return () => {
+      const el = videoRef.current;
+      if (el) {
+        try {
+          el.pause();
+          el.removeAttribute("src");
+          el.load();
+        } catch {
+          /* ignore */
+        }
+      }
+      restoreDocumentScroll();
+      clearStuckMediaChrome();
     };
   }, [isFeedHome]);
 
@@ -546,29 +565,27 @@ export default function SeeWhosEatingFullscreen({
     isDesktopViewport && item?.video_url && videoMuted && !managerForcedMute
   );
   const navInset = isFeedHome ? Math.max(0, Number(bottomInset) || 0) : 0;
-  const overlayStyle = {
-    ...styles.overlay,
-    // Modal reel still portals to body; feed home is positioned inside the shell body.
-    ...(isFeedHome
-      ? {
-          position: "absolute",
-          zIndex: 1,
-          top: 0,
-          left: 0,
-          right: 0,
-          // Match FeedPrimaryNav height (56 + safe-area); plain px under-covers on iPhone.
-          bottom:
-            navInset > 0
-              ? `calc(${navInset}px + env(safe-area-inset-bottom, 0px))`
-              : 0,
-          width: "auto",
-          height: "auto",
-          paddingBottom: 0,
-          // Clicks on the shell nav must never hit this layer.
-          pointerEvents: "auto",
-        }
-      : null),
-  };
+  // Feed home: do NOT spread styles.overlay (fixed + inset:0 + 100dvh + zIndex 200000).
+  // Those leftovers fight bottom inset and can cover the mobile primary nav while video plays.
+  const overlayStyle = isFeedHome
+    ? {
+        position: "absolute",
+        zIndex: 1,
+        top: 0,
+        left: 0,
+        right: 0,
+        // Match FeedPrimaryNav height (56 + safe-area); plain px under-covers on iPhone.
+        bottom:
+          navInset > 0
+            ? `calc(${navInset}px + env(safe-area-inset-bottom, 0px))`
+            : 0,
+        boxSizing: "border-box",
+        background: "#000",
+        overflow: "hidden",
+        overscrollBehavior: "none",
+        pointerEvents: "auto",
+      }
+    : { ...styles.overlay };
 
   if (!item && isFeedHome) {
     const empty = (

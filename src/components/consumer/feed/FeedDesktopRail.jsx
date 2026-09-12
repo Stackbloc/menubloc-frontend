@@ -152,7 +152,7 @@ const styles = {
     left: 0,
     bottom: 0,
     width: FEED_DESKTOP_RAIL_WIDTH,
-    zIndex: 60,
+    zIndex: 1300,
     display: "flex",
     flexDirection: "column",
     padding: "16px 12px calc(12px + env(safe-area-inset-bottom))",

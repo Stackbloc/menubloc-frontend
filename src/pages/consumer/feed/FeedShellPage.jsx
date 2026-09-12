@@ -90,6 +90,20 @@ export default function FeedShellPage({ children = null }) {
     clearStuckMediaChrome();
   }, [location.pathname]);
 
+  // Guest → signed-in while shell stays mounted (or remounts after login return).
+  useEffect(() => {
+    clearStuckMediaChrome();
+  }, [isAuthenticated]);
+
+  // bfcache / Safari restore can revive body touchAction locks without React cleanups.
+  useEffect(() => {
+    function onPageShow(event) {
+      if (event?.persisted) clearStuckMediaChrome();
+    }
+    window.addEventListener("pageshow", onPageShow);
+    return () => window.removeEventListener("pageshow", onPageShow);
+  }, []);
+
   useEffect(() => {
     document.documentElement.style.setProperty(
       "--feed-primary-nav-h",

@@ -19,6 +19,7 @@ import {
   listInviteMessageOptions,
   pickInviteCopySeed,
 } from "../lib/eatInviteShareCopy.js";
+import { CLEAR_STUCK_MEDIA_CHROME_EVENT } from "../pages/consumer/myMenuply/pendingHighlightMedia.js";
 
 function tomorrowIsoDate() {
   const d = new Date();
@@ -99,6 +100,16 @@ export default function InviteToEatModal({
     setShareOpen(false);
     autoShareOpenedRef.current = false;
   }, [open, diningCrewId, initialInviteKind, initialInviteeName, initialSeedCode]);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    function onForceClose() {
+      setShareOpen(false);
+      onClose?.();
+    }
+    window.addEventListener(CLEAR_STUCK_MEDIA_CHROME_EVENT, onForceClose);
+    return () => window.removeEventListener(CLEAR_STUCK_MEDIA_CHROME_EVENT, onForceClose);
+  }, [open, onClose]);
 
   useEffect(() => {
     if (!created?.url || !autoOpenShareOnReady || autoShareOpenedRef.current) return;

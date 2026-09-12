@@ -3,10 +3,12 @@
  * Share My QR opens the diner QR share sheet. Menu Browser lives on the video rail/dock.
  * Mobile bottom bar only — desktop uses FeedDesktopRail from the same tab config.
  *
- * All tabs use the same button/navigate click path (not raw NavLink default). After Feed
- * home, body touch-action leftovers made <a> NavLinks look dead while Share My QR worked.
+ * Portaled to document.body so a playing Feed reel (or leftover compositing layer) cannot
+ * sit above the tabs after Feed → Profile. Share My QR opens a sheet in-place; other tabs
+ * navigate — both must receive the same hit-testing.
  */
 
+import { createPortal } from "react-dom";
 import { useLocation, useNavigate } from "react-router-dom";
 import MenuplyXMark from "../../MenuplyXMark.jsx";
 import { FEED_LEFT_TABS, FEED_RIGHT_TABS } from "../../../lib/feedShellLinks.js";
@@ -60,7 +62,7 @@ export default function FeedPrimaryNav({
   createActive = false,
   onShareQr,
 }) {
-  return (
+  const nav = (
     <nav
       style={styles.nav}
       data-testid="feed-primary-nav"
@@ -93,6 +95,10 @@ export default function FeedPrimaryNav({
       </div>
     </nav>
   );
+
+  if (typeof document === "undefined") return nav;
+  // Body portal: survives Feed-home stacking / iOS video layers after Profile.
+  return createPortal(nav, document.body);
 }
 
 const styles = {
@@ -101,9 +107,9 @@ const styles = {
     left: 0,
     right: 0,
     bottom: 0,
-    // Above orphaned media overlays and Feed compose sheets (350–360).
-    // Intentional camera sheet uses ~13000–15000 and must close on route change.
-    zIndex: 400,
+    // Above ShareModal (1200) and stuck compose (~350–360) so primary taps can
+    // dismiss overlays via clearStuckMediaChrome. Camera sheets (~13000) still win.
+    zIndex: 1300,
     height: `calc(${FEED_PRIMARY_NAV_HEIGHT}px + env(safe-area-inset-bottom, 0px))`,
     paddingBottom: "env(safe-area-inset-bottom, 0px)",
     display: "flex",

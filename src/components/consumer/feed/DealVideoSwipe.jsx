@@ -12,6 +12,7 @@ import InviteToEatModal from "../../InviteToEatModal.jsx";
 import BrowseMenusIcon from "../../icons/BrowseMenusIcon.jsx";
 import FeedMenuBrowserPipOverlay from "./FeedMenuBrowserPipOverlay.jsx";
 import FeedVideoActionRail from "./FeedVideoActionRail.jsx";
+import { restoreDocumentScroll } from "../../../pages/consumer/myMenuply/pendingHighlightMedia.js";
 import { stripMediaUrlFragment } from "../../../lib/menuplyLiveFeedControl.js";
 import { OPEN_FEED_MENU_BROWSER_EVENT } from "../../../lib/feedMenuBrowserNav.js";
 import {
@@ -121,16 +122,17 @@ export default function DealVideoSwipe({
     });
   }, [browseSession, index, item?.id, items]);
 
+  // Modal / body-portaled reel: lock scroll. In-shell Feed Deals must NOT touch body —
+  // restoring a prior touchAction=none (or racing clearStuck) leaves primary nav dead
+  // after Deals → Profile while Share My QR still opens a sheet.
   useEffect(() => {
-    const prevOverflow = document.body.style.overflow;
-    const prevTouch = document.body.style.touchAction;
+    if (containInShell) return undefined;
     document.body.style.overflow = "hidden";
     document.body.style.touchAction = "none";
     return () => {
-      document.body.style.overflow = prevOverflow;
-      document.body.style.touchAction = prevTouch;
+      restoreDocumentScroll();
     };
-  }, []);
+  }, [containInShell]);
 
   useEffect(() => {
     const el = videoRef.current;

@@ -126,15 +126,26 @@ test.describe("Feed home → Profile bottom nav", () => {
     await expect(page.getByTestId("feed-shell")).toBeVisible({ timeout: 30_000 });
     await expect(page.getByTestId("feed-primary-nav")).toBeVisible({ timeout: 15_000 });
 
-    // Feed home reel may or may not appear depending on API shape; Profile path is the bug.
+    // Signed-in repro: let the reel mount/play before leaving for Profile.
+    await expect(page.getByTestId("see-whos-eating-fullscreen")).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page.getByTestId("see-whos-eating-video-tap")).toBeVisible({
+      timeout: 15_000,
+    });
+    await page.waitForTimeout(400);
+
     await page.getByTestId("feed-nav-profile").click();
     await expect(page).toHaveURL(/\/feed\/profile/);
     await expect(page.getByTestId("feed-shell")).toBeVisible();
+    await expect(page.getByTestId("my-menuply-page")).toBeVisible({ timeout: 15_000 });
 
     // Leftover body-portaled feedHome reel must not remain after leaving Feed home.
     await expect(page.locator('[data-testid="see-whos-eating-fullscreen"][data-variant="feedHome"]')).toHaveCount(
       0
     );
+    // Mobile nav is body-portaled and must still be the hit target.
+    await expect(page.getByTestId("feed-primary-nav")).toBeVisible();
 
     await page.getByTestId("feed-nav-home").click();
     await expect(page).toHaveURL(/\/(feed\/?)?$/);
@@ -166,6 +177,71 @@ test.describe("Feed home → Profile bottom nav", () => {
     await page.getByTestId("feed-nav-profile").click();
     await expect(page.getByTestId("feed-video-create-sheet")).toHaveCount(0);
     await expect(page).toHaveURL(/\/feed\/profile/);
+  });
+
+  test("guest Feed → Profile → sign-in return keeps primary nav clickable", async ({ page }) => {
+    let authed = false;
+    await page.route("**/api/**", async (route) => {
+      const url = route.request().url();
+      const method = route.request().method();
+      if (url.includes("/api/consumer-auth/me")) {
+        if (!authed) {
+          return route.fulfill({
+            status: 401,
+            contentType: "application/json",
+            body: JSON.stringify({ error: "unauthorized" }),
+          });
+        }
+        return route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify(SESSION),
+        });
+      }
+      if (url.includes("see-whos-eating") || url.includes("live-feed") || url.includes("feed/videos")) {
+        return route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({ ok: true, items: [FEED_ITEM], videos: [FEED_ITEM] }),
+        });
+      }
+      if (url.includes("/api/consumer/profile") && !url.includes("/media") && method === "GET") {
+        return route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            profile: {
+              display_name: "E2E Diner",
+              diner_about: "",
+              invite_me_out_audience: "none",
+              diner_social_defaults: null,
+              profile_completion: { needs_primary_location: false },
+            },
+            consumer: SESSION.consumer,
+          }),
+        });
+      }
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(emptyListBody()),
+      });
+    });
+
+    await page.goto("/feed", { waitUntil: "domcontentloaded" });
+    await expect(page.getByTestId("feed-shell")).toBeVisible({ timeout: 30_000 });
+    await page.getByTestId("feed-nav-profile").click();
+    await expect(page.getByTestId("feed-guest-profile-landing")).toBeVisible({ timeout: 15_000 });
+
+    // Login return: same next=/feed/profile path as FeedGuestProfileLanding sign-in.
+    authed = true;
+    await page.goto("/feed/profile", { waitUntil: "domcontentloaded" });
+    await expect(page.getByTestId("my-menuply-page")).toBeVisible({ timeout: 30_000 });
+
+    await page.getByTestId("feed-nav-deals").click();
+    await expect(page).toHaveURL(/\/feed\/deals/);
+    await page.getByTestId("feed-nav-home").click();
+    await expect(page).toHaveURL(/\/feed\/?$/);
   });
 });
 
