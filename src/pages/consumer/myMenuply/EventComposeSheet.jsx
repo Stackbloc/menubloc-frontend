@@ -1,5 +1,5 @@
 /**
- * Create a diner social event — Edit View + Add, or Multiplier compose=event.
+ * Create or edit a diner social event — Edit View + Add, or Multiplier compose=event.
  * Food is optional; general social events (concerts, birthdays, campus, etc.).
  * Join Me eligibility is per event instance (not a section-wide default).
  */
@@ -13,13 +13,32 @@ import {
   restoreDocumentScroll,
 } from "./pendingHighlightMedia.js";
 
+function dateOnly(value) {
+  const s = String(value || "").trim();
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+  return whatIAteTodayLocalDate();
+}
+
+function timeOnly(value) {
+  const s = String(value || "").trim();
+  if (!s) return "";
+  // "08:00:00" or "08:00"
+  const m = s.match(/^(\d{1,2}:\d{2})/);
+  return m ? m[1].padStart(5, "0") : "";
+}
+
 export default function EventComposeSheet({
   open,
   onClose,
   busy = false,
   onSubmit,
   joinCandidates = [],
+  /** Existing event → edit mode (per-instance Join Me like What's cookin' Add details). */
+  initialEvent = null,
 }) {
+  const editingId = initialEvent?.id != null ? Number(initialEvent.id) : null;
+  const isEdit = Number.isFinite(editingId) && editingId > 0;
+
   const [title, setTitle] = useState("");
   const [eventDate, setEventDate] = useState(() => whatIAteTodayLocalDate());
   const [startTime, setStartTime] = useState("");
@@ -33,11 +52,36 @@ export default function EventComposeSheet({
 
   useEffect(() => {
     if (!open) return;
-    setJoinMeOpen(false);
-    setJoinAudience("connections");
-    setJoinAllowedUserIds([]);
+    if (isEdit && initialEvent) {
+      setTitle(String(initialEvent.title || ""));
+      setEventDate(dateOnly(initialEvent.event_date));
+      setStartTime(timeOnly(initialEvent.start_time));
+      setLocationLabel(String(initialEvent.location_label || ""));
+      setDescription(String(initialEvent.description || ""));
+      const openJoin = Boolean(initialEvent.join_me_open);
+      setJoinMeOpen(openJoin);
+      const aud = String(initialEvent.join_audience || "").toLowerCase();
+      setJoinAudience(aud === "selected" ? "selected" : "connections");
+      setJoinAllowedUserIds(
+        openJoin && aud === "selected"
+          ? (initialEvent.join_allowed_user_ids || []).map((id) => Number(id)).filter(Boolean)
+          : []
+      );
+    } else {
+      setTitle("");
+      setEventDate(whatIAteTodayLocalDate());
+      setStartTime("");
+      setLocationLabel("");
+      setDescription("");
+      setJoinMeOpen(false);
+      setJoinAudience("connections");
+      setJoinAllowedUserIds([]);
+    }
+    setFile(null);
     setLocalError("");
-  }, [open]);
+    // Prefill once when sheet opens (or switches create ↔ edit target).
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: editingId + open only
+  }, [open, editingId]);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -68,6 +112,7 @@ export default function EventComposeSheet({
     setLocalError("");
     try {
       await onSubmit?.({
+        eventId: isEdit ? editingId : null,
         title: nextTitle,
         eventDate,
         startTime: String(startTime || "").trim() || null,
@@ -89,7 +134,7 @@ export default function EventComposeSheet({
       setFile(null);
       onClose?.();
     } catch (err) {
-      setLocalError(err?.message || "Unable to create event");
+      setLocalError(err?.message || (isEdit ? "Unable to update event" : "Unable to create event"));
     }
   }
 
@@ -105,12 +150,12 @@ export default function EventComposeSheet({
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="My Events"
+        aria-label={isEdit ? "Edit event" : "My Events"}
         style={styles.panel}
         onClick={(e) => e.stopPropagation()}
       >
         <div style={styles.head}>
-          <p style={styles.title}>My Events</p>
+          <p style={styles.title}>{isEdit ? "Edit event" : "My Events"}</p>
           <button
             type="button"
             style={styles.close}
@@ -122,7 +167,9 @@ export default function EventComposeSheet({
           </button>
         </div>
         <p style={styles.lead}>
-          Create an event. Turn on Join Me for this event only — pick who can see and join.
+          {isEdit
+            ? "Turn Join Me on or off for this event only — same as What’s cookin’ plans."
+            : "Create an event. Turn on Join Me for this event only — pick who can see and join."}
         </p>
         <form onSubmit={handleSubmit} style={styles.form} data-testid="event-compose-form">
           <MenuplyMediaPicker
@@ -233,7 +280,7 @@ export default function EventComposeSheet({
             style={styles.submit}
             data-testid="event-compose-submit"
           >
-            {busy ? "…" : "Post to My Events"}
+            {busy ? "…" : isEdit ? "Save event" : "Post to My Events"}
           </button>
         </form>
       </div>
@@ -288,28 +335,29 @@ const styles = {
     gap: 6,
     fontSize: 12,
     fontWeight: 700,
-    color: "#475467",
+    color: "#475569",
   },
   input: {
+    appearance: "none",
     border: "1px solid #e2e8f0",
-    borderRadius: 12,
+    borderRadius: 10,
     padding: "10px 12px",
-    font: "inherit",
     fontSize: 15,
+    font: "inherit",
     color: "#0f172a",
+    background: "#fff",
   },
-  error: { margin: 0, fontSize: 13, color: "#b91c1c", fontWeight: 600 },
   submit: {
     appearance: "none",
     border: "none",
     borderRadius: 12,
     padding: "12px 16px",
-    background: "linear-gradient(135deg, #0f766e, #115e59)",
-    color: "#fff",
-    font: "inherit",
-    fontWeight: 800,
     fontSize: 15,
+    fontWeight: 800,
+    color: "#fff",
+    background: "linear-gradient(135deg, #16a34a, #15803d)",
     cursor: "pointer",
-    minHeight: 48,
+    marginTop: 4,
   },
+  error: { margin: 0, fontSize: 13, color: "#b91c1c", fontWeight: 600 },
 };

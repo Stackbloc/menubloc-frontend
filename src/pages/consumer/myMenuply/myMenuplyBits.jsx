@@ -579,12 +579,16 @@ export function NamedShareCard({
   deleteBusy = false,
   deleteLabel,
   joinMeHref = null,
+  /** Owner Edit View — open Join Me settings for this instance (events). */
+  onEditJoinMe = null,
+  editJoinMeLabel = "Join Me",
 }) {
   const navigate = useNavigate();
   const title = String(name || "").trim() || "Untitled";
   const canDelete = typeof onDelete === "function";
   const { open, dismiss, consumeArmedClick, bind } = useLongPressReveal(canDelete);
   const joinHref = String(joinMeHref || "").trim() || null;
+  const canEditJoinMe = typeof onEditJoinMe === "function";
 
   function handleDelete(e) {
     e.preventDefault();
@@ -655,6 +659,24 @@ export function NamedShareCard({
           >
             Join Me
           </Link>
+        ) : null}
+        {canEditJoinMe ? (
+          <button
+            type="button"
+            style={{
+              ...(joinHref ? s.chipBtn : s.primaryBtn),
+              appearance: "none",
+              cursor: "pointer",
+              font: "inherit",
+            }}
+            data-testid="named-share-edit-join-me"
+            onClick={(e) => {
+              e.stopPropagation();
+              onEditJoinMe();
+            }}
+          >
+            {editJoinMeLabel}
+          </button>
         ) : null}
         {onInvite ? (
           <button

@@ -39,6 +39,7 @@ import {
   listMyVenueEvents,
   listDinerSocialEvents,
   createDinerSocialEvent,
+  updateDinerSocialEvent,
   ensureDinerSocialEventShareLink,
   listPendingEatInvitePeople,
   listWantToEat,
@@ -306,6 +307,7 @@ export default function MyMenuplyPage() {
   pendingHighlightsRef.current = pendingHighlights;
   const [crewComposeOpen, setCrewComposeOpen] = useState(false);
   const [eventComposeOpen, setEventComposeOpen] = useState(false);
+  const [eventComposeTarget, setEventComposeTarget] = useState(null);
   const [inviteCrewPickerOpen, setInviteCrewPickerOpen] = useState(false);
   const [inviteEventPickerOpen, setInviteEventPickerOpen] = useState(false);
   const [crewInvitePeopleOpen, setCrewInvitePeopleOpen] = useState(false);
@@ -492,6 +494,7 @@ export default function MyMenuplyPage() {
         return () => window.clearTimeout(timer);
       }
       if (compose === "event") {
+        setEventComposeTarget(null);
         setEventComposeOpen(true);
         clearComposeParams();
         const timer = window.setTimeout(() => {
@@ -1654,6 +1657,7 @@ export default function MyMenuplyPage() {
   }
 
   async function postSocialEvent({
+    eventId,
     title,
     eventDate,
     startTime,
@@ -1664,6 +1668,8 @@ export default function MyMenuplyPage() {
     joinAllowedUserIds,
     file,
   }) {
+    const editingId = eventId != null ? Number(eventId) : null;
+    const isEdit = Number.isFinite(editingId) && editingId > 0;
     setPostBusy("events");
     setError("");
     try {
@@ -1673,7 +1679,7 @@ export default function MyMenuplyPage() {
         const up = await uploadWhatIAteTodayPhoto(file);
         ({ photo_url, video_url } = eatingMediaFromUpload(up));
       }
-      const data = await createDinerSocialEvent({
+      const body = {
         title,
         event_date: eventDate,
         start_time: startTime,
@@ -1687,21 +1693,46 @@ export default function MyMenuplyPage() {
           : "none",
         join_allowed_user_ids:
           joinMeOpen && joinAudience === "selected" ? joinAllowedUserIds || [] : [],
-        photo_url,
-        video_url,
-      });
-      const created = data?.event;
-      if (created?.id) {
-        setSocialEvents((prev) => [created, ...(prev || []).filter((row) => Number(row.id) !== Number(created.id))]);
+        ...(photo_url || video_url ? { photo_url, video_url } : {}),
+      };
+      const data = isEdit
+        ? await updateDinerSocialEvent(editingId, body)
+        : await createDinerSocialEvent(body);
+      const saved = data?.event;
+      if (saved?.id) {
+        setSocialEvents((prev) => {
+          const rest = (prev || []).filter((row) => Number(row.id) !== Number(saved.id));
+          return isEdit ? [saved, ...rest] : [saved, ...rest];
+        });
       }
+      setEventComposeTarget(null);
       await load();
     } catch (err) {
-      const message = err.message || "Unable to create event";
+      const message = err.message || (isEdit ? "Unable to update event" : "Unable to create event");
       setError(message);
       throw err instanceof Error ? err : new Error(message);
     } finally {
       setPostBusy("");
     }
+  }
+
+  function openSocialEventCompose(ev = null) {
+    setEventComposeTarget(ev || null);
+    setEventComposeOpen(true);
+  }
+
+  function closeSocialEventCompose() {
+    setEventComposeOpen(false);
+    setEventComposeTarget(null);
+  }
+
+  function socialEventJoinHref(ev) {
+    if (!ev || ev.is_past || !ev.join_me_open) return "";
+    const token = String(ev.invitation_token || "").trim();
+    if (token) return `/join-event/${encodeURIComponent(token)}`;
+    const url = String(ev.join_url || "").trim();
+    if (url.startsWith("/")) return url;
+    return "";
   }
 
   function openShare(shareData, { modalTitle, analyticsContext }) {
@@ -2292,7 +2323,7 @@ export default function MyMenuplyPage() {
                         type="button"
                         style={hubEditStyles.compactAdd}
                         data-testid="my-events-compose-open"
-                        onClick={() => setEventComposeOpen(true)}
+                        onClick={() => openSocialEventCompose(null)}
                       >
                         <span aria-hidden="true">+</span> Add
                       </button>
@@ -2337,6 +2368,15 @@ export default function MyMenuplyPage() {
                       onDelete={previewAsConnect ? undefined : () => onSocialEventDelete(ev)}
                       deleteBusy={postBusy === `social-event-delete-${ev.id}`}
                       deleteLabel={`Delete event ${ev.title || ""}`.trim()}
+                      joinMeHref={
+                        previewAsConnect ? undefined : socialEventJoinHref(ev) || undefined
+                      }
+                      onEditJoinMe={
+                        previewAsConnect || ev.is_past
+                          ? undefined
+                          : () => openSocialEventCompose(ev)
+                      }
+                      editJoinMeLabel={ev.join_me_open ? "Edit Join Me" : "Turn on Join Me"}
                     />
                   ))}
                   {events.slice(0, 4).map((ev) => (
@@ -2370,12 +2410,19 @@ export default function MyMenuplyPage() {
               )}
             </section>
 
+            {!previewAsConnect ? (
+              <p style={{ ...s.muted, fontSize: 12, marginTop: -8, marginBottom: 16 }}>
+                Join Me is per event — tap Turn on Join Me on a card (same idea as What’s cookin’).
+              </p>
+            ) : null}
+
             <EventComposeSheet
               open={eventComposeOpen && !previewAsConnect}
-              onClose={() => setEventComposeOpen(false)}
+              onClose={closeSocialEventCompose}
               busy={postBusy === "events"}
               onSubmit={postSocialEvent}
               joinCandidates={joinCandidates}
+              initialEvent={eventComposeTarget}
             />
 
             <PlanVideoAttachSheet

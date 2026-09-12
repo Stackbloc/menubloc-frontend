@@ -70,6 +70,17 @@ test("EventComposeSheet sets Join Me per event with audience picker", () => {
   assert.match(sheet, /JoinMeAudiencePicker/);
   assert.match(sheet, /joinAudience/);
   assert.match(sheet, /joinAllowedUserIds/);
-  assert.doesNotMatch(sheet, /initialJoinMeOpen/);
-  assert.match(sheet, /setJoinMeOpen\(false\)/);
+  assert.match(sheet, /initialEvent/);
+  assert.match(sheet, /Open to Join Me|joinable=\{joinMeOpen\}/);
+  assert.match(sheet, /Save event/);
+});
+
+test("My events cards expose per-event Turn on / Edit Join Me", () => {
+  const page = read("src/pages/consumer/MyMenuplyPage.jsx");
+  const bits = read("src/pages/consumer/myMenuply/myMenuplyBits.jsx");
+  assert.match(page, /onEditJoinMe/);
+  assert.match(page, /Turn on Join Me/);
+  assert.match(page, /updateDinerSocialEvent/);
+  assert.match(bits, /named-share-edit-join-me/);
+  assert.match(bits, /onEditJoinMe/);
 });

@@ -21,9 +21,13 @@ test("Plans and events do not mount section-wide Join Me presets", () => {
 
 test("Event create posts per-event join_audience", () => {
   const page = read("src/pages/consumer/MyMenuplyPage.jsx");
+  const api = read("src/lib/consumerApi.js");
   assert.match(page, /join_audience/);
   assert.match(page, /join_allowed_user_ids/);
   assert.match(page, /createDinerSocialEvent/);
+  assert.match(page, /updateDinerSocialEvent/);
+  assert.match(api, /updateDinerSocialEvent/);
+  assert.match(api, /method: "PATCH"/);
 });
 
 test("Peer hub loads eligible social events for Join Me", () => {

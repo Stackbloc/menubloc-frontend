@@ -725,6 +725,8 @@ export const listPeerDinerSocialEvents = (peerId) =>
 export const getDinerSocialEvent = (eventId) =>
   get(`/api/consumer/social-events/${encodeURIComponent(String(eventId))}`);
 export const createDinerSocialEvent = (body) => post("/api/consumer/social-events", body);
+export const updateDinerSocialEvent = (eventId, body) =>
+  patch(`/api/consumer/social-events/${encodeURIComponent(String(eventId))}`, body);
 export const deleteDinerSocialEvent = (eventId) =>
   del(`/api/consumer/social-events/${encodeURIComponent(String(eventId))}`);
 export const ensureDinerSocialEventShareLink = (eventId) =>

@@ -89,6 +89,35 @@ async function mockApis(page) {
       });
     }
 
+    if (
+      url.includes("/api/consumer/social-events") &&
+      !url.includes("/connections/") &&
+      method === "GET"
+    ) {
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          ok: true,
+          events: [
+            {
+              id: 9001,
+              title: "Thanksgiving dinner",
+              event_date: "2026-11-26",
+              start_time: null,
+              location_label: null,
+              description: null,
+              join_me_open: false,
+              join_audience: "none",
+              join_allowed_user_ids: [],
+              is_past: false,
+              kind: "diner_social",
+            },
+          ],
+        }),
+      });
+    }
+
     return route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -343,7 +372,7 @@ test.describe("Feed home → Profile bottom nav", () => {
     }
   });
 
-  test("Profile Edit View has no section Join Me preset; event compose is per-instance", async ({
+  test("Profile Edit View has no section Join Me preset; event Join Me is per card", async ({
     page,
   }) => {
     await mockApis(page);
@@ -354,10 +383,17 @@ test.describe("Feed home → Profile bottom nav", () => {
     await expect(page.getByTestId("preset-events")).toHaveCount(0);
     await expect(page.getByText("Join Me is On", { exact: false })).toHaveCount(0);
 
-    await page.getByTestId("my-events-compose-open").click();
+    await expect(page.getByTestId("named-share-edit-join-me").first()).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page.getByTestId("named-share-edit-join-me").first()).toHaveText(
+      "Turn on Join Me"
+    );
+    await page.getByTestId("named-share-edit-join-me").first().click();
     await expect(page.getByTestId("event-compose-sheet")).toBeVisible({ timeout: 10_000 });
     await expect(page.getByTestId("event-compose-join-me")).toBeVisible();
     await expect(page.getByText("Open to Join Me")).toBeVisible();
+    await expect(page.getByTestId("event-compose-submit")).toHaveText("Save event");
   });
 });
 
