@@ -42,6 +42,8 @@ const chipOn = {
   color: "#166534",
 };
 
+const EMPTY_FAVORITE_FOODS = Object.freeze([]);
+
 /**
  * One profile-settings panel: occupation / school / hometown / hobbies /
  * gender / birthday / favorite foods — single Save, then collapse.
@@ -51,11 +53,15 @@ export default function DinerPersonalContextEditor({
   value = null,
   dateOfBirth = "",
   dinerSex = "",
-  favoriteFoods = [],
+  favoriteFoods = EMPTY_FAVORITE_FOODS,
   busy = false,
   onSave,
 }) {
-  const normalizedFavorites = normalizeFavoriteFoods(favoriteFoods);
+  const favoriteList = Array.isArray(favoriteFoods) ? favoriteFoods : EMPTY_FAVORITE_FOODS;
+  const favoriteFoodsKey = favoriteList
+    .map((item) => (typeof item === "string" ? item : String(item?.key || "")))
+    .join(",");
+  const normalizedFavorites = normalizeFavoriteFoods(favoriteList);
   const hasContext = buildDinerPersonalContextLines(value || {}).length > 0;
   const hasProfileBits =
     hasContext ||
@@ -82,7 +88,7 @@ export default function DinerPersonalContextEditor({
     });
     setDob(dateOfBirth || "");
     setSex(dinerSex || "");
-    setFavorites(normalizeFavoriteFoods(favoriteFoods));
+    setFavorites(normalizeFavoriteFoods(favoriteList));
   }, [
     editing,
     value?.diner_education_status,
@@ -92,7 +98,7 @@ export default function DinerPersonalContextEditor({
     value?.diner_hobbies,
     dateOfBirth,
     dinerSex,
-    favoriteFoods,
+    favoriteFoodsKey,
   ]);
 
   function toggleFavorite(opt) {

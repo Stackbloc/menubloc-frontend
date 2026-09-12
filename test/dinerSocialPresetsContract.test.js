@@ -30,6 +30,16 @@ test("DinerSocialPresetsPanel scopes Take Me Out / Join Me / Join Crew", () => {
   assert.match(panel, /variant="preset"/);
 });
 
+test("DinerSocialPresetsPanel uses stable empty defaults (Edit View max-update-depth)", () => {
+  const panel = read("src/pages/consumer/myMenuply/DinerSocialPresetsPanel.jsx");
+  // Default `= []` recreates array identity every render → sync useEffect loops →
+  // React Router pushState updates the URL while Edit View paint stays stuck.
+  assert.match(panel, /EMPTY_ID_LIST = Object\.freeze\(\[\]\)/);
+  assert.match(panel, /inviteMeOutSelectedIds = EMPTY_ID_LIST/);
+  assert.match(panel, /selectedIdsKey/);
+  assert.doesNotMatch(panel, /inviteMeOutSelectedIds = \[\]/);
+});
+
 test("Edit View audience pickers use quiet preset variant", () => {
   const invite = read("src/pages/consumer/myMenuply/InviteMeOutAudiencePicker.jsx");
   const join = read("src/pages/consumer/myMenuply/JoinMeAudiencePicker.jsx");

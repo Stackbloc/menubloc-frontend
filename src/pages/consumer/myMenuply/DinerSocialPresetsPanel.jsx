@@ -11,6 +11,10 @@ import * as s from "./myMenuplyStyles.js";
 
 const SCOPES = new Set(["wanna-eat", "plans", "events", "crews"]);
 
+/** Stable empties — default `= []` is a new array every render and infinite-loops sync effects. */
+const EMPTY_ID_LIST = Object.freeze([]);
+const EMPTY_CANDIDATES = Object.freeze([]);
+
 function normalizeJoinBlock(raw, { withCapacity = false } = {}) {
   const src = raw && typeof raw === "object" ? raw : {};
   const open = src.open === true || src.enabled === true;
@@ -70,26 +74,29 @@ export default function DinerSocialPresetsPanel({
   scope = "wanna-eat",
   inviteMeOutOpen = false,
   inviteMeOutAudience = "connections",
-  inviteMeOutSelectedIds = [],
-  inviteMeOutCandidates = [],
+  inviteMeOutSelectedIds = EMPTY_ID_LIST,
+  inviteMeOutCandidates = EMPTY_CANDIDATES,
   onInviteMeOutSave,
   inviteMeOutToggleBusy = false,
   dinerSocialDefaults = null,
   onDinerSocialDefaultsSave,
   socialDefaultsBusy = false,
-  joinCandidates = [],
+  joinCandidates = EMPTY_CANDIDATES,
 }) {
   const activeScope = SCOPES.has(scope) ? scope : "wanna-eat";
   const defaults = parseDinerSocialDefaults(dinerSocialDefaults);
   const busy = Boolean(inviteMeOutToggleBusy || socialDefaultsBusy);
+  const selectedIds = Array.isArray(inviteMeOutSelectedIds)
+    ? inviteMeOutSelectedIds
+    : EMPTY_ID_LIST;
+  // Primitive dep so omitted/empty props do not re-trigger every render.
+  const selectedIdsKey = selectedIds.map((id) => String(id)).join(",");
 
   const [draftInviteOpen, setDraftInviteOpen] = useState(Boolean(inviteMeOutOpen));
   const [draftInviteAudience, setDraftInviteAudience] = useState(
     inviteMeOutAudience === "selected" ? "selected" : "connections"
   );
-  const [draftInviteIds, setDraftInviteIds] = useState(
-    Array.isArray(inviteMeOutSelectedIds) ? inviteMeOutSelectedIds : []
-  );
+  const [draftInviteIds, setDraftInviteIds] = useState(() => [...selectedIds]);
 
   const [draftPlans, setDraftPlans] = useState(defaults.plans_join_me);
   const [draftPlansCapacity, setDraftPlansCapacity] = useState(
@@ -101,8 +108,8 @@ export default function DinerSocialPresetsPanel({
   useEffect(() => {
     setDraftInviteOpen(Boolean(inviteMeOutOpen));
     setDraftInviteAudience(inviteMeOutAudience === "selected" ? "selected" : "connections");
-    setDraftInviteIds(Array.isArray(inviteMeOutSelectedIds) ? inviteMeOutSelectedIds : []);
-  }, [inviteMeOutOpen, inviteMeOutAudience, inviteMeOutSelectedIds]);
+    setDraftInviteIds(selectedIds.map((id) => id));
+  }, [inviteMeOutOpen, inviteMeOutAudience, selectedIdsKey]);
 
   useEffect(() => {
     const next = parseDinerSocialDefaults(dinerSocialDefaults);
