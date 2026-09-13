@@ -58,6 +58,16 @@ test("ConsumerCameraSheet hybrid: desktop MediaRecorder + phone native capture",
   assert.doesNotMatch(sheet, /inputRef\.current\?\.click\(\)/);
 });
 
+test("ConsumerCameraSheet portals to body + keeps Record actions in viewport", () => {
+  const sheet = read("src/components/consumer/ConsumerCameraSheet.jsx");
+  assert.match(sheet, /createPortal/);
+  assert.match(sheet, /createPortal\(sheetUi,\s*document\.body\)/);
+  assert.match(sheet, /height:\s*"100dvh"/);
+  assert.match(sheet, /maxHeight:\s*"min\(62vh,\s*calc\(100dvh - 140px\)\)"/);
+  assert.match(sheet, /flexShrink:\s*0/);
+  assert.match(sheet, /flexDirection:\s*"column"/);
+});
+
 test("MenuplyMediaPicker defaults camera sheet to Video when allowVideo", () => {
   const picker = read("src/components/social/MenuplyMediaPicker.jsx");
   assert.match(picker, /defaultCameraMode = allowVideo \? "video" : "photo"/);

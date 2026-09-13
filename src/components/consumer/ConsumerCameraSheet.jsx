@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   capturePosterFromVideoElement,
   countVideoInputDevices,
@@ -22,12 +23,14 @@ import {
 import { CLEAR_STUCK_MEDIA_CHROME_EVENT } from "../../pages/consumer/myMenuply/pendingHighlightMedia.js";
 
 /**
- * Full-screen camera sheet.
+ * Full-screen camera sheet (portaled to document.body).
  * Photo → live getUserMedia snap (all devices).
  * Video on desktop (MacBook) → in-sheet MediaRecorder + webcam.
  * Video on phone/tablet → OS-native <label>+<input capture> (not button.click).
  *
  * Mode chips when allowVideo: Video | Photo (video first).
+ * Layout: preview flex-shrinks; Cancel / Record / Stop / Use video stay in viewport
+ * (Multiplier feed compose nests this under a scrollable sheet — portal avoids clip).
  */
 export default function ConsumerCameraSheet({
   open,
@@ -459,7 +462,7 @@ export default function ConsumerCameraSheet({
 
   const elapsedLabel = `${Math.floor(elapsedSec / 60)}:${String(elapsedSec % 60).padStart(2, "0")}`;
 
-  return (
+  const sheetUi = (
     <div
       data-testid="consumer-camera-sheet"
       role="dialog"
@@ -681,6 +684,9 @@ export default function ConsumerCameraSheet({
       `}</style>
     </div>
   );
+
+  if (typeof document === "undefined") return sheetUi;
+  return createPortal(sheetUi, document.body);
 }
 
 const styles = {
@@ -688,15 +694,21 @@ const styles = {
     position: "fixed",
     inset: 0,
     zIndex: 13000,
+    boxSizing: "border-box",
+    height: "100dvh",
+    maxHeight: "100dvh",
     background: "rgba(15, 23, 42, 0.72)",
     display: "flex",
     alignItems: "flex-end",
     justifyContent: "center",
-    padding: 12,
+    padding: "12px 12px max(12px, env(safe-area-inset-bottom, 0px))",
   },
   sheet: {
     width: "100%",
     maxWidth: 480,
+    maxHeight: "calc(100dvh - 24px - env(safe-area-inset-bottom, 0px))",
+    display: "flex",
+    flexDirection: "column",
     background: "#fff",
     borderRadius: 16,
     overflow: "hidden",
@@ -706,7 +718,11 @@ const styles = {
     position: "relative",
     background: "#0f172a",
     aspectRatio: "3 / 4",
-    maxHeight: "62vh",
+    width: "100%",
+    flex: "1 1 auto",
+    minHeight: 0,
+    /* Leave room for Cancel / Record (and error) on short mobile viewports */
+    maxHeight: "min(62vh, calc(100dvh - 140px))",
   },
   previewWrapRecording: {
     outline: "3px solid #f87171",
@@ -816,6 +832,7 @@ const styles = {
   },
   errorWrap: {
     margin: "10px 14px 0",
+    flexShrink: 0,
   },
   error: {
     margin: 0,
@@ -827,6 +844,9 @@ const styles = {
     display: "flex",
     gap: 10,
     padding: 14,
+    paddingBottom: "max(14px, env(safe-area-inset-bottom, 0px))",
+    flexShrink: 0,
+    background: "#fff",
   },
   secondary: {
     flex: 1,

@@ -81,6 +81,7 @@ test("ConsumerCameraSheet: desktop MediaRecorder + phone OS native capture", () 
   assert.match(sheet, /preferDesktopInlineVideoRecord/);
   assert.match(sheet, /preferNativeOsVideoCapture/);
   assert.match(sheet, /createCameraMediaRecorder/);
+  assert.match(sheet, /createPortal\(sheetUi,\s*document\.body\)/);
   assert.match(capture, /openVideoCaptureStreamWithFallback[\s\S]*withAudio:\s*true/);
   assert.match(capture, /hasMicAudio/);
   assert.match(sheet, /validateRecordedVideoBlob/);
