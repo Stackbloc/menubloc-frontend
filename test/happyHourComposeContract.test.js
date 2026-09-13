@@ -15,9 +15,11 @@ function read(rel) {
 test("Happy Hour intents live in shared eatingHubUtils", () => {
   const utils = read("src/pages/consumer/myMenuply/eatingHubUtils.js");
   assert.match(utils, /HAPPY_HOUR_INTENTS/);
-  assert.match(utils, /I'm enjoying Happy Hour/);
-  assert.match(utils, /I'm going to Happy Hour today/);
   assert.match(utils, /happyHourFoodName/);
+  assert.match(utils, /isHappyHourActivity/);
+  const lib = read("src/lib/happyHourActivity.js");
+  assert.match(lib, /I'm enjoying Happy Hour/);
+  assert.match(lib, /I'm going to Happy Hour today/);
 });
 
 test("EatingCompose Where order is Restaurant → Happy Hour → @Home", () => {

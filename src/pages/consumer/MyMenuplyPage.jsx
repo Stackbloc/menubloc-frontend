@@ -2225,10 +2225,12 @@ export default function MyMenuplyPage() {
                 })
               }
               onDiarySelect={(item) => {
-                if (item?.kind !== "what_i_ate") return;
+                const entryId = item?.entry_id ?? item?.id;
+                if (!entryId) return;
+                if (item?.kind && item.kind !== "what_i_ate") return;
                 setLastPost({
                   kind: "diary",
-                  id: item.entry_id,
+                  id: entryId,
                   meal_period: item.meal_period,
                   eaten_at: item.eaten_at || null,
                   eaten_on: item.eaten_on || null,
@@ -2356,6 +2358,11 @@ export default function MyMenuplyPage() {
                     ]
                       .filter(Boolean)
                       .join(" · ")}
+                    onEdit={
+                      previewAsConnect || crew.viewer_role !== "owner"
+                        ? undefined
+                        : () => navigate(`/account/dining-crews/${crew.id}`)
+                    }
                     onDelete={
                       previewAsConnect || crew.viewer_role !== "owner"
                         ? undefined
@@ -2421,6 +2428,11 @@ export default function MyMenuplyPage() {
                         .filter(Boolean)
                         .join(" · ")}
                       description={ev.description || null}
+                      onEdit={
+                        previewAsConnect || ev.is_past
+                          ? undefined
+                          : () => openSocialEventCompose(ev)
+                      }
                       onDelete={previewAsConnect ? undefined : () => onSocialEventDelete(ev)}
                       deleteBusy={postBusy === `social-event-delete-${ev.id}`}
                       deleteLabel={`Delete event ${ev.title || ""}`.trim()}

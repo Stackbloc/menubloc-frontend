@@ -7,6 +7,7 @@ import EatingSocialActions from "./EatingSocialActions.jsx";
 import { resolveConsumerMediaUrl } from "../../../lib/consumerApi.js";
 import { resolveEatingDishVisual, resolveEatingPlanVisual } from "./eatingDishVisual.js";
 import { useLongPressReveal } from "./mediaLongPressReveal.js";
+import HubLongPressActions from "./HubLongPressActions.jsx";
 import {
   compareMealPeriod,
   mealPeriodLabel,
@@ -455,26 +456,27 @@ export function DiningCrewHubCard({
   requestDisabled = false,
   onDelete,
   deleteBusy = false,
+  onEdit = null,
+  editBusy = false,
 }) {
   const navigate = useNavigate();
   const title = String(crew?.name || "").trim() || "Untitled";
   const purpose = crewPurposeText(crew);
+  const canEdit = typeof onEdit === "function";
   const canDelete = typeof onDelete === "function";
-  const { open, dismiss, consumeArmedClick, bind } = useLongPressReveal(canDelete);
-
-  function handleDelete(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    if (deleteBusy) return;
-    dismiss();
-    onDelete?.(crew);
-  }
+  const canAct = canEdit || canDelete;
+  const { open, dismiss, consumeArmedClick, bind } = useLongPressReveal(canAct);
 
   function handleCardActivate(e) {
     if (consumeArmedClick() || open) {
       e.preventDefault();
       e.stopPropagation();
-      if (open && !e.target?.closest?.('[data-testid="hub-card-delete"]')) dismiss();
+      if (
+        open &&
+        !e.target?.closest?.('[data-testid="hub-card-actions"]')
+      ) {
+        dismiss();
+      }
       return;
     }
     if (e.target?.closest?.("button, a")) return;
@@ -504,18 +506,16 @@ export function DiningCrewHubCard({
       {...bind}
       onClick={handleCardActivate}
     >
-      {open ? (
-        <button
-          type="button"
-          style={s.hubCardDelete}
-          data-testid="hub-card-delete"
-          aria-label={`Delete ${title}`}
-          disabled={deleteBusy}
-          onClick={handleDelete}
-        >
-          Delete
-        </button>
-      ) : null}
+      <HubLongPressActions
+        open={open}
+        onEdit={canEdit ? () => onEdit(crew) : null}
+        onDelete={canDelete ? () => onDelete(crew) : null}
+        editBusy={editBusy}
+        deleteBusy={deleteBusy}
+        editAriaLabel={`Edit ${title}`}
+        deleteAriaLabel={`Delete ${title}`}
+        onDismiss={dismiss}
+      />
       <div style={href ? s.cardTitleLink : { fontWeight: 700, fontSize: 15, color: "#0f172a" }}>
         {title}
       </div>
@@ -580,6 +580,8 @@ export function NamedShareCard({
   onDelete,
   deleteBusy = false,
   deleteLabel,
+  onEdit = null,
+  editBusy = false,
   /**
    * connect — JoinMeButton / Ended (Connect View + peer)
    * edit — JoinMeStatusLine for per-occasion eligibility (Edit View)
@@ -602,8 +604,10 @@ export function NamedShareCard({
 }) {
   const navigate = useNavigate();
   const title = String(name || "").trim() || "Untitled";
+  const canEdit = typeof onEdit === "function";
   const canDelete = typeof onDelete === "function";
-  const { open, dismiss, consumeArmedClick, bind } = useLongPressReveal(canDelete);
+  const canAct = canEdit || canDelete;
+  const { open, dismiss, consumeArmedClick, bind } = useLongPressReveal(canAct);
   const joinHref = String(joinMeHref || "").trim() || null;
   const isEdit = joinMeSurface === "edit";
   const deprioritized = Boolean(ended || (!isEdit && joinClosed));
@@ -611,19 +615,16 @@ export function NamedShareCard({
     !isEdit && !deprioritized && Boolean(joinHref || typeof onJoinMeClick === "function");
   const showEditControl = isEdit && !ended && typeof onJoinMeToggle === "function";
 
-  function handleDelete(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    if (deleteBusy) return;
-    dismiss();
-    onDelete?.();
-  }
-
   function handleCardActivate(e) {
     if (consumeArmedClick() || open) {
       e.preventDefault();
       e.stopPropagation();
-      if (open && !e.target?.closest?.('[data-testid="hub-card-delete"]')) dismiss();
+      if (
+        open &&
+        !e.target?.closest?.('[data-testid="hub-card-actions"]')
+      ) {
+        dismiss();
+      }
       return;
     }
     if (e.target?.closest?.("button, a")) return;
@@ -674,18 +675,16 @@ export function NamedShareCard({
       {...bind}
       onClick={handleCardActivate}
     >
-      {open ? (
-        <button
-          type="button"
-          style={s.hubCardDelete}
-          data-testid="hub-card-delete"
-          aria-label={deleteLabel || `Delete ${title}`}
-          disabled={deleteBusy}
-          onClick={handleDelete}
-        >
-          Delete
-        </button>
-      ) : null}
+      <HubLongPressActions
+        open={open}
+        onEdit={canEdit ? () => onEdit() : null}
+        onDelete={canDelete ? () => onDelete() : null}
+        editBusy={editBusy}
+        deleteBusy={deleteBusy}
+        editAriaLabel={`Edit ${title}`}
+        deleteAriaLabel={deleteLabel || `Delete ${title}`}
+        onDismiss={dismiss}
+      />
       <div style={s.joinMeTitleRow}>
         <div
           style={{

@@ -59,8 +59,19 @@ function testUnclaimedHomepageBlanks() {
   const shell = read("src/components/restaurant/publicProfile/PublicProfileShell.jsx");
   assert.match(primitives, /ProfileSectionBlank/);
   assert.match(primitives, /ProfileClaimBanner/);
-  assert.match(primitives, /Claim this profile to complete it/);
-  assert.doesNotMatch(primitives, /Claim this profile to complete<\/Link>/);
+  assert.match(primitives, /This is an unclaimed profile/);
+  assert.match(
+    primitives,
+    /independent directory listing and is not affiliated with/
+  );
+  assert.match(primitives, /Are you the owner\?/);
+  assert.match(
+    primitives,
+    /Claim this profile to manage menus, updates, and other content\./
+  );
+  assert.doesNotMatch(primitives, /This profile is unclaimed\./);
+  assert.doesNotMatch(primitives, /Claim this profile to complete it/);
+  assert.doesNotMatch(primitives, /Owners can add Instagram/);
   assert.match(about, /profile-about-founded/);
   assert.match(about, /profile-founded/);
   assert.match(about, /profile-founded-blank/);
@@ -97,7 +108,7 @@ function testUnclaimedHomepageBlanks() {
   assert.match(photos, /photos\.length === 0/);
   assert.match(shell, /ProfileAboutFounded/);
   assert.match(shell, /ProfileClaimBanner/);
-  assert.match(shell, /showClaimInvites=\{showClaimInvites\}/);
+  assert.match(shell, /showClaimInvites=\{allowClaimInvites\}/);
   assert.match(shell, /clusterName=\{clusterName\}/);
   assert.doesNotMatch(shell, /clusterLabel/);
   assert.doesNotMatch(shell, /clusterTypeLabel/);

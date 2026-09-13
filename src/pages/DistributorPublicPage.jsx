@@ -21,9 +21,9 @@ import {
   PROFILE_INK,
   PROFILE_MUTED,
   PROFILE_PAGE_BG,
+  ProfileClaimBanner,
   profileCardBorderVar,
   profileCardShadowVar,
-  profileAccentVar,
   profileReadableSurfaceStyle,
 } from "../components/restaurant/publicProfile/profilePrimitives.jsx";
 
@@ -394,70 +394,14 @@ export default function DistributorPublicPage() {
         />
 
         {showClaimInvites ? (
-          <section
-            data-testid="distributor-claim-panel"
-            style={{
-              marginBottom: 20,
-              padding: "16px 16px",
-              borderRadius: 14,
-              border: `1px solid ${profileCardBorderVar}`,
-              background: "#fffbeb",
-              boxShadow: profileCardShadowVar,
-            }}
-          >
-            <div
-              style={{
-                fontSize: 15,
-                fontWeight: 800,
-                color: PROFILE_INK,
-                letterSpacing: "-0.02em",
-              }}
-            >
-              Is this your company?
-            </div>
-            <p
-              style={{
-                margin: "8px 0 0",
-                fontSize: 13,
-                color: PROFILE_MUTED,
-                lineHeight: 1.5,
-              }}
-            >
-              Menuply is a new platform dedicated to serving the restaurant industry
-              and the diners they serve. Distributors play a critical role in that
-              ecosystem.
-            </p>
-            <p
-              style={{
-                margin: "8px 0 0",
-                fontSize: 13,
-                color: PROFILE_MUTED,
-                lineHeight: 1.5,
-              }}
-            >
-              Claim your free distributor profile to establish your presence on
-              Menuply and connect with restaurants that have joined the platform.
-            </p>
-            <Link
-              to={`/distributors/${d.slug}/claim`}
-              data-testid="distributor-claim-cta"
-              style={{
-                display: "inline-block",
-                marginTop: 12,
-                fontSize: 14,
-                fontWeight: 800,
-                color: profileAccentVar,
-                textDecoration: "none",
-              }}
-            >
-              Claim this Profile →
-            </Link>
+          <div data-testid="distributor-claim-panel">
+            <ProfileClaimBanner claimHref={`/distributors/${d.slug}/claim`} />
             {claimStatus === "CLAIM_PENDING" ? (
-              <p style={{ margin: "10px 0 0", fontSize: 13, color: PROFILE_MUTED }}>
+              <p style={{ margin: "0 0 20px", fontSize: 13, color: PROFILE_MUTED }}>
                 A claim is currently under review for this profile.
               </p>
             ) : null}
-          </section>
+          </div>
         ) : null}
 
         <ProfileAboutFounded

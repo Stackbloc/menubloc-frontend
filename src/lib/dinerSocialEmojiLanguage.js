@@ -6,6 +6,10 @@
 
 import { iconForFoodInterest, iconForFoodText } from "./foodInterestIcons.js";
 import { calendarDayYmd, localDateYmd } from "./calendarDayYmd.js";
+import {
+  formatHappyHourActivityClause,
+  isHappyHourActivity,
+} from "./happyHourActivity.js";
 
 /** Profile / scan action emotes (communicate without creating content). */
 export const DINER_ACTION_EMOTES = Object.freeze({
@@ -144,6 +148,11 @@ export function formatActivityProseClause(row = {}) {
   const homemade = row.homemade === true || row.cooking === true;
   const second = row.second_person === true;
   const mealProse = mealPeriodProseWord(row.meal_period || row.mealPeriod);
+
+  // Happy Hour is activity (Who's Eating), not meal reporting.
+  if (isHappyHourActivity(row)) {
+    return formatHappyHourActivityClause(row, { secondPerson: second });
+  }
 
   if (isWant) {
     const wantVerb = second ? "want" : "wants";

@@ -94,14 +94,17 @@ describe("distributor public profile contracts", () => {
     assert.match(page, /showPhotos=\{false\}/);
     assert.match(page, /ProfileUpdates/);
     assert.match(page, /show_claim_cta/);
-    assert.match(page, /Is this your company\?/);
-    assert.match(page, /Claim this Profile/);
-    assert.doesNotMatch(page, /statusBadgeStyle|label: "Unclaimed"/);
-    assert.match(page, /distributor-markets-categories/);
-    assert.match(
+    assert.match(page, /ProfileClaimBanner/);
+    assert.match(page, /distributor-claim-panel/);
+    assert.match(page, /\/distributors\/\$\{d\.slug\}\/claim/);
+    assert.doesNotMatch(page, /Is this your company\?/);
+    assert.doesNotMatch(page, /Claim this Profile →/);
+    assert.doesNotMatch(
       page,
       /Menuply is a new platform dedicated to serving the restaurant industry/
     );
+    assert.doesNotMatch(page, /statusBadgeStyle|label: "Unclaimed"/);
+    assert.match(page, /distributor-markets-categories/);
     assert.match(page, /data-distributor-offer-slot/);
     assert.doesNotMatch(page, /menuply_contacts|Menuply Contact/);
     assert.doesNotMatch(page, /Company information/);

@@ -17,6 +17,7 @@ import { shouldPreferRestaurantMark } from "../../../lib/restaurantMarkPreferenc
 import { restaurantHref } from "./myMenuplyBits.jsx";
 import { resolveEatingDishVisual } from "./eatingDishVisual.js";
 import { useLongPressReveal } from "./mediaLongPressReveal.js";
+import HubLongPressActions from "./HubLongPressActions.jsx";
 import { GREEN_MID } from "./myMenuplyStyles.js";
 import * as s from "./myMenuplyStyles.js";
 import {
@@ -25,6 +26,10 @@ import {
   MEAL_TIMELINE_INK,
 } from "./dinerHubFormat.js";
 import { mealPeriodProseWord } from "../../../lib/dinerSocialEmojiLanguage.js";
+import {
+  isHappyHourActivity,
+  resolveHappyHourIntent,
+} from "../../../lib/happyHourActivity.js";
 
 const THUMB = 40;
 
@@ -131,19 +136,26 @@ export default function DinerActivityScanRow({
   showThumb = true,
   /** Fold display name into prose: "Andre B is eating …" (no avatar row). */
   nameInProse = false,
+  /** Edit View Happy Hour: "You are going…" (second person verbs). */
+  secondPerson = false,
   /** Always render restaurant as text link (never inline logo mark). */
   placeAsText = false,
-  /** Owner profile: long-press / right-click to delete this entry. */
+  /** Owner profile: long-press Edit + Delete (user picks one). */
   onDelete = null,
   deleteBusy = false,
   deleteLabel = "Delete",
+  onEdit = null,
+  editBusy = false,
+  editLabel = "Edit",
   /** Timeline rail ends — soften connector above/below first/last meal. */
   timelineFirst = false,
   timelineLast = false,
 }) {
   const [expanded, setExpanded] = useState(false);
+  const canEdit = typeof onEdit === "function";
   const canDelete = typeof onDelete === "function";
-  const { open: deleteOpen, dismiss, consumeArmedClick, bind } = useLongPressReveal(canDelete);
+  const canAct = canEdit || canDelete;
+  const { open: deleteOpen, dismiss, consumeArmedClick, bind } = useLongPressReveal(canAct);
   const hasVideo = Boolean(String(videoUrl || "").trim());
   const videoSrc = hasVideo ? String(videoUrl).trim() : "";
 
@@ -177,14 +189,20 @@ export default function DinerActivityScanRow({
   const itemHref = dishHref(menuItemId);
   const place = String(restaurantName || "").trim() || null;
   const foodRaw = String(foodName || "").trim() || null;
+  const happyHour = isHappyHourActivity({ food_name: foodRaw, kind });
+  const happyHourIntent = happyHour ? resolveHappyHourIntent({ food_name: foodRaw }) : null;
   /** Never treat the restaurant brand as the dish ("eating Yoshinoya at Yoshinoya"). */
   const food =
-    foodRaw && place && foodRaw.toLowerCase() === place.toLowerCase() ? null : foodRaw;
+    happyHour
+      ? null
+      : foodRaw && place && foodRaw.toLowerCase() === place.toLowerCase()
+        ? null
+        : foodRaw;
   const isWant = kind === "want" || kind === "wanna_eat" || kind === "want_to_eat";
-  const proseName = String(displayName || "").trim() || "Diner";
+  const proseName = secondPerson ? "You" : String(displayName || "").trim() || "Diner";
   const identitySuffix =
-    nameInProse && whosEatingIdentity.startsWith(proseName)
-      ? whosEatingIdentity.slice(proseName.length)
+    !secondPerson && nameInProse && whosEatingIdentity.startsWith(String(displayName || "").trim())
+      ? whosEatingIdentity.slice(String(displayName || "").trim().length)
       : "";
 
   const specificNamed = Boolean(food && (place || homemade));
@@ -247,12 +265,14 @@ export default function DinerActivityScanRow({
     setExpanded((v) => !v);
   }
 
-  function handleDelete(e) {
-    e.preventDefault();
-    e.stopPropagation();
+  function handleDelete() {
     if (deleteBusy) return;
-    dismiss();
     onDelete?.();
+  }
+
+  function handleEdit() {
+    if (editBusy) return;
+    onEdit?.();
   }
 
   const identityBlock =
@@ -341,6 +361,35 @@ export default function DinerActivityScanRow({
             </PlaceLink>
           ) : null}
           {!food && !place ? <span>something to eat</span> : null}
+        </>
+      );
+    }
+
+    // Happy Hour activity (Who's Eating) — not meal reporting.
+    if (happyHour) {
+      const verb =
+        happyHourIntent === "enjoying"
+          ? secondPerson
+            ? "are enjoying"
+            : "is enjoying"
+          : secondPerson
+            ? "are going to"
+            : "is going to";
+      const placeNode = place ? (
+        <PlaceLink href={placeHref} markUrl={inlinePlaceMark}>
+          {place}
+        </PlaceLink>
+      ) : null;
+      return (
+        <>
+          {nameLead}
+          <span>{verb} Happy Hour</span>
+          {placeNode ? (
+            <>
+              <span> at </span>
+              {placeNode}
+            </>
+          ) : null}
         </>
       );
     }
@@ -447,24 +496,25 @@ export default function DinerActivityScanRow({
         ...styles.wrap,
         ...(ownerCompact ? styles.wrapTimeline : null),
         ...(selected ? styles.wrapSelected : null),
-        ...(canDelete ? s.hubCardShell : null),
+        ...(canAct ? s.hubCardShell : null),
       }}
       data-testid={testId}
       data-has-video={hasVideo ? "true" : "false"}
       {...bind}
     >
-      {deleteOpen ? (
-        <button
-          type="button"
-          style={s.hubCardDelete}
-          data-testid="diner-activity-scan-delete"
-          aria-label={deleteLabel}
-          disabled={deleteBusy}
-          onClick={handleDelete}
-        >
-          Delete
-        </button>
-      ) : null}
+      <HubLongPressActions
+        open={deleteOpen}
+        onEdit={canEdit ? handleEdit : null}
+        onDelete={canDelete ? handleDelete : null}
+        editBusy={editBusy}
+        deleteBusy={deleteBusy}
+        editLabel={editLabel}
+        deleteLabel={deleteLabel}
+        editAriaLabel={editLabel}
+        deleteAriaLabel={deleteLabel}
+        testIdPrefix="diner-activity-scan"
+        onDismiss={dismiss}
+      />
       {profileHref && identityBlock ? (
         <Link to={profileHref} style={styles.identityLink} data-testid="diner-activity-scan-profile">
           {identityBlock}

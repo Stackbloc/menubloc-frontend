@@ -26,6 +26,7 @@ import {
   clampEatingLookbackDate,
   compareYmd,
   eatingHistoryStart,
+  isHappyHourActivity,
   planYmd,
   shiftYmd,
 } from "./eatingHubUtils.js";
@@ -614,7 +615,14 @@ export default function EatingHubSection({
       }),
     [eating, hubDate, lastPost]
   );
-  const mealsForDay = useMemo(() => groupHubAteMeals(eatingForDay), [eatingForDay]);
+  const happyHourForDay = useMemo(
+    () => eatingForDay.filter((row) => isHappyHourActivity(row)),
+    [eatingForDay]
+  );
+  const mealsForDay = useMemo(
+    () => groupHubAteMeals(eatingForDay.filter((row) => !isHappyHourActivity(row))),
+    [eatingForDay]
+  );
 
   function openEatingCalendar() {
     setCalendarTitle("Eating");
@@ -811,15 +819,24 @@ export default function EatingHubSection({
                           ? () => onDiaryDelete(primary)
                           : null
                       }
+                      onEdit={
+                        canEdit && onDiarySelect
+                          ? () => onDiarySelect(primary)
+                          : null
+                      }
                       deleteBusy={diaryDeleteBusy}
                       deleteLabel={`Delete ${food || "meal"}`}
+                      editLabel="Edit"
                     />
                   </li>
                 );
               })}
             </ul>
           ) : null}
-          {lastPost?.kind === "diary" && canEdit && typeof onDiaryEatenAtChange === "function" ? (
+          {lastPost?.kind === "diary" &&
+          canEdit &&
+          typeof onDiaryEatenAtChange === "function" &&
+          !isHappyHourActivity(lastPost) ? (
             <div style={clockStyles.wrap} data-testid="eating-meal-clock-edit">
               <label style={clockStyles.label} htmlFor="eating-meal-clock-input">
                 Meal clock time
@@ -876,12 +893,30 @@ export default function EatingHubSection({
         </div>
       </section>
 
-      {/* Who's Eating — continuous-line discovery (owner hub) */}
+      {/* Who's Eating — Happy Hour activity + nearby discovery */}
       <NearbyEatingSection
-        hidden={readOnly || !canEdit}
+        hidden={(readOnly || !canEdit) && happyHourForDay.length === 0}
+        showNearbyDiscovery={canEdit}
         locationCity={locationCity}
         locationState={locationState}
         viewerUserId={viewerUserId}
+        subjectHappyHourEntries={happyHourForDay}
+        subjectDisplayName={
+          activityDisplayName || (readOnly ? "Diner" : rowDisplayName)
+        }
+        subjectSecondPerson={canEdit}
+        subjectAvatarUrl={rowAvatarUrl}
+        onHappyHourDelete={
+          canEdit && typeof onDiaryDelete === "function"
+            ? (entry) => onDiaryDelete(entry)
+            : null
+        }
+        onHappyHourEdit={
+          canEdit && typeof onDiarySelect === "function"
+            ? (entry) => onDiarySelect(entry)
+            : null
+        }
+        happyHourDeleteBusy={diaryDeleteBusy}
       />
 
       <section style={s.section} data-testid="want-to-eat">

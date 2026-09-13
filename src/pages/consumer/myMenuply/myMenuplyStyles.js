@@ -1500,6 +1500,37 @@ export const hubCardDelete = {
   ...mealHolderDelete,
 };
 
+/** Long-press Edit + Delete cluster (shown together; user picks one). */
+export const hubLongPressActions = {
+  position: "absolute",
+  top: 8,
+  right: 8,
+  zIndex: 2,
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 6,
+};
+
+export const hubLongPressEdit = {
+  appearance: "none",
+  border: "none",
+  borderRadius: 8,
+  padding: "5px 9px",
+  fontSize: 11,
+  fontWeight: 700,
+  background: "rgba(22, 101, 52, 0.92)",
+  color: "#fff",
+  cursor: "pointer",
+  boxShadow: "0 2px 10px rgba(15,23,42,0.25)",
+};
+
+export const hubLongPressDelete = {
+  ...mealHolderDelete,
+  position: "static",
+  top: "auto",
+  right: "auto",
+};
+
 export const hubCardShell = {
   position: "relative",
 };

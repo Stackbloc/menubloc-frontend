@@ -1,6 +1,7 @@
 /**
  * Who's Eating — continuous-line scan rows (max 8 + Show more).
  * [avatar] ScreenName, Sex, Age is eating [meal] at [restaurant|@home], [food]
+ * Happy Hour (subject): Edit "You are going to Happy Hour…"; Profile "Name is going…"
  * Liberal market discovery (no favorite-food filter); excludes viewer.
  */
 
@@ -187,14 +188,55 @@ export default function NearbyEatingSection({
   locationState = null,
   viewerUserId = null,
   hidden = false,
+  /** Own Edit View: load nearby diners. Connect/peer: Happy Hour only. */
+  showNearbyDiscovery = true,
+  /** Profile subject's Happy Hour diary rows for the selected day. */
+  subjectHappyHourEntries = [],
+  subjectDisplayName = "",
+  /** Edit View → "You are going…"; Profile → "Name is going…". */
+  subjectSecondPerson = false,
+  subjectAvatarUrl = null,
+  onHappyHourDelete = null,
+  onHappyHourEdit = null,
+  happyHourDeleteBusy = false,
 }) {
   const [lines, setLines] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [expanded, setExpanded] = useState(false);
 
+  const happyHourRows = useMemo(() => {
+    const out = [];
+    for (const entry of subjectHappyHourEntries || []) {
+      if (!entry) continue;
+      const id = entry.entry_id ?? entry.id;
+      out.push({
+        key: `hh-${id ?? out.length}`,
+        entry,
+        displayName: subjectSecondPerson
+          ? "You"
+          : String(subjectDisplayName || "").trim() || "Diner",
+        foodName: entry.food_name || null,
+        restaurantName: entry.restaurant_name || null,
+        restaurantId: entry.restaurant_id || null,
+        restaurantSlug: entry.restaurant_slug || null,
+        restaurantCity: entry.restaurant_city || null,
+        restaurantState: entry.restaurant_state || null,
+        restaurantLogoUrl: entry.restaurant_logo_url || null,
+        restaurantBillboardUrl: entry.restaurant_billboard_image_url || null,
+        videoUrl: entry.video_url || null,
+      });
+    }
+    return out;
+  }, [subjectHappyHourEntries, subjectDisplayName, subjectSecondPerson]);
+
   useEffect(() => {
-    if (hidden) return undefined;
+    if (hidden || !showNearbyDiscovery) {
+      setLines([]);
+      setLoading(false);
+      setError("");
+      return undefined;
+    }
     let cancelled = false;
     setLoading(true);
     setError("");
@@ -230,7 +272,7 @@ export default function NearbyEatingSection({
     return () => {
       cancelled = true;
     };
-  }, [hidden, locationCity, locationState, viewerUserId]);
+  }, [hidden, showNearbyDiscovery, locationCity, locationState, viewerUserId]);
 
   const visibleLines = useMemo(() => {
     if (expanded) return lines;
@@ -238,8 +280,11 @@ export default function NearbyEatingSection({
   }, [expanded, lines]);
 
   const hasMore = lines.length > INITIAL_VISIBLE;
+  const hasHappyHour = happyHourRows.length > 0;
+  const hasNearby = showNearbyDiscovery && (loading || lines.length > 0 || error);
 
   if (hidden) return null;
+  if (!hasHappyHour && !showNearbyDiscovery) return null;
 
   return (
     <section style={s.section} data-testid="see-others-nearby-eating">
@@ -247,18 +292,70 @@ export default function NearbyEatingSection({
         <SectionHead
           kicker="Nearby"
           title="Who's Eating"
-          subtitle="See what nearby diners are eating — open profile to connect; planned activities stay private"
+          subtitle={
+            showNearbyDiscovery
+              ? "See what nearby diners are eating — open profile to connect; planned activities stay private"
+              : "Happy Hour and activity signals"
+          }
         />
 
-        {error ? <p style={s.error}>{error}</p> : null}
+        {hasHappyHour ? (
+          <ul
+            style={styles.list}
+            data-testid="whos-eating-happy-hour"
+          >
+            {happyHourRows.map((row) => (
+              <li
+                key={row.key}
+                style={styles.row}
+                data-testid="whos-eating-happy-hour-row"
+              >
+                <DinerActivityScanRow
+                  displayName={row.displayName}
+                  avatarUrl={subjectAvatarUrl}
+                  kind="ate"
+                  foodName={row.foodName}
+                  restaurantName={row.restaurantName}
+                  restaurantId={row.restaurantId}
+                  restaurantSlug={row.restaurantSlug}
+                  restaurantCity={row.restaurantCity}
+                  restaurantState={row.restaurantState}
+                  restaurantLogoUrl={row.restaurantLogoUrl}
+                  restaurantBillboardUrl={row.restaurantBillboardUrl}
+                  videoUrl={row.videoUrl}
+                  nameInProse
+                  secondPerson={subjectSecondPerson}
+                  placeAsText
+                  showThumb={false}
+                  showIdentity={false}
+                  onDelete={
+                    typeof onHappyHourDelete === "function"
+                      ? () => onHappyHourDelete(row.entry)
+                      : null
+                  }
+                  onEdit={
+                    typeof onHappyHourEdit === "function"
+                      ? () => onHappyHourEdit(row.entry)
+                      : null
+                  }
+                  deleteBusy={happyHourDeleteBusy}
+                  deleteLabel="Delete Happy Hour"
+                  editLabel="Edit"
+                />
+              </li>
+            ))}
+          </ul>
+        ) : null}
 
-        {loading ? (
+        {error && showNearbyDiscovery ? <p style={s.error}>{error}</p> : null}
+
+        {showNearbyDiscovery && loading ? (
           <p style={{ ...s.muted, fontSize: 13 }} data-testid="nearby-eating-loading">
             Loading who&apos;s eating…
           </p>
         ) : null}
 
-        {!loading && lines.length > 0 ? (
+        {showNearbyDiscovery && !loading && lines.length > 0 ? (
           <>
             <ul style={styles.list} data-testid="whos-eating-links">
               {visibleLines.map((row) => (
@@ -317,7 +414,7 @@ export default function NearbyEatingSection({
           </>
         ) : null}
 
-        {!loading && lines.length === 0 ? (
+        {showNearbyDiscovery && !loading && lines.length === 0 && !hasHappyHour ? (
           <SectionEmptyState testId="nearby-eating-empty">
             No registered diners nearby yet. When someone posts what they&apos;re eating, you&apos;ll
             see a short summary here — tap ▶ when a video is attached, or open their profile.

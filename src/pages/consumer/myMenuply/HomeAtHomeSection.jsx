@@ -7,11 +7,12 @@
  */
 
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { resolveConsumerMediaUrl } from "../../../lib/consumerApi.js";
 import { homemadeDishPath } from "../../../lib/homemadeDishApi.js";
 import MenuplyMediaPicker from "../../../components/social/MenuplyMediaPicker.jsx";
 import { useLongPressReveal } from "./mediaLongPressReveal.js";
+import HubLongPressActions from "./HubLongPressActions.jsx";
 import { SectionHead } from "./myMenuplyBits.jsx";
 import * as s from "./myMenuplyStyles.js";
 import { GREEN_MID } from "./myMenuplyStyles.js";
@@ -24,14 +25,19 @@ function dishVideo(dish) {
   return resolveConsumerMediaUrl(dish?.video_url || "");
 }
 
-function HomeDishCell({ dish, readOnly, onDelete, deleteBusy }) {
+function HomeDishCell({ dish, readOnly, onDelete, deleteBusy, onEdit, editBusy }) {
+  const navigate = useNavigate();
   const [lightboxOpen, setLightboxOpen] = useState(false);
-  const canDelete = !readOnly && typeof onDelete === "function";
-  const { open, dismiss, consumeArmedClick, bind } = useLongPressReveal(canDelete);
   const photo = dishPhoto(dish);
   const video = dishVideo(dish);
   const name = dish?.name || "Home-cooked meal";
   const href = dish?.id || dish?.homemade_dish_id ? homemadeDishPath(dish.id || dish.homemade_dish_id) : null;
+  const defaultEdit = href ? () => navigate(href) : null;
+  const editFn = typeof onEdit === "function" ? () => onEdit(dish) : defaultEdit;
+  const canEdit = !readOnly && typeof editFn === "function";
+  const canDelete = !readOnly && typeof onDelete === "function";
+  const canAct = canEdit || canDelete;
+  const { open, dismiss, consumeArmedClick, bind } = useLongPressReveal(canAct);
   const skipCaption =
     !name ||
     name === "Home-cooked meal" ||
@@ -46,7 +52,12 @@ function HomeDishCell({ dish, readOnly, onDelete, deleteBusy }) {
         aria-label={name}
         onClick={() => {
           if (consumeArmedClick() || open) {
-            dismiss();
+            if (
+              open &&
+              !document.activeElement?.closest?.('[data-testid="home-at-home-actions"]')
+            ) {
+              dismiss();
+            }
             return;
           }
           if (photo || video) setLightboxOpen(true);
@@ -62,24 +73,17 @@ function HomeDishCell({ dish, readOnly, onDelete, deleteBusy }) {
         {video ? <span style={grid.playBadge}>▶</span> : null}
         {!skipCaption ? <span style={grid.caption}>{name}</span> : null}
       </button>
-      {open ? (
-        <button
-          type="button"
-          style={s.mealHolderDelete}
-          data-testid="home-at-home-delete"
-          aria-label={`Delete ${name}`}
-          disabled={deleteBusy}
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            if (deleteBusy) return;
-            dismiss();
-            onDelete?.(dish);
-          }}
-        >
-          Delete
-        </button>
-      ) : null}
+      <HubLongPressActions
+        open={open}
+        onEdit={canEdit ? editFn : null}
+        onDelete={canDelete ? () => onDelete(dish) : null}
+        editBusy={editBusy}
+        deleteBusy={deleteBusy}
+        editAriaLabel={`Edit ${name}`}
+        deleteAriaLabel={`Delete ${name}`}
+        testIdPrefix="home-at-home"
+        onDismiss={dismiss}
+      />
       {lightboxOpen && (photo || video) ? (
         <div
           role="presentation"
@@ -120,6 +124,7 @@ export default function HomeAtHomeSection({
   error = "",
   onPhotoFile,
   onDelete,
+  onEdit,
 }) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const rows = Array.isArray(dishes)
@@ -189,6 +194,8 @@ export default function HomeAtHomeSection({
               readOnly={readOnly}
               onDelete={onDelete}
               deleteBusy={busy}
+              onEdit={onEdit}
+              editBusy={busy}
             />
           ))}
         </div>

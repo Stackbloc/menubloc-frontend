@@ -188,7 +188,7 @@ export function ProfileSectionBlank({ testId, message }) {
   );
 }
 
-/** Single unclaimed-profile CTA — use once, prominently. */
+/** Single unclaimed-profile CTA — restaurants, venues, food trucks, and other public business shells. */
 export function ProfileClaimBanner({ claimHref = "/onboarding", claimState = null }) {
   return (
     <div
@@ -203,27 +203,37 @@ export function ProfileClaimBanner({ claimHref = "/onboarding", claimState = nul
         background: "#fffbeb",
       }}
     >
-      <div style={{ fontSize: 15, fontWeight: 800, color: PROFILE_INK, letterSpacing: "-0.02em" }}>
-        This profile is unclaimed.
-      </div>
-      <div style={{ marginTop: 4, fontSize: 13, color: PROFILE_MUTED, lineHeight: 1.45 }}>
-        Owners can add Instagram, hours, photos, favorites, and updates.
-      </div>
-      <Link
-        to={claimHref && claimHref !== "#claim-profile" ? claimHref : "/onboarding"}
-        state={claimState || undefined}
-        data-testid="profile-claim-banner-link"
-        style={{
-          display: "inline-block",
-          marginTop: 10,
-          fontSize: 14,
-          fontWeight: 800,
-          color: profileAccentVar,
-          textDecoration: "none",
-        }}
+      <div
+        style={{ fontSize: 15, fontWeight: 800, color: PROFILE_INK, letterSpacing: "-0.02em" }}
+        data-testid="profile-claim-banner-title"
       >
-        Claim this profile to complete it →
-      </Link>
+        This is an unclaimed profile
+      </div>
+      <div
+        style={{ marginTop: 6, fontSize: 13, color: PROFILE_MUTED, lineHeight: 1.45 }}
+        data-testid="profile-claim-banner-disclaimer"
+      >
+        This unclaimed profile is an independent directory listing and is not affiliated with,
+        sponsored by, or endorsed by the referenced business.
+      </div>
+      <div
+        style={{ marginTop: 10, fontSize: 14, color: PROFILE_INK, lineHeight: 1.45 }}
+        data-testid="profile-claim-banner-owner"
+      >
+        Are you the owner?{" "}
+        <Link
+          to={claimHref && claimHref !== "#claim-profile" ? claimHref : "/onboarding"}
+          state={claimState || undefined}
+          data-testid="profile-claim-banner-link"
+          style={{
+            fontWeight: 800,
+            color: profileAccentVar,
+            textDecoration: "none",
+          }}
+        >
+          Claim this profile to manage menus, updates, and other content.
+        </Link>
+      </div>
     </div>
   );
 }
