@@ -7,6 +7,8 @@ export async function fetchWaiterBriefing(city, state, mealPeriod, options = {})
   params.set("meal_period", mealPeriod || "lunch");
   if (options.clusterId) params.set("cluster_id", String(options.clusterId));
   if (options.clusterSlug) params.set("cluster_slug", String(options.clusterSlug));
+  if (options.restaurantId) params.set("restaurant_id", String(options.restaurantId));
+  if (options.restaurantSlug) params.set("restaurant_slug", String(options.restaurantSlug));
   const url = `${API}/api/waiter/briefing?${params.toString()}`;
   const res = await fetch(url, { credentials: "include" });
   if (!res.ok) throw new Error(`Briefing fetch failed: ${res.status}`);

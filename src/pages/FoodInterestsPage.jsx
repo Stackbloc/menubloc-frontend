@@ -185,6 +185,47 @@ function JoinMeSection({ joinMe }) {
   );
 }
 
+function BirthdaySection({ birthday }) {
+  if (!birthday) return null;
+  const headline = String(birthday.headline || "").trim();
+  if (!headline) return null;
+  const detail = String(birthday.detail || "").trim();
+  return (
+    <section style={styles.section} data-testid="waiter-birthday">
+      <SectionLabel>Reminder</SectionLabel>
+      <div style={styles.listCard}>
+        <div style={styles.rowTitle}>{headline}</div>
+        {detail ? <div style={styles.rowMeta}>{detail}</div> : null}
+      </div>
+    </section>
+  );
+}
+
+function IntentFollowThroughSection({ intentFollowThrough }) {
+  if (!intentFollowThrough) return null;
+  const headline = String(intentFollowThrough.headline || "").trim();
+  const detail = String(intentFollowThrough.detail || "").trim();
+  if (!headline || !detail) return null;
+  const inner = (
+    <>
+      <div style={styles.rowTitle}>{headline}</div>
+      <div style={styles.rowMeta}>{detail}</div>
+    </>
+  );
+  return (
+    <section style={styles.section} data-testid="waiter-intent-follow-through">
+      <SectionLabel>Want to Eat</SectionLabel>
+      {intentFollowThrough.link ? (
+        <Link to={intentFollowThrough.link} style={styles.listCard}>
+          {inner}
+        </Link>
+      ) : (
+        <div style={styles.listCard}>{inner}</div>
+      )}
+    </section>
+  );
+}
+
 function PrivateOfferSection({ privateOffer }) {
   if (!privateOffer) return null;
   const tag = String(privateOffer.preferenceTag || "").trim();
@@ -206,7 +247,7 @@ function PrivateOfferSection({ privateOffer }) {
 
   const inner = (
     <>
-      <div style={styles.offerKicker}>Because you love {tag}</div>
+      <div style={styles.offerKicker}>You like {tag}</div>
       <p style={styles.offerBody}>{body}.</p>
       <div style={styles.offerCta}>Redeem when you&apos;re ready →</div>
     </>
@@ -271,10 +312,12 @@ function MealOptionsSection({ mealOptions, mealPeriod, onSelectMealPeriod }) {
               ? `/restaurants/${card.restaurant_id}`
               : null;
           const detail = items.join(" · ");
+          const why = String(card.why || "").trim();
           const content = (
             <>
               <div style={styles.rowTitle}>{card.restaurant}</div>
               {detail ? <div style={styles.rowMeta}>{detail}</div> : null}
+              {why ? <div style={styles.rowMeta}>{why}</div> : null}
             </>
           );
           return href ? (
@@ -315,6 +358,8 @@ export default function FoodInterestsPage() {
     readMenuBrowserVenueSession() ||
     "";
   const clusterId = String(searchParams.get("cluster_id") || "").trim();
+  const restaurantId = String(searchParams.get("restaurant_id") || "").trim();
+  const restaurantSlug = String(searchParams.get("restaurant_slug") || "").trim();
 
   const [mealPeriod, setMealPeriod] = useState(() => {
     const fromUrl = normalizeMealPeriodId(searchParams.get("meal_period"));
@@ -339,6 +384,8 @@ export default function FoodInterestsPage() {
     fetchWaiterBriefing(location.city, location.state, period, {
       clusterId: clusterId || undefined,
       clusterSlug: clusterSlug || undefined,
+      restaurantId: restaurantId || undefined,
+      restaurantSlug: restaurantSlug || undefined,
     })
       .then((data) => {
         if (cancelled) return;
@@ -362,7 +409,7 @@ export default function FoodInterestsPage() {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- meal_period is client-only; do not refetch on tab change
-  }, [canFetchBriefing, location.city, location.state, clusterId, clusterSlug, timeZone]);
+  }, [canFetchBriefing, location.city, location.state, clusterId, clusterSlug, restaurantId, restaurantSlug, timeZone]);
 
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
@@ -393,6 +440,8 @@ export default function FoodInterestsPage() {
     briefing?.connect ||
       briefing?.joinMe ||
       briefing?.privateOffer ||
+      briefing?.birthday ||
+      briefing?.intentFollowThrough ||
       briefing?.mealOptions
   );
 
@@ -438,7 +487,11 @@ export default function FoodInterestsPage() {
             <>
               <ConnectSection connect={briefing?.connect ?? null} />
               <JoinMeSection joinMe={briefing?.joinMe ?? null} />
+              <BirthdaySection birthday={briefing?.birthday ?? null} />
               <PrivateOfferSection privateOffer={briefing?.privateOffer ?? null} />
+              <IntentFollowThroughSection
+                intentFollowThrough={briefing?.intentFollowThrough ?? null}
+              />
               <MealOptionsSection
                 mealOptions={briefing?.mealOptions ?? null}
                 mealPeriod={mealPeriod}

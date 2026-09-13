@@ -19,10 +19,16 @@ test("Waiter briefing sections + cluster follow; no forbidden UI", () => {
   assert.match(page, /waiter-join-me|JoinMeSection/);
   assert.match(page, /waiter-private-offer|PrivateOfferSection/);
   assert.match(page, /waiter-meal-options|MealOptionsSection/);
+  assert.match(page, /waiter-birthday|BirthdaySection/);
+  assert.match(page, /waiter-intent-follow-through|IntentFollowThroughSection/);
   assert.match(page, /briefing\?\.connect/);
   assert.match(page, /briefing\?\.joinMe/);
   assert.match(page, /briefing\?\.privateOffer/);
+  assert.match(page, /briefing\?\.birthday/);
+  assert.match(page, /briefing\?\.intentFollowThrough/);
   assert.match(page, /briefing\?\.mealOptions/);
+  assert.match(page, /restaurant_id/);
+  assert.match(page, /restaurant_slug/);
   assert.match(page, /WAITER_MEAL_PERIODS/);
   assert.doesNotMatch(page, /\/account\/cluster-subscriptions/);
   assert.doesNotMatch(page, /Manage followed places/);
@@ -38,5 +44,7 @@ test("Waiter briefing sections + cluster follow; no forbidden UI", () => {
   const api = read("src/lib/waiterApi.js");
   assert.match(api, /fetchWaiterBriefing/);
   assert.match(api, /\/api\/waiter\/briefing/);
+  assert.match(api, /restaurant_id/);
+  assert.match(api, /restaurant_slug/);
   assert.doesNotMatch(api, /if \(!city \|\| !state\) return \{ ok: true/);
 });

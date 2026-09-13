@@ -2,7 +2,8 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { BrandLogo } from "../../components/BrandLogo.jsx";
 import PrimaryLocationPicker from "../../components/consumer/PrimaryLocationPicker.jsx";
-import { updatePrimaryLocation } from "../../lib/consumerApi.js";
+import { getConsumerProfile, updateConsumerProfile, updatePrimaryLocation } from "../../lib/consumerApi.js";
+import { mapWelcomeCuisineLabels, normalizeFavoriteFoods } from "../../lib/dinerFavoriteFoods.js";
 
 const VITE_ENV = import.meta.env || {};
 const DEFAULT_PROD_API_BASE = "https://menubloc-backend-production.up.railway.app";
@@ -137,6 +138,23 @@ export default function AccountWelcome() {
             dietary_preferences: selectedDietary.map((key) => ({ key, is_enabled: true })),
           }),
         }).catch(() => {});
+      }
+
+      const cuisineFavorites = mapWelcomeCuisineLabels(selectedCuisines);
+      if (cuisineFavorites.length > 0) {
+        let existing = [];
+        try {
+          const current = await getConsumerProfile();
+          existing = Array.isArray(current?.profile?.favorite_foods)
+            ? current.profile.favorite_foods
+            : Array.isArray(current?.favorite_foods)
+              ? current.favorite_foods
+              : [];
+        } catch {
+          existing = [];
+        }
+        const merged = normalizeFavoriteFoods([...existing, ...cuisineFavorites]);
+        await updateConsumerProfile({ favorite_foods: merged }).catch(() => {});
       }
 
       if (primaryLocation?.us_city_id) {

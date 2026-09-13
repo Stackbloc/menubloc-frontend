@@ -64,6 +64,24 @@ export function normalizeFavoriteFoods(list) {
   return out;
 }
 
+/** Map Account Welcome chip labels onto the existing favorite_foods vocabulary. */
+export function mapWelcomeCuisineLabels(labels) {
+  const byLabel = Object.fromEntries(
+    ALL_FAVORITE_FOOD_OPTIONS.map((o) => [o.label.toLowerCase(), o])
+  );
+  const byKey = Object.fromEntries(ALL_FAVORITE_FOOD_OPTIONS.map((o) => [o.key, o]));
+  const out = [];
+  const seen = new Set();
+  for (const raw of Array.isArray(labels) ? labels : []) {
+    const token = String(raw || "").trim().toLowerCase();
+    const opt = byLabel[token] || byKey[token.replace(/[ -]+/g, "_")];
+    if (!opt || seen.has(opt.key)) continue;
+    seen.add(opt.key);
+    out.push({ kind: opt.kind, key: opt.key, label: opt.label });
+  }
+  return out;
+}
+
 export function summarizeFavoriteFoods(list) {
   const rows = normalizeFavoriteFoods(list);
   if (!rows.length) return "None yet — tap foods you love to unlock better discovery";

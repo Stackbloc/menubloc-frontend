@@ -36,11 +36,18 @@ describe("AccountWelcome contract", () => {
     expect(src).not.toMatch(/Zip code/);
   });
 
+  it("persists selected favorite cuisines onto existing favorite_foods", () => {
+    expect(src).toMatch(/mapWelcomeCuisineLabels\(selectedCuisines\)/);
+    expect(src).toMatch(/updateConsumerProfile\(\{ favorite_foods: merged \}\)/);
+    expect(src).toMatch(/getConsumerProfile/);
+    expect(src).not.toMatch(/Because you love/);
+  });
+
   it("shows a ready transition before navigating home", () => {
     expect(src).toMatch(/showReady/);
     expect(src).toMatch(/Your account is all set up/);
     expect(src).toMatch(/additional preferences using the Waiter/);
-    expect(src).toMatch(/taking you to the home screen/);
+    expect(src).toMatch(/Redirecting/);
     expect(src).toMatch(/HOME_REDIRECT_MS/);
     expect(src).toMatch(/setShowReady\(true\)/);
   });
