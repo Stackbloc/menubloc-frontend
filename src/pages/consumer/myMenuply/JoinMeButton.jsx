@@ -1,11 +1,13 @@
 /**
  * Compact inline Join Me pill — Connect View / peer presentation.
  * Edit View uses JoinMeStatusLine for per-occasion eligibility instead.
+ * Fill: Menuply mid green (same family as profile CTAs — not near-black).
  */
 
 import { Link } from "react-router-dom";
+import { GREEN_MID } from "./myMenuplyStyles.js";
 
-export const JOIN_ME_BUTTON_FILL = "#173404";
+export const JOIN_ME_BUTTON_FILL = GREEN_MID; // #166534
 export const JOIN_ME_CARD_ENDED_OPACITY = 0.55;
 
 const pillStyle = {

@@ -57,9 +57,12 @@ function isJoinMeGuestHref(href) {
 }
 
 /**
- * Own-hub Connect View: schedule Join Me or Take Me Out from a craving.
- * Edit View uses Take Me Out On/Off presets instead.
+ * Own-hub Connect View: schedule Join Me (or Take Me Out) from a craving.
+ * Trigger uses compact JoinMeButton — same Connect presentation as plan/event cards.
+ * Edit View configures Join Me on each plan/event card instead.
  * Peer-hub: Invite Me Out when eligible.
+ *
+ * placement="header" — sits in SectionHeader aside (inside Cravings), not below the scroller.
  */
 function WantCravingsActionBox({
   wants = [],
@@ -71,11 +74,13 @@ function WantCravingsActionBox({
   onJoinMeFromCraving,
   onTakeMeOutFromCraving,
   onInviteMeOut,
+  placement = "inline",
 }) {
   const [open, setOpen] = useState(false);
   const [selectedKey, setSelectedKey] = useState("");
   const [mode, setMode] = useState("join_me");
   const [error, setError] = useState("");
+  const inHeader = placement === "header";
 
   const options = useMemo(() => {
     const rows = [];
@@ -105,7 +110,7 @@ function WantCravingsActionBox({
 
   if (!options.length) return null;
 
-  /** Connect View only — Edit View uses Take Me Out On/Off presets instead. */
+  /** Connect View only — Edit View configures Join Me on each plan/event card. */
   const showOwnerFlow =
     isConnectPreview && typeof onJoinMeFromCraving === "function";
   const showPeerInvite =
@@ -113,6 +118,13 @@ function WantCravingsActionBox({
   if (!showOwnerFlow && !showPeerInvite) return null;
 
   const selected = options.find((o) => o.key === selectedKey) || options[0];
+
+  function openSheet() {
+    setSelectedKey(options[0]?.key || "");
+    setMode("join_me");
+    setError("");
+    setOpen(true);
+  }
 
   function handleContinue() {
     setError("");
@@ -134,146 +146,172 @@ function WantCravingsActionBox({
     setOpen(false);
   }
 
+  const sheet = showPeerInvite ? (
+    <div style={wantActStyles.sheet} data-testid="want-cravings-action-sheet">
+      <div style={wantActStyles.sheetHead}>
+        <span style={wantActStyles.sheetTitle}>Invite Me Out</span>
+        <button
+          type="button"
+          style={wantActStyles.close}
+          onClick={() => setOpen(false)}
+          aria-label="Close"
+        >
+          ✕
+        </button>
+      </div>
+      <button
+        type="button"
+        style={wantActStyles.actionBtn}
+        data-testid="want-cravings-action-invite"
+        onClick={() => {
+          onInviteMeOut();
+          setOpen(false);
+        }}
+      >
+        Invite Me Out
+      </button>
+    </div>
+  ) : (
+    <div style={wantActStyles.sheet} data-testid="want-cravings-action-sheet">
+      <div style={wantActStyles.sheetHead}>
+        <span style={wantActStyles.sheetTitle}>Join Me</span>
+        <button
+          type="button"
+          style={wantActStyles.close}
+          onClick={() => setOpen(false)}
+          aria-label="Close"
+        >
+          ✕
+        </button>
+      </div>
+      <label style={wantActStyles.fieldLabel} htmlFor="want-craving-pick">
+        Craving
+      </label>
+      <select
+        id="want-craving-pick"
+        style={wantActStyles.select}
+        value={selected?.key || ""}
+        onChange={(e) => setSelectedKey(e.target.value)}
+        data-testid="want-cravings-action-item"
+      >
+        {options.map((opt) => (
+          <option key={opt.key} value={opt.key}>
+            {opt.label}
+          </option>
+        ))}
+      </select>
+      <fieldset style={wantActStyles.modeFieldset} data-testid="want-cravings-mode">
+        <legend style={wantActStyles.fieldLabel}>How should this work?</legend>
+        <label style={wantActStyles.modeOption}>
+          <input
+            type="radio"
+            name="craving-outing-mode"
+            value="join_me"
+            checked={mode === "join_me"}
+            onChange={() => setMode("join_me")}
+            data-testid="want-cravings-mode-join-me"
+          />
+          <span>
+            <strong>Join Me</strong>
+            <span style={wantActStyles.modeHint}>
+              You’re hosting — open a plan and let people join you.
+            </span>
+          </span>
+        </label>
+        <label style={wantActStyles.modeOption}>
+          <input
+            type="radio"
+            name="craving-outing-mode"
+            value="take_me_out"
+            checked={mode === "take_me_out"}
+            onChange={() => setMode("take_me_out")}
+            data-testid="want-cravings-mode-take-me-out"
+          />
+          <span>
+            <strong>Take Me Out</strong>
+            <span style={wantActStyles.modeHint}>
+              Ask someone to take you out for this craving.
+            </span>
+          </span>
+        </label>
+      </fieldset>
+      {error ? (
+        <p style={wantActStyles.error} data-testid="want-cravings-action-error">
+          {error}
+        </p>
+      ) : null}
+      <button
+        type="button"
+        style={wantActStyles.continueBtn}
+        data-testid="want-cravings-action-continue"
+        onClick={handleContinue}
+      >
+        {mode === "take_me_out" ? "Continue to invite" : "Pick a date"}
+      </button>
+    </div>
+  );
+
+  const trigger = showOwnerFlow ? (
+    <JoinMeButton testId="want-cravings-action-open" onClick={openSheet} />
+  ) : (
+    <button
+      type="button"
+      style={wantActStyles.trigger}
+      data-testid="want-cravings-action-open"
+      onClick={openSheet}
+    >
+      Invite Me Out
+    </button>
+  );
+
   return (
-    <div style={wantActStyles.wrap} data-testid="want-cravings-action-box">
-      {!open ? (
-        <div style={wantActStyles.triggerRow}>
-          {showOwnerFlow ? (
-            <JoinMeButton
-              testId="want-cravings-action-open"
-              onClick={() => {
-                setSelectedKey(options[0]?.key || "");
-                setMode("join_me");
-                setError("");
-                setOpen(true);
-              }}
-            />
-          ) : (
-            <button
-              type="button"
-              style={wantActStyles.trigger}
-              data-testid="want-cravings-action-open"
-              onClick={() => {
-                setSelectedKey(options[0]?.key || "");
-                setMode("join_me");
-                setError("");
-                setOpen(true);
-              }}
-            >
-              Invite Me Out
-            </button>
-          )}
-        </div>
-      ) : showPeerInvite ? (
-        <div style={wantActStyles.sheet} data-testid="want-cravings-action-sheet">
-          <div style={wantActStyles.sheetHead}>
-            <span style={wantActStyles.sheetTitle}>Invite Me Out</span>
-            <button
-              type="button"
-              style={wantActStyles.close}
-              onClick={() => setOpen(false)}
-              aria-label="Close"
-            >
-              ✕
-            </button>
-          </div>
-          <button
-            type="button"
-            style={wantActStyles.actionBtn}
-            data-testid="want-cravings-action-invite"
-            onClick={() => {
-              onInviteMeOut();
-              setOpen(false);
-            }}
-          >
-            Invite Me Out
-          </button>
-        </div>
-      ) : (
-        <div style={wantActStyles.sheet} data-testid="want-cravings-action-sheet">
-          <div style={wantActStyles.sheetHead}>
-            <span style={wantActStyles.sheetTitle}>Join Me</span>
-            <button
-              type="button"
-              style={wantActStyles.close}
-              onClick={() => setOpen(false)}
-              aria-label="Close"
-            >
-              ✕
-            </button>
-          </div>
-          <label style={wantActStyles.fieldLabel} htmlFor="want-craving-pick">
-            Craving
-          </label>
-          <select
-            id="want-craving-pick"
-            style={wantActStyles.select}
-            value={selected?.key || ""}
-            onChange={(e) => setSelectedKey(e.target.value)}
-            data-testid="want-cravings-action-item"
-          >
-            {options.map((opt) => (
-              <option key={opt.key} value={opt.key}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-          <fieldset style={wantActStyles.modeFieldset} data-testid="want-cravings-mode">
-            <legend style={wantActStyles.fieldLabel}>How should this work?</legend>
-            <label style={wantActStyles.modeOption}>
-              <input
-                type="radio"
-                name="craving-outing-mode"
-                value="join_me"
-                checked={mode === "join_me"}
-                onChange={() => setMode("join_me")}
-                data-testid="want-cravings-mode-join-me"
-              />
-              <span>
-                <strong>Join Me</strong>
-                <span style={wantActStyles.modeHint}>
-                  You’re hosting — open a plan and let people join you.
-                </span>
-              </span>
-            </label>
-            <label style={wantActStyles.modeOption}>
-              <input
-                type="radio"
-                name="craving-outing-mode"
-                value="take_me_out"
-                checked={mode === "take_me_out"}
-                onChange={() => setMode("take_me_out")}
-                data-testid="want-cravings-mode-take-me-out"
-              />
-              <span>
-                <strong>Take Me Out</strong>
-                <span style={wantActStyles.modeHint}>
-                  Ask someone to take you out for this craving.
-                </span>
-              </span>
-            </label>
-          </fieldset>
-          {error ? (
-            <p style={wantActStyles.error} data-testid="want-cravings-action-error">
-              {error}
-            </p>
-          ) : null}
-          <button
-            type="button"
-            style={wantActStyles.continueBtn}
-            data-testid="want-cravings-action-continue"
-            onClick={handleContinue}
-          >
-            {mode === "take_me_out" ? "Continue to invite" : "Pick a date"}
-          </button>
-        </div>
-      )}
+    <div
+      style={{
+        ...(inHeader ? wantActStyles.wrapHeader : wantActStyles.wrap),
+        ...(inHeader && open ? wantActStyles.wrapHeaderOpen : null),
+      }}
+      data-testid="want-cravings-action-box"
+      data-placement={placement}
+    >
+      {!open ? <div style={wantActStyles.triggerRow}>{trigger}</div> : null}
+      {open ? (
+        inHeader ? (
+          <div style={wantActStyles.headerSheetAnchor}>{sheet}</div>
+        ) : (
+          sheet
+        )
+      ) : null}
     </div>
   );
 }
 
 const wantActStyles = {
   wrap: { marginTop: 8 },
+  wrapHeader: {
+    marginTop: 0,
+    position: "relative",
+    flexShrink: 0,
+  },
+  wrapHeaderOpen: {
+    zIndex: 40,
+  },
+  headerAside: {
+    display: "flex",
+    flexWrap: "wrap",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    gap: 8,
+  },
+  headerSheetAnchor: {
+    position: "absolute",
+    top: "100%",
+    right: 0,
+    marginTop: 8,
+    width: "min(92vw, 320px)",
+    zIndex: 50,
+    boxShadow: "0 12px 28px rgba(15, 23, 42, 0.14)",
+    borderRadius: 12,
+  },
   triggerRow: {
     display: "flex",
     flexWrap: "wrap",
@@ -859,17 +897,30 @@ export default function EatingHubSection({
             {...PROFILE_SECTION_HEADERS.wannaEat}
             testId="wanna-eat-section-header"
             aside={
-              canEdit ? (
-                <button
-                  type="button"
-                  style={styles.compactAdd}
-                  data-testid="status-compose-open"
-                  disabled={postBusy === "want"}
-                  onClick={() => setWantStatusComposeOpen(true)}
-                >
-                  <span aria-hidden="true">+</span> Add
-                </button>
-              ) : null
+              <div style={wantActStyles.headerAside}>
+                {canEdit ? (
+                  <button
+                    type="button"
+                    style={styles.compactAdd}
+                    data-testid="status-compose-open"
+                    disabled={postBusy === "want"}
+                    onClick={() => setWantStatusComposeOpen(true)}
+                  >
+                    <span aria-hidden="true">+</span> Add
+                  </button>
+                ) : null}
+                <WantCravingsActionBox
+                  wants={wants}
+                  diningIntents={diningIntents}
+                  canEdit={canEdit}
+                  isConnectPreview={isConnectPreview}
+                  canInviteMeOut={canInviteMeOut}
+                  onJoinMeFromCraving={onJoinMeFromCraving}
+                  onTakeMeOutFromCraving={onTakeMeOutFromCraving}
+                  onInviteMeOut={onInviteMeOut}
+                  placement="header"
+                />
+              </div>
             }
           />
           {canEdit ? (
@@ -940,16 +991,6 @@ export default function EatingHubSection({
             onDeleteDiningIntent={canEdit ? onDiningIntentDelete : undefined}
             deleteBusy={wantDeleteBusy || diningIntentDeleteBusy}
             onViewMmt={onViewMmt}
-          />
-          <WantCravingsActionBox
-            wants={wants}
-            diningIntents={diningIntents}
-            canEdit={canEdit}
-            isConnectPreview={isConnectPreview}
-            canInviteMeOut={canInviteMeOut}
-            onJoinMeFromCraving={onJoinMeFromCraving}
-            onTakeMeOutFromCraving={onTakeMeOutFromCraving}
-            onInviteMeOut={onInviteMeOut}
           />
         </div>
       </section>

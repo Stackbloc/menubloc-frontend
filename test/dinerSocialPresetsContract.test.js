@@ -87,7 +87,8 @@ test("My events cards: Edit status line vs Connect JoinMeButton", () => {
   assert.match(bits, /JoinMeStatusLine/);
   assert.match(bits, /named-share-join-me-status/);
   assert.match(bits, /named-share-join-me/);
-  assert.match(btn, /#173404/);
+  assert.match(btn, /#166534|GREEN_MID/);
+  assert.doesNotMatch(btn, /#173404/);
   assert.match(line, /Join Me is \{state\}/);
   assert.doesNotMatch(bits, /Turn on Join Me/);
   assert.doesNotMatch(bits, /editJoinMeLabel/);

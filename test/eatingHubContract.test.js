@@ -58,6 +58,7 @@ test("My Menuply and peer hub use five-section presentation hub", () => {
   assert.match(section, /Add a craving anytime|No cravings shared yet/);
   assert.match(section, /want-cravings-action-open/);
   assert.match(section, /want-cravings-action-box/);
+  assert.match(section, /placement="header"/);
   assert.match(section, /JoinMeButton/);
   assert.match(section, /want-cravings-mode-join-me/);
   assert.match(section, /want-cravings-mode-take-me-out/);
@@ -79,7 +80,10 @@ test("My Menuply and peer hub use five-section presentation hub", () => {
   assert.doesNotMatch(section, /PhotoGrid/);
   assert.doesNotMatch(section, /Multiplier\/Post/);
   assert.match(section, /editMode/);
-  assert.match(mine, /searchParams\.get\("view"\) === "connect"/);
+  assert.match(
+    mine,
+    /previewAsConnect|get\("view"\) === "connect"|URLSearchParams\(window\.location\.search\)\.get\("view"\)/
+  );
   const viewToggle = read("src/components/consumer/feed/ProfileViewModeToggle.jsx");
   assert.match(viewToggle, /profile-view-mode-toggle/);
   assert.match(viewToggle, /Edit View/);

@@ -32,7 +32,8 @@ test("Edit View uses JoinMeStatusLine; Connect View uses JoinMeButton", () => {
   assert.match(bits, /JoinMeButton/);
   assert.match(bits, /plan-row-join-me/);
   assert.match(bits, /named-share-join-me/);
-  assert.match(btn, /#173404/);
+  assert.match(btn, /#166534|GREEN_MID/);
+  assert.doesNotMatch(btn, /#173404/);
   assert.match(line, /Join Me is \{state\}/);
   assert.match(line, /click to turn/);
   assert.doesNotMatch(bits, /planRowJoinBtn/);
