@@ -126,7 +126,7 @@ import {
   MY_MENUPLY_PROFILE_PATH,
 } from "../../lib/myMenuplyRoutes.js";
 import { futurePlanKey, futurePlanRestaurantName, futurePlanDetailParts } from "./myMenuply/dinerHubFormat.js";
-import { dishPhotoUrl, eatingFoodName, joinHomemadeComment } from "../../lib/eatingPlaceLink.js";
+import { dishPhotoUrl, eatingFoodName, joinHomemadeComment, splitHomemadeComment } from "../../lib/eatingPlaceLink.js";
 import { mergeEatingFeedForHub, mapDiaryEntriesForHub, mapFoodActivityForHub, eatingFeedKey } from "../../lib/eatingFeedMerge.js";
 import {
   createHomemadeDish,
@@ -165,6 +165,36 @@ function formatEventWhen(ev) {
   const d = new Date(raw);
   if (Number.isNaN(d.getTime())) return "";
   return d.toLocaleString(undefined, { weekday: "short", month: "short", day: "numeric" });
+}
+
+/** Prefill EatingPlanDayForm for long-press Edit on What's cookin'. */
+function planToEditPrefill(plan) {
+  if (!plan) return null;
+  const place = String(plan.place_label || plan.restaurant_name || "").trim();
+  const split = splitHomemadeComment(place);
+  const homemade =
+    split.homemade || (!plan.restaurant_id && /^Homemade/i.test(place));
+  const { notes } = futurePlanDetailParts(plan);
+  const audience = String(plan.join_audience || "").toLowerCase();
+  return {
+    editingKey: plan.token || plan.id,
+    homemade,
+    restaurant: plan.restaurant_id
+      ? {
+          restaurant_id: plan.restaurant_id,
+          restaurant_name: plan.restaurant_name || place,
+          restaurant_slug: plan.restaurant_slug,
+        }
+      : null,
+    dish: null,
+    text: homemade ? split.recipe || notes || "" : notes || "",
+    joinable: Boolean(plan.joinable),
+    joinAudience: audience === "selected" ? "selected" : "connections",
+    joinAllowedUserIds: Array.isArray(plan.join_allowed_user_ids)
+      ? plan.join_allowed_user_ids
+      : [],
+    joinCapacity: plan.join_capacity != null ? String(plan.join_capacity) : "4",
+  };
 }
 
 const COMPOSE_LOGIN_ACTIONS = new Set([
@@ -1125,6 +1155,26 @@ export default function MyMenuplyPage() {
         const up = await uploadEatingPlanMedia(file);
         ({ photo_url, video_url } = eatingMediaFromUpload(up));
       }
+      const editingKey = planPrefill?.editingKey;
+      if (editingKey) {
+        await updateWhatWeDoingSession(editingKey, {
+          restaurant_id: payload.homemade ? null : payload.restaurantId,
+          place_label: payload.placeLabel,
+          joinable: payload.joinable,
+          join_capacity: payload.joinCapacity,
+          join_audience: payload.joinAudience,
+          join_allowed_user_ids: payload.joinAllowedUserIds,
+          ...(photo_url || video_url ? { photo_url, video_url } : {}),
+        });
+        if (!payload.homemade && payload.restaurantId) {
+          await maybeFollowRestaurant(payload.restaurantId);
+        }
+        setPlanPrefill(null);
+        setSchedulingPlans(false);
+        setSelectedPlanKey(String(editingKey));
+        await load();
+        return;
+      }
       const data = await createWhatWeDoingSession({
         plan_date: payload.planDate,
         restaurant_id: payload.homemade ? null : payload.restaurantId,
@@ -1147,10 +1197,24 @@ export default function MyMenuplyPage() {
       setSelectedPlanKey(futurePlanKey(session));
       await load();
     } catch (err) {
-      setError(err.message || "Unable to add plan");
+      setError(err.message || (planPrefill?.editingKey ? "Unable to update plan" : "Unable to add plan"));
     } finally {
       setPostBusy("");
     }
+  }
+
+  function openPlanEdit(plan) {
+    if (!plan || plan.is_creator === false) return;
+    const ymd = planYmd(plan.plan_date);
+    if (ymd) setHubDate(ymd);
+    setPlanPrefill(planToEditPrefill(plan));
+    setSelectedPlanKey(futurePlanKey(plan));
+    setSchedulingPlans(true);
+  }
+
+  function handleSchedulingPlansChange(next) {
+    setSchedulingPlans(next);
+    if (!next) setPlanPrefill(null);
   }
 
   async function onEatingPhotoPick(item, file) {
@@ -2176,7 +2240,7 @@ export default function MyMenuplyPage() {
               selectedPlanKey={selectedPlanKey}
               onSelectedPlanKeyChange={setSelectedPlanKey}
               schedulingPlans={schedulingPlans}
-              onSchedulingPlansChange={setSchedulingPlans}
+              onSchedulingPlansChange={handleSchedulingPlansChange}
               wants={wants}
               diningIntents={diningIntents}
               wantListError={wantListError}
@@ -2278,6 +2342,8 @@ export default function MyMenuplyPage() {
               diningIntentDeleteBusy={postBusy === "dining-intent-delete"}
               onPlanDelete={onPlanDelete}
               planDeleteBusy={String(postBusy).startsWith("plan-delete-")}
+              onPlanEdit={previewAsConnect ? undefined : openPlanEdit}
+              planEditBusy={postBusy === "eating" && Boolean(planPrefill?.editingKey)}
               onPlanAddDetails={(next) => {
                 setSelectedPlanKey(futurePlanKey(next));
                 setLastPost({

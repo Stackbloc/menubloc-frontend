@@ -41,7 +41,8 @@ test("See Who's Eating reel: guest watch, CK dish, existing camera, Connect noti
   // Delete is owner profile long-press only — not a feed "Remove from Public Feed" beg.
   const scanRow = read("src/pages/consumer/myMenuply/DinerActivityScanRow.jsx");
   assert.match(scanRow, /useLongPressReveal/);
-  assert.match(scanRow, /diner-activity-scan-delete/);
+  assert.match(scanRow, /HubLongPressActions/);
+  assert.match(scanRow, /testIdPrefix="diner-activity-scan"/);
   assert.match(scanRow, /Owner profile: long-press/);
 
   const fullscreen = read("src/pages/consumer/myMenuply/SeeWhosEatingFullscreen.jsx");

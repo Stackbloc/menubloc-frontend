@@ -25,6 +25,7 @@ export default function EatingPlanDayForm({
   initialJoinCapacity = "4",
   locationCity = null,
   locationState = null,
+  submitLabel = "Post",
 }) {
   const [restaurant, setRestaurant] = useState(initialRestaurant);
   const [dish, setDish] = useState(initialDish);
@@ -116,8 +117,9 @@ export default function EatingPlanDayForm({
         type="submit"
         disabled={busy || (joinable && joinAudience === "selected" && selectedIds.length === 0)}
         style={s.primaryBtn}
+        data-testid="eating-plan-day-submit"
       >
-        {busy ? "…" : "Post"}
+        {busy ? "…" : submitLabel}
       </button>
     </form>
   );

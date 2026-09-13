@@ -530,6 +530,8 @@ export default function EatingHubSection({
   onPlanAddVideo,
   onPlanDelete,
   planDeleteBusy = false,
+  onPlanEdit = null,
+  planEditBusy = false,
   onPlanJoinMeToggle = null,
   planJoinMeBusy = false,
   onPostTagged,
@@ -1083,6 +1085,12 @@ export default function EatingHubSection({
                   onOpenCalendar={openPlanOnCalendar}
                   onAddDetails={canEdit ? onPlanAddDetails : undefined}
                   onAddPlanVideo={canEdit ? onPlanAddVideo : undefined}
+                  onEdit={
+                    !canEdit || !onPlanEdit || plan?.is_creator !== true
+                      ? undefined
+                      : onPlanEdit
+                  }
+                  editBusy={planEditBusy}
                   onDelete={
                     !canEdit || !onPlanDelete || plan?.is_creator !== true
                       ? undefined
@@ -1175,12 +1183,14 @@ export default function EatingHubSection({
           <div
             role="dialog"
             aria-modal="true"
-            aria-label="Schedule eating plan"
+            aria-label={planPrefill?.editingKey ? "Edit eating plan" : "Schedule eating plan"}
             style={styles.planSheetPanel}
             onClick={(e) => e.stopPropagation()}
           >
             <div style={styles.planSheetHead}>
-              <p style={styles.planSheetTitle}>Eating plan</p>
+              <p style={styles.planSheetTitle}>
+                {planPrefill?.editingKey ? "Edit eating plan" : "Eating plan"}
+              </p>
               <button
                 type="button"
                 style={styles.planSheetClose}
@@ -1193,6 +1203,7 @@ export default function EatingHubSection({
             <EatingPlanDayForm
               key={[
                 dateCmp > 0 ? hubDate : today,
+                planPrefill?.editingKey || "new",
                 planPrefill?.restaurant?.restaurant_id || "",
                 planPrefill?.dish?.menu_item_id || planPrefill?.dish?.item_name || "",
                 planJoinablePrefill ? "join" : "solo",
@@ -1213,6 +1224,7 @@ export default function EatingHubSection({
               initialJoinCapacity={planJoinCapacityPrefill}
               locationCity={locationCity}
               locationState={locationState}
+              submitLabel={planPrefill?.editingKey ? "Save" : "Post"}
               onSubmit={onPostPlan}
             />
           </div>

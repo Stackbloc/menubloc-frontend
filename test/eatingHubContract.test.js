@@ -146,7 +146,11 @@ test("My Menuply and peer hub use five-section presentation hub", () => {
   );
   assert.match(
     read("src/pages/consumer/myMenuply/DinerActivityScanRow.jsx"),
-    /diner-activity-scan-delete/
+    /HubLongPressActions/
+  );
+  assert.match(
+    read("src/pages/consumer/myMenuply/DinerActivityScanRow.jsx"),
+    /testIdPrefix="diner-activity-scan"/
   );
   assert.match(mealBoard, /resolveEatingDishVisual/);
   assert.match(dishVisual, /video_url/);

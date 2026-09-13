@@ -832,6 +832,8 @@ export function FuturePlanRow({
   onAddPlanVideo,
   onDelete,
   deleteBusy = false,
+  onEdit = null,
+  editBusy = false,
   /** Edit View: per-occasion Join Me eligibility. Connect/peer omit. */
   onJoinMeToggle = null,
   joinMeBusy = false,
@@ -841,29 +843,23 @@ export function FuturePlanRow({
   const when = formatPlanBracketDate(plan?.plan_date);
   const name = futurePlanRestaurantName(plan);
   const { meal, notes } = futurePlanDetailParts(plan);
+  const canEditRow = typeof onEdit === "function";
   const canDelete = typeof onDelete === "function";
+  const canAct = canEditRow || canDelete;
   const joinHref = planJoinHref(plan);
   const ended = Boolean(plan?.is_past || plan?.status === "ended" || plan?.closed);
   const joinOpen = Boolean(plan?.joinable) && !ended;
   const isEdit = Boolean(editJoinMe);
   const deprioritized = Boolean(ended || (!isEdit && !joinOpen));
   const {
-    open: deleteOpen,
+    open: actionsOpen,
     dismiss,
     consumeArmedClick,
     bind,
-  } = useLongPressReveal(canDelete);
-
-  function handleDelete(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    if (deleteBusy) return;
-    dismiss();
-    onDelete?.(plan);
-  }
+  } = useLongPressReveal(canAct);
 
   function handleRowActivate() {
-    if (consumeArmedClick() || deleteOpen) {
+    if (consumeArmedClick() || actionsOpen) {
       dismiss();
       return;
     }
@@ -898,18 +894,17 @@ export function FuturePlanRow({
       data-join-me-surface={isEdit ? "edit" : "connect"}
       {...bind}
     >
-      {deleteOpen ? (
-        <button
-          type="button"
-          style={s.hubCardDelete}
-          data-testid="hub-card-delete"
-          aria-label={`Delete eating plan ${name}`}
-          disabled={deleteBusy}
-          onClick={handleDelete}
-        >
-          Delete
-        </button>
-      ) : null}
+      <HubLongPressActions
+        open={actionsOpen}
+        testIdPrefix="future-plan"
+        onEdit={canEditRow ? () => onEdit(plan) : null}
+        onDelete={canDelete ? () => onDelete(plan) : null}
+        editBusy={editBusy}
+        deleteBusy={deleteBusy}
+        editAriaLabel={`Edit eating plan ${name}`}
+        deleteAriaLabel={`Delete eating plan ${name}`}
+        onDismiss={dismiss}
+      />
       <div
         style={{
           ...s.planRowCompact,

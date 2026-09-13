@@ -65,7 +65,11 @@ test("My Menuply is the diner's personal home", () => {
   assert.match(section, /\(\) => onDiaryDelete\(primary\)/);
   assert.match(
     read("src/pages/consumer/myMenuply/DinerActivityScanRow.jsx"),
-    /diner-activity-scan-delete/
+    /HubLongPressActions/
+  );
+  assert.match(
+    read("src/pages/consumer/myMenuply/DinerActivityScanRow.jsx"),
+    /testIdPrefix="diner-activity-scan"/
   );
   assert.match(
     read("src/pages/consumer/myMenuply/DinerActivityScanRow.jsx"),

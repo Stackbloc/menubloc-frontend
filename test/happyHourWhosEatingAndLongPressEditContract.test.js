@@ -76,6 +76,14 @@ test("Long-press reveals Edit and Delete together", () => {
   const bits = read("src/pages/consumer/myMenuply/myMenuplyBits.jsx");
   assert.match(bits, /HubLongPressActions/);
   assert.match(bits, /onEdit = null/);
+  assert.match(bits, /function FuturePlanRow/);
+  assert.match(bits, /testIdPrefix="future-plan"/);
+  assert.match(bits, /onEdit=\{canEditRow \? \(\) => onEdit\(plan\) : null\}/);
+
+  const hub = read("src/pages/consumer/myMenuply/EatingHubSection.jsx");
+  assert.match(hub, /onPlanEdit/);
+  assert.match(hub, /Edit eating plan/);
+  assert.match(hub, /submitLabel=\{planPrefill\?\.editingKey \? "Save" : "Post"\}/);
 
   const home = read("src/pages/consumer/myMenuply/HomeAtHomeSection.jsx");
   assert.match(home, /HubLongPressActions/);
@@ -84,5 +92,8 @@ test("Long-press reveals Edit and Delete together", () => {
   const page = read("src/pages/consumer/MyMenuplyPage.jsx");
   assert.match(page, /onEdit=\{/);
   assert.match(page, /openSocialEventCompose\(ev\)/);
+  assert.match(page, /openPlanEdit/);
+  assert.match(page, /planToEditPrefill/);
+  assert.match(page, /updateWhatWeDoingSession\(editingKey/);
   assert.match(page, /dining-crews\/\$\{crew\.id\}/);
 });
