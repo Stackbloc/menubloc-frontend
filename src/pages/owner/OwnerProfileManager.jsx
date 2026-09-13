@@ -757,8 +757,9 @@ export default function OwnerProfileManager() {
                   >
                     <div style={{ fontWeight: 700, fontSize: 13, color: OWNER_COLORS.ink }}>{name}</div>
                     <div style={{ fontSize: 12, color: OWNER_COLORS.muted, marginTop: 2 }}>
-                      #{id}
-                      {r.city || r.state ? ` · ${[r.city, r.state].filter(Boolean).join(", ")}` : ""}
+                      {r.is_franchise_brand
+                        ? "One banner and menu for the whole franchise"
+                        : `#${id}${r.city || r.state ? ` · ${[r.city, r.state].filter(Boolean).join(", ")}` : ""}`}
                     </div>
                   </button>
                 );

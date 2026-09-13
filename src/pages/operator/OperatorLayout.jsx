@@ -545,7 +545,13 @@ export default function OperatorLayout({ title, children }) {
             }}
           >
             {restaurants.map((r) => (
-              <option key={r.id} value={r.id}>{r.restaurant_name}</option>
+              <option key={r.id} value={r.id}>
+                {r.is_canonical_parent
+                  ? `${r.restaurant_name} (brand — banner & menu)`
+                  : r.city
+                    ? `${r.restaurant_name} — ${r.city}`
+                    : r.restaurant_name}
+              </option>
             ))}
           </select>
         </div>
