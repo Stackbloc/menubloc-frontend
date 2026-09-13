@@ -236,6 +236,15 @@ export const planRowCopy = {
   minWidth: 0,
 };
 
+/** Title + optional JoinMeButton / Ended — right-aligned, vertically centered on title. */
+export const joinMeTitleRow = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: 12,
+  width: "100%",
+};
+
 export const crewMemberStack = {
   display: "flex",
   flexWrap: "wrap",

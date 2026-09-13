@@ -441,31 +441,31 @@ export default function ConsumerConnectionPeerPage() {
               {peerSocialEvents.length === 0 ? (
                 <p style={s.muted}>Nothing yet.</p>
               ) : (
-                peerSocialEvents.slice(0, 8).map((ev) => (
+                peerSocialEvents.slice(0, 8).map((ev) => {
+                  const joinPath = ev.invitation_token
+                    ? `/join-event/${encodeURIComponent(String(ev.invitation_token))}`
+                    : ev.join_me_href || ev.join_url || null;
+                  const joinOpen = Boolean(ev.join_me_open) && !ev.is_past;
+                  return (
                   <NamedShareCard
                     key={`peer-social-${ev.id}`}
                     name={ev.title}
-                    href={
-                      ev.invitation_token
-                        ? `/join-event/${encodeURIComponent(String(ev.invitation_token))}`
-                        : ev.join_me_href || ev.join_url || undefined
-                    }
+                    href={joinPath || undefined}
                     meta={[
                       ev.event_date || null,
                       ev.start_time || null,
                       ev.location_label || null,
-                      ev.join_me_open ? "Join Me open" : null,
                     ]
                       .filter(Boolean)
                       .join(" · ")}
                     description={ev.description || null}
-                    joinMeHref={
-                      ev.invitation_token
-                        ? `/join-event/${encodeURIComponent(String(ev.invitation_token))}`
-                        : ev.join_me_href || ev.join_url || null
-                    }
+                    joinMeSurface="connect"
+                    ended={Boolean(ev.is_past)}
+                    joinClosed={!ev.is_past && !ev.join_me_open}
+                    joinMeHref={joinOpen ? joinPath : null}
                   />
-                ))
+                  );
+                })
               )}
             </section>
 

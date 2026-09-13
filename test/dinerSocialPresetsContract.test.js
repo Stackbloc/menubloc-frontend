@@ -62,7 +62,7 @@ test("MyMenuplyPage mounts Crews Join Crew preset; Events Join Me is per event",
   assert.match(page, /scope="crews"/);
   assert.match(page, /saveDinerSocialDefaults/);
   assert.doesNotMatch(page, /events_join_me\?\.open/);
-  assert.match(page, /Join Me open/);
+  assert.match(page, /shareDinerSocialEventInvite|EventComposeSheet/);
 });
 
 test("EventComposeSheet sets Join Me per event with audience picker", () => {
@@ -75,16 +75,20 @@ test("EventComposeSheet sets Join Me per event with audience picker", () => {
   assert.match(sheet, /Save event/);
 });
 
-test("My events cards expose quiet Join Me status line (not green pills)", () => {
+test("My events cards: Edit status line vs Connect JoinMeButton", () => {
   const page = read("src/pages/consumer/MyMenuplyPage.jsx");
   const bits = read("src/pages/consumer/myMenuply/myMenuplyBits.jsx");
+  const btn = read("src/pages/consumer/myMenuply/JoinMeButton.jsx");
   const line = read("src/pages/consumer/myMenuply/JoinMeStatusLine.jsx");
-  assert.match(page, /onJoinMeToggle/);
   assert.match(page, /onSocialEventJoinMeToggle/);
+  assert.match(page, /onJoinMeToggle/);
+  assert.match(page, /joinMeSurface=\{previewAsConnect \? "connect" : "edit"\}/);
+  assert.doesNotMatch(page, /Join Me open/);
   assert.match(bits, /JoinMeStatusLine/);
   assert.match(bits, /named-share-join-me-status/);
+  assert.match(bits, /named-share-join-me/);
+  assert.match(btn, /#173404/);
   assert.match(line, /Join Me is \{state\}/);
-  assert.match(line, /click to turn/);
   assert.doesNotMatch(bits, /Turn on Join Me/);
   assert.doesNotMatch(bits, /editJoinMeLabel/);
 });

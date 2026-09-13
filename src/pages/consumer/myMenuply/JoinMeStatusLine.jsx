@@ -1,44 +1,59 @@
 /**
- * Quiet Join Me status line — same pattern as Edit View StatusToggle
- * (“Join Crew is On — click to turn Off”). Never a green pill.
+ * Edit View — quiet Join Me eligibility control (StatusToggle pattern).
+ * Connect View uses JoinMeButton instead — do not mount this on Connect/peer cards.
  */
 
-const statusBtn = {
+const lineStyle = {
   appearance: "none",
-  width: "100%",
-  textAlign: "left",
-  border: "1px solid #e5e7eb",
-  background: "#f8fafc",
-  borderRadius: 12,
-  padding: "10px 12px",
+  border: "none",
+  background: "transparent",
+  padding: 0,
+  margin: 0,
   font: "inherit",
   fontSize: 13,
-  fontWeight: 700,
-  color: "#334155",
+  fontWeight: 600,
+  color: "#64748b",
   cursor: "pointer",
-  minHeight: 44,
-  marginTop: 8,
+  textAlign: "right",
+  lineHeight: 1.3,
+  flexShrink: 0,
+  alignSelf: "center",
+  maxWidth: "46%",
 };
 
+/**
+ * @param {object} props
+ * @param {boolean} props.open — Join Me eligibility on for this occasion
+ * @param {(next: boolean) => void} [props.onToggle]
+ * @param {boolean} [props.busy]
+ * @param {string} [props.testId]
+ */
 export default function JoinMeStatusLine({
   open = false,
-  busy = false,
   onToggle,
+  busy = false,
   testId = "join-me-status-line",
 }) {
-  const state = open ? "On" : "Off";
-  const hint = open ? "click to turn Off" : "click to turn On";
-  if (typeof onToggle !== "function") return null;
+  const isOpen = Boolean(open);
+  const state = isOpen ? "On" : "Off";
+  const hint = isOpen ? "click to turn Off" : "click to turn On";
+  const interactive = typeof onToggle === "function" && !busy;
+
   return (
     <button
       type="button"
       data-testid={testId}
-      disabled={busy}
+      disabled={!interactive}
+      aria-pressed={isOpen}
+      style={{
+        ...lineStyle,
+        ...(busy || !interactive ? { opacity: 0.65, cursor: "default" } : null),
+      }}
       onClick={(e) => {
         e.stopPropagation();
-        onToggle(!open);
+        if (!interactive) return;
+        onToggle?.(!isOpen);
       }}
-      style={statusBtn}
     >
       Join Me is {state} — {hint}
     </button>

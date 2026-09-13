@@ -1764,7 +1764,6 @@ export default function MyMenuplyPage() {
     const key = plan?.token || plan?.id;
     if (!key) return;
     if (nextOpen) {
-      // Turn On → expand Add details / PostAfterActions path for audience.
       setSelectedPlanKey(futurePlanKey(plan));
       setLastPost({
         kind: "plan",
@@ -2403,21 +2402,21 @@ export default function MyMenuplyPage() {
                 </SectionEmptyState>
               ) : (
                 <>
-                  {socialEvents.slice(0, 6).map((ev) => (
+                  {socialEvents.slice(0, 6).map((ev) => {
+                    const joinOpen = !ev.is_past && Boolean(ev.join_me_open);
+                    return (
                     <NamedShareCard
                       key={`social-${ev.id}`}
                       name={ev.title}
                       href={`/account/social-events/${ev.id}`}
                       meta={[
-                        ev.is_past ? "Ended" : "Yours",
+                        ev.is_past ? null : "Yours",
                         formatEventWhen(ev),
                         ev.start_time || null,
                         ev.location_label || null,
-                        ev.is_past
-                          ? null
-                          : ev.join_me_open
-                            ? "Join Me open"
-                            : "Just me",
+                        !previewAsConnect && !ev.is_past && !ev.join_me_open
+                          ? "Just me"
+                          : null,
                       ]
                         .filter(Boolean)
                         .join(" · ")}
@@ -2425,15 +2424,24 @@ export default function MyMenuplyPage() {
                       onDelete={previewAsConnect ? undefined : () => onSocialEventDelete(ev)}
                       deleteBusy={postBusy === `social-event-delete-${ev.id}`}
                       deleteLabel={`Delete event ${ev.title || ""}`.trim()}
-                      joinMeOpen={!ev.is_past && Boolean(ev.join_me_open)}
+                      joinMeSurface={previewAsConnect ? "connect" : "edit"}
+                      ended={Boolean(ev.is_past)}
+                      joinClosed={!ev.is_past && !ev.join_me_open}
+                      joinMeOpen={joinOpen}
                       onJoinMeToggle={
                         previewAsConnect || ev.is_past
                           ? undefined
                           : (next) => onSocialEventJoinMeToggle(ev, next)
                       }
                       joinMeBusy={postBusy === `social-event-join-${ev.id}`}
+                      onJoinMeClick={
+                        previewAsConnect && joinOpen
+                          ? () => shareDinerSocialEventInvite(ev)
+                          : undefined
+                      }
                     />
-                  ))}
+                    );
+                  })}
                   {events.slice(0, 4).map((ev) => (
                     <NamedShareCard
                       key={ev.id || ev.slug}

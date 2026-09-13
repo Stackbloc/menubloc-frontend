@@ -113,6 +113,20 @@ async function mockApis(page) {
               is_past: false,
               kind: "diner_social",
             },
+            {
+              id: 9002,
+              title: "Friends brunch",
+              event_date: "2026-12-05",
+              start_time: null,
+              location_label: null,
+              description: null,
+              join_me_open: true,
+              join_audience: "connections",
+              join_allowed_user_ids: [],
+              invitation_token: "e2e-join-token",
+              is_past: false,
+              kind: "diner_social",
+            },
           ],
         }),
       });
@@ -372,7 +386,7 @@ test.describe("Feed home → Profile bottom nav", () => {
     }
   });
 
-  test("Profile Edit View has no section Join Me preset; event Join Me is quiet status line", async ({
+  test("Profile Edit View has per-occasion Join Me status; Connect uses JoinMeButton", async ({
     page,
   }) => {
     await mockApis(page);
@@ -381,15 +395,17 @@ test.describe("Feed home → Profile bottom nav", () => {
 
     await expect(page.getByTestId("preset-plans")).toHaveCount(0);
     await expect(page.getByTestId("preset-events")).toHaveCount(0);
-    await expect(page.getByText("Join Me is On", { exact: false })).toHaveCount(0);
+    await expect(page.getByTestId("named-share-edit-join-me")).toHaveCount(0);
 
+    // Edit View — closed occasion uses quiet status line (not Connect JoinMeButton)
     await expect(page.getByTestId("named-share-join-me-status").first()).toBeVisible({
       timeout: 15_000,
     });
     await expect(page.getByTestId("named-share-join-me-status").first()).toHaveText(
       /Join Me is Off — click to turn On/
     );
-    await expect(page.getByTestId("named-share-edit-join-me")).toHaveCount(0);
+    await expect(page.getByTestId("named-share-join-me")).toHaveCount(0);
+
     await page.getByTestId("named-share-join-me-status").first().click();
     await expect(page.getByTestId("event-compose-sheet")).toBeVisible({ timeout: 10_000 });
     await expect(page.getByTestId("event-compose-join-me")).toBeVisible();

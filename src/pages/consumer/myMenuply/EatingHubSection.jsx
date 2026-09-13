@@ -20,6 +20,7 @@ import {
   FuturePlanRow,
   WantToEatUnifiedList,
 } from "./myMenuplyBits.jsx";
+import JoinMeButton from "./JoinMeButton.jsx";
 import {
   calendarDayYmd,
   clampEatingLookbackDate,
@@ -64,7 +65,7 @@ function WantCravingsActionBox({
   wants = [],
   diningIntents = [],
   canEdit = false,
-  /** Own-hub Connect preview — show owner Join Me / Take Me Out. */
+  /** Own-hub Connect preview — show owner Join Me button (+ sheet). */
   isConnectPreview = false,
   canInviteMeOut = false,
   onJoinMeFromCraving,
@@ -137,19 +138,31 @@ function WantCravingsActionBox({
     <div style={wantActStyles.wrap} data-testid="want-cravings-action-box">
       {!open ? (
         <div style={wantActStyles.triggerRow}>
-          <button
-            type="button"
-            style={showOwnerFlow ? wantActStyles.triggerPrimary : wantActStyles.trigger}
-            data-testid="want-cravings-action-open"
-            onClick={() => {
-              setSelectedKey(options[0]?.key || "");
-              setMode("join_me");
-              setError("");
-              setOpen(true);
-            }}
-          >
-            {showOwnerFlow ? "Join Me / Take Me Out" : "Invite Me Out"}
-          </button>
+          {showOwnerFlow ? (
+            <JoinMeButton
+              testId="want-cravings-action-open"
+              onClick={() => {
+                setSelectedKey(options[0]?.key || "");
+                setMode("join_me");
+                setError("");
+                setOpen(true);
+              }}
+            />
+          ) : (
+            <button
+              type="button"
+              style={wantActStyles.trigger}
+              data-testid="want-cravings-action-open"
+              onClick={() => {
+                setSelectedKey(options[0]?.key || "");
+                setMode("join_me");
+                setError("");
+                setOpen(true);
+              }}
+            >
+              Invite Me Out
+            </button>
+          )}
         </div>
       ) : showPeerInvite ? (
         <div style={wantActStyles.sheet} data-testid="want-cravings-action-sheet">
@@ -179,7 +192,7 @@ function WantCravingsActionBox({
       ) : (
         <div style={wantActStyles.sheet} data-testid="want-cravings-action-sheet">
           <div style={wantActStyles.sheetHead}>
-            <span style={wantActStyles.sheetTitle}>Join Me / Take Me Out</span>
+            <span style={wantActStyles.sheetTitle}>Join Me</span>
             <button
               type="button"
               style={wantActStyles.close}
@@ -1000,6 +1013,7 @@ export default function EatingHubSection({
                       : onPlanDelete
                   }
                   deleteBusy={planDeleteBusy}
+                  editJoinMe={canEdit}
                   onJoinMeToggle={canEdit ? onPlanJoinMeToggle : undefined}
                   joinMeBusy={planJoinMeBusy}
                 />

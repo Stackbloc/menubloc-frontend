@@ -42,7 +42,7 @@ test("Connection diner page uses the same hub layout as My Menuply", () => {
   assert.match(peer, /listPeerDinerSocialEvents/);
   assert.match(peer, /peerSocialEvents/);
   assert.match(peer, /named-share-join-me|joinMeHref/);
-  assert.match(peer, /Join Me open/);
+  assert.doesNotMatch(peer, /Join Me open/);
 
   assert.match(section, /data-testid="eating"/);
   assert.match(section, /data-testid="what-im-eating"/);
@@ -81,7 +81,7 @@ test("Connection diner page uses the same hub layout as My Menuply", () => {
   assert.match(peer, /listPeerDinerSocialEvents/);
   assert.match(peer, /peerSocialEvents/);
   assert.match(peer, /joinMeHref/);
-  assert.match(peer, /Join Me open/);
+  assert.doesNotMatch(peer, /Join Me open/);
   assert.match(peer, /peerConnections/);
   assert.match(peer, /backTo=\{MY_MENUPLY_PROFILE_PATH\}/);
   assert.match(peer, /backLabel="My Menuply"/);
@@ -110,7 +110,7 @@ test("Diner hub photos are casual snapshots with food info, not Instagram heroes
   assert.doesNotMatch(mealBoard, /Nothing logged for this day\./);
   assert.match(bits, /View dish/);
   assert.match(bits, /restaurant_name/);
-  assert.match(bits, /Join Me/);
+  assert.match(bits, /JoinMeButton/);
   assert.match(bits, /Add details/);
   assert.doesNotMatch(bits, /Stories/);
 });

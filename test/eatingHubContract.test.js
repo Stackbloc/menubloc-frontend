@@ -58,11 +58,12 @@ test("My Menuply and peer hub use five-section presentation hub", () => {
   assert.match(section, /Add a craving anytime|No cravings shared yet/);
   assert.match(section, /want-cravings-action-open/);
   assert.match(section, /want-cravings-action-box/);
-  assert.match(section, /Join Me \/ Take Me Out/);
+  assert.match(section, /JoinMeButton/);
   assert.match(section, /want-cravings-mode-join-me/);
   assert.match(section, /want-cravings-mode-take-me-out/);
   assert.match(section, /onJoinMeFromCraving/);
   assert.match(section, /onTakeMeOutFromCraving/);
+  assert.doesNotMatch(section, /Join Me \/ Take Me Out/);
   assert.doesNotMatch(section, />\s*Actions\s*</);
   assert.doesNotMatch(section, /Invite & Make Me This/);
   assert.doesNotMatch(section, /Invite &amp; Make Me This/);
@@ -216,7 +217,8 @@ test("My Menuply and peer hub use five-section presentation hub", () => {
   assert.doesNotMatch(bits, /String\.fromCharCode\(65/);
   assert.doesNotMatch(bits, /crewMemberInitials/);
   assert.match(bits, /onOpenCalendar/);
-  assert.match(bits, /Join Me open/);  assert.match(calendar, /past_count/);
+  assert.match(bits, /JoinMeButton|plan-row-join-me/);
+  assert.match(calendar, /past_count/);
   assert.match(calendar, /future_count/);
   assert.match(calendar, /#007AFF/);
   assert.match(calendar, /#34C759/);

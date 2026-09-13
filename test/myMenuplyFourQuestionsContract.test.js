@@ -41,9 +41,10 @@ test("My Menuply is the diner's personal home", () => {
   assert.doesNotMatch(section, /InviteMeOutAudiencePicker/);
   assert.doesNotMatch(section, /invite-me-out-settings-sheet/);
   assert.doesNotMatch(section, /want-invite-me-out-toggle/);
-  assert.match(section, /Join Me \/ Take Me Out/);
+  assert.match(section, /JoinMeButton/);
   assert.match(section, /want-cravings-mode-join-me/);
   assert.match(section, /want-cravings-mode-take-me-out/);
+  assert.doesNotMatch(section, /Join Me \/ Take Me Out/);
   const compose = read("src/pages/consumer/myMenuply/EatingCompose.jsx");
   assert.match(compose, /want-invite-me-out-settings/);
   assert.match(compose, /InviteMeOutAudiencePicker/);
