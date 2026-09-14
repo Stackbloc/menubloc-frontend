@@ -648,6 +648,8 @@ export const putSocialOnboarding = (onboarding) =>
 export const getConsumerProfile    = ()     => get("/api/consumer/profile");
 export const updateConsumerProfile = (body) => put("/api/consumer/profile", body);
 export const updatePrimaryLocation = (body) => put("/api/consumer/profile/primary-location", body);
+export const updateCatchMe = (body) => put("/api/consumer/profile/catch-me", body);
+export const clearCatchMe = () => del("/api/consumer/profile/catch-me");
 export const searchDiners = (query, cityId = null) => {
   const q = new URLSearchParams();
   if (query) q.set("q", String(query));

@@ -11,7 +11,7 @@ import { readDetectedLocation } from "../lib/discoveryLocationPersistence.js";
 
 // ⚠️ WAITER PROTECTION GUARDRAIL
 // 2026-09-07 (user-authorized): briefing rebuilt to fixed sections —
-// greeting → connect → joinMe → privateOffer → mealOptions (skip-if-null).
+// greeting → connect → joinMe → catchMeLdl → privateOffer → mealOptions (skip-if-null).
 // Do not add MarketFallback, CommunityGrowthCard, or time-of-day greetings.
 // WaiterPublicActivity remains additive. BottomNav required.
 
@@ -181,6 +181,33 @@ function JoinMeSection({ joinMe }) {
       <Link to={PLANNING_PATH} style={styles.footerLink} data-testid="waiter-join-me-footer">
         See your connections for full updates
       </Link>
+    </section>
+  );
+}
+
+function CatchMeLdlSection({ catchMeLdl }) {
+  if (!catchMeLdl) return null;
+  const suggestions = Array.isArray(catchMeLdl.suggestions) ? catchMeLdl.suggestions : [];
+  if (!suggestions.length) return null;
+
+  return (
+    <section style={styles.section} data-testid="waiter-catch-me-ldl">
+      <SectionLabel>Catch Me</SectionLabel>
+      <div style={styles.stack}>
+        {suggestions.slice(0, 2).map((row, idx) => {
+          const href = row.href || "/account/invite-to-eat?seed_code=LDL&quick_invite=1";
+          return (
+            <Link
+              key={row.peer_id || `${row.peer_name}-${idx}`}
+              to={href}
+              style={styles.listCard}
+              data-testid="waiter-catch-me-ldl-suggestion"
+            >
+              <div style={styles.rowTitle}>{row.title}</div>
+            </Link>
+          );
+        })}
+      </div>
     </section>
   );
 }
@@ -439,6 +466,7 @@ export default function FoodInterestsPage() {
   const hasAnySection = Boolean(
     briefing?.connect ||
       briefing?.joinMe ||
+      briefing?.catchMeLdl ||
       briefing?.privateOffer ||
       briefing?.birthday ||
       briefing?.intentFollowThrough ||
@@ -487,6 +515,7 @@ export default function FoodInterestsPage() {
             <>
               <ConnectSection connect={briefing?.connect ?? null} />
               <JoinMeSection joinMe={briefing?.joinMe ?? null} />
+              <CatchMeLdlSection catchMeLdl={briefing?.catchMeLdl ?? null} />
               <BirthdaySection birthday={briefing?.birthday ?? null} />
               <PrivateOfferSection privateOffer={briefing?.privateOffer ?? null} />
               <IntentFollowThroughSection

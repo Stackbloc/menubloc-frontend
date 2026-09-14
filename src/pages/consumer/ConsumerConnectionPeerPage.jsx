@@ -325,6 +325,7 @@ export default function ConsumerConnectionPeerPage() {
                 Array.isArray(peer?.favorite_foods) ? peer.favorite_foods : []
               }
               eduConsumer={peer}
+              catchMe={peer?.catch_me || null}
             />
 
             <DinerActivitySelectionLayer

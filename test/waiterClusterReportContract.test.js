@@ -17,6 +17,8 @@ test("Waiter briefing sections + cluster follow; no forbidden UI", () => {
   assert.match(page, /Here&apos;s what&apos;s going on/);
   assert.match(page, /waiter-connect|ConnectSection/);
   assert.match(page, /waiter-join-me|JoinMeSection/);
+  assert.match(page, /waiter-catch-me-ldl|CatchMeLdlSection/);
+  assert.match(page, /briefing\?\.catchMeLdl/);
   assert.match(page, /waiter-private-offer|PrivateOfferSection/);
   assert.match(page, /waiter-meal-options|MealOptionsSection/);
   assert.match(page, /waiter-birthday|BirthdaySection/);

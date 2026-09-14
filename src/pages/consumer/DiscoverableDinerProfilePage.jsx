@@ -24,6 +24,7 @@ import { ageFromDob } from "../../lib/dinerDateOfBirth.js";
 import { labelWithFoodIcon } from "../../lib/foodInterestIcons.js";
 import { normalizeFavoriteFoods } from "../../lib/dinerFavoriteFoods.js";
 import DinerActivitySelectionLayer from "./myMenuply/DinerActivitySelectionLayer.jsx";
+import { catchMeProfileLine } from "../../lib/dinerCatchMeDisplay.js";
 
 const ABUSE_REASONS = [
   { value: "harassment", label: "Harassment" },
@@ -191,6 +192,11 @@ export default function DiscoverableDinerProfilePage() {
                 {school ? <p style={styles.meta}>{school}</p> : null}
                 {diner.location_label ? (
                   <p style={styles.meta}>📍 {diner.location_label}</p>
+                ) : null}
+                {catchMeProfileLine(diner.catch_me) ? (
+                  <p style={styles.meta} data-testid="discoverable-catch-me">
+                    ✈️ {catchMeProfileLine(diner.catch_me)}
+                  </p>
                 ) : null}
               </div>
             </div>

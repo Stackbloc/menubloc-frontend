@@ -98,4 +98,7 @@ test("Onboarding and identity surfaces include primary location", () => {
   assert.match(welcome, /updatePrimaryLocation/);
   const hero = read("src/pages/consumer/myMenuply/DinerIdentityHero.jsx");
   assert.match(hero, /locationLabel/);
+  assert.match(hero, /CatchMePanel/);
+  const api = read("src/lib/consumerApi.js");
+  assert.match(api, /updateCatchMe/);
 });

@@ -52,6 +52,8 @@ import {
   resolveConsumerMediaUrl,
   uploadWantToEatPhoto,
   updateConsumerProfile,
+  updateCatchMe,
+  clearCatchMe,
   uploadDinerAvatar,
   uploadConsumerProfileMedia,
   deleteConsumerProfileMedia,
@@ -730,6 +732,22 @@ export default function MyMenuplyPage() {
     } catch (err) {
       setIdentityError(err.message || "Unable to save About");
     }
+  }
+
+  async function onCatchMeSave(body) {
+    setIdentityError("");
+    setIdentityNotice("");
+    const data = await updateCatchMe(body);
+    setProfile((prev) => ({ ...(prev || {}), catch_me: data?.catch_me || null }));
+    setIdentityNotice("Catch Me saved.");
+  }
+
+  async function onCatchMeClear() {
+    setIdentityError("");
+    setIdentityNotice("");
+    await clearCatchMe();
+    setProfile((prev) => ({ ...(prev || {}), catch_me: null }));
+    setIdentityNotice("Catch Me cleared.");
   }
 
   async function onSaveProfileSettings(next) {
@@ -2132,6 +2150,9 @@ export default function MyMenuplyPage() {
                 diner_hobbies: profile?.diner_hobbies,
               }}
               locationLabel={profile?.primary_location?.public_label || null}
+              catchMe={profile?.catch_me || null}
+              onCatchMeSave={previewAsConnect ? undefined : onCatchMeSave}
+              onCatchMeClear={previewAsConnect ? undefined : onCatchMeClear}
               connections={connections}
               viewerUserId={consumer?.id}
               busy={identityBusy}

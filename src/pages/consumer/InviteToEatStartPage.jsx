@@ -232,6 +232,15 @@ export default function InviteToEatStartPage() {
         menuItemName={resolved.menuItemName}
         attachedMenuId={resolved.attachedMenuId}
         initialSeedCode={seedCode || null}
+        initialInviteeName={String(searchParams.get("invitee_name") || "").trim()}
+        initialInviteKind={
+          String(searchParams.get("invite_kind") || "").trim().toLowerCase() === "private" ||
+          String(searchParams.get("invitee_name") || "").trim()
+            ? "private"
+            : String(searchParams.get("invite_kind") || "").trim().toLowerCase() === "group"
+              ? "group"
+              : null
+        }
         autoOpenShareOnReady={quickInvite}
         flowTitle={
           isLgdQuickInvite

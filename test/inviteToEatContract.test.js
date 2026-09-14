@@ -73,6 +73,8 @@ test("InviteToEatButton tooltip and Invitation Ready confirmation", () => {
   assert.match(startPage, /quick_invite/);
   assert.match(startPage, /autoOpenShareOnReady/);
   assert.match(startPage, /initialSeedCode/);
+  assert.match(startPage, /initialInviteeName/);
+  assert.match(startPage, /invitee_name/);
   assert.match(startPage, /buildLgdQuickInviteFormTitle/);
   assert.match(startPage, /lgd-quick-invite-title/);
   assert.match(startPage, /lgd-attached-menu-fieldset/);

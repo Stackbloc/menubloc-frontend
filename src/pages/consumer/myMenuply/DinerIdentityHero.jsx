@@ -14,6 +14,8 @@ import {
   getEduVerificationFromConsumer,
 } from "../../../lib/eduVerificationDisplay.js";
 import { clearStuckMediaChrome } from "./pendingHighlightMedia.js";
+import CatchMePanel from "./CatchMePanel.jsx";
+import { catchMeProfileLine } from "../../../lib/dinerCatchMeDisplay.js";
 
 const ABOUT_MAX = 280;
 const ABOUT_PLACEHOLDER =
@@ -66,6 +68,9 @@ export default function DinerIdentityHero({
   about,
   personalContext = null,
   locationLabel = null,
+  catchMe = null,
+  onCatchMeSave = null,
+  onCatchMeClear = null,
   busy,
   notice,
   error,
@@ -267,6 +272,29 @@ export default function DinerIdentityHero({
               📍 {locationLabel}
             </p>
           ) : null}
+
+          {readOnly ? (
+            catchMeProfileLine(catchMe) ? (
+              <p
+                style={{
+                  margin: "4px 0 0",
+                  fontSize: 14,
+                  color: "#475467",
+                  fontWeight: 600,
+                }}
+                data-testid="diner-catch-me-profile"
+              >
+                ✈️ {catchMeProfileLine(catchMe)}
+              </p>
+            ) : null
+          ) : (
+            <CatchMePanel
+              catchMe={catchMe}
+              busy={busy}
+              onSave={onCatchMeSave}
+              onClear={onCatchMeClear}
+            />
+          )}
 
           {readOnly ? (
             String(about || "").trim() ? (
