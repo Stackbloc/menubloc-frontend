@@ -4,6 +4,10 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { formatClusterListingNoteForDisplay } from "../src/lib/clusterListingNoteDisplay.js";
+import {
+  CLUSTER_RESTAURANT_BILLBOARD_HEIGHT_PX,
+  resolveClusterRestaurantBillboardUrl,
+} from "../src/lib/clusterRestaurantDisplay.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const cardPath = path.join(
@@ -17,6 +21,12 @@ test("cluster restaurant card renders listing_note below name (not inline garble
   assert.match(src, /listingNote/);
   assert.match(src, /formatClusterListingNoteForDisplay/);
   assert.match(src, /cluster-restaurant-listing-note/);
+});
+
+test("cluster restaurant card uses a compact My Favs-style billboard strip", () => {
+  assert.match(src, /resolveClusterRestaurantBillboardUrl/);
+  assert.match(src, /cluster-restaurant-billboard/);
+  assert.match(src, /CLUSTER_RESTAURANT_BILLBOARD_HEIGHT_PX/);
 });
 
 test("cluster restaurant card avoids webkit-box name clamp garble", () => {
@@ -36,4 +46,35 @@ test("formatClusterListingNoteForDisplay drops SOURCE STATUS seed text", () => {
     null
   );
   assert.equal(formatClusterListingNoteForDisplay("catering orders only"), "catering orders only");
+});
+
+test("formatClusterListingNoteForDisplay drops seed JSON and data_origin blobs", () => {
+  assert.equal(
+    formatClusterListingNoteForDisplay(
+      '{"data_origin":"mcdonalds_simplemaps_seed_2026","source":"simplemaps"}'
+    ),
+    null
+  );
+  assert.equal(
+    formatClusterListingNoteForDisplay("USC local restaurant seed from cached OSM candidate set."),
+    null
+  );
+});
+
+test("resolveClusterRestaurantBillboardUrl prefers billboard then logo", () => {
+  assert.equal(
+    resolveClusterRestaurantBillboardUrl({
+      billboard_preview: [{ image_url: "https://cdn.example/billboard.jpg" }],
+      logo_url: "https://cdn.example/logo.png",
+    }),
+    "https://cdn.example/billboard.jpg"
+  );
+  assert.equal(
+    resolveClusterRestaurantBillboardUrl({
+      logo_url: "https://cdn.example/logo.png",
+    }),
+    "https://cdn.example/logo.png"
+  );
+  assert.equal(resolveClusterRestaurantBillboardUrl({}), null);
+  assert.equal(CLUSTER_RESTAURANT_BILLBOARD_HEIGHT_PX, 72);
 });

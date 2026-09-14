@@ -1,12 +1,14 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { restaurantMenuPathFromRow, restaurantPathFromRow } from "../../lib/canonicalUrl.js";
 import { isRestaurantMenuReady } from "../../lib/publicCardCounts.js";
 import { appendClusterReturnQuery } from "../../lib/clusterReturnNavigation.js";
 import {
+  CLUSTER_RESTAURANT_BILLBOARD_HEIGHT_PX,
   formatRestaurantCuisineLabel,
   formatRestaurantPriceTier,
   resolveClusterRestaurantAccent,
+  resolveClusterRestaurantBillboardUrl,
   resolveClusterRestaurantStatus,
 } from "../../lib/clusterRestaurantDisplay.js";
 import { formatClusterListingNoteForDisplay } from "../../lib/clusterListingNoteDisplay.js";
@@ -18,6 +20,8 @@ export default function ClusterRestaurantDirectoryCard({
   placeReturnPath = null,
   placeReturnLabel = null,
 }) {
+  const [imageFailed, setImageFailed] = useState(false);
+
   if (!restaurant) return null;
 
   const name = restaurant?.restaurant_name || restaurant?.name || "Restaurant";
@@ -38,6 +42,7 @@ export default function ClusterRestaurantDirectoryCard({
     rawHref && placeReturnPath
       ? appendClusterReturnQuery(rawHref, placeReturnPath, placeReturnLabel)
       : rawHref;
+  const billboardUrl = imageFailed ? null : resolveClusterRestaurantBillboardUrl(restaurant);
 
   const content = (
     <article
@@ -51,7 +56,7 @@ export default function ClusterRestaurantDirectoryCard({
         minWidth: 0,
         minHeight: 220,
         aspectRatio: "1 / 1",
-        padding: "1.1rem",
+        padding: 0,
         borderRadius: 6,
         border: `2px solid ${accent.border}`,
         background: accent.bg,
@@ -61,6 +66,34 @@ export default function ClusterRestaurantDirectoryCard({
         color: "inherit",
       }}
     >
+      {billboardUrl ? (
+        <img
+          src={billboardUrl}
+          alt=""
+          data-testid="cluster-restaurant-billboard"
+          loading="lazy"
+          onError={() => setImageFailed(true)}
+          style={{
+            width: "100%",
+            height: CLUSTER_RESTAURANT_BILLBOARD_HEIGHT_PX,
+            objectFit: "cover",
+            display: "block",
+            flexShrink: 0,
+            background: "#e5e7eb",
+          }}
+        />
+      ) : null}
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "space-between",
+          flex: "1 1 auto",
+          minHeight: 0,
+          minWidth: 0,
+          padding: billboardUrl ? "0.7rem 0.9rem 0.85rem" : "1.1rem",
+        }}
+      >
       <div
         style={{
           display: "flex",
@@ -72,9 +105,11 @@ export default function ClusterRestaurantDirectoryCard({
           overflow: "hidden",
         }}
       >
-        <div style={{ fontSize: "1.35rem", lineHeight: 1, flexShrink: 0 }} aria-hidden="true">
-          {accent.emoji}
-        </div>
+        {billboardUrl ? null : (
+          <div style={{ fontSize: "1.35rem", lineHeight: 1, flexShrink: 0 }} aria-hidden="true">
+            {accent.emoji}
+          </div>
+        )}
         <div style={{ minWidth: 0, flexShrink: 0 }}>
           <div
             className="cluster-card-title"
@@ -182,6 +217,7 @@ export default function ClusterRestaurantDirectoryCard({
             </span>
           )}
         </div>
+      </div>
       </div>
     </article>
   );

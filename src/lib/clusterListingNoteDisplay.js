@@ -14,6 +14,9 @@ export function formatClusterListingNoteForDisplay(raw) {
   const note = String(raw || "").trim();
   if (!note) return null;
   if (SOURCE_STATUS_RE.test(note)) return null;
+  if (/^\s*[{[]/.test(note)) return null;
+  if (/data_origin/i.test(note)) return null;
+  if (/\bseed from\b/i.test(note)) return null;
   if (/not a confirmed 2027/i.test(note) && note.length > 48) return null;
   if (note.length <= MAX_LISTING_NOTE_CHARS) return note;
   return `${note.slice(0, MAX_LISTING_NOTE_CHARS - 1).trimEnd()}…`;

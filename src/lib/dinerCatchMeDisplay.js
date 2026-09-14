@@ -2,6 +2,16 @@
  * Catch Me display helpers. Destination + date range only — never Wanna Eat.
  */
 
+/** Edit View title — keep the product name, never shout it as a mystery field. */
+export const CATCH_ME_EDITOR_TITLE = "Catch Me";
+
+/** Why this exists. Shown on Edit View so the diner is not left with a blank Add. */
+export const CATCH_ME_EDITOR_HELP =
+  "Heading out of town? Add the city and dates so people can catch you there. This does not change your home city.";
+
+export const CATCH_ME_SAVE_LABEL = "Save Catch Me";
+export const CATCH_ME_EDIT_LABEL = "Edit Catch Me";
+
 const MONTHS = [
   "Jan",
   "Feb",

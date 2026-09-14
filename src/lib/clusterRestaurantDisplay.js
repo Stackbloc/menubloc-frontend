@@ -1,5 +1,30 @@
 import { isRestaurantMenuReady } from "./publicCardCounts.js";
 
+const DEFAULT_MEDIA_BASE = "https://menubloc-backend-production.up.railway.app";
+/** Compact cluster-card billboard strip — smaller than My Favs 100px visit cards. */
+export const CLUSTER_RESTAURANT_BILLBOARD_HEIGHT_PX = 72;
+
+function mediaUrl(raw) {
+  const value = String(raw || "").trim();
+  if (!value) return null;
+  if (/^https?:\/\//i.test(value)) return value;
+  return `${DEFAULT_MEDIA_BASE}${value.startsWith("/") ? value : `/${value}`}`;
+}
+
+/**
+ * Same source as My Favs: active billboard image, then restaurant logo.
+ * @param {object} restaurant
+ * @returns {string|null}
+ */
+export function resolveClusterRestaurantBillboardUrl(restaurant = {}) {
+  const preview = Array.isArray(restaurant.billboard_preview)
+    ? restaurant.billboard_preview[0]
+    : null;
+  return mediaUrl(
+    preview?.image_url || restaurant.billboard_image_url || restaurant.logo_url || null
+  );
+}
+
 const CUISINE_ACCENTS = {
   american: { border: "#f59e0b", bg: "#fffbeb", emoji: "🍔" },
   burger: { border: "#f59e0b", bg: "#fffbeb", emoji: "🍔" },

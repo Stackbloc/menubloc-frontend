@@ -1,11 +1,18 @@
 /**
  * Catch Me editor — destination city + date range under current location.
  * Destination and dates only; no food-selection controls.
+ * Empty Edit View shows the city/date fields in this card — never a lone Add.
  */
 
 import { useEffect, useState } from "react";
 import { searchUsCities } from "../../../lib/locationReferenceApi.js";
-import { catchMeEditSummary } from "../../../lib/dinerCatchMeDisplay.js";
+import {
+  CATCH_ME_EDIT_LABEL,
+  CATCH_ME_EDITOR_HELP,
+  CATCH_ME_EDITOR_TITLE,
+  CATCH_ME_SAVE_LABEL,
+  catchMeEditSummary,
+} from "../../../lib/dinerCatchMeDisplay.js";
 import * as s from "./myMenuplyStyles.js";
 
 function todayYmd() {
@@ -34,7 +41,7 @@ export default function CatchMePanel({
   onSave,
   onClear,
 }) {
-  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [cityQuery, setCityQuery] = useState("");
   const [selectedCity, setSelectedCity] = useState(null);
   const [startDate, setStartDate] = useState("");
@@ -45,10 +52,11 @@ export default function CatchMePanel({
   const [error, setError] = useState("");
 
   const summary = catchMeEditSummary(catchMe);
+  const showForm = !summary || editing;
   const minDate = todayYmd();
 
   useEffect(() => {
-    if (!open) return;
+    if (summary && !editing) return;
     setError("");
     if (catchMe) {
       setSelectedCity({
@@ -67,11 +75,11 @@ export default function CatchMePanel({
       setStartDate(minDate);
       setEndDate(minDate);
     }
-  }, [open, catchMe, minDate]);
+  }, [editing, catchMe, summary, minDate]);
 
   useEffect(() => {
     const q = cityQuery.trim();
-    if (!open || q.length < 2) {
+    if (!showForm || q.length < 2) {
       setResults([]);
       return undefined;
     }
@@ -94,7 +102,7 @@ export default function CatchMePanel({
       }
     }, 250);
     return () => window.clearTimeout(timer);
-  }, [cityQuery, open, selectedCity]);
+  }, [cityQuery, showForm, selectedCity]);
 
   if (readOnly) {
     return null;
@@ -122,7 +130,7 @@ export default function CatchMePanel({
         start_date: startDate,
         end_date: endDate,
       });
-      setOpen(false);
+      setEditing(false);
     } catch (err) {
       setError(err?.message || "Unable to save Catch Me");
     } finally {
@@ -135,7 +143,7 @@ export default function CatchMePanel({
     setError("");
     try {
       await onClear?.();
-      setOpen(false);
+      setEditing(false);
     } catch (err) {
       setError(err?.message || "Unable to clear Catch Me");
     } finally {
@@ -146,42 +154,28 @@ export default function CatchMePanel({
   const disabled = busy || saving;
 
   return (
-    <div style={{ marginTop: 8 }} data-testid="diner-catch-me-editor">
+    <div style={s.personalContextPanel} data-testid="diner-catch-me-editor">
+      <p style={s.personalContextPanelTitle}>{CATCH_ME_EDITOR_TITLE}</p>
       <p
-        style={{
-          margin: "0 0 4px",
-          fontSize: 12,
-          fontWeight: 800,
-          letterSpacing: "0.02em",
-          textTransform: "uppercase",
-          color: "#667085",
-        }}
+        id="diner-catch-me-help"
+        data-testid="diner-catch-me-help"
+        style={s.personalContextPanelDesc}
       >
-        Catch Me
+        {CATCH_ME_EDITOR_HELP}
       </p>
-      {summary && !open ? (
+      {summary && !showForm ? (
         <p
-          style={{ margin: "0 0 4px", fontSize: 14, color: "#475467", fontWeight: 600 }}
+          style={{ margin: "8px 0 4px", fontSize: 14, color: "#475467", fontWeight: 600 }}
           data-testid="diner-catch-me-summary"
         >
           {summary}
         </p>
       ) : null}
-      {!open ? (
-        <button
-          type="button"
-          data-testid="diner-catch-me-toggle"
-          style={s.personalContextToggle}
-          disabled={disabled}
-          onClick={() => setOpen(true)}
-        >
-          {summary ? "Edit" : "Add"}
-        </button>
-      ) : (
-        <div data-testid="diner-catch-me-form">
+      {showForm ? (
+        <div data-testid="diner-catch-me-form" style={{ marginTop: 10 }}>
           <label style={{ display: "block", marginBottom: 8 }}>
             <span style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475467", marginBottom: 4 }}>
-              City / destination
+              City you're visiting
             </span>
             <input
               type="text"
@@ -191,6 +185,7 @@ export default function CatchMePanel({
               value={cityQuery}
               disabled={disabled}
               placeholder="Atlanta, GA"
+              aria-describedby="diner-catch-me-help"
               onChange={(e) => {
                 setSelectedCity(null);
                 setCityQuery(e.target.value);
@@ -246,7 +241,7 @@ export default function CatchMePanel({
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
             <label>
               <span style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475467", marginBottom: 4 }}>
-                Start date
+                First day there
               </span>
               <input
                 type="date"
@@ -260,7 +255,7 @@ export default function CatchMePanel({
             </label>
             <label>
               <span style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475467", marginBottom: 4 }}>
-                End date
+                Last day there
               </span>
               <input
                 type="date"
@@ -282,17 +277,19 @@ export default function CatchMePanel({
               disabled={disabled}
               onClick={handleSave}
             >
-              {saving ? "Saving…" : "Save"}
+              {saving ? "Saving…" : CATCH_ME_SAVE_LABEL}
             </button>
-            <button
-              type="button"
-              data-testid="diner-catch-me-cancel"
-              style={s.personalContextToggle}
-              disabled={disabled}
-              onClick={() => setOpen(false)}
-            >
-              Cancel
-            </button>
+            {summary ? (
+              <button
+                type="button"
+                data-testid="diner-catch-me-cancel"
+                style={s.personalContextToggle}
+                disabled={disabled}
+                onClick={() => setEditing(false)}
+              >
+                Cancel
+              </button>
+            ) : null}
             {catchMe ? (
               <button
                 type="button"
@@ -301,11 +298,22 @@ export default function CatchMePanel({
                 disabled={disabled}
                 onClick={handleClear}
               >
-                Clear
+                Clear Catch Me
               </button>
             ) : null}
           </div>
         </div>
+      ) : (
+        <button
+          type="button"
+          data-testid="diner-catch-me-toggle"
+          style={s.personalContextToggle}
+          disabled={disabled}
+          aria-describedby="diner-catch-me-help"
+          onClick={() => setEditing(true)}
+        >
+          {CATCH_ME_EDIT_LABEL}
+        </button>
       )}
     </div>
   );
