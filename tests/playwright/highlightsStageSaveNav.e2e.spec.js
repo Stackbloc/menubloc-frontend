@@ -51,7 +51,7 @@ async function expectPostButtonInViewport(page) {
   expect(box.x).toBeLessThan(vp?.width || 0);
 }
 
-async function mockDinerApis(page, { uploadPosts, mealPosts, mealPatches = [] }) {
+async function mockDinerApis(page, { uploadPosts, mealPosts, mealPatches = [], mealCreates = [] }) {
   await page.route("**/api/**", async (route) => {
     const req = route.request();
     const url = req.url();
@@ -96,6 +96,29 @@ async function mockDinerApis(page, { uploadPosts, mealPosts, mealPatches = [] })
       });
     }
 
+    if (
+      method === "POST" &&
+      url.includes("/api/consumer/what-i-ate-today") &&
+      !url.includes("/meals") &&
+      !url.includes("/photo")
+    ) {
+      const body = JSON.parse(req.postData() || "{}");
+      mealCreates.push({ url, method, body });
+      return route.fulfill({
+        status: 201,
+        contentType: "application/json",
+        body: JSON.stringify({
+          ok: true,
+          entry: {
+            id: 70002,
+            food_name: body.food_name || "E2E extra",
+            meal_id: body.meal_id || 80002,
+            meal_period: body.meal_period || "lunch",
+          },
+        }),
+      });
+    }
+
     if (/\/api\/consumer\/what-i-ate-today\/\d+(?:\?|$)/.test(url) && method === "PATCH") {
       const body = JSON.parse(req.postData() || "{}");
       mealPatches.push({ url, method, body });
@@ -104,12 +127,14 @@ async function mockDinerApis(page, { uploadPosts, mealPosts, mealPatches = [] })
         contentType: "application/json",
         body: JSON.stringify({
           ok: true,
+          meal_id: body.ensure_meal ? 80002 : null,
           entry: {
             id: 70001,
             food_name: body.food_name || "E2E leftover pasta",
             meal_period: body.meal_period || "lunch",
             homemade: true,
             eaten_at: body.eaten_at || null,
+            meal_id: body.ensure_meal ? 80002 : null,
           },
         }),
       });
@@ -297,5 +322,31 @@ test.describe("My Highlights stage + Save does not freeze nav", () => {
     await expect.poll(() => mealPatches.length).toBe(1);
     expect(mealPatches[0].url).toMatch(/\/api\/consumer\/what-i-ate-today\/70001/);
     expect(String(mealPatches[0].body?.food_name || "")).toContain("edited");
+  });
+
+  test("Edit View extra item PATCHes ensure_meal and POSTs meal_id", async ({ page }) => {
+    const uploadPosts = [];
+    const mealPosts = [];
+    const mealPatches = [];
+    const mealCreates = [];
+    await mockDinerApis(page, { uploadPosts, mealPosts, mealPatches, mealCreates });
+
+    await page.goto("/feed/profile");
+    await expect(page.getByTestId("feed-shell")).toBeVisible({ timeout: 20_000 });
+    const row = page.getByTestId("diner-activity-scan-row");
+    await row.scrollIntoViewIfNeeded();
+    await expect(row).toBeVisible({ timeout: 20_000 });
+    await row.click({ button: "right" });
+    await page.getByTestId("diner-activity-scan-edit").click();
+    await expect(page.getByTestId("status-compose-sheet")).toBeVisible();
+    await page.getByTestId("ate-add-item").click();
+    await page.getByTestId("ate-extra-item-0").fill("Chili");
+    await expectPostButtonInViewport(page);
+    await page.getByTestId("status-line-post").click();
+    await expect.poll(() => mealPatches.length).toBe(1);
+    expect(mealPatches[0].body?.ensure_meal).toBe(true);
+    await expect.poll(() => mealCreates.length).toBe(1);
+    expect(mealCreates[0].body?.food_name).toBe("Chili");
+    expect(Number(mealCreates[0].body?.meal_id)).toBe(80002);
   });
 });

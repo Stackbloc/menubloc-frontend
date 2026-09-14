@@ -25,6 +25,13 @@ test("exposes consumer food-activity API helpers", () => {
   assert.match(publicApi, /searchReportPlaces/);
   assert.match(publicApi, /resolveEatingPrefill/);
   assert.match(publicApi, /dishLabel/);
+  const dishFn = publicApi.slice(
+    publicApi.indexOf("export function dishLabel"),
+    publicApi.indexOf("function positiveId")
+  );
+  assert.match(dishFn, /food_name/);
+  assert.match(dishFn, /item_name/);
+  assert.match(dishFn, /title/);
 });
 
 test("composer picks restaurant + menu item via entity search", () => {

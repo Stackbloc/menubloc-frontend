@@ -121,8 +121,8 @@ export function formatMealPeriodClockLead(mealPeriod, eatenAt, { omitClock = fal
 }
 
 /**
- * Dish leads; secondary items fold under place line.
- * "Chicken and waffles" + "ham, iced tea"
+ * All dishes on one lead line: "Spicy Chicken Sandwich, Chili".
+ * Place stays on its own "at Wendy's" line.
  */
 export function splitMealFoodLead(mealOrItems) {
   const items = Array.isArray(mealOrItems)
@@ -140,13 +140,13 @@ export function splitMealFoodLead(mealOrItems) {
     if (!fallback) return { primary: "", secondary: "" };
     const parts = fallback.split(/\s*[·,]\s*/).map((p) => p.trim()).filter(Boolean);
     return {
-      primary: parts[0] || fallback,
-      secondary: parts.slice(1).join(", "),
+      primary: parts.join(", ") || fallback,
+      secondary: "",
     };
   }
   return {
-    primary: names[0],
-    secondary: names.slice(1).join(", "),
+    primary: names.join(", "),
+    secondary: "",
   };
 }
 

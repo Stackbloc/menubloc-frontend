@@ -70,7 +70,15 @@ export function restaurantLabel(row) {
 }
 
 export function dishLabel(row) {
-  return String(row?.item_name || row?.label || row?.name || "").trim();
+  return String(
+    row?.item_name ||
+      row?.food_name ||
+      row?.label ||
+      row?.name ||
+      row?.title ||
+      row?.dish_name ||
+      ""
+  ).trim();
 }
 
 function positiveId(value) {
@@ -108,10 +116,12 @@ export function asDishPlace(row) {
     coerceMenuItemId(row.item_id) ||
     coerceMenuItemId(row.id);
   if (!menu_item_id) return null;
+  const name = dishLabel(row);
   return {
     ...row,
     menu_item_id,
-    item_name: dishLabel(row),
+    item_name: name,
+    food_name: name || row.food_name || null,
     restaurant_id: positiveId(row.restaurant_id),
     menu_id: positiveId(row.menu_id),
   };

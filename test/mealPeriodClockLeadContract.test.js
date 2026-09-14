@@ -42,16 +42,15 @@ test("time input round-trip helpers", () => {
   assert.match(isoToTimeInputValue(iso), /^\d{2}:\d{2}$/);
 });
 
-test("splitMealFoodLead keeps primary dish + secondary fold", () => {
+test("splitMealFoodLead joins items on one dish line", () => {
   const split = splitMealFoodLead({
     items: [
-      { food_name: "Chicken and waffles" },
-      { food_name: "ham" },
-      { food_name: "iced tea" },
+      { food_name: "Spicy Chicken Sandwich" },
+      { food_name: "Chili" },
     ],
   });
-  assert.equal(split.primary, "Chicken and waffles");
-  assert.equal(split.secondary, "ham, iced tea");
+  assert.equal(split.primary, "Spicy Chicken Sandwich, Chili");
+  assert.equal(split.secondary, "");
 });
 
 test("eating hub date heading is weekday, month day, year", () => {

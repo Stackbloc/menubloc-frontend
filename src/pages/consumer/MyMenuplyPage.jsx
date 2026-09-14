@@ -1123,7 +1123,7 @@ export default function MyMenuplyPage() {
       setLastPost({
         kind: "diary",
         id: entry.id,
-        food_name: hubItems.map((r) => r.food_name).filter(Boolean).join(" · ") || hubItem.food_name,
+        food_name: hubItems.map((r) => r.food_name).filter(Boolean).join(", ") || hubItem.food_name,
         meal_period: hubItem.meal_period,
         comment: hubItem.comment,
         eaten_on: hubItem.eaten_on,
@@ -2060,28 +2060,34 @@ export default function MyMenuplyPage() {
         eaten_at: eatenAt || undefined,
         restaurant_id: restaurantId,
         menu_item_id: menuItemId,
+        ensure_meal: extras.some((row) => String(row?.food_name || "").trim()),
       });
       const entry = data?.entry || data;
+      const mealId = Number(entry?.meal_id ?? data?.meal_id);
       const extraIds = Array.isArray(itemIds) ? itemIds : [];
       for (let i = 0; i < extras.length; i += 1) {
         const extraName = String(extras[i]?.food_name || "").trim();
         if (!extraName) continue;
         const extraId = Number(extraIds[i]);
+        const extraMenuId = extras[i]?.menu_item_id || null;
         if (Number.isFinite(extraId) && extraId > 0) {
           await updateWhatIAteToday(extraId, {
             food_name: extraName,
             meal_period: mealPeriod || undefined,
             eaten_at: eatenAt || undefined,
             restaurant_id: restaurantId,
-            menu_item_id: null,
+            menu_item_id: extraMenuId,
           });
         } else {
           await createWhatIAteToday({
             food_name: extraName,
             restaurant_id: restaurantId || undefined,
+            menu_item_id: extraMenuId || undefined,
             meal_period: mealPeriod || undefined,
             eaten_at: eatenAt || undefined,
             eaten_on: entry?.eaten_on || hubDate,
+            meal_id: Number.isFinite(mealId) && mealId > 0 ? mealId : undefined,
+            where_type: homemade || whereType === "home" ? "home" : "restaurant",
           });
         }
       }

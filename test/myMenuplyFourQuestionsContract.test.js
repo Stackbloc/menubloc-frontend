@@ -141,6 +141,11 @@ test("My Menuply is the diner's personal home", () => {
   assert.match(placeFields, /eating-place-homemade/);
   assert.match(placeFields, /eating-place-restaurant/);
   assert.match(placeFields, /eating-place-dish-search/);
+  assert.match(placeFields, /eating-place-dish-selected/);
+  assert.match(placeFields, /eating-place-dish-selected-name/);
+  assert.match(placeFields, /EatingDishPickField/);
+  assert.match(placeFields, />\s*Dish\s*</);
+  assert.doesNotMatch(placeFields, /styles\.kind\}>Dish/);
   assert.match(placeFields, /eating-place-menu-item-label/);
   assert.match(placeFields, />\s*Dish\s*</);
   assert.doesNotMatch(placeFields, />\s*Menu item\s*</);

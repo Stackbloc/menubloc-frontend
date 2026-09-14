@@ -264,12 +264,14 @@ export default function EatingPlaceFields({
                       <img src={dishPhotoUrl(dish)} alt="" style={styles.dishThumb} />
                     ) : null}
                     <div>
-                      <div style={styles.kind}>Dish</div>
-                      <div style={{ fontWeight: 800 }}>{dishLabel(dish)}</div>
-                      {dishPhotoUrl(dish) ? (
-                        <div style={{ ...s.muted, fontSize: 12 }}>
-                          Restaurant photo — take your own anytime
-                        </div>
+                      <div
+                        style={styles.selectedName}
+                        data-testid="eating-place-dish-selected-name"
+                      >
+                        {dishLabel(dish) || "Dish"}
+                      </div>
+                      {dish.restaurant_name ? (
+                        <div style={s.muted}>{dish.restaurant_name}</div>
                       ) : null}
                     </div>
                   </div>
@@ -326,6 +328,112 @@ export default function EatingPlaceFields({
           ) : null}
         </>
       )}
+    </div>
+  );
+}
+
+/** Extra meal item: pick a dish from the restaurant menu, or type a name. */
+export function EatingDishPickField({
+  restaurant = null,
+  dish = null,
+  onDishChange,
+  disabled = false,
+  placeholder = "Search menu item",
+  testIdPrefix = "eating-extra-dish",
+}) {
+  const selectedName = dishLabel(dish);
+  const picked = Boolean(dish?.menu_item_id);
+  const [query, setQuery] = useState(() => (picked ? "" : selectedName));
+  const [hits, setHits] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!restaurant?.restaurant_id || picked) {
+      setHits([]);
+      setLoading(false);
+      return undefined;
+    }
+    const q = query.trim();
+    const t = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const data = await searchReportPlaces({
+          type: "menu_item",
+          q,
+          restaurant_id: restaurant.restaurant_id,
+          limit: 20,
+        });
+        setHits(data.results || []);
+      } catch {
+        setHits([]);
+      } finally {
+        setLoading(false);
+      }
+    }, q ? 220 : 0);
+    return () => clearTimeout(t);
+  }, [query, restaurant, picked]);
+
+  if (picked) {
+    return (
+      <div style={{ ...styles.selected, flex: 1, minWidth: 0 }} data-testid={`${testIdPrefix}-selected`}>
+        <div style={styles.selectedName} data-testid={`${testIdPrefix}-selected-name`}>
+          {selectedName || "Dish"}
+        </div>
+        <button
+          type="button"
+          style={styles.change}
+          disabled={disabled}
+          onClick={() => {
+            setQuery("");
+            onDishChange?.(null);
+          }}
+        >
+          Change
+        </button>
+      </div>
+    );
+  }
+
+  const inputValue = query !== "" ? query : selectedName;
+
+  return (
+    <div data-testid={testIdPrefix} style={{ flex: 1, minWidth: 0 }}>
+      <input
+        type="search"
+        value={inputValue}
+        onChange={(e) => {
+          const next = e.target.value.slice(0, 160);
+          setQuery(next);
+          onDishChange?.(next.trim() ? { item_name: next, food_name: next, menu_item_id: null } : null);
+        }}
+        placeholder={placeholder}
+        disabled={disabled}
+        autoComplete="off"
+        style={styles.place}
+        data-testid={`${testIdPrefix}-search`}
+      />
+      {loading ? <p style={s.muted}>Loading menu…</p> : null}
+      {hits.length > 0 ? (
+        <ul style={styles.hits} data-testid={`${testIdPrefix}-hits`}>
+          {hits.map((hit) => (
+            <li key={hit.menu_item_id}>
+              <button
+                type="button"
+                style={styles.hitBtn}
+                onClick={() => {
+                  const next = asDishPlace(hit);
+                  if (!next) return;
+                  setQuery("");
+                  setHits([]);
+                  onDishChange?.(next);
+                }}
+              >
+                {dishLabel(hit)}
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
     </div>
   );
 }

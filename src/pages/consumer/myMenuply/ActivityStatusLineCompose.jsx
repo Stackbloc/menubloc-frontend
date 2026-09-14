@@ -12,7 +12,8 @@ import {
 } from "../../../lib/whatIAteTodayMealPeriod.js";
 import { iconForFoodText } from "../../../lib/foodInterestIcons.js";
 import { socialBtn } from "../../../lib/socialDesignTokens.js";
-import EatingPlaceFields from "./EatingPlaceFields.jsx";
+import { dishLabel } from "../../../lib/foodActivityApi.js";
+import EatingPlaceFields, { EatingDishPickField } from "./EatingPlaceFields.jsx";
 import {
   HAPPY_HOUR_INTENTS,
   happyHourFoodName,
@@ -59,6 +60,7 @@ function dishFromEntry(entry) {
   return {
     menu_item_id: id,
     item_name: entry.food_name || entry.item_name || "",
+    food_name: entry.food_name || entry.item_name || "",
     restaurant_id: entry.restaurant_id || null,
     restaurant_name: entry.restaurant_name || null,
   };
@@ -99,6 +101,7 @@ export default function ActivityStatusLineCompose({
   const [wantText, setWantText] = useState("");
   const [extraItemNames, setExtraItemNames] = useState([]);
   const [extraItemIds, setExtraItemIds] = useState([]);
+  const [extraItemMenuIds, setExtraItemMenuIds] = useState([]);
   const [happyHourIntent, setHappyHourIntent] = useState("enjoying");
   const [error, setError] = useState("");
 
@@ -126,6 +129,7 @@ export default function ActivityStatusLineCompose({
       setWantText("");
       setExtraItemNames([]);
       setExtraItemIds([]);
+      setExtraItemMenuIds([]);
       setHappyHourIntent("enjoying");
       setMealPeriod(defaultWhatIAteMealPeriod());
       setClockTime(isoToTimeInputValue(new Date()));
@@ -162,6 +166,7 @@ export default function ActivityStatusLineCompose({
     const extras = items.slice(1);
     setExtraItemNames(extras.map((row) => String(row.food_name || row.item_name || "").trim()));
     setExtraItemIds(extras.map((row) => entryIdOf(row)));
+    setExtraItemMenuIds(extras.map((row) => row.menu_item_id || null));
     setMealPeriod(primary.meal_period || initialEntry.meal_period || defaultWhatIAteMealPeriod());
     setClockTime(
       isoToTimeInputValue(primary.eaten_at || initialEntry.eaten_at) || isoToTimeInputValue(new Date())
@@ -188,6 +193,7 @@ export default function ActivityStatusLineCompose({
     setWantText("");
     setExtraItemNames([]);
     setExtraItemIds([]);
+    setExtraItemMenuIds([]);
     setMode("restaurant");
     setHappyHourIntent("enjoying");
     setMealPeriod(defaultWhatIAteMealPeriod());
@@ -213,7 +219,12 @@ export default function ActivityStatusLineCompose({
     e.preventDefault();
     setError("");
     if (!canPost || busy) return;
-    const extras = extraItemNames.map((name) => String(name || "").trim()).filter(Boolean);
+    const extraPayload = extraItemNames
+      .map((name, index) => ({
+        food_name: String(name || "").trim(),
+        menu_item_id: extraItemMenuIds[index] || null,
+      }))
+      .filter((row) => row.food_name);
     try {
       if (isWant) {
         await onSubmit?.({
@@ -245,7 +256,7 @@ export default function ActivityStatusLineCompose({
           file: null,
           marketDiscoverable: true,
           whereType: "home",
-          items: [{ food_name: primary }, ...extras.map((food_name) => ({ food_name }))],
+          items: [{ food_name: primary }, ...extraPayload],
         });
       } else if (mode === "happy_hour") {
         const foodName = happyHourFoodName(happyHourIntent);
@@ -292,7 +303,7 @@ export default function ActivityStatusLineCompose({
               menu_item_id: dish?.menu_item_id || null,
               restaurant_id: restaurant?.restaurant_id || null,
             },
-            ...extras.map((food_name) => ({ food_name })),
+            ...extraPayload,
           ],
         });
       }
@@ -499,20 +510,51 @@ export default function ActivityStatusLineCompose({
                 <p style={styles.extraLabel}>More items on this meal (optional)</p>
                 {extraItemNames.map((name, index) => (
                   <div key={`extra-${index}`} style={styles.extraRow}>
-                    <input
-                      type="text"
-                      value={name}
-                      onChange={(e) => {
-                        const next = [...extraItemNames];
-                        next[index] = e.target.value;
-                        setExtraItemNames(next);
-                      }}
-                      placeholder={`Item ${index + 2}`}
-                      disabled={busy}
-                      maxLength={160}
-                      style={styles.textInput}
-                      data-testid={`ate-extra-item-${index}`}
-                    />
+                    {mode === "restaurant" && restaurant ? (
+                      <EatingDishPickField
+                        restaurant={restaurant}
+                        dish={
+                          extraItemMenuIds[index] || name
+                            ? {
+                                item_name: name,
+                                food_name: name,
+                                menu_item_id: extraItemMenuIds[index] || null,
+                              }
+                            : null
+                        }
+                        disabled={busy}
+                        placeholder={`Item ${index + 2}`}
+                        testIdPrefix={`ate-extra-item-${index}`}
+                        onDishChange={(next) => {
+                          const label = dishLabel(next);
+                          setExtraItemNames((prev) => {
+                            const copy = [...prev];
+                            copy[index] = label;
+                            return copy;
+                          });
+                          setExtraItemMenuIds((prev) => {
+                            const copy = [...prev];
+                            copy[index] = next?.menu_item_id || null;
+                            return copy;
+                          });
+                        }}
+                      />
+                    ) : (
+                      <input
+                        type="text"
+                        value={name}
+                        style={{ ...styles.textInput, flex: 1, minWidth: 0 }}
+                        onChange={(e) => {
+                          const next = [...extraItemNames];
+                          next[index] = e.target.value;
+                          setExtraItemNames(next);
+                        }}
+                        placeholder={`Item ${index + 2}`}
+                        disabled={busy}
+                        maxLength={160}
+                        data-testid={`ate-extra-item-${index}`}
+                      />
+                    )}
                     <button
                       type="button"
                       disabled={busy}
@@ -520,6 +562,7 @@ export default function ActivityStatusLineCompose({
                       onClick={() => {
                         setExtraItemNames((prev) => prev.filter((_, i) => i !== index));
                         setExtraItemIds((prev) => prev.filter((_, i) => i !== index));
+                        setExtraItemMenuIds((prev) => prev.filter((_, i) => i !== index));
                       }}
                       style={styles.removeExtra}
                     >
@@ -535,6 +578,7 @@ export default function ActivityStatusLineCompose({
                     onClick={() => {
                       setExtraItemNames((prev) => [...prev, ""]);
                       setExtraItemIds((prev) => [...prev, null]);
+                      setExtraItemMenuIds((prev) => [...prev, null]);
                     }}
                     style={styles.addExtra}
                   >
@@ -718,6 +762,7 @@ const styles = {
     display: "flex",
     gap: 8,
     marginBottom: 6,
+    alignItems: "flex-start",
   },
   addExtra: {
     appearance: "none",

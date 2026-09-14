@@ -95,7 +95,7 @@ export function groupHubAteMeals(entries = []) {
     return {
       ...meal,
       eaten_at: earliest?.eaten_at || meal.eaten_at || null,
-      food_name: names.join(" · ") || meal.food_name || "Food",
+      food_name: names.join(", ") || meal.food_name || "Food",
       menu_item_id:
         meal.items.length === 1
           ? meal.items[0].menu_item_id || meal.menu_item_id || null
