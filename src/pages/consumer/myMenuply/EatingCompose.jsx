@@ -1666,6 +1666,8 @@ const styles = {
     flexDirection: "column",
     alignItems: "stretch",
     gap: 10,
+    flex: 1,
+    minHeight: 0,
   },
 
   mediaBlock: {
@@ -1758,6 +1760,12 @@ const styles = {
     alignItems: "stretch",
     gap: 10,
     marginTop: 4,
+    position: "sticky",
+    bottom: 0,
+    background: "#fff",
+    paddingTop: 10,
+    zIndex: 2,
+    flexShrink: 0,
   },
 
   submitBlock: {

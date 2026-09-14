@@ -177,7 +177,7 @@ export default function DinerPersonalContextEditor({
         <button
           type="button"
           data-testid="diner-personal-context-toggle"
-          style={s.personalContextToggle}
+          style={{ ...s.personalContextToggle, marginTop: 14 }}
           disabled={busy || saving}
           onClick={() => setEditing(true)}
         >

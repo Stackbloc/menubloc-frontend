@@ -2,15 +2,18 @@
  * Catch Me display helpers. Destination + date range only — never Wanna Eat.
  */
 
-/** Edit View title — keep the product name, never shout it as a mystery field. */
-export const CATCH_ME_EDITOR_TITLE = "Catch Me";
+/** One quiet line under location until the diner opens the dialog. */
+export const CATCH_ME_TRAVELING_PROMPT = "Traveling?";
+export const CATCH_ME_ADD_DETAILS_LABEL = "Add details";
 
-/** Why this exists. Shown on Edit View so the diner is not left with a blank Add. */
-export const CATCH_ME_EDITOR_HELP =
-  "Heading out of town? Add the city and dates so people can catch you there. This does not change your home city.";
+export const CATCH_ME_DIALOG_TITLE = "Catch Me";
+export const CATCH_ME_DIALOG_HELP =
+  "Meet new Connects, or link up with people you already know, while you travel. This does not change your home city.";
 
-export const CATCH_ME_SAVE_LABEL = "Save Catch Me";
-export const CATCH_ME_EDIT_LABEL = "Edit Catch Me";
+export const CATCH_ME_CITY_LABEL = "City, state";
+export const CATCH_ME_FROM_LABEL = "From";
+export const CATCH_ME_UNTIL_LABEL = "Until";
+export const CATCH_ME_SAVE_LABEL = "Save";
 
 const MONTHS = [
   "Jan",

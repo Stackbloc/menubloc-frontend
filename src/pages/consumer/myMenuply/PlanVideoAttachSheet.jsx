@@ -87,7 +87,7 @@ const styles = {
     position: "fixed",
     inset: 0,
     background: "rgba(15, 23, 42, 0.48)",
-    zIndex: 1200,
+    zIndex: 1400,
     display: "flex",
     alignItems: "flex-end",
     justifyContent: "center",

@@ -111,7 +111,7 @@ const styles = {
   backdrop: {
     position: "fixed",
     inset: 0,
-    zIndex: 380,
+    zIndex: 1400,
     background: "rgba(0,0,0,0.55)",
     display: "flex",
     alignItems: "flex-end",
@@ -120,7 +120,7 @@ const styles = {
   },
   sheet: {
     width: "min(420px, 100%)",
-    maxHeight: "85vh",
+    maxHeight: "min(85dvh, calc(100dvh - 16px))",
     overflow: "auto",
     background: "#fff",
     borderRadius: 16,

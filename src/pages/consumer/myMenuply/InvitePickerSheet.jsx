@@ -114,7 +114,7 @@ const styles = {
     position: "fixed",
     inset: 0,
     background: "rgba(15, 23, 42, 0.48)",
-    zIndex: 1100,
+    zIndex: 1400,
     display: "flex",
     alignItems: "flex-end",
     justifyContent: "center",
@@ -127,7 +127,7 @@ const styles = {
     borderRadius: "20px 20px 14px 14px",
     padding: "16px 16px 20px",
     boxShadow: "0 -12px 40px rgba(15, 23, 42, 0.18)",
-    maxHeight: "min(78vh, 560px)",
+    maxHeight: "min(78dvh, calc(100dvh - 16px))",
     overflowY: "auto",
   },
   head: {

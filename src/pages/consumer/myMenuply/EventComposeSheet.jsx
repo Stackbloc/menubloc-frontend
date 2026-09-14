@@ -12,6 +12,13 @@ import {
   CLEAR_STUCK_MEDIA_CHROME_EVENT,
   restoreDocumentScroll,
 } from "./pendingHighlightMedia.js";
+import {
+  mobileDialogBackdrop,
+  mobileDialogPanel,
+  mobileDialogScrollBody,
+  mobileDialogStickyFooter,
+  useMobileDialogMaxHeight,
+} from "./mobileDialogLayout.js";
 
 function dateOnly(value) {
   const s = String(value || "").trim();
@@ -96,6 +103,8 @@ export default function EventComposeSheet({
     };
   }, [open, onClose, busy]);
 
+  const maxHeight = useMobileDialogMaxHeight(open);
+
   if (!open) return null;
 
   const joinSelectedBlocked =
@@ -141,7 +150,7 @@ export default function EventComposeSheet({
   return (
     <div
       role="presentation"
-      style={styles.backdrop}
+      style={mobileDialogBackdrop()}
       data-testid="event-compose-sheet"
       onClick={() => {
         if (!busy) onClose?.();
@@ -151,7 +160,7 @@ export default function EventComposeSheet({
         role="dialog"
         aria-modal="true"
         aria-label={isEdit ? "Edit event" : "My Events"}
-        style={styles.panel}
+        style={{ ...mobileDialogPanel(maxHeight), padding: "16px 16px 12px" }}
         onClick={(e) => e.stopPropagation()}
       >
         <div style={styles.head}>
@@ -172,6 +181,7 @@ export default function EventComposeSheet({
             : "Create an event. Turn on Join Me for this event only — pick who can see and join."}
         </p>
         <form onSubmit={handleSubmit} style={styles.form} data-testid="event-compose-form">
+          <div style={mobileDialogScrollBody}>
           <MenuplyMediaPicker
             file={file}
             onFile={setFile}
@@ -274,6 +284,8 @@ export default function EventComposeSheet({
               {localError}
             </p>
           ) : null}
+          </div>
+          <div style={mobileDialogStickyFooter}>
           <button
             type="submit"
             disabled={busy || !String(title).trim() || !eventDate || joinSelectedBlocked}
@@ -282,6 +294,7 @@ export default function EventComposeSheet({
           >
             {busy ? "…" : isEdit ? "Save event" : "Post to My Events"}
           </button>
+          </div>
         </form>
       </div>
     </div>
@@ -289,26 +302,6 @@ export default function EventComposeSheet({
 }
 
 const styles = {
-  backdrop: {
-    position: "fixed",
-    inset: 0,
-    background: "rgba(15, 23, 42, 0.48)",
-    zIndex: 1100,
-    display: "flex",
-    alignItems: "flex-end",
-    justifyContent: "center",
-    padding: "0 12px calc(var(--bottom-nav-h, 72px) + 12px)",
-  },
-  panel: {
-    width: "100%",
-    maxWidth: 480,
-    background: "#fff",
-    borderRadius: "20px 20px 14px 14px",
-    padding: "16px 16px 20px",
-    boxShadow: "0 -12px 40px rgba(15, 23, 42, 0.18)",
-    maxHeight: "min(88vh, 720px)",
-    overflowY: "auto",
-  },
   head: {
     display: "flex",
     alignItems: "center",
@@ -327,7 +320,7 @@ const styles = {
     cursor: "pointer",
   },
   lead: { margin: "0 0 14px", fontSize: 13, color: "#64748b", lineHeight: 1.45 },
-  form: { display: "flex", flexDirection: "column", gap: 12 },
+  form: { display: "flex", flexDirection: "column", gap: 12, flex: 1, minHeight: 0 },
   row: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 },
   label: {
     display: "flex",

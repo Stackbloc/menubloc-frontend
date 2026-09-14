@@ -211,7 +211,7 @@ const styles = {
   backdrop: {
     position: "fixed",
     inset: 0,
-    zIndex: 400,
+    zIndex: 1400,
     background: "rgba(0,0,0,0.35)",
     backdropFilter: "blur(8px)",
     WebkitBackdropFilter: "blur(8px)",

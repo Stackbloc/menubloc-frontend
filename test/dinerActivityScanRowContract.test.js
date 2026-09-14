@@ -72,6 +72,11 @@ test("What I'm Eating / Wanna Eat use compact Add + sheet compose", () => {
   assert.match(compose, /eating-status-line-compose|wanna-status-line-compose/);
   assert.match(compose, /status-compose-open|hideTrigger/);
   assert.match(compose, /status-compose-sheet/);
+  assert.match(compose, /createPortal/);
+  assert.match(compose, /MOBILE_DIALOG_Z_INDEX|mobileDialogBackdrop/);
+  assert.match(compose, /initialEntry/);
+  assert.match(compose, /mobileDialogStickyFooter/);
+  assert.match(compose, /isEdit \? "Save" : "Post"/);
   assert.match(compose, /ate-add-item/);
   assert.match(compose, /More items on this meal/);
   assert.match(compose, /Restaurant/);
@@ -104,7 +109,8 @@ test("What I'm Eating / Wanna Eat use compact Add + sheet compose", () => {
   assert.doesNotMatch(hub, /Multiplier\/Post/);
   assert.doesNotMatch(hub, /FoodStatusQuickCompose|EatingActivityCompose/);
   assert.doesNotMatch(hub, /Invite & Make Me This/);
-  assert.match(hub, /eating-activity-rows/);
+  assert.match(hub, /initialEntry=\{editingAteMeal\}/);
+  assert.match(hub, /setEditingAteMeal\(meal\)/);
   assert.match(page, /profileView\.previewAsConnect|previewAsConnect/);
   assert.match(page, /useOutletContext/);
   assert.match(read("src/components/consumer/feed/ProfileViewModeToggle.jsx"), /profile-view-mode-toggle/);

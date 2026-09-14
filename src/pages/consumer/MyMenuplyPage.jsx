@@ -64,6 +64,7 @@ import {
   uploadWhatIAteTodayPhoto,
   uploadEatingPlanMedia,
   updateWhatIAteToday,
+  updateWantToEat,
   whatIAteTodayLocalDate,
 } from "../../lib/consumerApi.js";
 import InviteToEatModal from "../../components/InviteToEatModal.jsx";
@@ -1979,6 +1980,138 @@ export default function MyMenuplyPage() {
     }
   }
 
+  async function updateWantFromCompose({
+    entryId,
+    text,
+    restaurant,
+    dish,
+    mealPeriod,
+    wantKind,
+    foodInterestKey,
+  }) {
+    setPostBusy("want");
+    setError("");
+    try {
+      const name = String(dish?.item_name || text || restaurant?.restaurant_name || "").trim();
+      if (!name) {
+        setError("Enter what you want to eat");
+        return;
+      }
+      const data = await updateWantToEat(entryId, {
+        food_name: name,
+        meal_period: mealPeriod || undefined,
+        restaurant_id: restaurant?.restaurant_id || null,
+        menu_item_id: dish?.menu_item_id || null,
+        intent_kind: wantKind || undefined,
+        food_interest_key: foodInterestKey || undefined,
+      });
+      const item = data?.item;
+      if (item?.id) {
+        setWants((prev) =>
+          [item, ...(prev || []).filter((row) => Number(row.id) !== Number(item.id))]
+        );
+      }
+      setLastPost({
+        kind: "want",
+        id: entryId,
+        food_name: item?.food_name || name,
+        restaurant_id: item?.restaurant_id ?? restaurant?.restaurant_id ?? null,
+        restaurant_name: item?.restaurant_name || restaurant?.restaurant_name || null,
+        menu_item_id: item?.menu_item_id ?? dish?.menu_item_id ?? null,
+        meal_period: mealPeriod || null,
+      });
+    } catch (err) {
+      setError(err.message || "Unable to update craving");
+      throw err;
+    } finally {
+      setPostBusy("");
+    }
+  }
+
+  async function updateEatingFromCompose({
+    entryId,
+    itemIds = [],
+    text,
+    mealPeriod,
+    homemade,
+    restaurant,
+    dish,
+    whereType,
+    items,
+    eatenAt,
+  }) {
+    setPostBusy("eating");
+    setError("");
+    try {
+      const extras = Array.isArray(items) ? items.slice(1) : [];
+      const primaryName = String(
+        items?.[0]?.food_name || dish?.item_name || text || restaurant?.restaurant_name || ""
+      ).trim();
+      if (!primaryName) {
+        setError("Enter what you're eating");
+        return;
+      }
+      const restaurantId =
+        homemade || whereType === "home" ? null : restaurant?.restaurant_id || null;
+      const menuItemId = homemade || whereType === "home" ? null : dish?.menu_item_id || null;
+      const data = await updateWhatIAteToday(entryId, {
+        food_name: primaryName,
+        meal_period: mealPeriod || undefined,
+        eaten_at: eatenAt || undefined,
+        restaurant_id: restaurantId,
+        menu_item_id: menuItemId,
+      });
+      const entry = data?.entry || data;
+      const extraIds = Array.isArray(itemIds) ? itemIds : [];
+      for (let i = 0; i < extras.length; i += 1) {
+        const extraName = String(extras[i]?.food_name || "").trim();
+        if (!extraName) continue;
+        const extraId = Number(extraIds[i]);
+        if (Number.isFinite(extraId) && extraId > 0) {
+          await updateWhatIAteToday(extraId, {
+            food_name: extraName,
+            meal_period: mealPeriod || undefined,
+            eaten_at: eatenAt || undefined,
+            restaurant_id: restaurantId,
+            menu_item_id: null,
+          });
+        } else {
+          await createWhatIAteToday({
+            food_name: extraName,
+            restaurant_id: restaurantId || undefined,
+            meal_period: mealPeriod || undefined,
+            eaten_at: eatenAt || undefined,
+            eaten_on: entry?.eaten_on || hubDate,
+          });
+        }
+      }
+      for (let i = extras.length; i < extraIds.length; i += 1) {
+        const extraId = Number(extraIds[i]);
+        if (Number.isFinite(extraId) && extraId > 0) {
+          await deleteWhatIAteToday(extraId);
+        }
+      }
+      await load();
+      setLastPost({
+        kind: "diary",
+        id: entryId,
+        food_name: entry?.food_name || primaryName,
+        meal_period: entry?.meal_period || mealPeriod || null,
+        eaten_at: entry?.eaten_at || eatenAt || null,
+        eaten_on: entry?.eaten_on || null,
+        restaurant_id: entry?.restaurant_id ?? restaurantId,
+        restaurant_name: entry?.restaurant_name || restaurant?.restaurant_name || null,
+        menu_item_id: entry?.menu_item_id ?? menuItemId,
+        homemade: Boolean(homemade || whereType === "home"),
+      });
+    } catch (err) {
+      setError(err.message || "Unable to update meal");
+      throw err;
+    } finally {
+      setPostBusy("");
+    }
+  }
+
   async function handleEatingCompose({
     category,
     text,
@@ -2001,7 +2134,39 @@ export default function MyMenuplyPage() {
     eatenAt,
     homemadeDishId,
     items,
+    entryId = null,
+    itemIds = [],
   }) {
+    const editingId = Number(entryId);
+    if (Number.isFinite(editingId) && editingId > 0) {
+      if (category === "want") {
+        await updateWantFromCompose({
+          entryId: editingId,
+          text,
+          restaurant,
+          dish,
+          mealPeriod,
+          wantKind,
+          foodInterestKey,
+        });
+        return;
+      }
+      if (category === "ate") {
+        await updateEatingFromCompose({
+          entryId: editingId,
+          itemIds,
+          text,
+          mealPeriod,
+          homemade,
+          restaurant,
+          dish,
+          whereType,
+          items,
+          eatenAt,
+        });
+        return;
+      }
+    }
     if (category === "cooking") {
       const { postFeedCookingVideo } = await import("../../lib/feedVideoCompose.js");
       setUploadPercent(file ? 0 : null);
@@ -2771,7 +2936,7 @@ const crewSheetStyles = {
     position: "fixed",
     inset: 0,
     background: "rgba(15, 23, 42, 0.48)",
-    zIndex: 1100,
+    zIndex: 1400,
     display: "flex",
     alignItems: "flex-end",
     justifyContent: "center",
@@ -2784,6 +2949,8 @@ const crewSheetStyles = {
     borderRadius: "20px 20px 14px 14px",
     padding: "16px 16px 20px",
     boxShadow: "0 -12px 40px rgba(15, 23, 42, 0.18)",
+    maxHeight: "min(92dvh, calc(100dvh - 16px))",
+    overflowY: "auto",
   },
   head: {
     display: "flex",

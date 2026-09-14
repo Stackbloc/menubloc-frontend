@@ -223,7 +223,7 @@ const styles = {
   backdrop: {
     position: "fixed",
     inset: 0,
-    zIndex: 1100,
+    zIndex: 1400,
     background: "rgba(15, 23, 42, 0.48)",
     display: "flex",
     alignItems: "flex-end",

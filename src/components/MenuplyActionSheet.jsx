@@ -290,7 +290,7 @@ const styles = {
   backdrop: {
     position: "fixed",
     inset: 0,
-    zIndex: 400,
+    zIndex: 1400,
     background: "rgba(15,23,42,0.45)",
     display: "flex",
     alignItems: "flex-end",
@@ -304,7 +304,7 @@ const styles = {
     boxShadow: "0 18px 50px rgba(0,0,0,0.22)",
     padding: "16px 16px 10px",
     fontFamily: "Inter, Arial, sans-serif",
-    maxHeight: "min(82vh, 640px)",
+    maxHeight: "min(82dvh, calc(100dvh - 16px))",
     overflowY: "auto",
   },
   head: {

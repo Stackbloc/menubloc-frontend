@@ -8,6 +8,12 @@ import {
   CLEAR_STUCK_MEDIA_CHROME_EVENT,
   restoreDocumentScroll,
 } from "./pendingHighlightMedia.js";
+import {
+  mobileDialogBackdrop,
+  mobileDialogPanel,
+  mobileDialogScrollBody,
+  useMobileDialogMaxHeight,
+} from "./mobileDialogLayout.js";
 
 export default function EatingComposeSheet({
   open,
@@ -44,6 +50,8 @@ export default function EatingComposeSheet({
     };
   }, [open, onClose, busy]);
 
+  const maxHeight = useMobileDialogMaxHeight(open);
+
   if (!open) return null;
 
   async function handleSubmit(payload) {
@@ -59,7 +67,7 @@ export default function EatingComposeSheet({
   return (
     <div
       role="presentation"
-      style={styles.backdrop}
+      style={mobileDialogBackdrop()}
       data-testid="eating-compose-sheet"
       onClick={() => {
         if (!busy) onClose?.();
@@ -69,7 +77,7 @@ export default function EatingComposeSheet({
         role="dialog"
         aria-modal="true"
         aria-label="Log food"
-        style={styles.panel}
+        style={{ ...mobileDialogPanel(maxHeight), padding: "16px 16px 12px" }}
         onClick={(e) => e.stopPropagation()}
       >
         <div style={styles.header}>
@@ -96,6 +104,7 @@ export default function EatingComposeSheet({
             ✕
           </button>
         </div>
+        <div style={mobileDialogScrollBody}>
         <p style={styles.lead}>
           {feedMode
             ? "Record a video for Feed. Tag restaurant or dish after if you like — optional caption below."
@@ -127,32 +136,13 @@ export default function EatingComposeSheet({
           initialWhereType={initialWhereType}
           inSheet
         />
+        </div>
       </div>
     </div>
   );
 }
 
 const styles = {
-  backdrop: {
-    position: "fixed",
-    inset: 0,
-    background: "rgba(15, 23, 42, 0.48)",
-    zIndex: 1100,
-    display: "flex",
-    alignItems: "flex-end",
-    justifyContent: "center",
-    padding: "0 12px calc(var(--bottom-nav-h, 72px) + 12px)",
-  },
-  panel: {
-    width: "100%",
-    maxWidth: 480,
-    background: "#fff",
-    borderRadius: "20px 20px 14px 14px",
-    padding: "16px 16px 20px",
-    boxShadow: "0 -12px 40px rgba(15, 23, 42, 0.18)",
-    maxHeight: "min(88vh, 640px)",
-    overflowY: "auto",
-  },
   header: {
     display: "flex",
     alignItems: "center",

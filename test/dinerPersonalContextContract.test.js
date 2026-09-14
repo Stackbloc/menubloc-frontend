@@ -76,6 +76,7 @@ test("DinerIdentityHero renders personal context and unified profile settings", 
   assert.match(hero, /diner-about-readonly/);
   assert.match(editor, /diner-personal-context-editor/);
   assert.match(editor, /diner-personal-context-toggle/);
+  assert.match(editor, /marginTop: 14/);
   assert.match(editor, /Edit profile details|Add profile details/);
   assert.match(editor, /diner-profile-settings-save/);
   assert.match(editor, /diner-hobbies-input/);

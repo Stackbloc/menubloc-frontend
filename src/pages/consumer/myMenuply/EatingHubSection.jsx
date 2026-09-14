@@ -34,10 +34,14 @@ import {
   formatEatingHubDateHeading,
   formatPlanBracketDate,
   futurePlanKey,
-  isoToTimeInputValue,
   splitMealFoodLead,
-  timeInputToIso,
 } from "./dinerHubFormat.js";
+import {
+  mobileDialogBackdrop,
+  mobileDialogPanel,
+  mobileDialogScrollBody,
+  useMobileDialogMaxHeight,
+} from "./mobileDialogLayout.js";
 import { whatIAteTodayLocalDate } from "../../../lib/consumerApi.js";
 import { defaultWhatIAteMealPeriod } from "../../../lib/whatIAteTodayMealPeriod.js";
 import WantDiscoveryPanel from "./WantDiscoveryPanel.jsx";
@@ -516,9 +520,7 @@ export default function EatingHubSection({
   onWantSelect,
   onDiarySelect,
   onDiaryDelete,
-  /** Edit View: update diary entry eaten_at (ISO). */
   onDiaryEatenAtChange = null,
-  diaryEatenAtBusy = false,
   /** Profile setting: hide clock after meal period. */
   omitMealClock = false,
   diaryDeleteBusy = false,
@@ -566,6 +568,7 @@ export default function EatingHubSection({
   void liked;
   void foodHref;
   void favoriteFoods;
+  void onDiaryEatenAtChange;
 
   const navigate = useNavigate();
   const canEdit = !readOnly && editMode !== false;
@@ -578,6 +581,9 @@ export default function EatingHubSection({
   const setComposeOpen = onComposeOpenChange ?? setComposeOpenLocal;
   const [ateStatusComposeOpen, setAteStatusComposeOpen] = useState(false);
   const [wantStatusComposeOpen, setWantStatusComposeOpen] = useState(false);
+  const [editingAteMeal, setEditingAteMeal] = useState(null);
+  const [editingWant, setEditingWant] = useState(null);
+  const planSheetMaxHeight = useMobileDialogMaxHeight(Boolean(canEdit && schedulingPlans));
   const [calendarTitleLocal, setCalendarTitleLocal] = useState("Eating");
   const calendarTitle = calendarTitleProp ?? calendarTitleLocal;
   const setCalendarTitle = onCalendarTitleChange ?? setCalendarTitleLocal;
@@ -725,7 +731,10 @@ export default function EatingHubSection({
                   style={styles.compactAdd}
                   data-testid="status-compose-open"
                   disabled={postBusy === "eating"}
-                  onClick={() => setAteStatusComposeOpen(true)}
+                  onClick={() => {
+                    setEditingAteMeal(null);
+                    setAteStatusComposeOpen(true);
+                  }}
                 >
                   <span aria-hidden="true">+</span> Add
                 </button>
@@ -753,7 +762,11 @@ export default function EatingHubSection({
               category="ate"
               hideTrigger
               open={ateStatusComposeOpen}
-              onOpenChange={setAteStatusComposeOpen}
+              onOpenChange={(next) => {
+                setAteStatusComposeOpen(next);
+                if (!next) setEditingAteMeal(null);
+              }}
+              initialEntry={editingAteMeal}
               busy={postBusy === "eating"}
               followed={followed}
               locationCity={locationCity}
@@ -822,8 +835,11 @@ export default function EatingHubSection({
                           : null
                       }
                       onEdit={
-                        canEdit && onDiarySelect
-                          ? () => onDiarySelect(primary)
+                        canEdit
+                          ? () => {
+                              setEditingAteMeal(meal);
+                              setAteStatusComposeOpen(true);
+                            }
                           : null
                       }
                       deleteBusy={diaryDeleteBusy}
@@ -834,43 +850,6 @@ export default function EatingHubSection({
                 );
               })}
             </ul>
-          ) : null}
-          {lastPost?.kind === "diary" &&
-          canEdit &&
-          typeof onDiaryEatenAtChange === "function" &&
-          !isHappyHourActivity(lastPost) ? (
-            <div style={clockStyles.wrap} data-testid="eating-meal-clock-edit">
-              <label style={clockStyles.label} htmlFor="eating-meal-clock-input">
-                Meal clock time
-              </label>
-              <input
-                id="eating-meal-clock-input"
-                type="time"
-                data-testid="eating-meal-clock-input"
-                disabled={diaryEatenAtBusy || omitMealClock}
-                value={isoToTimeInputValue(lastPost.eaten_at)}
-                style={{
-                  appearance: "none",
-                  border: "1px solid #cbd5e1",
-                  borderRadius: 8,
-                  padding: "6px 10px",
-                  font: "inherit",
-                  fontSize: 14,
-                  fontWeight: 650,
-                  color: "#0f172a",
-                  background: "#fff",
-                }}
-                onChange={(e) => {
-                  const nextIso = timeInputToIso(e.target.value, lastPost.eaten_at || lastPost.eaten_on);
-                  if (nextIso) onDiaryEatenAtChange(lastPost, nextIso);
-                }}
-              />
-              {omitMealClock ? (
-                <p style={clockStyles.hint}>Hidden on your profile — turn off “Omit meal clock time” in Settings to show it.</p>
-              ) : (
-                <p style={clockStyles.hint}>Auto-filled when you logged the meal. Change anytime.</p>
-              )}
-            </div>
           ) : null}
           {lastPost?.kind === "diary" &&
           canEdit &&
@@ -914,8 +893,11 @@ export default function EatingHubSection({
             : null
         }
         onHappyHourEdit={
-          canEdit && typeof onDiarySelect === "function"
-            ? (entry) => onDiarySelect(entry)
+          canEdit
+            ? (entry) => {
+                setEditingAteMeal(entry);
+                setAteStatusComposeOpen(true);
+              }
             : null
         }
         happyHourDeleteBusy={diaryDeleteBusy}
@@ -941,7 +923,10 @@ export default function EatingHubSection({
                     style={styles.compactAdd}
                     data-testid="status-compose-open"
                     disabled={postBusy === "want"}
-                    onClick={() => setWantStatusComposeOpen(true)}
+                    onClick={() => {
+                      setEditingWant(null);
+                      setWantStatusComposeOpen(true);
+                    }}
                   >
                     <span aria-hidden="true">+</span> Add
                   </button>
@@ -981,7 +966,11 @@ export default function EatingHubSection({
               category="want"
               hideTrigger
               open={wantStatusComposeOpen}
-              onOpenChange={setWantStatusComposeOpen}
+              onOpenChange={(next) => {
+                setWantStatusComposeOpen(next);
+                if (!next) setEditingWant(null);
+              }}
+              initialEntry={editingWant}
               busy={postBusy === "want"}
               followed={followed}
               locationCity={locationCity}
@@ -1024,6 +1013,14 @@ export default function EatingHubSection({
             readOnly={!canEdit}
             layout="scroll"
             onSelectItem={canEdit ? onWantSelect : undefined}
+            onEditWant={
+              canEdit
+                ? (want) => {
+                    setEditingWant(want);
+                    setWantStatusComposeOpen(true);
+                  }
+                : undefined
+            }
             onDeleteWant={canEdit ? onWantDelete : undefined}
             onDeleteDiningIntent={canEdit ? onDiningIntentDelete : undefined}
             deleteBusy={wantDeleteBusy || diningIntentDeleteBusy}
@@ -1176,7 +1173,7 @@ export default function EatingHubSection({
       {canEdit && schedulingPlans ? (
         <div
           role="presentation"
-          style={styles.planSheetBackdrop}
+          style={mobileDialogBackdrop()}
           data-testid="eating-plan-compose-sheet"
           onClick={() => onSchedulingPlansChange?.(false)}
         >
@@ -1184,7 +1181,7 @@ export default function EatingHubSection({
             role="dialog"
             aria-modal="true"
             aria-label={planPrefill?.editingKey ? "Edit eating plan" : "Schedule eating plan"}
-            style={styles.planSheetPanel}
+            style={{ ...mobileDialogPanel(planSheetMaxHeight), padding: "16px 16px 20px" }}
             onClick={(e) => e.stopPropagation()}
           >
             <div style={styles.planSheetHead}>
@@ -1200,6 +1197,7 @@ export default function EatingHubSection({
                 ✕
               </button>
             </div>
+            <div style={mobileDialogScrollBody}>
             <EatingPlanDayForm
               key={[
                 dateCmp > 0 ? hubDate : today,
@@ -1227,6 +1225,7 @@ export default function EatingHubSection({
               submitLabel={planPrefill?.editingKey ? "Save" : "Post"}
               onSubmit={onPostPlan}
             />
+            </div>
           </div>
         </div>
       ) : null}
@@ -1282,26 +1281,6 @@ const styles = {
     fontWeight: 750,
     color: "#166534",
   },
-  planSheetBackdrop: {
-    position: "fixed",
-    inset: 0,
-    background: "rgba(15, 23, 42, 0.48)",
-    zIndex: 1100,
-    display: "flex",
-    alignItems: "flex-end",
-    justifyContent: "center",
-    padding: "0 12px calc(var(--bottom-nav-h, 72px) + 12px)",
-  },
-  planSheetPanel: {
-    width: "100%",
-    maxWidth: 480,
-    background: "#fff",
-    borderRadius: "20px 20px 14px 14px",
-    padding: "16px 16px 20px",
-    boxShadow: "0 -12px 40px rgba(15, 23, 42, 0.18)",
-    maxHeight: "min(88vh, 640px)",
-    overflowY: "auto",
-  },
   planSheetHead: {
     display: "flex",
     alignItems: "center",
@@ -1324,31 +1303,5 @@ const styles = {
     borderRadius: "50%",
     fontSize: 16,
     cursor: "pointer",
-  },
-};
-
-const clockStyles = {
-  wrap: {
-    display: "flex",
-    flexWrap: "wrap",
-    alignItems: "center",
-    gap: 10,
-    margin: "0 0 12px",
-    padding: "10px 12px",
-    borderRadius: 12,
-    background: "linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)",
-    border: "1px solid #e2e8f0",
-  },
-  label: {
-    fontSize: 12,
-    fontWeight: 700,
-    color: "#334155",
-  },
-  hint: {
-    margin: 0,
-    flex: "1 1 100%",
-    fontSize: 12,
-    lineHeight: 1.35,
-    color: "#64748b",
   },
 };

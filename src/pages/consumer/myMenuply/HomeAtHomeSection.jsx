@@ -303,7 +303,7 @@ const grid = {
   lightbox: {
     position: "fixed",
     inset: 0,
-    zIndex: 80,
+    zIndex: 1400,
     background: "rgba(15,23,42,0.88)",
     display: "flex",
     alignItems: "center",

@@ -81,5 +81,8 @@ test("ownerCompact meal row uses Claude timeline color hierarchy", () => {
   assert.match(hub, /hideTrigger/);
   assert.match(hub, /eatenAt=\{meal\.eaten_at/);
   assert.match(hub, /omitMealClock/);
-  assert.match(hub, /eating-meal-clock-edit/);
+  const compose = read("src/pages/consumer/myMenuply/ActivityStatusLineCompose.jsx");
+  assert.match(compose, /eating-meal-clock-edit/);
+  assert.match(compose, /type="time"/);
+  assert.match(compose, /initialEntry/);
 });

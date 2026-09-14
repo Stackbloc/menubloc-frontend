@@ -1098,6 +1098,7 @@ function WantToEatCard({
   readOnly,
   isScroll,
   onSelectItem,
+  onEdit,
   onDelete,
   deleteBusy,
   onRequestMmt,
@@ -1127,7 +1128,8 @@ function WantToEatCard({
   const place = String(want.restaurant_name || "").trim();
   const foodName = String(want.food_name || "").trim() || "Want";
   const canDelete = !readOnly && typeof onDelete === "function" && want?.id != null;
-  const { open, dismiss, consumeArmedClick, bind } = useLongPressReveal(canDelete);
+  const canEditWant = !readOnly && typeof onEdit === "function" && want?.id != null;
+  const { open, dismiss, consumeArmedClick, bind } = useLongPressReveal(canDelete || canEditWant);
 
   // Scroll rail matches Restaurants I Follow visit cards (140×100 media + copy).
   const cardStyle = isScroll ? wantStyles.scrollCardPhoto : wantStyles.card;
@@ -1317,22 +1319,17 @@ function WantToEatCard({
         </div>
       ) : null}
       {open ? (
-        <button
-          type="button"
-          style={s.mealHolderDelete}
-          data-testid="want-to-eat-delete"
-          aria-label={`Delete ${foodName}`}
-          disabled={deleteBusy}
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            if (deleteBusy) return;
-            dismiss();
-            onDelete?.(want);
-          }}
-        >
-          Delete
-        </button>
+        <HubLongPressActions
+          open={open}
+          onEdit={canEditWant ? () => onEdit(want) : null}
+          onDelete={canDelete ? () => onDelete(want) : null}
+          deleteBusy={deleteBusy}
+          editLabel="Edit"
+          deleteLabel="Delete"
+          deleteAriaLabel={`Delete ${foodName}`}
+          testIdPrefix="want-to-eat"
+          onDismiss={dismiss}
+        />
       ) : null}
     </div>
   );
@@ -1342,6 +1339,7 @@ export function WantToEatList({
   items = [],
   readOnly = false,
   onSelectItem,
+  onEdit,
   onDelete,
   deleteBusy = false,
   onRequestMmt,
@@ -1371,6 +1369,7 @@ export function WantToEatList({
           readOnly={readOnly}
           isScroll={isScroll}
           onSelectItem={onSelectItem}
+          onEdit={onEdit}
           onDelete={onDelete}
           deleteBusy={deleteBusy}
           onRequestMmt={onRequestMmt}
@@ -1520,6 +1519,7 @@ export function WantToEatUnifiedList({
   diningIntents = [],
   readOnly = false,
   onSelectItem,
+  onEditWant,
   onDeleteWant,
   onDeleteDiningIntent,
   deleteBusy = false,
@@ -1554,6 +1554,7 @@ export function WantToEatUnifiedList({
           readOnly={readOnly}
           isScroll={isScroll}
           onSelectItem={onSelectItem}
+          onEdit={onEditWant}
           onDelete={onDeleteWant}
           deleteBusy={deleteBusy}
           onViewMmt={onViewMmt}

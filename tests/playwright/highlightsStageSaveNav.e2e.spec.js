@@ -39,7 +39,19 @@ function emptyListBody() {
   };
 }
 
-async function mockDinerApis(page, { uploadPosts, mealPosts }) {
+async function expectPostButtonInViewport(page) {
+  const post = page.getByTestId("status-line-post");
+  await expect(post).toBeVisible();
+  const box = await post.boundingBox();
+  const vp = page.viewportSize();
+  expect(box, "Post/Save must have a layout box").toBeTruthy();
+  expect(box.y).toBeGreaterThanOrEqual(0);
+  expect(box.y + box.height).toBeLessThanOrEqual((vp?.height || 0) + 1);
+  expect(box.x + box.width).toBeGreaterThan(0);
+  expect(box.x).toBeLessThan(vp?.width || 0);
+}
+
+async function mockDinerApis(page, { uploadPosts, mealPosts, mealPatches = [] }) {
   await page.route("**/api/**", async (route) => {
     const req = route.request();
     const url = req.url();
@@ -80,6 +92,62 @@ async function mockDinerApis(page, { uploadPosts, mealPosts }) {
           ok: true,
           meal: { id: 80001, items: [{ id: 1 }, { id: 2 }] },
           items: [{ id: 1 }, { id: 2 }],
+        }),
+      });
+    }
+
+    if (/\/api\/consumer\/what-i-ate-today\/\d+(?:\?|$)/.test(url) && method === "PATCH") {
+      const body = JSON.parse(req.postData() || "{}");
+      mealPatches.push({ url, method, body });
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          ok: true,
+          entry: {
+            id: 70001,
+            food_name: body.food_name || "E2E leftover pasta",
+            meal_period: body.meal_period || "lunch",
+            homemade: true,
+            eaten_at: body.eaten_at || null,
+          },
+        }),
+      });
+    }
+
+    if (
+      method === "GET" &&
+      url.includes("/api/consumer/what-i-ate-today") &&
+      !url.includes("/calendar") &&
+      !url.includes("/suggestions") &&
+      !url.includes("/photo") &&
+      !url.includes("/meals") &&
+      !url.includes("/users/") &&
+      !url.includes("/visibility")
+    ) {
+      let eatenOn = "2026-09-14";
+      try {
+        eatenOn = new URL(url).searchParams.get("eaten_on") || eatenOn;
+      } catch {
+        /* keep fallback */
+      }
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          ok: true,
+          entries: [
+            {
+              id: 70001,
+              item_name: "E2E leftover pasta",
+              food_name: "E2E leftover pasta",
+              homemade: true,
+              comment: "Homemade",
+              meal_period: "lunch",
+              eaten_on: eatenOn,
+              eaten_at: `${eatenOn}T19:30:00.000Z`,
+            },
+          ],
         }),
       });
     }
@@ -192,14 +260,42 @@ test.describe("My Highlights stage + Save does not freeze nav", () => {
 
     await page.goto("/feed/profile");
     await expect(page.getByTestId("feed-shell")).toBeVisible({ timeout: 20_000 });
-    await page.locator('[data-testid="eating-ate-panel"] [data-testid="status-compose-open"]').click();
-    await expect(page.getByTestId("eating-status-line-compose")).toBeVisible();
+    const ateAdd = page.locator('[data-testid="what-im-eating"] [data-testid="status-compose-open"]');
+    await ateAdd.scrollIntoViewIfNeeded();
+    await ateAdd.click();
+    await expect(page.getByTestId("status-compose-sheet")).toBeVisible();
 
-    await page.getByRole("button", { name: "@home" }).click();
+    await page.getByTestId("eating-status-mode").getByRole("button", { name: "@home" }).click();
     await page.getByTestId("athome-free-text").fill("E2E CPD item A");
     await page.getByTestId("ate-add-item").click();
     await page.getByTestId("ate-extra-item-0").fill("E2E CPD item B");
+    await expectPostButtonInViewport(page);
     await page.getByTestId("status-line-post").click();
     await expect.poll(() => mealPosts.length).toBe(1);
+  });
+
+  test("Edit View What I'm Eating Edit prefills all fields and PATCHes", async ({ page }) => {
+    const uploadPosts = [];
+    const mealPosts = [];
+    const mealPatches = [];
+    await mockDinerApis(page, { uploadPosts, mealPosts, mealPatches });
+
+    await page.goto("/feed/profile");
+    await expect(page.getByTestId("feed-shell")).toBeVisible({ timeout: 20_000 });
+    const row = page.getByTestId("diner-activity-scan-row");
+    await row.scrollIntoViewIfNeeded();
+    await expect(row).toBeVisible({ timeout: 20_000 });
+    await row.click({ button: "right" });
+    await page.getByTestId("diner-activity-scan-edit").click();
+    await expect(page.getByTestId("status-compose-sheet")).toBeVisible();
+    await expect(page.getByText("Edit What I'm Eating")).toBeVisible();
+    await expect(page.getByTestId("athome-free-text")).toHaveValue("E2E leftover pasta");
+    await expect(page.getByTestId("eating-meal-clock-edit")).toBeVisible();
+    await page.getByTestId("athome-free-text").fill("E2E leftover pasta edited");
+    await expectPostButtonInViewport(page);
+    await page.getByTestId("status-line-post").click();
+    await expect.poll(() => mealPatches.length).toBe(1);
+    expect(mealPatches[0].url).toMatch(/\/api\/consumer\/what-i-ate-today\/70001/);
+    expect(String(mealPatches[0].body?.food_name || "")).toContain("edited");
   });
 });
