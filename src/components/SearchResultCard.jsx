@@ -69,6 +69,7 @@ import {
   isPlaceScopedReturn,
   isSinglePlaceReturn,
 } from "../lib/clusterReturnNavigation.js";
+import SearchResultVideoStrip from "./search/SearchResultVideoCard.jsx";
 
 const MATCH_LABEL = "Match:";
 const SIMILAR_DIET_FILTER_KEYS = Object.freeze([
@@ -2010,7 +2011,11 @@ function ItemRow({
         <CompactScoreSummary presentation={indulgencePresentation} breadScore={breadScore} />
       ) : null}
 
-
+      <SearchResultVideoStrip
+        videos={row?.videos}
+        seeAllHref={restHref}
+        omitRestaurantContext={venueRenderedAbove}
+      />
 
       <div style={{ marginTop: 8, display: "flex", gap: 6, flexWrap: "wrap" }}>
         <Chip
@@ -2606,6 +2611,11 @@ export default function SearchResultCard({ restaurant, items, item, query, query
         billboard={item?.primary_billboard}
         restaurantId={restIdS}
         restaurantName={restNameS}
+      />
+
+      <SearchResultVideoStrip
+        videos={item?.videos}
+        seeAllHref={restHrefS}
       />
 
       {!isRestaurantBrowse && menuHrefS && (
