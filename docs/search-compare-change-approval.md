@@ -89,3 +89,22 @@ Display-only in similar list. Compare handler and eligibility unchanged.
 
 ### Approval basis
 Explicit user instruction: UI must always stay clean, even if similar item names are abbreviated.
+
+---
+
+## Date: 2026-09-15
+
+## Change: Search-result video strip from payload `videos[]`
+
+### Files modified
+- `src/components/SearchResultCard.jsx` (restaurant card + dish `ItemRow` mount)
+- `src/components/search/SearchResultVideoCard.jsx` (new)
+
+### What changed
+Mount `SearchResultVideoStrip` when the backend already attached `row.videos` / `item.videos`. Overlay player in-place. Does not fetch restaurant-wide profile videos.
+
+### Impact on Similar/Compare
+None. `handleCompare`, `DetailPanel`, eligibility, and Compare modal wiring are unchanged. The strip is additive presentation below existing card content.
+
+### Approval basis
+Andre current-turn: deploy held 2026-09-13 search-video work.
