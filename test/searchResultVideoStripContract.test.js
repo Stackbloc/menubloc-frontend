@@ -1,5 +1,6 @@
 /**
  * Search result video strip — omit when empty; payload-only (no restaurant-wide fetch).
+ * Part 3: three play states — thumbnail → inline expanded → native fullscreen.
  */
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -15,10 +16,34 @@ test("SearchResultVideoStrip omits empty payload and does not fetch profile vide
   assert.match(src, /data-testid="search-result-video-strip"/);
   assert.match(src, /aspectRatio:\s*"9 \/ 16"/);
   assert.match(src, /if \(!list\.length\) return null/);
+  assert.match(src, /thumbnail_url \|\| video\.photo_url/);
+  assert.match(src, /data-testid="search-result-video-thumb-placeholder"/);
+  assert.match(src, /#F3F4F6|#E5E7EB/);
   assert.doesNotMatch(src, /listRestaurantProfileVideos/);
   assert.doesNotMatch(src, /MenuRestaurantContextualVideo/);
   assert.doesNotMatch(src, /SeeWhosEatingFullscreen/);
   assert.doesNotMatch(src, /MKS|CK ID/);
+});
+
+test("SearchResultVideoCard prefers thumbnail_url and uses neutral placeholder not black shell", () => {
+  const src = read("src/components/search/SearchResultVideoCard.jsx");
+  assert.match(src, /thumbnail_url \|\| video\.photo_url|thumbnail_url \|\| video\?\.photo_url/);
+  assert.match(src, /search-result-video-thumb-placeholder/);
+  // Black-shell gradients from the pre–Part-2 strip must not remain as the empty thumb.
+  assert.doesNotMatch(src, /linear-gradient\(180deg,#1f2937,#111827\)/);
+  assert.doesNotMatch(src, /OwnerVideoCuration|multipartUpload|putBlobWithProgress/);
+});
+
+test("Part 3 video play is three-state: thumbnail → inline expanded → fullscreen", () => {
+  const src = read("src/components/search/SearchResultVideoCard.jsx");
+  assert.match(src, /data-testid="search-result-video-inline-expanded"/);
+  assert.match(src, /data-testid="search-result-video-inline-player"/);
+  assert.match(src, /data-testid="search-result-video-fullscreen"/);
+  assert.match(src, /data-testid="search-result-video-collapse"/);
+  assert.match(src, /requestFullscreen/);
+  // Initial tap must open inline expanded — not a body portal / full-screen modal.
+  assert.doesNotMatch(src, /createPortal/);
+  assert.doesNotMatch(src, /search-result-video-overlay/);
 });
 
 test("SearchResultCard mounts EnrichmentStack (Video→Connect→Deal) on dish and restaurant cards", () => {

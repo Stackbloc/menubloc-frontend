@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import OwnerLayout, { OWNER_COLORS, PageCard, SectionTitle } from "./OwnerLayout.jsx";
 import { SimpleTable } from "./intelligence/intelligenceShared.jsx";
@@ -8,6 +8,7 @@ import {
   lookupOwnerVideo,
   patchOwnerVideoMetadata,
   uploadOwnerVideo,
+  uploadOwnerVideoThumbnail,
   createOwnerDeal,
   uploadOwnerDealMediaVideo,
   publishOwnerDeal,
@@ -560,6 +561,8 @@ function ymdFromIso(value) {
 }
 
 function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
+  const videoPreviewRef = useRef(null);
+  const thumbFileInputRef = useRef(null);
   const [title, setTitle] = useState(video.title || "");
   const [comment, setComment] = useState(video.comment || "");
   const [clusterId, setClusterId] = useState(
@@ -581,7 +584,9 @@ function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
   const [managerActive, setManagerActive] = useState(video.manager_active !== false);
   const [runStartsAt, setRunStartsAt] = useState(() => ymdFromIso(video.run_starts_at));
   const [runEndsAt, setRunEndsAt] = useState(() => ymdFromIso(video.run_ends_at));
+  const [photoUrl, setPhotoUrl] = useState(video.photo_url || null);
   const [busy, setBusy] = useState(false);
+  const [thumbBusy, setThumbBusy] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
@@ -594,6 +599,7 @@ function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
     setManagerActive(video.manager_active !== false);
     setRunStartsAt(ymdFromIso(video.run_starts_at));
     setRunEndsAt(ymdFromIso(video.run_ends_at));
+    setPhotoUrl(video.photo_url || null);
     setError("");
     setSuccess("");
   }, [
@@ -606,6 +612,7 @@ function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
     video.manager_active,
     video.run_starts_at,
     video.run_ends_at,
+    video.photo_url,
   ]);
 
   useEffect(() => {
@@ -692,6 +699,81 @@ function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
     });
   }
 
+  async function applyThumbnailFile(file) {
+    if (!file) return;
+    setThumbBusy(true);
+    setError("");
+    setSuccess("");
+    try {
+      const result = await uploadOwnerVideoThumbnail(
+        video.video_kind,
+        video.video_source_id,
+        file
+      );
+      const next = result?.video || result;
+      const nextUrl = next?.photo_url || null;
+      setPhotoUrl(nextUrl);
+      setSuccess("Thumbnail saved");
+      onSaved?.(next);
+    } catch (err) {
+      setError(err.message || "Unable to save thumbnail");
+    } finally {
+      setThumbBusy(false);
+    }
+  }
+
+  async function handleCaptureFrame() {
+    const el = videoPreviewRef.current;
+    if (!el || !video.video_url) {
+      setError("Play or seek the video, then capture a frame.");
+      return;
+    }
+    try {
+      const canvas = document.createElement("canvas");
+      const w = el.videoWidth || 720;
+      const h = el.videoHeight || 1280;
+      if (!w || !h) {
+        setError("Wait for the video to load, then capture again.");
+        return;
+      }
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(el, 0, 0, w, h);
+      const blob = await new Promise((resolve, reject) => {
+        canvas.toBlob(
+          (b) => (b ? resolve(b) : reject(new Error("Could not capture frame"))),
+          "image/jpeg",
+          0.9
+        );
+      });
+      const file = new File([blob], `thumb-${video.video_id || "video"}.jpg`, {
+        type: "image/jpeg",
+      });
+      await applyThumbnailFile(file);
+    } catch (err) {
+      setError(err.message || "Unable to capture frame");
+    }
+  }
+
+  async function handleClearThumbnail() {
+    setThumbBusy(true);
+    setError("");
+    setSuccess("");
+    try {
+      const result = await patchOwnerVideoMetadata(video.video_kind, video.video_source_id, {
+        photo_url: null,
+      });
+      setPhotoUrl(null);
+      setSuccess("Thumbnail cleared");
+      onSaved?.(result.video);
+    } catch (err) {
+      setError(err.message || "Unable to clear thumbnail");
+    } finally {
+      setThumbBusy(false);
+    }
+  }
+
   return createPortal(
     <div
       data-testid="owner-video-editor"
@@ -749,10 +831,12 @@ function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
         {video.video_url ? (
           <div style={{ marginBottom: 16, display: "grid", gap: 8, maxWidth: 360 }}>
             <video
+              ref={videoPreviewRef}
               src={video.video_url}
               controls
               playsInline
               muted={playMuted}
+              crossOrigin="anonymous"
               data-testid="owner-video-preview"
               onVolumeChange={(e) => {
                 // Native player mute must update Feed mute state — preview-only mute was a false save.
@@ -787,6 +871,122 @@ function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
                 Check Mute (or mute the preview player) before Save — otherwise Feed plays with sound.
               </p>
             )}
+            <div
+              data-testid="owner-video-thumbnail-panel"
+              style={{
+                display: "grid",
+                gap: 8,
+                padding: 12,
+                borderRadius: 12,
+                border: `1px solid ${OWNER_COLORS.line}`,
+                background: "#FAFAF9",
+              }}
+            >
+              <span style={{ fontWeight: 700, fontSize: 13 }}>Search / Feed thumbnail</span>
+              <span style={{ fontSize: 12, color: OWNER_COLORS.muted, lineHeight: 1.4 }}>
+                Upload an image or capture the current video frame. Used on search cards and Feed
+                previews.
+              </span>
+              {photoUrl ? (
+                <img
+                  src={photoUrl}
+                  alt=""
+                  data-testid="owner-video-thumbnail-preview"
+                  style={{
+                    width: 96,
+                    height: 170,
+                    objectFit: "cover",
+                    borderRadius: 10,
+                    background: "#E5E7EB",
+                  }}
+                />
+              ) : (
+                <div
+                  data-testid="owner-video-thumbnail-empty"
+                  style={{
+                    width: 96,
+                    height: 170,
+                    borderRadius: 10,
+                    background: "linear-gradient(180deg,#F3F4F6,#E5E7EB)",
+                    display: "grid",
+                    placeItems: "center",
+                    fontSize: 11,
+                    color: OWNER_COLORS.muted,
+                    fontWeight: 600,
+                  }}
+                >
+                  No thumb
+                </div>
+              )}
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                <button
+                  type="button"
+                  disabled={thumbBusy || busy}
+                  onClick={() => thumbFileInputRef.current?.click()}
+                  data-testid="owner-video-thumbnail-upload"
+                  style={{
+                    border: `1px solid ${OWNER_COLORS.line}`,
+                    background: "#fff",
+                    borderRadius: 8,
+                    padding: "6px 12px",
+                    cursor: thumbBusy || busy ? "wait" : "pointer",
+                    fontWeight: 600,
+                    fontSize: 13,
+                  }}
+                >
+                  {thumbBusy ? "Saving…" : "Upload image"}
+                </button>
+                <button
+                  type="button"
+                  disabled={thumbBusy || busy || !video.video_url}
+                  onClick={handleCaptureFrame}
+                  data-testid="owner-video-thumbnail-capture"
+                  style={{
+                    border: `1px solid ${OWNER_COLORS.line}`,
+                    background: "#fff",
+                    borderRadius: 8,
+                    padding: "6px 12px",
+                    cursor: thumbBusy || busy ? "wait" : "pointer",
+                    fontWeight: 600,
+                    fontSize: 13,
+                  }}
+                >
+                  Capture frame
+                </button>
+                {photoUrl ? (
+                  <button
+                    type="button"
+                    disabled={thumbBusy || busy}
+                    onClick={handleClearThumbnail}
+                    data-testid="owner-video-thumbnail-clear"
+                    style={{
+                      border: `1px solid ${OWNER_COLORS.line}`,
+                      background: "#fff",
+                      borderRadius: 8,
+                      padding: "6px 12px",
+                      cursor: thumbBusy || busy ? "wait" : "pointer",
+                      fontWeight: 600,
+                      fontSize: 13,
+                      color: "#B91C1C",
+                    }}
+                  >
+                    Clear
+                  </button>
+                ) : null}
+              </div>
+              <input
+                ref={thumbFileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
+                hidden
+                data-testid="owner-video-thumbnail-file"
+                onChange={(e) => {
+                  const file = e.target.files?.[0] || null;
+                  e.target.value = "";
+                  if (file) void applyThumbnailFile(file);
+                }}
+              />
+            </div>
           </div>
         ) : null}
 

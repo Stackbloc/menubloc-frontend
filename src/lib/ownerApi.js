@@ -801,6 +801,21 @@ export const lookupOwnerVideo = ({ videoId, assetNumber } = {}) => {
 export const patchOwnerVideoMetadata = (kind, sourceId, body) =>
   patch(`/api/owner/videos/${encodeURIComponent(kind)}/${encodeURIComponent(String(sourceId))}`, body);
 
+/**
+ * Upload or replace the search/Feed thumbnail for a curated video.
+ * Multipart photo only — does not change the video file or Cause 2 video PUT path.
+ */
+export const uploadOwnerVideoThumbnail = (kind, sourceId, file) => {
+  if (!file) throw new Error("No thumbnail file selected");
+  const form = new FormData();
+  form.append("photo", file);
+  return postFormData(
+    `/api/owner/videos/${encodeURIComponent(kind)}/${encodeURIComponent(String(sourceId))}/thumbnail`,
+    form,
+    { timeoutMs: 60_000, mapNetworkError: true }
+  );
+};
+
 export const listOwnerVideoClusters = (params = {}) => {
   const qs = new URLSearchParams();
   if (params.q) qs.set("q", params.q);

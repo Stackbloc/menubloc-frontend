@@ -1,9 +1,11 @@
 /**
  * Search result video strip — evidence on the ranked card, not a video catalog.
  * Reads `row.videos` from Search. Does not fetch restaurant-wide profile videos.
+ *
+ * Play states (Part 3): thumbnail → inline expanded (in-card) → native fullscreen.
+ * Exit fullscreen returns to inline expanded; collapse to strip is a separate action.
  */
-import { useEffect, useState } from "react";
-import { createPortal } from "react-dom";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { resolveConsumerMediaUrl } from "../../lib/consumerApi.js";
 
@@ -27,6 +29,10 @@ function useVisibleCount() {
   return count;
 }
 
+function videoKey(video) {
+  return video?.video_id || `${video?.video_kind}:${video?.video_source_id}`;
+}
+
 function PlayGlyph() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
@@ -36,80 +42,23 @@ function PlayGlyph() {
   );
 }
 
-function SearchResultVideoOverlay({ video, onClose }) {
-  const src = video?.video_url ? resolveConsumerMediaUrl(video.video_url) : "";
-  useEffect(() => {
-    const onKey = (event) => {
-      if (event.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
-
-  if (!src || typeof document === "undefined") return null;
-
-  return createPortal(
-    <div
-      data-testid="search-result-video-overlay"
-      role="dialog"
-      aria-modal="true"
-      aria-label={video.context_line || "Video"}
-      onClick={onClose}
-      style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 80,
-        background: "rgba(0,0,0,0.78)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: 16,
-      }}
-    >
-      <div
-        onClick={(event) => event.stopPropagation()}
-        style={{
-          width: "min(360px, 92vw)",
-          maxHeight: "90vh",
-          display: "flex",
-          flexDirection: "column",
-          gap: 10,
-        }}
-      >
-        <video
-          src={src}
-          poster={video.photo_url ? resolveConsumerMediaUrl(video.photo_url) : undefined}
-          controls
-          autoPlay
-          playsInline
-          muted={video.play_muted === true}
-          style={{
-            width: "100%",
-            aspectRatio: "9 / 16",
-            objectFit: "cover",
-            borderRadius: 12,
-            background: "#111",
-          }}
-        />
-        <button
-          type="button"
-          onClick={onClose}
-          style={{
-            alignSelf: "center",
-            border: 0,
-            background: "transparent",
-            color: "#E5E7EB",
-            fontWeight: 700,
-            fontSize: 14,
-            cursor: "pointer",
-          }}
-        >
-          Close
-        </button>
-      </div>
-    </div>,
-    document.body
+function ExpandGlyph() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" fill="none">
+      <path
+        d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"
+        stroke="#fff"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
   );
+}
+
+function contextLabel(video, omitRestaurantContext) {
+  if (omitRestaurantContext && video.menu_item_name) return video.menu_item_name;
+  return video.context_line || video.menu_item_name || "Video";
 }
 
 export function SearchResultVideoCard({
@@ -118,14 +67,12 @@ export function SearchResultVideoCard({
   onPlay,
 }) {
   if (!video?.video_url) return null;
-  const thumb = video.photo_url ? resolveConsumerMediaUrl(video.photo_url) : "";
+  const rawThumb = video.thumbnail_url || video.photo_url || null;
+  const thumb = rawThumb ? resolveConsumerMediaUrl(rawThumb) : "";
   const avatar = video.creator_avatar_url
     ? resolveConsumerMediaUrl(video.creator_avatar_url)
     : "";
-  const context =
-    omitRestaurantContext && video.menu_item_name
-      ? video.menu_item_name
-      : video.context_line || video.menu_item_name || "Video";
+  const context = contextLabel(video, omitRestaurantContext);
 
   return (
     <button
@@ -154,23 +101,25 @@ export function SearchResultVideoCard({
           aspectRatio: "9 / 16",
           borderRadius: 10,
           overflow: "hidden",
-          background: "#111827",
+          background: "#E5E7EB",
         }}
       >
         {thumb ? (
           <img
             src={thumb}
             alt=""
+            data-testid="search-result-video-thumb"
             style={{ width: "100%", height: "100%", objectFit: "cover" }}
           />
         ) : (
           <span
             aria-hidden="true"
+            data-testid="search-result-video-thumb-placeholder"
             style={{
               display: "block",
               width: "100%",
               height: "100%",
-              background: "linear-gradient(180deg,#1f2937,#111827)",
+              background: "linear-gradient(180deg,#F3F4F6,#E5E7EB 55%,#D1D5DB)",
             }}
           />
         )}
@@ -230,28 +179,195 @@ export function SearchResultVideoCard({
   );
 }
 
+/**
+ * Inline expanded player — state 2. Fullscreen control is secondary (state 3).
+ * Exiting native fullscreen must not collapse this panel.
+ */
+function SearchResultVideoInlineExpanded({
+  video,
+  omitRestaurantContext = false,
+  onCollapse,
+}) {
+  const videoElRef = useRef(null);
+  const shellRef = useRef(null);
+  const src = video?.video_url ? resolveConsumerMediaUrl(video.video_url) : "";
+  const posterRaw = video?.thumbnail_url || video?.photo_url || null;
+  const poster = posterRaw ? resolveConsumerMediaUrl(posterRaw) : undefined;
+  const context = contextLabel(video, omitRestaurantContext);
+
+  useEffect(() => {
+    const onKey = (event) => {
+      if (event.key === "Escape") {
+        // Only collapse when not in native fullscreen — browser owns Escape there.
+        const fsEl =
+          document.fullscreenElement ||
+          document.webkitFullscreenElement ||
+          null;
+        if (!fsEl) onCollapse?.();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onCollapse]);
+
+  async function enterFullscreen() {
+    const target = shellRef.current || videoElRef.current;
+    if (!target) return;
+    try {
+      if (typeof target.requestFullscreen === "function") {
+        await target.requestFullscreen();
+        return;
+      }
+      if (typeof target.webkitRequestFullscreen === "function") {
+        await target.webkitRequestFullscreen();
+        return;
+      }
+      const el = videoElRef.current;
+      if (el && typeof el.webkitEnterFullscreen === "function") {
+        el.webkitEnterFullscreen();
+      }
+    } catch {
+      // Fullscreen may be blocked; stay in inline expanded.
+    }
+  }
+
+  if (!src) return null;
+
+  return (
+    <div
+      data-testid="search-result-video-inline-expanded"
+      style={{
+        marginTop: 10,
+        display: "flex",
+        flexDirection: "column",
+        gap: 8,
+        minWidth: 0,
+      }}
+    >
+      <div
+        ref={shellRef}
+        style={{
+          position: "relative",
+          width: "min(220px, 56vw)",
+          maxWidth: "100%",
+          borderRadius: 12,
+          overflow: "hidden",
+          background: "#111",
+        }}
+      >
+        <video
+          ref={videoElRef}
+          data-testid="search-result-video-inline-player"
+          src={src}
+          poster={poster}
+          controls
+          autoPlay
+          playsInline
+          muted={video.play_muted === true}
+          style={{
+            display: "block",
+            width: "100%",
+            aspectRatio: "9 / 16",
+            objectFit: "cover",
+            background: "#111",
+          }}
+        />
+        <button
+          type="button"
+          data-testid="search-result-video-fullscreen"
+          aria-label="Full screen"
+          onClick={(event) => {
+            event.stopPropagation();
+            void enterFullscreen();
+          }}
+          style={{
+            position: "absolute",
+            right: 8,
+            bottom: 8,
+            zIndex: 2,
+            width: 36,
+            height: 36,
+            border: 0,
+            borderRadius: 10,
+            background: "rgba(0,0,0,0.55)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+            padding: 0,
+          }}
+        >
+          <ExpandGlyph />
+        </button>
+      </div>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 10,
+          maxWidth: 220,
+        }}
+      >
+        <span
+          style={{
+            fontSize: 12,
+            fontWeight: 650,
+            color: "#C0C8D5",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+            minWidth: 0,
+          }}
+        >
+          {context}
+        </span>
+        <button
+          type="button"
+          data-testid="search-result-video-collapse"
+          onClick={onCollapse}
+          style={{
+            flex: "0 0 auto",
+            border: 0,
+            background: "transparent",
+            color: "#22C55E",
+            fontWeight: 750,
+            fontSize: 13,
+            cursor: "pointer",
+            padding: 0,
+          }}
+        >
+          Collapse
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function SearchResultVideoStrip({
   videos,
   seeAllHref = null,
   omitRestaurantContext = false,
 }) {
   const visibleCount = useVisibleCount();
-  const [playing, setPlaying] = useState(null);
+  const [expanded, setExpanded] = useState(null);
   const list = Array.isArray(videos) ? videos.filter((video) => video?.video_url) : [];
   if (!list.length) return null;
 
   const shown = list.slice(0, visibleCount);
   const total = list.length;
+  const expandedKey = expanded ? videoKey(expanded) : null;
 
   return (
     <div data-testid="search-result-video-strip" style={{ marginTop: 10 }}>
+      {/* State 1: thumbnail strip — always available; tap opens inline expanded (state 2). */}
       <div style={{ display: "flex", gap: 8, overflowX: "auto" }}>
         {shown.map((video) => (
           <SearchResultVideoCard
-            key={video.video_id || `${video.video_kind}:${video.video_source_id}`}
+            key={videoKey(video)}
             video={video}
             omitRestaurantContext={omitRestaurantContext}
-            onPlay={setPlaying}
+            onPlay={setExpanded}
           />
         ))}
       </div>
@@ -271,8 +387,14 @@ export default function SearchResultVideoStrip({
           {`See all ${total} ›`}
         </Link>
       ) : null}
-      {playing ? (
-        <SearchResultVideoOverlay video={playing} onClose={() => setPlaying(null)} />
+      {/* State 2: inline expanded inside this card (grows card height). Not a route change. */}
+      {expanded && expandedKey ? (
+        <SearchResultVideoInlineExpanded
+          key={expandedKey}
+          video={expanded}
+          omitRestaurantContext={omitRestaurantContext}
+          onCollapse={() => setExpanded(null)}
+        />
       ) : null}
     </div>
   );
