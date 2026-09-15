@@ -19,11 +19,11 @@ test("SearchResultSocialActivity omits empty payload and does not fetch", () => 
   assert.doesNotMatch(src, /HomeNext|FoodInterestsPage|waiterApi/);
 });
 
-test("SearchResultCard mounts Connect lines on dish ItemRow and restaurant-only card", () => {
+test("SearchResultCard mounts Connect lines via EnrichmentStack on dish and restaurant cards", () => {
   const card = read("src/components/SearchResultCard.jsx");
-  assert.match(card, /SearchResultSocialActivity/);
-  assert.match(card, /items=\{row\?\.social_activity\}/);
-  assert.match(card, /items=\{item\?\.social_activity\}/);
+  assert.match(card, /SearchResultEnrichmentStack/);
+  assert.match(card, /socialActivity=\{row\?\.social_activity\}/);
+  assert.match(card, /socialActivity=\{item\?\.social_activity\}/);
   assert.doesNotMatch(card, /listRestaurantProfileVideos/);
   assert.doesNotMatch(card, /HomeNext/);
   assert.doesNotMatch(card, /FoodInterestsPage/);

@@ -37,7 +37,6 @@ import { getConsumerDisplayPrice } from "../lib/pricingDisplay.js";
 import { getLocalizedField } from "../utils/getLocalizedField.js";
 import { getDisplayMenuItemName } from "../utils/getDisplayMenuItemName.js";
 import { trackMenuItemInteraction } from "../lib/interactionTracking.js";
-import { trackBillboardClick } from "../lib/analytics.js";
 import { fetchSimilarItems, fetchCompareItems, fetchMenuItemIntelligence, fetchFranchiseLocation } from "../lib/api.js";
 import CompareItemsModal from "./menu/CompareItemsModal.jsx";
 import { getNormalizedMenuItemId, normalizeMenuItemIdentity } from "../lib/menuItemIdentity.js";
@@ -69,8 +68,7 @@ import {
   isPlaceScopedReturn,
   isSinglePlaceReturn,
 } from "../lib/clusterReturnNavigation.js";
-import SearchResultVideoStrip from "./search/SearchResultVideoCard.jsx";
-import SearchResultSocialActivity from "./search/SearchResultSocialActivity.jsx";
+import SearchResultEnrichmentStack from "./search/SearchResultEnrichmentStack.jsx";
 
 const MATCH_LABEL = "Match:";
 const SIMILAR_DIET_FILTER_KEYS = Object.freeze([
@@ -79,140 +77,6 @@ const SIMILAR_DIET_FILTER_KEYS = Object.freeze([
 ]);
 const searchCardIntelligenceCache = new Map();
 const searchCardFranchiseLocationCache = new Map();
-
-/* ---- Billboard banner (compact, search-surface) ---- */
-
-const SEARCH_BILLBOARD_TYPE_META = {
-  deal:         { label: "Deal",   badgeColor: "#FCD34D", badgeBg: "rgba(252,211,77,0.12)",   grad: "linear-gradient(135deg,#92400e,#b45309)" },
-  event:        { label: "Event",  badgeColor: "#C4B5FD", badgeBg: "rgba(196,181,253,0.12)",  grad: "linear-gradient(135deg,#4c1d95,#6d28d9)" },
-  menu:         { label: "New",    badgeColor: "#93C5FD", badgeBg: "rgba(147,197,253,0.12)",  grad: "linear-gradient(135deg,#1e3a5f,#1d4ed8)" },
-  notice:       { label: "Notice", badgeColor: "#FCA5A5", badgeBg: "rgba(252,165,165,0.12)",  grad: "linear-gradient(135deg,#7f1d1d,#dc2626)" },
-  announcement: { label: "Update", badgeColor: "#86EFAC", badgeBg: "rgba(134,239,172,0.12)",  grad: "linear-gradient(135deg,#14532d,#15803d)" },
-  general:      { label: "Post",   badgeColor: "#CBD5E1", badgeBg: "rgba(203,213,225,0.12)",  grad: "linear-gradient(135deg,#1e293b,#475569)" },
-};
-
-function SearchBillboardBanner({ billboard, restaurantId = null, restaurantName = null }) {
-  if (!billboard) return null;
-  const meta = SEARCH_BILLBOARD_TYPE_META[billboard.post_type] || SEARCH_BILLBOARD_TYPE_META.general;
-  const headline = billboard.headline || billboard.title || "";
-  const sub = billboard.subheadline || null;
-  if (!headline) return null;
-
-  return (
-    <div
-      style={{
-        marginTop: 10,
-        display: "flex",
-        alignItems: "center",
-        gap: 10,
-        borderRadius: 8,
-        background: "rgba(255,255,255,0.03)",
-        border: "1px solid rgba(255,255,255,0.07)",
-        overflow: "hidden",
-        minWidth: 0,
-      }}
-    >
-      <div
-        style={{
-          width: 44,
-          height: 44,
-          flexShrink: 0,
-          background: billboard.image_url ? "#000" : meta.grad,
-          position: "relative",
-        }}
-      >
-        {billboard.image_url && (
-          <img
-            src={billboard.image_url}
-            alt={billboard.image_alt_text || headline}
-            loading="lazy"
-            style={{ width: "100%", height: "100%", objectFit: billboard.image_fit || "cover", display: "block" }}
-          />
-        )}
-      </div>
-      <div style={{ flex: 1, minWidth: 0, padding: "8px 10px 8px 0" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: sub ? 2 : 0 }}>
-          <span
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              height: 16,
-              padding: "0 6px",
-              borderRadius: 999,
-              background: meta.badgeBg,
-              color: meta.badgeColor,
-              fontSize: 9,
-              fontWeight: 800,
-              letterSpacing: 0.5,
-              textTransform: "uppercase",
-              flexShrink: 0,
-            }}
-          >
-            {meta.label}
-          </span>
-          <span
-            style={{
-              fontSize: 12,
-              fontWeight: 700,
-              color: "#E5E7EB",
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-            }}
-          >
-            {headline}
-          </span>
-        </div>
-        {sub && (
-          <div
-            style={{
-              fontSize: 11,
-              color: "#6B7280",
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-            }}
-          >
-            {sub}
-          </div>
-        )}
-      </div>
-      {billboard.cta_label && billboard.cta_url && (
-        <a
-          href={billboard.cta_url}
-          target="_blank"
-          rel="noreferrer"
-          onClick={() =>
-            trackBillboardClick({
-              restaurantId,
-              restaurantName,
-              billboardId: billboard.id || billboard.billboard_id || null,
-              target: billboard.cta_url,
-            })
-          }
-          style={{
-            flexShrink: 0,
-            display: "inline-flex",
-            alignItems: "center",
-            height: 28,
-            padding: "0 10px",
-            marginRight: 10,
-            borderRadius: 6,
-            background: "rgba(255,255,255,0.06)",
-            border: "1px solid rgba(255,255,255,0.10)",
-            color: "#E5E7EB",
-            fontSize: 11,
-            fontWeight: 700,
-            textDecoration: "none",
-            whiteSpace: "nowrap",
-          }}
-        >
-          {billboard.cta_label}
-        </a>
-      )}
-    </div>
-  );
-}
 
 /* ---- Helpers ---- */
 
@@ -1730,6 +1594,8 @@ function ItemRow({
 
   return (
     <div
+      data-testid="search-result-card"
+      data-card-skeleton="unified"
       style={{
         paddingTop: 16,
         paddingBottom: 16,
@@ -1738,6 +1604,7 @@ function ItemRow({
     >
       {/* 1. Item photo (optional) + name + price */}
       <div
+        data-testid="search-result-card-primary"
         style={{
           display: "flex",
           alignItems: "flex-start",
@@ -1862,29 +1729,7 @@ function ItemRow({
         </div>
       </div>
 
-      {/* 2. Action icons — view menu, like, share */}
-      {mid || dishShareData || fullMenuHref ? (
-        <div style={{ marginTop: 12, marginBottom: 2 }}>
-          <MenuItemDetailActionRail
-            menuItemId={mid}
-            itemName={name}
-            shareData={dishShareData}
-            shareAnalyticsContext={{
-              restaurantId: restIdForLink,
-              restaurantSlug: restSlugForLink || null,
-              menuItemId: mid,
-              menuItemName: name,
-              pageType: "search_results",
-              shareTarget: "dish",
-            }}
-            fullMenuHref={fullMenuHref}
-            iconGap={SEARCH_ITEM_ACTION_GAP}
-            shareStopPropagation
-          />
-        </div>
-      ) : null}
-
-      {/* 3. Restaurant name + facts + diet badges — one merged line */}
+      {/* Restaurant name + facts + diet badges — header/source context */}
       {!venueRenderedAbove && (restDisplayName || factsLine || popular || isGF || isVegan) ? (
         <div
           style={{
@@ -2012,15 +1857,38 @@ function ItemRow({
         <CompactScoreSummary presentation={indulgencePresentation} breadScore={breadScore} />
       ) : null}
 
-      <SearchResultSocialActivity items={row?.social_activity} />
-
-      <SearchResultVideoStrip
+      <SearchResultEnrichmentStack
         videos={row?.videos}
+        socialActivity={row?.social_activity}
+        deal={row?.primary_billboard || null}
         seeAllHref={restHref}
         omitRestaurantContext={venueRenderedAbove}
+        restaurantId={restIdForLink}
+        restaurantName={restDisplayName}
       />
 
-      <div style={{ marginTop: 8, display: "flex", gap: 6, flexWrap: "wrap" }}>
+      <div data-testid="search-result-card-footer" style={{ marginTop: 8 }}>
+        {(mid || dishShareData || fullMenuHref) ? (
+          <div style={{ marginBottom: 8 }}>
+            <MenuItemDetailActionRail
+              menuItemId={mid}
+              itemName={name}
+              shareData={dishShareData}
+              shareAnalyticsContext={{
+                restaurantId: restIdForLink,
+                restaurantSlug: restSlugForLink || null,
+                menuItemId: mid,
+                menuItemName: name,
+                pageType: "search_results",
+                shareTarget: "dish",
+              }}
+              fullMenuHref={fullMenuHref}
+              iconGap={SEARCH_ITEM_ACTION_GAP}
+              shareStopPropagation
+            />
+          </div>
+        ) : null}
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
         <Chip
           label={labels.nutrition}
           active={openTab === "nutrition"}
@@ -2044,6 +1912,7 @@ function ItemRow({
             }
           />
         ) : null}
+        </div>
       </div>
 
       {openTab === "nutrition" && (
@@ -2304,8 +2173,14 @@ export default function SearchResultCard({ restaurant, items, item, query, query
     });
 
     return (
-      <article className="gb-card" style={cardStyle}>
+      <article
+        className="gb-card"
+        data-testid="search-result-card"
+        data-card-skeleton="unified"
+        style={cardStyle}
+      >
         <div
+          data-testid="search-result-card-header"
           style={{
             paddingBottom: 12,
             marginBottom: 4,
@@ -2369,8 +2244,8 @@ export default function SearchResultCard({ restaurant, items, item, query, query
               />
             ) : null}
           </div>
-          <SearchBillboardBanner
-            billboard={restaurant?.raw?.primary_billboard}
+          <SearchResultEnrichmentStack
+            deal={restaurant?.raw?.primary_billboard || null}
             restaurantId={restId}
             restaurantName={restName}
           />
@@ -2502,9 +2377,14 @@ export default function SearchResultCard({ restaurant, items, item, query, query
   const isRestaurantBrowse = resultView === "restaurant";
 
   return (
-    <article className="gb-card" style={cardStyle}>
+    <article
+      className="gb-card"
+      data-testid="search-result-card"
+      data-card-skeleton="unified"
+      style={cardStyle}
+    >
       {/* Restaurant name + like */}
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
+      <div data-testid="search-result-card-header" style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
         <div style={{ fontSize: 20, fontWeight: 800, lineHeight: 1.25, letterSpacing: "-0.01em", color: "#22C55E", minWidth: 0, flex: 1 }}>
         {restHrefS ? (
           <Link
@@ -2610,19 +2490,16 @@ export default function SearchResultCard({ restaurant, items, item, query, query
         </div>
       )}
 
-      <SearchBillboardBanner
-        billboard={item?.primary_billboard}
+      <SearchResultEnrichmentStack
+        videos={item?.videos}
+        socialActivity={item?.social_activity}
+        deal={item?.primary_billboard || null}
+        seeAllHref={restHrefS}
         restaurantId={restIdS}
         restaurantName={restNameS}
       />
 
-      <SearchResultSocialActivity items={item?.social_activity} />
-
-      <SearchResultVideoStrip
-        videos={item?.videos}
-        seeAllHref={restHrefS}
-      />
-
+      <div data-testid="search-result-card-footer">
       {!isRestaurantBrowse && menuHrefS && (
         <div style={{ marginTop: 12 }}>
           <Link
@@ -2635,6 +2512,7 @@ export default function SearchResultCard({ restaurant, items, item, query, query
           </Link>
         </div>
       )}
+      </div>
     </article>
   );
 }
