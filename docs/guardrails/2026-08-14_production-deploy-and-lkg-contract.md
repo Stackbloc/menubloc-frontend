@@ -48,12 +48,12 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-backend-main` @ clean `main` |
-| Git on origin | `3037dbda` — cluster restaurant billboards |
-| Live health SHA | `3037dbda7a505fed0d26cf8a3de2ba0f305920da` |
+| Git on origin | `c5e21ee4` — bounded social/content search relevance ranking |
+| Live health SHA | `c5e21ee4fe1406bd6d5337991bb36c0e750e35d2` |
 | Health URL | `https://menubloc-backend-production.up.railway.app/health` |
-| `commit_hash` | `3037dbda…` |
-| DB | migrations through `0331` (`consumer_catch_me`); **0305** `eat_invitations.attached_menu_id` applied 2026-09-03 |
-| Smoke | BE cluster billboard CPD 2026-09-14 (health `3037dbda`, smoke 24 PASS); FE tip `7cw8hktux` / `index-BG0tPoo5.js` |
+| `commit_hash` | `c5e21ee4…` |
+| DB | migrations through `0332` (managed video `chain_menu_item_id`); **0305** `eat_invitations.attached_menu_id` applied 2026-09-03 |
+| Smoke | BE social/content relevance CPD 2026-09-15 (health `c5e21ee4`, smoke 25 PASS) |
 
 ### Restore current tip (if tip-gate fails mid-change)
 
