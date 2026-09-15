@@ -55,8 +55,8 @@ test("SearchResultCard does not equalize heights or auto-play large video inline
   assert.doesNotMatch(card, /equalize|uniform.?height/i);
   assert.match(strip, /aspectRatio:\s*"9 \/ 16"/);
   assert.match(strip, /data-testid="search-result-video-strip"/);
-  // Part 3: tap opens inline expanded; fullscreen is secondary — not portal overlay.
+  // Tap replaces strip with larger in-card player; no empty shell beside it; no fullscreen.
   assert.match(strip, /search-result-video-inline-expanded/);
-  assert.match(strip, /requestFullscreen/);
-  assert.doesNotMatch(strip, /createPortal|search-result-video-overlay/);
+  assert.match(strip, /isExpanded \? \(/);
+  assert.doesNotMatch(strip, /requestFullscreen|search-result-video-fullscreen|createPortal|search-result-video-overlay/);
 });

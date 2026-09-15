@@ -2,8 +2,9 @@
  * Search result video strip — evidence on the ranked card, not a video catalog.
  * Reads `row.videos` from Search. Does not fetch restaurant-wide profile videos.
  *
- * Play states (Part 3): thumbnail → inline expanded (in-card) → native fullscreen.
- * Exit fullscreen returns to inline expanded; collapse to strip is a separate action.
+ * Play: thumbnail shell → tap grows into the larger in-card player (same card).
+ * The empty/thumbnail shell is not kept on screen while playing.
+ * No fullscreen control — Collapse returns to the strip.
  */
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
@@ -11,6 +12,8 @@ import { resolveConsumerMediaUrl } from "../../lib/consumerApi.js";
 
 const MOBILE_VISIBLE = 2;
 const DESKTOP_VISIBLE = 3;
+const THUMB_WIDTH = 86;
+const EXPANDED_WIDTH = "min(220px, 56vw)";
 
 function useVisibleCount() {
   const [count, setCount] = useState(MOBILE_VISIBLE);
@@ -42,20 +45,6 @@ function PlayGlyph() {
   );
 }
 
-function ExpandGlyph() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" fill="none">
-      <path
-        d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"
-        stroke="#fff"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
 function contextLabel(video, omitRestaurantContext) {
   if (omitRestaurantContext && video.menu_item_name) return video.menu_item_name;
   return video.context_line || video.menu_item_name || "Video";
@@ -83,7 +72,7 @@ export function SearchResultVideoCard({
         display: "flex",
         flexDirection: "column",
         gap: 6,
-        width: 86,
+        width: THUMB_WIDTH,
         flex: "0 0 auto",
         padding: 0,
         border: 0,
@@ -179,17 +168,13 @@ export function SearchResultVideoCard({
   );
 }
 
-/**
- * Inline expanded player — state 2. Fullscreen control is secondary (state 3).
- * Exiting native fullscreen must not collapse this panel.
- */
+/** Larger in-card player — replaces the thumbnail strip while open (no empty shell, no fullscreen). */
 function SearchResultVideoInlineExpanded({
   video,
   omitRestaurantContext = false,
   onCollapse,
 }) {
   const videoElRef = useRef(null);
-  const shellRef = useRef(null);
   const src = video?.video_url ? resolveConsumerMediaUrl(video.video_url) : "";
   const posterRaw = video?.thumbnail_url || video?.photo_url || null;
   const poster = posterRaw ? resolveConsumerMediaUrl(posterRaw) : undefined;
@@ -197,39 +182,11 @@ function SearchResultVideoInlineExpanded({
 
   useEffect(() => {
     const onKey = (event) => {
-      if (event.key === "Escape") {
-        // Only collapse when not in native fullscreen — browser owns Escape there.
-        const fsEl =
-          document.fullscreenElement ||
-          document.webkitFullscreenElement ||
-          null;
-        if (!fsEl) onCollapse?.();
-      }
+      if (event.key === "Escape") onCollapse?.();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onCollapse]);
-
-  async function enterFullscreen() {
-    const target = shellRef.current || videoElRef.current;
-    if (!target) return;
-    try {
-      if (typeof target.requestFullscreen === "function") {
-        await target.requestFullscreen();
-        return;
-      }
-      if (typeof target.webkitRequestFullscreen === "function") {
-        await target.webkitRequestFullscreen();
-        return;
-      }
-      const el = videoElRef.current;
-      if (el && typeof el.webkitEnterFullscreen === "function") {
-        el.webkitEnterFullscreen();
-      }
-    } catch {
-      // Fullscreen may be blocked; stay in inline expanded.
-    }
-  }
 
   if (!src) return null;
 
@@ -237,7 +194,6 @@ function SearchResultVideoInlineExpanded({
     <div
       data-testid="search-result-video-inline-expanded"
       style={{
-        marginTop: 10,
         display: "flex",
         flexDirection: "column",
         gap: 8,
@@ -245,10 +201,9 @@ function SearchResultVideoInlineExpanded({
       }}
     >
       <div
-        ref={shellRef}
         style={{
           position: "relative",
-          width: "min(220px, 56vw)",
+          width: EXPANDED_WIDTH,
           maxWidth: "100%",
           borderRadius: 12,
           overflow: "hidden",
@@ -272,33 +227,6 @@ function SearchResultVideoInlineExpanded({
             background: "#111",
           }}
         />
-        <button
-          type="button"
-          data-testid="search-result-video-fullscreen"
-          aria-label="Full screen"
-          onClick={(event) => {
-            event.stopPropagation();
-            void enterFullscreen();
-          }}
-          style={{
-            position: "absolute",
-            right: 8,
-            bottom: 8,
-            zIndex: 2,
-            width: 36,
-            height: 36,
-            border: 0,
-            borderRadius: 10,
-            background: "rgba(0,0,0,0.55)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            cursor: "pointer",
-            padding: 0,
-          }}
-        >
-          <ExpandGlyph />
-        </button>
       </div>
       <div
         style={{
@@ -357,45 +285,48 @@ export default function SearchResultVideoStrip({
   const shown = list.slice(0, visibleCount);
   const total = list.length;
   const expandedKey = expanded ? videoKey(expanded) : null;
+  const isExpanded = Boolean(expanded && expandedKey);
 
   return (
     <div data-testid="search-result-video-strip" style={{ marginTop: 10 }}>
-      {/* State 1: thumbnail strip — always available; tap opens inline expanded (state 2). */}
-      <div style={{ display: "flex", gap: 8, overflowX: "auto" }}>
-        {shown.map((video) => (
-          <SearchResultVideoCard
-            key={videoKey(video)}
-            video={video}
-            omitRestaurantContext={omitRestaurantContext}
-            onPlay={setExpanded}
-          />
-        ))}
-      </div>
-      {seeAllHref && total > shown.length ? (
-        <Link
-          to={seeAllHref}
-          data-testid="search-result-video-see-all"
-          style={{
-            display: "inline-block",
-            marginTop: 8,
-            fontSize: 13,
-            fontWeight: 750,
-            color: "#22C55E",
-            textDecoration: "none",
-          }}
-        >
-          {`See all ${total} ›`}
-        </Link>
-      ) : null}
-      {/* State 2: inline expanded inside this card (grows card height). Not a route change. */}
-      {expanded && expandedKey ? (
+      {/* While playing: only the larger player — thumbnail/empty shell is not kept on screen. */}
+      {isExpanded ? (
         <SearchResultVideoInlineExpanded
           key={expandedKey}
           video={expanded}
           omitRestaurantContext={omitRestaurantContext}
           onCollapse={() => setExpanded(null)}
         />
-      ) : null}
+      ) : (
+        <>
+          <div style={{ display: "flex", gap: 8, overflowX: "auto" }}>
+            {shown.map((video) => (
+              <SearchResultVideoCard
+                key={videoKey(video)}
+                video={video}
+                omitRestaurantContext={omitRestaurantContext}
+                onPlay={setExpanded}
+              />
+            ))}
+          </div>
+          {seeAllHref && total > shown.length ? (
+            <Link
+              to={seeAllHref}
+              data-testid="search-result-video-see-all"
+              style={{
+                display: "inline-block",
+                marginTop: 8,
+                fontSize: 13,
+                fontWeight: 750,
+                color: "#22C55E",
+                textDecoration: "none",
+              }}
+            >
+              {`See all ${total} ›`}
+            </Link>
+          ) : null}
+        </>
+      )}
     </div>
   );
 }
