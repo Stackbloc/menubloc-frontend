@@ -9,6 +9,7 @@ import {
   asRestaurantPlace,
   dishLabel,
   restaurantLabel,
+  restaurantPlaceMeta,
   searchReportPlaces,
 } from "../../../lib/foodActivityApi.js";
 import { dishPhotoUrl } from "../../../lib/eatingPlaceLink.js";
@@ -227,8 +228,7 @@ export default function EatingPlaceFields({
                     <li key={hit.restaurant_id}>
                       <button type="button" style={styles.hitBtn} onClick={() => pickRestaurant(hit)}>
                         {restaurantLabel(hit)}
-                        {hit.city ? ` · ${hit.city}` : ""}
-                        {hit.state && !String(hit.city || "").includes(hit.state) ? `, ${hit.state}` : ""}
+                        {restaurantPlaceMeta(hit) ? ` · ${restaurantPlaceMeta(hit)}` : ""}
                       </button>
                     </li>
                   ))}

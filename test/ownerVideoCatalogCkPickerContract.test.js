@@ -15,13 +15,14 @@ function read(relPath) {
 
 test("CkRestaurantMenuPicker uses CK place search — name lookup, no manual ID entry", () => {
   const picker = read("src/components/ck/CkRestaurantMenuPicker.jsx");
+  assert.match(picker, /Canonical menu/i);
   assert.match(picker, /searchReportPlaces/);
   assert.match(picker, /type: "restaurant"/);
   assert.match(picker, /type: "menu_item"/);
   assert.match(picker, /asRestaurantPlace/);
   assert.match(picker, /asDishPlace/);
   assert.match(picker, /Search restaurant name/i);
-  assert.match(picker, /You never type an ID/i);
+  assert.match(picker, /canonical menu/i);
   assert.doesNotMatch(picker, /searchMenuConsoleRestaurants/);
   assert.doesNotMatch(picker, /searchMenuConsoleItems/);
   assert.doesNotMatch(picker, /type="number".*restaurant_id|restaurant_id.*type="number"/);
@@ -81,6 +82,19 @@ test("Owner Video Manager includes cluster dropdown for platform uploads", () =>
   assert.match(page, /owner-video-upload-cluster/);
   assert.match(api, /listOwnerVideoClusters/);
   assert.match(api, /\/api\/owner\/videos\/clusters/);
+});
+
+test("Owner Video Manager food type picker uses ontology catalog — not a new taxonomy", () => {
+  const page = read("src/pages/owner/OwnerVideoCuration.jsx");
+  const api = read("src/lib/ownerApi.js");
+  assert.match(page, /FoodFormPicker/);
+  assert.match(page, /owner-video-food-form-picker/);
+  assert.match(page, /food_form:/);
+  assert.match(page, /addOwnerVideoFoodForm/);
+  assert.match(api, /listOwnerVideoFoodForms/);
+  assert.match(api, /addOwnerVideoFoodForm/);
+  assert.match(api, /\/api\/owner\/videos\/food-forms/);
+  assert.doesNotMatch(page, /putBlobWithProgress[\s\S]*food.form|food_form[\s\S]*putBlobWithProgress/);
 });
 
 test("Owner Video Manager labels owner uploads Platform video and guest uploads Guest video", () => {

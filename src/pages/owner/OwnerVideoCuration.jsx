@@ -5,6 +5,8 @@ import { SimpleTable } from "./intelligence/intelligenceShared.jsx";
 import {
   listOwnerVideos,
   listOwnerVideoClusters,
+  listOwnerVideoFoodForms,
+  addOwnerVideoFoodForm,
   lookupOwnerVideo,
   patchOwnerVideoMetadata,
   uploadOwnerVideo,
@@ -115,6 +117,278 @@ function OwnerClusterSelect({
         <span style={{ fontSize: 12, color: OWNER_COLORS.muted }}>Loading clusters…</span>
       ) : null}
     </label>
+  );
+}
+
+function FoodFormPicker({ value, onChange, disabled }) {
+  const [q, setQ] = useState("");
+  const [family, setFamily] = useState("");
+  const [families, setFamilies] = useState([]);
+  const [results, setResults] = useState([]);
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [addFamily, setAddFamily] = useState("hot dog");
+  const [addBusy, setAddBusy] = useState(false);
+  const [addError, setAddError] = useState("");
+  const wrapRef = useRef(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const handle = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const result = await listOwnerVideoFoodForms({
+          q,
+          family: family || undefined,
+          limit: 120,
+        });
+        if (cancelled) return;
+        setFamilies(result.families || []);
+        setResults(result.results || []);
+      } catch {
+        if (!cancelled) {
+          setResults([]);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }, 180);
+    return () => {
+      cancelled = true;
+      clearTimeout(handle);
+    };
+  }, [q, family]);
+
+  useEffect(() => {
+    function onDocClick(event) {
+      if (!wrapRef.current?.contains(event.target)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, []);
+
+  const selectedLabel = value
+    ? results.find((row) => row.form_key === value)?.display_label || value
+    : "";
+  const qLower = q.trim().toLowerCase();
+  const hasExact = results.some(
+    (row) =>
+      row.form_key === qLower ||
+      (row.aliases || []).includes(qLower) ||
+      String(row.display_label || "").toLowerCase() === qLower
+  );
+  const canAdd = q.trim().length >= 2 && !hasExact && !value;
+
+  async function handleAdd() {
+    setAddBusy(true);
+    setAddError("");
+    try {
+      const result = await addOwnerVideoFoodForm({
+        label: q.trim(),
+        family_key: addFamily,
+      });
+      const form = result.form;
+      if (form?.form_key) {
+        onChange?.(form.form_key);
+        setQ("");
+        setOpen(false);
+      }
+    } catch (err) {
+      setAddError(err.message || "Unable to add food type");
+    } finally {
+      setAddBusy(false);
+    }
+  }
+
+  const grouped = [];
+  for (const row of results) {
+    const last = grouped[grouped.length - 1];
+    if (!last || last.family_key !== row.family_key) {
+      grouped.push({
+        family_key: row.family_key,
+        family_label: row.family_label,
+        rows: [row],
+      });
+    } else {
+      last.rows.push(row);
+    }
+  }
+
+  return (
+    <div ref={wrapRef} style={{ display: "grid", gap: 6 }} data-testid="owner-video-food-form-picker">
+      <span style={{ fontWeight: 700, fontSize: 13 }}>Food type</span>
+      <span style={{ fontSize: 12, color: OWNER_COLORS.muted, lineHeight: 1.4 }}>
+        Connect this clip to search (for example Hot Dogs) even when there is no menu item.
+      </span>
+      <div style={{ display: "grid", gap: 8, gridTemplateColumns: "minmax(0, 1fr) minmax(140px, 180px)" }}>
+        <input
+          value={open || !value ? q : selectedLabel}
+          onChange={(e) => {
+            setQ(e.target.value);
+            setOpen(true);
+            if (value) onChange?.("");
+          }}
+          onFocus={() => setOpen(true)}
+          placeholder="Type a food type or browse below"
+          disabled={disabled}
+          style={inputStyle}
+          data-testid="owner-video-food-form-input"
+          autoComplete="off"
+        />
+        <select
+          value={family}
+          onChange={(e) => {
+            setFamily(e.target.value);
+            setOpen(true);
+          }}
+          disabled={disabled}
+          style={inputStyle}
+          data-testid="owner-video-food-form-family"
+        >
+          <option value="">All categories</option>
+          {families.map((row) => (
+            <option key={row.key} value={row.key}>
+              {row.label}
+            </option>
+          ))}
+        </select>
+      </div>
+      {value ? (
+        <button
+          type="button"
+          onClick={() => {
+            onChange?.("");
+            setQ("");
+          }}
+          disabled={disabled}
+          data-testid="owner-video-food-form-clear"
+          style={{
+            justifySelf: "start",
+            border: "none",
+            background: "transparent",
+            color: "#b91c1c",
+            fontWeight: 700,
+            fontSize: 12,
+            cursor: disabled ? "wait" : "pointer",
+            padding: 0,
+          }}
+        >
+          Clear food type
+        </button>
+      ) : null}
+      {open ? (
+        <div
+          data-testid="owner-video-food-form-results"
+          style={{
+            maxHeight: 240,
+            overflowY: "auto",
+            border: `1px solid ${OWNER_COLORS.line}`,
+            borderRadius: 10,
+            background: "#fff",
+            padding: 6,
+          }}
+        >
+          {loading ? (
+            <div style={{ fontSize: 12, color: OWNER_COLORS.muted, padding: 8 }}>Matching food types…</div>
+          ) : null}
+          {!loading && !results.length ? (
+            <div style={{ fontSize: 12, color: OWNER_COLORS.muted, padding: 8 }}>No match in the food catalog.</div>
+          ) : null}
+          {grouped.map((group) => (
+            <div key={group.family_key} style={{ marginBottom: 6 }}>
+              <div
+                style={{
+                  fontSize: 11,
+                  fontWeight: 800,
+                  letterSpacing: "0.04em",
+                  textTransform: "uppercase",
+                  color: OWNER_COLORS.muted,
+                  padding: "6px 8px 2px",
+                }}
+              >
+                {group.family_label}
+              </div>
+              {group.rows.map((row) => (
+                <button
+                  key={`${row.source}-${row.form_key}`}
+                  type="button"
+                  onClick={() => {
+                    onChange?.(row.form_key);
+                    setQ("");
+                    setOpen(false);
+                  }}
+                  data-testid={`owner-video-food-form-option-${row.form_key}`}
+                  style={{
+                    display: "block",
+                    width: "100%",
+                    textAlign: "left",
+                    border: "none",
+                    background: value === row.form_key ? OWNER_COLORS.accentSoft : "transparent",
+                    borderRadius: 8,
+                    padding: "7px 8px",
+                    cursor: "pointer",
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: OWNER_COLORS.ink,
+                  }}
+                >
+                  {row.display_label}
+                </button>
+              ))}
+            </div>
+          ))}
+        </div>
+      ) : null}
+      {canAdd ? (
+        <div
+          data-testid="owner-video-food-form-add"
+          style={{
+            display: "grid",
+            gap: 8,
+            padding: 10,
+            borderRadius: 10,
+            border: `1px dashed ${OWNER_COLORS.line}`,
+            background: "#FAFAF9",
+          }}
+        >
+          <span style={{ fontSize: 12, fontWeight: 700 }}>
+            Add “{q.trim()}” under an existing category
+          </span>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <select
+              value={addFamily}
+              onChange={(e) => setAddFamily(e.target.value)}
+              disabled={disabled || addBusy}
+              style={{ ...inputStyle, flex: "1 1 160px" }}
+              data-testid="owner-video-food-form-add-family"
+            >
+              {families.map((row) => (
+                <option key={row.key} value={row.key}>
+                  {row.label}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={handleAdd}
+              disabled={disabled || addBusy || !addFamily}
+              data-testid="owner-video-food-form-add-submit"
+              style={{
+                border: `1px solid ${OWNER_COLORS.line}`,
+                background: "#fff",
+                borderRadius: 8,
+                padding: "8px 12px",
+                fontWeight: 700,
+                cursor: addBusy ? "wait" : "pointer",
+              }}
+            >
+              {addBusy ? "Adding…" : "Add food type"}
+            </button>
+          </div>
+          {addError ? <span style={{ fontSize: 12, color: "#b91c1c" }}>{addError}</span> : null}
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -581,6 +855,7 @@ function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
   });
   const [marketDiscoverable, setMarketDiscoverable] = useState(video.market_discoverable !== false);
   const [playMuted, setPlayMuted] = useState(video.play_muted === true);
+  const [foodForm, setFoodForm] = useState(video.food_form || "");
   const [managerActive, setManagerActive] = useState(video.manager_active !== false);
   const [runStartsAt, setRunStartsAt] = useState(() => ymdFromIso(video.run_starts_at));
   const [runEndsAt, setRunEndsAt] = useState(() => ymdFromIso(video.run_ends_at));
@@ -596,6 +871,7 @@ function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
     setClusterId(video.cluster_id != null ? Number(video.cluster_id) : null);
     setMarketDiscoverable(video.market_discoverable !== false);
     setPlayMuted(video.play_muted === true);
+    setFoodForm(video.food_form || "");
     setManagerActive(video.manager_active !== false);
     setRunStartsAt(ymdFromIso(video.run_starts_at));
     setRunEndsAt(ymdFromIso(video.run_ends_at));
@@ -609,6 +885,7 @@ function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
     video.cluster_id,
     video.market_discoverable,
     video.play_muted,
+    video.food_form,
     video.manager_active,
     video.run_starts_at,
     video.run_ends_at,
@@ -655,6 +932,7 @@ function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
         comment: comment.trim() || null,
         market_discoverable: marketDiscoverable,
         play_muted: playMuted,
+        food_form: foodForm || null,
         manager_active: nextActive,
         run_starts_at: runStartsAt || null,
         run_ends_at: runEndsAt || null,
@@ -1017,6 +1295,8 @@ function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
           )
         ) : null}
 
+        <FoodFormPicker value={foodForm || ""} onChange={setFoodForm} disabled={busy} />
+
         {video.video_kind === "managed" ? (
           <OwnerClusterSelect
             value={clusterId}
@@ -1347,6 +1627,7 @@ export default function OwnerVideoCuration() {
                 (row) => {
                   const bits = [];
                   if (row.play_muted === true) bits.push("Muted");
+                  if (row.food_form) bits.push(row.food_form);
                   if (row.manager_active === false) bits.push("Inactive");
                   if (row.run_starts_at || row.run_ends_at) bits.push("Scheduled");
                   return bits.length ? bits.join(" · ") : "—";

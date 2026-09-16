@@ -824,6 +824,17 @@ export const listOwnerVideoClusters = (params = {}) => {
   return get(`/api/owner/videos/clusters${serialized ? `?${serialized}` : ""}`);
 };
 
+export const listOwnerVideoFoodForms = (params = {}) => {
+  const qs = new URLSearchParams();
+  if (params.q) qs.set("q", params.q);
+  if (params.family) qs.set("family", params.family);
+  if (params.limit != null) qs.set("limit", String(params.limit));
+  const serialized = qs.toString();
+  return get(`/api/owner/videos/food-forms${serialized ? `?${serialized}` : ""}`);
+};
+
+export const addOwnerVideoFoodForm = (body) => post("/api/owner/videos/food-forms", body);
+
 // ─── Owner deal videos (Feed → Deals category) ───────────────────────────────
 
 export const listOwnerDeals = (restaurantId, params = {}) => {

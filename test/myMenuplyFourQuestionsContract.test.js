@@ -151,6 +151,7 @@ test("My Menuply is the diner's personal home", () => {
   assert.doesNotMatch(placeFields, />\s*Menu item\s*</);
   assert.ok(placeFields.indexOf("eating-place-restaurant") < placeFields.indexOf("eating-place-homemade"));
   assert.match(placeFields, /searchReportPlaces/);
+  assert.match(placeFields, /restaurantPlaceMeta/);
   assert.match(placeFields, /Homemade/);
   const picker = read("src/pages/consumer/myMenuply/JoinMeAudiencePicker.jsx");
   assert.match(picker, /All Connects/);

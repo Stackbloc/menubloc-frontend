@@ -5,7 +5,7 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { searchReportPlaces } from "../../lib/foodActivityApi.js";
+import { searchReportPlaces, restaurantPlaceMeta } from "../../lib/foodActivityApi.js";
 import { restaurantPath } from "../../lib/canonicalUrlCore.js";
 import {
   createWhatIAteToday,
@@ -493,7 +493,7 @@ function WhatIAteTagPicker({ restaurant, onRestaurantChange, disabled = false })
                   >
                     <span style={styles.actionTitle}>{row.restaurant_name}</span>
                     <span style={styles.muted}>
-                      {[row.city, row.state].filter(Boolean).join(", ")}
+                      {restaurantPlaceMeta(row) || [row.city, row.state].filter(Boolean).join(", ")}
                     </span>
                   </button>
                 </li>

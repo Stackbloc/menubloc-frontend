@@ -69,6 +69,16 @@ export function restaurantLabel(row) {
   ).trim();
 }
 
+/** Location line plus Canonical menu when franchise/MLE shares one menu. */
+export function restaurantPlaceMeta(row) {
+  const loc = [row?.address_line1, row?.city, row?.state].filter(Boolean).join(", ");
+  const canonical =
+    row?.uses_canonical_menu || row?.is_canonical_menu_holder || row?.menu_scope === "franchise_canonical" || row?.menu_scope === "mle_canonical"
+      ? "Canonical menu"
+      : "";
+  return [loc, canonical].filter(Boolean).join(" · ");
+}
+
 export function dishLabel(row) {
   return String(
     row?.item_name ||

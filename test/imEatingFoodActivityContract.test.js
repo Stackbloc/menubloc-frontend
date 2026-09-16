@@ -23,6 +23,8 @@ test("exposes consumer food-activity API helpers", () => {
   const publicApi = read("src/lib/foodActivityApi.js");
   assert.match(publicApi, /createPublicFoodActivity/);
   assert.match(publicApi, /searchReportPlaces/);
+  assert.match(publicApi, /restaurantPlaceMeta/);
+  assert.match(publicApi, /Canonical menu/);
   assert.match(publicApi, /resolveEatingPrefill/);
   assert.match(publicApi, /dishLabel/);
   const dishFn = publicApi.slice(

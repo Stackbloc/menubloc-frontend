@@ -4,7 +4,7 @@
  */
 
 import React, { useEffect, useState } from "react";
-import { searchReportPlaces, restaurantLabel, dishLabel, asRestaurantPlace, asDishPlace } from "../../lib/foodActivityApi.js";
+import { searchReportPlaces, restaurantLabel, restaurantPlaceMeta, dishLabel, asRestaurantPlace, asDishPlace } from "../../lib/foodActivityApi.js";
 import * as cs from "./foodActivityComposeStyles.js";
 
 function isDiningHallRestaurant(restaurant) {
@@ -164,8 +164,8 @@ export default function ImEatingComposer({
                     </strong>
                     <span style={styles.muted}>
                       {r.type === "restaurant"
-                        ? r.subtitle || [r.address_line1, r.city, r.state].filter(Boolean).join(", ")
-                        : r.restaurant_name}
+                        ? restaurantPlaceMeta(r) || r.subtitle || [r.address_line1, r.city, r.state].filter(Boolean).join(", ")
+                        : r.subtitle || r.restaurant_name}
                     </span>
                   </button>
                 </li>

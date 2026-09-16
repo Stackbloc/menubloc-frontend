@@ -9,6 +9,7 @@ import {
   asRestaurantPlace,
   dishLabel,
   restaurantLabel,
+  restaurantPlaceMeta,
   resolveEatingPrefill,
   searchReportPlaces,
 } from "../../lib/foodActivityApi.js";
@@ -170,8 +171,8 @@ export default function CkRestaurantMenuPicker({
   return (
     <div style={styles.wrap} data-testid={`${testIdPrefix}-picker`}>
       <p style={styles.hint}>
-        Search by restaurant name, pick a result — the Common Knowledge restaurant ID is linked to this
-        video automatically. You never type an ID.
+        Search by restaurant name. Franchise and multi-location brands use the canonical menu —
+        a specific location is fine, and it still lists that shared menu.
       </p>
 
       <div>
@@ -188,6 +189,9 @@ export default function CkRestaurantMenuPicker({
                   : "Linked to Common Knowledge"}
                 {restaurant.city
                   ? ` · ${[restaurant.city, restaurant.state].filter(Boolean).join(", ")}`
+                  : ""}
+                {restaurant.uses_canonical_menu || restaurant.is_canonical_menu_holder
+                  ? " · Canonical menu"
                   : ""}
               </div>
             </div>
@@ -223,7 +227,7 @@ export default function CkRestaurantMenuPicker({
                   <li key={hit.restaurant_id || hit.id}>
                     <button type="button" style={styles.hitBtn} onClick={() => pickRestaurant(hit)}>
                       {restaurantLabel(hit)}
-                      {hit.city ? ` · ${hit.city}${hit.state ? `, ${hit.state}` : ""}` : ""}
+                      {restaurantPlaceMeta(hit) ? ` · ${restaurantPlaceMeta(hit)}` : ""}
                     </button>
                   </li>
                 ))}
@@ -283,7 +287,7 @@ export default function CkRestaurantMenuPicker({
                 </ul>
               ) : !dishSearching ? (
                 <p style={styles.hint} data-testid={`${testIdPrefix}-dish-empty`}>
-                  No CK menu items match — pick another restaurant or refine search.
+                  No CK dishes on this brand’s canonical menu — pick another restaurant or refine search.
                 </p>
               ) : null}
             </>
