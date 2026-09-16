@@ -94,6 +94,11 @@ test("Owner Video Manager food type picker uses ontology catalog — not a new t
   assert.match(api, /listOwnerVideoFoodForms/);
   assert.match(api, /addOwnerVideoFoodForm/);
   assert.match(api, /\/api\/owner\/videos\/food-forms/);
+  assert.match(page, /CuisinePicker/);
+  assert.match(page, /owner-video-cuisine-picker/);
+  assert.match(page, /cuisine:/);
+  assert.match(api, /listOwnerVideoCuisines/);
+  assert.match(api, /\/api\/owner\/videos\/cuisines/);
   assert.doesNotMatch(page, /putBlobWithProgress[\s\S]*food.form|food_form[\s\S]*putBlobWithProgress/);
 });
 

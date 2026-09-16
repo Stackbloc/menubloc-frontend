@@ -19,11 +19,14 @@ test("Video Manager editor exposes mute active and run window settings", () => {
   assert.match(src, /owner-video-run-ends/);
   assert.match(src, /play_muted:/);
   assert.match(src, /food_form:/);
+  assert.match(src, /cuisine:/);
   assert.match(src, /manager_active:/);
   assert.match(src, /run_starts_at:/);
   assert.match(src, /run_ends_at:/);
   assert.match(src, /owner-video-food-form-picker/);
   assert.match(src, /FoodFormPicker/);
+  assert.match(src, /owner-video-cuisine-picker/);
+  assert.match(src, /CuisinePicker/);
 });
 
 test("Video Manager editor locks modal ink and exposes Stop showing in Feed", () => {

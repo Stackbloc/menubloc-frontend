@@ -835,6 +835,14 @@ export const listOwnerVideoFoodForms = (params = {}) => {
 
 export const addOwnerVideoFoodForm = (body) => post("/api/owner/videos/food-forms", body);
 
+export const listOwnerVideoCuisines = (params = {}) => {
+  const qs = new URLSearchParams();
+  if (params.q) qs.set("q", params.q);
+  if (params.limit != null) qs.set("limit", String(params.limit));
+  const serialized = qs.toString();
+  return get(`/api/owner/videos/cuisines${serialized ? `?${serialized}` : ""}`);
+};
+
 // ─── Owner deal videos (Feed → Deals category) ───────────────────────────────
 
 export const listOwnerDeals = (restaurantId, params = {}) => {
