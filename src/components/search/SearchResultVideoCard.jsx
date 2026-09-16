@@ -175,6 +175,23 @@ export function SearchResultVideoCard({
         >
           {context}
         </span>
+        {video.from_connect ? (
+          <span
+            data-testid="search-result-video-connect-badge"
+            style={{
+              fontSize: 10,
+              fontWeight: 800,
+              letterSpacing: 0.2,
+              color: "#166534",
+              background: "#dcfce7",
+              borderRadius: 999,
+              padding: "1px 6px",
+              flex: "0 0 auto",
+            }}
+          >
+            Connect
+          </span>
+        ) : null}
       </span>
     </button>
   );
@@ -394,6 +411,7 @@ export default function SearchResultVideoStrip({
   if (!list.length) return null;
 
   const shown = list.slice(0, visibleCount);
+  const hasConnect = shown.some((video) => video?.from_connect === true);
   const total = list.length;
   const expandedKey = expanded ? videoKey(expanded) : null;
   const isExpanded = Boolean(expanded && expandedKey);
@@ -414,6 +432,21 @@ export default function SearchResultVideoStrip({
         />
       ) : (
         <>
+          {hasConnect ? (
+            <p
+              data-testid="search-result-video-connects-label"
+              style={{
+                margin: "0 0 6px",
+                fontSize: 11,
+                fontWeight: 800,
+                letterSpacing: 0.3,
+                textTransform: "uppercase",
+                color: "#166534",
+              }}
+            >
+              Your Connects
+            </p>
+          ) : null}
           <div style={{ display: "flex", gap: 8, overflowX: "auto" }}>
             {shown.map((video) => (
               <SearchResultVideoCard

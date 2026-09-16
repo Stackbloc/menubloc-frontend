@@ -135,6 +135,9 @@ export default function MenuItemDetailActionRail({
         <FoodCommentNavButton
           target="menu_item"
           menuItemId={menuItemId}
+          restaurantId={restaurantId}
+          restaurantName={restaurantName}
+          menuItemName={itemName}
           tone="ghost"
           size="row"
         />

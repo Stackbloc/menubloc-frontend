@@ -19,6 +19,9 @@ test("SearchResultVideoStrip omits empty payload and does not fetch profile vide
   assert.match(src, /thumbnail_url \|\| video\.photo_url/);
   assert.match(src, /data-testid="search-result-video-thumb-placeholder"/);
   assert.match(src, /#F3F4F6|#E5E7EB/);
+  assert.match(src, /data-testid="search-result-video-connect-badge"/);
+  assert.match(src, /data-testid="search-result-video-connects-label"/);
+  assert.match(src, /Your Connects/);
   assert.doesNotMatch(src, /listRestaurantProfileVideos/);
   assert.doesNotMatch(src, /MenuRestaurantContextualVideo/);
   assert.doesNotMatch(src, /SeeWhosEatingFullscreen/);

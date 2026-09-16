@@ -36,6 +36,9 @@ export default function EatingComposeSheet({
   inviteMeOutSelectedIds = [],
   inviteMeOutCandidates = [],
   initialWhereType = null,
+  initialRestaurant = null,
+  initialDish = null,
+  identityLocked = false,
 }) {
   useEffect(() => {
     if (!open) return undefined;
@@ -82,7 +85,9 @@ export default function EatingComposeSheet({
       >
         <div style={styles.header}>
           <p style={styles.title}>
-            {feedMode
+            {identityLocked && defaultCategory === "reviews"
+              ? `Review ${String(initialDish?.item_name || "").trim() || "this dish"}`
+              : feedMode
               ? defaultCategory === "want"
                 ? "Wanna Eat"
                 : "I'm Eating"
@@ -106,7 +111,9 @@ export default function EatingComposeSheet({
         </div>
         <div style={mobileDialogScrollBody}>
         <p style={styles.lead}>
-          {feedMode
+          {identityLocked && defaultCategory === "reviews"
+            ? "This video is already about this menu item. Record or upload — you do not pick the restaurant or dish again."
+            : feedMode
             ? "Record a video for Feed. Tag restaurant or dish after if you like — optional caption below."
             : defaultCategory === "want"
               ? "Cuisine, restaurant, menu item, or a general food craving — no restaurant required."
@@ -115,7 +122,7 @@ export default function EatingComposeSheet({
                 : "Photo or video, restaurant or homemade, meal time, then an optional comment."}
         </p>
         <EatingCompose
-          key={`${defaultCategory}-${defaultMealPeriod || "auto"}-${mediaSource}-${feedMode ? "feed" : "hub"}-${initialWhereType || "where"}-${initialFile?.name || (initialFile ? "blob" : "none")}`}
+          key={`${defaultCategory}-${defaultMealPeriod || "auto"}-${mediaSource}-${feedMode ? "feed" : "hub"}-${initialWhereType || "where"}-${identityLocked ? "locked" : "open"}-${initialDish?.menu_item_id || "nodish"}-${initialFile?.name || (initialFile ? "blob" : "none")}`}
           busy={busy}
           uploadPercent={uploadPercent}
           defaultCategory={defaultCategory}
@@ -134,6 +141,9 @@ export default function EatingComposeSheet({
           inviteMeOutSelectedIds={inviteMeOutSelectedIds}
           inviteMeOutCandidates={inviteMeOutCandidates}
           initialWhereType={initialWhereType}
+          initialRestaurant={initialRestaurant}
+          initialDish={initialDish}
+          identityLocked={identityLocked}
           inSheet
         />
         </div>

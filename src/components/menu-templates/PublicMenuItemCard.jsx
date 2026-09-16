@@ -625,6 +625,9 @@ export default function PublicMenuItemCard({
                     <FoodCommentNavButton
                       target="menu_item"
                       menuItemId={normalizedItemId}
+                      restaurantId={currentRestaurantId}
+                      restaurantName={restaurantName}
+                      menuItemName={name}
                       tone="ghost"
                       size="row"
                     />
@@ -700,6 +703,9 @@ export default function PublicMenuItemCard({
                     <FoodCommentNavButton
                       target="menu_item"
                       menuItemId={normalizedItemId}
+                      restaurantId={currentRestaurantId}
+                      restaurantName={restaurantName}
+                      menuItemName={name}
                       tone="ghost"
                       size="row"
                     />
@@ -775,6 +781,9 @@ export default function PublicMenuItemCard({
                     <FoodCommentNavButton
                       target="menu_item"
                       menuItemId={normalizedItemId}
+                      restaurantId={currentRestaurantId}
+                      restaurantName={restaurantName}
+                      menuItemName={name}
                       tone="ghost"
                       size="row"
                     />

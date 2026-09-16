@@ -28,6 +28,7 @@ export default function EatingPlaceFields({
   allowHomemade = true,
   locationCity = null,
   locationState = null,
+  identityLocked = false,
   dishSearchPlaceholder = "Dish (optional)",
 }) {
   const [query, setQuery] = useState("");
@@ -184,7 +185,10 @@ export default function EatingPlaceFields({
             Restaurant
           </p>
           {restaurant ? (
-            <div style={styles.selected} data-testid="eating-place-restaurant-selected">
+            <div
+              style={styles.selected}
+              data-testid={identityLocked ? "eating-place-identity-locked" : "eating-place-restaurant-selected"}
+            >
               <div>
                 <div style={styles.selectedName}>{restaurantLabel(restaurant) || "Restaurant"}</div>
                 {restaurant.city ? (
@@ -193,10 +197,12 @@ export default function EatingPlaceFields({
                   </div>
                 ) : null}
               </div>
+              {identityLocked ? null : (
               <button
                 type="button"
                 style={styles.change}
                 disabled={disabled}
+                data-testid="eating-place-restaurant-change"
                 onClick={() => {
                   onRestaurantChange?.(null);
                   onDishChange?.(null);
@@ -204,6 +210,7 @@ export default function EatingPlaceFields({
               >
                 Change
               </button>
+              )}
             </div>
           ) : (
             <>
@@ -275,14 +282,17 @@ export default function EatingPlaceFields({
                       ) : null}
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    style={styles.change}
-                    disabled={disabled}
-                    onClick={() => onDishChange?.(null)}
-                  >
-                    Change
-                  </button>
+                  {identityLocked ? null : (
+                    <button
+                      type="button"
+                      style={styles.change}
+                      disabled={disabled}
+                      data-testid="eating-place-dish-change"
+                      onClick={() => onDishChange?.(null)}
+                    >
+                      Change
+                    </button>
+                  )}
                 </div>
               ) : restaurant ? (
                 <>

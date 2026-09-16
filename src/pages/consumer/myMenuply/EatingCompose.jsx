@@ -52,6 +52,9 @@ export default function EatingCompose({
   inviteMeOutCandidates = [],
   /** Prefill Where — e.g. Multiplier Happy Hour → happy_hour */
   initialWhereType = null,
+  initialRestaurant = null,
+  initialDish = null,
+  identityLocked = false,
 }) {
   const [category, setCategory] = useState(defaultCategory);
   const [text, setText] = useState("");
@@ -63,14 +66,15 @@ export default function EatingCompose({
   const [whereType, setWhereType] = useState(() => {
     const w = String(initialWhereType || "").trim();
     if (w === "happy_hour" || w === "home" || w === "restaurant") return w;
+    if (identityLocked) return "restaurant";
     return null;
   }); // restaurant | home | happy_hour
   const [happyHourIntent, setHappyHourIntent] = useState(
     String(initialWhereType || "").trim() === "happy_hour" ? "enjoying" : null
   );
   const [portionAmount, setPortionAmount] = useState("");
-  const [restaurant, setRestaurant] = useState(null);
-  const [dish, setDish] = useState(null);
+  const [restaurant, setRestaurant] = useState(() => initialRestaurant || null);
+  const [dish, setDish] = useState(() => initialDish || null);
   const [wantKind, setWantKind] = useState("food_item");
   const [ateKind, setAteKind] = useState("food_item");
   const [foodInterestKey, setFoodInterestKey] = useState("");
@@ -1215,7 +1219,9 @@ export default function EatingCompose({
             ) : (
               <>
             <p style={styles.stepLabel}>
-              {category === "reviews"
+              {identityLocked
+                ? "Reviewing"
+                : category === "reviews"
                 ? "Which menu item are you reviewing?"
                 : feedMode
                   ? "Restaurant & menu item (optional)"
@@ -1224,16 +1230,17 @@ export default function EatingCompose({
 
             <EatingPlaceFields
               homemade={category === "reviews" ? false : homemade}
-              onHomemadeChange={category === "reviews" ? () => {} : setHomemade}
+              onHomemadeChange={category === "reviews" || identityLocked ? () => {} : setHomemade}
               restaurant={restaurant}
-              onRestaurantChange={setRestaurant}
+              onRestaurantChange={identityLocked ? () => {} : setRestaurant}
               dish={dish}
-              onDishChange={setDish}
+              onDishChange={identityLocked ? () => {} : setDish}
               followed={followed}
               disabled={busy}
               locationCity={locationCity}
               locationState={locationState}
               allowDishSearch
+              identityLocked={identityLocked}
             />
               </>
             )}
