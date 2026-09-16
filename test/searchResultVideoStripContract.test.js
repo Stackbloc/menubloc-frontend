@@ -45,6 +45,17 @@ test("playing video replaces thumbnail strip — no empty shell and no fullscree
   assert.doesNotMatch(src, /search-result-video-overlay/);
 });
 
+test("Part 4: 2+ videos use in-player next/prev while strip stays hidden", () => {
+  const src = read("src/components/search/SearchResultVideoCard.jsx");
+  assert.match(src, /data-testid="search-result-video-prev"/);
+  assert.match(src, /data-testid="search-result-video-next"/);
+  assert.match(src, /playlist\.length > 1/);
+  assert.match(src, /thumbnails to choose, arrows to continue/);
+  assert.match(src, /playlist=\{playlist\}/);
+  // Expanded mode must not remount the thumbnail strip alongside the player.
+  assert.match(src, /While playing: larger player only/);
+});
+
 test("SearchResultCard mounts EnrichmentStack (Video→Connect→Deal) on dish and restaurant cards", () => {
   const card = read("src/components/SearchResultCard.jsx");
   assert.match(card, /SearchResultEnrichmentStack/);

@@ -2,8 +2,8 @@
  * Search result video strip — evidence on the ranked card, not a video catalog.
  * Reads `row.videos` from Search. Does not fetch restaurant-wide profile videos.
  *
- * Play: thumbnail shell → tap grows into the larger in-card player (same card).
- * The empty/thumbnail shell is not kept on screen while playing.
+ * Play: thumbnail strip → tap replaces strip with larger in-card player (no empty shell).
+ * 2+ videos: next/prev arrows on the player (Part 4) — thumbnails to choose, arrows to continue.
  * No fullscreen control — Collapse returns to the strip.
  */
 import { useEffect, useRef, useState } from "react";
@@ -41,6 +41,18 @@ function PlayGlyph() {
     <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
       <circle cx="12" cy="12" r="11" fill="rgba(0,0,0,0.55)" />
       <path d="M10 8.5v7l6-3.5-6-3.5z" fill="#fff" />
+    </svg>
+  );
+}
+
+function ChevronGlyph({ direction }) {
+  const d =
+    direction === "prev"
+      ? "M14.5 6.5 9 12l5.5 5.5"
+      : "M9.5 6.5 15 12l-5.5 5.5";
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" fill="none">
+      <path d={d} stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
@@ -168,25 +180,75 @@ export function SearchResultVideoCard({
   );
 }
 
+function navButtonStyle(side) {
+  return {
+    position: "absolute",
+    top: "50%",
+    [side]: 6,
+    transform: "translateY(-50%)",
+    zIndex: 3,
+    width: 34,
+    height: 34,
+    border: 0,
+    borderRadius: "50%",
+    background: "rgba(0,0,0,0.55)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "pointer",
+    padding: 0,
+  };
+}
+
 /** Larger in-card player — replaces the thumbnail strip while open (no empty shell, no fullscreen). */
 function SearchResultVideoInlineExpanded({
   video,
+  playlist = [],
   omitRestaurantContext = false,
   onCollapse,
+  onSelect,
 }) {
   const videoElRef = useRef(null);
   const src = video?.video_url ? resolveConsumerMediaUrl(video.video_url) : "";
   const posterRaw = video?.thumbnail_url || video?.photo_url || null;
   const poster = posterRaw ? resolveConsumerMediaUrl(posterRaw) : undefined;
   const context = contextLabel(video, omitRestaurantContext);
+  const multi = Array.isArray(playlist) && playlist.length > 1;
+  const index = multi
+    ? Math.max(
+        0,
+        playlist.findIndex((item) => videoKey(item) === videoKey(video))
+      )
+    : 0;
+  const hasPrev = multi && index > 0;
+  const hasNext = multi && index < playlist.length - 1;
+
+  function go(delta) {
+    if (!multi) return;
+    const next = playlist[index + delta];
+    if (next) onSelect?.(next);
+  }
 
   useEffect(() => {
     const onKey = (event) => {
-      if (event.key === "Escape") onCollapse?.();
+      if (event.key === "Escape") {
+        onCollapse?.();
+        return;
+      }
+      if (!multi) return;
+      if (event.key === "ArrowLeft" && index > 0) {
+        event.preventDefault();
+        const prev = playlist[index - 1];
+        if (prev) onSelect?.(prev);
+      } else if (event.key === "ArrowRight" && index < playlist.length - 1) {
+        event.preventDefault();
+        const next = playlist[index + 1];
+        if (next) onSelect?.(next);
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onCollapse]);
+  }, [multi, index, playlist, onCollapse, onSelect]);
 
   if (!src) return null;
 
@@ -212,6 +274,7 @@ function SearchResultVideoInlineExpanded({
       >
         <video
           ref={videoElRef}
+          key={videoKey(video)}
           data-testid="search-result-video-inline-player"
           src={src}
           poster={poster}
@@ -227,6 +290,54 @@ function SearchResultVideoInlineExpanded({
             background: "#111",
           }}
         />
+        {hasPrev ? (
+          <button
+            type="button"
+            data-testid="search-result-video-prev"
+            aria-label="Previous video"
+            onClick={(event) => {
+              event.stopPropagation();
+              go(-1);
+            }}
+            style={navButtonStyle("left")}
+          >
+            <ChevronGlyph direction="prev" />
+          </button>
+        ) : null}
+        {hasNext ? (
+          <button
+            type="button"
+            data-testid="search-result-video-next"
+            aria-label="Next video"
+            onClick={(event) => {
+              event.stopPropagation();
+              go(1);
+            }}
+            style={navButtonStyle("right")}
+          >
+            <ChevronGlyph direction="next" />
+          </button>
+        ) : null}
+        {multi ? (
+          <span
+            data-testid="search-result-video-position"
+            style={{
+              position: "absolute",
+              top: 8,
+              left: "50%",
+              transform: "translateX(-50%)",
+              zIndex: 3,
+              padding: "2px 8px",
+              borderRadius: 999,
+              background: "rgba(0,0,0,0.55)",
+              color: "#E5E7EB",
+              fontSize: 11,
+              fontWeight: 700,
+            }}
+          >
+            {`${index + 1} / ${playlist.length}`}
+          </span>
+        ) : null}
       </div>
       <div
         style={{
@@ -286,16 +397,20 @@ export default function SearchResultVideoStrip({
   const total = list.length;
   const expandedKey = expanded ? videoKey(expanded) : null;
   const isExpanded = Boolean(expanded && expandedKey);
+  // Playlist = all videos on this card (not only the visible strip slice).
+  const playlist = list;
 
   return (
     <div data-testid="search-result-video-strip" style={{ marginTop: 10 }}>
-      {/* While playing: only the larger player — thumbnail/empty shell is not kept on screen. */}
+      {/* While playing: larger player only — strip hidden; arrows continue when 2+. */}
       {isExpanded ? (
         <SearchResultVideoInlineExpanded
           key={expandedKey}
           video={expanded}
+          playlist={playlist}
           omitRestaurantContext={omitRestaurantContext}
           onCollapse={() => setExpanded(null)}
+          onSelect={setExpanded}
         />
       ) : (
         <>
