@@ -37,10 +37,11 @@ test("EatingCompose Where order is Restaurant → Happy Hour → @Home", () => {
 
 test("ActivityStatusLineCompose Edit Add includes Happy Hour before @home", () => {
   const status = read("src/pages/consumer/myMenuply/ActivityStatusLineCompose.jsx");
-  const rest = status.indexOf("Restaurant");
-  const hh = status.indexOf('data-testid="ate-where-happy-hour"');
-  const home = status.indexOf("@home");
-  assert.ok(rest > 0 && hh > rest && home > hh);
+  const modes = status.slice(status.indexOf('data-testid="eating-status-mode"'));
+  const rest = modes.indexOf("Restaurant");
+  const hh = modes.indexOf('data-testid="ate-where-happy-hour"');
+  const home = modes.indexOf("@home");
+  assert.ok(rest >= 0 && hh > rest && home > hh);
   assert.match(status, /mode === "happy_hour"/);
   assert.match(status, /ate-happy-hour-intents/);
 });

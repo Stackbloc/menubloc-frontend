@@ -16,6 +16,7 @@ import {
   isoToTimeInputValue,
   timeInputToIso,
 } from "../src/pages/consumer/myMenuply/dinerHubFormat.js";
+import { localDateYmd } from "../src/pages/consumer/myMenuply/eatingHubUtils.js";
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = (rel) => fs.readFileSync(path.join(root, rel), "utf8");
@@ -39,7 +40,10 @@ test("meal period + clock lead formatting", () => {
 test("time input round-trip helpers", () => {
   const iso = timeInputToIso("12:45", "2026-09-11");
   assert.ok(iso);
-  assert.match(isoToTimeInputValue(iso), /^\d{2}:\d{2}$/);
+  assert.equal(isoToTimeInputValue(iso), "12:45");
+  assert.equal(localDateYmd(new Date(iso)), "2026-09-11");
+  const fromUtcMidnight = timeInputToIso("12:45", "2026-09-11T00:00:00.000Z");
+  assert.equal(localDateYmd(new Date(fromUtcMidnight)), "2026-09-11");
 });
 
 test("splitMealFoodLead joins items on one dish line", () => {
@@ -84,4 +88,8 @@ test("ownerCompact meal row uses Claude timeline color hierarchy", () => {
   assert.match(compose, /eating-meal-clock-edit/);
   assert.match(compose, /type="time"/);
   assert.match(compose, /initialEntry/);
+  assert.match(compose, /journalDate = null/);
+  assert.match(compose, /eatenOn: journalDay/);
+  assert.match(compose, /timeInputToIso\(clockTime, journalDay\)/);
+  assert.doesNotMatch(compose, /What I'm Eating — /);
 });

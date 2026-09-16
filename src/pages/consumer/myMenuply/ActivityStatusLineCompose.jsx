@@ -20,7 +20,11 @@ import {
   isHappyHourActivity,
   resolveHappyHourIntent,
 } from "./eatingHubUtils.js";
-import { isoToTimeInputValue, timeInputToIso } from "./dinerHubFormat.js";
+import {
+  isoToTimeInputValue,
+  timeInputToIso,
+} from "./dinerHubFormat.js";
+import { clampEatingLookbackDate, localDateYmd } from "./eatingHubUtils.js";
 import { restoreDocumentScroll } from "./pendingHighlightMedia.js";
 import { GREEN_MID } from "./myMenuplyStyles.js";
 import {
@@ -79,6 +83,8 @@ export default function ActivityStatusLineCompose({
   onOpenChange = null,
   /** Existing meal / want — opens as a full content editor, not clock-only. */
   initialEntry = null,
+  /** Selected What I'm Eating journal day (YYYY-MM-DD). Prior days post to this date. */
+  journalDate = null,
 }) {
   const isWant = category === "want";
   const [openUncontrolled, setOpenUncontrolled] = useState(false);
@@ -206,13 +212,18 @@ export default function ActivityStatusLineCompose({
     reset();
   }
 
+  const journalDay = clampEatingLookbackDate(
+    String(journalDate || initialEntry?.eaten_on || initialEntry?.primaryItem?.eaten_on || "").slice(0, 10) ||
+      localDateYmd()
+  );
+
   function resolvedEatenAt() {
-    const base =
-      initialEntry?.eaten_at ||
-      initialEntry?.primaryItem?.eaten_at ||
-      initialEntry?.eaten_on ||
-      new Date();
-    return timeInputToIso(clockTime, base) || (typeof base === "string" ? base : new Date().toISOString());
+    // Date is the tabbed journal day. Clock prefills as now; diner can correct time.
+    return (
+      timeInputToIso(clockTime, journalDay) ||
+      timeInputToIso(isoToTimeInputValue(new Date()), journalDay) ||
+      new Date().toISOString()
+    );
   }
 
   async function handlePost(e) {
@@ -253,6 +264,7 @@ export default function ActivityStatusLineCompose({
           ateKind: "food_item",
           mealPeriod: mealPeriod || null,
           eatenAt: resolvedEatenAt(),
+          eatenOn: journalDay,
           file: null,
           marketDiscoverable: true,
           whereType: "home",
@@ -271,6 +283,7 @@ export default function ActivityStatusLineCompose({
           ateKind: "restaurant",
           mealPeriod: mealPeriod || null,
           eatenAt: resolvedEatenAt(),
+          eatenOn: journalDay,
           file: null,
           marketDiscoverable: true,
           whereType: "restaurant",
@@ -294,6 +307,7 @@ export default function ActivityStatusLineCompose({
           ateKind: dish ? "menu_item" : "restaurant",
           mealPeriod: mealPeriod || null,
           eatenAt: resolvedEatenAt(),
+          eatenOn: journalDay,
           file: null,
           marketDiscoverable: true,
           whereType: "restaurant",

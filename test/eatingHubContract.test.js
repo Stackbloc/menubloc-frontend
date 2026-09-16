@@ -264,7 +264,17 @@ test("Eating journal look-back is 90 days; future plan dates are not capped", as
   assert.match(utils, /Future plans are not capped/);
   assert.match(section, /canGoForward = true/);
   assert.match(section, /lookbackStart/);
+  assert.match(section, /journalDate=\{hubDate\}/);
+  assert.match(section, /canEdit && dateCmp <= 0 \?/);
+  assert.doesNotMatch(section, /onJumpToday/);
+  assert.doesNotMatch(section, /dayNavToday/);
   assert.match(calendar, /lookbackStart/);
+
+  const compose = read("src/pages/consumer/myMenuply/ActivityStatusLineCompose.jsx");
+  const mine = read("src/pages/consumer/MyMenuplyPage.jsx");
+  assert.match(compose, /eatenOn: journalDay/);
+  assert.match(mine, /requestedEatenOn/);
+  assert.match(mine, /clampEatingLookbackDate\(requestedDay, today\)/);
 
   const mod = await import("../src/pages/consumer/myMenuply/eatingHubUtils.js");
   assert.equal(mod.EATING_HISTORY_DAYS, 90);

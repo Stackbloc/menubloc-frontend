@@ -168,14 +168,22 @@ export function timeInputToIso(hhmm, baseEatenAtOrDay) {
   const minute = Number(m[2]);
   if (!Number.isFinite(hour) || hour < 0 || hour > 23) return null;
   if (!Number.isFinite(minute) || minute < 0 || minute > 59) return null;
-  let d =
-    baseEatenAtOrDay instanceof Date
-      ? new Date(baseEatenAtOrDay.getTime())
-      : baseEatenAtOrDay
-        ? new Date(String(baseEatenAtOrDay))
-        : new Date();
+  let d;
+  if (baseEatenAtOrDay instanceof Date) {
+    d = new Date(baseEatenAtOrDay.getTime());
+  } else {
+    const raw = String(baseEatenAtOrDay || "").trim();
+    const dayOnly = raw.slice(0, 10);
+    // Date-only YYYY-MM-DD must be the diner's local journal day, not UTC midnight.
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dayOnly) && (raw.length === 10 || /^T00:00:00/.test(raw.slice(10)))) {
+      d = new Date(`${dayOnly}T12:00:00`);
+    } else if (raw) {
+      d = new Date(raw);
+    } else {
+      d = new Date();
+    }
+  }
   if (Number.isNaN(d.getTime())) {
-    // YYYY-MM-DD day only
     const day = String(baseEatenAtOrDay || "").slice(0, 10);
     if (/^\d{4}-\d{2}-\d{2}$/.test(day)) d = new Date(`${day}T12:00:00`);
     else d = new Date();

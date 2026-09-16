@@ -94,6 +94,8 @@ import MmtDetailSheet from "./myMenuply/MmtDetailSheet.jsx";
 import { listMakeMeThisInbox } from "../../lib/makeMeThisApi.js";
 import {
   buildEatingDayMarkersFromCalendar,
+  calendarDayYmd,
+  clampEatingLookbackDate,
   compareYmd,
   eatingHistoryStart,
   planYmd,
@@ -941,16 +943,19 @@ export default function MyMenuplyPage() {
     eatenAt = null,
     homemadeDishId = null,
     items = null,
+    eatenOn: requestedEatenOn = null,
   }) {
     setPostBusy("eating");
     setUploadPercent(file ? 0 : null);
     setError("");
     try {
-      if (compareYmd(hubDate) > 0) return;
+      const today = whatIAteTodayLocalDate();
+      const requestedDay =
+        calendarDayYmd(requestedEatenOn) || calendarDayYmd(hubDate) || today;
+      if (compareYmd(requestedDay, today) > 0) return;
       // Diary posts land on the selected journal day (today by default). Never use
       // server CURRENT_DATE — Railway UTC can disagree with the diner's local day.
-      const eatenOn =
-        compareYmd(hubDate) < 0 ? hubDate : whatIAteTodayLocalDate();
+      const eatenOn = clampEatingLookbackDate(requestedDay, today);
       let photo_url;
       let video_url;
       if (file) {
@@ -1249,7 +1254,7 @@ export default function MyMenuplyPage() {
           food_name: item?.food_name || "Food",
           photo_url,
           video_url,
-          eaten_on: compareYmd(hubDate) < 0 ? hubDate : whatIAteTodayLocalDate(),
+          eaten_on: clampEatingLookbackDate(hubDate),
           meal_period: item?.meal_period || defaultWhatIAteMealPeriod(),
         });
       }
@@ -2138,6 +2143,7 @@ export default function MyMenuplyPage() {
     portionAmount,
     portionUnit,
     eatenAt,
+    eatenOn = null,
     homemadeDishId,
     items,
     entryId = null,
@@ -2228,6 +2234,7 @@ export default function MyMenuplyPage() {
         portionAmount,
         portionUnit,
         eatenAt,
+        eatenOn,
         homemadeDishId,
         items,
       });

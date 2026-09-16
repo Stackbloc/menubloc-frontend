@@ -434,7 +434,6 @@ function EatingDayNavInline({
   canGoForward,
   onPrev,
   onNext,
-  onJumpToday,
 }) {
   return (
     <div style={s.inlineDayNav} data-testid="eating-day-nav">
@@ -458,11 +457,6 @@ function EatingDayNavInline({
       >
         ›
       </button>
-      {hubDate !== today ? (
-        <button type="button" style={s.dayNavToday} onClick={onJumpToday}>
-          Today
-        </button>
-      ) : null}
     </div>
   );
 }
@@ -725,7 +719,7 @@ export default function EatingHubSection({
           testId="what-im-eating-section-header"
           aside={
             <div style={styles.sectionHeadActions}>
-              {canEdit ? (
+              {canEdit && dateCmp <= 0 ? (
                 <button
                   type="button"
                   style={styles.compactAdd}
@@ -746,7 +740,6 @@ export default function EatingHubSection({
                 canGoForward={canGoForward}
                 onPrev={() => goDay(-1)}
                 onNext={() => goDay(1)}
-                onJumpToday={() => handleCalendarDate(today)}
               />
               <DinerCalendarTrigger selectedDate={hubDate} onOpen={openEatingCalendar} />
             </div>
@@ -757,7 +750,7 @@ export default function EatingHubSection({
           <p style={styles.hubDateHeading} data-testid="eating-hub-date-heading">
             {formatEatingHubDateHeading(hubDate)}
           </p>
-          {canEdit ? (
+          {canEdit && dateCmp <= 0 ? (
             <ActivityStatusLineCompose
               category="ate"
               hideTrigger
@@ -767,6 +760,7 @@ export default function EatingHubSection({
                 if (!next) setEditingAteMeal(null);
               }}
               initialEntry={editingAteMeal}
+              journalDate={hubDate}
               busy={postBusy === "eating"}
               followed={followed}
               locationCity={locationCity}
@@ -1158,7 +1152,14 @@ export default function EatingHubSection({
           openLibraryOnMount={composeMediaSource === "library"}
           busy={postBusy === "eating" || postBusy === "want"}
           uploadPercent={uploadPercent}
-          onSubmit={onComposeSubmit}
+          onSubmit={async (payload) => {
+            await onComposeSubmit?.({
+              ...payload,
+              eatenOn:
+                payload?.eatenOn ||
+                (payload?.category === "ate" ? hubDate : payload?.eatenOn),
+            });
+          }}
           onPlanSchedule={onPlanSchedule}
           followed={followed}
           locationCity={locationCity}
