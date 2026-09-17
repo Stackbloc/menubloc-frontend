@@ -4,6 +4,7 @@
  */
 
 import { restaurantPathFromRow } from "../../../lib/canonicalUrl.js";
+import { calendarDayYmd, localDateYmd } from "../../../lib/calendarDayYmd.js";
 
 const DEFAULT_MEDIA_BASE = "https://menubloc-backend-production.up.railway.app";
 
@@ -72,6 +73,40 @@ export function buildWantSuggestions(liked = [], limit = 8) {
   }));
 }
 
+export function eventScheduleYmd(ev) {
+  if (!ev || typeof ev !== "object") return null;
+  return (
+    calendarDayYmd(ev.event_date) ||
+    calendarDayYmd(ev.starts_at) ||
+    calendarDayYmd(ev.end_date) ||
+    calendarDayYmd(ev.ends_at)
+  );
+}
+
+/** Current/upcoming scheduled events only — expired days do not count. */
+export function isCurrentScheduledEvent(ev, today = localDateYmd()) {
+  if (!ev || typeof ev !== "object") return false;
+  if (ev.is_past === true) return false;
+  const ymd = eventScheduleYmd(ev);
+  if (!ymd) return true; // undated memberships (some groups) stay current
+  return String(ymd) >= String(today);
+}
+
+export function countCurrentScheduledEvents(
+  { events = [], eventGroups = [], socialEvents = [] } = {},
+  today = localDateYmd()
+) {
+  const lists = [events, eventGroups, socialEvents];
+  let n = 0;
+  for (const list of lists) {
+    if (!Array.isArray(list)) continue;
+    for (const ev of list) {
+      if (isCurrentScheduledEvent(ev, today)) n += 1;
+    }
+  }
+  return n;
+}
+
 export function buildDinerStats({
   connections = [],
   followed = [],
@@ -82,8 +117,7 @@ export function buildDinerStats({
   eventGroups = [],
   socialEvents = [],
 } = {}) {
-  const eventCount =
-    (events?.length || 0) + (eventGroups?.length || 0) + (socialEvents?.length || 0);
+  const eventCount = countCurrentScheduledEvents({ events, eventGroups, socialEvents });
   return [
     { id: "connects", label: "Connects", value: connections.length },
     { id: "restaurants", label: "Restaurants", value: followed.length },

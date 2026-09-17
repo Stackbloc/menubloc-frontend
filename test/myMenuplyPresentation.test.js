@@ -97,3 +97,20 @@ test("buildWantSuggestions and stats helpers", () => {
   assert.deepEqual(stats.map((row) => row.id), ["connects", "restaurants", "dishes", "events"]);
   assert.deepEqual(stats.map((row) => row.value), [1, 2, 2, 1]);
 });
+
+test("buildDinerStats Events count excludes expired / is_past", () => {
+  const stats = buildDinerStats({
+    events: [
+      { id: 1, event_date: "2099-01-15" },
+      { id: 2, event_date: "2020-01-01" },
+    ],
+    socialEvents: [
+      { id: 3, event_date: "2099-06-01", is_past: false },
+      { id: 4, event_date: "2099-06-02", is_past: true },
+    ],
+    eventGroups: [{ id: 5, name: "Crew nights" }],
+  });
+  const eventsStat = stats.find((row) => row.id === "events");
+  // future venue + future social + undated group; past venue + is_past social excluded
+  assert.equal(eventsStat.value, 3);
+});

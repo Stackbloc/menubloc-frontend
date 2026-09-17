@@ -1,7 +1,7 @@
 /**
  * Current Vibe avatar badge + compact single-tap picker.
- * im_good = no visible badge; badge-position tap still opens picker for owner.
- * Re-tapping the active chip clears back to im_good.
+ * im_good = no emoji badge (Connect peers see nothing); owner gets a muted "+"
+ * status-dot so Current Vibe is discoverable. Re-tap active chip → im_good.
  */
 
 import { useEffect, useState } from "react";
@@ -199,17 +199,36 @@ export default function CurrentVibeAvatarControl({
           ...badgeBtnBase,
           ...(showBadge
             ? badgeToneStyles(entry?.badgeTone)
-            : {
-                background: "transparent",
-                border: "none",
-                boxShadow: "none",
-                opacity: readOnly ? 0 : 0.01,
-              }),
+            : readOnly
+              ? {
+                  background: "transparent",
+                  border: "none",
+                  boxShadow: "none",
+                  opacity: 0,
+                  pointerEvents: "none",
+                }
+              : {
+                  // Owner + im_good: muted "+" status-dot so Current Vibe is findable.
+                  // Not a vibe value — absence of an emoji badge still means neutral.
+                  background: "#f8fafc",
+                  border: "2px dashed #94a3b8",
+                  boxShadow: "0 1px 4px rgba(15, 23, 42, 0.12)",
+                  color: "#64748b",
+                  fontSize: 18,
+                  fontWeight: 700,
+                  opacity: 1,
+                }),
           cursor: readOnly || busy ? "default" : "pointer",
           pointerEvents: readOnly && !showBadge ? "none" : "auto",
         }}
       >
-        {showBadge ? <span aria-hidden>{entry?.icon || ""}</span> : null}
+        {showBadge ? (
+          <span aria-hidden>{entry?.icon || ""}</span>
+        ) : readOnly ? null : (
+          <span aria-hidden data-testid={`${testIdPrefix}-set-affordance`}>
+            +
+          </span>
+        )}
       </button>
       {error ? (
         <span data-testid={`${testIdPrefix}-error`} style={{ display: "none" }}>

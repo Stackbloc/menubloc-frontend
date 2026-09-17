@@ -41,6 +41,16 @@ test("picker selects on single tap and retap clears to im_good", () => {
   assert.doesNotMatch(ctrl, /Confirm|Submit|multi-step/);
 });
 
+test("owner im_good shows muted + set-affordance (not invisible)", () => {
+  const ctrl = read("src/pages/consumer/myMenuply/CurrentVibeAvatarControl.jsx");
+  assert.match(ctrl, /set-affordance/);
+  assert.match(ctrl, /Set current vibe/);
+  assert.doesNotMatch(ctrl, /opacity: 0\.01/);
+  const headers = read("src/pages/consumer/myMenuply/SectionHeader.jsx");
+  assert.match(headers, /eyebrowLabel: "Identity"/);
+  assert.doesNotMatch(headers, /eyebrowLabel: "My vibe"/);
+});
+
 test("API client updates Current Vibe without feed side effects in client", () => {
   const api = read("src/lib/consumerApi.js");
   assert.match(api, /updateCurrentVibe/);

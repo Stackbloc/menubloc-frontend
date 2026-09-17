@@ -92,7 +92,7 @@ export default function SectionHeader({
 export const PROFILE_SECTION_HEADERS = {
   about: {
     icon: "ti-id-badge",
-    eyebrowLabel: "My vibe",
+    eyebrowLabel: "Identity",
     eyebrowColor: "#5F5E5A",
     title: "About me",
     accentColor: "#888780",

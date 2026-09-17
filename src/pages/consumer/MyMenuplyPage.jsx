@@ -112,6 +112,8 @@ import {
   buildFollowedRestaurantRails,
   buildTopHighlights,
   buildWantSuggestions,
+  countCurrentScheduledEvents,
+  isCurrentScheduledEvent,
 } from "./myMenuply/myMenuplyPresentation.js";
 import {
   createPendingHighlight,
@@ -674,6 +676,28 @@ export default function MyMenuplyPage() {
     setCalendarOpen(true);
   }
 
+  const currentEvents = useMemo(
+    () => (events || []).filter((ev) => isCurrentScheduledEvent(ev)),
+    [events]
+  );
+  const currentEventGroups = useMemo(
+    () => (eventGroups || []).filter((g) => isCurrentScheduledEvent(g)),
+    [eventGroups]
+  );
+  const currentSocialEvents = useMemo(
+    () => (socialEvents || []).filter((ev) => isCurrentScheduledEvent(ev)),
+    [socialEvents]
+  );
+  const currentEventsCount = useMemo(
+    () =>
+      countCurrentScheduledEvents({
+        events: currentEvents,
+        eventGroups: currentEventGroups,
+        socialEvents: currentSocialEvents,
+      }),
+    [currentEvents, currentEventGroups, currentSocialEvents]
+  );
+
   const dinerStats = useMemo(
     () =>
       buildDinerStats({
@@ -682,11 +706,20 @@ export default function MyMenuplyPage() {
         liked,
         eating,
         homeDishes,
-        events,
-        eventGroups,
-        socialEvents,
+        events: currentEvents,
+        eventGroups: currentEventGroups,
+        socialEvents: currentSocialEvents,
       }),
-    [connections, followed, liked, eating, homeDishes, events, eventGroups, socialEvents]
+    [
+      connections,
+      followed,
+      liked,
+      eating,
+      homeDishes,
+      currentEvents,
+      currentEventGroups,
+      currentSocialEvents,
+    ]
   );
   const topHighlights = useMemo(() => {
     const pinned = (profileMedia || []).filter((row) => row?.is_highlight);
@@ -2658,7 +2691,7 @@ export default function MyMenuplyPage() {
             <section style={s.section} data-testid="my-events">
               <SectionHeader
                 {...PROFILE_SECTION_HEADERS.events}
-                count={events.length + eventGroups.length + socialEvents.length}
+                count={currentEventsCount}
                 testId="events-section-header"
                 aside={
                   previewAsConnect ? null : (
@@ -2684,13 +2717,13 @@ export default function MyMenuplyPage() {
                   )
                 }
               />
-              {events.length === 0 && eventGroups.length === 0 && socialEvents.length === 0 ? (
+              {currentEventsCount === 0 ? (
                 <SectionEmptyState testId="events-empty">
                   {previewAsConnect ? "Nothing yet." : "No events yet. Tap + Add to create one."}
                 </SectionEmptyState>
               ) : (
                 <>
-                  {socialEvents.slice(0, 6).map((ev) => {
+                  {currentSocialEvents.slice(0, 6).map((ev) => {
                     const joinOpen = !ev.is_past && Boolean(ev.join_me_open);
                     return (
                     <NamedShareCard
@@ -2735,7 +2768,7 @@ export default function MyMenuplyPage() {
                     />
                     );
                   })}
-                  {events.slice(0, 4).map((ev) => (
+                  {currentEvents.slice(0, 4).map((ev) => (
                     <NamedShareCard
                       key={ev.id || ev.slug}
                       name={ev.name}
@@ -2748,7 +2781,7 @@ export default function MyMenuplyPage() {
                         .join(" · ")}
                     />
                   ))}
-                  {eventGroups.slice(0, 4).map((g) => (
+                  {currentEventGroups.slice(0, 4).map((g) => (
                     <NamedShareCard
                       key={g.id || g.slug}
                       name={g.name}
