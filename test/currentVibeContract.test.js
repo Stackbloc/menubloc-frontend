@@ -5,6 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   DEFAULT_CURRENT_VIBE,
+  OPT_OUT_CURRENT_VIBE,
   coerceCurrentVibe,
   showsCurrentVibeBadge,
   getCurrentVibeEntry,
@@ -16,13 +17,17 @@ function read(rel) {
   return fs.readFileSync(path.join(root, rel), "utf8");
 }
 
-test("im_good shows no badge; me_time shows muted badge", () => {
+test("default is open_for_suggestions; im_good shows no badge", () => {
+  assert.equal(DEFAULT_CURRENT_VIBE, "open_for_suggestions");
+  assert.equal(OPT_OUT_CURRENT_VIBE, "im_good");
   assert.equal(coerceCurrentVibe(null), DEFAULT_CURRENT_VIBE);
   assert.equal(showsCurrentVibeBadge("im_good"), false);
+  assert.equal(showsCurrentVibeBadge("open_for_suggestions"), true);
   assert.equal(showsCurrentVibeBadge("hungry"), true);
   assert.equal(showsCurrentVibeBadge("me_time"), true);
   assert.equal(getCurrentVibeEntry("me_time").badgeTone, "muted");
   assert.equal(getCurrentVibeEntry("me_time").icon, "🌙");
+  assert.equal(getCurrentVibeEntry("open_for_suggestions").searchEligible, true);
 });
 
 test("DinerIdentityHero mounts Current Vibe on avatar wrap", () => {
@@ -33,13 +38,15 @@ test("DinerIdentityHero mounts Current Vibe on avatar wrap", () => {
   assert.match(hero, /currentVibe/);
 });
 
-test("picker selects on single tap and retap clears to im_good", () => {
+test("picker retap on default opts out to I'm good; hint documents search", () => {
   const section = read("src/pages/consumer/myMenuply/CurrentVibeProfileSection.jsx");
   assert.match(section, /Current vibe/);
   assert.match(section, /DEFAULT_CURRENT_VIBE/);
+  assert.match(section, /OPT_OUT_CURRENT_VIBE/);
   assert.match(section, /chip-grid/);
   assert.match(section, /I'm good/);
-  assert.match(section, /not shown in search/);
+  assert.match(section, /Open for suggestions/);
+  assert.match(section, /suggestion and invitation/);
 });
 
 test("profile mounts Current vibe under Favorite foods", () => {
@@ -75,4 +82,5 @@ test("My Menuply wires vibe update on identity hero", () => {
   assert.match(page, /onCurrentVibeChange/);
   assert.match(page, /updateCurrentVibe/);
   assert.match(page, /current_vibe_catalog/);
+  assert.match(page, /open_for_suggestions/);
 });

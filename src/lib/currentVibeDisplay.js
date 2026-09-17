@@ -1,12 +1,23 @@
 /**
  * Current Vibe presentation helpers (FE).
  * Machine values/labels prefer backend catalog when provided.
+ *
+ * Default: open_for_suggestions (search-eligible with Connects).
+ * Opt-out: im_good (I'm Good) — removes suggestion/invitation search surfaces.
  */
 
-export const DEFAULT_CURRENT_VIBE = "im_good";
+export const DEFAULT_CURRENT_VIBE = "open_for_suggestions";
+export const OPT_OUT_CURRENT_VIBE = "im_good";
 
 /** Fallback catalog if profile payload has no catalog yet (offline / stale session). */
 export const FALLBACK_CURRENT_VIBE_CATALOG = Object.freeze([
+  {
+    value: "open_for_suggestions",
+    label: "Open for suggestions",
+    icon: "💬",
+    badgeTone: "inviting",
+    searchEligible: true,
+  },
   { value: "im_good", label: "I'm good", icon: null, badgeTone: "none", searchEligible: false },
   { value: "hungry", label: "Hungry", icon: "🍽️", badgeTone: "warm", searchEligible: true },
   { value: "craving", label: "Craving something", icon: "😋", badgeTone: "warm", searchEligible: true },
@@ -61,9 +72,9 @@ export function getCurrentVibeEntry(value, catalog) {
   return list.find((e) => e.value === key) || list.find((e) => e.value === DEFAULT_CURRENT_VIBE);
 }
 
-/** Neutral im_good shows no badge. */
+/** I'm Good (opt-out) shows no badge. Open for suggestions and other vibes do. */
 export function showsCurrentVibeBadge(value) {
-  return coerceCurrentVibe(value) !== DEFAULT_CURRENT_VIBE;
+  return coerceCurrentVibe(value) !== OPT_OUT_CURRENT_VIBE;
 }
 
 export function badgeToneStyles(tone) {

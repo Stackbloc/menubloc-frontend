@@ -1,7 +1,7 @@
 /**
  * Ambient Current Vibe avatar badge (display only).
  * Selection lives in CurrentVibeProfileSection under Favorite foods.
- * im_good = no badge. Non-neutral vibes show an emoji for Connect peers / self.
+ * im_good = no badge (search opt-out). Non-opt-out vibes show an emoji for Connect peers / self.
  */
 
 import {

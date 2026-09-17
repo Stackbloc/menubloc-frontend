@@ -1,11 +1,13 @@
 /**
  * Prominent Current Vibe control on the diner profile (under Favorite foods).
- * Default I'm good is always shown as a selectable option; it stays search-invisible.
+ * Default Open for suggestions is search-eligible with Connects.
+ * I'm Good is the explicit opt-out (search-invisible for suggestions/invites).
  */
 
 import { useEffect, useState } from "react";
 import {
   DEFAULT_CURRENT_VIBE,
+  OPT_OUT_CURRENT_VIBE,
   getCurrentVibeEntry,
   resolveCurrentVibeCatalog,
 } from "../../../lib/currentVibeDisplay.js";
@@ -54,13 +56,14 @@ export default function CurrentVibeProfileSection({
   async function selectValue(nextRaw) {
     if (busy || readOnly || typeof onChange !== "function") return;
     const next = String(nextRaw || DEFAULT_CURRENT_VIBE);
-    // Re-tap active non-neutral → clear to I'm good
+    // Re-tap active default → I'm Good (opt out of search suggestions).
+    // Re-tap any other active vibe → back to Open for suggestions.
     const resolved =
-      next === activeValue && next !== DEFAULT_CURRENT_VIBE
-        ? DEFAULT_CURRENT_VIBE
-        : next === activeValue
-          ? DEFAULT_CURRENT_VIBE
-          : next;
+      next === activeValue
+        ? activeValue === DEFAULT_CURRENT_VIBE
+          ? OPT_OUT_CURRENT_VIBE
+          : DEFAULT_CURRENT_VIBE
+        : next;
     const prev = activeValue;
     setError("");
     setOptimistic(resolved);
@@ -72,8 +75,8 @@ export default function CurrentVibeProfileSection({
     }
   }
 
-  // Connect peers: only show when a non-neutral vibe is set (ambient).
-  if (readOnly && activeValue === DEFAULT_CURRENT_VIBE) {
+  // Connect peers: hide only when opted out (I'm Good).
+  if (readOnly && activeValue === OPT_OUT_CURRENT_VIBE) {
     return null;
   }
 
@@ -109,7 +112,7 @@ export default function CurrentVibeProfileSection({
           >
             {entries.map((opt) => {
               const active = activeValue === opt.value;
-              const isNeutral = opt.value === DEFAULT_CURRENT_VIBE;
+              const isOptOut = opt.value === OPT_OUT_CURRENT_VIBE;
               return (
                 <button
                   key={opt.value}
@@ -121,12 +124,12 @@ export default function CurrentVibeProfileSection({
                   style={{
                     ...chipBase,
                     border: active
-                      ? isNeutral
+                      ? isOptOut
                         ? "2px solid #64748b"
                         : "2px solid #166534"
                       : "1px solid #d1d5db",
                     background: active
-                      ? isNeutral
+                      ? isOptOut
                         ? "#f8fafc"
                         : opt.badgeTone === "muted"
                           ? "#f1f5f9"
@@ -147,8 +150,9 @@ export default function CurrentVibeProfileSection({
             style={{ margin: "10px 0 0", fontSize: 12, color: "#64748b", lineHeight: 1.4 }}
             data-testid={`${testIdPrefix}-hint`}
           >
-            Default is I&apos;m good — neutral, not shown in search. Pick another vibe when you
-            want Connects to see you&apos;re up for food or company. This is not a post.
+            Default is Open for suggestions — Connects can see you in search when it fits.
+            Tap I&apos;m good to stay out of suggestion and invitation surfaces. This is not a
+            post.
           </p>
         </>
       )}

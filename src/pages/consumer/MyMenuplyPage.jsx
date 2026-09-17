@@ -2377,7 +2377,7 @@ export default function MyMenuplyPage() {
               catchMe={profile?.catch_me || null}
               onCatchMeSave={previewAsConnect ? undefined : onCatchMeSave}
               onCatchMeClear={previewAsConnect ? undefined : onCatchMeClear}
-              currentVibe={profile?.current_vibe || profile?.currentVibe || "im_good"}
+              currentVibe={profile?.current_vibe || profile?.currentVibe || "open_for_suggestions"}
               currentVibeCatalog={profile?.current_vibe_catalog || null}
               onCurrentVibeChange={previewAsConnect ? undefined : onCurrentVibeChange}
               connections={connections}
