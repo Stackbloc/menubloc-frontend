@@ -325,7 +325,7 @@ export default function EatingPlaceFields({
                     </ul>
                   ) : !loadingDishes ? (
                     <p style={s.muted} data-testid="eating-place-dish-empty">
-                      No dishes yet for this location — you can still post the restaurant.
+                      No matching dishes — try another search.
                     </p>
                   ) : null}
                 </>

@@ -14,7 +14,6 @@ import { buildMonthInFoodModel, shiftYm } from "./buildMonthInFoodModel.js";
 import {
   MonthInFoodByTheNumbers,
   MonthInFoodHero,
-  MonthInFoodHighlights,
   MonthInFoodHomeMeals,
   MonthInFoodMood,
   MonthInFoodMoments,
@@ -144,7 +143,6 @@ export default function MonthInFoodPage() {
                 {!model.diaryVisible && isPeer ? (
                   <p style={s.muted}>This diner keeps their food diary private.</p>
                 ) : null}
-                <MonthInFoodHighlights highlights={model.highlights} />
                 <MonthInFoodVisited visited={model.visited} />
                 <MonthInFoodHomeMeals homeMeals={model.homeMeals} />
                 <MonthInFoodMoments moments={model.moments} overflow={model.momentsOverflow} />

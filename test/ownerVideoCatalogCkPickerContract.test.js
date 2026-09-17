@@ -15,14 +15,14 @@ function read(relPath) {
 
 test("CkRestaurantMenuPicker uses CK place search — name lookup, no manual ID entry", () => {
   const picker = read("src/components/ck/CkRestaurantMenuPicker.jsx");
-  assert.match(picker, /Canonical menu/i);
+  assert.doesNotMatch(picker, /Canonical menu/i);
   assert.match(picker, /searchReportPlaces/);
   assert.match(picker, /type: "restaurant"/);
   assert.match(picker, /type: "menu_item"/);
   assert.match(picker, /asRestaurantPlace/);
   assert.match(picker, /asDishPlace/);
   assert.match(picker, /Search restaurant name/i);
-  assert.match(picker, /canonical menu/i);
+  assert.match(picker, /share one menu/i);
   assert.doesNotMatch(picker, /searchMenuConsoleRestaurants/);
   assert.doesNotMatch(picker, /searchMenuConsoleItems/);
   assert.doesNotMatch(picker, /type="number".*restaurant_id|restaurant_id.*type="number"/);

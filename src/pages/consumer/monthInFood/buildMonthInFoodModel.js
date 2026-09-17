@@ -106,58 +106,21 @@ export function groupDiaryMealsForModel(diary = []) {
   return meals;
 }
 
-/** Pinned profile photos first (profile Top Highlights contract), then diary stills. */
-function buildHighlights({ diary = [], profileMedia = [] }) {
-  const cards = [];
-  const usedImages = new Set();
+/** Prefer existing restaurant visuals — billboard, then logo, then menu-item / meal photo. */
+function visitedRestaurantImage(row) {
+  return mediaUrl(
+    row.restaurant_billboard_image_url ||
+      row.restaurant_logo_url ||
+      row.item_photo_url ||
+      row.photo_url
+  );
+}
 
-  for (const m of profileMedia) {
-    if (cards.length >= 3) break;
-    if (m.is_highlight !== true) continue;
-    if (m.media_kind && m.media_kind !== "photo") continue;
-    const image = mediaUrl(m.media_url);
-    if (!image || usedImages.has(image)) continue;
-    cards.push({
-      key: `ph-${m.id}`,
-      label: "Profile photo",
-      sublabel: "From your gallery",
-      image,
-      href: null,
-      source: "profile_highlight",
-    });
-    usedImages.add(image);
-  }
-
-  const withMedia = diary
-    .map((row) => ({
-      key: `h-${row.id}`,
-      label: row.food_name || row.item_name || row.homemade_dish_name || "Meal",
-      sublabel: isHomeMeal(row) ? "@home" : row.restaurant_name || "",
-      image: mediaUrl(row.photo_url),
-      href: row.href || (row.menu_item_id ? `/menu-items/${row.menu_item_id}` : null),
-      source: "diary",
-      is_home: isHomeMeal(row),
-    }))
-    .filter((c) => c.image);
-
-  for (const card of withMedia) {
-    if (cards.length >= 3) break;
-    if (card.image && usedImages.has(card.image)) continue;
-    cards.push(card);
-    if (card.image) usedImages.add(card.image);
-  }
-
-  if (cards.length) return cards.slice(0, 3);
-
-  return diary.slice(0, 3).map((row) => ({
-    key: `h-${row.id}`,
-    label: row.food_name || row.item_name || "Meal",
-    sublabel: isHomeMeal(row) ? "@home" : row.restaurant_name || "",
-    image: mediaUrl(row.photo_url),
-    href: row.href || null,
-    source: "diary",
-    is_home: isHomeMeal(row),
-  }));
+function formatRestaurantSpend(dollars) {
+  const n = Number(dollars);
+  if (!Number.isFinite(n) || n <= 0) return null;
+  if (n >= 100) return `$${Math.round(n)}`;
+  return `$${n.toFixed(n % 1 === 0 ? 0 : 2)}`;
 }
 
 /**
@@ -230,9 +193,19 @@ export function buildMonthInFoodModel(payload = {}) {
           restaurant_id: Number(restRow.restaurant_id),
           name: restRow.restaurant_name || "Restaurant",
           place: [restRow.restaurant_city, restRow.restaurant_state].filter(Boolean).join(", "),
-          image: mediaUrl(restRow.restaurant_logo_url || restRow.photo_url || restRow.item_photo_url),
+          image: visitedRestaurantImage(restRow),
           slug: restRow.restaurant_slug || null,
         });
+      } else {
+        const existing = restaurantMap.get(Number(restRow.restaurant_id));
+        const nextImage = visitedRestaurantImage(restRow);
+        if (existing && nextImage && !existing.image) {
+          existing.image = nextImage;
+        } else if (existing && nextImage && existing.image) {
+          // Prefer billboard when a later meal row carries one
+          const billboard = mediaUrl(restRow.restaurant_billboard_image_url);
+          if (billboard) existing.image = billboard;
+        }
       }
     }
 
@@ -253,12 +226,8 @@ export function buildMonthInFoodModel(payload = {}) {
     }
   }
 
-  for (const m of profileMedia) {
-    if (m.media_kind === "photo" || !m.media_kind) {
-      const url = mediaUrl(m.media_url);
-      if (url) momentUrls.push({ key: `p-${m.id}`, url, label: "Moment" });
-    }
-  }
+  // Moments To Remember = this month's diary photos only (profile My Highlights stays on profile).
+  // Do not mix in profile gallery pins — that duplicated Top Highlights / My Highlights.
 
   const momentsShared = Number(payload.food_activity_count) || 0;
   const likesInMonth = Number(payload.likes_in_month) || 0;
@@ -276,12 +245,17 @@ export function buildMonthInFoodModel(payload = {}) {
           (m.restaurant_id != null || (m.items || []).some((r) => r.restaurant_id != null))
       ).length;
 
+  const restaurantSpendLabel = formatRestaurantSpend(payload.restaurant_spend_dollars);
+
   const stats = [];
   if (diaryVisible) {
     const dishesCount = restaurantDishesCount + homemadeDishesCount;
     stats.push({ id: "meals", label: "Meals Logged", value: mealsLogged, icon: "fork" });
     stats.push({ id: "dishes", label: "Dishes", value: dishesCount, icon: "dishes" });
     stats.push({ id: "restaurants", label: "Restaurants", value: restaurantIds.size, icon: "store" });
+    if (restaurantSpendLabel) {
+      stats.push({ id: "spend", label: "Restaurant $", value: restaurantSpendLabel, icon: "cash" });
+    }
     if (homeMealsCount > 0) {
       stats.push({ id: "home", label: "@home Meals", value: homeMealsCount, icon: "home" });
     }
@@ -294,7 +268,6 @@ export function buildMonthInFoodModel(payload = {}) {
     }
   }
 
-  const highlights = diaryVisible ? buildHighlights({ diary, profileMedia }) : [];
   const visited = [...restaurantMap.values()].slice(0, 12);
   const momentsVisible = momentUrls.slice(0, 6);
   const momentsOverflow = Math.max(0, momentUrls.length - momentsVisible.length);
@@ -333,10 +306,11 @@ export function buildMonthInFoodModel(payload = {}) {
     miniStats.push({ id: "snack_other", label: "Snacks & Other", value: snackOtherCount });
   }
 
+  const diaryHero = diary.find((d) => mediaUrl(d.photo_url));
   const pinnedHero = profileMedia.find((m) => m.is_highlight && m.media_url);
   const heroImage =
+    mediaUrl(diaryHero?.photo_url) ||
     mediaUrl(pinnedHero?.media_url) ||
-    mediaUrl(diary.find((d) => d.photo_url)?.photo_url) ||
     mediaUrl(profileMedia.find((m) => m.media_url)?.media_url) ||
     null;
 
@@ -377,7 +351,6 @@ export function buildMonthInFoodModel(payload = {}) {
     tagline: "Great food. Good people. Unforgettable moments.",
     heroImage,
     stats,
-    highlights,
     visited,
     homeMeals: homeMeals.slice(0, 8),
     moments: momentsVisible,

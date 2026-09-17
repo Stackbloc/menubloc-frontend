@@ -219,14 +219,16 @@ test("buildMonthInFoodModel counts @home meals and Take Me Out status", () => {
   assert.equal(model.eventsJoinDefault, false);
   assert.equal(model.crewsJoinDefault, false);
   assert.ok(model.miniStats.some((s) => s.id === "snack_other" && s.value === 1));
-  assert.equal(model.highlights[0].sublabel, "@home");
+  assert.equal(model.moments[0].url, "https://example.com/home.jpg");
 });
 
 test("Month in Food surfaces @home + Take Me Out + Join Me defaults", () => {
   const sections = read("src/pages/consumer/monthInFood/MonthInFoodSections.jsx");
   const page = read("src/pages/consumer/monthInFood/MonthInFoodPage.jsx");
   assert.match(sections, /MonthInFoodHomeMeals/);
-  assert.match(sections, /@home Meals/);
+  assert.match(sections, /Moments To Remember/);
+  assert.doesNotMatch(page, /MonthInFoodHighlights/);
+  assert.doesNotMatch(sections, /Top Highlights/);
   assert.match(sections, /month-in-food-take-me-out-status/);
   assert.match(sections, /Take Me Out is/);
   assert.match(sections, /month-in-food-join-me-defaults/);
@@ -293,7 +295,7 @@ test("buildMonthInFoodModel hides cuisine chart with single cuisine", () => {
   assert.ok(model.mood);
   assert.equal(model.mood.drinkOfChoice, "Iced Latte");
   assert.ok(model.stats.some((s) => s.id === "favorites" && s.value === 2));
-  assert.ok(model.highlights.length >= 1);
+  assert.ok(model.moments.length >= 1);
 });
 
 test("hidden diary yields no meal stats for peer", () => {
@@ -329,7 +331,7 @@ test("profile vocabulary: Wanna Eat label + Plans & Events sections", () => {
   assert.doesNotMatch(sections, /Events I&apos;m Excited For/);
 });
 
-test("buildMonthInFoodModel prefers pinned highlights and Wanna Go intents", () => {
+test("buildMonthInFoodModel uses month diary for Moments and Wanna Go intents", () => {
   const model = buildMonthInFoodModel({
     ym: "2025-05",
     month_label: "May 2025",
@@ -340,6 +342,9 @@ test("buildMonthInFoodModel prefers pinned highlights and Wanna Go intents", () 
         id: 1,
         food_name: "Burger",
         restaurant_name: "Fixins",
+        restaurant_id: 10,
+        restaurant_billboard_image_url: "https://example.com/billboard.jpg",
+        restaurant_logo_url: "https://example.com/logo.jpg",
         photo_url: "https://example.com/diary.jpg",
       },
     ],
@@ -367,12 +372,15 @@ test("buildMonthInFoodModel prefers pinned highlights and Wanna Go intents", () 
         is_highlight: true,
       },
     ],
+    restaurant_spend_dollars: 12.5,
   });
-  assert.equal(model.highlights[0].source, "profile_highlight");
-  assert.equal(model.highlights[0].image, "https://example.com/pin.jpg");
+  assert.equal(model.moments[0].url, "https://example.com/diary.jpg");
+  assert.ok(!model.moments.some((m) => m.url === "https://example.com/pin.jpg"));
+  assert.equal(model.visited[0].image, "https://example.com/billboard.jpg");
+  assert.ok(model.stats.some((s) => s.id === "spend" && s.value === "$12.50"));
   assert.equal(model.wants[0].kind, "dining_intent");
   assert.equal(model.wants[0].badge, "Wanna Go!");
   assert.equal(model.wants[1].kind, "want");
   assert.equal(model.plans[0].joinable, true);
-  assert.equal(model.heroImage, "https://example.com/pin.jpg");
+  assert.equal(model.heroImage, "https://example.com/diary.jpg");
 });

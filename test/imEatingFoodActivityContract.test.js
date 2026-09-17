@@ -24,7 +24,7 @@ test("exposes consumer food-activity API helpers", () => {
   assert.match(publicApi, /createPublicFoodActivity/);
   assert.match(publicApi, /searchReportPlaces/);
   assert.match(publicApi, /restaurantPlaceMeta/);
-  assert.match(publicApi, /Canonical menu/);
+  assert.doesNotMatch(publicApi, /Canonical menu/);
   assert.match(publicApi, /resolveEatingPrefill/);
   assert.match(publicApi, /dishLabel/);
   const dishFn = publicApi.slice(

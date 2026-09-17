@@ -11,6 +11,10 @@ export const BORDER = "#e7e5e4";
 
 export const page = {
   minHeight: "100vh",
+  width: "100%",
+  maxWidth: "100%",
+  overflowX: "hidden",
+  boxSizing: "border-box",
   background: CREAM,
   fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
   padding: "0 0 calc(var(--bottom-nav-h, 72px) + 24px)",
@@ -19,9 +23,11 @@ export const page = {
 
 export const inner = {
   maxWidth: 1080,
+  width: "100%",
   margin: "0 auto",
   padding: "16px 16px 0",
   boxSizing: "border-box",
+  minWidth: 0,
 };
 
 export const heroGrid = {
@@ -33,12 +39,14 @@ export const heroGrid = {
 
 export const title = {
   margin: "0 0 10px",
-  fontSize: 36,
+  fontSize: "clamp(26px, 6vw, 36px)",
   lineHeight: 1.1,
   fontWeight: 700,
   fontFamily: 'Georgia, "Times New Roman", serif',
   color: FOREST,
   letterSpacing: "-0.02em",
+  maxWidth: "100%",
+  wordBreak: "break-word",
 };
 
 export const titleRow = {
@@ -149,6 +157,8 @@ export const columns = {
   display: "grid",
   gridTemplateColumns: "1fr",
   gap: 22,
+  minWidth: 0,
+  maxWidth: "100%",
 };
 
 export const card = {
@@ -158,6 +168,9 @@ export const card = {
   border: `1px solid ${BORDER}`,
   boxShadow: "0 8px 24px rgba(28,25,23,0.05)",
   marginBottom: 16,
+  minWidth: 0,
+  maxWidth: "100%",
+  boxSizing: "border-box",
 };
 
 export const sectionHead = {
@@ -184,8 +197,9 @@ export const viewAll = {
 
 export const footer = {
   marginTop: 28,
-  marginLeft: -16,
-  marginRight: -16,
+  width: "100%",
+  maxWidth: "100%",
+  boxSizing: "border-box",
   background: FOREST,
   color: "#fff",
   padding: "28px 20px",
@@ -194,6 +208,17 @@ export const footer = {
   gap: 16,
   alignItems: "center",
   justifyContent: "space-between",
+  minWidth: 0,
+};
+
+export const hScrollRail = {
+  display: "flex",
+  gap: 12,
+  overflowX: "auto",
+  maxWidth: "100%",
+  minWidth: 0,
+  WebkitOverflowScrolling: "touch",
+  paddingBottom: 4,
 };
 
 export const footerTag = {

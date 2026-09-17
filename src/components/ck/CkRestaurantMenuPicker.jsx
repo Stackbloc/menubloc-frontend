@@ -171,8 +171,8 @@ export default function CkRestaurantMenuPicker({
   return (
     <div style={styles.wrap} data-testid={`${testIdPrefix}-picker`}>
       <p style={styles.hint}>
-        Search by restaurant name. Franchise and multi-location brands use the canonical menu —
-        a specific location is fine, and it still lists that shared menu.
+        Search by restaurant name. Multi-location brands share one menu — pick any location and
+        you still get that full dish list.
       </p>
 
       <div>
@@ -189,9 +189,6 @@ export default function CkRestaurantMenuPicker({
                   : "Linked to Common Knowledge"}
                 {restaurant.city
                   ? ` · ${[restaurant.city, restaurant.state].filter(Boolean).join(", ")}`
-                  : ""}
-                {restaurant.uses_canonical_menu || restaurant.is_canonical_menu_holder
-                  ? " · Canonical menu"
                   : ""}
               </div>
             </div>
@@ -287,7 +284,7 @@ export default function CkRestaurantMenuPicker({
                 </ul>
               ) : !dishSearching ? (
                 <p style={styles.hint} data-testid={`${testIdPrefix}-dish-empty`}>
-                  No CK dishes on this brand’s canonical menu — pick another restaurant or refine search.
+                  No dishes for this restaurant — pick another or refine search.
                 </p>
               ) : null}
             </>

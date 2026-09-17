@@ -10,6 +10,8 @@ const ICONS = {
   camera: "📷",
   people: "👥",
   flame: "🔥",
+  home: "🏠",
+  cash: "$",
 };
 
 export function MonthInFoodHero({ model, onPrev, onNext, shareData = null }) {
@@ -82,73 +84,6 @@ export function MonthInFoodStatsBar({ stats = [] }) {
   );
 }
 
-export function MonthInFoodHighlights({ highlights = [] }) {
-  if (!highlights.length) return null;
-  const [main, ...rest] = highlights;
-  return (
-    <section style={s.card} data-testid="month-in-food-highlights">
-      <div style={s.sectionHead}>
-        <h2 style={s.sectionTitle}>Top Highlights</h2>
-      </div>
-      <div style={{ display: "grid", gridTemplateColumns: rest.length ? "1.4fr 1fr" : "1fr", gap: 10 }}>
-        <HighlightCard card={main} large />
-        {rest.length ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {rest.map((card) => (
-              <HighlightCard key={card.key} card={card} />
-            ))}
-          </div>
-        ) : null}
-      </div>
-    </section>
-  );
-}
-
-function HighlightCard({ card, large = false }) {
-  const body = (
-    <div
-      style={{
-        position: "relative",
-        borderRadius: 14,
-        overflow: "hidden",
-        minHeight: large ? 180 : 88,
-        background: "#e7e5e4",
-        flex: 1,
-      }}
-    >
-      {card.image ? (
-        <img
-          src={card.image}
-          alt=""
-          style={{ width: "100%", height: "100%", objectFit: "cover", position: "absolute", inset: 0 }}
-        />
-      ) : null}
-      <div
-        style={{
-          position: "absolute",
-          left: 0,
-          right: 0,
-          bottom: 0,
-          padding: "10px 12px",
-          background: "linear-gradient(transparent, rgba(0,0,0,0.72))",
-          color: "#fff",
-        }}
-      >
-        <div style={{ fontWeight: 800, fontSize: large ? 16 : 13 }}>{card.label}</div>
-        {card.sublabel ? <div style={{ fontSize: 12, opacity: 0.9 }}>{card.sublabel}</div> : null}
-      </div>
-    </div>
-  );
-  if (card.href) {
-    return (
-      <Link to={card.href} style={{ textDecoration: "none", color: "inherit", display: "flex" }}>
-        {body}
-      </Link>
-    );
-  }
-  return body;
-}
-
 export function MonthInFoodVisited({ visited = [] }) {
   if (!visited.length) return null;
   return (
@@ -156,7 +91,7 @@ export function MonthInFoodVisited({ visited = [] }) {
       <div style={s.sectionHead}>
         <h2 style={s.sectionTitle}>Restaurants I Visited</h2>
       </div>
-      <div style={{ display: "flex", gap: 12, overflowX: "auto", paddingBottom: 4 }}>
+      <div style={s.hScrollRail}>
         {visited.map((r) => (
           <div key={r.restaurant_id} style={{ width: 96, flex: "0 0 auto", textAlign: "center" }}>
             <div
@@ -259,7 +194,7 @@ export function MonthInFoodMoments({ moments = [], overflow = 0 }) {
       <div style={s.sectionHead}>
         <h2 style={s.sectionTitle}>Moments To Remember</h2>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 8 }}>
         {moments.map((m, idx) => (
           <div
             key={m.key}
@@ -448,7 +383,7 @@ export function MonthInFoodWants({ wants = [], takeMeOutOpen = false, isSelf = f
         </Link>
       </div>
       {wants.length ? (
-      <div style={{ display: "flex", gap: 10, overflowX: "auto" }}>
+      <div style={s.hScrollRail}>
         {wants.map((w) => {
           const body = (
             <>
