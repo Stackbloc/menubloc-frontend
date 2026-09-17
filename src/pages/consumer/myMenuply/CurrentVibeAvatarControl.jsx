@@ -12,7 +12,7 @@ import {
   getCurrentVibeEntry,
   resolveCurrentVibeCatalog,
   showsCurrentVibeBadge,
-} from "../../lib/currentVibeDisplay.js";
+} from "../../../lib/currentVibeDisplay.js";
 
 const badgeBtnBase = {
   position: "absolute",
