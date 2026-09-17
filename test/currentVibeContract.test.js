@@ -34,21 +34,28 @@ test("DinerIdentityHero mounts Current Vibe on avatar wrap", () => {
 });
 
 test("picker selects on single tap and retap clears to im_good", () => {
-  const ctrl = read("src/pages/consumer/myMenuply/CurrentVibeAvatarControl.jsx");
-  assert.match(ctrl, /\$\{testIdPrefix\}-picker/);
-  assert.match(ctrl, /DEFAULT_CURRENT_VIBE/);
-  assert.match(ctrl, /nextRaw === coerceOrSame\(effective\)/);
-  assert.doesNotMatch(ctrl, /Confirm|Submit|multi-step/);
+  const section = read("src/pages/consumer/myMenuply/CurrentVibeProfileSection.jsx");
+  assert.match(section, /Current vibe/);
+  assert.match(section, /DEFAULT_CURRENT_VIBE/);
+  assert.match(section, /chip-grid/);
+  assert.match(section, /I'm good/);
+  assert.match(section, /not shown in search/);
 });
 
-test("owner im_good shows muted + set-affordance (not invisible)", () => {
+test("profile mounts Current vibe under Favorite foods", () => {
+  const hero = read("src/pages/consumer/myMenuply/DinerIdentityHero.jsx");
+  assert.match(hero, /CurrentVibeProfileSection/);
+  assert.match(hero, /afterFavorites/);
+  const editor = read("src/pages/consumer/myMenuply/DinerPersonalContextEditor.jsx");
+  assert.match(editor, /afterFavorites/);
+});
+
+test("avatar badge is display-only; im_good has no badge", () => {
   const ctrl = read("src/pages/consumer/myMenuply/CurrentVibeAvatarControl.jsx");
-  assert.match(ctrl, /set-affordance/);
-  assert.match(ctrl, /Set current vibe/);
-  assert.doesNotMatch(ctrl, /opacity: 0\.01/);
-  const headers = read("src/pages/consumer/myMenuply/SectionHeader.jsx");
-  assert.match(headers, /eyebrowLabel: "Identity"/);
-  assert.doesNotMatch(headers, /eyebrowLabel: "My vibe"/);
+  assert.match(ctrl, /showsCurrentVibeBadge/);
+  assert.match(ctrl, /display only|Display only|selection lives/i);
+  assert.doesNotMatch(ctrl, /set-affordance/);
+  assert.doesNotMatch(ctrl, /createPortal/);
 });
 
 test("API client updates Current Vibe without feed side effects in client", () => {

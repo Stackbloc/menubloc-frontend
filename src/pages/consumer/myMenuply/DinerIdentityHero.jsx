@@ -17,6 +17,7 @@ import { clearStuckMediaChrome } from "./pendingHighlightMedia.js";
 import CatchMePanel from "./CatchMePanel.jsx";
 import { catchMeProfileLine } from "../../../lib/dinerCatchMeDisplay.js";
 import CurrentVibeAvatarControl from "./CurrentVibeAvatarControl.jsx";
+import CurrentVibeProfileSection from "./CurrentVibeProfileSection.jsx";
 import { DEFAULT_CURRENT_VIBE } from "../../../lib/currentVibeDisplay.js";
 
 const ABOUT_MAX = 280;
@@ -278,8 +279,6 @@ export default function DinerIdentityHero({
             onRemove={readOnly || !showRichMedia ? undefined : onFlashVideoRemove}
           />
 
-          {readOnly ? <FavoriteFoodsReadonly favoriteFoods={favoriteFoods} /> : null}
-
           {locationLabel ? (
             <p
               style={{
@@ -342,8 +341,18 @@ export default function DinerIdentityHero({
             </>
           )}
 
-          {/* Last control in About Me — after identity lines, location, and about. */}
-          {!readOnly && onSaveProfileSettings ? (
+          {readOnly ? (
+            <>
+              <FavoriteFoodsReadonly favoriteFoods={favoriteFoods} />
+              <CurrentVibeProfileSection
+                value={currentVibe}
+                catalog={currentVibeCatalog}
+                readOnly
+                busy={false}
+                onChange={null}
+              />
+            </>
+          ) : onSaveProfileSettings ? (
             <DinerPersonalContextEditor
               value={personalContext}
               dateOfBirth={dateOfBirth}
@@ -351,8 +360,25 @@ export default function DinerIdentityHero({
               favoriteFoods={favoriteFoods}
               busy={busy || saving}
               onSave={onSaveProfileSettings}
+              afterFavorites={
+                <CurrentVibeProfileSection
+                  value={currentVibe}
+                  catalog={currentVibeCatalog}
+                  readOnly={typeof onCurrentVibeChange !== "function"}
+                  busy={busy}
+                  onChange={onCurrentVibeChange}
+                />
+              }
             />
-          ) : null}
+          ) : (
+            <CurrentVibeProfileSection
+              value={currentVibe}
+              catalog={currentVibeCatalog}
+              readOnly={typeof onCurrentVibeChange !== "function"}
+              busy={busy}
+              onChange={onCurrentVibeChange}
+            />
+          )}
         </div>
       </div>
 

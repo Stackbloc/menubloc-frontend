@@ -56,6 +56,8 @@ export default function DinerPersonalContextEditor({
   favoriteFoods = EMPTY_FAVORITE_FOODS,
   busy = false,
   onSave,
+  /** Rendered under Favorite foods when collapsed (e.g. Current vibe). */
+  afterFavorites = null,
 }) {
   const favoriteList = Array.isArray(favoriteFoods) ? favoriteFoods : EMPTY_FAVORITE_FOODS;
   const favoriteFoodsKey = favoriteList
@@ -174,6 +176,7 @@ export default function DinerPersonalContextEditor({
             </div>
           </div>
         ) : null}
+        {afterFavorites}
         <button
           type="button"
           data-testid="diner-personal-context-toggle"
@@ -367,6 +370,8 @@ export default function DinerPersonalContextEditor({
           </div>
         </div>
       </div>
+
+      {afterFavorites}
 
       {occupationSet ? (
         <p style={s.personalContextHint}>

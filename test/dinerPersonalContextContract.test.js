@@ -121,8 +121,13 @@ test("Connection peer hub passes personal context to identity hero", () => {
 test("DinerIdentityHero only mounts profile settings editor for profile owner", () => {
   const hero = read("src/pages/consumer/myMenuply/DinerIdentityHero.jsx");
   const page = read("src/pages/consumer/MyMenuplyPage.jsx");
-  assert.match(hero, /!readOnly && onSaveProfileSettings/);
+  assert.match(hero, /onSaveProfileSettings \? \(/);
+  assert.match(hero, /readOnly \? \(/);
   assert.match(page, /onSaveProfileSettings=\{onSaveProfileSettings\}/);
+  assert.doesNotMatch(
+    hero.slice(hero.indexOf("Favorite foods")),
+    /onSaveProfileSettings=\{onSaveProfileSettings\}/
+  );
 });
 
 test("summarizePersonalContext returns None added when empty", () => {
