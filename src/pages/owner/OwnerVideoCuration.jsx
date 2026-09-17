@@ -128,6 +128,7 @@ function FoodFormPicker({ value, onChange, disabled }) {
   const [results, setResults] = useState([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [expandedParents, setExpandedParents] = useState(() => new Set());
   const [addFamily, setAddFamily] = useState("hot dog");
   const [addBusy, setAddBusy] = useState(false);
   const [addError, setAddError] = useState("");
@@ -141,11 +142,18 @@ function FoodFormPicker({ value, onChange, disabled }) {
         const result = await listOwnerVideoFoodForms({
           q,
           family: family || undefined,
-          limit: 120,
+          limit: 200,
         });
         if (cancelled) return;
         setFamilies(result.families || []);
         setResults(result.results || []);
+        // Auto-expand parents when browsing a family or searching so children are visible.
+        const next = new Set();
+        for (const row of result.results || []) {
+          if (row.parent_form) next.add(row.parent_form);
+          if (family && row.form_key === family) next.add(row.form_key);
+        }
+        if (family || q.trim()) setExpandedParents(next);
       } catch {
         if (!cancelled) {
           setResults([]);
@@ -201,25 +209,117 @@ function FoodFormPicker({ value, onChange, disabled }) {
     }
   }
 
+  function toggleParent(formKey) {
+    setExpandedParents((prev) => {
+      const next = new Set(prev);
+      if (next.has(formKey)) next.delete(formKey);
+      else next.add(formKey);
+      return next;
+    });
+  }
+
+  function selectForm(formKey) {
+    onChange?.(formKey);
+    setQ("");
+    setOpen(false);
+  }
+
+  /** Family → roots (no parent in this result set) → children nested under parent_form. */
   const grouped = [];
+  const byFamily = new Map();
   for (const row of results) {
-    const last = grouped[grouped.length - 1];
-    if (!last || last.family_key !== row.family_key) {
-      grouped.push({
+    if (!byFamily.has(row.family_key)) {
+      const group = {
         family_key: row.family_key,
         family_label: row.family_label,
-        rows: [row],
-      });
-    } else {
-      last.rows.push(row);
+        roots: [],
+        childrenByParent: new Map(),
+      };
+      byFamily.set(row.family_key, group);
+      grouped.push(group);
     }
+    const group = byFamily.get(row.family_key);
+    if (row.parent_form) {
+      if (!group.childrenByParent.has(row.parent_form)) {
+        group.childrenByParent.set(row.parent_form, []);
+      }
+      group.childrenByParent.get(row.parent_form).push(row);
+    } else {
+      group.roots.push(row);
+    }
+  }
+  for (const group of grouped) {
+    // Orphan children whose parent isn't in this page — promote to roots.
+    for (const [parentKey, kids] of group.childrenByParent) {
+      if (!group.roots.some((r) => r.form_key === parentKey) && !results.some((r) => r.form_key === parentKey)) {
+        group.roots.push(...kids);
+        group.childrenByParent.delete(parentKey);
+      }
+    }
+    group.roots.sort((a, b) => a.display_label.localeCompare(b.display_label));
+    for (const kids of group.childrenByParent.values()) {
+      kids.sort((a, b) => a.display_label.localeCompare(b.display_label));
+    }
+  }
+
+  function renderOption(row, { depth = 0, hasChildren = false } = {}) {
+    const expanded = expandedParents.has(row.form_key);
+    return (
+      <div key={`${row.source}-${row.form_key}`} style={{ display: "grid", gap: 0 }}>
+        <div style={{ display: "flex", alignItems: "stretch", paddingLeft: depth * 14 }}>
+          {hasChildren ? (
+            <button
+              type="button"
+              aria-label={expanded ? `Collapse ${row.display_label}` : `Expand ${row.display_label}`}
+              onClick={() => toggleParent(row.form_key)}
+              data-testid={`owner-video-food-form-expand-${row.form_key}`}
+              style={{
+                width: 28,
+                border: "none",
+                background: "transparent",
+                cursor: "pointer",
+                fontSize: 12,
+                fontWeight: 800,
+                color: OWNER_COLORS.muted,
+                flex: "0 0 auto",
+              }}
+            >
+              {expanded ? "▾" : "▸"}
+            </button>
+          ) : (
+            <span style={{ width: 28, flex: "0 0 auto" }} aria-hidden />
+          )}
+          <button
+            type="button"
+            onClick={() => selectForm(row.form_key)}
+            data-testid={`owner-video-food-form-option-${row.form_key}`}
+            style={{
+              flex: 1,
+              textAlign: "left",
+              border: "none",
+              background: value === row.form_key ? OWNER_COLORS.accentSoft : "transparent",
+              borderRadius: 8,
+              padding: "7px 8px",
+              cursor: "pointer",
+              fontSize: 13,
+              fontWeight: depth ? 600 : 700,
+              color: OWNER_COLORS.ink,
+            }}
+          >
+            {row.display_label}
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div ref={wrapRef} style={{ display: "grid", gap: 6 }} data-testid="owner-video-food-form-picker">
       <span style={{ fontWeight: 700, fontSize: 13 }}>Food type</span>
       <span style={{ fontSize: 12, color: OWNER_COLORS.muted, lineHeight: 1.4 }}>
-        Connect this clip to search (for example Hot Dogs) even when there is no menu item.
+        Browse any category as a tree (Sandwiches → Gyro, Cakes → Cupcake, Desserts →
+        Brownie) or type to search. Connects this clip to search even when there is no menu
+        item.
       </span>
       <div style={{ display: "grid", gap: 8, gridTemplateColumns: "minmax(0, 1fr) minmax(140px, 180px)" }}>
         <input
@@ -230,7 +330,7 @@ function FoodFormPicker({ value, onChange, disabled }) {
             if (value) onChange?.("");
           }}
           onFocus={() => setOpen(true)}
-          placeholder="Type a food type or browse below"
+          placeholder="Type a food type or browse the tree"
           disabled={disabled}
           style={inputStyle}
           data-testid="owner-video-food-form-input"
@@ -281,7 +381,7 @@ function FoodFormPicker({ value, onChange, disabled }) {
         <div
           data-testid="owner-video-food-form-results"
           style={{
-            maxHeight: 240,
+            maxHeight: 280,
             overflowY: "auto",
             border: `1px solid ${OWNER_COLORS.line}`,
             borderRadius: 10,
@@ -309,33 +409,18 @@ function FoodFormPicker({ value, onChange, disabled }) {
               >
                 {group.family_label}
               </div>
-              {group.rows.map((row) => (
-                <button
-                  key={`${row.source}-${row.form_key}`}
-                  type="button"
-                  onClick={() => {
-                    onChange?.(row.form_key);
-                    setQ("");
-                    setOpen(false);
-                  }}
-                  data-testid={`owner-video-food-form-option-${row.form_key}`}
-                  style={{
-                    display: "block",
-                    width: "100%",
-                    textAlign: "left",
-                    border: "none",
-                    background: value === row.form_key ? OWNER_COLORS.accentSoft : "transparent",
-                    borderRadius: 8,
-                    padding: "7px 8px",
-                    cursor: "pointer",
-                    fontSize: 13,
-                    fontWeight: 600,
-                    color: OWNER_COLORS.ink,
-                  }}
-                >
-                  {row.display_label}
-                </button>
-              ))}
+              {group.roots.map((row) => {
+                const kids = group.childrenByParent.get(row.form_key) || [];
+                const hasChildren = kids.length > 0;
+                return (
+                  <div key={`${row.source}-${row.form_key}-branch`}>
+                    {renderOption(row, { depth: 0, hasChildren })}
+                    {hasChildren && expandedParents.has(row.form_key)
+                      ? kids.map((child) => renderOption(child, { depth: 1, hasChildren: false }))
+                      : null}
+                  </div>
+                );
+              })}
             </div>
           ))}
         </div>

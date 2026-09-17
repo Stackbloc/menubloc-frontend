@@ -89,6 +89,9 @@ test("Owner Video Manager food type picker uses ontology catalog — not a new t
   const api = read("src/lib/ownerApi.js");
   assert.match(page, /FoodFormPicker/);
   assert.match(page, /owner-video-food-form-picker/);
+  assert.match(page, /owner-video-food-form-expand-/);
+  assert.match(page, /parent_form/);
+  assert.match(page, /childrenByParent/);
   assert.match(page, /food_form:/);
   assert.match(page, /addOwnerVideoFoodForm/);
   assert.match(api, /listOwnerVideoFoodForms/);
