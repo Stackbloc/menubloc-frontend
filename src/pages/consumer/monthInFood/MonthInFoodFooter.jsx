@@ -22,26 +22,37 @@ export default function MonthInFoodFooter({ sharePath, isSelf }) {
   return (
     <footer style={s.footer} data-testid="month-in-food-footer">
       <div style={{ flex: 1, minWidth: 180 }}>
-        <div style={{ fontWeight: 800, letterSpacing: "0.04em" }}>MENUPLY</div>
+        <div
+          style={{
+            fontFamily: s.FONT_DISPLAY,
+            fontStyle: "italic",
+            fontSize: 28,
+            fontWeight: 600,
+            color: "var(--mif-amber, #DE9E33)",
+          }}
+        >
+          Menuply
+        </div>
         <p style={s.footerTag}>Great food. Good people. Better together.</p>
-        <p style={{ margin: "8px 0 0", fontSize: 12, opacity: 0.85 }}>Made with ♥ on Menuply</p>
+        <p style={{ margin: "8px 0 0", fontSize: 12, opacity: 0.85 }}>Made with ♥ on Menuply.</p>
         <button
           type="button"
           data-testid="month-in-food-footer-share"
           onClick={() => setShareOpen(true)}
           style={{
-            marginTop: 12,
+            marginTop: 14,
             background: "#fff",
             color: s.FOREST,
             border: "none",
             borderRadius: 999,
-            padding: "8px 14px",
-            fontWeight: 800,
+            padding: "10px 16px",
+            fontWeight: 700,
             cursor: "pointer",
             fontSize: 13,
+            fontFamily: s.FONT_BODY,
           }}
         >
-          Copy Link
+          Copy link
         </button>
       </div>
       {qrSrc ? (

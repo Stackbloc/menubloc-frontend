@@ -1,115 +1,203 @@
 import { Link } from "react-router-dom";
 import ShareButton from "../../../components/share/ShareButton.jsx";
-import { myMenuplyProfileHref } from "../../../lib/myMenuplyRoutes.js";
+import { MY_MENUPLY_PROFILE_PATH, myMenuplyProfileHref } from "../../../lib/myMenuplyRoutes.js";
 import * as s from "./monthInFoodStyles.js";
 
-const ICONS = {
-  fork: "🍽️",
-  dishes: "🥘",
-  store: "🏪",
-  camera: "📷",
-  people: "👥",
-  flame: "🔥",
-  home: "🏠",
-  cash: "$",
-};
-
 export function MonthInFoodHero({ model, onPrev, onNext, shareData = null }) {
+  const collage = Array.isArray(model.heroCollage) ? model.heroCollage : [];
+  const showCollage = collage.length >= 2;
+
   return (
-    <div style={s.heroGrid} data-testid="month-in-food-hero">
-      <div>
-        <div style={s.titleRow}>
-          <h1 style={{ ...s.title, margin: 0 }}>My Month In Food</h1>
-          {shareData ? (
-            <span data-testid="month-in-food-title-share">
-              <ShareButton
-                shareData={shareData}
-                iconOnly
-                size="compact"
-                tone="ghost"
-                label="Share"
-                modalTitle="Share Month in Food"
-                analyticsContext={{ surface: "month_in_food", path: shareData?.url || null }}
-              />
-            </span>
-          ) : null}
-        </div>
-        <div style={s.monthPill}>
-          <button type="button" style={s.monthNavBtn} onClick={onPrev} aria-label="Previous month">
-            ‹
-          </button>
-          <span>{model.monthLabel}</span>
-          <button type="button" style={s.monthNavBtn} onClick={onNext} aria-label="Next month">
-            ›
-          </button>
-        </div>
-        <p style={s.tagline}>{model.tagline}</p>
-        {model.subject?.display_name ? (
-          <p style={{ ...s.muted, marginTop: 8 }}>{model.subject.display_name}</p>
+    <header style={{ ...s.sectionGap }} data-testid="month-in-food-hero">
+      <div style={s.monthPill}>
+        <button type="button" style={s.monthNavBtn} onClick={onPrev} aria-label="Previous month">
+          ‹
+        </button>
+        <span>{model.monthLabel}</span>
+        <button type="button" style={s.monthNavBtn} onClick={onNext} aria-label="Next month">
+          ›
+        </button>
+      </div>
+
+      <div style={{ ...s.titleRow, marginTop: 18 }}>
+        <h1 style={{ ...s.title, margin: 0 }}>
+          My month in <em style={{ fontStyle: "italic", color: "var(--mif-amber, #DE9E33)" }}>food</em>.
+        </h1>
+        {shareData ? (
+          <span data-testid="month-in-food-title-share">
+            <ShareButton
+              shareData={shareData}
+              iconOnly
+              size="compact"
+              tone="ghost"
+              label="Share"
+              modalTitle="Share Month in Food"
+              analyticsContext={{ surface: "month_in_food", path: shareData?.url || null }}
+            />
+          </span>
         ) : null}
       </div>
-      <div style={s.heroMedia}>
-        {model.heroImage ? (
-          <img src={model.heroImage} alt="" style={s.heroImg} />
-        ) : (
-          <div style={{ ...s.heroImg, minHeight: 200 }} aria-hidden />
-        )}
-        <div style={s.heroBadge}>
-          <span>
-            Food is <em>better</em> together.
-          </span>
-          <span aria-hidden style={{ marginTop: 6, color: "#86efac" }}>
-            ♥
-          </span>
+
+      <p style={s.tagline}>{model.tagline}</p>
+      {model.subject?.display_name ? (
+        <p style={s.byline}>
+          Recapped by <strong style={{ color: "var(--mif-ink, #231F19)" }}>{model.subject.display_name}</strong>
+        </p>
+      ) : null}
+
+      {showCollage ? (
+        <div
+          data-testid="month-in-food-hero-collage"
+          style={{
+            position: "relative",
+            marginTop: 28,
+            height: 280,
+            maxHeight: 300,
+            width: "100%",
+            maxWidth: "100%",
+          }}
+        >
+          <div
+            style={{
+              position: "absolute",
+              left: "4%",
+              top: 18,
+              width: "48%",
+              maxWidth: 240,
+              aspectRatio: "4 / 5",
+              transform: "rotate(-3.5deg)",
+              background: "var(--mif-paper, #FFFDF8)",
+              padding: 6,
+              borderRadius: 4,
+              boxShadow: "0 12px 28px rgba(35,31,25,0.16)",
+              boxSizing: "border-box",
+            }}
+          >
+            <img
+              src={collage[0].url}
+              alt=""
+              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", borderRadius: 2 }}
+            />
+          </div>
+          <div
+            style={{
+              position: "absolute",
+              right: "2%",
+              top: 8,
+              width: "48%",
+              maxWidth: 240,
+              aspectRatio: "4 / 5",
+              transform: "rotate(3deg)",
+              background: "var(--mif-paper, #FFFDF8)",
+              padding: 6,
+              borderRadius: 4,
+              boxShadow: "0 12px 28px rgba(35,31,25,0.16)",
+              boxSizing: "border-box",
+            }}
+          >
+            <img
+              src={collage[1].url}
+              alt=""
+              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", borderRadius: 2 }}
+            />
+          </div>
+          <div
+            style={{
+              position: "absolute",
+              right: 8,
+              bottom: 8,
+              background: "var(--mif-forest, #16302A)",
+              color: "#fff",
+              borderRadius: 999,
+              padding: "8px 14px",
+              fontSize: 13,
+              fontWeight: 600,
+              fontFamily: s.FONT_BODY,
+              zIndex: 2,
+            }}
+            data-testid="month-in-food-meals-badge"
+          >
+            {model.mealsLogged} meals logged
+          </div>
         </div>
-      </div>
-    </div>
+      ) : null}
+    </header>
   );
 }
 
 export function MonthInFoodStatsBar({ stats = [] }) {
   if (!stats.length) return null;
   return (
-    <div style={s.statsBar} data-testid="month-in-food-stats">
-      {stats.map((stat) => (
-        <div key={stat.id} style={s.statCell}>
-          <div aria-hidden style={{ fontSize: 16 }}>
-            {ICONS[stat.icon] || "•"}
-          </div>
-          <div style={s.statValue}>{stat.value}</div>
-          <div style={s.statLabel}>{stat.label}</div>
-        </div>
-      ))}
-    </div>
+    <section style={{ ...s.sectionGap }} data-testid="month-in-food-stats">
+      <h2 style={{ ...s.sectionTitle, marginBottom: 14 }}>By the numbers</h2>
+      <div style={s.statsGrid}>
+        {stats.map((stat, idx) => {
+          const col = idx % 3;
+          const row = Math.floor(idx / 3);
+          return (
+            <div
+              key={stat.id}
+              style={{
+                ...s.statCell,
+                borderRight: col === 2 ? "none" : s.statCell.borderRight,
+                borderBottom: row === 1 ? "none" : s.statCell.borderBottom,
+              }}
+            >
+              <div style={s.statValue}>{stat.value}</div>
+              <div style={s.statLabel}>{stat.label}</div>
+            </div>
+          );
+        })}
+      </div>
+    </section>
   );
 }
 
 export function MonthInFoodVisited({ visited = [] }) {
   if (!visited.length) return null;
   return (
-    <section style={s.card} data-testid="month-in-food-visited">
+    <section style={{ ...s.sectionGap }} data-testid="month-in-food-visited">
       <div style={s.sectionHead}>
-        <h2 style={s.sectionTitle}>Restaurants I Visited</h2>
+        <h2 style={s.sectionTitle}>Restaurants I visited</h2>
+        <Link to={MY_MENUPLY_PROFILE_PATH} style={s.viewAll}>
+          See all
+        </Link>
       </div>
       <div style={s.hScrollRail}>
         {visited.map((r) => (
-          <div key={r.restaurant_id} style={{ width: 96, flex: "0 0 auto", textAlign: "center" }}>
+          <div key={r.restaurant_id} style={{ width: 88, flex: "0 0 auto", textAlign: "center" }}>
             <div
+              aria-hidden
               style={{
-                width: 84,
-                height: 84,
-                borderRadius: 16,
-                overflow: "hidden",
-                margin: "0 auto 6px",
-                background: "#e7e5e4",
+                width: 72,
+                height: 72,
+                borderRadius: "50%",
+                margin: "0 auto 8px",
+                background: r.monogramColor || s.FOREST,
+                color: "#fff",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontFamily: s.FONT_DISPLAY,
+                fontSize: 28,
+                fontWeight: 600,
               }}
             >
-              {r.image ? (
-                <img src={r.image} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-              ) : null}
+              {r.monogram || "?"}
             </div>
-            <div style={{ fontSize: 12, fontWeight: 700, lineHeight: 1.2 }}>{r.name}</div>
-            {r.place ? <div style={{ fontSize: 11, color: s.MUTED }}>{r.place}</div> : null}
+            <div
+              style={{
+                fontSize: 12,
+                fontWeight: 600,
+                lineHeight: 1.25,
+                color: "var(--mif-ink, #231F19)",
+              }}
+            >
+              {r.name}
+            </div>
+            {r.place ? (
+              <div style={{ fontSize: 11, color: "var(--mif-ink-soft, #5B5548)", marginTop: 2 }}>{r.place}</div>
+            ) : null}
           </div>
         ))}
       </div>
@@ -120,53 +208,31 @@ export function MonthInFoodVisited({ visited = [] }) {
 export function MonthInFoodHomeMeals({ homeMeals = [] }) {
   if (!homeMeals.length) return null;
   return (
-    <section style={s.card} data-testid="month-in-food-home">
+    <section style={{ ...s.card, ...s.sectionGap }} data-testid="month-in-food-home">
       <div style={s.sectionHead}>
-        <div>
-          <div
-            style={{
-              fontSize: 11,
-              fontWeight: 700,
-              color: s.MUTED,
-              letterSpacing: "0.04em",
-              textTransform: "uppercase",
-            }}
-          >
-            Where
-          </div>
-          <h2 style={{ ...s.sectionTitle, margin: 0 }}>@home Meals</h2>
-        </div>
+        <h2 style={{ ...s.sectionTitle, margin: 0 }}>@home meals</h2>
         <Link to={myMenuplyProfileHref({ compose: "ate" })} style={s.viewAll}>
           Log meal
         </Link>
       </div>
       <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
         {homeMeals.map((m) => {
-          const portion =
-            m.portion_amount != null
-              ? `${m.portion_amount}${m.portion_unit ? ` ${m.portion_unit}` : " serving"}`
-              : null;
+          const meta = [m.meal_period, m.eaten_on_label || m.eaten_on].filter(Boolean).join(" · ");
           const row = (
-            <div style={{ display: "flex", gap: 10, alignItems: "center", padding: "10px 0", borderTop: `1px solid ${s.BORDER}` }}>
-              <div
-                style={{
-                  width: 56,
-                  height: 56,
-                  borderRadius: 12,
-                  overflow: "hidden",
-                  background: "#e7e5e4",
-                  flex: "0 0 auto",
-                }}
-              >
-                {m.photo_url ? (
-                  <img src={m.photo_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                ) : null}
-              </div>
+            <div
+              style={{
+                display: "flex",
+                gap: 12,
+                alignItems: "center",
+                padding: "12px 0",
+                borderTop: "1px solid var(--mif-hairline, #DDD3BE)",
+              }}
+            >
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 800 }}>{m.food_name}</div>
-                <div style={{ fontSize: 12, color: s.MUTED }}>
-                  {[m.meal_period, portion, m.eaten_on].filter(Boolean).join(" · ")}
-                </div>
+                <div style={{ fontWeight: 600, fontSize: 15 }}>{m.food_name}</div>
+                {meta ? (
+                  <div style={{ fontSize: 12, color: "var(--mif-ink-soft, #5B5548)", marginTop: 2 }}>{meta}</div>
+                ) : null}
               </div>
             </div>
           );
@@ -187,376 +253,253 @@ export function MonthInFoodHomeMeals({ homeMeals = [] }) {
   );
 }
 
+export function MonthInFoodMood({ mood }) {
+  if (!mood) return null;
+  const facts = [
+    mood.mostLogged ? { label: "Most logged", value: mood.mostLogged } : null,
+    mood.drinkOfChoice ? { label: "Drink of choice", value: mood.drinkOfChoice } : null,
+    mood.goToSpot ? { label: "Go-to spot", value: mood.goToSpot } : null,
+  ].filter(Boolean);
+
+  return (
+    <section
+      style={{
+        ...s.card,
+        ...s.sectionGap,
+        background: "var(--mif-forest, #16302A)",
+        color: "#fff",
+        border: "none",
+      }}
+      data-testid="month-in-food-mood"
+    >
+      <div style={{ fontSize: 13, opacity: 0.8, fontWeight: 500 }}>My food mood this month</div>
+      {mood.label ? (
+        <div
+          style={{
+            fontSize: "clamp(32px, 8vw, 42px)",
+            fontFamily: s.FONT_DISPLAY,
+            fontStyle: "italic",
+            color: "var(--mif-amber, #DE9E33)",
+            margin: "8px 0 18px",
+            lineHeight: 1.1,
+          }}
+        >
+          {mood.label}
+        </div>
+      ) : (
+        <div style={{ height: 12 }} />
+      )}
+      {facts.length ? (
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+            gap: 14,
+            fontSize: 14,
+          }}
+        >
+          {facts.map((f) => (
+            <div key={f.label}>
+              <div style={{ fontSize: 12, opacity: 0.7, marginBottom: 2 }}>{f.label}</div>
+              <div style={{ fontWeight: 600 }}>{f.value}</div>
+            </div>
+          ))}
+        </div>
+      ) : null}
+      {mood.restaurantSpend ? (
+        <div
+          style={{
+            marginTop: 16,
+            paddingTop: 14,
+            borderTop: "1px solid rgba(255,255,255,0.22)",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "baseline",
+            gap: 12,
+          }}
+          data-testid="month-in-food-restaurant-spend"
+        >
+          <span style={{ fontSize: 13, opacity: 0.8 }}>Restaurant spend</span>
+          <span
+            style={{
+              fontFamily: s.FONT_DISPLAY,
+              fontSize: 22,
+              fontWeight: 600,
+              color: "var(--mif-amber, #DE9E33)",
+            }}
+          >
+            {mood.restaurantSpend}
+          </span>
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
 export function MonthInFoodMoments({ moments = [], overflow = 0 }) {
   if (!moments.length) return null;
   return (
-    <section style={s.card} data-testid="month-in-food-moments">
+    <section style={{ ...s.sectionGap }} data-testid="month-in-food-moments">
       <div style={s.sectionHead}>
-        <h2 style={s.sectionTitle}>Moments To Remember</h2>
+        <h2 style={s.sectionTitle}>Moments to remember</h2>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 8 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 12 }}>
         {moments.map((m, idx) => (
-          <div
-            key={m.key}
-            style={{
-              position: "relative",
-              aspectRatio: "1",
-              borderRadius: 12,
-              overflow: "hidden",
-              background: "#e7e5e4",
-            }}
-          >
-            <img src={m.url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-            {idx === moments.length - 1 && overflow > 0 ? (
-              <div
+          <figure key={m.key} style={{ margin: 0 }}>
+            <div
+              style={{
+                position: "relative",
+                aspectRatio: "1",
+                borderRadius: 12,
+                overflow: "hidden",
+                background: "var(--mif-hairline, #DDD3BE)",
+                border: "4px solid var(--mif-paper, #FFFDF8)",
+                boxShadow: "0 6px 18px rgba(35,31,25,0.1)",
+                boxSizing: "border-box",
+              }}
+            >
+              <img src={m.url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+              {idx === moments.length - 1 && overflow > 0 ? (
+                <div
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    background: "rgba(22,48,42,0.72)",
+                    color: "#fff",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontFamily: s.FONT_DISPLAY,
+                    fontWeight: 600,
+                    fontSize: 22,
+                  }}
+                >
+                  +{overflow}
+                </div>
+              ) : null}
+            </div>
+            {m.caption ? (
+              <figcaption
                 style={{
-                  position: "absolute",
-                  inset: 0,
-                  background: "rgba(20,83,45,0.72)",
-                  color: "#fff",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontWeight: 800,
-                  fontSize: 22,
+                  marginTop: 6,
+                  fontSize: 12,
+                  color: "var(--mif-ink-soft, #5B5548)",
+                  lineHeight: 1.3,
                 }}
               >
-                +{overflow}
-              </div>
+                {m.caption}
+              </figcaption>
             ) : null}
-          </div>
+          </figure>
         ))}
       </div>
     </section>
   );
 }
 
-export function MonthInFoodMood({ mood }) {
-  if (!mood) return null;
-  return (
-    <section style={{ ...s.card, background: s.FOREST, color: "#fff" }} data-testid="month-in-food-mood">
-      <div style={{ fontSize: 12, opacity: 0.8, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase" }}>
-        My Food Mood This Month
-      </div>
-      <div style={{ fontSize: 28, fontFamily: 'Georgia, "Times New Roman", serif', margin: "6px 0 12px" }}>
-        {mood.label}
-      </div>
-      <div style={{ display: "grid", gap: 8, fontSize: 14 }}>
-        {mood.mostLogged ? (
-          <div>
-            <strong>Most Logged:</strong> {mood.mostLogged}
-          </div>
-        ) : null}
-        {mood.drinkOfChoice ? (
-          <div>
-            <strong>Drink of Choice:</strong> {mood.drinkOfChoice}
-          </div>
-        ) : null}
-        {mood.goToSpot ? (
-          <div>
-            <strong>Go-To Spot:</strong> {mood.goToSpot}
-          </div>
-        ) : null}
-      </div>
-    </section>
-  );
-}
-
-export function MonthInFoodByTheNumbers({ totalMeals, cuisineSlices = [], miniStats = [] }) {
-  if (!cuisineSlices.length && !miniStats.length && !totalMeals) return null;
-  const colors = s.CUISINE_COLORS;
-  let gradient = "conic-gradient(#d6d3d1 0 100%)";
-  if (cuisineSlices.length) {
-    let acc = 0;
-    const stops = cuisineSlices.map((slice, i) => {
-      const start = acc;
-      acc += slice.pct;
-      return `${colors[i % colors.length]} ${start}% ${acc}%`;
-    });
-    if (acc < 100) stops.push(`#d6d3d1 ${acc}% 100%`);
-    gradient = `conic-gradient(${stops.join(", ")})`;
-  }
+export function MonthInFoodCravingsPlans({
+  wants = [],
+  takeMeOutOpen = false,
+  isSelf = false,
+  plans = [],
+  events = [],
+  crewsJoinDefault = false,
+}) {
+  const spots = wants.slice(0, 2);
+  const showCravings = spots.length > 0 || isSelf;
+  const showPlans = plans.length > 0 || events.length > 0 || (isSelf && crewsJoinDefault);
+  if (!showCravings && !showPlans) return null;
 
   return (
-    <section style={s.card} data-testid="month-in-food-numbers">
-      <div style={s.sectionHead}>
-        <h2 style={s.sectionTitle}>By The Numbers</h2>
-      </div>
-      {cuisineSlices.length ? (
-        <div style={{ display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap" }}>
-          <div
-            style={{
-              width: 140,
-              height: 140,
-              borderRadius: "50%",
-              background: gradient,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              position: "relative",
-            }}
-          >
-            <div
-              style={{
-                width: 88,
-                height: 88,
-                borderRadius: "50%",
-                background: "#fff",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                textAlign: "center",
-                padding: 8,
-              }}
-            >
-              <strong style={{ fontSize: 20, color: s.FOREST }}>{totalMeals}</strong>
-              <span style={{ fontSize: 11, color: s.MUTED }}>Total Meals</span>
-            </div>
-          </div>
-          <ul style={{ listStyle: "none", margin: 0, padding: 0, flex: 1, minWidth: 140 }}>
-            {cuisineSlices.map((slice, i) => (
-              <li key={slice.name} style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 6, fontSize: 13 }}>
-                <span
-                  style={{
-                    width: 10,
-                    height: 10,
-                    borderRadius: 999,
-                    background: colors[i % colors.length],
-                    flex: "0 0 auto",
-                  }}
-                />
-                <span style={{ flex: 1 }}>{slice.name}</span>
-                <strong>{slice.pct}%</strong>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : totalMeals > 0 ? (
-        <p style={s.muted}>{totalMeals} meals logged this month.</p>
-      ) : null}
-      {miniStats.length ? (
-        <div style={{ display: "flex", gap: 10, marginTop: 14, flexWrap: "wrap" }}>
-          {miniStats.map((m) => (
-            <div
-              key={m.id}
-              style={{
-                flex: "1 1 90px",
-                background: s.CREAM,
-                borderRadius: 12,
-                padding: "10px 12px",
-                textAlign: "center",
-              }}
-            >
-              <div style={{ fontSize: 20, fontWeight: 800, color: s.FOREST }}>{m.value}</div>
-              <div style={{ fontSize: 11, color: s.MUTED, fontWeight: 600 }}>{m.label}</div>
-            </div>
-          ))}
-        </div>
-      ) : null}
-    </section>
-  );
-}
-
-export function MonthInFoodWants({ wants = [], takeMeOutOpen = false, isSelf = false }) {
-  if (!wants.length && !isSelf) return null;
-  return (
-    <section style={s.card} data-testid="month-in-food-wants">
-      <div style={s.sectionHead}>
-        <div>
-          <div style={{ fontSize: 11, fontWeight: 700, color: s.MUTED, letterSpacing: "0.04em", textTransform: "uppercase" }}>
-            Cravings
-          </div>
-          <h2 style={{ ...s.sectionTitle, margin: 0 }}>What I Wanna Eat</h2>
+    <section
+      style={{
+        ...s.sectionGap,
+        display: "grid",
+        gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+        gap: 12,
+      }}
+      className="month-in-food-two-up"
+      data-testid="month-in-food-cravings-plans"
+    >
+      {showCravings ? (
+        <div style={s.card} data-testid="month-in-food-wants">
+          <div style={{ fontSize: 12, color: "var(--mif-ink-soft, #5B5548)", marginBottom: 4 }}>Cravings</div>
+          <h3 style={{ ...s.sectionTitle, fontSize: 18, margin: 0 }}>What I wanna eat</h3>
           {isSelf ? (
             <p
-              style={{ margin: "6px 0 0", fontSize: 12, color: s.MUTED, fontWeight: 600 }}
+              style={{ margin: "8px 0 0", fontSize: 12, color: "var(--mif-ink-soft, #5B5548)" }}
               data-testid="month-in-food-take-me-out-status"
             >
               Take Me Out is {takeMeOutOpen ? "On" : "Off"}
-              {takeMeOutOpen ? " — connections can invite you out" : " — set in Edit View"}
             </p>
           ) : null}
+          <ul style={{ listStyle: "none", margin: "12px 0 0", padding: 0 }}>
+            {spots.map((w) => (
+              <li key={w.key} style={{ padding: "8px 0", borderTop: "1px solid var(--mif-hairline, #DDD3BE)" }}>
+                <div style={{ fontWeight: 600, fontSize: 14 }}>{w.food_name}</div>
+                {w.restaurant_name ? (
+                  <div style={{ fontSize: 12, color: "var(--mif-ink-soft, #5B5548)" }}>{w.restaurant_name}</div>
+                ) : null}
+              </li>
+            ))}
+          </ul>
         </div>
-        <Link to={myMenuplyProfileHref({ compose: "want" })} style={s.viewAll}>
-          View all
-        </Link>
-      </div>
-      {wants.length ? (
-      <div style={s.hScrollRail}>
-        {wants.map((w) => {
-          const body = (
-            <>
-              <div
-                style={{
-                  position: "relative",
-                  width: 110,
-                  height: 88,
-                  borderRadius: 12,
-                  overflow: "hidden",
-                  background: "#e7e5e4",
-                  marginBottom: 6,
-                }}
-              >
-                {w.photo_url ? (
-                  <img src={w.photo_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                ) : null}
-                {w.badge ? (
-                  <span
-                    style={{
-                      position: "absolute",
-                      left: 6,
-                      top: 6,
-                      background: s.FOREST,
-                      color: "#fff",
-                      fontSize: 10,
-                      fontWeight: 800,
-                      borderRadius: 999,
-                      padding: "2px 6px",
-                    }}
-                  >
-                    {w.badge}
-                  </span>
-                ) : null}
-              </div>
-              <div style={{ fontSize: 12, fontWeight: 700 }}>{w.food_name}</div>
-              {w.restaurant_name ? <div style={{ fontSize: 11, color: s.MUTED }}>{w.restaurant_name}</div> : null}
-            </>
-          );
-          if (w.href) {
-            return (
-              <Link
-                key={w.key}
-                to={w.href}
-                style={{ width: 110, flex: "0 0 auto", textDecoration: "none", color: "inherit" }}
-              >
-                {body}
-              </Link>
-            );
-          }
-          return (
-            <div key={w.key} style={{ width: 110, flex: "0 0 auto" }}>
-              {body}
-            </div>
-          );
-        })}
-      </div>
-      ) : null}
-    </section>
-  );
-}
+      ) : (
+        <div />
+      )}
 
-export function MonthInFoodPlansEvents({
-  plans = [],
-  events = [],
-  plansJoinDefault = false,
-  eventsJoinDefault = false,
-  crewsJoinDefault = false,
-  isSelf = false,
-}) {
-  if (!plans.length && !events.length && !isSelf) return null;
-  if (!plans.length && !events.length && isSelf && !crewsJoinDefault) {
-    return null;
-  }
-  const plan = plans[0];
-  return (
-    <section style={s.card} data-testid="month-in-food-plans-events">
-      <div style={s.sectionHead}>
-        <h2 style={s.sectionTitle}>Plans &amp; Events</h2>
-      </div>
-      {isSelf && crewsJoinDefault ? (
-        <p
-          style={{ margin: "0 0 10px", fontSize: 12, color: s.MUTED, fontWeight: 600 }}
-          data-testid="month-in-food-join-me-defaults"
-        >
-          Join Crew default: On · Join Me is set on each plan and event
-        </p>
-      ) : isSelf ? (
-        <p
-          style={{ margin: "0 0 10px", fontSize: 12, color: s.MUTED, fontWeight: 600 }}
-          data-testid="month-in-food-join-me-defaults"
-        >
-          Join Me is set on each plan and event
-        </p>
-      ) : null}
-      {plan ? (
-        <div style={{ marginBottom: 14 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: s.MUTED, marginBottom: 6 }}>My Eating Plans</div>
-          <div
-            style={{
-              display: "flex",
-              gap: 12,
-              background: s.CREAM,
-              borderRadius: 14,
-              padding: 12,
-              alignItems: "center",
-            }}
-          >
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontWeight: 800 }}>{plan.title || plan.restaurant_name || "Plan"}</div>
-              <div style={{ fontSize: 12, color: s.MUTED }}>{plan.plan_date}</div>
-              <div style={{ fontSize: 12, marginTop: 4 }}>
-                {plan.joinable
-                  ? "Join Me open"
-                  : plan.participant_count > 1
-                    ? `${plan.participant_count} going`
-                    : "Just me"}
-              </div>
-              {plan.href ? (
-                <Link to={plan.href} style={{ ...s.viewAll, display: "inline-block", marginTop: 8 }}>
-                  Open plan
-                </Link>
-              ) : null}
-            </div>
-            {plan.restaurant_logo_url ? (
-              <img
-                src={plan.restaurant_logo_url}
-                alt=""
-                style={{ width: 72, height: 72, borderRadius: 12, objectFit: "cover" }}
-              />
-            ) : null}
-          </div>
-        </div>
-      ) : null}
-      {events.length ? (
-        <div>
-          <div style={{ fontSize: 12, fontWeight: 700, color: s.MUTED, marginBottom: 6 }}>My Events</div>
-          <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
-            {events.map((ev) => (
+      {showPlans ? (
+        <div style={s.card} data-testid="month-in-food-plans-events">
+          <h3 style={{ ...s.sectionTitle, fontSize: 18, margin: 0 }}>Plans &amp; events</h3>
+          {isSelf ? (
+            <p
+              style={{ margin: "8px 0 0", fontSize: 12, color: "var(--mif-ink-soft, #5B5548)" }}
+              data-testid="month-in-food-join-me-defaults"
+            >
+              {crewsJoinDefault
+                ? "Join Crew default: On · Join Me is set on each plan and event"
+                : "Join Me is set on each plan and event"}
+            </p>
+          ) : null}
+          <ul style={{ listStyle: "none", margin: "12px 0 0", padding: 0 }}>
+            {plans.slice(0, 2).map((plan) => (
+              <li key={`p-${plan.id}`} style={{ padding: "10px 0", borderTop: "1px solid var(--mif-hairline, #DDD3BE)" }}>
+                <div
+                  style={{
+                    fontFamily: s.FONT_DISPLAY,
+                    color: "var(--mif-clay, #B6472F)",
+                    fontSize: 14,
+                    fontWeight: 600,
+                  }}
+                >
+                  {plan.plan_date || "Soon"}
+                </div>
+                <div style={{ fontWeight: 600, fontSize: 14 }}>{plan.title || plan.restaurant_name || "Plan"}</div>
+                <div style={{ fontSize: 12, color: "var(--mif-ink-soft, #5B5548)", marginTop: 2 }}>
+                  {plan.joinable ? "Join Me is open" : "Just me"}
+                </div>
+              </li>
+            ))}
+            {events.slice(0, 2).map((ev) => (
               <li
                 key={`${ev.kind || "event"}-${ev.id}`}
-                style={{
-                  display: "flex",
-                  gap: 10,
-                  alignItems: "center",
-                  padding: "10px 0",
-                  borderTop: `1px solid ${s.BORDER}`,
-                }}
+                style={{ padding: "10px 0", borderTop: "1px solid var(--mif-hairline, #DDD3BE)" }}
               >
                 <div
                   style={{
-                    background: s.FOREST,
-                    color: "#fff",
-                    borderRadius: 10,
-                    padding: "6px 8px",
-                    fontSize: 11,
-                    fontWeight: 800,
-                    textAlign: "center",
-                    minWidth: 48,
+                    fontFamily: s.FONT_DISPLAY,
+                    color: "var(--mif-clay, #B6472F)",
+                    fontSize: 14,
+                    fontWeight: 600,
                   }}
                 >
-                  {(ev.event_date || "").slice(5) || "Soon"}
+                  {ev.event_date || "Soon"}
                 </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 700, fontSize: 14 }}>{ev.title}</div>
-                  {ev.kind === "diner_social" && ev.join_me_open ? (
-                    <div style={{ fontSize: 11, color: s.MUTED }}>Join Me open</div>
-                  ) : null}
-                </div>
-                {ev.href ? (
-                  <Link to={ev.href} style={s.viewAll}>
-                    View
-                  </Link>
+                <div style={{ fontWeight: 600, fontSize: 14 }}>{ev.title}</div>
+                {ev.kind === "diner_social" && ev.join_me_open ? (
+                  <div style={{ fontSize: 12, color: "var(--mif-ink-soft, #5B5548)", marginTop: 2 }}>
+                    Join Me is open
+                  </div>
                 ) : null}
               </li>
             ))}
@@ -565,4 +508,17 @@ export function MonthInFoodPlansEvents({
       ) : null}
     </section>
   );
+}
+
+/** Donut sidebar removed in redesign. */
+export function MonthInFoodByTheNumbers() {
+  return null;
+}
+
+export function MonthInFoodWants(props) {
+  return <MonthInFoodCravingsPlans {...props} />;
+}
+
+export function MonthInFoodPlansEvents() {
+  return null;
 }

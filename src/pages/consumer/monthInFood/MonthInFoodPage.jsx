@@ -1,6 +1,7 @@
 /**
  * My Month in Food scoreboard — self + peer connects.
  * Routes: /my-menuply/month-in-food , /account/connections/:peerId/month-in-food
+ * Redesign: docs/architecture/2026-09-17_month-in-food-redesign-spec.md
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -12,15 +13,13 @@ import { useConsumer } from "../../../context/ConsumerContext.jsx";
 import { getMonthInFood, getPeerMonthInFood } from "../../../lib/consumerApi.js";
 import { buildMonthInFoodModel, shiftYm } from "./buildMonthInFoodModel.js";
 import {
-  MonthInFoodByTheNumbers,
+  MonthInFoodCravingsPlans,
   MonthInFoodHero,
   MonthInFoodHomeMeals,
   MonthInFoodMood,
   MonthInFoodMoments,
-  MonthInFoodPlansEvents,
   MonthInFoodStatsBar,
   MonthInFoodVisited,
-  MonthInFoodWants,
 } from "./MonthInFoodSections.jsx";
 import MonthInFoodFooter from "./MonthInFoodFooter.jsx";
 import {
@@ -100,7 +99,6 @@ export default function MonthInFoodPage() {
     ? `/account/connections/${encodeURIComponent(String(peerId))}/month-in-food?ym=${encodeURIComponent(ym)}`
     : `${MY_MENUPLY_MONTH_IN_FOOD_PATH}?ym=${encodeURIComponent(ym)}`;
 
-  // Share icon stays next to the page H1 (hero title row) — not sticky-header relocated.
   const shareData = useMemo(
     () =>
       buildConsumerPathShareData(sharePath, {
@@ -133,42 +131,22 @@ export default function MonthInFoodPage() {
             />
             <MonthInFoodStatsBar stats={model.stats} />
 
-            <div
-              style={{
-                ...s.columns,
-              }}
-              className="month-in-food-columns"
-            >
-              <div>
-                {!model.diaryVisible && isPeer ? (
-                  <p style={s.muted}>This diner keeps their food diary private.</p>
-                ) : null}
-                <MonthInFoodVisited visited={model.visited} />
-                <MonthInFoodHomeMeals homeMeals={model.homeMeals} />
-                <MonthInFoodMoments moments={model.moments} overflow={model.momentsOverflow} />
-                <MonthInFoodMood mood={model.mood} />
-              </div>
-              <div>
-                <MonthInFoodByTheNumbers
-                  totalMeals={model.totalMeals}
-                  cuisineSlices={model.cuisineSlices}
-                  miniStats={model.miniStats}
-                />
-                <MonthInFoodWants
-                  wants={model.wants}
-                  takeMeOutOpen={model.takeMeOutOpen}
-                  isSelf={model.isSelf}
-                />
-                <MonthInFoodPlansEvents
-                  plans={model.plans}
-                  events={model.events}
-                  plansJoinDefault={model.plansJoinDefault}
-                  eventsJoinDefault={model.eventsJoinDefault}
-                  crewsJoinDefault={model.crewsJoinDefault}
-                  isSelf={model.isSelf}
-                />
-              </div>
-            </div>
+            {!model.diaryVisible && isPeer ? (
+              <p style={s.muted}>This diner keeps their food diary private.</p>
+            ) : null}
+
+            <MonthInFoodVisited visited={model.visited} />
+            <MonthInFoodHomeMeals homeMeals={model.homeMeals} />
+            <MonthInFoodMood mood={model.mood} />
+            <MonthInFoodMoments moments={model.moments} overflow={model.momentsOverflow} />
+            <MonthInFoodCravingsPlans
+              wants={model.wants}
+              takeMeOutOpen={model.takeMeOutOpen}
+              isSelf={model.isSelf}
+              plans={model.plans}
+              events={model.events}
+              crewsJoinDefault={model.crewsJoinDefault}
+            />
 
             {model.showEmptyHint ? (
               <p style={{ ...s.muted, marginTop: 8 }}>
@@ -186,14 +164,40 @@ export default function MonthInFoodPage() {
         ) : null}
       </div>
       <style>{`
-        @media (min-width: 900px) {
-          .month-in-food-columns {
-            grid-template-columns: 1.15fr 0.85fr !important;
+        ${s.FONT_IMPORT}
+        [data-testid="month-in-food-page"] {
+          --mif-cream: #F7F2E7;
+          --mif-paper: #FFFDF8;
+          --mif-forest: #16302A;
+          --mif-moss: #4B6F55;
+          --mif-amber: #DE9E33;
+          --mif-clay: #B6472F;
+          --mif-ink: #231F19;
+          --mif-ink-soft: #5B5548;
+          --mif-hairline: #DDD3BE;
+        }
+        @media (prefers-color-scheme: dark) {
+          [data-testid="month-in-food-page"] {
+            --mif-cream: #171410;
+            --mif-paper: #1E1B16;
+            --mif-forest: #0F2620;
+            --mif-moss: #7FA085;
+            --mif-amber: #E7AC4C;
+            --mif-clay: #D9694C;
+            --mif-ink: #F1EBDD;
+            --mif-ink-soft: #B9AF9A;
+            --mif-hairline: #3A352A;
           }
-          [data-testid="month-in-food-hero"] {
-            grid-template-columns: 1fr 1fr !important;
-            align-items: end;
+        }
+        @media (max-width: 420px) {
+          .month-in-food-two-up {
+            grid-template-columns: 1fr !important;
           }
+        }
+        [data-testid="month-in-food-page"] button:focus-visible,
+        [data-testid="month-in-food-page"] a:focus-visible {
+          outline: 2px solid var(--mif-amber, #DE9E33);
+          outline-offset: 2px;
         }
       `}</style>
       <BottomNav />

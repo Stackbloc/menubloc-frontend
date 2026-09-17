@@ -123,6 +123,19 @@ function formatRestaurantSpend(dollars) {
   return `$${n.toFixed(n % 1 === 0 ? 0 : 2)}`;
 }
 
+/** "Sept 16" short date for @home / Moments captions. */
+export function formatShortMonthDay(raw) {
+  const value = String(raw || "").trim();
+  if (!value) return null;
+  const m = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!m) return value;
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"];
+  const monthIdx = Number(m[2]) - 1;
+  const day = Number(m[3]);
+  if (monthIdx < 0 || monthIdx > 11 || !Number.isFinite(day)) return value;
+  return `${months[monthIdx]} ${day}`;
+}
+
 /**
  * @param {object} payload - API response from getMonthInFood
  */
@@ -172,18 +185,21 @@ export function buildMonthInFoodModel(payload = {}) {
         .map((row) => row.food_name || row.item_name || row.homemade_dish_name || "")
         .filter(Boolean);
       const first = items[0] || {};
+      const eatenOn = meal.eaten_on || first.eaten_on || null;
+      const periodRaw = String(meal.meal_period || first.meal_period || "").trim();
       homeMeals.push({
         key: `home-${meal.id || first.id || names.join("-")}`,
         food_name: names.join(" · ") || "Home meal",
         portion_amount: first.portion_amount ?? null,
         portion_unit: first.portion_unit || null,
-        meal_period: meal.meal_period || first.meal_period || null,
+        meal_period: periodRaw ? periodRaw.toLowerCase() : null,
         photo_url: mediaUrl(
           items.find((r) => r.photo_url || r.item_photo_url)?.photo_url ||
             items.find((r) => r.item_photo_url)?.item_photo_url
         ),
         href: first.href || null,
-        eaten_on: meal.eaten_on || first.eaten_on || null,
+        eaten_on: eatenOn,
+        eaten_on_label: formatShortMonthDay(eatenOn),
       });
     } else if (meal.restaurant_id || items.some((r) => r.restaurant_id)) {
       const restRow = items.find((r) => r.restaurant_id) || meal;
@@ -221,7 +237,23 @@ export function buildMonthInFoodModel(payload = {}) {
       const img = mediaUrl(row.photo_url || row.item_photo_url);
       if (img || row.video_url) {
         mediaMealCount += 1;
-        if (img) momentUrls.push({ key: `d-${row.id}`, url: img, label: name });
+        if (img) {
+          const place =
+            row.restaurant_name ||
+            (isHomeMeal(row) ? "@home" : null) ||
+            name ||
+            null;
+          momentUrls.push({
+            key: `d-${row.id}`,
+            url: img,
+            label: name,
+            place,
+            date: formatShortMonthDay(row.eaten_on || meal.eaten_on),
+            caption: [place, formatShortMonthDay(row.eaten_on || meal.eaten_on)]
+              .filter(Boolean)
+              .join(" · "),
+          });
+        }
       }
     }
   }
@@ -247,41 +279,50 @@ export function buildMonthInFoodModel(payload = {}) {
 
   const restaurantSpendLabel = formatRestaurantSpend(payload.restaurant_spend_dollars);
 
+  // Spec: exactly 6 stats (3×2). Restaurant $ lives on Food Mood, not here.
   const stats = [];
   if (diaryVisible) {
     const dishesCount = restaurantDishesCount + homemadeDishesCount;
-    stats.push({ id: "meals", label: "Meals Logged", value: mealsLogged, icon: "fork" });
-    stats.push({ id: "dishes", label: "Dishes", value: dishesCount, icon: "dishes" });
-    stats.push({ id: "restaurants", label: "Restaurants", value: restaurantIds.size, icon: "store" });
-    if (restaurantSpendLabel) {
-      stats.push({ id: "spend", label: "Restaurant $", value: restaurantSpendLabel, icon: "cash" });
-    }
-    if (homeMealsCount > 0) {
-      stats.push({ id: "home", label: "@home Meals", value: homeMealsCount, icon: "home" });
-    }
-    stats.push({ id: "media", label: "Photos & Videos", value: mediaMealCount, icon: "camera" });
-    if (momentsShared > 0) {
-      stats.push({ id: "moments", label: "Moments Shared", value: momentsShared, icon: "people" });
-    }
-    if (likesInMonth > 0) {
-      stats.push({ id: "favorites", label: "New Favorites", value: likesInMonth, icon: "flame" });
-    }
+    stats.push({ id: "dishes", label: "Dishes", value: dishesCount });
+    stats.push({ id: "restaurants", label: "Restaurants", value: restaurantIds.size });
+    stats.push({ id: "home", label: "@home meals", value: homeMealsCount });
+    stats.push({ id: "media", label: "Photos & videos", value: mediaMealCount });
+    stats.push({ id: "moments", label: "Moments shared", value: momentsShared });
+    stats.push({ id: "meals", label: "Total meals", value: mealsLogged });
   }
 
-  const visited = [...restaurantMap.values()].slice(0, 12);
-  const momentsVisible = momentUrls.slice(0, 6);
+  const visited = [...restaurantMap.values()].slice(0, 12).map((r, idx) => ({
+    ...r,
+    monogram: String(r.name || "?").trim().charAt(0).toUpperCase() || "?",
+    monogramColor: ["#16302A", "#4B6F55", "#DE9E33", "#B6472F", "#5B5548", "#2F4A3E"][idx % 6],
+  }));
+  const momentsVisible = momentUrls.slice(0, 8);
   const momentsOverflow = Math.max(0, momentUrls.length - momentsVisible.length);
+  const heroCollage = momentUrls.length >= 2 ? momentUrls.slice(0, 2) : [];
 
   let mood = null;
-  if (mealsLogged >= 3) {
+  if (mealsLogged >= 3 || restaurantSpendLabel) {
     const distinctCuisines = cuisineCounts.size;
     const moodLabel =
-      distinctCuisines >= 3 ? "Adventurous" : distinctCuisines >= 2 ? "Curious" : "Comfort";
+      mealsLogged >= 3
+        ? distinctCuisines >= 3
+          ? "Adventurous"
+          : distinctCuisines >= 2
+            ? "Curious"
+            : "Comfort"
+        : null;
     mood = {
       label: moodLabel,
-      mostLogged: modeCount(foodNames.filter((n) => !DRINK_RE.test(n))) || modeCount(foodNames),
-      drinkOfChoice: modeCount(drinkNames),
-      goToSpot: modeCount([...restaurantMap.values()].map((r) => r.place || r.name)),
+      mostLogged:
+        mealsLogged >= 3
+          ? modeCount(foodNames.filter((n) => !DRINK_RE.test(n))) || modeCount(foodNames)
+          : null,
+      drinkOfChoice: mealsLogged >= 3 ? modeCount(drinkNames) : null,
+      goToSpot:
+        mealsLogged >= 3
+          ? modeCount([...restaurantMap.values()].map((r) => r.place || r.name))
+          : null,
+      restaurantSpend: restaurantSpendLabel,
     };
   }
 
@@ -305,14 +346,6 @@ export function buildMonthInFoodModel(payload = {}) {
   if (snackOtherCount > 0) {
     miniStats.push({ id: "snack_other", label: "Snacks & Other", value: snackOtherCount });
   }
-
-  const diaryHero = diary.find((d) => mediaUrl(d.photo_url));
-  const pinnedHero = profileMedia.find((m) => m.is_highlight && m.media_url);
-  const heroImage =
-    mediaUrl(diaryHero?.photo_url) ||
-    mediaUrl(pinnedHero?.media_url) ||
-    mediaUrl(profileMedia.find((m) => m.media_url)?.media_url) ||
-    null;
 
   const intentCards = diningIntents.slice(0, 8).map((w) => ({
     key: `di-${w.id}`,
@@ -349,7 +382,8 @@ export function buildMonthInFoodModel(payload = {}) {
     diaryVisible,
     subject: payload.subject || null,
     tagline: "Great food. Good people. Unforgettable moments.",
-    heroImage,
+    heroCollage,
+    mealsLogged,
     stats,
     visited,
     homeMeals: homeMeals.slice(0, 8),
@@ -361,6 +395,8 @@ export function buildMonthInFoodModel(payload = {}) {
     homemadeDishesCount,
     homeMealsCount,
     restaurantDishesCount: Number.isFinite(restaurantDishesCount) ? restaurantDishesCount : null,
+    restaurantSpendLabel,
+    likesInMonth,
     miniStats,
     wants: cravingCards,
     plans: planCards,

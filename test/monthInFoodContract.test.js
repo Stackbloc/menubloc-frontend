@@ -47,7 +47,7 @@ test("footer Copy Link keeps placement; shareUtils + ShareModal for menuply.com 
   const footer = read("src/pages/consumer/monthInFood/MonthInFoodFooter.jsx");
   assert.match(footer, /buildConsumerPathShareData/);
   assert.match(footer, /ShareModal/);
-  assert.match(footer, /Copy Link/);
+  assert.match(footer, /Copy [Ll]ink/);
   assert.match(footer, /data-testid="month-in-food-footer-share"/);
   assert.doesNotMatch(footer, /buildMenuplyPathShareData/);
   assert.doesNotMatch(footer, /diningCrewInviteShare/);
@@ -106,9 +106,11 @@ test("buildMonthInFoodModel empty month hides cuisine and mood", () => {
   assert.equal(model.mood, null);
   assert.deepEqual(model.cuisineSlices, []);
   assert.equal(model.showEmptyHint, true);
+  assert.equal(model.stats.length, 6);
   assert.ok(model.stats.some((s) => s.id === "meals" && s.value === 0));
   assert.ok(model.stats.some((s) => s.id === "dishes" && s.value === 0));
-  assert.ok(!model.stats.some((s) => s.id === "home"));
+  assert.ok(model.stats.some((s) => s.id === "home" && s.value === 0));
+  assert.ok(!model.stats.some((s) => s.id === "spend"));
 });
 
 test("buildMonthInFoodModel counts multi-item meal as one Meals Logged occasion", () => {
@@ -220,13 +222,15 @@ test("buildMonthInFoodModel counts @home meals and Take Me Out status", () => {
   assert.equal(model.crewsJoinDefault, false);
   assert.ok(model.miniStats.some((s) => s.id === "snack_other" && s.value === 1));
   assert.equal(model.moments[0].url, "https://example.com/home.jpg");
+  assert.equal(model.stats.length, 6);
+  assert.ok(!model.stats.some((s) => s.id === "spend"));
 });
 
 test("Month in Food surfaces @home + Take Me Out + Join Me defaults", () => {
   const sections = read("src/pages/consumer/monthInFood/MonthInFoodSections.jsx");
   const page = read("src/pages/consumer/monthInFood/MonthInFoodPage.jsx");
   assert.match(sections, /MonthInFoodHomeMeals/);
-  assert.match(sections, /Moments To Remember/);
+  assert.match(sections, /Moments to remember/);
   assert.doesNotMatch(page, /MonthInFoodHighlights/);
   assert.doesNotMatch(sections, /Top Highlights/);
   assert.match(sections, /month-in-food-take-me-out-status/);
@@ -237,6 +241,10 @@ test("Month in Food surfaces @home + Take Me Out + Join Me defaults", () => {
   assert.match(page, /MonthInFoodHomeMeals/);
   assert.match(page, /takeMeOutOpen/);
   assert.match(page, /crewsJoinDefault/);
+  assert.match(page, /MonthInFoodCravingsPlans/);
+  assert.doesNotMatch(page, /month-in-food-columns/);
+  assert.match(sections, /month-in-food-restaurant-spend/);
+  assert.match(sections, /Restaurants I visited/);
 });
 
 test("Eating compose enforces Where before What for ate", () => {
@@ -294,7 +302,8 @@ test("buildMonthInFoodModel hides cuisine chart with single cuisine", () => {
   assert.equal(model.cuisineSlices.length, 0);
   assert.ok(model.mood);
   assert.equal(model.mood.drinkOfChoice, "Iced Latte");
-  assert.ok(model.stats.some((s) => s.id === "favorites" && s.value === 2));
+  assert.equal(model.stats.length, 6);
+  assert.ok(!model.stats.some((s) => s.id === "favorites"));
   assert.ok(model.moments.length >= 1);
 });
 
@@ -320,13 +329,11 @@ test("hidden diary yields no meal stats for peer", () => {
 
 test("profile vocabulary: Wanna Eat label + Plans & Events sections", () => {
   const sections = read("src/pages/consumer/monthInFood/MonthInFoodSections.jsx");
-  assert.match(sections, /What I Wanna Eat/);
+  assert.match(sections, /What I wanna eat/);
   assert.match(sections, /Cravings/);
   assert.doesNotMatch(sections, /What I Want To Eat/);
-  assert.match(sections, /Plans &amp; Events|Plans & Events/);
-  assert.match(sections, /My Eating Plans/);
-  assert.match(sections, /My Events/);
-  assert.match(sections, /Join Me open/);
+  assert.match(sections, /Plans &amp; events|Plans & events/);
+  assert.match(sections, /Join Me is open/);
   assert.doesNotMatch(sections, /Connections & Events/);
   assert.doesNotMatch(sections, /Events I&apos;m Excited For/);
 });
@@ -376,11 +383,26 @@ test("buildMonthInFoodModel uses month diary for Moments and Wanna Go intents", 
   });
   assert.equal(model.moments[0].url, "https://example.com/diary.jpg");
   assert.ok(!model.moments.some((m) => m.url === "https://example.com/pin.jpg"));
-  assert.equal(model.visited[0].image, "https://example.com/billboard.jpg");
-  assert.ok(model.stats.some((s) => s.id === "spend" && s.value === "$12.50"));
+  assert.equal(model.visited[0].monogram, "F");
+  assert.ok(model.mood?.restaurantSpend === "$12.50");
+  assert.ok(!model.stats.some((s) => s.id === "spend"));
+  assert.equal(model.stats.length, 6);
   assert.equal(model.wants[0].kind, "dining_intent");
   assert.equal(model.wants[0].badge, "Wanna Go!");
   assert.equal(model.wants[1].kind, "want");
   assert.equal(model.plans[0].joinable, true);
-  assert.equal(model.heroImage, "https://example.com/diary.jpg");
+  assert.equal(model.heroCollage.length, 0);
+});
+
+test("Month in Food redesign: even stats, spend on mood, no giant hero", () => {
+  const sections = read("src/pages/consumer/monthInFood/MonthInFoodSections.jsx");
+  const styles = read("src/pages/consumer/monthInFood/monthInFoodStyles.js");
+  const page = read("src/pages/consumer/monthInFood/MonthInFoodPage.jsx");
+  assert.match(styles, /maxWidth: 600/);
+  assert.match(styles, /Fraunces/);
+  assert.match(styles, /Public Sans/);
+  assert.match(sections, /month-in-food-hero-collage/);
+  assert.match(sections, /Restaurant spend/);
+  assert.match(page, /MonthInFoodCravingsPlans/);
+  assert.doesNotMatch(sections, /heroImg/);
 });
