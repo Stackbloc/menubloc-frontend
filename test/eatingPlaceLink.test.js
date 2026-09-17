@@ -3,14 +3,22 @@ import assert from "node:assert/strict";
 import {
   dishPhotoUrl,
   eatingFoodName,
+  formatHomemadePlaceLabel,
   joinHomemadeComment,
   splitHomemadeComment,
 } from "../src/lib/eatingPlaceLink.js";
 
 test("homemade comment round-trips and food name stays optional", () => {
+  assert.deepEqual(splitHomemadeComment("@home"), { homemade: true, recipe: "" });
   assert.deepEqual(splitHomemadeComment("Homemade"), { homemade: true, recipe: "" });
-  assert.equal(joinHomemadeComment(true, "grandma chili"), "Homemade. grandma chili");
-  assert.equal(eatingFoodName({ text: "", homemade: true }), "Homemade");
+  assert.deepEqual(splitHomemadeComment("@home: Thanksgiving dinner"), {
+    homemade: true,
+    recipe: "Thanksgiving dinner",
+  });
+  assert.equal(joinHomemadeComment(true, "grandma chili"), "@home: grandma chili");
+  assert.equal(formatHomemadePlaceLabel("Homemade. Thanksgiving dinner"), "@home: Thanksgiving dinner");
+  assert.equal(formatHomemadePlaceLabel("@home. Thanksgiving dinner"), "@home: Thanksgiving dinner");
+  assert.equal(eatingFoodName({ text: "", homemade: true }), "@home");
   assert.equal(
     eatingFoodName({ text: "", dish: { item_name: "Fries" }, homemade: false }),
     "Fries"

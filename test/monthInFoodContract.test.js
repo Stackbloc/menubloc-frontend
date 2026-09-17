@@ -219,14 +219,14 @@ test("buildMonthInFoodModel counts @home meals and Take Me Out status", () => {
   assert.equal(model.eventsJoinDefault, false);
   assert.equal(model.crewsJoinDefault, false);
   assert.ok(model.miniStats.some((s) => s.id === "snack_other" && s.value === 1));
-  assert.equal(model.highlights[0].sublabel, "@Home");
+  assert.equal(model.highlights[0].sublabel, "@home");
 });
 
-test("Month in Food surfaces @Home + Take Me Out + Join Me defaults", () => {
+test("Month in Food surfaces @home + Take Me Out + Join Me defaults", () => {
   const sections = read("src/pages/consumer/monthInFood/MonthInFoodSections.jsx");
   const page = read("src/pages/consumer/monthInFood/MonthInFoodPage.jsx");
   assert.match(sections, /MonthInFoodHomeMeals/);
-  assert.match(sections, /@Home Meals/);
+  assert.match(sections, /@home Meals/);
   assert.match(sections, /month-in-food-take-me-out-status/);
   assert.match(sections, /Take Me Out is/);
   assert.match(sections, /month-in-food-join-me-defaults/);

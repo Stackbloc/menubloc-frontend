@@ -188,7 +188,7 @@ export default function HomemadeDishDetailPage() {
   if (loading) {
     return (
       <div style={{ padding: 24, maxWidth: 720, margin: "0 auto" }}>
-        <StickyPageHeader title="Homemade" />
+        <StickyPageHeader title="@home" />
         <p>Loading…</p>
         <BottomNav />
       </div>
@@ -198,8 +198,8 @@ export default function HomemadeDishDetailPage() {
   if (error || !dish) {
     return (
       <div style={{ padding: 24, maxWidth: 720, margin: "0 auto" }}>
-        <StickyPageHeader title="Homemade" backTo="/search" />
-        <p>{error || "Homemade dish not found."}</p>
+        <StickyPageHeader title="@home" backTo="/search" />
+        <p>{error || "@home dish not found."}</p>
         <BottomNav />
       </div>
     );
@@ -210,11 +210,11 @@ export default function HomemadeDishDetailPage() {
 
   return (
     <div style={{ padding: "0 16px calc(var(--bottom-nav-h, 72px) + 16px)", maxWidth: 720, margin: "0 auto" }} data-testid="homemade-dish-detail">
-      <StickyPageHeader title="Homemade" backTo="/search" />
+      <StickyPageHeader title="@home" backTo="/search" />
 
       <div style={{ marginTop: 12 }}>
         <span style={{ display: "inline-block", fontSize: 11, fontWeight: 800, letterSpacing: "0.06em", textTransform: "uppercase", color: "#15803d", background: "#dcfce7", padding: "4px 10px", borderRadius: 999 }}>
-          Homemade
+          @home
         </span>
         <h1 style={{ fontSize: 28, fontWeight: 800, margin: "10px 0 4px", fontFamily: 'Georgia, "Times New Roman", serif' }}>
           {dish.name}

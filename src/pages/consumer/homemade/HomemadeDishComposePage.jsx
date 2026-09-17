@@ -54,7 +54,7 @@ export default function HomemadeDishComposePage() {
   if (!authLoading && !consumer) {
     return (
       <div style={s.page}>
-        <StickyPageHeader title="Create Homemade Dish" backTo="/my-menuply" />
+        <StickyPageHeader title="Create @home dish" backTo="/my-menuply" />
         <p style={{ marginTop: 24 }}>Sign in to share how you make it.</p>
         <Link to={`/account/login?next=${encodeURIComponent("/my-menuply/homemade/create")}`}>
           Sign in
@@ -129,7 +129,7 @@ export default function HomemadeDishComposePage() {
 
   return (
     <div style={s.page} data-testid="homemade-dish-compose">
-      <StickyPageHeader title="Create Homemade Dish" backTo="/my-menuply" />
+      <StickyPageHeader title="Create @home dish" backTo="/my-menuply" />
       <p style={{ ...s.lead, color: "#334155", marginTop: 16, marginBottom: 20 }}>
         Share structured ingredients and how you make it — not a separate recipe app.
       </p>
@@ -251,7 +251,7 @@ export default function HomemadeDishComposePage() {
             opacity: busy || !name.trim() ? 0.6 : 1,
           }}
         >
-          {busy ? "Publishing…" : "Publish Homemade Dish"}
+          {busy ? "Publishing…" : "Publish @home dish"}
         </button>
       </form>
       <BottomNav />

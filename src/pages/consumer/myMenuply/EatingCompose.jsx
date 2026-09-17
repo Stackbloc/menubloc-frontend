@@ -525,7 +525,7 @@ export default function EatingCompose({
       : String(dish?.item_name || "").trim() ||
         String(restaurant?.restaurant_name || "").trim() ||
         value ||
-        (feedHomemade ? "Homemade" : "Food");
+        (feedHomemade ? "@home" : "Food");
     const feedItems = [
       {
         food_name: feedPrimary,
@@ -800,7 +800,7 @@ export default function EatingCompose({
                   }}
                   onClick={() => selectWhere("home")}
                 >
-                  @Home
+                  @home
                 </button>
               </div>
               <p style={styles.hint}>
@@ -934,7 +934,7 @@ export default function EatingCompose({
                 </select>
                 {cuisinesError ? <p style={styles.hint}>{cuisinesError}</p> : null}
                 <p style={styles.hint}>
-                  Homemade / @ home cuisine signal — e.g. 🍣 Sushi @ Home when you add video.
+                  @home cuisine signal — e.g. 🍣 Sushi @home when you add video.
                 </p>
               </div>
             ) : null}
@@ -1168,7 +1168,7 @@ export default function EatingCompose({
                       setDish(null);
                     }}
                   >
-                    @Home
+                    @home
                   </button>
                 </div>
               </div>

@@ -1,6 +1,6 @@
 /**
  * Optional restaurant + dish, or homemade (no restaurant/dish).
- * Restaurant first, then that restaurant's dishes. Homemade is last.
+ * Restaurant first, then that restaurant's dishes. @home is last.
  */
 
 import { useEffect, useState } from "react";
@@ -156,7 +156,7 @@ export default function EatingPlaceFields({
               setHits([]);
             }}
           >
-            Homemade
+            @home
           </button>
         ) : null}
         {homemade || restaurant ? (
@@ -177,7 +177,7 @@ export default function EatingPlaceFields({
 
       {homemade ? (
         <p style={s.muted} data-testid="eating-place-homemade-note">
-          Homemade — no restaurant or dish.
+          @home — no restaurant or dish.
         </p>
       ) : (
         <>

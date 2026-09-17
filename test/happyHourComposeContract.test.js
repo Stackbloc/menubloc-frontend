@@ -22,12 +22,12 @@ test("Happy Hour intents live in shared eatingHubUtils", () => {
   assert.match(lib, /I'm going to Happy Hour today/);
 });
 
-test("EatingCompose Where order is Restaurant → Happy Hour → @Home", () => {
+test("EatingCompose Where order is Restaurant → Happy Hour → @home", () => {
   const compose = read("src/pages/consumer/myMenuply/EatingCompose.jsx");
   const rest = compose.indexOf('data-testid="ate-where-restaurant"');
   const hh = compose.indexOf('data-testid="ate-where-happy-hour"');
   const home = compose.indexOf('data-testid="ate-where-home"');
-  assert.ok(rest > 0 && hh > rest && home > hh, "chip order Restaurant → Happy Hour → @Home");
+  assert.ok(rest > 0 && hh > rest && home > hh, "chip order Restaurant → Happy Hour → @home");
   assert.match(compose, /ate-happy-hour-intents/);
   assert.match(compose, /ate-happy-hour-\$\{intent\.id\}/);
   assert.match(compose, /whereType === "happy_hour"/);

@@ -43,7 +43,7 @@ export async function postFeedAteVideo({
   const menuItemId = homemade ? null : dish?.menu_item_id || undefined;
   const note = String(text || "").trim();
   const foodName = homemade
-    ? note || "Homemade"
+    ? note || "@home"
     : String(dish?.item_name || "").trim() ||
       String(restaurant?.restaurant_name || "").trim() ||
       note ||
@@ -189,7 +189,7 @@ export async function postGuestFeedAteVideo(payload, { legalConsent, onUploadPro
   const menuItemId = homemade ? null : payload.dish?.menu_item_id;
   const note = String(payload.text || "").trim();
   const foodName = homemade
-    ? note || "Homemade"
+    ? note || "@home"
     : String(payload.dish?.item_name || "").trim() ||
       String(payload.restaurant?.restaurant_name || "").trim() ||
       note ||

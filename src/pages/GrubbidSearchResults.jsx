@@ -3346,7 +3346,7 @@ export default function GrubbidSearchResults({ embedInFeedShell = false } = {}) 
 
       {!loading && !err && include_homemade && homemadeDishes.length > 0 ? (
         <>
-          <SectionTitle style={{ color: "#0B0F0C", marginTop: 16 }}>Homemade</SectionTitle>
+          <SectionTitle style={{ color: "#0B0F0C", marginTop: 16 }}>@home</SectionTitle>
           <div>
             {homemadeDishes.map((row) => (
               <HomemadeDishSearchCard key={`hd-${row.id || row.homemade_dish_id}`} row={row} />

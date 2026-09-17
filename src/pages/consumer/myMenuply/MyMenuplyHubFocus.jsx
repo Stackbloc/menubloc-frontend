@@ -126,7 +126,9 @@ function DishesList({ liked, eating, homeDishes = [] }) {
     .map((row) => ({
       key: `eat-${row.entry_id || row.id}`,
       label: row.food_name || row.item_name || "Food",
-      sub: row.restaurant_name || (String(row.comment || "").startsWith("Homemade") ? "Home" : ""),
+      sub:
+        row.restaurant_name ||
+        (/^(@home|Homemade)/i.test(String(row.comment || "")) ? "@home" : ""),
       href: foodHref(row),
     }));
   const fromHome = (homeDishes || []).map((dish) => {

@@ -199,7 +199,7 @@ export function MonthInFoodHomeMeals({ homeMeals = [] }) {
           >
             Where
           </div>
-          <h2 style={{ ...s.sectionTitle, margin: 0 }}>@Home Meals</h2>
+          <h2 style={{ ...s.sectionTitle, margin: 0 }}>@home Meals</h2>
         </div>
         <Link to={myMenuplyProfileHref({ compose: "ate" })} style={s.viewAll}>
           Log meal

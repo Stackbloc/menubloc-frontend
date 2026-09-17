@@ -4,6 +4,7 @@ import {
   WHAT_I_ATE_MEAL_PERIODS,
 } from "../../../lib/whatIAteTodayMealPeriod.js";
 import { calendarDayYmd, planYmd } from "../../../lib/calendarDayYmd.js";
+import { formatHomemadePlaceLabel, splitHomemadeComment } from "../../../lib/eatingPlaceLink.js";
 
 const MEAL_LABELS = new Set(WHAT_I_ATE_MEAL_PERIODS.map((p) => p.label.toLowerCase()));
 
@@ -218,6 +219,7 @@ export function futurePlanRestaurantName(plan) {
   if (named) return named;
   const place = String(plan?.place_label || "").trim();
   if (!place) return "Restaurant";
+  if (splitHomemadeComment(place).homemade) return formatHomemadePlaceLabel(place);
   const parts = place.split(" · ").map((part) => part.trim()).filter(Boolean);
   const rest = parts.find((part) => !MEAL_LABELS.has(part.toLowerCase()));
   return rest || place;

@@ -17,7 +17,7 @@ export default function HomemadeDishSearchCard({ row, onClick }) {
     >
       <div style={{ flex: 1, minWidth: 0 }}>
         <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.06em", textTransform: "uppercase", color: "#15803d" }}>
-          Homemade
+          @home
         </span>
         <h3 style={{ margin: "4px 0", fontSize: 16, fontWeight: 700 }}>
           <Link

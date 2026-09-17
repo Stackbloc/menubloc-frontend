@@ -181,7 +181,7 @@ function planToEditPrefill(plan) {
   const place = String(plan.place_label || plan.restaurant_name || "").trim();
   const split = splitHomemadeComment(place);
   const homemade =
-    split.homemade || (!plan.restaurant_id && /^Homemade/i.test(place));
+    split.homemade || (!plan.restaurant_id && /^(@home|Homemade)/i.test(place));
   const { notes } = futurePlanDetailParts(plan);
   const audience = String(plan.join_audience || "").toLowerCase();
   return {
@@ -1044,7 +1044,7 @@ export default function MyMenuplyPage() {
         foodName = String(dish?.item_name || note || "").trim();
       } else if (!signal) {
         foodName = homemade || resolvedWhere === "home"
-          ? note || "Homemade"
+          ? note || "@home"
           : String(dish?.item_name || "").trim() ||
             String(restaurant?.restaurant_name || "").trim() ||
             note ||

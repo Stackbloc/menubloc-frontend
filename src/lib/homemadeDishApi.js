@@ -119,11 +119,11 @@ export function homemadeDishPath(id) {
 
 export function buildHomemadeDishShareData(dish) {
   const id = dish?.id || dish?.homemade_dish_id;
-  const name = dish?.name || "Homemade dish";
+  const name = dish?.name || "@home dish";
   const path = homemadeDishPath(id);
   return {
-    title: `${name} — Homemade on Menuply`,
-    text: `Check out this homemade dish: ${name}`,
+    title: `${name} — @home on Menuply`,
+    text: `Check out this @home dish: ${name}`,
     url: `https://menuply.com${path}`,
     imageUrl: dish?.photo_url || null,
   };

@@ -132,7 +132,7 @@ function buildHighlights({ diary = [], profileMedia = [] }) {
     .map((row) => ({
       key: `h-${row.id}`,
       label: row.food_name || row.item_name || row.homemade_dish_name || "Meal",
-      sublabel: isHomeMeal(row) ? "@Home" : row.restaurant_name || "",
+      sublabel: isHomeMeal(row) ? "@home" : row.restaurant_name || "",
       image: mediaUrl(row.photo_url),
       href: row.href || (row.menu_item_id ? `/menu-items/${row.menu_item_id}` : null),
       source: "diary",
@@ -152,7 +152,7 @@ function buildHighlights({ diary = [], profileMedia = [] }) {
   return diary.slice(0, 3).map((row) => ({
     key: `h-${row.id}`,
     label: row.food_name || row.item_name || "Meal",
-    sublabel: isHomeMeal(row) ? "@Home" : row.restaurant_name || "",
+    sublabel: isHomeMeal(row) ? "@home" : row.restaurant_name || "",
     image: mediaUrl(row.photo_url),
     href: row.href || null,
     source: "diary",
@@ -283,7 +283,7 @@ export function buildMonthInFoodModel(payload = {}) {
     stats.push({ id: "dishes", label: "Dishes", value: dishesCount, icon: "dishes" });
     stats.push({ id: "restaurants", label: "Restaurants", value: restaurantIds.size, icon: "store" });
     if (homeMealsCount > 0) {
-      stats.push({ id: "home", label: "@Home Meals", value: homeMealsCount, icon: "home" });
+      stats.push({ id: "home", label: "@home Meals", value: homeMealsCount, icon: "home" });
     }
     stats.push({ id: "media", label: "Photos & Videos", value: mediaMealCount, icon: "camera" });
     if (momentsShared > 0) {
@@ -328,7 +328,7 @@ export function buildMonthInFoodModel(payload = {}) {
   const miniStats = [];
   if (coffeeCups > 0) miniStats.push({ id: "coffee", label: "Cups", value: coffeeCups, hint: "coffee" });
   if (newRestaurants > 0) miniStats.push({ id: "new_r", label: "New Restaurants", value: newRestaurants });
-  if (homeMealsCount > 0) miniStats.push({ id: "home_m", label: "@Home", value: homeMealsCount });
+  if (homeMealsCount > 0) miniStats.push({ id: "home_m", label: "@home", value: homeMealsCount });
   if (snackOtherCount > 0) {
     miniStats.push({ id: "snack_other", label: "Snacks & Other", value: snackOtherCount });
   }

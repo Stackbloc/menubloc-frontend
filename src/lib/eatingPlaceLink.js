@@ -1,25 +1,50 @@
-/** Optional restaurant / menu-item / homemade tagging for eating logs. */
+/** Optional restaurant / menu-item / @home tagging for eating logs. */
 
-export const HOMEMADE_PREFIX = "Homemade";
+export const HOMEMADE_PREFIX = "@home";
+/** Legacy stored place_label / comment prefixes — still recognized on read. */
+export const HOMEMADE_PREFIX_LEGACY = "Homemade";
+
+function matchHomemadePrefix(raw) {
+  const text = String(raw || "").trim();
+  if (!text) return null;
+  for (const prefix of [HOMEMADE_PREFIX, HOMEMADE_PREFIX_LEGACY]) {
+    if (text === prefix || text === `${prefix}:` || text === `${prefix}.`) {
+      return { prefix, recipe: "" };
+    }
+    if (text.startsWith(`${prefix}: `)) {
+      return { prefix, recipe: text.slice(prefix.length + 2).trim() };
+    }
+    if (text.startsWith(`${prefix}. `)) {
+      return { prefix, recipe: text.slice(prefix.length + 2).trim() };
+    }
+    if (text.startsWith(`${prefix} `)) {
+      return { prefix, recipe: text.slice(prefix.length).trim() };
+    }
+  }
+  return null;
+}
 
 export function splitHomemadeComment(comment) {
-  const raw = String(comment || "").trim();
-  if (!raw) return { homemade: false, recipe: "" };
-  if (raw === HOMEMADE_PREFIX) return { homemade: true, recipe: "" };
-  if (raw.startsWith(`${HOMEMADE_PREFIX}. `)) {
-    return { homemade: true, recipe: raw.slice(HOMEMADE_PREFIX.length + 2).trim() };
+  const matched = matchHomemadePrefix(comment);
+  if (!matched) {
+    const raw = String(comment || "").trim();
+    return { homemade: false, recipe: raw };
   }
-  if (raw.startsWith(`${HOMEMADE_PREFIX} `)) {
-    return { homemade: true, recipe: raw.slice(HOMEMADE_PREFIX.length).trim() };
-  }
-  return { homemade: false, recipe: raw };
+  return { homemade: true, recipe: matched.recipe };
 }
 
 export function joinHomemadeComment(homemade, recipe) {
   const note = String(recipe || "").trim();
-  if (homemade && note) return `${HOMEMADE_PREFIX}. ${note}`;
+  if (homemade && note) return `${HOMEMADE_PREFIX}: ${note}`;
   if (homemade) return HOMEMADE_PREFIX;
   return note;
+}
+
+/** Display place_label with current @home: prefix (rewrites legacy Homemade. / @home.). */
+export function formatHomemadePlaceLabel(comment) {
+  const split = splitHomemadeComment(comment);
+  if (!split.homemade) return String(comment || "").trim();
+  return joinHomemadeComment(true, split.recipe);
 }
 
 export function dishPhotoUrl(dish) {
@@ -32,7 +57,7 @@ export function eatingFoodName({ text, dish, restaurant, homemade }) {
   if (named) return named;
   const dishName = String(dish?.item_name || "").trim();
   if (dishName) return dishName;
-  if (homemade) return "Homemade";
+  if (homemade) return HOMEMADE_PREFIX;
   const place = String(restaurant?.restaurant_name || "").trim();
   return place || "Food";
 }

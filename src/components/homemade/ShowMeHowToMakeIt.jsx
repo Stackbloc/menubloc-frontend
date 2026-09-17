@@ -51,7 +51,7 @@ export default function ShowMeHowToMakeIt({ menuItemId, menuItemName }) {
         >
           <span style={{ fontWeight: 700, color: "#14532d" }}>Show Me How to Make It →</span>
           <span style={{ fontSize: 13, color: "#15803d" }}>
-            {count > 0 ? `${count} Homemade version${count === 1 ? "" : "s"}` : "Be the first"}
+            {count > 0 ? `${count} @home version${count === 1 ? "" : "s"}` : "Be the first"}
           </span>
         </button>
       </section>
@@ -60,7 +60,7 @@ export default function ShowMeHowToMakeIt({ menuItemId, menuItemName }) {
 
   return (
     <section style={{ marginTop: 20, padding: "16px", borderRadius: 14, background: "#f0fdf4", border: "1px solid #bbf7d0" }} data-testid="show-me-how-expanded">
-      <h3 style={{ margin: "0 0 12px", fontSize: 16, color: "#14532d" }}>Homemade versions</h3>
+      <h3 style={{ margin: "0 0 12px", fontSize: 16, color: "#14532d" }}>@home versions</h3>
       {count === 0 ? (
         <div>
           <p style={{ margin: "0 0 12px", color: "#334155" }}>

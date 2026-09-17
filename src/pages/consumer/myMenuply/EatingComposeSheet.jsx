@@ -119,7 +119,7 @@ export default function EatingComposeSheet({
               ? "Cuisine, restaurant, menu item, or a general food craving — no restaurant required."
               : defaultCategory === "plan"
                 ? "Pick a place, then set the date and Join Me on the next step."
-                : "Photo or video, restaurant or homemade, meal time, then an optional comment."}
+                : "Photo or video, restaurant or @home, meal time, then an optional comment."}
         </p>
         <EatingCompose
           key={`${defaultCategory}-${defaultMealPeriod || "auto"}-${mediaSource}-${feedMode ? "feed" : "hub"}-${initialWhereType || "where"}-${identityLocked ? "locked" : "open"}-${initialDish?.menu_item_id || "nodish"}-${initialFile?.name || (initialFile ? "blob" : "none")}`}

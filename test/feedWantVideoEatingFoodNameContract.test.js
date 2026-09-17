@@ -23,7 +23,7 @@ describe("eatingFoodName wiring — all compose/media paths", () => {
       eatingFoodName({ text: "", dish: { item_name: "Red Velvet" }, restaurant: null, homemade: false }),
       "Red Velvet"
     );
-    assert.equal(joinHomemadeComment(true, "note"), "Homemade. note");
+    assert.equal(joinHomemadeComment(true, "note"), "@home: note");
   });
 
   it("feedVideoCompose imports from lib and posts food_name on want paths", () => {

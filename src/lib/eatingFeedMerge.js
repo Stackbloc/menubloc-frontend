@@ -3,17 +3,10 @@
  */
 
 import { calendarDayYmd } from "./calendarDayYmd.js";
-
-const HOMEMADE_PREFIX = "Homemade";
+import { splitHomemadeComment } from "./eatingPlaceLink.js";
 
 function isHomemadeComment(comment) {
-  const raw = String(comment || "").trim();
-  if (!raw) return false;
-  return (
-    raw === HOMEMADE_PREFIX ||
-    raw.startsWith(`${HOMEMADE_PREFIX}. `) ||
-    raw.startsWith(`${HOMEMADE_PREFIX} `)
-  );
+  return splitHomemadeComment(comment).homemade;
 }
 
 export function eatingFeedKey(row) {
