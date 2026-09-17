@@ -71,6 +71,7 @@ import {
 import InviteToEatModal from "../../components/InviteToEatModal.jsx";
 import { eatingMediaFromUpload } from "../../lib/eatingMediaUtils.js";
 import { pruneMenuplyLiveFeedItem } from "../../lib/menuplyLiveFeedControl.js";
+import { notifyMonthInFoodStale } from "../../lib/monthInFoodFreshness.js";
 import { defaultWhatIAteMealPeriod } from "../../lib/whatIAteTodayMealPeriod.js";
 import {
   buildDiningCrewInviteShareData,
@@ -965,6 +966,7 @@ export default function MyMenuplyPage() {
       setHomeDishes((prev) =>
         (prev || []).filter((row) => Number(row.id || row.homemade_dish_id) !== Number(id))
       );
+      notifyMonthInFoodStale("home-dish-delete");
     } catch (err) {
       setHomeDishError(err.message || "Unable to delete @home photo");
     } finally {
@@ -1341,6 +1343,7 @@ export default function MyMenuplyPage() {
         setLastPost((prev) =>
           prev?.kind === "diary" && Number(prev.id) === entryId ? null : prev
         );
+        notifyMonthInFoodStale("diary-delete");
         await load();
       } catch (err) {
         setError(err.message || "Unable to delete");
@@ -1363,6 +1366,7 @@ export default function MyMenuplyPage() {
             return true;
           })
         );
+        notifyMonthInFoodStale("activity-delete");
         await load();
       } catch (err) {
         setError(err.message || "Unable to delete");
@@ -1384,6 +1388,7 @@ export default function MyMenuplyPage() {
       setLastPost((prev) =>
         prev?.kind === "want" && Number(prev.id) === Number(want.id) ? null : prev
       );
+      notifyMonthInFoodStale("want-delete");
     } catch (err) {
       setError(err.message || "Unable to delete");
       setWantListError(err.message || "Unable to delete");
@@ -1401,6 +1406,7 @@ export default function MyMenuplyPage() {
       setDiningIntents((prev) =>
         (prev || []).filter((row) => Number(row.id) !== Number(intent.id))
       );
+      notifyMonthInFoodStale("dining-intent-delete");
     } catch (err) {
       setError(err.message || "Unable to remove");
     } finally {
@@ -1538,6 +1544,7 @@ export default function MyMenuplyPage() {
     try {
       await deleteDinerSocialEvent(ev.id);
       setSocialEvents((prev) => (prev || []).filter((row) => Number(row.id) !== Number(ev.id)));
+      notifyMonthInFoodStale("event-delete");
     } catch (err) {
       setError(err.message || "Unable to delete event");
     } finally {
@@ -1561,6 +1568,7 @@ export default function MyMenuplyPage() {
       setLastPost((prev) =>
         prev?.kind === "plan" && String(prev.token || prev.id) === String(key) ? null : prev
       );
+      notifyMonthInFoodStale("plan-delete");
     } catch (err) {
       setError(err.message || "Unable to delete eating plan");
     } finally {

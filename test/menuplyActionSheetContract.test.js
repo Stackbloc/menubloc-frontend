@@ -65,6 +65,9 @@ test("My Menuply opens EventComposeSheet from compose=event and Edit View Add", 
   assert.match(compose, /allowVideo/);
   assert.match(compose, /Food is optional/);
   assert.match(compose, /per event instance/);
+  assert.match(compose, /place you designate/);
+  assert.match(compose, /create one as the venue/);
+  assert.match(compose, /Your place \(not a venue name\)/);
 });
 
 test("MenuplyActionSheet routes Want to Eat to My Menuply compose", () => {

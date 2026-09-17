@@ -178,7 +178,7 @@ export default function EventComposeSheet({
         <p style={styles.lead}>
           {isEdit
             ? "Turn Join Me on or off for this event only — same as What’s cookin’ plans."
-            : "Create an event. Turn on Join Me for this event only — pick who can see and join."}
+            : "Create an event at a place you designate. Venues publish their own events — you join those; you can’t create one as the venue."}
         </p>
         <form onSubmit={handleSubmit} style={styles.form} data-testid="event-compose-form">
           <div style={mobileDialogScrollBody}>
@@ -237,7 +237,7 @@ export default function EventComposeSheet({
             <input
               value={locationLabel}
               onChange={(e) => setLocationLabel(e.target.value)}
-              placeholder="Place or address (optional)"
+              placeholder="Your place (not a venue name)"
               disabled={busy}
               maxLength={200}
               style={styles.input}

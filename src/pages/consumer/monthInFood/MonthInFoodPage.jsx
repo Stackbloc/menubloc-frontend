@@ -4,13 +4,14 @@
  * Redesign: docs/architecture/2026-09-17_month-in-food-redesign-spec.md
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import StickyPageHeader from "../../../components/StickyPageHeader.jsx";
 import BottomNav from "../../../components/BottomNav.jsx";
 import { buildConsumerPathShareData } from "../../../components/share/shareUtils.js";
 import { useConsumer } from "../../../context/ConsumerContext.jsx";
 import { getMonthInFood, getPeerMonthInFood } from "../../../lib/consumerApi.js";
+import { subscribeMonthInFoodStale } from "../../../lib/monthInFoodFreshness.js";
 import { buildMonthInFoodModel, shiftYm } from "./buildMonthInFoodModel.js";
 import {
   MonthInFoodCravingsPlans,
@@ -46,30 +47,41 @@ export default function MonthInFoodPage() {
   const isPeer = Number.isFinite(peerId) && peerId > 0;
   const { isAuthenticated, loading: authLoading } = useConsumer();
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const ym = searchParams.get("ym") || currentYmLa();
 
   const [payload, setPayload] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const loadGen = useRef(0);
 
   const backHref = isPeer
     ? `/account/connections/${encodeURIComponent(String(peerId))}`
     : MY_MENUPLY_PROFILE_PATH;
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError("");
-    try {
-      const data = isPeer ? await getPeerMonthInFood(peerId, ym) : await getMonthInFood(ym);
-      setPayload(data);
-    } catch (err) {
-      setPayload(null);
-      setError(err?.message || "Unable to load Month in Food");
-    } finally {
-      setLoading(false);
-    }
-  }, [isPeer, peerId, ym]);
+  const load = useCallback(
+    async ({ quiet = false } = {}) => {
+      const gen = ++loadGen.current;
+      if (!quiet) {
+        setLoading(true);
+        setError("");
+      }
+      try {
+        const data = isPeer ? await getPeerMonthInFood(peerId, ym) : await getMonthInFood(ym);
+        if (gen !== loadGen.current) return;
+        setPayload(data);
+        setError("");
+      } catch (err) {
+        if (gen !== loadGen.current) return;
+        if (!quiet) setPayload(null);
+        setError(err?.message || "Unable to load Month in Food");
+      } finally {
+        if (gen === loadGen.current && !quiet) setLoading(false);
+      }
+    },
+    [isPeer, peerId, ym]
+  );
 
   useEffect(() => {
     if (authLoading) return;
@@ -85,7 +97,32 @@ export default function MonthInFoodPage() {
       return;
     }
     load();
-  }, [authLoading, isAuthenticated, navigate, load, isPeer, peerIdParam, ym]);
+  }, [authLoading, isAuthenticated, navigate, load, isPeer, peerIdParam, ym, location.key]);
+
+  // Mirror profile deletes/edits immediately (same tab + return focus + bfcache).
+  useEffect(() => {
+    if (!isAuthenticated || authLoading) return undefined;
+    const refreshQuiet = () => {
+      load({ quiet: true });
+    };
+    const onVisible = () => {
+      if (document.visibilityState === "visible") refreshQuiet();
+    };
+    const onPageShow = (event) => {
+      if (event.persisted) refreshQuiet();
+      else refreshQuiet();
+    };
+    const unsub = subscribeMonthInFoodStale(refreshQuiet);
+    window.addEventListener("focus", refreshQuiet);
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("pageshow", onPageShow);
+    return () => {
+      unsub();
+      window.removeEventListener("focus", refreshQuiet);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("pageshow", onPageShow);
+    };
+  }, [authLoading, isAuthenticated, load]);
 
   const model = useMemo(() => (payload ? buildMonthInFoodModel(payload) : null), [payload]);
 

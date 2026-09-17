@@ -807,12 +807,19 @@ export const deleteWantToEat = (id) =>
 
 /** My Month in Food scoreboard (calendar month YYYY-MM). */
 export const getMonthInFood = (ym) =>
-  get(`/api/consumer/month-in-food${ym ? `?ym=${encodeURIComponent(String(ym))}` : ""}`);
+  get(`/api/consumer/month-in-food${ym ? `?ym=${encodeURIComponent(String(ym))}` : ""}`, {
+    cache: "no-store",
+    headers: { "Cache-Control": "no-cache", Pragma: "no-cache" },
+  });
 export const getPeerMonthInFood = (peerId, ym) =>
   get(
     `/api/consumer/connections/${encodeURIComponent(String(peerId))}/month-in-food${
       ym ? `?ym=${encodeURIComponent(String(ym))}` : ""
-    }`
+    }`,
+    {
+      cache: "no-store",
+      headers: { "Cache-Control": "no-cache", Pragma: "no-cache" },
+    }
   );
 
 export async function uploadWantToEatPhoto(file, opts = {}) {

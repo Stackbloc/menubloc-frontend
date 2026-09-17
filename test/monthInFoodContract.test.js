@@ -406,3 +406,21 @@ test("Month in Food redesign: even stats, spend on mood, no giant hero", () => {
   assert.match(page, /MonthInFoodCravingsPlans/);
   assert.doesNotMatch(sections, /heroImg/);
 });
+
+test("Month in Food refreshes when profile mutates (no stale cache)", () => {
+  const page = read("src/pages/consumer/monthInFood/MonthInFoodPage.jsx");
+  const api = read("src/lib/consumerApi.js");
+  const freshness = read("src/lib/monthInFoodFreshness.js");
+  const profile = read("src/pages/consumer/MyMenuplyPage.jsx");
+  assert.match(freshness, /notifyMonthInFoodStale/);
+  assert.match(freshness, /subscribeMonthInFoodStale/);
+  assert.match(page, /subscribeMonthInFoodStale/);
+  assert.match(page, /visibilitychange/);
+  assert.match(page, /pageshow/);
+  assert.match(page, /quiet:\s*true|load\(\{\s*quiet:\s*true/);
+  assert.match(api, /getMonthInFood[\s\S]*cache:\s*[\"']no-store[\"']/);
+  assert.match(profile, /notifyMonthInFoodStale\("plan-delete"\)/);
+  assert.match(profile, /notifyMonthInFoodStale\("event-delete"\)/);
+  assert.match(profile, /notifyMonthInFoodStale\("diary-delete"\)/);
+  assert.match(profile, /notifyMonthInFoodStale\("want-delete"\)/);
+});
