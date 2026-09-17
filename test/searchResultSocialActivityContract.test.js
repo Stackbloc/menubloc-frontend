@@ -19,6 +19,14 @@ test("SearchResultSocialActivity omits empty payload and does not fetch", () => 
   assert.doesNotMatch(src, /HomeNext|FoodInterestsPage|waiterApi/);
 });
 
+test("SearchResultSocialActivity shows Invite CTA only when projection supplies cta_label + cta_href", () => {
+  const src = read("src/components/search/SearchResultSocialActivity.jsx");
+  assert.match(src, /cta_label/);
+  assert.match(src, /cta_href/);
+  assert.match(src, /search-result-social-cta/);
+  assert.match(src, /showCta = Boolean\(ctaLabel && ctaHref\)/);
+});
+
 test("SearchResultCard mounts Connect lines via EnrichmentStack on dish and restaurant cards", () => {
   const card = read("src/components/SearchResultCard.jsx");
   assert.match(card, /SearchResultEnrichmentStack/);
