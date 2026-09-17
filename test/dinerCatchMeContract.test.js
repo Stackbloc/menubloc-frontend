@@ -107,3 +107,21 @@ test("API client and Waiter suggestion use existing Invite to Eat LDL", () => {
   assert.match(start, /invitee_name/);
   assert.match(start, /initialInviteeName/);
 });
+
+test("Who's Eating Catch Me notice is dismissible via Hide", () => {
+  const nearby = read("src/pages/consumer/myMenuply/NearbyEatingSection.jsx");
+  const dismiss = read("src/lib/catchMeNoticeDismiss.js");
+  const display = read("src/lib/dinerCatchMeDisplay.js");
+  assert.match(nearby, /kind === "catch_me"/);
+  assert.match(nearby, /whos-eating-catch-me-row/);
+  assert.match(nearby, /whos-eating-catch-me-hide/);
+  assert.match(nearby, /Hide/);
+  assert.match(nearby, /hideCatchMeNotice/);
+  assert.match(nearby, /isCatchMeNoticeHidden/);
+  assert.match(nearby, /whos-eating-catch-me-invite/);
+  assert.match(dismiss, /menuply:catchMeNoticeHidden:/);
+  assert.match(dismiss, /hideCatchMeNotice/);
+  assert.match(dismiss, /isCatchMeNoticeHidden/);
+  assert.match(display, /whenPhrase/);
+  assert.match(display, /this week|whenPhrase/);
+});

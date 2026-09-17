@@ -60,7 +60,11 @@ test("Who's Eating mounts before Wanna Eat on eating hub", () => {
 
 test("Who's Eating is owner-hub discovery (hidden when readOnly)", () => {
   const section = read("src/pages/consumer/myMenuply/EatingHubSection.jsx");
-  assert.match(section, /hidden=\{readOnly \|\| !canEdit\}/);
+  // Peer/read-only hides discovery unless Happy Hour rows exist for the day.
+  assert.match(
+    section,
+    /hidden=\{\(readOnly \|\| !canEdit\) && happyHourForDay\.length === 0\}/
+  );
 });
 
 test("formatDinerDiscoverySummary: SusyQ, F, 25, USC wants Burgers (prose)", () => {

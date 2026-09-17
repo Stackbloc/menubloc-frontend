@@ -1,15 +1,22 @@
 /**
  * Who's Eating — continuous-line scan rows (max 8 + Show more).
  * [avatar] ScreenName, Sex, Age is eating [meal] at [restaurant|@home], [food]
+ * Catch Me Connect notices: "[Name] is in [city] today|this week|this month. Invite …?" + Hide
  * Happy Hour (subject): Edit "You are going to Happy Hour…"; Profile "Name is going…"
  * Liberal market discovery (no favorite-food filter); excludes viewer.
  */
 
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   fetchWantDiscovery,
   listSeeWhosEating,
+  resolveConsumerMediaUrl,
 } from "../../../lib/consumerApi.js";
+import {
+  hideCatchMeNotice,
+  isCatchMeNoticeHidden,
+} from "../../../lib/catchMeNoticeDismiss.js";
 import {
   formatWhosEatingDiscoveryLine,
   formatWhosEatingScanIdentity,
@@ -62,7 +69,46 @@ function registeredDinerId(row) {
   return Number.isFinite(n) && n > 0 ? n : null;
 }
 
+function pushCatchMeRow(out, seen, row, viewerUserId) {
+  if (String(row?.kind || "") !== "catch_me") return false;
+  const dinerId = registeredDinerId(row);
+  if (!dinerId || seen.has(dinerId) || out.length >= FETCH_LIMIT) return true;
+  const viewerN = Number(viewerUserId);
+  if (Number.isFinite(viewerN) && viewerN > 0 && dinerId === viewerN) return true;
+
+  const catchMeId = Number(row.id);
+  const endDate = row.catch_me_end_date || null;
+  if (isCatchMeNoticeHidden(catchMeId, endDate)) return true;
+
+  const href =
+    dinerPeerProfilePath(dinerId) ||
+    liveFeedCreatorProfilePath(row) ||
+    null;
+  const displayName =
+    row.display_name || feedPersonLabel(row) || row.name || "";
+  const message = String(row.message || "").trim();
+  if (!message || !href) return true;
+
+  seen.add(dinerId);
+  out.push({
+    key: `catch-me-${catchMeId || dinerId}`,
+    kind: "catch_me",
+    catchMeId: Number.isFinite(catchMeId) && catchMeId > 0 ? catchMeId : dinerId,
+    catchMeEndDate: endDate,
+    dinerId,
+    href,
+    displayName,
+    avatarUrl: row.avatar_url || null,
+    message,
+    inviteHref: row.invite_href || null,
+    inviteCtaLabel: row.invite_cta_label || "Invite them out?",
+  });
+  return true;
+}
+
 function pushRow(out, seen, row, viewerUserId) {
+  if (pushCatchMeRow(out, seen, row, viewerUserId)) return;
+
   const dinerId = registeredDinerId(row);
   if (!dinerId || seen.has(dinerId) || out.length >= FETCH_LIMIT) return;
   const viewerN = Number(viewerUserId);
@@ -183,6 +229,54 @@ function buildWhosEatingLines({ feedItems, connectLines, viewerUserId }) {
   return out;
 }
 
+function CatchMeNoticeRow({ row, onHide }) {
+  const avatarSrc = resolveConsumerMediaUrl(row.avatarUrl) || null;
+  const inviteHref = row.inviteHref || null;
+  const cta = String(row.inviteCtaLabel || "Invite them out?").trim();
+  let presence = String(row.message || "").trim();
+  if (cta && presence.endsWith(cta)) {
+    presence = presence.slice(0, -cta.length).trim();
+  }
+
+  return (
+    <div style={styles.catchMeRow} data-testid="whos-eating-catch-me-row">
+      {avatarSrc ? (
+        <img src={avatarSrc} alt="" style={styles.catchMeAvatar} />
+      ) : (
+        <span style={styles.catchMeAvatarFallback} aria-hidden>
+          {(row.displayName || "?").trim().charAt(0).toUpperCase() || "?"}
+        </span>
+      )}
+      <p style={styles.catchMeText}>
+        {row.href ? (
+          <Link to={row.href} style={styles.catchMeNameLink}>
+            {presence || row.message}
+          </Link>
+        ) : (
+          <span>{presence || row.message}</span>
+        )}{" "}
+        {inviteHref ? (
+          <Link
+            to={inviteHref}
+            style={styles.catchMeInvite}
+            data-testid="whos-eating-catch-me-invite"
+          >
+            {cta}
+          </Link>
+        ) : null}
+      </p>
+      <button
+        type="button"
+        style={styles.catchMeHide}
+        data-testid="whos-eating-catch-me-hide"
+        onClick={() => onHide?.(row)}
+      >
+        Hide
+      </button>
+    </div>
+  );
+}
+
 export default function NearbyEatingSection({
   locationCity = null,
   locationState = null,
@@ -274,6 +368,11 @@ export default function NearbyEatingSection({
     };
   }, [hidden, showNearbyDiscovery, locationCity, locationState, viewerUserId]);
 
+  function onHideCatchMe(row) {
+    hideCatchMeNotice(row.catchMeId, row.catchMeEndDate);
+    setLines((prev) => prev.filter((line) => line.key !== row.key));
+  }
+
   const visibleLines = useMemo(() => {
     if (expanded) return lines;
     return lines.slice(0, INITIAL_VISIBLE);
@@ -281,7 +380,6 @@ export default function NearbyEatingSection({
 
   const hasMore = lines.length > INITIAL_VISIBLE;
   const hasHappyHour = happyHourRows.length > 0;
-  const hasNearby = showNearbyDiscovery && (loading || lines.length > 0 || error);
 
   if (hidden) return null;
   if (!hasHappyHour && !showNearbyDiscovery) return null;
@@ -360,34 +458,38 @@ export default function NearbyEatingSection({
             <ul style={styles.list} data-testid="whos-eating-links">
               {visibleLines.map((row) => (
                 <li key={row.key} style={styles.row} data-testid="whos-eating-row">
-                  <DinerActivityScanRow
-                    displayName={row.displayName}
-                    avatarUrl={row.avatarUrl}
-                    ageYears={row.ageYears}
-                    affiliation={row.affiliation}
-                    occupation={row.occupation}
-                    includeSex
-                    dinerSex={row.dinerSex}
-                    dinerSexShort={row.dinerSexShort}
-                    kind={row.kind}
-                    foodName={row.foodName}
-                    restaurantName={row.restaurantName}
-                    restaurantId={row.restaurantId}
-                    restaurantSlug={row.restaurantSlug}
-                    restaurantCity={row.restaurantCity}
-                    restaurantState={row.restaurantState}
-                    restaurantLogoUrl={row.restaurantLogoUrl}
-                    restaurantBillboardUrl={row.restaurantBillboardUrl}
-                    menuItemId={row.menuItemId}
-                    mealPeriod={row.mealPeriod}
-                    icon={row.icon}
-                    videoUrl={row.videoUrl}
-                    profileHref={row.href}
-                    homemade={row.homemade}
-                    nameInProse
-                    placeAsText
-                    showThumb={false}
-                  />
+                  {row.kind === "catch_me" ? (
+                    <CatchMeNoticeRow row={row} onHide={onHideCatchMe} />
+                  ) : (
+                    <DinerActivityScanRow
+                      displayName={row.displayName}
+                      avatarUrl={row.avatarUrl}
+                      ageYears={row.ageYears}
+                      affiliation={row.affiliation}
+                      occupation={row.occupation}
+                      includeSex
+                      dinerSex={row.dinerSex}
+                      dinerSexShort={row.dinerSexShort}
+                      kind={row.kind}
+                      foodName={row.foodName}
+                      restaurantName={row.restaurantName}
+                      restaurantId={row.restaurantId}
+                      restaurantSlug={row.restaurantSlug}
+                      restaurantCity={row.restaurantCity}
+                      restaurantState={row.restaurantState}
+                      restaurantLogoUrl={row.restaurantLogoUrl}
+                      restaurantBillboardUrl={row.restaurantBillboardUrl}
+                      menuItemId={row.menuItemId}
+                      mealPeriod={row.mealPeriod}
+                      icon={row.icon}
+                      videoUrl={row.videoUrl}
+                      profileHref={row.href}
+                      homemade={row.homemade}
+                      nameInProse
+                      placeAsText
+                      showThumb={false}
+                    />
+                  )}
                 </li>
               ))}
             </ul>
@@ -437,6 +539,62 @@ const styles = {
     fontSize: 15,
     lineHeight: 1.4,
     color: "#0f172a",
+  },
+  catchMeRow: {
+    display: "flex",
+    alignItems: "flex-start",
+    gap: 10,
+    padding: "10px 0",
+    borderBottom: "1px solid #e2e8f0",
+  },
+  catchMeAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: "50%",
+    objectFit: "cover",
+    flexShrink: 0,
+    background: "#e2e8f0",
+  },
+  catchMeAvatarFallback: {
+    width: 36,
+    height: 36,
+    borderRadius: "50%",
+    flexShrink: 0,
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    background: "#dcfce7",
+    color: "#166534",
+    fontSize: 14,
+    fontWeight: 700,
+  },
+  catchMeText: {
+    margin: 0,
+    flex: 1,
+    fontSize: 14,
+    lineHeight: 1.4,
+    color: "#0f172a",
+  },
+  catchMeNameLink: {
+    color: "inherit",
+    textDecoration: "none",
+  },
+  catchMeInvite: {
+    color: "#166534",
+    fontWeight: 700,
+    textDecoration: "none",
+  },
+  catchMeHide: {
+    appearance: "none",
+    flexShrink: 0,
+    margin: 0,
+    padding: "2px 0 0",
+    border: "none",
+    background: "transparent",
+    color: "#64748b",
+    fontSize: 13,
+    fontWeight: 600,
+    cursor: "pointer",
   },
   showMore: {
     appearance: "none",

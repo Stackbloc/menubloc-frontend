@@ -77,3 +77,26 @@ export function catchMeProfileLine(catchMe) {
   if (!city || !range) return null;
   return `Catch Me in ${city}, ${range}`;
 }
+
+function invitePronoun(dinerSex) {
+  const sex = String(dinerSex || "")
+    .trim()
+    .toLowerCase();
+  if (sex === "male") return "him";
+  if (sex === "female") return "her";
+  return "them";
+}
+
+/** Who's Eating: "Joe J is in LA today|this week|this month. Invite him out?" */
+export function formatCatchMeWhosEatingLine({
+  displayName,
+  cityName,
+  dinerSex,
+  whenPhrase = "today",
+} = {}) {
+  const name = String(displayName || "").trim();
+  const city = String(cityName || "").trim();
+  if (!name || !city) return null;
+  const when = String(whenPhrase || "today").trim() || "today";
+  return `${name} is in ${city} ${when}. Invite ${invitePronoun(dinerSex)} out?`;
+}
