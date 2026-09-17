@@ -650,6 +650,11 @@ export const updateConsumerProfile = (body) => put("/api/consumer/profile", body
 export const updatePrimaryLocation = (body) => put("/api/consumer/profile/primary-location", body);
 export const updateCatchMe = (body) => put("/api/consumer/profile/catch-me", body);
 export const clearCatchMe = () => del("/api/consumer/profile/catch-me");
+export const getCurrentVibe = () => get("/api/consumer/profile/current-vibe");
+export const updateCurrentVibe = (body) =>
+  put("/api/consumer/profile/current-vibe", {
+    currentVibe: body?.currentVibe ?? body?.current_vibe ?? body,
+  });
 export const searchDiners = (query, cityId = null) => {
   const q = new URLSearchParams();
   if (query) q.set("q", String(query));

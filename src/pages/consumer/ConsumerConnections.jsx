@@ -14,21 +14,87 @@ import {
   declineConnection,
   removeConnection,
   requestConnection,
+  resolveConsumerMediaUrl,
 } from "../../lib/consumerApi.js";
 import { formatDinerPeerLabel } from "../../lib/dinerPublicIdentity.js";
+import {
+  getCurrentVibeEntry,
+  showsCurrentVibeBadge,
+} from "../../lib/currentVibeDisplay.js";
 
 function PeerLine({ peer }) {
   if (!peer) return null;
+  const vibeValue = peer.current_vibe || peer.currentVibe || "im_good";
+  const vibeEntry = getCurrentVibeEntry(vibeValue);
+  const showVibe = showsCurrentVibeBadge(vibeValue);
+  const avatarSrc = peer.avatar_url ? resolveConsumerMediaUrl(peer.avatar_url) : "";
   return (
-    <div>
-      <div style={{ fontWeight: 700, color: "#0f172a" }}>
-        {formatDinerPeerLabel(peer)}
+    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+      <div style={{ position: "relative", width: 40, height: 40, flexShrink: 0 }}>
+        {avatarSrc ? (
+          <img
+            src={avatarSrc}
+            alt=""
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: "50%",
+              objectFit: "cover",
+              display: "block",
+              background: "#f1f5f9",
+            }}
+          />
+        ) : (
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: "50%",
+              background: "#f1f5f9",
+              display: "grid",
+              placeItems: "center",
+              fontWeight: 700,
+              color: "#334155",
+            }}
+          >
+            {String(formatDinerPeerLabel(peer) || "?").slice(0, 1).toUpperCase()}
+          </div>
+        )}
+        {showVibe ? (
+          <span
+            data-testid="connect-list-vibe-badge"
+            data-vibe={vibeEntry.value}
+            title={vibeEntry.label}
+            aria-label={`Current vibe: ${vibeEntry.label}`}
+            style={{
+              position: "absolute",
+              right: -2,
+              bottom: -2,
+              width: 18,
+              height: 18,
+              borderRadius: "50%",
+              background: vibeEntry.badgeTone === "muted" ? "#e5e7eb" : "#fff7ed",
+              border: "2px solid #fff",
+              display: "grid",
+              placeItems: "center",
+              fontSize: 10,
+              lineHeight: 1,
+            }}
+          >
+            {vibeEntry.icon}
+          </span>
+        ) : null}
       </div>
-      {peer.edu_verified ? (
-        <div style={{ fontSize: 12, color: "#14532d", marginTop: 2, fontWeight: 600 }}>
-          {peer.edu_verification_badge}
+      <div>
+        <div style={{ fontWeight: 700, color: "#0f172a" }}>
+          {formatDinerPeerLabel(peer)}
         </div>
-      ) : null}
+        {peer.edu_verified ? (
+          <div style={{ fontSize: 12, color: "#14532d", marginTop: 2, fontWeight: 600 }}>
+            {peer.edu_verification_badge}
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }

@@ -54,6 +54,7 @@ import {
   updateConsumerProfile,
   updateCatchMe,
   clearCatchMe,
+  updateCurrentVibe,
   uploadDinerAvatar,
   uploadConsumerProfileMedia,
   deleteConsumerProfileMedia,
@@ -751,6 +752,18 @@ export default function MyMenuplyPage() {
     await clearCatchMe();
     setProfile((prev) => ({ ...(prev || {}), catch_me: null }));
     setIdentityNotice("Catch Me cleared.");
+  }
+
+  async function onCurrentVibeChange(next) {
+    setIdentityError("");
+    const data = await updateCurrentVibe({ currentVibe: next });
+    const value = data?.current_vibe || data?.currentVibe || next;
+    setProfile((prev) => ({
+      ...(prev || {}),
+      current_vibe: value,
+      currentVibe: value,
+      current_vibe_meta: data?.current_vibe_meta || prev?.current_vibe_meta || null,
+    }));
   }
 
   async function onSaveProfileSettings(next) {
@@ -2331,6 +2344,9 @@ export default function MyMenuplyPage() {
               catchMe={profile?.catch_me || null}
               onCatchMeSave={previewAsConnect ? undefined : onCatchMeSave}
               onCatchMeClear={previewAsConnect ? undefined : onCatchMeClear}
+              currentVibe={profile?.current_vibe || profile?.currentVibe || "im_good"}
+              currentVibeCatalog={profile?.current_vibe_catalog || null}
+              onCurrentVibeChange={previewAsConnect ? undefined : onCurrentVibeChange}
               connections={connections}
               viewerUserId={consumer?.id}
               busy={identityBusy}

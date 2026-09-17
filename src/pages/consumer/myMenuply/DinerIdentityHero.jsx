@@ -16,6 +16,8 @@ import {
 import { clearStuckMediaChrome } from "./pendingHighlightMedia.js";
 import CatchMePanel from "./CatchMePanel.jsx";
 import { catchMeProfileLine } from "../../../lib/dinerCatchMeDisplay.js";
+import CurrentVibeAvatarControl from "./CurrentVibeAvatarControl.jsx";
+import { DEFAULT_CURRENT_VIBE } from "../../../lib/currentVibeDisplay.js";
 
 const ABOUT_MAX = 280;
 const ABOUT_PLACEHOLDER =
@@ -71,6 +73,9 @@ export default function DinerIdentityHero({
   catchMe = null,
   onCatchMeSave = null,
   onCatchMeClear = null,
+  currentVibe = DEFAULT_CURRENT_VIBE,
+  currentVibeCatalog = null,
+  onCurrentVibeChange = null,
   busy,
   notice,
   error,
@@ -190,18 +195,26 @@ export default function DinerIdentityHero({
 
       <div style={s.identity}>
         {readOnly ? (
-          <div style={{ ...s.identityPhotoBtn, cursor: "default" }}>
-            {avatarUrl ? (
-              <img src={avatarUrl} alt="" style={s.identityPhoto} />
-            ) : (
-              <div style={s.identityInitial}>{initial}</div>
-            )}
+          <div style={s.identityAvatarWrap} data-testid="diner-avatar-readonly">
+            <div style={{ ...s.identityPhotoBtn, cursor: "default", overflow: "hidden" }}>
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="" style={s.identityPhoto} />
+              ) : (
+                <div style={s.identityInitial}>{initial}</div>
+              )}
+            </div>
+            <CurrentVibeAvatarControl
+              value={currentVibe}
+              catalog={currentVibeCatalog}
+              readOnly
+              busy={busy}
+            />
           </div>
         ) : (
-          <>
+          <div style={s.identityAvatarWrap} data-testid="diner-avatar-owner-wrap">
             <button
               type="button"
-              style={s.identityPhotoBtn}
+              style={{ ...s.identityPhotoBtn, overflow: "hidden" }}
               aria-label="Change profile photo"
               disabled={busy}
               onClick={openAvatarSheet}
@@ -212,10 +225,17 @@ export default function DinerIdentityHero({
               ) : (
                 <div style={s.identityInitial}>{initial}</div>
               )}
-              <span style={s.identityCamera} aria-hidden>
+              <span style={{ ...s.identityCamera, right: "auto", left: 4 }} aria-hidden>
                 📷
               </span>
             </button>
+            <CurrentVibeAvatarControl
+              value={currentVibe}
+              catalog={currentVibeCatalog}
+              readOnly={false}
+              busy={busy}
+              onChange={onCurrentVibeChange}
+            />
 
             <AvatarComposeSheet
               open={avatarSheetOpen}
@@ -225,7 +245,7 @@ export default function DinerIdentityHero({
               busy={busy}
               onFile={handleAvatarFile}
             />
-          </>
+          </div>
         )}
 
         <div style={{ flex: 1, minWidth: 0 }}>

@@ -987,6 +987,14 @@ export const identityPhotoBtn = {
   flexShrink: 0,
 };
 
+/** Wrapper so Current Vibe badge can sit outside the clipped avatar circle. */
+export const identityAvatarWrap = {
+  position: "relative",
+  width: 96,
+  height: 96,
+  flexShrink: 0,
+};
+
 export const identityPhoto = {
   width: "100%",
   height: "100%",
