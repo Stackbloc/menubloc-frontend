@@ -2135,6 +2135,8 @@ export default function GrubbidSearchResults({ embedInFeedShell = false } = {}) 
   const [searchTotalCount, setSearchTotalCount] = useState(0);
   const [searchViewMode, setSearchViewMode] = useState("dishes");
   const [homemadeDishes, setHomemadeDishes] = useState([]);
+  const [contextualSections, setContextualSections] = useState(null);
+  const [searchEvents, setSearchEvents] = useState([]);
   const [restaurantVisibleLimits, setRestaurantVisibleLimits] = useState({});
   const SEARCH_LIMIT = 24;
   const [shareCopied, setShareCopied] = useState(false);
@@ -2502,6 +2504,8 @@ export default function GrubbidSearchResults({ embedInFeedShell = false } = {}) 
         setRows([]);
         setQueryMeta(null);
         setSearchMeta(null);
+        setContextualSections(null);
+        setSearchEvents([]);
         return;
       }
 
@@ -2615,6 +2619,12 @@ export default function GrubbidSearchResults({ embedInFeedShell = false } = {}) 
         }
         setRows(resultRows);
         setHomemadeDishes(Array.isArray(json?.homemade_dishes) ? json.homemade_dishes : []);
+        setContextualSections(
+          json?.contextual_sections && typeof json.contextual_sections === "object"
+            ? json.contextual_sections
+            : null
+        );
+        setSearchEvents(Array.isArray(json?.events) ? json.events : []);
         setRestaurantMetaMap(rMeta);
         setQueryMeta(json?.query || null);
         setSearchMeta(json?.search_meta || null);
@@ -3343,6 +3353,86 @@ export default function GrubbidSearchResults({ embedInFeedShell = false } = {}) 
           </div>
         </>
       )}
+
+      {!loading && !err && contextualSections?.connects?.items?.length > 0 ? (
+        <>
+          <SectionTitle style={{ color: "#0B0F0C", marginTop: 16 }}>
+            {contextualSections.connects.title || "Your Connects"}
+          </SectionTitle>
+          <div style={{ display: "grid", gap: 10, marginBottom: 8 }}>
+            {contextualSections.connects.items.map((item) => (
+              <div
+                key={item.activity_id || `${item.kind}-${item.display_name}`}
+                style={{
+                  padding: "10px 12px",
+                  borderRadius: 12,
+                  background: "rgba(15, 23, 42, 0.04)",
+                  color: "#0B0F0C",
+                  fontSize: 14,
+                  lineHeight: 1.4,
+                }}
+              >
+                <div>{item.line || `${item.display_name || "Connect"} · ${item.target_name || ""}`}</div>
+                {item.cta_href ? (
+                  <a href={item.cta_href} style={{ color: "#166534", fontWeight: 600, fontSize: 13 }}>
+                    {item.cta_label || "Invite"}
+                  </a>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        </>
+      ) : null}
+
+      {!loading && !err && (contextualSections?.events?.items?.length > 0 || searchEvents.length > 0) ? (
+        <>
+          <SectionTitle style={{ color: "#0B0F0C", marginTop: 16 }}>
+            {contextualSections?.events?.title || "Events"}
+          </SectionTitle>
+          <div style={{ display: "grid", gap: 10, marginBottom: 8 }}>
+            {(contextualSections?.events?.items || searchEvents).map((event) => (
+              <a
+                key={event.id || event.slug}
+                href={event.href || (event.slug ? `/events/${encodeURIComponent(event.slug)}` : "#")}
+                style={{
+                  display: "block",
+                  padding: "10px 12px",
+                  borderRadius: 12,
+                  background: "rgba(15, 23, 42, 0.04)",
+                  color: "#0B0F0C",
+                  textDecoration: "none",
+                  fontSize: 14,
+                  lineHeight: 1.4,
+                }}
+              >
+                <div style={{ fontWeight: 650 }}>{event.name || event.title || "Event"}</div>
+                {event.restaurant_name || event.city ? (
+                  <div style={{ opacity: 0.75, fontSize: 13 }}>
+                    {[event.restaurant_name, event.city, event.state].filter(Boolean).join(" · ")}
+                  </div>
+                ) : null}
+                {event.connection_label || event.connect_rank_label ? (
+                  <div style={{ marginTop: 4, color: "#166534", fontSize: 13, fontWeight: 600 }}>
+                    {event.connect_rank_label || "Popular with your Connects"}
+                    {event.connection_label ? ` — ${event.connection_label}` : ""}
+                  </div>
+                ) : null}
+              </a>
+            ))}
+          </div>
+        </>
+      ) : null}
+
+      {!loading && !err && contextualSections?.cluster?.href ? (
+        <div style={{ marginTop: 8, marginBottom: 4 }}>
+          <a
+            href={contextualSections.cluster.href}
+            style={{ color: "#166534", fontWeight: 600, fontSize: 14 }}
+          >
+            Explore {contextualSections.cluster.title || "cluster"} →
+          </a>
+        </div>
+      ) : null}
 
       {!loading && !err && include_homemade && homemadeDishes.length > 0 ? (
         <>
