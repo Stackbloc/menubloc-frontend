@@ -13,11 +13,22 @@ function buildQuery(params = {}) {
   return serialized ? `?${serialized}` : "";
 }
 
-export async function listRestaurantProfileVideos(restaurantId, { limit = 24 } = {}) {
+export async function listRestaurantProfileVideos(
+  restaurantId,
+  { limit = 24, excludeKinds = null } = {}
+) {
   const rid = restaurantId != null ? String(restaurantId).trim() : "";
   if (!rid) return { restaurant_id: null, videos: [] };
+  const exclude_kinds = Array.isArray(excludeKinds)
+    ? excludeKinds.filter(Boolean).join(",")
+    : excludeKinds
+      ? String(excludeKinds).trim()
+      : undefined;
   const data = await apiGet(
-    `/public/restaurants/${encodeURIComponent(rid)}/videos${buildQuery({ limit })}`
+    `/public/restaurants/${encodeURIComponent(rid)}/videos${buildQuery({
+      limit,
+      exclude_kinds,
+    })}`
   );
   return {
     restaurant_id: data?.restaurant_id != null ? Number(data.restaurant_id) : Number(rid),

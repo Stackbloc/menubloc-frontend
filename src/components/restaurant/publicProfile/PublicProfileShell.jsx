@@ -363,7 +363,11 @@ export default function PublicProfileShell({
         )}
 
         {isDiningHall || !restaurantId ? null : (
-          <ProfileVideosSection restaurantId={restaurantId} isMobile={isMobile} />
+          <ProfileVideosSection
+            restaurantId={restaurantId}
+            restaurantName={name || ""}
+            isMobile={isMobile}
+          />
         )}
 
         {isDiningHall ? null : (
