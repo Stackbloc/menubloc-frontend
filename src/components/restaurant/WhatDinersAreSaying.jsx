@@ -9,7 +9,6 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import FoodComments from "../comments/FoodComments.jsx";
 import { listPublicRestaurantFoodActivity, getRestaurantUpcomingEatingPlans } from "../../lib/foodActivityApi.js";
-import { resolveConsumerMediaUrl } from "../../lib/consumerApi.js";
 import { profileReadableSurfaceStyle } from "./publicProfile/profilePrimitives.jsx";
 import DinerStatusFeed from "../dinerStatus/DinerStatusFeed.jsx";
 import ImEatingAtPanel from "../foodActivity/ImEatingAtPanel.jsx";
@@ -31,42 +30,32 @@ function ActivityCard({ activity }) {
     ? activity?.restaurant_name || "this place"
     : activity?.item_name || activity?.food_name || "Menu item";
   const badge = activity?.edu_verification_badge || null;
-  const photoUrl = activity?.photo_url ? resolveConsumerMediaUrl(activity.photo_url) : "";
-  const videoUrl = activity?.video_url ? resolveConsumerMediaUrl(activity.video_url) : "";
-  const hasMedia = Boolean(photoUrl || videoUrl);
 
   return (
     <article
       data-testid="diners-saying-activity"
       data-share-kind={isPlaceOnly ? "place" : "dish"}
-      style={hasMedia ? styles.cardMedia : styles.card}
+      style={styles.card}
     >
-      {videoUrl ? (
-        <video src={videoUrl} style={styles.hero} controls playsInline preload="metadata" />
-      ) : photoUrl ? (
-        <img src={photoUrl} alt="" style={styles.hero} loading="lazy" />
-      ) : null}
-      <div style={hasMedia ? styles.cardBody : undefined}>
-        <div style={styles.nameRow}>
-          <strong style={styles.name}>{dinerLabel(activity)}</strong>
-          {badge ? <span style={styles.badge}>{badge}</span> : null}
-        </div>
-        <div style={styles.itemLine}>
-          {itemHref ? (
-            <Link to={itemHref} style={styles.itemLink}>
-              {itemName}
-            </Link>
-          ) : (
-            <span>{itemName}</span>
-          )}
-        </div>
-        <p style={styles.shared}>
-          {activity?.activity_label || "shared that they are eating"}
-        </p>
-        {activity?.comment ? (
-          <p style={styles.quote}>&ldquo;{activity.comment}&rdquo;</p>
-        ) : null}
+      <div style={styles.nameRow}>
+        <strong style={styles.name}>{dinerLabel(activity)}</strong>
+        {badge ? <span style={styles.badge}>{badge}</span> : null}
       </div>
+      <div style={styles.itemLine}>
+        {itemHref ? (
+          <Link to={itemHref} style={styles.itemLink}>
+            {itemName}
+          </Link>
+        ) : (
+          <span>{itemName}</span>
+        )}
+      </div>
+      <p style={styles.shared}>
+        {activity?.activity_label || "shared that they are eating"}
+      </p>
+      {activity?.comment ? (
+        <p style={styles.quote}>&ldquo;{activity.comment}&rdquo;</p>
+      ) : null}
     </article>
   );
 }

@@ -1,6 +1,7 @@
 /**
  * Tagged What I Ate entries on a restaurant profile.
  * Only diners who opted in and linked this restaurant/menu item appear here.
+ * C1: text-only on restaurant profile — video lives in Videos section only.
  */
 
 import React, { useEffect, useState } from "react";
@@ -8,10 +9,21 @@ import { Link } from "react-router-dom";
 import { listPublicRestaurantWhatIAteToday } from "../../lib/whatIAteTodayApi.js";
 import { restaurantPath } from "../../lib/canonicalUrlCore.js";
 import { mealPeriodLabel } from "../../lib/whatIAteTodayMealPeriod.js";
-import { resolveConsumerMediaUrl } from "../../lib/consumerApi.js";
 import { calendarDayYmd } from "../../lib/calendarDayYmd.js";
 
+/** Day (Sep 9) or month-only (Sep 2026) when API coarsened to YYYY-MM. */
 function formatEatenOn(value) {
+  const raw = String(value || "").trim();
+  const monthOnly = raw.match(/^(\d{4})-(\d{2})$/);
+  if (monthOnly) {
+    const y = Number(monthOnly[1]);
+    const m = Number(monthOnly[2]);
+    if (!y || !m) return raw;
+    return new Date(y, m - 1, 1).toLocaleDateString(undefined, {
+      month: "short",
+      year: "numeric",
+    });
+  }
   const ymd = calendarDayYmd(value);
   if (!ymd) return "";
   const [y, m, d] = ymd.split("-").map(Number);
@@ -24,7 +36,9 @@ function formatEatenOn(value) {
 
 function EntryCard({ entry }) {
   const itemLabel = entry.item_name || entry.food_name;
-  const menuHref = entry.menu_item_href || (entry.menu_item_id ? `/menu-items/${entry.menu_item_id}` : null);
+  const menuHref =
+    entry.menu_item_href ||
+    (entry.menu_item_id ? `/menu-items/${entry.menu_item_id}` : null);
   const restaurantHref = restaurantPath({
     slug: entry.restaurant_slug,
     city: entry.restaurant_city,
@@ -63,23 +77,6 @@ function EntryCard({ entry }) {
       ) : null}
       <p style={styles.shared}>{entry.activity_label || "logged in their food diary"}</p>
       {entry.comment ? <p style={styles.quote}>&ldquo;{entry.comment}&rdquo;</p> : null}
-      {entry.video_url ? (
-        <video
-          src={resolveConsumerMediaUrl(entry.video_url)}
-          style={styles.video}
-          controls
-          playsInline
-          preload="metadata"
-          data-testid="what-i-ate-restaurant-video"
-        />
-      ) : entry.photo_url ? (
-        <img
-          src={resolveConsumerMediaUrl(entry.photo_url)}
-          alt=""
-          style={styles.photo}
-          loading="lazy"
-        />
-      ) : null}
     </article>
   );
 }
@@ -129,57 +126,18 @@ export default function WhatIAteTodayAtRestaurant({ restaurantId }) {
 }
 
 const styles = {
-  wrap: { margin: "0 0 14px" },
-  title: {
-    fontSize: 13,
-    fontWeight: 800,
-    letterSpacing: 0.3,
-    color: "#1c1917",
-    marginBottom: 4,
-  },
-  disclaimer: {
-    margin: "0 0 10px",
-    fontSize: 12,
-    color: "#78716c",
-    lineHeight: 1.4,
-  },
-  list: { display: "grid", gap: 10 },
-  card: {
-    padding: "12px 14px",
-    borderRadius: 12,
-    border: "1px solid #e7e5e4",
-    background: "#fff",
-    display: "grid",
-    gap: 4,
-  },
-  nameRow: { display: "flex", flexWrap: "wrap", gap: 8, alignItems: "baseline" },
-  name: { fontSize: 15, color: "#1c1917" },
-  meal: { fontSize: 11, fontWeight: 700, color: "#166534" },
-  when: { fontSize: 11, color: "#78716c" },
-  itemLine: { fontSize: 15, fontWeight: 600, color: "#1c1917" },
-  atLine: { margin: 0, fontSize: 13, color: "#57534e" },
-  itemLink: { color: "#166534", textDecoration: "none" },
-  shared: { margin: 0, fontSize: 12, color: "#78716c" },
-  quote: {
-    margin: "4px 0 0",
-    fontSize: 14,
-    color: "#44403c",
-    fontStyle: "italic",
-    lineHeight: 1.4,
-  },
-  photo: {
-    marginTop: 8,
-    maxWidth: "100%",
-    maxHeight: 180,
-    borderRadius: 8,
-    objectFit: "cover",
-  },
-  video: {
-    marginTop: 8,
-    width: "100%",
-    maxHeight: 220,
-    borderRadius: 8,
-    background: "#0f172a",
-    objectFit: "contain",
-  },
+  wrap: { marginTop: 16 },
+  title: { fontSize: 13, fontWeight: 800, letterSpacing: 0.3, marginBottom: 4 },
+  disclaimer: { margin: "0 0 10px", fontSize: 12, color: "#78716c", lineHeight: 1.4 },
+  list: { display: "flex", flexDirection: "column", gap: 12 },
+  card: { padding: "10px 0", borderBottom: "1px solid #e7e5e4" },
+  nameRow: { display: "flex", flexWrap: "wrap", gap: 8, alignItems: "baseline", marginBottom: 4 },
+  name: { fontSize: 14, color: "#1c1917" },
+  meal: { fontSize: 12, color: "#78716c" },
+  when: { fontSize: 12, color: "#78716c" },
+  itemLine: { fontSize: 14, fontWeight: 600, color: "#1c1917" },
+  itemLink: { color: "#1c1917", textDecoration: "underline" },
+  atLine: { margin: "4px 0 0", fontSize: 13, color: "#57534e" },
+  shared: { margin: "6px 0 0", fontSize: 12, color: "#78716c" },
+  quote: { margin: "6px 0 0", fontSize: 13, color: "#44403c", fontStyle: "italic" },
 };

@@ -77,11 +77,13 @@ function TileThumb({ video, width = 240, height = 373 }) {
   const [active, setActive] = useState(false);
   const wrapRef = useRef(null);
   const videoRef = useRef(null);
+  const capturedRef = useRef(false);
 
   useEffect(() => {
     setPoster("");
     setFailed(false);
     setActive(false);
+    capturedRef.current = false;
   }, [thumb, src]);
 
   useEffect(() => {
@@ -116,9 +118,10 @@ function TileThumb({ video, width = 240, height = 373 }) {
     }
 
     function tryCapture() {
-      if (cancelled || !el) return;
+      if (cancelled || !el || capturedRef.current) return;
       const dataUrl = capturePosterFromVideoElement(el);
       if (dataUrl) {
+        capturedRef.current = true;
         setPoster(dataUrl);
         done();
       }
@@ -147,10 +150,11 @@ function TileThumb({ video, width = 240, height = 373 }) {
     el?.addEventListener("loadeddata", tryCapture);
     el?.addEventListener("seeked", tryCapture);
     el?.addEventListener("error", onError);
+    if (el && el.readyState >= 2) onMeta();
 
     return () => {
       cancelled = true;
-      done();
+      if (!capturedRef.current) done();
       el?.removeEventListener("loadedmetadata", onMeta);
       el?.removeEventListener("loadeddata", tryCapture);
       el?.removeEventListener("seeked", tryCapture);
@@ -179,6 +183,7 @@ function TileThumb({ video, width = 240, height = 373 }) {
             <video
               ref={videoRef}
               src={withVideoPreviewSeek(src)}
+              crossOrigin="anonymous"
               muted
               playsInline
               preload="metadata"
@@ -188,7 +193,7 @@ function TileThumb({ video, width = 240, height = 373 }) {
             />
           ) : null}
           <div
-            style={styles.placeholder}
+            style={styles.neutralPlaceholder}
             data-testid="profile-video-tile-placeholder"
             aria-hidden="true"
           />
@@ -296,6 +301,16 @@ function useSheetMotionStyles() {
   }, []);
 }
 
+function clampAspectRatio(w, h) {
+  const width = Number(w);
+  const height = Number(h);
+  if (!(width > 0) || !(height > 0)) return 9 / 16;
+  const ratio = width / height;
+  const minR = 9 / 16;
+  const maxR = 16 / 9;
+  return Math.min(maxR, Math.max(minR, ratio));
+}
+
 function PlayerSheet({
   open,
   video,
@@ -312,6 +327,7 @@ function PlayerSheet({
   const openedAt = useRef(0);
   const [loadError, setLoadError] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
+  const [aspectRatio, setAspectRatio] = useState(9 / 16);
   const src = video?.video_url ? resolveConsumerMediaUrl(video.video_url) : "";
   const caption = dishCaption(video, restaurantName);
   const dishHref =
@@ -319,9 +335,12 @@ function PlayerSheet({
       ? `/menu-items/${encodeURIComponent(String(video.menu_item_id))}?from=profile`
       : null;
   const durationLabel = formatDurationMs(video?.duration_ms);
+  const isLandscape = aspectRatio >= 1;
+  const desktopMaxWidth = isLandscape ? 560 : 360;
 
   useEffect(() => {
     if (!open) return undefined;
+    setAspectRatio(9 / 16);
     openedAt.current = Date.now();
     setLoadError(false);
     const prev = document.activeElement;
@@ -438,7 +457,17 @@ function PlayerSheet({
           ×
         </button>
         <div style={styles.sheetBody}>
-          <div style={styles.playerFrame}>
+          <div
+            style={{
+              ...styles.playerFrame,
+              aspectRatio: String(aspectRatio),
+              ...(isDesktop
+                ? { maxWidth: desktopMaxWidth, width: "clamp(130px, 38%, 200px)" }
+                : null),
+            }}
+            data-testid="profile-video-player-frame"
+            data-aspect={isLandscape ? "landscape" : "portrait"}
+          >
             {loadError ? (
               <div style={styles.loadFail} data-testid="profile-video-player-error">
                 <p style={{ margin: 0 }}>Couldn’t load this video.</p>
@@ -468,6 +497,10 @@ function PlayerSheet({
                       ? resolveConsumerMediaUrl(video.thumbnail_url)
                       : undefined
                   }
+                  onLoadedMetadata={(e) => {
+                    const el = e.currentTarget;
+                    setAspectRatio(clampAspectRatio(el.videoWidth, el.videoHeight));
+                  }}
                   onError={() => setLoadError(true)}
                   style={styles.playerVideo}
                   data-testid="profile-video-player"
@@ -1047,8 +1080,9 @@ const styles = {
     opacity: 0,
     pointerEvents: "none",
     left: -9999,
+    top: 0,
   },
-  placeholder: {
+  neutralPlaceholder: {
     width: "100%",
     height: "100%",
     background: "linear-gradient(165deg, #d6d3d1 0%, #a8a29e 100%)",
@@ -1174,19 +1208,23 @@ const styles = {
     alignItems: "flex-start",
   },
   playerFrame: {
-    width: 130,
-    flex: "0 0 130px",
+    width: "clamp(130px, 38%, 200px)",
+    flex: "0 0 auto",
+    maxWidth: "100%",
+    maxHeight: "min(70svh, 640px)",
     aspectRatio: "9 / 16",
     borderRadius: 10,
     overflow: "hidden",
-    background: "#0f172a",
+    background: "#000",
+    marginLeft: "auto",
+    marginRight: "auto",
   },
   playerVideo: {
     width: "100%",
     height: "100%",
-    objectFit: "cover",
+    objectFit: "contain",
     display: "block",
-    background: "#0f172a",
+    background: "#000",
   },
   sheetMeta: {
     flex: 1,
