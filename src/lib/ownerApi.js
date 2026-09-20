@@ -778,6 +778,7 @@ export const listOwnerVideos = (params = {}) => {
   const qs = new URLSearchParams();
   if (params.kind) qs.set("kind", params.kind);
   if (params.untagged_only) qs.set("untagged_only", "1");
+  if (params.no_admin_description) qs.set("no_admin_description", "1");
   if (params.q) qs.set("q", params.q);
   if (params.date) qs.set("date", params.date);
   if (params.date_from) qs.set("date_from", params.date_from);
@@ -800,6 +801,23 @@ export const lookupOwnerVideo = ({ videoId, assetNumber } = {}) => {
 
 export const patchOwnerVideoMetadata = (kind, sourceId, body) =>
   patch(`/api/owner/videos/${encodeURIComponent(kind)}/${encodeURIComponent(String(sourceId))}`, body);
+
+export const getOwnerVideoSearchMetadata = (kind, sourceId) =>
+  get(
+    `/api/owner/videos/${encodeURIComponent(kind)}/${encodeURIComponent(String(sourceId))}/search-metadata`
+  );
+
+export const putOwnerVideoSearchMetadata = (kind, sourceId, body) =>
+  put(
+    `/api/owner/videos/${encodeURIComponent(kind)}/${encodeURIComponent(String(sourceId))}/search-metadata`,
+    body
+  );
+
+export const resetOwnerVideoSearchMetadataField = (kind, sourceId, field) =>
+  post(
+    `/api/owner/videos/${encodeURIComponent(kind)}/${encodeURIComponent(String(sourceId))}/search-metadata/reset`,
+    { field }
+  );
 
 /**
  * Upload or replace the search/Feed thumbnail for a curated video.

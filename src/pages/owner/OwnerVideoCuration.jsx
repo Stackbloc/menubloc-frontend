@@ -10,6 +10,9 @@ import {
   listOwnerVideoCuisines,
   lookupOwnerVideo,
   patchOwnerVideoMetadata,
+  getOwnerVideoSearchMetadata,
+  putOwnerVideoSearchMetadata,
+  resetOwnerVideoSearchMetadataField,
   uploadOwnerVideo,
   uploadOwnerVideoThumbnail,
   createOwnerDeal,
@@ -1052,6 +1055,344 @@ function ymdFromIso(value) {
   return d.toISOString().slice(0, 10);
 }
 
+const SEARCH_METADATA_KINDS = new Set(["ate", "want", "managed", "cooking", "deal"]);
+
+function SearchWebMetadataSection({ video }) {
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [payload, setPayload] = useState(null);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [keywordsText, setKeywordsText] = useState("");
+  const [cuisine, setCuisine] = useState("");
+  const [locationCity, setLocationCity] = useState("");
+  const [locationNeighborhood, setLocationNeighborhood] = useState("");
+  const [locationRegion, setLocationRegion] = useState("");
+  const [spiceLevel, setSpiceLevel] = useState("");
+  const [dietaryNotes, setDietaryNotes] = useState("");
+
+  const kind = video?.video_kind;
+  const sourceId = video?.video_source_id;
+  const supported = SEARCH_METADATA_KINDS.has(kind);
+
+  const applyPayload = useCallback((data) => {
+    setPayload(data);
+    const fields = data?.fields || {};
+    const hints = data?.form_hints || {};
+    setTitle(fields.title || "");
+    setDescription(
+      hints.description_form_value != null
+        ? hints.description_form_value
+        : fields.description || ""
+    );
+    setKeywordsText(Array.isArray(fields.keywords) ? fields.keywords.join(", ") : "");
+    setCuisine(fields.cuisine || "");
+    setLocationCity(fields.location_city || "");
+    setLocationNeighborhood(fields.location_neighborhood || "");
+    setLocationRegion(fields.location_region || "");
+    setSpiceLevel(fields.spice_level || "");
+    setDietaryNotes(fields.dietary_notes || "");
+  }, []);
+
+  useEffect(() => {
+    if (!supported || !kind || sourceId == null) {
+      setLoading(false);
+      setPayload(null);
+      return undefined;
+    }
+    let cancelled = false;
+    setLoading(true);
+    setError("");
+    setSuccess("");
+    getOwnerVideoSearchMetadata(kind, sourceId)
+      .then((data) => {
+        if (!cancelled) applyPayload(data);
+      })
+      .catch((err) => {
+        if (!cancelled) setError(err.message || "Could not load search metadata");
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [supported, kind, sourceId, applyPayload]);
+
+  if (!supported) return null;
+
+  async function handleSave(e) {
+    e.preventDefault();
+    setBusy(true);
+    setError("");
+    setSuccess("");
+    try {
+      const body = {
+        title,
+        description,
+        keywords: keywordsText,
+        cuisine,
+        spice_level: spiceLevel || null,
+        dietary_notes: dietaryNotes || null,
+      };
+      if (!payload?.form_hints?.omit_restaurant_location) {
+        body.location_city = locationCity;
+        body.location_neighborhood = locationNeighborhood;
+        body.location_region = locationRegion;
+      }
+      const next = await putOwnerVideoSearchMetadata(kind, sourceId, body);
+      applyPayload(next);
+      setSuccess("Search & web metadata saved");
+    } catch (err) {
+      setError(err.message || "Save failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleReset(field) {
+    setBusy(true);
+    setError("");
+    setSuccess("");
+    try {
+      const next = await resetOwnerVideoSearchMetadataField(kind, sourceId, field);
+      applyPayload(next);
+      setSuccess(`Reset ${field} to auto`);
+    } catch (err) {
+      setError(err.message || "Reset failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function fieldBadge(field) {
+    const src = payload?.field_sources?.[field] || "prefilled";
+    const edited = src === "admin_edited";
+    return (
+      <span style={{ display: "inline-flex", gap: 8, alignItems: "center" }}>
+        <span
+          style={{
+            fontSize: 11,
+            fontWeight: 700,
+            padding: "2px 8px",
+            borderRadius: 999,
+            background: edited ? "#fef3c7" : "#ecfdf5",
+            color: edited ? "#92400e" : "#065f46",
+          }}
+        >
+          {edited ? "Edited" : "Auto"}
+        </span>
+        {edited ? (
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => handleReset(field)}
+            style={{
+              fontSize: 12,
+              border: "none",
+              background: "transparent",
+              color: "#1d4ed8",
+              cursor: busy ? "wait" : "pointer",
+              textDecoration: "underline",
+              padding: 0,
+            }}
+          >
+            Reset to auto
+          </button>
+        ) : null}
+      </span>
+    );
+  }
+
+  const titleMax = payload?.form_hints?.title_max || 70;
+  const descSoftMax = payload?.form_hints?.description_soft_max || 300;
+  const omitLoc = payload?.form_hints?.omit_restaurant_location;
+
+  return (
+    <fieldset
+      data-testid="owner-video-search-web-metadata"
+      style={{
+        border: `1px solid ${OWNER_COLORS.line}`,
+        borderRadius: 12,
+        padding: "12px 14px",
+        margin: "8px 0 0",
+        display: "grid",
+        gap: 10,
+      }}
+    >
+      <legend style={{ fontWeight: 700, fontSize: 13, padding: "0 6px" }}>
+        Search &amp; web metadata
+      </legend>
+      <p style={{ margin: 0, fontSize: 12, color: OWNER_COLORS.muted }}>
+        Public title/description for search engines. Auto values come from tags and restaurant
+        profile only — diner caption can prefill the description here but is not public until you
+        save. Status: <strong>{payload?.status || "auto"}</strong>
+        {payload && !payload.eligible ? " · not currently eligible for public emission" : ""}.
+      </p>
+      {loading ? <p style={{ margin: 0, fontSize: 13, color: OWNER_COLORS.muted }}>Loading…</p> : null}
+      {error ? <p style={{ margin: 0, color: "#b91c1c", fontSize: 13 }}>{error}</p> : null}
+      {success ? <p style={{ margin: 0, color: "#065f46", fontSize: 13 }}>{success}</p> : null}
+      {!loading && payload ? (
+        <form onSubmit={handleSave} style={{ display: "grid", gap: 10 }}>
+          <label style={{ display: "grid", gap: 4 }}>
+            <span style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: 13, fontWeight: 700 }}>
+              <span>SEO title</span>
+              {fieldBadge("title")}
+            </span>
+            <input
+              value={title}
+              maxLength={titleMax}
+              onChange={(e) => setTitle(e.target.value)}
+              style={inputStyle}
+              data-testid="owner-video-seo-title"
+            />
+            <span style={{ fontSize: 11, color: OWNER_COLORS.muted }}>
+              {title.length}/{titleMax}
+            </span>
+          </label>
+          <label style={{ display: "grid", gap: 4 }}>
+            <span style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: 13, fontWeight: 700 }}>
+              <span>SEO description</span>
+              {fieldBadge("description")}
+            </span>
+            <textarea
+              value={description}
+              rows={4}
+              onChange={(e) => setDescription(e.target.value)}
+              style={inputStyle}
+              data-testid="owner-video-seo-description"
+            />
+            <span style={{ fontSize: 11, color: OWNER_COLORS.muted }}>
+              {description.length} chars (target 150–{descSoftMax})
+            </span>
+          </label>
+          <label style={{ display: "grid", gap: 4 }}>
+            <span style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: 13, fontWeight: 700 }}>
+              <span>Keywords (≤ 8, comma-separated)</span>
+              {fieldBadge("keywords")}
+            </span>
+            <input
+              value={keywordsText}
+              onChange={(e) => setKeywordsText(e.target.value)}
+              style={inputStyle}
+              data-testid="owner-video-seo-keywords"
+            />
+          </label>
+          <label style={{ display: "grid", gap: 4 }}>
+            <span style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: 13, fontWeight: 700 }}>
+              <span>Cuisine</span>
+              {fieldBadge("cuisine")}
+            </span>
+            <input value={cuisine} onChange={(e) => setCuisine(e.target.value)} style={inputStyle} />
+          </label>
+          {!omitLoc ? (
+            <>
+              <label style={{ display: "grid", gap: 4 }}>
+                <span style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: 13, fontWeight: 700 }}>
+                  <span>City</span>
+                  {fieldBadge("location_city")}
+                </span>
+                <input
+                  value={locationCity}
+                  onChange={(e) => setLocationCity(e.target.value)}
+                  style={inputStyle}
+                />
+              </label>
+              <label style={{ display: "grid", gap: 4 }}>
+                <span style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: 13, fontWeight: 700 }}>
+                  <span>Neighborhood</span>
+                  {fieldBadge("location_neighborhood")}
+                </span>
+                <input
+                  value={locationNeighborhood}
+                  onChange={(e) => setLocationNeighborhood(e.target.value)}
+                  style={inputStyle}
+                />
+              </label>
+              <label style={{ display: "grid", gap: 4 }}>
+                <span style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: 13, fontWeight: 700 }}>
+                  <span>Region / state</span>
+                  {fieldBadge("location_region")}
+                </span>
+                <input
+                  value={locationRegion}
+                  onChange={(e) => setLocationRegion(e.target.value)}
+                  style={inputStyle}
+                />
+              </label>
+            </>
+          ) : null}
+          <label style={{ display: "grid", gap: 4 }}>
+            <span style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: 13, fontWeight: 700 }}>
+              <span>Spice level</span>
+              {fieldBadge("spice_level")}
+            </span>
+            <input
+              value={spiceLevel}
+              onChange={(e) => setSpiceLevel(e.target.value)}
+              style={inputStyle}
+              placeholder="Optional"
+            />
+          </label>
+          <label style={{ display: "grid", gap: 4 }}>
+            <span style={{ fontSize: 13, fontWeight: 700 }}>Dietary notes</span>
+            <input
+              value={dietaryNotes}
+              onChange={(e) => setDietaryNotes(e.target.value)}
+              style={inputStyle}
+              placeholder="Admin-entered only"
+            />
+          </label>
+          {payload.derived?.deal_offer_text ? (
+            <p style={{ margin: 0, fontSize: 12, color: OWNER_COLORS.muted }}>
+              Deal (from record): {payload.derived.deal_offer_text}
+            </p>
+          ) : null}
+          <div
+            style={{
+              background: "#f8fafc",
+              borderRadius: 8,
+              padding: 10,
+              fontSize: 12,
+              display: "grid",
+              gap: 4,
+            }}
+            data-testid="owner-video-seo-preview"
+          >
+            <strong>Public preview</strong>
+            <div>Title: {payload.preview?.title || "—"}</div>
+            <div>Description: {payload.preview?.description || "—"}</div>
+            <div>Location: {payload.preview?.location_line || "—"}</div>
+            <div>
+              Derived dish: {payload.derived?.dish_name || "—"} · Restaurant:{" "}
+              {payload.derived?.restaurant_name || "—"}
+            </div>
+          </div>
+          <button
+            type="submit"
+            disabled={busy}
+            data-testid="owner-video-seo-save"
+            style={{
+              justifySelf: "start",
+              padding: "8px 14px",
+              borderRadius: 8,
+              border: "none",
+              background: "#166534",
+              color: "#fff",
+              fontWeight: 700,
+              cursor: busy ? "wait" : "pointer",
+            }}
+          >
+            {busy ? "Saving…" : "Save search metadata"}
+          </button>
+        </form>
+      ) : null}
+    </fieldset>
+  );
+}
+
 function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
   const videoPreviewRef = useRef(null);
   const thumbFileInputRef = useRef(null);
@@ -1519,6 +1860,7 @@ function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
 
         <FoodFormPicker value={foodForm || ""} onChange={setFoodForm} disabled={busy} />
         <CuisinePicker value={cuisine || ""} onChange={setCuisine} disabled={busy} />
+        <SearchWebMetadataSection video={video} />
 
         {video.video_kind === "managed" ? (
           <OwnerClusterSelect
@@ -1660,6 +2002,7 @@ export default function OwnerVideoCuration() {
   const [error, setError] = useState("");
   const [kind, setKind] = useState("all");
   const [untaggedOnly, setUntaggedOnly] = useState(false);
+  const [noAdminDescription, setNoAdminDescription] = useState(false);
   const [query, setQuery] = useState("");
   const [dateFromFilter, setDateFromFilter] = useState("");
   const [dateToFilter, setDateToFilter] = useState("");
@@ -1675,6 +2018,7 @@ export default function OwnerVideoCuration() {
         const result = await listOwnerVideos({
           kind: kind === "all" ? undefined : kind,
           untagged_only: untaggedOnly,
+          no_admin_description: noAdminDescription,
           q: query.trim() || undefined,
           date_from: dateFromFilter || undefined,
           date_to: dateToFilter || undefined,
@@ -1691,7 +2035,7 @@ export default function OwnerVideoCuration() {
         setLoadingMore(false);
       }
     },
-    [kind, untaggedOnly, query, dateFromFilter, dateToFilter]
+    [kind, untaggedOnly, noAdminDescription, query, dateFromFilter, dateToFilter]
   );
 
   useEffect(() => {
@@ -1814,6 +2158,15 @@ export default function OwnerVideoCuration() {
               onChange={(e) => setUntaggedOnly(e.target.checked)}
             />
             Untagged only
+          </label>
+          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14 }}>
+            <input
+              type="checkbox"
+              checked={noAdminDescription}
+              onChange={(e) => setNoAdminDescription(e.target.checked)}
+              data-testid="owner-video-no-admin-description-filter"
+            />
+            No admin description
           </label>
           <button
             type="button"

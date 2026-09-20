@@ -164,6 +164,40 @@ function sitemapUrlset(entries) {
   return `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${rows.join("")}</urlset>`;
 }
 
+/** Google video sitemap (alongside plain urlset — does not replace it). */
+function googleVideoSitemapUrlset(entries) {
+  const rows = (entries || []).map((entry) => {
+    const pageLoc = absoluteCanonicalUrl(entry.loc || entry.path);
+    const contentLoc = entry.content_loc || entry.contentUrl;
+    const thumbLoc = entry.thumbnail_loc || entry.thumbnailUrl;
+    const playerLoc = absoluteCanonicalUrl(entry.player_loc || entry.path || entry.loc);
+    const title = entry.title || "Menuply video";
+    const description = entry.description || title;
+    if (!pageLoc || !contentLoc || !thumbLoc) return "";
+    const lastmod = entry.updated_at
+      ? `<lastmod>${escapeXml(String(entry.updated_at).slice(0, 10))}</lastmod>`
+      : "";
+    return (
+      `<url>` +
+      `<loc>${escapeXml(pageLoc)}</loc>${lastmod}` +
+      `<video:video>` +
+      `<video:thumbnail_loc>${escapeXml(thumbLoc)}</video:thumbnail_loc>` +
+      `<video:title>${escapeXml(title)}</video:title>` +
+      `<video:description>${escapeXml(description)}</video:description>` +
+      `<video:content_loc>${escapeXml(contentLoc)}</video:content_loc>` +
+      `<video:player_loc>${escapeXml(playerLoc)}</video:player_loc>` +
+      `</video:video>` +
+      `</url>`
+    );
+  }).filter(Boolean);
+  return (
+    `<?xml version="1.0" encoding="UTF-8"?>` +
+    `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" ` +
+    `xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">` +
+    `${rows.join("")}</urlset>`
+  );
+}
+
 function sitemapIndex(count) {
   const chunks = Math.ceil(count / SITEMAP_LIMIT);
   const rows = Array.from({ length: chunks }, (_, index) =>
@@ -308,6 +342,12 @@ function injectedResponse(html) {
 export default async function middleware(request) {
   const { pathname } = new URL(request.url);
 
+  if (pathname === "/sitemap-videos.xml") {
+    const inventory = await fetchMeta("/public/sitemap-inventory", 10000);
+    if (!inventory?.ok) return new Response("Sitemap inventory unavailable", { status: 503 });
+    return xmlResponse(googleVideoSitemapUrlset(inventory.video_sitemap || []));
+  }
+
   if (pathname === "/sitemap.xml" || SITEMAP_CHUNK_RE.test(pathname)) {
     const entries = await buildSitemapEntries();
     if (!entries) return new Response("Sitemap inventory unavailable", { status: 503 });
@@ -389,7 +429,7 @@ export default async function middleware(request) {
     let html = injectNoScriptLinks(injectMeta(shell, title, description, canonical), [
       { href: cityUrl, text: `Restaurants in ${meta.data.city}, ${meta.data.state}` },
     ], "Related city");
-    html = injectJsonLd(html, restaurantPageJsonLd(meta.data));
+    html = injectJsonLd(html, restaurantPageJsonLd(meta.data, meta.data.videos || []));
     return injectedResponse(html);
   }
 
@@ -450,7 +490,10 @@ export default async function middleware(request) {
     if (!shell) return;
     const { title, description } = buildRestaurantProfileMeta(meta.data);
     return injectedResponse(
-      injectJsonLd(injectMeta(shell, title, description, canonical), restaurantPageJsonLd(meta.data))
+      injectJsonLd(
+        injectMeta(shell, title, description, canonical),
+        restaurantPageJsonLd(meta.data, meta.data.videos || [])
+      )
     );
   }
 
@@ -558,8 +601,9 @@ export default async function middleware(request) {
     let html = injectMeta(shell, title, description, canonical, data.photo_url || null);
     if (!data.indexable) {
       html = injectRobots(html, "noindex, follow");
+    } else {
+      html = injectJsonLd(html, videoWatchPageJsonLd(data));
     }
-    html = injectJsonLd(html, videoWatchPageJsonLd(data));
     const links = [];
     if (data.restaurant?.slug) {
       const rPath = restaurantPath(data.restaurant);
@@ -617,6 +661,7 @@ export default async function middleware(request) {
 export const config = {
   matcher: [
     "/sitemap.xml",
+    "/sitemap-videos.xml",
     "/sitemaps/:path*",
     "/clusters",
     "/clusters/:path*",

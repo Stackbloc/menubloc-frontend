@@ -77,6 +77,7 @@ test("VideoObject includes restaurant and menu item about refs together", () => 
     path: "/videos/ate/9",
     title: "Lunch",
     description: "Yum",
+    keywords: ["cheese pull", "late night"],
     video_url: "https://cdn.example/v.mp4",
     photo_url: "https://cdn.example/t.jpg",
     created_at: "2026-09-01T12:00:00Z",
@@ -87,11 +88,15 @@ test("VideoObject includes restaurant and menu item about refs together", () => 
       slug: "alpha",
       city: "Dothan",
       state: "AL",
+      address_line_1: "1 Main St",
     },
     menu_item: { id: 88, name: "Burger" },
   });
   assert.equal(built.video["@type"], "VideoObject");
   assert.equal(built.video.duration, "PT15S");
+  assert.equal(built.video.embedUrl, "https://menuply.com/videos/ate/9");
+  assert.deepEqual(built.video.keywords, ["cheese pull", "late night"]);
+  assert.equal(built.video.contentLocation["@type"], "Place");
   assert.ok(Array.isArray(built.video.about));
   assert.equal(built.video.about.length, 2);
   assert.equal(built.entities.length, 2);
@@ -100,17 +105,23 @@ test("VideoObject includes restaurant and menu item about refs together", () => 
     id: 9,
     path: "/videos/ate/9",
     title: "Lunch",
+    description: "Yum",
+    indexable: true,
     video_url: "https://cdn.example/v.mp4",
-    created_at: "2026-09-01T12:00:00Z",
-    restaurant: {
-      id: 1,
-      name: "Alpha",
-      slug: "alpha",
-      city: "Dothan",
-      state: "AL",
-    },
+    photo_url: "https://cdn.example/t.jpg",
+    restaurant: { id: 1, name: "Alpha", slug: "alpha", city: "Dothan", state: "AL" },
   });
-  assert.ok(page["@graph"] || page["@type"]);
+  assert.ok(page);
+  assert.equal(
+    videoWatchPageJsonLd({
+      kind: "ate",
+      id: 9,
+      path: "/videos/ate/9",
+      title: "Lunch",
+      indexable: false,
+    }),
+    null
+  );
 });
 
 test("restaurantPageJsonLd builds Restaurant type", () => {
@@ -124,6 +135,37 @@ test("restaurantPageJsonLd builds Restaurant type", () => {
   assert.ok(buildRestaurantJsonLd({ name: "Alpha", slug: "alpha" }));
 });
 
+test("restaurantPageJsonLd includes VideoObject nodes linked by @id", () => {
+  const page = restaurantPageJsonLd(
+    {
+      id: 1,
+      name: "Alpha",
+      slug: "alpha",
+      city: "Dothan",
+      state: "AL",
+    },
+    [
+      {
+        kind: "managed",
+        id: 34,
+        path: "/videos/managed/34",
+        title: "Black Ramen",
+        description: "Watch Black Ramen on Menuply.",
+        video_url: "https://cdn.example/v.mp4",
+        photo_url: "https://cdn.example/t.jpg",
+        indexable: true,
+      },
+    ]
+  );
+  assert.ok(Array.isArray(page["@graph"]));
+  const restaurantNode = page["@graph"].find((n) => n["@type"] === "Restaurant");
+  const videoNode = page["@graph"].find((n) => n["@type"] === "VideoObject");
+  assert.ok(restaurantNode);
+  assert.ok(videoNode);
+  assert.equal(videoNode.embedUrl, "https://menuply.com/videos/managed/34");
+  assert.equal(videoNode.about["@id"], restaurantNode["@id"]);
+});
+
 test("middleware matches videos and destination venues and injects JSON-LD helpers", () => {
   const mw = readFileSync(join(root, "middleware.js"), "utf8");
   assert.match(mw, /VIDEO_WATCH_RE/);
@@ -135,6 +177,8 @@ test("middleware matches videos and destination venues and injects JSON-LD helpe
   assert.match(mw, /destinationVenuePageJsonLd/);
   assert.match(mw, /destination_venues/);
   assert.match(mw, /inventory\.videos/);
+  assert.match(mw, /sitemap-videos\.xml/);
+  assert.match(mw, /googleVideoSitemapUrlset|xmlns:video/);
   assert.match(mw, /noindex, follow/);
 });
 

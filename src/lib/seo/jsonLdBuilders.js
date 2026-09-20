@@ -192,6 +192,17 @@ export function buildVideoObjectJsonLd(video, refs = {}) {
   const thumbnailUrl = absoluteUrl(video.photo_url || video.thumbnailUrl);
   const name = trimStr(video.title) || "Menuply video";
   const description = trimStr(video.description || video.comment);
+  const embedUrl = absoluteUrl(video.embed_path || video.embedUrl || path);
+  const keywordsRaw = video.keywords;
+  const keywords = Array.isArray(keywordsRaw)
+    ? keywordsRaw.map((k) => trimStr(k)).filter(Boolean).slice(0, 8)
+    : typeof keywordsRaw === "string"
+      ? keywordsRaw
+          .split(/[,;]+/)
+          .map((k) => trimStr(k))
+          .filter(Boolean)
+          .slice(0, 8)
+      : [];
 
   const node = {
     "@type": "VideoObject",
@@ -207,6 +218,32 @@ export function buildVideoObjectJsonLd(video, refs = {}) {
   const duration = isoDurationFromMs(video.duration_ms ?? video.durationMs);
   if (duration) node.duration = duration;
   if (contentUrl) node.contentUrl = contentUrl;
+  if (embedUrl) node.embedUrl = embedUrl;
+  if (keywords.length === 1) node.keywords = keywords[0];
+  else if (keywords.length > 1) node.keywords = keywords;
+
+  const contentLocation = video.content_location || video.contentLocation || null;
+  if (contentLocation && typeof contentLocation === "object") {
+    node.contentLocation = contentLocation;
+  } else {
+    const restaurant = refs.restaurant || video.restaurant;
+    if (restaurant?.city || restaurant?.address_line_1 || restaurant?.address) {
+      const address = postalAddress({
+        address_line_1: restaurant.address_line_1 || restaurant.address,
+        city: restaurant.city,
+        state: restaurant.state,
+        postal_code: restaurant.postal_code,
+        country: restaurant.country || "US",
+      });
+      if (address || restaurant.name) {
+        node.contentLocation = {
+          "@type": "Place",
+          ...(trimStr(restaurant.name) ? { name: trimStr(restaurant.name) } : {}),
+          ...(address ? { address } : {}),
+        };
+      }
+    }
+  }
 
   const restaurant = refs.restaurant || video.restaurant;
   const menuItem = refs.menuItem || video.menu_item;
@@ -250,8 +287,23 @@ export function toJsonLdScriptTag(graph) {
   return `<script type="application/ld+json">${json}</script>`;
 }
 
-export function restaurantPageJsonLd(restaurant) {
-  return buildJsonLdGraph(buildRestaurantJsonLd(restaurant));
+export function restaurantPageJsonLd(restaurant, videos = []) {
+  const restaurantLd = buildRestaurantJsonLd(restaurant);
+  if (!restaurantLd) return null;
+  const list = Array.isArray(videos) ? videos : [];
+  const videoNodes = [];
+  for (const video of list) {
+    if (!video || video.indexable === false) continue;
+    const built = buildVideoObjectJsonLd(video, { restaurant });
+    if (built?.video) {
+      // Link video about restaurant via @id when not already set
+      if (!built.video.about && restaurantLd["@id"]) {
+        built.video.about = { "@id": restaurantLd["@id"] };
+      }
+      videoNodes.push(built.video);
+    }
+  }
+  return buildJsonLdGraph([restaurantLd, ...videoNodes]);
 }
 
 export function menuItemPageJsonLd(item, restaurant) {
@@ -265,6 +317,7 @@ export function destinationVenuePageJsonLd(venue) {
 }
 
 export function videoWatchPageJsonLd(video) {
+  if (!video || video.indexable === false) return null;
   const built = buildVideoObjectJsonLd(video);
   if (!built) return null;
   return buildJsonLdGraph([built.video, ...built.entities]);
