@@ -834,6 +834,47 @@ export const uploadOwnerVideoThumbnail = (kind, sourceId, file) => {
   );
 };
 
+/**
+ * Replace the playable video file on an existing Video Manager row (same id / tags / SEO).
+ * Cause 2: sign → browser PUT → complete. Does not create a new catalog row.
+ */
+export async function replaceOwnerVideoMedia({ kind, sourceId, file, onProgress } = {}) {
+  if (!kind || sourceId == null) throw new Error("Missing video reference");
+  if (!file) throw new Error("No file selected");
+  const timeoutMs = videoUploadTimeoutMs(file.size);
+  const base = `/api/owner/videos/${encodeURIComponent(kind)}/${encodeURIComponent(String(sourceId))}/replace-media`;
+  try {
+    const grant = await post(`${base}/sign`, {
+      filename: file.name || "video.mp4",
+      content_type: file.type || "video/mp4",
+      byte_size: Number(file.size) || 0,
+    });
+    if (!grant?.signed_url || !grant?.storage_key) {
+      throw new Error("Sign response missing signed_url or storage_key");
+    }
+
+    await putBlobWithProgress({
+      url: grant.signed_url,
+      blob: file,
+      headers: grant.upload_headers || {
+        "Content-Type": grant.content_type || file.type || "video/mp4",
+        "x-upsert": "false",
+      },
+      timeoutMs,
+      onProgress,
+    });
+
+    return post(`${base}/complete`, {
+      storage_key: grant.storage_key,
+      content_type: grant.content_type || file.type || "video/mp4",
+      byte_size: Number(file.size) || 0,
+    });
+  } catch (err) {
+    if (err && typeof err === "object" && Number(err.status) > 0) throw err;
+    throw mapOwnerUploadNetworkError(err, "upload");
+  }
+}
+
 export const listOwnerVideoClusters = (params = {}) => {
   const qs = new URLSearchParams();
   if (params.q) qs.set("q", params.q);

@@ -15,6 +15,7 @@ import {
   resetOwnerVideoSearchMetadataField,
   uploadOwnerVideo,
   uploadOwnerVideoThumbnail,
+  replaceOwnerVideoMedia,
   createOwnerDeal,
   uploadOwnerDealMediaVideo,
   publishOwnerDeal,
@@ -1396,6 +1397,7 @@ function SearchWebMetadataSection({ video }) {
 function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
   const videoPreviewRef = useRef(null);
   const thumbFileInputRef = useRef(null);
+  const replaceFileInputRef = useRef(null);
   const [title, setTitle] = useState(video.title || "");
   const [comment, setComment] = useState(video.comment || "");
   const [clusterId, setClusterId] = useState(
@@ -1420,8 +1422,12 @@ function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
   const [runStartsAt, setRunStartsAt] = useState(() => ymdFromIso(video.run_starts_at));
   const [runEndsAt, setRunEndsAt] = useState(() => ymdFromIso(video.run_ends_at));
   const [photoUrl, setPhotoUrl] = useState(video.photo_url || null);
+  const [previewUrl, setPreviewUrl] = useState(video.video_url || null);
+  const [previewKey, setPreviewKey] = useState(0);
   const [busy, setBusy] = useState(false);
   const [thumbBusy, setThumbBusy] = useState(false);
+  const [replaceBusy, setReplaceBusy] = useState(false);
+  const [replaceProgress, setReplaceProgress] = useState(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
@@ -1437,22 +1443,12 @@ function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
     setRunStartsAt(ymdFromIso(video.run_starts_at));
     setRunEndsAt(ymdFromIso(video.run_ends_at));
     setPhotoUrl(video.photo_url || null);
+    setPreviewUrl(video.video_url || null);
+    setPreviewKey((k) => k + 1);
     setError("");
     setSuccess("");
-  }, [
-    video.video_id,
-    video.title,
-    video.comment,
-    video.cluster_id,
-    video.market_discoverable,
-    video.play_muted,
-    video.food_form,
-    video.cuisine,
-    video.manager_active,
-    video.run_starts_at,
-    video.run_ends_at,
-    video.photo_url,
-  ]);
+    setReplaceProgress(null);
+  }, [video]);
 
   useEffect(() => {
     function onKeyDown(event) {
@@ -1563,9 +1559,49 @@ function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
     }
   }
 
+  async function applyReplaceVideoFile(file) {
+    if (!file) return;
+    if (Number(file.size || 0) > MAX_UPLOAD_VIDEO_BYTES) {
+      setError(
+        `Video is too large (${formatBytes(file.size)}). Max is ${formatBytes(MAX_UPLOAD_VIDEO_BYTES)}. Use a shorter/smaller clip.`
+      );
+      return;
+    }
+    setReplaceBusy(true);
+    setError("");
+    setSuccess("");
+    setReplaceProgress({ percent: 0 });
+    try {
+      const result = await replaceOwnerVideoMedia({
+        kind: video.video_kind,
+        sourceId: video.video_source_id,
+        file,
+        onProgress: (p) => setReplaceProgress(p),
+      });
+      const next = result?.video || result;
+      const nextUrl = next?.video_url || null;
+      if (nextUrl) {
+        setPreviewUrl(nextUrl);
+        setPreviewKey((k) => k + 1);
+      }
+      setSuccess(
+        result?.video_transcoding === "pending"
+          ? "Video file replaced — normalizing in the background"
+          : "Video file replaced"
+      );
+      onSaved?.(next);
+    } catch (err) {
+      setError(err.message || "Unable to replace video file");
+    } finally {
+      setReplaceBusy(false);
+      setReplaceProgress(null);
+      if (replaceFileInputRef.current) replaceFileInputRef.current.value = "";
+    }
+  }
+
   async function handleCaptureFrame() {
     const el = videoPreviewRef.current;
-    if (!el || !video.video_url) {
+    if (!el || !previewUrl) {
       setError("Play or seek the video, then capture a frame.");
       return;
     }
@@ -1669,11 +1705,12 @@ function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
           }
         />
 
-        {video.video_url ? (
+        {previewUrl ? (
           <div style={{ marginBottom: 16, display: "grid", gap: 8, maxWidth: 360 }}>
             <video
+              key={previewKey}
               ref={videoPreviewRef}
-              src={video.video_url}
+              src={previewUrl}
               controls
               playsInline
               muted={playMuted}
@@ -1685,6 +1722,55 @@ function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
               }}
               style={{ width: "100%", borderRadius: 12, background: "#000" }}
             />
+            <div
+              data-testid="owner-video-replace-panel"
+              style={{
+                display: "grid",
+                gap: 8,
+                padding: 12,
+                borderRadius: 12,
+                border: `1px solid ${OWNER_COLORS.line}`,
+                background: "#FAFAF9",
+              }}
+            >
+              <span style={{ fontWeight: 700, fontSize: 13 }}>Replace video file</span>
+              <span style={{ fontSize: 12, color: OWNER_COLORS.muted, lineHeight: 1.4 }}>
+                Upload an improved MP4, WebM, or MOV. Keeps this asset’s tags, SEO metadata, and id —
+                only the playable file changes.
+              </span>
+              <input
+                ref={replaceFileInputRef}
+                type="file"
+                accept="video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov"
+                hidden
+                data-testid="owner-video-replace-file"
+                onChange={(e) => {
+                  const next = e.target.files?.[0] || null;
+                  if (next) void applyReplaceVideoFile(next);
+                }}
+              />
+              <button
+                type="button"
+                disabled={replaceBusy || busy || thumbBusy}
+                onClick={() => replaceFileInputRef.current?.click()}
+                data-testid="owner-video-replace-upload"
+                style={{
+                  justifySelf: "start",
+                  border: `1px solid ${OWNER_COLORS.line}`,
+                  background: "#fff",
+                  borderRadius: 8,
+                  padding: "8px 12px",
+                  fontWeight: 700,
+                  cursor: replaceBusy || busy || thumbBusy ? "wait" : "pointer",
+                }}
+              >
+                {replaceBusy
+                  ? replaceProgress?.percent != null
+                    ? `Uploading… ${Math.round(replaceProgress.percent)}%`
+                    : "Replacing…"
+                  : "Choose new file"}
+              </button>
+            </div>
             <label
               style={{
                 display: "flex",
@@ -1779,7 +1865,7 @@ function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
                 </button>
                 <button
                   type="button"
-                  disabled={thumbBusy || busy || !video.video_url}
+                  disabled={thumbBusy || busy || replaceBusy || !previewUrl}
                   onClick={handleCaptureFrame}
                   data-testid="owner-video-thumbnail-capture"
                   style={{

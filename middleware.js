@@ -144,6 +144,20 @@ function escapeXml(value) {
     .replace(/'/g, "&apos;");
 }
 
+/** YYYY-MM-DD for sitemap lastmod; omit invalid / Date→{} leftovers. */
+function sitemapLastmodXml(value) {
+  if (value == null || value === "") return "";
+  if (typeof value === "object" && !(value instanceof Date)) return "";
+  const iso =
+    value instanceof Date && Number.isFinite(value.getTime())
+      ? value.toISOString()
+      : typeof value === "string"
+        ? value.trim()
+        : String(value);
+  if (!iso || iso === "[object Object]" || !/^\d{4}-\d{2}-\d{2}/.test(iso)) return "";
+  return `<lastmod>${escapeXml(iso.slice(0, 10))}</lastmod>`;
+}
+
 function xmlResponse(body) {
   return new Response(body, {
     status: 200,
@@ -156,7 +170,7 @@ function xmlResponse(body) {
 
 function sitemapUrlset(entries) {
   const rows = entries.map((entry) => {
-    const lastmod = entry.lastmod ? `<lastmod>${escapeXml(String(entry.lastmod).slice(0, 10))}</lastmod>` : "";
+    const lastmod = sitemapLastmodXml(entry.lastmod);
     const changefreq = entry.changefreq ? `<changefreq>${entry.changefreq}</changefreq>` : "";
     const priority = entry.priority != null ? `<priority>${entry.priority}</priority>` : "";
     return `<url><loc>${escapeXml(entry.url)}</loc>${lastmod}${changefreq}${priority}</url>`;
@@ -174,9 +188,7 @@ function googleVideoSitemapUrlset(entries) {
     const title = entry.title || "Menuply video";
     const description = entry.description || title;
     if (!pageLoc || !contentLoc || !thumbLoc) return "";
-    const lastmod = entry.updated_at
-      ? `<lastmod>${escapeXml(String(entry.updated_at).slice(0, 10))}</lastmod>`
-      : "";
+    const lastmod = sitemapLastmodXml(entry.updated_at);
     return (
       `<url>` +
       `<loc>${escapeXml(pageLoc)}</loc>${lastmod}` +
