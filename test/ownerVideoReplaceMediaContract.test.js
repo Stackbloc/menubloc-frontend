@@ -18,6 +18,8 @@ test("OwnerVideoCuration exposes replace video file controls", () => {
   assert.match(src, /data-testid="owner-video-replace-upload"/);
   assert.match(src, /data-testid="owner-video-replace-file"/);
   assert.match(src, /applyReplaceVideoFile/);
+  assert.match(src, /setPhotoUrl\(null\)/);
+  assert.match(src, /Capture or upload a new Search \/ Feed thumbnail/);
 });
 
 test("ownerApi replace helper uses Cause 2 replace-media sign→PUT→complete", () => {

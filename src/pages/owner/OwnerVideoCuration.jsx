@@ -1584,10 +1584,12 @@ function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
         setPreviewUrl(nextUrl);
         setPreviewKey((k) => k + 1);
       }
+      // Old Search/Feed thumbnail is cleared on replace — must recapture from the new file.
+      setPhotoUrl(null);
       setSuccess(
         result?.video_transcoding === "pending"
-          ? "Video file replaced — normalizing in the background"
-          : "Video file replaced"
+          ? "Video file replaced (normalizing). Capture or upload a new Search / Feed thumbnail from this clip."
+          : "Video file replaced. Capture or upload a new Search / Feed thumbnail from this clip."
       );
       onSaved?.(next);
     } catch (err) {
@@ -1736,7 +1738,8 @@ function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
               <span style={{ fontWeight: 700, fontSize: 13 }}>Replace video file</span>
               <span style={{ fontSize: 12, color: OWNER_COLORS.muted, lineHeight: 1.4 }}>
                 Upload an improved MP4, WebM, or MOV. Keeps this asset’s tags, SEO metadata, and id —
-                only the playable file changes.
+                only the playable file changes. The old Search / Feed thumbnail is cleared so you can
+                capture or upload a frame from the new clip.
               </span>
               <input
                 ref={replaceFileInputRef}
