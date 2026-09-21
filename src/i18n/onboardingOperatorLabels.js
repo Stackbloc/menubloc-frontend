@@ -178,22 +178,22 @@ export const ONBOARDING_OPERATOR_LABELS = {
     "signup.entry.plan.published.name": "Menuply",
     "signup.entry.plan.published.price": "Free",
     "signup.entry.plan.published.description":
-      "A simple published restaurant presence with public menu access on Menuply.",
+      "Join Menuply with a 6% marketplace commission and no subscription fee.",
     "signup.entry.plan.published.cta": "Sign Up",
     "signup.entry.plan.verified.name": "Menuply",
     "signup.entry.plan.verified.price": "Free",
     "signup.entry.plan.verified.description":
-      "A simple published restaurant presence with public menu access on Menuply.",
+      "Join Menuply with a 6% marketplace commission and no subscription fee.",
     "signup.entry.plan.verified.cta": "Sign Up",
     "signup.entry.plan.pro.name": "Pro",
     "signup.entry.plan.pro.price": "$20/month or $199/year",
     "signup.entry.plan.pro.description":
-      "Professional Menuply tools for growing restaurants — profiles, menus, QR Code, online ordering, and standard marketplace commission.",
+      "Professional Menuply tools for growing restaurants — profiles, menus, QR Code, online ordering, and 9% marketplace commission.",
     "signup.entry.plan.pro.cta": "Continue with Pro",
     "signup.entry.plan.founder.name": "Founder's",
     "signup.entry.plan.founder.price": "$39/month or $319/year",
     "signup.entry.plan.founder.description":
-      "Founders are early adopters who want to take back their restaurant's independence. Lock in early-bird Founder's pricing while availability remains open.",
+      "Founders are early adopters who want to take back their restaurant's independence. Lock in early-bird Founder's pricing and 6% commission while availability remains open.",
     "signup.entry.plan.founder.cta": "Continue with Founder's",
     "signup.entry.foundersNotice":
       "Founder's Membership is available for a limited time to early restaurant partners.",
@@ -205,7 +205,7 @@ export const ONBOARDING_OPERATOR_LABELS = {
     "signup.account.changePlan": "Back",
     "signup.account.partnerExpectationTitle": "Menuply Partner Expectation",
     "signup.account.partnerExpectationBody":
-      "Restaurants always control their own pricing. Menuply is built for partners aligned with real diner value through better pricing, meaningful deals, richer menu information, and more direct engagement.",
+      "Restaurants always control their own pricing. Menuply is built for partners aligned with real diner value through better pricing, meaningful deals, richer menu information, and more direct engagement. Joining Menuply has no subscription fee; Menuply's marketplace commission is 6% unless a different rate is disclosed for an elected paid option.",
     "signup.account.optionalModulesNote":
       "Optional setup modules such as QR starter kit, equipment readiness, and launch deals stay optional later in onboarding.",
     "signup.account.sectionAccount": "Account",
@@ -272,9 +272,9 @@ export const ONBOARDING_OPERATOR_LABELS = {
     "onboarding.faq.hide": "Hide FAQ",
     "onboarding.faq.q1": "How does Menuply pricing work for restaurants?",
     "onboarding.faq.q1.a1":
-      "Joining Menuply has no subscription fee. Menuply earns a commission on transactions generated through Menuply. The platform provides restaurant profile pages, menu presentation, ordering tools, deal promotion, QR code support, customer discovery features, and self-service management tools.",
+      "Joining Menuply has no subscription fee. Menuply's marketplace commission is 6% on transactions generated through Menuply unless a different rate is disclosed for an elected paid option. The platform provides restaurant profile pages, menu presentation, ordering tools, deal promotion, QR code support, customer discovery features, and self-service management tools.",
     "onboarding.faq.q1.a2":
-      "At the same time, Menuply was intentionally designed to remain affordable and accessible for independent restaurants and local businesses. Restaurants that want to establish a presence on the platform at no cost can join Menuply with no subscription fee, including a public restaurant profile, a single menu with unlimited menu items, and QR code support.",
+      "At the same time, Menuply was intentionally designed to remain affordable and accessible for independent restaurants and local businesses. Restaurants that want to establish a presence on the platform at no cost can join Menuply with a 6% marketplace commission and no subscription fee, including a public restaurant profile, a single menu with unlimited menu items, and QR code support.",
     "onboarding.faq.q1.a3":
       "Many restaurants already pay more for website hosting alone. Menuply is designed to give restaurants a practical online commerce presence at a lower overall cost than relying only on traditional delivery marketplaces or expensive custom website solutions.",
     "onboarding.faq.q1.a4":
@@ -518,17 +518,17 @@ export const ONBOARDING_OPERATOR_LABELS = {
     "signup.entry.plan.published.name": "Menuply",
     "signup.entry.plan.published.price": "Gratis",
     "signup.entry.plan.verified.description":
-      "Presencia verificada sencilla con menú público en Menuply.",
+      "Únete a Menuply con una comisión de marketplace del 6% y sin cuota de suscripción.",
     "signup.entry.plan.verified.cta": "Registrarse",
     "signup.entry.plan.pro.name": "Pro",
-    "signup.entry.plan.pro.price": "$49/mes o $399/año",
+    "signup.entry.plan.pro.price": "$20/mes o $199/año",
     "signup.entry.plan.pro.description":
-      "Para restaurantes que quieren mejores precios, pedidos directos y más engagement.",
+      "Herramientas profesionales de Menuply — perfiles, menús, código QR, pedidos en línea y comisión de marketplace del 9%.",
     "signup.entry.plan.pro.cta": "Continuar con Pro",
     "signup.entry.plan.founder.name": "Founder's",
-    "signup.entry.plan.founder.price": "$299/año",
+    "signup.entry.plan.founder.price": "$39/mes o $319/año",
     "signup.entry.plan.founder.description":
-      "Sé de los primeros restaurantes en unirte al movimiento y recuperar la independencia de tu restaurante. Asegura el precio Founder's de lanzamiento mientras haya disponibilidad.",
+      "Founders son early adopters que quieren recuperar la independencia de su restaurante. Asegura el precio Founder's y la comisión del 6% mientras haya disponibilidad.",
     "signup.entry.plan.founder.cta": "Continuar con Founder's",
     "signup.entry.foundersNotice":
       "La membresía Founder's está disponible por tiempo limitado para restaurantes socios pioneros.",
@@ -605,11 +605,11 @@ export const ONBOARDING_OPERATOR_LABELS = {
       "Respuestas prácticas sobre costes, expectativas de crecimiento y encaje antes de profundizar en el registro.",
     "onboarding.faq.view": "Ver preguntas frecuentes",
     "onboarding.faq.hide": "Ocultar preguntas frecuentes",
-    "onboarding.faq.q1": "¿Por qué Menuply cobra una cuota de suscripción?",
+    "onboarding.faq.q1": "¿Cómo funciona el precio de Menuply para restaurantes?",
     "onboarding.faq.q1.a1":
-      "Menuply cobra una suscripción porque los restaurantes necesitan más que un simple listado: perfiles, presentación de menú, pedidos, ofertas, códigos QR, descubrimiento y herramientas de autoservicio.",
+      "Unirse a Menuply no tiene cuota de suscripción. La comisión de marketplace de Menuply es del 6% sobre las transacciones generadas a través de Menuply, salvo que se indique otra tarifa para una opción de pago elegida. La plataforma ofrece perfiles, menú, pedidos, ofertas, códigos QR, descubrimiento y herramientas de autoservicio.",
     "onboarding.faq.q1.a2":
-      "Al mismo tiempo, Menuply se diseñó para seguir siendo asequible. Unirse a Menuply no tiene cuota de suscripción e incluye perfil público, un menú con artículos ilimitados y soporte QR.",
+      "Al mismo tiempo, Menuply se diseñó para seguir siendo asequible. Los restaurantes pueden unirse con una comisión de marketplace del 6% y sin cuota de suscripción, con perfil público, un menú con artículos ilimitados y soporte QR.",
     "onboarding.faq.q1.a3":
       "Muchos restaurantes ya pagan más solo por alojar un sitio web. Menuply ofrece presencia comercial en línea a un coste total menor que depender solo de marketplaces tradicionales o sitios a medida caros.",
     "onboarding.faq.q1.a4":
@@ -925,11 +925,11 @@ export const ONBOARDING_OPERATOR_LABELS = {
     "onboarding.faq.intro": "在深入注册前，关于费用、增长预期和平台契合度的实用解答。",
     "onboarding.faq.view": "查看常见问题",
     "onboarding.faq.hide": "隐藏常见问题",
-    "onboarding.faq.q1": "为什么 Menuply 收取订阅费？",
+    "onboarding.faq.q1": "Menuply 对餐厅如何收费？",
     "onboarding.faq.q1.a1":
-      "Menuply 收取订阅费是因为餐厅需要的不仅是展示位：还包括资料页、菜单呈现、点餐工具、优惠推广、二维码、发现功能和自助管理工具。",
+      "加入 Menuply 无订阅费。除非为所选付费方案另行披露不同费率，Menuply 对通过平台产生的交易收取 6% 的市场佣金。平台提供资料页、菜单呈现、点餐、优惠、二维码、发现功能和自助管理工具。",
     "onboarding.faq.q1.a2":
-      "同时，Menuply 有意保持对独立餐厅和小型企业可负担。加入 Menuply 无订阅费，包含公开资料、一个菜单（菜品不限）和二维码支持。",
+      "同时，Menuply 有意保持对独立餐厅可负担。餐厅可以以 6% 市场佣金、无订阅费加入，包含公开资料、一个菜单（菜品不限）和二维码支持。",
     "onboarding.faq.q1.a3":
       "许多餐厅仅网站托管的费用就更高。Menuply 旨在以低于仅依赖传统外卖平台或昂贵定制网站的总成本，提供实用的在线经营能力。",
     "onboarding.faq.q1.a4":

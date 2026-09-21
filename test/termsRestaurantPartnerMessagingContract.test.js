@@ -11,9 +11,9 @@ import test from "node:test";
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const legal = fs.readFileSync(path.join(root, "src/content/legal.js"), "utf8");
 
-test("Terms version is terms_of_use_v2026_09_07 with Sep 7 effective date", () => {
-  assert.match(legal, /consumerTerms:\s*"terms_of_use_v2026_09_07"/);
-  assert.match(legal, /"title": "Menuply Terms of Use"[\s\S]*?"effectiveDate": "September 7, 2026"/);
+test("Terms version is terms_of_use_v2026_09_20 with Sep 20 effective date", () => {
+  assert.match(legal, /consumerTerms:\s*"terms_of_use_v2026_09_20"/);
+  assert.match(legal, /"title": "Menuply Terms of Use"[\s\S]*?"effectiveDate": "September 20, 2026"/);
 });
 
 test("Restaurant Partner Terms: commission-first, no $0 subscription plan framing", () => {
@@ -24,6 +24,10 @@ test("Restaurant Partner Terms: commission-first, no $0 subscription plan framin
   assert.match(
     legal,
     /Participation on Menuply does not require a subscription fee unless the restaurant separately elects a paid option/
+  );
+  assert.match(
+    legal,
+    /marketplace commission for restaurant participation is six percent \(6%\)/
   );
   assert.match(
     legal,

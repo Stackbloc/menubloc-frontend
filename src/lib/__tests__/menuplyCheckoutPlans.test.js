@@ -145,7 +145,7 @@ describe("menuplyCheckoutPlans canonical checkout contract", () => {
     expect(getMarketplaceCommissionDisclosure("founders_annual")).toBe(
       "6% marketplace commission · 2-year rate lock"
     );
-    expect(getMarketplaceCommissionDisclosure(FREE_PLAN_CODE)).toBe("12% marketplace commission");
+    expect(getMarketplaceCommissionDisclosure(FREE_PLAN_CODE)).toBe("6% marketplace commission");
     expect(FALLBACK_CHECKOUT_PLANS.find((p) => p.code === "starter_annual").commission_rate_bps).toBe(
       900
     );

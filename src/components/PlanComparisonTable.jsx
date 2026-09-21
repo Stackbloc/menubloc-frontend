@@ -31,7 +31,7 @@ const FALLBACK_PLAN_COLUMNS = [
   {
     key: "published",
     name: "Standard",
-    commission: "No order commission",
+    commission: "6%",
     prices: ["Free"],
     nameColor: GREEN,
     highlight: false,
@@ -39,7 +39,7 @@ const FALLBACK_PLAN_COLUMNS = [
   {
     key: "starter",
     name: "Pro",
-    commission: "11% commission",
+    commission: "9% commission",
     prices: ["$20/month", "or $199/year"],
     nameColor: GREEN,
     highlight: false,
@@ -47,7 +47,7 @@ const FALLBACK_PLAN_COLUMNS = [
   {
     key: "founders",
     name: "Founder's*",
-    commission: "8% · 2-year lock",
+    commission: "6% · 2-year lock",
     prices: ["$39/month", "or $319/year"],
     nameColor: AMBER,
     highlight: true,

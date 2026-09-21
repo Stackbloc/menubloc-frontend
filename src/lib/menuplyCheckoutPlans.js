@@ -43,9 +43,9 @@ export const CHECKOUT_PRICE_LABELS = Object.freeze({
  * Display only — never send these fields in checkout request bodies.
  */
 export const FALLBACK_COMMISSION_RATE_BPS = Object.freeze({
-  [FREE_PLAN_CODE]: 1200,
-  standard: 1200,
-  [LEGACY_FREE_PLAN_CODE]: 1200,
+  [FREE_PLAN_CODE]: 600,
+  standard: 600,
+  [LEGACY_FREE_PLAN_CODE]: 600,
   starter_monthly: 900,
   starter_annual: 900,
   founders_monthly: 600,

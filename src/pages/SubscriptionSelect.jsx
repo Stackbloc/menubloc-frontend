@@ -584,7 +584,7 @@ export default function SubscriptionSelect() {
           <h1 id="subscription-invite-headline" style={s.heading}>
             Your Menu. More Ways to Be Discovered.
           </h1>
-          <p style={s.economics}>12% commission. No subscription fee.</p>
+          <p style={s.economics}>6% commission. No subscription fee.</p>
           <p style={s.body}>
             Join Menuply with a free restaurant profile. Put your menu where the conversation about
             food is happening — then claim, upload, and manage your menu in the community.

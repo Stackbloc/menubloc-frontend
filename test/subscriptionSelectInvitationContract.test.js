@@ -21,7 +21,7 @@ test("SubscriptionSelect free path is Menuply invitation, not Standard pitch", (
   const src = read("src/pages/SubscriptionSelect.jsx");
   assert.match(src, /FREE_PLAN_CODE/);
   assert.match(src, /choosePublished/);
-  assert.match(src, /12% commission\. No subscription fee\./);
+  assert.match(src, /6% commission\. No subscription fee\./);
   assert.match(src, /Continue with Menuply/);
   assert.match(src, /\[FREE_PLAN_CODE\]:\s*"Menuply"/);
   assert.doesNotMatch(src, /Optional paid upgrades/i);

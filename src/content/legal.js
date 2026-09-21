@@ -1,9 +1,9 @@
 export const LEGAL_EFFECTIVE_DATE = "August 27, 2026";
 
 export const LEGAL_VERSIONS = {
-  consumerTerms: "terms_of_use_v2026_09_07",
+  consumerTerms: "terms_of_use_v2026_09_20",
   privacyPolicy: "privacy_policy_v2026_08_27",
-  merchantTerms: "merchant_terms_v2026_05_31",
+  merchantTerms: "merchant_terms_v2026_09_20",
   subscriptionTerms: "subscription_terms_v2026_04_09",
   orderTerms: "order_terms_v2026_04_09",
 };
@@ -16,7 +16,7 @@ export const LEGAL_CONTACT = {
 export const TERMS_DOCUMENT = {
   "title": "Menuply Terms of Use",
   "description": "Public website, app, consumer ordering, content, and social features for Menuply, operated by Stackbloc Corporation, a California corporation, doing business as Menuply (\"Menuply\").",
-  "effectiveDate": "September 7, 2026",
+  "effectiveDate": "September 20, 2026",
   "sections": [
     {
       "heading": "Overview",
@@ -181,6 +181,7 @@ export const TERMS_DOCUMENT = {
         "Restaurants are responsible for promptly updating their menus, prices, hours, availability, tax settings, promotions, fulfillment options, and other customer-facing information when changes occur.",
         "Menuply may charge restaurants a marketplace commission on transactions generated through Menuply, and may charge other disclosed fees for platform services.",
         "Participation on Menuply does not require a subscription fee unless the restaurant separately elects a paid option Menuply discloses.",
+        "Unless a different rate is disclosed for an elected paid option or other disclosed arrangement, Menuply's marketplace commission for restaurant participation is six percent (6%) of transactions generated through Menuply.",
         "Applicable commission rates and fees are disclosed in the product experience before the restaurant accepts them.",
         "Commission rates and related fees may vary by market, order type, elected paid options, or other factors Menuply discloses.",
         "Menuply may change commission rates, fees, or related pricing terms with advance notice, subject to applicable law and any separate written agreement.",
@@ -656,7 +657,8 @@ export const MERCHANT_TERMS_DOCUMENT = {
     {
       heading: "Fees, restaurant plans, and taxes",
       paragraphs: [
-        "You agree to pay the fees, restaurant plan charges, and other amounts disclosed by Menuply for the plan or services you select. Unless expressly stated otherwise, fees are exclusive of taxes.",
+        "You agree to pay the fees, restaurant plan charges, marketplace commissions, and other amounts disclosed by Menuply for the plan or services you select. Unless expressly stated otherwise, fees are exclusive of taxes.",
+        "Unless a different rate is disclosed for an elected paid option or other disclosed arrangement, Menuply's marketplace commission for restaurant participation is six percent (6%) of transactions generated through Menuply.",
         "You are responsible for taxes arising from your restaurant operations, menu sales, and business activities, except for taxes based on Menuply's own net income.",
       ],
     },
