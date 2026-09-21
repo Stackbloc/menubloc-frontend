@@ -9,7 +9,7 @@ const src = readFileSync(join(root, "src/pages/ClusterPage.jsx"), "utf8");
 
 test("Cluster Food search shows Showing N results count", () => {
   assert.match(src, /data-testid="cluster-food-search-result-count"/);
-  assert.match(src, /Showing \{searchMenuItems\.length\}/);
-  assert.match(src, /searchMenuItems\.length === 1 \? "result" : "results"/);
+  assert.match(src, /Showing \{displaySearchItems\.length\}/);
+  assert.match(src, /displaySearchItems\.length === 1 \? "result" : "results"/);
   assert.match(src, /aria-live="polite"/);
 });

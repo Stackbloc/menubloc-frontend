@@ -25,3 +25,13 @@ test("Cluster Food price sort runs after optional zone filter", () => {
   assert.match(src, /zone: selectedZone/);
   assert.match(src, /priceSort/);
 });
+
+test("Cluster Food search uses the same price sort controls as category browse", () => {
+  assert.match(src, /displaySearchItems/);
+  assert.match(src, /applyClusterZoneAndPriceSort\(searchMenuItems/);
+  assert.match(src, /renderClusterFoodPriceSortControls/);
+  assert.match(src, /displaySearchItems\.map/);
+  // Shared helper must appear in both search and category branches
+  const helperCalls = src.match(/renderClusterFoodPriceSortControls\(\)/g) || [];
+  assert.ok(helperCalls.length >= 2, "price sort controls rendered for search and category");
+});

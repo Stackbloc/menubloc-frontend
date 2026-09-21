@@ -522,6 +522,60 @@ function ClusterMenuExplorerTab({
     [items, selectedZone, priceSort],
   );
 
+  /** Same price-sort infrastructure as category browse — applies on search for every cluster. */
+  const displaySearchItems = useMemo(
+    () =>
+      applyClusterZoneAndPriceSort(searchMenuItems, {
+        zone: null,
+        priceSort,
+        getPriceCents: getConsumerDisplayPrice,
+      }),
+    [searchMenuItems, priceSort],
+  );
+
+  const renderClusterFoodPriceSortControls = () => (
+    <div
+      role="group"
+      aria-label="Sort by price"
+      style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem", marginLeft: "auto" }}
+    >
+      <button
+        type="button"
+        data-testid="cluster-food-price-sort-asc"
+        aria-pressed={priceSort === "asc"}
+        onClick={() => setPriceSort((prev) => (prev === "asc" ? "default" : "asc"))}
+        style={{
+          padding: "0.4rem 0.65rem",
+          borderRadius: 8,
+          border: priceSort === "asc" ? "1px solid #111827" : "1px solid #d1d5db",
+          background: priceSort === "asc" ? "#111827" : "#fff",
+          color: priceSort === "asc" ? "#fff" : "#111827",
+          cursor: "pointer",
+          fontSize: "0.82rem",
+        }}
+      >
+        Price: Low–High
+      </button>
+      <button
+        type="button"
+        data-testid="cluster-food-price-sort-desc"
+        aria-pressed={priceSort === "desc"}
+        onClick={() => setPriceSort((prev) => (prev === "desc" ? "default" : "desc"))}
+        style={{
+          padding: "0.4rem 0.65rem",
+          borderRadius: 8,
+          border: priceSort === "desc" ? "1px solid #111827" : "1px solid #d1d5db",
+          background: priceSort === "desc" ? "#111827" : "#fff",
+          color: priceSort === "desc" ? "#fff" : "#111827",
+          cursor: "pointer",
+          fontSize: "0.82rem",
+        }}
+      >
+        High–Low
+      </button>
+    </div>
+  );
+
   const clusterReturnTo = useMemo(
     () => (cluster ? buildClusterReturnPath(cluster, { view: CLUSTER_VIEW_MODES.MENU }) : null),
     [cluster],
@@ -712,18 +766,28 @@ function ClusterMenuExplorerTab({
             <p style={{ color: "#888", margin: 0 }}>No food in this area matches “{submittedSearch}”.</p>
           ) : null}
           {searchStatus === "ok" && searchMenuItems.length > 0 ? (
-            <p
-              data-testid="cluster-food-search-result-count"
-              style={{ margin: 0, color: "#6b7280", fontSize: "0.9rem" }}
-              aria-live="polite"
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: "0.5rem",
+                alignItems: "center",
+              }}
             >
-              Showing {searchMenuItems.length}{" "}
-              {searchMenuItems.length === 1 ? "result" : "results"}
-            </p>
+              <p
+                data-testid="cluster-food-search-result-count"
+                style={{ margin: 0, color: "#6b7280", fontSize: "0.9rem" }}
+                aria-live="polite"
+              >
+                Showing {displaySearchItems.length}{" "}
+                {displaySearchItems.length === 1 ? "result" : "results"}
+              </p>
+              {renderClusterFoodPriceSortControls()}
+            </div>
           ) : null}
           <div style={CLUSTER_SEARCH_GRID_STYLE}>
-            {searchMenuItems.map((row, index) => {
-              const inlineSlot = shouldInsertClusterSearchAd(index, searchMenuItems.length) ? (
+            {displaySearchItems.map((row, index) => {
+              const inlineSlot = shouldInsertClusterSearchAd(index, displaySearchItems.length) ? (
                 <SpacedClusterAdSlot compact clusterSlug={clusterSlug} pageRegion="cluster_search_inline" />
               ) : null;
 
@@ -778,46 +842,7 @@ function ClusterMenuExplorerTab({
             <h2 style={{ margin: 0, fontSize: "1.15rem" }}>
               {categoryTitle}
             </h2>
-            <div
-              role="group"
-              aria-label="Sort by price"
-              style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem", marginLeft: "auto" }}
-            >
-              <button
-                type="button"
-                data-testid="cluster-food-price-sort-asc"
-                aria-pressed={priceSort === "asc"}
-                onClick={() => setPriceSort((prev) => (prev === "asc" ? "default" : "asc"))}
-                style={{
-                  padding: "0.4rem 0.65rem",
-                  borderRadius: 8,
-                  border: priceSort === "asc" ? "1px solid #111827" : "1px solid #d1d5db",
-                  background: priceSort === "asc" ? "#111827" : "#fff",
-                  color: priceSort === "asc" ? "#fff" : "#111827",
-                  cursor: "pointer",
-                  fontSize: "0.82rem",
-                }}
-              >
-                Price: Low–High
-              </button>
-              <button
-                type="button"
-                data-testid="cluster-food-price-sort-desc"
-                aria-pressed={priceSort === "desc"}
-                onClick={() => setPriceSort((prev) => (prev === "desc" ? "default" : "desc"))}
-                style={{
-                  padding: "0.4rem 0.65rem",
-                  borderRadius: 8,
-                  border: priceSort === "desc" ? "1px solid #111827" : "1px solid #d1d5db",
-                  background: priceSort === "desc" ? "#111827" : "#fff",
-                  color: priceSort === "desc" ? "#fff" : "#111827",
-                  cursor: "pointer",
-                  fontSize: "0.82rem",
-                }}
-              >
-                High–Low
-              </button>
-            </div>
+            {renderClusterFoodPriceSortControls()}
           </div>
           {availableZones.length > 0 ? (
             <div
