@@ -1058,7 +1058,7 @@ function ymdFromIso(value) {
 
 const SEARCH_METADATA_KINDS = new Set(["ate", "want", "managed", "cooking", "deal"]);
 
-function SearchWebMetadataSection({ video }) {
+function SearchWebMetadataSection({ video, clusters = [], clustersLoading = false }) {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -1077,6 +1077,24 @@ function SearchWebMetadataSection({ video }) {
   const kind = video?.video_kind;
   const sourceId = video?.video_source_id;
   const supported = SEARCH_METADATA_KINDS.has(kind);
+
+  const selectedClusterId = useMemo(() => {
+    const stored = String(locationNeighborhood || "").trim().toLowerCase();
+    if (!stored) return "";
+    const exact = clusters.find(
+      (c) => String(c.name || "").trim().toLowerCase() === stored
+    );
+    if (exact) return String(exact.id);
+    const loose = clusters.find((c) => {
+      const name = String(c.name || "").trim().toLowerCase();
+      if (!name) return false;
+      const label = `${name}${
+        c.city ? ` · ${String(c.city).toLowerCase()}${c.state ? `, ${String(c.state).toLowerCase()}` : ""}` : ""
+      }`;
+      return label === stored || stored.startsWith(name);
+    });
+    return loose ? String(loose.id) : "";
+  }, [clusters, locationNeighborhood]);
 
   const applyPayload = useCallback((data) => {
     setPayload(data);
@@ -1303,14 +1321,43 @@ function SearchWebMetadataSection({ video }) {
               </label>
               <label style={{ display: "grid", gap: 4 }}>
                 <span style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: 13, fontWeight: 700 }}>
-                  <span>Neighborhood</span>
+                  <span>Cluster</span>
                   {fieldBadge("location_neighborhood")}
                 </span>
-                <input
-                  value={locationNeighborhood}
-                  onChange={(e) => setLocationNeighborhood(e.target.value)}
+                <select
+                  value={selectedClusterId}
+                  disabled={busy || clustersLoading}
+                  onChange={(e) => {
+                    const id = e.target.value;
+                    if (!id) {
+                      setLocationNeighborhood("");
+                      return;
+                    }
+                    const hit = clusters.find((c) => String(c.id) === String(id));
+                    setLocationNeighborhood(hit?.name ? String(hit.name).trim() : "");
+                  }}
                   style={inputStyle}
-                />
+                  data-testid="owner-video-seo-cluster"
+                >
+                  <option value="">No cluster</option>
+                  {clusters.map((cluster) => (
+                    <option key={cluster.id} value={cluster.id}>
+                      {cluster.name}
+                      {cluster.city
+                        ? ` · ${cluster.city}${cluster.state ? `, ${cluster.state}` : ""}`
+                        : ""}
+                    </option>
+                  ))}
+                </select>
+                {clustersLoading ? (
+                  <span style={{ fontSize: 11, color: OWNER_COLORS.muted }}>Loading clusters…</span>
+                ) : null}
+                {locationNeighborhood && !selectedClusterId ? (
+                  <span style={{ fontSize: 11, color: OWNER_COLORS.muted }}>
+                    Saved value “{locationNeighborhood}” is not in the cluster list — pick a
+                    cluster or Reset to auto.
+                  </span>
+                ) : null}
               </label>
               <label style={{ display: "grid", gap: 4 }}>
                 <span style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: 13, fontWeight: 700 }}>
@@ -1949,7 +1996,11 @@ function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
 
         <FoodFormPicker value={foodForm || ""} onChange={setFoodForm} disabled={busy} />
         <CuisinePicker value={cuisine || ""} onChange={setCuisine} disabled={busy} />
-        <SearchWebMetadataSection video={video} />
+        <SearchWebMetadataSection
+          video={video}
+          clusters={clusters}
+          clustersLoading={clustersLoading}
+        />
 
         {video.video_kind === "managed" ? (
           <OwnerClusterSelect
