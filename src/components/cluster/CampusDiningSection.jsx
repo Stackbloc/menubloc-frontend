@@ -60,7 +60,10 @@ export default function CampusDiningSection({ cluster }) {
       <div className="cluster-feed-section-label" style={styles.sectionTitle}>
         On campus
       </div>
-      <p style={styles.lead}>Places to eat on campus — tap a name for what&apos;s going on there.</p>
+      <p style={styles.lead}>
+        Dining halls and campus spots — tap a name for what&apos;s going on (status and comments; no
+        menus).
+      </p>
 
       {loading ? <p style={styles.muted}>Loading campus dining…</p> : null}
 
