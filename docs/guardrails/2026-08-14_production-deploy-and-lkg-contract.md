@@ -48,12 +48,12 @@ Update this section **only** after tip-gate `RESULT=PASS` on apex + www. Railway
 | Field | Value |
 |-------|-------|
 | Authorized path | `/Users/andrebarber/Desktop/menubloc/menubloc-backend-main` @ clean `main` |
-| Git on origin | `27875717` — ATL/Hartfield place-scope + USC Figueroa seeds (FIG's Corner #79020) |
-| Live health SHA | `27875717679788ce5b4692f4de48a51ce1ed62b7` |
+| Git on origin | `f74cd0ec` — OCR screenshot chrome strip + newline rebuild (Il Giardino A+B) |
+| Live health SHA | `f74cd0ec847a0d15157c160a7c04d4b4424e19c1` |
 | Health URL | `https://menubloc-backend-production.up.railway.app/health` |
-| `commit_hash` | `27875717…` |
+| `commit_hash` | `f74cd0ec…` |
 | DB | migrations through `0335` (`video_asset_metadata.cuisine`) |
-| Smoke | ATL/Hartfield place-scope CPD 2026-09-18 (`cpd-be.sh` RESULT=PASS, smoke 30, health `27875717`) |
+| Smoke | OCR A+B CPD 2026-09-21 (smoke 30, health `f74cd0ec`) |
 
 ### Restore current tip (if tip-gate fails mid-change)
 
