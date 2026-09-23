@@ -66,8 +66,6 @@ export default function SeeWhosEatingFullscreen({
   isAuthenticated = false,
   viewerUserId = null,
   onClose,
-  // Kept for call-site compatibility; delete lives on profile long-press, not feed.
-  onRemovedFromFeed: _onRemovedFromFeed,
   variant = "modal",
   bottomInset = 0,
   desktopFeedShell = false,
@@ -75,6 +73,9 @@ export default function SeeWhosEatingFullscreen({
   showEmptyFirstVisitPrompt = false,
   sharedClipId = "",
   showSharedAccountInvite = false,
+  onLoadMore = null,
+  hasMore = false,
+  loadingMore = false,
 }) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -94,6 +95,7 @@ export default function SeeWhosEatingFullscreen({
   const touchStartY = useRef(null);
   const pipSwipeStartY = useRef(null);
   const ignoreVideoClickRef = useRef(false);
+  const pendingAdvanceAfterLoadRef = useRef(null);
   const activeItems = isFeedHome ? playlist : items;
   const item = activeItems[index] || null;
   const feedShareData = useMemo(() => (item ? buildFeedVideoShareData(item) : null), [item]);
@@ -106,6 +108,17 @@ export default function SeeWhosEatingFullscreen({
   useEffect(() => {
     setPlaylist(Array.isArray(items) ? items : []);
   }, [items]);
+
+  useEffect(() => {
+    const pendingIndex = pendingAdvanceAfterLoadRef.current;
+    if (pendingIndex == null) return;
+    if (playlist.length > pendingIndex) {
+      pendingAdvanceAfterLoadRef.current = null;
+      setIndex(pendingIndex);
+    } else if (!hasMore && !loadingMore) {
+      pendingAdvanceAfterLoadRef.current = null;
+    }
+  }, [playlist.length, hasMore, loadingMore]);
 
   useEffect(() => {
     setIndex(Math.min(Math.max(0, startIndex), Math.max(0, activeItems.length - 1)));
@@ -275,8 +288,15 @@ export default function SeeWhosEatingFullscreen({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- goNext/goPrev close over latest index
   }, [activeItems.length, index, onClose, variant, menuBrowserOpen]);
 
-  function goNext() {
+  async function goNext() {
     if (isFeedHome) {
+      if (index + 1 >= playlist.length && hasMore && typeof onLoadMore === "function") {
+        if (loadingMore) return;
+        pendingAdvanceAfterLoadRef.current = playlist.length;
+        const added = await onLoadMore();
+        if (!added) pendingAdvanceAfterLoadRef.current = null;
+        return;
+      }
       const { items: nextItems, index: nextIndex } = wrapEndlessFeedNext(playlist, index);
       setPlaylist(nextItems);
       setIndex(nextIndex);

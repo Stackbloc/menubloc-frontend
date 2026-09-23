@@ -3,7 +3,7 @@
  * Reuses SeeWhosEatingFullscreen; photos never enter this pool.
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { listSeeWhosEating } from "../../../lib/consumerApi.js";
 import { readDetectedLocation } from "../../../lib/discoveryLocationPersistence.js";
@@ -46,10 +46,18 @@ export default function FeedHomePage() {
   const [items, setItems] = useState([]);
   const [startIndex, setStartIndex] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [nextCursor, setNextCursor] = useState(null);
   const [error, setError] = useState("");
   const [showEmptyFirstVisitPrompt, setShowEmptyFirstVisitPrompt] = useState(false);
   const [showXCoach, setShowXCoach] = useState(() => !isDesktop);
+  const loadingMoreRef = useRef(false);
+  const itemsRef = useRef([]);
   const market = resolveMarket();
+
+  useEffect(() => {
+    itemsRef.current = items;
+  }, [items]);
 
   useEffect(() => {
     if (isDesktop) {
@@ -88,10 +96,12 @@ export default function FeedHomePage() {
           }
           setShowEmptyFirstVisitPrompt(showPrompt);
           setItems(rows);
+          setNextCursor(data?.next_cursor || null);
         })
         .catch((err) => {
           if (cancelled) return;
           setItems([]);
+          setNextCursor(null);
           setError(err?.message || "Unable to load Feed");
         })
         .finally(() => {
@@ -108,6 +118,39 @@ export default function FeedHomePage() {
       window.removeEventListener(FEED_VIDEO_POSTED_EVENT, onPosted);
     };
   }, [market.city, market.state]);
+
+  const loadMore = useCallback(async () => {
+    if (!nextCursor || loadingMoreRef.current) return false;
+    loadingMoreRef.current = true;
+    setLoadingMore(true);
+    try {
+      const data = await listSeeWhosEating({
+        city: market.city,
+        state: market.state,
+        limit: 20,
+        cursor: nextCursor,
+        kind: "all",
+      });
+      const rows = shuffleFeedVideos(Array.isArray(data?.items) ? data.items : []);
+      setNextCursor(data?.next_cursor || null);
+      const seen = new Set((itemsRef.current || []).map((row) => String(row?.id)));
+      const uniqueRows = rows.filter((row) => {
+        const id = String(row?.id || "");
+        if (!id || seen.has(id)) return false;
+        seen.add(id);
+        return true;
+      });
+      if (uniqueRows.length === 0) return false;
+      setItems((prev) => [...(prev || []), ...uniqueRows]);
+      return true;
+    } catch (err) {
+      setError(err?.message || "Unable to load more Feed videos");
+      return false;
+    } finally {
+      loadingMoreRef.current = false;
+      setLoadingMore(false);
+    }
+  }, [market.city, market.state, nextCursor]);
 
   useEffect(() => {
     setStartIndex(resolveFeedClipStartIndex(items, sharedClipId));
@@ -154,6 +197,9 @@ export default function FeedHomePage() {
         isAuthenticated={Boolean(isAuthenticated)}
         viewerUserId={consumer?.id || null}
         onRemovedFromFeed={onRemovedFromFeed}
+        onLoadMore={loadMore}
+        hasMore={Boolean(nextCursor)}
+        loadingMore={loadingMore}
         bottomInset={isDesktop ? 0 : FEED_PRIMARY_NAV_HEIGHT + 8}
         desktopFeedShell={isDesktop}
         showEmptyFirstVisitPrompt={showEmptyFirstVisitPrompt}
