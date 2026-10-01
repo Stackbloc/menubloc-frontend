@@ -73,6 +73,23 @@ export async function fetchClusterCampusDining(clusterSlug, { limit = 24, signal
 }
 
 /**
+ * Campus live indicators (Phase 1) — glance + per-venue Line/Food.
+ * Pass guest_key so the Update sheet can show the viewer's own taps.
+ */
+export async function fetchClusterCampusLive(clusterSlug, { guestKey = null, signal } = {}) {
+  const params = new URLSearchParams();
+  if (guestKey) params.set("guest_key", String(guestKey));
+  const qs = params.toString();
+  const path = `/public/clusters/${encodeURIComponent(clusterSlug)}/live${qs ? `?${qs}` : ""}`;
+  return apiGet(path, { signal });
+}
+
+/** One-tap Line or Food report (or clear). Guests welcome. */
+export async function postClusterCampusLiveReport(clusterSlug, payload = {}) {
+  return apiPost(`/public/clusters/${encodeURIComponent(clusterSlug)}/live/report`, payload || {});
+}
+
+/**
  * Public Cluster Feed — no auth, no subscription required.
  * Same underlying activity Waiter personalizes for followed clusters.
  */

@@ -1,5 +1,6 @@
 # Handoff Files Index
 
+- [2026-10-01_campus-cluster-live-phase1_handoff.md](./2026-10-01_campus-cluster-live-phase1_handoff.md) — Campus cluster live Phase 1 (Line/Food glance + Update). **CPD in progress**
 - [2026-09-11_unified-multi-item-meals_handoff.md](./2026-09-11_unified-multi-item-meals_handoff.md) — Parent diner_meals + multi-item compose/Multiplier + MiF occasion counts; mig 0328; **CPD COMPLETE** — tip `9r6ukumw1` / `index-DMRlbt9y.js`; FE `d7929078`; BE `a09498b2`
 
 - [2026-08-21_my-menuply-five-section_handoff.md](./2026-08-21_my-menuply-five-section_handoff.md) — Five-section My Menuply + My Events CPD (**COMPLETE** — tip `g8uuar69o` / `index-BpozLIHf.js`; FE `3056680`; BE `6514a605`)

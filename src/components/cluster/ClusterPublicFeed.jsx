@@ -6,7 +6,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { fetchClusterPublicFeed } from "../../lib/clusterApi.js";
+import { fetchClusterCampusLive, fetchClusterPublicFeed } from "../../lib/clusterApi.js";
 import { listPublicClusterFoodActivity } from "../../lib/foodActivityApi.js";
 import {
   listPublicClusterDinerStatuses,
@@ -20,6 +20,8 @@ import {
   buildWhoIsEatingComments,
   formatClusterNowLine,
 } from "../../lib/clusterDashboardModel.js";
+import { getOrCreateGuestReporterKey } from "../../lib/guestReporterSession.js";
+import CampusLiveGlanceBar from "./CampusLiveGlanceBar.jsx";
 
 function clusterDisplayName(cluster) {
   const name = String(cluster?.name || "").trim();
@@ -63,16 +65,25 @@ function StatusLine({ status }) {
   );
 }
 
+function isUniversityCluster(cluster) {
+  return String(cluster?.type || cluster?.cluster_type || "")
+    .trim()
+    .toLowerCase() === "university";
+}
+
 export default function ClusterPublicFeed({ cluster }) {
   const [activityItems, setActivityItems] = useState([]);
   const [statuses, setStatuses] = useState([]);
   const [signals, setSignals] = useState([]);
   const [feedNotice, setFeedNotice] = useState("");
   const [loading, setLoading] = useState(false);
+  const [campusGlance, setCampusGlance] = useState(null);
+  const [campusGlanceLoading, setCampusGlanceLoading] = useState(false);
 
   const slug = cluster?.slug;
   const placeName = clusterDisplayName(cluster);
   const timeZone = getTimezoneForUsState(cluster?.state);
+  const university = isUniversityCluster(cluster);
   const restaurantsHref = useMemo(() => {
     const path = clusterPath({
       state: cluster?.state,
@@ -144,6 +155,38 @@ export default function ClusterPublicFeed({ cluster }) {
     };
   }, [slug, cluster?.id]);
 
+  // Campus live glance (Phase 1) — under the date header; non-blocking.
+  useEffect(() => {
+    let cancelled = false;
+    if (!university || !slug) {
+      setCampusGlance(null);
+      setCampusGlanceLoading(false);
+      return undefined;
+    }
+    setCampusGlanceLoading(true);
+    fetchClusterCampusLive(slug, { guestKey: getOrCreateGuestReporterKey() })
+      .then((data) => {
+        if (!cancelled) setCampusGlance(data?.glance || null);
+      })
+      .catch(() => {
+        if (!cancelled) setCampusGlance(null);
+      })
+      .finally(() => {
+        if (!cancelled) setCampusGlanceLoading(false);
+      });
+    const id = setInterval(() => {
+      fetchClusterCampusLive(slug, { guestKey: getOrCreateGuestReporterKey() })
+        .then((data) => {
+          if (!cancelled) setCampusGlance(data?.glance || null);
+        })
+        .catch(() => {});
+    }, 45000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [university, slug]);
+
   if (!slug) return null;
 
   const quiet =
@@ -163,6 +206,26 @@ export default function ClusterPublicFeed({ cluster }) {
       <p style={styles.lead} data-testid="cluster-feed-happening-now">
         A quick look at {placeName} today
       </p>
+
+      {university ? (
+        <CampusLiveGlanceBar
+          glance={campusGlance}
+          loading={campusGlanceLoading && !campusGlance}
+          onSelectVenue={(restaurantId) => {
+            const el = document.querySelector(
+              `[data-campus-venue-id="${Number(restaurantId)}"]`
+            );
+            if (el?.scrollIntoView) {
+              el.scrollIntoView({ behavior: "smooth", block: "center" });
+            } else {
+              document.getElementById("campus-dining")?.scrollIntoView({
+                behavior: "smooth",
+                block: "start",
+              });
+            }
+          }}
+        />
+      ) : null}
 
       {loading ? <p style={styles.muted}>Loading…</p> : null}
 

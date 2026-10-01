@@ -1339,7 +1339,7 @@ export default function ClusterPage() {
       {cluster.slug ? <ClusterPublicFeed cluster={cluster} /> : null}
 
       {/* University clusters only — hidden when no campus dining members. */}
-      <CampusDiningSection cluster={cluster} />
+      <CampusDiningSection cluster={cluster} showGlance={false} />
 
       {cluster.slug ? <ClusterNearbyEvents cluster={cluster} /> : null}
 

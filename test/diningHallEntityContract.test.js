@@ -67,7 +67,16 @@ test("dining halls skip restaurant upcoming eating-plan counts", () => {
 test("campus dining section is experience-only (no menu framing)", () => {
   const src = read("src/components/cluster/CampusDiningSection.jsx");
   assert.match(src, /On campus/);
-  assert.match(src, /Places to eat on campus/);
+  assert.match(src, /tap a name for what/);
+  assert.match(src, /CampusLiveUpdateSheet/);
+  assert.match(src, /fetchClusterCampusLive/);
   assert.doesNotMatch(src, /full menu|Today.?s Menu|View Menu/);
   assert.doesNotMatch(src, /\bWaiter\b/);
+});
+
+test("campus live glance sits under the cluster date header", () => {
+  const feed = read("src/components/cluster/ClusterPublicFeed.jsx");
+  assert.match(feed, /CampusLiveGlanceBar/);
+  assert.match(feed, /fetchClusterCampusLive/);
+  assert.doesNotMatch(feed, /"Activity"|"social feed"/i);
 });
