@@ -1299,7 +1299,8 @@ export default function ClusterPage() {
         {isUsc ? (
           <div className="cluster-campus-hero" data-testid="cluster-usc-hero">
             <p className="cluster-campus-powered">USC powered by Menuply</p>
-            <p className="cluster-campus-kicker">Food around University Park</p>
+            {/* USC: the hero line is the page H1 (generic heading + intro were duplicative). */}
+            <h1 className="cluster-campus-kicker">Food around University Park</h1>
             <p className="cluster-campus-sub">
               Dining halls, nearby spots, and what Trojans are saying about food right now —
               without digging through venue menus.
@@ -1318,20 +1319,24 @@ export default function ClusterPage() {
             </div>
           </div>
         ) : null}
-        <h1
-          style={{
-            margin: 0,
-            color: "#111827",
-            fontSize: "1.85rem",
-            lineHeight: 1.15,
-            minWidth: 0,
-            overflowWrap: "anywhere",
-            letterSpacing: "-0.02em",
-          }}
-        >
-          {pageHeading}
-        </h1>
-        <ClusterDescription cluster={cluster} />
+        {!isUsc ? (
+          <>
+            <h1
+              style={{
+                margin: 0,
+                color: "#111827",
+                fontSize: "1.85rem",
+                lineHeight: 1.15,
+                minWidth: 0,
+                overflowWrap: "anywhere",
+                letterSpacing: "-0.02em",
+              }}
+            >
+              {pageHeading}
+            </h1>
+            <ClusterDescription cluster={cluster} />
+          </>
+        ) : null}
         {cluster.id ? (
           <ClusterSubscribeButton clusterId={cluster.id} clusterName={cluster.name || pageHeading} />
         ) : null}

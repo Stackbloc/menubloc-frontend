@@ -42,6 +42,8 @@ export default function CampusDiningSection({ cluster, showGlance = true, onSele
   const [loading, setLoading] = useState(false);
   const [liveLoading, setLiveLoading] = useState(false);
   const [updateVenueId, setUpdateVenueId] = useState(null);
+  // Collapsed by default so restaurants/food aren't buried under every dining hall.
+  const [expanded, setExpanded] = useState(false);
 
   const slug = cluster?.slug;
   const university = isUniversityCluster(cluster);
@@ -138,9 +140,27 @@ export default function CampusDiningSection({ cluster, showGlance = true, onSele
       aria-label="On campus"
       style={styles.section}
     >
-      <div className="cluster-feed-section-label" style={styles.sectionTitle}>
-        On campus
-      </div>
+      <button
+        type="button"
+        data-testid="campus-dining-toggle"
+        aria-expanded={expanded}
+        aria-controls="campus-dining-list"
+        onClick={() => setExpanded((v) => !v)}
+        style={styles.toggle}
+      >
+        <span className="cluster-feed-section-label" style={{ ...styles.sectionTitle, marginBottom: 0 }}>
+          On campus
+        </span>
+        <span style={styles.toggleMeta}>
+          {locations.length ? `${locations.length} dining spots · ` : ""}
+          {expanded ? "Hide" : "Show"}
+          <span aria-hidden="true" style={{ ...styles.chevron, transform: expanded ? "rotate(180deg)" : "none" }}>
+            ▾
+          </span>
+        </span>
+      </button>
+      {expanded ? (
+      <div id="campus-dining-list">
       <p style={styles.lead}>
         Dining halls and campus spots — tap a name for what&apos;s going on there.
       </p>
@@ -217,6 +237,8 @@ export default function CampusDiningSection({ cluster, showGlance = true, onSele
             );
           })
         : null}
+      </div>
+      ) : null}
 
       <CampusLiveUpdateSheet
         open={updateVenueId != null}
@@ -246,6 +268,27 @@ const styles = {
     padding: "14px 0 4px",
     borderTop: "1px solid #e5e7eb",
   },
+  toggle: {
+    width: "100%",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
+    border: "none",
+    background: "transparent",
+    padding: "4px 0 10px",
+    cursor: "pointer",
+    textAlign: "left",
+  },
+  toggleMeta: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 6,
+    fontSize: 13,
+    fontWeight: 700,
+    color: "#166534",
+  },
+  chevron: { display: "inline-block", fontSize: 14, transition: "transform 0.15s ease" },
   sectionTitle: {
     fontSize: 12,
     fontWeight: 800,

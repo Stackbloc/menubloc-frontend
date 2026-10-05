@@ -129,6 +129,12 @@
   color: transparent !important;
 }
 
+/* Hero kicker is the USC page H1 — keep the hero's own size over the generic h1 rule. */
+.cluster-theme-usc h1.cluster-campus-kicker {
+  font-size: clamp(1.45rem, 4vw, 2rem) !important;
+  line-height: 1.08;
+}
+
 .cluster-theme-usc [data-testid="cluster-sticky-chrome"] {
   background: rgba(255, 253, 249, 0.94) !important;
   border-bottom: 1px solid var(--usc-line) !important;

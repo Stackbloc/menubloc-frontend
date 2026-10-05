@@ -55,3 +55,13 @@ test("venue filter wired from glance tiles and On campus rows", () => {
   assert.match(dining, /closest\("a, button"\)/, "name link + Update keep their own actions");
   assert.match(dining, /tap a name for what&apos;s going on there/);
 });
+
+test("USC header: hero line is the single H1; On campus collapsible (Andre 2026-10-05)", () => {
+  const page = read("src/pages/ClusterPage.jsx");
+  assert.match(page, /<h1 className="cluster-campus-kicker">Food around University Park<\/h1>/);
+  assert.match(page, /\{!isUsc \? \(/, "generic heading + intro hidden for USC only");
+  const dining = read("src/components/cluster/CampusDiningSection.jsx");
+  assert.match(dining, /campus-dining-toggle/);
+  assert.match(dining, /aria-expanded=\{expanded\}/);
+  assert.match(dining, /useState\(false\)/, "collapsed by default");
+});
