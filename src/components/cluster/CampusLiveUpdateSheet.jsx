@@ -4,6 +4,7 @@
  */
 
 import React, { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { postClusterCampusLiveReport } from "../../lib/clusterApi.js";
 import { getOrCreateGuestReporterKey, readOptionalReporterCoords } from "../../lib/guestReporterSession.js";
 import GuestContributeNextStep from "../foodActivity/GuestContributeNextStep.jsx";
@@ -141,7 +142,8 @@ export default function CampusLiveUpdateSheet({
 
   if (!open || !venue) return null;
 
-  return (
+  // Portal to body so the fixed BottomNav and later sections never cover the sheet.
+  return createPortal(
     <div
       data-testid="campus-live-update-sheet"
       style={styles.backdrop}
@@ -168,7 +170,8 @@ export default function CampusLiveUpdateSheet({
         />
         {posted && !isAuthenticated ? <GuestContributeNextStep /> : null}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -177,7 +180,8 @@ const styles = {
     position: "fixed",
     inset: 0,
     background: "rgba(15, 23, 42, 0.45)",
-    zIndex: 80,
+    // Above BottomNav (zIndex 200); matches MenuplyActionSheet.
+    zIndex: 1400,
     display: "flex",
     alignItems: "flex-end",
     justifyContent: "center",
@@ -188,7 +192,9 @@ const styles = {
     background: "#fff",
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
-    padding: "10px 16px 28px",
+    maxHeight: "88vh",
+    overflowY: "auto",
+    padding: "10px 16px calc(28px + env(safe-area-inset-bottom, 0px))",
     boxShadow: "0 -8px 28px rgba(0,0,0,0.18)",
   },
   handle: {
