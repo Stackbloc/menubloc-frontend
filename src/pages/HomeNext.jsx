@@ -22,6 +22,7 @@ import HomeNextHealthGoals from "../components/homeNext/HomeNextHealthGoals.jsx"
 import HomeNextDiscoverySection from "../components/homeNext/HomeNextDiscoverySection.jsx";
 import HomeNextSectionExpanded from "../components/homeNext/HomeNextSectionExpanded.jsx";
 import HomeNextLocationSelector from "../components/homeNext/HomeNextLocationSelector.jsx";
+import { useMarketClusters } from "../hooks/useMarketClusters.js";
 import { useFeedShellDesktop } from "../lib/useFeedShellDesktop.js";
 import { FEED_MOBILE_HEADER_OFFSET } from "../lib/feedShellNavigation.js";
 import { FEED_MENU_CAPTURE_HINT, FEED_MENU_CAPTURE_PATH } from "../lib/feedShellLinks.js";
@@ -53,6 +54,10 @@ export default function HomeNext({ embedInFeedShell = false } = {}) {
     shouldUseGeoBrowse,
     locating,
   } = useHomeBrowseFeed();
+
+  const { market: clusterMarket, clusters: marketClusters } = useMarketClusters(
+    appliedLocation || autoLocation.label
+  );
 
   const sections = useMemo(
     () =>
@@ -320,6 +325,8 @@ export default function HomeNext({ embedInFeedShell = false } = {}) {
               onApplyLocation={setAppliedLocation}
               locating={locating}
               collapseSignal={homeResetSignal}
+              clusters={marketClusters}
+              clusterMarket={clusterMarket}
             />
 
             <form

@@ -7,7 +7,8 @@ import { createCluster, fetchClustersDirectory } from "../lib/clusterApi.js";
 import { toConsumerErrorMessage } from "../lib/api.js";
 import ClusterDirectoryCard, { CLUSTER_DIRECTORY_GRID_STYLE } from "../components/cluster/ClusterDirectoryCard.jsx";
 import ClusterBackButton from "../components/cluster/ClusterBackButton.jsx";
-import { stateDisplayName, clusterCoverageBadge, CLUSTER_GROWING_HELP_TEXT, CLUSTER_VIEW_PROMPTS, clusterDirectoryPath } from "../lib/clusterUrl.js";
+import { stateDisplayName, clusterCoverageBadge, CLUSTER_GROWING_HELP_TEXT, CLUSTER_VIEW_PROMPTS, clusterDirectoryPath, groupClustersByStateCity } from "../lib/clusterUrl.js";
+import { sortClustersForNav } from "../lib/clusterNavigation.js";
 import { resolveClusterAutoOpenPath, resolveClusterMarketFromStoredLocation } from "../lib/clusterLocation.js";
 
 const DIRECTORY_PAGE_TITLE = "Menuply Clusters — Destination Dining Guides";
@@ -135,13 +136,16 @@ export default function ClustersDirectoryPage() {
     load();
   }, []);
 
-  const sortedClusters = useMemo(
+  // Grouped by state, then city; only cities that have clusters produce a group.
+  const clusterGroups = useMemo(
     () =>
-      [...clusters].sort(
-        (a, b) =>
-          String(a.city || "").localeCompare(String(b.city || "")) ||
-          String(a.name || "").localeCompare(String(b.name || ""))
-      ),
+      groupClustersByStateCity(clusters).map((stateEntry) => ({
+        ...stateEntry,
+        cities: stateEntry.cities.map((cityEntry) => ({
+          ...cityEntry,
+          clusters: sortClustersForNav(cityEntry.clusters),
+        })),
+      })),
     [clusters]
   );
 
@@ -286,12 +290,28 @@ export default function ClustersDirectoryPage() {
             Every public Cluster on Menuply — tap a card to explore.
           </p>
           {loading ? <p style={{ color: "#64748b" }}>Loading clusters…</p> : null}
-          {!loading && sortedClusters.length === 0 ? (
+          {!loading && clusterGroups.length === 0 ? (
             <p style={{ color: "#64748b" }}>No public clusters yet.</p>
           ) : null}
-          {!loading && sortedClusters.length > 0 ? (
-            <div style={CLUSTER_DIRECTORY_GRID_STYLE}>
-              {sortedClusters.map((cluster) => renderClusterCard(cluster, false))}
+          {!loading
+            ? clusterGroups.map((stateEntry) => (
+                <section key={stateEntry.state} aria-label={stateEntry.stateLabel} style={{ marginTop: "1rem" }}>
+                  <h3 style={{ margin: "0 0 0.5rem", fontSize: "1.05rem", color: "#0f172a" }}>{stateEntry.stateLabel}</h3>
+                  {stateEntry.cities.map((cityEntry) => (
+                    <div key={cityEntry.city} style={{ marginBottom: "0.9rem" }}>
+                      <h4 style={{ margin: "0 0 0.45rem", fontSize: "0.92rem", color: "#475569", fontWeight: 700 }}>
+                        {cityEntry.city}
+                      </h4>
+                      <div style={CLUSTER_DIRECTORY_GRID_STYLE}>
+                        {cityEntry.clusters.map((cluster) => renderClusterCard(cluster, false))}
+                      </div>
+                    </div>
+                  ))}
+                </section>
+              ))
+            : null}
+          {!loading && pendingSubmissions.length > 0 ? (
+            <div style={{ ...CLUSTER_DIRECTORY_GRID_STYLE, marginTop: "1rem" }}>
               {pendingSubmissions.map((cluster) => renderClusterCard(cluster, true))}
             </div>
           ) : null}

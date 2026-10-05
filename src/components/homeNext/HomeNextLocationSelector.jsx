@@ -1,5 +1,15 @@
 import { useEffect, useRef, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { normalizeLocationLabel } from "../../lib/locationUtils.js";
+import { clusterDirectoryPath } from "../../lib/clusterUrl.js";
+import {
+  SEARCH_ALL_CLUSTERS_LABEL,
+  clusterNavDescriptor,
+  clusterNavHref,
+  marketFromLocationLabel,
+  sameMarket,
+} from "../../lib/clusterNavigation.js";
+import HomeNextClusterPill from "./HomeNextClusterPill.jsx";
 
 const SESSION_LOCATION_KEY = "grubbid.discovery.location";
 const RECENT_LOCATIONS_KEY = "grubbid.recent.locations";
@@ -42,7 +52,10 @@ export default function HomeNextLocationSelector({
   onApplyLocation,
   locating = false,
   collapseSignal = 0,
+  clusters = [],
+  clusterMarket = null,
 }) {
+  const location = useLocation();
   const [showEditor, setShowEditor] = useState(false);
   const [locationInput, setLocationInput] = useState(() => appliedLocation || "");
   const [recentLocations, setRecentLocations] = useState(() => loadRecentLocations());
@@ -89,44 +102,50 @@ export default function HomeNextLocationSelector({
     setShowEditor(false);
   }
 
+  const clusterExitTo = `${location.pathname}${location.search}`;
+
   return (
     <div style={{ marginBottom: 12 }}>
-      <button
-        type="button"
-        onClick={() => setShowEditor((prev) => !prev)}
-        aria-expanded={showEditor}
-        aria-controls="home-next-location-editor"
-        title="Change location"
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 8,
-          maxWidth: "100%",
-          minHeight: 34,
-          padding: "4px 12px",
-          margin: "-4px -12px",
-          borderRadius: 999,
-          border: "1px solid rgba(34,197,94,0.25)",
-          background: showEditor ? "rgba(34,197,94,0.12)" : "rgba(34,197,94,0.06)",
-          color: "#15803d",
-          cursor: "pointer",
-        }}
-      >
-        <span aria-hidden="true">📍</span>
-        <span
+      <div style={{ display: "flex", alignItems: "center", flexWrap: "nowrap", minWidth: 0 }}>
+        <button
+          type="button"
+          onClick={() => setShowEditor((prev) => !prev)}
+          aria-expanded={showEditor}
+          aria-controls="home-next-location-editor"
+          title="Change location"
           style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 8,
+            maxWidth: "100%",
             minWidth: 0,
-            fontSize: 14,
-            fontWeight: 600,
-            whiteSpace: "nowrap",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
+            minHeight: 34,
+            padding: "4px 12px",
+            margin: "-4px -12px",
+            borderRadius: 999,
+            border: "1px solid rgba(34,197,94,0.25)",
+            background: showEditor ? "rgba(34,197,94,0.12)" : "rgba(34,197,94,0.06)",
+            color: "#15803d",
+            cursor: "pointer",
           }}
         >
-          {summaryLabel}
-        </span>
-        <span aria-hidden="true" style={{ opacity: 0.65, fontSize: 11 }}>▾</span>
-      </button>
+          <span aria-hidden="true">📍</span>
+          <span
+            style={{
+              minWidth: 0,
+              fontSize: 14,
+              fontWeight: 600,
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}
+          >
+            {summaryLabel}
+          </span>
+          <span aria-hidden="true" style={{ opacity: 0.65, fontSize: 11 }}>▾</span>
+        </button>
+        <HomeNextClusterPill clusters={clusters} collapseSignal={collapseSignal} />
+      </div>
 
       {showEditor && (
         <div
@@ -147,59 +166,95 @@ export default function HomeNextLocationSelector({
 
           {recentLocations.length > 0 && (
             <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 10 }}>
-              {recentLocations.map((label) => (
-                <div
-                  key={label}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    padding: "8px 12px",
-                    borderRadius: 10,
-                    border: "1px solid #E5E7EB",
-                    background: locationInput === label ? "rgba(34,197,94,0.08)" : "#F9FAFB",
-                  }}
-                >
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setLocationInput(label);
-                      applyLocation(label);
-                    }}
-                    style={{
-                      border: "none",
-                      background: "transparent",
-                      padding: 0,
-                      fontSize: 14,
-                      fontWeight: 700,
-                      color: "#111827",
-                      cursor: "pointer",
-                      textAlign: "left",
-                      flex: 1,
-                    }}
-                  >
-                    {label}
-                  </button>
-                  <button
-                    type="button"
-                    aria-label={`Remove ${label}`}
-                    onClick={() => {
-                      removeRecentLocation(label);
-                      setRecentLocations(loadRecentLocations());
-                    }}
-                    style={{
-                      border: "none",
-                      background: "transparent",
-                      padding: "0 0 0 8px",
-                      color: "#9CA3AF",
-                      fontSize: 16,
-                      cursor: "pointer",
-                    }}
-                  >
-                    ×
-                  </button>
-                </div>
-              ))}
+              {recentLocations.map((label) => {
+                const nestedClusters =
+                  clusters.length > 0 && sameMarket(marketFromLocationLabel(label), clusterMarket) ? clusters : [];
+                return (
+                  <div key={label}>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        padding: "8px 12px",
+                        borderRadius: 10,
+                        border: "1px solid #E5E7EB",
+                        background: locationInput === label ? "rgba(34,197,94,0.08)" : "#F9FAFB",
+                      }}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setLocationInput(label);
+                          applyLocation(label);
+                        }}
+                        style={{
+                          border: "none",
+                          background: "transparent",
+                          padding: 0,
+                          fontSize: 14,
+                          fontWeight: 700,
+                          color: "#111827",
+                          cursor: "pointer",
+                          textAlign: "left",
+                          flex: 1,
+                        }}
+                      >
+                        {label}
+                      </button>
+                      <button
+                        type="button"
+                        aria-label={`Remove ${label}`}
+                        onClick={() => {
+                          removeRecentLocation(label);
+                          setRecentLocations(loadRecentLocations());
+                        }}
+                        style={{
+                          border: "none",
+                          background: "transparent",
+                          padding: "0 0 0 8px",
+                          color: "#9CA3AF",
+                          fontSize: 16,
+                          cursor: "pointer",
+                        }}
+                      >
+                        ×
+                      </button>
+                    </div>
+                    {nestedClusters.length > 0 && (
+                      <ul
+                        aria-label={`Clusters in ${label}`}
+                        style={{ listStyle: "none", margin: "4px 0 0", padding: "0 0 0 16px", display: "grid", gap: 2 }}
+                      >
+                        {nestedClusters.map((cluster) => {
+                          const href = clusterNavHref(cluster, clusterExitTo);
+                          if (!href) return null;
+                          const descriptor = clusterNavDescriptor(cluster);
+                          return (
+                            <li key={cluster.slug}>
+                              <Link
+                                to={href}
+                                style={{
+                                  display: "block",
+                                  padding: "6px 10px",
+                                  borderLeft: "2px solid rgba(34,197,94,0.35)",
+                                  color: "#111827",
+                                  textDecoration: "none",
+                                }}
+                              >
+                                <span style={{ display: "block", fontSize: 13, fontWeight: 600 }}>{cluster.name}</span>
+                                {descriptor ? (
+                                  <span style={{ display: "block", fontSize: 12, color: "#6B7280" }}>{descriptor}</span>
+                                ) : null}
+                              </Link>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
 
@@ -287,6 +342,20 @@ export default function HomeNextLocationSelector({
               </button>
             )}
           </div>
+
+          <Link
+            to={clusterDirectoryPath()}
+            style={{
+              display: "inline-block",
+              marginTop: 12,
+              fontSize: 13,
+              fontWeight: 700,
+              color: "#15803d",
+              textDecoration: "none",
+            }}
+          >
+            {SEARCH_ALL_CLUSTERS_LABEL} →
+          </Link>
         </div>
       )}
     </div>

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useParams, useSearchParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import BottomNav from "../components/BottomNav.jsx";
 import { CLUSTER_DIRECTORY_GRID_STYLE } from "../components/cluster/ClusterDirectoryCard.jsx";
 import ClusterGrowingNotice from "../components/cluster/ClusterGrowingNotice.jsx";
@@ -20,6 +20,7 @@ import {
 } from "../components/share/shareUtils.js";
 import { fetchClusterMetadata, fetchClusterMenuItems, fetchClusterRestaurants, searchCluster } from "../lib/clusterApi.js";
 import { isClusterGrowing, clusterCityPath, clusterDirectoryPath } from "../lib/clusterUrl.js";
+import { EXIT_CLUSTER_LABEL, clearClusterExit, resolveClusterExitTo } from "../lib/clusterNavigation.js";
 import { groupClusterRestaurantsByCuisine } from "../lib/clusterRestaurantCuisineGroups.js";
 import {
   getClusterDisclaimer,
@@ -1056,6 +1057,9 @@ export default function ClusterPage() {
 
   const resolvedViewMode = viewMode || CLUSTER_VIEW_MODES.MENU;
 
+  // Set only when the cluster was opened from the search page pill / location panel.
+  const exitTo = useMemo(() => resolveClusterExitTo(searchParams, clusterSlug), [searchParams, clusterSlug]);
+
   const shareData = useMemo(
     () => (cluster ? buildClusterShareData({ cluster, origin: CANONICAL_BASE }) : null),
     [cluster]
@@ -1271,7 +1275,31 @@ export default function ClusterPage() {
       style={{ maxWidth: 900, margin: "0 auto", padding: "1.25rem 1rem 5rem", width: "100%", boxSizing: "border-box" }}
     >
       <header style={{ marginBottom: "0.85rem", minWidth: 0, display: "grid", gap: "0.75rem" }}>
-        <ClusterBackButton fallbackTo={clusterCityBack} label={cityBackLabel} />
+        {exitTo ? (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem", minWidth: 0 }}>
+            <ClusterBackButton fallbackTo={clusterCityBack} label={cityBackLabel} />
+            <Link
+              to={exitTo}
+              onClick={clearClusterExit}
+              style={{
+                flexShrink: 0,
+                padding: "0.3rem 0.75rem",
+                borderRadius: 999,
+                border: "1px solid #d1d5db",
+                background: "#ffffff",
+                color: "#374151",
+                fontSize: "0.85rem",
+                fontWeight: 700,
+                textDecoration: "none",
+                lineHeight: 1.2,
+              }}
+            >
+              {EXIT_CLUSTER_LABEL}
+            </Link>
+          </div>
+        ) : (
+          <ClusterBackButton fallbackTo={clusterCityBack} label={cityBackLabel} />
+        )}
         {isIndioFestivalGrounds ? (
           <div className="cluster-indio-festival-hero" data-testid="cluster-indio-festival-hero">
             <p className="cluster-indio-festival-eyebrow" data-testid="cluster-indio-festival-eyebrow">
