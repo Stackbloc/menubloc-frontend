@@ -22,6 +22,7 @@ import {
 } from "../../lib/clusterDashboardModel.js";
 import { getOrCreateGuestReporterKey } from "../../lib/guestReporterSession.js";
 import CampusLiveGlanceBar from "./CampusLiveGlanceBar.jsx";
+import CampusLivePosts from "./CampusLivePosts.jsx";
 
 function clusterDisplayName(cluster) {
   const name = String(cluster?.name || "").trim();
@@ -71,13 +72,18 @@ function isUniversityCluster(cluster) {
     .toLowerCase() === "university";
 }
 
-export default function ClusterPublicFeed({ cluster }) {
+export default function ClusterPublicFeed({
+  cluster,
+  venueFilter = null,
+  onVenueFilterChange = null,
+}) {
   const [activityItems, setActivityItems] = useState([]);
   const [statuses, setStatuses] = useState([]);
   const [signals, setSignals] = useState([]);
   const [feedNotice, setFeedNotice] = useState("");
   const [loading, setLoading] = useState(false);
   const [campusGlance, setCampusGlance] = useState(null);
+  const [campusVenues, setCampusVenues] = useState([]);
   const [campusGlanceLoading, setCampusGlanceLoading] = useState(false);
 
   const slug = cluster?.slug;
@@ -155,6 +161,25 @@ export default function ClusterPublicFeed({ cluster }) {
     };
   }, [slug, cluster?.id]);
 
+  function applyLive(data) {
+    setCampusGlance(data?.glance || null);
+    setCampusVenues(Array.isArray(data?.venues) ? data.venues : []);
+  }
+
+  function selectVenue(restaurantId) {
+    const venue = campusVenues.find((v) => Number(v.restaurant_id) === Number(restaurantId));
+    if (onVenueFilterChange) {
+      onVenueFilterChange({
+        restaurant_id: Number(restaurantId),
+        name: venue?.name || null,
+      });
+    }
+    document.getElementById("cluster-live-posts")?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }
+
   // Campus live glance (Phase 1) — under the date header; non-blocking.
   useEffect(() => {
     let cancelled = false;
@@ -166,7 +191,7 @@ export default function ClusterPublicFeed({ cluster }) {
     setCampusGlanceLoading(true);
     fetchClusterCampusLive(slug, { guestKey: getOrCreateGuestReporterKey() })
       .then((data) => {
-        if (!cancelled) setCampusGlance(data?.glance || null);
+        if (!cancelled) applyLive(data);
       })
       .catch(() => {
         if (!cancelled) setCampusGlance(null);
@@ -177,7 +202,7 @@ export default function ClusterPublicFeed({ cluster }) {
     const id = setInterval(() => {
       fetchClusterCampusLive(slug, { guestKey: getOrCreateGuestReporterKey() })
         .then((data) => {
-          if (!cancelled) setCampusGlance(data?.glance || null);
+          if (!cancelled) applyLive(data);
         })
         .catch(() => {});
     }, 45000);
@@ -190,6 +215,7 @@ export default function ClusterPublicFeed({ cluster }) {
   if (!slug) return null;
 
   const quiet =
+    !university &&
     !loading &&
     hotspots.items.length === 0 &&
     popular.length === 0 &&
@@ -211,18 +237,19 @@ export default function ClusterPublicFeed({ cluster }) {
         <CampusLiveGlanceBar
           glance={campusGlance}
           loading={campusGlanceLoading && !campusGlance}
-          onSelectVenue={(restaurantId) => {
-            const el = document.querySelector(
-              `[data-campus-venue-id="${Number(restaurantId)}"]`
-            );
-            if (el?.scrollIntoView) {
-              el.scrollIntoView({ behavior: "smooth", block: "center" });
-            } else {
-              document.getElementById("campus-dining")?.scrollIntoView({
-                behavior: "smooth",
-                block: "start",
-              });
-            }
+          onSelectVenue={selectVenue}
+        />
+      ) : null}
+
+      {university ? (
+        <CampusLivePosts
+          clusterSlug={slug}
+          clusterName={cluster?.name || ""}
+          venues={campusVenues}
+          venueFilter={venueFilter}
+          onClearVenueFilter={() => onVenueFilterChange && onVenueFilterChange(null)}
+          onLiveRefresh={(nextLive) => {
+            if (nextLive) applyLive(nextLive);
           }}
         />
       ) : null}

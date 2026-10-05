@@ -89,6 +89,33 @@ export async function postClusterCampusLiveReport(clusterSlug, payload = {}) {
   return apiPost(`/public/clusters/${encodeURIComponent(clusterSlug)}/live/report`, payload || {});
 }
 
+/** Campus posts (Phase 2) — recent window, newest first; optional venue filter. */
+export async function fetchClusterLivePosts(
+  clusterSlug,
+  { guestKey = null, restaurantId = null, limit = null, signal } = {}
+) {
+  const params = new URLSearchParams();
+  if (guestKey) params.set("guest_key", String(guestKey));
+  if (restaurantId != null) params.set("restaurant_id", String(restaurantId));
+  if (limit != null) params.set("limit", String(limit));
+  const qs = params.toString();
+  const path = `/public/clusters/${encodeURIComponent(clusterSlug)}/live/posts${qs ? `?${qs}` : ""}`;
+  return apiGet(path, { signal });
+}
+
+/** Create a campus post (comment). Guests welcome. */
+export async function createClusterLivePost(clusterSlug, payload = {}) {
+  return apiPost(`/public/clusters/${encodeURIComponent(clusterSlug)}/live/posts`, payload || {});
+}
+
+/** Report a campus post. */
+export async function reportClusterLivePost(clusterSlug, postId, payload = {}) {
+  return apiPost(
+    `/public/clusters/${encodeURIComponent(clusterSlug)}/live/posts/${encodeURIComponent(postId)}/report`,
+    payload || {}
+  );
+}
+
 /**
  * Public Cluster Feed — no auth, no subscription required.
  * Same underlying activity Waiter personalizes for followed clusters.

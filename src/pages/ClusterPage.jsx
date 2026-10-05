@@ -1043,6 +1043,8 @@ export default function ClusterPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [status, setStatus] = useState("loading");
   const [cluster, setCluster] = useState(null);
+  /** Campus live: venue filter shared by glance tiles, On campus rows and posts. */
+  const [campusVenueFilter, setCampusVenueFilter] = useState(null);
   const [error, setError] = useState("");
 
   const viewMode = useMemo(() => {
@@ -1336,10 +1338,26 @@ export default function ClusterPage() {
       </header>
 
       {/* Public cluster dashboard — clock, hotspots, popular, comments. */}
-      {cluster.slug ? <ClusterPublicFeed cluster={cluster} /> : null}
+      {cluster.slug ? (
+        <ClusterPublicFeed
+          cluster={cluster}
+          venueFilter={campusVenueFilter}
+          onVenueFilterChange={setCampusVenueFilter}
+        />
+      ) : null}
 
       {/* University clusters only — hidden when no campus dining members. */}
-      <CampusDiningSection cluster={cluster} showGlance={false} />
+      <CampusDiningSection
+        cluster={cluster}
+        showGlance={false}
+        onSelectVenue={(venue) => {
+          setCampusVenueFilter(venue);
+          document.getElementById("cluster-live-posts")?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+        }}
+      />
 
       {cluster.slug ? <ClusterNearbyEvents cluster={cluster} /> : null}
 

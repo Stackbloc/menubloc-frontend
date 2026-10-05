@@ -21,39 +21,27 @@ const FOOD_OPTIONS = [
   { value: "skip", label: "Skip it" },
 ];
 
-export default function CampusLiveUpdateSheet({
-  open,
-  onClose,
-  clusterSlug,
-  venue,
-  onSaved = null,
-}) {
+/**
+ * One-tap Line + Food rows for a venue. Each tap saves immediately; tapping the
+ * selected value again clears it. Shared by the Update sheet and the composer.
+ */
+export function CampusLiveQuickStatusRows({ clusterSlug, venue, onSaved = null, onPosted = null }) {
   const { isAuthenticated } = useConsumer();
   const [busyKind, setBusyKind] = useState(null);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
-  const [posted, setPosted] = useState(false);
   const [selectedLine, setSelectedLine] = useState(null);
   const [selectedFood, setSelectedFood] = useState(null);
 
   useEffect(() => {
-    if (!open) return undefined;
     setNotice("");
     setError("");
-    setPosted(false);
     setSelectedLine(venue?.viewer?.line?.value || null);
     setSelectedFood(venue?.viewer?.food?.value || null);
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-    };
-  }, [open, venue?.restaurant_id, venue?.viewer?.line?.value, venue?.viewer?.food?.value]);
-
-  if (!open || !venue) return null;
+  }, [venue?.restaurant_id, venue?.viewer?.line?.value, venue?.viewer?.food?.value]);
 
   async function tap(kind, value) {
-    if (!clusterSlug || busyKind) return;
+    if (!clusterSlug || !venue || busyKind) return;
     const current = kind === "line" ? selectedLine : selectedFood;
     const nextValue = current === value ? null : value;
     setBusyKind(kind);
@@ -72,7 +60,7 @@ export default function CampusLiveUpdateSheet({
       if (kind === "line") setSelectedLine(nextValue);
       else setSelectedFood(nextValue);
       setNotice(data?.notice || (data?.cleared ? "Cleared" : "Saved"));
-      setPosted(true);
+      if (onPosted) onPosted();
       if (onSaved) onSaved(data?.live || null);
     } catch (err) {
       setError(err?.message || "Unable to save");
@@ -80,6 +68,78 @@ export default function CampusLiveUpdateSheet({
       setBusyKind(null);
     }
   }
+
+  if (!venue) return null;
+
+  return (
+    <>
+      <div style={styles.kindLabel}>Line</div>
+      <div style={styles.chipRow} data-testid="campus-live-line-options">
+        {LINE_OPTIONS.map((opt) => (
+          <button
+            key={opt.value}
+            type="button"
+            disabled={Boolean(busyKind)}
+            onClick={() => tap("line", opt.value)}
+            style={{
+              ...styles.chip,
+              ...(selectedLine === opt.value ? styles.chipSelected : null),
+            }}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
+
+      <div style={styles.kindLabel}>Food</div>
+      <div style={styles.chipRow} data-testid="campus-live-food-options">
+        {FOOD_OPTIONS.map((opt) => (
+          <button
+            key={opt.value}
+            type="button"
+            disabled={Boolean(busyKind)}
+            onClick={() => tap("food", opt.value)}
+            style={{
+              ...styles.chip,
+              ...(selectedFood === opt.value ? styles.chipSelected : null),
+            }}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
+
+      {notice ? (
+        <p style={styles.notice} data-testid="campus-live-saved">
+          {notice}
+        </p>
+      ) : null}
+      {error ? <p style={styles.error}>{error}</p> : null}
+    </>
+  );
+}
+
+export default function CampusLiveUpdateSheet({
+  open,
+  onClose,
+  clusterSlug,
+  venue,
+  onSaved = null,
+}) {
+  const { isAuthenticated } = useConsumer();
+  const [posted, setPosted] = useState(false);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    setPosted(false);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [open, venue?.restaurant_id]);
+
+  if (!open || !venue) return null;
 
   return (
     <div
@@ -100,48 +160,12 @@ export default function CampusLiveUpdateSheet({
         </div>
         <p style={styles.hint}>Tap to save. Tap again to clear.</p>
 
-        <div style={styles.kindLabel}>Line</div>
-        <div style={styles.chipRow} data-testid="campus-live-line-options">
-          {LINE_OPTIONS.map((opt) => (
-            <button
-              key={opt.value}
-              type="button"
-              disabled={Boolean(busyKind)}
-              onClick={() => tap("line", opt.value)}
-              style={{
-                ...styles.chip,
-                ...(selectedLine === opt.value ? styles.chipSelected : null),
-              }}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
-
-        <div style={styles.kindLabel}>Food</div>
-        <div style={styles.chipRow} data-testid="campus-live-food-options">
-          {FOOD_OPTIONS.map((opt) => (
-            <button
-              key={opt.value}
-              type="button"
-              disabled={Boolean(busyKind)}
-              onClick={() => tap("food", opt.value)}
-              style={{
-                ...styles.chip,
-                ...(selectedFood === opt.value ? styles.chipSelected : null),
-              }}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
-
-        {notice ? (
-          <p style={styles.notice} data-testid="campus-live-saved">
-            {notice}
-          </p>
-        ) : null}
-        {error ? <p style={styles.error}>{error}</p> : null}
+        <CampusLiveQuickStatusRows
+          clusterSlug={clusterSlug}
+          venue={venue}
+          onSaved={onSaved}
+          onPosted={() => setPosted(true)}
+        />
         {posted && !isAuthenticated ? <GuestContributeNextStep /> : null}
       </div>
     </div>

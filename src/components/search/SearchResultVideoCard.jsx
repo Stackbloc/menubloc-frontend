@@ -8,6 +8,7 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import ConnectPill from "../connect/ConnectPill.jsx";
 import { resolveConsumerMediaUrl } from "../../lib/consumerApi.js";
 
 const MOBILE_VISIBLE = 2;
@@ -175,23 +176,7 @@ export function SearchResultVideoCard({
         >
           {context}
         </span>
-        {video.from_connect ? (
-          <span
-            data-testid="search-result-video-connect-badge"
-            style={{
-              fontSize: 10,
-              fontWeight: 800,
-              letterSpacing: 0.2,
-              color: "#166534",
-              background: "#dcfce7",
-              borderRadius: 999,
-              padding: "1px 6px",
-              flex: "0 0 auto",
-            }}
-          >
-            Connect
-          </span>
-        ) : null}
+        {video.from_connect ? <ConnectPill data-testid="search-result-video-connect-badge" /> : null}
       </span>
     </button>
   );

@@ -35,7 +35,7 @@ function StatusChip({ label, muted = false }) {
   );
 }
 
-export default function CampusDiningSection({ cluster, showGlance = true }) {
+export default function CampusDiningSection({ cluster, showGlance = true, onSelectVenue = null }) {
   const { isAuthenticated } = useConsumer();
   const [locations, setLocations] = useState([]);
   const [live, setLive] = useState(null);
@@ -166,7 +166,12 @@ export default function CampusDiningSection({ cluster, showGlance = true }) {
                 key={loc.restaurant_id}
                 data-testid="campus-dining-location"
                 data-campus-venue-id={loc.restaurant_id}
-                style={styles.card}
+                style={{ ...styles.card, ...(onSelectVenue ? { cursor: "pointer" } : null) }}
+                onClick={(e) => {
+                  // Row tap filters campus posts; name link + Update keep their own actions.
+                  if (!onSelectVenue || e.target.closest("a, button")) return;
+                  onSelectVenue({ restaurant_id: Number(loc.restaurant_id), name: loc.name });
+                }}
               >
                 <div style={styles.nameRow}>
                   {loc.href ? (
