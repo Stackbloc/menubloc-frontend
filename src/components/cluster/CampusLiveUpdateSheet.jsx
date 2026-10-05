@@ -194,7 +194,9 @@ const styles = {
     borderTopRightRadius: 16,
     maxHeight: "88vh",
     overflowY: "auto",
-    padding: "10px 16px calc(28px + env(safe-area-inset-bottom, 0px))",
+    // Clear the fixed BottomNav on mobile even if a browser stacks it above the sheet
+    // (same pattern as MenuplyActionSheet: --bottom-nav-h is set by BottomNav).
+    padding: "10px 16px calc(var(--bottom-nav-h, 72px) + 16px + env(safe-area-inset-bottom, 0px))",
     boxShadow: "0 -8px 28px rgba(0,0,0,0.18)",
   },
   handle: {
