@@ -1,5 +1,5 @@
 /**
- * Campus live posts (Phase 2) — Video / Comment buttons, Everyone / Connects tabs,
+ * Campus live posts — text only (no video; USC rules). Comment button, Everyone / Connects tabs,
  * recent posts (48h window, newest first), venue filter, report + hide.
  * Guests can post. Connects tab only for signed-in viewers who have Connects.
  */
@@ -9,6 +9,7 @@ import { Link } from "react-router-dom";
 import {
   fetchClusterLivePosts,
   reportClusterLivePost,
+  toggleClusterLivePostRsvp,
 } from "../../lib/clusterApi.js";
 import { getOrCreateGuestReporterKey } from "../../lib/guestReporterSession.js";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
@@ -62,7 +63,42 @@ function PostHeader({ post }) {
   );
 }
 
-function PostCard({ post, highlighted, onReport, onHide, reported }) {
+function formatPlanTime(iso) {
+  const d = iso ? new Date(iso) : null;
+  if (!d || Number.isNaN(d.getTime())) return "";
+  return new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit" }).format(d);
+}
+
+function goingLine(rsvp) {
+  if (!rsvp || !rsvp.count) return "";
+  const names = Array.isArray(rsvp.names) ? rsvp.names : [];
+  const others = Number(rsvp.others) || 0;
+  if (!names.length) return `${others} going`;
+  return `${names.join(", ")}${others ? ` +${others}` : ""} going`;
+}
+
+function PlanBlock({ post, onRsvp, busy }) {
+  const rsvp = post.rsvp || { count: 0, viewer_in: false };
+  const going = goingLine(rsvp);
+  return (
+    <div style={styles.planRow} data-testid="campus-post-plan">
+      <span style={styles.planTime}>Around {formatPlanTime(post.plan_time)}</span>
+      <button
+        type="button"
+        data-testid="campus-post-rsvp"
+        aria-pressed={Boolean(rsvp.viewer_in)}
+        disabled={busy}
+        onClick={() => onRsvp(post)}
+        style={{ ...styles.rsvpButton, ...(rsvp.viewer_in ? styles.rsvpOn : null) }}
+      >
+        {rsvp.viewer_in ? "You're in" : "I'm in"}
+      </button>
+      {going ? <span style={styles.going} data-testid="campus-post-going">{going}</span> : null}
+    </div>
+  );
+}
+
+function PostCard({ post, highlighted, onReport, onHide, reported, onRsvp, rsvpBusy }) {
   const [menuOpen, setMenuOpen] = useState(false);
   return (
     <li
@@ -83,6 +119,7 @@ function PostCard({ post, highlighted, onReport, onHide, reported }) {
         </button>
       </div>
       {post.body ? <p style={styles.body}>{post.body}</p> : null}
+      {post.type === "plan" ? <PlanBlock post={post} onRsvp={onRsvp} busy={rsvpBusy} /> : null}
       {menuOpen ? (
         <div style={styles.menuRow}>
           <button
@@ -131,6 +168,7 @@ export default function CampusLivePosts({
   const [reportedIds, setReportedIds] = useState(() => new Set());
   const [highlightId, setHighlightId] = useState(null);
   const [composer, setComposer] = useState(null);
+  const [rsvpBusyId, setRsvpBusyId] = useState(null);
   const listRef = useRef(null);
 
   const filterId = venueFilter?.restaurant_id ? Number(venueFilter.restaurant_id) : null;
@@ -179,7 +217,6 @@ export default function CampusLivePosts({
 
   const visible = expanded ? posts : posts.slice(0, INITIAL_VISIBLE);
   const moreCount = Math.max(0, posts.length - INITIAL_VISIBLE);
-  const videoEnabled = Boolean(data?.limits?.video_enabled);
   const maxChars = Number(data?.limits?.max_chars) || 140;
 
   function handlePosted(post) {
@@ -208,6 +245,26 @@ export default function CampusLivePosts({
     }
   }
 
+  async function handleRsvp(post) {
+    if (rsvpBusyId) return;
+    setRsvpBusyId(post.id);
+    try {
+      const res = await toggleClusterLivePostRsvp(clusterSlug, post.id, {
+        guest_key: isAuthenticated ? undefined : getOrCreateGuestReporterKey(),
+      });
+      if (res?.rsvp) {
+        setData((prev) => ({
+          ...(prev || {}),
+          posts: (prev?.posts || []).map((p) => (p.id === post.id ? { ...p, rsvp: res.rsvp } : p)),
+        }));
+      }
+    } catch {
+      load();
+    } finally {
+      setRsvpBusyId(null);
+    }
+  }
+
   function handleHide(post) {
     setHiddenIds((prev) => {
       const next = new Set(prev).add(Number(post.id));
@@ -223,16 +280,6 @@ export default function CampusLivePosts({
   return (
     <div id="cluster-live-posts" data-testid="campus-live-posts" style={styles.wrap}>
       <div style={styles.actions}>
-        {videoEnabled ? (
-          <button
-            type="button"
-            data-testid="campus-live-video-button"
-            style={styles.actionButton}
-            onClick={() => setComposer({ mode: "video" })}
-          >
-            Video
-          </button>
-        ) : null}
         <button
           type="button"
           data-testid="campus-live-comment-button"
@@ -290,6 +337,8 @@ export default function CampusLivePosts({
             reported={reportedIds.has(Number(post.id))}
             onReport={handleReport}
             onHide={handleHide}
+            onRsvp={handleRsvp}
+            rsvpBusy={rsvpBusyId === post.id}
           />
         ))}
       </ul>
@@ -422,6 +471,20 @@ const styles = {
     cursor: "pointer",
   },
   muted: { fontSize: 13, color: "#6b7280", margin: "8px 0" },
+  planRow: { display: "flex", alignItems: "center", flexWrap: "wrap", gap: 8, marginTop: 6 },
+  planTime: { fontSize: 13, fontWeight: 700, color: "#111827" },
+  rsvpButton: {
+    border: "1px solid #059669",
+    background: "#fff",
+    color: "#065f46",
+    borderRadius: 999,
+    padding: "5px 12px",
+    fontSize: 13,
+    fontWeight: 800,
+    cursor: "pointer",
+  },
+  rsvpOn: { background: "#059669", color: "#fff" },
+  going: { fontSize: 12, color: "#4b5563" },
   moreButton: {
     marginTop: 8,
     border: "none",

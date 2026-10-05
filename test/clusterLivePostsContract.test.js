@@ -13,8 +13,11 @@ const read = (rel) => fs.readFileSync(path.join(ROOT, rel), "utf8");
 test("posts section: buttons, tabs, filter, report/hide, empty copy", () => {
   const src = read("src/components/cluster/CampusLivePosts.jsx");
   assert.match(src, /campus-live-comment-button/);
-  assert.match(src, /campus-live-video-button/);
-  assert.match(src, /videoEnabled \?/, "Video button gated until Phase 3 upload re-check");
+  // Text-only: no Video button / video posts on campus clusters (USC rules, Andre 2026-10-05).
+  assert.doesNotMatch(src, /campus-live-video-button|VideoStillPreview|video_url/);
+  const composer = read("src/components/cluster/CampusLiveComposerSheet.jsx");
+  assert.doesNotMatch(composer, /MenuplyMediaPicker|isVideo|video_url|Upload/);
+  assert.equal(fs.existsSync(path.join(ROOT, "src/components/cluster/CampusLiveVideoStrip.jsx")), false);
   assert.match(src, /isAuthenticated && data\?\.connects_tab/, "Connects tab never for guests / zero Connects");
   assert.match(src, /Show \$\{moreCount\} more/);
   assert.match(src, /Show less/);

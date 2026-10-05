@@ -2,7 +2,7 @@
  * Campus live composer (Phase 2) — same page, bottom sheet, no new route.
  * "Posting to <Cluster>", optional hall chip, one-tap Line/Food when a hall is picked,
  * 140-char text (counter only in the last 20), quick-fill chips, Post.
- * Guests can post. Video mode ships in Phase 3.
+ * Guests can post. Text only — no video (USC rules, 2026-10-05).
  */
 
 import React, { useEffect, useMemo, useState } from "react";
@@ -15,6 +15,22 @@ import { CampusLiveQuickStatusRows } from "./CampusLiveUpdateSheet.jsx";
 /** Reuses the existing dining-hall status copy (DinerStatusComposer HALL_OPS). */
 const QUICK_FILL = ["Very crowded", "Seating available", "Station sold out", "Food available"];
 const COUNTER_WINDOW = 20;
+
+function nextHalfHourLocal() {
+  const d = new Date(Date.now() + 30 * 60 * 1000);
+  d.setMinutes(d.getMinutes() < 30 ? 30 : 60, 0, 0);
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
+/** "19:00" → ISO for today (or tomorrow if that time already passed). */
+function planTimeIso(hhmm) {
+  const [h, m] = String(hhmm || "").split(":").map(Number);
+  if (!Number.isFinite(h) || !Number.isFinite(m)) return null;
+  const d = new Date();
+  d.setHours(h, m, 0, 0);
+  if (d.getTime() < Date.now() - 5 * 60 * 1000) d.setDate(d.getDate() + 1);
+  return d.toISOString();
+}
 
 export default function CampusLiveComposerSheet({
   open,
@@ -32,12 +48,16 @@ export default function CampusLiveComposerSheet({
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [planOn, setPlanOn] = useState(false);
+  const [planTime, setPlanTime] = useState(nextHalfHourLocal());
 
   useEffect(() => {
     if (!open) return undefined;
     setVenueId(initialVenueId != null ? Number(initialVenueId) : null);
     setText("");
     setError("");
+    setPlanOn(false);
+    setPlanTime(nextHalfHourLocal());
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
@@ -54,7 +74,8 @@ export default function CampusLiveComposerSheet({
 
   const length = [...text].length;
   const remaining = maxChars - length;
-  const canPost = text.trim().length > 0 && remaining >= 0 && !busy;
+  const canPost =
+    text.trim().length > 0 && remaining >= 0 && !busy && (!planOn || Boolean(planTime));
 
   function appendQuickFill(phrase) {
     setText((prev) => {
@@ -70,11 +91,14 @@ export default function CampusLiveComposerSheet({
     setBusy(true);
     setError("");
     try {
-      const res = await createClusterLivePost(clusterSlug, {
-        body: text.trim(),
+      const base = {
         restaurant_id: venueId || undefined,
         guest_key: isAuthenticated ? undefined : getOrCreateGuestReporterKey(),
-      });
+      };
+      const payload = planOn
+        ? { ...base, type: "plan", body: text.trim(), plan_time: planTimeIso(planTime) }
+        : { ...base, type: "comment", body: text.trim() };
+      const res = await createClusterLivePost(clusterSlug, payload);
       if (onPosted) onPosted(res?.post || null);
     } catch (err) {
       setError(err?.message || "Could not post. Please try again.");
@@ -132,13 +156,35 @@ export default function CampusLiveComposerSheet({
           />
         ) : null}
 
+        <div style={styles.planToggleRow}>
+          <button
+            type="button"
+            data-testid="campus-live-composer-plan-toggle"
+            aria-pressed={planOn}
+            onClick={() => setPlanOn((v) => !v)}
+            style={{ ...styles.chip, ...(planOn ? styles.chipSelected : null) }}
+          >
+            Eating invite
+          </button>
+          {planOn ? (
+            <input
+              type="time"
+              data-testid="campus-live-composer-plan-time"
+              value={planTime}
+              onChange={(e) => setPlanTime(e.target.value)}
+              style={styles.timeInput}
+              aria-label="Around what time?"
+            />
+          ) : null}
+        </div>
+
         <textarea
           data-testid="campus-live-composer-text"
           value={text}
           onChange={(e) => setText([...e.target.value].slice(0, maxChars).join(""))}
           rows={3}
           maxLength={maxChars}
-          placeholder="What's it like right now?"
+          placeholder={planOn ? "Anyone eating at EVK around 7?" : "What's it like right now?"}
           style={styles.textarea}
         />
         <div style={styles.metaRow}>
@@ -237,7 +283,8 @@ const styles = {
     border: "1px solid #d1d5db",
     borderRadius: 12,
     padding: 10,
-    fontSize: 15,
+    // 16px avoids iOS Safari zoom-on-focus.
+    fontSize: 16,
     fontFamily: "inherit",
     resize: "none",
   },
@@ -254,6 +301,15 @@ const styles = {
     cursor: "pointer",
   },
   counter: { fontSize: 12, fontWeight: 700, color: "#b45309", flex: "0 0 auto" },
+  planToggleRow: { display: "flex", alignItems: "center", gap: 8, marginTop: 12 },
+  // 16px avoids iOS zoom-on-focus.
+  timeInput: {
+    border: "1px solid #d1d5db",
+    borderRadius: 10,
+    padding: "6px 8px",
+    fontSize: 16,
+    fontFamily: "inherit",
+  },
   error: { margin: "8px 0 0", fontSize: 13, color: "#b91c1c" },
   post: {
     width: "100%",

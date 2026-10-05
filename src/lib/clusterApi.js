@@ -108,6 +108,14 @@ export async function createClusterLivePost(clusterSlug, payload = {}) {
   return apiPost(`/public/clusters/${encodeURIComponent(clusterSlug)}/live/posts`, payload || {});
 }
 
+/** "I'm in" toggle on an eating invite. Guests welcome. */
+export async function toggleClusterLivePostRsvp(clusterSlug, postId, payload = {}) {
+  return apiPost(
+    `/public/clusters/${encodeURIComponent(clusterSlug)}/live/posts/${encodeURIComponent(postId)}/rsvp`,
+    payload || {}
+  );
+}
+
 /** Report a campus post. */
 export async function reportClusterLivePost(clusterSlug, postId, payload = {}) {
   return apiPost(
