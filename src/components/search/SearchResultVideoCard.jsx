@@ -2,35 +2,36 @@
  * Search result video strip — evidence on the ranked card, not a video catalog.
  * Reads `row.videos` from Search. Does not fetch restaurant-wide profile videos.
  *
- * Play: thumbnail strip → tap replaces strip with larger in-card player (no empty shell).
- * 2+ videos: next/prev arrows on the player (Part 4) — thumbnails to choose, arrows to continue.
- * No fullscreen control — Collapse returns to the strip.
+ * Play states: thumbnail strip → inline expanded (larger in-card player, no empty shell)
+ * → full-screen via the small expand icon. Exiting full-screen returns to inline expanded;
+ * Collapse returns to the strip.
+ * Collapsed: all thumbnails. 2+ videos: next/prev arrows on the player — thumbnails to choose, arrows to continue.
  */
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
 import ConnectPill from "../connect/ConnectPill.jsx";
 import { resolveConsumerMediaUrl } from "../../lib/consumerApi.js";
 
-const MOBILE_VISIBLE = 2;
-const DESKTOP_VISIBLE = 3;
 const THUMB_WIDTH = 86;
 const EXPANDED_WIDTH = "min(220px, 56vw)";
 
-function useVisibleCount() {
-  const [count, setCount] = useState(MOBILE_VISIBLE);
-  useEffect(() => {
-    if (typeof window === "undefined" || !window.matchMedia) return undefined;
-    const mq = window.matchMedia("(min-width: 768px)");
-    const apply = () => setCount(mq.matches ? DESKTOP_VISIBLE : MOBILE_VISIBLE);
-    apply();
-    if (typeof mq.addEventListener === "function") {
-      mq.addEventListener("change", apply);
-      return () => mq.removeEventListener("change", apply);
-    }
-    mq.addListener(apply);
-    return () => mq.removeListener(apply);
-  }, []);
-  return count;
+function currentFullscreenElement() {
+  if (typeof document === "undefined") return null;
+  return document.fullscreenElement || document.webkitFullscreenElement || null;
+}
+
+/** Element full-screen where supported; iPhone Safari only has native video full-screen. */
+function enterFullscreen(containerEl, videoEl) {
+  if (containerEl?.requestFullscreen) return containerEl.requestFullscreen();
+  if (containerEl?.webkitRequestFullscreen) return containerEl.webkitRequestFullscreen();
+  if (videoEl?.webkitEnterFullscreen) return videoEl.webkitEnterFullscreen();
+  return null;
+}
+
+function exitFullscreen() {
+  if (typeof document === "undefined") return null;
+  if (document.exitFullscreen) return document.exitFullscreen();
+  if (document.webkitExitFullscreen) return document.webkitExitFullscreen();
+  return null;
 }
 
 function videoKey(video) {
@@ -182,6 +183,17 @@ export function SearchResultVideoCard({
   );
 }
 
+function ExpandGlyph({ exit = false }) {
+  const d = exit
+    ? "M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"
+    : "M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5";
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" fill="none">
+      <path d={d} stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 function navButtonStyle(side) {
   return {
     position: "absolute",
@@ -202,7 +214,7 @@ function navButtonStyle(side) {
   };
 }
 
-/** Larger in-card player — replaces the thumbnail strip while open (no empty shell, no fullscreen). */
+/** Larger in-card player — replaces the thumbnail strip while open; expand icon → full-screen. */
 function SearchResultVideoInlineExpanded({
   video,
   playlist = [],
@@ -211,6 +223,8 @@ function SearchResultVideoInlineExpanded({
   onSelect,
 }) {
   const videoElRef = useRef(null);
+  const frameRef = useRef(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const src = video?.video_url ? resolveConsumerMediaUrl(video.video_url) : "";
   const posterRaw = video?.thumbnail_url || video?.photo_url || null;
   const poster = posterRaw ? resolveConsumerMediaUrl(posterRaw) : undefined;
@@ -232,8 +246,28 @@ function SearchResultVideoInlineExpanded({
   }
 
   useEffect(() => {
+    const sync = () => setIsFullscreen(currentFullscreenElement() === frameRef.current);
+    document.addEventListener("fullscreenchange", sync);
+    document.addEventListener("webkitfullscreenchange", sync);
+    return () => {
+      document.removeEventListener("fullscreenchange", sync);
+      document.removeEventListener("webkitfullscreenchange", sync);
+      // Leaving the card (collapse/unmount) must not strand the page in full-screen.
+      if (frameRef.current && currentFullscreenElement() === frameRef.current) exitFullscreen();
+    };
+  }, []);
+
+  function toggleFullscreen(event) {
+    event.stopPropagation();
+    if (isFullscreen) exitFullscreen();
+    else enterFullscreen(frameRef.current, videoElRef.current);
+  }
+
+  useEffect(() => {
     const onKey = (event) => {
       if (event.key === "Escape") {
+        // Escape in full-screen only exits full-screen (back to inline expanded).
+        if (currentFullscreenElement()) return;
         onCollapse?.();
         return;
       }
@@ -265,11 +299,14 @@ function SearchResultVideoInlineExpanded({
       }}
     >
       <div
+        ref={frameRef}
+        data-testid="search-result-video-frame"
         style={{
           position: "relative",
-          width: EXPANDED_WIDTH,
+          width: isFullscreen ? "100%" : EXPANDED_WIDTH,
+          height: isFullscreen ? "100%" : undefined,
           maxWidth: "100%",
-          borderRadius: 12,
+          borderRadius: isFullscreen ? 0 : 12,
           overflow: "hidden",
           background: "#111",
         }}
@@ -287,11 +324,36 @@ function SearchResultVideoInlineExpanded({
           style={{
             display: "block",
             width: "100%",
-            aspectRatio: "9 / 16",
-            objectFit: "cover",
+            height: isFullscreen ? "100%" : undefined,
+            aspectRatio: isFullscreen ? undefined : "9 / 16",
+            objectFit: isFullscreen ? "contain" : "cover",
             background: "#111",
           }}
         />
+        <button
+          type="button"
+          data-testid="search-result-video-fullscreen"
+          aria-label={isFullscreen ? "Exit full screen" : "Full screen"}
+          onClick={toggleFullscreen}
+          style={{
+            position: "absolute",
+            top: 8,
+            right: 8,
+            zIndex: 4,
+            width: 30,
+            height: 30,
+            border: 0,
+            borderRadius: 8,
+            background: "rgba(0,0,0,0.55)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+            padding: 0,
+          }}
+        >
+          <ExpandGlyph exit={isFullscreen} />
+        </button>
         {hasPrev ? (
           <button
             type="button"
@@ -385,19 +447,12 @@ function SearchResultVideoInlineExpanded({
   );
 }
 
-export default function SearchResultVideoStrip({
-  videos,
-  seeAllHref = null,
-  omitRestaurantContext = false,
-}) {
-  const visibleCount = useVisibleCount();
+export default function SearchResultVideoStrip({ videos, omitRestaurantContext = false }) {
   const [expanded, setExpanded] = useState(null);
   const list = Array.isArray(videos) ? videos.filter((video) => video?.video_url) : [];
   if (!list.length) return null;
 
-  const shown = list.slice(0, visibleCount);
-  const hasConnect = shown.some((video) => video?.from_connect === true);
-  const total = list.length;
+  const hasConnect = list.some((video) => video?.from_connect === true);
   const expandedKey = expanded ? videoKey(expanded) : null;
   const isExpanded = Boolean(expanded && expandedKey);
   // Playlist = all videos on this card (not only the visible strip slice).
@@ -433,7 +488,7 @@ export default function SearchResultVideoStrip({
             </p>
           ) : null}
           <div style={{ display: "flex", gap: 8, overflowX: "auto" }}>
-            {shown.map((video) => (
+            {list.map((video) => (
               <SearchResultVideoCard
                 key={videoKey(video)}
                 video={video}
@@ -442,22 +497,6 @@ export default function SearchResultVideoStrip({
               />
             ))}
           </div>
-          {seeAllHref && total > shown.length ? (
-            <Link
-              to={seeAllHref}
-              data-testid="search-result-video-see-all"
-              style={{
-                display: "inline-block",
-                marginTop: 8,
-                fontSize: 13,
-                fontWeight: 750,
-                color: "#22C55E",
-                textDecoration: "none",
-              }}
-            >
-              {`See all ${total} ›`}
-            </Link>
-          ) : null}
         </>
       )}
     </div>

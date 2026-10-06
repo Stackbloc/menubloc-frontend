@@ -1,6 +1,6 @@
 /**
  * Search result video strip — omit when empty; payload-only (no restaurant-wide fetch).
- * Play: thumbnail → larger in-card player; empty shell hidden while playing; no fullscreen.
+ * Play: thumbnail → larger in-card player → full-screen (expand icon); empty shell hidden while playing.
  */
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -36,16 +36,28 @@ test("SearchResultVideoCard prefers thumbnail_url and uses neutral placeholder n
   assert.doesNotMatch(src, /OwnerVideoCuration|multipartUpload|putBlobWithProgress/);
 });
 
-test("playing video replaces thumbnail strip — no empty shell and no fullscreen", () => {
+test("playing video replaces thumbnail strip — no empty shell; expand icon gives full-screen", () => {
   const src = read("src/components/search/SearchResultVideoCard.jsx");
   assert.match(src, /data-testid="search-result-video-inline-expanded"/);
   assert.match(src, /data-testid="search-result-video-inline-player"/);
   assert.match(src, /data-testid="search-result-video-collapse"/);
   assert.match(src, /isExpanded \? \(/);
-  assert.doesNotMatch(src, /requestFullscreen|webkitRequestFullscreen|webkitEnterFullscreen/);
-  assert.doesNotMatch(src, /search-result-video-fullscreen/);
+  // Third play state: explicit secondary action from the inline player.
+  assert.match(src, /data-testid="search-result-video-fullscreen"/);
+  assert.match(src, /requestFullscreen/);
+  assert.match(src, /webkitEnterFullscreen/);
+  // Exiting full-screen returns to inline expanded — Escape must not collapse while full-screen.
+  assert.match(src, /if \(currentFullscreenElement\(\)\) return;/);
+  // No portal/overlay player outside the card.
   assert.doesNotMatch(src, /createPortal/);
   assert.doesNotMatch(src, /search-result-video-overlay/);
+});
+
+test("collapsed strip shows all thumbnails (no slice / see-all)", () => {
+  const src = read("src/components/search/SearchResultVideoCard.jsx");
+  assert.match(src, /\{list\.map\(\(video\) =>/);
+  assert.doesNotMatch(src, /list\.slice\(/);
+  assert.doesNotMatch(src, /search-result-video-see-all/);
 });
 
 test("Part 4: 2+ videos use in-player next/prev while strip stays hidden", () => {

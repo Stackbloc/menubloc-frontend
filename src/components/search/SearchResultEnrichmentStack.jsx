@@ -12,7 +12,6 @@ import SearchResultDealModule, { isTemporallyValid } from "./SearchResultDealMod
  * @param {Array|null} props.videos
  * @param {Array|null} props.socialActivity
  * @param {object|null} props.deal
- * @param {string|null} props.seeAllHref
  * @param {boolean} props.omitRestaurantContext
  * @param {string|number|null} props.restaurantId
  * @param {string|null} props.restaurantName
@@ -21,7 +20,6 @@ export default function SearchResultEnrichmentStack({
   videos = null,
   socialActivity = null,
   deal = null,
-  seeAllHref = null,
   omitRestaurantContext = false,
   restaurantId = null,
   restaurantName = null,
@@ -42,7 +40,6 @@ export default function SearchResultEnrichmentStack({
       {/* Module order §5: Video → Connect → Deal */}
       <SearchResultVideoStrip
         videos={videos}
-        seeAllHref={seeAllHref}
         omitRestaurantContext={omitRestaurantContext}
       />
       <SearchResultSocialActivity items={socialActivity} />
