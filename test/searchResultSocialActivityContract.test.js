@@ -47,3 +47,21 @@ test("protected Waiter, Home, and video-upload files were not used as the social
     assert.doesNotMatch(src, /waiterApi/);
   }
 });
+
+test("one primary social line per card, rendered with the shared Diner avatar", () => {
+  const src = read("src/components/search/SearchResultSocialActivity.jsx");
+  assert.match(src, /\.slice\(0, 1\)/);
+  assert.match(src, /import DinerAvatar from "\.\.\/social\/DinerAvatar\.jsx"/);
+  assert.match(src, /avatarUrl=\{row\.avatar_url\}/);
+  assert.match(src, /displayName=\{row\.display_name\}/);
+  const proof = read("src/components/social/ConnectionSocialProof.jsx");
+  assert.match(proof, /import DinerAvatar from "\.\/DinerAvatar\.jsx"/);
+});
+
+test("social search adds no chip or filter row for social content", () => {
+  const stack = read("src/components/search/SearchResultEnrichmentStack.jsx");
+  const src = read("src/components/search/SearchResultSocialActivity.jsx");
+  for (const s of [stack, src]) {
+    assert.doesNotMatch(s, /Your people|Recommended by Connects/);
+  }
+});

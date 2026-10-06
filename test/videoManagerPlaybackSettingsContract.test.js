@@ -61,3 +61,11 @@ test("profile videos honor play_muted No sound label", () => {
   assert.match(src, /No sound\./);
   assert.match(src, /play_muted/);
 });
+
+test("Video Manager editor exposes the entertainment designation (off the search path)", () => {
+  const src = read("src/pages/owner/OwnerVideoCuration.jsx");
+  assert.match(src, /owner-video-entertainment/);
+  assert.match(src, /is_entertainment: isEntertainment/);
+  assert.match(src, /not in search results/);
+  assert.match(src, /bits\.push\("Entertainment"\)/);
+});

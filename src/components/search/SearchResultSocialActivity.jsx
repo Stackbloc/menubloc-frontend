@@ -1,12 +1,15 @@
+import DinerAvatar from "../social/DinerAvatar.jsx";
+
 /**
- * ConnectActivityModule — Connect Wants / Wants-to-Try on a ranked search card.
+ * ConnectActivityModule — one primary Connect line on a ranked search card
+ * (review, or invite candidate), with the person's avatar and a "because" line.
  * Reads `row.social_activity` from Search. Does not fetch, infer, or rank.
  * Optional Invite CTA only when the projection supplies cta_label + cta_href
  * (never invent a dead button — Working Features Only).
  */
 export default function SearchResultSocialActivity({ items }) {
   const list = Array.isArray(items)
-    ? items.filter((row) => row && String(row.line || "").trim())
+    ? items.filter((row) => row && String(row.line || "").trim()).slice(0, 1)
     : [];
   if (!list.length) return null;
 
@@ -41,7 +44,15 @@ export default function SearchResultSocialActivity({ items }) {
               color: "#86EFAC",
             }}
           >
-            <span style={{ minWidth: 0 }}>{row.line}</span>
+            <span style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+              <DinerAvatar
+                avatarUrl={row.avatar_url}
+                displayName={row.display_name}
+                size={24}
+                title={null}
+              />
+              <span style={{ minWidth: 0 }}>{row.line}</span>
+            </span>
             {showCta ? (
               <a
                 href={ctaHref}

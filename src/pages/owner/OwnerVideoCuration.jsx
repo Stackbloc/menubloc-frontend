@@ -1466,6 +1466,7 @@ function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
   const [foodForm, setFoodForm] = useState(video.food_form || "");
   const [cuisine, setCuisine] = useState(video.cuisine || "");
   const [managerActive, setManagerActive] = useState(video.manager_active !== false);
+  const [isEntertainment, setIsEntertainment] = useState(video.is_entertainment === true);
   const [runStartsAt, setRunStartsAt] = useState(() => ymdFromIso(video.run_starts_at));
   const [runEndsAt, setRunEndsAt] = useState(() => ymdFromIso(video.run_ends_at));
   const [photoUrl, setPhotoUrl] = useState(video.photo_url || null);
@@ -1487,6 +1488,7 @@ function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
     setFoodForm(video.food_form || "");
     setCuisine(video.cuisine || "");
     setManagerActive(video.manager_active !== false);
+    setIsEntertainment(video.is_entertainment === true);
     setRunStartsAt(ymdFromIso(video.run_starts_at));
     setRunEndsAt(ymdFromIso(video.run_ends_at));
     setPhotoUrl(video.photo_url || null);
@@ -1540,6 +1542,7 @@ function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
         food_form: foodForm || null,
         cuisine: cuisine || null,
         manager_active: nextActive,
+        is_entertainment: isEntertainment,
         run_starts_at: runStartsAt || null,
         run_ends_at: runEndsAt || null,
       };
@@ -2039,6 +2042,15 @@ function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
             />
             Show in Feed (uncheck to hide across Feed, profiles, and watch pages)
           </label>
+          <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 14 }}>
+            <input
+              type="checkbox"
+              checked={isEntertainment}
+              onChange={(e) => setIsEntertainment(e.target.checked)}
+              data-testid="owner-video-entertainment"
+            />
+            Entertainment (shows in Feed and to Connects, not in search results)
+          </label>
           {managerActive ? (
             <button
               type="button"
@@ -2346,6 +2358,7 @@ export default function OwnerVideoCuration() {
                   if (row.food_form) bits.push(row.food_form);
                   if (row.cuisine) bits.push(row.cuisine);
                   if (row.manager_active === false) bits.push("Inactive");
+                  if (row.is_entertainment === true) bits.push("Entertainment");
                   if (row.run_starts_at || row.run_ends_at) bits.push("Scheduled");
                   return bits.length ? bits.join(" · ") : "—";
                 },

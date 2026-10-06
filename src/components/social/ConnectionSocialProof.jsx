@@ -7,19 +7,9 @@ import React, { useEffect, useState } from "react";
 import {
   fetchRestaurantConnectionSocialProof,
   fetchMenuItemConnectionSocialProof,
-  resolveConsumerMediaUrl,
 } from "../../lib/consumerApi.js";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
-
-function initials(name) {
-  const parts = String(name || "")
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean);
-  if (!parts.length) return "?";
-  if (parts.length === 1) return parts[0].slice(0, 1).toUpperCase();
-  return `${parts[0].slice(0, 1)}${parts[1].slice(0, 1)}`.toUpperCase();
-}
+import DinerAvatar from "./DinerAvatar.jsx";
 
 function SignalLines({ counts, variant }) {
   const lines = [];
@@ -106,22 +96,13 @@ export default function ConnectionSocialProof({ restaurantId = null, menuItemId 
     >
       <h3 style={styles.title}>Your connections</h3>
       <div style={styles.avatarRow} aria-hidden={avatars.length === 0}>
-        {avatars.map((peer) => {
-          const url = peer.avatar_url ? resolveConsumerMediaUrl(peer.avatar_url) : "";
-          return (
-            <div
-              key={peer.user_id}
-              title={peer.display_name || "Connection"}
-              style={styles.avatar}
-            >
-              {url ? (
-                <img src={url} alt="" style={styles.avatarImg} loading="lazy" />
-              ) : (
-                <span style={styles.avatarInitials}>{initials(peer.display_name)}</span>
-              )}
-            </div>
-          );
-        })}
+        {avatars.map((peer) => (
+          <DinerAvatar
+            key={peer.user_id}
+            avatarUrl={peer.avatar_url}
+            displayName={peer.display_name}
+          />
+        ))}
         {overflow > 0 ? <span style={styles.overflow}>+{overflow}</span> : null}
       </div>
       <SignalLines counts={counts} variant={variant} />
@@ -149,29 +130,6 @@ const styles = {
     gap: 6,
     marginBottom: 8,
     minHeight: 32,
-  },
-  avatar: {
-    width: 32,
-    height: 32,
-    borderRadius: "50%",
-    overflow: "hidden",
-    background: "linear-gradient(135deg, #1d4ed8, #0f766e)",
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    flexShrink: 0,
-    border: "2px solid #fff",
-    boxShadow: "0 0 0 1px rgba(0,0,0,0.06)",
-  },
-  avatarImg: {
-    width: "100%",
-    height: "100%",
-    objectFit: "cover",
-  },
-  avatarInitials: {
-    color: "#fff",
-    fontSize: 11,
-    fontWeight: 700,
   },
   overflow: {
     fontSize: 13,
