@@ -77,6 +77,8 @@ export default function DinerIdentityHero({
   currentVibe = DEFAULT_CURRENT_VIBE,
   currentVibeCatalog = null,
   onCurrentVibeChange = null,
+  searchVibeAudience = "connects",
+  onSearchVibeAudienceChange = null,
   busy,
   notice,
   error,
@@ -367,6 +369,8 @@ export default function DinerIdentityHero({
                   readOnly={typeof onCurrentVibeChange !== "function"}
                   busy={busy}
                   onChange={onCurrentVibeChange}
+                  searchVibeAudience={searchVibeAudience}
+                  onSearchVibeAudienceChange={onSearchVibeAudienceChange}
                 />
               }
             />
@@ -377,6 +381,8 @@ export default function DinerIdentityHero({
               readOnly={typeof onCurrentVibeChange !== "function"}
               busy={busy}
               onChange={onCurrentVibeChange}
+              searchVibeAudience={searchVibeAudience}
+              onSearchVibeAudienceChange={onSearchVibeAudienceChange}
             />
           )}
         </div>

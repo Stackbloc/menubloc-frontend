@@ -655,6 +655,9 @@ export const updateCurrentVibe = (body) =>
   put("/api/consumer/profile/current-vibe", {
     currentVibe: body?.currentVibe ?? body?.current_vibe ?? body,
   });
+/** Who may see my vibe in search: "connects" | "connects_of_connects". */
+export const updateSearchVibeAudience = (audience) =>
+  put("/api/consumer/profile/current-vibe", { search_vibe_audience: audience });
 export const searchDiners = (query, cityId = null) => {
   const q = new URLSearchParams();
   if (query) q.set("q", String(query));

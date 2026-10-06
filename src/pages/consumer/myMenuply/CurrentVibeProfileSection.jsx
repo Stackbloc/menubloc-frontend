@@ -1,6 +1,6 @@
 /**
  * Prominent Current Vibe control on the diner profile (under Favorite foods).
- * Default Open for suggestions is search-eligible with Connects.
+ * Default is Open for suggestions; food vibes (Hungry, Coffee, …) show to Connects in search.
  * I'm Good is the explicit opt-out (search-invisible for suggestions/invites).
  */
 
@@ -39,6 +39,8 @@ export default function CurrentVibeProfileSection({
   readOnly = false,
   busy = false,
   onChange = null,
+  searchVibeAudience = "connects",
+  onSearchVibeAudienceChange = null,
   testIdPrefix = "current-vibe-profile",
 }) {
   const [optimistic, setOptimistic] = useState(null);
@@ -150,10 +152,34 @@ export default function CurrentVibeProfileSection({
             style={{ margin: "10px 0 0", fontSize: 12, color: "#64748b", lineHeight: 1.4 }}
             data-testid={`${testIdPrefix}-hint`}
           >
-            Default is Open for suggestions — Connects can see you in search when it fits.
-            Tap I&apos;m good to stay out of suggestion and invitation surfaces. This is not a
-            post.
+            Pick a food vibe like Hungry or Coffee and your Connects can see it in search when
+            it fits. Tap I&apos;m good to stay out of suggestion and invitation surfaces. This
+            is not a post.
           </p>
+          {typeof onSearchVibeAudienceChange === "function" ? (
+            <label
+              style={{ display: "flex", gap: 8, alignItems: "flex-start", margin: "10px 0 0", fontSize: 13, color: "#334155", lineHeight: 1.4 }}
+              data-testid={`${testIdPrefix}-search-audience`}
+            >
+              <input
+                type="checkbox"
+                checked={searchVibeAudience === "connects_of_connects"}
+                disabled={busy}
+                onChange={async (e) => {
+                  setError("");
+                  try {
+                    await onSearchVibeAudienceChange(e.target.checked ? "connects_of_connects" : "connects");
+                  } catch (err) {
+                    setError(err?.message || "Could not update setting");
+                  }
+                }}
+                data-testid={`${testIdPrefix}-search-audience-input`}
+              />
+              <span>
+                Also show my vibe to Connects of my Connects in search (first name and initial only)
+              </span>
+            </label>
+          ) : null}
         </>
       )}
       {error ? (

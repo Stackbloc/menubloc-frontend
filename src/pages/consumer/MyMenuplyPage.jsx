@@ -55,6 +55,7 @@ import {
   updateCatchMe,
   clearCatchMe,
   updateCurrentVibe,
+  updateSearchVibeAudience,
   uploadDinerAvatar,
   uploadConsumerProfileMedia,
   deleteConsumerProfileMedia,
@@ -797,6 +798,15 @@ export default function MyMenuplyPage() {
       current_vibe: value,
       currentVibe: value,
       current_vibe_meta: data?.current_vibe_meta || prev?.current_vibe_meta || null,
+    }));
+  }
+
+  async function onSearchVibeAudienceChange(next) {
+    setIdentityError("");
+    const data = await updateSearchVibeAudience(next);
+    setProfile((prev) => ({
+      ...(prev || {}),
+      search_vibe_audience: data?.search_vibe_audience || next,
     }));
   }
 
@@ -2388,6 +2398,8 @@ export default function MyMenuplyPage() {
               currentVibe={profile?.current_vibe || profile?.currentVibe || "open_for_suggestions"}
               currentVibeCatalog={profile?.current_vibe_catalog || null}
               onCurrentVibeChange={previewAsConnect ? undefined : onCurrentVibeChange}
+              searchVibeAudience={profile?.search_vibe_audience || "connects"}
+              onSearchVibeAudienceChange={previewAsConnect ? undefined : onSearchVibeAudienceChange}
               connections={connections}
               viewerUserId={consumer?.id}
               busy={identityBusy}

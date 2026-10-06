@@ -2,7 +2,7 @@
  * Current Vibe presentation helpers (FE).
  * Machine values/labels prefer backend catalog when provided.
  *
- * Default: open_for_suggestions (search-eligible with Connects).
+ * Default: open_for_suggestions (not search-surfaced; the brief's 8 food-social vibes are).
  * Opt-out: im_good (I'm Good) — removes suggestion/invitation search surfaces.
  */
 
@@ -16,7 +16,7 @@ export const FALLBACK_CURRENT_VIBE_CATALOG = Object.freeze([
     label: "Open for suggestions",
     icon: "💬",
     badgeTone: "inviting",
-    searchEligible: true,
+    searchEligible: false,
   },
   { value: "im_good", label: "I'm good", icon: null, badgeTone: "none", searchEligible: false },
   { value: "hungry", label: "Hungry", icon: "🍽️", badgeTone: "warm", searchEligible: true },

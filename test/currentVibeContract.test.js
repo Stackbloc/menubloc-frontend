@@ -27,7 +27,9 @@ test("default is open_for_suggestions; im_good shows no badge", () => {
   assert.equal(showsCurrentVibeBadge("me_time"), true);
   assert.equal(getCurrentVibeEntry("me_time").badgeTone, "muted");
   assert.equal(getCurrentVibeEntry("me_time").icon, "🌙");
-  assert.equal(getCurrentVibeEntry("open_for_suggestions").searchEligible, true);
+  // Social search Phase 4: the default is not search-surfaced.
+  assert.equal(getCurrentVibeEntry("open_for_suggestions").searchEligible, false);
+  assert.equal(getCurrentVibeEntry("hungry").searchEligible, true);
 });
 
 test("DinerIdentityHero mounts Current Vibe on avatar wrap", () => {
