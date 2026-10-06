@@ -32,3 +32,14 @@ test("default vibe is not search-surfaced in the FE mirror", () => {
   const src = read("src/lib/currentVibeDisplay.js");
   assert.match(src, /value: "open_for_suggestions",\n    label: "Open for suggestions",\n    icon: "💬",\n    badgeTone: "inviting",\n    searchEligible: false,/);
 });
+
+test("vibe catalog 2026-10-06: Open for Coffee / Drinks / Company / Lunch; three removed; chips have hover", () => {
+  const src = read("src/lib/currentVibeDisplay.js");
+  assert.match(src, /value: "coffee", label: "Open for Coffee", icon: "☕"/);
+  assert.match(src, /value: "drinks", label: "Open for Drinks", icon: "🍹"/);
+  assert.match(src, /label: "Open for Company"/);
+  assert.match(src, /value: "open_for_lunch", label: "Open for Lunch"/);
+  assert.doesNotMatch(src, /going_out|cheap_eats|treat_myself/);
+  const section = read("src/pages/consumer/myMenuply/CurrentVibeProfileSection.jsx");
+  assert.match(section, /title=\{opt\.label\}/);
+});

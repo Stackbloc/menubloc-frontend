@@ -120,6 +120,7 @@ export default function CurrentVibeProfileSection({
                   key={opt.value}
                   type="button"
                   data-testid={`${testIdPrefix}-chip-${opt.value}`}
+                  title={opt.label}
                   disabled={busy}
                   aria-pressed={active}
                   onClick={() => selectValue(opt.value)}

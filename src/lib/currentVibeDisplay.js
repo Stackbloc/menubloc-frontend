@@ -21,13 +21,12 @@ export const FALLBACK_CURRENT_VIBE_CATALOG = Object.freeze([
   { value: "im_good", label: "I'm good", icon: null, badgeTone: "none", searchEligible: false },
   { value: "hungry", label: "Hungry", icon: "🍽️", badgeTone: "warm", searchEligible: true },
   { value: "craving", label: "Craving something", icon: "😋", badgeTone: "warm", searchEligible: true },
-  { value: "coffee", label: "Coffee", icon: "☕", badgeTone: "warm", searchEligible: true },
-  { value: "drinks", label: "Drinks", icon: "🍹", badgeTone: "warm", searchEligible: true },
-  { value: "going_out", label: "Going out", icon: "🎉", badgeTone: "inviting", searchEligible: true },
+  { value: "coffee", label: "Open for Coffee", icon: "☕", badgeTone: "warm", searchEligible: true },
+  { value: "drinks", label: "Open for Drinks", icon: "🍹", badgeTone: "warm", searchEligible: true },
   { value: "me_time", label: "Me time", icon: "🌙", badgeTone: "muted", searchEligible: false },
   {
     value: "looking_for_company",
-    label: "Looking for company",
+    label: "Open for Company",
     icon: "👋",
     badgeTone: "inviting",
     searchEligible: true,
@@ -39,8 +38,7 @@ export const FALLBACK_CURRENT_VIBE_CATALOG = Object.freeze([
     badgeTone: "warm",
     searchEligible: false,
   },
-  { value: "cheap_eats", label: "Cheap eats", icon: "💵", badgeTone: "warm", searchEligible: true },
-  { value: "treat_myself", label: "Treat myself", icon: "✨", badgeTone: "warm", searchEligible: true },
+  { value: "open_for_lunch", label: "Open for Lunch", icon: "🥪", badgeTone: "inviting", searchEligible: true },
 ]);
 
 export function coerceCurrentVibe(raw) {
