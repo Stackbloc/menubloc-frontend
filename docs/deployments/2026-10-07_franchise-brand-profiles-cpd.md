@@ -38,3 +38,14 @@
 - Brand page without `?location=` does not auto-select the nearest store; profile page (not menu page) has no location picker yet.
 - The Blue Plate (chain 105) → MLE conversion.
 - Pre-existing: `launchReadinessService` requires missing `./menuLocationAssignmentOwnership` (also on main).
+
+## Follow-up CPD (same day): franchise page shows the franchise, not a store
+
+| Layer | Commit | Proof |
+|-------|--------|-------|
+| BE | `682e8d6e` | `cpd-be.sh` RESULT=PASS, smoke 32, `health_commit=682e8d6e45c2ad8205366e4f351688b05b56f921` |
+| FE | `e2413fd0` | `menubloc-frontend-jbe7k0pvl-menuply.vercel.app` / `index-BHGpdt-Y.js`; content probe `Menu for location` PASS; tip-gate apex + www RESULT=PASS (alias http-01 cert error → `--lock-only`) |
+
+- Brand record is never swapped for a store by market; `?franchise_location=<store>` applies that store's overlays + centres the picker; header = corporate address.
+- Search brand card: corporate address, no distance, "N locations nearby"; links preselect nearest store.
+- Live: `/public/restaurants/78947/menu?franchise_location=1386` → Starbucks, 2401 Utah Ave S, Seattle WA; location 3201 Hoover St; 179 items; picker 25. `/search?q=starbucks` @USC → 1 brand card (Seattle address, 59 nearby, nearest 1386).
