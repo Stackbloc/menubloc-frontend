@@ -85,10 +85,26 @@ function compareBrowseDistance(a, b, userGeo = null) {
   return nameA.localeCompare(nameB);
 }
 
+/** A dish row (not a restaurant-level row). */
+function isDishLevelRow(row) {
+  return Boolean(row?.menu_item_id || row?.menu_item_name || row?.item_name);
+}
+
+/**
+ * Identity plane: a dish's videos and social lines never stand in for the
+ * restaurant. Restaurant-level videos still arrive via `meta` (restaurants[]).
+ */
+function withoutDishEnrichment(row) {
+  if (!isDishLevelRow(row)) return row;
+  const { videos, social_activity, ...rest } = row;
+  return rest;
+}
+
 function finalizeRestaurantBrowseRow(row, meta, restaurantId, userGeo = null) {
+  const base = withoutDishEnrichment(row);
   const merged = meta
-    ? { ...row, ...meta, restaurant_id: restaurantId || row?.restaurant_id }
-    : { ...row };
+    ? { ...base, ...meta, restaurant_id: restaurantId || row?.restaurant_id }
+    : { ...base };
 
   const distances = [
     resolveRestaurantBrowseDistanceMiles(row, userGeo),

@@ -1,6 +1,7 @@
 /**
  * Unified search-result enrichment stack.
- * Fixed display order (not ranking order): Video → Connect → Deal.
+ * Fixed display order (not ranking order): Connect → Video → Deal
+ * (social line sits above the video strip — 2026-10-06 card spec).
  * Omits absent modules; does not reserve empty space.
  */
 import SearchResultVideoStrip from "./SearchResultVideoCard.jsx";
@@ -37,12 +38,12 @@ export default function SearchResultEnrichmentStack({
 
   return (
     <div data-testid="search-result-enrichment" style={{ minWidth: 0 }}>
-      {/* Module order §5: Video → Connect → Deal */}
+      {/* Module order: Connect → Video → Deal */}
+      <SearchResultSocialActivity items={socialActivity} />
       <SearchResultVideoStrip
         videos={videos}
         omitRestaurantContext={omitRestaurantContext}
       />
-      <SearchResultSocialActivity items={socialActivity} />
       <SearchResultDealModule
         deal={deal}
         restaurantId={restaurantId}

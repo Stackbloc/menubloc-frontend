@@ -2,7 +2,7 @@ import DinerAvatar from "../social/DinerAvatar.jsx";
 
 /**
  * ConnectActivityModule — one primary Connect line on a ranked search card
- * (review, or invite candidate), with the person's avatar and a "because" line.
+ * (review > invite candidate > Like), with the person's avatar. One row, no background.
  * Reads `row.social_activity` from Search. Does not fetch, infer, or rank.
  * Optional Invite CTA only when the projection supplies cta_label + cta_href
  * (never invent a dead button — Working Features Only).
@@ -39,35 +39,46 @@ export default function SearchResultSocialActivity({ items }) {
               justifyContent: "space-between",
               gap: 8,
               fontSize: 13,
-              fontWeight: 650,
+              fontWeight: 600,
               lineHeight: 1.35,
-              color: "#86EFAC",
+              color: "#C0C8D5",
             }}
           >
             <span style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
               <DinerAvatar
                 avatarUrl={row.avatar_url}
                 displayName={row.display_name}
-                size={24}
+                size={20}
                 title={null}
               />
-              <span style={{ minWidth: 0 }}>{row.line}</span>
+              <span
+                style={{
+                  minWidth: 0,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {row.line}
+              </span>
             </span>
             {showCta ? (
               <a
                 href={ctaHref}
                 data-testid="search-result-social-cta"
                 style={{
+                  // Outlined pill — same shape as the Nutrition / Similar Items chips.
                   flexShrink: 0,
                   display: "inline-flex",
                   alignItems: "center",
-                  height: 26,
-                  padding: "0 10px",
-                  borderRadius: 6,
-                  background: "rgba(34,197,94,0.15)",
-                  color: "#86EFAC",
+                  borderRadius: 999,
+                  padding: "4px 10px",
+                  border: "1px solid var(--gb-color-accent)",
+                  background: "transparent",
+                  color: "var(--gb-color-accent)",
                   fontSize: 12,
-                  fontWeight: 800,
+                  fontWeight: 700,
+                  lineHeight: 1,
                   textDecoration: "none",
                 }}
               >

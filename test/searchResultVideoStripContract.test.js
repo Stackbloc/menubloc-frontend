@@ -14,7 +14,7 @@ const read = (rel) => fs.readFileSync(path.join(root, rel), "utf8");
 test("SearchResultVideoStrip omits empty payload and does not fetch profile videos", () => {
   const src = read("src/components/search/SearchResultVideoCard.jsx");
   assert.match(src, /data-testid="search-result-video-strip"/);
-  assert.match(src, /aspectRatio:\s*"9 \/ 16"/);
+  assert.match(src, /aspectRatio:\s*"4 \/ 5"/);
   assert.match(src, /if \(!list\.length\) return null/);
   assert.match(src, /thumbnail_url \|\| video\.photo_url/);
   assert.match(src, /data-testid="search-result-video-thumb-placeholder"/);
@@ -71,13 +71,13 @@ test("Part 4: 2+ videos use in-player next/prev while strip stays hidden", () =>
   assert.match(src, /While playing: larger player only/);
 });
 
-test("SearchResultCard mounts EnrichmentStack (Video→Connect→Deal) on dish and restaurant cards", () => {
+test("SearchResultCard mounts EnrichmentStack (Connect→Video→Deal) on dish and restaurant cards", () => {
   const card = read("src/components/SearchResultCard.jsx");
   assert.match(card, /SearchResultEnrichmentStack/);
   assert.match(card, /videos=\{row\?\.videos\}/);
   assert.match(card, /socialActivity=\{row\?\.social_activity\}/);
   assert.match(card, /videos=\{item\?\.videos\}/);
-  assert.match(card, /socialActivity=\{item\?\.social_activity\}/);
+  assert.match(card, /socialActivity=\{isRestaurantLevelS \? null : item\?\.social_activity\}/);
   assert.doesNotMatch(card, /listRestaurantProfileVideos/);
   assert.doesNotMatch(card, /HomeNext/);
   assert.doesNotMatch(card, /FoodInterestsPage/);
@@ -93,4 +93,15 @@ test("protected video-upload and Waiter files were not used as the strip source"
     assert.doesNotMatch(src, /putBlobWithProgress/);
     assert.doesNotMatch(src, /waiterApi/);
   }
+});
+
+test("strip thumbnails are small 4:5 tiles captioned with the creator name on one line", () => {
+  const src = read("src/components/search/SearchResultVideoCard.jsx");
+  assert.match(src, /const THUMB_WIDTH = 60;/);
+  assert.match(src, /data-testid="search-result-video-creator"/);
+  assert.match(src, /video\?\.creator_label/);
+  const creatorBlock = src.slice(src.indexOf('data-testid="search-result-video-creator"'));
+  assert.match(creatorBlock.slice(0, 400), /textOverflow: "ellipsis"/);
+  assert.match(creatorBlock.slice(0, 400), /whiteSpace: "nowrap"/);
+  assert.doesNotMatch(src, /WebkitLineClamp: 2/);
 });

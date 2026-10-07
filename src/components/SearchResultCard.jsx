@@ -69,6 +69,7 @@ import {
   isSinglePlaceReturn,
 } from "../lib/clusterReturnNavigation.js";
 import SearchResultEnrichmentStack from "./search/SearchResultEnrichmentStack.jsx";
+import SearchResultSocialActivity from "./search/SearchResultSocialActivity.jsx";
 
 const MATCH_LABEL = "Match:";
 const SIMILAR_DIET_FILTER_KEYS = Object.freeze([
@@ -2375,6 +2376,8 @@ export default function SearchResultCard({ restaurant, items, item, query, query
   const mapsUrl = buildGoogleMapsUrl(item);
   const addressDisplay = [addressLine1S, cityStateLine].filter(Boolean).join(", ");
   const isRestaurantBrowse = resultView === "restaurant";
+  // Restaurant-level row: its social line sits under the distance (at most one).
+  const isRestaurantLevelS = !(item?.menu_item_id || item?.menu_item_name || item?.item_name);
 
   return (
     <article
@@ -2471,6 +2474,8 @@ export default function SearchResultCard({ restaurant, items, item, query, query
         </div>
       )}
 
+      {isRestaurantLevelS ? <SearchResultSocialActivity items={item?.social_activity} /> : null}
+
       {phoneS && (
         <div style={{ marginTop: 4 }}>
           <a
@@ -2492,7 +2497,7 @@ export default function SearchResultCard({ restaurant, items, item, query, query
 
       <SearchResultEnrichmentStack
         videos={item?.videos}
-        socialActivity={item?.social_activity}
+        socialActivity={isRestaurantLevelS ? null : item?.social_activity}
         deal={item?.primary_billboard || null}
         seeAllHref={restHrefS}
         restaurantId={restIdS}

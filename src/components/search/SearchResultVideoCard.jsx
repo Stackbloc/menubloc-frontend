@@ -11,7 +11,7 @@ import { useEffect, useRef, useState } from "react";
 import ConnectPill from "../connect/ConnectPill.jsx";
 import { resolveConsumerMediaUrl } from "../../lib/consumerApi.js";
 
-const THUMB_WIDTH = 86;
+const THUMB_WIDTH = 60;
 const EXPANDED_WIDTH = "min(220px, 56vw)";
 
 function currentFullscreenElement() {
@@ -64,6 +64,11 @@ function contextLabel(video, omitRestaurantContext) {
   return video.context_line || video.menu_item_name || "Video";
 }
 
+/** Strip caption: who made the clip (one line). Falls back to the context line. */
+function creatorLabel(video, omitRestaurantContext) {
+  return String(video?.creator_label || "").trim() || contextLabel(video, omitRestaurantContext);
+}
+
 export function SearchResultVideoCard({
   video,
   omitRestaurantContext = false,
@@ -72,9 +77,7 @@ export function SearchResultVideoCard({
   if (!video?.video_url) return null;
   const rawThumb = video.thumbnail_url || video.photo_url || null;
   const thumb = rawThumb ? resolveConsumerMediaUrl(rawThumb) : "";
-  const avatar = video.creator_avatar_url
-    ? resolveConsumerMediaUrl(video.creator_avatar_url)
-    : "";
+  const creator = creatorLabel(video, omitRestaurantContext);
   const context = contextLabel(video, omitRestaurantContext);
 
   return (
@@ -82,10 +85,12 @@ export function SearchResultVideoCard({
       type="button"
       data-testid="search-result-video-card"
       onClick={() => onPlay?.(video)}
+      aria-label={`Play video: ${context}`}
+      title={context}
       style={{
         display: "flex",
         flexDirection: "column",
-        gap: 6,
+        gap: 4,
         width: THUMB_WIDTH,
         flex: "0 0 auto",
         padding: 0,
@@ -101,8 +106,8 @@ export function SearchResultVideoCard({
           position: "relative",
           display: "block",
           width: "100%",
-          aspectRatio: "9 / 16",
-          borderRadius: 10,
+          aspectRatio: "4 / 5",
+          borderRadius: 8,
           overflow: "hidden",
           background: "#E5E7EB",
         }}
@@ -137,47 +142,26 @@ export function SearchResultVideoCard({
         >
           <PlayGlyph />
         </span>
+        {video.from_connect ? (
+          <span style={{ position: "absolute", left: 3, bottom: 3, display: "flex" }}>
+            <ConnectPill data-testid="search-result-video-connect-badge" />
+          </span>
+        ) : null}
       </span>
-      <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-        {avatar ? (
-          <img
-            src={avatar}
-            alt=""
-            style={{
-              width: 16,
-              height: 16,
-              borderRadius: "50%",
-              objectFit: "cover",
-              flex: "0 0 auto",
-            }}
-          />
-        ) : (
-          <span
-            aria-hidden="true"
-            style={{
-              width: 16,
-              height: 16,
-              borderRadius: "50%",
-              background: "#374151",
-              flex: "0 0 auto",
-            }}
-          />
-        )}
-        <span
-          style={{
-            fontSize: 11,
-            lineHeight: 1.3,
-            fontWeight: 650,
-            color: "#C0C8D5",
-            overflow: "hidden",
-            display: "-webkit-box",
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: "vertical",
-          }}
-        >
-          {context}
-        </span>
-        {video.from_connect ? <ConnectPill data-testid="search-result-video-connect-badge" /> : null}
+      <span
+        data-testid="search-result-video-creator"
+        style={{
+          display: "block",
+          fontSize: 11,
+          lineHeight: 1.3,
+          fontWeight: 650,
+          color: "#C0C8D5",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+        }}
+      >
+        {creator}
       </span>
     </button>
   );
