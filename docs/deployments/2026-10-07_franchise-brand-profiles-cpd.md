@@ -1,0 +1,40 @@
+# CPD — Franchise brand profiles (canonical menu first, one brand card per chain)
+
+**Date:** 2026-10-07
+**Approved by:** Andre Barber (session)
+
+## What shipped
+
+| Layer | Commit | Proof |
+|-------|--------|-------|
+| BE | `ae7c0ed4` | `cpd-be.sh` RESULT=PASS, smoke passed=32, `health_commit=ae7c0ed443506285f83badbfbd210f76264463c3` |
+| FE | `e13a4f52` | `menubloc-frontend-1n1wro604-menuply.vercel.app` / `index-_Wj45xaw.js`; content probe `Nearest of` PASS; tip-gate apex + www RESULT=PASS |
+
+- Franchise stores + brand records serve the chain canonical menu (`menus.is_franchise_canonical`) plus store overlays (`franchise_location_menu_overlays`); leftover per-store CK copies no longer win.
+- Pure brand-name search: one brand card per chain (canonical parent) with `nearest_location` + `nearby_location_count` (distinct addresses); fails open to store cards.
+- FE: brand card opens the brand menu with `?location=<nearest store>`; menu page loads that store under the brand URL; "See all locations" switches `?location=`.
+
+## Production data (ops scripts, applied before code)
+
+- `applyFranchiseBrandProfiles.js` — 70 brand records: corporate address + brand slug (old slug in `legacy_slug`, no lat/lng); 33 canonical menus flagged; Starbucks menu 15877: 20 prices from list A + 7 items added. 351 audit events. Snapshot `scripts/ops/output/franchiseBrandProfiles_snapshot_1791400923368.json` (local).
+- `applyStarbucksStoreCleanup.js` — linked 3 unlinked Starbucks (3007, 3534, 3535) to chain 4; deactivated 19 (8 unlinked no-address + 11 duplicate-address incl. velo-coffee 1452). Nothing deleted. 28 audit events. Snapshot `scripts/ops/output/starbucksStoreCleanup_snapshot_1791402964718.json` (local).
+- Both scripts: dry run → `--rehearse` (ROLLBACK) → `--apply`; identity fields via `restaurantMutationService.updateRestaurantIdentity`.
+
+## Verification
+
+- Branch backend against production data (pre-deploy): starbucks-7 / brand / starbucks-9 menus = 179 items, Cold Brew $4.75; `burger` LA (24) and Dothan (9, AL only) identical to production; `in n out` LA = 1 brand card.
+- Pre-commit search protection regression 11/11; `test/franchiseBrandProfile.test.js` 9/9; related suites 49/49; `test:routes` route contract 8/8 (same as main).
+- Live after BE CPD: `GET /search?q=starbucks` @USC → 1 result, Starbucks brand card (nearest 3201 Hoover St, 59 locations); `GET /public/restaurants/664/menu` → canonical menu 15877, 179 items, Cold Brew $4.75.
+- E2E: read-only paths (no mutation UI) — verified via live API above.
+
+## Notes
+
+- `cpd-fe.sh` alias step hit the recurring http-01 cert error (same as 2026-10-05/06); apex already served the new bundle → finished with `--lock-only`.
+- BE `main` had unrelated uncommitted WIP (hamburger synonym + Starbucks probes); stashed for the CPD and restored unchanged afterwards.
+
+## Follow-ups
+
+- Address backfill for 16,698 address-less Starbucks store records (reverse geocode from lat/lng) — approved as "keep + backfill"; not done.
+- Brand page without `?location=` does not auto-select the nearest store; profile page (not menu page) has no location picker yet.
+- The Blue Plate (chain 105) → MLE conversion.
+- Pre-existing: `launchReadinessService` requires missing `./menuLocationAssignmentOwnership` (also on main).
