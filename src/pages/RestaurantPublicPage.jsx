@@ -37,6 +37,7 @@ import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import BottomNav from "../components/BottomNav.jsx";
 import PublicProfileOwnerChrome from "../components/restaurant/PublicProfileOwnerChrome.jsx";
 import RestaurantPublicEditorial from "../components/restaurant/RestaurantPublicEditorial.jsx";
+import BrandLocationsSection from "../components/restaurant/BrandLocationsSection.jsx";
 import UnclaimedRestaurantBrandSplash, {
   UNCLAIMED_BRAND_SPLASH_MS,
 } from "../components/restaurant/UnclaimedRestaurantBrandSplash.jsx";
@@ -278,7 +279,12 @@ export default function RestaurantPublicPage() {
     isAuthenticated: isOperatorAuthenticated,
     restaurants: operatorRestaurants,
   } = useOperator();
-  const { slugOrId, restaurantSlug: canonicalRestaurantSlug } = useParams();
+  const {
+    slugOrId,
+    restaurantSlug: canonicalRestaurantSlug,
+    state: routeStateParam,
+    city: routeCityParam,
+  } = useParams();
   // canonicalRestaurantSlug is present on 3-segment canonical routes
   // (/restaurants/:state/:city/:restaurantSlug); slugOrId on legacy 1-segment routes.
   const trackedRestaurantViewRef = useRef(new Set());
@@ -295,8 +301,14 @@ export default function RestaurantPublicPage() {
   const isMobile = useIsMobile();
   const resolvedSlug = canonicalRestaurantSlug || slugOrId;
   const dataUrl = useMemo(
-    () => `${API}/public/restaurants/${encodeURIComponent(resolvedSlug)}`,
-    [resolvedSlug]
+    () => {
+      // Canonical URLs carry state/city so a shared slug resolves to the right record.
+      const qs = canonicalRestaurantSlug && routeStateParam && routeCityParam
+        ? `?${new URLSearchParams({ route_state: routeStateParam, route_city: routeCityParam }).toString()}`
+        : "";
+      return `${API}/public/restaurants/${encodeURIComponent(resolvedSlug)}${qs}`;
+    },
+    [resolvedSlug, canonicalRestaurantSlug, routeStateParam, routeCityParam]
   );
 
   const isOwner = Boolean(
@@ -653,6 +665,22 @@ export default function RestaurantPublicPage() {
           profile={data}
           showClaimInvites={showClaimInvites}
           isMobile={isMobile}
+        />
+      ) : null}
+      {!loading && !err && data?.is_canonical_parent === true && data?.chain_id ? (
+        <BrandLocationsSection
+          chainId={data.chain_id}
+          brandName={name}
+          menuHref={
+            restaurantMenuPathFromRow({
+              slug: data?.slug || resolvedSlug,
+              city,
+              state: stateVal,
+              id: data?.id,
+            }) || menuHref
+          }
+          initialLat={new URLSearchParams(location.search).get("lat")}
+          initialLng={new URLSearchParams(location.search).get("lng")}
         />
       ) : null}
       <BottomNav />

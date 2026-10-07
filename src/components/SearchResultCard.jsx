@@ -2357,7 +2357,8 @@ export default function SearchResultCard({ restaurant, items, item, query, query
   const displayCityS = cityS;
   const displayStateS = stateS;
   const postalS = getPostalCodeLike(item);
-  const distanceMilesS = brandNearestS ? null : getDistanceMilesLike(item);
+  const isBrandCardS = item?.is_brand_card === true;
+  const distanceMilesS = isBrandCardS ? null : getDistanceMilesLike(item);
   const restProfileTargetS = restSlugS || restIdS;
   const restHrefBaseS = restaurantPath({ slug: restSlugS, city: cityS, state: stateS }) ||
     (restProfileTargetS ? "/restaurants/" + restProfileTargetS : null);
@@ -2496,9 +2497,9 @@ export default function SearchResultCard({ restaurant, items, item, query, query
         </div>
       )}
 
-      {brandNearestS && Number(item?.nearby_location_count) > 1 ? (
+      {isBrandCardS && Number(item?.nearby_location_count) > 0 ? (
         <div data-testid="search-result-brand-locations" style={{ marginTop: 4, fontSize: 13, fontWeight: 600, color: "#9CA3AF" }}>
-          {Number(item.nearby_location_count)} locations nearby
+          {Number(item.nearby_location_count)} {Number(item.nearby_location_count) === 1 ? "location" : "locations"} nearby
         </div>
       ) : null}
 

@@ -321,7 +321,10 @@ function FranchiseLocationSheet({ locations, currentRestaurantId, brandName, onS
             const addressLine = asStr(loc.address_line || loc.address_line1 || loc.address).trim();
             const cityState = [asStr(loc.city).trim(), asStr(loc.state).trim()].filter(Boolean).join(", ");
             const secondaryLine = addressLine || cityState || null;
-            const distanceMiles = Number.isFinite(Number(loc.distance_miles)) ? Number(loc.distance_miles) : null;
+            const distanceMiles =
+              loc.distance_miles != null && Number.isFinite(Number(loc.distance_miles))
+                ? Number(loc.distance_miles)
+                : null; // Number(null) is 0 — a missing distance must not render as "< 0.1 mi"
 
             return (
               <button
@@ -818,7 +821,13 @@ export default function PublicMenuPage() {
   const { language, t } = useLanguage();
   const location = useLocation();
   const isMenuTemplatePreview = location.pathname === "/menu-template-preview";
-  const { id, slugOrId, restaurantSlug: routeRestaurantSlug } = useParams();
+  const {
+    id,
+    slugOrId,
+    restaurantSlug: routeRestaurantSlug,
+    state: routeStateParam,
+    city: routeCityParam,
+  } = useParams();
   const navigate = useNavigate();
   const routeRestaurantParam = asStr(routeRestaurantSlug || slugOrId || id).trim();
   const numericRouteRestaurantId = asFiniteNumber(routeRestaurantParam);
@@ -908,7 +917,11 @@ export default function PublicMenuPage() {
         setResolvedRouteState({ status: "loading", restaurantId: "", error: null });
 
         const res = await fetch(
-          `${API}/public/restaurants/${encodeURIComponent(routeRestaurantParam)}`,
+          `${API}/public/restaurants/${encodeURIComponent(routeRestaurantParam)}${
+            routeRestaurantSlug && routeStateParam && routeCityParam
+              ? `?${new URLSearchParams({ route_state: routeStateParam, route_city: routeCityParam }).toString()}`
+              : ""
+          }`,
           { credentials: "include" }
         );
         const json = await res.json().catch(() => null);
@@ -959,7 +972,7 @@ export default function PublicMenuPage() {
 
     resolveRouteRestaurant();
     return () => { cancelled = true; };
-  }, [numericRouteRestaurantId, routeRestaurantParam, isMenuTemplatePreview]);
+  }, [numericRouteRestaurantId, routeRestaurantParam, routeRestaurantSlug, routeStateParam, routeCityParam, isMenuTemplatePreview]);
 
   const routeState = useMemo(() => {
     if (isMenuTemplatePreview) {
