@@ -391,7 +391,7 @@ function FranchiseLocationSheet({ locations, currentRestaurantId, brandName, onS
   );
 }
 
-function FranchiseBanner({ group, currentRestaurantId, onSelectLocation, brand }) {
+function FranchiseBanner({ group, currentRestaurantId, onSelectLocation, brand, selectedLocation = null }) {
   const accent = brand?.accent ?? "#22C55E";
   const [sheetOpen, setSheetOpen] = useState(false);
   const locations = (Array.isArray(group?.locations) ? group.locations : []).filter(
@@ -408,9 +408,21 @@ function FranchiseBanner({ group, currentRestaurantId, onSelectLocation, brand }
   // Address is already rendered by the menu template header. Keep this slot as a
   // left-aligned locations control only — a side-by-side "Closest location" label
   // used hard-coded light text and pushed the link off the address column on light menus.
+  const selectedLocationLabel = selectedLocation
+    ? [
+        asStr(selectedLocation.address_line1).trim(),
+        [asStr(selectedLocation.city).trim(), asStr(selectedLocation.state).trim()].filter(Boolean).join(", "),
+      ].filter(Boolean).join(" · ")
+    : "";
+
   return (
     <>
       <div style={{ marginTop: 6, textAlign: "left" }}>
+        {selectedLocationLabel ? (
+          <div data-testid="franchise-selected-location" style={{ fontSize: 12, opacity: 0.8, marginBottom: 2 }}>
+            Menu for location: {selectedLocationLabel}
+          </div>
+        ) : null}
         <button
           type="button"
           onClick={() => setSheetOpen(true)}
@@ -872,8 +884,9 @@ export default function PublicMenuPage() {
 
   const proximityLat = asFiniteNumber(searchParams.get("lat"));
   const proximityLng = asFiniteNumber(searchParams.get("lng"));
-  // Franchise brand profile: ?location=<store id> selects the physical location whose
-  // menu (canonical menu + that store's differences) is shown under the brand URL.
+  // Franchise brand profile: ?location=<store id> selects the physical location. The
+  // page keeps the brand header (corporate address); the store only supplies its menu
+  // differences and centres the location picker.
   const selectedLocationId = asFiniteNumber(searchParams.get("location"));
   // An explicit location must not be swapped for another same-chain store by market.
   const contextCity  = selectedLocationId != null ? null : searchParams.get("city")  || null;
@@ -976,10 +989,9 @@ export default function PublicMenuPage() {
 
 
   const apiUrl = useMemo(() => {
-    const rid = encodeURIComponent(
-      selectedLocationId != null ? String(selectedLocationId) : asStr(routeState.restaurantId).trim()
-    );
+    const rid = encodeURIComponent(asStr(routeState.restaurantId).trim());
     const params = new URLSearchParams();
+    if (selectedLocationId != null) params.set("franchise_location", String(selectedLocationId));
     if (proximityLat != null && proximityLng != null) {
       params.set("lat", String(proximityLat));
       params.set("lng", String(proximityLng));
@@ -1098,11 +1110,10 @@ export default function PublicMenuPage() {
     setTabError(null);
     setTabLoading(true);
     try {
-      const rid = encodeURIComponent(
-        selectedLocationId != null ? String(selectedLocationId) : asStr(routeState.restaurantId).trim()
-      );
+      const rid = encodeURIComponent(asStr(routeState.restaurantId).trim());
       const params = new URLSearchParams();
       params.set("menu", String(menuId));
+      if (selectedLocationId != null) params.set("franchise_location", String(selectedLocationId));
       appendSavedMenuPreferenceQueryParams(params, {
         applyDietaryPreferences: dietaryFilterActive,
         dietPrefs,
@@ -1567,7 +1578,8 @@ export default function PublicMenuPage() {
   const franchiseSlot = franchiseGroup ? (
     <FranchiseBanner
       group={franchiseGroup}
-      currentRestaurantId={currentRestaurantId}
+      currentRestaurantId={selectedLocationId ?? currentRestaurantId}
+      selectedLocation={data?.franchise_location || null}
       onSelectLocation={navigateToFranchiseLocation}
       brand={menuBrand}
     />
