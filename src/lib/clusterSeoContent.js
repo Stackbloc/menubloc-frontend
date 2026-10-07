@@ -10,7 +10,7 @@
 
 import { resolveClusterSlug } from "./clusterSlugAliases.js";
 
-/** @typedef {"airport"|"university"|"stadium"|"entertainment_complex"|"convention_district"|"downtown"|"other"} ClusterSeoType */
+/** @typedef {"airport"|"university"|"stadium"|"entertainment_complex"|"convention_district"|"historic_district"|"downtown"|"other"} ClusterSeoType */
 
 /**
  * @typedef {object} ClusterSeoEntry
@@ -37,6 +37,7 @@ export const PUBLIC_CLUSTER_SEO_SLUGS = Object.freeze([
   "att-stadium",
   "ucla",
   "usc",
+  "little-tokyo",
 ]);
 
 const DEFAULT_SEARCH_PLACEHOLDER = "Search food here";
@@ -177,6 +178,21 @@ export const CLUSTER_SEO_CONTENT = Object.freeze({
     metaDescription:
       "Explore available restaurants and menus near USC in Los Angeles, CA. Search nearby dining options with Menuply.",
     searchPlaceholder: "Search Dining Options near USC",
+  }),
+  "little-tokyo": Object.freeze({
+    slug: "little-tokyo",
+    displayName: "Little Tokyo",
+    city: "Los Angeles",
+    state: "CA",
+    clusterType: "historic_district",
+    intro:
+      "Discover available restaurants, menus, and dining options in Little Tokyo in downtown Los Angeles, California. Browse participating restaurants across Japanese Village Plaza, East 1st and 2nd Streets, Weller Court, and Little Tokyo Marketplace — from ramen, sushi, udon, izakaya plates, and shabu-shabu to mochi, boba, matcha, and desserts. Use Menuply to search menu items by dish, cuisine, or dietary preference and plan where to eat in this historic neighborhood.",
+    cardDescription:
+      "Available restaurants and menus across Little Tokyo in downtown Los Angeles.",
+    seoTitle: "Little Tokyo Restaurants, Menus & Food | Menuply",
+    metaDescription:
+      "Explore available restaurants, menus, ramen, sushi, and desserts in Little Tokyo, Los Angeles, CA. Search dining options with Menuply.",
+    searchPlaceholder: "Search Little Tokyo menus",
   }),
 });
 
