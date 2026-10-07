@@ -85,6 +85,15 @@ function asStr(v) {
   return v === undefined || v === null ? "" : String(v).trim();
 }
 
+/** Set one query param on a relative path, keeping its existing query string. */
+function withSearchParam(path, key, value) {
+  if (!path) return path;
+  const [base, query = ""] = String(path).split("?");
+  const params = new URLSearchParams(query);
+  params.set(key, String(value));
+  return `${base}?${params.toString()}`;
+}
+
 function asNum(v) {
   if (typeof v === "number") return Number.isFinite(v) ? v : null;
   if (typeof v === "string") {
@@ -2336,17 +2345,30 @@ export default function SearchResultCard({ restaurant, items, item, query, query
   const restNameS = getRestName(item, language);
   const cuisineS = getCuisineLike(item);
   const phoneS = getPhoneLike(item);
-  const addressLine1S = getAddressLine1Like(item);
+  // Franchise brand card: links go to the brand profile (corporate city/state in
+  // the path) with the nearest store preselected; the card shows that store's address.
+  const brandNearestS =
+    item?.is_brand_card === true && item?.nearest_location?.restaurant_id
+      ? item.nearest_location
+      : null;
+  const addressLine1S = brandNearestS ? brandNearestS.address_line1 || null : getAddressLine1Like(item);
   const cityS = getCityLike(item);
   const stateS = getStateLike(item);
-  const postalS = getPostalCodeLike(item);
+  const displayCityS = brandNearestS ? brandNearestS.city || null : cityS;
+  const displayStateS = brandNearestS ? brandNearestS.state || null : stateS;
+  const postalS = brandNearestS ? brandNearestS.postal_code || null : getPostalCodeLike(item);
   const distanceMilesS = getDistanceMilesLike(item);
   const restProfileTargetS = restSlugS || restIdS;
-  const restHrefS = restaurantPath({ slug: restSlugS, city: cityS, state: stateS }) ||
+  const restHrefBaseS = restaurantPath({ slug: restSlugS, city: cityS, state: stateS }) ||
     (restProfileTargetS ? "/restaurants/" + restProfileTargetS : null);
-  const menuHrefS = restIdS
+  const menuHrefBaseS = restIdS
     ? (restaurantMenuPath({ slug: restSlugS, city: cityS, state: stateS, id: restIdS }) || buildCanonicalMenuPath({ restaurantSlug: restSlugS, restaurantId: restIdS })) + contextSearch
     : null;
+  const menuHrefS = brandNearestS
+    ? withSearchParam(menuHrefBaseS, "location", brandNearestS.restaurant_id)
+    : menuHrefBaseS;
+  // Brand card name opens the brand menu page, which carries the location picker.
+  const restHrefS = brandNearestS ? menuHrefS : restHrefBaseS;
 
   if (isItemRow) {
     return (
@@ -2370,10 +2392,14 @@ export default function SearchResultCard({ restaurant, items, item, query, query
 
   const cityStateLine = omitPlaceLocation
     ? ""
-    : [cityS, stateS ? (postalS ? `${stateS} ${postalS}` : stateS) : postalS]
+    : [displayCityS, displayStateS ? (postalS ? `${displayStateS} ${postalS}` : displayStateS) : postalS]
         .filter(Boolean)
         .join(", ");
-  const mapsUrl = buildGoogleMapsUrl(item);
+  const mapsUrl = buildGoogleMapsUrl(
+    brandNearestS
+      ? { ...item, address_line1: addressLine1S, city: displayCityS, state: displayStateS, postal_code: postalS }
+      : item
+  );
   const addressDisplay = [addressLine1S, cityStateLine].filter(Boolean).join(", ");
   const isRestaurantBrowse = resultView === "restaurant";
   // Restaurant-level row: its social line sits under the distance (at most one).
@@ -2473,6 +2499,12 @@ export default function SearchResultCard({ restaurant, items, item, query, query
             : " away"}
         </div>
       )}
+
+      {brandNearestS && Number(item?.nearby_location_count) > 1 ? (
+        <div data-testid="search-result-brand-locations" style={{ marginTop: 4, fontSize: 13, fontWeight: 600, color: "#9CA3AF" }}>
+          Nearest of {Number(item.nearby_location_count)} locations nearby
+        </div>
+      ) : null}
 
       {isRestaurantLevelS ? <SearchResultSocialActivity items={item?.social_activity} /> : null}
 

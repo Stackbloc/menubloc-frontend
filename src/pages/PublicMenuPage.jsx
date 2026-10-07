@@ -872,8 +872,12 @@ export default function PublicMenuPage() {
 
   const proximityLat = asFiniteNumber(searchParams.get("lat"));
   const proximityLng = asFiniteNumber(searchParams.get("lng"));
-  const contextCity  = searchParams.get("city")  || null;
-  const contextState = searchParams.get("state") || null;
+  // Franchise brand profile: ?location=<store id> selects the physical location whose
+  // menu (canonical menu + that store's differences) is shown under the brand URL.
+  const selectedLocationId = asFiniteNumber(searchParams.get("location"));
+  // An explicit location must not be swapped for another same-chain store by market.
+  const contextCity  = selectedLocationId != null ? null : searchParams.get("city")  || null;
+  const contextState = selectedLocationId != null ? null : searchParams.get("state") || null;
 
   useEffect(() => {
     let cancelled = false;
@@ -972,7 +976,9 @@ export default function PublicMenuPage() {
 
 
   const apiUrl = useMemo(() => {
-    const rid = encodeURIComponent(asStr(routeState.restaurantId).trim());
+    const rid = encodeURIComponent(
+      selectedLocationId != null ? String(selectedLocationId) : asStr(routeState.restaurantId).trim()
+    );
     const params = new URLSearchParams();
     if (proximityLat != null && proximityLng != null) {
       params.set("lat", String(proximityLat));
@@ -990,6 +996,7 @@ export default function PublicMenuPage() {
     return `${API}/public/restaurants/${rid}/menu${qs ? `?${qs}` : ""}`;
   }, [
     routeState.restaurantId,
+    selectedLocationId,
     proximityLat,
     proximityLng,
     contextCity,
@@ -1091,7 +1098,9 @@ export default function PublicMenuPage() {
     setTabError(null);
     setTabLoading(true);
     try {
-      const rid = encodeURIComponent(asStr(routeState.restaurantId).trim());
+      const rid = encodeURIComponent(
+        selectedLocationId != null ? String(selectedLocationId) : asStr(routeState.restaurantId).trim()
+      );
       const params = new URLSearchParams();
       params.set("menu", String(menuId));
       appendSavedMenuPreferenceQueryParams(params, {
@@ -1494,6 +1503,13 @@ export default function PublicMenuPage() {
 
   function navigateToFranchiseLocation(restaurantId, restaurantSlug = null) {
     if (!restaurantId) return;
+    // On the brand profile, switching location keeps the brand URL.
+    if (selectedLocationId != null) {
+      const next = new URLSearchParams(searchParams);
+      next.set("location", String(restaurantId));
+      setSearchParams(next);
+      return;
+    }
     navigate({
       pathname: buildCanonicalMenuPath({
         restaurantSlug,
