@@ -49,3 +49,17 @@
 - Brand record is never swapped for a store by market; `?franchise_location=<store>` applies that store's overlays + centres the picker; header = corporate address.
 - Search brand card: corporate address, no distance, "N locations nearby"; links preselect nearest store.
 - Live: `/public/restaurants/78947/menu?franchise_location=1386` → Starbucks, 2401 Utah Ave S, Seattle WA; location 3201 Hoover St; 179 items; picker 25. `/search?q=starbucks` @USC → 1 brand card (Seattle address, 59 nearby, nearest 1386).
+
+## Follow-up CPD (same day): location picker — addressed stores only, brand profile picker
+
+| Layer | Commit | Proof |
+|-------|--------|-------|
+| BE | `fe41cc5a` | `cpd-be.sh` RESULT=PASS, smoke 32, `health_commit=fe41cc5a36b73572ade8b0823f1eaf36715d7acd` |
+| FE | `84d9f0bd` | `menubloc-frontend-b106e2qy9-menuply.vercel.app` / `index-Cdcv03IU.js`; content probe `Locations near you` PASS; tip-gate apex + www RESULT=PASS (alias http-01 cert error → `--lock-only`) |
+
+- Pickers (chain locations endpoint, menu sheet, brand-card preselect) list only active, non-brand stores with a street address — live queries, so stores appear as addresses are added (e.g. SimpleMaps Comprehensive backfill).
+- Brand profile shows "Locations near you" (nearest first); tap → brand menu with `?location=`.
+- Fixed: `/restaurants/washington/seattle/starbucks` resolved by slug alone to LA store 658 (now prefers route state/city + active rows).
+- Fixed: picker dropped when selected store outside 25 nearest; 0,0 coords; null distance rendered as 0 / "< 0.1 mi" / 7,836 mi.
+- Live: `/public/restaurants/starbucks?route_state=washington&route_city=seattle` → 78947 Seattle (chain 4, brand record); `/chains/4/locations` @USC → 20, all addressed, nearest 3201 Hoover St 0.2 mi.
+- Pre-existing FE contract failures (also on main): MenuHeaderNameWithActions, PublicMenuItemCard row order, operatorPublicProfileContract followSource.
