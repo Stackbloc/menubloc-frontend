@@ -74,6 +74,7 @@ const NAV_SECTIONS_STATIC = [
       { to: "/owner/deployments", label: "Deployment Operations" },
       { to: "/owner/intelligence", label: "Platform Intelligence" },
       { to: "/owner/venues", label: "Venues" },
+      { to: "/owner/ads", label: "Ads" },
     ],
   },
   {

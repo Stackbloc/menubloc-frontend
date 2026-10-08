@@ -99,6 +99,44 @@ export const assignVenueClusters = (id, clusterIds) =>
   });
 export const inviteVenueOperator = (id, body) => post(`/api/owner/venues/${id}/memberships`, body);
 
+// ── Owner > Ads (cluster ad slots, house + venue inventory) ────────────────
+
+export const getOwnerAdsMeta = () => get("/api/owner/ads/meta");
+export const listOwnerAdClusters = () => get("/api/owner/ads/clusters");
+export const getOwnerClusterAdSlots = (clusterId) =>
+  get(`/api/owner/ads/clusters/${encodeURIComponent(String(clusterId))}`);
+export const provisionOwnerClusterAdSlots = (clusterId) =>
+  post(`/api/owner/ads/clusters/${encodeURIComponent(String(clusterId))}/provision`, {});
+export const provisionAllOwnerClusterAdSlots = () => post("/api/owner/ads/clusters/provision-all", {});
+export const updateOwnerAdSlot = (inventoryId, body) =>
+  patch(`/api/owner/ads/slots/${encodeURIComponent(String(inventoryId))}`, body);
+export const createOwnerAd = (body) => post("/api/owner/ads/advertisements", body);
+export const updateOwnerAd = (adId, body) =>
+  patch(`/api/owner/ads/advertisements/${encodeURIComponent(String(adId))}`, body);
+export const deleteOwnerAd = (adId) => del(`/api/owner/ads/advertisements/${encodeURIComponent(String(adId))}`);
+export const searchOwnerAdRestaurants = (q) =>
+  get(`/api/owner/ads/advertisers/restaurants?q=${encodeURIComponent(String(q || ""))}`);
+export const listOwnerAdRestaurantDeals = (restaurantId) =>
+  get(`/api/owner/ads/advertisers/restaurants/${encodeURIComponent(String(restaurantId))}/deals`);
+
+export async function uploadOwnerAdImage(file) {
+  const formData = new FormData();
+  formData.append("image", file);
+  const res = await fetch(`${API}/api/owner/ads/advertisements/upload-image`, {
+    credentials: "include",
+    method: "POST",
+    body: formData,
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const error = new Error(json.error || `Upload failed (${res.status})`);
+    error.status = res.status;
+    error.payload = json;
+    throw error;
+  }
+  return json;
+}
+
 export const listDestinationVenueLiveFeedVideos = (destinationVenueId) =>
   get(`/api/owner/destination-venues/${encodeURIComponent(String(destinationVenueId))}/live-feed-videos`);
 
