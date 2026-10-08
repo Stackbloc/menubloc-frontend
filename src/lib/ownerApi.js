@@ -398,6 +398,9 @@ export const submitOwnerMenuFilePdf = (restaurantId, file, opts = {}) => {
   if (Number.isFinite(menuId) && menuId > 0) {
     form.append("menu_id", String(menuId));
   }
+  if (opts.batchId) {
+    form.append("upload_batch_id", String(opts.batchId));
+  }
   return postFormData("/menu-upload/pdf", form, {
     timeoutMs: OWNER_MENU_UPLOAD_TIMEOUT_MS,
     mapNetworkError: true,

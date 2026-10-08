@@ -146,6 +146,28 @@ function mergeOwnerUploadFiles(existing, incoming) {
   return next;
 }
 
+/** Flatten per-upload page lists (each photo upload is page 1) into one 1..N source. */
+function mergeBatchUploadPages(pageLists) {
+  const merged = [];
+  for (const pages of pageLists) {
+    const ordered = [...(pages || [])].sort(
+      (a, b) => Number(a.page_number || 0) - Number(b.page_number || 0)
+    );
+    for (const page of ordered) {
+      merged.push({ ...page, source_page_number: page.page_number, page_number: merged.length + 1 });
+    }
+  }
+  return merged;
+}
+
+/** One id per Upload & Parse click so multi-photo uploads stay grouped. */
+function newOwnerUploadBatchId() {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return `batch-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
 function clearOwnerUploadInputRefs(...refs) {
   for (const ref of refs) {
     if (ref?.current) ref.current.value = "";
@@ -1135,15 +1157,18 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
 
     // OCR companion rail: prefer pending upload pages, else most recent upload with pages
     let pagesForRail = [];
+    let railUploadId = null;
     const preferredId = pending[0]?.id || latestUploadId;
     const preferredSession = sessions.find((s) => s.id === preferredId);
     if (preferredSession?.pages?.length) {
       pagesForRail = preferredSession.pages;
+      railUploadId = preferredSession.id;
     } else {
       for (const u of uploads.slice(0, 8)) {
         const fromSession = sessions.find((s) => s.id === u.id);
         if (fromSession?.pages?.length) {
           pagesForRail = fromSession.pages;
+          railUploadId = u.id;
           break;
         }
         try {
@@ -1151,11 +1176,35 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
           const pages = detail.upload?.pages || detail.pages || [];
           if (pages.length) {
             pagesForRail = pages;
+            railUploadId = u.id;
             break;
           }
         } catch {
           /* skip */
         }
+      }
+    }
+    // Multi-photo batch: each photo is its own 1-page upload — show every
+    // photo of the batch as one multi-page source, in upload order.
+    const batchId = uploads.find((u) => u.id === railUploadId)?.upload_batch_id;
+    if (batchId) {
+      const batchUploads = uploads
+        .filter((u) => u.upload_batch_id === batchId)
+        .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+      if (batchUploads.length > 1) {
+        const batchPages = await Promise.all(
+          batchUploads.map(async (u) => {
+            const cached = sessions.find((s) => s.id === u.id);
+            if (cached?.pages?.length) return cached.pages;
+            try {
+              const detail = await getOwnerMenuUpload(u.id);
+              return detail.upload?.pages || detail.pages || [];
+            } catch {
+              return [];
+            }
+          })
+        );
+        pagesForRail = mergeBatchUploadPages(batchPages);
       }
     }
     setSourcePages(pagesForRail);
@@ -1255,6 +1304,7 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
       const succeededFiles = [];
       const failedFiles = [];
       const batchTotal = files.length;
+      const batchId = newOwnerUploadBatchId();
 
       // Continue-on-error: one file failure must not abort the rest of the batch
       // (Rock & Reilly's 2026-09-20 — 3/22 sessions then stop).
@@ -1268,7 +1318,7 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
           message: `Uploading ${i + 1}/${batchTotal}: ${nextFile.name}…`,
         });
         try {
-          const json = await submitOwnerMenuFilePdf(rid, nextFile, { menuId: activeMenuId });
+          const json = await submitOwnerMenuFilePdf(rid, nextFile, { menuId: activeMenuId, batchId });
           const inserted = (json.inserted_items || json.inserted || 0) + (json.updated_items || json.updated || 0);
           const reviewCount = Number(json.review_count || json.human_review_items || 0);
           const superseded = Number(json.superseded_count || 0);
@@ -1410,14 +1460,10 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
     || (existingRestaurant && showProfilePanel)
     || (restaurant && !existingRestaurant)
   );
-  const menusWithItems = availableMenus.filter((m) => Number(m.item_count) > 0);
   const orderedMenus = sortMenusByDisplayPriority(availableMenus);
   const selectedMenuRow = orderedMenus.find((m) => Number(m.id) === Number(mid)) || null;
   const selectedMenuItemCount = Number(menuDetail?.item_count) || Number(selectedMenuRow?.item_count) || 0;
   const selectedMenuNeedsContent = Boolean(restaurant && selectedMenuItemCount === 0);
-  const restaurantNeedsMenuContent = Boolean(
-    restaurant && selectedMenuNeedsContent && menusWithItems.length === 0
-  );
 
   const profileFormCard = showProfileFormCard ? (
       <PageCard style={{ padding: 20, marginBottom: 16, opacity: restaurant && !existingRestaurant ? 0.72 : 1 }}>
@@ -2122,7 +2168,9 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
       {uploadCard}
       {menusCard}
 
-      {restaurant && menuDetail && (Number(menuDetail.item_count) > 0 || !restaurantNeedsMenuContent) ? (
+      {/* Always show the editor once a menu exists so dishes can be added by hand
+          (an empty menu used to hide it until an upload succeeded). */}
+      {restaurant && menuDetail ? (
         <div ref={menuEditorRef}>
           <OcrEditSplitLayout
             pages={sourcePages}
@@ -2141,7 +2189,11 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
                 <div>
                   <SectionTitle
                     title="Edit dishes"
-                    subtitle={`${menuDetail.item_count ?? 0} items in this menu — this is the main editor. Publish when ready.`}
+                    subtitle={
+                      Number(menuDetail.item_count) > 0
+                        ? `${menuDetail.item_count} items in this menu — this is the main editor. Publish when ready.`
+                        : "No dishes yet — upload a menu above, or use + Add dish to enter dishes by hand."
+                    }
                   />
                   <div style={{ display: "flex", gap: 10, alignItems: "center", marginTop: 6, flexWrap: "wrap" }}>
                     <StatusChip status={menuDetail.menu?.status} />
@@ -2163,6 +2215,7 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
                 onMenuDeleted={handleMenuDeleted}
                 onReload={loadMenuState}
                 onItemPhotosChange={setItemPhotoUrls}
+                showTopAddItem
               />
             </PageCard>
           </OcrEditSplitLayout>

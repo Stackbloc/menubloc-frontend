@@ -125,7 +125,7 @@ describe("owner Add Restaurant restore", () => {
     assert.match(workspace, /is too large/);
     assert.match(workspace, /const \[files, setFiles\] = useState\(\[\]\)/);
     assert.match(workspace, /for \(let i = 0; i < files\.length; i \+= 1\)/);
-    assert.match(workspace, /submitOwnerMenuFilePdf\(rid, nextFile, \{ menuId: activeMenuId \}\)/);
+    assert.match(workspace, /submitOwnerMenuFilePdf\(rid, nextFile, \{ menuId: activeMenuId, batchId \}\)/);
     assert.match(workspace, /Update OCR: add PDF or photos/);
     assert.match(workspace, /same-named dishes replace prior versions/);
     assert.match(workspace, /totalSuperseded/);
@@ -133,7 +133,7 @@ describe("owner Add Restaurant restore", () => {
     assert.match(workspace, /Replaced \$\{totalSuperseded\} prior same-named/);
     assert.match(workspace, /"Update OCR"/);
     // Initial load still prefers a menu that already has items; tabs show every shell.
-    assert.match(workspace, /menusWithItems/);
+    assert.match(workspace, /const withItems = menus\.filter\(\(m\) => Number\(m\.item_count\) > 0\)/);
     assert.match(workspace, /Prefer a menu that already has items/);
     assert.match(workspace, /data-testid="owner-menu-tabs-panel"/);
     assert.match(workspace, /data-testid="owner-menu-tab"/);
@@ -159,7 +159,7 @@ describe("owner Add Restaurant restore", () => {
     assert.match(api, /postFormData\("\/menu-upload\/pdf"/);
 
     const workspace = read("src/pages/owner/OwnerMenuCreateWorkspace.jsx");
-    assert.match(workspace, /submitOwnerMenuFilePdf\(rid, nextFile, \{ menuId: activeMenuId \}\)/);
+    assert.match(workspace, /submitOwnerMenuFilePdf\(rid, nextFile, \{ menuId: activeMenuId, batchId \}\)/);
     assert.match(workspace, /json\.public_menu_id/);
     assert.match(workspace, /reloadMenus\(publicMenuId\)/);
     assert.match(workspace, /importParsedToMenuDraft\(lastUploadId, \{ publicMenuId: activeMenuId \}\)/);

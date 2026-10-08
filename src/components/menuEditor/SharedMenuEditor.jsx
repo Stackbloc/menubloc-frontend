@@ -228,6 +228,7 @@ export function MenuEditor({
   onReload,
   onItemPhotosChange,
   allowDeleteMenu = true,
+  showTopAddItem = false,
   colors = MENU_EDITOR_COLORS,
   PageCard = DefaultPageCard,
   EmptyState = DefaultEmptyState,
@@ -253,6 +254,7 @@ export function MenuEditor({
   const [newItem, setNewItem] = useState({ name: "", description: "", price: "", section: "" });
   const [addingItem, setAddingItem] = useState(false);
   const [addItemErr, setAddItemErr] = useState("");
+  const [addFormAtTop, setAddFormAtTop] = useState(false);
 
   const [editingMenuName, setEditingMenuName] = useState(false);
   const [menuNameDraft, setMenuNameDraft] = useState(menu.display_name || menu.name || "");
@@ -793,7 +795,47 @@ export function MenuEditor({
             + Add Section
           </button>
         </form>
+        {showTopAddItem ? (
+          <button
+            type="button"
+            data-testid="menu-editor-top-add-item"
+            onClick={() => {
+              setAddFormAtTop(true);
+              openAddItem("");
+            }}
+            style={{
+              marginTop: 10,
+              padding: "9px 16px",
+              borderRadius: 10,
+              background: colors.accent,
+              color: "#fff",
+              border: "none",
+              fontWeight: 700,
+              fontSize: 13,
+              cursor: "pointer",
+            }}
+          >
+            + Add dish
+          </button>
+        ) : null}
       </div>
+
+      {addFormAtTop && newItemSection === "" && (
+        <AddItemForm
+          sectionName=""
+          sectionOptions={sectionOptions}
+          onEnsureSection={ensureSection}
+          newItem={newItem}
+          onSetNewItem={setNewItem}
+          addItemErr={addItemErr}
+          addingItem={addingItem}
+          onSubmit={handleAddItem}
+          onCancel={() => setNewItemSection(null)}
+          colors={colors}
+          fieldStyle={fieldStyle}
+          labelStyle={labelStyle}
+        />
+      )}
 
       {sections.length === 0 ? (
         <EmptyState colors={colors}>No items yet. Add a section above or add an item below.</EmptyState>
@@ -832,7 +874,7 @@ export function MenuEditor({
         ))
       )}
 
-      {newItemSection === "" && (
+      {!addFormAtTop && newItemSection === "" && (
         <AddItemForm
           sectionName=""
           sectionOptions={sectionOptions}
@@ -852,7 +894,10 @@ export function MenuEditor({
       <div style={{ marginTop: 16, borderTop: `1px solid ${colors.line}`, paddingTop: 14 }}>
         <button
           type="button"
-          onClick={() => openAddItem("")}
+          onClick={() => {
+            setAddFormAtTop(false);
+            openAddItem("");
+          }}
           style={{
             padding: "9px 16px",
             borderRadius: 10,
