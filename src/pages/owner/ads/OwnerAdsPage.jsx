@@ -149,6 +149,26 @@ function advertiserSummary(ad) {
   return "Menuply";
 }
 
+function SizeBadge({ size }) {
+  return (
+    <span
+      style={{
+        display: "inline-block",
+        marginLeft: 8,
+        padding: "2px 8px",
+        borderRadius: 999,
+        fontSize: 12,
+        fontWeight: 700,
+        background: OWNER_COLORS.accentSoft,
+        color: OWNER_COLORS.ink,
+        verticalAlign: "middle",
+      }}
+    >
+      Banner size {size}
+    </span>
+  );
+}
+
 function StatusPill({ status }) {
   const s = STATUS_STYLES[status] || STATUS_STYLES.paused;
   return (
@@ -385,7 +405,7 @@ function SlotCard({ slot, busy, run }) {
   const [editingAd, setEditingAd] = useState(null); // null | "new" | ad
   const [showPricing, setShowPricing] = useState(false);
   const placement = REGION_PLACEMENT[slot.page_region] || slot.page_region;
-  const size = slot.width && slot.height ? `${slot.width}×${slot.height}` : "Flexible size";
+  const size = slot.width && slot.height ? `${slot.width} × ${slot.height} px` : "Flexible size";
 
   return (
     <div
@@ -403,9 +423,10 @@ function SlotCard({ slot, busy, run }) {
           <div style={{ fontWeight: 700, color: OWNER_COLORS.ink }}>
             {slot.slot_number ? `Slot ${slot.slot_number} · ` : ""}
             {slot.name}
+            <SizeBadge size={size} />
           </div>
           <div style={{ fontSize: 13, color: OWNER_COLORS.muted, marginTop: 4 }}>
-            {placement} · {slot.inventory_type} · {size} · {slot.owner === "venue" ? slot.venue_name || "Venue" : "Menuply"}
+            {placement} · {slot.inventory_type} · {slot.owner === "venue" ? slot.venue_name || "Venue" : "Menuply"}
           </div>
           {slot.active && slot.showing ? (
             <div style={{ fontSize: 12, marginTop: 4, fontWeight: 700, color: slot.showing === "sold" ? "#166534" : OWNER_COLORS.muted }}>
@@ -716,7 +737,8 @@ function AdEditor({ slot, ad, busy, onCancel, onSave }) {
         background: OWNER_COLORS.page,
       }}
     >
-      <div style={{ fontWeight: 700 }}>{ad ? `Edit “${ad.name}”` : `New ad in ${slot.name}`}</div>
+      <div style={{ fontWeight: 700 }}>{ad ? `Edit “${ad.name}”` : `New ad in ${slot.name}`}
+        {slot.width && slot.height ? <SizeBadge size={`${slot.width} × ${slot.height} px`} /> : null}</div>
 
       <label style={labelStyle}>
         Ad name
@@ -894,8 +916,10 @@ function DefaultBannersPanel({ busy, run }) {
               >
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
                   <div>
-                    <div style={{ fontWeight: 700 }}>{type.label}</div>
-                    <div style={{ fontSize: 12, color: OWNER_COLORS.muted }}>Best at {type.size}px</div>
+                    <div style={{ fontWeight: 700 }}>
+                      {type.label}
+                      <SizeBadge size={`${type.size.replace("×", " × ")} px`} />
+                    </div>
                   </div>
                   <button
                     type="button"
