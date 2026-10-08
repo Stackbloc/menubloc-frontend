@@ -10,9 +10,9 @@
 set -euo pipefail
 
 HOST="${1:-https://menuply.com}"
-# Locked tip 2026-10-08: menubloc-frontend-829673rh9-menuply.vercel.app / index-DJqZgDFf.js (FE 4bb39fff;BE 13e195cc;owner menu manager cluster picker (alias http-01 cert error; apex already on new bundle))
-LOCKED_BUNDLE="index-DJqZgDFf.js"
-LOCKED_DEPLOY="menubloc-frontend-829673rh9-menuply.vercel.app"
+# Locked tip 2026-10-08: menubloc-frontend-1fc8tg9pp-menuply.vercel.app / index-D_CtL62l.js (FE 27302484;BE 598aab6d;menu manager multi-photo OCR rail + add dish)
+LOCKED_BUNDLE="index-D_CtL62l.js"
+LOCKED_DEPLOY="menubloc-frontend-1fc8tg9pp-menuply.vercel.app"
 
 html=$(curl -sSL -m 25 -H 'Cache-Control: no-cache' "${HOST}/?gate=$(date +%s)")
 bundle=$(printf '%s' "$html" | grep -oE 'index-[A-Za-z0-9_-]+\.js' | head -1)
