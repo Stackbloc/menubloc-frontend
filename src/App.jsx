@@ -130,6 +130,7 @@ import {
   OwnerVenueDetailPage,
   OwnerVenuesListPage,
 } from "./pages/owner/venues/OwnerVenuesPages.jsx";
+import OwnerAdsPage from "./pages/owner/ads/OwnerAdsPage.jsx";
 import { VenueProvider, useVenue } from "./context/VenueContext.jsx";
 import VenueLogin from "./pages/venue/VenueLogin.jsx";
 import VenueInventoryPage from "./pages/venue/VenueInventoryPage.jsx";
@@ -1113,6 +1114,7 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
         <Route path="/owner/restaurants" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerRestaurants /></OwnerRoute>} />
         <Route path="/owner/venues" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerVenuesListPage /></OwnerRoute>} />
         <Route path="/owner/venues/:id" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerVenueDetailPage /></OwnerRoute>} />
+        <Route path="/owner/ads" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerAdsPage /></OwnerRoute>} />
         <Route path="/owner/revenue" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerRevenue /></OwnerRoute>} />
         <Route path="/owner/support" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerSupportTickets /></OwnerRoute>} />
         <Route path="/owner/support/:ticketId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerTicketDetail /></OwnerRoute>} />

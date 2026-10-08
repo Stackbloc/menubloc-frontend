@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { getAdvertisementByRegion, getAdvertisements } from "../../lib/advertisementApi.js";
 
 /**
@@ -104,19 +105,23 @@ export default function ClusterAdSlot({
   );
 
   if (href) {
+    const linkStyle = {
+      display: "block",
+      width: resolvedSize === "small" ? "auto" : "100%",
+      maxWidth: resolvedSize === "small" ? 228 : "100%",
+      textDecoration: "none",
+      color: "inherit",
+    };
+    // Restaurant / deal ads resolve to Menuply paths ("/restaurants/12") — keep those in-app.
+    if (href.startsWith("/") && !href.startsWith("//")) {
+      return (
+        <Link to={href} style={linkStyle}>
+          {body}
+        </Link>
+      );
+    }
     return (
-      <a
-        href={href}
-        target="_blank"
-        rel="noopener noreferrer"
-        style={{
-          display: "block",
-          width: resolvedSize === "small" ? "auto" : "100%",
-          maxWidth: resolvedSize === "small" ? 228 : "100%",
-          textDecoration: "none",
-          color: "inherit",
-        }}
-      >
+      <a href={href} target="_blank" rel="noopener noreferrer" style={linkStyle}>
         {body}
       </a>
     );
