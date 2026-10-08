@@ -119,6 +119,12 @@ export const searchOwnerAdRestaurants = (q) =>
 export const listOwnerAdRestaurantDeals = (restaurantId) =>
   get(`/api/owner/ads/advertisers/restaurants/${encodeURIComponent(String(restaurantId))}/deals`);
 
+export const listOwnerAdDefaults = () => get("/api/owner/ads/defaults");
+export const createOwnerAdDefault = (body) => post("/api/owner/ads/defaults", body);
+export const updateOwnerAdDefault = (id, body) =>
+  patch(`/api/owner/ads/defaults/${encodeURIComponent(String(id))}`, body);
+export const deleteOwnerAdDefault = (id) => del(`/api/owner/ads/defaults/${encodeURIComponent(String(id))}`);
+
 export async function uploadOwnerAdImage(file) {
   const formData = new FormData();
   formData.append("image", file);
