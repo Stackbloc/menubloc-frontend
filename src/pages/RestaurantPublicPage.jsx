@@ -60,6 +60,7 @@ import { buildRestaurantStatusLightProps } from "../lib/restaurantStatusLight.js
 import { buildRestaurantShareData } from "../components/share/shareUtils.js";
 import {
   formatAddressQuery,
+  isBrandPageRecord,
   normalizeDisplayAddress,
 } from "../lib/displayAddress.js";
 
@@ -485,9 +486,14 @@ export default function RestaurantPublicPage() {
     zip: data?.zip,
     postcode: data?.postcode,
   });
-  const streetDirectionsUrl = buildGoogleMapsDirectionsUrl(
-    formatAddressQuery({ streetAddr, cityLine })
-  );
+  // Brand page (franchise canonical/HQ record): corporate address is never shown to diners.
+  // city/state stay for URL building only (brand menu link).
+  const hideHqAddress = isBrandPageRecord(data);
+  const displayStreetAddr = hideHqAddress ? "" : streetAddr;
+  const displayCityLine = hideHqAddress ? "" : cityLine;
+  const streetDirectionsUrl = hideHqAddress
+    ? ""
+    : buildGoogleMapsDirectionsUrl(formatAddressQuery({ streetAddr, cityLine }));
   const websiteRaw = data?.website || data?.website_url || "";
   const website = normalizeUrl(websiteRaw);
   const phone = data?.phone || data?.phone_number || data?.contact_phone || "";
@@ -624,8 +630,8 @@ export default function RestaurantPublicPage() {
       ) : data ? (
         <RestaurantPublicEditorial
           name={name}
-          streetAddr={streetAddr}
-          cityLine={cityLine}
+          streetAddr={displayStreetAddr}
+          cityLine={displayCityLine}
           directionsUrl={streetDirectionsUrl}
           website={website}
           websiteRaw={websiteRaw}

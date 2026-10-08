@@ -129,12 +129,22 @@ function asFiniteCoord(value) {
   return Number.isFinite(n) ? n : null;
 }
 
+/** Brand page = a franchise canonical (HQ) record. Its address is corporate, never a store. */
+export function isBrandPageRecord(data) {
+  return data?.is_canonical_parent === true;
+}
+
 /**
  * Public menu header address for restaurants and food trucks.
  * Food trucks prefer live current_pickup_location; fall back to home base.
  * Returns street/city lines only — no "Current Location" label (menu chrome).
  */
 export function resolvePublicMenuAddressDisplay(data, { isFoodTruck = false } = {}) {
+  // Brand page (franchise canonical/HQ record): the corporate address is not a place to
+  // eat — never show it to diners. The franchise banner shows the chosen store.
+  if (isBrandPageRecord(data)) {
+    return { addressLine1: "", addressLine2: "", addressLine: "", directionsHref: "", usedCurrentPickup: false };
+  }
   const pickup = data?.current_pickup_location || null;
   const pickupStreet = firstNonEmpty(
     pickup?.current_pickup_address,
