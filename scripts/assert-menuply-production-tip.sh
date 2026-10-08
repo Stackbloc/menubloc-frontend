@@ -10,9 +10,9 @@
 set -euo pipefail
 
 HOST="${1:-https://menuply.com}"
-# Locked tip 2026-10-08: menubloc-frontend-cmhvdx30i-menuply.vercel.app / index-5QMrqr-z.js (FE 3eefee10;BE f8a5badc;menubot rename + 3-step flow (finish after alias cert error))
-LOCKED_BUNDLE="index-5QMrqr-z.js"
-LOCKED_DEPLOY="menubloc-frontend-cmhvdx30i-menuply.vercel.app"
+# Locked tip 2026-10-08: menubloc-frontend-al0hxv8v0-menuply.vercel.app / index-D2ijAQfi.js (FE 36fca6c1;BE a662e424;Owner Ads panel (finish after alias cert error))
+LOCKED_BUNDLE="index-D2ijAQfi.js"
+LOCKED_DEPLOY="menubloc-frontend-al0hxv8v0-menuply.vercel.app"
 
 html=$(curl -sSL -m 25 -H 'Cache-Control: no-cache' "${HOST}/?gate=$(date +%s)")
 bundle=$(printf '%s' "$html" | grep -oE 'index-[A-Za-z0-9_-]+\.js' | head -1)
