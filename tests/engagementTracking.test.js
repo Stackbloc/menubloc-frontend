@@ -45,6 +45,7 @@ function reset(pathname = "/clusters/ca/los-angeles/usc") {
   window.location.pathname = pathname;
   nav.globalPrivacyControl = undefined;
   nav.doNotTrack = null;
+  document.visibilityState = "visible";
   sent.length = 0;
 }
 
@@ -177,4 +178,41 @@ test("link classifier: phone, directions, order, website, deal, profile→menu",
   assert.equal(menu.event, "restaurant_click");
   assert.equal(menu.fields.subtype, "menu");
   assert.equal(classifyRestaurantLink(a("/restaurants/ca/la/burger-barn/menu"), { ...ctx, pageType: "menu" }), null);
+});
+
+test("page loaded in a hidden tab: view is sent when first shown, once", () => {
+  reset();
+  document.visibilityState = "hidden";
+  const id = tracker.beginPageView({ pageType: "profile", restaurantId: 10, navigationKey: "p" });
+  assert.equal(flushed().length, 0, "nothing sent while hidden");
+  document.visibilityState = "visible";
+  tracker.handleVisibilityChange();
+  tracker.handleVisibilityChange();
+  const views = flushed().filter((e) => e.event_name === "page_view");
+  assert.equal(views.length, 1);
+  assert.equal(views[0].page_view_id, id);
+});
+
+test("page never shown is never counted, even after navigating away", () => {
+  reset();
+  document.visibilityState = "hidden";
+  tracker.beginPageView({ pageType: "profile", restaurantId: 10, navigationKey: "p1" });
+  tracker.beginPageView({ pageType: "profile", restaurantId: 20, navigationKey: "p2" });
+  document.visibilityState = "visible";
+  tracker.handleVisibilityChange();
+  const views = flushed().filter((e) => e.event_name === "page_view");
+  assert.deepEqual(views.map((v) => v.restaurant_id), [20], "only the view that was actually shown");
+});
+
+test("hidden-tab view keeps its click-through attribution when shown later", () => {
+  reset();
+  tracker.beginPageView({ pageType: "cluster", clusterId: 1, navigationKey: "c" });
+  tracker.trackEngagement("restaurant_click", { restaurant_id: 10 }, { target_restaurant_id: 10 });
+  document.visibilityState = "hidden";
+  tracker.beginPageView({ pageType: "menu", restaurantId: 10, navigationKey: "m" });
+  document.visibilityState = "visible";
+  tracker.handleVisibilityChange();
+  const view = flushed().find((e) => e.page_type === "menu");
+  assert.equal(view.src_cluster_id, 1);
+  assert.equal(view.attr_cluster_id, 1);
 });

@@ -2,7 +2,8 @@
  * First-party engagement analytics (POST /api/analytics/events → engagement_events).
  * Counting rules: menubloc docs/audits/2026-10-09_engagement-analytics.md
  *
- * - Page view: one per navigation (beginPageView), keyed by page_view_id.
+ * - Page view: one per navigation (beginPageView), keyed by page_view_id. Sent only once the
+ *   page is visible: a page loaded in a background tab is sent when first shown, never if closed unseen.
  * - Click: deliberate clicks; same element + entity within 1s counts once.
  * - Impression: >= 50% visible for >= 1s continuously, once per page view per placement.
  * - Attribution (sessionStorage, this tab only):
@@ -36,6 +37,7 @@ const BATCH_MAX = 25;
 const NAVIGATING_EVENTS = new Set(["restaurant_click", "deal_click", "ad_click", "menu_item_click"]);
 
 let queue = [];
+let deferredPageView = null; // page_view waiting for the page to become visible
 let flushTimer = null;
 let currentPage = null;
 let lastPageViewKey = null;
@@ -166,9 +168,31 @@ export function flushEngagementEvents() {
 if (typeof window !== "undefined") {
   try {
     window.addEventListener("pagehide", flushEngagementEvents);
-    document.addEventListener("visibilitychange", () => {
-      if (document.visibilityState === "hidden") flushEngagementEvents();
-    });
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+  } catch {
+    // ignore
+  }
+}
+
+function isPageVisible() {
+  try {
+    return typeof document === "undefined" || document.visibilityState !== "hidden";
+  } catch {
+    return true;
+  }
+}
+
+function sendDeferredPageView() {
+  if (!deferredPageView) return;
+  const event = deferredPageView;
+  deferredPageView = null;
+  enqueue(event);
+}
+
+export function handleVisibilityChange() {
+  try {
+    if (document.visibilityState === "hidden") flushEngagementEvents();
+    else sendDeferredPageView();
   } catch {
     // ignore
   }
@@ -204,6 +228,8 @@ export function beginPageView({ pageType, restaurantId = null, clusterId = null,
     const pagePath = window.location.pathname;
     // Pending impression timers belong to the previous page view.
     for (const el of [...observed.keys()]) unobserveImpression(el);
+    // A previous view that was never shown (hidden tab) is dropped, not counted.
+    deferredPageView = null;
 
     // Immediate source: consumed by the first page view after the click, kept only if it matches.
     let src = null;
@@ -234,7 +260,7 @@ export function beginPageView({ pageType, restaurantId = null, clusterId = null,
     };
     lastPageViewKey = { key: viewKey, ts: now };
 
-    enqueue(withAttribution({
+    const pageViewEvent = withAttribution({
       event_id: newEventId(),
       event_name: "page_view",
       ...currentPage,
@@ -244,7 +270,10 @@ export function beginPageView({ pageType, restaurantId = null, clusterId = null,
       src_cluster_id: src?.src_cluster_id || null,
       src_placement: src?.src_placement || null,
       src_advertisement_id: src?.src_advertisement_id || null,
-    }));
+    });
+    // Attribution and page context are captured now; the view itself is sent only once seen.
+    if (isPageVisible()) enqueue(pageViewEvent);
+    else deferredPageView = pageViewEvent;
     return pageViewId;
   } catch {
     return null;
@@ -277,6 +306,8 @@ export function getCurrentPageView() {
 export function trackEngagement(eventName, fields = {}, navigation = null) {
   try {
     if (!eventName || !currentPage || !isEngagementTrackingAllowed()) return;
+    // Any interaction means the page was seen; its view goes first.
+    sendDeferredPageView();
     const now = Date.now();
     const entityKey = [
       eventName, fields.restaurant_id, fields.menu_item_id, fields.deal_id,
@@ -396,6 +427,7 @@ export function unobserveImpression(el) {
 /** Test hook. */
 export function resetEngagementTrackingForTests() {
   queue = [];
+  deferredPageView = null;
   currentPage = null;
   lastPageViewKey = null;
   recentClicks.clear();
