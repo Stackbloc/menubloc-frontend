@@ -939,7 +939,7 @@ export const uploadOwnerDealMediaVideo = (restaurantId, dealId, file) => {
   });
 };
 
-// ─── Knowledge Bot (restaurant / franchise ingestion) ───────────────────────
+// ─── Menubot (formerly Knowledge Bot) — restaurant / franchise menu ingestion ─
 
 export const listKnowledgeBotJobs = (params = {}) => {
   const qs = new URLSearchParams();
@@ -965,6 +965,12 @@ export const runKnowledgeBotResearch = (jobId) =>
 
 export const runKnowledgeBotPreview = (jobId) =>
   post(`/api/owner/knowledge-bot/jobs/${encodeURIComponent(String(jobId))}/preview`, {});
+
+// Menubot: locate sources (if none given), parse, and build the review plan in one call.
+export const findKnowledgeBotMenu = (jobId) =>
+  post(`/api/owner/knowledge-bot/jobs/${encodeURIComponent(String(jobId))}/find`, {});
+
+export const listKnowledgeBotClusters = () => get("/api/owner/knowledge-bot/lookup/clusters");
 
 export const applyKnowledgeBotJob = (jobId, body = {}) =>
   post(`/api/owner/knowledge-bot/jobs/${encodeURIComponent(String(jobId))}/apply`, body);

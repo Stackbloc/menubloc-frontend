@@ -45,7 +45,7 @@ export default function OwnerKnowledgeBotHistory() {
   useEffect(() => {
     listKnowledgeBotJobs({ limit: 100 })
       .then((data) => setJobs(data.jobs || []))
-      .catch(() => setError("Could not load Knowledge Bot history."));
+      .catch(() => setError("Could not load Menubot history."));
   }, []);
 
   useEffect(() => {
@@ -88,9 +88,9 @@ export default function OwnerKnowledgeBotHistory() {
 
   return (
     <OwnerLayout
-      title="Knowledge Bot History"
+      title="Menubot History"
       actions={
-        <Link to="/owner/knowledge-bot" style={{ fontSize: 13, fontWeight: 700, color: OWNER_COLORS.accent, textDecoration: "none" }}>
+        <Link to="/owner/menubot" style={{ fontSize: 13, fontWeight: 700, color: OWNER_COLORS.accent, textDecoration: "none" }}>
           New job →
         </Link>
       }
@@ -104,7 +104,7 @@ export default function OwnerKnowledgeBotHistory() {
       <PageCard style={{ padding: "20px 22px", marginBottom: 16 }}>
         <SectionTitle title="Previous ingestion jobs" subtitle="Status, administrator, record counts, conflicts, and errors." />
         {!jobs.length ? (
-          <EmptyState>No Knowledge Bot jobs yet.</EmptyState>
+          <EmptyState>No Menubot jobs yet.</EmptyState>
         ) : (
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -166,7 +166,7 @@ export default function OwnerKnowledgeBotHistory() {
               </a>
               {" · "}
               <Link
-                to={`/owner/knowledge-bot?job=${detail.job?.id}`}
+                to={`/owner/menubot?job=${detail.job?.id}`}
                 style={{ color: OWNER_COLORS.accent, fontWeight: 600, textDecoration: "none" }}
               >
                 Resume job
