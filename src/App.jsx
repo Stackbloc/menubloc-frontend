@@ -111,6 +111,7 @@ import OperatorMenuCameraUpload from "./pages/operator/OperatorMenuCameraUpload.
 import OperatorDealsEditor from "./pages/operator/OperatorDealsEditor.jsx";
 import OperatorVenuePackagePage from "./pages/operator/OperatorVenuePackagePage.jsx";
 import OperatorEventsEditor from "./pages/operator/OperatorEventsEditor.jsx";
+import OperatorAnalyticsPage from "./pages/operator/OperatorAnalyticsPage.jsx";
 import EventDetailPage from "./pages/EventDetailPage.jsx";
 import EventGroupDetailPage, {
   EventGroupInvitePage,
@@ -1063,6 +1064,7 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
         <Route path="/operator/feed-video" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorFeedVideoPage /></OperatorRoute>} />
         <Route path="/operator/events" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorVenuePackagePage /></OperatorRoute>} />
         <Route path="/operator/events/manage" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorEventsEditor /></OperatorRoute>} />
+        <Route path="/operator/analytics" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorAnalyticsPage /></OperatorRoute>} />
         <Route path="/operator/hours" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorHoursEditor /></OperatorRoute>} />
         <Route path="/operator/intent-based-offers" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorCartNegotiationSettings /></OperatorRoute>} />
         <Route path="/operator/limited-audience-offers" element={<Navigate to="/operator/intent-based-offers" replace />} />

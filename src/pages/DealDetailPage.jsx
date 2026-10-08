@@ -5,7 +5,7 @@
 //   selectors (when deal_options are available), and Add to order.
 // ============================================================
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import BottomNav from "../components/BottomNav.jsx";
@@ -14,6 +14,7 @@ import { useLanguage } from "../context/LanguageContext.jsx";
 import { getDisplayMenuItemName } from "../utils/getDisplayMenuItemName.js";
 import { buildLocalizedApiUrl, withLanguageHeaders } from "../lib/languageApi.js";
 import { restaurantPath, restaurantMenuPath } from "../lib/canonicalUrl.js";
+import useEngagementPage from "../hooks/useEngagementPage.js";
 
 // ── Helpers ──────────────────────────────────────────────────
 
@@ -152,8 +153,30 @@ export default function DealDetailPage() {
   const hasDealPrice = dealPriceCents != null && menuPriceCents != null && dealPriceCents !== menuPriceCents;
   const days = deal ? daysUntil(deal.expires_at) : null;
 
+  const engagementDealId = Number(deal?.id ?? deal?.deal_id) || null;
+  const engagementRootRef = useRef(null);
+  useEngagementPage(engagementRootRef, {
+    pageType: "deal",
+    ready: !loading && !error && Boolean(engagementDealId),
+    dealId: engagementDealId,
+    restaurantId: deal?.restaurant_id,
+  });
+  const restaurantLinkAttrs = (subtype) =>
+    Number(deal?.restaurant_id) > 0
+      ? {
+          "data-mp-event": "restaurant_click",
+          "data-mp-restaurant-id": deal.restaurant_id,
+          "data-mp-deal-id": engagementDealId || undefined,
+          "data-mp-subtype": subtype,
+          "data-mp-placement": "deal_detail",
+        }
+      : {};
+
   return (
-    <div style={{ position: "relative", minHeight: "100vh", background: "var(--gb-color-page)", color: "var(--gb-color-ink)" }}>
+    <div
+      ref={engagementRootRef}
+      style={{ position: "relative", minHeight: "100vh", background: "var(--gb-color-page)", color: "var(--gb-color-ink)" }}
+    >
       <StickyPageHeader title={t("dealDetail.terms", "Deal terms")} />
 
       <div style={{ maxWidth: 560, margin: "0 auto", padding: "16px 16px 100px" }}>
@@ -218,6 +241,7 @@ export default function DealDetailPage() {
               {restaurantUrl ? (
                 <Link
                   to={restaurantUrl}
+                  {...restaurantLinkAttrs("profile")}
                   style={{ fontSize: 13, color: "#22C55E", fontWeight: 700, textDecoration: "none" }}
                 >
                   {deal.restaurant_name}
@@ -247,6 +271,7 @@ export default function DealDetailPage() {
                 {restaurantMenuUrl && (
                   <Link
                     to={restaurantMenuUrl}
+                    {...restaurantLinkAttrs("menu")}
                     style={{
                       height: 38,
                       padding: "0 14px",

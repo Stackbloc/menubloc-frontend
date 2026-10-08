@@ -9,6 +9,7 @@ import IntelligenceMenu from "./IntelligenceMenu.jsx";
 import IntelligenceRestaurant from "./IntelligenceRestaurant.jsx";
 import IntelligenceMarket from "./IntelligenceMarket.jsx";
 import IntelligenceRevenue from "./IntelligenceRevenue.jsx";
+import IntelligenceEngagement from "./IntelligenceEngagement.jsx";
 
 export default function OwnerPlatformIntelligence() {
   return (
@@ -22,6 +23,7 @@ export default function OwnerPlatformIntelligence() {
         <Route path="restaurant" element={<IntelligenceRestaurant />} />
         <Route path="market" element={<IntelligenceMarket />} />
         <Route path="revenue" element={<IntelligenceRevenue />} />
+        <Route path="engagement" element={<IntelligenceEngagement />} />
         <Route path="*" element={<Navigate to="/owner/intelligence" replace />} />
       </Routes>
     </PlatformIntelligenceShell>

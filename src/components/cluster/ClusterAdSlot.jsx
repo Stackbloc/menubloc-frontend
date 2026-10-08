@@ -17,6 +17,7 @@ export default function ClusterAdSlot({
 }) {
   const [ad, setAd] = useState(null);
   const [inventoryType, setInventoryType] = useState(null);
+  const [delivery, setDelivery] = useState(null);
 
   useEffect(() => {
     if (!clusterSlug || (!inventoryKey && !pageRegion)) {
@@ -32,6 +33,7 @@ export default function ClusterAdSlot({
       .then((data) => {
         if (controller.signal.aborted) return;
         setAd(data?.advertisement || data?.advertisements?.[0] || null);
+        setDelivery({ inventoryId: data?.inventory?.id ?? null, adSource: data?.ad_source ?? null });
         setInventoryType(
           data?.inventory?.inventory_type ||
             data?.advertisement?.inventory_type ||
@@ -66,6 +68,7 @@ export default function ClusterAdSlot({
       data-page-region={pageRegion || ad.page_region || ""}
       data-inventory-key={inventoryKey || ad.inventory_key || ""}
       style={frameStyle}
+      {...adEngagementAttrs(ad, delivery)}
     >
       <div style={{ position: "relative" }}>
         {media}
@@ -236,4 +239,27 @@ function resolveFrameStyle(type, size, style = {}) {
     default:
       return base;
   }
+}
+
+/**
+ * Engagement analytics (impression + click) for a served ad. Requires the inventory id and
+ * ad source from the delivery response; the server derives cluster, destination, and
+ * paid/house class from its own rows. Unknown delivery → not tracked.
+ */
+function adEngagementAttrs(ad, delivery) {
+  const inventoryId = Number(delivery?.inventoryId) || null;
+  const adSource = delivery?.adSource || null;
+  if (!inventoryId || !adSource) return {};
+  const attrs = {
+    "data-mp-event": "ad_click",
+    "data-mp-impression": "ad_impression",
+    "data-mp-ad-inventory-id": inventoryId,
+    "data-mp-subtype": adSource,
+  };
+  if ((adSource === "sold" || adSource === "slot_house") && Number(ad?.id) > 0) attrs["data-mp-ad-id"] = ad.id;
+  else if (adSource === "default_banner" && Number(ad?.default_banner_id) > 0) attrs["data-mp-ad-banner-id"] = ad.default_banner_id;
+  else if (adSource !== "built_in") return {};
+  if (Number(ad?.restaurant_id) > 0) attrs["data-mp-restaurant-id"] = ad.restaurant_id;
+  if (Number(ad?.deal_id) > 0) attrs["data-mp-deal-id"] = ad.deal_id;
+  return attrs;
 }

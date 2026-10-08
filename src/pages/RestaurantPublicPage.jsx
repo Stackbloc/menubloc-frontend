@@ -53,6 +53,8 @@ import { useOperator } from "../context/OperatorContext.jsx";
 import { fetchRestaurantMenuPreview, toConsumerErrorMessage } from "../lib/api.js";
 import { trackRestaurantView } from "../lib/analytics.js";
 import { sendPageVisit } from "../lib/analyticsPageVisitSend.js";
+import useEngagementPage from "../hooks/useEngagementPage.js";
+import { classifyRestaurantLink } from "../lib/engagementLinkClassifier.js";
 import { restaurantMenuPathFromRow } from "../lib/canonicalUrl.js";
 import { getLocalizedField } from "../utils/getLocalizedField.js";
 import { getDisplayMenuItemName } from "../utils/getDisplayMenuItemName.js";
@@ -452,6 +454,19 @@ export default function RestaurantPublicPage() {
     });
   }, [data?.id, data?.restaurant_name, data?.name, data?.slug, resolvedSlug, loading, err]);
 
+  const engagementRootRef = useRef(null);
+  useEngagementPage(engagementRootRef, {
+    pageType: "profile",
+    ready: !loading && !err && Boolean(data?.id) && !isFoodTruckListing(data),
+    restaurantId: data?.id,
+    classifyLink: (anchor) =>
+      classifyRestaurantLink(anchor, {
+        restaurantId: data?.id,
+        website: normalizeUrl(data?.website || data?.website_url || ""),
+        pageType: "profile",
+      }),
+  });
+
   // Food trucks use FoodTruckPage only — do not splash here (prevents empty+photo double entrance).
   if (!loading && !err && data && isFoodTruckListing(data)) {
     const foodTruckHref = buildFoodTruckProfileHref(data, resolvedSlug, location);
@@ -599,7 +614,7 @@ export default function RestaurantPublicPage() {
   }
 
   return (
-    <>
+    <div ref={engagementRootRef} style={{ display: "contents" }}>
       <StickyPageHeader />
       {!loading && !err && data && isOwner ? <PublicProfileOwnerChrome /> : null}
       {loading ? (
@@ -690,6 +705,6 @@ export default function RestaurantPublicPage() {
         />
       ) : null}
       <BottomNav />
-    </>
+    </div>
   );
 }

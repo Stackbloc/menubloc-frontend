@@ -228,9 +228,23 @@ export default function ClusterRestaurantDirectoryCard({
     <Link
       to={href}
       className="cluster-themed-card-link"
+      {...clusterListingEngagementAttrs(restaurant, Boolean(menuHref) && rawHref === menuHref)}
       style={{ display: "block", color: "inherit", textDecoration: "none", minWidth: 0, maxWidth: "100%" }}
     >
       {content}
     </Link>
   );
+}
+
+/** Engagement analytics: listing impression + click-through (cluster page only; see useEngagementPage). */
+function clusterListingEngagementAttrs(restaurant, toMenu) {
+  const restaurantId = Number(restaurant?.restaurant_id ?? restaurant?.id) || null;
+  if (!restaurantId) return {};
+  return {
+    "data-mp-event": "restaurant_click",
+    "data-mp-impression": "restaurant_impression",
+    "data-mp-restaurant-id": restaurantId,
+    "data-mp-subtype": toMenu ? "menu" : "profile",
+    "data-mp-placement": "cluster_directory",
+  };
 }

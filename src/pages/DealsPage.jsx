@@ -5,6 +5,7 @@
 // ============================================================
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import useEngagementPage from "../hooks/useEngagementPage.js";
 import { Link, useLocation } from "react-router-dom";
 import BottomNav from "../components/BottomNav.jsx";
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
@@ -136,11 +137,18 @@ async function shareLink({ url, title, text }) {
 function DealRow({ deal, restaurantUrl, onShare, onDealClick }) {
   const dealUrl = buildDealUrl(deal);
   const link = dealUrl || restaurantUrl;
+  const engagementDealId = Number(deal.deal_id || deal.id) || undefined;
+  const clickAttrs = engagementDealId ? { "data-mp-event": "deal_click", "data-mp-deal-id": engagementDealId } : {};
   return (
-    <div style={{ padding: "10px 14px", borderTop: "1px solid #1F2937" }}>
+    <div
+      style={{ padding: "10px 14px", borderTop: "1px solid #1F2937" }}
+      data-mp-impression={engagementDealId ? "deal_impression" : undefined}
+      data-mp-deal-id={engagementDealId}
+      data-mp-placement="deals_index"
+    >
       <div style={{ fontSize: 13, fontWeight: 700, color: "#FFFFFF", marginBottom: 3 }}>
         {link ? (
-          <Link to={link} style={{ color: "#FFFFFF", textDecoration: "none" }}>
+          <Link to={link} style={{ color: "#FFFFFF", textDecoration: "none" }} {...clickAttrs}>
             {deal.title || "Untitled Deal"}
           </Link>
         ) : (
@@ -157,6 +165,7 @@ function DealRow({ deal, restaurantUrl, onShare, onDealClick }) {
           <Link
             to={link}
             onClick={() => onDealClick?.(deal)}
+            {...clickAttrs}
             style={{
               display: "inline-flex", alignItems: "center",
               height: 26, padding: "0 11px",
@@ -346,8 +355,14 @@ export default function DealsPage() {
     });
   }
 
+  const engagementRootRef = useRef(null);
+  useEngagementPage(engagementRootRef, { pageType: "deals_index", ready: true });
+
   return (
-    <div style={{ position: "relative", minHeight: "100vh", background: "var(--gb-color-page)", color: "var(--gb-color-ink)" }}>
+    <div
+      ref={engagementRootRef}
+      style={{ position: "relative", minHeight: "100vh", background: "var(--gb-color-page)", color: "var(--gb-color-ink)" }}
+    >
       <style>{`
         .deals-skeleton { animation: skelPulse 1.4s ease-in-out infinite; }
         @keyframes skelPulse { 0%,100%{opacity:1} 50%{opacity:0.45} }
