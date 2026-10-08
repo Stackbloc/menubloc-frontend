@@ -14,6 +14,10 @@ import {
   updateOwnerAd,
   updateOwnerAdSlot,
   uploadOwnerAdImage,
+  listOwnerAdDefaults,
+  createOwnerAdDefault,
+  updateOwnerAdDefault,
+  deleteOwnerAdDefault,
 } from "../../../lib/venueApi.js";
 
 /**
@@ -46,6 +50,22 @@ const STATUS_STYLES = {
   expired: { label: "Ended", bg: "#f3f4f6", fg: "#4b5563" },
   paused: { label: "Paused", bg: "#fef3c7", fg: "#92400e" },
 };
+
+const SHOWING_LABELS = {
+  sold: "Showing: sold ad",
+  slot_house: "Showing: Menuply ad placed in this slot",
+  default_banner: "Unsold — showing your default banner",
+};
+
+/** The six standard slot types (matches clusterAdSlotTemplate.js on the backend). */
+const DEFAULT_BANNER_TYPES = [
+  { page_region: "cluster_landing_hero", label: "Food landing hero", size: "1200×675" },
+  { page_region: "cluster_landing_footer", label: "Food landing footer (small card)", size: "1200×675" },
+  { page_region: "cluster_search_top", label: "Food category in-list strip (also Drinks)", size: "1200×220" },
+  { page_region: "cluster_search_inline", label: "Food search inline (small card)", size: "900×675" },
+  { page_region: "cluster_events_top", label: "Restaurants mid-directory", size: "1200×675" },
+  { page_region: "cluster_restaurant_footer", label: "Restaurants footer", size: "1200×675" },
+];
 
 const PAYMENT_LABELS = {
   not_required: "Not required",
@@ -209,7 +229,10 @@ export default function OwnerAdsPage() {
     }
   }
 
-  const clustersMissingSlots = clusters.filter((c) => c.active_slots < c.max_active_slots);
+  // Private clusters (e.g. Menuply Holding) are never set up by "all clusters", so they don't count.
+  const clustersMissingSlots = clusters.filter(
+    (c) => c.is_public !== false && c.active_slots < c.max_active_slots
+  );
 
   return (
     <OwnerLayout
@@ -273,6 +296,11 @@ export default function OwnerAdsPage() {
                       >
                         <td style={{ padding: "10px 6px", fontWeight: 600 }}>
                           {c.name}
+                          {c.is_public === false ? (
+                            <span style={{ marginLeft: 6, fontSize: 11, fontWeight: 700, color: OWNER_COLORS.muted }}>
+                              PRIVATE
+                            </span>
+                          ) : null}
                           <div style={{ fontSize: 12, color: OWNER_COLORS.muted, fontWeight: 400 }}>
                             {[c.city, c.state].filter(Boolean).join(", ")}
                           </div>
@@ -293,6 +321,8 @@ export default function OwnerAdsPage() {
             </div>
           )}
         </PageCard>
+
+        <DefaultBannersPanel busy={busy} run={run} />
 
         {detail ? (
           <ClusterSlotsPanel detail={detail} busy={busy} run={run} />
@@ -377,6 +407,11 @@ function SlotCard({ slot, busy, run }) {
           <div style={{ fontSize: 13, color: OWNER_COLORS.muted, marginTop: 4 }}>
             {placement} · {slot.inventory_type} · {size} · {slot.owner === "venue" ? slot.venue_name || "Venue" : "Menuply"}
           </div>
+          {slot.active && slot.showing ? (
+            <div style={{ fontSize: 12, marginTop: 4, fontWeight: 700, color: slot.showing === "sold" ? "#166534" : OWNER_COLORS.muted }}>
+              {SHOWING_LABELS[slot.showing]}
+            </div>
+          ) : null}
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
           <label style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 13, fontWeight: 600 }}>
@@ -406,7 +441,9 @@ function SlotCard({ slot, busy, run }) {
 
       <div style={{ display: "grid", gap: 10, marginTop: 14 }}>
         {slot.advertisements.length === 0 ? (
-          <div style={{ fontSize: 13, color: OWNER_COLORS.muted }}>No ads in this slot. Nothing shows here.</div>
+          <div style={{ fontSize: 13, color: OWNER_COLORS.muted }}>
+            No ads placed. This slot shows your default banner for its slot type.
+          </div>
         ) : (
           slot.advertisements.map((ad) => (
             <div
@@ -808,6 +845,287 @@ function AdEditor({ slot, ad, busy, onCancel, onSave }) {
       <div style={{ display: "flex", gap: 8 }}>
         <button type="submit" style={buttonStyle("primary")} disabled={busy || Boolean(uploading)}>
           {ad ? "Save ad" : "Create ad"}
+        </button>
+        <button type="button" style={buttonStyle()} onClick={onCancel}>
+          Cancel
+        </button>
+      </div>
+    </form>
+  );
+}
+
+function DefaultBannersPanel({ busy, run }) {
+  const [banners, setBanners] = useState(null);
+  const [editing, setEditing] = useState(null); // { page_region } for new, or banner
+
+  const reload = useCallback(async () => {
+    const data = await listOwnerAdDefaults();
+    setBanners(data.banners || []);
+  }, []);
+
+  useEffect(() => {
+    reload().catch(() => setBanners([]));
+  }, [reload]);
+
+  async function act(work, message) {
+    const result = await run(work, message);
+    await reload();
+    return result;
+  }
+
+  return (
+    <PageCard style={{ padding: 20 }}>
+      <SectionTitle
+        title="Default banners"
+        subtitle="Shown in every unsold slot on every cluster. A sold ad (or a Menuply ad placed in one slot) always wins. Several live banners of the same type take turns; if none are live, the built-in Menuply “Eating is Social” banner shows."
+      />
+      {banners === null ? (
+        <EmptyState>Loading default banners…</EmptyState>
+      ) : (
+        <div style={{ display: "grid", gap: 14 }}>
+          {DEFAULT_BANNER_TYPES.map((type) => {
+            const rows = banners.filter((b) => b.page_region === type.page_region);
+            const isNew = editing && !editing.id && editing.page_region === type.page_region;
+            return (
+              <div
+                key={type.page_region}
+                data-testid="owner-ad-default-type"
+                style={{ border: `1px solid ${OWNER_COLORS.line}`, borderRadius: 14, background: "#fff", padding: 14 }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
+                  <div>
+                    <div style={{ fontWeight: 700 }}>{type.label}</div>
+                    <div style={{ fontSize: 12, color: OWNER_COLORS.muted }}>Best at {type.size}px</div>
+                  </div>
+                  <button
+                    type="button"
+                    style={buttonStyle()}
+                    disabled={busy}
+                    onClick={() => setEditing({ page_region: type.page_region })}
+                  >
+                    Add banner
+                  </button>
+                </div>
+                <div style={{ display: "grid", gap: 8, marginTop: 10 }}>
+                  {rows.length === 0 ? (
+                    <div style={{ fontSize: 13, color: OWNER_COLORS.muted }}>
+                      None — the built-in Menuply banner shows.
+                    </div>
+                  ) : (
+                    rows.map((b) => (
+                      <div key={b.id}>
+                        <div
+                          style={{
+                            display: "grid",
+                            gridTemplateColumns: "minmax(96px, 160px) 1fr auto",
+                            gap: 12,
+                            alignItems: "center",
+                          }}
+                        >
+                          <img
+                            src={b.image_url}
+                            alt=""
+                            style={{ width: "100%", maxHeight: 80, objectFit: "cover", borderRadius: 6, background: "#f3f4f6" }}
+                          />
+                          <div style={{ minWidth: 0 }}>
+                            <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                              <span style={{ fontWeight: 700 }}>{b.name}</span>
+                              <StatusPill status={b.status} />
+                            </div>
+                            <div style={{ fontSize: 12, color: OWNER_COLORS.muted, marginTop: 2 }}>
+                              {displayWindow(b)} · priority {b.priority} · clicks go to {b.destination_url || "nowhere"}
+                            </div>
+                          </div>
+                          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>
+                            <button type="button" style={buttonStyle()} disabled={busy} onClick={() => setEditing(b)}>
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              style={buttonStyle()}
+                              disabled={busy}
+                              onClick={() =>
+                                act(
+                                  () => updateOwnerAdDefault(b.id, { active: !b.active }),
+                                  b.active ? "Default banner paused." : "Default banner turned on."
+                                )
+                              }
+                            >
+                              {b.active ? "Pause" : "Turn on"}
+                            </button>
+                            <button
+                              type="button"
+                              style={buttonStyle("danger")}
+                              disabled={busy}
+                              onClick={() => {
+                                if (window.confirm(`Delete default banner “${b.name}”?`)) {
+                                  act(() => deleteOwnerAdDefault(b.id), "Default banner deleted.");
+                                }
+                              }}
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                        {editing?.id === b.id ? (
+                          <DefaultBannerEditor
+                            banner={b}
+                            type={type}
+                            busy={busy}
+                            onCancel={() => setEditing(null)}
+                            onSave={async (body) => {
+                              const ok = await act(() => updateOwnerAdDefault(b.id, body), "Default banner saved.");
+                              if (ok) setEditing(null);
+                            }}
+                          />
+                        ) : null}
+                      </div>
+                    ))
+                  )}
+                </div>
+                {isNew ? (
+                  <DefaultBannerEditor
+                    banner={null}
+                    type={type}
+                    busy={busy}
+                    onCancel={() => setEditing(null)}
+                    onSave={async (body) => {
+                      const ok = await act(
+                        () => createOwnerAdDefault({ ...body, page_region: type.page_region }),
+                        "Default banner added."
+                      );
+                      if (ok) setEditing(null);
+                    }}
+                  />
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </PageCard>
+  );
+}
+
+function DefaultBannerEditor({ banner, type, busy, onCancel, onSave }) {
+  const [form, setForm] = useState(() => ({
+    name: banner?.name || "",
+    image_url: banner?.image_url || "",
+    mobile_image_url: banner?.mobile_image_url || "",
+    destination_url: banner?.destination_url || "",
+    start_date: banner?.start_date || "",
+    end_date: banner?.end_date || "",
+    priority: banner?.priority ?? 0,
+    active: banner ? banner.active !== false : true,
+  }));
+  const [uploading, setUploading] = useState("");
+  const [localError, setLocalError] = useState("");
+  const set = (patch) => setForm((f) => ({ ...f, ...patch }));
+
+  async function handleUpload(field, file) {
+    if (!file) return;
+    setUploading(field);
+    setLocalError("");
+    try {
+      const result = await uploadOwnerAdImage(file);
+      set({ [field]: result.photo_url });
+    } catch (err) {
+      setLocalError(err.message || "Upload failed");
+    } finally {
+      setUploading("");
+    }
+  }
+
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (!form.image_url) {
+          setLocalError("Upload a banner image first.");
+          return;
+        }
+        onSave({
+          ...form,
+          mobile_image_url: form.mobile_image_url || null,
+          destination_url: form.destination_url || null,
+          start_date: form.start_date || null,
+          end_date: form.end_date || null,
+          priority: Number(form.priority) || 0,
+        });
+      }}
+      style={{
+        display: "grid",
+        gap: 12,
+        marginTop: 12,
+        padding: 14,
+        borderRadius: 12,
+        border: `1px solid ${OWNER_COLORS.line}`,
+        background: OWNER_COLORS.page,
+      }}
+    >
+      <div style={{ fontWeight: 700 }}>{banner ? `Edit “${banner.name}”` : `New default banner · ${type.label}`}</div>
+      <label style={labelStyle}>
+        Banner name
+        <input required value={form.name} onChange={(e) => set({ name: e.target.value })} style={inputStyle} />
+      </label>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 12 }}>
+        <ImageField
+          label="Banner image"
+          hint={`Best at ${type.size}px.`}
+          url={form.image_url}
+          uploading={uploading === "image_url"}
+          onFile={(file) => handleUpload("image_url", file)}
+          onClear={() => set({ image_url: "" })}
+        />
+        <ImageField
+          label="Mobile image (optional)"
+          hint="Used on phones if provided."
+          url={form.mobile_image_url}
+          uploading={uploading === "mobile_image_url"}
+          onFile={(file) => handleUpload("mobile_image_url", file)}
+          onClear={() => set({ mobile_image_url: "" })}
+        />
+      </div>
+      <label style={labelStyle}>
+        Link (optional)
+        <input
+          value={form.destination_url}
+          placeholder="https://menuply.com or /deals"
+          onChange={(e) => set({ destination_url: e.target.value })}
+          style={inputStyle}
+        />
+      </label>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12 }}>
+        <label style={labelStyle}>
+          Start date
+          <input type="date" value={form.start_date} onChange={(e) => set({ start_date: e.target.value })} style={inputStyle} />
+        </label>
+        <label style={labelStyle}>
+          End date
+          <input
+            type="date"
+            value={form.end_date}
+            min={form.start_date || undefined}
+            onChange={(e) => set({ end_date: e.target.value })}
+            style={inputStyle}
+          />
+        </label>
+        <label style={labelStyle}>
+          Priority
+          <input type="number" step="1" value={form.priority} onChange={(e) => set({ priority: e.target.value })} style={inputStyle} />
+        </label>
+      </div>
+      <div style={{ fontSize: 12, color: OWNER_COLORS.muted }}>
+        Highest priority live banner shows; equal priorities take turns. Dates follow each cluster’s local date.
+      </div>
+      <label style={{ ...labelStyle, display: "flex", gap: 6, alignItems: "center" }}>
+        <input type="checkbox" checked={form.active} onChange={(e) => set({ active: e.target.checked })} />
+        Banner is on
+      </label>
+      {localError ? <div style={{ color: "#b91c1c", fontWeight: 600 }}>{localError}</div> : null}
+      <div style={{ display: "flex", gap: 8 }}>
+        <button type="submit" style={buttonStyle("primary")} disabled={busy || Boolean(uploading)}>
+          {banner ? "Save banner" : "Add banner"}
         </button>
         <button type="button" style={buttonStyle()} onClick={onCancel}>
           Cancel
