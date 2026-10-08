@@ -443,6 +443,15 @@ export const updateMenuConsoleRestaurant = (restaurantId, body) =>
     method: "PATCH",
     body: JSON.stringify(body),
   });
+export const listMenuConsoleAvailableClusters = (params = {}) => {
+  const qs = new URLSearchParams(params).toString();
+  return get(`/api/owner/menu-console/clusters/available${qs ? `?${qs}` : ""}`);
+};
+export const setMenuConsoleRestaurantClusters = (restaurantId, clusterIds = []) =>
+  req(`/api/owner/menu-console/restaurants/${encodeURIComponent(restaurantId)}/clusters`, {
+    method: "PUT",
+    body: JSON.stringify({ cluster_ids: clusterIds }),
+  });
 export const getMenuConsoleRestaurantActivity = (restaurantId, params = {}) => {
   const qs = new URLSearchParams(params).toString();
   return get(`/api/owner/menu-console/restaurants/${encodeURIComponent(restaurantId)}/activity${qs ? `?${qs}` : ""}`);

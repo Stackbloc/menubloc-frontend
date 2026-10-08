@@ -168,4 +168,36 @@ describe("owner Add Restaurant restore", () => {
       /uploadMenuId !== Number\(mid\)[\s\S]*unpublishMenuConsoleMenu/
     );
   });
+
+  it("Add Restaurant and Edit Profile share a cluster picker; edit saves only a changed full set", () => {
+    const api = read("src/lib/ownerApi.js");
+    assert.match(api, /\/api\/owner\/menu-console\/clusters\/available/);
+    assert.match(api, /\/api\/owner\/menu-console\/restaurants\/\$\{[^}]+\}\/clusters/);
+    assert.match(api, /method:\s*"PUT"[\s\S]*?cluster_ids:\s*clusterIds/);
+
+    const ws = read("src/pages/owner/OwnerMenuCreateWorkspace.jsx");
+    assert.match(ws, /function ClusterPicker/);
+    assert.match(ws, /data-testid="owner-add-restaurant-cluster"/);
+    assert.match(ws, /data-testid="owner-restaurant-cluster-chip"/);
+    // Shown on create, and on edit only when the backend returned the full membership list.
+    assert.match(ws, /\{\(!existingRestaurant \|\| ownerClusterIds\(restaurant\)\) && \(/);
+    assert.match(ws, /if \(!Array\.isArray\(r\.owner_clusters\)\) return null;/);
+    // Optional: not a required create field.
+    const missingFn = ws.match(/function missingCreateFields[\s\S]*?\n}\n/)?.[0] || "";
+    assert.doesNotMatch(missingFn, /cluster/i);
+
+    // Create: assign after the restaurant exists, only when clusters were chosen.
+    const createFn = ws.match(/async function createProfile[\s\S]*?\n  }\n/)?.[0] || "";
+    const createIdx = createFn.indexOf("await createMenuConsoleRestaurant(payload)");
+    const assignIdx = createFn.indexOf("await setMenuConsoleRestaurantClusters(data.restaurant.id, clusterIds)");
+    assert.ok(createIdx >= 0 && assignIdx > createIdx);
+    assert.match(createFn, /if \(clusterIds\.length && data\?\.restaurant\?\.id\)/);
+    assert.match(ws, /data-testid="owner-add-restaurant-cluster-notice"/);
+
+    // Edit: cluster_ids never rides along via ...profile; sent only when owner_clusters loaded and changed.
+    const saveFn = ws.match(/async function saveExistingProfile[\s\S]*?\n  }\n/)?.[0] || "";
+    assert.match(saveFn, /const \{ cluster_ids: selectedClusterIds, \.\.\.profileFields \} = profile;/);
+    assert.doesNotMatch(saveFn, /\.\.\.profile,/);
+    assert.match(saveFn, /if \(loadedClusterIds && !sameIdSet\(loadedClusterIds, selectedClusterIds\)\)/);
+  });
 });

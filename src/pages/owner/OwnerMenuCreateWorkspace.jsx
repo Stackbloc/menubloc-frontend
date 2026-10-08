@@ -24,6 +24,8 @@ import {
   clearMenuConsoleMenuItems,
   deleteMenuConsoleRestaurant,
   getMenuConsoleRestaurantDeleteImpact,
+  listMenuConsoleAvailableClusters,
+  setMenuConsoleRestaurantClusters,
 } from "../../lib/ownerApi.js";
 
 const fieldLabel = {
@@ -175,6 +177,10 @@ function applyOwnerUploadPick(event, { setFiles, setUploadMsg }) {
   event.target.value = "";
 }
 
+// Create clears ?create/&fresh, which re-keys (remounts) this workspace; hand the
+// post-create cluster result to the remounted instance by restaurant id.
+const pendingClusterNotices = new Map();
+
 const EMPTY_PROFILE = {
   restaurant_name: "",
   restaurant_type: "",
@@ -192,7 +198,87 @@ const EMPTY_PROFILE = {
   website: "",
   lat: "",
   lng: "",
+  cluster_ids: [],
 };
+
+const MAX_CLUSTERS_PER_RESTAURANT = 12;
+
+function clusterLabel(cluster) {
+  if (!cluster) return "";
+  const where = cluster.city ? ` · ${cluster.city}${cluster.state ? `, ${cluster.state}` : ""}` : "";
+  return `${cluster.name}${where}`;
+}
+
+/** Owner console membership list; null when the backend predates owner_clusters. */
+function ownerClusterIds(r = {}) {
+  if (!Array.isArray(r.owner_clusters)) return null;
+  return r.owner_clusters.map((c) => Number(c.id)).filter((id) => id > 0);
+}
+
+function sameIdSet(a = [], b = []) {
+  if (a.length !== b.length) return false;
+  const set = new Set(a.map(Number));
+  return b.every((id) => set.has(Number(id)));
+}
+
+function ClusterPicker({ selectedIds, options, knownClusters, onChange, disabled }) {
+  const byId = new Map();
+  // Memberships last: they carry is_public, which the available list does not.
+  for (const c of [...(options || []), ...(knownClusters || [])]) byId.set(Number(c.id), c);
+  const selected = (selectedIds || []).map(Number);
+  const addable = (options || []).filter((c) => !selected.includes(Number(c.id)));
+  const atLimit = selected.length >= MAX_CLUSTERS_PER_RESTAURANT;
+  return (
+    <div data-testid="owner-restaurant-cluster-picker">
+      <label style={fieldLabel}>Clusters (optional)</label>
+      {selected.length > 0 ? (
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
+          {selected.map((id) => (
+            <span
+              key={id}
+              data-testid="owner-restaurant-cluster-chip"
+              style={{
+                display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 6px 4px 10px",
+                borderRadius: 20, fontSize: 12, fontWeight: 600,
+                border: `1px solid ${OWNER_COLORS.accent}`, background: OWNER_COLORS.accentSoft, color: OWNER_COLORS.accent,
+              }}
+            >
+              {byId.has(id) ? clusterLabel(byId.get(id)) : `Cluster #${id}`}
+              {byId.get(id)?.is_public === false ? <span style={{ fontWeight: 500, opacity: 0.8 }}>(not public)</span> : null}
+              <button
+                type="button"
+                aria-label={`Remove from ${byId.get(id)?.name || `cluster #${id}`}`}
+                disabled={disabled}
+                onClick={() => onChange(selected.filter((x) => x !== id))}
+                style={{
+                  border: "none", background: "transparent", color: OWNER_COLORS.accent,
+                  cursor: disabled ? "not-allowed" : "pointer", fontSize: 14, lineHeight: 1, padding: "0 4px",
+                }}
+              >
+                ×
+              </button>
+            </span>
+          ))}
+        </div>
+      ) : null}
+      <select
+        data-testid="owner-add-restaurant-cluster"
+        value=""
+        onChange={(e) => {
+          const id = Number(e.target.value);
+          if (id > 0) onChange([...selected, id]);
+        }}
+        style={inputStyle}
+        disabled={disabled || atLimit}
+      >
+        <option value="">{atLimit ? `Limit of ${MAX_CLUSTERS_PER_RESTAURANT} clusters reached` : selected.length ? "Add to another cluster…" : "Add to cluster…"}</option>
+        {addable.map((cluster) => (
+          <option key={cluster.id} value={String(cluster.id)}>{clusterLabel(cluster)}</option>
+        ))}
+      </select>
+    </div>
+  );
+}
 
 function StepHeader({ current }) {
   return (
@@ -327,6 +413,7 @@ function profileFromRestaurant(r = {}) {
     website: r.website || r.website_url || "",
     lat: r.lat != null ? String(r.lat) : "",
     lng: r.lng != null ? String(r.lng) : "",
+    cluster_ids: ownerClusterIds(r) || [],
   };
 }
 
@@ -358,6 +445,8 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
   const [searchParams, setSearchParams] = useSearchParams();
   const [schema, setSchema] = useState(null);
   const [schemaError, setSchemaError] = useState("");
+  const [clusterOptions, setClusterOptions] = useState([]);
+  const [clusterNotice, setClusterNotice] = useState(null);
   const [profile, setProfile] = useState(EMPTY_PROFILE);
   const [profileErr, setProfileErr] = useState("");
   const [duplicateMatches, setDuplicateMatches] = useState(null);
@@ -435,6 +524,20 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
   }
 
   useEffect(() => {
+    let cancelled = false;
+    listMenuConsoleAvailableClusters({ limit: 500 })
+      .then((data) => {
+        if (!cancelled) setClusterOptions(data?.clusters || []);
+      })
+      .catch(() => {
+        if (!cancelled) setClusterOptions([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
     getMenuConsoleProfileSchema()
       .then((data) => setSchema(data))
       .catch(() => setSchemaError("Could not load profile options."));
@@ -473,6 +576,7 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
     setLoadingRestaurant(true);
     setLoadRestaurantErr("");
     setDuplicateMatches(null);
+    setClusterNotice(null);
     setProfileErr("");
     setUploadMsg(null);
     setPendingUploadId(null);
@@ -503,6 +607,10 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
         || null;
       setRestaurant(normalizedRestaurant);
       setExistingRestaurant(true);
+      if (pendingClusterNotices.has(ridNum)) {
+        setClusterNotice(pendingClusterNotices.get(ridNum));
+        pendingClusterNotices.delete(ridNum);
+      }
       setAvailableMenus(menus);
       setProfile(profileFromRestaurant(normalizedRestaurant));
       setMenu(activeMenu);
@@ -556,6 +664,7 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
     setUploadMsg(null);
     setPendingUploadId(null);
     setActionMsg("");
+    setClusterNotice(null);
     setProfileErr("");
     setDuplicateMatches(null);
     setLoadRestaurantErr("");
@@ -864,8 +973,9 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
     setSavingProfile(true);
     setProfileErr("");
     try {
+      const { cluster_ids: selectedClusterIds, ...profileFields } = profile;
       const payload = {
-        ...profile,
+        ...profileFields,
         restaurant_name: profile.restaurant_name.trim(),
         address_line1: profile.address_line1.trim(),
         city: profile.city.trim(),
@@ -877,6 +987,12 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
         lng: profile.lng === "" ? null : Number(profile.lng),
         geo_source: profile.lat !== "" && profile.lng !== "" ? "manual" : undefined,
       };
+      // Replace-set save: only when the backend gave the full membership list
+      // (owner_clusters) and the operator actually changed it.
+      const loadedClusterIds = ownerClusterIds(restaurant);
+      if (loadedClusterIds && !sameIdSet(loadedClusterIds, selectedClusterIds)) {
+        payload.cluster_ids = selectedClusterIds.map(Number);
+      }
       const data = await updateMenuConsoleRestaurant(rid, payload);
       setRestaurant(data.restaurant);
       setProfile(profileFromRestaurant(data.restaurant));
@@ -921,6 +1037,26 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
         confirm_duplicate: confirmDuplicate || undefined,
       };
       const data = await createMenuConsoleRestaurant(payload);
+      const clusterIds = (profile.cluster_ids || []).map(Number).filter((id) => id > 0);
+      if (clusterIds.length && data?.restaurant?.id) {
+        const clusterName = clusterIds
+          .map((id) => clusterOptions.find((c) => Number(c.id) === id)?.name || `#${id}`)
+          .join(", ");
+        let notice;
+        try {
+          await setMenuConsoleRestaurantClusters(data.restaurant.id, clusterIds);
+          notice = { ok: true, text: `Added to cluster${clusterIds.length > 1 ? "s" : ""} ${clusterName}.` };
+        } catch (clusterErr) {
+          notice = {
+            ok: false,
+            text: `Restaurant created, but cluster assignment to ${clusterName} failed: ${
+              clusterErr?.payload?.error || clusterErr?.message || "unknown error"
+            }`,
+          };
+        }
+        setClusterNotice(notice);
+        pendingClusterNotices.set(Number(data.restaurant.id), notice);
+      }
       suppressUrlLoadRef.current = true;
       setRestaurant(data.restaurant);
       setExistingRestaurant(false);
@@ -1355,6 +1491,17 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
             <label style={fieldLabel}>Longitude</label>
             <input value={profile.lng} onChange={(e) => updateProfile("lng", e.target.value)} style={inputStyle} disabled={!!restaurant && !existingRestaurant} placeholder="-85.3902" />
           </div>
+          {(!existingRestaurant || ownerClusterIds(restaurant)) && (
+            <div style={{ gridColumn: "1 / -1" }}>
+              <ClusterPicker
+                selectedIds={profile.cluster_ids}
+                options={clusterOptions}
+                knownClusters={restaurant?.owner_clusters}
+                onChange={(ids) => updateProfile("cluster_ids", ids)}
+                disabled={!!restaurant && !existingRestaurant}
+              />
+            </div>
+          )}
         </div>
 
         <div style={{ marginTop: 14 }}>
@@ -1918,6 +2065,23 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
         </div>
       ) : null}
 
+      {clusterNotice && restaurant ? (
+        <div
+          data-testid="owner-add-restaurant-cluster-notice"
+          style={{
+            padding: "10px 12px",
+            marginBottom: 16,
+            borderRadius: 10,
+            fontSize: 13,
+            fontWeight: 600,
+            color: clusterNotice.ok ? "#166534" : "#991b1b",
+            background: clusterNotice.ok ? "#f0fdf4" : "#fef2f2",
+            border: `1px solid ${clusterNotice.ok ? "#bbf7d0" : "#fecaca"}`,
+          }}
+        >
+          {clusterNotice.text}
+        </div>
+      ) : null}
       {loadRestaurantErr ? (
         <PageCard style={{ padding: 16, marginBottom: 16, color: "#991b1b" }}>{loadRestaurantErr}</PageCard>
       ) : null}
