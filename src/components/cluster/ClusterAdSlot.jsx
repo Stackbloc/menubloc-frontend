@@ -67,34 +67,23 @@ export default function ClusterAdSlot({
       data-inventory-key={inventoryKey || ad.inventory_key || ""}
       style={frameStyle}
     >
-      {resolvedSize === "small" ? (
-        <div
-          style={{
-            padding: "5px 8px 0",
-            fontSize: 10,
-            fontWeight: 700,
-            letterSpacing: "0.06em",
-            textTransform: "uppercase",
-            color: "#9ca3af",
-            lineHeight: 1.2,
-          }}
-        >
-          Sponsored
-        </div>
-      ) : null}
-      <div style={{ position: "relative", padding: resolvedSize === "small" ? "6px 6px 8px" : 0 }}>
+      <div style={{ position: "relative" }}>
         {media}
-        {resolvedSize === "slim" ? (
+        {resolvedSize === "slim" || resolvedSize === "small" ? (
           <div
             style={{
               position: "absolute",
-              top: 6,
-              left: 8,
+              bottom: 6,
+              right: 8,
               fontSize: 9,
               fontWeight: 700,
               letterSpacing: "0.06em",
               textTransform: "uppercase",
-              color: "rgba(255,255,255,0.78)",
+              color: "#fff",
+              background: "rgba(15, 23, 42, 0.55)",
+              padding: "2px 6px",
+              borderRadius: 4,
+              lineHeight: 1.3,
             }}
           >
             Sponsored
