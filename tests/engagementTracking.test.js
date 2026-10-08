@@ -216,3 +216,32 @@ test("hidden-tab view keeps its click-through attribution when shown later", () 
   assert.equal(view.src_cluster_id, 1);
   assert.equal(view.attr_cluster_id, 1);
 });
+
+test("profile share: options opened vs shared are separate; item shares carry the item", () => {
+  reset("/restaurants/ca/la/burger-barn");
+  tracker.beginPageView({ pageType: "profile", restaurantId: 10, navigationKey: "p" });
+  tracker.trackShareEngagement("open", { variant: "menu" });
+  tracker.trackShareEngagement("copy_link", { variant: "menu" });
+  tracker.trackShareEngagement("whatsapp", { variant: "dish", menuItemId: "1001" });
+  tracker.trackShareEngagement("telegram", { variant: "menu" });
+  tracker.trackShareEngagement("sms", { variant: "dish", menuItemId: "cmi:63" });
+  const events = flushed().filter((e) => e.event_name.startsWith("share"));
+  assert.deepEqual(
+    events.map((e) => [e.event_name, e.subtype || null, e.menu_item_id || null, e.page_type, e.restaurant_id]),
+    [
+      ["share_open", null, null, "profile", 10],
+      ["share", "copy_link", null, "profile", 10],
+      ["share", "whatsapp", 1001, "profile", 10],
+    ]
+  );
+});
+
+test("events are not recorded once the user has left the tracked page (e.g. feed)", () => {
+  reset("/restaurants/ca/la/burger-barn");
+  tracker.beginPageView({ pageType: "profile", restaurantId: 10, navigationKey: "p" });
+  flushed();
+  window.location.pathname = "/feed";
+  tracker.trackShareEngagement("copy_link", { variant: "menu" });
+  tracker.trackEngagement("outbound_click", { restaurant_id: 10, subtype: "phone" });
+  assert.equal(flushed().length, 0);
+});

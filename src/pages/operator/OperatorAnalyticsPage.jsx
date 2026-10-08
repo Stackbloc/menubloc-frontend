@@ -22,6 +22,20 @@ const PRESETS = [
   ["90 days", -89],
 ];
 
+const CHANNEL_LABELS = {
+  copy_link: "Link copied",
+  native: "Phone share sheet",
+  sms: "Text message",
+  email: "Email",
+  facebook: "Facebook",
+  x: "X",
+  whatsapp: "WhatsApp",
+};
+
+function social(entry, noun) {
+  return entry ? `${entry.total_active} ${noun} total` : null;
+}
+
 const OUTBOUND_LABELS = { website: "Website", directions: "Directions", phone: "Phone", order: "External ordering link" };
 
 export default function OperatorAnalyticsPage() {
@@ -95,6 +109,12 @@ export default function OperatorAnalyticsPage() {
               <Metric label="Deal impressions / clicks" value={`${o.deal_impressions || 0} / ${o.deal_clicks || 0}`} />
               <Metric label="Cluster listing clicks" value={o.cluster_listing_clicks} note={`${o.cluster_listing_impressions || 0} listing impressions`} />
               <Metric label="Website, directions, phone, order" value={o.outbound_clicks} />
+              <Metric label="Profile shares" value={o.profile_shares} />
+              <Metric label="Menu shares" value={o.menu_shares} />
+              <Metric label="Menu item shares" value={o.menu_item_shares} />
+              <Metric label="Menu item likes" value={rep.social?.menu_item_likes?.in_period} note={social(rep.social?.menu_item_likes, "active likes")} />
+              <Metric label="New followers" value={rep.social?.restaurant_follows?.in_period} note={social(rep.social?.restaurant_follows, "followers")} />
+              <Metric label="Diner comments" value={rep.social?.diner_comments?.in_period} />
             </div>
 
             <Section title="Menu items by clicks" note="How often diners opened each item. Item views are not measured.">
@@ -137,6 +157,28 @@ export default function OperatorAnalyticsPage() {
                   ["CTR", (r) => (r.ctr_pct == null ? "—" : `${r.ctr_pct}%`)],
                 ]}
                 empty="No deal activity in this period."
+              />
+            </Section>
+
+            <Section title="Shares" note="Shared = link copied, device share sheet completed, or a text/email/social app opened. Menuply can't confirm the message was sent.">
+              <Table
+                rows={rep.shares?.by_channel}
+                columns={[["Channel", (r) => CHANNEL_LABELS[r.channel] || r.channel], ["Shares", (r) => r.shares]]}
+                empty="No shares in this period."
+              />
+              <div style={{ height: 12 }} />
+              <Table
+                rows={rep.shares?.top_items}
+                columns={[["Most-shared item", (r) => r.menu_item_name || `Item ${r.menu_item_id}`], ["Shares", (r) => r.shares]]}
+                empty="No menu item shares in this period."
+              />
+            </Section>
+
+            <Section title="Most-liked items" note="Likes from signed-in diners in this period that are still active.">
+              <Table
+                rows={rep.social?.top_liked_items}
+                columns={[["Menu item", (r) => r.menu_item_name || `Item ${r.menu_item_id}`], ["Likes", (r) => r.likes_in_period]]}
+                empty="No likes in this period."
               />
             </Section>
 

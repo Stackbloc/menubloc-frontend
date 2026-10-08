@@ -306,6 +306,8 @@ export function getCurrentPageView() {
 export function trackEngagement(eventName, fields = {}, navigation = null) {
   try {
     if (!eventName || !currentPage || !isEngagementTrackingAllowed()) return;
+    // Only while the user is still on the tracked page (e.g. feed pages are not tracked).
+    if (window.location.pathname !== currentPage.page_path) return;
     // Any interaction means the page was seen; its view goes first.
     sendDeferredPageView();
     const now = Date.now();
@@ -347,6 +349,26 @@ export function trackEngagement(eventName, fields = {}, navigation = null) {
         ts: now,
       });
     }
+  } catch {
+    // never throw into the UI
+  }
+}
+
+const SHARE_CHANNELS = new Set(["copy_link", "native", "sms", "email", "facebook", "x", "whatsapp"]);
+
+/**
+ * Share tracking. action: "open" (share options opened) or a channel —
+ * copy_link (after a successful copy), native (after the device share sheet completes),
+ * sms / email / facebook / x / whatsapp (channel opened; delivery cannot be confirmed).
+ * What was shared: the menu item for dish shares, otherwise the current page.
+ */
+export function trackShareEngagement(action, { variant = "menu", menuItemId = null } = {}) {
+  try {
+    const itemId = variant === "dish" ? toId(menuItemId) : null;
+    if (variant === "dish" && !itemId) return; // franchise canonical (cmi:) items are not trackable
+    const fields = itemId ? { menu_item_id: itemId } : {};
+    if (action === "open") trackEngagement("share_open", fields);
+    else if (SHARE_CHANNELS.has(action)) trackEngagement("share", { ...fields, subtype: action });
   } catch {
     // never throw into the UI
   }

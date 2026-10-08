@@ -213,6 +213,8 @@ export default function IntelligenceEngagement() {
         </div>
       </IntelligenceSection>
 
+      <SharesAndSocial shares={rep.shares} social={rep.social} />
+
       <IntelligenceSection title="Outbound actions" subtitle="Website, directions, phone, and external ordering link clicks. Completed calls or orders are not measured.">
         <SimpleTable rows={rep.outbound_clicks} columns={[["Action", "action"], ["Clicks", "clicks"], ["Unique visitors", "unique_visitors"]]} />
       </IntelligenceSection>
@@ -260,6 +262,7 @@ function ClusterReport({ state }) {
         <MetricCard label="Downstream menu views" value={o.attributed_menu_views} subtitle={`${o.attributed_profile_views || 0} profile views`} />
         <MetricCard label="Downstream item clicks" value={o.attributed_menu_item_clicks} subtitle={`${o.menu_item_clicks_on_cluster || 0} on the cluster page`} />
         <MetricCard label="Ad impressions / clicks" value={`${o.ad_impressions || 0} / ${o.ad_clicks || 0}`} subtitle={`${o.event_clicks || 0} event clicks`} />
+        <MetricCard label="Cluster page shares" value={o.cluster_page_shares} subtitle={`${rep.social?.diner_comments?.in_period ?? 0} diner comments`} />
       </div>
       <div style={{ display: "grid", gap: 18 }}>
         <SimpleTable
@@ -279,6 +282,69 @@ function ClusterReport({ state }) {
         <SimpleTable rows={rep.top_menu_items} wrapKeys={["menu_item_name", "restaurant_name"]} columns={[["Menu item", "menu_item_name"], ["Restaurant", "restaurant_name"], ["Clicks", "clicks"]]} emptyLabel="No item clicks from this cluster." />
         <PlacementTable rows={rep.placements} />
         <SimpleTable rows={rep.series} columns={[["Day", "day"], ["Page views", "page_views"], ["Unique", "unique_visitors"], ["Restaurant clicks", "restaurant_clicks"]]} />
+      </div>
+    </IntelligenceSection>
+  );
+}
+
+const SHARED_WHAT_LABELS = {
+  profile: "Restaurant profile",
+  menu: "Menu",
+  menu_item: "Menu item",
+  cluster: "Cluster page",
+  deal: "Deal",
+  deals_index: "Deals list",
+};
+const CHANNEL_LABELS = {
+  copy_link: "Link copied",
+  native: "Device share sheet",
+  sms: "Text message (opened)",
+  email: "Email (opened)",
+  facebook: "Facebook (opened)",
+  x: "X (opened)",
+  whatsapp: "WhatsApp (opened)",
+};
+
+function socialValue(entry) {
+  if (!entry) return "—";
+  return `${entry.in_period} (${entry.total_active} total)`;
+}
+
+function SharesAndSocial({ shares, social }) {
+  return (
+    <IntelligenceSection
+      title="Shares and social"
+      subtitle="Opening share options and actually sharing are separate. Likes, follows, and comments come from diner accounts (current state — unlikes and unfollows are removed)."
+    >
+      <div style={{ ...metricGrid, marginBottom: 18 }}>
+        <MetricCard label="Menu item likes" value={socialValue(social?.menu_item_likes)} subtitle="in period (still active)" />
+        <MetricCard label="Restaurant follows" value={socialValue(social?.restaurant_follows)} subtitle="in period (still following)" />
+        <MetricCard label="Diner comments" value={socialValue(social?.diner_comments)} subtitle="in period" />
+      </div>
+      <div style={{ display: "grid", gap: 18 }}>
+        <SimpleTable
+          rows={shares?.by_target}
+          columns={[
+            ["Shared", "shared_what", (r) => SHARED_WHAT_LABELS[r.shared_what] || r.shared_what],
+            ["Share options opened", "share_opens"],
+            ["Shared", "shares"],
+            ["Unique sharers", "unique_sharers"],
+          ]}
+          emptyLabel="No shares in this range."
+        />
+        <SimpleTable rows={shares?.by_channel} columns={[["Channel", "channel", (r) => CHANNEL_LABELS[r.channel] || r.channel], ["Shares", "shares"]]} emptyLabel="No shares in this range." />
+        <SimpleTable
+          rows={shares?.top_items}
+          wrapKeys={["menu_item_name", "restaurant_name"]}
+          columns={[["Most-shared menu item", "menu_item_name"], ["Restaurant", "restaurant_name"], ["Shared", "shares"], ["Options opened", "share_opens"]]}
+          emptyLabel="No menu item shares in this range."
+        />
+        <SimpleTable
+          rows={social?.top_liked_items}
+          wrapKeys={["menu_item_name", "restaurant_name"]}
+          columns={[["Most-liked menu item", "menu_item_name"], ["Restaurant", "restaurant_name"], ["Likes in period", "likes_in_period"]]}
+          emptyLabel="No likes in this range."
+        />
       </div>
     </IntelligenceSection>
   );

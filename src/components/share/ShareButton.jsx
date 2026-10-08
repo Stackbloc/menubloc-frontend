@@ -20,6 +20,7 @@ import ShareModal from "./ShareModal.jsx";
 import ShareIcon from "./ShareIcon.jsx";
 import IconHoverLabel from "../IconHoverLabel.jsx";
 import { trackShareEvent } from "./shareUtils.js";
+import { trackShareEngagement } from "../../lib/engagementTracking.js";
 
 function getVariantEventName(variant, suffix) {
   const normalizedVariant = variant === "dish" ? "dish" : "menu";
@@ -114,6 +115,7 @@ export default function ShareButton({
     }
 
     trackShareEvent(getVariantEventName(normalizedVariant, "clicked"), analyticsContext);
+    trackShareEngagement("open", { variant: normalizedVariant, menuItemId: analyticsContext?.menuItemId });
     // Always open the in-app share sheet (Copy Link + channels). Desktop OS share
     // sheets are limited to a few apps; Copy Link lets users paste into any app.
     setIsModalOpen(true);
