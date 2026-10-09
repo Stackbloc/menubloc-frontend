@@ -10,6 +10,7 @@ import {
   getAnalyticsClientHints,
 } from "./analyticsClientHints.js";
 import { shouldRecordPageVisit } from "./analyticsPageVisitDedupe.js";
+import { resolvePageVisitMarket } from "./analyticsPageVisitMarket.js";
 
 const API = (
   import.meta.env.VITE_API_BASE_URL ||
@@ -59,8 +60,11 @@ export function sendPageVisit({
   const ua = navigator.userAgent || "";
   const device_type = classifyDeviceType(ua);
   const hints = getAnalyticsClientHints();
+  // Explicit market (page URL / caller) wins; otherwise attribute to the diner's known city.
+  const fallbackMarket = market ? null : resolvePageVisitMarket(window);
   const mergedMetadata = {
     ...(metadata && typeof metadata === "object" ? metadata : {}),
+    ...(fallbackMarket ? { location_source: fallbackMarket.source } : {}),
     browser: hints.browser,
     os: hints.os,
     language: hints.language,
@@ -81,7 +85,7 @@ export function sendPageVisit({
       device_type,
       restaurant_id,
       menu_item_id,
-      market,
+      market: market || fallbackMarket?.market || null,
       country,
       browser: hints.browser,
       os: hints.os,
