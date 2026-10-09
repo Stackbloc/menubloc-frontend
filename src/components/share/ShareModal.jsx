@@ -19,6 +19,7 @@ import { createPortal } from "react-dom";
 import { useLanguage } from "../../context/LanguageContext.jsx";
 import { buildShareLinks, copyText, normalizeConsumerShareUrl, trackShareEvent } from "./shareUtils.js";
 import { trackMenuShare } from "../../lib/analytics.js";
+import { trackShareEngagement } from "../../lib/engagementTracking.js";
 import {
   CLEAR_STUCK_MEDIA_CHROME_EVENT,
   restoreDocumentScroll,
@@ -139,6 +140,7 @@ export default function ShareModal({
 
       setCopyState("success");
       trackShareEvent(eventNameForAction(variant, "copy"), analyticsContext);
+      trackShareEngagement("copy_link", { variant, menuItemId: analyticsContext?.menuItemId });
       if (variant === "menu") {
         trackMenuShare({
           restaurantId: analyticsContext?.restaurantId,
@@ -169,6 +171,8 @@ export default function ShareModal({
         text: shareData?.text,
         url: shareUrl,
       });
+      // Counted only once the device share sheet completed (cancel rejects above).
+      trackShareEngagement("native", { variant, menuItemId: analyticsContext?.menuItemId });
       onClose?.();
     } catch {
       // User cancelled or share failed — keep modal open for Copy Link.
@@ -178,6 +182,7 @@ export default function ShareModal({
   function handleChannelClick(action) {
     const eventName = eventNameForAction(variant, action);
     if (eventName) trackShareEvent(eventName, analyticsContext);
+    trackShareEngagement(action, { variant, menuItemId: analyticsContext?.menuItemId });
     if (variant === "menu") {
       trackMenuShare({
         restaurantId: analyticsContext?.restaurantId,

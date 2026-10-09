@@ -402,6 +402,11 @@ export default function OperatorLayout({ title, children }) {
             icon: "▣",
           },
           {
+            to: "/operator/analytics",
+            label: t("operator.nav.analytics", "Analytics"),
+            icon: "▤",
+          },
+          {
             to: "/operator/intent-based-offers",
             label: t("operator.nav.bidFree", "Intent-Based Offers"),
             icon: "◇",

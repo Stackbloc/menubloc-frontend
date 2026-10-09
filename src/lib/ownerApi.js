@@ -197,6 +197,19 @@ export const getOwnerSearchAnalytics = (params = {}) => {
   const qs = new URLSearchParams(params).toString();
   return get(`/api/owner/analytics/searches${qs ? `?${qs}` : ""}`);
 };
+// Engagement analytics (engagement_events). Params: from, to, restaurant_id, cluster_id, event_name, placement_class.
+function engagementQuery(params = {}) {
+  const qs = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value != null && value !== "") qs.set(key, String(value));
+  }
+  const serialized = qs.toString();
+  return serialized ? `?${serialized}` : "";
+}
+export const getOwnerEngagementOverview = (params = {}) =>
+  get(`/api/owner/analytics/engagement/overview${engagementQuery(params)}`);
+export const getOwnerEngagementCluster = (clusterId, params = {}) =>
+  get(`/api/owner/analytics/engagement/clusters/${encodeURIComponent(String(clusterId))}${engagementQuery(params)}`);
 
 function intelligenceQueryString(params = {}) {
   const qs = new URLSearchParams();

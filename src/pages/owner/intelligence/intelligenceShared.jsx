@@ -13,6 +13,7 @@ export const INTELLIGENCE_TABS = [
   { to: "/owner/intelligence/restaurant", label: "Restaurant Intelligence" },
   { to: "/owner/intelligence/market", label: "Market Intelligence" },
   { to: "/owner/intelligence/revenue", label: "Revenue Intelligence" },
+  { to: "/owner/intelligence/engagement", label: "Engagement" },
 ];
 
 export function PlatformIntelligenceShell({ children }) {

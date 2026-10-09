@@ -900,6 +900,14 @@ export const setRestaurantCapability = (rid, key, body = {}) =>
 export const getRestaurantVenuePackage = (rid) =>
   get(`/operator/restaurants/${encodeURIComponent(String(rid))}/capabilities/venue-package`);
 
+// Engagement analytics for one authorized restaurant (owner/manager). Params: from, to (YYYY-MM-DD).
+export const getRestaurantEngagementAnalytics = (rid, params = {}) => {
+  const qs = new URLSearchParams(
+    Object.entries(params).filter(([, v]) => v != null && v !== "")
+  ).toString();
+  return get(`/operator/restaurants/${encodeURIComponent(String(rid))}/analytics${qs ? `?${qs}` : ""}`);
+};
+
 export const listVenueEvents = (rid, params = {}) => {
   const qs = new URLSearchParams(params).toString();
   return get(

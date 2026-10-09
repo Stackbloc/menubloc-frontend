@@ -1,6 +1,7 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import BottomNav from "../components/BottomNav.jsx";
+import useEngagementPage from "../hooks/useEngagementPage.js";
 import { CLUSTER_DIRECTORY_GRID_STYLE } from "../components/cluster/ClusterDirectoryCard.jsx";
 import ClusterGrowingNotice from "../components/cluster/ClusterGrowingNotice.jsx";
 import ClusterRestaurantDirectoryCard from "../components/cluster/ClusterRestaurantDirectoryCard.jsx";
@@ -1197,6 +1198,13 @@ export default function ClusterPage() {
     }
   }, [cluster?.page_heading, cluster?.page_title, cluster?.share_title, shareData?.title]);
 
+  const engagementRootRef = useRef(null);
+  useEngagementPage(engagementRootRef, {
+    pageType: "cluster",
+    ready: status !== "loading" && status !== "error" && Boolean(cluster?.id),
+    clusterId: cluster?.id,
+  });
+
   if (status === "loading") {
     return (
       <div style={{ padding: "2rem 1rem", textAlign: "center" }}>
@@ -1322,6 +1330,7 @@ export default function ClusterPage() {
 
   return (
     <div
+      ref={engagementRootRef}
       className={themeClass}
       data-cluster-slug={cluster.slug}
       style={{ maxWidth: 900, margin: "0 auto", padding: "1.25rem 1rem 5rem", width: "100%", boxSizing: "border-box" }}

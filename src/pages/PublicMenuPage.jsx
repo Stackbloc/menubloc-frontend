@@ -107,6 +107,10 @@ import {
   shouldShowMenuPurchaseWaiterHint,
 } from "../lib/restaurantStatusLight.js";
 import { sendPageVisit } from "../lib/analyticsPageVisitSend.js";
+import { trackEngagement } from "../lib/engagementTracking.js";
+import useEngagementPage from "../hooks/useEngagementPage.js";
+import { classifyRestaurantLink } from "../lib/engagementLinkClassifier.js";
+import { getNormalizedMenuItemId, parseMenuItemRouteId } from "../lib/menuItemIdentity.js";
 import TasteIndexBadge from "../components/TasteIndexBadge.jsx";
 import { useOperator } from "../context/OperatorContext.jsx";
 import {
@@ -829,6 +833,13 @@ export default function PublicMenuPage() {
     city: routeCityParam,
   } = useParams();
   const navigate = useNavigate();
+  // Templates navigate straight to /menu-items/:id for some items — that open is a menu_item_click too.
+  const navigateWithItemTracking = useCallback((to, options) => {
+    const match = typeof to === "string" ? to.match(/^\/menu-items\/([^/?#]+)/) : null;
+    const route = match ? parseMenuItemRouteId(match[1]) : null;
+    if (route?.kind === "ck") trackEngagement("menu_item_click", { menu_item_id: route.numericId, subtype: "detail_page" });
+    return navigate(to, options);
+  }, [navigate]);
   const routeRestaurantParam = asStr(routeRestaurantSlug || slugOrId || id).trim();
   const numericRouteRestaurantId = asFiniteNumber(routeRestaurantParam);
   const {
@@ -868,7 +879,21 @@ export default function PublicMenuPage() {
   const [modifierItem, setModifierItem] = useState(null);
   const [modifierInitialInstructions, setModifierInitialInstructions] = useState("");
   const [smartSheetItem, setSmartSheetItem] = useState(null);
-  const [itemSheet, setItemSheet] = useState(null);
+  const [itemSheet, setItemSheetState] = useState(null);
+  // Engagement analytics: opening an item's details sheet = one menu_item_click.
+  const setItemSheet = useCallback((next) => {
+    // Only numeric menu_items ids are trackable; franchise canonical (cmi:) items are not menu_items rows.
+    const route = next && typeof next === "object" ? parseMenuItemRouteId(getNormalizedMenuItemId(next.item)) : null;
+    const itemId = route?.kind === "ck" ? route.numericId : null;
+    if (itemId != null) {
+      trackEngagement("menu_item_click", {
+        menu_item_id: itemId,
+        subtype: "details_sheet",
+        label: next.name || next.item?.name || null,
+      });
+    }
+    setItemSheetState(next);
+  }, []);
   const [addedConfirmation, setAddedConfirmation] = useState(null);
   const [hoveredItemId, setHoveredItemId] = useState(null);
   // Multi-menu tab state
@@ -1518,6 +1543,19 @@ export default function PublicMenuPage() {
     });
   }, [pageState.status, data?.restaurant_id, data?.slug, restaurantName, routeRestaurantParam]);
 
+  const engagementRootRef = useRef(null);
+  useEngagementPage(engagementRootRef, {
+    pageType: "menu",
+    ready: !isMenuTemplatePreview && pageState.status === "ok" && Boolean(data?.restaurant_id),
+    restaurantId: data?.restaurant_id,
+    classifyLink: (anchor) =>
+      classifyRestaurantLink(anchor, {
+        restaurantId: data?.restaurant_id,
+        website: data?.website || data?.website_url || null,
+        pageType: "menu",
+      }),
+  });
+
   function handleRemoveAdded() {
     if (!addedConfirmation) return;
     const state = getCartItemState(activeCartItems, addedConfirmation.itemId);
@@ -1660,7 +1698,7 @@ export default function PublicMenuPage() {
           hoveredItemId,
           setHoveredItemId,
           removeItem,
-          navigate,
+          navigate: navigateWithItemTracking,
           setItemSheet,
           setAddedConfirmation,
           commitMenuItemToBasket,
@@ -1674,7 +1712,16 @@ export default function PublicMenuPage() {
           fontStack: fontStackForPreset(menuBrand?.fontPreset),
           menus: data?.menus || [],
           selectedMenuId,
-          onSelectMenu: handleSelectMenu,
+          onSelectMenu: (menuId) => {
+            if (menuId !== selectedMenuId) {
+              const menu = (data?.menus || []).find((m) => String(m?.id) === String(menuId));
+              trackEngagement("menu_category_select", {
+                menu_id: menuId,
+                label: menu?.tab_label || menu?.display_name || menu?.name || String(menuId),
+              });
+            }
+            return handleSelectMenu(menuId);
+          },
           tabLoading,
           tabError,
           menuPresentation: data?.menu_presentation || data?.presentation || {},
@@ -1757,6 +1804,7 @@ export default function PublicMenuPage() {
   return (
     <MenuDesignPhotoEditProvider value={designPhotoEdit}>
     <div
+      ref={engagementRootRef}
       style={pageShellStyle}
       data-menu-appearance={applyMenuAppearance ? effectiveMenuAppearance : undefined}
     >

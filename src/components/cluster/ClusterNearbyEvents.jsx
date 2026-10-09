@@ -31,6 +31,10 @@ function EventRow({ event }) {
       {event.href || event.slug ? (
         <Link
           to={event.href || `/events/${encodeURIComponent(String(event.slug))}`}
+          data-mp-event="event_click"
+          data-mp-venue-event-id={Number(event.id) || undefined}
+          data-mp-label={event.slug || event.title || undefined}
+          data-mp-placement="cluster_nearby_events"
           style={styles.linkWrap}
         >
           {inner}

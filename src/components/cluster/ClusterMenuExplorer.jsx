@@ -212,7 +212,16 @@ export function ClusterDishChip({
   }
 
   return (
-    <Link to={href} style={CLUSTER_DISH_CHIP_STYLE}>
+    <Link
+      to={href}
+      style={CLUSTER_DISH_CHIP_STYLE}
+      data-mp-event="menu_item_click"
+      data-mp-menu-item-id={item?.menu_item_id ?? item?.id}
+      data-mp-restaurant-id={item?.restaurant_id ?? undefined}
+      data-mp-subtype="detail_page"
+      data-mp-label={item?.name}
+      data-mp-placement="cluster_menu_explorer"
+    >
       {content}
     </Link>
   );

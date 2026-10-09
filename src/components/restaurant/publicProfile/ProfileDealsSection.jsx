@@ -33,6 +33,17 @@ export default function ProfileDealsSection({
   );
   if (!deals.length && !showClaimInvites) return null;
 
+  // Engagement analytics: only rows with a real deal id are counted as deal impressions/clicks.
+  const dealEngagementAttrs = (deal) =>
+    deal?.deal_id
+      ? {
+          "data-mp-event": "deal_click",
+          "data-mp-impression": "deal_impression",
+          "data-mp-deal-id": deal.deal_id,
+          "data-mp-placement": "profile_deals",
+        }
+      : {};
+
   const browseHref = restaurantId
     ? `/deals?restaurant_id=${encodeURIComponent(String(restaurantId))}`
     : "/deals";
@@ -110,7 +121,12 @@ export default function ProfileDealsSection({
             </div>
           );
           return href ? (
-            <Link key={deal.deal_id || deal.id || title} to={href} style={{ textDecoration: "none" }}>
+            <Link
+              key={deal.deal_id || deal.id || title}
+              to={href}
+              style={{ textDecoration: "none" }}
+              {...dealEngagementAttrs(deal)}
+            >
               {inner}
             </Link>
           ) : (
