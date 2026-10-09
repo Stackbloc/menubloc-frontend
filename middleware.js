@@ -56,18 +56,22 @@ function escapeHtml(str) {
     .replace(/'/g, "&#39;");
 }
 
-function injectMeta(html, title, description, canonical, image) {
+function injectMeta(html, title, description, canonical, image, shareUrl = canonical) {
   const t = escapeHtml(title);
   const d = escapeHtml(description);
+  const ogUrl = escapeHtml(shareUrl);
   let next = html
     .replace(/<title>[^<]*<\/title>/, `<title>${t}</title>`)
-    .replace(/<link rel="canonical" href="[^"]*"[^>]*>/, `<link rel="canonical" href="${canonical}">`)
     .replace(/<meta name="description" content="[^"]*"[^>]*>/, `<meta name="description" content="${d}">`)
     .replace(/<meta property="og:title" content="[^"]*"[^>]*>/, `<meta property="og:title" content="${t}">`)
     .replace(/<meta property="og:description" content="[^"]*"[^>]*>/, `<meta property="og:description" content="${d}">`)
-    .replace(/<meta property="og:url" content="[^"]*"[^>]*>/, `<meta property="og:url" content="${canonical}">`)
+    .replace(/<meta property="og:url" content="[^"]*"[^>]*>/, `<meta property="og:url" content="${ogUrl}">`)
     .replace(/<meta name="twitter:title" content="[^"]*"[^>]*>/, `<meta name="twitter:title" content="${t}">`)
     .replace(/<meta name="twitter:description" content="[^"]*"[^>]*>/, `<meta name="twitter:description" content="${d}">`);
+
+  if (canonical) {
+    next = next.replace(/<link rel="canonical" href="[^"]*"[^>]*>/, `<link rel="canonical" href="${canonical}">`);
+  }
 
   if (image) {
     const img = escapeHtml(image);
@@ -341,6 +345,41 @@ function buildClusterMeta(cluster, pathname) {
   return { title, description, canonical, image };
 }
 
+function cleanShareQuery(value) {
+  return String(value || "").replace(/\s+/g, " ").trim().slice(0, 80);
+}
+
+const SEARCH_DIET_LABELS = [
+  ["vegan", "vegan"],
+  ["vegetarian", "vegetarian"],
+  ["gluten_free", "gluten-free"],
+  ["dairy_free", "dairy-free"],
+  ["keto", "keto"],
+  ["high_protein", "high-protein"],
+];
+
+// Shared /search links: preview cards name the query and the sharer's area.
+function buildSearchShareMeta(url) {
+  const sp = url.searchParams;
+  const query = cleanShareQuery(sp.get("q"));
+  if (!query) return null;
+  const city = cleanShareQuery(sp.get("city"));
+  const state = cleanShareQuery(sp.get("state"));
+  const place =
+    cleanShareQuery(sp.get("location_label")) ||
+    [city, state].filter(Boolean).join(", ") ||
+    cleanShareQuery(sp.get("near")) ||
+    cleanShareQuery(sp.get("zip"));
+  const diets = SEARCH_DIET_LABELS.filter(([key]) => ["1", "true"].includes(sp.get(key))).map(([, label]) => label);
+  const dish = [diets.join(", "), query].filter(Boolean).join(" ");
+  const where = place ? ` near ${place}` : "";
+  return {
+    title: `“${dish}”${where} | Menuply`,
+    description: `See ${dish} dishes and restaurants${where} on Menuply: menus, prices, and nutrition.`,
+    shareUrl: `${ORIGIN}${url.pathname}${url.search}`,
+  };
+}
+
 function injectedResponse(html) {
   return new Response(html, {
     headers: {
@@ -353,6 +392,17 @@ function injectedResponse(html) {
 
 export default async function middleware(request) {
   const { pathname } = new URL(request.url);
+
+  if (pathname === "/search") {
+    const searchMeta = buildSearchShareMeta(new URL(request.url));
+    if (!searchMeta) return;
+    const shell = await fetchShell(request.url);
+    if (!shell) return;
+    // canonical=null keeps the shell's canonical (no SEO change for search pages).
+    return injectedResponse(
+      injectMeta(shell, searchMeta.title, searchMeta.description, null, null, searchMeta.shareUrl)
+    );
+  }
 
   if (pathname === "/sitemap-videos.xml") {
     const inventory = await fetchMeta("/public/sitemap-inventory", 10000);
@@ -543,8 +593,23 @@ export default async function middleware(request) {
     ]);
     if (!shell || !meta?.ok || !meta.cluster) return;
     const { title, description, canonical, image } = buildClusterMeta(meta.cluster, pathname);
+    const { search, searchParams } = new URL(request.url);
     if (canonical !== `${ORIGIN}${pathname}`) {
-      return Response.redirect(canonical, 301);
+      return Response.redirect(canonical + search, 301);
+    }
+    const query = cleanShareQuery(searchParams.get("q"));
+    if (query) {
+      const area = meta.cluster.area_name || meta.cluster.name || "this area";
+      return injectedResponse(
+        injectMeta(
+          shell,
+          `“${query}” at ${area} | Menuply`,
+          `See “${query}” results at ${area} on Menuply: dishes, prices, and nutrition.`,
+          canonical,
+          image,
+          `${canonical}?q=${encodeURIComponent(query)}`
+        )
+      );
     }
     return injectedResponse(injectMeta(shell, title, description, canonical, image));
   }
@@ -672,6 +737,7 @@ export default async function middleware(request) {
 
 export const config = {
   matcher: [
+    "/search",
     "/sitemap.xml",
     "/sitemap-videos.xml",
     "/sitemaps/:path*",

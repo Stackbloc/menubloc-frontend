@@ -16,10 +16,10 @@ Purpose:
   <path d="M188 155H211C223.15 155 233 164.85 233 177V177C233 189.15 223.15 199 211 199H188V155Z" fill="#FF8A4C"/>
   <text x="268" y="166" fill="#11211A" font-family="Georgia, Times New Roman, serif" font-size="46" font-weight="700">Menuply</text>
   <text x="268" y="214" fill="#475467" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="600">Menus, deals, and nutrition insights</text>
-  <text x="92" y="332" fill="#11211A" font-family="Georgia, Times New Roman, serif" font-size="82" font-weight="700">Shareable public menu pages</text>
-  <text x="92" y="392" fill="#475467" font-family="Arial, Helvetica, sans-serif" font-size="32" font-weight="600">Canonical Menuply links with restaurant-aware previews.</text>
-  <rect x="92" y="446" width="314" height="66" rx="33" fill="#11211A"/>
-  <text x="124" y="489" fill="#F8FAFC" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="700">menuply.com</text>
+  <text x="140" y="336" fill="#11211A" font-family="Georgia, Times New Roman, serif" font-size="76" font-weight="700">Find dishes near you</text>
+  <text x="140" y="394" fill="#475467" font-family="Arial, Helvetica, sans-serif" font-size="32" font-weight="600">Search local menus, prices, and nutrition.</text>
+  <rect x="140" y="446" width="250" height="66" rx="33" fill="#11211A"/>
+  <text x="172" y="489" fill="#F8FAFC" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="700">menuply.com</text>
   <defs>
     <linearGradient id="bg" x1="70" y1="62" x2="1120" y2="588" gradientUnits="userSpaceOnUse">
       <stop stop-color="#FFF3D6"/>

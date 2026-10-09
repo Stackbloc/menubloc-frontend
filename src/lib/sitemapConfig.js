@@ -8,7 +8,7 @@ function page(path, title, description, changefreq = "monthly", priority = 0.5) 
     canonical: `${CANONICAL_ORIGIN}${path}`,
     ogTitle: title,
     ogDescription: description,
-    ogImage: `${CANONICAL_ORIGIN}/menuply-share-default.svg`,
+    ogImage: `${CANONICAL_ORIGIN}/menuply-share-default.png`,
     changefreq,
     priority,
   };
