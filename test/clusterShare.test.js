@@ -54,3 +54,30 @@ test("ClusterPage keeps the food search in ?q= and shares it from the Share butt
   // Canonical / OG metadata must stay on the base cluster URL.
   assert.match(page, /applyDocumentSocialMetadata\(\{\s*title: shareData\.title/);
 });
+
+test("buildClusterShareData carries a tapped food category (?category=)", async () => {
+  const { readClusterShareFilters } = await import("../src/lib/clusterShareFilters.js");
+  const cluster = { name: "L.A. Live", area_name: "L.A. Live", slug: "la-live", city: "Los Angeles", state: "CA" };
+  const filters = readClusterShareFilters(new URLSearchParams("category=PASTA"));
+  const payload = buildClusterShareData({ cluster, origin: "https://menuply.com", filters });
+  assert.equal(payload.url, "https://menuply.com/clusters/california/los-angeles/la-live?category=PASTA");
+  assert.equal(payload.title, "Pasta at L.A. Live | Menuply");
+
+  const drinks = readClusterShareFilters(new URLSearchParams("category=BEVERAGES&drink=coffee"));
+  assert.equal(drinks.label, "Coffee");
+  assert.equal(
+    buildClusterShareData({ cluster, origin: "https://menuply.com", filters: drinks }).url,
+    "https://menuply.com/clusters/california/los-angeles/la-live?category=BEVERAGES&drink=coffee"
+  );
+  // Junk codes are ignored rather than echoed into links.
+  assert.equal(readClusterShareFilters(new URLSearchParams("category=<x>")).label, "");
+});
+
+test("ClusterPage keeps the tapped category in ?category= and restores it", async () => {
+  const { readFileSync } = await import("node:fs");
+  const page = readFileSync(new URL("../src/pages/ClusterPage.jsx", import.meta.url), "utf8");
+  assert.match(page, /params\.set\(CLUSTER_CATEGORY_QUERY_KEY, category\.code\)/);
+  assert.match(page, /onSelect=\{\(category\) => selectCategory\(category\)\}/);
+  assert.match(page, /if \(match\) setSelectedCategory\(match\)/);
+  assert.match(page, /filters: shareFilters/);
+});

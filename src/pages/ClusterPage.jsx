@@ -15,6 +15,13 @@ import SearchResultCard from "../components/SearchResultCard.jsx";
 import { ClusterMksCategoryGrid } from "../components/cluster/ClusterMksCategoryBlock.jsx";
 import ShareButton from "../components/share/ShareButton.jsx";
 import {
+  CLUSTER_CATEGORY_QUERY_KEY,
+  CLUSTER_DRINK_QUERY_KEY,
+  CLUSTER_SEARCH_QUERY_KEY,
+  normalizeClusterCategoryCode,
+  readClusterShareFilters,
+} from "../lib/clusterShareFilters.js";
+import {
   applyDocumentSocialMetadata,
   buildClusterShareData,
 } from "../components/share/shareUtils.js";
@@ -67,7 +74,6 @@ import ClusterPublicFeed from "../components/cluster/ClusterPublicFeed.jsx";
 import ClusterNearbyEvents from "../components/cluster/ClusterNearbyEvents.jsx";
 
 const CANONICAL_BASE = "https://menuply.com";
-const CLUSTER_SEARCH_QUERY_KEY = "q";
 const CLUSTER_VIEW_MODES = Object.freeze({
   MENU: "menu",
   RESTAURANTS: "restaurants",
@@ -477,9 +483,11 @@ function ClusterMenuExplorerTab({
   const [items, setItems] = useState([]);
   const [pagination, setPagination] = useState(null);
   const [error, setError] = useState("");
-  // Submitted search lives in ?q= so Share / reload / back reproduce the same results.
+  // Search (?q=), tapped category (?category=) and drink chip (?drink=) live in the URL
+  // so Share / reload reproduce the same results.
   const [searchParams, setSearchParams] = useSearchParams();
   const submittedSearch = String(searchParams.get(CLUSTER_SEARCH_QUERY_KEY) || "").trim();
+  const urlCategoryCode = normalizeClusterCategoryCode(searchParams.get(CLUSTER_CATEGORY_QUERY_KEY));
   const [searchInput, setSearchInput] = useState(submittedSearch);
   const [searchStatus, setSearchStatus] = useState("idle");
   const [searchMenuItems, setSearchMenuItems] = useState([]);
@@ -487,8 +495,35 @@ function ClusterMenuExplorerTab({
   const [searchError, setSearchError] = useState("");
   const [priceSort, setPriceSort] = useState("default");
   const [selectedZone, setSelectedZone] = useState(null);
-  const [drinkSubcategory, setDrinkSubcategory] = useState(CLUSTER_DRINK_SUBCATEGORY_ALL);
+  const [drinkSubcategory, setDrinkSubcategory] = useState(() =>
+    normalizeClusterDrinkSubcategory(searchParams.get(CLUSTER_DRINK_QUERY_KEY))
+  );
   const [availableDrinkCategories, setAvailableDrinkCategories] = useState([]);
+
+  function updateFoodParams(mutate) {
+    const params = new URLSearchParams(searchParams);
+    mutate(params);
+    setSearchParams(params, { replace: true });
+  }
+
+  function selectCategory(category) {
+    setDrinkSubcategory(CLUSTER_DRINK_SUBCATEGORY_ALL);
+    setSelectedCategory(category);
+    updateFoodParams((params) => {
+      if (category?.code) params.set(CLUSTER_CATEGORY_QUERY_KEY, category.code);
+      else params.delete(CLUSTER_CATEGORY_QUERY_KEY);
+      params.delete(CLUSTER_DRINK_QUERY_KEY);
+    });
+  }
+
+  function selectDrinkSubcategory(id) {
+    const next = normalizeClusterDrinkSubcategory(id);
+    setDrinkSubcategory(next);
+    updateFoodParams((params) => {
+      if (next === CLUSTER_DRINK_SUBCATEGORY_ALL) params.delete(CLUSTER_DRINK_QUERY_KEY);
+      else params.set(CLUSTER_DRINK_QUERY_KEY, next);
+    });
+  }
 
   const searchActive = Boolean(submittedSearch.trim());
   const drinksCategorySelected = isClusterBeveragesCategory(selectedCategory);
@@ -505,6 +540,13 @@ function ClusterMenuExplorerTab({
       setSelectedZone(null);
     }
   }, [selectedZone, availableZones]);
+
+  // Shared/reloaded ?category= link: open that category once the cluster's categories load.
+  useEffect(() => {
+    if (!urlCategoryCode || searchActive || selectedCategory?.code === urlCategoryCode) return;
+    const match = mksCategories.find((category) => String(category?.code || "").toUpperCase() === urlCategoryCode);
+    if (match) setSelectedCategory(match);
+  }, [urlCategoryCode, mksCategories, searchActive, selectedCategory?.code]);
 
   useEffect(() => {
     if (
@@ -748,6 +790,8 @@ function ClusterMenuExplorerTab({
     if (!trimmed) return;
     const params = new URLSearchParams(searchParams);
     params.set(CLUSTER_SEARCH_QUERY_KEY, trimmed);
+    params.delete(CLUSTER_CATEGORY_QUERY_KEY);
+    params.delete(CLUSTER_DRINK_QUERY_KEY);
     setSearchParams(params, { replace: true });
     setSelectedCategory(null);
   }
@@ -833,10 +877,7 @@ function ClusterMenuExplorerTab({
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", alignItems: "center" }}>
             <button
               type="button"
-              onClick={() => {
-                setDrinkSubcategory(CLUSTER_DRINK_SUBCATEGORY_ALL);
-                setSelectedCategory(null);
-              }}
+              onClick={() => selectCategory(null)}
               style={{
                 padding: "0.45rem 0.75rem",
                 borderRadius: 8,
@@ -916,9 +957,7 @@ function ClusterMenuExplorerTab({
                     type="button"
                     data-testid={`cluster-food-drink-${chip.id}`}
                     aria-pressed={selected}
-                    onClick={() =>
-                      setDrinkSubcategory(normalizeClusterDrinkSubcategory(chip.id))
-                    }
+                    onClick={() => selectDrinkSubcategory(chip.id)}
                     style={{
                       flexShrink: 0,
                       padding: "7px 16px",
@@ -1000,10 +1039,7 @@ function ClusterMenuExplorerTab({
           ) : null}
           <ClusterMksCategoryGrid
             categories={mksCategories}
-            onSelect={(category) => {
-              setDrinkSubcategory(CLUSTER_DRINK_SUBCATEGORY_ALL);
-              setSelectedCategory(category);
-            }}
+            onSelect={(category) => selectCategory(category)}
           />
           <SpacedClusterAdSlot compact clusterSlug={clusterSlug} pageRegion="cluster_landing_footer" />
         </div>
@@ -1072,13 +1108,13 @@ export default function ClusterPage() {
     [cluster]
   );
   // Share button only: carries the active food search. Page metadata/canonical stay on the base cluster URL.
-  const clusterSearchQuery = String(searchParams.get(CLUSTER_SEARCH_QUERY_KEY) || "").trim();
+  const shareFilters = useMemo(() => readClusterShareFilters(searchParams), [searchParams]);
   const shareButtonData = useMemo(
     () =>
-      cluster && clusterSearchQuery
-        ? buildClusterShareData({ cluster, origin: CANONICAL_BASE, searchQuery: clusterSearchQuery })
+      cluster && shareFilters.label
+        ? buildClusterShareData({ cluster, origin: CANONICAL_BASE, filters: shareFilters })
         : shareData,
-    [cluster, clusterSearchQuery, shareData]
+    [cluster, shareFilters, shareData]
   );
 
   function setViewMode(nextView) {

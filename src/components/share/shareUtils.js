@@ -25,6 +25,7 @@ import {
   restaurantPath,
 } from "../../lib/canonicalUrl.js";
 import { clusterPath } from "../../lib/clusterUrl.js";
+import { clusterShareSearch } from "../../lib/clusterShareFilters.js";
 import {
   buildClusterShareDescription,
   buildClusterShareTitle,
@@ -311,24 +312,32 @@ export function buildRestaurantShareData({
   return { title, text, url, image, restaurantName: safeRestaurantName };
 }
 
-export function buildClusterShareData({ cluster, origin = getPublicOrigin(), searchQuery = "" }) {
+export function buildClusterShareData({ cluster, origin = getPublicOrigin(), searchQuery = "", filters = null }) {
   const name = pickFirstText(cluster?.area_name, cluster?.name, "this area");
   const city = pickFirstText(cluster?.city);
   const state = pickFirstText(cluster?.state);
   const slug = pickFirstText(cluster?.slug);
   const query = asText(searchQuery);
+  // Food search (?q=) or tapped category (?category=) — shared links reopen on the same results.
+  const shareFilters = filters?.label ? filters : query ? { query, label: query } : null;
   const path = clusterPath({ state, city, slug });
-  // Shared cluster searches reopen on the same results (ClusterPage reads ?q=).
-  const sharePath = path && query ? `${path}?q=${encodeURIComponent(query)}` : path;
+  const sharePath = path && shareFilters ? `${path}${clusterShareSearch(shareFilters)}` : path;
   const url = toConsumerShareAbsolute(sharePath || "/");
   const image = resolveShareImageUrl({
     imageUrl: pickFirstText(cluster?.og_image_url),
     origin,
   });
-  const title = query ? `“${query}” at ${name} | Menuply` : buildClusterShareTitle(cluster);
-  const description = query
-    ? `See “${query}” results at ${name} on Menuply.`
-    : buildClusterShareDescription(cluster);
+  const label = shareFilters?.label || "";
+  const title = !shareFilters
+    ? buildClusterShareTitle(cluster)
+    : shareFilters.query
+      ? `“${label}” at ${name} | Menuply`
+      : `${label} at ${name} | Menuply`;
+  const description = !shareFilters
+    ? buildClusterShareDescription(cluster)
+    : shareFilters.query
+      ? `See “${label}” results at ${name} on Menuply.`
+      : `See ${label} at ${name} on Menuply: dishes, prices, and nutrition.`;
   const text = description;
   return { title, text, url, image, description, clusterName: name };
 }

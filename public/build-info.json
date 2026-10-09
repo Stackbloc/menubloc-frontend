@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "f50e57d6ebec6d0840cc10b67c839abfdf081bd3",
-  "gitShortSha": "f50e57d6",
-  "branch": "feature/link-preview-cards",
-  "buildTime": "2026-10-09T20:58:05.380Z",
+  "gitSha": "dbde71fa078497bc25450da9ef886e6a9eba4516",
+  "gitShortSha": "dbde71fa",
+  "branch": "fix/share-cluster-category",
+  "buildTime": "2026-10-09T22:11:19.982Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "chore(tip-gate): lock mz52cfx72 / index-s-MzRZmG.js (share actual search results) + FE b34590ee"
+  "commitMessage": "chore(tip-gate): lock 3eg4akeqt / index-2gPg3nFW.js (link preview cards) + FE d57c7b4c"
 }
