@@ -311,19 +311,24 @@ export function buildRestaurantShareData({
   return { title, text, url, image, restaurantName: safeRestaurantName };
 }
 
-export function buildClusterShareData({ cluster, origin = getPublicOrigin() }) {
+export function buildClusterShareData({ cluster, origin = getPublicOrigin(), searchQuery = "" }) {
   const name = pickFirstText(cluster?.area_name, cluster?.name, "this area");
   const city = pickFirstText(cluster?.city);
   const state = pickFirstText(cluster?.state);
   const slug = pickFirstText(cluster?.slug);
+  const query = asText(searchQuery);
   const path = clusterPath({ state, city, slug });
-  const url = toConsumerShareAbsolute(path || "/");
+  // Shared cluster searches reopen on the same results (ClusterPage reads ?q=).
+  const sharePath = path && query ? `${path}?q=${encodeURIComponent(query)}` : path;
+  const url = toConsumerShareAbsolute(sharePath || "/");
   const image = resolveShareImageUrl({
     imageUrl: pickFirstText(cluster?.og_image_url),
     origin,
   });
-  const title = buildClusterShareTitle(cluster);
-  const description = buildClusterShareDescription(cluster);
+  const title = query ? `“${query}” at ${name} | Menuply` : buildClusterShareTitle(cluster);
+  const description = query
+    ? `See “${query}” results at ${name} on Menuply.`
+    : buildClusterShareDescription(cluster);
   const text = description;
   return { title, text, url, image, description, clusterName: name };
 }

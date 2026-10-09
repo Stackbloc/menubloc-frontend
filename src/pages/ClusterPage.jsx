@@ -67,6 +67,7 @@ import ClusterPublicFeed from "../components/cluster/ClusterPublicFeed.jsx";
 import ClusterNearbyEvents from "../components/cluster/ClusterNearbyEvents.jsx";
 
 const CANONICAL_BASE = "https://menuply.com";
+const CLUSTER_SEARCH_QUERY_KEY = "q";
 const CLUSTER_VIEW_MODES = Object.freeze({
   MENU: "menu",
   RESTAURANTS: "restaurants",
@@ -476,8 +477,10 @@ function ClusterMenuExplorerTab({
   const [items, setItems] = useState([]);
   const [pagination, setPagination] = useState(null);
   const [error, setError] = useState("");
-  const [searchInput, setSearchInput] = useState("");
-  const [submittedSearch, setSubmittedSearch] = useState("");
+  // Submitted search lives in ?q= so Share / reload / back reproduce the same results.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const submittedSearch = String(searchParams.get(CLUSTER_SEARCH_QUERY_KEY) || "").trim();
+  const [searchInput, setSearchInput] = useState(submittedSearch);
   const [searchStatus, setSearchStatus] = useState("idle");
   const [searchMenuItems, setSearchMenuItems] = useState([]);
   const [searchQueryMeta, setSearchQueryMeta] = useState(null);
@@ -743,13 +746,17 @@ function ClusterMenuExplorerTab({
     event.preventDefault();
     const trimmed = searchInput.trim();
     if (!trimmed) return;
-    setSubmittedSearch(trimmed);
+    const params = new URLSearchParams(searchParams);
+    params.set(CLUSTER_SEARCH_QUERY_KEY, trimmed);
+    setSearchParams(params, { replace: true });
     setSelectedCategory(null);
   }
 
   function clearSearch() {
     setSearchInput("");
-    setSubmittedSearch("");
+    const params = new URLSearchParams(searchParams);
+    params.delete(CLUSTER_SEARCH_QUERY_KEY);
+    setSearchParams(params, { replace: true });
   }
 
   if (!enabled) {
@@ -1064,6 +1071,15 @@ export default function ClusterPage() {
     () => (cluster ? buildClusterShareData({ cluster, origin: CANONICAL_BASE }) : null),
     [cluster]
   );
+  // Share button only: carries the active food search. Page metadata/canonical stay on the base cluster URL.
+  const clusterSearchQuery = String(searchParams.get(CLUSTER_SEARCH_QUERY_KEY) || "").trim();
+  const shareButtonData = useMemo(
+    () =>
+      cluster && clusterSearchQuery
+        ? buildClusterShareData({ cluster, origin: CANONICAL_BASE, searchQuery: clusterSearchQuery })
+        : shareData,
+    [cluster, clusterSearchQuery, shareData]
+  );
 
   function setViewMode(nextView) {
     const params = new URLSearchParams(searchParams);
@@ -1203,7 +1219,7 @@ export default function ClusterPage() {
           <ClusterViewToggle viewMode={resolvedViewMode} onChange={setViewMode} disabled={false} />
           {shareData ? (
             <ShareButton
-              shareData={shareData}
+              shareData={shareButtonData}
               analyticsContext={{
                 pageType: "cluster",
                 clusterSlug: cluster.slug,
