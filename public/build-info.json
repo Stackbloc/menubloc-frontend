@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "9fcc7752216c097530f7253bb888a66323953601",
-  "gitShortSha": "9fcc7752",
-  "branch": "main",
-  "buildTime": "2026-09-10T16:43:20.577Z",
+  "gitSha": "f50e57d6ebec6d0840cc10b67c839abfdf081bd3",
+  "gitShortSha": "f50e57d6",
+  "branch": "feature/link-preview-cards",
+  "buildTime": "2026-10-09T20:58:05.380Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "docs: CPD sandbox verify fallback guardrail for agent CONNECT 403"
+  "commitMessage": "chore(tip-gate): lock mz52cfx72 / index-s-MzRZmG.js (share actual search results) + FE b34590ee"
 }

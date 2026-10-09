@@ -30,7 +30,7 @@ import {
   buildClusterShareTitle,
 } from "../../lib/clusterLegalCopy.js";
 
-const DEFAULT_SHARE_IMAGE_PATH = "/menuply-share-default.svg";
+const DEFAULT_SHARE_IMAGE_PATH = "/menuply-share-default.png";
 const ALLOWED_SHARE_HOSTS = new Set(["menuply.com", "www.menuply.com"]);
 
 function asText(value) {
