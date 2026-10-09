@@ -115,3 +115,30 @@ test("non-canonical cluster paths keep ?q= through the redirect", async (t) => {
     "https://menuply.com/clusters/california/los-angeles/la-live?q=pasta"
   );
 });
+
+test("cluster category links (?category=PASTA) get a category card", async (t) => {
+  mockFetch(t);
+  const response = await middleware(
+    new Request("https://menuply.com/clusters/california/los-angeles/la-live?category=pasta")
+  );
+  const html = await response.text();
+  assert.equal(meta(html, "property", "og:title"), "Pasta at L.A. Live | Menuply");
+  assert.equal(
+    meta(html, "property", "og:url"),
+    "https://menuply.com/clusters/california/los-angeles/la-live?category=PASTA"
+  );
+  assert.match(html, /<link rel="canonical" href="https:\/\/menuply\.com\/clusters\/california\/los-angeles\/la-live">/);
+});
+
+test("cluster drink subcategory links name the drink", async (t) => {
+  mockFetch(t);
+  const response = await middleware(
+    new Request("https://menuply.com/clusters/california/los-angeles/la-live?category=BEVERAGES&drink=coffee")
+  );
+  const html = await response.text();
+  assert.equal(meta(html, "property", "og:title"), "Coffee at L.A. Live | Menuply");
+  assert.equal(
+    meta(html, "property", "og:url"),
+    "https://menuply.com/clusters/california/los-angeles/la-live?category=BEVERAGES&amp;drink=coffee"
+  );
+});

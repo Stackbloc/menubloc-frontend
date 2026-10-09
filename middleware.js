@@ -11,6 +11,7 @@ import {
   restaurantPath,
 } from "./src/lib/canonicalUrlCore.js";
 import { clusterPath } from "./src/lib/clusterUrl.js";
+import { clusterShareSearch, readClusterShareFilters } from "./src/lib/clusterShareFilters.js";
 import { getClusterSeoContent } from "./src/lib/clusterSeoContent.js";
 import { INDEXABLE_STATIC_PAGES } from "./src/lib/sitemapConfig.js";
 import {
@@ -597,18 +598,16 @@ export default async function middleware(request) {
     if (canonical !== `${ORIGIN}${pathname}`) {
       return Response.redirect(canonical + search, 301);
     }
-    const query = cleanShareQuery(searchParams.get("q"));
-    if (query) {
+    // Shared food search (?q=) or tapped category (?category=PASTA): card names it.
+    const filters = readClusterShareFilters(searchParams);
+    if (filters.label) {
       const area = meta.cluster.area_name || meta.cluster.name || "this area";
+      const title = filters.query ? `“${filters.label}” at ${area} | Menuply` : `${filters.label} at ${area} | Menuply`;
+      const description = filters.query
+        ? `See “${filters.label}” results at ${area} on Menuply: dishes, prices, and nutrition.`
+        : `See ${filters.label} at ${area} on Menuply: dishes, prices, and nutrition.`;
       return injectedResponse(
-        injectMeta(
-          shell,
-          `“${query}” at ${area} | Menuply`,
-          `See “${query}” results at ${area} on Menuply: dishes, prices, and nutrition.`,
-          canonical,
-          image,
-          `${canonical}?q=${encodeURIComponent(query)}`
-        )
+        injectMeta(shell, title, description, canonical, image, `${canonical}${clusterShareSearch(filters)}`)
       );
     }
     return injectedResponse(injectMeta(shell, title, description, canonical, image));
