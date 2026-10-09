@@ -17,6 +17,7 @@ import {
   uploadOwnerVideoThumbnail,
   replaceOwnerVideoMedia,
   createOwnerDeal,
+  listOwnerDealMenuItems,
   uploadOwnerDealMediaVideo,
   publishOwnerDeal,
 } from "../../lib/ownerApi.js";
@@ -770,6 +771,103 @@ function defaultDealEndDate() {
   return end.toISOString().slice(0, 10);
 }
 
+const MAX_DEAL_MENU_ITEMS = 3;
+
+/**
+ * Pick up to 3 menu items the deal applies to — each item gets the same deal terms
+ * (not a bundle). Items come from the restaurant's deal menu (CK canonical, else public).
+ */
+function DealMenuItemsPicker({ items, selected, onChange, loading, disabled }) {
+  const [search, setSearch] = useState("");
+  const selectedIds = new Set(selected.map((i) => String(i.id)));
+  const q = search.trim().toLowerCase();
+  const hits = q
+    ? items.filter((i) => !selectedIds.has(String(i.id)) && String(i.name || "").toLowerCase().includes(q)).slice(0, 8)
+    : [];
+  const full = selected.length >= MAX_DEAL_MENU_ITEMS;
+
+  return (
+    <div style={{ display: "grid", gap: 6 }} data-testid="owner-deal-menu-items">
+      <span style={{ fontWeight: 700, fontSize: 13 }}>
+        Applies to menu items <span style={{ fontWeight: 400, color: OWNER_COLORS.muted }}>(optional, up to 3)</span>
+      </span>
+      <span style={{ fontSize: 12, color: OWNER_COLORS.muted }}>
+        Each item gets the same deal on its own. For several items at one price, create a combo deal.
+      </span>
+      {selected.length ? (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+          {selected.map((item) => (
+            <span
+              key={item.id}
+              style={{
+                display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 10px",
+                borderRadius: 999, background: OWNER_COLORS.accentSoft, fontSize: 13, fontWeight: 600,
+              }}
+              data-testid="owner-deal-menu-item-chip"
+            >
+              {item.name}
+              <button
+                type="button"
+                disabled={disabled}
+                onClick={() => onChange(selected.filter((s) => String(s.id) !== String(item.id)))}
+                style={{ border: "none", background: "transparent", cursor: "pointer", color: OWNER_COLORS.muted, padding: 0 }}
+                aria-label={`Remove ${item.name}`}
+              >
+                ✕
+              </button>
+            </span>
+          ))}
+        </div>
+      ) : null}
+      {loading ? (
+        <span style={{ fontSize: 12, color: OWNER_COLORS.muted }}>Loading menu…</span>
+      ) : !items.length ? (
+        <span style={{ fontSize: 12, color: OWNER_COLORS.muted }} data-testid="owner-deal-menu-items-empty">
+          No menu items for this restaurant yet.
+        </span>
+      ) : full ? null : (
+        <>
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value.slice(0, 120))}
+            placeholder="Search menu item name…"
+            disabled={disabled}
+            autoComplete="off"
+            style={inputStyle}
+            data-testid="owner-deal-menu-item-search"
+          />
+          {hits.length ? (
+            <div style={{ border: `1px solid ${OWNER_COLORS.line}`, borderRadius: 8, maxHeight: 200, overflowY: "auto" }}>
+              {hits.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => {
+                    onChange([...selected, item]);
+                    setSearch("");
+                  }}
+                  style={{
+                    display: "flex", justifyContent: "space-between", width: "100%", textAlign: "left",
+                    border: "none", borderBottom: `1px solid ${OWNER_COLORS.line}`, background: "#fff",
+                    padding: "8px 10px", fontSize: 13, cursor: "pointer",
+                  }}
+                  data-testid="owner-deal-menu-item-hit"
+                >
+                  <span>{item.name}</span>
+                  <span style={{ color: OWNER_COLORS.muted, fontSize: 12 }}>
+                    {item.price != null ? `$${Number(item.price).toFixed(2)}` : ""}
+                  </span>
+                </button>
+              ))}
+            </div>
+          ) : null}
+        </>
+      )}
+    </div>
+  );
+}
+
 function DealVideoUploadPanel({ onUploaded }) {
   const [file, setFile] = useState(null);
   const [title, setTitle] = useState("");
@@ -783,6 +881,35 @@ function DealVideoUploadPanel({ onUploaded }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [dealMenu, setDealMenu] = useState({ source: "public", items: [] });
+  const [dealMenuLoading, setDealMenuLoading] = useState(false);
+  const [dealItems, setDealItems] = useState([]);
+
+  const dealRestaurantId = restaurant?.restaurant_id || null;
+  useEffect(() => {
+    setDealItems([]);
+    setDealMenu({ source: "public", items: [] });
+    if (!dealRestaurantId) return undefined;
+    let cancelled = false;
+    setDealMenuLoading(true);
+    listOwnerDealMenuItems(dealRestaurantId)
+      .then((res) => {
+        if (cancelled) return;
+        setDealMenu({
+          source: res?.source === "commonknowledge" ? "commonknowledge" : "public",
+          items: Array.isArray(res?.items) ? res.items : [],
+        });
+      })
+      .catch(() => {
+        if (!cancelled) setDealMenu({ source: "public", items: [] });
+      })
+      .finally(() => {
+        if (!cancelled) setDealMenuLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [dealRestaurantId]);
 
   const mealTimeCaptionPreview =
     showMealTimeCaption && mealPeriods.length
@@ -840,6 +967,13 @@ function DealVideoUploadPanel({ onUploaded }) {
         meal_periods: mealPeriods,
         show_meal_time_caption: showMealTimeCaption && mealPeriods.length > 0,
         publish: false,
+        ...(dealItems.length
+          ? {
+              menu_item_id: Number(dealItems[0].id),
+              applies_to_menu_item_ids: dealItems.slice(1).map((i) => Number(i.id)),
+              linked_items_source: dealMenu.source,
+            }
+          : {}),
       });
       const dealId = created.deal?.id;
       if (!dealId) throw new Error("Deal was not created");
@@ -860,6 +994,7 @@ function DealVideoUploadPanel({ onUploaded }) {
       setDescription("");
       setMealPeriods([]);
       setShowMealTimeCaption(true);
+      setDealItems([]);
       onUploaded?.();
     } catch (err) {
       setError(err.message || "Deal video upload failed");
@@ -885,6 +1020,16 @@ function DealVideoUploadPanel({ onUploaded }) {
           disabled={busy}
           testIdPrefix="owner-deal"
         />
+
+        {restaurant?.restaurant_id ? (
+          <DealMenuItemsPicker
+            items={dealMenu.items}
+            selected={dealItems}
+            onChange={setDealItems}
+            loading={dealMenuLoading}
+            disabled={busy}
+          />
+        ) : null}
 
         <label style={{ display: "grid", gap: 6 }}>
           <span style={{ fontWeight: 700, fontSize: 13 }}>Deal title *</span>

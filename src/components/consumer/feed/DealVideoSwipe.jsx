@@ -39,6 +39,7 @@ import {
   formatVerticalReelCue,
   formatVerticalReelNavHint,
 } from "../../../lib/feedVerticalReelNavigationCopy.js";
+import { wrapEndlessFeedNext } from "../../../lib/shuffleProfileVideos.js";
 
 const SWIPE_MIN_PX = 56;
 
@@ -50,6 +51,9 @@ export default function DealVideoSwipe({
   containInShell = false,
 }) {
   const [index, setIndex] = useState(startIndex);
+  // Endless reel: plays the (shuffled) items once each, then reshuffles — no repeats
+  // until every deal video has played.
+  const [playlist, setPlaylist] = useState(items);
   const [videoMuted, setVideoMuted] = useState(() => defaultFeedVideoMuted("feedHome"));
   const [inviteOpen, setInviteOpen] = useState(false);
   const [browseSession, setBrowseSession] = useState(null);
@@ -58,18 +62,18 @@ export default function DealVideoSwipe({
   const touchStartY = useRef(null);
   const pipSwipeStartY = useRef(null);
   const ignoreVideoClickRef = useRef(false);
-  const item = items[index] || null;
+  const item = playlist[index] || null;
   const restaurantRef = restaurantRefFromDealItem(item);
   const menuBrowserOpen = Boolean(browseSession);
   const browseTrail = useMemo(() => {
     if (!browseSession) return [];
     return buildBrowseMenuTrail(
-      items,
+      playlist,
       browseSession.openIndex,
       index,
       restaurantRefFromDealItem
     );
-  }, [browseSession, items, index]);
+  }, [browseSession, playlist, index]);
   const browseTrailIndex = clampBrowseTrailIndex(
     browseSession?.trailIndex ?? 0,
     browseTrail.length
@@ -86,6 +90,10 @@ export default function DealVideoSwipe({
       ? item.menu_item_id
       : null;
   const inviteMenuItemName = String(item?.menu_item_name || "").trim() || null;
+
+  useEffect(() => {
+    setPlaylist(items);
+  }, [items]);
 
   useEffect(() => {
     setIndex(Math.min(Math.max(0, startIndex), Math.max(0, items.length - 1)));
@@ -113,7 +121,7 @@ export default function DealVideoSwipe({
     setBrowseSession((prev) => {
       if (!prev) return null;
       const trail = buildBrowseMenuTrail(
-        items,
+        playlist,
         prev.openIndex,
         index,
         restaurantRefFromDealItem
@@ -124,7 +132,7 @@ export default function DealVideoSwipe({
       if (trailIdx === prev.trailIndex) return prev;
       return { ...prev, trailIndex: trailIdx };
     });
-  }, [browseSession, index, item?.id, items]);
+  }, [browseSession, index, item?.id, playlist]);
 
   // Modal / body-portaled reel: lock scroll. In-shell Feed Deals must NOT touch body —
   // restoring a prior touchAction=none (or racing clearStuck) leaves primary nav dead
@@ -203,10 +211,13 @@ export default function DealVideoSwipe({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [items.length, index, menuBrowserOpen]);
+  }, [playlist, index, menuBrowserOpen]);
 
   function goNext() {
-    setIndex((i) => (i + 1 < items.length ? i + 1 : i));
+    if (playlist.length <= 1) return;
+    const { items: nextItems, index: nextIndex } = wrapEndlessFeedNext(playlist, index);
+    setPlaylist(nextItems);
+    setIndex(nextIndex);
   }
 
   function goPrev() {
@@ -277,7 +288,7 @@ export default function DealVideoSwipe({
     window.addEventListener(OPEN_FEED_MENU_BROWSER_EVENT, onRequestOpen);
     return () => window.removeEventListener(OPEN_FEED_MENU_BROWSER_EVENT, onRequestOpen);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- open against current clip
-  }, [index, item?.id, items.length]);
+  }, [index, item?.id, playlist.length]);
 
   function closeMenuBrowser() {
     setBrowseSession(null);
@@ -294,7 +305,7 @@ export default function DealVideoSwipe({
     setBrowseSession((prev) => {
       if (!prev) return null;
       const trail = buildBrowseMenuTrail(
-        items,
+        playlist,
         prev.openIndex,
         index,
         restaurantRefFromDealItem
@@ -386,7 +397,8 @@ export default function DealVideoSwipe({
     return containInShell ? empty : createPortal(empty, document.body);
   }
 
-  const atEnd = index >= items.length - 1;
+  // Endless: only a single-video reel has an end.
+  const atEnd = playlist.length <= 1;
   const atStart = index <= 0;
   const useMobileActionRail = !isDesktopViewport;
   const soundPromptLabel = isDesktopViewport ? "Click for sound" : "Tap for sound";
@@ -497,9 +509,9 @@ export default function DealVideoSwipe({
             style={{
               ...styles.pipSideArrowBtn,
               ...styles.pipSideArrowRight,
-              ...(index >= items.length - 1 ? styles.pipVideoNavBtnDisabled : null),
+              ...(atEnd ? styles.pipVideoNavBtnDisabled : null),
             }}
-            disabled={index >= items.length - 1}
+            disabled={atEnd}
             data-testid="feed-deals-pip-next-video"
             aria-label="Next Feed video"
             onClick={(e) => {
@@ -607,17 +619,22 @@ export default function DealVideoSwipe({
             ))}
           </div>
         ) : null}
-        {item.menu_item_name ? (
+        {item.eligible_item_names?.length > 1 ? (
+          <span style={styles.menuItem} data-testid="feed-deals-eligible-items">
+            {item.eligible_item_names.join(" · ")}
+          </span>
+        ) : item.menu_item_name ? (
           <span style={styles.menuItem}>{item.menu_item_name}</span>
         ) : null}
         {item.description ? <p style={styles.description}>{item.description}</p> : null}
         <p style={styles.hint}>
           {formatVerticalReelNavHint({
             index,
-            total: items.length,
+            total: playlist.length,
             atStart,
             atEnd,
             isDesktopViewport,
+            showPosition: false,
           })}
         </p>
       </div>

@@ -19,7 +19,9 @@ export function verticalReelUsesArrowKeyHints(isDesktopViewport) {
  *   atEnd: boolean,
  *   isDesktopViewport: boolean,
  *   modalWithExit?: boolean,
+ *   showPosition?: boolean,
  * }} opts
+ * showPosition=false omits the "3 / 12" count (Feed reels never show a video count).
  */
 export function formatVerticalReelNavHint({
   index,
@@ -28,22 +30,23 @@ export function formatVerticalReelNavHint({
   atEnd,
   isDesktopViewport,
   modalWithExit = false,
+  showPosition = true,
 }) {
-  const pos = `${index + 1} / ${total}`;
+  const pos = showPosition ? `${index + 1} / ${total} · ` : "";
   if (verticalReelUsesArrowKeyHints(isDesktopViewport)) {
-    if (atEnd) return `${pos} · ↑ arrow key for previous`;
+    if (atEnd) return `${pos}↑ arrow key for previous`;
     if (atStart && modalWithExit) {
-      return `${pos} · ↓ arrow key for next · ↑ arrow key or Exit to leave`;
+      return `${pos}↓ arrow key for next · ↑ arrow key or Exit to leave`;
     }
-    if (atStart) return `${pos} · ↓ arrow key for next`;
-    return `${pos} · ↓ arrow key next · ↑ arrow key previous`;
+    if (atStart) return `${pos}↓ arrow key for next`;
+    return `${pos}↓ arrow key next · ↑ arrow key previous`;
   }
-  if (atEnd) return `${pos} · swipe down for previous`;
+  if (atEnd) return `${pos}swipe down for previous`;
   if (atStart && modalWithExit) {
-    return `${pos} · swipe up for next · swipe down or Exit to leave`;
+    return `${pos}swipe up for next · swipe down or Exit to leave`;
   }
-  if (atStart) return `${pos} · swipe up for next`;
-  return `${pos} · swipe up next · swipe down previous`;
+  if (atStart) return `${pos}swipe up for next`;
+  return `${pos}swipe up next · swipe down previous`;
 }
 
 /** Short cue shown at bottom of reel when more items exist. */
