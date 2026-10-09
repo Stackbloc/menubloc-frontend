@@ -54,7 +54,10 @@ test("HomeNextFoodGrid still navigates with prefetch state (unchanged entry path
   assert.match(foodGrid, /buildHomeContextChipSearchUrl/);
 });
 
-test("Share results still copies the searchable URL", () => {
+test("Share results copies the searchable URL with the sharer's location pinned", () => {
   assert.match(searchPage, /handleShareResults/);
-  assert.match(searchPage, /navigator\.clipboard\.writeText\(window\.location\.href\)/);
+  assert.match(searchPage, /buildSearchResultsShareUrl\(window\.location\.href,/);
+  assert.match(searchPage, /navigator\.clipboard\.writeText\(shareUrl\)/);
+  // Device GPS is not in the page URL; without it recipients search near themselves.
+  assert.match(searchPage, /sp\.set\("lat", geo\.lat\.toFixed\(2\)\)/);
 });

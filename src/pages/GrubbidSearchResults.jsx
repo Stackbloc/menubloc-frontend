@@ -136,6 +136,32 @@ function SearchResultModeSelector({ dishCount, restaurantCount, mode, onModeChan
   );
 }
 
+/**
+ * Shared search links must reopen on the sharer's results, not the recipient's
+ * location. The URL already holds q + filters; device GPS and the session city
+ * do not, so pin them into the link (GPS rounded to ~1 km for privacy).
+ */
+function buildSearchResultsShareUrl(href, { geo, sessionLabel }) {
+  let url;
+  try {
+    url = new URL(href);
+  } catch {
+    return href;
+  }
+  const sp = url.searchParams;
+  const hasUrlLocation = ["zip", "city", "near", "lat"].some((key) => String(sp.get(key) || "").trim());
+  if (!hasUrlLocation && Number.isFinite(geo?.lat) && Number.isFinite(geo?.lng)) {
+    sp.set("lat", geo.lat.toFixed(2));
+    sp.set("lng", geo.lng.toFixed(2));
+    if (!sp.get("radius_miles")) sp.set("radius_miles", "8");
+  }
+  const label = String(sessionLabel || "").trim();
+  if (!sp.get("location_label") && label && label !== "your current location") {
+    sp.set("location_label", label);
+  }
+  return url.toString();
+}
+
 function SearchResultsShareControl({ copied, onShare }) {
   return (
     <button
@@ -2081,8 +2107,10 @@ export default function GrubbidSearchResults({ embedInFeedShell = false } = {}) 
         label: routeLocationLabel,
       };
     }
+    // Shared geo links carry lat/lng; the viewer's own saved city would mislabel those results.
+    if (routeLat && routeLng) return parseLocation("");
     return parseLocation(sessionLocation);
-  }, [routeZip, routeCity, routeState, routeNear, routeLocationLabel, sessionLocation]);
+  }, [routeZip, routeCity, routeState, routeNear, routeLocationLabel, routeLat, routeLng, sessionLocation]);
   const zip = fallbackLocation.zip;
   const city = fallbackLocation.city;
   const state = fallbackLocation.state;
@@ -2140,15 +2168,20 @@ export default function GrubbidSearchResults({ embedInFeedShell = false } = {}) 
   const [restaurantVisibleLimits, setRestaurantVisibleLimits] = useState({});
   const SEARCH_LIMIT = 24;
   const [shareCopied, setShareCopied] = useState(false);
+  const locationLabelRef = useRef("");
   const handleShareResults = useCallback(async () => {
+    const shareUrl = buildSearchResultsShareUrl(window.location.href, {
+      geo,
+      sessionLabel: locationLabelRef.current,
+    });
     try {
-      await navigator.clipboard.writeText(window.location.href);
+      await navigator.clipboard.writeText(shareUrl);
       setShareCopied(true);
       setTimeout(() => setShareCopied(false), 2200);
     } catch {
-      prompt("Copy this search link:", window.location.href);
+      prompt("Copy this search link:", shareUrl);
     }
-  }, []);
+  }, [geo]);
 
   const isRestaurantCardResults = searchMeta?.result_type === "restaurant_cards";
   const waiterInventoryRows = useMemo(
@@ -2979,6 +3012,21 @@ export default function GrubbidSearchResults({ embedInFeedShell = false } = {}) 
     }
     return "";
   }, [explicitLocationLabel, city, near, zip, geo.status, minVisibleDistance]);
+
+  // Share label: what the sharer sees, or the nearest result's city when they searched by GPS.
+  const shareLocationLabel = useMemo(() => {
+    if (locationLabel !== "your current location") return locationLabel;
+    let nearest = null;
+    for (const row of rows) {
+      const d = asNumber(pickFirst(row, ["distance_miles", "restaurant_distance_miles"], null));
+      if (d !== null && (!nearest || d < nearest.d)) nearest = { d, row };
+    }
+    if (!nearest) return "";
+    const nearCity = String(pickFirst(nearest.row, ["city", "restaurant_city", "restaurant_city_name"], "") || "").trim();
+    const nearState = String(pickFirst(nearest.row, ["state", "restaurant_state"], "") || "").trim();
+    return [nearCity, nearState].filter(Boolean).join(", ");
+  }, [locationLabel, rows]);
+  locationLabelRef.current = shareLocationLabel;
 
   const locationPhrase = useMemo(() => {
     if (!locationLabel) return "";
