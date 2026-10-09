@@ -327,7 +327,10 @@ function DealForm({ allItems, restaurantId, initial = {}, initialBillboard = nul
     }
   }
 
-  const valid = form.title && form.description && form.expires_at && form.menu_item_id;
+  // Start and end dates are both required; same-day deals are allowed (end of day > start of day).
+  const datesOutOfOrder = Boolean(form.starts_at && form.expires_at && form.expires_at < form.starts_at);
+  const valid =
+    form.title && form.description && form.starts_at && form.expires_at && !datesOutOfOrder && form.menu_item_id;
 
   return (
     <div style={{
@@ -496,13 +499,34 @@ function DealForm({ allItems, restaurantId, initial = {}, initialBillboard = nul
         )}
 
         <div>
-          <label style={LABEL}>Start date</label>
-          <input style={{ ...INPUT, width: "100%" }} type="date" value={form.starts_at} onChange={f("starts_at")} />
+          <label style={LABEL}>Start date *</label>
+          <input
+            style={{ ...INPUT, width: "100%" }}
+            type="date"
+            required
+            value={form.starts_at}
+            max={form.expires_at || undefined}
+            onChange={f("starts_at")}
+            data-testid="deal-form-start-date"
+          />
         </div>
         <div>
           <label style={LABEL}>Expires *</label>
-          <input style={{ ...INPUT, width: "100%" }} type="date" value={form.expires_at} onChange={f("expires_at")} />
+          <input
+            style={{ ...INPUT, width: "100%" }}
+            type="date"
+            required
+            value={form.expires_at}
+            min={form.starts_at || undefined}
+            onChange={f("expires_at")}
+            data-testid="deal-form-end-date"
+          />
         </div>
+        {datesOutOfOrder && (
+          <div style={{ gridColumn: "1 / -1", fontSize: 12, color: "#b91c1c", marginTop: -6 }} data-testid="deal-form-date-error">
+            Expires must be on or after the start date.
+          </div>
+        )}
         <div style={{ gridColumn: "1 / -1" }}>
           <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 12, color: "#0f1720", fontWeight: 600 }}>
             <input

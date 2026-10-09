@@ -63,3 +63,17 @@ test("operator editor: 2 'also applies to' slots for non-combo deals; combos sen
   assert.match(src, /form\.deal_type !== "combo" && form\.menu_item_id/);
   assert.match(src, /form\.deal_type === "combo" \|\| !form\.menu_item_id\s*\?\s*\[\]/);
 });
+
+test("deal start and end dates are required on both deal forms", () => {
+  const op = read("src/pages/operator/OperatorDealsEditor.jsx");
+  assert.match(op, /Start date \*/);
+  assert.match(op, /Expires \*/);
+  assert.match(op, /form\.starts_at && form\.expires_at && !datesOutOfOrder/);
+  assert.equal((op.match(/type="date"\s+required/g) || []).length, 2);
+
+  const owner = read("src/pages/owner/OwnerVideoCuration.jsx");
+  assert.match(owner, /Starts \*/);
+  assert.match(owner, /Ends \*/);
+  assert.match(owner, /Start and end dates are required\./);
+  assert.match(owner, /End date must be on or after the start date\./);
+});

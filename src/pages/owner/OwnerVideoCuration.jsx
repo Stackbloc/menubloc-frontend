@@ -951,6 +951,10 @@ function DealVideoUploadPanel({ onUploaded }) {
       setError("Start and end dates are required.");
       return;
     }
+    if (endDate < startDate) {
+      setError("End date must be on or after the start date.");
+      return;
+    }
 
     setBusy(true);
     setError("");
@@ -1112,6 +1116,7 @@ function DealVideoUploadPanel({ onUploaded }) {
             <input
               type="date"
               value={startDate}
+              required
               max={endDate || undefined}
               onChange={(e) => setStartDate(e.target.value)}
               style={inputStyle}
@@ -1123,6 +1128,7 @@ function DealVideoUploadPanel({ onUploaded }) {
             <input
               type="date"
               value={endDate}
+              required
               min={startDate || undefined}
               onChange={(e) => setEndDate(e.target.value)}
               style={inputStyle}
