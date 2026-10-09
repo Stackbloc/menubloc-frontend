@@ -345,6 +345,27 @@ export default function DealDetailPage() {
               </div>
             )}
 
+            {/* Other items the same deal terms apply to (each item individually) */}
+            {Array.isArray(deal.eligible_items) && deal.eligible_items.length > 1 && (
+              <div
+                style={{
+                  marginTop: 10, padding: "12px 16px",
+                  borderRadius: 12, background: "#121A14",
+                  border: "1px solid #1F2937",
+                }}
+                data-testid="deal-detail-also-applies-to"
+              >
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#6B7280", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                  Same deal also applies to
+                </div>
+                {deal.eligible_items.slice(1).map((item) => (
+                  <div key={item.id} style={{ fontSize: 14, fontWeight: 700, color: "#FFFFFF", marginTop: 2 }}>
+                    {getDisplayMenuItemName({ name: item.name, menu_item_name: item.name }, language, item.name)}
+                  </div>
+                ))}
+              </div>
+            )}
+
             {/* Preference selector — bundle/combo choices */}
             {deal.deal_type === "bundle" && (
               <div style={{

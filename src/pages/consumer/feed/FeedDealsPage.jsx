@@ -17,6 +17,7 @@ import {
 import { readDetectedLocation } from "../../../lib/discoveryLocationPersistence.js";
 import { resolveFeedDealStartIndex } from "../../../lib/feedShare.js";
 import { useFeedShellDesktop } from "../../../lib/useFeedShellDesktop.js";
+import { shuffleFeedVideos } from "../../../lib/shuffleProfileVideos.js";
 
 const DEFAULT_MARKET = { city: "Los Angeles", state: "CA" };
 const MEAL_FILTERS = [{ id: "all", label: "All" }, ...DEAL_MEAL_PERIODS];
@@ -65,7 +66,8 @@ export default function FeedDealsPage() {
         }
         const data = await apiGet(`/deals?${params.toString()}`);
         if (cancelled) return;
-        setItems(mapDealsToFeedVideoItems(data?.deals));
+        // Random order each load; DealVideoSwipe reshuffles after every video has played.
+        setItems(shuffleFeedVideos(mapDealsToFeedVideoItems(data?.deals)));
       } catch (err) {
         if (cancelled) return;
         setItems([]);

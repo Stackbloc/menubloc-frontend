@@ -872,6 +872,7 @@ export default function SeeWhosEatingFullscreen({
               atEnd,
               isDesktopViewport,
               modalWithExit: variant === "modal",
+              showPosition: variant !== "feedHome",
             })}
           </p>
         ) : null}

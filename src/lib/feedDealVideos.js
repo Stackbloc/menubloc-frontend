@@ -53,6 +53,10 @@ export function mapDealRowToFeedVideoItem(deal) {
     meal_period_labels: formatDealMealPeriodLabels(mealPeriods),
     menu_item_name: String(deal.menu_item_name || "").trim(),
     menu_item_id: deal.menu_item_id != null ? deal.menu_item_id : null,
+    // Menu items the deal applies to (same terms on each), in order; first = menu_item_id.
+    eligible_item_names: (Array.isArray(deal.eligible_items) ? deal.eligible_items : [])
+      .map((i) => String(i?.name || "").trim())
+      .filter(Boolean),
     discount_label: formatDealDiscountLabel(deal),
     feed_promoted: deal.feed_promoted === true,
     restaurant_href:

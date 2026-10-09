@@ -924,6 +924,10 @@ export const listOwnerDeals = (restaurantId, params = {}) => {
 export const createOwnerDeal = (restaurantId, body) =>
   post(`/api/owner/restaurants/${restaurantId}/deals`, body);
 
+/** Menu items a deal can apply to → { source: "commonknowledge"|"public", items: [{id,name,price}] }. */
+export const listOwnerDealMenuItems = (restaurantId) =>
+  get(`/api/owner/restaurants/${restaurantId}/deals/menu-items`);
+
 export const updateOwnerDeal = (restaurantId, dealId, body) =>
   patch(`/api/owner/restaurants/${restaurantId}/deals/${dealId}`, body);
 

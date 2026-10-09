@@ -106,7 +106,7 @@ function formatDate(iso) {
 function ComboItemPicker({ label, selectedId, selectedName, allItems, onSelect, onClear, disabledIds }) {
   const [search, setSearch] = useState(selectedName || "");
   const filtered = allItems.filter(i => {
-    if (disabledIds.has(i.id)) return false;
+    if (disabledIds.has(Number(i.id))) return false; // API ids may be bigint strings
     if (!search.trim() || selectedId) return false;
     return (
       i.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -194,6 +194,21 @@ function DealForm({ allItems, restaurantId, initial = {}, initialBillboard = nul
     { id: initComboIds[2] || "", name: initComboNames[2] || "" },
   ]);
 
+  // "Also applies to" items: same deal terms on each item (not a bundle — that's Combo).
+  // menu_item_id + up to 2 more = 3 items. Operator menus are public items; skip prefill
+  // for owner-created deals linked to the Common Knowledge menu.
+  const initAppliesIds =
+    Array.isArray(initial.applies_to_menu_item_ids) && initial.linked_items_source !== "commonknowledge"
+      ? initial.applies_to_menu_item_ids
+      : [];
+  const [appliesItems, setAppliesItems] = useState(() => {
+    const map = Object.fromEntries(allItems.map(i => [String(i.id), i.name]));
+    return [0, 1].map(n => ({
+      id: initAppliesIds[n] || "",
+      name: initAppliesIds[n] ? map[String(initAppliesIds[n])] || "" : "",
+    }));
+  });
+
   // Billboard section state
   const existingActive = initialBillboard?.billboard_status === "active";
   const [billboardEnabled, setBillboardEnabled] = useState(existingActive);
@@ -263,6 +278,10 @@ function DealForm({ allItems, restaurantId, initial = {}, initialBillboard = nul
     if (form.deal_type === "combo") {
       p.combo_item_ids = comboItems.filter(c => c.id).map(c => Number(c.id));
     }
+    p.applies_to_menu_item_ids =
+      form.deal_type === "combo" || !form.menu_item_id
+        ? []
+        : appliesItems.filter(c => c.id).map(c => Number(c.id));
     return p;
   }
 
@@ -308,7 +327,10 @@ function DealForm({ allItems, restaurantId, initial = {}, initialBillboard = nul
     }
   }
 
-  const valid = form.title && form.description && form.expires_at && form.menu_item_id;
+  // Start and end dates are both required; same-day deals are allowed (end of day > start of day).
+  const datesOutOfOrder = Boolean(form.starts_at && form.expires_at && form.expires_at < form.starts_at);
+  const valid =
+    form.title && form.description && form.starts_at && form.expires_at && !datesOutOfOrder && form.menu_item_id;
 
   return (
     <div style={{
@@ -352,7 +374,11 @@ function DealForm({ allItems, restaurantId, initial = {}, initialBillboard = nul
               {filteredItems.slice(0, 8).map(i => (
                 <div
                   key={i.id}
-                  onClick={() => { setForm(p => ({ ...p, menu_item_id: i.id })); setItemSearch(i.name); }}
+                  onClick={() => {
+                    setForm(p => ({ ...p, menu_item_id: i.id }));
+                    setItemSearch(i.name);
+                    setAppliesItems(p => p.map(c => (String(c.id) === String(i.id) ? { id: "", name: "" } : c)));
+                  }}
                   style={{
                     padding: "8px 12px", cursor: "pointer", fontSize: 13,
                     borderBottom: "1px solid #f4f3ef",
@@ -384,6 +410,7 @@ function DealForm({ allItems, restaurantId, initial = {}, initialBillboard = nul
               const newType = e.target.value;
               setForm(p => ({ ...p, deal_type: newType }));
               if (newType !== "combo") setComboItems([{ id: "", name: "" }, { id: "", name: "" }, { id: "", name: "" }]);
+              if (newType === "combo") setAppliesItems([{ id: "", name: "" }, { id: "", name: "" }]);
             }}
           >
             {DEAL_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
@@ -443,14 +470,63 @@ function DealForm({ allItems, restaurantId, initial = {}, initialBillboard = nul
           </>
         )}
 
+        {/* Same-terms items (non-combo): deal applies to each item individually */}
+        {form.deal_type !== "combo" && form.menu_item_id && (
+          <>
+            <div style={{ gridColumn: "1 / -1", fontSize: 12, color: "#64748b", marginBottom: -6 }} data-testid="deal-applies-to-hint">
+              This deal can apply to up to 3 menu items. Each item gets the same deal on its own —
+              for several items at one price, use the Combo deal type.
+            </div>
+            <ComboItemPicker
+              label="Also applies to (item 2)"
+              selectedId={appliesItems[0].id}
+              selectedName={appliesItems[0].name}
+              allItems={allItems}
+              onSelect={(id, name) => setAppliesItems(p => [{ id, name }, p[1]])}
+              onClear={() => setAppliesItems(p => [{ id: "", name: "" }, p[1]])}
+              disabledIds={new Set([form.menu_item_id, appliesItems[1].id].filter(Boolean).map(Number))}
+            />
+            <ComboItemPicker
+              label="Also applies to (item 3)"
+              selectedId={appliesItems[1].id}
+              selectedName={appliesItems[1].name}
+              allItems={allItems}
+              onSelect={(id, name) => setAppliesItems(p => [p[0], { id, name }])}
+              onClear={() => setAppliesItems(p => [p[0], { id: "", name: "" }])}
+              disabledIds={new Set([form.menu_item_id, appliesItems[0].id].filter(Boolean).map(Number))}
+            />
+          </>
+        )}
+
         <div>
-          <label style={LABEL}>Start date</label>
-          <input style={{ ...INPUT, width: "100%" }} type="date" value={form.starts_at} onChange={f("starts_at")} />
+          <label style={LABEL}>Start date *</label>
+          <input
+            style={{ ...INPUT, width: "100%" }}
+            type="date"
+            required
+            value={form.starts_at}
+            max={form.expires_at || undefined}
+            onChange={f("starts_at")}
+            data-testid="deal-form-start-date"
+          />
         </div>
         <div>
           <label style={LABEL}>Expires *</label>
-          <input style={{ ...INPUT, width: "100%" }} type="date" value={form.expires_at} onChange={f("expires_at")} />
+          <input
+            style={{ ...INPUT, width: "100%" }}
+            type="date"
+            required
+            value={form.expires_at}
+            min={form.starts_at || undefined}
+            onChange={f("expires_at")}
+            data-testid="deal-form-end-date"
+          />
         </div>
+        {datesOutOfOrder && (
+          <div style={{ gridColumn: "1 / -1", fontSize: 12, color: "#b91c1c", marginTop: -6 }} data-testid="deal-form-date-error">
+            Expires must be on or after the start date.
+          </div>
+        )}
         <div style={{ gridColumn: "1 / -1" }}>
           <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 12, color: "#0f1720", fontWeight: 600 }}>
             <input
