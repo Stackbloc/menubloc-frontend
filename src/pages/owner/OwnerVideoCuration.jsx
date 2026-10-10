@@ -17,6 +17,8 @@ import {
   uploadOwnerVideoThumbnail,
   replaceOwnerVideoMedia,
   createOwnerDeal,
+  listOwnerDeals,
+  updateOwnerDeal,
   listOwnerDealMenuItems,
   uploadOwnerDealMediaVideo,
   publishOwnerDeal,
@@ -781,9 +783,10 @@ function DealMenuItemsPicker({ items, selected, onChange, loading, disabled }) {
   const [search, setSearch] = useState("");
   const selectedIds = new Set(selected.map((i) => String(i.id)));
   const q = search.trim().toLowerCase();
-  const hits = q
-    ? items.filter((i) => !selectedIds.has(String(i.id)) && String(i.name || "").toLowerCase().includes(q)).slice(0, 8)
-    : [];
+  // Full menu is listed (scroll) without typing; typing narrows it.
+  const hits = items.filter(
+    (i) => !selectedIds.has(String(i.id)) && (!q || String(i.name || "").toLowerCase().includes(q))
+  );
   const full = selected.length >= MAX_DEAL_MENU_ITEMS;
 
   return (
@@ -831,14 +834,17 @@ function DealMenuItemsPicker({ items, selected, onChange, loading, disabled }) {
             type="search"
             value={search}
             onChange={(e) => setSearch(e.target.value.slice(0, 120))}
-            placeholder="Search menu item name…"
+            placeholder={`Search or scroll all ${items.length} menu items…`}
             disabled={disabled}
             autoComplete="off"
             style={inputStyle}
             data-testid="owner-deal-menu-item-search"
           />
           {hits.length ? (
-            <div style={{ border: `1px solid ${OWNER_COLORS.line}`, borderRadius: 8, maxHeight: 200, overflowY: "auto" }}>
+            <div
+              style={{ border: `1px solid ${OWNER_COLORS.line}`, borderRadius: 8, maxHeight: 240, overflowY: "auto" }}
+              data-testid="owner-deal-menu-item-list"
+            >
               {hits.map((item) => (
                 <button
                   key={item.id}
@@ -1658,10 +1664,11 @@ function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [onClose]);
 
+  // Deal videos pick up to 3 "applies to" items (DealMenuItemsPicker), not one CK dish.
+  const isDealVideo = video.video_kind === "deal";
   const supportsMenuItem =
     video.video_kind === "ate" ||
     video.video_kind === "want" ||
-    video.video_kind === "deal" ||
     video.video_kind === "managed";
   const supportsRestaurant =
     video.video_kind === "ate" ||
@@ -1669,6 +1676,52 @@ function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
     video.video_kind === "plan" ||
     video.video_kind === "deal" ||
     video.video_kind === "managed";
+
+  const [dealMenu, setDealMenu] = useState({ source: "public", items: [] });
+  const [dealItems, setDealItems] = useState([]);
+  const [dealItemsState, setDealItemsState] = useState("idle"); // idle | loading | ready | error
+  const [dealItemsDirty, setDealItemsDirty] = useState(false);
+  const dealRestaurantId = isDealVideo ? restaurant?.restaurant_id || null : null;
+  const dealRestaurantChanged =
+    isDealVideo && String(dealRestaurantId || "") !== String(video.restaurant_id || "");
+
+  useEffect(() => {
+    if (!isDealVideo) return undefined;
+    setDealItems([]);
+    setDealItemsDirty(false);
+    if (!dealRestaurantId) {
+      setDealMenu({ source: "public", items: [] });
+      setDealItemsState("idle");
+      return undefined;
+    }
+    let cancelled = false;
+    setDealItemsState("loading");
+    Promise.all([listOwnerDealMenuItems(dealRestaurantId), listOwnerDeals(dealRestaurantId)])
+      .then(([menuRes, dealsRes]) => {
+        if (cancelled) return;
+        const source = menuRes?.source === "commonknowledge" ? "commonknowledge" : "public";
+        const items = Array.isArray(menuRes?.items) ? menuRes.items : [];
+        setDealMenu({ source, items });
+        const deal = (dealsRes?.deals || []).find((d) => String(d.id) === String(video.video_source_id));
+        if (deal && (deal.linked_items_source || "public") === source) {
+          const byId = new Map(items.map((i) => [String(i.id), i]));
+          const ids = [deal.menu_item_id, ...(deal.applies_to_menu_item_ids || [])].filter((v) => v != null);
+          setDealItems(ids.map((id) => byId.get(String(id))).filter(Boolean));
+        }
+        setDealItemsState("ready");
+      })
+      .catch(() => {
+        if (!cancelled) setDealItemsState("error");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isDealVideo, dealRestaurantId, video.video_source_id]);
+
+  function handleDealItemsChange(next) {
+    setDealItems(next);
+    setDealItemsDirty(true);
+  }
 
   function handleDishChange(next) {
     setDish(next);
@@ -1697,7 +1750,9 @@ function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
         run_starts_at: runStartsAt || null,
         run_ends_at: runEndsAt || null,
       };
-      if (supportsRestaurant) {
+      // Deal videos: send the restaurant only when it changed — the metadata save clears
+      // the deal's items on any restaurant patch; items are saved below via the deal itself.
+      if (supportsRestaurant && (!isDealVideo || dealRestaurantChanged)) {
         body.restaurant_id = restaurant?.restaurant_id ?? null;
       }
       if (supportsMenuItem) {
@@ -1711,6 +1766,19 @@ function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
         video.video_source_id,
         body
       );
+      if (
+        isDealVideo &&
+        dealRestaurantId &&
+        dealItemsState === "ready" &&
+        (dealItemsDirty || dealRestaurantChanged)
+      ) {
+        await updateOwnerDeal(dealRestaurantId, video.video_source_id, {
+          menu_item_id: dealItems[0] ? Number(dealItems[0].id) : null,
+          applies_to_menu_item_ids: dealItems.slice(1).map((i) => Number(i.id)),
+          linked_items_source: dealMenu.source,
+        });
+        setDealItemsDirty(false);
+      }
       if (managerActiveOverride !== undefined) {
         setManagerActive(managerActiveOverride);
       }
@@ -2144,6 +2212,22 @@ function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
               allowMenuItem={supportsMenuItem}
               disabled={busy}
               testIdPrefix="owner-video"
+            />
+          )
+        ) : null}
+
+        {isDealVideo && dealRestaurantId ? (
+          dealItemsState === "error" ? (
+            <p style={{ fontSize: 13, color: "#b91c1c", margin: 0 }} data-testid="owner-video-deal-items-error">
+              Could not load this deal's menu items. Reload to edit them.
+            </p>
+          ) : (
+            <DealMenuItemsPicker
+              items={dealMenu.items}
+              selected={dealItems}
+              onChange={handleDealItemsChange}
+              loading={dealItemsState === "loading"}
+              disabled={busy}
             />
           )
         ) : null}

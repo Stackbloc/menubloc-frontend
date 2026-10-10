@@ -73,6 +73,8 @@ const styles = {
   },
 };
 
+const FULL_MENU_LIMIT = 500;
+
 export default function CkRestaurantMenuPicker({
   restaurant = null,
   onRestaurantChange,
@@ -91,6 +93,7 @@ export default function CkRestaurantMenuPicker({
   const [dishQuery, setDishQuery] = useState("");
   const [dishHits, setDishHits] = useState([]);
   const [dishSearching, setDishSearching] = useState(false);
+  const [menuDishes, setMenuDishes] = useState([]);
 
   useEffect(() => {
     const q = restaurantQuery.trim();
@@ -113,31 +116,40 @@ export default function CkRestaurantMenuPicker({
     return () => clearTimeout(timer);
   }, [restaurantQuery, restaurant]);
 
+  // Load the restaurant's full menu once (server allows up to 500 for one restaurant),
+  // then filter on the device as the owner types — every dish is reachable.
+  const menuRestaurantId = restaurant?.restaurant_id || null;
   useEffect(() => {
-    if (!allowMenuItem || !restaurant?.restaurant_id || dish) {
-      setDishHits([]);
+    setMenuDishes([]);
+    if (!allowMenuItem || !menuRestaurantId) {
       setDishSearching(false);
       return undefined;
     }
-    const q = dishQuery.trim();
-    const timer = setTimeout(async () => {
-      setDishSearching(true);
-      try {
-        const data = await searchReportPlaces({
-          type: "menu_item",
-          q,
-          restaurant_id: restaurant.restaurant_id,
-          limit: 20,
-        });
-        setDishHits(data.results || []);
-      } catch {
-        setDishHits([]);
-      } finally {
-        setDishSearching(false);
-      }
-    }, q ? 220 : 0);
-    return () => clearTimeout(timer);
-  }, [allowMenuItem, dishQuery, restaurant, dish]);
+    let cancelled = false;
+    setDishSearching(true);
+    searchReportPlaces({ type: "menu_item", q: "", restaurant_id: menuRestaurantId, limit: FULL_MENU_LIMIT })
+      .then((data) => {
+        if (!cancelled) setMenuDishes(data.results || []);
+      })
+      .catch(() => {
+        if (!cancelled) setMenuDishes([]);
+      })
+      .finally(() => {
+        if (!cancelled) setDishSearching(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [allowMenuItem, menuRestaurantId]);
+
+  useEffect(() => {
+    if (!allowMenuItem || !menuRestaurantId || dish) {
+      setDishHits([]);
+      return;
+    }
+    const q = dishQuery.trim().toLowerCase();
+    setDishHits(q ? menuDishes.filter((row) => dishLabel(row).toLowerCase().includes(q)) : menuDishes);
+  }, [allowMenuItem, menuRestaurantId, dish, dishQuery, menuDishes]);
 
   function pickRestaurant(row) {
     const next = asRestaurantPlace(row);
