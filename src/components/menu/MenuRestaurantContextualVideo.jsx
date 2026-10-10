@@ -91,15 +91,19 @@ export default function MenuRestaurantContextualVideo({
     return stripMediaUrlFragment(resolveConsumerMediaUrl(clip.video_url) || clip.video_url);
   }, [clip?.video_url, clip?.video_key]);
 
+  // Video Manager "play muted": always muted; the sound button is locked.
+  const forcedMute = clip?.play_muted === true;
+  const effectiveMuted = forcedMute || muted;
+
   useEffect(() => {
     const el = videoRef.current;
     if (!el || !src) return undefined;
     el.currentTime = 0;
-    el.muted = muted;
+    el.muted = effectiveMuted;
     const p = el.play();
     if (p && typeof p.catch === "function") p.catch(() => {});
     return undefined;
-  }, [src, index, muted]);
+  }, [src, index, effectiveMuted]);
 
   if (!rid || loading || !clip || !src) return null;
   if (typeof document === "undefined") return null;
@@ -122,6 +126,7 @@ export default function MenuRestaurantContextualVideo({
   function toggleMute(e) {
     e?.preventDefault?.();
     e?.stopPropagation?.();
+    if (forcedMute) return;
     setMuted((m) => !m);
   }
 
@@ -147,7 +152,7 @@ export default function MenuRestaurantContextualVideo({
         src={src}
         style={styles.video}
         playsInline
-        muted={muted}
+        muted={effectiveMuted}
         loop
         autoPlay
         controls={false}
@@ -188,10 +193,13 @@ export default function MenuRestaurantContextualVideo({
         type="button"
         style={styles.muteBtn}
         data-testid="menu-restaurant-contextual-video-mute"
-        aria-label={muted ? "Unmute video" : "Mute video"}
+        aria-label={forcedMute ? "This video plays without sound" : muted ? "Unmute video" : "Mute video"}
+        title={forcedMute ? "No sound" : undefined}
+        disabled={forcedMute}
+        data-forced-mute={forcedMute ? "1" : "0"}
         onClick={toggleMute}
       >
-        {muted ? "🔇" : "🔊"}
+        {effectiveMuted ? "🔇" : "🔊"}
       </button>
     </div>,
     document.body

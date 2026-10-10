@@ -147,6 +147,15 @@ export default function VideoWatchPage() {
               poster={data.photo_url || undefined}
               controls
               playsInline
+              // Video Manager "play muted": start muted and undo any unmute from native controls.
+              muted={data.play_muted === true}
+              ref={(el) => {
+                if (el && data.play_muted === true) el.muted = true;
+              }}
+              onVolumeChange={(e) => {
+                if (data.play_muted === true && !e.currentTarget.muted) e.currentTarget.muted = true;
+              }}
+              data-play-muted={data.play_muted === true ? "1" : "0"}
               style={{ width: "100%", maxHeight: "70vh", display: "block", background: "#000" }}
             />
           ) : (
@@ -155,6 +164,14 @@ export default function VideoWatchPage() {
             </div>
           )}
         </div>
+        {data.video_url && data.play_muted === true ? (
+          <p
+            style={{ margin: "-0.5rem 0 1rem", fontSize: 13, color: "#94a3b8" }}
+            data-testid="video-watch-no-sound"
+          >
+            This video plays without sound.
+          </p>
+        ) : null}
 
         <div style={{ display: "grid", gap: "0.55rem" }}>
           {restaurantHref ? (
