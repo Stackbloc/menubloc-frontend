@@ -59,11 +59,38 @@ export function mapDealRowToFeedVideoItem(deal) {
       .filter(Boolean),
     discount_label: formatDealDiscountLabel(deal),
     feed_promoted: deal.feed_promoted === true,
+    // Video Manager "play muted": DealVideoSwipe forces mute + locks the sound toggle.
+    play_muted: deal.play_muted === true,
     restaurant_href:
       restaurantPath({ slug, city, state }) ||
       (deal.restaurant_id ? `/restaurants/${encodeURIComponent(String(deal.restaurant_id))}` : null),
     deal_href: dealId ? `/deals/${dealId}` : "/deals",
   };
+}
+
+/**
+ * Meal time SORTS deal videos, never hides them (Andre, 2026-10-09):
+ * deals tagged with `mealPeriod` first, then all-day deals, then deals for other meals.
+ * Random order within each group. "all" (or none) = plain random.
+ */
+export function orderDealVideosForMeal(items, mealPeriod, shuffle = shuffleList) {
+  const list = Array.isArray(items) ? items : [];
+  if (!mealPeriod || mealPeriod === "all") return shuffle(list);
+  const groups = [[], [], []];
+  for (const item of list) {
+    const periods = Array.isArray(item?.meal_periods) ? item.meal_periods : [];
+    groups[periods.includes(mealPeriod) ? 0 : periods.length === 0 ? 1 : 2].push(item);
+  }
+  return groups.flatMap((g) => shuffle(g));
+}
+
+function shuffleList(list) {
+  const next = [...list];
+  for (let i = next.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [next[i], next[j]] = [next[j], next[i]];
+  }
+  return next;
 }
 
 export function mapDealsToFeedVideoItems(deals) {

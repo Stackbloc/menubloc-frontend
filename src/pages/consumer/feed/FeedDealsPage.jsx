@@ -4,12 +4,12 @@
  * Text search / filters live at /deals (classic DealsPage).
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import DealVideoSwipe from "../../../components/consumer/feed/DealVideoSwipe.jsx";
 import { FEED_PRIMARY_NAV_HEIGHT } from "../../../components/consumer/feed/FeedPrimaryNav.jsx";
 import { apiGet } from "../../../lib/api.js";
-import { mapDealsToFeedVideoItems } from "../../../lib/feedDealVideos.js";
+import { mapDealsToFeedVideoItems, orderDealVideosForMeal } from "../../../lib/feedDealVideos.js";
 import {
   DEAL_MEAL_PERIODS,
   defaultDealMealPeriod,
@@ -17,7 +17,6 @@ import {
 import { readDetectedLocation } from "../../../lib/discoveryLocationPersistence.js";
 import { resolveFeedDealStartIndex } from "../../../lib/feedShare.js";
 import { useFeedShellDesktop } from "../../../lib/useFeedShellDesktop.js";
-import { shuffleFeedVideos } from "../../../lib/shuffleProfileVideos.js";
 
 const DEFAULT_MARKET = { city: "Los Angeles", state: "CA" };
 const MEAL_FILTERS = [{ id: "all", label: "All" }, ...DEAL_MEAL_PERIODS];
@@ -35,12 +34,21 @@ export default function FeedDealsPage() {
   const isDesktop = useFeedShellDesktop();
   const [searchParams] = useSearchParams();
   const market = useMemo(() => resolveMarket(), []);
-  const [items, setItems] = useState([]);
+  const [allItems, setAllItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [mealFilter, setMealFilter] = useState(() => defaultDealMealPeriod());
-  // Desktop: no top meal chips (bottom caption already shows meal times). Show all deal videos.
+  // Meal time SORTS, never hides: every deal video always loads; the chosen meal's deals
+  // play first. Desktop has no chips (bottom caption shows meal times) → plain random.
   const effectiveMealFilter = isDesktop ? "all" : mealFilter;
+  const items = useMemo(
+    () => orderDealVideosForMeal(allItems, effectiveMealFilter),
+    [allItems, effectiveMealFilter]
+  );
+  const reshuffleForMeal = useCallback(
+    (list) => orderDealVideosForMeal(list, effectiveMealFilter),
+    [effectiveMealFilter]
+  );
   const sharedDealId = useMemo(
     () => String(searchParams.get("deal") || "").trim(),
     [searchParams]
@@ -61,16 +69,13 @@ export default function FeedDealsPage() {
           state: market.state,
           has_video: "1",
         });
-        if (effectiveMealFilter && effectiveMealFilter !== "all") {
-          params.set("meal_period", effectiveMealFilter);
-        }
         const data = await apiGet(`/deals?${params.toString()}`);
         if (cancelled) return;
-        // Random order each load; DealVideoSwipe reshuffles after every video has played.
-        setItems(shuffleFeedVideos(mapDealsToFeedVideoItems(data?.deals)));
+        // Order (meal sort + random) is applied in `items`; the reel reshuffles after each full pass.
+        setAllItems(mapDealsToFeedVideoItems(data?.deals));
       } catch (err) {
         if (cancelled) return;
-        setItems([]);
+        setAllItems([]);
         setError(err?.message || "Unable to load deal videos");
       } finally {
         if (!cancelled) setLoading(false);
@@ -80,7 +85,7 @@ export default function FeedDealsPage() {
     return () => {
       cancelled = true;
     };
-  }, [market.city, market.state, effectiveMealFilter]);
+  }, [market.city, market.state]);
 
   const headerSlot = isDesktop ? null : (
     <div style={styles.chromeWrap} data-testid="feed-deals-chrome" data-deals-channel="public-offers">
@@ -90,7 +95,7 @@ export default function FeedDealsPage() {
       <div
         style={styles.mealStrip}
         role="tablist"
-        aria-label="Filter deal videos by meal time"
+        aria-label="Sort deal videos by meal time"
         data-testid="feed-deals-meal-filters"
       >
         {MEAL_FILTERS.map((chip) => {
@@ -137,7 +142,9 @@ export default function FeedDealsPage() {
   return (
     <div style={styles.page} data-testid="feed-deals-page">
       <DealVideoSwipe
+        key={effectiveMealFilter}
         items={items}
+        reshuffle={reshuffleForMeal}
         startIndex={startIndex}
         bottomInset={isDesktop ? 8 : FEED_PRIMARY_NAV_HEIGHT + 8}
         headerSlot={headerSlot}

@@ -49,6 +49,8 @@ export default function DealVideoSwipe({
   bottomInset = 0,
   headerSlot = null,
   containInShell = false,
+  /** Optional reorder used when the reel loops (keeps meal-time sort across passes). */
+  reshuffle = null,
 }) {
   const [index, setIndex] = useState(startIndex);
   // Endless reel: plays the (shuffled) items once each, then reshuffles — no repeats
@@ -215,7 +217,7 @@ export default function DealVideoSwipe({
 
   function goNext() {
     if (playlist.length <= 1) return;
-    const { items: nextItems, index: nextIndex } = wrapEndlessFeedNext(playlist, index);
+    const { items: nextItems, index: nextIndex } = wrapEndlessFeedNext(playlist, index, reshuffle);
     setPlaylist(nextItems);
     setIndex(nextIndex);
   }

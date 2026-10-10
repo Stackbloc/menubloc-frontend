@@ -19,7 +19,7 @@ export const shuffleFeedVideos = shuffleProfileVideos;
  * Feed home never ends: advance one clip, or reshuffle and restart when past the last.
  * When reshuffling, prefer a different first clip than the one just watched (if pool > 1).
  */
-export function wrapEndlessFeedNext(list, currentIndex) {
+export function wrapEndlessFeedNext(list, currentIndex, reshuffle = null) {
   const rows = Array.isArray(list) ? list : [];
   if (rows.length === 0) return { items: rows, index: 0 };
   const i = Math.min(Math.max(0, Number(currentIndex) || 0), rows.length - 1);
@@ -27,9 +27,13 @@ export function wrapEndlessFeedNext(list, currentIndex) {
     return { items: rows, index: i + 1 };
   }
   const currentId = rows[i]?.id;
-  const reshuffled = shuffleFeedVideos(rows);
+  // Optional custom reshuffle (e.g. Feed Deals keeps meal-time sort order across passes).
+  const reshuffled = typeof reshuffle === "function" ? reshuffle(rows) : shuffleFeedVideos(rows);
   if (rows.length > 1 && currentId != null && String(reshuffled[0]?.id) === String(currentId)) {
-    const j = 1 + Math.floor(Math.random() * (reshuffled.length - 1));
+    // Custom order: swap with the neighbor so the order is preserved as much as possible.
+    const j = typeof reshuffle === "function"
+      ? 1
+      : 1 + Math.floor(Math.random() * (reshuffled.length - 1));
     const tmp = reshuffled[0];
     reshuffled[0] = reshuffled[j];
     reshuffled[j] = tmp;

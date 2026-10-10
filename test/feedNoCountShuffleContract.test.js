@@ -48,12 +48,11 @@ test("endless shuffle: every video plays once before any repeats", () => {
   }
 });
 
-test("Feed Deals shuffles on load and loops via wrapEndlessFeedNext", () => {
-  assert.match(
-    read("src/pages/consumer/feed/FeedDealsPage.jsx"),
-    /setItems\(shuffleFeedVideos\(mapDealsToFeedVideoItems\(data\?\.deals\)\)\)/
-  );
+test("Feed Deals orders by meal (random within groups) and loops via wrapEndlessFeedNext", () => {
+  const page = read("src/pages/consumer/feed/FeedDealsPage.jsx");
+  assert.match(page, /orderDealVideosForMeal\(allItems, effectiveMealFilter\)/);
+  assert.match(page, /reshuffle=\{reshuffleForMeal\}/);
   const swipe = read("src/components/consumer/feed/DealVideoSwipe.jsx");
-  assert.match(swipe, /wrapEndlessFeedNext\(playlist, index\)/);
+  assert.match(swipe, /wrapEndlessFeedNext\(playlist, index, reshuffle\)/);
   assert.match(swipe, /const atEnd = playlist\.length <= 1;/);
 });

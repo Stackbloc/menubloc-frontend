@@ -51,7 +51,9 @@ test("Feed deals: video swipe reel, no meal chips", () => {
   assert.doesNotMatch(feedDeals, /feed-deals-search/);
   assert.doesNotMatch(feedDeals, /Search deals/);
   assert.match(feedDeals, /feed-deals-meal-filters/);
-  assert.match(feedDeals, /meal_period/);
+  // Meal time sorts, never hides: no meal_period filter sent; chips reorder via orderDealVideosForMeal.
+  assert.doesNotMatch(feedDeals, /params\.set\("meal_period"/);
+  assert.match(feedDeals, /orderDealVideosForMeal\(allItems, effectiveMealFilter\)/);
   // Desktop: no top meal filter strip (bottom caption already has meal badges).
   assert.match(feedDeals, /headerSlot = isDesktop \? null/);
   assert.match(feedDeals, /effectiveMealFilter = isDesktop \? "all"/);
@@ -89,4 +91,13 @@ test("Feed deals: video swipe reel, no meal chips", () => {
 
   const operatorApi = read("src/lib/operatorApi.js");
   assert.match(operatorApi, /deals\/\$\{did\}\/media\/video/);
+});
+
+test("feedDealVideos: carries the Video Manager play_muted setting", () => {
+  const base = { id: 7, title: "x", video_url: "https://example.test/v.mp4" };
+  assert.equal(mapDealRowToFeedVideoItem({ ...base, play_muted: true }).play_muted, true);
+  assert.equal(mapDealRowToFeedVideoItem({ ...base, play_muted: false }).play_muted, false);
+  assert.equal(mapDealRowToFeedVideoItem(base).play_muted, false);
+  const swipe = read("src/components/consumer/feed/DealVideoSwipe.jsx");
+  assert.match(swipe, /isManagerForcedMute\(item\)/);
 });
