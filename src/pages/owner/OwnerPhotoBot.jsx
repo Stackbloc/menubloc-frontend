@@ -162,7 +162,10 @@ export default function OwnerPhotoBot() {
       if (!groups.has(key)) groups.set(key, []);
       groups.get(key).push(mi);
     }
-    return [...groups.entries()];
+    // Alphabetical within each menu so items are easy to find in the dropdown.
+    const byName = (a, b) =>
+      String(a.item_name || "").localeCompare(String(b.item_name || ""), undefined, { sensitivity: "base", numeric: true });
+    return [...groups.entries()].map(([menuName, items]) => [menuName, [...items].sort(byName)]);
   }, [preview]);
 
   const selections = useMemo(
