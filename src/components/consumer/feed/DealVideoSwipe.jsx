@@ -11,6 +11,7 @@ import { Link } from "react-router-dom";
 import InviteToEatModal from "../../InviteToEatModal.jsx";
 import BrowseMenusIcon from "../../icons/BrowseMenusIcon.jsx";
 import FeedMenuBrowserPipOverlay from "./FeedMenuBrowserPipOverlay.jsx";
+import FeedPipExpandButton from "./FeedPipExpandButton.jsx";
 import FeedVideoActionRail from "./FeedVideoActionRail.jsx";
 import {
   clearStuckMediaChrome,
@@ -495,6 +496,7 @@ export default function DealVideoSwipe({
           }}
           data-testid="feed-menu-browser-pip-video-nav"
         >
+          <FeedPipExpandButton onExpand={closeMenuBrowser} />
           <button
             type="button"
             style={{

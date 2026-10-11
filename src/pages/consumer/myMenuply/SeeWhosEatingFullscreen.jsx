@@ -11,6 +11,7 @@ import ShareButton from "../../../components/share/ShareButton.jsx";
 import InviteToEatModal from "../../../components/InviteToEatModal.jsx";
 import BrowseMenusIcon from "../../../components/icons/BrowseMenusIcon.jsx";
 import FeedMenuBrowserPipOverlay from "../../../components/consumer/feed/FeedMenuBrowserPipOverlay.jsx";
+import FeedPipExpandButton from "../../../components/consumer/feed/FeedPipExpandButton.jsx";
 import FeedVideoActionRail from "../../../components/consumer/feed/FeedVideoActionRail.jsx";
 import { requestConnection } from "../../../lib/consumerApi.js";
 import {
@@ -760,6 +761,7 @@ export default function SeeWhosEatingFullscreen({
           }}
           data-testid="feed-menu-browser-pip-video-nav"
         >
+          <FeedPipExpandButton onExpand={closeMenuBrowser} />
           <button
             type="button"
             style={{
