@@ -553,13 +553,10 @@ export default function BrowseMenus({
           ? {
               boxSizing: "border-box",
               paddingTop: isFeedDesktop ? 0 : FEED_MOBILE_HEADER_OFFSET,
-              paddingBottom: isFeedDesktop
-                ? 0
-                : "calc(var(--feed-primary-nav-h, 56px) + env(safe-area-inset-bottom, 0px))",
-              // Food/Drinks FAB uses --bottom-nav-h; in the Feed shell that is the primary nav.
-              "--bottom-nav-h": isFeedDesktop
-                ? "0px"
-                : "calc(var(--feed-primary-nav-h, 56px) + env(safe-area-inset-bottom, 0px))",
+              // Mobile: the ordering BottomNav (Basket) replaces the Feed nav and publishes
+              // its own --bottom-nav-h. Desktop: Feed rail already has Basket, no bottom bar.
+              paddingBottom: isFeedDesktop ? 0 : "var(--bottom-nav-h, 72px)",
+              ...(isFeedDesktop ? { "--bottom-nav-h": "0px" } : null),
             }
           : null),
       }}
@@ -863,7 +860,7 @@ export default function BrowseMenus({
         </div>
       </div>
 
-      {!embedInFeedShell ? <BottomNav /> : null}
+      {!embedInFeedShell || !isFeedDesktop ? <BottomNav /> : null}
     </div>
   );
 }

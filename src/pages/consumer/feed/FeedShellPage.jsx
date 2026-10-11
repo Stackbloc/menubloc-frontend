@@ -7,6 +7,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Outlet, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { isFeedShopRoute } from "../../../lib/feedShellNavigation.js";
+import { SEARCH_SHOP_MODE_MENU_BROWSER, resolveSearchShopMode } from "../../../lib/searchShopMode.js";
 import FeedPrimaryNav, { FEED_PRIMARY_NAV_HEIGHT } from "../../../components/consumer/feed/FeedPrimaryNav.jsx";
 import FeedDesktopRail, { FEED_DESKTOP_RAIL_WIDTH } from "../../../components/consumer/feed/FeedDesktopRail.jsx";
 import FeedMobileHeader from "../../../components/consumer/feed/FeedMobileHeader.jsx";
@@ -31,10 +32,16 @@ function isOwnFeedProfilePath(pathname) {
 export default function FeedShellPage({ children = null }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const [, setSearchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { isAuthenticated } = useConsumer();
   const isDesktop = useFeedShellDesktop();
   const showShopBasket = isFeedShopRoute(location.pathname);
+  // Search & Shop → Menu Browser: menus take orders, so mobile shows the ordering
+  // BottomNav (Home · Waiter · X · Basket · My Menuply) rendered by BrowseMenus instead.
+  const hideFeedPrimaryNav =
+    !isDesktop &&
+    showShopBasket &&
+    resolveSearchShopMode(searchParams) === SEARCH_SHOP_MODE_MENU_BROWSER;
   const [createSheetOpen, setCreateSheetOpen] = useState(false);
   const [composeCategory, setComposeCategory] = useState("");
   const [composeMediaSource, setComposeMediaSource] = useState("camera");
@@ -107,7 +114,7 @@ export default function FeedShellPage({ children = null }) {
   useEffect(() => {
     document.documentElement.style.setProperty(
       "--feed-primary-nav-h",
-      `${isDesktop ? 0 : FEED_PRIMARY_NAV_HEIGHT}px`
+      `${isDesktop || hideFeedPrimaryNav ? 0 : FEED_PRIMARY_NAV_HEIGHT}px`
     );
     document.documentElement.style.setProperty(
       "--feed-desktop-rail-w",
@@ -117,7 +124,7 @@ export default function FeedShellPage({ children = null }) {
       document.documentElement.style.removeProperty("--feed-primary-nav-h");
       document.documentElement.style.removeProperty("--feed-desktop-rail-w");
     };
-  }, [isDesktop]);
+  }, [isDesktop, hideFeedPrimaryNav]);
 
   // Close Multiplier / compose / More / QR on route change.
   useEffect(() => {
@@ -247,7 +254,7 @@ export default function FeedShellPage({ children = null }) {
         {children != null ? children : <Outlet context={profileViewOutlet} />}
       </div>
 
-      {!isDesktop ? (
+      {!isDesktop && !hideFeedPrimaryNav ? (
         <FeedPrimaryNav
           onCreateClick={openCreateSheet}
           createActive={createActive}
