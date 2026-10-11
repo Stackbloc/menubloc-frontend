@@ -1,5 +1,5 @@
 /**
- * Live Feed mobile right action rail — Connect · Wanna Go! · Invite · Like · Clusters · Menu Browser.
+ * Live Feed mobile right action rail — Connect · Wanna Go! · Invite · Like · Menu Browser.
  * Share lives inside the Invite flow (shareData is forwarded there by the parent).
  * Desktop Feed keeps the prior Share & Invite + Menu Browser dock (not this rail).
  * Hide (do not gray-out) actions that do not apply.
@@ -56,19 +56,6 @@ function ConnectGlyph({ size = 22 }) {
   );
 }
 
-function ClustersGlyph({ size = 22 }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <circle cx="7" cy="8" r="3" stroke="#fff" strokeWidth="2" />
-      <circle cx="17" cy="8" r="3" stroke="#fff" strokeWidth="2" />
-      <circle cx="12" cy="16.5" r="3" stroke="#5eead4" strokeWidth="2" />
-    </svg>
-  );
-}
-
-/** Clusters directory spans every public cluster — never a dead end for guests. */
-export const FEED_RAIL_CLUSTERS_PATH = "/clusters";
-
 /**
  * @param {object} props
  * @param {number} [props.bottomInset]
@@ -116,7 +103,8 @@ export default function FeedVideoActionRail({
 
   const showWannaGo = hasRestaurant;
   const showLike = hasRestaurant;
-  // Clusters is always available, so the rail always renders.
+  const anyVisible = showConnect || showWannaGo || showInvite || showLike || showMenu;
+  if (!anyVisible) return null;
 
   async function onWannaGoClick() {
     setWannaError("");
@@ -141,10 +129,6 @@ export default function FeedVideoActionRail({
     } finally {
       setWannaBusy(false);
     }
-  }
-
-  function onClustersClick() {
-    navigate(FEED_RAIL_CLUSTERS_PATH);
   }
 
   const inset = Math.max(0, Number(bottomInset) || 0);
@@ -209,15 +193,6 @@ export default function FeedVideoActionRail({
             />
           </RailButton>
         ) : null}
-
-        <RailButton
-          testId="feed-rail-clusters"
-          label="Clusters"
-          ariaLabel="Explore Clusters"
-          onClick={onClustersClick}
-        >
-          <ClustersGlyph />
-        </RailButton>
 
         {showMenu ? (
           <RailButton

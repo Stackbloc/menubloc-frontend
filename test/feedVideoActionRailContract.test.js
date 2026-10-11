@@ -18,7 +18,7 @@ test("FeedVideoActionRail: Connect first, no Waiter on rail", () => {
   assert.match(rail, /feed-rail-wanna-go/);
   assert.doesNotMatch(rail, /feed-rail-share/);
   assert.match(rail, /feed-rail-invite/);
-  assert.match(rail, /feed-rail-clusters/);
+  assert.doesNotMatch(rail, /feed-rail-clusters/);
   assert.match(rail, /feed-rail-like/);
   assert.match(rail, /feed-rail-menu/);
   assert.match(rail, /WannaGoPlateIcon/);
@@ -30,8 +30,8 @@ test("FeedVideoActionRail: Connect first, no Waiter on rail", () => {
   const connectIdx = rail.indexOf("feed-rail-connect");
   const wannaIdx = rail.indexOf("feed-rail-wanna-go");
   assert.ok(connectIdx >= 0 && wannaIdx > connectIdx);
-  // Rail order: Wanna Go!, Invite, Like, Clusters, Menu Browser.
-  const order = ["feed-rail-wanna-go", "feed-rail-invite", "feed-rail-like", "feed-rail-clusters", "feed-rail-menu\""]
+  // Rail order: Wanna Go!, Invite, Like, Menu Browser (no Share, no Clusters).
+  const order = ["feed-rail-wanna-go", "feed-rail-invite", "feed-rail-like", "feed-rail-menu\""]
     .map((id) => rail.indexOf(id));
   assert.ok(order.every((idx, i) => idx >= 0 && (i === 0 || idx > order[i - 1])));
 });
