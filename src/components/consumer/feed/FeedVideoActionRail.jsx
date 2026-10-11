@@ -1,14 +1,12 @@
 /**
- * Live Feed mobile right action rail — Connect · Wanna Go! · Share · Invite · Like · Menu Browser.
+ * Live Feed mobile right action rail — Connect · Wanna Go! · Invite · Like · Clusters · Menu Browser.
+ * Share lives inside the Invite flow (shareData is forwarded there by the parent).
  * Desktop Feed keeps the prior Share & Invite + Menu Browser dock (not this rail).
  * Hide (do not gray-out) actions that do not apply.
  */
 
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import ShareModal from "../../share/ShareModal.jsx";
-import ShareIcon from "../../share/ShareIcon.jsx";
-import { trackShareEvent } from "../../share/shareUtils.js";
 import InviteToEatIcon from "../../icons/InviteToEatIcon.jsx";
 import BrowseMenusIcon from "../../icons/BrowseMenusIcon.jsx";
 import ThumbsUpIcon from "../../icons/ThumbsUpIcon.jsx";
@@ -58,6 +56,19 @@ function ConnectGlyph({ size = 22 }) {
   );
 }
 
+function ClustersGlyph({ size = 22 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="7" cy="8" r="3" stroke="#fff" strokeWidth="2" />
+      <circle cx="17" cy="8" r="3" stroke="#fff" strokeWidth="2" />
+      <circle cx="12" cy="16.5" r="3" stroke="#5eead4" strokeWidth="2" />
+    </svg>
+  );
+}
+
+/** Clusters directory spans every public cluster — never a dead end for guests. */
+export const FEED_RAIL_CLUSTERS_PATH = "/clusters";
+
 /**
  * @param {object} props
  * @param {number} [props.bottomInset]
@@ -65,8 +76,6 @@ function ConnectGlyph({ size = 22 }) {
  * @param {boolean} [props.connectBusy]
  * @param {() => void} [props.onConnect]
  * @param {{ restaurant_id: string|number, restaurant_name?: string } | null} [props.restaurantRef]
- * @param {object | null} [props.shareData]
- * @param {object} [props.shareAnalyticsContext]
  * @param {boolean} [props.showInvite]
  * @param {() => void} [props.onInvite]
  * @param {boolean} [props.showMenu]
@@ -79,8 +88,6 @@ export default function FeedVideoActionRail({
   connectBusy = false,
   onConnect,
   restaurantRef = null,
-  shareData = null,
-  shareAnalyticsContext = null,
   showInvite = false,
   onInvite,
   showMenu = false,
@@ -90,7 +97,6 @@ export default function FeedVideoActionRail({
   const navigate = useNavigate();
   const location = useLocation();
   const { isAuthenticated } = useConsumer();
-  const [shareOpen, setShareOpen] = useState(false);
   const [wannaBusy, setWannaBusy] = useState(false);
   const [wannaDone, setWannaDone] = useState(false);
   const [wannaError, setWannaError] = useState("");
@@ -106,15 +112,11 @@ export default function FeedVideoActionRail({
   useEffect(() => {
     setWannaDone(false);
     setWannaError("");
-    setShareOpen(false);
   }, [restaurantId]);
 
   const showWannaGo = hasRestaurant;
   const showLike = hasRestaurant;
-  const showShare = Boolean(shareData?.url);
-  const anyVisible =
-    showConnect || showWannaGo || showShare || showInvite || showLike || showMenu;
-  if (!anyVisible) return null;
+  // Clusters is always available, so the rail always renders.
 
   async function onWannaGoClick() {
     setWannaError("");
@@ -141,10 +143,8 @@ export default function FeedVideoActionRail({
     }
   }
 
-  function onShareClick() {
-    if (!shareData?.url) return;
-    trackShareEvent("menu_share_clicked", shareAnalyticsContext || { surface: "feed_video_rail" });
-    setShareOpen(true);
+  function onClustersClick() {
+    navigate(FEED_RAIL_CLUSTERS_PATH);
   }
 
   const inset = Math.max(0, Number(bottomInset) || 0);
@@ -182,17 +182,6 @@ export default function FeedVideoActionRail({
           </RailButton>
         ) : null}
 
-        {showShare ? (
-          <RailButton
-            testId="feed-rail-share"
-            label="Share"
-            ariaLabel="Share video"
-            onClick={onShareClick}
-          >
-            <ShareIcon size={20} stroke="#fff" />
-          </RailButton>
-        ) : null}
-
         {showInvite ? (
           <RailButton
             testId="feed-rail-invite"
@@ -221,6 +210,15 @@ export default function FeedVideoActionRail({
           </RailButton>
         ) : null}
 
+        <RailButton
+          testId="feed-rail-clusters"
+          label="Clusters"
+          ariaLabel="Explore Clusters"
+          onClick={onClustersClick}
+        >
+          <ClustersGlyph />
+        </RailButton>
+
         {showMenu ? (
           <RailButton
             testId="feed-rail-menu"
@@ -238,16 +236,6 @@ export default function FeedVideoActionRail({
           </p>
         ) : null}
       </div>
-
-      {shareData ? (
-        <ShareModal
-          open={shareOpen}
-          onClose={() => setShareOpen(false)}
-          shareData={shareData}
-          modalTitle="Share video"
-          analyticsContext={shareAnalyticsContext || { surface: "feed_video_rail" }}
-        />
-      ) : null}
     </>
   );
 }

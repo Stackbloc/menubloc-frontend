@@ -54,6 +54,10 @@ export default function InviteToEatModal({
   videoShareUrl = null,
   /** Optional lead line for feed/deals Share & Invite share text. */
   shareMessageLead = null,
+  /** Optional link/text share (e.g. Feed video) offered on the first step — no invitation needed. */
+  quickShareData = null,
+  quickShareTitle = "Share",
+  quickShareAnalyticsContext = null,
 }) {
   const { isAuthenticated } = useConsumer();
   const autoShareOpenedRef = useRef(false);
@@ -71,6 +75,7 @@ export default function InviteToEatModal({
   const [error, setError] = useState("");
   const [created, setCreated] = useState(null);
   const [shareOpen, setShareOpen] = useState(false);
+  const [quickShareOpen, setQuickShareOpen] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -98,6 +103,7 @@ export default function InviteToEatModal({
     setError("");
     setCreated(null);
     setShareOpen(false);
+    setQuickShareOpen(false);
     autoShareOpenedRef.current = false;
   }, [open, diningCrewId, initialInviteKind, initialInviteeName, initialSeedCode]);
 
@@ -105,6 +111,7 @@ export default function InviteToEatModal({
     if (!open) return undefined;
     function onForceClose() {
       setShareOpen(false);
+      setQuickShareOpen(false);
       onClose?.();
     }
     window.addEventListener(CLEAR_STUCK_MEDIA_CHROME_EVENT, onForceClose);
@@ -292,6 +299,19 @@ export default function InviteToEatModal({
     );
   }
 
+  if (quickShareOpen && quickShareData?.url) {
+    return createPortal(
+      <ShareModal
+        open
+        onClose={() => setQuickShareOpen(false)}
+        modalTitle={quickShareTitle}
+        shareData={quickShareData}
+        analyticsContext={quickShareAnalyticsContext || { pageType: "invite_to_eat", shareTarget: "quick_share" }}
+      />,
+      document.body
+    );
+  }
+
   const dishName = created?.menu_item_name || menuItemName || null;
   const statusLabel = created?.status_label || "Ready to Send";
   const kindLabel = resolvedKind === "private" ? "One person" : "Group";
@@ -422,6 +442,21 @@ export default function InviteToEatModal({
             >
               A Group
             </button>
+            {quickShareData?.url ? (
+              <>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "#78716c", textAlign: "center" }}>
+                  Or just send the link
+                </div>
+                <button
+                  type="button"
+                  data-testid="invite-quick-share"
+                  onClick={() => setQuickShareOpen(true)}
+                  style={choiceBtn}
+                >
+                  Share
+                </button>
+              </>
+            ) : null}
           </div>
         ) : null}
 

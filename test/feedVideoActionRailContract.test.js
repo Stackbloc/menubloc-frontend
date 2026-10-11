@@ -16,8 +16,9 @@ test("FeedVideoActionRail: Connect first, no Waiter on rail", () => {
   const rail = read("src/components/consumer/feed/FeedVideoActionRail.jsx");
   assert.match(rail, /feed-rail-connect/);
   assert.match(rail, /feed-rail-wanna-go/);
-  assert.match(rail, /feed-rail-share/);
+  assert.doesNotMatch(rail, /feed-rail-share/);
   assert.match(rail, /feed-rail-invite/);
+  assert.match(rail, /feed-rail-clusters/);
   assert.match(rail, /feed-rail-like/);
   assert.match(rail, /feed-rail-menu/);
   assert.match(rail, /WannaGoPlateIcon/);
@@ -29,6 +30,22 @@ test("FeedVideoActionRail: Connect first, no Waiter on rail", () => {
   const connectIdx = rail.indexOf("feed-rail-connect");
   const wannaIdx = rail.indexOf("feed-rail-wanna-go");
   assert.ok(connectIdx >= 0 && wannaIdx > connectIdx);
+  // Rail order: Wanna Go!, Invite, Like, Clusters, Menu Browser.
+  const order = ["feed-rail-wanna-go", "feed-rail-invite", "feed-rail-like", "feed-rail-clusters", "feed-rail-menu\""]
+    .map((id) => rail.indexOf(id));
+  assert.ok(order.every((idx, i) => idx >= 0 && (i === 0 || idx > order[i - 1])));
+});
+
+test("Invite flow keeps an external Share entry point (link/text)", () => {
+  const modal = read("src/components/InviteToEatModal.jsx");
+  assert.match(modal, /invite-quick-share/);
+  assert.match(modal, /quickShareData/);
+  for (const rel of [
+    "src/components/consumer/feed/DealVideoSwipe.jsx",
+    "src/pages/consumer/myMenuply/SeeWhosEatingFullscreen.jsx",
+  ]) {
+    assert.match(read(rel), /quickShareData=\{/);
+  }
 });
 
 test("feed home: mobile rail + desktop Share & Invite dock", () => {

@@ -886,8 +886,6 @@ export default function SeeWhosEatingFullscreen({
           connectBusy={connectBusy}
           onConnect={() => onScreenNameClick({ preventDefault() {}, stopPropagation() {} })}
           restaurantRef={restaurantRef}
-          shareData={feedShareData}
-          shareAnalyticsContext={{ surface: "feed_home_video", clip_id: item.id }}
           showInvite={showInvite}
           onInvite={() => setInviteOpen(true)}
           showMenu={showInvite}
@@ -951,6 +949,9 @@ export default function SeeWhosEatingFullscreen({
           videoShareUrl={inviteVideoShareUrl || null}
           shareMessageLead="Let's try this out!"
           flowTitle={useMobileActionRail ? "Invite to Eat" : "Share & Invite"}
+          quickShareData={feedShareData}
+          quickShareTitle="Share video"
+          quickShareAnalyticsContext={{ surface: "feed_home_video", clip_id: item?.id }}
         />
       ) : null}
     </>

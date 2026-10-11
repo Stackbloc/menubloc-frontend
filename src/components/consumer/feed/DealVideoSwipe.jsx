@@ -2,7 +2,7 @@
  * TikTok-style swipe reel for restaurant deal videos (Feed Deals).
  * Sound on by default (same as Feed home); muted fallback if autoplay blocked. Tap/click toggles mute.
  * Meta dock: desktop shell lifts captions so meal-time badges do not clip; mobile caption layout unchanged.
- * Mobile right rail: Wanna Go! · Share · Invite · Like · Menu. Desktop: Share & Invite + Menu Browser dock.
+ * Mobile right rail: Wanna Go! · Invite · Like · Clusters · Menu (Share inside Invite). Desktop: Share & Invite + Menu Browser dock.
  */
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
@@ -647,11 +647,6 @@ export default function DealVideoSwipe({
           bottomInset={Number(bottomInset) || 0}
           showConnect={false}
           restaurantRef={restaurantRef}
-          shareData={dealShareData}
-          shareAnalyticsContext={{
-            surface: "feed_deals_video",
-            deal_id: item.deal_id || item.id,
-          }}
           showInvite={showInvite}
           onInvite={() => setInviteOpen(true)}
           showMenu={showInvite}
@@ -718,6 +713,9 @@ export default function DealVideoSwipe({
       videoShareUrl={inviteVideoShareUrl || null}
       shareMessageLead="Let's try this out!"
       flowTitle={useMobileActionRail ? "Invite to Eat" : "Share & Invite"}
+      quickShareData={dealShareData}
+      quickShareTitle="Share video"
+      quickShareAnalyticsContext={{ surface: "feed_deals_video", deal_id: item?.deal_id || item?.id }}
     />
   ) : null;
 
