@@ -43,3 +43,18 @@ test("switching keeps query and filters", () => {
   assert.equal(next.get("city"), "Los Angeles");
   assert.equal(next.get("view"), "menu-browser");
 });
+
+test("/browse-menus redirects into Search & Shop Menu Browser mode with params kept", async () => {
+  const { buildMenuBrowserRedirectPath } = await import("../src/lib/searchShopMode.js");
+  assert.equal(buildMenuBrowserRedirectPath(""), "/feed/search?view=menu-browser");
+  const out = new URL(
+    buildMenuBrowserRedirectPath("?cluster=indio-festival-grounds&section=nearby&i=2&mode=drinks"),
+    "https://menuply.com"
+  );
+  assert.equal(out.pathname, "/feed/search");
+  assert.equal(out.searchParams.get("view"), "menu-browser");
+  assert.equal(out.searchParams.get("cluster"), "indio-festival-grounds");
+  assert.equal(out.searchParams.get("section"), "nearby");
+  assert.equal(out.searchParams.get("i"), "2");
+  assert.equal(out.searchParams.get("mode"), "drinks");
+});

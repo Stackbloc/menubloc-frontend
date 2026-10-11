@@ -3,25 +3,20 @@ import { Link, useLocation } from "react-router-dom";
 import { useOrderCart } from "../context/OrderCartContext.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import WaiterFaceIcon from "./icons/WaiterFaceIcon.jsx";
-import BrowseMenusIcon from "./icons/BrowseMenusIcon.jsx";
 import MenuplyXMark from "./MenuplyXMark.jsx";
 import MenuplyActionSheet from "./MenuplyActionSheet.jsx";
-import { resolveBrowseMenusHref } from "../lib/menuBrowserVenueContext.js";
 import { MY_MENUPLY_PROFILE_PATH } from "../lib/myMenuplyRoutes.js";
 
 const POST_LABEL = "Post";
 
+/** Menu Browser now lives in Search & Shop (Menu Browser mode); the old route redirects there. */
+
 export default function BottomNav() {
   const { t } = useLanguage();
   const navRef = useRef(null);
-  const { pathname, search } = useLocation();
+  const { pathname } = useLocation();
   const { itemCount } = useOrderCart();
   const [postOpen, setPostOpen] = useState(false);
-
-  const browseMenusHref = useMemo(
-    () => resolveBrowseMenusHref({ pathname, search }),
-    [pathname, search]
-  );
 
   const tabs = useMemo(
     () => [
@@ -33,12 +28,6 @@ export default function BottomNav() {
         iconSize: 28,
         to: "/waiter",
       },
-      {
-        id: "browse",
-        label: t("nav.browseMenus", "Browse"),
-        iconComponent: BrowseMenusIcon,
-        to: browseMenusHref,
-      },
       { id: "post", kind: "post", title: POST_LABEL },
       { id: "basket", label: t("nav.basket", "Basket"), icon: "🛒", to: "/checkout" },
       {
@@ -48,7 +37,7 @@ export default function BottomNav() {
         to: MY_MENUPLY_PROFILE_PATH,
       },
     ],
-    [t, browseMenusHref]
+    [t]
   );
 
   useEffect(() => {
@@ -149,24 +138,15 @@ export default function BottomNav() {
         }
 
         const isCheckout = tab.to === "/checkout";
-        const isBrowseTab = String(tab.to || "").startsWith("/browse-menus");
         const isHome = tab.to === "/";
         const active = isCheckout
           ? pathname.startsWith("/checkout")
-          : isBrowseTab
-            ? pathname === "/browse-menus" || pathname.startsWith("/browse-menus")
-            : isHome
-              ? pathname === "/"
-              : pathname === tab.to || pathname.startsWith(`${tab.to}/`);
+          : isHome
+            ? pathname === "/"
+            : pathname === tab.to || pathname.startsWith(`${tab.to}/`);
         const showBadge = tab.to === "/checkout" && itemCount > 0;
         const iconSize = tab.iconSize || 22;
-        const linkColor = isBrowseTab
-          ? active
-            ? "#CA8A04"
-            : "#EAB308"
-          : active
-            ? "#1d4ed8"
-            : "#9ca3af";
+        const linkColor = active ? "#1d4ed8" : "#9ca3af";
 
         return (
           <Link
@@ -188,11 +168,7 @@ export default function BottomNav() {
           >
             <span style={iconWrapStyle}>
               {tab.iconComponent ? (
-                <tab.iconComponent
-                  size={iconSize}
-                  active={isBrowseTab ? active : undefined}
-                  aria-hidden
-                />
+                <tab.iconComponent size={iconSize} aria-hidden />
               ) : (
                 <span aria-hidden="true">{tab.icon}</span>
               )}
@@ -223,23 +199,7 @@ export default function BottomNav() {
                 </span>
               ) : null}
             </span>
-            {isBrowseTab ? (
-              <span
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  lineHeight: 1.05,
-                  fontWeight: active ? 900 : 800,
-                  letterSpacing: "0.01em",
-                }}
-              >
-                <span>Menu</span>
-                <span>Browser</span>
-              </span>
-            ) : (
-              <span>{tab.label}</span>
-            )}
+            <span>{tab.label}</span>
           </Link>
         );
       })}

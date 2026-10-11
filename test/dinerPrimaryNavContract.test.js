@@ -1,5 +1,6 @@
 /**
- * Diner primary nav: Home | Waiter | Menu Browser | X (Post) | Basket | My Menuply.
+ * Diner primary nav: Home | Waiter | X (Post) | Basket | My Menuply.
+ * Menu Browser lives in Search & Shop (Menu Browser mode); /browse-menus redirects there.
  * Activity lives on Waiter. Search is not a bottom-nav tab.
  */
 import test from "node:test";
@@ -14,13 +15,14 @@ function read(rel) {
   return fs.readFileSync(path.join(root, rel), "utf8");
 }
 
-test("BottomNav is Home Waiter Menu Browser X Basket My Menuply", () => {
+test("BottomNav is Home Waiter X Basket My Menuply (no Menu Browser tab)", () => {
   const nav = read("src/components/BottomNav.jsx");
   assert.match(nav, /to: "\/"/);
   assert.match(nav, /to: "\/waiter"/);
   assert.match(nav, /WaiterFaceIcon/);
-  assert.match(nav, /BrowseMenusIcon/);
-  assert.match(nav, /resolveBrowseMenusHref/);
+  assert.doesNotMatch(nav, /BrowseMenusIcon/);
+  assert.doesNotMatch(nav, /resolveBrowseMenusHref/);
+  assert.doesNotMatch(nav, /browse-menus/);
   assert.match(nav, /MenuplyXMark/);
   assert.match(nav, /MenuplyActionSheet/);
   assert.match(nav, /title=\{POST_LABEL\}/);
@@ -29,8 +31,7 @@ test("BottomNav is Home Waiter Menu Browser X Basket My Menuply", () => {
   assert.match(nav, /visibility: "hidden"/);
   assert.match(nav, /to: "\/checkout"/);
   assert.match(nav, /MY_MENUPLY_PROFILE_PATH/);
-  assert.match(nav, /<span>Menu<\/span>/);
-  assert.match(nav, /<span>Browser<\/span>/);
+  assert.doesNotMatch(nav, /<span>Browser<\/span>/);
   assert.match(nav, /MenuplyXMark size=\{24\}/);
   assert.match(nav, /translateY\(6px\)/);
   assert.doesNotMatch(nav, /to: "\/search"/);
@@ -130,4 +131,10 @@ test("Waiter incorporates public Activity; /activity redirects there", () => {
   assert.doesNotMatch(panel, /Follow a cluster|clusterDirectoryPath\(/);
   assert.doesNotMatch(panel, /\/account\/diner-status|\/account\/im-eating/);
   assert.doesNotMatch(panel, /What My Connections Are Eating/);
+});
+
+test("/browse-menus redirects to Search & Shop in Menu Browser mode", () => {
+  const app = read("src/App.jsx");
+  assert.match(app, /path="\/browse-menus" element=\{crmHost \? <HostRouteRedirect to="\/crm" \/> : <BrowseMenusRedirect \/>\}/);
+  assert.match(app, /buildMenuBrowserRedirectPath\(search\)/);
 });

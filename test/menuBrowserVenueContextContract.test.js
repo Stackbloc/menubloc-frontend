@@ -40,10 +40,16 @@ test("resolveBrowseMenusHref prefers Indio festival path over bare browse", () =
   assert.equal(resolveBrowseMenusHref({ pathname: "/", search: "" }), "/browse-menus");
 });
 
-test("BottomNav uses venue-aware Yellow Browser href", () => {
+test("Menu Browser tab retired: venue scope survives via redirect params + session", () => {
   const nav = readFileSync(join(root, "src/components/BottomNav.jsx"), "utf8");
-  assert.match(nav, /resolveBrowseMenusHref/);
-  assert.match(nav, /BrowseMenusIcon/);
+  assert.doesNotMatch(nav, /BrowseMenusIcon/);
+  const modeSrc = readFileSync(join(root, "src/lib/searchShopMode.js"), "utf8");
+  // Redirect carries every query param (cluster included) into Search & Shop.
+  assert.match(modeSrc, /buildMenuBrowserRedirectPath/);
+  assert.match(modeSrc, /new URLSearchParams\(raw/);
+  // Embedded Menu Browser still restores the venue from session.
+  const shop = readFileSync(join(root, "src/pages/consumer/feed/FeedSearchPage.jsx"), "utf8");
+  assert.match(shop, /<BrowseMenus/);
 });
 
 test("BrowseMenus wires venue session/path into Yellow Browser", () => {

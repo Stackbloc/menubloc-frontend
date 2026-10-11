@@ -266,7 +266,7 @@ import BuyMeThisPage from "./pages/BuyMeThisPage.jsx";
 import EatInvitationPage from "./pages/EatInvitationPage.jsx";
 import JoinMeLandingPage from "./pages/JoinMeLandingPage.jsx";
 import OrderConfirmationPage from "./pages/OrderConfirmationPage.jsx";
-import BrowseMenus from "./pages/BrowseMenus.jsx";
+import { buildMenuBrowserRedirectPath } from "./lib/searchShopMode.js";
 import FoodInterestsPage from "./pages/FoodInterestsPage.jsx";
 
 import DealsPage from "./pages/DealsPage.jsx";
@@ -432,6 +432,12 @@ function CrmHostRoot() {
 
 function HostRouteRedirect({ to }) {
   return <Navigate to={to} replace />;
+}
+
+/** Standalone Menu Browser tab retired → Search & Shop in Menu Browser mode (params kept). */
+function BrowseMenusRedirect() {
+  const { search } = useLocation();
+  return <Navigate to={buildMenuBrowserRedirectPath(search)} replace />;
 }
 
 function MyMenuplyProfileRedirect() {
@@ -860,7 +866,7 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
         />
         <Route path="/search" element={crmHost ? <HostRouteRedirect to="/crm" /> : <GrubbidSearchResults />} />
         <Route path="/compare" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ComparePage />} />
-        <Route path="/browse-menus" element={crmHost ? <HostRouteRedirect to="/crm" /> : <BrowseMenus />} />
+        <Route path="/browse-menus" element={crmHost ? <HostRouteRedirect to="/crm" /> : <BrowseMenusRedirect />} />
         <Route path="/waiter" element={crmHost ? <HostRouteRedirect to="/crm" /> : <FoodInterestsPage />} />
         <Route path="/deals" element={crmHost ? <HostRouteRedirect to="/crm" /> : <DealsPage />} />
         <Route path="/deals/:dealId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <DealDetailPage />} />

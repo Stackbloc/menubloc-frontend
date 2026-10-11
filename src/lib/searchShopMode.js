@@ -50,3 +50,14 @@ export function buildSearchShopModeSearch(searchParams, mode) {
   next.set(SEARCH_SHOP_VIEW_PARAM, normalizeSearchShopMode(mode) || SEARCH_SHOP_MODE_SEARCH);
   return next;
 }
+
+/**
+ * Old standalone Menu Browser (/browse-menus) → Search & Shop in Menu Browser mode.
+ * Every query param (cluster, section, i, city, state, mode=drinks…) is carried over.
+ */
+export function buildMenuBrowserRedirectPath(search = "") {
+  const raw = String(search || "");
+  const next = new URLSearchParams(raw.startsWith("?") ? raw.slice(1) : raw);
+  next.set(SEARCH_SHOP_VIEW_PARAM, SEARCH_SHOP_MODE_MENU_BROWSER);
+  return `/feed/search?${next.toString()}`;
+}
