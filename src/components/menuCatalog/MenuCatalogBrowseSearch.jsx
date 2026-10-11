@@ -12,8 +12,10 @@ export default function MenuCatalogBrowseSearch({
   onSelectSection,
   onNavigateSearch,
   showExploreChips = true,
-  /** Search & Shop: mode toggle between the search box and the chips. */
-  belowFormSlot = null,
+  /** Search & Shop: mode toggle shown above the menu search box. */
+  aboveFormSlot = null,
+  /** Visible label over the box (e.g. "Menu Search") so it reads apart from the main Search. */
+  visibleLabel = null,
   initialQuery = "",
   onQueryChange = null,
 }) {
@@ -39,10 +41,22 @@ export default function MenuCatalogBrowseSearch({
 
   return (
     <div data-testid="menu-browser-search" style={styles.wrap}>
-      <form onSubmit={handleSubmit} style={styles.form}>
-        <label htmlFor="menu-browser-search-input" style={styles.srOnly}>
-          Search restaurants, food, menus
+      {aboveFormSlot ? <div style={{ marginBottom: 10 }}>{aboveFormSlot}</div> : null}
+      {visibleLabel ? (
+        <label
+          htmlFor="menu-browser-search-input"
+          data-testid="menu-browser-search-label"
+          style={styles.visibleLabel}
+        >
+          {visibleLabel}
         </label>
+      ) : null}
+      <form onSubmit={handleSubmit} style={styles.form}>
+        {visibleLabel ? null : (
+          <label htmlFor="menu-browser-search-input" style={styles.srOnly}>
+            Search restaurants, food, menus
+          </label>
+        )}
         <input
           id="menu-browser-search-input"
           data-testid="menu-browser-search-input"
@@ -57,7 +71,6 @@ export default function MenuCatalogBrowseSearch({
           Search
         </button>
       </form>
-      {belowFormSlot ? <div style={{ marginTop: 8 }}>{belowFormSlot}</div> : null}
       {showExploreChips ? (
         <div data-testid="menu-browser-explore-chips" style={styles.chips} role="list">
           {MENU_BROWSER_EXPLORE_CHIPS.map((chip) => (
@@ -133,6 +146,15 @@ const styles = {
     borderRadius: 999,
     cursor: "pointer",
     whiteSpace: "nowrap",
+  },
+  visibleLabel: {
+    display: "block",
+    marginBottom: 6,
+    fontSize: 12,
+    fontWeight: 800,
+    letterSpacing: "0.04em",
+    textTransform: "uppercase",
+    color: "var(--gb-color-muted, #475467)",
   },
   srOnly: {
     position: "absolute",

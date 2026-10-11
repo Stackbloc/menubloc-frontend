@@ -105,7 +105,7 @@ function getUserCoords() {
 export default function BrowseMenus({
   /** Search & Shop → Menu Browser mode: Feed shell owns header + bottom nav. */
   embedInFeedShell = false,
-  /** Search & Shop mode toggle, rendered directly under the search box. */
+  /** Search & Shop mode toggle — rendered above the "Menu Search" box in Menu Browser mode. */
   belowSearchSlot = null,
   initialQuery = "",
   onQueryChange = null,
@@ -635,7 +635,8 @@ export default function BrowseMenus({
             onSelectSection={selectSection}
             onNavigateSearch={navigateBrowseSearch}
             showExploreChips={personalSection || activeSection === "nearby" || isEmpty}
-            belowFormSlot={embedInFeedShell ? belowSearchSlot : null}
+            aboveFormSlot={embedInFeedShell ? belowSearchSlot : null}
+            visibleLabel={embedInFeedShell ? "Menu Search" : null}
             initialQuery={embedInFeedShell ? initialQuery : ""}
             onQueryChange={embedInFeedShell ? onQueryChange : null}
           />
