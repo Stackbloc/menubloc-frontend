@@ -403,7 +403,8 @@ export default function DealVideoSwipe({
   // Endless: only a single-video reel has an end.
   const atEnd = playlist.length <= 1;
   const atStart = index <= 0;
-  const useMobileActionRail = !isDesktopViewport;
+  // Same right-side action rail on mobile and desktop (Andre, 2026-10-11).
+  const useMobileActionRail = true;
   const soundPromptLabel = isDesktopViewport ? "Click for sound" : "Tap for sound";
   const managerForcedMute = isManagerForcedMute(item);
   const soundToggleLabel = managerForcedMute

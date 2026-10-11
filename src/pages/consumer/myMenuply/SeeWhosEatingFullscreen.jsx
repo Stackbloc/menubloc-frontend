@@ -555,7 +555,9 @@ export default function SeeWhosEatingFullscreen({
   const atStart = index <= 0;
   const showInvite = Boolean(isFeedHome && restaurantRef?.restaurant_id);
   /** Mobile-only TikTok-style icon rail; desktop keeps Share & Invite dock. */
-  const useMobileActionRail = Boolean(isFeedHome && !isDesktopViewport);
+  // Same right-side action rail on mobile and desktop (Andre, 2026-10-11) — replaces the old
+  // desktop-only Share & Invite dock and top Share button.
+  const useMobileActionRail = Boolean(isFeedHome);
   const soundPromptLabel = isDesktopViewport ? "Click for sound" : "Tap for sound";
   const managerForcedMute = isManagerForcedMute(item);
   const soundToggleLabel = managerForcedMute
