@@ -54,7 +54,11 @@ function TabControl({ tab, onShareQr }) {
         fontWeight: active && !tab.openShareQr ? 800 : 600,
       }}
     >
-      {tab.label}
+      {tab.mobileIcon ? (
+        <span aria-hidden="true" style={styles.tabIcon}>{tab.mobileIcon}</span>
+      ) : (
+        tab.label
+      )}
     </button>
   );
 }
@@ -163,6 +167,10 @@ const styles = {
     width: "100%",
   },
   /** X gets the same-width slot as a tab so all items spread evenly. */
+  tabIcon: {
+    fontSize: 22,
+    lineHeight: 1,
+  },
   createSlot: {
     flex: "1 1 0",
     minWidth: 0,

@@ -19,6 +19,8 @@ export const FEED_HOME_TAB = {
   to: "/feed",
   end: true,
   label: "Home",
+  /** Mobile bottom bar shows the house icon instead of the word (matches Search & Shop's bar). */
+  mobileIcon: "🏠",
   testId: "feed-nav-home",
   alsoActiveOn: ["/"],
 };
