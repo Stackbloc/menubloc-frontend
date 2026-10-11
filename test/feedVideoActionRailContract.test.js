@@ -52,7 +52,9 @@ test("feed home: mobile rail + desktop Share & Invite dock", () => {
   const reel = read("src/pages/consumer/myMenuply/SeeWhosEatingFullscreen.jsx");
   assert.match(reel, /useMobileActionRail/);
   assert.match(reel, /FeedVideoActionRail/);
-  assert.match(reel, /showRailConnect/);
+  // Connect is not shown on the video screen (More → Connect Search instead).
+  assert.match(reel, /showConnect=\{false\}/);
+  assert.doesNotMatch(reel, /showRailConnect/);
   assert.match(reel, /see-whos-eating-share-wrap/);
   assert.match(reel, /feed-video-share-invite/);
   assert.match(reel, /feed-video-yellow-browser/);

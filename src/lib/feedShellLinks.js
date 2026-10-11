@@ -100,8 +100,8 @@ export const FEED_MORE_SECTIONS = [
     authOnly: true,
     links: [
       { to: "/account", label: "Account & settings", testId: "feed-more-account" },
-      // Search other diners by name, phone, or email (was only reachable from the X sheet).
-      { to: "/account/find-diners", label: "Find People", testId: "feed-more-find-people" },
+      // Search other diners by name, phone, or email and connect (was only reachable from the X sheet).
+      { to: "/account/find-diners", label: "Connect Search", testId: "feed-more-connect-search" },
       { to: "/clusters", label: "Clusters", testId: "feed-more-clusters" },
       { to: FEED_MENU_CAPTURE_PATH, label: "Add a menu", testId: "feed-more-add-menu" },
     ],

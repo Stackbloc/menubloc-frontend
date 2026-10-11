@@ -211,7 +211,7 @@ test("Feed shell: Home|Waiter|Share My QR|X|Deals|Shop|Profile + slim X sheet", 
   assert.match(feedLinks, /restaurant\/onboarding/);
   assert.match(feedLinks, /feed-nav-home/);
   assert.match(feedLinks, /feed-more-account/);
-  assert.match(feedLinks, /to: "\/account\/find-diners", label: "Find People"/);
+  assert.match(feedLinks, /to: "\/account\/find-diners", label: "Connect Search"/);
   const moreLogoutPanel = read("src/components/consumer/feed/FeedMorePanel.jsx");
   assert.match(moreLogoutPanel, /data-testid="feed-more-logout"/);
   assert.match(moreLogoutPanel, /isAuthenticated \? \(\s*<div style=\{styles\.logoutWrap\}>/);

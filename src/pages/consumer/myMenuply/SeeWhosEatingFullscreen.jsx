@@ -553,19 +553,9 @@ export default function SeeWhosEatingFullscreen({
   /** Feed home never ends — wrap + reshuffle; modal reel still stops at the last clip. */
   const atEnd = isFeedHome ? false : index >= activeItems.length - 1;
   const atStart = index <= 0;
-  const peerId = item?.diner?.id != null ? Number(item.diner.id) : null;
   const showInvite = Boolean(isFeedHome && restaurantRef?.restaurant_id);
   /** Mobile-only TikTok-style icon rail; desktop keeps Share & Invite dock. */
   const useMobileActionRail = Boolean(isFeedHome && !isDesktopViewport);
-  const showRailConnect = Boolean(
-    useMobileActionRail &&
-      item &&
-      !isLiveFeedGuestCreator(item) &&
-      !isVenue &&
-      !showRestaurantBadge &&
-      peerId != null &&
-      !(viewerUserId != null && Number(viewerUserId) === peerId)
-  );
   const soundPromptLabel = isDesktopViewport ? "Click for sound" : "Tap for sound";
   const managerForcedMute = isManagerForcedMute(item);
   const soundToggleLabel = managerForcedMute
@@ -891,9 +881,9 @@ export default function SeeWhosEatingFullscreen({
       {useMobileActionRail && item && !menuBrowserOpen ? (
         <FeedVideoActionRail
           bottomInset={navInset}
-          showConnect={showRailConnect}
-          connectBusy={connectBusy}
-          onConnect={() => onScreenNameClick({ preventDefault() {}, stopPropagation() {} })}
+          // No Connect on the video screen (Andre, 2026-10-11) — signed-in users use
+          // More → Connect Search instead.
+          showConnect={false}
           restaurantRef={restaurantRef}
           menuItemId={inviteMenuItemId}
           menuItemName={String(item?.item_name || "").trim() || null}
