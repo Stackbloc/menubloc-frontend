@@ -1,6 +1,6 @@
 /**
- * Live Feed mobile right action rail — Connect · Wanna Eat It! / Wanna Go! · Invite · Like · Menu Browser.
- * Per video: linked to a specific menu item → "Wanna Eat It!" (saves the dish); otherwise "Wanna Go!"
+ * Live Feed mobile right action rail — Connect · Wanna Eat! / Wanna Go! · Invite · Like · Menu Browser.
+ * Per video: linked to a specific menu item → "Wanna Eat!" (saves the dish); otherwise "Wanna Go!"
  * (saves the restaurant). Both land in What I Wanna Eat.
  * Share lives inside the Invite flow (shareData is forwarded there by the parent).
  * Desktop Feed keeps the prior Share & Invite + Menu Browser dock (not this rail).
@@ -58,8 +58,8 @@ function ConnectGlyph({ size = 22 }) {
   );
 }
 
-/** Non-breaking space keeps "Eat It!" together: wraps as "Wanna / Eat It!". */
-const WANNA_EAT_IT_LABEL = "Wanna Eat\u00a0It!";
+/** Short enough to stay on one line in the rail. */
+const WANNA_EAT_LABEL = "Wanna Eat!";
 
 /**
  * @param {object} props
@@ -68,7 +68,7 @@ const WANNA_EAT_IT_LABEL = "Wanna Eat\u00a0It!";
  * @param {boolean} [props.connectBusy]
  * @param {() => void} [props.onConnect]
  * @param {{ restaurant_id: string|number, restaurant_name?: string } | null} [props.restaurantRef]
- * @param {string|number|null} [props.menuItemId] video's linked menu item (drives "Wanna Eat It!")
+ * @param {string|number|null} [props.menuItemId] video's linked menu item (drives "Wanna Eat!")
  * @param {string|null} [props.menuItemName]
  * @param {boolean} [props.showInvite]
  * @param {() => void} [props.onInvite]
@@ -157,7 +157,7 @@ export default function FeedVideoActionRail({
       }
       setWannaDone(true);
     } catch (err) {
-      setWannaError(err?.message || (isDishVideo ? "Could not save Wanna Eat It!" : "Could not save Wanna Go!"));
+      setWannaError(err?.message || (isDishVideo ? "Could not save Wanna Eat!" : "Could not save Wanna Go!"));
     } finally {
       setWannaBusy(false);
     }
@@ -189,7 +189,7 @@ export default function FeedVideoActionRail({
         {showWannaGo ? (
           <RailButton
             testId="feed-rail-wanna-go"
-            label={wannaDone ? "Added" : isDishVideo ? WANNA_EAT_IT_LABEL : "Wanna Go!"}
+            label={wannaDone ? "Added" : isDishVideo ? WANNA_EAT_LABEL : "Wanna Go!"}
             ariaLabel={
               isDishVideo
                 ? `Add ${dishName || "this dish"} to What I Wanna Eat`
