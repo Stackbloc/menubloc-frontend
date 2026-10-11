@@ -348,6 +348,9 @@ function ClusterRestaurantsTab({ clusterSlug, cluster, enabled, placeReturnPath,
   );
 }
 
+/** Cluster food searches/categories open sorted by price, low to high (Andre, 2026-10-11). */
+const DEFAULT_CLUSTER_PRICE_SORT = "asc";
+
 const CLUSTER_SEARCH_GRID_STYLE = {
   display: "grid",
   gap: "0.85rem",
@@ -494,7 +497,7 @@ function ClusterMenuExplorerTab({
   const [searchMenuItems, setSearchMenuItems] = useState([]);
   const [searchQueryMeta, setSearchQueryMeta] = useState(null);
   const [searchError, setSearchError] = useState("");
-  const [priceSort, setPriceSort] = useState("default");
+  const [priceSort, setPriceSort] = useState(DEFAULT_CLUSTER_PRICE_SORT);
   const [selectedZone, setSelectedZone] = useState(null);
   const [drinkSubcategory, setDrinkSubcategory] = useState(() =>
     normalizeClusterDrinkSubcategory(searchParams.get(CLUSTER_DRINK_QUERY_KEY))
@@ -681,7 +684,7 @@ function ClusterMenuExplorerTab({
     setError("");
     setItems([]);
     setPagination(null);
-    setPriceSort("default");
+    setPriceSort(DEFAULT_CLUSTER_PRICE_SORT);
     setSelectedZone(null);
     if (!isClusterBeveragesCategory(selectedCategory)) {
       setAvailableDrinkCategories([]);
@@ -730,6 +733,7 @@ function ClusterMenuExplorerTab({
     const controller = new AbortController();
     setSearchStatus("loading");
     setSearchError("");
+    setPriceSort(DEFAULT_CLUSTER_PRICE_SORT);
 
     searchCluster(clusterSlug, { q: submittedSearch.trim(), signal: controller.signal })
       .then((data) => {

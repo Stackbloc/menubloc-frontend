@@ -8,7 +8,9 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const src = readFileSync(join(root, "src/pages/ClusterPage.jsx"), "utf8");
 
 test("Cluster Food category list supports price sort Low-High and High-Low", () => {
-  assert.match(src, /const \[priceSort, setPriceSort\] = useState\("default"\)/);
+  // Default view is price low → high.
+  assert.match(src, /const DEFAULT_CLUSTER_PRICE_SORT = "asc";/);
+  assert.match(src, /const \[priceSort, setPriceSort\] = useState\(DEFAULT_CLUSTER_PRICE_SORT\)/);
   assert.match(src, /getConsumerDisplayPrice/);
   assert.match(src, /displayItems/);
   assert.match(src, /applyClusterZoneAndPriceSort|getConsumerDisplayPrice/);
@@ -17,7 +19,7 @@ test("Cluster Food category list supports price sort Low-High and High-Low", () 
   assert.match(src, /Price: Low–High/);
   assert.match(src, /High–Low/);
   assert.match(src, /items=\{displayItems\}/);
-  assert.match(src, /setPriceSort\("default"\)/);
+  assert.match(src, /setPriceSort\(DEFAULT_CLUSTER_PRICE_SORT\)/);
 });
 
 test("Cluster Food price sort runs after optional zone filter", () => {
