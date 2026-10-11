@@ -106,7 +106,7 @@ export default function BrowseMenus({
   /** Search & Shop → Menu Browser mode: Feed shell owns header + bottom nav. */
   embedInFeedShell = false,
   /** Search & Shop mode toggle — rendered above the "Menu Search" box in Menu Browser mode. */
-  belowSearchSlot = null,
+  modeToggleSlot = null,
   initialQuery = "",
   onQueryChange = null,
 } = {}) {
@@ -635,14 +635,14 @@ export default function BrowseMenus({
             onSelectSection={selectSection}
             onNavigateSearch={navigateBrowseSearch}
             showExploreChips={personalSection || activeSection === "nearby" || isEmpty}
-            aboveFormSlot={embedInFeedShell ? belowSearchSlot : null}
+            aboveFormSlot={embedInFeedShell ? modeToggleSlot : null}
             visibleLabel={embedInFeedShell ? "Menu Search" : null}
             initialQuery={embedInFeedShell ? initialQuery : ""}
             onQueryChange={embedInFeedShell ? onQueryChange : null}
           />
-        ) : embedInFeedShell && belowSearchSlot ? (
+        ) : embedInFeedShell && modeToggleSlot ? (
           // Food/Drinks chooser, splash, or drinks mode: keep the toggle reachable.
-          <div style={{ flexShrink: 0, padding: "8px 0 6px" }}>{belowSearchSlot}</div>
+          <div style={{ flexShrink: 0, padding: "8px 0 6px" }}>{modeToggleSlot}</div>
         ) : null}
 
         {showCategoryTabs ? (

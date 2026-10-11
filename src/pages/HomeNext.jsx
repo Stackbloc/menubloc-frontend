@@ -33,8 +33,8 @@ const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").repla
 
 export default function HomeNext({
   embedInFeedShell = false,
-  /** Feed Search & Shop only: rendered directly under the search box (mode toggle). */
-  belowSearchSlot = null,
+  /** Feed Search & Shop only: Search | Menu Browser toggle, rendered over the search box. */
+  modeToggleSlot = null,
   /** Feed Search & Shop only: shared typed query across Search / Menu Browser modes. */
   initialQuery = "",
   onDraftQueryChange = null,
@@ -340,6 +340,10 @@ export default function HomeNext({
               clusterMarket={clusterMarket}
             />
 
+            {embedInFeedShell && modeToggleSlot ? (
+              <div style={{ margin: "4px 0 12px" }}>{modeToggleSlot}</div>
+            ) : null}
+
             <form
               role="search"
               onSubmit={(e) => {
@@ -417,10 +421,6 @@ export default function HomeNext({
                 </button>
               </div>
             </form>
-
-            {embedInFeedShell && belowSearchSlot ? (
-              <div style={{ marginTop: 12 }}>{belowSearchSlot}</div>
-            ) : null}
 
             {inlineError ? (
               <div

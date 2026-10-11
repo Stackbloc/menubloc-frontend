@@ -1,5 +1,5 @@
 /**
- * Search & Shop segmented control: [ Search | Menu Browser ]. Sits directly under the
+ * Search & Shop segmented control: [ Search | Menu Browser ]. Sits directly over the
  * search box; both modes share the same query.
  */
 

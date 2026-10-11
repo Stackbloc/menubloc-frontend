@@ -2048,8 +2048,8 @@ function FilterToggle({ label, active, onClick, isMobile }) {
 
 export default function GrubbidSearchResults({
   embedInFeedShell = false,
-  /** Feed Search & Shop only: Search | Menu Browser toggle under the query header. */
-  belowSearchSlot = null,
+  /** Feed Search & Shop only: Search | Menu Browser toggle over the query header. */
+  modeToggleSlot = null,
 } = {}) {
   const { t, language } = useLanguage();
   const location = useLocation();
@@ -3142,6 +3142,9 @@ export default function GrubbidSearchResults({
           )}
           <div style={{ width: 30, flexShrink: 0 }} />
         </div>
+        {embedInFeedShell && modeToggleSlot ? (
+          <div style={{ maxWidth: 576, margin: "0 auto", padding: "0 14px 10px" }}>{modeToggleSlot}</div>
+        ) : null}
         <div style={{ maxWidth: 576, margin: "0 auto", padding: "0 14px", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
           <span style={{ fontSize: 17, fontWeight: 900, color: "#0B0F0C", letterSpacing: "-0.02em" }}>
             🔍 {displayQuery ? `"${displayQuery}"` : embedInFeedShell ? "Shop" : "Search"}
@@ -3156,9 +3159,6 @@ export default function GrubbidSearchResults({
             </span>
           ) : null}
         </div>
-        {embedInFeedShell && belowSearchSlot ? (
-          <div style={{ maxWidth: 576, margin: "0 auto", padding: "10px 14px 0" }}>{belowSearchSlot}</div>
-        ) : null}
         {showWaiterBar && (
           <div style={{ maxWidth: 576, margin: "0 auto", padding: "4px 14px 2px" }}>
             <WaiterRefinementPrompt

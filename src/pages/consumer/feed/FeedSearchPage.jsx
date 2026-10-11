@@ -1,6 +1,6 @@
 /**
  * Feed shell Shop tab — original Menuply search discovery (HomeNext) + in-shell results,
- * with a [ Search | Menu Browser ] toggle under the search box. Menu Browser mode embeds the
+ * with a [ Search | Menu Browser ] toggle over the search box. Menu Browser mode embeds the
  * /browse-menus experience. Both modes share the typed query; the last mode is remembered.
  */
 
@@ -44,16 +44,16 @@ export default function FeedSearchPage() {
       {isMenuBrowser ? (
         <BrowseMenus
           embedInFeedShell
-          belowSearchSlot={toggle}
+          modeToggleSlot={toggle}
           initialQuery={draftQuery}
           onQueryChange={setDraftQuery}
         />
       ) : showResults ? (
-        <GrubbidSearchResults embedInFeedShell belowSearchSlot={toggle} />
+        <GrubbidSearchResults embedInFeedShell modeToggleSlot={toggle} />
       ) : (
         <HomeNext
           embedInFeedShell
-          belowSearchSlot={toggle}
+          modeToggleSlot={toggle}
           initialQuery={draftQuery}
           onDraftQueryChange={setDraftQuery}
         />
