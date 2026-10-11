@@ -272,6 +272,13 @@ export default function BrowseMenus({
     navigate({ search: `?${next.toString()}` }, { replace: true });
   }, [isDrinksMode, navigate, search, urlCity, urlState, venueSlug]);
 
+  // Search & Shop → Menu Browser: skip "What do you want to browse?" and open Food directly.
+  // The Food/Drinks FAB still switches modes.
+  useEffect(() => {
+    if (!embedInFeedShell || isModeChosen) return;
+    updateUrl(MENU_CATALOG_DEFAULT_SECTION, 0, { drinks: false });
+  }, [embedInFeedShell, isModeChosen, updateUrl]);
+
   function selectSection(sectionId) {
     updateUrl(sectionId, 0);
   }
@@ -426,8 +433,8 @@ export default function BrowseMenus({
   const listPending = isModeChosen && (loading || locationPending || waitingForPage || (loadingMore && !currentEntry && !isVenueAdPage));
   const menuPending = isModeChosen && currentEntry && !isVenueAdPage && (menuLoadStatus === "idle" || menuLoadStatus === "loading");
   const initialHold = isModeChosen && !browseBootComplete && !introMinElapsed;
-  const showSplashIntro = !isModeChosen && bookPhase === "splash";
-  const showChooseMode = !isModeChosen && bookPhase === "chooseMode";
+  const showSplashIntro = !embedInFeedShell && !isModeChosen && bookPhase === "splash";
+  const showChooseMode = !embedInFeedShell && !isModeChosen && bookPhase === "chooseMode";
   // browseBootComplete stays true across drinks/food category tab changes; resets only on mode switch or leaving browse.
   const showLoadingSplash = isModeChosen && !browseBootComplete && (initialHold || listPending || (!initialMenuReady && menuPending));
   const showBookOverlay = showSplashIntro || showChooseMode || showLoadingSplash;
