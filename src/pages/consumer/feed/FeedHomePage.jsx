@@ -204,7 +204,8 @@ export default function FeedHomePage() {
         desktopFeedShell={isDesktop}
         showEmptyFirstVisitPrompt={showEmptyFirstVisitPrompt}
         sharedClipId={sharedClipId}
-        showSharedAccountInvite={Boolean(sharedClipId && !isAuthenticated)}
+        // No "Open a free Menuply account" card over shared clips (cognitive load; header Log in stays).
+        showSharedAccountInvite={false}
       />
     </div>
   );

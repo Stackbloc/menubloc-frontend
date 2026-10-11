@@ -48,7 +48,7 @@ test("feed home + fullscreen wire clip deep link and share affordance", () => {
   const home = read("src/pages/consumer/feed/FeedHomePage.jsx");
   assert.match(home, /useSearchParams/);
   assert.match(home, /sharedClipId/);
-  assert.match(home, /showSharedAccountInvite/);
+  assert.match(home, /showSharedAccountInvite=\{false\}/);
   assert.match(home, /resolveFeedClipStartIndex/);
 
   const reel = read("src/pages/consumer/myMenuply/SeeWhosEatingFullscreen.jsx");
