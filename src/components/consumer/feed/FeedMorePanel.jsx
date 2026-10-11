@@ -2,8 +2,9 @@
  * Feed More menu — mobile drawer + desktop panel (TikTok-style overflow).
  */
 
-import { useEffect } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useConsumer } from "../../../context/ConsumerContext.jsx";
 import FeedMenuCaptureCameraIcon from "./FeedMenuCaptureCameraIcon.jsx";
 import { FEED_DESKTOP_RAIL_WIDTH, FEED_MENU_CAPTURE_HINT, resolveFeedMoreSections } from "../../../lib/feedShellLinks.js";
 import { restoreDocumentScroll } from "../../../pages/consumer/myMenuply/pendingHighlightMedia.js";
@@ -27,6 +28,21 @@ function FeedMoreLink({ link, onClose }) {
 
 export default function FeedMorePanel({ open, onClose, isAuthenticated = false, isDesktop = false }) {
   const sections = resolveFeedMoreSections({ isAuthenticated });
+  const { logout } = useConsumer();
+  const navigate = useNavigate();
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  async function handleLogout() {
+    if (loggingOut) return;
+    setLoggingOut(true);
+    try {
+      await logout();
+    } finally {
+      setLoggingOut(false);
+      onClose?.();
+      navigate("/", { replace: true });
+    }
+  }
 
   useEffect(() => {
     if (!open) return undefined;
@@ -61,7 +77,7 @@ export default function FeedMorePanel({ open, onClose, isAuthenticated = false, 
             ×
           </button>
         </div>
-        <div style={styles.body}>
+        <div style={isDesktop ? styles.body : { ...styles.body, ...styles.bodyMobile }}>
           {sections.map((section) => (
             <section key={section.id} style={styles.section} aria-labelledby={`feed-more-${section.id}`}>
               <h3 id={`feed-more-${section.id}`} style={styles.sectionTitle}>
@@ -91,6 +107,19 @@ export default function FeedMorePanel({ open, onClose, isAuthenticated = false, 
                   )}
             </section>
           ))}
+          {isAuthenticated ? (
+            <div style={styles.logoutWrap}>
+              <button
+                type="button"
+                style={styles.logoutBtn}
+                data-testid="feed-more-logout"
+                disabled={loggingOut}
+                onClick={handleLogout}
+              >
+                {loggingOut ? "Logging out…" : "Log out"}
+              </button>
+            </div>
+          ) : null}
         </div>
       </div>
     </div>
@@ -159,6 +188,11 @@ const styles = {
     overflowY: "auto",
     padding: "8px 12px calc(16px + env(safe-area-inset-bottom))",
   },
+  // Mobile sheet sits behind the fixed bottom nav — keep the last items (Log out) reachable.
+  bodyMobile: {
+    paddingBottom:
+      "calc(16px + env(safe-area-inset-bottom) + var(--feed-primary-nav-h, 0px) + var(--bottom-nav-h, 0px))",
+  },
   section: {
     margin: "8px 0 12px",
   },
@@ -188,6 +222,25 @@ const styles = {
   },
   item: {
     margin: 0,
+  },
+  logoutWrap: {
+    margin: "4px 0 12px",
+    paddingTop: 12,
+    borderTop: "1px solid rgba(255,255,255,0.08)",
+  },
+  logoutBtn: {
+    display: "block",
+    width: "100%",
+    textAlign: "left",
+    padding: "12px 10px",
+    borderRadius: 10,
+    border: "none",
+    background: "transparent",
+    color: "#fca5a5",
+    fontSize: 15,
+    fontWeight: 650,
+    fontFamily: "inherit",
+    cursor: "pointer",
   },
   link: {
     display: "block",
