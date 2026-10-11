@@ -893,6 +893,8 @@ export default function SeeWhosEatingFullscreen({
           connectBusy={connectBusy}
           onConnect={() => onScreenNameClick({ preventDefault() {}, stopPropagation() {} })}
           restaurantRef={restaurantRef}
+          menuItemId={inviteMenuItemId}
+          menuItemName={String(item?.item_name || "").trim() || null}
           showInvite={showInvite}
           onInvite={() => setInviteOpen(true)}
           showMenu={showInvite}

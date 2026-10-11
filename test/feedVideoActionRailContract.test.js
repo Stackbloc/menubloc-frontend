@@ -89,3 +89,19 @@ test("buildFeedDealShareData locks menuply.com", () => {
   assert.ok(data);
   assert.match(data.url, /^https:\/\/menuply\.com\/feed\/deals\?deal=/);
 });
+
+test("Wanna button is per video: menu item -> Wanna Eat It!, otherwise Wanna Go!", () => {
+  const rail = read("src/components/consumer/feed/FeedVideoActionRail.jsx");
+  assert.match(rail, /isDishVideo \? WANNA_EAT_IT_LABEL : "Wanna Go!"/);
+  assert.ok(rail.includes('const WANNA_EAT_IT_LABEL = "Wanna Eat\\u00a0It!";'));
+  assert.match(rail, /const isDishVideo = linkedMenuItemId != null;/);
+  assert.match(rail, /menu_item_id: linkedMenuItemId,\s*intent_kind: "menu_item"/);
+  assert.match(rail, /intent_kind: "restaurant"/);
+  assert.match(rail, /menu_item_not_found/);
+  for (const rel of [
+    "src/components/consumer/feed/DealVideoSwipe.jsx",
+    "src/pages/consumer/myMenuply/SeeWhosEatingFullscreen.jsx",
+  ]) {
+    assert.match(read(rel), /menuItemId=\{inviteMenuItemId\}/);
+  }
+});

@@ -1,5 +1,7 @@
 /**
- * Live Feed mobile right action rail — Connect · Wanna Go! · Invite · Like · Menu Browser.
+ * Live Feed mobile right action rail — Connect · Wanna Eat It! / Wanna Go! · Invite · Like · Menu Browser.
+ * Per video: linked to a specific menu item → "Wanna Eat It!" (saves the dish); otherwise "Wanna Go!"
+ * (saves the restaurant). Both land in What I Wanna Eat.
  * Share lives inside the Invite flow (shareData is forwarded there by the parent).
  * Desktop Feed keeps the prior Share & Invite + Menu Browser dock (not this rail).
  * Hide (do not gray-out) actions that do not apply.
@@ -56,6 +58,9 @@ function ConnectGlyph({ size = 22 }) {
   );
 }
 
+/** Non-breaking space keeps "Eat It!" together: wraps as "Wanna / Eat It!". */
+const WANNA_EAT_IT_LABEL = "Wanna Eat\u00a0It!";
+
 /**
  * @param {object} props
  * @param {number} [props.bottomInset]
@@ -63,6 +68,8 @@ function ConnectGlyph({ size = 22 }) {
  * @param {boolean} [props.connectBusy]
  * @param {() => void} [props.onConnect]
  * @param {{ restaurant_id: string|number, restaurant_name?: string } | null} [props.restaurantRef]
+ * @param {string|number|null} [props.menuItemId] video's linked menu item (drives "Wanna Eat It!")
+ * @param {string|null} [props.menuItemName]
  * @param {boolean} [props.showInvite]
  * @param {() => void} [props.onInvite]
  * @param {boolean} [props.showMenu]
@@ -75,6 +82,8 @@ export default function FeedVideoActionRail({
   connectBusy = false,
   onConnect,
   restaurantRef = null,
+  menuItemId = null,
+  menuItemName = null,
   showInvite = false,
   onInvite,
   showMenu = false,
@@ -91,6 +100,10 @@ export default function FeedVideoActionRail({
   const restaurantId = restaurantRef?.restaurant_id;
   const restaurantName = String(restaurantRef?.restaurant_name || "").trim();
   const hasRestaurant = restaurantId != null && String(restaurantId).trim() !== "";
+  const linkedMenuItemId =
+    menuItemId != null && String(menuItemId).trim() !== "" ? menuItemId : null;
+  const isDishVideo = linkedMenuItemId != null;
+  const dishName = String(menuItemName || "").trim();
   const { followed, statusLoading, actionLoading, toggleFollow } = useRestaurantFollow(
     hasRestaurant ? restaurantId : null,
     { source: followSource, restaurantName }
@@ -99,7 +112,7 @@ export default function FeedVideoActionRail({
   useEffect(() => {
     setWannaDone(false);
     setWannaError("");
-  }, [restaurantId]);
+  }, [restaurantId, linkedMenuItemId]);
 
   const showWannaGo = hasRestaurant;
   const showLike = hasRestaurant;
@@ -117,15 +130,34 @@ export default function FeedVideoActionRail({
     if (wannaBusy || wannaDone) return;
     setWannaBusy(true);
     try {
-      const name = restaurantName || "Restaurant";
-      await createWantToEat({
-        food_name: name,
-        restaurant_id: restaurantId,
-        intent_kind: "restaurant",
-      });
+      if (isDishVideo) {
+        const foodName = dishName || restaurantName || "Dish";
+        try {
+          await createWantToEat({
+            food_name: foodName,
+            restaurant_id: restaurantId,
+            menu_item_id: linkedMenuItemId,
+            intent_kind: "menu_item",
+          });
+        } catch (err) {
+          // Stale link on the video: still save the dish by name at this restaurant.
+          if (err?.payload?.code !== "menu_item_not_found") throw err;
+          await createWantToEat({
+            food_name: foodName,
+            restaurant_id: restaurantId,
+            intent_kind: "food_item",
+          });
+        }
+      } else {
+        await createWantToEat({
+          food_name: restaurantName || "Restaurant",
+          restaurant_id: restaurantId,
+          intent_kind: "restaurant",
+        });
+      }
       setWannaDone(true);
     } catch (err) {
-      setWannaError(err?.message || "Could not save Wanna Go!");
+      setWannaError(err?.message || (isDishVideo ? "Could not save Wanna Eat It!" : "Could not save Wanna Go!"));
     } finally {
       setWannaBusy(false);
     }
@@ -157,8 +189,12 @@ export default function FeedVideoActionRail({
         {showWannaGo ? (
           <RailButton
             testId="feed-rail-wanna-go"
-            label={wannaDone ? "Added" : "Wanna Go!"}
-            ariaLabel="Add restaurant to Wanna Go!"
+            label={wannaDone ? "Added" : isDishVideo ? WANNA_EAT_IT_LABEL : "Wanna Go!"}
+            ariaLabel={
+              isDishVideo
+                ? `Add ${dishName || "this dish"} to What I Wanna Eat`
+                : "Add restaurant to Wanna Go!"
+            }
             disabled={wannaBusy || wannaDone}
             onClick={onWannaGoClick}
           >
