@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { menuBrowserPath } from "../lib/searchShopMode.js";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { useNavigate, useLocation } from "react-router-dom";
 import { parseLocation, reverseGeocode } from "../lib/locationUtils.js";
@@ -233,7 +234,7 @@ export default function GrubbidHomeV1() {
       if (autoLocation.state) params.set("state", autoLocation.state);
     }
     const qs = params.toString();
-    navigate(qs ? `/browse-menus?${qs}` : "/browse-menus");
+    navigate(menuBrowserPath(qs));
   }
 
   const toggleSave = (id) =>

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { MENU_BROWSER_PATH } from "../../lib/searchShopMode.js";
 import { Link } from "react-router-dom";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
 import { useLanguage } from "../../context/LanguageContext.jsx";
@@ -232,7 +233,7 @@ export default function DiscoveryDrawer({
             display: "block", padding: "12px 0",
             fontSize: 15, fontWeight: 700, color: "#1F4E3D", textDecoration: "none",
           }}>{t("nav.waiter", "Waiter")}</Link>
-          <Link to="/browse-menus" onClick={onClose} style={{
+          <Link to={MENU_BROWSER_PATH} onClick={onClose} style={{
             display: "block", padding: "12px 0",
             fontSize: 15, fontWeight: 700, color: "#1F4E3D", textDecoration: "none",
           }}>{t("nav.browseMenus", "Menu Browser")}</Link>

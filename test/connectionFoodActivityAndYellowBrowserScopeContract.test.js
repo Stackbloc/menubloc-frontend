@@ -62,7 +62,7 @@ test("clearMenuBrowserVenueSession is exported", () => {
 });
 
 test("resolveBrowseMenusHref stays city without session", () => {
-  assert.equal(resolveBrowseMenusHref({ pathname: "/", search: "" }), "/browse-menus");
+  assert.equal(resolveBrowseMenusHref({ pathname: "/", search: "" }), "/feed/search?view=menu-browser");
 });
 
 test("cluster food section filter matches cuisine and name hints", () => {

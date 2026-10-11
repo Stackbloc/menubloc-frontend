@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { MENU_BROWSER_PATH } from "../../lib/searchShopMode.js";
 import { Link, useNavigate } from "react-router-dom";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
 import { getFollowedRestaurants } from "../../lib/consumerApi.js";
@@ -113,7 +114,7 @@ export default function FollowingFeed({ redirectIfUnauthenticated = true, extern
           <h1 style={styles.pageTitle}>Following</h1>
           <p style={styles.pageSubtitle}>{headingCopy}</p>
         </div>
-        <Link to="/browse-menus" style={styles.browseLink}>Browse restaurants</Link>
+        <Link to={MENU_BROWSER_PATH} style={styles.browseLink}>Browse restaurants</Link>
       </div>
 
       {error ? (
@@ -133,7 +134,7 @@ export default function FollowingFeed({ redirectIfUnauthenticated = true, extern
           </p>
           <div style={styles.emptyActions}>
             <Link to="/" style={styles.secondaryLink}>Go to discovery</Link>
-            <Link to="/browse-menus" style={styles.primaryLink}>Browse menus</Link>
+            <Link to={MENU_BROWSER_PATH} style={styles.primaryLink}>Browse menus</Link>
           </div>
         </div>
       ) : null}

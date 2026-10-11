@@ -3,6 +3,8 @@
  * Mobile bottom nav and desktop left rail read from the same config.
  */
 
+import { MENU_BROWSER_PATH } from "./searchShopMode.js";
+
 export const FEED_DESKTOP_MIN_WIDTH = 900;
 export const FEED_DESKTOP_RAIL_WIDTH = 240;
 
@@ -61,7 +63,7 @@ export const FEED_PRIMARY_TABS = [...FEED_LEFT_TABS, ...FEED_RIGHT_TABS];
 export const FEED_RAIL_TABS_AFTER_HOME = [...FEED_LEFT_TABS.slice(1), ...FEED_RIGHT_TABS];
 
 /** Menu capture return — Yellow Browse owns bookmarked/recent menus. */
-export const FEED_MENU_CAPTURE_PATH = `/menu-capture?next=${encodeURIComponent("/browse-menus")}`;
+export const FEED_MENU_CAPTURE_PATH = `/menu-capture?next=${encodeURIComponent(MENU_BROWSER_PATH)}`;
 export const FEED_MENU_CAPTURE_HINT = "Upload restaurant menus to Menuply";
 
 export const FEED_GUEST_PROFILE_CARDS = [

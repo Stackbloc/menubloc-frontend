@@ -3,6 +3,7 @@
  * a cluster page via BottomNav Browse (no ?cluster= in the path).
  */
 
+import { MENU_BROWSER_PATH } from "./searchShopMode.js";
 import { MENU_BROWSER_VENUE_SLUGS } from "./menuBrowserVenueCover.js";
 import { resolveClusterSlug } from "./clusterSlugAliases.js";
 
@@ -59,6 +60,6 @@ export function resolveBrowseMenusHref({ pathname = "", search = "" } = {}) {
   const fromPath = clusterSlugFromPathname(pathname);
   const fromSession = readMenuBrowserVenueSession();
   const cluster = [fromQuery, fromPath, fromSession].find((slug) => isMenuBrowserVenueSlug(slug)) || null;
-  if (!cluster) return "/browse-menus";
-  return `/browse-menus?cluster=${encodeURIComponent(cluster)}`;
+  if (!cluster) return MENU_BROWSER_PATH;
+  return `${MENU_BROWSER_PATH}&cluster=${encodeURIComponent(cluster)}`;
 }

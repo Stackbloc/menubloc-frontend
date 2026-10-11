@@ -38,3 +38,10 @@ test("/browse-menus redirects into Search & Shop Menu Browser mode with params k
   assert.equal(out.searchParams.get("i"), "2");
   assert.equal(out.searchParams.get("mode"), "drinks");
 });
+
+test("menuBrowserPath is the canonical Menu Browser link (no /browse-menus)", async () => {
+  const { MENU_BROWSER_PATH, menuBrowserPath } = await import("../src/lib/searchShopMode.js");
+  assert.equal(MENU_BROWSER_PATH, "/feed/search?view=menu-browser");
+  assert.equal(menuBrowserPath("city=Los+Angeles&state=CA"), "/feed/search?view=menu-browser&city=Los+Angeles&state=CA");
+  assert.equal(menuBrowserPath(), "/feed/search?view=menu-browser");
+});

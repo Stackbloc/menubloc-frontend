@@ -36,3 +36,13 @@ export function buildMenuBrowserRedirectPath(search = "") {
   next.set(SEARCH_SHOP_VIEW_PARAM, SEARCH_SHOP_MODE_MENU_BROWSER);
   return `/feed/search?${next.toString()}`;
 }
+
+/** Canonical Menu Browser link (Search & Shop → Menu Browser), with optional extra params. */
+export const MENU_BROWSER_PATH = `/feed/search?${SEARCH_SHOP_VIEW_PARAM}=${SEARCH_SHOP_MODE_MENU_BROWSER}`;
+
+export function menuBrowserPath(params = null) {
+  const extra = params instanceof URLSearchParams ? params : new URLSearchParams(params || {});
+  extra.delete(SEARCH_SHOP_VIEW_PARAM);
+  const qs = extra.toString();
+  return qs ? `${MENU_BROWSER_PATH}&${qs}` : MENU_BROWSER_PATH;
+}

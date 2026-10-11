@@ -2,6 +2,7 @@
  * MENUS tab — Feed-scoped Yellow Browser deck (saved + followed + 48h recents).
  */
 
+import { MENU_BROWSER_PATH } from "../../../lib/searchShopMode.js";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import CatalogMenuRenderer, {
@@ -308,7 +309,7 @@ export default function FeedMenusPage() {
             <Link to="/feed" style={styles.sampleHintLink} data-testid="feed-menus-browse-feed">
               Browse Feed
             </Link>
-            <Link to="/browse-menus" style={styles.sampleHintLinkMuted} data-testid="feed-menus-discover">
+            <Link to={MENU_BROWSER_PATH} style={styles.sampleHintLinkMuted} data-testid="feed-menus-discover">
               Discover restaurants
             </Link>
           </div>
@@ -337,7 +338,7 @@ export default function FeedMenusPage() {
       </div>
 
       <div style={{ ...styles.footer, bottom: navBottom }}>
-        <Link to="/browse-menus" style={styles.discoverInline} data-testid="feed-menus-discover-inline">
+        <Link to={MENU_BROWSER_PATH} style={styles.discoverInline} data-testid="feed-menus-discover-inline">
           Discover more restaurants
         </Link>
       </div>

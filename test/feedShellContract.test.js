@@ -54,7 +54,7 @@ test("Feed shell: Home|Waiter|Share My QR|X|Deals|Shop|Profile + slim X sheet", 
   assert.match(feedTabLinks, /feed-nav-shop/);
   assert.doesNotMatch(feedTabLinks, /label: "Search"/);
   assert.match(feedTabLinks, /feed-nav-profile/);
-  assert.match(feedTabLinks, /\/browse-menus/);
+  assert.match(feedTabLinks, /MENU_BROWSER_PATH/);
 
   const menuBrowserNav = read("src/lib/feedMenuBrowserNav.js");
   assert.match(menuBrowserNav, /OPEN_FEED_MENU_BROWSER_EVENT/);
@@ -411,7 +411,7 @@ test("Feed as home: / redirects to /feed; FeedPrimaryNav paths unchanged", () =>
   assert.match(feedLinks, /to: "\/feed\/profile"/);
   assert.match(feedLinks, /FEED_MENU_CAPTURE_PATH/);
   assert.match(feedLinks, /FEED_MENU_CAPTURE_HINT/);
-  assert.match(feedLinks, /\/browse-menus/);
+  assert.match(feedLinks, /MENU_BROWSER_PATH/);
   assert.doesNotMatch(feedLinks, /to: "\/"/);
 
   const app = read("src/App.jsx");

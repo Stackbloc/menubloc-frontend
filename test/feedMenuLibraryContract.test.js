@@ -209,7 +209,7 @@ test("Feed nav Share My QR; Menu Browser on video rail; legacy /feed/menus kept 
   assert.doesNotMatch(navLinks, /openFeedMenuBrowser/);
   assert.doesNotMatch(navLinks, /My Menu Stack/);
   assert.doesNotMatch(navLinks, /feed-nav-eating/);
-  assert.match(navLinks, /\/browse-menus/);
+  assert.match(navLinks, /MENU_BROWSER_PATH/);
 
   const rail = read("src/components/consumer/feed/FeedVideoActionRail.jsx");
   assert.match(rail, /label="Menu Browser"/);

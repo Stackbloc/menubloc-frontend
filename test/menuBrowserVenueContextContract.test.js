@@ -35,9 +35,9 @@ test("resolveBrowseMenusHref prefers Indio festival path over bare browse", () =
       pathname: "/clusters/california/indio/indio-festival-grounds",
       search: "",
     }),
-    `/browse-menus?cluster=${INDIO_FESTIVAL_GROUNDS_SLUG}`
+    `/feed/search?view=menu-browser&cluster=${INDIO_FESTIVAL_GROUNDS_SLUG}`
   );
-  assert.equal(resolveBrowseMenusHref({ pathname: "/", search: "" }), "/browse-menus");
+  assert.equal(resolveBrowseMenusHref({ pathname: "/", search: "" }), "/feed/search?view=menu-browser");
 });
 
 test("Menu Browser tab retired: venue scope survives via redirect params + session", () => {
