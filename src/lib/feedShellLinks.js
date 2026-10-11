@@ -23,8 +23,13 @@ export const FEED_HOME_TAB = {
   alsoActiveOn: ["/"],
 };
 
+/**
+ * authOnly tabs are introduced after sign-up: new visitors only see features that explain
+ * themselves (a guest has no QR, and Waiter is unfamiliar) — Andre, 2026-10-11.
+ */
 export const FEED_LEFT_TABS = [
   FEED_HOME_TAB,
+  { to: "/waiter", end: false, label: "Waiter", testId: "feed-nav-waiter", authOnly: true },
   {
     to: "/feed",
     end: true,
@@ -32,6 +37,7 @@ export const FEED_LEFT_TABS = [
     testId: "feed-nav-share-qr",
     /** Opens diner QR share sheet (FeedShareMyMenuplySheet). */
     openShareQr: true,
+    authOnly: true,
   },
 ];
 
@@ -40,6 +46,11 @@ export const FEED_RIGHT_TABS = [
   { to: "/feed/search", end: true, label: "Search & Shop", testId: "feed-nav-shop", resetSearch: true },
   { to: "/feed/profile", end: false, label: "Profile", testId: "feed-nav-profile" },
 ];
+
+/** Drop authOnly tabs for signed-out visitors. */
+export function visibleFeedTabs(tabs, { isAuthenticated = false } = {}) {
+  return (Array.isArray(tabs) ? tabs : []).filter((tab) => isAuthenticated || !tab.authOnly);
+}
 
 /** All primary tabs in display order (desktop rail). */
 export const FEED_PRIMARY_TABS = [...FEED_LEFT_TABS, ...FEED_RIGHT_TABS];
@@ -64,12 +75,6 @@ export const FEED_GUEST_PROFILE_CARDS = [
     title: "Explore Clusters",
     blurb: "Stadiums, campuses, venues, and food places near you.",
     testId: "feed-guest-clusters-card",
-  },
-  {
-    to: "/waiter",
-    title: "Try Waiter",
-    blurb: "Get meal ideas for breakfast, lunch, dinner, and late night.",
-    testId: "feed-guest-waiter-card",
   },
 ];
 

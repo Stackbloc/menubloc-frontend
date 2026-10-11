@@ -40,8 +40,8 @@ test("Feed shell: Home|Waiter|Share My QR|X|Deals|Shop|Profile + slim X sheet", 
 
   const feedTabLinks = read("src/lib/feedShellLinks.js");
   assert.match(feedTabLinks, /feed-nav-home/);
-  // Waiter removed from the Feed nav (Andre, 2026-10-11).
-  assert.doesNotMatch(feedTabLinks, /feed-nav-waiter/);
+  // Waiter is signed-in only in the Feed nav (Andre, 2026-10-11).
+  assert.match(feedTabLinks, /testId: "feed-nav-waiter", authOnly: true/);
   assert.doesNotMatch(feedTabLinks, /feed-nav-connects/);
   assert.doesNotMatch(feedTabLinks, /label: "Connects"/);
   assert.match(feedTabLinks, /feed-nav-share-qr/);
@@ -396,8 +396,8 @@ test("Feed as home: / redirects to /feed; FeedPrimaryNav paths unchanged", () =>
 
   const feedLinks = read("src/lib/feedShellLinks.js");
   assert.match(feedLinks, /to: "\/feed"/);
-  // Waiter removed from the Feed nav (Andre, 2026-10-11).
-  assert.doesNotMatch(feedLinks, /label: "Waiter"/);
+  assert.match(feedLinks, /to: "\/waiter"/);
+  assert.match(feedLinks, /label: "Waiter"/);
   assert.match(feedLinks, /label: "Share My QR"/);
   assert.match(feedLinks, /openShareQr:\s*true/);
   assert.doesNotMatch(feedLinks, /to: "\/feed\/menus"/);

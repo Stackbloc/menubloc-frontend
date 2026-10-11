@@ -71,10 +71,18 @@ test("feed deals: mobile rail + desktop Share & Invite dock", () => {
   assert.match(swipe, /buildFeedDealShareData/);
 });
 
-test("Feed shell nav has no Waiter or Connects tab", () => {
+test("Feed shell nav: Waiter + Share My QR are signed-in only; no Connects tab", () => {
   const links = read("src/lib/feedShellLinks.js");
-  assert.doesNotMatch(links, /feed-nav-waiter/);
-  assert.doesNotMatch(links, /label: "Waiter"/);
+  assert.match(links, /label: "Waiter", testId: "feed-nav-waiter", authOnly: true/);
+  assert.match(links, /openShareQr: true,\s*authOnly: true/);
+  assert.match(links, /export function visibleFeedTabs/);
+  assert.doesNotMatch(links, /feed-guest-waiter-card/);
+  const nav = read("src/components/consumer/feed/FeedPrimaryNav.jsx");
+  assert.match(nav, /visibleFeedTabs\(FEED_LEFT_TABS, \{ isAuthenticated \}\)/);
+  const rail = read("src/components/consumer/feed/FeedDesktopRail.jsx");
+  assert.match(rail, /visibleFeedTabs\(FEED_RAIL_TABS_AFTER_HOME, \{ isAuthenticated \}\)/);
+  const bottom = read("src/components/BottomNav.jsx");
+  assert.match(bottom, /isAuthenticated \|\| !tab\.authOnly/);
   assert.doesNotMatch(links, /label: "Connects"/);
   assert.doesNotMatch(links, /feed-nav-connects/);
 });

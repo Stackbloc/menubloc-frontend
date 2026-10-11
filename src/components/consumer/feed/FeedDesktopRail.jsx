@@ -13,6 +13,7 @@ import {
   FEED_MENU_CAPTURE_HINT,
   FEED_MENU_CAPTURE_PATH,
   FEED_RAIL_TABS_AFTER_HOME,
+  visibleFeedTabs,
   FEED_SHELL_LOGIN_PATH,
   FEED_SHELL_SIGNUP_PATH,
 } from "../../../lib/feedShellLinks.js";
@@ -91,7 +92,7 @@ export default function FeedDesktopRail({
           <span>Add menu</span>
         </Link>
 
-        {FEED_RAIL_TABS_AFTER_HOME.map((tab) => (
+        {visibleFeedTabs(FEED_RAIL_TABS_AFTER_HOME, { isAuthenticated }).map((tab) => (
           <RailTab key={tab.testId} tab={tab} onShareQr={onShareMyMenuply} />
         ))}
       </nav>

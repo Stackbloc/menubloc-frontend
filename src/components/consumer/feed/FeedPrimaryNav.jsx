@@ -1,5 +1,6 @@
 /**
- * TikTok-style feed shell nav: Home · Share My QR | [X] | Deals · Search · Profile.
+ * TikTok-style feed shell nav: Home · Waiter · Share My QR | [X] | Deals · Search · Profile.
+ * Waiter and Share My QR are signed-in only (authOnly); guests see Home | [X] | Deals · Search · Profile.
  * Share My QR opens the diner QR share sheet. Menu Browser lives on the video rail/dock.
  * Mobile bottom bar only — desktop uses FeedDesktopRail from the same tab config.
  *
@@ -11,7 +12,8 @@
 import { createPortal } from "react-dom";
 import { useLocation, useNavigate } from "react-router-dom";
 import MenuplyXMark from "../../MenuplyXMark.jsx";
-import { FEED_LEFT_TABS, FEED_RIGHT_TABS } from "../../../lib/feedShellLinks.js";
+import { FEED_LEFT_TABS, FEED_RIGHT_TABS, visibleFeedTabs } from "../../../lib/feedShellLinks.js";
+import { useConsumer } from "../../../context/ConsumerContext.jsx";
 import { clearStuckMediaChrome } from "../../../pages/consumer/myMenuply/pendingHighlightMedia.js";
 
 export const FEED_PRIMARY_NAV_HEIGHT = 56;
@@ -62,6 +64,9 @@ export default function FeedPrimaryNav({
   createActive = false,
   onShareQr,
 }) {
+  const { isAuthenticated } = useConsumer();
+  const leftTabs = visibleFeedTabs(FEED_LEFT_TABS, { isAuthenticated });
+  const rightTabs = visibleFeedTabs(FEED_RIGHT_TABS, { isAuthenticated });
   const nav = (
     <nav
       style={styles.nav}
@@ -70,7 +75,7 @@ export default function FeedPrimaryNav({
       className="feed-primary-nav-mobile"
     >
       <div style={styles.side}>
-        {FEED_LEFT_TABS.map((tab) => (
+        {leftTabs.map((tab) => (
           <TabControl key={tab.testId} tab={tab} onShareQr={onShareQr} />
         ))}
       </div>
@@ -89,7 +94,7 @@ export default function FeedPrimaryNav({
         <MenuplyXMark size={26} active={createActive} />
       </button>
       <div style={styles.side}>
-        {FEED_RIGHT_TABS.map((tab) => (
+        {rightTabs.map((tab) => (
           <TabControl key={tab.testId} tab={tab} onShareQr={onShareQr} />
         ))}
       </div>

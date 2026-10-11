@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useOrderCart } from "../context/OrderCartContext.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
+import { useConsumer } from "../context/ConsumerContext.jsx";
 import WaiterFaceIcon from "./icons/WaiterFaceIcon.jsx";
 import MenuplyXMark from "./MenuplyXMark.jsx";
 import MenuplyActionSheet from "./MenuplyActionSheet.jsx";
@@ -16,6 +17,7 @@ export default function BottomNav() {
   const navRef = useRef(null);
   const { pathname } = useLocation();
   const { itemCount } = useOrderCart();
+  const { isAuthenticated } = useConsumer();
   const [postOpen, setPostOpen] = useState(false);
 
   const tabs = useMemo(
@@ -27,6 +29,8 @@ export default function BottomNav() {
         iconComponent: WaiterFaceIcon,
         iconSize: 28,
         to: "/waiter",
+        // Introduced after sign-up — new visitors only see self-explanatory features.
+        authOnly: true,
       },
       { id: "post", kind: "post", title: POST_LABEL },
       { id: "basket", label: t("nav.basket", "Basket"), icon: "🛒", to: "/checkout" },
@@ -36,8 +40,8 @@ export default function BottomNav() {
         icon: "👤",
         to: MY_MENUPLY_PROFILE_PATH,
       },
-    ],
-    [t]
+    ].filter((tab) => isAuthenticated || !tab.authOnly),
+    [t, isAuthenticated]
   );
 
   useEffect(() => {

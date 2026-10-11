@@ -327,6 +327,8 @@ export default function FeedVideoCreateSheet({
                 ))}
               </ul>
             </section>
+            {/* Signed-in only: a new visitor has no QR to share. */}
+            {isAuthenticated ? (
             <section data-testid="feed-x-section-share-menuply" style={styles.section}>
               <SectionTitle>My Menuply</SectionTitle>
               <ul style={styles.list}>
@@ -341,6 +343,7 @@ export default function FeedVideoCreateSheet({
                 />
               </ul>
             </section>
+            ) : null}
             <section data-testid="feed-x-section-quick-invites" style={styles.section}>
               <SectionTitle>Quick Invites</SectionTitle>
               <p style={styles.sectionLead}>

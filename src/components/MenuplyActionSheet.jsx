@@ -45,6 +45,8 @@ const ACTION_DEFS = {
     description: "Show your code so someone nearby can connect with you.",
     to: "/account/diner-qr",
     guestOk: false,
+    // A new visitor has no QR — only shown once signed in.
+    authOnly: true,
   },
   ate: {
     id: "ate",
@@ -172,8 +174,11 @@ export const POST_ABOUT_ACTIONS = POST_ABOUT_SECTIONS.flatMap((section) =>
   section.actionIds.map((id) => ACTION_DEFS[id]).filter(Boolean)
 );
 
-function SectionBlock({ section, open, onToggle, onGo }) {
-  const actions = section.actionIds.map((id) => ACTION_DEFS[id]).filter(Boolean);
+function SectionBlock({ section, open, onToggle, onGo, isAuthenticated = false }) {
+  const actions = section.actionIds
+    .map((id) => ACTION_DEFS[id])
+    .filter(Boolean)
+    .filter((action) => isAuthenticated || !action.authOnly);
   return (
     <section style={styles.section} data-testid={`x-section-${section.id}`}>
       <button
@@ -278,6 +283,7 @@ export default function MenuplyActionSheet({ open, onClose }) {
               setSectionOpen((prev) => ({ ...prev, [section.id]: !prev[section.id] }))
             }
             onGo={go}
+            isAuthenticated={isAuthenticated}
           />
         ))}
       </div>
