@@ -122,7 +122,7 @@ export const PROFILE_SECTION_HEADERS = {
     icon: "ti-flame",
     eyebrowLabel: "Cravings",
     eyebrowColor: "#993556",
-    title: "What I wanna eat",
+    title: "Wish List",
     accentColor: "#D4537E",
   },
   plans: {

@@ -113,7 +113,7 @@ export const EATING_COMPOSE_CATEGORIES = [
   },
   {
     id: "want",
-    label: "What I Wanna Eat",
+    label: "Wish List",
     placeholder: "What do you want?",
     description: "Cuisine, restaurant, menu item, or a general food craving.",
   },

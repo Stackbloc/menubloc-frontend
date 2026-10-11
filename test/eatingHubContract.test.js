@@ -28,7 +28,7 @@ test("My Menuply and peer hub use five-section presentation hub", () => {
   assert.match(section, /data-testid="eating-plans"/);
   assert.ok(
     section.indexOf("<NearbyEatingSection") < section.indexOf('data-testid="want-to-eat"'),
-    "Who's Eating before What I Wanna Eat"
+    "Who's Eating before Wish List"
   );
 
   assert.match(section, /data-testid="eating"/);

@@ -18,7 +18,7 @@ const CHANNEL_LABEL_BY_KIND = Object.fromEntries(
 /** Full captions in fullscreen reel (hub section titles). */
 export const LIVE_FEED_FULL_CATEGORY_LABELS = {
   ate: "What I'm Eating",
-  want: "What I Wanna Eat",
+  want: "Wish List",
   plan: "My Eating Plans",
   reviews: "Reviews",
   cooking: "What's Cooking @home",

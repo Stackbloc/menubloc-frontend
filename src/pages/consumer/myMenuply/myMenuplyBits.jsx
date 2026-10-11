@@ -1385,7 +1385,7 @@ export function WantToEatList({
 }
 
 /**
- * Restaurant dining intent card — same What I Wanna Eat section as menu-item wants.
+ * Restaurant dining intent card — same Wish List section as menu-item wants.
  * Internally kind=dining_intent (not diner_want_to_eat). Invite someone lives in CravingsInviteSheet.
  */
 function WannaGoRestaurantCard({
@@ -1515,7 +1515,7 @@ function WannaGoRestaurantCard({
 }
 
 /**
- * One What I Wanna Eat rail: restaurant dining intents + menu-item wants.
+ * One Wish List rail: restaurant dining intents + menu-item wants.
  * Separate stores; unified diner UI.
  */
 export function WantToEatUnifiedList({

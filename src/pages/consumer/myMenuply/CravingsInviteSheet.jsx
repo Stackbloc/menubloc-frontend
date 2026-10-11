@@ -191,7 +191,7 @@ export default function CravingsInviteSheet({
           <h3 style={styles.sectionTitle}>Make Me This dishes</h3>
           {dishWants.length === 0 ? (
             <p style={s.muted} data-testid="cravings-mmt-empty">
-              Add a dish to What I Wanna Eat, then open it for Make Me This here.
+              Add a dish to your Wish List, then open it for Make Me This here.
             </p>
           ) : (
             <ul style={styles.checkList} data-testid="mmt-want-checklist">

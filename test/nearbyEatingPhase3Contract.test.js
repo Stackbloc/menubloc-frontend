@@ -27,7 +27,7 @@ test("Who's Eating mounts before Wanna Eat on eating hub", () => {
   const page = read("src/pages/consumer/MyMenuplyPage.jsx");
 
   assert.match(section, /NearbyEatingSection/);
-  assert.match(section, /PROFILE_SECTION_HEADERS\.wannaEat|What I wanna eat|want-to-eat/);
+  assert.match(section, /PROFILE_SECTION_HEADERS\.wannaEat|Wish List|want-to-eat/);
   assert.match(nearby, /data-testid="see-others-nearby-eating"/);
   assert.match(nearby, /Who's Eating/);
   assert.match(nearby, /listSeeWhosEating/);
@@ -50,7 +50,7 @@ test("Who's Eating mounts before Wanna Eat on eating hub", () => {
   const want = section.indexOf('data-testid="want-to-eat"');
   assert.ok(ate >= 0 && nearbyMount >= 0 && want >= 0);
   assert.ok(ate < nearbyMount, "What I'm Eating before Who's Eating");
-  assert.ok(nearbyMount < want, "Who's Eating before What I Wanna Eat");
+  assert.ok(nearbyMount < want, "Who's Eating before Wish List");
   assert.match(section, /viewerUserId=\{viewerUserId\}/);
   assert.match(page, /viewerUserId=\{consumer\?\.id/);
 

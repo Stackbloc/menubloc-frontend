@@ -30,7 +30,7 @@ test("FeedVideoActionRail: Connect first, no Waiter on rail", () => {
   const connectIdx = rail.indexOf("feed-rail-connect");
   const wannaIdx = rail.indexOf("feed-rail-wanna-go");
   assert.ok(connectIdx >= 0 && wannaIdx > connectIdx);
-  // Rail order: Wanna Go!, Invite, Like, Menu Browser (no Share, no Clusters).
+  // Rail order: +Wish List, Invite, Like, Menu Browser (no Share, no Clusters).
   const order = ["feed-rail-wanna-go", "feed-rail-invite", "feed-rail-like", "feed-rail-menu\""]
     .map((id) => rail.indexOf(id));
   assert.ok(order.every((idx, i) => idx >= 0 && (i === 0 || idx > order[i - 1])));
@@ -90,10 +90,11 @@ test("buildFeedDealShareData locks menuply.com", () => {
   assert.match(data.url, /^https:\/\/menuply\.com\/feed\/deals\?deal=/);
 });
 
-test("Wanna button is per video: menu item -> Wanna Eat!, otherwise Wanna Go!", () => {
+test("+Wish List on every video; saves the dish when linked, else the restaurant", () => {
   const rail = read("src/components/consumer/feed/FeedVideoActionRail.jsx");
-  assert.match(rail, /isDishVideo \? WANNA_EAT_LABEL : "Wanna Go!"/);
-  assert.match(rail, /const WANNA_EAT_LABEL = "Wanna Eat!";/);
+  assert.match(rail, /label=\{wannaDone \? "Added" : WISH_LIST_LABEL\}/);
+  assert.match(rail, /const WISH_LIST_LABEL = "\+Wish List";/);
+  assert.doesNotMatch(rail, /"Wanna Go!"|"Wanna Eat!"/);
   assert.match(rail, /const isDishVideo = linkedMenuItemId != null;/);
   assert.match(rail, /menu_item_id: linkedMenuItemId,\s*intent_kind: "menu_item"/);
   assert.match(rail, /intent_kind: "restaurant"/);

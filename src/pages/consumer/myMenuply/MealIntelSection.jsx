@@ -65,7 +65,7 @@ export default function MealIntelSection({ hidden = false }) {
         {!loading && intents.length === 0 ? (
           <SectionEmptyState testId="meal-intel-no-intent">
             {data?.headline ||
-              "Save What I Wanna Eat or What I’m Eating to unlock Meal Intel."}
+              "Save to your Wish List or What I’m Eating to unlock Meal Intel."}
           </SectionEmptyState>
         ) : null}
 

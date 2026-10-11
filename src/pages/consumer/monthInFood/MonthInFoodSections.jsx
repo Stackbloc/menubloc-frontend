@@ -424,7 +424,7 @@ export function MonthInFoodCravingsPlans({
       {showCravings ? (
         <div style={s.card} data-testid="month-in-food-wants">
           <div style={{ fontSize: 12, color: "var(--mif-ink-soft, #5B5548)", marginBottom: 4 }}>Cravings</div>
-          <h3 style={{ ...s.sectionTitle, fontSize: 18, margin: 0 }}>What I wanna eat</h3>
+          <h3 style={{ ...s.sectionTitle, fontSize: 18, margin: 0 }}>Wish List</h3>
           {isSelf ? (
             <p
               style={{ margin: "8px 0 0", fontSize: 12, color: "var(--mif-ink-soft, #5B5548)" }}

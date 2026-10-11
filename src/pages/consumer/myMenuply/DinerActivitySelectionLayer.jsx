@@ -63,7 +63,7 @@ export default function DinerActivitySelectionLayer({
         market_discoverable: true,
         include_discovery: true,
       });
-      setWantNotice("Saved to What I Wanna Eat.");
+      setWantNotice("Saved to Wish List.");
       onWantCreated?.(want);
     } catch (err) {
       setWantError(err.message || "Could not save want");

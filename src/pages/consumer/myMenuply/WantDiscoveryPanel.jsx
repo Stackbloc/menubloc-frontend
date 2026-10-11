@@ -1,5 +1,5 @@
 /**
- * Immediate discovery return after What I Wanna Eat save.
+ * Immediate discovery return after Wish List save.
  * Value-extraction principle — not a matching UI.
  */
 

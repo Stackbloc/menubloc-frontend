@@ -1104,7 +1104,7 @@ export default function EatingCompose({
               </>
             ) : null}
             <p style={styles.hint} data-testid="ate-signal-hint">
-              {ateMeta.label}: actual eating now — separate from What I Wanna Eat (desire).
+              {ateMeta.label}: actual eating now — separate from your Wish List (desire).
             </p>
             </>
             ) : null}

@@ -93,11 +93,11 @@ export default function RequestMmtSheet({
         <h2 style={styles.title}>Make Me This</h2>
         <p style={styles.lead}>
           Allow specific <strong>Connects</strong> to make you a dish from your{" "}
-          <strong>Wanna Eat</strong> list. Pick which items are open — not on the public Feed.
+          <strong>Wish List</strong>. Pick which items are open — not on the public Feed.
         </p>
         {wants.length === 0 ? (
           <p style={s.muted} data-testid="mmt-picker-empty">
-            Add something you wanna eat first, then choose Make Me This items here.
+            Add something to your Wish List first, then choose Make Me This items here.
           </p>
         ) : (
           <ul style={styles.checkList} data-testid="mmt-want-checklist">

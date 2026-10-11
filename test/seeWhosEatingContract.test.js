@@ -146,7 +146,7 @@ test("See Who's Eating reel: guest watch, CK dish, existing camera, Connect noti
   assert.match(cats, /abbreviateLiveFeedRestaurantName/);
   assert.match(cats, /\$\{place\}\/\$\{dishName\}/);
   assert.match(cats, /liveFeedFullCategoryLabel/);
-  assert.match(cats, /What I Wanna Eat/);
+  assert.match(cats, /want: "Wish List"/);
   assert.match(cats, /My Eating Plans/);
   assert.match(cats, /What I'm Eating/);
   assert.match(cats, /CHANNEL_LABEL_BY_KIND/);
@@ -157,7 +157,7 @@ test("See Who's Eating reel: guest watch, CK dish, existing camera, Connect noti
   assert.match(cats, /label:\s*"Wanna Eat"/);
   assert.match(cats, /Eating Plans/);
   assert.doesNotMatch(cats, /short:\s*"ALL"/);
-  assert.doesNotMatch(cats, /label:\s*"What I Wanna Eat"/);
+  assert.doesNotMatch(cats, /label:\s*"Wish List"/);
   assert.match(cats, /LIVE_FEED_FULL_CATEGORY_LABELS/);
   assert.match(cats, /LIVE_FEED_CHANNELS/);
   assert.match(cats, /venueLiveFeedPath/);

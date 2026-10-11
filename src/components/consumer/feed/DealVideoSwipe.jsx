@@ -2,7 +2,7 @@
  * TikTok-style swipe reel for restaurant deal videos (Feed Deals).
  * Sound on by default (same as Feed home); muted fallback if autoplay blocked. Tap/click toggles mute.
  * Meta dock: desktop shell lifts captions so meal-time badges do not clip; mobile caption layout unchanged.
- * Mobile right rail: Wanna Eat!/Wanna Go! · Invite · Like · Menu (Share inside Invite). Desktop: Share & Invite + Menu Browser dock.
+ * Mobile right rail: +Wish List · Invite · Like · Menu (Share inside Invite). Desktop: Share & Invite + Menu Browser dock.
  */
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";

@@ -329,7 +329,7 @@ test("hidden diary yields no meal stats for peer", () => {
 
 test("profile vocabulary: Wanna Eat label + Plans & Events sections", () => {
   const sections = read("src/pages/consumer/monthInFood/MonthInFoodSections.jsx");
-  assert.match(sections, /What I wanna eat/);
+  assert.match(sections, /Wish List/);
   assert.match(sections, /Cravings/);
   assert.doesNotMatch(sections, /What I Want To Eat/);
   assert.match(sections, /Plans &amp; events|Plans & events/);

@@ -32,7 +32,7 @@ test("My Menuply is the diner's personal home", () => {
   assert.match(section, /PROFILE_SECTION_HEADERS\.plans|What's cookin'/);
   assert.match(section, /PROFILE_SECTION_HEADERS\.eating|What I'm eating/);
   assert.doesNotMatch(section, /kicker="Today"/);
-  assert.match(section, /PROFILE_SECTION_HEADERS\.wannaEat|What I wanna eat/);
+  assert.match(section, /PROFILE_SECTION_HEADERS\.wannaEat|Wish List/);
   assert.match(section, /eating-calendar/);
   assert.match(section, /DinerCalendarTrigger/);
   assert.match(section, /PostAfterActions/);

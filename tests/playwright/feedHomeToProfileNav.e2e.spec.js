@@ -372,7 +372,7 @@ test.describe("Feed home → Profile bottom nav", () => {
       ["my-highlights-section-header", "My reel"],
       ["my-favs-section-header", "My Favs"],
       ["what-im-eating-section-header", "What I'm eating"],
-      ["wanna-eat-section-header", "What I wanna eat"],
+      ["wanna-eat-section-header", "Wish List"],
       ["eating-plans-section-header", "What's cookin'"],
       ["crews-section-header", "My crews"],
       ["events-section-header", "My events"],
