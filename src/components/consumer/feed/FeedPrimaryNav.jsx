@@ -74,11 +74,14 @@ export default function FeedPrimaryNav({
       aria-label="Primary"
       className="feed-primary-nav-mobile"
     >
-      <div style={styles.side}>
+      {/* Each side grows by its tab count so every tab gets the same width (even spacing
+          when guests see 1 tab left of X and 3 on the right). */}
+      <div style={{ ...styles.side, flexGrow: Math.max(1, leftTabs.length) }}>
         {leftTabs.map((tab) => (
           <TabControl key={tab.testId} tab={tab} onShareQr={onShareQr} />
         ))}
       </div>
+      <div style={styles.createSlot}>
       <button
         type="button"
         data-testid="feed-nav-create-x"
@@ -93,7 +96,8 @@ export default function FeedPrimaryNav({
       >
         <MenuplyXMark size={26} active={createActive} />
       </button>
-      <div style={styles.side}>
+      </div>
+      <div style={{ ...styles.side, flexGrow: Math.max(1, rightTabs.length) }}>
         {rightTabs.map((tab) => (
           <TabControl key={tab.testId} tab={tab} onShareQr={onShareQr} />
         ))}
@@ -128,7 +132,7 @@ const styles = {
     backdropFilter: "blur(10px)",
   },
   side: {
-    flex: 1,
+    flex: "1 1 0",
     display: "flex",
     alignItems: "stretch",
     minWidth: 0,
@@ -157,6 +161,14 @@ const styles = {
     color: "inherit",
     fontFamily: "inherit",
     width: "100%",
+  },
+  /** X gets the same-width slot as a tab so all items spread evenly. */
+  createSlot: {
+    flex: "1 1 0",
+    minWidth: 0,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
   },
   createBtn: {
     flex: "0 0 auto",
