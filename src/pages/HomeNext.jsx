@@ -31,14 +31,25 @@ import { appendSearchAnalyticsParams } from "../lib/analyticsPageVisitSend.js";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 
-export default function HomeNext({ embedInFeedShell = false } = {}) {
+export default function HomeNext({
+  embedInFeedShell = false,
+  /** Feed Search & Shop only: rendered directly under the search box (mode toggle). */
+  belowSearchSlot = null,
+  /** Feed Search & Shop only: shared typed query across Search / Menu Browser modes. */
+  initialQuery = "",
+  onDraftQueryChange = null,
+} = {}) {
   const { t, language } = useLanguage();
   const { isAuthenticated: consumerLoggedIn, loading: consumerLoading } = useConsumer();
   const isFeedDesktop = useFeedShellDesktop();
   const navigate = useNavigate();
   const inputRef = useRef(null);
   const helpSectionRef = useRef(null);
-  const [draftQuery, setDraftQuery] = useState("");
+  const [draftQuery, setDraftQueryState] = useState(() => (embedInFeedShell ? String(initialQuery || "") : ""));
+  function setDraftQuery(value) {
+    setDraftQueryState(value);
+    if (embedInFeedShell) onDraftQueryChange?.(value);
+  }
   const [searching, setSearching] = useState(false);
   const [inlineError, setInlineError] = useState("");
   const [expandedSectionId, setExpandedSectionId] = useState(null);
@@ -406,6 +417,10 @@ export default function HomeNext({ embedInFeedShell = false } = {}) {
                 </button>
               </div>
             </form>
+
+            {embedInFeedShell && belowSearchSlot ? (
+              <div style={{ marginTop: 12 }}>{belowSearchSlot}</div>
+            ) : null}
 
             {inlineError ? (
               <div

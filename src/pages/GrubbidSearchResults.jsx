@@ -2046,7 +2046,11 @@ function FilterToggle({ label, active, onClick, isMobile }) {
   );
 }
 
-export default function GrubbidSearchResults({ embedInFeedShell = false } = {}) {
+export default function GrubbidSearchResults({
+  embedInFeedShell = false,
+  /** Feed Search & Shop only: Search | Menu Browser toggle under the query header. */
+  belowSearchSlot = null,
+} = {}) {
   const { t, language } = useLanguage();
   const location = useLocation();
   const params = useQueryParams();
@@ -3152,6 +3156,9 @@ export default function GrubbidSearchResults({ embedInFeedShell = false } = {}) 
             </span>
           ) : null}
         </div>
+        {embedInFeedShell && belowSearchSlot ? (
+          <div style={{ maxWidth: 576, margin: "0 auto", padding: "10px 14px 0" }}>{belowSearchSlot}</div>
+        ) : null}
         {showWaiterBar && (
           <div style={{ maxWidth: 576, margin: "0 auto", padding: "4px 14px 2px" }}>
             <WaiterRefinementPrompt

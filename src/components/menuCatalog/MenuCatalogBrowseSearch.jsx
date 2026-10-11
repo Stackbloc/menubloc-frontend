@@ -12,8 +12,16 @@ export default function MenuCatalogBrowseSearch({
   onSelectSection,
   onNavigateSearch,
   showExploreChips = true,
+  /** Search & Shop: mode toggle between the search box and the chips. */
+  belowFormSlot = null,
+  initialQuery = "",
+  onQueryChange = null,
 }) {
-  const [query, setQuery] = useState("");
+  const [query, setQueryState] = useState(() => String(initialQuery || ""));
+  function setQuery(value) {
+    setQueryState(value);
+    onQueryChange?.(value);
+  }
 
   function submitIntent(raw) {
     const intent = resolveMenuBrowserSearchIntent(raw);
@@ -49,6 +57,7 @@ export default function MenuCatalogBrowseSearch({
           Search
         </button>
       </form>
+      {belowFormSlot ? <div style={{ marginTop: 8 }}>{belowFormSlot}</div> : null}
       {showExploreChips ? (
         <div data-testid="menu-browser-explore-chips" style={styles.chips} role="list">
           {MENU_BROWSER_EXPLORE_CHIPS.map((chip) => (

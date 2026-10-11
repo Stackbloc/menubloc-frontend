@@ -29,6 +29,9 @@ import { computeMenuBrowserLoadTarget, useSmoothedProgress } from "../lib/menuCa
 import { asFiniteNumber } from "../lib/catalogMenuUtils.js";
 import { recordFeedMenuOpen } from "../lib/feedMenuLibrary.js";
 import { buildSearchLocationParams } from "../lib/locationUtils.js";
+import { FEED_MOBILE_HEADER_OFFSET, FEED_SHELL_SEARCH_PATH } from "../lib/feedShellNavigation.js";
+import { useFeedShellDesktop } from "../lib/useFeedShellDesktop.js";
+import { SEARCH_SHOP_MODE_SEARCH, SEARCH_SHOP_VIEW_PARAM } from "../lib/searchShopMode.js";
 import {
   buildMenuBrowserPages,
   getMenuBrowserVenueCover,
@@ -99,8 +102,16 @@ function getUserCoords() {
   });
 }
 
-export default function BrowseMenus() {
+export default function BrowseMenus({
+  /** Search & Shop → Menu Browser mode: Feed shell owns header + bottom nav. */
+  embedInFeedShell = false,
+  /** Search & Shop mode toggle, rendered directly under the search box. */
+  belowSearchSlot = null,
+  initialQuery = "",
+  onQueryChange = null,
+} = {}) {
   const { t, language } = useLanguage();
+  const isFeedDesktop = useFeedShellDesktop();
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const { search } = useLocation();
@@ -289,6 +300,12 @@ export default function BrowseMenus() {
         state: locationParams?.state || urlState || undefined,
       },
     });
+    if (embedInFeedShell) {
+      // Non-cuisine queries run in Search mode with the same query (stays in Search & Shop).
+      params.set(SEARCH_SHOP_VIEW_PARAM, SEARCH_SHOP_MODE_SEARCH);
+      navigate(`${FEED_SHELL_SEARCH_PATH}?${params.toString()}`);
+      return;
+    }
     const qs = params.toString();
     navigate(qs ? `/search?${qs}` : `/search?q=${encodeURIComponent(q)}`);
   }
@@ -540,15 +557,28 @@ export default function BrowseMenus() {
   return (
     <div
       style={{
-        height: "100vh",
+        height: embedInFeedShell ? "100dvh" : "100vh",
         overflow: "hidden",
         display: "flex",
         flexDirection: "column",
         background: "var(--gb-color-page)",
         color: "var(--gb-color-ink)",
+        ...(embedInFeedShell
+          ? {
+              boxSizing: "border-box",
+              paddingTop: isFeedDesktop ? 0 : FEED_MOBILE_HEADER_OFFSET,
+              paddingBottom: isFeedDesktop
+                ? 0
+                : "calc(var(--feed-primary-nav-h, 56px) + env(safe-area-inset-bottom, 0px))",
+              // Food/Drinks FAB uses --bottom-nav-h; in the Feed shell that is the primary nav.
+              "--bottom-nav-h": isFeedDesktop
+                ? "0px"
+                : "calc(var(--feed-primary-nav-h, 56px) + env(safe-area-inset-bottom, 0px))",
+            }
+          : null),
       }}
     >
-      <StickyPageHeader />
+      {!embedInFeedShell ? <StickyPageHeader /> : null}
 
       {isClusterScoped && venueCover ? (
         <div
@@ -605,7 +635,13 @@ export default function BrowseMenus() {
             onSelectSection={selectSection}
             onNavigateSearch={navigateBrowseSearch}
             showExploreChips={personalSection || activeSection === "nearby" || isEmpty}
+            belowFormSlot={embedInFeedShell ? belowSearchSlot : null}
+            initialQuery={embedInFeedShell ? initialQuery : ""}
+            onQueryChange={embedInFeedShell ? onQueryChange : null}
           />
+        ) : embedInFeedShell && belowSearchSlot ? (
+          // Food/Drinks chooser, splash, or drinks mode: keep the toggle reachable.
+          <div style={{ flexShrink: 0, padding: "8px 0 6px" }}>{belowSearchSlot}</div>
         ) : null}
 
         {showCategoryTabs ? (
@@ -813,7 +849,7 @@ export default function BrowseMenus() {
         </div>
       </div>
 
-      <BottomNav />
+      {!embedInFeedShell ? <BottomNav /> : null}
     </div>
   );
 }
