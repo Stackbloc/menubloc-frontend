@@ -999,6 +999,18 @@ export const findKnowledgeBotMenu = (jobId) =>
 
 export const listKnowledgeBotClusters = () => get("/api/owner/knowledge-bot/lookup/clusters");
 
+/** Menubot cluster run — every member with its latest cluster-run job. */
+export const getMenubotClusterRun = (slug) =>
+  get(`/api/owner/knowledge-bot/clusters/${encodeURIComponent(slug)}/run`);
+
+/** Queue the next batch (default 10, max 15) of restaurants without a menu. */
+export const startMenubotClusterBatch = (slug, batchSize) =>
+  post(`/api/owner/knowledge-bot/clusters/${encodeURIComponent(slug)}/run/batch`, { batch_size: batchSize });
+
+/** Publish reviewed cluster-run jobs. */
+export const approveMenubotClusterJobs = (slug, jobIds) =>
+  post(`/api/owner/knowledge-bot/clusters/${encodeURIComponent(slug)}/run/approve`, { job_ids: jobIds });
+
 export const applyKnowledgeBotJob = (jobId, body = {}) =>
   post(`/api/owner/knowledge-bot/jobs/${encodeURIComponent(String(jobId))}/apply`, body);
 

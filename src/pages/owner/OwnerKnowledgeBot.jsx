@@ -433,9 +433,14 @@ export default function OwnerKnowledgeBot() {
     <OwnerLayout
       title="Menubot"
       actions={
-        <Link to="/owner/menubot/history" style={{ fontSize: 13, fontWeight: 700, color: OWNER_COLORS.accent, textDecoration: "none" }}>
-          History
-        </Link>
+        <div style={{ display: "flex", gap: 16 }}>
+          <Link to="/owner/menubot/cluster" style={{ fontSize: 13, fontWeight: 700, color: OWNER_COLORS.accent, textDecoration: "none" }}>
+            Cluster run
+          </Link>
+          <Link to="/owner/menubot/history" style={{ fontSize: 13, fontWeight: 700, color: OWNER_COLORS.accent, textDecoration: "none" }}>
+            History
+          </Link>
+        </div>
       }
     >
       <PageCard style={{ padding: "22px 24px" }}>
