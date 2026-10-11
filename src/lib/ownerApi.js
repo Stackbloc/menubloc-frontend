@@ -554,6 +554,16 @@ export const searchMenuConsoleItems = (restaurantId, params = {}) => {
 export const bulkMenuConsoleItems = (restaurantId, body) =>
   post(`/api/owner/menu-console/restaurants/${restaurantId}/items/bulk`, body);
 
+// ─── Photo Bot (import dish photos from a restaurant's ordering site) ─────────
+
+/** Read-only: fetch source photos and suggested matches to CK menu items. */
+export const previewPhotoBotImport = (restaurantId, body) =>
+  post(`/api/owner/menu-console/restaurants/${encodeURIComponent(restaurantId)}/photo-import/preview`, body);
+
+/** Import approved pairs: body = { url, selections: [{ image_id, menu_item_id }] }. */
+export const applyPhotoBotImport = (restaurantId, body) =>
+  post(`/api/owner/menu-console/restaurants/${encodeURIComponent(restaurantId)}/photo-import/apply`, body);
+
 // ─── Profile billboards (entrance splash + Windows panel) ─────────────────────
 
 const menuConsoleRestaurantPath = (restaurantId) =>

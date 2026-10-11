@@ -139,6 +139,7 @@ export default function OwnerLayout({ title, children, actions = null }) {
           { to: "/owner/profile-manager", label: "Profile Manager" },
           { to: "/owner/menu-manager", label: "Menu Manager" },
           { to: "/owner/menubot", label: "Menubot" },
+          { to: "/owner/photo-bot", label: "Photo Bot" },
         ],
       },
       NAV_SECTIONS_STATIC[1],

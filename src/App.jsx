@@ -188,6 +188,7 @@ import SubscriptionDesignerAudit from "./pages/owner/subscriptionDesigner/Subscr
 import OwnerHelpCenter from "./pages/owner/OwnerHelpCenter.jsx";
 import OwnerKnowledgeBot from "./pages/owner/OwnerKnowledgeBot.jsx";
 import OwnerKnowledgeBotHistory from "./pages/owner/OwnerKnowledgeBotHistory.jsx";
+import OwnerPhotoBot from "./pages/owner/OwnerPhotoBot.jsx";
 import OperatorQrStickers from "./pages/operator/OperatorQrStickers.jsx";
 import OperatorMenuStudio from "./pages/operator/OperatorMenuStudio.jsx";
 import OperatorBrandSettings from "./pages/operator/OperatorBrandSettings.jsx";
@@ -1123,6 +1124,7 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
         <Route path="/owner/help" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerHelpCenter /></OwnerRoute>} />
         <Route path="/owner/menubot/history" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerKnowledgeBotHistory /></OwnerRoute>} />
         <Route path="/owner/menubot" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerKnowledgeBot /></OwnerRoute>} />
+        <Route path="/owner/photo-bot" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerPhotoBot /></OwnerRoute>} />
         {/* Legacy Knowledge Bot URLs (bookmarks, handoff docs) — same pages. */}
         <Route path="/owner/knowledge-bot/history" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerKnowledgeBotHistory /></OwnerRoute>} />
         <Route path="/owner/knowledge-bot" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerKnowledgeBot /></OwnerRoute>} />
