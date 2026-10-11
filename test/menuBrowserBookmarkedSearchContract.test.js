@@ -103,3 +103,15 @@ test("Feed Menus bookmark still uses feedMenuLibrary (no duplicate store)", () =
   assert.doesNotMatch(reel, /toggleFeedMenuBookmark/);
   assert.doesNotMatch(page, /saved_menus/);
 });
+
+test("Menu Browser shows one chip row: Bookmarked + American, Mexican, Italian, Asian", async () => {
+  const { MENU_BROWSER_CHIP_TABS } = await import("../src/lib/menuCatalogCategories.js");
+  assert.deepEqual(
+    MENU_BROWSER_CHIP_TABS.map((tab) => tab.id),
+    ["bookmarked", "american", "mexican", "italian", "asian"]
+  );
+  const tabs = read("src/components/menuCatalog/MenuCatalogCategoryTabs.jsx");
+  assert.match(tabs, /MENU_BROWSER_CHIP_TABS\.map/);
+  const browse = read("src/pages/BrowseMenus.jsx");
+  assert.match(browse, /showExploreChips=\{false\}/);
+});

@@ -1,12 +1,11 @@
 /**
- * Search & Shop mode: [ Search | Menu Browser ]. URL (?view=) wins, then the last mode the
- * viewer used (localStorage), then Search. Storage is best-effort — private mode can throw.
+ * Search & Shop mode: [ Search | Menu Browser ]. Always opens in Search unless the URL
+ * asks for Menu Browser (?view=menu-browser) — Andre, 2026-10-11 (no remembered mode).
  */
 
 export const SEARCH_SHOP_MODE_SEARCH = "search";
 export const SEARCH_SHOP_MODE_MENU_BROWSER = "menu-browser";
 export const SEARCH_SHOP_VIEW_PARAM = "view";
-export const SEARCH_SHOP_MODE_STORAGE_KEY = "menuply.searchShop.mode";
 
 export function normalizeSearchShopMode(raw) {
   return String(raw || "").trim() === SEARCH_SHOP_MODE_MENU_BROWSER
@@ -16,32 +15,8 @@ export function normalizeSearchShopMode(raw) {
       : null;
 }
 
-export function readStoredSearchShopMode(storage) {
-  try {
-    const store = storage ?? (typeof window !== "undefined" ? window.localStorage : null);
-    return normalizeSearchShopMode(store?.getItem(SEARCH_SHOP_MODE_STORAGE_KEY));
-  } catch {
-    return null;
-  }
-}
-
-export function writeStoredSearchShopMode(mode, storage) {
-  const normalized = normalizeSearchShopMode(mode);
-  if (!normalized) return;
-  try {
-    const store = storage ?? (typeof window !== "undefined" ? window.localStorage : null);
-    store?.setItem(SEARCH_SHOP_MODE_STORAGE_KEY, normalized);
-  } catch {
-    /* storage unavailable — mode still works for this visit */
-  }
-}
-
-export function resolveSearchShopMode(searchParams, storage) {
-  return (
-    normalizeSearchShopMode(searchParams?.get?.(SEARCH_SHOP_VIEW_PARAM)) ||
-    readStoredSearchShopMode(storage) ||
-    SEARCH_SHOP_MODE_SEARCH
-  );
+export function resolveSearchShopMode(searchParams) {
+  return normalizeSearchShopMode(searchParams?.get?.(SEARCH_SHOP_VIEW_PARAM)) || SEARCH_SHOP_MODE_SEARCH;
 }
 
 /** Same query + filters, only the view changes. */

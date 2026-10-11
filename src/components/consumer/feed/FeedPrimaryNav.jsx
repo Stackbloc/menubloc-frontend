@@ -170,6 +170,8 @@ const styles = {
   tabIcon: {
     fontSize: 22,
     lineHeight: 1,
+    // Lift to line up with the raised X button.
+    transform: "translateY(-5px)",
   },
   createSlot: {
     flex: "1 1 0",

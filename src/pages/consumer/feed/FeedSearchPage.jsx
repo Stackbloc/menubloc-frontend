@@ -1,7 +1,7 @@
 /**
  * Feed shell Shop tab — original Menuply search discovery (HomeNext) + in-shell results,
  * with a [ Search | Menu Browser ] toggle over the search box. Menu Browser mode embeds the
- * /browse-menus experience. Both modes share the typed query; the last mode is remembered.
+ * /browse-menus experience. Both modes share the typed query; Search is the default.
  */
 
 import { useState } from "react";
@@ -15,7 +15,6 @@ import {
   SEARCH_SHOP_MODE_MENU_BROWSER,
   buildSearchShopModeSearch,
   resolveSearchShopMode,
-  writeStoredSearchShopMode,
 } from "../../../lib/searchShopMode.js";
 
 export default function FeedSearchPage() {
@@ -27,7 +26,6 @@ export default function FeedSearchPage() {
   const [draftQuery, setDraftQuery] = useState(() => String(searchParams.get("q") || ""));
 
   function changeMode(nextMode) {
-    writeStoredSearchShopMode(nextMode);
     setSearchParams(buildSearchShopModeSearch(searchParams, nextMode), { replace: true });
   }
 

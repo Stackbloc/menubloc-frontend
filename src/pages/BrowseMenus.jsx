@@ -624,7 +624,7 @@ export default function BrowseMenus({
           <MenuCatalogBrowseSearch
             onSelectSection={selectSection}
             onNavigateSearch={navigateBrowseSearch}
-            showExploreChips={personalSection || activeSection === "nearby" || isEmpty}
+            showExploreChips={false}
             aboveFormSlot={embedInFeedShell ? modeToggleSlot : null}
             visibleLabel={embedInFeedShell ? "Menu Search" : null}
             initialQuery={embedInFeedShell ? initialQuery : ""}

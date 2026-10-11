@@ -1,6 +1,10 @@
 import { useEffect, useRef } from "react";
 import { useLanguage } from "../../context/LanguageContext.jsx";
-import { MENU_CATALOG_TABS, toMenuCatalogTranslationKey } from "../../lib/menuCatalogCategories.js";
+import {
+  MENU_BROWSER_CHIP_TABS,
+  MENU_CATALOG_DEFAULT_SECTION,
+  toMenuCatalogTranslationKey,
+} from "../../lib/menuCatalogCategories.js";
 
 export default function MenuCatalogCategoryTabs({
   activeSection,
@@ -38,7 +42,7 @@ export default function MenuCatalogCategoryTabs({
           scrollbarWidth: "none",
         }}
       >
-        {MENU_CATALOG_TABS.map((entry) => {
+        {MENU_BROWSER_CHIP_TABS.map((entry) => {
           const isActive = entry.id === activeSection;
           const label = t(toMenuCatalogTranslationKey(entry.id), entry.label);
           const accent = entry.accent || "#1a1a1a";
@@ -49,7 +53,8 @@ export default function MenuCatalogCategoryTabs({
               type="button"
               data-active={isActive ? "true" : "false"}
               aria-current={isActive ? "true" : undefined}
-              onClick={() => onSelect(entry.id)}
+              // Tapping the active chip clears it (back to all nearby menus).
+              onClick={() => onSelect(isActive ? MENU_CATALOG_DEFAULT_SECTION : entry.id)}
               style={{
                 flexShrink: 0,
                 border: isActive ? `2px solid ${accent}` : `2px solid ${accent}33`,

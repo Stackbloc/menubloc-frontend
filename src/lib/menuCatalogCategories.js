@@ -26,6 +26,17 @@ export const MENU_CATALOG_DISCOVERY_TABS = [
 
 export const MENU_CATALOG_TABS = [...MENU_CATALOG_PERSONAL_TABS, ...MENU_CATALOG_DISCOVERY_TABS];
 
+/**
+ * The single Menu Browser chip row (Andre, 2026-10-11): Bookmarked + four major cuisines.
+ * Cuisines follow Common Knowledge — Asian covers Chinese, Japanese, Korean, Thai,
+ * Vietnamese, Indian, Filipino and Sushi. Other section ids stay valid for typed searches
+ * and old links; they just are not chips.
+ */
+const MENU_BROWSER_CHIP_IDS = ["bookmarked", "american", "mexican", "italian", "asian"];
+export const MENU_BROWSER_CHIP_TABS = MENU_BROWSER_CHIP_IDS.map((id) =>
+  MENU_CATALOG_TABS.find((tab) => tab.id === id)
+).filter(Boolean);
+
 /** Sections that /menus/browse understands (excludes personal library ids). */
 export const MENU_CATALOG_BROWSE_SECTION_IDS = new Set([
   ...MENU_CATALOG_DISCOVERY_TABS.map((tab) => tab.id),
