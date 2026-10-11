@@ -68,6 +68,11 @@ const PIN_UNSUPPORTED_MENU_STYLES = new Set(["v14", "v15"]);
 const API = (import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? "http://localhost:3001" : "")).replace(/\/$/, "");
 
 const menuPayloadCache = new Map();
+/**
+ * Prefetch window only — a menu payload older than this is refetched so owner menu edits
+ * show up without a full page reload (the cache used to live for the whole SPA session).
+ */
+const MENU_PAYLOAD_TTL_MS = 60 * 1000;
 
 function AddedConfirmation({ name, onRemove, setConfirmation, brand }) {
   const accent = brand?.accent ?? "#22C55E";
@@ -129,11 +134,13 @@ function fmtMoney(item) {
 
 async function fetchMenuPayload(restaurantId, apiUrl) {
   const cacheKey = apiUrl;
-  if (menuPayloadCache.has(cacheKey)) {
-    return menuPayloadCache.get(cacheKey);
+  const cached = menuPayloadCache.get(cacheKey);
+  if (cached && Date.now() - cached.at < MENU_PAYLOAD_TTL_MS) {
+    return cached.promise;
   }
   const promise = (async () => {
-    const res = await fetch(apiUrl);
+    // no-cache = revalidate with the server (ETag), never serve a stale browser copy.
+    const res = await fetch(apiUrl, { cache: "no-cache" });
     const json = await res.json().catch(() => null);
     if (!res.ok || !json || json.ok !== true) {
       throw new Error(
@@ -145,7 +152,7 @@ async function fetchMenuPayload(restaurantId, apiUrl) {
     }
     return json;
   })();
-  menuPayloadCache.set(cacheKey, promise);
+  menuPayloadCache.set(cacheKey, { promise, at: Date.now() });
   try {
     return await promise;
   } catch (error) {
@@ -315,7 +322,7 @@ export default function CatalogMenuRenderer({
         dietPrefs,
         enabledAllergenKeys,
       });
-      const res = await fetch(`${API}/public/restaurants/${rid}/menu?${params.toString()}`);
+      const res = await fetch(`${API}/public/restaurants/${rid}/menu?${params.toString()}`, { cache: "no-cache" });
       const json = await res.json().catch(() => null);
       if (res.ok && json?.ok) {
         const newSections = normalizeSections(json);

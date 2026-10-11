@@ -27,6 +27,8 @@ import {
 } from "../menu-templates/menuThemeSettings.js";
 
 const drinksMenuPayloadCache = new Map();
+/** Same freshness window as the food Menu Browser so menu edits are picked up. */
+const DRINKS_MENU_PAYLOAD_TTL_MS = 60 * 1000;
 
 /** Empty or failed responses must not stick in cache across remounts. */
 function isCacheableDrinksPayload(json) {
@@ -49,11 +51,12 @@ export function clearDrinksMenuPayloadCache(apiUrl = null) {
 }
 
 async function fetchDrinksMenuPayload(restaurantId, apiUrl) {
-  if (drinksMenuPayloadCache.has(apiUrl)) {
-    return drinksMenuPayloadCache.get(apiUrl);
+  const cached = drinksMenuPayloadCache.get(apiUrl);
+  if (cached && Date.now() - cached.at < DRINKS_MENU_PAYLOAD_TTL_MS) {
+    return cached.promise;
   }
   const promise = (async () => {
-    const res = await fetch(apiUrl);
+    const res = await fetch(apiUrl, { cache: "no-cache" });
     const json = await res.json().catch(() => null);
     if (!res.ok || !json || json.ok !== true) {
       throw new Error(
@@ -65,7 +68,7 @@ async function fetchDrinksMenuPayload(restaurantId, apiUrl) {
     }
     return json;
   })();
-  drinksMenuPayloadCache.set(apiUrl, promise);
+  drinksMenuPayloadCache.set(apiUrl, { promise, at: Date.now() });
   try {
     const json = await promise;
     if (!isCacheableDrinksPayload(json)) {
