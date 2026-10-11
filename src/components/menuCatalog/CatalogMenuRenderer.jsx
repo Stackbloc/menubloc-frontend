@@ -8,6 +8,7 @@ import BasketSummaryBar from "../basket/BasketSummaryBar.jsx";
 import ModifierSheet from "../basket/ModifierSheet.jsx";
 import SmartCustomizationSheet, { isCustomizableItem } from "../basket/SmartCustomizationSheet.jsx";
 import PublicMenuMainContent from "../menu-templates/PublicMenuMainContent.jsx";
+import PublicMenuItemCard from "../menu-templates/PublicMenuItemCard.jsx";
 import { pickHeroImageUrl, resolveTemplateMenuStyle } from "../menu-templates/menuPresentationUtils.js";
 import { buildRestaurantMenuBrand, fontStackForPreset } from "../menu-templates/restaurantMenuBrand.js";
 import { normalizeMenuThemeSettings, resolveMenuPageBackground, resolveMenuShellTextColor } from "../menu-templates/menuThemeSettings.js";
@@ -35,6 +36,9 @@ import useSavedMenuPreferences from "../../hooks/useSavedMenuPreferences.js";
 import useCatalogDietaryPreferencesSession from "../../hooks/useCatalogDietaryPreferencesSession.js";
 import useMenuPreferenceBannerSession from "../../hooks/useMenuPreferenceBannerSession.js";
 import useMenuItemHighlight from "../../hooks/useMenuItemHighlight.js";
+import { getNormalizedMenuItemId } from "../../lib/menuItemIdentity.js";
+import { findPinnedMenuItem, withoutPinnedMenuItem } from "../../lib/menuPinnedItem.js";
+import { MenuRowActionsContext } from "./menuRowActionsContext.js";
 import {
   buildAllergenPreferenceLabels,
   buildDietPreferenceLabels,
@@ -53,6 +57,13 @@ import {
 } from "../../lib/catalogMenuUtils.js";
 import { resolvePublicMenuAddressDisplay } from "../../lib/displayAddress.js";
 import { appendSavedMenuPreferenceQueryParams } from "../../lib/dietaryParams.js";
+
+/** Menu Browser rows: Invite covers sharing, so the per-dish Share icon is dropped. */
+const MENU_BROWSER_ROW_ACTIONS = { hideDishShare: true, hideComment: false };
+/** Pinned "From the video" card: Like, Invite, Add to basket only. */
+const PINNED_CARD_ROW_ACTIONS = { hideDishShare: true, hideComment: true };
+/** Templates without the post-header slot (allergenBannerSlot) — keep the in-row highlight instead. */
+const PIN_UNSUPPORTED_MENU_STYLES = new Set(["v14", "v15"]);
 
 const API = (import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? "http://localhost:3001" : "")).replace(/\/$/, "");
 
@@ -164,6 +175,12 @@ export default function CatalogMenuRenderer({
   isMobile = false,
   browseSection = "",
   highlightMenuItemId = null,
+  /** Dish name fallback when the highlight id is not on this menu (Feed videos). */
+  highlightMenuItemName = null,
+  /** When set (e.g. "From the video"), the matched dish is pinned under the restaurant header. */
+  pinnedItemLabel = null,
+  /** Extra list bottom padding (px) so floating controls never cover the last row. */
+  bottomClearance = 0,
   /** When false, Feed PiP owns video — do not mount restaurant contextual player. */
   enableRestaurantContextualVideo = true,
   onLoadStateChange,
@@ -399,11 +416,34 @@ export default function CatalogMenuRenderer({
     [sections, dietaryFilterActive, dietPrefs, enabledAllergenKeys]
   );
 
-  useMenuItemHighlight({
-    highlightMenuItemId:
-      highlightMenuItemId != null && String(highlightMenuItemId).trim() !== ""
-        ? highlightMenuItemId
+  const subjectMatch = useMemo(
+    () =>
+      highlightMenuItemId != null || highlightMenuItemName
+        ? findPinnedMenuItem(displaySections, {
+            menuItemId: highlightMenuItemId,
+            menuItemName: highlightMenuItemName,
+          })
         : null,
+    [displaySections, highlightMenuItemId, highlightMenuItemName]
+  );
+  const pinnedMatch =
+    pinnedItemLabel && subjectMatch && !PIN_UNSUPPORTED_MENU_STYLES.has(resolveTemplateMenuStyle(data?.menu_style))
+      ? subjectMatch
+      : null;
+  const listSections = useMemo(
+    () => withoutPinnedMenuItem(displaySections, pinnedMatch),
+    [displaySections, pinnedMatch]
+  );
+  const subjectMatchId = subjectMatch ? getNormalizedMenuItemId(subjectMatch.item) : null;
+  const effectiveHighlightId =
+    subjectMatchId != null && String(subjectMatchId).trim() !== ""
+      ? subjectMatchId
+      : highlightMenuItemId != null && String(highlightMenuItemId).trim() !== ""
+        ? highlightMenuItemId
+        : null;
+
+  useMenuItemHighlight({
+    highlightMenuItemId: effectiveHighlightId,
     ready: pageState.status === "ok" && Boolean(data),
     displaySections,
   });
@@ -567,6 +607,62 @@ export default function CatalogMenuRenderer({
 
   const menuPresentationStyle = resolveTemplateMenuStyle(data?.menu_style);
 
+  const pinnedCard = pinnedMatch ? (
+    <section
+      data-testid="menu-browser-pinned-item"
+      aria-label={pinnedItemLabel}
+      style={{
+        marginTop: 12,
+        marginBottom: 4,
+        padding: "8px 10px 2px",
+        borderRadius: 14,
+        background: "rgba(34, 197, 94, 0.08)",
+        border: "1px solid rgba(34, 197, 94, 0.28)",
+      }}
+    >
+      <div
+        style={{
+          fontSize: 11,
+          fontWeight: 800,
+          letterSpacing: "0.06em",
+          textTransform: "uppercase",
+          color: "#15803d",
+          marginBottom: 2,
+        }}
+      >
+        {pinnedItemLabel}
+      </div>
+      <MenuRowActionsContext.Provider value={PINNED_CARD_ROW_ACTIONS}>
+        <PublicMenuItemCard
+          density="classic"
+          editorialRefresh={!["v12", "v13", "v17"].includes(menuPresentationStyle)}
+          it={pinnedMatch.item}
+          sIdx={pinnedMatch.sectionIndex}
+          iIdx={pinnedMatch.itemIndex}
+          language={language}
+          t={t}
+          data={data}
+          restaurantName={restaurantName}
+          currentRestaurantId={currentRestaurantId}
+          dealMap={dealMap}
+          activeCartItems={activeCartItems}
+          hoveredItemId={hoveredItemId}
+          setHoveredItemId={setHoveredItemId}
+          removeItem={removeItem}
+          navigate={navigate}
+          setItemSheet={setItemSheet}
+          setAddedConfirmation={setAddedConfirmation}
+          commitMenuItemToBasket={commitMenuItemToBasket}
+          fmtMoney={fmtMoney}
+          getConsumerDisplayPrice={getConsumerDisplayPrice}
+          brand={menuBrand}
+          menuThemeSettings={menuThemeSettings}
+          showImage={false}
+        />
+      </MenuRowActionsContext.Provider>
+    </section>
+  ) : null;
+
   const templateContext =
     data && pageState.status === "ok"
       ? {
@@ -601,6 +697,8 @@ export default function CatalogMenuRenderer({
             </>
           ),
           allergenBannerSlot: (
+            <>
+            {pinnedCard}
             <MenuPreferencesAppliedBanner
               visible={preferenceBannerVisible}
               isFirstMenuView={isFirstMenuView}
@@ -612,8 +710,9 @@ export default function CatalogMenuRenderer({
               allergenLabels={allergenLabels}
               onToggleDietary={setApplySavedPreferences}
             />
+            </>
           ),
-          displaySections,
+          displaySections: listSections,
           displayableItemCount,
           dealItems: data?.deal_items || [],
           filtersActive,
@@ -713,8 +812,10 @@ export default function CatalogMenuRenderer({
           maxWidth: 860,
           margin: "0 auto",
           padding: isMobile ? "12px 12px 24px" : "20px 20px 24px",
+          paddingBottom: 24 + Math.max(0, Number(bottomClearance) || 0),
           color: effectiveShellTextColor,
         }}>
+          <MenuRowActionsContext.Provider value={MENU_BROWSER_ROW_ACTIONS}>
           {templateContext ? (
             applyMenuAppearance && appearanceTokens ? (
               <div
@@ -733,6 +834,7 @@ export default function CatalogMenuRenderer({
               <PublicMenuMainContent menuStyle={menuPresentationStyle} templateContext={templateContext} />
             )
           ) : null}
+          </MenuRowActionsContext.Provider>
         </div>
       </div>
 
@@ -818,7 +920,7 @@ export default function CatalogMenuRenderer({
       {enableRestaurantContextualVideo && restaurantId ? (
         <MenuRestaurantContextualVideo
           restaurantId={restaurantId}
-          preferredMenuItemId={highlightMenuItemId}
+          preferredMenuItemId={effectiveHighlightId}
           bottomInset={itemCount > 0 ? 72 : 56}
         />
       ) : null}

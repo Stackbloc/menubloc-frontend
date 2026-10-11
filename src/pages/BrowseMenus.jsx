@@ -41,6 +41,23 @@ import {
   rememberMenuBrowserVenueSession,
 } from "../lib/menuBrowserVenueContext.js";
 
+/** Food/Drinks FAB is 56px, 14px above the bottom nav — keep the last row's price clear of it. */
+const MODE_FAB_CLEARANCE_PX = 84;
+
+const MENU_PAGER_BUTTON_STYLE = {
+  width: 30,
+  height: 30,
+  borderRadius: 10,
+  border: "1px solid rgba(255,255,255,0.35)",
+  background: "rgba(0,0,0,0.78)",
+  color: "#fff",
+  fontSize: 20,
+  fontWeight: 900,
+  cursor: "pointer",
+  lineHeight: 1,
+  padding: 0,
+};
+
 function useIsMobile(breakpoint = 900) {
   const [isMobile, setIsMobile] = useState(() => {
     if (typeof window === "undefined") return false;
@@ -635,83 +652,56 @@ export default function BrowseMenus() {
           onToggle={toggleBrowseMode}
         />
 
-        {!showBookOverlay && hasPrev ? (
-          <button
-            type="button"
-            aria-label={t("menuBrowser.prevMenu", "Previous menu")}
-            onClick={goPrev}
-            style={{
-              position: "absolute",
-              left: 4,
-              top: "50%",
-              transform: "translateY(-50%)",
-              zIndex: 56,
-              width: 36,
-              height: 56,
-              borderRadius: 10,
-              border: "1px solid rgba(255,255,255,0.35)",
-              background: "rgba(0,0,0,0.55)",
-              color: "#fff",
-              fontSize: 22,
-              fontWeight: 900,
-              cursor: "pointer",
-              lineHeight: 1,
-              padding: 0,
-            }}
-          >
-            ‹
-          </button>
-        ) : null}
-
-        {!showBookOverlay && hasNext ? (
-          <button
-            type="button"
-            aria-label={t("menuBrowser.nextMenu", "Next menu")}
-            onClick={goNext}
-            style={{
-              position: "absolute",
-              right: 4,
-              top: "50%",
-              transform: "translateY(-50%)",
-              zIndex: 56,
-              width: 36,
-              height: 56,
-              borderRadius: 10,
-              border: "1px solid rgba(255,255,255,0.35)",
-              background: "rgba(0,0,0,0.55)",
-              color: "#fff",
-              fontSize: 22,
-              fontWeight: 900,
-              cursor: "pointer",
-              lineHeight: 1,
-              padding: 0,
-            }}
-          >
-            ›
-          </button>
-        ) : null}
-
         {!showBookOverlay && totalMenuCount > 0 ? (
+          // Prev/next sit beside the "Menu N of M" label (they used to float over the first row).
           <div
-            aria-live="polite"
             style={{
               position: "absolute",
               top: 12,
               right: 12,
               zIndex: 55,
-              padding: "7px 10px",
-              borderRadius: 10,
-              background: "rgba(0,0,0,0.78)",
-              color: "#fff",
-              fontSize: 12,
-              fontWeight: 800,
-              letterSpacing: "0.04em",
-              textTransform: "uppercase",
-              fontVariantNumeric: "tabular-nums",
-              whiteSpace: "nowrap",
+              display: "flex",
+              alignItems: "center",
+              gap: 4,
             }}
           >
-            {isVenueAdPage ? "Sponsored" : "Menu"} {currentMenuNumber} of {totalMenuCount}
+            {hasPrev ? (
+              <button
+                type="button"
+                aria-label={t("menuBrowser.prevMenu", "Previous menu")}
+                onClick={goPrev}
+                style={MENU_PAGER_BUTTON_STYLE}
+              >
+                ‹
+              </button>
+            ) : null}
+            <div
+              aria-live="polite"
+              style={{
+                padding: "7px 10px",
+                borderRadius: 10,
+                background: "rgba(0,0,0,0.78)",
+                color: "#fff",
+                fontSize: 12,
+                fontWeight: 800,
+                letterSpacing: "0.04em",
+                textTransform: "uppercase",
+                fontVariantNumeric: "tabular-nums",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {isVenueAdPage ? "Sponsored" : "Menu"} {currentMenuNumber} of {totalMenuCount}
+            </div>
+            {hasNext ? (
+              <button
+                type="button"
+                aria-label={t("menuBrowser.nextMenu", "Next menu")}
+                onClick={goNext}
+                style={MENU_PAGER_BUTTON_STYLE}
+              >
+                ›
+              </button>
+            ) : null}
           </div>
         ) : null}
 
@@ -815,6 +805,7 @@ export default function BrowseMenus() {
                 isMobile={isMobile}
                 browseSection={activeSection}
                 onLoadStateChange={handleMenuLoadStateChange}
+                bottomClearance={showModeToggleFab ? MODE_FAB_CLEARANCE_PX : 0}
               />
             )}
           </div>

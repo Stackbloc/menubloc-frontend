@@ -1,5 +1,6 @@
 /**
  * Menu Browser — menu-primary panel; parent owns Feed PiP video.
+ * The video's dish (id, else name) is pinned under the restaurant header as "From the video".
  * Horizontal swipe walks restaurants discussed from open clip → current playing clip.
  * Close / tap PiP returns to live Feed (parent).
  */
@@ -34,6 +35,7 @@ export function resolveFeedMenuBrowserLocationParams() {
  *   trail?: object[],
  *   trailIndex?: number,
  *   highlightMenuItemId?: string | number | null,
+ *   highlightMenuItemName?: string | null,
  *   bottomInset?: number,
  *   onClose: () => void,
  *   onTrailPrev?: () => void,
@@ -45,6 +47,7 @@ export default function FeedMenuBrowserPipOverlay({
   trail = null,
   trailIndex = 0,
   highlightMenuItemId = null,
+  highlightMenuItemName = null,
   bottomInset = 0,
   onClose,
   onTrailPrev,
@@ -219,11 +222,13 @@ export default function FeedMenuBrowserPipOverlay({
         onTouchCancel={resetSwipe}
       >
         <CatalogMenuRenderer
-          key={`${entry.restaurant_id}-${highlightMenuItemId || "none"}`}
+          key={`${entry.restaurant_id}-${highlightMenuItemId || highlightMenuItemName || "none"}`}
           entry={entry}
           locationParams={locationParams}
           isMobile
           highlightMenuItemId={highlightMenuItemId}
+          highlightMenuItemName={highlightMenuItemName}
+          pinnedItemLabel="From the video"
           enableRestaurantContextualVideo={false}
         />
       </div>

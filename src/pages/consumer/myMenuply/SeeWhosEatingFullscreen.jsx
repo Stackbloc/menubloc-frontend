@@ -698,6 +698,13 @@ export default function SeeWhosEatingFullscreen({
               ? inviteMenuItemId
               : null
           }
+          highlightMenuItemName={
+            restaurantRef?.restaurant_id &&
+            browseRestaurantRef?.restaurant_id &&
+            String(restaurantRef.restaurant_id) === String(browseRestaurantRef.restaurant_id)
+              ? inviteMenuItemName
+              : null
+          }
           bottomInset={navInset}
           onClose={closeMenuBrowser}
           onTrailPrev={onBrowseTrailPrev}

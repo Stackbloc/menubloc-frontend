@@ -14,6 +14,7 @@ import { getMenuItemImageUrl } from "./menuImageUtils.js";
 import { MenuDesignPhotoSlot, useMenuDesignPhotoEdit } from "./MenuDesignPhotoEditOverlay.jsx";
 import { normalizeMenuThemeSettings } from "./menuThemeSettings.js";
 import { getNormalizedMenuItemId } from "../../lib/menuItemIdentity.js";
+import { useMenuRowActions } from "../menuCatalog/menuRowActionsContext.js";
 import { isOnlineOrderingAvailable } from "../../lib/restaurantStatusLight.js";
 import {
   useIsTabletRange,
@@ -288,6 +289,7 @@ export default function PublicMenuItemCard({
   menuThemeSettings = {},
 }) {
   const themeSettings = normalizeMenuThemeSettings(menuThemeSettings);
+  const { hideDishShare, hideComment } = useMenuRowActions();
   const accent = brand?.accent ?? (editorialRefresh ? (ED_PALETTES[editorialColorScheme]?.accentDefault || ED_PALETTES.light.accentDefault) : "#22C55E");
   const onAccent = brand?.onAccent ?? "#0B0F0C";
   const softBg = brand?.accentSoftBg ?? "rgba(34,197,94,0.12)";
@@ -597,7 +599,7 @@ export default function PublicMenuItemCard({
                   {canNavigate ? (
                     <LikeMenuItemButton menuItemId={normalizedItemId} tone="ghost" size="row" />
                   ) : null}
-                  {dishShareData ? (
+                  {dishShareData && !hideDishShare ? (
                     <ShareButton
                       variant="dish"
                       iconOnly={true}
@@ -621,7 +623,7 @@ export default function PublicMenuItemCard({
                     tone="ghost"
                     size="row"
                   />
-                  {canNavigate ? (
+                  {canNavigate && !hideComment ? (
                     <FoodCommentNavButton
                       target="menu_item"
                       menuItemId={normalizedItemId}
@@ -675,7 +677,7 @@ export default function PublicMenuItemCard({
                   {canNavigate ? (
                     <LikeMenuItemButton menuItemId={normalizedItemId} tone="ghost" size="row" />
                   ) : null}
-                  {dishShareData ? (
+                  {dishShareData && !hideDishShare ? (
                     <ShareButton
                       variant="dish"
                       iconOnly={true}
@@ -699,7 +701,7 @@ export default function PublicMenuItemCard({
                     tone="ghost"
                     size="row"
                   />
-                  {canNavigate ? (
+                  {canNavigate && !hideComment ? (
                     <FoodCommentNavButton
                       target="menu_item"
                       menuItemId={normalizedItemId}
@@ -753,7 +755,7 @@ export default function PublicMenuItemCard({
                   {canNavigate ? (
                     <LikeMenuItemButton menuItemId={normalizedItemId} tone="ghost" size="row" />
                   ) : null}
-                  {dishShareData ? (
+                  {dishShareData && !hideDishShare ? (
                     <ShareButton
                       variant="dish"
                       iconOnly={true}
@@ -777,7 +779,7 @@ export default function PublicMenuItemCard({
                     tone="ghost"
                     size="row"
                   />
-                  {canNavigate ? (
+                  {canNavigate && !hideComment ? (
                     <FoodCommentNavButton
                       target="menu_item"
                       menuItemId={normalizedItemId}
