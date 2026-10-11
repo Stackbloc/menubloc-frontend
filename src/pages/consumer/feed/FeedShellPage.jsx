@@ -1,5 +1,5 @@
 /**
- * Feed shell layout — Home · Waiter · Share My QR | [X] | Deals · Search · Profile.
+ * Feed shell layout — Home · Share My QR | [X] | Deals · Search · Profile.
  * Share My QR opens diner QR sheet. Menu Browser is on the video rail/dock.
  * Mobile: bottom nav + top More header. Desktop: left rail + More panel.
  */

@@ -25,7 +25,6 @@ export const FEED_HOME_TAB = {
 
 export const FEED_LEFT_TABS = [
   FEED_HOME_TAB,
-  { to: "/waiter", end: false, label: "Waiter", testId: "feed-nav-waiter" },
   {
     to: "/feed",
     end: true,

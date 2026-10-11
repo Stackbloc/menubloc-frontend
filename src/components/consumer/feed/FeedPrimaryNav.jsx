@@ -1,5 +1,5 @@
 /**
- * TikTok-style feed shell nav: Home · Waiter · Share My QR | [X] | Deals · Search · Profile.
+ * TikTok-style feed shell nav: Home · Share My QR | [X] | Deals · Search · Profile.
  * Share My QR opens the diner QR share sheet. Menu Browser lives on the video rail/dock.
  * Mobile bottom bar only — desktop uses FeedDesktopRail from the same tab config.
  *

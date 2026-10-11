@@ -51,8 +51,7 @@ export default function FeedSearchPage() {
       ) : showResults ? (
         <GrubbidSearchResults embedInFeedShell modeToggleSlot={toggle} />
       ) : (
-        <HomeNext
-          embedInFeedShell
+        <HomeNext embedInFeedShell
           modeToggleSlot={toggle}
           initialQuery={draftQuery}
           onDraftQueryChange={setDraftQuery}

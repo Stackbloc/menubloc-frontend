@@ -71,11 +71,10 @@ test("feed deals: mobile rail + desktop Share & Invite dock", () => {
   assert.match(swipe, /buildFeedDealShareData/);
 });
 
-test("Feed shell nav replaces Connects tab with Waiter", () => {
+test("Feed shell nav has no Waiter or Connects tab", () => {
   const links = read("src/lib/feedShellLinks.js");
-  assert.match(links, /label: "Waiter"/);
-  assert.match(links, /to: "\/waiter"/);
-  assert.match(links, /feed-nav-waiter/);
+  assert.doesNotMatch(links, /feed-nav-waiter/);
+  assert.doesNotMatch(links, /label: "Waiter"/);
   assert.doesNotMatch(links, /label: "Connects"/);
   assert.doesNotMatch(links, /feed-nav-connects/);
 });
