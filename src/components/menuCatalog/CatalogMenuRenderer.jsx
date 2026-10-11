@@ -39,6 +39,10 @@ import useMenuItemHighlight from "../../hooks/useMenuItemHighlight.js";
 import { getNormalizedMenuItemId } from "../../lib/menuItemIdentity.js";
 import { findPinnedMenuItem, withoutPinnedMenuItem } from "../../lib/menuPinnedItem.js";
 import { MenuRowActionsContext } from "./menuRowActionsContext.js";
+import { MenuHeaderTrailingActionContext } from "./menuHeaderTrailingActionContext.js";
+import MenuHeaderOrderAction from "./MenuHeaderOrderAction.jsx";
+import { hasPaidSubscriptionPlan } from "../../lib/restaurantStatusLight.js";
+import { restaurantMenuPath } from "../../lib/canonicalUrlCore.js";
 import {
   buildAllergenPreferenceLabels,
   buildDietPreferenceLabels,
@@ -186,6 +190,8 @@ export default function CatalogMenuRenderer({
   highlightMenuItemName = null,
   /** When set (e.g. "From the video"), the matched dish is pinned under the restaurant header. */
   pinnedItemLabel = null,
+  /** Feed Menu Browser only: Order icon after Comment in the restaurant header. */
+  showHeaderOrderAction = false,
   /** Extra list bottom padding (px) so floating controls never cover the last row. */
   bottomClearance = 0,
   /** When false, Feed PiP owns video — do not mount restaurant contextual player. */
@@ -614,6 +620,21 @@ export default function CatalogMenuRenderer({
 
   const menuPresentationStyle = resolveTemplateMenuStyle(data?.menu_style);
 
+  const headerOrderAction = useMemo(() => {
+    if (!showHeaderOrderAction || !data) return null;
+    const available = isOnlineOrderingAvailable(data);
+    // Registered (paid plan) but closed/paused → the restaurant's own message; otherwise generic.
+    const registered = hasPaidSubscriptionPlan(buildRestaurantStatusLightProps(data));
+    const message = !available && registered ? data?.ordering_availability?.message || "" : "";
+    const href = restaurantMenuPath({
+      slug: data?.slug,
+      city: data?.city,
+      state: data?.state,
+      id: currentRestaurantId,
+    });
+    return <MenuHeaderOrderAction available={available} message={message} href={href} />;
+  }, [showHeaderOrderAction, data, currentRestaurantId]);
+
   const pinnedCard = pinnedMatch ? (
     <section
       data-testid="menu-browser-pinned-item"
@@ -822,6 +843,7 @@ export default function CatalogMenuRenderer({
           paddingBottom: 24 + Math.max(0, Number(bottomClearance) || 0),
           color: effectiveShellTextColor,
         }}>
+          <MenuHeaderTrailingActionContext.Provider value={headerOrderAction}>
           <MenuRowActionsContext.Provider value={MENU_BROWSER_ROW_ACTIONS}>
           {templateContext ? (
             applyMenuAppearance && appearanceTokens ? (
@@ -842,6 +864,7 @@ export default function CatalogMenuRenderer({
             )
           ) : null}
           </MenuRowActionsContext.Provider>
+          </MenuHeaderTrailingActionContext.Provider>
         </div>
       </div>
 

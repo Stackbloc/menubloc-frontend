@@ -1,4 +1,6 @@
+import { useContext } from "react";
 import RestaurantVerificationBadge from "../RestaurantVerificationBadge.jsx";
+import { MenuHeaderTrailingActionContext } from "../menuCatalog/menuHeaderTrailingActionContext.js";
 import {
   useIsNarrowMenuViewport,
   resolveMenuRowSpacing,
@@ -21,6 +23,7 @@ export default function MenuHeaderNameWithActions({
   isPaidSubscriber,
   orderAcceptanceStatus,
 }) {
+  const trailingAction = useContext(MenuHeaderTrailingActionContext);
   const isNarrow = useIsNarrowMenuViewport();
   const spacing = resolveMenuRowSpacing(isNarrow);
 
@@ -81,6 +84,7 @@ export default function MenuHeaderNameWithActions({
       >
         {leadingAction}
         {actions}
+        {trailingAction}
       </div>
     </div>
   );

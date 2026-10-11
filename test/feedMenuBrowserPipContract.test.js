@@ -108,3 +108,16 @@ test("Deal reel mirrors PiP side arrows + mute + menu sync", () => {
   assert.match(swipe, /Keep browseSession locked/);
   assert.doesNotMatch(swipe, /navigate\(menuPath\)/);
 });
+
+test("Feed Menu Browser header shows an Order icon after Comment (green when available)", () => {
+  const pip = fs.readFileSync(path.join(root, "src/components/consumer/feed/FeedMenuBrowserPipOverlay.jsx"), "utf8");
+  assert.match(pip, /showHeaderOrderAction/);
+  const renderer = fs.readFileSync(path.join(root, "src/components/menuCatalog/CatalogMenuRenderer.jsx"), "utf8");
+  assert.match(renderer, /MenuHeaderTrailingActionContext\.Provider value=\{headerOrderAction\}/);
+  assert.match(renderer, /isOnlineOrderingAvailable\(data\)/);
+  const rail = fs.readFileSync(path.join(root, "src/components/menu-templates/MenuHeaderIconRail.jsx"), "utf8");
+  assert.match(rail, /\{actions\}\s*\{trailingAction\}/);
+  const order = fs.readFileSync(path.join(root, "src/components/menuCatalog/MenuHeaderOrderAction.jsx"), "utf8");
+  assert.match(order, /Online ordering not available/);
+  assert.match(order, /likeButtonVisualStyle\(\{ selected: available/);
+});
