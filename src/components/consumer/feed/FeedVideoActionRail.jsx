@@ -89,6 +89,8 @@ export default function FeedVideoActionRail({
   showMenu = false,
   onMenu,
   followSource = "feed_video_rail",
+  /** Optional control above the buttons (Feed play/pause circle) — thumb-reachable. */
+  topSlot = null,
 }) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -174,6 +176,7 @@ export default function FeedVideoActionRail({
           bottom: `calc(${inset}px + max(88px, env(safe-area-inset-bottom) + 72px))`,
         }}
       >
+        {topSlot}
         {showConnect ? (
           <RailButton
             testId="feed-rail-connect"

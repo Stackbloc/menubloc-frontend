@@ -602,16 +602,6 @@ export default function DealVideoSwipe({
         </button>
       ) : null}
 
-      {item && !menuBrowserOpen ? (
-        <FeedVideoPlayPauseButton
-          paused={userPaused}
-          onToggle={() => setUserPaused((prev) => !prev)}
-          style={{
-            right: "max(14px, env(safe-area-inset-right))",
-            top: "calc(max(16px, env(safe-area-inset-top)) + 46px)",
-          }}
-        />
-      ) : null}
 
       {!menuBrowserOpen ? (
       <div
@@ -700,6 +690,13 @@ export default function DealVideoSwipe({
           showMenu={showInvite}
           onMenu={openMenuBrowser}
           followSource="feed_deals_video"
+          topSlot={
+            <FeedVideoPlayPauseButton
+              paused={userPaused}
+              onToggle={() => setUserPaused((prev) => !prev)}
+              style={{ position: "relative", marginBottom: 2 }}
+            />
+          }
         />
       ) : null}
 

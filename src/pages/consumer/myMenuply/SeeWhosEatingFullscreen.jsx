@@ -54,7 +54,6 @@ import MenuplyAccountInviteCard from "../../../components/consumer/MenuplyAccoun
 import { wrapEndlessFeedNext } from "../../../lib/shuffleProfileVideos.js";
 import { clearStuckMediaChrome, restoreDocumentScroll } from "./pendingHighlightMedia.js";
 import FeedVideoPlayPauseButton from "../../../components/consumer/feed/FeedVideoPlayPauseButton.jsx";
-import { FEED_MOBILE_HEADER_OFFSET } from "../../../lib/feedShellNavigation.js";
 
 const SWIPE_MIN_PX = 56;
 
@@ -848,18 +847,6 @@ export default function SeeWhosEatingFullscreen({
         />
       ) : null}
 
-      {item && isFeedHome && !menuBrowserOpen ? (
-        <FeedVideoPlayPauseButton
-          paused={userPaused}
-          onToggle={() => setUserPaused((prev) => !prev)}
-          style={{
-            right: "max(14px, env(safe-area-inset-right))",
-            top: isDesktopViewport
-              ? "max(16px, env(safe-area-inset-top))"
-              : `calc(${FEED_MOBILE_HEADER_OFFSET} + 14px)`,
-          }}
-        />
-      ) : null}
 
       {!menuBrowserOpen ? (
         <button
@@ -936,6 +923,13 @@ export default function SeeWhosEatingFullscreen({
           showMenu={showInvite}
           onMenu={openMenuBrowser}
           followSource="feed_home_video"
+          topSlot={
+            <FeedVideoPlayPauseButton
+              paused={userPaused}
+              onToggle={() => setUserPaused((prev) => !prev)}
+              style={{ position: "relative", marginBottom: 2 }}
+            />
+          }
         />
       ) : null}
 
