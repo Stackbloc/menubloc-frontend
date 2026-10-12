@@ -690,13 +690,6 @@ export default function DealVideoSwipe({
           showMenu={showInvite}
           onMenu={openMenuBrowser}
           followSource="feed_deals_video"
-          topSlot={
-            <FeedVideoPlayPauseButton
-              paused={userPaused}
-              onToggle={() => setUserPaused((prev) => !prev)}
-              style={{ position: "relative", marginBottom: 2 }}
-            />
-          }
         />
       ) : null}
 
@@ -743,6 +736,21 @@ export default function DealVideoSwipe({
         >
           {formatVerticalReelCue({ isDesktopViewport })}
         </div>
+      ) : null}
+
+      {item && !menuBrowserOpen ? (
+        // Play/pause circle centered directly under the swipe pill.
+        <FeedVideoPlayPauseButton
+          paused={userPaused}
+          onToggle={() => setUserPaused((prev) => !prev)}
+          style={{
+            left: "50%",
+            transform: "translateX(-50%)",
+            bottom: isDesktopViewport
+              ? "calc(36% + env(safe-area-inset-bottom) - 44px)"
+              : "calc(28% + env(safe-area-inset-bottom) - 44px)",
+          }}
+        />
       ) : null}
     </div>
   );

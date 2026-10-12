@@ -923,13 +923,6 @@ export default function SeeWhosEatingFullscreen({
           showMenu={showInvite}
           onMenu={openMenuBrowser}
           followSource="feed_home_video"
-          topSlot={
-            <FeedVideoPlayPauseButton
-              paused={userPaused}
-              onToggle={() => setUserPaused((prev) => !prev)}
-              style={{ position: "relative", marginBottom: 2 }}
-            />
-          }
         />
       ) : null}
 
@@ -966,9 +959,21 @@ export default function SeeWhosEatingFullscreen({
         </div>
       ) : null}
 
-      {!atEnd && !menuBrowserOpen ? (
-        <div style={styles.swipeCue} aria-hidden="true">
-          {formatVerticalReelCue({ isDesktopViewport })}
+      {item && !menuBrowserOpen && (isFeedHome || !atEnd) ? (
+        // Swipe pill with the play/pause circle centered directly under it.
+        <div style={styles.cueStack}>
+          {!atEnd ? (
+            <div style={{ ...styles.swipeCue, ...styles.swipeCueInStack }} aria-hidden="true">
+              {formatVerticalReelCue({ isDesktopViewport })}
+            </div>
+          ) : null}
+          {isFeedHome ? (
+            <FeedVideoPlayPauseButton
+              paused={userPaused}
+              onToggle={() => setUserPaused((prev) => !prev)}
+              style={{ position: "relative" }}
+            />
+          ) : null}
         </div>
       ) : null}
     </div>
@@ -1313,6 +1318,22 @@ const styles = {
     color: "#bbf7d0",
   },
   hint: { margin: 0, fontSize: 12, opacity: 0.8 },
+  cueStack: {
+    position: "absolute",
+    left: "50%",
+    bottom: "max(88px, calc(env(safe-area-inset-bottom) + 72px))",
+    transform: "translateX(-50%)",
+    zIndex: 6,
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 8,
+    pointerEvents: "none",
+  },
+  swipeCueInStack: {
+    position: "static",
+    transform: "none",
+  },
   swipeCue: {
     position: "absolute",
     left: "50%",
