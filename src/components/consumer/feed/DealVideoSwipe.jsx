@@ -523,6 +523,14 @@ export default function DealVideoSwipe({
           data-testid="feed-menu-browser-pip-video-nav"
         >
           <FeedPipExpandButton onExpand={closeMenuBrowser} />
+          {userPaused ? (
+            // Paused while reading the menu → restart playback right from the mini player.
+            <FeedVideoPlayPauseButton
+              paused
+              onToggle={() => setUserPaused(false)}
+              style={{ left: "50%", top: "50%", transform: "translate(-50%, -50%)" }}
+            />
+          ) : null}
           <button
             type="button"
             style={{
