@@ -41,6 +41,10 @@ import { findPinnedMenuItem, withoutPinnedMenuItem } from "../../lib/menuPinnedI
 import { MenuRowActionsContext } from "./menuRowActionsContext.js";
 import { MenuHeaderTrailingActionContext } from "./menuHeaderTrailingActionContext.js";
 import MenuHeaderOrderAction from "./MenuHeaderOrderAction.jsx";
+import {
+  FEED_ORDER_UNKNOWN_LOCATION_MESSAGE,
+  resolveFeedOrderMarketState,
+} from "../../lib/feedOrderEligibility.js";
 import { hasPaidSubscriptionPlan } from "../../lib/restaurantStatusLight.js";
 import { restaurantMenuPath } from "../../lib/canonicalUrlCore.js";
 import {
@@ -192,6 +196,8 @@ export default function CatalogMenuRenderer({
   pinnedItemLabel = null,
   /** Feed Menu Browser only: Order icon after Comment in the restaurant header. */
   showHeaderOrderAction = false,
+  /** Feed viewer location (preference first, then detected); null = unknown. */
+  orderViewerLocation = null,
   /** Extra list bottom padding (px) so floating controls never cover the last row. */
   bottomClearance = 0,
   /** When false, Feed PiP owns video — do not mount restaurant contextual player. */
@@ -622,6 +628,16 @@ export default function CatalogMenuRenderer({
 
   const headerOrderAction = useMemo(() => {
     if (!showHeaderOrderAction || !data) return null;
+    // Only offer ordering in the viewer's market; an LA-only restaurant playing in Dothan gets no icon.
+    const marketState = resolveFeedOrderMarketState({
+      viewer: orderViewerLocation,
+      restaurant: { city: data?.city, state: data?.state },
+      distanceMiles,
+    });
+    if (marketState === "out_of_market") return null;
+    if (marketState === "unknown_location") {
+      return <MenuHeaderOrderAction available={false} message={FEED_ORDER_UNKNOWN_LOCATION_MESSAGE} />;
+    }
     const available = isOnlineOrderingAvailable(data);
     // Registered (paid plan) but closed/paused → the restaurant's own message; otherwise generic.
     const registered = hasPaidSubscriptionPlan(buildRestaurantStatusLightProps(data));
@@ -633,7 +649,7 @@ export default function CatalogMenuRenderer({
       id: currentRestaurantId,
     });
     return <MenuHeaderOrderAction available={available} message={message} href={href} />;
-  }, [showHeaderOrderAction, data, currentRestaurantId]);
+  }, [showHeaderOrderAction, data, currentRestaurantId, orderViewerLocation, distanceMiles]);
 
   const pinnedCard = pinnedMatch ? (
     <section

@@ -8,23 +8,38 @@
 import { useMemo, useRef } from "react";
 import CatalogMenuRenderer from "../../menuCatalog/CatalogMenuRenderer.jsx";
 import { readDetectedLocation } from "../../../lib/discoveryLocationPersistence.js";
+import { readMenuCatalogAppliedLocation } from "../../../lib/menuCatalogBrowseLocation.js";
+import { resolveFeedViewerLocation } from "../../../lib/feedOrderEligibility.js";
 import { clampBrowseTrailIndex } from "../../../lib/feedMenuBrowserTrail.js";
 
 const SWIPE_MIN_PX = 48;
 
-export function resolveFeedMenuBrowserLocationParams() {
-  if (typeof window === "undefined") return {};
-  const detected = readDetectedLocation(window.localStorage);
-  const city = String(detected?.city || "").trim();
-  const state = String(detected?.state || "").trim().toUpperCase().slice(0, 2);
-  const lat = detected?.lat;
-  const lng = detected?.lng;
+/** Viewer location for the Feed Menu Browser: location preference first, then detected. */
+function resolveFeedMenuBrowserViewer() {
+  if (typeof window === "undefined") return null;
+  let preferenceLabel = "";
+  let detected = null;
+  try {
+    preferenceLabel = readMenuCatalogAppliedLocation();
+  } catch {
+    preferenceLabel = "";
+  }
+  try {
+    detected = readDetectedLocation(window.localStorage);
+  } catch {
+    detected = null;
+  }
+  return resolveFeedViewerLocation({ preferenceLabel, detected });
+}
+
+export function resolveFeedMenuBrowserLocationParams(viewer = resolveFeedMenuBrowserViewer()) {
   const out = {};
-  if (city) out.city = city;
-  if (state) out.state = state;
-  if (lat != null && lng != null) {
-    out.lat = lat;
-    out.lng = lng;
+  if (!viewer) return out;
+  if (viewer.city) out.city = viewer.city;
+  if (viewer.state) out.state = viewer.state;
+  if (viewer.lat != null && viewer.lng != null) {
+    out.lat = viewer.lat;
+    out.lng = viewer.lng;
   }
   return out;
 }
@@ -53,7 +68,8 @@ export default function FeedMenuBrowserPipOverlay({
   onTrailPrev,
   onTrailNext,
 }) {
-  const locationParams = useMemo(() => resolveFeedMenuBrowserLocationParams(), []);
+  const viewerLocation = useMemo(() => resolveFeedMenuBrowserViewer(), []);
+  const locationParams = useMemo(() => resolveFeedMenuBrowserLocationParams(viewerLocation), [viewerLocation]);
   const swipeRef = useRef({ startX: 0, startY: 0, active: false, axis: null });
 
   const trailList = Array.isArray(trail) && trail.length > 0 ? trail : null;
@@ -230,6 +246,7 @@ export default function FeedMenuBrowserPipOverlay({
           highlightMenuItemName={highlightMenuItemName}
           pinnedItemLabel="From the video"
           showHeaderOrderAction
+          orderViewerLocation={viewerLocation}
           enableRestaurantContextualVideo={false}
         />
       </div>
