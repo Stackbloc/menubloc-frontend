@@ -138,8 +138,17 @@ export default function OwnerLayout({ title, children, actions = null }) {
           },
           { to: "/owner/profile-manager", label: "Profile Manager" },
           { to: "/owner/menu-manager", label: "Menu Manager" },
+        ],
+      },
+      {
+        id: "bots",
+        label: "Bots",
+        items: [
+          { to: "/owner/bots", label: "All bots", end: true },
           { to: "/owner/menubot", label: "Menubot" },
           { to: "/owner/photo-bot", label: "Photo Bot" },
+          { to: "/owner/bots/nutribot", label: "Nutribot" },
+          { to: "/owner/bots/language-bot", label: "Language Bot" },
         ],
       },
       NAV_SECTIONS_STATIC[1],

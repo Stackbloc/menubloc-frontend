@@ -564,6 +564,26 @@ export const previewPhotoBotImport = (restaurantId, body) =>
 export const applyPhotoBotImport = (restaurantId, body) =>
   post(`/api/owner/menu-console/restaurants/${encodeURIComponent(restaurantId)}/photo-import/apply`, body);
 
+// ─── Bots (Nutribot + Language Bot schedules, runs, history) ──────────────────
+
+/** Status of every automatic bot: schedule, next run, active run, last run. */
+export const listOwnerBots = () => get("/api/owner/bots");
+
+/** One bot: status + recent runs (+ restaurant_runs for nutribot). */
+export const getOwnerBot = (botKey) => get(`/api/owner/bots/${encodeURIComponent(botKey)}`);
+
+/** body: { enabled?, frequency?: 'daily'|'weekly', day_of_week?: 0-6, time_of_day?: 'HH:MM' } */
+export const updateOwnerBotSchedule = (botKey, body) =>
+  put(`/api/owner/bots/${encodeURIComponent(botKey)}/schedule`, body);
+
+export const runOwnerBotNow = (botKey) => post(`/api/owner/bots/${encodeURIComponent(botKey)}/run`, {});
+
+/** Nutribot: recompute nutrition for every menu item of one restaurant. */
+export const runNutribotForRestaurant = (restaurantId) =>
+  post(`/api/owner/bots/nutribot/restaurants/${encodeURIComponent(restaurantId)}/run`, {});
+
+export const getNutribotRun = (logId) => get(`/api/owner/bots/nutribot/runs/${encodeURIComponent(logId)}`);
+
 // ─── Profile billboards (entrance splash + Windows panel) ─────────────────────
 
 const menuConsoleRestaurantPath = (restaurantId) =>

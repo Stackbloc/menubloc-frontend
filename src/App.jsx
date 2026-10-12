@@ -190,6 +190,8 @@ import OwnerKnowledgeBot from "./pages/owner/OwnerKnowledgeBot.jsx";
 import OwnerKnowledgeBotHistory from "./pages/owner/OwnerKnowledgeBotHistory.jsx";
 import OwnerPhotoBot from "./pages/owner/OwnerPhotoBot.jsx";
 import OwnerMenubotClusterRun from "./pages/owner/OwnerMenubotClusterRun.jsx";
+import OwnerBots from "./pages/owner/OwnerBots.jsx";
+import OwnerScheduledBot from "./pages/owner/OwnerScheduledBot.jsx";
 import OperatorQrStickers from "./pages/operator/OperatorQrStickers.jsx";
 import OperatorMenuStudio from "./pages/operator/OperatorMenuStudio.jsx";
 import OperatorBrandSettings from "./pages/operator/OperatorBrandSettings.jsx";
@@ -1133,6 +1135,9 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
         <Route path="/owner/menubot/cluster" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerMenubotClusterRun /></OwnerRoute>} />
         <Route path="/owner/menubot" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerKnowledgeBot /></OwnerRoute>} />
         <Route path="/owner/photo-bot" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerPhotoBot /></OwnerRoute>} />
+        <Route path="/owner/bots" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerBots /></OwnerRoute>} />
+        <Route path="/owner/bots/nutribot" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerScheduledBot key="nutribot" botKey="nutribot" /></OwnerRoute>} />
+        <Route path="/owner/bots/language-bot" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerScheduledBot key="language_bot" botKey="language_bot" /></OwnerRoute>} />
         {/* Legacy Knowledge Bot URLs (bookmarks, handoff docs) — same pages. */}
         <Route path="/owner/knowledge-bot/history" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerKnowledgeBotHistory /></OwnerRoute>} />
         <Route path="/owner/knowledge-bot" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerKnowledgeBot /></OwnerRoute>} />
