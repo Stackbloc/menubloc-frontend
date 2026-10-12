@@ -13,6 +13,7 @@ import BrowseMenusIcon from "../../icons/BrowseMenusIcon.jsx";
 import FeedMenuBrowserPipOverlay from "./FeedMenuBrowserPipOverlay.jsx";
 import FeedPipExpandButton from "./FeedPipExpandButton.jsx";
 import FeedVideoActionRail from "./FeedVideoActionRail.jsx";
+import FeedVideoPlayPauseButton from "./FeedVideoPlayPauseButton.jsx";
 import {
   clearStuckMediaChrome,
   restoreDocumentScroll,
@@ -59,6 +60,11 @@ export default function DealVideoSwipe({
   const [playlist, setPlaylist] = useState(items);
   const [videoMuted, setVideoMuted] = useState(() => defaultFeedVideoMuted("feedHome"));
   const [inviteOpen, setInviteOpen] = useState(false);
+  // Viewer pause + hold while Invite/Share is open (no advancing to another deal mid-share).
+  const [userPaused, setUserPaused] = useState(false);
+  const holdPlayback = userPaused || inviteOpen;
+  const holdPlaybackRef = useRef(holdPlayback);
+  holdPlaybackRef.current = holdPlayback;
   const [browseSession, setBrowseSession] = useState(null);
   const isDesktopViewport = useFeedShellDesktop();
   const videoRef = useRef(null);
@@ -165,7 +171,7 @@ export default function DealVideoSwipe({
     let cancelled = false;
 
     const onReady = () => {
-      if (cancelled) return;
+      if (cancelled || holdPlaybackRef.current) return;
       const preferSound = !isManagerForcedMute(item);
       attemptFeedVideoAutoplay(el, { preferSound }).then(({ muted }) => {
         if (!cancelled) setVideoMuted(isManagerForcedMute(item) ? true : muted);
@@ -188,12 +194,29 @@ export default function DealVideoSwipe({
     const el = videoRef.current;
     if (!el) return;
     el.muted = videoMuted;
-    if (!videoMuted) {
+    if (!videoMuted && !holdPlaybackRef.current) {
       el.volume = 1;
       const p = el.play();
       if (p && typeof p.catch === "function") p.catch(() => {});
     }
   }, [videoMuted, item?.id]);
+
+  useEffect(() => {
+    setUserPaused(false);
+  }, [index, item?.id]);
+
+  useEffect(() => {
+    const el = videoRef.current;
+    if (!el) return;
+    if (holdPlayback) {
+      el.pause();
+      return;
+    }
+    if (el.paused) {
+      const p = el.play();
+      if (p && typeof p.catch === "function") p.catch(() => {});
+    }
+  }, [holdPlayback, item?.id]);
 
   useEffect(() => {
     function onKey(e) {
@@ -274,7 +297,9 @@ export default function DealVideoSwipe({
     recordFeedMenuOpen(ref);
     setBrowseSession({ openIndex: index, trailIndex: 0 });
     const el = videoRef.current;
-    if (el) {
+    if (el && holdPlaybackRef.current) {
+      // Paused to read the menu — keep it paused in the mini player.
+    } else if (el) {
       const preferSound = !isManagerForcedMute(item);
       attemptFeedVideoAutoplay(el, { preferSound }).then(({ muted }) => {
         setVideoMuted(isManagerForcedMute(item) ? true : muted);
@@ -323,7 +348,7 @@ export default function DealVideoSwipe({
     if (!el) return;
     el.muted = nextMuted;
     el.defaultMuted = nextMuted;
-    if (!nextMuted) {
+    if (!nextMuted && !holdPlaybackRef.current) {
       el.volume = 1;
       const p = el.play();
       if (p && typeof p.catch === "function") p.catch(() => {});
@@ -575,6 +600,17 @@ export default function DealVideoSwipe({
         >
           {soundToggleLabel}
         </button>
+      ) : null}
+
+      {item && !menuBrowserOpen ? (
+        <FeedVideoPlayPauseButton
+          paused={userPaused}
+          onToggle={() => setUserPaused((prev) => !prev)}
+          style={{
+            right: "max(14px, env(safe-area-inset-right))",
+            top: "calc(max(16px, env(safe-area-inset-top)) + 46px)",
+          }}
+        />
       ) : null}
 
       {!menuBrowserOpen ? (

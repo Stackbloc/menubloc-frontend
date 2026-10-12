@@ -53,6 +53,8 @@ import {
 import MenuplyAccountInviteCard from "../../../components/consumer/MenuplyAccountInviteCard.jsx";
 import { wrapEndlessFeedNext } from "../../../lib/shuffleProfileVideos.js";
 import { clearStuckMediaChrome, restoreDocumentScroll } from "./pendingHighlightMedia.js";
+import FeedVideoPlayPauseButton from "../../../components/consumer/feed/FeedVideoPlayPauseButton.jsx";
+import { FEED_MOBILE_HEADER_OFFSET } from "../../../lib/feedShellNavigation.js";
 
 const SWIPE_MIN_PX = 56;
 
@@ -90,6 +92,12 @@ export default function SeeWhosEatingFullscreen({
   const [connectError, setConnectError] = useState("");
   const [videoMuted, setVideoMuted] = useState(() => defaultFeedVideoMuted(variant));
   const [inviteOpen, setInviteOpen] = useState(false);
+  // Viewer pause (play/pause circle). Invite/Share also holds the clip so the reel cannot
+  // advance to a different video while someone is sharing it.
+  const [userPaused, setUserPaused] = useState(false);
+  const holdPlayback = userPaused || inviteOpen;
+  const holdPlaybackRef = useRef(holdPlayback);
+  holdPlaybackRef.current = holdPlayback;
   /** Menu Browser session: open Feed index + which discussed-menu trail slot is showing. */
   const [browseSession, setBrowseSession] = useState(null);
   const videoRef = useRef(null);
@@ -233,7 +241,7 @@ export default function SeeWhosEatingFullscreen({
     let cancelled = false;
 
     const onReady = () => {
-      if (cancelled) return;
+      if (cancelled || holdPlaybackRef.current) return;
       const preferSound = variant === "feedHome" && !isManagerForcedMute(item);
       attemptFeedVideoAutoplay(el, { preferSound }).then(({ muted }) => {
         if (!cancelled) setVideoMuted(isManagerForcedMute(item) ? true : muted);
@@ -256,12 +264,31 @@ export default function SeeWhosEatingFullscreen({
     const el = videoRef.current;
     if (!el) return;
     el.muted = videoMuted;
-    if (!videoMuted) {
+    if (!videoMuted && !holdPlaybackRef.current) {
       el.volume = 1;
       const p = el.play();
       if (p && typeof p.catch === "function") p.catch(() => {});
     }
   }, [videoMuted, item?.id]);
+
+  // New clip → plays again (a pause applies to the clip it was set on).
+  useEffect(() => {
+    setUserPaused(false);
+  }, [index, item?.id]);
+
+  // Hold / release playback for the viewer pause and while Invite/Share is open.
+  useEffect(() => {
+    const el = videoRef.current;
+    if (!el) return;
+    if (holdPlayback) {
+      el.pause();
+      return;
+    }
+    if (el.paused) {
+      const p = el.play();
+      if (p && typeof p.catch === "function") p.catch(() => {});
+    }
+  }, [holdPlayback, item?.id]);
 
   useEffect(() => {
     function onKey(e) {
@@ -363,7 +390,9 @@ export default function SeeWhosEatingFullscreen({
     recordFeedMenuOpen(ref);
     setBrowseSession({ openIndex: index, trailIndex: 0 });
     const el = videoRef.current;
-    if (el) {
+    if (el && holdPlaybackRef.current) {
+      // Paused to read the menu — keep it paused in the mini player.
+    } else if (el) {
       const preferSound = !isManagerForcedMute(item);
       attemptFeedVideoAutoplay(el, { preferSound }).then(({ muted }) => {
         setVideoMuted(isManagerForcedMute(item) ? true : muted);
@@ -423,7 +452,7 @@ export default function SeeWhosEatingFullscreen({
     if (!el) return;
     el.muted = nextMuted;
     el.defaultMuted = nextMuted;
-    if (!nextMuted) {
+    if (!nextMuted && !holdPlaybackRef.current) {
       el.volume = 1;
       const p = el.play();
       if (p && typeof p.catch === "function") p.catch(() => {});
@@ -816,6 +845,19 @@ export default function SeeWhosEatingFullscreen({
           aria-label={videoMuted ? soundToggleLabel : "Mute video"}
           data-testid="see-whos-eating-video-sound-layer"
           onClick={onToggleVideoSound}
+        />
+      ) : null}
+
+      {item && isFeedHome && !menuBrowserOpen ? (
+        <FeedVideoPlayPauseButton
+          paused={userPaused}
+          onToggle={() => setUserPaused((prev) => !prev)}
+          style={{
+            right: "max(14px, env(safe-area-inset-right))",
+            top: isDesktopViewport
+              ? "max(16px, env(safe-area-inset-top))"
+              : `calc(${FEED_MOBILE_HEADER_OFFSET} + 14px)`,
+          }}
         />
       ) : null}
 

@@ -115,3 +115,17 @@ test("+Wish List on every video; saves the dish when linked, else the restaurant
     assert.match(read(rel), /menuItemId=\{inviteMenuItemId\}/);
   }
 });
+
+test("Feed videos: play/pause circle + Invite/Share holds playback", () => {
+  for (const rel of [
+    "src/pages/consumer/myMenuply/SeeWhosEatingFullscreen.jsx",
+    "src/components/consumer/feed/DealVideoSwipe.jsx",
+  ]) {
+    const src = read(rel);
+    assert.match(src, /FeedVideoPlayPauseButton/);
+    assert.match(src, /const holdPlayback = userPaused \|\| inviteOpen;/);
+    assert.match(src, /if \(holdPlayback\) \{\s*el\.pause\(\);/);
+  }
+  const btn = read("src/components/consumer/feed/FeedVideoPlayPauseButton.jsx");
+  assert.match(btn, /aria-label=\{paused \? "Play video" : "Pause video"\}/);
+});
