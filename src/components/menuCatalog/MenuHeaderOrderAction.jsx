@@ -56,10 +56,11 @@ export default function MenuHeaderOrderAction({ available = false, message = "",
           ...likeButtonVisualStyle({ selected: available, ghost: true }),
           width: size,
           height: size,
-          ...(available ? null : { opacity: 0.45, cursor: "not-allowed", boxShadow: "none" }),
+          // Visible enough to read as an icon (investor demo), still clearly "off".
+          ...(available ? null : { opacity: 0.75, cursor: "not-allowed", boxShadow: "none" }),
         }}
       >
-        <BagIcon size={14} color={available ? LIKE_ACCENT : "#64748b"} />
+        <BagIcon size={14} color={available ? LIKE_ACCENT : "#475569"} />
       </button>
       {showNote ? (
         <span role="status" data-testid="menu-header-order-note" style={styles.note}>
