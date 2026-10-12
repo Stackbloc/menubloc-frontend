@@ -18,6 +18,7 @@ test("Owner nav has one Bots section holding every bot", () => {
     ["/owner/photo-bot", "Photo Bot"],
     ["/owner/bots/nutribot", "Nutribot"],
     ["/owner/bots/language-bot", "Language Bot"],
+    ["/owner/bots/hours-bot", "Hours Bot"],
   ]) {
     assert.ok(section.includes(`to: "${to}", label: "${label}"`), `${label} is under Bots`);
   }
@@ -31,8 +32,9 @@ test("Bot pages are routed and call /api/owner/bots", () => {
   assert.match(app, /path="\/owner\/bots" element=.*<OwnerBots \/>/);
   assert.match(app, /path="\/owner\/bots\/nutribot" element=.*botKey="nutribot"/);
   assert.match(app, /path="\/owner\/bots\/language-bot" element=.*botKey="language_bot"/);
+  assert.match(app, /path="\/owner\/bots\/hours-bot" element=.*botKey="hours_bot"/);
   const api = read("src/lib/ownerApi.js");
-  for (const fn of ["listOwnerBots", "getOwnerBot", "updateOwnerBotSchedule", "runOwnerBotNow", "runNutribotForRestaurant", "getNutribotRun"]) {
+  for (const fn of ["listOwnerBots", "getOwnerBot", "updateOwnerBotSchedule", "runOwnerBotNow", "runNutribotForRestaurant", "getNutribotRun", "runHoursBotForRestaurant", "getHoursBotRun"]) {
     assert.match(api, new RegExp(`export const ${fn} =`));
   }
   assert.match(api, /\/api\/owner\/bots\/nutribot\/restaurants\//);
@@ -43,4 +45,13 @@ test("Scheduled bot page shows last run, next run, schedule, Run now and history
   for (const text of ["Last run", "Next run", "Run now", "Save schedule", "Run history", "Analyze menu now", "Restaurant analyses"]) {
     assert.ok(page.includes(text), `has "${text}"`);
   }
+});
+
+test("Hours Bot page: restaurant lookup, market run, recent results, coverage", () => {
+  const page = read("src/pages/owner/OwnerScheduledBot.jsx");
+  for (const text of ["Find hours now", "Run for this market", "Recent results", "Restaurants with menus that have hours"]) {
+    assert.ok(page.includes(text), `has "${text}"`);
+  }
+  const fmt = read("src/pages/owner/ownerBotFormat.js");
+  assert.match(fmt, /path: "\/owner\/bots\/hours-bot"/);
 });

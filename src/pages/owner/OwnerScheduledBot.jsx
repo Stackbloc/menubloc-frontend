@@ -2,8 +2,10 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import OwnerLayout, { EmptyState, OWNER_COLORS, PageCard, SectionTitle } from "./OwnerLayout.jsx";
 import {
+  getHoursBotRun,
   getNutribotRun,
   getOwnerBot,
+  runHoursBotForRestaurant,
   runNutribotForRestaurant,
   runOwnerBotNow,
   searchMenuConsoleRestaurants,
@@ -11,11 +13,15 @@ import {
 } from "../../lib/ownerApi.js";
 import {
   DAY_NAMES,
+  HOURS_OUTCOME_LABELS,
+  HOURS_OUTCOME_STATUS,
+  HOURS_SOURCE_LABELS,
   SCHEDULED_BOTS,
   STATUS_LABELS,
   STATUS_TONES,
   formatDateTime,
   formatDuration,
+  formatHoursSummary,
   formatTime12,
   runResultText,
   scheduleSummary,
@@ -29,6 +35,8 @@ import {
  *   - Schedule: paused / daily / weekly + time (Pacific)
  *   - Run history
  *   - Nutribot only: analyze one restaurant's whole menu right away
+ *   - Hours Bot only: find one restaurant's hours now, run one market,
+ *     recent per-restaurant results, coverage of restaurants with menus
  */
 
 const HOURS = Array.from({ length: 24 }, (_, h) => `${String(h).padStart(2, "0")}:00`);
@@ -69,7 +77,7 @@ const secondaryButtonStyle = {
 const labelStyle = { display: "block", fontSize: 13, fontWeight: 700, marginBottom: 6, color: OWNER_COLORS.ink };
 const mutedStyle = { color: OWNER_COLORS.muted, fontSize: 13 };
 
-function StatusPill({ status }) {
+function StatusPill({ status, label }) {
   const tone = STATUS_TONES[status] || STATUS_TONES.completed_no_writes;
   return (
     <span
@@ -84,7 +92,7 @@ function StatusPill({ status }) {
         whiteSpace: "nowrap",
       }}
     >
-      {STATUS_LABELS[status] || status}
+      {label || STATUS_LABELS[status] || status}
     </span>
   );
 }
@@ -98,7 +106,7 @@ function Stat({ label, children }) {
   );
 }
 
-function RunHistory({ botKey, runs, showRestaurant = false, emptyText }) {
+function RunHistory({ botKey, runs, showRestaurant = false, showScope = false, emptyText }) {
   if (!runs?.length) return <EmptyState>{emptyText}</EmptyState>;
   return (
     <div style={{ overflowX: "auto" }}>
@@ -107,6 +115,7 @@ function RunHistory({ botKey, runs, showRestaurant = false, emptyText }) {
           <tr style={{ textAlign: "left", color: OWNER_COLORS.muted }}>
             <th style={{ padding: "8px 10px 8px 0" }}>Started</th>
             {showRestaurant ? <th style={{ padding: "8px 10px" }}>Restaurant</th> : null}
+            {showScope ? <th style={{ padding: "8px 10px" }}>Where</th> : null}
             <th style={{ padding: "8px 10px" }}>How</th>
             <th style={{ padding: "8px 10px" }}>Status</th>
             <th style={{ padding: "8px 10px" }}>Result</th>
@@ -120,6 +129,7 @@ function RunHistory({ botKey, runs, showRestaurant = false, emptyText }) {
               {showRestaurant ? (
                 <td style={{ padding: 10 }}>{run.restaurant_name || `#${run.restaurant_id}`}</td>
               ) : null}
+              {showScope ? <td style={{ padding: 10 }}>{run.market || "All markets"}</td> : null}
               <td style={{ padding: 10, whiteSpace: "nowrap" }}>{triggerLabel(run.trigger)}</td>
               <td style={{ padding: 10 }}><StatusPill status={run.status} /></td>
               <td style={{ padding: 10 }}>
@@ -221,7 +231,48 @@ function ScheduleEditor({ bot, onSaved }) {
   );
 }
 
-function RestaurantAnalyzer({ onFinished }) {
+const ANALYZER = {
+  nutribot: {
+    start: runNutribotForRestaurant,
+    poll: getNutribotRun,
+    button: "Analyze menu now",
+    busyText: (run) => `Analyzing ${run.totals?.items ?? ""} menu items…`,
+  },
+  hours_bot: {
+    start: runHoursBotForRestaurant,
+    poll: getHoursBotRun,
+    button: "Find hours now",
+    busyText: () => "Looking for hours…",
+  },
+};
+
+function HoursResult({ check }) {
+  if (!check) return null;
+  return (
+    <div style={{ display: "grid", gap: 4 }}>
+      <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+        <StatusPill status={HOURS_OUTCOME_STATUS[check.outcome] || "completed_no_writes"} label={HOURS_OUTCOME_LABELS[check.outcome]} />
+        {check.source ? (
+          <span style={mutedStyle}>
+            from{" "}
+            {check.source_url ? (
+              <a href={check.source_url} target="_blank" rel="noreferrer">{HOURS_SOURCE_LABELS[check.source] || check.source}</a>
+            ) : (
+              HOURS_SOURCE_LABELS[check.source] || check.source
+            )}
+          </span>
+        ) : null}
+      </div>
+      {check.hours?.length ? <div style={{ fontSize: 13 }}>{formatHoursSummary(check.hours)}</div> : null}
+      {check.outcome !== "saved" && check.notes?.length ? (
+        <div style={{ ...mutedStyle, fontSize: 12 }}>{check.notes.join(" ")}</div>
+      ) : null}
+    </div>
+  );
+}
+
+function RestaurantAnalyzer({ botKey, onFinished }) {
+  const cfg = ANALYZER[botKey];
   const [query, setQuery] = useState("");
   const [searching, setSearching] = useState(false);
   const [results, setResults] = useState(null);
@@ -253,7 +304,7 @@ function RestaurantAnalyzer({ onFinished }) {
     clearTimeout(pollRef.current);
     pollRef.current = setTimeout(async () => {
       try {
-        const data = await getNutribotRun(logId);
+        const data = await cfg.poll(logId);
         setRun((cur) => ({ ...cur, ...data.run }));
         if (data.run.status === "running") poll(logId);
         else onFinished?.();
@@ -269,7 +320,7 @@ function RestaurantAnalyzer({ onFinished }) {
     setError("");
     setRun(null);
     try {
-      const data = await runNutribotForRestaurant(restaurant.id);
+      const data = await cfg.start(restaurant.id);
       setRun({ log_id: data.log_id, status: "running", totals: { items: data.total_items, updated: 0 } });
       onFinished?.();
       poll(data.log_id);
@@ -302,15 +353,15 @@ function RestaurantAnalyzer({ onFinished }) {
             Change
           </button>
           <button type="button" onClick={analyze} disabled={busy || running} style={primaryButtonStyle({ busy: busy || running })}>
-            {running ? "Analyzing…" : busy ? "Starting…" : "Analyze menu now"}
+            {running ? "Working…" : busy ? "Starting…" : cfg.button}
           </button>
         </div>
       ) : (
         <form onSubmit={handleSearch}>
-          <label style={labelStyle} htmlFor="nutribot-restaurant-search">Restaurant</label>
+          <label style={labelStyle} htmlFor={`${botKey}-restaurant-search`}>Restaurant</label>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <input
-              id="nutribot-restaurant-search"
+              id={`${botKey}-restaurant-search`}
               style={{ ...inputStyle, flex: "1 1 260px" }}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -359,16 +410,109 @@ function RestaurantAnalyzer({ onFinished }) {
             flexWrap: "wrap",
           }}
         >
-          <StatusPill status={run.status} />
-          <span style={{ fontSize: 14 }}>
-            {running
-              ? `Analyzing ${run.totals?.items ?? ""} menu items…`
-              : runResultText("nutribot", run) || "Done."}
-          </span>
+          {running || botKey !== "hours_bot" ? (
+            <>
+              <StatusPill status={run.status} />
+              <span style={{ fontSize: 14 }}>
+                {running ? cfg.busyText(run) : runResultText(botKey, run) || "Done."}
+              </span>
+            </>
+          ) : (
+            <HoursResult check={run.results?.[0]} />
+          )}
           {run.error ? <span style={{ color: "#b91c1c", fontSize: 13 }}>{run.error}</span> : null}
         </div>
       ) : null}
       {error ? <div style={{ marginTop: 8, color: "#b91c1c", fontSize: 13 }}>{error}</div> : null}
+    </div>
+  );
+}
+
+const BATCH_SIZES = [25, 50, 100, 200];
+
+function MarketRunner({ markets, running, onStarted }) {
+  const [marketKey, setMarketKey] = useState("");
+  const [limit, setLimit] = useState(50);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState("");
+
+  async function start() {
+    const market = (markets || []).find((m) => `${m.name}|${m.state}` === marketKey);
+    if (!market) return;
+    setBusy(true);
+    setMessage("");
+    try {
+      const data = await runOwnerBotNow("hours_bot", { market: { name: market.name, state: market.state }, limit });
+      setMessage(
+        data.total_restaurants
+          ? `Started: checking ${data.total_restaurants} restaurants in ${market.name}. Results appear below as it goes.`
+          : `Nothing to do in ${market.name} — every restaurant there has hours or was checked in the last 30 days.`
+      );
+      onStarted?.();
+    } catch (err) {
+      setMessage(err?.status === 409 ? "Hours Bot is already running. Try again when it finishes." : err?.message || "Could not start the run");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div>
+      <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "flex-end" }}>
+        <div style={{ flex: "1 1 240px", minWidth: 0 }}>
+          <label style={labelStyle} htmlFor="hours-bot-market">Market</label>
+          <select id="hours-bot-market" style={{ ...inputStyle, width: "100%" }} value={marketKey} onChange={(e) => setMarketKey(e.target.value)}>
+            <option value="">Choose a market…</option>
+            {(markets || []).map((m) => (
+              <option key={`${m.name}|${m.state}`} value={`${m.name}|${m.state}`}>{m.name}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label style={labelStyle} htmlFor="hours-bot-limit">Up to</label>
+          <select id="hours-bot-limit" style={inputStyle} value={limit} onChange={(e) => setLimit(Number(e.target.value))}>
+            {BATCH_SIZES.map((n) => <option key={n} value={n}>{n} restaurants</option>)}
+          </select>
+        </div>
+        <button type="button" onClick={start} disabled={!marketKey || busy || running} style={primaryButtonStyle({ busy, disabled: !marketKey || running })}>
+          {busy ? "Starting…" : "Run for this market"}
+        </button>
+      </div>
+      <div style={{ ...mutedStyle, marginTop: 10 }}>
+        Checks the restaurants in this market that have no hours yet, those with menus first. Takes a few seconds per restaurant.
+      </div>
+      {message ? <div style={{ marginTop: 10, fontSize: 13, fontWeight: 700 }}>{message}</div> : null}
+    </div>
+  );
+}
+
+function RecentChecks({ checks }) {
+  if (!checks?.length) return <EmptyState>No restaurants checked yet.</EmptyState>;
+  return (
+    <div style={{ overflowX: "auto" }}>
+      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+        <thead>
+          <tr style={{ textAlign: "left", color: OWNER_COLORS.muted }}>
+            <th style={{ padding: "8px 10px 8px 0" }}>Restaurant</th>
+            <th style={{ padding: "8px 10px" }}>Result</th>
+            <th style={{ padding: "8px 0 8px 10px" }}>Checked</th>
+          </tr>
+        </thead>
+        <tbody>
+          {checks.map((c) => (
+            <tr key={c.restaurant_id} style={{ borderTop: `1px solid ${OWNER_COLORS.line}`, verticalAlign: "top" }}>
+              <td style={{ padding: "10px 10px 10px 0" }}>
+                <a href={`/restaurants/${c.restaurant_id}`} target="_blank" rel="noreferrer" style={{ fontWeight: 700, color: OWNER_COLORS.ink }}>
+                  {c.restaurant_name}
+                </a>
+                <div style={mutedStyle}>#{c.restaurant_id}{c.city ? ` · ${c.city}${c.state ? `, ${c.state}` : ""}` : ""}</div>
+              </td>
+              <td style={{ padding: 10 }}><HoursResult check={c} /></td>
+              <td style={{ padding: "10px 0 10px 10px", whiteSpace: "nowrap", color: OWNER_COLORS.muted }}>{formatDateTime(c.last_checked_at)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -461,6 +605,11 @@ export default function OwnerScheduledBot({ botKey }) {
                   {running ? "Running now" : bot.next_run_at ? formatDateTime(bot.next_run_at) : "Not scheduled"}
                 </Stat>
                 <Stat label="Schedule">{scheduleSummary(bot.schedule)}</Stat>
+                {bot.coverage ? (
+                  <Stat label="Restaurants with menus that have hours">
+                    {bot.coverage.ck_with_hours.toLocaleString()} of {bot.coverage.ck_restaurants.toLocaleString()}
+                  </Stat>
+                ) : null}
               </div>
               {running ? (
                 <div style={{ ...mutedStyle, marginTop: 14 }}>
@@ -481,8 +630,24 @@ export default function OwnerScheduledBot({ botKey }) {
                   title="Analyze a restaurant now"
                   subtitle="Recalculates nutrition for every item on one restaurant's menu right away. Use it after a menu changes."
                 />
-                <RestaurantAnalyzer onFinished={load} />
+                <RestaurantAnalyzer botKey="nutribot" onFinished={load} />
               </PageCard>
+            ) : null}
+
+            {botKey === "hours_bot" ? (
+              <>
+                <PageCard style={{ padding: 24 }}>
+                  <SectionTitle
+                    title="Find hours for a restaurant"
+                    subtitle="Looks up one restaurant right away and adds its hours to its profile. Hours already on a profile are never changed."
+                  />
+                  <RestaurantAnalyzer botKey="hours_bot" onFinished={load} />
+                </PageCard>
+                <PageCard style={{ padding: 24 }}>
+                  <SectionTitle title="Run for a market" subtitle="Fill in hours for one market now." />
+                  <MarketRunner markets={bot.markets} running={running} onStarted={load} />
+                </PageCard>
+              </>
             ) : null}
 
             <PageCard style={{ padding: 24 }}>
@@ -492,12 +657,19 @@ export default function OwnerScheduledBot({ botKey }) {
 
             <PageCard style={{ padding: 24 }}>
               <SectionTitle title="Run history" subtitle="The 10 most recent full runs." />
-              <RunHistory botKey={botKey} runs={bot.runs} emptyText="No runs yet." />
+              <RunHistory botKey={botKey} runs={bot.runs} showScope={botKey === "hours_bot"} emptyText="No runs yet." />
             </PageCard>
 
-            {botKey === "nutribot" ? (
+            {botKey === "hours_bot" ? (
               <PageCard style={{ padding: 24 }}>
-                <SectionTitle title="Restaurant analyses" subtitle="The 10 most recent single-restaurant runs." />
+                <SectionTitle title="Recent results" subtitle="The last 25 restaurants Hours Bot checked. Sources are tried free first: OpenStreetMap, the restaurant's website, then Google." />
+                <RecentChecks checks={bot.recent_checks} />
+              </PageCard>
+            ) : null}
+
+            {botKey === "nutribot" || botKey === "hours_bot" ? (
+              <PageCard style={{ padding: 24 }}>
+                <SectionTitle title={botKey === "hours_bot" ? "Single-restaurant lookups" : "Restaurant analyses"} subtitle="The 10 most recent single-restaurant runs." />
                 <RunHistory botKey={botKey} runs={bot.restaurant_runs} showRestaurant emptyText="No restaurant analyses yet." />
               </PageCard>
             ) : null}

@@ -576,13 +576,21 @@ export const getOwnerBot = (botKey) => get(`/api/owner/bots/${encodeURIComponent
 export const updateOwnerBotSchedule = (botKey, body) =>
   put(`/api/owner/bots/${encodeURIComponent(botKey)}/schedule`, body);
 
-export const runOwnerBotNow = (botKey) => post(`/api/owner/bots/${encodeURIComponent(botKey)}/run`, {});
+/** Hours Bot accepts body { market: { name, state }, limit }. */
+export const runOwnerBotNow = (botKey, body = {}) => post(`/api/owner/bots/${encodeURIComponent(botKey)}/run`, body);
 
 /** Nutribot: recompute nutrition for every menu item of one restaurant. */
 export const runNutribotForRestaurant = (restaurantId) =>
   post(`/api/owner/bots/nutribot/restaurants/${encodeURIComponent(restaurantId)}/run`, {});
 
 export const getNutribotRun = (logId) => get(`/api/owner/bots/nutribot/runs/${encodeURIComponent(logId)}`);
+
+/** Hours Bot: find hours for one restaurant now. */
+export const runHoursBotForRestaurant = (restaurantId) =>
+  post(`/api/owner/bots/hours_bot/restaurants/${encodeURIComponent(restaurantId)}/run`, {});
+
+/** Hours Bot: one run with per-restaurant results. */
+export const getHoursBotRun = (runId) => get(`/api/owner/bots/hours_bot/runs/${encodeURIComponent(runId)}`);
 
 // ─── Profile billboards (entrance splash + Windows panel) ─────────────────────
 

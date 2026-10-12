@@ -1138,6 +1138,7 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
         <Route path="/owner/bots" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerBots /></OwnerRoute>} />
         <Route path="/owner/bots/nutribot" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerScheduledBot key="nutribot" botKey="nutribot" /></OwnerRoute>} />
         <Route path="/owner/bots/language-bot" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerScheduledBot key="language_bot" botKey="language_bot" /></OwnerRoute>} />
+        <Route path="/owner/bots/hours-bot" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerScheduledBot key="hours_bot" botKey="hours_bot" /></OwnerRoute>} />
         {/* Legacy Knowledge Bot URLs (bookmarks, handoff docs) — same pages. */}
         <Route path="/owner/knowledge-bot/history" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerKnowledgeBotHistory /></OwnerRoute>} />
         <Route path="/owner/knowledge-bot" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerKnowledgeBot /></OwnerRoute>} />
