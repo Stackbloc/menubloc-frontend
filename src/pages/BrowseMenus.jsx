@@ -778,7 +778,7 @@ export default function BrowseMenus({
                 <div style={{ color: "#667085", fontSize: 14, lineHeight: 1.5 }}>
                   {t(
                     "menuBrowser.bookmarkedEmptyBody",
-                    "Menus you bookmark from Feed Menus appear here. Search above anytime to discover restaurants — you do not need a bookmark to invite."
+                    "Tap the bookmark icon next to a restaurant’s name to save its menu here."
                   )}
                 </div>
               </>

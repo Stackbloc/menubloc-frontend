@@ -247,7 +247,7 @@ export default function FeedMenuBrowserPipOverlay({
           highlightMenuItemName={highlightMenuItemName}
           highlightMenuItems={highlightMenuItems}
           pinnedItemLabel="From the video"
-          showHeaderOrderAction
+          gateOrderingByMarket
           orderViewerLocation={viewerLocation}
           enableRestaurantContextualVideo={false}
         />

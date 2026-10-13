@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import ShareButton from "../share/ShareButton.jsx";
 import LikeMenuItemButton from "../LikeMenuItemButton.jsx";
 import InviteToEatButton from "../InviteToEatButton.jsx";
@@ -289,7 +290,7 @@ export default function PublicMenuItemCard({
   menuThemeSettings = {},
 }) {
   const themeSettings = normalizeMenuThemeSettings(menuThemeSettings);
-  const { hideDishShare, hideComment } = useMenuRowActions();
+  const { hideDishShare, hideComment, tapRowToAdd, onRemoveOne } = useMenuRowActions();
   const accent = brand?.accent ?? (editorialRefresh ? (ED_PALETTES[editorialColorScheme]?.accentDefault || ED_PALETTES.light.accentDefault) : "#22C55E");
   const onAccent = brand?.onAccent ?? "#0B0F0C";
   const softBg = brand?.accentSoftBg ?? "rgba(34,197,94,0.12)";
@@ -441,6 +442,43 @@ export default function PublicMenuItemCard({
     setAddedConfirmation({ itemId: normalizedItemId, name });
   }
 
+  // Menu Browser: press and hold a dish already in the basket to remove one (Andre, 2026-10-12).
+  const holdTimerRef = useRef(null);
+  const holdStartRef = useRef(null);
+  const suppressClickRef = useRef(false);
+  const holdToRemove = Boolean(tapRowToAdd && onRemoveOne && inCartCount > 0);
+  function clearHold() {
+    if (holdTimerRef.current) window.clearTimeout(holdTimerRef.current);
+    holdTimerRef.current = null;
+    holdStartRef.current = null;
+  }
+  useEffect(() => clearHold, []);
+  const holdHandlers = tapRowToAdd
+    ? {
+        onPointerDown: (e) => {
+          clearHold();
+          if (!holdToRemove || (e.button != null && e.button !== 0)) return;
+          holdStartRef.current = { x: e.clientX, y: e.clientY };
+          holdTimerRef.current = window.setTimeout(() => {
+            holdTimerRef.current = null;
+            suppressClickRef.current = true;
+            try { navigator.vibrate?.(15); } catch { /* unsupported */ }
+            onRemoveOne(normalizedItemId, name);
+          }, 550);
+        },
+        onPointerMove: (e) => {
+          const start = holdStartRef.current;
+          if (start && Math.hypot(e.clientX - start.x, e.clientY - start.y) > 10) clearHold();
+        },
+        onPointerUp: clearHold,
+        onPointerLeave: clearHold,
+        onPointerCancel: clearHold,
+        onContextMenu: (e) => {
+          if (holdToRemove) e.preventDefault();
+        },
+      }
+    : null;
+
   const addToOrderBox = canAddToOrder ? (
     <AddToOrderBox
       editorial={editorialRefresh}
@@ -461,6 +499,10 @@ export default function PublicMenuItemCard({
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
+          if (tapRowToAdd && canAddToOrder) {
+            addItemToOrder();
+            return;
+          }
           if (canNavigate) {
             openMenuItemDetail();
             return;
@@ -472,7 +514,16 @@ export default function PublicMenuItemCard({
         if (inCartCount > 0) setHoveredItemId(normalizedItemId);
       }}
       onMouseLeave={() => setHoveredItemId(null)}
+      {...holdHandlers}
       onClick={() => {
+        if (suppressClickRef.current) {
+          suppressClickRef.current = false;
+          return;
+        }
+        if (tapRowToAdd && canAddToOrder) {
+          addItemToOrder();
+          return;
+        }
         if (canNavigate) {
           openMenuItemDetail();
           return;
@@ -508,6 +559,7 @@ export default function PublicMenuItemCard({
           density === "classic" ? (compactActions ? "0 1px 4px rgba(0,0,0,0.20)" : "0 2px 12px rgba(0,0,0,0.28), 0 1px 3px rgba(0,0,0,0.18)") :
           "var(--gb-shadow-card)",
         cursor: "pointer",
+        ...(tapRowToAdd ? { WebkitTouchCallout: "none", WebkitUserSelect: "none", userSelect: "none" } : null),
         opacity: itemIsOrderable ? 1 : 0.78,
         transition: "background 120ms ease, border-color 120ms ease",
         WebkitTapHighlightColor: "transparent",

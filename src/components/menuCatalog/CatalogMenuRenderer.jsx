@@ -24,12 +24,10 @@ import { buildMenuShareMetadata } from "../share/shareUtils.js";
 import {
   buildRestaurantStatusLightProps,
   isOnlineOrderingAvailable,
-  shouldShowMenuPurchaseWaiterHint,
 } from "../../lib/restaurantStatusLight.js";
 import { toConsumerErrorMessage } from "../../lib/api.js";
 import CatalogItemDetailSheet from "./CatalogItemDetailSheet.jsx";
 import MenuPreferencesAppliedBanner from "../menu/MenuPreferencesAppliedBanner.jsx";
-import MenuPurchaseWaiterHint from "../menu/MenuPurchaseWaiterHint.jsx";
 import OrderingUnavailableBanner from "../menu/OrderingUnavailableBanner.jsx";
 import MenuRestaurantContextualVideo from "../menu/MenuRestaurantContextualVideo.jsx";
 import useSavedMenuPreferences from "../../hooks/useSavedMenuPreferences.js";
@@ -39,14 +37,13 @@ import useMenuItemHighlight from "../../hooks/useMenuItemHighlight.js";
 import { getNormalizedMenuItemId } from "../../lib/menuItemIdentity.js";
 import { findPinnedMenuItems, withoutPinnedMenuItems } from "../../lib/menuPinnedItem.js";
 import { MenuRowActionsContext } from "./menuRowActionsContext.js";
+import MenuTapToOrderHint from "./MenuTapToOrderHint.jsx";
+import MenuHeaderBookmarkAction from "./MenuHeaderBookmarkAction.jsx";
 import { MenuHeaderTrailingActionContext } from "./menuHeaderTrailingActionContext.js";
-import MenuHeaderOrderAction from "./MenuHeaderOrderAction.jsx";
 import {
   FEED_ORDER_UNKNOWN_LOCATION_MESSAGE,
-  resolveFeedOrderMarketState,
+  withFeedOrderMarketGate,
 } from "../../lib/feedOrderEligibility.js";
-import { hasPaidSubscriptionPlan } from "../../lib/restaurantStatusLight.js";
-import { restaurantMenuPath } from "../../lib/canonicalUrlCore.js";
 import {
   buildAllergenPreferenceLabels,
   buildDietPreferenceLabels,
@@ -67,9 +64,9 @@ import { resolvePublicMenuAddressDisplay } from "../../lib/displayAddress.js";
 import { appendSavedMenuPreferenceQueryParams } from "../../lib/dietaryParams.js";
 
 /** Menu Browser rows: Invite covers sharing, so the per-dish Share icon is dropped. */
-const MENU_BROWSER_ROW_ACTIONS = { hideDishShare: true, hideComment: false };
+const MENU_BROWSER_ROW_ACTIONS = { hideDishShare: true, hideComment: false, tapRowToAdd: true };
 /** Pinned "From the video" card: Like, Invite, Add to basket only. */
-const PINNED_CARD_ROW_ACTIONS = { hideDishShare: true, hideComment: true };
+const PINNED_CARD_ROW_ACTIONS = { hideDishShare: true, hideComment: true, tapRowToAdd: true };
 /** Templates without the post-header slot (allergenBannerSlot) — keep the in-row highlight instead. */
 const PIN_UNSUPPORTED_MENU_STYLES = new Set(["v14", "v15"]);
 
@@ -196,8 +193,8 @@ export default function CatalogMenuRenderer({
   highlightMenuItems = null,
   /** When set (e.g. "From the video"), the matched dish is pinned under the restaurant header. */
   pinnedItemLabel = null,
-  /** Feed Menu Browser only: Order icon after Comment in the restaurant header. */
-  showHeaderOrderAction = false,
+  /** Feed Menu Browser only: ordering is offered only for restaurants in the viewer's market. */
+  gateOrderingByMarket = false,
   /** Feed viewer location (preference first, then detected); null = unknown. */
   orderViewerLocation = null,
   /** Extra list bottom padding (px) so floating controls never cover the last row. */
@@ -358,7 +355,22 @@ export default function CatalogMenuRenderer({
     }
   }, [restaurantId, selectedMenuId, dietaryFilterActive, dietPrefs, enabledAllergenKeys]);
 
-  const data = pageState.status === "ok" ? pageState.data : null;
+  const loadedData = pageState.status === "ok" ? pageState.data : null;
+  // Feed: out-of-market / unknown-location viewers browse the same menu with ordering switched off.
+  const { data, orderMarketState } = useMemo(
+    () =>
+      withFeedOrderMarketGate(loadedData, {
+        enabled: gateOrderingByMarket,
+        viewer: orderViewerLocation,
+        distanceMiles: asFiniteNumber(
+          entry?.distance_miles ??
+            entry?.restaurant_distance_miles ??
+            loadedData?.distance_miles ??
+            loadedData?.restaurant_distance_miles
+        ),
+      }),
+    [loadedData, gateOrderingByMarket, orderViewerLocation, entry?.distance_miles, entry?.restaurant_distance_miles]
+  );
   const displaySettingsSource = data?.display_settings || data || {};
   const menuThemeSettings = normalizeMenuThemeSettings(displaySettingsSource);
   const restaurantName = data
@@ -513,7 +525,10 @@ export default function CatalogMenuRenderer({
   const hasBasketItems = itemCount > 0;
   const basketMatchesCurrentRestaurant =
     Number(cartRestaurantState?.restaurantId) === Number(cartRestaurant.restaurantId);
-  const activeCartItems = basketMatchesCurrentRestaurant ? cartItems || [] : [];
+  const activeCartItems = useMemo(
+    () => (basketMatchesCurrentRestaurant ? cartItems || [] : []),
+    [basketMatchesCurrentRestaurant, cartItems]
+  );
 
   const menuBrand = data ? buildRestaurantMenuBrand({
     ...data,
@@ -540,9 +555,6 @@ export default function CatalogMenuRenderer({
   const appearanceTokens = applyMenuAppearance
     ? getMenuAppearanceTokens(effectiveMenuAppearance)
     : null;
-  const stickyBarBackground = applyMenuAppearance
-    ? appearanceTokens.pageBackground
-    : resolvedPageBackground;
   const catalogShellStyle = applyMenuAppearance
     ? {
         flex: 1,
@@ -620,6 +632,29 @@ export default function CatalogMenuRenderer({
     }
   }
 
+  const [removedNotice, setRemovedNotice] = useState(null);
+  const removeOneFromBasket = useCallback(
+    (menuItemId, itemName) => {
+      const state = getCartItemState(activeCartItems, menuItemId);
+      const line = state.simpleLine || state.matchingLines[state.matchingLines.length - 1];
+      if (!line) return;
+      const qty = Number(line.quantity || 0);
+      if (qty > 1) updateQuantity(line.lineId, qty - 1);
+      else removeItem(line.lineId);
+      setAddedConfirmation(null);
+      setRemovedNotice({ key: Date.now(), name: itemName || "Item" });
+    },
+    [activeCartItems, updateQuantity, removeItem]
+  );
+  const menuBrowserRowActions = useMemo(
+    () => ({ ...MENU_BROWSER_ROW_ACTIONS, onRemoveOne: removeOneFromBasket }),
+    [removeOneFromBasket]
+  );
+  const pinnedCardRowActions = useMemo(
+    () => ({ ...PINNED_CARD_ROW_ACTIONS, onRemoveOne: removeOneFromBasket }),
+    [removeOneFromBasket]
+  );
+
   function handleRemoveAdded() {
     if (!addedConfirmation) return;
     const state = getCartItemState(activeCartItems, addedConfirmation.itemId);
@@ -629,30 +664,29 @@ export default function CatalogMenuRenderer({
 
   const menuPresentationStyle = resolveTemplateMenuStyle(data?.menu_style);
 
-  const headerOrderAction = useMemo(() => {
-    if (!showHeaderOrderAction || !data) return null;
-    // Only offer ordering in the viewer's market; an LA-only restaurant playing in Dothan gets no icon.
-    const marketState = resolveFeedOrderMarketState({
-      viewer: orderViewerLocation,
-      restaurant: { city: data?.city, state: data?.state },
-      distanceMiles,
-    });
-    if (marketState === "out_of_market") return null;
-    if (marketState === "unknown_location") {
-      return <MenuHeaderOrderAction available={false} message={FEED_ORDER_UNKNOWN_LOCATION_MESSAGE} />;
-    }
-    const available = isOnlineOrderingAvailable(data);
-    // Registered (paid plan) but closed/paused → the restaurant's own message; otherwise generic.
-    const registered = hasPaidSubscriptionPlan(buildRestaurantStatusLightProps(data));
-    const message = !available && registered ? data?.ordering_availability?.message || "" : "";
-    const href = restaurantMenuPath({
-      slug: data?.slug,
-      city: data?.city,
-      state: data?.state,
-      id: currentRestaurantId,
-    });
-    return <MenuHeaderOrderAction available={available} message={message} href={href} />;
-  }, [showHeaderOrderAction, data, currentRestaurantId, orderViewerLocation, distanceMiles]);
+  const headerBookmarkAction = currentRestaurantId ? (
+    <MenuHeaderBookmarkAction
+      key={`bookmark-${currentRestaurantId}`}
+      restaurant={{
+        restaurant_id: currentRestaurantId,
+        restaurant_name: restaurantName,
+        slug: data?.slug || entry?.slug || "",
+        city: data?.city || entry?.city || "",
+        state: data?.state || entry?.state || "",
+      }}
+    />
+  ) : null;
+
+  const orderingAvailable = isOnlineOrderingAvailable(data);
+  const tapToOrderHint = orderingAvailable ? (
+    <MenuTapToOrderHint key={`order-hint-${currentRestaurantId}`} />
+  ) : orderMarketState === "unknown_location" && isOnlineOrderingAvailable(loadedData) ? (
+    <MenuTapToOrderHint
+      key={`order-hint-${currentRestaurantId}`}
+      tone="info"
+      message={FEED_ORDER_UNKNOWN_LOCATION_MESSAGE}
+    />
+  ) : null;
 
   const pinnedCard = pinnedMatches.length ? (
     <section
@@ -679,7 +713,7 @@ export default function CatalogMenuRenderer({
       >
         {pinnedItemLabel}
       </div>
-      <MenuRowActionsContext.Provider value={PINNED_CARD_ROW_ACTIONS}>
+      <MenuRowActionsContext.Provider value={pinnedCardRowActions}>
         {pinnedMatches.map((match) => (
         <div
           key={`${match.sectionIndex}:${match.itemIndex}`}
@@ -742,13 +776,6 @@ export default function CatalogMenuRenderer({
           intakeBannerSlot: (
             <>
               <OrderingUnavailableBanner data={data} />
-              {shouldShowMenuPurchaseWaiterHint(data) ? (
-                <MenuPurchaseWaiterHint
-                  sticky
-                  pinWithStickyMenuHeader
-                  stickyBackground={stickyBarBackground}
-                />
-              ) : null}
             </>
           ),
           allergenBannerSlot: (
@@ -830,9 +857,19 @@ export default function CatalogMenuRenderer({
 
   return (
     <div
-      style={catalogShellStyle}
+      style={{ ...catalogShellStyle, position: "relative" }}
       data-menu-appearance={applyMenuAppearance ? effectiveMenuAppearance : undefined}
     >
+      {removedNotice ? (
+        <MenuTapToOrderHint
+          key={`removed-${removedNotice.key}`}
+          tone="info"
+          durationMs={2200}
+          message={`Removed 1 ${removedNotice.name} from your basket`}
+        />
+      ) : (
+        tapToOrderHint
+      )}
       {isSponsored ? (
         <div style={{
           padding: "6px 16px",
@@ -870,8 +907,8 @@ export default function CatalogMenuRenderer({
           paddingBottom: 24 + Math.max(0, Number(bottomClearance) || 0),
           color: effectiveShellTextColor,
         }}>
-          <MenuHeaderTrailingActionContext.Provider value={headerOrderAction}>
-          <MenuRowActionsContext.Provider value={MENU_BROWSER_ROW_ACTIONS}>
+          <MenuHeaderTrailingActionContext.Provider value={headerBookmarkAction}>
+          <MenuRowActionsContext.Provider value={menuBrowserRowActions}>
           {templateContext ? (
             applyMenuAppearance && appearanceTokens ? (
               <div
