@@ -70,6 +70,8 @@ const MENU_BROWSER_ROW_ACTIONS = { hideDishShare: true, hideComment: false, tapR
 const PINNED_CARD_ROW_ACTIONS = { hideDishShare: true, hideComment: true, tapRowToAdd: true, hideAddButton: true };
 /** Templates without the post-header slot (allergenBannerSlot) — keep the in-row highlight instead. */
 const SCROLL_TAP_GUARD_MS = 350;
+const CANNOT_ORDER_RESTAURANT_NOTE = "This restaurant isn't taking online orders yet";
+const CANNOT_ORDER_DISH_NOTE = "This dish can't be ordered online";
 /** Menu Browser ordering chip — says it is an order surface and how to use it. */
 const ORDER_HERE_CHIP_LABEL = "🛍 Order here · Tap any dish to add it to your basket";
 /** Feed: keep the order bar clear of the mini video player (bottom-right). */
@@ -640,7 +642,7 @@ export default function CatalogMenuRenderer({
     }
   }
 
-  const [removedNotice, setRemovedNotice] = useState(null);
+  const [menuNotice, setMenuNotice] = useState(null);
   // A tap within this window after the menu scrolled is a scroll gesture, not a selection.
   const lastScrollAtRef = useRef(0);
   const isScrollTap = useCallback(() => Date.now() - lastScrollAtRef.current < SCROLL_TAP_GUARD_MS, []);
@@ -659,17 +661,30 @@ export default function CatalogMenuRenderer({
       if (qty > 1) updateQuantity(line.lineId, qty - 1);
       else removeItem(line.lineId);
       setAddedConfirmation(null);
-      setRemovedNotice({ key: Date.now(), name: itemName || "Item" });
+      setMenuNotice({ key: Date.now(), message: `Removed 1 ${itemName || "item"} from your basket` });
     },
     [activeCartItems, updateQuantity, removeItem]
   );
+  const onCannotOrder = useCallback((reason) => {
+    setMenuNotice({
+      key: Date.now(),
+      message: reason === "restaurant" ? CANNOT_ORDER_RESTAURANT_NOTE : CANNOT_ORDER_DISH_NOTE,
+    });
+  }, []);
+  const onOpenOptions = useCallback((item, itemName, itemDescription) => {
+    openSmartOrModifierFlow(item, itemName, itemDescription);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- flow setters are stable
+  }, []);
+  const sharedRowActions = { onRemoveOne: removeOneFromBasket, isScrollTap, onCannotOrder, onOpenOptions };
   const menuBrowserRowActions = useMemo(
-    () => ({ ...MENU_BROWSER_ROW_ACTIONS, onRemoveOne: removeOneFromBasket, isScrollTap }),
-    [removeOneFromBasket, isScrollTap]
+    () => ({ ...MENU_BROWSER_ROW_ACTIONS, ...sharedRowActions }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- members listed individually
+    [removeOneFromBasket, isScrollTap, onCannotOrder, onOpenOptions]
   );
   const pinnedCardRowActions = useMemo(
-    () => ({ ...PINNED_CARD_ROW_ACTIONS, onRemoveOne: removeOneFromBasket, isScrollTap }),
-    [removeOneFromBasket, isScrollTap]
+    () => ({ ...PINNED_CARD_ROW_ACTIONS, ...sharedRowActions }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- members listed individually
+    [removeOneFromBasket, isScrollTap, onCannotOrder, onOpenOptions]
   );
 
   function handleRemoveAdded() {
@@ -877,12 +892,12 @@ export default function CatalogMenuRenderer({
       style={{ ...catalogShellStyle, position: "relative" }}
       data-menu-appearance={applyMenuAppearance ? effectiveMenuAppearance : undefined}
     >
-      {removedNotice ? (
+      {menuNotice ? (
         <MenuTapToOrderHint
-          key={`removed-${removedNotice.key}`}
+          key={`notice-${menuNotice.key}`}
           tone="info"
           durationMs={2200}
-          message={`Removed 1 ${removedNotice.name} from your basket`}
+          message={menuNotice.message}
         />
       ) : (
         tapToOrderHint

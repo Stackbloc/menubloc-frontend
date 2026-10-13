@@ -290,7 +290,8 @@ export default function PublicMenuItemCard({
   menuThemeSettings = {},
 }) {
   const themeSettings = normalizeMenuThemeSettings(menuThemeSettings);
-  const { hideDishShare, hideComment, tapRowToAdd, onRemoveOne, isScrollTap, hideAddButton } = useMenuRowActions();
+  const { hideDishShare, hideComment, tapRowToAdd, onRemoveOne, isScrollTap, hideAddButton, onOpenOptions, onCannotOrder } =
+    useMenuRowActions();
   const accent = brand?.accent ?? (editorialRefresh ? (ED_PALETTES[editorialColorScheme]?.accentDefault || ED_PALETTES.light.accentDefault) : "#22C55E");
   const onAccent = brand?.onAccent ?? "#0B0F0C";
   const softBg = brand?.accentSoftBg ?? "rgba(34,197,94,0.12)";
@@ -435,7 +436,9 @@ export default function PublicMenuItemCard({
     e?.stopPropagation?.();
     if (!canAddToOrder) return;
     if (itemHasRequiredModifiers(it)) {
-      openSheet();
+      // Menu Browser: go straight to the options picker (part of ordering), not the info sheet.
+      if (tapRowToAdd && onOpenOptions) onOpenOptions(it, name, desc);
+      else openSheet();
       return;
     }
     commitMenuItemToBasket(it, name, desc);
@@ -501,6 +504,7 @@ export default function PublicMenuItemCard({
           e.preventDefault();
           if (tapRowToAdd) {
             if (canAddToOrder) addItemToOrder();
+            else if (onCannotOrder) onCannotOrder(restaurantOrderingAvailable ? "dish" : "restaurant");
             else openSheet();
             return;
           }
@@ -524,8 +528,9 @@ export default function PublicMenuItemCard({
         if (tapRowToAdd) {
           // Menu Browser: a tap that ends a scroll is not a selection.
           if (isScrollTap?.()) return;
-          // Orderable → basket; anything else opens the dish sheet in place (never leaves the menu).
+          // Orderable → basket; otherwise a short note — never the info sheet or detail page.
           if (canAddToOrder) addItemToOrder();
+          else if (onCannotOrder) onCannotOrder(restaurantOrderingAvailable ? "dish" : "restaurant");
           else openSheet();
           return;
         }
