@@ -13,7 +13,7 @@ import BrowseMenusIcon from "../../icons/BrowseMenusIcon.jsx";
 import FeedMenuBrowserPipOverlay from "./FeedMenuBrowserPipOverlay.jsx";
 import FeedPipExpandButton from "./FeedPipExpandButton.jsx";
 import FeedVideoActionRail from "./FeedVideoActionRail.jsx";
-import FeedVideoPlayPauseButton from "./FeedVideoPlayPauseButton.jsx";
+import FeedVideoPlayPauseButton, { PIP_PAUSE_TITLE } from "./FeedVideoPlayPauseButton.jsx";
 import {
   clearStuckMediaChrome,
   restoreDocumentScroll,
@@ -550,6 +550,7 @@ export default function DealVideoSwipe({
             onToggle={() => setUserPaused((prev) => !prev)}
             // Beside the mini player's sound button (bottom center).
             style={{ left: "calc(50% + 24px)", bottom: 9 }}
+            pauseTitle={PIP_PAUSE_TITLE}
           />
           <button
             type="button"

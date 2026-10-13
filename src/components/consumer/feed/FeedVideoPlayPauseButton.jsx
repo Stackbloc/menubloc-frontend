@@ -3,15 +3,18 @@
  * being discussed. Deliberately faint so it does not compete with the video.
  */
 
-export default function FeedVideoPlayPauseButton({ paused = false, onToggle, style = null }) {
+/** Mini player (Menu Browser open): pausing also keeps the current menu on screen. */
+export const PIP_PAUSE_TITLE = "Pause video / stay on current menu view";
+
+export default function FeedVideoPlayPauseButton({ paused = false, onToggle, style = null, pauseTitle = null }) {
   return (
     <button
       type="button"
       data-testid="feed-video-play-pause"
       data-paused={paused ? "true" : "false"}
-      aria-label={paused ? "Play video" : "Pause video"}
+      aria-label={paused ? "Play video" : pauseTitle || "Pause video"}
       aria-pressed={paused}
-      title={paused ? "Play" : "Pause"}
+      title={paused ? "Play" : pauseTitle || "Pause"}
       onClick={(e) => {
         e.preventDefault();
         e.stopPropagation();

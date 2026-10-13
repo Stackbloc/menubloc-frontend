@@ -54,7 +54,7 @@ import {
 import MenuplyAccountInviteCard from "../../../components/consumer/MenuplyAccountInviteCard.jsx";
 import { wrapEndlessFeedNext } from "../../../lib/shuffleProfileVideos.js";
 import { clearStuckMediaChrome, restoreDocumentScroll } from "./pendingHighlightMedia.js";
-import FeedVideoPlayPauseButton from "../../../components/consumer/feed/FeedVideoPlayPauseButton.jsx";
+import FeedVideoPlayPauseButton, { PIP_PAUSE_TITLE } from "../../../components/consumer/feed/FeedVideoPlayPauseButton.jsx";
 
 const SWIPE_MIN_PX = 56;
 
@@ -816,6 +816,7 @@ export default function SeeWhosEatingFullscreen({
             onToggle={() => setUserPaused((prev) => !prev)}
             // Beside the mini player's sound button (bottom center).
             style={{ left: "calc(50% + 24px)", bottom: 9 }}
+            pauseTitle={PIP_PAUSE_TITLE}
           />
           <button
             type="button"
