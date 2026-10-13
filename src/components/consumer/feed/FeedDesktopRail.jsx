@@ -91,9 +91,18 @@ export default function FeedDesktopRail({
           <span>Add menu</span>
         </Link>
 
-        {visibleFeedTabs(FEED_RAIL_TABS_AFTER_HOME, { isAuthenticated, desktop: true }).map((tab) => (
-          <RailTab key={tab.testId} tab={tab} onShareQr={onShareMyMenuply} />
-        ))}
+        {/* Basket sits between Search & Shop and Profile (same order as the mobile bar); it opens
+            the existing order cart (OrderCartContext / OrderCartDrawer → /checkout). */}
+        {visibleFeedTabs(FEED_RAIL_TABS_AFTER_HOME, { isAuthenticated }).map((tab) =>
+          tab.openCart ? (
+            <div key={tab.testId} style={styles.shopBasketWrap} data-testid="feed-desktop-shop-basket">
+              <FeedShopBasketButton variant="feedDark" />
+              <span style={styles.shopBasketLabel}>Basket</span>
+            </div>
+          ) : (
+            <RailTab key={tab.testId} tab={tab} onShareQr={onShareMyMenuply} />
+          )
+        )}
       </nav>
 
       <button
@@ -124,11 +133,6 @@ export default function FeedDesktopRail({
       ) : null}
 
       <div style={styles.footer}>
-        {/* Basket on every Feed screen (was Search & Shop only). */}
-        <div style={styles.shopBasketWrap} data-testid="feed-desktop-shop-basket">
-          <FeedShopBasketButton variant="feedDark" />
-          <span style={styles.shopBasketLabel}>Basket</span>
-        </div>
         <button
           type="button"
           style={styles.moreBtn}

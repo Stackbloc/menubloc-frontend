@@ -48,8 +48,8 @@ export const FEED_LEFT_TABS = [
 export const FEED_RIGHT_TABS = [
   { to: "/feed/deals", end: false, label: "Deals", testId: "feed-nav-deals" },
   { to: "/feed/search", end: true, label: "Search & Shop", testId: "feed-nav-shop", resetSearch: true },
-  /** Mobile bar only — opens the order cart. Desktop rail has its own Basket block. */
-  { to: "/checkout", end: false, label: "Basket", testId: "feed-nav-basket", openCart: true, mobileOnly: true },
+  /** Opens the existing order cart. Desktop rail renders it as its Basket button (same slot). */
+  { to: "/checkout", end: false, label: "Basket", testId: "feed-nav-basket", openCart: true },
   { to: "/feed/profile", end: false, label: "Profile", testId: "feed-nav-profile" },
 ];
 
