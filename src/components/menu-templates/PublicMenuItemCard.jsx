@@ -290,7 +290,7 @@ export default function PublicMenuItemCard({
   menuThemeSettings = {},
 }) {
   const themeSettings = normalizeMenuThemeSettings(menuThemeSettings);
-  const { hideDishShare, hideComment, tapRowToAdd, onRemoveOne } = useMenuRowActions();
+  const { hideDishShare, hideComment, tapRowToAdd, onRemoveOne, isScrollTap } = useMenuRowActions();
   const accent = brand?.accent ?? (editorialRefresh ? (ED_PALETTES[editorialColorScheme]?.accentDefault || ED_PALETTES.light.accentDefault) : "#22C55E");
   const onAccent = brand?.onAccent ?? "#0B0F0C";
   const softBg = brand?.accentSoftBg ?? "rgba(34,197,94,0.12)";
@@ -499,8 +499,9 @@ export default function PublicMenuItemCard({
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
-          if (tapRowToAdd && canAddToOrder) {
-            addItemToOrder();
+          if (tapRowToAdd) {
+            if (canAddToOrder) addItemToOrder();
+            else openSheet();
             return;
           }
           if (canNavigate) {
@@ -520,8 +521,12 @@ export default function PublicMenuItemCard({
           suppressClickRef.current = false;
           return;
         }
-        if (tapRowToAdd && canAddToOrder) {
-          addItemToOrder();
+        if (tapRowToAdd) {
+          // Menu Browser: a tap that ends a scroll is not a selection.
+          if (isScrollTap?.()) return;
+          // Orderable → basket; anything else opens the dish sheet in place (never leaves the menu).
+          if (canAddToOrder) addItemToOrder();
+          else openSheet();
           return;
         }
         if (canNavigate) {

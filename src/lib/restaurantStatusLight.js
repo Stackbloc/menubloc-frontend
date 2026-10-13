@@ -1,4 +1,5 @@
 import { isRestaurantVerifiedMenuStatus } from "./menuVerificationLabels.js";
+import { isDemoOrderingOn } from "./demoOrdering.js";
 
 const STANDARD_SUBSCRIPTION_PLANS = new Set(["standard", "standard_free", "published_free", "verified"]);
 const PAID_SUBSCRIPTION_PLANS = new Set([
@@ -80,6 +81,8 @@ export function getOrderingAvailabilityMessage(data) {
 }
 
 export function isOnlineOrderingAvailable(data) {
+  // Demo ordering (this device only): every menu is orderable.
+  if (data && isDemoOrderingOn()) return true;
   const availability = data?.ordering_availability || data?.restaurant?.ordering_availability;
   if (availability && typeof availability.available === "boolean") {
     return availability.available === true;

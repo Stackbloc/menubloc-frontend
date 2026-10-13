@@ -68,6 +68,7 @@ const MENU_BROWSER_ROW_ACTIONS = { hideDishShare: true, hideComment: false, tapR
 /** Pinned "From the video" card: Like, Invite, Add to basket only. */
 const PINNED_CARD_ROW_ACTIONS = { hideDishShare: true, hideComment: true, tapRowToAdd: true };
 /** Templates without the post-header slot (allergenBannerSlot) — keep the in-row highlight instead. */
+const SCROLL_TAP_GUARD_MS = 350;
 const PIN_UNSUPPORTED_MENU_STYLES = new Set(["v14", "v15"]);
 
 const API = (import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? "http://localhost:3001" : "")).replace(/\/$/, "");
@@ -633,6 +634,9 @@ export default function CatalogMenuRenderer({
   }
 
   const [removedNotice, setRemovedNotice] = useState(null);
+  // A tap within this window after the menu scrolled is a scroll gesture, not a selection.
+  const lastScrollAtRef = useRef(0);
+  const isScrollTap = useCallback(() => Date.now() - lastScrollAtRef.current < SCROLL_TAP_GUARD_MS, []);
   const removeOneFromBasket = useCallback(
     (menuItemId, itemName) => {
       const state = getCartItemState(activeCartItems, menuItemId);
@@ -647,12 +651,12 @@ export default function CatalogMenuRenderer({
     [activeCartItems, updateQuantity, removeItem]
   );
   const menuBrowserRowActions = useMemo(
-    () => ({ ...MENU_BROWSER_ROW_ACTIONS, onRemoveOne: removeOneFromBasket }),
-    [removeOneFromBasket]
+    () => ({ ...MENU_BROWSER_ROW_ACTIONS, onRemoveOne: removeOneFromBasket, isScrollTap }),
+    [removeOneFromBasket, isScrollTap]
   );
   const pinnedCardRowActions = useMemo(
-    () => ({ ...PINNED_CARD_ROW_ACTIONS, onRemoveOne: removeOneFromBasket }),
-    [removeOneFromBasket]
+    () => ({ ...PINNED_CARD_ROW_ACTIONS, onRemoveOne: removeOneFromBasket, isScrollTap }),
+    [removeOneFromBasket, isScrollTap]
   );
 
   function handleRemoveAdded() {
@@ -889,6 +893,7 @@ export default function CatalogMenuRenderer({
 
       <div
         className="menu-catalog-scroll"
+        onScroll={() => { lastScrollAtRef.current = Date.now(); }}
         style={{
           flex: 1,
           minHeight: 0,

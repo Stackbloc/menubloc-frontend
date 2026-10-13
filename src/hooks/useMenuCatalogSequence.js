@@ -55,10 +55,10 @@ function readPersonalLibraryEntries(section) {
   const lib = purgeExpiredRecent(readFeedMenuLibrary());
   if (section === "bookmarked") {
     return libraryRowsToBrowseEntries(
+      // Newest bookmark first. Not last_opened_at: opening a menu updates it, which reshuffled
+      // the list mid-browse (Next showed the same menu again).
       [...(lib.saved || [])].sort(
-        (a, b) =>
-          Number(b?.last_opened_at || b?.bookmarked_at || 0) -
-          Number(a?.last_opened_at || a?.bookmarked_at || 0)
+        (a, b) => Number(b?.bookmarked_at || 0) - Number(a?.bookmarked_at || 0)
       )
     );
   }

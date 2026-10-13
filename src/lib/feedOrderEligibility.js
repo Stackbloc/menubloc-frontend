@@ -13,6 +13,7 @@
 
 import { parseLocation } from "./locationUtils.js";
 import { activeMarketsShareBrowseScope } from "./marketGate.js";
+import { isDemoOrderingOn } from "./demoOrdering.js";
 
 export const FEED_ORDER_MARKET_RADIUS_MILES = 30;
 export const FEED_ORDER_UNKNOWN_LOCATION_MESSAGE = "We cannot detect your location";
@@ -95,6 +96,7 @@ export function resolveFeedOrderMarketState({ viewer = null, restaurant = null, 
  */
 export function withFeedOrderMarketGate(data, { enabled = false, viewer = null, distanceMiles = null } = {}) {
   if (!data || !enabled) return { data, orderMarketState: null };
+  if (isDemoOrderingOn()) return { data, orderMarketState: "in_market" };
   // Restaurants stored at 0,0 ("null island", e.g. Vistango in 2026-10) get absurd API distances;
   // judge those by city/state instead.
   const nullIsland = Number(data.lat) === 0 && Number(data.lng) === 0;
