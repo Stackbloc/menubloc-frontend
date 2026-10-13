@@ -64,9 +64,10 @@ import { resolvePublicMenuAddressDisplay } from "../../lib/displayAddress.js";
 import { appendSavedMenuPreferenceQueryParams } from "../../lib/dietaryParams.js";
 
 /** Menu Browser rows: Invite covers sharing, so the per-dish Share icon is dropped. */
-const MENU_BROWSER_ROW_ACTIONS = { hideDishShare: true, hideComment: false, tapRowToAdd: true, labeledAdd: true };
+/** Menu Browser rows: tapping the dish adds it, so no per-row add button (Andre: cognitive load). */
+const MENU_BROWSER_ROW_ACTIONS = { hideDishShare: true, hideComment: false, tapRowToAdd: true, hideAddButton: true };
 /** Pinned "From the video" card: Like, Invite, Add to basket only. */
-const PINNED_CARD_ROW_ACTIONS = { hideDishShare: true, hideComment: true, tapRowToAdd: true, labeledAdd: true };
+const PINNED_CARD_ROW_ACTIONS = { hideDishShare: true, hideComment: true, tapRowToAdd: true, hideAddButton: true };
 /** Templates without the post-header slot (allergenBannerSlot) — keep the in-row highlight instead. */
 const SCROLL_TAP_GUARD_MS = 350;
 /** Menu Browser ordering chip — says it is an order surface and how to use it. */

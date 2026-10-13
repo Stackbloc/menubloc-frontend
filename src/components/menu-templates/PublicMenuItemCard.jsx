@@ -175,7 +175,7 @@ function AffordancePillButton({ label, color, hairline, hoverBg, onClick }) {
 }
 
 /** Separate add-to-order control — row click opens item detail instead. */
-function AddToOrderBox({ accent, ink, hairline, editorial, ariaLabel, onClick, labeled = false }) {
+function AddToOrderBox({ accent, ink, hairline, editorial, ariaLabel, onClick }) {
   const size = editorial ? 28 : 26;
   return (
     <button
@@ -187,31 +187,22 @@ function AddToOrderBox({ accent, ink, hairline, editorial, ariaLabel, onClick, l
         display: "inline-flex",
         alignItems: "center",
         justifyContent: "center",
-        width: labeled ? "auto" : size,
+        width: size,
         height: size,
         flexShrink: 0,
-        gap: 3,
         borderRadius: editorial ? 6 : 8,
         border: `1.5px solid ${editorial ? hairline : accent}`,
         background: "transparent",
         color: editorial ? ink : accent,
-        fontSize: labeled ? 13 : editorial ? 18 : 16,
-        fontWeight: labeled ? 800 : 500,
+        fontSize: editorial ? 18 : 16,
+        fontWeight: 500,
         lineHeight: 1,
         cursor: "pointer",
-        padding: labeled ? "0 9px" : 0,
-        whiteSpace: "nowrap",
+        padding: 0,
         WebkitTapHighlightColor: "transparent",
       }}
     >
-      {labeled ? (
-        <>
-          <span aria-hidden="true" style={{ fontSize: 15, fontWeight: 700 }}>+</span>
-          Add
-        </>
-      ) : (
-        "+"
-      )}
+      +
     </button>
   );
 }
@@ -299,7 +290,7 @@ export default function PublicMenuItemCard({
   menuThemeSettings = {},
 }) {
   const themeSettings = normalizeMenuThemeSettings(menuThemeSettings);
-  const { hideDishShare, hideComment, tapRowToAdd, onRemoveOne, isScrollTap, labeledAdd } = useMenuRowActions();
+  const { hideDishShare, hideComment, tapRowToAdd, onRemoveOne, isScrollTap, hideAddButton } = useMenuRowActions();
   const accent = brand?.accent ?? (editorialRefresh ? (ED_PALETTES[editorialColorScheme]?.accentDefault || ED_PALETTES.light.accentDefault) : "#22C55E");
   const onAccent = brand?.onAccent ?? "#0B0F0C";
   const softBg = brand?.accentSoftBg ?? "rgba(34,197,94,0.12)";
@@ -488,7 +479,7 @@ export default function PublicMenuItemCard({
       }
     : null;
 
-  const addToOrderBox = canAddToOrder ? (
+  const addToOrderBox = canAddToOrder && !hideAddButton ? (
     <AddToOrderBox
       editorial={editorialRefresh}
       accent={accent}
@@ -496,7 +487,6 @@ export default function PublicMenuItemCard({
       hairline={ed.hairline}
       ariaLabel={t("menu.addToOrder", "Add to order")}
       onClick={addItemToOrder}
-      labeled={Boolean(labeledAdd)}
     />
   ) : null;
 
