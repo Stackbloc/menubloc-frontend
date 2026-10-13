@@ -592,6 +592,19 @@ export const runHoursBotForRestaurant = (restaurantId) =>
 /** Hours Bot: one run with per-restaurant results. */
 export const getHoursBotRun = (runId) => get(`/api/owner/bots/hours_bot/runs/${encodeURIComponent(runId)}`);
 
+// ─── Franchise Bot (paste a chain's stores → preview → install) ───────────────
+
+const franchiseBotQuery = (q) => (q ? `?q=${encodeURIComponent(q)}` : "");
+export const listFranchiseBotChains = (q = "") => get(`/api/owner/franchise-bot/chains${franchiseBotQuery(q)}`);
+export const listFranchiseBotClusters = (q = "") => get(`/api/owner/franchise-bot/clusters${franchiseBotQuery(q)}`);
+export const parseFranchiseBotPaste = (text, defaultState) =>
+  post("/api/owner/franchise-bot/parse", { text, default_state: defaultState || null });
+/** Starts a background preview job: { chain_id, locations, locator_base_url, default_state } */
+export const startFranchiseBotPreview = (body) => post("/api/owner/franchise-bot/preview", body);
+/** Starts a background install job: { chain_id, rows, hide_legacy } */
+export const startFranchiseBotInstall = (body) => post("/api/owner/franchise-bot/install", body);
+export const getFranchiseBotJob = (jobId) => get(`/api/owner/franchise-bot/jobs/${encodeURIComponent(jobId)}`);
+
 // ─── Profile billboards (entrance splash + Windows panel) ─────────────────────
 
 const menuConsoleRestaurantPath = (restaurantId) =>

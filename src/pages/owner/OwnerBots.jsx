@@ -12,7 +12,8 @@ import {
 
 /**
  * Owner → Bots: one place for every bot.
- *   On-demand: Menubot (find + import menus), Photo Bot (import dish photos)
+ *   On-demand: Menubot (find + import menus), Photo Bot (import dish photos),
+ *              Franchise Bot (add a chain's stores from a pasted list)
  *   Scheduled: Nutribot (nutrition), Language Bot (translations)
  */
 
@@ -28,6 +29,12 @@ const ON_DEMAND_BOTS = [
     name: "Photo Bot",
     path: "/owner/photo-bot",
     blurb: "Copies dish photos from a restaurant's online ordering site into Menu Manager.",
+  },
+  {
+    key: "franchise_bot",
+    name: "Franchise Bot",
+    path: "/owner/bots/franchise-bot",
+    blurb: "Paste a chain's store list; it fills in addresses from the official store locator and adds the stores with the chain menu.",
   },
 ];
 
