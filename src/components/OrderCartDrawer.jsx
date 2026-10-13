@@ -74,7 +74,7 @@ export default function OrderCartDrawer() {
           opacity: isOpen ? 1 : 0,
           pointerEvents: isOpen ? "auto" : "none",
           transition: "opacity 160ms ease",
-          zIndex: 1198,
+          zIndex: 1400, // above Feed header/nav (1300) so the cart is fully usable from the Feed
         }}
       />
 
@@ -91,7 +91,7 @@ export default function OrderCartDrawer() {
           boxShadow: "-18px 0 50px rgba(15,23,42,0.16)",
           transform: isOpen ? "translateX(0)" : "translateX(100%)",
           transition: "transform 180ms ease",
-          zIndex: 1199,
+          zIndex: 1401,
           display: "flex",
           flexDirection: "column",
         }}

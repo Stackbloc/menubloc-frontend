@@ -82,7 +82,7 @@ test("Feed shell nav: Waiter + Share My QR are signed-in only; no Connects tab",
   const nav = read("src/components/consumer/feed/FeedPrimaryNav.jsx");
   assert.match(nav, /visibleFeedTabs\(FEED_LEFT_TABS, \{ isAuthenticated \}\)/);
   const rail = read("src/components/consumer/feed/FeedDesktopRail.jsx");
-  assert.match(rail, /visibleFeedTabs\(FEED_RAIL_TABS_AFTER_HOME, \{ isAuthenticated \}\)/);
+  assert.match(rail, /visibleFeedTabs\(FEED_RAIL_TABS_AFTER_HOME, \{ isAuthenticated, desktop: true \}\)/);
   const bottom = read("src/components/BottomNav.jsx");
   assert.match(bottom, /isAuthenticated \|\| !tab\.authOnly/);
   assert.doesNotMatch(links, /label: "Connects"/);

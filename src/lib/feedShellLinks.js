@@ -48,12 +48,16 @@ export const FEED_LEFT_TABS = [
 export const FEED_RIGHT_TABS = [
   { to: "/feed/deals", end: false, label: "Deals", testId: "feed-nav-deals" },
   { to: "/feed/search", end: true, label: "Search & Shop", testId: "feed-nav-shop", resetSearch: true },
+  /** Mobile bar only — opens the order cart. Desktop rail has its own Basket block. */
+  { to: "/checkout", end: false, label: "Basket", testId: "feed-nav-basket", openCart: true, mobileOnly: true },
   { to: "/feed/profile", end: false, label: "Profile", testId: "feed-nav-profile" },
 ];
 
-/** Drop authOnly tabs for signed-out visitors. */
-export function visibleFeedTabs(tabs, { isAuthenticated = false } = {}) {
-  return (Array.isArray(tabs) ? tabs : []).filter((tab) => isAuthenticated || !tab.authOnly);
+/** Drop authOnly tabs for signed-out visitors (and mobileOnly tabs on the desktop rail). */
+export function visibleFeedTabs(tabs, { isAuthenticated = false, desktop = false } = {}) {
+  return (Array.isArray(tabs) ? tabs : []).filter(
+    (tab) => (isAuthenticated || !tab.authOnly) && !(desktop && tab.mobileOnly)
+  );
 }
 
 /** All primary tabs in display order (desktop rail). */

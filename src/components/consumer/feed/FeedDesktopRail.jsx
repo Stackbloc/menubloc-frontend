@@ -62,7 +62,6 @@ export default function FeedDesktopRail({
   onMoreClick,
   onShareMyMenuply,
   isAuthenticated = false,
-  showShopBasket = false,
 }) {
   return (
     <aside style={styles.rail} data-testid="feed-desktop-rail" aria-label="Feed navigation">
@@ -92,7 +91,7 @@ export default function FeedDesktopRail({
           <span>Add menu</span>
         </Link>
 
-        {visibleFeedTabs(FEED_RAIL_TABS_AFTER_HOME, { isAuthenticated }).map((tab) => (
+        {visibleFeedTabs(FEED_RAIL_TABS_AFTER_HOME, { isAuthenticated, desktop: true }).map((tab) => (
           <RailTab key={tab.testId} tab={tab} onShareQr={onShareMyMenuply} />
         ))}
       </nav>
@@ -125,12 +124,11 @@ export default function FeedDesktopRail({
       ) : null}
 
       <div style={styles.footer}>
-        {showShopBasket ? (
-          <div style={styles.shopBasketWrap} data-testid="feed-desktop-shop-basket">
-            <FeedShopBasketButton variant="feedDark" />
-            <span style={styles.shopBasketLabel}>Basket</span>
-          </div>
-        ) : null}
+        {/* Basket on every Feed screen (was Search & Shop only). */}
+        <div style={styles.shopBasketWrap} data-testid="feed-desktop-shop-basket">
+          <FeedShopBasketButton variant="feedDark" />
+          <span style={styles.shopBasketLabel}>Basket</span>
+        </div>
         <button
           type="button"
           style={styles.moreBtn}

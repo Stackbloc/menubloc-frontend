@@ -231,13 +231,12 @@ export default function FeedShellPage({ children = null }) {
             })
           }
           isAuthenticated={isAuthenticated}
-          showShopBasket={showShopBasket}
         />
       ) : (
         <FeedMobileHeader
           onMoreClick={() => setMoreOpen(true)}
           isAuthenticated={isAuthenticated}
-          showShopBasket={showShopBasket}
+          showShopBasket={false}
           profileViewToggle={
             showProfileViewToggle
               ? { previewAsConnect, onToggle: toggleProfileView }

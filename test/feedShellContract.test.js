@@ -172,9 +172,11 @@ test("Feed shell: Home|Waiter|Share My QR|X|Deals|Shop|Profile + slim X sheet", 
   assert.match(desktopRail, /FEED_MENU_CAPTURE_HINT/);
   assert.match(desktopRail, /Share My QR/);
   assert.doesNotMatch(desktopRail, /feed-desktop-share-my-menuply/);
-  assert.match(desktopRail, /showShopBasket/);
-  assert.match(desktopRail, /showShopBasket\s*=\s*false/);
+  // Basket shows on every Feed screen on the desktop rail (Andre, 2026-10-12).
+  assert.doesNotMatch(desktopRail, /showShopBasket/);
   assert.match(desktopRail, /feed-desktop-shop-basket/);
+  const feedLinksBasket = read("src/lib/feedShellLinks.js");
+  assert.match(feedLinksBasket, /testId: "feed-nav-basket", openCart: true, mobileOnly: true/);
   assert.match(desktopRail, /resetSearch/);
 
   const mobileHeader = read("src/components/consumer/feed/FeedMobileHeader.jsx");

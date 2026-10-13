@@ -14,6 +14,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import MenuplyXMark from "../../MenuplyXMark.jsx";
 import { FEED_LEFT_TABS, FEED_RIGHT_TABS, visibleFeedTabs } from "../../../lib/feedShellLinks.js";
 import { useConsumer } from "../../../context/ConsumerContext.jsx";
+import { useOrderCart } from "../../../context/OrderCartContext.jsx";
 import { clearStuckMediaChrome } from "../../../pages/consumer/myMenuply/pendingHighlightMedia.js";
 
 export const FEED_PRIMARY_NAV_HEIGHT = 56;
@@ -29,10 +30,16 @@ function tabIsActive(tab, pathname) {
 function TabControl({ tab, onShareQr }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const active = tabIsActive(tab, location.pathname);
+  const { itemCount, openCart } = useOrderCart();
+  const active = !tab.openCart && tabIsActive(tab, location.pathname);
+  const basketBadge = tab.openCart && itemCount > 0 ? (itemCount > 9 ? "9+" : String(itemCount)) : null;
 
   function go() {
     clearStuckMediaChrome();
+    if (tab.openCart) {
+      openCart();
+      return;
+    }
     if (tab.openShareQr) {
       onShareQr?.();
       return;
@@ -44,7 +51,9 @@ function TabControl({ tab, onShareQr }) {
     <button
       type="button"
       data-testid={tab.testId}
-      aria-label={tab.openShareQr ? "Share My QR" : tab.label}
+      aria-label={
+        tab.openShareQr ? "Share My QR" : basketBadge ? `Basket with ${itemCount} items` : tab.label
+      }
       aria-current={active && !tab.openShareQr ? "page" : undefined}
       onClick={go}
       style={{
@@ -59,6 +68,9 @@ function TabControl({ tab, onShareQr }) {
       ) : (
         tab.label
       )}
+      {basketBadge ? (
+        <span aria-hidden="true" style={styles.tabBadge}>{basketBadge}</span>
+      ) : null}
     </button>
   );
 }
@@ -167,6 +179,20 @@ const styles = {
     width: "100%",
   },
   /** X gets the same-width slot as a tab so all items spread evenly. */
+  tabBadge: {
+    marginLeft: 3,
+    minWidth: 15,
+    height: 15,
+    padding: "0 4px",
+    borderRadius: 999,
+    background: "#dc2626",
+    color: "#fff",
+    fontSize: 9,
+    fontWeight: 800,
+    lineHeight: "15px",
+    textAlign: "center",
+    boxSizing: "border-box",
+  },
   tabIcon: {
     fontSize: 22,
     lineHeight: 1,
