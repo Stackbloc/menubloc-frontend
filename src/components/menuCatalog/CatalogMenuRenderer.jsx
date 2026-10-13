@@ -4,7 +4,6 @@ import { useLanguage } from "../../context/LanguageContext.jsx";
 import { useOrderCart } from "../../context/OrderCartContext.jsx";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
 import { getLocalizedField } from "../../utils/getLocalizedField.js";
-import BasketSummaryBar from "../basket/BasketSummaryBar.jsx";
 import ModifierSheet from "../basket/ModifierSheet.jsx";
 import SmartCustomizationSheet, { isCustomizableItem } from "../basket/SmartCustomizationSheet.jsx";
 import PublicMenuMainContent from "../menu-templates/PublicMenuMainContent.jsx";
@@ -38,6 +37,7 @@ import { getNormalizedMenuItemId } from "../../lib/menuItemIdentity.js";
 import { findPinnedMenuItems, withoutPinnedMenuItems } from "../../lib/menuPinnedItem.js";
 import { MenuRowActionsContext } from "./menuRowActionsContext.js";
 import MenuTapToOrderHint from "./MenuTapToOrderHint.jsx";
+import MenuOrderBar from "./MenuOrderBar.jsx";
 import MenuHeaderBookmarkAction from "./MenuHeaderBookmarkAction.jsx";
 import { MenuHeaderTrailingActionContext } from "./menuHeaderTrailingActionContext.js";
 import {
@@ -64,11 +64,15 @@ import { resolvePublicMenuAddressDisplay } from "../../lib/displayAddress.js";
 import { appendSavedMenuPreferenceQueryParams } from "../../lib/dietaryParams.js";
 
 /** Menu Browser rows: Invite covers sharing, so the per-dish Share icon is dropped. */
-const MENU_BROWSER_ROW_ACTIONS = { hideDishShare: true, hideComment: false, tapRowToAdd: true };
+const MENU_BROWSER_ROW_ACTIONS = { hideDishShare: true, hideComment: false, tapRowToAdd: true, labeledAdd: true };
 /** Pinned "From the video" card: Like, Invite, Add to basket only. */
-const PINNED_CARD_ROW_ACTIONS = { hideDishShare: true, hideComment: true, tapRowToAdd: true };
+const PINNED_CARD_ROW_ACTIONS = { hideDishShare: true, hideComment: true, tapRowToAdd: true, labeledAdd: true };
 /** Templates without the post-header slot (allergenBannerSlot) — keep the in-row highlight instead. */
 const SCROLL_TAP_GUARD_MS = 350;
+/** Menu Browser ordering chip — says it is an order surface and how to use it. */
+const ORDER_HERE_CHIP_LABEL = "🛍 Order here · Tap any dish to add it to your basket";
+/** Feed: keep the order bar clear of the mini video player (bottom-right). */
+const FEED_PIP_ORDER_BAR_INSET = 150;
 const PIN_UNSUPPORTED_MENU_STYLES = new Set(["v14", "v15"]);
 
 const API = (import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? "http://localhost:3001" : "")).replace(/\/$/, "");
@@ -200,6 +204,8 @@ export default function CatalogMenuRenderer({
   orderViewerLocation = null,
   /** Extra list bottom padding (px) so floating controls never cover the last row. */
   bottomClearance = 0,
+  /** Right inset (px) for the order bar so floating buttons (Feed mini player, menu FAB) never cover it. */
+  orderBarInsetRight = 0,
   /** When false, Feed PiP owns video — do not mount restaurant contextual player. */
   enableRestaurantContextualVideo = true,
   onLoadStateChange,
@@ -637,6 +643,12 @@ export default function CatalogMenuRenderer({
   // A tap within this window after the menu scrolled is a scroll gesture, not a selection.
   const lastScrollAtRef = useRef(0);
   const isScrollTap = useCallback(() => Date.now() - lastScrollAtRef.current < SCROLL_TAP_GUARD_MS, []);
+  useEffect(() => {
+    // Capture phase: catches the menu scroller and any outer scroller the menu sits in.
+    const onAnyScroll = () => { lastScrollAtRef.current = Date.now(); };
+    document.addEventListener("scroll", onAnyScroll, { capture: true, passive: true });
+    return () => document.removeEventListener("scroll", onAnyScroll, { capture: true });
+  }, []);
   const removeOneFromBasket = useCallback(
     (menuItemId, itemName) => {
       const state = getCartItemState(activeCartItems, menuItemId);
@@ -779,7 +791,7 @@ export default function CatalogMenuRenderer({
           franchiseSlot: null,
           intakeBannerSlot: (
             <>
-              <OrderingUnavailableBanner data={data} />
+              <OrderingUnavailableBanner data={data} label={ORDER_HERE_CHIP_LABEL} />
             </>
           ),
           allergenBannerSlot: (
@@ -893,7 +905,6 @@ export default function CatalogMenuRenderer({
 
       <div
         className="menu-catalog-scroll"
-        onScroll={() => { lastScrollAtRef.current = Date.now(); }}
         style={{
           flex: 1,
           minHeight: 0,
@@ -934,6 +945,24 @@ export default function CatalogMenuRenderer({
           ) : null}
           </MenuRowActionsContext.Provider>
           </MenuHeaderTrailingActionContext.Provider>
+          <MenuOrderBar
+            showEmpty={orderingAvailable}
+            insetRight={Math.max(orderBarInsetRight, gateOrderingByMarket ? FEED_PIP_ORDER_BAR_INSET : 0)}
+            basketProps={
+              hasBasketItems
+                ? {
+                    itemCount,
+                    subtotal: subtotalCents,
+                    restaurantName: cartRestaurantState?.restaurantName,
+                    isCurrentRestaurant: basketMatchesCurrentRestaurant,
+                    summaryLabel: `${itemCount} ${itemCount === 1 ? "item" : "items"} • ${formatMoney(subtotalCents)}`,
+                    ctaLabel: "Review Order",
+                    onOpenBasket: () => navigate("/checkout"),
+                    onClear: () => { for (const line of activeCartItems) removeItem(line.lineId); },
+                  }
+                : null
+            }
+          />
         </div>
       </div>
 
@@ -993,19 +1022,6 @@ export default function CatalogMenuRenderer({
           openModifierFlow(item, item.name, item.description, initialInstructions || "");
         }}
       />
-
-      {hasBasketItems ? (
-        <BasketSummaryBar
-          itemCount={itemCount}
-          subtotal={subtotalCents}
-          restaurantName={cartRestaurantState?.restaurantName}
-          isCurrentRestaurant={basketMatchesCurrentRestaurant}
-          summaryLabel={`${itemCount} ${itemCount === 1 ? "item" : "items"} • ${formatMoney(subtotalCents)}`}
-          ctaLabel="Review Order"
-          onOpenBasket={() => navigate("/checkout")}
-          onClear={() => { for (const line of activeCartItems) removeItem(line.lineId); }}
-        />
-      ) : null}
 
       {addedConfirmation ? (
         <AddedConfirmation

@@ -46,6 +46,8 @@ import {
 
 /** Food/Drinks FAB is 56px, 14px above the bottom nav — keep the last row's price clear of it. */
 const MODE_FAB_CLEARANCE_PX = 84;
+/** Order bar right inset so the menu-book FAB (bottom-right) never covers Review Order. */
+const ORDER_BAR_FAB_INSET_PX = 64;
 
 function useIsMobile(breakpoint = 900) {
   const [isMobile, setIsMobile] = useState(() => {
@@ -860,6 +862,7 @@ export default function BrowseMenus({
                 browseSection={activeSection}
                 onLoadStateChange={handleMenuLoadStateChange}
                 bottomClearance={showModeToggleFab ? MODE_FAB_CLEARANCE_PX : 0}
+                orderBarInsetRight={showModeToggleFab ? ORDER_BAR_FAB_INSET_PX : 0}
               />
             )}
           </div>

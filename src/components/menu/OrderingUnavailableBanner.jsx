@@ -10,9 +10,9 @@ import {
  * Hidden when ordering is unavailable (no yellow unavailable callout).
  * Does not replace MenuPurchaseWaiterHint sticky wiring.
  */
-export default function OrderingUnavailableBanner({ data, style }) {
+export default function OrderingUnavailableBanner({ data, style, label = null }) {
   if (!isOnlineOrderingAvailable(data)) return null;
-  const message = getOrderingAvailabilityMessage(data);
+  const message = label || getOrderingAvailabilityMessage(data);
   if (!message) return null;
 
   return (

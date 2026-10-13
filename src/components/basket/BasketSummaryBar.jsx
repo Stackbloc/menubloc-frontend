@@ -13,6 +13,8 @@ export default function BasketSummaryBar({
   summaryLabel,
   ctaLabel = "View Cart",
   onClear,
+  /** Menu Browser renders the bar inside its own sticky slot instead of fixed to the viewport. */
+  inline = false,
 }) {
   const { t } = useLanguage();
   if (!itemCount) return null;
@@ -27,11 +29,9 @@ export default function BasketSummaryBar({
 
   return (
     <div style={{
-      position: "fixed",
-      left: 12,
-      right: 12,
-      bottom: 12,
-      zIndex: 1100,
+      ...(inline
+        ? { position: "relative" }
+        : { position: "fixed", left: 12, right: 12, bottom: 12, zIndex: 1100 }),
       maxWidth: 540,
       margin: "0 auto",
       display: "flex",

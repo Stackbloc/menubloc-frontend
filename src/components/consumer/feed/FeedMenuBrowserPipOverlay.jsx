@@ -15,6 +15,9 @@ import { clampBrowseTrailIndex } from "../../../lib/feedMenuBrowserTrail.js";
 const SWIPE_MIN_PX = 48;
 
 /** Viewer location for the Feed Menu Browser: location preference first, then detected. */
+/** Space under the last dish so the mini player never covers it. */
+const FEED_MENU_PIP_CLEARANCE_PX = 248;
+
 function resolveFeedMenuBrowserViewer() {
   if (typeof window === "undefined") return null;
   let preferenceLabel = "";
@@ -250,6 +253,7 @@ export default function FeedMenuBrowserPipOverlay({
           gateOrderingByMarket
           orderViewerLocation={viewerLocation}
           enableRestaurantContextualVideo={false}
+          bottomClearance={FEED_MENU_PIP_CLEARANCE_PX}
         />
       </div>
     </div>
@@ -348,12 +352,14 @@ const styles = {
     fontWeight: 600,
     color: "rgba(232,240,236,0.65)",
   },
+  // The menu scrolls inside CatalogMenuRenderer (.menu-catalog-scroll) so its sticky order bar
+  // and scroll-tap guard work; bottom clearance for the mini player is passed as bottomClearance.
   menuArea: {
     flex: 1,
     minHeight: 0,
-    overflow: "auto",
-    WebkitOverflowScrolling: "touch",
-    paddingBottom: "calc(max(28px, env(safe-area-inset-bottom)) + 220px)",
+    display: "flex",
+    flexDirection: "column",
+    overflow: "hidden",
     touchAction: "pan-y",
   },
 };
