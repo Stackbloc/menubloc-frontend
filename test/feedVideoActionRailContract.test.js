@@ -130,12 +130,14 @@ test("Feed videos: play/pause circle + Invite/Share holds playback", () => {
   assert.match(btn, /aria-label=\{paused \? "Play video" : "Pause video"\}/);
 });
 
-test("Menu Browser mini player shows a play circle while the video is paused", () => {
+test("Menu Browser mini player has the same play/pause toggle as the full feed", () => {
   for (const rel of [
     "src/pages/consumer/myMenuply/SeeWhosEatingFullscreen.jsx",
     "src/components/consumer/feed/DealVideoSwipe.jsx",
   ]) {
     const src = read(rel);
-    assert.match(src, /\{userPaused \? \(\s*\/\/[^\n]*\n\s*<FeedVideoPlayPauseButton\s+paused\s+onToggle=\{\(\) => setUserPaused\(false\)\}/);
+    // One shared userPaused state drives both the full-screen circle and the mini-player circle.
+    const toggles = src.match(/onToggle=\{\(\) => setUserPaused\(\(prev\) => !prev\)\}/g) || [];
+    assert.equal(toggles.length, 2, rel);
   }
 });

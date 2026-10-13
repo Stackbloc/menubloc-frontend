@@ -276,6 +276,18 @@ export default function SeeWhosEatingFullscreen({
   }, [index, item?.id]);
 
   // Hold / release playback for the viewer pause and while Invite/Share is open.
+  // Any async play (autoplay retries when the Menu Browser opens, sound toggles) must not
+  // override a pause — re-pause immediately while playback is held.
+  useEffect(() => {
+    const el = videoRef.current;
+    if (!el) return undefined;
+    const onPlay = () => {
+      if (holdPlaybackRef.current) el.pause();
+    };
+    el.addEventListener("play", onPlay);
+    return () => el.removeEventListener("play", onPlay);
+  }, [item?.id]);
+
   useEffect(() => {
     const el = videoRef.current;
     if (!el) return;
@@ -782,14 +794,13 @@ export default function SeeWhosEatingFullscreen({
           data-testid="feed-menu-browser-pip-video-nav"
         >
           <FeedPipExpandButton onExpand={closeMenuBrowser} />
-          {userPaused ? (
-            // Paused while reading the menu → restart playback right from the mini player.
-            <FeedVideoPlayPauseButton
-              paused
-              onToggle={() => setUserPaused(false)}
-              style={{ left: "50%", top: "50%", transform: "translate(-50%, -50%)" }}
-            />
-          ) : null}
+          {/* Same play/pause as the full-screen feed (shared state): pause or resume while reading the menu. */}
+          <FeedVideoPlayPauseButton
+            paused={userPaused}
+            onToggle={() => setUserPaused((prev) => !prev)}
+            // Beside the mini player's sound button (bottom center).
+            style={{ left: "calc(50% + 24px)", bottom: 9 }}
+          />
           <button
             type="button"
             style={{
