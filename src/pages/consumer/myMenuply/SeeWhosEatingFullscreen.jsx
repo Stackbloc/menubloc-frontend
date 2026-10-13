@@ -5,6 +5,7 @@
  */
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useOrderCart } from "../../../context/OrderCartContext.jsx";
 import { createPortal } from "react-dom";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import ShareButton from "../../../components/share/ShareButton.jsx";
@@ -142,6 +143,11 @@ export default function SeeWhosEatingFullscreen({
 
   const restaurantRef = restaurantRefFromFeedItem(item);
   const menuBrowserOpen = Boolean(browseSession);
+  // Ordering from the Feed menu (Andre, 2026-10-12): once something is in the basket the clip
+  // loops instead of auto-advancing, so the menu never switches restaurants mid-order. Arrows /
+  // swipes still move on; auto-advance resumes after checkout clears the basket.
+  const { itemCount: basketItemCount = 0 } = useOrderCart();
+  const holdForOrder = menuBrowserOpen && basketItemCount > 0;
   const browseTrail = useMemo(() => {
     if (!browseSession) return [];
     return buildBrowseMenuTrail(
@@ -772,7 +778,7 @@ export default function SeeWhosEatingFullscreen({
         }}
         playsInline
         muted={videoMuted}
-        loop={!(isFeedHome && activeItems.length > 1)}
+        loop={holdForOrder || !(isFeedHome && activeItems.length > 1)}
         autoPlay
         controls={false}
         preload="auto"
@@ -785,6 +791,7 @@ export default function SeeWhosEatingFullscreen({
         onEnded={
           isFeedHome && activeItems.length > 1
             ? () => {
+                if (holdForOrder) return;
                 goNext();
               }
             : undefined
