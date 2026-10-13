@@ -80,19 +80,20 @@ test("isOnlineOrderingAvailable respects ordering_availability.available", () =>
   );
 });
 
-test("isOnlineOrderingAvailable fails closed without availability payload for unpaid restaurants", () => {
+test("isOnlineOrderingAvailable fails closed without availability payload unless ordering is switched on (one plan)", () => {
   assert.equal(
     isOnlineOrderingAvailable({
       order_acceptance_status: "accepting_orders",
-      subscription_plan: "unverified",
+      subscription_plan: "pro",
+      is_pro: true,
     }),
     false
   );
   assert.equal(
     isOnlineOrderingAvailable({
       order_acceptance_status: "accepting_orders",
-      subscription_plan: "pro",
-      is_pro: true,
+      subscription_plan: "unverified",
+      ordering_enabled: true,
     }),
     true
   );

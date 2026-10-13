@@ -84,19 +84,16 @@ export function isOnlineOrderingAvailable(data) {
   if (availability && typeof availability.available === "boolean") {
     return availability.available === true;
   }
-  // Fail closed when the menu payload omits ordering_availability: require a paid
-  // subscriber plan AND accepting_orders (zero unpaid restaurants may add to cart).
+  // Fail closed when the menu payload omits ordering_availability. One plan (2026-10-12): no
+  // plan gate — the restaurant's ordering switch (Stripe payouts connected) + accepting orders.
   const props = buildRestaurantStatusLightProps(data);
-  return hasPaidSubscriptionPlan(props) && hasOnlineOrderingEnabled(props);
+  const orderingEnabled = (data?.ordering_enabled ?? data?.restaurant?.ordering_enabled) === true;
+  return orderingEnabled && hasOnlineOrderingEnabled(props);
 }
 
-/** Tap-to-order coach on public menus — paid plan + accepting online orders only. */
+/** Tap-to-order coach on public menus — only when online ordering is available. */
 export function shouldShowMenuPurchaseWaiterHint(data) {
-  const props = buildRestaurantStatusLightProps(data);
-  return (
-    hasPaidSubscriptionPlan(props) &&
-    hasOnlineOrderingEnabled(props)
-  );
+  return isOnlineOrderingAvailable(data);
 }
 
 export function hasStandardSubscriptionPlan({ subscriptionPlan, planSlug } = {}) {
