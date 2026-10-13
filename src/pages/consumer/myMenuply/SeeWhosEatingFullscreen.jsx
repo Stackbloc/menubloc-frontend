@@ -908,7 +908,11 @@ export default function SeeWhosEatingFullscreen({
             Restaurant
           </span>
         ) : null}
-        <FeedPlaceCaption item={item} onMenuLinkClick={onFeedMenuLinkClick} />
+        <FeedPlaceCaption
+          item={item}
+          onMenuLinkClick={onFeedMenuLinkClick}
+          onOpenMenu={restaurantRef?.restaurant_id ? openMenuBrowser : null}
+        />
         {connectNotice ? <p style={styles.notice}>{connectNotice}</p> : null}
         {connectError ? <p style={styles.error}>{connectError}</p> : null}
         {item.is_recommend ? <p style={styles.recommend}>Recommend</p> : null}

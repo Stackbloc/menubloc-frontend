@@ -642,9 +642,11 @@ export default function DealVideoSwipe({
             to={item.restaurant_href}
             style={styles.restaurantLink}
             data-testid="feed-deals-restaurant"
-            onClick={() => {
-              const ref = restaurantRefFromDealItem(item);
-              if (ref) recordFeedMenuOpen(ref);
+            onClick={(e) => {
+              // Open this restaurant's menu in the Menu Browser (video keeps playing in the mini player).
+              e.preventDefault();
+              e.stopPropagation();
+              openMenuBrowser(e);
             }}
           >
             {item.restaurant_name}

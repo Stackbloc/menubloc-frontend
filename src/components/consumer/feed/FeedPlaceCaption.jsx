@@ -66,6 +66,11 @@ export default function FeedPlaceCaption({
   item,
   compact = false,
   onMenuLinkClick,
+  /**
+   * Feed reels: open the restaurant's menu (dish from the video pinned + highlighted) in the
+   * Menu Browser instead of navigating to the dish-detail / profile page.
+   */
+  onOpenMenu = null,
   testId = "feed-video-place-caption",
 }) {
   const placeCaption = resolveFeedPlaceCaption(item);
@@ -93,6 +98,10 @@ export default function FeedPlaceCaption({
             onClick={(e) => {
               e.stopPropagation();
               onMenuLinkClick?.();
+              if (onOpenMenu) {
+                e.preventDefault();
+                onOpenMenu(e);
+              }
             }}
           >
             {placeCaption.restaurant.label}
@@ -112,6 +121,10 @@ export default function FeedPlaceCaption({
             onClick={(e) => {
               e.stopPropagation();
               onMenuLinkClick?.();
+              if (onOpenMenu) {
+                e.preventDefault();
+                onOpenMenu(e);
+              }
             }}
           >
             {placeCaption.menuItem.label}

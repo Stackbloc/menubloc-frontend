@@ -141,3 +141,11 @@ test("Menu Browser mini player has the same play/pause toggle as the full feed",
     assert.equal(toggles.length, 2, rel);
   }
 });
+
+test("Video caption links open the restaurant menu (dish highlighted) in the Menu Browser", () => {
+  const cap = read("src/components/consumer/feed/FeedPlaceCaption.jsx");
+  assert.match(cap, /onOpenMenu = null/);
+  assert.equal((cap.match(/if \(onOpenMenu\) \{\s*e\.preventDefault\(\);\s*onOpenMenu\(e\);/g) || []).length, 2);
+  assert.match(read("src/pages/consumer/myMenuply/SeeWhosEatingFullscreen.jsx"), /onOpenMenu=\{restaurantRef\?\.restaurant_id \? openMenuBrowser : null\}/);
+  assert.match(read("src/components/consumer/feed/DealVideoSwipe.jsx"), /data-testid="feed-deals-restaurant"[\s\S]{0,300}openMenuBrowser\(e\)/);
+});
