@@ -121,3 +121,17 @@ test("Feed Menu Browser header shows an Order icon after Comment (green when ava
   assert.match(order, /Online ordering not available/);
   assert.match(order, /likeButtonVisualStyle\(\{ selected: available/);
 });
+
+test("From the video pins up to three dishes (feed menu_items / deal eligible_items)", () => {
+  const renderer = fs.readFileSync(path.join(root, "src/components/menuCatalog/CatalogMenuRenderer.jsx"), "utf8");
+  assert.match(renderer, /findPinnedMenuItems\(displaySections, subjects, 3\)/);
+  assert.match(renderer, /data-testid="menu-browser-pinned-dish"/);
+  const deals = fs.readFileSync(path.join(root, "src/lib/feedDealVideos.js"), "utf8");
+  assert.match(deals, /menu_items: \(Array\.isArray\(deal\.eligible_items\)/);
+  for (const rel of ["src/pages/consumer/myMenuply/SeeWhosEatingFullscreen.jsx", "src/components/consumer/feed/DealVideoSwipe.jsx"]) {
+    assert.match(fs.readFileSync(path.join(root, rel), "utf8"), /item\.menu_items\.slice\(0, 3\)/);
+  }
+  const owner = fs.readFileSync(path.join(root, "src/pages/owner/OwnerVideoCuration.jsx"), "utf8");
+  assert.match(owner, /title="Also features these dishes"/);
+  assert.match(owner, /body\.applies_to_menu_item_ids = /);
+});

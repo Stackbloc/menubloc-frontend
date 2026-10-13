@@ -52,3 +52,19 @@ test("withoutPinnedMenuItem removes only the pinned row and drops emptied sectio
   assert.equal(solo.length, 2);
   assert.equal(withoutPinnedMenuItem(sections, null), sections);
 });
+
+test("findPinnedMenuItems pins up to three dishes in video order, skipping misses/dupes", async () => {
+  const { findPinnedMenuItems, withoutPinnedMenuItems } = await import("../src/lib/menuPinnedItem.js");
+  const matches = findPinnedMenuItems(sections, [
+    { id: 541700, name: "Spicy Chicken Sandwich Combo" },
+    { id: null, name: "Not On Menu" },
+    { id: 9, name: "Frosty" },
+    { id: 541700, name: "dupe" },
+    { id: 541657, name: "Breakfast Baconator" },
+    { id: 541634, name: "Spicy Chicken Sandwich" },
+  ]);
+  assert.deepEqual(matches.map((m) => m.item.menu_item_id), ["541700", "9", "541657"]);
+  const rest = withoutPinnedMenuItems(sections, matches);
+  assert.deepEqual(rest.map((s) => s.title), ["Chicken"]);
+  assert.deepEqual(rest[0].items.map((i) => i.menu_item_id), ["541634"]);
+});

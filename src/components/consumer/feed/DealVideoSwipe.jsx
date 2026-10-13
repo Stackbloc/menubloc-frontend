@@ -484,6 +484,15 @@ export default function DealVideoSwipe({
               ? inviteMenuItemName
               : null
           }
+          highlightMenuItems={
+            restaurantRef?.restaurant_id &&
+            browseRestaurantRef?.restaurant_id &&
+            String(restaurantRef.restaurant_id) === String(browseRestaurantRef.restaurant_id) &&
+            Array.isArray(item?.menu_items) &&
+            item.menu_items.length
+              ? item.menu_items.slice(0, 3)
+              : null
+          }
           bottomInset={safeBottomInset}
           onClose={closeMenuBrowser}
           onTrailPrev={onBrowseTrailPrev}

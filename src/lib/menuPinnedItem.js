@@ -70,3 +70,42 @@ export function withoutPinnedMenuItem(sections, match) {
   });
   return out;
 }
+
+/**
+ * Up to three dishes from a video (feed `menu_items` / deal `eligible_items`), each matched by
+ * id then exact name; duplicates and misses are skipped. Order follows the video's dish order.
+ * @param {Array<{ items?: object[] }>} sections
+ * @param {Array<{ id?: string|number|null, name?: string|null }>} subjects
+ */
+export function findPinnedMenuItems(sections, subjects = [], max = 3) {
+  const out = [];
+  const seen = new Set();
+  for (const subject of Array.isArray(subjects) ? subjects : []) {
+    if (out.length >= max) break;
+    const match = findPinnedMenuItem(sections, {
+      menuItemId: subject?.id ?? null,
+      menuItemName: subject?.name ?? null,
+    });
+    if (!match) continue;
+    const key = `${match.sectionIndex}:${match.itemIndex}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(match);
+  }
+  return out;
+}
+
+/** Sections without any of the pinned rows (emptied sections dropped). */
+export function withoutPinnedMenuItems(sections, matches) {
+  const list = Array.isArray(matches) ? matches : [];
+  if (!list.length) return sections;
+  const drop = new Set(list.map((m) => `${m.sectionIndex}:${m.itemIndex}`));
+  const out = [];
+  (Array.isArray(sections) ? sections : []).forEach((section, s) => {
+    const items = (Array.isArray(section?.items) ? section.items : []).filter(
+      (_, i) => !drop.has(`${s}:${i}`)
+    );
+    if (items.length > 0) out.push(items.length === (section?.items || []).length ? section : { ...section, items });
+  });
+  return out;
+}

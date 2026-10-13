@@ -37,7 +37,7 @@ import useCatalogDietaryPreferencesSession from "../../hooks/useCatalogDietaryPr
 import useMenuPreferenceBannerSession from "../../hooks/useMenuPreferenceBannerSession.js";
 import useMenuItemHighlight from "../../hooks/useMenuItemHighlight.js";
 import { getNormalizedMenuItemId } from "../../lib/menuItemIdentity.js";
-import { findPinnedMenuItem, withoutPinnedMenuItem } from "../../lib/menuPinnedItem.js";
+import { findPinnedMenuItems, withoutPinnedMenuItems } from "../../lib/menuPinnedItem.js";
 import { MenuRowActionsContext } from "./menuRowActionsContext.js";
 import { MenuHeaderTrailingActionContext } from "./menuHeaderTrailingActionContext.js";
 import MenuHeaderOrderAction from "./MenuHeaderOrderAction.jsx";
@@ -192,6 +192,8 @@ export default function CatalogMenuRenderer({
   highlightMenuItemId = null,
   /** Dish name fallback when the highlight id is not on this menu (Feed videos). */
   highlightMenuItemName = null,
+  /** Feed videos with several dishes: [{ id, name }] (up to 3), video order. */
+  highlightMenuItems = null,
   /** When set (e.g. "From the video"), the matched dish is pinned under the restaurant header. */
   pinnedItemLabel = null,
   /** Feed Menu Browser only: Order icon after Comment in the restaurant header. */
@@ -435,27 +437,28 @@ export default function CatalogMenuRenderer({
     [sections, dietaryFilterActive, dietPrefs, enabledAllergenKeys]
   );
 
-  const subjectMatch = useMemo(
-    () =>
-      highlightMenuItemId != null || highlightMenuItemName
-        ? findPinnedMenuItem(displaySections, {
-            menuItemId: highlightMenuItemId,
-            menuItemName: highlightMenuItemName,
-          })
-        : null,
-    [displaySections, highlightMenuItemId, highlightMenuItemName]
-  );
-  const pinnedMatch =
-    pinnedItemLabel && subjectMatch && !PIN_UNSUPPORTED_MENU_STYLES.has(resolveTemplateMenuStyle(data?.menu_style))
-      ? subjectMatch
-      : null;
+  const subjectMatches = useMemo(() => {
+    const subjects =
+      Array.isArray(highlightMenuItems) && highlightMenuItems.length
+        ? highlightMenuItems
+        : highlightMenuItemId != null || highlightMenuItemName
+          ? [{ id: highlightMenuItemId, name: highlightMenuItemName }]
+          : [];
+    return subjects.length ? findPinnedMenuItems(displaySections, subjects, 3) : [];
+  }, [displaySections, highlightMenuItems, highlightMenuItemId, highlightMenuItemName]);
+  const pinnedMatches =
+    pinnedItemLabel && !PIN_UNSUPPORTED_MENU_STYLES.has(resolveTemplateMenuStyle(data?.menu_style))
+      ? subjectMatches
+      : [];
   const listSections = useMemo(
-    () => withoutPinnedMenuItem(displaySections, pinnedMatch),
-    [displaySections, pinnedMatch]
+    () => withoutPinnedMenuItems(displaySections, pinnedMatches),
+    [displaySections, pinnedMatches]
   );
-  const subjectMatchId = subjectMatch ? getNormalizedMenuItemId(subjectMatch.item) : null;
-  const effectiveHighlightId =
-    subjectMatchId != null && String(subjectMatchId).trim() !== ""
+  const subjectMatchId = subjectMatches[0] ? getNormalizedMenuItemId(subjectMatches[0].item) : null;
+  // Pinned cards carry their own highlight; the row highlight is for in-list (unpinned) matches.
+  const effectiveHighlightId = pinnedMatches.length
+    ? null
+    : subjectMatchId != null && String(subjectMatchId).trim() !== ""
       ? subjectMatchId
       : highlightMenuItemId != null && String(highlightMenuItemId).trim() !== ""
         ? highlightMenuItemId
@@ -651,7 +654,7 @@ export default function CatalogMenuRenderer({
     return <MenuHeaderOrderAction available={available} message={message} href={href} />;
   }, [showHeaderOrderAction, data, currentRestaurantId, orderViewerLocation, distanceMiles]);
 
-  const pinnedCard = pinnedMatch ? (
+  const pinnedCard = pinnedMatches.length ? (
     <section
       data-testid="menu-browser-pinned-item"
       aria-label={pinnedItemLabel}
@@ -677,12 +680,18 @@ export default function CatalogMenuRenderer({
         {pinnedItemLabel}
       </div>
       <MenuRowActionsContext.Provider value={PINNED_CARD_ROW_ACTIONS}>
+        {pinnedMatches.map((match) => (
+        <div
+          key={`${match.sectionIndex}:${match.itemIndex}`}
+          data-testid="menu-browser-pinned-dish"
+          style={{ border: "2px solid #22c55e", borderRadius: 10, padding: "0 8px", marginBottom: 6, background: "#fff" }}
+        >
         <PublicMenuItemCard
           density="classic"
           editorialRefresh={!["v12", "v13", "v17"].includes(menuPresentationStyle)}
-          it={pinnedMatch.item}
-          sIdx={pinnedMatch.sectionIndex}
-          iIdx={pinnedMatch.itemIndex}
+          it={match.item}
+          sIdx={match.sectionIndex}
+          iIdx={match.itemIndex}
           language={language}
           t={t}
           data={data}
@@ -703,6 +712,8 @@ export default function CatalogMenuRenderer({
           menuThemeSettings={menuThemeSettings}
           showImage={false}
         />
+        </div>
+        ))}
       </MenuRowActionsContext.Provider>
     </section>
   ) : null;

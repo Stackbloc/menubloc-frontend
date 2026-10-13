@@ -63,6 +63,7 @@ export default function FeedMenuBrowserPipOverlay({
   trailIndex = 0,
   highlightMenuItemId = null,
   highlightMenuItemName = null,
+  highlightMenuItems = null,
   bottomInset = 0,
   onClose,
   onTrailPrev,
@@ -244,6 +245,7 @@ export default function FeedMenuBrowserPipOverlay({
           isMobile
           highlightMenuItemId={highlightMenuItemId}
           highlightMenuItemName={highlightMenuItemName}
+          highlightMenuItems={highlightMenuItems}
           pinnedItemLabel="From the video"
           showHeaderOrderAction
           orderViewerLocation={viewerLocation}

@@ -57,6 +57,11 @@ export function mapDealRowToFeedVideoItem(deal) {
     eligible_item_names: (Array.isArray(deal.eligible_items) ? deal.eligible_items : [])
       .map((i) => String(i?.name || "").trim())
       .filter(Boolean),
+    // Up to three dishes the deal video features → pinned under "From the video".
+    menu_items: (Array.isArray(deal.eligible_items) ? deal.eligible_items : [])
+      .map((i) => ({ id: i?.id ?? null, name: String(i?.name || "").trim() || null }))
+      .filter((i) => i.id != null || i.name)
+      .slice(0, 3),
     discount_label: formatDealDiscountLabel(deal),
     feed_promoted: deal.feed_promoted === true,
     // Video Manager "play muted": DealVideoSwipe forces mute + locks the sound toggle.

@@ -26,7 +26,7 @@ import {
 import CkRestaurantMenuPicker, {
   useCkPlaceFromVideoIds,
 } from "../../components/ck/CkRestaurantMenuPicker.jsx";
-import { dishLabel } from "../../lib/foodActivityApi.js";
+import { asDishPlace, dishLabel, searchReportPlaces } from "../../lib/foodActivityApi.js";
 import {
   DEAL_MEAL_PERIODS,
   formatMealTimeDealCaption,
@@ -779,7 +779,16 @@ const MAX_DEAL_MENU_ITEMS = 3;
  * Pick up to 3 menu items the deal applies to — each item gets the same deal terms
  * (not a bundle). Items come from the restaurant's deal menu (CK canonical, else public).
  */
-function DealMenuItemsPicker({ items, selected, onChange, loading, disabled }) {
+function DealMenuItemsPicker({
+  items,
+  selected,
+  onChange,
+  loading,
+  disabled,
+  max = MAX_DEAL_MENU_ITEMS,
+  title = null,
+  hint = null,
+}) {
   const [search, setSearch] = useState("");
   const selectedIds = new Set(selected.map((i) => String(i.id)));
   const q = search.trim().toLowerCase();
@@ -787,15 +796,16 @@ function DealMenuItemsPicker({ items, selected, onChange, loading, disabled }) {
   const hits = items.filter(
     (i) => !selectedIds.has(String(i.id)) && (!q || String(i.name || "").toLowerCase().includes(q))
   );
-  const full = selected.length >= MAX_DEAL_MENU_ITEMS;
+  const full = selected.length >= max;
 
   return (
     <div style={{ display: "grid", gap: 6 }} data-testid="owner-deal-menu-items">
       <span style={{ fontWeight: 700, fontSize: 13 }}>
-        Applies to menu items <span style={{ fontWeight: 400, color: OWNER_COLORS.muted }}>(optional, up to 3)</span>
+        {title || "Applies to menu items"}{" "}
+        <span style={{ fontWeight: 400, color: OWNER_COLORS.muted }}>(optional, up to {max})</span>
       </span>
       <span style={{ fontSize: 12, color: OWNER_COLORS.muted }}>
-        Each item gets the same deal on its own. For several items at one price, create a combo deal.
+        {hint || "Each item gets the same deal on its own. For several items at one price, create a combo deal."}
       </span>
       {selected.length ? (
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
@@ -1723,6 +1733,48 @@ function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
     setDealItemsDirty(true);
   }
 
+  // Feed (managed) videos can feature up to 3 dishes: main dish above + up to 2 extras here.
+  const isManagedVideo = video.video_kind === "managed";
+  const extrasRestaurantId = isManagedVideo ? restaurant?.restaurant_id || null : null;
+  const [restaurantDishes, setRestaurantDishes] = useState({ state: "idle", items: [] });
+  const [extraDishes, setExtraDishes] = useState([]);
+  const [extraDishesDirty, setExtraDishesDirty] = useState(false);
+  useEffect(() => {
+    if (!extrasRestaurantId) {
+      setRestaurantDishes({ state: "idle", items: [] });
+      return undefined;
+    }
+    let cancelled = false;
+    setRestaurantDishes((prev) => ({ ...prev, state: "loading" }));
+    searchReportPlaces({ type: "menu_item", q: "", restaurant_id: extrasRestaurantId, limit: 400 })
+      .then((data) => {
+        if (cancelled) return;
+        const items = (data.results || [])
+          .map(asDishPlace)
+          .filter((d) => d && Number.isInteger(Number(d.menu_item_id)))
+          .map((d) => ({ id: Number(d.menu_item_id), name: d.item_name || dishLabel(d), price: d.price ?? null }));
+        setRestaurantDishes({ state: "ready", items });
+      })
+      .catch(() => {
+        if (!cancelled) setRestaurantDishes({ state: "error", items: [] });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [extrasRestaurantId]);
+  useEffect(() => {
+    if (!isManagedVideo || extraDishesDirty || restaurantDishes.state !== "ready") return;
+    const byId = new Map(restaurantDishes.items.map((d) => [String(d.id), d]));
+    setExtraDishes(
+      (video.applies_to_menu_item_ids || []).map((id) => byId.get(String(id))).filter(Boolean)
+    );
+  }, [isManagedVideo, extraDishesDirty, restaurantDishes, video.applies_to_menu_item_ids]);
+
+  function handleExtraDishesChange(next) {
+    setExtraDishes(next.slice(0, 2));
+    setExtraDishesDirty(true);
+  }
+
   function handleDishChange(next) {
     setDish(next);
     if (next && !title.trim()) {
@@ -1760,6 +1812,18 @@ function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
       }
       if (video.video_kind === "managed") {
         body.cluster_id = clusterId;
+        // Always send the extras with the dish (the server clears them on a dish/restaurant save).
+        const restaurantChanged =
+          String(restaurant?.restaurant_id || "") !== String(video.restaurant_id || "");
+        if (!dish?.menu_item_id) {
+          body.applies_to_menu_item_ids = [];
+        } else if (restaurantDishes.state === "ready") {
+          body.applies_to_menu_item_ids = extraDishes
+            .map((d) => Number(d.id))
+            .filter((id) => id !== Number(dish.menu_item_id));
+        } else {
+          body.applies_to_menu_item_ids = restaurantChanged ? [] : video.applies_to_menu_item_ids || [];
+        }
       }
       const result = await patchOwnerVideoMetadata(
         video.video_kind,
@@ -2214,6 +2278,19 @@ function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
               testIdPrefix="owner-video"
             />
           )
+        ) : null}
+
+        {isManagedVideo && dish?.menu_item_id && extrasRestaurantId ? (
+          <DealMenuItemsPicker
+            items={restaurantDishes.items.filter((d) => String(d.id) !== String(dish.menu_item_id))}
+            selected={extraDishes}
+            onChange={handleExtraDishesChange}
+            loading={restaurantDishes.state === "loading"}
+            disabled={busy}
+            max={2}
+            title="Also features these dishes"
+            hint="Up to 3 dishes per video in total (main dish + 2). All are highlighted under “From the video” in the Menu Browser."
+          />
         ) : null}
 
         {isDealVideo && dealRestaurantId ? (
