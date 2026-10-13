@@ -725,7 +725,7 @@ export default function OwnerProfileManager() {
           <input
             value={query}
             onChange={(e) => onQueryChange(e.target.value)}
-            placeholder="Search by name, city, or id…"
+            placeholder="Search by name, street, city, ZIP, or id…"
             data-testid="owner-profile-manager-search-input"
             style={{ ...inputStyle, maxWidth: 480 }}
           />
@@ -758,8 +758,8 @@ export default function OwnerProfileManager() {
                     <div style={{ fontWeight: 700, fontSize: 13, color: OWNER_COLORS.ink }}>{name}</div>
                     <div style={{ fontSize: 12, color: OWNER_COLORS.muted, marginTop: 2 }}>
                       {r.is_franchise_brand
-                        ? "One banner and menu for the whole franchise"
-                        : `#${id}${r.city || r.state ? ` · ${[r.city, r.state].filter(Boolean).join(", ")}` : ""}`}
+                        ? "One banner and menu for the whole franchise — add a street, city or ZIP to pick one location"
+                        : `#${id} · ${[r.address_line1, r.city, r.state].filter(Boolean).join(", ")}`}
                     </div>
                   </button>
                 );
