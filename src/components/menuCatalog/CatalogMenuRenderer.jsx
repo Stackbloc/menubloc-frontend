@@ -947,7 +947,8 @@ export default function CatalogMenuRenderer({
           </MenuRowActionsContext.Provider>
           </MenuHeaderTrailingActionContext.Provider>
           <MenuOrderBar
-            showEmpty={orderingAvailable}
+            // No empty-state bar: the chip already says how to order (Andre: overkill).
+            showEmpty={false}
             insetRight={Math.max(orderBarInsetRight, gateOrderingByMarket ? FEED_PIP_ORDER_BAR_INSET : 0)}
             basketProps={
               hasBasketItems
