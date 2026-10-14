@@ -463,6 +463,14 @@ export const listMenuConsoleAvailableClusters = (params = {}) => {
   const qs = new URLSearchParams(params).toString();
   return get(`/api/owner/menu-console/clusters/available${qs ? `?${qs}` : ""}`);
 };
+/** Where a restaurant sits on a cluster page (20 shown before "Load more") + the full order. */
+export const getMenuConsoleClusterOrder = (restaurantId, clusterId) =>
+  get(`/api/owner/menu-console/restaurants/${encodeURIComponent(restaurantId)}/clusters/${encodeURIComponent(clusterId)}/order`);
+/** Place a restaurant right after another one in a cluster (null = first). */
+export const setMenuConsoleClusterPosition = (restaurantId, clusterId, afterRestaurantId) =>
+  put(`/api/owner/menu-console/restaurants/${encodeURIComponent(restaurantId)}/clusters/${encodeURIComponent(clusterId)}/position`, {
+    after_restaurant_id: afterRestaurantId ?? null,
+  });
 export const setMenuConsoleRestaurantClusters = (restaurantId, clusterIds = []) =>
   req(`/api/owner/menu-console/restaurants/${encodeURIComponent(restaurantId)}/clusters`, {
     method: "PUT",

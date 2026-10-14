@@ -24,7 +24,9 @@ import {
   clearMenuConsoleMenuItems,
   deleteMenuConsoleRestaurant,
   getMenuConsoleRestaurantDeleteImpact,
+  getMenuConsoleClusterOrder,
   listMenuConsoleAvailableClusters,
+  setMenuConsoleClusterPosition,
   setMenuConsoleRestaurantClusters,
 } from "../../lib/ownerApi.js";
 
@@ -298,6 +300,107 @@ function ClusterPicker({ selectedIds, options, knownClusters, onChange, disabled
           <option key={cluster.id} value={String(cluster.id)}>{clusterLabel(cluster)}</option>
         ))}
       </select>
+    </div>
+  );
+}
+
+/**
+ * Saved cluster memberships: where the restaurant shows on each cluster page and
+ * a way to move it. New members are added last, so on big clusters they sit
+ * behind "Load more restaurants" until placed.
+ */
+function ClusterPositions({ restaurantId, clusterIds, clusterById }) {
+  if (!restaurantId || !clusterIds?.length) return null;
+  return (
+    <div data-testid="owner-restaurant-cluster-positions" style={{ marginTop: 12, display: "grid", gap: 10 }}>
+      <div style={fieldLabel}>Position on cluster page</div>
+      {clusterIds.map((cid) => (
+        <ClusterPositionRow key={cid} restaurantId={restaurantId} clusterId={cid} cluster={clusterById.get(Number(cid))} />
+      ))}
+    </div>
+  );
+}
+
+function ClusterPositionRow({ restaurantId, clusterId, cluster }) {
+  const [data, setData] = useState(null);
+  const [after, setAfter] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    setData(null);
+    setError("");
+    getMenuConsoleClusterOrder(restaurantId, clusterId)
+      .then((d) => { if (!cancelled) setData(d); })
+      .catch((err) => { if (!cancelled) setError(err?.status === 404 ? "" : err?.message || "Could not load the order"); });
+    return () => { cancelled = true; };
+  }, [restaurantId, clusterId]);
+
+  if (!data && !error) return null;
+  const pos = data?.position;
+
+  async function save() {
+    setBusy(true);
+    setError("");
+    setSaved(false);
+    try {
+      const d = await setMenuConsoleClusterPosition(restaurantId, clusterId, after === "first" ? null : Number(after));
+      setData(d);
+      setAfter("");
+      setSaved(true);
+    } catch (err) {
+      setError(err?.message || "Could not move it");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div style={{ padding: 10, borderRadius: 10, border: `1px solid ${OWNER_COLORS.line}`, background: "#fff", fontSize: 13 }}>
+      <div style={{ fontWeight: 700 }}>{cluster ? clusterLabel(cluster) : `Cluster #${clusterId}`}</div>
+      {pos ? (
+        <div style={{ color: pos.on_first_page ? OWNER_COLORS.muted : "#93370d", marginTop: 2 }}>
+          #{pos.position} of {pos.total}
+          {pos.after ? ` · after ${pos.after.restaurant_name}` : " · first"}
+          {pos.on_first_page ? " · on the first page" : ` · hidden until "Load more" (first ${pos.page_size} show)`}
+        </div>
+      ) : null}
+      {data ? (
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
+          <select
+            aria-label={`Show after, in ${cluster?.name || `cluster #${clusterId}`}`}
+            value={after}
+            onChange={(e) => { setAfter(e.target.value); setSaved(false); }}
+            style={{ ...inputStyle, flex: "1 1 220px", fontSize: 13 }}
+          >
+            <option value="">Show it after…</option>
+            <option value="first">— First on the page —</option>
+            {data.order
+              .filter((m) => m.restaurant_id !== Number(restaurantId))
+              .map((m) => (
+                <option key={m.restaurant_id} value={String(m.restaurant_id)}>
+                  #{m.position} {m.restaurant_name}{m.address_line1 ? ` · ${m.address_line1}` : ""}
+                </option>
+              ))}
+          </select>
+          <button
+            type="button"
+            disabled={!after || busy}
+            onClick={save}
+            style={{
+              border: "none", borderRadius: 8, padding: "6px 12px", fontWeight: 700,
+              background: OWNER_COLORS.accent, color: "#fff", opacity: !after || busy ? 0.5 : 1,
+              cursor: !after || busy ? "not-allowed" : "pointer",
+            }}
+          >
+            {busy ? "Moving…" : "Move"}
+          </button>
+          {saved ? <span style={{ alignSelf: "center", color: "#146c2e", fontWeight: 600 }}>Moved</span> : null}
+        </div>
+      ) : null}
+      {error ? <div style={{ color: "#b91c1c", marginTop: 6 }}>{error}</div> : null}
     </div>
   );
 }
@@ -1545,6 +1648,12 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
                 knownClusters={restaurant?.owner_clusters}
                 onChange={(ids) => updateProfile("cluster_ids", ids)}
                 disabled={!!restaurant && !existingRestaurant}
+              />
+              {/* Only saved memberships have a position; unsaved picks show after Save. */}
+              <ClusterPositions
+                restaurantId={restaurant?.id}
+                clusterIds={(ownerClusterIds(restaurant || {}) || []).filter((id) => (profile.cluster_ids || []).map(Number).includes(id))}
+                clusterById={new Map([...(clusterOptions || []), ...(restaurant?.owner_clusters || [])].map((c) => [Number(c.id), c]))}
               />
             </div>
           )}

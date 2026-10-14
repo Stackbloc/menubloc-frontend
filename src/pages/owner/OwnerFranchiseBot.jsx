@@ -633,7 +633,25 @@ export default function OwnerFranchiseBot() {
                                 {r.hidden_legacy_rows?.length ? <div style={mutedStyle}>{r.hidden_legacy_rows.length} old rows hidden</div> : null}
                               </td>
                               <td style={tdStyle}>{r.coordinates_source === "locator" ? "Store locator" : r.coordinates_source === "openstreetmap" ? "OpenStreetMap" : "—"}</td>
-                              <td style={tdStyle}>{r.cluster?.error ? <span style={errorStyle}>{r.cluster.error}</span> : r.cluster ? r.cluster.cluster : "—"}</td>
+                              <td style={tdStyle}>
+                                {r.cluster?.error ? (
+                                  <span style={errorStyle}>{r.cluster.error}</span>
+                                ) : r.cluster ? (
+                                  <>
+                                    {r.cluster.cluster}
+                                    {r.cluster.position ? (
+                                      <div style={{ ...mutedStyle, color: r.cluster.position.on_first_page ? OWNER_COLORS.muted : "#93370d" }}>
+                                        #{r.cluster.position.position} of {r.cluster.position.total}
+                                        {r.cluster.position.on_first_page
+                                          ? ""
+                                          : " · behind “Load more” — move it in the restaurant's cluster settings"}
+                                      </div>
+                                    ) : null}
+                                  </>
+                                ) : (
+                                  "—"
+                                )}
+                              </td>
                             </tr>
                           ))}
                         </tbody>
