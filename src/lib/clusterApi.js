@@ -155,7 +155,7 @@ export async function fetchClusterNearbyEvents(
 
 export async function fetchClusterMenuItems(
   clusterSlug,
-  { limit = 40, offset = 0, summary = false, mksCategory = null, drinkCategory = null, signal } = {}
+  { limit = 40, offset = 0, summary = false, mksCategory = null, drinkCategory = null, priceSort = null, signal } = {}
 ) {
   const params = new URLSearchParams();
   if (limit != null) params.set("limit", String(limit));
@@ -165,6 +165,9 @@ export async function fetchClusterMenuItems(
   if (drinkCategory && drinkCategory !== "all") {
     params.set("drink_category", String(drinkCategory));
   }
+  // Server sorts the whole category before paging; sorting only the loaded page
+  // hid cheaper items that sat beyond the first page.
+  if (priceSort === "asc" || priceSort === "desc") params.set("price_sort", priceSort);
   const qs = params.toString();
   const path = `/public/clusters/${encodeURIComponent(clusterSlug)}/menu-items${qs ? `?${qs}` : ""}`;
   return apiGet(path, { signal });

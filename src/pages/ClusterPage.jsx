@@ -699,6 +699,7 @@ function ClusterMenuExplorerTab({
     fetchClusterMenuItems(clusterSlug, {
       mksCategory: selectedCategory.code,
       drinkCategory,
+      priceSort,
       limit: PAGE_SIZE,
       offset: 0,
       signal: controller.signal,
@@ -719,7 +720,7 @@ function ClusterMenuExplorerTab({
       });
 
     return () => controller.abort();
-  }, [clusterSlug, enabled, selectedCategory?.code, drinkSubcategory, searchActive]);
+  }, [clusterSlug, enabled, selectedCategory?.code, drinkSubcategory, searchActive, priceSort]);
 
   useEffect(() => {
     if (!enabled || !clusterSlug || !searchActive) {
@@ -767,6 +768,7 @@ function ClusterMenuExplorerTab({
         drinkCategory,
         limit: PAGE_SIZE,
         offset: items.length,
+        priceSort,
       });
       if (!data?.ok) throw new Error(data?.error || "Could not load more food");
       const nextItems = Array.isArray(data.menu_items) ? data.menu_items : [];
