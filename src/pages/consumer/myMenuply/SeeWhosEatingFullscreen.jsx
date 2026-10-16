@@ -29,6 +29,7 @@ import {
   isLiveFeedVenueItem,
 } from "../../../lib/liveFeedCategory.js";
 import FeedPlaceCaption from "../../../components/consumer/feed/FeedPlaceCaption.jsx";
+import FeedVideoWatchLink from "../../../components/consumer/feed/FeedVideoWatchLink.jsx";
 import { FEED_EMPTY_FIRST_VISIT_PROMPT_COPY } from "../../../lib/feedEmptyFirstVisitPrompt.js";
 import {
   recordFeedMenuOpen,
@@ -764,6 +765,7 @@ export default function SeeWhosEatingFullscreen({
         key={item.id}
         ref={videoRef}
         src={stripMediaUrlFragment(item.video_url)}
+        poster={item.photo_url || undefined}
         style={{
           ...styles.video,
           ...feedVideoElementStyle({ desktopFeedShell: isFeedHome && desktopFeedShell && !menuBrowserOpen }),
@@ -925,6 +927,11 @@ export default function SeeWhosEatingFullscreen({
             Restaurant
           </span>
         ) : null}
+        <FeedVideoWatchLink
+          kind={item.kind}
+          id={item.source_id}
+          label={item.item_name || item.food_name}
+        />
         <FeedPlaceCaption
           item={item}
           onMenuLinkClick={onFeedMenuLinkClick}

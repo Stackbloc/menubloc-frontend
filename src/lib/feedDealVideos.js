@@ -40,6 +40,8 @@ export function mapDealRowToFeedVideoItem(deal) {
     id: String(dealId),
     deal_id: dealId,
     video_url: videoUrl,
+    // Thumbnail as currently saved on the deal (SEO fields can change after upload).
+    photo_url: String(deal.photo_url || "").trim() || null,
     title,
     meal_time_caption: mealTimeCaption,
     headline: mealTimeCaption || title,
