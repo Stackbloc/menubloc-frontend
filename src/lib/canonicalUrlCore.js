@@ -18,6 +18,13 @@ export function restaurantPath({ slug, city, state } = {}) {
   return restaurantSlug ? `/restaurants/${encodeURIComponent(restaurantSlug)}` : null;
 }
 
+// Only the canonical /restaurants/{state}/{city}/{slug} path — null instead of the legacy
+// /restaurants/{slug} fallback, so callers keep their own fallback (e.g. id-first).
+export function canonicalRestaurantPath({ slug, city, state } = {}) {
+  const path = restaurantPath({ slug, city, state });
+  return path && path.split("/").length === 5 ? path : null;
+}
+
 export function restaurantMenuPath({ slug, city, state, id } = {}) {
   const base = restaurantPath({ slug, city, state });
   if (base) return `${base}/menu`;

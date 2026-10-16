@@ -1,5 +1,5 @@
 import { getClientPreferenceDisplaySections } from "./menuClientPreferenceFilter.js";
-import { restaurantPath } from "./canonicalUrl.js";
+import { canonicalRestaurantPath } from "./canonicalUrl.js";
 
 export function asStr(v) {
   return v === undefined || v === null ? "" : String(v);
@@ -54,9 +54,10 @@ export function resolveRestaurantProfileHref({
     return target ? `/foodtrucks/${encodeURIComponent(target)}` : null;
   }
 
-  if (id) return `/restaurants/${encodeURIComponent(id)}`;
-  const canonical = restaurantPath({ slug, city, state });
+  // Canonical first: the legacy /restaurants/{id|slug} forms each cost a 301 hop.
+  const canonical = canonicalRestaurantPath({ slug, city, state });
   if (canonical) return canonical;
+  if (id) return `/restaurants/${encodeURIComponent(id)}`;
   if (slug) return `/restaurants/${encodeURIComponent(slug)}`;
   return null;
 }

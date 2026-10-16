@@ -10,6 +10,7 @@
 export {
   absoluteCanonicalUrl,
   CANONICAL_ORIGIN,
+  canonicalRestaurantPath,
   cityPath,
   restaurantMenuPath,
   restaurantPath,

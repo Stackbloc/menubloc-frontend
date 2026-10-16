@@ -1332,8 +1332,10 @@ function ItemRow({
     getRestName(displayRow, language);
   const restIdForLink = (restaurantSummary && restaurantSummary.id) || getRestId(displayRow);
   const restSlugForLink = (restaurantSummary && restaurantSummary.slug) || getRestSlug(displayRow);
-  const restCityForLink = getCityLike(restaurantSummary || displayRow);
-  const restStateForLink = getStateLike(restaurantSummary || displayRow);
+  // Fall through to the row when the summary has no location, otherwise links lose the
+  // canonical /{state}/{city}/ form and cost a 301 hop.
+  const restCityForLink = getCityLike(restaurantSummary) || getCityLike(displayRow);
+  const restStateForLink = getStateLike(restaurantSummary) || getStateLike(displayRow);
   const restProfileTarget = restSlugForLink || restIdForLink;
   const restHref = restaurantPath({ slug: restSlugForLink, city: restCityForLink, state: restStateForLink }) ||
     (restProfileTarget ? "/restaurants/" + restProfileTarget : null);
@@ -2158,8 +2160,8 @@ export default function SearchResultCard({ restaurant, items, item, query, query
       asStr(restaurant?.restaurant_name || restaurant?.name) ||
       getRestName(items[0], language);
 
-    const restCity = asStr(restaurant?.city || restaurant?.restaurant_city);
-    const restState = asStr(restaurant?.state || restaurant?.restaurant_state);
+    const restCity = asStr(restaurant?.city || restaurant?.restaurant_city) || getCityLike(items[0]);
+    const restState = asStr(restaurant?.state || restaurant?.restaurant_state) || getStateLike(items[0]);
 
     const restaurantSummary = {
       id: restId,
@@ -2169,6 +2171,8 @@ export default function SearchResultCard({ restaurant, items, item, query, query
       cuisine: restaurant?.cuisine ?? null,
       restaurant_cuisine: restaurant?.cuisine ?? null,
       distance_miles: restaurant?.distance_miles ?? null,
+      city: restCity || null,
+      state: restState || null,
     };
 
     const restProfileTarget = restSlug || restId;

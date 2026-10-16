@@ -22,6 +22,7 @@ import {
   resolveBillboardImageObjectPosition,
 } from "../lib/billboardImageObjectPosition.js";
 import { resolveBillboardMediaUrl } from "../lib/billboardMediaUrl.js";
+import { canonicalRestaurantPath } from "../lib/canonicalUrl.js";
 
 function nameOf(r) {
   return String(
@@ -86,11 +87,15 @@ export default function MenuHeader({ restaurant }) {
   });
   const title = nameOf(r);
   const sub = subOf(r);
-  const profileHref = restaurantId
+  const profileHref = canonicalRestaurantPath({
+    slug,
+    city: r?.city || r?.restaurant_city,
+    state: r?.state || r?.restaurant_state,
+  }) || (restaurantId
     ? `/restaurants/${encodeURIComponent(restaurantId)}`
     : slug
     ? `/restaurants/${encodeURIComponent(slug)}`
-    : null;
+    : null);
 
   return (
     <div style={{ width: "100%", background: "transparent", overflowX: "hidden" }}>

@@ -3340,6 +3340,9 @@ export default function GrubbidSearchResults({
                       id: g.restaurant_id,
                       slug: g.restaurant_slug || g._first?.restaurant_slug || g._first?.slug || null,
                       name: g.restaurant_name,
+                      // Needed for canonical /restaurants/{state}/{city}/{slug} card links.
+                      city: g._first?.restaurant_city || g._first?.city || null,
+                      state: g._first?.restaurant_state || g._first?.state || null,
                       cuisine: g._first?.cuisine || g._first?.restaurant_cuisine || null,
                       category: g._first?.category || g._first?.restaurant_category || null,
                       phone: g._first?.phone || g._first?.restaurant_phone || null,

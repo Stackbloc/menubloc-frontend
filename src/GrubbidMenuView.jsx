@@ -7,6 +7,7 @@ import { MKS_CATEGORIES, mapRawCategoryToMks } from "./mks/mksCategories.js";
 import MenuItemInsightsPanel from "./components/MenuItemInsightsPanel.jsx";
 import { getDisplayMenuItemName } from "./utils/getDisplayMenuItemName.js";
 import { captureEvent } from "./services/posthog.js";
+import { canonicalRestaurantPath } from "./lib/canonicalUrl.js";
 
 // -----------------------------
 // Helpers
@@ -442,11 +443,15 @@ export default function GrubbidMenuView({ restaurantId = null, menuData = null }
   }, [restaurant, userGeo, rLatLng]);
 
   const profileRestaurantId = safeText(restaurant?.id || restaurantId);
-  const publicLink = profileRestaurantId
+  const publicLink = canonicalRestaurantPath({
+    slug: restaurant?.slug,
+    city: restaurant?.city || restaurant?.restaurant_city,
+    state: restaurant?.state || restaurant?.restaurant_state,
+  }) || (profileRestaurantId
     ? `/restaurants/${encodeURIComponent(profileRestaurantId)}`
     : restaurant?.slug
     ? `/restaurants/${encodeURIComponent(String(restaurant.slug))}`
-    : "/";
+    : "/");
 
   function handleMenuItemClick(item) {
     captureEvent("menu_item_clicked", {

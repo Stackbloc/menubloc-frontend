@@ -90,6 +90,7 @@ import {
 
 import { API_BASE } from "../lib/api.js";
 import { buildMenuItemDetailApiQuery } from "../lib/menuItemDetailGeoQuery.js";
+import { restaurantPath } from "../lib/canonicalUrl.js";
 
 const BACKEND_BASE = String(API_BASE || "").replace(/\/$/, "");
 
@@ -1615,7 +1616,7 @@ export default function MenuItemDetailPage() {
                 <div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                     <div style={{ fontSize: 13, color: "#9CA3AF", fontWeight: 800 }}>
-                      <Link to={`/restaurants/${item.restaurant.slug || item.restaurant.id}`} style={{ color: "inherit", textDecoration: "none" }}>
+                      <Link to={restaurantPath(item.restaurant) || `/restaurants/${item.restaurant.slug || item.restaurant.id}`} style={{ color: "inherit", textDecoration: "none" }}>
                         {item.restaurant.name}
                       </Link>
                     </div>

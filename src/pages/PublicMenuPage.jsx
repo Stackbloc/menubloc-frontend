@@ -37,7 +37,7 @@ import {
   buildCanonicalMenuPath,
   buildMenuShareMetadata,
 } from "../components/share/shareUtils.js";
-import { restaurantMenuPath } from "../lib/canonicalUrl.js";
+import { canonicalRestaurantPath, restaurantMenuPath } from "../lib/canonicalUrl.js";
 import { resolvePublicMenuAddressDisplay } from "../lib/displayAddress.js";
 import BottomNav from "../components/BottomNav.jsx";
 
@@ -1376,9 +1376,16 @@ export default function PublicMenuPage() {
     isFoodTruckCategory(data?.restaurant_category) ||
     isFoodTruckCategory(data?.type);
   const restaurantProfileTarget = asStr(data?.slug || data?.restaurant_id || routeState.restaurantId).trim();
+  // Canonical /restaurants/{state}/{city}/{slug} when the payload has a location, so the
+  // profile link doesn't cost a 301 hop; legacy slug/id route only as a fallback.
+  const canonicalProfilePath = isFoodTruck
+    ? null
+    : canonicalRestaurantPath({ slug: data?.slug, city: data?.city, state: data?.state });
   const restaurantProfileHref = restaurantProfileTarget
     ? {
-        pathname: `${isFoodTruck ? "/foodtrucks" : "/restaurants"}/${encodeURIComponent(restaurantProfileTarget)}`,
+        pathname:
+          canonicalProfilePath ||
+          `${isFoodTruck ? "/foodtrucks" : "/restaurants"}/${encodeURIComponent(restaurantProfileTarget)}`,
         search: searchParams.toString() ? `?${searchParams.toString()}` : "",
       }
     : null;
