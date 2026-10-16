@@ -21,6 +21,8 @@ import {
   toJsonLdScriptTag,
   videoWatchPageJsonLd,
 } from "./src/lib/seo/jsonLdBuilders.js";
+import { SEO_SHELL_HTML } from "./src/lib/seo/seoShell.generated.js";
+import { STATE_NAMES } from "./src/lib/slugs.js";
 
 const BACKEND = "https://menubloc-backend-production.up.railway.app";
 const ORIGIN = "https://menuply.com";
@@ -46,6 +48,11 @@ const VIDEO_WATCH_RE = /^\/videos\/([a-z]+)\/(\d+)\/?$/;
 const DESTINATION_VENUE_RE = /^\/destination-venues\/([^/]+)\/?$/;
 const SITEMAP_CHUNK_RE = /^\/sitemaps\/sitemap-(\d+)\.xml$/;
 const SITEMAP_LIMIT = 45000;
+// City pages are /restaurants/<city>-<st> (see cityPath). Only slugs ending in a real
+// state code need the city inventory; every other legacy slug is a restaurant.
+const CITY_SLUG_STATE_RE = /-([a-z]{2})$/;
+const CITY_INVENTORY_TTL_MS = 10 * 60 * 1000;
+let cityInventoryCache = null;
 
 function escapeHtml(str) {
   if (str == null) return "";
@@ -112,7 +119,10 @@ function injectNoScriptLinks(html, links, label) {
   return html.replace("</body>", `<noscript><nav aria-label="${escapeHtml(label)}">${anchors}</nav></noscript></body>`);
 }
 
+// The build embeds dist/index.html (scripts/embedSeoShell.mjs), so production never
+// fetches "/" from itself — that self-fetch cost an extra CDN request per invocation.
 async function fetchShell(requestUrl) {
+  if (SEO_SHELL_HTML) return SEO_SHELL_HTML;
   const ac = new AbortController();
   const timer = setTimeout(() => ac.abort(), 2000);
   try {
@@ -138,6 +148,22 @@ async function fetchMeta(path, timeoutMs = 3000) {
   } finally {
     clearTimeout(timer);
   }
+}
+
+function couldBeCitySlug(slug) {
+  const m = CITY_SLUG_STATE_RE.exec(slug);
+  return Boolean(m && STATE_NAMES[m[1].toUpperCase()]);
+}
+
+// The inventory is ~2.3 MB; keep one copy per middleware instance instead of
+// downloading it on every legacy city-page request.
+async function fetchCityInventory() {
+  if (cityInventoryCache && Date.now() - cityInventoryCache.at < CITY_INVENTORY_TTL_MS) {
+    return cityInventoryCache.inventory;
+  }
+  const inventory = await fetchMeta("/public/sitemap-inventory", 10000);
+  if (inventory?.ok) cityInventoryCache = { at: Date.now(), inventory };
+  return inventory;
 }
 
 function escapeXml(value) {
@@ -520,7 +546,7 @@ export default async function middleware(request) {
   m = RESTAURANT_PROFILE_RE.exec(pathname);
   if (m) {
     const slug = m[1];
-    const inventory = await fetchMeta("/public/sitemap-inventory", 10000);
+    const inventory = couldBeCitySlug(slug) ? await fetchCityInventory() : null;
     const city = inventory?.ok
       ? (inventory.cities || []).find((entry) => cityPath(entry) === pathname)
       : null;
