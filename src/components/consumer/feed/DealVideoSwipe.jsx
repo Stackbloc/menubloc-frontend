@@ -13,6 +13,7 @@ import BrowseMenusIcon from "../../icons/BrowseMenusIcon.jsx";
 import FeedMenuBrowserPipOverlay from "./FeedMenuBrowserPipOverlay.jsx";
 import FeedPipExpandButton from "./FeedPipExpandButton.jsx";
 import FeedVideoActionRail from "./FeedVideoActionRail.jsx";
+import FeedVideoWatchLink from "./FeedVideoWatchLink.jsx";
 import FeedVideoPlayPauseButton, { PIP_PAUSE_TITLE } from "./FeedVideoPlayPauseButton.jsx";
 import {
   clearStuckMediaChrome,
@@ -504,6 +505,7 @@ export default function DealVideoSwipe({
         key={item.id}
         ref={videoRef}
         src={stripMediaUrlFragment(item.video_url)}
+        poster={item.photo_url || undefined}
         style={{
           ...styles.video,
           ...feedVideoElementStyle({
@@ -667,6 +669,7 @@ export default function DealVideoSwipe({
         <Link to={item.deal_href} style={styles.titleLink} data-testid="feed-deals-title">
           {item.headline || item.title}
         </Link>
+        <FeedVideoWatchLink kind="deal" id={item.deal_id} label={item.title} />
         {item.meal_time_caption &&
         item.title &&
         item.title !== item.meal_time_caption ? (
