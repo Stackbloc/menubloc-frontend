@@ -72,8 +72,11 @@ const PINNED_CARD_ROW_ACTIONS = { hideDishShare: true, hideComment: true, tapRow
 const SCROLL_TAP_GUARD_MS = 350;
 const CANNOT_ORDER_RESTAURANT_NOTE = "This restaurant isn't taking online orders yet";
 const CANNOT_ORDER_DISH_NOTE = "This dish can't be ordered online";
-/** Menu Browser ordering chip — says it is an order surface and how to use it. */
-const ORDER_HERE_CHIP_LABEL = "🛍 Order here · Tap any dish to add it to your basket";
+/**
+ * Menu Browser ordering chip — the one tap-to-order instruction (Andre, 2026-10-16: the
+ * 4s top toast that repeated it on every load was dropped as duplicative).
+ */
+const ORDER_HERE_CHIP_LABEL = "🛍 Order here · Tap a dish to add it to your basket · Hold to remove";
 /** Feed: keep the order bar clear of the mini video player (bottom-right). */
 const FEED_PIP_ORDER_BAR_INSET = 150;
 const PIN_UNSUPPORTED_MENU_STYLES = new Set(["v14", "v15"]);
@@ -710,9 +713,8 @@ export default function CatalogMenuRenderer({
   ) : null;
 
   const orderingAvailable = isOnlineOrderingAvailable(data);
-  const tapToOrderHint = orderingAvailable ? (
-    <MenuTapToOrderHint key={`order-hint-${currentRestaurantId}`} />
-  ) : orderMarketState === "unknown_location" && isOnlineOrderingAvailable(loadedData) ? (
+  // Orderable menus say "tap to order" in the static chip only; this toast is just for unknown location.
+  const tapToOrderHint = !orderingAvailable && orderMarketState === "unknown_location" && isOnlineOrderingAvailable(loadedData) ? (
     <MenuTapToOrderHint
       key={`order-hint-${currentRestaurantId}`}
       tone="info"

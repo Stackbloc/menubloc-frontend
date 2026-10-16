@@ -336,7 +336,9 @@ export default function PublicMenuItemCard({
       String(nutritionChip.allergen_alert || "").trim()
     )
   );
+  // Menu Browser: a dish tap orders, so no Nutrition chip that leaves the menu for the detail page.
   const showNutritionInline =
+    !tapRowToAdd &&
     themeSettings.nutrition_display !== "hidden" &&
     themeSettings.intelligence_density !== "none" &&
     (hasNutritionData || itemHasInsightsData(it));

@@ -71,14 +71,22 @@ function itemText(raw = {}, detailSystem = null) {
     raw?.section_name,
     raw?.section,
     raw?.original_section_name,
-    raw?.menu?.name,
-    raw?.menu?.menu_type,
-    raw?.menu?.service_label,
     detailSystem?.item_category,
     detailSystem?.presentation_model?.item_category,
   ]
     .filter(Boolean)
     .join(" ");
+}
+
+/**
+ * Menu name/type minus the restaurant name: default menus are named "<Restaurant> menu", so
+ * "Tom's Watch Bar menu" must not read as a bar menu and turn every dish into a drink.
+ */
+function menuText(raw = {}) {
+  const text = [raw?.menu?.name, raw?.menu?.menu_type, raw?.menu?.service_label].filter(Boolean).join(" ");
+  const name = restaurantName(raw);
+  if (!name) return text;
+  return text.replace(new RegExp(name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi"), " ");
 }
 
 function collectBrowserCategories(raw) {
@@ -128,14 +136,16 @@ export function isAlcoholicBeverageItem(raw, detailSystem = null) {
       "",
   ).trim().toLowerCase();
   const presentationKind = String(detailSystem?.presentation_model?.kind || "").trim().toLowerCase();
+  const menu = menuText(raw || {});
   const drinkContext =
     category === "beverage" ||
     presentationKind === "drink_detail" ||
     ALCOHOL_SECTION_RE.test(text) ||
-    /\b(drink|drinks|beverage|bar)\b/i.test(String(raw?.menu?.menu_type || raw?.menu?.name || ""));
+    /\b(drink|drinks|beverage|bar)\b/i.test(menu) ||
+    ALCOHOL_SECTION_RE.test(menu);
 
   if (!drinkContext) return false;
-  return ALCOHOL_NAME_RE.test(text) || ALCOHOL_SECTION_RE.test(text);
+  return ALCOHOL_NAME_RE.test(text) || ALCOHOL_SECTION_RE.test(text) || ALCOHOL_SECTION_RE.test(menu);
 }
 
 function trimText(value) {

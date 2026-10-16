@@ -1,8 +1,7 @@
 /**
- * Menu Browser ordering hint (Andre, 2026-10-12): the menu itself is the ordering surface, so
- * when a restaurant takes online orders we say so for a few seconds as the menu opens —
- * "Tap a menu item to add it to your basket · Hold to remove". Feed viewers whose location is unknown get
- * "We cannot detect your location" instead (ordering stays off for them).
+ * Menu Browser transient notice pill. It used to flash "Tap a menu item to add it to your basket ·
+ * Hold to remove" on every menu load; since 2026-10-16 that lives only in the static "Order here"
+ * chip. Still used for "We cannot detect your location" and short in-menu notes (removed, can't order).
  */
 
 import { useEffect, useState } from "react";

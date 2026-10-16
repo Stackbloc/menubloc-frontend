@@ -81,6 +81,7 @@ import { sendPageVisit } from "../lib/analyticsPageVisitSend.js";
 import { getNormalizedMenuItemId, isValidMenuItemRouteId, parseMenuItemRouteId } from "../lib/menuItemIdentity.js";
 import ShowMeHowToMakeIt from "../components/homemade/ShowMeHowToMakeIt.jsx";
 import {
+  hasAlcoholicBeverageContent,
   isAlcoholicBeverageItem,
   resolveAlcoholicBeverageContent,
   RESPONSIBLE_DRINKING_BULLETS,
