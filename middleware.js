@@ -311,6 +311,14 @@ async function buildSitemapEntries() {
   return entries.filter((entry) => entry.url && !seen.has(entry.url) && seen.add(entry.url));
 }
 
+// Slugs are shared across stores (e.g. 227 in-n-out-burger rows); pass the URL's
+// state/city so the backend picks the same record the SPA renders instead of 301ing
+// every store to one city.
+function canonicalRestaurantMetaPath(stateSlug, citySlug, slug) {
+  const qs = new URLSearchParams({ route_state: stateSlug, route_city: citySlug });
+  return `/public/meta/restaurants/${encodeURIComponent(slug)}?${qs}`;
+}
+
 // Returns the canonical path for a restaurant given DB data ({slug, city, state, id}).
 function buildCanonicalRestaurantPath(data, suffix = "") {
   const path = suffix === "/menu" ? restaurantMenuPath(data) : restaurantPath(data);
@@ -479,10 +487,9 @@ export default async function middleware(request) {
   // --- Canonical 3-segment: /restaurants/:state/:city/:slug/menu ---
   m = CANONICAL_MENU_RE.exec(pathname);
   if (m) {
-    const slug = m[3];
     const [shell, meta] = await Promise.all([
       fetchShell(request.url),
-      fetchMeta(`/public/meta/restaurants/${encodeURIComponent(slug)}`),
+      fetchMeta(canonicalRestaurantMetaPath(m[1], m[2], m[3])),
     ]);
     if (!shell || !meta || !meta.ok) return;
     const { title, description, canonical } = buildRestaurantMenuMeta(meta.data);
@@ -503,10 +510,9 @@ export default async function middleware(request) {
   if (m) {
     // Guard: never treat .../menu-items/:id as state/city/slug.
     if (m[2] === "menu-items") return;
-    const slug = m[3];
     const [shell, meta] = await Promise.all([
       fetchShell(request.url),
-      fetchMeta(`/public/meta/restaurants/${encodeURIComponent(slug)}`),
+      fetchMeta(canonicalRestaurantMetaPath(m[1], m[2], m[3])),
     ]);
     if (!shell || !meta || !meta.ok) return;
     const { title, description, canonical } = buildRestaurantProfileMeta(meta.data);
