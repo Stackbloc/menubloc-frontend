@@ -609,7 +609,15 @@ export default function OwnerKnowledgeBot() {
                   </ul>
                 </Notice>
               ) : (
-                <Notice tone="ok"><strong>Published.</strong> The menu is live.</Notice>
+                <Notice tone="ok">
+                  <strong>Published.</strong> The menu is live.
+                  {(() => {
+                    const fanout = (applyResult.updated || []).find((u) => u.entity === "chain_menu_fanout");
+                    return fanout
+                      ? ` It is now going onto the other ${fanout.stores_queued} ${chainStore?.chain_name || "chain"} stores in the background (a few minutes for hundreds of stores).`
+                      : null;
+                  })()}
+                </Notice>
               )
             ) : row?.status === "applying" ? (
               <Notice>Publishing in the background (large franchise job). Check History for progress.</Notice>

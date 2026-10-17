@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import OwnerLayout, { EmptyState, OWNER_COLORS, PageCard, SectionTitle } from "./OwnerLayout.jsx";
 import {
+  createFranchiseBotBrand,
   getFranchiseBotJob,
   listFranchiseBotChains,
   listFranchiseBotClusters,
@@ -118,6 +119,55 @@ function Step({ number, title, subtitle, children, done }) {
   );
 }
 
+/**
+ * A brand Menuply doesn't have yet. Large company-owned brands (CAVA) are added here as
+ * chains so every store is findable; small multi-location groups belong in Menubot (MLE).
+ */
+function NewBrandForm({ initialName, onCreated }) {
+  const [name, setName] = useState(initialName || "");
+  const [website, setWebsite] = useState("");
+  const [companyOwned, setCompanyOwned] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  async function create(e) {
+    e.preventDefault();
+    setBusy(true);
+    setError("");
+    try {
+      const data = await createFranchiseBotBrand({ name: name.trim(), website_url: website.trim() || null, company_owned: companyOwned });
+      onCreated(data.chain);
+    } catch (err) {
+      const existing = err?.payload?.chain;
+      if (existing) onCreated(existing);
+      else setError(err?.payload?.error || err?.message || "Could not add the brand");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <form onSubmit={create} style={{ marginTop: 14, padding: 12, border: `1px dashed ${OWNER_COLORS.line}`, borderRadius: 10 }}>
+      <div style={{ fontWeight: 700, marginBottom: 8 }}>Add a new brand</div>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <input style={{ ...inputStyle, flex: "1 1 180px" }} value={name} onChange={(e) => setName(e.target.value)} placeholder="Brand name, e.g. CAVA" />
+        <input style={{ ...inputStyle, flex: "1 1 220px" }} value={website} onChange={(e) => setWebsite(e.target.value)} placeholder="https://cava.com (optional)" />
+      </div>
+      <label style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 8, fontSize: 13 }}>
+        <input type="checkbox" checked={companyOwned} onChange={(e) => setCompanyOwned(e.target.checked)} />
+        Company-owned (not franchised) — one menu for every store
+      </label>
+      <div style={{ ...mutedStyle, marginTop: 4 }}>
+        For brands with many stores. A small group with a few locations is an MLE — add it in Menubot instead.
+      </div>
+      {error ? <div style={errorStyle}>{error}</div> : null}
+      <button type="submit" style={{ ...primaryButtonStyle({ busy, disabled: name.trim().length < 2 }), marginTop: 10 }} disabled={busy || name.trim().length < 2}>
+        {busy ? "Adding…" : "Add brand"}
+      </button>
+    </form>
+  );
+}
+
 function ChainPicker({ chain, onChange, disabled }) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState(null);
@@ -144,7 +194,8 @@ function ChainPicker({ chain, onChange, disabled }) {
         <div>
           <div style={{ fontWeight: 700 }}>{chain.name}</div>
           <div style={mutedStyle}>
-            Chain #{chain.id} · {chain.store_count} stores · {chain.menu_item_count} menu items
+            {chain.default_ownership_type === "company_owned" ? "Company-owned" : "Franchise"} #{chain.id} · {chain.store_count} stores ·{" "}
+            {chain.menu_item_count ? `${chain.menu_item_count} menu items` : "no chain menu yet"}
           </div>
         </div>
         <button type="button" style={secondaryButtonStyle} disabled={disabled} onClick={() => onChange(null)}>
@@ -173,7 +224,7 @@ function ChainPicker({ chain, onChange, disabled }) {
       {results ? (
         <div style={{ marginTop: 10, display: "grid", gap: 6 }}>
           {results.length === 0 ? (
-            <div style={mutedStyle}>No chains found.</div>
+            <NewBrandForm initialName={query.trim()} onCreated={onChange} />
           ) : (
             results.map((c) => (
               <button
@@ -184,6 +235,7 @@ function ChainPicker({ chain, onChange, disabled }) {
               >
                 <span style={{ fontWeight: 700 }}>{c.name}</span>
                 <span style={mutedStyle}>
+                  {c.default_ownership_type === "company_owned" ? "Company-owned · " : ""}
                   {c.store_count} stores · {c.menu_item_count} menu items
                 </span>
               </button>
@@ -234,13 +286,19 @@ function ClusterPicker({ cluster, onChange }) {
 }
 
 function AddressCell({ row, onEdit, editable }) {
+  const flags = [
+    row.coordinatesApproximate ? "map: city centre" : null,
+    row.cityGuessed ? "city guessed" : null,
+  ].filter(Boolean);
   if (!editable) {
     return (
       <>
+        {row.label ? <div style={{ fontWeight: 700 }}>{row.label}</div> : null}
         <div>{row.addressLine1 || <span style={mutedStyle}>—</span>}</div>
         <div style={mutedStyle}>
           {[row.city, row.state].filter(Boolean).join(", ")} {row.postalCode || ""}
         </div>
+        {flags.length ? <div style={{ fontSize: 12, color: "#b45309", fontWeight: 600 }}>{flags.join(" · ")}</div> : null}
       </>
     );
   }
@@ -386,7 +444,8 @@ export default function OwnerFranchiseBot() {
     <OwnerLayout title="Franchise Bot">
       <div style={{ display: "grid", gap: 16 }}>
         <div style={mutedStyle}>
-          Paste a chain's store list — Google Maps results, a CSV, or plain addresses. The bot fills in missing
+          Paste a chain's store list — a brand's locations page (store name + address), Google Maps results, a CSV,
+          or plain addresses. New brand? Search for it and add it, company-owned or franchise. The bot fills in missing
           addresses from the chain's official store locator, matches stores Menuply already has, and adds the rest
           with the chain menu. Nothing is written until you press Install. <Link to="/owner/bots">All bots</Link>
         </div>
@@ -475,6 +534,7 @@ export default function OwnerFranchiseBot() {
                   <Pill tone="blue">{preview.summary.update} already in Menuply</Pill>
                   {preview.summary.needs_address ? <Pill tone="amber">{preview.summary.needs_address} need an address</Pill> : null}
                   {preview.summary.with_legacy_menu ? <Pill tone="red">{preview.summary.with_legacy_menu} with an old menu</Pill> : null}
+                  {preview.summary.approximate_location ? <Pill tone="amber">{preview.summary.approximate_location} placed at city centre</Pill> : null}
                   {preview.locator.used ? (
                     <span style={mutedStyle}>Store locator: {preview.locator.pages_fetched} pages read</span>
                   ) : null}

@@ -605,6 +605,7 @@ export const getHoursBotRun = (runId) => get(`/api/owner/bots/hours_bot/runs/${e
 const franchiseBotQuery = (q) => (q ? `?q=${encodeURIComponent(q)}` : "");
 export const listFranchiseBotChains = (q = "") => get(`/api/owner/franchise-bot/chains${franchiseBotQuery(q)}`);
 export const listFranchiseBotClusters = (q = "") => get(`/api/owner/franchise-bot/clusters${franchiseBotQuery(q)}`);
+export const createFranchiseBotBrand = (body) => post("/api/owner/franchise-bot/chains", body);
 export const parseFranchiseBotPaste = (text, defaultState) =>
   post("/api/owner/franchise-bot/parse", { text, default_state: defaultState || null });
 /** Starts a background preview job: { chain_id, locations, locator_base_url, default_state } */
