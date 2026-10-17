@@ -150,6 +150,35 @@ async function fetchMeta(path, timeoutMs = 3000) {
   }
 }
 
+// Search engines and Google's testing tools (Rich Results Test = Google-InspectionTool).
+const SEARCH_CRAWLER_UA_RE =
+  /googlebot|google-inspectiontool|googleother|bingbot|applebot|duckduckbot|yandexbot|baiduspider|slurp/i;
+
+function isSearchCrawler(request) {
+  return SEARCH_CRAWLER_UA_RE.test(request.headers.get("user-agent") || "");
+}
+
+const TAKEN_DOWN_MENU_STATUSES = new Set(["draft", "archived", "removed"]);
+
+// Same payload the menu page renders (published menus only, franchise chain menu),
+// so the Menu JSON-LD matches what visitors see.
+async function fetchPublicMenuForJsonLd(restaurantId) {
+  const id = Number(restaurantId);
+  if (!Number.isInteger(id) || id <= 0) return null;
+  const menu = await fetchMeta(`/public/restaurants/${id}/menu`, 2500);
+  if (!menu?.ok || !Array.isArray(menu.sections)) return null;
+  // Belt and braces: a taken-down menu (Unpublish/Archive/Remove) is never marked up.
+  if (TAKEN_DOWN_MENU_STATUSES.has(String(menu.menu_status || menu.status || "").toLowerCase())) return null;
+  return menu;
+}
+
+// The menu payload carries street address/zip/cuisine (null when the store has none,
+// e.g. SimpleMaps franchise imports); the meta endpoint only has name/city/state.
+function menuRestaurantFields(menu) {
+  const fields = { address: menu.address, zip: menu.zip, phone: menu.phone, cuisine: menu.cuisine };
+  return Object.fromEntries(Object.entries(fields).filter(([, value]) => value != null && value !== ""));
+}
+
 function couldBeCitySlug(slug) {
   const m = CITY_SLUG_STATE_RE.exec(slug);
   return Boolean(m && STATE_NAMES[m[1].toUpperCase()]);
@@ -501,8 +530,14 @@ export default async function middleware(request) {
     let html = injectNoScriptLinks(injectMeta(shell, title, description, canonical), [
       { href: cityUrl, text: `Restaurants in ${meta.data.city}, ${meta.data.state}` },
     ], "Related city");
-    html = injectJsonLd(html, restaurantPageJsonLd(meta.data));
-    return injectedResponse(html);
+    // The public menu call is ~1s, so only crawlers pay for it; people get the
+    // basic Restaurant node (hasMenu URL) at today's speed.
+    const menu = isSearchCrawler(request) ? await fetchPublicMenuForJsonLd(meta.data.id) : null;
+    const restaurant = menu ? { ...meta.data, ...menuRestaurantFields(menu) } : meta.data;
+    html = injectJsonLd(html, restaurantPageJsonLd(restaurant, [], { menuSections: menu?.sections }));
+    const response = injectedResponse(html);
+    response.headers.set("Vary", "User-Agent");
+    return response;
   }
 
   // --- Canonical 3-segment: /restaurants/:state/:city/:slug (profile) ---
