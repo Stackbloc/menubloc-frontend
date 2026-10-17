@@ -31,6 +31,10 @@ const TYPE_OPTIONS = [
   { value: "location", label: "One franchise location" },
 ];
 
+// The server takes at most 12 files per request; a full menu can be many more photos.
+const UPLOAD_BATCH_SIZE = 10;
+const MAX_FILE_MB = 25;
+
 const EMPTY_FORM = {
   target_type: "restaurant",
   target_name: "",
@@ -238,6 +242,7 @@ export default function OwnerKnowledgeBot() {
   const [clusters, setClusters] = useState([]);
   const [lookup, setLookup] = useState(null);
   const [files, setFiles] = useState([]);
+  const [uploadProgress, setUploadProgress] = useState("");
   const [form, setForm] = useState(EMPTY_FORM);
 
   const setField = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
@@ -365,12 +370,29 @@ export default function OwnerKnowledgeBot() {
 
   async function handleFind() {
     await run("find", async () => {
+      const tooBig = files.filter((f) => f.size > MAX_FILE_MB * 1024 * 1024);
+      if (tooBig.length) {
+        throw new Error(
+          `Over ${MAX_FILE_MB} MB: ${tooBig.map((f) => f.name).join(", ")}. Use smaller photos or split the PDF.`
+        );
+      }
       const id = await saveJob();
-      if (files.length) {
-        const fd = new FormData();
-        for (const file of files) fd.append("files", file);
-        await uploadKnowledgeBotEvidence(id, fd);
-        setFiles([]);
+      // Upload in batches; drop each batch from the list once saved, so a retry only sends what's left.
+      let remaining = files;
+      const total = files.length;
+      try {
+        while (remaining.length) {
+          const batch = remaining.slice(0, UPLOAD_BATCH_SIZE);
+          const done = total - remaining.length;
+          setUploadProgress(`Uploading and reading files ${done + 1}–${done + batch.length} of ${total}…`);
+          const fd = new FormData();
+          for (const file of batch) fd.append("files", file);
+          await uploadKnowledgeBotEvidence(id, fd);
+          remaining = remaining.slice(batch.length);
+          setFiles(remaining);
+        }
+      } finally {
+        setUploadProgress("");
       }
       await findKnowledgeBotMenu(id);
       await refresh(id);
@@ -543,9 +565,14 @@ export default function OwnerKnowledgeBot() {
             </Field>
             <Field
               label="Menu photos, screenshots, or PDFs (optional)"
-              hint="The most reliable source — photos and PDFs are read with OCR. Up to 12 files, 25 MB each."
+              hint={`The most reliable source — photos and PDFs are read with OCR. Any number of files, ${MAX_FILE_MB} MB each.`}
             >
               <input type="file" multiple accept="image/*,.pdf,.txt,.md" onChange={(e) => setFiles(Array.from(e.target.files || []))} />
+              {files.length ? (
+                <div style={{ marginTop: 8, fontSize: 12, color: OWNER_COLORS.muted }}>
+                  {files.length} file{files.length === 1 ? "" : "s"} ready to upload
+                </div>
+              ) : null}
               {evidenceFiles.length ? (
                 <div style={{ marginTop: 8, fontSize: 12, color: OWNER_COLORS.muted }}>
                   Already uploaded: {evidenceFiles.map((e) => e.file_name).join(", ")}
@@ -557,7 +584,7 @@ export default function OwnerKnowledgeBot() {
             </Field>
 
             {busy === "find" ? (
-              <Notice>Finding and reading the menu… websites and photos can take up to a minute.</Notice>
+              <Notice>{uploadProgress || "Finding and reading the menu… websites and photos can take up to a minute."}</Notice>
             ) : null}
 
             <div style={{ marginTop: 20, display: "flex", gap: 10, flexWrap: "wrap" }}>
