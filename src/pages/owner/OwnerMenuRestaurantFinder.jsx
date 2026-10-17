@@ -46,9 +46,19 @@ function ResultRow({ restaurant, onSelect }) {
   const street = String(restaurant.address_line1 || restaurant.address || "").trim();
   const location = formatLocationLine(restaurant);
   const metaParts = [];
-  metaParts.push(street || "No address on file");
-  if (location) metaParts.push(location);
-  metaParts.push(`#${restaurant.id}`);
+  if (restaurant.is_franchise_brand) {
+    // One row per franchise: describe the brand, not a single store.
+    const stores = Number(restaurant.franchise_location_count) || 0;
+    const chainItems = Number(restaurant.chain_menu_item_count) || 0;
+    metaParts.push(restaurant.is_brand_record ? "Brand record" : "Franchise");
+    metaParts.push(`${stores} store${stores === 1 ? "" : "s"}`);
+    metaParts.push(chainItems ? `Chain menu: ${chainItems} items` : "No chain menu yet");
+    metaParts.push(`#${restaurant.id}`);
+  } else {
+    metaParts.push(street || "No address on file");
+    if (location) metaParts.push(location);
+    metaParts.push(`#${restaurant.id}`);
+  }
   if (restaurant.menu_count != null) {
     metaParts.push(`${restaurant.menu_count} menu${restaurant.menu_count === 1 ? "" : "s"}`);
   }
@@ -76,9 +86,9 @@ function ResultRow({ restaurant, onSelect }) {
       <div
         style={{
           fontSize: 12,
-          color: street ? OWNER_COLORS.muted : "#b45309",
+          color: street || restaurant.is_franchise_brand ? OWNER_COLORS.muted : "#b45309",
           marginTop: 4,
-          fontWeight: street ? 400 : 600,
+          fontWeight: street || restaurant.is_franchise_brand ? 400 : 600,
         }}
       >
         {metaParts.join(" · ")}
