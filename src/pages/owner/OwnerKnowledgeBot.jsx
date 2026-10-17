@@ -417,6 +417,8 @@ export default function OwnerKnowledgeBot() {
   const applyResult = row?.apply_result && Object.keys(row.apply_result).length ? row.apply_result : null;
   const evidenceFiles = (job?.evidence || []).filter((e) => e.file_name);
   const items = research.menu_candidates || [];
+  // Chain store (e.g. one IHOP): the menu is the chain menu, not something scraped for this store.
+  const chainStore = research.chain_store || null;
   const isFranchise = form.target_type === "franchise" || form.target_type === "location";
   const restaurantConflict = (preview.conflicts || []).find((c) => c.entity === "restaurant_match");
   const needsRestaurantChoice = Boolean(restaurantConflict) && !row?.restaurant_id;
@@ -614,7 +616,9 @@ export default function OwnerKnowledgeBot() {
             </div>
 
             <div style={{ fontSize: 14, marginBottom: 12, lineHeight: 1.5 }}>
-              {research.restaurant ? (
+              {chainStore && research.restaurant ? (
+                <>Store: <RestaurantSummary restaurant={research.restaurant} />.</>
+              ) : research.restaurant ? (
                 <>Menu goes onto existing restaurant <RestaurantSummary restaurant={research.restaurant} />.</>
               ) : isFranchise ? (
                 <>Updates the <strong>{row?.target_name}</strong> chain menu and its locations.</>
@@ -630,6 +634,12 @@ export default function OwnerKnowledgeBot() {
                 </div>
               ) : null}
             </div>
+
+            {chainStore?.message ? (
+              <Notice tone={items.length ? "info" : "warn"}>
+                <strong>{chainStore.chain_name} chain store.</strong> {chainStore.message}
+              </Notice>
+            ) : null}
 
             {needsRestaurantChoice ? (
               <Notice tone="warn">
@@ -650,7 +660,7 @@ export default function OwnerKnowledgeBot() {
 
             {items.length ? (
               <MenuPreview items={items} />
-            ) : (
+            ) : chainStore ? null : (
               <Notice tone="error">
                 No menu items found yet. Go back and add menu photos, a PDF, or a direct link to the menu page.
               </Notice>
@@ -675,7 +685,13 @@ export default function OwnerKnowledgeBot() {
                   onClick={handlePublish}
                   style={primaryButtonStyle({ busy: Boolean(busy), disabled: publishBlocked })}
                 >
-                  {busy === "publish" ? "Publishing…" : items.length ? `Publish ${items.length} items` : "Publish"}
+                  {busy === "publish"
+                    ? "Publishing…"
+                    : chainStore?.ready
+                      ? `Publish ${chainStore.chain_name} menu to this store (${items.length} items)`
+                      : items.length
+                        ? `Publish ${items.length} items`
+                        : "Publish"}
                 </button>
               )}
               {!published ? (
@@ -688,7 +704,7 @@ export default function OwnerKnowledgeBot() {
             <details style={{ marginTop: 20 }}>
               <summary style={{ cursor: "pointer", fontSize: 12, color: OWNER_COLORS.muted }}>Technical details</summary>
               <pre style={{ marginTop: 8, padding: 12, borderRadius: 10, background: "#faf8f6", border: `1px solid ${OWNER_COLORS.line}`, fontSize: 11, overflow: "auto", maxHeight: 320 }}>
-                {JSON.stringify({ status: row?.status, preview_plan: preview, apply_result: applyResult, discovery: research.discovery }, null, 2)}
+                {JSON.stringify({ status: row?.status, preview_plan: preview, apply_result: applyResult, discovery: research.discovery, chain_store: chainStore, url_errors: research.web_research?.errors }, null, 2)}
               </pre>
             </details>
           </div>
