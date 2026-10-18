@@ -4,6 +4,8 @@ import { restaurantMenuPathFromRow } from "../../lib/canonicalUrl.js";
 import { appendClusterReturnQuery } from "../../lib/clusterReturnNavigation.js";
 import { formatClusterDishExcerpt } from "../../lib/clusterDishExcerpt.js";
 import { formatMoney, getConsumerDisplayPrice } from "../../lib/pricingDisplay.js";
+import { useClusterVideos } from "./video/ClusterVideoContext.jsx";
+import ClusterVideoPlayButton from "./video/ClusterVideoPlayButton.jsx";
 
 export const CLUSTER_PLACEHOLDER_FOOD_CARD_STYLE = {
   display: "grid",
@@ -204,17 +206,24 @@ export function ClusterDishChip({
     return <ClusterPlaceholderFoodCard item={item} />;
   }
 
-  const href = buildDishHref(item, clusterReturnTo, clusterReturnLabel);
-  const content = <ClusterDishChipContent item={item} showExcerpt={showExcerpt} />;
-
-  if (!href) {
-    return <div style={CLUSTER_DISH_CHIP_STYLE}>{content}</div>;
-  }
-
   return (
+    <ClusterDishChipWithVideo
+      item={item}
+      href={buildDishHref(item, clusterReturnTo, clusterReturnLabel)}
+      content={<ClusterDishChipContent item={item} showExcerpt={showExcerpt} />}
+    />
+  );
+}
+
+/** Rows whose dish appears in a cluster video get a play control on the left (no navigation). */
+function ClusterDishChipWithVideo({ item, href, content }) {
+  const { index, activeVideoKey } = useClusterVideos();
+  const videos = index.forDish(item);
+
+  const link = href ? (
     <Link
       to={href}
-      style={CLUSTER_DISH_CHIP_STYLE}
+      style={videos.length > 0 ? CLUSTER_DISH_CHIP_LINK_IN_VIDEO_ROW_STYLE : CLUSTER_DISH_CHIP_STYLE}
       data-mp-event="menu_item_click"
       data-mp-menu-item-id={item?.menu_item_id ?? item?.id}
       data-mp-restaurant-id={item?.restaurant_id ?? undefined}
@@ -224,8 +233,54 @@ export function ClusterDishChip({
     >
       {content}
     </Link>
+  ) : null;
+
+  if (videos.length === 0) {
+    return link || <div style={CLUSTER_DISH_CHIP_STYLE}>{content}</div>;
+  }
+
+  const playing = videos.some((v) => v.video_key === activeVideoKey);
+  return (
+    <div
+      data-testid="cluster-dish-video-row"
+      data-playing={playing ? "1" : "0"}
+      style={{ ...CLUSTER_DISH_CHIP_STYLE, ...CLUSTER_DISH_VIDEO_ROW_STYLE, ...(playing ? CLUSTER_DISH_PLAYING_STYLE : null) }}
+    >
+      <ClusterVideoPlayButton
+        videos={videos}
+        trigger="dish_icon"
+        item={item}
+        label={`Play video of ${item.name}`}
+        testId="cluster-dish-video-play"
+      />
+      {link || <div style={CLUSTER_DISH_CHIP_LINK_IN_VIDEO_ROW_STYLE}>{content}</div>}
+    </div>
   );
 }
+
+const CLUSTER_DISH_VIDEO_ROW_STYLE = {
+  gap: "0.6rem",
+  padding: "0.45rem 0.75rem 0.45rem 0.55rem",
+};
+
+const CLUSTER_DISH_PLAYING_STYLE = {
+  background: "#fffbeb",
+  boxShadow: "0 0 0 2px #fbbf24",
+};
+
+const CLUSTER_DISH_CHIP_LINK_IN_VIDEO_ROW_STYLE = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "0.75rem",
+  flex: 1,
+  minWidth: 0,
+  padding: "0.1rem 0",
+  color: "#111827",
+  textDecoration: "none",
+  textAlign: "left",
+  overflowWrap: "anywhere",
+};
 
 export function ClusterDishList({
   items = [],

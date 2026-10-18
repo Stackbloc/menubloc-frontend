@@ -78,7 +78,12 @@ describe("venue advertising Phase 1 contracts", () => {
   it("ClusterPage wires cluster page_region slots only", () => {
     const page = read("src/pages/ClusterPage.jsx");
     assert.match(page, /ClusterAdSlot/);
-    assert.match(page, /cluster_landing_hero/);
+    // Landing hero: video first, delivered hero ad as fallback (ClusterVideoHero owns the region).
+    assert.match(page, /<ClusterVideoHero clusterSlug=\{cluster\.slug\} \/>/);
+    const hero = read("src/components/cluster/video/ClusterVideoHero.jsx");
+    assert.match(hero, /PAGE_REGION = "cluster_landing_hero"/);
+    assert.match(hero, /getAdvertisementByRegion\(PAGE_REGION/);
+    assert.match(hero, /ClusterAdCreative/);
     assert.match(page, /cluster_landing_footer/);
     assert.match(page, /cluster_search_inline/);
     assert.match(page, /cluster_restaurant_footer/);

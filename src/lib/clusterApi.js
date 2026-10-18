@@ -209,3 +209,15 @@ export async function submitClusterContribution(payload, { signal } = {}) {
   }
   return apiPost("/public/clusters/contributions", payload || {});
 }
+
+/**
+ * Videos shown on this cluster's member restaurant profiles (same visibility rules),
+ * merged: { videos, restaurants: { [restaurant_id]: video_key[] }, video_count }.
+ */
+export async function fetchClusterVideos(clusterSlug, { limit = 40, signal } = {}) {
+  const params = new URLSearchParams();
+  if (limit != null) params.set("limit", String(limit));
+  const qs = params.toString();
+  const path = `/public/clusters/${encodeURIComponent(clusterSlug)}/videos${qs ? `?${qs}` : ""}`;
+  return apiGet(path, { signal });
+}

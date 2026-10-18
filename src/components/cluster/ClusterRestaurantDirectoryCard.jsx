@@ -14,6 +14,8 @@ import {
 import { formatClusterListingNoteForDisplay } from "../../lib/clusterListingNoteDisplay.js";
 import AddMenuAction from "../AddMenuAction.jsx";
 import { canShowAddMenu } from "../../lib/addMenuContribution.js";
+import { useClusterVideos } from "./video/ClusterVideoContext.jsx";
+import ClusterVideoPlayButton from "./video/ClusterVideoPlayButton.jsx";
 
 export default function ClusterRestaurantDirectoryCard({
   restaurant,
@@ -21,6 +23,7 @@ export default function ClusterRestaurantDirectoryCard({
   placeReturnLabel = null,
 }) {
   const [imageFailed, setImageFailed] = useState(false);
+  const { index: videoIndex } = useClusterVideos();
 
   if (!restaurant) return null;
 
@@ -222,9 +225,7 @@ export default function ClusterRestaurantDirectoryCard({
     </article>
   );
 
-  if (!href) return content;
-
-  return (
+  const card = href ? (
     <Link
       to={href}
       className="cluster-themed-card-link"
@@ -233,6 +234,27 @@ export default function ClusterRestaurantDirectoryCard({
     >
       {content}
     </Link>
+  ) : (
+    content
+  );
+
+  // Restaurants with cluster videos: a Video pill over the card's top-right (sibling of the link,
+  // so tapping it plays in the floating player instead of opening the menu).
+  const videos = videoIndex.forRestaurant(restaurant?.restaurant_id ?? restaurant?.id);
+  if (videos.length === 0) return card;
+  return (
+    <div style={{ position: "relative", minWidth: 0, maxWidth: "100%" }} data-testid="cluster-restaurant-video-card">
+      {card}
+      <div style={{ position: "absolute", top: 8, right: 8, zIndex: 1 }}>
+        <ClusterVideoPlayButton
+          videos={videos}
+          trigger="restaurant_icon"
+          label={`Play ${name} video`}
+          variant="overlay"
+          testId="cluster-restaurant-video-play"
+        />
+      </div>
+    </div>
   );
 }
 

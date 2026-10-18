@@ -73,6 +73,9 @@ import CampusDiningSection from "../components/cluster/CampusDiningSection.jsx";
 import ClusterSubscribeButton from "../components/cluster/ClusterSubscribeButton.jsx";
 import ClusterPublicFeed from "../components/cluster/ClusterPublicFeed.jsx";
 import ClusterNearbyEvents from "../components/cluster/ClusterNearbyEvents.jsx";
+import { ClusterVideoProvider, useClusterVideos } from "../components/cluster/video/ClusterVideoContext.jsx";
+import ClusterVideoHero from "../components/cluster/video/ClusterVideoHero.jsx";
+import ClusterVideoPlayButton, { ClusterVideosPill } from "../components/cluster/video/ClusterVideoPlayButton.jsx";
 
 const CANONICAL_BASE = "https://menuply.com";
 const CLUSTER_VIEW_MODES = Object.freeze({
@@ -362,6 +365,13 @@ const CLUSTER_AD_SPACE_STYLE = {
   padding: "2.75rem 0 3.25rem",
 };
 
+const CLUSTER_SEARCH_VIDEO_ROW_STYLE = {
+  display: "flex",
+  alignItems: "flex-start",
+  gap: "0.5rem",
+  minWidth: 0,
+};
+
 function SpacedClusterAdSlot({ compact = false, slim = false, ...props }) {
   return (
     <div
@@ -503,6 +513,7 @@ function ClusterMenuExplorerTab({
   const [searchLoadingMore, setSearchLoadingMore] = useState(false);
   const [priceSort, setPriceSort] = useState(DEFAULT_CLUSTER_PRICE_SORT);
   const [selectedZone, setSelectedZone] = useState(null);
+  const { index: videoIndex } = useClusterVideos();
   const [drinkSubcategory, setDrinkSubcategory] = useState(() =>
     normalizeClusterDrinkSubcategory(searchParams.get(CLUSTER_DRINK_QUERY_KEY))
   );
@@ -901,18 +912,37 @@ function ClusterMenuExplorerTab({
 
               const rowId = row?.menu_item_id ?? row?.id;
               const rowName = row?.search_display_name || row?.menu_item_name || row?.name || "item";
+              const card = (
+                <SearchResultCard
+                  item={row}
+                  query={submittedSearch}
+                  queryMeta={searchQueryMeta}
+                  geo={{
+                    city: cluster?.city || null,
+                    state: cluster?.state || null,
+                  }}
+                  returnNavigation={returnNavigation}
+                />
+              );
+              const rowVideos = videoIndex.forDish(row);
               return (
                 <React.Fragment key={`cluster-search-${rowId || rowName}`}>
-                  <SearchResultCard
-                    item={row}
-                    query={submittedSearch}
-                    queryMeta={searchQueryMeta}
-                    geo={{
-                      city: cluster?.city || null,
-                      state: cluster?.state || null,
-                    }}
-                    returnNavigation={returnNavigation}
-                  />
+                  {rowVideos.length > 0 ? (
+                    <div data-testid="cluster-search-video-row" style={CLUSTER_SEARCH_VIDEO_ROW_STYLE}>
+                      <div style={{ paddingTop: 12 }}>
+                        <ClusterVideoPlayButton
+                          videos={rowVideos}
+                          trigger="dish_icon"
+                          item={{ ...row, name: rowName }}
+                          label={`Play video of ${rowName}`}
+                          testId="cluster-search-video-play"
+                        />
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>{card}</div>
+                    </div>
+                  ) : (
+                    card
+                  )}
                   {inlineSlot}
                 </React.Fragment>
               );
@@ -1300,21 +1330,24 @@ export default function ClusterPage() {
   function renderStickyLead() {
     return (
       <>
-        <h2
-          data-testid="cluster-sticky-title"
-          style={{
-            margin: 0,
-            color: "#111827",
-            fontSize: "1.2rem",
-            lineHeight: 1.2,
-            fontWeight: 700,
-            minWidth: 0,
-            overflowWrap: "anywhere",
-            letterSpacing: "-0.02em",
-          }}
-        >
-          {productTitle}
-        </h2>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.6rem", minWidth: 0 }}>
+          <h2
+            data-testid="cluster-sticky-title"
+            style={{
+              margin: 0,
+              color: "#111827",
+              fontSize: "1.2rem",
+              lineHeight: 1.2,
+              fontWeight: 700,
+              minWidth: 0,
+              overflowWrap: "anywhere",
+              letterSpacing: "-0.02em",
+            }}
+          >
+            {productTitle}
+          </h2>
+          <ClusterVideosPill />
+        </div>
         <div
           style={{
             display: "flex",
@@ -1345,8 +1378,11 @@ export default function ClusterPage() {
     );
   }
 
+  // Video first; falls back to the delivered hero ad (see ClusterVideoHero for slot rules).
   const clusterFoodHero = (
-    <SpacedClusterAdSlot clusterSlug={cluster.slug} pageRegion="cluster_landing_hero" />
+    <div data-testid="cluster-ad-space" data-ad-compact="false" data-ad-slim="false" style={CLUSTER_AD_SPACE_STYLE}>
+      <ClusterVideoHero clusterSlug={cluster.slug} />
+    </div>
   );
 
   const clusterDisclaimer = (
@@ -1394,6 +1430,7 @@ export default function ClusterPage() {
           : undefined;
 
   return (
+    <ClusterVideoProvider cluster={cluster}>
     <div
       ref={engagementRootRef}
       className={themeClass}
@@ -1568,5 +1605,6 @@ export default function ClusterPage() {
 
       <BottomNav />
     </div>
+    </ClusterVideoProvider>
   );
 }

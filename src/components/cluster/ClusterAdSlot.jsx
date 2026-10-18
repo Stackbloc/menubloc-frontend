@@ -47,6 +47,34 @@ export default function ClusterAdSlot({
     return () => controller.abort();
   }, [clusterSlug, inventoryKey, pageRegion]);
 
+  return (
+    <ClusterAdCreative
+      ad={ad}
+      inventoryType={inventoryType}
+      delivery={delivery}
+      inventoryKey={inventoryKey}
+      pageRegion={pageRegion}
+      size={size}
+      className={className}
+      style={style}
+    />
+  );
+}
+
+/**
+ * Renders one delivered ad (image, Sponsored label, link, engagement attrs). Exported so the
+ * cluster video hero can fall back to the same creative it already fetched.
+ */
+export function ClusterAdCreative({
+  ad,
+  inventoryType = null,
+  delivery = null,
+  inventoryKey = null,
+  pageRegion = null,
+  size = null,
+  className,
+  style,
+}) {
   if (!ad?.image_url) return null;
 
   const type = inventoryType || ad.inventory_type || "Page Banner";
@@ -246,7 +274,7 @@ function resolveFrameStyle(type, size, style = {}) {
  * ad source from the delivery response; the server derives cluster, destination, and
  * paid/house class from its own rows. Unknown delivery → not tracked.
  */
-function adEngagementAttrs(ad, delivery) {
+export function adEngagementAttrs(ad, delivery) {
   const inventoryId = Number(delivery?.inventoryId) || null;
   const adSource = delivery?.adSource || null;
   if (!inventoryId || !adSource) return {};
