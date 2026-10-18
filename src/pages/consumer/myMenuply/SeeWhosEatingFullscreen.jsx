@@ -53,7 +53,7 @@ import {
   formatVerticalReelNavHint,
 } from "../../../lib/feedVerticalReelNavigationCopy.js";
 import MenuplyAccountInviteCard from "../../../components/consumer/MenuplyAccountInviteCard.jsx";
-import { wrapEndlessFeedNext } from "../../../lib/shuffleProfileVideos.js";
+import { feedListKeepsPosition, wrapEndlessFeedNext } from "../../../lib/shuffleProfileVideos.js";
 import { clearStuckMediaChrome, restoreDocumentScroll } from "./pendingHighlightMedia.js";
 import FeedVideoPlayPauseButton, { PIP_PAUSE_TITLE } from "../../../components/consumer/feed/FeedVideoPlayPauseButton.jsx";
 
@@ -130,9 +130,19 @@ export default function SeeWhosEatingFullscreen({
     }
   }, [playlist.length, hasMore, loadingMore]);
 
+  // Restart at startIndex only for a fresh list. A Load More page (or a removed clip) keeps the
+  // viewer's place — resetting on length used to jump back to clip 0 and replay the first batch.
+  const prevItemsRef = useRef(items);
   useEffect(() => {
-    setIndex(Math.min(Math.max(0, startIndex), Math.max(0, activeItems.length - 1)));
-  }, [startIndex, activeItems.length]);
+    const prevItems = prevItemsRef.current;
+    prevItemsRef.current = items;
+    const last = Math.max(0, (Array.isArray(items) ? items.length : 0) - 1);
+    if (prevItems !== items && feedListKeepsPosition(prevItems, items)) {
+      setIndex((i) => Math.min(i, last));
+      return;
+    }
+    setIndex(Math.min(Math.max(0, startIndex), last));
+  }, [startIndex, items]);
 
   useEffect(() => {
     setConnectNotice("");
