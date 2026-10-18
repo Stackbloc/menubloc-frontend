@@ -584,7 +584,7 @@ export const getOwnerBot = (botKey) => get(`/api/owner/bots/${encodeURIComponent
 export const updateOwnerBotSchedule = (botKey, body) =>
   put(`/api/owner/bots/${encodeURIComponent(botKey)}/schedule`, body);
 
-/** Hours Bot accepts body { market: { name, state }, limit }. */
+/** Hours Bot accepts body { market: { name, state }, limit }; Address Bot { market: key, limit }. */
 export const runOwnerBotNow = (botKey, body = {}) => post(`/api/owner/bots/${encodeURIComponent(botKey)}/run`, body);
 
 /** Nutribot: recompute nutrition for every menu item of one restaurant. */
@@ -599,6 +599,17 @@ export const runHoursBotForRestaurant = (restaurantId) =>
 
 /** Hours Bot: one run with per-restaurant results. */
 export const getHoursBotRun = (runId) => get(`/api/owner/bots/hours_bot/runs/${encodeURIComponent(runId)}`);
+
+/** Address Bot: find one restaurant's street address now. */
+export const runAddressBotForRestaurant = (restaurantId) =>
+  post(`/api/owner/bots/address_bot/restaurants/${encodeURIComponent(restaurantId)}/run`, {});
+
+/** Address Bot: one run with per-restaurant results. */
+export const getAddressBotRun = (runId) => get(`/api/owner/bots/address_bot/runs/${encodeURIComponent(runId)}`);
+
+/** Address Bot: publish one candidate from the review list. */
+export const acceptAddressBotCandidate = (restaurantId, index) =>
+  post(`/api/owner/bots/address_bot/restaurants/${encodeURIComponent(restaurantId)}/accept`, { index });
 
 // ─── Franchise Bot (paste a chain's stores → preview → install) ───────────────
 

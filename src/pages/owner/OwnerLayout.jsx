@@ -150,6 +150,7 @@ export default function OwnerLayout({ title, children, actions = null }) {
           { to: "/owner/bots/nutribot", label: "Nutribot" },
           { to: "/owner/bots/language-bot", label: "Language Bot" },
           { to: "/owner/bots/hours-bot", label: "Hours Bot" },
+          { to: "/owner/bots/address-bot", label: "Address Bot" },
           { to: "/owner/bots/franchise-bot", label: "Franchise Bot" },
         ],
       },

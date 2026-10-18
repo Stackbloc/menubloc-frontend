@@ -2,9 +2,12 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import OwnerLayout, { EmptyState, OWNER_COLORS, PageCard, SectionTitle } from "./OwnerLayout.jsx";
 import {
+  acceptAddressBotCandidate,
+  getAddressBotRun,
   getHoursBotRun,
   getNutribotRun,
   getOwnerBot,
+  runAddressBotForRestaurant,
   runHoursBotForRestaurant,
   runNutribotForRestaurant,
   runOwnerBotNow,
@@ -12,6 +15,9 @@ import {
   updateOwnerBotSchedule,
 } from "../../lib/ownerApi.js";
 import {
+  ADDRESS_OUTCOME_LABELS,
+  ADDRESS_OUTCOME_STATUS,
+  ADDRESS_SOURCE_LABELS,
   DAY_NAMES,
   HOURS_OUTCOME_LABELS,
   HOURS_OUTCOME_STATUS,
@@ -23,6 +29,7 @@ import {
   formatDuration,
   formatHoursSummary,
   formatTime12,
+  addressSourceUrl,
   runResultText,
   scheduleSummary,
   triggerLabel,
@@ -37,6 +44,8 @@ import {
  *   - Nutribot only: analyze one restaurant's whole menu right away
  *   - Hours Bot only: find one restaurant's hours now, run one market,
  *     recent per-restaurant results, coverage of restaurants with menus
+ *   - Address Bot only: same per-restaurant / market tools, LA street-address
+ *     coverage, and a review list of matches the bot wasn't sure of
  */
 
 const HOURS = Array.from({ length: 24 }, (_, h) => `${String(h).padStart(2, "0")}:00`);
@@ -244,6 +253,12 @@ const ANALYZER = {
     button: "Find hours now",
     busyText: () => "Looking for hours…",
   },
+  address_bot: {
+    start: runAddressBotForRestaurant,
+    poll: getAddressBotRun,
+    button: "Find address now",
+    busyText: () => "Looking for the address…",
+  },
 };
 
 function HoursResult({ check }) {
@@ -267,6 +282,38 @@ function HoursResult({ check }) {
       {check.outcome !== "saved" && check.notes?.length ? (
         <div style={{ ...mutedStyle, fontSize: 12 }}>{check.notes.join(" ")}</div>
       ) : null}
+    </div>
+  );
+}
+
+function candidatesOf(check) {
+  return Array.isArray(check?.candidate?.candidates) ? check.candidate.candidates : [];
+}
+
+function AddressLine({ candidate }) {
+  const url = addressSourceUrl(candidate);
+  return (
+    <span>
+      {candidate.address_line1}
+      {candidate.postal_code ? `, ${candidate.postal_code}` : ""}
+      <span style={mutedStyle}>
+        {candidate.distance_m != null ? ` · ${candidate.distance_m} m from the map pin` : ""}
+        {candidate.source ? " · " : ""}
+        {candidate.source ? (url ? <a href={url} target="_blank" rel="noreferrer">{ADDRESS_SOURCE_LABELS[candidate.source] || candidate.source}</a> : ADDRESS_SOURCE_LABELS[candidate.source] || candidate.source) : null}
+      </span>
+    </span>
+  );
+}
+
+function AddressResult({ check }) {
+  if (!check) return null;
+  const candidates = candidatesOf(check);
+  return (
+    <div style={{ display: "grid", gap: 4 }}>
+      <div><StatusPill status={ADDRESS_OUTCOME_STATUS[check.outcome] || "completed_no_writes"} label={ADDRESS_OUTCOME_LABELS[check.outcome]} /></div>
+      {check.outcome === "saved" && candidates[0] ? <div style={{ fontSize: 13 }}><AddressLine candidate={candidates[0]} /></div> : null}
+      {check.outcome === "kept_existing" && check.address_line1 ? <div style={{ fontSize: 13 }}>{check.address_line1}</div> : null}
+      {check.outcome !== "saved" && check.notes?.length ? <div style={{ ...mutedStyle, fontSize: 12 }}>{check.notes.join(" ")}</div> : null}
     </div>
   );
 }
@@ -410,13 +457,15 @@ function RestaurantAnalyzer({ botKey, onFinished }) {
             flexWrap: "wrap",
           }}
         >
-          {running || botKey !== "hours_bot" ? (
+          {running || (botKey !== "hours_bot" && botKey !== "address_bot") ? (
             <>
               <StatusPill status={run.status} />
               <span style={{ fontSize: 14 }}>
                 {running ? cfg.busyText(run) : runResultText(botKey, run) || "Done."}
               </span>
             </>
+          ) : botKey === "address_bot" ? (
+            <AddressResult check={run.results?.[0]} />
           ) : (
             <HoursResult check={run.results?.[0]} />
           )}
@@ -482,6 +531,149 @@ function MarketRunner({ markets, running, onStarted }) {
         Checks the restaurants in this market that have no hours yet, those with menus first. Takes a few seconds per restaurant.
       </div>
       {message ? <div style={{ marginTop: 10, fontSize: 13, fontWeight: 700 }}>{message}</div> : null}
+    </div>
+  );
+}
+
+const ADDRESS_BATCH_SIZES = [25, 50, 100, 300];
+
+function AddressMarketRunner({ markets, running, onStarted }) {
+  const list = markets || [];
+  const [marketKey, setMarketKey] = useState(list.find((m) => m.scheduled)?.key || "");
+  const [limit, setLimit] = useState(100);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState("");
+  const market = list.find((m) => m.key === marketKey);
+
+  async function start() {
+    if (!market) return;
+    setBusy(true);
+    setMessage("");
+    try {
+      const data = await runOwnerBotNow("address_bot", { market: market.key, limit });
+      setMessage(
+        data.total_restaurants
+          ? `Started: checking ${data.total_restaurants} restaurants in ${market.name}, about one a second. Results appear below as it goes.`
+          : `Nothing to do in ${market.name} — every restaurant there has an address or was checked in the last 30 days.`
+      );
+      onStarted?.();
+    } catch (err) {
+      setMessage(err?.status === 409 ? "Address Bot is already running. Try again when it finishes." : err?.message || "Could not start the run");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div>
+      <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "flex-end" }}>
+        <div style={{ flex: "1 1 240px", minWidth: 0 }}>
+          <label style={labelStyle} htmlFor="address-bot-market">Market</label>
+          <select id="address-bot-market" style={{ ...inputStyle, width: "100%" }} value={marketKey} onChange={(e) => setMarketKey(e.target.value)}>
+            <option value="">Choose a market…</option>
+            <optgroup label="On the schedule">
+              {list.filter((m) => m.scheduled).map((m) => <option key={m.key} value={m.key}>{m.name}</option>)}
+            </optgroup>
+            <optgroup label="Later (run by hand only)">
+              {list.filter((m) => !m.scheduled).map((m) => <option key={m.key} value={m.key}>{m.name}</option>)}
+            </optgroup>
+          </select>
+        </div>
+        <div>
+          <label style={labelStyle} htmlFor="address-bot-limit">Up to</label>
+          <select id="address-bot-limit" style={inputStyle} value={limit} onChange={(e) => setLimit(Number(e.target.value))}>
+            {ADDRESS_BATCH_SIZES.map((n) => <option key={n} value={n}>{n} restaurants</option>)}
+          </select>
+        </div>
+        <button type="button" onClick={start} disabled={!market || busy || running} style={primaryButtonStyle({ busy, disabled: !market || running })}>
+          {busy ? "Starting…" : "Run for this market"}
+        </button>
+      </div>
+      <div style={{ ...mutedStyle, marginTop: 10 }}>
+        Checks restaurants in this market that have no street address yet, those with menus and chain stores first.
+        The nightly schedule only covers the markets marked &ldquo;On the schedule&rdquo;.
+      </div>
+      {message ? <div style={{ marginTop: 10, fontSize: 13, fontWeight: 700 }}>{message}</div> : null}
+    </div>
+  );
+}
+
+function AddressReviewQueue({ checks, onChanged }) {
+  const [busyKey, setBusyKey] = useState("");
+  const [error, setError] = useState("");
+  if (!checks?.length) return <EmptyState>Nothing to review.</EmptyState>;
+
+  async function accept(restaurantId, index) {
+    setBusyKey(`${restaurantId}:${index}`);
+    setError("");
+    try {
+      await acceptAddressBotCandidate(restaurantId, index);
+      onChanged?.();
+    } catch (err) {
+      setError(err?.message || "Could not save that address");
+    } finally {
+      setBusyKey("");
+    }
+  }
+
+  return (
+    <div style={{ display: "grid", gap: 12 }}>
+      {error ? <div style={{ color: "#b91c1c", fontSize: 13 }}>{error}</div> : null}
+      {checks.map((c) => (
+        <div key={c.restaurant_id} style={{ borderTop: `1px solid ${OWNER_COLORS.line}`, paddingTop: 12 }}>
+          <a href={`/restaurants/${c.restaurant_id}`} target="_blank" rel="noreferrer" style={{ fontWeight: 700, color: OWNER_COLORS.ink }}>
+            {c.restaurant_name}
+          </a>
+          <span style={mutedStyle}> #{c.restaurant_id}{c.city ? ` · ${c.city}${c.state ? `, ${c.state}` : ""}` : ""}</span>
+          {c.notes?.length ? <div style={{ ...mutedStyle, fontSize: 12, marginTop: 2 }}>{c.notes.join(" ")}</div> : null}
+          <div style={{ display: "grid", gap: 6, marginTop: 8 }}>
+            {candidatesOf(c).map((cand, i) => (
+              <div key={`${cand.address_line1}-${i}`} style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", fontSize: 13 }}>
+                <button
+                  type="button"
+                  style={{ ...secondaryButtonStyle, padding: "5px 12px" }}
+                  disabled={Boolean(busyKey)}
+                  onClick={() => accept(c.restaurant_id, i)}
+                >
+                  {busyKey === `${c.restaurant_id}:${i}` ? "Saving…" : "Use this"}
+                </button>
+                <AddressLine candidate={cand} />
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function AddressRecentChecks({ checks }) {
+  if (!checks?.length) return <EmptyState>No restaurants checked yet.</EmptyState>;
+  return (
+    <div style={{ overflowX: "auto" }}>
+      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+        <thead>
+          <tr style={{ textAlign: "left", color: OWNER_COLORS.muted }}>
+            <th style={{ padding: "8px 10px 8px 0" }}>Restaurant</th>
+            <th style={{ padding: "8px 10px" }}>Result</th>
+            <th style={{ padding: "8px 0 8px 10px" }}>Checked</th>
+          </tr>
+        </thead>
+        <tbody>
+          {checks.map((c) => (
+            <tr key={c.restaurant_id} style={{ borderTop: `1px solid ${OWNER_COLORS.line}`, verticalAlign: "top" }}>
+              <td style={{ padding: "10px 10px 10px 0" }}>
+                <a href={`/restaurants/${c.restaurant_id}`} target="_blank" rel="noreferrer" style={{ fontWeight: 700, color: OWNER_COLORS.ink }}>
+                  {c.restaurant_name}
+                </a>
+                <div style={mutedStyle}>#{c.restaurant_id}{c.city ? ` · ${c.city}${c.state ? `, ${c.state}` : ""}` : ""}</div>
+              </td>
+              <td style={{ padding: 10 }}><AddressResult check={c} /></td>
+              <td style={{ padding: "10px 0 10px 10px", whiteSpace: "nowrap", color: OWNER_COLORS.muted }}>{formatDateTime(c.last_checked_at)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -610,6 +802,14 @@ export default function OwnerScheduledBot({ botKey }) {
                     {bot.coverage.ck_with_hours.toLocaleString()} of {bot.coverage.ck_restaurants.toLocaleString()}
                   </Stat>
                 ) : null}
+                {(bot.address_coverage || []).map((c) => (
+                  <Stat key={c.key} label={`${c.market}: restaurants with a street address`}>
+                    {c.with_street.toLocaleString()} of {c.restaurants.toLocaleString()}
+                    <div style={{ ...mutedStyle, fontWeight: 400, marginTop: 4 }}>
+                      Chain stores: {c.chain_with_street.toLocaleString()} of {c.chain_stores.toLocaleString()}
+                    </div>
+                  </Stat>
+                ))}
               </div>
               {running ? (
                 <div style={{ ...mutedStyle, marginTop: 14 }}>
@@ -619,6 +819,11 @@ export default function OwnerScheduledBot({ botKey }) {
               {!bot.automatic_runs_allowed ? (
                 <div style={{ marginTop: 14, padding: 12, borderRadius: 10, background: "#fff7ed", color: "#9a3412", fontSize: 13 }}>
                   Automatic runs are switched off on the server, so the schedule below won&apos;t run until that switch is turned back on. Run now still works.
+                </div>
+              ) : null}
+              {bot.migrated === false ? (
+                <div style={{ marginTop: 14, padding: 12, borderRadius: 10, background: "#fff7ed", color: "#9a3412", fontSize: 13 }}>
+                  Address Bot&apos;s database tables aren&apos;t set up yet (migration 0355), so it can&apos;t run. Nothing else is affected.
                 </div>
               ) : null}
               {runMessage ? <div style={{ marginTop: 12, fontSize: 13, fontWeight: 700 }}>{runMessage}</div> : null}
@@ -650,6 +855,29 @@ export default function OwnerScheduledBot({ botKey }) {
               </>
             ) : null}
 
+            {botKey === "address_bot" ? (
+              <>
+                <PageCard style={{ padding: 24 }}>
+                  <SectionTitle
+                    title="Needs review"
+                    subtitle="Matches Address Bot wasn't sure enough to publish: several possible addresses, or a match too far from the map pin. Pick the right one, or leave it."
+                  />
+                  <AddressReviewQueue checks={bot.review_queue} onChanged={load} />
+                </PageCard>
+                <PageCard style={{ padding: 24 }}>
+                  <SectionTitle
+                    title="Find the address for a restaurant"
+                    subtitle="Looks up one restaurant right away. Addresses already on a profile are never changed."
+                  />
+                  <RestaurantAnalyzer botKey="address_bot" onFinished={load} />
+                </PageCard>
+                <PageCard style={{ padding: 24 }}>
+                  <SectionTitle title="Run for a market" subtitle="Fill in street addresses for one market now." />
+                  <AddressMarketRunner markets={bot.markets} running={running} onStarted={load} />
+                </PageCard>
+              </>
+            ) : null}
+
             <PageCard style={{ padding: 24 }}>
               <SectionTitle title="Schedule" subtitle="When the bot runs on its own. Times are Pacific." />
               <ScheduleEditor bot={bot} onSaved={(next) => setBot((cur) => ({ ...cur, ...next }))} />
@@ -657,7 +885,7 @@ export default function OwnerScheduledBot({ botKey }) {
 
             <PageCard style={{ padding: 24 }}>
               <SectionTitle title="Run history" subtitle="The 10 most recent full runs." />
-              <RunHistory botKey={botKey} runs={bot.runs} showScope={botKey === "hours_bot"} emptyText="No runs yet." />
+              <RunHistory botKey={botKey} runs={bot.runs} showScope={botKey === "hours_bot" || botKey === "address_bot"} emptyText="No runs yet." />
             </PageCard>
 
             {botKey === "hours_bot" ? (
@@ -667,9 +895,19 @@ export default function OwnerScheduledBot({ botKey }) {
               </PageCard>
             ) : null}
 
-            {botKey === "nutribot" || botKey === "hours_bot" ? (
+            {botKey === "address_bot" ? (
               <PageCard style={{ padding: 24 }}>
-                <SectionTitle title={botKey === "hours_bot" ? "Single-restaurant lookups" : "Restaurant analyses"} subtitle="The 10 most recent single-restaurant runs." />
+                <SectionTitle
+                  title="Recent results"
+                  subtitle="The last 25 restaurants Address Bot checked. OpenStreetMap is tried first (free), then Google when it's set up. Map data © OpenStreetMap contributors."
+                />
+                <AddressRecentChecks checks={bot.recent_checks} />
+              </PageCard>
+            ) : null}
+
+            {botKey === "nutribot" || botKey === "hours_bot" || botKey === "address_bot" ? (
+              <PageCard style={{ padding: 24 }}>
+                <SectionTitle title={botKey === "nutribot" ? "Restaurant analyses" : "Single-restaurant lookups"} subtitle="The 10 most recent single-restaurant runs." />
                 <RunHistory botKey={botKey} runs={bot.restaurant_runs} showRestaurant emptyText="No restaurant analyses yet." />
               </PageCard>
             ) : null}

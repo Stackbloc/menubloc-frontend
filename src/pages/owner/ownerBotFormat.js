@@ -23,7 +23,43 @@ export const SCHEDULED_BOTS = {
     path: "/owner/bots/hours-bot",
     blurb: "Finds opening hours for restaurants that don't have them and shows them on their profile. Restaurants with menus go first.",
   },
+  address_bot: {
+    key: "address_bot",
+    name: "Address Bot",
+    path: "/owner/bots/address-bot",
+    blurb: "Finds street addresses for Los Angeles–area restaurants that don't have one, so they show in store pickers and on Google. Addresses already on a profile are never changed.",
+  },
 };
+
+export const ADDRESS_OUTCOME_LABELS = {
+  saved: "Address added",
+  needs_review: "Needs review",
+  not_found: "Not found",
+  kept_existing: "Already had an address",
+  error: "Lookup failed — will retry",
+};
+
+export const ADDRESS_OUTCOME_STATUS = {
+  saved: "success",
+  needs_review: "stale",
+  not_found: "completed_no_writes",
+  kept_existing: "completed_no_writes",
+  error: "error",
+};
+
+export const ADDRESS_SOURCE_LABELS = {
+  nominatim: "OpenStreetMap",
+  google_places: "Google",
+  brand_locator: "Brand store locator",
+  simplemaps_comprehensive: "SimpleMaps",
+  manual_import: "Import",
+};
+
+/** Link to the source record (OpenStreetMap node/way) when there is one. */
+export function addressSourceUrl(candidate) {
+  const m = /^osm:(node|way|relation)\/(\d+)$/.exec(String(candidate?.source_ref || ""));
+  return m ? `https://www.openstreetmap.org/${m[1]}/${m[2]}` : null;
+}
 
 export const HOURS_OUTCOME_LABELS = {
   saved: "Hours added",
@@ -150,6 +186,20 @@ export function runResultText(botKey, run) {
     if (t.items == null) return "";
     const parts = [`${t.updated} of ${t.items} items updated`];
     if (t.no_template) parts.push(`${t.no_template} had no matching dish template`);
+    if (t.failed) parts.push(`${t.failed} failed`);
+    return parts.join(" · ");
+  }
+  if (botKey === "address_bot") {
+    if (run.scope_type === "restaurant") {
+      if (t.found) return "Address added";
+      if (t.needs_review) return "Needs review";
+      if (t.skipped) return "Already had an address";
+      if (t.failed) return "Lookup failed";
+      return "No address found";
+    }
+    const parts = [`${t.checked || 0} checked`, `${t.found || 0} addresses added`];
+    if (t.needs_review) parts.push(`${t.needs_review} to review`);
+    if (t.not_found) parts.push(`${t.not_found} not found`);
     if (t.failed) parts.push(`${t.failed} failed`);
     return parts.join(" · ");
   }
