@@ -350,6 +350,8 @@ function ClusterRestaurantsTab({ clusterSlug, cluster, enabled, placeReturnPath,
 
 /** Cluster food searches/categories open sorted by price, low to high (Andre, 2026-10-11). */
 const DEFAULT_CLUSTER_PRICE_SORT = "asc";
+/** Cluster search results per page ("Load more" fetches the next page). */
+const SEARCH_PAGE_SIZE = 24;
 
 const CLUSTER_SEARCH_GRID_STYLE = {
   display: "grid",
@@ -497,6 +499,8 @@ function ClusterMenuExplorerTab({
   const [searchMenuItems, setSearchMenuItems] = useState([]);
   const [searchQueryMeta, setSearchQueryMeta] = useState(null);
   const [searchError, setSearchError] = useState("");
+  const [searchHasMore, setSearchHasMore] = useState(false);
+  const [searchLoadingMore, setSearchLoadingMore] = useState(false);
   const [priceSort, setPriceSort] = useState(DEFAULT_CLUSTER_PRICE_SORT);
   const [selectedZone, setSelectedZone] = useState(null);
   const [drinkSubcategory, setDrinkSubcategory] = useState(() =>
@@ -734,13 +738,19 @@ function ClusterMenuExplorerTab({
     const controller = new AbortController();
     setSearchStatus("loading");
     setSearchError("");
-    setPriceSort(DEFAULT_CLUSTER_PRICE_SORT);
+    setSearchHasMore(false);
 
-    searchCluster(clusterSlug, { q: submittedSearch.trim(), signal: controller.signal })
+    searchCluster(clusterSlug, {
+      q: submittedSearch.trim(),
+      limit: SEARCH_PAGE_SIZE,
+      priceSort,
+      signal: controller.signal,
+    })
       .then((data) => {
         if (!data?.ok) throw new Error(data?.error || "Search failed");
         setSearchMenuItems(Array.isArray(data.menu_items) ? data.menu_items : []);
         setSearchQueryMeta(data.query || null);
+        setSearchHasMore(Boolean(data.pagination?.has_more));
         setSearchStatus("ok");
       })
       .catch((err) => {
@@ -750,7 +760,37 @@ function ClusterMenuExplorerTab({
       });
 
     return () => controller.abort();
-  }, [clusterSlug, enabled, searchActive, submittedSearch]);
+  }, [clusterSlug, enabled, searchActive, submittedSearch, priceSort]);
+
+  // A new search starts on the default price order (changing the sort re-fetches above).
+  useEffect(() => {
+    if (searchActive) setPriceSort(DEFAULT_CLUSTER_PRICE_SORT);
+  }, [submittedSearch, searchActive]);
+
+  async function loadMoreSearchItems() {
+    if (!clusterSlug || !searchActive || !searchHasMore || searchLoadingMore) return;
+    setSearchLoadingMore(true);
+    setSearchError("");
+    try {
+      const data = await searchCluster(clusterSlug, {
+        q: submittedSearch.trim(),
+        limit: SEARCH_PAGE_SIZE,
+        offset: searchMenuItems.length,
+        priceSort,
+      });
+      if (!data?.ok) throw new Error(data?.error || "Could not load more food");
+      const nextItems = Array.isArray(data.menu_items) ? data.menu_items : [];
+      setSearchMenuItems((prev) => {
+        const seen = new Set(prev.map((row) => `${row.menu_item_id ?? row.id}-${row.restaurant_id}`));
+        return [...prev, ...nextItems.filter((row) => !seen.has(`${row.menu_item_id ?? row.id}-${row.restaurant_id}`))];
+      });
+      setSearchHasMore(Boolean(data.pagination?.has_more));
+    } catch (err) {
+      setSearchError(toConsumerErrorMessage(err, "Could not load more food."));
+    } finally {
+      setSearchLoadingMore(false);
+    }
+  }
 
   async function loadMoreCategoryItems() {
     if (!clusterSlug || !selectedCategory?.code || !pagination?.has_more || status === "loading-more") return;
@@ -878,6 +918,25 @@ function ClusterMenuExplorerTab({
               );
             })}
           </div>
+          {searchStatus === "ok" && searchHasMore ? (
+            <button
+              type="button"
+              data-testid="cluster-food-search-load-more"
+              onClick={loadMoreSearchItems}
+              disabled={searchLoadingMore}
+              style={{
+                marginTop: "0.25rem",
+                padding: "0.65rem 1rem",
+                borderRadius: 8,
+                border: "1px solid #d1d5db",
+                background: "#fff",
+                cursor: searchLoadingMore ? "wait" : "pointer",
+              }}
+            >
+              {searchLoadingMore ? "Loading…" : "Load more"}
+            </button>
+          ) : null}
+          {searchStatus === "ok" && searchError ? <p style={{ color: "#b91c1c", margin: 0 }}>{searchError}</p> : null}
         </div>
       ) : selectedCategory ? (
         <div style={{ display: "grid", gap: "0.75rem" }}>

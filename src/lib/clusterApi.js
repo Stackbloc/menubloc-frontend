@@ -173,11 +173,13 @@ export async function fetchClusterMenuItems(
   return apiGet(path, { signal });
 }
 
-export async function searchCluster(clusterSlug, { q, limit = 24, offset = 0, signal } = {}) {
+export async function searchCluster(clusterSlug, { q, limit = 24, offset = 0, priceSort = null, signal } = {}) {
   const params = new URLSearchParams();
   params.set("q", q);
   if (limit != null) params.set("limit", String(limit));
   if (offset != null) params.set("offset", String(offset));
+  // Server price-sorts every match before paging, so "Load more" continues the order.
+  if (priceSort === "asc" || priceSort === "desc") params.set("price_sort", priceSort);
   return apiGet(`/public/clusters/${encodeURIComponent(clusterSlug)}/search?${params.toString()}`, {
     signal,
   });
