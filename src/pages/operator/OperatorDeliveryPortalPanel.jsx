@@ -667,9 +667,10 @@ export default function OperatorDeliveryPortalPanel({ embedded = false }) {
               data-testid="delivery-fee-help"
               style={{ margin: 0, fontSize: 13, color: "#667085", lineHeight: 1.5, maxWidth: 620 }}
             >
-              Added to every delivery order at checkout. You keep the whole fee to help cover what
-              Uber Direct charges you — Menuply&apos;s 6% does not apply to it. Percentage fees are
-              based on the food subtotal.
+              Starts at $9.00 and is added to every delivery order at checkout — change the amount
+              or turn it off anytime. You keep the whole fee to help cover what Uber Direct charges
+              you (from $7.99 per delivery) — Menuply&apos;s 6% does not apply to it. Percentage fees
+              are based on the food subtotal.
             </p>
 
             <div
