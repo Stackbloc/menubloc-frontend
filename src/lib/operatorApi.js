@@ -701,6 +701,9 @@ export const markOrderCompleted = (rid, orderId) =>
 export const confirmDeliveryPickup = (rid, orderId) =>
   post(`/operator/restaurants/${rid}/orders/${orderId}/picked-up`, {});
 
+export const retryOrderDeliveryDispatch = (rid, orderId) =>
+  post(`/operator/restaurants/${rid}/orders/${orderId}/delivery/dispatch`, {});
+
 export const getOrderHistory = (rid, params = {}) => {
   const qs = new URLSearchParams(
     Object.entries(params).filter(

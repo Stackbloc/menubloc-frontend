@@ -9,6 +9,7 @@ import {
   markOrderCompleted,
   markOrderPreparing,
   markOrderReady,
+  retryOrderDeliveryDispatch,
 } from "../../lib/operatorApi.js";
 
 const ACTIONS = {
@@ -17,6 +18,19 @@ const ACTIONS = {
   accepted: ["preparing"],
   preparing: ["ready"],
   ready: ["completed"],
+};
+
+// Uber Direct delivery statuses → operator wording.
+const DELIVERY_STATUS_LABELS = {
+  pending: "Courier requested — finding a driver",
+  pickup: "Courier on the way to pick up",
+  pickup_complete: "Courier picked up the order",
+  dropoff: "Courier on the way to the customer",
+  delivered: "Delivered",
+  canceled: "Courier canceled",
+  returned: "Returned to restaurant",
+  dispatch_failed: "Courier request failed",
+  picked_up: "Picked up",
 };
 
 function formatMoney(cents) {
@@ -82,6 +96,7 @@ export default function RestaurantOrderDetailPage() {
   const [busyStatus, setBusyStatus] = useState("");
   const [declineReasonCode, setDeclineReasonCode] = useState("");
   const [declineNote, setDeclineNote] = useState("");
+  const [dispatchBusy, setDispatchBusy] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -108,7 +123,12 @@ export default function RestaurantOrderDetailPage() {
       setBusyStatus(nextStatus);
       const restaurantId = state.order.restaurant_id;
       if (nextStatus === "accept") {
-        await acceptOrder(restaurantId, orderId);
+        const acceptResponse = await acceptOrder(restaurantId, orderId);
+        if (acceptResponse?.delivery?.error) {
+          window.alert(
+            `Order accepted, but the Uber courier request failed: ${acceptResponse.delivery.error}`
+          );
+        }
       } else if (nextStatus === "decline") {
         const declineResponse = await declineOrder(restaurantId, orderId, {
           reason_code: declineReasonCode || undefined,
@@ -132,6 +152,31 @@ export default function RestaurantOrderDetailPage() {
       setBusyStatus("");
     }
   }
+
+  async function handleRetryDispatch() {
+    try {
+      setDispatchBusy(true);
+      const response = await retryOrderDeliveryDispatch(state.order.restaurant_id, orderId);
+      if (response?.delivery?.error) {
+        window.alert(`Uber courier request failed: ${response.delivery.error}`);
+      }
+      const refreshed = await getRestaurantOrderDetail(orderId);
+      setState({ status: "ready", order: refreshed.order, error: "" });
+    } catch (error) {
+      window.alert(error.message || "Unable to request a courier.");
+    } finally {
+      setDispatchBusy(false);
+    }
+  }
+
+  const deliveryPayload = state.order?.delivery_payload_json || {};
+  const providerFeeCents =
+    state.order?.delivery_provider_fee_cents ?? deliveryPayload.provider_fee_cents ?? 0;
+  const canRequestCourier =
+    state.order?.fulfillment_type === "delivery" &&
+    ["accepted", "preparing", "ready"].includes(state.order?.order_status) &&
+    (!state.order?.delivery_external_id ||
+      ["dispatch_failed", "canceled"].includes(state.order?.delivery_status));
 
   return (
     <OperatorLayout title="Order Detail">
@@ -209,8 +254,8 @@ export default function RestaurantOrderDetailPage() {
               <DetailRow label="Refund completed" value={formatDateTime(state.order.refund_completed_at)} />
               <DetailRow label="Subtotal" value={formatMoney(state.order.subtotal_cents)} />
               <DetailRow label="Tax" value={formatMoney(state.order.tax_cents)} />
-              {Number(state.order.delivery_provider_fee_cents || 0) > 0 ? (
-                <DetailRow label="Provider delivery fee" value={formatMoney(state.order.delivery_provider_fee_cents)} />
+              {Number(providerFeeCents || 0) > 0 ? (
+                <DetailRow label="Uber delivery fee (billed to you by Uber)" value={formatMoney(providerFeeCents)} />
               ) : null}
               {Number(state.order.delivery_fee_cents || 0) > 0 ? (
                 <DetailRow
@@ -237,10 +282,57 @@ export default function RestaurantOrderDetailPage() {
                     {Object.values(state.order.delivery_address_json || {}).filter(Boolean).map((value) => (
                       <div key={String(value)}>{String(value)}</div>
                     ))}
-                    <div style={{ marginTop: 8, color: "#475467" }}>
-                      Dispatch: {state.order.delivery_status || "Not dispatched"}
-                      {state.order.delivery_provider ? ` via ${state.order.delivery_provider}` : ""}
+                    <div data-testid="order-delivery-status" style={{ marginTop: 8, color: "#475467" }}>
+                      Courier:{" "}
+                      {DELIVERY_STATUS_LABELS[state.order.delivery_status] ||
+                        state.order.delivery_status ||
+                        "Not requested yet — requested automatically when you accept"}
+                      {state.order.delivery_provider === "uber_direct" ? " · Uber Direct" : ""}
                     </div>
+                    {deliveryPayload.tracking_url ? (
+                      <a
+                        href={deliveryPayload.tracking_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        data-testid="order-delivery-tracking"
+                        style={{ display: "inline-block", marginTop: 6, fontWeight: 700, color: "#1F4E3D" }}
+                      >
+                        Track courier ↗
+                      </a>
+                    ) : null}
+                    {state.order.delivery_status === "dispatch_failed" && deliveryPayload.dispatch_error ? (
+                      <div
+                        data-testid="order-delivery-error"
+                        style={{ marginTop: 8, color: "#991b1b", fontWeight: 700 }}
+                      >
+                        {deliveryPayload.dispatch_error}
+                      </div>
+                    ) : null}
+                    {canRequestCourier ? (
+                      <button
+                        type="button"
+                        onClick={handleRetryDispatch}
+                        disabled={dispatchBusy}
+                        data-testid="order-delivery-retry"
+                        style={{
+                          marginTop: 10,
+                          border: "none",
+                          borderRadius: 10,
+                          background: "#1F4E3D",
+                          color: "#fff",
+                          padding: "8px 12px",
+                          fontSize: 13,
+                          fontWeight: 800,
+                          cursor: "pointer",
+                        }}
+                      >
+                        {dispatchBusy
+                          ? "Requesting…"
+                          : state.order.delivery_status
+                            ? "Request Uber courier again"
+                            : "Request Uber courier"}
+                      </button>
+                    ) : null}
                   </div>
                 </div>
               ) : null}
