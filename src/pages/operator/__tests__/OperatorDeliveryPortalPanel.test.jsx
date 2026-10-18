@@ -43,6 +43,25 @@ describe("OperatorDeliveryPortalPanel (Uber Direct only)", () => {
     );
   });
 
+  it("delivery fee: no 'Applies to', explains 6% exclusion, saves fee fields", async () => {
+    api.updateDeliverySettings.mockResolvedValue({ ok: true });
+    render(<OperatorDeliveryPortalPanel />);
+    await screen.findByTestId("delivery-fee-help");
+
+    expect(document.body.textContent).not.toMatch(/Applies to/);
+    expect(screen.getByTestId("delivery-fee-help").textContent).toMatch(/6% does not apply/);
+
+    fireEvent.click(screen.getByLabelText("Charge customers a delivery fee"));
+    fireEvent.change(screen.getByLabelText("Flat amount"), { target: { value: "4.99" } });
+    fireEvent.click(screen.getByRole("button", { name: /Save restaurant delivery settings/ }));
+
+    await waitFor(() => expect(api.updateDeliverySettings).toHaveBeenCalled());
+    const [, body] = api.updateDeliverySettings.mock.calls[0];
+    expect(body.deliveryFeeEnabled).toBe(true);
+    expect(body.deliveryFeeAmountCents).toBe(499);
+    expect(body).not.toHaveProperty("deliveryFeeAppliesTo");
+  });
+
   it("sends credentials as default provider and surfaces Uber's credential error", async () => {
     api.saveDeliveryProviderAccount.mockResolvedValue({
       ok: true,

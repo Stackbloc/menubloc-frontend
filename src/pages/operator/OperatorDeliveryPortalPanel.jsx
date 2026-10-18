@@ -526,8 +526,6 @@ export default function OperatorDeliveryPortalPanel({ embedded = false }) {
             ? Number(state.settings.delivery_fee_percentage_bps || 0)
             : 0,
         deliveryFeeLabel: state.settings.delivery_fee_label || "Delivery fee",
-        deliveryFeeAppliesTo:
-          state.settings.delivery_fee_applies_to || "menuply_delivery_without_provider_fee",
         deliveryFeeDisclosure: state.settings.delivery_fee_disclosure || "",
       });
       await reloadSettings("Restaurant delivery settings updated.");
@@ -663,8 +661,16 @@ export default function OperatorDeliveryPortalPanel({ embedded = false }) {
                   }))
                 }
               />
-              Enable a restaurant-configured delivery fee
+              Charge customers a delivery fee
             </label>
+            <p
+              data-testid="delivery-fee-help"
+              style={{ margin: 0, fontSize: 13, color: "#667085", lineHeight: 1.5, maxWidth: 620 }}
+            >
+              Added to every delivery order at checkout. You keep the whole fee to help cover what
+              Uber Direct charges you — Menuply&apos;s 6% does not apply to it. Percentage fees are
+              based on the food subtotal.
+            </p>
 
             <div
               className="operator-responsive-grid-4"
@@ -745,31 +751,6 @@ export default function OperatorDeliveryPortalPanel({ embedded = false }) {
                   }
                   style={inputStyle}
                 />
-              </label>
-              <label style={{ display: "grid", gap: 6 }}>
-                <span style={labelStyle}>Applies to</span>
-                <select
-                  value={
-                    state.settings?.delivery_fee_applies_to ||
-                    "menuply_delivery_without_provider_fee"
-                  }
-                  onChange={(event) =>
-                    setState((prev) => ({
-                      ...prev,
-                      settings: {
-                        ...(prev.settings || {}),
-                        delivery_fee_applies_to: event.target.value,
-                      },
-                    }))
-                  }
-                  style={inputStyle}
-                >
-                  <option value="restaurant_delivery">Restaurant delivery</option>
-                  <option value="menuply_delivery_without_provider_fee">
-                    Menuply delivery without provider fee
-                  </option>
-                  <option value="all_delivery_orders">All delivery orders</option>
-                </select>
               </label>
             </div>
 
