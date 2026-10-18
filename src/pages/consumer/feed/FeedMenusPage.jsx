@@ -327,6 +327,7 @@ export default function FeedMenusPage() {
             entry={currentEntry}
             locationParams={locationParams}
             isMobile
+            varyDefaultChrome
             onLoadStateChange={setMenuStatus}
           />
         ) : null}

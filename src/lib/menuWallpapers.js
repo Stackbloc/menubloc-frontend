@@ -443,6 +443,32 @@ export function pickMenuChromeForRestaurant(opts = {}) {
 }
 
 /**
+ * Light appearances eligible for Feed display-only variety. Excludes dark (contrast)
+ * and jamaican (bold two-color palms); modern_minimal is the plain fallback being varied.
+ */
+export const FEED_MENU_CHROME_APPEARANCE_POOL = Object.freeze(
+  RANDOM_APPEARANCE_POOL.filter((k) => k !== "jamaican" && k !== "modern_minimal")
+);
+
+let lastFeedAppearance = null;
+let lastFeedWallpaper = null;
+
+/**
+ * Display-only chrome for Feed menus that have no owner-chosen appearance/wallpaper.
+ * Never persisted or tied to a restaurant; avoids repeating the previous pick.
+ */
+export function pickFeedMenuChrome() {
+  const menu_appearance_key = pickAvoiding(FEED_MENU_CHROME_APPEARANCE_POOL, lastFeedAppearance);
+  const menu_wallpaper_key = pickAvoiding(
+    wallpaperPoolForAppearance(menu_appearance_key),
+    lastFeedWallpaper
+  );
+  lastFeedAppearance = menu_appearance_key;
+  lastFeedWallpaper = menu_wallpaper_key;
+  return { menu_appearance_key, menu_wallpaper_key };
+}
+
+/**
  * Pick Menu Appearance + Wallpaper for newly created restaurants/menus.
  * Prefer type-scoped pools when category/cuisine provided; else type-default pool.
  * @param {{ category?: string|null, cuisine?: string|null } | string} [categoryOrOpts]

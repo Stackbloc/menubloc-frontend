@@ -17,7 +17,7 @@ import {
   shouldApplyMenuAppearance,
 } from "../../lib/menuAppearances.js";
 import { resolveEffectiveMenuAppearance } from "../../lib/menuAppearanceRecommendation.js";
-import { buildMenuChromeRootStyle } from "../../lib/menuWallpapers.js";
+import { buildMenuChromeRootStyle, pickFeedMenuChrome } from "../../lib/menuWallpapers.js";
 import { formatMoney, getBaseMenuPrice, getConsumerDisplayPrice } from "../../lib/pricingDisplay.js";
 import { buildMenuShareMetadata } from "../share/shareUtils.js";
 import {
@@ -214,6 +214,8 @@ export default function CatalogMenuRenderer({
   orderBarInsetRight = 0,
   /** When false, Feed PiP owns video — do not mount restaurant contextual player. */
   enableRestaurantContextualVideo = true,
+  /** Feed only: menus without an owner-chosen appearance/wallpaper get random subtle chrome (display-only). */
+  varyDefaultChrome = false,
   onLoadStateChange,
 }) {
   const { language, t } = useLanguage();
@@ -554,15 +556,25 @@ export default function CatalogMenuRenderer({
   const shellTextColor = resolveMenuShellTextColor(displaySettingsSource);
 
   const applyMenuAppearance = shouldApplyMenuAppearance(data?.menu_style || "v1");
-  const effectiveMenuAppearance =
-    data?.effective_menu_appearance ||
-    resolveEffectiveMenuAppearance({
-      menu_appearance_key: data?.menu_appearance_key,
-      category: data?.category,
-      cuisine: data?.cuisine,
-    });
-  const effectiveMenuWallpaper =
-    data?.menu_wallpaper_key == null || data?.menu_wallpaper_key === ""
+  const feedChrome = useMemo(
+    () => (varyDefaultChrome && restaurantId ? pickFeedMenuChrome() : null),
+    [varyDefaultChrome, restaurantId]
+  );
+  const hasOwnerChrome =
+    String(data?.menu_appearance_key || "").trim() !== "" ||
+    String(data?.menu_wallpaper_key || "").trim() !== "";
+  const useFeedChrome = Boolean(feedChrome && data && !hasOwnerChrome);
+  const effectiveMenuAppearance = useFeedChrome
+    ? feedChrome.menu_appearance_key
+    : data?.effective_menu_appearance ||
+      resolveEffectiveMenuAppearance({
+        menu_appearance_key: data?.menu_appearance_key,
+        category: data?.category,
+        cuisine: data?.cuisine,
+      });
+  const effectiveMenuWallpaper = useFeedChrome
+    ? feedChrome.menu_wallpaper_key
+    : data?.menu_wallpaper_key == null || data?.menu_wallpaper_key === ""
       ? null
       : String(data.menu_wallpaper_key).trim();
   const appearanceTokens = applyMenuAppearance
@@ -577,7 +589,7 @@ export default function CatalogMenuRenderer({
         ...buildMenuChromeRootStyle(
           effectiveMenuAppearance,
           effectiveMenuWallpaper,
-          data?.resolved_menu_wallpaper || null
+          useFeedChrome ? null : data?.resolved_menu_wallpaper || null
         ),
         overflow: "hidden",
       }
@@ -893,6 +905,7 @@ export default function CatalogMenuRenderer({
     <div
       style={{ ...catalogShellStyle, position: "relative" }}
       data-menu-appearance={applyMenuAppearance ? effectiveMenuAppearance : undefined}
+      data-menu-chrome={applyMenuAppearance && useFeedChrome ? "feed" : undefined}
     >
       {menuNotice ? (
         <MenuTapToOrderHint

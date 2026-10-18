@@ -253,6 +253,7 @@ export default function FeedMenuBrowserPipOverlay({
           gateOrderingByMarket
           orderViewerLocation={viewerLocation}
           enableRestaurantContextualVideo={false}
+          varyDefaultChrome
           bottomClearance={FEED_MENU_PIP_CLEARANCE_PX}
         />
       </div>
