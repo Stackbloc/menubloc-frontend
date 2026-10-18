@@ -1,46 +1,37 @@
 /**
- * Delivery Portal panel — sign up with Uber Direct / DoorDash Drive,
- * then Link Delivery Account to store credentials on the Menuply restaurant.
+ * Delivery Portal panel — restaurants and food trucks sign up for their own
+ * Uber Direct account, then Link Delivery Account to store credentials on the
+ * Menuply restaurant. Uber bills the restaurant directly; Menuply never collects
+ * delivery charges. DoorDash Drive is off until further notice (2026-10-18).
  * Used by My Account (?tab=delivery) and /operator/delivery deep links.
  */
 import React, { useEffect, useMemo, useState } from "react";
 import { useOperator } from "../../context/OperatorContext.jsx";
 import {
+  API_BASE,
   disconnectDeliveryProviderAccount,
   getDeliverySettings,
   saveDeliveryProviderAccount,
   updateDeliverySettings,
 } from "../../lib/operatorApi.js";
 
+const UBER_DIRECT_WEBHOOK_URL = `${API_BASE}/api/webhooks/delivery/uber-direct`;
+
 const PROVIDERS = [
   {
     key: "uber_direct",
     label: "Uber Direct",
     blurb:
-      "Create your Uber Direct merchant account so customers can get Menuply orders delivered by Uber couriers.",
+      "Create your own Uber Direct account so customers can get Menuply orders delivered by Uber couriers. Works for restaurants and food trucks. Uber bills you directly for each delivery — Menuply does not add delivery charges.",
     signupUrl: "https://direct.uber.com",
     signupLabel: "Open Uber Direct signup",
     docsUrl: "https://developer.uber.com/docs/deliveries/get-started",
     docsLabel: "Uber Direct get-started guide",
     fields: [
+      { key: "customerId", label: "Customer ID" },
       { key: "clientId", label: "Client ID" },
       { key: "clientSecret", label: "Client Secret" },
-      { key: "customerId", label: "Customer / Account ID" },
-    ],
-  },
-  {
-    key: "doordash_drive",
-    label: "DoorDash Drive",
-    blurb:
-      "Create your DoorDash Developer / Drive account so customers can get Menuply orders delivered by Dashers.",
-    signupUrl: "https://developer.doordash.com/",
-    signupLabel: "Open DoorDash Developer Portal",
-    docsUrl: "https://developer.doordash.com/en-US/docs/drive/overview/about_drive/",
-    docsLabel: "DoorDash Drive overview",
-    fields: [
-      { key: "developerId", label: "Developer ID" },
-      { key: "keyId", label: "Key ID" },
-      { key: "signingSecret", label: "Signing Secret" },
+      { key: "webhookSigningKey", label: "Webhook signing key" },
     ],
   },
 ];
@@ -170,15 +161,33 @@ function ProviderPortalCard({
             {providerDef.blurb}
           </div>
           <ol style={{ margin: "12px 0 0", paddingLeft: 18, fontSize: 13, color: "#475467", lineHeight: 1.55 }}>
-            <li>Sign up for the delivery service in their portal (opens in a new tab).</li>
+            <li>Sign up for Uber Direct and add a payment method in its dashboard (opens in a new tab).</li>
             <li>
-              After you have an account, return here and choose <strong>Link Delivery Account</strong> to
-              add your delivery info to Menuply.
+              In the Uber Direct dashboard, open <strong>Developer</strong> and copy your Customer ID,
+              Client ID, and Client Secret.
+            </li>
+            <li>
+              In <strong>Webhooks</strong>, add this URL and copy the signing key:{" "}
+              <code data-testid="uber-direct-webhook-url" style={{ wordBreak: "break-all" }}>
+                {UBER_DIRECT_WEBHOOK_URL}
+              </code>
+            </li>
+            <li>
+              Return here, choose <strong>Link Delivery Account</strong>, and paste them in. Menuply checks
+              the credentials with Uber when you save.
             </li>
           </ol>
         </div>
         <div className="operator-responsive-status" style={{ textAlign: "right" }}>
           <StatusPill value={isLinked ? savedAccount?.account_status || "connected" : "pending"} />
+          {savedAccount?.account_status === "error" && savedAccount?.last_error ? (
+            <div
+              data-testid="delivery-provider-error"
+              style={{ marginTop: 8, fontSize: 12, color: "#991b1b", maxWidth: 260 }}
+            >
+              {savedAccount.last_error}
+            </div>
+          ) : null}
           <div style={{ marginTop: 8, fontSize: 12, color: "#667085" }}>
             {isLinked
               ? savedAccount?.credentials_last4
@@ -248,9 +257,8 @@ function ProviderPortalCard({
             Link Delivery Account
           </div>
           <p style={{ margin: 0, fontSize: 13, color: "#5b6675", lineHeight: 1.5 }}>
-            Paste the account IDs and API credentials from your {providerDef.label} dashboard after
-            you have signed up. Menuply stores them for this restaurant so we can dispatch deliveries
-            through your own account.
+            Paste the credentials from your {providerDef.label} dashboard. Menuply stores them
+            encrypted for this restaurant so we can request couriers through your own account.
           </p>
 
           <div
@@ -278,43 +286,6 @@ function ProviderPortalCard({
               <input
                 value={formState.contactEmail}
                 onChange={(event) => onChange("contactEmail", event.target.value)}
-                style={inputStyle}
-              />
-            </label>
-            <label style={{ display: "grid", gap: 6 }}>
-              <span style={labelStyle}>Account status</span>
-              <select
-                value={formState.accountStatus}
-                onChange={(event) => onChange("accountStatus", event.target.value)}
-                style={inputStyle}
-              >
-                <option value="pending">Pending</option>
-                <option value="connected">Connected</option>
-                <option value="error">Error</option>
-                <option value="disabled">Disabled</option>
-              </select>
-            </label>
-            <label style={{ display: "grid", gap: 6 }}>
-              <span style={labelStyle}>External business ID</span>
-              <input
-                value={formState.externalBusinessId}
-                onChange={(event) => onChange("externalBusinessId", event.target.value)}
-                style={inputStyle}
-              />
-            </label>
-            <label style={{ display: "grid", gap: 6 }}>
-              <span style={labelStyle}>External store ID</span>
-              <input
-                value={formState.externalStoreId}
-                onChange={(event) => onChange("externalStoreId", event.target.value)}
-                style={inputStyle}
-              />
-            </label>
-            <label style={{ display: "grid", gap: 6 }}>
-              <span style={labelStyle}>External account ID</span>
-              <input
-                value={formState.externalAccountId}
-                onChange={(event) => onChange("externalAccountId", event.target.value)}
                 style={inputStyle}
               />
             </label>
@@ -349,14 +320,6 @@ function ProviderPortalCard({
                 onChange={(event) => onChange("isEnabled", event.target.checked)}
               />
               Enable this provider for delivery dispatch
-            </label>
-            <label style={checkLabelStyle}>
-              <input
-                type="checkbox"
-                checked={formState.isDefault}
-                onChange={(event) => onChange("isDefault", event.target.checked)}
-              />
-              Set as default provider
             </label>
           </div>
 
@@ -490,20 +453,29 @@ export default function OperatorDeliveryPortalPanel({ embedded = false }) {
         Object.entries(formState.credentials || {}).filter(([, value]) => String(value || "").trim())
       );
 
-      await saveDeliveryProviderAccount(selectedRestaurant.id, provider, {
+      const saved = await saveDeliveryProviderAccount(selectedRestaurant.id, provider, {
         accountLabel: formState.accountLabel,
         businessName: formState.businessName,
         contactEmail: formState.contactEmail,
         accountStatus: formState.accountStatus,
         isEnabled: formState.isEnabled,
-        isDefault: formState.isDefault,
+        // Uber Direct is the only provider, so it is always the default.
+        isDefault: true,
         externalBusinessId: formState.externalBusinessId,
         externalStoreId: formState.externalStoreId,
         externalAccountId: formState.externalAccountId,
         credentials,
       });
 
-      await reloadSettings("Delivery account linked.");
+      const check = saved?.credential_check;
+      if (check && check.validated === false && check.error) {
+        await reloadSettings("");
+        setState((prev) => ({ ...prev, error: check.error, message: "" }));
+      } else {
+        await reloadSettings(
+          check?.validated ? "Uber Direct account verified and linked." : "Delivery account saved."
+        );
+      }
     } catch (error) {
       setState((prev) => ({
         ...prev,
@@ -593,11 +565,12 @@ export default function OperatorDeliveryPortalPanel({ embedded = false }) {
           {selectedRestaurant.restaurant_name}
         </div>
         <div style={{ marginTop: 8, color: "#5b6675", lineHeight: 1.6, maxWidth: 760 }}>
-          Delivery Portal helps you sign up for Uber Direct or DoorDash Drive, then link those
-          accounts to Menuply. You stay the merchant of record with each delivery service.
+          Menuply delivers with Uber Direct for restaurants and food trucks. You sign up for your own
+          Uber Direct account and link it here; Uber bills you directly and you stay the merchant of
+          record. Food trucks: couriers are sent to your current pickup location.
         </div>
         <div style={{ marginTop: 10, color: "#5b6675", lineHeight: 1.6, maxWidth: 760, fontSize: 14 }}>
-          Step 1: open the provider signup portal. Step 2: after you have signed up, use{" "}
+          Step 1: open Uber Direct signup. Step 2: after you have signed up, use{" "}
           <strong>Link Delivery Account</strong> to add your delivery credentials to this restaurant.
         </div>
 
@@ -648,39 +621,11 @@ export default function OperatorDeliveryPortalPanel({ embedded = false }) {
             Enable delivery checkout for this restaurant
           </label>
 
-          {activeProviders.length > 0 ? (
-            <label
-              className="operator-responsive-field"
-              style={{ display: "grid", gap: 6, maxWidth: 320 }}
-            >
-              <span style={labelStyle}>Default delivery provider</span>
-              <select
-                value={state.settings?.default_delivery_provider || ""}
-                onChange={(event) =>
-                  setState((prev) => ({
-                    ...prev,
-                    settings: {
-                      ...(prev.settings || {}),
-                      default_delivery_provider: event.target.value || null,
-                    },
-                  }))
-                }
-                style={inputStyle}
-              >
-                <option value="">Select default provider</option>
-                {activeProviders.map((provider) => (
-                  <option key={provider} value={provider}>
-                    {PROVIDERS.find((entry) => entry.key === provider)?.label || provider}
-                  </option>
-                ))}
-              </select>
-            </label>
-          ) : (
+          {activeProviders.length === 0 ? (
             <p style={{ margin: 0, fontSize: 13, color: "#667085", lineHeight: 1.5, maxWidth: 520 }}>
-              Sign up and link Uber Direct or DoorDash Drive below, then you can choose a default
-              delivery provider here.
+              Sign up for Uber Direct and link it below before turning on delivery checkout.
             </p>
-          )}
+          ) : null}
 
           <div style={{ fontSize: 13, color: "#667085" }}>
             Linked providers:{" "}
