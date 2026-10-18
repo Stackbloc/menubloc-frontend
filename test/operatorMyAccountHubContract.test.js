@@ -65,14 +65,17 @@ function testDeliveryPortalRewire() {
   const panel = read("src/pages/operator/OperatorDeliveryPortalPanel.jsx");
   const page = read("src/pages/operator/OperatorDeliveryPage.jsx");
   assert.match(panel, /uber_direct/);
-  assert.match(panel, /doordash_drive/);
+  // Uber Direct is the only delivery provider (restaurants + food trucks); DoorDash off.
+  assert.doesNotMatch(panel, /key: "doordash_drive"/);
+  assert.doesNotMatch(panel, /developer\.doordash\.com/);
+  assert.match(panel, /webhookSigningKey/);
+  assert.match(panel, /\/api\/webhooks\/delivery\/uber-direct/);
   assert.match(panel, /data-testid="delivery-portal-panel"/);
   assert.match(panel, /getDeliverySettings/);
   assert.match(panel, /https:\/\/direct\.uber\.com/);
-  assert.match(panel, /https:\/\/developer\.doordash\.com\//);
   assert.match(panel, /Link Delivery Account/);
   assert.match(panel, /delivery-link-account-/);
-  assert.match(panel, /activeProviders\.length > 0/);
+  assert.match(panel, /activeProviders\.length === 0/);
   assert.match(page, /OperatorDeliveryPortalPanel/);
   assert.match(page, /\/operator\/my-account\?tab=delivery/);
   assert.doesNotMatch(page, /function ProviderCard/);

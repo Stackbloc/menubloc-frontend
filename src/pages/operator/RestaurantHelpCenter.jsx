@@ -177,7 +177,7 @@ const OPERATIONS_SECTIONS = [
         title: "Business Section",
         summary: "Owner-level settings protected by Owner PIN.",
         points: [
-          "My Account — Profile, Menu, Settings (plan/billing), My QR Code, Delivery Portal (Uber Direct / DoorDash Drive), and Password. No PIN required.",
+          "My Account — Profile, Menu, Settings (plan/billing), My QR Code, Delivery Portal (Uber Direct), and Password. No PIN required.",
           "Marketplace — order printed QR stickers, window decals, and table kits at /operator/marketplace.",
           "Billboards — manage profile splash creatives at /operator/billboards.",
           "Restaurant Profile / Owner PIN Settings — edit public-facing restaurant info (owner PIN for sensitive settings).",
@@ -406,12 +406,14 @@ const OPERATIONS_SECTIONS = [
       },
       {
         id: "delivery-portal-setup",
-        title: "Delivery Portal (Uber Direct & DoorDash Drive)",
-        summary: "Sign up for delivery services, then link those accounts to Menuply.",
+        title: "Delivery Portal (Uber Direct)",
+        summary: "Sign up for your own Uber Direct account, then link it to Menuply. Restaurants and food trucks.",
         points: [
           "Open My Account → Delivery Portal.",
-          "Use Open Uber Direct signup or Open DoorDash Developer Portal to create your delivery-service account.",
-          "After you have signed up, choose Link Delivery Account and enter the IDs/credentials from that provider’s dashboard.",
+          "Use Open Uber Direct signup to create your Uber Direct account and add a payment method — Uber bills you directly for deliveries.",
+          "From the Uber Direct dashboard, copy your Customer ID, Client ID, and Client Secret (Developer tab), add the Menuply webhook URL shown in Delivery Portal, and copy its signing key.",
+          "Choose Link Delivery Account and paste them in. Menuply checks the credentials with Uber when you save.",
+          "Food trucks: couriers are sent to your current pickup location, so keep it up to date.",
           "Finish-setup links still open /operator/delivery, which shows the same Delivery Portal.",
         ],
       },
