@@ -15,7 +15,7 @@ import {
 /**
  * Menubot (formerly Knowledge Bot) — three steps:
  *   1. Restaurant       — which profile (existing or new), type, optional cluster
- *   2. Menu sources     — links / photos / PDFs, or leave empty and Menubot finds the website + menu
+ *   2. Menu sources     — links / photos / PDFs / pasted menu text, or leave empty and Menubot finds the website + menu
  *   3. Review & publish — readable plan; nothing is written until Publish
  */
 const STEPS = [
@@ -242,6 +242,8 @@ export default function OwnerKnowledgeBot() {
   const [clusters, setClusters] = useState([]);
   const [lookup, setLookup] = useState(null);
   const [files, setFiles] = useState([]);
+  // Copied from an ordering page Menubot can't fetch (Toast and other bot-checked sites).
+  const [pastedMenuText, setPastedMenuText] = useState("");
   const [uploadProgress, setUploadProgress] = useState("");
   const [form, setForm] = useState(EMPTY_FORM);
 
@@ -390,6 +392,13 @@ export default function OwnerKnowledgeBot() {
           await uploadKnowledgeBotEvidence(id, fd);
           remaining = remaining.slice(batch.length);
           setFiles(remaining);
+        }
+        if (pastedMenuText.trim()) {
+          setUploadProgress("Reading the pasted menu text…");
+          const fd = new FormData();
+          fd.append("menu_text", pastedMenuText);
+          await uploadKnowledgeBotEvidence(id, fd);
+          setPastedMenuText("");
         }
       } finally {
         setUploadProgress("");
@@ -579,6 +588,17 @@ export default function OwnerKnowledgeBot() {
                 </div>
               ) : null}
             </Field>
+            <Field
+              label="Paste menu text (optional)"
+              hint="For sites Menubot can't open (Toast ordering sites, “verify you are human” checks): open the menu page in your browser, select all (⌘A), copy, and paste it here. Prices and sections are read from the text."
+            >
+              <textarea
+                style={{ ...inputStyle, minHeight: 110, fontFamily: "inherit" }}
+                value={pastedMenuText}
+                onChange={(e) => setPastedMenuText(e.target.value)}
+                placeholder={"Coffee\nLatte\n$6.00\nCortado\n$5.00"}
+              />
+            </Field>
             <Field label="Notes (optional)">
               <textarea style={{ ...inputStyle, minHeight: 60 }} value={form.admin_notes} onChange={setField("admin_notes")} />
             </Field>
@@ -697,7 +717,7 @@ export default function OwnerKnowledgeBot() {
               <MenuPreview items={items} />
             ) : chainStore ? null : (
               <Notice tone="error">
-                No menu items found yet. Go back and add menu photos, a PDF, or a direct link to the menu page.
+                No menu items found yet. Go back and paste the menu text, add menu photos or a PDF, or a direct link to the menu page.
               </Notice>
             )}
 
