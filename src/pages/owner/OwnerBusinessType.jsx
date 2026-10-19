@@ -99,6 +99,12 @@ function BrandPicker({ value, onChange, disabled, defaultQuery }) {
   }, [q]);
 
   const exact = brands.find((b) => b.name.toLowerCase().replace(/[^a-z0-9]/g, "") === q.toLowerCase().replace(/[^a-z0-9]/g, ""));
+
+  // Typing (or prefilling) an existing brand's exact name picks that brand — no extra click.
+  useEffect(() => {
+    if (exact && !value.chain_id) onChange({ ...value, chain_id: exact.id, chain_label: exact.name, chain_name: "" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [exact?.id]);
   const picked = value.chain_id ? brands.find((b) => b.id === value.chain_id) || { id: value.chain_id, name: value.chain_label } : null;
 
   return (
