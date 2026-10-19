@@ -459,6 +459,12 @@ export const updateMenuConsoleRestaurant = (restaurantId, body) =>
     method: "PATCH",
     body: JSON.stringify(body),
   });
+/** Franchise brands (chains) for the business-type picker. */
+export const listMenuConsoleFranchiseBrands = (q = "") =>
+  get(`/api/owner/menu-console/franchise-brands${q ? `?q=${encodeURIComponent(q)}` : ""}`);
+/** Stand-alone | MLE | franchise (joins or creates a chain; its menu becomes the chain menu). */
+export const setMenuConsoleBusinessType = (restaurantId, body) =>
+  put(`/api/owner/menu-console/restaurants/${encodeURIComponent(restaurantId)}/business-type`, body);
 export const listMenuConsoleAvailableClusters = (params = {}) => {
   const qs = new URLSearchParams(params).toString();
   return get(`/api/owner/menu-console/clusters/available${qs ? `?${qs}` : ""}`);

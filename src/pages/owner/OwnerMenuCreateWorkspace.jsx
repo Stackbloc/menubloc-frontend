@@ -5,6 +5,13 @@ import { MenuEditor, StatusChip, inputStyle } from "./ownerMenuEditorComponents.
 import OwnerMenuRestaurantFinder, { saveRecentRestaurant } from "./OwnerMenuRestaurantFinder.jsx";
 import OcrEditSplitLayout from "./OcrEditSplitLayout.jsx";
 import {
+  BusinessTypeConvertPanel,
+  BusinessTypeCreateField,
+  EMPTY_BUSINESS_TYPE,
+  businessTypeMissing,
+  businessTypePayload,
+} from "./OwnerBusinessType.jsx";
+import {
   bulkReviewItems,
   createMenuConsoleMenu,
   createMenuConsoleRestaurant,
@@ -573,6 +580,7 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
   const [clusterOptions, setClusterOptions] = useState([]);
   const [clusterNotice, setClusterNotice] = useState(null);
   const [profile, setProfile] = useState(EMPTY_PROFILE);
+  const [businessType, setBusinessType] = useState(EMPTY_BUSINESS_TYPE);
   const [profileErr, setProfileErr] = useState("");
   const [duplicateMatches, setDuplicateMatches] = useState(null);
   const [creatingProfile, setCreatingProfile] = useState(false);
@@ -783,6 +791,7 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
     setSourcePages([]);
     setLatestUploadId(null);
     setProfile(EMPTY_PROFILE);
+    setBusinessType(EMPTY_BUSINESS_TYPE);
     setMenuName("Main Menu");
     setMenuType("main");
     setFiles([]);
@@ -1134,6 +1143,8 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
     setProfileErr("");
     try {
       const missing = missingCreateFields(profile);
+      const missingType = businessTypeMissing(businessType);
+      if (missingType) missing.push(missingType);
       if (missing.length) {
         setProfileErr(`Complete required fields before adding: ${missing.join("; ")}.`);
         return;
@@ -1160,8 +1171,12 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
         menu_name: menuName.trim() || "Main Menu",
         menu_type: menuType,
         confirm_duplicate: confirmDuplicate || undefined,
+        ...businessTypePayload(businessType),
       };
       const data = await createMenuConsoleRestaurant(payload);
+      if (data?.business_type_error) {
+        setProfileErr(`Restaurant added, but its business type was not set: ${data.business_type_error}`);
+      }
       const clusterIds = (profile.cluster_ids || []).map(Number).filter((id) => id > 0);
       if (clusterIds.length && data?.restaurant?.id) {
         const clusterName = clusterIds
@@ -1183,7 +1198,7 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
         pendingClusterNotices.set(Number(data.restaurant.id), notice);
       }
       suppressUrlLoadRef.current = true;
-      setRestaurant(data.restaurant);
+      setRestaurant({ ...data.restaurant, business_type: data.business_type || null });
       setExistingRestaurant(false);
       setMenu(data.menu);
       setAvailableMenus(data.menu ? [data.menu] : []);
@@ -1657,6 +1672,28 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
               />
             </div>
           )}
+          <div style={{ gridColumn: "1 / -1" }}>
+            {!restaurant ? (
+              <BusinessTypeCreateField
+                value={businessType}
+                onChange={setBusinessType}
+                disabled={creatingProfile}
+                restaurantName={profile.restaurant_name}
+              />
+            ) : (
+              <BusinessTypeConvertPanel
+                restaurant={restaurant}
+                onConverted={async () => {
+                  try {
+                    const res = await getMenuConsoleRestaurant(restaurant.id);
+                    if (res?.restaurant) setRestaurant((prev) => ({ ...(prev || {}), ...res.restaurant }));
+                  } catch {
+                    // panel already shows the result
+                  }
+                }}
+              />
+            )}
+          </div>
         </div>
 
         <div style={{ marginTop: 14 }}>
