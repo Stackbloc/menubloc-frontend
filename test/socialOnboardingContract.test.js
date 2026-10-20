@@ -7,6 +7,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { resolveBackendRoot } from "./helpers/backendRoot.js";
 import {
   SOCIAL_ONBOARDING_STEPS,
   SOCIAL_ONBOARDING_ROUTE,
@@ -153,7 +154,7 @@ test("App route and account entry points wired", () => {
 });
 
 test("backend social-onboarding route includes welcome step", () => {
-  const beRoot = path.join(root, "..", "menubloc-backend-main");
+  const beRoot = resolveBackendRoot(root);
   const route = fs.readFileSync(
     path.join(beRoot, "src/routes/consumer/socialOnboarding.js"),
     "utf8"

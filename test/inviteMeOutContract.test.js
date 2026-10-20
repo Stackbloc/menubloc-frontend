@@ -6,9 +6,12 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { resolveBackendRoot } from "./helpers/backendRoot.js";
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
-const read = (rel) => fs.readFileSync(path.join(root, rel), "utf8");
+const read = (rel) => fs.readFileSync(path.isAbsolute(rel) ? rel : path.join(root, rel), "utf8");
+/** Backend checkout (main folder or worktree). */
+const BE = resolveBackendRoot(root);
 
 test("Invite Me Out flow uses want picker then InviteToEatModal schedule", () => {
   const flow = read("src/pages/consumer/myMenuply/InviteMeOutFlow.jsx");
@@ -74,22 +77,22 @@ test("Connection peer hub gates Invite Me Out by viewer eligibility", () => {
 
 test("Backend stores Invite Me Out audience on consumer profile", () => {
   const migration = read(
-    "../menubloc-backend-main/sql/migrations/20260824_0286_invite_me_out_audience.sql"
+    BE + "/sql/migrations/20260824_0286_invite_me_out_audience.sql"
   );
   assert.match(migration, /invite_me_out_audience/);
   assert.match(migration, /invite_me_out_allowed_user_ids/);
 
   const eligibility = read(
-    "../menubloc-backend-main/src/services/wantToEat/inviteMeOutEligibility.js"
+    BE + "/src/services/wantToEat/inviteMeOutEligibility.js"
   );
   assert.match(eligibility, /viewerMayInviteMeOut/);
   assert.match(eligibility, /normalizeInviteMeOutPayload/);
 
-  const wants = read("../menubloc-backend-main/src/services/wantToEat/wantToEatService.js");
+  const wants = read(BE + "/src/services/wantToEat/wantToEatService.js");
   assert.match(wants, /viewer_may_invite/);
   assert.match(wants, /invite_me_out/);
 
-  const profile = read("../menubloc-backend-main/src/routes/consumer/profile.js");
+  const profile = read(BE + "/src/routes/consumer/profile.js");
   assert.match(profile, /invite_me_out_audience/);
   assert.match(profile, /invite_me_out_allowed_user_ids/);
 });

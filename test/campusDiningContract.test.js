@@ -7,10 +7,11 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { resolveBackendRoot } from "./helpers/backendRoot.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, "..");
-const beRoot = path.join(root, "..", "menubloc-backend-main");
+const beRoot = resolveBackendRoot(root);
 
 function read(rel, base = root) {
   return fs.readFileSync(path.join(base, rel), "utf8");
@@ -46,7 +47,9 @@ test("I'm Eating allows place-only share with note", () => {
   const page = read("src/pages/consumer/ImEatingPage.jsx");
   assert.match(page, /ImEatingAtPanel/);
   const panel = read("src/components/foodActivity/ImEatingAtPanel.jsx");
-  assert.match(panel, /without a menu item/);
+  // Place-only share: a name or a note is enough without a menu item (copy since 2026-08-19, fba813a7).
+  assert.match(panel, /!menuItem\?\.menu_item_id && !name && !comment\.trim\(\)/);
+  assert.match(panel, /pick a menu item, or add a brief note/);
   assert.match(panel, /menu_item_id: menuItem\?\.menu_item_id \|\| null/);
   const composer = read("src/components/foodActivity/ImEatingComposer.jsx");
   assert.match(composer, /skipMenuItem/);

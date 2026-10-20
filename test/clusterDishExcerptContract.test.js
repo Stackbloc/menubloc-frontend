@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
+import { resolveBackendRoot } from "./helpers/backendRoot.js";
 import {
   clusterShowsDishExcerpt,
   formatClusterDishExcerpt,
@@ -12,7 +13,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const pageSrc = readFileSync(join(root, "src/pages/ClusterPage.jsx"), "utf8");
 const explorerSrc = readFileSync(join(root, "src/components/cluster/ClusterMenuExplorer.jsx"), "utf8");
 const beExplorerSrc = readFileSync(
-  join(root, "../menubloc-backend-main/src/services/clusters/clusterMenuExplorerService.js"),
+  join(resolveBackendRoot(root), "src/services/clusters/clusterMenuExplorerService.js"),
   "utf8"
 );
 
