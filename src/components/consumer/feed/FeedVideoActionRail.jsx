@@ -22,15 +22,24 @@ import useMenuItemLike from "../../../hooks/useMenuItemLike.js";
 import useWishListEntry from "../../../hooks/useWishListEntry.js";
 import { WISH_LIST_ACCENT } from "../../WishListMenuItemButton.jsx";
 
-function RailButton({ testId, label, ariaLabel, disabled, onClick, children, pressed }) {
+/**
+ * Rail icon + short label. `hint` is the full explanation ("Add this item to your Wish List")
+ * shown to the left of the icon on mouse hover; it is also the accessible name.
+ */
+function RailButton({ testId, label, hint, disabled, onClick, children, pressed }) {
+  const [hovered, setHovered] = useState(false);
+  const explanation = hint || label;
   return (
     <button
       type="button"
       data-testid={testId}
-      aria-label={ariaLabel || label}
+      aria-label={explanation}
       aria-pressed={pressed}
       disabled={disabled}
-      title={label}
+      onPointerEnter={(e) => {
+        if (e.pointerType === "mouse") setHovered(true);
+      }}
+      onPointerLeave={() => setHovered(false)}
       onClick={(e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -43,6 +52,11 @@ function RailButton({ testId, label, ariaLabel, disabled, onClick, children, pre
     >
       <span style={styles.iconCircle}>{children}</span>
       <span style={styles.label}>{label}</span>
+      {hovered ? (
+        <span role="tooltip" data-testid={`${testId}-hint`} style={styles.hint}>
+          {explanation}
+        </span>
+      ) : null}
     </button>
   );
 }
@@ -71,7 +85,7 @@ function DishLikeButton({ menuItemId }) {
     <RailButton
       testId="feed-rail-like"
       label={liked ? "Liked" : "Like"}
-      ariaLabel={liked ? "Unlike this dish" : "Like this dish"}
+      hint={liked ? "You like this dish — tap to unlike" : "Like this dish"}
       pressed={liked}
       disabled={loading || busy}
       onClick={toggle}
@@ -90,7 +104,7 @@ function RestaurantFavButton({ restaurantId, restaurantName, followSource }) {
     <RailButton
       testId="feed-rail-fav"
       label={followed ? "My Fav" : "Fav"}
-      ariaLabel={followed ? "Remove restaurant from My Favs" : "Add restaurant to My Favs"}
+      hint={followed ? "In your Favorites — tap to remove this restaurant" : "Add this restaurant to your Favorites"}
       pressed={followed}
       disabled={statusLoading || actionLoading}
       onClick={toggleFollow}
@@ -138,6 +152,7 @@ export default function FeedVideoActionRail({
   topSlot = null,
 }) {
   const [shareOpen, setShareOpen] = useState(false);
+  const [menuHover, setMenuHover] = useState(false);
 
   const restaurantId = restaurantRef?.restaurant_id;
   const restaurantName = String(restaurantRef?.restaurant_name || "").trim();
@@ -180,7 +195,7 @@ export default function FeedVideoActionRail({
           <RailButton
             testId="feed-rail-connect"
             label="Connect"
-            ariaLabel="Connect with person in video"
+            hint="Connect with the person in this clip"
             disabled={connectBusy}
             onClick={onConnect}
           >
@@ -192,12 +207,12 @@ export default function FeedVideoActionRail({
           <RailButton
             testId="feed-rail-wanna-go"
             label={wish.added ? "Added" : WISH_LIST_LABEL}
-            ariaLabel={
+            hint={
               wish.added
-                ? `Remove ${isDishVideo ? dishName || "this dish" : restaurantName || "restaurant"} from Wish List`
+                ? `On your Wish List — tap to remove this ${isDishVideo ? "item" : "restaurant"}`
                 : isDishVideo
-                  ? `Add ${dishName || "this dish"} to Wish List`
-                  : `Add ${restaurantName || "restaurant"} to Wish List`
+                  ? "Add this item to your Wish List"
+                  : "Add this restaurant to your Wish List"
             }
             pressed={wish.added}
             disabled={wish.busy}
@@ -220,7 +235,7 @@ export default function FeedVideoActionRail({
           <RailButton
             testId="feed-rail-invite"
             label="Invite"
-            ariaLabel="Invite to Eat at this restaurant"
+            hint={isDishVideo ? "Invite a Connect to eat this" : "Invite a Connect to eat here"}
             onClick={onInvite}
           >
             <InviteToEatIcon size={20} color="#fff" />
@@ -231,7 +246,7 @@ export default function FeedVideoActionRail({
           <RailButton
             testId="feed-rail-share"
             label="Share"
-            ariaLabel="Share this clip"
+            hint="Share this clip"
             onClick={() => {
               trackShareEvent("menu_share_clicked", shareAnalyticsContext);
               setShare(true);
@@ -245,7 +260,12 @@ export default function FeedVideoActionRail({
           <button
             type="button"
             data-testid="feed-rail-menu"
+            aria-label={isDishVideo ? "Order this dish from the menu" : "See this restaurant's menu"}
             style={styles.orderBtn}
+            onPointerEnter={(e) => {
+              if (e.pointerType === "mouse") setMenuHover(true);
+            }}
+            onPointerLeave={() => setMenuHover(false)}
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -253,6 +273,11 @@ export default function FeedVideoActionRail({
             }}
           >
             {isDishVideo ? "Order this" : "See menu"}
+            {menuHover ? (
+              <span role="tooltip" data-testid="feed-rail-menu-hint" style={{ ...styles.hint, top: 4 }}>
+                {isDishVideo ? "Order this dish from the menu" : "See this restaurant's menu"}
+              </span>
+            ) : null}
           </button>
         ) : null}
 
@@ -277,10 +302,15 @@ export default function FeedVideoActionRail({
 }
 
 const styles = {
+  /**
+   * Fixed 64px column so the four icons sit exactly where the original four did
+   * (Andre, 2026-10-20); the wider "Order this" pill hangs below the column.
+   */
   rail: {
     position: "absolute",
     right: "max(10px, env(safe-area-inset-right))",
     zIndex: 5,
+    width: 64,
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
@@ -288,6 +318,7 @@ const styles = {
     pointerEvents: "auto",
   },
   btn: {
+    position: "relative",
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
@@ -325,7 +356,9 @@ const styles = {
   },
   /** Same green pill as the cluster clip player's "Order this" / "See menu". */
   orderBtn: {
-    marginTop: 2,
+    position: "absolute",
+    top: "calc(100% + 10px)",
+    right: 0,
     height: 32,
     padding: "0 12px",
     borderRadius: 999,
@@ -339,6 +372,23 @@ const styles = {
     fontFamily: "inherit",
     boxShadow: "0 4px 14px rgba(0,0,0,0.35)",
     WebkitTapHighlightColor: "transparent",
+  },
+  /** Hover explanation, opens to the left of the rail so it never covers the icons. */
+  hint: {
+    position: "absolute",
+    right: "calc(100% + 10px)",
+    top: 12,
+    padding: "6px 10px",
+    borderRadius: 8,
+    background: "rgba(17,24,39,0.94)",
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: 600,
+    lineHeight: 1.3,
+    whiteSpace: "nowrap",
+    pointerEvents: "none",
+    boxShadow: "0 6px 18px rgba(0,0,0,0.35)",
+    zIndex: 6,
   },
   railError: {
     margin: 0,

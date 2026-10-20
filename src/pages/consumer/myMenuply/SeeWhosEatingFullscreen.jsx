@@ -13,6 +13,8 @@ import InviteToEatModal from "../../../components/InviteToEatModal.jsx";
 import FeedMenuBrowserPipOverlay from "../../../components/consumer/feed/FeedMenuBrowserPipOverlay.jsx";
 import FeedPipExpandButton from "../../../components/consumer/feed/FeedPipExpandButton.jsx";
 import FeedVideoActionRail from "../../../components/consumer/feed/FeedVideoActionRail.jsx";
+import FeedClipClusterBadge from "../../../components/consumer/feed/FeedClipClusterBadge.jsx";
+import useFeedClipClusters from "../../../hooks/useFeedClipClusters.js";
 import { requestConnection } from "../../../lib/consumerApi.js";
 import {
   MENUPY_CLOSE_LIVE_FEED_FULLSCREEN,
@@ -153,6 +155,8 @@ export default function SeeWhosEatingFullscreen({
   }, [index, item?.id, item?.play_muted, variant]);
 
   const restaurantRef = restaurantRefFromFeedItem(item);
+  const clusterForRestaurant = useFeedClipClusters();
+  const clipCluster = isFeedHome && restaurantRef?.restaurant_id ? clusterForRestaurant(restaurantRef.restaurant_id) : null;
   const menuBrowserOpen = Boolean(browseSession);
   // Ordering from the Feed menu (Andre, 2026-10-12): once something is in the basket the clip
   // loops instead of auto-advancing, so the menu never switches restaurants mid-order. Arrows /
@@ -895,6 +899,10 @@ export default function SeeWhosEatingFullscreen({
         />
       ) : null}
 
+
+      {clipCluster && !menuBrowserOpen ? (
+        <FeedClipClusterBadge cluster={clipCluster} desktop={isDesktopViewport} />
+      ) : null}
 
       {!menuBrowserOpen ? (
         <button

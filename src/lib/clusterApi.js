@@ -245,3 +245,11 @@ export async function fetchClusterVideos(clusterSlug, { limit = 40, signal } = {
   const path = `/public/clusters/${encodeURIComponent(clusterSlug)}/videos${qs ? `?${qs}` : ""}`;
   return apiGet(path, { signal });
 }
+
+/** Member restaurant ids for public clusters (Feed clip → cluster badge). */
+export async function fetchClusterMemberIds(slugs, { signal } = {}) {
+  const list = (Array.isArray(slugs) ? slugs : []).map((s) => String(s || "").trim()).filter(Boolean);
+  if (list.length === 0) return { ok: true, clusters: [] };
+  const params = new URLSearchParams({ slugs: list.join(",") });
+  return apiGet(`/public/clusters/member-ids?${params.toString()}`, { signal });
+}
