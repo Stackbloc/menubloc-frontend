@@ -170,7 +170,6 @@ import OwnerRevenue from "./pages/owner/OwnerRevenue.jsx";
 import OwnerSupportTickets from "./pages/owner/OwnerSupportTickets.jsx";
 import OwnerTicketDetail from "./pages/owner/OwnerTicketDetail.jsx";
 import OwnerMenuUploads from "./pages/owner/OwnerMenuUploads.jsx";
-import OwnerProfileManager from "./pages/owner/OwnerProfileManager.jsx";
 import OwnerMenuEditorPage from "./pages/owner/OwnerMenuEditorPage.jsx";
 import OwnerMenuUploadDetail from "./pages/owner/OwnerMenuUploadDetail.jsx";
 import OwnerMenuUploadReviewItems from "./pages/owner/OwnerMenuUploadReviewItems.jsx";
@@ -456,6 +455,20 @@ function RestaurantSingularRedirect() {
 function TruckRedirect() {
   const { slugOrId } = useParams();
   return <Navigate to={slugOrId ? `/foodtrucks/${slugOrId}` : "/"} replace />;
+}
+
+/**
+ * Profile Manager and Menu Manager are sections of Restaurant Manager now (2026-10-20).
+ * Old links keep their restaurant and land on the matching section.
+ */
+function RestaurantManagerRedirect({ section }) {
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  if (params.get("restaurant") && !params.get("section") && params.get("tab") !== "activity") {
+    params.set("section", section);
+  }
+  const qs = params.toString();
+  return <Navigate to={`/owner/restaurant-manager${qs ? `?${qs}` : ""}`} replace />;
 }
 
 function OldUploadDetailRedirect() {
@@ -1145,12 +1158,13 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
         {/* Legacy Knowledge Bot URLs (bookmarks, handoff docs) — same pages. */}
         <Route path="/owner/knowledge-bot/history" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerKnowledgeBotHistory /></OwnerRoute>} />
         <Route path="/owner/knowledge-bot" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerKnowledgeBot /></OwnerRoute>} />
-        <Route path="/owner/profile-manager" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerProfileManager /></OwnerRoute>} />
-        <Route path="/owner/menu-manager" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerMenuUploads /></OwnerRoute>} />
+        <Route path="/owner/restaurant-manager" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerMenuUploads /></OwnerRoute>} />
+        <Route path="/owner/profile-manager" element={<RestaurantManagerRedirect section="profile" />} />
+        <Route path="/owner/menu-manager" element={<RestaurantManagerRedirect section="menus" />} />
         <Route path="/owner/restaurants/:restaurantId/menus/:menuId/edit" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerMenuEditorPage /></OwnerRoute>} />
         <Route path="/owner/menu-manager/uploads/:uploadId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerMenuUploadDetail /></OwnerRoute>} />
         <Route path="/owner/menu-manager/uploads/:uploadId/review-items" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerMenuUploadReviewItems /></OwnerRoute>} />
-        <Route path="/owner/menu-uploads" element={<Navigate to="/owner/menu-manager" replace />} />
+        <Route path="/owner/menu-uploads" element={<Navigate to="/owner/restaurant-manager" replace />} />
         <Route path="/owner/menu-uploads/:uploadId" element={<OldUploadDetailRedirect />} />
         <Route path="/owner/menu-uploads/:uploadId/review-items" element={<OldUploadReviewRedirect />} />
         <Route path="/owner/qr-stickers" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerQrStickers /></OwnerRoute>} />

@@ -294,9 +294,10 @@ export default function OwnerMenuRestaurantFinder({
               </div>
             </div>
           ) : null}
-          {typeof onRequestAddRestaurant === "function" && !(Array.isArray(results) && results.length === 0 && query.trim().length >= 2) ? (
+          {/* Every addition starts with a search: the link appears once something was searched. */}
+          {typeof onRequestAddRestaurant === "function" && Array.isArray(results) && results.length > 0 && query.trim().length >= 2 ? (
             <div style={{ marginTop: 14, fontSize: 13, color: OWNER_COLORS.muted }}>
-              Can&apos;t find it?{" "}
+              Not in these results?{" "}
               <button
                 type="button"
                 data-testid="owner-finder-add-restaurant-link"

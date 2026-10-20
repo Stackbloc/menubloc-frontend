@@ -5,6 +5,8 @@ import { MenuEditor, StatusChip, inputStyle } from "./ownerMenuEditorComponents.
 import OwnerMenuRestaurantFinder, { saveRecentRestaurant } from "./OwnerMenuRestaurantFinder.jsx";
 import OcrEditSplitLayout from "./OcrEditSplitLayout.jsx";
 import OwnerBrandStorePicker, { isBrandRecord } from "./OwnerBrandStorePicker.jsx";
+import OwnerMleLocations from "./OwnerMleLocations.jsx";
+import OwnerProfileManager from "./OwnerProfileManager.jsx";
 import {
   BusinessTypeConvertPanel,
   BusinessTypeCreateField,
@@ -444,6 +446,48 @@ function StepHeader({ current }) {
   );
 }
 
+/** Restaurant Manager sections for a found restaurant (search → modify). */
+const RESTAURANT_SECTIONS = [
+  { key: "details", label: "Details" },
+  { key: "profile", label: "Public profile" },
+  { key: "menus", label: "Menus" },
+];
+
+function restaurantSectionFrom(searchParams) {
+  const raw = String(searchParams.get("section") || "").toLowerCase();
+  return RESTAURANT_SECTIONS.some((s) => s.key === raw) ? raw : "details";
+}
+
+function RestaurantSectionTabs({ current, onChange }) {
+  return (
+    <div data-testid="owner-restaurant-sections" style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
+      {RESTAURANT_SECTIONS.map((s) => {
+        const active = s.key === current;
+        return (
+          <button
+            key={s.key}
+            type="button"
+            data-testid={`owner-restaurant-section-${s.key}`}
+            onClick={() => onChange(s.key)}
+            style={{
+              padding: "8px 14px",
+              borderRadius: 999,
+              fontSize: 13,
+              fontWeight: active ? 700 : 600,
+              background: active ? OWNER_COLORS.accentSoft : "#fff",
+              color: active ? OWNER_COLORS.accent : OWNER_COLORS.ink,
+              border: `1px solid ${active ? OWNER_COLORS.accent : OWNER_COLORS.line}`,
+              cursor: "pointer",
+            }}
+          >
+            {s.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 function SelectField({ label, value, onChange, options, required }) {
   return (
     <div>
@@ -622,8 +666,10 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
   const [bulkActing, setBulkActing] = useState(false);
   const [actionMsg, setActionMsg] = useState("");
   const [publishing, setPublishing] = useState(false);
-  const [showProfilePanel, setShowProfilePanel] = useState(false);
   const [menuTabBusy, setMenuTabBusy] = useState(false);
+  // Restaurant Manager: one restaurant, three sections (?section=details|profile|menus).
+  const section = restaurantSectionFrom(searchParams);
+  const showProfilePanel = section === "details";
 
   const loadGenerationRef = useRef(0);
   const suppressUrlLoadRef = useRef(false);
@@ -659,6 +705,31 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
       mutator(next);
       return next;
     }, { replace: true });
+  }
+
+  /** Re-read the row after a business-type or location change (location count, chain). */
+  async function refreshRestaurantRow() {
+    if (!restaurant?.id) return;
+    try {
+      const res = await getMenuConsoleRestaurant(restaurant.id);
+      if (!res?.restaurant) return;
+      setRestaurant((prev) => ({ ...(prev || {}), ...res.restaurant }));
+      // Location cluster picks change the restaurant's clusters; keep the Clusters field in step
+      // so Save Restaurant Profile doesn't put back the old set.
+      const ids = ownerClusterIds(res.restaurant);
+      if (ids) setProfile((prev) => ({ ...prev, cluster_ids: ids }));
+    } catch {
+      // the panel already shows the result
+    }
+  }
+
+  function setSection(nextSection) {
+    setSearchParams((params) => {
+      const next = new URLSearchParams(params);
+      next.set("tab", "workspace");
+      next.set("section", nextSection);
+      return next;
+    });
   }
 
   useEffect(() => {
@@ -707,7 +778,7 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
     return () => window.clearTimeout(t);
   }, [searchParams, restaurant]);
 
-  async function loadExistingRestaurant(restaurantId, seed = null) {
+  async function loadExistingRestaurant(restaurantId, seed = null, opts = {}) {
     const ridNum = Number(restaurantId);
     if (!Number.isFinite(ridNum)) return;
     const generation = ++loadGenerationRef.current;
@@ -758,6 +829,7 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
       saveRecentRestaurant(normalizedRestaurant);
       patchWorkspaceParams((next) => {
         next.set("restaurant", String(ridNum));
+        if (opts.section) next.set("section", opts.section);
         next.delete("create");
         next.delete("name");
         next.delete("city");
@@ -807,7 +879,6 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
     setProfileErr("");
     setDuplicateMatches(null);
     setLoadRestaurantErr("");
-    setShowProfilePanel(false);
     prefillAppliedRef.current = false;
   }
 
@@ -820,6 +891,7 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
       next.delete("create");
       next.delete("fresh");
       next.delete("restaurant");
+      next.delete("section");
       return next;
     }, { replace: true });
   }
@@ -836,6 +908,7 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
       next.set("create", "1");
       next.set("fresh", String(Date.now()));
       next.delete("restaurant");
+      next.delete("section");
       if (q && !/^\d+$/.test(q)) next.set("name", q);
       else next.delete("name");
       return next;
@@ -1583,6 +1656,8 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
     || (existingRestaurant && showProfilePanel)
     || (restaurant && !existingRestaurant)
   );
+  // Just-added restaurants keep the upload step below the success card; existing ones use the Menus tab.
+  const showMenusSection = !existingRestaurant || section === "menus";
   const orderedMenus = sortMenusByDisplayPriority(availableMenus);
   const selectedMenuRow = orderedMenus.find((m) => Number(m.id) === Number(mid)) || null;
   const selectedMenuItemCount = Number(menuDetail?.item_count) || Number(selectedMenuRow?.item_count) || 0;
@@ -1605,8 +1680,7 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
             onConfirm={() => createProfile(true)}
             onCancel={() => setDuplicateMatches(null)}
             onSelectExisting={async (match) => {
-              setShowProfilePanel(true);
-              await selectExistingRestaurant(match);
+              await loadExistingRestaurant(match.id, match, { section: "details" });
             }}
           />
         )}
@@ -1692,17 +1766,12 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
                 restaurantName={profile.restaurant_name}
               />
             ) : (
-              <BusinessTypeConvertPanel
-                restaurant={restaurant}
-                onConverted={async () => {
-                  try {
-                    const res = await getMenuConsoleRestaurant(restaurant.id);
-                    if (res?.restaurant) setRestaurant((prev) => ({ ...(prev || {}), ...res.restaurant }));
-                  } catch {
-                    // panel already shows the result
-                  }
-                }}
-              />
+              <>
+                <BusinessTypeConvertPanel restaurant={restaurant} onConverted={refreshRestaurantRow} />
+                {existingRestaurant && restaurant.business_type?.business_type === "mle" ? (
+                  <OwnerMleLocations restaurant={restaurant} onChanged={refreshRestaurantRow} />
+                ) : null}
+              </>
             )}
           </div>
         </div>
@@ -1823,12 +1892,14 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
               </div>
             ) : null}
             <div style={{ marginTop: 10, display: "flex", gap: 12, flexWrap: "wrap" }}>
-              <Link
-                to={`/owner/profile-manager?restaurant=${restaurant.id}`}
-                style={{ fontSize: 12, fontWeight: 700, color: OWNER_COLORS.accent, textDecoration: "none" }}
+              <button
+                type="button"
+                data-testid="owner-restaurant-created-continue"
+                onClick={() => loadExistingRestaurant(restaurant.id, restaurant, { section: "profile" })}
+                style={{ border: "none", background: "none", padding: 0, fontSize: 12, fontWeight: 700, color: OWNER_COLORS.accent, cursor: "pointer" }}
               >
-                Open Profile Manager →
-              </Link>
+                Continue to public profile →
+              </button>
               <span style={{ fontSize: 12, color: "#15803d" }}>
                 Upload a menu below, or skip and return later.
               </span>
@@ -2018,7 +2089,7 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
               : "Update OCR"}
         </button>
         <Link
-          to="/owner/menu-manager?tab=activity&status=needs_review"
+          to="/owner/restaurant-manager?tab=activity&status=needs_review"
           style={{ fontSize: 12, fontWeight: 600, color: OWNER_COLORS.muted, textDecoration: "none" }}
         >
           Held OCR items →
@@ -2250,12 +2321,15 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
             >
               + Add Another Menu
             </button>
-            <Link
-              to={`/owner/profile-manager?restaurant=${rid}`}
-              style={{ fontSize: 12, fontWeight: 700, color: OWNER_COLORS.accent, textDecoration: "none", padding: "9px 4px" }}
-            >
-              Profile & style editors →
-            </Link>
+            {existingRestaurant ? (
+              <button
+                type="button"
+                onClick={() => setSection("profile")}
+                style={{ border: "none", background: "none", fontSize: 12, fontWeight: 700, color: OWNER_COLORS.accent, padding: "9px 4px", cursor: "pointer" }}
+              >
+                Profile & style editors →
+              </button>
+            ) : null}
           </div>
         </PageCard>
   ) : null;
@@ -2264,7 +2338,7 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
     <>
       {embedded ? (
         <div style={{ marginBottom: 14, padding: "12px 14px", borderRadius: 10, background: "#f8fafc", border: `1px solid ${OWNER_COLORS.line}`, fontSize: 13, color: OWNER_COLORS.ink, lineHeight: 1.5 }}>
-          Find a restaurant, <strong>upload a PDF or photos</strong>, then edit dishes. Held OCR lines only need the Review queue.
+          <strong>Search first.</strong> Pick the restaurant to edit its details, public profile and menus — or, if search doesn&apos;t find it, add it. Held OCR lines only need the Needs review tab.
         </div>
       ) : null}
 
@@ -2302,37 +2376,29 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
       ) : (
         <>
           {finderCard}
-          {!existingRestaurant ? <StepHeader current={step} /> : null}
+          {existingRestaurant
+            ? <RestaurantSectionTabs current={section} onChange={setSection} />
+            : <StepHeader current={step} />}
           {profileFormCard}
         </>
       )}
 
-      {restaurant && existingRestaurant && isBrandRecord(restaurant) ? (
+      {restaurant && existingRestaurant && section === "details" && isBrandRecord(restaurant) ? (
         <OwnerBrandStorePicker
           restaurant={restaurant}
           onOpenStore={(store) => {
-            setShowProfilePanel(false);
             loadExistingRestaurant(store.id, { id: store.id, name: store.name });
             window.scrollTo({ top: 0, behavior: "smooth" });
           }}
         />
       ) : null}
 
-      {restaurant && existingRestaurant && !showProfilePanel ? (
-        <div style={{ marginBottom: 12 }}>
-          <button
-            type="button"
-            onClick={() => setShowProfilePanel(true)}
-            style={{
-              padding: "8px 12px", borderRadius: 8, border: `1px solid ${OWNER_COLORS.line}`,
-              background: "#fff", color: OWNER_COLORS.muted, fontWeight: 600, fontSize: 12, cursor: "pointer",
-            }}
-          >
-            Edit restaurant profile
-          </button>
-        </div>
+      {restaurant && existingRestaurant && section === "profile" ? (
+        <OwnerProfileManager key={rid} embedded restaurantId={rid} />
       ) : null}
 
+      {showMenusSection ? (
+      <>
       {uploadCard}
       {menusCard}
 
@@ -2458,6 +2524,8 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
           </div>
         </PageCard>
       )}
+      </>
+      ) : null}
     </>
   );
 

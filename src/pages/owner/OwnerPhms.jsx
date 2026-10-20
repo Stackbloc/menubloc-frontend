@@ -32,7 +32,7 @@ const HEALTH_CHECK_NAV = {
   home_display: { scrollTo: "display-audit", actionLabel: "Display audit" },
   home_feed_cache: { scrollTo: "home-feed-cache", actionLabel: "Cache diagnostics" },
   restaurant_profile: { to: "/owner/restaurants", actionLabel: "Restaurant intelligence" },
-  menu_retrieval: { to: "/owner/menu-manager", actionLabel: "Menu manager" },
+  menu_retrieval: { to: "/owner/restaurant-manager", actionLabel: "Restaurant Manager" },
   owner_login: { to: "/owner/login", actionLabel: "Test owner login" },
   email_verification: { to: "/owner/deployments", actionLabel: "Deployment operations" },
   last_deploy: { to: "/owner/deployments", actionLabel: "Deployment operations" },

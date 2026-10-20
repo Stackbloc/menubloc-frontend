@@ -17,7 +17,7 @@ describe("featured dish profile manager + menu badge", () => {
     assert.match(api, /featured-dish\/candidates/);
     assert.match(page, /getOwnerRestaurantFeaturedDishCandidates/);
     assert.match(page, /owner-profile-manager-favorite-items/);
-    assert.match(page, /Open Menu Manager/);
+    assert.match(page, /Open Menus/);
     assert.match(page, /View featured on menu/);
     assert.match(page, /menuItemDomId/);
     assert.doesNotMatch(page, /searchMenuConsoleItems\(restaurantId/);

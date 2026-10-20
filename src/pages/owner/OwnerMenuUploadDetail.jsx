@@ -696,7 +696,7 @@ export default function OwnerMenuUploadDetail() {
         )}
         {upload.restaurant_id ? (
           <Link
-            to={`/owner/menu-manager?tab=workspace&restaurant=${upload.restaurant_id}`}
+            to={`/owner/restaurant-manager?restaurant=${upload.restaurant_id}&section=menus`}
             style={{
               padding: "9px 18px",
               borderRadius: 10,
@@ -711,7 +711,7 @@ export default function OwnerMenuUploadDetail() {
           </Link>
         ) : (
           <Link
-            to={`/owner/menu-manager?tab=workspace&create=1&name=${encodeURIComponent(upload.restaurant_name || "")}&city=${encodeURIComponent(upload.city || "")}&state=${encodeURIComponent(upload.state || "")}`}
+            to={`/owner/restaurant-manager?tab=workspace&create=1&name=${encodeURIComponent(upload.restaurant_name || "")}&city=${encodeURIComponent(upload.city || "")}&state=${encodeURIComponent(upload.state || "")}`}
             style={{
               padding: "9px 18px",
               borderRadius: 10,
@@ -726,7 +726,7 @@ export default function OwnerMenuUploadDetail() {
           </Link>
         )}
         <Link
-          to="/owner/menu-manager?tab=activity&status=needs_review"
+          to="/owner/restaurant-manager?tab=activity&status=needs_review"
           style={{
             padding: "9px 18px",
             borderRadius: 10,
@@ -1194,7 +1194,7 @@ function StatusActions({ upload, displayStatus, uploadId, doAction, onRetryCompl
 function BackLink() {
   return (
     <div style={{ marginBottom: 20 }}>
-      <Link to="/owner/menu-manager?tab=activity&status=needs_review" style={{ color: OWNER_COLORS.muted, fontSize: 13, textDecoration: "none", fontWeight: 600 }}>
+      <Link to="/owner/restaurant-manager?tab=activity&status=needs_review" style={{ color: OWNER_COLORS.muted, fontSize: 13, textDecoration: "none", fontWeight: 600 }}>
         ← Upload Activity
       </Link>
     </div>

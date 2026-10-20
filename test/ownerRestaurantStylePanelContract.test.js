@@ -11,21 +11,13 @@ import { describe, it } from "node:test";
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 
 describe("owner restaurant manager nav + profile manager", () => {
-  it("left nav has Restaurant Manager with Add Restaurant first, then Profile Manager and Menu Manager", () => {
+  it("left nav has Restaurant Manager with one search-first Restaurants entry (2026-10-20)", () => {
     const layout = readFileSync(join(root, "src/pages/owner/OwnerLayout.jsx"), "utf8");
     assert.match(layout, /id:\s*"restaurant-manager"/);
     assert.match(layout, /label:\s*"Restaurant Manager"/);
-    const section = layout.match(/id:\s*"restaurant-manager"[\s\S]*?NAV_SECTIONS_STATIC\[1\]/)?.[0] || "";
-    assert.match(section, /label:\s*"Add Restaurant"/);
-    assert.match(section, /button:\s*true/);
-    assert.match(section, /to:\s*"\/owner\/profile-manager"/);
-    assert.match(section, /label:\s*"Profile Manager"/);
-    assert.match(section, /to:\s*"\/owner\/menu-manager"/);
-    assert.match(section, /label:\s*"Menu Manager"/);
-    const addIdx = section.indexOf('label: "Add Restaurant"');
-    const profileIdx = section.indexOf('label: "Profile Manager"');
-    const menuIdx = section.indexOf('label: "Menu Manager"');
-    assert.ok(addIdx >= 0 && profileIdx > addIdx && menuIdx > profileIdx, "Add Restaurant must be first under Restaurant Manager");
+    const section = layout.match(/id:\s*"restaurant-manager"[\s\S]*?id:\s*"bots"/)?.[0] || "";
+    assert.match(section, /to:\s*"\/owner\/restaurant-manager"/);
+    assert.doesNotMatch(section, /"\/owner\/profile-manager"|"\/owner\/menu-manager"/);
     assert.doesNotMatch(
       layout.match(/id:\s*"growth"[\s\S]*?id:\s*"support"/)?.[0] || "",
       /menu-manager/
@@ -50,8 +42,10 @@ describe("owner restaurant manager nav + profile manager", () => {
     assert.match(page, /getMenuConsoleRestaurant/);
     assert.match(page, /updateMenuConsoleRestaurant/);
     assert.match(api, /profile-style/);
-    assert.match(app, /path="\/owner\/profile-manager"/);
-    assert.match(app, /OwnerProfileManager/);
+    // Profile Manager is the Public profile section of Restaurant Manager; old URL redirects.
+    assert.match(app, /path="\/owner\/profile-manager" element=\{<RestaurantManagerRedirect section="profile" \/>\}/);
+    const ws = readFileSync(join(root, "src/pages/owner/OwnerMenuCreateWorkspace.jsx"), "utf8");
+    assert.match(ws, /<OwnerProfileManager key=\{rid\} embedded restaurantId=\{rid\} \/>/);
   });
 
   it("Profile Manager mounts Menu Appearance with live owner APIs", () => {

@@ -323,7 +323,7 @@ export default function OwnerMenuEditorPage() {
   }
 
   function handleMenuDeleted() {
-    navigate(`/owner/menu-manager?tab=workspace&restaurant=${rid}`);
+    navigate(`/owner/restaurant-manager?restaurant=${rid}&section=menus`);
   }
 
   const restaurantName = restaurant?.restaurant_name || restaurant?.name || "Restaurant";
@@ -333,10 +333,10 @@ export default function OwnerMenuEditorPage() {
     <OwnerLayout title="Menu Editor">
       <div style={{ marginBottom: 16 }}>
         <Link
-          to={Number.isFinite(rid) ? `/owner/menu-manager?tab=workspace&restaurant=${rid}` : "/owner/menu-manager?tab=activity"}
+          to={Number.isFinite(rid) ? `/owner/restaurant-manager?restaurant=${rid}&section=menus` : "/owner/restaurant-manager?tab=activity"}
           style={{ color: OWNER_COLORS.accent, fontWeight: 700, fontSize: 13, textDecoration: "none" }}
         >
-          ← Back to Menu Manager
+          ← Back to Restaurant Manager
         </Link>
       </div>
 

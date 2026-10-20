@@ -41,8 +41,11 @@ function TabButton({ active, label, onClick }) {
 }
 
 /**
- * Menu Manager shell: Upload Activity inbox + Create/Edit workspace.
- * Add Restaurant lives in left nav (Restaurant Manager) — not duplicated here.
+ * Restaurant Manager (2026-10-20, Andre: "Search, Add Restaurant, Profile Manager, and Menu
+ * Manager should be a cohesive workflow. Every restaurant addition starts with search.").
+ * One page: search → pick a restaurant (Details · Public profile · Menus) or, when search
+ * finds nothing, Add Restaurant. Needs review is the held-OCR inbox. No separate left-nav
+ * Add Restaurant / Profile Manager / Menu Manager entries any more.
  */
 export default function OwnerMenuUploads() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -55,6 +58,7 @@ export default function OwnerMenuUploads() {
       next.set("tab", nextTab);
       if (nextTab === "activity") {
         next.delete("restaurant");
+        next.delete("section");
         next.delete("create");
         next.delete("fresh");
         next.delete("name");
@@ -72,13 +76,13 @@ export default function OwnerMenuUploads() {
 
   return (
     <OwnerLayout
-      title="Menu Manager"
-      subtitle="Upload a PDF or photos to build a menu. Use Needs review only for held OCR lines. Add Restaurant is under Restaurant Manager."
+      title="Restaurant Manager"
+      subtitle="Search first. Found → Details, Public profile, Menus. Not found → Add Restaurant. Upload a PDF or photos under Menus."
     >
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 20, alignItems: "center" }}>
         <TabButton
           active={tab === "workspace"}
-          label="Menus"
+          label="Restaurants"
           onClick={() => setTab("workspace")}
         />
         <TabButton

@@ -318,7 +318,7 @@ export default function OwnerPhotoBot() {
                 .map(([k, n]) => `${ACTION_LABELS[k] || k}: ${n}`)
                 .join(" · ")}
               action={
-                <Link to="/owner/menu-manager" style={{ fontSize: 13, fontWeight: 700, color: OWNER_COLORS.accent, textDecoration: "none" }}>
+                <Link to="/owner/restaurant-manager" style={{ fontSize: 13, fontWeight: 700, color: OWNER_COLORS.accent, textDecoration: "none" }}>
                   Open Menu Manager
                 </Link>
               }

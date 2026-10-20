@@ -1,6 +1,6 @@
 /**
- * Owner Menu Manager — Add Restaurant restore contract.
- * Single left-nav entry; form-first create; required-field validation.
+ * Owner Restaurant Manager — search-first Add Restaurant contract.
+ * One left-nav entry (search); Add only from search; required-field validation.
  */
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -15,24 +15,48 @@ function read(rel) {
 }
 
 describe("owner Add Restaurant restore", () => {
-  it("Restaurant Manager nav lists Add Restaurant first above Profile Manager as a button action", () => {
+  it("Restaurant Manager nav is one search-first entry (2026-10-20: no separate Add / Profile / Menu Manager)", () => {
     const layout = read("src/pages/owner/OwnerLayout.jsx");
-    const section = layout.match(/id:\s*"restaurant-manager"[\s\S]*?NAV_SECTIONS_STATIC\[1\]/)?.[0]
-      || layout.match(/id:\s*"restaurant-manager"[\s\S]*?id:\s*"growth"/)?.[0]
-      || "";
-    assert.match(section, /label:\s*"Add Restaurant"/);
-    assert.match(section, /button:\s*true/);
-    assert.match(section, /create=1&fresh=/);
-    const addIdx = section.indexOf('label: "Add Restaurant"');
-    const profileIdx = section.indexOf('label: "Profile Manager"');
-    assert.ok(addIdx >= 0 && profileIdx > addIdx);
+    const section = layout.match(/id:\s*"restaurant-manager"[\s\S]*?id:\s*"bots"/)?.[0] || "";
+    assert.match(section, /to:\s*"\/owner\/restaurant-manager", label:\s*"Restaurants"/);
+    assert.doesNotMatch(section, /label:\s*"Add Restaurant"/);
+    assert.doesNotMatch(section, /label:\s*"Profile Manager"/);
+    assert.doesNotMatch(section, /label:\s*"Menu Manager"/);
+    const app = read("src/App.jsx");
+    assert.match(app, /path="\/owner\/restaurant-manager"[^\n]*<OwnerMenuUploads \/>/);
+    assert.match(app, /path="\/owner\/profile-manager" element=\{<RestaurantManagerRedirect section="profile" \/>\}/);
+    assert.match(app, /path="\/owner\/menu-manager" element=\{<RestaurantManagerRedirect section="menus" \/>\}/);
   });
 
-  it("Menu Manager shell does not duplicate Add Restaurant CTA", () => {
+  it("Restaurant Manager shell: Restaurants + Needs review tabs, no Add Restaurant CTA of its own", () => {
     const shell = read("src/pages/owner/OwnerMenuUploads.jsx");
     assert.doesNotMatch(shell, /data-testid="owner-add-restaurant"/);
-    assert.match(shell, /left nav/);
+    assert.match(shell, /title="Restaurant Manager"/);
+    assert.match(shell, /label="Restaurants"/);
+    assert.match(shell, /label="Needs review"/);
     assert.match(shell, /workspaceKey/);
+  });
+
+  it("found restaurant opens Details · Public profile · Menus; Profile Manager is embedded", () => {
+    const ws = read("src/pages/owner/OwnerMenuCreateWorkspace.jsx");
+    assert.match(ws, /data-testid="owner-restaurant-sections"/);
+    for (const key of ["details", "profile", "menus"]) assert.match(ws, new RegExp(`key: "${key}"`));
+    assert.match(ws, /<OwnerProfileManager key=\{rid\} embedded restaurantId=\{rid\} \/>/);
+    assert.match(ws, /const showMenusSection = !existingRestaurant \|\| section === "menus";/);
+    assert.match(ws, /<OwnerMleLocations restaurant=\{restaurant\} onChanged=\{refreshRestaurantRow\} \/>/);
+    const pm = read("src/pages/owner/OwnerProfileManager.jsx");
+    assert.match(pm, /export default function OwnerProfileManager\(\{ embedded = false, restaurantId = null \} = \{\}\)/);
+    assert.match(pm, /if \(!embedded\) setSearchParams/);
+  });
+
+  it("MLE locations panel: add/edit/main/remove + per-location clusters", () => {
+    const panel = read("src/pages/owner/OwnerMleLocations.jsx");
+    for (const id of ["mle-locations-panel", "mle-location-add", "mle-location-row", "mle-location-remove", "mle-location-clusters", "mle-location-cluster-add"]) {
+      assert.match(panel, new RegExp(`data-testid="${id}"`));
+    }
+    const api = read("src/lib/ownerApi.js");
+    assert.match(api, /\/api\/owner\/menu-console\/restaurants\/\$\{encodeURIComponent\(restaurantId\)\}\/locations/);
+    assert.match(api, /\/clusters`, \{ cluster_ids: clusterIds \}/);
   });
 
   it("finder exposes Add restaurant CTA when search finds nothing (and optional link)", () => {
@@ -41,6 +65,8 @@ describe("owner Add Restaurant restore", () => {
     assert.match(finder, /data-testid="owner-finder-add-restaurant"/);
     assert.match(finder, /data-testid="owner-finder-empty-results"/);
     assert.match(finder, /data-testid="owner-finder-add-restaurant-link"/);
+    // Add only after a search (no add link on an empty finder).
+    assert.match(finder, /results\.length > 0 && query\.trim\(\)\.length >= 2 \? \(/);
     assert.match(finder, /No restaurants matched/);
   });
 
@@ -96,7 +122,7 @@ describe("owner Add Restaurant restore", () => {
     assert.match(workspace, /Restaurant added successfully|Restaurant created successfully/);
     assert.match(workspace, /Restaurant ID:/);
     assert.match(workspace, /Menu ID:/);
-    assert.match(workspace, /\/owner\/profile-manager\?restaurant=\$\{restaurant\.id\}/);
+    assert.match(workspace, /loadExistingRestaurant\(restaurant\.id, restaurant, \{ section: "profile" \}\)/);
   });
 
   it("upload success panel shows Restaurant ID, Menu ID, and parse status", () => {
