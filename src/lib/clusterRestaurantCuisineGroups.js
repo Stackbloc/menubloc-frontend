@@ -6,7 +6,9 @@ const CK_CUISINE_GROUP_RULES = [
     label: "American",
     match: (restaurant) => {
       const text = cuisineText(restaurant);
-      return /american|southern|soul|bbq|barbecue|burger/.test(text);
+      // Sandwiches / Chicken / Breakfast: cuisines the backend infers for chains and
+      // restaurants with no cuisine on file (Subway, KFC, Egg Tuck).
+      return /american|southern|soul|bbq|barbecue|burger|sandwich|deli|chicken|breakfast|diner/.test(text);
     },
   },
   {

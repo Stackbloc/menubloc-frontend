@@ -1,22 +1,26 @@
 /**
- * Live Feed mobile right action rail — Connect · +Wish List · Invite · Like · Menu Browser.
- * "+Wish List" on every video: linked to a specific menu item → saves the dish; otherwise
- * saves the restaurant. Both land in the profile Wish List.
- * Share lives inside the Invite flow (shareData is forwarded there by the parent).
- * Desktop Feed keeps the prior Share & Invite + Menu Browser dock (not this rail).
+ * Live Feed right action rail — Wish List · Like · Invite · Share, then the clip's
+ * "Order this" / "See menu" button (Andre, 2026-10-20 — same four actions as menu rows;
+ * the green button is the cluster clip player's and replaces the Menu Browser icon).
+ * "+Wish List": linked dish → saves the dish; otherwise saves the restaurant. Both land in
+ * the profile Wish List.
+ * Like is for dishes; a clip with no linked dish shows the restaurant Fav heart (My Favs).
  * Hide (do not gray-out) actions that do not apply.
  */
 
-import { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useState } from "react";
 import InviteToEatIcon from "../../icons/InviteToEatIcon.jsx";
-import BrowseMenusIcon from "../../icons/BrowseMenusIcon.jsx";
 import ThumbsUpIcon from "../../icons/ThumbsUpIcon.jsx";
-import { LIKE_ACCENT } from "../../../lib/likeButtonStyles.js";
+import FavHeartIcon from "../../icons/FavHeartIcon.jsx";
+import WishListIcon from "../../icons/WishListIcon.jsx";
+import ShareIcon from "../../share/ShareIcon.jsx";
+import ShareModal from "../../share/ShareModal.jsx";
+import { trackShareEvent } from "../../share/shareUtils.js";
+import { FAV_ACCENT, LIKE_ACCENT } from "../../../lib/likeButtonStyles.js";
 import useRestaurantFollow from "../../../hooks/useRestaurantFollow.js";
-import { useConsumer } from "../../../context/ConsumerContext.jsx";
-import { createWantToEat } from "../../../lib/consumerApi.js";
-import WannaGoPlateIcon from "../../icons/WannaGoPlateIcon.jsx";
+import useMenuItemLike from "../../../hooks/useMenuItemLike.js";
+import useWishListEntry from "../../../hooks/useWishListEntry.js";
+import { WISH_LIST_ACCENT } from "../../WishListMenuItemButton.jsx";
 
 function RailButton({ testId, label, ariaLabel, disabled, onClick, children, pressed }) {
   return (
@@ -61,6 +65,41 @@ function ConnectGlyph({ size = 22 }) {
 /** One label for every video; short enough to stay on one line in the rail. */
 const WISH_LIST_LABEL = "+Wish List";
 
+function DishLikeButton({ menuItemId }) {
+  const { liked, loading, busy, toggle } = useMenuItemLike(menuItemId);
+  return (
+    <RailButton
+      testId="feed-rail-like"
+      label={liked ? "Liked" : "Like"}
+      ariaLabel={liked ? "Unlike this dish" : "Like this dish"}
+      pressed={liked}
+      disabled={loading || busy}
+      onClick={toggle}
+    >
+      <ThumbsUpIcon size={20} filled={liked} color={liked ? LIKE_ACCENT : "#fff"} />
+    </RailButton>
+  );
+}
+
+function RestaurantFavButton({ restaurantId, restaurantName, followSource }) {
+  const { followed, statusLoading, actionLoading, toggleFollow } = useRestaurantFollow(restaurantId, {
+    source: followSource,
+    restaurantName,
+  });
+  return (
+    <RailButton
+      testId="feed-rail-fav"
+      label={followed ? "My Fav" : "Fav"}
+      ariaLabel={followed ? "Remove restaurant from My Favs" : "Add restaurant to My Favs"}
+      pressed={followed}
+      disabled={statusLoading || actionLoading}
+      onClick={toggleFollow}
+    >
+      <FavHeartIcon size={20} filled={followed} color={followed ? FAV_ACCENT : "#fff"} />
+    </RailButton>
+  );
+}
+
 /**
  * @param {object} props
  * @param {number} [props.bottomInset]
@@ -73,7 +112,10 @@ const WISH_LIST_LABEL = "+Wish List";
  * @param {boolean} [props.showInvite]
  * @param {() => void} [props.onInvite]
  * @param {boolean} [props.showMenu]
- * @param {() => void} [props.onMenu]
+ * @param {() => void} [props.onMenu] opens the Menu Browser (dish highlighted when linked)
+ * @param {object|null} [props.shareData] clip share payload; Share hides without it
+ * @param {object} [props.shareAnalyticsContext]
+ * @param {(open: boolean) => void} [props.onShareOpenChange] lets the parent pause the clip
  * @param {string} [props.followSource]
  */
 export default function FeedVideoActionRail({
@@ -88,16 +130,14 @@ export default function FeedVideoActionRail({
   onInvite,
   showMenu = false,
   onMenu,
+  shareData = null,
+  shareAnalyticsContext = null,
+  onShareOpenChange,
   followSource = "feed_video_rail",
   /** Optional control above the buttons (Feed play/pause circle) — thumb-reachable. */
   topSlot = null,
 }) {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { isAuthenticated } = useConsumer();
-  const [wannaBusy, setWannaBusy] = useState(false);
-  const [wannaDone, setWannaDone] = useState(false);
-  const [wannaError, setWannaError] = useState("");
+  const [shareOpen, setShareOpen] = useState(false);
 
   const restaurantId = restaurantRef?.restaurant_id;
   const restaurantName = String(restaurantRef?.restaurant_name || "").trim();
@@ -106,63 +146,22 @@ export default function FeedVideoActionRail({
     menuItemId != null && String(menuItemId).trim() !== "" ? menuItemId : null;
   const isDishVideo = linkedMenuItemId != null;
   const dishName = String(menuItemName || "").trim();
-  const { followed, statusLoading, actionLoading, toggleFollow } = useRestaurantFollow(
-    hasRestaurant ? restaurantId : null,
-    { source: followSource, restaurantName }
-  );
-
-  useEffect(() => {
-    setWannaDone(false);
-    setWannaError("");
-  }, [restaurantId, linkedMenuItemId]);
+  const wish = useWishListEntry({
+    menuItemId: linkedMenuItemId,
+    menuItemName: dishName,
+    restaurantId: hasRestaurant ? restaurantId : null,
+    restaurantName,
+  });
 
   const showWannaGo = hasRestaurant;
   const showLike = hasRestaurant;
-  const anyVisible = showConnect || showWannaGo || showInvite || showLike || showMenu;
+  const showShare = Boolean(shareData);
+  const anyVisible = showConnect || showWannaGo || showInvite || showLike || showShare || showMenu;
   if (!anyVisible) return null;
 
-  async function onWannaGoClick() {
-    setWannaError("");
-    if (!hasRestaurant) return;
-    if (!isAuthenticated) {
-      const next = `${location.pathname}${location.search || ""}`;
-      navigate(`/account/login?next=${encodeURIComponent(next)}`);
-      return;
-    }
-    if (wannaBusy || wannaDone) return;
-    setWannaBusy(true);
-    try {
-      if (isDishVideo) {
-        const foodName = dishName || restaurantName || "Dish";
-        try {
-          await createWantToEat({
-            food_name: foodName,
-            restaurant_id: restaurantId,
-            menu_item_id: linkedMenuItemId,
-            intent_kind: "menu_item",
-          });
-        } catch (err) {
-          // Stale link on the video: still save the dish by name at this restaurant.
-          if (err?.payload?.code !== "menu_item_not_found") throw err;
-          await createWantToEat({
-            food_name: foodName,
-            restaurant_id: restaurantId,
-            intent_kind: "food_item",
-          });
-        }
-      } else {
-        await createWantToEat({
-          food_name: restaurantName || "Restaurant",
-          restaurant_id: restaurantId,
-          intent_kind: "restaurant",
-        });
-      }
-      setWannaDone(true);
-    } catch (err) {
-      setWannaError(err?.message || "Could not add to Wish List");
-    } finally {
-      setWannaBusy(false);
-    }
+  function setShare(open) {
+    setShareOpen(open);
+    onShareOpenChange?.(open);
   }
 
   const inset = Math.max(0, Number(bottomInset) || 0);
@@ -192,17 +191,29 @@ export default function FeedVideoActionRail({
         {showWannaGo ? (
           <RailButton
             testId="feed-rail-wanna-go"
-            label={wannaDone ? "Added" : WISH_LIST_LABEL}
+            label={wish.added ? "Added" : WISH_LIST_LABEL}
             ariaLabel={
-              isDishVideo
-                ? `Add ${dishName || "this dish"} to Wish List`
-                : `Add ${restaurantName || "restaurant"} to Wish List`
+              wish.added
+                ? `Remove ${isDishVideo ? dishName || "this dish" : restaurantName || "restaurant"} from Wish List`
+                : isDishVideo
+                  ? `Add ${dishName || "this dish"} to Wish List`
+                  : `Add ${restaurantName || "restaurant"} to Wish List`
             }
-            disabled={wannaBusy || wannaDone}
-            onClick={onWannaGoClick}
+            pressed={wish.added}
+            disabled={wish.busy}
+            onClick={wish.toggle}
           >
-            <WannaGoPlateIcon size={22} color="#fff" />
+            <WishListIcon size={22} filled={wish.added} color={wish.added ? WISH_LIST_ACCENT : "#fff"} />
           </RailButton>
+        ) : null}
+
+        {showLike && isDishVideo ? <DishLikeButton menuItemId={linkedMenuItemId} /> : null}
+        {showLike && !isDishVideo ? (
+          <RestaurantFavButton
+            restaurantId={restaurantId}
+            restaurantName={restaurantName}
+            followSource={followSource}
+          />
         ) : null}
 
         {showInvite ? (
@@ -216,40 +227,51 @@ export default function FeedVideoActionRail({
           </RailButton>
         ) : null}
 
-        {showLike ? (
+        {showShare ? (
           <RailButton
-            testId="feed-rail-like"
-            label={followed ? "Liked" : "Like"}
-            ariaLabel={followed ? "Unlike restaurant" : "Like restaurant"}
-            pressed={followed}
-            disabled={statusLoading || actionLoading}
-            onClick={toggleFollow}
+            testId="feed-rail-share"
+            label="Share"
+            ariaLabel="Share this clip"
+            onClick={() => {
+              trackShareEvent("menu_share_clicked", shareAnalyticsContext);
+              setShare(true);
+            }}
           >
-            <ThumbsUpIcon
-              size={20}
-              filled={followed}
-              color={followed ? LIKE_ACCENT : "#fff"}
-            />
+            <ShareIcon size={20} stroke="#fff" />
           </RailButton>
         ) : null}
 
         {showMenu ? (
-          <RailButton
-            testId="feed-rail-menu"
-            label="Menu Browser"
-            ariaLabel="Menu Browser"
-            onClick={onMenu}
+          <button
+            type="button"
+            data-testid="feed-rail-menu"
+            style={styles.orderBtn}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onMenu?.(e);
+            }}
           >
-            <BrowseMenusIcon size={22} title="" />
-          </RailButton>
+            {isDishVideo ? "Order this" : "See menu"}
+          </button>
         ) : null}
 
-        {wannaError ? (
+        {wish.error ? (
           <p style={styles.railError} data-testid="feed-rail-wanna-go-error">
-            {wannaError}
+            {wish.error}
           </p>
         ) : null}
       </div>
+      {showShare ? (
+        <ShareModal
+          open={shareOpen}
+          onClose={() => setShare(false)}
+          shareData={shareData}
+          analyticsContext={shareAnalyticsContext}
+          modalTitle="Share clip"
+          variant="menu"
+        />
+      ) : null}
     </>
   );
 }
@@ -300,6 +322,23 @@ const styles = {
     textShadow: "0 1px 3px rgba(0,0,0,0.75)",
     maxWidth: 64,
     textAlign: "center",
+  },
+  /** Same green pill as the cluster clip player's "Order this" / "See menu". */
+  orderBtn: {
+    marginTop: 2,
+    height: 32,
+    padding: "0 12px",
+    borderRadius: 999,
+    border: "none",
+    background: "#16a34a",
+    color: "#fff",
+    fontSize: 13,
+    fontWeight: 800,
+    whiteSpace: "nowrap",
+    cursor: "pointer",
+    fontFamily: "inherit",
+    boxShadow: "0 4px 14px rgba(0,0,0,0.35)",
+    WebkitTapHighlightColor: "transparent",
   },
   railError: {
     margin: 0,

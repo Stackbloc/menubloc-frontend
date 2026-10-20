@@ -70,3 +70,23 @@ describe("restaurant type wins for coffee & bakery (2026-10-19)", () => {
     assert.equal(group.restaurants[0].cuisine_display, "Cafe");
   });
 });
+
+describe("clusterRestaurantCuisineGroups inferred cuisines", () => {
+  it("puts backend-inferred Sandwiches / Chicken / Breakfast under American", () => {
+    for (const cuisine of ["Sandwiches", "Chicken", "Breakfast", "Burgers"]) {
+      assert.equal(resolveRestaurantCuisineGroup({ restaurant_name: "X", cuisine }).id, "american", cuisine);
+    }
+  });
+  it("puts a newly added Chinese restaurant in Asian", () => {
+    assert.equal(resolveRestaurantCuisineGroup({ restaurant_name: "YGF Malatang", cuisine: "chinese" }).id, "asian");
+  });
+});
+
+describe("cluster Restaurants view loads every page", async () => {
+  const { readFileSync } = await import("node:fs");
+  const src = readFileSync(new URL("../src/pages/ClusterPage.jsx", import.meta.url), "utf8");
+  it("groups by cuisine from the full list, not the first page", () => {
+    assert.match(src, /fetchAllClusterRestaurantPages\(clusterSlug, PAGE_SIZE, controller\.signal\)/);
+    assert.match(src, /pagination\?\.has_more && page < MAX_CLUSTER_RESTAURANT_PAGES/);
+  });
+});

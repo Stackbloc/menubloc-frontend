@@ -1,4 +1,11 @@
 export const LIKE_ACCENT = "#22C55E";
+/** Fav (restaurants → My Favs) — the heart turns this red when selected. */
+export const FAV_ACCENT = "#E11D48";
+
+const SELECTED_TINTS = {
+  [LIKE_ACCENT]: { bg: "rgba(34,197,94,0.14)", ring: "0 0 0 1px rgba(34,197,94,0.18)" },
+  [FAV_ACCENT]: { bg: "rgba(225,29,72,0.12)", ring: "0 0 0 1px rgba(225,29,72,0.18)" },
+};
 
 export function likeButtonVisualStyle({
   selected = false,
@@ -6,8 +13,9 @@ export function likeButtonVisualStyle({
   ghost = false,
   dark = false,
   loading = false,
+  accent = LIKE_ACCENT,
 }) {
-  const accent = LIKE_ACCENT;
+  const tint = SELECTED_TINTS[accent] || SELECTED_TINTS[LIKE_ACCENT];
   return {
     display: "inline-flex",
     alignItems: "center",
@@ -30,7 +38,7 @@ export function likeButtonVisualStyle({
     background: inline
       ? "transparent"
       : selected
-        ? "rgba(34,197,94,0.14)"
+        ? tint.bg
         : ghost
           ? "rgba(255,255,255,0.96)"
           : dark
@@ -48,7 +56,7 @@ export function likeButtonVisualStyle({
     boxShadow: inline
       ? "none"
       : selected
-        ? "0 0 0 1px rgba(34,197,94,0.18)"
+        ? tint.ring
         : ghost
           ? "0 2px 8px rgba(15, 23, 42, 0.12)"
           : "0 8px 18px rgba(15, 23, 42, 0.12)",

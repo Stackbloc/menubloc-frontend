@@ -1,8 +1,12 @@
 import useRestaurantFollow from "../hooks/useRestaurantFollow.js";
-import { LIKE_ACCENT, likeButtonVisualStyle } from "../lib/likeButtonStyles.js";
+import { FAV_ACCENT, likeButtonVisualStyle } from "../lib/likeButtonStyles.js";
 import IconHoverLabel from "./IconHoverLabel.jsx";
-import ThumbsUpIcon from "./icons/ThumbsUpIcon.jsx";
+import FavHeartIcon from "./icons/FavHeartIcon.jsx";
 
+/**
+ * Fav heart for a restaurant (Andre, 2026-10-20): Favs are restaurants only and land in the
+ * profile's My Favs; Like is for menu items. Same follow record underneath.
+ */
 export default function FollowRestaurantButton({
   restaurantId,
   restaurantName = "",
@@ -20,16 +24,17 @@ export default function FollowRestaurantButton({
 
   const busy = statusLoading || actionLoading;
   const label = followed
-    ? `Liked ${restaurantName || "this restaurant"}. Tap to unlike.`
-    : `Like ${restaurantName || "this restaurant"}`;
+    ? `${restaurantName || "This restaurant"} is in My Favs. Tap to remove.`
+    : `Add ${restaurantName || "this restaurant"} to My Favs`;
 
-  const hoverLabel = followed ? "Liked" : "Like";
+  const hoverLabel = followed ? "My Fav" : "Fav";
   const iconSize = Math.max(14, Math.round(size * 0.5));
 
   return (
     <IconHoverLabel label={hoverLabel}>
       <button
         type="button"
+        data-testid="restaurant-fav-button"
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -40,15 +45,15 @@ export default function FollowRestaurantButton({
         aria-pressed={followed}
         title={hoverLabel}
         style={{
-          ...likeButtonVisualStyle({ selected: followed, dark, loading: busy }),
+          ...likeButtonVisualStyle({ selected: followed, dark, loading: busy, accent: FAV_ACCENT }),
           width: size,
           height: size,
         }}
       >
-        <ThumbsUpIcon
+        <FavHeartIcon
           size={iconSize}
           filled={followed}
-          color={followed ? LIKE_ACCENT : dark ? "#f8fafc" : "#0f172a"}
+          color={followed ? FAV_ACCENT : dark ? "#f8fafc" : "#0f172a"}
         />
       </button>
     </IconHoverLabel>

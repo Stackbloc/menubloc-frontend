@@ -50,10 +50,12 @@ test("MenuItemDetailPage restaurant actions order is like → share → invite �
 
 test("MenuItemDetailActionRail includes dish comment after invite", () => {
   const src = read("src/components/menu/MenuItemDetailActionRail.jsx");
-  const likeIdx = src.indexOf("LikeMenuItemButton");
+  // Andre, 2026-10-20: Wish List · Like · Invite · Share (same four as menu rows), then Comment.
+  const wishIdx = src.indexOf("<WishListMenuItemButton");
+  const likeIdx = src.indexOf("<LikeMenuItemButton");
   const shareIdx = src.indexOf("<ShareButton");
   const inviteIdx = src.indexOf("<InviteToEatButton");
   const commentIdx = src.indexOf('target="menu_item"');
-  assert.ok(likeIdx > 0 && shareIdx > likeIdx && inviteIdx > shareIdx);
-  assert.ok(commentIdx > inviteIdx, "dish FoodCommentNavButton after Invite");
+  assert.ok(wishIdx > 0 && likeIdx > wishIdx && inviteIdx > likeIdx && shareIdx > inviteIdx);
+  assert.ok(commentIdx > shareIdx, "dish FoodCommentNavButton after Share");
 });

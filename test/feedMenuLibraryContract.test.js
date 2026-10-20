@@ -212,7 +212,8 @@ test("Feed nav Share My QR; Menu Browser on video rail; legacy /feed/menus kept 
   assert.match(navLinks, /MENU_BROWSER_PATH/);
 
   const rail = read("src/components/consumer/feed/FeedVideoActionRail.jsx");
-  assert.match(rail, /label="Menu Browser"/);
+  // Andre, 2026-10-20: the clip's "Order this" / "See menu" button replaces the Menu Browser icon.
+  assert.match(rail, /isDishVideo \? "Order this" : "See menu"/);
   assert.match(rail, /feed-rail-menu/);
 
   const app = read("src/App.jsx");

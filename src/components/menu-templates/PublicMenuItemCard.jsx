@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import ShareButton from "../share/ShareButton.jsx";
 import LikeMenuItemButton from "../LikeMenuItemButton.jsx";
 import InviteToEatButton from "../InviteToEatButton.jsx";
-import FoodCommentNavButton from "../FoodCommentNavButton.jsx";
+import WishListMenuItemButton from "../WishListMenuItemButton.jsx";
 import PreferenceIngredientAdvisory from "../menu/PreferenceIngredientAdvisory.jsx";
 import MenuItemDealsIndicator from "../menu/MenuItemDealsIndicator.jsx";
 import { getLocalizedField } from "../../utils/getLocalizedField.js";
@@ -290,7 +290,7 @@ export default function PublicMenuItemCard({
   menuThemeSettings = {},
 }) {
   const themeSettings = normalizeMenuThemeSettings(menuThemeSettings);
-  const { hideDishShare, hideComment, tapRowToAdd, onRemoveOne, isScrollTap, hideAddButton, onOpenOptions, onCannotOrder } =
+  const { hideDishShare, tapRowToAdd, onRemoveOne, isScrollTap, hideAddButton, onOpenOptions, onCannotOrder } =
     useMenuRowActions();
   const accent = brand?.accent ?? (editorialRefresh ? (ED_PALETTES[editorialColorScheme]?.accentDefault || ED_PALETTES.light.accentDefault) : "#22C55E");
   const onAccent = brand?.onAccent ?? "#0B0F0C";
@@ -661,8 +661,24 @@ export default function PublicMenuItemCard({
               iconButtons={
                 <>
                   {canNavigate ? (
+                    <WishListMenuItemButton
+                      menuItemId={normalizedItemId}
+                      menuItemName={name}
+                      restaurantId={currentRestaurantId}
+                      restaurantName={restaurantName}
+                    />
+                  ) : null}
+                  {canNavigate ? (
                     <LikeMenuItemButton menuItemId={normalizedItemId} tone="ghost" size="row" />
                   ) : null}
+                  <InviteToEatButton
+                    restaurantId={currentRestaurantId}
+                    restaurantName={restaurantName}
+                    menuItemId={canNavigate ? normalizedItemId : null}
+                    menuItemName={name}
+                    tone="ghost"
+                    size="row"
+                  />
                   {dishShareData && !hideDishShare ? (
                     <ShareButton
                       variant="dish"
@@ -677,25 +693,6 @@ export default function PublicMenuItemCard({
                         pageType: "public_menu",
                         shareTarget: "dish",
                       }}
-                    />
-                  ) : null}
-                  <InviteToEatButton
-                    restaurantId={currentRestaurantId}
-                    restaurantName={restaurantName}
-                    menuItemId={canNavigate ? normalizedItemId : null}
-                    menuItemName={name}
-                    tone="ghost"
-                    size="row"
-                  />
-                  {canNavigate && !hideComment ? (
-                    <FoodCommentNavButton
-                      target="menu_item"
-                      menuItemId={normalizedItemId}
-                      restaurantId={currentRestaurantId}
-                      restaurantName={restaurantName}
-                      menuItemName={name}
-                      tone="ghost"
-                      size="row"
                     />
                   ) : null}
                 </>
@@ -739,8 +736,24 @@ export default function PublicMenuItemCard({
               iconButtons={
                 <>
                   {canNavigate ? (
+                    <WishListMenuItemButton
+                      menuItemId={normalizedItemId}
+                      menuItemName={name}
+                      restaurantId={currentRestaurantId}
+                      restaurantName={restaurantName}
+                    />
+                  ) : null}
+                  {canNavigate ? (
                     <LikeMenuItemButton menuItemId={normalizedItemId} tone="ghost" size="row" />
                   ) : null}
+                  <InviteToEatButton
+                    restaurantId={currentRestaurantId}
+                    restaurantName={restaurantName}
+                    menuItemId={canNavigate ? normalizedItemId : null}
+                    menuItemName={name}
+                    tone="ghost"
+                    size="row"
+                  />
                   {dishShareData && !hideDishShare ? (
                     <ShareButton
                       variant="dish"
@@ -755,25 +768,6 @@ export default function PublicMenuItemCard({
                         pageType: "public_menu",
                         shareTarget: "dish",
                       }}
-                    />
-                  ) : null}
-                  <InviteToEatButton
-                    restaurantId={currentRestaurantId}
-                    restaurantName={restaurantName}
-                    menuItemId={canNavigate ? normalizedItemId : null}
-                    menuItemName={name}
-                    tone="ghost"
-                    size="row"
-                  />
-                  {canNavigate && !hideComment ? (
-                    <FoodCommentNavButton
-                      target="menu_item"
-                      menuItemId={normalizedItemId}
-                      restaurantId={currentRestaurantId}
-                      restaurantName={restaurantName}
-                      menuItemName={name}
-                      tone="ghost"
-                      size="row"
                     />
                   ) : null}
                 </>
@@ -817,8 +811,24 @@ export default function PublicMenuItemCard({
               iconButtons={
                 <>
                   {canNavigate ? (
+                    <WishListMenuItemButton
+                      menuItemId={normalizedItemId}
+                      menuItemName={name}
+                      restaurantId={currentRestaurantId}
+                      restaurantName={restaurantName}
+                    />
+                  ) : null}
+                  {canNavigate ? (
                     <LikeMenuItemButton menuItemId={normalizedItemId} tone="ghost" size="row" />
                   ) : null}
+                  <InviteToEatButton
+                    restaurantId={currentRestaurantId}
+                    restaurantName={restaurantName}
+                    menuItemId={canNavigate ? normalizedItemId : null}
+                    menuItemName={name}
+                    tone="ghost"
+                    size="row"
+                  />
                   {dishShareData && !hideDishShare ? (
                     <ShareButton
                       variant="dish"
@@ -833,25 +843,6 @@ export default function PublicMenuItemCard({
                         pageType: "public_menu",
                         shareTarget: "dish",
                       }}
-                    />
-                  ) : null}
-                  <InviteToEatButton
-                    restaurantId={currentRestaurantId}
-                    restaurantName={restaurantName}
-                    menuItemId={canNavigate ? normalizedItemId : null}
-                    menuItemName={name}
-                    tone="ghost"
-                    size="row"
-                  />
-                  {canNavigate && !hideComment ? (
-                    <FoodCommentNavButton
-                      target="menu_item"
-                      menuItemId={normalizedItemId}
-                      restaurantId={currentRestaurantId}
-                      restaurantName={restaurantName}
-                      menuItemName={name}
-                      tone="ghost"
-                      size="row"
                     />
                   ) : null}
                 </>

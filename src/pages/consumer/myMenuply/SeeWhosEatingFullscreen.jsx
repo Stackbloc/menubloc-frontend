@@ -10,7 +10,6 @@ import { createPortal } from "react-dom";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import ShareButton from "../../../components/share/ShareButton.jsx";
 import InviteToEatModal from "../../../components/InviteToEatModal.jsx";
-import BrowseMenusIcon from "../../../components/icons/BrowseMenusIcon.jsx";
 import FeedMenuBrowserPipOverlay from "../../../components/consumer/feed/FeedMenuBrowserPipOverlay.jsx";
 import FeedPipExpandButton from "../../../components/consumer/feed/FeedPipExpandButton.jsx";
 import FeedVideoActionRail from "../../../components/consumer/feed/FeedVideoActionRail.jsx";
@@ -93,10 +92,11 @@ export default function SeeWhosEatingFullscreen({
   const [connectError, setConnectError] = useState("");
   const [videoMuted, setVideoMuted] = useState(() => defaultFeedVideoMuted(variant));
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [railShareOpen, setRailShareOpen] = useState(false);
   // Viewer pause (play/pause circle). Invite/Share also holds the clip so the reel cannot
   // advance to a different video while someone is sharing it.
   const [userPaused, setUserPaused] = useState(false);
-  const holdPlayback = userPaused || inviteOpen;
+  const holdPlayback = userPaused || inviteOpen || railShareOpen;
   const holdPlaybackRef = useRef(holdPlayback);
   holdPlaybackRef.current = holdPlayback;
   /** Menu Browser session: open Feed index + which discussed-menu trail slot is showing. */
@@ -979,6 +979,9 @@ export default function SeeWhosEatingFullscreen({
           onInvite={() => setInviteOpen(true)}
           showMenu={showInvite}
           onMenu={openMenuBrowser}
+          shareData={feedShareData}
+          shareAnalyticsContext={{ surface: "feed_home_video", clip_id: item?.id }}
+          onShareOpenChange={setRailShareOpen}
           followSource="feed_home_video"
         />
       ) : null}
@@ -992,13 +995,11 @@ export default function SeeWhosEatingFullscreen({
         >
           <button
             type="button"
-            style={styles.yellowBrowserBtn}
+            style={styles.dockOrderBtn}
             data-testid="feed-video-yellow-browser"
-            aria-label="Menu Browser"
-            title="Menu Browser"
             onClick={openMenuBrowser}
           >
-            <BrowseMenusIcon size={28} title="Menu Browser" />
+            {inviteMenuItemId ? "Order this" : "See menu"}
           </button>
           <button
             type="button"
@@ -1116,16 +1117,18 @@ const styles = {
     gap: 8,
     pointerEvents: "auto",
   },
-  yellowBrowserBtn: {
+  /** The cluster clip player's green "Order this" / "See menu" button. */
+  dockOrderBtn: {
+    height: 36,
+    padding: "0 14px",
+    borderRadius: 999,
     border: "none",
-    padding: 6,
-    borderRadius: 12,
-    background: "rgba(0,0,0,0.45)",
+    background: "#16a34a",
+    color: "#fff",
+    fontSize: 13,
+    fontWeight: 800,
+    whiteSpace: "nowrap",
     cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    lineHeight: 0,
     fontFamily: "inherit",
   },
   inviteShareBtn: {

@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import ShareButton from "../share/ShareButton.jsx";
 import LikeMenuItemButton from "../LikeMenuItemButton.jsx";
 import InviteToEatButton from "../InviteToEatButton.jsx";
+import WishListMenuItemButton from "../WishListMenuItemButton.jsx";
 import FoodCommentNavButton from "../FoodCommentNavButton.jsx";
 import MenuItemSaveToMyMenuplyIcon from "../consumer/MenuItemSaveToMyMenuplyIcon.jsx";
 import IconHoverLabel from "../IconHoverLabel.jsx";
@@ -71,7 +72,8 @@ function ReturnToSearchButton({ onClick, label = "Return to results" }) {
 
 /**
  * Detail-page action icons — same ghost controls as public menu rows.
- * Order: View Full Menu (or return-to-search), Like, Share, Invite, Comment.
+ * Order: View Full Menu (or return-to-search), Wish List, Like, Invite, Share (same four as menu
+ * rows and the Feed rail), then Comment.
  */
 export default function MenuItemDetailActionRail({
   menuItemId,
@@ -108,7 +110,25 @@ export default function MenuItemDetailActionRail({
       {fullMenuHref ? (
         <ViewFullMenuLink href={fullMenuHref} />
       ) : null}
+      {menuItemId ? (
+        <WishListMenuItemButton
+          menuItemId={menuItemId}
+          menuItemName={itemName}
+          restaurantId={restaurantId}
+          restaurantName={restaurantName}
+        />
+      ) : null}
       {menuItemId ? <LikeMenuItemButton menuItemId={menuItemId} tone="ghost" size="row" /> : null}
+      {restaurantId ? (
+        <InviteToEatButton
+          restaurantId={restaurantId}
+          restaurantName={restaurantName}
+          menuItemId={menuItemId}
+          menuItemName={itemName}
+          tone="ghost"
+          size="row"
+        />
+      ) : null}
       {shareData ? (
         <ShareButton
           variant="dish"
@@ -119,16 +139,6 @@ export default function MenuItemDetailActionRail({
           shareData={shareData}
           analyticsContext={shareAnalyticsContext}
           stopPropagation={shareStopPropagation}
-        />
-      ) : null}
-      {restaurantId ? (
-        <InviteToEatButton
-          restaurantId={restaurantId}
-          restaurantName={restaurantName}
-          menuItemId={menuItemId}
-          menuItemName={itemName}
-          tone="ghost"
-          size="row"
         />
       ) : null}
       {menuItemId ? (

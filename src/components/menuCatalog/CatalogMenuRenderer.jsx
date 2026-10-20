@@ -63,11 +63,14 @@ import {
 import { resolvePublicMenuAddressDisplay } from "../../lib/displayAddress.js";
 import { appendSavedMenuPreferenceQueryParams } from "../../lib/dietaryParams.js";
 
-/** Menu Browser rows: Invite covers sharing, so the per-dish Share icon is dropped. */
-/** Menu Browser rows: tapping the dish adds it, so no per-row add button (Andre: cognitive load). */
-const MENU_BROWSER_ROW_ACTIONS = { hideDishShare: true, hideComment: false, tapRowToAdd: true, hideAddButton: true };
-/** Pinned "From the video" card: Like, Invite, Add to basket only. */
-const PINNED_CARD_ROW_ACTIONS = { hideDishShare: true, hideComment: true, tapRowToAdd: true, hideAddButton: true };
+/**
+ * Menu Browser rows carry the same four actions as the Feed rail — Wish List · Like · Invite ·
+ * Share (Andre, 2026-10-20) — and tapping the dish adds it, so no per-row add button
+ * (Andre: cognitive load). The header keeps its Bookmark.
+ */
+const MENU_BROWSER_ROW_ACTIONS = { hideDishShare: false, tapRowToAdd: true, hideAddButton: true };
+/** Pinned "From the video" card: same four actions + Add to basket. */
+const PINNED_CARD_ROW_ACTIONS = { hideDishShare: false, tapRowToAdd: true, hideAddButton: true };
 /** Templates without the post-header slot (allergenBannerSlot) — keep the in-row highlight instead. */
 const SCROLL_TAP_GUARD_MS = 350;
 const CANNOT_ORDER_RESTAURANT_NOTE = "This restaurant isn't taking online orders yet";

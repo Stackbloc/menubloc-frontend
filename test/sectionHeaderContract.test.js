@@ -49,7 +49,12 @@ test("Eight profile sections mount shared SectionHeader configs", () => {
 
   const headers = read("src/pages/consumer/myMenuply/SectionHeader.jsx");
   assert.match(headers, /title: "About me"/);
-  assert.match(headers, /title: "My reel"/);
+  // Andre, 2026-10-20: "My Clips" replaces "My reel"; My Favs = red heart; Wish List glyph.
+  assert.match(headers, /title: "My Clips"/);
+  assert.doesNotMatch(headers, /My reel/);
+  assert.match(headers, /icon: "menuply-fav-heart"/);
+  assert.match(headers, /icon: "menuply-wish-list"/);
+  assert.match(headers, /title: "Wish List"/);
   assert.match(headers, /title: "My Favs"/);
   assert.doesNotMatch(rails, /Restaurants I Follow/);
 });

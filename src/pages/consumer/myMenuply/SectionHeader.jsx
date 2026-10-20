@@ -11,9 +11,31 @@ import {
   IconFlame,
   IconIdBadge,
   IconPhoto,
+  IconPlayerPlay,
   IconToolsKitchen2,
   IconUsers,
 } from "@tabler/icons-react";
+import FavHeartIcon from "../../../components/icons/FavHeartIcon.jsx";
+import WishListIcon from "../../../components/icons/WishListIcon.jsx";
+import { FAV_ACCENT } from "../../../lib/likeButtonStyles.js";
+
+/** My Favs uses the same red heart as the restaurant Fav button. */
+function FavHeartHeaderIcon({ size = 14, style }) {
+  return (
+    <span style={{ ...style, lineHeight: 0 }}>
+      <FavHeartIcon size={size} filled color={FAV_ACCENT} />
+    </span>
+  );
+}
+
+/** Wish List uses the same glyph as the +Wish List action on menus and the Feed. */
+function WishListHeaderIcon({ size = 14, style }) {
+  return (
+    <span style={{ ...style, lineHeight: 0 }}>
+      <WishListIcon size={size} color="currentColor" />
+    </span>
+  );
+}
 
 const ICON_MAP = {
   "ti-id-badge": IconIdBadge,
@@ -24,6 +46,9 @@ const ICON_MAP = {
   "ti-calendar-event": IconCalendarEvent,
   "ti-users": IconUsers,
   "ti-calendar-star": IconCalendarStar,
+  "ti-player-play": IconPlayerPlay,
+  "menuply-fav-heart": FavHeartHeaderIcon,
+  "menuply-wish-list": WishListHeaderIcon,
 };
 
 const TITLE_FONT = 'Georgia, "Times New Roman", serif';
@@ -98,18 +123,18 @@ export const PROFILE_SECTION_HEADERS = {
     accentColor: "#888780",
   },
   highlights: {
-    icon: "ti-photo",
-    eyebrowLabel: "Snapshots",
+    icon: "ti-player-play",
+    eyebrowLabel: "Clips",
     eyebrowColor: "#0F6E56",
-    title: "My reel",
+    title: "My Clips",
     accentColor: "#1D9E75",
   },
   favs: {
-    icon: "ti-building-store",
-    eyebrowLabel: "Following",
-    eyebrowColor: "#993C1D",
+    icon: "menuply-fav-heart",
+    eyebrowLabel: "Restaurants",
+    eyebrowColor: "#BE123C",
     title: "My Favs",
-    accentColor: "#D85A30",
+    accentColor: FAV_ACCENT,
   },
   eating: {
     icon: "ti-tools-kitchen-2",
@@ -119,7 +144,7 @@ export const PROFILE_SECTION_HEADERS = {
     accentColor: "#1D9E75",
   },
   wannaEat: {
-    icon: "ti-flame",
+    icon: "menuply-wish-list",
     eyebrowLabel: "Cravings",
     eyebrowColor: "#993556",
     title: "Wish List",

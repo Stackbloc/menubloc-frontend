@@ -9,7 +9,6 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import InviteToEatModal from "../../InviteToEatModal.jsx";
-import BrowseMenusIcon from "../../icons/BrowseMenusIcon.jsx";
 import FeedMenuBrowserPipOverlay from "./FeedMenuBrowserPipOverlay.jsx";
 import FeedPipExpandButton from "./FeedPipExpandButton.jsx";
 import FeedVideoActionRail from "./FeedVideoActionRail.jsx";
@@ -61,9 +60,10 @@ export default function DealVideoSwipe({
   const [playlist, setPlaylist] = useState(items);
   const [videoMuted, setVideoMuted] = useState(() => defaultFeedVideoMuted("feedHome"));
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [railShareOpen, setRailShareOpen] = useState(false);
   // Viewer pause + hold while Invite/Share is open (no advancing to another deal mid-share).
   const [userPaused, setUserPaused] = useState(false);
-  const holdPlayback = userPaused || inviteOpen;
+  const holdPlayback = userPaused || inviteOpen || railShareOpen;
   const holdPlaybackRef = useRef(holdPlayback);
   holdPlaybackRef.current = holdPlayback;
   const [browseSession, setBrowseSession] = useState(null);
@@ -723,6 +723,9 @@ export default function DealVideoSwipe({
           onInvite={() => setInviteOpen(true)}
           showMenu={showInvite}
           onMenu={openMenuBrowser}
+          shareData={dealShareData}
+          shareAnalyticsContext={{ surface: "feed_deals_video", deal_id: item?.deal_id || item?.id }}
+          onShareOpenChange={setRailShareOpen}
           followSource="feed_deals_video"
         />
       ) : null}
@@ -736,13 +739,11 @@ export default function DealVideoSwipe({
         >
           <button
             type="button"
-            style={styles.yellowBrowserBtn}
+            style={styles.dockOrderBtn}
             data-testid="feed-deals-yellow-browser"
-            aria-label="Menu Browser"
-            title="Menu Browser"
             onClick={openMenuBrowser}
           >
-            <BrowseMenusIcon size={28} title="Menu Browser" />
+            {inviteMenuItemId ? "Order this" : "See menu"}
           </button>
           <button
             type="button"
@@ -962,16 +963,18 @@ const styles = {
     gap: 8,
     pointerEvents: "auto",
   },
-  yellowBrowserBtn: {
+  /** The cluster clip player's green "Order this" / "See menu" button. */
+  dockOrderBtn: {
+    height: 36,
+    padding: "0 14px",
+    borderRadius: 999,
     border: "none",
-    padding: 6,
-    borderRadius: 12,
-    background: "rgba(0,0,0,0.45)",
+    background: "#16a34a",
+    color: "#fff",
+    fontSize: 13,
+    fontWeight: 800,
+    whiteSpace: "nowrap",
     cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    lineHeight: 0,
     fontFamily: "inherit",
   },
   inviteShareBtn: {

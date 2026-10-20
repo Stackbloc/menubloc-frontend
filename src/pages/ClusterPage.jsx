@@ -175,6 +175,34 @@ function ClusterViewToggle({ viewMode, onChange, disabled }) {
   );
 }
 
+/**
+ * Cuisine groups are built from the loaded rows, and newly added restaurants sort last, so a
+ * first-page-only load leaves them out of their cuisine (YGF Malatang in USC, 2026-10-20).
+ * Load every page up front; the API caps one page at 36 rows.
+ */
+const MAX_CLUSTER_RESTAURANT_PAGES = 12;
+
+async function fetchAllClusterRestaurantPages(clusterSlug, pageSize, signal) {
+  const first = await fetchClusterRestaurants(clusterSlug, { limit: pageSize, offset: 0, signal });
+  if (!first?.ok) return first;
+  const rows = Array.isArray(first.restaurants) ? [...first.restaurants] : [];
+  const seen = new Set(rows.map((row) => row.restaurant_id));
+  let pagination = first.pagination || null;
+  for (let page = 1; pagination?.has_more && page < MAX_CLUSTER_RESTAURANT_PAGES; page += 1) {
+    const next = await fetchClusterRestaurants(clusterSlug, { limit: pageSize, offset: rows.length, signal });
+    if (!next?.ok) break;
+    const nextRows = Array.isArray(next.restaurants) ? next.restaurants : [];
+    if (nextRows.length === 0) break;
+    for (const row of nextRows) {
+      if (seen.has(row.restaurant_id)) continue;
+      seen.add(row.restaurant_id);
+      rows.push(row);
+    }
+    pagination = next.pagination || null;
+  }
+  return { ...first, restaurants: rows, pagination };
+}
+
 function ClusterRestaurantsTab({ clusterSlug, cluster, enabled, placeReturnPath, placeReturnLabel }) {
   // Match BE MAX_CLUSTER_RESTAURANTS_LIMIT so district lists (e.g. LACC ~31) fit one page.
   const PAGE_SIZE = 36;
@@ -202,7 +230,7 @@ function ClusterRestaurantsTab({ clusterSlug, cluster, enabled, placeReturnPath,
     setDrinksFilter("all");
     setPagination(null);
 
-    fetchClusterRestaurants(clusterSlug, { limit: PAGE_SIZE, offset: 0, signal: controller.signal })
+    fetchAllClusterRestaurantPages(clusterSlug, PAGE_SIZE, controller.signal)
       .then((data) => {
         if (!data?.ok) throw new Error(data?.error || "Could not load restaurants");
         setRestaurants(Array.isArray(data.restaurants) ? data.restaurants : []);
