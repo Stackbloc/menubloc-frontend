@@ -51,3 +51,22 @@ describe("clusterRestaurantCuisineGroups coffee_bakery", () => {
     assert.ok(other?.restaurants.some((r) => r.restaurant_name === "Yogurtland"));
   });
 });
+
+describe("restaurant type wins for coffee & bakery (2026-10-19)", () => {
+  it("puts a coffee_shop with a Thai cuisine (Amino Ave) in Coffee & Bakery", () => {
+    assert.equal(
+      resolveRestaurantCuisineGroup({ restaurant_name: "Amino Ave", cuisine: "thai", restaurant_type: "coffee_shop" }).id,
+      "coffee_bakery"
+    );
+  });
+  it("keeps a Thai full-service restaurant in Asian", () => {
+    assert.equal(
+      resolveRestaurantCuisineGroup({ restaurant_name: "Thai Spot", cuisine: "thai", restaurant_type: "full_service_restaurant" }).id,
+      "asian"
+    );
+  });
+  it("labels a cafe with no cuisine as Cafe", () => {
+    const [group] = groupClusterRestaurantsByCuisine([{ restaurant_name: "Cafe Dulce", cuisine: null, restaurant_type: "cafe" }]);
+    assert.equal(group.restaurants[0].cuisine_display, "Cafe");
+  });
+});

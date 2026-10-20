@@ -72,7 +72,13 @@ function matchesCoffeeBakery(restaurant) {
   );
 }
 
+/** Restaurant types that are coffee & bakery spots whatever cuisine they list (Amino Ave: coffee_shop + thai). */
+const COFFEE_BAKERY_TYPES = new Set(["cafe", "coffee_shop", "bakery"]);
+
 export function resolveRestaurantCuisineGroup(restaurant) {
+  if (COFFEE_BAKERY_TYPES.has(String(restaurant?.restaurant_type || "").trim().toLowerCase())) {
+    return CK_CUISINE_GROUP_RULES.find((rule) => rule.id === "coffee_bakery");
+  }
   for (const rule of CK_CUISINE_GROUP_RULES) {
     if (rule.match(restaurant)) return rule;
   }

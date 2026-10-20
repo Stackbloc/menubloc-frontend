@@ -80,8 +80,18 @@ export function formatRestaurantCuisineLabel(restaurant = {}) {
   const cuisine = restaurant?.cuisine || restaurant?.category || null;
   if (cuisine) return String(cuisine).trim();
   if (restaurant?.cuisine_display) return String(restaurant.cuisine_display).trim();
-  return null;
+  // No cuisine on file: say what kind of place it is ("Cafe", "Coffee Shop").
+  return RESTAURANT_TYPE_LABELS[String(restaurant?.restaurant_type || "").trim().toLowerCase()] || null;
 }
+
+const RESTAURANT_TYPE_LABELS = {
+  cafe: "Cafe",
+  coffee_shop: "Coffee Shop",
+  bakery: "Bakery",
+  bar: "Bar",
+  bar_and_grill: "Bar & Grill",
+  food_truck: "Food Truck",
+};
 
 export function formatRestaurantMenuCount(restaurant = {}) {
   const count = Number(
