@@ -477,6 +477,17 @@ export const setMenuConsoleClusterPosition = (restaurantId, clusterId, afterRest
   put(`/api/owner/menu-console/restaurants/${encodeURIComponent(restaurantId)}/clusters/${encodeURIComponent(clusterId)}/position`, {
     after_restaurant_id: afterRestaurantId ?? null,
   });
+/** Stores of a restaurant's chain (from its brand record); with cluster_id, nearest first + in_cluster. */
+export const listMenuConsoleChainStores = (restaurantId, params = {}) => {
+  const clean = Object.fromEntries(Object.entries(params).filter(([, v]) => v != null && v !== ""));
+  const qs = new URLSearchParams(clean).toString();
+  return get(`/api/owner/menu-console/restaurants/${encodeURIComponent(restaurantId)}/chain-stores${qs ? `?${qs}` : ""}`);
+};
+/** Add one cluster membership, keeping the restaurant's other clusters. */
+export const addMenuConsoleRestaurantToCluster = (restaurantId, clusterId) =>
+  req(`/api/owner/menu-console/restaurants/${encodeURIComponent(restaurantId)}/clusters/${encodeURIComponent(clusterId)}`, {
+    method: "POST",
+  });
 export const setMenuConsoleRestaurantClusters = (restaurantId, clusterIds = []) =>
   req(`/api/owner/menu-console/restaurants/${encodeURIComponent(restaurantId)}/clusters`, {
     method: "PUT",

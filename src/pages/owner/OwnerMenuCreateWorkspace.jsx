@@ -4,6 +4,7 @@ import OwnerLayout, { OWNER_COLORS, PageCard, SectionTitle } from "./OwnerLayout
 import { MenuEditor, StatusChip, inputStyle } from "./ownerMenuEditorComponents.jsx";
 import OwnerMenuRestaurantFinder, { saveRecentRestaurant } from "./OwnerMenuRestaurantFinder.jsx";
 import OcrEditSplitLayout from "./OcrEditSplitLayout.jsx";
+import OwnerBrandStorePicker, { isBrandRecord } from "./OwnerBrandStorePicker.jsx";
 import {
   BusinessTypeConvertPanel,
   BusinessTypeCreateField,
@@ -240,9 +241,13 @@ function clusterLabel(cluster) {
   return `${cluster.name}${where}`;
 }
 
-/** Owner console membership list; null when the backend predates owner_clusters. */
+/**
+ * Owner console membership list; null when the backend predates owner_clusters, or for a
+ * brand record that isn't in any cluster (its stores are clustered from Locations instead).
+ */
 function ownerClusterIds(r = {}) {
   if (!Array.isArray(r.owner_clusters)) return null;
+  if (isBrandRecord(r) && !r.owner_clusters.length) return null;
   return r.owner_clusters.map((c) => Number(c.id)).filter((id) => id > 0);
 }
 
@@ -1655,6 +1660,12 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
             <label style={fieldLabel}>Longitude</label>
             <input value={profile.lng} onChange={(e) => updateProfile("lng", e.target.value)} style={inputStyle} disabled={!!restaurant && !existingRestaurant} placeholder="-85.3902" />
           </div>
+          {existingRestaurant && isBrandRecord(restaurant) && !restaurant.owner_clusters?.length ? (
+            <div style={{ gridColumn: "1 / -1", fontSize: 13, color: OWNER_COLORS.muted }} data-testid="owner-brand-record-cluster-note">
+              <div style={fieldLabel}>Clusters</div>
+              This is the brand record, so it isn't in any cluster. Use the <strong>locations</strong> list above to add a specific store to a cluster.
+            </div>
+          ) : null}
           {(!existingRestaurant || ownerClusterIds(restaurant)) && (
             <div style={{ gridColumn: "1 / -1" }}>
               <ClusterPicker
@@ -2295,6 +2306,17 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
           {profileFormCard}
         </>
       )}
+
+      {restaurant && existingRestaurant && isBrandRecord(restaurant) ? (
+        <OwnerBrandStorePicker
+          restaurant={restaurant}
+          onOpenStore={(store) => {
+            setShowProfilePanel(false);
+            loadExistingRestaurant(store.id, { id: store.id, name: store.name });
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
+        />
+      ) : null}
 
       {restaurant && existingRestaurant && !showProfilePanel ? (
         <div style={{ marginBottom: 12 }}>
