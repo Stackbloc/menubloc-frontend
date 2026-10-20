@@ -2,6 +2,7 @@
  * Campus Dining — university Cluster section only.
  * Place list (halls + campus spots) + Phase 1 Line/Food indicators.
  * Comments live on the cluster dashboard. No dining-hall menu analysis.
+ * USC: each row also gets Live clips (count + newest, or "Add a clip"); see HallClipsSheet.
  */
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
@@ -9,16 +10,36 @@ import { Link } from "react-router-dom";
 import {
   fetchClusterCampusDining,
   fetchClusterCampusLive,
+  fetchClusterHallClipsSummary,
 } from "../../lib/clusterApi.js";
 import { getOrCreateGuestReporterKey } from "../../lib/guestReporterSession.js";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
 import CampusLiveGlanceBar from "./CampusLiveGlanceBar.jsx";
 import CampusLiveUpdateSheet from "./CampusLiveUpdateSheet.jsx";
+import HallClipsSheet, { formatNewestClipAgo } from "./HallClipsSheet.jsx";
 
 function isUniversityCluster(cluster) {
   return String(cluster?.type || cluster?.cluster_type || "")
     .trim()
     .toLowerCase() === "university";
+}
+
+/** "Live clips · N" (or "Add a clip") beside Line/Food. Opens that hall's clips. */
+function HallClipsButton({ count, onOpen }) {
+  const has = count > 0;
+  return (
+    <button
+      type="button"
+      data-testid="hall-clips-button"
+      style={{ ...styles.clipsButton, ...(has ? null : styles.clipsButtonEmpty) }}
+      onClick={onOpen}
+    >
+      <span aria-hidden="true" style={styles.clipsDot}>
+        ▶
+      </span>
+      {has ? `Live clips · ${count}` : "Add a clip"}
+    </button>
+  );
 }
 
 function StatusChip({ label, muted = false }) {
@@ -42,6 +63,8 @@ export default function CampusDiningSection({ cluster, showGlance = true, onSele
   const [loading, setLoading] = useState(false);
   const [liveLoading, setLiveLoading] = useState(false);
   const [updateVenueId, setUpdateVenueId] = useState(null);
+  const [clipsSummary, setClipsSummary] = useState(null);
+  const [clipsHall, setClipsHall] = useState(null);
   // Collapsed by default so restaurants/food aren't buried under every dining hall.
   const [expanded, setExpanded] = useState(false);
 
@@ -93,19 +116,37 @@ export default function CampusDiningSection({ cluster, showGlance = true, onSele
     };
   }, [university, slug]);
 
+  const loadClips = useCallback(() => {
+    if (!university || !slug) {
+      setClipsSummary(null);
+      return Promise.resolve(null);
+    }
+    return fetchClusterHallClipsSummary(slug)
+      .then((data) => {
+        setClipsSummary(data?.enabled ? data : null);
+        return data;
+      })
+      .catch(() => {
+        setClipsSummary(null);
+        return null;
+      });
+  }, [university, slug]);
+
   useEffect(() => {
     let cancelled = false;
     loadLive().then(() => {
       if (cancelled) return;
     });
+    loadClips();
     const id = setInterval(() => {
       loadLive();
+      loadClips();
     }, 45000);
     return () => {
       cancelled = true;
       clearInterval(id);
     };
-  }, [loadLive]);
+  }, [loadLive, loadClips]);
 
   const venueById = useMemo(() => {
     const map = new Map();
@@ -181,6 +222,7 @@ export default function CampusDiningSection({ cluster, showGlance = true, onSele
             const line = status?.line;
             const food = status?.food;
             const age = status?.age_label;
+            const clips = clipsSummary ? clipsSummary.halls?.[String(loc.restaurant_id)] || { count: 0 } : null;
             return (
               <article
                 key={loc.restaurant_id}
@@ -229,7 +271,20 @@ export default function CampusDiningSection({ cluster, showGlance = true, onSele
                       {age}
                     </span>
                   ) : null}
+                  {clips ? (
+                    <HallClipsButton
+                      count={clips.count}
+                      onOpen={() => setClipsHall({ restaurant_id: Number(loc.restaurant_id), name: loc.name })}
+                    />
+                  ) : null}
                 </div>
+                {clips ? (
+                  <p style={styles.clipsLine} data-testid="hall-clips-recency">
+                    {clips.count > 0
+                      ? formatNewestClipAgo(clips.newest_at) || "Live clips today"
+                      : "Be the first to post a clip"}
+                  </p>
+                ) : null}
                 {loc.short_description ? (
                   <p style={styles.desc}>{loc.short_description}</p>
                 ) : null}
@@ -239,6 +294,16 @@ export default function CampusDiningSection({ cluster, showGlance = true, onSele
         : null}
       </div>
       ) : null}
+
+      <HallClipsSheet
+        open={clipsHall != null}
+        onClose={() => setClipsHall(null)}
+        clusterSlug={slug}
+        hall={clipsHall}
+        recordingEnabled={Boolean(clipsSummary?.recording_enabled)}
+        limits={clipsSummary?.limits || null}
+        onPosted={loadClips}
+      />
 
       <CampusLiveUpdateSheet
         open={updateVenueId != null}
@@ -368,5 +433,22 @@ const styles = {
     border: "1px solid #e5e7eb",
   },
   age: { fontSize: 12, fontWeight: 600, color: "#6b7280" },
+  clipsButton: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 5,
+    fontSize: 12,
+    fontWeight: 800,
+    color: "#7f1d1d",
+    background: "#fef2f2",
+    border: "1px solid #fecaca",
+    borderRadius: 999,
+    padding: "3px 10px",
+    cursor: "pointer",
+    whiteSpace: "nowrap",
+  },
+  clipsButtonEmpty: { color: "#374151", background: "#fff", border: "1px dashed #d1d5db" },
+  clipsDot: { fontSize: 9, lineHeight: 1 },
+  clipsLine: { margin: "6px 0 0", fontSize: 12, fontWeight: 600, color: "#6b7280" },
   desc: { margin: "6px 0 0", fontSize: 13, color: "#6b7280", lineHeight: 1.4 },
 };

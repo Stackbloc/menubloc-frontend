@@ -37,3 +37,12 @@ export function isFeedAsHomeEnabled() {
   if (isLegacyHomepageEnabled()) return false;
   return true;
 }
+
+/**
+ * USC hall Live clips — record/upload (ships dark; USC policy on recording in dining halls
+ * unconfirmed). Counts, newest clip and empty states show regardless. Recording also needs the
+ * backend CAMPUS_HALL_CLIPS_ENABLED (summary.recording_enabled). Enable with VITE_ENABLE_HALL_CLIPS=1.
+ */
+export function isHallClipsRecordingEnabled() {
+  return isTruthy(import.meta.env.VITE_ENABLE_HALL_CLIPS);
+}

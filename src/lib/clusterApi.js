@@ -116,7 +116,31 @@ export async function toggleClusterLivePostRsvp(clusterSlug, postId, payload = {
   );
 }
 
-/** Report a campus post. */
+/** Hall Live clips (USC On campus): per-hall count + newest clip; recording flag state. */
+export async function fetchClusterHallClipsSummary(clusterSlug, { signal } = {}) {
+  return apiGet(`/public/clusters/${encodeURIComponent(clusterSlug)}/live/hall-clips`, { signal });
+}
+
+/** One hall's clips, newest first, inside the campus window. */
+export async function fetchHallClips(clusterSlug, restaurantId, { guestKey = null, signal } = {}) {
+  const params = new URLSearchParams();
+  if (guestKey) params.set("guest_key", String(guestKey));
+  const qs = params.toString();
+  const path = `/public/clusters/${encodeURIComponent(clusterSlug)}/live/hall-clips/${encodeURIComponent(
+    restaurantId
+  )}${qs ? `?${qs}` : ""}`;
+  return apiGet(path, { signal });
+}
+
+/** Post an uploaded clip to a hall ({ video_url, duration_ms, body?, guest_key?, ...consent }). */
+export async function createHallClip(clusterSlug, restaurantId, payload = {}) {
+  return apiPost(
+    `/public/clusters/${encodeURIComponent(clusterSlug)}/live/hall-clips/${encodeURIComponent(restaurantId)}`,
+    payload || {}
+  );
+}
+
+/** Report a campus post (hall clips use the same report; a clip hides on its first report). */
 export async function reportClusterLivePost(clusterSlug, postId, payload = {}) {
   return apiPost(
     `/public/clusters/${encodeURIComponent(clusterSlug)}/live/posts/${encodeURIComponent(postId)}/report`,
