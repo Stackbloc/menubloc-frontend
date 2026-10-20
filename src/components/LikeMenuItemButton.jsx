@@ -8,9 +8,10 @@ import ThumbsUpIcon from "./icons/ThumbsUpIcon.jsx";
 
 /**
  * Row-level "like" control for a menu item — thumbs up on menu rows and detail pages.
- * Same like/unlike API underneath.
+ * Same like/unlike API underneath. onLikedChange(liked) fires on a user toggle (and on revert),
+ * so a row can keep its visible like count in step.
  */
-export default function LikeMenuItemButton({ menuItemId, tone = "inline", size = "compact" }) {
+export default function LikeMenuItemButton({ menuItemId, tone = "inline", size = "compact", onLikedChange = null }) {
   const { isAuthenticated } = useConsumer();
   const navigate = useNavigate();
   const location = useLocation();
@@ -60,6 +61,7 @@ export default function LikeMenuItemButton({ menuItemId, tone = "inline", size =
     setBusy(true);
     const wasLiked = liked;
     setLiked(!wasLiked);
+    onLikedChange?.(!wasLiked);
     try {
       if (wasLiked) {
         await unlikeMenuItem(id);
@@ -68,6 +70,7 @@ export default function LikeMenuItemButton({ menuItemId, tone = "inline", size =
       }
     } catch {
       setLiked(wasLiked);
+      onLikedChange?.(wasLiked);
     } finally {
       setBusy(false);
     }

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { restaurantMenuPathFromRow } from "../../lib/canonicalUrl.js";
 import { appendClusterReturnQuery } from "../../lib/clusterReturnNavigation.js";
@@ -6,6 +6,8 @@ import { formatClusterDishExcerpt } from "../../lib/clusterDishExcerpt.js";
 import { formatMoney, getConsumerDisplayPrice } from "../../lib/pricingDisplay.js";
 import { useClusterVideos } from "./video/ClusterVideoContext.jsx";
 import ClusterVideoPlayButton from "./video/ClusterVideoPlayButton.jsx";
+import ClusterDishActions, { resolveClusterDishCkId } from "./ClusterDishActions.jsx";
+import { fetchMenuItemSocialCounts } from "../../lib/foodCommentsApi.js";
 
 export const CLUSTER_PLACEHOLDER_FOOD_CARD_STYLE = {
   display: "grid",
@@ -82,73 +84,82 @@ function buildDishHref(item, clusterReturnTo, clusterReturnLabel) {
     : menuPath;
 }
 
-function ClusterDishChipContent({ item, showExcerpt = false }) {
-  const restaurantName = String(item?.restaurant_name || "").trim();
-  const area = String(item?.area || "").trim();
+function ClusterDishChipText({ item, showExcerpt = false }) {
   const priceCents = getConsumerDisplayPrice(item);
   const priceLabel = priceCents != null ? formatMoney(priceCents) : null;
   const excerpt = showExcerpt ? formatClusterDishExcerpt(item) : null;
 
   return (
     <>
-      <span style={{ display: "grid", gap: "0.15rem", minWidth: 0, flex: 1 }}>
+      <span
+        style={{
+          display: "flex",
+          alignItems: "baseline",
+          justifyContent: "space-between",
+          gap: "0.75rem",
+          minWidth: 0,
+        }}
+      >
         <span
+          data-testid="cluster-dish-name"
           style={{
-            display: "flex",
-            alignItems: "baseline",
-            justifyContent: "space-between",
-            gap: "0.75rem",
+            fontWeight: 650,
+            fontSize: "0.95rem",
+            lineHeight: 1.3,
+            color: "#111827",
+            overflowWrap: "anywhere",
             minWidth: 0,
           }}
         >
+          {item.name}
+        </span>
+        {priceLabel ? (
           <span
-            data-testid="cluster-dish-name"
+            data-testid="cluster-dish-price"
             style={{
+              flexShrink: 0,
               fontWeight: 650,
-              fontSize: "0.95rem",
+              fontSize: "0.9rem",
               lineHeight: 1.3,
               color: "#111827",
-              overflowWrap: "anywhere",
-              minWidth: 0,
+              fontVariantNumeric: "tabular-nums",
             }}
           >
-            {item.name}
-          </span>
-          {priceLabel ? (
-            <span
-              data-testid="cluster-dish-price"
-              style={{
-                flexShrink: 0,
-                fontWeight: 650,
-                fontSize: "0.9rem",
-                lineHeight: 1.3,
-                color: "#111827",
-                fontVariantNumeric: "tabular-nums",
-              }}
-            >
-              {priceLabel}
-            </span>
-          ) : null}
-        </span>
-        {excerpt ? (
-          <span
-            className="cluster-card-muted"
-            data-testid="cluster-dish-excerpt"
-            style={{
-              fontWeight: 500,
-              fontSize: "0.82rem",
-              lineHeight: 1.35,
-              color: "#4b5563",
-              overflowWrap: "anywhere",
-              display: "-webkit-box",
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: "vertical",
-              overflow: "hidden",
-            }}
-          >
-            {excerpt}
+            {priceLabel}
           </span>
         ) : null}
+      </span>
+      {excerpt ? (
+        <span
+          className="cluster-card-muted"
+          data-testid="cluster-dish-excerpt"
+          style={{
+            fontWeight: 500,
+            fontSize: "0.82rem",
+            lineHeight: 1.35,
+            color: "#4b5563",
+            overflowWrap: "anywhere",
+            display: "-webkit-box",
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: "vertical",
+            overflow: "hidden",
+          }}
+        >
+          {excerpt}
+        </span>
+      ) : null}
+    </>
+  );
+}
+
+/** Restaurant + area on the left, the dish actions on the right (same line, no wrap). */
+function ClusterDishChipMeta({ item, counts }) {
+  const restaurantName = String(item?.restaurant_name || "").trim();
+  const area = String(item?.area || "").trim();
+
+  return (
+    <span style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.5rem", minWidth: 0 }}>
+      <span style={{ display: "grid", gap: "0.15rem", minWidth: 0, flex: 1 }}>
         {restaurantName ? (
           <span
             data-testid="cluster-dish-restaurant"
@@ -178,19 +189,8 @@ function ClusterDishChipContent({ item, showExcerpt = false }) {
           </span>
         ) : null}
       </span>
-      <span
-        aria-hidden="true"
-        style={{
-          flexShrink: 0,
-          color: "#9ca3af",
-          fontSize: "0.95rem",
-          fontWeight: 500,
-          lineHeight: 1,
-        }}
-      >
-        →
-      </span>
-    </>
+      <ClusterDishActions item={item} counts={counts} />
+    </span>
   );
 }
 
@@ -199,6 +199,7 @@ export function ClusterDishChip({
   clusterReturnTo = null,
   clusterReturnLabel = null,
   showExcerpt = false,
+  counts = null,
 }) {
   if (!item?.name) return null;
 
@@ -210,20 +211,30 @@ export function ClusterDishChip({
     <ClusterDishChipWithVideo
       item={item}
       href={buildDishHref(item, clusterReturnTo, clusterReturnLabel)}
-      content={<ClusterDishChipContent item={item} showExcerpt={showExcerpt} />}
+      showExcerpt={showExcerpt}
+      counts={counts}
     />
   );
 }
 
-/** Rows whose dish appears in a cluster video get a play control on the left (no navigation). */
-function ClusterDishChipWithVideo({ item, href, content }) {
+/**
+ * The whole row opens the dish: the name/price block is the link, and taps anywhere else on
+ * the row (restaurant line, padding) click that same link. Action and play icons stop
+ * propagation. Rows whose dish appears in a cluster video get a play control on the left.
+ */
+function ClusterDishChipWithVideo({ item, href, showExcerpt, counts }) {
   const { index, activeVideoKey } = useClusterVideos();
   const videos = index.forDish(item);
+  const linkRef = useRef(null);
+  const hasVideo = videos.length > 0;
+  const playing = hasVideo && videos.some((v) => v.video_key === activeVideoKey);
 
+  const text = <ClusterDishChipText item={item} showExcerpt={showExcerpt} />;
   const link = href ? (
     <Link
+      ref={linkRef}
       to={href}
-      style={videos.length > 0 ? CLUSTER_DISH_CHIP_LINK_IN_VIDEO_ROW_STYLE : CLUSTER_DISH_CHIP_STYLE}
+      style={CLUSTER_DISH_CHIP_LINK_STYLE}
       data-mp-event="menu_item_click"
       data-mp-menu-item-id={item?.menu_item_id ?? item?.id}
       data-mp-restaurant-id={item?.restaurant_id ?? undefined}
@@ -231,29 +242,43 @@ function ClusterDishChipWithVideo({ item, href, content }) {
       data-mp-label={item?.name}
       data-mp-placement="cluster_menu_explorer"
     >
-      {content}
+      {text}
     </Link>
-  ) : null;
+  ) : (
+    <span style={CLUSTER_DISH_CHIP_LINK_STYLE}>{text}</span>
+  );
 
-  if (videos.length === 0) {
-    return link || <div style={CLUSTER_DISH_CHIP_STYLE}>{content}</div>;
+  function openFromRow(event) {
+    if (!linkRef.current || event.defaultPrevented) return;
+    if (event.target instanceof Element && event.target.closest("a, button")) return;
+    linkRef.current.click();
   }
 
-  const playing = videos.some((v) => v.video_key === activeVideoKey);
   return (
     <div
-      data-testid="cluster-dish-video-row"
-      data-playing={playing ? "1" : "0"}
-      style={{ ...CLUSTER_DISH_CHIP_STYLE, ...CLUSTER_DISH_VIDEO_ROW_STYLE, ...(playing ? CLUSTER_DISH_PLAYING_STYLE : null) }}
+      data-testid={hasVideo ? "cluster-dish-video-row" : "cluster-dish-row"}
+      data-playing={hasVideo ? (playing ? "1" : "0") : undefined}
+      onClick={openFromRow}
+      style={{
+        ...CLUSTER_DISH_CHIP_STYLE,
+        ...(hasVideo ? CLUSTER_DISH_VIDEO_ROW_STYLE : null),
+        ...(playing ? CLUSTER_DISH_PLAYING_STYLE : null),
+        cursor: href ? "pointer" : undefined,
+      }}
     >
-      <ClusterVideoPlayButton
-        videos={videos}
-        trigger="dish_icon"
-        item={item}
-        label={`Play clip of ${item.name}`}
-        testId="cluster-dish-video-play"
-      />
-      {link || <div style={CLUSTER_DISH_CHIP_LINK_IN_VIDEO_ROW_STYLE}>{content}</div>}
+      {hasVideo ? (
+        <ClusterVideoPlayButton
+          videos={videos}
+          trigger="dish_icon"
+          item={item}
+          label={`Play clip of ${item.name}`}
+          testId="cluster-dish-video-play"
+        />
+      ) : null}
+      <span style={{ display: "grid", gap: "0.15rem", minWidth: 0, flex: 1 }}>
+        {link}
+        <ClusterDishChipMeta item={item} counts={counts} />
+      </span>
     </div>
   );
 }
@@ -268,19 +293,43 @@ const CLUSTER_DISH_PLAYING_STYLE = {
   boxShadow: "0 0 0 2px #fbbf24",
 };
 
-const CLUSTER_DISH_CHIP_LINK_IN_VIDEO_ROW_STYLE = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "0.75rem",
-  flex: 1,
+const CLUSTER_DISH_CHIP_LINK_STYLE = {
+  display: "grid",
+  gap: "0.15rem",
   minWidth: 0,
-  padding: "0.1rem 0",
   color: "#111827",
   textDecoration: "none",
   textAlign: "left",
   overflowWrap: "anywhere",
 };
+
+/** One batched counts read per list (100 ids per call); counts show only when above 0. */
+function useClusterDishSocialCounts(items) {
+  const [counts, setCounts] = useState({});
+  const idsKey = useMemo(
+    () =>
+      [...new Set((Array.isArray(items) ? items : []).map(resolveClusterDishCkId).filter(Boolean))]
+        .sort((a, b) => a - b)
+        .join(","),
+    [items]
+  );
+
+  useEffect(() => {
+    if (!idsKey) return undefined;
+    let alive = true;
+    const ids = idsKey.split(",").map(Number);
+    const chunks = [];
+    for (let i = 0; i < ids.length; i += 100) chunks.push(ids.slice(i, i + 100));
+    Promise.all(chunks.map((chunk) => fetchMenuItemSocialCounts(chunk).catch(() => ({})))).then((parts) => {
+      if (alive) setCounts(Object.assign({}, ...parts));
+    });
+    return () => {
+      alive = false;
+    };
+  }, [idsKey]);
+
+  return counts;
+}
 
 export function ClusterDishList({
   items = [],
@@ -291,6 +340,7 @@ export function ClusterDishList({
   insertAfterIndex = null,
   showExcerpt = false,
 }) {
+  const socialCounts = useClusterDishSocialCounts(items);
   if (!Array.isArray(items) || items.length === 0) return null;
 
   let lastRestaurantId = null;
@@ -329,6 +379,7 @@ export function ClusterDishList({
               clusterReturnTo={clusterReturnTo}
               clusterReturnLabel={clusterReturnLabel}
               showExcerpt={showExcerpt}
+              counts={socialCounts[String(resolveClusterDishCkId(item))] || null}
             />
             {index === insertAt ? midListAd : null}
           </React.Fragment>

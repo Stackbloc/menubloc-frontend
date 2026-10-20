@@ -59,6 +59,14 @@ export async function listPublicFoodComments({
   return Array.isArray(data?.comments) ? data.comments : [];
 }
 
+/** Like + comment counts for CK dish ids → { "12": { likes, comments } }. Max 100 ids per call. */
+export async function fetchMenuItemSocialCounts(menuItemIds = []) {
+  const ids = [...new Set(menuItemIds.map((id) => Number(id)).filter((id) => Number.isInteger(id) && id > 0))];
+  if (ids.length === 0) return {};
+  const data = await apiGet(`/public/menu-item-social-counts${buildQuery({ ids: ids.slice(0, 100).join(",") })}`);
+  return data?.counts && typeof data.counts === "object" ? data.counts : {};
+}
+
 export async function createFoodComment(body) {
   return apiPost("/api/consumer/comments", body);
 }
