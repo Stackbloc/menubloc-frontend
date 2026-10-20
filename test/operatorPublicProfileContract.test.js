@@ -98,7 +98,7 @@ function testProfileEditorHasSavePublishView() {
   assert.match(src, /RestaurantStatusSettingsPanel/);
   assert.match(src, /readOnly/);
   assert.match(src, /Protected listing identity/);
-  assert.match(src, /Instagram/);
+  assert.doesNotMatch(src, /Instagram/);
   assert.match(src, /updateFavoriteMenuItems/);
   assert.match(src, /createProfileUpdate/);
   assert.doesNotMatch(src, /restaurant_name:\s*form\.restaurant_name/);

@@ -29,7 +29,8 @@ function testPublicShellConsumesHomepageFields() {
   const photos = read("src/components/restaurant/publicProfile/ProfilePhotoStrip.jsx");
   const page = read("src/pages/RestaurantPublicPage.jsx");
 
-  assert.match(hero, /instagram/);
+  // Instagram removed from restaurant profiles (Andre 2026-10-20).
+  assert.doesNotMatch(hero, /instagram/i);
   assert.match(hero, /website/);
   assert.match(hero, /phone/);
   assert.match(hero, /operatingHours|formatHoursRows/);
@@ -50,8 +51,7 @@ function testOperatorEditorAsksHomepageQuestions() {
   const editor = read("src/pages/operator/OperatorProfileEditor.jsx");
   const api = read("src/lib/operatorApi.js");
 
-  assert.match(editor, /data-testid="operator-profile-instagram"/);
-  assert.match(editor, /instagram:\s*form\.instagram/);
+  assert.doesNotMatch(editor, /operator-profile-instagram|instagram:\s*form\.instagram/);
   assert.match(editor, /founded_year/);
   assert.match(editor, /about_us/);
   assert.match(editor, /data-testid="operator-profile-favorite-items"/);
@@ -70,8 +70,7 @@ function testOwnerEditorAsksHomepageQuestions() {
   const owner = read("src/pages/owner/OwnerProfileManager.jsx");
   const api = read("src/lib/ownerApi.js");
 
-  assert.match(owner, /data-testid="owner-profile-manager-instagram"/);
-  assert.match(owner, /instagram: form\.instagram/);
+  assert.doesNotMatch(owner, /owner-profile-manager-instagram|instagram: form\.instagram/);
   assert.match(owner, /about_us: form\.about_us/);
   assert.match(owner, /founded_year/);
   assert.match(owner, /owner-profile-manager-favorite-items/);
@@ -90,10 +89,9 @@ function testPersistPathsReachPublicFields() {
 
   assert.match(editor, /updateProfile\(rid, payload\)/);
   assert.match(editor, /publishProfile/);
-  assert.match(editor, /mismatches\.push\("instagram"\)/);
+  assert.doesNotMatch(editor, /mismatches\.push\("instagram"\)/);
   assert.match(editor, /mismatches\.push\("founded_year"\)/);
   assert.match(editor, /mismatches\.push\("favorite_menu_items"\)/);
-  assert.match(owner, /instagram: form\.instagram/);
   assert.match(owner, /updateOwnerRestaurantFavoriteMenuItems\(selected\.id, ids\)/);
   assert.match(owner, /createOwnerRestaurantProfileUpdate\(selected\.id/);
 }

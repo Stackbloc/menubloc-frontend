@@ -6,7 +6,7 @@
  * /operator/profile redirects to My Account.
  *
  * Sections (visibility controlled by plan benefits):
- *   • Core fields — always visible (profile_edit): cuisine, type, contact, Instagram, address
+ *   • Core fields — always visible (profile_edit): cuisine, type, contact, address
  *   • About Us    — benefit: about_us
  *   • Founded — profile_edit (draft → Publish)
  *   • Logo / banner / billboards / deals — public homepage photos + sections
@@ -250,7 +250,6 @@ export function OperatorRestaurantProfileForm({ embedded = false } = {}) {
           postal_code:     p.postal_code || "",
           phone:           p.phone || "",
           website_url:     p.website_url || "",
-          instagram:       p.instagram || "",
           about_us:        p.about_us || "",
           founded_year:    p.founded_year != null ? String(p.founded_year) : "",
           team_intro:      p.team_intro || "",
@@ -330,7 +329,6 @@ export function OperatorRestaurantProfileForm({ embedded = false } = {}) {
         postal_code:     form.postal_code,
         phone:           form.phone,
         website_url:     form.website_url,
-        instagram:       form.instagram || null,
         founded_year:    form.founded_year === "" || form.founded_year == null ? null : form.founded_year,
         team_intro:      form.team_intro || null,
         // Explicit null clears manual override (Use Recommended Style)
@@ -407,9 +405,6 @@ export function OperatorRestaurantProfileForm({ embedded = false } = {}) {
       const publicCategory = String(publicRestaurant.category || "").trim();
       const publicPhone = String(publicRestaurant.phone || "").trim();
       const publicWebsite = String(publicRestaurant.website || publicRestaurant.website_url || "").trim();
-      const normIg = (v) => String(v || "").trim().replace(/^@+/, "").toLowerCase();
-      const publicInstagram = normIg(publicRestaurant.instagram);
-      const liveInstagram = normIg(refreshedProfile?.instagram);
       const publicFounded =
         publicRestaurant.founded_year == null || publicRestaurant.founded_year === ""
           ? ""
@@ -434,7 +429,6 @@ export function OperatorRestaurantProfileForm({ embedded = false } = {}) {
       if (String(refreshedProfile?.category || "").trim() !== publicCategory) mismatches.push("type");
       if (String(refreshedProfile?.phone || "").trim() !== publicPhone) mismatches.push("phone");
       if (String(refreshedProfile?.website_url || "").trim() !== publicWebsite) mismatches.push("website");
-      if (liveInstagram !== publicInstagram) mismatches.push("instagram");
       if (liveFounded !== publicFounded) mismatches.push("founded_year");
       if (liveAbout && liveAbout !== publicAbout) mismatches.push("about_us");
       if (JSON.stringify(publicFavIds) !== JSON.stringify(expectedFavIds)) mismatches.push("favorite_menu_items");
@@ -612,16 +606,6 @@ export function OperatorRestaurantProfileForm({ embedded = false } = {}) {
                 value={form.website_url || ""}
                 onChange={f("website_url")}
                 placeholder="https://your-restaurant.com"
-              />
-            </div>
-            <div>
-              <Label>Instagram</Label>
-              <input
-                style={INPUT}
-                value={form.instagram || ""}
-                onChange={f("instagram")}
-                placeholder="@handle"
-                data-testid="operator-profile-instagram"
               />
             </div>
             <div>

@@ -1,6 +1,6 @@
 /**
  * Owner Profile Manager — pick a restaurant and edit public homepage fields
- * (About, Founded, Instagram, Favorite Menu Items, Updates, hours, style).
+ * (About, Founded, Favorite Menu Items, Updates, hours, style).
  */
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
@@ -75,7 +75,6 @@ function emptyForm() {
     postal_code: "",
     phone: "",
     website_url: "",
-    instagram: "",
     about_us: "",
     founded_year: "",
     team_intro: "",
@@ -266,7 +265,6 @@ export default function OwnerProfileManager({ embedded = false, restaurantId = n
         postal_code: r.postal_code || "",
         phone: r.phone || "",
         website_url: r.website_url || "",
-        instagram: r.instagram || "",
         about_us: r.about_us || "",
         founded_year: r.founded_year != null ? String(r.founded_year) : "",
         team_intro: r.team_intro || "",
@@ -473,7 +471,6 @@ export default function OwnerProfileManager({ embedded = false, restaurantId = n
         postal_code: form.postal_code,
         phone: form.phone,
         website_url: form.website_url,
-        instagram: form.instagram,
         about_us: form.about_us,
         founded_year: form.founded_year === "" ? null : form.founded_year,
         team_intro: form.team_intro || null,
@@ -928,16 +925,6 @@ export default function OwnerProfileManager({ embedded = false, restaurantId = n
                   <div>
                     <Label>Website</Label>
                     <input style={inputStyle} value={form.website_url} onChange={f("website_url")} />
-                  </div>
-                  <div>
-                    <Label>Instagram</Label>
-                    <input
-                      style={inputStyle}
-                      value={form.instagram}
-                      onChange={f("instagram")}
-                      placeholder="@handle"
-                      data-testid="owner-profile-manager-instagram"
-                    />
                   </div>
                   <div style={{ gridColumn: "1 / -1" }}>
                     <Label>Address</Label>

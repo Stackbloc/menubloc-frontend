@@ -202,14 +202,6 @@ function fmtMoney(price) {
   return asStr(price).trim();
 }
 
-function normalizeInstagram(raw) {
-  return asStr(raw)
-    .trim()
-    .replace(/^@/, "")
-    .replace(/^https?:\/\/(www\.)?instagram\.com\//i, "")
-    .replace(/\/$/, "");
-}
-
 /* ─── Colors ──────────────────────────────────────────────── */
 
 function getColors(isDark) {
@@ -1134,9 +1126,8 @@ function MenuInline({ menuData, isDark, c, isMobile, language = "en" }) {
 
 function AboutSection({ profile, isDark, c }) {
   const bio = firstNonEmpty(profile?.bio);
-  const instagram = normalizeInstagram(firstNonEmpty(profile?.instagram));
 
-  if (!bio && !instagram) return null;
+  if (!bio) return null;
 
   return (
     <div>
@@ -1165,33 +1156,6 @@ function AboutSection({ profile, isDark, c }) {
         >
           {bio}
         </p>
-      ) : null}
-
-      {instagram ? (
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            fontSize: 14,
-            flexWrap: "wrap",
-          }}
-        >
-          <span style={{ color: c.muted }}>Instagram</span>
-          <a
-            href={`https://instagram.com/${instagram}`}
-            target="_blank"
-            rel="noreferrer"
-            style={{
-              color: c.linkColor,
-              textDecoration: "none",
-              fontWeight: 600,
-              wordBreak: "break-word",
-            }}
-          >
-            @{instagram} ↗
-          </a>
-        </div>
       ) : null}
     </div>
   );

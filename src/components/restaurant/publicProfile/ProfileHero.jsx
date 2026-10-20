@@ -20,7 +20,6 @@ import {
   canShowOrderAction,
   formatHoursRows,
   formatFoodTruckHoursTodayHeading,
-  firstNonEmpty,
 } from "./profilePrimitives.jsx";
 import AddMenuAction from "../../AddMenuAction.jsx";
 import { canShowAddMenu } from "../../../lib/addMenuContribution.js";
@@ -120,7 +119,6 @@ export default function ProfileHero({
   phone = "",
   website = "",
   websiteRaw = "",
-  instagram = "",
   shortDescription = "",
   openStatus = null,
   operatingHours = [],
@@ -169,19 +167,6 @@ export default function ProfileHero({
       ? foodTruckLocation?.directionsUrl || directionsUrl || ""
       : directionsUrl || "";
   const websiteLabel = formatWebsiteHostLabel(websiteRaw || website);
-  const ig = firstNonEmpty(instagram);
-  const igHref = ig
-    ? ig.startsWith("http")
-      ? ig
-      : `https://instagram.com/${String(ig).replace(/^@/, "")}`
-    : "";
-  const igLabel = ig
-    ? ig.startsWith("@") || ig.startsWith("http")
-      ? ig.startsWith("http")
-        ? `@${String(ig).replace(/^https?:\/\/(www\.)?instagram\.com\//i, "").replace(/\/$/, "")}`
-        : ig
-      : `@${String(ig).replace(/^@/, "")}`
-    : "";
   const isFoodTruck = profileType === "food_truck";
   const hoursTimezone =
     profile?.timezone || profile?.restaurant_timezone || null;
@@ -522,7 +507,7 @@ export default function ProfileHero({
           )
         ) : null}
 
-        {showRestaurantContact && (phone || igHref || website) ? (
+        {showRestaurantContact && (phone || website) ? (
           <div
             data-testid="profile-hero-contact"
             style={{
@@ -543,17 +528,6 @@ export default function ProfileHero({
                 style={{ color: linkColor, textDecoration: "none", fontWeight: 600 }}
               >
                 {phone}
-              </a>
-            ) : null}
-            {igHref ? (
-              <a
-                href={igHref}
-                target="_blank"
-                rel="noreferrer"
-                data-testid="profile-hero-instagram"
-                style={{ color: linkColor, textDecoration: "none", fontWeight: 600 }}
-              >
-                {igLabel}
               </a>
             ) : null}
             {website ? (
