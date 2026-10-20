@@ -33,11 +33,13 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Navigate, useLocation, useParams } from "react-router-dom";
+import { readDetectedLocation } from "../lib/discoveryLocationPersistence.js";
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import BottomNav from "../components/BottomNav.jsx";
 import PublicProfileOwnerChrome from "../components/restaurant/PublicProfileOwnerChrome.jsx";
 import RestaurantPublicEditorial from "../components/restaurant/RestaurantPublicEditorial.jsx";
 import BrandLocationsSection from "../components/restaurant/BrandLocationsSection.jsx";
+import MleLocationsSection from "../components/restaurant/MleLocationsSection.jsx";
 import UnclaimedRestaurantBrandSplash, {
   UNCLAIMED_BRAND_SPLASH_MS,
 } from "../components/restaurant/UnclaimedRestaurantBrandSplash.jsx";
@@ -306,12 +308,24 @@ export default function RestaurantPublicPage() {
   const dataUrl = useMemo(
     () => {
       // Canonical URLs carry state/city so a shared slug resolves to the right record.
-      const qs = canonicalRestaurantSlug && routeStateParam && routeCityParam
-        ? `?${new URLSearchParams({ route_state: routeStateParam, route_city: routeCityParam }).toString()}`
-        : "";
-      return `${API}/public/restaurants/${encodeURIComponent(resolvedSlug)}${qs}`;
+      const params = new URLSearchParams();
+      if (canonicalRestaurantSlug && routeStateParam && routeCityParam) {
+        params.set("route_state", routeStateParam);
+        params.set("route_city", routeCityParam);
+      }
+      // Multi-location restaurants: show the kitchen a cluster card linked to (?location=),
+      // else the one nearest the diner's saved position (rounded to ~1 km), else the main one.
+      const requestedLocation = new URLSearchParams(location.search).get("location");
+      if (requestedLocation) params.set("location", requestedLocation);
+      const diner = typeof window !== "undefined" ? readDetectedLocation(window.localStorage) : null;
+      if (diner) {
+        params.set("lat", diner.lat.toFixed(2));
+        params.set("lng", diner.lng.toFixed(2));
+      }
+      const qs = params.toString();
+      return `${API}/public/restaurants/${encodeURIComponent(resolvedSlug)}${qs ? `?${qs}` : ""}`;
     },
-    [resolvedSlug, canonicalRestaurantSlug, routeStateParam, routeCityParam]
+    [resolvedSlug, canonicalRestaurantSlug, routeStateParam, routeCityParam, location.search]
   );
 
   const isOwner = Boolean(
@@ -686,6 +700,14 @@ export default function RestaurantPublicPage() {
           profile={data}
           showClaimInvites={showClaimInvites}
           isMobile={isMobile}
+        />
+      ) : null}
+      {!loading && !err && Array.isArray(data?.locations) && data.locations.length > 1 ? (
+        <MleLocationsSection
+          locations={data.locations}
+          current={data.location}
+          selection={data.location_selection}
+          restaurantName={name}
         />
       ) : null}
       {!loading && !err && data?.is_canonical_parent === true && data?.chain_id ? (
