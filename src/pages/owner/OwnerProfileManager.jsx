@@ -104,9 +104,15 @@ function Label({ children }) {
   );
 }
 
-export default function OwnerProfileManager() {
+/** Embedded in Restaurant Manager → Public profile: the hub owns the page, search and context bar. */
+function EmbeddedShell({ children }) {
+  return <div data-testid="owner-profile-manager-embedded">{children}</div>;
+}
+
+export default function OwnerProfileManager({ embedded = false, restaurantId = null } = {}) {
   const [searchParams, setSearchParams] = useSearchParams();
-  const restaurantParam = searchParams.get("restaurant");
+  const restaurantParam = embedded ? restaurantId : searchParams.get("restaurant");
+  const Shell = embedded ? EmbeddedShell : OwnerLayout;
 
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
@@ -302,7 +308,7 @@ export default function OwnerProfileManager() {
       setUpdateDraft({ title: "", body: "" });
       setResults([]);
       setQuery("");
-      setSearchParams({ restaurant: String(r.id) }, { replace: true });
+      if (!embedded) setSearchParams({ restaurant: String(r.id) }, { replace: true });
     } catch (err) {
       setSelected(null);
       setForm(emptyForm());
@@ -338,7 +344,7 @@ export default function OwnerProfileManager() {
     setUpdateDraft({ title: "", body: "" });
     setMessage("");
     setError("");
-    setSearchParams({}, { replace: true });
+    if (!embedded) setSearchParams({}, { replace: true });
   }
 
   const dirty = useMemo(() => {
@@ -703,13 +709,19 @@ export default function OwnerProfileManager() {
   const f = (key) => (e) => setForm((prev) => ({ ...prev, [key]: e.target.value }));
 
   return (
-    <OwnerLayout title="Profile Manager">
-      <SectionTitle
-        title="Profile Manager"
-        subtitle="Complete the public profile fields diners see — At a Glance story rows, contact, hours, hiring, Restaurant Style, and Menu Appearance."
-      />
+    <Shell title="Profile Manager">
+      {embedded ? null : (
+        <SectionTitle
+          title="Profile Manager"
+          subtitle="Complete the public profile fields diners see — At a Glance story rows, contact, hours, hiring, Restaurant Style, and Menu Appearance."
+        />
+      )}
 
-      {!selected ? (
+      {!selected && embedded ? (
+        <PageCard style={{ padding: 22, fontSize: 13, color: error ? "#b91c1c" : OWNER_COLORS.muted }}>
+          {error || "Loading public profile…"}
+        </PageCard>
+      ) : !selected ? (
         <PageCard style={{ padding: 22 }} data-testid="owner-profile-manager-search">
           <label
             style={{
@@ -772,6 +784,7 @@ export default function OwnerProfileManager() {
         </PageCard>
       ) : (
         <>
+          {embedded ? null : (
           <OwnerRestaurantContextBar
             name={form.restaurant_name || selected.name}
             id={selected.id}
@@ -800,6 +813,7 @@ export default function OwnerProfileManager() {
               Change restaurant
             </button>
           </OwnerRestaurantContextBar>
+          )}
 
           <div
             style={{
@@ -829,8 +843,9 @@ export default function OwnerProfileManager() {
                 View public profile
               </Link>
             ) : null}
+            {embedded ? null : (
             <Link
-              to={`/owner/menu-manager?tab=workspace&restaurant=${selected.id}`}
+              to={`/owner/restaurant-manager?restaurant=${selected.id}&section=menus`}
               style={{
                 padding: "8px 12px",
                 borderRadius: 8,
@@ -842,8 +857,9 @@ export default function OwnerProfileManager() {
                 fontWeight: 700,
               }}
             >
-              Open Menu Manager
+              Open Menus
             </Link>
+            )}
             <button
               type="button"
               onClick={handleSave}
@@ -1118,10 +1134,10 @@ export default function OwnerProfileManager() {
                     {menuItems.length === 0 ? (
                       <div style={{ marginTop: 8, fontSize: 12, color: OWNER_COLORS.muted, lineHeight: 1.45 }}>
                         <Link
-                          to={`/owner/menu-manager?tab=workspace&restaurant=${selected.id}`}
+                          to={`/owner/restaurant-manager?restaurant=${selected.id}&section=menus`}
                           style={{ color: OWNER_COLORS.accent, fontWeight: 700, textDecoration: "none" }}
                         >
-                          Open Menu Manager
+                          Open Menus
                         </Link>
                         {menuHref ? (
                           <>
@@ -1587,6 +1603,6 @@ export default function OwnerProfileManager() {
           ) : null}
         </>
       )}
-    </OwnerLayout>
+    </Shell>
   );
 }

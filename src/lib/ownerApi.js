@@ -465,6 +465,19 @@ export const listMenuConsoleFranchiseBrands = (q = "") =>
 /** Stand-alone | MLE | franchise (joins or creates a chain; its menu becomes the chain menu). */
 export const setMenuConsoleBusinessType = (restaurantId, body) =>
   put(`/api/owner/menu-console/restaurants/${encodeURIComponent(restaurantId)}/business-type`, body);
+/** MLE locations: one restaurant, several kitchens. */
+const mleLocationsPath = (restaurantId) =>
+  `/api/owner/menu-console/restaurants/${encodeURIComponent(restaurantId)}/locations`;
+export const listMenuConsoleMleLocations = (restaurantId) => get(mleLocationsPath(restaurantId));
+export const addMenuConsoleMleLocation = (restaurantId, body) => post(mleLocationsPath(restaurantId), body);
+export const updateMenuConsoleMleLocation = (restaurantId, locationId, body) =>
+  patch(`${mleLocationsPath(restaurantId)}/${encodeURIComponent(locationId)}`, body);
+export const removeMenuConsoleMleLocation = (restaurantId, locationId) =>
+  del(`${mleLocationsPath(restaurantId)}/${encodeURIComponent(locationId)}`);
+export const setMenuConsoleMleLocationClusters = (restaurantId, locationId, clusterIds) =>
+  put(`${mleLocationsPath(restaurantId)}/${encodeURIComponent(locationId)}/clusters`, { cluster_ids: clusterIds });
+export const setMenuConsoleMleMainLocation = (restaurantId, locationId) =>
+  put(`${mleLocationsPath(restaurantId)}/${encodeURIComponent(locationId)}/primary`, {});
 export const listMenuConsoleAvailableClusters = (params = {}) => {
   const qs = new URLSearchParams(params).toString();
   return get(`/api/owner/menu-console/clusters/available${qs ? `?${qs}` : ""}`);

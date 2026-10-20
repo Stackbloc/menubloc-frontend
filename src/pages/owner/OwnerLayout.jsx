@@ -127,17 +127,9 @@ export default function OwnerLayout({ title, children, actions = null }) {
       {
         id: "restaurant-manager",
         label: "Restaurant Manager",
+        // One search-first workspace (search → Details · Public profile · Menus, or Add).
         items: [
-          {
-            key: "add-restaurant",
-            label: "Add Restaurant",
-            button: true,
-            onClick: () => {
-              navigate(`/owner/menu-manager?tab=workspace&create=1&fresh=${Date.now()}`);
-            },
-          },
-          { to: "/owner/profile-manager", label: "Profile Manager" },
-          { to: "/owner/menu-manager", label: "Menu Manager" },
+          { to: "/owner/restaurant-manager", label: "Restaurants" },
         ],
       },
       {
