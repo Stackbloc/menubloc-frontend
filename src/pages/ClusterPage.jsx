@@ -934,7 +934,7 @@ function ClusterMenuExplorerTab({
                           videos={rowVideos}
                           trigger="dish_icon"
                           item={{ ...row, name: rowName }}
-                          label={`Play video of ${rowName}`}
+                          label={`Play clip of ${rowName}`}
                           testId="cluster-search-video-play"
                         />
                       </div>

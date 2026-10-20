@@ -37,7 +37,7 @@ export default function ClusterVideoPlayButton({ videos, trigger, item = null, l
       data-testid={testId || "cluster-video-play"}
       data-video-count={count}
       data-playing={playing ? "1" : "0"}
-      aria-label={count > 1 ? `${label} (${count} videos)` : label}
+      aria-label={count > 1 ? `${label} (${count} clips)` : label}
       title={label}
       onClick={(e) => {
         e.preventDefault();
@@ -47,7 +47,7 @@ export default function ClusterVideoPlayButton({ videos, trigger, item = null, l
       style={{ ...style, ...(playing ? styles.playing : null) }}
     >
       <PlayGlyph size={variant === "overlay" ? 11 : 12} />
-      {variant === "overlay" ? <span style={styles.overlayText}>{count > 1 ? `${count} videos` : "Video"}</span> : null}
+      {variant === "overlay" ? <span style={styles.overlayText}>{count > 1 ? `${count} clips` : "Clip"}</span> : null}
       {variant === "row" && count > 1 ? <span style={styles.count}>{count}</span> : null}
     </button>
   );
@@ -124,14 +124,14 @@ export function ClusterVideosPill() {
     <button
       type="button"
       data-testid="cluster-videos-pill"
-      aria-label={`Play ${count} food ${count === 1 ? "video" : "videos"} from this area`}
+      aria-label={`Play ${count} food ${count === 1 ? "clip" : "clips"} from this area`}
       onClick={() => openVideo(index.videos, { trigger: "header_pill" })}
       style={styles.pill}
     >
       <span style={styles.pillDot}>
         <PlayGlyph size={9} color="#fff" />
       </span>
-      {count} {count === 1 ? "video" : "videos"}
+      {count} {count === 1 ? "clip" : "clips"}
     </button>
   );
 }

@@ -110,7 +110,7 @@ export default function ClusterFloatingVideoPlayer({ cluster, player, compact = 
   return createPortal(
     <div
       role="dialog"
-      aria-label="Video player"
+      aria-label="Clip player"
       data-testid="cluster-floating-video"
       data-video-key={clip.video_key}
       data-compact={compact ? "1" : "0"}
@@ -130,7 +130,7 @@ export default function ClusterFloatingVideoPlayer({ cluster, player, compact = 
           preload="auto"
           controls={false}
           data-testid="cluster-floating-video-el"
-          aria-label={paused ? "Play video" : "Pause video"}
+          aria-label={paused ? "Play clip" : "Pause clip"}
           onClick={togglePlay}
           onPlay={() => {
             setPaused(false);
@@ -152,7 +152,7 @@ export default function ClusterFloatingVideoPlayer({ cluster, player, compact = 
           }}
         />
         {paused ? (
-          <button type="button" style={styles.bigPlay} aria-label="Play video" onClick={togglePlay}>
+          <button type="button" style={styles.bigPlay} aria-label="Play clip" onClick={togglePlay}>
             <PlayGlyph size={18} color="#fff" />
           </button>
         ) : null}
@@ -160,7 +160,7 @@ export default function ClusterFloatingVideoPlayer({ cluster, player, compact = 
           type="button"
           style={styles.close}
           data-testid="cluster-floating-video-close"
-          aria-label="Close video"
+          aria-label="Close clip"
           onClick={close}
         >
           ✕
@@ -169,7 +169,7 @@ export default function ClusterFloatingVideoPlayer({ cluster, player, compact = 
           type="button"
           style={styles.mute}
           data-testid="cluster-floating-video-mute"
-          aria-label={forcedMute ? "This video plays without sound" : effectiveMuted ? "Turn sound on" : "Mute"}
+          aria-label={forcedMute ? "This clip plays without sound" : effectiveMuted ? "Turn sound on" : "Mute"}
           disabled={forcedMute}
           onClick={(e) => {
             e.preventDefault();
@@ -181,13 +181,13 @@ export default function ClusterFloatingVideoPlayer({ cluster, player, compact = 
         </button>
         {queue.length > 1 ? (
           <div style={styles.stepper}>
-            <button type="button" style={styles.stepBtn} disabled={!hasPrev} aria-label="Previous video" onClick={step(-1)}>
+            <button type="button" style={styles.stepBtn} disabled={!hasPrev} aria-label="Previous clip" onClick={step(-1)}>
               ‹
             </button>
             <span style={styles.stepCount}>
               {position + 1}/{queue.length}
             </span>
-            <button type="button" style={styles.stepBtn} disabled={!hasNext} aria-label="Next video" onClick={step(1)}>
+            <button type="button" style={styles.stepBtn} disabled={!hasNext} aria-label="Next clip" onClick={step(1)}>
               ›
             </button>
           </div>
@@ -195,7 +195,7 @@ export default function ClusterFloatingVideoPlayer({ cluster, player, compact = 
       </div>
       {compact ? null : (
         <div style={styles.footer} data-testid="cluster-floating-video-dish">
-          <span style={styles.eyebrow}>{dishName ? "From the video" : dealTitle ? "Deal" : "Video"}</span>
+          <span style={styles.eyebrow}>{dishName ? "From the clip" : dealTitle ? "Deal" : "Clip"}</span>
           <span style={styles.dish}>{dishName || dealTitle || clip.restaurant_name || "Restaurant"}</span>
           {(dishName || dealTitle) && clip.restaurant_name ? (
             <span style={styles.restaurant}>{clip.restaurant_name}</span>

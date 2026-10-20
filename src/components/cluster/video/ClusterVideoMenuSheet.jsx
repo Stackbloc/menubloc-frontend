@@ -84,7 +84,7 @@ export default function ClusterVideoMenuSheet({ cluster, video, item = null, wit
           isMobile
           highlightMenuItemId={highlightId}
           highlightMenuItemName={highlightName}
-          pinnedItemLabel={highlightName ? "From the video" : null}
+          pinnedItemLabel={highlightName ? "From the clip" : null}
           enableRestaurantContextualVideo={false}
           bottomClearance={withPlayer ? SHEET_PLAYER_CLEARANCE_PX : 0}
           orderBarInsetRight={withPlayer ? SHEET_ORDER_BAR_INSET_RIGHT_PX : 0}

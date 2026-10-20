@@ -249,7 +249,7 @@ export default function ClusterRestaurantDirectoryCard({
         <ClusterVideoPlayButton
           videos={videos}
           trigger="restaurant_icon"
-          label={`Play ${name} video`}
+          label={`Play ${name} clip`}
           variant="overlay"
           testId="cluster-restaurant-video-play"
         />

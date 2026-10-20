@@ -76,9 +76,30 @@ test("video playback is muted by default and tracked through the video events pi
   assert.match(analytics, /isEngagementTrackingAllowed\(\)/);
 });
 
-test("video → dish → basket reuses the Feed 'From the video' menu treatment", () => {
+test("clip → dish → basket reuses the Feed pinned-dish menu treatment", () => {
   const sheet = read("src/components/cluster/video/ClusterVideoMenuSheet.jsx");
   assert.match(sheet, /CatalogMenuRenderer/);
-  assert.match(sheet, /pinnedItemLabel=\{highlightName \? "From the video" : null\}/);
+  assert.match(sheet, /pinnedItemLabel=\{highlightName \? "From the clip" : null\}/);
   assert.match(sheet, /enableRestaurantContextualVideo=\{false\}/);
+});
+
+test("cluster page calls them clips, never videos, in visible text", () => {
+  const files = [
+    "src/components/cluster/video/ClusterVideoHero.jsx",
+    "src/components/cluster/video/ClusterFloatingVideoPlayer.jsx",
+    "src/components/cluster/video/ClusterVideoPlayButton.jsx",
+    "src/components/cluster/video/ClusterVideoMenuSheet.jsx",
+    "src/components/cluster/ClusterMenuExplorer.jsx",
+    "src/components/cluster/ClusterRestaurantDirectoryCard.jsx",
+    "src/pages/ClusterPage.jsx",
+  ];
+  for (const rel of files) {
+    const visible = read(rel)
+      .split("\n")
+      .filter((line) => !/^\s*(\*|\/\/|\/\*)/.test(line))
+      .filter((line) => /(aria-label|label=|title=|>[^<{]*\b[Vv]ideos?\b|"[^"]*\b[Vv]ideos?\b[^"]*"|`[^`]*\b[Vv]ideos?\b)/.test(line))
+      .filter((line) => !/data-testid|testId=|className=|import /.test(line))
+      .filter((line) => /\b[Vv]ideos?\b/.test(line.replace(/\.videos?\b/g, "")));
+    assert.deepEqual(visible, [], `${rel} shows "video" to diners`);
+  }
 });

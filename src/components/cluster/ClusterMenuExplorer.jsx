@@ -250,7 +250,7 @@ function ClusterDishChipWithVideo({ item, href, content }) {
         videos={videos}
         trigger="dish_icon"
         item={item}
-        label={`Play video of ${item.name}`}
+        label={`Play clip of ${item.name}`}
         testId="cluster-dish-video-play"
       />
       {link || <div style={CLUSTER_DISH_CHIP_LINK_IN_VIDEO_ROW_STYLE}>{content}</div>}

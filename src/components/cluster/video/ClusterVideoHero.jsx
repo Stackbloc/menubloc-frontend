@@ -203,7 +203,7 @@ function VideoHero({ cluster, clips, sponsoredAd = null, delivery = null }) {
       className="cluster-video-hero"
       data-testid="cluster-video-hero"
       data-mode={sponsoredAd ? "sponsored" : "featured"}
-      aria-label={sponsoredAd ? "Sponsored video" : `Videos in ${clusterLabel}`}
+      aria-label={sponsoredAd ? "Sponsored clip" : `Clips in ${clusterLabel}`}
       style={styles.root}
     >
       <div style={styles.main}>
@@ -221,7 +221,7 @@ function VideoHero({ cluster, clips, sponsoredAd = null, delivery = null }) {
             controls={false}
             data-testid="cluster-video-hero-el"
             data-video-key={clip.video_key}
-            aria-label={paused ? "Play video" : "Pause video"}
+            aria-label={paused ? "Play clip" : "Pause clip"}
             onClick={togglePlay}
             onPlay={() => {
               setPaused(false);
@@ -248,7 +248,7 @@ function VideoHero({ cluster, clips, sponsoredAd = null, delivery = null }) {
               type="button"
               style={styles.bigPlay}
               data-testid="cluster-video-hero-play"
-              aria-label="Play video"
+              aria-label="Play clip"
               onClick={togglePlay}
             >
               <PlayGlyph size={22} color="#fff" />
@@ -258,7 +258,7 @@ function VideoHero({ cluster, clips, sponsoredAd = null, delivery = null }) {
             type="button"
             style={styles.mute}
             data-testid="cluster-video-hero-mute"
-            aria-label={forcedMute ? "This video plays without sound" : effectiveMuted ? "Turn sound on" : "Mute"}
+            aria-label={forcedMute ? "This clip plays without sound" : effectiveMuted ? "Turn sound on" : "Mute"}
             disabled={forcedMute}
             onClick={() => !forcedMute && setMuted((m) => !m)}
           >
@@ -273,9 +273,9 @@ function VideoHero({ cluster, clips, sponsoredAd = null, delivery = null }) {
 
         <div style={styles.info}>
           <span style={styles.eyebrow}>
-            {sponsoredAd ? sponsoredAd.advertiser_name || clip.restaurant_name || "Sponsored" : `Videos in ${clusterLabel}`}
+            {sponsoredAd ? sponsoredAd.advertiser_name || clip.restaurant_name || "Sponsored" : `Clips in ${clusterLabel}`}
           </span>
-          {dishName || dealTitle ? <span style={styles.fromVideo}>{dishName ? "From the video" : "Deal"}</span> : null}
+          {dishName || dealTitle ? <span style={styles.fromVideo}>{dishName ? "From the clip" : "Deal"}</span> : null}
           <h2 style={styles.dish} data-testid="cluster-video-hero-dish">
             {dishName || dealTitle || clip.restaurant_name || "Watch"}
           </h2>
@@ -310,7 +310,7 @@ function VideoHero({ cluster, clips, sponsoredAd = null, delivery = null }) {
               <button
                 type="button"
                 style={styles.stepBtn}
-                aria-label="Previous video"
+                aria-label="Previous clip"
                 disabled={position === 0}
                 onClick={() => select(position - 1, "next")}
               >
@@ -322,7 +322,7 @@ function VideoHero({ cluster, clips, sponsoredAd = null, delivery = null }) {
               <button
                 type="button"
                 style={styles.stepBtn}
-                aria-label="Next video"
+                aria-label="Next clip"
                 disabled={position >= clips.length - 1}
                 onClick={() => select(position + 1, "next")}
               >
@@ -334,7 +334,7 @@ function VideoHero({ cluster, clips, sponsoredAd = null, delivery = null }) {
       </div>
 
       {clips.length > 1 ? (
-        <div ref={reelRef} style={styles.reel} role="list" aria-label="More videos" data-testid="cluster-video-reel">
+        <div ref={reelRef} style={styles.reel} role="list" aria-label="More clips" data-testid="cluster-video-reel">
           {clips.map((c, i) => (
             <ReelThumb
               key={c.video_key}
@@ -351,7 +351,7 @@ function VideoHero({ cluster, clips, sponsoredAd = null, delivery = null }) {
 }
 
 function ReelThumb({ clip, index, active, onSelect }) {
-  const label = clusterVideoDishName(clip) || clusterVideoDealTitle(clip) || clip.restaurant_name || "Video";
+  const label = clusterVideoDishName(clip) || clusterVideoDealTitle(clip) || clip.restaurant_name || "Clip";
   return (
     <button
       type="button"
@@ -384,9 +384,9 @@ function ReelThumb({ clip, index, active, onSelect }) {
 function ClusterVideoReelRow({ cluster, clips }) {
   const { openVideo } = useClusterVideos();
   return (
-    <section aria-label={`Videos in ${cluster?.name || "this area"}`} data-testid="cluster-video-reel-row" style={styles.rowRoot}>
+    <section aria-label={`Clips in ${cluster?.name || "this area"}`} data-testid="cluster-video-reel-row" style={styles.rowRoot}>
       <span style={styles.rowTitle}>
-        <PlayGlyph size={10} /> Videos in {cluster?.name || "this area"}
+        <PlayGlyph size={10} /> Clips in {cluster?.name || "this area"}
       </span>
       <div style={styles.reel} role="list">
         {clips.map((c, i) => (
