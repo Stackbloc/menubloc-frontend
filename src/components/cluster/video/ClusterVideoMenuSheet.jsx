@@ -1,5 +1,5 @@
 /**
- * Video → dish → basket without leaving the cluster: the clip's restaurant menu in a sheet,
+ * Video (or dish row) → dish → basket without leaving the cluster: the restaurant menu in a sheet,
  * with the video's dish pinned under the header as "From the video" (same CatalogMenuRenderer
  * treatment as the Feed Menu Browser, including Add to basket). Close returns to the cluster
  * exactly where the diner was.
@@ -14,17 +14,26 @@ import { clusterVideoDishName } from "../../../lib/clusterVideoIndex.js";
 const SHEET_PLAYER_CLEARANCE_PX = 200;
 const SHEET_ORDER_BAR_INSET_RIGHT_PX = 136;
 
-export default function ClusterVideoMenuSheet({ cluster, video, item = null, withPlayer = false, onClose }) {
+export default function ClusterVideoMenuSheet({
+  cluster,
+  video = null,
+  item = null,
+  pinnedLabel = null,
+  withPlayer = false,
+  onClose,
+}) {
+  // Restaurant comes from the clip, or from the dish row when opened without one.
   const entry = useMemo(() => {
-    if (!video?.restaurant_id) return null;
+    const src = video?.restaurant_id ? video : item?.restaurant_id ? item : null;
+    if (!src) return null;
     return {
-      restaurant_id: video.restaurant_id,
-      restaurant_name: video.restaurant_name || undefined,
-      slug: video.restaurant_slug || undefined,
-      city: video.city || cluster?.city || undefined,
-      state: video.state || cluster?.state || undefined,
+      restaurant_id: src.restaurant_id,
+      restaurant_name: src.restaurant_name || undefined,
+      slug: src.restaurant_slug || undefined,
+      city: src.city || cluster?.city || undefined,
+      state: src.state || cluster?.state || undefined,
     };
-  }, [video, cluster]);
+  }, [video, item, cluster]);
 
   const locationParams = useMemo(() => {
     const out = {};
@@ -84,7 +93,7 @@ export default function ClusterVideoMenuSheet({ cluster, video, item = null, wit
           isMobile
           highlightMenuItemId={highlightId}
           highlightMenuItemName={highlightName}
-          pinnedItemLabel={highlightName ? "From the clip" : null}
+          pinnedItemLabel={highlightName ? pinnedLabel || "From the clip" : null}
           enableRestaurantContextualVideo={false}
           bottomClearance={withPlayer ? SHEET_PLAYER_CLEARANCE_PX : 0}
           orderBarInsetRight={withPlayer ? SHEET_ORDER_BAR_INSET_RIGHT_PX : 0}

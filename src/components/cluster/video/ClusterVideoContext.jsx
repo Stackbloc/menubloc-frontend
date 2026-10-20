@@ -1,6 +1,7 @@
 /**
  * Cluster video state for one cluster page: the video pool (GET /public/clusters/:slug/videos),
- * the floating player, and the "From the video" menu sheet.
+ * the floating player, and the restaurant menu sheet ("From the clip", or "Your pick" when a
+ * diner taps a dish row — the row opens the ordering menu, not the dish detail page).
  *
  * One player at a time: opening the floating player pauses the hero, and the hero resumes
  * only when the floating player closes.
@@ -25,6 +26,8 @@ const ClusterVideoContext = createContext({
   openVideo: () => {},
   closeVideo: () => {},
   openMenu: () => {},
+  /** null outside a provider: dish rows then fall back to their link. */
+  openDishMenu: null,
 });
 
 export function useClusterVideos() {
@@ -37,7 +40,7 @@ export function ClusterVideoProvider({ cluster, children }) {
   const [index, setIndex] = useState(EMPTY_INDEX);
   /** Floating player: { queue, position, trigger, item } */
   const [player, setPlayer] = useState(null);
-  /** Menu sheet: { video, item } */
+  /** Menu sheet: { video, item, pinnedLabel } (video null when opened from a dish row) */
   const [menu, setMenu] = useState(null);
 
   useEffect(() => {
@@ -83,6 +86,13 @@ export function ClusterVideoProvider({ cluster, children }) {
     setMenu({ video, item });
   }, []);
 
+  /** Dish row → that restaurant's ordering menu with the dish pinned + highlighted. */
+  const openDishMenu = useCallback((item) => {
+    if (!item?.restaurant_id) return false;
+    setMenu({ video: null, item, pinnedLabel: "Your pick" });
+    return true;
+  }, []);
+
   const closeMenu = useCallback(() => setMenu(null), []);
 
   const setPlayerPosition = useCallback((position, trigger = "next") => {
@@ -97,8 +107,8 @@ export function ClusterVideoProvider({ cluster, children }) {
 
   const menuOpen = Boolean(menu);
   const value = useMemo(
-    () => ({ cluster, status, index, player, activeVideoKey, menuOpen, openVideo, closeVideo, openMenu }),
-    [cluster, status, index, player, activeVideoKey, menuOpen, openVideo, closeVideo, openMenu]
+    () => ({ cluster, status, index, player, activeVideoKey, menuOpen, openVideo, closeVideo, openMenu, openDishMenu }),
+    [cluster, status, index, player, activeVideoKey, menuOpen, openVideo, closeVideo, openMenu, openDishMenu]
   );
 
   return (
@@ -109,6 +119,7 @@ export function ClusterVideoProvider({ cluster, children }) {
           cluster={cluster}
           video={menu.video}
           item={menu.item}
+          pinnedLabel={menu.pinnedLabel}
           withPlayer={Boolean(player)}
           onClose={closeMenu}
         />

@@ -53,3 +53,16 @@ test("counts load in one batched call per list", () => {
   assert.match(explorer, /useClusterDishSocialCounts\(items\)/);
   assert.match(read("src/lib/foodCommentsApi.js"), /\/public\/menu-item-social-counts/);
 });
+
+test("row opens the restaurant's ordering menu with the dish pinned (not the dish page)", () => {
+  const ctx = read("src/components/cluster/video/ClusterVideoContext.jsx");
+  const sheet = read("src/components/cluster/video/ClusterVideoMenuSheet.jsx");
+  assert.match(ctx, /setMenu\(\{ video: null, item, pinnedLabel: "Your pick" \}\)/);
+  assert.match(sheet, /CatalogMenuRenderer/);
+  assert.match(sheet, /pinnedItemLabel=\{highlightName \? pinnedLabel \|\| "From the clip" : null\}/);
+  assert.match(explorer, /onClick=\{openMenuInstead\}/);
+  assert.match(explorer, /if \(openDishMenu\(item\)\) event\.preventDefault\(\);/);
+  // New-tab clicks and crawlers keep the dish link.
+  assert.match(explorer, /event\.metaKey \|\| event\.ctrlKey/);
+  assert.match(explorer, /to=\{href\}/);
+});

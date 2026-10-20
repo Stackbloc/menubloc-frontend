@@ -79,7 +79,8 @@ test("video playback is muted by default and tracked through the video events pi
 test("clip → dish → basket reuses the Feed pinned-dish menu treatment", () => {
   const sheet = read("src/components/cluster/video/ClusterVideoMenuSheet.jsx");
   assert.match(sheet, /CatalogMenuRenderer/);
-  assert.match(sheet, /pinnedItemLabel=\{highlightName \? "From the clip" : null\}/);
+  // Clips keep "From the clip"; dish rows pass "Your pick".
+  assert.match(sheet, /pinnedItemLabel=\{highlightName \? pinnedLabel \|\| "From the clip" : null\}/);
   assert.match(sheet, /enableRestaurantContextualVideo=\{false\}/);
 });
 

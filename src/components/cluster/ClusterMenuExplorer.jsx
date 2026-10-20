@@ -218,27 +218,36 @@ export function ClusterDishChip({
 }
 
 /**
- * The whole row opens the dish: the name/price block is the link, and taps anywhere else on
- * the row (restaurant line, padding) click that same link. Action and play icons stop
+ * The whole row opens the dish in its restaurant's menu: the name/price block is the link, and
+ * taps anywhere else on the row (restaurant line, padding) click that same link. Action and play icons stop
  * propagation. Rows whose dish appears in a cluster video get a play control on the left.
  */
 function ClusterDishChipWithVideo({ item, href, showExcerpt, counts }) {
-  const { index, activeVideoKey } = useClusterVideos();
+  const { index, activeVideoKey, openDishMenu } = useClusterVideos();
   const videos = index.forDish(item);
   const linkRef = useRef(null);
   const hasVideo = videos.length > 0;
   const playing = hasVideo && videos.some((v) => v.video_key === activeVideoKey);
 
   const text = <ClusterDishChipText item={item} showExcerpt={showExcerpt} />;
+  // The row opens the restaurant's ordering menu with this dish pinned (same sheet as a clip's
+  // "Order"). The href stays the dish page for new-tab clicks, crawlers and no-provider pages.
+  const opensMenu = typeof openDishMenu === "function" && Boolean(item?.restaurant_id);
+  function openMenuInstead(event) {
+    if (!opensMenu || event.defaultPrevented) return;
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    if (openDishMenu(item)) event.preventDefault();
+  }
   const link = href ? (
     <Link
       ref={linkRef}
       to={href}
+      onClick={openMenuInstead}
       style={CLUSTER_DISH_CHIP_LINK_STYLE}
       data-mp-event="menu_item_click"
       data-mp-menu-item-id={item?.menu_item_id ?? item?.id}
       data-mp-restaurant-id={item?.restaurant_id ?? undefined}
-      data-mp-subtype="detail_page"
+      data-mp-subtype={opensMenu ? "menu_sheet" : "detail_page"}
       data-mp-label={item?.name}
       data-mp-placement="cluster_menu_explorer"
     >
