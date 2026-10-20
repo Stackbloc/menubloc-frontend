@@ -88,7 +88,8 @@ function testUnclaimedHomepageBlanks() {
   assert.match(hero, /formatHoursRows\(operatingHours,\s*\{/);
   assert.match(hero, /timezone:\s*hoursTimezone/);
   assert.match(hero, /gridTemplateColumns: "auto 1fr"/);
-  assert.match(hero, /profile-hero-instagram/);
+  // Instagram removed from restaurant profiles (Andre 2026-10-20).
+  assert.doesNotMatch(hero, /instagram/i);
   assert.match(hero, /profile-hero-website/);
   assert.match(hero, /profile-hero-phone/);
   assert.match(hero, /profile-hero-cluster-field/);
@@ -128,8 +129,8 @@ function testOwnerFavoritesAndUpdates() {
   const api = read("src/lib/ownerApi.js");
   assert.match(owner, /owner-profile-manager-favorite-items/);
   assert.match(owner, /owner-profile-manager-updates/);
-  assert.match(owner, /owner-profile-manager-instagram/);
-  assert.match(owner, /instagram: form\.instagram/);
+  // Instagram removed from restaurant profiles (Andre 2026-10-20).
+  assert.doesNotMatch(owner, /owner-profile-manager-instagram|instagram: form\.instagram/);
   assert.match(owner, /updateOwnerRestaurantFavoriteMenuItems/);
   assert.match(owner, /createOwnerRestaurantProfileUpdate/);
   assert.match(api, /favorite-menu-items/);

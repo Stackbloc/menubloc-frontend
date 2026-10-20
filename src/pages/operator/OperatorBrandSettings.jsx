@@ -161,7 +161,6 @@ export default function OperatorBrandSettings() {
         footer_show_hours:   profile.footer_show_hours,
         footer_show_social:  profile.footer_show_social,
         qr_style:            profile.qr_style,
-        instagram_handle:    profile.instagram_handle,
         facebook_url:        profile.facebook_url,
         website_url:         profile.website_url,
         tagline:             profile.tagline,
@@ -300,10 +299,6 @@ export default function OperatorBrandSettings() {
         <div style={card}>
           <div style={{ fontSize: 15, fontWeight: 700, color: "#0f1720", marginBottom: 16 }}>Social &amp; Tagline</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-            <div>
-              <span style={label}>Instagram Handle</span>
-              <input value={profile.instagram_handle || ""} onChange={e => set("instagram_handle", e.target.value)} placeholder="@yourhandle" style={inputStyle} />
-            </div>
             <div>
               <span style={label}>Facebook URL</span>
               <input value={profile.facebook_url || ""} onChange={e => set("facebook_url", e.target.value)} placeholder="https://facebook.com/…" style={inputStyle} />

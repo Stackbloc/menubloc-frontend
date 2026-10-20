@@ -8,7 +8,6 @@ import {
   PROFILE_MUTED,
   profileAccentVar,
   formatHoursRows,
-  firstNonEmpty,
   profileReadableSurfaceStyle,
 } from "./profilePrimitives.jsx";
 import { formatWebsiteHostLabel } from "../../../lib/formatWebsiteHostLabel.js";
@@ -36,7 +35,6 @@ export default function ProfileRestaurantInfo({
   directionsUrl = "",
   website = "",
   websiteRaw = "",
-  instagram = "",
   claimHref = null,
   claimState = null,
   showClaimInvites = false,
@@ -48,14 +46,8 @@ export default function ProfileRestaurantInfo({
   });
   const hoursLabel = `${formatFoodTruckHoursTodayHeading(timezone)}:`;
   const websiteLabel = formatWebsiteHostLabel(websiteRaw || website);
-  const ig = firstNonEmpty(instagram);
-  const igHref = ig
-    ? ig.startsWith("http")
-      ? ig
-      : `https://instagram.com/${String(ig).replace(/^@/, "")}`
-    : "";
 
-  const hasContact = Boolean(phone || streetAddr || cityLine || website || igHref);
+  const hasContact = Boolean(phone || streetAddr || cityLine || website);
   const hasAnything = hoursRows.length > 0 || hasContact || showClaimInvites;
   if (!hasAnything) return null;
 
@@ -177,24 +169,6 @@ export default function ProfileRestaurantInfo({
           </div>
         ) : showClaimInvites ? (
           <InfoBlank testId="profile-info-website-blank" label="Website" />
-        ) : null}
-
-        {igHref ? (
-          <div>
-            <div style={{ fontSize: 12, fontWeight: 700, color: PROFILE_MUTED, marginBottom: 2 }}>
-              Instagram
-            </div>
-            <a
-              href={igHref}
-              target="_blank"
-              rel="noreferrer"
-              style={{ color: profileAccentVar, textDecoration: "none", fontWeight: 600 }}
-            >
-              {ig.startsWith("@") ? ig : `@${String(ig).replace(/^@/, "")}`}
-            </a>
-          </div>
-        ) : showClaimInvites ? (
-          <InfoBlank testId="profile-info-instagram-blank" label="Instagram" />
         ) : null}
 
         {showClaimInvites ? (

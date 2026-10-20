@@ -280,7 +280,6 @@ export default function PublicProfileShell({
         phone={phone}
         website={website}
         websiteRaw={websiteRaw}
-        instagram={profile?.instagram || ""}
         shortDescription={shortDescription}
         openStatus={openStatus}
         operatingHours={operatingHours}
