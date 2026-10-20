@@ -10,30 +10,31 @@ const actions = read("src/components/cluster/ClusterDishActions.jsx");
 const explorer = read("src/components/cluster/ClusterMenuExplorer.jsx");
 
 test("cluster dish actions reuse the restaurant menu row components", () => {
-  for (const name of ["LikeMenuItemButton", "InviteToEatButton", "ShareButton", "FoodCommentNavButton"]) {
+  for (const name of ["WishListMenuItemButton", "LikeMenuItemButton", "InviteToEatButton", "ShareButton"]) {
     assert.match(actions, new RegExp(`import ${name} from`), `${name} imported`);
   }
   assert.match(actions, /buildDishShareData/);
 });
 
-test("Like + Invite inline; Share + Comment only after the dots expand", () => {
-  assert.match(actions, /data-testid="cluster-dish-more"/);
-  assert.match(actions, /aria-expanded=\{moreOpen\}/);
-  assert.match(actions, /\{moreOpen && shareData \? \(\s*<ShareButton/);
-  assert.match(actions, /\{moreOpen && ckId \? \(\s*<span[^>]*>\s*<FoodCommentNavButton/);
-  assert.doesNotMatch(actions, /moreOpen && ckId \? \(\s*<span[^>]*>\s*<LikeMenuItemButton/);
+test("same four actions as the Feed rail, same order, all inline (Andre, 2026-10-20)", () => {
+  const order = ["<WishListMenuItemButton", "<LikeMenuItemButton", "<InviteToEatButton", "<ShareButton"].map((tag) =>
+    actions.indexOf(tag)
+  );
+  assert.ok(order.every((idx) => idx > 0), "all four present");
+  assert.deepEqual([...order].sort((a, b) => a - b), order, "Wish List · Like · Invite · Share");
+  assert.doesNotMatch(actions, /cluster-dish-more|moreOpen/, "no dots menu");
+  assert.doesNotMatch(actions, /Order this|See menu/, "Order / See menu is Feed-only");
 });
 
-test("likes/comments write to the CK dish record (franchise rows use ck_menu_item_id)", () => {
+test("Wish List and Like write to the CK dish record (franchise rows use ck_menu_item_id)", () => {
   assert.match(actions, /is_franchise_cluster_item \? item\?\.ck_menu_item_id : item\?\.menu_item_id/);
   assert.match(actions, /<LikeMenuItemButton\s+menuItemId=\{ckId\}/);
-  assert.match(actions, /<FoodCommentNavButton\s+target="menu_item"\s+menuItemId=\{ckId\}/);
+  assert.match(actions, /<WishListMenuItemButton\s+menuItemId=\{ckId\}/);
 });
 
 test("counts show only above 0", () => {
   assert.match(actions, /if \(!\(value > 0\)\) return null;/);
   assert.match(actions, /cluster-dish-like-count/);
-  assert.match(actions, /cluster-dish-comment-count/);
 });
 
 test("action taps never open the dish; the row (minus icons) does", () => {
